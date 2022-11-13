@@ -1,7 +1,0 @@
-0	18:29:43.601	Custom indicator iPIC EURUSD,H1: loaded successfully
-0	18:29:43.779	iPIC EURUSD,H1: ATR_INIT():  bar=0  Bars=5000 Time[bar]=2022.10.05 21:00 Time[1]=2022.10.05 20:00 Time[Bars]=2021.12.17 06:00
-0	18:29:43.779	iPIC EURUSD,H1: INIT: lib_PIC.mqh  v200.212  compilation time: 2022.09.21 06:51:48
-0	18:29:43.779	iPIC EURUSD,H1: initialized
-0	18:33:37.685	iPIC EURUSD,H1: uninit reason 9
-0	18:33:37.685	iPIC EURUSD,H1: CLEAR CHART: удалено 3 графических объектов.  Предельное количество 4294967295
-0	18:33:37.807	Custom indicator iPIC EURUSD,H1: removed
