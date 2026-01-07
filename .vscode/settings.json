@@ -1,0 +1,18 @@
+{
+    "clangd.fallbackFlags": [
+        "-xc++",
+        "-std=c++17",
+        "-includec:/Users/hohla/.cursor/extensions/ngsoftware.mql-tools-1.0.3-universal/files/mql_clangd_compat.h",
+        "-fms-extensions",
+        "-fms-compatibility",
+        "-ferror-limit=0",
+        "-Wno-unknown-pragmas",
+        "-Wno-writable-strings",
+        "-Xclang",
+        "-Wno-invalid-pp-directive",
+        "-Wno-unknown-directives",
+        "-Ic:/Users/hohla/git/SoSimple",
+        "-Ic:/Users/hohla/git/SoSimple/Include",
+        "-IC:/Users/hohla/MT/MQL4/Include/Include"
+    ]
+}
