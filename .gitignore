@@ -211,6 +211,7 @@ __marimo__/
 *.ex4
 *.ex5
 *.dll
+*.index
 
 # Временные файлы MT4
 *.log
