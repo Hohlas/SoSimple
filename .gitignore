@@ -221,5 +221,6 @@ __marimo__/
 *.swp
 *~
 
-# LOG files
-*.log
+# CSV, XLSX files
+*.csv
+*.xlsx
