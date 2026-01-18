@@ -11,7 +11,6 @@ from typing import Dict, List
 class StreamingStats:
     """Класс для накопления статистики по чанкам [web:7]"""
     def __init__(self):
-        self.n_samples = 0
         self.signal_counts = Counter()
         
         # Для каждого из 11 признаков фрактала
@@ -20,33 +19,63 @@ class StreamingStats:
                             'power', 'count', 'impulse']
         
         # Онлайн статистика по методу Уэлфорда
+        # ИСПРАВЛЕНО: Отдельный счётчик для каждого признака
+        self.n_per_feature = {f: 0 for f in self.feature_names}
         self.means = {f: 0.0 for f in self.feature_names}
         self.m2s = {f: 0.0 for f in self.feature_names}  # для вариации
         self.mins = {f: float('inf') for f in self.feature_names}
         self.maxs = {f: float('-inf') for f in self.feature_names}
-        self.value_lists = {f: [] for f in self.feature_names}  # для квантилей
+        
+        # Для квантилей: reservoir sampling с ограничением
+        self.value_lists = {f: [] for f in self.feature_names}
+        self.value_lists_max_size = 10000  # Максимальный размер выборки для квантилей
+        self._rng = np.random.default_rng(42)  # Фиксированный seed для воспроизводимости
         
     def update(self, chunk_data: pd.DataFrame, parsed_fractals: Dict):
         """Обновление статистики на основе чанка"""
         # Подсчёт классов
-        self.signal_counts.update(chunk_data['signal'].value_counts().to_dict())
+        for signal in chunk_data['signal']:
+            self.signal_counts[int(signal)] += 1
         
         # Обновление статистики по признакам (метод Уэлфорда для онлайн расчёта)
-        for feature_idx, feature_name in enumerate(self.feature_names):
+        # ИСПРАВЛЕНО: Используем отдельный счётчик для каждого признака
+        for feature_name in self.feature_names:
             values = parsed_fractals[feature_name]
             
             for value in values:
-                self.n_samples += 1
+                n = self.n_per_feature[feature_name] + 1
+                self.n_per_feature[feature_name] = n
+                
                 delta = value - self.means[feature_name]
-                self.means[feature_name] += delta / self.n_samples
+                self.means[feature_name] += delta / n
                 delta2 = value - self.means[feature_name]
                 self.m2s[feature_name] += delta * delta2
                 
                 self.mins[feature_name] = min(self.mins[feature_name], value)
                 self.maxs[feature_name] = max(self.maxs[feature_name], value)
             
-            # Сохраняем выборку для квантилей (ограничиваем размер)
-            self.value_lists[feature_name].extend(values[:1000])
+            # ИСПРАВЛЕНО: Reservoir sampling для несмещённой выборки квантилей
+            self._update_value_list(feature_name, values)
+    
+    def _update_value_list(self, feature_name: str, new_values: List):
+        """
+        Reservoir sampling для формирования несмещённой выборки.
+        Гарантирует, что каждый элемент имеет равную вероятность попасть в выборку.
+        """
+        current_list = self.value_lists[feature_name]
+        max_size = self.value_lists_max_size
+        
+        for value in new_values:
+            if len(current_list) < max_size:
+                # Резервуар ещё не заполнен — добавляем напрямую
+                current_list.append(value)
+            else:
+                # Резервуар заполнен — вероятностная замена
+                # Вероятность замены = max_size / (n_per_feature + 1)
+                n_seen = self.n_per_feature[feature_name]
+                j = self._rng.integers(0, n_seen + 1)
+                if j < max_size:
+                    current_list[j] = value
     
     def get_summary(self) -> Dict:
         """Финальная статистика"""
@@ -57,7 +86,7 @@ class StreamingStats:
         }
         
         for feature_name in self.feature_names:
-            n = self.n_samples
+            n = self.n_per_feature[feature_name]
             variance = self.m2s[feature_name] / (n - 1) if n > 1 else 0
             std = np.sqrt(variance)
             
@@ -220,11 +249,11 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     print(f"  Распределение классов:")
     print(stratified_sample['signal'].value_counts())
     
+    # 5. class_statistics.json
     print("\n[ГЕНЕРАЦИЯ] Создание class_statistics.json...")
     class_stats = {}
     
     # Загружаем весь файл для анализа первого фрактала по классам
-    # (нужно для точной статистики, можно оптимизировать позже если файл очень большой)
     print("  Загрузка данных для class_statistics.json...")
     final_df = pd.read_csv(filepath, sep=';', low_memory=False)
     final_df.columns = final_df.columns.str.strip()
