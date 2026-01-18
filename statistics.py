@@ -220,6 +220,75 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     print(f"  Распределение классов:")
     print(stratified_sample['signal'].value_counts())
     
+    print("\n[ГЕНЕРАЦИЯ] Создание class_statistics.json...")
+    class_stats = {}
+    
+    # Загружаем весь файл для анализа первого фрактала по классам
+    # (нужно для точной статистики, можно оптимизировать позже если файл очень большой)
+    print("  Загрузка данных для class_statistics.json...")
+    final_df = pd.read_csv(filepath, sep=';', low_memory=False)
+    final_df.columns = final_df.columns.str.strip()
+    
+    # Определяем имя колонки первого фрактала
+    fractal_columns = [col for col in final_df.columns if col.startswith('fractal')]
+    if len(fractal_columns) == 0:
+        print("[WARNING] Колонки с фракталами не найдены, пропускаем class_statistics.json")
+    else:
+        # Используем первую колонку с фракталом (fractal0 или fractal[0])
+        first_fractal_col = sorted(fractal_columns)[0]  # сортируем для детерминированности
+        
+        for signal_val in [-1, 0, 1]:
+            class_rows = final_df[final_df['signal'] == signal_val]
+            
+            if len(class_rows) == 0:
+                class_stats[str(signal_val)] = {
+                    'count': 0,
+                    'percentage': '0.00%',
+                    'fractal_0_features': {}
+                }
+                continue
+            
+            # Парсинг первого фрактала из каждой строки класса
+            first_fractal_stats = {}
+            for feature_idx, feature_name in enumerate(stats.feature_names):
+                feature_values = []
+                for _, row in class_rows.iterrows():
+                    fractal_str = row[first_fractal_col]
+                    if pd.isna(fractal_str) or fractal_str == '':
+                        continue
+                    try:
+                        fractal_parts = str(fractal_str).split(':')
+                        if len(fractal_parts) > feature_idx:
+                            feature_values.append(float(fractal_parts[feature_idx]))
+                    except (ValueError, IndexError):
+                        continue
+                
+                if len(feature_values) > 0:
+                    first_fractal_stats[feature_name] = {
+                        'mean': float(np.mean(feature_values)),
+                        'std': float(np.std(feature_values)),
+                        'min': float(np.min(feature_values)),
+                        'max': float(np.max(feature_values))
+                    }
+                else:
+                    first_fractal_stats[feature_name] = {
+                        'mean': 0.0,
+                        'std': 0.0,
+                        'min': 0.0,
+                        'max': 0.0
+                    }
+            
+            class_stats[str(signal_val)] = {
+                'count': len(class_rows),
+                'percentage': f"{len(class_rows)/len(final_df)*100:.2f}%",
+                'fractal_0_features': first_fractal_stats
+            }
+
+        with open('class_statistics.json', 'w', encoding='utf-8') as f:
+            json.dump(class_stats, f, indent=2, ensure_ascii=False)
+
+        print("[OK] Создан class_statistics.json")
+    
     return summary
 
 
