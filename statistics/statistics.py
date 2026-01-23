@@ -3,6 +3,11 @@ import numpy as np
 import json
 from collections import Counter, defaultdict
 from typing import Dict, List
+import os
+from pathlib import Path
+
+# Получаем абсолютный путь к директории, где находится скрипт
+SCRIPT_DIR = Path(__file__).parent.absolute()
 
 # ============================================================================
 # ЭТАП 1: ПОТОКОВАЯ ОБРАБОТКА И СБОР СТАТИСТИКИ
@@ -203,7 +208,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
         for k, v in summary['class_distribution'].items()
     }
     
-    with open('statistics_summary.json', 'w', encoding='utf-8') as f:
+    with open(SCRIPT_DIR / 'statistics_summary.json', 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
     
     print("[OK] Создан statistics_summary.json")
@@ -217,7 +222,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
         }
         for signal, count in sorted(summary['class_distribution'].items())
     ])
-    class_report.to_csv('class_balance_report.csv', index=False)
+    class_report.to_csv(SCRIPT_DIR / 'class_balance_report.csv', index=False)
     
     print("[OK] Создан class_balance_report.csv")
     
@@ -229,7 +234,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
             **feature_stats
         })
     
-    pd.DataFrame(feature_dists).to_csv('feature_distributions.csv', index=False)
+    pd.DataFrame(feature_dists).to_csv(SCRIPT_DIR / 'feature_distributions.csv', index=False)
     
     print("[OK] Создан feature_distributions.csv")
     
@@ -242,7 +247,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     # Перемешиваем
     stratified_sample = stratified_sample.sample(frac=1, random_state=42).reset_index(drop=True)
     
-    stratified_sample.to_csv('nero_sample_stratified.csv', sep=';', index=False)
+    stratified_sample.to_csv(SCRIPT_DIR / 'nero_sample_stratified.csv', sep=';', index=False)
     
     print(f"[OK] Создан nero_sample_stratified.csv")
     print(f"  Всего строк: {len(stratified_sample)}")
@@ -313,7 +318,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
                 'fractal_0_features': first_fractal_stats
             }
 
-        with open('class_statistics.json', 'w', encoding='utf-8') as f:
+        with open(SCRIPT_DIR / 'class_statistics.json', 'w', encoding='utf-8') as f:
             json.dump(class_stats, f, indent=2, ensure_ascii=False)
 
         print("[OK] Создан class_statistics.json")
@@ -329,7 +334,7 @@ if __name__ == "__main__":
     print("Начало обработки Nero_train_labeled.csv...")
     print("="*60)
     
-    summary = process_nero_csv('Nero_train_labeled.csv', chunksize=500)
+    summary = process_nero_csv(SCRIPT_DIR / 'Nero_train_labeled.csv', chunksize=500)
     
     print("="*60)
     print("Обработка завершена!")
