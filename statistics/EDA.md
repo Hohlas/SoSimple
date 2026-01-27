@@ -97,7 +97,11 @@ def load_nero_data(filepath: str) -> tuple:
     print(f"Колонки: {list(df.columns[:5])}... (всего {len(df.columns)})")
     
     # Определяем колонки фракталов
-    fractal_cols = sorted([col for col in df.columns if col.startswith('fractal')])
+    # ✅ ПРАВИЛЬНАЯ (численная сортировка):
+    fractal_cols = sorted(
+        [col for col in df.columns if col.startswith('fractal')],
+        key=lambda x: int(x.replace('fractal', ''))
+    )
     print(f"Найдено {len(fractal_cols)} фрактальных колонок")
     
     # Парсинг первого фрактала (fractal[0]) для всех строк
@@ -1890,24 +1894,19 @@ else:
     ============================================================
     
     1. Проверка упорядоченности фракталов по времени:
-       ❌ ISSUES DETECTED: 5042 строк с нарушениями!
-       Примеры нарушений (первые 5):
-          Строка 0: позиции [11, 22, 33, 44, 55]...
-          Строка 1: позиции [11, 22, 33, 44, 55]...
-          Строка 2: позиции [11, 22, 33, 44, 55]...
-          Строка 3: позиции [11, 22, 33, 44, 55]...
-          Строка 4: позиции [11, 22, 33, 44, 55]...
+       ✅ PASSED: Все 5042 строк корректно упорядочены (fractal_time убывает)
     
     2. Проверка эволюции признаков фрактала между строками:
-       Фракталов, появляющихся в нескольких строках: 1024
-       ⚠️ ANOMALIES: 119 нарушений монотонности позиций
+       Фракталов, появляющихся в нескольких строках: 1017
+       ⚠️ ANOMALIES: 8 нарушений монотонности позиций
        (Это может быть нормально, если фрактал исчезает из окна наблюдения)
     
     ============================================================
     DATA LEAKAGE CHECK SUMMARY
     ============================================================
-    ❌ STATUS: ISSUES DETECTED - Требуется дополнительный анализ
-       Обнаружено 5042 строк с нарушениями порядка
+    ✅ STATUS: PASSED - Данные корректно упорядочены по времени
+       Фракталы идут от новых (позиция 0) к старым (позиция 98)
+       Data leakage из будущего НЕ ОБНАРУЖЕН
     
 
 ### 9.2 Статистика последовательности по классам
@@ -2069,18 +2068,18 @@ for class_val in classes:
     Temporal patterns по классам:
     
     -1 (Sell (-1), n=257):
-      Среднее количество смен direction: 51.90
-      Средний longest streak: 9.89
+      Среднее количество смен direction: 54.99
+      Средний longest streak: 10.62
       Средняя волатильность цены: 0.189073
     
     0 (Neutral (0), n=4545):
-      Среднее количество смен direction: 52.55
-      Средний longest streak: 9.52
+      Среднее количество смен direction: 55.53
+      Средний longest streak: 10.13
       Средняя волатильность цены: 0.190576
     
     1 (Buy (1), n=240):
-      Среднее количество смен direction: 52.91
-      Средний longest streak: 9.14
+      Среднее количество смен direction: 55.78
+      Средний longest streak: 9.92
       Средняя волатильность цены: 0.194052
     
 
@@ -2192,26 +2191,26 @@ print(f"\n✅ График сохранён: {PLOTS_DIR}attention_cohens_d_heatm
     Класс -1:
       Позиция 0: средний |Cohen's d| = 0.380
       Позиция 1: средний |Cohen's d| = 0.261
-      Позиция 12: средний |Cohen's d| = 0.141
-      Позиция 34: средний |Cohen's d| = 0.099
-      Позиция 45: средний |Cohen's d| = 0.091
-      Позиция 2: средний |Cohen's d| = 0.085
-      Позиция 23: средний |Cohen's d| = 0.082
-      Позиция 20: средний |Cohen's d| = 0.079
-      Позиция 40: средний |Cohen's d| = 0.076
-      Позиция 56: средний |Cohen's d| = 0.074
+      Позиция 2: средний |Cohen's d| = 0.141
+      Позиция 4: средний |Cohen's d| = 0.099
+      Позиция 5: средний |Cohen's d| = 0.091
+      Позиция 10: средний |Cohen's d| = 0.085
+      Позиция 3: средний |Cohen's d| = 0.082
+      Позиция 27: средний |Cohen's d| = 0.079
+      Позиция 45: средний |Cohen's d| = 0.076
+      Позиция 6: средний |Cohen's d| = 0.074
     
     Класс 1:
       Позиция 0: средний |Cohen's d| = 0.406
       Позиция 1: средний |Cohen's d| = 0.278
-      Позиция 12: средний |Cohen's d| = 0.137
-      Позиция 23: средний |Cohen's d| = 0.099
+      Позиция 2: средний |Cohen's d| = 0.137
+      Позиция 3: средний |Cohen's d| = 0.099
       Позиция 98: средний |Cohen's d| = 0.098
-      Позиция 9: средний |Cohen's d| = 0.096
-      Позиция 16: средний |Cohen's d| = 0.092
-      Позиция 67: средний |Cohen's d| = 0.088
-      Позиция 34: средний |Cohen's d| = 0.088
-      Позиция 27: средний |Cohen's d| = 0.087
+      Позиция 17: средний |Cohen's d| = 0.096
+      Позиция 23: средний |Cohen's d| = 0.092
+      Позиция 7: средний |Cohen's d| = 0.088
+      Позиция 4: средний |Cohen's d| = 0.088
+      Позиция 33: средний |Cohen's d| = 0.087
     
     ✅ График сохранён: plots/attention_cohens_d_heatmap.png
     
@@ -2830,31 +2829,6 @@ print(f"\n✅ Feature importance сохранён: {PLOTS_DIR}feature_importance
     1. Feature importance ranking...
        Вычисление Mutual Information для топ-100 признаков...
     
-       Топ-20 признаков по важности:
-                               feature  correlation  mutual_info  importance_score
-    168                  price_slope_2    -0.346919     0.085391          0.673459
-    4                    front_mean_w1     0.043518     0.067033          0.414267
-    6                     front_min_w1     0.043518     0.066080          0.408688
-    7                     front_max_w1     0.043518     0.065751          0.406759
-    200           price_percentile_w10     0.201343     0.040733          0.339180
-    199               price_zscore_w10     0.223740     0.033514          0.308107
-    226  impulse_direction_interaction     0.230683     0.027994          0.279259
-    16                 impulse_mean_w1    -0.056028     0.041151          0.268974
-    19                  impulse_max_w1    -0.056028     0.040139          0.263044
-    204           price_percentile_w20     0.175729     0.028213          0.253063
-    18                  impulse_min_w1    -0.056028     0.037589          0.248113
-    225      count_reverse_interaction    -0.028325     0.038805          0.241382
-    43                  impulse_max_w2    -0.051451     0.034991          0.230615
-    203               price_zscore_w20     0.189610     0.022141          0.224450
-    171                  price_slope_3    -0.168223     0.021316          0.208926
-    64                 impulse_mean_w3    -0.061858     0.029744          0.205094
-    67                  impulse_max_w3    -0.054427     0.030365          0.205015
-    40                 impulse_mean_w2    -0.062056     0.024737          0.175872
-    212               price_momentum_5     0.150876     0.015661          0.167141
-    42                  impulse_min_w2    -0.067419     0.020400          0.153158
-    
-    ✅ Feature importance сохранён: plots/feature_importance_sequence.csv
-    
 
 
 ```python
@@ -2900,25 +2874,6 @@ if redundant_pairs:
 else:
     print("   ✅ Redundant features не обнаружено (correlation < 0.95)")
 ```
-
-    
-    2. Redundancy analysis...
-       Найдено 15 пар с correlation > 0.95:
-                   feature1          feature2  correlation
-    0         front_mean_w1      front_min_w1     1.000000
-    1         front_mean_w1      front_max_w1     1.000000
-    2          front_min_w1      front_max_w1     1.000000
-    3  price_percentile_w10  price_zscore_w10     0.968047
-    4       impulse_mean_w1    impulse_max_w1     1.000000
-    5       impulse_mean_w1    impulse_min_w1     1.000000
-    6        impulse_max_w1    impulse_min_w1     1.000000
-    7  price_percentile_w20  price_zscore_w20     0.965543
-    8        impulse_max_w2   impulse_mean_w2     0.955247
-    9      price_momentum_5     price_slope_5     0.966367
-    
-       Рекомендация: можно удалить 11 признаков:
-       ['impulse_max_w1', 'impulse_mean_w2', 'back_mean_w1', 'back_min_w1', 'price_slope_5', 'front_max_w1', 'impulse_min_w1', 'price_zscore_w20', 'price_zscore_w10', 'front_min_w1']
-    
 
 
 ```python
@@ -2966,19 +2921,6 @@ plt.show()
 print(f"✅ График сохранён: {PLOTS_DIR}engineered_features_boxplots.png")
 ```
 
-    
-    3. Feature stability по классам...
-    
-
-
-    
-![png](EDA_files/EDA_52_1.png)
-    
-
-
-    ✅ График сохранён: plots/engineered_features_boxplots.png
-    
-
 Раздел 9.6: Экспорт результатов
 
 
@@ -3003,15 +2945,6 @@ engineered_features.to_csv(output_file, index=False)
 print(f"   ✅ Сохранено: {output_file}")
 print(f"   Размерность: {engineered_features.shape}")
 ```
-
-    ============================================================
-    9.6 ЭКСПОРТ РЕЗУЛЬТАТОВ
-    ============================================================
-    
-    1. Сохранение engineered dataset...
-       ✅ Сохранено: nero_features_engineered.csv
-       Размерность: (5042, 236)
-    
 
 
 ```python
@@ -3083,12 +3016,6 @@ with open('feature_catalog.json', 'w', encoding='utf-8') as f:
 print(f"   ✅ Сохранено: feature_catalog.json")
 print(f"   Записей: {len(feature_catalog)}")
 ```
-
-    
-    2. Создание feature catalog...
-       ✅ Сохранено: feature_catalog.json
-       Записей: 233
-    
 
 
 ```python
@@ -3168,10 +3095,8 @@ report += f"""
 
 **Status:** {'❌ ISSUES DETECTED' if ('causal_violations' in locals() and len(causal_violations) > 0) else '✅ PASSED'}
 
-**Details:**
-- Нарушения упорядоченности по времени обнаружены на позициях [11, 22, 33, 44, 55]
-- Требуется дополнительный анализ: возможно, это особенность структуры данных
-- Рекомендуется проверить логику формирования фракталов
+- Проверка временного порядка: {'нарушений не обнаружено' if len(causal_violations) == 0 else f'{len(causal_violations)} строк с нарушениями'}
+
 
 ### 5. Feature Selection
 
@@ -3215,23 +3140,6 @@ print("  - feature_importance_sequence.csv")
 print("  - sequence_analysis_report.md")
 print("\n✅ Раздел 9 (Анализ полной последовательности фракталов) завершён!")
 ```
-
-    
-    3. Создание отчёта...
-       ✅ Сохранено: sequence_analysis_report.md
-    
-    ============================================================
-    ✅ ЭКСПОРТ ЗАВЕРШЁН
-    ============================================================
-    
-    Созданные файлы:
-      - nero_features_engineered.csv
-      - feature_catalog.json
-      - feature_importance_sequence.csv
-      - sequence_analysis_report.md
-    
-    ✅ Раздел 9 (Анализ полной последовательности фракталов) завершён!
-    
 
 
 ```python

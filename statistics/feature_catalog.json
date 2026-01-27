@@ -7,19 +7,52 @@
     "aggregation": "slope",
     "importance_rank": 169,
     "correlation_with_target": -0.3469189745233626,
-    "mutual_information": 0.08539055509820437,
+    "mutual_information": 0.08537768189767903,
     "importance_score": 0.6734594872616813
   },
   {
-    "feature_name": "front_mean_w1",
-    "type": "rolling_statistic",
-    "window": 1,
-    "base_feature": "front",
-    "aggregation": "mean",
-    "importance_rank": 5,
+    "feature_name": "price_zscore_w10",
+    "type": "relative_feature",
+    "window": 10,
+    "base_feature": "price",
+    "aggregation": "zscore",
+    "importance_rank": 200,
+    "correlation_with_target": 0.3570610854994662,
+    "mutual_information": 0.0807786783116411,
+    "importance_score": 0.6515972536054482
+  },
+  {
+    "feature_name": "price_percentile_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 201,
+    "correlation_with_target": 0.3357563749703549,
+    "mutual_information": 0.0786290312482889,
+    "importance_score": 0.6283558527286655
+  },
+  {
+    "feature_name": "front_max_w1",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 8,
     "correlation_with_target": 0.04351823974713856,
-    "mutual_information": 0.06703286209189807,
-    "importance_score": 0.41426659341561484
+    "mutual_information": 0.0667291926677096,
+    "importance_score": 0.4125473866930015
+  },
+  {
+    "feature_name": "price_slope_3",
+    "type": "trend_indicator",
+    "window": 3,
+    "base_feature": "price",
+    "aggregation": "slope",
+    "importance_rank": 172,
+    "correlation_with_target": -0.25495329078421797,
+    "mutual_information": 0.048662004770972045,
+    "importance_score": 0.4124574722860218
   },
   {
     "feature_name": "front_min_w1",
@@ -30,40 +63,62 @@
     "importance_rank": 7,
     "correlation_with_target": 0.04351823974713856,
     "mutual_information": 0.06608017803506239,
-    "importance_score": 0.40868820095909525
+    "importance_score": 0.40874654191587917
   },
   {
-    "feature_name": "front_max_w1",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 8,
+    "feature_name": "front_mean_w1",
+    "type": "rolling_statistic",
+    "window": 1,
+    "base_feature": "front",
+    "aggregation": "mean",
+    "importance_rank": 5,
     "correlation_with_target": 0.04351823974713856,
-    "mutual_information": 0.06575065343619002,
-    "importance_score": 0.406758686632286
+    "mutual_information": 0.0653958308911382,
+    "importance_score": 0.4047387782432584
   },
   {
-    "feature_name": "price_percentile_w10",
+    "feature_name": "price_percentile_w20",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 201,
-    "correlation_with_target": 0.20134291442600352,
-    "mutual_information": 0.04073272653471727,
-    "importance_score": 0.3391798407682564
+    "importance_rank": 205,
+    "correlation_with_target": 0.25827276957651024,
+    "mutual_information": 0.04620411709023298,
+    "importance_score": 0.39972300686125983
   },
   {
-    "feature_name": "price_zscore_w10",
+    "feature_name": "price_zscore_w20",
     "type": "relative_feature",
-    "window": 10,
+    "window": 20,
     "base_feature": "price",
     "aggregation": "zscore",
-    "importance_rank": 200,
-    "correlation_with_target": 0.22373953736036326,
-    "mutual_information": 0.033513621450526054,
-    "importance_score": 0.30810705400982574
+    "importance_rank": 204,
+    "correlation_with_target": 0.2651458029648805,
+    "mutual_information": 0.04345025168448413,
+    "importance_score": 0.387031975087631
+  },
+  {
+    "feature_name": "price_momentum_5",
+    "type": "momentum_volatility",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 213,
+    "correlation_with_target": 0.2284985576434626,
+    "mutual_information": 0.044327954951070225,
+    "importance_score": 0.37384847363352713
+  },
+  {
+    "feature_name": "price_slope_4",
+    "type": "trend_indicator",
+    "window": 4,
+    "base_feature": "price",
+    "aggregation": "slope",
+    "importance_rank": 175,
+    "correlation_with_target": -0.21817497361593743,
+    "mutual_information": 0.03951353017907433,
+    "importance_score": 0.3404918146183054
   },
   {
     "feature_name": "impulse_direction_interaction",
@@ -72,20 +127,9 @@
     "base_feature": null,
     "aggregation": null,
     "importance_rank": 227,
-    "correlation_with_target": 0.23068311695339191,
-    "mutual_information": 0.027993943681603017,
-    "importance_score": 0.2792586547492771
-  },
-  {
-    "feature_name": "impulse_mean_w1",
-    "type": "rolling_statistic",
-    "window": 1,
-    "base_feature": "impulse",
-    "aggregation": "mean",
-    "importance_rank": 17,
-    "correlation_with_target": -0.05602849450198313,
-    "mutual_information": 0.041151431442440156,
-    "importance_score": 0.26897433584107916
+    "correlation_with_target": 0.252015909413281,
+    "mutual_information": 0.034584427384455774,
+    "importance_score": 0.3285458230098788
   },
   {
     "feature_name": "impulse_max_w1",
@@ -95,19 +139,19 @@
     "aggregation": null,
     "importance_rank": 20,
     "correlation_with_target": -0.05602849450198313,
-    "mutual_information": 0.040138624901450815,
-    "importance_score": 0.2630438992733314
+    "mutual_information": 0.043863997232743035,
+    "importance_score": 0.2848963519051791
   },
   {
-    "feature_name": "price_percentile_w20",
-    "type": "other",
+    "feature_name": "front_back_interaction",
+    "type": "interaction_feature",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 205,
-    "correlation_with_target": 0.17572854817222014,
-    "mutual_information": 0.028212745807992823,
-    "importance_score": 0.25306255494718677
+    "importance_rank": 224,
+    "correlation_with_target": 0.02194234992894815,
+    "mutual_information": 0.044875397793748606,
+    "importance_score": 0.2737763764896781
   },
   {
     "feature_name": "impulse_min_w1",
@@ -117,19 +161,30 @@
     "aggregation": null,
     "importance_rank": 19,
     "correlation_with_target": -0.05602849450198313,
-    "mutual_information": 0.03758863806227275,
-    "importance_score": 0.24811258259407204
+    "mutual_information": 0.04151930245213942,
+    "importance_score": 0.2711650422204443
   },
   {
-    "feature_name": "count_reverse_interaction",
-    "type": "interaction_feature",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 226,
-    "correlation_with_target": -0.02832470551556719,
-    "mutual_information": 0.038804805383005014,
-    "importance_score": 0.2413818932466416
+    "feature_name": "impulse_mean_w1",
+    "type": "rolling_statistic",
+    "window": 1,
+    "base_feature": "impulse",
+    "aggregation": "mean",
+    "importance_rank": 17,
+    "correlation_with_target": -0.05602849450198313,
+    "mutual_information": 0.03987945942597104,
+    "importance_score": 0.2615615780028655
+  },
+  {
+    "feature_name": "price_slope_5",
+    "type": "trend_indicator",
+    "window": 5,
+    "base_feature": "price",
+    "aggregation": "slope",
+    "importance_rank": 178,
+    "correlation_with_target": -0.17664970921071665,
+    "mutual_information": 0.0292636748042836,
+    "importance_score": 0.25970263246160585
   },
   {
     "feature_name": "impulse_max_w2",
@@ -140,51 +195,18 @@
     "importance_rank": 44,
     "correlation_with_target": -0.05145129558792614,
     "mutual_information": 0.03499127333520957,
-    "importance_score": 0.23061524767399352
+    "importance_score": 0.2306461408166297
   },
   {
-    "feature_name": "price_zscore_w20",
-    "type": "relative_feature",
-    "window": 20,
-    "base_feature": "price",
-    "aggregation": "zscore",
-    "importance_rank": 204,
-    "correlation_with_target": 0.18961014632565545,
-    "mutual_information": 0.02214088623858279,
-    "importance_score": 0.22444989285699307
-  },
-  {
-    "feature_name": "price_slope_3",
+    "feature_name": "impulse_slope_5",
     "type": "trend_indicator",
-    "window": 3,
-    "base_feature": "price",
-    "aggregation": "slope",
-    "importance_rank": 172,
-    "correlation_with_target": -0.16822286595490069,
-    "mutual_information": 0.021315951626205365,
-    "importance_score": 0.2089258905113703
-  },
-  {
-    "feature_name": "impulse_mean_w3",
-    "type": "rolling_statistic",
-    "window": 3,
+    "window": 5,
     "base_feature": "impulse",
-    "aggregation": "mean",
-    "importance_rank": 65,
-    "correlation_with_target": -0.061857901137631885,
-    "mutual_information": 0.029744093655879933,
-    "importance_score": 0.2050939599288816
-  },
-  {
-    "feature_name": "impulse_max_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 68,
-    "correlation_with_target": -0.05442735510864113,
-    "mutual_information": 0.03036513676310637,
-    "importance_score": 0.20501517286129334
+    "aggregation": "slope",
+    "importance_rank": 180,
+    "correlation_with_target": 0.046822687667138256,
+    "mutual_information": 0.03245345876920602,
+    "importance_score": 0.2134695537068467
   },
   {
     "feature_name": "impulse_mean_w2",
@@ -194,19 +216,140 @@
     "aggregation": "mean",
     "importance_rank": 41,
     "correlation_with_target": -0.06205598491468373,
-    "mutual_information": 0.024736616709176262,
-    "importance_score": 0.17587197830992027
+    "mutual_information": 0.030482878372376065,
+    "importance_score": 0.20954583046158928
   },
   {
-    "feature_name": "price_momentum_5",
+    "feature_name": "count_reverse_interaction",
+    "type": "interaction_feature",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 226,
+    "correlation_with_target": -0.02832470551556719,
+    "mutual_information": 0.03286650162454352,
+    "importance_score": 0.20663947847743253
+  },
+  {
+    "feature_name": "peak_valley_ratio_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 185,
+    "correlation_with_target": 0.17385525108483327,
+    "mutual_information": 0.020270963684278387,
+    "importance_score": 0.2056411068276789
+  },
+  {
+    "feature_name": "front_mean_w2",
+    "type": "rolling_statistic",
+    "window": 2,
+    "base_feature": "front",
+    "aggregation": "mean",
+    "importance_rank": 29,
+    "correlation_with_target": 0.018255653887938223,
+    "mutual_information": 0.03318367500572439,
+    "importance_score": 0.20346242509746196
+  },
+  {
+    "feature_name": "impulse_slope_4",
+    "type": "trend_indicator",
+    "window": 4,
+    "base_feature": "impulse",
+    "aggregation": "slope",
+    "importance_rank": 177,
+    "correlation_with_target": 0.05398054868307692,
+    "mutual_information": 0.029548150010779928,
+    "importance_score": 0.20003403328425573
+  },
+  {
+    "feature_name": "cumulative_direction_5",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 212,
+    "correlation_with_target": 0.14089316818070316,
+    "mutual_information": 0.019201583560994218,
+    "importance_score": 0.18289742097302997
+  },
+  {
+    "feature_name": "impulse_max_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 68,
+    "correlation_with_target": -0.03684889743575869,
+    "mutual_information": 0.027878061168955526,
+    "importance_score": 0.18168761392284485
+  },
+  {
+    "feature_name": "price_momentum_10",
     "type": "momentum_volatility",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 213,
-    "correlation_with_target": 0.15087561531854046,
-    "mutual_information": 0.015661222138528164,
-    "importance_score": 0.16714128774858922
+    "importance_rank": 217,
+    "correlation_with_target": 0.15976995330068827,
+    "mutual_information": 0.01443169953896617,
+    "importance_score": 0.1644017919245153
+  },
+  {
+    "feature_name": "price_std_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "price",
+    "aggregation": "std",
+    "importance_rank": 50,
+    "correlation_with_target": 0.020562937461055985,
+    "mutual_information": 0.025225890932349504,
+    "importance_score": 0.15801264608072532
+  },
+  {
+    "feature_name": "majority_direction_match_w10",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 195,
+    "correlation_with_target": -0.14532374438570744,
+    "mutual_information": 0.013510739543060701,
+    "importance_score": 0.15178524051791942
+  },
+  {
+    "feature_name": "impulse_slope_3",
+    "type": "trend_indicator",
+    "window": 3,
+    "base_feature": "impulse",
+    "aggregation": "slope",
+    "importance_rank": 174,
+    "correlation_with_target": 0.029222633774786837,
+    "mutual_information": 0.02173016845111153,
+    "importance_score": 0.14187038487868694
+  },
+  {
+    "feature_name": "impulse_max_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 92,
+    "correlation_with_target": -0.02010964625549274,
+    "mutual_information": 0.02137583414935529,
+    "importance_score": 0.13523879201889744
+  },
+  {
+    "feature_name": "front_mean_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "front",
+    "aggregation": "mean",
+    "importance_rank": 53,
+    "correlation_with_target": 0.023809241218589856,
+    "mutual_information": 0.02018207239562142,
+    "importance_score": 0.13009752504893904
   },
   {
     "feature_name": "impulse_min_w2",
@@ -216,195 +359,30 @@
     "aggregation": null,
     "importance_rank": 43,
     "correlation_with_target": -0.06741894640984844,
-    "mutual_information": 0.020399636243827457,
-    "importance_score": 0.15315849318357774
+    "mutual_information": 0.01618655934335589,
+    "importance_score": 0.12850332906736545
   },
   {
-    "feature_name": "impulse_mean_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "impulse",
-    "aggregation": "mean",
-    "importance_rank": 113,
-    "correlation_with_target": -0.05582891030805597,
-    "mutual_information": 0.02136963626020094,
-    "importance_score": 0.1530432602989562
-  },
-  {
-    "feature_name": "front_mean_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "front",
-    "aggregation": "mean",
-    "importance_rank": 53,
-    "correlation_with_target": 0.027166254550592822,
-    "mutual_information": 0.023317970110236397,
-    "importance_score": 0.15012030099093338
-  },
-  {
-    "feature_name": "majority_direction_match_w10",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 195,
-    "correlation_with_target": -0.15480904816955415,
-    "mutual_information": 0.011934433945120837,
-    "importance_score": 0.1472859877396011
-  },
-  {
-    "feature_name": "impulse_mean_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "impulse",
-    "aggregation": "mean",
-    "importance_rank": 89,
-    "correlation_with_target": -0.05546744429886835,
-    "mutual_information": 0.020193990042095766,
-    "importance_score": 0.14597859137924207
-  },
-  {
-    "feature_name": "impulse_slope_4",
-    "type": "trend_indicator",
-    "window": 4,
-    "base_feature": "impulse",
-    "aggregation": "slope",
-    "importance_rank": 177,
-    "correlation_with_target": 0.03218303251621678,
-    "mutual_information": 0.02019763236272465,
-    "importance_score": 0.1343577129088746
-  },
-  {
-    "feature_name": "impulse_slope_3",
-    "type": "trend_indicator",
-    "window": 3,
-    "base_feature": "impulse",
-    "aggregation": "slope",
-    "importance_rank": 174,
-    "correlation_with_target": 0.02693202427998787,
-    "mutual_information": 0.020303134783699717,
-    "importance_score": 0.13234997278616767
-  },
-  {
-    "feature_name": "price_slope_4",
-    "type": "trend_indicator",
-    "window": 4,
-    "base_feature": "price",
-    "aggregation": "slope",
-    "importance_rank": 175,
-    "correlation_with_target": -0.11882223553361919,
-    "mutual_information": 0.012347156729503483,
-    "importance_score": 0.13170925844117046
-  },
-  {
-    "feature_name": "impulse_slope_10",
-    "type": "trend_indicator",
-    "window": 10,
-    "base_feature": "impulse",
-    "aggregation": "slope",
-    "importance_rank": 183,
-    "correlation_with_target": 0.043659638495540075,
-    "mutual_information": 0.0184449911178306,
-    "importance_score": 0.12983351530418827
-  },
-  {
-    "feature_name": "impulse_slope_5",
-    "type": "trend_indicator",
-    "window": 5,
-    "base_feature": "impulse",
-    "aggregation": "slope",
-    "importance_rank": 180,
-    "correlation_with_target": 0.027625333239610295,
-    "mutual_information": 0.019420263615277156,
-    "importance_score": 0.12752702058402673
-  },
-  {
-    "feature_name": "impulse_max_w5",
+    "feature_name": "peak_valley_ratio_w5",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 116,
-    "correlation_with_target": -0.05075819928092437,
-    "mutual_information": 0.01657834342919373,
-    "importance_score": 0.12245273623954285
+    "importance_rank": 189,
+    "correlation_with_target": 0.11744398600636932,
+    "mutual_information": 0.011780154647088148,
+    "importance_score": 0.12771048264855878
   },
   {
-    "feature_name": "front_std_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "front",
-    "aggregation": "std",
-    "importance_rank": 54,
-    "correlation_with_target": 0.026797876312606307,
-    "mutual_information": 0.017900914042777716,
-    "importance_score": 0.1182168189054713
-  },
-  {
-    "feature_name": "back_max_w1",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 12,
-    "correlation_with_target": 0.023298784983199046,
-    "mutual_information": 0.018104418943523104,
-    "importance_score": 0.11765888571190891
-  },
-  {
-    "feature_name": "price_momentum_10",
+    "feature_name": "price_momentum_20",
     "type": "momentum_volatility",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 217,
-    "correlation_with_target": 0.11537823785801328,
-    "mutual_information": 0.010222967404899475,
-    "importance_score": 0.11754917835327455
-  },
-  {
-    "feature_name": "front_max_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 56,
-    "correlation_with_target": 0.026647717097201373,
-    "mutual_information": 0.01776665825352919,
-    "importance_score": 0.11735561143448159
-  },
-  {
-    "feature_name": "back_mean_w1",
-    "type": "rolling_statistic",
-    "window": 1,
-    "base_feature": "back",
-    "aggregation": "mean",
-    "importance_rank": 9,
-    "correlation_with_target": 0.023298784983199046,
-    "mutual_information": 0.017957652754711617,
-    "importance_score": 0.11679950384793873
-  },
-  {
-    "feature_name": "impulse_max_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 92,
-    "correlation_with_target": -0.05090179620888099,
-    "mutual_information": 0.015556516040435175,
-    "importance_score": 0.11654127702599822
-  },
-  {
-    "feature_name": "impulse_std_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "impulse",
-    "aggregation": "std",
-    "importance_rank": 90,
-    "correlation_with_target": -0.03795882981022991,
-    "mutual_information": 0.0165034955424761,
-    "importance_score": 0.1156147835562267
+    "importance_rank": 221,
+    "correlation_with_target": 0.11269943671015549,
+    "mutual_information": 0.011091871309119705,
+    "importance_score": 0.1213073926710235
   },
   {
     "feature_name": "back_min_w1",
@@ -414,272 +392,41 @@
     "aggregation": null,
     "importance_rank": 11,
     "correlation_with_target": 0.023298784983199046,
-    "mutual_information": 0.017517768261411604,
-    "importance_score": 0.11422378283995302
+    "mutual_information": 0.018348798893188967,
+    "importance_score": 0.11910603974034484
   },
   {
-    "feature_name": "price_slope_5",
-    "type": "trend_indicator",
-    "window": 5,
-    "base_feature": "price",
-    "aggregation": "slope",
-    "importance_rank": 178,
-    "correlation_with_target": -0.09758324838632396,
-    "mutual_information": 0.009761352854809058,
-    "importance_score": 0.10594872338043687
-  },
-  {
-    "feature_name": "impulse_mean_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "impulse",
-    "aggregation": "mean",
-    "importance_rank": 137,
-    "correlation_with_target": -0.041765681225425184,
-    "mutual_information": 0.013457682306961205,
-    "importance_score": 0.09968360664289032
-  },
-  {
-    "feature_name": "impulse_std_w3",
+    "feature_name": "impulse_mean_w3",
     "type": "rolling_statistic",
     "window": 3,
     "base_feature": "impulse",
-    "aggregation": "std",
-    "importance_rank": 66,
-    "correlation_with_target": -0.03942248394122164,
-    "mutual_information": 0.012365644271823628,
-    "importance_score": 0.09211763549740298
-  },
-  {
-    "feature_name": "impulse_mean_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "impulse",
     "aggregation": "mean",
-    "importance_rank": 161,
-    "correlation_with_target": -0.04284145374677482,
-    "mutual_information": 0.011587869715385057,
-    "importance_score": 0.08927290151997623
+    "importance_rank": 65,
+    "correlation_with_target": -0.05467040874594946,
+    "mutual_information": 0.01546354693788321,
+    "importance_score": 0.11789485997720814
   },
   {
-    "feature_name": "cumulative_direction_5",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 212,
-    "correlation_with_target": 0.06985362591576008,
-    "mutual_information": 0.00860969444265236,
-    "importance_score": 0.0853404355930221
-  },
-  {
-    "feature_name": "price_momentum_20",
-    "type": "momentum_volatility",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 221,
-    "correlation_with_target": 0.07451420230067538,
-    "mutual_information": 0.007512246130173761,
-    "importance_score": 0.08124467168161142
-  },
-  {
-    "feature_name": "impulse_std_w5",
+    "feature_name": "back_mean_w1",
     "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "impulse",
-    "aggregation": "std",
-    "importance_rank": 114,
-    "correlation_with_target": -0.041907370344846276,
-    "mutual_information": 0.00966845792565052,
-    "importance_score": 0.0775668428836665
-  },
-  {
-    "feature_name": "impulse_min_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 115,
-    "correlation_with_target": -0.02563488471325118,
-    "mutual_information": 0.01049435479115246,
-    "importance_score": 0.07426659665175407
-  },
-  {
-    "feature_name": "peak_valley_ratio_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 185,
-    "correlation_with_target": 0.06632539933280188,
-    "mutual_information": 0.0069076441423614465,
-    "importance_score": 0.07361005437920982
-  },
-  {
-    "feature_name": "impulse_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 91,
-    "correlation_with_target": -0.03719830338714353,
-    "mutual_information": 0.008830357450212434,
-    "importance_score": 0.07030485521111526
-  },
-  {
-    "feature_name": "price_std_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "price",
-    "aggregation": "std",
-    "importance_rank": 146,
-    "correlation_with_target": 0.03127842112552516,
-    "mutual_information": 0.009296127097836226,
-    "importance_score": 0.07007220427702707
-  },
-  {
-    "feature_name": "longest_streak_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 190,
-    "correlation_with_target": 0.03498487276337753,
-    "mutual_information": 0.008093058734911063,
-    "importance_score": 0.06488092522336189
-  },
-  {
-    "feature_name": "direction_changes_w5",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 188,
-    "correlation_with_target": -0.0257644520412782,
-    "mutual_information": 0.0075418057799472304,
-    "importance_score": 0.05704288155961347
-  },
-  {
-    "feature_name": "majority_direction_match_w20",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 199,
-    "correlation_with_target": -0.10792307384904617,
-    "mutual_information": 0.0,
-    "importance_score": 0.05396153692452309
-  },
-  {
-    "feature_name": "cumulative_direction_20",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 220,
-    "correlation_with_target": 0.07398012983530843,
-    "mutual_information": 0.002877156902683975,
-    "importance_score": 0.053837109063081465
-  },
-  {
-    "feature_name": "direction_changes_w3",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 184,
-    "correlation_with_target": -0.039565849696825334,
-    "mutual_information": 0.0058099760416510104,
-    "importance_score": 0.05380294049867505
-  },
-  {
-    "feature_name": "price_mean_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "price",
+    "window": 1,
+    "base_feature": "back",
     "aggregation": "mean",
-    "importance_rank": 97,
-    "correlation_with_target": -0.028560918525479387,
-    "mutual_information": 0.006264811198671838,
-    "importance_score": 0.05096373876283734
+    "importance_rank": 9,
+    "correlation_with_target": 0.023298784983199046,
+    "mutual_information": 0.017947194845054915,
+    "importance_score": 0.11675411333986377
   },
   {
-    "feature_name": "support_resistance_w20",
+    "feature_name": "back_max_w1",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 211,
-    "correlation_with_target": -0.02856539251138219,
-    "mutual_information": 0.006174343976768304,
-    "importance_score": 0.05043624959462553
-  },
-  {
-    "feature_name": "atr_analog_10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 219,
-    "correlation_with_target": 0.02579117699238489,
-    "mutual_information": 0.006386560015285925,
-    "importance_score": 0.05029176192509796
-  },
-  {
-    "feature_name": "price_std_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "price",
-    "aggregation": "std",
-    "importance_rank": 98,
-    "correlation_with_target": 0.025833677712610557,
-    "mutual_information": 0.0058382920221984325,
-    "importance_score": 0.04710265727313158
-  },
-  {
-    "feature_name": "impulse_min_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 67,
-    "correlation_with_target": -0.03640823988164434,
-    "mutual_information": 0.004744042764124101,
-    "importance_score": 0.045982618152176816
-  },
-  {
-    "feature_name": "price_mean_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "price",
-    "aggregation": "mean",
-    "importance_rank": 145,
-    "correlation_with_target": -0.03092876338948291,
-    "mutual_information": 0.004964679917721648,
-    "importance_score": 0.04453480940195077
-  },
-  {
-    "feature_name": "back_min_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 107,
-    "correlation_with_target": 0.023567041718799264,
-    "mutual_information": 0.004763778276183572,
-    "importance_score": 0.03967757934575644
-  },
-  {
-    "feature_name": "impulse_min_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 139,
-    "correlation_with_target": -0.029386466031339358,
-    "mutual_information": 0.004146467910320251,
-    "importance_score": 0.038972662430032654
+    "importance_rank": 12,
+    "correlation_with_target": 0.023298784983199046,
+    "mutual_information": 0.017691230805270575,
+    "importance_score": 0.11525510309447493
   },
   {
     "feature_name": "cumulative_direction_10",
@@ -688,163 +435,31 @@
     "base_feature": null,
     "aggregation": null,
     "importance_rank": 216,
-    "correlation_with_target": 0.052976744744219026,
-    "mutual_information": 0.0019215613329184311,
-    "importance_score": 0.03773997584692308
+    "correlation_with_target": 0.11197864874157554,
+    "mutual_information": 0.009275196727799306,
+    "importance_score": 0.11030795027887447
   },
   {
-    "feature_name": "atr_analog_20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 223,
-    "correlation_with_target": 0.02657934144822691,
-    "mutual_information": 0.003967217496405828,
-    "importance_score": 0.03651950856650296
-  },
-  {
-    "feature_name": "peak_valley_ratio_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 197,
-    "correlation_with_target": 0.07183857956880627,
-    "mutual_information": 0.0,
-    "importance_score": 0.03591928978440313
-  },
-  {
-    "feature_name": "peak_valley_ratio_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 189,
-    "correlation_with_target": 0.06908549392530486,
-    "mutual_information": 0.0,
-    "importance_score": 0.03454274696265243
-  },
-  {
-    "feature_name": "support_resistance_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 210,
-    "correlation_with_target": -0.029495331305741064,
-    "mutual_information": 0.00313133529151699,
-    "importance_score": 0.033083038270578444
-  },
-  {
-    "feature_name": "peak_valley_ratio_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 193,
-    "correlation_with_target": 0.052265121231349604,
-    "mutual_information": 0.0008600389626274296,
-    "importance_score": 0.03116847449185427
-  },
-  {
-    "feature_name": "volatility_proxy_10",
-    "type": "momentum_volatility",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 218,
-    "correlation_with_target": 0.028586420188033097,
-    "mutual_information": 0.0024636518509852934,
-    "importance_score": 0.028718996693904222
-  },
-  {
-    "feature_name": "price_mean_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "price",
-    "aggregation": "mean",
-    "importance_rank": 121,
-    "correlation_with_target": -0.030896162665701908,
-    "mutual_information": 0.00214697881786452,
-    "importance_score": 0.02801960528766869
-  },
-  {
-    "feature_name": "time_acceleration",
-    "type": "time_based",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 233,
-    "correlation_with_target": 0.023742530411220285,
-    "mutual_information": 0.002711494889591437,
-    "importance_score": 0.027748283960629665
-  },
-  {
-    "feature_name": "price_min_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 123,
-    "correlation_with_target": -0.029715507051705073,
-    "mutual_information": 0.002108553308089789,
-    "importance_score": 0.027204278886091872
-  },
-  {
-    "feature_name": "back_std_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "back",
-    "aggregation": "std",
-    "importance_rank": 130,
-    "correlation_with_target": 0.026461487705455543,
-    "mutual_information": 0.0020708857483044962,
-    "importance_score": 0.025356708755537284
-  },
-  {
-    "feature_name": "longest_streak_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 186,
-    "correlation_with_target": 0.039565849696825334,
-    "mutual_information": 0.0007863573050750361,
-    "importance_score": 0.024387399571470018
-  },
-  {
-    "feature_name": "price_slope_10",
-    "type": "trend_indicator",
-    "window": 10,
-    "base_feature": "price",
-    "aggregation": "slope",
-    "importance_rank": 181,
-    "correlation_with_target": -0.03896323724019665,
-    "mutual_information": 0.000490930499293718,
-    "importance_score": 0.02235623688864757
-  },
-  {
-    "feature_name": "price_min_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 147,
-    "correlation_with_target": -0.03176229973789664,
-    "mutual_information": 0.0010641344879107617,
-    "importance_score": 0.022112134587849268
-  },
-  {
-    "feature_name": "price_mean_w4",
+    "feature_name": "impulse_mean_w4",
     "type": "rolling_statistic",
     "window": 4,
-    "base_feature": "price",
+    "base_feature": "impulse",
     "aggregation": "mean",
-    "importance_rank": 73,
-    "correlation_with_target": -0.026837316210834145,
-    "mutual_information": 0.0014224253457153502,
-    "importance_score": 0.02174759649959588
+    "importance_rank": 89,
+    "correlation_with_target": -0.03773953407116103,
+    "mutual_information": 0.014422430052597024,
+    "importance_score": 0.1033322971255963
+  },
+  {
+    "feature_name": "back_std_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "back",
+    "aggregation": "std",
+    "importance_rank": 106,
+    "correlation_with_target": 0.018334128393226137,
+    "mutual_information": 0.014263255230933192,
+    "importance_score": 0.09269741377923002
   },
   {
     "feature_name": "volatility_proxy_5",
@@ -853,361 +468,31 @@
     "base_feature": null,
     "aggregation": null,
     "importance_rank": 214,
-    "correlation_with_target": 0.02642721325056483,
-    "mutual_information": 0.0014505739116794647,
-    "importance_score": 0.02170736749855005
+    "correlation_with_target": 0.025187818092686377,
+    "mutual_information": 0.013223643156149878,
+    "importance_score": 0.0900359457837529
   },
   {
-    "feature_name": "back_mean_w10",
+    "feature_name": "price_std_w5",
     "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "back",
-    "aggregation": "mean",
-    "importance_rank": 129,
-    "correlation_with_target": 0.023900251523888867,
-    "mutual_information": 0.0015760752251043897,
-    "importance_score": 0.021178753115940474
-  },
-  {
-    "feature_name": "back_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 132,
-    "correlation_with_target": 0.028710618706358406,
-    "mutual_information": 0.0011044182896180477,
-    "importance_score": 0.020822173799416255
-  },
-  {
-    "feature_name": "volatility_proxy_20",
-    "type": "momentum_volatility",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 222,
-    "correlation_with_target": 0.03298658549787846,
-    "mutual_information": 0.0,
-    "importance_score": 0.01649329274893923
-  },
-  {
-    "feature_name": "impulse_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 140,
-    "correlation_with_target": -0.028373819620625226,
-    "mutual_information": 0.00035152780335434564,
-    "importance_score": 0.01624526276837728
-  },
-  {
-    "feature_name": "back_std_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "back",
-    "aggregation": "std",
-    "importance_rank": 154,
-    "correlation_with_target": 0.03079851512065472,
-    "mutual_information": 0.0,
-    "importance_score": 0.01539925756032736
-  },
-  {
-    "feature_name": "power_min_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 159,
-    "correlation_with_target": -0.030585526656876257,
-    "mutual_information": 0.0,
-    "importance_score": 0.015292763328438128
-  },
-  {
-    "feature_name": "price_mean_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "price",
-    "aggregation": "mean",
-    "importance_rank": 49,
-    "correlation_with_target": -0.02412919151454042,
-    "mutual_information": 0.00048315440209933946,
-    "importance_score": 0.014893681488963148
-  },
-  {
-    "feature_name": "majority_direction_match_w5",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 191,
-    "correlation_with_target": -0.029409947867988808,
-    "mutual_information": 0.0,
-    "importance_score": 0.014704973933994404
-  },
-  {
-    "feature_name": "back_max_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 156,
-    "correlation_with_target": 0.02901697082619497,
-    "mutual_information": 0.0,
-    "importance_score": 0.014508485413097485
-  },
-  {
-    "feature_name": "back_mean_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "back",
-    "aggregation": "mean",
-    "importance_rank": 153,
-    "correlation_with_target": 0.028729758562961675,
-    "mutual_information": 0.0,
-    "importance_score": 0.014364879281480837
-  },
-  {
-    "feature_name": "price_min_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 99,
-    "correlation_with_target": -0.02858010961006333,
-    "mutual_information": 0.0,
-    "importance_score": 0.014290054805031665
-  },
-  {
-    "feature_name": "price_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 75,
-    "correlation_with_target": -0.028121220913392864,
-    "mutual_information": 0.0,
-    "importance_score": 0.014060610456696432
-  },
-  {
-    "feature_name": "price_std_w10",
-    "type": "rolling_statistic",
-    "window": 10,
+    "window": 5,
     "base_feature": "price",
     "aggregation": "std",
-    "importance_rank": 122,
-    "correlation_with_target": 0.02692417149548022,
-    "mutual_information": 0.0,
-    "importance_score": 0.01346208574774011
+    "importance_rank": 98,
+    "correlation_with_target": 0.0269661471709114,
+    "mutual_information": 0.013006230225016902,
+    "importance_score": 0.08965186814586688
   },
   {
-    "feature_name": "price_std_w4",
+    "feature_name": "front_mean_w4",
     "type": "rolling_statistic",
     "window": 4,
-    "base_feature": "price",
-    "aggregation": "std",
-    "importance_rank": 74,
-    "correlation_with_target": 0.025868743421570025,
-    "mutual_information": 0.0,
-    "importance_score": 0.012934371710785013
-  },
-  {
-    "feature_name": "price_min_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 51,
-    "correlation_with_target": -0.025813249612483907,
-    "mutual_information": 0.0,
-    "importance_score": 0.012906624806241954
-  },
-  {
-    "feature_name": "price_max_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 100,
-    "correlation_with_target": -0.02526958065719249,
-    "mutual_information": 0.0,
-    "importance_score": 0.012634790328596246
-  },
-  {
-    "feature_name": "price_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 124,
-    "correlation_with_target": -0.025128724600158196,
-    "mutual_information": 0.0,
-    "importance_score": 0.012564362300079098
-  },
-  {
-    "feature_name": "price_max_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 76,
-    "correlation_with_target": -0.0249242098066541,
-    "mutual_information": 0.0,
-    "importance_score": 0.01246210490332705
-  },
-  {
-    "feature_name": "price_max_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 148,
-    "correlation_with_target": -0.02467310936332252,
-    "mutual_information": 0.0,
-    "importance_score": 0.01233655468166126
-  },
-  {
-    "feature_name": "majority_direction_match_w3",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 187,
-    "correlation_with_target": -0.024218529072734286,
-    "mutual_information": 0.0,
-    "importance_score": 0.012109264536367143
-  },
-  {
-    "feature_name": "impulse_min_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 163,
-    "correlation_with_target": -0.023443635090559196,
-    "mutual_information": 0.0,
-    "importance_score": 0.011721817545279598
-  },
-  {
-    "feature_name": "price_max_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 52,
-    "correlation_with_target": -0.023269834924619124,
-    "mutual_information": 0.0,
-    "importance_score": 0.011634917462309562
-  },
-  {
-    "feature_name": "impulse_std_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "impulse",
-    "aggregation": "std",
-    "importance_rank": 138,
-    "correlation_with_target": -0.023234977041056582,
-    "mutual_information": 0.0,
-    "importance_score": 0.011617488520528291
-  },
-  {
-    "feature_name": "front_back_interaction",
-    "type": "interaction_feature",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 224,
-    "correlation_with_target": 0.02194234992894815,
-    "mutual_information": 0.0,
-    "importance_score": 0.010971174964474075
-  },
-  {
-    "feature_name": "front_mean_w10",
-    "type": "rolling_statistic",
-    "window": 10,
     "base_feature": "front",
     "aggregation": "mean",
-    "importance_rank": 125,
-    "correlation_with_target": 0.021908388646497055,
-    "mutual_information": 0.0,
-    "importance_score": 0.010954194323248527
-  },
-  {
-    "feature_name": "price_std_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "price",
-    "aggregation": "std",
-    "importance_rank": 50,
-    "correlation_with_target": 0.021902361711438726,
-    "mutual_information": 0.0,
-    "importance_score": 0.010951180855719363
-  },
-  {
-    "feature_name": "impulse_std_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "impulse",
-    "aggregation": "std",
-    "importance_rank": 162,
-    "correlation_with_target": -0.02138893818897531,
-    "mutual_information": 0.0,
-    "importance_score": 0.010694469094487655
-  },
-  {
-    "feature_name": "longest_streak_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 194,
-    "correlation_with_target": 0.021274888818711365,
-    "mutual_information": 0.0,
-    "importance_score": 0.010637444409355682
-  },
-  {
-    "feature_name": "power_min_w3",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 63,
-    "correlation_with_target": 0.020390514563088092,
-    "mutual_information": 0.0,
-    "importance_score": 0.010195257281544046
-  },
-  {
-    "feature_name": "power_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 87,
-    "correlation_with_target": 0.019481763867447058,
-    "mutual_information": 0.0,
-    "importance_score": 0.009740881933723529
-  },
-  {
-    "feature_name": "back_max_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 108,
-    "correlation_with_target": 0.019354031337007742,
-    "mutual_information": 0.0,
-    "importance_score": 0.009677015668503871
-  },
-  {
-    "feature_name": "direction_changes_w10",
-    "type": "directional_pattern",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 192,
-    "correlation_with_target": -0.019273478654310203,
-    "mutual_information": 0.0,
-    "importance_score": 0.009636739327155102
+    "importance_rank": 77,
+    "correlation_with_target": 0.020891116828201665,
+    "mutual_information": 0.01305656869367966,
+    "importance_score": 0.086909151729549
   },
   {
     "feature_name": "front_mean_w5",
@@ -1216,9 +501,592 @@
     "base_feature": "front",
     "aggregation": "mean",
     "importance_rank": 101,
-    "correlation_with_target": 0.018730348789513636,
+    "correlation_with_target": 0.024838934417992786,
+    "mutual_information": 0.012698001213481414,
+    "importance_score": 0.08678317052843851
+  },
+  {
+    "feature_name": "peak_valley_ratio_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 193,
+    "correlation_with_target": 0.10366105492136136,
+    "mutual_information": 0.005965304703949403,
+    "importance_score": 0.08676532875394213
+  },
+  {
+    "feature_name": "impulse_slope_10",
+    "type": "trend_indicator",
+    "window": 10,
+    "base_feature": "impulse",
+    "aggregation": "slope",
+    "importance_rank": 183,
+    "correlation_with_target": 0.01988636517184918,
+    "mutual_information": 0.01306012752190333,
+    "importance_score": 0.08642761757887307
+  },
+  {
+    "feature_name": "atr_analog_20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 223,
+    "correlation_with_target": 0.029983766183362966,
+    "mutual_information": 0.011361961990349112,
+    "importance_score": 0.08153129794699383
+  },
+  {
+    "feature_name": "price_std_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "price",
+    "aggregation": "std",
+    "importance_rank": 74,
+    "correlation_with_target": 0.021137995898954258,
+    "mutual_information": 0.01162302576630192,
+    "importance_score": 0.07863728879527186
+  },
+  {
+    "feature_name": "impulse_max_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 116,
+    "correlation_with_target": -0.019947888310744878,
+    "mutual_information": 0.011423161485957012,
+    "importance_score": 0.0768717635389387
+  },
+  {
+    "feature_name": "impulse_min_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 67,
+    "correlation_with_target": -0.0603457029202671,
+    "mutual_information": 0.0064482725557490905,
+    "importance_score": 0.06793607255271972
+  },
+  {
+    "feature_name": "volatility_proxy_20",
+    "type": "momentum_volatility",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 222,
+    "correlation_with_target": 0.031143623920020475,
+    "mutual_information": 0.008895339306445038,
+    "importance_score": 0.06766586692103428
+  },
+  {
+    "feature_name": "price_slope_10",
+    "type": "trend_indicator",
+    "window": 10,
+    "base_feature": "price",
+    "aggregation": "slope",
+    "importance_rank": 181,
+    "correlation_with_target": -0.0753765723763138,
+    "mutual_information": 0.005091008237356531,
+    "importance_score": 0.06750291762461272
+  },
+  {
+    "feature_name": "front_std_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "front",
+    "aggregation": "std",
+    "importance_rank": 126,
+    "correlation_with_target": 0.018303207152352872,
+    "mutual_information": 0.009845319236714944,
+    "importance_score": 0.06680905583936905
+  },
+  {
+    "feature_name": "majority_direction_match_w20",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 199,
+    "correlation_with_target": -0.11314440903257826,
+    "mutual_information": 0.0014033784105673686,
+    "importance_score": 0.06479085357875283
+  },
+  {
+    "feature_name": "impulse_mean_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "impulse",
+    "aggregation": "mean",
+    "importance_rank": 113,
+    "correlation_with_target": -0.03417928608100686,
+    "mutual_information": 0.007746070449120124,
+    "importance_score": 0.06245319869667251
+  },
+  {
+    "feature_name": "back_max_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 108,
+    "correlation_with_target": 0.018182675143859243,
+    "mutual_information": 0.00853009796154991,
+    "importance_score": 0.059046418173513616
+  },
+  {
+    "feature_name": "volatility_proxy_10",
+    "type": "momentum_volatility",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 218,
+    "correlation_with_target": 0.02764643788028201,
+    "mutual_information": 0.0069118317720302525,
+    "importance_score": 0.05430119643028734
+  },
+  {
+    "feature_name": "price_mean_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "price",
+    "aggregation": "mean",
+    "importance_rank": 49,
+    "correlation_with_target": -0.02190206531956665,
+    "mutual_information": 0.00675548408052129,
+    "importance_score": 0.05051338625364997
+  },
+  {
+    "feature_name": "impulse_mean_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "impulse",
+    "aggregation": "mean",
+    "importance_rank": 161,
+    "correlation_with_target": -0.03572544666649481,
+    "mutual_information": 0.005306659021865334,
+    "importance_score": 0.048940277232081913
+  },
+  {
+    "feature_name": "peak_valley_ratio_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 197,
+    "correlation_with_target": 0.0684963657904932,
+    "mutual_information": 0.002500127235696814,
+    "importance_score": 0.048889756548494145
+  },
+  {
+    "feature_name": "price_std_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "price",
+    "aggregation": "std",
+    "importance_rank": 146,
+    "correlation_with_target": 0.028183557153782138,
+    "mutual_information": 0.005738161413862741,
+    "importance_score": 0.047696353486406926
+  },
+  {
+    "feature_name": "price_max_w2",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 28,
+    "correlation_with_target": -0.01870796107187418,
+    "mutual_information": 0.005928764703832412,
+    "importance_score": 0.04407479147888203
+  },
+  {
+    "feature_name": "direction_changes_w3",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 184,
+    "correlation_with_target": -0.027520347035409103,
+    "mutual_information": 0.004271505586899371,
+    "importance_score": 0.03877552584372906
+  },
+  {
+    "feature_name": "cumulative_direction_20",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 220,
+    "correlation_with_target": 0.07023776276148713,
     "mutual_information": 0.0,
-    "importance_score": 0.009365174394756818
+    "importance_score": 0.035118881380743566
+  },
+  {
+    "feature_name": "back_max_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 132,
+    "correlation_with_target": 0.025341085001085627,
+    "mutual_information": 0.0035325682953004645,
+    "importance_score": 0.03335843315757702
+  },
+  {
+    "feature_name": "impulse_mean_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "impulse",
+    "aggregation": "mean",
+    "importance_rank": 137,
+    "correlation_with_target": -0.03537584935300457,
+    "mutual_information": 0.0020624023003548153,
+    "importance_score": 0.029766036043044793
+  },
+  {
+    "feature_name": "count_std_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "count",
+    "aggregation": "std",
+    "importance_rank": 70,
+    "correlation_with_target": 0.01887319393329863,
+    "mutual_information": 0.0029470138090206266,
+    "importance_score": 0.026695286494859267
+  },
+  {
+    "feature_name": "price_max_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 52,
+    "correlation_with_target": -0.02067559188407518,
+    "mutual_information": 0.002683878693566122,
+    "importance_score": 0.0260554790291857
+  },
+  {
+    "feature_name": "impulse_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 115,
+    "correlation_with_target": -0.028465730121164903,
+    "mutual_information": 0.001962995716664029,
+    "importance_score": 0.025728818528940746
+  },
+  {
+    "feature_name": "impulse_min_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 91,
+    "correlation_with_target": -0.030476444334438704,
+    "mutual_information": 0.0017084939823270862,
+    "importance_score": 0.025243729135507813
+  },
+  {
+    "feature_name": "price_min_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 123,
+    "correlation_with_target": -0.030702494345573643,
+    "mutual_information": 0.0012047766203824306,
+    "importance_score": 0.02240681833379759
+  },
+  {
+    "feature_name": "atr_analog_10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 219,
+    "correlation_with_target": 0.02356078021060767,
+    "mutual_information": 0.0017928717055608612,
+    "importance_score": 0.022280040984262638
+  },
+  {
+    "feature_name": "back_std_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "back",
+    "aggregation": "std",
+    "importance_rank": 130,
+    "correlation_with_target": 0.026202635921679058,
+    "mutual_information": 0.0012995841402783093,
+    "importance_score": 0.02071211337828713
+  },
+  {
+    "feature_name": "price_mean_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "price",
+    "aggregation": "mean",
+    "importance_rank": 73,
+    "correlation_with_target": -0.025529577635459398,
+    "mutual_information": 0.0011080962364726776,
+    "importance_score": 0.01925416760995714
+  },
+  {
+    "feature_name": "power_slope_5",
+    "type": "trend_indicator",
+    "window": 5,
+    "base_feature": "power",
+    "aggregation": "slope",
+    "importance_rank": 179,
+    "correlation_with_target": -0.022253723024202112,
+    "mutual_information": 0.0012500337774044024,
+    "importance_score": 0.018447473583195387
+  },
+  {
+    "feature_name": "impulse_std_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "impulse",
+    "aggregation": "std",
+    "importance_rank": 138,
+    "correlation_with_target": -0.021255135893209053,
+    "mutual_information": 0.0011395130676432608,
+    "importance_score": 0.01730093411394151
+  },
+  {
+    "feature_name": "price_min_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 147,
+    "correlation_with_target": -0.03303066818395078,
+    "mutual_information": 0.0,
+    "importance_score": 0.01651533409197539
+  },
+  {
+    "feature_name": "price_mean_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "price",
+    "aggregation": "mean",
+    "importance_rank": 145,
+    "correlation_with_target": -0.0327741202470279,
+    "mutual_information": 0.0,
+    "importance_score": 0.01638706012351395
+  },
+  {
+    "feature_name": "price_mean_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "price",
+    "aggregation": "mean",
+    "importance_rank": 121,
+    "correlation_with_target": -0.03148782792036325,
+    "mutual_information": 0.0,
+    "importance_score": 0.015743913960181623
+  },
+  {
+    "feature_name": "back_mean_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "back",
+    "aggregation": "mean",
+    "importance_rank": 153,
+    "correlation_with_target": 0.024771277211412406,
+    "mutual_information": 0.0005023860306998529,
+    "importance_score": 0.015327777696001124
+  },
+  {
+    "feature_name": "back_std_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "back",
+    "aggregation": "std",
+    "importance_rank": 154,
+    "correlation_with_target": 0.028801537837746017,
+    "mutual_information": 0.0,
+    "importance_score": 0.014400768918873008
+  },
+  {
+    "feature_name": "price_std_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "price",
+    "aggregation": "std",
+    "importance_rank": 122,
+    "correlation_with_target": 0.02765060959415874,
+    "mutual_information": 6.223565833018974e-05,
+    "importance_score": 0.014189777437627142
+  },
+  {
+    "feature_name": "back_max_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 156,
+    "correlation_with_target": 0.02824422383640926,
+    "mutual_information": 0.0,
+    "importance_score": 0.01412211191820463
+  },
+  {
+    "feature_name": "longest_streak_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 186,
+    "correlation_with_target": 0.027520347035409103,
+    "mutual_information": 0.0,
+    "importance_score": 0.013760173517704552
+  },
+  {
+    "feature_name": "price_mean_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "price",
+    "aggregation": "mean",
+    "importance_rank": 97,
+    "correlation_with_target": -0.027502789236142446,
+    "mutual_information": 0.0,
+    "importance_score": 0.013751394618071223
+  },
+  {
+    "feature_name": "front_mean_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "front",
+    "aggregation": "mean",
+    "importance_rank": 125,
+    "correlation_with_target": 0.02722420726702008,
+    "mutual_information": 0.0,
+    "importance_score": 0.01361210363351004
+  },
+  {
+    "feature_name": "direction_changes_w5",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 188,
+    "correlation_with_target": -0.027210294481000215,
+    "mutual_information": 0.0,
+    "importance_score": 0.013605147240500107
+  },
+  {
+    "feature_name": "price_max_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 124,
+    "correlation_with_target": -0.02708788306356301,
+    "mutual_information": 0.0,
+    "importance_score": 0.013543941531781505
+  },
+  {
+    "feature_name": "price_max_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 148,
+    "correlation_with_target": -0.026763160953877728,
+    "mutual_information": 0.0,
+    "importance_score": 0.013381580476938864
+  },
+  {
+    "feature_name": "price_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 99,
+    "correlation_with_target": -0.02667097224193816,
+    "mutual_information": 0.0,
+    "importance_score": 0.01333548612096908
+  },
+  {
+    "feature_name": "price_min_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 75,
+    "correlation_with_target": -0.024656394150076477,
+    "mutual_information": 0.0,
+    "importance_score": 0.012328197075038239
+  },
+  {
+    "feature_name": "front_mean_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "front",
+    "aggregation": "mean",
+    "importance_rank": 149,
+    "correlation_with_target": 0.023984999069184644,
+    "mutual_information": 0.0,
+    "importance_score": 0.011992499534592322
+  },
+  {
+    "feature_name": "price_max_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 100,
+    "correlation_with_target": -0.02397881567489213,
+    "mutual_information": 0.0,
+    "importance_score": 0.011989407837446064
+  },
+  {
+    "feature_name": "price_max_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 76,
+    "correlation_with_target": -0.023154043982700316,
+    "mutual_information": 0.0,
+    "importance_score": 0.011577021991350158
+  },
+  {
+    "feature_name": "price_min_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 51,
+    "correlation_with_target": -0.02218256273277262,
+    "mutual_information": 0.0,
+    "importance_score": 0.01109128136638631
+  },
+  {
+    "feature_name": "impulse_max_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 140,
+    "correlation_with_target": -0.020715862032600067,
+    "mutual_information": 0.0,
+    "importance_score": 0.010357931016300033
+  },
+  {
+    "feature_name": "longest_streak_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 190,
+    "correlation_with_target": 0.019168664450729584,
+    "mutual_information": 0.0,
+    "importance_score": 0.009584332225364792
   },
   {
     "feature_name": "time_diff_1",
@@ -1232,61 +1100,6 @@
     "importance_score": 0.009360205395142674
   },
   {
-    "feature_name": "price_max_w2",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 28,
-    "correlation_with_target": -0.01870796107187418,
-    "mutual_information": 0.0,
-    "importance_score": 0.00935398053593709
-  },
-  {
-    "feature_name": "impulse_max_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 164,
-    "correlation_with_target": -0.018566228184720077,
-    "mutual_information": 0.0,
-    "importance_score": 0.009283114092360038
-  },
-  {
-    "feature_name": "support_resistance_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 209,
-    "correlation_with_target": -0.01841372400704795,
-    "mutual_information": 0.0,
-    "importance_score": 0.009206862003523974
-  },
-  {
-    "feature_name": "front_mean_w2",
-    "type": "rolling_statistic",
-    "window": 2,
-    "base_feature": "front",
-    "aggregation": "mean",
-    "importance_rank": 29,
-    "correlation_with_target": 0.018255653887938223,
-    "mutual_information": 0.0,
-    "importance_score": 0.009127826943969112
-  },
-  {
-    "feature_name": "back_min_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 155,
-    "correlation_with_target": 0.018225932073690734,
-    "mutual_information": 0.0,
-    "importance_score": 0.009112966036845367
-  },
-  {
     "feature_name": "front_max_w2",
     "type": "other",
     "window": null,
@@ -1296,6 +1109,17 @@
     "correlation_with_target": 0.018039400673390618,
     "mutual_information": 0.0,
     "importance_score": 0.009019700336695309
+  },
+  {
+    "feature_name": "atr_analog_5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 215,
+    "correlation_with_target": 0.01801499586262181,
+    "mutual_information": 0.0,
+    "importance_score": 0.009007497931310905
   },
   {
     "feature_name": "price_mean_w2",
@@ -1309,6 +1133,17 @@
     "importance_score": 0.00899893909603317
   },
   {
+    "feature_name": "count_min_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 143,
+    "correlation_with_target": -0.017319168812674444,
+    "mutual_information": 0.0,
+    "importance_score": 0.008659584406337222
+  },
+  {
     "feature_name": "price_min_w2",
     "type": "other",
     "window": null,
@@ -1320,48 +1155,37 @@
     "importance_score": 0.008634926032612237
   },
   {
-    "feature_name": "count_mean_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "count",
-    "aggregation": "mean",
-    "importance_rank": 165,
-    "correlation_with_target": 0.017212951311313753,
-    "mutual_information": 0.0,
-    "importance_score": 0.008606475655656877
-  },
-  {
-    "feature_name": "time_diff_5",
-    "type": "time_based",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 232,
-    "correlation_with_target": -0.01717194191410922,
-    "mutual_information": 0.0,
-    "importance_score": 0.00858597095705461
-  },
-  {
-    "feature_name": "front_mean_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "front",
-    "aggregation": "mean",
-    "importance_rank": 77,
-    "correlation_with_target": 0.017003777267153786,
-    "mutual_information": 0.0,
-    "importance_score": 0.008501888633576893
-  },
-  {
-    "feature_name": "atr_analog_5",
+    "feature_name": "impulse_min_w10",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 215,
-    "correlation_with_target": 0.01653826010891925,
+    "importance_rank": 139,
+    "correlation_with_target": -0.017005510122501344,
     "mutual_information": 0.0,
-    "importance_score": 0.008269130054459626
+    "importance_score": 0.008502755061250672
+  },
+  {
+    "feature_name": "majority_direction_match_w3",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 187,
+    "correlation_with_target": -0.016546510396360438,
+    "mutual_information": 0.0,
+    "importance_score": 0.008273255198180219
+  },
+  {
+    "feature_name": "front_std_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "front",
+    "aggregation": "std",
+    "importance_rank": 150,
+    "correlation_with_target": 0.0165202420567522,
+    "mutual_information": 0.0,
+    "importance_score": 0.0082601210283761
   },
   {
     "feature_name": "front_std_w2",
@@ -1386,81 +1210,125 @@
     "importance_score": 0.008246314965555303
   },
   {
-    "feature_name": "count_std_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "count",
-    "aggregation": "std",
-    "importance_rank": 70,
-    "correlation_with_target": 0.01614289333452861,
-    "mutual_information": 0.0,
-    "importance_score": 0.008071446667264306
-  },
-  {
-    "feature_name": "count_std_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "count",
-    "aggregation": "std",
-    "importance_rank": 94,
-    "correlation_with_target": 0.015793574838824796,
-    "mutual_information": 0.0,
-    "importance_score": 0.007896787419412398
-  },
-  {
-    "feature_name": "front_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 128,
-    "correlation_with_target": 0.01569587735240144,
-    "mutual_information": 0.0,
-    "importance_score": 0.00784793867620072
-  },
-  {
-    "feature_name": "time_diff_4",
+    "feature_name": "time_diff_2",
     "type": "time_based",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 231,
-    "correlation_with_target": -0.015641958382693128,
+    "importance_rank": 229,
+    "correlation_with_target": 0.01632473392546958,
     "mutual_information": 0.0,
-    "importance_score": 0.007820979191346564
+    "importance_score": 0.00816236696273479
   },
   {
-    "feature_name": "count_std_w5",
+    "feature_name": "back_std_w3",
     "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "count",
+    "window": 3,
+    "base_feature": "back",
     "aggregation": "std",
-    "importance_rank": 118,
-    "correlation_with_target": 0.01558149801458129,
+    "importance_rank": 58,
+    "correlation_with_target": 0.01604853189703614,
     "mutual_information": 0.0,
-    "importance_score": 0.007790749007290645
+    "importance_score": 0.00802426594851807
   },
   {
-    "feature_name": "front_std_w10",
+    "feature_name": "back_mean_w10",
     "type": "rolling_statistic",
     "window": 10,
-    "base_feature": "front",
-    "aggregation": "std",
-    "importance_rank": 126,
-    "correlation_with_target": 0.015539378199290382,
+    "base_feature": "back",
+    "aggregation": "mean",
+    "importance_rank": 129,
+    "correlation_with_target": 0.015519903037505152,
     "mutual_information": 0.0,
-    "importance_score": 0.007769689099645191
+    "importance_score": 0.007759951518752576
   },
   {
-    "feature_name": "back_min_w3",
+    "feature_name": "front_std_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "front",
+    "aggregation": "std",
+    "importance_rank": 54,
+    "correlation_with_target": 0.015509933361950404,
+    "mutual_information": 0.0,
+    "importance_score": 0.007754966680975202
+  },
+  {
+    "feature_name": "count_max_w3",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 59,
-    "correlation_with_target": 0.015347048287961254,
+    "importance_rank": 72,
+    "correlation_with_target": 0.01502064925271615,
     "mutual_information": 0.0,
-    "importance_score": 0.007673524143980627
+    "importance_score": 0.007510324626358075
+  },
+  {
+    "feature_name": "front_std_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "front",
+    "aggregation": "std",
+    "importance_rank": 102,
+    "correlation_with_target": 0.014919309656282163,
+    "mutual_information": 0.0,
+    "importance_score": 0.007459654828141081
+  },
+  {
+    "feature_name": "impulse_min_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 163,
+    "correlation_with_target": -0.014707832365654604,
+    "mutual_information": 0.0,
+    "importance_score": 0.007353916182827302
+  },
+  {
+    "feature_name": "impulse_std_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "impulse",
+    "aggregation": "std",
+    "importance_rank": 162,
+    "correlation_with_target": -0.01462203888828064,
+    "mutual_information": 0.0,
+    "importance_score": 0.00731101944414032
+  },
+  {
+    "feature_name": "front_max_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 56,
+    "correlation_with_target": 0.014459171308502924,
+    "mutual_information": 0.0,
+    "importance_score": 0.007229585654251462
+  },
+  {
+    "feature_name": "back_max_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 60,
+    "correlation_with_target": 0.014412387030469436,
+    "mutual_information": 0.0,
+    "importance_score": 0.007206193515234718
+  },
+  {
+    "feature_name": "support_resistance_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 211,
+    "correlation_with_target": -0.014312485617832481,
+    "mutual_information": 0.0,
+    "importance_score": 0.007156242808916241
   },
   {
     "feature_name": "power_max_w20",
@@ -1469,138 +1337,116 @@
     "base_feature": null,
     "aggregation": null,
     "importance_rank": 160,
-    "correlation_with_target": -0.01528559029301831,
+    "correlation_with_target": -0.01427489487815444,
     "mutual_information": 0.0,
-    "importance_score": 0.007642795146509155
+    "importance_score": 0.00713744743907722
   },
   {
-    "feature_name": "power_slope_3",
+    "feature_name": "back_min_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 131,
+    "correlation_with_target": -0.014183681908950226,
+    "mutual_information": 0.0,
+    "importance_score": 0.007091840954475113
+  },
+  {
+    "feature_name": "power_slope_10",
     "type": "trend_indicator",
-    "window": 3,
+    "window": 10,
     "base_feature": "power",
     "aggregation": "slope",
-    "importance_rank": 173,
-    "correlation_with_target": -0.015136671870529474,
+    "importance_rank": 182,
+    "correlation_with_target": -0.014151890861211719,
     "mutual_information": 0.0,
-    "importance_score": 0.007568335935264737
+    "importance_score": 0.007075945430605859
   },
   {
-    "feature_name": "count_max_w4",
+    "feature_name": "front_min_w3",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 96,
-    "correlation_with_target": 0.014791085087021393,
+    "importance_rank": 55,
+    "correlation_with_target": -0.013918384301692057,
     "mutual_information": 0.0,
-    "importance_score": 0.007395542543510696
+    "importance_score": 0.006959192150846029
   },
   {
-    "feature_name": "count_max_w5",
+    "feature_name": "front_max_w20",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 120,
-    "correlation_with_target": 0.014711324804983784,
+    "importance_rank": 152,
+    "correlation_with_target": 0.01356104363681468,
     "mutual_information": 0.0,
-    "importance_score": 0.007355662402491892
+    "importance_score": 0.00678052181840734
   },
   {
-    "feature_name": "front_max_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 80,
-    "correlation_with_target": 0.014379052739224117,
-    "mutual_information": 0.0,
-    "importance_score": 0.007189526369612059
-  },
-  {
-    "feature_name": "front_std_w4",
+    "feature_name": "count_std_w4",
     "type": "rolling_statistic",
     "window": 4,
-    "base_feature": "front",
-    "aggregation": "std",
-    "importance_rank": 78,
-    "correlation_with_target": 0.01424858578326736,
-    "mutual_information": 0.0,
-    "importance_score": 0.00712429289163368
-  },
-  {
-    "feature_name": "longest_streak_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 198,
-    "correlation_with_target": -0.014219088488953138,
-    "mutual_information": 0.0,
-    "importance_score": 0.007109544244476569
-  },
-  {
-    "feature_name": "back_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 83,
-    "correlation_with_target": 0.014167993045712146,
-    "mutual_information": 0.0,
-    "importance_score": 0.007083996522856073
-  },
-  {
-    "feature_name": "time_diff_2",
-    "type": "time_based",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 229,
-    "correlation_with_target": -0.014164571648822146,
-    "mutual_information": 0.0,
-    "importance_score": 0.007082285824411073
-  },
-  {
-    "feature_name": "power_std_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "power",
-    "aggregation": "std",
-    "importance_rank": 62,
-    "correlation_with_target": -0.014051227599013958,
-    "mutual_information": 0.0,
-    "importance_score": 0.007025613799506979
-  },
-  {
-    "feature_name": "back_mean_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "back",
-    "aggregation": "mean",
-    "importance_rank": 105,
-    "correlation_with_target": 0.013748876568402568,
-    "mutual_information": 0.0,
-    "importance_score": 0.006874438284201284
-  },
-  {
-    "feature_name": "back_std_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "back",
-    "aggregation": "std",
-    "importance_rank": 106,
-    "correlation_with_target": 0.013181512423873817,
-    "mutual_information": 0.0,
-    "importance_score": 0.006590756211936909
-  },
-  {
-    "feature_name": "count_mean_w1",
-    "type": "rolling_statistic",
-    "window": 1,
     "base_feature": "count",
-    "aggregation": "mean",
-    "importance_rank": 21,
+    "aggregation": "std",
+    "importance_rank": 94,
+    "correlation_with_target": 0.013405905851354878,
+    "mutual_information": 0.0,
+    "importance_score": 0.006702952925677439
+  },
+  {
+    "feature_name": "impulse_std_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "impulse",
+    "aggregation": "std",
+    "importance_rank": 114,
+    "correlation_with_target": -0.013255517603469666,
+    "mutual_information": 0.0,
+    "importance_score": 0.006627758801734833
+  },
+  {
+    "feature_name": "count_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 119,
+    "correlation_with_target": -0.013210087178350833,
+    "mutual_information": 0.0,
+    "importance_score": 0.0066050435891754165
+  },
+  {
+    "feature_name": "power_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 111,
+    "correlation_with_target": -0.013187929937899003,
+    "mutual_information": 0.0,
+    "importance_score": 0.006593964968949501
+  },
+  {
+    "feature_name": "count_std_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "count",
+    "aggregation": "std",
+    "importance_rank": 118,
+    "correlation_with_target": 0.01314420708536639,
+    "mutual_information": 0.0,
+    "importance_score": 0.006572103542683195
+  },
+  {
+    "feature_name": "count_max_w1",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 24,
     "correlation_with_target": -0.013071972695264522,
     "mutual_information": 0.0,
     "importance_score": 0.006535986347632261
@@ -1617,48 +1463,48 @@
     "importance_score": 0.006535986347632261
   },
   {
-    "feature_name": "count_max_w1",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 24,
+    "feature_name": "count_mean_w1",
+    "type": "rolling_statistic",
+    "window": 1,
+    "base_feature": "count",
+    "aggregation": "mean",
+    "importance_rank": 21,
     "correlation_with_target": -0.013071972695264522,
     "mutual_information": 0.0,
     "importance_score": 0.006535986347632261
   },
   {
-    "feature_name": "power_percentile_w10",
+    "feature_name": "front_max_w10",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 203,
-    "correlation_with_target": -0.01303497645274585,
+    "importance_rank": 128,
+    "correlation_with_target": 0.012963445413703013,
     "mutual_information": 0.0,
-    "importance_score": 0.006517488226372925
+    "importance_score": 0.006481722706851507
   },
   {
-    "feature_name": "front_max_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 152,
-    "correlation_with_target": 0.012667500036924,
+    "feature_name": "count_mean_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "count",
+    "aggregation": "mean",
+    "importance_rank": 93,
+    "correlation_with_target": 0.012925897329736473,
     "mutual_information": 0.0,
-    "importance_score": 0.006333750018462
+    "importance_score": 0.0064629486648682365
   },
   {
-    "feature_name": "back_max_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 84,
-    "correlation_with_target": 0.012484002079450386,
+    "feature_name": "back_std_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "back",
+    "aggregation": "std",
+    "importance_rank": 82,
+    "correlation_with_target": 0.012613863855049492,
     "mutual_information": 0.0,
-    "importance_score": 0.006242001039725193
+    "importance_score": 0.006306931927524746
   },
   {
     "feature_name": "power_mean_w1",
@@ -1667,17 +1513,6 @@
     "base_feature": "power",
     "aggregation": "mean",
     "importance_rank": 13,
-    "correlation_with_target": 0.01245322890071713,
-    "mutual_information": 0.0,
-    "importance_score": 0.006226614450358565
-  },
-  {
-    "feature_name": "power_max_w1",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 16,
     "correlation_with_target": 0.01245322890071713,
     "mutual_information": 0.0,
     "importance_score": 0.006226614450358565
@@ -1694,59 +1529,37 @@
     "importance_score": 0.006226614450358565
   },
   {
-    "feature_name": "count_max_w3",
+    "feature_name": "power_max_w1",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 72,
-    "correlation_with_target": 0.012396600417996444,
+    "importance_rank": 16,
+    "correlation_with_target": 0.01245322890071713,
     "mutual_information": 0.0,
-    "importance_score": 0.006198300208998222
+    "importance_score": 0.006226614450358565
   },
   {
-    "feature_name": "front_min_w20",
+    "feature_name": "front_max_w5",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 151,
-    "correlation_with_target": 0.011850807336215748,
+    "importance_rank": 104,
+    "correlation_with_target": 0.012074168362030915,
     "mutual_information": 0.0,
-    "importance_score": 0.005925403668107874
+    "importance_score": 0.006037084181015458
   },
   {
-    "feature_name": "front_min_w5",
-    "type": "other",
+    "feature_name": "direction_changes_w10",
+    "type": "directional_pattern",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 103,
-    "correlation_with_target": -0.011543588111148369,
+    "importance_rank": 192,
+    "correlation_with_target": -0.011195325857282647,
     "mutual_information": 0.0,
-    "importance_score": 0.005771794055574184
-  },
-  {
-    "feature_name": "time_diff_3",
-    "type": "time_based",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 230,
-    "correlation_with_target": -0.011498772891458352,
-    "mutual_information": 0.0,
-    "importance_score": 0.005749386445729176
-  },
-  {
-    "feature_name": "front_mean_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "front",
-    "aggregation": "mean",
-    "importance_rank": 149,
-    "correlation_with_target": 0.011410495218352709,
-    "mutual_information": 0.0,
-    "importance_score": 0.005705247609176354
+    "importance_score": 0.005597662928641323
   },
   {
     "feature_name": "count_min_w2",
@@ -1760,15 +1573,103 @@
     "importance_score": 0.005583954011137672
   },
   {
+    "feature_name": "impulse_std_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "impulse",
+    "aggregation": "std",
+    "importance_rank": 90,
+    "correlation_with_target": -0.0111471552990674,
+    "mutual_information": 0.0,
+    "importance_score": 0.0055735776495337
+  },
+  {
     "feature_name": "count_std_w20",
     "type": "rolling_statistic",
     "window": 20,
     "base_feature": "count",
     "aggregation": "std",
     "importance_rank": 166,
-    "correlation_with_target": 0.010678153621140553,
+    "correlation_with_target": 0.010972633416198512,
     "mutual_information": 0.0,
-    "importance_score": 0.005339076810570277
+    "importance_score": 0.005486316708099256
+  },
+  {
+    "feature_name": "front_min_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 151,
+    "correlation_with_target": 0.010938235560748934,
+    "mutual_information": 0.0,
+    "importance_score": 0.005469117780374467
+  },
+  {
+    "feature_name": "back_mean_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "back",
+    "aggregation": "mean",
+    "importance_rank": 105,
+    "correlation_with_target": 0.010938123122824942,
+    "mutual_information": 0.0,
+    "importance_score": 0.005469061561412471
+  },
+  {
+    "feature_name": "back_max_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 84,
+    "correlation_with_target": 0.010606467588309326,
+    "mutual_information": 0.0,
+    "importance_score": 0.005303233794154663
+  },
+  {
+    "feature_name": "power_min_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 135,
+    "correlation_with_target": -0.010261052384718444,
+    "mutual_information": 0.0,
+    "importance_score": 0.005130526192359222
+  },
+  {
+    "feature_name": "power_max_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 136,
+    "correlation_with_target": -0.010183685679428822,
+    "mutual_information": 0.0,
+    "importance_score": 0.005091842839714411
+  },
+  {
+    "feature_name": "count_std_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "count",
+    "aggregation": "std",
+    "importance_rank": 142,
+    "correlation_with_target": 0.010042964964451727,
+    "mutual_information": 0.0,
+    "importance_score": 0.005021482482225863
+  },
+  {
+    "feature_name": "front_std_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "front",
+    "aggregation": "std",
+    "importance_rank": 78,
+    "correlation_with_target": 0.009886963939702155,
+    "mutual_information": 0.0,
+    "importance_score": 0.0049434819698510775
   },
   {
     "feature_name": "count_mean_w3",
@@ -1777,53 +1678,31 @@
     "base_feature": "count",
     "aggregation": "mean",
     "importance_rank": 69,
-    "correlation_with_target": 0.010419893135024266,
+    "correlation_with_target": 0.009860659976317023,
     "mutual_information": 0.0,
-    "importance_score": 0.005209946567512133
+    "importance_score": 0.004930329988158511
   },
   {
-    "feature_name": "count_mean_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "count",
-    "aggregation": "mean",
-    "importance_rank": 141,
-    "correlation_with_target": 0.010252521455406899,
-    "mutual_information": 0.0,
-    "importance_score": 0.005126260727703449
-  },
-  {
-    "feature_name": "count_max_w20",
+    "feature_name": "impulse_max_w20",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 168,
-    "correlation_with_target": 0.010219231075551928,
+    "importance_rank": 164,
+    "correlation_with_target": -0.00963175339713531,
     "mutual_information": 0.0,
-    "importance_score": 0.005109615537775964
+    "importance_score": 0.004815876698567655
   },
   {
-    "feature_name": "power_zscore_w10",
-    "type": "relative_feature",
-    "window": 10,
-    "base_feature": "power",
-    "aggregation": "zscore",
-    "importance_rank": 202,
-    "correlation_with_target": -0.010110794167994269,
+    "feature_name": "front_min_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 127,
+    "correlation_with_target": 0.009515268716143875,
     "mutual_information": 0.0,
-    "importance_score": 0.0050553970839971344
-  },
-  {
-    "feature_name": "front_std_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "front",
-    "aggregation": "std",
-    "importance_rank": 102,
-    "correlation_with_target": 0.009663836732648024,
-    "mutual_information": 0.0,
-    "importance_score": 0.004831918366324012
+    "importance_score": 0.004757634358071938
   },
   {
     "feature_name": "power_slope_2",
@@ -1837,17 +1716,6 @@
     "importance_score": 0.004703113474977519
   },
   {
-    "feature_name": "count_mean_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "count",
-    "aggregation": "mean",
-    "importance_rank": 117,
-    "correlation_with_target": 0.009400155747543059,
-    "mutual_information": 0.0,
-    "importance_score": 0.0047000778737715295
-  },
-  {
     "feature_name": "back_std_w2",
     "type": "rolling_statistic",
     "window": 2,
@@ -1859,26 +1727,26 @@
     "importance_score": 0.004683487479593285
   },
   {
-    "feature_name": "count_min_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 167,
-    "correlation_with_target": 0.008988955347530811,
-    "mutual_information": 0.0,
-    "importance_score": 0.004494477673765406
-  },
-  {
-    "feature_name": "front_std_w20",
+    "feature_name": "power_std_w20",
     "type": "rolling_statistic",
     "window": 20,
-    "base_feature": "front",
+    "base_feature": "power",
     "aggregation": "std",
-    "importance_rank": 150,
-    "correlation_with_target": 0.008969159854867136,
+    "importance_rank": 158,
+    "correlation_with_target": -0.009237498077098278,
     "mutual_information": 0.0,
-    "importance_score": 0.004484579927433568
+    "importance_score": 0.004618749038549139
+  },
+  {
+    "feature_name": "impulse_std_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "impulse",
+    "aggregation": "std",
+    "importance_rank": 66,
+    "correlation_with_target": -0.00920308354091675,
+    "mutual_information": 0.0,
+    "importance_score": 0.004601541770458375
   },
   {
     "feature_name": "support_resistance_w3",
@@ -1887,31 +1755,42 @@
     "base_feature": null,
     "aggregation": null,
     "importance_rank": 208,
-    "correlation_with_target": -0.008946423218884753,
+    "correlation_with_target": -0.009148869446228565,
     "mutual_information": 0.0,
-    "importance_score": 0.004473211609442376
+    "importance_score": 0.0045744347231142825
   },
   {
-    "feature_name": "power_percentile_w20",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 207,
-    "correlation_with_target": -0.00888366098258851,
-    "mutual_information": 0.0,
-    "importance_score": 0.004441830491294255
-  },
-  {
-    "feature_name": "back_std_w4",
+    "feature_name": "power_std_w10",
     "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "back",
+    "window": 10,
+    "base_feature": "power",
     "aggregation": "std",
-    "importance_rank": 82,
-    "correlation_with_target": 0.00873863103435529,
+    "importance_rank": 134,
+    "correlation_with_target": -0.008881829843614459,
     "mutual_information": 0.0,
-    "importance_score": 0.004369315517177645
+    "importance_score": 0.004440914921807229
+  },
+  {
+    "feature_name": "count_mean_w20",
+    "type": "rolling_statistic",
+    "window": 20,
+    "base_feature": "count",
+    "aggregation": "mean",
+    "importance_rank": 165,
+    "correlation_with_target": 0.008796280512292816,
+    "mutual_information": 0.0,
+    "importance_score": 0.004398140256146408
+  },
+  {
+    "feature_name": "power_mean_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "power",
+    "aggregation": "mean",
+    "importance_rank": 133,
+    "correlation_with_target": -0.008772476602904923,
+    "mutual_information": 0.0,
+    "importance_score": 0.004386238301452462
   },
   {
     "feature_name": "power_mean_w2",
@@ -1936,48 +1815,37 @@
     "importance_score": 0.004125311259295046
   },
   {
-    "feature_name": "back_mean_w4",
+    "feature_name": "power_mean_w4",
     "type": "rolling_statistic",
     "window": 4,
-    "base_feature": "back",
+    "base_feature": "power",
     "aggregation": "mean",
-    "importance_rank": 81,
-    "correlation_with_target": 0.008043008188163912,
+    "importance_rank": 85,
+    "correlation_with_target": 0.008127230572700195,
     "mutual_information": 0.0,
-    "importance_score": 0.004021504094081956
+    "importance_score": 0.004063615286350098
   },
   {
-    "feature_name": "front_max_w5",
+    "feature_name": "support_resistance_w10",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 104,
-    "correlation_with_target": 0.008011302812954504,
+    "importance_rank": 210,
+    "correlation_with_target": 0.008032010109247312,
     "mutual_information": 0.0,
-    "importance_score": 0.004005651406477252
+    "importance_score": 0.004016005054623656
   },
   {
-    "feature_name": "front_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 79,
-    "correlation_with_target": -0.00798627382406722,
+    "feature_name": "power_mean_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "power",
+    "aggregation": "mean",
+    "importance_rank": 61,
+    "correlation_with_target": 0.008022159392766426,
     "mutual_information": 0.0,
-    "importance_score": 0.00399313691203361
-  },
-  {
-    "feature_name": "back_min_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 131,
-    "correlation_with_target": 0.007942722737361102,
-    "mutual_information": 0.0,
-    "importance_score": 0.003971361368680551
+    "importance_score": 0.004011079696383213
   },
   {
     "feature_name": "price_min_w1",
@@ -2013,26 +1881,26 @@
     "importance_score": 0.0039707624669078154
   },
   {
-    "feature_name": "count_std_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "count",
-    "aggregation": "std",
-    "importance_rank": 142,
-    "correlation_with_target": 0.0077618925985314235,
+    "feature_name": "support_resistance_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 209,
+    "correlation_with_target": 0.0076466180924491,
     "mutual_information": 0.0,
-    "importance_score": 0.0038809462992657117
+    "importance_score": 0.00382330904622455
   },
   {
-    "feature_name": "power_mean_w4",
+    "feature_name": "back_mean_w4",
     "type": "rolling_statistic",
     "window": 4,
-    "base_feature": "power",
+    "base_feature": "back",
     "aggregation": "mean",
-    "importance_rank": 85,
-    "correlation_with_target": 0.007545396189581889,
+    "importance_rank": 81,
+    "correlation_with_target": 0.007364637055627665,
     "mutual_information": 0.0,
-    "importance_score": 0.0037726980947909443
+    "importance_score": 0.0036823185278138325
   },
   {
     "feature_name": "back_max_w2",
@@ -2044,6 +1912,50 @@
     "correlation_with_target": -0.007332100993032829,
     "mutual_information": 0.0,
     "importance_score": 0.0036660504965164145
+  },
+  {
+    "feature_name": "time_diff_5",
+    "type": "time_based",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 232,
+    "correlation_with_target": 0.00728468463984593,
+    "mutual_information": 0.0,
+    "importance_score": 0.003642342319922965
+  },
+  {
+    "feature_name": "power_slope_3",
+    "type": "trend_indicator",
+    "window": 3,
+    "base_feature": "power",
+    "aggregation": "slope",
+    "importance_rank": 173,
+    "correlation_with_target": -0.007284356547269417,
+    "mutual_information": 0.0,
+    "importance_score": 0.0036421782736347085
+  },
+  {
+    "feature_name": "count_mean_w5",
+    "type": "rolling_statistic",
+    "window": 5,
+    "base_feature": "count",
+    "aggregation": "mean",
+    "importance_rank": 117,
+    "correlation_with_target": 0.007232625432320581,
+    "mutual_information": 0.0,
+    "importance_score": 0.0036163127161602904
+  },
+  {
+    "feature_name": "count_max_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 96,
+    "correlation_with_target": 0.007211196553791108,
+    "mutual_information": 0.0,
+    "importance_score": 0.003605598276895554
   },
   {
     "feature_name": "power_std_w2",
@@ -2068,26 +1980,15 @@
     "importance_score": 0.0035269720929056265
   },
   {
-    "feature_name": "power_std_w20",
-    "type": "rolling_statistic",
-    "window": 20,
-    "base_feature": "power",
-    "aggregation": "std",
-    "importance_rank": 158,
-    "correlation_with_target": -0.006948580311243046,
-    "mutual_information": 0.0,
-    "importance_score": 0.003474290155621523
-  },
-  {
-    "feature_name": "count_min_w5",
+    "feature_name": "front_max_w4",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 119,
-    "correlation_with_target": -0.006817728969063956,
+    "importance_rank": 80,
+    "correlation_with_target": 0.006948581622073073,
     "mutual_information": 0.0,
-    "importance_score": 0.003408864484531978
+    "importance_score": 0.0034742908110365366
   },
   {
     "feature_name": "impulse_std_w2",
@@ -2101,48 +2002,59 @@
     "importance_score": 0.003345951651640238
   },
   {
-    "feature_name": "power_slope_5",
-    "type": "trend_indicator",
-    "window": 5,
+    "feature_name": "front_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 103,
+    "correlation_with_target": 0.0066841952388474535,
+    "mutual_information": 0.0,
+    "importance_score": 0.0033420976194237268
+  },
+  {
+    "feature_name": "count_min_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 95,
+    "correlation_with_target": -0.006442577241400649,
+    "mutual_information": 0.0,
+    "importance_score": 0.0032212886207003246
+  },
+  {
+    "feature_name": "back_min_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 107,
+    "correlation_with_target": 0.006353433412252887,
+    "mutual_information": 0.0,
+    "importance_score": 0.0031767167061264433
+  },
+  {
+    "feature_name": "power_zscore_w10",
+    "type": "relative_feature",
+    "window": 10,
     "base_feature": "power",
-    "aggregation": "slope",
-    "importance_rank": 179,
-    "correlation_with_target": -0.00632351323299039,
+    "aggregation": "zscore",
+    "importance_rank": 202,
+    "correlation_with_target": 0.006338591980316753,
     "mutual_information": 0.0,
-    "importance_score": 0.003161756616495195
+    "importance_score": 0.0031692959901583767
   },
   {
-    "feature_name": "power_max_w3",
-    "type": "other",
+    "feature_name": "direction_changes_w20",
+    "type": "directional_pattern",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 64,
-    "correlation_with_target": -0.006277874459120085,
+    "importance_rank": 196,
+    "correlation_with_target": -0.00613588340121339,
     "mutual_information": 0.0,
-    "importance_score": 0.0031389372295600425
-  },
-  {
-    "feature_name": "count_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 144,
-    "correlation_with_target": 0.006233111975732066,
-    "mutual_information": 0.0,
-    "importance_score": 0.003116555987866033
-  },
-  {
-    "feature_name": "count_mean_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "count",
-    "aggregation": "mean",
-    "importance_rank": 93,
-    "correlation_with_target": 0.006188650272432531,
-    "mutual_information": 0.0,
-    "importance_score": 0.0030943251362162655
+    "importance_score": 0.003067941700606695
   },
   {
     "feature_name": "count_std_w2",
@@ -2156,6 +2068,39 @@
     "importance_score": 0.0029997415523803144
   },
   {
+    "feature_name": "power_max_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 112,
+    "correlation_with_target": -0.005943074258179479,
+    "mutual_information": 0.0,
+    "importance_score": 0.0029715371290897396
+  },
+  {
+    "feature_name": "count_max_w5",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 120,
+    "correlation_with_target": 0.005869132529456462,
+    "mutual_information": 0.0,
+    "importance_score": 0.002934566264728231
+  },
+  {
+    "feature_name": "back_mean_w3",
+    "type": "rolling_statistic",
+    "window": 3,
+    "base_feature": "back",
+    "aggregation": "mean",
+    "importance_rank": 57,
+    "correlation_with_target": 0.005787688169105522,
+    "mutual_information": 0.0,
+    "importance_score": 0.002893844084552761
+  },
+  {
     "feature_name": "price_std_w2",
     "type": "rolling_statistic",
     "window": 2,
@@ -2165,6 +2110,17 @@
     "correlation_with_target": -0.0056321286084109416,
     "mutual_information": 0.0,
     "importance_score": 0.0028160643042054708
+  },
+  {
+    "feature_name": "power_slope_4",
+    "type": "trend_indicator",
+    "window": 4,
+    "base_feature": "power",
+    "aggregation": "slope",
+    "importance_rank": 176,
+    "correlation_with_target": -0.005582392991610387,
+    "mutual_information": 0.0,
+    "importance_score": 0.0027911964958051935
   },
   {
     "feature_name": "back_mean_w2",
@@ -2189,26 +2145,15 @@
     "importance_score": 0.0026559620302483797
   },
   {
-    "feature_name": "power_mean_w5",
-    "type": "rolling_statistic",
-    "window": 5,
-    "base_feature": "power",
-    "aggregation": "mean",
-    "importance_rank": 109,
-    "correlation_with_target": 0.005239081628813887,
-    "mutual_information": 0.0,
-    "importance_score": 0.0026195408144069434
-  },
-  {
-    "feature_name": "count_min_w3",
+    "feature_name": "back_min_w3",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 71,
-    "correlation_with_target": -0.005192792943972782,
+    "importance_rank": 59,
+    "correlation_with_target": -0.005044230127038946,
     "mutual_information": 0.0,
-    "importance_score": 0.002596396471986391
+    "importance_score": 0.002522115063519473
   },
   {
     "feature_name": "power_mean_w20",
@@ -2217,42 +2162,163 @@
     "base_feature": "power",
     "aggregation": "mean",
     "importance_rank": 157,
-    "correlation_with_target": 0.0048837567075807765,
+    "correlation_with_target": -0.0050408369650176334,
     "mutual_information": 0.0,
-    "importance_score": 0.0024418783537903882
+    "importance_score": 0.0025204184825088167
   },
   {
-    "feature_name": "front_min_w10",
+    "feature_name": "power_max_w3",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 127,
-    "correlation_with_target": 0.004801532106360563,
+    "importance_rank": 64,
+    "correlation_with_target": 0.004867878851332812,
     "mutual_information": 0.0,
-    "importance_score": 0.0024007660531802813
+    "importance_score": 0.002433939425666406
   },
   {
-    "feature_name": "power_slope_10",
-    "type": "trend_indicator",
-    "window": 10,
+    "feature_name": "majority_direction_match_w5",
+    "type": "directional_pattern",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 191,
+    "correlation_with_target": -0.0048604470376090725,
+    "mutual_information": 0.0,
+    "importance_score": 0.0024302235188045362
+  },
+  {
+    "feature_name": "power_percentile_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 207,
+    "correlation_with_target": -0.0048145675585072965,
+    "mutual_information": 0.0,
+    "importance_score": 0.0024072837792536482
+  },
+  {
+    "feature_name": "back_min_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 155,
+    "correlation_with_target": -0.004693741489926911,
+    "mutual_information": 0.0,
+    "importance_score": 0.0023468707449634555
+  },
+  {
+    "feature_name": "power_std_w3",
+    "type": "rolling_statistic",
+    "window": 3,
     "base_feature": "power",
-    "aggregation": "slope",
-    "importance_rank": 182,
-    "correlation_with_target": -0.004655040284960302,
+    "aggregation": "std",
+    "importance_rank": 62,
+    "correlation_with_target": 0.004579732877565455,
     "mutual_information": 0.0,
-    "importance_score": 0.002327520142480151
+    "importance_score": 0.0022898664387827274
   },
   {
-    "feature_name": "power_max_w5",
+    "feature_name": "count_max_w10",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 112,
-    "correlation_with_target": 0.004292321354261289,
+    "importance_rank": 144,
+    "correlation_with_target": 0.0044942562435654684,
     "mutual_information": 0.0,
-    "importance_score": 0.0021461606771306443
+    "importance_score": 0.0022471281217827342
+  },
+  {
+    "feature_name": "back_min_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 83,
+    "correlation_with_target": -0.004414084186493188,
+    "mutual_information": 0.0,
+    "importance_score": 0.002207042093246594
+  },
+  {
+    "feature_name": "power_min_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 87,
+    "correlation_with_target": -0.004053671097230955,
+    "mutual_information": 0.0,
+    "importance_score": 0.0020268355486154775
+  },
+  {
+    "feature_name": "time_acceleration",
+    "type": "time_based",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 233,
+    "correlation_with_target": 0.0040239682514934955,
+    "mutual_information": 0.0,
+    "importance_score": 0.0020119841257467477
+  },
+  {
+    "feature_name": "power_percentile_w10",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 203,
+    "correlation_with_target": 0.0037335529627239845,
+    "mutual_information": 0.0,
+    "importance_score": 0.0018667764813619923
+  },
+  {
+    "feature_name": "count_mean_w10",
+    "type": "rolling_statistic",
+    "window": 10,
+    "base_feature": "count",
+    "aggregation": "mean",
+    "importance_rank": 141,
+    "correlation_with_target": 0.003698328418454758,
+    "mutual_information": 0.0,
+    "importance_score": 0.001849164209227379
+  },
+  {
+    "feature_name": "count_min_w3",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 71,
+    "correlation_with_target": -0.0036759921048932437,
+    "mutual_information": 0.0,
+    "importance_score": 0.0018379960524466219
+  },
+  {
+    "feature_name": "count_max_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 168,
+    "correlation_with_target": 0.0034981478242716115,
+    "mutual_information": 0.0,
+    "importance_score": 0.0017490739121358058
+  },
+  {
+    "feature_name": "time_diff_3",
+    "type": "time_based",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 230,
+    "correlation_with_target": 0.0033960953923186576,
+    "mutual_information": 0.0,
+    "importance_score": 0.0016980476961593288
   },
   {
     "feature_name": "power_std_w5",
@@ -2261,42 +2327,9 @@
     "base_feature": "power",
     "aggregation": "std",
     "importance_rank": 110,
-    "correlation_with_target": 0.0036742560590953856,
+    "correlation_with_target": -0.003210248969842379,
     "mutual_information": 0.0,
-    "importance_score": 0.0018371280295476928
-  },
-  {
-    "feature_name": "power_mean_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "power",
-    "aggregation": "mean",
-    "importance_rank": 133,
-    "correlation_with_target": 0.003452489548403275,
-    "mutual_information": 0.0,
-    "importance_score": 0.0017262447742016375
-  },
-  {
-    "feature_name": "power_std_w4",
-    "type": "rolling_statistic",
-    "window": 4,
-    "base_feature": "power",
-    "aggregation": "std",
-    "importance_rank": 86,
-    "correlation_with_target": -0.0034369397262792125,
-    "mutual_information": 0.0,
-    "importance_score": 0.0017184698631396063
-  },
-  {
-    "feature_name": "count_min_w4",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 95,
-    "correlation_with_target": -0.003304186601785259,
-    "mutual_information": 0.0,
-    "importance_score": 0.0016520933008926295
+    "importance_score": 0.0016051244849211894
   },
   {
     "feature_name": "count_max_w2",
@@ -2321,37 +2354,26 @@
     "importance_score": 0.0014255709910069043
   },
   {
-    "feature_name": "front_min_w3",
+    "feature_name": "longest_streak_w10",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 55,
-    "correlation_with_target": -0.002839889742778462,
+    "importance_rank": 194,
+    "correlation_with_target": -0.002446715867041767,
     "mutual_information": 0.0,
-    "importance_score": 0.001419944871389231
+    "importance_score": 0.0012233579335208834
   },
   {
-    "feature_name": "power_mean_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "power",
-    "aggregation": "mean",
-    "importance_rank": 61,
-    "correlation_with_target": 0.0028022864858475048,
-    "mutual_information": 0.0,
-    "importance_score": 0.0014011432429237524
-  },
-  {
-    "feature_name": "power_max_w4",
+    "feature_name": "front_min_w4",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 88,
-    "correlation_with_target": 0.00243612415699251,
+    "importance_rank": 79,
+    "correlation_with_target": -0.002444869317900376,
     "mutual_information": 0.0,
-    "importance_score": 0.001218062078496255
+    "importance_score": 0.001222434658950188
   },
   {
     "feature_name": "power_impulse_interaction",
@@ -2365,103 +2387,81 @@
     "importance_score": 0.0011851847458218268
   },
   {
-    "feature_name": "back_max_w3",
+    "feature_name": "longest_streak_w20",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 60,
-    "correlation_with_target": 0.0022581177296409237,
+    "importance_rank": 198,
+    "correlation_with_target": -0.002111974539656422,
     "mutual_information": 0.0,
-    "importance_score": 0.0011290588648204618
+    "importance_score": 0.001055987269828211
   },
   {
-    "feature_name": "back_std_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "back",
-    "aggregation": "std",
-    "importance_rank": 58,
-    "correlation_with_target": -0.0022328376216370982,
-    "mutual_information": 0.0,
-    "importance_score": 0.0011164188108185491
-  },
-  {
-    "feature_name": "direction_changes_w20",
-    "type": "directional_pattern",
+    "feature_name": "count_min_w20",
+    "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 196,
-    "correlation_with_target": -0.0021755595834462476,
+    "importance_rank": 167,
+    "correlation_with_target": -0.0020808310994534524,
     "mutual_information": 0.0,
-    "importance_score": 0.0010877797917231238
+    "importance_score": 0.0010404155497267262
   },
   {
-    "feature_name": "power_slope_4",
-    "type": "trend_indicator",
-    "window": 4,
+    "feature_name": "time_diff_4",
+    "type": "time_based",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 231,
+    "correlation_with_target": -0.0017176592421858695,
+    "mutual_information": 0.0,
+    "importance_score": 0.0008588296210929348
+  },
+  {
+    "feature_name": "power_min_w20",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 159,
+    "correlation_with_target": 0.0017126227054960834,
+    "mutual_information": 0.0,
+    "importance_score": 0.0008563113527480417
+  },
+  {
+    "feature_name": "power_max_w4",
+    "type": "other",
+    "window": null,
+    "base_feature": null,
+    "aggregation": null,
+    "importance_rank": 88,
+    "correlation_with_target": -0.0011039809057842892,
+    "mutual_information": 0.0,
+    "importance_score": 0.0005519904528921446
+  },
+  {
+    "feature_name": "power_zscore_w20",
+    "type": "relative_feature",
+    "window": 20,
     "base_feature": "power",
-    "aggregation": "slope",
-    "importance_rank": 176,
-    "correlation_with_target": -0.0019352748389311891,
+    "aggregation": "zscore",
+    "importance_rank": 206,
+    "correlation_with_target": 0.0010335312254553257,
     "mutual_information": 0.0,
-    "importance_score": 0.0009676374194655946
+    "importance_score": 0.0005167656127276629
   },
   {
-    "feature_name": "back_mean_w3",
-    "type": "rolling_statistic",
-    "window": 3,
-    "base_feature": "back",
-    "aggregation": "mean",
-    "importance_rank": 57,
-    "correlation_with_target": 0.00167731872396723,
-    "mutual_information": 0.0,
-    "importance_score": 0.000838659361983615
-  },
-  {
-    "feature_name": "power_min_w10",
+    "feature_name": "power_min_w3",
     "type": "other",
     "window": null,
     "base_feature": null,
     "aggregation": null,
-    "importance_rank": 135,
-    "correlation_with_target": 0.0013883908614084478,
+    "importance_rank": 63,
+    "correlation_with_target": -0.0005617339324764178,
     "mutual_information": 0.0,
-    "importance_score": 0.0006941954307042239
-  },
-  {
-    "feature_name": "power_std_w10",
-    "type": "rolling_statistic",
-    "window": 10,
-    "base_feature": "power",
-    "aggregation": "std",
-    "importance_rank": 134,
-    "correlation_with_target": 0.0012333246640931193,
-    "mutual_information": 0.0,
-    "importance_score": 0.0006166623320465597
-  },
-  {
-    "feature_name": "count_min_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 143,
-    "correlation_with_target": 0.0004640325870129086,
-    "mutual_information": 0.0,
-    "importance_score": 0.0002320162935064543
-  },
-  {
-    "feature_name": "power_min_w5",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 111,
-    "correlation_with_target": -0.0004595872933716903,
-    "mutual_information": 0.0,
-    "importance_score": 0.00022979364668584515
+    "importance_score": 0.0002808669662382089
   },
   {
     "feature_name": "back_min_w2",
@@ -2475,26 +2475,26 @@
     "importance_score": 0.00022828791564525114
   },
   {
-    "feature_name": "power_max_w10",
-    "type": "other",
-    "window": null,
-    "base_feature": null,
-    "aggregation": null,
-    "importance_rank": 136,
-    "correlation_with_target": 0.0003302652634297914,
+    "feature_name": "power_std_w4",
+    "type": "rolling_statistic",
+    "window": 4,
+    "base_feature": "power",
+    "aggregation": "std",
+    "importance_rank": 86,
+    "correlation_with_target": 0.0004186400129606975,
     "mutual_information": 0.0,
-    "importance_score": 0.0001651326317148957
+    "importance_score": 0.00020932000648034874
   },
   {
-    "feature_name": "power_zscore_w20",
-    "type": "relative_feature",
-    "window": 20,
+    "feature_name": "power_mean_w5",
+    "type": "rolling_statistic",
+    "window": 5,
     "base_feature": "power",
-    "aggregation": "zscore",
-    "importance_rank": 206,
-    "correlation_with_target": 5.4680593735773774e-05,
+    "aggregation": "mean",
+    "importance_rank": 109,
+    "correlation_with_target": -0.00038601773097307124,
     "mutual_information": 0.0,
-    "importance_score": 2.7340296867886887e-05
+    "importance_score": 0.00019300886548653562
   },
   {
     "feature_name": "count_std_w1",

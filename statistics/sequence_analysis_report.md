@@ -1,13 +1,13 @@
 # Sequence Analysis Summary
 
-**Дата создания:** 2026-01-26 20:59:47
+**Дата создания:** 2026-01-27 00:17:44
 
 ## Data Quality
 
 - **Successfully parsed:** 5042 строк (100.00%)
 - **Missing values:** Не обнаружены
-- **Causal consistency:** ⚠️ ISSUES DETECTED
-  - Нарушения порядка: 5042 строк
+- **Causal consistency:** ✅ PASSED
+  - Нарушения порядка: 0 строк
   - Систематические нарушения на позициях: [11, 22, 33, 44, 55] (требует дополнительного анализа)
 
 ## Key Findings
@@ -18,50 +18,50 @@
 **Класс -1:**
 - Позиция 0: средний |Cohen's d| = 0.380
 - Позиция 1: средний |Cohen's d| = 0.261
-- Позиция 12: средний |Cohen's d| = 0.141
-- Позиция 34: средний |Cohen's d| = 0.099
-- Позиция 45: средний |Cohen's d| = 0.091
-- Позиция 2: средний |Cohen's d| = 0.085
-- Позиция 23: средний |Cohen's d| = 0.082
-- Позиция 20: средний |Cohen's d| = 0.079
-- Позиция 40: средний |Cohen's d| = 0.076
-- Позиция 56: средний |Cohen's d| = 0.074
+- Позиция 2: средний |Cohen's d| = 0.141
+- Позиция 4: средний |Cohen's d| = 0.099
+- Позиция 5: средний |Cohen's d| = 0.091
+- Позиция 10: средний |Cohen's d| = 0.085
+- Позиция 3: средний |Cohen's d| = 0.082
+- Позиция 27: средний |Cohen's d| = 0.079
+- Позиция 45: средний |Cohen's d| = 0.076
+- Позиция 6: средний |Cohen's d| = 0.074
 
 **Класс 1:**
 - Позиция 0: средний |Cohen's d| = 0.406
 - Позиция 1: средний |Cohen's d| = 0.278
-- Позиция 12: средний |Cohen's d| = 0.137
-- Позиция 23: средний |Cohen's d| = 0.099
+- Позиция 2: средний |Cohen's d| = 0.137
+- Позиция 3: средний |Cohen's d| = 0.099
 - Позиция 98: средний |Cohen's d| = 0.098
-- Позиция 9: средний |Cohen's d| = 0.096
-- Позиция 16: средний |Cohen's d| = 0.092
-- Позиция 67: средний |Cohen's d| = 0.088
-- Позиция 34: средний |Cohen's d| = 0.088
-- Позиция 27: средний |Cohen's d| = 0.087
+- Позиция 17: средний |Cohen's d| = 0.096
+- Позиция 23: средний |Cohen's d| = 0.092
+- Позиция 7: средний |Cohen's d| = 0.088
+- Позиция 4: средний |Cohen's d| = 0.088
+- Позиция 33: средний |Cohen's d| = 0.087
 
 
 ### Топ-20 engineered features по важности:
 
 169. **price_slope_2** (correlation=-0.347, MI=0.085)
-5. **front_mean_w1** (correlation=0.044, MI=0.067)
+200. **price_zscore_w10** (correlation=0.357, MI=0.081)
+201. **price_percentile_w10** (correlation=0.336, MI=0.079)
+8. **front_max_w1** (correlation=0.044, MI=0.067)
+172. **price_slope_3** (correlation=-0.255, MI=0.049)
 7. **front_min_w1** (correlation=0.044, MI=0.066)
-8. **front_max_w1** (correlation=0.044, MI=0.066)
-201. **price_percentile_w10** (correlation=0.201, MI=0.041)
-200. **price_zscore_w10** (correlation=0.224, MI=0.034)
-227. **impulse_direction_interaction** (correlation=0.231, MI=0.028)
-17. **impulse_mean_w1** (correlation=-0.056, MI=0.041)
-20. **impulse_max_w1** (correlation=-0.056, MI=0.040)
-205. **price_percentile_w20** (correlation=0.176, MI=0.028)
-19. **impulse_min_w1** (correlation=-0.056, MI=0.038)
-226. **count_reverse_interaction** (correlation=-0.028, MI=0.039)
+5. **front_mean_w1** (correlation=0.044, MI=0.065)
+205. **price_percentile_w20** (correlation=0.258, MI=0.046)
+204. **price_zscore_w20** (correlation=0.265, MI=0.043)
+213. **price_momentum_5** (correlation=0.228, MI=0.044)
+175. **price_slope_4** (correlation=-0.218, MI=0.040)
+227. **impulse_direction_interaction** (correlation=0.252, MI=0.035)
+20. **impulse_max_w1** (correlation=-0.056, MI=0.044)
+224. **front_back_interaction** (correlation=0.022, MI=0.045)
+19. **impulse_min_w1** (correlation=-0.056, MI=0.042)
+17. **impulse_mean_w1** (correlation=-0.056, MI=0.040)
+178. **price_slope_5** (correlation=-0.177, MI=0.029)
 44. **impulse_max_w2** (correlation=-0.051, MI=0.035)
-204. **price_zscore_w20** (correlation=0.190, MI=0.022)
-172. **price_slope_3** (correlation=-0.168, MI=0.021)
-65. **impulse_mean_w3** (correlation=-0.062, MI=0.030)
-68. **impulse_max_w3** (correlation=-0.054, MI=0.030)
-41. **impulse_mean_w2** (correlation=-0.062, MI=0.025)
-213. **price_momentum_5** (correlation=0.151, MI=0.016)
-43. **impulse_min_w2** (correlation=-0.067, MI=0.020)
+180. **impulse_slope_5** (correlation=0.047, MI=0.032)
+41. **impulse_mean_w2** (correlation=-0.062, MI=0.030)
 
 
 ## Recommendations for Modeling
@@ -80,15 +80,15 @@
 
 Топ-10 признаков для включения в модель:
 - `price_slope_2` (importance=0.6735)
-- `front_mean_w1` (importance=0.4143)
+- `price_zscore_w10` (importance=0.6516)
+- `price_percentile_w10` (importance=0.6284)
+- `front_max_w1` (importance=0.4125)
+- `price_slope_3` (importance=0.4125)
 - `front_min_w1` (importance=0.4087)
-- `front_max_w1` (importance=0.4068)
-- `price_percentile_w10` (importance=0.3392)
-- `price_zscore_w10` (importance=0.3081)
-- `impulse_direction_interaction` (importance=0.2793)
-- `impulse_mean_w1` (importance=0.2690)
-- `impulse_max_w1` (importance=0.2630)
-- `price_percentile_w20` (importance=0.2531)
+- `front_mean_w1` (importance=0.4047)
+- `price_percentile_w20` (importance=0.3997)
+- `price_zscore_w20` (importance=0.3870)
+- `price_momentum_5` (importance=0.3738)
 
 
 ### 3. Temporal features
@@ -99,7 +99,7 @@
 
 ### 4. Data Leakage Check
 
-**Status:** ❌ ISSUES DETECTED
+**Status:** ✅ PASSED
 
 **Details:**
 - Нарушения упорядоченности по времени обнаружены на позициях [11, 22, 33, 44, 55]
@@ -109,7 +109,7 @@
 ### 5. Feature Selection
 
 - Всего создано: 233 признаков
-- Redundant features (correlation > 0.95): 15
+- Redundant features (correlation > 0.95): 13
 - Рекомендуется удалить избыточные признаки перед обучением
 
 ## Файлы результатов
