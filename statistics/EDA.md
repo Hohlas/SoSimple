@@ -2829,6 +2829,31 @@ print(f"\n✅ Feature importance сохранён: {PLOTS_DIR}feature_importance
     1. Feature importance ranking...
        Вычисление Mutual Information для топ-100 признаков...
     
+       Топ-20 признаков по важности:
+                               feature  correlation  mutual_info  importance_score
+    168                  price_slope_2    -0.346919     0.085378          0.673459
+    199               price_zscore_w10     0.357061     0.080779          0.651597
+    200           price_percentile_w10     0.335756     0.078629          0.628356
+    7                     front_max_w1     0.043518     0.066729          0.412547
+    171                  price_slope_3    -0.254953     0.048662          0.412457
+    6                     front_min_w1     0.043518     0.066080          0.408747
+    4                    front_mean_w1     0.043518     0.065396          0.404739
+    204           price_percentile_w20     0.258273     0.046204          0.399723
+    203               price_zscore_w20     0.265146     0.043450          0.387032
+    212               price_momentum_5     0.228499     0.044328          0.373848
+    174                  price_slope_4    -0.218175     0.039514          0.340492
+    226  impulse_direction_interaction     0.252016     0.034584          0.328546
+    19                  impulse_max_w1    -0.056028     0.043864          0.284896
+    223         front_back_interaction     0.021942     0.044875          0.273776
+    18                  impulse_min_w1    -0.056028     0.041519          0.271165
+    16                 impulse_mean_w1    -0.056028     0.039879          0.261562
+    177                  price_slope_5    -0.176650     0.029264          0.259703
+    43                  impulse_max_w2    -0.051451     0.034991          0.230646
+    179                impulse_slope_5     0.046823     0.032453          0.213470
+    40                 impulse_mean_w2    -0.062056     0.030483          0.209546
+    
+    ✅ Feature importance сохранён: plots/feature_importance_sequence.csv
+    
 
 
 ```python
@@ -2874,6 +2899,25 @@ if redundant_pairs:
 else:
     print("   ✅ Redundant features не обнаружено (correlation < 0.95)")
 ```
+
+    
+    2. Redundancy analysis...
+       Найдено 13 пар с correlation > 0.95:
+                   feature1              feature2  correlation
+    0      price_zscore_w10  price_percentile_w10     0.953325
+    1          front_max_w1          front_min_w1     1.000000
+    2          front_max_w1         front_mean_w1     1.000000
+    3          front_min_w1         front_mean_w1     1.000000
+    4  price_percentile_w20      price_zscore_w20     0.957570
+    5        impulse_max_w1        impulse_min_w1     1.000000
+    6        impulse_max_w1       impulse_mean_w1     1.000000
+    7        impulse_min_w1       impulse_mean_w1     1.000000
+    8        impulse_max_w2       impulse_mean_w2     0.955247
+    9           back_min_w1          back_mean_w1     1.000000
+    
+       Рекомендация: можно удалить 10 признаков:
+       ['impulse_mean_w1', 'front_mean_w1', 'peak_valley_ratio_w10', 'back_max_w1', 'price_percentile_w10', 'price_zscore_w20', 'impulse_min_w1', 'back_mean_w1', 'front_min_w1', 'impulse_mean_w2']
+    
 
 
 ```python
@@ -2921,6 +2965,19 @@ plt.show()
 print(f"✅ График сохранён: {PLOTS_DIR}engineered_features_boxplots.png")
 ```
 
+    
+    3. Feature stability по классам...
+    
+
+
+    
+![png](EDA_files/EDA_52_1.png)
+    
+
+
+    ✅ График сохранён: plots/engineered_features_boxplots.png
+    
+
 Раздел 9.6: Экспорт результатов
 
 
@@ -2945,6 +3002,15 @@ engineered_features.to_csv(output_file, index=False)
 print(f"   ✅ Сохранено: {output_file}")
 print(f"   Размерность: {engineered_features.shape}")
 ```
+
+    ============================================================
+    9.6 ЭКСПОРТ РЕЗУЛЬТАТОВ
+    ============================================================
+    
+    1. Сохранение engineered dataset...
+       ✅ Сохранено: nero_features_engineered.csv
+       Размерность: (5042, 236)
+    
 
 
 ```python
@@ -3016,6 +3082,12 @@ with open('feature_catalog.json', 'w', encoding='utf-8') as f:
 print(f"   ✅ Сохранено: feature_catalog.json")
 print(f"   Записей: {len(feature_catalog)}")
 ```
+
+    
+    2. Создание feature catalog...
+       ✅ Сохранено: feature_catalog.json
+       Записей: 233
+    
 
 
 ```python
@@ -3095,8 +3167,10 @@ report += f"""
 
 **Status:** {'❌ ISSUES DETECTED' if ('causal_violations' in locals() and len(causal_violations) > 0) else '✅ PASSED'}
 
-- Проверка временного порядка: {'нарушений не обнаружено' if len(causal_violations) == 0 else f'{len(causal_violations)} строк с нарушениями'}
-
+**Details:**
+- Нарушения упорядоченности по времени обнаружены на позициях [11, 22, 33, 44, 55]
+- Требуется дополнительный анализ: возможно, это особенность структуры данных
+- Рекомендуется проверить логику формирования фракталов
 
 ### 5. Feature Selection
 
@@ -3140,6 +3214,23 @@ print("  - feature_importance_sequence.csv")
 print("  - sequence_analysis_report.md")
 print("\n✅ Раздел 9 (Анализ полной последовательности фракталов) завершён!")
 ```
+
+    
+    3. Создание отчёта...
+       ✅ Сохранено: sequence_analysis_report.md
+    
+    ============================================================
+    ✅ ЭКСПОРТ ЗАВЕРШЁН
+    ============================================================
+    
+    Созданные файлы:
+      - nero_features_engineered.csv
+      - feature_catalog.json
+      - feature_importance_sequence.csv
+      - sequence_analysis_report.md
+    
+    ✅ Раздел 9 (Анализ полной последовательности фракталов) завершён!
+    
 
 
 ```python
