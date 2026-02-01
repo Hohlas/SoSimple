@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 import os
-from label_signals import label_signals
+from label_signals import label_all
 
 
 def process_row_fractals(row_data, fractal_columns, debug=False, row_idx=None):
@@ -218,7 +218,7 @@ def main():
     print(f"  Входной файл: {train_path}")
     print(f"  Выходной файл: {train_labeled_path}")
     
-    label_signals(train_path, train_labeled_path, debug=args.debug)
+    label_all(train_path, train_labeled_path, debug=args.debug)
     
     print(f"\nИтоговые файлы:")
     print(f"  Train (с метками): {train_labeled_path}")
