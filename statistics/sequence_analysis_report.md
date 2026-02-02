@@ -1,14 +1,14 @@
 # Sequence Analysis Summary
 
-**Дата создания:** 2026-01-27 10:18:34
+**Дата создания:** 2026-02-02 14:32:40
 
 ## Data Quality
 
-- **Successfully parsed:** 5042 строк (100.00%)
+- **Successfully parsed:** 5082 строк (100.00%)
 - **Missing values:** Не обнаружены
 - **Causal consistency:** ✅ PASSED
   - Нарушения порядка: 0 строк
-  - Систематические нарушения на позициях: [11, 22, 33, 44, 55] (требует дополнительного анализа)
+
 
 ## Key Findings
 
@@ -16,59 +16,59 @@
 
 
 **Класс -1:**
-- Позиция 0: средний |Cohen's d| = 0.380
-- Позиция 1: средний |Cohen's d| = 0.261
-- Позиция 2: средний |Cohen's d| = 0.141
-- Позиция 4: средний |Cohen's d| = 0.099
-- Позиция 5: средний |Cohen's d| = 0.091
-- Позиция 10: средний |Cohen's d| = 0.085
-- Позиция 3: средний |Cohen's d| = 0.082
-- Позиция 27: средний |Cohen's d| = 0.079
-- Позиция 45: средний |Cohen's d| = 0.076
-- Позиция 6: средний |Cohen's d| = 0.074
+- Позиция 0: средний |Cohen's d| = 0.573
+- Позиция 1: средний |Cohen's d| = 0.451
+- Позиция 53: средний |Cohen's d| = 0.345
+- Позиция 41: средний |Cohen's d| = 0.319
+- Позиция 70: средний |Cohen's d| = 0.296
+- Позиция 63: средний |Cohen's d| = 0.280
+- Позиция 3: средний |Cohen's d| = 0.273
+- Позиция 22: средний |Cohen's d| = 0.269
+- Позиция 10: средний |Cohen's d| = 0.267
+- Позиция 71: средний |Cohen's d| = 0.255
 
 **Класс 1:**
-- Позиция 0: средний |Cohen's d| = 0.406
-- Позиция 1: средний |Cohen's d| = 0.278
-- Позиция 2: средний |Cohen's d| = 0.137
-- Позиция 3: средний |Cohen's d| = 0.099
-- Позиция 98: средний |Cohen's d| = 0.098
-- Позиция 17: средний |Cohen's d| = 0.096
-- Позиция 23: средний |Cohen's d| = 0.092
-- Позиция 7: средний |Cohen's d| = 0.088
-- Позиция 4: средний |Cohen's d| = 0.088
-- Позиция 33: средний |Cohen's d| = 0.087
+- Позиция 0: средний |Cohen's d| = 0.456
+- Позиция 34: средний |Cohen's d| = 0.405
+- Позиция 2: средний |Cohen's d| = 0.387
+- Позиция 55: средний |Cohen's d| = 0.385
+- Позиция 1: средний |Cohen's d| = 0.297
+- Позиция 50: средний |Cohen's d| = 0.293
+- Позиция 21: средний |Cohen's d| = 0.292
+- Позиция 60: средний |Cohen's d| = 0.283
+- Позиция 4: средний |Cohen's d| = 0.278
+- Позиция 29: средний |Cohen's d| = 0.272
 
 
 ### Топ-20 engineered features по важности:
 
-169. **price_slope_2** (correlation=-0.347, MI=0.085)
-200. **price_zscore_w10** (correlation=0.357, MI=0.081)
-201. **price_percentile_w10** (correlation=0.336, MI=0.079)
-8. **front_max_w1** (correlation=0.044, MI=0.067)
-172. **price_slope_3** (correlation=-0.255, MI=0.049)
-7. **front_min_w1** (correlation=0.044, MI=0.066)
-5. **front_mean_w1** (correlation=0.044, MI=0.065)
-205. **price_percentile_w20** (correlation=0.258, MI=0.046)
-204. **price_zscore_w20** (correlation=0.265, MI=0.043)
-213. **price_momentum_5** (correlation=0.228, MI=0.044)
-175. **price_slope_4** (correlation=-0.218, MI=0.040)
-227. **impulse_direction_interaction** (correlation=0.252, MI=0.035)
-20. **impulse_max_w1** (correlation=-0.056, MI=0.044)
-224. **front_back_interaction** (correlation=0.022, MI=0.045)
-19. **impulse_min_w1** (correlation=-0.056, MI=0.042)
-17. **impulse_mean_w1** (correlation=-0.056, MI=0.040)
-178. **price_slope_5** (correlation=-0.177, MI=0.029)
-44. **impulse_max_w2** (correlation=-0.051, MI=0.035)
-180. **impulse_slope_5** (correlation=0.047, MI=0.032)
-41. **impulse_mean_w2** (correlation=-0.062, MI=0.030)
+204. **price_zscore_w20** (correlation=0.135, MI=0.012)
+205. **price_percentile_w20** (correlation=0.112, MI=0.012)
+201. **price_percentile_w10** (correlation=0.115, MI=0.012)
+8. **front_max_w1** (correlation=0.034, MI=0.013)
+7. **front_min_w1** (correlation=0.034, MI=0.013)
+5. **front_mean_w1** (correlation=0.034, MI=0.013)
+200. **price_zscore_w10** (correlation=0.131, MI=0.011)
+172. **price_slope_3** (correlation=-0.126, MI=0.008)
+175. **price_slope_4** (correlation=-0.113, MI=0.007)
+32. **front_max_w2** (correlation=0.029, MI=0.008)
+56. **front_max_w3** (correlation=0.029, MI=0.008)
+169. **price_slope_2** (correlation=-0.135, MI=0.006)
+36. **back_max_w2** (correlation=-0.062, MI=0.007)
+84. **back_max_w4** (correlation=-0.062, MI=0.006)
+30. **front_std_w2** (correlation=0.034, MI=0.007)
+221. **price_momentum_20** (correlation=0.090, MI=0.006)
+53. **front_mean_w3** (correlation=0.036, MI=0.006)
+78. **front_std_w4** (correlation=0.030, MI=0.006)
+80. **front_max_w4** (correlation=0.027, MI=0.006)
+54. **front_std_w3** (correlation=0.032, MI=0.006)
 
 
 ## Recommendations for Modeling
 
 ### 1. Архитектура модели
 
-- **Вариант A:** Использовать full sequence (99 фракталов) с LSTM/Transformer
+- **Вариант A:** Использовать full sequence (100 фракталов) с LSTM/Transformer
   - Преимущества: сохранение временной структуры
   - Недостатки: требует больше вычислительных ресурсов
 
@@ -79,16 +79,16 @@
 ### 2. Критичные признаки
 
 Топ-10 признаков для включения в модель:
-- `price_slope_2` (importance=0.6735)
-- `price_zscore_w10` (importance=0.6516)
-- `price_percentile_w10` (importance=0.6284)
-- `front_max_w1` (importance=0.4125)
-- `price_slope_3` (importance=0.4125)
-- `front_min_w1` (importance=0.4087)
-- `front_mean_w1` (importance=0.4047)
-- `price_percentile_w20` (importance=0.3997)
-- `price_zscore_w20` (importance=0.3870)
-- `price_momentum_5` (importance=0.3738)
+- `price_zscore_w20` (importance=0.5528)
+- `price_percentile_w20` (importance=0.5369)
+- `price_percentile_w10` (importance=0.5193)
+- `front_max_w1` (importance=0.5170)
+- `front_min_w1` (importance=0.5170)
+- `front_mean_w1` (importance=0.5170)
+- `price_zscore_w10` (importance=0.4973)
+- `price_slope_3` (importance=0.3923)
+- `price_slope_4` (importance=0.3436)
+- `front_max_w2` (importance=0.3424)
 
 
 ### 3. Temporal features
@@ -102,14 +102,14 @@
 **Status:** ✅ PASSED
 
 **Details:**
-- Нарушения упорядоченности по времени обнаружены на позициях [11, 22, 33, 44, 55]
+
 - Требуется дополнительный анализ: возможно, это особенность структуры данных
 - Рекомендуется проверить логику формирования фракталов
 
 ### 5. Feature Selection
 
 - Всего создано: 233 признаков
-- Redundant features (correlation > 0.95): 13
+- Redundant features (correlation > 0.95): 16
 - Рекомендуется удалить избыточные признаки перед обучением
 
 ## Файлы результатов
@@ -125,7 +125,6 @@
 ---
 
 **Следующие шаги:**
-1. Провести дополнительный анализ нарушений на позициях [11, 22, 33, 44, 55]
 2. Выбрать архитектуру модели (LSTM/Transformer vs Feature-based)
 3. Подготовить train/test split с учётом временной структуры
 4. Применить техники балансировки классов (SMOTE, class weights)
