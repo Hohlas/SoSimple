@@ -8,15 +8,15 @@
 
 ```bash
 < строка заголовков >
-human_time[0];signal[0];predict[0];ATR[0];fractal[0][0];fractal[0][1];…;fractal[0][n-1]
-human_time[1];signal[1];predict[1];ATR[1];fractal[1][0];fractal[1][1];…;fractal[1][n-1]
+time[0];signal[0];predict[0];ATR[0];fractal[0][0];fractal[0][1];…;fractal[0][n-1]
+time[1];signal[1];predict[1];ATR[1];fractal[1][0];fractal[1][1];…;fractal[1][n-1]
 . . .
-human_time[k];signal[k];predict[k];ATR[k];fractal[k][0];fractal[k][1];…;fractal[k][n-1]
+time[k];signal[k];predict[k];ATR[k];fractal[k][0];fractal[k][1];…;fractal[k][n-1]
 ```
 
 k > 6000  (количество строк в файле)
 n = 100 (количество фракталов в строке)
-human_time[i] - время формирования нового фрактала (человекочитаемая дата/время)
+time[i] - время формирования нового фрактала (человекочитаемая дата/время)
 signal[i] - сигнал для обучения модели (значения добавляются при маркировке данных). 
 predict[i] - сигнал для обучения модели (значения добавляются при маркировке данных).
 ATR[i]-значение Average True Range в момент формирования нового фрактала 

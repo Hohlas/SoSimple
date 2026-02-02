@@ -130,7 +130,7 @@ def parse_fractal_column(fractal_str: str) -> Dict:
             'back': float(parts[4]),
             'strong': int(parts[5]),
             'break': int(parts[6]),
-            'reverse': int(parts[7]),
+            'reverse': float(parts[7]),
             'power': float(parts[8]),
             'count': int(parts[9]),
             'impulse': float(parts[10])
@@ -150,6 +150,8 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     
     all_rare_events = []  # Для сбора редких событий
     normal_samples = []   # Для сбора нормальных событий
+    predict_values: List[float] = []
+    atr_values: List[float] = []
     
     chunk_counter = 0
     total_fractals_processed = 0
@@ -164,11 +166,11 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
         # Парсинг всех фрактальных колонок
         parsed_fractals = defaultdict(list)
         
-        # Предполагаем, что колонки: time, signal, fractal0, ..., fractal98
+        # Колонки: time, signal, predict, ATR, fractal0..fractal{n-1}; n задаётся файлом
         fractal_columns = [col for col in chunk.columns if col.startswith('fractal')]
         
         for idx, row in chunk.iterrows():
-            # перебираем ВСЕ 99 фракталов
+            # перебираем все столбцы-фракталы (fractal0 .. fractal(n-1))
             for fractal_col in fractal_columns:
                 fractal_str = row[fractal_col]
                 parsed = parse_fractal_column(fractal_str)
@@ -182,6 +184,12 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
 
         # Обновление статистики
         stats.update(chunk, parsed_fractals)
+        
+        # Накопление predict и ATR для сводной статистики (если столбцы есть)
+        if 'predict' in chunk.columns:
+            predict_values.extend(chunk['predict'].dropna().astype(float).tolist())
+        if 'ATR' in chunk.columns:
+            atr_values.extend(chunk['ATR'].dropna().astype(float).tolist())
         
         # Сбор стратифицированной выборки [web:13][web:14]
         rare_events = chunk[chunk['signal'] != 0]
@@ -200,6 +208,25 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     
     # 1. statistics_summary.json
     summary = stats.get_summary()
+    
+    # Статистика по predict и ATR (если столбцы были в данных)
+    def _numeric_stats(values: List[float]) -> Dict:
+        if not values:
+            return {'mean': 0.0, 'std': 0.0, 'min': 0.0, 'max': 0.0, 'q25': 0.0, 'median': 0.0, 'q75': 0.0}
+        arr = np.array(values)
+        return {
+            'mean': float(np.mean(arr)),
+            'std': float(np.std(arr)),
+            'min': float(np.min(arr)),
+            'max': float(np.max(arr)),
+            'q25': float(np.percentile(arr, 25)),
+            'median': float(np.percentile(arr, 50)),
+            'q75': float(np.percentile(arr, 75))
+        }
+    if predict_values:
+        summary['predict'] = _numeric_stats(predict_values)
+    if atr_values:
+        summary['ATR'] = _numeric_stats(atr_values)
     
     # Добавляем процент дисбаланса
     total = summary['total_samples']
@@ -226,13 +253,17 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     
     print("[OK] Создан class_balance_report.csv")
     
-    # 3. feature_distributions.csv
+    # 3. feature_distributions.csv (признаки фрактала + predict и ATR при наличии)
     feature_dists = []
     for feature_name, feature_stats in summary['features'].items():
         feature_dists.append({
             'feature': feature_name,
             **feature_stats
         })
+    if 'predict' in summary:
+        feature_dists.append({'feature': 'predict', **summary['predict']})
+    if 'ATR' in summary:
+        feature_dists.append({'feature': 'ATR', **summary['ATR']})
     
     pd.DataFrame(feature_dists).to_csv(SCRIPT_DIR / 'feature_distributions.csv', index=False)
     
@@ -268,8 +299,9 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     if len(fractal_columns) == 0:
         print("[WARNING] Колонки с фракталами не найдены, пропускаем class_statistics.json")
     else:
-        # Используем первую колонку с фракталом (fractal0 или fractal[0])
-        first_fractal_col = sorted(fractal_columns)[0]  # сортируем для детерминированности
+        # Первый фрактал — колонка с минимальным индексом (fractal0 при наличии)
+        fractal_columns_sorted = sorted(fractal_columns, key=lambda c: int(c.replace('fractal', '')))
+        first_fractal_col = fractal_columns_sorted[0]
         
         for signal_val in [-1, 0, 1]:
             class_rows = final_df[final_df['signal'] == signal_val]
