@@ -87,6 +87,15 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
     df = pd.read_csv(input_path, sep=';')
     df.columns = [c.strip() for c in df.columns]
     
+    # Инициализация и приведение типов для целевых колонок
+    if 'signal' not in df.columns:
+        df['signal'] = 0
+    
+    if 'predict' not in df.columns:
+        df['predict'] = 0.0
+    else:
+        df['predict'] = df['predict'].astype(float)
+    
     # Получаем список колонок с фракталами (динамически, не привязываясь к n=100)
     fractal_columns = [col for col in df.columns if col.startswith('fractal')]
     total_rows = len(df)
