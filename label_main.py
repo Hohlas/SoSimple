@@ -131,7 +131,7 @@ def verify_sorting_quality(df, debug=False):
     return error_rows == 0
 
 
-def split_train_validation(df, input_path, train_ratio=0.75):
+def split_train_validation(df, input_path, train_ratio=0.9):
     """
     Разделяет DataFrame на тренировочный и проверочный наборы и сохраняет их.
     
