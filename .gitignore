@@ -213,6 +213,7 @@ __marimo__/
 *.dll
 *.index
 *.log
+*.dat
 
 # Временные файлы MT4
 *.log
