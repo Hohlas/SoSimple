@@ -1,20 +1,73 @@
+# =============================================================================
+# Файл: label_signals.py
+# Назначение: Маркировка торговых сигналов и расчет прогнозных значений (predict)
+# Язык: Python 3.10+
+# Автор: Antigravity
+# Создан: Неизвестно
+# Обновлён: 2026-02-06
+#
+# Зависимости:
+#   Входные данные:
+#     - CSV файлы (например, Nero.csv или Nero_train.csv) с колонками фракталов
+#   Выходные данные:
+#     - Обновленный pd.DataFrame с колонками 'signal' и 'predict'
+#     - CSV файл по указанному output_path
+# Внешние зависимости:
+#   - pandas>=2.0.0
+#
+# Использование:
+#   from label_signals import label_all
+#   label_all('input.csv', 'output.csv', debug=True)
+#
+# Примечания:
+#   - Использует "forward-looking" логику (заглядывание в будущее) для расчета 'predict'
+#   - Формат строки фрактала является критически важным для парсинга
+# =============================================================================
+
+"""
+Модуль для анализа и маркировки исторических данных котировок.
+
+Этот модуль предоставляет функции для обнаружения сильных уровней (strong levels)
+на основе фракталов и разметки обучающей выборки для нейронных сетей.
+Включает расчет целевой переменной 'predict', которая отражает потенциал
+движения цены против пробитого фрактала.
+"""
+
 import pandas as pd
 
 
 def parse_fractal(fractal_str):
     """
     Парсит строку фрактала и возвращает словарь с параметрами.
-    Формат: fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse
-    Индексы:     [0]      [1]     [2]     [3]   [4]   [5]    [6]    [7]    [8]   [9]   [10]
-    
+
+    Формат строки:
+    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse`
+
+    Индексы в строке:
+        [0]  time (int): Время формирования
+        [1]  price (float): Цена фрактала
+        [2]  direction (int): Направление (1 - верх, -1 - низ)
+        [3]  front (float): Расстояние до фронтального бара
+        [4]  back (float): Расстояние до заднего бара
+        [5]  strong (int): Флаг сильного фрактала (1 - да, 0 - нет)
+        [6]  break (int): Флаг пробития (1 - да, 0 - нет)
+        [7]  reverse (float): Значение разворота
+        [8]  power (float): Сила импульса
+        [9]  count (int): Счетчик подтверждений
+        [10] impulse (float): Значение импульса
+
+    Args:
+        fractal_str (str): Строка с данными фрактала из CSV.
+
     Returns:
-        dict или None если парсинг неудачен
+        Optional[Dict[str, Any]]: Словарь с распарсенными данными или None,
+            если строка пуста или некорректна.
     """
     if pd.isna(fractal_str) or fractal_str == '':
         return None
     
     parts = str(fractal_str).split(':')
-    if len(parts) < 7:  # Минимум нужны индексы 0-6
+    if len(parts) < 7:  # Минимум нужны индексы 0-6 для базовой логики
         return None
     
     try:
@@ -37,15 +90,18 @@ def parse_fractal(fractal_str):
 
 def find_fractal_by_time(row, fractal_columns, target_time):
     """
-    Ищет фрактал с заданным временем в строке.
-    
+    Ищет фрактал с заданным временем в текущей строке данных.
+
+    Просматривает все колонки, начинающиеся на 'fractal', чтобы найти
+    совпадение по времени формирования (time_val).
+
     Args:
-        row: строка DataFrame (namedtuple из itertuples или Series)
-        fractal_columns: список колонок с фракталами
-        target_time: искомое время фрактала
-        
+        row (Union[pd.Series, NamedTuple]): Строка DataFrame.
+        fractal_columns (List[str]): Список имен колонок, содержащих фракталы.
+        target_time (int): Искомый временной отпечаток фрактала.
+
     Returns:
-        dict с параметрами фрактала или None если не найден
+        Optional[Dict[str, Any]]: Данные найденного фрактала или None.
     """
     for col_name in fractal_columns:
         # Поддержка как namedtuple (itertuples), так и Series (iloc)
@@ -61,17 +117,28 @@ def find_fractal_by_time(row, fractal_columns, target_time):
 
 def label_all(input_path, output_path, debug=False, label_signal=True, label_predict=True):
     """
-    Совместная маркировка signal и predict с оптимизацией производительности.
-    
+    Выполняет комплексную маркировку данных: сигналы (signal) и прогнозы (predict).
+
+    Алгоритм:
+    1. Находит все фракталы с пометкой 'strong' во всем файле.
+    2. Для каждой строки:
+       - Если fractal0 является 'strong', ставит метку в 'signal'.
+       - Рассчитывает 'predict' как максимальный откат (back) цены до момента
+         пробития (break) этого фрактала в будущем.
+
     Args:
-        input_path: путь к входному CSV файлу
-        output_path: путь для сохранения результатов
-        debug: включить отладочный вывод
-        label_signal: маркировать столбец signal (по умолчанию True)
-        label_predict: маркировать столбец predict (по умолчанию True)
-        
+        input_path (str): Путь к исходному CSV файлу (разделитель ';').
+        output_path (str): Путь для сохранения результата.
+        debug (bool): Флаг включения подробного вывода в консоль.
+        label_signal (bool): Нужно ли маркировать колонку 'signal'.
+        label_predict (bool): Нужно ли маркировать колонку 'predict'.
+
     Returns:
-        pd.DataFrame с маркированными данными
+        pd.DataFrame: DataFrame с добавленными метками.
+
+    Note:
+        Процесс маркировки 'predict' является ресурсоемким (O(N^2) в худшем случае),
+        так как требует просмотра будущих строк для каждого фрактала.
     """
     if debug:
         print("=" * 60)
@@ -96,14 +163,16 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
     else:
         df['predict'] = df['predict'].astype(float)
     
-    # Получаем список колонок с фракталами (динамически, не привязываясь к n=100)
+    # Получаем список колонок с фракталами динамически
     fractal_columns = [col for col in df.columns if col.startswith('fractal')]
     total_rows = len(df)
     
     if debug:
         print(f"\n[ЗАГРУЗКА] Строк: {total_rows}, колонок фракталов: {len(fractal_columns)}")
     
-    # === ЭТАП 1: Сбор strong_levels для signal (если нужно) ===
+    # === ЭТАП 1: Сбор strong_levels для signal ===
+    # Мы собираем времена всех сильных фракталов во всем датасете заранее,
+    # чтобы при проходе по строкам мгновенно проверять fractal0 на "силу".
     strong_levels = set()
     
     if label_signal:
@@ -120,17 +189,16 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         print(f"\n[SIGNAL] Найдено {len(strong_levels)} уникальных strong фракталов")
     
     # === ЭТАП 2: Маркировка signal и predict ===
-    # Статистика
     signals_marked = 0
     predict_marked = 0
     empty_fractal0 = 0
-    fractals_dropped = 0  # Количество фракталов, выпавших до пробития
+    fractals_dropped = 0
     
-    # Конвертируем в список для доступа по индексу (для predict нужен forward-looking)
+    # Конвертируем в список для быстрого доступа по индексу (нужно для forward-looking)
     rows_list = list(df.itertuples(index=False))
     
     for i, row_i in enumerate(rows_list):
-        # Парсим fractal0
+        # Парсим текущий активный фрактал (fractal0)
         fractal0_val = getattr(row_i, 'fractal0', None)
         fractal0 = parse_fractal(fractal0_val)
         
@@ -150,31 +218,36 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         
         # --- Маркировка predict ---
         if label_predict:
+            # Логика: идем вперед по времени (строкам), пока фрактал существует
+            # и пока он не пробит. Фиксируем максимальное значение 'back'.
             max_back = fractal0['back']
             was_broken = False
             
             for j in range(i + 1, total_rows):
                 row_j = rows_list[j]
                 
+                # Ищем тот же самый фрактал в будущих строках
                 found = find_fractal_by_time(row_j, fractal_columns, target_time)
                 
                 if found is None:
-                    # Фрактал выпал из списка
+                    # Фрактал исчез из истории (вытеснен новыми фракталами) раньше, чем был пробит
                     fractals_dropped += 1
                     if debug and i < 5:
                         print(f"    [Строка {j}] Фрактал time={target_time} выпал")
                     break
                 
+                # Обновляем максимальный откат
                 if found['back'] > max_back:
                     max_back = found['back']
                 
+                # Проверяем условие пробития уровня
                 if found['break'] > 0:
-                    # Фрактал пробит
                     was_broken = True
                     if debug and i < 5:
                         print(f"    [Строка {j}] Фрактал пробит: break={found['break']}, max_back={max_back}")
                     break
             
+            # Predict рассчитывается как негативный откат относительно направления
             predict_value = -max_back * target_direction
             df.at[i, 'predict'] = predict_value
             predict_marked += 1
@@ -191,7 +264,7 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         print(f"  Фракталов выпало до пробития: {fractals_dropped}")
     print(f"  Пустых fractal0: {empty_fractal0}")
     
-    # Сохранение
+    # Сохранение результата
     df.to_csv(output_path, sep=';', index=False)
     print(f"[СОХРАНЕНО] {output_path}")
     
@@ -200,8 +273,15 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
 
 def label_signals(input_path, output_path, debug=False):
     """
-    Маркирует только столбец signal.
-    Обёртка над label_all() для обратной совместимости.
+    Маркирует только столбец signal (для обратной совместимости).
+
+    Args:
+        input_path (str): Путь к входному CSV.
+        output_path (str): Путь для сохранения.
+        debug (bool): Режим отладки.
+
+    Returns:
+        pd.DataFrame: Обработанные данные.
     """
     return label_all(input_path, output_path, debug=debug, 
                      label_signal=True, label_predict=False)
@@ -210,13 +290,20 @@ def label_signals(input_path, output_path, debug=False):
 def label_predict_only(input_path, output_path, debug=False):
     """
     Маркирует только столбец predict.
-    Обёртка над label_all().
+
+    Args:
+        input_path (str): Путь к входному CSV.
+        output_path (str): Путь для сохранения.
+        debug (bool): Режим отладки.
+
+    Returns:
+        pd.DataFrame: Обработанные данные.
     """
     return label_all(input_path, output_path, debug=debug, 
                      label_signal=False, label_predict=True)
 
 
-# Пример использования:
-# label_all('Nero.csv', 'Nero_full.csv')  # Рекомендуется - маркирует оба столбца
-# label_signals('Nero.csv', 'Nero_signals.csv')  # Только signal
-# label_predict_only('Nero.csv', 'Nero_predict.csv')  # Только predict
+if __name__ == "__main__":
+    # Пример использования модуля при прямом запуске
+    # label_all('Nero.csv', 'Nero_full.csv', debug=True)
+    pass

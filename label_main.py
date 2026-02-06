@@ -1,21 +1,67 @@
+# =============================================================================
+# Файл: label_main.py
+# Назначение: Основной скрипт для подготовки и маркировки данных (Preprocessing & Labeling)
+# Язык: Python 3.10+
+# Автор: Antigravity
+# Создан: Неизвестно
+# Обновлён: 2026-02-06
+#
+# Зависимости:
+#   Входные данные:
+#     - Nero.csv (или другой CSV файл по --input)
+#   Выходные данные:
+#     - {input}_train.csv (исходные данные для обучения)
+#     - {input}_validation.csv (исходные данные для валидации)
+#     - {input}_train_labeled.csv (маркированные данные для обучения)
+# Внутренние зависимости:
+#   - label_signals.py (функция label_all)
+# Внешние зависимости:
+#   - pandas>=2.0.0
+#   - argparse
+#
+# Использование:
+#   python label_main.py --input data/raw.csv --debug
+#   python label_main.py -i Nero.csv -o Nero_labeled.csv
+#
+# Примечания:
+#   - Скрипт сначала сортирует фракталы в каждой строке по времени (новые первые)
+#   - Разделяет датасет на train/validation блоки до маркировки
+# =============================================================================
+
+"""
+Модуль управления процессом подготовки и разметки торговых данных.
+
+Этот скрипт является входной точкой (CLI) для обработки CSV файлов,
+полученных из MetaTrader. Он обеспечивает:
+1. Корректную сортировку фракталов в строках (новые события слева).
+2. Проверку качества сортировки.
+3. Разделение данных на обучающую и проверочную выборки.
+4. Вызов модуля маркировки сигналов для обучающей выборки.
+"""
+
 import argparse
 import pandas as pd
 import os
 from label_signals import label_all
 
 
+
 def process_row_fractals(row_data, fractal_columns, debug=False, row_idx=None):
     """
-    Обрабатывает фракталы в строке: сортирует по времени в обратном порядке.
-    
+    Парсит и сортирует фракталы в конкретной строке DataFrame.
+
+    Логика: собирает все непустые значения из колонок 'fractalN',
+    извлекает время формирования из каждого значения и сортирует
+    фракталы так, чтобы самые свежие (наибольшее время) шли первыми.
+
     Args:
-        row_data: данные строки (Series)
-        fractal_columns: список названий колонок с фракталами
-        debug: включить отладочный вывод
-        row_idx: индекс строки для отладки
-    
+        row_data (pd.Series): Данные одной строки DataFrame.
+        fractal_columns (List[str]): Список имен колонок с фракталами.
+        debug (bool): Флаг включения отладки.
+        row_idx (int, optional): Индекс строки для вывода в логах.
+
     Returns:
-        list: отсортированные фракталы (новые первые)
+        List[str]: Список отсортированных строк-фракталов.
     """
     fractals = []
     
@@ -47,14 +93,17 @@ def process_row_fractals(row_data, fractal_columns, debug=False, row_idx=None):
 
 def sort_fractals_in_dataframe(df, debug=False):
     """
-    Сортирует фракталы в каждой строке DataFrame.
-    
+    Выполняет сортировку фракталов во всем DataFrame.
+
+    Проходит по каждой строке и переупорядочивает значения в колонках
+    'fractal0', 'fractal1', ... на основе времени их появления.
+
     Args:
-        df: исходный DataFrame
-        debug: флаг отладки
-        
+        df (pd.DataFrame): Исходный DataFrame с неструктурированными фракталами.
+        debug (bool): Флаг отладки.
+
     Returns:
-        pd.DataFrame: DataFrame с отсортированными фракталами
+        pd.DataFrame: DataFrame, где в каждой строке фракталы упорядочены (новые первые).
     """
     if debug:
         print(f"\n[СОРТИРОВКА] Начало сортировки фракталов в {len(df)} строках")
@@ -82,14 +131,17 @@ def sort_fractals_in_dataframe(df, debug=False):
 
 def verify_sorting_quality(df, debug=False):
     """
-    Проверяет корректность сортировки фракталов (новые первые, т.е. время убывает).
-    
+    Функция валидации качества сортировки фракталов.
+
+    Проверяет бизнес-правило: время фрактала N должно быть больше или равно
+    времени фрактала N+1 (убывающая последовательность).
+
     Args:
-        df: DataFrame для проверки
-        debug: флаг отладки
-        
+        df (pd.DataFrame): DataFrame после обработки функцией сортировки.
+        debug (bool): Флаг отладки для вывода конкретных строк с ошибками.
+
     Returns:
-        bool: True если ошибок нет, False если есть
+        bool: True, если все строки отсортированы корректно, иначе False.
     """
     fractal_columns = [col for col in df.columns if col.startswith('fractal')]
     correct_rows = 0
@@ -131,17 +183,20 @@ def verify_sorting_quality(df, debug=False):
     return error_rows == 0
 
 
-def split_train_validation(df, input_path, train_ratio=0.9):
+def split_train_validation(df, input_path, train_ratio=0.75):
     """
-    Разделяет DataFrame на тренировочный и проверочный наборы и сохраняет их.
-    
+    Разделяет данные на обучающий и валидационный наборы по временной шкале.
+
+    Разделение происходит последовательно (не случайно!), так как в
+    торговых данных важен порядок времени.
+
     Args:
-        df: DataFrame с данными
-        input_path: путь к исходному файлу (для формирования имен)
-        train_ratio: доля данных для тренировки (по умолчанию 0.75, т.е. 75%)
-    
+        df (pd.DataFrame): Исходный набор данных.
+        input_path (str): Путь к исходному файлу для генерации имен новых файлов.
+        train_ratio (float): Доля данных, отводимая под обучение (0.0 - 1.0).
+
     Returns:
-        tuple: (train_path, validation_path) - пути к созданным файлам
+        Tuple[str, str]: Пути к сохраненным файлам (train_path, validation_path).
     """
     # Вычисляем границу разделения
     total_rows = len(df)
@@ -169,8 +224,12 @@ def split_train_validation(df, input_path, train_ratio=0.9):
 
 
 def main():
+    """
+    Главная точка входа скрипта. Обрабатывает аргументы командной строки
+    и запускает конвейер обработки данных.
+    """
     parser = argparse.ArgumentParser(
-        description="Маркировка сигналов в Nero.csv по strong-фракталам"
+        description="Программный комплекс для подготовки и маркировки котировок"
     )
     parser.add_argument(
         "--input",
@@ -182,47 +241,48 @@ def main():
         "--output",
         "-o",
         default="Nero_labeled.csv",
-        help="Путь к выходному CSV (по умолчанию Nero_labeled.csv)",
+        help="Путь к выходному CSV (используется как база для имен файлов)",
     )
     parser.add_argument(
         "--debug",
         "-d",
         action="store_true",
-        help="Включить отладочный вывод",
+        help="Включить детальный отладочный вывод",
     )
 
     args = parser.parse_args()
 
-    print(f"Читаю: {args.input}")
+    print(f"Чтение данных из: {args.input}")
     
-    # Загружаем данные
+    # Загружаем данные из MetaTrader CSV
     df = pd.read_csv(args.input, sep=';')
+    # Очищаем имена колонок от возможных пробелов
     df.columns = [c.strip() for c in df.columns]
     
-    # Сортируем фракталы СРАЗУ
+    # 1. Сортируем фракталы СРАЗУ (критично для правильной маркировки)
     df = sort_fractals_in_dataframe(df, debug=args.debug)
     
-    # Проверяем качество
+    # 2. Проверяем, что сортировка выполнена без ошибок
     verify_sorting_quality(df, debug=args.debug)
     
-    # Разделяем файл на train и validation
+    # 3. Разделяем файл на обучающую (75%) и проверочную (25%) выборки
     train_path, validation_path = split_train_validation(df, args.input, train_ratio=0.75)
     
-    # Маркируем только train файл
+    # 4. Маркируем только обучающий файл (train), чтобы избежать утечки данных (data leakage)
     train_labeled_path = os.path.splitext(train_path)[0] + "_labeled.csv"
     
     if args.debug:
         print("Режим отладки: ВКЛЮЧЕН")
     
-    print(f"\nМаркировка train файла:")
-    print(f"  Входной файл: {train_path}")
-    print(f"  Выходной файл: {train_labeled_path}")
+    print(f"\nЗапуск маркировки обучающей выборки:")
+    print(f"  Вход:  {train_path}")
+    print(f"  Выход: {train_labeled_path}")
     
     label_all(train_path, train_labeled_path, debug=args.debug)
     
-    print(f"\nИтоговые файлы:")
-    print(f"  Train (с метками): {train_labeled_path}")
-    print(f"  Validation (без меток): {validation_path}")
+    print(f"\nПодготовка завершена:")
+    print(f"  Обучающий набор (маркирован): {train_labeled_path}")
+    print(f"  Валидационный набор:           {validation_path}")
 
 
 if __name__ == "__main__":
