@@ -1,6 +1,6 @@
 # =============================================================================
 # Файл: label_main.py
-# Назначение: Основной скрипт для подготовки и маркировки данных (Preprocessing & Labeling)
+# Назначение: Основной скрипт для подготовки, маркировки и нормализации данных
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
@@ -10,39 +10,48 @@
 #   Входные данные:
 #     - Nero.csv (или другой CSV файл по --input)
 #   Выходные данные:
-#     - {input}_train_labeled.csv (маркированные данные для обучения, 70%)
-#     - {input}_validation_labeled.csv (маркированные данные для валидации, 15%)
-#     - {input}_test_labeled.csv (маркированные данные для теста, 15%)
+#     - {input}_train_labeled.csv (маркированные + нормализованные данные, 70%)
+#     - {input}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - {input}_test_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - {input}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
+#     - {input}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
-#   - label_signals.py (функция label_all_df)
+#   - label_signals.py (функция label_all)
+#   - normalize.py (функции normalize_rowwise, normalize_atr_train, normalize_atr_inference)
 # Внешние зависимости:
 #   - pandas>=2.0.0
+#   - numpy>=1.24.0
+#   - scikit-learn>=1.3.0
 #   - argparse
 #
 # Использование:
 #   python label_main.py --input data/raw.csv --debug
 #   python label_main.py -i Nero.csv
+#   python label_main.py -i Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
-#   - Конвейер: сортировка -> маркировка ВСЕГО датасета -> разделение (70/15/15)
-#   - Все три выходных файла содержат метки signal и predict
+#   - Конвейер: сортировка -> маркировка -> нормализация (построчная) -> разделение -> ATR нормализация
+#   - Построчная нормализация выполняется до split (нет data leakage)
+#   - ATR нормализация: fit на train, transform на val/test
 # =============================================================================
 
 """
-Модуль управления процессом подготовки и разметки торговых данных.
+Модуль управления процессом подготовки, разметки и нормализации торговых данных.
 
 Этот скрипт является входной точкой (CLI) для обработки CSV файлов,
 полученных из MetaTrader. Он обеспечивает:
 1. Корректную сортировку фракталов в строках (новые события слева).
 2. Проверку качества сортировки.
 3. Маркировку ВСЕГО датасета (signal + predict).
-4. Разделение на train/validation/test (70/15/15%).
+4. Нормализацию признаков (построчная для фракталов, глобальная для ATR).
+5. Разделение на train/validation/test (70/15/15%).
 """
 
 import argparse
 import pandas as pd
 import os
 from label_signals import label_all
+from normalize import normalize_rowwise, normalize_atr_train, normalize_atr_inference
 
 
 
@@ -183,21 +192,20 @@ def verify_sorting_quality(df, debug=False):
     return error_rows == 0
 
 
-def split_train_val_test(df, input_path, train_ratio=0.70, val_ratio=0.15):
+def split_train_val_test(df, train_ratio=0.70, val_ratio=0.15):
     """
-    Разделяет уже маркированный DataFrame на train/validation/test.
+    Разделяет DataFrame на train/validation/test.
 
     Разделение происходит последовательно (не случайно!), так как в
     торговых данных важен порядок времени.
 
     Args:
-        df (pd.DataFrame): Промаркированный набор данных.
-        input_path (str): Путь к исходному файлу для генерации имен новых файлов.
+        df (pd.DataFrame): Промаркированный и нормализованный набор данных.
         train_ratio (float): Доля данных для обучения (по умолчанию 0.70).
         val_ratio (float): Доля данных для валидации (по умолчанию 0.15).
 
     Returns:
-        Tuple[str, str, str]: Пути к сохраненным файлам (train, validation, test).
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: (train_df, val_df, test_df).
     """
     total_rows = len(df)
     train_end = int(total_rows * train_ratio)
@@ -207,6 +215,28 @@ def split_train_val_test(df, input_path, train_ratio=0.70, val_ratio=0.15):
     val_df = df.iloc[train_end:val_end].copy()
     test_df = df.iloc[val_end:].copy()
     
+    print(f"\nРазделение файла:")
+    print(f"  Всего строк: {total_rows}")
+    print(f"  Train:      {len(train_df):>6} ({len(train_df)/total_rows*100:.1f}%)")
+    print(f"  Validation: {len(val_df):>6} ({len(val_df)/total_rows*100:.1f}%)")
+    print(f"  Test:       {len(test_df):>6} ({len(test_df)/total_rows*100:.1f}%)")
+    
+    return train_df, val_df, test_df
+
+
+def save_datasets(train_df, val_df, test_df, input_path):
+    """
+    Сохраняет train/validation/test датасеты в CSV файлы.
+
+    Args:
+        train_df (pd.DataFrame): Обучающий датасет.
+        val_df (pd.DataFrame): Валидационный датасет.
+        test_df (pd.DataFrame): Тестовый датасет.
+        input_path (str): Путь к исходному файлу для генерации имен.
+
+    Returns:
+        Tuple[str, str, str]: Пути к сохранённым файлам (train, validation, test).
+    """
     base_path = os.path.splitext(input_path)[0]
     train_path = f"{base_path}_train_labeled.csv"
     val_path = f"{base_path}_validation_labeled.csv"
@@ -216,11 +246,10 @@ def split_train_val_test(df, input_path, train_ratio=0.70, val_ratio=0.15):
     val_df.to_csv(val_path, sep=';', index=False)
     test_df.to_csv(test_path, sep=';', index=False)
     
-    print(f"\nРазделение файла (ВСЕ с метками):")
-    print(f"  Всего строк: {total_rows}")
-    print(f"  Train:      {len(train_df):>6} ({len(train_df)/total_rows*100:.1f}%) → {train_path}")
-    print(f"  Validation: {len(val_df):>6} ({len(val_df)/total_rows*100:.1f}%) → {val_path}")
-    print(f"  Test:       {len(test_df):>6} ({len(test_df)/total_rows*100:.1f}%) → {test_path}")
+    print(f"\nСохранение файлов:")
+    print(f"  Train:      {train_path}")
+    print(f"  Validation: {val_path}")
+    print(f"  Test:       {test_path}")
     
     return train_path, val_path, test_path
 
@@ -229,10 +258,16 @@ def main():
     """
     Главная точка входа скрипта.
     
-    Конвейер: сортировка -> маркировка ВСЕГО датасета -> разделение (70/15/15).
+    Конвейер:
+    1. Сортировка фракталов
+    2. Маркировка (signal + predict)
+    3. Построчная нормализация (до split — нет data leakage)
+    4. Разделение train/val/test (70/15/15)
+    5. ATR нормализация (fit на train, transform на val/test)
+    6. Сохранение файлов
     """
     parser = argparse.ArgumentParser(
-        description="Программный комплекс для подготовки и маркировки котировок"
+        description="Программный комплекс для подготовки, маркировки и нормализации котировок"
     )
     parser.add_argument(
         "--input", "-i",
@@ -244,8 +279,18 @@ def main():
         action="store_true",
         help="Включить детальный отладочный вывод",
     )
+    parser.add_argument(
+        "--no-normalize",
+        action="store_true",
+        help="Пропустить этап нормализации",
+    )
 
     args = parser.parse_args()
+    
+    # Формируем пути для артефактов
+    base_path = os.path.splitext(args.input)[0]
+    stats_path = f"{base_path}_normalization_stats.csv"
+    scaler_path = f"{base_path}_atr_scaler.pkl"
 
     print(f"Чтение данных из: {args.input}")
     df = pd.read_csv(args.input, sep=';')
@@ -258,21 +303,48 @@ def main():
     verify_sorting_quality(df, debug=args.debug)
     
     # 3. Маркируем ВЕСЬ датасет (сохраняем во временный файл)
-    temp_sorted_path = os.path.splitext(args.input)[0] + "_sorted_temp.csv"
+    temp_sorted_path = f"{base_path}_sorted_temp.csv"
     df.to_csv(temp_sorted_path, sep=';', index=False)
     
-    temp_labeled_path = os.path.splitext(args.input)[0] + "_labeled_temp.csv"
+    temp_labeled_path = f"{base_path}_labeled_temp.csv"
     print(f"\nМаркировка ВСЕГО датасета ({len(df)} строк)...")
     labeled_df = label_all(temp_sorted_path, temp_labeled_path, debug=args.debug)
     
-    # 4. Разделяем на train/validation/test (70/15/15)
-    train_p, val_p, test_p = split_train_val_test(labeled_df, args.input)
+    # 4. Построчная нормализация (до split — каждая строка независима)
+    if not args.no_normalize:
+        labeled_df = normalize_rowwise(
+            labeled_df, 
+            stats_path=stats_path, 
+            debug=args.debug
+        )
     
-    # 5. Удаляем временные файлы
+    # 5. Разделяем на train/validation/test (70/15/15)
+    train_df, val_df, test_df = split_train_val_test(labeled_df)
+    
+    # 6. ATR нормализация (fit на train, transform на val/test)
+    if not args.no_normalize and 'ATR' in train_df.columns:
+        train_df = normalize_atr_train(train_df, scaler_path)
+        val_df = normalize_atr_inference(val_df, scaler_path)
+        test_df = normalize_atr_inference(test_df, scaler_path)
+    
+    # 7. Сохраняем файлы
+    save_datasets(train_df, val_df, test_df, args.input)
+    
+    # 8. Удаляем временные файлы
     os.remove(temp_sorted_path)
     os.remove(temp_labeled_path)
     
-    print(f"\nПодготовка завершена. Все файлы содержат метки signal и predict.")
+    print(f"\n" + "=" * 60)
+    print("ПОДГОТОВКА ЗАВЕРШЕНА")
+    print("=" * 60)
+    print(f"Метки: signal, predict")
+    if not args.no_normalize:
+        print(f"Нормализация: применена")
+        print(f"  Статистика: {stats_path}")
+        if 'ATR' in df.columns:
+            print(f"  ATR scaler: {scaler_path}")
+    else:
+        print(f"Нормализация: пропущена (--no-normalize)")
 
 
 if __name__ == "__main__":
