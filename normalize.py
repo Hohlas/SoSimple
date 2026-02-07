@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: 2026-02-07
-# Обновлён: 2026-02-07
+# Обновлён: 2026-02-07 (fix: корректная нормализация знакового predict)
 #
 # Зависимости:
 #   Входные данные:
@@ -275,7 +275,8 @@ def normalize_rowwise(
     Каждая строка нормализуется независимо от других.
     
     Группы нормализации:
-        - predict + front + back: совместная piecewise linear-log (общие параметры)
+        - |predict| + front + back: совместная piecewise linear-log (общие параметры);
+          знак predict сохраняется и восстанавливается после нормализации
         - impulse, count, reverse, power, break: раздельная piecewise linear-log
         - price: min-max [0, 1]
         - direction, strong: без изменений
@@ -345,8 +346,14 @@ def normalize_rowwise(
         front_vals = fractals[i, :, idx_front]
         back_vals = fractals[i, :, idx_back]
         
-        # Объединяем для расчёта общих параметров (201 значение)
-        pooled = np.concatenate([[predict_val], front_vals, back_vals])
+        # predict может быть отрицательным (из-за target_direction в label_signals.py),
+        # а front и back — всегда >= 0 (расстояния). Для корректного объединения
+        # используем модуль predict, а после нормализации возвращаем знак.
+        predict_sign = np.sign(predict_val) if np.isfinite(predict_val) else 1.0
+        predict_abs = np.abs(predict_val)
+        
+        # Объединяем |predict| с front/back для расчёта общих параметров
+        pooled = np.concatenate([[predict_abs], front_vals, back_vals])
         pooled_valid = pooled[np.isfinite(pooled)]
         
         if len(pooled_valid) > 0:
@@ -356,10 +363,12 @@ def normalize_rowwise(
             brk = max(brk, lo + eps)
             cap = max(cap, brk + eps)
             
-            # Применяем с общими параметрами
-            predict_normalized[i] = piecewise_linear_log_transform(
-                predict_val, lo, brk, cap, linear_max, tail_strength, eps
+            # Нормализуем модуль predict и возвращаем знак
+            predict_norm_abs = piecewise_linear_log_transform(
+                predict_abs, lo, brk, cap, linear_max, tail_strength, eps
             )
+            predict_normalized[i] = predict_norm_abs * predict_sign
+            
             fractals[i, :, idx_front] = piecewise_linear_log_transform(
                 front_vals, lo, brk, cap, linear_max, tail_strength, eps
             )
