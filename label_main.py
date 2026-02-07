@@ -4,28 +4,28 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-02-06
+# Обновлён: 2026-02-07
 #
 # Зависимости:
 #   Входные данные:
 #     - Nero.csv (или другой CSV файл по --input)
 #   Выходные данные:
-#     - {input}_train.csv (исходные данные для обучения)
-#     - {input}_validation.csv (исходные данные для валидации)
-#     - {input}_train_labeled.csv (маркированные данные для обучения)
+#     - {input}_train_labeled.csv (маркированные данные для обучения, 70%)
+#     - {input}_validation_labeled.csv (маркированные данные для валидации, 15%)
+#     - {input}_test_labeled.csv (маркированные данные для теста, 15%)
 # Внутренние зависимости:
-#   - label_signals.py (функция label_all)
+#   - label_signals.py (функция label_all_df)
 # Внешние зависимости:
 #   - pandas>=2.0.0
 #   - argparse
 #
 # Использование:
 #   python label_main.py --input data/raw.csv --debug
-#   python label_main.py -i Nero.csv -o Nero_labeled.csv
+#   python label_main.py -i Nero.csv
 #
 # Примечания:
-#   - Скрипт сначала сортирует фракталы в каждой строке по времени (новые первые)
-#   - Разделяет датасет на train/validation блоки до маркировки
+#   - Конвейер: сортировка -> маркировка ВСЕГО датасета -> разделение (70/15/15)
+#   - Все три выходных файла содержат метки signal и predict
 # =============================================================================
 
 """
@@ -35,8 +35,8 @@
 полученных из MetaTrader. Он обеспечивает:
 1. Корректную сортировку фракталов в строках (новые события слева).
 2. Проверку качества сортировки.
-3. Разделение данных на обучающую и проверочную выборки.
-4. Вызов модуля маркировки сигналов для обучающей выборки.
+3. Маркировку ВСЕГО датасета (signal + predict).
+4. Разделение на train/validation/test (70/15/15%).
 """
 
 import argparse
@@ -183,69 +183,64 @@ def verify_sorting_quality(df, debug=False):
     return error_rows == 0
 
 
-def split_train_validation(df, input_path, train_ratio=0.75):
+def split_train_val_test(df, input_path, train_ratio=0.70, val_ratio=0.15):
     """
-    Разделяет данные на обучающий и валидационный наборы по временной шкале.
+    Разделяет уже маркированный DataFrame на train/validation/test.
 
     Разделение происходит последовательно (не случайно!), так как в
     торговых данных важен порядок времени.
 
     Args:
-        df (pd.DataFrame): Исходный набор данных.
+        df (pd.DataFrame): Промаркированный набор данных.
         input_path (str): Путь к исходному файлу для генерации имен новых файлов.
-        train_ratio (float): Доля данных, отводимая под обучение (0.0 - 1.0).
+        train_ratio (float): Доля данных для обучения (по умолчанию 0.70).
+        val_ratio (float): Доля данных для валидации (по умолчанию 0.15).
 
     Returns:
-        Tuple[str, str]: Пути к сохраненным файлам (train_path, validation_path).
+        Tuple[str, str, str]: Пути к сохраненным файлам (train, validation, test).
     """
-    # Вычисляем границу разделения
     total_rows = len(df)
-    train_rows = int(total_rows * train_ratio)
+    train_end = int(total_rows * train_ratio)
+    val_end = int(total_rows * (train_ratio + val_ratio))
     
-    # Разделяем на train и validation
-    train_df = df.iloc[:train_rows].copy()
-    validation_df = df.iloc[train_rows:].copy()
+    train_df = df.iloc[:train_end].copy()
+    val_df = df.iloc[train_end:val_end].copy()
+    test_df = df.iloc[val_end:].copy()
     
-    # Формируем имена выходных файлов
     base_path = os.path.splitext(input_path)[0]
-    train_path = f"{base_path}_train.csv"
-    validation_path = f"{base_path}_validation.csv"
+    train_path = f"{base_path}_train_labeled.csv"
+    val_path = f"{base_path}_validation_labeled.csv"
+    test_path = f"{base_path}_test_labeled.csv"
     
-    # Сохраняем файлы
     train_df.to_csv(train_path, sep=';', index=False)
-    validation_df.to_csv(validation_path, sep=';', index=False)
+    val_df.to_csv(val_path, sep=';', index=False)
+    test_df.to_csv(test_path, sep=';', index=False)
     
-    print(f"\nРазделение файла:")
+    print(f"\nРазделение файла (ВСЕ с метками):")
     print(f"  Всего строк: {total_rows}")
-    print(f"  Train: {len(train_df)} строк ({(len(train_df)/total_rows)*100:.1f}%) → {train_path}")
-    print(f"  Validation: {len(validation_df)} строк ({(len(validation_df)/total_rows)*100:.1f}%) → {validation_path}")
+    print(f"  Train:      {len(train_df):>6} ({len(train_df)/total_rows*100:.1f}%) → {train_path}")
+    print(f"  Validation: {len(val_df):>6} ({len(val_df)/total_rows*100:.1f}%) → {val_path}")
+    print(f"  Test:       {len(test_df):>6} ({len(test_df)/total_rows*100:.1f}%) → {test_path}")
     
-    return train_path, validation_path
+    return train_path, val_path, test_path
 
 
 def main():
     """
-    Главная точка входа скрипта. Обрабатывает аргументы командной строки
-    и запускает конвейер обработки данных.
+    Главная точка входа скрипта.
+    
+    Конвейер: сортировка -> маркировка ВСЕГО датасета -> разделение (70/15/15).
     """
     parser = argparse.ArgumentParser(
         description="Программный комплекс для подготовки и маркировки котировок"
     )
     parser.add_argument(
-        "--input",
-        "-i",
+        "--input", "-i",
         default="Nero.csv",
         help="Путь к входному CSV (по умолчанию Nero.csv)",
     )
     parser.add_argument(
-        "--output",
-        "-o",
-        default="Nero_labeled.csv",
-        help="Путь к выходному CSV (используется как база для имен файлов)",
-    )
-    parser.add_argument(
-        "--debug",
-        "-d",
+        "--debug", "-d",
         action="store_true",
         help="Включить детальный отладочный вывод",
     )
@@ -253,36 +248,31 @@ def main():
     args = parser.parse_args()
 
     print(f"Чтение данных из: {args.input}")
-    
-    # Загружаем данные из MetaTrader CSV
     df = pd.read_csv(args.input, sep=';')
-    # Очищаем имена колонок от возможных пробелов
     df.columns = [c.strip() for c in df.columns]
     
-    # 1. Сортируем фракталы СРАЗУ (критично для правильной маркировки)
+    # 1. Сортируем фракталы
     df = sort_fractals_in_dataframe(df, debug=args.debug)
     
-    # 2. Проверяем, что сортировка выполнена без ошибок
+    # 2. Проверяем качество сортировки
     verify_sorting_quality(df, debug=args.debug)
     
-    # 3. Разделяем файл на обучающую (75%) и проверочную (25%) выборки
-    train_path, validation_path = split_train_validation(df, args.input, train_ratio=0.75)
+    # 3. Маркируем ВЕСЬ датасет (сохраняем во временный файл)
+    temp_sorted_path = os.path.splitext(args.input)[0] + "_sorted_temp.csv"
+    df.to_csv(temp_sorted_path, sep=';', index=False)
     
-    # 4. Маркируем только обучающий файл (train), чтобы избежать утечки данных (data leakage)
-    train_labeled_path = os.path.splitext(train_path)[0] + "_labeled.csv"
+    temp_labeled_path = os.path.splitext(args.input)[0] + "_labeled_temp.csv"
+    print(f"\nМаркировка ВСЕГО датасета ({len(df)} строк)...")
+    labeled_df = label_all(temp_sorted_path, temp_labeled_path, debug=args.debug)
     
-    if args.debug:
-        print("Режим отладки: ВКЛЮЧЕН")
+    # 4. Разделяем на train/validation/test (70/15/15)
+    train_p, val_p, test_p = split_train_val_test(labeled_df, args.input)
     
-    print(f"\nЗапуск маркировки обучающей выборки:")
-    print(f"  Вход:  {train_path}")
-    print(f"  Выход: {train_labeled_path}")
+    # 5. Удаляем временные файлы
+    os.remove(temp_sorted_path)
+    os.remove(temp_labeled_path)
     
-    label_all(train_path, train_labeled_path, debug=args.debug)
-    
-    print(f"\nПодготовка завершена:")
-    print(f"  Обучающий набор (маркирован): {train_labeled_path}")
-    print(f"  Валидационный набор:           {validation_path}")
+    print(f"\nПодготовка завершена. Все файлы содержат метки signal и predict.")
 
 
 if __name__ == "__main__":

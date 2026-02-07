@@ -11,11 +11,11 @@
 
 | Функция | Описание |
 |---------|----------|
-| `main()` | Точка входа CLI: загрузка CSV, вызов сортировки, разделения и маркировки |
+| `main()` | Точка входа CLI: загрузка CSV, вызов сортировки, маркировки и разделения |
 | `process_row_fractals()` | Парсинг и обратная сортировка фракталов в одной строке (новые → первые) |
 | `sort_fractals_in_dataframe()` | Применение сортировки ко всему DataFrame |
 | `verify_sorting_quality()` | Валидация хронологического порядка фракталов (время убывает слева направо) |
-| `split_train_validation()` | Последовательное разделение данных на Train (75%) и Validation (25%) |
+| `split_train_val_test()` | Разделение промаркированных данных на Train (70%) / Validation (15%) / Test (15%) |
 
 ### `label_signals.py` (Логика маркировки)
 
@@ -34,28 +34,25 @@
 ```mermaid
 graph TD
     A[Raw CSV from MT4] --> B[label_main.py]
-    B --> C{Sort Fractals}
+    B --> C[Sort Fractals]
     C --> D[Verify Sorting]
-    D --> E{Split Data}
-    E --> F[Train Set 75%]
-    E --> G[Validation Set 25%]
-    F --> H[label_signals.py]
-    H --> I[Find Strong Fractals]
-    I --> J{Label Signal}
-    J --> K{Label Predict}
-    K --> L["Train Labeled CSV"]
-    G --> M["Validation CSV (Unlabeled)"]
+    D --> E[label_signals.py]
+    E --> F[Label Signal + Predict]
+    F --> G{Split Data}
+    G --> H["Train 70% (labeled)"]
+    G --> I["Validation 15% (labeled)"]
+    G --> J["Test 15% (labeled)"]
 ```
 
 - **Вход**: CSV файл из MetaTrader (разделитель `;`), содержащий колонки `fractal0`, `fractal1`...
 - **Обработка**: 
   1. Сортировка фракталов по времени (descending).
-  2. Разделение выборки (Train/Validation).
-  3. Маркировка `signal` (направление strong-фрактала).
-  4. Маркировка `predict` (максимальный откат цены до пробоя).
-- **Выход**: 
+  2. **Маркировка ВСЕГО датасета** (signal + predict).
+  3. Разделение на Train/Validation/Test (70/15/15%).
+- **Выход** (все файлы содержат метки): 
   - `*_train_labeled.csv` (для обучения)
-  - `*_validation.csv` (для теста)
+  - `*_validation_labeled.csv` (для оценки во время обучения)
+  - `*_test_labeled.csv` (для финальной оценки модели)
 
 ---
 
