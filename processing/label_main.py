@@ -225,7 +225,7 @@ def split_train_val_test(df, train_ratio=0.70, val_ratio=0.15):
     return train_df, val_df, test_df
 
 
-def save_datasets(train_df, val_df, test_df, input_path):
+def save_datasets(train_df, val_df, test_df, input_name, project_root):
     """
     Сохраняет train/validation/test датасеты в CSV файлы.
 
@@ -233,15 +233,15 @@ def save_datasets(train_df, val_df, test_df, input_path):
         train_df (pd.DataFrame): Обучающий датасет.
         val_df (pd.DataFrame): Валидационный датасет.
         test_df (pd.DataFrame): Тестовый датасет.
-        input_path (str): Путь к исходному файлу для генерации имен.
+        input_name (str): Базовое имя входного файла (без пути и расширения).
+        project_root (Path): Путь к корню проекта.
 
     Returns:
         Tuple[str, str, str]: Пути к сохранённым файлам (train, validation, test).
     """
-    base_path = os.path.splitext(input_path)[0]
-    train_path = f"{base_path}_train_labeled.csv"
-    val_path = f"{base_path}_validation_labeled.csv"
-    test_path = f"{base_path}_test_labeled.csv"
+    train_path = project_root / f"{input_name}_train_labeled.csv"
+    val_path = project_root / f"{input_name}_validation_labeled.csv"
+    test_path = project_root / f"{input_name}_test_labeled.csv"
     
     train_df.to_csv(train_path, sep=';', index=False)
     val_df.to_csv(val_path, sep=';', index=False)
@@ -252,7 +252,7 @@ def save_datasets(train_df, val_df, test_df, input_path):
     print(f"  Validation: {val_path}")
     print(f"  Test:       {test_path}")
     
-    return train_path, val_path, test_path
+    return str(train_path), str(val_path), str(test_path)
 
 
 def get_project_root():
@@ -297,13 +297,19 @@ def main():
 
     args = parser.parse_args()
     
-    # Формируем пути для артефактов
-    base_path = os.path.splitext(args.input)[0]
-    stats_path = f"{base_path}_normalization_stats.csv"
-    scaler_path = f"{base_path}_atr_scaler.pkl"
+    # Получаем корень проекта
+    project_root = get_project_root()
+    
+    # Формируем полный путь к входному файлу
+    input_path = project_root / args.input
+    input_name = input_path.stem  # Имя файла без расширения
+    
+    # Формируем пути для артефактов в корне проекта
+    stats_path = project_root / f"{input_name}_normalization_stats.csv"
+    scaler_path = project_root / f"{input_name}_atr_scaler.pkl"
 
-    print(f"Чтение данных из: {args.input}")
-    df = pd.read_csv(args.input, sep=';')
+    print(f"Чтение данных из: {input_path}")
+    df = pd.read_csv(input_path, sep=';')
     df.columns = [c.strip() for c in df.columns]
     
     # 1. Сортируем фракталы
