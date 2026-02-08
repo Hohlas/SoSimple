@@ -794,7 +794,7 @@ void EXPERT::TARGET_COUNT() {
 /// @details Создаёт файл Nero_{SYMBOL}{PERIOD}.csv с заголовками.
 /// @note Вызывается один раз при инициализации
 void EXPERT::NERO_CSV_CREATE() {
-  string FileName = "Nero_" + Symbol() + S0(Period()) + ".csv";
+  string FileName = "Nero" + ".csv"; //  + "_"+Symbol() + S0(Period())
   if (FileIsExist(FileName)) {
     if (!FileDelete(FileName))
       ERROR_CHECK("Delete " + FileName);
@@ -894,7 +894,7 @@ string S_NORM(float value) { return (DoubleToString(value, 8)); }
 /// @warning Файл записывается только после заполнения всего массива
 /// (cnt==LevelsAmount)
 void EXPERT::NERO_CSV_CREATE(int cur_bar) {
-  string FileName = "Nero_" + Symbol() + S0(Period()) + ".csv";
+  string FileName = "Nero" + ".csv"; //  + "_"+Symbol() + S0(Period())
   int File = FileOpen(FileName, FILE_READ | FILE_WRITE);
   string NeroInfo = BTIME(cur_bar) + ";0;0;" + S4(Atr.Fast);
   uchar cnt = 1;
