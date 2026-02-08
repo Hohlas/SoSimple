@@ -68,19 +68,21 @@ graph TD
     H --> T[stats.csv]
 ```
 
-- **Вход**: CSV файл из MetaTrader (разделитель `;`), содержащий колонки `time`, `signal`, `predict`, `ATR`, `fractal0`...`fractal99`
+- **Вход**: CSV файл из MetaTrader (разделитель `;`), путь задаётся относительно корня проекта (`--input`, по умолчанию `MT/MQL4/Files/Nero.csv`). Колонки: `time`, `signal`, `predict`, `ATR`, `fractal0`...`fractal99`
 - **Обработка**: 
   1. Сортировка фракталов по времени (descending).
   2. Маркировка ВСЕГО датасета (signal + predict).
   3. **Построчная нормализация** (до split — нет data leakage).
   4. Разделение на Train/Validation/Test (70/15/15%).
   5. **ATR нормализация** (fit на train, transform на val/test).
-- **Выход**: 
-  - `*_train_labeled.csv` — обучающая выборка с нормализацией
-  - `*_validation_labeled.csv` — валидационная выборка с нормализацией
-  - `*_test_labeled.csv` — тестовая выборка с нормализацией
-  - `*_atr_scaler.pkl` — обученный RobustScaler для ATR (для inference)
-  - `*_normalization_stats.csv` — статистика признаков до нормализации
+- **Выход** (все файлы в корень проекта):
+  - `{stem}_train_labeled.csv` — обучающая выборка с нормализацией
+  - `{stem}_validation_labeled.csv` — валидационная выборка с нормализацией
+  - `{stem}_test_labeled.csv` — тестовая выборка с нормализацией
+  - `{stem}_atr_scaler.pkl` — обученный RobustScaler для ATR (для inference)
+  - `{stem}_normalization_stats.csv` — статистика признаков до нормализации
+
+  **Пути**: входной файл задаётся относительно корня проекта (`--input`), все артефакты сохраняются в корень проекта.
 
 ---
 
@@ -140,21 +142,21 @@ ATR нормализуется **после split**, потому что RobustS
 
 | Параметр CLI | По умолчанию | Описание |
 |--------------|--------------|----------|
-| `--input`, `-i` | `Nero.csv` | Путь к входному файлу |
+| `--input`, `-i` | `MT/MQL4/Files/Nero.csv` | Путь к входному CSV относительно корня проекта |
 | `--debug`, `-d` | `False` | Включить подробный вывод (примеры до/после нормализации) |
 | `--no-normalize` | `False` | Пропустить этап нормализации |
 
 ### Примеры запуска
 
 ```bash
-# Полный pipeline с нормализацией
-python label_main.py -i Nero.csv
+# Полный pipeline (по умолчанию читает MT/MQL4/Files/Nero.csv)
+python label_main.py
 
 # С отладочным выводом
-python label_main.py -i Nero.csv --debug
+python label_main.py -i MT/MQL4/Files/Nero.csv --debug
 
-# Без нормализации (как раньше)
-python label_main.py -i Nero.csv --no-normalize
+# Без нормализации
+python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize
 ```
 
 ---
@@ -185,11 +187,11 @@ python label_main.py -i Nero.csv --no-normalize
 
 | Файл | Описание |
 |------|----------|
-| `{base}_train_labeled.csv` | Обучающая выборка (70%) |
-| `{base}_validation_labeled.csv` | Валидационная выборка (15%) |
-| `{base}_test_labeled.csv` | Тестовая выборка (15%) |
-| `{base}_atr_scaler.pkl` | RobustScaler для ATR (использовать в inference) |
-| `{base}_normalization_stats.csv` | Статистика признаков до нормализации |
+| `{stem}_train_labeled.csv` | Обучающая выборка (70%), в корне проекта |
+| `{stem}_validation_labeled.csv` | Валидационная выборка (15%), в корне проекта |
+| `{stem}_test_labeled.csv` | Тестовая выборка (15%), в корне проекта |
+| `{stem}_atr_scaler.pkl` | RobustScaler для ATR (использовать в inference), в корне проекта |
+| `{stem}_normalization_stats.csv` | Статистика признаков до нормализации, в корне проекта |
 
 ---
 

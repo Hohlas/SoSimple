@@ -4,17 +4,17 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-02-07
+# Обновлён: 2026-02-08
 #
 # Зависимости:
 #   Входные данные:
-#     - Nero.csv (или другой CSV файл по --input)
-#   Выходные данные:
-#     - {input}_train_labeled.csv (маркированные + нормализованные данные, 70%)
-#     - {input}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
-#     - {input}_test_labeled.csv (маркированные + нормализованные данные, 15%)
-#     - {input}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
-#     - {input}_normalization_stats.csv (статистика признаков до нормализации)
+#     - MT/MQL4/Files/Nero.csv (путь относительно корня проекта, см. --input)
+#   Выходные данные (все в корень проекта):
+#     - {stem}_train_labeled.csv (маркированные + нормализованные данные, 70%)
+#     - {stem}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - {stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - {stem}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
+#     - {stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
 #   - label_signals.py (функция label_all)
 #   - normalize.py (функции normalize_rowwise, normalize_atr_train, normalize_atr_inference)
@@ -25,11 +25,12 @@
 #   - argparse
 #
 # Использование:
-#   python label_main.py --input data/raw.csv --debug
-#   python label_main.py -i Nero.csv
-#   python label_main.py -i Nero.csv --no-normalize  # без нормализации
+#   python label_main.py  # по умолчанию: MT/MQL4/Files/Nero.csv
+#   python label_main.py -i MT/MQL4/Files/Nero.csv --debug
+#   python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
+#   - Входной путь (--input) задаётся относительно корня проекта; вывод — в корень проекта
 #   - Конвейер: сортировка -> маркировка -> нормализация (построчная) -> разделение -> ATR нормализация
 #   - Построчная нормализация выполняется до split (нет data leakage)
 #   - ATR нормализация: fit на train, transform на val/test
@@ -225,7 +226,7 @@ def split_train_val_test(df, train_ratio=0.70, val_ratio=0.15):
     return train_df, val_df, test_df
 
 
-def save_datasets(train_df, val_df, test_df, input_name, project_root):
+def save_datasets(train_df, val_df, test_df, output_base: Path):
     """
     Сохраняет train/validation/test датасеты в CSV файлы.
 
@@ -233,15 +234,16 @@ def save_datasets(train_df, val_df, test_df, input_name, project_root):
         train_df (pd.DataFrame): Обучающий датасет.
         val_df (pd.DataFrame): Валидационный датасет.
         test_df (pd.DataFrame): Тестовый датасет.
-        input_name (str): Базовое имя входного файла (без пути и расширения).
-        project_root (Path): Путь к корню проекта.
+        output_base (Path): Базовый путь для имён файлов (без расширения).
+            Все артефакты сохраняются в проект: {output_base}_train_labeled.csv и т.д.
 
     Returns:
         Tuple[str, str, str]: Пути к сохранённым файлам (train, validation, test).
     """
-    train_path = project_root / f"{input_name}_train_labeled.csv"
-    val_path = project_root / f"{input_name}_validation_labeled.csv"
-    test_path = project_root / f"{input_name}_test_labeled.csv"
+    output_base_str = str(output_base)
+    train_path = f"{output_base_str}_train_labeled.csv"
+    val_path = f"{output_base_str}_validation_labeled.csv"
+    test_path = f"{output_base_str}_test_labeled.csv"
     
     train_df.to_csv(train_path, sep=';', index=False)
     val_df.to_csv(val_path, sep=';', index=False)
@@ -252,7 +254,7 @@ def save_datasets(train_df, val_df, test_df, input_name, project_root):
     print(f"  Validation: {val_path}")
     print(f"  Test:       {test_path}")
     
-    return str(train_path), str(val_path), str(test_path)
+    return train_path, val_path, test_path
 
 
 def get_project_root():
@@ -296,20 +298,18 @@ def main():
     )
 
     args = parser.parse_args()
-    
-    # Получаем корень проекта
-    project_root = get_project_root()
-    
-    # Формируем полный путь к входному файлу
-    input_path = project_root / args.input
-    input_name = input_path.stem  # Имя файла без расширения
-    
-    # Формируем пути для артефактов в корне проекта
-    stats_path = project_root / f"{input_name}_normalization_stats.csv"
-    scaler_path = project_root / f"{input_name}_atr_scaler.pkl"
 
-    print(f"Чтение данных из: {input_path}")
-    df = pd.read_csv(input_path, sep=';')
+    # Пути: входной — относительно корня проекта, выходы — в корень проекта
+    project_root = get_project_root()
+    input_path = Path(args.input)
+    input_resolved = (project_root / input_path) if not input_path.is_absolute() else input_path
+    output_base = project_root / input_path.stem
+
+    stats_path = str(output_base) + "_normalization_stats.csv"
+    scaler_path = str(output_base) + "_atr_scaler.pkl"
+
+    print(f"Чтение данных из: {input_resolved}")
+    df = pd.read_csv(input_resolved, sep=';')
     df.columns = [c.strip() for c in df.columns]
     
     # 1. Сортируем фракталы
@@ -319,10 +319,10 @@ def main():
     verify_sorting_quality(df, debug=args.debug)
     
     # 3. Маркируем ВЕСЬ датасет (сохраняем во временный файл)
-    temp_sorted_path = project_root / f"{input_name}_sorted_temp.csv"
+    temp_sorted_path = str(output_base) + "_sorted_temp.csv"
     df.to_csv(temp_sorted_path, sep=';', index=False)
-    
-    temp_labeled_path = project_root / f"{input_name}_labeled_temp.csv"
+
+    temp_labeled_path = str(output_base) + "_labeled_temp.csv"
     print(f"\nМаркировка ВСЕГО датасета ({len(df)} строк)...")
     labeled_df = label_all(temp_sorted_path, temp_labeled_path, debug=args.debug)
     
@@ -344,7 +344,7 @@ def main():
         test_df = normalize_atr_inference(test_df, scaler_path)
     
     # 7. Сохраняем файлы
-    save_datasets(train_df, val_df, test_df, args.input)
+    save_datasets(train_df, val_df, test_df, output_base)
     
     # 8. Удаляем временные файлы
     os.remove(temp_sorted_path)
