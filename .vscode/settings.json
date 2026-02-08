@@ -15,5 +15,6 @@
         "-Ic:/Users/hohla/git/SoSimple/Include",
         "-IC:/Users/hohla/MT/MQL4/Include/Include"
     ],
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "terminal.integrated.gpuAcceleration": "off"
 }

@@ -50,6 +50,7 @@
 import argparse
 import pandas as pd
 import os
+from pathlib import Path
 from label_signals import label_all
 from normalize import normalize_rowwise, normalize_atr_train, normalize_atr_inference
 
@@ -254,6 +255,15 @@ def save_datasets(train_df, val_df, test_df, input_path):
     return train_path, val_path, test_path
 
 
+def get_project_root():
+    """Находит корень проекта (где находится .git папка)"""
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / '.git').exists():
+            return parent
+    return current.parent
+
+
 def main():
     """
     Главная точка входа скрипта.
@@ -271,8 +281,8 @@ def main():
     )
     parser.add_argument(
         "--input", "-i",
-        default="Nero.csv",
-        help="Путь к входному CSV (по умолчанию Nero.csv)",
+        default="MT/MQL4/Files/Nero.csv",
+        help="Путь к входному CSV относительно корня проекта (по умолчанию MT/MQL4/Files/Nero.csv)",
     )
     parser.add_argument(
         "--debug", "-d",
