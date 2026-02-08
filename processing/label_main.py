@@ -319,10 +319,10 @@ def main():
     verify_sorting_quality(df, debug=args.debug)
     
     # 3. Маркируем ВЕСЬ датасет (сохраняем во временный файл)
-    temp_sorted_path = f"{base_path}_sorted_temp.csv"
+    temp_sorted_path = project_root / f"{input_name}_sorted_temp.csv"
     df.to_csv(temp_sorted_path, sep=';', index=False)
     
-    temp_labeled_path = f"{base_path}_labeled_temp.csv"
+    temp_labeled_path = project_root / f"{input_name}_labeled_temp.csv"
     print(f"\nМаркировка ВСЕГО датасета ({len(df)} строк)...")
     labeled_df = label_all(temp_sorted_path, temp_labeled_path, debug=args.debug)
     
