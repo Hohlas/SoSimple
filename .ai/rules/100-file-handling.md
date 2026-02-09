@@ -1,15 +1,48 @@
 ---
+description: Правила работы с файлами проекта
 trigger: always_on
-globs: ["**/*.mqh", "**/*.csv", "**/*.parquet"]
+globs: ["**/*.mqh", "**/*.mq4", "**/*.csv", "**/*.parquet"]
 ---
 
-# Правила работы с файлами
+# Правило: Работа с файлами
 
-**MQL4 (*.mqh *.mq4)**: Читай напрямую в UTF-16LE, не в UTF-8
+## MQL4 файлы (*.mqh, *.mq4)
 
-**Большие CSV** (`*.csv`): НЕ открывай целиком (>10MB), используй `head` или `pd.read_csv(nrows=10)`
+**Кодировка**: UTF-16LE (НЕ UTF-8)
 
-**НЕ открывай целиком *.csv** : используй 'head -n 50 file.csv' или 'tail -n 50' или 'pd.read_csv(nrows=10)'
+**Чтение**:
+```python
+with open('file.mqh', 'r', encoding='utf-16-le') as f:
+    content = f.read()
+```
 
-**Используй**:
-- запускай скрипты из 'processing/' или 'statistics/'
+
+
+## CSV файлы (*.csv)
+Проблема: Файлы проекта могут быть >10 MB (Nero.csv, train/test выборки)
+
+❌ НЕ открывай целиком:
+
+```python
+df = pd.read_csv('Nero.csv')  # НЕ делай так
+```
+
+✅ Используй sampling:
+
+```bash
+# В терминале
+head -n 100 Nero.csv
+tail -n 100 Nero.csv
+
+# В Python
+df = pd.read_csv('Nero.csv', nrows=100)
+```
+
+## Parquet файлы
+При работе с большими данными предпочитай .parquet вместо .csv:
+
+```python
+df.to_parquet('output.parquet')
+df = pd.read_parquet('input.parquet')
+```
+
