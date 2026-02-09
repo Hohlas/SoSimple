@@ -1,3 +1,33 @@
+# =============================================================================
+# Файл: statistics/statistics.py
+# Назначение: Потоковая обработка и сбор статистики по фракталам и сигналам
+# Язык: Python
+# Обновлён: 2026-02-09
+# Зависимости:
+#   Входные данные:
+#     - Nero.csv (из директории скрипта)
+#   Выходные данные:
+#     - statistics_summary.json (сводная статистика)
+#     - class_balance_report.csv (баланс классов)
+#     - feature_distributions.csv (распределения признаков)
+#     - nero_sample_stratified.csv (стратифицированная выборка)
+#     - class_statistics.json (статистика по классам)
+# Внешние зависимости:
+#   - pandas, numpy, collections, json, pathlib
+# Использование:
+#   python statistics/statistics.py
+# Примечания:
+#   - Использует метод Уэлфорда для онлайн-расчёта среднего и дисперсии.
+#   - Применяет Reservoir sampling для формирования выборки квантилей.
+# =============================================================================
+
+"""
+Модуль для накопления и анализа статистических данных по финансовым фракталам.
+
+Обеспечивает потоковую обработку больших CSV файлов, расчёт онлайн-метрик 
+и генерацию аналитических отчётов.
+"""
+
 import pandas as pd
 import numpy as np
 import json
@@ -14,7 +44,11 @@ SCRIPT_DIR = Path(__file__).parent.absolute()
 # ============================================================================
 
 class StreamingStats:
-    """Класс для накопления статистики по чанкам [web:7]"""
+    """
+    Класс для накопления статистики по чанкам данных в режиме реального времени.
+    
+    Использует алгоритмы, не требующие загрузки всего набора данных в память.
+    """
     def __init__(self):
         self.signal_counts = Counter()
         
@@ -37,7 +71,13 @@ class StreamingStats:
         self._rng = np.random.default_rng(42)  # Фиксированный seed для воспроизводимости
         
     def update(self, chunk_data: pd.DataFrame, parsed_fractals: Dict):
-        """Обновление статистики на основе чанка"""
+        """
+        Обновление статистики на основе нового чанка данных.
+        
+        Аргументы:
+            chunk_data: DataFrame с сигналами
+            parsed_fractals: Словарь со списками значений признаков фракталов
+        """
         # Подсчёт классов
         for signal in chunk_data['signal']:
             self.signal_counts[int(signal)] += 1
@@ -83,7 +123,12 @@ class StreamingStats:
                     current_list[j] = value
     
     def get_summary(self) -> Dict:
-        """Финальная статистика"""
+        """
+        Формирует финальный словарь со всей накопленной статистикой.
+        
+        Возвращает:
+            Словарь с метриками (mean, std, min, max, квантили) по каждому признаку.
+        """
         summary = {
             'total_samples': sum(self.signal_counts.values()),
             'class_distribution': dict(self.signal_counts),
@@ -116,7 +161,15 @@ class StreamingStats:
 
 
 def parse_fractal_column(fractal_str: str) -> Dict:
-    """Парсинг строки фрактала 'time:price:direction:...' в словарь"""
+    """
+    Парсинг строки фрактала формата 'time:price:direction:...' в словарь.
+    
+    Аргументы:
+        fractal_str: Строка из CSV с данными фрактала
+        
+    Возвращает:
+        Словарь с распарсенными признаками или None в случае ошибки.
+    """
     parts = fractal_str.split(':')
     if len(parts) != 11:
         return None
@@ -140,7 +193,14 @@ def parse_fractal_column(fractal_str: str) -> Dict:
 
 def process_nero_csv(filepath: str, chunksize: int = 500):
     """
-    Основная функция потоковой обработки
+    Основная функция для потоковой обработки CSV файла и генерации отчётов.
+    
+    Аргументы:
+        filepath: Путь к входному CSV файлу
+        chunksize: Размер чанка для чтения (количество строк)
+        
+    Возвращает:
+        Сводный словарь статистики.
     """
     stats = StreamingStats()
     
@@ -363,10 +423,10 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
 # ============================================================================
 
 if __name__ == "__main__":
-    print("Начало обработки Nero_train_labeled.csv...")
+    print("Начало обработки Nero.csv...")
     print("="*60)
     
-    summary = process_nero_csv(SCRIPT_DIR / 'Nero_train_labeled.csv', chunksize=500)
+    summary = process_nero_csv(SCRIPT_DIR / 'Nero.csv', chunksize=500)
     
     print("="*60)
     print("Обработка завершена!")
