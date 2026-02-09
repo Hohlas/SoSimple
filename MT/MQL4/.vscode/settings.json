@@ -1,0 +1,33 @@
+{
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/Include"
+    ],
+    "C_Cpp.default.compilerPath": "",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.autocompleteAddParentheses": true,
+    "files.exclude": {
+        "**/*.ex4": true,
+        "**/*.ex5": true,
+        "**/*_@!!@.mq4": true,
+        "**/*_@!!@.mq5": true,
+        "**/*_@!!@.mqh": true,
+        "**/*_@!!@.log": true,
+        "**/*_@!@.log": true,
+        "**/*_@!@.ex4": true,
+        "**/*_@!@.ex5": true,
+        "**/*_@!@.mq4": true,
+        "**/*_@!@.mq5": true,
+        "**/*_@!@.mqh": true
+    },
+    "files.associations": {
+        "*.mqh": "cpp",
+        "*.mq4": "cpp",
+        "*.mq5": "cpp"
+    },
+    "editor.tabSize": 3,
+    "C_Cpp.default.forcedInclude": [
+        "/home/hohla/.vscode/extensions/l-i-v.mql-tools-2.2.0/data/mql4_en.mqh"
+    ]
+}

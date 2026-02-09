@@ -1,42 +1,58 @@
 # AI Agent Configuration
 
 ## Project Context
-- Type: Автоматическая торговая система на базе нейронной сети  
-- Languages: Python, MQL4, Jupyter Notebooks
-- Primary Tools: Cursor, Antigravity, Perplexity
-- Documentation Language: Russian (with English technical terms)  
+- **Type**: Trading bot system with ML predictions
+- **Languages**: Python 3.11+, MQL4, Jupyter Notebooks
+- **Tools**: Cursor, Antigravity, Perplexity
+- **Documentation**: Русский (код на английском) 
 
-## Project Structure 
-docs/architecture.md
+## Pipeline Overview
+
+MT4 (lib_PIC.mqh) → Nero.csv
+↓
+processing/ → train/val/test + scalers
+↓
+statistics/ → EDA, reports
+↓
+ML/ → models (в разработке)
 
 
-## Agent Instructions
+**Детали**: `docs/architecture.md`
 
-### When creating/modifying code:
-1. Read script's file header for context
-2. Check `docs/data_preprocessing/*.md` for details
-3. After changes, update BOTH file header AND .md file
-4. Update `docs/data-flow.md` if input/output changed
+## Key Directories
 
-### When creating prompts:
-1. Start with `docs/architecture.md` for context
-2. Use `docs/data-flow.md` to understand dependencies
-3. Reference specific script docs from `docs/data_preprocessing/*.md`
+- `MT/MQL4/Include/lib_PIC.mqh` — структурирование рыночных котировок
+- `processing/` — нормализация, маркировка, разделение
+- `statistics/` — статистический анализ и EDA
+- `ML/` — обучение моделей
+- `docs/` — документация проекта
+
 
 ## Quick Commands
 
-**`sync docs`** — Обнови документацию для изменённых файлов согласно '.ai/rules/update-docs-on-code-change.md' 
-**`doc this`** — Документируй текущий файл согласно `.ai/rules/000-documentation.md`  
-**`check docs`** — Проверь актуальность документации
+- **`sync docs`** — Синхронизируй документацию с изменённым кодом
+- **`doc this`** — Задокументируй текущий открытый файл
+- **`check docs`** — Проверь актуальность всей документации
+
+## Agent Instructions
+
+### При изменении кода:
+1. Прочитай file header скрипта
+2. Найди соответствующий `.md` в `docs/data_preprocessing/`
+3. Обнови **file header** (дата Last Updated) **И** `.md` файл
+4. Если изменились входы/выходы → обнови `docs/architecture.md` (секция Pipeline)
+
+### При составлении промптов:
+1. Общая картина → `docs/architecture.md`
+2. Детали данных → `docs/dataset_description.md`
+3. Детали скриптов → `docs/data_preprocessing/[script].md`
 
 
 
-## Documentation Rules
+### Important Rules
 
-Детальные правила в `.ai/rules/000-documentation.md`
+**File headers**: Обязательны для всех `.py`, `.mq4`, `.ipynb`  
+**Большие файлы**: НЕ открывай `*.csv` целиком — используй sampling  
+**Кодировка MQL4**: UTF-16LE (не UTF-8)
 
-**File header обязателен**:
-- Назначение скрипта
-- Входные/выходные данные
-- Зависимости
-- Дата последнего обновления
+**Детальные правила**: `.ai/rules/`

@@ -1,0 +1,30 @@
+{
+    "clangd.fallbackFlags": [
+        "-xc++",
+        "-std=c++17",
+        "-D__MQL__",
+        "-D__MQL5__",
+        "-include/home/hohla/.vscode/extensions/ngsoftware.mql-clangd-1.1.21/files/mql_clangd_compat.h",
+        "-fms-extensions",
+        "-fms-compatibility",
+        "-ferror-limit=0",
+        "-Wno-invalid-token-paste",
+        "-Wno-unused-value",
+        "-Wno-unknown-pragmas",
+        "-Wno-writable-strings",
+        "-Xclang",
+        "-Wno-invalid-pp-directive",
+        "-Wno-unknown-directives",
+        "-Wno-language-extension-token",
+        "-I/home/hohla/git/SoSimple/MT",
+        "-I/home/hohla/git/SoSimple/MT/Include",
+        "-I/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/metaeditor.exe"
+    ],
+    "C_Cpp.intelliSenseEngine": "Disabled",
+    "mql_tools.context": true,
+    "files.associations": {
+        "*.mqh": "cpp",
+        "*.mq4": "cpp",
+        "*.mq5": "cpp"
+    }
+}
