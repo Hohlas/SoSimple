@@ -1,20 +1,13 @@
 # AI Agent Configuration
 
 ## Project Context
-- Type: Multi-language trading bot system
+- Type: Автоматическая торговая система на базе нейронной сети  
 - Languages: Python, MQL4, Jupyter Notebooks
 - Primary Tools: Cursor, Antigravity, Perplexity
 - Documentation Language: Russian (with English technical terms)  
 
-## Project Structure
-.ai/rules/ # Правила документирования и стиля
-.ai/prompts/ # Готовые промпты
-docs/ # Документация
-├── data_analysis/ # Анализ данных
-├── data_preprocessing/ # Описания скриптов
-├── architecture.md
-├── data-flow.md
-└── dataset_description.md
+## Project Structure 
+docs/architecture.md
 
 
 ## Agent Instructions
@@ -36,12 +29,7 @@ docs/ # Документация
 **`doc this`** — Документируй текущий файл согласно `.ai/rules/000-documentation.md`  
 **`check docs`** — Проверь актуальность документации
 
-## Data Flow
-MT/MQL4/Include/lib_PIC.mqh → Nero.csv
-↓
-processing/label_main.py → Nero_normalization_stats.csv, Nero_test_labeled.csv, Nero_train_labeled.csv, Nero_val_labeled.csv, Nero_atr_scaler.pkl 
-↓
-statistics/EDA.ipynb → reports/*, plots/*, EDA_files/*
+
 
 ## Documentation Rules
 
