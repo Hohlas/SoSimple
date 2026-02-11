@@ -1,58 +1,75 @@
 # AI Agent Configuration
 
-## Project Context
-- **Type**: Trading bot system with ML predictions
-- **Languages**: Python 3.11+, MQL4, Jupyter Notebooks
-- **Tools**: Cursor, Antigravity, Perplexity
-- **Documentation**: Русский (код на английском) 
+## Quick Start для ИИ-агентов
+
+### Основные индексы
+- 📖 **[MODULE_INDEX.md](MODULE_INDEX.md)** — все модули проекта
+- 🔄 **[DATA_FLOW.md](DATA_FLOW.md)** — поток данных через pipeline
+- ⚡ **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** — команды и пути
+- 📜 **[.ai/RULES_INDEX.md](.ai/RULES_INDEX.md)** — правила работы
+- ⚙️ **[.ai/SKILLS_INDEX.md](.ai/SKILLS_INDEX.md)** — автоматизированные команды
+
+### Project Context
+- **Type**: Trading bot с ML predictions
+- **Languages**: Python 3.11+, MQL4, Jupyter
+- **Documentation**: Русский (код на английском)
 
 ## Pipeline Overview
 
 MT4 (lib_PIC.mqh) → Nero.csv
 ↓
-processing/ → train/val/test + scalers
+processing/normalize.py → Nero_normalized.csv
+↓
+processing/label_main.py → train/val/test + scalers
 ↓
 statistics/ → EDA, reports
 ↓
 ML/ → models (в разработке)
 
+text
 
-**Детали**: `docs/architecture.md`
-
-## Key Directories
-
-- `MT/MQL4/Include/lib_PIC.mqh` — структурирование рыночных котировок
-- `processing/` — нормализация, маркировка, разделение
-- `statistics/` — статистический анализ и EDA
-- `ML/` — обучение моделей
-- `docs/` — документация проекта
-
+**Детали**: [DATA_FLOW.md](DATA_FLOW.md)
 
 ## Quick Commands
 
-- **`sync docs`** — Синхронизируй документацию с изменённым кодом
-- **`doc this`** — Задокументируй текущий открытый файл
-- **`check docs`** — Проверь актуальность всей документации
+| Команда | Назначение |
+|---------|-----------|
+| `sync docs` | Синхронизировать документацию с изменённым кодом |
+| `doc this [файл]` | Задокументировать модуль *(⏸️ не реализован)* |
+| `check docs` | Проверить актуальность документации *(⏸️ не реализован)* |
 
-## Agent Instructions
+**Все команды**: [.ai/SKILLS_INDEX.md](.ai/SKILLS_INDEX.md)
 
-### При изменении кода:
-1. Прочитай file header скрипта
-2. Найди соответствующий `.md` в `docs/data_preprocessing/`
-3. Обнови **file header** (дата Last Updated) **И** `.md` файл
-4. Если изменились входы/выходы → обнови `docs/architecture.md` (секция Pipeline)
+## Критические правила
 
-### При составлении промптов:
-1. Общая картина → `docs/architecture.md`
-2. Детали данных → `docs/dataset_description.md`
-3. Детали скриптов → `docs/data_preprocessing/[script].md`
+⚠️ **Всегда читай перед началом**:
+1. **[000-documentation.md](.ai/rules/000-documentation.md)** — стандарт документирования
+2. **[007-no-csv-context.md](.ai/rules/007-no-csv-context.md)** — запрет загрузки больших CSV
+3. **[100-file-handling.md](.ai/rules/100-file-handling.md)** — работа с файлами (кодировки, форматы)
 
+**Все правила**: [.ai/RULES_INDEX.md](.ai/RULES_INDEX.md)
 
+## Workflow для агента
 
-### Important Rules
+### При изменении кода
+1. Запусти `sync docs` — автоматически обновит file headers и .md файлы
+2. Если изменились входы/выходы — проверь [DATA_FLOW.md](DATA_FLOW.md)
 
-**File headers**: Обязательны для всех `.py`, `.mq4`, `.ipynb`  
-**Большие файлы**: НЕ открывай `*.csv` целиком — используй sampling  
-**Кодировка MQL4**: UTF-16LE (не UTF-8)
+### При изучении проекта
+1. Начни с [MODULE_INDEX.md](MODULE_INDEX.md) — посмотри список модулей
+2. Открой [DATA_FLOW.md](DATA_FLOW.md) — пойми pipeline
+3. Используй [QUICK_REFERENCE.md](QUICK_REFERENCE.md) — найди команды и пути
 
-**Детальные правила**: `.ai/rules/`
+### При создании нового модуля
+1. Следуй [000-documentation.md](.ai/rules/000-documentation.md) — создай file header
+2. Добавь запись в [MODULE_INDEX.md](MODULE_INDEX.md)
+3. Создай `docs/[category]/[module].md`
+4. Обнови [DATA_FLOW.md](DATA_FLOW.md) если нужно
+
+## Навигация
+
+- **Для людей**: [README.md](README.md)
+- **Для агентов**: Этот файл
+- **Индексы**: [MODULE_INDEX.md](MODULE_INDEX.md), [DATA_FLOW.md](DATA_FLOW.md), [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
+- **Правила**: [.ai/RULES_INDEX.md](.ai/RULES_INDEX.md)
+- **Команды**: [.ai/SKILLS_INDEX.md](.ai/SKILLS_INDEX.md)
