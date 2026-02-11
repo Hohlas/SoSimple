@@ -14,7 +14,7 @@
 python processing/normalize.py
 
 # Маркировка и разделение на выборки
-python processing/label_main.py --input Nero_normalized.csv
+python processing/label_main.py --input Nerod.csv
 
 # Статистический анализ
 python statistics/statistics.py --input Nero_train_labeled.csv
@@ -44,6 +44,9 @@ check docs                   # Проверить актуальность до�
 create module [имя]          # Создать новый модуль (⏸️)
 check data impact [файл]     # Показать downstream-зависимости (⏸️)
 explain step [название]      # Объяснить шаг pipeline (⏸️)
+rebuild module index         # Пересоздать MODULE_INDEX.md (⏸️)
+refresh module index         # Пересоздать MODULE_INDEX.md (⏸️)
+analyze [файл.csv]           # Запустить EDA для датасета (⏸️)
 ```
 
 
@@ -60,7 +63,7 @@ Nero_atr_scaler.pkl            # Scaler для ATR (RobustScaler)
 Nero_normalization_stats.csv   # Статистика признаков до нормализации
 
 Nero_train_labeled.csv         # Train выборка (до 2024-06-01)
-Nero_val_labeled.csv           # Validation выборка (2024-06-01 - 2024-09-01)
+Nero_validation_labeled.csv    # Validation выборка (2024-06-01 - 2024-09-01)
 Nero_test_labeled.csv          # Test выборка (после 2024-09-01)
 ```
 
@@ -89,7 +92,7 @@ DATA_FLOW.md                    # Визуальный граф потока д�
 QUICK_REFERENCE.md              # Этот файл
 CHANGELOG.md                    # Хронология major milestones
 
-docs/architecture.md            # Архитектура проекта (будет заменена DATA_FLOW.md)
+docs/DATA_FLOW.md               # Архитектура проекта
 docs/dataset_description.md     # Структура датасета
 docs/data_preprocessing/        # Детали скриптов preprocessing
 docs/data_analysis/             # Детали статистического анализа
