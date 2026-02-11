@@ -1,6 +1,6 @@
-# Резюме документации
+# lib_PIC.mqh
 
-**Файл**: `lib_PIC.mqh`  
+**Файл**: `lib_PIC.mqh`
 **Назначение**: Библиотека анализа ценовых уровней (Price Item Calculator) для обнаружения фракталов, классификации уровней и экспорта данных для нейросетевого обучения.
 
 ---
@@ -29,7 +29,7 @@
 ### Вспомогательные функции
 
 | Функция | Описание |
-|---------|----------|
+|-------|----------|
 | `NORMALIZE_MINMAX()` | Min-Max нормализация в [0, 1] |
 | `CALCULATE_PERCENTILE()` | Вычисление перцентиля с линейной интерполяцией |
 | `PiecewiseNormalize()` | Piecewise нормализация с логарифмическим сжатием хвоста |
@@ -117,12 +117,12 @@ struct FRACTAL {
 T:normPrice:Dir:normFrnt:normBack:Strong:normBrk:normRev:normPwrSum:normCnt:normImp
 ```
 
-**Нормализация**:
+**Нормализация (опционально)**:
 - `Price`, `Brk` — Min-Max [0, 1]
 - `FrntVal`, `BackVal`, `PwrSum`, `Rev`, `Imp`, `Cnt` — Piecewise (линейная до 95-го перцентиля, логарифмическое сжатие хвоста)
 
 ---
 
-## Предлагаемое расположение .md файла
+## Расположение
 
-`docs/mql4/lib_PIC.md`
+`docs/mql4/lib_PIC.mqh.md`

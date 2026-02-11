@@ -18,13 +18,13 @@
 - **Вход**: `MT/MQL4/Files/Nero.csv`
 - **Выход**: `{stem}_train_labeled.csv`, `{stem}_validation_labeled.csv`, `{stem}_test_labeled.csv`
 - **Использование**: `python label_main.py --input MT/MQL4/Files/Nero.csv --debug`
-- **Статус**: ✅ Актуален (2026-02-08)
+- **Статус**: ✅ Актуален (2026-02-11)
 
 ### `label_signals.py` ✅
 - **Назначение**: Маркировка сигналов (signal + predict) с учетом направления целевого фрактала
 - **Ключевая функция**: `label_all(input_path, output_path, debug=False)`
 - **Логика**: Поиск ближайшего сильного фрактала → расчёт signal → predict с учётом direction
-- **Статус**: ✅ Актуален
+- **Статус**: ✅ Актуален (2026-02-11)
 
 ### `normalize.py` ✅
 - **Назначение**: Нормализация признаков (построчная + глобальная ATR)
@@ -33,7 +33,7 @@
   - `normalize_atr_train()` — RobustScaler fit+transform (train)
   - `normalize_atr_inference()` — RobustScaler transform only (val/test)
 - **Артефакты**: `{stem}_atr_scaler.pkl`, `{stem}_normalization_stats.csv`
-- **Статус**: ✅ Актуален (2026-02-07)
+- **Статус**: ✅ Актуален (2026-02-11)
 
 ---
 
@@ -60,7 +60,7 @@
 ### `lib_PIC.mqh` ⚠️
 - **Назначение**: Библиотека алгоритма PIC (Price in Channel) для формирования фракталов
 - **Размер**: ~41KB
-- **Путь**: `MT/MQL4/Include/lib_PIC.mqh`
+- **Путь**: `MT/MQL4/Include/lib_PIC.mqh` ([Документация](docs/mql4/lib_PIC.mqh.md))
 - **Зависимости**: `head_PIC.mqh`, `ERRORs.mqh`, `SERVICE.mqh`, и др.
 - **Статус**: ⚠️ Наследуемый (legacy), не приоритет для текущего этапа
 
@@ -74,11 +74,10 @@
 ## 📄 Docs (Документация)
 
 ### `data_preprocessing/` 📂
-- `overview.md` ✅ — обзор препроцессинга
-- `normalization.md` ✅ — детали нормализации
-- `labeling.md` ✅ — логика маркировки
-- `fractals.md` ✅ — структура фракталов
-- **Статус**: ✅ Актуальные
+- `label_main.py.md` ✅ — документация оркестратора
+- `label_signals.py.md` ✅ — логика маркировки
+- `normalize.py.md` ✅ — методы нормализации
+- **Статус**: ✅ Актуальные (2026-02-11)
 
 ### `DATA_FLOW.md` ✅ (создаётся)
 - **Назначение**: Диаграмма потока данных через все этапы
@@ -126,5 +125,5 @@
 
 ---
 
-**Последнее обновление**: 2026-02-10  
+**Последнее обновление**: 2026-02-11  
 **Автор**: Antigravity + Claude
