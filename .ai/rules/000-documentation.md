@@ -1,7 +1,11 @@
 ---
+priority: ALWAYS
+trigger: Создание или изменение любого .py, .mq4, .mqh, .ipynb файла
+affects: Файлы кода, соответствующие .md файлы в docs/
 description: Стандарт документирования для всех файлов проекта
 tags: documentation, file-header, docstrings
 ---
+
 
 # Правило: Стандарт документирования кода
 

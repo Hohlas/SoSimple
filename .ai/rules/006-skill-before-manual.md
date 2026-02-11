@@ -1,3 +1,11 @@
+---
+priority: ALWAYS
+trigger: Перед выполнением рутинной задачи
+affects: Workflow ИИ-агента
+description: Проверка наличия skill перед ручным выполнением задачи
+tags: skills, automation, efficiency
+---
+
 Перед выполнением рутинной задачи проверь SKILLS_INDEX.md.
 
 Существующие команды:

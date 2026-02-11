@@ -1,3 +1,11 @@
+---
+priority: CONTEXT
+trigger: Работа с .mq4 или .mqh файлами
+affects: MT/MQL4/Include/*.mqh, docs/mql4/
+description: Специфика работы с MQL4 кодом (кодировка UTF-16LE, MetaEditor)
+tags: mql4, encoding, metatrader
+---
+
 При работе с .mq4/.mqh:
 - Кодировка: UTF-16LE (не UTF-8)
 - File header: используй //+--...--+ вместо #

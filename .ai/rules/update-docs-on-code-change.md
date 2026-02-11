@@ -1,6 +1,9 @@
 ---
+priority: ON_CHANGE
+trigger: После изменения кода (перед коммитом)
+affects: File headers в коде, соответствующие .md файлы, MODULE_INDEX.md
 description: Синхронизация документации при изменении кода
-alwaysApply: false
+tags: sync, git-hooks, automation
 ---
 
 # Правило: Синхронизация документации
