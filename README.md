@@ -41,8 +41,9 @@ graph LR
     Samples -->|statistics/| EDA[EDA & Stats]
     Samples -->|ML/| Training[Model Training]
     Training -->|Inference| Signals[Trading Signals]
+```
 
-[Подробная диаграмма:] (DATA_FLOW.md)
+[Подробная диаграмма:](DATA_FLOW.md)
 
 ## Структура проекта
 - [MT/](MT/) — Код на MQL4 для MetaTrader 4

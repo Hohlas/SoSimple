@@ -16,6 +16,7 @@
 
 ## Pipeline Overview
 
+```text
 MT4 (lib_PIC.mqh) → Nero.csv
 ↓
 processing/normalize.py → Nero_normalized.csv
@@ -25,8 +26,7 @@ processing/label_main.py → train/val/test + scalers
 statistics/ → EDA, reports
 ↓
 ML/ → models (в разработке)
-
-text
+```
 
 **Детали**: [DATA_FLOW.md](DATA_FLOW.md)
 
