@@ -1,6 +1,9 @@
 ---
-description: Правила работы с файлами проекта
-trigger: always_on
+priority: CONTEXT
+trigger: Открытие .mqh, .mq4, .csv, .parquet файлов
+affects: Чтение файлов, кодировка, производительность
+description: Технические правила работы с файлами проекта (кодировки, большие CSV)
+tags: files, encoding, csv, parquet, mql4
 globs: ["**/*.mqh", "**/*.mq4", "**/*.csv", "**/*.parquet"]
 ---
 
