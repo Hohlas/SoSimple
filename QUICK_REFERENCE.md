@@ -158,30 +158,11 @@ category: data_preprocessing, data_analysis, models
 
 ### CSV (Nero.csv)
 
-```
-Колонки:
-  time_open   — Unix timestamp начала event
-  signal      — Тип сигнала (торговый индикатор)
-  predict     — Целевая переменная (может быть отрицательной)
-  ATR         — Average True Range (волатильность)
-  fractal0    — Фрактал 0 (строка: time:price:direction:front:back:strong:break:reverse:power:count:impulse)
-  fractal1    — Фрактал 1
-  ...
-  fractal99   — Фрактал 99
+**Структура**: См. [dataset_description.md](docs/dataset_description.md)
 
-Формат фрактала (11 признаков):
-  0: fractal_time — время фрактала
-  1: price        — цена экстремума
-  2: direction    — направление (-1: down, 1: up)
-  3: front        — расстояние до предыдущего фрактала
-  4: back         — расстояние до следующего фрактала
-  5: strong       — признак сильного фрактала (0/1)
-  6: break        — количество пробитых уровней
-  7: reverse      — сила разворота
-  8: power        — мощность фрактала
-  9: count        — количество свечей
-  10: impulse     — импульс движения
-```
+**Кратко**:
+- Колонки: `time_open`, `signal`, `predict`, `ATR`, `fractal0`...`fractal99`
+- Формат фрактала: 11 признаков, разделитель `:`
 
 
 ### PKL (Nero_atr_scaler.pkl)
