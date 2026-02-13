@@ -16,3 +16,13 @@ tags: module-index, navigation, discovery
 **Назначение**: [одна строка]
 **Входы**: [файлы] | **Выходы**: [файлы]
 **Использует**: [библиотеки] | **Используется в**: [скрипты]
+
+## Examples
+
+### ✅ Complete module entry
+```markdown
+## processing/label_main.py
+**Назначение**: CLI оркестратор для полного конвейера обработки данных
+**Входы**: MT/MQL4/Files/Nero.csv | **Выходы**: data/Nero_train_labeled.csv
+**Использует**: pandas, numpy | **Используется в**: ML training pipeline
+```

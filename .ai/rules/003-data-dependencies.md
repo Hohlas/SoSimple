@@ -13,3 +13,16 @@ tags: data-flow, dependencies, breaking-changes
 4. Проверь downstream-скрипты в MODULE_INDEX.md (секция "Используется в")
 
 Используй команду: `check data impact [файл]`
+
+## Examples
+
+### ✅ Update file header after changing output format
+```python
+# =============================================================================
+# Файл: normalize.py
+# Обновлён: 2026-02-13
+# Зависимости:
+#   Выходные данные:
+#     - data/Nero_train.csv (ИЗМЕНЕНО: добавлена колонка ATR_normalized)
+# =============================================================================
+```

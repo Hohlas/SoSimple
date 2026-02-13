@@ -13,3 +13,12 @@ tags: mql4, encoding, metatrader
 - Тестирование: только в MetaTrader 4 Strategy Tester
 
 Не пытайся запускать MQL4-код в Python-окружении.
+
+## Examples
+
+### ✅ Read MQL4 file with correct encoding
+```python
+with open('MT/MQL4/Include/lib_PIC.mqh', 'r', encoding='utf-16-le') as f:
+    content = f.read()
+```
+

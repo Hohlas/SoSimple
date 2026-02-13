@@ -16,3 +16,14 @@ tags: skills, automation, efficiency
 Если skill не реализован:
 1. Выполни задачу вручную
 2. Предложи создать skill для автоматизации
+
+## Examples
+
+### ✅ Check SKILLS_INDEX before manual work
+```markdown
+# Перед обновлением документации:
+1. Проверь .ai/SKILLS_INDEX.md
+2. Найдена команда: `sync docs`
+3. Выполни: sync docs processing/normalize.py
+```
+

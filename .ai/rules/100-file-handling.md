@@ -49,3 +49,19 @@ df.to_parquet('output.parquet')
 df = pd.read_parquet('input.parquet')
 ```
 
+## Examples
+
+### ✅ Read MQL4 file with UTF-16LE encoding
+```python
+with open('MT/MQL4/Include/lib_PIC.mqh', 'r', encoding='utf-16-le') as f:
+    content = f.read()
+```
+
+### ✅ Sample large CSV for exploration
+```python
+df = pd.read_csv('Nero.csv', nrows=100, sep=';')
+print(df.head())
+print(df.describe())
+```
+
+

@@ -66,3 +66,18 @@ MT/MQL4/Include/[lib].mqh → docs/architecture.md (секция Pipeline)
 - Пользователь: "sync docs"
   - Действие: Найди все staged файлы через git diff --cached, обнови их документацию
 
+## Examples
+
+### ✅ Sync documentation after code change
+```bash
+# User changed normalize.py
+$ git diff --cached --name-only
+processing/normalize.py
+
+# Agent updates:
+1. File header in normalize.py (Обновлён: 2026-02-13)
+2. docs/data_preprocessing/normalize.py.md (Входные/Выходные данные)
+3. MODULE_INDEX.md (если изменились зависимости)
+```
+
+

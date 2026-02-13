@@ -14,3 +14,18 @@ tags: csv, performance, memory
 - sample(100) для анализа паттернов
 
 Для больших операций используй streaming/chunking.
+
+## Examples
+
+### ✅ Sample for exploration
+```python
+# Explore structure
+df = pd.read_csv('Nero.csv', nrows=100)
+print(df.head())
+print(df.describe())
+
+# For analysis: streaming
+for chunk in pd.read_csv('Nero.csv', chunksize=1000):
+    process(chunk)
+```
+

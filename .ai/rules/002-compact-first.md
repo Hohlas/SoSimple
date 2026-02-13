@@ -15,3 +15,14 @@ tags: documentation, efficiency, links
 Если документ > 300 строк:
 1. Вынеси детали в отдельный файл
 2. Оставь краткое резюме + ссылку
+
+## Examples
+
+### ✅ Link to detailed documentation
+```markdown
+## Data Flow
+Полное описание потока данных: [DATA_FLOW.md](docs/DATA_FLOW.md)
+
+### Краткая схема
+MT4 → Nero.csv → Сортировка → Маркировка → Нормализация
+```
