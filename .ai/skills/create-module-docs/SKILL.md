@@ -1,3 +1,21 @@
+---
+name: create-module-docs
+description: >
+  Create complete documentation for a new or undocumented module including file header, markdown docs, and module index entry.
+tags:
+  - documentation
+  - automation
+triggers:
+  - doc this [file]
+  - document [file]
+applies_to:
+  - "*.py"
+  - "*.mq4"
+  - "*.mqh"
+  - "*.ipynb"
+always_apply: false
+---
+
 **Команда**: `doc this` или `document [файл]`
 **Назначение**: Создать полную документацию для нового/недокументированного модуля
 

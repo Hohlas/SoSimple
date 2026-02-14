@@ -1,3 +1,21 @@
+---
+name: validate-docs-sync
+description: >
+  Validate that code documentation is up-to-date by comparing file headers with git history and checking for missing docs.
+tags:
+  - documentation
+  - validation
+triggers:
+  - check docs
+  - validate docs
+applies_to:
+  - "*.py"
+  - "*.mq4"
+  - "*.mqh"
+  - "*.ipynb"
+always_apply: false
+---
+
 **Команда**: `check docs` или `validate docs`
 **Назначение**: Проверить актуальность документации относительно кода
 

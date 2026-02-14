@@ -54,7 +54,7 @@ file headers, docstrings, Markdown‑документацию и архитек�
 
 - processing/[script].py → docs/data_preprocessing/[script].md
 - statistics/[script].py → docs/data_analysis/[script].md
-- MT/MQL4/Include/[lib].mqh → docs/architecture.md (секция Pipeline)
+- MT/MQL4/Include/[lib].mqh → docs/DATA_FLOW.md (секция Pipeline)
 
 Если соответствующий .md ещё не существует, предложи его создать.
 
@@ -72,7 +72,7 @@ file headers, docstrings, Markdown‑документацию и архитек�
 - Использование — обнови пример запуска и параметры, если они изменились.
 - Примечания — добавь новые ограничения или важные особенности.
 
-В docs/architecture.md (если нужно):
+В docs/DATA_FLOW.md (если нужно):
 
 - Обнови секцию Pipeline, если изменились входы/выходы шагов конвейера или их связи.
 

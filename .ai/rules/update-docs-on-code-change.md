@@ -27,7 +27,7 @@ processing/[script].py → docs/data_preprocessing/[script].md
 
 statistics/[script].py → docs/data_analysis/[script].md
 
-MT/MQL4/Include/[lib].mqh → docs/architecture.md (секция Pipeline)
+MT/MQL4/Include/[lib].mqh → docs/DATA_FLOW.md (секция Pipeline)
 
 ### 3. Обнови элементы документации
 В коде:
@@ -46,7 +46,7 @@ MT/MQL4/Include/[lib].mqh → docs/architecture.md (секция Pipeline)
 
 - Примечания — если появились ограничения
 
-В architecture.md (если нужно):
+В DATA_FLOW.md (если нужно):
 
 - Секция Pipeline — если изменились входы/выходы
 

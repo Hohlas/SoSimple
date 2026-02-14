@@ -217,7 +217,7 @@
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_5_1.png)
+![png](EDA_report_files/reports/EDA_report_5_1.png)
     
 
 
@@ -249,7 +249,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_7_1.png)
+![png](EDA_report_files/reports/EDA_report_7_1.png)
     
 
 
@@ -270,7 +270,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_8_1.png)
+![png](EDA_report_files/reports/EDA_report_8_1.png)
     
 
 
@@ -364,7 +364,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_12_0.png)
+![png](EDA_report_files/reports/EDA_report_12_0.png)
     
 
 
@@ -375,7 +375,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_14_0.png)
+![png](EDA_report_files/reports/EDA_report_14_0.png)
     
 
 
@@ -428,7 +428,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_17_0.png)
+![png](EDA_report_files/reports/EDA_report_17_0.png)
     
 
 
@@ -505,7 +505,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_20_0.png)
+![png](EDA_report_files/reports/EDA_report_20_0.png)
     
 
 
@@ -517,7 +517,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_21_1.png)
+![png](EDA_report_files/reports/EDA_report_21_1.png)
     
 
 
@@ -534,7 +534,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_24_0.png)
+![png](EDA_report_files/reports/EDA_report_24_0.png)
     
 
 
@@ -543,7 +543,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_25_0.png)
+![png](EDA_report_files/reports/EDA_report_25_0.png)
     
 
 
@@ -569,7 +569,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_26_1.png)
+![png](EDA_report_files/reports/EDA_report_26_1.png)
     
 
 
@@ -595,7 +595,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_28_1.png)
+![png](EDA_report_files/reports/EDA_report_28_1.png)
     
 
 
@@ -642,7 +642,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_31_0.png)
+![png](EDA_report_files/reports/EDA_report_31_0.png)
     
 
 
@@ -666,7 +666,7 @@ ATR (Average True Range) — показатель волатильности р�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_35_0.png)
+![png](EDA_report_files/reports/EDA_report_35_0.png)
     
 
 
@@ -711,7 +711,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_38_1.png)
+![png](EDA_report_files/reports/EDA_report_38_1.png)
     
 
 
@@ -812,7 +812,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_45_1.png)
+![png](EDA_report_files/reports/EDA_report_45_1.png)
     
 
 
@@ -850,7 +850,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_48_1.png)
+![png](EDA_report_files/reports/EDA_report_48_1.png)
     
 
 
@@ -890,7 +890,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_50_1.png)
+![png](EDA_report_files/reports/EDA_report_50_1.png)
     
 
 
@@ -970,7 +970,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_54_1.png)
+![png](EDA_report_files/reports/EDA_report_54_1.png)
     
 
 
@@ -983,7 +983,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_55_1.png)
+![png](EDA_report_files/reports/EDA_report_55_1.png)
     
 
 
@@ -996,7 +996,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_56_1.png)
+![png](EDA_report_files/reports/EDA_report_56_1.png)
     
 
 
@@ -1069,7 +1069,7 @@ PCA показывает глобальную линейную структур�
 
 
     
-![png](reports/EDA_report_files/reports/EDA_report_60_1.png)
+![png](EDA_report_files/reports/EDA_report_60_1.png)
     
 
 

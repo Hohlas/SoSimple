@@ -1,3 +1,17 @@
+---
+name: generate-module-index
+description: >
+  Regenerate MODULE_INDEX.md from file headers across all code files in the project.
+tags:
+  - documentation
+  - automation
+  - index
+triggers:
+  - rebuild module index
+  - refresh MODULE_INDEX.md
+always_apply: false
+---
+
 **Команда**: `rebuild module index` или `refresh MODULE_INDEX.md`
 **Назначение**: Автоматически пересоздать MODULE_INDEX.md из file headers
 

@@ -1,3 +1,17 @@
+---
+name: explain-pipeline-step
+description: >
+  Provide a detailed explanation of a specific pipeline step by combining information from DATA_FLOW.md and module documentation.
+tags:
+  - documentation
+  - explanation
+  - pipeline
+triggers:
+  - explain step [name]
+  - what does [name] do
+always_apply: false
+---
+
 **Команда**: `explain step [название]` или `what does [название] do`
 **Назначение**: Дать детальное объяснение конкретного шага pipeline
 

@@ -1,3 +1,17 @@
+---
+name: add-new-module
+description: >
+  Create a new module with complete documentation scaffold including file header, markdown docs, module index and data flow entries.
+tags:
+  - documentation
+  - automation
+  - scaffold
+triggers:
+  - create module [name]
+  - new script [name]
+always_apply: false
+---
+
 **Команда**: `create module [имя]` или `new script [имя]`
 **Назначение**: Создать новый модуль со всей необходимой документацией
 

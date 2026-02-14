@@ -1,3 +1,19 @@
+---
+name: create-eda-report
+description: >
+  Run automated exploratory data analysis on a CSV dataset with sampling for large files.
+tags:
+  - analysis
+  - eda
+  - data
+triggers:
+  - "analyze [file.csv]"
+  - "run eda [file.csv]"
+applies_to:
+  - "*.csv"
+always_apply: false
+---
+
 **Команда**: `analyze [файл.csv]` или `run eda [файл.csv]`
 **Назначение**: Запустить автоматический EDA для датасета
 

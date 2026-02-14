@@ -1,3 +1,20 @@
+---
+name: check-data-impact
+description: >
+  Analyze downstream dependencies when changing data formats to prevent breaking changes in the pipeline.
+tags:
+  - analysis
+  - impact
+  - data
+triggers:
+  - check data impact [file]
+  - impact analysis [file]
+applies_to:
+  - "*.csv"
+  - "*.parquet"
+always_apply: false
+---
+
 **Команда**: `check data impact [файл]` или `impact analysis [файл]`
 **Назначение**: Показать, какие скрипты будут затронуты при изменении формата данных
 
