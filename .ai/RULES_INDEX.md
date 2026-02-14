@@ -18,7 +18,7 @@
 | **CONTEXT** | Skill перед ручной работой | Перед выполнением рутинной задачи | [006-skill-before-manual.md](rules/006-skill-before-manual.md) |
 | **CONTEXT** | Не грузить CSV в контекст | Работа с .csv файлами | [007-no-csv-context.md](rules/007-no-csv-context.md) |
 | **CONTEXT** | Работа с файлами | Открытие файлов проекта | [100-file-handling.md](rules/100-file-handling.md) |
-| **ON_CHANGE** | Синхронизация документации | После изменения кода | [update-docs-on-code-change.md](rules/update-docs-on-code-change.md) |
+| **ON_CHANGE** | Синхронизация документации | После изменения кода | [008-sync-docs.md](rules/008-sync-docs.md) |
 
 ---
 
@@ -48,7 +48,7 @@
 
 ### По задаче
 - **Создание нового модуля**: [000-documentation](rules/000-documentation.md) → [001-module-index](rules/001-module-index.md) → skill `create module`
-- **Изменение кода**: [update-docs-on-code-change](rules/update-docs-on-code-change.md) → skill `sync docs`
+- **Изменение кода**: [008-sync-docs](rules/008-sync-docs.md) → skill `sync docs`
 - **Изменение данных**: [003-data-dependencies](rules/003-data-dependencies.md) → skill `check data impact`
 - **Документирование**: [000-documentation](rules/000-documentation.md) → [002-compact-and-no-duplication](rules/002-compact-and-no-duplication.md) → skill `doc this`
 - **Работа с большими CSV**: [007-no-csv-context](rules/007-no-csv-context.md) → [100-file-handling](rules/100-file-handling.md)

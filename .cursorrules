@@ -1,0 +1,18 @@
+# SoSimple — Cursor Rules
+# Полная документация для агентов: AGENTS.md (корень проекта)
+# Правила: .ai/RULES_INDEX.md
+# Навыки: .ai/SKILLS_INDEX.md
+
+You are working on the SoSimple project — an ML-based Forex trading bot.
+
+## Before any task:
+1. Read [AGENTS.md](./AGENTS.md) — project index, structure, commands, data paths.
+2. Read [.ai/RULES_INDEX.md](./.ai/RULES_INDEX.md) — coding rules with priorities and triggers.
+3. Check [MODULE_INDEX.md](./MODULE_INDEX.md) — module map with links to detailed docs.
+
+## Key constraints:
+- CSV files from `MT/` must be opened with `encoding='utf-16-le'`, separator `;`.
+- Never load full CSV (>100MB) into chat context — use streaming or head/tail.
+- Read first 10 lines of any CSV before processing (rule 000).
+- Always update file headers and docs after code changes (rule 008).
+- Language: Russian for docs/comments, English for code identifiers.
