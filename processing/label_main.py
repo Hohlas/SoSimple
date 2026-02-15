@@ -9,12 +9,12 @@
 # Зависимости:
 #   Входные данные:
 #     - MT/MQL4/Files/Nero.csv (путь относительно корня проекта, см. --input)
-#   Выходные данные (все в корень проекта):
-#     - {stem}_train_labeled.csv (маркированные + нормализованные данные, 70%)
-#     - {stem}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
-#     - {stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
-#     - {stem}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
-#     - {stem}_normalization_stats.csv (статистика признаков до нормализации)
+#   Выходные данные (все в каталог DATA/):
+#     - DATA/{stem}_train_labeled.csv (маркированные + нормализованные данные, 70%)
+#     - DATA/{stem}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - DATA/{stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
+#     - DATA/{stem}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
+#     - DATA/{stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
 #   - label_signals.py (функция label_all)
 #   - normalize.py (функции normalize_rowwise, normalize_atr_train, normalize_atr_inference)
@@ -30,7 +30,7 @@
 #   python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
-#   - Входной путь (--input) задаётся относительно корня проекта; вывод — в корень проекта
+#   - Входной путь (--input) задаётся относительно корня проекта; вывод — в каталог DATA/
 #   - Конвейер: сортировка -> маркировка -> нормализация (построчная) -> разделение -> ATR нормализация
 #   - Построчная нормализация выполняется до split (нет data leakage)
 #   - ATR нормализация: fit на train, transform на val/test
@@ -299,11 +299,11 @@ def main():
 
     args = parser.parse_args()
 
-    # Пути: входной — относительно корня проекта, выходы — в корень проекта
+    # Пути: входной — относительно корня проекта, выходы — в каталог DATA/
     project_root = get_project_root()
     input_path = Path(args.input)
     input_resolved = (project_root / input_path) if not input_path.is_absolute() else input_path
-    output_base = project_root / input_path.stem
+    output_base = project_root / "DATA" / input_path.stem
 
     stats_path = str(output_base) + "_normalization_stats.csv"
     scaler_path = str(output_base) + "_atr_scaler.pkl"

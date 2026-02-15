@@ -8,31 +8,31 @@
 ```
 MT/MQL4/Files/Nero.csv (raw)
           ↓
-   [Сортировка фракталов]
+    [Сортировка фракталов]
           ↓
-   Nero_sorted_temp.csv
+    DATA/Nero_sorted_temp.csv
           ↓
-   [Маркировка signal + predict]
+    [Маркировка signal + predict]
           ↓
-   Nero_labeled_temp.csv
+    DATA/Nero_labeled_temp.csv
           ↓
-   [Построчная нормализация]
+    [Построчная нормализация]
           ↓
-   Nero_normalized (in-memory)
+    Nero_normalized (in-memory)
           ↓
-   [Разделение 70/15/15]
+    [Разделение 70/15/15]
           ↓
-  train / val / test
+   train / val / test
           ↓
-   [ATR нормализация]
+    [ATR нормализация]
           ↓
-  Nero_train_labeled.csv
-  Nero_validation_labeled.csv
-  Nero_test_labeled.csv
+   DATA/Nero_train_labeled.csv
+   DATA/Nero_validation_labeled.csv
+   DATA/Nero_test_labeled.csv
           ↓
-   [Обучение модели] (🚧 TODO)
+    [Обучение модели] (🚧 TODO)
           ↓
-  model_weights.pt
+   model_weights.pt
 ```
 
 ---
@@ -55,7 +55,7 @@ MT/MQL4/Files/Nero.csv (raw)
 4. Записывает обратно в `fractal0`, `fractal1`, ...
 
 ### Выход
-- **Файл**: `Nero_sorted_temp.csv` (временный)
+- **Файл**: `DATA/Nero_sorted_temp.csv` (временный)
 - **Валидация**: `verify_sorting_quality()` — проверяет `time[i] >= time[i+1]`
 
 ### Ключевые требования
@@ -67,7 +67,7 @@ MT/MQL4/Files/Nero.csv (raw)
 ## 🏷️ Этап 2: Маркировка (Labeling)
 
 ### Вход
-- **Файл**: `Nero_sorted_temp.csv`
+- **Файл**: `DATA/Nero_sorted_temp.csv`
 - **Формат**: Отсортированные фракталы
 
 ### Процесс
@@ -99,7 +99,7 @@ predict = (расстояние до цели) * target_direction
 **Важно**: `predict` может быть **отрицательным** (знак кодирует direction).
 
 ### Выход
-- **Файл**: `Nero_labeled_temp.csv` (временный)
+- **Файл**: `DATA/Nero_labeled_temp.csv` (временный)
 - **Новые колонки**: `signal`, `predict` (перезаписывают старые значения)
 
 ### Ключевые требования
@@ -111,7 +111,7 @@ predict = (расстояние до цели) * target_direction
 ## 🔢 Этап 3: Построчная нормализация
 
 ### Вход
-- **DataFrame**: `Nero_labeled_temp.csv` (в памяти)
+- **DataFrame**: `DATA/Nero_labeled_temp.csv` (в памяти)
 
 ### Процесс
 **Модуль**: `processing/normalize.py` → `normalize_rowwise()`
@@ -149,7 +149,7 @@ df = array_to_fractal_strings(fractals, df, fractal_columns)
 
 ### Выход
 - **DataFrame** (в памяти): Нормализованные фракталы + predict
-- **Артефакт**: `Nero_normalization_stats.csv` (статистика до нормализации)
+- **Артефакт**: `DATA/Nero_normalization_stats.csv` (статистика до нормализации)
 
 ### Ключевые требования
 - Нормализация **до split** — каждая строка независима
@@ -187,7 +187,7 @@ test_df = df.iloc[val_end:]              # 15%
 
 #### 5.1. Train
 ```python
-train_df = normalize_atr_train(train_df, scaler_path="Nero_atr_scaler.pkl")
+train_df = normalize_atr_train(train_df, scaler_path="DATA/Nero_atr_scaler.pkl")
 # Выполняет:
 # - RobustScaler.fit(train_df['ATR'])
 # - RobustScaler.transform(train_df['ATR'])
@@ -196,15 +196,15 @@ train_df = normalize_atr_train(train_df, scaler_path="Nero_atr_scaler.pkl")
 
 #### 5.2. Validation/Test
 ```python
-val_df = normalize_atr_inference(val_df, scaler_path="Nero_atr_scaler.pkl")
-test_df = normalize_atr_inference(test_df, scaler_path="Nero_atr_scaler.pkl")
+val_df = normalize_atr_inference(val_df, scaler_path="DATA/Nero_atr_scaler.pkl")
+test_df = normalize_atr_inference(test_df, scaler_path="DATA/Nero_atr_scaler.pkl")
 # Выполняет:
 # - Загружает scaler из .pkl
 # - RobustScaler.transform(df['ATR'])
 ```
 
 ### Выход
-- **Артефакт**: `Nero_atr_scaler.pkl` (RobustScaler)
+- **Артефакт**: `DATA/Nero_atr_scaler.pkl` (RobustScaler)
 
 ### Ключевые требования
 - **fit только на train** — нет data leakage
@@ -216,11 +216,11 @@ test_df = normalize_atr_inference(test_df, scaler_path="Nero_atr_scaler.pkl")
 
 ### Выход
 ```
-Nero_train_labeled.csv
-Nero_validation_labeled.csv
-Nero_test_labeled.csv
-Nero_atr_scaler.pkl
-Nero_normalization_stats.csv
+DATA/Nero_train_labeled.csv
+DATA/Nero_validation_labeled.csv
+DATA/Nero_test_labeled.csv
+DATA/Nero_atr_scaler.pkl
+DATA/Nero_normalization_stats.csv
 ```
 
 ### Формат CSV
@@ -232,8 +232,8 @@ Nero_normalization_stats.csv
 ## 🚧 Этап 7: ML Training (TODO)
 
 ### Вход
-- `Nero_train_labeled.csv`
-- `Nero_validation_labeled.csv`
+- `DATA/Nero_train_labeled.csv`
+- `DATA/Nero_validation_labeled.csv`
 
 ### Процесс (планируется)
 1. Парсинг фракталов в tensors

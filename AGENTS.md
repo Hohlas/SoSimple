@@ -20,8 +20,8 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 
 ### Пути к данным
 - **Вход**: `MT/MQL4/Files/Nero.csv` (UTF-16LE, `;`)
-- **Выход**: `Nero_{train|validation|test}_labeled.csv`
-- **Мета**: `Nero_atr_scaler.pkl`, `Nero_normalization_stats.csv`
+- **Выход**: `DATA/Nero_{train|validation|test}_labeled.csv`
+- **Мета**: `DATA/Nero_atr_scaler.pkl`, `DATA/Nero_normalization_stats.csv`
 
 ### Critical Rules Top-3
 1. **[000] Headers first**: Читай первые 10 строк CSV перед работой.

@@ -10,11 +10,11 @@ CLI-оркестратор для полного конвейера подгот
 - **Источник**: MetaTrader 4 (экспорт через `lib_PIC.mqh`)
 
 ## Выходные данные
-- **Файл**: `{stem}_train_labeled.csv`
-- **Файл**: `{stem}_validation_labeled.csv`
-- **Файл**: `{stem}_test_labeled.csv`
-- **Файл**: `{stem}_atr_scaler.pkl`
-- **Файл**: `{stem}_normalization_stats.csv`
+- **Файл**: `DATA/{stem}_train_labeled.csv`
+- **Файл**: `DATA/{stem}_validation_labeled.csv`
+- **Файл**: `DATA/{stem}_test_labeled.csv`
+- **Файл**: `DATA/{stem}_atr_scaler.pkl`
+- **Файл**: `DATA/{stem}_normalization_stats.csv`
 
 ## Использование
 ```bash
