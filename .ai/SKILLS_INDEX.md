@@ -16,7 +16,7 @@
 | `check data impact [файл]` | [check-data-impact](skills/check-data-impact/SKILL.md) | Показать downstream-зависимости | ✅ Реализован |
 | `explain step [название]` | [explain-pipeline-step](skills/explain-pipeline-step/SKILL.md) | Детальное объяснение шага pipeline | ✅ Реализован |
 | `rebuild module index` | [generate-module-index](skills/generate-module-index/SKILL.md) | Пересоздать MODULE_INDEX.md из file headers | ✅ Реализован |
-| `analyze [файл.csv]` | [create-eda-report](skills/create-eda-report/SKILL.md) | Автоматический EDA для датасета | ✅ Реализован |
+| `run eda` / `analyze` | [create-eda-report](skills/create-eda-report/SKILL.md) | Полный EDA цикл (statistics.py + ноутбук) | ✅ Реализован |
 
 ---
 

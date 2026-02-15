@@ -1,36 +1,33 @@
 ---
 name: create-eda-report
 description: >
-  Run automated exploratory data analysis on a CSV dataset with sampling for large files.
+  Run automated project-specific exploratory data analysis using statistics.py and EDA.ipynb.
 tags:
   - analysis
   - eda
   - data
 triggers:
-  - "analyze [file.csv]"
-  - "run eda [file.csv]"
+  - "analyze"
+  - "analyze [file]"
+  - "run eda"
 applies_to:
-  - "*.csv"
+  - "statistics/Nero.csv"
 always_apply: false
 ---
 
-**Команда**: `analyze [файл.csv]` или `run eda [файл.csv]`
-**Назначение**: Запустить автоматический EDA для датасета
+**Команда**: `run eda` или `analyze`
+**Назначение**: Запустить полный цикл статистического анализа и EDA для датасета Nero.
 
 Шаги:
-1. Загрузить датасет (sampling, если > 10MB)
-2. Выполнить базовую статистику:
-   - df.info(), df.describe()
-   - Проверка на пропуски, дубликаты
-   - Распределение целевой переменной
-3. Сгенерировать отчёт в docs/data_analysis/[файл]_eda_[дата].md
-4. Если необходимы графики — создать plots/[файл]/
-5. Показать краткие выводы
+1. Запустить сбор статистики:
+   `cd statistics && python statistics.py`
+   * Генерирует: `statistics_summary.json`, `class_balance_report.csv`, `feature_distributions.csv`, `nero_sample_stratified.csv`, `class_statistics.json`
 
-Пример:
-> analyze Nero_train_labeled.csv
-Загружаю sample (1000 строк из 50000)...
-✅ Нет пропущенных значений
-✅ Нет дубликатов
-⚠️ Дисбаланс классов: 65% класс 0, 35% класс 1
-Отчёт сохранён: docs/data_analysis/Nero_train_labeled_eda_2026-02-10.md
+2. Сгенерировать EDA отчёт из ноутбука:
+   `cd statistics && jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb`
+   * Генерирует: `reports/EDA_executed.ipynb` и графики в `plots/`
+
+Выходные данные:
+- JSON/CSV отчеты в `statistics/`
+- Выполненный ноутбук в `statistics/reports/`
+- Графики в `statistics/plots/`

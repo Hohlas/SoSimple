@@ -35,6 +35,7 @@ from collections import Counter, defaultdict
 from typing import Dict, List
 import os
 from pathlib import Path
+import sys
 
 # Получаем абсолютный путь к директории, где находится скрипт
 SCRIPT_DIR = Path(__file__).parent.absolute()
@@ -423,10 +424,17 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
 # ============================================================================
 
 if __name__ == "__main__":
-    print("Начало обработки Nero.csv...")
+    if len(sys.argv) > 1:
+        input_file = Path(sys.argv[1])
+        if not input_file.is_absolute():
+            input_file = Path.cwd() / input_file
+    else:
+        input_file = SCRIPT_DIR / 'Nero.csv'
+
+    print(f"Начало обработки {input_file.name}...")
     print("="*60)
     
-    summary = process_nero_csv(SCRIPT_DIR / 'Nero.csv', chunksize=500)
+    summary = process_nero_csv(input_file, chunksize=500)
     
     print("="*60)
     print("Обработка завершена!")
