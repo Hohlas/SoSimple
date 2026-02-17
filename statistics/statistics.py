@@ -37,8 +37,12 @@ import os
 from pathlib import Path
 import sys
 
-# Получаем абсолютный путь к директории, где находится скрипт
+# Путь к директории скрипта
 SCRIPT_DIR = Path(__file__).parent.absolute()
+# Путь к корню проекта (на уровень выше от statistics/)
+ROOT_DIR = SCRIPT_DIR.parent
+# Путь к данным в корне проекта
+DATA_DIR = ROOT_DIR / 'DATA'
 
 # ============================================================================
 # ЭТАП 1: ПОТОКОВАЯ ОБРАБОТКА И СБОР СТАТИСТИКИ
@@ -429,7 +433,7 @@ if __name__ == "__main__":
         if not input_file.is_absolute():
             input_file = Path.cwd() / input_file
     else:
-        input_file = SCRIPT_DIR / 'Nero.csv'
+        input_file = DATA_DIR / 'Nero_train_labeled.csv'
 
     print(f"Начало обработки {input_file.name}...")
     print("="*60)
