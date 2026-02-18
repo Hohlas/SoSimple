@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //|                                              PeriodConverter.mq4 |
-//|                             Copyright 2000-2025, MetaQuotes Ltd. |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
 //|                                        http://www.metaquotes.net |
 //+------------------------------------------------------------------+
-#property copyright   "2000-2025, MetaQuotes Ltd."
+#property copyright   "2000-2026, MetaQuotes Ltd."
 #property link        "https://www.mql5.com"
 #property description "Period Converter to updated format of history base"
 #property strict

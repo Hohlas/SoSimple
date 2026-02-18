@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                                       stdlib.mqh |
-//|                      Copyright © 2004, MetaQuotes Software Corp. |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
 //|                                       http://www.metaquotes.net/ |
 //+------------------------------------------------------------------+
 #import "stdlib.ex4"

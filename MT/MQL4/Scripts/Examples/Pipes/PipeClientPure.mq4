@@ -1,6 +1,6 @@
 //+------------------------------------------------------------------+
 //|                                               PipeClientPure.mq4 |
-//|                             Copyright 2000-2025, MetaQuotes Ltd. |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
 //|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2005-2025, MetaQuotes Ltd."

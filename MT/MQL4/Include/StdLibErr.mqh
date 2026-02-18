@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //|                                                    StdLibErr.mqh |
-//|                   Copyright 2009-2013, MetaQuotes Software Corp. |
-//|                                              http://www.mql4.com |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
+//|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 #define ERR_USER_INVALID_HANDLE                            1
 #define ERR_USER_INVALID_BUFF_NUM                          2

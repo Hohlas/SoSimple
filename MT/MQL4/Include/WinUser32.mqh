@@ -1,10 +1,10 @@
 //+------------------------------------------------------------------+
 //|                                                    WinUser32.mqh |
-//|                      Copyright © 2013, MetaQuotes Software Corp. |
-//|                                             http://www.mql4.com/ |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
+//|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
-#property copyright "Copyright © 2013, MetaQuotes Software Corp."
-#property link      "http://www.mql4.com/"
+#property copyright "2000-2026, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
 
 #import "user32.dll"
    //---- messages

@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-02-17T19:28:22.885981",
-  "total_samples": 32136,
+  "created_at": "2026-02-18T17:15:37.989994",
+  "total_samples": 43593,
   "total_features": 236,
   "feature_columns": [
     "price_mean_w1",
@@ -241,9 +241,9 @@
     "time"
   ],
   "class_distribution": {
-    "0": 23869,
-    "1": 4284,
-    "-1": 3983
+    "0": 41390,
+    "1": 1119,
+    "-1": 1084
   },
   "feature_groups": {
     "Базовые признаки fractal": [

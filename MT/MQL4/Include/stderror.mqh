@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //|                                                     stderror.mqh |
-//|                   Copyright 2005-2015, MetaQuotes Software Corp. |
-//|                                              http://www.mql4.com |
+//|                             Copyright 2000-2026, MetaQuotes Ltd. |
+//|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 //--- errors returned from trade server
 #define ERR_NO_ERROR                                  0

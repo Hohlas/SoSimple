@@ -1,13 +1,13 @@
 # Sequence Analysis Summary
 
-**Дата создания:** 2026-02-17 19:28:22
+**Дата создания:** 2026-02-18 17:15:38
 
 ## Data Quality
 
 - **Successfully parsed:** 0 строк (0.00%)
 - **Missing values:** Обнаружены
 - **Causal consistency:** ⚠️ ISSUES DETECTED
-  - Нарушения порядка: 32136 строк
+  - Нарушения порядка: 43593 строк
 
 
 ## Key Findings
@@ -18,26 +18,26 @@
 
 ### Топ-20 engineered features по важности:
 
-169. **price_slope_2** (correlation=-0.465, MI=0.262)
-172. **price_slope_3** (correlation=-0.457, MI=0.250)
-175. **price_slope_4** (correlation=-0.424, MI=0.232)
-200. **price_zscore_w10** (correlation=0.461, MI=0.206)
-178. **price_slope_5** (correlation=-0.387, MI=0.212)
-213. **price_momentum_5** (correlation=0.385, MI=0.207)
-204. **price_zscore_w20** (correlation=0.364, MI=0.161)
-7. **front_min_w1** (correlation=0.066, MI=0.225)
-5. **front_mean_w1** (correlation=0.066, MI=0.224)
-8. **front_max_w1** (correlation=0.066, MI=0.224)
-217. **price_momentum_10** (correlation=0.285, MI=0.164)
-181. **price_slope_10** (correlation=-0.265, MI=0.141)
-201. **price_percentile_w10** (correlation=0.378, MI=0.111)
-224. **front_back_interaction** (correlation=0.041, MI=0.196)
-19. **impulse_min_w1** (correlation=-0.028, MI=0.168)
-20. **impulse_max_w1** (correlation=-0.028, MI=0.167)
-17. **impulse_mean_w1** (correlation=-0.028, MI=0.167)
-187. **majority_direction_match_w3** (correlation=-0.353, MI=0.081)
-221. **price_momentum_20** (correlation=0.174, MI=0.119)
-29. **front_mean_w2** (correlation=0.030, MI=0.152)
+200. **price_zscore_w10** (correlation=0.303, MI=0.068)
+204. **price_zscore_w20** (correlation=0.299, MI=0.057)
+201. **price_percentile_w10** (correlation=0.268, MI=0.058)
+172. **price_slope_3** (correlation=-0.270, MI=0.058)
+205. **price_percentile_w20** (correlation=0.251, MI=0.056)
+175. **price_slope_4** (correlation=-0.269, MI=0.054)
+178. **price_slope_5** (correlation=-0.258, MI=0.052)
+7. **front_min_w1** (correlation=0.049, MI=0.064)
+8. **front_max_w1** (correlation=0.049, MI=0.064)
+5. **front_mean_w1** (correlation=0.049, MI=0.064)
+213. **price_momentum_5** (correlation=0.255, MI=0.049)
+169. **price_slope_2** (correlation=-0.240, MI=0.048)
+181. **price_slope_10** (correlation=-0.219, MI=0.037)
+217. **price_momentum_10** (correlation=0.223, MI=0.036)
+29. **front_mean_w2** (correlation=0.036, MI=0.042)
+32. **front_max_w2** (correlation=0.031, MI=0.042)
+187. **majority_direction_match_w3** (correlation=-0.178, MI=0.030)
+20. **impulse_max_w1** (correlation=-0.028, MI=0.038)
+19. **impulse_min_w1** (correlation=-0.028, MI=0.038)
+17. **impulse_mean_w1** (correlation=-0.028, MI=0.037)
 
 
 ## Recommendations for Modeling
@@ -55,16 +55,16 @@
 ### 2. Критичные признаки
 
 Топ-10 признаков для включения в модель:
-- `price_slope_2` (importance=0.7327)
-- `price_slope_3` (importance=0.7060)
-- `price_slope_4` (importance=0.6555)
-- `price_zscore_w10` (importance=0.6240)
-- `price_slope_5` (importance=0.5980)
-- `price_momentum_5` (importance=0.5879)
-- `price_zscore_w20` (importance=0.4890)
-- `front_min_w1` (importance=0.4620)
-- `front_mean_w1` (importance=0.4598)
-- `front_max_w1` (importance=0.4594)
+- `price_zscore_w10` (importance=0.6517)
+- `price_zscore_w20` (importance=0.5693)
+- `price_percentile_w10` (importance=0.5636)
+- `price_slope_3` (importance=0.5613)
+- `price_percentile_w20` (importance=0.5376)
+- `price_slope_4` (importance=0.5349)
+- `price_slope_5` (importance=0.5141)
+- `front_min_w1` (importance=0.4989)
+- `front_max_w1` (importance=0.4983)
+- `front_mean_w1` (importance=0.4981)
 
 
 ### 3. Temporal features
@@ -85,7 +85,7 @@
 ### 5. Feature Selection
 
 - Всего создано: 233 признаков
-- Redundant features (correlation > 0.95): 13
+- Redundant features (correlation > 0.95): 22
 - Рекомендуется удалить избыточные признаки перед обучением
 
 ## Файлы результатов
