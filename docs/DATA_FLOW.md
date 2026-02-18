@@ -229,20 +229,49 @@ DATA/Nero_normalization_stats.csv
 
 ---
 
-## 🚧 Этап 7: ML Training (TODO)
+## 🚧 Этап 7: ML Training
 
 ### Вход
 - `DATA/Nero_train_labeled.csv`
 - `DATA/Nero_validation_labeled.csv`
 
-### Процесс (планируется)
-1. Парсинг фракталов в tensors
-2. Построение sequences (если RNN/Transformer)
-3. Обучение модели с classification/regression loss
-4. Валидация на val_df
+### Процесс
+
+#### 7.1. Загрузка и парсинг данных
+**Модуль**: `ML/data_loader.py` → `create_data_loaders()`
+
+1. CSV → 3D тензор `(n_samples, 100, 11)`:
+   - 10 фрактальных features (price, direction, front, back, strong, break, reverse, power, count, impulse)
+   - `fractal_time` **исключён** (data leakage через абсолютное время)
+   - ATR broadcast на все 100 позиций как 11-й признак
+2. **StandardScaler**: fit на train (flatten `n_samples*100 × 11`), transform на val
+3. Padding mask для NaN-позиций (используется Transformer)
+4. Маппинг меток: `{-1, 0, 1}` → `{0, 1, 2}`
+
+#### 7.2. Обучение
+**Модуль**: `ML/train.py` (CLI: `--model bilstm|cnn1d|transformer|hybrid`)
+
+- **Loss**: Focal Loss (gamma=2, alpha=[0.45, 0.10, 0.45])
+- **Optimizer**: AdamW (lr=1e-3, weight_decay=1e-4)
+- **Early stopping**: на val macro F1 (patience=10). НЕ на loss — при 95% дисбалансе loss может улучшаться за счёт majority-класса
+- **Scheduler**: ReduceLROnPlateau (patience=5, factor=0.5, monitor=val_f1_macro)
+- **Архитектуры**: Bi-LSTM, 1D-CNN, Transformer Encoder, Hybrid CNN+LSTM
+
+#### 7.3. Сравнение архитектур
+**Модуль**: `ML/compare_architectures.py`
+
+Последовательно обучает все 4 модели, генерирует сводный отчёт.
 
 ### Выход
-- `model_weights.pt` или `model.h5`
+- `ML/checkpoints/<model>_best.pt` (веса лучшей модели по val F1)
+- `ML/plots/training_curves_<model>.png` (кривые обучения)
+- `ML/plots/cm_<model>.png` (confusion matrices)
+- `ML/reports/architecture_comparison.md` (сводный отчёт)
+
+### Ключевые требования
+- **StandardScaler fit только на train** — нет data leakage
+- **Shuffle=True в train DataLoader** — каждая строка является независимым snapshot
+- **Shuffle=False в val DataLoader** — для воспроизводимости метрик
 
 ---
 
@@ -255,8 +284,10 @@ DATA/Nero_normalization_stats.csv
 3. **ATR fit только на train**: Validation/test используют тот же scaler
 4. **Split последовательный**: Не случайный shuffle (сохраняем временной порядок)
 5. **Маркировка до split**: Маркируем весь датасет, затем делим
+6. **StandardScaler (NN)**: fit только на train, transform на val
+7. **fractal_time исключён** из features для нейросетей
 
 ---
 
-**Последнее обновление**: 2026-02-13  
+**Последнее обновление**: 2026-02-18  
 **Автор**: Antigravity + Claude

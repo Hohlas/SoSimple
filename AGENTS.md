@@ -41,7 +41,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ├── MT/MQL4/          # MT4 код: lib_PIC.mqh (алгоритм PIC)
 ├── processing/       # Препроцессинг: label_main.py (CLI), label_signals.py, normalize.py
 ├── statistics/       # Статистика: statistics.py, EDA.ipynb
-├── ML/               # Machine Learning: baseline_experiments.py (baseline-модели)
+├── ML/               # Machine Learning: модели (Bi-LSTM, CNN, Transformer, Hybrid), train.py
 ├── .ai/              # Правила (.ai/rules/) и команды (.ai/SKILLS_INDEX.md)
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
 └── AGENTS.md, CHANGELOG.md, README.md
@@ -56,6 +56,9 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 - `processing/normalize.py` — Нормализация признаков ✅
 - `statistics/statistics.py` — Потоковая статистика ✅
 - `ML/baseline_experiments.py` — Baseline-модели (Dummy, LogReg, RF, XGBoost, LightGBM) ✅
+- `ML/train.py` — Единый скрипт обучения нейросетей (PyTorch) ✅
+- `ML/models/` — 4 архитектуры: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM ✅
+- `ML/compare_architectures.py` — Сравнение всех архитектур ✅
 - `MT/MQL4/Include/lib_PIC.mqh` — Алгоритм PIC (legacy) ⚠️
 
 ---
@@ -93,7 +96,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 | Сбор данных (MT4) | ✅ Готов | lib_PIC.mqh (legacy) |
 | Препроцессинг | ✅ Готов | label_main.py, normalize.py |
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
-| ML модели | 🚧 В разработке | Архитектура в процессе выбора |
+| ML модели | 🚧 В разработке | 4 архитектуры реализованы, ожидает обучения |
 | Интеграция с MT4 | 📅 Планируется | DLL/REST API |
 
 
@@ -106,6 +109,6 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 
 ---
 
-**Последнее обновление**: 2026-02-14
+**Последнее обновление**: 2026-02-18
 **Авторы**: Antigravity (human) + Claude (AI)
 

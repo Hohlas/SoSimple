@@ -2,7 +2,7 @@
 title: Product Requirements Document
 status: active
 phase: MVP
-last_updated: 2026-02-14
+last_updated: 2026-02-18
 ---
 
 # Product Requirements Document
@@ -87,8 +87,9 @@ last_updated: 2026-02-14
 - [x] Сбор данных (lib_PIC.mqh)
 - [x] Preprocessing (normalize, label, split)
 - [x] EDA и статистический анализ
-- [ ] Выбор архитектуры нейронной сети
-- [ ] Обучение baseline модели
+- [x] Обучение baseline модели (RF macro F1=0.56)
+- [x] Реализация 4 архитектур нейросетей (Bi-LSTM, CNN, Transformer, Hybrid)
+- [ ] Обучение и сравнение нейросетей
 - [ ] Бэктест на test set
 
 ### Фаза 2: Автоматизация

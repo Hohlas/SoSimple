@@ -1,6 +1,19 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-02-18] — Нейросетевые архитектуры (Этап 3.2)
+### Добавлено
+- `ML/models/bilstm.py` — Bi-LSTM классификатор (147K параметров)
+- `ML/models/cnn1d.py` — 1D-CNN классификатор (42K параметров)
+- `ML/models/transformer.py` — Transformer Encoder с CLS-токеном (70K параметров)
+- `ML/models/hybrid_cnn_lstm.py` — Hybrid CNN+LSTM (83K параметров)
+- `ML/data_loader.py` — Dataset/DataLoader с парсингом, нормализацией и padding mask
+- `ML/train.py` — Единый скрипт обучения (Focal Loss, AdamW, early stopping на F1)
+- `ML/losses.py` — Focal Loss для несбалансированных данных
+- `ML/utils.py` — Seed, метрики, подсчёт параметров
+- `ML/compare_architectures.py` — Скрипт сравнения всех архитектур
+- Зависимость: torch>=2.0
+
 ## [2026-02-18] — Baseline ML эксперименты
 ### Добавлено
 - `ML/baseline_experiments.py` — 5 baseline-моделей (Dummy, LogReg, RF, XGBoost, LightGBM)

@@ -30,6 +30,15 @@
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
 | [baseline_experiments.py](ML/baseline_experiments.py) | Baseline-модели (5 алгоритмов) | `*_labeled.csv` → `reports/baseline_report.md`, `plots/` | [report](ML/reports/baseline_report.md) | ✅ |
+| [data_loader.py](ML/data_loader.py) | Dataset/DataLoader для фрактальных последовательностей | `*_labeled.csv` → in-memory tensors | — | ✅ |
+| [train.py](ML/train.py) | Единый скрипт обучения нейросетей | DataLoader → `checkpoints/`, `plots/` | — | ✅ |
+| [losses.py](ML/losses.py) | Focal Loss для несбалансированных данных | — | — | ✅ |
+| [utils.py](ML/utils.py) | Утилиты: seed, метрики, параметры | — | — | ✅ |
+| [models/bilstm.py](ML/models/bilstm.py) | Bi-LSTM классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
+| [models/cnn1d.py](ML/models/cnn1d.py) | 1D-CNN классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
+| [models/transformer.py](ML/models/transformer.py) | Transformer Encoder классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
+| [models/hybrid_cnn_lstm.py](ML/models/hybrid_cnn_lstm.py) | Hybrid CNN+LSTM классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
+| [compare_architectures.py](ML/compare_architectures.py) | Сравнение всех 4 архитектур | DataLoader → `reports/architecture_comparison.md` | — | ✅ |
 
 ## Docs
 
@@ -44,6 +53,7 @@
 | [statistics.py.md](docs/data_analysis/statistics.py.md) | Справка по потоковой статистике |
 | [EDA.ipynb.md](docs/data_analysis/EDA.ipynb.md) | Отчет по разведочному анализу |
 | [lib_PIC.mqh.md](docs/mql4/lib_PIC.mqh.md) | Описание библиотеки PIC |
+| [neural_networks.md](docs/ml/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики |
 
 ## Легенда статусов
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
