@@ -41,7 +41,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ├── MT/MQL4/          # MT4 код: lib_PIC.mqh (алгоритм PIC)
 ├── processing/       # Препроцессинг: label_main.py (CLI), label_signals.py, normalize.py
 ├── statistics/       # Статистика: statistics.py, EDA.ipynb
-├── ML/               # Machine Learning (в разработке)
+├── ML/               # Machine Learning: baseline_experiments.py (baseline-модели)
 ├── .ai/              # Правила (.ai/rules/) и команды (.ai/SKILLS_INDEX.md)
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
 └── AGENTS.md, CHANGELOG.md, README.md
@@ -55,6 +55,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 - `processing/label_signals.py` — Маркировка signal/predict ✅
 - `processing/normalize.py` — Нормализация признаков ✅
 - `statistics/statistics.py` — Потоковая статистика ✅
+- `ML/baseline_experiments.py` — Baseline-модели (Dummy, LogReg, RF, XGBoost, LightGBM) ✅
 - `MT/MQL4/Include/lib_PIC.mqh` — Алгоритм PIC (legacy) ⚠️
 
 ---
@@ -69,7 +70,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 
 ## 🛠️ Технологический стек
 - **Языки**: Python 3.11+, MQL4; **Библиотеки**: Pandas, NumPy, Scikit-learn, Scipy
-- **Визуализация**: Matplotlib, Seaborn; **ML**: PyTorch (план)
+- **Визуализация**: Matplotlib, Seaborn; **ML**: XGBoost, LightGBM, PyTorch (план)
 
 ---
 

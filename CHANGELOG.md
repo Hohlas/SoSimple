@@ -1,6 +1,12 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-02-18] — Baseline ML эксперименты
+### Добавлено
+- `ML/baseline_experiments.py` — 5 baseline-моделей (Dummy, LogReg, RF, XGBoost, LightGBM)
+- `ML/reports/baseline_report.md` — автогенерируемый отчёт с метриками и confusion matrices
+- Зависимости: xgboost, lightgbm
+
 ## [2026-02-15] — Изменение путей вывода данных
 ### Изменено
 - Выходные файлы `label_main.py` теперь создаются в каталоге `DATA/` вместо корня проекта
