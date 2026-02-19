@@ -22,7 +22,7 @@ MT/MQL4/Files/Nero.csv (raw)
           ↓
     [Разделение 70/15/15]
           ↓
-   train / val / test
+    train / val / test
           ↓
     [ATR нормализация]
           ↓
@@ -30,9 +30,11 @@ MT/MQL4/Files/Nero.csv (raw)
    DATA/Nero_validation_labeled.csv
    DATA/Nero_test_labeled.csv
           ↓
-    [Обучение модели] (🚧 TODO)
+    [Baseline Experiments] (ML/baseline_experiments.py) ----→ reports/baseline_report.md
           ↓
-   model_weights.pt
+    [Обучение Нейросетей] (ML/train.py)
+          ↓
+   ML/checkpoints/*_best.pt
 ```
 
 ---
@@ -226,6 +228,30 @@ DATA/Nero_normalization_stats.csv
 ### Формат CSV
 - **Separator**: `;`
 - **Columns**: `time`, `signal`, `predict`, `ATR` (нормализованный), `fractal0`...`fractal99` (нормализованные строки)
+
+---
+
+## 📊 Этап 6.5: Baseline Experiments
+
+### Вход
+- `DATA/Nero_train_labeled.csv`
+- `DATA/Nero_validation_labeled.csv`
+
+### Процесс
+**Модуль**: `ML/baseline_experiments.py`
+
+1. **Flat features**: Extract 15 features (price, direction, ..., time[hour, dow]) from `fractal[0]`
+2. **Engineered features**: ~233 features (rolling stats, trends, volatility)
+3. **Training**: 
+   - Dummy Classifier (Stratified/MostFrequent)
+   - Logistic Regression (StandardScaler)
+   - Random Forest (n_estimators=100)
+   - XGBoost / LightGBM (class_weight='balanced')
+4. **Evaluation**: Macro F1-score, Precision/Recall per class
+
+### Выход
+- `ML/reports/baseline_report.md`
+- `ML/plots/*.png` (confusion matrices)
 
 ---
 
