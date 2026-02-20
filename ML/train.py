@@ -256,7 +256,6 @@ def train_model(
         mode='max',          # Максимизируем F1
         patience=DEFAULTS['scheduler_patience'],
         factor=DEFAULTS['scheduler_factor'],
-        verbose=True,
     )
 
     # ── Training loop ────────────────────────────────────────────────────────
