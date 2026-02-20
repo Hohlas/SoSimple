@@ -67,12 +67,13 @@ warnings.filterwarnings('ignore', category=UserWarning)
 
 # ─── Константы ───────────────────────────────────────────────────────────────
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / 'DATA'
 STATS_DIR = PROJECT_ROOT / 'statistics'
 ML_DIR = PROJECT_ROOT / 'ML'
-PLOTS_DIR = ML_DIR / 'plots'
-REPORTS_DIR = ML_DIR / 'reports'
+BASELINE_DIR = ML_DIR / 'baseline'
+PLOTS_DIR = BASELINE_DIR / 'plots'
+REPORTS_DIR = BASELINE_DIR / 'reports'
 
 TRAIN_FILE = DATA_DIR / 'Nero_train_labeled.csv'
 VAL_FILE = DATA_DIR / 'Nero_validation_labeled.csv'

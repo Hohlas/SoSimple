@@ -30,7 +30,7 @@ MT/MQL4/Files/Nero.csv (raw)
    DATA/Nero_validation_labeled.csv
    DATA/Nero_test_labeled.csv
           ↓
-    [Baseline Experiments] (ML/baseline_experiments.py) ----→ reports/baseline_report.md
+    [Baseline Experiments] (ML/baseline/baseline_experiments.py) ----→ baseline/reports/baseline_report.md
           ↓
     [Обучение Нейросетей] (ML/train.py)
           ↓
@@ -238,7 +238,7 @@ DATA/Nero_normalization_stats.csv
 - `DATA/Nero_validation_labeled.csv`
 
 ### Процесс
-**Модуль**: `ML/baseline_experiments.py`
+**Модуль**: `ML/baseline/baseline_experiments.py`
 
 1. **Flat features**: Extract 15 features (price, direction, ..., time[hour, dow]) from `fractal[0]`
 2. **Engineered features**: ~233 features (rolling stats, trends, volatility)
@@ -250,8 +250,8 @@ DATA/Nero_normalization_stats.csv
 4. **Evaluation**: Macro F1-score, Precision/Recall per class
 
 ### Выход
-- `ML/reports/baseline_report.md`
-- `ML/plots/*.png` (confusion matrices)
+- `ML/baseline/reports/baseline_report.md`
+- `ML/baseline/plots/*.png` (confusion matrices)
 
 ---
 

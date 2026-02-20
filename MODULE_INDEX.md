@@ -29,7 +29,7 @@
 
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
-| [baseline_experiments.py](ML/baseline_experiments.py) | Baseline-модели (5 алгоритмов) | `*_labeled.csv` → `reports/baseline_report.md`, `plots/` | [report](ML/reports/baseline_report.md) | ✅ |
+| [baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (5 алгоритмов) | `*_labeled.csv` → `baseline/reports/baseline_report.md`, `baseline/plots/` | [docs](docs/ml/baseline_experiments.py.md) | ✅ |
 | [data_loader.py](ML/data_loader.py) | Dataset/DataLoader для фрактальных последовательностей | `*_labeled.csv` → in-memory tensors | — | ✅ |
 | [train.py](ML/train.py) | Единый скрипт обучения нейросетей | DataLoader → `checkpoints/`, `plots/` | — | ✅ |
 | [losses.py](ML/losses.py) | Focal Loss для несбалансированных данных | — | — | ✅ |

@@ -1,6 +1,14 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+
+## [2026-02-20] — Реструктуризация ML/baseline
+### Изменено
+- Создан подкаталог `ML/baseline/` для изоляции baseline-моделей
+- `ML/baseline_experiments.py` перемещен в `ML/baseline/`
+- Автогенерируемые артефакты baseline теперь сохраняются в `ML/baseline/plots/` и `ML/baseline/reports/`
+- Обновлена документация: `AGENTS.md`, `MODULE_INDEX.md`, `CHANGELOG.md`, `docs/ml/baseline_experiments.py.md`
+
 ## [2026-02-18] — Нейросетевые архитектуры (Этап 3.2)
 ### Добавлено
 - `ML/models/bilstm.py` — Bi-LSTM классификатор (147K параметров)

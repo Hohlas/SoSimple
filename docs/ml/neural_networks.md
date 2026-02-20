@@ -7,6 +7,7 @@
 
 ```
 ML/
+├── baseline/                 # Baseline-модели (Dummy, LogReg, RF, XGB, LGBM)
 ├── data_loader.py            # Dataset и DataLoader для фрактальных последовательностей
 ├── models/
 │   ├── __init__.py           # Реестр моделей + get_model()
