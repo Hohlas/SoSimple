@@ -227,3 +227,7 @@ __marimo__/
 # CSV, XLSX files
 *.csv
 *.xlsx
+
+# pictures
+*.png
+*.jpg 

@@ -2,7 +2,7 @@
 # Файл: utils.py
 # Назначение: Общие утилиты для обучения нейросетей (seed, метрики, подсчёт параметров)
 # Язык: Python 3.11+
-# Обновлён: 2026-02-18
+# Обновлён: 2026-02-23
 # Зависимости:
 #   Входные данные: нет
 #   Выходные данные: нет
@@ -25,10 +25,14 @@ import random
 
 import numpy as np
 import torch
+from scipy import stats
 from sklearn.metrics import (
     f1_score,
     classification_report,
     confusion_matrix,
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
 )
 
 
@@ -87,6 +91,39 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         'f1_per_class': f1_per_class,
         'confusion_matrix': cm,
         'classification_report': report,
+    }
+
+
+def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+    """
+    Вычисление набора метрик регрессии.
+
+    Аргументы:
+        y_true: Истинные значения predict, shape (n_samples,)
+        y_pred: Предсказанные значения, shape (n_samples,)
+
+    Возвращает:
+        Словарь с ключами:
+        - mae: float — Mean Absolute Error
+        - rmse: float — Root Mean Squared Error
+        - r2: float — R² (коэффициент детерминации)
+        - pearson_r: float — Корреляция Пирсона (основная метрика early stopping)
+        - pearson_p: float — p-значение корреляции
+        - directional_accuracy: float — Доля совпадений знака (sign(y_pred)==sign(y_true))
+    """
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
+    r2 = r2_score(y_true, y_pred)
+    pearson_r, pearson_p = stats.pearsonr(y_true, y_pred)
+    dir_acc = float(np.mean(np.sign(y_true) == np.sign(y_pred)))
+
+    return {
+        'mae': float(mae),
+        'rmse': rmse,
+        'r2': float(r2),
+        'pearson_r': float(pearson_r),
+        'pearson_p': float(pearson_p),
+        'directional_accuracy': dir_acc,
     }
 
 

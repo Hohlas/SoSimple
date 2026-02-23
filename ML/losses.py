@@ -2,7 +2,7 @@
 # Файл: losses.py
 # Назначение: Focal Loss для обучения на несбалансированных данных
 # Язык: Python 3.11+
-# Обновлён: 2026-02-18
+# Обновлён: 2026-02-23
 # Зависимости:
 #   Входные данные: нет
 #   Выходные данные: нет
@@ -109,3 +109,42 @@ class FocalLoss(nn.Module):
             return loss.sum()
         else:
             return loss
+
+
+class HuberLoss(nn.Module):
+    """
+    Huber Loss для регрессии на непрерывных значениях predict.
+
+    Huber Loss (delta=1.0 по умолчанию) менее чувствителен к выбросам,
+    чем MSE: при |error| < delta ведёт себя как MSE, при |error| >= delta —
+    как MAE. Это важно для predict, где редкие сильные движения цены
+    могут давать большие выбросы.
+
+    Аргументы:
+        delta: Порог переключения MSE/MAE (по умолчанию 1.0)
+        reduction: 'mean' | 'sum' | 'none'
+
+    Пример:
+        >>> loss_fn = HuberLoss(delta=1.0)
+        >>> preds = torch.randn(32)
+        >>> targets = torch.randn(32)
+        >>> loss = loss_fn(preds, targets)
+    """
+
+    def __init__(self, delta: float = 1.0, reduction: str = 'mean'):
+        super().__init__()
+        self._loss = nn.HuberLoss(delta=delta, reduction=reduction)
+
+    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        """
+        Вычисление Huber Loss.
+
+        Аргументы:
+            preds: Предсказания модели, shape (batch,)
+            targets: Целевые значения predict, shape (batch,)
+
+        Возвращает:
+            Скалярный loss (если reduction='mean' или 'sum')
+        """
+        return self._loss(preds, targets)
+

@@ -2,7 +2,7 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей
 # Язык: Python 3.11+
-# Обновлён: 2026-02-18
+# Обновлён: 2026-02-23
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -59,6 +59,9 @@ FRACTAL_TIME_IDX = 0
 # Маппинг меток: signal {-1, 0, 1} → индексы {0, 1, 2}
 LABEL_MAP = {-1: 0, 0: 1, 1: 2}
 INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
+
+# Имя колонки для регрессионного таргета
+REGRESSION_TARGET = 'predict'
 
 
 # ─── Парсинг данных ──────────────────────────────────────────────────────────
@@ -176,20 +179,32 @@ class FractalSequenceDataset(Dataset):
 
     Каждый сэмпл содержит:
     - X: tensor shape (seq_len=100, features=11)
-    - y: tensor scalar — метка класса (0, 1 или 2 после маппинга)
+    - y: tensor scalar — метка класса (0, 1 или 2 после маппинга) или float predict
     - mask: tensor shape (seq_len=100) — True для валидных позиций
 
     Аргументы:
         X: np.ndarray shape (n_samples, 100, 11) — нормализованные features
-        y: np.ndarray shape (n_samples,) — метки {-1, 0, 1}
+        y: np.ndarray shape (n_samples,) — метки {-1, 0, 1} (classification)
+               или float-значения predict (regression)
         mask: np.ndarray shape (n_samples, 100) — padding mask
+        regression: bool — если True, y трактуется как float (не маппируется)
     """
 
-    def __init__(self, X: np.ndarray, y: np.ndarray, mask: np.ndarray):
+    def __init__(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        mask: np.ndarray,
+        regression: bool = False,
+    ):
         self.X = torch.from_numpy(X).float()
-        # Маппинг меток: {-1, 0, 1} → {0, 1, 2}
-        y_mapped = np.array([LABEL_MAP[label] for label in y], dtype=np.int64)
-        self.y = torch.from_numpy(y_mapped).long()
+        if regression:
+            # Регрессия: y — float, маппинг не нужен
+            self.y = torch.from_numpy(y.astype(np.float32)).float()
+        else:
+            # Классификация: маппинг {-1, 0, 1} → {0, 1, 2}
+            y_mapped = np.array([LABEL_MAP[label] for label in y], dtype=np.int64)
+            self.y = torch.from_numpy(y_mapped).long()
         self.mask = torch.from_numpy(mask).bool()
 
     def __len__(self) -> int:
@@ -204,6 +219,7 @@ class FractalSequenceDataset(Dataset):
 def create_data_loaders(
     batch_size: int = 256,
     num_workers: int = 0,
+    target: str = 'signal',
 ) -> tuple[DataLoader, DataLoader, StandardScaler]:
     """
     Создание train и val DataLoader'ов.
@@ -213,6 +229,8 @@ def create_data_loaders(
     Аргументы:
         batch_size: Размер батча (по умолчанию 256)
         num_workers: Количество worker'ов для загрузки данных
+        target: Колонка таргета — 'signal' (классификация, default) или
+                'predict' (регрессия, непрерывные значения float)
 
     Возвращает:
         Кортеж (train_loader, val_loader, scaler):
@@ -234,17 +252,25 @@ def create_data_loaders(
     print(f"  Train: {len(df_train)} строк, Val: {len(df_val)} строк")
 
     # ── Извлечение меток ─────────────────────────────────────────────────────
-    y_train = df_train['signal'].values.astype(int)
-    y_val = df_val['signal'].values.astype(int)
+    regression = (target == REGRESSION_TARGET)
 
-    # Проверка распределения классов
-    for name, y in [('Train', y_train), ('Val', y_val)]:
-        classes, counts = np.unique(y, return_counts=True)
-        total = len(y)
-        dist_str = ", ".join(
-            [f"{c}: {cnt} ({cnt / total * 100:.1f}%)" for c, cnt in zip(classes, counts)]
-        )
-        print(f"  {name}: {dist_str}")
+    if regression:
+        y_train = df_train[target].values.astype(np.float32)
+        y_val = df_val[target].values.astype(np.float32)
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} predict: min={y.min():.4f}, max={y.max():.4f}, "
+                  f"mean={y.mean():.4f}, std={y.std():.4f}")
+    else:
+        y_train = df_train[target].values.astype(int)
+        y_val = df_val[target].values.astype(int)
+        # Проверка распределения классов
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            classes, counts = np.unique(y, return_counts=True)
+            total = len(y)
+            dist_str = ", ".join(
+                [f"{c}: {cnt} ({cnt / total * 100:.1f}%)" for c, cnt in zip(classes, counts)]
+            )
+            print(f"  {name}: {dist_str}")
 
     # ── Парсинг фракталов в 3D тензоры ───────────────────────────────────────
     print("\n🔧 Парсинг фракталов в 3D тензоры...")
@@ -262,8 +288,8 @@ def create_data_loaders(
     print(f"  ✅ Нормализация завершена")
 
     # ── Создание Dataset и DataLoader ────────────────────────────────────────
-    train_dataset = FractalSequenceDataset(X_train_norm, y_train, mask_train)
-    val_dataset = FractalSequenceDataset(X_val_norm, y_val, mask_val)
+    train_dataset = FractalSequenceDataset(X_train_norm, y_train, mask_train, regression=regression)
+    val_dataset = FractalSequenceDataset(X_val_norm, y_val, mask_val, regression=regression)
 
     train_loader = DataLoader(
         train_dataset,
