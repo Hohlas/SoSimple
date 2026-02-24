@@ -48,12 +48,13 @@ ML_DIR = PROJECT_ROOT / 'ML'
 REPORTS_DIR = ML_DIR / 'reports'
 
 
-def compare_all_architectures(task: str = 'classification') -> list[dict]:
+def compare_all_architectures(task: str = 'classification', use_scaler: bool = False) -> list[dict]:
     """
     Обучение и сравнение всех моделей из MODEL_REGISTRY.
 
     Аргументы:
         task: 'classification' или 'regression'
+        use_scaler: Использовать ли StandardScaler (default: False)
 
     Возвращает:
         Список словарей с результатами для каждой модели
@@ -71,7 +72,7 @@ def compare_all_architectures(task: str = 'classification') -> list[dict]:
         print(f"  Обучение: {model_name.upper()}")
         print(f"{'▶' * 60}")
 
-        result = train_model(model_name=model_name, task=task)
+        result = train_model(model_name=model_name, task=task, use_scaler=use_scaler)
         results.append(result)
 
     # Определяем лучшую модель
@@ -287,13 +288,17 @@ def parse_args() -> argparse.Namespace:
         choices=['classification', 'regression'],
         help="Задача: 'classification' или 'regression'."
     )
+    parser.add_argument(
+        '--use_scaler', action='store_true',
+        help="Включить StandardScaler (по умолчанию выключено)"
+    )
     return parser.parse_args()
 
 
 def main():
     """Точка входа: сравнение всех архитектур."""
     args = parse_args()
-    results = compare_all_architectures(task=args.task)
+    results = compare_all_architectures(task=args.task, use_scaler=args.use_scaler)
 
     print("\n" + "=" * 60)
     print(f"  ✅ СРАВНЕНИЕ АРХИТЕКТУР ЗАВЕРШЕНО ({args.task.upper()})")

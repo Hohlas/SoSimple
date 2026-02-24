@@ -41,19 +41,38 @@ ML/
 
 ## Использование
 
+### Сравнение всех архитектур (`compare_architectures.py`)
+Запускает последовательное обучение всех 4 моделей и генерирует сводный отчет.
 ```bash
-# Классификация (по умолчанию)
-python ML/train.py --model bilstm
+# Массовое обучение для классификации
+python ML/compare_architectures.py --task classification
+
+# Массовое обучение для регрессии
+python ML/compare_architectures.py --task regression
+```
+
+### Обучение конкретной модели (`train.py`)
+```bash
+# Классификация
 python ML/train.py --model bilstm --task classification
 
-# Регрессия:
+# Регрессия с кастомными параметрами
 python ML/train.py --model cnn1d --task regression --epochs 30 --batch_size 512
-python ML/train.py --model transformer --task regression
-python ML/train.py --model hybrid --task regression
-
-# Сравнение всех архитектур:
-python ML/compare_architectures.py
 ```
+
+### Аргументы командной строки
+Для обоих скриптов доступны следующие основные аргументы:
+
+| Аргумент | Описание | Значение по умолчанию |
+|----------|----------|-----------------------|
+| `--task` | Тип задачи: `classification` или `regression` | `classification` (в `train.py`) |
+| `--model`| Архитектура модели (только для `train.py`) | **обязательный** |
+| `--use_scaler` | Включить математический `StandardScaler` | `False` (выключено) |
+| `--batch_size` | Размер батча | `256` |
+| `--epochs` | Лимит эпох обучения | `50` |
+| `--lr` | Скорость обучения (Learning Rate) | `1e-3` |
+| `--patience` | Patience для раннего останова | `10` |
+| `--seed` | Random Seed | `42` |
 
 ## Data Pipeline
 
@@ -65,8 +84,8 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 - Padding mask для NaN-позиций
 
 ### 2. Нормализация (`data_loader.py`)
-- StandardScaler: **fit на train** (flatten `n_samples*100 × 11`), transform на val
-- Обязательна: разные масштабы — price ~1.0, front/impulse ~0.001-0.01, power/count — целые числа
+- StandardScaler: математическая нормализация (Z-score). **По умолчанию выключена** (флаг `--use_scaler`), так как достаточно предметной нормализации в `normalize.py`.
+- Обязательна (при включении): приводит разные масштабы признаков к среднему 0 и std 1.
 
 ### 3. Маппинг меток
 `{-1, 0, 1}` → `{0, 1, 2}` для PyTorch
