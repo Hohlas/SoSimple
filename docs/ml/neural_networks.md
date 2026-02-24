@@ -1,7 +1,10 @@
 # Neural Networks Pipeline
 
 ## Назначение
-Обучение и сравнение 4 архитектур нейронных сетей для классификации `signal ∈ {-1, 0, 1}` на последовательностях фракталов. Фреймворк: PyTorch.
+Обучение и сравнение 4 архитектур нейронных сетей для решения двух задач:
+1. **Классификация** (`--task classification`): `signal ∈ {-1, 0, 1}` (направление и сила движения)
+2. **Регрессия** (`--task regression`): `predict ∈ [-p..p]` (непрерывная нормализованная величина ожидаемого движения цены).
+Фреймворк: PyTorch.
 
 ## Структура модулей
 
@@ -19,8 +22,8 @@ ML/
 ├── losses.py                 # Focal Loss
 ├── utils.py                  # Seed, метрики, подсчёт параметров
 ├── compare_architectures.py  # Скрипт сравнения всех моделей
-├── checkpoints/              # Веса лучших моделей
-├── plots/                    # Training curves, confusion matrices
+├── checkpoints/              # Веса лучших моделей (*_best.pt или *_regression_best.pt)
+├── plots/                    # Training curves, confusion matrices, residuals
 └── reports/
     └── architecture_comparison.md
 ```
@@ -31,18 +34,22 @@ ML/
 - **Источник**: `processing/label_main.py`
 
 ## Выходные данные
-- **Файл**: `ML/checkpoints/<model>_best.pt` (веса лучшей модели)
-- **Файл**: `ML/reports/architecture_comparison.md` (сводный отчёт)
-- **Файл**: `ML/plots/training_curves_*.png`, `ML/plots/cm_*.png`
+- **Файл**: `ML/checkpoints/<model>_best.pt` или `ML/checkpoints/<model>_regression_best.pt` (веса лучшей модели)
+- **Файл**: `ML/checkpoints/<model>_result.json` или `<model>_regression_result.json` (лучшие метрики)
+- **Файл**: `ML/plots/training_curves_*.png`
+- **Файл**: `ML/plots/cm_*.png` (для классификации) или `ML/plots/regression_*.png` (для регрессии)
 
 ## Использование
 
 ```bash
-# Обучение одной модели:
+# Классификация (по умолчанию)
 python ML/train.py --model bilstm
-python ML/train.py --model cnn1d --epochs 30 --batch_size 512
-python ML/train.py --model transformer
-python ML/train.py --model hybrid
+python ML/train.py --model bilstm --task classification
+
+# Регрессия:
+python ML/train.py --model cnn1d --task regression --epochs 30 --batch_size 512
+python ML/train.py --model transformer --task regression
+python ML/train.py --model hybrid --task regression
 
 # Сравнение всех архитектур:
 python ML/compare_architectures.py
@@ -73,24 +80,31 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 | **Transformer** | (batch, 100, 11) | Self-attention + CLS token + padding mask | 69,955 |
 | **Hybrid CNN+LSTM** | (batch, 100, 11)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | 83,203 |
 
-Все модели: `forward(x, mask=None) → logits (batch, 3)`
+Все модели возвращают тензор `(batch, num_classes)`.
+- Для классификации: `num_classes=3`.
+- Для регрессии: `num_classes=1`, тензор сжимается до размера `(batch,)`.
 
 ## Обучение (`train.py`)
 
 | Параметр | Значение | Обоснование |
 |----------|----------|-------------|
-| Loss | Focal Loss (γ=2, α=[0.45, 0.10, 0.45]) | Дисбаланс 95%/2.5%/2.5%; CrossEntropy недостаточен |
+| Loss | Focal Loss (γ=2, α=[0.45, 0.10, 0.45]) или HuberLoss (δ=1.0) | Focal Loss для несбалансированной классификации; Huber Loss для устойчивой к выбросам регрессии |
 | Optimizer | AdamW (lr=1e-3, wd=1e-4) | Стандарт для трансформеров и LSTM |
-| Scheduler | ReduceLROnPlateau (patience=5, factor=0.5) | Мониторит val macro F1 |
-| Early stopping | patience=10 на val macro F1 | **НЕ на loss** — loss может улучшаться за счёт majority |
+| Scheduler | ReduceLROnPlateau (patience=5, factor=0.5) | Мониторит основную метрику (max) |
+| Early stopping | patience=10 на F1 или pearson_r | Classification: val macro F1; Regression: pearson_r correlation. **НЕ по val_loss** |
 | Batch size | 256 | Оптимально при 43K сэмплах |
 | Seed | 42 | torch, numpy, random, cudnn deterministic |
 
 ## Метрики
-- **Основная**: macro F1-score (early stopping + выбор лучшей модели)
-- **Per-class F1**: особенно для minority-классов -1 и 1
-- **Confusion matrix**: best epoch
-- **Training curves**: loss и F1 по эпохам
+### Задача классификации
+- **Основная**: `macro F1-score` (early stopping + выбор лучшей модели)
+- **Дополнительные**: `Per-class F1` (особенно для minority-классов -1 и 1), Precision, Recall
+- **Графики**: Confusion matrix, Training curves (loss + F1)
+
+### Задача регрессии
+- **Основная**: Коэффициент корреляции Пирсона `pearson_r` (early stopping + выбор лучшей модели)
+- **Дополнительные**: `MAE`, `RMSE`, `R²`, `Directional Accuracy` (Доля правильных предсказаний знака таргета)
+- **Графики**: Scatter (y_true / y_pred), Резидуалы, Training curves (loss + Pearson r + MAE)
 
 ## Примечания
 - `fractal_time` исключён из features — его смысл уже отражён порядком позиций

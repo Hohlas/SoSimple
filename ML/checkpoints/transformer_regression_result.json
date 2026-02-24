@@ -1,0 +1,16 @@
+{
+  "model_name": "transformer",
+  "task": "regression",
+  "best_pearson_r": 0.5628297924995422,
+  "best_epoch": 49,
+  "num_parameters": 69889,
+  "training_time": 1548.6449737548828,
+  "val_metrics": {
+    "mae": 0.11356563866138458,
+    "rmse": 0.1850081604047028,
+    "r2": 0.3058939576148987,
+    "pearson_r": 0.5628297924995422,
+    "pearson_p": 0.0,
+    "directional_accuracy": 0.9748420939942191
+  }
+}

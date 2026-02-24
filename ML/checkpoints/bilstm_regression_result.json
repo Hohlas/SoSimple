@@ -1,15 +1,15 @@
 {
   "model_name": "bilstm",
   "task": "regression",
-  "best_pearson_r": 0.5438486933708191,
-  "best_epoch": 2,
+  "best_pearson_r": 0.5551061630249023,
+  "best_epoch": 3,
   "num_parameters": 147073,
-  "training_time": 20.22026491165161,
+  "training_time": 127.86689281463623,
   "val_metrics": {
-    "mae": 0.10606939345598221,
-    "rmse": 0.1865397640892,
-    "r2": 0.29435402154922485,
-    "pearson_r": 0.5438486933708191,
+    "mae": 0.10264616459608078,
+    "rmse": 0.18502749984528136,
+    "r2": 0.3057488799095154,
+    "pearson_r": 0.5551061630249023,
     "pearson_p": 0.0,
     "directional_accuracy": 0.9748420939942191
   }

@@ -31,9 +31,9 @@
 |--------|-----------|--------------|------|--------|
 | [baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (5 алгоритмов) | `*_labeled.csv` → `baseline/reports/baseline_report.md`, `baseline/plots/` | [docs](docs/ml/baseline_experiments.py.md) | ✅ |
 | [data_loader.py](ML/data_loader.py) | Dataset/DataLoader для фрактальных последовательностей | `*_labeled.csv` → in-memory tensors | — | ✅ |
-| [train.py](ML/train.py) | Единый скрипт обучения нейросетей | DataLoader → `checkpoints/`, `plots/` | — | ✅ |
-| [losses.py](ML/losses.py) | Focal Loss для несбалансированных данных | — | — | ✅ |
-| [utils.py](ML/utils.py) | Утилиты: seed, метрики, параметры | — | — | ✅ |
+| [train.py](ML/train.py) | Единый скрипт обучения нейросетей (--task regression/classification) | DataLoader → `checkpoints/`, `plots/` | — | ✅ |
+| [losses.py](ML/losses.py) | Focal Loss для классификации, Huber Loss для регрессии | — | — | ✅ |
+| [utils.py](ML/utils.py) | Утилиты: seed, параметры, класификационные и регрессионные метрики | — | — | ✅ |
 | [models/bilstm.py](ML/models/bilstm.py) | Bi-LSTM классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
 | [models/cnn1d.py](ML/models/cnn1d.py) | 1D-CNN классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
 | [models/transformer.py](ML/models/transformer.py) | Transformer Encoder классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
@@ -59,4 +59,4 @@
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-02-18
+**Последнее обновление**: 2026-02-24

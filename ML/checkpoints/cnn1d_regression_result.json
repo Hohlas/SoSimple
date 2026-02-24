@@ -1,0 +1,16 @@
+{
+  "model_name": "cnn1d",
+  "task": "regression",
+  "best_pearson_r": 0.5191989541053772,
+  "best_epoch": 5,
+  "num_parameters": 41473,
+  "training_time": 60.499282121658325,
+  "val_metrics": {
+    "mae": 0.10325223207473755,
+    "rmse": 0.19457769452289947,
+    "r2": 0.23223179578781128,
+    "pearson_r": 0.5191989541053772,
+    "pearson_p": 0.0,
+    "directional_accuracy": 0.9313777968097634
+  }
+}

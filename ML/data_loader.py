@@ -136,9 +136,12 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 def normalize_features(
     X_train: np.ndarray,
     X_val: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, StandardScaler]:
+    use_scaler: bool = True,
+) -> tuple[np.ndarray, np.ndarray, StandardScaler | None]:
     """
-    Нормализация features с помощью StandardScaler.
+    Нормализация features с помощью StandardScaler (опционально).
+
+    Если use_scaler=False, данные возвращаются без изменений (но scaler=None).
 
     Fit на train, transform на val. Нормализуется по каждому feature индексу
     отдельно по всему train. Для этого flatten: (n_samples * seq_len, n_features).
@@ -151,8 +154,11 @@ def normalize_features(
         Кортеж (X_train_norm, X_val_norm, scaler):
         - X_train_norm: shape (n_train, 100, 11) нормализованный train
         - X_val_norm: shape (n_val, 100, 11) нормализованный val
-        - scaler: обученный StandardScaler
+        - scaler: обученный StandardScaler (или None, если отключено)
     """
+    if not use_scaler:
+        return X_train, X_val, None
+
     n_train, seq_len, n_features = X_train.shape
     n_val = X_val.shape[0]
 
@@ -220,7 +226,8 @@ def create_data_loaders(
     batch_size: int = 256,
     num_workers: int = 0,
     target: str = 'signal',
-) -> tuple[DataLoader, DataLoader, StandardScaler]:
+    use_scaler: bool = True,
+) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
 
@@ -231,12 +238,13 @@ def create_data_loaders(
         num_workers: Количество worker'ов для загрузки данных
         target: Колонка таргета — 'signal' (классификация, default) или
                 'predict' (регрессия, непрерывные значения float)
+        use_scaler: Использовать ли математический StandardScaler (default: True)
 
     Возвращает:
         Кортеж (train_loader, val_loader, scaler):
         - train_loader: DataLoader (shuffle=True)
         - val_loader: DataLoader (shuffle=False)
-        - scaler: обученный StandardScaler для последующего использования
+        - scaler: обученный StandardScaler (или None, если use_scaler=False)
 
     Пример:
         >>> train_loader, val_loader, scaler = create_data_loaders(batch_size=256)
@@ -282,10 +290,14 @@ def create_data_loaders(
     X_val, mask_val = parse_fractals_to_3d(df_val)
     print(f"  ✅ Val: X={X_val.shape}, mask={mask_val.shape}")
 
-    # ── Нормализация ─────────────────────────────────────────────────────────
-    print("\n📏 Нормализация features (StandardScaler, fit на train)...")
-    X_train_norm, X_val_norm, scaler = normalize_features(X_train, X_val)
-    print(f"  ✅ Нормализация завершена")
+    # ── Дополнительная Нормализация (StandardScaler) ─────────────────────────
+    if use_scaler:
+        print("\n📏 Формирование features (StandardScaler, fit на train)...")
+    else:
+        print("\n📏 StandardScaler выключен (use_scaler=False). Дополнительная нормализация не применяется.")
+    X_train_norm, X_val_norm, scaler = normalize_features(X_train, X_val, use_scaler=use_scaler)
+    if use_scaler:
+        print(f"  ✅ Нормализация завершена")
 
     # ── Создание Dataset и DataLoader ────────────────────────────────────────
     train_dataset = FractalSequenceDataset(X_train_norm, y_train, mask_train, regression=regression)

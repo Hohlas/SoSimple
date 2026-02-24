@@ -1,0 +1,16 @@
+{
+  "model_name": "hybrid",
+  "task": "regression",
+  "best_pearson_r": 0.546499490737915,
+  "best_epoch": 3,
+  "num_parameters": 83073,
+  "training_time": 74.73333811759949,
+  "val_metrics": {
+    "mae": 0.11460776627063751,
+    "rmse": 0.18806071681771144,
+    "r2": 0.28280019760131836,
+    "pearson_r": 0.546499490737915,
+    "pearson_p": 0.0,
+    "directional_accuracy": 0.9721657210148806
+  }
+}

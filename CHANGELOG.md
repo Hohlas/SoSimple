@@ -2,6 +2,18 @@
 Хронология значимых изменений проекта (major milestones).
 
 
+## [2026-02-23] — Поддержка обучения в режиме регрессии (predict target)
+### Добавлено
+- `ML/train.py` — аргумент `--task {classification,regression}`
+- `ML/train.py` — поддержка раннего останова (early stopping) по корреляции Пирсона (`pearson_r`)
+- `ML/data_loader.py` — аргумент `target` для загрузки `predict` как float32-тензора
+- `ML/losses.py` — `HuberLoss` (δ=1.0) для робастной функции ошибок при регрессии
+- `ML/utils.py` — `compute_regression_metrics()` (MAE, RMSE, R², pearson_r, DirAcc)
+- `docs/ml/neural_networks.md` — обновлено описание пайплайна и используемых метрик
+### Изменено
+- Архитектура `models/` поддерживает `num_classes=1` для регрессии (скалярный выход)
+- Артефакты регрессии сохраняются с суффиксом `_regression` во избежание конфликтов
+
 ## [2026-02-20] — Реструктуризация ML/baseline
 ### Изменено
 - Создан подкаталог `ML/baseline/` для изоляции baseline-моделей
