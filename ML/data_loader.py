@@ -226,7 +226,7 @@ def create_data_loaders(
     batch_size: int = 256,
     num_workers: int = 0,
     target: str = 'signal',
-    use_scaler: bool = True,
+    use_scaler: bool = False,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -238,7 +238,7 @@ def create_data_loaders(
         num_workers: Количество worker'ов для загрузки данных
         target: Колонка таргета — 'signal' (классификация, default) или
                 'predict' (регрессия, непрерывные значения float)
-        use_scaler: Использовать ли математический StandardScaler (default: True)
+        use_scaler: Использовать ли математический StandardScaler (default: False)
 
     Возвращает:
         Кортеж (train_loader, val_loader, scaler):

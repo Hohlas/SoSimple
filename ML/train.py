@@ -256,6 +256,7 @@ def validate_regression(
 def train_model(
     model_name: str,
     task: str = 'classification',
+    use_scaler: bool = False,
     epochs: int = DEFAULTS['epochs'],
     batch_size: int = DEFAULTS['batch_size'],
     lr: float = DEFAULTS['lr'],
@@ -296,6 +297,7 @@ def train_model(
     train_loader, val_loader, scaler = create_data_loaders(
         batch_size=batch_size,
         target=target_col,
+        use_scaler=use_scaler,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -659,6 +661,11 @@ def parse_args() -> argparse.Namespace:
                         help=f"Early stopping patience (default: {DEFAULTS['patience']})")
     parser.add_argument('--seed', type=int, default=DEFAULTS['seed'],
                         help=f"Random seed (default: {DEFAULTS['seed']})")
+    
+    # Флаг для включения StandardScaler (по дефолту False)
+    parser.add_argument('--use_scaler', action='store_true',
+                        help="Включить дополнительную нормализацию (StandardScaler). По умолчанию выключено.")
+    
     return parser.parse_args()
 
 
@@ -675,6 +682,7 @@ def main():
     result = train_model(
         model_name=args.model,
         task=args.task,
+        use_scaler=args.use_scaler,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
