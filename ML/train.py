@@ -23,9 +23,9 @@
 #   - matplotlib>=3.7
 #   - seaborn>=0.12
 # Использование:
-#   python ML/train.py --model bilstm --task classification
-#   python ML/train.py --model bilstm --task regression
-#   python ML/train.py --model cnn1d  --task regression --epochs 30 --batch_size 512
+#   python -m ML.train --model bilstm --task classification
+#   python -m ML.train --model bilstm --task regression
+#   python -m ML.train --model cnn1d  --task regression --epochs 30 --batch_size 512
 # Примечания:
 #   Classification:
 #     - Early stopping на val macro F1 (НЕ на loss!)

@@ -45,19 +45,19 @@ ML/
 Запускает последовательное обучение всех 4 моделей и генерирует сводный отчет.
 ```bash
 # Массовое обучение для классификации
-python ML/compare_architectures.py --task classification
+python -m ML.compare_architectures --task classification
 
 # Массовое обучение для регрессии
-python ML/compare_architectures.py --task regression
+python -m ML.compare_architectures --task regression
 ```
 
 ### Обучение конкретной модели (`train.py`)
 ```bash
 # Классификация
-python ML/train.py --model bilstm --task classification
+python -m ML.train --model bilstm --task classification
 
 # Регрессия с кастомными параметрами
-python ML/train.py --model cnn1d --task regression --epochs 30 --batch_size 512
+python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
 ```
 
 ### Аргументы командной строки

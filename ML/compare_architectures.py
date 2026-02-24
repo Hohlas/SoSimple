@@ -12,8 +12,8 @@
 #     - ML/plots/architecture_comparison_*.png (сводный график)
 #     - ML/reports/architecture_comparison_*.md (отчёт)
 # Использование:
-#   python ML/compare_architectures.py --task classification
-#   python ML/compare_architectures.py --task regression
+#   python -m ML.compare_architectures --task classification
+#   python -m ML.compare_architectures --task regression
 # Примечания:
 #   - Запускает train.py для каждой модели последовательно
 #   - Генерирует разные отчёты и графики в зависимости от типа задачи (classification или regression)

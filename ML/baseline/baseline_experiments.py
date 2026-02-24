@@ -21,7 +21,7 @@
 #   - matplotlib>=3.7
 #   - seaborn>=0.12
 # Использование:
-#   python ML/baseline_experiments.py
+#   python -m ML.baseline.baseline_experiments
 # Примечания:
 #   - Данные НЕ перемешиваются (time-series!)
 #   - Основная метрика: macro F1-score
