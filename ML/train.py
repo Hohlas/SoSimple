@@ -57,6 +57,16 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Optuna Pruning support (optional)
+try:
+    from optuna import TrialPruned
+    OPTUNA_AVAILABLE = True
+except ImportError:
+    OPTUNA_AVAILABLE = False
+    # Создаем заглушку для случаев, когда Optuna не установлен
+    class TrialPruned(Exception):
+        pass
+
 from ML.data_loader import create_data_loaders, INV_LABEL_MAP
 from ML.losses import FocalLoss, HuberLoss
 from ML.models import get_model, MODEL_REGISTRY
@@ -264,6 +274,18 @@ def train_model(
     weight_decay: float = DEFAULTS['weight_decay'],
     patience: int = DEFAULTS['patience'],
     seed: int = DEFAULTS['seed'],
+    # Focal Loss параметры (classification)
+    focal_alpha: list[float] | None = None,
+    focal_gamma: float = DEFAULTS['gamma'],
+    # Huber Loss параметр (regression)
+    huber_delta: float = DEFAULTS['huber_delta'],
+    # Scheduler параметры
+    scheduler_patience: int = DEFAULTS['scheduler_patience'],
+    scheduler_factor: float = DEFAULTS['scheduler_factor'],
+    # Optuna Pruning
+    trial=None,
+    # Режим без вывода в консоль (для Optuna)
+    silent: bool = False,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -278,6 +300,13 @@ def train_model(
         weight_decay: L2 регуляризация
         patience: Early stopping patience
         seed: Random seed
+        focal_alpha: Веса классов для Focal Loss (classification)
+        focal_gamma: Gamma параметр Focal Loss (classification)
+        huber_delta: Delta параметр Huber Loss (regression)
+        scheduler_patience: Patience для ReduceLROnPlateau
+        scheduler_factor: Factor для ReduceLROnPlateau
+        trial: Optuna trial объект для Pruning (опционально)
+        silent: Если True — минимальный вывод в консоль
 
     Возвращает:
         Словарь с результатами обучения:
@@ -308,18 +337,21 @@ def train_model(
     model = model.to(device)
     n_params = count_parameters(model)
 
-    print(f"\n{'═' * 60}")
-    print(f"  Модель: {model_name.upper()}  |  Задача: {task.upper()}")
-    print(f"  Параметров: {n_params:,}")
-    print(f"{'═' * 60}")
+    if not silent:
+        print(f"\n{'═' * 60}")
+        print(f"  Модель: {model_name.upper()}  |  Задача: {task.upper()}")
+        print(f"  Параметров: {n_params:,}")
+        print(f"{'═' * 60}")
 
     # ── Loss, Optimizer, Scheduler ───────────────────────────────────────────
     if regression:
-        loss_fn = HuberLoss(delta=DEFAULTS['huber_delta']).to(device)
+        loss_fn = HuberLoss(delta=huber_delta).to(device)
     else:
+        # Используем переданный focal_alpha или дефолт
+        alpha = focal_alpha if focal_alpha is not None else DEFAULTS['alpha']
         loss_fn = FocalLoss(
-            alpha=DEFAULTS['alpha'],
-            gamma=DEFAULTS['gamma'],
+            alpha=alpha,
+            gamma=focal_gamma,
         ).to(device)
 
     optimizer = torch.optim.AdamW(
@@ -332,8 +364,8 @@ def train_model(
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='max',
-        patience=DEFAULTS['scheduler_patience'],
-        factor=DEFAULTS['scheduler_factor'],
+        patience=scheduler_patience,
+        factor=scheduler_factor,
     )
 
     # ── Training loop ────────────────────────────────────────────────────────
@@ -344,8 +376,9 @@ def train_model(
             'val_r2': [], 'val_dir_acc': [], 'lr': [],
         }
         metric_name = 'pearson_r'
-        print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
-              f"{'pearson_r':>10} | {'MAE':>8} | {'RMSE':>8} | {'DirAcc':>7} | {'LR':>10}")
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'pearson_r':>10} | {'MAE':>8} | {'RMSE':>8} | {'DirAcc':>7} | {'LR':>10}")
     else:
         history = {
             'train_loss': [], 'val_loss': [], 'val_f1_macro': [],
@@ -353,10 +386,12 @@ def train_model(
             'val_f1_class_pos': [], 'lr': [],
         }
         metric_name = 'f1_macro'
-        print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
-              f"{'Val F1 (macro)':>14} | {'F1(-1)':>7} | {'F1(0)':>7} | {'F1(1)':>7} | {'LR':>10}")
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'Val F1 (macro)':>14} | {'F1(-1)':>7} | {'F1(0)':>7} | {'F1(1)':>7} | {'LR':>10}")
 
-    print(f"{'─' * 90}")
+    if not silent:
+        print(f"{'─' * 90}")
 
     best_metric = -1.0
     best_epoch = 0
@@ -386,10 +421,11 @@ def train_model(
             history['lr'].append(optimizer.param_groups[0]['lr'])
 
             current_lr = optimizer.param_groups[0]['lr']
-            print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
-                  f"{metrics['pearson_r']:>10.4f} | {metrics['mae']:>8.4f} | "
-                  f"{metrics['rmse']:>8.4f} | {metrics['directional_accuracy']:>7.4f} | "
-                  f"{current_lr:>10.6f}")
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['pearson_r']:>10.4f} | {metrics['mae']:>8.4f} | "
+                      f"{metrics['rmse']:>8.4f} | {metrics['directional_accuracy']:>7.4f} | "
+                      f"{current_lr:>10.6f}")
         else:
             val_loss, metrics = validate(model, val_loader, loss_fn, device)
             val_metric = metrics['f1_macro']
@@ -405,12 +441,22 @@ def train_model(
             history['val_f1_class_pos'].append(f1_per.get(1, 0.0))
             history['lr'].append(current_lr)
 
-            print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
-                  f"{val_metric:>14.4f} | {f1_per.get(-1, 0):>7.4f} | {f1_per.get(0, 0):>7.4f} | "
-                  f"{f1_per.get(1, 0):>7.4f} | {current_lr:>10.6f}")
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{val_metric:>14.4f} | {f1_per.get(-1, 0):>7.4f} | {f1_per.get(0, 0):>7.4f} | "
+                      f"{f1_per.get(1, 0):>7.4f} | {current_lr:>10.6f}")
 
         # Scheduler step (на основной метрике)
         scheduler.step(val_metric)
+
+        # ── Optuna Pruning ─────────────────────────────────────────────────────
+        if trial is not None:
+            trial.report(val_metric, epoch)
+            # Прерываем trial, если Optuna считает его неуспешным
+            if trial.should_prune():
+                if not silent:
+                    print(f"\n  🚫 Optuna Pruning на epoch {epoch}")
+                raise TrialPruned()
 
         # ── Early stopping ───────────────────────────────────────────────────
         if val_metric > best_metric:
@@ -432,42 +478,46 @@ def train_model(
                 'task': task,
                 'num_classes': num_classes,
             }, checkpoint_path)
-            print(f"      ✅ Новый лучший {metric_name}={best_metric:.4f}, "
-                  f"сохранено: {checkpoint_path.name}")
+            if not silent:
+                print(f"      ✅ Новый лучший {metric_name}={best_metric:.4f}, "
+                      f"сохранено: {checkpoint_path.name}")
         else:
             epochs_without_improvement += 1
             if epochs_without_improvement >= patience:
-                print(f"\n  ⏹️  Early stopping: {patience} эпох без улучшения {metric_name}")
+                if not silent:
+                    print(f"\n  ⏹️  Early stopping: {patience} эпох без улучшения {metric_name}")
                 break
 
     training_time = time.time() - start_time
 
     # ── Результаты ───────────────────────────────────────────────────────────
-    print(f"\n{'═' * 60}")
-    print(f"  РЕЗУЛЬТАТ: {model_name.upper()} ({task.upper()})")
-    print(f"{'═' * 60}")
-    print(f"  Лучший epoch: {best_epoch}")
-    print(f"  Best val {metric_name}: {best_metric:.4f}")
-    print(f"  Время обучения: {training_time:.1f}с")
-    print(f"  Параметров: {n_params:,}")
+    if not silent:
+        print(f"\n{'═' * 60}")
+        print(f"  РЕЗУЛЬТАТ: {model_name.upper()} ({task.upper()})")
+        print(f"{'═' * 60}")
+        print(f"  Лучший epoch: {best_epoch}")
+        print(f"  Best val {metric_name}: {best_metric:.4f}")
+        print(f"  Время обучения: {training_time:.1f}с")
+        print(f"  Параметров: {n_params:,}")
 
-    if not regression:
-        print(f"\n{best_metrics.get('classification_report', '')}")
-    else:
-        print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
-        print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
-        print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
-        print(f"  DirAcc: {best_metrics.get('directional_accuracy', 0):.4f}")
+        if not regression:
+            print(f"\n{best_metrics.get('classification_report', '')}")
+        else:
+            print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
+            print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
+            print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
+            print(f"  DirAcc: {best_metrics.get('directional_accuracy', 0):.4f}")
 
-    # ── Plots ────────────────────────────────────────────────────────────────
-    _plot_training_curves(history, model_name, regression=regression)
+    # ── Plots (только если не silent) ────────────────────────────────────────
+    if not silent:
+        _plot_training_curves(history, model_name, regression=regression)
 
-    if regression:
-        # Для scatter нужны предсказания на val — пересчитываем
-        all_preds, all_targets = _collect_regression_preds(model, val_loader, device)
-        _plot_regression_results(all_targets, all_preds, model_name)
-    else:
-        _plot_confusion_matrix(best_metrics['confusion_matrix'], model_name)
+        if regression:
+            # Для scatter нужны предсказания на val — пересчитываем
+            all_preds, all_targets = _collect_regression_preds(model, val_loader, device)
+            _plot_regression_results(all_targets, all_preds, model_name)
+        else:
+            _plot_confusion_matrix(best_metrics['confusion_matrix'], model_name)
 
     return {
         'model_name': model_name,
