@@ -75,6 +75,9 @@ BASELINE_DIR = ML_DIR / 'baseline'
 PLOTS_DIR = BASELINE_DIR / 'plots'
 REPORTS_DIR = BASELINE_DIR / 'reports'
 
+# Import experiment logger (after PROJECT_ROOT is defined)
+from ML.experiment_logger import CSVExperimentLogger
+
 TRAIN_FILE = DATA_DIR / 'Nero_train_labeled.csv'
 VAL_FILE = DATA_DIR / 'Nero_validation_labeled.csv'
 ENGINEERED_FEATURES_FILE = STATS_DIR / 'nero_features_engineered.csv'
@@ -895,6 +898,23 @@ def main():
     print("\n📝 Генерация отчёта...")
     generate_report(results, len(y_train), len(y_val),
                     class_dist_train, class_dist_val)
+
+    # ── Логирование экспериментов ────────────────────────────────────────────
+    print("\n📝 Логирование экспериментов...")
+    logger = CSVExperimentLogger()
+    for r in results:
+        config_dict = {
+            'model': r['model_name'],
+            'task': 'classification',
+            'use_scaler': 'scaled' in r.get('features_used', '').lower(),
+        }
+        metrics_dict = {
+            'metric_name': 'f1_macro',
+            'best_metric': r['f1_macro'],
+            'f1_macro': r['f1_macro'],
+        }
+        # F1 per class из classification report не извлекается, оставляем пустым
+        logger.log_experiment(config_dict, metrics_dict, checkpoint_path=None)
 
     print("\n" + "=" * 60)
     print("  ✅ BASELINE EXPERIMENTS ЗАВЕРШЕНЫ")

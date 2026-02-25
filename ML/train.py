@@ -64,6 +64,7 @@ from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
     count_parameters, get_device,
 )
+from ML.experiment_logger import CSVExperimentLogger
 
 
 # ─── Пути ────────────────────────────────────────────────────────────────────
@@ -725,6 +726,43 @@ def main():
     with open(result_path, 'w', encoding='utf-8') as f:
         json.dump(result_serializable, f, indent=2, ensure_ascii=False)
     print(f"\n✅ Результат сохранён: {result_path}")
+
+    # ── Логирование эксперимента ─────────────────────────────────────────────
+    config_dict = {
+        'model': args.model,
+        'task': args.task,
+        'epochs': args.epochs,
+        'batch_size': args.batch_size,
+        'lr': args.lr,
+        'patience': args.patience,
+        'focal_weights': DEFAULTS['alpha'] if not regression else None,
+        'use_scaler': args.use_scaler,
+    }
+
+    metrics_dict = {
+        'metric_name': result.get('metric_name', 'f1_macro' if not regression else 'pearson_r'),
+        'best_metric': result['best_metric'],
+        'best_epoch': result['best_epoch'],
+        'training_time': result['training_time'],
+    }
+
+    # Добавляем метрики в зависимости от задачи
+    if regression:
+        metrics_dict['mae'] = result['best_metrics'].get('mae')
+        metrics_dict['rmse'] = result['best_metrics'].get('rmse')
+        metrics_dict['r2'] = result['best_metrics'].get('r2')
+        metrics_dict['dir_acc'] = result['best_metrics'].get('directional_accuracy')
+    else:
+        metrics_dict['f1_macro'] = result['best_metric']
+        f1_per_class = result['best_metrics'].get('f1_per_class', {})
+        metrics_dict['f1_sell'] = f1_per_class.get(-1)
+        metrics_dict['f1_neutral'] = f1_per_class.get(0)
+        metrics_dict['f1_buy'] = f1_per_class.get(1)
+
+    checkpoint_path = str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
+
+    logger = CSVExperimentLogger()
+    logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
 
     print("\n" + "=" * 60)
     print("  ✅ ОБУЧЕНИЕ ЗАВЕРШЕНО")
