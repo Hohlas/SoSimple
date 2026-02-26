@@ -1,0 +1,918 @@
+{
+  "study_name": "cnn1d_classification",
+  "direction": "MAXIMIZE",
+  "best_trial": 47,
+  "best_value": 0.5714740408592095,
+  "best_params": {
+    "lr": 0.004012297247120644,
+    "batch_size": 64,
+    "patience": 7,
+    "weight_decay": 6.948873436259482e-06,
+    "scheduler_patience": 4,
+    "scheduler_factor": 0.4198421272800256,
+    "focal_minority_weight": 0.44496228644304736,
+    "focal_gamma": 1.7416605655953168
+  },
+  "trials": [
+    {
+      "number": 0,
+      "value": 0.5511695473555203,
+      "params": {
+        "lr": 0.00122859164275488,
+        "batch_size": 512,
+        "patience": 6,
+        "weight_decay": 0.0008755734725056498,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.49237276059374435,
+        "focal_minority_weight": 0.3960587590970752,
+        "focal_gamma": 1.6863560323017388
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:19:35.217733",
+      "datetime_complete": "2026-02-26 12:22:38.129134",
+      "duration": "0:03:02.911401"
+    },
+    {
+      "number": 1,
+      "value": 0.3720765273807051,
+      "params": {
+        "lr": 0.001538682881677986,
+        "batch_size": 512,
+        "patience": 4,
+        "weight_decay": 3.3601237200293555e-06,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5127310348387464,
+        "focal_minority_weight": 0.5172004792756605,
+        "focal_gamma": 2.698863588155579
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:22:38.129911",
+      "datetime_complete": "2026-02-26 12:24:51.339090",
+      "duration": "0:02:13.209179"
+    },
+    {
+      "number": 2,
+      "value": 0.4855340430877458,
+      "params": {
+        "lr": 0.0014906166728108333,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 7.60575162972653e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.33684197597803006,
+        "focal_minority_weight": 0.41685058633976413,
+        "focal_gamma": 1.8617255266592876
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:24:51.340659",
+      "datetime_complete": "2026-02-26 12:26:42.701461",
+      "duration": "0:01:51.360802"
+    },
+    {
+      "number": 3,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.0003027298829337906,
+        "batch_size": 512,
+        "patience": 10,
+        "weight_decay": 3.2026540415337624e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.34624735803171824,
+        "focal_minority_weight": 0.35864274091016046,
+        "focal_gamma": 1.8296524239072636
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:26:42.702049",
+      "datetime_complete": "2026-02-26 12:28:49.880604",
+      "duration": "0:02:07.178555"
+    },
+    {
+      "number": 4,
+      "value": 0.5697738129559355,
+      "params": {
+        "lr": 0.003971252247766701,
+        "batch_size": 256,
+        "patience": 7,
+        "weight_decay": 2.3008377696598825e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5412240513643709,
+        "focal_minority_weight": 0.4725340032332324,
+        "focal_gamma": 1.6855276675486168
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:28:49.881109",
+      "datetime_complete": "2026-02-26 12:31:00.149792",
+      "duration": "0:02:10.268683"
+    },
+    {
+      "number": 5,
+      "value": 0.03023302765397388,
+      "params": {
+        "lr": 8.172639965350114e-05,
+        "batch_size": 256,
+        "patience": 8,
+        "weight_decay": 5.725450413061511e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.5698756203951298,
+        "focal_minority_weight": 0.6211712188101286,
+        "focal_gamma": 1.1663899766648775
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:31:00.150651",
+      "datetime_complete": "2026-02-26 12:32:26.655459",
+      "duration": "0:01:26.504808"
+    },
+    {
+      "number": 6,
+      "value": 0.22159530470875477,
+      "params": {
+        "lr": 0.0019545578290561393,
+        "batch_size": 256,
+        "patience": 10,
+        "weight_decay": 7.616350400724728e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3064516826780067,
+        "focal_minority_weight": 0.4972159397225212,
+        "focal_gamma": 2.113570384788577
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:32:26.655881",
+      "datetime_complete": "2026-02-26 12:33:53.591134",
+      "duration": "0:01:26.935253"
+    },
+    {
+      "number": 7,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 2.998326563858222e-05,
+        "batch_size": 128,
+        "patience": 7,
+        "weight_decay": 1.4684248397051648e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6366679987650865,
+        "focal_minority_weight": 0.37869878334158813,
+        "focal_gamma": 1.087182927598081
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:33:53.591699",
+      "datetime_complete": "2026-02-26 12:35:21.340779",
+      "duration": "0:01:27.749080"
+    },
+    {
+      "number": 8,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 8.20926396139288e-05,
+        "batch_size": 256,
+        "patience": 9,
+        "weight_decay": 6.0190887880876424e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.36045098093923206,
+        "focal_minority_weight": 0.3994381463630783,
+        "focal_gamma": 1.481711795447249
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:35:21.341156",
+      "datetime_complete": "2026-02-26 12:36:47.848284",
+      "duration": "0:01:26.507128"
+    },
+    {
+      "number": 9,
+      "value": 0.037665133640496916,
+      "params": {
+        "lr": 0.00010724277473864444,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 9.65368247319305e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5213029379186853,
+        "focal_minority_weight": 0.6272262437622523,
+        "focal_gamma": 1.7696756225515222
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:36:47.848571",
+      "datetime_complete": "2026-02-26 12:38:13.403053",
+      "duration": "0:01:25.554482"
+    },
+    {
+      "number": 10,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.008975616834191182,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 1.0572639648140522e-06,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.687499416272778,
+        "focal_minority_weight": 0.2019190721168774,
+        "focal_gamma": 2.3160554819128656
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:38:13.403785",
+      "datetime_complete": "2026-02-26 12:39:41.559045",
+      "duration": "0:01:28.155260"
+    },
+    {
+      "number": 11,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.008122394672379915,
+        "batch_size": 512,
+        "patience": 6,
+        "weight_decay": 0.0007756818269832865,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.4421046873538538,
+        "focal_minority_weight": 0.2739327754072213,
+        "focal_gamma": 1.4800399590905375
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:39:41.559418",
+      "datetime_complete": "2026-02-26 12:41:07.884535",
+      "duration": "0:01:26.325117"
+    },
+    {
+      "number": 12,
+      "value": 0.32303655496074507,
+      "params": {
+        "lr": 0.0006179261964847892,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 0.0007337238265623532,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.44462835125136774,
+        "focal_minority_weight": 0.4947369720542262,
+        "focal_gamma": 1.403408745505592
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:41:07.884858",
+      "datetime_complete": "2026-02-26 12:42:38.202993",
+      "duration": "0:01:30.318135"
+    },
+    {
+      "number": 13,
+      "value": 0.0760745758841438,
+      "params": {
+        "lr": 0.0036073184906681367,
+        "batch_size": 256,
+        "patience": 3,
+        "weight_decay": 0.00025356154836486314,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5747437749771638,
+        "focal_minority_weight": 0.5604686421305901,
+        "focal_gamma": 2.3333423658292816
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:42:38.203307",
+      "datetime_complete": "2026-02-26 12:44:02.357574",
+      "duration": "0:01:24.154267"
+    },
+    {
+      "number": 14,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.0005748588259513247,
+        "batch_size": 512,
+        "patience": 8,
+        "weight_decay": 1.0505544254002264e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.44227265557340184,
+        "focal_minority_weight": 0.3066550483954405,
+        "focal_gamma": 2.953265332598021
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:44:02.358053",
+      "datetime_complete": "2026-02-26 12:45:28.240903",
+      "duration": "0:01:25.882850"
+    },
+    {
+      "number": 15,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.003973056205514484,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 3.1252080598898224e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.576432250550079,
+        "focal_minority_weight": 0.4398343502158212,
+        "focal_gamma": 1.5815195456768605
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:45:28.241193",
+      "datetime_complete": "2026-02-26 12:46:51.711092",
+      "duration": "0:01:23.469899"
+    },
+    {
+      "number": 16,
+      "value": 0.033546271259449735,
+      "params": {
+        "lr": 1.0250423288396914e-05,
+        "batch_size": 512,
+        "patience": 8,
+        "weight_decay": 0.00022153997329332715,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.46156501213089973,
+        "focal_minority_weight": 0.5724110097259594,
+        "focal_gamma": 2.0372422782907855
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:46:51.711458",
+      "datetime_complete": "2026-02-26 12:48:16.890984",
+      "duration": "0:01:25.179526"
+    },
+    {
+      "number": 17,
+      "value": 0.2630799069130277,
+      "params": {
+        "lr": 0.0006160657939185903,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 1.2490184259031663e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.39446763099732746,
+        "focal_minority_weight": 0.6779284452181753,
+        "focal_gamma": 1.2482259106976508
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:48:16.891468",
+      "datetime_complete": "2026-02-26 12:49:45.213769",
+      "duration": "0:01:28.322301"
+    },
+    {
+      "number": 18,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.003609224967245569,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.00034926953644484946,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.6234279237767764,
+        "focal_minority_weight": 0.3114304843604665,
+        "focal_gamma": 1.6833529898954738
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:49:45.214089",
+      "datetime_complete": "2026-02-26 12:51:08.406261",
+      "duration": "0:01:23.192172"
+    },
+    {
+      "number": 19,
+      "value": 0.36174703261032937,
+      "params": {
+        "lr": 0.00024386537259136494,
+        "batch_size": 512,
+        "patience": 7,
+        "weight_decay": 2.4973222050869515e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.48848727591464747,
+        "focal_minority_weight": 0.48094734759524893,
+        "focal_gamma": 2.2012542187178727
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:51:08.406568",
+      "datetime_complete": "2026-02-26 12:52:43.384452",
+      "duration": "0:01:34.977884"
+    },
+    {
+      "number": 20,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.00138248923721931,
+        "batch_size": 512,
+        "patience": 9,
+        "weight_decay": 2.6842489268951984e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5395345217372947,
+        "focal_minority_weight": 0.23281337798119095,
+        "focal_gamma": 1.3235772649282014
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:52:43.384820",
+      "datetime_complete": "2026-02-26 12:54:08.208353",
+      "duration": "0:01:24.823533"
+    },
+    {
+      "number": 21,
+      "value": 0.5543721527036202,
+      "params": {
+        "lr": 0.0011532587802665674,
+        "batch_size": 128,
+        "patience": 3,
+        "weight_decay": 7.0693621401090935e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3925971135942097,
+        "focal_minority_weight": 0.43290653148714037,
+        "focal_gamma": 1.872677643219996
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:54:08.208723",
+      "datetime_complete": "2026-02-26 12:56:03.683921",
+      "duration": "0:01:55.475198"
+    },
+    {
+      "number": 22,
+      "value": 0.535983721264292,
+      "params": {
+        "lr": 0.002473897153348499,
+        "batch_size": 128,
+        "patience": 3,
+        "weight_decay": 6.065312501167563e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.48222319458344626,
+        "focal_minority_weight": 0.4487651230985553,
+        "focal_gamma": 1.896561520535169
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:56:03.684398",
+      "datetime_complete": "2026-02-26 12:57:36.321807",
+      "duration": "0:01:32.637409"
+    },
+    {
+      "number": 23,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.0008095408004636355,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 2.0629974023811264e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.38416091124791607,
+        "focal_minority_weight": 0.35986947655005586,
+        "focal_gamma": 1.648277256109045
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:57:36.322305",
+      "datetime_complete": "2026-02-26 12:58:59.768139",
+      "duration": "0:01:23.445834"
+    },
+    {
+      "number": 24,
+      "value": 0.17194798379297213,
+      "params": {
+        "lr": 0.005770568013899832,
+        "batch_size": 128,
+        "patience": 3,
+        "weight_decay": 5.418600851668988e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.39524799405716055,
+        "focal_minority_weight": 0.5470274781722901,
+        "focal_gamma": 2.549831697515007
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 12:58:59.768609",
+      "datetime_complete": "2026-02-26 13:00:23.200657",
+      "duration": "0:01:23.432048"
+    },
+    {
+      "number": 25,
+      "value": 0.559448319858877,
+      "params": {
+        "lr": 0.0010208690895044691,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 1.4443125330446959e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5478812064091939,
+        "focal_minority_weight": 0.4511386038064964,
+        "focal_gamma": 1.9688091003076305
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 13:00:23.201008",
+      "datetime_complete": "2026-02-26 13:02:34.721183",
+      "duration": "0:02:11.520175"
+    },
+    {
+      "number": 26,
+      "value": 0.5263852718641653,
+      "params": {
+        "lr": 0.0004085752956031777,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 1.1888232899742298e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.546822459153827,
+        "focal_minority_weight": 0.4578426281180105,
+        "focal_gamma": 2.0039461396847167
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:02:34.721765",
+      "datetime_complete": "2026-02-26 13:04:59.058139",
+      "duration": "0:02:24.336374"
+    },
+    {
+      "number": 27,
+      "value": 0.06764950874084381,
+      "params": {
+        "lr": 0.0002112747150548378,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 2.0811843857969797e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6124276581632241,
+        "focal_minority_weight": 0.5282597438404758,
+        "focal_gamma": 2.2658662747008878
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:04:59.058443",
+      "datetime_complete": "2026-02-26 13:06:22.625465",
+      "duration": "0:01:23.567022"
+    },
+    {
+      "number": 28,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.0028838996642477593,
+        "batch_size": 128,
+        "patience": 3,
+        "weight_decay": 1.8772794637270282e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6688907945831789,
+        "focal_minority_weight": 0.3362430654504623,
+        "focal_gamma": 1.890939743268271
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:06:22.625877",
+      "datetime_complete": "2026-02-26 13:07:46.311545",
+      "duration": "0:01:23.685668"
+    },
+    {
+      "number": 29,
+      "value": 0.5612210051084758,
+      "params": {
+        "lr": 0.0011833531413979928,
+        "batch_size": 128,
+        "patience": 6,
+        "weight_decay": 7.5303476233175495e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.4211901824128831,
+        "focal_minority_weight": 0.41917466894564875,
+        "focal_gamma": 2.480106712526789
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 13:07:46.311889",
+      "datetime_complete": "2026-02-26 13:09:53.742351",
+      "duration": "0:02:07.430462"
+    },
+    {
+      "number": 30,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.00095780758221848,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 4.02517102566423e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5933600268073547,
+        "focal_minority_weight": 0.39999210397475277,
+        "focal_gamma": 2.486862849937029
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:09:53.742924",
+      "datetime_complete": "2026-02-26 13:11:19.963407",
+      "duration": "0:01:26.220483"
+    },
+    {
+      "number": 31,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.001089595659256612,
+        "batch_size": 128,
+        "patience": 7,
+        "weight_decay": 9.130134646341506e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.4118910869764386,
+        "focal_minority_weight": 0.4224464016594195,
+        "focal_gamma": 2.1065245518129654
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:11:19.963775",
+      "datetime_complete": "2026-02-26 13:12:43.547728",
+      "duration": "0:01:23.583953"
+    },
+    {
+      "number": 32,
+      "value": 0.5538229501624622,
+      "params": {
+        "lr": 0.0021336816503120396,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 4.466052376281316e-06,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5169021675473204,
+        "focal_minority_weight": 0.4698122995759144,
+        "focal_gamma": 2.8567547369777815
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 13:12:43.548053",
+      "datetime_complete": "2026-02-26 13:15:07.301358",
+      "duration": "0:02:23.753305"
+    },
+    {
+      "number": 33,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.005015484956778556,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 7.409317964082752e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.42224475134707257,
+        "focal_minority_weight": 0.4222800713462386,
+        "focal_gamma": 2.502282325683831
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:15:07.301905",
+      "datetime_complete": "2026-02-26 13:16:30.022564",
+      "duration": "0:01:22.720659"
+    },
+    {
+      "number": 34,
+      "value": 0.3095762383787426,
+      "params": {
+        "lr": 0.0015745680024522187,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 1.983098707254691e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.4711922484459625,
+        "focal_minority_weight": 0.514753575450954,
+        "focal_gamma": 2.689304441237069
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:16:30.022888",
+      "datetime_complete": "2026-02-26 13:17:52.903219",
+      "duration": "0:01:22.880331"
+    },
+    {
+      "number": 35,
+      "value": 0.34922867544600694,
+      "params": {
+        "lr": 0.00043421717765348137,
+        "batch_size": 128,
+        "patience": 6,
+        "weight_decay": 8.93488102006481e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.35949045988053036,
+        "focal_minority_weight": 0.37785619069141907,
+        "focal_gamma": 1.7669151833691297
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:17:52.903515",
+      "datetime_complete": "2026-02-26 13:19:16.450596",
+      "duration": "0:01:23.547081"
+    },
+    {
+      "number": 36,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.00015851954347242164,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 3.794310504673042e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.31439824488354906,
+        "focal_minority_weight": 0.436680042549607,
+        "focal_gamma": 1.9584398134756065
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:19:16.451059",
+      "datetime_complete": "2026-02-26 13:20:43.189284",
+      "duration": "0:01:26.738225"
+    },
+    {
+      "number": 37,
+      "value": 0.31843576786929223,
+      "params": {
+        "lr": 0.0016898681647570999,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 1.8214488996635064e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.5455985234565,
+        "focal_minority_weight": 0.49064887368262455,
+        "focal_gamma": 2.153868005893278
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:20:43.189563",
+      "datetime_complete": "2026-02-26 13:22:05.593678",
+      "duration": "0:01:22.404115"
+    },
+    {
+      "number": 38,
+      "value": 0.2689969043608406,
+      "params": {
+        "lr": 0.0011035036097160572,
+        "batch_size": 128,
+        "patience": 8,
+        "weight_decay": 3.392656961548527e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.4988002760051663,
+        "focal_minority_weight": 0.5885080751654898,
+        "focal_gamma": 1.5634950239348384
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:22:05.594070",
+      "datetime_complete": "2026-02-26 13:23:29.303281",
+      "duration": "0:01:23.709211"
+    },
+    {
+      "number": 39,
+      "value": 0.20021157630990363,
+      "params": {
+        "lr": 0.0058950331879183875,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 1.7755341500140258e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3329937981860399,
+        "focal_minority_weight": 0.5186385954984637,
+        "focal_gamma": 1.8059630220995013
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:23:29.303696",
+      "datetime_complete": "2026-02-26 13:24:52.505400",
+      "duration": "0:01:23.201704"
+    },
+    {
+      "number": 40,
+      "value": 0.32459946901034514,
+      "params": {
+        "lr": 0.0007543033184615727,
+        "batch_size": 256,
+        "patience": 9,
+        "weight_decay": 4.1012109037968324e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3768964975764707,
+        "focal_minority_weight": 0.3958561512913129,
+        "focal_gamma": 2.4397440338605594
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:24:52.505706",
+      "datetime_complete": "2026-02-26 13:26:14.919726",
+      "duration": "0:01:22.414020"
+    },
+    {
+      "number": 41,
+      "value": 0.5696906711725281,
+      "params": {
+        "lr": 0.0024574665641714064,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 4.499155015297004e-06,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5217421345241352,
+        "focal_minority_weight": 0.4553673486260251,
+        "focal_gamma": 2.8013063698065817
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 13:26:14.920106",
+      "datetime_complete": "2026-02-26 13:28:22.247601",
+      "duration": "0:02:07.327495"
+    },
+    {
+      "number": 42,
+      "value": 0.3954523378872307,
+      "params": {
+        "lr": 0.002172844953780178,
+        "batch_size": 128,
+        "patience": 4,
+        "weight_decay": 5.34508057685849e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.5238356006425066,
+        "focal_minority_weight": 0.47060663649318735,
+        "focal_gamma": 2.7414771278036505
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:28:22.248104",
+      "datetime_complete": "2026-02-26 13:29:50.226028",
+      "duration": "0:01:27.977924"
+    },
+    {
+      "number": 43,
+      "value": 0.44905970933743383,
+      "params": {
+        "lr": 0.002778468867179256,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 9.073368879139615e-06,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.5560222834629559,
+        "focal_minority_weight": 0.4198478392146202,
+        "focal_gamma": 2.629299039218444
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:29:50.226357",
+      "datetime_complete": "2026-02-26 13:31:17.416041",
+      "duration": "0:01:27.189684"
+    },
+    {
+      "number": 44,
+      "value": 0.3426107653472834,
+      "params": {
+        "lr": 0.001443587654285754,
+        "batch_size": 128,
+        "patience": 7,
+        "weight_decay": 1.2813351043638872e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5040027828535173,
+        "focal_minority_weight": 0.380483925764325,
+        "focal_gamma": 2.966696835161769
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:31:17.416339",
+      "datetime_complete": "2026-02-26 13:32:40.912266",
+      "duration": "0:01:23.495927"
+    },
+    {
+      "number": 45,
+      "value": 0.2367439686775273,
+      "params": {
+        "lr": 0.00039586229161137185,
+        "batch_size": 128,
+        "patience": 6,
+        "weight_decay": 1.524090375612124e-06,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.591570841554652,
+        "focal_minority_weight": 0.5042180850166742,
+        "focal_gamma": 2.78115944504472
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:32:40.912789",
+      "datetime_complete": "2026-02-26 13:34:04.317719",
+      "duration": "0:01:23.404930"
+    },
+    {
+      "number": 46,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.007441103203475779,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 2.917611419315219e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5312352635199793,
+        "focal_minority_weight": 0.3529317572425189,
+        "focal_gamma": 2.37859113983603
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:34:04.317998",
+      "datetime_complete": "2026-02-26 13:35:26.123558",
+      "duration": "0:01:21.805560"
+    },
+    {
+      "number": 47,
+      "value": 0.5714740408592095,
+      "params": {
+        "lr": 0.004012297247120644,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 6.948873436259482e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.4198421272800256,
+        "focal_minority_weight": 0.44496228644304736,
+        "focal_gamma": 1.7416605655953168
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 13:35:26.123957",
+      "datetime_complete": "2026-02-26 13:38:27.097128",
+      "duration": "0:03:00.973171"
+    },
+    {
+      "number": 48,
+      "value": 0.32461825771723607,
+      "params": {
+        "lr": 0.009467699807459424,
+        "batch_size": 64,
+        "patience": 8,
+        "weight_decay": 4.649752066657338e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.46476698960815865,
+        "focal_minority_weight": 0.45644726155677817,
+        "focal_gamma": 2.858680348992594
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:38:27.097600",
+      "datetime_complete": "2026-02-26 13:39:53.538496",
+      "duration": "0:01:26.440896"
+    },
+    {
+      "number": 49,
+      "value": 0.23015817628092225,
+      "params": {
+        "lr": 0.0042396047185261675,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 2.7234690336247995e-05,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.4523004436490066,
+        "focal_minority_weight": 0.5392583365927092,
+        "focal_gamma": 1.737645123256878
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-02-26 13:39:53.538820",
+      "datetime_complete": "2026-02-26 13:41:19.983442",
+      "duration": "0:01:26.444622"
+    }
+  ]
+}

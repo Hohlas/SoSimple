@@ -11,3 +11,4 @@ nbconvert>=7.0.0
 torch>=2.0.0
 xgboost>=1.7.0
 lightgbm>=3.3.0
+optuna>=3.5.0

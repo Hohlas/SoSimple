@@ -38,7 +38,7 @@ class FocalLoss(nn.Module):
 
     Аргументы:
         alpha: Веса классов, list/tensor длины num_classes.
-               alpha=[0.45, 0.10, 0.45] даёт больший вес minority-классам
+               alpha=[0.495, 0.01, 0.495] даёт больший вес minority-классам
                (-1 и 1), меньший — majority-классу (0).
                Порядок соответствует индексам классов после маппинга:
                0 → class -1, 1 → class 0, 2 → class 1.
@@ -48,7 +48,7 @@ class FocalLoss(nn.Module):
         reduction: 'mean' | 'sum' | 'none'
 
     Пример:
-        >>> loss_fn = FocalLoss(alpha=[0.45, 0.10, 0.45], gamma=2.0)
+        >>> loss_fn = FocalLoss(alpha=[0.495, 0.01, 0.495], gamma=2.0)
         >>> logits = torch.randn(32, 3)   # batch=32, 3 класса
         >>> targets = torch.randint(0, 3, (32,))
         >>> loss = loss_fn(logits, targets)

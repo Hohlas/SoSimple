@@ -170,7 +170,7 @@ def _generate_report(results: list[dict], task: str):
         suffix = "_regression"
     else:
         lines.append(f"**Задача**: Классификация signal ∈ {{-1, 0, 1}}")
-        lines.append(f"**Loss**: Focal Loss (gamma=2, alpha=[0.45, 0.10, 0.45])")
+        lines.append(f"**Loss**: Focal Loss (gamma=2, alpha=[0.495, 0.01, 0.495])")
         lines.append(f"**Early stopping**: на val macro F1 (patience=10)")
         metric_name = "Macro F1"
         suffix = ""

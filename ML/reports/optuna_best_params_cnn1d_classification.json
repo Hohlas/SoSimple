@@ -1,0 +1,18 @@
+{
+  "model": "cnn1d",
+  "task": "classification",
+  "best_value": 0.5714740408592095,
+  "best_params": {
+    "lr": 0.004012297247120644,
+    "batch_size": 64,
+    "patience": 7,
+    "weight_decay": 6.948873436259482e-06,
+    "scheduler_patience": 4,
+    "scheduler_factor": 0.4198421272800256,
+    "focal_minority_weight": 0.44496228644304736,
+    "focal_gamma": 1.7416605655953168
+  },
+  "best_trial": 47,
+  "n_trials": 50,
+  "timestamp": "20260226_134119"
+}

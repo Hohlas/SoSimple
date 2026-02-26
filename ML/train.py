@@ -29,7 +29,7 @@
 # Примечания:
 #   Classification:
 #     - Early stopping на val macro F1 (НЕ на loss!)
-#     - Focal Loss с alpha=[0.45, 0.10, 0.45]
+#     - Focal Loss с alpha=[0.495, 0.01, 0.495]
 #   Regression:
 #     - Early stopping на val pearson_r (максимизируем корреляцию)
 #     - Huber Loss (delta=1.0)
@@ -96,7 +96,7 @@ DEFAULTS = {
     'scheduler_factor': 0.5,
     # Classification
     'gamma': 2.0,          # Focal Loss gamma
-    'alpha': [0.45, 0.10, 0.45],  # Focal Loss class weights
+    'alpha': [0.495, 0.01, 0.495],  # Focal Loss class weights
     # Regression
     'huber_delta': 1.0,    # Huber Loss delta
     'seed': 42,
