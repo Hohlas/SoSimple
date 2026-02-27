@@ -102,7 +102,7 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str) -> dict:
 # OBJECTIVE FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def create_objective(model_name: str, task: str, epochs: int, seed: int):
+def create_objective(model_name: str, task: str, epochs: int, seed: int, use_weighted_sampler: bool = False):
     """
     Создание objective-функции для Optuna.
 
@@ -111,6 +111,7 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int):
         task: 'classification' или 'regression'
         epochs: Максимальное количество эпох
         seed: Базовый seed
+        use_weighted_sampler: Использовать ли WeightedRandomSampler
 
     Возвращает:
         Функцию objective(trial) для Optuna
@@ -138,6 +139,10 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int):
                 huber_delta=params.get('huber_delta', DEFAULTS['huber_delta']),
                 scheduler_patience=params['scheduler_patience'],
                 scheduler_factor=params['scheduler_factor'],
+                # Параметры для новых режимов метрики (используем дефолты)
+                metric_mode='f1_macro',
+                min_signal_recall=0.3,
+                use_weighted_sampler=use_weighted_sampler,
                 trial=trial,  # Для Pruning
                 silent=True,  # Минимальный вывод
             )
@@ -166,6 +171,7 @@ def run_optimization(
     n_trials: int,
     epochs: int,
     seed: int,
+    use_weighted_sampler: bool = False,
 ) -> optuna.Study:
     """
     Запуск оптимизации гиперпараметров.
@@ -176,6 +182,7 @@ def run_optimization(
         n_trials: Количество trials
         epochs: Макс. эпох на trial
         seed: Random seed
+        use_weighted_sampler: Использовать ли WeightedRandomSampler
 
     Возвращает:
         Optuna Study объект с результатами
@@ -196,7 +203,7 @@ def run_optimization(
     )
 
     # Создаём objective функцию
-    objective = create_objective(model_name, task, epochs, seed)
+    objective = create_objective(model_name, task, epochs, seed, use_weighted_sampler=use_weighted_sampler)
 
     # Callback для вывода прогресса
     def callback(study, trial):
@@ -340,6 +347,10 @@ def parse_args() -> argparse.Namespace:
         '--seed', type=int, default=42,
         help="Random seed (default: 42)"
     )
+    parser.add_argument(
+        '--use_weighted_sampler', action='store_true',
+        help="Использовать WeightedRandomSampler (для классификации)"
+    )
     
     return parser.parse_args()
 
@@ -362,6 +373,7 @@ def main():
         n_trials=args.trials,
         epochs=args.epochs,
         seed=args.seed,
+        use_weighted_sampler=args.use_weighted_sampler,
     )
 
     # Выводим и сохраняем результаты

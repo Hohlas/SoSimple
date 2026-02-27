@@ -28,6 +28,8 @@ import torch
 from scipy import stats
 from sklearn.metrics import (
     f1_score,
+    precision_score,
+    recall_score,
     classification_report,
     confusion_matrix,
     mean_absolute_error,
@@ -66,6 +68,11 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         Словарь с ключами:
         - f1_macro: float — macro F1-score (основная метрика)
         - f1_per_class: dict — F1 для каждого класса {-1: ..., 0: ..., 1: ...}
+        - precision_neg, precision_pos: float — precision для сигнальных классов
+        - recall_neg, recall_pos: float — recall для сигнальных классов
+        - signal_precision: float — средний precision (-1 и 1 классов)
+        - signal_recall: float — средний recall (-1 и 1 классов)
+        - f1_minority: float — средний F1 (-1 и 1 классов)
         - confusion_matrix: np.ndarray shape (3, 3) — матрица ошибок
         - classification_report: str — полный текстовый отчёт
     """
@@ -76,6 +83,19 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
 
     f1_per = f1_score(y_true, y_pred, average=None, labels=labels)
     f1_per_class = {label: score for label, score in zip(labels, f1_per)}
+
+    # Precision и Recall для каждого класса
+    precision_per = precision_score(y_true, y_pred, average=None, labels=labels, zero_division=0)
+    recall_per = recall_score(y_true, y_pred, average=None, labels=labels, zero_division=0)
+
+    precision_neg = precision_per[0]  # класс -1
+    precision_pos = precision_per[2]  # класс 1
+    recall_neg = recall_per[0]        # класс -1
+    recall_pos = recall_per[2]        # класс 1
+
+    signal_precision = (precision_neg + precision_pos) / 2
+    signal_recall = (recall_neg + recall_pos) / 2
+    f1_minority = (f1_per_class[-1] + f1_per_class[1]) / 2
 
     cm = confusion_matrix(y_true, y_pred, labels=labels)
 
@@ -89,6 +109,13 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     return {
         'f1_macro': f1_macro,
         'f1_per_class': f1_per_class,
+        'precision_neg': precision_neg,
+        'precision_pos': precision_pos,
+        'recall_neg': recall_neg,
+        'recall_pos': recall_pos,
+        'signal_precision': signal_precision,
+        'signal_recall': signal_recall,
+        'f1_minority': f1_minority,
         'confusion_matrix': cm,
         'classification_report': report,
     }

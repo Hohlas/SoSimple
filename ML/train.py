@@ -29,7 +29,7 @@
 # Примечания:
 #   Classification:
 #     - Early stopping на val macro F1 (НЕ на loss!)
-#     - Focal Loss с alpha=[0.495, 0.01, 0.495]
+#     - Focal Loss с alpha=[0.45, 0.10, 0.45]
 #   Regression:
 #     - Early stopping на val pearson_r (максимизируем корреляцию)
 #     - Huber Loss (delta=1.0)
@@ -96,7 +96,7 @@ DEFAULTS = {
     'scheduler_factor': 0.5,
     # Classification
     'gamma': 2.0,          # Focal Loss gamma
-    'alpha': [0.495, 0.01, 0.495],  # Focal Loss class weights
+    'alpha': [0.45, 0.10, 0.45],  # Focal Loss class weights
     # Regression
     'huber_delta': 1.0,    # Huber Loss delta
     'seed': 42,
@@ -282,6 +282,10 @@ def train_model(
     # Scheduler параметры
     scheduler_patience: int = DEFAULTS['scheduler_patience'],
     scheduler_factor: float = DEFAULTS['scheduler_factor'],
+    # Metrique mode для classification
+    metric_mode: str = 'f1_macro',
+    min_signal_recall: float = 0.3,
+    use_weighted_sampler: bool = False,
     # Optuna Pruning
     trial=None,
     # Режим без вывода в консоль (для Optuna)
@@ -328,6 +332,7 @@ def train_model(
         batch_size=batch_size,
         target=target_col,
         use_scaler=use_scaler,
+        use_weighted_sampler=use_weighted_sampler if not regression else False,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -385,7 +390,7 @@ def train_model(
             'val_f1_class_neg': [], 'val_f1_class_zero': [],
             'val_f1_class_pos': [], 'lr': [],
         }
-        metric_name = 'f1_macro'
+        metric_name = metric_mode  # Используем переданный режим метрики
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'Val F1 (macro)':>14} | {'F1(-1)':>7} | {'F1(0)':>7} | {'F1(1)':>7} | {'LR':>10}")
@@ -428,14 +433,25 @@ def train_model(
                       f"{current_lr:>10.6f}")
         else:
             val_loss, metrics = validate(model, val_loader, loss_fn, device)
-            val_metric = metrics['f1_macro']
             f1_per = metrics['f1_per_class']
+
+            # Выбираем метрику для early stopping в зависимости от metric_mode
+            if metric_mode == 'signal_precision':
+                # Проверяем ограничение на recall
+                if metrics['signal_recall'] >= min_signal_recall:
+                    val_metric = metrics['signal_precision']
+                else:
+                    val_metric = 0.0  # Штраф за невыполнение условия
+            elif metric_mode == 'f1_minority':
+                val_metric = metrics['f1_minority']
+            else:  # 'f1_macro'
+                val_metric = metrics['f1_macro']
 
             current_lr = optimizer.param_groups[0]['lr']
 
             history['train_loss'].append(train_loss)
             history['val_loss'].append(val_loss)
-            history['val_f1_macro'].append(val_metric)
+            history['val_f1_macro'].append(metrics['f1_macro'])
             history['val_f1_class_neg'].append(f1_per.get(-1, 0.0))
             history['val_f1_class_zero'].append(f1_per.get(0, 0.0))
             history['val_f1_class_pos'].append(f1_per.get(1, 0.0))
@@ -716,8 +732,8 @@ def parse_args() -> argparse.Namespace:
     # Focal Loss параметры (только для classification)
     parser.add_argument('--focal_gamma', type=float, default=DEFAULTS['gamma'],
                         help=f"Focal Loss gamma (default: {DEFAULTS['gamma']})")
-    parser.add_argument('--focal_minority_weight', type=float, default=0.495,
-                        help=f"Вес minority классов (-1 и 1) для Focal Loss. Neutral будет (1-2*weight). (default: 0.495)")
+    parser.add_argument('--focal_minority_weight', type=float, default=0.45,
+                        help=f"Вес minority классов (-1 и 1) для Focal Loss. Neutral будет (1-2*weight). (default: 0.45)")
     
     # Optimizer и Scheduler параметры
     parser.add_argument('--weight_decay', type=float, default=DEFAULTS['weight_decay'],
@@ -730,6 +746,15 @@ def parse_args() -> argparse.Namespace:
     # Флаг для включения StandardScaler (по дефолту False)
     parser.add_argument('--use_scaler', action='store_true',
                         help="Включить дополнительную нормализацию (StandardScaler). По умолчанию выключено.")
+    
+    # Параметры для выбора целевой метрики и WeightedRandomSampler
+    parser.add_argument('--metric_mode', type=str, default='f1_macro',
+                        choices=['f1_macro', 'f1_minority', 'signal_precision'],
+                        help="Целевая метрика для early stopping: f1_macro | f1_minority | signal_precision (default: f1_macro)")
+    parser.add_argument('--min_signal_recall', type=float, default=0.3,
+                        help="Минимальный recall сигнальных классов (для metric_mode=signal_precision). Default: 0.3")
+    parser.add_argument('--use_weighted_sampler', action='store_true',
+                        help="Использовать WeightedRandomSampler для балансировки train-батчей. По умолчанию выключено.")
     
     return parser.parse_args()
 
@@ -764,6 +789,9 @@ def main():
         focal_gamma=args.focal_gamma,
         scheduler_patience=args.scheduler_patience,
         scheduler_factor=args.scheduler_factor,
+        metric_mode=args.metric_mode,
+        min_signal_recall=args.min_signal_recall,
+        use_weighted_sampler=args.use_weighted_sampler,
     )
 
     # Сохраняем результат как JSON
@@ -794,6 +822,10 @@ def main():
             'f1_per_class': {
                 str(k): v for k, v in result['best_metrics']['f1_per_class'].items()
             },
+            'metric_mode': args.metric_mode,
+            'signal_precision': result['best_metrics'].get('signal_precision'),
+            'signal_recall': result['best_metrics'].get('signal_recall'),
+            'f1_minority': result['best_metrics'].get('f1_minority'),
         }
         suffix = ''
 

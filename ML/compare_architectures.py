@@ -48,13 +48,18 @@ ML_DIR = PROJECT_ROOT / 'ML'
 REPORTS_DIR = ML_DIR / 'reports'
 
 
-def compare_all_architectures(task: str = 'classification', use_scaler: bool = False) -> list[dict]:
+def compare_all_architectures(
+    task: str = 'classification',
+    use_scaler: bool = False,
+    use_weighted_sampler: bool = False,
+) -> list[dict]:
     """
     Обучение и сравнение всех моделей из MODEL_REGISTRY.
 
     Аргументы:
         task: 'classification' или 'regression'
         use_scaler: Использовать ли StandardScaler (default: False)
+        use_weighted_sampler: Использовать ли WeightedRandomSampler (для classification)
 
     Возвращает:
         Список словарей с результатами для каждой модели
@@ -72,7 +77,12 @@ def compare_all_architectures(task: str = 'classification', use_scaler: bool = F
         print(f"  Обучение: {model_name.upper()}")
         print(f"{'▶' * 60}")
 
-        result = train_model(model_name=model_name, task=task, use_scaler=use_scaler)
+        result = train_model(
+            model_name=model_name,
+            task=task,
+            use_scaler=use_scaler,
+            use_weighted_sampler=use_weighted_sampler,
+        )
         results.append(result)
 
     # Определяем лучшую модель
@@ -292,13 +302,21 @@ def parse_args() -> argparse.Namespace:
         '--use_scaler', action='store_true',
         help="Включить StandardScaler (по умолчанию выключено)"
     )
+    parser.add_argument(
+        '--use_weighted_sampler', action='store_true',
+        help="Использовать WeightedRandomSampler (для классификации)"
+    )
     return parser.parse_args()
 
 
 def main():
     """Точка входа: сравнение всех архитектур."""
     args = parse_args()
-    results = compare_all_architectures(task=args.task, use_scaler=args.use_scaler)
+    results = compare_all_architectures(
+        task=args.task,
+        use_scaler=args.use_scaler,
+        use_weighted_sampler=args.use_weighted_sampler,
+    )
 
     print("\n" + "=" * 60)
     print(f"  ✅ СРАВНЕНИЕ АРХИТЕКТУР ЗАВЕРШЕНО ({args.task.upper()})")

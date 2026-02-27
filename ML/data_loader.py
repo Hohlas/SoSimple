@@ -2,7 +2,7 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей
 # Язык: Python 3.11+
-# Обновлён: 2026-02-23
+# Обновлён: 2026-02-27
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -35,7 +35,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
 
@@ -227,6 +227,7 @@ def create_data_loaders(
     num_workers: int = 0,
     target: str = 'signal',
     use_scaler: bool = False,
+    use_weighted_sampler: bool = False,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -239,11 +240,13 @@ def create_data_loaders(
         target: Колонка таргета — 'signal' (классификация, default) или
                 'predict' (регрессия, непрерывные значения float)
         use_scaler: Использовать ли математический StandardScaler (default: False)
+        use_weighted_sampler: Использовать ли WeightedRandomSampler для train (только для classification).
+                             Веса обратны частотам класса. Default: False
 
     Возвращает:
         Кортеж (train_loader, val_loader, scaler):
-        - train_loader: DataLoader (shuffle=True)
-        - val_loader: DataLoader (shuffle=False)
+        - train_loader: DataLoader (shuffle=True или sampler=WeightedRandomSampler)
+        - val_loader: DataLoader (shuffle=False, реальное распределение)
         - scaler: обученный StandardScaler (или None, если use_scaler=False)
 
     Пример:
@@ -304,14 +307,39 @@ def create_data_loaders(
     train_dataset = FractalSequenceDataset(X_train_norm, y_train, mask_train, regression=regression)
     val_dataset = FractalSequenceDataset(X_val_norm, y_val, mask_val, regression=regression)
 
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,       # Каждая строка — независимый snapshot, shuffle допустим
-        num_workers=num_workers,
-        pin_memory=torch.cuda.is_available(),
-        drop_last=False,
-    )
+    # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
+    if use_weighted_sampler and not regression:
+        # Рассчитываем веса: 1 / freq(class)
+        # Отображаем {-1, 0, 1} → {0, 1, 2} для np.bincount()
+        # Векторизованное преобразование меток
+        y_train_mapped = y_train + 1  # {-1, 0, 1} → {0, 1, 2}
+        class_counts = np.bincount(y_train_mapped)
+        class_weights = 1.0 / class_counts
+        sample_weights = class_weights[y_train_mapped]
+        sampler = WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(train_dataset),
+            replacement=True
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            sampler=sampler,  # Используем sampler вместо shuffle
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available(),
+            drop_last=False,
+        )
+        sampler_info = " (WeightedRandomSampler)"
+    else:
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,       # Каждая строка — независимый snapshot, shuffle допустим
+            num_workers=num_workers,
+            pin_memory=torch.cuda.is_available(),
+            drop_last=False,
+        )
+        sampler_info = ""
 
     val_loader = DataLoader(
         val_dataset,
@@ -322,7 +350,7 @@ def create_data_loaders(
         drop_last=False,
     )
 
-    print(f"\n✅ DataLoaders: train={len(train_loader)} batches, "
+    print(f"\n✅ DataLoaders: train={len(train_loader)} batches{sampler_info}, "
           f"val={len(val_loader)} batches (batch_size={batch_size})")
 
     return train_loader, val_loader, scaler

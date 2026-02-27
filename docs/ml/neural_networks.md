@@ -1,10 +1,23 @@
 # Neural Networks Pipeline
 
+> **Обновлено**: 2026-02-27 — добавлены новые метрики для работы с дисбалансом классов (`signal_precision`, `f1_minority`) и `WeightedRandomSampler`.
+
 ## Назначение
 Обучение и сравнение 4 архитектур нейронных сетей для решения двух задач:
 1. **Классификация** (`--task classification`): `signal ∈ {-1, 0, 1}` (направление и сила движения)
 2. **Регрессия** (`--task regression`): `predict ∈ [-p..p]` (непрерывная нормализованная величина ожидаемого движения цены).
 Фреймворк: PyTorch.
+
+### ⚠️ Важно: Ловушка дисбаланса классов
+
+В датасете наблюдается сильный дисбаланс: **neutral (0) ≈ 95%**, **сигналы (-1, 1) ≈ 5%**.
+
+При использовании стандартной метрики `macro F1` модель может показывать "хороший" результат (~0.57), фактически не умея предсказывать сигналы:
+- F1(0) ≈ 0.95 (отлично — majority класс)
+- F1(-1) и F1(1) ≈ 0.35 (плохо — торгово-значимые классы)
+- Precision сигналов: 0.25–0.30 → **70-75% ложных торговых сигналов**
+
+**Решение**: Используйте `--metric_mode f1_minority` или `--metric_mode signal_precision` для честной оценки качества сигналов.
 
 ## Структура модулей
 
@@ -55,7 +68,7 @@ python -m ML.compare_architectures --task regression
 
 ### Обучение конкретной модели (`train.py`)
 ```bash
-# Классификация
+# Классификация с дефолтным F1 macro
 python -m ML.train --model bilstm --task classification
 
 # Регрессия с кастомными параметрами
@@ -67,6 +80,15 @@ python -m ML.train --model cnn1d --task classification \
   --weight_decay 6.95e-6 --scheduler_patience 4 --scheduler_factor 0.42 \
   --focal_gamma 1.74 --focal_minority_weight 0.445 \
   --epochs 100 --seed 123
+
+# Классификация, ориентированная на precision сигналов с ограничением на recall
+python -m ML.train --model cnn1d --task classification \
+  --metric_mode signal_precision --min_signal_recall 0.3 \
+  --use_weighted_sampler --epochs 50 --seed 42
+
+# Классификация со средним F1 для minority классов (-1 и 1)
+python -m ML.train --model transformer --task classification \
+  --metric_mode f1_minority --use_weighted_sampler --epochs 50 --seed 42
 ```
 
 ### Аргументы командной строки
@@ -87,6 +109,9 @@ python -m ML.train --model cnn1d --task classification \
 | `--focal_gamma` | Gamma параметр Focal Loss (classification) | `2.0` |
 | `--focal_minority_weight` | Вес классов -1 и 1 для Focal Loss | `0.495` |
 | `--seed` | Random Seed | `42` |
+| `--metric_mode` | Целевая метрика для early stopping (classification): `f1_macro`, `f1_minority`, `signal_precision` | `f1_macro` |
+| `--min_signal_recall` | Минимальный recall для сигнальных классов (-1 и 1), используется только при `--metric_mode=signal_precision` | `0.3` |
+| `--use_weighted_sampler` | Использовать WeightedRandomSampler для балансировки train-батчей (классификация только) | `False` (выключено) |
 
 **Примечание:** Для Focal Loss веса классов вычисляются как:
 - alpha[-1] = focal_minority_weight
@@ -235,9 +260,42 @@ python -m ML.optimize --model transformer --task classification --trials 10 --ep
 
 ## Метрики
 ### Задача классификации
-- **Основная**: `macro F1-score` (early stopping + выбор лучшей модели)
-- **Дополнительные**: `Per-class F1` (особенно для minority-классов -1 и 1), Precision, Recall
-- **Графики**: Confusion matrix, Training curves (loss + F1)
+
+#### Режимы целевой метрики (`--metric_mode`)
+
+При дисбалансе классов (95% neutral, 5% сигналы) стандартная метрика `macro F1` может быть обманчивой — высокое значение достигается за счёт отличного предсказания neutral класса, в то время как качество сигналов (-1 и 1) остаётся низким.
+
+| Режим | Формула | Когда использовать |
+|-------|---------|-------------------|
+| `f1_macro` | (F1(-1) + F1(0) + F1(1)) / 3 | Базовый режим, когда все классы равнозначны |
+| `f1_minority` | (F1(-1) + F1(1)) / 2 | **Рекомендуется** — фокус на торговых сигналах с балансом precision/recall |
+| `signal_precision` | (Precision(-1) + Precision(1)) / 2 | Когда критично минимизировать ложные сигналы (штраф за recall < min_signal_recall) |
+
+#### Дополнительные метрики сигналов
+
+Все метрики доступны в выводе и логах:
+
+| Метрика | Описание | Интерпретация для торговли |
+|---------|----------|---------------------------|
+| `signal_precision` | Средний precision классов -1 и 1 | Доля правильных сигналов (выше = меньше ложных входов) |
+| `signal_recall` | Средний recall классов -1 и 1 | Процент найденных реальных сигналов (выше = меньше пропущенных возможностей) |
+| `f1_minority` | Средний F1 классов -1 и 1 | Баланс precision/recall для сигналов |
+| `precision_neg` / `precision_pos` | Precision отдельно для Sell/Buy | Контроль качества каждого направления |
+| `recall_neg` / `recall_pos` | Recall отдельно для Sell/Buy | Полнота покрытия каждого направления |
+
+#### Графики
+- Confusion matrix — визуализация ошибок по классам
+- Training curves — loss + выбранная целевая метрика
+
+### WeightedRandomSampler (`--use_weighted_sampler`)
+
+При включении создаёт сбалансированные батчи для обучения:
+- Вес каждого примера = 1 / частота_класса
+- minority классы (-1, 1) попадают в батчи чаще
+- Только для train; validation/test сохраняют реальное распределение
+- Помогает модели лучше учиться на сигнальных классах
+
+**Примечание**: sampler работает только для классификации, для регрессии игнорируется.
 
 ### Задача регрессии
 - **Основная**: Коэффициент корреляции Пирсона `pearson_r` (early stopping + выбор лучшей модели)
@@ -253,7 +311,7 @@ python -m ML.optimize --model transformer --task classification --trials 10 --ep
 
 | Файл | Описание |
 |------|----------|
-| `<model>_best.pt` | Лучшая модель для классификации (по macro F1) |
+| `<model>_best.pt` | Лучшая модель для классификации (по выбранной метрике: f1_macro / f1_minority / signal_precision) |
 | `<model>_regression_best.pt` | Лучшая модель для регрессии (по pearson_r) |
 
 Где `<model>` ∈ {`bilstm`, `cnn1d`, `transformer`, `hybrid`}

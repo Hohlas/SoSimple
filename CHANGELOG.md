@@ -2,6 +2,40 @@
 Хронология значимых изменений проекта (major milestones).
 
 
+## [2026-02-27] — Оптимизация под торговые сигналы: метрики и балансировка
+### Добавлено
+- CLI аргумент `--metric_mode` для выбора целевой метрики (f1_macro | f1_minority | signal_precision)
+- CLI аргумент `--min_signal_recall` для ограничения минимального recall сигнальных классов
+- CLI аргумент `--use_weighted_sampler` для балансировки train-батчей (WeightedRandomSampler)
+- Метрики `signal_precision`, `signal_recall`, `f1_minority` в `ML/utils.py`
+- Метрик precision_neg, precision_pos, recall_neg, recall_pos в возвращаемый словарь `compute_metrics()`
+- Поддержка WeightedRandomSampler в `ML/data_loader.py` для классификации
+- Логирование выбранного режима метрики и signal-метрик в результаты эксперимента
+- Обновлена документация `docs/ml/neural_networks.md` с описанием новых метрик и режимов
+
+### Изменено
+- Early stopping теперь может использовать Precision сигнальных классов вместо Macro F1
+- Возвращаемый словарь `compute_metrics()` содержит расширенный набор метрик для сигналов
+- `train_model()` передаёт новые параметры в `create_data_loaders()` для WeightedRandomSampler
+
+### Примечание
+- WeightedRandomSampler используется только для train; val/test сохраняют реальное распределение
+- Для `metric_mode=signal_precision` применяется штраф, если recall < min_signal_recall
+
+### Исправлено
+- Ошибка в `WeightedRandomSampler`: преобразование меток {-1, 0, 1} → {0, 1, 2} через `y_train + 1` вместо list comprehension
+
+## [2026-02-27] — Критический анализ: ловушка дисбаланса классов
+### Проблема
+- **Macro F1 = 0.57 — обманчивая метрика**: высокое значение достигается за счёт F1(0)=0.95 (neutral, 95% данных)
+- **Торгово-значимые классы (-1 и 1) имеют F1 ≈ 0.35** — катастрофически низкое качество
+- **Precision сигнальных классов**: 0.25–0.30 → 70-75% ложных торговых сигналов
+- Веса Focal Loss [0.445, 0.11, 0.445] недостаточны для компенсации дисбаланса 5%/95%
+
+### Вывод
+- Модели с "хорошим" Macro F1 фактически непригодны для торговли
+- Требуется смена целевой метрики (F1 minority, MCC) и балансировка батчей (WeightedRandomSampler)
+
 ## [2026-02-27] — Сравнение архитектур нейросетей (регрессия)
 ### Добавлено
 - `ML/reports/architecture_comparison_regression.md` — отчёт сравнения всех архитектур для регрессии
