@@ -2,6 +2,28 @@
 Хронология значимых изменений проекта (major milestones).
 
 
+## [2026-02-27] — Сравнение архитектур нейросетей (регрессия)
+### Добавлено
+- `ML/reports/architecture_comparison_regression.md` — отчёт сравнения всех архитектур для регрессии
+- Чекпоинты для всех моделей в режиме регрессии: `*_regression_best.pt`
+- Графики кривых обучения и residual plots для регрессии в `ML/plots/`
+### Результаты
+- **Bi-LSTM**: лучший Pearson r = 0.3236, 147K параметров
+- **Hybrid CNN+LSTM**: Pearson r = 0.2825, 83K параметров
+- **1D-CNN**: Pearson r = 0.2518, 42K параметров (самая быстрая)
+- **Transformer**: Pearson r = 0.1143, 70K параметров
+
+## [2026-02-25] — Оптимизация гиперпараметров (Optuna)
+### Добавлено
+- `ML/optimize.py` — автоматический подбор гиперпараметров с помощью Optuna
+- `ML/experiment_logger.py` — единый CSV-логгер для всех ML-экспериментов
+- `ML/reports/optuna_best_params_*.json` — лучшие найденные конфигурации
+- `ML/reports/optuna_study_*.json` — результаты study Optuna
+- Поддержка pruning (досрочная остановка неперспективных trials)
+- Оптимизация для classification (macro F1) и regression (pearson_r)
+### Зависимости
+- `optuna>=3.0`
+
 ## [2026-02-23] — Поддержка обучения в режиме регрессии (predict target)
 ### Добавлено
 - `ML/train.py` — аргумент `--task {classification,regression}`
