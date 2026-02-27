@@ -19,13 +19,15 @@ ML/
 │   ├── transformer.py        # Transformer Encoder (70K параметров)
 │   └── hybrid_cnn_lstm.py    # Hybrid CNN+LSTM (83K параметров)
 ├── train.py                  # Единый скрипт обучения (CLI: --model arg)
+├── optimize.py               # Оптимизация гиперпараметров с Optuna
 ├── losses.py                 # Focal Loss
 ├── utils.py                  # Seed, метрики, подсчёт параметров
 ├── compare_architectures.py  # Скрипт сравнения всех моделей
-├── checkpoints/              # Веса лучших моделей (*_best.pt или *_regression_best.pt)
+├── checkpoints/              # Веса моделей (.pt) и метрики (.json)
 ├── plots/                    # Training curves, confusion matrices, residuals
 └── reports/
-    └── architecture_comparison.md
+    ├── architecture_comparison.md
+    └── optuna_*.json         # Отчёты оптимизации гиперпараметров
 ```
 
 ## Входные данные
@@ -58,6 +60,13 @@ python -m ML.train --model bilstm --task classification
 
 # Регрессия с кастомными параметрами
 python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
+
+# Классификация с оптимизированными параметрами (из Optuna)
+python -m ML.train --model cnn1d --task classification \
+  --lr 0.004012 --batch_size 64 --patience 7 \
+  --weight_decay 6.95e-6 --scheduler_patience 4 --scheduler_factor 0.42 \
+  --focal_gamma 1.74 --focal_minority_weight 0.445 \
+  --epochs 100 --seed 123
 ```
 
 ### Аргументы командной строки
@@ -71,8 +80,18 @@ python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
 | `--batch_size` | Размер батча | `256` |
 | `--epochs` | Лимит эпох обучения | `50` |
 | `--lr` | Скорость обучения (Learning Rate) | `1e-3` |
+| `--weight_decay` | L2 регуляризация (AdamW) | `1e-4` |
 | `--patience` | Patience для раннего останова | `10` |
+| `--scheduler_patience` | Patience для ReduceLROnPlateau | `5` |
+| `--scheduler_factor` | Factor уменьшения LR | `0.5` |
+| `--focal_gamma` | Gamma параметр Focal Loss (classification) | `2.0` |
+| `--focal_minority_weight` | Вес классов -1 и 1 для Focal Loss | `0.495` |
 | `--seed` | Random Seed | `42` |
+
+**Примечание:** Для Focal Loss веса классов вычисляются как:
+- alpha[-1] = focal_minority_weight
+- alpha[0] = 1 - 2 * focal_minority_weight
+- alpha[1] = focal_minority_weight
 
 ## Data Pipeline
 
@@ -114,6 +133,106 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 | Batch size | 256 | Оптимально при 43K сэмплах |
 | Seed | 42 | torch, numpy, random, cudnn deterministic |
 
+## Оптимизация гиперпараметров (`optimize.py`)
+
+Автоматический подбор гиперпараметров с использованием фреймворка [Optuna](https://optuna.org/).
+Поддерживает early stopping (pruning) для экономии времени на неперспективных trials.
+
+### Пространство поиска гиперпараметров
+
+| Параметр | Диапазон | Описание | Применимость |
+|----------|----------|----------|--------------|
+| `lr` | [1e-5, 1e-2] log | Learning rate | Все задачи |
+| `batch_size` | {64, 128, 256, 512} | Размер батча | Все задачи |
+| `patience` | [3, 10] | Early stopping patience | Все задачи |
+| `weight_decay` | [1e-6, 1e-3] log | L2 регуляризация | Все задачи |
+| `scheduler_patience` | [3, 7] | Patience для ReduceLROnPlateau | Все задачи |
+| `scheduler_factor` | [0.3, 0.7] | Factor уменьшения LR | Все задачи |
+| `focal_gamma` | [1.0, 3.0] | Фокусирующий параметр Focal Loss | Только classification |
+| `focal_minority_weight` | [0.2, 0.7] | Вес классов -1 и 1 | Только classification |
+| `huber_delta` | [0.5, 2.0] | Параметр δ для Huber Loss | Только regression |
+
+### Примеры команд запуска
+
+```bash
+# Базовая оптимизация CNN1D для классификации (50 trials)
+python -m ML.optimize --model cnn1d --task classification --trials 50
+
+# Оптимизация с увеличенным числом эпох и кастомным seed
+python -m ML.optimize --model cnn1d --task classification --trials 50 --epochs 50 --seed 123
+
+# Оптимизация Bi-LSTM для регрессии
+python -m ML.optimize --model bilstm --task regression --trials 30 --epochs 40
+
+# Быстрая оптимизация для тестирования
+python -m ML.optimize --model transformer --task classification --trials 10 --epochs 20
+```
+
+### Аргументы командной строки
+
+| Аргумент | Описание | Значение по умолчанию |
+|----------|----------|-----------------------|
+| `--model` | Архитектура модели (cnn1d, bilstm, transformer, hybrid) | **обязательный** |
+| `--task` | Задача: `classification` или `regression` | `classification` |
+| `--trials` | Количество Optuna trials | `50` |
+| `--epochs` | Максимум эпох на один trial | `30` |
+| `--seed` | Random seed для воспроизводимости | `42` |
+
+### Форматы выходных файлов
+
+Оптимизация создаёт два типа отчётов в `ML/reports/`:
+
+#### 1. `optuna_best_params_<model>_<task>.json`
+Содержит только лучшие найденные параметры:
+```json
+{
+  "model": "cnn1d",
+  "task": "classification",
+  "best_value": 0.5714740408592095,
+  "best_params": {
+    "lr": 0.004012297247120644,
+    "batch_size": 64,
+    "patience": 7,
+    "weight_decay": 6.948873436259482e-06,
+    "scheduler_patience": 4,
+    "scheduler_factor": 0.4198421272800256,
+    "focal_minority_weight": 0.44496228644304736,
+    "focal_gamma": 1.7416605655953168
+  },
+  "best_trial": 47,
+  "n_trials": 50,
+  "timestamp": "20260226_134119"
+}
+```
+
+#### 2. `optuna_study_<model>_<task>_<timestamp>.json`
+Полная история всех trials с параметрами, метриками и временем выполнения:
+```json
+{
+  "study_name": "cnn1d_classification",
+  "direction": "MAXIMIZE",
+  "best_trial": 47,
+  "best_value": 0.5714740408592095,
+  "best_params": { ... },
+  "trials": [
+    {
+      "number": 0,
+      "value": 0.5511695473555203,
+      "params": { ... },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-02-26 12:19:35.217733",
+      "datetime_complete": "2026-02-26 12:22:38.129134",
+      "duration": "0:03:02.911401"
+    }
+  ]
+}
+```
+
+Состояния trial:
+- `COMPLETE` — успешно завершён
+- `PRUNED` — остановлен early (неперспективная конфигурация)
+- `FAIL` — произошла ошибка
+
 ## Метрики
 ### Задача классификации
 - **Основная**: `macro F1-score` (early stopping + выбор лучшей модели)
@@ -124,6 +243,61 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 - **Основная**: Коэффициент корреляции Пирсона `pearson_r` (early stopping + выбор лучшей модели)
 - **Дополнительные**: `MAE`, `RMSE`, `R²`, `Directional Accuracy` (Доля правильных предсказаний знака таргета)
 - **Графики**: Scatter (y_true / y_pred), Резидуалы, Training curves (loss + Pearson r + MAE)
+
+## Содержимое каталога `ML/checkpoints/`
+
+Каталог `ML/checkpoints/` хранит артефакты обучения моделей:
+
+### Файлы весов (`.pt`)
+Сохранённые state_dict моделей PyTorch, загружаемые через `torch.load()`:
+
+| Файл | Описание |
+|------|----------|
+| `<model>_best.pt` | Лучшая модель для классификации (по macro F1) |
+| `<model>_regression_best.pt` | Лучшая модель для регрессии (по pearson_r) |
+
+Где `<model>` ∈ {`bilstm`, `cnn1d`, `transformer`, `hybrid`}
+
+### Файлы метрик (`.json`)
+Результаты обучения в JSON-формате:
+
+| Файл | Описание |
+|------|----------|
+| `<model>_result.json` | Метрики классификации |
+| `<model>_regression_result.json` | Метрики регрессии |
+
+Пример содержимого `cnn1d_result.json`:
+```json
+{
+  "model": "cnn1d",
+  "task": "classification",
+  "best_metric": 0.5698,
+  "best_epoch": 24,
+  "train_loss": 0.8234,
+  "val_loss": 0.9123
+}
+```
+
+### Структура каталога
+```
+ML/checkpoints/
+├── bilstm_best.pt                    # Bi-LSTM classification
+├── bilstm_regression_best.pt         # Bi-LSTM regression
+├── bilstm_result.json
+├── bilstm_regression_result.json
+├── cnn1d_best.pt                     # 1D-CNN classification
+├── cnn1d_regression_best.pt          # 1D-CNN regression
+├── cnn1d_result.json
+├── cnn1d_regression_result.json
+├── transformer_best.pt               # Transformer classification
+├── transformer_regression_best.pt    # Transformer regression
+├── transformer_result.json
+├── transformer_regression_result.json
+├── hybrid_best.pt                    # Hybrid CNN+LSTM classification
+├── hybrid_regression_best.pt         # Hybrid CNN+LSTM regression
+├── hybrid_result.json
+└── hybrid_regression_result.json
+```
 
 ## Примечания
 - `fractal_time` исключён из features — его смысл уже отражён порядком позиций

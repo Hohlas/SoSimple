@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-02-23
+# Обновлён: 2026-02-27
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -713,6 +713,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--seed', type=int, default=DEFAULTS['seed'],
                         help=f"Random seed (default: {DEFAULTS['seed']})")
     
+    # Focal Loss параметры (только для classification)
+    parser.add_argument('--focal_gamma', type=float, default=DEFAULTS['gamma'],
+                        help=f"Focal Loss gamma (default: {DEFAULTS['gamma']})")
+    parser.add_argument('--focal_minority_weight', type=float, default=0.495,
+                        help=f"Вес minority классов (-1 и 1) для Focal Loss. Neutral будет (1-2*weight). (default: 0.495)")
+    
+    # Optimizer и Scheduler параметры
+    parser.add_argument('--weight_decay', type=float, default=DEFAULTS['weight_decay'],
+                        help=f"L2 weight decay (default: {DEFAULTS['weight_decay']})")
+    parser.add_argument('--scheduler_patience', type=int, default=DEFAULTS['scheduler_patience'],
+                        help=f"Patience для ReduceLROnPlateau (default: {DEFAULTS['scheduler_patience']})")
+    parser.add_argument('--scheduler_factor', type=float, default=DEFAULTS['scheduler_factor'],
+                        help=f"Factor для ReduceLROnPlateau (default: {DEFAULTS['scheduler_factor']})")
+    
     # Флаг для включения StandardScaler (по дефолту False)
     parser.add_argument('--use_scaler', action='store_true',
                         help="Включить дополнительную нормализацию (StandardScaler). По умолчанию выключено.")
@@ -730,6 +744,12 @@ def main():
     print(f"  Epochs: {args.epochs}, Batch: {args.batch_size}, LR: {args.lr}")
     print("=" * 60)
 
+    # Формируем focal_alpha из focal_minority_weight
+    # [weight_minority, 1-2*weight_minority, weight_minority]
+    focal_alpha = [args.focal_minority_weight,
+                   1.0 - 2 * args.focal_minority_weight,
+                   args.focal_minority_weight]
+    
     result = train_model(
         model_name=args.model,
         task=args.task,
@@ -737,8 +757,13 @@ def main():
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
+        weight_decay=args.weight_decay,
         patience=args.patience,
         seed=args.seed,
+        focal_alpha=focal_alpha,
+        focal_gamma=args.focal_gamma,
+        scheduler_patience=args.scheduler_patience,
+        scheduler_factor=args.scheduler_factor,
     )
 
     # Сохраняем результат как JSON
@@ -784,8 +809,12 @@ def main():
         'epochs': args.epochs,
         'batch_size': args.batch_size,
         'lr': args.lr,
+        'weight_decay': args.weight_decay,
         'patience': args.patience,
-        'focal_weights': DEFAULTS['alpha'] if not regression else None,
+        'focal_gamma': args.focal_gamma if not regression else None,
+        'focal_minority_weight': args.focal_minority_weight if not regression else None,
+        'scheduler_patience': args.scheduler_patience,
+        'scheduler_factor': args.scheduler_factor,
         'use_scaler': args.use_scaler,
     }
 

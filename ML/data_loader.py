@@ -263,10 +263,11 @@ def create_data_loaders(
     regression = (target == REGRESSION_TARGET)
 
     if regression:
-        y_train = df_train[target].values.astype(np.float32)
-        y_val = df_val[target].values.astype(np.float32)
+        # Убираем знак из predict (берем по модулю), чтобы модель предсказывала только величину
+        y_train = np.abs(df_train[target].values.astype(np.float32))
+        y_val = np.abs(df_val[target].values.astype(np.float32))
         for name, y in [('Train', y_train), ('Val', y_val)]:
-            print(f"  {name} predict: min={y.min():.4f}, max={y.max():.4f}, "
+            print(f"  {name} predict (absolute): min={y.min():.4f}, max={y.max():.4f}, "
                   f"mean={y.mean():.4f}, std={y.std():.4f}")
     else:
         y_train = df_train[target].values.astype(int)
