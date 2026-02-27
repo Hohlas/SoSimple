@@ -191,6 +191,14 @@ python -m ML.optimize --model bilstm --task regression --trials 30 --epochs 40
 
 # Быстрая оптимизация для тестирования
 python -m ML.optimize --model transformer --task classification --trials 10 --epochs 20
+
+# Оптимизация под f1_minority (рекомендуется для дисбаланса)
+python -m ML.optimize --model cnn1d --task classification --trials 50 \
+  --metric_mode f1_minority --use_weighted_sampler
+
+# Оптимизация под signal_precision с порогом recall
+python -m ML.optimize --model cnn1d --task classification --trials 50 \
+  --metric_mode signal_precision --min_signal_recall 0.3 --use_weighted_sampler
 ```
 
 ### Аргументы командной строки
@@ -202,6 +210,9 @@ python -m ML.optimize --model transformer --task classification --trials 10 --ep
 | `--trials` | Количество Optuna trials | `50` |
 | `--epochs` | Максимум эпох на один trial | `30` |
 | `--seed` | Random seed для воспроизводимости | `42` |
+| `--metric_mode` | Целевая метрика (f1_macro, f1_minority, signal_precision) | `f1_macro` |
+| `--min_signal_recall` | Минимальный recall для signal_precision mode | `0.3` |
+| `--use_weighted_sampler` | Использовать WeightedRandomSampler (классификация) | `False` |
 
 ### Форматы выходных файлов
 

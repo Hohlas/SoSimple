@@ -25,6 +25,15 @@
 ### Исправлено
 - Ошибка в `WeightedRandomSampler`: преобразование меток {-1, 0, 1} → {0, 1, 2} через `y_train + 1` вместо list comprehension
 
+## [2026-02-27] — CLI аргументы для Optuna
+### Добавлено
+- CLI аргумент `--metric_mode` в `ML/optimize.py` для выбора целевой метрики оптимизации
+- CLI аргумент `--min_signal_recall` в `ML/optimize.py` для настройки порога recall
+- Параметры `metric_mode` и `min_signal_recall` в `create_objective()` и `run_optimization()`
+
+### Изменено
+- `ML/optimize.py` теперь поддерживает все три режима метрик через CLI (f1_macro, f1_minority, signal_precision)
+
 ## [2026-02-27] — Критический анализ: ловушка дисбаланса классов
 ### Проблема
 - **Macro F1 = 0.57 — обманчивая метрика**: высокое значение достигается за счёт F1(0)=0.95 (neutral, 95% данных)

@@ -2,7 +2,7 @@
 # Файл: optimize.py
 # Назначение: Оптимизация гиперпараметров нейросетей с помощью Optuna
 # Язык: Python 3.11+
-# Обновлён: 2026-02-25
+# Обновлён: 2026-02-27
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -102,7 +102,10 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str) -> dict:
 # OBJECTIVE FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def create_objective(model_name: str, task: str, epochs: int, seed: int, use_weighted_sampler: bool = False):
+def create_objective(model_name: str, task: str, epochs: int, seed: int,
+                     use_weighted_sampler: bool = False,
+                     metric_mode: str = 'f1_macro',
+                     min_signal_recall: float = 0.3):
     """
     Создание objective-функции для Optuna.
 
@@ -112,6 +115,8 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int, use_wei
         epochs: Максимальное количество эпох
         seed: Базовый seed
         use_weighted_sampler: Использовать ли WeightedRandomSampler
+        metric_mode: Целевая метрика (f1_macro, f1_minority, signal_precision)
+        min_signal_recall: Минимальный recall для signal_precision mode
 
     Возвращает:
         Функцию objective(trial) для Optuna
@@ -139,9 +144,9 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int, use_wei
                 huber_delta=params.get('huber_delta', DEFAULTS['huber_delta']),
                 scheduler_patience=params['scheduler_patience'],
                 scheduler_factor=params['scheduler_factor'],
-                # Параметры для новых режимов метрики (используем дефолты)
-                metric_mode='f1_macro',
-                min_signal_recall=0.3,
+                # Параметры для новых режимов метрики
+                metric_mode=metric_mode,
+                min_signal_recall=min_signal_recall,
                 use_weighted_sampler=use_weighted_sampler,
                 trial=trial,  # Для Pruning
                 silent=True,  # Минимальный вывод
@@ -172,6 +177,8 @@ def run_optimization(
     epochs: int,
     seed: int,
     use_weighted_sampler: bool = False,
+    metric_mode: str = 'f1_macro',
+    min_signal_recall: float = 0.3,
 ) -> optuna.Study:
     """
     Запуск оптимизации гиперпараметров.
@@ -183,6 +190,8 @@ def run_optimization(
         epochs: Макс. эпох на trial
         seed: Random seed
         use_weighted_sampler: Использовать ли WeightedRandomSampler
+        metric_mode: Целевая метрика (f1_macro, f1_minority, signal_precision)
+        min_signal_recall: Минимальный recall для signal_precision mode
 
     Возвращает:
         Optuna Study объект с результатами
@@ -203,7 +212,12 @@ def run_optimization(
     )
 
     # Создаём objective функцию
-    objective = create_objective(model_name, task, epochs, seed, use_weighted_sampler=use_weighted_sampler)
+    objective = create_objective(
+        model_name, task, epochs, seed,
+        use_weighted_sampler=use_weighted_sampler,
+        metric_mode=metric_mode,
+        min_signal_recall=min_signal_recall,
+    )
 
     # Callback для вывода прогресса
     def callback(study, trial):
@@ -351,6 +365,15 @@ def parse_args() -> argparse.Namespace:
         '--use_weighted_sampler', action='store_true',
         help="Использовать WeightedRandomSampler (для классификации)"
     )
+    parser.add_argument(
+        '--metric_mode', type=str, default='f1_macro',
+        choices=['f1_macro', 'f1_minority', 'signal_precision'],
+        help="Целевая метрика для оптимизации (classification): f1_macro | f1_minority | signal_precision (default: f1_macro)"
+    )
+    parser.add_argument(
+        '--min_signal_recall', type=float, default=0.3,
+        help="Минимальный recall сигнальных классов (для metric_mode=signal_precision). Default: 0.3"
+    )
     
     return parser.parse_args()
 
@@ -374,6 +397,8 @@ def main():
         epochs=args.epochs,
         seed=args.seed,
         use_weighted_sampler=args.use_weighted_sampler,
+        metric_mode=args.metric_mode,
+        min_signal_recall=args.min_signal_recall,
     )
 
     # Выводим и сохраняем результаты
