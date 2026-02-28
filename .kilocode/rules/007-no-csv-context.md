@@ -1,9 +1,9 @@
 ---
-priority: ALWAYS
-trigger: Работа с .csv файлами (особенно большими > 10MB)
-affects: Контекст ИИ-агента, производительность
+name: no-csv-context
 description: Запрет загрузки CSV в контекст (использовать sampling/streaming)
-tags: csv, performance, memory
+globs:
+  - "**/*.csv"
+alwaysApply: true
 ---
 
 НИКОГДА не помещай .csv файлы целиком в контекст.
@@ -28,4 +28,3 @@ print(df.describe())
 for chunk in pd.read_csv('Nero.csv', chunksize=1000):
     process(chunk)
 ```
-

@@ -1,11 +1,13 @@
 ---
-priority: ALWAYS
-trigger: Создание или изменение любого .py, .mq4, .mqh, .ipynb файла
-affects: Файлы кода, соответствующие .md файлы в docs/
-description: Стандарт документирования для всех файлов проекта
-tags: documentation, file-header, docstrings
+name: documentation
+description: Стандарт документирования для всех файлов проекта (file headers, docstrings, markdown docs)
+globs:
+  - "*.py"
+  - "*.mq4"
+  - "*.mqh"
+  - "*.ipynb"
+alwaysApply: true
 ---
-
 
 # Правило: Стандарт документирования кода
 
@@ -179,5 +181,3 @@ scaler = RobustScaler()
 #   python processing/label_main.py --input Nero.csv
 # =============================================================================
 ```
-
-

@@ -1,10 +1,12 @@
 ---
-priority: CONTEXT
-trigger: Открытие .mqh, .mq4, .csv, .parquet файлов
-affects: Чтение файлов, кодировка, производительность
+name: file-handling
 description: Технические правила работы с файлами проекта (кодировки, большие CSV)
-tags: files, encoding, csv, parquet, mql4
-globs: ["**/*.mqh", "**/*.mq4", "**/*.csv", "**/*.parquet"]
+globs:
+  - "**/*.mqh"
+  - "**/*.mq4"
+  - "**/*.csv"
+  - "**/*.parquet"
+alwaysApply: false
 ---
 
 # Правило: Работа с файлами
@@ -63,5 +65,3 @@ df = pd.read_csv('Nero.csv', nrows=100, sep=';')
 print(df.head())
 print(df.describe())
 ```
-
-

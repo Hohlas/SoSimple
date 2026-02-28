@@ -1,9 +1,10 @@
 ---
-priority: CONTEXT
-trigger: Работа с .mq4 или .mqh файлами
-affects: MT/MQL4/Include/*.mqh, docs/mql4/
+name: mql4-specifics
 description: Специфика работы с MQL4 кодом (кодировка UTF-16LE, MetaEditor)
-tags: mql4, encoding, metatrader
+globs:
+  - "**/*.mq4"
+  - "**/*.mqh"
+alwaysApply: false
 ---
 
 При работе с .mq4/.mqh:
@@ -21,4 +22,3 @@ tags: mql4, encoding, metatrader
 with open('MT/MQL4/Include/lib_PIC.mqh', 'r', encoding='utf-16-le') as f:
     content = f.read()
 ```
-

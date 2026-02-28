@@ -1,9 +1,11 @@
 ---
-priority: ALWAYS
-trigger: Создание нового исполняемого файла
-affects: MODULE_INDEX.md
-description: Правило индексирования модулей в MODULE_INDEX.md
-tags: module-index, navigation, discovery
+name: module-index
+description: Правило индексирования модулей в MODULE_INDEX.md при создании новых файлов
+globs:
+  - "*.py"
+  - "*.mqh"
+  - "*.ipynb"
+alwaysApply: true
 ---
 
 При создании нового .py/.mqh/.ipynb файла:

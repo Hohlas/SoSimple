@@ -1,9 +1,9 @@
 ---
-priority: ALWAYS
-trigger: Написание или обновление любого .md файла
-affects: Все .md файлы в проекте
-description: Компактность документации и запрет дублирования
-tags: documentation, efficiency, links, duplication
+name: compact-and-no-duplication
+description: Компактность документации и запрет дублирования между файлами
+globs:
+  - "*.md"
+alwaysApply: true
 ---
 
 - Одна мысль = одно предложение

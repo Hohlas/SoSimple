@@ -43,7 +43,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ├── statistics/       # Статистика: statistics.py, EDA.ipynb
 ├── ML/               # Machine Learning: baseline/ (Dummy/GBM), neural models, train.py
 │   └── baseline/     # Baseline-модели: эксперименты, отчеты и графики
-├── .ai/              # Правила (.ai/rules/) и команды (.ai/SKILLS_INDEX.md)
+├── .kilocode/        # Правила (.kilocode/rules/) и skills (.kilocode/skills/)
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
 └── AGENTS.md, CHANGELOG.md, README.md
 ```
@@ -65,7 +65,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ---
 
 ## ⚙️ Правила работы
-Все правила: [.ai/RULES_INDEX.md](.ai/RULES_INDEX.md)
+Все правила: [.kilocode/rules/](.kilocode/rules/)
 
 ### Data Leakage Prevention
 Детали: [DATA_FLOW.md § Data Leakage Prevention](docs/DATA_FLOW.md#-data-leakage-prevention)
@@ -79,9 +79,9 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ---
 
 ## 📋 Workflow для агента
-- **Код**: Обнови header ([rule 000](.ai/rules/000-documentation.md)), проверь правила, обнови CHANGELOG.md.
+- **Код**: Обнови header ([rule 000](.kilocode/rules/000-documentation.md)), проверь правила, обнови CHANGELOG.md.
 - **Новый модуль**: Header -> Добавить в AGENTS.md -> Обновить структуру.
-- **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> RULES_INDEX.md (правила).
+- **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> .kilocode/rules/ (правила).
 
 ---
 

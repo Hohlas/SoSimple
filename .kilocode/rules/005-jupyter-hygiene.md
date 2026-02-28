@@ -1,9 +1,9 @@
 ---
-priority: CONTEXT
-trigger: Работа с .ipynb файлами
-affects: statistics/*.ipynb, docs/data_analysis/
+name: jupyter-hygiene
 description: Правила чистоты Jupyter notebooks (clear outputs, no hardcoded paths)
-tags: jupyter, notebooks, reproducibility
+globs:
+  - "**/*.ipynb"
+alwaysApply: false
 ---
 
 При работе с .ipynb:
@@ -29,4 +29,3 @@ jupyter nbconvert --to script notebook.ipynb
 - Вход: statistics/Nero.csv
 - Выход: statistics/reports/EDA_report.md
 ```
-
