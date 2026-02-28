@@ -1,18 +1,18 @@
 {
   "model": "cnn1d",
   "task": "classification",
-  "best_value": 0.5714740408592095,
+  "best_value": 0.28163728830296747,
   "best_params": {
-    "lr": 0.004012297247120644,
+    "lr": 0.0021612389728347375,
     "batch_size": 64,
-    "patience": 7,
-    "weight_decay": 6.948873436259482e-06,
+    "patience": 9,
+    "weight_decay": 2.2853670616987085e-05,
     "scheduler_patience": 4,
-    "scheduler_factor": 0.4198421272800256,
-    "focal_minority_weight": 0.44496228644304736,
-    "focal_gamma": 1.7416605655953168
+    "scheduler_factor": 0.4874454212638858,
+    "focal_minority_weight": 0.2568471077076708,
+    "focal_gamma": 1.8422476616275212
   },
-  "best_trial": 47,
+  "best_trial": 18,
   "n_trials": 50,
-  "timestamp": "20260226_134119"
+  "timestamp": "20260228_100415"
 }

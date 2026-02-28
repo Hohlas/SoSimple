@@ -1,17 +1,17 @@
 {
   "model_name": "cnn1d",
   "task": "classification",
-  "best_f1_macro": 0.32971812642752896,
-  "best_epoch": 31,
+  "best_f1_macro": 0.34627247025384394,
+  "best_epoch": 34,
   "num_parameters": 41603,
-  "training_time": 182.4748933315277,
+  "training_time": 250.12905883789062,
   "f1_per_class": {
-    "-1": 0.35974842767295595,
-    "0": 0.9301666075859625,
-    "1": 0.29968782518210196
+    "-1": 0.3678696158323632,
+    "0": 0.9309426593289544,
+    "1": 0.3246753246753247
   },
   "metric_mode": "f1_minority",
-  "signal_precision": 0.22741663384290672,
-  "signal_recall": 0.6032716223855286,
-  "f1_minority": 0.32971812642752896
+  "signal_precision": 0.23629092785439534,
+  "signal_recall": 0.6478942905596382,
+  "f1_minority": 0.34627247025384394
 }
