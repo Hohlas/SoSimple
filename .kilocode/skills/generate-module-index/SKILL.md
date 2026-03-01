@@ -9,7 +9,7 @@ tags:
 triggers:
   - rebuild module index
   - refresh MODULE_INDEX.md
-always_apply: false
+alwaysApply: false
 ---
 
 **Команда**: `rebuild module index` или `refresh MODULE_INDEX.md`

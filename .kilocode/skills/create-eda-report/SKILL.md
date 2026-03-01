@@ -12,7 +12,7 @@ triggers:
   - "run eda"
 applies_to:
   - "statistics/Nero.csv"
-always_apply: false
+alwaysApply: false
 ---
 
 **Команда**: `run eda` или `analyze`

@@ -12,7 +12,7 @@ triggers:
 applies_to:
   - "*.csv"
   - "*.parquet"
-always_apply: false
+alwaysApply: false
 ---
 
 **Команда**: `check data impact [файл]` или `impact analysis [файл]`

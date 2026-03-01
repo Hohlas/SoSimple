@@ -9,7 +9,7 @@ tags:
 triggers:
   - explain step [name]
   - what does [name] do
-always_apply: false
+alwaysApply: false
 ---
 
 **Команда**: `explain step [название]` или `what does [название] do`
