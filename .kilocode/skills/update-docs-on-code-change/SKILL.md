@@ -193,7 +193,7 @@ wc -l <файл>
 
 ### Архитектура документации (3-Tier System)
 
-Следуй принципам из `.kilocode/rules/claude-md-writer.md`:
+Следуй принципам из `.kilocode/rules/agents-md-writer.md`:
 
 | Tier | Файл | Размер | Содержание |
 |------|------|--------|------------|
