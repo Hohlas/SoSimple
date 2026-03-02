@@ -164,11 +164,14 @@ Rules with `paths:` only load when working with matching files → saves tokens.
 | Quick start (3 commands) | AGENTS.md |
 | Architecture overview | AGENTS.md |
 | Key patterns (1-liners) | AGENTS.md |
-| ML patterns | `.kilocode/rules/ml.md` |
-| MQL4 rules | `.kilocode/rules/mql4.md` |
-| Data processing | `.kilocode/rules/data_processing.md` |
-| API documentation | `.kilocode/rules/api.md` |
-| Deployment steps | `.kilocode/rules/deploy.md` |
+| ML documentation | `docs/ml/` |
+| MQL4 documentation | `docs/mql4/` |
+| Data preprocessing docs | `docs/data_preprocessing/` |
+| Data analysis docs | `docs/data_analysis/` |
+| ML coding rules | `.kilocode/rules/ml.md` (if created) |
+| MQL4 coding rules | `.kilocode/rules/004-mql4-specifics.md` |
+| Data pipeline rules | `.kilocode/rules/data_processing.md` (if created) |
+| API documentation | `docs/ml/neural_networks.md` |
 | Personal preferences | `AGENTS.local.md` (gitignored) |
 | Code style rules | `.eslintrc` / `biome.json` (NOT docs) |
 
