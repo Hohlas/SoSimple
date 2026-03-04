@@ -113,7 +113,7 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 - Входные данные — обнови, если изменились форматы или источники.
 - Выходные данные — обнови, если изменились форматы или потребители.
 - Использование — обнови пример запуска и параметры, если они изменились.
-- Примечания — добавь новые огранраничения или важные особенности.
+- Примечания — добавь новые ограничения или важные особенности.
 
 **Принцип Single Source of Truth**: Не дублируй информацию между docstrings и .md файлами.
 - Детальная документация API → храни в docstrings кода
@@ -144,7 +144,7 @@ wc -l <файл>
 ```
 Если файл >500 строк:
 1. Предложи разбить на логические части
-2. Для каждой части создай отдельный .md файл с соответствующим paths:
+2. Для каждой части создай отдельный .md файл:
 3. В исходном файле оставь оглавление со ссылками @
 
 #### Шаг 5. Покажи diff и запроси подтверждение
@@ -175,7 +175,7 @@ wc -l <файл>
    - Проверить наличие соответствующего .md
    - Сравнить дату "Обновлён" в header с git log
    - Проверить наличие в MODULE_INDEX.md
-   - Проверить соответсвие ссылок @ в .md и YAML frontmatter paths
+   - Проверить соответствие ссылок @ в .md
    - Проверить размер .md файла (< 500 строк)
    - Проверить наличие дублирования docstrings в .md (искать полные описания функций)
 3. Вывести отчёт:
@@ -192,11 +192,6 @@ wc -l <файл>
    ✅ Размер: 187/200 строк
    ✅ Структура: оптимальная
 
-📁 .kilocode/rules/:
-   ✅ ml.md: paths: "ML/**/*.py" (OK)
-   ⚠️  mql4.md: нет paths: (рекомендуется добавить)
-   ✅ database.md: paths: "processing/**/*.py, statistics/**/*.py" (OK)
-
 📚 Документация к коду:
    ❌ processing/new_script.py — нет docs/data_preprocessing/new_script.py.md
    ⚠️  processing/normalize.py — дублирование docstrings в .md
@@ -210,9 +205,7 @@ wc -l <файл>
 
 📋 ИТОГОВЫЙ ЧЕКЛИСТ:
    ✅ AGENTS.md < 200 строк? ✅
-   ❌ Все rules файлы < 500 строк? ⚠️ (1 файл превышает)
-   ❌ Нет дублирования docstrings? ⚠️ (1 файл)
-   ❌ Для всех .kilocode/rules/ указаны paths? ⚠️ (1 файл без paths)
+   ✅ Нет дублирования docstrings? ⚠️ (1 файл)
    ❌ CHANGELOG.md только для значимых изменений? ❌ (3 лишних записи)
 ```
 
@@ -222,12 +215,10 @@ wc -l <файл>
 
 ### Архитектура документации (3-Tier System)
 
-Следуй принципам из `.kilocode/rules/agents-md-writer.md`:
-
 | Tier | Файл | Размер | Содержание |
 |------|------|--------|------------|
 | 1 | AGENTS.md | < 200 строк | Критическая информация, quick start, архитектура |
-| 2 | .kilocode/rules/*.md | < 500 строк | Домен-специфичные правила |
+| 2 | .kilocode/skills/*/SKILL.md | < 500 строк | Домен-специфичные workflow (skills) |
 | 3 | docs/**/*.md | По необходимости | Детальная документация компонентов |
 
 ### Что оставлять в AGENTS.md
@@ -239,43 +230,45 @@ wc -l <файл>
 | Critical constraints | AGENTS.md (в начале!) |
 | Архитектура (overview) | AGENTS.md |
 | Ключевые паттерны (1 строка) | AGENTS.md |
-| Правила для ML | .kilocode/rules/ml.md |
-| Правила для MQL4 | .kilocode/rules/mql4.md |
+| Workflow для ML | skill `ml-pipeline` |
+| Workflow для MQL4 | skill `mql4-processing` |
 | Детали API | docs/ml/neural_networks.md |
-| Deployment инструкции | .kilocode/rules/deploy.md |
+| Deployment инструкции | docs/deploy.md |
 
 
 ### При обновлении AGENTS.md
 
-1. **Проверь размер**: если > 200 строк → вынеси контент в .kilocode/rules/
-2. **Critical rules FIRST**: важные ограничения должны быть в начале
+1. **Проверь размер**: если > 200 строк → вынеси контент в skills
+2. **Critical info FIRST**: важные ограничения должны быть в начале
 3. **Используй ссылки**: не дублируй информацию, используй `@file` или markdown-ссылки
-4. **Модульные правила**: создавай отдельные файлы в `.kilocode/rules/` для домен-специфичных правил
+4. **Модульные workflow**: создавай отдельные skills в `.kilocode/skills/` для домен-специфичной логики
 
-### Работа с .kilocode/rules/
+### Работа со skills
 
-При создании нового правила в `.kilocode/rules/`:
+При создании нового skill в `.kilocode/skills/`:
 
-1. Добавь YAML frontmatter с `paths:` для условной загрузки:
+1. Добавь YAML frontmatter с `triggers:` для активации:
 
 ```markdown
 ---
-name: ml
-description: Rules for ML development
-paths: "ML/**/*.py"
+name: ml-pipeline
+description: Workflow for ML development
+triggers:
+  - ml pipeline
+  - train model
+alwaysApply: false
 ---
 
-# ML Rules
+# ML Workflow
 ...
 ```
 
-2. Примеры glob-паттернов:
-   - `**/*.py` — все Python файлы
-   - `ML/**/*.py` — файлы в ML/
-   - `MT/MQL4/**/*.{mq4,mqh}` — MQL4 файлы
-   - `processing/*.py` — скрипты препроцессинга
+2. Примеры triggers:
+   - `ml pipeline` — активация при упоминании ML
+   - `train model` — активация при обучении моделей
+   - `mql4` — активация для MQL4 файлов
 
-3. Размер: каждый файл правил должен быть < 500 строк
+3. Размер: каждый skill должен быть < 500 строк
 
 ---
 
@@ -303,12 +296,12 @@ paths: "ML/**/*.py"
   - Проверить размеры .md файлов.
   - Вывести отчёт с рекомендациями.
 
-**Пример 4**: Создание нового правила .kilocode/rules/ml.md
+**Пример 4**: Создание нового skill `.kilocode/skills/ml-pipeline/SKILL.md`
 - Действия:
-  - Добавить YAML frontmatter с `paths: "ML/**/*.py"`.
+  - Добавить YAML frontmatter с `triggers:` для активации.
   - Убедиться, что файл < 500 строк.
   - Использовать `@` ссылки на код вместо дублирования.
-  - Обновить AGENTS.md ссылкой на новое правило (не дублируя содержание).
+  - Обновить AGENTS.md ссылкой на новый skill (не дублируя содержание).
 
 ---
 
@@ -319,14 +312,14 @@ paths: "ML/**/*.py"
 - [ ] File headers обновлены (поле Обновлён)?
 - [ ] Docstrings актуальны (совпадают с сигнатурами)?
 - [ ] Markdown docs обновлены без дублирования (используются @ ссылки)?
-- [ ] AGENTS.md < 200 строк? Если нет — вынеси в .kilocode/rules/
-- [ ] Каждый .md файл в .kilocode/rules/ < 500 строк?
-- [ ] Для .kilocode/rules/*.md добавлен YAML frontmatter с paths?
+- [ ] AGENTS.md < 200 строк? Если нет — вынеси в skills
+- [ ] Каждый skill < 500 строк?
+- [ ] Для skills добавлен YAML frontmatter с triggers?
 - [ ] CHANGELOG.md обновлён ТОЛЬКО для значимых изменений продукта?
 - [ ] MODULE_INDEX.md актуален?
 - [ ] DATA_FLOW.md актуален (если изменился pipeline)?
 - [ ] Нет дублирования между docstrings и .md файлами?
-- [ ] Critical rules размещены в начале AGENTS.md?
+- [ ] Critical info размещены в начале AGENTS.md?
 
 ---
 
@@ -334,11 +327,11 @@ paths: "ML/**/*.py"
 
 | Ошибка | Исправление |
 |--------|-------------|
-| AGENTS.md > 200 строк | Разбить на .kilocode/rules/ |
-| SQL/API docs в AGENTS.md | Перенести в .kilocode/rules/*.md |
+| AGENTS.md > 200 строк | Разбить на skills |
+| SQL/API docs в AGENTS.md | Перенести в docs/ или skills |
 | Дублирование docstrings в .md | Использовать `@file` ссылки |
 | CHANGELOG для каждого коммита | Только значимые изменения продукта |
-| Правила без paths: | Добавить YAML frontmatter |
+| Skill без triggers | Добавить YAML frontmatter с triggers |
 | Файлы > 500 строк | Разбить на несколько файлов |
 | Отрицательные правила без альтернатив | Добавить: "Не X; используй Y" |
 
@@ -351,8 +344,8 @@ paths: "ML/**/*.py"
 wc -l AGENTS.md
 
 # Проверить размеры всех .md файлов
-find .kilocode/rules docs -name "*.md" -exec wc -l {} \;
+find .kilocode/skills docs -name "*.md" -exec wc -l {} \;
 
 # Найти файлы > 500 строк
-find .kilocode/rules docs -name "*.md" -exec sh -c 'lines=$(wc -l < "$1"); [ $lines -gt 500 ] && echo "$lines $1"' _ {} \;
+find .kilocode/skills docs -name "*.md" -exec sh -c 'lines=$(wc -l < "$1"); [ $lines -gt 500 ] && echo "$lines $1"' _ {} \;
 ```

@@ -79,9 +79,9 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 ---
 
 ## 📋 Workflow для агента
-- **Код**: Обнови header ([rule 000](.kilocode/rules/000-documentation.md)), проверь правила, обнови CHANGELOG.md.
+- **Код**: Обнови header ([rule 000](docs/plans/000-documentation.md)), используй skills, обнови CHANGELOG.md.
 - **Новый модуль**: Header -> Добавить в AGENTS.md -> Обновить структуру.
-- **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> .kilocode/rules/ (правила).
+- **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> .kilocode/skills/ (workflow).
 
 ---
 
