@@ -1,35 +1,22 @@
 ---
 name: update-docs-on-code-change
-description: >
-  Sync and validate code documentation (headers, docstrings, Markdown docs, architecture) after code changes. Includes validation mode to check for missing or outdated docs.
-tags:
-  - documentation
-  - workflows
-  - sync
-  - validation
-triggers:
-  - sync docs
-  - обнови документацию
-  - синхронизируй docs
-  - check docs
-  - validate docs
-applies_to:
-  - "*.py"
-  - "*.mq4"
-  - "*.mqh"
-  - "*.ipynb"
-  - "*.md"
-alwaysApply: false
+description: Use when syncing and validating code documentation after code changes
 ---
 
-# Skill: Управление документацией
+# Управление документацией
 
-## Цель
+## Overview
 
 Поддерживать документацию в актуальном состоянии при изменении кода:
 file headers, docstrings, Markdown‑документацию и архитектурные описания.
 
----
+## When to Use
+
+- После изменений в коде нужно обновить документацию
+- Проверка актуальности документации
+- Команды: "sync docs", "обнови документацию", "check docs", "validate docs"
+
+Applies to: `*.py`, `*.mq4`, `*.mqh`, `*.ipynb`, `*.md` файлы
 
 ## Принципы компактности документации
 

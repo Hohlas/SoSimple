@@ -1,20 +1,6 @@
 ---
 name: mql4-processing
-description: Use when working with MetaTrader 4 MQL4 files (.mq4, .mqh) - reading, modifying, analyzing, or documenting MQL4 code
-triggers:
-  - read mql4
-  - mql4 file
-  - .mqh file
-  - .mq4 file
-  - modify mql4
-  - analyze mql4
-  - метатрейдер
-  - мкл4
-  - кодировка mql4
-applies_to:
-  - "**/*.mq4"
-  - "**/*.mqh"
-alwaysApply: false
+description: Use when working with MetaTrader 4 MQL4 files - reading, modifying, analyzing, or documenting MQL4 code
 ---
 
 # Работа с MQL4 файлами
@@ -25,6 +11,14 @@ MQL4 файлы имеют особенности:
 - **Кодировка**: UTF-16LE (НЕ UTF-8)
 - **Синтаксис**: C-подобный, специфичные конструкции
 - **Тестирование**: Только в MetaTrader 4 Strategy Tester
+
+## When to Use
+
+- Чтение или модификация MQL4 файлов
+- Документирование MQL4 кода
+- Команды: "read mql4", "mql4 file", "modify mql4", "analyze mql4"
+
+Applies to: `**/*.mq4`, `**/*.mqh` файлы
 
 ## The Workflow
 
@@ -127,15 +121,17 @@ with open('file.mqh', 'w', encoding='utf-16-le') as f:
 grep -r "#include" MT/MQL4/Include/
 ```
 
-## Red Flags
+## Quick Reference
 
-| НЕ делай | Почему |
+| Category | Values |
 |----------|--------|
-| Открывать без encoding='utf-16-le' | Будут кракозябры |
+| Tags | mql4, metatrader, forex, encoding |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Открывать без encoding='utf-16-le' | Всегда использовать UTF-16LE кодировку |
 | Пытаться запустить MQL4 в Python | MQL4 только в MetaTrader |
-| Забывать file header | Нарушение 000-documentation.md |
-
-## Integration with Other Skills
-
-- После работы: использовать `add-new-module` для обновления MODULE_INDEX.md
-- Перед commit: использовать `verification-before-completion` для проверки
+| Забывать file header | Добавлять header по шаблону |
+| Использовать UTF-8 для записи | Проверять кодировку перед записью |

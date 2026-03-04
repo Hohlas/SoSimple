@@ -1,31 +1,23 @@
 ---
 name: add-new-module
-description: >
-  Create a new module or add documentation to an existing module. Includes file header, markdown docs, module index and data flow entries.
-tags:
-  - documentation
-  - automation
-  - scaffold
-triggers:
-  - create module [name]
-  - new script [name]
-  - doc this [file]
-  - document [file]
-  - создай модуль [name]
-  - новый скрипт [name]
-  - задокументируй [file]
-  - документация [file]
-applies_to:
-  - "*.py"
-  - "*.mq4"
-  - "*.mqh"
-  - "*.ipynb"
-alwaysApply: false
+description: Use when creating a new module, adding documentation to existing files, or scaffolding scripts with proper headers
 ---
 
-## Стандарты документирования (из rules/000-documentation.md)
+# Создание нового модуля
 
-### File Header шаблоны
+## Overview
+
+Создание новых модулей или добавление документации к существующим с использованием стандартизированных file headers, markdown-документации и записей в индексах.
+
+## When to Use
+
+- Создание новых Python, MQL4 или Jupyter модулей
+- Добавление документации к существующим скриптам
+- Команды: "create module [name]", "new script [name]", "doc this [file]", "document [file]"
+
+Applies to: `*.py`, `*.mq4`, `*.mqh`, `*.ipynb` файлы
+
+## File Header шаблоны
 
 **Для Python (.py):**
 ```python
@@ -225,9 +217,8 @@ python script.py --input data.csv
 
 Шаги:
 1. Проверить наличие file header в коде
-   - Если нет → создать по шаблону 000-documentation.md
+   - Если нет → создать по File Header шаблоны
 2. Создать docs/[категория]/[модуль].md
-   - Использовать шаблон из 000-documentation.md
 3. Добавить запись в MODULE_INDEX.md
 4. Обновить DATA_FLOW.md (если участвует в pipeline)
 5. Показать diff и запросить подтверждение

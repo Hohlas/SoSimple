@@ -1,16 +1,21 @@
 ---
 name: explain-pipeline-step
-description: >
-  Provide a detailed explanation of a specific pipeline step by combining information from DATA_FLOW.md and module documentation.
-tags:
-  - documentation
-  - explanation
-  - pipeline
-triggers:
-  - explain step [name]
-  - what does [name] do
-alwaysApply: false
+description: Use when explaining a specific pipeline step by combining information from DATA_FLOW.md and module documentation
 ---
+
+# Объяснение шага pipeline
+
+## Overview
+
+Предоставление детального объяснения конкретного шага pipeline на основе информации из DATA_FLOW.md и документации модулей.
+
+## When to Use
+
+- Нужно понять, что делает конкретный шаг обработки
+- Изучение pipeline новым разработчиком
+- Команды: "explain step [name]", "what does [name] do"
+
+## The Workflow
 
 **Команда**: `explain step [название]` или `what does [название] do`
 **Назначение**: Дать детальное объяснение конкретного шага pipeline
@@ -41,3 +46,17 @@ python processing/normalize.py --input Nero.csv --output Nero_normalized.csv
 **Особенности**:
 - ATR нормализуется отдельным scaler (сохраняется для inference)
 - Исключены признаки time_open, symbol (немасштабируемые)
+
+## Quick Reference
+
+| Category | Values |
+|----------|--------|
+| Tags | documentation, explanation, pipeline |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Looking only at code, not documentation | Check docs/ directory for context |
+| Missing DATA_FLOW.md reference | Always cross-reference with data flow |
+| Not checking module dependencies | Review MODULE_INDEX.md for full picture |

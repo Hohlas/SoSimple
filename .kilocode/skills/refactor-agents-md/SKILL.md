@@ -1,11 +1,6 @@
 ---
 name: refactor-agents-md
 description: Use when AGENTS.md exceeds 200 lines, needs restructuring, or when refactoring project documentation architecture
-triggers:
-  - refactor agents.md
-  - сократи agents
-  - split agents.md
-alwaysApply: false
 ---
 
 # Рефакторинг AGENTS.md
@@ -22,6 +17,7 @@ AGENTS.md > 200 lines — проблема: загружается на КАЖД
 - Появился task-specific контент (ML, MQL4, deploy)
 - Дублирование между AGENTS.md и другими документами
 - Нужно добавить новый компонент в проект
+- Команды: "refactor agents.md", "split agents.md"
 
 ## The Process
 
@@ -130,13 +126,21 @@ git commit -m "refactor: split AGENTS.md into modular rules
 - Add cross-references with @ syntax"
 ```
 
-## Red Flags
+## Quick Reference
 
-| НЕ делай | Почему |
+| Category | Values |
 |----------|--------|
-| Оставить task-specific в AGENTS.md | Будет грузиться всегда, трата токенов |
-| Дублировать контент | Нарушение 002-compact-and-no-duplication |
-| Забыть globs в новых rules | Будут грузиться для всех файлов |
+| Tags | documentation, refactoring, agents, architecture |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Оставить task-specific в AGENTS.md | Выносить в отдельные rules |
+| Дублировать контент | Использовать @ ссылки вместо копирования |
+| Забыть globs в новых rules | Добавлять globs для автозагрузки |
+| AGENTS.md > 200 строк | Разбить на skills и docs |
+| Не проверять размеры после рефакторинга | Всегда проверять wc -l |
 
 ## Examples
 

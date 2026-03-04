@@ -1,22 +1,6 @@
 ---
 name: jupyter-processing
-description: >-
-  Use when working with Jupyter notebooks (.ipynb) - creating, editing, cleaning,
-  exporting notebooks. Handles file headers, output cleaning, conversion to scripts,
-  and execution workflows.
-triggers:
-  - jupyter notebook
-  - ipynb file
-  - notebook analysis
-  - чистить outputs
-  - export notebook
-  - конвертировать ipynb
-  - jupyter nbconvert
-  - nbstripout
-  - execute notebook
-applies_to:
-  - "**/*.ipynb"
-alwaysApply: false
+description: Use when working with Jupyter notebooks - creating, editing, cleaning outputs, exporting, or executing notebooks
 ---
 
 # Работа с Jupyter Notebooks
@@ -36,6 +20,15 @@ Jupyter Notebooks (.ipynb) требуют особого подхода для �
 - Невоспроизводимые результаты
 - Переполнение контекста (token limit)
 - Сложности при code review
+
+## When to Use
+
+- Создание новых Jupyter notebooks
+- Очистка outputs перед коммитом
+- Конвертация notebook в скрипт для анализа
+- Команды: "jupyter notebook", "ipynb file", "clean outputs", "export notebook"
+
+Applies to: `**/*.ipynb` файлы
 
 ## The Workflow
 
@@ -377,20 +370,26 @@ info = read_nb_structure('statistics/EDA.ipynb')
 print(f"Cells: {info['cells_count']}")
 ```
 
-## Red Flags
+## Quick Reference
 
-| НЕ делай | Почему | Что делать вместо |
-|----------|--------|-------------------|
-| Коммитить notebook с output'ами | Засоряет git, невоспроизводимо | Использовать nbstripout перед коммитом |
-| Загружать .ipynb целиком в контекст | Token limit, много мусора | Конвертировать в .py или извлечь код |
-| Жёстко кодировать пути | Не переносимо между окружениями | Использовать `Path` и переменные |
-| Использовать абсолютные пути | Ломается на других машинах | Использовать относительные пути от notebook |
-| Запускать `print(df)` для больших DataFrame | Засоряет output | Использовать `df.head()`, `df.info()` |
-| Сохранять секреты в notebook | Утечка данных | Использовать переменные окружения |
-| Игнорировать kernel в метаданных | Несовместимость | Указывать конкретный kernel |
-| Коммитить checkpoint'ы | Дублирование | Добавить `.ipynb_checkpoints/` в .gitignore |
-| Делать notebook слишком большим (>100 ячеек) | Сложно поддерживать | Разбивать на логические части |
-| Не добавлять file header | Непонятно назначение | Всегда первая ячейка — документация |
+| Category | Values |
+|----------|--------|
+| Tags | jupyter, notebook, ipynb, data-analysis |
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Коммитить notebook с output'ами | Использовать nbstripout перед коммитом |
+| Загружать .ipynb целиком в контекст | Конвертировать в .py или извлечь код |
+| Жёстко кодировать пути | Использовать `Path` и переменные |
+| Использовать абсолютные пути | Использовать относительные пути от notebook |
+| Запускать `print(df)` для больших DataFrame | Использовать `df.head()`, `df.info()` |
+| Сохранять секреты в notebook | Использовать переменные окружения |
+| Игнорировать kernel в метаданных | Указывать конкретный kernel |
+| Коммитить checkpoint'ы | Добавить `.ipynb_checkpoints/` в .gitignore |
+| Делать notebook слишком большим (>100 ячеек) | Разбивать на логические части |
+| Не добавлять file header | Всегда первая ячейка — документация |
 
 ## Integration with Other Skills
 
@@ -448,15 +447,4 @@ df = pd.read_csv(
 
 # Для полной обработки — экспортировать в .py
 # и запускать как скрипт
-```
-
-### Конфигурация nbstripout для проекта
-
-```bash
-# Установить для всех в репозитории
-nbstripout --install --attributes .gitattributes
-
-# Проверить что настроено
-cat .gitattributes | grep ipynb
-# Вывод: *.ipynb filter=nbstripout
 ```

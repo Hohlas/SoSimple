@@ -1,18 +1,6 @@
 ---
 name: csv-processing
 description: Use when working with CSV files - reading, exploring, analyzing large datasets
-triggers:
-  - csv file
-  - read csv
-  - large csv
-  - sampling csv
-  - читать csv
-  - большой csv
-  - анализ csv
-  - обработка csv
-applies_to:
-  - "**/*.csv"
-alwaysApply: false
 ---
 
 # Работа с CSV файлами
@@ -28,6 +16,14 @@ CSV файлы часто содержат большие объёмы данн�
 - **Sampling** — загружай только часть данных для исследования
 - **Streaming** — обрабатывай данные порциями (chunks)
 - **No full load** — никогда не загружай весь файл в контекст
+
+## When to Use
+
+- Работа с CSV файлами любого размера
+- Исследование структуры данных перед обработкой
+- Команды: "csv file", "read csv", "large csv", "sampling csv"
+
+Applies to: `**/*.csv` файлы
 
 ## The Workflow
 
@@ -213,23 +209,23 @@ df = pd.read_csv('file.csv', encoding='utf-16-le')
 df = pd.read_csv('file.csv', encoding='cp1251')
 ```
 
-## Red Flags
+## Quick Reference
 
-| НЕ делай | Почему | Что делать вместо |
-|----------|--------|-------------------|
-| `pd.read_csv('large.csv')` без `nrows` | Загрузит весь файл в память | Используй `nrows=100` для исследования |
-| `print(df)` для большого DataFrame | Выводит всё в контекст | Используй `df.head()`, `df.describe()` |
-| `df.to_string()` | Создаёт огромную строку | Используй `df.head(10).to_string()` |
-| Загружать >100MB CSV целиком | Переполнение контекста | Используй `chunksize` для обработки |
-| `df.values` или `df.to_numpy()` для больших данных | Конвертирует всё в массив | Работай с DataFrame напрямую |
-| Игнорировать `sep` параметр | Неправильный парсинг | Всегда указывай `sep=';'` или `sep=','` |
+| Category | Values |
+|----------|--------|
+| Tags | csv, pandas, data-processing |
 
-## Integration with Other Skills
+## Common Mistakes
 
-- После исследования: использовать `create-eda-report` для генерации отчёта
-- Для обработки конвейера: использовать `check-data-impact` для анализа зависимостей
-- Перед сохранением результатов: использовать `verification-before-completion` для проверки
-- Для добавления модуля: использовать `add-new-module` для обновления документации
+| Mistake | Fix |
+|---------|-----|
+| `pd.read_csv('large.csv')` без `nrows` | Use `nrows=100` для исследования структуры |
+| `print(df)` для большого DataFrame | Use `df.head()`, `df.describe()` |
+| `df.to_string()` для больших данных | Use `df.head(10).to_string()` |
+| Загрузка >100MB CSV целиком | Use `chunksize` для потоковой обработки |
+| `df.values` или `df.to_numpy()` | Работай с DataFrame напрямую |
+| Игнорирование `sep` параметра | Всегда указывай `sep=';'` или `sep=','` |
+
 
 ## Project-Specific Notes
 
