@@ -1,28 +1,20 @@
 ---
 name: skill-before-manual
-description: Проверка наличия skill перед ручным выполнением рутинной задачи
+description: Check for available skills before manual work
+globs: []
 alwaysApply: true
 ---
 
-Перед выполнением рутинной задачи проверь доступные skills.
+Перед выполнением задачи проверь доступные skills:
 
-Существующие команды:
-- `sync docs` — синхронизация документации
-- `doc this` — документирование файла
-- `check docs` — проверка актуальности
-- `create module` — создание нового модуля
-- `check data impact` — анализ зависимостей данных
-
-Если skill не реализован:
-1. Выполни задачу вручную
-2. Предложи создать skill для автоматизации
-
-## Examples
-
-### ✅ Check skills before manual work
-```markdown
-# Перед обновлением документации:
-1. Проверь доступные skills
-2. Найдена команда: `sync docs`
-3. Выполни: sync docs processing/normalize.py
-```
+| Команда | Назначение |
+|---------|------------|
+| `sync docs` | Синхронизация документации |
+| `doc this [file]` | Документирование файла |
+| `check docs` | Проверка актуальности |
+| `create module [name]` | Создание нового модуля |
+| `check data impact [file]` | Анализ зависимостей данных |
+| `refactor agents.md` | Рефакторинг AGENTS.md |
+| `mql4-processing [file]` | Работа с MQL4 файлами |
+| `csv-processing [file]` | Работа с CSV файлами |
+| `jupyter-processing [file]` | Работа с Jupyter Notebooks |
