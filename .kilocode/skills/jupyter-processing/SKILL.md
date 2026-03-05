@@ -124,23 +124,29 @@ nbstripout --install
 nbstripout --status
 ```
 
-**Шаг 2.2: Очистить outputs вручную**
+**Шаг 2.2: Очистить outputs через nbstripout**
 ```bash
 # Очистка конкретного файла
-nbstripout statistics/EDA.ipynb
+nbstripout EDA.ipynb
 
 # Очистка всех notebooks
 find . -name "*.ipynb" -exec nbstripout {} \;
 ```
 
-**Шаг 2.3: Очистка через Jupyter**
+**Шаг 2.3: Очистка через nbconvert (альтернатива)**
+```bash
+# Очистка outputs в исходном файле (inplace)
+jupyter nbconvert --clear-output --inplace EDA.ipynb
+```
+
+**Шаг 2.4: Очистка через Jupyter программно**
 ```python
 # В Jupyter: Cell -> All Output -> Clear
 # Или программно:
 from nbformat import read, write
 
 # Читаем notebook
-with open('statistics/EDA.ipynb', 'r', encoding='utf-8') as f:
+with open('EDA.ipynb', 'r', encoding='utf-8') as f:
     nb = read(f, as_version=4)
 
 # Очищаем все output'ы
@@ -150,11 +156,11 @@ for cell in nb.cells:
         cell.execution_count = None
 
 # Сохраняем
-with open('statistics/EDA.ipynb', 'w', encoding='utf-8') as f:
+with open('EDA.ipynb', 'w', encoding='utf-8') as f:
     write(nb, f)
 ```
 
-**Шаг 2.4: Настроить .gitattributes**
+**Шаг 2.5: Настроить .gitattributes**
 ```bash
 # Добавить в .gitattributes
 echo "*.ipynb filter=nbstripout" >> .gitattributes
@@ -204,41 +210,77 @@ jupyter nbconvert --to html \
 
 ### Phase 4: Execute (Выполнение notebook)
 
+**Шаг 4.0: Подготовка окружения**
+```bash
+# Переход в директорию проекта
+cd ~/git/SoSimple
+
+# Активация виртуального окружения
+source /home/hohla/git/SoSimple/.venv/bin/activate
+
+# Установка зависимостей (при необходимости)
+# pip install -r requirements.txt
+
+# Переход в директорию со статистикой
+cd ~/git/SoSimple/statistics
+
+# Установка переменной окружения для входных данных
+export NERO_INPUT_PATH="../DATA/Nero_train_labeled.csv"
+```
+
 **Шаг 4.1: Выполнение через nbconvert**
 ```bash
-# Выполнить и сохранить результат
+# Выполнить и сохранить результат в ./reports/
 jupyter nbconvert --execute \
     --to notebook \
-    --output EDA_executed.ipynb \
-    statistics/EDA.ipynb
+    --output EDA_executed \
+    --output-dir ./reports \
+    EDA.ipynb
 
 # С таймаутом (для долгих операций)
 jupyter nbconvert --execute \
     --to notebook \
     --ExecutePreprocessor.timeout=600 \
-    --output EDA_executed.ipynb \
-    statistics/EDA.ipynb
+    --output EDA_executed \
+    --output-dir ./reports \
+    EDA.ipynb
 ```
 
-**Шаг 4.2: Выполнение с параметрами**
+**Шаг 4.2: Очистка output'ов после работы**
+```bash
+# Очистка outputs в исходном notebook (inplace)
+jupyter nbconvert --clear-output --inplace EDA.ipynb
+```
+
+**Шаг 4.3: Конвертация в Markdown для отчёта**
+```bash
+# Конвертация выполненного notebook в Markdown (без input ячеек)
+jupyter nbconvert --to markdown \
+    --no-input \
+    --no-prompt \
+    --output EDA_report \
+    reports/EDA_executed.ipynb
+```
+
+**Шаг 4.4: Выполнение с параметрами (papermill)**
 ```bash
 # Используем papermill для параметризации
 pip install papermill
 
 # Запуск с параметрами
-papermill statistics/EDA.ipynb \
-    statistics/EDA_output.ipynb \
-    -p input_file 'DATA/Nero.csv' \
+papermill EDA.ipynb \
+    reports/EDA_output.ipynb \
+    -p input_file '../DATA/Nero_train_labeled.csv' \
     -p sample_size 1000
 ```
 
-**Шаг 4.3: Выполнение из Python**
+**Шаг 4.5: Выполнение из Python**
 ```python
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbformat import read, write
 
 # Читаем notebook
-with open('statistics/EDA.ipynb', 'r', encoding='utf-8') as f:
+with open('EDA.ipynb', 'r', encoding='utf-8') as f:
     nb = read(f, as_version=4)
 
 # Создаём executor
@@ -248,17 +290,17 @@ ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
 ep.preprocess(nb, {'metadata': {'path': './'}})
 
 # Сохраняем
-with open('statistics/EDA_executed.ipynb', 'w', encoding='utf-8') as f:
+with open('reports/EDA_executed.ipynb', 'w', encoding='utf-8') as f:
     write(nb, f)
 ```
 
-**Шаг 4.4: Проверка перед коммитом**
+**Шаг 4.6: Проверка перед коммитом**
 ```bash
 # Выполнить и проверить на ошибки
 jupyter nbconvert --execute \
     --to notebook \
     --stdout \
-    statistics/EDA.ipynb > /dev/null
+    EDA.ipynb > /dev/null
 
 # Если ошибок нет — можно коммитить (после nbstripout)
 ```
@@ -269,14 +311,14 @@ jupyter nbconvert --execute \
 ```bash
 # Просмотр структуры
 jupyter nbconvert --to notebook \
-    --stdout statistics/EDA.ipynb | \
+    --stdout EDA.ipynb | \
     python -m json.tool | \
     head -100
 
 # Или используя nbformat
 cat << 'EOF' | python3
 import json
-with open('statistics/EDA.ipynb', 'r') as f:
+with open('EDA.ipynb', 'r') as f:
     nb = json.load(f)
 print(f"Cells: {len(nb['cells'])}")
 print(f"Cell types: {[c['cell_type'] for c in nb['cells']]}")
@@ -289,14 +331,14 @@ EOF
 ### ✅ Извлечь только код
 ```bash
 # Извлечь Python код
-jupyter nbconvert --to script statistics/EDA.ipynb --stdout | head -50
+jupyter nbconvert --to script EDA.ipynb --stdout | head -50
 ```
 
 ### ✅ Проверить метаданные
 ```python
 import json
 
-with open('statistics/EDA.ipynb', 'r', encoding='utf-8') as f:
+with open('EDA.ipynb', 'r', encoding='utf-8') as f:
     nb = json.load(f)
 
 print(f"nbformat: {nb['nbformat']}.{nb['nbformat_minor']}")
@@ -366,8 +408,29 @@ def read_nb_structure(filepath):
     return structure
 
 # Использование
-info = read_nb_structure('statistics/EDA.ipynb')
+info = read_nb_structure('EDA.ipynb')
 print(f"Cells: {info['cells_count']}")
+```
+
+## Quick Start (SoSimple Project)
+
+### Полный рабочий цикл для EDA.ipynb
+
+```bash
+# 1. Подготовка окружения
+cd ~/git/SoSimple
+source /home/hohla/git/SoSimple/.venv/bin/activate
+cd ~/git/SoSimple/statistics
+export NERO_INPUT_PATH="../DATA/Nero_train_labeled.csv"
+
+# 2. Выполнение notebook
+jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb
+
+# 3. Очистка output'ов в исходном файле
+jupyter nbconvert --clear-output --inplace EDA.ipynb
+
+# 4. Конвертация в Markdown для отчёта
+jupyter nbconvert --to markdown --no-input --no-prompt --output EDA_report reports/EDA_executed.ipynb
 ```
 
 ## Quick Reference

@@ -10,12 +10,19 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ## 🚀 Быстрый старт
 
+### Окружение
+```bash
+source ~/git/SoSimple/.venv/bin/activate
+```
+
 ### Основные команды
 ```bash
 # Препроцессинг: MT4 -> train/val/test
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
-# Статистика (из statistics/): cd statistics && python statistics.py
-# Jupyter: jupyter nbconvert --execute --to notebook --output EDA_executed EDA.ipynb
+python statistics/statistics.py DATA/Nero_train_labeled.csv
+cd ~/git/SoSimple/statistics
+export NERO_INPUT_PATH="../DATA/Nero_train_labeled.csv"
+jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb
 ```
 
 ### Пути к данным
@@ -25,7 +32,7 @@ python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 
 ### Critical Rules Top-3
 1. **[000] Headers first**: Читай первые 10 строк CSV перед работой.
-2. **[007] No CSV in context**: Не грузи файлы >100MB целиком в чат.
+2. **[007] No CSV in context**: Не грузи файлы >10MB целиком в чат.
 3. **[100] MQL4 encoding**: Файлы из `MT/` открывать только в `encoding='utf-16-le'`.
 
 ---
