@@ -1,22 +1,38 @@
 ---
 name: update-docs-on-code-change
-description: Use when syncing and validating code documentation after code changes
+description: Use when creating new modules, adding documentation to existing files, syncing docs after code changes, or validating documentation currency
 ---
 
 # Управление документацией
 
 ## Overview
 
-Поддерживать документацию в актуальном состоянии при изменении кода:
-file headers, docstrings, Markdown‑документацию и архитектурные описания.
+Комплексное управление документацией: создание новых модулей с правильными headers, добавление документации к существующим файлам, синхронизация при изменениях кода и валидация актуальности.
 
 ## When to Use
 
+- Создание новых Python, MQL4 или Jupyter модулей
+- Добавление документации к существующим недокументированным файлам
 - После изменений в коде нужно обновить документацию
 - Проверка актуальности документации
-- Команды: "sync docs", "обнови документацию", "check docs", "validate docs"
+- Команды: "create module [name]", "new script [name]", "doc this [file]", "document [file]", "sync docs", "обнови документацию", "check docs", "validate docs"
 
 Applies to: `*.py`, `*.mq4`, `*.mqh`, `*.ipynb`, `*.md` файлы
+
+---
+
+## File Header Templates
+
+**Полные шаблоны**: См. [templates/file-headers.md](templates/file-headers.md)
+
+- **Python (.py)**: `# ===...===` рамка с зависимостями, входами/выходами
+- **MQL4 (.mqh/.mq4)**: `//+--...--+` рамка (**UTF-16LE кодировка!**)
+- **Jupyter (.ipynb)**: Markdown-ячейка с метаданными
+- **Docstrings**: Google-style для Python (module-level, functions, classes)
+- **Языковые соглашения**: Русский для docs, английский для кода
+- **Markdown docs template**: Стандартная структура для `docs/[category]/[file].md`
+
+---
 
 ## Принципы компактности документации
 
@@ -47,7 +63,118 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 
 ---
 
-## Режим 1: Синхронизация (sync docs)
+## MODULE_INDEX.md Format
+
+**Формат записи в MODULE_INDEX.md:**
+```markdown
+## [путь/файл]
+**Назначение**: [одна строка]
+**Входы**: [файлы] | **Выходы**: [файлы]
+**Использует**: [библиотеки] | **Используется в**: [скрипты]
+```
+
+**Пример:**
+```markdown
+## processing/label_main.py
+**Назначение**: CLI оркестратор для полного конвейера обработки данных
+**Входы**: MT/MQL4/Files/Nero.csv | **Выходы**: data/Nero_train_labeled.csv
+**Использует**: pandas, numpy | **Используется в**: ML training pipeline
+```
+
+---
+
+## Режим 1: Создание нового модуля
+
+**Команда**: `create module [имя]` или `new script [имя]`
+**Назначение**: Создать новый модуль со всей необходимой документацией
+
+### Когда использовать
+
+- Создание новых Python, MQL4 или Jupyter модулей
+- Команды: "create module [name]", "new script [name]"
+
+### Шаги
+
+#### Шаг 0: Проверить связанные skills
+
+Перед созданием модуля загрузить соответствующие skills:
+- Для .py: данный skill (шаблоны выше)
+- Для .mqh/.mq4: ссылаться на .kilocode/skills/mql4-processing/
+- Для .ipynb: ссылаться на .kilocode/skills/jupyter-processing/
+
+#### Шаг 1: Определить параметры
+
+- Директория (processing/statistics/ML)
+- Назначение (одна строка)
+- Входные/выходные данные
+
+#### Шаг 2: Создать file header
+
+Использовать точный шаблон из [templates/file-headers.md](templates/file-headers.md):
+- Для Python: `# ====` рамка
+- Для MQL4: `//+--+` рамка (UTF-16LE!)
+- Для Jupyter: Markdown ячейка
+
+#### Шаг 3: Создать markdown документацию
+
+Создать `docs/[category]/[filename].md` по шаблону из [templates/file-headers.md](templates/file-headers.md#markdown-documentation-template)
+
+#### Шаг 4: Обновить MODULE_INDEX.md
+
+Добавить запись в MODULE_INDEX.md по формату выше.
+
+**Также обновить:**
+- DATA_FLOW.md если участвует в pipeline
+- AGENTS.md если критичный компонент
+
+#### Шаг 5: Валидация
+
+- Проверить file header: все поля заполнены?
+- Проверить кодировку (особенно для MQL4: UTF-16LE)
+- Проверить ссылки в документации
+
+**Пример:**
+```
+> create module feature_engineering
+Директория: processing
+Назначение: Создание дополнительных признаков из фракталов
+Входы: Nero_normalized.csv
+Выходы: Nero_features.csv
+✅ Создан processing/feature_engineering.py
+✅ Создан docs/data_preprocessing/feature_engineering.py.md
+✅ Обновлён MODULE_INDEX.md
+✅ File header проверен
+✅ Кодировка UTF-8 (Python)
+```
+
+---
+
+## Режим 2: Документирование существующего модуля
+
+**Команда**: `doc this [файл]` или `document [файл]`
+**Назначение**: Создать полную документацию для существующего недокументированного модуля
+
+### Шаги
+
+1. Проверить наличие file header в коде
+   - Если нет → создать по File Header шаблоны
+2. Создать `docs/[категория]/[модуль].md` по шаблону из Режим 1, Шаг 3
+3. Добавить запись в MODULE_INDEX.md
+4. Обновить DATA_FLOW.md (если участвует в pipeline)
+5. Показать diff и запросить подтверждение
+
+**Пример:**
+```
+> doc this processing/normalize.py
+Создаю документацию...
+- ✅ File header добавлен
+- ✅ docs/data_preprocessing/normalize.py.md создан
+- ✅ MODULE_INDEX.md обновлён
+```
+
+---
+
+## Режим 3: Синхронизация документации (sync docs)
 
 **Команда**: `sync docs`, `обнови документацию`, `синхронизируй docs`
 **Назначение**: Обновить документацию после изменений в коде
@@ -150,7 +277,7 @@ wc -l <файл>
 
 ---
 
-## Режим 2: Валидация (check docs)
+## Режим 4: Валидация документации (check docs)
 
 **Команда**: `check docs`, `validate docs`
 **Назначение**: Проверить актуальность документации относительно кода
@@ -261,14 +388,29 @@ alwaysApply: false
 
 ## Примеры использования
 
-**Пример 1**: Пользователь: «Я изменил normalize.py, обнови документацию».
+**Пример 1**: Пользователь: `create module feature_engineering`
+- Действия:
+  - Запросить параметры: директория, назначение, входы/выходы
+  - Создать файл с file header по шаблону
+  - Создать docs/[category]/feature_engineering.py.md
+  - Обновить MODULE_INDEX.md
+  - Валидировать header и кодировку
+
+**Пример 2**: Пользователь: `doc this processing/normalize.py`
+- Действия:
+  - Проверить наличие file header, добавить если нет
+  - Создать docs/data_preprocessing/normalize.py.md
+  - Добавить в MODULE_INDEX.md
+  - Показать diff и запросить подтверждение
+
+**Пример 3**: Пользователь: «Я изменил normalize.py, обнови документацию».
 - Действия:
   - Обновить header и docstrings в processing/normalize.py, отражая новые аргументы/поведение.
   - Обновить docs/data_preprocessing/normalize.py.md (назначение, входы/выходы, использование, примечания).
   - Использовать `@processing/normalize.py` вместо дублирования docstrings.
   - Показать diff и запросить подтверждение.
 
-**Пример 2**: Пользователь: `sync docs`
+**Пример 4**: Пользователь: `sync docs`
 - Действия:
   - Найти все staged файлы через git diff --cached --name-only | grep -E '\.(py|mq4|mqh|ipynb)$'.
   - Для каждого файла найти соответствующий .md/архитектурный документ.
@@ -276,14 +418,14 @@ alwaysApply: false
   - Проверить размеры файлов (< 500 строк).
   - Показать сводный diff и запросить подтверждение перед применением.
 
-**Пример 3**: Пользователь: `check docs`
+**Пример 5**: Пользователь: `check docs`
 - Действия:
   - Проверить все файлы на наличие документации.
   - Сравнить даты с git history.
   - Проверить размеры .md файлов.
   - Вывести отчёт с рекомендациями.
 
-**Пример 4**: Создание нового skill `.kilocode/skills/ml-pipeline/SKILL.md`
+**Пример 6**: Создание нового skill `.kilocode/skills/ml-pipeline/SKILL.md`
 - Действия:
   - Добавить YAML frontmatter с `triggers:` для активации.
   - Убедиться, что файл < 500 строк.
