@@ -1,6 +1,6 @@
 ---
 name: update-docs-on-code-change
-description: Use when creating new modules, adding documentation to existing files, syncing docs after code changes, validating documentation currency, regenerating MODULE_INDEX.md from file headers, or when AGENTS.md exceeds 200 lines and needs refactoring
+description: Use when creating new modules, adding documentation to existing files, syncing docs after code changes, validating documentation currency, or when AGENTS.md exceeds 200 lines and needs refactoring
 ---
 
 # Управление документацией
@@ -11,13 +11,12 @@ description: Use when creating new modules, adding documentation to existing fil
 
 ## When to Use
 
-- Создание новых Python, MQL4 или Jupyter модулей → Режим 1
-- Добавление документации к существующим недокументированным файлам → Режим 2
-- После изменений в коде нужно обновить документацию → Режим 3
-- Проверка актуальности документации → Режим 4
-- Полная регенерация MODULE_INDEX.md из file headers → Режим 6
-- AGENTS.md превышает 200 строк или появился task-specific контент → Режим 5
-- Команды: "create module [name]", "new script [name]", "doc this [file]", "document [file]", "sync docs", "обнови документацию", "check docs", "validate docs", "refactor agents.md", "rebuild module index", "refresh MODULE_INDEX.md", "regenerate index"
+- Создание новых Python, MQL4 или Jupyter модулей
+- Добавление документации к существующим недокументированным файлам
+- После изменений в коде нужно обновить документацию
+- Проверка актуальности документации
+- AGENTS.md превышает 200 строк или появился task-specific контент
+- Команды: "create module [name]", "new script [name]", "doc this [file]", "document [file]", "sync docs", "обнови документацию", "check docs", "validate docs", "refactor agents.md"
 
 Applies to: `*.py`, `*.mq4`, `*.mqh`, `*.ipynb`, `*.md` файлы
 
@@ -125,8 +124,6 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 
 Добавить запись в MODULE_INDEX.md по формату выше.
 
-**Примечание:** Для массового обновления MODULE_INDEX.md используй **Режим 6: Регенерация MODULE_INDEX.md**.
-
 **Также обновить:**
 - DATA_FLOW.md если участвует в pipeline
 - AGENTS.md если критичный компонент
@@ -163,7 +160,7 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 1. Проверить наличие file header в коде
    - Если нет → создать по File Header шаблоны
 2. Создать `docs/[категория]/[модуль].md` по шаблону из Режим 1, Шаг 3
-3. Добавить запись в MODULE_INDEX.md (или используй **Режим 6** для полной регенерации)
+3. Добавить запись в MODULE_INDEX.md
 4. Обновить DATA_FLOW.md (если участвует в pipeline)
 5. Показать diff и запросить подтверждение
 
@@ -472,142 +469,6 @@ alwaysApply: false
 
 ---
 
-## Режим 6: Регенерация MODULE_INDEX.md
-
-**Команда**: `rebuild module index`, `refresh MODULE_INDEX.md`, `regenerate index`
-**Назначение**: Полная регенерация MODULE_INDEX.md из file headers всех кодовых файлов проекта
-
-### Когда использовать
-
-- После массовых изменений в структуре проекта
-- Когда MODULE_INDEX.md потерял синхронизацию с кодом
-- После добавления нескольких новых модулей (альтернатива ручному обновлению в Режиме 1)
-
-### Шаги
-
-#### Шаг 1: Найти все кодовые файлы
-
-Найти все `.py`, `.mqh`, `.mq4`, `.ipynb` файлы в проекте (исключая `venv/`, `__pycache__/`, `.git/`):
-
-```bash
-find . -type f \( -name "*.py" -o -name "*.mqh" -o -name "*.mq4" -o -name "*.ipynb" \) \
-  ! -path "./venv/*" ! -path "./__pycache__/*" ! -path "./.git/*" ! -path "./.kilocode/*" | sort
-```
-
-#### Шаг 2: Извлечь file headers
-
-Для каждого найденного файла извлечь header:
-- **Python**: `# ===` ... `# ===` рамка
-- **MQL4**: `//+--` ... `//+--` рамка
-- **Jupyter**: Первая markdown-ячейка
-
-**Кодировки:**
-- Python/Jupyter: UTF-8
-- MQL4: UTF-16LE (критично!)
-
-#### Шаг 3: Парсить секции
-
-Из каждого header извлечь:
-| Поле | Обозначение в header | Пример |
-|------|---------------------|--------|
-| Назначение | `Назначение:` или `Purpose:` | "CLI оркестратор для обработки данных" |
-| Входные данные | `Входные данные:` / `Input:` | `MT/MQL4/Files/Nero.csv` |
-| Выходные данные | `Выходные данные:` / `Output:` | `DATA/Nero_train_labeled.csv` |
-| Зависимости | `Зависимости:` / `Dependencies:` | `pandas, numpy` |
-
-#### Шаг 4: Сгенерировать MODULE_INDEX.md
-
-Создать файл в формате:
-
-```markdown
-# Module Index
-
-> **Автоматически сгенерировано**: YYYY-MM-DD HH:MM
-> **Версия**: [git commit hash]
-
-## processing/label_main.py
-
-**Назначение**: CLI оркестратор для полного конвейера обработки данных
-**Входные данные**: `MT/MQL4/Files/Nero.csv`
-**Выходные данные**: `DATA/Nero_train_labeled.csv`, `DATA/Nero_validation_labeled.csv`, `DATA/Nero_test_labeled.csv`
-**Зависимости**: `pandas`, `numpy`, `scikit-learn`
-
-## MT/MQL4/Include/lib_PIC.mqh
-
-**Назначение**: Алгоритм PIC (Price Interaction Channel) — legacy код
-**Входные данные**: -
-**Выходные данные**: -
-**Зависимости**: `lib_ATR.mqh`, `lib_TRG.mqh`
-```
-
-**Правила форматирования:**
-1. Файлы группировать по директориям
-2. Путь относительно корня проекта
-3. Если поле отсутствует в header — проставить "-"
-4. Добавить автоматическую шапку с датой генерации
-
-#### Шаг 5: Показать diff и запросить подтверждение
-
-1. Сгенерировать diff между текущим и новым MODULE_INDEX.md:
-   ```bash
-   git diff MODULE_INDEX.md
-   # или
-   diff -u MODULE_INDEX.md MODULE_INDEX.md.new
-   ```
-
-2. Показать статистику изменений:
-   ```
-   📊 СТАТИСТИКА РЕГЕНЕРАЦИИ:
-   
-   Всего файлов найдено: 25
-   С file headers: 23
-   Без headers: 2
-     - processing/temp_script.py
-     - ML/old/legacy.py
-   
-   Изменения в MODULE_INDEX.md:
-   + Добавлено: 3 записи
-   ~ Обновлено: 5 записей
-   - Удалено: 1 запись
-   ```
-
-3. Явно спросить: "Применить изменения? (yes/no)"
-
-4. Только после подтверждения заменить файл:
-   ```bash
-   mv MODULE_INDEX.md.new MODULE_INDEX.md
-   ```
-
-### Обработка ошибок
-
-| Ситуация | Действие |
-|----------|----------|
-| Файл без header | Добавить в отчёт, продолжить |
-| Неизвестная кодировка | Попробовать UTF-8, затем UTF-16LE |
-| Неполный header | Использовать доступные поля, остальные "-" |
-| Дублирующиеся пути | Обновить существующую запись |
-
-### Пример использования
-
-```
-> rebuild module index
-🔍 Найдено 25 кодовых файлов
-📄 Извлечено headers: 23/25
-⚠️  Пропущено (нет header): 2 файла
-
-📊 Изменения:
-+ Добавлено: processing/new_feature.py
-~ Обновлено: processing/label_main.py (новые зависимости)
-~ Обновлено: ML/train.py (изменены выходы)
-- Удалено: ML/old_module.py (файл не найден)
-
-Применить изменения? (yes/no)
-> yes
-✅ MODULE_INDEX.md обновлён (23 записи)
-```
-
----
-
 ## Примеры использования
 
 **Пример 1**: Пользователь: `create module feature_engineering`
@@ -647,22 +508,14 @@ find . -type f \( -name "*.py" -o -name "*.mqh" -o -name "*.mq4" -o -name "*.ipy
   - Проверить размеры .md файлов.
   - Вывести отчёт с рекомендациями.
 
-**Пример 6**: Пользователь: `rebuild module index`
-- Действия:
-  - Найти все .py/.mqh/.ipynb файлы в проекте
-  - Извлечь file headers из каждого файла
-  - Распарсить секции: Назначение, Входные данные, Выходные данные, Зависимости
-  - Сгенерировать MODULE_INDEX.md по формату MODULE_INDEX.md Format
-  - Показать diff и запросить подтверждение
-
-**Пример 7**: Создание нового skill `.kilocode/skills/ml-pipeline/SKILL.md`
+**Пример 6**: Создание нового skill `.kilocode/skills/ml-pipeline/SKILL.md`
 - Действия:
   - Добавить YAML frontmatter с `triggers:` для активации.
   - Убедиться, что файл < 500 строк.
   - Использовать `@` ссылки на код вместо дублирования.
   - Обновить AGENTS.md ссылкой на новый skill (не дублируя содержание).
 
-**Пример 8**: Пользователь: `refactor agents.md`
+**Пример 7**: Пользователь: `refactor agents.md`
 - Действия:
   - Проверить размер AGENTS.md (`wc -l`)
   - Найти task-specific контент (ML, MQL4, deploy)
