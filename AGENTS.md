@@ -10,15 +10,35 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ## 🚀 Быстрый старт
 
-### Основные команды
+### команды обработки и анализа данных
 ```bash
-# Формирование датасета: MetaTrader4 -> MT/MQL4/Files/Nero.csv
 source ~/git/SoSimple/.venv/bin/activate
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 python statistics/statistics.py DATA/Nero_train_labeled.csv
 cd ~/git/SoSimple/statistics
 export NERO_INPUT_PATH="../DATA/Nero_train_labeled.csv"
-jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb
+jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb # Выполнить ноутбук и сохранить результат в отдельный файл
+jupyter nbconvert --clear-output --inplace EDA.ipynb # Очистить выходы в исходном файле
+jupyter nbconvert --to markdown --no-input --no-prompt --output EDA_report reports/EDA_executed.ipynb # Исключает изображения и исходный код, оставляя только текстовые отчеты
+```
+
+### команды обучения моделей
+```bash
+# Все 4 модели последовательно
+python -m ML.compare_architectures --task regression 
+python -m ML.compare_architectures --task classification
+
+# Запуск подбора для классификации
+python -m ML.optimize --model bilstm --task classification --trials 50 --epochs 30 --seed 42
+# Запуск подбора для регрессии
+python -m ML.optimize --model cnn1d --task regression --trials 30 --epochs 50 --seed 123
+
+# Для классификации:
+python -m ML.experiment_logger --best f1_macro --task classification
+# Для регрессии:
+python -m ML.experiment_logger --best pearson_r --task regression
+
+
 ```
 
 ### Пути к данным
@@ -41,14 +61,14 @@ jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./r
 ## 📂 Структура проекта
 ```
 .
-├── MT/MQL4           # MetaTrader4 код. 
-├── processing/       # Препроцессинг: label_main.py (CLI), label_signals.py, normalize.py
+├── MT/MQL4           # MetaTrader4 - Формирование датасета Nero.csv
+├── processing/       # Препроцессинг: label_main.py, label_signals.py, normalize.py
 ├── statistics/       # Статистика: statistics.py, EDA.ipynb, файлы статистических характеристик датасета
-├── plans/            # Планы работы для ИИ агентов
+├── plans/            # Планы работы для ИИ агентов (прошлые и актуальные)
 ├── ML/               # Machine Learning: модели, эксперименты, отчеты и графики
 │   ├── baseline/     # Baseline-модели: эксперименты, отчеты и графики
-│   └── models/       # Другие модели: 
-├── .kilocode/        # Правила и скиллы проекта
+│   └── models/       # Другие модели, checkpoints, plots, reports.
+├── .kilocode/        # rulls, skills, mcp
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
 └── AGENTS.md, CHANGELOG.md, MODULE_INDEX.md, README.md
 ```
@@ -61,6 +81,7 @@ jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./r
 - `processing/label_signals.py` — Маркировка signal/predict ✅
 - `processing/normalize.py` — Нормализация признаков ✅
 - `statistics/statistics.py` — Потоковая статистика ✅
+- `statistics/EDA.ipynb` - 'Exploratory Data Analysis' для Nero.csv
 - `ML/baseline/baseline_experiments.py` — Baseline-модели (Dummy, LogReg, RF, XGBoost, LightGBM) ✅
 - `ML/train.py` — Единый скрипт обучения нейросетей (PyTorch) ✅
 - `ML/models/` — 4 архитектуры: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM ✅
