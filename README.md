@@ -5,9 +5,19 @@
 ## Документация
 - 🤖 **[AGENTS.md](AGENTS.md)** — руководство для работы с проектом (для ИИ-агентов и разработчиков)
 - 📋 **[CHANGELOG.md](CHANGELOG.md)** — история изменений
-- 📜 **[.ai/RULES_INDEX.md](.ai/RULES_INDEX.md)** — правила работы с кодом
+- 📊 **[DATA_FLOW.md](docs/DATA_FLOW.md)** — поток данных через пайплайн
 
-Статус
-🔄 В активной разработке. Готовы: сбор данных, препроцессинг, EDA. В работе: ML модели.
+## Быстрый старт
+```bash
+# Установка зависимостей
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# Обработка данных
+python processing/label_main.py --input MT/MQL4/Files/Nero.csv
+```
+
+## Статус
+🔄 В активной разработке. Готовы: сбор данных, препроцессинг, EDA, ML модели.
 
 > 🤖 AI agents: see [AGENTS.md](AGENTS.md)

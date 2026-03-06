@@ -26,7 +26,7 @@ ML/baseline/
   - `engineered`: 233 признака, включая скользящие статистики, индикаторы тренда, моментум и волатильность.
 
 ## Выходные данные
-- **Отчет**: `ML/baseline/reports/baseline_report.md`.
+- **Отчет**: [`ML/baseline/reports/baseline_report.md`](../../ML/baseline/reports/baseline_report.md).
 - **Графики**: `ML/baseline/plots/baseline_cm_*.png`.
 
 ## Использование
@@ -38,3 +38,6 @@ python ML/baseline/baseline_experiments.py
 - **Macro F1-score** — основная метрика для оценки качества при сильном дисбалансе классов.
 - **Accuracy**, **ROC-AUC (OVR)** — дополнительные метрики.
 - **Classification Report** — полнота и точность по каждому классу.
+
+## Результаты
+См. [baseline_report.md](ML/baseline/reports/baseline_report.md) — сгенерированный отчёт с метриками и confusion matrices.

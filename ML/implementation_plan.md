@@ -47,16 +47,16 @@
 
 > **Промпт: Этап 3.1 — Baseline-эксперименты**
 > 
-> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и [.ai/RULES_INDEX.md](file:///home/hohla/git/SoSimple/.ai/RULES_INDEX.md).
+> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и .
 >
-> **Контекст**: Завершены этапы предобработки и EDA. Статистические результаты в [statistics/reports/EDA_report.md](file:///home/hohla/git/SoSimple/statistics/reports/EDA_report.md), [statistics/plots/feature_stats_by_class.csv](file:///home/hohla/git/SoSimple/statistics/plots/feature_stats_by_class.csv), [statistics/plots/statistical_tests.csv](file:///home/hohla/git/SoSimple/statistics/plots/statistical_tests.csv). Рекомендации по моделированию — в [statistics/sequence_analysis_report.md](file:///home/hohla/git/SoSimple/statistics/sequence_analysis_report.md). Описание формата данных и целевых переменных — [docs/dataset_description.md](file:///home/hohla/git/SoSimple/docs/dataset_description.md). Поток данных — [docs/DATA_FLOW.md](file:///home/hohla/git/SoSimple/docs/DATA_FLOW.md).
+> **Контекст**: Завершены этапы предобработки и EDA. Статистические результаты в [statistics/reports/EDA_report.md](statistics/reports/EDA_report.md), [statistics/plots/feature_stats_by_class.csv](statistics/plots/feature_stats_by_class.csv), [statistics/plots/statistical_tests.csv](statistics/plots/statistical_tests.csv). Рекомендации по моделированию — в [statistics/sequence_analysis_report.md](statistics/sequence_analysis_report.md). Описание формата данных и целевых переменных — [docs/dataset_description.md](docs/dataset_description.md). Поток данных — [docs/DATA_FLOW.md](docs/DATA_FLOW.md).
 >
 > **Задача**: Создать и обучить baseline-модели для задачи классификации `signal ∈ {-1, 0, 1}`. Код реализовать в `ML/baseline_experiments.py`.
 >
 > **Требования к данным**:
-> 1. Загружать данные из [DATA/Nero_train_labeled.csv](file:///home/hohla/git/SoSimple/DATA/Nero_train_labeled.csv) (train) и [DATA/Nero_validation_labeled.csv](file:///home/hohla/git/SoSimple/DATA/Nero_validation_labeled.csv) (validation). Разделитель `;`. НЕ перемешивать данные (time-series!).
+> 1. Загружать данные из [DATA/Nero_train_labeled.csv](DATA/Nero_train_labeled.csv) (train) и [DATA/Nero_validation_labeled.csv](DATA/Nero_validation_labeled.csv) (validation). Разделитель `;`. НЕ перемешивать данные (time-series!).
 > 2. Парсинг фракталов: каждая строка содержит 100 фракталов в формате `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse`. Разделитель фракталов `;`, разделитель признаков `:`.
-> 3. Для feature-based моделей использовать уже готовые engineered features из EDA (файлы [statistics/nero_features_engineered.csv](file:///home/hohla/git/SoSimple/statistics/nero_features_engineered.csv) и [statistics/feature_catalog.json](file:///home/hohla/git/SoSimple/statistics/feature_catalog.json)) — но помни, что этот файл содержит только train split. Для validation применить ту же логику feature engineering.
+> 3. Для feature-based моделей использовать уже готовые engineered features из EDA (файлы [statistics/nero_features_engineered.csv](statistics/nero_features_engineered.csv) и [statistics/feature_catalog.json](statistics/feature_catalog.json)) — но помни, что этот файл содержит только train split. Для validation применить ту же логику feature engineering.
 > 4. Для sequence-based моделей парсить полный 3D тензор: X shape=(n_samples, 100, 11). Обработать пропуски (NaN) — заполнять нулями или masking.
 >
 > **Модели для сравнения**:
@@ -112,9 +112,9 @@
 
 > **Промпт: Этап 3.2 — Сравнение архитектур нейронных сетей**
 >
-> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и [.ai/RULES_INDEX.md](file:///home/hohla/git/SoSimple/.ai/RULES_INDEX.md).
+> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и .
 >
-> **Контекст**: Завершены этапы 1-2 (предобработка, EDA). Baseline-модели обучены (результаты в `ML/reports/baseline_report.md`). Описание данных: [docs/dataset_description.md](file:///home/hohla/git/SoSimple/docs/dataset_description.md). Статистика: [statistics/reports/EDA_report.md](file:///home/hohla/git/SoSimple/statistics/reports/EDA_report.md).
+> **Контекст**: Завершены этапы 1-2 (предобработка, EDA). Baseline-модели обучены (результаты в `ML/reports/baseline_report.md`). Описание данных: [docs/dataset_description.md](docs/dataset_description.md). Статистика: [statistics/reports/EDA_report.md](statistics/reports/EDA_report.md).
 >
 > **Задача**: Реализовать и сравнить 4 архитектуры нейронных сетей для классификации `signal ∈ {-1, 0, 1}` на последовательностях фракталов. Фреймворк: **PyTorch**. Код реализовать в `ML/`.
 >
@@ -144,7 +144,7 @@
 >    - Concat последних hidden states → FC → 3 класса
 >
 > **Требования к данным**:
-> 1. Загружать [DATA/Nero_train_labeled.csv](file:///home/hohla/git/SoSimple/DATA/Nero_train_labeled.csv) (train), [DATA/Nero_validation_labeled.csv](file:///home/hohla/git/SoSimple/DATA/Nero_validation_labeled.csv) (val). Разделитель `;`.
+> 1. Загружать [DATA/Nero_train_labeled.csv](DATA/Nero_train_labeled.csv) (train), [DATA/Nero_validation_labeled.csv](DATA/Nero_validation_labeled.csv) (val). Разделитель `;`.
 > 2. Парсить фракталы в 3D тензор: shape=(n_samples, 100, 11). Фракталы разделены `;`, поля внутри фрактала разделены `:`. Формат: `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse`.
 > 3. ВАЖНО: исключить `fractal_time` (индекс 0) из входных features для модели — он уже учтён через порядок позиций и может дать data leakage. Итого features = 10 (price, direction, front, back, strong, break, reverse, power, count, impulse).
 > 4. Обработка пропусков: заполнять NaN нулями + создать padding mask для Transformer.
@@ -210,7 +210,7 @@
 
 > **Промпт: Этап 3.3 — Финальный выбор архитектуры и анализ ошибок**
 >
-> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и [.ai/RULES_INDEX.md](file:///home/hohla/git/SoSimple/.ai/RULES_INDEX.md).
+> Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и .
 >
 > **Контекст**: Завершены baseline эксперименты (`ML/reports/baseline_report.md`) и сравнение архитектур NN (`ML/reports/architecture_comparison.md`).
 >
@@ -243,8 +243,8 @@
 >      - Рекомендации для фазы полноценного обучения (Этап 4)
 >
 > 4. **Обновить документацию проекта**:
->    - Обновить [AGENTS.md](file:///home/hohla/git/SoSimple/AGENTS.md): секцию "Статус разработки" — отметить "Выбор архитектуры ✅"
->    - Обновить [docs/PRD.md](file:///home/hohla/git/SoSimple/docs/PRD.md): roadmap — отметить "Выбор архитектуры" как выполненный
+>    - Обновить [AGENTS.md](AGENTS.md): секцию "Статус разработки" — отметить "Выбор архитектуры ✅"
+>    - Обновить [docs/PRD.md](docs/PRD.md): roadmap — отметить "Выбор архитектуры" как выполненный
 >    - Обновить `CHANGELOG.md`
 >
 > **Формат `architecture_decision.md`**:

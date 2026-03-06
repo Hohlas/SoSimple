@@ -39,6 +39,8 @@
 | [models/transformer.py](ML/models/transformer.py) | Transformer Encoder классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
 | [models/hybrid_cnn_lstm.py](ML/models/hybrid_cnn_lstm.py) | Hybrid CNN+LSTM классификатор | (batch, 100, 11) → (batch, 3) | — | ✅ |
 | [compare_architectures.py](ML/compare_architectures.py) | Сравнение всех 4 архитектур | DataLoader → `reports/architecture_comparison.md` | — | ✅ |
+| [optimize.py](ML/optimize.py) | Оптимизация гиперпараметров (Optuna) | DataLoader → `reports/optuna_*.json` | — | ✅ |
+| [experiment_logger.py](ML/experiment_logger.py) | Логирование экспериментов в CSV | results → `reports/experiments_log.csv` | — | ✅ |
 
 ## Docs
 

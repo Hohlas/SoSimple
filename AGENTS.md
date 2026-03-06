@@ -64,34 +64,19 @@ python -m ML.experiment_logger --best pearson_r --task regression
 ├── MT/MQL4           # MetaTrader4 - Формирование датасета Nero.csv
 ├── processing/       # Препроцессинг: label_main.py, label_signals.py, normalize.py
 ├── statistics/       # Статистика: statistics.py, EDA.ipynb, файлы статистических характеристик датасета
-├── plans/            # Планы работы для ИИ агентов (прошлые и актуальные)
+├── plans/            # ⚠️ Планы работы (архив) — читать только по отдельному указанию
 ├── ML/               # Machine Learning: модели, эксперименты, отчеты и графики
 │   ├── baseline/     # Baseline-модели: эксперименты, отчеты и графики
 │   └── models/       # Другие модели, checkpoints, plots, reports.
-├── .kilocode/        # rulls, skills, mcp
+├── .kilocode/        # rules, skills, mcp
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
-└── AGENTS.md, CHANGELOG.md, MODULE_INDEX.md, README.md
+├── AGENTS.md         # Главный индекс для ИИ-агентов (этот файл)
+├── CHANGELOG.md      # История изменений
+├── MODULE_INDEX.md   # Детальные описания модулей
+└── README.md         # Точка входа в проект
 ```
 
 ---
-
-## 🔧 Модули
-Детальные описания: [MODULE_INDEX.md](MODULE_INDEX.md)
-- `processing/label_main.py` — CLI полного конвейера ✅
-- `processing/label_signals.py` — Маркировка signal/predict ✅
-- `processing/normalize.py` — Нормализация признаков ✅
-- `statistics/statistics.py` — Потоковая статистика ✅
-- `statistics/EDA.ipynb` - 'Exploratory Data Analysis' для Nero.csv
-- `ML/baseline/baseline_experiments.py` — Baseline-модели (Dummy, LogReg, RF, XGBoost, LightGBM) ✅
-- `ML/train.py` — Единый скрипт обучения нейросетей (PyTorch) ✅
-- `ML/models/` — 4 архитектуры: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM ✅
-- `ML/compare_architectures.py` — Сравнение всех архитектур ✅
-- `MT/MQL4/Include/lib_PIC.mqh` — Основная библиотека создания датасета Nero.csv ⚠️
-
----
-
-## ⚙️ Правила работы
-Все правила: [.kilocode/rules/](.kilocode/rules/)
 
 ### Data Leakage Prevention
 Детали: [DATA_FLOW.md § Data Leakage Prevention](docs/DATA_FLOW.md#-data-leakage-prevention)
@@ -105,7 +90,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 ---
 
 ## 📋 Workflow для агента
-- **Код**: Обнови header ([rule 000](docs/plans/000-documentation.md)), используй skills, обнови CHANGELOG.md.
+- **Код**: Обнови header, используй skills, обнови CHANGELOG.md.
 - **Новый модуль**: Header -> Добавить в AGENTS.md -> Обновить структуру.
 - **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> .kilocode/skills/ (workflow).
 
