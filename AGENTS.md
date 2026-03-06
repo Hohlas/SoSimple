@@ -10,14 +10,10 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ## 🚀 Быстрый старт
 
-### Окружение
-```bash
-source ~/git/SoSimple/.venv/bin/activate
-```
-
 ### Основные команды
 ```bash
-# Препроцессинг: MT4 -> train/val/test
+# Формирование датасета: MetaTrader4 -> MT/MQL4/Files/Nero.csv
+source ~/git/SoSimple/.venv/bin/activate
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 python statistics/statistics.py DATA/Nero_train_labeled.csv
 cd ~/git/SoSimple/statistics
@@ -31,9 +27,9 @@ jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./r
 - **Мета**: `DATA/Nero_atr_scaler.pkl`, `DATA/Nero_normalization_stats.csv`
 
 ### Critical Rules Top-3
-1. **[000] Headers first**: Читай первые 10 строк CSV перед работой.
-2. **[007] No CSV in context**: Не грузи файлы >10MB целиком в чат.
-3. **[100] MQL4 encoding**: Файлы из `MT/` открывать только в `encoding='utf-16-le'`.
+1. Читай только первые 10 строк в файлах CSV, т.к. их размер >10MB
+2. Не грузи файлы >10MB целиком в чат.
+3. Файлы *.mqh, *.mq4 из `MT/` открывать только в `encoding='utf-16-le'`.
 
 ---
 
@@ -45,14 +41,16 @@ jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./r
 ## 📂 Структура проекта
 ```
 .
-├── MT/MQL4/          # MT4 код: lib_PIC.mqh (алгоритм PIC)
+├── MT/MQL4           # MetaTrader4 код. 
 ├── processing/       # Препроцессинг: label_main.py (CLI), label_signals.py, normalize.py
-├── statistics/       # Статистика: statistics.py, EDA.ipynb
-├── ML/               # Machine Learning: baseline/ (Dummy/GBM), neural models, train.py
-│   └── baseline/     # Baseline-модели: эксперименты, отчеты и графики
-├── .kilocode/        # Правила (.kilocode/rules/) и skills (.kilocode/skills/)
+├── statistics/       # Статистика: statistics.py, EDA.ipynb, файлы статистических характеристик датасета
+├── plans/            # Планы работы для ИИ агентов
+├── ML/               # Machine Learning: модели, эксперименты, отчеты и графики
+│   ├── baseline/     # Baseline-модели: эксперименты, отчеты и графики
+│   └── models/       # Другие модели: 
+├── .kilocode/        # Правила и скиллы проекта
 ├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
-└── AGENTS.md, CHANGELOG.md, README.md
+└── AGENTS.md, CHANGELOG.md, MODULE_INDEX.md, README.md
 ```
 
 ---
@@ -67,7 +65,7 @@ jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./r
 - `ML/train.py` — Единый скрипт обучения нейросетей (PyTorch) ✅
 - `ML/models/` — 4 архитектуры: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM ✅
 - `ML/compare_architectures.py` — Сравнение всех архитектур ✅
-- `MT/MQL4/Include/lib_PIC.mqh` — Алгоритм PIC (legacy) ⚠️
+- `MT/MQL4/Include/lib_PIC.mqh` — Основная библиотека создания датасета Nero.csv ⚠️
 
 ---
 
