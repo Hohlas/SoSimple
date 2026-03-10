@@ -157,6 +157,7 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 | Early stopping | patience=10 на F1 или pearson_r | Classification: val macro F1; Regression: pearson_r correlation. **НЕ по val_loss** |
 | Batch size | 256 | Оптимально при 43K сэмплах |
 | Seed | 42 | torch, numpy, random, cudnn deterministic |
+| Device | CUDA | Автоопределение через `torch.cuda.is_available()` |
 
 ## Оптимизация гиперпараметров (`optimize.py`)
 

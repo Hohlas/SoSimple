@@ -815,7 +815,9 @@ def main():
         result_serializable = {
             'model_name': result['model_name'],
             'task': result['task'],
-            'best_f1_macro': result['best_metric'],
+            'best_metric': result['best_metric'],
+            'metric_name': result.get('metric_name'),
+            'best_f1_macro': result['best_metrics'].get('f1_macro'),
             'best_epoch': result['best_epoch'],
             'num_parameters': result['num_parameters'],
             'training_time': result['training_time'],

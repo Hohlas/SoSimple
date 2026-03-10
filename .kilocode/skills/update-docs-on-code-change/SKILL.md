@@ -1,6 +1,8 @@
 ---
 name: update-docs-on-code-change
-description: Use when creating new modules, adding documentation to existing files, syncing docs after code changes, validating documentation currency, regenerating MODULE_INDEX.md from file headers, or when AGENTS.md exceeds 200 lines and needs refactoring
+description: Run explicitly when user requests: sync docs, обнови документацию, обнови доки, check docs, rebuild module index, refresh MODULE_INDEX.md, regenerate index,
+  refactor agents.md
+alwaysApply: false
 ---
 
 # Управление документацией
