@@ -1,90 +1,180 @@
-Ты работаешь с проектом SoSimple. Прочитай AGENTS.md и .ai/RULES_INDEX.md
+# Промпт для ИИ-агента: Анализ состояния проекта и план дальнейших действий
 
-**Контекст**: Завершены этапы 1-2 (предобработка, EDA). Baseline-модели обучены (результаты в `ML/reports/baseline_report.md`).
+## Роль
+Ты — прагматичный эксперт по глубокому машинному обучению и анализу временных рядов. Ты работаешь с проектом SoSimple. Прочитай AGENTS.md целиком.
 
-Описание данных: docs/dataset_description.md.
-Статистика: statistics/reports/EDA_report.md
-statistics/plots/feature_stats_by_class.csv
-statistics/plots/statistical_tests.csv
+## Контекст проекта
 
-**Задача**: Реализовать и сравнить 4 архитектуры нейронных сетей для классификации `signal ∈ {-1, 0, 1}` на последовательностях фракталов. Фреймворк: **PyTorch**. Код реализовать в `ML/`.
->
-> **Архитектуры для сравнения**:
->
-> 1. **Bi-LSTM**
->    - Input: (batch, seq_len=100, features=11) — 10 фрактальных + ATR
->    - 2 слоя Bi-LSTM (hidden_size=64)
->    - Dropout 0.3 между слоями
->    - Pooling: concat(last_hidden_fwd, last_hidden_bwd)
->    - FC → 3 класса
->
-> 2. **1D-CNN**
->    - Input: (batch, features=11, seq_len=100) — conv по оси времени
->    - 3 блока: Conv1D → BatchNorm → ReLU → MaxPool
->    - Каналы: 32 → 64 → 128, kernel_sizes: 5, 3, 3
->    - Global Average Pooling → FC → 3 класса
->
-> 3. **Transformer Encoder**
->    - Input: (batch, seq_len=100, features=11) + positional encoding
->    - 2 encoder layers, d_model=64, nhead=4, feedforward=128
->    - CLS token или mean pooling → FC → 3 класса
->    - Mask для padding (NaN позиции)
->
-> 4. **Hybrid CNN+LSTM**
->    - Conv1D block (32→64, kernel=5,3) → LSTM (hidden=64)
->    - Concat последних hidden states → FC → 3 класса
->
-> **Требования к данным**:
-> 1. Загружать DATA/Nero_train_labeled.csv (train), DATA/Nero_validation_labeled.csv (val). CSV-столбцы разделены `;`. Каждый столбец fractalN (N=0..99) содержит строку с полями через `:`.
-> 2. Парсить фракталы в 3D тензор: shape=(n_samples, 100, 11). Формат полей фрактала: `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse`.
-> 3. ВАЖНО: исключить `fractal_time` (индекс 0) из входных features для модели — он уже учтён через порядок позиций и может дать data leakage. Итого 10 фрактальных features: price, direction, front, back, strong, break, reverse, power, count, impulse.
-> 4. Добавить ATR как 11-й признак (broadcast на все 100 позиций). Итого features = **11** (10 фрактальных + 1 ATR).
-> 5. Обработка пропусков: заполнять NaN нулями + создать padding mask для Transformer.
-> 6. **Нормализация features** (обязательно для нейросетей): применить StandardScaler — fit на train, transform на val. Разные масштабы признаков: price ~1.0, front/back/impulse ~0.001-0.01, power/count — целые числа. Нормализовать по каждому feature индексу отдельно по всему train (shape flatten: n_samples*100, n_features).
->
+ML-бот для прогнозирования разворотов Forex (XAUUSD, H1). Подробнее: [PRD.md](../docs/PRD.md).
+Входной тензор: X ∈ R^{k×100×11} — последовательности из 100 фракталов, каждый с 11 признаками.
+Две задачи: классификация signal ∈ {-1, 0, 1} и регрессия predict ∈ [-p..p].
 
-> ⚠️ **Не запускать обучение!** Только написать код, проверить 
-> синтаксис и корректность импортов. Обучение будет запущено отдельно.
->
-> **Параметры обучения** (реализовать в train.py):
-> - Loss: **Focal Loss** (gamma=2, alpha=[0.45, 0.10, 0.45]) — обязательно. При дисбалансе 95%/2.5%/2.5% обычный CrossEntropy с class_weight недостаточен (baseline показал recall minority 1-12%).
-> - Optimizer: AdamW, lr=1e-3, weight_decay=1e-4
-> - Scheduler: ReduceLROnPlateau (patience=5, factor=0.5, monitor='val_f1_macro')
-> - Epochs: до 50, **early stopping на val macro F1** (patience=10). НЕ на val loss — при 95% дисбалансе loss может улучшаться за счёт majority-класса, пока F1 minority падает.
-> - Batch size: 256 (при 43K сэмплах и маленьких моделях 256-512 оптимальнее, чем 128)
-> - Train DataLoader: shuffle=True (каждая строка — независимый snapshot, перемешивание допустимо). Validation DataLoader: shuffle=False.
-> - **Воспроизводимость**: установить seed для PyTorch, NumPy, random: `torch.manual_seed(42)`, `torch.backends.cudnn.deterministic = True`, `np.random.seed(42)`.
->
-> **Метрики** (вычислять после каждой эпохи на validation):
-> - macro F1-score (основная, решающая для early stopping и выбора лучшей модели)
-> - Per-class F1 (особенно для классов -1 и 1)
-> - Confusion matrix (сохранить best epoch)
-> - Training curves: loss и F1 по эпохам
->
-> **Формат результатов**:
-> 1. Таблица сравнения 4 архитектур: val macro F1, per-class F1, #parameters, время обучения
-> 2. Training curves для каждой модели (plots)
-> 3. Confusion matrix для best epoch каждой модели
-> 4. Сохранить веса лучшей модели: `ML/checkpoints/best_model.pt`
-> 5. Создать отчёт `ML/reports/architecture_comparison.md`
->
-> **Структура кода**:
-> ```
-> ML/
-> ├── data_loader.py            # Dataset и DataLoader для фрактальных последовательностей
-> ├── models/
-> │   ├── __init__.py
-> │   ├── bilstm.py             # Bi-LSTM модель
-> │   ├── cnn1d.py              # 1D-CNN модель
-> │   ├── transformer.py        # Transformer Encoder
-> │   └── hybrid_cnn_lstm.py    # Hybrid CNN+LSTM
-> ├── train.py                  # Единый скрипт обучения (принимает --model arg)
-> ├── losses.py                 # FocalLoss
-> ├── utils.py                  # Metrics, нормализация, seed-setting, общие утилиты
-> ├── compare_architectures.py  # Скрипт сравнения всех моделей
-> ├── reports/
-> │   └── architecture_comparison.md
-> ├── checkpoints/
-> └── plots/
->     └── training_curves_*.png
-> ```
+## Текущий этап разработки (зафиксирован 2026-03-09)
+
+### Что завершено
+
+Проект находится на завершении **Этапа 3.2** из [ML/implementation_plan.md](../ML/implementation_plan.md):
+
+1. **Этап 1 — Предобработка данных**: ✅ Завершён
+   - Pipeline: MT4 → Raw → Sort → Label → Norm → Split → ATR → Final
+   - Файлы: `processing/label_main.py`, `label_signals.py`, `normalize.py`
+   - Выходы: `DATA/Nero_{train|validation|test}_labeled.csv`
+
+2. **Этап 2 — Статистический анализ и EDA**: ✅ Завершён
+   - `statistics/statistics.py`, `statistics/EDA.ipynb`
+
+3. **Этап 3.1 — Baseline-модели**: ✅ Завершён
+   - 5 моделей: Dummy, LogReg, RF, XGBoost, LightGBM
+   - Лучший: Random Forest (macro F1 = 0.556)
+   - Отчёт: [ML/baseline/reports/baseline_report.md](../ML/baseline/reports/baseline_report.md)
+
+4. **Этап 3.2 — Сравнение архитектур нейросетей**: ✅ Завершён
+   - 4 архитектуры: Bi-LSTM (147K), 1D-CNN (42K), Transformer (70K), Hybrid CNN+LSTM (83K)
+   - Классификация и регрессия обученнь, отчёты сгенерированы
+   - Реализованы: Focal Loss, WeightedRandomSampler, метрики f1_minority и signal_precision
+   - Optuna HPO: проведён только для cnn1d classification (3 запуска по 50 trials)
+
+5. **Этап 3.3 — Финальный выбор архитектуры**: ❌ НЕ начат
+   - Нет файла `ML/reports/architecture_decision.md`
+   - Нет error analysis
+
+### Ключевые результаты экспериментов
+
+#### Классификация — последние сохранённые checkpoint-ы
+
+| Модель | Метрика | Значение | F1(-1) | F1(0) | F1(1) | Best Epoch |
+|--------|---------|----------|--------|-------|-------|------------|
+| hybrid | f1_macro | **0.568** | 0.417 | 0.935 | 0.353 | 10 |
+| transformer | f1_macro | **0.567** | 0.392 | 0.949 | 0.359 | 11 |
+| bilstm | f1_macro | **0.553** | 0.370 | 0.949 | 0.340 | 2 |
+| cnn1d | f1_minority | **0.346** | 0.368 | 0.931 | 0.325 | 34 |
+
+#### Регрессия — последние сохранённые checkpoint-ы
+
+| Модель | Pearson r | MAE | RMSE | R² | Время, с | Best Epoch |
+|--------|-----------|-----|------|----|----------|------------|
+| transformer | **0.563** | 0.114 | 0.185 | 0.306 | 1549 | 49 |
+| bilstm | **0.555** | 0.103 | 0.185 | 0.306 | 128 | 3 |
+| hybrid | **0.546** | 0.115 | 0.188 | 0.283 | 75 | 3 |
+| cnn1d | **0.519** | 0.103 | 0.195 | 0.232 | 60 | 5 |
+
+**Важно**: Результаты в checkpoint JSON-файлах отличаются от ранних отчётов `architecture_comparison_*.md`, так как были проведены дополнительные эксперименты после генерации отчётов.
+
+#### Optuna HPO для cnn1d classification
+
+Три запуска по 50 trials. Последний лучший результат — f1_minority = 0.282 (слабый). HPO для остальных моделей и для задачи регрессии НЕ проводился.
+
+### Критическая проблема: ловушка дисбаланса классов
+
+Диагностировано [2026-02-27]:
+- **Macro F1 ≈ 0.57 — обманчивая метрика**: высокое значение за счёт F1(0) = 0.95 (neutral ≈ 95% данных)
+- **Торгово-значимые классы: F1(-1) ≈ 0.37–0.42, F1(1) ≈ 0.34–0.38** — катастрофически низкое качество
+- **Precision сигнальных классов: 0.25–0.30** → 70-75% ложных торговых сигналов
+- Все 4 архитектуры упираются в один потолок (~0.57 macro F1) — проблема не в архитектуре
+- Overfitting наблюдается у всех моделей: train loss падает, val loss растёт
+
+Частично реализованные меры борьбы:
+- ✅ Новые метрики: `f1_minority`, `signal_precision` (реализованы в train.py)
+- ✅ `WeightedRandomSampler` (реализован)
+- ✅ Параметр `--metric_mode` для выбора целевой метрики early stopping
+- ❌ Систематическое сравнение эффекта этих мер НЕ проведено
+- ❌ Другие подходы (downsampling, двухклассовая постановка, порог решения) НЕ исследованы
+
+### Незавершённые задачи из discussion.md
+
+Упомянуты, но не реализованы:
+- Optuna HPO — гиперпараметры оптимизировались только для cnn1d classification
+- Систематическое сравнение с обновлёнными результатами (отчёт не перегенерирован)
+- Hyperparameter search для всех моделей (не только cnn1d)
+- Bidirectional attention поверх BiLSTM
+- Ensemble BiLSTM + 1D-CNN
+- Feature engineering (технические индикаторы, multi-scale features)
+- Двухклассовая постановка (Signal vs NoSignal → Sell vs Buy)
+- Borьба с overfitting (увеличение Dropout, data augmentation)
+- Финальная оценка на test set
+
+---
+
+## Задание
+
+### Фаза 1: Аудит текущего состояния
+
+Проведи полный аудит ML-компонента проекта. Для каждого пункта дай конкретную оценку:
+
+1. **Аудит данных**:
+   - Достаточно ли данных для обучения? (train: 43593, val: 9341 строк, дисбаланс -1:2.5%, 0:94.9%, 1:2.6%)
+   - Насколько критичен дисбаланс и какие реальные подходы к нему применимы при ~1000 сигнальных примерах?
+   - Есть ли признаки data leakage, которые могли быть упущены?
+
+2. **Аудит моделей**:
+   - Оцени текущие результаты (Pearson r=0.55 для регрессии, F1_minority~0.35 для классификации) — это потолок данных/фичей или потолок архитектур?
+   - Стоит ли продолжать улучшать классификацию сигналов, или лучше сосредоточиться на регрессии (predict)?
+   - Критически оцени наблюдение DirAcc=97.5% при регрессии — это data leakage через direction?
+
+3. **Аудит pipeline**:
+   - Есть ли узкие места в data_loader.py, train.py?
+   - Адекватны ли выбранные loss functions (Focal Loss, Huber)?
+   - Стоит ли менять подход к нормализации?
+
+### Фаза 2: Стратегический план
+
+На основе аудита составь приоритизированный план дальнейших действий. План должен:
+
+1. **Определить стратегическое направление**: классификация, регрессия, или гибридный подход? Обоснуй.
+
+2. **Приоритизировать вмешательства** по принципу максимального impact при минимальных усилиях:
+   - Quick wins (можно получить улучшение, используя существующий код)
+   - Medium effort (требуют новых модулей или существенных изменений)
+   - Structural changes (требуют пересмотра подхода)
+
+3. **Для каждого шага укажи**:
+   - Что конкретно делать (файлы, команды)
+   - Какой результат ожидается (метрика, порог)
+   - Критерий перехода к следующему шагу
+   - Что делать, если результат не достигнут
+
+4. **Оцени реалистичность целей MVP**:
+   - Accuracy >65% на тестовой выборке — достижимо ли с текущими данными?
+   - Sharpe Ratio >1.5 — что нужно для бэктеста?
+   - Какие метрики реально важны для торговой системы?
+
+### Ограничения и контекст
+
+- Проект одного разработчика. Прагматичность важнее академической полноты.
+- GPU не всегда доступен — модели должны обучаться на CPU за разумное время.
+- Test set (`DATA/Nero_test_labeled.csv`) зарезервирован для финальной оценки. НЕ использовать для экспериментов.
+- Текущий tech stack: PyTorch, Optuna, Pandas, NumPy, Scikit-learn.
+- Все эксперименты и решения записывать в CHANGELOG.md.
+
+### Формат результата
+
+1. **Документ**: `ML/reports/project_audit_and_plan.md` — полный аудит с выводами
+2. **Todo-лист**: Приоритизированный список конкретных задач для выполнения
+3. **Architecture Decision Record** (если готов): `ML/reports/architecture_decision.md`
+
+### Ключевые файлы для изучения
+
+| Файл | Зачем |
+|------|-------|
+| [AGENTS.md](../AGENTS.md) | Главный индекс проекта |
+| [docs/PRD.md](../docs/PRD.md) | Цели и критерии успеха |
+| [docs/dataset_description.md](../docs/dataset_description.md) | Структура входных данных |
+| [docs/DATA_FLOW.md](../docs/DATA_FLOW.md) | Pipeline данных |
+| [docs/ml/neural_networks.md](../docs/ml/neural_networks.md) | ML pipeline, архитектуры, метрики |
+| [ML/implementation_plan.md](../ML/implementation_plan.md) | План этапов 3.1–3.3 |
+| [ML/baseline/reports/baseline_report.md](../ML/baseline/reports/baseline_report.md) | Результаты baseline |
+| [ML/reports/architecture_comparison_classification.md](../ML/reports/architecture_comparison_classification.md) | Сравнение NN (классификация) |
+| [ML/reports/architecture_comparison_regression.md](../ML/reports/architecture_comparison_regression.md) | Сравнение NN (регрессия) |
+| [docs/plans/discussion.md](../docs/plans/discussion.md) | Обсуждения и нереализованные идеи |
+| [ML/checkpoints/*_result.json](../ML/checkpoints/) | Последние метрики моделей |
+| [ML/reports/experiments_log.csv](../ML/reports/experiments_log.csv) | Лог экспериментов |
+| [ML/train.py](../ML/train.py) | Основной скрипт обучения |
+| [ML/data_loader.py](../ML/data_loader.py) | Загрузка данных для NN |
+| [ML/losses.py](../ML/losses.py) | Функции потерь |
+
+### Критически важно
+
+- **Не предлагай абстрактных рекомендаций**. Каждый пункт плана должен быть конкретным: файл, функция, метрика, порог.
+- **Оспаривай мои предыдущие решения**, если видишь ошибки. Не бойся сказать что текущий подход тупиковый.
+- **Будь честен по поводу потолка**: если данные/фичи не несут достаточно сигнала, лучше это зафиксировать рано.
+- **Учитывай trade-off**: precision vs recall для торговли (ложный сигнал = убыток, пропущенный сигнал = упущенная прибыль).
