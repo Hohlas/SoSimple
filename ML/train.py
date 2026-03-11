@@ -233,7 +233,7 @@ def validate_regression(
 
     Возвращает:
         Кортеж (val_loss, metrics) с регрессионными метриками:
-        mae, rmse, r2, pearson_r, pearson_p, directional_accuracy
+        mae, rmse, r2, pearson_r, pearson_p
     """
     model.eval()
     total_loss = 0.0
@@ -378,12 +378,12 @@ def train_model(
         history = {
             'train_loss': [], 'val_loss': [],
             'val_pearson_r': [], 'val_mae': [], 'val_rmse': [],
-            'val_r2': [], 'val_dir_acc': [], 'lr': [],
+            'val_r2': [], 'lr': [],
         }
         metric_name = 'pearson_r'
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
-                  f"{'pearson_r':>10} | {'MAE':>8} | {'RMSE':>8} | {'DirAcc':>7} | {'LR':>10}")
+                  f"{'pearson_r':>10} | {'MAE':>8} | {'RMSE':>8} | {'LR':>10}")
     else:
         history = {
             'train_loss': [], 'val_loss': [], 'val_f1_macro': [],
@@ -422,14 +422,13 @@ def train_model(
             history['val_mae'].append(metrics['mae'])
             history['val_rmse'].append(metrics['rmse'])
             history['val_r2'].append(metrics['r2'])
-            history['val_dir_acc'].append(metrics['directional_accuracy'])
             history['lr'].append(optimizer.param_groups[0]['lr'])
 
             current_lr = optimizer.param_groups[0]['lr']
             if not silent:
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['pearson_r']:>10.4f} | {metrics['mae']:>8.4f} | "
-                      f"{metrics['rmse']:>8.4f} | {metrics['directional_accuracy']:>7.4f} | "
+                      f"{metrics['rmse']:>8.4f} | "
                       f"{current_lr:>10.6f}")
         else:
             val_loss, metrics = validate(model, val_loader, loss_fn, device)
@@ -522,7 +521,6 @@ def train_model(
             print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
             print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
             print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
-            print(f"  DirAcc: {best_metrics.get('directional_accuracy', 0):.4f}")
 
     # ── Plots (только если не silent) ────────────────────────────────────────
     if not silent:
@@ -640,7 +638,6 @@ def _log_experiment(
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
         metrics_dict['r2'] = result['best_metrics'].get('r2')
-        metrics_dict['dir_acc'] = result['best_metrics'].get('directional_accuracy')
     else:
         metrics_dict['f1_macro'] = result['best_metric']
         f1_per_class = result['best_metrics'].get('f1_per_class', {})
@@ -702,9 +699,7 @@ def _plot_training_curves(history: dict, model_name: str, regression: bool = Fal
         ax2 = axes[1].twinx()
         ax2.plot(epochs_range, history['val_mae'],
                  label='MAE', color='#FF9800', linestyle='--')
-        ax2.plot(epochs_range, history['val_dir_acc'],
-                 label='Dir.Acc', color='#03A9F4', linestyle=':')
-        ax2.set_ylabel('MAE / DirAcc')
+        ax2.set_ylabel('MAE')
         axes[1].set_xlabel('Epoch')
         axes[1].set_ylabel('Pearson r')
         axes[1].set_title(f'{model_name}: Validation Metrics (Regression)')

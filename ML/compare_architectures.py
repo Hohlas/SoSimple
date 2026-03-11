@@ -196,9 +196,9 @@ def _generate_report(results: list[dict], task: str):
     lines.append("")
     
     if regression:
-        lines.append("| Модель | Val Pearson r | MAE | RMSE | R² | DirAcc | "
+        lines.append("| Модель | Val Pearson r | MAE | RMSE | R² | "
                      "Параметры | Время (с) | Best Epoch |")
-        lines.append("|--------|-------------|--------|-------|-------|--------|"
+        lines.append("|--------|-------------|--------|-------|-------|"
                      "-----------|-----------|------------|")
         for r in results:
             m = r['best_metrics']
@@ -209,7 +209,6 @@ def _generate_report(results: list[dict], task: str):
                 f"{m.get('mae', 0):.4f} | "
                 f"{m.get('rmse', 0):.4f} | "
                 f"{m.get('r2', 0):.4f} | "
-                f"{m.get('directional_accuracy', 0):.4f} | "
                 f"{r['num_parameters']:,} | "
                 f"{r['training_time']:.1f} | "
                 f"{r['best_epoch']} |"

@@ -70,7 +70,6 @@ CSV_COLUMNS = [
     'mae',
     'rmse',
     'r2',
-    'dir_acc',
     # Метрики классификации
     'f1_macro',
     'f1_sell',
@@ -265,7 +264,7 @@ class CSVExperimentLogger:
             metrics_dict: Словарь с метриками эксперимента
                 - best_metric: Лучшее значение основной метрики
                 - metric_name: Название основной метрики
-                - mae, rmse, r2, directional_accuracy / dir_acc: Для регрессии
+                - mae, rmse, r2: Для регрессии
                 - f1_macro, f1_per_class: Для классификации
                 - training_time: Время обучения в секундах
                 - best_epoch: Эпоха с лучшим результатом
@@ -325,9 +324,6 @@ class CSVExperimentLogger:
             'mae': self._format_value(metrics_dict.get('mae')),
             'rmse': self._format_value(metrics_dict.get('rmse')),
             'r2': self._format_value(metrics_dict.get('r2')),
-            'dir_acc': self._format_value(
-                metrics_dict.get('dir_acc') or metrics_dict.get('directional_accuracy')
-            ),
             # Метрики классификации
             'f1_macro': self._format_value(metrics_dict.get('f1_macro')),
             'f1_sell': f1_sell,

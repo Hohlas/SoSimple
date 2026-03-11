@@ -136,13 +136,11 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         - r2: float — R² (коэффициент детерминации)
         - pearson_r: float — Корреляция Пирсона (основная метрика early stopping)
         - pearson_p: float — p-значение корреляции
-        - directional_accuracy: float — Доля совпадений знака (sign(y_pred)==sign(y_true))
     """
     mae = mean_absolute_error(y_true, y_pred)
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
     r2 = r2_score(y_true, y_pred)
     pearson_r, pearson_p = stats.pearsonr(y_true, y_pred)
-    dir_acc = float(np.mean(np.sign(y_true) == np.sign(y_pred)))
 
     return {
         'mae': float(mae),
@@ -150,7 +148,6 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         'r2': float(r2),
         'pearson_r': float(pearson_r),
         'pearson_p': float(pearson_p),
-        'directional_accuracy': dir_acc,
     }
 
 
