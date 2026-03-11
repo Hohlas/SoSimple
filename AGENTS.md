@@ -58,23 +58,66 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ---
 
-## 📂 Структура проекта
+## 📂 Структура проекта (до 2-го уровня вложенности)
 ```
 .
-├── MT/MQL4           # MetaTrader4 - Формирование датасета Nero.csv
-├── processing/       # Препроцессинг: label_main.py, label_signals.py, normalize.py
-├── statistics/       # Статистика: statistics.py, EDA.ipynb, файлы статистических характеристик датасета
-├── plans/            # ⚠️ Планы работы (архив) — читать только по отдельному указанию
-├── ML/               # Machine Learning: модели, эксперименты, отчеты и графики
-│   ├── baseline/     # Baseline-модели: эксперименты, отчеты и графики
-│   └── models/       # Другие модели, checkpoints, plots, reports.
-├── .kilocode/        # rules, skills, mcp
-├── docs/             # Документация: DATA_FLOW.md, PRD.md, dataset_description.md
-├── AGENTS.md         # Главный индекс для ИИ-агентов (этот файл)
-├── CHANGELOG.md      # История изменений
-├── MODULE_INDEX.md   # Детальные описания модулей
-└── README.md         # Точка входа в проект
+├── MT/MQL4              # MetaTrader4 - Формирование датасета Nero.csv
+│   ├── Experts/        # MQL4 советники
+│   ├── Files/          # Файлы данных (Nero.csv)
+│   └── Include/        # MQL4 библиотеки (.mqh)
+├── processing/         # Препроцессинг данных: Маркировка signal/predict, Нормализация признаков
+├── statistics/         # Статистика и EDA
+│   ├── statistics.py   # расчёт статистики по фракталам и сигналам
+│   ├── EDA.ipynb       # Разведочный анализ данных
+│   ├── plots/          # Визуализации
+│   ├── reports/        # Отчёты
+│   └── EDA_files/      # Файлы EDA
+├── ML/                 # Machine Learning
+│   ├── baseline/       # Baseline-модели (5 алгоритмов)
+│   ├── models/         # Neural Network модели: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM
+│   ├── checkpoints/    # Чекпоинты моделей (.pt)
+│   ├── plots/          # Графики обучения
+│   ├── reports/        # Отчёты экспериментов
+│   ├── old/            # Архив старого кода
+│   ├── train.py        # Скрипт обучения
+│   ├── optimize.py     # Optuna оптимизация
+│   ├── compare_architectures.py # Сравнение архитектур
+│   ├── data_loader.py  # Dataset и DataLoader для фрактальных последовательностей
+│   └── experiment_logger.py # CSV-логгер для ML-экспериментов
+├── DATA/               # Обрабатывамые данные
+│   ├── Nero_train_labeled.csv
+│   ├── Nero_validation_labeled.csv
+│   ├── Nero_test_labeled.csv
+│   ├── Nero_atr_scaler.pkl
+│   └── Nero_normalization_stats.csv
+├── docs/               # Документация
+│   ├── DATA_FLOW.md    # Поток данных
+│   ├── dataset_description.md # Описание структуры датасета
+│   ├── PRD.md          # Product Requirements
+│   ├── archive/        # Архив устаревшей документации
+│   │   ├── discussion.md
+│   │   └── 03.10_audit_answers/ # Аудит ИИ-моделей
+│   ├── data_analysis/  # Документация анализа
+│   │   ├── statistics.py.md
+│   │   └── EDA.ipynb.md
+│   ├── data_preprocessing/ # Документация препроцессинга
+│   │   ├── label_main.py.md
+│   │   ├── label_signals.py.md
+│   │   └── normalize.py.md
+│   ├── ml/             # Документация ML
+│   │   ├── baseline_experiments.py.md
+│   │   └── neural_networks.md
+│   ├── mql4/           # Документация MQL4
+│   │   └── lib_PIC.mqh.md # Библиотека анализа фракталов, классификации уровней и экспорта данных
+│   └── plans/          # Планы работы
+├── .kilocode/          # Конфигурация IDE: MCP, skills, rules
+├── AGENTS.md           # Главный индекс для ИИ-агентов
+├── CHANGELOG.md        # Основные этапы, История изменений
+├── MODULE_INDEX.md     # Детальные описания модулей
+└── README.md           # Точка входа в проект
 ```
+
+> **Примечание**: Полный рекурсивный список см. в `environment_details` при запуске.
 
 ---
 

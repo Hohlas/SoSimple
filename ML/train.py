@@ -535,6 +535,30 @@ def train_model(
         else:
             _plot_confusion_matrix(best_metrics['confusion_matrix'], model_name)
 
+    # Логируем эксперимент в CSV
+    _log_experiment(
+        model_name=model_name,
+        task=task,
+        epochs=epochs,
+        batch_size=batch_size,
+        lr=lr,
+        patience=patience,
+        focal_gamma=focal_gamma,
+        use_scaler=use_scaler,
+        result={
+            'model_name': model_name,
+            'task': task,
+            'best_metric': best_metric,
+            'metric_name': metric_name,
+            'best_epoch': best_epoch,
+            'num_parameters': n_params,
+            'training_time': training_time,
+            'history': history,
+            'best_metrics': best_metrics,
+        },
+        regression=regression,
+    )
+
     return {
         'model_name': model_name,
         'task': task,
@@ -551,6 +575,64 @@ def train_model(
 # ═══════════════════════════════════════════════════════════════════════════════
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _log_experiment(
+    model_name: str,
+    task: str,
+    epochs: int,
+    batch_size: int,
+    lr: float,
+    patience: int,
+    focal_gamma: float | None,
+    use_scaler: bool,
+    result: dict,
+    regression: bool,
+) -> None:
+    """Логирует эксперимент в CSV файл."""
+    from ML.experiment_logger import CSVExperimentLogger
+    
+    # Строим config_dict
+    config_dict = {
+        'model': model_name,
+        'task': task,
+        'epochs': epochs,
+        'batch_size': batch_size,
+        'lr': lr,
+        'weight_decay': None,
+        'patience': patience,
+        'focal_gamma': focal_gamma if not regression else None,
+        'focal_minority_weight': None,
+        'scheduler_patience': None,
+        'scheduler_factor': None,
+        'use_scaler': use_scaler,
+    }
+    
+    # Строим metrics_dict
+    metrics_dict = {
+        'metric_name': result.get('metric_name', 'f1_macro' if not regression else 'pearson_r'),
+        'best_metric': result['best_metric'],
+        'best_epoch': result['best_epoch'],
+        'training_time': result['training_time'],
+    }
+    
+    if regression:
+        metrics_dict['mae'] = result['best_metrics'].get('mae')
+        metrics_dict['rmse'] = result['best_metrics'].get('rmse')
+        metrics_dict['r2'] = result['best_metrics'].get('r2')
+        metrics_dict['dir_acc'] = result['best_metrics'].get('directional_accuracy')
+    else:
+        metrics_dict['f1_macro'] = result['best_metric']
+        f1_per_class = result['best_metrics'].get('f1_per_class', {})
+        metrics_dict['f1_sell'] = f1_per_class.get(-1)
+        metrics_dict['f1_neutral'] = f1_per_class.get(0)
+        metrics_dict['f1_buy'] = f1_per_class.get(1)
+    
+    checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{"_regression" if regression else ""}_best.pt')
+    
+    logger = CSVExperimentLogger()
+    logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
+
 
 @torch.no_grad()
 def _collect_regression_preds(
@@ -874,8 +956,9 @@ def main():
 
     checkpoint_path = str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
 
-    logger = CSVExperimentLogger()
-    logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
+    # Логирование теперь происходит внутри train_model() - дублировать не нужно
+    # logger = CSVExperimentLogger()
+    # logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
 
     print("\n" + "=" * 60)
     print("  ✅ ОБУЧЕНИЕ ЗАВЕРШЕНО")
