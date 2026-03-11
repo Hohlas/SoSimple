@@ -41,6 +41,8 @@
 | [compare_architectures.py](ML/compare_architectures.py) | Сравнение всех 4 архитектур | DataLoader → `reports/architecture_comparison.md` | — | ✅ |
 | [optimize.py](ML/optimize.py) | Оптимизация гиперпараметров (Optuna) | DataLoader → `reports/optuna_*.json` | — | ✅ |
 | [experiment_logger.py](ML/experiment_logger.py) | Логирование экспериментов в CSV | results → `reports/experiments_log.csv` | — | ✅ |
+| [threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | checkpoint + val CSV → `reports/threshold_analysis.md`, `plots/threshold_*.png` | — | ✅ |
+| [reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | — → `reports/reproducibility_report.md` | — | ✅ |
 
 ## Docs
 

@@ -286,6 +286,8 @@ def train_model(
     metric_mode: str = 'f1_macro',
     min_signal_recall: float = 0.3,
     use_weighted_sampler: bool = False,
+    # Гиперпараметры архитектуры модели
+    model_kwargs: dict | None = None,
     # Optuna Pruning
     trial=None,
     # Режим без вывода в консоль (для Optuna)
@@ -309,6 +311,7 @@ def train_model(
         huber_delta: Delta параметр Huber Loss (regression)
         scheduler_patience: Patience для ReduceLROnPlateau
         scheduler_factor: Factor для ReduceLROnPlateau
+        model_kwargs: Дополнительные гиперпараметры архитектуры модели
         trial: Optuna trial объект для Pruning (опционально)
         silent: Если True — минимальный вывод в консоль
 
@@ -338,7 +341,9 @@ def train_model(
     # ── Модель ───────────────────────────────────────────────────────────────
     # Для регрессии: 1 выход; для классификации: 3 выхода
     num_classes = 1 if regression else 3
-    model = get_model(model_name, num_classes=num_classes)
+    if model_kwargs is None:
+        model_kwargs = {}
+    model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
     n_params = count_parameters(model)
 
@@ -602,6 +607,7 @@ def _log_experiment(
     n_params: int,
     result: dict,
     regression: bool,
+    model_kwargs: dict | None = None,
 ) -> None:
     """Логирует эксперимент в CSV файл."""
     from ML.experiment_logger import CSVExperimentLogger
@@ -625,6 +631,9 @@ def _log_experiment(
         'use_weighted_sampler': use_weighted_sampler,
         'num_parameters': n_params,
     }
+    
+    if model_kwargs:
+        config_dict.update(model_kwargs)
     
     # Строим metrics_dict
     metrics_dict = {

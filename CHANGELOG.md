@@ -1,6 +1,21 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-11] — ME-1: Подготовка к Optuna HPO для регрессии
+### Изменено
+- `ML/train.py`: функция `train_model` теперь принимает `model_kwargs` и прокидывает их в `get_model()` для инициализации параметров архитектуры. Добавлено сохранение этих параметров в логи `experiments_log.csv`.
+- `ML/optimize.py`: добавлена поддержка функции генерации гиперпараметров архитектуры `hidden_size`, `num_layers`, `dropout` для `bilstm`.
+
+## [2026-03-11] — QW-4: Threshold Analysis (Regression → Trading Signal)
+### Добавлено
+- Новый скрипт `ML/threshold_analysis.py`: поиск оптимального порога θ для конвертации регрессионных предсказаний `|predict|` в торговые сигналы
+- Генерация Precision-Recall curve, Metrics vs θ, Profit Factor vs θ графиков
+- Markdown-отчёт `ML/reports/threshold_analysis.md`
+
+### Результат
+- При Pearson r ≈ 0.32 (BiLSTM): лучший PF = 0.618, precision = 23%, recall = 20%
+- **Вывод**: сигнал слишком слаб для торговли → необходим HPO (ME-1) или feature engineering (ME-3)
+
 ## [2026-03-11] — Обеспечение 100% воспроизводимости экспериментов
 ### Добавлено
 - В `experiments_log.csv` теперь логируются все гиперпараметры, влияющие на результат: `seed`, `weight_decay`, `huber_delta`, `scheduler_patience`, `scheduler_factor`, `focal_gamma`, `use_weighted_sampler`, `num_parameters`.

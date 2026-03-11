@@ -59,13 +59,14 @@ REPORTS_DIR = ML_DIR / 'reports'
 # ПРОСТРАНСТВО ГИПЕРПАРАМЕТРОВ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def suggest_hyperparameters(trial: optuna.Trial, task: str) -> dict:
+def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str) -> dict:
     """
     Определение пространства поиска гиперпараметров.
 
     Аргументы:
         trial: Optuna trial объект
         task: 'classification' или 'regression'
+        model_name: Имя модели из MODEL_REGISTRY
 
     Возвращает:
         Словарь с предложенными гиперпараметрами
@@ -95,6 +96,13 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str) -> dict:
         # Regression: Huber Loss
         params['huber_delta'] = trial.suggest_float('huber_delta', 0.5, 2.0)
 
+    # Architectural parameters
+    params['model_kwargs'] = {}
+    if model_name == 'bilstm':
+        params['model_kwargs']['hidden_size'] = trial.suggest_categorical('hidden_size', [32, 64, 128])
+        params['model_kwargs']['num_layers'] = trial.suggest_int('num_layers', 1, 3)
+        params['model_kwargs']['dropout'] = trial.suggest_float('dropout', 0.1, 0.5)
+
     return params
 
 
@@ -123,7 +131,7 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
     """
     def objective(trial: optuna.Trial) -> float:
         # Получаем гиперпараметры
-        params = suggest_hyperparameters(trial, task)
+        params = suggest_hyperparameters(trial, task, model_name)
         
         # Добавляем уникальность seed для каждого trial
         trial_seed = seed + trial.number
@@ -144,6 +152,7 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
                 huber_delta=params.get('huber_delta', DEFAULTS['huber_delta']),
                 scheduler_patience=params['scheduler_patience'],
                 scheduler_factor=params['scheduler_factor'],
+                model_kwargs=params.get('model_kwargs'),
                 # Параметры для новых режимов метрики
                 metric_mode=metric_mode,
                 min_signal_recall=min_signal_recall,
