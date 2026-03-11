@@ -30,7 +30,7 @@
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
 | [baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (5 алгоритмов) | `*_labeled.csv` → `baseline/reports/baseline_report.md`, `baseline/plots/` | [docs](docs/ml/baseline_experiments.py.md) | ✅ |
-| [data_loader.py](ML/data_loader.py) | Dataset/DataLoader для фрактальных последовательностей | `*_labeled.csv` → in-memory tensors | — | ✅ |
+| [data_loader.py](ML/data_loader.py) | Dataset/DataLoader для фрактальных последовательностей | `*_labeled.csv` → in-memory tensors, `*.npy` cache | — | ✅ |
 | [train.py](ML/train.py) | Единый скрипт обучения нейросетей (--task regression/classification) | DataLoader → `checkpoints/`, `plots/` | — | ✅ |
 | [losses.py](ML/losses.py) | Focal Loss для классификации, Huber Loss для регрессии | — | — | ✅ |
 | [utils.py](ML/utils.py) | Утилиты: seed, параметры, класификационные и регрессионные метрики | — | — | ✅ |
@@ -61,4 +61,4 @@
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-02-24
+**Последнее обновление**: 2026-03-11

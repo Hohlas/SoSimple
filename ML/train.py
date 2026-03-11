@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-02-27
+# Обновлён: 2026-03-11
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -542,9 +542,17 @@ def train_model(
         epochs=epochs,
         batch_size=batch_size,
         lr=lr,
+        weight_decay=weight_decay,
         patience=patience,
+        seed=seed,
+        scheduler_patience=scheduler_patience,
+        scheduler_factor=scheduler_factor,
+        focal_alpha=focal_alpha if focal_alpha is not None else DEFAULTS['alpha'],
         focal_gamma=focal_gamma,
+        huber_delta=huber_delta,
         use_scaler=use_scaler,
+        use_weighted_sampler=use_weighted_sampler,
+        n_params=n_params,
         result={
             'model_name': model_name,
             'task': task,
@@ -583,9 +591,17 @@ def _log_experiment(
     epochs: int,
     batch_size: int,
     lr: float,
+    weight_decay: float,
     patience: int,
+    seed: int,
+    scheduler_patience: int,
+    scheduler_factor: float,
+    focal_alpha: list[float] | None,
     focal_gamma: float | None,
+    huber_delta: float | None,
     use_scaler: bool,
+    use_weighted_sampler: bool,
+    n_params: int,
     result: dict,
     regression: bool,
 ) -> None:
@@ -596,16 +612,20 @@ def _log_experiment(
     config_dict = {
         'model': model_name,
         'task': task,
+        'seed': seed,
         'epochs': epochs,
         'batch_size': batch_size,
         'lr': lr,
-        'weight_decay': None,
+        'weight_decay': weight_decay,
         'patience': patience,
+        'scheduler_patience': scheduler_patience,
+        'scheduler_factor': scheduler_factor,
+        'focal_weights': focal_alpha if not regression else None,
         'focal_gamma': focal_gamma if not regression else None,
-        'focal_minority_weight': None,
-        'scheduler_patience': None,
-        'scheduler_factor': None,
+        'huber_delta': huber_delta if regression else None,
         'use_scaler': use_scaler,
+        'use_weighted_sampler': use_weighted_sampler,
+        'num_parameters': n_params,
     }
     
     # Строим metrics_dict

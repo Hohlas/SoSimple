@@ -1,13 +1,15 @@
 # =============================================================================
 # Файл: data_loader.py
-# Назначение: Dataset и DataLoader для фрактальных последовательностей
+# Назначение: Dataset и DataLoader для фрактальных последовательностей с кэшированием тензоров
 # Язык: Python 3.11+
-# Обновлён: 2026-02-27
+# Обновлён: 2026-03-11
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
 #     - DATA/Nero_validation_labeled.csv (откуда: processing/label_main.py)
-#   Выходные данные: нет (in-memory Dataset/DataLoader)
+#   Выходные данные: 
+#     - (in-memory Dataset/DataLoader)
+#     - Кэш NumPy массивов: DATA/X_*.npy, DATA/mask_*.npy, DATA/y_*.npy
 # Внешние зависимости:
 #   - torch>=2.0
 #   - pandas>=2.0
@@ -20,6 +22,7 @@
 #   - ATR broadcast на все 100 позиций как 11-й признак
 #   - StandardScaler fit на train, transform на val
 #   - Нормализация по каждому feature индексу отдельно
+#   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта 
 # =============================================================================
 
 """
@@ -256,26 +259,50 @@ def create_data_loaders(
         ...     logits = model(X_batch, mask_batch)
     """
     print("📦 Загрузка данных...")
-
-    # ── Загрузка CSV ─────────────────────────────────────────────────────────
-    df_train = pd.read_csv(TRAIN_FILE, sep=CSV_SEP, low_memory=False)
-    df_val = pd.read_csv(VAL_FILE, sep=CSV_SEP, low_memory=False)
-    print(f"  Train: {len(df_train)} строк, Val: {len(df_val)} строк")
-
-    # ── Извлечение меток ─────────────────────────────────────────────────────
     regression = (target == REGRESSION_TARGET)
 
+    def load_or_parse_data(csv_file: Path, target_col: str, prefix: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        x_path = DATA_DIR / f'X_{prefix}.npy'
+        mask_path = DATA_DIR / f'mask_{prefix}.npy'
+        y_path = DATA_DIR / f'y_{prefix}_{target_col}.npy'
+
+        if x_path.exists() and mask_path.exists() and y_path.exists():
+            print(f"  Загрузка кэшированных данных {prefix} из .npy...")
+            X = np.load(x_path)
+            mask = np.load(mask_path)
+            y = np.load(y_path)
+            return X, mask, y
+
+        print(f"  Кэш не найден. Загрузка {csv_file.name} и парсинг...")
+        df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)
+        
+        # Извлечение таргета
+        if regression:
+            y = np.abs(df[target_col].values.astype(np.float32))
+        else:
+            y = df[target_col].values.astype(int)
+            
+        print(f"  🔧 Парсинг фракталов в 3D тензоры ({prefix})...")
+        X, mask = parse_fractals_to_3d(df)
+        
+        # Сохранение кэша
+        np.save(x_path, X)
+        np.save(mask_path, mask)
+        np.save(y_path, y)
+        print(f"  ✅ Данные {prefix} сохранены в кэш.")
+        
+        return X, mask, y
+
+    X_train, mask_train, y_train = load_or_parse_data(TRAIN_FILE, target, 'train')
+    X_val, mask_val, y_val = load_or_parse_data(VAL_FILE, target, 'val')
+
+    print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
+
     if regression:
-        # Убираем знак из predict (берем по модулю), чтобы модель предсказывала только величину
-        y_train = np.abs(df_train[target].values.astype(np.float32))
-        y_val = np.abs(df_val[target].values.astype(np.float32))
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} predict (absolute): min={y.min():.4f}, max={y.max():.4f}, "
                   f"mean={y.mean():.4f}, std={y.std():.4f}")
     else:
-        y_train = df_train[target].values.astype(int)
-        y_val = df_val[target].values.astype(int)
-        # Проверка распределения классов
         for name, y in [('Train', y_train), ('Val', y_val)]:
             classes, counts = np.unique(y, return_counts=True)
             total = len(y)
@@ -284,14 +311,7 @@ def create_data_loaders(
             )
             print(f"  {name}: {dist_str}")
 
-    # ── Парсинг фракталов в 3D тензоры ───────────────────────────────────────
-    print("\n🔧 Парсинг фракталов в 3D тензоры...")
-    print("  Train...")
-    X_train, mask_train = parse_fractals_to_3d(df_train)
     print(f"  ✅ Train: X={X_train.shape}, mask={mask_train.shape}")
-
-    print("  Validation...")
-    X_val, mask_val = parse_fractals_to_3d(df_val)
     print(f"  ✅ Val: X={X_val.shape}, mask={mask_val.shape}")
 
     # ── Дополнительная Нормализация (StandardScaler) ─────────────────────────

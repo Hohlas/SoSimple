@@ -2,7 +2,7 @@
 # Файл: experiment_logger.py
 # Назначение: Единый CSV-логгер для всех ML-экспериментов
 # Язык: Python 3.11+
-# Обновлён: 2026-02-25
+# Обновлён: 2026-03-11
 # Зависимости:
 #   Входные данные:
 #     - Конфигурация эксперимента (dict)
@@ -30,6 +30,7 @@
 """
 
 import csv
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -47,13 +48,21 @@ CSV_COLUMNS = [
     'run_id',
     'model',
     'task',
+    'seed',
+    'git_commit',
     # Гиперпараметры обучения
     'epochs',
     'batch_size',
     'lr',
+    'weight_decay',
     'patience',
+    'scheduler_patience',
+    'scheduler_factor',
     'focal_weights',
+    'focal_gamma',
+    'huber_delta',
     'use_scaler',
+    'use_weighted_sampler',
     # Метрики (основная)
     'metric_name',
     'best_metric',
@@ -68,10 +77,26 @@ CSV_COLUMNS = [
     'f1_neutral',
     'f1_buy',
     # Доп. информация
+    'num_parameters',
     'training_time',
     'best_epoch',
     'checkpoint_path',
 ]
+
+
+# ─── Утилиты модуля ──────────────────────────────────────────────────────────
+
+def _get_git_commit() -> str:
+    """Получить короткий hash текущего git коммита."""
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            capture_output=True, text=True, timeout=5,
+            cwd=PROJECT_ROOT,
+        )
+        return result.stdout.strip() if result.returncode == 0 else 'unknown'
+    except Exception:
+        return 'unknown'
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -106,15 +131,44 @@ class CSVExperimentLogger:
         self._ensure_log_file_exists()
     
     def _ensure_log_file_exists(self) -> None:
-        """Создаёт CSV файл с заголовками, если он не существует."""
+        """Создаёт CSV файл с заголовками или мигрирует старый формат."""
         # Создаём директорию, если не существует
         self.log_filepath.parent.mkdir(parents=True, exist_ok=True)
         
-        # Создаём файл с заголовками, если не существует
         if not self.log_filepath.exists():
+            # Новый файл — записываем актуальные заголовки
             with open(self.log_filepath, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(CSV_COLUMNS)
+        else:
+            # Файл существует — проверяем, нужна ли миграция колонок
+            self._migrate_csv_columns()
+    
+    def _migrate_csv_columns(self) -> None:
+        """
+        Мигрирует старый CSV к новому формату колонок.
+        
+        Читает существующий файл, добавляет отсутствующие колонки
+        (заполняя пустыми значениями) и перезаписывает файл.
+        """
+        with open(self.log_filepath, 'r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            existing_columns = reader.fieldnames or []
+            
+            # Если колонки совпадают — миграция не нужна
+            if existing_columns == CSV_COLUMNS:
+                return
+            
+            rows = list(reader)
+        
+        # Перезаписываем файл с новыми колонками
+        with open(self.log_filepath, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+            writer.writeheader()
+            for row in rows:
+                # Новые колонки будут заполнены пустыми значениями
+                migrated = {col: row.get(col, '') for col in CSV_COLUMNS}
+                writer.writerow(migrated)
     
     def _generate_run_id(self, model_name: str) -> str:
         """
@@ -235,6 +289,9 @@ class CSVExperimentLogger:
         # Извлекаем F1 по классам
         f1_sell, f1_neutral, f1_buy = self._extract_f1_per_class(metrics_dict)
         
+        # Git commit (автоматически)
+        git_commit = config_dict.get('git_commit') or _get_git_commit()
+        
         # Формируем строку данных
         row = {
             # Идентификация
@@ -242,15 +299,23 @@ class CSVExperimentLogger:
             'run_id': run_id,
             'model': model_name,
             'task': config_dict.get('task', 'classification'),
+            'seed': self._format_value(config_dict.get('seed')),
+            'git_commit': git_commit,
             # Гиперпараметры
             'epochs': self._format_value(config_dict.get('epochs')),
             'batch_size': self._format_value(config_dict.get('batch_size')),
             'lr': self._format_value(config_dict.get('lr')),
+            'weight_decay': self._format_value(config_dict.get('weight_decay')),
             'patience': self._format_value(config_dict.get('patience')),
+            'scheduler_patience': self._format_value(config_dict.get('scheduler_patience')),
+            'scheduler_factor': self._format_value(config_dict.get('scheduler_factor')),
             'focal_weights': self._format_value(
                 config_dict.get('focal_weights') or config_dict.get('alpha')
             ),
+            'focal_gamma': self._format_value(config_dict.get('focal_gamma')),
+            'huber_delta': self._format_value(config_dict.get('huber_delta')),
             'use_scaler': self._format_value(config_dict.get('use_scaler')),
+            'use_weighted_sampler': self._format_value(config_dict.get('use_weighted_sampler')),
             # Метрики (основная)
             'metric_name': metrics_dict.get('metric_name', ''),
             'best_metric': self._format_value(
@@ -269,6 +334,9 @@ class CSVExperimentLogger:
             'f1_neutral': f1_neutral,
             'f1_buy': f1_buy,
             # Доп. информация
+            'num_parameters': self._format_value(
+                config_dict.get('num_parameters') or metrics_dict.get('num_parameters')
+            ),
             'training_time': self._format_value(metrics_dict.get('training_time')),
             'best_epoch': self._format_value(metrics_dict.get('best_epoch')),
             'checkpoint_path': checkpoint_path or '',

@@ -1,6 +1,9 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-11] — Ускорение загрузки данных
+### Добавлено
+- Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
 
 ## [2026-03-10] — Ключевые находки аудита проекта ([opus-project_audit_and_plan.md](docs/archive/03.10_audit_answers/Opus4.6/opus-project_audit_and_plan.md))
 - Data Leakage не обнаружен. DirAcc=97.5% — артефакт кода (`np.abs()` на таргете в [`data_loader.py:270`](ML/data_loader.py:270)), не утечка данных.
