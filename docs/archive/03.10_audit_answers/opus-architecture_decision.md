@@ -47,7 +47,7 @@
 
 ### Почему регрессия, а не классификация?
 
-Подробное обоснование: [project_audit_and_plan.md § 1.2](ML/reports/project_audit_and_plan.md)
+Подробное обоснование: [project_audit_and_plan.md § 1.2](docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md)
 
 Краткое:
 1. **Классификация уперлась в потолок** (F1_minority ≈ 0.37 у всех 5 архитектур включая RF)
@@ -185,7 +185,7 @@ signal_generation:
 7. **Ансамбль BiLSTM + Transformer** если оба > 0.55
 
 ### Полная дорожная карта
-См. [project_audit_and_plan.md § 2.2](ML/reports/project_audit_and_plan.md)
+См. [project_audit_and_plan.md § 2.2](docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md)
 
 ---
 
