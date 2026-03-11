@@ -232,3 +232,4 @@ DATA/*.npy
 # pictures
 *.png
 *.jpg 
+statistics/*.old_32k
