@@ -525,6 +525,7 @@ def run_threshold_analysis(
     model_name: str | None = None,
     checkpoint_path: str | None = None,
     seed: int = 42,
+    optuna_json: str | None = None,
 ) -> dict:
     """
     Полный pipeline анализа порогов.
@@ -571,8 +572,20 @@ def run_threshold_analysis(
     print(f"  Best {metric_name}: {pearson_r_val:.5f}")
     print(f"  Best epoch: {ckpt.get('epoch', '?')}")
 
+    # ── Загрузка Optuna parameters ───────────────────────────────────────────
+    model_kwargs = {}
+    if optuna_json:
+        import json
+        with open(optuna_json, 'r', encoding='utf-8') as f:
+            optuna_data = json.load(f)
+        best_params = optuna_data.get('best_params', {})
+        for k in ['hidden_size', 'num_layers', 'dropout']:
+            if k in best_params:
+                model_kwargs[k] = best_params[k]
+        print(f"  📥 Загружены параметры архитектуры: {model_kwargs}")
+
     # ── Создание модели и загрузка весов ─────────────────────────────────────
-    model = get_model(ckpt_model_name, num_classes=num_classes)
+    model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
     model = model.to(device)
     print(f"  ✅ Модель загружена")
@@ -665,6 +678,10 @@ def parse_args() -> argparse.Namespace:
         '--seed', type=int, default=42,
         help="Random seed (default: 42)"
     )
+    parser.add_argument(
+        '--optuna_json', type=str, default=None,
+        help="Путь к JSON файлу с лучшими параметрами Optuna"
+    )
     return parser.parse_args()
 
 
@@ -674,4 +691,5 @@ if __name__ == '__main__':
         model_name=args.model,
         checkpoint_path=args.checkpoint,
         seed=args.seed,
+        optuna_json=args.optuna_json,
     )
