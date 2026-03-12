@@ -1,6 +1,13 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-12] — Оптимизация regression завершена!
+HPO для BiLSTM успешно отработал, найдя параметры (lr=0.004, batch=256, dropout=0.36), которые позволили поднять best_value (Pearson r) с 0.323 до 0.342
+"сырые" данные фракталов (цены + базовый ATR) исчерпали свой потенциал
+✅ Лучшие параметры сохранены: [optuna_best_params_bilstm_regression.json](ML/reports/optuna_best_params_bilstm_regression.json)
+✅ История trials сохранена: [optuna_study_bilstm_regression_20260312_003636.json](ML/reports/optuna_study_bilstm_regression_20260312_003636.json)
+
+
 ## [2026-03-11] — ME-1: Подготовка к Optuna HPO для регрессии
 ### Изменено
 - `ML/train.py`: функция `train_model` теперь принимает `model_kwargs` и прокидывает их в `get_model()` для инициализации параметров архитектуры. Добавлено сохранение этих параметров в логи `experiments_log.csv`.

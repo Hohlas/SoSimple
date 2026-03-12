@@ -861,6 +861,8 @@ def parse_args() -> argparse.Namespace:
                         help="Минимальный recall сигнальных классов (для metric_mode=signal_precision). Default: 0.3")
     parser.add_argument('--use_weighted_sampler', action='store_true',
                         help="Использовать WeightedRandomSampler для балансировки train-батчей. По умолчанию выключено.")
+    parser.add_argument('--optuna_json', type=str, default=None,
+                        help="Путь к JSON файлу с лучшими параметрами Optuna")
     
     return parser.parse_args()
 
@@ -869,10 +871,39 @@ def main():
     """Точка входа: парсинг аргументов → обучение модели."""
     args = parse_args()
 
+    # Загружаем Optuna parameters если указан файл
+    model_kwargs = None
+    if args.optuna_json:
+        import json
+        with open(args.optuna_json, 'r', encoding='utf-8') as f:
+            optuna_data = json.load(f)
+        best_params = optuna_data.get('best_params', {})
+        
+        # Перезаписываем аргументы CLI
+        if 'lr' in best_params: args.lr = best_params['lr']
+        if 'batch_size' in best_params: args.batch_size = best_params['batch_size']
+        if 'patience' in best_params: args.patience = best_params['patience']
+        if 'weight_decay' in best_params: args.weight_decay = best_params['weight_decay']
+        if 'scheduler_patience' in best_params: args.scheduler_patience = best_params['scheduler_patience']
+        if 'scheduler_factor' in best_params: args.scheduler_factor = best_params['scheduler_factor']
+        if 'focal_gamma' in best_params: args.focal_gamma = best_params['focal_gamma']
+        if 'focal_minority_weight' in best_params: args.focal_minority_weight = best_params['focal_minority_weight']
+        if 'huber_delta' in best_params: setattr(args, 'huber_delta', best_params['huber_delta'])
+        
+        # Извлекаем параметры архитектуры
+        model_kwargs = {}
+        for k in ['hidden_size', 'num_layers', 'dropout']:
+            if k in best_params:
+                model_kwargs[k] = best_params[k]
+                
+        print(f"✅ Успешно загружены параметры Optuna из {args.optuna_json}")
+
     print("=" * 60)
     print("  NEURAL NETWORK TRAINING")
     print(f"  Модель: {args.model}  |  Задача: {args.task}")
     print(f"  Epochs: {args.epochs}, Batch: {args.batch_size}, LR: {args.lr}")
+    if model_kwargs:
+        print(f"  Model kwargs: {model_kwargs}")
     print("=" * 60)
 
     # Формируем focal_alpha из focal_minority_weight
@@ -893,11 +924,13 @@ def main():
         seed=args.seed,
         focal_alpha=focal_alpha,
         focal_gamma=args.focal_gamma,
+        huber_delta=getattr(args, 'huber_delta', DEFAULTS['huber_delta']),
         scheduler_patience=args.scheduler_patience,
         scheduler_factor=args.scheduler_factor,
         metric_mode=args.metric_mode,
         min_signal_recall=args.min_signal_recall,
         use_weighted_sampler=args.use_weighted_sampler,
+        model_kwargs=model_kwargs,
     )
 
     # Сохраняем результат как JSON

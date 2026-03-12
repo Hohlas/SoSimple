@@ -1,0 +1,1020 @@
+{
+  "study_name": "bilstm_regression",
+  "direction": "MAXIMIZE",
+  "best_trial": 18,
+  "best_value": 0.3420099914073944,
+  "best_params": {
+    "lr": 0.004145942899770848,
+    "batch_size": 256,
+    "patience": 5,
+    "weight_decay": 0.0006334341976289819,
+    "scheduler_patience": 6,
+    "scheduler_factor": 0.49279749177750537,
+    "huber_delta": 0.7891410373962812,
+    "hidden_size": 32,
+    "num_layers": 1,
+    "dropout": 0.3613612793673665
+  },
+  "trials": [
+    {
+      "number": 0,
+      "value": 0.3100135326385498,
+      "params": {
+        "lr": 0.0001329291894316216,
+        "batch_size": 64,
+        "patience": 4,
+        "weight_decay": 1.493656855461763e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5404460046972834,
+        "huber_delta": 1.5621088666940683,
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.17272998688284025
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 22:38:39.885805",
+      "datetime_complete": "2026-03-11 22:40:28.866981",
+      "duration": "0:01:48.981176"
+    },
+    {
+      "number": 1,
+      "value": 0.27590835094451904,
+      "params": {
+        "lr": 3.5498788321965036e-05,
+        "batch_size": 128,
+        "patience": 7,
+        "weight_decay": 2.62108787826544e-06,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.4465447373174767,
+        "huber_delta": 1.1841049763255538,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.1185801650879991
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 22:40:28.867766",
+      "datetime_complete": "2026-03-11 22:48:12.859730",
+      "duration": "0:07:43.991964"
+    },
+    {
+      "number": 2,
+      "value": 0.31498220562934875,
+      "params": {
+        "lr": 0.0006647135865318024,
+        "batch_size": 512,
+        "patience": 9,
+        "weight_decay": 8.200518402245835e-06,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.5736932106048627,
+        "huber_delta": 1.1602287406094018,
+        "hidden_size": 64,
+        "num_layers": 3,
+        "dropout": 0.20351199264000677
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 22:48:12.861143",
+      "datetime_complete": "2026-03-11 22:54:38.192825",
+      "duration": "0:06:25.331682"
+    },
+    {
+      "number": 3,
+      "value": 0.3322044312953949,
+      "params": {
+        "lr": 0.0009717775305059633,
+        "batch_size": 256,
+        "patience": 10,
+        "weight_decay": 0.00021154290797261214,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6579309401710595,
+        "huber_delta": 1.3968499682166278,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.23013213230530574
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 22:54:38.193370",
+      "datetime_complete": "2026-03-11 22:56:45.814230",
+      "duration": "0:02:07.620860"
+    },
+    {
+      "number": 4,
+      "value": 0.2820338308811188,
+      "params": {
+        "lr": 0.00014656553886225324,
+        "batch_size": 128,
+        "patience": 7,
+        "weight_decay": 2.6471141828218185e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.3298202574719083,
+        "huber_delta": 1.980330404900776,
+        "hidden_size": 32,
+        "num_layers": 3,
+        "dropout": 0.38274293753904687
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 22:56:45.815610",
+      "datetime_complete": "2026-03-11 23:04:24.666571",
+      "duration": "0:07:38.850961"
+    },
+    {
+      "number": 5,
+      "value": 0.3358413577079773,
+      "params": {
+        "lr": 0.0015382308040279,
+        "batch_size": 64,
+        "patience": 9,
+        "weight_decay": 7.411299781083242e-05,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.32542334011440943,
+        "huber_delta": 0.9664734825734933,
+        "hidden_size": 64,
+        "num_layers": 3,
+        "dropout": 0.28888597006477973
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:04:24.667566",
+      "datetime_complete": "2026-03-11 23:15:34.328733",
+      "duration": "0:11:09.661167"
+    },
+    {
+      "number": 6,
+      "value": 0.07342614233493805,
+      "params": {
+        "lr": 2.284455685002053e-05,
+        "batch_size": 512,
+        "patience": 6,
+        "weight_decay": 3.69997243146381e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.3101676506976381,
+        "huber_delta": 0.6618371404899567,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.4630265895704372
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-11 23:15:34.330135",
+      "datetime_complete": "2026-03-11 23:16:01.804950",
+      "duration": "0:00:27.474815"
+    },
+    {
+      "number": 7,
+      "value": 0.12909066677093506,
+      "params": {
+        "lr": 5.59598687800608e-05,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 3.0455368715396793e-06,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6232481518257668,
+        "huber_delta": 1.4501056347656351,
+        "hidden_size": 32,
+        "num_layers": 3,
+        "dropout": 0.31573689676626027
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-11 23:16:01.805276",
+      "datetime_complete": "2026-03-11 23:16:43.926894",
+      "duration": "0:00:42.121618"
+    },
+    {
+      "number": 8,
+      "value": 0.33884626626968384,
+      "params": {
+        "lr": 0.0026443593078398627,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 0.00028447512555118193,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.30278085221247625,
+        "huber_delta": 1.2661209538663485,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.47716388156500766
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:16:43.927225",
+      "datetime_complete": "2026-03-11 23:21:16.664467",
+      "duration": "0:04:32.737242"
+    },
+    {
+      "number": 9,
+      "value": 0.1545499563217163,
+      "params": {
+        "lr": 9.324140221663475e-05,
+        "batch_size": 512,
+        "patience": 10,
+        "weight_decay": 5.6930747676446135e-06,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.4203513239267078,
+        "huber_delta": 0.9272607415662014,
+        "hidden_size": 64,
+        "num_layers": 1,
+        "dropout": 0.2114585856946446
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-11 23:21:16.666010",
+      "datetime_complete": "2026-03-11 23:21:28.101905",
+      "duration": "0:00:11.435895"
+    },
+    {
+      "number": 10,
+      "value": 0.2457493394613266,
+      "params": {
+        "lr": 0.008493447532901665,
+        "batch_size": 64,
+        "patience": 3,
+        "weight_decay": 0.00071138894478991,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.41746485162825897,
+        "huber_delta": 1.8789068519032661,
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.4969450661841348
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-11 23:21:28.102400",
+      "datetime_complete": "2026-03-11 23:23:45.193236",
+      "duration": "0:02:17.090836"
+    },
+    {
+      "number": 11,
+      "value": 0.334703654050827,
+      "params": {
+        "lr": 0.003768453003754396,
+        "batch_size": 64,
+        "patience": 8,
+        "weight_decay": 9.238298768027128e-05,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.3739062080333209,
+        "huber_delta": 0.8601448804381884,
+        "hidden_size": 128,
+        "num_layers": 2,
+        "dropout": 0.32081049603020767
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:23:45.193566",
+      "datetime_complete": "2026-03-11 23:31:51.547528",
+      "duration": "0:08:06.353962"
+    },
+    {
+      "number": 12,
+      "value": 0.3351496756076813,
+      "params": {
+        "lr": 0.0022261117586426992,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 0.0003608668916532532,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.3134343539737888,
+        "huber_delta": 0.5551040260963358,
+        "hidden_size": 64,
+        "num_layers": 3,
+        "dropout": 0.4128695712200452
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:31:51.548151",
+      "datetime_complete": "2026-03-11 23:41:34.257093",
+      "duration": "0:09:42.708942"
+    },
+    {
+      "number": 13,
+      "value": 0.28726816177368164,
+      "params": {
+        "lr": 0.0004932987762056127,
+        "batch_size": 64,
+        "patience": 8,
+        "weight_decay": 5.658618927296891e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.48441189123349404,
+        "huber_delta": 0.9813421710229829,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.27810039746038406
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-11 23:41:34.257660",
+      "datetime_complete": "2026-03-11 23:42:14.848137",
+      "duration": "0:00:40.590477"
+    },
+    {
+      "number": 14,
+      "value": 0.3330520689487457,
+      "params": {
+        "lr": 0.0021534500892332427,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 1.5846819023510044e-05,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.36688781644696156,
+        "huber_delta": 1.6799418076549977,
+        "hidden_size": 128,
+        "num_layers": 3,
+        "dropout": 0.36968195751996663
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:42:14.848932",
+      "datetime_complete": "2026-03-11 23:58:21.993102",
+      "duration": "0:16:07.144170"
+    },
+    {
+      "number": 15,
+      "value": 0.33608317375183105,
+      "params": {
+        "lr": 0.008872754604813387,
+        "batch_size": 64,
+        "patience": 8,
+        "weight_decay": 0.00014272309664018905,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3706210610081008,
+        "huber_delta": 1.076582583186339,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.26554851301508897
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-11 23:58:21.993738",
+      "datetime_complete": "2026-03-12 00:03:45.456192",
+      "duration": "0:05:23.462454"
+    },
+    {
+      "number": 16,
+      "value": 0.28555530309677124,
+      "params": {
+        "lr": 0.009659526969480761,
+        "batch_size": 64,
+        "patience": 8,
+        "weight_decay": 0.00017233390068676307,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.3718888168213773,
+        "huber_delta": 1.26899122796822,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.432120674850406
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:03:45.456796",
+      "datetime_complete": "2026-03-12 00:06:15.631190",
+      "duration": "0:02:30.174394"
+    },
+    {
+      "number": 17,
+      "value": 0.34059059619903564,
+      "params": {
+        "lr": 0.004600500946946463,
+        "batch_size": 64,
+        "patience": 5,
+        "weight_decay": 0.0007864978751369729,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.4839944835498074,
+        "huber_delta": 0.7719361270875071,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.3533662957691397
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:06:15.631911",
+      "datetime_complete": "2026-03-12 00:09:41.167966",
+      "duration": "0:03:25.536055"
+    },
+    {
+      "number": 18,
+      "value": 0.3420099914073944,
+      "params": {
+        "lr": 0.004145942899770848,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.0006334341976289819,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.49279749177750537,
+        "huber_delta": 0.7891410373962812,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.3613612793673665
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:09:41.168486",
+      "datetime_complete": "2026-03-12 00:11:01.766118",
+      "duration": "0:01:20.597632"
+    },
+    {
+      "number": 19,
+      "value": 0.22862666845321655,
+      "params": {
+        "lr": 0.00029162138539387804,
+        "batch_size": 256,
+        "patience": 3,
+        "weight_decay": 0.0006484651545826793,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.5042322372835727,
+        "huber_delta": 0.7649058950072847,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.35194169239014383
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:11:01.766637",
+      "datetime_complete": "2026-03-12 00:11:11.079424",
+      "duration": "0:00:09.312787"
+    },
+    {
+      "number": 20,
+      "value": 0.3333919644355774,
+      "params": {
+        "lr": 0.0053877504293342125,
+        "batch_size": 256,
+        "patience": 4,
+        "weight_decay": 0.000910405056338124,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.5635137395580605,
+        "huber_delta": 0.5260376052586532,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.4185893797689661
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:11:11.080263",
+      "datetime_complete": "2026-03-12 00:11:42.017681",
+      "duration": "0:00:30.937418"
+    },
+    {
+      "number": 21,
+      "value": 0.3403598368167877,
+      "params": {
+        "lr": 0.0030364687161795858,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.000357305458676364,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6989879313923892,
+        "huber_delta": 0.7441066697779517,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.49856985073165466
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:11:42.019197",
+      "datetime_complete": "2026-03-12 00:12:49.583105",
+      "duration": "0:01:07.563908"
+    },
+    {
+      "number": 22,
+      "value": 0.3386022746562958,
+      "params": {
+        "lr": 0.004234703486044596,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.00046125631602877715,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.48593633215069115,
+        "huber_delta": 0.7412817441119699,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.3545632210962239
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:12:49.584577",
+      "datetime_complete": "2026-03-12 00:13:50.708885",
+      "duration": "0:01:01.124308"
+    },
+    {
+      "number": 23,
+      "value": 0.30265727639198303,
+      "params": {
+        "lr": 0.0012245993863389977,
+        "batch_size": 256,
+        "patience": 4,
+        "weight_decay": 0.0009736623269097227,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.6916728164886777,
+        "huber_delta": 0.6666491640569873,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.44862722603345373
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:13:50.709515",
+      "datetime_complete": "2026-03-12 00:14:06.119488",
+      "duration": "0:00:15.409973"
+    },
+    {
+      "number": 24,
+      "value": 0.3379074037075043,
+      "params": {
+        "lr": 0.005772681960480896,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.00044876380883022114,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.522987993507051,
+        "huber_delta": 0.8173059696717686,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.4050263264243317
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:14:06.120531",
+      "datetime_complete": "2026-03-12 00:15:29.231801",
+      "duration": "0:01:23.111270"
+    },
+    {
+      "number": 25,
+      "value": 0.2771727740764618,
+      "params": {
+        "lr": 0.00033317517230586994,
+        "batch_size": 256,
+        "patience": 4,
+        "weight_decay": 0.0002785688026279936,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.6139513310023041,
+        "huber_delta": 0.6570199209755866,
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.3501624680597639
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:15:29.232928",
+      "datetime_complete": "2026-03-12 00:16:00.532510",
+      "duration": "0:00:31.299582"
+    },
+    {
+      "number": 26,
+      "value": 0.33655846118927,
+      "params": {
+        "lr": 0.003158600684184045,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.00012824025705294686,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.446948949275128,
+        "huber_delta": 1.03948221883982,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.39083896882191277
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:16:00.532863",
+      "datetime_complete": "2026-03-12 00:16:52.562047",
+      "duration": "0:00:52.029184"
+    },
+    {
+      "number": 27,
+      "value": 0.2931784689426422,
+      "params": {
+        "lr": 0.0008624320262783081,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 0.0006025635315237527,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5790052651719648,
+        "huber_delta": 0.5024969726984023,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.4993111313847527
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:16:52.563501",
+      "datetime_complete": "2026-03-12 00:17:01.816300",
+      "duration": "0:00:09.252799"
+    },
+    {
+      "number": 28,
+      "value": 0.2984354794025421,
+      "params": {
+        "lr": 0.001623316401632703,
+        "batch_size": 128,
+        "patience": 3,
+        "weight_decay": 1.748000451336105e-05,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.4735799452079812,
+        "huber_delta": 0.8810348706736081,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.2506943990829773
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:17:01.816643",
+      "datetime_complete": "2026-03-12 00:17:27.861636",
+      "duration": "0:00:26.044993"
+    },
+    {
+      "number": 29,
+      "value": 0.32296720147132874,
+      "params": {
+        "lr": 0.005246835738750041,
+        "batch_size": 512,
+        "patience": 4,
+        "weight_decay": 0.00037995150719449637,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.523008048869822,
+        "huber_delta": 0.7507405081426699,
+        "hidden_size": 128,
+        "num_layers": 1,
+        "dropout": 0.15393428714347895
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:17:27.861978",
+      "datetime_complete": "2026-03-12 00:18:27.711859",
+      "duration": "0:00:59.849881"
+    },
+    {
+      "number": 30,
+      "value": 0.06062290072441101,
+      "params": {
+        "lr": 1.1753375407181641e-05,
+        "batch_size": 256,
+        "patience": 7,
+        "weight_decay": 0.00021116908484502105,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6042381032832861,
+        "huber_delta": 0.6491897804819395,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.3226629006792058
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:18:27.712549",
+      "datetime_complete": "2026-03-12 00:18:36.849760",
+      "duration": "0:00:09.137211"
+    },
+    {
+      "number": 31,
+      "value": 0.30184653401374817,
+      "params": {
+        "lr": 0.0030800493557748506,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 0.0002750073844439865,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.552832767004515,
+        "huber_delta": 1.3046723009743373,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.476093600008577
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:18:36.850177",
+      "datetime_complete": "2026-03-12 00:19:17.238266",
+      "duration": "0:00:40.388089"
+    },
+    {
+      "number": 32,
+      "value": 0.2924562096595764,
+      "params": {
+        "lr": 0.0023735877658426197,
+        "batch_size": 64,
+        "patience": 5,
+        "weight_decay": 0.0005019182626936281,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.4492093128338623,
+        "huber_delta": 1.1213005724082041,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.44513467481967894
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:19:17.239385",
+      "datetime_complete": "2026-03-12 00:19:57.624271",
+      "duration": "0:00:40.384886"
+    },
+    {
+      "number": 33,
+      "value": 0.27862295508384705,
+      "params": {
+        "lr": 0.006428935866566691,
+        "batch_size": 64,
+        "patience": 6,
+        "weight_decay": 0.0003409173783564323,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6884132621250431,
+        "huber_delta": 1.6260196484236022,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.4590022314855856
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:19:57.624842",
+      "datetime_complete": "2026-03-12 00:20:38.061281",
+      "duration": "0:00:40.436439"
+    },
+    {
+      "number": 34,
+      "value": 0.28870272636413574,
+      "params": {
+        "lr": 0.0006433253740869414,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 0.000994406008848361,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.4112164628342358,
+        "huber_delta": 1.4400209812248097,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.1016276929675653
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:20:38.061947",
+      "datetime_complete": "2026-03-12 00:21:19.275850",
+      "duration": "0:00:41.213903"
+    },
+    {
+      "number": 35,
+      "value": 0.31931272149086,
+      "params": {
+        "lr": 0.0028681177041572866,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 0.0001080574672992652,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6453847059050781,
+        "huber_delta": 1.1929589461756045,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.4290923910301728
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:21:19.276264",
+      "datetime_complete": "2026-03-12 00:22:02.029905",
+      "duration": "0:00:42.753641"
+    },
+    {
+      "number": 36,
+      "value": 0.26488566398620605,
+      "params": {
+        "lr": 0.001177454280670829,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 0.00022712915498235495,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.5325800141507532,
+        "huber_delta": 1.0011684248992645,
+        "hidden_size": 32,
+        "num_layers": 2,
+        "dropout": 0.4715216800262839
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:22:02.030977",
+      "datetime_complete": "2026-03-12 00:22:20.090028",
+      "duration": "0:00:18.059051"
+    },
+    {
+      "number": 37,
+      "value": 0.2843770682811737,
+      "params": {
+        "lr": 0.0017341034817001844,
+        "batch_size": 512,
+        "patience": 4,
+        "weight_decay": 4.202806901226411e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5835703839930775,
+        "huber_delta": 1.3428222748702094,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.3903003597762799
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:22:20.090802",
+      "datetime_complete": "2026-03-12 00:22:46.749168",
+      "duration": "0:00:26.658366"
+    },
+    {
+      "number": 38,
+      "value": 0.3054529130458832,
+      "params": {
+        "lr": 0.0038330181765763023,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 0.0006258075634125058,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.3465923158612856,
+        "huber_delta": 1.174441935273443,
+        "hidden_size": 32,
+        "num_layers": 3,
+        "dropout": 0.48248474043273964
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:22:46.749482",
+      "datetime_complete": "2026-03-12 00:24:44.967583",
+      "duration": "0:01:58.218101"
+    },
+    {
+      "number": 39,
+      "value": 0.22711722552776337,
+      "params": {
+        "lr": 0.00016487532715230198,
+        "batch_size": 128,
+        "patience": 5,
+        "weight_decay": 0.00027689130904602675,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.40151529206741815,
+        "huber_delta": 1.5299509406588383,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.30156453979279996
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:24:44.967929",
+      "datetime_complete": "2026-03-12 00:24:56.924434",
+      "duration": "0:00:11.956505"
+    },
+    {
+      "number": 40,
+      "value": 0.3039260804653168,
+      "params": {
+        "lr": 0.006910078350967101,
+        "batch_size": 512,
+        "patience": 6,
+        "weight_decay": 6.99021177753849e-05,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.6462176796688317,
+        "huber_delta": 0.5795638933650749,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.23840057847084645
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:24:56.924789",
+      "datetime_complete": "2026-03-12 00:25:23.603611",
+      "duration": "0:00:26.678822"
+    },
+    {
+      "number": 41,
+      "value": 0.3140906095504761,
+      "params": {
+        "lr": 0.004498311750550477,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.0005377364442047004,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.47594622582839297,
+        "huber_delta": 0.7517202301696531,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.34866796800628247
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:25:23.603929",
+      "datetime_complete": "2026-03-12 00:25:38.931880",
+      "duration": "0:00:15.327951"
+    },
+    {
+      "number": 42,
+      "value": 0.33321133255958557,
+      "params": {
+        "lr": 0.003966616118609397,
+        "batch_size": 256,
+        "patience": 5,
+        "weight_decay": 0.0004441347420062264,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.46095499235186366,
+        "huber_delta": 0.8424201522624296,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.3617057149811519
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:25:38.933351",
+      "datetime_complete": "2026-03-12 00:26:16.177182",
+      "duration": "0:00:37.243831"
+    },
+    {
+      "number": 43,
+      "value": 0.30811938643455505,
+      "params": {
+        "lr": 0.0018305512683509798,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 1.3932766505506098e-06,
+        "scheduler_patience": 6,
+        "scheduler_factor": 0.43531751362436155,
+        "huber_delta": 0.945551010851249,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.33390067673862056
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:26:16.178635",
+      "datetime_complete": "2026-03-12 00:26:31.614016",
+      "duration": "0:00:15.435381"
+    },
+    {
+      "number": 44,
+      "value": 0.30680951476097107,
+      "params": {
+        "lr": 0.0026352412620259005,
+        "batch_size": 256,
+        "patience": 4,
+        "weight_decay": 0.00018909770236716304,
+        "scheduler_patience": 7,
+        "scheduler_factor": 0.5044616245774045,
+        "huber_delta": 0.7070992694644391,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.3745824538551242
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:26:31.614636",
+      "datetime_complete": "2026-03-12 00:26:41.172428",
+      "duration": "0:00:09.557792"
+    },
+    {
+      "number": 45,
+      "value": 0.3363172709941864,
+      "params": {
+        "lr": 0.0012357775236193295,
+        "batch_size": 64,
+        "patience": 5,
+        "weight_decay": 0.0007680149242043227,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.4999133119505603,
+        "huber_delta": 0.6035512608832992,
+        "hidden_size": 32,
+        "num_layers": 1,
+        "dropout": 0.40377943410071093
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:26:41.172765",
+      "datetime_complete": "2026-03-12 00:29:04.464402",
+      "duration": "0:02:23.291637"
+    },
+    {
+      "number": 46,
+      "value": 0.29012230038642883,
+      "params": {
+        "lr": 0.006866058175220319,
+        "batch_size": 256,
+        "patience": 6,
+        "weight_decay": 0.00033905369137148087,
+        "scheduler_patience": 3,
+        "scheduler_factor": 0.5450454121361648,
+        "huber_delta": 0.9126391303959185,
+        "hidden_size": 128,
+        "num_layers": 3,
+        "dropout": 0.29278507930557574
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:29:04.465206",
+      "datetime_complete": "2026-03-12 00:31:16.109454",
+      "duration": "0:02:11.644248"
+    },
+    {
+      "number": 47,
+      "value": 0.339964896440506,
+      "params": {
+        "lr": 0.004367889234185559,
+        "batch_size": 64,
+        "patience": 5,
+        "weight_decay": 2.5271339403913e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.4939272063217596,
+        "huber_delta": 0.7988845917847323,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.1719795853868452
+      },
+      "state": "TrialState.COMPLETE",
+      "datetime_start": "2026-03-12 00:31:16.109905",
+      "datetime_complete": "2026-03-12 00:34:49.311637",
+      "duration": "0:03:33.201732"
+    },
+    {
+      "number": 48,
+      "value": 0.30501678586006165,
+      "params": {
+        "lr": 0.0007241673605512486,
+        "batch_size": 64,
+        "patience": 7,
+        "weight_decay": 1.69784241997734e-05,
+        "scheduler_patience": 4,
+        "scheduler_factor": 0.39736975728050733,
+        "huber_delta": 0.8342434643350468,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.17809866439988353
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:34:49.312192",
+      "datetime_complete": "2026-03-12 00:35:42.613758",
+      "duration": "0:00:53.301566"
+    },
+    {
+      "number": 49,
+      "value": 0.1781645268201828,
+      "params": {
+        "lr": 4.7429052318851945e-05,
+        "batch_size": 64,
+        "patience": 3,
+        "weight_decay": 2.7143913163638358e-05,
+        "scheduler_patience": 5,
+        "scheduler_factor": 0.34757897978006147,
+        "huber_delta": 1.2264592476403142,
+        "hidden_size": 64,
+        "num_layers": 2,
+        "dropout": 0.14664665886333328
+      },
+      "state": "TrialState.PRUNED",
+      "datetime_start": "2026-03-12 00:35:42.614119",
+      "datetime_complete": "2026-03-12 00:36:36.005328",
+      "duration": "0:00:53.391209"
+    }
+  ]
+}
