@@ -41,8 +41,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
-from ML.feature_engineering import enrich_features
-
 
 # ─── Константы ───────────────────────────────────────────────────────────────
 
@@ -288,9 +286,6 @@ def create_data_loaders(
             
         print(f"  🔧 Парсинг фракталов в 3D тензоры ({prefix})...")
         X, mask = parse_fractals_to_3d(df)
-        
-        print(f"  🧬 Feature Engineering: добавление динамических признаков...")
-        X = enrich_features(X, mask)
         
         # Сохранение кэша
         np.save(x_path, X)

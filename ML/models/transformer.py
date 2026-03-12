@@ -103,7 +103,7 @@ class TransformerClassifier(nn.Module):
 
     def __init__(
         self,
-        input_features: int = 17,
+        input_features: int = 11,
         d_model: int = 64,
         nhead: int = 4,
         num_layers: int = 2,
