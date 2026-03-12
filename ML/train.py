@@ -286,6 +286,7 @@ def train_model(
     metric_mode: str = 'f1_macro',
     min_signal_recall: float = 0.3,
     use_weighted_sampler: bool = False,
+    seq_len: int = 20,
     # Гиперпараметры архитектуры модели
     model_kwargs: dict | None = None,
     # Optuna Pruning
@@ -336,6 +337,7 @@ def train_model(
         target=target_col,
         use_scaler=use_scaler,
         use_weighted_sampler=use_weighted_sampler if not regression else False,
+        seq_len=seq_len,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -863,6 +865,8 @@ def parse_args() -> argparse.Namespace:
                         help="Использовать WeightedRandomSampler для балансировки train-батчей. По умолчанию выключено.")
     parser.add_argument('--optuna_json', type=str, default=None,
                         help="Путь к JSON файлу с лучшими параметрами Optuna")
+    parser.add_argument('--seq_len', type=int, default=20,
+                        help="Количество фракталов в последовательности (default: 20)")
     
     return parser.parse_args()
 
@@ -889,6 +893,7 @@ def main():
         if 'focal_gamma' in best_params: args.focal_gamma = best_params['focal_gamma']
         if 'focal_minority_weight' in best_params: args.focal_minority_weight = best_params['focal_minority_weight']
         if 'huber_delta' in best_params: setattr(args, 'huber_delta', best_params['huber_delta'])
+        if 'seq_len' in best_params: args.seq_len = best_params['seq_len']
         
         # Извлекаем параметры архитектуры
         model_kwargs = {}
@@ -901,7 +906,7 @@ def main():
     print("=" * 60)
     print("  NEURAL NETWORK TRAINING")
     print(f"  Модель: {args.model}  |  Задача: {args.task}")
-    print(f"  Epochs: {args.epochs}, Batch: {args.batch_size}, LR: {args.lr}")
+    print(f"  Epochs: {args.epochs}, Batch: {args.batch_size}, LR: {args.lr}, SeqLen: {args.seq_len}")
     if model_kwargs:
         print(f"  Model kwargs: {model_kwargs}")
     print("=" * 60)
@@ -931,6 +936,7 @@ def main():
         min_signal_recall=args.min_signal_recall,
         use_weighted_sampler=args.use_weighted_sampler,
         model_kwargs=model_kwargs,
+        seq_len=args.seq_len,
     )
 
     # Сохраняем результат как JSON

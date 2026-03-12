@@ -52,7 +52,7 @@ class BiLSTMClassifier(nn.Module):
 
     def __init__(
         self,
-        input_features: int = 11,
+        input_features: int = 17,
         hidden_size: int = 64,
         num_layers: int = 2,
         num_classes: int = 3,

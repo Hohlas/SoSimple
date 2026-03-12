@@ -50,7 +50,7 @@ class CNN1DClassifier(nn.Module):
 
     def __init__(
         self,
-        input_features: int = 11,
+        input_features: int = 17,
         num_classes: int = 3,
         dropout: float = 0.3,
     ):

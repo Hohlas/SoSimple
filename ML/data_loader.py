@@ -41,6 +41,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
+from ML.feature_engineering import enrich_features
+
 
 # ─── Константы ───────────────────────────────────────────────────────────────
 
@@ -231,6 +233,7 @@ def create_data_loaders(
     target: str = 'signal',
     use_scaler: bool = False,
     use_weighted_sampler: bool = False,
+    seq_len: int = 100,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -245,6 +248,7 @@ def create_data_loaders(
         use_scaler: Использовать ли математический StandardScaler (default: False)
         use_weighted_sampler: Использовать ли WeightedRandomSampler для train (только для classification).
                              Веса обратны частотам класса. Default: False
+        seq_len: Количество последних фракталов для обучения (максимум 100). Default: 100
 
     Возвращает:
         Кортеж (train_loader, val_loader, scaler):
@@ -285,6 +289,9 @@ def create_data_loaders(
         print(f"  🔧 Парсинг фракталов в 3D тензоры ({prefix})...")
         X, mask = parse_fractals_to_3d(df)
         
+        print(f"  🧬 Feature Engineering: добавление динамических признаков...")
+        X = enrich_features(X, mask)
+        
         # Сохранение кэша
         np.save(x_path, X)
         np.save(mask_path, mask)
@@ -295,6 +302,15 @@ def create_data_loaders(
 
     X_train, mask_train, y_train = load_or_parse_data(TRAIN_FILE, target, 'train')
     X_val, mask_val, y_val = load_or_parse_data(VAL_FILE, target, 'val')
+
+    # Truncate sequence length if requested
+    if seq_len < 100:
+        print(f"  ✂️ Усечение последовательности фракталов до {seq_len} (оставляем самые недавние)")
+        # Фракталы записаны: 0 - самый новый, 99 - самый старый
+        X_train = X_train[:, :seq_len, :]
+        mask_train = mask_train[:, :seq_len]
+        X_val = X_val[:, :seq_len, :]
+        mask_val = mask_val[:, :seq_len]
 
     print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
 

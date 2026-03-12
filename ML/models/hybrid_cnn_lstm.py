@@ -52,7 +52,7 @@ class HybridCNNLSTMClassifier(nn.Module):
 
     def __init__(
         self,
-        input_features: int = 11,
+        input_features: int = 17,
         cnn_channels: list[int] | None = None,
         lstm_hidden: int = 64,
         num_classes: int = 3,
