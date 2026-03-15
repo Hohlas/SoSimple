@@ -94,9 +94,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   ├── DATA_FLOW.md    # Поток данных
 │   ├── dataset_description.md # Описание структуры датасета
 │   ├── PRD.md          # Product Requirements
-│   ├── archive/        # Архив устаревшей документации
-│   │   ├── discussion.md
-│   │   └── 03.10_audit_answers/ # Аудит ИИ-моделей
+│   ├── archive/        # Архив НЕ актуальных заметок. НЕ СМОТРИ этот каталог!
 │   ├── data_analysis/  # Документация анализа
 │   │   ├── statistics.py.md
 │   │   └── EDA.ipynb.md
