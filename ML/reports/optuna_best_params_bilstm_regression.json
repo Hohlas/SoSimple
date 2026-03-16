@@ -1,20 +1,20 @@
 {
   "model": "bilstm",
   "task": "regression",
-  "best_value": 0.338176429271698,
+  "best_value": 0.33922144770622253,
   "best_params": {
-    "lr": 0.0021081446100329926,
-    "batch_size": 64,
-    "patience": 8,
-    "weight_decay": 0.00015744302471700546,
-    "scheduler_patience": 6,
-    "scheduler_factor": 0.3706210610081008,
-    "huber_delta": 0.9645289190849025,
+    "lr": 0.008076670578795617,
+    "batch_size": 256,
+    "patience": 5,
+    "weight_decay": 3.4558785002478565e-05,
+    "scheduler_patience": 7,
+    "scheduler_factor": 0.5020399517546839,
+    "asym_under_penalty": 1.0343096007309187,
     "hidden_size": 64,
-    "num_layers": 2,
-    "dropout": 0.27734455871272584
+    "num_layers": 3,
+    "dropout": 0.16326655507378643
   },
-  "best_trial": 15,
-  "n_trials": 30,
-  "timestamp": "20260312_112811"
+  "best_trial": 49,
+  "n_trials": 50,
+  "timestamp": "20260316_102024"
 }

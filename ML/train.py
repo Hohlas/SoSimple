@@ -509,6 +509,7 @@ def train_model(
                 'model_name': model_name,
                 'task': task,
                 'num_classes': num_classes,
+                'model_kwargs': model_kwargs,
             }, checkpoint_path)
             if not silent:
                 print(f"      ✅ Новый лучший {metric_name}={best_metric:.4f}, "

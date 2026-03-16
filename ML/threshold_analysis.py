@@ -572,17 +572,23 @@ def run_threshold_analysis(
     print(f"  Best {metric_name}: {pearson_r_val:.5f}")
     print(f"  Best epoch: {ckpt.get('epoch', '?')}")
 
-    # ── Загрузка Optuna parameters ───────────────────────────────────────────
-    model_kwargs = {}
+    # ── Загрузка Optuna / Architecture parameters ───────────────────────────
+    model_kwargs = ckpt.get('model_kwargs', {})
+    
     if optuna_json:
         import json
         with open(optuna_json, 'r', encoding='utf-8') as f:
             optuna_data = json.load(f)
         best_params = optuna_data.get('best_params', {})
+        # Приоритет параметрам из JSON, если они переданы явно
         for k in ['hidden_size', 'num_layers', 'dropout']:
             if k in best_params:
                 model_kwargs[k] = best_params[k]
-        print(f"  📥 Загружены параметры архитектуры: {model_kwargs}")
+        print(f"  📥 Загружены параметры архитектуры из {optuna_json}: {model_kwargs}")
+    elif model_kwargs:
+        print(f"  📦 Параметры архитектуры извлечены из чекпоинта: {model_kwargs}")
+    else:
+        print(f"  ⚠️  Параметры архитектуры не найдены в чекпоинте, используются дефолтные.")
 
     # ── Создание модели и загрузка весов ─────────────────────────────────────
     model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)

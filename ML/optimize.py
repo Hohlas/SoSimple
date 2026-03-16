@@ -20,7 +20,7 @@
 # Примечания:
 #   - Optuna Pruning: досрочно останавливает неуспешные trials
 #   - Classification: оптимизирует macro F1, Focal Loss weights
-#   - Regression: оптимизирует pearson_r, Huber delta
+#   - Regression: оптимизирует pearson_r, Huber delta или Asymmetric penalty
 # =============================================================================
 
 """
@@ -31,7 +31,8 @@
   - batch_size: [64, 128, 256, 512]
   - patience: [3, 10]
   - focal_alpha: веса классов для Focal Loss (classification)
-  - huber_delta: [0.5, 2.0] (regression)
+  - huber_delta: [0.5, 2.0] (regression, huber)
+  - asym_under_penalty: [1.0, 20.0] (regression, asymmetric)
 """
 
 import argparse
@@ -59,7 +60,8 @@ REPORTS_DIR = ML_DIR / 'reports'
 # ПРОСТРАНСТВО ГИПЕРПАРАМЕТРОВ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str) -> dict:
+def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str, 
+                            regression_loss: str = 'huber') -> dict:
     """
     Определение пространства поиска гиперпараметров.
 
@@ -93,8 +95,12 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str) -> 
         params['focal_alpha'] = [minority_weight, neutral_weight, minority_weight]
         params['focal_gamma'] = trial.suggest_float('focal_gamma', 1.0, 3.0)
     else:
-        # Regression: Huber Loss
-        params['huber_delta'] = trial.suggest_float('huber_delta', 0.5, 2.0)
+        # Regression
+        if regression_loss == 'asymmetric':
+            params['asym_under_penalty'] = trial.suggest_float('asym_under_penalty', 1.0, 20.0)
+            params['asym_over_penalty'] = 1.0 # Обычно фиксируем FP penalty на 1.0
+        else:
+            params['huber_delta'] = trial.suggest_float('huber_delta', 0.5, 2.0)
 
     # Architectural parameters
     params['model_kwargs'] = {}
@@ -113,7 +119,8 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str) -> 
 def create_objective(model_name: str, task: str, epochs: int, seed: int,
                      use_weighted_sampler: bool = False,
                      metric_mode: str = 'f1_macro',
-                     min_signal_recall: float = 0.3):
+                     min_signal_recall: float = 0.3,
+                     regression_loss: str = 'huber'):
     """
     Создание objective-функции для Optuna.
 
@@ -131,7 +138,7 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
     """
     def objective(trial: optuna.Trial) -> float:
         # Получаем гиперпараметры
-        params = suggest_hyperparameters(trial, task, model_name)
+        params = suggest_hyperparameters(trial, task, model_name, regression_loss)
         
         # Добавляем уникальность seed для каждого trial
         trial_seed = seed + trial.number
@@ -150,6 +157,9 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
                 focal_alpha=params.get('focal_alpha'),
                 focal_gamma=params.get('focal_gamma', DEFAULTS['gamma']),
                 huber_delta=params.get('huber_delta', DEFAULTS['huber_delta']),
+                regression_loss=regression_loss,
+                asym_over_penalty=params.get('asym_over_penalty', 1.0),
+                asym_under_penalty=params.get('asym_under_penalty', 10.0),
                 scheduler_patience=params['scheduler_patience'],
                 scheduler_factor=params['scheduler_factor'],
                 model_kwargs=params.get('model_kwargs'),
@@ -188,6 +198,7 @@ def run_optimization(
     use_weighted_sampler: bool = False,
     metric_mode: str = 'f1_macro',
     min_signal_recall: float = 0.3,
+    regression_loss: str = 'huber',
 ) -> optuna.Study:
     """
     Запуск оптимизации гиперпараметров.
@@ -226,6 +237,7 @@ def run_optimization(
         use_weighted_sampler=use_weighted_sampler,
         metric_mode=metric_mode,
         min_signal_recall=min_signal_recall,
+        regression_loss=regression_loss,
     )
 
     # Callback для вывода прогресса
@@ -383,6 +395,10 @@ def parse_args() -> argparse.Namespace:
         '--min_signal_recall', type=float, default=0.3,
         help="Минимальный recall сигнальных классов (для metric_mode=signal_precision). Default: 0.3"
     )
+    parser.add_argument(
+        '--regression_loss', type=str, default='huber', choices=['huber', 'asymmetric'],
+        help="Loss функция для регрессии (default: huber)"
+    )
     
     return parser.parse_args()
 
@@ -408,6 +424,7 @@ def main():
         use_weighted_sampler=args.use_weighted_sampler,
         metric_mode=args.metric_mode,
         min_signal_recall=args.min_signal_recall,
+        regression_loss=args.regression_loss,
     )
 
     # Выводим и сохраняем результаты
