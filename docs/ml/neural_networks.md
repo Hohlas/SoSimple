@@ -111,6 +111,9 @@ python -m ML.train --model transformer --task classification \
 | `--seed` | Random Seed | `42` |
 | `--metric_mode` | Целевая метрика для early stopping (classification): `f1_macro`, `f1_minority`, `signal_precision` | `f1_macro` |
 | `--min_signal_recall` | Минимальный recall для сигнальных классов (-1 и 1), используется только при `--metric_mode=signal_precision` | `0.3` |
+| `--regression_loss` | Функция потерь для регрессии: `huber` или `asymmetric` | `huber` |
+| `--asym_over_penalty` | Штраф за перепрогноз (over-prediction) в `asymmetric` | `1.0` |
+| `--asym_under_penalty` | Штраф за недопрогноз (under-prediction) в `asymmetric` | `10.0` |
 | `--use_weighted_sampler` | Использовать WeightedRandomSampler для балансировки train-батчей (классификация только) | `False` (выключено) |
 
 **Примечание:** Для Focal Loss веса классов вычисляются как:
@@ -151,7 +154,7 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 
 | Параметр | Значение | Обоснование |
 |----------|----------|-------------|
-| Loss | Focal Loss (γ=2, α=[0.45, 0.10, 0.45]) или HuberLoss (δ=1.0) | Focal Loss для несбалансированной классификации; Huber Loss для устойчивой к выбросам регрессии |
+| Loss | Focal Loss (γ=2, α=[0.45, 0.10, 0.45]) или HuberLoss (δ=1.0) / AsymmetricLoss | Focal Loss для несбалансированной классификации; Huber/Asymmetric для устойчивой или направленной регрессии |
 | Optimizer | AdamW (lr=1e-3, wd=1e-4) | Стандарт для трансформеров и LSTM |
 | Scheduler | ReduceLROnPlateau (patience=5, factor=0.5) | Мониторит основную метрику (max) |
 | Early stopping | patience=10 на F1 или pearson_r | Classification: val macro F1; Regression: pearson_r correlation. **НЕ по val_loss** |
@@ -177,6 +180,7 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 | `focal_gamma` | [1.0, 3.0] | Фокусирующий параметр Focal Loss | Только classification |
 | `focal_minority_weight` | [0.2, 0.7] | Вес классов -1 и 1 | Только classification |
 | `huber_delta` | [0.5, 2.0] | Параметр δ для Huber Loss | Только regression |
+| `asym_under_penalty` | [1.0, 20.0] | Штраф за FN (недопрогноз) | Только regression |
 
 ### Примеры команд запуска
 

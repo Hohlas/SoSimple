@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-03-11
+# Обновлён: 2026-03-16
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -24,15 +24,15 @@
 #   - seaborn>=0.12
 # Использование:
 #   python -m ML.train --model bilstm --task classification
-#   python -m ML.train --model bilstm --task regression
+#   python -m ML.train --model bilstm --task regression --regression_loss asymmetric
 #   python -m ML.train --model cnn1d  --task regression --epochs 30 --batch_size 512
 # Примечания:
 #   Classification:
-#     - Early stopping на val macro F1 (НЕ на loss!)
+#     - Early stopping на val macro F1 (или f1_minority/signal_precision)
 #     - Focal Loss с alpha=[0.45, 0.10, 0.45]
 #   Regression:
 #     - Early stopping на val pearson_r (максимизируем корреляцию)
-#     - Huber Loss (delta=1.0)
+#     - Huber Loss (delta=1.0) или Asymmetric Loss (penalizing FP/FN differently)
 #   - Scheduler: ReduceLROnPlateau на основной метрике (mode='max')
 # =============================================================================
 
@@ -68,7 +68,7 @@ except ImportError:
         pass
 
 from ML.data_loader import create_data_loaders, INV_LABEL_MAP
-from ML.losses import FocalLoss, HuberLoss
+from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
@@ -279,6 +279,10 @@ def train_model(
     focal_gamma: float = DEFAULTS['gamma'],
     # Huber Loss параметр (regression)
     huber_delta: float = DEFAULTS['huber_delta'],
+    # Asymmetric Loss параметры (regression)
+    regression_loss: str = 'huber',
+    asym_over_penalty: float = 1.0,
+    asym_under_penalty: float = 10.0,
     # Scheduler параметры
     scheduler_patience: int = DEFAULTS['scheduler_patience'],
     scheduler_factor: float = DEFAULTS['scheduler_factor'],
@@ -357,7 +361,13 @@ def train_model(
 
     # ── Loss, Optimizer, Scheduler ───────────────────────────────────────────
     if regression:
-        loss_fn = HuberLoss(delta=huber_delta).to(device)
+        if regression_loss == 'asymmetric':
+            loss_fn = AsymmetricLoss(
+                over_penalty=asym_over_penalty,
+                under_penalty=asym_under_penalty
+            ).to(device)
+        else:
+            loss_fn = HuberLoss(delta=huber_delta).to(device)
     else:
         # Используем переданный focal_alpha или дефолт
         alpha = focal_alpha if focal_alpha is not None else DEFAULTS['alpha']
@@ -851,6 +861,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--scheduler_factor', type=float, default=DEFAULTS['scheduler_factor'],
                         help=f"Factor для ReduceLROnPlateau (default: {DEFAULTS['scheduler_factor']})")
     
+    # Регрессионные функции потерь
+    parser.add_argument('--regression_loss', type=str, default='huber', choices=['huber', 'asymmetric'],
+                        help="Loss функция для регрессии (default: huber)")
+    parser.add_argument('--asym_over_penalty', type=float, default=1.0,
+                        help="Штраф за перепрогноз (FP) в AsymmetricLoss (default: 1.0)")
+    parser.add_argument('--asym_under_penalty', type=float, default=10.0,
+                        help="Штраф за недопрогноз (FN) в AsymmetricLoss (default: 10.0)")
+    
     # Флаг для включения StandardScaler (по дефолту False)
     parser.add_argument('--use_scaler', action='store_true',
                         help="Включить дополнительную нормализацию (StandardScaler). По умолчанию выключено.")
@@ -930,6 +948,9 @@ def main():
         focal_alpha=focal_alpha,
         focal_gamma=args.focal_gamma,
         huber_delta=getattr(args, 'huber_delta', DEFAULTS['huber_delta']),
+        regression_loss=args.regression_loss,
+        asym_over_penalty=args.asym_over_penalty,
+        asym_under_penalty=args.asym_under_penalty,
         scheduler_patience=args.scheduler_patience,
         scheduler_factor=args.scheduler_factor,
         metric_mode=args.metric_mode,

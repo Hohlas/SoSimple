@@ -1,19 +1,19 @@
 # =============================================================================
 # Файл: losses.py
-# Назначение: Focal Loss для обучения на несбалансированных данных
+# Назначение: Функции потерь для обучения (Focal Loss, Huber, Asymmetric)
 # Язык: Python 3.11+
-# Обновлён: 2026-02-23
+# Обновлён: 2026-03-16
 # Зависимости:
 #   Входные данные: нет
 #   Выходные данные: нет
 # Внешние зависимости:
 #   - torch>=2.0
 # Использование:
-#   from ML.losses import FocalLoss
+#   from ML.losses import FocalLoss, AsymmetricLoss
 # Примечания:
-#   - При дисбалансе 95%/2.5%/2.5% обычный CrossEntropy с class_weight
-#     недостаточен (baseline: recall minority 1-12%). Focal Loss снижает
-#     вклад уверенно классифицированных примеров (majority класс 0).
+#   - Focal Loss: для классификации при дисбалансе 95%/5%.
+#   - Asymmetric Loss: кастомная "торговая" функция потерь для регрессии,
+#     позволяющая штрафовать недопрогноз (FN) сильнее, чем перепрогноз (FP).
 # =============================================================================
 
 """
@@ -148,3 +148,49 @@ class HuberLoss(nn.Module):
         """
         return self._loss(preds, targets)
 
+
+class AsymmetricLoss(nn.Module):
+    """
+    Асимметричная функция потерь (Custom Trading Loss) для регрессии.
+
+    Позволяет по-разному штрафовать недопрогноз (under-prediction)
+    и перепрогноз (over-prediction). Полезно для предсказания predict,
+    когда ложный сигнал (over-prediction) приводит к финансовым потерям,
+    а упущенный сигнал (under-prediction) — только к упущенной прибыли.
+
+    Аргументы:
+        over_penalty: Множитель штрафа, если предсказание > реальности (FP)
+        under_penalty: Множитель штрафа, если предсказание < реальности (FN)
+        reduction: 'mean' | 'sum' | 'none'
+    """
+
+    def __init__(
+        self,
+        over_penalty: float = 1.0,
+        under_penalty: float = 1.0,
+        reduction: str = 'mean',
+    ):
+        super().__init__()
+        self.over_penalty = over_penalty
+        self.under_penalty = under_penalty
+        self.reduction = reduction
+
+    def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        error = preds - targets
+        squared_error = error ** 2
+        
+        # Применяем разные штрафы для (preds > targets) и (preds <= targets)
+        weights = torch.where(
+            error > 0, 
+            torch.tensor(self.over_penalty, device=preds.device, dtype=preds.dtype),
+            torch.tensor(self.under_penalty, device=preds.device, dtype=preds.dtype)
+        )
+        
+        loss = squared_error * weights
+        
+        if self.reduction == 'mean':
+            return loss.mean()
+        elif self.reduction == 'sum':
+            return loss.sum()
+        else:
+            return loss

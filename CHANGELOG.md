@@ -1,6 +1,12 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-16] — ME-5: Custom Trading Loss (AsymmetricLoss)
+### Добавлено
+- `ML/losses.py`: Реализован класс `AsymmetricLoss`, позволяющий задавать разные штрафы за перепрогноз (over-prediction, FP) и недопрогноз (under-prediction, FN).
+- `ML/train.py`: Добавлена поддержка `--regression_loss asymmetric` с параметрами `--asym_over_penalty` и `--asym_under_penalty`.
+- **Логика**: По умолчанию штраф за "пропуск" тренда (under-prediction) в 10 раз выше, чем за "ложный сигнал" (over-prediction), чтобы заставить модель не бояться предсказывать крупные движения в хвосте распределения.
+
 ## [2026-03-12] — ME-3: Feature Engineering (Динамические признаки)
 ### Добавлено
 - `ML/feature_engineering.py`: динамические признаки (price momentum), относительные фичи (нормировка front/back/impulse и momentum на ATR) и скользящие средние (MA3).
