@@ -297,6 +297,8 @@ def train_model(
     trial=None,
     # Режим без вывода в консоль (для Optuna)
     silent: bool = False,
+    # Очистка кэша
+    clear_cache: bool = False,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -342,6 +344,7 @@ def train_model(
         use_scaler=use_scaler,
         use_weighted_sampler=use_weighted_sampler if not regression else False,
         seq_len=seq_len,
+        clear_cache=clear_cache,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -887,6 +890,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--seq_len', type=int, default=20,
                         help="Количество фракталов в последовательности (default: 20)")
     
+    parser.add_argument(
+        '--clear_cache', action='store_true',
+        help="Удалить старый кэш .npy перед загрузкой"
+    )
+    
     return parser.parse_args()
 
 
@@ -897,7 +905,6 @@ def main():
     # Загружаем Optuna parameters если указан файл
     model_kwargs = None
     if args.optuna_json:
-        import json
         with open(args.optuna_json, 'r', encoding='utf-8') as f:
             optuna_data = json.load(f)
         best_params = optuna_data.get('best_params', {})

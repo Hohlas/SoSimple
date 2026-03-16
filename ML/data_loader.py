@@ -232,6 +232,7 @@ def create_data_loaders(
     use_scaler: bool = False,
     use_weighted_sampler: bool = False,
     seq_len: int = 100,
+    clear_cache: bool = False,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -268,12 +269,31 @@ def create_data_loaders(
         mask_path = DATA_DIR / f'mask_{prefix}.npy'
         y_path = DATA_DIR / f'y_{prefix}_{target_col}.npy'
 
-        if x_path.exists() and mask_path.exists() and y_path.exists():
-            print(f"  Загрузка кэшированных данных {prefix} из .npy...")
-            X = np.load(x_path)
-            mask = np.load(mask_path)
-            y = np.load(y_path)
-            return X, mask, y
+        # Список всех файлов кэша для данного набора
+        cache_files = [x_path, mask_path, y_path]
+        
+        # 1. Принудительная очистка
+        if clear_cache:
+            print(f"  🧹 Принудительная очистка кэша ({prefix})...")
+            for f in cache_files:
+                if f.exists():
+                    f.unlink()
+
+        # 2. Автоматическая инвалидация по дате изменения
+        elif all(f.exists() for f in cache_files):
+            csv_mtime = csv_file.stat().st_mtime
+            cache_mtimes = [f.stat().st_mtime for f in cache_files]
+            
+            if any(csv_mtime > mtime for mtime in cache_mtimes):
+                print(f"  🔄 Исходный файл {csv_file.name} обновился. Инвалидация кэша {prefix}...")
+                for f in cache_files:
+                    f.unlink()
+            else:
+                print(f"  Загрузка кэшированных данных {prefix} из .npy...")
+                X = np.load(x_path)
+                mask = np.load(mask_path)
+                y = np.load(y_path)
+                return X, mask, y
 
         print(f"  Кэш не найден. Загрузка {csv_file.name} и парсинг...")
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)

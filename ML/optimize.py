@@ -120,7 +120,8 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
                      use_weighted_sampler: bool = False,
                      metric_mode: str = 'f1_macro',
                      min_signal_recall: float = 0.3,
-                     regression_loss: str = 'huber'):
+                     regression_loss: str = 'huber',
+                     clear_cache: bool = False):
     """
     Создание objective-функции для Optuna.
 
@@ -169,6 +170,7 @@ def create_objective(model_name: str, task: str, epochs: int, seed: int,
                 use_weighted_sampler=use_weighted_sampler,
                 trial=trial,  # Для Pruning
                 silent=True,  # Минимальный вывод
+                clear_cache=clear_cache if trial.number == 0 else False, # Чистим только в первом trial
             )
 
             # Возвращаем основную метрику
@@ -199,6 +201,7 @@ def run_optimization(
     metric_mode: str = 'f1_macro',
     min_signal_recall: float = 0.3,
     regression_loss: str = 'huber',
+    clear_cache: bool = False,
 ) -> optuna.Study:
     """
     Запуск оптимизации гиперпараметров.
@@ -238,6 +241,7 @@ def run_optimization(
         metric_mode=metric_mode,
         min_signal_recall=min_signal_recall,
         regression_loss=regression_loss,
+        clear_cache=clear_cache,
     )
 
     # Callback для вывода прогресса
@@ -399,6 +403,10 @@ def parse_args() -> argparse.Namespace:
         '--regression_loss', type=str, default='huber', choices=['huber', 'asymmetric'],
         help="Loss функция для регрессии (default: huber)"
     )
+    parser.add_argument(
+        '--clear_cache', action='store_true',
+        help="Удалить старый кэш .npy перед загрузкой"
+    )
     
     return parser.parse_args()
 
@@ -425,6 +433,7 @@ def main():
         metric_mode=args.metric_mode,
         min_signal_recall=args.min_signal_recall,
         regression_loss=args.regression_loss,
+        clear_cache=args.clear_cache,
     )
 
     # Выводим и сохраняем результаты
