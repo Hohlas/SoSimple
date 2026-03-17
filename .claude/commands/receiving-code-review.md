@@ -1,0 +1,1 @@
+../../.kilocode/skills/receiving-code-review/SKILL.md

@@ -1,0 +1,1 @@
+../../.kilocode/skills/jupyter-processing/SKILL.md

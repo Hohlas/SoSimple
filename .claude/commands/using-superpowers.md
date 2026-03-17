@@ -1,0 +1,1 @@
+../../.kilocode/skills/using-superpowers/SKILL.md

@@ -1,0 +1,1 @@
+../../.kilocode/skills/executing-plans/SKILL.md

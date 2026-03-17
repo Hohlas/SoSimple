@@ -1,0 +1,1 @@
+../../.kilocode/skills/brainstorming/SKILL.md
