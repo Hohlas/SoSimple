@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cut -d';' -f1-12)"
+    ]
+  }
+}
