@@ -1,1 +1,0 @@
-../../.kilocode/skills/subagent-driven-development/SKILL.md

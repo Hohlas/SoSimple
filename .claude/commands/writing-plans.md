@@ -1,1 +1,0 @@
-../../.kilocode/skills/writing-plans/SKILL.md

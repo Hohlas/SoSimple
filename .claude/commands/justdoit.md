@@ -1,1 +1,0 @@
-../../.kilocode/skills/justdoit/SKILL.md

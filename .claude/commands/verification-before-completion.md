@@ -1,1 +1,0 @@
-../../.kilocode/skills/verification-before-completion/SKILL.md

@@ -1,1 +1,0 @@
-../../.kilocode/skills/systematic-debugging/SKILL.md

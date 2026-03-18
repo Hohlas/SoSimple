@@ -1,1 +1,0 @@
-../../.kilocode/skills/update-docs-on-code-change/SKILL.md

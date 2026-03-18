@@ -1,1 +1,0 @@
-../../.kilocode/skills/using-git-worktrees/SKILL.md

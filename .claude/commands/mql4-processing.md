@@ -1,1 +1,0 @@
-../../.kilocode/skills/mql4-processing/SKILL.md

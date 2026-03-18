@@ -1,1 +1,0 @@
-../../.kilocode/skills/finishing-a-development-branch/SKILL.md
