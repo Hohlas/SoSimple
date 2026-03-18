@@ -4,7 +4,7 @@
 
 **Goal:** Replace the flawed variable-horizon `predict` target with direction-independent fixed-horizon `up_N` / `dn_N` targets, computed incrementally in MQL4 and extracted in Python.
 
-**Architecture:** Up[3]/Dn[3] arrays are added to the PICS struct and accumulated on every bar in `LEVELS_FIND_AROUND()`. The values are written as part of each fractal's data (17 fields instead of 11). Python `label_updn()` extracts the 6 target columns (up_12, dn_12, up_24, dn_24, up_48, dn_48) by tracking the newest fractal through future rows until its Up/Dn values converge. The predict column is preserved for backward compatibility.
+**Architecture:** Up[3]/Dn[3] arrays are added to the PICS struct and accumulated on every bar in `LEVELS_FIND_AROUND()`. The values are written as part of each fractal's data (18 fields instead of 11). Row-level ATR in the CSV is Atr.Slow (baseline volatility); each fractal carries its own F[f].Atr (Atr.Fast at formation). Python computes `ATR_ratio = F[f].Atr / Atr.Slow` per fractal as a model feature. Python `label_updn()` extracts the 6 target columns (up_12, dn_12, up_24, dn_24, up_48, dn_48) by tracking the newest fractal through future rows until its Up/Dn values converge. The predict column is preserved for backward compatibility.
 
 **Tech Stack:** MQL4 (MT4 EA), Python 3.11, pandas
 
@@ -15,10 +15,10 @@
 | File | Change |
 |------|--------|
 | `MT/MQL4/Include/head_PIC.mqh` | Add `#define H12/H24/H48` + `float Up[3], Dn[3]` to PICS struct |
-| `MT/MQL4/Include/lib_PIC.mqh` | 3 edits: init in NEW_LEVEL(), accumulate in LEVELS_FIND_AROUND(), export in NERO_CSV_CREATE() |
-| `processing/label_signals.py` | Extend `parse_fractal()` (17 fields), add `label_updn()` |
+| `MT/MQL4/Include/lib_PIC.mqh` | 4 edits: init in NEW_LEVEL(), accumulate in LEVELS_FIND_AROUND(), export in NERO_CSV_CREATE() (18 fields, Atr.Slow as row ATR, F[f].Atr per fractal) |
+| `processing/label_signals.py` | Extend `parse_fractal()` (18 fields, adds `fractal_atr`), add `label_updn()` |
 | `processing/label_main.py` | Import and call `label_updn()` after `label_all()` |
-| `ML/data_loader.py` | Update `N_RAW_FEATURES=17`, `N_FRACTAL_FEATURES=16`, add target column options |
+| `ML/data_loader.py` | Update `N_RAW_FEATURES=18`, `N_FRACTAL_FEATURES=17`, replace ATR broadcast with ATR_ratio computation |
 | `tests/test_label_updn.py` | New unit test file for Python changes |
 
 ---
@@ -127,9 +127,17 @@ In MT4 Strategy Tester, run on 200 bars. Open Nero.csv (in `MT/MQL4/Files/`). Fi
 **Files:**
 - Modify: `MT/MQL4/Include/lib_PIC.mqh` (around lines 856–880)
 
-- [ ] **Step 1: Extend non-normalized output branch**
+- [ ] **Step 1: Change row-level ATR from Atr.Fast to Atr.Slow**
 
-Find the non-normalized fractal string block (the `else` branch, around line 864):
+Find line 773:
+```cpp
+string NeroInfo = BTIME(cur_bar) + ";0;0;" + S4(Atr.Fast);
+```
+Replace `S4(Atr.Fast)` with `S4(Atr.Slow)`.
+
+- [ ] **Step 2: Extend non-normalized output branch**
+
+Find the non-normalized fractal string block (the `else` branch, around line 884):
 
 ```cpp
 NeroInfo = NeroInfo + ";" +
@@ -152,40 +160,44 @@ Replace `S4(F[f].Imp);` with:
            S4(F[f].Imp) + ":" +
            S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
            S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
-           S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
+           S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
+           S4(F[f].Atr);
 ```
 
-- [ ] **Step 2: Extend normalized output branch**
+- [ ] **Step 3: Extend normalized output branch**
 
-Find the normalized fractal string block (the `if (USE_NORMALIZED_OUTPUT)` branch, around line 843). It also ends with `S_NORM(normImp);`. Replace similarly:
+Find the normalized fractal string block (the `if (USE_NORMALIZED_OUTPUT)` branch, around line 856). It also ends with `S4(F[f].Dn[H48]);`. Replace:
 
 ```cpp
-                    S_NORM(normImp) + ":" +
-                    S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
-                    S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
                     S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
 ```
+with:
+```cpp
+                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
+                    S4(F[f].Atr);
+```
 
-> Note: Up/Dn are exported raw (not normalized) even in the normalized branch — they are in price units and will be normalized by Python.
+> Note: Up/Dn and fractal_atr exported raw (not normalized) in both branches — Python handles them.
 
-- [ ] **Step 3: Compile. Expected: 0 errors.**
+- [ ] **Step 4: Compile. Expected: 0 errors.**
 
-- [ ] **Step 4: Run EA on full history, verify Nero.csv format**
+- [ ] **Step 5: Run EA on full history, verify Nero.csv format**
 
 ```bash
 head -3 MT/MQL4/Files/Nero.csv
 ```
 
-Each fractal field should have 17 colon-separated values (instead of 11). Example non-zero row:
+Each fractal field should have 18 colon-separated values (instead of 11). Example non-zero row:
 ```
-2026.01.15 10:00;0;0;0.0012;1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031;...
+2026.01.15 10:00;0;0;0.00085;1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031:0.00092;...
 ```
+(last field = F[f].Atr, 4th field in row header = Atr.Slow)
 
-- [ ] **Step 5: Commit MQL4 changes**
+- [ ] **Step 6: Commit MQL4 changes**
 
 ```bash
 git add MT/MQL4/Include/head_PIC.mqh MT/MQL4/Include/lib_PIC.mqh
-git commit -m "feat(mql4): add Up/Dn fixed-horizon targets to PICS struct and NERO_CSV"
+git commit -m "feat(mql4): add Up/Dn targets + fractal_atr to NERO_CSV, row ATR → Atr.Slow"
 ```
 
 ---
@@ -209,7 +221,7 @@ from label_signals import parse_fractal
 
 
 FRACTAL_11 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018"
-FRACTAL_17 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031"
+FRACTAL_18 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031:0.00092"
 
 
 def test_parse_fractal_11_fields_backward_compat():
@@ -218,10 +230,11 @@ def test_parse_fractal_11_fields_backward_compat():
     assert result['up_12'] == 0.0
     assert result['dn_12'] == 0.0
     assert result['up_48'] == 0.0
+    assert result['fractal_atr'] == 0.0
 
 
-def test_parse_fractal_17_fields():
-    result = parse_fractal(FRACTAL_17)
+def test_parse_fractal_18_fields():
+    result = parse_fractal(FRACTAL_18)
     assert result is not None
     assert result['up_12'] == 0.0015
     assert result['dn_12'] == 0.0010
@@ -229,6 +242,7 @@ def test_parse_fractal_17_fields():
     assert result['dn_24'] == 0.0019
     assert result['up_48'] == 0.0040
     assert result['dn_48'] == 0.0031
+    assert result['fractal_atr'] == pytest.approx(0.00092, abs=1e-6)
 
 
 def test_parse_fractal_none_input():
@@ -247,22 +261,23 @@ Expected: FAIL with `KeyError: 'up_12'`
 
 - [ ] **Step 3: Extend parse_fractal() in label_signals.py**
 
-In `processing/label_signals.py`, find the `return {` block (line 74) and add 6 new keys after `'impulse'`:
+In `processing/label_signals.py`, find the `return {` block (line 74) and add 7 new keys after `'impulse'`:
 
 ```python
-        'up_12':  float(parts[11]) if len(parts) > 11 else 0.0,
-        'dn_12':  float(parts[12]) if len(parts) > 12 else 0.0,
-        'up_24':  float(parts[13]) if len(parts) > 13 else 0.0,
-        'dn_24':  float(parts[14]) if len(parts) > 14 else 0.0,
-        'up_48':  float(parts[15]) if len(parts) > 15 else 0.0,
-        'dn_48':  float(parts[16]) if len(parts) > 16 else 0.0,
+        'up_12':      float(parts[11]) if len(parts) > 11 else 0.0,
+        'dn_12':      float(parts[12]) if len(parts) > 12 else 0.0,
+        'up_24':      float(parts[13]) if len(parts) > 13 else 0.0,
+        'dn_24':      float(parts[14]) if len(parts) > 14 else 0.0,
+        'up_48':      float(parts[15]) if len(parts) > 15 else 0.0,
+        'dn_48':      float(parts[16]) if len(parts) > 16 else 0.0,
+        'fractal_atr': float(parts[17]) if len(parts) > 17 else 0.0,
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
 pytest tests/test_label_updn.py::test_parse_fractal_11_fields_backward_compat \
-       tests/test_label_updn.py::test_parse_fractal_17_fields \
+       tests/test_label_updn.py::test_parse_fractal_18_fields \
        tests/test_label_updn.py::test_parse_fractal_none_input -v
 ```
 
@@ -285,9 +300,9 @@ Add to `tests/test_label_updn.py` (add these imports/functions to the existing f
 from label_signals import label_updn
 
 
-def _make_fractal(t, price, up12, dn12, up24, dn24, up48, dn48, strong=0, brk=0):
-    """Helper: build a fractal string with 17 fields."""
-    return f"{t}:{price:.5f}:1:0.001:0.001:{strong}:{brk}:0.0:0.001:1:0.001:{up12:.5f}:{dn12:.5f}:{up24:.5f}:{dn24:.5f}:{up48:.5f}:{dn48:.5f}"
+def _make_fractal(t, price, up12, dn12, up24, dn24, up48, dn48, strong=0, brk=0, atr=0.001):
+    """Helper: build a fractal string with 18 fields."""
+    return f"{t}:{price:.5f}:1:0.001:0.001:{strong}:{brk}:0.0:0.001:1:0.001:{up12:.5f}:{dn12:.5f}:{up24:.5f}:{dn24:.5f}:{up48:.5f}:{dn48:.5f}:{atr:.5f}"
 
 
 def test_label_updn_basic():
@@ -405,7 +420,7 @@ Expected: all PASSED
 
 ```bash
 git add processing/label_signals.py tests/test_label_updn.py
-git commit -m "feat(python): extend parse_fractal to 17 fields, add label_updn()"
+git commit -m "feat(python): extend parse_fractal to 18 fields (+fractal_atr), add label_updn()"
 ```
 
 ---
@@ -495,11 +510,41 @@ N_FRACTAL_FEATURES = 10  # Без fractal_time → price..impulse
 ```
 Replace with:
 ```python
-N_RAW_FEATURES = 17   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48
-N_FRACTAL_FEATURES = 16  # Без fractal_time → 16 features per fractal position
+N_RAW_FEATURES = 18   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr
+N_FRACTAL_FEATURES = 17  # Без fractal_time → 17 features per fractal (fields 1-17)
 ```
 
-- [ ] **Step 2: Update REGRESSION_TARGET and add new target names**
+- [ ] **Step 2: Replace ATR broadcast with ATR_ratio computation**
+
+Find the ATR broadcast block:
+```python
+# ATR как 11-й признак (индекс 10), broadcast на все позиции
+atr_values = pd.to_numeric(df['ATR'], errors='coerce').fillna(0).values.astype(np.float32)
+X[:, :, N_FRACTAL_FEATURES] = atr_values[:, np.newaxis]
+```
+Replace with:
+```python
+# ATR_ratio = F[f].Atr (Atr.Fast при формировании) / Atr.Slow (текущий бар, row-level)
+# fractal_atr уже в X[:,:,16] (последнее поле из CSV, feat_idx = 17-1 = 16)
+atr_slow = pd.to_numeric(df['ATR'], errors='coerce').fillna(1.0).values.astype(np.float32)
+denom = np.where(atr_slow > 0, atr_slow, 1.0)
+X[:, :, N_FRACTAL_FEATURES - 1] = X[:, :, N_FRACTAL_FEATURES - 1] / denom[:, np.newaxis]
+```
+
+Also update the docstring comment above the function (`n_features = N_FRACTAL_FEATURES + 1` becomes `n_features = N_FRACTAL_FEATURES`):
+
+Find:
+```python
+    # 10 фрактальных features (без fractal_time) + 1 ATR = 11
+    n_features = N_FRACTAL_FEATURES + 1
+```
+Replace with:
+```python
+    # 17 фрактальных features (без fractal_time); поле 17 (fractal_atr) → ATR_ratio in-place
+    n_features = N_FRACTAL_FEATURES
+```
+
+- [ ] **Step 3: Update REGRESSION_TARGET and add new target names**
 
 Find:
 ```python
@@ -515,7 +560,7 @@ REGRESSION_TARGET = 'predict'  # backward compat default
 UPDN_TARGETS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 ```
 
-- [ ] **Step 3: Verify data loads without error**
+- [ ] **Step 4: Verify data loads without error**
 
 ```bash
 cd /home/hohla/git/SoSimple && source .venv/bin/activate
@@ -528,15 +573,15 @@ print('y shape:', y.shape)
 "
 ```
 
-Expected: `X shape: (batch_size, 20, 17)` — 17 features per fractal (16 + ATR).
+Expected: `X shape: (batch_size, 20, 17)` — 17 features per fractal position (price..Dn48 + ATR_ratio).
 
 > Note: `create_data_loaders` signature uses `target=` (not `task=`). Available values: `'signal'`, `'predict'`.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add ML/data_loader.py
-git commit -m "feat(ml): update data_loader for 17-field fractals and add UPDN_TARGETS"
+git commit -m "feat(ml): update data_loader for 18-field fractals, replace ATR broadcast with ATR_ratio"
 ```
 
 ---
@@ -577,10 +622,10 @@ Add at the top of CHANGELOG.md:
 ### Добавлено
 - `head_PIC.mqh`: `float Up[3], Dn[3]` в структуру PICS + `#define H12/H24/H48`
 - `lib_PIC.mqh`: инкрементальное накопление Up/Dn в `LEVELS_FIND_AROUND()` для всех фракталов
-- `lib_PIC.mqh`: экспорт Up/Dn как полей 12–17 каждого фрактала в `NERO_CSV_CREATE()`
-- `label_signals.py`: `parse_fractal()` расширен до 17 полей, новая функция `label_updn()`
+- `lib_PIC.mqh`: row-level ATR заменён на Atr.Slow; экспорт Up/Dn + F[f].Atr как полей 12–18 в `NERO_CSV_CREATE()`
+- `label_signals.py`: `parse_fractal()` расширен до 18 полей (+ fractal_atr), новая функция `label_updn()`
 - `label_main.py`: шаг `label_updn` добавлен в pipeline
-- `data_loader.py`: `N_RAW_FEATURES=17`, `N_FRACTAL_FEATURES=16`, `UPDN_TARGETS`
+- `data_loader.py`: `N_RAW_FEATURES=18`, `N_FRACTAL_FEATURES=17`, ATR broadcast → ATR_ratio, `UPDN_TARGETS`
 ### Суть
 Заменяем шумный таргет `predict` (переменный горизонт) на direction-independent up/dn с фиксированными горизонтами 12/24/48 баров. Для входа берётся `F[f].P` (цена фрактала).
 ```
