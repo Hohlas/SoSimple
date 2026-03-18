@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-02-11
+# Обновлён: 2026-03-18
 #
 # Зависимости:
 #   Входные данные:
@@ -16,7 +16,7 @@
 #     - DATA/{stem}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
 #     - DATA/{stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
-#   - label_signals.py (функция label_all)
+#   - label_signals.py (функции label_all, label_updn)
 #   - normalize.py (функции normalize_rowwise, normalize_atr_train, normalize_atr_inference)
 # Внешние зависимости:
 #   - pandas>=2.0.0
@@ -30,10 +30,10 @@
 #   python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
-#   - Входной путь (--input) задаётся относительно корня проекта; вывод — в каталог DATA/
-#   - Конвейер: сортировка -> маркировка -> нормализация (построчная) -> разделение -> ATR нормализация
+#   - Конвейер: сортировка -> маркировка (signal+predict) -> up/dn таргеты -> нормализация -> split -> ATR norm
 #   - Построчная нормализация выполняется до split (нет data leakage)
 #   - ATR нормализация: fit на train, transform на val/test
+#   - up_12..dn_48 не нормализуются (таргеты регрессии в ценовых единицах)
 # =============================================================================
 
 """

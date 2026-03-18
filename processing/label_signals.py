@@ -1,27 +1,27 @@
 # =============================================================================
 # Файл: label_signals.py
-# Назначение: Маркировка торговых сигналов и расчет прогнозных значений (predict)
+# Назначение: Маркировка торговых сигналов, predict и up/dn fixed-horizon таргетов
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-02-11
+# Обновлён: 2026-03-18
 #
 # Зависимости:
 #   Входные данные:
-#     - CSV файлы (например, Nero.csv или Nero_train.csv) с колонками фракталов
+#     - CSV файлы с колонками фракталов (18 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr)
 #   Выходные данные:
-#     - Обновленный pd.DataFrame с колонками 'signal' и 'predict'
-#     - CSV файл по указанному output_path
+#     - pd.DataFrame с колонками 'signal', 'predict', 'up_12'..'dn_48'
 # Внешние зависимости:
 #   - pandas>=2.0.0
 #
 # Использование:
-#   from label_signals import label_all
-#   label_all('input.csv', 'output.csv', debug=True)
+#   from label_signals import label_all, label_updn
+#   labeled_df = label_all('input.csv', 'output.csv', debug=True)
+#   labeled_df = label_updn(labeled_df, debug=True)
 #
 # Примечания:
-#   - Использует "forward-looking" логику (заглядывание в будущее) для расчета 'predict'
-#   - Формат строки фрактала является критически важным для парсинга
+#   - Обратная совместимость: parse_fractal() принимает строки с 7..18 полями
+#   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
 """

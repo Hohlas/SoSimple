@@ -6,7 +6,7 @@
 //! @author   [Автор не указан]
 //! @version  230.525+
 //! @date     Создан: Неизвестно
-//! @date     Обновлён: 2026-02-06
+//! @date     Обновлён: 2026-03-18
 //!
 //! @details
 //! Основное назначение:
@@ -19,7 +19,8 @@
 //!   - Определение статусов уровней (CLEAR, TOUCH, MIRROR, BROKEN)
 //!   - Детекция ложных пробоев и флэтов
 //!   - Определение локального/глобального тренда
-//!   - Экспорт данных в CSV для нейросетевого обучения (Nero)
+//!   - Инкрементальное накопление Up[3]/Dn[3] для каждого фрактала (горизонты H12/H24/H48)
+//!   - Экспорт данных в CSV: 18 полей на фрактал (+ Up/Dn/Atr); строка-ATR = Atr.Slow
 //!
 //! Архитектура:
 //!   - Расширяет класс EXPERT, добавляя методы работы с уровнями
@@ -770,7 +771,7 @@ string S_NORM(float value) {
 void EXPERT::NERO_CSV_CREATE(int cur_bar) {
    string FileName = "Nero" + ".csv"; //  + "_"+Symbol() + S0(Period())
    int File = FileOpen(FileName, FILE_READ | FILE_WRITE);
-   string NeroInfo = BTIME(cur_bar) + ";0;0;" + S4(Atr.Fast);
+   string NeroInfo = BTIME(cur_bar) + ";0;0;" + S4(Atr.Slow);
    uchar cnt = 1;
 
 // Первый проход: вычисление min/max и сбор значений для перцентилей
@@ -880,7 +881,7 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S_NORM(normImp) + ":" +
                     S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
-                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
+                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" + S4(F[f].Atr);
       } else {
          NeroInfo = NeroInfo + ";" +
                     S0(F[f].T) + ":" +
@@ -896,7 +897,7 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Imp) + ":" +
                     S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
-                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
+                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" + S4(F[f].Atr);
       }
       cnt++;
    }

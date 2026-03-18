@@ -2,12 +2,12 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей с кэшированием тензоров
 # Язык: Python 3.11+
-# Обновлён: 2026-03-11
+# Обновлён: 2026-03-18
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
 #     - DATA/Nero_validation_labeled.csv (откуда: processing/label_main.py)
-#   Выходные данные: 
+#   Выходные данные:
 #     - (in-memory Dataset/DataLoader)
 #     - Кэш NumPy массивов: DATA/X_*.npy, DATA/mask_*.npy, DATA/y_*.npy
 # Внешние зависимости:
@@ -19,10 +19,11 @@
 #   from ML.data_loader import create_data_loaders
 # Примечания:
 #   - fractal_time (индекс 0) исключается из features — может дать data leakage
-#   - ATR broadcast на все 100 позиций как 11-й признак
+#   - N_RAW_FEATURES=18: поле 17 (fractal_atr) → ATR_ratio = fractal_atr / Atr.Slow (in-place)
+#   - N_FRACTAL_FEATURES=17: итого 17 признаков на позицию; форма X: (n, 100, 17)
+#   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
-#   - Нормализация по каждому feature индексу отдельно
-#   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта 
+#   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
 # =============================================================================
 
 """

@@ -14,7 +14,7 @@
 | `INIT()` | Инициализация модуля: проверка ATR, настройка констант, создание CSV |
 | `PIC()` | Основной цикл: обновление ATR, поиск фракталов, определение тренда |
 | `NEW_LEVEL()` | Формирование нового уровня и удаление слабых |
-| `LEVELS_FIND_AROUND()` | Поиск ближайших "первых" уровней HI/LO/HI2/LO2 |
+| `LEVELS_FIND_AROUND()` | Поиск ближайших уровней HI/LO/HI2/LO2; попутно накапливает Up[3]/Dn[3] для всех фракталов |
 | `LOCAL_TREND()` | Определение локального тренда по пробитым уровням |
 | `LEV_TOUCH()` | Проверка касания уровня |
 | `LEV_BREAK()` | Проверка пробоя уровня (баром или фракталом) |
@@ -83,12 +83,15 @@ struct FRACTAL {
     float BackVal;     // Амплитуда заднего фронта
     float Pwr;         // Сила = MIN(FrntVal, BackVal)
     float Imp;         // Импульс из пика
+    float Atr;         // Atr.Fast в момент формирования фрактала
     char Brk;          // Статус: CLEAR(0), TOUCH(1), MIRROR(2), BROKEN(3+)
     char Cnt;          // Количество совпадений с уровнями
     float PwrSum;      // Сумма сил совпадающих пиков
     float Rev;         // Разворотный пик (Pwr предыдущего)
     bool Strong;       // Признак "первого" уровня
     bool StrongImp;    // Признак сильного импульса
+    float Up[3];       // max(High-P) за H12/H24/H48 баров (накапливается в LEVELS_FIND_AROUND)
+    float Dn[3];       // max(P-Low) за H12/H24/H48 баров
     // ... и другие поля
 };
 ```
@@ -111,15 +114,20 @@ struct FRACTAL {
 ## Формат CSV для нейросети
 
 **Заголовки**: `time;signal;predict;ATR;fractal0;fractal1;...`
+- `ATR` = `Atr.Slow` (долгосрочная волатильность текущего бара; знаменатель для ATR_ratio в Python)
 
-**Формат фрактала** (нормализованный):
+**Формат фрактала** (18 полей):
 ```
-T:normPrice:Dir:normFrnt:normBack:Strong:normBrk:normRev:normPwrSum:normCnt:normImp
+T:Price:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr
 ```
+- Поля 0–10: классические признаки уровня
+- Поля 11–16: Up/Dn за горизонты H12/H24/H48 (накоплены в `LEVELS_FIND_AROUND`)
+- Поле 17: `FractalAtr` = `F[f].Atr` (Atr.Fast в момент формирования; числитель ATR_ratio)
 
-**Нормализация (опционально)**:
+**Нормализация (опционально, USE_NORMALIZED_OUTPUT)**:
 - `Price`, `Brk` — Min-Max [0, 1]
 - `FrntVal`, `BackVal`, `PwrSum`, `Rev`, `Imp`, `Cnt` — Piecewise (линейная до 95-го перцентиля, логарифмическое сжатие хвоста)
+- `Up*/Dn*`, `FractalAtr` — всегда сырые (нормализуются в Python)
 
 ---
 

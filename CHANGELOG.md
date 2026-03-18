@@ -1,6 +1,21 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-18] — ME-6: Up/Dn Fixed-Horizon Targets + ATR_ratio
+### Причина
+Все 4 модели убыточны (PF=0.728). Диагноз: таргет `predict` шумный (переменный горизонт, зависимость от `direction`). Решение — direction-independent таргеты с фиксированным горизонтом.
+
+### Добавлено
+- **`head_PIC.mqh`**: поля `float Up[3], Dn[3]` в структуру PICS; `#define H12/H24/H48` — индексы горизонтов.
+- **`lib_PIC.mqh`**: инкрементальное накопление `Up/Dn` в `LEVELS_FIND_AROUND()` для всех фракталов без фильтров (горизонты 12/24/48 баров H1). Строка-ATR переключена на `Atr.Slow`. CSV теперь содержит 18 полей на фрактал (+Up12/Dn12/Up24/Dn24/Up48/Dn48/FractalAtr).
+- **`label_signals.py`**: `parse_fractal()` расширен до 18 полей (поле 17 = `fractal_atr`). Новая функция `label_updn()`: для каждой строки сканирует вперёд до вытеснения fractal0, берёт последние накопленные Up/Dn.
+- **`label_main.py`**: шаг `label_updn` добавлен в pipeline после `label_all`.
+- **`data_loader.py`**: `N_RAW_FEATURES=18`, `N_FRACTAL_FEATURES=17`. ATR broadcast заменён на `ATR_ratio = fractal_atr / Atr.Slow` (вычисляется in-place для позиции 16 в X). Добавлена константа `UPDN_TARGETS`.
+- **`tests/test_label_updn.py`**: 5 unit-тестов для `parse_fractal` и `label_updn`.
+
+### Суть
+`up_N` = max(High - P), `dn_N` = max(P - Low) за первые N баров после формирования фрактала. Оба ≥ 0, не зависят от направления. `ATR_ratio` = Atr.Fast(формирование) / Atr.Slow(текущий) — относительная волатильность как признак. Критерий успеха: PF > 1.5.
+
 ## [2026-03-16] — ME-5: Custom Trading Loss (AsymmetricLoss)
 ### Добавлено
 - `ML/losses.py`: Реализован класс `AsymmetricLoss`, позволяющий задавать разные штрафы за перепрогноз (over-prediction, FP) и недопрогноз (under-prediction, FN).
