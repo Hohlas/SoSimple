@@ -268,6 +268,8 @@ void EXPERT::NEW_LEVEL(char NewPicDir,
    F[n].Fls.Phase=NONE; // стадия ложняка: NONE, START, CONFIRM, BREAK
    F[n].TRG.N=0;  // кол-во вершин в треугольнике
    F[n].PwrSum=PwrSum;  // Сумма сил пиков, совпадающих с этим по уровню
+   F[n].Up[H12]=0.0f; F[n].Up[H24]=0.0f; F[n].Up[H48]=0.0f;
+   F[n].Dn[H12]=0.0f; F[n].Dn[H24]=0.0f; F[n].Dn[H48]=0.0f;
    F[n].Atr=Atr.Fast; // значение быстрого atr на момент формирования пика 
    if (Dir>0){ // вершина  
       F[n].Tr=New-Atr.Fast;// для вершины трендовый уровень не продажу (пока хай не опустится под трендовый, он будет не действителен)     LINE("PicHi="+S4(F[hi].P)+" F[hi].Trd="+S4(F[hi].Trd), bar+PicPer*2, F[hi].Trd,  bar, F[hi].Trd, clrRed);
@@ -372,6 +374,22 @@ void EXPERT::LEVELS_FIND_AROUND(){ // П О И С К   Б Л И З Л Е Ж А �
    HI=0; LO=0;
    for (uchar f=1; f<LevelsAmount; f++){// в нулевом хранится последнее значение, оно же записывается в массив вместо самого слабого пика 
       if (F[f].P==0)    continue; // пустые значения
+      int dist = SHIFT(F[f].T) - bar;
+      if (dist < 0 || dist > 48) continue;  // вне горизонта — пропускаем
+      float hmp = H - F[f].P;   // upward excursion from fractal price
+      float pml = F[f].P - L;   // downward excursion from fractal price
+      if (dist <= 48) {
+         if (hmp > F[f].Up[H48]) F[f].Up[H48] = hmp;
+         if (pml > F[f].Dn[H48]) F[f].Dn[H48] = pml;
+      }
+      if (dist <= 24) {
+         if (hmp > F[f].Up[H24]) F[f].Up[H24] = hmp;
+         if (pml > F[f].Dn[H24]) F[f].Dn[H24] = pml;
+      }
+      if (dist <= 12) {
+         if (hmp > F[f].Up[H12]) F[f].Up[H12] = hmp;
+         if (pml > F[f].Dn[H12]) F[f].Dn[H12] = pml;
+      }
       //if (F[f].T==StringToTime(TEST_DATE)) V(" Brk="+S0(F[f].Brk)+" Back="+S4(F[f].Back)+" Frnt="+S4(F[f].Frnt),  bar+1, New, clrRed);
       //if (ABS(F[f].P-H)<Atr.Lim || ABS(F[f].P-L)<Atr.Lim) F[f].BarTch++;  // кол-во касаний с барами
       if (LEV_CHECK(f)>TOUCH) continue;
@@ -859,7 +877,10 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S_NORM(normRev) + ":" +
                     S_NORM(normPwrSum) + ":" +
                     S_NORM(normCnt) + ":" +
-                    S_NORM(normImp);
+                    S_NORM(normImp) + ":" +
+                    S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
+                    S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
+                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
       } else {
          NeroInfo = NeroInfo + ";" +
                     S0(F[f].T) + ":" +
@@ -872,7 +893,10 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Rev) + ":" +
                     S4(F[f].PwrSum) + ":" +
                     S0(F[f].Cnt) + ":" +
-                    S4(F[f].Imp);
+                    S4(F[f].Imp) + ":" +
+                    S4(F[f].Up[H12]) + ":" + S4(F[f].Dn[H12]) + ":" +
+                    S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
+                    S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]);
       }
       cnt++;
    }
