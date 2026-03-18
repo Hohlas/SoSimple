@@ -41,7 +41,7 @@ def parse_fractal(fractal_str):
     Парсит строку фрактала и возвращает словарь с параметрами.
 
     Формат строки:
-    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse`
+    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
 
     Индексы в строке:
         [0]  time (int): Время формирования
@@ -55,6 +55,13 @@ def parse_fractal(fractal_str):
         [8]  power (float): Сила импульса
         [9]  count (int): Счетчик подтверждений
         [10] impulse (float): Значение импульса
+        [11] up_12 (float): max(High - P) за 12 баров H1
+        [12] dn_12 (float): max(P - Low) за 12 баров H1
+        [13] up_24 (float): max(High - P) за 24 бара H1
+        [14] dn_24 (float): max(P - Low) за 24 бара H1
+        [15] up_48 (float): max(High - P) за 48 баров H1
+        [16] dn_48 (float): max(P - Low) за 48 баров H1
+        [17] fractal_atr (float): Atr.Fast в момент формирования фрактала
 
     Args:
         fractal_str (str): Строка с данными фрактала из CSV.
@@ -82,7 +89,14 @@ def parse_fractal(fractal_str):
             'reverse': float(parts[7]) if len(parts) > 7 else 0.0,
             'power': float(parts[8]) if len(parts) > 8 else 0.0,
             'count': int(parts[9]) if len(parts) > 9 else 0,
-            'impulse': float(parts[10]) if len(parts) > 10 else 0.0,
+            'impulse':     float(parts[10]) if len(parts) > 10 else 0.0,
+            'up_12':       float(parts[11]) if len(parts) > 11 else 0.0,
+            'dn_12':       float(parts[12]) if len(parts) > 12 else 0.0,
+            'up_24':       float(parts[13]) if len(parts) > 13 else 0.0,
+            'dn_24':       float(parts[14]) if len(parts) > 14 else 0.0,
+            'up_48':       float(parts[15]) if len(parts) > 15 else 0.0,
+            'dn_48':       float(parts[16]) if len(parts) > 16 else 0.0,
+            'fractal_atr': float(parts[17]) if len(parts) > 17 else 0.0,
         }
     except (ValueError, IndexError):
         return None
@@ -301,6 +315,57 @@ def label_predict_only(input_path, output_path, debug=False):
     """
     return label_all(input_path, output_path, debug=debug, 
                      label_signal=False, label_predict=True)
+
+
+def label_updn(df, debug=False):
+    """
+    Извлекает up/dn таргеты для каждой строки из накопленных значений фрактала.
+
+    Алгоритм: для каждой строки i берёт fractal0 (новейший фрактал).
+    Сканирует вперёд до тех пор, пока фрактал существует в массиве.
+    Берёт последние найденные значения Up/Dn (самые накопленные).
+    Записывает в колонки up_12, dn_12, up_24, dn_24, up_48, dn_48.
+
+    Args:
+        df (pd.DataFrame): DataFrame с колонками fractalN.
+        debug (bool): Флаг отладки.
+
+    Returns:
+        pd.DataFrame: DataFrame с добавленными колонками up/dn.
+    """
+    HORIZONS = [12, 24, 48]
+    for h in HORIZONS:
+        df[f'up_{h}'] = 0.0
+        df[f'dn_{h}'] = 0.0
+
+    fractal_columns = [col for col in df.columns if col.startswith('fractal')]
+    rows_list = list(df.itertuples(index=False))
+    total_rows = len(rows_list)
+
+    found_count = 0
+    for i, row_i in enumerate(rows_list):
+        fractal0 = parse_fractal(getattr(row_i, 'fractal0', None))
+        if fractal0 is None:
+            continue
+
+        target_time = fractal0['time']
+        best = fractal0  # начинаем с текущей строки (Up/Dn = 0 для новейшего)
+
+        for j in range(i + 1, total_rows):
+            found = find_fractal_by_time(rows_list[j], fractal_columns, target_time)
+            if found is None:
+                break  # фрактал вытеснен — берём best
+            best = found
+
+        for h in HORIZONS:
+            df.at[i, f'up_{h}'] = best.get(f'up_{h}', 0.0)
+            df.at[i, f'dn_{h}'] = best.get(f'dn_{h}', 0.0)
+        found_count += 1
+
+    if debug:
+        print(f"[UPDN] Размечено строк: {found_count} / {total_rows}")
+
+    return df
 
 
 if __name__ == "__main__":

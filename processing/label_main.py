@@ -52,7 +52,7 @@ import argparse
 import pandas as pd
 import os
 from pathlib import Path
-from label_signals import label_all
+from label_signals import label_all, label_updn
 from normalize import normalize_rowwise, normalize_atr_train, normalize_atr_inference
 
 
@@ -325,7 +325,11 @@ def main():
     temp_labeled_path = str(output_base) + "_labeled_temp.csv"
     print(f"\nМаркировка ВСЕГО датасета ({len(df)} строк)...")
     labeled_df = label_all(temp_sorted_path, temp_labeled_path, debug=args.debug)
-    
+
+    # 3b. Разметка Up/Dn таргетов
+    print(f"\nРазметка Up/Dn таргетов...")
+    labeled_df = label_updn(labeled_df, debug=args.debug)
+
     # 4. Построчная нормализация (до split — каждая строка независима)
     if not args.no_normalize:
         labeled_df = normalize_rowwise(
@@ -353,7 +357,7 @@ def main():
     print(f"\n" + "=" * 60)
     print("ПОДГОТОВКА ЗАВЕРШЕНА")
     print("=" * 60)
-    print(f"Метки: signal, predict")
+    print(f"Метки: signal, predict, up_12, dn_12, up_24, dn_24, up_48, dn_48")
     if not args.no_normalize:
         print(f"Нормализация: применена")
         print(f"  Статистика: {stats_path}")

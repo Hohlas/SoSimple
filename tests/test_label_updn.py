@@ -1,0 +1,81 @@
+import sys
+import pytest
+import pandas as pd
+sys.path.insert(0, 'processing')
+from label_signals import parse_fractal
+
+
+FRACTAL_11 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018"
+FRACTAL_18 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031:0.00092"
+
+
+def test_parse_fractal_11_fields_backward_compat():
+    result = parse_fractal(FRACTAL_11)
+    assert result is not None
+    assert result['up_12'] == 0.0
+    assert result['dn_12'] == 0.0
+    assert result['up_48'] == 0.0
+    assert result['fractal_atr'] == 0.0
+
+
+def test_parse_fractal_18_fields():
+    result = parse_fractal(FRACTAL_18)
+    assert result is not None
+    assert result['up_12'] == pytest.approx(0.0015, abs=1e-6)
+    assert result['dn_12'] == pytest.approx(0.0010, abs=1e-6)
+    assert result['up_24'] == pytest.approx(0.0028, abs=1e-6)
+    assert result['dn_24'] == pytest.approx(0.0019, abs=1e-6)
+    assert result['up_48'] == pytest.approx(0.0040, abs=1e-6)
+    assert result['dn_48'] == pytest.approx(0.0031, abs=1e-6)
+    assert result['fractal_atr'] == pytest.approx(0.00092, abs=1e-6)
+
+
+def test_parse_fractal_none_input():
+    assert parse_fractal(None) is None
+    assert parse_fractal('') is None
+
+
+# ── label_updn tests (imported after Task 6 implementation) ──────────────────
+from label_signals import label_updn
+
+
+def _make_fractal(t, price, up12, dn12, up24, dn24, up48, dn48, strong=0, brk=0, atr=0.001):
+    """Helper: build a fractal string with 18 fields."""
+    return (f"{t}:{price:.5f}:1:0.001:0.001:{strong}:{brk}:0.0:0.001:1:0.001"
+            f":{up12:.5f}:{dn12:.5f}:{up24:.5f}:{dn24:.5f}:{up48:.5f}:{dn48:.5f}:{atr:.5f}")
+
+
+def test_label_updn_basic():
+    """Fractal0 appears in 3 subsequent rows; last row has final Up/Dn."""
+    T0 = 1705312800  # fractal being tracked
+    T1 = 1705316400  # another fractal
+
+    rows = [
+        {"time": "2026.01.15 10:00",
+         "fractal0": _make_fractal(T0, 1.28, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+         "fractal1": _make_fractal(T1, 1.27, 0.005, 0.003, 0.008, 0.005, 0.012, 0.008)},
+        {"time": "2026.01.15 11:00",
+         "fractal0": _make_fractal(T1, 1.27, 0.005, 0.003, 0.008, 0.005, 0.012, 0.008),
+         "fractal1": _make_fractal(T0, 1.28, 0.002, 0.001, 0.004, 0.002, 0.0, 0.0)},
+        {"time": "2026.01.15 12:00",
+         "fractal0": _make_fractal(T1, 1.27, 0.005, 0.003, 0.008, 0.005, 0.012, 0.008),
+         "fractal1": _make_fractal(T0, 1.28, 0.003, 0.002, 0.006, 0.004, 0.010, 0.007)},
+        {"time": "2026.01.15 13:00",
+         "fractal0": _make_fractal(T1, 1.27, 0.005, 0.003, 0.008, 0.005, 0.012, 0.008),
+         "fractal1": ""},  # T0 evicted
+    ]
+    df = pd.DataFrame(rows)
+    result = label_updn(df)
+
+    # Row 0: target = last found values for T0 = row 2's values
+    assert result.at[0, 'up_12'] == pytest.approx(0.003, abs=1e-5)
+    assert result.at[0, 'dn_12'] == pytest.approx(0.002, abs=1e-5)
+    assert result.at[0, 'up_48'] == pytest.approx(0.010, abs=1e-5)
+
+
+def test_label_updn_fractal0_missing():
+    """Row with no fractal0 gets zeros."""
+    df = pd.DataFrame([{"time": "2026.01.15 10:00", "fractal0": ""}])
+    result = label_updn(df)
+    assert result.at[0, 'up_12'] == 0.0
+    assert result.at[0, 'up_48'] == 0.0

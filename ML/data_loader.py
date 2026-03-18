@@ -53,8 +53,8 @@ VAL_FILE = DATA_DIR / 'Nero_validation_labeled.csv'
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
-N_RAW_FEATURES = 11   # Всего полей в строке фрактала (включая fractal_time)
-N_FRACTAL_FEATURES = 10  # Без fractal_time → price..impulse
+N_RAW_FEATURES = 18   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr
+N_FRACTAL_FEATURES = 17  # Без fractal_time → 17 features per fractal (fields 1-17)
 
 # Индекс fractal_time в сырых данных (исключается)
 FRACTAL_TIME_IDX = 0
@@ -64,7 +64,10 @@ LABEL_MAP = {-1: 0, 0: 1, 1: 2}
 INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
 
 # Имя колонки для регрессионного таргета
-REGRESSION_TARGET = 'predict'
+REGRESSION_TARGET = 'predict'  # backward compat default
+
+# Доступные up/dn таргеты
+UPDN_TARGETS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 
 # ─── Парсинг данных ──────────────────────────────────────────────────────────
@@ -75,24 +78,25 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Парсит колонки fractal0..fractal99 из DataFrame.
     Исключает fractal_time (индекс 0) из features.
-    Добавляет ATR как 11-й признак (broadcast на все 100 позиций).
+    Парсит 18 полей на фрактал; поле 17 (fractal_atr) заменяется ATR_ratio in-place.
 
     Аргументы:
         df: DataFrame с колонками fractal0..fractal99, ATR, signal
 
     Возвращает:
         Кортеж (X, mask):
-        - X: np.ndarray shape (n_samples, 100, 11) — 10 фрактальных + ATR.
+        - X: np.ndarray shape (n_samples, 100, 17) — 17 features per fractal.
              Feature order: price, direction, front, back, strong, break,
-             reverse, power, count, impulse, ATR
+             reverse, power, count, impulse, up_12, dn_12, up_24, dn_24,
+             up_48, dn_48, ATR_ratio
         - mask: np.ndarray shape (n_samples, 100) — True для валидных позиций,
                 False для padding (все features == 0)
     """
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 10 фрактальных features (без fractal_time) + 1 ATR = 11
-    n_features = N_FRACTAL_FEATURES + 1
+    # 17 фрактальных features (без fractal_time); поле 17 (fractal_atr) → ATR_ratio in-place
+    n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)
     raw_valid = np.ones((n_samples, N_FRACTALS), dtype=bool)
@@ -105,11 +109,11 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         split = series.str.split(FRACTAL_SEP, expand=True)
 
         if split.shape[1] == N_RAW_FEATURES:
-            # Парсим все 11 полей, затем исключаем fractal_time (индекс 0)
+            # Парсим все 18 полей, затем исключаем fractal_time (индекс 0)
             for k in range(N_RAW_FEATURES):
                 if k == FRACTAL_TIME_IDX:
                     continue
-                # Сдвигаем индекс: k=1 → 0, k=2 → 1, ..., k=10 → 9
+                # Сдвигаем индекс: k=1 → 0, k=2 → 1, ..., k=17 → 16
                 feat_idx = k - 1
                 vals = pd.to_numeric(split[k], errors='coerce')
                 X[:, j, feat_idx] = vals.fillna(0).values
@@ -123,9 +127,11 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
             # Неожиданный формат — помечаем как padding
             raw_valid[:, j] = False
 
-    # ATR как 11-й признак (индекс 10), broadcast на все позиции
-    atr_values = pd.to_numeric(df['ATR'], errors='coerce').fillna(0).values.astype(np.float32)
-    X[:, :, N_FRACTAL_FEATURES] = atr_values[:, np.newaxis]
+    # ATR_ratio = F[f].Atr (Atr.Fast при формировании) / Atr.Slow (row-level)
+    # fractal_atr уже в X[:,:,16] (feat_idx = N_FRACTAL_FEATURES - 1 = 16)
+    atr_slow = pd.to_numeric(df['ATR'], errors='coerce').fillna(1.0).values.astype(np.float32)
+    denom = np.where(atr_slow > 0, atr_slow, 1.0)
+    X[:, :, N_FRACTAL_FEATURES - 1] = X[:, :, N_FRACTAL_FEATURES - 1] / denom[:, np.newaxis]
 
     # Финальная маска: True для валидных (non-padding) позиций
     mask = raw_valid
