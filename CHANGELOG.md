@@ -1,6 +1,19 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-19] — ME-10: MT4 Integration & Python ML API
+
+### Добавлено
+- **Python API Server (`API/api_server.py`)**: FastAPI REST сервер. Загружает модель `transformer_updn_best.pt`, нормализует 100 последних фракталов (с учетом time features и `ATR_ratio`) и вычисляет торговый сигнал (`BUY`/`SELL`/`WAIT`) на основе OOS порога `θ=2.665`.
+- **MQL4 Коннектор (`MT/MQL4/Include/lib_ML_API.mqh`)**: Библиотека для сериализации `Atr.Slow` и `F[]` в JSON. Выполняет POST-запросы через `WebRequest` к `api_server.py`.
+- **Торговый Эксперт (`MT/MQL4/Experts/SoSimple_ML.mq4`)**: Рабочий робот, связывающий сбор данных фракталов (`lib_PIC.mqh`), ML-сигналы и торговое ядро `$o$imple` (открытие ордеров, трейлинги).
+
+### Изменено
+- **`MAIN.mqh`**: Поля `F[]` и `Atr` перенесены в секцию `public:` класса `EXPERT` для доступа коннектора к истории фракталов.
+
+### Результат
+- Интеграция успешно завершена и скомпилирована. Цепочка замкнута: MT4 (источник) → Python (ML Inference) → MT4 (торговля).
+
 ## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis
 
 ### Добавлено
