@@ -73,6 +73,7 @@ INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
 
 # Имя колонки для регрессионного таргета
 REGRESSION_TARGET = 'predict'  # backward compat default
+UPDN_REGRESSION_TARGET = 'updn'  # multi-task: 6 Up/Dn таргетов
 
 # Доступные up/dn таргеты
 UPDN_TARGETS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
@@ -223,14 +224,14 @@ class FractalSequenceDataset(Dataset):
     PyTorch Dataset для фрактальных последовательностей.
 
     Каждый сэмпл содержит:
-    - X: tensor shape (seq_len=100, features=11)
-    - y: tensor scalar — метка класса (0, 1 или 2 после маппинга) или float predict
+    - X: tensor shape (seq_len=100, features=20)
+    - y: tensor scalar (classification/single regression) или (6,) для multi-target
     - mask: tensor shape (seq_len=100) — True для валидных позиций
 
     Аргументы:
-        X: np.ndarray shape (n_samples, 100, 11) — нормализованные features
+        X: np.ndarray shape (n_samples, 100, 20) — нормализованные features
         y: np.ndarray shape (n_samples,) — метки {-1, 0, 1} (classification)
-               или float-значения predict (regression)
+               или float predict (regression) или shape (n_samples, 6) для multi-target
         mask: np.ndarray shape (n_samples, 100) — padding mask
         regression: bool — если True, y трактуется как float (не маппируется)
     """
@@ -298,7 +299,8 @@ def create_data_loaders(
         ...     logits = model(X_batch, mask_batch)
     """
     print("📦 Загрузка данных...")
-    regression = (target == REGRESSION_TARGET)
+    regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
+    multi_target = (target == UPDN_REGRESSION_TARGET)
 
     def load_or_parse_data(csv_file: Path, target_col: str, prefix: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         x_path = DATA_DIR / f'X_{prefix}.npy'
@@ -341,7 +343,9 @@ def create_data_loaders(
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)
         
         # Извлечение таргета
-        if regression:
+        if multi_target:
+            y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
+        elif regression:
             y = np.abs(df[target_col].values.astype(np.float32))
         else:
             y = df[target_col].values.astype(int)
@@ -371,7 +375,13 @@ def create_data_loaders(
 
     print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
 
-    if regression:
+    if multi_target:
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} updn targets: shape={y.shape}")
+            for i, col in enumerate(UPDN_TARGETS):
+                print(f"    {col}: mean={y[:, i].mean():.4f}, std={y[:, i].std():.4f}, "
+                      f"min={y[:, i].min():.4f}, max={y[:, i].max():.4f}")
+    elif regression:
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} predict (absolute): min={y.min():.4f}, max={y.max():.4f}, "
                   f"mean={y.mean():.4f}, std={y.std():.4f}")

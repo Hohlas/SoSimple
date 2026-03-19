@@ -151,6 +151,46 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+UPDN_TARGET_NAMES = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+
+
+def compute_multitarget_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+    """
+    Метрики для multi-target регрессии (6 Up/Dn таргетов).
+
+    Аргументы:
+        y_true: shape (n_samples, 6)
+        y_pred: shape (n_samples, 6)
+
+    Возвращает:
+        Словарь: per-target pearson_r + средние метрики.
+        Ключ 'pearson_r' содержит среднее по всем таргетам (для early stopping).
+    """
+    n_targets = y_true.shape[1]
+    per_target = {}
+    pearson_rs = []
+
+    for i in range(n_targets):
+        name = UPDN_TARGET_NAMES[i] if i < len(UPDN_TARGET_NAMES) else f'target_{i}'
+        m = compute_regression_metrics(y_true[:, i], y_pred[:, i])
+        per_target[name] = m
+        pearson_rs.append(m['pearson_r'])
+
+    avg_mae = float(np.mean([per_target[n]['mae'] for n in per_target]))
+    avg_rmse = float(np.mean([per_target[n]['rmse'] for n in per_target]))
+    avg_r2 = float(np.mean([per_target[n]['r2'] for n in per_target]))
+    avg_pearson_r = float(np.mean(pearson_rs))
+
+    return {
+        'mae': avg_mae,
+        'rmse': avg_rmse,
+        'r2': avg_r2,
+        'pearson_r': avg_pearson_r,
+        'pearson_p': 0.0,
+        'per_target': per_target,
+    }
+
+
 def count_parameters(model: torch.nn.Module) -> int:
     """
     Подсчёт обучаемых параметров модели.

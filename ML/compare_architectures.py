@@ -89,8 +89,9 @@ def compare_all_architectures(
     best = max(results, key=lambda r: r['best_metric'])
 
     # Копируем лучшую модель в best_model.pt
-    regression = (task == 'regression')
-    suffix = '_regression' if regression else ''
+    multi_target = (task == 'regression_updn')
+    regression = (task == 'regression') or multi_target
+    suffix = '_updn' if multi_target else ('_regression' if regression else '')
     best_src = CHECKPOINTS_DIR / f"{best['model_name']}{suffix}_best.pt"
     best_dst = CHECKPOINTS_DIR / f'best_model{suffix}.pt'
     if best_src.exists():
@@ -109,7 +110,7 @@ def compare_all_architectures(
 def _plot_comparison(results: list[dict], task: str):
     """Сводный bar chart."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    regression = (task == 'regression')
+    regression = (task == 'regression') or (task == 'regression_updn')
 
     model_names = [r['model_name'] for r in results]
     best_metrics = [r['best_metric'] for r in results]
@@ -164,7 +165,7 @@ def _plot_comparison(results: list[dict], task: str):
 def _generate_report(results: list[dict], task: str):
     """Генерация markdown-отчёта ML/reports/architecture_comparison_{task}.md."""
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    regression = (task == 'regression')
+    regression = (task == 'regression') or (task == 'regression_updn')
 
     best = max(results, key=lambda r: r['best_metric'])
     lines = []
@@ -294,8 +295,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Сравнение всех архитектур.')
     parser.add_argument(
         '--task', type=str, required=True,
-        choices=['classification', 'regression'],
-        help="Задача: 'classification' или 'regression'."
+        choices=['classification', 'regression', 'regression_updn'],
+        help="Задача: 'classification' | 'regression' | 'regression_updn' (6 Up/Dn)."
     )
     parser.add_argument(
         '--use_scaler', action='store_true',
@@ -323,11 +324,11 @@ def main():
 
     # Финальная сводка
     best = max(results, key=lambda r: r['best_metric'])
-    metric_name = "Pearson r" if args.task == 'regression' else "Macro F1"
-    
+    metric_name = "Pearson r" if args.task in ('regression', 'regression_updn') else "Macro F1"
+
     print(f"\n  🏆 Лучшая модель: {best['model_name']}")
     print(f"     {metric_name}: {best['best_metric']:.4f}")
-    if args.task == 'regression':
+    if args.task in ('regression', 'regression_updn'):
         print(f"     MAE: {best['best_metrics'].get('mae', 0):.4f}")
     print(f"     Параметров: {best['num_parameters']:,}")
     print(f"     Время обучения: {best['training_time']:.1f}с")

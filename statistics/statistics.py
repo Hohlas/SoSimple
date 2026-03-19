@@ -226,6 +226,7 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
     normal_samples = []   # Для сбора нормальных событий
     predict_values: List[float] = []
     atr_values: List[float] = []
+    updn_target_values: Dict[str, List[float]] = {col: [] for col in ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']}
     
     chunk_counter = 0
     total_fractals_processed = 0
@@ -264,7 +265,10 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
             predict_values.extend(chunk['predict'].dropna().astype(float).tolist())
         if 'ATR' in chunk.columns:
             atr_values.extend(chunk['ATR'].dropna().astype(float).tolist())
-        
+        for col in updn_target_values:
+            if col in chunk.columns:
+                updn_target_values[col].extend(chunk[col].dropna().astype(float).tolist())
+
         # Сбор стратифицированной выборки [web:13][web:14]
         rare_events = chunk[chunk['signal'] != 0]
         if len(rare_events) > 0:
@@ -301,6 +305,10 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
         summary['predict'] = _numeric_stats(predict_values)
     if atr_values:
         summary['ATR'] = _numeric_stats(atr_values)
+    summary['updn_targets'] = {}
+    for col, vals in updn_target_values.items():
+        if vals:
+            summary['updn_targets'][col] = _numeric_stats(vals)
     
     # Добавляем процент дисбаланса
     total = summary['total_samples']
@@ -338,7 +346,9 @@ def process_nero_csv(filepath: str, chunksize: int = 500):
         feature_dists.append({'feature': 'predict', **summary['predict']})
     if 'ATR' in summary:
         feature_dists.append({'feature': 'ATR', **summary['ATR']})
-    
+    for col, col_stats in summary.get('updn_targets', {}).items():
+        feature_dists.append({'feature': f'target_{col}', **col_stats})
+
     pd.DataFrame(feature_dists).to_csv(SCRIPT_DIR / 'feature_distributions.csv', index=False)
     
     print("[OK] Создан feature_distributions.csv")

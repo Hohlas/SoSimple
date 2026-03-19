@@ -1,6 +1,37 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-19] — ME-8: Multi-Task Regression (6 Up/Dn targets)
+
+### Добавлено
+- **`data_loader.py`**: `target='updn'` — загрузка 6 таргетов (up_12, dn_12, up_24, dn_24, up_48, dn_48), y shape (N, 6).
+- **`train.py`**: `--task regression_updn` — multi-target обучение, HuberLoss на 6 выходов, per-target Pearson r.
+- **`utils.py`**: `compute_multitarget_regression_metrics()` — per-target и средние метрики.
+- **`compare_architectures.py`**: поддержка `--task regression_updn`.
+- **`train.py`**: Multi-target scatter/residual графики (6 subplots).
+- **`statistics/statistics.py`**: статистика по Up/Dn таргетам (колонки строки).
+- **`statistics/EDA.ipynb`**: Секция 10 — анализ таргетов Up/Dn (гистограммы, scatter, по классам).
+
+### Обновлено
+- **`statistics/statistics.py`**: парсинг 18-полевых фракталов (было 11).
+- **`statistics/EDA.ipynb`**: парсинг 18-полевых фракталов, `n_features=18`.
+
+### Результат: Transformer regression_updn
+- **Per-target Pearson r**: up_12=0.502, dn_12=0.538, up_24=0.406, dn_24=0.421, up_48=0.333, dn_48=0.359
+- **Средний Pearson r**: 0.427 | MAE: 0.169 | R²: 0.183
+
+### Profit Factor (val, ratio = pred_up/pred_dn)
+| Горизонт | Порог 1.5 | Порог 2.0 | Порог 3.0 |
+|----------|-----------|-----------|-----------|
+| **12H** | PF=2.54 (77.6%) | PF=3.14 (47.0%) | PF=4.97 (19.8%) |
+| **24H** | PF=2.22 (54.2%) | PF=2.93 (22.6%) | PF=4.89 (5.1%) |
+| **48H** | PF=2.00 (35.2%) | PF=2.85 (8.8%) | PF=6.54 (1.2%) |
+
+**Критерий успеха PF > 1.0 при ratio_min=1.5 — выполнен с запасом (PF=2.0–2.5).**
+Прорыв: от PF=0.728 (старый `predict` таргет) до PF=2.0+ (multi-target Up/Dn).
+
+---
+
 ## [2026-03-19] — ME-7: Time Features + Up/Dn Normalization + ATR_ratio Fix
 
 ### Добавлено

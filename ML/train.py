@@ -67,11 +67,12 @@ except ImportError:
     class TrialPruned(Exception):
         pass
 
-from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES
+from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES, UPDN_TARGETS, UPDN_REGRESSION_TARGET
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
+    compute_multitarget_regression_metrics,
     count_parameters, get_device,
 )
 from ML.experiment_logger import CSVExperimentLogger
@@ -142,9 +143,12 @@ def train_one_epoch(
         logits = model(X_batch, mask=mask_batch)
 
         if regression:
-            # Регрессия: модель возвращает (batch, 1) → squeeze → (batch,)
-            preds = logits.squeeze(-1)
-            loss = loss_fn(preds, y_batch)
+            # Регрессия: multi-target (batch, 6) или single (batch, 1) → squeeze
+            if logits.shape[-1] > 1 and y_batch.dim() > 1:
+                loss = loss_fn(logits, y_batch)  # (batch, 6) vs (batch, 6)
+            else:
+                preds = logits.squeeze(-1)
+                loss = loss_fn(preds, y_batch)
         else:
             loss = loss_fn(logits, y_batch)
 
@@ -247,19 +251,28 @@ def validate_regression(
         mask_batch = mask_batch.to(device)
 
         logits = model(X_batch, mask=mask_batch)
-        preds = logits.squeeze(-1)           # (batch,)
-        loss = loss_fn(preds, y_batch)
+
+        # Multi-target: (batch, 6) vs (batch, 6); single: squeeze
+        if logits.shape[-1] > 1 and y_batch.dim() > 1:
+            loss = loss_fn(logits, y_batch)
+            all_preds.append(logits.cpu().numpy())
+        else:
+            preds = logits.squeeze(-1)
+            loss = loss_fn(preds, y_batch)
+            all_preds.append(preds.cpu().numpy())
 
         total_loss += loss.item()
         n_batches += 1
-
-        all_preds.append(preds.cpu().numpy())
         all_targets.append(y_batch.cpu().numpy())
 
     all_preds = np.concatenate(all_preds)
     all_targets = np.concatenate(all_targets)
 
-    metrics = compute_regression_metrics(all_targets, all_preds)
+    # Multi-target: per-target metrics + average
+    if all_preds.ndim == 2 and all_preds.shape[1] > 1:
+        metrics = compute_multitarget_regression_metrics(all_targets, all_preds)
+    else:
+        metrics = compute_regression_metrics(all_targets, all_preds)
 
     return total_loss / n_batches, metrics
 
@@ -327,7 +340,8 @@ def train_model(
         - model_name, task, best_metric, best_epoch, num_parameters,
           training_time, history, best_metrics
     """
-    regression = (task == 'regression')
+    multi_target = (task == 'regression_updn')
+    regression = (task == 'regression') or multi_target
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -337,7 +351,12 @@ def train_model(
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Данные ───────────────────────────────────────────────────────────────
-    target_col = 'predict' if regression else 'signal'
+    if multi_target:
+        target_col = UPDN_REGRESSION_TARGET
+    elif regression:
+        target_col = 'predict'
+    else:
+        target_col = 'signal'
     train_loader, val_loader, scaler = create_data_loaders(
         batch_size=batch_size,
         target=target_col,
@@ -348,8 +367,8 @@ def train_model(
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
-    # Для регрессии: 1 выход; для классификации: 3 выхода
-    num_classes = 1 if regression else 3
+    # Multi-target: 6 выходов; single regression: 1 выход; classification: 3 выхода
+    num_classes = len(UPDN_TARGETS) if multi_target else (1 if regression else 3)
     if model_kwargs is None:
         model_kwargs = {}
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
@@ -501,8 +520,8 @@ def train_model(
             best_metrics = metrics.copy()
             epochs_without_improvement = 0
 
-            # Суффикс чекпойнта: _regression для регрессии
-            suffix = '_regression' if regression else ''
+            # Суффикс чекпойнта
+            suffix = '_updn' if multi_target else ('_regression' if regression else '')
             checkpoint_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
             torch.save({
                 'epoch': epoch,
@@ -543,6 +562,10 @@ def train_model(
             print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
             print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
             print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
+            if 'per_target' in best_metrics:
+                print(f"\n  Per-target Pearson r:")
+                for tname, tm in best_metrics['per_target'].items():
+                    print(f"    {tname:8s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
 
     # ── Plots (только если не silent) ────────────────────────────────────────
     if not silent:
@@ -671,7 +694,8 @@ def _log_experiment(
         metrics_dict['f1_neutral'] = f1_per_class.get(0)
         metrics_dict['f1_buy'] = f1_per_class.get(1)
     
-    checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{"_regression" if regression else ""}_best.pt')
+    log_suffix = '_updn' if task == 'regression_updn' else ('_regression' if regression else '')
+    checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{log_suffix}_best.pt')
     
     logger = CSVExperimentLogger()
     logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
@@ -689,8 +713,11 @@ def _collect_regression_preds(
     for X_batch, y_batch, mask_batch in val_loader:
         X_batch = X_batch.to(device)
         mask_batch = mask_batch.to(device)
-        preds = model(X_batch, mask=mask_batch).squeeze(-1).cpu().numpy()
-        all_preds.append(preds)
+        logits = model(X_batch, mask=mask_batch)
+        # Multi-target: keep shape (batch, 6); single: squeeze to (batch,)
+        if logits.shape[-1] == 1:
+            logits = logits.squeeze(-1)
+        all_preds.append(logits.cpu().numpy())
         all_targets.append(y_batch.numpy())
     return np.concatenate(all_preds), np.concatenate(all_targets)
 
@@ -788,13 +815,48 @@ def _plot_regression_results(
     """
     Построение scatter plot и гистограммы residuals для регрессии.
 
+    Поддерживает single-target (1D) и multi-target (2D).
     Сохраняет в ML/plots/regression_<model>.png
     """
-    residuals = y_pred - y_true
+    from ML.utils import UPDN_TARGET_NAMES
 
+    # Multi-target: per-target subplots
+    if y_true.ndim == 2 and y_true.shape[1] > 1:
+        n_targets = y_true.shape[1]
+        fig, axes = plt.subplots(2, n_targets, figsize=(4 * n_targets, 8))
+
+        for i in range(n_targets):
+            name = UPDN_TARGET_NAMES[i] if i < len(UPDN_TARGET_NAMES) else f't{i}'
+            yt, yp = y_true[:, i], y_pred[:, i]
+            residuals = yp - yt
+
+            # Scatter
+            axes[0, i].scatter(yt, yp, alpha=0.15, s=3, color='#2196F3')
+            lim = max(abs(yt).max(), abs(yp).max()) * 1.05
+            axes[0, i].plot([0, lim], [0, lim], 'r--', linewidth=1)
+            axes[0, i].set_title(name, fontsize=10)
+            axes[0, i].set_xlabel('true')
+            axes[0, i].set_ylabel('pred')
+            axes[0, i].grid(True, alpha=0.3)
+
+            # Residuals
+            axes[1, i].hist(residuals, bins=40, color='#FF9800', edgecolor='none', alpha=0.8)
+            axes[1, i].axvline(0, color='red', linestyle='--', linewidth=1)
+            axes[1, i].set_xlabel('residual')
+            axes[1, i].grid(True, alpha=0.3)
+
+        fig.suptitle(f'{model_name}: Multi-target regression (val)', fontsize=12)
+        plt.tight_layout()
+        save_path = PLOTS_DIR / f'regression_{model_name}_updn.png'
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        print(f"  📊 Multi-target regression: {save_path.name}")
+        return
+
+    # Single-target (original)
+    residuals = y_pred - y_true
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    # Scatter: y_true vs y_pred
     axes[0].scatter(y_true, y_pred, alpha=0.3, s=10, color='#2196F3')
     lim = max(abs(y_true).max(), abs(y_pred).max()) * 1.05
     axes[0].plot([-lim, lim], [-lim, lim], 'r--', linewidth=1.5, label='Ideal')
@@ -806,7 +868,6 @@ def _plot_regression_results(
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
 
-    # Histogram residuals
     axes[1].hist(residuals, bins=60, color='#FF9800', edgecolor='none', alpha=0.8)
     axes[1].axvline(0, color='red', linestyle='--', linewidth=1.5)
     axes[1].set_xlabel('Residual (y_pred - y_true)')
@@ -837,8 +898,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default='classification',
-        choices=['classification', 'regression'],
-        help="Задача: 'classification' (signal, FocalLoss) или 'regression' (predict, HuberLoss). "
+        choices=['classification', 'regression', 'regression_updn'],
+        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (6 Up/Dn). "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],

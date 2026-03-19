@@ -6,7 +6,9 @@
       "Bash(iconv -f UTF-16LE -t UTF-8 /home/hohla/git/SoSimple/MT/MQL4/Include/lib_PIC.mqh)",
       "Bash(xargs cat:*)",
       "Read(//home/hohla/git/SoSimple/MT/MQL4/Experts/**)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python statistics/statistics.py DATA/Nero_train_labeled.csv)"
     ]
   }
 }
