@@ -108,6 +108,19 @@ def suggest_hyperparameters(trial: optuna.Trial, task: str, model_name: str,
         params['model_kwargs']['hidden_size'] = trial.suggest_categorical('hidden_size', [32, 64, 128])
         params['model_kwargs']['num_layers'] = trial.suggest_int('num_layers', 1, 3)
         params['model_kwargs']['dropout'] = trial.suggest_float('dropout', 0.1, 0.5)
+    elif model_name == 'transformer':
+        d_model = trial.suggest_categorical('d_model', [32, 64, 128])
+        # nhead must divide d_model evenly
+        valid_nheads = [h for h in [2, 4, 8] if d_model % h == 0]
+        params['model_kwargs']['d_model'] = d_model
+        params['model_kwargs']['nhead'] = trial.suggest_categorical('nhead', valid_nheads)
+        params['model_kwargs']['num_layers'] = trial.suggest_int('num_layers', 1, 4)
+        params['model_kwargs']['dim_feedforward'] = trial.suggest_categorical('dim_feedforward', [64, 128, 256])
+        params['model_kwargs']['dropout'] = trial.suggest_float('dropout', 0.1, 0.5)
+    elif model_name == 'cnn1d':
+        params['model_kwargs']['dropout'] = trial.suggest_float('dropout', 0.1, 0.5)
+    elif model_name == 'hybrid':
+        params['model_kwargs']['dropout'] = trial.suggest_float('dropout', 0.1, 0.5)
 
     return params
 
@@ -371,8 +384,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default='classification',
-        choices=['classification', 'regression'],
-        help="Задача: 'classification' или 'regression'. Default: classification"
+        choices=['classification', 'regression', 'regression_updn'],
+        help="Задача: 'classification' | 'regression' | 'regression_updn'. Default: classification"
     )
     parser.add_argument(
         '--trials', type=int, default=50,

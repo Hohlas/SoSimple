@@ -73,6 +73,7 @@ jupyter nbconvert --to markdown --no-input --no-prompt --output EDA_report repor
 ### Команды обучения моделей
 ```bash
 # Все 4 модели последовательно
+python -m ML.compare_architectures --task regression_updn
 python -m ML.compare_architectures --task regression
 python -m ML.compare_architectures --task classification
 
@@ -168,7 +169,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ## 🛠️ Технологический стек
 - **Языки**: Python 3.11+, MQL4; **Библиотеки**: Pandas, NumPy, Scikit-learn, Scipy
-- **Визуализация**: Matplotlib, Seaborn; **ML**: XGBoost, LightGBM, PyTorch (план)
+- **Визуализация**: Matplotlib, Seaborn; **ML**: XGBoost, LightGBM, PyTorch
 
 ---
 

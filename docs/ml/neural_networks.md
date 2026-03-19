@@ -1,11 +1,12 @@
 # Neural Networks Pipeline
 
-> **Обновлено**: 2026-02-27 — добавлены новые метрики для работы с дисбалансом классов (`signal_precision`, `f1_minority`) и `WeightedRandomSampler`.
+> **Обновлено**: 2026-03-19 — добавлен multi-task regression (`--task regression_updn`) для 6 Up/Dn таргетов.
 
 ## Назначение
-Обучение и сравнение 4 архитектур нейронных сетей для решения двух задач:
+Обучение и сравнение 4 архитектур нейронных сетей для решения трёх задач:
 1. **Классификация** (`--task classification`): `signal ∈ {-1, 0, 1}` (направление и сила движения)
-2. **Регрессия** (`--task regression`): `predict ∈ [-p..p]` (непрерывная нормализованная величина ожидаемого движения цены).
+2. **Регрессия** (`--task regression`): `predict ∈ [-p..p]` (непрерывная нормализованная величина ожидаемого движения цены)
+3. **Multi-task регрессия** (`--task regression_updn`): 6 таргетов (up_12, dn_12, up_24, dn_24, up_48, dn_48) — движение цены вверх/вниз на 3 горизонтах. Торговый сигнал: ratio = pred_up/pred_dn > threshold.
 Фреймворк: PyTorch.
 
 ### ⚠️ Важно: Ловушка дисбаланса классов
@@ -49,10 +50,10 @@ ML/
 - **Источник**: `processing/label_main.py`
 
 ## Выходные данные
-- **Файл**: `ML/checkpoints/<model>_best.pt` или `ML/checkpoints/<model>_regression_best.pt` (веса лучшей модели)
-- **Файл**: `ML/checkpoints/<model>_result.json` или `<model>_regression_result.json` (лучшие метрики)
+- **Файл**: `ML/checkpoints/<model>_best.pt` или `<model>_regression_best.pt` или `<model>_updn_best.pt`
+- **Файл**: `ML/checkpoints/<model>_result.json`
 - **Файл**: `ML/plots/training_curves_*.png`
-- **Файл**: `ML/plots/cm_*.png` (для классификации) или `ML/plots/regression_*.png` (для регрессии)
+- **Файл**: `ML/plots/cm_*.png` (классификация), `ML/plots/regression_*.png` (регрессия), `ML/plots/regression_*_updn.png` (multi-target)
 
 ## Использование
 
@@ -62,8 +63,11 @@ ML/
 # Массовое обучение для классификации
 python -m ML.compare_architectures --task classification
 
-# Массовое обучение для регрессии
+# Массовое обучение для регрессии (старый predict таргет)
 python -m ML.compare_architectures --task regression
+
+# Массовое обучение multi-task regression (6 Up/Dn таргетов)
+python -m ML.compare_architectures --task regression_updn
 ```
 
 ### Обучение конкретной модели (`train.py`)
@@ -73,6 +77,9 @@ python -m ML.train --model bilstm --task classification
 
 # Регрессия с кастомными параметрами
 python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
+
+# Multi-task regression (6 Up/Dn таргетов)
+python -m ML.train --model transformer --task regression_updn --epochs 50
 
 # Классификация с оптимизированными параметрами (из Optuna)
 python -m ML.train --model cnn1d --task classification \
@@ -96,7 +103,7 @@ python -m ML.train --model transformer --task classification \
 
 | Аргумент | Описание | Значение по умолчанию |
 |----------|----------|-----------------------|
-| `--task` | Тип задачи: `classification` или `regression` | `classification` (в `train.py`) |
+| `--task` | Тип задачи: `classification`, `regression` или `regression_updn` | `classification` (в `train.py`) |
 | `--model`| Архитектура модели (только для `train.py`) | **обязательный** |
 | `--use_scaler` | Включить математический `StandardScaler` | `False` (выключено) |
 | `--batch_size` | Размер батча | `256` |
