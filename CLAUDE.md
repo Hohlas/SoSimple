@@ -88,12 +88,12 @@ python -m ML.experiment_logger --best pearson_r --task regression
 ### Пути к данным
 - **Вход**: `MT/MQL4/Files/Nero.csv` (UTF-16LE, `;`)
 - **Выход**: `DATA/Nero_{train|validation|test}_labeled.csv`
-- **Мета**: `DATA/Nero_atr_scaler.pkl`, `DATA/Nero_normalization_stats.csv`
+- **Мета**: `DATA/Nero_normalization_stats.csv`
 
 ---
 
 ## 📊 Pipeline данных
-Схема: `MT4 → Raw → Sort → Label → Norm → Split → ATR → Final` ([Детали в DATA_FLOW.md](docs/DATA_FLOW.md))
+Схема: `MT4 → Raw → Sort → Label → Norm → Split → Final` ([Детали в DATA_FLOW.md](docs/DATA_FLOW.md))
 
 ---
 
@@ -127,7 +127,6 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   ├── Nero_train_labeled.csv
 │   ├── Nero_validation_labeled.csv
 │   ├── Nero_test_labeled.csv
-│   ├── Nero_atr_scaler.pkl
 │   └── Nero_normalization_stats.csv
 ├── docs/               # Документация
 │   ├── DATA_FLOW.md    # Поток данных
@@ -206,6 +205,6 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ---
 
-**Последнее обновление**: 2026-03-18
+**Последнее обновление**: 2026-03-19
 **Авторы**: Antigravity (human) + Claude (AI)
 

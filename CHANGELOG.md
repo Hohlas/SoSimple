@@ -1,20 +1,40 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
-## [2026-03-18] — ME-6: Up/Dn Fixed-Horizon Targets + ATR_ratio
-### Причина
-Все 4 модели убыточны (PF=0.728). Диагноз: таргет `predict` шумный (переменный горизонт, зависимость от `direction`). Решение — direction-independent таргеты с фиксированным горизонтом.
+## [2026-03-19] — ME-7: Time Features + Up/Dn Normalization + ATR_ratio Fix
 
 ### Добавлено
-- **`head_PIC.mqh`**: поля `float Up[3], Dn[3]` в структуру PICS; `#define H12/H24/H48` — индексы горизонтов.
-- **`lib_PIC.mqh`**: инкрементальное накопление `Up/Dn` в `LEVELS_FIND_AROUND()` для всех фракталов без фильтров (горизонты 12/24/48 баров H1). Строка-ATR переключена на `Atr.Slow`. CSV теперь содержит 18 полей на фрактал (+Up12/Dn12/Up24/Dn24/Up48/Dn48/FractalAtr).
+- **`data_loader.py`**: 3 новые time-фичи на фрактал (вычисляются из fractal_time на лету):
+  - `hour_sin` = sin(2π·hour/24) — циклическое кодирование часа суток
+  - `hour_cos` = cos(2π·hour/24) — вторая координата цикла
+  - `time_pos` = позиция фрактала на временной оси строки [0..1] (newest=1, oldest=0)
+- **`normalize.py`**: Joint Piecewise Linear-Log нормализация для Up/Dn (606 значений на строку = 100 фракталов × 6 полей + 6 таргетов).
+- **`data_loader.py`**: `N_FRACTAL_FEATURES=20` (17 исходных + 3 time-фичи). Автоинвалидация кэша при изменении shape.
+- **`train.py`**: `input_features=N_FRACTAL_FEATURES` передаётся в модели автоматически.
+
+### Исправлено
+- **`data_loader.py`**: ATR_ratio теперь вычисляется как `log(fractal_Atr.Fast / Atr.Slow)`.
+- **`label_main.py`**: Убрана ATR нормализация (RobustScaler). Atr.Slow сохраняется в CSV сырым — используется только как знаменатель для ATR_ratio в data_loader.
+
+### Удалено
+- Артефакт `DATA/Nero_atr_scaler.pkl` больше не создаётся.
+- Вызовы `normalize_atr_train()` / `normalize_atr_inference()` убраны из pipeline.
+
+## [2026-03-18] — ME-6: Up/Dn Fixed-Horizon Targets + ATR_ratio
+### Причина
+Все 4 модели убыточны (PF=0.728). Решение: заменить таргет `predict` шумный (переменный горизонт, зависимость от `direction`) на — direction-independent таргеты с фиксированным горизонтом.
+up_12 = max(High[i] - price) за 12 баров от момента формирования фрактала.
+- dn_12 = max(price - Low[i]) за 12 баров.
+- up_24, dn_24 (float) – аналогично за 24 бара.
+- up_48, dn_48 (float) – аналогично за 48 баров. 
+
+### Добавлено
+- **`dataset_description.md`**: Добавлены признаки `Up/Dn` (12/24/48 баров) и Atr.Fast для каждого фрактала. 
+`up_N` = max(High - P), `dn_N` = max(P - Low) за первые N баров после формирования фрактала. Оба ≥ 0, не зависят от направления.
+Строка-ATR переключена на `Atr.Slow` - общий для всей строки.
 - **`label_signals.py`**: `parse_fractal()` расширен до 18 полей (поле 17 = `fractal_atr`). Новая функция `label_updn()`: для каждой строки сканирует вперёд до вытеснения fractal0, берёт последние накопленные Up/Dn.
 - **`label_main.py`**: шаг `label_updn` добавлен в pipeline после `label_all`.
-- **`data_loader.py`**: `N_RAW_FEATURES=18`, `N_FRACTAL_FEATURES=17`. ATR broadcast заменён на `ATR_ratio = fractal_atr / Atr.Slow` (вычисляется in-place для позиции 16 в X). Добавлена константа `UPDN_TARGETS`.
-- **`tests/test_label_updn.py`**: 5 unit-тестов для `parse_fractal` и `label_updn`.
 
-### Суть
-`up_N` = max(High - P), `dn_N` = max(P - Low) за первые N баров после формирования фрактала. Оба ≥ 0, не зависят от направления. `ATR_ratio` = Atr.Fast(формирование) / Atr.Slow(текущий) — относительная волатильность как признак. Критерий успеха: PF > 1.5.
 
 ## [2026-03-16] — ME-5: Custom Trading Loss (AsymmetricLoss)
 ### Добавлено

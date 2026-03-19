@@ -67,7 +67,7 @@ except ImportError:
     class TrialPruned(Exception):
         pass
 
-from ML.data_loader import create_data_loaders, INV_LABEL_MAP
+from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.utils import (
@@ -352,6 +352,7 @@ def train_model(
     num_classes = 1 if regression else 3
     if model_kwargs is None:
         model_kwargs = {}
+    model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
     n_params = count_parameters(model)

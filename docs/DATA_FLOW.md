@@ -24,8 +24,6 @@ MT/MQL4/Files/Nero.csv (raw)
           ↓
     train / val / test
           ↓
-    [ATR нормализация]
-          ↓
    DATA/Nero_train_labeled.csv
    DATA/Nero_validation_labeled.csv
    DATA/Nero_test_labeled.csv
@@ -46,7 +44,7 @@ MT/MQL4/Files/Nero.csv (raw)
 - **Формат**: 
   - Columns: `time`, `signal`, `predict`, `ATR`, `fractal0`...`fractal99`
   - Separator: `;`
-  - Fractal format: `time:price:direction:front:back:strong:break:reverse:power:count:impulse`
+  - Fractal format: `time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
 
 ### Процесс
 **Модуль**: `processing/label_main.py` → `sort_fractals_in_dataframe()`
@@ -120,12 +118,12 @@ predict = (расстояние до цели) * target_direction
 
 #### 3.1. Парсинг фракталов
 ```python
-fractals = parse_fractals_to_array(df)  # shape: (n_rows, n_fractals, 11)
+fractals = parse_fractals_to_array(df)  # shape: (n_rows, n_fractals, 18)
 ```
 
 #### 3.2. Нормализация по группам
 
-**Группа A**: Piecewise Linear-Log (совместная)
+**Группа A**: Piecewise Linear-Log (совместная — front/back/predict)
 - **Признаки**: `|predict|`, `front`, `back`
 - **Логика**:
   1. Объединяем все значения строки
@@ -137,12 +135,16 @@ fractals = parse_fractals_to_array(df)  # shape: (n_rows, n_fractals, 11)
 - **Признаки**: `impulse`, `count`, `reverse`, `power`, `break`
 - **Логика**: Отдельные параметры для каждого
 
-**Группа C**: Min-Max
+**Группа C**: Piecewise Linear-Log (совместная — Up/Dn)
+- **Признаки**: `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48` (фичи фракталов + таргеты строки)
+- **Логика**: 606 значений на строку (100 фракталов × 6 полей + 6 таргетов) → общие p85/p99
+
+**Группа D**: Min-Max
 - **Признак**: `price`
 - **Логика**: Нормализация в [0, 1]
 
-**Группа D**: Без нормализации
-- **Признаки**: `direction`, `strong`, `fractal_time`
+**Группа E**: Без нормализации
+- **Признаки**: `direction`, `strong`, `fractal_time`, `fractal_atr`
 
 #### 3.3. Запись обратно
 ```python
@@ -156,7 +158,7 @@ df = array_to_fractal_strings(fractals, df, fractal_columns)
 ### Ключевые требования
 - Нормализация **до split** — каждая строка независима
 - Нет data leakage (строки не влияют друг на друга)
-- ATR **не нормализуется** на этом этапе
+- ATR **не нормализуется** — используется только как знаменатель для ATR_ratio в data_loader.py
 
 ---
 
@@ -182,56 +184,23 @@ test_df = df.iloc[val_end:]              # 15%
 
 ---
 
-## 📉 Этап 5: ATR нормализация
-
-### Процесс
-**Модуль**: `processing/normalize.py`
-
-#### 5.1. Train
-```python
-train_df = normalize_atr_train(train_df, scaler_path="DATA/Nero_atr_scaler.pkl")
-# Выполняет:
-# - RobustScaler.fit(train_df['ATR'])
-# - RobustScaler.transform(train_df['ATR'])
-# - Сохраняет scaler в .pkl
-```
-
-#### 5.2. Validation/Test
-```python
-val_df = normalize_atr_inference(val_df, scaler_path="DATA/Nero_atr_scaler.pkl")
-test_df = normalize_atr_inference(test_df, scaler_path="DATA/Nero_atr_scaler.pkl")
-# Выполняет:
-# - Загружает scaler из .pkl
-# - RobustScaler.transform(df['ATR'])
-```
-
-### Выход
-- **Артефакт**: `DATA/Nero_atr_scaler.pkl` (RobustScaler)
-
-### Ключевые требования
-- **fit только на train** — нет data leakage
-- Validation/test используют **тот же scaler**
-
----
-
-## 💾 Этап 6: Сохранение финальных файлов
+## 💾 Этап 5: Сохранение финальных файлов
 
 ### Выход
 ```
 DATA/Nero_train_labeled.csv
 DATA/Nero_validation_labeled.csv
 DATA/Nero_test_labeled.csv
-DATA/Nero_atr_scaler.pkl
 DATA/Nero_normalization_stats.csv
 ```
 
 ### Формат CSV
 - **Separator**: `;`
-- **Columns**: `time`, `signal`, `predict`, `ATR` (нормализованный), `fractal0`...`fractal99` (нормализованные строки)
+- **Columns**: `time`, `signal`, `predict`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`, `ATR` (сырой), `fractal0`...`fractal99` (нормализованные строки)
 
 ---
 
-## 📊 Этап 6.5: Baseline Experiments
+## 📊 Этап 5.5: Baseline Experiments
 
 ### Вход
 - `DATA/Nero_train_labeled.csv`
@@ -255,7 +224,7 @@ DATA/Nero_normalization_stats.csv
 
 ---
 
-## 🚧 Этап 7: ML Training
+## 🚧 Этап 6: ML Training
 
 ### Вход
 - `DATA/Nero_train_labeled.csv`
@@ -263,18 +232,19 @@ DATA/Nero_normalization_stats.csv
 
 ### Процесс
 
-#### 7.1. Загрузка и парсинг данных
+#### 6.1. Загрузка и парсинг данных
 **Модуль**: `ML/data_loader.py` → `create_data_loaders()`
 
-1. CSV → 3D тензор `(n_samples, 100, 11)`:
-   - 10 фрактальных features (price, direction, front, back, strong, break, reverse, power, count, impulse)
-   - `fractal_time` **исключён** (data leakage через абсолютное время)
-   - ATR broadcast на все 100 позиций как 11-й признак
-2. **StandardScaler**: fit на train (flatten `n_samples*100 × 11`), transform на val
+1. CSV → 3D тензор `(n_samples, 100, 20)`:
+   - 17 фрактальных features из CSV (fields 1-17): price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48, ATR_ratio
+   - `fractal_time` (field 0) **исключён как сырое поле**, но используется для вычисления time-фич
+   - `fractal_atr` (field 17) → `log(ATR_ratio)` = log(fractal_atr / ATR_raw) — in-place
+   - 3 вычисляемые time-фичи: `hour_sin`, `hour_cos` (циклическое кодирование часа), `time_pos` (позиция на оси [0..1])
+2. **StandardScaler** (опционально): fit на train (flatten `n_samples*100 × 20`), transform на val
 3. Padding mask для NaN-позиций (используется Transformer)
 4. Маппинг меток: `{-1, 0, 1}` → `{0, 1, 2}`
 
-#### 7.2. Обучение
+#### 6.2. Обучение
 **Модуль**: `ML/train.py` (CLI: `--model bilstm|cnn1d|transformer|hybrid`)
 
 - **Loss**: Focal Loss (gamma=2, alpha=[0.45, 0.10, 0.45])
@@ -283,7 +253,7 @@ DATA/Nero_normalization_stats.csv
 - **Scheduler**: ReduceLROnPlateau (patience=5, factor=0.5, monitor=val_f1_macro)
 - **Архитектуры**: Bi-LSTM, 1D-CNN, Transformer Encoder, Hybrid CNN+LSTM
 
-#### 7.3. Сравнение архитектур
+#### 6.3. Сравнение архитектур
 **Модуль**: `ML/compare_architectures.py`
 
 Последовательно обучает все 4 модели, генерирует сводный отчёт.
@@ -307,13 +277,12 @@ DATA/Nero_normalization_stats.csv
 
 1. **Сортировка**: Независима по строкам
 2. **Построчная нормализация**: Каждая строка нормализуется независимо
-3. **ATR fit только на train**: Validation/test используют тот же scaler
-4. **Split последовательный**: Не случайный shuffle (сохраняем временной порядок)
-5. **Маркировка до split**: Маркируем весь датасет, затем делим
-6. **StandardScaler (NN)**: fit только на train, transform на val
-7. **fractal_time исключён** из features для нейросетей
+3. **Split последовательный**: Не случайный shuffle (сохраняем временной порядок)
+4. **Маркировка до split**: Маркируем весь датасет, затем делим
+5. **StandardScaler (NN)**: fit только на train, transform на val
+6. **fractal_time** не подаётся как сырое абсолютное значение — используется только для вычисления time-фич (hour_sin, hour_cos, time_pos)
 
 ---
 
-**Последнее обновление**: 2026-02-18  
+**Последнее обновление**: 2026-03-19
 **Автор**: Antigravity + Claude

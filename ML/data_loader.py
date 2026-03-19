@@ -2,7 +2,7 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей с кэшированием тензоров
 # Язык: Python 3.11+
-# Обновлён: 2026-03-18
+# Обновлён: 2026-03-19
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -18,9 +18,9 @@
 # Использование:
 #   from ML.data_loader import create_data_loaders
 # Примечания:
-#   - fractal_time (индекс 0) исключается из features — может дать data leakage
-#   - N_RAW_FEATURES=18: поле 17 (fractal_atr) → ATR_ratio = fractal_atr / Atr.Slow (in-place)
-#   - N_FRACTAL_FEATURES=17: итого 17 признаков на позицию; форма X: (n, 100, 17)
+#   - fractal_time (индекс 0) исключается из features, но используется для вычисления time-фич
+#   - N_RAW_FEATURES=18: поле 17 (fractal_atr) → log(ATR_ratio) = log(fractal_atr / Atr.Slow)
+#   - N_FRACTAL_FEATURES=20: 17 исходных + 3 time-фичи (hour_sin, hour_cos, time_pos); форма X: (n, 100, 20)
 #   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
 #   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
@@ -29,8 +29,9 @@
 """
 Dataset и DataLoader для фрактальных последовательностей.
 
-Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 11),
-исключает fractal_time, добавляет ATR, нормализует features.
+Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 20),
+исключает fractal_time как сырое поле, вычисляет time-фичи (hour_sin, hour_cos, time_pos),
+добавляет ATR_ratio, нормализует features.
 Создаёт padding mask для Transformer (NaN позиции).
 """
 
@@ -55,10 +56,16 @@ CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
 N_RAW_FEATURES = 18   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr
-N_FRACTAL_FEATURES = 17  # Без fractal_time → 17 features per fractal (fields 1-17)
+N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
 
-# Индекс fractal_time в сырых данных (исключается)
+# Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
 FRACTAL_TIME_IDX = 0
+
+# Индексы вычисляемых features в X
+ATR_RATIO_IDX = 16      # fractal_atr → ATR_ratio (in-place)
+TIME_FEAT_HOUR_SIN = 17  # sin(2π · hour / 24)
+TIME_FEAT_HOUR_COS = 18  # cos(2π · hour / 24)
+TIME_FEAT_TIME_POS = 19   # позиция на временной оси строки [0..1]
 
 # Маппинг меток: signal {-1, 0, 1} → индексы {0, 1, 2}
 LABEL_MAP = {-1: 0, 0: 1, 1: 2}
@@ -86,21 +93,23 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Возвращает:
         Кортеж (X, mask):
-        - X: np.ndarray shape (n_samples, 100, 17) — 17 features per fractal.
+        - X: np.ndarray shape (n_samples, 100, 20) — 20 features per fractal.
              Feature order: price, direction, front, back, strong, break,
              reverse, power, count, impulse, up_12, dn_12, up_24, dn_24,
-             up_48, dn_48, ATR_ratio
+             up_48, dn_48, ATR_ratio, hour_sin, hour_cos, time_pos
         - mask: np.ndarray shape (n_samples, 100) — True для валидных позиций,
                 False для padding (все features == 0)
     """
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 17 фрактальных features (без fractal_time); поле 17 (fractal_atr) → ATR_ratio in-place
+    # 20 features: 17 из CSV (fields 1-17) + 3 time-фичи (вычисляются из fractal_time)
     n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)
     raw_valid = np.ones((n_samples, N_FRACTALS), dtype=bool)
+    # Хранилище fractal_time для вычисления time-фич
+    fractal_times = np.zeros((n_samples, N_FRACTALS), dtype=np.float64)
 
     for j, col in enumerate(fractal_cols):
         if j % 20 == 0:
@@ -110,9 +119,11 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         split = series.str.split(FRACTAL_SEP, expand=True)
 
         if split.shape[1] == N_RAW_FEATURES:
-            # Парсим все 18 полей, затем исключаем fractal_time (индекс 0)
+            # Парсим все 18 полей: fractal_time → отдельный массив, остальные → X
             for k in range(N_RAW_FEATURES):
                 if k == FRACTAL_TIME_IDX:
+                    vals = pd.to_numeric(split[k], errors='coerce')
+                    fractal_times[:, j] = vals.fillna(0).values
                     continue
                 # Сдвигаем индекс: k=1 → 0, k=2 → 1, ..., k=17 → 16
                 feat_idx = k - 1
@@ -128,11 +139,29 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
             # Неожиданный формат — помечаем как padding
             raw_valid[:, j] = False
 
-    # ATR_ratio = F[f].Atr (Atr.Fast при формировании) / Atr.Slow (row-level)
-    # fractal_atr уже в X[:,:,16] (feat_idx = N_FRACTAL_FEATURES - 1 = 16)
+    # ATR_ratio = log(fractal_atr / Atr.Slow) — log-transform сжимает выбросы
+    # fractal_atr уже в X[:,:,16] (ATR_RATIO_IDX), ATR — сырое (без RobustScaler)
     atr_slow = pd.to_numeric(df['ATR'], errors='coerce').fillna(1.0).values.astype(np.float32)
     denom = np.where(atr_slow > 0, atr_slow, 1.0)
-    X[:, :, N_FRACTAL_FEATURES - 1] = X[:, :, N_FRACTAL_FEATURES - 1] / denom[:, np.newaxis]
+    ratio = X[:, :, ATR_RATIO_IDX] / denom[:, np.newaxis]
+    ratio = np.clip(ratio, 1e-6, None)  # защита от log(0)
+    X[:, :, ATR_RATIO_IDX] = np.log(ratio)
+
+    # === Time features (вычисляются из fractal_time) ===
+    # hour_sin, hour_cos — циклическое кодирование часа суток
+    hour = (fractal_times % 86400) / 3600.0  # 0..23.99
+    X[:, :, TIME_FEAT_HOUR_SIN] = np.where(raw_valid, np.sin(2 * np.pi * hour / 24), 0.0)
+    X[:, :, TIME_FEAT_HOUR_COS] = np.where(raw_valid, np.cos(2 * np.pi * hour / 24), 0.0)
+
+    # time_pos — позиция фрактала на временной оси строки [0..1]
+    # newest=1, oldest=0; padding=0
+    times_masked = np.where(raw_valid & (fractal_times > 0), fractal_times, np.nan)
+    t_newest = np.nanmax(times_masked, axis=1, keepdims=True)  # (n_samples, 1)
+    t_oldest = np.nanmin(times_masked, axis=1, keepdims=True)  # (n_samples, 1)
+    span = t_newest - t_oldest
+    span = np.where(span > 0, span, 1.0)  # avoid division by zero
+    time_pos = (fractal_times - t_oldest) / span
+    X[:, :, TIME_FEAT_TIME_POS] = np.where(raw_valid & (fractal_times > 0), time_pos, 0.0)
 
     # Финальная маска: True для валидных (non-padding) позиций
     mask = raw_valid
@@ -296,11 +325,17 @@ def create_data_loaders(
                 for f in cache_files:
                     f.unlink()
             else:
-                print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                 X = np.load(x_path)
-                mask = np.load(mask_path)
-                y = np.load(y_path)
-                return X, mask, y
+                # Проверяем совместимость кэша по количеству features
+                if X.shape[2] != N_FRACTAL_FEATURES:
+                    print(f"  🔄 Кэш {prefix} устарел ({X.shape[2]} features, ожидается {N_FRACTAL_FEATURES}). Инвалидация...")
+                    for f in cache_files:
+                        f.unlink()
+                else:
+                    print(f"  Загрузка кэшированных данных {prefix} из .npy...")
+                    mask = np.load(mask_path)
+                    y = np.load(y_path)
+                    return X, mask, y
 
         print(f"  Кэш не найден. Загрузка {csv_file.name} и парсинг...")
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)

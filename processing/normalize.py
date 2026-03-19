@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: 2026-02-07
-# Обновлён: 2026-02-11
+# Обновлён: 2026-03-19
 #
 # Зависимости:
 #   Входные данные:
@@ -40,9 +40,9 @@
 - Min-Max: для price
 - RobustScaler: для ATR (глобальная нормализация)
 
-Структура фрактала (11 признаков):
-    fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse
-    [0]         :[1]  :[2]      :[3]  :[4] :[5]   :[6]  :[7]    :[8]  :[9]  :[10]
+Структура фрактала (18 признаков):
+    fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr
+    [0]         :[1]  :[2]      :[3]  :[4] :[5]   :[6]  :[7]    :[8]  :[9]  :[10]  :[11] :[12] :[13] :[14] :[15] :[16] :[17]
 """
 
 import numpy as np
@@ -64,6 +64,13 @@ FRACTAL_INDICES = {
     'power': 8,
     'count': 9,
     'impulse': 10,
+    'up_12': 11,
+    'dn_12': 12,
+    'up_24': 13,
+    'dn_24': 14,
+    'up_48': 15,
+    'dn_48': 16,
+    'fractal_atr': 17,
 }
 
 # Признаки для piecewise linear-log нормализации (раздельно)
@@ -72,8 +79,14 @@ PIECEWISE_SEPARATE = ['impulse', 'count', 'reverse', 'power', 'break']
 # Признаки для совместной нормализации (общие параметры)
 PIECEWISE_JOINT = ['front', 'back']  # + predict (отдельная колонка)
 
+# Up/Dn поля для совместной piecewise нормализации (отдельный пул от front/back)
+UPDN_FIELDS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+
+# Row-level колонки-таргеты (нормализуются в том же пуле)
+UPDN_TARGET_COLUMNS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+
 # Признаки без нормализации
-NO_NORMALIZE = ['direction', 'strong', 'fractal_time']
+NO_NORMALIZE = ['direction', 'strong', 'fractal_time', 'fractal_atr']
 
 # Параметры piecewise linear-log по умолчанию
 DEFAULT_PIECEWISE_PARAMS = {
@@ -90,20 +103,20 @@ def parse_fractal(fractal_str: str) -> Optional[List[float]]:
     Парсит строку фрактала в список значений.
 
     Args:
-        fractal_str: Строка формата "time:price:direction:front:back:strong:break:reverse:power:count:impulse"
+        fractal_str: Строка формата "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr"
 
     Returns:
-        Список из 11 float значений или None, если строка некорректна.
+        Список из 18 float значений или None, если строка некорректна.
     """
     if pd.isna(fractal_str) or fractal_str == '':
         return None
-    
+
     parts = str(fractal_str).split(':')
-    if len(parts) < 11:
+    if len(parts) < 18:
         return None
-    
+
     try:
-        return [float(p) for p in parts[:11]]
+        return [float(p) for p in parts[:18]]
     except (ValueError, IndexError):
         return None
 
@@ -113,7 +126,7 @@ def fractal_to_string(values: np.ndarray) -> str:
     Собирает массив значений обратно в строку фрактала.
 
     Args:
-        values: Массив из 11 значений признаков фрактала.
+        values: Массив из 18 значений признаков фрактала.
 
     Returns:
         Строка формата "time:price:direction:...".
@@ -139,7 +152,7 @@ def parse_fractals_to_array(df: pd.DataFrame) -> Tuple[np.ndarray, List[str]]:
 
     Returns:
         Tuple:
-            - numpy array shape (n_rows, n_fractals, 11)
+            - numpy array shape (n_rows, n_fractals, 18)
             - список имён колонок фракталов
     """
     fractal_columns = sorted(
@@ -149,7 +162,7 @@ def parse_fractals_to_array(df: pd.DataFrame) -> Tuple[np.ndarray, List[str]]:
     
     n_rows = len(df)
     n_fractals = len(fractal_columns)
-    n_features = 11
+    n_features = 18
     
     # Инициализируем массив NaN для обработки пустых фракталов
     result = np.full((n_rows, n_fractals, n_features), np.nan, dtype=np.float64)
@@ -172,7 +185,7 @@ def array_to_fractal_strings(
     Записывает numpy array обратно в DataFrame как строки фракталов.
 
     Args:
-        fractals: Массив shape (n_rows, n_fractals, 11).
+        fractals: Массив shape (n_rows, n_fractals, 18).
         df: Исходный DataFrame для модификации.
         fractal_columns: Список имён колонок фракталов.
 
@@ -326,6 +339,14 @@ def normalize_rowwise(
     df = df.copy()
     predict_original = df['predict'].values.copy()
     predict_normalized = np.zeros_like(predict_original, dtype=np.float32)
+
+    # Подготовка Up/Dn target columns для нормализации в общем пуле с фичами фракталов
+    updn_targets = {}
+    for col in UPDN_TARGET_COLUMNS:
+        if col in df.columns:
+            updn_targets[col] = df[col].values.copy().astype(np.float64)
+        else:
+            updn_targets[col] = np.zeros(n_rows, dtype=np.float64)
     
     # Логирование: сохраняем примеры до нормализации
     if debug:
@@ -396,16 +417,53 @@ def normalize_rowwise(
         # === 3. Min-max нормализация price ===
         price_vals = fractals[i, :, idx_price]
         price_valid = price_vals[np.isfinite(price_vals)]
-        
+
         if len(price_valid) > 0:
             fractals[i, :, idx_price] = minmax_normalize(price_vals, eps)
-        
+
+        # === 4. Joint piecewise нормализация Up/Dn (фичи + таргеты) ===
+        updn_indices = [FRACTAL_INDICES[name] for name in UPDN_FIELDS]
+
+        # 600 значений из фракталов + 6 значений из таргетов строки = 606
+        updn_fractal_vals = fractals[i, :, updn_indices].flatten()
+        updn_target_vals = np.array([updn_targets[col][i] for col in UPDN_TARGET_COLUMNS])
+        updn_pool = np.concatenate([updn_fractal_vals, updn_target_vals])
+
+        # Перцентили считаем по ненулевым (нули — "цена не двигалась" — не должны сдвигать p85)
+        updn_valid = updn_pool[np.isfinite(updn_pool) & (updn_pool > 0)]
+
+        if len(updn_valid) > 0:
+            lo_updn = 0.0  # Up/Dn >= 0 всегда, нули останутся нулями
+            brk_updn = np.nanpercentile(updn_valid, q_break * 100)
+            cap_updn = np.nanpercentile(updn_valid, q_cap * 100)
+            brk_updn = max(brk_updn, lo_updn + eps)
+            cap_updn = max(cap_updn, brk_updn + eps)
+
+            # Нормализуем фичи фракталов (поля 11-16)
+            for idx in updn_indices:
+                fractals[i, :, idx] = piecewise_linear_log_transform(
+                    fractals[i, :, idx], lo_updn, brk_updn, cap_updn,
+                    linear_max, tail_strength, eps
+                )
+
+            # Нормализуем таргеты строки
+            for col in UPDN_TARGET_COLUMNS:
+                updn_targets[col][i] = piecewise_linear_log_transform(
+                    np.array([updn_targets[col][i]]), lo_updn, brk_updn, cap_updn,
+                    linear_max, tail_strength, eps
+                )[0]
+
         # Прогресс
         if (i + 1) % 10000 == 0 or i == n_rows - 1:
             print(f"      Обработано: {i + 1}/{n_rows} строк")
     
     # Записываем нормализованный predict обратно
     df['predict'] = predict_normalized
+
+    # Записываем нормализованные Up/Dn таргеты обратно
+    for col in UPDN_TARGET_COLUMNS:
+        if col in df.columns:
+            df[col] = updn_targets[col].astype(np.float32)
     
     # Записываем фракталы обратно в DataFrame
     print(f"\n[4/4] Запись нормализованных фракталов...")
@@ -439,7 +497,7 @@ def collect_statistics(df: pd.DataFrame, fractals: np.ndarray) -> dict:
 
     Args:
         df: DataFrame с колонкой predict.
-        fractals: Numpy array фракталов shape (n_rows, n_fractals, 11).
+        fractals: Numpy array фракталов shape (n_rows, n_fractals, 18).
 
     Returns:
         Словарь со статистикой по каждому признаку.

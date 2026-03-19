@@ -8,15 +8,14 @@
 | Метод | Признаки | Диапазон | Особенности |
 |-------|----------|----------|-------------|
 | **Piecewise Linear-Log** | `predict`, `front`, `back`, `impulse`, `count`, `reverse`, `power`, `break` | [0, 1] | Линейная часть до 85-го перцентиля, логарифмическое сжатие хвоста до 99-го. |
+| **Piecewise Linear-Log (joint Up/Dn)** | `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48` | [0, 1] | 606 значений на строку (100 фракталов × 6 + 6 таргетов), общие p85/p99. |
 | **Min-Max** | `price` | [0, 1] | Классическое масштабирование. |
-| **RobustScaler** | `ATR` | — | Глобальная нормализация, устойчивая к выбросам (fit на Train). |
-| **Без изменений** | `direction`, `strong` | {-1, 0, 1} | Категориальные признаки. |
+| **Без изменений** | `direction`, `strong`, `fractal_atr` | {-1, 0, 1} / raw | Категориальные и служебные признаки. |
 
 ## Ключевые функции
-- `normalize_rowwise()`: Построчная нормализация (fractals, predict) — **без утечки данных (No Data Leakage)**.
-- `normalize_atr_train()`: Fit + Transform RobustScaler для ATR на обучающей выборке.
-- `normalize_atr_inference()`: Transform RobustScaler для ATR на валидации/тесте.
+- `normalize_rowwise()`: Построчная нормализация (fractals, predict, Up/Dn таргеты) — **без утечки данных (No Data Leakage)**.
 - `piecewise_linear_log_transform()`: Реализация алгоритма PLL.
+- `normalize_atr_train()` / `normalize_atr_inference()`: Устаревшие, не используются (ATR не нормализуется, используется как знаменатель для ATR_ratio в data_loader.py).
 
 ## Алгоритм Piecewise Linear-Log
 1. **Линейная зона**: Значения от `min` до `p85` маппятся в `[0, 0.85]`.
@@ -25,14 +24,11 @@
 
 ## Использование
 ```python
-from normalize import normalize_rowwise, normalize_atr_train
+from normalize import normalize_rowwise
 
-# 1. Построчная нормализация (безопасно до сплита)
-df = normalize_rowwise(df)
+# Построчная нормализация (безопасно до сплита)
+df = normalize_rowwise(df, stats_path="stats.csv")
 
-# ... сплит на train/val ...
-
-# 2. ATR нормализация (после сплита)
-train_df = normalize_atr_train(train_df, "scaler.pkl")
-val_df = normalize_atr_inference(val_df, "scaler.pkl")
+# ... сплит на train/val/test ...
+# ATR не нормализуется — используется как знаменатель для ATR_ratio в data_loader.py
 ```

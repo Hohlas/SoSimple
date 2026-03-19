@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-03-18
+# Обновлён: 2026-03-19
 #
 # Зависимости:
 #   Входные данные:
@@ -13,11 +13,10 @@
 #     - DATA/{stem}_train_labeled.csv (маркированные + нормализованные данные, 70%)
 #     - DATA/{stem}_validation_labeled.csv (маркированные + нормализованные данные, 15%)
 #     - DATA/{stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
-#     - DATA/{stem}_atr_scaler.pkl (RobustScaler для ATR, обученный на train)
 #     - DATA/{stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
 #   - label_signals.py (функции label_all, label_updn)
-#   - normalize.py (функции normalize_rowwise, normalize_atr_train, normalize_atr_inference)
+#   - normalize.py (функция normalize_rowwise)
 # Внешние зависимости:
 #   - pandas>=2.0.0
 #   - numpy>=1.24.0
@@ -30,10 +29,10 @@
 #   python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
-#   - Конвейер: сортировка -> маркировка (signal+predict) -> up/dn таргеты -> нормализация -> split -> ATR norm
+#   - Конвейер: сортировка -> маркировка (signal+predict) -> up/dn таргеты -> нормализация -> split
 #   - Построчная нормализация выполняется до split (нет data leakage)
-#   - ATR нормализация: fit на train, transform на val/test
-#   - up_12..dn_48 не нормализуются (таргеты регрессии в ценовых единицах)
+#   - ATR (Atr.Slow) не нормализуется — используется только как знаменатель для ATR_ratio в data_loader.py
+#   - up_12..dn_48 нормализуются совместно с Up/Dn фичами фракталов (Piecewise Linear-Log, 606 значений на строку)
 # =============================================================================
 
 """
@@ -44,7 +43,7 @@
 1. Корректную сортировку фракталов в строках (новые события слева).
 2. Проверку качества сортировки.
 3. Маркировку ВСЕГО датасета (signal + predict).
-4. Нормализацию признаков (построчная для фракталов, глобальная для ATR).
+4. Нормализацию признаков (построчная для фракталов).
 5. Разделение на train/validation/test (70/15/15%).
 """
 
@@ -53,7 +52,7 @@ import pandas as pd
 import os
 from pathlib import Path
 from label_signals import label_all, label_updn
-from normalize import normalize_rowwise, normalize_atr_train, normalize_atr_inference
+from normalize import normalize_rowwise
 
 
 
@@ -275,8 +274,7 @@ def main():
     2. Маркировка (signal + predict)
     3. Построчная нормализация (до split — нет data leakage)
     4. Разделение train/val/test (70/15/15)
-    5. ATR нормализация (fit на train, transform на val/test)
-    6. Сохранение файлов
+    5. Сохранение файлов
     """
     parser = argparse.ArgumentParser(
         description="Программный комплекс для подготовки, маркировки и нормализации котировок"
@@ -306,7 +304,6 @@ def main():
     output_base = project_root / "DATA" / input_path.stem
 
     stats_path = str(output_base) + "_normalization_stats.csv"
-    scaler_path = str(output_base) + "_atr_scaler.pkl"
 
     print(f"Чтение данных из: {input_resolved}")
     df = pd.read_csv(input_resolved, sep=';')
@@ -340,20 +337,15 @@ def main():
     
     # 5. Разделяем на train/validation/test (70/15/15)
     train_df, val_df, test_df = split_train_val_test(labeled_df)
-    
-    # 6. ATR нормализация (fit на train, transform на val/test)
-    if not args.no_normalize and 'ATR' in train_df.columns:
-        train_df = normalize_atr_train(train_df, scaler_path)
-        val_df = normalize_atr_inference(val_df, scaler_path)
-        test_df = normalize_atr_inference(test_df, scaler_path)
-    
-    # 7. Сохраняем файлы
+
+    # 6. Сохраняем файлы
     save_datasets(train_df, val_df, test_df, output_base)
-    
-    # 8. Удаляем временные файлы
-    os.remove(temp_sorted_path)
-    os.remove(temp_labeled_path)
-    
+
+    # 7. Удаляем временные файлы
+    for tmp in [temp_sorted_path, temp_labeled_path]:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
     print(f"\n" + "=" * 60)
     print("ПОДГОТОВКА ЗАВЕРШЕНА")
     print("=" * 60)
@@ -361,8 +353,6 @@ def main():
     if not args.no_normalize:
         print(f"Нормализация: применена")
         print(f"  Статистика: {stats_path}")
-        if 'ATR' in df.columns:
-            print(f"  ATR scaler: {scaler_path}")
     else:
         print(f"Нормализация: пропущена (--no-normalize)")
 

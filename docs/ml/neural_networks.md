@@ -45,7 +45,7 @@ ML/
 
 ## Входные данные
 - **Файл**: `DATA/Nero_train_labeled.csv`, `DATA/Nero_validation_labeled.csv`
-- **Формат**: CSV (`;`), 100 фракталов × 11 полей через `:`
+- **Формат**: CSV (`;`), 100 фракталов × 18 полей через `:`
 - **Источник**: `processing/label_main.py`
 
 ## Выходные данные
@@ -124,10 +124,11 @@ python -m ML.train --model transformer --task classification \
 ## Data Pipeline
 
 ### 1. Парсинг (`data_loader.py`)
-CSV → 3D тензор `(n_samples, 100, 11)`:
-- 10 фрактальных features: price, direction, front, back, strong, break, reverse, power, count, impulse
-- `fractal_time` **исключён** — data leakage через абсолютное время
-- ATR broadcast как 11-й признак
+CSV → 3D тензор `(n_samples, 100, 20)`:
+- 17 фрактальных features из CSV (fields 1-17): price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48, ATR_ratio
+- `fractal_time` (field 0) — исключён как сырое, но используется для вычисления time-фич
+- `fractal_atr` (field 17) → `log(ATR_ratio)` = log(fractal_atr / ATR_raw)
+- 3 вычисляемые time-фичи: `hour_sin`, `hour_cos` (sin/cos часа суток), `time_pos` (позиция на оси строки [0..1])
 - Padding mask для NaN-позиций
 
 ### 2. Нормализация (`data_loader.py`)
@@ -141,10 +142,10 @@ CSV → 3D тензор `(n_samples, 100, 11)`:
 
 | Модель | Вход | Ключевая идея | Параметры |
 |--------|------|---------------|-----------|
-| **Bi-LSTM** | (batch, 100, 11) | Временные зависимости в обоих направлениях, concat pooling | 147,203 |
-| **1D-CNN** | (batch, 100, 11)→транспоз | Локальные паттерны между соседними фракталами, GAP | 41,603 |
-| **Transformer** | (batch, 100, 11) | Self-attention + CLS token + padding mask | 69,955 |
-| **Hybrid CNN+LSTM** | (batch, 100, 11)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | 83,203 |
+| **Bi-LSTM** | (batch, 100, 20) | Временные зависимости в обоих направлениях, concat pooling | ~150K |
+| **1D-CNN** | (batch, 100, 20)→транспоз | Локальные паттерны между соседними фракталами, GAP | ~44K |
+| **Transformer** | (batch, 100, 20) | Self-attention + CLS token + padding mask | ~72K |
+| **Hybrid CNN+LSTM** | (batch, 100, 20)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | ~86K |
 
 Все модели возвращают тензор `(batch, num_classes)`.
 - Для классификации: `num_classes=3`.
@@ -374,7 +375,7 @@ ML/checkpoints/
 ```
 
 ## Примечания
-- `fractal_time` исключён из features — его смысл уже отражён порядком позиций
+- `fractal_time` не подаётся как сырое абсолютное время — вместо него вычисляются `hour_sin`, `hour_cos`, `time_pos`
 - Focal Loss: alpha=[0.45, 0.10, 0.45] = больший вес minority-классам (-1 и 1)
 - Маппинг alpha: индекс 0→class -1, индекс 1→class 0, индекс 2→class 1
 - Gradient clipping (max_norm=1.0) для стабильности LSTM/Transformer
