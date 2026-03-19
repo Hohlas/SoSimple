@@ -5,7 +5,8 @@
       "Bash(iconv -f UTF-16LE -t UTF-8 /home/hohla/git/SoSimple/MT/MQL4/Include/head_PIC.mqh)",
       "Bash(iconv -f UTF-16LE -t UTF-8 /home/hohla/git/SoSimple/MT/MQL4/Include/lib_PIC.mqh)",
       "Bash(xargs cat:*)",
-      "Read(//home/hohla/git/SoSimple/MT/MQL4/Experts/**)"
+      "Read(//home/hohla/git/SoSimple/MT/MQL4/Experts/**)",
+      "Bash(python3:*)"
     ]
   }
 }

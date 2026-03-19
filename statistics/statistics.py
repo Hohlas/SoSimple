@@ -2,7 +2,7 @@
 # Файл: statistics/statistics.py
 # Назначение: Потоковая обработка и сбор статистики по фракталам и сигналам
 # Язык: Python
-# Обновлён: 2026-02-11
+# Обновлён: 2026-03-19
 # Зависимости:
 #   Входные данные:
 #     - Nero.csv (из директории скрипта)
@@ -57,10 +57,12 @@ class StreamingStats:
     def __init__(self):
         self.signal_counts = Counter()
         
-        # Для каждого из 11 признаков фрактала
-        self.feature_names = ['fractal_time', 'price', 'direction', 'front', 
-                            'back', 'strong', 'break', 'reverse', 
-                            'power', 'count', 'impulse']
+        # Для каждого из 18 признаков фрактала
+        self.feature_names = ['fractal_time', 'price', 'direction', 'front',
+                            'back', 'strong', 'break', 'reverse',
+                            'power', 'count', 'impulse',
+                            'up_12', 'dn_12', 'up_24', 'dn_24',
+                            'up_48', 'dn_48', 'fractal_atr']
         
         # Онлайн статистика по методу Уэлфорда
         # ИСПРАВЛЕНО: Отдельный счётчик для каждого признака
@@ -176,9 +178,9 @@ def parse_fractal_column(fractal_str: str) -> Dict:
         Словарь с распарсенными признаками или None в случае ошибки.
     """
     parts = fractal_str.split(':')
-    if len(parts) != 11:
+    if len(parts) != 18:
         return None
-    
+
     try:
         return {
             'fractal_time': int(parts[0]),
@@ -191,7 +193,14 @@ def parse_fractal_column(fractal_str: str) -> Dict:
             'reverse': float(parts[7]),
             'power': float(parts[8]),
             'count': int(parts[9]),
-            'impulse': float(parts[10])
+            'impulse': float(parts[10]),
+            'up_12': float(parts[11]),
+            'dn_12': float(parts[12]),
+            'up_24': float(parts[13]),
+            'dn_24': float(parts[14]),
+            'up_48': float(parts[15]),
+            'dn_48': float(parts[16]),
+            'fractal_atr': float(parts[17])
         }
     except (ValueError, IndexError):
         return None  # Некорректные данные
