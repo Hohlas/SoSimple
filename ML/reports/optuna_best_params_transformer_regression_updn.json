@@ -1,0 +1,22 @@
+{
+  "model": "transformer",
+  "task": "regression_updn",
+  "best_value": 0.4432884007692337,
+  "best_params": {
+    "lr": 0.0022829015407735465,
+    "batch_size": 256,
+    "patience": 6,
+    "weight_decay": 7.904805314839799e-05,
+    "scheduler_patience": 4,
+    "scheduler_factor": 0.38835158848738194,
+    "huber_delta": 0.8458675969643228,
+    "d_model": 32,
+    "nhead": 8,
+    "num_layers": 3,
+    "dim_feedforward": 128,
+    "dropout": 0.16611553370752882
+  },
+  "best_trial": 17,
+  "n_trials": 50,
+  "timestamp": "20260319_172657"
+}
