@@ -42,6 +42,7 @@
 | [optimize.py](ML/optimize.py) | Оптимизация гиперпараметров (Optuna) | DataLoader → `reports/optuna_*.json` | — | ✅ |
 | [experiment_logger.py](ML/experiment_logger.py) | Логирование экспериментов в CSV | results → `reports/experiments_log.csv` | — | ✅ |
 | [threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | checkpoint + val CSV → `reports/threshold_analysis.md`, `plots/threshold_*.png` | — | ✅ |
+| [evaluate_test.py](ML/evaluate_test.py) | Out-of-Sample оценка (profit factor, precision) на тестовой выборке | checkpoint + test CSV → `reports/evaluate_test_*.md` | — | ✅ |
 | [reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | — → `reports/reproducibility_report.md` | — | ✅ |
 
 ## Docs
@@ -63,4 +64,4 @@
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-03-11
+**Последнее обновление**: 2026-03-19

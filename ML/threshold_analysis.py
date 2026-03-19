@@ -47,6 +47,7 @@ import matplotlib.pyplot as plt
 
 from ML.data_loader import (
     create_data_loaders, CSV_SEP, VAL_FILE, FRACTAL_SEP,
+    UPDN_TARGETS, UPDN_REGRESSION_TARGET
 )
 from ML.models import get_model
 from ML.utils import set_seed, get_device
@@ -88,27 +89,27 @@ def run_inference(
     for X_batch, _y_batch, mask_batch in val_loader:
         X_batch = X_batch.to(device)
         mask_batch = mask_batch.to(device)
-        preds = model(X_batch, mask=mask_batch).squeeze(-1).cpu().numpy()
+        preds = model(X_batch, mask=mask_batch).cpu().numpy()
+        if preds.ndim > 1 and preds.shape[-1] == 1:
+            preds = preds.squeeze(-1)
         all_preds.append(preds)
 
     return np.concatenate(all_preds)
 
 
-def load_validation_metadata() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def load_validation_metadata(task: str = 'regression') -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Загрузка signal, predict и direction из validation CSV.
-
-    Возвращает:
-        Кортеж (signal, predict_true, direction):
-        - signal: np.ndarray (n,) — метки {-1, 0, 1}
-        - predict_abs: np.ndarray (n,) — |predict| (absolute)
-        - direction: np.ndarray (n,) — direction из fractal[0] {-1, 1}
+    Загрузка signal, predict/updn и direction из validation CSV.
     """
     print("  📄 Загрузка метаданных из validation CSV...")
     df = pd.read_csv(VAL_FILE, sep=CSV_SEP, low_memory=False)
 
     signal = df['signal'].values.astype(int)
-    predict_abs = np.abs(df['predict'].values.astype(np.float64))
+    
+    if task == 'regression_updn':
+        predict_val = df[UPDN_TARGETS].values.astype(np.float64)
+    else:
+        predict_val = np.abs(df['predict'].values.astype(np.float64))
 
     # Извлекаем direction из fractal0 (3-е поле, индекс 2)
     direction = df['fractal0'].astype(str).apply(
@@ -116,11 +117,7 @@ def load_validation_metadata() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     ).values
 
     print(f"    Загружено {len(signal)} строк")
-    print(f"    Signals: {(signal != 0).sum()} ({(signal != 0).mean()*100:.1f}%)")
-    print(f"    Direction: {(direction == 1).sum()} пиков, "
-          f"{(direction == -1).sum()} впадин")
-
-    return signal, predict_abs, direction
+    return signal, predict_val, direction
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -199,6 +196,75 @@ def analyze_thresholds(
             'gross_profit': gross_profit,
             'gross_loss': gross_loss,
             'profit_factor': pf,
+        })
+
+    return pd.DataFrame(rows)
+
+
+def analyze_thresholds_updn(
+    y_pred: np.ndarray,
+    y_true: np.ndarray,
+    horizon: int = 12,
+    n_thresholds: int = 200,
+) -> pd.DataFrame:
+    idx_map = {12: 0, 24: 2, 48: 4}
+    if horizon not in idx_map:
+        raise ValueError(f"Unknown horizon {horizon}")
+    idx = idx_map[horizon]
+    
+    pred_up = y_pred[:, idx]
+    pred_dn = y_pred[:, idx + 1]
+    true_up = y_true[:, idx]
+    true_dn = y_true[:, idx + 1]
+    
+    ratio_up = pred_up / (pred_dn + 1e-6)
+    ratio_dn = pred_dn / (pred_up + 1e-6)
+    
+    all_ratios = np.concatenate([ratio_up, ratio_dn])
+    all_ratios = all_ratios[all_ratios > 1.01]
+    
+    if len(all_ratios) == 0:
+        thresholds = np.linspace(1.1, 3.0, n_thresholds)
+    else:
+        percentiles = np.linspace(0, 99.5, n_thresholds)
+        thresholds = np.unique(np.percentile(all_ratios, percentiles))
+        thresholds = thresholds[thresholds > 1.0]
+        
+    rows = []
+    
+    for theta in thresholds:
+        signal = np.zeros(len(y_pred), dtype=int)
+        signal[ratio_up > theta] = 1
+        signal[ratio_dn > theta] = -1
+        
+        trades = np.count_nonzero(signal)
+        profit_trades = 0
+        loss_trades = 0
+        gross_profit = 0.0
+        gross_loss = 0.0
+        
+        buy_mask = (signal == 1)
+        gross_profit += true_up[buy_mask].sum()
+        gross_loss += true_dn[buy_mask].sum()
+        profit_trades += (true_up[buy_mask] > true_dn[buy_mask]).sum()
+        loss_trades += (true_up[buy_mask] <= true_dn[buy_mask]).sum()
+        
+        sell_mask = (signal == -1)
+        gross_profit += true_dn[sell_mask].sum()
+        gross_loss += true_up[sell_mask].sum()
+        profit_trades += (true_dn[sell_mask] > true_up[sell_mask]).sum()
+        loss_trades += (true_dn[sell_mask] <= true_up[sell_mask]).sum()
+        
+        pf = gross_profit / gross_loss if gross_loss > 0 else np.inf
+        precision = profit_trades / trades if trades > 0 else 0.0
+        recall = trades / len(y_pred)
+        f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+        
+        rows.append({
+            'theta': float(theta), 'precision': float(precision), 'recall': float(recall),
+            'f1': float(f1), 'trades_count': float(trades), 'tp': float(profit_trades),
+            'fp': float(loss_trades), 'fn': float(loss_trades), 'gross_profit': float(gross_profit),
+            'gross_loss': float(gross_loss), 'profit_factor': float(pf),
         })
 
     return pd.DataFrame(rows)
@@ -500,14 +566,20 @@ def generate_report(
     lines.append("## 4. Схема торгового решения")
     lines.append("")
     lines.append("```")
-    lines.append(f"Input: X ∈ R^{{100×11}} → Model → |predict_hat| ∈ R+")
+    lines.append(f"Input: X ∈ R^{{100×11}} → Model → predicts")
     lines.append("")
-    lines.append(f"if |predict_hat| > θ={optimal['theta']:.5f}:")
-    lines.append(f"    direction = fractal[0].direction")
-    lines.append(f"    if direction == -1:  → BUY  (впадина → рост)")
-    lines.append(f"    if direction ==  1:  → SELL (пик → падение)")
-    lines.append(f"else:")
-    lines.append(f"    → NO SIGNAL")
+    if 'updn' in model_name.lower():
+        lines.append(f"if pred_up / pred_dn > θ={optimal['theta']:.5f}:  → BUY")
+        lines.append(f"if pred_dn / pred_up > θ={optimal['theta']:.5f}:  → SELL")
+        lines.append(f"else:")
+        lines.append(f"    → NO SIGNAL")
+    else:
+        lines.append(f"if |predict_hat| > θ={optimal['theta']:.5f}:")
+        lines.append(f"    direction = fractal[0].direction")
+        lines.append(f"    if direction == -1:  → BUY  (впадина → рост)")
+        lines.append(f"    if direction ==  1:  → SELL (пик → падение)")
+        lines.append(f"else:")
+        lines.append(f"    → NO SIGNAL")
     lines.append("```")
     lines.append("")
 
@@ -526,6 +598,8 @@ def run_threshold_analysis(
     checkpoint_path: str | None = None,
     seed: int = 42,
     optuna_json: str | None = None,
+    task: str = 'regression',
+    horizon: int = 12,
 ) -> dict:
     """
     Полный pipeline анализа порогов.
@@ -546,9 +620,11 @@ def run_threshold_analysis(
     if checkpoint_path:
         ckpt_path = Path(checkpoint_path)
     elif model_name:
-        ckpt_path = CHECKPOINTS_DIR / f'{model_name}_regression_best.pt'
+        suffix = '_updn' if task == 'regression_updn' else '_regression'
+        ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
     else:
-        ckpt_path = CHECKPOINTS_DIR / 'best_model_regression.pt'
+        suffix = '_updn' if task == 'regression_updn' else '_regression'
+        ckpt_path = CHECKPOINTS_DIR / f'best_model{suffix}.pt'
 
     if not ckpt_path.exists():
         raise FileNotFoundError(
@@ -598,14 +674,15 @@ def run_threshold_analysis(
 
     # ── Загрузка данных ──────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
+    target_col = UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
     _train_loader, val_loader, _scaler = create_data_loaders(
         batch_size=256,
-        target='predict',
+        target=target_col,
         use_scaler=False,
     )
 
     # Загрузка метаданных (signal, predict, direction) из CSV
-    signal_true, predict_abs_true, direction = load_validation_metadata()
+    signal_true, predict_abs_true, direction = load_validation_metadata(task)
 
     # ── Инференс ─────────────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
@@ -622,7 +699,10 @@ def run_threshold_analysis(
     # ── Анализ порогов ───────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
     print("📊 Анализ порогов...")
-    df_thresholds = analyze_thresholds(y_pred, signal_true, predict_abs_true)
+    if task == 'regression_updn':
+        df_thresholds = analyze_thresholds_updn(y_pred, predict_abs_true, horizon=horizon)
+    else:
+        df_thresholds = analyze_thresholds(y_pred, signal_true, predict_abs_true)
     print(f"  Проанализировано {len(df_thresholds)} порогов")
 
     # ── Оптимальный порог ────────────────────────────────────────────────────
@@ -654,7 +734,7 @@ def run_threshold_analysis(
     n_signals = int((signal_true != 0).sum())
     generate_report(
         df_thresholds, optimal,
-        model_name=ckpt_model_name,
+        model_name=f"{ckpt_model_name} ({task}{'_H'+str(horizon) if task=='regression_updn' else ''})",
         pearson_r=pearson_r_val,
         n_val=len(signal_true),
         n_signals=n_signals,
@@ -675,6 +755,16 @@ def parse_args() -> argparse.Namespace:
         '--model', type=str, default=None,
         choices=['bilstm', 'cnn1d', 'transformer', 'hybrid'],
         help="Имя модели (загрузит <model>_regression_best.pt)"
+    )
+    parser.add_argument(
+        '--task', type=str, default='regression',
+        choices=['regression', 'regression_updn'],
+        help="Тип таргета."
+    )
+    parser.add_argument(
+        '--horizon', type=int, default=12,
+        choices=[12, 24, 48],
+        help="Горизонт (только для regression_updn)."
     )
     parser.add_argument(
         '--checkpoint', type=str, default=None,
@@ -698,4 +788,6 @@ if __name__ == '__main__':
         checkpoint_path=args.checkpoint,
         seed=args.seed,
         optuna_json=args.optuna_json,
+        task=args.task,
+        horizon=args.horizon,
     )

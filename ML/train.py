@@ -1031,7 +1031,7 @@ def main():
     )
 
     # Сохраняем результат как JSON
-    regression = (args.task == 'regression')
+    regression = (args.task in ['regression', 'regression_updn'])
 
     if regression:
         result_serializable = {
@@ -1046,7 +1046,7 @@ def main():
                 if isinstance(v, float)
             },
         }
-        suffix = '_regression'
+        suffix = '_updn' if args.task == 'regression_updn' else '_regression'
     else:
         result_serializable = {
             'model_name': result['model_name'],

@@ -1,6 +1,29 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
+## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis
+
+### Добавлено
+- Скрипт `ML/evaluate_test.py`: Запуск обученной модели на отложенной (Test) выборке `Nero_test_labeled.csv`.
+- `ML/data_loader.py`: Поддержка загрузки и кэширования тестовой выборки (`TEST_FILE`).
+
+### Обновлено
+- **`threshold_analysis.py`**: нативная поддержка таргета `regression_updn`. Внедрена логика конвертации выходов `(N, 6)` в торговые сигналы путем оценки отношения `pred_up / pred_dn > θ`. Добавлен параметр `--horizon` (12, 24, 48).
+
+### Зафиксированные Отчеты
+- [`ML/reports/threshold_analysis_12H.md`](ML/reports/threshold_analysis_12H.md): Оптимальный горизонт. PF = **2.94**, Precision = 78.3%, Trades = 2502.
+- [`ML/reports/threshold_analysis_24H.md`](ML/reports/threshold_analysis_24H.md): Хороший результат. PF = **2.34**, Precision = 73.3%, Trades = 2115.
+- [`ML/reports/threshold_analysis_48H.md`](ML/reports/threshold_analysis_48H.md): Удовлетворительный результат. PF = **1.97**, Precision = 69.6%, Trades = 1870.
+- [`ML/reports/evaluate_test_H12.md`](ML/reports/evaluate_test_H12.md): Результаты OOS тестирования.
+
+### Прорывной Результат (Out-Of-Sample)
+Применение порога `θ=2.665` (выявленного на валидации 12H) к новой отложенной выборке (Test) показало феноменальный результат:
+- Сделок: **2203**
+- Win Rate (Precision): **86.20%**
+- **Profit Factor: 4.50**
+
+Этот результат подтверждает устойчивость выявленных (Transformer) рыночных паттернов на новых данных и открывает дорогу к интеграции модели в торговый эксперт MQL4.
+
 ## [2026-03-19] — ME-8: Multi-Task Regression (6 Up/Dn targets)
 
 ### Добавлено

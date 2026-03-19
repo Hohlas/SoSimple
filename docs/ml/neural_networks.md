@@ -37,10 +37,13 @@ ML/
 ├── losses.py                 # Focal Loss
 ├── utils.py                  # Seed, метрики, подсчёт параметров
 ├── compare_architectures.py  # Скрипт сравнения всех моделей
+├── evaluate_test.py          # OOS оценка обученной модели на тестовой выборке
 ├── checkpoints/              # Веса моделей (.pt) и метрики (.json)
 ├── plots/                    # Training curves, confusion matrices, residuals
 └── reports/
     ├── architecture_comparison.md
+    ├── threshold_analysis_*.md # Отчеты по подбору порогов для торговых сигналов
+    ├── evaluate_test_*.md      # Отчеты по тестированию Out-of-Sample
     └── optuna_*.json         # Отчёты оптимизации гиперпараметров
 ```
 
@@ -54,6 +57,12 @@ ML/
 - **Файл**: `ML/checkpoints/<model>_result.json`
 - **Файл**: `ML/plots/training_curves_*.png`
 - **Файл**: `ML/plots/cm_*.png` (классификация), `ML/plots/regression_*.png` (регрессия), `ML/plots/regression_*_updn.png` (multi-target)
+
+## Ключевые отчеты по торговым сигналам
+После обучения модели `regression_updn` формируются следующие отчеты в каталоге `ML/reports/`:
+- `threshold_analysis_12H.md` (а также `24H` и `48H`): Результаты подбора оптимального торгового порога `θ` на валидации.
+- `evaluate_test_H12.md`: Окончательный результат симуляции торговли на отложенных данных (Test).
+- `walkthrough.md`: Сводная документация по OOS-тестированию и достигнутому Profit Factor.
 
 ## Использование
 

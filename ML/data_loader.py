@@ -51,6 +51,7 @@ DATA_DIR = PROJECT_ROOT / 'DATA'
 
 TRAIN_FILE = DATA_DIR / 'Nero_train_labeled.csv'
 VAL_FILE = DATA_DIR / 'Nero_validation_labeled.csv'
+TEST_FILE = DATA_DIR / 'Nero_test_labeled.csv'
 
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
@@ -457,3 +458,81 @@ def create_data_loaders(
           f"val={len(val_loader)} batches (batch_size={batch_size})")
 
     return train_loader, val_loader, scaler
+
+
+def create_test_loader(
+    batch_size: int = 256,
+    target: str = 'predict',
+    seq_len: int = 100,
+    clear_cache: bool = False,
+    num_workers: int = 4,
+) -> DataLoader:
+    """Только для инференса на отложенной выборке. StandardScaler отключён (False)."""
+    print("\n📦 Загрузка тестовых данных...")
+    regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
+    multi_target = (target == UPDN_REGRESSION_TARGET)
+    prefix = 'test'
+    
+    x_path = DATA_DIR / f'X_{prefix}.npy'
+    mask_path = DATA_DIR / f'mask_{prefix}.npy'
+    y_path = DATA_DIR / f'y_{prefix}_{target}.npy'
+    cache_files = [x_path, mask_path, y_path]
+    
+    if clear_cache:
+        print(f"  🧹 Принудительная очистка кэша ({prefix})...")
+        for f in cache_files:
+            if f.exists(): f.unlink()
+    elif all(f.exists() for f in cache_files):
+        csv_mtime = TEST_FILE.stat().st_mtime
+        if any(csv_mtime > f.stat().st_mtime for f in cache_files):
+            print(f"  🔄 Файл {TEST_FILE.name} обновился. Инвалидация кэша {prefix}...")
+            for f in cache_files: f.unlink()
+        else:
+            X = np.load(x_path)
+            if X.shape[2] != N_FRACTAL_FEATURES:
+                print(f"  🔄 Кэш {prefix} устарел. Инвалидация...")
+                for f in cache_files: f.unlink()
+            else:
+                print(f"  Загрузка кэшированных данных {prefix} из .npy...")
+                mask = np.load(mask_path)
+                y = np.load(y_path)
+                
+                if seq_len < 100:
+                    X = X[:, :seq_len, :]
+                    mask = mask[:, :seq_len]
+                
+                dataset = FractalSequenceDataset(X, y, mask, regression=regression)
+                return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+
+    print(f"  Кэш не найден. Загрузка {TEST_FILE.name} и парсинг...")
+    df = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
+    
+    if multi_target:
+        y = df[UPDN_TARGETS].values.astype(np.float32)
+    elif regression:
+        y = np.abs(df[target].values.astype(np.float32))
+    else:
+        y = df[target].values.astype(int)
+        
+    X, mask = parse_fractals_to_3d(df)
+    np.save(x_path, X)
+    np.save(mask_path, mask)
+    np.save(y_path, y)
+    print(f"  ✅ Данные {prefix} сохранены в кэш.")
+    
+    if seq_len < 100:
+        X = X[:, :seq_len, :]
+        mask = mask[:, :seq_len]
+        
+    dataset = FractalSequenceDataset(X, y, mask, regression=regression)
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=torch.cuda.is_available(),
+        drop_last=False,
+    )
+    print(f"  ✅ Test DataLoader создан: {len(loader)} batches (batch_size={batch_size})")
+    
+    return loader
