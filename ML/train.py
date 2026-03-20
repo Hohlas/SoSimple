@@ -956,7 +956,12 @@ def parse_args() -> argparse.Namespace:
         '--clear_cache', action='store_true',
         help="Удалить старый кэш .npy перед загрузкой"
     )
-    
+    parser.add_argument(
+        '--model_kwargs', type=str, default=None,
+        help='JSON строка с архитектурными параметрами модели. '
+             'Пример: \'{"d_model": 32, "nhead": 8, "num_layers": 3}\''
+    )
+
     return parser.parse_args()
 
 
@@ -964,8 +969,10 @@ def main():
     """Точка входа: парсинг аргументов → обучение модели."""
     args = parse_args()
 
-    # Загружаем Optuna parameters если указан файл
+    # Загружаем архитектурные параметры
     model_kwargs = None
+    if args.model_kwargs:
+        model_kwargs = json.loads(args.model_kwargs)
     if args.optuna_json:
         with open(args.optuna_json, 'r', encoding='utf-8') as f:
             optuna_data = json.load(f)
@@ -983,11 +990,19 @@ def main():
         if 'huber_delta' in best_params: setattr(args, 'huber_delta', best_params['huber_delta'])
         if 'seq_len' in best_params: args.seq_len = best_params['seq_len']
         
-        # Извлекаем параметры архитектуры
-        model_kwargs = {}
-        for k in ['hidden_size', 'num_layers', 'dropout']:
-            if k in best_params:
-                model_kwargs[k] = best_params[k]
+        # Извлекаем параметры архитектуры (всё кроме training params)
+        training_params = {
+            'lr', 'batch_size', 'patience', 'weight_decay',
+            'scheduler_patience', 'scheduler_factor',
+            'focal_gamma', 'focal_minority_weight',
+            'huber_delta', 'seq_len',
+            'asym_over_penalty', 'asym_under_penalty',
+        }
+        if model_kwargs is None:
+            model_kwargs = {}
+        for k, v in best_params.items():
+            if k not in training_params:
+                model_kwargs[k] = v
                 
         print(f"✅ Успешно загружены параметры Optuna из {args.optuna_json}")
 
