@@ -80,6 +80,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   ├── checkpoints/    # Чекпоинты моделей (.pt)
 │   ├── plots/          # Графики обучения
 │   ├── reports/        # Отчёты экспериментов
+│   ├── conformal/      # Conformal Prediction: calibrate.py, quantiles, report
 │   ├── old/            # Архив старого кода
 │   ├── train.py        # Скрипт обучения
 │   ├── optimize.py     # Optuna оптимизация
@@ -105,7 +106,8 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   │   └── normalize.py.md
 │   ├── ml/             # Документация ML
 │   │   ├── baseline_experiments.py.md
-│   │   └── neural_networks.md
+│   │   ├── neural_networks.md
+│   │   └── conformal_prediction.md
 │   ├── mql4/           # Документация MQL4
 │   │   ├── lib_PIC.mqh.md # Библиотека анализа фракталов
 │   │   └── ml_signal_integration.md # Архитектура ML ↔ MT4
@@ -153,6 +155,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
 | ML модели | ✅ Готов | Baseline и 4 NN архитектуры реализованы |
 | Интеграция с MT4 | ✅ Готов | Файловый обмен CSV ([docs](docs/mql4/ml_signal_integration.md)) |
+| Conformal Prediction | ✅ Готов | Инфраструктура готова; при θ=2.665 эффект нейтральный ([docs](docs/ml/conformal_prediction.md)) |
 
 
 ---

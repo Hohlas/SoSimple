@@ -51,6 +51,7 @@
 | [threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | checkpoint + val CSV → `reports/threshold_analysis.md`, `plots/threshold_*.png` | — | ✅ |
 | [evaluate_test.py](ML/evaluate_test.py) | Out-of-Sample оценка (profit factor, precision) на тестовой выборке | checkpoint + test CSV → `reports/evaluate_test_*.md` | — | ✅ |
 | [reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | — → `reports/reproducibility_report.md` | — | ✅ |
+| [conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка поверх обученной модели | val CSV + checkpoint → `conformal/conformal_quantiles.json` | [docs](docs/ml/conformal_prediction.md) | ✅ |
 
 ## Docs
 
@@ -67,6 +68,7 @@
 | [lib_PIC.mqh.md](docs/mql4/lib_PIC.mqh.md) | Описание библиотеки PIC |
 | [ml_signal_integration.md](docs/mql4/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) |
 | [neural_networks.md](docs/ml/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики |
+| [conformal_prediction.md](docs/ml/conformal_prediction.md) | Conformal Prediction эксперимент: реализация, результаты, выводы |
 
 ## Легенда статусов
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве

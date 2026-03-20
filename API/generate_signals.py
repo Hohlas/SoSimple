@@ -15,6 +15,7 @@
 # Использование:
 #   python -m API.generate_signals
 #   python -m API.generate_signals --horizon 24 --theta 3.0
+#   python -m API.generate_signals --conformal
 # Примечания:
 #   - time в CSV совпадает с Time[bar] в MT4 (формат "YYYY.MM.DD HH:MM")
 #   - signal: 1 (BUY), -1 (SELL), 0 (FLAT)
@@ -89,10 +90,19 @@ def preds_to_signals(
     y_pred: np.ndarray,
     horizon: int,
     theta: float,
+    conformal_quantiles: dict | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Конвертация предсказаний updn в торговые сигналы.
-    
+
+    Если conformal_quantiles задан — добавляется фильтр минимальной величины:
+    сигнал BUY срабатывает только если pred_up > q_up (предсказание вверх
+    превышает типичную ошибку модели — модель «уверена» в движении).
+    Аналогично SELL: pred_dn > q_dn.
+
+    Это отсекает «шумовые» сигналы, где ratio > θ лишь потому, что обе
+    стороны (pred_up и pred_dn) близки к нулю и ratio случайно велик.
+
     Returns:
         signals, pred_up, pred_dn, ratio_up, ratio_dn
     """
@@ -109,6 +119,14 @@ def preds_to_signals(
     signals[ratio_up > theta] = 1    # BUY
     signals[ratio_dn > theta] = -1   # SELL
 
+    if conformal_quantiles:
+        q_up = conformal_quantiles[UPDN_TARGETS[idx]]
+        q_dn = conformal_quantiles[UPDN_TARGETS[idx + 1]]
+        # Фильтр: отменяем BUY если pred_up < q_up (модель не уверена в росте)
+        signals[(signals == 1) & (pred_up < q_up)] = 0
+        # Фильтр: отменяем SELL если pred_dn < q_dn (модель не уверена в падении)
+        signals[(signals == -1) & (pred_dn < q_dn)] = 0
+
     return signals, pred_up, pred_dn, ratio_up, ratio_dn
 
 
@@ -123,6 +141,7 @@ def generate_signals(
     theta: float = DEFAULT_THETA,
     optuna_json: str | None = DEFAULT_OPTUNA_JSON,
     seed: int = 42,
+    conformal: bool = False,
 ):
     """Полный pipeline: загрузка модели → инференс → запись CSV."""
 
@@ -130,8 +149,23 @@ def generate_signals(
     device = get_device()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # ── Conformal Prediction (опционально) ────────────────────────────────────
+    conformal_quantiles = None
+    if conformal:
+        cp_path = PROJECT_ROOT / 'ML' / 'conformal' / 'conformal_quantiles.json'
+        if not cp_path.exists():
+            raise FileNotFoundError(
+                f"Conformal quantiles не найдены: {cp_path}\n"
+                f"Сначала запустите калибровку: python -m ML.conformal"
+            )
+        with open(cp_path, 'r', encoding='utf-8') as f:
+            cp_data = json.load(f)
+        conformal_quantiles = cp_data['quantiles']
+
     print(f"\n{'═' * 60}")
     print(f"  GENERATE ML SIGNALS FOR MT4")
+    if conformal:
+        print(f"  🛡️  Conformal Prediction: ON (alpha={cp_data['alpha']})")
     print(f"{'═' * 60}")
 
     # ── Загрузка чекпоинта ───────────────────────────────────────────────────
@@ -195,7 +229,7 @@ def generate_signals(
         )
 
         signals, pred_up, pred_dn, ratio_up, ratio_dn = preds_to_signals(
-            y_pred, horizon, theta
+            y_pred, horizon, theta, conformal_quantiles
         )
         buy_count = (signals == 1).sum()
         sell_count = (signals == -1).sum()
@@ -218,7 +252,7 @@ def generate_signals(
     print(f"    test: {len(y_pred)} предсказаний")
     assert len(y_pred) == len(times)
 
-    signals, pred_up, pred_dn, ratio_up, ratio_dn = preds_to_signals(y_pred, horizon, theta)
+    signals, pred_up, pred_dn, ratio_up, ratio_dn = preds_to_signals(y_pred, horizon, theta, conformal_quantiles)
     buy_count = (signals == 1).sum()
     sell_count = (signals == -1).sum()
     print(f"    test: BUY={buy_count}, SELL={sell_count}, FLAT={len(signals)-buy_count-sell_count}")
@@ -280,6 +314,10 @@ def parse_args() -> argparse.Namespace:
         help="Путь к JSON с Optuna параметрами"
     )
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument(
+        '--conformal', action='store_true', default=False,
+        help="Использовать Conformal Prediction фильтр (требует предварительной калибровки: python -m ML.conformal)"
+    )
     return parser.parse_args()
 
 
@@ -292,4 +330,5 @@ if __name__ == '__main__':
         theta=args.theta,
         optuna_json=args.optuna_json,
         seed=args.seed,
+        conformal=args.conformal,
     )
