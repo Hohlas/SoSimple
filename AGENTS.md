@@ -110,7 +110,8 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   │   └── conformal_prediction.md
 │   ├── mql4/           # Документация MQL4
 │   │   ├── lib_PIC.mqh.md # Библиотека анализа фракталов
-│   │   └── ml_signal_integration.md # Архитектура ML ↔ MT4
+│   │   ├── ml_signal_integration.md # Архитектура ML ↔ MT4
+│   │   └── trading_strategy.md # Полный алгоритм торгового эксперта MAIN()
 │   └── plans/          # Планы работы
 ├── .kilocode/          # Конфигурация IDE: MCP, skills, rules
 ├── AGENTS.md           # Главный индекс для ИИ-агентов
