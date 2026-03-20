@@ -61,9 +61,11 @@ python -m ML.experiment_logger --best pearson_r --task regression
 ## 📂 Структура проекта (до 2-го уровня вложенности)
 ```
 .
+├── API/                 # Python ML API и генерация сигналов
+│   └── generate_signals.py  # Генерация ml_signals.csv для MT4
 ├── MT/MQL4              # MetaTrader4 - Формирование датасета Nero.csv
 │   ├── Experts/        # MQL4 советники
-│   ├── Files/          # Файлы данных (Nero.csv)
+│   ├── Files/          # Файлы данных (Nero.csv, ml_signals.csv)
 │   └── Include/        # MQL4 библиотеки (.mqh)
 ├── processing/         # Препроцессинг данных: Маркировка signal/predict, Нормализация признаков
 ├── statistics/         # Статистика и EDA
@@ -105,7 +107,8 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   │   ├── baseline_experiments.py.md
 │   │   └── neural_networks.md
 │   ├── mql4/           # Документация MQL4
-│   │   └── lib_PIC.mqh.md # Библиотека анализа фракталов, классификации уровней и экспорта данных
+│   │   ├── lib_PIC.mqh.md # Библиотека анализа фракталов
+│   │   └── ml_signal_integration.md # Архитектура ML ↔ MT4
 │   └── plans/          # Планы работы
 ├── .kilocode/          # Конфигурация IDE: MCP, skills, rules
 ├── AGENTS.md           # Главный индекс для ИИ-агентов
@@ -149,7 +152,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 | Препроцессинг | ✅ Готов | label_main.py, normalize.py |
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
 | ML модели | ✅ Готов | Baseline и 4 NN архитектуры реализованы |
-| Интеграция с MT4 | 📅 Планируется | DLL/REST API |
+| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV ([docs](docs/mql4/ml_signal_integration.md)) |
 
 
 ---
@@ -161,6 +164,6 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ---
 
-**Последнее обновление**: 2026-02-18
+**Последнее обновление**: 2026-03-20
 **Авторы**: Antigravity (human) + Claude (AI)
 

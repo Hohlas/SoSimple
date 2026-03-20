@@ -48,6 +48,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void TIMER();
       void CONSTANT_COUNTER();
       bool COUNT();
+      void ML_TRADE();   // ML-сигналы из CSV
       void INPUT();
       void OUTPUT();
       bool IMPULSE_UP();
@@ -106,6 +107,8 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void LINE(string txt, uchar f0, uchar f1, color clr, uchar Width);
    }EXP[1];
 
+#include <lib_ML_Signal.mqh>  // ML-сигналы из предрассчитанного CSV
+
    
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------     
 #ifndef PIC_INDICATOR // код компилируется только в эксперте
@@ -115,6 +118,7 @@ void EXPERT::MAIN(){
    ORDER_CHECK();  // подробности открытых и отложенных поз  Print("SELLSTOP=",SELLSTOP," BUYSTOP=",BUYSTOP);
    TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
    if (!COUNT()) return;
+   ML_TRADE();  // ML-сигналы из файла
    //TRAILING_PROFIT();
    if (FINE_TIME()) INPUT();// не торгуем и закрываем все позы в период запрета торговли
    OUTPUT();

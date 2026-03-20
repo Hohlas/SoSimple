@@ -1,16 +1,21 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
 
-## [2026-03-19] — ME-10: MT4 Integration & Python ML API
+## [2026-03-20] — ME-10: MT4 ↔ ML Integration (File-Based Signals)
 
 ### Добавлено
-- **Python API Server (`API/api_server.py`)**: FastAPI REST сервер. Загружает модель `transformer_updn_best.pt`, нормализует 100 последних фракталов (с учетом time features и `ATR_ratio`) и вычисляет торговый сигнал (`BUY`/`SELL`/`WAIT`) на основе OOS порога `θ=2.665`.
-- **MQL4 Коннектор (`MT/MQL4/Include/lib_ML_API.mqh`)**: Библиотека для сериализации `Atr.Slow` и `F[]` в JSON. Выполняет POST-запросы через `WebRequest` к `api_server.py`.
-- **Торговый Эксперт (`MT/MQL4/Experts/SoSimple_ML.mq4`)**: Рабочий робот, связывающий сбор данных фракталов (`lib_PIC.mqh`), ML-сигналы и торговое ядро `$o$imple` (открытие ордеров, трейлинги).
+- **`API/generate_signals.py`**: Генерация предрассчитанных ML-сигналов. Прогоняет все три датасета через `transformer_updn_best.pt`, применяет порог θ=2.665 на горизонте 12H, записывает `ml_signals.csv` (58,540 строк, 2004–2026).
+- **`MT/MQL4/Include/lib_ML_Signal.mqh`**: Библиотека файлового обмена сигналами. Загружает CSV при первом вызове (lazy init), бинарный поиск по `Time[bar]`, вызов `OPEN_BUY`/`OPEN_SELL`.
+- **`MT/MQL4/Include/MAIN.mqh`**: Интеграция `ML_TRADE()` в основной цикл после `COUNT()` — 3 строки изменений.
 
+### Изменено
+- Отказ от HTTP/WebRequest (`lib_ML_API.mqh`, `api_server.py`, `SoSimple_ML.mq4`) в пользу файлового обмена. WebRequest не работает в Strategy Tester и ненадёжен под Wine (error 5200).
 
 ### Результат
-- Интеграция НЕ завершена. 
+- ✅ Полная цепочка работает: `Python → ml_signals.csv → MQL4 → торговые сигналы в тестере`
+- Логи тестера подтверждают: `ML_INIT: Loaded 58540 signals`, `ML Signal=1/−1` с корректными pred_up/pred_dn
+- Документация: [docs/mql4/ml_signal_integration.md](docs/mql4/ml_signal_integration.md)
+
 
 ## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis
 

@@ -18,11 +18,18 @@
 | [statistics.py](statistics/statistics.py) | Онлайн-расчёт статистики | `Nero.csv` → `.json`, `.csv`, `.md` | [docs](docs/data_analysis/statistics.py.md) | ✅ |
 | [EDA.ipynb](statistics/EDA.ipynb) | Разведочный анализ данных | `Nero.csv` → `plots/`, `.csv` | [docs](docs/data_analysis/EDA.ipynb.md) | ✅ |
 
+## API
+
+| Модуль | Назначение | Вход → Выход | Docs | Статус |
+|--------|-----------|--------------|------|--------|
+| [generate_signals.py](API/generate_signals.py) | Генерация ML-сигналов для MT4 | `Nero_*_labeled.csv` + checkpoint → `ml_signals.csv` | [docs](docs/mql4/ml_signal_integration.md) | ✅ |
+
 ## MT/MQL4
 
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
 | [lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | Tick data → `Nero.csv` | [docs](docs/mql4/lib_PIC.mqh.md) | ⚠️ |
+| [lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, торговля | `ml_signals.csv` → `OPEN_BUY/SELL` | [docs](docs/mql4/ml_signal_integration.md) | ✅ |
 | `Вспомогательные .mqh` | Торговая логика и индикаторы | - | - | 📁 |
 
 ## ML
@@ -58,10 +65,11 @@
 | [statistics.py.md](docs/data_analysis/statistics.py.md) | Справка по потоковой статистике |
 | [EDA.ipynb.md](docs/data_analysis/EDA.ipynb.md) | Отчет по разведочному анализу |
 | [lib_PIC.mqh.md](docs/mql4/lib_PIC.mqh.md) | Описание библиотеки PIC |
+| [ml_signal_integration.md](docs/mql4/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) |
 | [neural_networks.md](docs/ml/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики |
 
 ## Легенда статусов
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-03-19
+**Последнее обновление**: 2026-03-20
