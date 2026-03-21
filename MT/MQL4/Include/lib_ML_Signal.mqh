@@ -19,6 +19,8 @@
 #define ML_SIGNALS_FILE  "ml_signals.csv"
 #define ML_MAX_SIGNALS   200000  // максимум строк в CSV
 
+double ML_MinRatio = 0.0;        // минимальный порог ratio (0.0 = без фильтра)
+
 // ─── Хранилище сигналов ─────────────────────────────────────────────
 
 int      ML_SignalCount = 0;
@@ -117,24 +119,46 @@ void EXPERT::ML_TRADE() {
    
    char sig = ML_Signals[idx];
    if (sig == 0) return;  // FLAT
-   
-   // Лог сигнала
-   Print(Mgc, ":: ML Signal=", sig,
-         " pred_up=", DoubleToString(ML_PredUp[idx], 3),
-         " pred_dn=", DoubleToString(ML_PredDn[idx], 3),
-         " ratio_up=", DoubleToString(ML_RatioUp[idx], 2),
-         " ratio_dn=", DoubleToString(ML_RatioDn[idx], 2),
-         " bar_time=", TimeToString(Time[bar]));
-   
-   // Торговля
-   if (sig == 1 && BUY.Typ == NONE) {
-      set.BUY.Val=(float)Ask+DELTA(D); // V("BUY="+S4(set.BUY.Stp+Stop)+"/"+S4(Stop),bar,Low[bar],clrBlack); 
+
+   // Торговля + лог
+   if (sig == 1 && BUY.Typ == NONE && SEL.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
+      set.BUY.Sig=GOGO;
+      set.BUY.Val=(float)Ask+DELTA(D);
       set.BUY.Stp=set.BUY.Val-DELTA(Stp);
       set.BUY.Prf=set.BUY.Val+DELTA(Prf);
+      Print(Mgc,":: ML BUY"
+            " ratio=",  DoubleToString(ML_RatioUp[idx],2),
+            " Val=",    DoubleToString(set.BUY.Val,Digits),
+            " Stp=",    DoubleToString(set.BUY.Stp,Digits),
+            " Prf=",    DoubleToString(set.BUY.Prf,Digits),
+            " ATR=",    DoubleToString(ATR,Digits),
+            " bar=",    TimeToString(Time[bar]));
    }
-   else if (sig == -1 && SEL.Typ == NONE) {
-      set.SEL.Val=(float)Bid-DELTA(D); // 
+   else if (sig == -1 && SEL.Typ == NONE && BUY.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
+      set.SEL.Sig=GOGO;
+      set.SEL.Val=(float)Bid-DELTA(D);
       set.SEL.Stp=set.SEL.Val+DELTA(Stp);
       set.SEL.Prf=set.SEL.Val-DELTA(Prf);
+      Print(Mgc,":: ML SELL"
+            " ratio=",  DoubleToString(ML_RatioDn[idx],2),
+            " Val=",    DoubleToString(set.SEL.Val,Digits),
+            " Stp=",    DoubleToString(set.SEL.Stp,Digits),
+            " Prf=",    DoubleToString(set.SEL.Prf,Digits),
+            " ATR=",    DoubleToString(ATR,Digits),
+            " bar=",    TimeToString(Time[bar]));
+   }
+   else {
+      string skip_reason;
+      if      (sig== 1 && ML_RatioUp[idx] < ML_MinRatio) skip_reason = "LowRatio";
+      else if (sig==-1 && ML_RatioDn[idx] < ML_MinRatio) skip_reason = "LowRatio";
+      else if (sig== 1 && SEL.Typ != NONE)                skip_reason = "SEL_open";
+      else if (sig==-1 && BUY.Typ != NONE)                skip_reason = "BUY_open";
+      else if (sig== 1 && BUY.Typ != NONE)                skip_reason = "BUY_exist";
+      else                                                  skip_reason = "SEL_exist";
+      Print(Mgc,":: ML SKIP reason=", skip_reason,
+            " sig=",    sig,
+            " BUY.Typ=",BUY.Typ," SEL.Typ=",SEL.Typ,
+            " ratio=",  DoubleToString(sig==1?ML_RatioUp[idx]:ML_RatioDn[idx],2),
+            " bar=",    TimeToString(Time[bar]));
    }
 }
