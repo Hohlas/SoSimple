@@ -19,7 +19,7 @@
 #define ML_SIGNALS_FILE  "ml_signals.csv"
 #define ML_MAX_SIGNALS   200000  // максимум строк в CSV
 
-double ML_MinRatio = 0.0;        // минимальный порог ratio (0.0 = без фильтра)
+double ML_MinRatio = 5.0;        // минимальный порог ratio (0.0 = без фильтра)
 
 // ─── Хранилище сигналов ─────────────────────────────────────────────
 
