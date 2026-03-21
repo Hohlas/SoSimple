@@ -118,7 +118,6 @@ void EXPERT::MAIN(){
    ORDER_CHECK();  // подробности открытых и отложенных поз  Print("SELLSTOP=",SELLSTOP," BUYSTOP=",BUYSTOP);
    TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
    if (!COUNT()) return;
-   ML_TRADE();  // ML-сигналы из файла (тестовое подключение)
    //TRAILING_PROFIT();
    if (FINE_TIME()) INPUT();// не торгуем и закрываем все позы в период запрета торговли
    OUTPUT();
