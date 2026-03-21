@@ -127,12 +127,12 @@ void EXPERT::ML_TRADE() {
          " bar_time=", TimeToString(Time[bar]));
    
    // Торговля
-   if (sig == 1 && BUY.Typ == 0) {
+   if (sig == 1 && BUY.Typ == NONE) {
       set.BUY.Val=(float)Ask+DELTA(D); // V("BUY="+S4(set.BUY.Stp+Stop)+"/"+S4(Stop),bar,Low[bar],clrBlack); 
       set.BUY.Stp=set.BUY.Val-DELTA(Stp);
       set.BUY.Prf=set.BUY.Val+DELTA(Prf);
    }
-   else if (sig == -1 && SEL.Typ == 0) {
+   else if (sig == -1 && SEL.Typ == NONE) {
       set.SEL.Val=(float)Bid-DELTA(D); // 
       set.SEL.Stp=set.SEL.Val+DELTA(Stp);
       set.SEL.Prf=set.SEL.Val-DELTA(Prf);
