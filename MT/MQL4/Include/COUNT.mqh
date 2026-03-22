@@ -42,7 +42,7 @@ void EXPERT::CONSTANT_COUNTER(){// Индивидуальные констант
          case 3: Tper= 3;  break;  
          case 4: Tper= 5;  break;     
          case 5: Tper= 8;  break;  
-         case 6: Tper=13;  break;  
+         case 6: Tper=12;  break;  
          case 7: Tper=21;  break;  
          default:Tper=0; // бесконечно 
          } 

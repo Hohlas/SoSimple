@@ -22,6 +22,7 @@
 
 double ML_MinRatio     = 2.665;  // порог ratio (совпадает с Python θ=2.665)
 double ML_MaxRR        = 4.0;    // максимальный множитель R:R (cap)
+double ML_ScaleK       = 5.0;    // множитель для перевода pred_up/dn в ATR (SL/TP)
 bool   ML_BypassTrend  = true;   // true = ML-сигналы игнорируют трендовый фильтр
 
 // ─── Диагностические счётчики ─────────────────────────────────────
@@ -158,19 +159,19 @@ void EXPERT::ML_TRADE() {
       }
    }
 
-   // ─── Торговля с асимметричным R:R ───
+   // ─── Торговля с адаптивным SL/TP ───
    if (sig == 1 && BUY.Typ == NONE && SEL.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
       ML_cnt_executed++; ML_cnt_buy++;
-      float sl_dist = DELTA(Stp);
-      float rr = (float)MathMin(ML_RatioUp[idx] / ML_MinRatio, ML_MaxRR);
-      if (rr < 1.0) rr = 1.0;
+      // Адаптивный расчёт дистанций
+      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 0.5); // минимум 0.5 ATR
+      float tp_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
+      
       set.BUY.Sig=GOGO;
       set.BUY.Val=(float)Ask+DELTA(D);
       set.BUY.Stp=set.BUY.Val-sl_dist;
-      set.BUY.Prf=set.BUY.Val+sl_dist*rr;
+      set.BUY.Prf=set.BUY.Val+tp_dist;
       Print(Mgc,":: ML BUY"
             " ratio=",  DoubleToString(ML_RatioUp[idx],2),
-            " R:R=1:",  DoubleToString(rr,2),
             " Val=",    DoubleToString(set.BUY.Val,Digits),
             " Stp=",    DoubleToString(set.BUY.Stp,Digits),
             " Prf=",    DoubleToString(set.BUY.Prf,Digits),
@@ -179,16 +180,16 @@ void EXPERT::ML_TRADE() {
    }
    else if (sig == -1 && SEL.Typ == NONE && BUY.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
       ML_cnt_executed++; ML_cnt_sell++;
-      float sl_dist = DELTA(Stp);
-      float rr = (float)MathMin(ML_RatioDn[idx] / ML_MinRatio, ML_MaxRR);
-      if (rr < 1.0) rr = 1.0;
+      // Адаптивный расчёт дистанций
+      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 0.5); // минимум 0.5 ATR
+      float tp_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
+
       set.SEL.Sig=GOGO;
       set.SEL.Val=(float)Bid-DELTA(D);
       set.SEL.Stp=set.SEL.Val+sl_dist;
-      set.SEL.Prf=set.SEL.Val-sl_dist*rr;
+      set.SEL.Prf=set.SEL.Val-tp_dist;
       Print(Mgc,":: ML SELL"
             " ratio=",  DoubleToString(ML_RatioDn[idx],2),
-            " R:R=1:",  DoubleToString(rr,2),
             " Val=",    DoubleToString(set.SEL.Val,Digits),
             " Stp=",    DoubleToString(set.SEL.Stp,Digits),
             " Prf=",    DoubleToString(set.SEL.Prf,Digits),
@@ -222,7 +223,7 @@ void ML_DIAG_PRINT() {
    Print("  Executed:         ", ML_cnt_executed,
          "  (BUY=",ML_cnt_buy," SELL=",ML_cnt_sell,")");
    Print("  ML_MinRatio=", DoubleToString(ML_MinRatio,3),
-         "  ML_MaxRR=", DoubleToString(ML_MaxRR,1),
+         "  ML_ScaleK=", DoubleToString(ML_ScaleK,1),
          "  ML_BypassTrend=", ML_BypassTrend);
    Print("======================");
 }
