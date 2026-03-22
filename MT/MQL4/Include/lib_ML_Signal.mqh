@@ -22,7 +22,7 @@
 
 double ML_MinRatio     = 2.665;  // порог ratio (совпадает с Python θ=2.665)
 double ML_MaxRR        = 4.0;    // максимальный множитель R:R (cap)
-double ML_ScaleK       = 5.0;    // множитель для перевода pred_up/dn в ATR (SL/TP)
+double ML_ScaleK       = 20.0;   // множитель для перевода pred_up/dn в ATR (SL/TP)
 bool   ML_BypassTrend  = true;   // true = ML-сигналы игнорируют трендовый фильтр
 
 // ─── Диагностические счётчики ─────────────────────────────────────
@@ -162,8 +162,8 @@ void EXPERT::ML_TRADE() {
    // ─── Торговля с адаптивным SL/TP ───
    if (sig == 1 && BUY.Typ == NONE && SEL.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
       ML_cnt_executed++; ML_cnt_buy++;
-      // Адаптивный расчёт дистанций
-      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 0.5); // минимум 0.5 ATR
+      // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
+      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 1.5); 
       float tp_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
       
       set.BUY.Sig=GOGO;
@@ -180,8 +180,8 @@ void EXPERT::ML_TRADE() {
    }
    else if (sig == -1 && SEL.Typ == NONE && BUY.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
       ML_cnt_executed++; ML_cnt_sell++;
-      // Адаптивный расчёт дистанций
-      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 0.5); // минимум 0.5 ATR
+      // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
+      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 1.5); 
       float tp_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
 
       set.SEL.Sig=GOGO;
