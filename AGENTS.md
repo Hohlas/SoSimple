@@ -24,20 +24,27 @@ jupyter nbconvert --to markdown --no-input --no-prompt --output EDA_report repor
 
 ### команды обучения моделей
 ```bash
-# Все 4 модели последовательно
-python -m ML.compare_architectures --task regression 
-python -m ML.compare_architectures --task classification
+# Сравнение 4 архитектур (regression_updn — основной режим)
+python -m ML.compare_architectures --task regression_updn
 
-# Запуск подбора для классификации
-python -m ML.optimize --model bilstm --task classification --trials 50 --epochs 30 --seed 42
-# Запуск подбора для регрессии
-python -m ML.optimize --model cnn1d --task regression --trials 30 --epochs 50 --seed 123
+# Optuna оптимизация (transformer — лучшая архитектура)
+python -m ML.optimize --model transformer --task regression_updn --trials 50 --epochs 30 --seed 42
 
-# Для классификации:
-python -m ML.experiment_logger --best f1_macro --task classification
-# Для регрессии:
-python -m ML.experiment_logger --best pearson_r --task regression
+# Оценка на тестовой выборке (OOS)
+python -m ML.evaluate_test --task regression_updn --model transformer
 
+# Threshold analysis: поиск оптимального θ для торговых сигналов
+python -m ML.threshold_analysis --task regression_updn --horizon 12
+
+# Логгер экспериментов
+python -m ML.experiment_logger --best pearson_r --task regression_updn
+```
+
+### команды генерации ML-сигналов для MT4
+```bash
+# Генерация ml_signals.csv (transformer, H12, θ=2.665)
+python -m API.generate_signals
+python -m API.generate_signals --horizon 24 --theta 3.0  # кастомные параметры
 
 ```
 
@@ -48,13 +55,13 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ### Critical Rules Top-3
 1. Читай только первые 10 строк в файлах CSV, т.к. их размер >10MB
-2. Не грузи файлы >10MB целиком в чат.
+2. Не грузи файлы >2MB целиком в чат.
 3. Файлы *.mqh, *.mq4 из `MT/` открывать только в `encoding='utf-16-le'`.
 
 ---
 
 ## 📊 Pipeline данных
-Схема: `MT4 → Raw → Sort → Label → Norm → Split → Final` ([Детали в DATA_FLOW.md](docs/DATA_FLOW.md))
+Схема: `MT4 → Raw → Sort → Label → Norm → Split → Train → Signals → MT4` ([Детали в DATA_FLOW.md](docs/DATA_FLOW.md))
 
 ---
 
@@ -79,13 +86,16 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   ├── models/         # Neural Network модели: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM
 │   ├── checkpoints/    # Чекпоинты моделей (.pt)
 │   ├── plots/          # Графики обучения
-│   ├── reports/        # Отчёты экспериментов
+│   ├── reports/        # Отчёты экспериментов (threshold_analysis, evaluate_test)
 │   ├── conformal/      # Conformal Prediction: calibrate.py, quantiles, report
-│   ├── old/            # Архив старого кода
-│   ├── train.py        # Скрипт обучения
-│   ├── optimize.py     # Optuna оптимизация
-│   ├── compare_architectures.py # Сравнение архитектур
-│   ├── data_loader.py  # Dataset и DataLoader для фрактальных последовательностей
+│   ├── train.py        # Скрипт обучения (classification, regression, regression_updn)
+│   ├── optimize.py     # Optuna оптимизация гиперпараметров
+│   ├── compare_architectures.py # Сравнение 4 архитектур
+│   ├── evaluate_test.py # OOS оценка на тестовой выборке
+│   ├── threshold_analysis.py # Поиск оптимального θ для торговых сигналов
+│   ├── data_loader.py  # Dataset и DataLoader (20 фич на фрактал, 100 фракталов)
+│   ├── losses.py       # AsymmetricLoss для регрессии
+│   ├── utils.py        # Метрики: Pearson r, MAE, R², multi-target metrics
 │   └── experiment_logger.py # CSV-логгер для ML-экспериментов
 ├── DATA/               # Обрабатывамые данные
 │   ├── Nero_train_labeled.csv
@@ -110,7 +120,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 │   │   └── conformal_prediction.md
 │   ├── mql4/           # Документация MQL4
 │   │   ├── lib_PIC.mqh.md # Библиотека анализа фракталов
-│   │   ├── ml_signal_integration.md # Архитектура ML ↔ MT4
+│   │   ├── ml_signal_integration.md # Файловый обмен ML ↔ MT4
 │   │   └── trading_strategy.md # Полный алгоритм торгового эксперта MAIN()
 │   └── plans/          # Планы работы
 ├── .kilocode/          # Конфигурация IDE: MCP, skills, rules
@@ -131,7 +141,7 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ## 🛠️ Технологический стек
 - **Языки**: Python 3.11+, MQL4; **Библиотеки**: Pandas, NumPy, Scikit-learn, Scipy
-- **Визуализация**: Matplotlib, Seaborn; **ML**: XGBoost, LightGBM, PyTorch (план)
+- **Визуализация**: Matplotlib, Seaborn; **ML**: PyTorch, XGBoost, LightGBM, Optuna
 
 ---
 
@@ -151,11 +161,13 @@ python -m ML.experiment_logger --best pearson_r --task regression
 ## 🚧 Статус разработки
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
-| Сбор данных (MT4) | ✅ Готов | lib_PIC.mqh (legacy) |
-| Препроцессинг | ✅ Готов | label_main.py, normalize.py |
+| Сбор данных (MT4) | ✅ Готов | lib_PIC.mqh, NERO_CSV_CREATE() — 18 полей на фрактал |
+| Препроцессинг | ✅ Готов | label_main.py, normalize.py (Piecewise Linear-Log) |
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
-| ML модели | ✅ Готов | Baseline и 4 NN архитектуры реализованы |
-| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV ([docs](docs/mql4/ml_signal_integration.md)) |
+| ML модели | ✅ Готов | Transformer (лучший), BiLSTM, CNN1D, Hybrid; regression_updn (6 таргетов) |
+| Генерация сигналов | ✅ Готов | [generate_signals.py](API/generate_signals.py) → ml_signals.csv |
+| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV, ML_TRADE() в $o$imple.mq4 ([docs](docs/mql4/ml_signal_integration.md)) |
+| Торговый робот | ✅ Работает | OOS PF=4.50 (θ=2.665, 12H). В тестере: PF=0.85 при ML_MinRatio=5.0 ([trading_strategy](docs/mql4/trading_strategy.md)) |
 | Conformal Prediction | ✅ Готов | Инфраструктура готова; при θ=2.665 эффект нейтральный ([docs](docs/ml/conformal_prediction.md)) |
 
 
@@ -168,6 +180,6 @@ python -m ML.experiment_logger --best pearson_r --task regression
 
 ---
 
-**Последнее обновление**: 2026-03-20
+**Последнее обновление**: 2026-03-22
 **Авторы**: Antigravity (human) + Claude (AI)
 

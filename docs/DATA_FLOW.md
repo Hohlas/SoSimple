@@ -6,13 +6,13 @@
 ## 🔄 Общая схема потока
 
 ```
-MT/MQL4/Files/Nero.csv (raw)
+MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
           ↓
     [Сортировка фракталов]
           ↓
     DATA/Nero_sorted_temp.csv
           ↓
-    [Маркировка signal + predict]
+    [Маркировка signal + predict + Up/Dn]
           ↓
     DATA/Nero_labeled_temp.csv
           ↓
@@ -22,17 +22,21 @@ MT/MQL4/Files/Nero.csv (raw)
           ↓
     [Разделение 70/15/15]
           ↓
-    train / val / test
-          ↓
    DATA/Nero_train_labeled.csv
    DATA/Nero_validation_labeled.csv
    DATA/Nero_test_labeled.csv
           ↓
-    [Baseline Experiments] (ML/baseline/baseline_experiments.py) ----→ baseline/reports/baseline_report.md
+    [Обучение NN] (ML/train.py --task regression_updn)
           ↓
-    [Обучение Нейросетей] (ML/train.py)
+   ML/checkpoints/transformer_updn_best.pt
           ↓
-   ML/checkpoints/*_best.pt
+    [Threshold Analysis] (ML/threshold_analysis.py) → оптимальный θ
+          ↓
+    [Генерация сигналов] (API/generate_signals.py --theta 2.665)
+          ↓
+   MT/MQL4/Files/ml_signals.csv (58K+ строк)
+          ↓
+    [Торговый эксперт] $o$imple.mq4 → ML_TRADE() → ордера
 ```
 
 ---
@@ -71,15 +75,16 @@ MT/MQL4/Files/Nero.csv (raw)
 - **Формат**: Отсортированные фракталы
 
 ### Процесс
-**Модуль**: `processing/label_signals.py` → `label_all()`
+**Модуль**: `processing/label_signals.py` → `label_all()` + `label_updn()`
 
-#### 2.1. Поиск целевого фрактала
+#### 2.1. Маркировка signal/predict (`label_all`)
+
+Поиск целевого фрактала:
 ```python
-# Логика:
 target_fractal = первый фрактал с strong=1 (ближайший в будущем)
 ```
 
-#### 2.2. Расчёт `signal`
+Расчёт `signal`:
 ```python
 signal = {
   0  если target_fractal не найден,
@@ -88,23 +93,32 @@ signal = {
 }
 ```
 
-#### 2.3. Расчёт `predict`
+Расчёт `predict`:
 ```python
 predict = (расстояние до цели) * target_direction
-# Где:
-# - расстояние = front (до пробития)
-# - target_direction = -1/+1 (направление целевого фрактала)
 ```
 
-**Важно**: `predict` может быть **отрицательным** (знак кодирует direction).
+**Важно**: `predict` может быть **отрицательным** (знак кодирует direction). Этот таргет использовался в ранних экспериментах, сейчас основной таргет — Up/Dn.
+
+#### 2.2. Маркировка Up/Dn (`label_updn`)
+
+Для каждой строки берутся последние накопленные Up/Dn значения из `fractal[0]` до момента его вытеснения:
+```python
+up_12, dn_12  # макс. экскурсия вверх/вниз за 12 баров после фрактала
+up_24, dn_24  # за 24 бара
+up_48, dn_48  # за 48 баров
+```
+
+Эти 6 значений — **основные таргеты** для regression_updn. Direction-independent, фиксированный горизонт.
 
 ### Выход
 - **Файл**: `DATA/Nero_labeled_temp.csv` (временный)
-- **Новые колонки**: `signal`, `predict` (перезаписывают старые значения)
+- **Колонки**: `signal`, `predict`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`
 
 ### Ключевые требования
 - Маркировка **всего датасета** до split — затем разделение на train/val/test
 - Нет forward-looking bias (цель — это **будущий** фрактал)
+- Up/Dn накапливаются инкрементально в MT4 (LEVELS_FIND_AROUND) и экспортируются в Nero.csv
 
 ---
 
@@ -200,31 +214,7 @@ DATA/Nero_normalization_stats.csv
 
 ---
 
-## 📊 Этап 5.5: Baseline Experiments
-
-### Вход
-- `DATA/Nero_train_labeled.csv`
-- `DATA/Nero_validation_labeled.csv`
-
-### Процесс
-**Модуль**: `ML/baseline/baseline_experiments.py`
-
-1. **Flat features**: Extract 15 features (price, direction, ..., time[hour, dow]) from `fractal[0]`
-2. **Engineered features**: ~233 features (rolling stats, trends, volatility)
-3. **Training**: 
-   - Dummy Classifier (Stratified/MostFrequent)
-   - Logistic Regression (StandardScaler)
-   - Random Forest (n_estimators=100)
-   - XGBoost / LightGBM (class_weight='balanced')
-4. **Evaluation**: Macro F1-score, Precision/Recall per class
-
-### Выход
-- `ML/baseline/reports/baseline_report.md`
-- `ML/baseline/plots/*.png` (confusion matrices)
-
----
-
-## 🚧 Этап 6: ML Training
+## 🚧 Этап 6: ML Training (regression_updn)
 
 ### Вход
 - `DATA/Nero_train_labeled.csv`
@@ -242,32 +232,99 @@ DATA/Nero_normalization_stats.csv
    - 3 вычисляемые time-фичи: `hour_sin`, `hour_cos` (циклическое кодирование часа), `time_pos` (позиция на оси [0..1])
 2. **StandardScaler** (опционально): fit на train (flatten `n_samples*100 × 20`), transform на val
 3. Padding mask для NaN-позиций (используется Transformer)
-4. Маппинг меток: `{-1, 0, 1}` → `{0, 1, 2}`
+4. **Таргет** `regression_updn`: y shape `(N, 6)` — up_12, dn_12, up_24, dn_24, up_48, dn_48
 
 #### 6.2. Обучение
-**Модуль**: `ML/train.py` (CLI: `--model bilstm|cnn1d|transformer|hybrid`)
+**Модуль**: `ML/train.py` (CLI: `--model bilstm|cnn1d|transformer|hybrid --task regression_updn`)
 
-- **Loss**: Focal Loss (gamma=2, alpha=[0.45, 0.10, 0.45])
-- **Optimizer**: AdamW (lr=1e-3, weight_decay=1e-4)
-- **Early stopping**: на val macro F1 (patience=10). НЕ на loss — при 95% дисбалансе loss может улучшаться за счёт majority-класса
-- **Scheduler**: ReduceLROnPlateau (patience=5, factor=0.5, monitor=val_f1_macro)
-- **Архитектуры**: Bi-LSTM, 1D-CNN, Transformer Encoder, Hybrid CNN+LSTM
+- **Loss**: HuberLoss (δ=1.0) на 6 выходов
+- **Optimizer**: AdamW (lr, weight_decay подбираются Optuna)
+- **Early stopping**: на val Pearson r (среднее по 6 таргетам, patience=10)
+- **Scheduler**: ReduceLROnPlateau (patience=5, factor=0.5, monitor=val_pearson_r)
+- **Архитектуры**: Transformer Encoder (лучший), Bi-LSTM, 1D-CNN, Hybrid CNN+LSTM
 
 #### 6.3. Сравнение архитектур
-**Модуль**: `ML/compare_architectures.py`
+**Модуль**: `ML/compare_architectures.py --task regression_updn`
 
 Последовательно обучает все 4 модели, генерирует сводный отчёт.
 
+#### 6.4. Optuna оптимизация
+**Модуль**: `ML/optimize.py --model transformer --task regression_updn`
+
+Подбирает: lr, batch_size, dropout, d_model, nhead, num_layers, dim_feedforward.
+
 ### Выход
-- `ML/checkpoints/<model>_best.pt` (веса лучшей модели по val F1)
-- `ML/plots/training_curves_<model>.png` (кривые обучения)
-- `ML/plots/cm_<model>.png` (confusion matrices)
-- `ML/reports/architecture_comparison.md` (сводный отчёт)
+- `ML/checkpoints/transformer_updn_best.pt` (лучшая модель)
+- `ML/plots/training_curves_*.png`, `ML/plots/scatter_*.png`
+- `ML/reports/architecture_comparison.md`, `ML/reports/optuna_best_params_*.json`
 
 ### Ключевые требования
 - **StandardScaler fit только на train** — нет data leakage
 - **Shuffle=True в train DataLoader** — каждая строка является независимым snapshot
 - **Shuffle=False в val DataLoader** — для воспроизводимости метрик
+
+---
+
+## 📈 Этап 7: OOS Evaluation & Threshold Analysis
+
+### Вход
+- `DATA/Nero_test_labeled.csv` (отложенная выборка, 15%)
+- `ML/checkpoints/transformer_updn_best.pt`
+
+### Процесс
+
+#### 7.1. Оценка на тестовой выборке
+**Модуль**: `ML/evaluate_test.py`
+
+Прогоняет обученную модель на test set, вычисляет per-target Pearson r, MAE, R².
+
+#### 7.2. Threshold Analysis
+**Модуль**: `ML/threshold_analysis.py --horizon 12`
+
+Для каждого порога θ вычисляет:
+- `ratio_up = pred_up / pred_dn` → если `ratio_up > θ` → BUY signal
+- `ratio_dn = pred_dn / pred_up` → если `ratio_dn > θ` → SELL signal
+- Метрики: Precision, Recall, Profit Factor, кол-во сделок
+
+### Выход
+- `ML/reports/evaluate_test_H12.md`
+- `ML/reports/threshold_analysis_12H.md`
+
+### Текущий результат (OOS, θ=2.665, 12H)
+- Сделок: 2203, Win Rate: 86.20%, **Profit Factor: 4.50**
+
+---
+
+## 🔄 Этап 8: Генерация ML-сигналов для MT4
+
+### Вход
+- `DATA/Nero_{train,validation,test}_labeled.csv`
+- `ML/checkpoints/transformer_updn_best.pt`
+
+### Процесс
+**Модуль**: `API/generate_signals.py`
+
+1. Загружает чекпоинт модели и параметры Optuna
+2. Прогоняет все три датасета через модель
+3. Для каждой строки: `ratio_up = pred_up / pred_dn`
+   - `ratio_up > θ` → signal = **1** (BUY)
+   - `ratio_dn > θ` → signal = **-1** (SELL)
+   - иначе → signal = **0** (FLAT)
+4. Записывает CSV в `MT/MQL4/Files/ml_signals.csv`
+
+```bash
+python -m API.generate_signals                     # дефолт: θ=2.665, horizon=12
+python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
+```
+
+### Выход
+- `MT/MQL4/Files/ml_signals.csv` (~58K строк, 2004–2026)
+- Формат: `time;signal;pred_up;pred_dn;ratio_up;ratio_dn`
+
+### Интеграция с MT4
+- ML_TRADE() в $o$imple.mq4 читает ml_signals.csv через ML_INIT() (lazy load)
+- ML_FindSignal() — бинарный поиск по Time[bar]
+- Подробности: [docs/mql4/ml_signal_integration.md](mql4/ml_signal_integration.md), [docs/mql4/trading_strategy.md](mql4/trading_strategy.md)
 
 ---
 
@@ -281,8 +338,9 @@ DATA/Nero_normalization_stats.csv
 4. **Маркировка до split**: Маркируем весь датасет, затем делим
 5. **StandardScaler (NN)**: fit только на train, transform на val
 6. **fractal_time** не подаётся как сырое абсолютное значение — используется только для вычисления time-фич (hour_sin, hour_cos, time_pos)
+7. **Up/Dn таргеты**: Накапливаются в MT4 инкрементально, не зависят от будущих данных после горизонта
 
 ---
 
-**Последнее обновление**: 2026-03-19
+**Последнее обновление**: 2026-03-22
 **Автор**: Antigravity + Claude
