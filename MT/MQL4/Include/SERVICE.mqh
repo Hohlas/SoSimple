@@ -362,8 +362,9 @@ double OnTester(){////  Ф О Р М И Р О В А Н И Е   Ф А Й Л А    
       CustomMax=TEST_RESULT(e); 
       }
    else CustomMax=TEST_RESULT(0);
+   ML_DIAG_PRINT();
    Print ("OnTester(): ExpTotal=",ExpTotal," CurExp=",CurExp," EXP[0].Mgc=",EXP[0].Mgc," EXP[0].Ver=",EXP[0].Ver," CustomMax=",CustomMax);
-   return (CustomMax); // возвращаем критерий оптимизации 
+   return (CustomMax); // возвращаем критерий оптимизации
    }
 float TEST_RESULT(uchar e){
    float   CustomMax, SD=0,  iDD=0, GrossProfit=0, GrossLoss=0, MidWin, MidLoss,  profit, MaxWin[5], FullProfit=0, MaxProfit=0, Years, MO,RF=555, iRF=555, PF=555, Sharp=555;  

@@ -13,7 +13,7 @@
 > В коде остались рудиментарные функции от прошлой (убыточной) логики, которые не будут использоваться для торговли: SIG_FIRST_LEVELS(), SIG_FALSE_BREAK(), SIG_TURTLE(), TARGET_COUNT(), FLAT_DETECT(), ... и другие.
 > Код может отличаться от описания в этом документе в связи с активной разработкой. Допускается вносить сюда исправления.
 
-> **Последнее обновление**: 2026-03-22
+> **Последнее обновление**: 2026-03-22 (v2.0: асимметричный R:R, bypass тренда, диагностика)
 
 ---
 
@@ -129,12 +129,19 @@ class ATR_CLASS {
 ### 2.5 Глобальные ML-переменные [lib_ML_Signal.mqh]
 
 ```c
-double   ML_MinRatio = 5.0;     // порог минимального ratio для открытия сделки
+double   ML_MinRatio    = 2.665; // порог ratio (совпадает с Python θ=2.665)
+double   ML_MaxRR       = 4.0;   // максимальный множитель R:R (cap)
+bool     ML_BypassTrend = true;  // true = ML-сигналы игнорируют трендовый фильтр
+
 int      ML_SignalCount = 0;     // количество загруженных сигналов
 datetime ML_Times[];             // время каждого сигнала (сортировано)
 char     ML_Signals[];           // направление: 1=BUY, -1=SELL, 0=FLAT
 float    ML_PredUp[], ML_PredDn[];   // предсказанные экскурсии
 float    ML_RatioUp[], ML_RatioDn[]; // ratio = pred_up/pred_dn и наоборот
+
+// Диагностические счётчики
+int ML_cnt_total, ML_cnt_trend, ML_cnt_lowratio, ML_cnt_posblock;
+int ML_cnt_executed, ML_cnt_buy, ML_cnt_sell;
 ```
 
 ### 2.6 Ключевые переменные EXPERT
@@ -199,42 +206,57 @@ time;signal;pred_up;pred_dn;ratio_up;ratio_dn
 
 ```c
 void EXPERT::ML_TRADE() {
-   // Ленивая инициализация: загрузка CSV при первом вызове
+   // Ленивая инициализация
    static bool ml_loaded = false;
    if (!ml_loaded) { ml_loaded = true; ML_INIT(); }
    if (ML_SignalCount <= 0) return;
 
    int idx = ML_FindSignal(Time[bar]);
-   if (idx < 0) return;  // нет сигнала для этого бара
+   if (idx < 0) return;
 
    char sig = ML_Signals[idx];
    if (sig == 0) return;  // FLAT
 
-   // BUY: сигнал=1, нет открытых позиций, ratio достаточен
+   ML_cnt_total++;
+
+   // Трендовый фильтр (опциональный bypass)
+   if (sig == 1 && !UP)  { ML_cnt_trend++; if (!ML_BypassTrend) return; }
+   if (sig == -1 && !DN) { ML_cnt_trend++; if (!ML_BypassTrend) return; }
+
+   // BUY с асимметричным R:R
    if (sig == 1 && BUY.Typ == NONE && SEL.Typ == NONE
        && ML_RatioUp[idx] >= ML_MinRatio) {
+      float sl_dist = DELTA(Stp);
+      float rr = min(ML_RatioUp[idx] / ML_MinRatio, ML_MaxRR);  // R:R масштабируется по ratio
+      if (rr < 1.0) rr = 1.0;
       set.BUY.Sig = GOGO;
       set.BUY.Val = (float)Ask + DELTA(D);
-      set.BUY.Stp = set.BUY.Val - DELTA(Stp);
-      set.BUY.Prf = set.BUY.Val + DELTA(Prf);
+      set.BUY.Stp = set.BUY.Val - sl_dist;
+      set.BUY.Prf = set.BUY.Val + sl_dist * rr;  // TP = SL × rr
+      ML_cnt_executed++; ML_cnt_buy++;
    }
-   // SELL: сигнал=-1, нет открытых позиций, ratio достаточен
-   else if (sig == -1 && BUY.Typ == NONE && SEL.Typ == NONE
+   // SELL аналогично
+   else if (sig == -1 && SEL.Typ == NONE && BUY.Typ == NONE
             && ML_RatioDn[idx] >= ML_MinRatio) {
+      float sl_dist = DELTA(Stp);
+      float rr = min(ML_RatioDn[idx] / ML_MinRatio, ML_MaxRR);
+      if (rr < 1.0) rr = 1.0;
       set.SEL.Sig = GOGO;
       set.SEL.Val = (float)Bid - DELTA(D);
-      set.SEL.Stp = set.SEL.Val + DELTA(Stp);
-      set.SEL.Prf = set.SEL.Val - DELTA(Prf);
+      set.SEL.Stp = set.SEL.Val + sl_dist;
+      set.SEL.Prf = set.SEL.Val - sl_dist * rr;
+      ML_cnt_executed++; ML_cnt_sell++;
    }
-   // else: SKIP (логирует причину: позиция уже открыта, ratio < ML_MinRatio)
+   else { /* SKIP: LowRatio или PosBlock, инкремент счётчиков */ }
 }
 ```
 
-**Ключевые отличия от legacy-стратегий:**
+**Ключевые отличия от v1.1:**
+- **Асимметричный R:R**: TP = SL × min(ratio / ML_MinRatio, ML_MaxRR). При ratio=10 и ML_MinRatio=2.665 → R:R=1:3.75. Нужен только ~21% win rate для PF>1
+- **Bypass трендового фильтра**: ML_BypassTrend=true позволяет ML_TRADE() работать при заблокированном UP/DN
+- **Диагностические счётчики**: ML_cnt_total/trend/lowratio/posblock/executed для анализа фильтрации
 - Устанавливает `set.BUY.Sig = GOGO` — включает валидацию Stp/Val/Prf в INPUT()
 - Проверяет `BUY.Typ == NONE && SEL.Typ == NONE` — запрет одновременных позиций
-- Фильтрует по `ML_MinRatio` (дефолт 5.0) — отсекает слабые сигналы
-- Логирует причину SKIP для диагностики
 
 ### 3.4 Как ML_TRADE() взаимодействует с INPUT()
 
@@ -247,7 +269,7 @@ ML_TRADE() вызывается внутри INPUT(). Это определяе�
    UP = (BUY.Typ != MARKET) AND (Trnd.Global >= 0) AND (Trnd.Local >= 0)
    DN = (SEL.Typ != MARKET) AND (Trnd.Global <= 0) AND (Trnd.Local <= 0)
    ```
-3. Если `!UP && !DN` → return. ML_TRADE() **не вызывается**.
+3. Если `!UP && !DN` → для iSignal=3: ML_TRADE() **вызывается** (bypass), трендовая проверка выполняется внутри ML_TRADE() с учётом ML_BypassTrend. Для остальных стратегий → return.
 
 **Что INPUT() делает ПОСЛЕ вызова ML_TRADE():**
 1. Проверяет `set.BUY.Sig == GOGO` → UP остаётся true (ML_TRADE() ставит GOGO)
@@ -282,20 +304,23 @@ DELTA(n) = -(n-1)² / 10 * ATR   (для n < 0)
 **Текущие дефолты** (из $o$imple.mq4):
 - `D=0` → DELTA(D)=0 → вход по рыночной цене
 - `Stp=3` → DELTA(Stp)=1.6*ATR → стоп на 1.6*ATR от входа
-- `Prf=3` → DELTA(Prf)=1.6*ATR → тейк на 1.6*ATR от входа
 
-**Итого для BUY**: Val=Ask, Stp=Ask-1.6\*ATR, Prf=Ask+1.6\*ATR (R:R = 1:1).
+**Асимметричный R:R (v2.0):**
+- SL = DELTA(Stp) = 1.6*ATR (фиксирован)
+- TP = SL × min(ratio / ML_MinRatio, ML_MaxRR)
+- Примеры: ratio=5.33 → R:R=1:2, ratio=10.66 → R:R=1:4 (cap)
 
-> **pred_up/pred_dn не используются** для расчёта стопов/профитов. Это ключевая точка для улучшения.
+**Итого для BUY**: Val=Ask, Stp=Ask-1.6\*ATR, Prf=Ask+1.6\*ATR\*rr (R:R = 1:rr).
 
 ### 3.6 Трендовый фильтр и iSignal=3
 
-При дефолтных значениях `iGlb=0`, `iFlt=0`, `iLoc=0`:
-- `Trnd.Global` остаётся 0 (SET_BROKEN не обновляет при iGlb=0)
-- `Trnd.Local` остаётся 0
-- Фильтр: `UP = (BUY.Typ != MARKET && 0 >= 0 && 0 >= 0)` = **true**
+ML_TRADE() имеет собственную обработку трендового фильтра (v2.0):
+- `ML_BypassTrend = true` (дефолт) → трендовый фильтр **не блокирует** ML-сигналы, но считает заблокированные в ML_cnt_trend
+- `ML_BypassTrend = false` → классическое поведение: UP/DN блокируют BUY/SELL
 
-> **Трендовый фильтр фактически отключён** с дефолтными параметрами. ML_TRADE() может генерировать сигналы в обоих направлениях.
+В INPUT.mqh добавлен bypass: при `!UP && !DN && iSignal==3` → ML_TRADE() вызывается напрямую.
+
+При дефолтных значениях `iGlb=0`, `iFlt=0`, `iLoc=0` трендовый фильтр фактически неактивен (Trnd.Global=0, Trnd.Local=0 → UP=true, DN=true).
 
 ### 3.7 Защита от дублирования
 

@@ -81,14 +81,13 @@ ulong    MagicLong;
 #include <MM.mqh> 
  
 #include <lib_PIC.mqh>  // сортировка фракталов
-#include <lib_ssss.mqh>
 #include <COUNT.mqh>
 #include <INPUT.mqh>
 #include <OUTPUT.mqh>
-#include <iSIG_FALSE_BREAK.mqh>
+//#include <iSIG_FALSE_BREAK.mqh>
 //#include <iSIG_FIRST_LEVELS_CONFIRM.mqh>
-#include <iSIG_FIRST_LEVELS.mqh>
-#include <iSIG_TURTLE.mqh>
+//#include <iSIG_FIRST_LEVELS.mqh>
+//#include <iSIG_TURTLE.mqh>
 
 //#include <lib_REZENKO.mqh> // 
 //#include <iREPORT.mqh>       // сохранение/восстановление параметров, отчеты и др. заморочки

@@ -66,7 +66,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void SIG_FIRST_LEVELS();
       void SIG_TURTLE();
       void SIG_SESSIONS();
-      void SIG_FALSE_BREAK();
+      //void SIG_FALSE_BREAK();
       void OPEN_BUY(uchar pic);
       void OPEN_BUY(float input_price, float target_price);
       void OPEN_SELL(uchar pic);

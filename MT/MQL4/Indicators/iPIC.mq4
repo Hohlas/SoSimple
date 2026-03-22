@@ -75,7 +75,7 @@ string ExpertName="iPIC";  // идентификатор графических 
 #include <MAIN.mqh>
 #include <iGRAPH.mqh>
 
-#include <lib_POC.mqh>     // 
+//#include <lib_POC.mqh>     // 
 #include <lib_PIC.mqh>     // 
 #include <lib_ssss.mqh>
 //#include <old_versions.mqh>
