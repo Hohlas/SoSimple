@@ -384,8 +384,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default='classification',
-        choices=['classification', 'regression', 'regression_updn'],
-        help="Задача: 'classification' | 'regression' | 'regression_updn'. Default: classification"
+        choices=['classification', 'regression', 'regression_updn', 'triple_barrier'],
+        help="Задача: 'classification' | 'regression' | 'regression_updn' | 'triple_barrier'. Default: classification"
     )
     parser.add_argument(
         '--trials', type=int, default=50,

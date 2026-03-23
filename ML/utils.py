@@ -35,6 +35,7 @@ from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
     r2_score,
+    roc_auc_score,
 )
 
 
@@ -187,6 +188,71 @@ def compute_multitarget_regression_metrics(y_true: np.ndarray, y_pred: np.ndarra
         'r2': avg_r2,
         'pearson_r': avg_pearson_r,
         'pearson_p': 0.0,
+        'per_target': per_target,
+    }
+
+
+def compute_binary_classification_metrics(
+    y_true: np.ndarray,
+    y_pred_proba: np.ndarray,
+    target_names: list[str] | None = None,
+    threshold: float = 0.5,
+) -> dict:
+    """
+    Metrics for multi-target binary classification (Triple Barrier).
+
+    Args:
+        y_true: shape (n_samples, n_targets), binary {0, 1}
+        y_pred_proba: shape (n_samples, n_targets), probabilities [0, 1]
+        target_names: list of target names for per-target reporting
+        threshold: classification threshold for precision/recall
+
+    Returns:
+        Dict with per-target AUC, precision, recall, and mean AUC.
+    """
+    n_targets = y_true.shape[1]
+    if target_names is None:
+        target_names = [f'target_{i}' for i in range(n_targets)]
+
+    per_target = {}
+    aucs = []
+
+    for i in range(n_targets):
+        name = target_names[i]
+        yt = y_true[:, i]
+        yp = y_pred_proba[:, i]
+
+        # AUC (handle edge case: only one class present)
+        n_pos = yt.sum()
+        n_neg = len(yt) - n_pos
+        if n_pos == 0 or n_neg == 0:
+            auc = 0.5  # uninformative
+        else:
+            auc = float(roc_auc_score(yt, yp))
+
+        # Precision / Recall at threshold
+        yp_bin = (yp >= threshold).astype(int)
+        tp = ((yp_bin == 1) & (yt == 1)).sum()
+        fp = ((yp_bin == 1) & (yt == 0)).sum()
+        fn = ((yp_bin == 0) & (yt == 1)).sum()
+
+        precision = float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
+        recall = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
+        pos_rate = float(n_pos / len(yt))
+
+        per_target[name] = {
+            'auc': auc,
+            'precision': precision,
+            'recall': recall,
+            'pos_rate': pos_rate,
+            'n_pos': int(n_pos),
+        }
+        aucs.append(auc)
+
+    mean_auc = float(np.mean(aucs))
+
+    return {
+        'mean_auc': mean_auc,
         'per_target': per_target,
     }
 

@@ -70,6 +70,8 @@ CSV_COLUMNS = [
     'mae',
     'rmse',
     'r2',
+    # Метрики Triple Barrier
+    'val_mean_auc',
     # Метрики классификации
     'f1_macro',
     'f1_sell',
@@ -324,6 +326,8 @@ class CSVExperimentLogger:
             'mae': self._format_value(metrics_dict.get('mae')),
             'rmse': self._format_value(metrics_dict.get('rmse')),
             'r2': self._format_value(metrics_dict.get('r2')),
+            # Метрики Triple Barrier
+            'val_mean_auc': self._format_value(metrics_dict.get('val_mean_auc')),
             # Метрики классификации
             'f1_macro': self._format_value(metrics_dict.get('f1_macro')),
             'f1_sell': f1_sell,
@@ -442,7 +446,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--task', type=str, default=None,
-        choices=['classification', 'regression'],
+        choices=['classification', 'regression', 'regression_updn', 'triple_barrier'],
         help='Фильтр по типу задачи'
     )
     

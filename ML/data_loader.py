@@ -79,6 +79,18 @@ UPDN_REGRESSION_TARGET = 'updn'  # multi-task: 6 Up/Dn таргетов
 # Доступные up/dn таргеты
 UPDN_TARGETS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
+# Triple Barrier targets (12 binary: 6 BUY + 6 SELL)
+TB_TARGET = 'triple_barrier'
+TB_SL_LEVELS = [2, 3]
+TB_TP_LEVELS = [3, 6, 9]
+TB_TARGET_NAMES = []
+for _sl in TB_SL_LEVELS:
+    for _tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'buy_sl{_sl}_tp{_tp}')
+for _sl in TB_SL_LEVELS:
+    for _tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'sell_sl{_sl}_tp{_tp}')
+
 
 # ─── Парсинг данных ──────────────────────────────────────────────────────────
 
@@ -302,6 +314,7 @@ def create_data_loaders(
     print("📦 Загрузка данных...")
     regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
+    triple_barrier = (target == TB_TARGET)
 
     def load_or_parse_data(csv_file: Path, target_col: str, prefix: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         x_path = DATA_DIR / f'X_{prefix}.npy'
@@ -346,6 +359,8 @@ def create_data_loaders(
         # Извлечение таргета
         if multi_target:
             y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
+        elif triple_barrier:
+            y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
         elif regression:
             y = np.abs(df[target_col].values.astype(np.float32))
         else:
@@ -382,6 +397,13 @@ def create_data_loaders(
             for i, col in enumerate(UPDN_TARGETS):
                 print(f"    {col}: mean={y[:, i].mean():.4f}, std={y[:, i].std():.4f}, "
                       f"min={y[:, i].min():.4f}, max={y[:, i].max():.4f}")
+    elif triple_barrier:
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} TB targets: shape={y.shape}")
+            for i, col in enumerate(TB_TARGET_NAMES):
+                ones = y[:, i].sum()
+                total = len(y)
+                print(f"    {col}: {int(ones)}/{total} ({ones/total*100:.1f}%)")
     elif regression:
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} predict (absolute): min={y.min():.4f}, max={y.max():.4f}, "
@@ -408,8 +430,14 @@ def create_data_loaders(
         print(f"  ✅ Нормализация завершена")
 
     # ── Создание Dataset и DataLoader ────────────────────────────────────────
-    train_dataset = FractalSequenceDataset(X_train_norm, y_train, mask_train, regression=regression)
-    val_dataset = FractalSequenceDataset(X_val_norm, y_val, mask_val, regression=regression)
+    train_dataset = FractalSequenceDataset(
+        X_train_norm, y_train, mask_train,
+        regression=(regression or triple_barrier),
+    )
+    val_dataset = FractalSequenceDataset(
+        X_val_norm, y_val, mask_val,
+        regression=(regression or triple_barrier),
+    )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
     if use_weighted_sampler and not regression:
@@ -471,6 +499,7 @@ def create_test_loader(
     print("\n📦 Загрузка тестовых данных...")
     regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
+    triple_barrier = (target == TB_TARGET)
     prefix = 'test'
     
     x_path = DATA_DIR / f'X_{prefix}.npy'
@@ -501,7 +530,7 @@ def create_test_loader(
                     X = X[:, :seq_len, :]
                     mask = mask[:, :seq_len]
                 
-                dataset = FractalSequenceDataset(X, y, mask, regression=regression)
+                dataset = FractalSequenceDataset(X, y, mask, regression=(regression or triple_barrier))
                 return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     print(f"  Кэш не найден. Загрузка {TEST_FILE.name} и парсинг...")
@@ -509,6 +538,8 @@ def create_test_loader(
     
     if multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
+    elif triple_barrier:
+        y = df[TB_TARGET_NAMES].values.astype(np.float32)
     elif regression:
         y = np.abs(df[target].values.astype(np.float32))
     else:
@@ -524,7 +555,7 @@ def create_test_loader(
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
         
-    dataset = FractalSequenceDataset(X, y, mask, regression=regression)
+    dataset = FractalSequenceDataset(X, y, mask, regression=(regression or triple_barrier))
     loader = DataLoader(
         dataset,
         batch_size=batch_size,

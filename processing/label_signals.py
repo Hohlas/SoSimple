@@ -368,6 +368,64 @@ def label_updn(df, debug=False):
     return df
 
 
+# ─── Triple Barrier Labels ────────────────────────────────────────────────
+
+# SL/TP grid (in ATR units)
+TB_SL_LEVELS = [2, 3]
+TB_TP_LEVELS = [3, 6, 9]
+
+# Column names for 12 binary targets
+TB_TARGET_NAMES = []
+for sl in TB_SL_LEVELS:
+    for tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'buy_sl{sl}_tp{tp}')
+for sl in TB_SL_LEVELS:
+    for tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'sell_sl{sl}_tp{tp}')
+
+
+def label_triple_barrier(df, debug=False):
+    """
+    Compute 12 binary Triple Barrier labels from raw MFE values.
+
+    Must be called AFTER label_updn() and BEFORE normalize_rowwise().
+    Uses raw up_24/dn_24 (price units) and ATR to determine if
+    TP barrier was hit before SL barrier within 24 bars.
+
+    Ambiguous cases (both barriers reached) → label = 0 (conservative).
+
+    Args:
+        df: DataFrame with raw up_24, dn_24, ATR columns.
+        debug: Print statistics.
+
+    Returns:
+        DataFrame with 12 added binary columns.
+    """
+    up_raw = pd.to_numeric(df['up_24'], errors='coerce').fillna(0.0)
+    dn_raw = pd.to_numeric(df['dn_24'], errors='coerce').fillna(0.0)
+    atr = pd.to_numeric(df['ATR'], errors='coerce').fillna(1.0)
+
+    # Convert to ATR units
+    up_atr = up_raw / atr.replace(0, 1.0)
+    dn_atr = dn_raw / atr.replace(0, 1.0)
+
+    for sl in TB_SL_LEVELS:
+        for tp in TB_TP_LEVELS:
+            # BUY: price up >= TP*ATR AND price down < SL*ATR
+            df[f'buy_sl{sl}_tp{tp}'] = ((up_atr >= tp) & (dn_atr < sl)).astype(int)
+            # SELL: mirror
+            df[f'sell_sl{sl}_tp{tp}'] = ((dn_atr >= tp) & (up_atr < sl)).astype(int)
+
+    if debug:
+        total = len(df)
+        print(f"\n[TRIPLE BARRIER] Labels computed for {total} rows:")
+        for name in TB_TARGET_NAMES:
+            ones = df[name].sum()
+            print(f"  {name}: {ones} ({ones/total*100:.1f}%)")
+
+    return df
+
+
 if __name__ == "__main__":
     # Пример использования модуля при прямом запуске
     # label_all('Nero.csv', 'Nero_full.csv', debug=True)

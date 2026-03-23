@@ -47,7 +47,8 @@ import matplotlib.pyplot as plt
 
 from ML.data_loader import (
     create_data_loaders, CSV_SEP, VAL_FILE, FRACTAL_SEP,
-    UPDN_TARGETS, UPDN_REGRESSION_TARGET
+    UPDN_TARGETS, UPDN_REGRESSION_TARGET,
+    TB_TARGET, TB_TARGET_NAMES,
 )
 from ML.models import get_model
 from ML.utils import set_seed, get_device
@@ -268,6 +269,75 @@ def analyze_thresholds_updn(
         })
 
     return pd.DataFrame(rows)
+
+
+def analyze_thresholds_tb(
+    y_pred_proba: np.ndarray,
+    y_true: np.ndarray,
+    target_names: list[str],
+    n_thresholds: int = 50,
+) -> pd.DataFrame:
+    """
+    Threshold analysis for Triple Barrier.
+
+    For each SL/TP combo and threshold theta:
+    - Count trades where P(TP hit) > theta
+    - PF = (wins * TP) / (losses * SL)
+    - Losses include timeouts (conservative — counted as full SL)
+
+    Args:
+        y_pred_proba: shape (n, 12), probabilities after sigmoid
+        y_true: shape (n, 12), binary labels {0, 1}
+        target_names: list of 12 target names
+        n_thresholds: number of threshold steps
+
+    Returns:
+        DataFrame with columns: target, direction, sl, tp, theta,
+        trades, wins, win_rate, pf, profit, loss
+    """
+    results = []
+
+    for i, name in enumerate(target_names):
+        # Parse SL/TP from name: "buy_sl2_tp6" → sl=2, tp=6
+        parts = name.split('_')
+        direction = parts[0]  # 'buy' or 'sell'
+        sl = int(parts[1][2:])  # 'sl2' → 2
+        tp = int(parts[2][2:])  # 'tp6' → 6
+
+        proba = y_pred_proba[:, i]
+        true = y_true[:, i]
+
+        thresholds = np.linspace(0.3, 0.95, n_thresholds)
+
+        for theta in thresholds:
+            mask = proba > theta
+            n_trades = mask.sum()
+            if n_trades < 10:
+                continue
+
+            wins = true[mask].sum()
+            losses = n_trades - wins
+
+            profit = wins * tp
+            loss_val = losses * sl
+            pf = profit / loss_val if loss_val > 0 else float('inf')
+            win_rate = wins / n_trades
+
+            results.append({
+                'target': name,
+                'direction': direction,
+                'sl': sl,
+                'tp': tp,
+                'theta': round(float(theta), 4),
+                'trades': int(n_trades),
+                'wins': int(wins),
+                'win_rate': round(float(win_rate), 4),
+                'pf': round(float(pf), 4),
+                'profit': round(float(profit), 2),
+                'loss': round(float(loss_val), 2),
+            })
+
+    return pd.DataFrame(results)
 
 
 def find_optimal_theta(
@@ -743,6 +813,132 @@ def run_threshold_analysis(
     return optimal
 
 
+def run_tb_analysis(
+    model_name: str = 'transformer',
+    checkpoint_path: str | None = None,
+    seed: int = 42,
+    optuna_json: str | None = None,
+):
+    """Run threshold analysis for Triple Barrier task."""
+    import json
+
+    set_seed(seed)
+    device = get_device()
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Load checkpoint
+    if checkpoint_path:
+        ckpt_path = Path(checkpoint_path)
+    else:
+        ckpt_path = CHECKPOINTS_DIR / f'{model_name}_tb_best.pt'
+
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Чекпоинт не найден: {ckpt_path}")
+
+    print(f"\n{'═' * 60}")
+    print(f"  TRIPLE BARRIER THRESHOLD ANALYSIS")
+    print(f"{'═' * 60}")
+    print(f"  Чекпоинт: {ckpt_path.name}")
+
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+    ckpt_model_name = ckpt.get('model_name', model_name)
+    num_classes = ckpt.get('num_classes', len(TB_TARGET_NAMES))
+
+    model_kwargs = ckpt.get('model_kwargs', {})
+    if optuna_json:
+        with open(optuna_json, 'r', encoding='utf-8') as f:
+            optuna_data = json.load(f)
+        best_params = optuna_data.get('best_params', {})
+        for k in ['hidden_size', 'num_layers', 'dropout', 'input_features']:
+            if k in best_params:
+                model_kwargs[k] = best_params[k]
+
+    model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
+    model.load_state_dict(ckpt['model_state_dict'])
+    model = model.to(device)
+    model.eval()
+
+    # Load validation data
+    _, val_loader, _ = create_data_loaders(
+        batch_size=256,
+        target=TB_TARGET,
+        seq_len=model_kwargs.get('seq_len', 20),
+    )
+
+    # Inference
+    print("\n🧠 Inference...")
+    all_preds = []
+    all_targets = []
+    with torch.no_grad():
+        for X_batch, y_batch, mask_batch in val_loader:
+            X_batch = X_batch.to(device)
+            mask_batch = mask_batch.to(device)
+            logits = model(X_batch, mask=mask_batch).cpu().numpy()
+            all_preds.append(logits)
+            all_targets.append(y_batch.numpy())
+
+    y_pred_logits = np.concatenate(all_preds)
+    y_true = np.concatenate(all_targets)
+
+    # Apply sigmoid
+    y_pred_proba = 1.0 / (1.0 + np.exp(-y_pred_logits))
+
+    # Analyze
+    print("\n📊 Анализ порогов...")
+    df_results = analyze_thresholds_tb(y_pred_proba, y_true, TB_TARGET_NAMES)
+
+    if df_results.empty:
+        print("  ⚠️ Нет результатов (все комбинации имеют < 10 сделок)")
+        return
+
+    # Best theta per target
+    print(f"\n{'═' * 60}")
+    print("  ЛУЧШИЙ ПОРОГ ПО КАЖДОМУ ТАРГЕТУ (max PF, trades >= 10)")
+    print(f"{'═' * 60}")
+    print(f"  {'Target':<20} {'θ':>6} {'Trades':>8} {'WinRate':>8} {'PF':>8}")
+    print(f"  {'─'*52}")
+
+    best_rows = []
+    for name in TB_TARGET_NAMES:
+        target_df = df_results[df_results['target'] == name]
+        if target_df.empty:
+            continue
+        # Best PF with at least some trades
+        best = target_df.loc[target_df['pf'].idxmax()]
+        best_rows.append(best)
+        print(f"  {name:<20} {best['theta']:>6.3f} {int(best['trades']):>8} "
+              f"{best['win_rate']:>8.1%} {best['pf']:>8.2f}")
+
+    # Generate report
+    report_path = REPORTS_DIR / 'threshold_analysis_tb.md'
+    lines = [
+        f"# Triple Barrier Threshold Analysis",
+        f"",
+        f"**Дата**: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        f"**Модель**: {ckpt_model_name}",
+        f"",
+        f"## Best θ per Target",
+        f"| Target | θ | Trades | Win Rate | PF |",
+        f"|--------|---|--------|----------|------|",
+    ]
+    for row in best_rows:
+        lines.append(f"| {row['target']} | {row['theta']:.3f} | {int(row['trades'])} | "
+                    f"{row['win_rate']:.1%} | {row['pf']:.2f} |")
+
+    lines.extend([
+        f"",
+        f"## Full Results",
+        f"",
+        f"Saved to: `ML/reports/threshold_tb_full.csv`",
+    ])
+
+    report_path.write_text("\n".join(lines), 'utf-8')
+    df_results.to_csv(REPORTS_DIR / 'threshold_tb_full.csv', index=False)
+
+    print(f"\n✅ Отчет: {report_path.name}")
+    print(f"✅ Полные данные: threshold_tb_full.csv")
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # CLI
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -758,7 +954,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default='regression',
-        choices=['regression', 'regression_updn'],
+        choices=['regression', 'regression_updn', 'triple_barrier'],
         help="Тип таргета."
     )
     parser.add_argument(

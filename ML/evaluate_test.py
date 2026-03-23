@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ML.data_loader import create_test_loader, UPDN_REGRESSION_TARGET, TEST_FILE, CSV_SEP, FRACTAL_SEP, UPDN_TARGETS
+from ML.data_loader import create_test_loader, UPDN_REGRESSION_TARGET, TEST_FILE, CSV_SEP, FRACTAL_SEP, UPDN_TARGETS, TB_TARGET, TB_TARGET_NAMES
 from ML.models import get_model
-from ML.utils import set_seed, get_device
+from ML.utils import set_seed, get_device, compute_binary_classification_metrics
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CHECKPOINTS_DIR = PROJECT_ROOT / 'ML' / 'checkpoints'
@@ -53,10 +53,20 @@ def run_evaluation(
     if checkpoint_path:
         ckpt_path = Path(checkpoint_path)
     elif model_name:
-        suffix = '_updn' if task == 'regression_updn' else '_regression'
+        if task == 'triple_barrier':
+            suffix = '_tb'
+        elif task == 'regression_updn':
+            suffix = '_updn'
+        else:
+            suffix = '_regression'
         ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
     else:
-        suffix = '_updn' if task == 'regression_updn' else '_regression'
+        if task == 'triple_barrier':
+            suffix = '_tb'
+        elif task == 'regression_updn':
+            suffix = '_updn'
+        else:
+            suffix = '_regression'
         ckpt_path = CHECKPOINTS_DIR / f'best_model{suffix}.pt'
 
     if not ckpt_path.exists():
@@ -93,7 +103,12 @@ def run_evaluation(
 
     # ── Загрузка данных ──────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
-    target_col = UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
+    if task == 'triple_barrier':
+        target_col = TB_TARGET
+    elif task == 'regression_updn':
+        target_col = UPDN_REGRESSION_TARGET
+    else:
+        target_col = 'predict'
     test_loader = create_test_loader(
         batch_size=256,
         target=target_col,
@@ -117,6 +132,77 @@ def run_evaluation(
             all_preds.append(preds)
 
     y_pred = np.concatenate(all_preds)
+
+    # ── Triple Barrier Evaluation ─────────────────────────────────────────────
+    if task == 'triple_barrier':
+        print(f"\n{'─' * 60}")
+        print("📊 Triple Barrier OOS Evaluation...")
+
+        # Apply sigmoid to get probabilities
+        y_proba = 1.0 / (1.0 + np.exp(-y_pred))  # sigmoid
+
+        # Load true labels from test CSV
+        df_test = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
+        y_true = df_test[TB_TARGET_NAMES].values.astype(np.float32)
+
+        # Compute binary metrics
+        metrics = compute_binary_classification_metrics(y_true, y_proba, TB_TARGET_NAMES)
+
+        print(f"\n🏆 Out-of-Sample Triple Barrier Results:")
+        print(f"  Mean AUC: {metrics['mean_auc']:.4f}")
+        print(f"\n  Per-target results:")
+        print(f"  {'Target':<20} {'AUC':>8} {'Prec':>8} {'Recall':>8} {'Pos%':>8}")
+        print(f"  {'─'*52}")
+        for name, tm in metrics['per_target'].items():
+            print(f"  {name:<20} {tm['auc']:>8.4f} {tm['precision']:>8.4f} "
+                  f"{tm['recall']:>8.4f} {tm['pos_rate']:>8.1%}")
+
+        # Realistic PF for each SL/TP combo
+        print(f"\n  Realistic PF (θ=0.5, timeouts=full SL loss):")
+        print(f"  {'Target':<20} {'Trades':>8} {'Wins':>8} {'WinRate':>8} {'PF':>8}")
+        print(f"  {'─'*52}")
+        for i, name in enumerate(TB_TARGET_NAMES):
+            parts = name.split('_')
+            sl = int(parts[1][2:])
+            tp = int(parts[2][2:])
+
+            mask = y_proba[:, i] > 0.5
+            n_trades = mask.sum()
+            if n_trades < 10:
+                print(f"  {name:<20} {n_trades:>8} {'skip':>8} {'':>8} {'':>8}")
+                continue
+
+            wins = y_true[mask, i].sum()
+            losses = n_trades - wins
+            win_rate = wins / n_trades
+            profit = wins * tp
+            loss_val = losses * sl
+            pf = profit / loss_val if loss_val > 0 else float('inf')
+
+            print(f"  {name:<20} {int(n_trades):>8} {int(wins):>8} "
+                  f"{win_rate:>8.1%} {pf:>8.2f}")
+
+        # Generate report
+        report_path = REPORTS_DIR / 'evaluate_test_tb.md'
+        lines = [
+            f"# Triple Barrier Test Set Evaluation",
+            f"",
+            f"**Модель**: {ckpt_model_name}",
+            f"**Набор**: Test ({len(y_pred)} строк)",
+            f"**Mean AUC**: {metrics['mean_auc']:.4f}",
+            f"",
+            f"## Per-target AUC",
+            f"| Target | AUC | Precision | Recall | Pos Rate |",
+            f"|--------|-----|-----------|--------|----------|",
+        ]
+        for name, tm in metrics['per_target'].items():
+            lines.append(f"| {name} | {tm['auc']:.4f} | {tm['precision']:.4f} | "
+                        f"{tm['recall']:.4f} | {tm['pos_rate']:.1%} |")
+
+        report_path.write_text("\n".join(lines), 'utf-8')
+        print(f"\n✅ Отчет сохранён: {report_path.name}")
+        print(f"{'═' * 60}\n")
+        return
 
     # ── Анализ и Торговое Правило ───────────────────────────────────────────
     print(f"\n{'─' * 60}")
@@ -205,9 +291,10 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='transformer')
     parser.add_argument('--checkpoint', type=str, default=None)
-    parser.add_argument('--task', type=str, default='regression_updn')
+    parser.add_argument('--task', type=str, default='regression_updn',
+                        choices=['regression', 'regression_updn', 'triple_barrier'])
     parser.add_argument('--horizon', type=int, default=12)
-    parser.add_argument('--theta', type=float, required=True, help='Торговый порог (ratio pred_up/pred_dn)')
+    parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optuna_json', type=str, default=None)
     return parser.parse_args()

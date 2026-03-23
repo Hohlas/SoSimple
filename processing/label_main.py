@@ -51,7 +51,7 @@ import argparse
 import pandas as pd
 import os
 from pathlib import Path
-from label_signals import label_all, label_updn
+from label_signals import label_all, label_updn, label_triple_barrier
 from normalize import normalize_rowwise
 
 
@@ -327,6 +327,10 @@ def main():
     print(f"\nРазметка Up/Dn таргетов...")
     labeled_df = label_updn(labeled_df, debug=args.debug)
 
+    # 3c. Triple Barrier labels (binary, before normalization)
+    print(f"\nРазметка Triple Barrier таргетов...")
+    labeled_df = label_triple_barrier(labeled_df, debug=args.debug)
+
     # 4. Построчная нормализация (до split — каждая строка независима)
     if not args.no_normalize:
         labeled_df = normalize_rowwise(
@@ -349,7 +353,7 @@ def main():
     print(f"\n" + "=" * 60)
     print("ПОДГОТОВКА ЗАВЕРШЕНА")
     print("=" * 60)
-    print(f"Метки: signal, predict, up_12, dn_12, up_24, dn_24, up_48, dn_48")
+    print(f"Метки: signal, predict, up_12..dn_48, buy_sl*_tp*, sell_sl*_tp*")
     if not args.no_normalize:
         print(f"Нормализация: применена")
         print(f"  Статистика: {stats_path}")

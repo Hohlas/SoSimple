@@ -41,6 +41,7 @@ from ML.data_loader import (
     create_data_loaders, create_test_loader,
     CSV_SEP, TRAIN_FILE, VAL_FILE, TEST_FILE,
     UPDN_REGRESSION_TARGET, UPDN_TARGETS,
+    TB_TARGET, TB_TARGET_NAMES,
 )
 from ML.models import get_model
 from ML.utils import set_seed, get_device

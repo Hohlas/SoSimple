@@ -295,8 +295,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Сравнение всех архитектур.')
     parser.add_argument(
         '--task', type=str, required=True,
-        choices=['classification', 'regression', 'regression_updn'],
-        help="Задача: 'classification' | 'regression' | 'regression_updn' (6 Up/Dn)."
+        choices=['classification', 'regression', 'regression_updn', 'triple_barrier'],
+        help="Задача: 'classification' | 'regression' | 'regression_updn' | 'triple_barrier'."
     )
     parser.add_argument(
         '--use_scaler', action='store_true',
