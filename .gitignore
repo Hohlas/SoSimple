@@ -220,6 +220,20 @@ __marimo__/
 *.hst
 *.frx
 
+# файлы  MT5
+MT/MQL5/Experts/Advisors/*
+MT/MQL5/Experts/Examples/*
+MT/MQL5/Experts/Free Robots/*
+MT/MQL5/Images
+MT/MQL5/Indicators/Examples/*
+MT/MQL5/Indicators/Free Indicators/*
+MT/MQL5/Scripts/*
+MT/MQL5/Include/MovingAverages.mqh
+MT/MQL5/Include/Object.mqh
+MT/MQL5/Include/StdLibErr.mqh
+MT/MQL5/Include/VirtualKeys.mqh
+
+
 # файлы тестера стратегий MT4
 MT/tester/caches/*
 MT/tester/history/*

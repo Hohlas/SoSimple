@@ -4,7 +4,7 @@
   "best_mean_auc": 0.5,
   "best_epoch": 1,
   "num_parameters": 70828,
-  "training_time": 16.101479291915894,
+  "training_time": 89.64313817024231,
   "per_target": {
     "buy_sl2_tp3": {
       "auc": 0.5,
