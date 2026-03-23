@@ -21,10 +21,11 @@
 #define ML_MAX_SIGNALS   200000  // максимум строк в CSV
 #define ML_Ver   2.0  // 
 
-double ML_MinRatio     = 4.0;    // порог ratio (повышен для фильтрации слабых сигналов)
-double ML_MaxRR        = 4.0;    // максимальный множитель R:R (cap)
-double ML_ScaleK       = 20.0;   // множитель для перевода pred_up/dn в ATR (SL/TP)
-bool   ML_BypassTrend  = true;   // true = ML-сигналы игнорируют трендовый фильтр
+// ML параметры перенесены во внешние (extern) переменные MT/MQL4/Experts/$o$imple.mq4
+// double ML_MinRatio     = 4.0;    // порог ratio (повышен для фильтрации слабых сигналов)
+// double ML_MaxRR        = 4.0;    // максимальный множитель R:R (cap)
+// double ML_ScaleK       = 20.0;   // множитель для перевода pred_up/dn в ATR (SL/TP)
+// bool   ML_BypassTrend  = true;   // true = ML-сигналы игнорируют трендовый фильтр
 
 // ─── Диагностические счётчики ─────────────────────────────────────
 
@@ -167,7 +168,7 @@ void EXPERT::ML_TRADE() {
       }
       ML_cnt_executed++; ML_cnt_buy++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
-      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 1.5); 
+      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR); 
       float tp_dist = sl_dist * (float)MathMin(ML_RatioUp[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
       
       set.BUY.Sig=GOGO;
@@ -188,7 +189,7 @@ void EXPERT::ML_TRADE() {
       }
       ML_cnt_executed++; ML_cnt_sell++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
-      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 1.5); 
+      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR); 
       float tp_dist = sl_dist * (float)MathMin(ML_RatioDn[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
 
       set.SEL.Sig=GOGO;
