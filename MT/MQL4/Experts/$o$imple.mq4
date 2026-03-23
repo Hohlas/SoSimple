@@ -56,13 +56,13 @@ extern char  T0=7;    // T0=1..8  (1)  при tk=0 expiration: 1,2,3,5,8,12,21,0
 extern char  T1=6;    // T1=1..8  (1)  при tk=0 скока баров держать открытую позу: 1,2,3,5,8,13,21,0. При tk>0 количество баров в течении которых разрешена работа  с момента T0. При T1=0 || T1=8 ограничения по времени не работают  
 extern char  tp=1;    // tp=1..5  (1)  выход по времени:  1~Bid, 2~BUY.Val, 3~BUY.Max, >3~Atr*(tp-3)/2 -1~стоп за последний пик, -2~стоп в БУ
       sinput string  zML="          -  M L   O P T I M I Z A T I O N  - ";
-extern double ML_MinRatio      = 4.0;  // ML: Порог ratio (фильтр слабых сигналов)
+extern double ML_MinRatio      = 3.5;  // ML: Порог ratio (фильтр слабых сигналов)
 extern double ML_MaxRR         = 4.0;  // ML: Макс множитель Asymmetric R:R
 extern double ML_ScaleK        = 20.0; // ML: Множитель pred -> ATR
-extern double ML_Min_SL_ATR    = 1.5;  // ML: Минимальный стартовый SL в ATR
+extern double ML_Min_SL_ATR    = 2.0;  // ML: Минимальный стартовый SL в ATR
 extern bool   ML_BypassTrend   = true; // ML: Игнорировать трендовый фильтр
 extern double ML_Trl_Start_ATR = 1.0;  // Активация ML-трала при профите в ATR (от 0.5 до 2.0)
-extern double ML_Trl_Step_ATR  = 0.8;  // Дистанция ML-трала в ATR (от 0.3 до 1.5)
+extern double ML_Trl_Step_ATR  = 1.5;  // Дистанция ML-трала в ATR (от 0.3 до 1.5)
 
 datetime BarTime;
 uchar    ExpTotal;
