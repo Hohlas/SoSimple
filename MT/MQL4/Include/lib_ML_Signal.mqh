@@ -168,7 +168,7 @@ void EXPERT::ML_TRADE() {
       ML_cnt_executed++; ML_cnt_buy++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
       float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 1.5); 
-      float tp_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
+      float tp_dist = sl_dist * (float)MathMin(ML_RatioUp[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
       
       set.BUY.Sig=GOGO;
       set.BUY.Val=(float)Ask+DELTA(D);
@@ -189,7 +189,7 @@ void EXPERT::ML_TRADE() {
       ML_cnt_executed++; ML_cnt_sell++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
       float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 1.5); 
-      float tp_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, sl_dist * 1.0); // R:R >= 1.0
+      float tp_dist = sl_dist * (float)MathMin(ML_RatioDn[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
 
       set.SEL.Sig=GOGO;
       set.SEL.Val=(float)Bid-DELTA(D);

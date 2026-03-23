@@ -22,8 +22,8 @@ void EXPERT::OUTPUT() {
         } else if (BUY.Typ == MARKET) {
             if (SHIFT(BUY.T) >= 12) {
                 CLOSE_BUY(1, "ML_Timeout(12H)");
-            } else if (BID > BUY.Val + ATR) {
-                float new_sl = (float)(BID - ATR * 1.5);
+            } else if (BID > BUY.Val + ATR * ML_Trl_Start_ATR) {
+                float new_sl = (float)(BID - ATR * ML_Trl_Step_ATR);
                 if (new_sl > BUY.Stp && BID - new_sl > StopLevel) {
                     BUY.Stp = new_sl;
                     V("ML_TrailBuy", new_sl, bar, clrBlue);
@@ -49,8 +49,8 @@ void EXPERT::OUTPUT() {
         } else if (SEL.Typ == MARKET) {
             if (SHIFT(SEL.T) >= 12) {
                 CLOSE_SEL(1, "ML_Timeout(12H)");
-            } else if (ASK < SEL.Val - ATR) {
-                float new_sl = (float)(ASK + ATR * 1.5);
+            } else if (ASK < SEL.Val - ATR * ML_Trl_Start_ATR) {
+                float new_sl = (float)(ASK + ATR * ML_Trl_Step_ATR);
                 if (new_sl < SEL.Stp && new_sl - ASK > StopLevel) {
                     SEL.Stp = new_sl;
                     A("ML_TrailSel", new_sl, bar, clrRed);
