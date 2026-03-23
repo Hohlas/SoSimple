@@ -82,13 +82,12 @@ datetime DAYS_TIME(uchar CountDays){
    }   
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ 
-string NAME, VER;
-void VERSION(){ 
-   uchar chr; 
-   for (chr=0; chr<StringLen(NAME_VER); chr++)  if (StringGetChar(NAME_VER,chr)>47 && StringGetChar(NAME_VER,chr)<58) break; // в имени ищем число ("0"-48, "1"-49, "2"-50,..., "9"-57)
-   NAME=StringSubstr(NAME_VER,0,chr);
-   VER=StringSubstr(NAME_VER,chr,7);
-   }
+//void VERSION(){ 
+//   uchar chr; 
+//   for (chr=0; chr<StringLen(NAME_VER); chr++)  if (StringGetChar(NAME_VER,chr)>47 && StringGetChar(NAME_VER,chr)<58) break; // в имени ищем число ("0"-48, "1"-49, "2"-50,..., "9"-57)
+//   NAME=StringSubstr(NAME_VER,0,chr);
+//   VER=StringSubstr(NAME_VER,chr,7);
+//   }
 
 // типы ордеров  
 #define NONE   0
@@ -144,7 +143,7 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
          LastTestDD=0;
          Back=0;
          Rsk=Risk;
-         VERSION();
+         //VERSION();
          Name=NAME; 
          Ver=StringToDouble(VER);
          Print("EXPERT_PARENT_CLASS constructor: CurExp=",CurExp," Name=",Name," Ver=",Ver); 

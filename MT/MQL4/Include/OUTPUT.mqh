@@ -6,33 +6,57 @@
 void EXPERT::OUTPUT() {
     // CLOSE BUY
     if (BUY.Val || set.BUY.Val) { // если есть (рыночные / отложные / готовящиеся к открытию) ордера
-        if (oImp < 0 && !IMPULSE_UP())
-            CLOSE_BUY(1, "ImpulseOver"); // отсутствие резкого отскока после входа = закрытие по текущей цене
-        if (oImp > 0 && !IMPULSE_UP())
-            CLOSE_BUY(4, "ImpulseOver"); // отсутствие резкого отскока после входа = тейк в безубыток
-        if (oGlb && Trnd.Global < 0)
-            CLOSE_BUY(oGlb, "Global<0"); // смена глобального тренда
-        if (oLoc && Trnd.Local < 0)
-            CLOSE_BUY(oLoc, "Local<0"); // смена локального тренда (пробитие нескольких пиков)
-        if (Target && BUY.Val > TargetLo)
-            CLOSE_BUY(1, "TargetLo");
-        if (oFlt && POC_CLOSE_TO_BUY())
-            CLOSE_BUY(1, reason + "NearBuy");
+        if (iSignal != 3) {
+            if (oImp < 0 && !IMPULSE_UP())
+                CLOSE_BUY(1, "ImpulseOver"); // отсутствие резкого отскока после входа = закрытие по текущей цене
+            if (oImp > 0 && !IMPULSE_UP())
+                CLOSE_BUY(4, "ImpulseOver"); // отсутствие резкого отскока после входа = тейк в безубыток
+            if (oGlb && Trnd.Global < 0)
+                CLOSE_BUY(oGlb, "Global<0"); // смена глобального тренда
+            if (oLoc && Trnd.Local < 0)
+                CLOSE_BUY(oLoc, "Local<0"); // смена локального тренда (пробитие нескольких пиков)
+            if (Target && BUY.Val > TargetLo)
+                CLOSE_BUY(1, "TargetLo");
+            if (oFlt && POC_CLOSE_TO_BUY())
+                CLOSE_BUY(1, reason + "NearBuy");
+        } else if (BUY.Typ == MARKET) {
+            if (SHIFT(BUY.T) >= 12) {
+                CLOSE_BUY(1, "ML_Timeout(12H)");
+            } else if (BID > BUY.Val + ATR) {
+                float new_sl = (float)(BID - ATR * 1.5);
+                if (new_sl > BUY.Stp && BID - new_sl > StopLevel) {
+                    BUY.Stp = new_sl;
+                    V("ML_TrailBuy", new_sl, bar, clrBlue);
+                }
+            }
+        }
     }
     // CLOSE SELL
     if (SEL.Val || set.SEL.Val) {
-        if (oImp < 0 && !IMPULSE_DN())
-            CLOSE_SEL(1, "ImpulseOver"); // отсутствие резкого отскока после входа = закрытие по текущей цене
-        if (oImp > 0 && !IMPULSE_DN())
-            CLOSE_SEL(4, "ImpulseOver"); // отсутствие резкого отскока после входа = тейк в безубыток
-        if (oGlb && Trnd.Global > 0)
-            CLOSE_SEL(oGlb, "Global>0"); // смена глобального тренда
-        if (oLoc && Trnd.Local > 0)
-            CLOSE_SEL(oLoc, "Local>0"); // смена локального тренда
-        if (Target && SEL.Val < TargetHi)
-            CLOSE_SEL(1, "TargetHi");
-        if (oFlt && POC_CLOSE_TO_SEL())
-            CLOSE_SEL(1, reason + "NearSell");
+        if (iSignal != 3) {
+            if (oImp < 0 && !IMPULSE_DN())
+                CLOSE_SEL(1, "ImpulseOver"); // отсутствие резкого отскока после входа = закрытие по текущей цене
+            if (oImp > 0 && !IMPULSE_DN())
+                CLOSE_SEL(4, "ImpulseOver"); // отсутствие резкого отскока после входа = тейк в безубыток
+            if (oGlb && Trnd.Global > 0)
+                CLOSE_SEL(oGlb, "Global>0"); // смена глобального тренда
+            if (oLoc && Trnd.Local > 0)
+                CLOSE_SEL(oLoc, "Local>0"); // смена локального тренда
+            if (Target && SEL.Val < TargetHi)
+                CLOSE_SEL(1, "TargetHi");
+            if (oFlt && POC_CLOSE_TO_SEL())
+                CLOSE_SEL(1, reason + "NearSell");
+        } else if (SEL.Typ == MARKET) {
+            if (SHIFT(SEL.T) >= 12) {
+                CLOSE_SEL(1, "ML_Timeout(12H)");
+            } else if (ASK < SEL.Val - ATR) {
+                float new_sl = (float)(ASK + ATR * 1.5);
+                if (new_sl < SEL.Stp && new_sl - ASK > StopLevel) {
+                    SEL.Stp = new_sl;
+                    A("ML_TrailSel", new_sl, bar, clrRed);
+                }
+            }
+        }
     }
     ERROR_CHECK(__FUNCTION__);
 }

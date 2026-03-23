@@ -1,8 +1,9 @@
 #define MAX_RISK  10
+#define VERSION "260.323"
 #property copyright  "Hohla"
 #property link       "hohla.ru"
 #property strict // Указание компилятору на применение особого строгого режима проверки ошибок 
-
+#property version  VERSION
 
 extern short   BackTest=0;
 sinput char    Opt_Trades=10; // Opt_Trades Влияет только на оптимизацию, остальные параметры и на опт ина бэктест
@@ -62,7 +63,7 @@ int      bar=1, Today, TesterFile;
 float    PS[20], ch[10], MaxSpred, Lot, Aggress, CurDD,
          ASK, BID, StopLevel, Spred, MaxRisk, MaxMargin=float(0.7),  // максимальный суммарный риск всех позиций в одну сторону (все лонги или все шорты), максимальная загрузка маржи    
          InitDeposit, DayMinEquity, DrawDown, MaxEquity, MinEquity, Equity;  
-string   ChartHistory="", Company, NAME_VER=__FILE__,
+string   ChartHistory="", Company, NAME="SoSimple", VER=VERSION,
          Prm1,Prm2,Prm3,Prm4,Prm5,Prm6,Prm7,Prm8,Prm9,Prm10,Prm11,Prm12,Prm13, 
          Str1,Str2,Str3,Str4,Str5,Str6,Str7,Str8,Str9,Str10,Str11,Str12,Str13; 
 ulong    MagicLong;

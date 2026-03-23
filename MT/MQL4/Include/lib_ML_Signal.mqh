@@ -19,8 +19,9 @@
 
 #define ML_SIGNALS_FILE  "ml_signals.csv"
 #define ML_MAX_SIGNALS   200000  // максимум строк в CSV
+#define ML_Ver   2.0  // 
 
-double ML_MinRatio     = 2.665;  // порог ratio (совпадает с Python θ=2.665)
+double ML_MinRatio     = 4.0;    // порог ratio (повышен для фильтрации слабых сигналов)
 double ML_MaxRR        = 4.0;    // максимальный множитель R:R (cap)
 double ML_ScaleK       = 20.0;   // множитель для перевода pred_up/dn в ATR (SL/TP)
 bool   ML_BypassTrend  = true;   // true = ML-сигналы игнорируют трендовый фильтр
@@ -96,7 +97,7 @@ bool ML_INIT() {
    ArrayResize(ML_RatioUp, ML_SignalCount);
    ArrayResize(ML_RatioDn, ML_SignalCount);
 
-   Print("ML_INIT: Loaded ", ML_SignalCount, " signals from ", ML_SIGNALS_FILE,
+   Print("ML_INIT: Loaded V",ML_Ver, ML_SignalCount, " signals from ", ML_SIGNALS_FILE,
          "  Range: ", TimeToString(ML_Times[0]), " — ", TimeToString(ML_Times[ML_SignalCount-1]),
          "  MinRatio=", DoubleToString(ML_MinRatio,3),
          "  MaxRR=", DoubleToString(ML_MaxRR,1),
@@ -160,7 +161,10 @@ void EXPERT::ML_TRADE() {
    }
 
    // ─── Торговля с адаптивным SL/TP ───
-   if (sig == 1 && BUY.Typ == NONE && SEL.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
+   if (sig == 1 && BUY.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
+      if (SEL.Typ != NONE) {
+         CLOSE_SEL(1, "ML_Reversal");
+      }
       ML_cnt_executed++; ML_cnt_buy++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
       float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * 1.5); 
@@ -178,7 +182,10 @@ void EXPERT::ML_TRADE() {
             " ATR=",    DoubleToString(ATR,Digits),
             " bar=",    TimeToString(Time[bar]));
    }
-   else if (sig == -1 && SEL.Typ == NONE && BUY.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
+   else if (sig == -1 && SEL.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
+      if (BUY.Typ != NONE) {
+         CLOSE_BUY(1, "ML_Reversal");
+      }
       ML_cnt_executed++; ML_cnt_sell++;
       // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
       float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * 1.5); 
