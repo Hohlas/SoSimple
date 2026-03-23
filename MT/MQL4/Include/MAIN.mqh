@@ -107,7 +107,8 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void LINE(string txt, uchar f0, uchar f1, color clr, uchar Width);
    }EXP[1];
 
-#include <lib_ML_Signal.mqh>  // ML-сигналы из предрассчитанного CSV
+#include <lib_ML_Signal.mqh>     // ML-сигналы из предрассчитанного CSV (regression_updn)
+#include <lib_ML_Signal_TB.mqh>  // ML Triple Barrier сигналы (фиксированные SL/TP)
 
    
 // -----------------------------------------------------------------------------------------------------------------------------------------------------------     

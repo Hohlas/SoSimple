@@ -132,6 +132,180 @@ def preds_to_signals(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TRIPLE BARRIER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def tb_preds_to_signals(
+    y_pred_logits: np.ndarray,
+    theta: float,
+) -> pd.DataFrame:
+    """
+    Convert 12 TB logits to best signal per row.
+
+    For each row: sigmoid → filter P>theta → pick max EV.
+    EV = P * TP - (1-P) * SL. Conflict BUY+SELL: max EV wins.
+    """
+    proba = 1.0 / (1.0 + np.exp(-y_pred_logits))  # sigmoid
+    n = len(proba)
+
+    signals = np.zeros(n, dtype=int)
+    sl_atrs = np.zeros(n, dtype=float)
+    tp_atrs = np.zeros(n, dtype=float)
+    probs = np.zeros(n, dtype=float)
+    evs = np.zeros(n, dtype=float)
+
+    for row_idx in range(n):
+        best_ev = -np.inf
+        best_signal = 0
+        best_sl = 0.0
+        best_tp = 0.0
+        best_prob = 0.0
+
+        for i, name in enumerate(TB_TARGET_NAMES):
+            p = proba[row_idx, i]
+            if p <= theta:
+                continue
+
+            parts = name.split('_')
+            direction = 1 if parts[0] == 'buy' else -1
+            sl = int(parts[1][2:])
+            tp = int(parts[2][2:])
+
+            ev = p * tp - (1 - p) * sl
+
+            if ev > best_ev:
+                best_ev = ev
+                best_signal = direction
+                best_sl = float(sl)
+                best_tp = float(tp)
+                best_prob = p
+
+        signals[row_idx] = best_signal
+        sl_atrs[row_idx] = best_sl
+        tp_atrs[row_idx] = best_tp
+        probs[row_idx] = round(best_prob, 4)
+        evs[row_idx] = round(best_ev, 4) if best_ev > -np.inf else 0.0
+
+    return pd.DataFrame({
+        'signal': signals,
+        'sl_atr': sl_atrs,
+        'tp_atr': tp_atrs,
+        'prob': probs,
+        'ev': evs,
+    })
+
+
+def generate_tb_signals(
+    model_name: str = DEFAULT_MODEL,
+    theta: float = 0.6,
+    optuna_json: str | None = None,
+    seed: int = 42,
+):
+    """Generate ml_signals_tb.csv for Triple Barrier task."""
+    set_seed(seed)
+    device = get_device()
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    print(f"\n{'═' * 60}")
+    print(f"  GENERATE TRIPLE BARRIER SIGNALS FOR MT4")
+    print(f"{'═' * 60}")
+
+    ckpt_path = CHECKPOINTS_DIR / f'{model_name}_tb_best.pt'
+    if not ckpt_path.exists():
+        raise FileNotFoundError(f"Чекпоинт не найден: {ckpt_path}")
+
+    print(f"  📥 Чекпоинт: {ckpt_path.name}")
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+
+    ckpt_model_name = ckpt.get('model_name', model_name)
+    num_classes = ckpt.get('num_classes', len(TB_TARGET_NAMES))
+    model_kwargs = ckpt.get('model_kwargs', {})
+
+    if optuna_json and Path(optuna_json).exists():
+        with open(optuna_json, 'r', encoding='utf-8') as f:
+            optuna_data = json.load(f)
+        best_params = optuna_data.get('best_params', {})
+        for k in ['hidden_size', 'num_layers', 'dropout', 'input_features']:
+            if k in best_params:
+                model_kwargs[k] = best_params[k]
+
+    seq_len = model_kwargs.get('seq_len', 20)
+
+    model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
+    model.load_state_dict(ckpt['model_state_dict'])
+    model = model.to(device)
+    model.eval()
+    print(f"  ✅ Модель {ckpt_model_name} загружена (seq_len={seq_len})")
+    print(f"  📈 Порог (θ): {theta}")
+
+    all_results = []
+
+    # Train + Validation
+    print(f"\n{'─' * 60}")
+    print(f"  🔮 Обработка train + validation...")
+    train_loader, val_loader, _ = create_data_loaders(
+        batch_size=256, target=TB_TARGET,
+        use_scaler=False, seq_len=seq_len,
+    )
+
+    for split_name, loader, csv_path in [
+        ('train', train_loader, TRAIN_FILE),
+        ('validation', val_loader, VAL_FILE),
+    ]:
+        df_meta = pd.read_csv(csv_path, sep=CSV_SEP, usecols=['time'], low_memory=False)
+        times = df_meta['time'].values
+
+        y_pred = run_inference(model, loader, device)
+        print(f"    {split_name}: {len(y_pred)} предсказаний")
+        assert len(y_pred) == len(times)
+
+        df_signals = tb_preds_to_signals(y_pred, theta)
+        df_signals.insert(0, 'time', times)
+
+        buy_count = (df_signals['signal'] == 1).sum()
+        sell_count = (df_signals['signal'] == -1).sum()
+        print(f"    {split_name}: BUY={buy_count}, SELL={sell_count}, FLAT={len(df_signals)-buy_count-sell_count}")
+        all_results.append(df_signals)
+
+    # Test
+    print(f"\n{'─' * 60}")
+    print(f"  🔮 Обработка test...")
+    test_loader = create_test_loader(batch_size=256, target=TB_TARGET, seq_len=seq_len)
+    df_meta = pd.read_csv(TEST_FILE, sep=CSV_SEP, usecols=['time'], low_memory=False)
+    times = df_meta['time'].values
+
+    y_pred = run_inference(model, test_loader, device)
+    print(f"    test: {len(y_pred)} предсказаний")
+    assert len(y_pred) == len(times)
+
+    df_signals = tb_preds_to_signals(y_pred, theta)
+    df_signals.insert(0, 'time', times)
+
+    buy_count = (df_signals['signal'] == 1).sum()
+    sell_count = (df_signals['signal'] == -1).sum()
+    print(f"    test: BUY={buy_count}, SELL={sell_count}, FLAT={len(df_signals)-buy_count-sell_count}")
+    all_results.append(df_signals)
+
+    # Combine and write
+    df_all = pd.concat(all_results, ignore_index=True)
+    df_all.sort_values('time', inplace=True)
+    df_all.drop_duplicates(subset='time', keep='last', inplace=True)
+
+    output_path = OUTPUT_DIR / 'ml_signals_tb.csv'
+    df_all.to_csv(output_path, sep=';', index=False)
+
+    print(f"\n{'═' * 60}")
+    print(f"  ✅ Записано {len(df_all)} строк в {output_path}")
+    print(f"  📅 Диапазон: {df_all['time'].iloc[0]} — {df_all['time'].iloc[-1]}")
+
+    total_buy = (df_all['signal'] == 1).sum()
+    total_sell = (df_all['signal'] == -1).sum()
+    total_flat = (df_all['signal'] == 0).sum()
+    print(f"  📊 Итого: BUY={total_buy}, SELL={total_sell}, FLAT={total_flat}")
+    print(f"{'═' * 60}\n")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -298,7 +472,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default=DEFAULT_TASK,
-        choices=['regression', 'regression_updn'],
+        choices=['regression', 'regression_updn', 'triple_barrier'],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
     parser.add_argument(
@@ -324,12 +498,19 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_args()
-    generate_signals(
-        model_name=args.model,
-        task=args.task,
-        horizon=args.horizon,
-        theta=args.theta,
-        optuna_json=args.optuna_json,
-        seed=args.seed,
-        conformal=args.conformal,
-    )
+    if args.task == 'triple_barrier':
+        generate_tb_signals(
+            model_name=args.model,
+            theta=args.theta,
+            seed=args.seed,
+        )
+    else:
+        generate_signals(
+            model_name=args.model,
+            task=args.task,
+            horizon=args.horizon,
+            theta=args.theta,
+            optuna_json=args.optuna_json,
+            seed=args.seed,
+            conformal=args.conformal,
+        )

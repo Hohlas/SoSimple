@@ -221,7 +221,9 @@ __marimo__/
 *.frx
 
 # файлы тестера стратегий MT4
-MT/tester/*
+MT/tester/caches/*
+MT/tester/history/*
+MT/tester/logs/*
 
 # IDE временные файлы
 *.swp

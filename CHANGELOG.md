@@ -3,6 +3,21 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-03-23] — Triple Barrier Classification (параллельный ML-трек)
+
+### Добавлено
+- **Triple Barrier таргет**: 12 бинарных таргетов (6 SL/TP комбо × 2 направления), предсказывающих P(TP hit before SL). SL grid: [2, 3] ATR, TP grid: [3, 6, 9] ATR, timeout: 24 бара.
+- **`label_triple_barrier()`**: Маркировка на сырых up_24/dn_24 до нормализации. Неоднозначные случаи (оба барьера) → label=0 (консервативно).
+- **`--task triple_barrier`**: Поддержка во всех ML-скриптах (train, evaluate_test, threshold_analysis, compare_architectures, optimize, generate_signals).
+- **BCEWithLogitsLoss с pos_weight**: Автоматически вычисляемый вес для компенсации дисбаланса классов.
+- **Реалистичный PF**: `PF = (wins × TP) / (losses × SL)`, timeouts = полный SL loss (консервативная нижняя граница).
+- **`generate_tb_signals()`**: Выбор лучшей SL/TP комбинации по Expected Value: `EV = P × TP - (1-P) × SL`.
+- **`lib_ML_Signal_TB.mqh`**: MT4 интеграция (iSignal=5), фиксированные SL/TP из CSV вместо адаптивных.
+- **`ml_signals_tb.csv`**: Формат `time;signal;sl_atr;tp_atr;prob;ev`.
+
+### Вывод
+Цель: устранить разрыв между Python PF (MFE-based, 4.50) и MT4 PF (фиксированные SL/TP, 1.03). Triple Barrier считает PF из фиксированных уровней — Python PF напрямую соответствует торговой механике MT4. Ожидаемый gap < 20%.
+
 ## [2026-03-23] — ME-14 & ME-15: Адаптивная фиксация прибыли и Оптимизация (R:R и Trailing Stop)
 
 ### Добавлено

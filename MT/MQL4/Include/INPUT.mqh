@@ -11,14 +11,14 @@ void EXPERT::INPUT(){
    if (!UP && !DN) return;
    //SIG_LINES(UP==1," UP="+S0(UP)+" Buy="+S4(BUY.Val)+" BuyLim="+S4(BUYLIM), 
    //          DN==1," DN="+S0(DN)+" Sel="+S4(SEL.Val)+" SelLim="+S4(SELLIM),clrSIG1);
-   ML_TRADE(); // ML-сигналы из файла (тестовое подключение)
-//   switch(iSignal){// ГЛОБАЛЬНЫЕ СИГНАЛОЫ 
-//      case 1:  SIG_FIRST_LEVELS();  break;   // ОТСКОК 
-//      case 2:  SIG_FALSE_BREAK();   break;   // работает в lib_PIC
-//      case 3:  ML_TRADE();          break;   // ML-сигналы из файла (тестовое подключение)
-//      case 4:  SIG_TURTLE();        break;
-//      default: SIG_NULL();          break;   // БЕЗ ГЛОБАЛОВ
-//      }
+   switch(iSignal){// ГЛОБАЛЬНЫЕ СИГНАЛЫ
+   //   case 1:  SIG_FIRST_LEVELS();  break;   // ОТСКОК
+   //   case 2:  SIG_FALSE_BREAK();   break;   // работает в lib_PIC
+      case 3:  ML_TRADE();          break;   // ML-сигналы (regression_updn)
+   //   case 4:  SIG_TURTLE();        break;
+      case 5:  ML_TRADE_TB();       break;   // ML Triple Barrier (фиксированные SL/TP из CSV)
+      default: SIG_NULL();          break;   // БЕЗ ГЛОБАЛОВ
+      }
    if (set.BUY.Sig!=GOGO) UP=0;
    if (set.SEL.Sig!=GOGO) DN=0;   
    //SIG_LINES(set.BUY.Sig==GOGO,"GOGO: UP="+S0(UP)+" Buy="+S4(BUY.Val)+" BuyLim="+S4(BUYLIM), 

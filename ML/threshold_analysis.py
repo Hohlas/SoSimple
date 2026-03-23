@@ -979,11 +979,19 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == '__main__':
     args = parse_args()
-    run_threshold_analysis(
-        model_name=args.model,
-        checkpoint_path=args.checkpoint,
-        seed=args.seed,
-        optuna_json=args.optuna_json,
-        task=args.task,
-        horizon=args.horizon,
-    )
+    if args.task == 'triple_barrier':
+        run_tb_analysis(
+            model_name=args.model,
+            checkpoint_path=args.checkpoint,
+            seed=args.seed,
+            optuna_json=args.optuna_json,
+        )
+    else:
+        run_threshold_analysis(
+            model_name=args.model,
+            checkpoint_path=args.checkpoint,
+            seed=args.seed,
+            optuna_json=args.optuna_json,
+            task=args.task,
+            horizon=args.horizon,
+        )

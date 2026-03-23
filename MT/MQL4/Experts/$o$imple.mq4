@@ -38,7 +38,7 @@ extern char  PicVal=20;  // PicVal=10..50  Допуск  Atr.Lim: АТР%
 //extern char  iFrstLev=1;// iFrstLev=-3..3 вход в районе Первых Уровней: |iFrstLev|*ATR / <0 уровня серединки
 //extern char  Del=1;   // Del=0..2 удаление отложников 0=не трогаем;  1=при появлении нового сигнала удаляем; 2=при появлении нового сигнала удаляем противоположный или если ордер остался один;
 extern char  Target=0;   // Target=-2..2 целевой уровень: >0~макс. <0~средн движение от 1-последнего, 2-разворотного пика      
-extern char  iSignal=3; // iSignal=0..4 1-FIRST_LEVELS, 2-FALSE_BREAK, 3-ML_TRADE, 4-TURTLE
+extern char  iSignal=3; // iSignal=0..5 1-FIRST_LEVELS, 2-FALSE_BREAK, 3-ML_TRADE, 4-TURTLE, 5-ML_TRADE_TB
 extern char  iParam=1;  // iParam=1..4 параметры сигнала   
 extern char  D=0;       // D=-7..5 >0: BUY=Stop+ATR*D/2, <=0: stop/profit=2/3 1/2 2/5 1/3 2/7 1/4
 extern char  Stp=3;  // Stp=0..4 Stop=input_price-Atr.Lim*Stp;

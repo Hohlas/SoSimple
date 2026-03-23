@@ -1173,7 +1173,20 @@ def main():
     # Сохраняем результат как JSON
     regression = (args.task in ['regression', 'regression_updn'])
 
-    if regression:
+    triple_barrier = (args.task == 'triple_barrier')
+
+    if triple_barrier:
+        result_serializable = {
+            'model_name': result['model_name'],
+            'task': result['task'],
+            'best_mean_auc': result['best_metric'],
+            'best_epoch': result['best_epoch'],
+            'num_parameters': result['num_parameters'],
+            'training_time': result['training_time'],
+            'per_target': result['best_metrics'].get('per_target', {}),
+        }
+        suffix = '_tb'
+    elif regression:
         result_serializable = {
             'model_name': result['model_name'],
             'task': result['task'],

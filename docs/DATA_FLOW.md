@@ -115,10 +115,25 @@ up_48, dn_48  # за 48 баров
 - **Файл**: `DATA/Nero_labeled_temp.csv` (временный)
 - **Колонки**: `signal`, `predict`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`
 
+#### 2.3. Маркировка Triple Barrier (`label_triple_barrier`)
+
+Вычисляется **до нормализации** на сырых up_24/dn_24 и ATR.
+
+Для каждой комбинации SL ∈ {2, 3} ATR, TP ∈ {3, 6, 9} ATR × {BUY, SELL}:
+```python
+# BUY: up_24 = MFE вверх, dn_24 = MAE вниз
+tp_hit = (up_24 / ATR) >= tp_level
+sl_hit = (dn_24 / ATR) >= sl_level
+label = 1 if tp_hit and not sl_hit else 0  # оба → 0 (консервативно)
+```
+
+**12 бинарных колонок**: buy_sl2_tp3, buy_sl2_tp6, ..., sell_sl3_tp9
+
 ### Ключевые требования
 - Маркировка **всего датасета** до split — затем разделение на train/val/test
 - Нет forward-looking bias (цель — это **будущий** фрактал)
 - Up/Dn накапливаются инкрементально в MT4 (LEVELS_FIND_AROUND) и экспортируются в Nero.csv
+- **TB labels вычисляются до нормализации** — на сырых значениях up/dn/ATR
 
 ---
 
@@ -328,6 +343,38 @@ python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
 
 ---
 
+## 🎯 Этап 8b: Triple Barrier Training & Signals (параллельный трек)
+
+### Отличия от regression_updn
+- **Таргет**: 12 бинарных колонок (buy_sl2_tp3 ... sell_sl3_tp9) вместо 6 непрерывных up/dn
+- **Loss**: BCEWithLogitsLoss с pos_weight вместо HuberLoss
+- **Метрика**: Mean AUC ROC вместо Pearson r
+- **Чекпоинт**: `transformer_tb_best.pt`
+- **PF**: Реалистичный — `(wins × TP) / (losses × SL)`, timeouts = полный SL loss
+
+### Команды
+
+```bash
+# Обучение
+python -m ML.train --model transformer --task triple_barrier --epochs 50
+
+# Оценка на тестовой выборке
+python -m ML.evaluate_test --task triple_barrier --model transformer
+
+# Threshold analysis: поиск оптимального θ
+python -m ML.threshold_analysis --task triple_barrier --model transformer
+
+# Генерация сигналов
+python -m API.generate_signals --task triple_barrier --theta 0.6
+```
+
+### Выход
+- `ML/checkpoints/transformer_tb_best.pt`
+- `MT/MQL4/Files/ml_signals_tb.csv` — формат: `time;signal;sl_atr;tp_atr;prob;ev`
+- MT4: `ML_TRADE_TB()` (iSignal=5), SL/TP из CSV в ATR-единицах
+
+---
+
 ## 🔍 Data Leakage Prevention
 
 ### Применённые меры
@@ -342,5 +389,5 @@ python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
 
 ---
 
-**Последнее обновление**: 2026-03-22
+**Последнее обновление**: 2026-03-23
 **Автор**: Antigravity + Claude

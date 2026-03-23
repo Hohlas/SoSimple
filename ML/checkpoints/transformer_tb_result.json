@@ -1,0 +1,94 @@
+{
+  "model_name": "transformer",
+  "task": "triple_barrier",
+  "best_mean_auc": 0.5,
+  "best_epoch": 1,
+  "num_parameters": 70828,
+  "training_time": 16.101479291915894,
+  "per_target": {
+    "buy_sl2_tp3": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.29793134331703186,
+      "n_pos": 2794
+    },
+    "buy_sl2_tp6": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.08829174935817719,
+      "n_pos": 828
+    },
+    "buy_sl2_tp9": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.02793772704899311,
+      "n_pos": 262
+    },
+    "buy_sl3_tp3": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.33919811248779297,
+      "n_pos": 3181
+    },
+    "buy_sl3_tp6": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.09820857644081116,
+      "n_pos": 921
+    },
+    "buy_sl3_tp9": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.03092343732714653,
+      "n_pos": 290
+    },
+    "sell_sl2_tp3": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.27383238077163696,
+      "n_pos": 2568
+    },
+    "sell_sl2_tp6": {
+      "auc": 0.5,
+      "precision": 0.08957133717210493,
+      "recall": 1.0,
+      "pos_rate": 0.08957133442163467,
+      "n_pos": 840
+    },
+    "sell_sl2_tp9": {
+      "auc": 0.5,
+      "precision": 0.03326935380678183,
+      "recall": 1.0,
+      "pos_rate": 0.033269353210926056,
+      "n_pos": 312
+    },
+    "sell_sl3_tp3": {
+      "auc": 0.5,
+      "precision": 0.31211345702708465,
+      "recall": 1.0,
+      "pos_rate": 0.3121134638786316,
+      "n_pos": 2927
+    },
+    "sell_sl3_tp6": {
+      "auc": 0.5,
+      "precision": 0.0979953081680529,
+      "recall": 1.0,
+      "pos_rate": 0.09799531102180481,
+      "n_pos": 919
+    },
+    "sell_sl3_tp9": {
+      "auc": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "pos_rate": 0.036574963480234146,
+      "n_pos": 343
+    }
+  }
+}

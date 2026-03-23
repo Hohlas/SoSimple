@@ -38,14 +38,22 @@ python -m ML.threshold_analysis --task regression_updn --horizon 12
 
 # Логгер экспериментов
 python -m ML.experiment_logger --best pearson_r --task regression_updn
+
+# === Triple Barrier (параллельный трек) ===
+python -m ML.train --model transformer --task triple_barrier --epochs 50
+python -m ML.evaluate_test --task triple_barrier --model transformer
+python -m ML.threshold_analysis --task triple_barrier --model transformer
+python -m ML.compare_architectures --task triple_barrier
 ```
 
 ### команды генерации ML-сигналов для MT4
 ```bash
-# Генерация ml_signals.csv (transformer, H12, θ=2.665)
+# Генерация ml_signals.csv (regression_updn, transformer, H12, θ=2.665)
 python -m API.generate_signals
 python -m API.generate_signals --horizon 24 --theta 3.0  # кастомные параметры
 
+# Генерация ml_signals_tb.csv (triple_barrier, фиксированные SL/TP)
+python -m API.generate_signals --task triple_barrier --theta 0.6
 ```
 
 ### Пути к данным
@@ -165,8 +173,9 @@ python -m API.generate_signals --horizon 24 --theta 3.0  # кастомные п
 | Препроцессинг | ✅ Готов | label_main.py, normalize.py (Piecewise Linear-Log) |
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
 | ML модели | ✅ Готов | Transformer (лучший), BiLSTM, CNN1D, Hybrid; regression_updn (6 таргетов) |
-| Генерация сигналов | ✅ Готов | [generate_signals.py](API/generate_signals.py) → ml_signals.csv |
-| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV, ML_TRADE() в $o$imple.mq4 ([docs](docs/mql4/ml_signal_integration.md)) |
+| Triple Barrier | 🔧 Код готов | 12 бинарных таргетов, BCEWithLogitsLoss, iSignal=5, lib_ML_Signal_TB.mqh |
+| Генерация сигналов | ✅ Готов | [generate_signals.py](API/generate_signals.py) → ml_signals.csv / ml_signals_tb.csv |
+| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV, ML_TRADE() (iSignal=3) + ML_TRADE_TB() (iSignal=5) |
 | Торговый робот | ✅ Работает | OOS PF=4.50 (θ=2.665, 12H). В тестере: PF=0.85 при ML_MinRatio=5.0 ([trading_strategy](docs/mql4/trading_strategy.md)) |
 | Conformal Prediction | ✅ Готов | Инфраструктура готова; при θ=2.665 эффект нейтральный ([docs](docs/ml/conformal_prediction.md)) |
 

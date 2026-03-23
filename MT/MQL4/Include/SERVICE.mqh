@@ -363,6 +363,7 @@ double OnTester(){////  Ф О Р М И Р О В А Н И Е   Ф А Й Л А    
       }
    else CustomMax=TEST_RESULT(0);
    ML_DIAG_PRINT();
+   TB_DIAG_PRINT();
    Print ("OnTester() ",NAME,".V",VER,": ExpTotal=",ExpTotal," CurExp=",CurExp," EXP[0].Mgc=",EXP[0].Mgc," EXP[0].Ver=",EXP[0].Ver," CustomMax=",CustomMax);
    return (CustomMax); // возвращаем критерий оптимизации
    }
