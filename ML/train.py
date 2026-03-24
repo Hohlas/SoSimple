@@ -352,6 +352,8 @@ def train_model(
     silent: bool = False,
     # Очистка кэша
     clear_cache: bool = False,
+    # Transfer learning: загрузить encoder из другого checkpoint
+    encoder_ckpt: str | None = None,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -424,6 +426,22 @@ def train_model(
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
+
+    # ── Transfer learning: загрузка encoder из другого checkpoint ────────────
+    if encoder_ckpt:
+        src_ckpt = torch.load(encoder_ckpt, map_location=device, weights_only=False)
+        src_state = src_ckpt['model_state_dict']
+        dst_state = model.state_dict()
+        encoder_parts = ('input_projection', 'pos_encoding', 'transformer_encoder', 'cls_token')
+        copied = 0
+        for key, val in src_state.items():
+            if key.startswith(encoder_parts) and key in dst_state and dst_state[key].shape == val.shape:
+                dst_state[key] = val
+                copied += 1
+        model.load_state_dict(dst_state)
+        if not silent:
+            print(f"  🔁 Transfer learning: загружено {copied} слоёв из {encoder_ckpt}")
+
     n_params = count_parameters(model)
 
     if not silent:
@@ -1086,6 +1104,11 @@ def parse_args() -> argparse.Namespace:
         help='JSON строка с архитектурными параметрами модели. '
              'Пример: \'{"d_model": 32, "nhead": 8, "num_layers": 3}\''
     )
+    parser.add_argument(
+        '--encoder_ckpt', type=str, default=None,
+        help='Путь к checkpoint для transfer learning (загружает encoder веса, сбрасывает classifier).'
+             ' Пример: ML/checkpoints/transformer_updn_best.pt'
+    )
 
     return parser.parse_args()
 
@@ -1168,6 +1191,7 @@ def main():
         use_weighted_sampler=args.use_weighted_sampler,
         model_kwargs=model_kwargs,
         seq_len=args.seq_len,
+        encoder_ckpt=getattr(args, 'encoder_ckpt', None),
     )
 
     # Сохраняем результат как JSON

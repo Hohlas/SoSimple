@@ -136,10 +136,12 @@ void EXPERT::ML_TRADE_TB() {
    if (sig == 1 && !UP) {
       TB_cnt_trend++;
       if (!ML_BypassTrend) return;
+      UP = 1;  // bypass: разрешаем BUY против тренда
    }
    if (sig == -1 && !DN) {
       TB_cnt_trend++;
       if (!ML_BypassTrend) return;
+      DN = 1;  // bypass: разрешаем SELL против тренда
    }
 
    // ─── SL/TP из CSV (в ATR-единицах → абсолютные) ───

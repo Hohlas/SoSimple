@@ -1,92 +1,92 @@
 {
   "model_name": "transformer",
   "task": "triple_barrier",
-  "best_mean_auc": 0.5,
-  "best_epoch": 1,
-  "num_parameters": 70828,
-  "training_time": 89.64313817024231,
+  "best_mean_auc": 0.7171976595820254,
+  "best_epoch": 5,
+  "num_parameters": 104300,
+  "training_time": 329.90213346481323,
   "per_target": {
     "buy_sl2_tp3": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.7098582461897609,
+      "precision": 0.4706932460577209,
+      "recall": 0.5662133142448104,
       "pos_rate": 0.29793134331703186,
       "n_pos": 2794
     },
     "buy_sl2_tp6": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.7179623979433285,
+      "precision": 0.17116477272727273,
+      "recall": 0.5821256038647343,
       "pos_rate": 0.08829174935817719,
       "n_pos": 828
     },
     "buy_sl2_tp9": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.7718000227768306,
+      "precision": 0.07215619694397284,
+      "recall": 0.648854961832061,
       "pos_rate": 0.02793772704899311,
       "n_pos": 262
     },
     "buy_sl3_tp3": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.6887097462305564,
+      "precision": 0.515850144092219,
+      "recall": 0.5064445143036781,
       "pos_rate": 0.33919811248779297,
       "n_pos": 3181
     },
     "buy_sl3_tp6": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.6961580054274693,
+      "precision": 0.18638392857142858,
+      "recall": 0.5439739413680782,
       "pos_rate": 0.09820857644081116,
       "n_pos": 921
     },
     "buy_sl3_tp9": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.7383618792496358,
+      "precision": 0.07367549668874172,
+      "recall": 0.6137931034482759,
       "pos_rate": 0.03092343732714653,
       "n_pos": 290
     },
     "sell_sl2_tp3": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.715950979181248,
+      "precision": 0.38470254957507083,
+      "recall": 0.7932242990654206,
       "pos_rate": 0.27383238077163696,
       "n_pos": 2568
     },
     "sell_sl2_tp6": {
-      "auc": 0.5,
-      "precision": 0.08957133717210493,
-      "recall": 1.0,
+      "auc": 0.7141622466508272,
+      "precision": 0.14285714285714285,
+      "recall": 0.7333333333333333,
       "pos_rate": 0.08957133442163467,
       "n_pos": 840
     },
     "sell_sl2_tp9": {
-      "auc": 0.5,
-      "precision": 0.03326935380678183,
-      "recall": 1.0,
+      "auc": 0.7512808492705911,
+      "precision": 0.06377551020408163,
+      "recall": 0.7211538461538461,
       "pos_rate": 0.033269353210926056,
       "n_pos": 312
     },
     "sell_sl3_tp3": {
-      "auc": 0.5,
-      "precision": 0.31211345702708465,
-      "recall": 1.0,
+      "auc": 0.6924738999846256,
+      "precision": 0.42287181512936994,
+      "recall": 0.731465664502904,
       "pos_rate": 0.3121134638786316,
       "n_pos": 2927
     },
     "sell_sl3_tp6": {
-      "auc": 0.5,
-      "precision": 0.0979953081680529,
-      "recall": 1.0,
+      "auc": 0.6893698735795434,
+      "precision": 0.15248835498896787,
+      "recall": 0.676822633297062,
       "pos_rate": 0.09799531102180481,
       "n_pos": 919
     },
     "sell_sl3_tp9": {
-      "auc": 0.5,
-      "precision": 0.0,
-      "recall": 0.0,
+      "auc": 0.7202837684998895,
+      "precision": 0.07067351253397765,
+      "recall": 0.6822157434402333,
       "pos_rate": 0.036574963480234146,
       "n_pos": 343
     }

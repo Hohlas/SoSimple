@@ -349,14 +349,17 @@ python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
 - **Таргет**: 12 бинарных колонок (buy_sl2_tp3 ... sell_sl3_tp9) вместо 6 непрерывных up/dn
 - **Loss**: BCEWithLogitsLoss с pos_weight вместо HuberLoss
 - **Метрика**: Mean AUC ROC вместо Pearson r
-- **Чекпоинт**: `transformer_tb_best.pt`
+- **Чекпоинт**: `transformer_tb_best.pt`, val Mean AUC=0.7172 (per-target 0.69-0.77)
 - **PF**: Реалистичный — `(wins × TP) / (losses × SL)`, timeouts = полный SL loss
+- **ВАЖНО**: Требует transfer learning — `--encoder_ckpt ML/checkpoints/transformer_updn_best.pt`. Обучение с нуля → AUC=0.5 (коллапс энкодера из-за симметричного pos_weight).
 
 ### Команды
 
 ```bash
-# Обучение
-python -m ML.train --model transformer --task triple_barrier --epochs 50
+# Обучение (transfer learning от regression_updn обязателен!)
+python -m ML.train --model transformer --task triple_barrier --epochs 100 --patience 20 \
+  --encoder_ckpt ML/checkpoints/transformer_updn_best.pt \
+  --model_kwargs '{"num_layers":3,"dropout":0.166,"input_features":20}'
 
 # Оценка на тестовой выборке
 python -m ML.evaluate_test --task triple_barrier --model transformer

@@ -15,6 +15,12 @@
 - **`lib_ML_Signal_TB.mqh`**: MT4 интеграция (iSignal=5), фиксированные SL/TP из CSV вместо адаптивных.
 - **`ml_signals_tb.csv`**: Формат `time;signal;sl_atr;tp_atr;prob;ev`.
 
+### Результаты
+- **Transfer learning**: Энкодер из regression_updn checkpoint обязателен — обучение с нуля даёт AUC=0.5000 (коллапс энкодера при BCE+pos_weight=n_neg/n_pos создаёт нейтральную точку sigma=0.5).
+- **Val Mean AUC = 0.7172** (transformer, 104k params, epoch 5, LR=0.001).
+- **OOS Mean AUC = 0.7002**: buy_sl2_tp3 AUC=0.68 PF=1.41, buy_sl3_tp3 PF=1.11. SELL-таргеты на тестовой выборке PF < 1.0 (период теста — преимущественно бычий рынок).
+- Threshold θ=0.5: BUY сигналов 14,865, SELL 19,623 из 58,766 строк в ml_signals_tb.csv.
+
 ### Вывод
 Цель: устранить разрыв между Python PF (MFE-based, 4.50) и MT4 PF (фиксированные SL/TP, 1.03). Triple Barrier считает PF из фиксированных уровней — Python PF напрямую соответствует торговой механике MT4. Ожидаемый gap < 20%.
 

@@ -40,7 +40,6 @@ python -m ML.threshold_analysis --task regression_updn --horizon 12
 python -m ML.experiment_logger --best pearson_r --task regression_updn
 
 # === Triple Barrier (параллельный трек) ===
-python -m ML.train --model transformer --task triple_barrier --epochs 50
 python -m ML.evaluate_test --task triple_barrier --model transformer
 python -m ML.threshold_analysis --task triple_barrier --model transformer
 python -m ML.compare_architectures --task triple_barrier
@@ -64,7 +63,7 @@ python -m API.generate_signals --task triple_barrier --theta 0.6
 ### Critical Rules Top-3
 1. Читай только первые 10 строк в файлах CSV, т.к. их размер >10MB
 2. Не грузи файлы >2MB целиком в чат.
-3. Файлы *.mqh, *.mq4 из `MT/` открывать только в `encoding='utf-16-le'`.
+3. Файлы *.mqh, *.mq4 из `MT/` открывать ТОЛЬКО если в основном файле, или в уже открытых файлах на них есть явная директива #include <*.mqh>.
 
 ---
 

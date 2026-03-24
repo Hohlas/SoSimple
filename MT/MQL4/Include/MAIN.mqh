@@ -49,6 +49,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void CONSTANT_COUNTER();
       bool COUNT();
       void ML_TRADE();   // ML-сигналы из CSV
+      void ML_TRADE_TB(); 
       void INPUT();
       void OUTPUT();
       bool IMPULSE_UP();
