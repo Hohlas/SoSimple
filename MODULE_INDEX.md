@@ -17,6 +17,7 @@
 |--------|-----------|--------------|------|--------|
 | [statistics.py](statistics/statistics.py) | Онлайн-расчёт статистики | `Nero.csv` → `.json`, `.csv`, `.md` | [docs](docs/data_analysis/statistics.py.md) | ✅ |
 | [EDA.ipynb](statistics/EDA.ipynb) | Разведочный анализ данных | `Nero.csv` → `plots/`, `.csv` | [docs](docs/data_analysis/EDA.ipynb.md) | ✅ |
+| [signal_tracer.py](statistics/signal_tracer.py) | Trade-level reconciliation: ML vs MT4 | `ml_signals.csv` + `Nero.csv` + log → dossiers, CSV | [docs](docs/data_analysis/signal_tracer.py.md) | ✅ |
 
 ## API
 
@@ -67,6 +68,7 @@
 | [EDA.ipynb.md](docs/data_analysis/EDA.ipynb.md) | Отчет по разведочному анализу |
 | [lib_PIC.mqh.md](docs/mql4/lib_PIC.mqh.md) | Описание библиотеки PIC |
 | [ml_signal_integration.md](docs/mql4/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) |
+| [signal_tracer.py.md](docs/data_analysis/signal_tracer.py.md) | Trade-level reconciliation: диагностика расхождения Python PF vs MT4 PF |
 | [neural_networks.md](docs/ml/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики |
 | [conformal_prediction.md](docs/ml/conformal_prediction.md) | Conformal Prediction эксперимент: реализация, результаты, выводы |
 
@@ -74,4 +76,4 @@
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-03-20
+**Последнее обновление**: 2026-03-24

@@ -10,50 +10,13 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ## 🚀 Быстрый старт
 
-### команды обработки и анализа данных
-```bash
-source ~/git/SoSimple/.venv/bin/activate
-python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
-python statistics/statistics.py DATA/Nero_train_labeled.csv
-cd ~/git/SoSimple/statistics
-export NERO_INPUT_PATH="../DATA/Nero_train_labeled.csv"
-jupyter nbconvert --execute --to notebook --output EDA_executed --output-dir ./reports EDA.ipynb # Выполнить ноутбук и сохранить результат в отдельный файл
-jupyter nbconvert --clear-output --inplace EDA.ipynb # Очистить выходы в исходном файле
-jupyter nbconvert --to markdown --no-input --no-prompt --output EDA_report reports/EDA_executed.ipynb # Исключает изображения и исходный код, оставляя только текстовые отчеты
-```
-
-### команды обучения моделей
-```bash
-# Сравнение 4 архитектур (regression_updn — основной режим)
-python -m ML.compare_architectures --task regression_updn
-
-# Optuna оптимизация (transformer — лучшая архитектура)
-python -m ML.optimize --model transformer --task regression_updn --trials 50 --epochs 30 --seed 42
-
-# Оценка на тестовой выборке (OOS)
-python -m ML.evaluate_test --task regression_updn --model transformer
-
-# Threshold analysis: поиск оптимального θ для торговых сигналов
-python -m ML.threshold_analysis --task regression_updn --horizon 12
-
-# Логгер экспериментов
-python -m ML.experiment_logger --best pearson_r --task regression_updn
-
-# === Triple Barrier (параллельный трек) ===
-python -m ML.evaluate_test --task triple_barrier --model transformer
-python -m ML.threshold_analysis --task triple_barrier --model transformer
-python -m ML.compare_architectures --task triple_barrier
-```
-
-### команды генерации ML-сигналов для MT4
-```bash
-# Генерация ml_signals.csv (regression_updn, transformer, H12, θ=2.665)
-python -m API.generate_signals
-python -m API.generate_signals --horizon 24 --theta 3.0  # кастомные параметры
-
-# Генерация ml_signals_tb.csv (triple_barrier, фиксированные SL/TP)
-python -m API.generate_signals --task triple_barrier --theta 0.6
-```
+### Команды
+| Этап | Команды |
+|------|---------|
+| Препроцессинг данных | [DATA_FLOW.md#⚙️-этап-1-сортировка-фракталов](docs/DATA_FLOW.md#-этап-1-сортировка-фракталов) |
+| Обучение ML моделей | [DATA_FLOW.md#🚧-этап-6-ml-training-regression_updn](docs/DATA_FLOW.md#-этап-6-ml-training-regression_updn) |
+| Генерация сигналов | [DATA_FLOW.md#🔄-этап-8-генерация-ml-сигналов-для-mt4](docs/DATA_FLOW.md#-этап-8-генерация-ml-сигналов-для-mt4) |
+| Triple Barrier | [DATA_FLOW.md#🎯-этап-8b-triple-barrier-training-signals-параллельный-трек](docs/DATA_FLOW.md#-этап-8b-triple-barrier-training-signals-параллельный-трек) |
 
 ### Пути к данным
 - **Вход**: `MT/MQL4/Files/Nero.csv` (UTF-16LE, `;`)
@@ -188,6 +151,6 @@ python -m API.generate_signals --task triple_barrier --theta 0.6
 
 ---
 
-**Последнее обновление**: 2026-03-22
+**Последнее обновление**: 2026-03-24
 **Авторы**: Antigravity (human) + Claude (AI)
 
