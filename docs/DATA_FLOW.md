@@ -38,7 +38,7 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
           ↓
     [Торговый эксперт] $o$imple.mq4 → ML_TRADE() → ордера
           ↓          ↓
-     MT4 Лог    Nero.csv (Ground Truth: Up_12/Dn_12)
+     MT4 Лог    DATA/y_*_updn.npy (Ground Truth: Up_12/Dn_12)
           ↓          ↓
     ════════════════════════════════════
          ↓
@@ -456,114 +456,48 @@ python -m API.generate_signals --task triple_barrier --theta 0.6
 ```bash
 python statistics/signal_tracer.py --time "2023.01.03 04:00"
 ```
-**Выводит:**
-- ML prediction vs формула SL/TP (lib_ML_Signal.mqh)
-- Ground Truth (Up_12/Dn_12) vs теоретические уровни
-- Lag bias между фракталом и сигналом
-- Диагноз: TP_CLEAR / SL_CLEAR / BOTH_HIT / TIMEOUT
+Выводит: ML prediction → формула SL/TP → Ground Truth → Диагноз (TP_CLEAR / SL_CLEAR / BOTH_HIT / TIMEOUT)
 
 #### 9.2. Batch: автоматический поиск top-N высокорейтинговых сигналов
 ```bash
 python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
 ```
-**Анализирует:**
-- Сигналы с ratio ≥ 5.0 (самые уверенные)
-- Сводная таблица формула vs Ground Truth
-- CSV для дальнейшего анализа
 
 #### 9.3. From-Log: разбор РЕАЛЬНЫХ сделок из MT4 логов
 ```bash
-python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only
+python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
 ```
-**Сравнивает:**
-- MT4 actual Val/Stp/Prf/ATR (из логa) vs формула
-- MT4 actual vs Ground Truth (Nero.csv)
-- Классификация по mt4_result: LOSS(SL), WIN(TP), WIN(MKT)
+Сравнивает: MT4 actual (Val/Stp/Prf/ATR из лога) vs формула vs Ground Truth
 
 ### Вход
 
-**ml_signals.csv** (2004–2026, 58.5K строк)
-- time;signal;pred_up;pred_dn;ratio_up;ratio_dn
+| Источник | Данные |
+|----------|--------|
+| `MT/MQL4/Files/ml_signals.csv` | time, signal, pred_up, pred_dn, ratio_up, ratio_dn |
+| `DATA/Nero_*_labeled.csv` | fractal[i][0] (sorted) → price, fractal_atr, direction |
+| `DATA/y_*_updn.npy` | up_12, dn_12, up_24, dn_24, up_48, dn_48 (нормализованные, shape N×6) |
+| `MT/tester/logs/YYYYMMDD.log` | ML BUY/SELL bar=..., Val, Stp, Prf, ATR, stop loss/take profit |
+| `MT/tester/$o$imple.ini` | ML_MinRatio, ML_MaxRR, ML_ScaleK, ML_Min_SL_ATR |
 
-**Nero.csv** (Ground Truth)
-- fractal0 содержит: up_12, dn_12 (max excursions за 12 баров)
-- ATR (локальный ATR на момент фрактала)
+**Важно**: `bar_time` из лога MT4 = `time` в ml_signals.csv. EA открывает сделку на следующем баре после сигнала.
 
-**MT/tester/logs/YYYYMMDD.log** (опционально для --from-log)
-- "ML BUY/SELL ratio=X Val=... Stp=... Prf=... ATR=..."
-- "Tester: stop loss/take profit #N"
-- "close #N ... at price"
-
-**$o$imple.ini** (параметры MT4)
-- ML_MinRatio, ML_MaxRR, ML_ScaleK, ML_Min_SL_ATR
-
-### Процесс
-
-**Модуль**: `statistics/signal_tracer.py` v2.1
-
-1. **parse_ini()** — читает текущие параметры MT4
-2. **calc_sl_tp()** — точная реплика lib_ML_Signal.mqh:171–193
-3. **build_dossier()** — вычисляет все диагностические поля
-4. **classify_outcome()** — 4-категорийная классификация
-5. **parse_log()** — парсит лог тестера для --from-log режима
-6. **print_dossier()** — форматированный вывод
-7. **CSV export** — для Excel/Python анализа
-
-### Выход
-
-**Таблица с колонками:**
-- Время, Dir, Ratio
-- MT4_SL, Формула_SL, Δ_SL  (погрешность формулы vs MT4)
-- MT4_TP, Формула_TP, Δ_TP
-- Up_12, Dn_12 (Ground Truth)
-- NeroRes (категория: TP_CLEAR / SL_CLEAR / BOTH_HIT / TIMEOUT)
-- MT4_Res (результат: WIN(TP) / LOSS(SL) / MARKET / OPEN)
-
-**Сводная статистика:**
-- Распределение по категориям (Nero классификация)
-- Средняя погрешность формулы (SL Δ, TP Δ)
-- CSV экспорт для внешнего анализа
+**Ground Truth**: up_12/dn_12 берутся из `y_*_updn.npy` (нормализованы piecewise linear-log, per-row). Для денормализации требуется восстановить p85/p99 из 606 значений строки.
 
 ### Результаты (--from-log --losses-only, 321 убыточная SL-сделка, 2023–2026)
 
-| Категория | Кол-во | Смысл |
-|-----------|--------|-------|
-| TIMEOUT | 161 (50%) | Ни SL ни TP за 12H → убыток |
-| SL_CLEAR | 108 (34%) | SL неизбежен |
-| **TP_CLEAR** | **33 (10%)** | **TP достижим, но SL раньше** ← MFE/MAE иллюзия |
-| BOTH_HIT | 13 (4%) | Оба барьера, порядок неизвестен |
+| Категория | Кол-во | % | Смысл |
+|-----------|--------|---|-------|
+| TIMEOUT | 161 | 50% | Ни SL ни TP за 12H |
+| SL_CLEAR | 108 | 34% | SL был неизбежен |
+| **TP_CLEAR** | **33** | **10%** | **TP достижим, но MT4 выбило SL раньше** |
+| BOTH_HIT | 13 | 4% | Оба барьера, порядок неизвестен |
 
-**Погрешность формулы:**
-- `SL Δ = −3.91` (формула недооценивает, MT4 ставит шире)
-- `TP Δ = −7.40` (причина: ATR fractal_atr vs ATR на баре входа)
-
-### Ключевые находки
-
-1. **MFE/MAE иллюзия подтверждена**: 33 сделки с TP_CLEAR + LOSS(SL) — Python видел TP, но MT4 выбило SL раньше
-2. **Формула vs MT4 погрешность**: ATR из фрактала ниже ATR на баре входа, отсюда сдвиги SL/TP
-3. **High ratio ≠ надёжность**: ни один из top-50 сигналов (ratio 100+) не достиг TP в убыточной выборке
-4. **Lag bias**: средний фрактал устарелый 100+ баров — модель предсказывает на старых данных
-
-### Команды
-
-```bash
-# Single-trace: полное досье
-python statistics/signal_tracer.py --time "2023.01.03 04:00"
-
-# Batch: топ-10
-python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0
-
-# From-log: все убыточные SL
-python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
-
-# From-log: все 922 сделки
-python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --csv-out all_trades.csv
-```
+Погрешность формулы: `SL Δ = −3.91`, `TP Δ = −7.40` (fractal_atr < ATR на баре входа).
 
 ### Документация
-- [statistics/signal_tracer.py](../../statistics/signal_tracer.py) — исходный код v2.1
+- [docs/data_analysis/signal_tracer.py.md](data_analysis/signal_tracer.py.md) — полное описание
 
 ---
 
-**Последнее обновление**: 2026-03-24
+**Последнее обновление**: 2026-03-25
 **Автор**: Antigravity + Claude

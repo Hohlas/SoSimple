@@ -17,7 +17,7 @@
 |--------|-----------|--------------|------|--------|
 | [statistics.py](statistics/statistics.py) | Онлайн-расчёт статистики | `Nero.csv` → `.json`, `.csv`, `.md` | [docs](docs/data_analysis/statistics.py.md) | ✅ |
 | [EDA.ipynb](statistics/EDA.ipynb) | Разведочный анализ данных | `Nero.csv` → `plots/`, `.csv` | [docs](docs/data_analysis/EDA.ipynb.md) | ✅ |
-| [signal_tracer.py](statistics/signal_tracer.py) | Trade-level reconciliation: ML vs MT4 | `ml_signals.csv` + `Nero.csv` + log → dossiers, CSV | [docs](docs/data_analysis/signal_tracer.py.md) | ✅ |
+| [signal_tracer.py](statistics/signal_tracer.py) | Trade-level reconciliation: ML vs MT4 | `ml_signals.csv` + `Nero_*_labeled.csv` + `y_*_updn.npy` + log → dossiers, CSV | [docs](docs/data_analysis/signal_tracer.py.md) | 🚧 |
 
 ## API
 
@@ -76,4 +76,4 @@
 ✅ Актуален | ⚠️ Требует ревью | 🚧 В разработке | 📁 В архиве
 
 ---
-**Последнее обновление**: 2026-03-24
+**Последнее обновление**: 2026-03-25
