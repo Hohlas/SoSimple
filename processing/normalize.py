@@ -280,7 +280,8 @@ def normalize_rowwise(
     df: pd.DataFrame,
     stats_path: Optional[str] = None,
     debug: bool = False,
-    piecewise_params: Optional[dict] = None
+    piecewise_params: Optional[dict] = None,
+    return_updn_params: bool = False
 ) -> pd.DataFrame:
     """
     Выполняет построчную нормализацию всех признаков (кроме ATR).
@@ -347,6 +348,9 @@ def normalize_rowwise(
             updn_targets[col] = df[col].values.copy().astype(np.float64)
         else:
             updn_targets[col] = np.zeros(n_rows, dtype=np.float64)
+
+    # Массив для per-row параметров нормализации updn
+    updn_params = np.zeros((n_rows, 2), dtype=np.float64)  # [brk, cap]
     
     # Логирование: сохраняем примеры до нормализации
     if debug:
@@ -438,6 +442,7 @@ def normalize_rowwise(
             cap_updn = np.nanpercentile(updn_valid, q_cap * 100)
             brk_updn = max(brk_updn, lo_updn + eps)
             cap_updn = max(cap_updn, brk_updn + eps)
+            updn_params[i] = [brk_updn, cap_updn]
 
             # Нормализуем фичи фракталов (поля 11-16)
             for idx in updn_indices:
@@ -487,7 +492,9 @@ def normalize_rowwise(
                 print(f"  price[0]: {samples_before[i]['price'][0]:.6f} -> {frac_norm[idx_price]:.6f}")
     
     print(f"\n[ГОТОВО] Построчная нормализация завершена")
-    
+
+    if return_updn_params:
+        return df, updn_params
     return df
 
 
