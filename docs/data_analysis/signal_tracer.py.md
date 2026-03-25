@@ -24,7 +24,7 @@ Python OOS оценивал качество предсказания через
 1. **ML предсказания** (pred_up, pred_dn, ratio) из `ml_signals.csv`
 2. **Формула SL/TP** (реплика `lib_ML_Signal.mqh`)
 3. **MT4 фактические уровни** (Val/Stp/Prf/ATR из лога тестера)
-4. **Ground Truth** (up_12/dn_12 из `DATA/y_*_updn.npy`, денормализованные)
+4. **Ground Truth** (up_12/dn_12 из `DATA/Nero_*_labeled.csv` cols[104-109], денормализованные через `Nero_*_updn_params.npy`)
 
 **Важно**: Время сигнала в `ml_signals.csv` на 1 бар раньше времени открытия сделки в MT4.
 EA читает сигнал закрытого бара T, открывает сделку на баре T+1.
@@ -94,7 +94,7 @@ python statistics/signal_tracer.py --batch --top 20 --min-ratio 4.0 --csv-out ba
 1. Загружает все сигналы из `ml_signals.csv`
 2. Фильтрует по `ratio >= min_ratio`
 3. Сортирует по ratio descending, берёт top N
-4. Находит ground truth из `DATA/y_*_updn.npy`
+4. Находит ground truth из `DATA/Nero_*_labeled.csv` cols[104-109], денормализует через `Nero_*_updn_params.npy`
 5. Строит досье для каждого, выводит сводную таблицу + CSV
 
 ---
@@ -228,5 +228,5 @@ sl_delta, tp_delta, atr_delta, mt4_result, close_type, close_price
 ---
 
 **Версия**: v2.2 (2026-03-25)
-**Статус**: 🚧 В разработке (денормализация up_12/dn_12)
+**Статус**: ✅ Готов
 **Автор**: Antigravity + Claude

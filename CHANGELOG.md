@@ -17,16 +17,6 @@
 ### Вывод
 - Инструмент `signal_tracer.py` теперь способен выдавать реальные категории расхождения Python/MT4: какой % сделок — BOTH_HIT (MFE/MAE иллюзия), какой — SL_CLEAR (реальные убытки)
 
-## [2026-03-25] — ME-13 Diagnostics: signal_tracer.py v2.2 (исправление источников данных)
-
-### Изменено
-- **up_12/dn_12**: в fractal[i][0] всегда 0 (фрактал только что сформирован). Корректные значения — в `y_*_updn.npy`, требуют обратного piecewise_linear_log преобразования.
-- **Время сигнала**: `bar_time` из лога MT4 = время сигнала в `ml_signals.csv` (EA открывает сделку на следующем баре).
-
-### Вывод по структуре данных
-- `DATA/Nero_*_labeled.csv` — sorted fractals, но up_12/dn_12 в fractal[0] = 0
-- `DATA/y_*_updn.npy` — единственный корректный источник up_12/dn_12 ground truth
-- Нормализация up/dn: piecewise linear-log, per-row, параметры (p85/p99) восстанавливаются из 606 значений строки
 
 ## [2026-03-24] — ME-13 Diagnostics: signal_tracer.py v2.0 (Trade-level reconciliation)
 

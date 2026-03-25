@@ -38,7 +38,7 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
           ↓
     [Торговый эксперт] $o$imple.mq4 → ML_TRADE() → ордера
           ↓          ↓
-     MT4 Лог    DATA/y_*_updn.npy (Ground Truth: Up_12/Dn_12)
+     MT4 Лог    DATA/Nero_*_labeled.csv + Nero_*_updn_params.npy (Ground Truth)
           ↓          ↓
     ════════════════════════════════════
          ↓
@@ -475,24 +475,16 @@ python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --loss
 |----------|--------|
 | `MT/MQL4/Files/ml_signals.csv` | time, signal, pred_up, pred_dn, ratio_up, ratio_dn |
 | `DATA/Nero_*_labeled.csv` | fractal[i][0] (sorted) → price, fractal_atr, direction |
-| `DATA/y_*_updn.npy` | up_12, dn_12, up_24, dn_24, up_48, dn_48 (нормализованные, shape N×6) |
+| `DATA/Nero_*_labeled.csv` cols[104-109] | up_12, dn_12, up_24, dn_24, up_48, dn_48 (нормализованные) |
+| `DATA/Nero_*_updn_params.npy` | per-row (brk, cap) для денормализации updn, shape (N, 2) |
 | `MT/tester/logs/YYYYMMDD.log` | ML BUY/SELL bar=..., Val, Stp, Prf, ATR, stop loss/take profit |
 | `MT/tester/$o$imple.ini` | ML_MinRatio, ML_MaxRR, ML_ScaleK, ML_Min_SL_ATR |
 
 **Важно**: `bar_time` из лога MT4 = `time` в ml_signals.csv. EA открывает сделку на следующем баре после сигнала.
 
-**Ground Truth**: up_12/dn_12 берутся из `y_*_updn.npy` (нормализованы piecewise linear-log, per-row). Для денормализации требуется восстановить p85/p99 из 606 значений строки.
+**Ground Truth**: up_12/dn_12 берутся из `Nero_*_labeled.csv` cols[104-109] (нормализованы piecewise linear-log, per-row), денормализуются через `brk/cap` из `Nero_*_updn_params.npy`.
 
-### Результаты (--from-log --losses-only, 321 убыточная SL-сделка, 2023–2026)
-
-| Категория | Кол-во | % | Смысл |
-|-----------|--------|---|-------|
-| TIMEOUT | 161 | 50% | Ни SL ни TP за 12H |
-| SL_CLEAR | 108 | 34% | SL был неизбежен |
-| **TP_CLEAR** | **33** | **10%** | **TP достижим, но MT4 выбило SL раньше** |
-| BOTH_HIT | 13 | 4% | Оба барьера, порядок неизвестен |
-
-Погрешность формулы: `SL Δ = −3.91`, `TP Δ = −7.40` (fractal_atr < ATR на баре входа).
+**Погрешность SL/TP**: `Δ ≈ −4/−7 пунктов` — скрипт использует `fractal_atr` из `fractal[i][0]`, MT4 использует `Atr.Fast` на баре входа.
 
 ### Документация
 - [docs/data_analysis/signal_tracer.py.md](data_analysis/signal_tracer.py.md) — полное описание
