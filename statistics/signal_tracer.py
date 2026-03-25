@@ -1,21 +1,37 @@
-# statistics/signal_tracer.py                                      v2.2
-# Назначение : Trade-level reconciliation — поиск причин расхождения
-#              между Python ML-бэктестом (PF=4.50) и MT4 тестером (PF≈1.0)
-# Режимы     : --time "YYYY.MM.DD HH:MM"  → полное досье одного сигнала
-#              --batch [--top N] [--min-ratio X] → пакетный анализ top-N
-#              --from-log PATH [--losses-only]   → разбор реальных сделок из лога
-# Источники  : MT/MQL4/Files/ml_signals.csv  (ML предсказания)
-#              DATA/Nero_{train,validation,test}_labeled.csv  (Ground truth)
-#              MT/tester/$o$imple.ini         (текущие параметры SL/TP)
-#              MT/tester/logs/YYYYMMDD.log    (реальные Val/Stp/Prf/ATR из MT4)
-# SL/TP      : точная реплика lib_ML_Signal.mqh (строки 171–193)
-# Создан     : 2026-03-22  (ME-13: первый тестовый прогон)
-# Обновлён   : 2026-03-25  (v2.2: labeled CSV как источник up_12/dn_12 и fractal_atr)
+# =============================================================================
+# Файл: statistics/signal_tracer.py
+# Назначение: Trade-level reconciliation — диагностика расхождения
+#             между Python ML-бэктестом (PF=4.50) и MT4 тестером (PF≈1.0)
+# Язык: Python 3.11+
+# Обновлён: 2026-03-25
+# Зависимости:
+#   Входные данные:
+#     - MT/MQL4/Files/ml_signals.csv       (ML предсказания: pred_up, pred_dn, ratio)
+#     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr, direction)
+#     - DATA/y_{train,val,test}_updn.npy   (ground truth up_12/dn_12, нормализованные)
+#     - MT/tester/$o$imple.ini             (параметры: ML_MinRatio, ML_ScaleK и др.)
+#     - MT/tester/logs/YYYYMMDD.log        (--from-log: Val/Stp/Prf/ATR из MT4)
+#   Выходные данные:
+#     - stdout (досье сигналов, сводные таблицы)
+#     - [--csv-out PATH].csv               (экспорт для Excel/Python)
+# Внешние зависимости:
+#   - numpy, pickle (стандартные)
+# Использование:
+#   python statistics/signal_tracer.py --time "2025.12.29 16:00"
+#   python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0
+#   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only
+# Примечания:
+#   - bar_time из лога MT4 = time в ml_signals.csv (EA открывает сделку на следующем баре)
+#   - fractal[i][0] в labeled CSV = триггерный фрактал (отсортированы, cols[4])
+#   - up_12/dn_12 в fractal[i][0] всегда 0; берутся из y_*_updn.npy + денормализация
+#   - SL/TP: точная реплика lib_ML_Signal.mqh строки 171–193
+# =============================================================================
 import argparse
 import os
 import re
 import csv
 import math
+import numpy as np
 from datetime import datetime, timedelta
 
 
@@ -49,12 +65,45 @@ def inverse_piecewise_linear_log(y, brk, cap, linear_max=0.85, tail_strength=9.0
     return brk + t * (cap - brk)
 
 
-def denormalize_updn(norm_val, field, norm_stats):
-    """Денормализация up/dn значения обратно в пункты используя глобальные p85/p99."""
-    if not norm_stats or field not in norm_stats:
-        return norm_val  # без статистики — возвращаем как есть
-    s = norm_stats[field]
-    return inverse_piecewise_linear_log(norm_val, s['p85'], s['p99'])
+def denormalize_updn_row(y_norm_6, brk, cap):
+    """Денормализация 6 значений updn (up_12..dn_48) для одной строки.
+
+    Args:
+        y_norm_6: array-like из 6 нормализованных значений [up_12, dn_12, ..., dn_48]
+        brk: per-row breakpoint (p85 ненулевых updn значений строки)
+        cap: per-row cap (p99 ненулевых updn значений строки)
+    Returns:
+        np.ndarray из 6 денормализованных значений в пунктах
+    """
+    return np.array([inverse_piecewise_linear_log(float(y), brk, cap) for y in y_norm_6])
+
+
+UPDN_PARAMS_PATHS = [
+    ('DATA/Nero_train_updn_params.npy',      'DATA/Nero_train_labeled.csv'),
+    ('DATA/Nero_validation_updn_params.npy', 'DATA/Nero_validation_labeled.csv'),
+    ('DATA/Nero_test_updn_params.npy',       'DATA/Nero_test_labeled.csv'),
+]
+
+
+def load_updn_params(nero_paths=None):
+    """Загружает per-row updn_params (brk, cap) и строит маппинг time->params.
+
+    Returns:
+        dict {time_str: (brk, cap)} или {} если файлы не найдены.
+    """
+    time_to_params = {}
+    for params_path, csv_path in UPDN_PARAMS_PATHS:
+        if not os.path.exists(params_path) or not os.path.exists(csv_path):
+            continue
+        params_arr = np.load(params_path)  # shape (N, 2)
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            f.readline()  # header
+            for i, line in enumerate(f):
+                if i >= len(params_arr):
+                    break
+                t = line[:16]  # 'YYYY.MM.DD HH:MM'
+                time_to_params[t] = (params_arr[i, 0], params_arr[i, 1])
+    return time_to_params
 
 
 # ─── INI Parser ──────────────────────────────────────────────────────────────
@@ -184,13 +233,15 @@ def time_str_to_unix(time_str):
 
 # ─── Dossier Builder ────────────────────────────────────────────────────────
 
-def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade=None, norm_stats=None):
+def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade=None,
+                  updn_params_map=None):
     """
     Строит досье для одного сигнала.
     signal_row: dict из ml_signals.csv (time, signal, pred_up, pred_dn, ratio_up, ratio_dn)
     nero_cols: list of raw columns from Nero.csv row
     fractal: parsed fractal0 dict
     params: ML parameters dict
+    updn_params_map: dict {time_str: (brk, cap)} из load_updn_params()
     Returns: dict with all diagnostic fields
     """
     d = {'time': target_time}
@@ -246,15 +297,23 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     d['price'] = fractal['price']
     d['atr'] = atr
 
-    # up_12/dn_12 берём из row-level колонок labeled CSV (cols[104]/[105]) с денормализацией
+    # up_12/dn_12: берём нормализованные из cols[104]/[105], денормализуем per-row brk/cap
     # Labeled формат: time;signal;predict;ATR;fractal0..fractal99;up_12;dn_12;...
     # cols[104]=up_12, cols[105]=dn_12 (после 100 фракталов, cols[4..103])
-    if nero_cols and len(nero_cols) > 105:
-        d['up_12'] = denormalize_updn(float(nero_cols[104]), 'up_12', norm_stats)
-        d['dn_12'] = denormalize_updn(float(nero_cols[105]), 'dn_12', norm_stats)
-    else:
-        d['up_12'] = 0.0
-        d['dn_12'] = 0.0
+    d['up_12'] = 0.0
+    d['dn_12'] = 0.0
+    if nero_cols and len(nero_cols) > 105 and updn_params_map:
+        row_params = updn_params_map.get(target_time)
+        if row_params:
+            brk, cap = row_params
+            y_norm_6 = [float(nero_cols[104]), float(nero_cols[105]),
+                        float(nero_cols[106]) if len(nero_cols) > 106 else 0.0,
+                        float(nero_cols[107]) if len(nero_cols) > 107 else 0.0,
+                        float(nero_cols[108]) if len(nero_cols) > 108 else 0.0,
+                        float(nero_cols[109]) if len(nero_cols) > 109 else 0.0]
+            vals = denormalize_updn_row(y_norm_6, brk, cap)
+            d['up_12'] = vals[0]
+            d['dn_12'] = vals[1]
 
     # SL/TP по формуле MT4
     sl_dist, tp_dist = calc_sl_tp(sig, pred_up, pred_dn, ratio_up, ratio_dn, atr, params)
@@ -279,8 +338,8 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     d['sl_atr'] = sl_dist / atr if atr > 0 else 0
     d['tp_atr'] = tp_dist / atr if atr > 0 else 0
 
-    # Classification
-    category, detail = classify_outcome(sig, fractal['up_12'], fractal['dn_12'], sl_dist, tp_dist)
+    # Classification (использует денормализованные d['up_12']/d['dn_12'])
+    category, detail = classify_outcome(sig, d['up_12'], d['dn_12'], sl_dist, tp_dist)
     d['category'] = category
     d['category_detail'] = detail
 
@@ -544,7 +603,7 @@ def parse_log(log_path):
     return results
 
 
-def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_only, csv_out, norm_stats=None):
+def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_only, csv_out, updn_params_map=None):
     """
     Разбор всех исполненных ML-сделок из лога тестера.
     Для каждой сделки: реальные MT4 Val/Stp/Prf/ATR vs формула vs Ground Truth.
@@ -594,7 +653,7 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
                 'ratio_up': str(t['ratio']) if t['dir'] == 'BUY' else '0',
                 'ratio_dn': str(t['ratio']) if t['dir'] == 'SELL' else '0',
             }
-        d = build_dossier(bt, sig_row, nero_cols, fractal, params, mt4_trade=t, norm_stats=norm_stats)
+        d = build_dossier(bt, sig_row, nero_cols, fractal, params, mt4_trade=t, updn_params_map=updn_params_map)
         dossiers.append(d)
 
     # Сводная таблица
@@ -673,7 +732,7 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
 
 # ─── Single Trace Mode ──────────────────────────────────────────────────────
 
-def trace_signal(target_time, nero_path, signals_path, params, norm_stats=None):
+def trace_signal(target_time, nero_path, signals_path, params, updn_params_map=None):
     """Полный разбор одного сигнала. Если время не найдено — пробует time-1H (смещение EA)."""
     print(f"[1] Поиск ML-интерпретации в {signals_path}...")
     signal_row = load_signal(target_time, signals_path)
@@ -695,13 +754,13 @@ def trace_signal(target_time, nero_path, signals_path, params, norm_stats=None):
         print(f"  [!] Строка '{actual_time}' не найдена в Nero.csv")
         return
 
-    d = build_dossier(actual_time, signal_row, nero_cols, fractal, params, norm_stats=norm_stats)
+    d = build_dossier(actual_time, signal_row, nero_cols, fractal, params, updn_params_map=updn_params_map)
     print_dossier(d, params)
 
 
 # ─── Batch Mode ─────────────────────────────────────────────────────────────
 
-def batch_reconciliation(signals_path, nero_path, params, top_n, min_ratio, csv_out, norm_stats=None):
+def batch_reconciliation(signals_path, nero_path, params, top_n, min_ratio, csv_out, updn_params_map=None):
     """Пакетный разбор: найти top_n сигналов с ratio >= min_ratio, создать досье."""
     print(f"[1] Загрузка сигналов из {signals_path} (min_ratio >= {min_ratio})...")
     signals = load_all_signals(signals_path, min_ratio)
@@ -725,7 +784,7 @@ def batch_reconciliation(signals_path, nero_path, params, top_n, min_ratio, csv_
     for s in signals:
         t = s['time']
         nero_cols, fractal = nero_data.get(t, (None, None))
-        d = build_dossier(t, s, nero_cols, fractal, params, norm_stats=norm_stats)
+        d = build_dossier(t, s, nero_cols, fractal, params, updn_params_map=updn_params_map)
         dossiers.append(d)
 
     # Summary table
@@ -834,19 +893,20 @@ def load_params(args):
 if __name__ == "__main__":
     args = parse_args()
     params = load_params(args)
-    norm_stats = load_normalization_stats(args.stats)
+    updn_params_map = load_updn_params()
 
     print(f"--- Параметры MT4 ---")
     for k, v in params.items():
         print(f"  {k} = {v}")
+    print(f"  updn_params: {len(updn_params_map)} строк загружено")
 
     if args.from_log:
         from_log_reconciliation(args.from_log, args.signals, args.nero, params,
                                 losses_only=args.losses_only, csv_out=args.csv_out,
-                                norm_stats=norm_stats)
+                                updn_params_map=updn_params_map)
     elif args.batch:
         batch_reconciliation(args.signals, args.nero, params,
                              top_n=args.top, min_ratio=args.min_ratio,
-                             csv_out=args.csv_out, norm_stats=norm_stats)
+                             csv_out=args.csv_out, updn_params_map=updn_params_map)
     else:
-        trace_signal(args.time, args.nero, args.signals, params, norm_stats=norm_stats)
+        trace_signal(args.time, args.nero, args.signals, params, updn_params_map=updn_params_map)
