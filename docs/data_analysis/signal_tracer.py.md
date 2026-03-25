@@ -10,11 +10,21 @@
 
 **Основной вопрос**: Почему ML модель с PF=4.50 в Python дает PF=1.0 в MT4?
 
-**Ответ**: Разбор сделок на уровне trade-level reconciliation через сравнение:
+### Гипотезы расхождения
+
+**1. MFE/MAE иллюзия (BOTH_HIT)** — главная гипотеза
+Python OOS оценивал качество предсказания через `up_12/dn_12` — максимальное продвижение цены за 12 баров в каждую сторону. Если `up_12 >= TP` и `dn_12 >= SL`, Python засчитывал профит (цена дошла до TP). Но MT4 закрывает первый достигнутый барьер: если SL был задет раньше TP — убыток. При k%=BOTH_HIT записей Python "видел профит", MT4 — убыток.
+
+**2. TIMEOUT (50% убытков)**
+Сделки, где ни SL ни TP не достигнуты за 12H — закрываются по трейлингу или HoldOverTime. Python OOS эти случаи учитывал иначе.
+
+### Как устроен разбор
+
+Сравниваются 4 источника для каждой сделки:
 1. **ML предсказания** (pred_up, pred_dn, ratio) из `ml_signals.csv`
-2. **Формула SL/TP** (`lib_ML_Signal.mqh`) vs
-3. **MT4 фактические уровни** (из лога тестера) vs
-4. **Ground Truth** (реальный ход цены Up_12/Dn_12 из `DATA/y_*_updn.npy`)
+2. **Формула SL/TP** (реплика `lib_ML_Signal.mqh`)
+3. **MT4 фактические уровни** (Val/Stp/Prf/ATR из лога тестера)
+4. **Ground Truth** (up_12/dn_12 из `DATA/y_*_updn.npy`, денормализованные)
 
 **Важно**: Время сигнала в `ml_signals.csv` на 1 бар раньше времени открытия сделки в MT4.
 EA читает сигнал закрытого бара T, открывает сделку на баре T+1.
@@ -149,11 +159,18 @@ time;signal;pred_up;pred_dn;ratio_up;ratio_dn
 - Из `fractal[i][0]` берётся: `price`, `fractal_atr`, `direction`
 - **up_12/dn_12 из fractal[i][0] всегда = 0** (фрактал только что сформирован)
 
-### DATA/y_*_updn.npy — Ground Truth up_12/dn_12
-- `y_train_updn.npy`, `y_val_updn.npy`, `y_test_updn.npy`
-- Shape: `(N, 6)` — `up_12, dn_12, up_24, dn_24, up_48, dn_48`
-- Значения нормализованы piecewise linear-log (per-row, совместно с up/dn фичами фракталов)
-- Денормализация: требует `brk` (p85) и `cap` (p99) из 606 значений строки
+### DATA/Nero_*_labeled.csv — up_12/dn_12 (нормализованные)
+- Формат: `time;signal;predict;ATR;fractal0..fractal99;up_12;dn_12;up_24;dn_24;up_48;dn_48;...`
+- `cols[104]=up_12`, `cols[105]=dn_12` — нормализованные значения [0,1]
+- Денормализация выполняется через per-row `brk/cap` из `Nero_*_updn_params.npy`
+
+### DATA/Nero_*_updn_params.npy — Per-row параметры нормализации
+- `Nero_train_updn_params.npy`, `Nero_validation_updn_params.npy`, `Nero_test_updn_params.npy`
+- Shape: `(N, 2)` — `[brk, cap]` для каждой строки
+- Вычисляются в `normalize_rowwise()` из пула 606 значений: 100 фракталов × 6 updn полей + 6 row targets
+- `brk = p85(non-zero pool)`, `cap = p99(non-zero pool)`
+- Генерируются при запуске `label_main.py` (pipeline должен быть перезапущен после обновления)
+- Соответствие строк: `updn_params[i]` ↔ строка `i` в labeled CSV (один к одному)
 
 ### MT/tester/logs/YYYYMMDD.log (только для --from-log)
 ```

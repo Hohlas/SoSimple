@@ -7,15 +7,15 @@
 # Зависимости:
 #   Входные данные:
 #     - MT/MQL4/Files/ml_signals.csv       (ML предсказания: pred_up, pred_dn, ratio)
-#     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr, direction)
-#     - DATA/y_{train,val,test}_updn.npy   (ground truth up_12/dn_12, нормализованные)
+#     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; cols[104-109]: up/dn нормализованные)
+#     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,2))
 #     - MT/tester/$o$imple.ini             (параметры: ML_MinRatio, ML_ScaleK и др.)
 #     - MT/tester/logs/YYYYMMDD.log        (--from-log: Val/Stp/Prf/ATR из MT4)
 #   Выходные данные:
 #     - stdout (досье сигналов, сводные таблицы)
 #     - [--csv-out PATH].csv               (экспорт для Excel/Python)
 # Внешние зависимости:
-#   - numpy, pickle (стандартные)
+#   - numpy (стандартная)
 # Использование:
 #   python statistics/signal_tracer.py --time "2025.12.29 16:00"
 #   python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0
@@ -23,7 +23,7 @@
 # Примечания:
 #   - bar_time из лога MT4 = time в ml_signals.csv (EA открывает сделку на следующем баре)
 #   - fractal[i][0] в labeled CSV = триггерный фрактал (отсортированы, cols[4])
-#   - up_12/dn_12 в fractal[i][0] всегда 0; берутся из y_*_updn.npy + денормализация
+#   - up_12/dn_12 денормализуются per-row через brk/cap из Nero_*_updn_params.npy
 #   - SL/TP: точная реплика lib_ML_Signal.mqh строки 171–193
 # =============================================================================
 import argparse

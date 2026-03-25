@@ -3,11 +3,23 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-03-25] — ME-13 Diagnostics: per-row updn_params + точная денормализация ground truth
+
+### Добавлено
+- **`DATA/Nero_{train,validation,test}_updn_params.npy`**: per-row `(brk, cap)` параметры нормализации, сохраняются pipeline-ом при каждом запуске `label_main.py`
+- **`processing/normalize.py`**: параметр `return_updn_params=True` → возвращает `(df, updn_params)` с shape `(N, 2)`
+- **`statistics/signal_tracer.py`** v2.2: денормализация up_12/dn_12 через per-row brk/cap (точный inverse piecewise_linear_log), 4-категорийная классификация теперь работает корректно
+- **`tests/test_inverse_piecewise.py`**: 6 round-trip тестов для `inverse_piecewise_linear_log` + тест `normalize_rowwise(return_updn_params=True)`
+
+### Исправлено
+- **Классификация TP_CLEAR/SL_CLEAR/BOTH_HIT/TIMEOUT**: ранее up_12/dn_12 брались из fractal[0] (всегда 0) → все сделки падали в TIMEOUT. Теперь правильно денормализуются из строки labeled CSV.
+
+### Вывод
+- Инструмент `signal_tracer.py` теперь способен выдавать реальные категории расхождения Python/MT4: какой % сделок — BOTH_HIT (MFE/MAE иллюзия), какой — SL_CLEAR (реальные убытки)
+
 ## [2026-03-25] — ME-13 Diagnostics: signal_tracer.py v2.2 (исправление источников данных)
 
 ### Изменено
-- **Источник ground truth**: с `MT/MQL4/Files/Nero.csv` (raw, фракталы не отсортированы) на `DATA/Nero_*_labeled.csv` (отсортированные) + `DATA/y_*_updn.npy` (денормализованные таргеты).
-- **fractal[i][0]**: в labeled-файлах = триггерный фрактал (новейший, cols[4]). В raw Nero.csv фракталы не отсортированы.
 - **up_12/dn_12**: в fractal[i][0] всегда 0 (фрактал только что сформирован). Корректные значения — в `y_*_updn.npy`, требуют обратного piecewise_linear_log преобразования.
 - **Время сигнала**: `bar_time` из лога MT4 = время сигнала в `ml_signals.csv` (EA открывает сделку на следующем баре).
 
