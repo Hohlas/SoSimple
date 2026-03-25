@@ -48,6 +48,7 @@
 """
 
 import argparse
+import numpy as np
 import pandas as pd
 import os
 from pathlib import Path
@@ -332,18 +333,30 @@ def main():
     labeled_df = label_triple_barrier(labeled_df, debug=args.debug)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
+    updn_params = None
     if not args.no_normalize:
-        labeled_df = normalize_rowwise(
-            labeled_df, 
-            stats_path=stats_path, 
-            debug=args.debug
+        labeled_df, updn_params = normalize_rowwise(
+            labeled_df,
+            stats_path=stats_path,
+            debug=args.debug,
+            return_updn_params=True
         )
-    
+
     # 5. Разделяем на train/validation/test (70/15/15)
     train_df, val_df, test_df = split_train_val_test(labeled_df)
 
     # 6. Сохраняем файлы
     save_datasets(train_df, val_df, test_df, output_base)
+
+    # 6b. Сохраняем per-row updn_params (brk, cap) для денормализации
+    if updn_params is not None:
+        n_train = len(train_df)
+        n_val = len(val_df)
+        n_total = len(labeled_df)
+        np.save(str(output_base) + "_train_updn_params.npy", updn_params[:n_train])
+        np.save(str(output_base) + "_validation_updn_params.npy", updn_params[n_train:n_train + n_val])
+        np.save(str(output_base) + "_test_updn_params.npy", updn_params[n_train + n_val:])
+        print(f"  updn_params: train={n_train}, val={n_val}, test={n_total - n_train - n_val}")
 
     # 7. Удаляем временные файлы
     for tmp in [temp_sorted_path, temp_labeled_path]:
