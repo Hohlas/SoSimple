@@ -21,8 +21,8 @@ Python OOS оценивал качество предсказания через
 ### Как устроен разбор
 
 Сравниваются 4 источника для каждой сделки:
-1. **ML предсказания** (pred_up, pred_dn, ratio) из `ml_signals.csv`
-2. **Формула SL/TP** (реплика `lib_ML_Signal.mqh`)
+1. **ML предсказания** (pred_up, pred_dn, ratio) из `MT/tester/Files/ml_signals.csv`
+2. **Формула SL/TP** (реплика `MT/MQL4/Include/lib_ML_Signal.mqh`)
 3. **MT4 фактические уровни** (Val/Stp/Prf/ATR из лога тестера)
 4. **Ground Truth** (up_12/dn_12 из `DATA/Nero_*_labeled.csv` cols[104-109], денормализованные через `Nero_*_updn_params.npy`)
 

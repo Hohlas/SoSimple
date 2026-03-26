@@ -66,7 +66,7 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
 | 7 | OOS Evaluation & Threshold | `ML/` | `docs/ML/` | ✅ |
 | 8 | Генерация ML-сигналов для MT4 | `API/` | `docs/MT/` | ✅ |
 | 8b| Triple Barrier (параллельный трек) | `ML/` | `docs/ML/` | 🚧 |
-| 9 | Trade-Level Reconciliation | `statistics/` | `docs/statistics/` | ✅ |
+| 9 | Trade-Level Reconciliation | `statistics/` | `docs/statistics/` | 🚧 |
 
 > Легенда: ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
@@ -427,6 +427,7 @@ python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
 - **Чекпоинт**: `transformer_tb_best.pt`, val Mean AUC=0.7172 (per-target 0.69-0.77)
 - **PF**: Реалистичный — `(wins × TP) / (losses × SL)`, timeouts = полный SL loss
 - **ВАЖНО**: Требует transfer learning — `--encoder_ckpt ML/checkpoints/transformer_updn_best.pt`. Обучение с нуля → AUC=0.5 (коллапс энкодера из-за симметричного pos_weight).
+- **Статус**: Не закончен, требует пересмотра подхода.
 
 ### Команды
 
@@ -495,7 +496,7 @@ python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --loss
 
 | Источник | Данные |
 |----------|--------|
-| `MT/MQL4/Files/ml_signals.csv` | time, signal, pred_up, pred_dn, ratio_up, ratio_dn |
+| `MT/tester/Files/ml_signals.csv` | time, signal, pred_up, pred_dn, ratio_up, ratio_dn |
 | `DATA/Nero_*_labeled.csv` | fractal[i][0] (sorted) → price, fractal_atr, direction |
 | `DATA/Nero_*_labeled.csv` cols[104-109] | up_12, dn_12, up_24, dn_24, up_48, dn_48 (нормализованные) |
 | `DATA/Nero_*_updn_params.npy` | per-row (brk, cap) для денормализации updn, shape (N, 2) |
