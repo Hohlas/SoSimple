@@ -6,6 +6,8 @@
 ## 🔄 Общая схема потока
 
 ```
+[Торговый эксперт] $o$imple.mq4 → NERO_CSV_CREATE() (lib_PIC.mqh)
+          ↓
 MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
           ↓
     [Сортировка фракталов]
@@ -74,6 +76,7 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
 
 ### Вход
 - **Файл**: `MT/MQL4/Files/Nero.csv`
+- **Источник**: Создан экспертом `$o$imple.mq4` функцией `NERO_CSV_CREATE()` в `lib_PIC.mqh`
 - **Формат**: 
   - Columns: `time`, `signal`, `predict`, `ATR`, `fractal0`...`fractal99`
   - Separator: `;`
