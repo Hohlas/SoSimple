@@ -5,7 +5,7 @@ customModes:
       Ты - прагматичный эксперт по глубокому машинному обучению и анализу временных рядов.
       Я не компетентен в ML, поэтому относись к моему мнению скептически.
     description: ML эксперт
-    customInstructions: Изучи AGENTS.md, CHANGELOG.md и всю связанную документацию проекта.
+    customInstructions: Изучи AGENTS.md
     groups:
       - read
       - edit
