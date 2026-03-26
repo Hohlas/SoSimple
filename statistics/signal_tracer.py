@@ -18,8 +18,9 @@
 #   - numpy (стандартная)
 # Использование:
 #   python statistics/signal_tracer.py --time "2025.12.29 16:00"
-#   python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0
-#   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only
+#   python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
+#   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
+#   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --csv-out all_trades.csv
 # Примечания:
 #   - bar_time из лога MT4 = time в ml_signals.csv (EA открывает сделку на следующем баре)
 #   - fractal[i][0] в labeled CSV = триггерный фрактал (отсортированы, cols[4])
