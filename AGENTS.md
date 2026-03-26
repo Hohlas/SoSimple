@@ -35,82 +35,48 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ---
 
-## 📂 Структура проекта (до 2-го уровня вложенности)
+## 📂 Структура проекта
 
-**Флаги этапов**
-✅  Активный, используется сейчас
-🚧  В Разработке
-🏁	Завершённый этап (код стабилен, не меняется)
-📁  Архивный, этап закрыт (не трогай без причины)
-⚠️	Требует внимания
-🔬	Исследовательский / экспериментальный
-
+**Легенда статусов** (единая для всех документов)
+✅ Активный — читай, можешь менять
+🚧 В разработке
+🏁 Завершён — стабилен, не меняй без причины
+📦 Архив — смотри только если явно попросили
+⚠️ Требует внимания
 
 ```
 .
-├── API/                 # Python ML API и генерация сигналов
-│   └── generate_signals.py  # Генерация ml_signals.csv для MT4
-├── MT/MQL4              # MetaTrader4 - Формирование датасета Nero.csv
-│   ├── Experts/        # MQL4 советники
-│   ├── Files/          # Файлы данных (Nero.csv, ml_signals.csv)
-│   └── Include/        # MQL4 библиотеки (.mqh)
-├── processing/         # Препроцессинг данных: Маркировка signal/predict, Нормализация признаков
-├── statistics/         # Статистика и EDA
-│   ├── statistics.py   # расчёт статистики по фракталам и сигналам
-│   ├── EDA.ipynb       # Разведочный анализ данных
-│   ├── plots/          # Визуализации
-│   ├── reports/        # Отчёты
-│   └── EDA_files/      # Файлы EDA
-├── ML/                 # Machine Learning
-│   ├── baseline/       # Baseline-модели (5 алгоритмов)
-│   ├── models/         # Neural Network модели: Bi-LSTM, 1D-CNN, Transformer, Hybrid CNN+LSTM
-│   ├── checkpoints/    # Чекпоинты моделей (.pt)
-│   ├── plots/          # Графики обучения
-│   ├── reports/        # Отчёты экспериментов (threshold_analysis, evaluate_test)
-│   ├── conformal/      # Conformal Prediction: calibrate.py, quantiles, report
-│   ├── train.py        # Скрипт обучения (classification, regression, regression_updn)
-│   ├── optimize.py     # Optuna оптимизация гиперпараметров
-│   ├── compare_architectures.py # Сравнение 4 архитектур
-│   ├── evaluate_test.py # OOS оценка на тестовой выборке
-│   ├── threshold_analysis.py # Поиск оптимального θ для торговых сигналов
-│   ├── data_loader.py  # Dataset и DataLoader (20 фич на фрактал, 100 фракталов)
-│   ├── losses.py       # AsymmetricLoss для регрессии
-│   ├── utils.py        # Метрики: Pearson r, MAE, R², multi-target metrics
-│   └── experiment_logger.py # CSV-логгер для ML-экспериментов
-├── DATA/               # Обрабатывамые данные
-│   ├── Nero_train_labeled.csv
-│   ├── Nero_validation_labeled.csv
-│   ├── Nero_test_labeled.csv
-│   └── Nero_normalization_stats.csv
-├── docs/               # Документация
-│   ├── DATA_FLOW.md    # Поток данных
-│   ├── dataset_description.md # Описание структуры датасета
-│   ├── PRD.md          # Product Requirements
-│   ├── archive/        # Архив старых заметок. НЕ СМОТРИ этот каталог!
-│   ├── data_analysis/  # Документация анализа
-│   │   ├── statistics.py.md
-│   │   └── EDA.ipynb.md
-│   ├── data_preprocessing/ # Документация препроцессинга
-│   │   ├── label_main.py.md
-│   │   ├── label_signals.py.md
-│   │   └── normalize.py.md
-│   ├── ml/             # Документация ML
-│   │   ├── baseline_experiments.py.md
-│   │   ├── neural_networks.md
-│   │   └── conformal_prediction.md
-│   ├── mql4/           # Документация MQL4
-│   │   ├── lib_PIC.mqh.md # Библиотека анализа фракталов
-│   │   ├── ml_signal_integration.md # Файловый обмен ML ↔ MT4
-│   │   └── trading_strategy.md # Полный алгоритм торгового эксперта MAIN()
-│   └── plans/          # Планы работы
-├── .kilocode/          # Конфигурация IDE: MCP, skills, rules
-├── AGENTS.md           # Главный индекс для ИИ-агентов
-├── CHANGELOG.md        # Основные этапы, История изменений
-├── MODULE_INDEX.md     # Детальные описания модулей
-└── README.md           # Точка входа в проект
+├── API/                 # ✅ Генерация ML-сигналов для MT4 (README.md внутри)
+├── MT/MQL4/             # ✅ MetaTrader4 — формирование датасета, торговый робот
+│   ├── Experts/         #    MQL4 советники
+│   ├── Files/           #    Данные (Nero.csv, ml_signals.csv)
+│   └── Include/         #    MQL4 библиотеки (.mqh)
+├── processing/          # 🏁 Препроцессинг: sort → label → normalize → split (README.md внутри)
+├── statistics/          # ✅/🏁 Статистика, EDA, signal_tracer (README.md внутри)
+├── ML/                  # ✅ Machine Learning — 18 скриптов по слоям (README.md внутри)
+│   ├── models/          # ✅ Transformer (лучший), BiLSTM, CNN1D, Hybrid
+│   ├── baseline/        # 🏁 Baseline-модели (5 алгоритмов)
+│   ├── conformal/       # 🏁 Conformal Prediction
+│   ├── checkpoints/     #    Веса моделей (.pt)
+│   ├── reports/         #    Отчёты экспериментов (.md, .json)
+│   └── plots/           #    Графики обучения
+├── DATA/                #    Обработанные данные
+├── docs/                # Документация (каталоги = каталоги кода)
+│   ├── DATA_FLOW.md     #    Поток данных + навигация по этапам
+│   ├── PRD.md           #    Product Requirements
+│   ├── statistics/      #    Docs для statistics/
+│   ├── processing/      #    Docs для processing/
+│   ├── ML/              #    Docs для ML/
+│   ├── MT/              #    Docs для MT/
+│   ├── plans/           #    Планы работы
+│   └── archive/         # 📦 НЕ СМОТРИ без явной просьбы
+├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
+├── MODULE_INDEX.md      # Детальный реестр всех модулей со статусами
+├── CHANGELOG.md         # История изменений
+└── README.md            # Точка входа
 ```
 
-> **Примечание**: Полный рекурсивный список см. в `environment_details` при запуске.
+> **Навигация**: Каждый каталог с кодом содержит README.md с описанием файлов, командами и статусами. Детали по модулям: [MODULE_INDEX.md](MODULE_INDEX.md). Этапы pipeline: [DATA_FLOW.md](docs/DATA_FLOW.md).
 
 ---
 
@@ -141,26 +107,19 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ## 🚧 Статус разработки
 | Компонент | Статус | Примечание |
 |-----------|--------|------------|
-| Сбор данных (MT4) | ✅ Готов | lib_PIC.mqh, NERO_CSV_CREATE() — 18 полей на фрактал |
-| Препроцессинг | ✅ Готов | label_main.py, normalize.py (Piecewise Linear-Log) |
-| Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
-| ML модели | 🏁 Готов | Transformer (лучший), BiLSTM, CNN1D, Hybrid; regression_updn (6 таргетов) |
-| Triple Barrier | 🔧 Код готов | 12 бинарных таргетов, BCEWithLogitsLoss, iSignal=5, lib_ML_Signal_TB.mqh |
-| Генерация сигналов | ✅ Готов | [generate_signals.py](API/generate_signals.py) → ml_signals.csv / ml_signals_tb.csv |
-| Интеграция с MT4 | ✅ Готов | Файловый обмен CSV, ML_TRADE() (iSignal=3) + ML_TRADE_TB() (iSignal=5) |
-| Торговый робот | ✅ Работает | OOS PF=4.50 (θ=2.665, 12H). В тестере: PF=0.85 при ML_MinRatio=5.0 ([trading_strategy](docs/mql4/trading_strategy.md)) |
-| Conformal Prediction | ✅ Готов | Инфраструктура готова; при θ=2.665 эффект нейтральный ([docs](docs/ml/conformal_prediction.md)) |
-
-
----
-
-
-## 🧪 Артефакты statistics/
-Скрипты `statistics.py` и `EDA.ipynb` генерируют консолидированные отчеты (`.json`, `.md`), таблицы статистик и визуализации (каталог `plots/`) для оценки качества маркировки и распределения признаков.
-Подробности: [docs/data_analysis/statistics.py.md](docs/data_analysis/statistics.py.md)
+| Сбор данных (MT4) | 🏁 | lib_PIC.mqh, NERO_CSV_CREATE() — 18 полей на фрактал |
+| Препроцессинг | 🏁 | label_main.py, normalize.py (Piecewise Linear-Log) |
+| Статистика/EDA | 🏁 | statistics.py, EDA.ipynb |
+| ML модели | ✅ | Transformer (лучший); regression_updn (6 таргетов) |
+| Triple Barrier | 🚧 | 12 бинарных таргетов, BCEWithLogitsLoss, iSignal=5 |
+| Генерация сигналов | ✅ | [generate_signals.py](API/generate_signals.py) → ml_signals.csv / ml_signals_tb.csv |
+| Интеграция с MT4 | ✅ | ML_TRADE() (iSignal=3) + ML_TRADE_TB() (iSignal=5) |
+| Торговый робот | ✅ | OOS PF=4.50 (θ=2.665, 12H). Тестер: PF=0.85 ([trading_strategy](docs/MT/trading_strategy.md)) |
+| Conformal Prediction | 🏁 | При θ=2.665 эффект нейтральный ([docs](docs/ML/conformal_prediction.md)) |
+| Reconciliation | ✅ | signal_tracer.py — диагностика Python PF vs MT4 PF |
 
 ---
 
-**Последнее обновление**: 2026-03-24
+**Последнее обновление**: 2026-03-26
 **Авторы**: Antigravity (human) + Claude (AI)
 

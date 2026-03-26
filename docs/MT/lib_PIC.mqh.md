@@ -133,4 +133,4 @@ T:Price:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up
 
 ## Расположение
 
-`docs/mql4/lib_PIC.mqh.md`
+`docs/MT/lib_PIC.mqh.md`

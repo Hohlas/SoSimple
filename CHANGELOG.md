@@ -186,7 +186,7 @@
 ### Результат
 - ✅ Полная цепочка работает: `Python → ml_signals.csv → MQL4 → торговые сигналы в тестере`
 - Логи тестера подтверждают: `ML_INIT: Loaded 58540 signals`, `ML Signal=1/−1` с корректными pred_up/pred_dn
-- Документация: [docs/mql4/ml_signal_integration.md](docs/mql4/ml_signal_integration.md)
+- Документация: [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md)
 
 
 ## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis

@@ -54,7 +54,7 @@ scikit-learn>=1.2
 
 ## Резюме документации
 
-> Полная документация: [`docs/data_analysis/EDA.md`](../docs/data_analysis/EDA.md)
+> Полная документация: [`docs/statistics/EDA.md`](../docs/statistics/EDA.md)
 
 ### Ключевые функции
 

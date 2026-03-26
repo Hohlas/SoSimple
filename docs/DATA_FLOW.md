@@ -51,6 +51,25 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
 
 ---
 
+## 📋 Навигация по этапам
+
+| # | Этап | Код | Docs | Статус |
+|---|------|-----|------|--------|
+| 1 | Сортировка фракталов | `processing/` | `docs/processing/` | 🏁 |
+| 2 | Маркировка signal/predict/UpDn | `processing/` | `docs/processing/` | 🏁 |
+| 3 | Построчная нормализация | `processing/` | `docs/processing/` | 🏁 |
+| 4 | Split train/val/test | `processing/` | — | 🏁 |
+| 5 | Сохранение финальных CSV | `processing/` | — | 🏁 |
+| 6 | ML Training (regression_updn) | `ML/` | `docs/ML/` | ✅ |
+| 7 | OOS Evaluation & Threshold | `ML/` | `docs/ML/` | ✅ |
+| 8 | Генерация ML-сигналов для MT4 | `API/` | `docs/MT/` | ✅ |
+| 8b| Triple Barrier (параллельный трек) | `ML/` | `docs/ML/` | 🚧 |
+| 9 | Trade-Level Reconciliation | `statistics/` | `docs/statistics/` | ✅ |
+
+> Легенда: ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
+
+---
+
 ## ⚙️ Этап 1: Сортировка фракталов
 
 ### Вход
@@ -392,7 +411,7 @@ python -m API.generate_signals --theta 3.0 --horizon 24  # кастом
 ### Интеграция с MT4
 - ML_TRADE() в $o$imple.mq4 читает ml_signals.csv через ML_INIT() (lazy load)
 - ML_FindSignal() — бинарный поиск по Time[bar]
-- Подробности: [docs/mql4/ml_signal_integration.md](mql4/ml_signal_integration.md), [docs/mql4/trading_strategy.md](mql4/trading_strategy.md)
+- Подробности: [docs/MT/ml_signal_integration.md](MT/ml_signal_integration.md), [docs/MT/trading_strategy.md](MT/trading_strategy.md)
 
 ---
 
@@ -487,7 +506,7 @@ python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --loss
 **Погрешность SL/TP**: `Δ ≈ −4/−7 пунктов` — скрипт использует `fractal_atr` из `fractal[i][0]`, MT4 использует `Atr.Fast` на баре входа.
 
 ### Документация
-- [docs/data_analysis/signal_tracer.py.md](data_analysis/signal_tracer.py.md) — полное описание
+- [docs/statistics/signal_tracer.py.md](statistics/signal_tracer.py.md) — полное описание
 
 ---
 

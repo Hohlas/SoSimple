@@ -147,7 +147,7 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 Входы: Nero_normalized.csv
 Выходы: Nero_features.csv
 ✅ Создан processing/feature_engineering.py
-✅ Создан docs/data_preprocessing/feature_engineering.py.md
+✅ Создан docs/processing/feature_engineering.py.md
 ✅ Обновлён MODULE_INDEX.md
 ✅ File header проверен
 ✅ Кодировка UTF-8 (Python)
@@ -174,7 +174,7 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 > doc this processing/normalize.py
 Создаю документацию...
 - ✅ File header добавлен
-- ✅ docs/data_preprocessing/normalize.py.md создан
+- ✅ docs/processing/normalize.py.md создан
 - ✅ MODULE_INDEX.md обновлён
 ```
 
@@ -214,8 +214,8 @@ MT4 → Nero.csv → Сортировка → Маркировка → Норм�
 #### Шаг 2. Определи соответствующую документацию
 Для каждого изменённого файла определи связанный .md/архитектурный файл:
 
-- processing/[script].py → docs/data_preprocessing/[script].md
-- statistics/[script].py → docs/data_analysis/[script].md
+- processing/[script].py → docs/processing/[script].md
+- statistics/[script].py → docs/statistics/[script].md
 - MT/MQL4/Include/[lib].mqh → docs/DATA_FLOW.md (секция Pipeline)
 
 Если соответствующий .md ещё не существует, предложи его создать.
@@ -273,7 +273,7 @@ wc -l <файл>
 1. Сгенерируй сводку изменений в стиле:
 
 ```bash
-Файл: docs/data_preprocessing/normalize.py.md
+Файл: docs/processing/normalize.py.md
 + ## Входные данные
 + - **Файл**: `Nero.csv` (было: `data.csv`)
 ```
@@ -314,7 +314,7 @@ wc -l <файл>
    ✅ Структура: оптимальная
 
 📚 Документация к коду:
-   ❌ processing/new_script.py — нет docs/data_preprocessing/new_script.py.md
+   ❌ processing/new_script.py — нет docs/processing/new_script.py.md
    ⚠️  processing/normalize.py — дублирование docstrings в .md
    ✅ processing/label_main.py — актуально, ссылки @
 
@@ -363,7 +363,7 @@ wc -l <файл>
 | Ключевые паттерны (1 строка) | AGENTS.md |
 | Workflow для ML | skill `ml-pipeline` |
 | Workflow для MQL4 | skill `mql4-processing` |
-| Детали API | docs/ml/neural_networks.md |
+| Детали API | docs/ML/neural_networks.md |
 | Deployment инструкции | docs/deploy.md |
 
 ### Phase 1: Audit (Обязательно!)
@@ -417,7 +417,7 @@ EOF
 ```markdown
 ## ML Pipeline
 Детали: [.kilocode/rules/ml.md](.kilocode/rules/ml.md)
-Руководство: [docs/ml/training_guide.md](docs/ml/training_guide.md)
+Руководство: [docs/ML/training_guide.md](docs/ML/training_guide.md)
 ```
 
 ### Phase 3: Validate (Проверить)
@@ -624,14 +624,14 @@ find . -type f \( -name "*.py" -o -name "*.mqh" -o -name "*.mq4" -o -name "*.ipy
 **Пример 2**: Пользователь: `doc this processing/normalize.py`
 - Действия:
   - Проверить наличие file header, добавить если нет
-  - Создать docs/data_preprocessing/normalize.py.md
+  - Создать docs/processing/normalize.py.md
   - Добавить в MODULE_INDEX.md
   - Показать diff и запросить подтверждение
 
 **Пример 3**: Пользователь: «Я изменил normalize.py, обнови документацию».
 - Действия:
   - Обновить header и docstrings в processing/normalize.py, отражая новые аргументы/поведение.
-  - Обновить docs/data_preprocessing/normalize.py.md (назначение, входы/выходы, использование, примечания).
+  - Обновить docs/processing/normalize.py.md (назначение, входы/выходы, использование, примечания).
   - Использовать `@processing/normalize.py` вместо дублирования docstrings.
   - Показать diff и запросить подтверждение.
 
