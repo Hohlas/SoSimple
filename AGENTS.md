@@ -36,6 +36,16 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ---
 
 ## 📂 Структура проекта (до 2-го уровня вложенности)
+
+**Флаги этапов**
+✅  Активный, используется сейчас
+🚧  В Разработке
+🏁	Завершённый этап (код стабилен, не меняется)
+📁  Архивный, этап закрыт (не трогай без причины)
+⚠️	Требует внимания
+🔬	Исследовательский / экспериментальный
+
+
 ```
 .
 ├── API/                 # Python ML API и генерация сигналов
@@ -76,7 +86,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 │   ├── DATA_FLOW.md    # Поток данных
 │   ├── dataset_description.md # Описание структуры датасета
 │   ├── PRD.md          # Product Requirements
-│   ├── archive/        # Архив НЕ актуальных заметок. НЕ СМОТРИ этот каталог!
+│   ├── archive/        # Архив старых заметок. НЕ СМОТРИ этот каталог!
 │   ├── data_analysis/  # Документация анализа
 │   │   ├── statistics.py.md
 │   │   └── EDA.ipynb.md
@@ -134,7 +144,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 | Сбор данных (MT4) | ✅ Готов | lib_PIC.mqh, NERO_CSV_CREATE() — 18 полей на фрактал |
 | Препроцессинг | ✅ Готов | label_main.py, normalize.py (Piecewise Linear-Log) |
 | Статистика/EDA | ✅ Готов | statistics.py, EDA.ipynb |
-| ML модели | ✅ Готов | Transformer (лучший), BiLSTM, CNN1D, Hybrid; regression_updn (6 таргетов) |
+| ML модели | 🏁 Готов | Transformer (лучший), BiLSTM, CNN1D, Hybrid; regression_updn (6 таргетов) |
 | Triple Barrier | 🔧 Код готов | 12 бинарных таргетов, BCEWithLogitsLoss, iSignal=5, lib_ML_Signal_TB.mqh |
 | Генерация сигналов | ✅ Готов | [generate_signals.py](API/generate_signals.py) → ml_signals.csv / ml_signals_tb.csv |
 | Интеграция с MT4 | ✅ Готов | Файловый обмен CSV, ML_TRADE() (iSignal=3) + ML_TRADE_TB() (iSignal=5) |
