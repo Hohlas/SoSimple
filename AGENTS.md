@@ -92,9 +92,43 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ---
 
 ## 📋 Workflow для агента
-- **Код**: Обнови header, используй skills, обнови CHANGELOG.md.
-- **Новый модуль**: Header -> Добавить в AGENTS.md -> Обновить структуру.
-- **Изучение**: AGENTS.md (индекс) -> PRD.md (цели) -> .kilocode/skills/ (workflow).
+
+### Паттерны разработки
+- **Новая фича**: `/brainstorming` → `/writing-plans` → `/test-driven-development` → `/requesting-code-review`
+- **Bugfix**: `/systematic-debugging` → diagnose → fix → `/verification-before-completion`
+- **Завершение**: `/finishing-a-development-branch` → merge/PR → update CHANGELOG.md
+- **Новый модуль**: создай header → docs → добавь в MODULE_INDEX.md → обнови AGENTS.md
+
+### Когда использовать skills
+| Skill | Когда |
+|-------|-------|
+| `/brainstorming` | Перед любым feature/refactor |
+| `/writing-plans` | Для многошаговых задач — план перед кодом |
+| `/test-driven-development` | Перед реализацией фичи |
+| `/systematic-debugging` | При ошибке или падении теста |
+| `/verification-before-completion` | Перед commit/PR |
+| `/requesting-code-review` | При завершении большой работы |
+| `/executing-plans` | Если есть письменный план |
+
+### Git workflow
+- ❌ Не делай `git commit` и `git push` без явной просьбы пользователя
+
+### CHANGELOG.md
+Добавляй запись **только** при: новых фичах, breaking changes, багфиксах, результатах экспериментов с выводами.
+**НЕ добавляй** при: правках документации, рефакторинге без изменения поведения, обновлении путей.
+Формат: `## [YYYY-MM-DD] — Краткое описание`
+Секции: `### Добавлено`, `### Изменено`, `### Исправлено`, `### Результаты`, `### Вывод`
+
+### Что НЕ делать
+- ❌ Не добавляй docstrings/comments если их не было в исходном коде
+- ❌ Не рефакторься "заодно" (bug fix = только fix, не cleanup)
+- ❌ Не добавляй error handling для невозможных сценариев
+- ❌ Не создавай helper-функции для one-time операций
+- ❌ Не over-engineer: три строки кода лучше, чем абстракция
+
+### Память проекта
+- `.claude/memory/MEMORY.md` — индекс памяти (синхронизируется через git)
+- Читай перед началом работы, обновляй при появлении новых паттернов
 
 ---
 
@@ -120,6 +154,6 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ---
 
-**Последнее обновление**: 2026-03-26
+**Последнее обновление**: 2026-03-26 (рефакторинг структуры проекта)
 **Авторы**: Antigravity (human) + Claude (AI)
 
