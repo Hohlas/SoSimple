@@ -3,7 +3,7 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
-## [2026-03-27] — Phase A EA Optimization: PF 0.53 → 1.23 (+132%)
+## [2026-03-27] — Phase A EA Optimization: финал PF=1.23, лучшая конфигурация найдена
 
 ### Добавлено
 - **`ML_MaxRatio`** параметр: фильтр ratio>4.5 убирает 72% SL-сделок (321→91)
@@ -11,15 +11,24 @@
 - **`ML_RR_Mode`, `ML_RR_Cap`, `ML_ExitEnabled`, `ML_ExitThreshold`** — новые extern параметры EA
 - **`ExportOHLC.mq4`**: скрипт экспорта 126,637 H1 баров XAUUSD → DATA/XAUUSD_H1_OHLC.csv
 - **`signal_tracer.py`**: поля `close_price`, `mt4_pnl_pips`, `mt4_pnl_atr` в CSV
+- **`analyze_path_ordering.py`**: bar-by-bar scan OHLC, определение SL_FIRST vs TP_FIRST
 
-### Результаты
-- MT4 PF: **0.53 → 1.23** (367 сделок, WR=49%, MaxDD=18%)
-- Walk-forward: 5/6 полугодий PF≥1.0; 2025H2=0.63 требует исследования
-- ML_Exit при threshold<MinRatio логически некорректен — отключён
+### Результаты тестов
+- **PF: 0.53 → 1.23** — лучший конфиг: ML_MaxRatio=4.5, ML_RR_Mode=1, ML_ExitEnabled=1, ExitThreshold=2.0
+- ML_Exit OFF + T1=7 (21 баров): PF=1.20 — хуже: avg loss растёт ($85→$95) сильнее avg win ($108→$114)
+- ML_Exit даёт +0.03 PF за счёт 94 ранних выходов из losers до SL
+- T1 (hold time) неважен при ML_Exit ON — HoldOverTime=0, ML_Exit закрывает всё первым
+
+### Path-ordering анализ (analyze_path_ordering.py)
+- BOTH_HIT: 92% SL_FIRST — подтверждено, но теперь только 24 сделки (7%)
+- TP_CLEAR + SL_FIRST: 33 сделки — цель для first-barrier-hit лейблинга
+- TP_CLEAR + TIMEOUT: 100 сделок; 83% достигают TP за ≤24 бара (текущее окно = 12)
+- Главный вывод: модель правильно предсказывает направление, но TP слишком далеко и/или путь идёт через SL
 
 ### Вывод
-- Phase A отчёт: [docs/archive/signal_tracer/phase_a_results.md](docs/archive/signal_tracer/phase_a_results.md)
-- Цель PF≥2.0 требует Phase B: path-ordered targets + лимитный вход + asymmetric loss
+- Phase A потолок достигнут — дальнейший рост требует переобучения модели
+- Phase B план: [docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md)
+- Приоритет Phase B: first-barrier-hit лейблинг → asymmetric loss → лимитный вход
 
 
 ## [2026-03-26] — ME-13 Diagnostics: анализ 922 сделок MT4 Strategy Tester

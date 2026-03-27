@@ -222,23 +222,28 @@ def compute_binary_classification_metrics(
         yt = y_true[:, i]
         yp = y_pred_proba[:, i]
 
+        # Exclude TIMEOUT (0.5) rows — keep only definitive outcomes {0, 1}
+        mask = (yt == 0) | (yt == 1)
+        yt_bin = yt[mask]
+        yp_bin_m = yp[mask]
+
         # AUC (handle edge case: only one class present)
-        n_pos = yt.sum()
-        n_neg = len(yt) - n_pos
+        n_pos = float((yt_bin == 1).sum())
+        n_neg = float((yt_bin == 0).sum())
         if n_pos == 0 or n_neg == 0:
             auc = 0.5  # uninformative
         else:
-            auc = float(roc_auc_score(yt, yp))
+            auc = float(roc_auc_score(yt_bin, yp_bin_m))
 
-        # Precision / Recall at threshold
-        yp_bin = (yp >= threshold).astype(int)
-        tp = ((yp_bin == 1) & (yt == 1)).sum()
-        fp = ((yp_bin == 1) & (yt == 0)).sum()
-        fn = ((yp_bin == 0) & (yt == 1)).sum()
+        # Precision / Recall at threshold (on definitive rows only)
+        yp_bin = (yp_bin_m >= threshold).astype(int)
+        tp = ((yp_bin == 1) & (yt_bin == 1)).sum()
+        fp = ((yp_bin == 1) & (yt_bin == 0)).sum()
+        fn = ((yp_bin == 0) & (yt_bin == 1)).sum()
 
         precision = float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
         recall = float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
-        pos_rate = float(n_pos / len(yt))
+        pos_rate = float(n_pos / len(yt_bin)) if len(yt_bin) > 0 else 0.0
 
         per_target[name] = {
             'auc': auc,

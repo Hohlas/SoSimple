@@ -361,6 +361,7 @@ def create_data_loaders(
             y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
+            y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
         elif regression:
             y = np.abs(df[target_col].values.astype(np.float32))
         else:
@@ -540,6 +541,7 @@ def create_test_loader(
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
         y = df[TB_TARGET_NAMES].values.astype(np.float32)
+        y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS
     elif regression:
         y = np.abs(df[target].values.astype(np.float32))
     else:

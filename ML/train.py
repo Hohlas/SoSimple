@@ -457,8 +457,8 @@ def train_model(
         for _, y_batch, _ in train_loader:
             y_train_all.append(y_batch.numpy())
         y_train_np = np.concatenate(y_train_all)
-        n_pos = y_train_np.sum(axis=0)
-        n_neg = len(y_train_np) - n_pos
+        n_pos = (y_train_np == 1).sum(axis=0).astype(float)
+        n_neg = (y_train_np == 0).sum(axis=0).astype(float)
         pos_weight = torch.tensor(n_neg / (n_pos + 1e-6), dtype=torch.float32).to(device)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight).to(device)
     elif regression:

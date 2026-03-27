@@ -52,7 +52,7 @@ import numpy as np
 import pandas as pd
 import os
 from pathlib import Path
-from label_signals import label_all, label_updn, label_triple_barrier
+from label_signals import label_all, label_updn, label_triple_barrier, label_first_barrier_hit
 from normalize import normalize_rowwise
 
 
@@ -295,6 +295,11 @@ def main():
         action="store_true",
         help="Пропустить этап нормализации",
     )
+    parser.add_argument(
+        "--ohlc",
+        default="DATA/XAUUSD_H1_OHLC.csv",
+        help="Путь к H1 OHLC CSV для path-ordered Triple Barrier (по умолчанию DATA/XAUUSD_H1_OHLC.csv)",
+    )
 
     args = parser.parse_args()
 
@@ -328,9 +333,9 @@ def main():
     print(f"\nРазметка Up/Dn таргетов...")
     labeled_df = label_updn(labeled_df, debug=args.debug)
 
-    # 3c. Triple Barrier labels (binary, before normalization)
-    print(f"\nРазметка Triple Barrier таргетов...")
-    labeled_df = label_triple_barrier(labeled_df, debug=args.debug)
+    # 3c. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
+    print(f"\nРазметка Triple Barrier таргетов (path-ordered, OHLC={args.ohlc})...")
+    labeled_df = label_first_barrier_hit(labeled_df, args.ohlc, scan_bars=24, debug=args.debug)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None
