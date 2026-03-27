@@ -290,6 +290,22 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
         else:
             d['mt4_result'] = ct
 
+        # P&L расчёт
+        cp = mt4_trade.get('close_price')
+        atr_mt4 = mt4_trade['atr_mt4']
+        if cp is not None and cp > 0:
+            if mt4_trade['dir'] == 'BUY':
+                d['mt4_pnl_pips'] = cp - mt4_trade['val']
+            else:
+                d['mt4_pnl_pips'] = mt4_trade['val'] - cp
+            d['mt4_pnl_atr'] = d['mt4_pnl_pips'] / atr_mt4 if atr_mt4 > 0 else 0
+        elif ct == 'SL':
+            d['mt4_pnl_pips'] = -mt4_sl
+            d['mt4_pnl_atr'] = -d.get('mt4_sl_atr', 0)
+        elif ct == 'TP':
+            d['mt4_pnl_pips'] = mt4_tp
+            d['mt4_pnl_atr'] = d.get('mt4_tp_atr', 0)
+
     if fractal is None:
         d['error'] = 'fractal0 не распарсен'
         return d
@@ -718,9 +734,10 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
     # CSV
     if csv_out:
         fieldnames = ['time', 'direction', 'ratio', 'close_type', 'mt4_result',
-                      'val', 'stp', 'prf', 'atr_mt4',
+                      'val', 'stp', 'prf', 'close_price', 'atr_mt4',
                       'mt4_sl_dist', 'mt4_tp_dist', 'mt4_sl_atr', 'mt4_tp_atr',
-                      'sl_dist', 'tp_dist', 'sl_atr', 'tp_atr',
+                      'mt4_pnl_pips', 'mt4_pnl_atr',
+                      'price', 'sl_dist', 'tp_dist', 'sl_atr', 'tp_atr',
                       'sl_delta', 'tp_delta', 'atr_delta',
                       'up_12', 'dn_12', 'category', 'lag_bars']
         with open(csv_out, 'w', newline='', encoding='utf-8') as f:

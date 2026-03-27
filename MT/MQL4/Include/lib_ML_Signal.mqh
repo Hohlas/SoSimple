@@ -98,10 +98,13 @@ bool ML_INIT() {
    ArrayResize(ML_RatioUp, ML_SignalCount);
    ArrayResize(ML_RatioDn, ML_SignalCount);
 
-   Print("ML_INIT: Loaded V",ML_Ver, ML_SignalCount, " signals from ", ML_SIGNALS_FILE,
+   Print("ML_INIT: Loaded V",ML_Ver, " ", ML_SignalCount, " signals from ", ML_SIGNALS_FILE,
          "  Range: ", TimeToString(ML_Times[0]), " — ", TimeToString(ML_Times[ML_SignalCount-1]),
-         "  MinRatio=", DoubleToString(ML_MinRatio,3),
-         "  MaxRR=", DoubleToString(ML_MaxRR,1),
+         "  MinRatio=", DoubleToString(ML_MinRatio,2),
+         "  MaxRatio=", (ML_MaxRatio>0 ? DoubleToString(ML_MaxRatio,2) : "off"),
+         "  RR_Mode=", ML_RR_Mode,
+         "  MaxRR/Cap=", DoubleToString(ML_RR_Mode==0?ML_MaxRR:ML_RR_Cap,1),
+         "  Exit=", ML_ExitEnabled, "(thr=", DoubleToString(ML_ExitThreshold,1), ")",
          "  BypassTrend=", ML_BypassTrend);
 
    return true;
@@ -122,6 +125,17 @@ int ML_FindSignal(datetime barTime) {
    return -1; // не найден
 }
 
+// ─── Вспомогательная функция: расчёт R:R по режиму ─────────────────
+
+float ML_CalcRR(double ratio) {
+   double r = ratio / ML_MinRatio;
+   switch(ML_RR_Mode) {
+      case 1:  return (float)MathMin(MathLog(r) + 1.0, ML_RR_Cap);  // log + cap
+      case 2:  return (float)MathMin(MathSqrt(r),      ML_RR_Cap);  // sqrt + cap
+      default: return (float)MathMin(r,                ML_MaxRR);   // текущий (min/cap)
+   }
+}
+
 // ─── Торговая функция (вызывается из INPUT) ─────────────────────────
 
 void EXPERT::ML_TRADE() {
@@ -138,6 +152,20 @@ void EXPERT::ML_TRADE() {
 
    char sig = ML_Signals[idx];
    if (sig == 0) return;  // FLAT
+
+   // ─── ML-exit: закрытие позиции при reverse-сигнале ───────────────
+   if (ML_ExitEnabled) {
+      if (sig == -1 && BUY.Typ != NONE && ML_RatioDn[idx] >= ML_ExitThreshold) {
+         CLOSE_BUY(1, "ML_Exit");
+         Print(Mgc,":: ML EXIT BUY reason=ReverseSignal ratio_dn=",
+               DoubleToString(ML_RatioDn[idx],2), " bar=", TimeToString(Time[bar]));
+      }
+      if (sig == 1 && SEL.Typ != NONE && ML_RatioUp[idx] >= ML_ExitThreshold) {
+         CLOSE_SEL(1, "ML_Exit");
+         Print(Mgc,":: ML EXIT SELL reason=ReverseSignal ratio_up=",
+               DoubleToString(ML_RatioUp[idx],2), " bar=", TimeToString(Time[bar]));
+      }
+   }
 
    ML_cnt_total++;
 
@@ -162,14 +190,14 @@ void EXPERT::ML_TRADE() {
    }
 
    // ─── Торговля с адаптивным SL/TP ───
-   if (sig == 1 && BUY.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio) {
+   if (sig == 1 && BUY.Typ == NONE && ML_RatioUp[idx] >= ML_MinRatio
+       && (ML_MaxRatio <= 0 || ML_RatioUp[idx] <= ML_MaxRatio)) {
       if (SEL.Typ != NONE) {
          CLOSE_SEL(1, "ML_Reversal");
       }
       ML_cnt_executed++; ML_cnt_buy++;
-      // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
-      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR); 
-      float tp_dist = sl_dist * (float)MathMin(ML_RatioUp[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
+      float sl_dist = (float)MathMax(ML_PredDn[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
+      float tp_dist = sl_dist * ML_CalcRR(ML_RatioUp[idx]);
       
       set.BUY.Sig=GOGO;
       set.BUY.Val=(float)Ask+DELTA(D);
@@ -183,14 +211,14 @@ void EXPERT::ML_TRADE() {
             " ATR=",    DoubleToString(ATR,Digits),
             " bar=",    TimeToString(Time[bar]));
    }
-   else if (sig == -1 && SEL.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio) {
+   else if (sig == -1 && SEL.Typ == NONE && ML_RatioDn[idx] >= ML_MinRatio
+            && (ML_MaxRatio <= 0 || ML_RatioDn[idx] <= ML_MaxRatio)) {
       if (BUY.Typ != NONE) {
          CLOSE_BUY(1, "ML_Reversal");
       }
       ML_cnt_executed++; ML_cnt_sell++;
-      // Адаптивный расчёт дистанций (min 1.5 ATR для защиты от рыночного шума)
-      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR); 
-      float tp_dist = sl_dist * (float)MathMin(ML_RatioDn[idx] / ML_MinRatio, ML_MaxRR); // Асимметричный R:R
+      float sl_dist = (float)MathMax(ML_PredUp[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
+      float tp_dist = sl_dist * ML_CalcRR(ML_RatioDn[idx]);
 
       set.SEL.Sig=GOGO;
       set.SEL.Val=(float)Bid-DELTA(D);
@@ -206,9 +234,11 @@ void EXPERT::ML_TRADE() {
    }
    else {
       string skip_reason;
-      if      (sig== 1 && ML_RatioUp[idx] < ML_MinRatio) { skip_reason = "LowRatio";  ML_cnt_lowratio++; }
-      else if (sig==-1 && ML_RatioDn[idx] < ML_MinRatio) { skip_reason = "LowRatio";  ML_cnt_lowratio++; }
-      else                                                 { skip_reason = "PosBlock";  ML_cnt_posblock++; }
+      if      (sig== 1 && ML_RatioUp[idx] < ML_MinRatio)                              { skip_reason = "LowRatio";  ML_cnt_lowratio++; }
+      else if (sig==-1 && ML_RatioDn[idx] < ML_MinRatio)                              { skip_reason = "LowRatio";  ML_cnt_lowratio++; }
+      else if (sig== 1 && ML_MaxRatio > 0 && ML_RatioUp[idx] > ML_MaxRatio)          { skip_reason = "HighRatio"; ML_cnt_lowratio++; }
+      else if (sig==-1 && ML_MaxRatio > 0 && ML_RatioDn[idx] > ML_MaxRatio)          { skip_reason = "HighRatio"; ML_cnt_lowratio++; }
+      else                                                                              { skip_reason = "PosBlock";  ML_cnt_posblock++; }
       Print(Mgc,":: ML SKIP reason=", skip_reason,
             " sig=",    sig,
             " BUY.Typ=",BUY.Typ," SEL.Typ=",SEL.Typ,
