@@ -3,6 +3,25 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-03-27] — Phase A EA Optimization: PF 0.53 → 1.23 (+132%)
+
+### Добавлено
+- **`ML_MaxRatio`** параметр: фильтр ratio>4.5 убирает 72% SL-сделок (321→91)
+- **`ML_CalcRR()`**: динамический R:R — Mode 1 (log+cap=2.5) вместо жёсткого cap
+- **`ML_RR_Mode`, `ML_RR_Cap`, `ML_ExitEnabled`, `ML_ExitThreshold`** — новые extern параметры EA
+- **`ExportOHLC.mq4`**: скрипт экспорта 126,637 H1 баров XAUUSD → DATA/XAUUSD_H1_OHLC.csv
+- **`signal_tracer.py`**: поля `close_price`, `mt4_pnl_pips`, `mt4_pnl_atr` в CSV
+
+### Результаты
+- MT4 PF: **0.53 → 1.23** (367 сделок, WR=49%, MaxDD=18%)
+- Walk-forward: 5/6 полугодий PF≥1.0; 2025H2=0.63 требует исследования
+- ML_Exit при threshold<MinRatio логически некорректен — отключён
+
+### Вывод
+- Phase A отчёт: [docs/archive/signal_tracer/phase_a_results.md](docs/archive/signal_tracer/phase_a_results.md)
+- Цель PF≥2.0 требует Phase B: path-ordered targets + лимитный вход + asymmetric loss
+
+
 ## [2026-03-26] — ME-13 Diagnostics: анализ 922 сделок MT4 Strategy Tester
 
 ### Результаты
