@@ -68,7 +68,7 @@ except ImportError:
         pass
 
 from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES, UPDN_TARGETS, UPDN_REGRESSION_TARGET, TB_TARGET, TB_TARGET_NAMES
-from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss
+from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
@@ -135,7 +135,13 @@ def train_one_epoch(
     total_loss = 0.0
     n_batches = 0
 
-    for X_batch, y_batch, mask_batch in train_loader:
+    for batch in train_loader:
+        if len(batch) == 4:
+            X_batch, y_batch, mask_batch, signal_batch = batch
+            signal_batch = signal_batch.to(device)
+        else:
+            X_batch, y_batch, mask_batch = batch
+            signal_batch = None
         X_batch = X_batch.to(device)
         y_batch = y_batch.to(device)
         mask_batch = mask_batch.to(device)
@@ -146,7 +152,10 @@ def train_one_epoch(
         if regression:
             # Регрессия: multi-target (batch, 6) или single (batch, 1) → squeeze
             if logits.shape[-1] > 1 and y_batch.dim() > 1:
-                loss = loss_fn(logits, y_batch)  # (batch, 6) vs (batch, 6)
+                if signal_batch is not None and isinstance(loss_fn, DirectionalAsymmetricLoss):
+                    loss = loss_fn(logits, y_batch, signal_batch)
+                else:
+                    loss = loss_fn(logits, y_batch)
             else:
                 preds = logits.squeeze(-1)
                 loss = loss_fn(preds, y_batch)
@@ -246,7 +255,13 @@ def validate_regression(
     all_preds = []
     all_targets = []
 
-    for X_batch, y_batch, mask_batch in val_loader:
+    for batch in val_loader:
+        if len(batch) == 4:
+            X_batch, y_batch, mask_batch, signal_batch = batch
+            signal_batch = signal_batch.to(device)
+        else:
+            X_batch, y_batch, mask_batch = batch
+            signal_batch = None
         X_batch = X_batch.to(device)
         y_batch = y_batch.to(device)
         mask_batch = mask_batch.to(device)
@@ -255,7 +270,10 @@ def validate_regression(
 
         # Multi-target: (batch, 6) vs (batch, 6); single: squeeze
         if logits.shape[-1] > 1 and y_batch.dim() > 1:
-            loss = loss_fn(logits, y_batch)
+            if signal_batch is not None and isinstance(loss_fn, DirectionalAsymmetricLoss):
+                loss = loss_fn(logits, y_batch, signal_batch)
+            else:
+                loss = loss_fn(logits, y_batch)
             all_preds.append(logits.cpu().numpy())
         else:
             preds = logits.squeeze(-1)
@@ -454,15 +472,19 @@ def train_model(
     if triple_barrier:
         # Compute pos_weight from training data for class imbalance
         y_train_all = []
-        for _, y_batch, _ in train_loader:
-            y_train_all.append(y_batch.numpy())
+        for batch in train_loader:
+            y_train_all.append(batch[1].numpy())
         y_train_np = np.concatenate(y_train_all)
         n_pos = (y_train_np == 1).sum(axis=0).astype(float)
         n_neg = (y_train_np == 0).sum(axis=0).astype(float)
         pos_weight = torch.tensor(n_neg / (n_pos + 1e-6), dtype=torch.float32).to(device)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight).to(device)
     elif regression:
-        if regression_loss == 'asymmetric':
+        if regression_loss == 'directional':
+            loss_fn = DirectionalAsymmetricLoss(
+                alpha=asym_over_penalty,  # reuse param as alpha
+            ).to(device)
+        elif regression_loss == 'asymmetric':
             loss_fn = AsymmetricLoss(
                 over_penalty=asym_over_penalty,
                 under_penalty=asym_under_penalty
@@ -836,7 +858,8 @@ def _collect_regression_preds(
     """Собрать предсказания регрессионной модели для построения графиков."""
     model.eval()
     all_preds, all_targets = [], []
-    for X_batch, y_batch, mask_batch in val_loader:
+    for batch in val_loader:
+        X_batch, y_batch, mask_batch = batch[0], batch[1], batch[2]
         X_batch = X_batch.to(device)
         mask_batch = mask_batch.to(device)
         logits = model(X_batch, mask=mask_batch)
@@ -1071,7 +1094,7 @@ def parse_args() -> argparse.Namespace:
                         help=f"Factor для ReduceLROnPlateau (default: {DEFAULTS['scheduler_factor']})")
     
     # Регрессионные функции потерь
-    parser.add_argument('--regression_loss', type=str, default='huber', choices=['huber', 'asymmetric'],
+    parser.add_argument('--regression_loss', type=str, default='huber', choices=['huber', 'asymmetric', 'directional'],
                         help="Loss функция для регрессии (default: huber)")
     parser.add_argument('--asym_over_penalty', type=float, default=1.0,
                         help="Штраф за перепрогноз (FP) в AsymmetricLoss (default: 1.0)")

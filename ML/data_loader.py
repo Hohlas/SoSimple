@@ -255,6 +255,7 @@ class FractalSequenceDataset(Dataset):
         y: np.ndarray,
         mask: np.ndarray,
         regression: bool = False,
+        signal: np.ndarray | None = None,
     ):
         self.X = torch.from_numpy(X).float()
         if regression:
@@ -265,11 +266,14 @@ class FractalSequenceDataset(Dataset):
             y_mapped = np.array([LABEL_MAP[label] for label in y], dtype=np.int64)
             self.y = torch.from_numpy(y_mapped).long()
         self.mask = torch.from_numpy(mask).bool()
+        self.signal = torch.from_numpy(signal).long() if signal is not None else None
 
     def __len__(self) -> int:
         return len(self.y)
 
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int):
+        if self.signal is not None:
+            return self.X[idx], self.y[idx], self.mask[idx], self.signal[idx]
         return self.X[idx], self.y[idx], self.mask[idx]
 
 
@@ -381,6 +385,12 @@ def create_data_loaders(
     X_train, mask_train, y_train = load_or_parse_data(TRAIN_FILE, target, 'train')
     X_val, mask_val, y_val = load_or_parse_data(VAL_FILE, target, 'val')
 
+    # Signal column для directional asymmetric loss (regression_updn only)
+    signal_train = signal_val = None
+    if multi_target:
+        signal_train = pd.read_csv(TRAIN_FILE, sep=CSV_SEP, usecols=['signal'])['signal'].values.astype(np.int64)
+        signal_val = pd.read_csv(VAL_FILE, sep=CSV_SEP, usecols=['signal'])['signal'].values.astype(np.int64)
+
     # Truncate sequence length if requested
     if seq_len < 100:
         print(f"  ✂️ Усечение последовательности фракталов до {seq_len} (оставляем самые недавние)")
@@ -434,10 +444,12 @@ def create_data_loaders(
     train_dataset = FractalSequenceDataset(
         X_train_norm, y_train, mask_train,
         regression=(regression or triple_barrier),
+        signal=signal_train,
     )
     val_dataset = FractalSequenceDataset(
         X_val_norm, y_val, mask_val,
         regression=(regression or triple_barrier),
+        signal=signal_val,
     )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train

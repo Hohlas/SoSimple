@@ -187,10 +187,48 @@ class AsymmetricLoss(nn.Module):
         )
         
         loss = squared_error * weights
-        
+
         if self.reduction == 'mean':
             return loss.mean()
         elif self.reduction == 'sum':
             return loss.sum()
         else:
             return loss
+
+
+class DirectionalAsymmetricLoss(nn.Module):
+    """
+    Direction-aware asymmetric loss для regression_updn (Phase B.4).
+
+    Для BUY-сигналов: штрафует ошибки на dn (adverse) с весом alpha.
+    Для SELL-сигналов: штрафует ошибки на up (adverse) с весом alpha.
+    Для signal=0: симметричный MSE.
+
+    Targets: [up_12, dn_12, up_24, dn_24, up_48, dn_48]
+      up indices: 0, 2, 4
+      dn indices: 1, 3, 5
+    """
+
+    def __init__(self, alpha: float = 2.5):
+        super().__init__()
+        self.alpha = alpha
+
+    def forward(self, preds: torch.Tensor, targets: torch.Tensor,
+                signals: torch.Tensor) -> torch.Tensor:
+        se = (preds - targets) ** 2  # (batch, 6)
+        weights = torch.ones_like(se)
+
+        buy = (signals == 1)    # (batch,)
+        sell = (signals == -1)  # (batch,)
+
+        # BUY: penalize dn errors (columns 1,3,5) — adverse direction
+        weights[buy, 1] = self.alpha
+        weights[buy, 3] = self.alpha
+        weights[buy, 5] = self.alpha
+
+        # SELL: penalize up errors (columns 0,2,4) — adverse direction
+        weights[sell, 0] = self.alpha
+        weights[sell, 2] = self.alpha
+        weights[sell, 4] = self.alpha
+
+        return (se * weights).mean()

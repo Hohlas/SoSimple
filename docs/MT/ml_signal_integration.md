@@ -49,7 +49,7 @@ time;signal;pred_up;pred_dn;ratio_up;ratio_dn
 python -m API.generate_signals
 
 # 2. Скопировать CSV в каталог тестера (Wine/Linux)
-cp MT/MQL4/Files/ml_signals.csv ~/.mt4/drive_c/Program\ Files\ \(x86\)/MetaTrader\ 4/tester/files/
+cp MT/MQL4/Files/ml_signals.csv MT/tester/files # MT/MQL4/Files - файлы для реалтайм торговли; MT/tester/files - файлы для тестера и оптимизации
 
 # 3. Скомпилировать $o$imple.mq4 в MetaEditor (F7)
 # 4. Запустить тест: XAUUSD, H1, параметр iSignal=3

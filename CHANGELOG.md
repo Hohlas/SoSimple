@@ -3,6 +3,19 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-03-31] — Phase B.4: Directional Asymmetric Loss — эксперимент провален
+
+### Результаты
+- **Directional α=2.5**: PF=1.04, 352 сделки (baseline: PF=1.20, 366 сделок)
+- **Directional α=5.0**: PF=0.97, 533 сделки (убыточно)
+- Все варианты хуже production модели (huber loss, r=0.56)
+
+### Вывод
+Directional asymmetric loss не работает. Снижение r с 0.56 до 0.43 не компенсируется консервативностью на adverse direction — модель теряет предсказательную силу сильнее, чем выигрывает от асимметрии. Production модель восстановлена (`git checkout ML/checkpoints/transformer_updn_best.pt`).
+
+**Не повторять**: directional asymmetric loss на regression_updn с текущими фичами не даёт прироста PF.
+
+
 ## [2026-03-27] — Phase A EA Optimization: финал PF=1.23, лучшая конфигурация найдена
 
 ### Добавлено

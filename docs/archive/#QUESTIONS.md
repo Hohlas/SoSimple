@@ -60,6 +60,8 @@ lag_bars = -2 для 99% сделок — GT (up_12/dn_12) не покрывае
 ---
 
 
+docs/superpowers/specs/2026-03-27-pf-improvement-design.md
+
 У меня появилось несколько идей
 
 
