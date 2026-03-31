@@ -76,8 +76,7 @@ def run_inference(
     model.eval()
     all_preds = []
 
-    for batch in loader:
-        X_batch, _y_batch, mask_batch = batch[0], batch[1], batch[2]
+    for X_batch, _y_batch, mask_batch in loader:
         X_batch = X_batch.to(device)
         mask_batch = mask_batch.to(device)
         preds = model(X_batch, mask=mask_batch).cpu().numpy()
@@ -108,7 +107,7 @@ def preds_to_signals(
     Returns:
         signals, pred_up, pred_dn, ratio_up, ratio_dn
     """
-    idx_map = {12: 0, 24: 2, 48: 4}  # TEMP: 6-target test
+    idx_map = {12: 0, 24: 2, 48: 4}
     idx = idx_map[horizon]
 
     pred_up = y_pred[:, idx]

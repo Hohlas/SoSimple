@@ -40,9 +40,9 @@
 - Min-Max: для price
 - RobustScaler: для ATR (глобальная нормализация)
 
-Структура фрактала (22 признака):
-    fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr
-    [0]         :[1]  :[2]      :[3]  :[4] :[5]   :[6]  :[7]    :[8]  :[9]  :[10]  :[11] :[12] :[13] :[14] :[15] :[16] :[17]:[18]:[19]:[20]:[21]
+Структура фрактала (18 признаков):
+    fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr
+    [0]         :[1]  :[2]      :[3]  :[4] :[5]   :[6]  :[7]    :[8]  :[9]  :[10]  :[11] :[12] :[13] :[14] :[15] :[16] :[17]
 """
 
 import numpy as np
@@ -70,11 +70,7 @@ FRACTAL_INDICES = {
     'dn_24': 14,
     'up_48': 15,
     'dn_48': 16,
-    'up_3': 17,
-    'dn_3': 18,
-    'up_6': 19,
-    'dn_6': 20,
-    'fractal_atr': 21,
+    'fractal_atr': 17,
 }
 
 # Признаки для piecewise linear-log нормализации (раздельно)
@@ -84,11 +80,10 @@ PIECEWISE_SEPARATE = ['impulse', 'count', 'reverse', 'power', 'break']
 PIECEWISE_JOINT = ['front', 'back']  # + predict (отдельная колонка)
 
 # Up/Dn поля для совместной piecewise нормализации (отдельный пул от front/back)
-# Только длинные горизонты: короткие (3,6) смещают p85 вниз и искажают нормализацию up_12..dn_48
 UPDN_FIELDS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 # Row-level колонки-таргеты (нормализуются в том же пуле)
-UPDN_TARGET_COLUMNS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+UPDN_TARGET_COLUMNS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 # Признаки без нормализации
 NO_NORMALIZE = ['direction', 'strong', 'fractal_time', 'fractal_atr']
@@ -108,20 +103,20 @@ def parse_fractal(fractal_str: str) -> Optional[List[float]]:
     Парсит строку фрактала в список значений.
 
     Args:
-        fractal_str: Строка формата "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr"
+        fractal_str: Строка формата "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr"
 
     Returns:
-        Список из 22 float значений или None, если строка некорректна.
+        Список из 18 float значений или None, если строка некорректна.
     """
     if pd.isna(fractal_str) or fractal_str == '':
         return None
 
     parts = str(fractal_str).split(':')
-    if len(parts) < 22:
+    if len(parts) < 18:
         return None
 
     try:
-        return [float(p) for p in parts[:22]]
+        return [float(p) for p in parts[:18]]
     except (ValueError, IndexError):
         return None
 
@@ -131,7 +126,7 @@ def fractal_to_string(values: np.ndarray) -> str:
     Собирает массив значений обратно в строку фрактала.
 
     Args:
-        values: Массив из 22 значений признаков фрактала.
+        values: Массив из 18 значений признаков фрактала.
 
     Returns:
         Строка формата "time:price:direction:...".
@@ -157,17 +152,17 @@ def parse_fractals_to_array(df: pd.DataFrame) -> Tuple[np.ndarray, List[str]]:
 
     Returns:
         Tuple:
-            - numpy array shape (n_rows, n_fractals, 22)
+            - numpy array shape (n_rows, n_fractals, 18)
             - список имён колонок фракталов
     """
     fractal_columns = sorted(
         [col for col in df.columns if col.startswith('fractal')],
         key=lambda x: int(x.replace('fractal', ''))
     )
-
+    
     n_rows = len(df)
     n_fractals = len(fractal_columns)
-    n_features = 22
+    n_features = 18
     
     # Инициализируем массив NaN для обработки пустых фракталов
     result = np.full((n_rows, n_fractals, n_features), np.nan, dtype=np.float64)
@@ -190,7 +185,7 @@ def array_to_fractal_strings(
     Записывает numpy array обратно в DataFrame как строки фракталов.
 
     Args:
-        fractals: Массив shape (n_rows, n_fractals, 22).
+        fractals: Массив shape (n_rows, n_fractals, 18).
         df: Исходный DataFrame для модификации.
         fractal_columns: Список имён колонок фракталов.
 
@@ -433,7 +428,7 @@ def normalize_rowwise(
         # === 4. Joint piecewise нормализация Up/Dn (фичи + таргеты) ===
         updn_indices = [FRACTAL_INDICES[name] for name in UPDN_FIELDS]
 
-        # 1000 значений из фракталов (100*10) + 10 значений из таргетов строки = 1010
+        # 600 значений из фракталов + 6 значений из таргетов строки = 606
         updn_fractal_vals = fractals[i, :, updn_indices].flatten()
         updn_target_vals = np.array([updn_targets[col][i] for col in UPDN_TARGET_COLUMNS])
         updn_pool = np.concatenate([updn_fractal_vals, updn_target_vals])
@@ -449,7 +444,7 @@ def normalize_rowwise(
             cap_updn = max(cap_updn, brk_updn + eps)
             updn_params[i] = [brk_updn, cap_updn]
 
-            # Нормализуем фичи фракталов (поля 11-20)
+            # Нормализуем фичи фракталов (поля 11-16)
             for idx in updn_indices:
                 fractals[i, :, idx] = piecewise_linear_log_transform(
                     fractals[i, :, idx], lo_updn, brk_updn, cap_updn,
