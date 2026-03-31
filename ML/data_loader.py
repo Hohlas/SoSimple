@@ -93,6 +93,104 @@ for _sl in TB_SL_LEVELS:
         TB_TARGET_NAMES.append(f'sell_sl{_sl}_tp{_tp}')
 
 
+# ─── Ожидаемые колонки CSV (контракт с MQL4) ─────────────────────────────────
+
+EXPECTED_CSV_COLUMNS = ['time', 'signal', 'predict', 'ATR'] + [f'fractal{i}' for i in range(N_FRACTALS)]
+
+# Доменные ограничения для каждого поля строки фрактала [индекс]: (название, тип, проверка, описание)
+FRACTAL_FIELD_SCHEMA = [
+    (0,  'time',        'int',   lambda v: v > 0,          'timestamp > 0'),
+    (1,  'price',       'float', lambda v: v > 0,          'price > 0'),
+    (2,  'direction',   'int',   lambda v: v in (-1, 1),   'direction ∈ {-1, 1}'),
+    (5,  'strong',      'int',   lambda v: v in (0, 1),    'strong ∈ {0, 1}'),
+    (6,  'break',       'int',   lambda v: v in (0, 1),    'break ∈ {0, 1}'),
+    (11, 'up_12',       'float', lambda v: v >= 0,         'up_12 >= 0'),
+    (16, 'dn_48',       'float', lambda v: v >= 0,         'dn_48 >= 0'),
+    (21, 'fractal_atr', 'float', lambda v: v > 0,          'fractal_atr > 0'),
+]
+
+
+def validate_fractal_format(df: pd.DataFrame, source: str = '', sample_size: int = 50) -> None:
+    col = 'fractal0'
+    if col not in df.columns:
+        print(f"  ⚠ validate_fractal_format ({source}): колонка {col} не найдена")
+        return
+
+    sample = df[col].dropna().head(sample_size)
+    errors = []
+
+    for raw in sample:
+        parts = str(raw).split(FRACTAL_SEP)
+        # 1. Количество полей
+        if len(parts) != N_RAW_FEATURES:
+            errors.append(
+                f"Ожидается {N_RAW_FEATURES} полей, найдено {len(parts)}: '{raw[:60]}...'"
+            )
+            break  # достаточно одного примера
+
+        # 2. Типы и доменные значения
+        for idx, name, kind, check, desc in FRACTAL_FIELD_SCHEMA:
+            try:
+                v = int(parts[idx]) if kind == 'int' else float(parts[idx])
+                if not check(v):
+                    errors.append(f"[{idx}] {name}={v} нарушает: {desc}")
+            except (ValueError, IndexError):
+                errors.append(f"[{idx}] {name}='{parts[idx]}' не является {kind}")
+
+    if errors:
+        lines = [f"[validate_fractal_format] ПРЕДУПРЕЖДЕНИЕ ({source}):"]
+        for e in errors[:5]:  # не спамим, только первые 5
+            lines.append(f"  ✗ {e}")
+        if len(errors) > 5:
+            lines.append(f"  ... и ещё {len(errors) - 5} ошибок")
+        lines.append(f"  → Проверь N_RAW_FEATURES={N_RAW_FEATURES} и формат NERO_CSV в lib_PIC.mqh")
+        print('\n'.join(lines))
+    else:
+        print(f"  ✅ validate_fractal_format: OK ({source}) | {N_RAW_FEATURES} полей | типы верны")
+
+
+def validate_csv_columns(df: pd.DataFrame, source: str = '') -> None:
+    actual = set(df.columns)
+    expected = set(EXPECTED_CSV_COLUMNS)
+    removed = expected - actual  # добавленные колонки — нормально (label_main добавляет свои)
+    if removed:
+        lines = [f"[validate_csv_columns] ПРЕДУПРЕЖДЕНИЕ — ожидаемые колонки отсутствуют ({source})"]
+        lines.append(f"  - Отсутствуют: {sorted(removed)}")
+        lines.append("  → Проверь формат Nero.csv и EXPECTED_CSV_COLUMNS в data_loader.py")
+        print('\n'.join(lines))
+    else:
+        print(f"  ✅ validate_csv_columns: OK ({source})")
+
+
+def validate_parsed_features(X: np.ndarray, mask: np.ndarray, source: str = '') -> None:
+    valid = X[mask]
+    if len(valid) == 0:
+        raise ValueError(f"validate_parsed_features ({source}): нет валидных фракталов вообще")
+
+    checks = {
+        "Слишком мало валидных фракталов (< 20%)": mask.mean() < 0.20,
+        "Все значения нулевые — парсер сломан":    float((valid == 0).all()),
+        "ATR мёртв (std < 0.01)":                  valid[:, ATR_RATIO_IDX].std() < 0.01,
+        "price мёртв (std < 0.01)":                valid[:, 0].std() < 0.01,
+        "back мёртв (все нули)":                   float((valid[:, 3] == 0).all()),
+    }
+    failed = [msg for msg, cond in checks.items() if cond]
+    if failed:
+        raise ValueError(
+            f"validate_parsed_features FAILED ({source}):\n" +
+            "\n".join(f"  ✗ {m}" for m in failed) +
+            f"\n\n  Подсказка: проверь N_RAW_FEATURES={N_RAW_FEATURES} и "
+            f"FRACTAL_ATR_RAW_IDX={FRACTAL_ATR_RAW_IDX} — "
+            f"совпадает ли формат Nero.csv?"
+        )
+    print(
+        f"  ✅ validate_parsed_features: OK ({source}) | "
+        f"valid={mask.mean():.1%} | "
+        f"ATR std={valid[:, ATR_RATIO_IDX].std():.3f} | "
+        f"price std={valid[:, 0].std():.3f}"
+    )
+
+
 # ─── Парсинг данных ──────────────────────────────────────────────────────────
 
 def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
@@ -185,6 +283,8 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     # NaN → 0
     X = np.nan_to_num(X, nan=0.0).astype(np.float32)
+
+    validate_parsed_features(X, mask, source=df.index.name or 'parse_fractals_to_3d')
 
     return X, mask
 
@@ -358,6 +458,8 @@ def create_data_loaders(
 
         print(f"  Кэш не найден. Загрузка {csv_file.name} и парсинг...")
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)
+        validate_csv_columns(df, source=csv_file.name)
+        validate_fractal_format(df, source=csv_file.name)
         
         # Извлечение таргета
         if multi_target:
