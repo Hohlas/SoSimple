@@ -204,9 +204,9 @@ class DirectionalAsymmetricLoss(nn.Module):
     Для SELL-сигналов: штрафует ошибки на up (adverse) с весом alpha.
     Для signal=0: симметричный MSE.
 
-    Targets: [up_12, dn_12, up_24, dn_24, up_48, dn_48]
-      up indices: 0, 2, 4
-      dn indices: 1, 3, 5
+    Targets: [up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48]
+      up indices: 0, 2, 4, 6, 8
+      dn indices: 1, 3, 5, 7, 9
     """
 
     def __init__(self, alpha: float = 2.5):
@@ -215,20 +215,18 @@ class DirectionalAsymmetricLoss(nn.Module):
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor,
                 signals: torch.Tensor) -> torch.Tensor:
-        se = (preds - targets) ** 2  # (batch, 6)
+        se = (preds - targets) ** 2  # (batch, 10)
         weights = torch.ones_like(se)
 
         buy = (signals == 1)    # (batch,)
         sell = (signals == -1)  # (batch,)
 
-        # BUY: penalize dn errors (columns 1,3,5) — adverse direction
-        weights[buy, 1] = self.alpha
-        weights[buy, 3] = self.alpha
-        weights[buy, 5] = self.alpha
+        # BUY: penalize dn errors (columns 1,3,5,7,9) — adverse direction
+        for j in range(1, se.shape[1], 2):
+            weights[buy, j] = self.alpha
 
-        # SELL: penalize up errors (columns 0,2,4) — adverse direction
-        weights[sell, 0] = self.alpha
-        weights[sell, 2] = self.alpha
-        weights[sell, 4] = self.alpha
+        # SELL: penalize up errors (columns 0,2,4,6,8) — adverse direction
+        for j in range(0, se.shape[1], 2):
+            weights[sell, j] = self.alpha
 
         return (se * weights).mean()

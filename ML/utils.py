@@ -152,7 +152,7 @@ def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
-UPDN_TARGET_NAMES = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+UPDN_TARGET_NAMES = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']  # TEMP: 6-target test
 
 
 def compute_multitarget_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:

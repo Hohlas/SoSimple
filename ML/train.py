@@ -1065,7 +1065,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--task', type=str, default='classification',
         choices=['classification', 'regression', 'regression_updn', 'triple_barrier'],
-        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (6 Up/Dn) | 'triple_barrier'. "
+        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (10 Up/Dn) | 'triple_barrier'. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],

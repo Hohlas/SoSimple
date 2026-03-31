@@ -8,9 +8,9 @@
 #
 # Зависимости:
 #   Входные данные:
-#     - CSV файлы с колонками фракталов (18 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr)
+#     - CSV файлы с колонками фракталов (22 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr)
 #   Выходные данные:
-#     - pd.DataFrame с колонками 'signal', 'predict', 'up_12'..'dn_48'
+#     - pd.DataFrame с колонками 'signal', 'predict', 'up_3'..'dn_48'
 # Внешние зависимости:
 #   - pandas>=2.0.0
 #
@@ -20,7 +20,7 @@
 #   labeled_df = label_updn(labeled_df, debug=True)
 #
 # Примечания:
-#   - Обратная совместимость: parse_fractal() принимает строки с 7..18 полями
+#   - Обратная совместимость: parse_fractal() принимает строки с 7..22 полями
 #   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
@@ -41,7 +41,7 @@ def parse_fractal(fractal_str):
     Парсит строку фрактала и возвращает словарь с параметрами.
 
     Формат строки:
-    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
+    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr`
 
     Индексы в строке:
         [0]  time (int): Время формирования
@@ -61,7 +61,11 @@ def parse_fractal(fractal_str):
         [14] dn_24 (float): max(P - Low) за 24 бара H1
         [15] up_48 (float): max(High - P) за 48 баров H1
         [16] dn_48 (float): max(P - Low) за 48 баров H1
-        [17] fractal_atr (float): Atr.Fast в момент формирования фрактала
+        [17] up_3 (float): max(High - P) за 3 бара H1
+        [18] dn_3 (float): max(P - Low) за 3 бара H1
+        [19] up_6 (float): max(High - P) за 6 баров H1
+        [20] dn_6 (float): max(P - Low) за 6 баров H1
+        [21] fractal_atr (float): Atr.Fast в момент формирования фрактала
 
     Args:
         fractal_str (str): Строка с данными фрактала из CSV.
@@ -96,7 +100,11 @@ def parse_fractal(fractal_str):
             'dn_24':       float(parts[14]) if len(parts) > 14 else 0.0,
             'up_48':       float(parts[15]) if len(parts) > 15 else 0.0,
             'dn_48':       float(parts[16]) if len(parts) > 16 else 0.0,
-            'fractal_atr': float(parts[17]) if len(parts) > 17 else 0.0,
+            'up_3':        float(parts[17]) if len(parts) > 17 else 0.0,
+            'dn_3':        float(parts[18]) if len(parts) > 18 else 0.0,
+            'up_6':        float(parts[19]) if len(parts) > 19 else 0.0,
+            'dn_6':        float(parts[20]) if len(parts) > 20 else 0.0,
+            'fractal_atr': float(parts[21]) if len(parts) > 21 else 0.0,
         }
     except (ValueError, IndexError):
         return None
@@ -164,111 +172,136 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         print(f"МАРКИРОВКА: {' + '.join(mode)}")
         print("=" * 60)
     
+    import bisect
+
     # Загрузка данных
     df = pd.read_csv(input_path, sep=';')
     df.columns = [c.strip() for c in df.columns]
-    
+
     # Инициализация и приведение типов для целевых колонок
     if 'signal' not in df.columns:
         df['signal'] = 0
-    
+
     if 'predict' not in df.columns:
         df['predict'] = 0.0
     else:
         df['predict'] = df['predict'].astype(float)
-    
+
     # Получаем список колонок с фракталами динамически
-    fractal_columns = [col for col in df.columns if col.startswith('fractal')]
+    fractal_columns = sorted(
+        [col for col in df.columns if col.startswith('fractal')],
+        key=lambda x: int(x.replace('fractal', ''))
+    )
     total_rows = len(df)
-    
+
     if debug:
         print(f"\n[ЗАГРУЗКА] Строк: {total_rows}, колонок фракталов: {len(fractal_columns)}")
-    
-    # === ЭТАП 1: Сбор strong_levels для signal ===
-    # Мы собираем времена всех сильных фракталов во всем датасете заранее,
-    # чтобы при проходе по строкам мгновенно проверять fractal0 на "силу".
-    strong_levels = set()
-    
+
+    # === ПРЕДВАРИТЕЛЬНЫЙ СКАН O(n*K) ===
+    # Для каждого fractal_time строим:
+    #   timeline_rows[T]  — отсортированный список строк, где T виден
+    #   timeline_back[T]  — back-значение на каждой строке
+    #   timeline_break[T] — break-статус на каждой строке
+    # Заодно собираем strong_levels и fractal0_data[i].
+
+    print(f"\n[СКАН] Предварительный проход по {total_rows} строкам...")
+
+    all_col_values = {col: df[col].values for col in fractal_columns}
+    fractal0_raw = df['fractal0'].values
+
+    timeline_rows  = {}   # T -> [row_idx, ...]
+    timeline_back  = {}   # T -> [back, ...]
+    timeline_break = {}   # T -> [break_status, ...]
+    strong_levels  = set()
+    fractal0_data  = [None] * total_rows  # (time, direction, back) per row
+
+    for j in range(total_rows):
+        for col in fractal_columns:
+            parsed = parse_fractal(all_col_values[col][j])
+            if parsed is None:
+                continue
+            t = parsed['time']
+            if t not in timeline_rows:
+                timeline_rows[t]  = []
+                timeline_back[t]  = []
+                timeline_break[t] = []
+            timeline_rows[t].append(j)
+            timeline_back[t].append(parsed['back'])
+            timeline_break[t].append(parsed['break'])
+            if label_signal and parsed['strong'] == 1:
+                strong_levels.add(t)
+
+        f0 = parse_fractal(fractal0_raw[j])
+        if f0 is not None:
+            fractal0_data[j] = (f0['time'], f0['direction'], f0['back'])
+
     if label_signal:
-        for row in df.itertuples(index=False):
-            for col_name in fractal_columns:
-                val = getattr(row, col_name, None)
-                parsed = parse_fractal(val)
-                if parsed and parsed['strong'] == 1:
-                    if parsed['time'] not in strong_levels:
-                        strong_levels.add(parsed['time'])
-                        if debug:
-                            print(f"  Strong фрактал: time={parsed['time']}")
-        
-        print(f"\n[SIGNAL] Найдено {len(strong_levels)} уникальных strong фракталов")
-    
-    # === ЭТАП 2: Маркировка signal и predict ===
-    signals_marked = 0
-    predict_marked = 0
-    empty_fractal0 = 0
+        print(f"[SIGNAL] Найдено {len(strong_levels)} уникальных strong фракталов")
+
+    # === МАРКИРОВКА ===
+    signals_marked  = 0
+    predict_marked  = 0
+    empty_fractal0  = 0
     fractals_dropped = 0
-    
-    # Конвертируем в список для быстрого доступа по индексу (нужно для forward-looking)
-    rows_list = list(df.itertuples(index=False))
-    
-    for i, row_i in enumerate(rows_list):
-        # Парсим текущий активный фрактал (fractal0)
-        fractal0_val = getattr(row_i, 'fractal0', None)
-        fractal0 = parse_fractal(fractal0_val)
-        
-        if fractal0 is None:
+
+    signal_arr  = df['signal'].values.copy()
+    predict_arr = df['predict'].values.copy().astype(float)
+
+    for i in range(total_rows):
+        f0 = fractal0_data[i]
+        if f0 is None:
             empty_fractal0 += 1
             continue
-        
-        target_time = fractal0['time']
-        target_direction = fractal0['direction']
-        
+
+        target_time, target_direction, f0_back = f0
+
         # --- Маркировка signal ---
         if label_signal and target_time in strong_levels:
-            df.at[i, 'signal'] = target_direction
+            signal_arr[i] = target_direction
             signals_marked += 1
             if debug:
                 print(f"  [Строка {i}] ✓ signal={target_direction}")
-        
+
         # --- Маркировка predict ---
-        if label_predict:
-            # Логика: идем вперед по времени (строкам), пока фрактал существует
-            # и пока он не пробит. Фиксируем максимальное значение 'back'.
-            max_back = fractal0['back']
+        if label_predict and target_time in timeline_rows:
+            rows_t  = timeline_rows[target_time]
+            backs_t = timeline_back[target_time]
+            brks_t  = timeline_break[target_time]
+
+            # Первый индекс в timeline строго после i
+            start = bisect.bisect_right(rows_t, i)
+
+            max_back  = f0_back
             was_broken = False
-            
-            for j in range(i + 1, total_rows):
-                row_j = rows_list[j]
-                
-                # Ищем тот же самый фрактал в будущих строках
-                found = find_fractal_by_time(row_j, fractal_columns, target_time)
-                
-                if found is None:
-                    # Фрактал исчез из истории (вытеснен новыми фракталами) раньше, чем был пробит
-                    fractals_dropped += 1
-                    if debug and i < 5:
-                        print(f"    [Строка {j}] Фрактал time={target_time} выпал")
+            dropped    = False
+            prev_row   = i
+
+            for k in range(start, len(rows_t)):
+                row_j = rows_t[k]
+                # Фрактал должен присутствовать в каждой последующей строке
+                if row_j != prev_row + 1:
+                    dropped = True
                     break
-                
-                # Обновляем максимальный откат
-                if found['back'] > max_back:
-                    max_back = found['back']
-                
-                # Проверяем условие пробития уровня
-                if found['break'] > 0:
+                if backs_t[k] > max_back:
+                    max_back = backs_t[k]
+                if brks_t[k] > 0:
                     was_broken = True
-                    if debug and i < 5:
-                        print(f"    [Строка {j}] Фрактал пробит: break={found['break']}, max_back={max_back}")
                     break
-            
-            # Predict рассчитывается как негативный откат относительно направления
+                prev_row = row_j
+
+            if dropped and not was_broken:
+                fractals_dropped += 1
+
             predict_value = -max_back * target_direction
-            df.at[i, 'predict'] = predict_value
+            predict_arr[i] = predict_value
             predict_marked += 1
-            
+
             if debug and i < 5:
                 print(f"  [Строка {i}] ✓ predict={predict_value:.4f}")
-    
+
+    df['signal']  = signal_arr
+    df['predict'] = predict_arr
+
     # === Статистика ===
     print(f"\n[РЕЗУЛЬТАТ]")
     if label_signal:
@@ -277,11 +310,11 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         print(f"  Predict помечено: {predict_marked}")
         print(f"  Фракталов выпало до пробития: {fractals_dropped}")
     print(f"  Пустых fractal0: {empty_fractal0}")
-    
+
     # Сохранение результата
     df.to_csv(output_path, sep=';', index=False)
     print(f"[СОХРАНЕНО] {output_path}")
-    
+
     return df
 
 
@@ -321,10 +354,13 @@ def label_updn(df, debug=False):
     """
     Извлекает up/dn таргеты для каждой строки из накопленных значений фрактала.
 
-    Алгоритм: для каждой строки i берёт fractal0 (новейший фрактал).
-    Сканирует вперёд до тех пор, пока фрактал существует в массиве.
-    Берёт последние найденные значения Up/Dn (самые накопленные).
-    Записывает в колонки up_12, dn_12, up_24, dn_24, up_48, dn_48.
+    Алгоритм: два прохода O(n*K) вместо O(n²).
+    Проход 1 (снизу вверх): для каждой строки j парсим все K фракталов,
+      обновляем словарь last_seen[fractal_time] = {up_3..dn_48}.
+    Проход 2 (сверху вниз): для строки i берём fractal0.time,
+      смотрим last_seen[time] — это и есть самые накопленные Up/Dn.
+
+    Записывает в колонки up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48.
 
     Args:
         df (pd.DataFrame): DataFrame с колонками fractalN.
@@ -333,37 +369,59 @@ def label_updn(df, debug=False):
     Returns:
         pd.DataFrame: DataFrame с добавленными колонками up/dn.
     """
-    HORIZONS = [12, 24, 48]
-    for h in HORIZONS:
-        df[f'up_{h}'] = 0.0
-        df[f'dn_{h}'] = 0.0
+    import numpy as np
 
-    fractal_columns = [col for col in df.columns if col.startswith('fractal')]
-    rows_list = list(df.itertuples(index=False))
-    total_rows = len(rows_list)
+    HORIZONS = [3, 6, 12, 24, 48]
+    updn_keys = [f'up_{h}' for h in HORIZONS] + [f'dn_{h}' for h in HORIZONS]
 
+    fractal_columns = sorted(
+        [col for col in df.columns if col.startswith('fractal')],
+        key=lambda x: int(x.replace('fractal', ''))
+    )
+    n_rows = len(df)
+
+    # Проход 1: снизу вверх — для каждого fractal_time запоминаем последние (самые накопленные) Up/Dn.
+    # "Последние" = из строки с наибольшим индексом, где фрактал ещё виден.
+    # Идём снизу вверх: первое встреченное значение для каждого time — и есть самое накопленное.
+    last_seen = {}  # {fractal_time: {up_3: float, ...}}
+    fractal0_times = [None] * n_rows  # запоминаем time fractal0 каждой строки
+
+    fractal0_col = df['fractal0'].values
+    all_cols_values = {col: df[col].values for col in fractal_columns}
+
+    for j in range(n_rows - 1, -1, -1):
+        for col in fractal_columns:
+            parsed = parse_fractal(all_cols_values[col][j])
+            if parsed is None:
+                continue
+            t = parsed['time']
+            if t not in last_seen:
+                last_seen[t] = {k: parsed.get(k, 0.0) for k in updn_keys}
+
+        f0 = parse_fractal(fractal0_col[j])
+        if f0 is not None:
+            fractal0_times[j] = f0['time']
+
+    # Проход 2: сверху вниз — lookup O(1) по словарю
+    result = {k: np.zeros(n_rows, dtype=np.float32) for k in updn_keys}
     found_count = 0
-    for i, row_i in enumerate(rows_list):
-        fractal0 = parse_fractal(getattr(row_i, 'fractal0', None))
-        if fractal0 is None:
+
+    for i in range(n_rows):
+        t = fractal0_times[i]
+        if t is None:
             continue
-
-        target_time = fractal0['time']
-        best = fractal0  # начинаем с текущей строки (Up/Dn = 0 для новейшего)
-
-        for j in range(i + 1, total_rows):
-            found = find_fractal_by_time(rows_list[j], fractal_columns, target_time)
-            if found is None:
-                break  # фрактал вытеснен — берём best
-            best = found
-
-        for h in HORIZONS:
-            df.at[i, f'up_{h}'] = best.get(f'up_{h}', 0.0)
-            df.at[i, f'dn_{h}'] = best.get(f'dn_{h}', 0.0)
+        best = last_seen.get(t)
+        if best is None:
+            continue
+        for k in updn_keys:
+            result[k][i] = best[k]
         found_count += 1
 
+    for k in updn_keys:
+        df[k] = result[k]
+
     if debug:
-        print(f"[UPDN] Размечено строк: {found_count} / {total_rows}")
+        print(f"[UPDN] Размечено строк: {found_count} / {n_rows}")
 
     return df
 

@@ -72,6 +72,9 @@
 ```bash
 source ~/git/SoSimple/.venv/bin/activate
 
+# удали кэш
+rm DATA/*_train.npy DATA/*_val.npy DATA/*_mask_train.npy DATA/*_mask_val.npy 2>/dev/null; echo "ok"
+
 # Обучение transformer (regression_updn)
 python -m ML.train --model transformer --task regression_updn --epochs 100
 

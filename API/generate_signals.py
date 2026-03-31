@@ -108,7 +108,7 @@ def preds_to_signals(
     Returns:
         signals, pred_up, pred_dn, ratio_up, ratio_dn
     """
-    idx_map = {12: 0, 24: 2, 48: 4}
+    idx_map = {12: 0, 24: 2, 48: 4}  # TEMP: 6-target test
     idx = idx_map[horizon]
 
     pred_up = y_pred[:, idx]
