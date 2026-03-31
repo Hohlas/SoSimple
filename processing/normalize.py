@@ -70,7 +70,7 @@ FRACTAL_INDICES = {
     'dn_24': 14,
     'up_48': 15,
     'dn_48': 16,
-    'fractal_atr': 17,
+    'fractal_atr': 21,
 }
 
 # Признаки для piecewise linear-log нормализации (раздельно)
@@ -116,7 +116,7 @@ def parse_fractal(fractal_str: str) -> Optional[List[float]]:
         return None
 
     try:
-        return [float(p) for p in parts[:18]]
+        return [float(p) for p in parts[:22]] if len(parts) >= 22 else [float(p) for p in parts[:18]]
     except (ValueError, IndexError):
         return None
 
@@ -162,8 +162,8 @@ def parse_fractals_to_array(df: pd.DataFrame) -> Tuple[np.ndarray, List[str]]:
     
     n_rows = len(df)
     n_fractals = len(fractal_columns)
-    n_features = 18
-    
+    n_features = 22
+
     # Инициализируем массив NaN для обработки пустых фракталов
     result = np.full((n_rows, n_fractals, n_features), np.nan, dtype=np.float64)
     

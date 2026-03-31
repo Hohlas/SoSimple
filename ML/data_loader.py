@@ -56,7 +56,8 @@ TEST_FILE = DATA_DIR / 'Nero_test_labeled.csv'
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
-N_RAW_FEATURES = 18   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr
+N_RAW_FEATURES = 22   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
+FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 22-полевом CSV (ранее было 17)
 N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
 
 # Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
@@ -132,15 +133,17 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         series = df[col].astype(str)
         split = series.str.split(FRACTAL_SEP, expand=True)
 
-        if split.shape[1] == N_RAW_FEATURES:
-            # Парсим все 18 полей: fractal_time → отдельный массив, остальные → X
+        if split.shape[1] >= N_RAW_FEATURES:
+            # Парсим поля: time → fractal_times, fields 1-16 → X[0-15], field 21 (fractal_atr) → X[16]
             for k in range(N_RAW_FEATURES):
                 if k == FRACTAL_TIME_IDX:
                     vals = pd.to_numeric(split[k], errors='coerce')
                     fractal_times[:, j] = vals.fillna(0).values
                     continue
-                # Сдвигаем индекс: k=1 → 0, k=2 → 1, ..., k=17 → 16
-                feat_idx = k - 1
+                if k >= 17 and k < FRACTAL_ATR_RAW_IDX:
+                    continue  # поля up_3/dn_3/up_6/dn_6 (17-20) пропускаем в X
+                # k=1..16 → feat_idx=0..15; k=21 (fractal_atr) → feat_idx=16
+                feat_idx = k - 1 if k <= 16 else ATR_RATIO_IDX
                 vals = pd.to_numeric(split[k], errors='coerce')
                 X[:, j, feat_idx] = vals.fillna(0).values
 
