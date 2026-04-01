@@ -227,9 +227,9 @@ Confidence = prob_signal × |predict|
 ## 7. План внедрения
 
 ### 7.1 Этап 1: Подготовка (1 день)
-- [ ] Создать [`ML/two_stage_pipeline.py`](ML/two_stage_pipeline.py)
-- [ ] Модифицировать [`ML/data_loader.py`](ML/data_loader.py) для бинарной классификации
-- [ ] Добавить BCE loss с pos_weight в [`ML/losses.py`](ML/losses.py)
+- [ ] Создать `ML/two_stage_pipeline.py` (планируемый файл)
+- [ ] Модифицировать [`ML/data_loader.py`](../../../../../ML/data_loader.py) для бинарной классификации
+- [ ] Добавить BCE loss с pos_weight в [`ML/losses.py`](../../../../../ML/losses.py)
 
 ### 7.2 Этап 2: Обучение Stage 1 (2–3 дня)
 ```bash
@@ -274,10 +274,10 @@ python -m ML.train --model bilstm --task regression \
 
 ## 9. Связанные документы
 
-- [`ML/reports/project_audit_and_plan.md`](ML/reports/project_audit_and_plan.md) — полный аудит и стратегический план
-- [`docs/plans/discussion.md`](docs/plans/discussion.md) — обсуждения и нереализованные идеи
-- [`ML/implementation_plan.md`](ML/implementation_plan.md) — исходный план этапов
-- [`docs/PRD.md`](docs/PRD.md) — требования и критерии успеха
+- [`kimi_project_audit_and_plan.md`](kimi_project_audit_and_plan.md) — полный аудит и стратегический план
+- [`docs/plans/ml_implementation_plan.md`](../../../../plans/ml_implementation_plan.md) — обсуждения и нереализованные идеи
+- `ML/implementation_plan.md` — исходный план этапов (историческая ссылка, файл отсутствует)
+- [`docs/PRD.md`](../../../../PRD.md) — требования и критерии успеха
 
 ---
 

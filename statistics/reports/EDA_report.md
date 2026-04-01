@@ -54,7 +54,7 @@ scikit-learn>=1.2
 
 ## Резюме документации
 
-> Полная документация: [`docs/statistics/EDA.md`](../docs/statistics/EDA.md)
+> Полная документация: [`docs/statistics/EDA.ipynb.md`](../../docs/statistics/EDA.ipynb.md)
 
 ### Ключевые функции
 
@@ -1350,6 +1350,5 @@ PCA показывает глобальную линейную структур�
       - sequence_analysis_report.md
     
     ✅ Раздел 9 (Анализ полной последовательности фракталов) завершён!
-
 
 

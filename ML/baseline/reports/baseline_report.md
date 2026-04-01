@@ -101,13 +101,13 @@ weighted avg       0.92      0.95      0.93      9341
 ## 4. Confusion Matrices
 
 ### Dummy (stratified)
-![Dummy (stratified)](../plots/baseline_cm_dummy_stratified.png)
+![Dummy (stratified)](../plots/baseline_cm_dummy.png)
 
 ### Logistic Regression
-![Logistic Regression](../plots/baseline_cm_logistic_regression.png)
+![Logistic Regression](../plots/baseline_cm_logreg.png)
 
 ### Random Forest
-![Random Forest](../plots/baseline_cm_random_forest.png)
+![Random Forest](../plots/baseline_cm_rf.png)
 
 ### XGBoost
 ![XGBoost](../plots/baseline_cm_xgboost.png)

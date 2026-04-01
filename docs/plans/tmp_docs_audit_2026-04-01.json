@@ -1,0 +1,1936 @@
+{
+  "total_files": 124,
+  "total_broken_links": 92,
+  "broken_links": [
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "FORMS.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "REFERENCE.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "EXAMPLES.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "reference/finance.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "reference/sales.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "reference/product.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "reference/marketing.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "DOCX-JS.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "REDLINING.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "OOXML.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "advanced.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "details.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "advanced.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "reference.md",
+      "path"
+    ],
+    [
+      ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "examples.md",
+      "path"
+    ],
+    [
+      ".github/copilot-instructions.md",
+      "../.ai/RULES_INDEX.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "ML/two_stage_pipeline.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "ML/data_loader.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "ML/losses.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "ML/reports/project_audit_and_plan.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "docs/plans/discussion.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "ML/implementation_plan.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "docs/PRD.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "docs/DATA_FLOW.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "docs/plans/discussion.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "docs/plans/discussion.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/losses.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "docs/DATA_FLOW.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/models/",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/optimize.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/two_stage_pipeline.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/error_analysis.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/threshold_optimizer.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "processing/",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/data_loader.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/ensemble.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/two_stage_pipeline.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "processing/",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/models/bilstm.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/two_stage_pipeline.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/threshold_optimizer.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "ML/error_analysis.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "backtest/backtest_engine.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_architecture_decision.md",
+      "ML/data_loader.py:269",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_architecture_decision.md",
+      "project_audit_and_plan.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_architecture_decision.md",
+      "docs/plans/discussion.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_architecture_decision.md",
+      "docs/ml/neural_networks.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/data_loader.py:269",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/utils.py:145",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/data_loader.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/data_loader.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/reports/",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "ML/models/",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/docs/archive/03.10_audit_answers/opus-architecture_decision.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/reports/architecture_comparison_regression.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/checkpoints/bilstm_regression_result.json",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/checkpoints/best_model.pt",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-architecture_decision.md",
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-architecture_decision.md",
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "ML/data_loader.py:270",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "ML/utils.py:145",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "docs/dataset_description.md",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "ML/data_loader.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "ML/utils.py:145",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/experiment_logger.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#89-100",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#147-172",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#588-655",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/utils.py#41-57",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#89-100",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/utils.py#157-168",
+      "path"
+    ],
+    [
+      "docs/archive/03.10_audit_answers/walkthrough.md",
+      "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#147-172",
+      "path"
+    ],
+    [
+      "docs/archive/0316/Custom Trading Loss Results.md",
+      "file:///home/hohla/git/SoSimple/ML/train.py",
+      "path"
+    ],
+    [
+      "docs/archive/0316/Custom Trading Loss Results.md",
+      "file:///home/hohla/git/SoSimple/ML/optimize.py",
+      "path"
+    ],
+    [
+      "docs/archive/0316/Custom Trading Loss Results.md",
+      "file:///home/hohla/git/SoSimple/ML/threshold_analysis.py",
+      "path"
+    ],
+    [
+      "docs/archive/0319_Gemini.md",
+      "cci:7://file:///home/hohla/git/SoSimple/CHANGELOG.md:0:0-0:0",
+      "path"
+    ],
+    [
+      "docs/archive/0319_Gemini.md",
+      "cci:7://file:///home/hohla/git/SoSimple/docs/PRD.md:0:0-0:0",
+      "path"
+    ]
+  ],
+  "files": [
+    {
+      "file": ".claude/memory/MEMORY.md",
+      "lines": 7,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/memory/feedback_ml_approach.md",
+      "lines": 25,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/memory/project_ml_status.md",
+      "lines": 72,
+      "h1_count": 0,
+      "heading_count": 6,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/memory/user_profile.md",
+      "lines": 13,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/brainstorming/SKILL.md",
+      "lines": 164,
+      "h1_count": 1,
+      "heading_count": 8,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/brainstorming/spec-document-reviewer-prompt.md",
+      "lines": 49,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/brainstorming/visual-companion.md",
+      "lines": 285,
+      "h1_count": 12,
+      "heading_count": 30,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/dispatching-parallel-agents/SKILL.md",
+      "lines": 182,
+      "h1_count": 1,
+      "heading_count": 15,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/executing-plans/SKILL.md",
+      "lines": 70,
+      "h1_count": 1,
+      "heading_count": 10,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/finishing-a-development-branch/SKILL.md",
+      "lines": 200,
+      "h1_count": 10,
+      "heading_count": 27,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/receiving-code-review/SKILL.md",
+      "lines": 213,
+      "h1_count": 1,
+      "heading_count": 17,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/requesting-code-review/SKILL.md",
+      "lines": 105,
+      "h1_count": 1,
+      "heading_count": 6,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/requesting-code-review/code-reviewer.md",
+      "lines": 146,
+      "h1_count": 1,
+      "heading_count": 21,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/subagent-driven-development/SKILL.md",
+      "lines": 277,
+      "h1_count": 1,
+      "heading_count": 10,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/subagent-driven-development/code-quality-reviewer-prompt.md",
+      "lines": 26,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/subagent-driven-development/implementer-prompt.md",
+      "lines": 113,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/subagent-driven-development/spec-reviewer-prompt.md",
+      "lines": 61,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/CREATION-LOG.md",
+      "lines": 119,
+      "h1_count": 1,
+      "heading_count": 19,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/SKILL.md",
+      "lines": 296,
+      "h1_count": 1,
+      "heading_count": 16,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/condition-based-waiting.md",
+      "lines": 115,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/defense-in-depth.md",
+      "lines": 122,
+      "h1_count": 1,
+      "heading_count": 11,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/root-cause-tracing.md",
+      "lines": 169,
+      "h1_count": 1,
+      "heading_count": 15,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/test-academic.md",
+      "lines": 14,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/test-pressure-1.md",
+      "lines": 58,
+      "h1_count": 1,
+      "heading_count": 4,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/test-pressure-2.md",
+      "lines": 68,
+      "h1_count": 1,
+      "heading_count": 4,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/systematic-debugging/test-pressure-3.md",
+      "lines": 69,
+      "h1_count": 1,
+      "heading_count": 4,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/test-driven-development/SKILL.md",
+      "lines": 371,
+      "h1_count": 1,
+      "heading_count": 21,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/test-driven-development/testing-anti-patterns.md",
+      "lines": 299,
+      "h1_count": 1,
+      "heading_count": 17,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/using-git-worktrees/SKILL.md",
+      "lines": 218,
+      "h1_count": 10,
+      "heading_count": 33,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/using-superpowers/SKILL.md",
+      "lines": 115,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/using-superpowers/references/codex-tools.md",
+      "lines": 25,
+      "h1_count": 1,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/using-superpowers/references/gemini-tools.md",
+      "lines": 33,
+      "h1_count": 1,
+      "heading_count": 3,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/verification-before-completion/SKILL.md",
+      "lines": 139,
+      "h1_count": 1,
+      "heading_count": 11,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-plans/SKILL.md",
+      "lines": 142,
+      "h1_count": 2,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-plans/plan-document-reviewer-prompt.md",
+      "lines": 49,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-skills/SKILL.md",
+      "lines": 655,
+      "h1_count": 19,
+      "heading_count": 75,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-skills/anthropic-best-practices.md",
+      "lines": 1150,
+      "h1_count": 16,
+      "heading_count": 96,
+      "local_links": 15,
+      "broken_path_links": [
+        "FORMS.md",
+        "REFERENCE.md",
+        "EXAMPLES.md",
+        "reference/finance.md",
+        "reference/sales.md",
+        "reference/product.md",
+        "reference/marketing.md",
+        "DOCX-JS.md",
+        "REDLINING.md",
+        "OOXML.md",
+        "advanced.md",
+        "details.md",
+        "advanced.md",
+        "reference.md",
+        "examples.md"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": ".claude/skills/writing-skills/examples/CLAUDE_MD_TESTING.md",
+      "lines": 189,
+      "h1_count": 1,
+      "heading_count": 19,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-skills/persuasion-principles.md",
+      "lines": 187,
+      "h1_count": 1,
+      "heading_count": 15,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": ".claude/skills/writing-skills/testing-skills-with-subagents.md",
+      "lines": 384,
+      "h1_count": 1,
+      "heading_count": 30,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": ".codex/skills/csv-processing/SKILL.md",
+      "lines": 91,
+      "h1_count": 1,
+      "heading_count": 10,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".codex/skills/jupyter-processing/SKILL.md",
+      "lines": 70,
+      "h1_count": 2,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".codex/skills/rebuild-module-index/SKILL.md",
+      "lines": 47,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".codex/skills/update-docs-on-code-change/SKILL.md",
+      "lines": 60,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".github/copilot-instructions.md",
+      "lines": 15,
+      "h1_count": 1,
+      "heading_count": 3,
+      "local_links": 4,
+      "broken_path_links": [
+        "../.ai/RULES_INDEX.md"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/rules-architect/user_rules.md",
+      "lines": 11,
+      "h1_count": 0,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/rules-ask/user_rules.md",
+      "lines": 11,
+      "h1_count": 0,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/csv-processing/SKILL.md",
+      "lines": 91,
+      "h1_count": 1,
+      "heading_count": 10,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/jupyter-processing/SKILL.md",
+      "lines": 70,
+      "h1_count": 2,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/rebuild-module-index/SKILL.md",
+      "lines": 47,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/update-docs-on-code-change/SKILL.md",
+      "lines": 60,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/update-docs-on-code-change/references/file-mappings.md",
+      "lines": 64,
+      "h1_count": 1,
+      "heading_count": 11,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": ".kilocode/skills/update-docs-on-code-change/templates/file-headers.md",
+      "lines": 164,
+      "h1_count": 22,
+      "heading_count": 38,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "AGENTS.md",
+      "lines": 131,
+      "h1_count": 6,
+      "heading_count": 20,
+      "local_links": 7,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "API/README.md",
+      "lines": 33,
+      "h1_count": 5,
+      "heading_count": 7,
+      "local_links": 4,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "CHANGELOG.md",
+      "lines": 543,
+      "h1_count": 1,
+      "heading_count": 114,
+      "local_links": 12,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "CLAUDE.md",
+      "lines": 52,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 2,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "CONTEXT_HANDOFF.md",
+      "lines": 174,
+      "h1_count": 5,
+      "heading_count": 18,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/README.md",
+      "lines": 96,
+      "h1_count": 8,
+      "heading_count": 17,
+      "local_links": 17,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/baseline/reports/baseline_report.md",
+      "lines": 135,
+      "h1_count": 1,
+      "heading_count": 18,
+      "local_links": 5,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/architecture_comparison_classification.md",
+      "lines": 107,
+      "h1_count": 1,
+      "heading_count": 14,
+      "local_links": 9,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/architecture_comparison_regression.md",
+      "lines": 51,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 9,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/architecture_comparison_regression_updn.md",
+      "lines": 51,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 9,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/evaluate_test_H12.md",
+      "lines": 16,
+      "h1_count": 1,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/evaluate_test_tb.md",
+      "lines": 21,
+      "h1_count": 1,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/reproducibility_report_12H.md",
+      "lines": 50,
+      "h1_count": 1,
+      "heading_count": 4,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/threshold_analysis_12H.md",
+      "lines": 77,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/threshold_analysis_24H.md",
+      "lines": 77,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "ML/reports/threshold_analysis_48H.md",
+      "lines": 77,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "MODULE_INDEX.md",
+      "lines": 80,
+      "h1_count": 1,
+      "heading_count": 8,
+      "local_links": 54,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "MT/MQL4/README.md",
+      "lines": 4,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "README.md",
+      "lines": 23,
+      "h1_count": 3,
+      "heading_count": 6,
+      "local_links": 4,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/DATA_FLOW.md",
+      "lines": 518,
+      "h1_count": 17,
+      "heading_count": 84,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/ML/baseline_experiments.py.md",
+      "lines": 43,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 2,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/ML/conformal_prediction.md",
+      "lines": 107,
+      "h1_count": 2,
+      "heading_count": 14,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/ML/neural_networks.md",
+      "lines": 397,
+      "h1_count": 16,
+      "heading_count": 51,
+      "local_links": 1,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/MT/lib_PIC.mqh.md",
+      "lines": 136,
+      "h1_count": 1,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/MT/ml_signal_integration.md",
+      "lines": 79,
+      "h1_count": 5,
+      "heading_count": 10,
+      "local_links": 2,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/MT/trading_strategy.md",
+      "lines": 738,
+      "h1_count": 1,
+      "heading_count": 60,
+      "local_links": 7,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/PRD.md",
+      "lines": 110,
+      "h1_count": 1,
+      "heading_count": 21,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/archive/#QUESTIONS.md",
+      "lines": 91,
+      "h1_count": 1,
+      "heading_count": 2,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/GLM5/GLM5-architecture_decision.md",
+      "lines": 218,
+      "h1_count": 1,
+      "heading_count": 21,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/GLM5/GLM5-project_audit_and_plan.md",
+      "lines": 299,
+      "h1_count": 4,
+      "heading_count": 40,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_architecture_decision.md",
+      "lines": 292,
+      "h1_count": 3,
+      "heading_count": 28,
+      "local_links": 7,
+      "broken_path_links": [
+        "ML/two_stage_pipeline.py",
+        "ML/data_loader.py",
+        "ML/losses.py",
+        "ML/reports/project_audit_and_plan.md",
+        "docs/plans/discussion.md",
+        "ML/implementation_plan.md",
+        "docs/PRD.md"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/kimi-k2.5/kimi_project_audit_and_plan.md",
+      "lines": 488,
+      "h1_count": 18,
+      "heading_count": 57,
+      "local_links": 23,
+      "broken_path_links": [
+        "docs/DATA_FLOW.md",
+        "docs/plans/discussion.md",
+        "docs/plans/discussion.md",
+        "ML/losses.py",
+        "docs/DATA_FLOW.md",
+        "ML/train.py",
+        "ML/train.py",
+        "ML/models/",
+        "ML/optimize.py",
+        "ML/two_stage_pipeline.py",
+        "ML/error_analysis.py",
+        "ML/threshold_optimizer.py",
+        "processing/",
+        "ML/data_loader.py",
+        "ML/ensemble.py",
+        "ML/two_stage_pipeline.py",
+        "processing/",
+        "ML/train.py",
+        "ML/models/bilstm.py",
+        "ML/two_stage_pipeline.py",
+        "ML/threshold_optimizer.py",
+        "ML/error_analysis.py",
+        "backtest/backtest_engine.py"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": true,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_architecture_decision.md",
+      "lines": 172,
+      "h1_count": 6,
+      "heading_count": 26,
+      "local_links": 4,
+      "broken_path_links": [
+        "ML/data_loader.py:269",
+        "project_audit_and_plan.md",
+        "docs/plans/discussion.md",
+        "docs/ml/neural_networks.md"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/another agents/minimax-m2.5/minimax_project_audit_and_plan.md",
+      "lines": 342,
+      "h1_count": 12,
+      "heading_count": 46,
+      "local_links": 8,
+      "broken_path_links": [
+        "ML/data_loader.py:269",
+        "ML/utils.py:145",
+        "ML/data_loader.py",
+        "ML/train.py",
+        "ML/data_loader.py",
+        "ML/train.py",
+        "ML/reports/",
+        "ML/models/"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/audit_reproducibility_analysis.md",
+      "lines": 180,
+      "h1_count": 5,
+      "heading_count": 23,
+      "local_links": 7,
+      "broken_path_links": [
+        "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv",
+        "file:///home/hohla/git/SoSimple/docs/archive/03.10_audit_answers/opus-architecture_decision.md",
+        "file:///home/hohla/git/SoSimple/ML/reports/architecture_comparison_regression.md",
+        "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv",
+        "file:///home/hohla/git/SoSimple/ML/checkpoints/bilstm_regression_result.json",
+        "file:///home/hohla/git/SoSimple/ML/checkpoints/best_model.pt",
+        "file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/opus-architecture_decision.md",
+      "lines": 193,
+      "h1_count": 1,
+      "heading_count": 23,
+      "local_links": 2,
+      "broken_path_links": [
+        "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+        "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md",
+      "lines": 441,
+      "h1_count": 1,
+      "heading_count": 47,
+      "local_links": 6,
+      "broken_path_links": [
+        "ML/data_loader.py:270",
+        "ML/utils.py:145",
+        "docs/dataset_description.md",
+        "ML/data_loader.py",
+        "ML/utils.py:145",
+        "ML/train.py"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/03.10_audit_answers/walkthrough.md",
+      "lines": 58,
+      "h1_count": 2,
+      "heading_count": 8,
+      "local_links": 14,
+      "broken_path_links": [
+        "file:///home/hohla/git/SoSimple/ML/experiment_logger.py",
+        "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#89-100",
+        "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#147-172",
+        "file:///home/hohla/git/SoSimple/ML/train.py",
+        "file:///home/hohla/git/SoSimple/ML/train.py#588-655",
+        "file:///home/hohla/git/SoSimple/ML/utils.py#41-57",
+        "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+        "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#89-100",
+        "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+        "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+        "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+        "file:///home/hohla/git/SoSimple/ML/train.py#267-581",
+        "file:///home/hohla/git/SoSimple/ML/utils.py#157-168",
+        "file:///home/hohla/git/SoSimple/ML/experiment_logger.py#147-172"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0315/plans_Nemotron_free.md",
+      "lines": 81,
+      "h1_count": 1,
+      "heading_count": 10,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0316/Custom Trading Loss Results.md",
+      "lines": 40,
+      "h1_count": 1,
+      "heading_count": 6,
+      "local_links": 3,
+      "broken_path_links": [
+        "file:///home/hohla/git/SoSimple/ML/train.py",
+        "file:///home/hohla/git/SoSimple/ML/optimize.py",
+        "file:///home/hohla/git/SoSimple/ML/threshold_analysis.py"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/archive/0317/MEMORY.md",
+      "lines": 7,
+      "h1_count": 1,
+      "heading_count": 1,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0317/feedback_ml_approach.md",
+      "lines": 21,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0317/project_ml_status.md",
+      "lines": 23,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0317/serialized-foraging-honey.md",
+      "lines": 173,
+      "h1_count": 1,
+      "heading_count": 16,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0317/user_profile.md",
+      "lines": 13,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0317_claude_answer.md",
+      "lines": 132,
+      "h1_count": 4,
+      "heading_count": 4,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0318.md",
+      "lines": 78,
+      "h1_count": 1,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0319_Gemini.md",
+      "lines": 89,
+      "h1_count": 0,
+      "heading_count": 4,
+      "local_links": 2,
+      "broken_path_links": [
+        "cci:7://file:///home/hohla/git/SoSimple/CHANGELOG.md:0:0-0:0",
+        "cci:7://file:///home/hohla/git/SoSimple/docs/PRD.md:0:0-0:0"
+      ],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/0320_Codex.md",
+      "lines": 5,
+      "h1_count": 0,
+      "heading_count": 0,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/signal_tracer/path_ordering_analysis.md",
+      "lines": 47,
+      "h1_count": 1,
+      "heading_count": 9,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/signal_tracer/phase_a_results.md",
+      "lines": 110,
+      "h1_count": 1,
+      "heading_count": 14,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/archive/signal_tracer/trade_analysis_20260324.md",
+      "lines": 214,
+      "h1_count": 1,
+      "heading_count": 23,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/dataset_description.md",
+      "lines": 121,
+      "h1_count": 1,
+      "heading_count": 17,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/plans/2026-03-22-triple-barrier.md",
+      "lines": 943,
+      "h1_count": 5,
+      "heading_count": 46,
+      "local_links": 1,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/plans/ME13_Diagnostics_Plan.md",
+      "lines": 55,
+      "h1_count": 2,
+      "heading_count": 8,
+      "local_links": 1,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/plans/ml_implementation_plan.md",
+      "lines": 287,
+      "h1_count": 1,
+      "heading_count": 15,
+      "local_links": 15,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/plans/project_refactoring.md",
+      "lines": 80,
+      "h1_count": 0,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/processing/label_main.py.md",
+      "lines": 53,
+      "h1_count": 5,
+      "heading_count": 11,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/processing/label_signals.py.md",
+      "lines": 26,
+      "h1_count": 1,
+      "heading_count": 6,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/processing/normalize.py.md",
+      "lines": 46,
+      "h1_count": 6,
+      "heading_count": 12,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/specs/2026-03-22-triple-barrier-design.md",
+      "lines": 284,
+      "h1_count": 1,
+      "heading_count": 29,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": true
+    },
+    {
+      "file": "docs/statistics/EDA.ipynb.md",
+      "lines": 273,
+      "h1_count": 1,
+      "heading_count": 33,
+      "local_links": 3,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/statistics/signal_tracer.py.md",
+      "lines": 232,
+      "h1_count": 5,
+      "heading_count": 28,
+      "local_links": 4,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/statistics/statistics.py.md",
+      "lines": 138,
+      "h1_count": 6,
+      "heading_count": 24,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/superpowers/plans/2026-03-25-updn-denormalization.md",
+      "lines": 469,
+      "h1_count": 5,
+      "heading_count": 20,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md",
+      "lines": 585,
+      "h1_count": 17,
+      "heading_count": 27,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md",
+      "lines": 211,
+      "h1_count": 2,
+      "heading_count": 17,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "docs/superpowers/specs/2026-03-27-pf-improvement-design.md",
+      "lines": 287,
+      "h1_count": 1,
+      "heading_count": 29,
+      "local_links": 0,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "processing/README.md",
+      "lines": 33,
+      "h1_count": 3,
+      "heading_count": 6,
+      "local_links": 4,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "statistics/README.md",
+      "lines": 48,
+      "h1_count": 6,
+      "heading_count": 9,
+      "local_links": 4,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    },
+    {
+      "file": "statistics/reports/EDA_report.md",
+      "lines": 1354,
+      "h1_count": 2,
+      "heading_count": 48,
+      "local_links": 23,
+      "broken_path_links": [],
+      "broken_anchor_links": [],
+      "has_todo": false,
+      "has_last_updated": false
+    }
+  ]
+}

@@ -29,14 +29,14 @@
 
 **Проблема**: Directional Accuracy (DirAcc) = 97.5% — это артефакт обработки данных, а не реальная метрика.
 
-**Корневая причина** ([`data_loader.py:269-271`](ML/data_loader.py:269)):
+**Корневая причина** ([`ML/data_loader.py`](../../../../../ML/data_loader.py), строки 269-271):
 ```python
 # Regression: Убираем знак из predict (берем по модулю)
 y_train = np.abs(df_train[target].values.astype(np.float32))
 y_val = np.abs(df_val[target].values.astype(np.float32))
 ```
 
-**Как это работает** ([`utils.py:145`](ML/utils.py:145)):
+**Как это работает** ([`ML/utils.py`](../../../../../ML/utils.py), строка 145):
 ```python
 dir_acc = float(np.mean(np.sign(y_true) == np.sign(y_pred)))
 ```
@@ -102,7 +102,7 @@ dir_acc = float(np.mean(np.sign(y_true) == np.sign(y_pred)))
 
 ### 1.3 Аудит Pipeline
 
-#### Data Loader ([`data_loader.py`](ML/data_loader.py))
+#### Data Loader ([`ML/data_loader.py`](../../../../../ML/data_loader.py))
 
 | Компонент | Статус | Проблемы |
 |-----------|--------|----------|
@@ -112,7 +112,7 @@ dir_acc = float(np.mean(np.sign(y_true) == np.sign(y_pred)))
 | StandardScaler | ✅ Работает | По умолчанию выключен |
 | Regression target: abs(predict) | ❌ Проблема | Direction leakage |
 
-#### Training ([`train.py`](ML/train.py))
+#### Training ([`ML/train.py`](../../../../../ML/train.py))
 
 | Компонент | Статус | Проблемы |
 |-----------|--------|----------|
@@ -332,10 +332,10 @@ final_pred = torch.stack(preds).mean(dim=0)
 
 | Файл | Изменение |
 |------|-----------|
-| [`ML/data_loader.py`](ML/data_loader.py) | Исправить regression target (убрать abs или добавить sign) |
-| [`ML/train.py`](ML/train.py) | Добавить аргумент --dropout |
-| [`ML/optimize.py`](ML/reports/) | Запустить для regression |
-| [`ML/models/`](ML/models/) | Возможно, упростить архитектуру |
+| [`ML/data_loader.py`](../../../../../ML/data_loader.py) | Исправить regression target (убрать abs или добавить sign) |
+| [`ML/train.py`](../../../../../ML/train.py) | Добавить аргумент --dropout |
+| [`ML/optimize.py`](../../../../../ML/optimize.py) | Запустить для regression |
+| [`ML/models/`](../../../../../ML/models/) | Возможно, упростить архитектуру |
 
 ---
 

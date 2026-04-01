@@ -60,8 +60,14 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 - Секции: `### Добавлено`, `### Изменено`, `### Исправлено`, `### Результаты`, `### Вывод`
 
 ### Память проекта
-- `.claude/memory/` можно использовать как вспомогательный контекст.
+- `.claude/memory/` использовать для поддержания актуального контекста.
 - Источником актуальных требований считать текущую задачу пользователя и профильные docs в `docs/`.
+
+### Приоритет источников
+1. Явный запрос пользователя в текущем диалоге.
+2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
+3. Рабочие планы и исследовательские материалы: `docs/plans/`, `docs/superpowers/`, `docs/specs/`.
+4. Вспомогательная память и архив: `.claude/memory/`, `docs/archive/`.
 
 ## Структура проекта
 
@@ -71,17 +77,35 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ```
 .
 ├── API/                 # ✅ Генерация ML-сигналов для MT4
-├── MT/MQL4/             # ✅ MetaTrader4: датасет и торговый робот
-├── processing/          # 🏁 sort -> label -> normalize -> split
-├── statistics/          # ✅/🏁 статистика, EDA, signal_tracer
-├── ML/                  # ✅ модели и training pipeline
-├── DATA/                # обработанные данные
-├── docs/                # документация по модулям и pipeline
-├── AGENTS.md            # codex-first индекс
-├── CLAUDE.md            # Claude Code-specific workflow и skills
-├── MODULE_INDEX.md      # реестр модулей со статусами
-├── CHANGELOG.md         # история значимых изменений
-└── README.md            # точка входа
+├── MT/MQL4/             # ✅ MetaTrader4 — формирование датасета, торговый робот
+│   ├── Experts/         #    MQL4 советники
+│   ├── Files/           #    Данные (Nero.csv, ml_signals.csv)
+│   └── Include/         #    MQL4 библиотеки (.mqh)
+├── processing/          # 🏁 Препроцессинг: sort → label → normalize → split
+├── statistics/          # ✅/🏁 Статистика, EDA, signal_tracer
+├── ML/                  # ✅ Machine Learning — 18 скриптов по слоям
+│   ├── models/          # ✅ Transformer (лучший), BiLSTM, CNN1D, Hybrid
+│   ├── baseline/        # 🏁 Baseline-модели (5 алгоритмов)
+│   ├── conformal/       # 🏁 Conformal Prediction
+│   ├── checkpoints/     #    Веса моделей (.pt)
+│   ├── reports/         #    Отчёты экспериментов (.md, .json)
+│   └── plots/           #    Графики обучения
+├── DATA/                #    Обработанные данные
+├── docs/                # Документация (каталоги = каталоги кода)
+│   ├── DATA_FLOW.md     #    Поток данных + навигация по этапам
+│   ├── PRD.md           #    Product Requirements
+│   ├── statistics/      #    Docs для statistics/
+│   ├── processing/      #    Docs для processing/
+│   ├── ML/              #    Docs для ML/
+│   ├── MT/              #    Docs для MT/
+│   ├── plans/           #    Планы работы (исследовательские/временные)
+│   ├── superpowers/     #    Планы и спецификации superpowers (исследовательские/временные)
+│   └── archive/         # 📦 НЕ СМОТРИ без явной просьбы
+├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
+├── MODULE_INDEX.md      # Реестр всех модулей со статусами
+├── CHANGELOG.md         # История значимых изменений
+└── README.md            # Точка входа
+
 ```
 
 Навигация:
@@ -104,4 +128,4 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ---
 
 Последнее обновление: 2026-04-01
-Авторы: Antigravity (human) + AI agents
+Авторы: human + AI agents

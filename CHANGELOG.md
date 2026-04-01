@@ -477,8 +477,8 @@ MAE: 0.1083
 ### Добавлено
 - Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
 
-## [2026-03-10] — Ключевые находки аудита проекта ([opus-project_audit_and_plan.md](docs/archive/03.10_audit_answers/Opus4.6/opus-project_audit_and_plan.md))
-- **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`data_loader.py:270`](ML/data_loader.py:270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`utils.py:145`](ML/utils.py:145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок.
+## [2026-03-10] — Ключевые находки аудита проекта ([opus-project_audit_and_plan.md](docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md))
+- **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`ML/data_loader.py`](ML/data_loader.py) (строка 270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`ML/utils.py`](ML/utils.py) (строка 145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок.
 - **`direction` как feature**: `fractal[0].direction` ∈ {-1, 1} напрямую коррелирует со знаком `predict` (по определению: `predict = -back * direction`). Для задачи классификации `signal` это может быть мягкая форма leakage — direction определяет **направление** сигнала, хотя не его **наличие**. Для регрессии `|predict|` проблемы нет, т.к. знак удалён.
 - Классификация уперлась в потолок данных — 5 архитектур (RF + 4 NN) дают F1_minority 0.35-0.39, разброс в пределах стат. ошибки. ~1000 сигнальных примеров недостаточно для deep learning.
 - Регрессия показывает потенциал — Pearson r=0.56, R²=0.30. Все 43K примеров работают.

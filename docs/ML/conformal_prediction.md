@@ -30,7 +30,7 @@ Split Conformal Prediction — математическая надстройка
 |------|-----------|
 | [ML/conformal/calibrate.py](../../ML/conformal/calibrate.py) | Калибровка. Запуск: `python -m ML.conformal.calibrate` |
 | [ML/conformal/conformal_quantiles.json](../../ML/conformal/conformal_quantiles.json) | Откалиброванные квантили (6 значений) |
-| [ML/conformal/conformal_calibration.md](../../ML/conformal/conformal_calibration.md) | Отчёт калибровки |
+| [ML/conformal/conformal_quantiles.json](../../ML/conformal/conformal_quantiles.json) | Артефакт калибровки (квантили на 6 таргетов) |
 
 Интеграция в генерацию сигналов: `python -m API.generate_signals --conformal`
 

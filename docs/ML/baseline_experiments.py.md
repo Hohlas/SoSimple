@@ -40,4 +40,4 @@ python ML/baseline/baseline_experiments.py
 - **Classification Report** — полнота и точность по каждому классу.
 
 ## Результаты
-См. [baseline_report.md](ML/baseline/reports/baseline_report.md) — сгенерированный отчёт с метриками и confusion matrices.
+См. [baseline_report.md](../../ML/baseline/reports/baseline_report.md) — сгенерированный отчёт с метриками и confusion matrices.

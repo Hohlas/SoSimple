@@ -66,11 +66,11 @@
 
 **Потенциальные проблемы:**
 
-1. **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`data_loader.py:270`](ML/data_loader.py:270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`utils.py:145`](ML/utils.py:145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок. **Рекомендация: убрать DirAcc из регрессионных метрик — она бесполезна для |predict|.**
+1. **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`ML/data_loader.py`](../../../ML/data_loader.py) (строка 270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`ML/utils.py`](../../../ML/utils.py) (строка 145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок. **Рекомендация: убрать DirAcc из регрессионных метрик — она бесполезна для |predict|.**
 
 2. **`direction` как feature**: `fractal[0].direction` ∈ {-1, 1} напрямую коррелирует со знаком `predict` (по определению: `predict = -back * direction`). Для задачи классификации `signal` это может быть мягкая форма leakage — direction определяет **направление** сигнала, хотя не его **наличие**. Для регрессии `|predict|` проблемы нет, т.к. знак удалён.
 
-3. **`strong` feature**: `fractal[0].strong = 0` всегда (по определению из [`dataset_description.md`](docs/dataset_description.md)), но `fractal[k].strong` для k > 0 может коррелировать с `signal`. Фрактал с `strong=1` в позициях 1-99 — это уже **произошедший** разворот, не будущий. **Утечки нет** — это историческая информация.
+3. **`strong` feature**: `fractal[0].strong = 0` всегда (по определению из [`dataset_description.md`](../../dataset_description.md)), но `fractal[k].strong` для k > 0 может коррелировать с `signal`. Фрактал с `strong=1` в позициях 1-99 — это уже **произошедший** разворот, не будущий. **Утечки нет** — это историческая информация.
 
 4. **Маркировка до split**: Маркировка (`label_signals.py`) use forward-looking data (будущий `strong` фрактал), но это корректно — маркировка выполняется на полном датасете, затем split по времени. Каждая строка — immutable snapshot, маркировка ретроспективная. **Утечки нет.**
 
@@ -224,7 +224,7 @@ flowchart LR
 ##### QW-1: Кэширование parsed данных
 
 **Что**: Сохранять parsed 3D тензоры в `.npy` файлы после первого парсинга
-**Где**: [`data_loader.py`](ML/data_loader.py) — `parse_fractals_to_3d()`
+**Где**: [`ML/data_loader.py`](../../../ML/data_loader.py) — `parse_fractals_to_3d()`
 **Ожидание**: ускорение загрузки с ~60с до ~1с (60x), критично для HPO
 **Файлы**: `DATA/X_train.npy`, `DATA/mask_train.npy`, `DATA/y_train_{signal|predict}.npy` и аналогичные для val
 **Критерий**: время загрузки < 2 секунд при повторных экспериментах
@@ -233,14 +233,14 @@ flowchart LR
 ##### QW-2: Удалить DirAcc из регрессионных метрик
 
 **Что**: убрать `directional_accuracy` из вывода и логов для задачи регрессии (бесполезна при |predict|)
-**Где**: [`utils.py:145`](ML/utils.py:145) — `compute_regression_metrics()`
+**Где**: [`ML/utils.py`](../../../ML/utils.py) (строка 145) — `compute_regression_metrics()`
 **Ожидание**: нет числового эффекта, но убирает путаницу
 **Критерий**: DirAcc не появляется в выводе при `--task regression`
 
 ##### QW-3: Исправить баг логирования metric_mode
 
 **Что**: при `metric_mode != f1_macro` в result.json поле `best_f1_macro` содержит значение другой метрики
-**Где**: [`train.py`](ML/train.py) — секция сохранения result JSON (после training loop)
+**Где**: [`ML/train.py`](../../../ML/train.py) — секция сохранения result JSON (после training loop)
 **Ожидание**: корректные имена полей в JSON
 **Критерий**: `cnn1d_result.json` содержит `best_metric` + `metric_name`, а не `best_f1_macro`
 

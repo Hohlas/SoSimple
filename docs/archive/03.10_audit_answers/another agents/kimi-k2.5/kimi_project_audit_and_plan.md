@@ -53,7 +53,7 @@
 
 #### 1.1.3 Признаки Data Leakage
 
-Проведён анализ pipeline ([`docs/DATA_FLOW.md`](docs/DATA_FLOW.md)):
+Проведён анализ pipeline ([`docs/DATA_FLOW.md`](../../../../DATA_FLOW.md)):
 
 | Этап | Риск утечки | Статус | Примечание |
 |------|-------------|--------|------------|
@@ -62,7 +62,7 @@
 | Нормализация | Средний | ⚠️ Проверить | StandardScaler fit на train, transform на val — корректно |
 | ATR нормализация | Низкий | ✅ Чисто | ATR вычисляется на момент времени строки |
 
-**Выявленная утечка в регрессии**: В [`discussion.md`](docs/plans/discussion.md) зафиксирована критическая утечка через признак `fractal0_direction`:
+**Выявленная утечка в регрессии**: В плановых обсуждениях (`docs/plans/discussion.md`, файл отсутствует в текущем репозитории) зафиксирована критическая утечка через признак `fractal0_direction`:
 - `predict = -back * direction` — знак predict жёстко связан с direction
 - Нейросеть достигает DirAcc=97.5%, "видя" direction текущего фрактала
 - **Это НЕ legit утечка, а математическая связь** — но делает метрику DirAcc бессмысленной
@@ -139,7 +139,7 @@
 
 **Наблюдение**: Все модели регрессии показывают directional_accuracy ≈ 97.5%.
 
-**Объяснение** (из [`discussion.md`](docs/plans/discussion.md)):
+**Объяснение** (из плановых обсуждений `docs/plans/discussion.md`, файл отсутствует в текущем репозитории):
 ```
 predict = -back * direction
 ```
@@ -183,7 +183,7 @@ predict = -back * direction
 
 #### 1.3.3 Адекватность loss functions
 
-**Focal Loss** ([`ML/losses.py`](ML/losses.py)):
+**Focal Loss** ([`ML/losses.py`](../../../../../ML/losses.py)):
 ```python
 FocalLoss(alpha=[0.45, 0.10, 0.45], gamma=2.0)
 ```
@@ -199,7 +199,7 @@ FocalLoss(alpha=[0.45, 0.10, 0.45], gamma=2.0)
 
 #### 1.3.4 Подход к нормализации
 
-**Текущая схема** ([`docs/DATA_FLOW.md`](docs/DATA_FLOW.md)):
+**Текущая схема** ([`docs/DATA_FLOW.md`](../../../../DATA_FLOW.md)):
 1. Построчная нормализация (цена → % относительно первого фрактала)
 2. StandardScaler по каждому признаку
 3. ATR нормализация для predict
@@ -260,13 +260,13 @@ FocalLoss(alpha=[0.45, 0.10, 0.45], gamma=2.0)
 
 | № | Действие | Файл/Команда | Ожидаемый результат | Критерий успеха |
 |---|----------|--------------|---------------------|-----------------|
-| 1 | **Усилить Focal Loss** | [`ML/train.py`](ML/train.py) строка 99 | Увеличить precision сигналов | F1_minority > 0.40 |
+| 1 | **Усилить Focal Loss** | [`ML/train.py`](../../../../../ML/train.py) строка 99 | Увеличить precision сигналов | F1_minority > 0.40 |
 |   | Изменить alpha на [0.495, 0.01, 0.495] | `DEFAULTS['alpha'] = [0.495, 0.01, 0.495]` | | |
-| 2 | **Увеличить gamma** | [`ML/train.py`](ML/train.py) строка 98 | Лучше фокус на сложных примерах | F1_minority > 0.40 |
+| 2 | **Увеличить gamma** | [`ML/train.py`](../../../../../ML/train.py) строка 98 | Лучше фокус на сложных примерах | F1_minority > 0.40 |
 |   | Gamma=3.0 вместо 2.0 | `DEFAULTS['gamma'] = 3.0` | | |
 | 3 | **Использовать WeightedRandomSampler** | Команда | Равное представление классов в батче | F1_minority > 0.42 |
 |   | Запуск с флагом | `python -m ML.train --model cnn1d --use_weighted_sampler --metric_mode f1_minority` | | |
-| 4 | **Увеличить dropout** | Модели в [`ML/models/`](ML/models/) | Снижение overfitting | Val loss стабилизируется |
+| 4 | **Увеличить dropout** | Модели в [`ML/models/`](../../../../../ML/models/) | Снижение overfitting | Val loss стабилизируется |
 |   | Dropout 0.4–0.5 | `dropout=0.4` в Bi-LSTM, Hybrid | | |
 
 **Ожидаемый суммарный эффект**: F1_minority от 0.35 до 0.42–0.45 (20–30% улучшение).
@@ -275,25 +275,25 @@ FocalLoss(alpha=[0.45, 0.10, 0.45], gamma=2.0)
 
 | № | Действие | Файл/Команда | Ожидаемый результат | Критерий успеха |
 |---|----------|--------------|---------------------|-----------------|
-| 5 | **HPO для всех моделей** | [`ML/optimize.py`](ML/optimize.py) | Оптимальные гиперпараметры | Улучшение 5–10% |
+| 5 | **HPO для всех моделей** | [`ML/optimize.py`](../../../../../ML/optimize.py) | Оптимальные гиперпараметры | Улучшение 5–10% |
 |   | Запуски для bilstm, transformer, hybrid | `python -m ML.optimize --model bilstm --task classification --trials 50` | | |
-| 6 | **Реализовать двухэтапный подход** | Новый файл [`ML/two_stage_pipeline.py`](ML/two_stage_pipeline.py) | Разделение задач | Signal Precision > 0.40 |
+| 6 | **Реализовать двухэтапный подход** | Новый файл `ML/two_stage_pipeline.py` (планируемый) | Разделение задач | Signal Precision > 0.40 |
 |   | Stage 1: Signal/NoSignal | | | |
 |   | Stage 2: Регрессия + направление | | | |
-| 7 | **Анализ ошибок** | Новый файл [`ML/error_analysis.py`](ML/error_analysis.py) | Понимание паттернов ошибок | Отчёт с визуализацией |
+| 7 | **Анализ ошибок** | Новый файл `ML/error_analysis.py` (планируемый) | Понимание паттернов ошибок | Отчёт с визуализацией |
 |   | Confusion по ATR, времени | | | |
-| 8 | **Threshold tuning** | [`ML/threshold_optimizer.py`](ML/threshold_optimizer.py) | Оптимальный порог для инференса | Max F-beta при β=0.5 |
+| 8 | **Threshold tuning** | `ML/threshold_optimizer.py` (планируемый) | Оптимальный порог для инференса | Max F-beta при β=0.5 |
 
 #### 2.2.3 Structural Changes (высокие усилия, потенциально прорыв)
 
 | № | Действие | Файл/Команда | Ожидаемый результат | Fallback |
 |---|----------|--------------|---------------------|----------|
-| 9 | **Feature Engineering** | [`processing/`](processing/) | Новые признаки | Если не даст +10% — откатить |
+| 9 | **Feature Engineering** | [`processing/`](../../../../../processing/) | Новые признаки | Если не даст +10% — откатить |
 |   | Технические индикаторы (RSI, MACD) | | | |
 |   | Multi-scale features (H4, D1) | | | |
-| 10 | **Downsample Neutral класса** | [`ML/data_loader.py`](ML/data_loader.py) | Баланс 20%/40%/40% | Риск потери информации |
+| 10 | **Downsample Neutral класса** | [`ML/data_loader.py`](../../../../../ML/data_loader.py) | Баланс 20%/40%/40% | Риск потери информации |
 |   | Использовать только 20% neutral | | | |
-| 11 | **Ensemble моделей** | [`ML/ensemble.py`](ML/ensemble.py) | Стабильность предсказаний | Если не даёт прирост — использовать лучшую модель |
+| 11 | **Ensemble моделей** | `ML/ensemble.py` (планируемый файл) | Стабильность предсказаний | Если не даёт прирост — использовать лучшую модель |
 |   | Bi-LSTM + CNN average | | | |
 
 ### 2.3 Детальный план по шагам
@@ -325,7 +325,7 @@ python -m ML.train --model bilstm --task classification \
 
 #### Шаг 2: Двухэтапный подход (3–5 дней)
 
-Создать [`ML/two_stage_pipeline.py`](ML/two_stage_pipeline.py):
+Создать `ML/two_stage_pipeline.py` (планируемый файл):
 
 ```python
 # Stage 1: Binary classifier (Signal vs NoSignal)
@@ -349,7 +349,7 @@ python -m ML.train --model bilstm --task classification \
 
 #### Шаг 3: Feature Engineering (5–7 дней)
 
-В [`processing/`](processing/) добавить:
+В [`processing/`](../../../../../processing/) добавить:
 1. Технические индикаторы (RSI, MACD, Bollinger Bands)
 2. Волатильностные признаки (ATR-based)
 3. Мульти-таймфреймовые фичи
@@ -398,7 +398,7 @@ python -m ML.train --model bilstm --task classification \
 ### 🔥 Критический приоритет (сделать немедленно)
 
 - [ ] **TW-1**: Усилить Focal Loss alpha до [0.495, 0.01, 0.495]
-  - Файл: [`ML/train.py`](ML/train.py), строка 99
+  - Файл: [`ML/train.py`](../../../../../ML/train.py), строка 99
   - Команда: Изменить `DEFAULTS['alpha']`
   
 - [ ] **TW-2**: Запустить обучение с WeightedRandomSampler
@@ -406,13 +406,13 @@ python -m ML.train --model bilstm --task classification \
   - Цель: F1_minority > 0.40
 
 - [ ] **TW-3**: Увеличить dropout в Bi-LSTM до 0.4
-  - Файл: [`ML/models/bilstm.py`](ML/models/bilstm.py)
+  - Файл: [`ML/models/bilstm.py`](../../../../../ML/models/bilstm.py)
   - Параметр: `dropout=0.4`
 
 ### ⚡ Высокий приоритет (в течение недели)
 
 - [ ] **ME-1**: Реализовать двухэтапный pipeline
-  - Новый файл: [`ML/two_stage_pipeline.py`](ML/two_stage_pipeline.py)
+  - Новый файл: `ML/two_stage_pipeline.py` (планируемый)
   - Stage 1: Signal/NoSignal binary classifier
   - Stage 2: Regression predict + direction
 
@@ -420,13 +420,13 @@ python -m ML.train --model bilstm --task classification \
   - Команда: `python -m ML.optimize --model bilstm --task classification --trials 50 --epochs 30`
 
 - [ ] **ME-3**: Реализовать threshold tuning
-  - Новый файл: [`ML/threshold_optimizer.py`](ML/threshold_optimizer.py)
+  - Новый файл: `ML/threshold_optimizer.py` (планируемый)
   - Оптимизация F-beta с β=0.5 (приоритет precision)
 
 ### 📊 Средний приоритет (в течение 2 недель)
 
 - [ ] **ST-1**: Анализ ошибок лучшей модели
-  - Новый файл: [`ML/error_analysis.py`](ML/error_analysis.py)
+  - Новый файл: `ML/error_analysis.py` (планируемый)
   - Визуализация confusion по ATR, времени суток, признакам
 
 - [ ] **ST-2**: Оценка на test set
@@ -434,7 +434,7 @@ python -m ML.train --model bilstm --task classification \
   - Только после финализации модели!
 
 - [ ] **ST-3**: Бэктест интеграции
-  - Новый файл: [`backtest/backtest_engine.py`](backtest/backtest_engine.py)
+  - Новый файл: `backtest/backtest_engine.py` (планируемый)
   - Оценка Sharpe Ratio, просадки
 
 ### 🏗️ Низкий приоритет (по необходимости)

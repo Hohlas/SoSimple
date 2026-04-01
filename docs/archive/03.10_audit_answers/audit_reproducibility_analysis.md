@@ -6,10 +6,10 @@
 
 | Источник | BiLSTM r | Transformer r | Hybrid r | CNN1D r | Дата |
 |----------|----------|---------------|----------|---------|------|
-| [experiments_log.csv](file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv) | 0.324 | 0.114 | 0.283 | 0.252 | 2026-03-10 |
+| [experiments_log.csv](../../../ML/reports/experiments_log.csv) | 0.324 | 0.114 | 0.283 | 0.252 | 2026-03-10 |
 | `*_regression_result.json` | 0.324 | **0.563** | **0.546** | **0.519** | BiLSTM: 03-10, остальные: **02-24** |
-| Аудит ([architecture_decision.md](file:///home/hohla/git/SoSimple/docs/archive/03.10_audit_answers/opus-architecture_decision.md)) | **0.555** | 0.563 | 0.546 | 0.519 | 2026-03-09 |
-| Отчёт [architecture_comparison_regression.md](file:///home/hohla/git/SoSimple/ML/reports/architecture_comparison_regression.md) | 0.324 | 0.114 | 0.283 | 0.252 | 2026-03-10 |
+| Аудит ([architecture_decision.md](opus-architecture_decision.md)) | **0.555** | 0.563 | 0.546 | 0.519 | 2026-03-09 |
+| Отчёт [architecture_comparison_regression.md](../../../ML/reports/architecture_comparison_regression.md) | 0.324 | 0.114 | 0.283 | 0.252 | 2026-03-10 |
 
 ### Что произошло (реконструкция по timestamps файлов)
 
@@ -28,10 +28,10 @@
 ```
 
 > [!CAUTION]
-> **BiLSTM r=0.555** — главная цифра, на которой построен выбор архитектуры — **не имеет задокументированного источника**. Она не найдена ни в [experiments_log.csv](file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv), ни в [bilstm_regression_result.json](file:///home/hohla/git/SoSimple/ML/checkpoints/bilstm_regression_result.json), ни в отчёте.
+> **BiLSTM r=0.555** — главная цифра, на которой построен выбор архитектуры — **не имеет задокументированного источника**. Она не найдена ни в [experiments_log.csv](../../../ML/reports/experiments_log.csv), ни в [bilstm_regression_result.json](../../../ML/checkpoints/bilstm_regression_result.json), ни в отчёте.
 
 > [!WARNING]
-> **3 из 4 result JSONs** содержат данные от **февральских запусков** (02-24), а не от мартовских (03-10). Checkpoints [.pt](file:///home/hohla/git/SoSimple/ML/checkpoints/best_model.pt) при этом **перезаписаны** мартовским запуском. JSON и checkpoint **рассинхронизированы**.
+> **3 из 4 result JSONs** содержат данные от **февральских запусков** (02-24), а не от мартовских (03-10). Checkpoints [.pt](../../../ML/checkpoints/best_model.pt) при этом **перезаписаны** мартовским запуском. JSON и checkpoint **рассинхронизированы**.
 
 ### Возможные причины расхождения r=0.32 → r=0.55
 
@@ -44,7 +44,7 @@
 
 ---
 
-## 2. Что есть в [experiments_log.csv](file:///home/hohla/git/SoSimple/ML/reports/experiments_log.csv) и чего не хватает
+## 2. Что есть в [experiments_log.csv](../../../ML/reports/experiments_log.csv) и чего не хватает
 
 ### Что есть ✅
 - 12 записей экспериментов (6 classification, 6 regression)

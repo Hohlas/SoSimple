@@ -49,7 +49,7 @@
 
 ### 1. Direction Leakage (КРИТИЧЕСКИЙ)
 
-**Проблема**: [`data_loader.py:269-271`](ML/data_loader.py:269)
+**Проблема**: [`ML/data_loader.py`](../../../../../ML/data_loader.py) (строки 269-271)
 ```python
 y_train = np.abs(df_train[target].values)  # Убирает sign!
 ```
@@ -167,6 +167,6 @@ python -m ML.train --model transformer --task regression
 
 ## References
 
-- [Project Audit and Plan](project_audit_and_plan.md)
-- [Discussion - Known Issues](docs/plans/discussion.md)
-- [Neural Networks Pipeline](docs/ml/neural_networks.md)
+- [Project Audit and Plan](minimax_project_audit_and_plan.md)
+- [Implementation Plan](../../../../plans/ml_implementation_plan.md)
+- [Neural Networks Pipeline](../../../../ML/neural_networks.md)

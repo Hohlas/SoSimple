@@ -269,5 +269,5 @@
 ## Связанные документы
 
 - [Описание датасета](../dataset_description.md) — структура входных данных
-- [Маркировка данных](../data_preprocessing/label_signals.py.md) — создание меток signal/predict
-- [Парсинг данных](../mql4/lib_PIC.mqh.md) — извлечение данных из MT4
+- [Маркировка данных](../processing/label_signals.py.md) — создание меток signal/predict
+- [Парсинг данных](../MT/lib_PIC.mqh.md) — извлечение данных из MT4
