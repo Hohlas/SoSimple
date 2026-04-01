@@ -83,7 +83,7 @@ PIECEWISE_JOINT = ['front', 'back']  # + predict (отдельная колон�
 UPDN_FIELDS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 # Row-level колонки-таргеты (нормализуются в том же пуле)
-UPDN_TARGET_COLUMNS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+UPDN_TARGET_COLUMNS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 # Признаки без нормализации
 NO_NORMALIZE = ['direction', 'strong', 'fractal_time', 'fractal_atr']

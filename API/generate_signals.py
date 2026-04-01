@@ -92,22 +92,14 @@ def preds_to_signals(
     horizon: int,
     theta: float,
     conformal_quantiles: dict | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> np.ndarray:
     """
     Конвертация предсказаний updn в торговые сигналы.
 
-    Если conformal_quantiles задан — добавляется фильтр минимальной величины:
-    сигнал BUY срабатывает только если pred_up > q_up (предсказание вверх
-    превышает типичную ошибку модели — модель «уверена» в движении).
-    Аналогично SELL: pred_dn > q_dn.
-
-    Это отсекает «шумовые» сигналы, где ratio > θ лишь потому, что обе
-    стороны (pred_up и pred_dn) близки к нулю и ratio случайно велик.
-
     Returns:
-        signals, pred_up, pred_dn, ratio_up, ratio_dn
+        signals: np.ndarray of {-1, 0, 1}
     """
-    idx_map = {12: 0, 24: 2, 48: 4}
+    idx_map = {3: 0, 6: 2, 12: 4, 24: 6, 48: 8}
     idx = idx_map[horizon]
 
     pred_up = y_pred[:, idx]
@@ -123,12 +115,10 @@ def preds_to_signals(
     if conformal_quantiles:
         q_up = conformal_quantiles[UPDN_TARGETS[idx]]
         q_dn = conformal_quantiles[UPDN_TARGETS[idx + 1]]
-        # Фильтр: отменяем BUY если pred_up < q_up (модель не уверена в росте)
         signals[(signals == 1) & (pred_up < q_up)] = 0
-        # Фильтр: отменяем SELL если pred_dn < q_dn (модель не уверена в падении)
         signals[(signals == -1) & (pred_dn < q_dn)] = 0
 
-    return signals, pred_up, pred_dn, ratio_up, ratio_dn
+    return signals
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -403,18 +393,15 @@ def generate_signals(
             f"Размер предсказаний ({len(y_pred)}) ≠ размер times ({len(times)}) для {split_name}"
         )
 
-        signals, pred_up, pred_dn, ratio_up, ratio_dn = preds_to_signals(
-            y_pred, horizon, theta, conformal_quantiles
-        )
+        signals = preds_to_signals(y_pred, horizon, theta, conformal_quantiles)
         buy_count = (signals == 1).sum()
         sell_count = (signals == -1).sum()
         print(f"    {split_name}: BUY={buy_count}, SELL={sell_count}, FLAT={len(signals)-buy_count-sell_count}")
 
-        all_results.append(pd.DataFrame({
-            'time': times, 'signal': signals,
-            'pred_up': np.round(pred_up, 4), 'pred_dn': np.round(pred_dn, 4),
-            'ratio_up': np.round(ratio_up, 4), 'ratio_dn': np.round(ratio_dn, 4),
-        }))
+        df = pd.DataFrame({'time': times, 'signal': signals})
+        for i, name in enumerate(UPDN_TARGETS):
+            df[name] = np.round(y_pred[:, i], 4)
+        all_results.append(df)
 
     # ── Test ─────────────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
@@ -427,16 +414,15 @@ def generate_signals(
     print(f"    test: {len(y_pred)} предсказаний")
     assert len(y_pred) == len(times)
 
-    signals, pred_up, pred_dn, ratio_up, ratio_dn = preds_to_signals(y_pred, horizon, theta, conformal_quantiles)
+    signals = preds_to_signals(y_pred, horizon, theta, conformal_quantiles)
     buy_count = (signals == 1).sum()
     sell_count = (signals == -1).sum()
     print(f"    test: BUY={buy_count}, SELL={sell_count}, FLAT={len(signals)-buy_count-sell_count}")
 
-    all_results.append(pd.DataFrame({
-        'time': times, 'signal': signals,
-        'pred_up': np.round(pred_up, 4), 'pred_dn': np.round(pred_dn, 4),
-        'ratio_up': np.round(ratio_up, 4), 'ratio_dn': np.round(ratio_dn, 4),
-    }))
+    df = pd.DataFrame({'time': times, 'signal': signals})
+    for i, name in enumerate(UPDN_TARGETS):
+        df[name] = np.round(y_pred[:, i], 4)
+    all_results.append(df)
 
     # ── Объединение и запись CSV ──────────────────────────────────────────────
     df_all = pd.concat(all_results, ignore_index=True)
@@ -477,7 +463,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--horizon', type=int, default=DEFAULT_HORIZON,
-        choices=[12, 24, 48],
+        choices=[3, 6, 12, 24, 48],
         help=f"Горизонт для updn (default: {DEFAULT_HORIZON})"
     )
     parser.add_argument(

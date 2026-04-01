@@ -1,15 +1,15 @@
 {
   "model_name": "transformer",
   "task": "regression_updn",
-  "best_pearson_r": 0.4378925214211146,
-  "best_epoch": 27,
-  "num_parameters": 40070,
-  "training_time": 676.0070126056671,
+  "best_pearson_r": 0.5625332802534103,
+  "best_epoch": 36,
+  "num_parameters": 40202,
+  "training_time": 863.6132206916809,
   "val_metrics": {
-    "mae": 0.16965354109803835,
-    "rmse": 0.21383968538376416,
-    "r2": 0.18889422218004862,
-    "pearson_r": 0.4378925214211146,
+    "mae": 0.12594808600842952,
+    "rmse": 0.1645579035082964,
+    "r2": 0.3383252739906311,
+    "pearson_r": 0.5625332802534103,
     "pearson_p": 0.0
   }
 }

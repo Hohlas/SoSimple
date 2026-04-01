@@ -78,7 +78,7 @@ REGRESSION_TARGET = 'predict'  # backward compat default
 UPDN_REGRESSION_TARGET = 'updn'  # multi-task: 6 Up/Dn таргетов
 
 # Доступные up/dn таргеты
-UPDN_TARGETS = ['up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+UPDN_TARGETS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
 
 # Triple Barrier targets (12 binary: 6 BUY + 6 SELL)
 TB_TARGET = 'triple_barrier'

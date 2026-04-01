@@ -66,6 +66,8 @@ extern double ML_Min_SL_ATR    = 2.0;  // ML_Min_SL_ATR: Минимальный 
 extern bool   ML_BypassTrend   = true; // ML_BypassTrend: Игнорировать трендовый фильтр
 extern bool   ML_ExitEnabled   = true; // ML_ExitEnabled: Закрывать позицию при reverse-сигнале
 extern double ML_ExitThreshold = 2.0;  // ML_ExitThreshold: Мин. ratio для ML-exit (< ML_MinRatio)
+extern double ML_Filter3       = 0.0;  // ML_Filter3: Фильтр up_3/dn_3 (0=выкл, 1.0=совпадение направления, >1=усиленный)
+extern double ML_Filter6       = 0.0;  // ML_Filter6: Фильтр up_6/dn_6 (0=выкл, 1.0=совпадение направления, >1=усиленный)
 extern double ML_Trl_Start_ATR = 1.0;  // ML_Trl_Start_ATR: Активация ML-трала при профите в ATR (от 0.5 до 2.0)
 extern double ML_Trl_Step_ATR  = 1.5;  // ML_Trl_Step_ATR: Дистанция ML-трала в ATR (от 0.3 до 1.5)
 
