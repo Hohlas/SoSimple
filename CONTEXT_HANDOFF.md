@@ -10,7 +10,7 @@
 Автоматическая торговая система на XAUUSD (золото), H1 таймфрейм. MetaTrader 4 (MQL4) + Python ML pipeline.
 
 **Архитектура:**
-1. MQL4 индикатор `iPIC.mqh` собирает фракталы (ценовые уровни) и записывает CSV
+1. MQL4 библиотека `lib_PIC.mqh` собирает фракталы (ценовые уровни) и записывает CSV
 2. Python `processing/normalize.py` (через `label_main.py`) нормализует данные и создаёт таргеты
 3. Python `ML/train.py` обучает Transformer модель (regression_updn task)
 4. Python `API/generate_signals.py` генерирует `ml_signals.csv` из обученной модели
@@ -118,6 +118,20 @@ SL/TP логика (текущая):
 
 **5. Корреляция pred vs reality:**
 - Слабая (0.13-0.21). Модель хороша в направлении, плоха в амплитуде
+
+---
+
+## Активные планы (обязательно прочитать)
+
+Работа ведётся в рамках единого плана повышения PF. Три документа:
+
+| Документ | Назначение |
+|----------|-----------|
+| [`docs/superpowers/specs/2026-03-27-pf-improvement-design.md`](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) | Общая архитектура улучшений, диагностика корневых причин, цели (PF ≥ 2.0) |
+| [`docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md`](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) | Phase A: исследования + EA оптимизация (цель PF ≥ 1.2–1.5 как baseline) |
+| [`docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md`](docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md) | Phase B: новые таргеты + лимитный вход (цель PF ≥ 2.0) |
+
+**Где мы сейчас:** Phase A завершена (PF вырос с 0.53 → 1.18). Phase B.1 (добавление up_3/dn_3/up_6/dn_6 как таргетов и фильтров) технически реализована, но фильтры оказались статистически бесполезны в текущей форме. Продолжаем Phase B — ищем способ использовать short-term предсказания или улучшить SL/TP логику.
 
 ---
 
