@@ -1,50 +1,52 @@
 # CLAUDE.md
-> **Инструкции для Claude Code. Источник истины — [AGENTS.md](AGENTS.md)**
+> Инструкции для Claude Code в репозитории SoSimple. Общий codex-first индекс: [AGENTS.md](AGENTS.md).
 
-## 📋 Инструкции для Claude Code
+## Как использовать вместе с AGENTS.md
+1. Сначала читать [AGENTS.md](AGENTS.md) для структуры проекта, путей, ограничений по данным и базовых команд.
+2. Этот файл использовать для Claude Code-specific workflow и вызова `.claude/skills`.
+3. При конфликте приоритет: явный запрос пользователя -> ограничения окружения -> этот файл -> AGENTS.md.
 
-### Как я работаю с этим проектом
-1. **Начинаю с AGENTS.md** — этот файл содержит все инструкции
-2. **Использую skills** — `/brainstorming`, `/writing-plans`, `/test-driven-development` и т.д.
-3. **Обновляю код** — добавляю header с датой и версией, обновляю CHANGELOG.md
-4. **Читаю feedback** — есть memory система в `.claude/memory/`
+## Workflow для Claude Code
+
+### Паттерны разработки
+- Новая фича: `/brainstorming` -> `/writing-plans` -> `/test-driven-development` -> `/requesting-code-review`
+- Bugfix: `/systematic-debugging` -> diagnose -> fix -> `/verification-before-completion`
+- Завершение ветки: `/finishing-a-development-branch` -> merge/PR -> update `CHANGELOG.md`
+- Новый модуль: создать file header -> добавить docs -> добавить запись в `MODULE_INDEX.md`
 
 ### Когда использовать skills
-- **`/brainstorming`** → перед любым feature/refactor (исследовать идеи, требования)
-- **`/writing-plans`** → для многошаговых задач (создать план перед кодом)
-- **`/test-driven-development`** → перед реализацией фичи (написать тесты первыми)
-- **`/systematic-debugging`** → при ошибке/падении теста (диагностика перед фиксом)
-- **`/verification-before-completion`** → перед commit/PR (проверить, что всё работает)
-- **`/requesting-code-review`** → при завершении большой работы (ревью перед мержом)
-- **`/executing-plans`** → если есть письменный план (выполнить по шагам)
+| Skill | Когда |
+|-------|-------|
+| `/brainstorming` | Перед feature/refactor |
+| `/writing-plans` | Для многошаговых задач |
+| `/test-driven-development` | Перед реализацией фичи |
+| `/systematic-debugging` | При ошибке или падении теста |
+| `/verification-before-completion` | Перед завершением работы |
+| `/requesting-code-review` | При завершении большой работы |
+| `/executing-plans` | Если есть письменный план |
 
-### Работа с памятью (синхронизируется через git)
-- Память проекта: `.claude/memory/MEMORY.md` ⬅️ в репозитории
-- **MEMORY.md** — индекс (ссылки на файлы памяти)
-- **user_profile.md**, **feedback_*.md**, **project_*.md** — сами память-файлы
-- Claude Code автоматически читает эту папку при загрузке проекта
+### Текстовые команды для документации (.kilocode/skills)
+| Команда | Когда |
+|---------|-------|
+| `обнови документацию` | После правки кода |
+| `doc this путь/к/файлу.py` | Добавить docs для файла |
+| `create module имя` | Создать новый модуль с docs |
+| `rebuild module index` | Обновить `MODULE_INDEX.md` |
 
-### Git workflow
-- ❌ Не делай `git commit` и `git push` без явной просьбы — пользователь контролирует историю сам
+## Работа с памятью
+- Память проекта: `.claude/memory/MEMORY.md` (индекс ссылок).
+- Содержимое памяти считать вспомогательным контекстом: проверять актуальность по текущим docs и запросу пользователя.
 
-### CHANGELOG.md: обновляй при каждой значительной смене
-- хронология результатов исследований, выводы по проведённым работам, новые фичи, breaking changes, багфиксы.
-- Добавь запись ТОЛЬКО при: новых фичах, breaking changes, багфиксах, результатах экспериментов и исследований с выводами.
-- НЕ добавляй записи, если: проведены правки документации, обновление путей сохранения, рефакторинг без изменения поведения, обновление AGENTS.md/MODULE_INDEX.md.
-- Используй формат: `## [YYYY-MM-DD] — Краткое описание`
-- Структурируй изменения секциями: ### Добавлено, ### Изменено, ### Исправлено, ### Результаты, ### Вывод
-- Укажи ключевые изменения с точки зрения продукта/исследования; НЕ упоминай обновление документации и пути к файлам
+## Git и CHANGELOG
+- Не делать `git commit`/`git push` без явной просьбы пользователя.
+- В `CHANGELOG.md` писать только: новые фичи, breaking changes, багфиксы, результаты экспериментов с выводами.
+- Не писать в `CHANGELOG.md`: изменения документации, обновление путей, рефакторинг без изменения поведения.
+- Формат: `## [YYYY-MM-DD] - Краткое описание`
+- Секции: `### Добавлено`, `### Изменено`, `### Исправлено`, `### Результаты`, `### Вывод`
 
-
-### Что НЕ нужно делать
-- ❌ Не добавляй docstrings/comments если их не было в исходном коде
-- ❌ Не рефакторься "заодно" (bug fix = только fix, не cleanup)
-- ❌ Не добавляй error handling для невозможных сценариев
-- ❌ Не создавай helper-функции для one-time операций
-- ❌ Не over-engineer: три строки кода лучше, чем абстракция
-
-## 📋 Workflow для разработки
-- **Новое feature**: `/brainstorming` → `/writing-plans` → `/test-driven-development` → `/requesting-code-review`
-- **Bugfix**: `/systematic-debugging` → diagnose → fix → `/verification-before-completion`
-- **Завершение**: `/finishing-a-development-branch` → merge/PR → update CHANGELOG.md
-- **Новый модуль**: Add to structure → Create docs → Add to AGENTS.md → Update this file
+## Что не делать
+- Не добавлять docstrings/comments, если их не было и это не требуется задачей.
+- Не рефакторить "заодно" в bugfix-задачах.
+- Не добавлять обработку невозможных сценариев.
+- Не создавать helper-функции для одноразовых операций.
+- Не over-engineer.
