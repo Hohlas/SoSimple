@@ -44,7 +44,8 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 - Перед правками в каталоге сначала читать локальный `README.md` этого каталога.
 - Предпочитать точечное чтение: `rg`, `head`, `sed`, а не полный вывод больших файлов.
 - Не трогать `docs/archive/` и архивные модули без явной просьбы.
-- Не делать `git commit` и `git push` без явной просьбы пользователя.
+- `git push` не делать без явной просьбы пользователя.
+- `git commit` делать только по явной просьбе пользователя или при явной просьбе закрыть этап с обновлением отчёта, `CHANGELOG.md` и `CONTEXT_HANDOFF.md`.
 - Для bugfix не делать рефакторинг "заодно".
 
 ### Качество изменений
@@ -57,11 +58,18 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ### Документация и CHANGELOG
 - `CHANGELOG.md` обновлять только при: новых фичах, breaking changes, багфиксах, результатах экспериментов с выводами.
 - Не добавлять запись в `CHANGELOG.md` для: правок документации, обновления путей, рефакторинга без изменения поведения.
-- Формат записи: `## [YYYY-MM-DD] - Краткое описание`
+- Формат записи: `## [YYYY-MM-DD] — Краткое описание`
 - Секции: `### Добавлено`, `### Изменено`, `### Исправлено`, `### Результаты`, `### Вывод`
 
+### Отчёты и handoff
+- `docs/reports/` хранит подробные отчёты завершённых этапов.
+- `CONTEXT_HANDOFF.md` хранит текущее состояние работ: где мы, что дальше, что читать первым и какие риски открыты.
+- `.claude/memory/` хранит только устойчивые знания, правила и инварианты.
+- Для закрытия этапа и синхронизации `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
+
 ### Память проекта
-- `.claude/memory/` использовать для поддержания актуального контекста.
+- `.claude/memory/` использовать только для устойчивых знаний, стабильных предпочтений и долгоживущих правил/инвариантов.
+- Текущий операционный контекст и следующий шаг держать в `CONTEXT_HANDOFF.md`.
 - Источником актуальных требований считать текущую задачу пользователя и профильные docs в `docs/`.
 
 ### Приоритет источников
@@ -77,6 +85,8 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 
 ```
 .
+├── .claude/memory/      # Долговечная память проекта
+├── .codex/skills/       # Локальные workflow/skills для Codex
 ├── API/                 # ✅ Генерация ML-сигналов для MT4
 ├── MT/MQL4/             # ✅ MetaTrader4 — формирование датасета, торговый робот
 │   ├── Experts/         #    MQL4 советники
@@ -95,6 +105,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ├── docs/                # Документация (каталоги = каталоги кода)
 │   ├── DATA_FLOW.md     #    Поток данных + навигация по этапам
 │   ├── PRD.md           #    Product Requirements
+│   ├── reports/         #    Канонические отчёты этапов
 │   ├── statistics/      #    Docs для statistics/
 │   ├── processing/      #    Docs для processing/
 │   ├── ML/              #    Docs для ML/
@@ -105,14 +116,16 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
 ├── MODULE_INDEX.md      # Реестр всех модулей со статусами
 ├── CHANGELOG.md         # История значимых изменений
+├── CONTEXT_HANDOFF.md   # Текущий baton pass: где мы, что дальше, что читать
 └── README.md            # Точка входа
 
 ```
 
-Навигация:
+Навигация (быстрые точки входа):
 - [MODULE_INDEX.md](MODULE_INDEX.md)
 - [docs/DATA_FLOW.md](docs/DATA_FLOW.md)
-- [docs/dataset_description.md](docs/dataset_description.md)
+- [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md)
+- [CHANGELOG.md](CHANGELOG.md)
 
 ## Статус разработки
 | Компонент | Статус | Примечание |
@@ -128,5 +141,5 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 
 ---
 
-Последнее обновление: 2026-04-01
+Последнее обновление: 2026-04-02
 Авторы: human + AI agents

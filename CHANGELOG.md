@@ -23,7 +23,7 @@
 
 ### Вывод
 Исследование подтвердило, что сигнал даёт не сильный импульс, а слабый статистический дрейф, который легко теряется неудачной механикой входа. Для Variant 3 нужно тестировать не только `SL/TP`, но и сам способ входа: `market`, вход на откате, задержанный вход и окна отмены сигнала.
-Подробные исследовательские выводы: [docs/superpowers/specs/2026-04-01-signal-research-variant-2-findings.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-findings.md)
+Подробный отчёт: [docs/reports/2026-04-01-signal-research-variant-2.md](docs/reports/2026-04-01-signal-research-variant-2.md)
 
 ---
 
