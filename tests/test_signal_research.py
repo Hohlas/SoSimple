@@ -1,5 +1,6 @@
 import sys
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -84,6 +85,19 @@ def test_compute_excursions_adds_directional_aliases_and_pullback_windows():
     assert sell['fav_1'] == pytest.approx(5.0, abs=1e-9)
     assert sell['adv_1'] == pytest.approx(2.0, abs=1e-9)
     assert sell['close_net_3'] == pytest.approx(-3.0, abs=1e-9)
+
+
+def test_compute_excursions_preserves_pic_price_for_variant3():
+    ohlc = _ohlc_frame()
+    df = pd.DataFrame([{
+        **_signal_row(ohlc.loc[0, 'time'], 1),
+        'pic_price': 98.5,
+        'atr14': 2.0,
+    }])
+
+    exc = sr.compute_excursions(df, ohlc)
+
+    assert exc.iloc[0]['pic_price'] == pytest.approx(98.5, abs=1e-9)
 
 
 def test_compute_excursions_labels_low_ratio_rows_explicitly():
@@ -598,14 +612,16 @@ def test_build_entry_opportunity_profile_counts_pullback_and_favorable_levels():
     frame = pd.DataFrame([
         {
             'time': pd.Timestamp('2026-01-01 00:00'), 'cohort': 'A', 'signal': 1,
-            'adv_1': 4.0, 'adv_3': 6.0, 'adv_6': 9.0,
-            'fav_1': 12.0, 'fav_3': 18.0, 'fav_6': 35.0,
+            'entry_atr14': 4.0,
+            'adv_1': 4.0, 'adv_3': 8.0, 'adv_6': 12.0,
+            'fav_1': 4.0, 'fav_3': 8.0, 'fav_6': 12.0,
             'close_net_1': 2.0, 'close_net_3': 5.0, 'close_net_6': 9.0,
         },
         {
             'time': pd.Timestamp('2026-01-01 01:00'), 'cohort': 'A', 'signal': 1,
-            'adv_1': 1.0, 'adv_3': 4.0, 'adv_6': 8.0,
-            'fav_1': 9.0, 'fav_3': 22.0, 'fav_6': None,
+            'entry_atr14': 4.0,
+            'adv_1': 3.0, 'adv_3': 7.0, 'adv_6': 11.0,
+            'fav_1': 3.0, 'fav_3': 7.0, 'fav_6': 11.0,
             'close_net_1': -1.0, 'close_net_3': 1.0, 'close_net_6': None,
         },
     ])
@@ -613,12 +629,12 @@ def test_build_entry_opportunity_profile_counts_pullback_and_favorable_levels():
     table = sr.build_entry_opportunity_profile(frame, 'cohort', ['A'])
     row = table.iloc[0]
 
-    assert row['pullback>=3_1H'] == pytest.approx(50.0, abs=1e-9)
-    assert row['pullback>=5_1H'] == pytest.approx(50.0, abs=1e-9)
-    assert row['pullback>=8_6H'] == pytest.approx(100.0, abs=1e-9)
-    assert row['fav>=10_1H'] == pytest.approx(50.0, abs=1e-9)
-    assert row['fav>=20_3H'] == pytest.approx(50.0, abs=1e-9)
-    assert row['fav>=30_6H'] == pytest.approx(100.0, abs=1e-9)
+    assert row['pullback>=1ATR_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['pullback>=2ATR_3H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['pullback>=3ATR_6H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['fav>=1ATR_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['fav>=2ATR_3H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['fav>=3ATR_6H'] == pytest.approx(50.0, abs=1e-9)
     assert row['close>0_1H'] == pytest.approx(50.0, abs=1e-9)
     assert row['close>0_3H'] == pytest.approx(100.0, abs=1e-9)
     assert row['close>0_6H'] == pytest.approx(100.0, abs=1e-9)
@@ -793,3 +809,273 @@ def test_report_by_ratio_does_not_mutate_existing_variant2_ratio_bin(capsys):
     capsys.readouterr()
 
     assert exc.loc[0, 'ratio_bin'] == '5+'
+
+
+def test_parse_fractal_price_reads_price_field_from_fractal0():
+    fractal = '1664470800:4585.25:-1:0.1:0.2:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:11'
+    assert sr.parse_fractal_price(fractal) == pytest.approx(4585.25, abs=1e-9)
+
+
+def test_latest_fractal_price_uses_latest_embedded_time_not_column_order():
+    fractals = [
+        '1664470800:4585.25:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0',
+        '1664478000:4601.50:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0',
+        '1664474400:4590.75:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0',
+    ]
+
+    assert sr.latest_fractal_price(fractals) == pytest.approx(4601.50, abs=1e-9)
+
+
+def test_load_pic_price_data_extracts_latest_sorted_price_and_mirrors_signal_dedupe(monkeypatch, tmp_path):
+    raw = tmp_path / 'nero_variant3.csv'
+    raw.write_text(
+        "\n".join([
+            "time;fractal0;fractal1;fractal2",
+            "2026.01.01 00:00;1664470800:4585.25:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;1664478000:4601.50:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;1664474400:4590.75:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0",
+            "2026.01.01 01:00;1664481600:4610.00:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;1664479800:4604.25:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;",
+            "2026.01.01 01:00;1664485200:4622.75:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;1664483400:4618.50:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0;",
+        ]),
+        encoding='utf-8',
+    )
+
+    monkeypatch.setattr(sr, 'RAW_FEATURES_FILE', raw)
+
+    prices = sr.load_pic_price_data()
+
+    assert list(prices['time']) == list(pd.to_datetime([
+        '2026-01-01 00:00',
+        '2026-01-01 01:00',
+    ]))
+    assert list(prices['pic_price']) == pytest.approx([4601.50, 4622.75], abs=1e-9)
+    assert list(prices['pic_direction']) == [1, 1]
+    assert list(prices['pic_fractal_time']) == list(pd.to_datetime([1664478000, 1664485200], unit='s'))
+
+
+def test_summarize_pic_price_validation_matches_high_low_by_direction():
+    frame = pd.DataFrame({
+        'time': pd.to_datetime(['2026-01-01 00:00', '2026-01-01 01:00']),
+        'pic_fractal_time': pd.to_datetime(['2025-12-31 23:00', '2026-01-01 00:00']),
+        'pic_price': [105.0, 97.0],
+        'pic_direction': [1, -1],
+    })
+    ohlc = pd.DataFrame({
+        'time': pd.to_datetime(['2025-12-31 23:00', '2026-01-01 00:00']),
+        'high': [105.0, 103.0],
+        'low': [100.0, 97.0],
+    })
+
+    summary = sr.summarize_pic_price_validation(frame, ohlc)
+
+    assert summary['N_rows'] == 2
+    assert summary['N_joined'] == 2
+    assert summary['N_matched'] == 2
+    assert summary['match_pct'] == pytest.approx(100.0, abs=1e-9)
+    assert summary['peak_match_pct'] == pytest.approx(100.0, abs=1e-9)
+    assert summary['trough_match_pct'] == pytest.approx(100.0, abs=1e-9)
+    assert summary['max_abs_error'] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_resolve_limit_fill_uses_open_for_better_buy_fill():
+    fill_idx, fill_price = sr.resolve_limit_fill(
+        opens=[89.0],
+        highs=[110.0],
+        lows=[88.0],
+        signal=1,
+        limit_price=90.0,
+    )
+    assert fill_idx == 0
+    assert fill_price == pytest.approx(89.0, abs=1e-9)
+
+
+def test_build_variant3_scenario_outcomes_compares_market_pullback_delayed_and_cancel():
+    ohlc = pd.DataFrame({
+        'time': pd.to_datetime([
+            '2026-01-01 00:00',
+            '2026-01-01 01:00',
+            '2026-01-01 02:00',
+            '2026-01-01 03:00',
+            '2026-01-01 04:00',
+        ]),
+        'open': [100.0, 99.0, 90.0, 150.0, 150.0],
+        'high': [100.0, 104.0, 160.0, 151.0, 151.0],
+        'low': [100.0, 88.0, 89.0, 149.0, 149.0],
+        'close': [100.0, 90.0, 150.0, 150.0, 150.0],
+        'atr14': [10.0, 10.0, 10.0, 10.0, 10.0],
+    })
+    exc = pd.DataFrame([
+        {
+            'time': ohlc.loc[0, 'time'],
+            'signal': 1,
+            'ohlc_idx': 0,
+            'entry_close': 100.0,
+            'entry_atr14': 10.0,
+            'pic_price': 80.0,
+            'ratio_bin': '4-5',
+            'atr_bucket': 'Q4',
+            'net_3': 50.0,
+        },
+    ])
+    scenario_specs = [
+        {'scenario': 'market'},
+        {'scenario': 'delayed', 'delay_bars': 1},
+        {'scenario': 'pullback', 'anchor': 'entry_close', 'offset_atr': 1.0},
+        {'scenario': 'pullback', 'anchor': 'pic_price', 'offset_atr': 1.0},
+        {'scenario': 'cancel-window', 'anchor': 'entry_close', 'offset_atr': 2.0, 'expiry_bars': 1},
+    ]
+
+    outcomes = sr.build_variant3_scenario_outcomes(
+        exc,
+        ohlc,
+        horizon=3,
+        sl=5,
+        tp=50,
+        scenario_specs=scenario_specs,
+    )
+
+    market = outcomes[outcomes['scenario'] == 'market'].iloc[0]
+    delayed = outcomes[(outcomes['scenario'] == 'delayed') & (outcomes['delay_bars'] == 1)].iloc[0]
+    pullback_close = outcomes[
+        (outcomes['scenario'] == 'pullback')
+        & (outcomes['anchor'] == 'entry_close')
+        & (outcomes['offset_atr'] == 1.0)
+    ].iloc[0]
+    pullback_pic = outcomes[
+        (outcomes['scenario'] == 'pullback')
+        & (outcomes['anchor'] == 'pic_price')
+        & (outcomes['offset_atr'] == 1.0)
+    ].iloc[0]
+    cancel_skip = outcomes[
+        (outcomes['scenario'] == 'cancel-window')
+        & (outcomes['anchor'] == 'entry_close')
+        & (outcomes['offset_atr'] == 2.0)
+        & (outcomes['expiry_bars'] == 1)
+    ].iloc[0]
+
+    assert market['outcome'] == 'SL_FIRST'
+    assert market['fill_price'] == pytest.approx(100.0, abs=1e-9)
+
+    assert delayed['outcome'] == 'TP_FIRST'
+    assert delayed['fill_price'] == pytest.approx(90.0, abs=1e-9)
+
+    assert pullback_close['outcome'] == 'TP_FIRST'
+    assert pullback_close['fill_price'] == pytest.approx(90.0, abs=1e-9)
+
+    assert pullback_pic['outcome'] == 'TP_FIRST'
+    assert pullback_pic['fill_price'] == pytest.approx(90.0, abs=1e-9)
+
+    assert cancel_skip['fill_status'] == 'SKIP'
+    assert pd.isna(cancel_skip['pnl'])
+
+
+def test_build_variant3_scenario_outcomes_uses_common_signal_deadline():
+    ohlc = pd.DataFrame({
+        'time': pd.to_datetime([
+            '2026-01-01 00:00',
+            '2026-01-01 01:00',
+            '2026-01-01 02:00',
+            '2026-01-01 03:00',
+        ]),
+        'open': [100.0, 100.0, 100.0, 100.0],
+        'high': [100.0, 101.0, 101.0, 160.0],
+        'low': [100.0, 99.0, 99.0, 99.0],
+        'close': [100.0, 100.0, 100.0, 150.0],
+        'atr14': [10.0, 10.0, 10.0, 10.0],
+    })
+    exc = pd.DataFrame([
+        {
+            'time': ohlc.loc[0, 'time'],
+            'signal': 1,
+            'ohlc_idx': 0,
+            'entry_close': 100.0,
+            'entry_atr14': 10.0,
+            'pic_price': 90.0,
+            'ratio_bin': '4-5',
+            'atr_bucket': 'Q4',
+            'net_2': 0.0,
+        },
+    ])
+
+    outcomes = sr.build_variant3_scenario_outcomes(
+        exc,
+        ohlc,
+        horizon=2,
+        sl=5,
+        tp=50,
+        scenario_specs=[{'scenario': 'delayed', 'delay_bars': 1}],
+    )
+
+    delayed = outcomes.iloc[0]
+    assert delayed['outcome'] == 'NEITHER'
+    assert delayed['pnl'] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_summarize_variant3_scenarios_reports_fill_and_skip_rates():
+    outcomes = pd.DataFrame([
+        {
+            'cohort': 'A',
+            'scenario': 'pullback',
+            'params': 'entry_close-1ATR',
+            'fill_status': 'FILLED',
+            'outcome': 'TP_FIRST',
+            'pnl': 50.0,
+        },
+        {
+            'cohort': 'A',
+            'scenario': 'pullback',
+            'params': 'entry_close-1ATR',
+            'fill_status': 'SKIP',
+            'outcome': 'SKIP',
+            'pnl': np.nan,
+        },
+    ])
+
+    summary = sr.summarize_variant3_scenarios(outcomes, ['cohort', 'scenario', 'params'])
+    row = summary.iloc[0]
+
+    assert row['N_signals'] == 2
+    assert row['N_filled'] == 1
+    assert row['fill_pct'] == pytest.approx(50.0, abs=1e-9)
+    assert row['skip_pct'] == pytest.approx(50.0, abs=1e-9)
+    assert row['PF'] == float('inf')
+
+
+def test_variant3_reports_smoke(capsys):
+    summary = pd.DataFrame([
+        {
+            'cohort': 'ratio 4-5 x ATR Q4',
+            'scenario': 'pullback',
+            'params': 'entry_close-1ATR',
+            'N_signals': 10,
+            'N_filled': 6,
+            'fill_pct': 60.0,
+            'skip_pct': 40.0,
+            'PF': 2.0,
+            'AvgPnL': 5.0,
+            'TP_FIRST_pct': 50.0,
+            'SL_FIRST_pct': 16.7,
+            'NEITHER_pct': 33.3,
+        },
+        {
+            'cohort': 'ratio 3-4',
+            'scenario': 'pullback',
+            'params': 'entry_close-1ATR',
+            'N_signals': 10,
+            'N_filled': 5,
+            'fill_pct': 50.0,
+            'skip_pct': 50.0,
+            'PF': 0.8,
+            'AvgPnL': -1.0,
+            'TP_FIRST_pct': 20.0,
+            'SL_FIRST_pct': 40.0,
+            'NEITHER_pct': 40.0,
+        },
+    ])
+
+    sr.report_variant3_scenario_matrix(summary)
+    sr.report_variant3_shortlist_verdict(summary)
+    sr.report_variant3_negative_controls(summary)
+
+    out = capsys.readouterr().out
+    assert 'Variant 3 Scenario Matrix' in out
+    assert 'Variant 3 Shortlist Verdict' in out
+    assert 'Variant 3 Negative Controls' in out

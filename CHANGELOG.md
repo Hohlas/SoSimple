@@ -3,6 +3,28 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-02] — signal_research Variant 3: scenario matrix, raw pic_price и OHLC validation
+
+### Добавлено
+- `API/signal_research.py` расширен до full Variant 3: `market`, `pullback`, `delayed`, `cancel-window`, общая матрица `cohort x scenario x params`, новые секции `Variant 3 Scenario Matrix`, `Variant 3 Shortlist Verdict`, `Variant 3 Negative Controls`
+- `pic_price` теперь извлекается из raw `MT/MQL4/Files/Nero.csv` как цена самого позднего embedded fractal внутри строки, а не по порядку колонок и не через OHLC proxy
+- `tests/test_signal_research.py` расширен тестами на raw fractal parsing, row-level latest-fractal extraction, OHLC validation, fill logic и Variant 3 report smoke
+
+### Исправлено
+- Исправлена критичная ошибка research-layer: `pic_price` теперь протягивается в excursion/matrix pipeline, поэтому pic-relative Variant 3 scenarios больше не падают в ложный `0 fill`
+
+### Результаты
+- OOS CLI run (`2022-07-18 11:00:00` — `2026-03-20 06:00:00`) дал `2603` реальных сигналов с excursion-данными и полную Variant 3 matrix на shortlist/controls
+- OOS `pic_price` validation: `9403/9403` test-slice rows matched expected OHLC `High/Low` side within tolerance
+- Deep pullback entries заметно улучшают primary cohorts на бумаге: например, `ratio 4-5 × ATR Q4` вырос от `market PF=1.34` до `pullback pic_price-1ATR PF=6.20` (`22` fill-а), а `ATR Q4` от `1.12` до `pullback entry_close-3ATR PF=2.57` (`106` fill-ов)
+- Но negative controls тоже улучшаются: `ratio 3-4` от `market PF=0.92` до `pullback entry_close-3ATR PF=1.62`, `non-Q4` от `1.02` до `cancel-window entry_close-1ATR@1b PF=1.41`
+
+### Вывод
+Variant 3 tooling и каноническая execution matrix готовы, но финальный winner ещё не зафиксирован: текущий auto-verdict слишком чувствителен к low-fill сценариям, а uplift частично переносится и на negative controls. Следующий шаг — ужесточить robustness-фильтр и только потом выбирать кандидатов для EA.
+Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3.md](docs/reports/2026-04-02-signal-research-variant-3.md)
+
+---
+
 ## [2026-04-02] — signal_research Variant 3 prep: canonical ATR, cohort map и shortlist для Variant 3
 
 ### Добавлено
@@ -15,11 +37,12 @@
 - OOS `2022-07-18 11:00:00` — `2026-03-20 06:00:00`: `2603` реальных сигналов с excursion-данными
 - Лучший кандидат для Variant 3: `ratio 4-5 × ATR Q4` (`N=101`, `PF_12=2.62`, `Net_12 mean=22.2`, `AvgPnL_baseline=1.4`)
 - Лучший широкий ratio-бакет не изменился: `ratio 4-5` (`PF_12=1.95`), а `ratio 3-4` остался устойчивым анти-паттерном (`PF_12=0.87`)
-- `ATR Q4` резко отличается от `non-Q4` по path profile: `fav>=20_3H = 29.6%` против `2.6%`, `fav>=30_6H = 29.2%` против `2.3%`
+- `pic_price` validated against OHLC on the full deduplicated `Nero.csv` universe: `58766` rows, `100%` match to fractal-bar `High/Low` within `0.05` tolerance (`max abs error = 0.05`)
+- После пересчёта prep path profile в ATR-единицы старое преимущество Q4 по раннему pullback почти исчезло; surviving edge остался в favorable continuation, особенно у `ratio 4-5 × ATR Q4`
 - Broad `SELL` по-прежнему слабый (`PF_12=0.95`), а `BUY` и `ATR Q4` выглядят лучшими общими группами для следующего этапа
 
 ### Вывод
-Этап подтвердил, что Variant 3 нужно запускать не по всей выборке, а по shortlist когорт. Главный приоритет теперь — прямое сравнение `market / pullback / delayed / cancel-window` на `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`, с `ratio 3-4` и `non-Q4` как отрицательными контролями.
+Этап подтвердил, что Variant 3 нужно запускать не по всей выборке, а по shortlist когорт. При этом ATR-нормализация убрала иллюзию “очевидного pullback edge” у Q4, поэтому главный приоритет теперь — прямое сравнение `market / pullback / delayed / cancel-window` на `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`, с `ratio 3-4` и `non-Q4` как отрицательными контролями.
 Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3-prep.md](docs/reports/2026-04-02-signal-research-variant-3-prep.md)
 
 ---

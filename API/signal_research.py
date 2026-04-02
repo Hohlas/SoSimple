@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: API/signal_research.py
-# Назначение: Variant 2 исследование качества ML-сигналов по реальным OHLC,
-#              которое готовится к расширению под Variant 3 prep
+# Назначение: Variant 2 / Variant 3 prep / Variant 3 execution research
+#              качества ML-сигналов по реальным OHLC
 # Язык: Python 3.11+
 # Создан: 2026-04-01
 # Зависимости:
@@ -32,10 +32,21 @@ Variant 2 отчёт строит:
 6. Regime Split по направлению, ratio и ATR-квартилям
 7. Practical Conclusions для следующего этапа построения EA
 
-Этот файл поддерживает Variant 2 отчёт и готовится к расширению под Variant 3 prep.
+Variant 3 prep добавляет cohort-oriented shortlist и entry-opportunity sections.
+Variant 3 execution research добавляет прямое сравнение entry scenarios:
+- market
+- pullback
+- delayed
+- cancel-window
+
+Этот файл поддерживает Variant 2, Variant 3 prep и full Variant 3 execution research.
 Если в OHLC CSV уже есть `atr14`, используется каноническое значение из MT4;
 пропуски в нём добираются Python ATR(14) как fallback.
 Если колонки `atr14` нет, ATR(14) целиком досчитывается в Python.
+`pic_price` берётся из реальной фрактальной `price` feature в raw Nero rows:
+внутри каждой строки выбирается фрактал с максимальным embedded-time
+(зеркально sort-логике `label_main.py`), затем применяется та же dedupe-политика
+по `time`, что и в `generate_signals.py`.
 """
 
 import argparse
@@ -47,6 +58,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SIGNALS_FILE = PROJECT_ROOT / 'MT' / 'MQL4' / 'Files' / 'ml_signals.csv'
 OHLC_FILE = PROJECT_ROOT / 'DATA' / 'XAUUSD_H1_OHLC.csv'
+RAW_FEATURES_FILE = PROJECT_ROOT / 'MT' / 'MQL4' / 'Files' / 'Nero.csv'
 
 BASE_HORIZON = 12
 PULLBACK_WINDOWS = [1, 3, 6]
@@ -54,6 +66,8 @@ BARRIER_HORIZONS = [6, 12, 24]
 SL_LEVELS = [5, 10, 15, 20, 30]
 TP_LEVELS = [5, 10, 15, 20, 30, 50]
 ATR_PERIOD = 14
+VARIANT3_PRIMARY_COHORTS = ['ratio 4-5 × ATR Q4', 'ratio 4-5', 'BUY', 'ATR Q4']
+VARIANT3_NEGATIVE_CONTROLS = ['ratio 3-4', 'non-Q4']
 
 
 def compute_true_range(ohlc: pd.DataFrame) -> pd.Series:
@@ -76,10 +90,81 @@ PRED_COLS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12',
 AMPLITUDE_BUCKET_LABELS = ['low', 'mid', 'high']
 
 
+def parse_fractal_price(fractal_value) -> float:
+    parsed = parse_fractal_record(fractal_value)
+    return parsed['price'] if parsed is not None else np.nan
+
+
+def parse_fractal_record(fractal_value):
+    if pd.isna(fractal_value) or fractal_value == '':
+        return None
+    parts = str(fractal_value).split(':')
+    if len(parts) < 3:
+        return None
+    try:
+        return {
+            'fractal_time': int(parts[0]),
+            'price': float(parts[1]),
+            'direction': int(parts[2]),
+        }
+    except ValueError:
+        return None
+
+
+def latest_fractal_price(fractal_values) -> float:
+    return latest_fractal_record(fractal_values)['price']
+
+
+def latest_fractal_record(fractal_values):
+    latest = {'fractal_time': np.nan, 'price': np.nan, 'direction': np.nan}
+    latest_time = None
+
+    for fractal_value in fractal_values:
+        parsed = parse_fractal_record(fractal_value)
+        if parsed is None:
+            continue
+        if latest_time is None or parsed['fractal_time'] > latest_time:
+            latest_time = parsed['fractal_time']
+            latest = parsed
+
+    return latest
+
+
+def load_pic_price_data() -> pd.DataFrame:
+    if not RAW_FEATURES_FILE.exists():
+        return pd.DataFrame(columns=['time', 'pic_fractal_time', 'pic_price', 'pic_direction'])
+
+    frame = pd.read_csv(
+        RAW_FEATURES_FILE,
+        sep=';',
+        usecols=lambda col: col == 'time' or col.startswith('fractal'),
+        parse_dates=['time'],
+        low_memory=False,
+    )
+    fractal_columns = [col for col in frame.columns if col.startswith('fractal')]
+    latest_records = [
+        latest_fractal_record(fractal_values)
+        for fractal_values in frame[fractal_columns].itertuples(index=False, name=None)
+    ]
+    frame['pic_fractal_time'] = pd.to_datetime(
+        [record['fractal_time'] for record in latest_records],
+        unit='s',
+        errors='coerce',
+    )
+    frame['pic_price'] = [record['price'] for record in latest_records]
+    frame['pic_direction'] = [record['direction'] for record in latest_records]
+
+    prices = frame[['time', 'pic_fractal_time', 'pic_price', 'pic_direction']].copy()
+    prices.sort_values('time', inplace=True)
+    prices = prices.drop_duplicates(subset=['time'], keep='last').reset_index(drop=True)
+    return prices
+
+
 def load_data(test_only: bool = False):
     """Загрузка и слияние сигналов с OHLC."""
     sig = pd.read_csv(SIGNALS_FILE, sep=';', parse_dates=['time'])
     ohlc = pd.read_csv(OHLC_FILE, sep=';', parse_dates=['time'])
+    pic_prices = load_pic_price_data()
 
     ohlc.sort_values('time', inplace=True)
     ohlc.reset_index(drop=True, inplace=True)
@@ -91,6 +176,12 @@ def load_data(test_only: bool = False):
 
     # Merge: оставляем только строки где есть и сигнал и OHLC
     df = sig.merge(ohlc[['time', 'open', 'high', 'low', 'close', 'atr14']], on='time', how='inner')
+    if pic_prices.empty:
+        df['pic_price'] = np.nan
+        df['pic_fractal_time'] = pd.NaT
+        df['pic_direction'] = np.nan
+    else:
+        df = df.merge(pic_prices, on='time', how='left')
     df.sort_values('time', inplace=True)
     df.reset_index(drop=True, inplace=True)
 
@@ -155,6 +246,7 @@ def compute_excursions(df: pd.DataFrame, ohlc: pd.DataFrame):
             'ohlc_idx': ohlc_idx,
             'entry_close': entry_close,
             'entry_atr14': row.get('atr14', atr14.iloc[ohlc_idx]),
+            'pic_price': row.get('pic_price', np.nan),
         }
 
         # Предсказания модели
@@ -461,6 +553,17 @@ def _non_null_rate(series: pd.Series, predicate) -> float:
     return 100.0 * predicate(valid).mean()
 
 
+def _atr_multiple_rate(frame: pd.DataFrame, value_col: str, threshold_atr: float) -> float:
+    value_series = pd.to_numeric(frame.get(value_col, pd.Series(index=frame.index, dtype=float)), errors='coerce')
+    atr_series = pd.to_numeric(frame.get('entry_atr14', pd.Series(index=frame.index, dtype=float)), errors='coerce')
+    valid = pd.DataFrame({'value': value_series, 'atr': atr_series}).replace([np.inf, -np.inf], np.nan)
+    valid = valid.dropna()
+    valid = valid[valid['atr'] > 0]
+    if valid.empty:
+        return np.nan
+    return 100.0 * ((valid['value'] / valid['atr']) >= threshold_atr).mean()
+
+
 def build_entry_opportunity_profile(frame: pd.DataFrame, group_col, group_values) -> pd.DataFrame:
     group_cols = [group_col] if isinstance(group_col, str) else list(group_col)
     if group_values is None:
@@ -472,12 +575,12 @@ def build_entry_opportunity_profile(frame: pd.DataFrame, group_col, group_values
     columns = [
         *group_cols,
         'N',
-        'pullback>=3_1H',
-        'pullback>=5_1H',
-        'pullback>=8_6H',
-        'fav>=10_1H',
-        'fav>=20_3H',
-        'fav>=30_6H',
+        'pullback>=1ATR_1H',
+        'pullback>=2ATR_3H',
+        'pullback>=3ATR_6H',
+        'fav>=1ATR_1H',
+        'fav>=2ATR_3H',
+        'fav>=3ATR_6H',
         'close>0_1H',
         'close>0_3H',
         'close>0_6H',
@@ -506,12 +609,12 @@ def build_entry_opportunity_profile(frame: pd.DataFrame, group_col, group_values
         rows.append({
             **dict(zip(group_cols, group_key)),
             'N': len(sub),
-            'pullback>=3_1H': _non_null_rate(sub.get('adv_1', pd.Series(dtype=float)), lambda s: s >= 3),
-            'pullback>=5_1H': _non_null_rate(sub.get('adv_3', pd.Series(dtype=float)), lambda s: s >= 5),
-            'pullback>=8_6H': _non_null_rate(sub.get('adv_6', pd.Series(dtype=float)), lambda s: s >= 8),
-            'fav>=10_1H': _non_null_rate(sub.get('fav_1', pd.Series(dtype=float)), lambda s: s >= 10),
-            'fav>=20_3H': _non_null_rate(sub.get('fav_3', pd.Series(dtype=float)), lambda s: s >= 20),
-            'fav>=30_6H': _non_null_rate(sub.get('fav_6', pd.Series(dtype=float)), lambda s: s >= 30),
+            'pullback>=1ATR_1H': _atr_multiple_rate(sub, 'adv_1', 1.0),
+            'pullback>=2ATR_3H': _atr_multiple_rate(sub, 'adv_3', 2.0),
+            'pullback>=3ATR_6H': _atr_multiple_rate(sub, 'adv_6', 3.0),
+            'fav>=1ATR_1H': _atr_multiple_rate(sub, 'fav_1', 1.0),
+            'fav>=2ATR_3H': _atr_multiple_rate(sub, 'fav_3', 2.0),
+            'fav>=3ATR_6H': _atr_multiple_rate(sub, 'fav_6', 3.0),
             'close>0_1H': _non_null_rate(sub.get('close_net_1', pd.Series(dtype=float)), lambda s: s > 0),
             'close>0_3H': _non_null_rate(sub.get('close_net_3', pd.Series(dtype=float)), lambda s: s > 0),
             'close>0_6H': _non_null_rate(sub.get('close_net_6', pd.Series(dtype=float)), lambda s: s > 0),
@@ -606,6 +709,326 @@ def _build_priority_cohort_frame(frame: pd.DataFrame) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame(columns=[*analysis.columns, 'cohort'])
     return pd.concat(frames, axis=0, ignore_index=True)
+
+
+def summarize_pic_price_validation(frame: pd.DataFrame, ohlc: pd.DataFrame, eps: float = 0.051) -> dict:
+    summary = {
+        'N_rows': 0,
+        'N_joined': 0,
+        'N_matched': 0,
+        'match_pct': np.nan,
+        'peak_match_pct': np.nan,
+        'trough_match_pct': np.nan,
+        'max_abs_error': np.nan,
+        'median_abs_error': np.nan,
+    }
+    required = {'pic_fractal_time', 'pic_price', 'pic_direction'}
+    if frame.empty or not required.issubset(frame.columns):
+        return summary
+
+    working = frame[['time', 'pic_fractal_time', 'pic_price', 'pic_direction']].copy()
+    working = working.dropna(subset=['pic_fractal_time', 'pic_price', 'pic_direction'])
+    working = working[working['pic_direction'].isin([-1, 1])]
+    if working.empty:
+        return summary
+
+    reference = ohlc[['time', 'high', 'low']].copy()
+    reference.rename(columns={'time': 'pic_fractal_time'}, inplace=True)
+    merged = working.merge(reference, on='pic_fractal_time', how='left')
+    joined = merged.dropna(subset=['high', 'low']).copy()
+
+    summary['N_rows'] = len(working)
+    summary['N_joined'] = len(joined)
+    if joined.empty:
+        return summary
+
+    expected_price = np.where(joined['pic_direction'] == 1, joined['high'], joined['low'])
+    abs_error = (joined['pic_price'] - expected_price).abs()
+    matched = abs_error <= eps
+    summary['N_matched'] = int(matched.sum())
+    summary['match_pct'] = 100.0 * matched.mean()
+    peaks = joined['pic_direction'] == 1
+    troughs = joined['pic_direction'] == -1
+    if peaks.any():
+        summary['peak_match_pct'] = 100.0 * matched[peaks].mean()
+    if troughs.any():
+        summary['trough_match_pct'] = 100.0 * matched[troughs].mean()
+    summary['max_abs_error'] = abs_error.max()
+    summary['median_abs_error'] = abs_error.median()
+    return summary
+
+
+def default_variant3_scenario_specs():
+    specs = [{'scenario': 'market'}]
+    for delay_bars in [1, 3]:
+        specs.append({'scenario': 'delayed', 'delay_bars': delay_bars})
+    for offset_atr in [1.0, 2.0, 3.0]:
+        specs.append({'scenario': 'pullback', 'anchor': 'entry_close', 'offset_atr': offset_atr})
+    for offset_atr in [0.0, 1.0, -1.0]:
+        specs.append({'scenario': 'pullback', 'anchor': 'pic_price', 'offset_atr': offset_atr})
+    for expiry_bars in [1, 3, 6]:
+        for offset_atr in [1.0, 2.0, 3.0]:
+            specs.append({
+                'scenario': 'cancel-window',
+                'anchor': 'entry_close',
+                'offset_atr': offset_atr,
+                'expiry_bars': expiry_bars,
+            })
+        for offset_atr in [0.0, 1.0, -1.0]:
+            specs.append({
+                'scenario': 'cancel-window',
+                'anchor': 'pic_price',
+                'offset_atr': offset_atr,
+                'expiry_bars': expiry_bars,
+            })
+    return specs
+
+
+def _format_atr_label(value) -> str:
+    value = float(value)
+    if value.is_integer():
+        return f'{int(value)}ATR'
+    return f'{value:.1f}ATR'
+
+
+def _variant3_params_label(spec: dict) -> str:
+    scenario = spec['scenario']
+    if scenario == 'market':
+        return 'market'
+    if scenario == 'delayed':
+        return f"delay={int(spec['delay_bars'])}"
+
+    anchor = spec['anchor']
+    offset_atr = float(spec['offset_atr'])
+    if anchor == 'entry_close':
+        base = f"entry_close-{_format_atr_label(abs(offset_atr))}"
+    elif offset_atr > 0:
+        base = f"pic_price+{_format_atr_label(offset_atr)}"
+    elif offset_atr < 0:
+        base = f"pic_price-{_format_atr_label(abs(offset_atr))}"
+    else:
+        base = 'pic_price'
+
+    if scenario == 'cancel-window':
+        return f"{base}@{int(spec['expiry_bars'])}b"
+    return base
+
+
+def resolve_limit_fill(opens, highs, lows, signal, limit_price):
+    for idx, (opn, high, low) in enumerate(zip(opens, highs, lows)):
+        if signal == 1:
+            if opn <= limit_price:
+                return idx, float(opn)
+            if low <= limit_price:
+                return idx, float(limit_price)
+        else:
+            if opn >= limit_price:
+                return idx, float(opn)
+            if high >= limit_price:
+                return idx, float(limit_price)
+    return None, np.nan
+
+
+def _variant3_limit_price(row: pd.Series, anchor: str, offset_atr: float):
+    atr = row.get('entry_atr14', np.nan)
+    if pd.isna(atr):
+        return np.nan
+
+    if anchor == 'entry_close':
+        base_price = row.get('entry_close', np.nan)
+        if pd.isna(base_price):
+            return np.nan
+        return base_price - atr * offset_atr if int(row['signal']) == 1 else base_price + atr * offset_atr
+
+    if anchor == 'pic_price':
+        base_price = row.get('pic_price', np.nan)
+        if pd.isna(base_price):
+            return np.nan
+        return base_price + atr * offset_atr if int(row['signal']) == 1 else base_price - atr * offset_atr
+
+    return np.nan
+
+
+def _variant3_net_from_close(signal: int, entry_price: float, exit_close: float):
+    return exit_close - entry_price if signal == 1 else entry_price - exit_close
+
+
+def _evaluate_variant3_outcome(opens, highs, lows, closes, signal, fill_idx, deadline_idx, fill_price, sl, tp):
+    future_opens = opens[fill_idx + 1:deadline_idx + 1]
+    future_highs = highs[fill_idx + 1:deadline_idx + 1]
+    future_lows = lows[fill_idx + 1:deadline_idx + 1]
+    outcome = first_hit_barrier_result(future_opens, future_highs, future_lows, fill_price, signal, sl, tp)
+    if outcome == 'TP_FIRST':
+        return outcome, float(tp)
+    if outcome == 'SL_FIRST':
+        return outcome, -float(sl)
+    return outcome, _variant3_net_from_close(signal, fill_price, float(closes[deadline_idx]))
+
+
+def build_variant3_scenario_outcomes(
+    exc: pd.DataFrame,
+    ohlc: pd.DataFrame,
+    horizon: int = BASE_HORIZON,
+    sl: int = 5,
+    tp: int = 50,
+    scenario_specs=None,
+) -> pd.DataFrame:
+    columns = [
+        'time', 'signal', 'ratio_bin', 'atr_bucket', 'pic_price',
+        'scenario', 'params', 'anchor', 'offset_atr', 'delay_bars', 'expiry_bars',
+        'fill_status', 'fill_idx', 'fill_price', 'outcome', 'pnl',
+    ]
+    if exc.empty:
+        return pd.DataFrame(columns=columns)
+
+    specs = default_variant3_scenario_specs() if scenario_specs is None else list(scenario_specs)
+    ohlc_sorted = ohlc.sort_values('time').reset_index(drop=True)
+    opens = ohlc_sorted['open'].to_numpy()
+    highs = ohlc_sorted['high'].to_numpy()
+    lows = ohlc_sorted['low'].to_numpy()
+    closes = ohlc_sorted['close'].to_numpy()
+    records = []
+
+    for _, row in exc.iterrows():
+        idx = int(row['ohlc_idx'])
+        deadline_idx = idx + horizon
+        if deadline_idx >= len(ohlc_sorted):
+            continue
+
+        for spec in specs:
+            scenario = spec['scenario']
+            anchor = spec.get('anchor')
+            offset_atr = spec.get('offset_atr')
+            delay_bars = spec.get('delay_bars')
+            expiry_bars = spec.get('expiry_bars')
+
+            fill_idx = None
+            fill_price = np.nan
+            fill_status = 'SKIP'
+
+            if scenario == 'market':
+                fill_idx = idx
+                fill_price = float(row['entry_close'])
+                fill_status = 'FILLED'
+            elif scenario == 'delayed':
+                fill_idx = idx + int(delay_bars)
+                if fill_idx <= deadline_idx and fill_idx < len(ohlc_sorted):
+                    fill_price = float(closes[fill_idx])
+                    fill_status = 'FILLED'
+            elif scenario in ('pullback', 'cancel-window'):
+                limit_price = _variant3_limit_price(row, anchor, float(offset_atr))
+                if not pd.isna(limit_price):
+                    expiry_limit = deadline_idx if scenario == 'pullback' else min(deadline_idx, idx + int(expiry_bars))
+                    if expiry_limit > idx:
+                        relative_fill_idx, resolved_price = resolve_limit_fill(
+                            opens=opens[idx + 1:expiry_limit + 1],
+                            highs=highs[idx + 1:expiry_limit + 1],
+                            lows=lows[idx + 1:expiry_limit + 1],
+                            signal=int(row['signal']),
+                            limit_price=float(limit_price),
+                        )
+                        if relative_fill_idx is not None:
+                            fill_idx = idx + 1 + int(relative_fill_idx)
+                            fill_price = resolved_price
+                            fill_status = 'FILLED'
+
+            if fill_status == 'FILLED':
+                outcome, pnl = _evaluate_variant3_outcome(
+                    opens=opens,
+                    highs=highs,
+                    lows=lows,
+                    closes=closes,
+                    signal=int(row['signal']),
+                    fill_idx=fill_idx,
+                    deadline_idx=deadline_idx,
+                    fill_price=float(fill_price),
+                    sl=sl,
+                    tp=tp,
+                )
+            else:
+                outcome, pnl = 'SKIP', np.nan
+
+            records.append({
+                'time': row['time'],
+                'signal': int(row['signal']),
+                'ratio_bin': row.get('ratio_bin'),
+                'atr_bucket': row.get('atr_bucket', 'ALL'),
+                'pic_price': row.get('pic_price', np.nan),
+                'scenario': scenario,
+                'params': _variant3_params_label(spec),
+                'anchor': anchor,
+                'offset_atr': offset_atr,
+                'delay_bars': delay_bars,
+                'expiry_bars': expiry_bars,
+                'fill_status': fill_status,
+                'fill_idx': fill_idx,
+                'fill_price': fill_price,
+                'outcome': outcome,
+                'pnl': pnl,
+            })
+
+    return pd.DataFrame(records, columns=columns)
+
+
+def summarize_variant3_scenarios(outcomes: pd.DataFrame, group_cols) -> pd.DataFrame:
+    group_cols = [group_cols] if isinstance(group_cols, str) else list(group_cols)
+    columns = [
+        *group_cols,
+        'N_signals',
+        'N_filled',
+        'fill_pct',
+        'skip_pct',
+        'PF',
+        'AvgPnL',
+        'TP_FIRST_pct',
+        'SL_FIRST_pct',
+        'NEITHER_pct',
+    ]
+    if outcomes.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows = []
+    for group_key, sub in outcomes.groupby(group_cols, sort=False):
+        if not isinstance(group_key, tuple):
+            group_key = (group_key,)
+        filled = sub[sub['fill_status'] == 'FILLED'].copy()
+        n_signals = len(sub)
+        n_filled = len(filled)
+        outcomes_filled = filled['outcome']
+        denom = len(outcomes_filled)
+        rows.append({
+            **dict(zip(group_cols, group_key)),
+            'N_signals': n_signals,
+            'N_filled': n_filled,
+            'fill_pct': 100.0 * n_filled / n_signals if n_signals else np.nan,
+            'skip_pct': 100.0 * (sub['fill_status'] == 'SKIP').sum() / n_signals if n_signals else np.nan,
+            'PF': _profit_factor(filled['pnl'].dropna()) if n_filled else np.nan,
+            'AvgPnL': filled['pnl'].mean() if n_filled else np.nan,
+            'TP_FIRST_pct': 100.0 * (outcomes_filled == 'TP_FIRST').sum() / denom if denom else np.nan,
+            'SL_FIRST_pct': 100.0 * (outcomes_filled == 'SL_FIRST').sum() / denom if denom else np.nan,
+            'NEITHER_pct': 100.0 * (outcomes_filled == 'NEITHER').sum() / denom if denom else np.nan,
+        })
+    return pd.DataFrame(rows, columns=columns)
+
+
+def build_variant3_summary(exc: pd.DataFrame, ohlc: pd.DataFrame) -> pd.DataFrame:
+    scenario_outcomes = build_variant3_scenario_outcomes(exc, ohlc)
+    if scenario_outcomes.empty:
+        return pd.DataFrame(columns=[
+            'cohort', 'scenario', 'params', 'N_signals', 'N_filled', 'fill_pct', 'skip_pct',
+            'PF', 'AvgPnL', 'TP_FIRST_pct', 'SL_FIRST_pct', 'NEITHER_pct',
+        ])
+
+    cohort_frame = _build_priority_cohort_frame(scenario_outcomes)
+    if cohort_frame.empty:
+        return pd.DataFrame(columns=[
+            'cohort', 'scenario', 'params', 'N_signals', 'N_filled', 'fill_pct', 'skip_pct',
+            'PF', 'AvgPnL', 'TP_FIRST_pct', 'SL_FIRST_pct', 'NEITHER_pct',
+        ])
+
+    wanted = VARIANT3_PRIMARY_COHORTS + VARIANT3_NEGATIVE_CONTROLS
+    cohort_frame = cohort_frame[cohort_frame['cohort'].isin(wanted)].copy()
+    return summarize_variant3_scenarios(cohort_frame, ['cohort', 'scenario', 'params'])
 
 
 def print_separator(title: str):
@@ -952,6 +1375,28 @@ def report_entry_opportunities(exc: pd.DataFrame):
     print(table.to_string(index=False))
 
 
+def report_pic_price_validation(df: pd.DataFrame, ohlc: pd.DataFrame):
+    print_separator("Pic Price Validation")
+
+    summary = summarize_pic_price_validation(df, ohlc)
+    if summary['N_rows'] == 0:
+        print("  No pic_price rows available.")
+        return
+
+    print(
+        f"  Rows: {summary['N_rows']}, joined on fractal time: {summary['N_joined']}, "
+        f"matched High/Low within 0.05 tolerance: {summary['N_matched']} ({_format_pct(summary['match_pct'])})."
+    )
+    print(
+        f"  Peaks vs High: {_format_pct(summary['peak_match_pct'])}, "
+        f"troughs vs Low: {_format_pct(summary['trough_match_pct'])}."
+    )
+    print(
+        f"  Abs error: median={_format_num(summary['median_abs_error'])}, "
+        f"max={_format_num(summary['max_abs_error'])}."
+    )
+
+
 def report_stability_splits(exc: pd.DataFrame, barriers: pd.DataFrame, barrier_outcomes: pd.DataFrame):
     print_separator("Stability Split")
 
@@ -1063,6 +1508,74 @@ def report_priority_cohorts(exc: pd.DataFrame, barriers: pd.DataFrame, barrier_o
         print(display[['cohort', 'N', 'PF_12', 'AvgPnL_baseline', 'Net_12_mean', 'TP_FIRST_pct', 'SL_FIRST_pct', 'NEITHER_pct']].to_string(index=False))
 
 
+def report_variant3_scenario_matrix(summary: pd.DataFrame):
+    print_separator("Variant 3 Scenario Matrix")
+    if summary.empty:
+        print("  No Variant 3 scenario rows available.")
+        return
+
+    table = summary.copy()
+    table['fill_pct'] = table['fill_pct'].map(_format_pct)
+    table['skip_pct'] = table['skip_pct'].map(_format_pct)
+    table['PF'] = table['PF'].map(_format_pf)
+    table['AvgPnL'] = table['AvgPnL'].map(_format_num)
+    table['TP_FIRST_pct'] = table['TP_FIRST_pct'].map(_format_pct)
+    table['SL_FIRST_pct'] = table['SL_FIRST_pct'].map(_format_pct)
+    table['NEITHER_pct'] = table['NEITHER_pct'].map(_format_pct)
+    table = table.sort_values(['cohort', 'scenario', 'params'], kind='stable').reset_index(drop=True)
+    print(table.to_string(index=False))
+
+
+def report_variant3_shortlist_verdict(summary: pd.DataFrame):
+    print_separator("Variant 3 Shortlist Verdict")
+    shortlist = summary[summary['cohort'].isin(VARIANT3_PRIMARY_COHORTS)].copy()
+    if shortlist.empty:
+        print("  No primary cohort rows available.")
+        return
+
+    shortlist = shortlist[shortlist['N_filled'] > 0].copy()
+    if shortlist.empty:
+        print("  No filled primary-cohort rows available.")
+        return
+
+    shortlist['PF_sort'] = pd.to_numeric(shortlist['PF'], errors='coerce')
+    shortlist['AvgPnL_sort'] = pd.to_numeric(shortlist['AvgPnL'], errors='coerce')
+    shortlist['fill_sort'] = pd.to_numeric(shortlist['fill_pct'], errors='coerce')
+    verdict = shortlist.sort_values(
+        ['cohort', 'PF_sort', 'AvgPnL_sort', 'fill_sort'],
+        ascending=[True, False, False, False],
+        na_position='last',
+    ).groupby('cohort', sort=False).head(1)
+
+    display = verdict.drop(columns=['PF_sort', 'AvgPnL_sort', 'fill_sort'])
+    display['fill_pct'] = display['fill_pct'].map(_format_pct)
+    display['skip_pct'] = display['skip_pct'].map(_format_pct)
+    display['PF'] = display['PF'].map(_format_pf)
+    display['AvgPnL'] = display['AvgPnL'].map(_format_num)
+    display['TP_FIRST_pct'] = display['TP_FIRST_pct'].map(_format_pct)
+    display['SL_FIRST_pct'] = display['SL_FIRST_pct'].map(_format_pct)
+    display['NEITHER_pct'] = display['NEITHER_pct'].map(_format_pct)
+    print(display.to_string(index=False))
+
+
+def report_variant3_negative_controls(summary: pd.DataFrame):
+    print_separator("Variant 3 Negative Controls")
+    controls = summary[summary['cohort'].isin(VARIANT3_NEGATIVE_CONTROLS)].copy()
+    if controls.empty:
+        print("  No negative-control rows available.")
+        return
+
+    controls = controls.sort_values(['cohort', 'scenario', 'params'], kind='stable').reset_index(drop=True)
+    controls['fill_pct'] = controls['fill_pct'].map(_format_pct)
+    controls['skip_pct'] = controls['skip_pct'].map(_format_pct)
+    controls['PF'] = controls['PF'].map(_format_pf)
+    controls['AvgPnL'] = controls['AvgPnL'].map(_format_num)
+    controls['TP_FIRST_pct'] = controls['TP_FIRST_pct'].map(_format_pct)
+    controls['SL_FIRST_pct'] = controls['SL_FIRST_pct'].map(_format_pct)
+    controls['NEITHER_pct'] = controls['NEITHER_pct'].map(_format_pct)
+    print(controls.to_string(index=False))
+
+
 def report_regime_splits(exc: pd.DataFrame, barrier_outcomes: pd.DataFrame, barrier_summary: pd.DataFrame):
     print_separator("Regime Split")
 
@@ -1149,12 +1662,14 @@ def main():
     print(f"{'═' * 70}")
 
     df, ohlc = load_data(test_only=args.test_only)
+    report_pic_price_validation(df, ohlc)
 
     print("\n  Вычисление MFE/MAE/Net...")
     exc = compute_excursions(df, ohlc)
     print(f"  Готово: {len(exc)} сигналов с excursion данными")
     barrier_outcomes = build_barrier_outcomes(exc, ohlc)
     barrier_summary = summarize_barrier_outcomes(barrier_outcomes)
+    variant3_summary = build_variant3_summary(exc, ohlc)
 
     report_signal_passport(exc)
     report_by_ratio(exc)
@@ -1167,6 +1682,9 @@ def main():
     report_entry_opportunities(exc)
     report_stability_splits(exc, barrier_summary, barrier_outcomes)
     report_priority_cohorts(exc, barrier_summary, barrier_outcomes)
+    report_variant3_scenario_matrix(variant3_summary)
+    report_variant3_shortlist_verdict(variant3_summary)
+    report_variant3_negative_controls(variant3_summary)
     print_practical_conclusions(exc, barrier_summary)
 
 

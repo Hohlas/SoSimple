@@ -233,3 +233,4 @@ time;open;high;low;close;volume;atr14
 - `cancel-window`
 
 Но сравнивать их нужно не по всем сигналам подряд, а на shortlist когорт, полученном здесь.
+Для `pullback` и `cancel-window` в следующем этапе нужно использовать адаптивные уровни `ATR14 * k`, где `k=1,2,3` (без фиксированных абсолютных оффсетов), и отдельно проверять якоря `entry_close` и `pic_price`; `pic_price` должен браться как реальная фрактальная `price`-feature из raw `Nero.csv` после row-level ordering по embedded fractal time (зеркально `label_main.py`), а не из нормализованного labeled dataset.

@@ -63,6 +63,19 @@ python -m API.signal_research --test-only
 | Best broad ratio bucket | `4-5` |
 | Persistent anti-pattern | `3-4` |
 
+### `pic_price` extraction validation
+
+Before using `pic_price` as a Variant 3 anchor, the extraction logic was validated against `DATA/XAUUSD_H1_OHLC.csv` on the full deduplicated `Nero.csv` universe:
+
+- validated rows: `58766`
+- match to fractal-bar `High/Low` within `0.05` price tolerance: `100.0%`
+- peak rows (`direction=1`) vs `High`: `100.0%`
+- trough rows (`direction=-1`) vs `Low`: `100.0%`
+- max absolute error: `0.05`
+- median absolute error: `0.02`
+
+This confirms that the research `pic_price` anchor is aligned with the actual fractal bar in OHLC terms; the small non-zero error is a rounding/tick-scale effect, not a wrong-bar mismatch.
+
 ### Priority cohorts for Variant 3
 
 | Cohort | N | PF_12 | Net_12 mean | AvgPnL_baseline |
@@ -83,16 +96,19 @@ python -m API.signal_research --test-only
 
 ### Entry-opportunity profile highlights
 
-The strong cohorts are not just better on `PF_12`; they also look different path-wise:
+After converting the prep profile from raw-price thresholds to ATR-normalized thresholds, the path picture became more conservative and more informative:
 
-| Cohort | `pullback>=3_1H` | `fav>=20_3H` | `fav>=30_6H` | `close>0_6H` |
+| Cohort | `pullback>=1ATR_1H` | `fav>=1ATR_1H` | `fav>=3ATR_6H` | `close>0_6H` |
 |---|---:|---:|---:|---:|
-| `ratio 4-5 × ATR Q4` | `74.3%` | `33.7%` | `33.7%` | `51.5%` |
-| `ATR Q4` | `78.4%` | `29.6%` | `29.2%` | `51.4%` |
-| `ratio 4-5` | `53.1%` | `11.4%` | `10.3%` | `52.8%` |
-| `non-Q4` | `40.6%` | `2.6%` | `2.3%` | `49.6%` |
+| `ratio 4-5 × ATR Q4` | `12.9%` | `24.8%` | `13.9%` | `51.5%` |
+| `ATR Q4` | `12.6%` | `16.2%` | `10.2%` | `51.4%` |
+| `ratio 4-5` | `21.1%` | `20.6%` | `11.1%` | `52.8%` |
+| `non-Q4` | `19.2%` | `18.5%` | `11.6%` | `49.6%` |
 
-This is the clearest practical result of the stage: high-volatility strong-ratio cohorts offer both much larger early pullback incidence and much larger favorable continuation incidence than the broad non-Q4 pool.
+The important correction is that the old raw-price impression of “Q4 gives much larger pullbacks” was mostly a volatility-scale artifact. After ATR normalization, early pullback incidence is no longer a strong discriminator, and broad `non-Q4` is not materially worse on normalized pullback depth.
+
+What still survives normalization is the continuation side: the top shortlist cohort `ratio 4-5 × ATR Q4` remains the best early-favorable profile on `fav>=1ATR_1H` and the best long-window favorable profile on `fav>=3ATR_6H`, while `close>0_6H` stays roughly similar across the shortlisted cohorts.
+These `...>=kATR...` thresholds are descriptive prep metrics from this stage, not fixed Variant 3 limit-entry offsets.
 
 ### Stability highlights
 
@@ -110,6 +126,8 @@ Variant 3 prep did produce a real statistical research result, not just tooling:
 - `ratio 3-4` remains a robust anti-pattern and should be used as a negative control, not a candidate;
 - broad `SELL` is still too weak to treat as a primary Variant 3 target without extra filtering;
 - `ATR Q4` is the clearest regime split for focusing entry-scenario work.
+- `pic_price` is now validated as a trustworthy research anchor against OHLC `High/Low`, so pic-relative Variant 3 scenarios are statistically safe to compare.
+- ATR-normalized prep metrics show that the strongest cohorts still have better favorable continuation, but not obviously larger normalized pullback depth; so `pullback` should be treated as a hypothesis to test, not as something already “proven” by prep.
 
 The stage also clarified an important nuance: even strong cohorts can still show low `TP_FIRST%` under the fixed baseline `12H / SL=5 / TP=50`, because `TP=50` is far away and many rows finish as `SL_FIRST` or `NEITHER`. So the value of this stage is not “we found a ready-made trading rule”; it is “we found where entry-timing research is worth spending time”.
 
@@ -131,6 +149,7 @@ Run the full Variant 3 entry-scenario research on the shortlist from this stage:
 - primary cohorts: `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`
 - negative controls: `ratio 3-4`, `non-Q4`
 - scenarios: `market`, `pullback limit entry`, `delayed entry`, `cancel-window`
+- `pullback` and `cancel-window` parameterization: adaptive offsets `ATR14 * k` with `k=1,2,3` (instead of fixed absolute price offsets), using both `entry_close` and `pic_price` anchors; `pic_price` must come from the real fractal `price` feature in raw `Nero.csv`, after row-level ordering by embedded fractal time (mirroring `label_main.py`), not from the normalized labeled output.
 
 The goal of the next stage should be to compare those entry mechanics explicitly on the shortlisted cohorts instead of on the full signal set.
 
