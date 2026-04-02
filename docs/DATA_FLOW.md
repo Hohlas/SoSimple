@@ -370,7 +370,7 @@ python -m ML.experiment_logger --best pearson_r --task regression_updn
 
 ### Вход
 - `MT/MQL4/Files/ml_signals.csv`
-- `DATA/XAUUSD_H1_OHLC.csv` (126K баров OHLC для расчёта реального MFE/MAE)
+- `DATA/XAUUSD_H1_OHLC.csv` (126K баров OHLC + `atr14` для расчёта реального MFE/MAE и volatility splits)
 
 ### Процесс
 **Модуль**: `API/signal_research.py`

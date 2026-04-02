@@ -344,6 +344,286 @@ def test_variant2_reports_smoke(capsys):
     assert 'Practical Conclusions' in out
 
 
+def test_variant3_prep_reports_smoke(capsys):
+    exc = pd.DataFrame([
+        {
+            'time': pd.Timestamp('2026-01-01 00:00'),
+            'signal': 1,
+            'ratio_bin': '2-3',
+            'atr_bucket': 'Q1',
+            'adv_1': 1.0,
+            'adv_3': 2.0,
+            'fav_1': 4.0,
+            'fav_3': 6.0,
+            'fav_6': 8.0,
+            'adv_6': 3.0,
+            'close_net_1': 1.0,
+            'close_net_3': 3.0,
+            'close_net_6': 4.0,
+            'pred_fav_3': 0.2,
+            'pred_fav_6': 0.3,
+            'pred_fav_12': 0.4,
+            'pred_adv_3': 0.1,
+            'pred_adv_6': 0.15,
+            'mfe_3': 5.0, 'mae_3': 2.0, 'net_3': 2.0,
+            'mfe_6': 7.0, 'mae_6': 3.0, 'net_6': 3.0,
+            'mfe_12': 10.0, 'mae_12': 4.0, 'net_12': 6.0,
+            'mfe_24': 12.0, 'mae_24': 5.0, 'net_24': 7.0,
+            'mfe_48': 14.0, 'mae_48': 6.0, 'net_48': 8.0,
+        },
+        {
+            'time': pd.Timestamp('2026-01-01 01:00'),
+            'signal': -1,
+            'ratio_bin': '5+',
+            'atr_bucket': 'Q4',
+            'adv_1': 2.0,
+            'adv_3': 3.0,
+            'fav_1': 3.0,
+            'fav_3': 5.0,
+            'fav_6': 7.0,
+            'adv_6': 4.0,
+            'close_net_1': -1.0,
+            'close_net_3': 2.0,
+            'close_net_6': 3.0,
+            'pred_fav_3': 0.8,
+            'pred_fav_6': 0.9,
+            'pred_fav_12': 1.0,
+            'pred_adv_3': 0.4,
+            'pred_adv_6': 0.5,
+            'mfe_3': 4.0, 'mae_3': 3.0, 'net_3': -1.0,
+            'mfe_6': 6.0, 'mae_6': 4.0, 'net_6': 1.0,
+            'mfe_12': 9.0, 'mae_12': 5.0, 'net_12': 4.0,
+            'mfe_24': 11.0, 'mae_24': 6.0, 'net_24': 5.0,
+            'mfe_48': 13.0, 'mae_48': 7.0, 'net_48': 6.0,
+        },
+    ])
+
+    barriers = pd.DataFrame([
+        {
+            'horizon': 12, 'SL': 5, 'TP': 10, 'N': 2,
+            'tp_first_pct': 50.0, 'sl_first_pct': 25.0, 'neither_pct': 25.0,
+            'PF_num': 2.0, 'AvgPnL_num': 3.5, 'TotalPnL_num': 7.0,
+        },
+        {
+            'horizon': 12, 'SL': 10, 'TP': 20, 'N': 2,
+            'tp_first_pct': 25.0, 'sl_first_pct': 50.0, 'neither_pct': 25.0,
+            'PF_num': 1.5, 'AvgPnL_num': 2.0, 'TotalPnL_num': 4.0,
+        },
+        {
+            'horizon': 6, 'SL': 5, 'TP': 5, 'N': 2,
+            'tp_first_pct': 50.0, 'sl_first_pct': 50.0, 'neither_pct': 0.0,
+            'PF_num': 1.0, 'AvgPnL_num': 0.0, 'TotalPnL_num': 0.0,
+        },
+    ])
+
+    barrier_outcomes = pd.DataFrame([
+        {
+            'time': pd.Timestamp('2026-01-01 00:00'),
+            'signal': 1,
+            'ratio_bin': '2-3',
+            'atr_bucket': 'Q1',
+            'pred_fav_3': 0.2,
+            'pred_fav_6': 0.3,
+            'pred_fav_12': 0.4,
+            'pred_adv_3': 0.1,
+            'pred_adv_6': 0.15,
+            'pred_adv_12': 0.2,
+            'horizon': 12,
+            'SL': 5,
+            'TP': 10,
+            'outcome': 'TP_FIRST',
+            'pnl': 10.0,
+        },
+        {
+            'time': pd.Timestamp('2026-01-01 01:00'),
+            'signal': -1,
+            'ratio_bin': '5+',
+            'atr_bucket': 'Q4',
+            'pred_fav_3': 0.8,
+            'pred_fav_6': 0.9,
+            'pred_fav_12': 1.0,
+            'pred_adv_3': 0.4,
+            'pred_adv_6': 0.5,
+            'pred_adv_12': 0.6,
+            'horizon': 12,
+            'SL': 5,
+            'TP': 10,
+            'outcome': 'SL_FIRST',
+            'pnl': -5.0,
+        },
+        {
+            'time': pd.Timestamp('2026-01-01 00:00'),
+            'signal': 1,
+            'ratio_bin': '2-3',
+            'atr_bucket': 'Q1',
+            'pred_fav_3': 0.2,
+            'pred_fav_6': 0.3,
+            'pred_fav_12': 0.4,
+            'pred_adv_3': 0.1,
+            'pred_adv_6': 0.15,
+            'pred_adv_12': 0.2,
+            'horizon': 12,
+            'SL': 10,
+            'TP': 20,
+            'outcome': 'NEITHER',
+            'pnl': 6.0,
+        },
+        {
+            'time': pd.Timestamp('2026-01-01 01:00'),
+            'signal': -1,
+            'ratio_bin': '5+',
+            'atr_bucket': 'Q4',
+            'pred_fav_3': 0.8,
+            'pred_fav_6': 0.9,
+            'pred_fav_12': 1.0,
+            'pred_adv_3': 0.4,
+            'pred_adv_6': 0.5,
+            'pred_adv_12': 0.6,
+            'horizon': 12,
+            'SL': 10,
+            'TP': 20,
+            'outcome': 'TP_FIRST',
+            'pnl': 20.0,
+        },
+    ])
+
+    sr.report_cohort_map(exc, barriers, barrier_outcomes)
+    sr.report_entry_opportunities(exc)
+    sr.report_stability_splits(exc, barriers, barrier_outcomes)
+    sr.report_priority_cohorts(exc, barriers, barrier_outcomes)
+
+    out = capsys.readouterr().out
+    assert 'Cohort Map' in out
+    assert 'Entry Opportunity Profile' in out
+    assert 'Stability Split' in out
+    assert 'Priority Cohorts' in out
+
+
+def test_load_data_prefers_atr14_column_from_csv(monkeypatch, tmp_path):
+    signals = tmp_path / 'signals.csv'
+    ohlc = tmp_path / 'ohlc.csv'
+
+    signals.write_text(
+        "time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48\n"
+        "2026-01-01 00:00:00;1;0.3;0.1;0.4;0.2;0.5;0.2;0.6;0.3;0.7;0.4\n",
+        encoding='utf-8',
+    )
+    ohlc.write_text(
+        "time;open;high;low;close;volume;atr14\n"
+        "2026-01-01 00:00:00;100;101;99;100;10;7.5\n",
+        encoding='utf-8',
+    )
+
+    monkeypatch.setattr(sr, 'SIGNALS_FILE', signals)
+    monkeypatch.setattr(sr, 'OHLC_FILE', ohlc)
+
+    df, merged_ohlc = sr.load_data()
+
+    assert df.loc[0, 'atr14'] == pytest.approx(7.5, abs=1e-9)
+    assert merged_ohlc.loc[0, 'atr14'] == pytest.approx(7.5, abs=1e-9)
+
+
+def test_load_data_falls_back_to_python_atr_when_csv_has_no_atr14(monkeypatch, tmp_path):
+    signals = tmp_path / 'signals.csv'
+    ohlc = tmp_path / 'ohlc.csv'
+
+    signals.write_text(
+        "time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48\n"
+        "2026-01-01 13:00:00;1;0.3;0.1;0.4;0.2;0.5;0.2;0.6;0.3;0.7;0.4\n",
+        encoding='utf-8',
+    )
+
+    rows = ["time;open;high;low;close;volume"]
+    for i in range(16):
+        rows.append(f"2026-01-01 {i:02d}:00:00;100;102;100;101;10")
+    ohlc.write_text("\n".join(rows) + "\n", encoding='utf-8')
+
+    monkeypatch.setattr(sr, 'SIGNALS_FILE', signals)
+    monkeypatch.setattr(sr, 'OHLC_FILE', ohlc)
+
+    df, merged_ohlc = sr.load_data()
+
+    assert 'atr14' in merged_ohlc.columns
+    assert df.loc[0, 'atr14'] == pytest.approx(2.0, abs=1e-9)
+
+
+def test_summarize_signal_groups_returns_baseline_outcome_shares_and_pf():
+    frame = pd.DataFrame([
+        {
+            'cohort': 'A',
+            'net_12': 4.0,
+            'mfe_12': 8.0,
+            'mae_12': 2.0,
+            'baseline_outcome': 'TP_FIRST',
+            'baseline_pnl': 10.0,
+        },
+        {
+            'cohort': 'A',
+            'net_12': -2.0,
+            'mfe_12': 5.0,
+            'mae_12': 4.0,
+            'baseline_outcome': 'SL_FIRST',
+            'baseline_pnl': -5.0,
+        },
+        {
+            'cohort': 'A',
+            'net_12': 1.0,
+            'mfe_12': 4.0,
+            'mae_12': 1.0,
+            'baseline_outcome': pd.NA,
+            'baseline_pnl': float('nan'),
+        },
+        {
+            'cohort': 'B',
+            'net_12': 3.0,
+            'mfe_12': 6.0,
+            'mae_12': 2.0,
+            'baseline_outcome': 'NEITHER',
+            'baseline_pnl': 3.0,
+        },
+    ])
+
+    summary = sr.summarize_signal_groups(frame, ['cohort'])
+
+    row_a = summary[summary['cohort'] == 'A'].iloc[0]
+    assert row_a['N'] == 3
+    assert row_a['PF_12'] == pytest.approx(2.5, abs=1e-9)
+    assert row_a['AvgPnL_baseline'] == pytest.approx(2.5, abs=1e-9)
+    assert row_a['TP_FIRST_pct'] == pytest.approx(50.0, abs=1e-9)
+    assert row_a['SL_FIRST_pct'] == pytest.approx(50.0, abs=1e-9)
+    assert row_a['NEITHER_pct'] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_build_entry_opportunity_profile_counts_pullback_and_favorable_levels():
+    frame = pd.DataFrame([
+        {
+            'time': pd.Timestamp('2026-01-01 00:00'), 'cohort': 'A', 'signal': 1,
+            'adv_1': 4.0, 'adv_3': 6.0, 'adv_6': 9.0,
+            'fav_1': 12.0, 'fav_3': 18.0, 'fav_6': 35.0,
+            'close_net_1': 2.0, 'close_net_3': 5.0, 'close_net_6': 9.0,
+        },
+        {
+            'time': pd.Timestamp('2026-01-01 01:00'), 'cohort': 'A', 'signal': 1,
+            'adv_1': 1.0, 'adv_3': 4.0, 'adv_6': 8.0,
+            'fav_1': 9.0, 'fav_3': 22.0, 'fav_6': None,
+            'close_net_1': -1.0, 'close_net_3': 1.0, 'close_net_6': None,
+        },
+    ])
+
+    table = sr.build_entry_opportunity_profile(frame, 'cohort', ['A'])
+    row = table.iloc[0]
+
+    assert row['pullback>=3_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['pullback>=5_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['pullback>=8_6H'] == pytest.approx(100.0, abs=1e-9)
+    assert row['fav>=10_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['fav>=20_3H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['fav>=30_6H'] == pytest.approx(100.0, abs=1e-9)
+    assert row['close>0_1H'] == pytest.approx(50.0, abs=1e-9)
+    assert row['close>0_3H'] == pytest.approx(100.0, abs=1e-9)
+    assert row['close>0_6H'] == pytest.approx(100.0, abs=1e-9)
+
+
 def test_select_base_barrier_setups_prefers_adaptive_viable_sample_over_tiny_inf_pf():
     barrier_summary = pd.DataFrame([
         {

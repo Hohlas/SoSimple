@@ -3,6 +3,27 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-02] — signal_research Variant 3 prep: canonical ATR, cohort map и shortlist для Variant 3
+
+### Добавлено
+- `MT/MQL4/Scripts/ExportOHLC.mq4` теперь экспортирует `time;open;high;low;close;volume;atr14`, а `API/signal_research.py` использует канонический `atr14` из CSV с Python fallback для старых файлов
+- `API/signal_research.py` расширен секциями `Cohort Map`, `Entry Opportunity Profile`, `Stability Split`, `Priority Cohorts`
+- В исследовательский слой добавлена baseline-аннотация фиксированного сетапа `12H / SL=5 / TP=50`
+- `tests/test_signal_research.py` расширен тестами на ATR source selection, cohort summaries, entry-opportunity метрики и новые секции отчёта
+
+### Результаты
+- OOS `2022-07-18 11:00:00` — `2026-03-20 06:00:00`: `2603` реальных сигналов с excursion-данными
+- Лучший кандидат для Variant 3: `ratio 4-5 × ATR Q4` (`N=101`, `PF_12=2.62`, `Net_12 mean=22.2`, `AvgPnL_baseline=1.4`)
+- Лучший широкий ratio-бакет не изменился: `ratio 4-5` (`PF_12=1.95`), а `ratio 3-4` остался устойчивым анти-паттерном (`PF_12=0.87`)
+- `ATR Q4` резко отличается от `non-Q4` по path profile: `fav>=20_3H = 29.6%` против `2.6%`, `fav>=30_6H = 29.2%` против `2.3%`
+- Broad `SELL` по-прежнему слабый (`PF_12=0.95`), а `BUY` и `ATR Q4` выглядят лучшими общими группами для следующего этапа
+
+### Вывод
+Этап подтвердил, что Variant 3 нужно запускать не по всей выборке, а по shortlist когорт. Главный приоритет теперь — прямое сравнение `market / pullback / delayed / cancel-window` на `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`, с `ratio 3-4` и `non-Q4` как отрицательными контролями.
+Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3-prep.md](docs/reports/2026-04-02-signal-research-variant-3-prep.md)
+
+---
+
 ## [2026-04-01] — signal_research Variant 2: path-dependent профили сигнала и торговые выводы
 
 ### Добавлено

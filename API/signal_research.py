@@ -1,6 +1,7 @@
 # =============================================================================
 # Файл: API/signal_research.py
-# Назначение: Variant 2 исследование качества ML-сигналов по реальным OHLC
+# Назначение: Variant 2 исследование качества ML-сигналов по реальным OHLC,
+#              которое готовится к расширению под Variant 3 prep
 # Язык: Python 3.11+
 # Создан: 2026-04-01
 # Зависимости:
@@ -30,6 +31,11 @@ Variant 2 отчёт строит:
 5. Amplitude Filters по предсказанной favorable/adverse амплитуде
 6. Regime Split по направлению, ratio и ATR-квартилям
 7. Practical Conclusions для следующего этапа построения EA
+
+Этот файл поддерживает Variant 2 отчёт и готовится к расширению под Variant 3 prep.
+Если в OHLC CSV уже есть `atr14`, используется каноническое значение из MT4;
+пропуски в нём добираются Python ATR(14) как fallback.
+Если колонки `atr14` нет, ATR(14) целиком досчитывается в Python.
 """
 
 import argparse
@@ -67,6 +73,7 @@ def compute_atr14(ohlc: pd.DataFrame) -> pd.Series:
 HORIZONS = [3, 6, BASE_HORIZON, 24, 48]
 PRED_COLS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12',
              'up_24', 'dn_24', 'up_48', 'dn_48']
+AMPLITUDE_BUCKET_LABELS = ['low', 'mid', 'high']
 
 
 def load_data(test_only: bool = False):
@@ -76,7 +83,11 @@ def load_data(test_only: bool = False):
 
     ohlc.sort_values('time', inplace=True)
     ohlc.reset_index(drop=True, inplace=True)
-    ohlc['atr14'] = compute_atr14(ohlc)
+    atr14_fallback = compute_atr14(ohlc)
+    if 'atr14' in ohlc.columns:
+        ohlc['atr14'] = pd.to_numeric(ohlc['atr14'], errors='coerce').fillna(atr14_fallback)
+    else:
+        ohlc['atr14'] = atr14_fallback
 
     # Merge: оставляем только строки где есть и сигнал и OHLC
     df = sig.merge(ohlc[['time', 'open', 'high', 'low', 'close', 'atr14']], on='time', how='inner')
@@ -370,6 +381,233 @@ def summarize_barrier_outcomes(outcomes: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def annotate_baseline_setup(
+    exc: pd.DataFrame,
+    barrier_outcomes: pd.DataFrame,
+    horizon: int = BASE_HORIZON,
+    sl: int = 5,
+    tp: int = 50,
+) -> pd.DataFrame:
+    """Attach the fixed baseline barrier outcome to each signal row."""
+    baseline = barrier_outcomes[
+        (barrier_outcomes['horizon'] == horizon)
+        & (barrier_outcomes['SL'] == sl)
+        & (barrier_outcomes['TP'] == tp)
+    ][['time', 'signal', 'outcome', 'pnl']].copy()
+
+    baseline.rename(
+        columns={
+            'outcome': 'baseline_outcome',
+            'pnl': 'baseline_pnl',
+        },
+        inplace=True,
+    )
+    baseline['baseline_setup'] = f'{horizon}H_SL{sl}_TP{tp}'
+
+    annotated = exc.merge(baseline, on=['time', 'signal'], how='left')
+    if 'baseline_setup' not in annotated.columns:
+        annotated['baseline_setup'] = f'{horizon}H_SL{sl}_TP{tp}'
+    else:
+        annotated['baseline_setup'] = annotated['baseline_setup'].fillna(f'{horizon}H_SL{sl}_TP{tp}')
+    return annotated
+
+
+def summarize_signal_groups(exc: pd.DataFrame, group_cols) -> pd.DataFrame:
+    group_cols = [group_cols] if isinstance(group_cols, str) else list(group_cols)
+    columns = [
+        *group_cols,
+        'N',
+        'PF_12',
+        'AvgPnL_baseline',
+        'TP_FIRST_pct',
+        'SL_FIRST_pct',
+        'NEITHER_pct',
+    ]
+    if exc.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows = []
+    for group_key, sub in exc.groupby(list(group_cols), sort=False):
+        if not isinstance(group_key, tuple):
+            group_key = (group_key,)
+        baseline = sub['baseline_outcome'].dropna()
+        baseline_pnl = sub['baseline_pnl'].dropna()
+        net_12 = sub['net_12'].dropna()
+
+        tp_first = (baseline == 'TP_FIRST').sum()
+        sl_first = (baseline == 'SL_FIRST').sum()
+        neither = (baseline == 'NEITHER').sum()
+        denom = len(baseline)
+        rows.append({
+            **dict(zip(group_cols, group_key)),
+            'N': len(sub),
+            'PF_12': _profit_factor(net_12),
+            'AvgPnL_baseline': baseline_pnl.mean() if len(baseline_pnl) else np.nan,
+            'TP_FIRST_pct': 100.0 * tp_first / denom if denom else np.nan,
+            'SL_FIRST_pct': 100.0 * sl_first / denom if denom else np.nan,
+            'NEITHER_pct': 100.0 * neither / denom if denom else np.nan,
+        })
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _amplitude_bucket_series(series: pd.Series) -> pd.Series:
+    return _safe_quantile_bins(series, AMPLITUDE_BUCKET_LABELS)
+
+
+def _non_null_rate(series: pd.Series, predicate) -> float:
+    valid = pd.to_numeric(series, errors='coerce').dropna()
+    if len(valid) == 0:
+        return np.nan
+    return 100.0 * predicate(valid).mean()
+
+
+def build_entry_opportunity_profile(frame: pd.DataFrame, group_col, group_values) -> pd.DataFrame:
+    group_cols = [group_col] if isinstance(group_col, str) else list(group_col)
+    if group_values is None:
+        selected_values = []
+    elif isinstance(group_values, (str, bytes)):
+        selected_values = [group_values]
+    else:
+        selected_values = list(group_values)
+    columns = [
+        *group_cols,
+        'N',
+        'pullback>=3_1H',
+        'pullback>=5_1H',
+        'pullback>=8_6H',
+        'fav>=10_1H',
+        'fav>=20_3H',
+        'fav>=30_6H',
+        'close>0_1H',
+        'close>0_3H',
+        'close>0_6H',
+    ]
+
+    if frame.empty:
+        return pd.DataFrame(columns=columns)
+
+    if selected_values:
+        if len(group_cols) == 1:
+            working = frame[frame[group_cols[0]].isin(selected_values)].copy()
+        else:
+            lookup = {tuple(value) if isinstance(value, (list, tuple)) else value for value in selected_values}
+            working = frame[frame[group_cols].apply(lambda row: tuple(row), axis=1).isin(lookup)].copy()
+    else:
+        working = frame.copy()
+
+    if working.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows = []
+    for group_key, sub in working.groupby(group_cols, sort=False):
+        if not isinstance(group_key, tuple):
+            group_key = (group_key,)
+
+        rows.append({
+            **dict(zip(group_cols, group_key)),
+            'N': len(sub),
+            'pullback>=3_1H': _non_null_rate(sub.get('adv_1', pd.Series(dtype=float)), lambda s: s >= 3),
+            'pullback>=5_1H': _non_null_rate(sub.get('adv_3', pd.Series(dtype=float)), lambda s: s >= 5),
+            'pullback>=8_6H': _non_null_rate(sub.get('adv_6', pd.Series(dtype=float)), lambda s: s >= 8),
+            'fav>=10_1H': _non_null_rate(sub.get('fav_1', pd.Series(dtype=float)), lambda s: s >= 10),
+            'fav>=20_3H': _non_null_rate(sub.get('fav_3', pd.Series(dtype=float)), lambda s: s >= 20),
+            'fav>=30_6H': _non_null_rate(sub.get('fav_6', pd.Series(dtype=float)), lambda s: s >= 30),
+            'close>0_1H': _non_null_rate(sub.get('close_net_1', pd.Series(dtype=float)), lambda s: s > 0),
+            'close>0_3H': _non_null_rate(sub.get('close_net_3', pd.Series(dtype=float)), lambda s: s > 0),
+            'close>0_6H': _non_null_rate(sub.get('close_net_6', pd.Series(dtype=float)), lambda s: s > 0),
+        })
+
+    return pd.DataFrame(rows, columns=columns)
+
+
+def _cohort_map_extended_summary(exc: pd.DataFrame, group_cols) -> pd.DataFrame:
+    group_cols = [group_cols] if isinstance(group_cols, str) else list(group_cols)
+    columns = [
+        *group_cols,
+        'N',
+        'Net_12_mean',
+        'Net_12_median',
+        'MFE_12_mean',
+        'MAE_12_mean',
+        'PF_12',
+        'AvgPnL_baseline',
+        'TP_FIRST_pct',
+        'SL_FIRST_pct',
+        'NEITHER_pct',
+    ]
+    if exc.empty:
+        return pd.DataFrame(columns=columns)
+
+    base = summarize_signal_groups(exc, group_cols)
+    rows = []
+    for group_key, sub in exc.groupby(group_cols, sort=False):
+        if not isinstance(group_key, tuple):
+            group_key = (group_key,)
+        net_12 = pd.to_numeric(sub['net_12'], errors='coerce').dropna()
+        mfe_12 = pd.to_numeric(sub['mfe_12'], errors='coerce').dropna()
+        mae_12 = pd.to_numeric(sub['mae_12'], errors='coerce').dropna()
+        rows.append({
+            **dict(zip(group_cols, group_key)),
+            'Net_12_mean': net_12.mean() if len(net_12) else np.nan,
+            'Net_12_median': net_12.median() if len(net_12) else np.nan,
+            'MFE_12_mean': mfe_12.mean() if len(mfe_12) else np.nan,
+            'MAE_12_mean': mae_12.mean() if len(mae_12) else np.nan,
+        })
+
+    metrics = pd.DataFrame(rows, columns=[*group_cols, 'Net_12_mean', 'Net_12_median', 'MFE_12_mean', 'MAE_12_mean'])
+    summary = base.merge(metrics, on=group_cols, how='left')
+    return summary[columns]
+
+
+def _prepare_priority_cohort_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    analysis = frame.copy()
+    analysis['direction'] = pd.Series(np.where(analysis['signal'] == 1, 'BUY', 'SELL'), index=analysis.index)
+
+    if 'ratio_bin' not in analysis.columns and 'ratio_12' in analysis.columns:
+        analysis['ratio_bin'] = pd.cut(
+            analysis['ratio_12'],
+            bins=[0, 2, 3, 4, 5, np.inf],
+            labels=['<2', '2-3', '3-4', '4-5', '5+'],
+            right=False,
+        )
+    if 'ratio_bin' not in analysis.columns:
+        analysis['ratio_bin'] = 'ALL'
+    analysis['ratio_bin'] = analysis['ratio_bin'].astype('object')
+
+    if 'atr_bucket' not in analysis.columns:
+        analysis['atr_bucket'] = 'ALL'
+    analysis['atr_bucket'] = analysis['atr_bucket'].astype('object')
+    analysis['atr_regime'] = np.where(analysis['atr_bucket'] == 'Q4', 'Q4', 'non-Q4')
+    analysis['year'] = pd.to_datetime(analysis['time']).dt.year
+    return analysis
+
+
+def _build_priority_cohort_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    analysis = _prepare_priority_cohort_frame(frame)
+    cohort_specs = [
+        ('BUY', analysis['signal'] == 1),
+        ('SELL', analysis['signal'] == -1),
+        ('ratio 3-4', analysis['ratio_bin'] == '3-4'),
+        ('ratio 4-5', analysis['ratio_bin'] == '4-5'),
+        ('ratio 5+', analysis['ratio_bin'] == '5+'),
+        ('ATR Q4', analysis['atr_bucket'] == 'Q4'),
+        ('non-Q4', analysis['atr_bucket'] != 'Q4'),
+        ('ratio 4-5 × ATR Q4', (analysis['ratio_bin'] == '4-5') & (analysis['atr_bucket'] == 'Q4')),
+    ]
+
+    frames = []
+    for label, mask in cohort_specs:
+        sub = analysis.loc[mask].copy()
+        if sub.empty:
+            continue
+        sub['cohort'] = label
+        frames.append(sub)
+
+    if not frames:
+        return pd.DataFrame(columns=[*analysis.columns, 'cohort'])
+    return pd.concat(frames, axis=0, ignore_index=True)
+
+
 def print_separator(title: str):
     print(f"\n{'═' * 70}")
     print(f"  {title}")
@@ -633,6 +871,198 @@ def report_amplitude_filters(exc: pd.DataFrame, barrier_outcomes: pd.DataFrame, 
         print(pd.DataFrame(rows).to_string(index=False))
 
 
+def report_cohort_map(exc: pd.DataFrame, barriers: pd.DataFrame, barrier_outcomes: pd.DataFrame):
+    print_separator("Cohort Map")
+    print("  Baseline setup: 12H / SL=5 / TP=50")
+
+    annotated = annotate_baseline_setup(exc, barrier_outcomes)
+    analysis = annotated.copy()
+    analysis['direction'] = pd.Series(np.where(analysis['signal'] == 1, 'BUY', 'SELL'), index=analysis.index)
+    if 'ratio_bin' not in analysis.columns and 'ratio_12' in analysis.columns:
+        analysis['ratio_bin'] = pd.cut(
+            analysis['ratio_12'],
+            bins=[0, 2, 3, 4, 5, np.inf],
+            labels=['<2', '2-3', '3-4', '4-5', '5+'],
+            right=False,
+        )
+    if 'ratio_bin' not in analysis.columns:
+        analysis['ratio_bin'] = 'ALL'
+    analysis['ratio_bin'] = analysis['ratio_bin'].astype('object')
+    if 'atr_bucket' not in analysis.columns:
+        analysis['atr_bucket'] = 'ALL'
+    pred_fav_3 = analysis['pred_fav_3'] if 'pred_fav_3' in analysis.columns else pd.Series(np.nan, index=analysis.index)
+    pred_adv_3 = analysis['pred_adv_3'] if 'pred_adv_3' in analysis.columns else pd.Series(np.nan, index=analysis.index)
+    analysis['pred_fav_3_bucket'] = _amplitude_bucket_series(pred_fav_3)
+    analysis['pred_adv_3_bucket'] = _amplitude_bucket_series(pred_adv_3)
+
+    specs = [
+        ('BUY/SELL × ratio_12', ['direction', 'ratio_bin']),
+        ('BUY/SELL × atr_bucket', ['direction', 'atr_bucket']),
+        ('ratio_12 × atr_bucket', ['ratio_bin', 'atr_bucket']),
+        ('ratio_12 × pred_fav_3 bucket', ['ratio_bin', 'pred_fav_3_bucket']),
+        ('ratio_12 × pred_adv_3 bucket', ['ratio_bin', 'pred_adv_3_bucket']),
+    ]
+
+    sort_orders = {
+        'direction': ['BUY', 'SELL'],
+        'ratio_bin': ['<2', '2-3', '3-4', '4-5', '5+'],
+        'atr_bucket': ['Q1', 'Q2', 'Q3', 'Q4', 'ALL'],
+        'pred_fav_3_bucket': AMPLITUDE_BUCKET_LABELS,
+        'pred_adv_3_bucket': AMPLITUDE_BUCKET_LABELS,
+    }
+
+    for title, group_cols in specs:
+        subset = analysis.copy()
+        for col in group_cols:
+            if col in sort_orders:
+                subset[col] = pd.Categorical(subset[col], categories=sort_orders[col], ordered=True)
+        subset = subset.sort_values(group_cols, kind='stable')
+        summary = _cohort_map_extended_summary(subset, group_cols)
+
+        print(f"\n  [{title}]")
+        if summary.empty:
+            print("  No rows.")
+            continue
+
+        table = summary.copy()
+        for col in ['Net_12_mean', 'Net_12_median', 'MFE_12_mean', 'MAE_12_mean', 'AvgPnL_baseline']:
+            table[col] = table[col].map(_format_num)
+        table['PF_12'] = table['PF_12'].map(_format_pf)
+        table['TP_FIRST_pct'] = table['TP_FIRST_pct'].map(_format_pct)
+        table['SL_FIRST_pct'] = table['SL_FIRST_pct'].map(_format_pct)
+        table['NEITHER_pct'] = table['NEITHER_pct'].map(_format_pct)
+        print(table.to_string(index=False))
+
+
+def report_entry_opportunities(exc: pd.DataFrame):
+    print_separator("Entry Opportunity Profile")
+
+    if exc.empty:
+        print("  No signal rows available.")
+        return
+
+    cohort_frame = _build_priority_cohort_frame(exc)
+    if cohort_frame.empty:
+        print("  No priority cohorts available.")
+        return
+
+    wanted = ['BUY', 'SELL', 'ratio 3-4', 'ratio 4-5', 'ratio 5+', 'ATR Q4', 'non-Q4', 'ratio 4-5 × ATR Q4']
+    wanted = [label for label in wanted if label in cohort_frame['cohort'].unique()]
+    table = build_entry_opportunity_profile(cohort_frame, 'cohort', wanted)
+    print(table.to_string(index=False))
+
+
+def report_stability_splits(exc: pd.DataFrame, barriers: pd.DataFrame, barrier_outcomes: pd.DataFrame):
+    print_separator("Stability Split")
+
+    annotated = annotate_baseline_setup(exc, barrier_outcomes)
+    if annotated.empty:
+        print("  No signal rows available.")
+        return
+
+    cohort_frame = _build_priority_cohort_frame(annotated)
+    if cohort_frame.empty:
+        print("  No priority cohorts available.")
+        return
+
+    table = _cohort_map_extended_summary(cohort_frame.dropna(subset=['net_12']), ['year', 'cohort'])
+    if table.empty:
+        print("  No stability rows available.")
+        return
+
+    table = table[table['N'] >= 10].copy()
+    if table.empty:
+        print("  No stability rows with N>=10.")
+        return
+
+    table = table.sort_values(['cohort', 'year'], kind='stable').reset_index(drop=True)
+    table['PF_12'] = table['PF_12'].map(_format_pf)
+    table['Net_12_mean'] = table['Net_12_mean'].map(_format_num)
+    table['TP_FIRST_pct'] = table['TP_FIRST_pct'].map(_format_pct)
+    table['SL_FIRST_pct'] = table['SL_FIRST_pct'].map(_format_pct)
+    print("  Baseline setup: 12H / SL=5 / TP=50")
+    print("  Only rows with N>=10 are shown.")
+    print(table[['year', 'cohort', 'N', 'PF_12', 'Net_12_mean', 'TP_FIRST_pct', 'SL_FIRST_pct']].to_string(index=False))
+
+
+def report_priority_cohorts(exc: pd.DataFrame, barriers: pd.DataFrame, barrier_outcomes: pd.DataFrame):
+    print_separator("Priority Cohorts")
+
+    annotated = annotate_baseline_setup(exc, barrier_outcomes)
+    if annotated.empty:
+        print("  No signal rows available.")
+        return
+
+    cohort_frame = _build_priority_cohort_frame(annotated)
+    if cohort_frame.empty:
+        print("  No priority cohorts available.")
+        return
+
+    summary = _cohort_map_extended_summary(cohort_frame, ['cohort'])
+    if summary.empty:
+        print("  No cohort summaries available.")
+        return
+
+    summary = summary.copy()
+    summary['PF_sort'] = pd.to_numeric(summary['PF_12'], errors='coerce')
+    summary['AvgPnL_sort'] = pd.to_numeric(summary['AvgPnL_baseline'], errors='coerce')
+    summary['Net_sort'] = pd.to_numeric(summary['Net_12_mean'], errors='coerce')
+    weak_mask = (
+        summary['PF_sort'].isna()
+        | (summary['PF_sort'] <= 1.05)
+        | (summary['AvgPnL_sort'] <= 0.1)
+        | (summary['Net_sort'] <= 0)
+    )
+
+    best_pool = summary[~weak_mask].copy()
+    if best_pool.empty:
+        best_pool = summary.copy()
+
+    best = best_pool.sort_values(
+        ['PF_sort', 'AvgPnL_sort', 'N'],
+        ascending=[False, False, False],
+        na_position='last',
+    ).head(5).drop(columns=['PF_sort', 'AvgPnL_sort', 'Net_sort'])
+    best_cohorts = set(best['cohort'].tolist())
+
+    anti_seed = summary[summary['cohort'] == 'ratio 3-4']
+    weak = summary[weak_mask].sort_values(
+        ['PF_sort', 'AvgPnL_sort', 'N'],
+        ascending=[True, True, False],
+        na_position='first',
+    )
+
+    anti = pd.concat([anti_seed, weak], axis=0, ignore_index=True)
+    if not anti.empty:
+        anti = anti.drop_duplicates(subset=['cohort'], keep='first')
+        anti = anti[~anti['cohort'].isin(best_cohorts)].copy()
+        anti = anti.assign(_priority=np.where(anti['cohort'] == 'ratio 3-4', 0, 1))
+        anti = anti.sort_values(
+            ['_priority', 'PF_sort', 'AvgPnL_sort', 'N'],
+            ascending=[True, True, True, False],
+            na_position='first',
+        ).head(4)
+        anti = anti.drop(columns=['PF_sort', 'AvgPnL_sort', 'Net_sort'], errors='ignore')
+        anti = anti.drop(columns=['_priority'], errors='ignore')
+
+    for title, table in [('Best candidates', best), ('Anti-pattern cohorts', anti)]:
+        print(f"\n  [{title}]")
+        if table.empty:
+            print("  No rows.")
+            continue
+        display = table.copy()
+        display['PF_12'] = display['PF_12'].map(_format_pf)
+        display['AvgPnL_baseline'] = display['AvgPnL_baseline'].map(_format_num)
+        display['Net_12_mean'] = display['Net_12_mean'].map(_format_num)
+        display['Net_12_median'] = display['Net_12_median'].map(_format_num)
+        display['MFE_12_mean'] = display['MFE_12_mean'].map(_format_num)
+        display['MAE_12_mean'] = display['MAE_12_mean'].map(_format_num)
+        display['TP_FIRST_pct'] = display['TP_FIRST_pct'].map(_format_pct)
+        display['SL_FIRST_pct'] = display['SL_FIRST_pct'].map(_format_pct)
+        display['NEITHER_pct'] = display['NEITHER_pct'].map(_format_pct)
+        print(display[['cohort', 'N', 'PF_12', 'AvgPnL_baseline', 'Net_12_mean', 'TP_FIRST_pct', 'SL_FIRST_pct', 'NEITHER_pct']].to_string(index=False))
+
+
 def report_regime_splits(exc: pd.DataFrame, barrier_outcomes: pd.DataFrame, barrier_summary: pd.DataFrame):
     print_separator("Regime Split")
 
@@ -733,6 +1163,10 @@ def main():
     report_amplitude_filters(exc, barrier_outcomes, barrier_summary)
     report_regime_splits(exc, barrier_outcomes, barrier_summary)
     report_prediction_vs_reality(exc)
+    report_cohort_map(exc, barrier_summary, barrier_outcomes)
+    report_entry_opportunities(exc)
+    report_stability_splits(exc, barrier_summary, barrier_outcomes)
+    report_priority_cohorts(exc, barrier_summary, barrier_outcomes)
     print_practical_conclusions(exc, barrier_summary)
 
 

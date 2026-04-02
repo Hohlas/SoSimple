@@ -1,0 +1,141 @@
+# Signal Research Variant 3 Prep
+
+> **Date**: 2026-04-02
+> **Status**: Completed
+> **Goal**: Finish the cohort-oriented research prep stage before full Variant 3 entry-scenario testing
+> **Related plan/spec**: [docs/superpowers/specs/2026-04-02-signal-research-variant-3-prep-design.md](../superpowers/specs/2026-04-02-signal-research-variant-3-prep-design.md), [docs/superpowers/plans/2026-04-02-signal-research-variant-3-prep.md](../superpowers/plans/2026-04-02-signal-research-variant-3-prep.md)
+> **Related commit**: pending
+
+## Context
+
+Signal Research Variant 2 showed that the current ML signal behaves more like a weak drift than a strong impulse. That was enough to justify the next question, but not enough to answer it: which signal subgroups are worth testing in Variant 3, and where should entry timing research focus first.
+
+This stage was created to avoid testing `market / pullback / delayed / cancel-window` on the full signal pool blindly. It also closed the MT4-vs-Python volatility gap by making `atr14` part of the canonical OHLC export.
+
+The completed OOS run used `MT/MQL4/Files/ml_signals.csv` together with `DATA/XAUUSD_H1_OHLC.csv` on the `2022-07-18 11:00:00 — 2026-03-20 06:00:00` slice and produced `2603` real BUY/SELL signals with excursion data.
+
+## What Was Done
+
+- Extended `MT/MQL4/Scripts/ExportOHLC.mq4` so the MT4 export now writes canonical `atr14`.
+- Updated `API/signal_research.py` to prefer CSV `atr14` with Python ATR fallback for legacy OHLC files.
+- Added fixed baseline annotation for `12H / SL=5 / TP=50`.
+- Added the new Variant 3 prep report sections `Cohort Map`, `Entry Opportunity Profile`, `Stability Split`, and `Priority Cohorts`.
+- Extended `tests/test_signal_research.py` to cover canonical ATR loading, baseline cohort summaries, entry-opportunity calculations, and the new report sections.
+- Re-ran the OOS research flow with the refreshed OHLC file that already contains `atr14`.
+- Closed the stage with a canonical report, `CHANGELOG` entry, and refreshed `CONTEXT_HANDOFF`.
+
+## Changed Files
+
+- `API/signal_research.py`
+- `tests/test_signal_research.py`
+- `MT/MQL4/Scripts/ExportOHLC.mq4`
+- `docs/DATA_FLOW.md`
+- `docs/superpowers/specs/2026-04-02-signal-research-variant-3-prep-design.md`
+- `docs/superpowers/plans/2026-04-02-signal-research-variant-3-prep.md`
+- `docs/reports/2026-04-02-signal-research-variant-3-prep.md`
+- `CHANGELOG.md`
+- `CONTEXT_HANDOFF.md`
+
+## Verification
+
+Verification commands used in the stage:
+
+```bash
+python -m pytest tests/test_signal_research.py -q
+python -m API.signal_research --test-only
+```
+
+## Results
+
+### Core OOS summary
+
+| Metric | Value |
+|---|---:|
+| OOS period | `2022-07-18 11:00:00 — 2026-03-20 06:00:00` |
+| Real BUY/SELL signals | `2603` |
+| Baseline setup | `12H / SL=5 / TP=50` |
+| Baseline PF | `1.05` |
+| Baseline AvgPnL | `0.2` |
+| Broad `BUY PF_12` | `1.35` |
+| Broad `SELL PF_12` | `0.95` |
+| Broad `ATR Q4 PF_12` | `1.23` |
+| Broad `non-Q4 PF_12` | `1.02` |
+| Best broad ratio bucket | `4-5` |
+| Persistent anti-pattern | `3-4` |
+
+### Priority cohorts for Variant 3
+
+| Cohort | N | PF_12 | Net_12 mean | AvgPnL_baseline |
+|---|---:|---:|---:|---:|
+| `ratio 4-5 × ATR Q4` | 101 | 2.62 | 22.2 | 1.4 |
+| `ratio 4-5` | 369 | 1.95 | 6.4 | 0.5 |
+| `BUY` | 1375 | 1.35 | 2.4 | 0.9 |
+| `ATR Q4` | 649 | 1.23 | 4.1 | 0.5 |
+
+### Anti-pattern cohorts
+
+| Cohort | N | PF_12 | Net_12 mean | AvgPnL_baseline |
+|---|---:|---:|---:|---:|
+| `ratio 3-4` | 941 | 0.87 | -1.2 | -0.3 |
+| `SELL` | 1228 | 0.95 | -0.5 | -0.6 |
+| `non-Q4` | 1954 | 1.02 | 0.1 | 0.1 |
+| `ratio 5+` | 658 | 1.05 | 0.3 | -0.0 |
+
+### Entry-opportunity profile highlights
+
+The strong cohorts are not just better on `PF_12`; they also look different path-wise:
+
+| Cohort | `pullback>=3_1H` | `fav>=20_3H` | `fav>=30_6H` | `close>0_6H` |
+|---|---:|---:|---:|---:|
+| `ratio 4-5 × ATR Q4` | `74.3%` | `33.7%` | `33.7%` | `51.5%` |
+| `ATR Q4` | `78.4%` | `29.6%` | `29.2%` | `51.4%` |
+| `ratio 4-5` | `53.1%` | `11.4%` | `10.3%` | `52.8%` |
+| `non-Q4` | `40.6%` | `2.6%` | `2.3%` | `49.6%` |
+
+This is the clearest practical result of the stage: high-volatility strong-ratio cohorts offer both much larger early pullback incidence and much larger favorable continuation incidence than the broad non-Q4 pool.
+
+### Stability highlights
+
+- `ratio 3-4` stayed weak in every shown year: `PF_12 = 0.78, 0.80, 0.81, 0.99, 0.83`.
+- `ratio 4-5` was weak in `2022-2023`, turned positive in `2024`, and became much stronger in `2025-2026`.
+- Broad `SELL` remained weak through `2023-2025` and improved only in `2026`, so it is still regime-sensitive.
+- `ATR Q4` became meaningfully stronger in the later OOS years, especially `2025-2026`.
+
+## Conclusions
+
+Variant 3 prep did produce a real statistical research result, not just tooling:
+
+- the strongest next-step research cohort is `ratio 4-5 × ATR Q4`;
+- `ratio 4-5` remains the best broad ratio bucket and should stay in the primary shortlist;
+- `ratio 3-4` remains a robust anti-pattern and should be used as a negative control, not a candidate;
+- broad `SELL` is still too weak to treat as a primary Variant 3 target without extra filtering;
+- `ATR Q4` is the clearest regime split for focusing entry-scenario work.
+
+The stage also clarified an important nuance: even strong cohorts can still show low `TP_FIRST%` under the fixed baseline `12H / SL=5 / TP=50`, because `TP=50` is far away and many rows finish as `SL_FIRST` or `NEITHER`. So the value of this stage is not “we found a ready-made trading rule”; it is “we found where entry-timing research is worth spending time”.
+
+## Limitations / Open Questions
+
+This stage did not simulate actual Variant 3 entry policies yet. It only prepared the evidence base and shortlist.
+
+The main remaining questions are:
+
+- does `pullback` entry outperform `market` on `ratio 4-5 × ATR Q4`;
+- is `delayed` entry better than immediate entry for `ATR Q4` or only for the strongest ratio cohorts;
+- should `ratio 5+` be kept only as a secondary benchmark rather than a primary candidate;
+- can `SELL` be rescued by tighter cohort filters, or is it mostly a regime artifact in this OOS period.
+
+## Next Step
+
+Run the full Variant 3 entry-scenario research on the shortlist from this stage:
+
+- primary cohorts: `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`
+- negative controls: `ratio 3-4`, `non-Q4`
+- scenarios: `market`, `pullback limit entry`, `delayed entry`, `cancel-window`
+
+The goal of the next stage should be to compare those entry mechanics explicitly on the shortlisted cohorts instead of on the full signal set.
+
+## Related Materials
+
+- [docs/reports/2026-04-01-signal-research-variant-2.md](2026-04-01-signal-research-variant-2.md)
+- [docs/superpowers/specs/2026-04-02-signal-research-variant-3-prep-design.md](../superpowers/specs/2026-04-02-signal-research-variant-3-prep-design.md)
+- [docs/superpowers/plans/2026-04-02-signal-research-variant-3-prep.md](../superpowers/plans/2026-04-02-signal-research-variant-3-prep.md)
