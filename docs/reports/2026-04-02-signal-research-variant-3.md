@@ -29,8 +29,13 @@ This stage closes that gap by extending `API/signal_research.py` from Variant 2 
   - `Variant 3 Scenario Matrix`
   - `Variant 3 Shortlist Verdict`
   - `Variant 3 Negative Controls`
+- Added a robustness layer on top of the full Variant 3 matrix:
+  - support ladder `10/5 -> 20/10 -> 30/10 -> 40/15` for `N_filled` / `fill_pct`;
+  - baseline deltas vs same-cohort `market` rows (`PF_delta`, `AvgPnL_delta`);
+  - stricter shortlist verdict that now requires positive uplift and support tier `>= Supported` (`30/10` or `40/15`), instead of ranking tiny-fill rows by raw `PF`.
 - Extended `tests/test_signal_research.py` with coverage for raw fractal parsing, row-level latest-fractal extraction, `pic_price` preservation, OHLC validation, limit-fill logic, scenario outcomes, and Variant 3 report smoke.
-- Re-ran the OOS CLI flow after the `pic_price` fix and after ATR-normalizing the prep profile.
+- Extended the test suite again for robustness annotation, floor-by-floor support ladders, and the stricter shortlist verdict.
+- Re-ran the OOS CLI flow after the robustness pass and compared primary cohorts vs negative controls under the same support filter.
 
 ## Changed Files
 
@@ -89,41 +94,93 @@ The more important result is that the same family of improvements is not isolate
 
 That means the raw PF uplift in Variant 3 cannot yet be interpreted as a cohort-specific edge. At this stage it still looks at least partly like a generic execution effect from demanding a better entry price.
 
-### Current auto-verdict is too permissive
+### Robustness pass removes the low-fill winners
 
-The built-in `Variant 3 Shortlist Verdict` currently ranks by `PF`, `AvgPnL`, and `fill_pct` without a minimum-support floor. In the fresh OOS run it therefore selected tiny-fill rows such as:
+To stop the shortlist from overreacting to thin tails, the completed matrix was re-ranked under four explicit support floors:
 
-- `ratio 4-5`: `cancel-window entry_close-3ATR@1b`, only `3` fills;
-- `BUY`: `cancel-window entry_close-3ATR@1b`, only `14` fills;
-- `ATR Q4`: `cancel-window entry_close-3ATR@1b`, only `6` fills.
+- `10/5`: `N_filled >= 10`, `fill_pct >= 5%`
+- `20/10`: `N_filled >= 20`, `fill_pct >= 10%`
+- `30/10`: `N_filled >= 30`, `fill_pct >= 10%`
+- `40/15`: `N_filled >= 40`, `fill_pct >= 15%`
 
-These rows are still useful as exploratory tails of the matrix, but they are not strong enough to drive the next trading decision without an explicit robustness filter.
+This immediately exposed the original low-fill verdict problem:
+
+- `ratio 4-5`: the old winner `cancel-window entry_close-3ATR@1b` disappears because it has only `3` fills;
+- `BUY`: the old winner `cancel-window entry_close-3ATR@1b` disappears because it has only `14` fills;
+- `ATR Q4`: the old winner `cancel-window entry_close-3ATR@1b` disappears because it has only `6` fills;
+- `ratio 4-5 × ATR Q4`: the flashy `pullback pic_price-1ATR` row remains interesting, but it only survives the `20/10` floor and therefore stays below the new verdict bar.
+
+The strongest practical shortlist after the new filter is:
+
+| Cohort | Robust survivor | Support tier | `PF` | `PF_delta vs market` | Fill |
+|---|---|---|---:|---:|---:|
+| `ratio 4-5 × ATR Q4` | `pullback entry_close-2ATR` | `Supported` | `3.69` | `+2.35` | `36 / 101` (`35.6%`) |
+| `ratio 4-5` | `pullback entry_close-3ATR` | `Supported` | `3.55` | `+2.39` | `54 / 369` (`14.6%`) |
+| `BUY` | `pullback entry_close-3ATR` | `Strong` | `2.35` | `+1.08` | `227 / 1374` (`16.5%`) |
+| `ATR Q4` | `pullback entry_close-3ATR` | `Strong` | `2.57` | `+1.45` | `106 / 648` (`16.4%`) |
+
+So the stricter verdict does not kill the pullback hypothesis. It removes the tail-artifacts and leaves a smaller, cleaner set of survivors.
+
+### Primary cohorts vs negative controls under the same filter
+
+Applying the same verdict logic to the negative controls gives:
+
+| Control cohort | Same-filter leader | Support tier | `PF` | `PF_delta vs market` | Fill |
+|---|---|---|---:|---:|---:|
+| `ratio 3-4` | `pullback entry_close-3ATR` | `Strong` | `1.62` | `+0.69` | `193 / 940` (`20.5%`) |
+| `non-Q4` | `cancel-window entry_close-1ATR@1b` | `Strong` | `1.41` | `+0.39` | `375 / 1954` (`19.2%`) |
+
+This is the key transportability split:
+
+- the broad `entry_close-3ATR` pullback still improves the controls, so it looks more like a generic “better price” mechanic than a cohort-exclusive edge;
+- the filtered primary cohorts improve materially more than the controls, especially `ratio 4-5` and `ATR Q4`;
+- the cleanest cohort-specific survivor is now `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`.
+
+For that top cohort, the same `entry_close-2ATR` scenario looks much weaker on the controls:
+
+- `ratio 4-5 × ATR Q4`: `PF=3.69`, `PF_delta=+2.35`, `36` fills;
+- `ratio 3-4`: `PF=1.13`, `PF_delta=+0.21`, `342` fills;
+- `non-Q4`: `PF=1.04`, `PF_delta=+0.01`, `663` fills.
+
+So `entry_close-2ATR` is not just “improves everything”; its strongest uplift remains concentrated in the best shortlist cohort.
 
 ## Conclusions
 
 Variant 3 is now implemented and runnable end-to-end inside `API/signal_research.py`.
 
-The new matrix produced two practical conclusions:
+The full matrix plus the robustness pass produced four practical conclusions:
 
 - `pic_price` is now a validated research anchor, so pic-relative entry scenarios are safe to compare statistically;
-- deep pullback-style entries can improve paper metrics on the primary cohorts, but similar improvements also appear on the negative controls, so the stage did not yet isolate a clean, cohort-specific winner.
+- the original raw-PF verdict was indeed too permissive and promoted low-fill artifacts;
+- after explicit support filtering, `pullback` still dominates the shortlist, but the broad `entry_close-3ATR` family is only partly cohort-specific because it also improves the controls;
+- one qualified candidate does remain for future EA prototyping: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`.
 
-So this stage is a tooling-and-evidence completion, not yet a final trading-rule selection. The matrix is ready; the interpretation still needs stronger robustness rules.
+That candidate is not “proven production-ready”, but it is the first Variant 3 row that simultaneously has:
+
+- non-trivial support (`36` fills, `35.6%` fill rate);
+- strong uplift over its own market baseline (`PF 1.34 -> 3.69`);
+- no comparable uplift on `ratio 3-4` or broad `non-Q4`.
+
+So the stage is no longer just tooling. It now has a filtered statistical conclusion: there is a plausible EA-prototype candidate, but only one clearly cleaner than the generic deeper-entry effect.
 
 ## Limitations / Open Questions
 
-- The current `Variant 3 Shortlist Verdict` is low-fill-biased and should not be treated as final.
+- Even the cleanest surviving candidate `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` still has only `36` fills in the OOS slice, so it remains a medium-support signal, not a large-sample result.
 - The present comparison still uses the fixed baseline `12H / SL=5 / TP=50`; the choice of entry looks promising, but the barrier geometry remains harsh.
-- Some of the strongest PF rows are based on fill rates below `10%`, which may be too thin for practical MT4 deployment even if they are statistically interesting.
-- Negative controls also benefit from deeper entries, so the next decision step must separate “better entry price in general” from “better entry only where the signal is truly stronger”.
+- `pullback entry_close-3ATR` still improves the negative controls, so it should be treated as a broad benchmark rule, not as a clean cohort-specific discovery.
+- Some of the strongest exploratory rows are still below the new support bar and should stay in research only, not in the prototype shortlist.
 
 ## Next Step
 
-Do a robustness pass on the Variant 3 matrix before any EA work:
+If the project moves from research into EA prototyping, start with the filtered winner only:
 
-- tighten the auto-verdict with explicit support floors such as minimum `N_filled` and/or minimum `fill_pct`;
-- re-rank the primary cohorts against `ratio 3-4` and `non-Q4` under those floors;
-- select a compact set of candidate rules for EA prototyping only after the improvement remains meaningfully stronger on the shortlisted cohorts than on the controls.
+- primary prototype candidate: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`;
+- keep `pullback entry_close-3ATR` on `ratio 4-5` / `BUY` / `ATR Q4` as broad research benchmarks, not as equally clean production candidates.
+
+Before touching the EA, the safest optional confirmation step would be one more Python-only robustness check on the winner:
+
+- year-split stability for `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`;
+- sensitivity to nearby barrier geometry around the same fixed entry rule.
 
 ## Related Materials
 

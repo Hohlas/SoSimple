@@ -68,6 +68,13 @@ TP_LEVELS = [5, 10, 15, 20, 30, 50]
 ATR_PERIOD = 14
 VARIANT3_PRIMARY_COHORTS = ['ratio 4-5 × ATR Q4', 'ratio 4-5', 'BUY', 'ATR Q4']
 VARIANT3_NEGATIVE_CONTROLS = ['ratio 3-4', 'non-Q4']
+VARIANT3_SUPPORT_FLOORS = [
+    {'label': '10/5', 'tier': 'Exploratory', 'min_filled': 10, 'min_fill_pct': 5.0},
+    {'label': '20/10', 'tier': 'Standard', 'min_filled': 20, 'min_fill_pct': 10.0},
+    {'label': '30/10', 'tier': 'Supported', 'min_filled': 30, 'min_fill_pct': 10.0},
+    {'label': '40/15', 'tier': 'Strong', 'min_filled': 40, 'min_fill_pct': 15.0},
+]
+VARIANT3_VERDICT_MIN_TIER_RANK = 2
 
 
 def compute_true_range(ohlc: pd.DataFrame) -> pd.Series:
@@ -1031,6 +1038,147 @@ def build_variant3_summary(exc: pd.DataFrame, ohlc: pd.DataFrame) -> pd.DataFram
     return summarize_variant3_scenarios(cohort_frame, ['cohort', 'scenario', 'params'])
 
 
+def annotate_variant3_robustness(summary: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        *summary.columns,
+        'PF_num',
+        'AvgPnL_num',
+        'fill_pct_num',
+        'market_PF',
+        'market_AvgPnL',
+        'PF_delta',
+        'AvgPnL_delta',
+        'support_floors',
+        'support_pass_count',
+        'support_tier',
+        'support_tier_rank',
+        'verdict_eligible',
+    ]
+    if summary.empty:
+        return pd.DataFrame(columns=columns)
+
+    working = summary.copy()
+    working['PF_num'] = pd.to_numeric(working['PF'], errors='coerce')
+    working['AvgPnL_num'] = pd.to_numeric(working['AvgPnL'], errors='coerce')
+    working['fill_pct_num'] = pd.to_numeric(working['fill_pct'], errors='coerce')
+
+    market = working[working['scenario'] == 'market'][['cohort', 'PF_num', 'AvgPnL_num']].copy()
+    market = market.drop_duplicates(subset=['cohort'], keep='last')
+    market.rename(columns={'PF_num': 'market_PF', 'AvgPnL_num': 'market_AvgPnL'}, inplace=True)
+    working = working.merge(market, on='cohort', how='left')
+    working['PF_delta'] = working['PF_num'] - working['market_PF']
+    working['AvgPnL_delta'] = working['AvgPnL_num'] - working['market_AvgPnL']
+
+    support_floors = []
+    support_pass_count = []
+    support_tier = []
+    support_tier_rank = []
+    for _, row in working.iterrows():
+        labels = []
+        top_tier = 'None'
+        top_rank = -1
+        n_filled = pd.to_numeric(row.get('N_filled'), errors='coerce')
+        fill_pct = row.get('fill_pct_num', np.nan)
+        for rank, floor in enumerate(VARIANT3_SUPPORT_FLOORS):
+            if pd.isna(n_filled) or pd.isna(fill_pct):
+                continue
+            if n_filled >= floor['min_filled'] and fill_pct >= floor['min_fill_pct']:
+                labels.append(floor['label'])
+                top_tier = floor['tier']
+                top_rank = rank
+        support_floors.append(', '.join(labels) if labels else 'none')
+        support_pass_count.append(len(labels))
+        support_tier.append(top_tier)
+        support_tier_rank.append(top_rank)
+
+    working['support_floors'] = support_floors
+    working['support_pass_count'] = support_pass_count
+    working['support_tier'] = support_tier
+    working['support_tier_rank'] = support_tier_rank
+    working['verdict_eligible'] = (
+        (working['scenario'] != 'market')
+        & (working['PF_delta'] > 0)
+        & (working['AvgPnL_delta'] > 0)
+        & (working['support_tier_rank'] >= VARIANT3_VERDICT_MIN_TIER_RANK)
+    )
+    return working[columns]
+
+
+def build_variant3_support_ladder(summary: pd.DataFrame, cohorts=None, floors=None) -> pd.DataFrame:
+    columns = [
+        'support_floor',
+        'support_tier_target',
+        'cohort',
+        'scenario',
+        'params',
+        'N_signals',
+        'N_filled',
+        'fill_pct',
+        'skip_pct',
+        'PF',
+        'PF_delta',
+        'AvgPnL',
+        'AvgPnL_delta',
+    ]
+    annotated = annotate_variant3_robustness(summary)
+    if annotated.empty:
+        return pd.DataFrame(columns=columns)
+
+    working = annotated.copy()
+    if cohorts is not None:
+        working = working[working['cohort'].isin(cohorts)].copy()
+    working = working[
+        (working['scenario'] != 'market')
+        & (working['PF_delta'] > 0)
+        & (working['AvgPnL_delta'] > 0)
+    ].copy()
+    if working.empty:
+        return pd.DataFrame(columns=columns)
+
+    floors = VARIANT3_SUPPORT_FLOORS if floors is None else list(floors)
+    rows = []
+    for floor in floors:
+        eligible = working[
+            (working['N_filled'] >= floor['min_filled'])
+            & (working['fill_pct_num'] >= floor['min_fill_pct'])
+        ].copy()
+        if eligible.empty:
+            continue
+        best = eligible.sort_values(
+            ['cohort', 'PF_delta', 'AvgPnL_delta', 'PF_num', 'fill_pct_num', 'N_filled'],
+            ascending=[True, False, False, False, False, False],
+            na_position='last',
+        ).groupby('cohort', sort=False).head(1).copy()
+        best['support_floor'] = floor['label']
+        best['support_tier_target'] = floor['tier']
+        rows.append(best[columns])
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.concat(rows, axis=0, ignore_index=True)
+
+
+def _build_variant3_verdict_rows(summary: pd.DataFrame, cohorts) -> pd.DataFrame:
+    annotated = annotate_variant3_robustness(summary)
+    if annotated.empty:
+        return annotated
+
+    working = annotated[annotated['cohort'].isin(cohorts)].copy()
+    working = working[working['verdict_eligible']].copy()
+    if working.empty:
+        return working
+
+    return working.sort_values(
+        ['cohort', 'PF_delta', 'AvgPnL_delta', 'support_tier_rank', 'fill_pct_num', 'N_filled'],
+        ascending=[True, False, False, False, False, False],
+        na_position='last',
+    ).groupby('cohort', sort=False).head(1).reset_index(drop=True)
+
+
+def build_variant3_shortlist_verdict(summary: pd.DataFrame) -> pd.DataFrame:
+    return _build_variant3_verdict_rows(summary, VARIANT3_PRIMARY_COHORTS)
+
+
 def print_separator(title: str):
     print(f"\n{'═' * 70}")
     print(f"  {title}")
@@ -1528,26 +1676,15 @@ def report_variant3_scenario_matrix(summary: pd.DataFrame):
 
 def report_variant3_shortlist_verdict(summary: pd.DataFrame):
     print_separator("Variant 3 Shortlist Verdict")
-    shortlist = summary[summary['cohort'].isin(VARIANT3_PRIMARY_COHORTS)].copy()
+    shortlist = build_variant3_shortlist_verdict(summary)
     if shortlist.empty:
-        print("  No primary cohort rows available.")
+        print("  No primary-cohort rows pass the robustness verdict.")
         return
 
-    shortlist = shortlist[shortlist['N_filled'] > 0].copy()
-    if shortlist.empty:
-        print("  No filled primary-cohort rows available.")
-        return
-
-    shortlist['PF_sort'] = pd.to_numeric(shortlist['PF'], errors='coerce')
-    shortlist['AvgPnL_sort'] = pd.to_numeric(shortlist['AvgPnL'], errors='coerce')
-    shortlist['fill_sort'] = pd.to_numeric(shortlist['fill_pct'], errors='coerce')
-    verdict = shortlist.sort_values(
-        ['cohort', 'PF_sort', 'AvgPnL_sort', 'fill_sort'],
-        ascending=[True, False, False, False],
-        na_position='last',
-    ).groupby('cohort', sort=False).head(1)
-
-    display = verdict.drop(columns=['PF_sort', 'AvgPnL_sort', 'fill_sort'])
+    print("  Filter: positive uplift vs market and support tier >= Supported (30/10 or 40/15).")
+    display = shortlist.copy()
+    display['PF_delta'] = display['PF_delta'].map(_format_num, digits=2)
+    display['AvgPnL_delta'] = display['AvgPnL_delta'].map(_format_num)
     display['fill_pct'] = display['fill_pct'].map(_format_pct)
     display['skip_pct'] = display['skip_pct'].map(_format_pct)
     display['PF'] = display['PF'].map(_format_pf)
@@ -1555,7 +1692,11 @@ def report_variant3_shortlist_verdict(summary: pd.DataFrame):
     display['TP_FIRST_pct'] = display['TP_FIRST_pct'].map(_format_pct)
     display['SL_FIRST_pct'] = display['SL_FIRST_pct'].map(_format_pct)
     display['NEITHER_pct'] = display['NEITHER_pct'].map(_format_pct)
-    print(display.to_string(index=False))
+    print(display[[
+        'cohort', 'scenario', 'params', 'support_tier', 'support_floors',
+        'N_filled', 'fill_pct', 'PF', 'PF_delta', 'AvgPnL', 'AvgPnL_delta',
+        'TP_FIRST_pct', 'SL_FIRST_pct', 'NEITHER_pct',
+    ]].to_string(index=False))
 
 
 def report_variant3_negative_controls(summary: pd.DataFrame):
@@ -1574,6 +1715,27 @@ def report_variant3_negative_controls(summary: pd.DataFrame):
     controls['SL_FIRST_pct'] = controls['SL_FIRST_pct'].map(_format_pct)
     controls['NEITHER_pct'] = controls['NEITHER_pct'].map(_format_pct)
     print(controls.to_string(index=False))
+
+    robust_controls = _build_variant3_verdict_rows(summary, VARIANT3_NEGATIVE_CONTROLS)
+    print("\n  [Robust control leaders under the same filter]")
+    if robust_controls.empty:
+        print("  No control rows pass the robustness verdict.")
+        return
+
+    display = robust_controls.copy()
+    display['PF_delta'] = display['PF_delta'].map(_format_num, digits=2)
+    display['AvgPnL_delta'] = display['AvgPnL_delta'].map(_format_num)
+    display['fill_pct'] = display['fill_pct'].map(_format_pct)
+    display['skip_pct'] = display['skip_pct'].map(_format_pct)
+    display['PF'] = display['PF'].map(_format_pf)
+    display['AvgPnL'] = display['AvgPnL'].map(_format_num)
+    display['TP_FIRST_pct'] = display['TP_FIRST_pct'].map(_format_pct)
+    display['SL_FIRST_pct'] = display['SL_FIRST_pct'].map(_format_pct)
+    display['NEITHER_pct'] = display['NEITHER_pct'].map(_format_pct)
+    print(display[[
+        'cohort', 'scenario', 'params', 'support_tier', 'support_floors',
+        'N_filled', 'fill_pct', 'PF', 'PF_delta', 'AvgPnL', 'AvgPnL_delta',
+    ]].to_string(index=False))
 
 
 def report_regime_splits(exc: pd.DataFrame, barrier_outcomes: pd.DataFrame, barrier_summary: pd.DataFrame):

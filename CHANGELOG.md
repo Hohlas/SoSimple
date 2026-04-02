@@ -3,6 +3,25 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-02] — signal_research Variant 3 robustness pass: support ladder и stricter shortlist
+
+### Добавлено
+- В `API/signal_research.py` добавлен robustness-layer поверх полной Variant 3 matrix: support ladder `10/5 -> 20/10 -> 30/10 -> 40/15`, baseline deltas против `market` (`PF_delta`, `AvgPnL_delta`) и helpers для filtered verdict
+- `Variant 3 Shortlist Verdict` теперь требует не только положительный uplift против `market`, но и support tier не ниже `Supported` (`30/10` или `40/15`), поэтому tiny-fill rows больше не могут выигрывать по голому `PF`
+- `tests/test_signal_research.py` расширен тестами на robustness annotation, floor-by-floor support ladder и новый shortlist verdict
+
+### Результаты
+- Low-fill artefacts удалены из shortlist: `cancel-window entry_close-3ATR@1b` / `@3b` больше не становятся “победителями”, а `ratio 4-5 × ATR Q4 + pullback pic_price-1ATR` понижен до exploratory/standard-only варианта
+- После фильтра robust survivors для primary cohorts: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` (`PF=3.69`, `36` fill-ов, `35.6%`), `ratio 4-5 + pullback entry_close-3ATR` (`PF=3.55`), `BUY + pullback entry_close-3ATR` (`PF=2.35`), `ATR Q4 + pullback entry_close-3ATR` (`PF=2.57`)
+- Negative controls под тем же фильтром тоже улучшаются, но слабее: `ratio 3-4 + pullback entry_close-3ATR` (`PF=1.62`, `ΔPF=+0.69`), `non-Q4 + cancel-window entry_close-1ATR@1b` (`PF=1.41`, `ΔPF=+0.39`)
+- Самый чистый transportable survivor — `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`: на тех же controls его uplift почти исчезает (`ratio 3-4: PF=1.13`, `non-Q4: PF=1.04`)
+
+### Вывод
+Robustness pass оставил один действительно интересный кандидат для будущего EA-прототипа: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`. Более глубокий `entry_close-3ATR` остаётся сильным research-эффектом на primary cohorts, но уже не выглядит чисто cohort-specific, потому что заметно улучшает и controls.
+Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3.md](docs/reports/2026-04-02-signal-research-variant-3.md)
+
+---
+
 ## [2026-04-02] — signal_research Variant 3: scenario matrix, raw pic_price и OHLC validation
 
 ### Добавлено

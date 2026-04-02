@@ -1,13 +1,13 @@
 # Context Handoff
 
 ## Current Stage
-Phase B research continues after Signal Research Variant 3 implementation.
+Phase B research continues after the Variant 3 robustness pass.
 
 ## Last Completed Stage
-Signal Research Variant 3 completed on 2026-04-02.
+Signal Research Variant 3 robustness pass completed on 2026-04-02.
 
 ## Next Step
-Do a robustness pass on the completed Variant 3 matrix. Tighten the current auto-verdict with explicit support floors such as minimum `N_filled` and/or minimum `fill_pct`, then compare the shortlisted cohorts against `ratio 3-4` and `non-Q4` again under those floors before choosing any candidate rules for EA prototyping.
+If work moves beyond Python research, prototype only the filtered winner first: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`. Keep `pullback entry_close-3ATR` on `ratio 4-5` / `BUY` / `ATR Q4` as a benchmark family, but not as equally clean cohort-specific rules. Before any EA change, the safest extra check is another Python-only pass on yearly stability and nearby barrier sensitivity for that `entry_close-2ATR` winner.
 
 ## Read First
 - `AGENTS.md`
@@ -19,9 +19,8 @@ Do a robustness pass on the completed Variant 3 matrix. Tighten the current auto
 - `API/signal_research.py`
 
 ## Open Risks
-- The top cohort `ratio 4-5 × ATR Q4` is still relatively small (`N=101`), so the strongest PF rows can become thin very quickly.
-- The current `Variant 3 Shortlist Verdict` is low-fill-biased and can promote rows with only a handful of fills.
-- Negative controls also improve under some deeper-entry scenarios, so the current uplift is not yet clearly cohort-specific.
+- The winner `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` still has only `36` fills in the OOS slice, so support is improved but not large-sample.
+- The broader `pullback entry_close-3ATR` family remains partly generic because `ratio 3-4` also improves under it (`PF=1.62`).
 - The fixed baseline `12H / SL=5 / TP=50` still keeps `TP_FIRST%` low and may mask part of the entry effect.
 - Broad `SELL` remains weak and regime-sensitive.
 

@@ -1039,6 +1039,206 @@ def test_summarize_variant3_scenarios_reports_fill_and_skip_rates():
     assert row['PF'] == float('inf')
 
 
+def test_annotate_variant3_robustness_computes_support_tiers_and_market_deltas():
+    summary = pd.DataFrame([
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'market',
+            'params': 'market',
+            'N_signals': 100,
+            'N_filled': 100,
+            'fill_pct': 100.0,
+            'skip_pct': 0.0,
+            'PF': 1.2,
+            'AvgPnL': 0.5,
+            'TP_FIRST_pct': 40.0,
+            'SL_FIRST_pct': 30.0,
+            'NEITHER_pct': 30.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'entry_close-3ATR',
+            'N_signals': 100,
+            'N_filled': 30,
+            'fill_pct': 30.0,
+            'skip_pct': 70.0,
+            'PF': 3.5,
+            'AvgPnL': 4.0,
+            'TP_FIRST_pct': 60.0,
+            'SL_FIRST_pct': 20.0,
+            'NEITHER_pct': 20.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'pic_price-1ATR',
+            'N_signals': 100,
+            'N_filled': 20,
+            'fill_pct': 10.0,
+            'skip_pct': 80.0,
+            'PF': 6.0,
+            'AvgPnL': 7.0,
+            'TP_FIRST_pct': 70.0,
+            'SL_FIRST_pct': 10.0,
+            'NEITHER_pct': 20.0,
+        },
+    ])
+
+    annotated = sr.annotate_variant3_robustness(summary)
+
+    supported = annotated[annotated['params'] == 'entry_close-3ATR'].iloc[0]
+    fragile = annotated[annotated['params'] == 'pic_price-1ATR'].iloc[0]
+
+    assert supported['PF_delta'] == pytest.approx(2.3, abs=1e-9)
+    assert supported['AvgPnL_delta'] == pytest.approx(3.5, abs=1e-9)
+    assert supported['support_tier'] == 'Supported'
+    assert supported['support_floors'] == '10/5, 20/10, 30/10'
+    assert bool(supported['verdict_eligible']) is True
+
+    assert fragile['support_tier'] == 'Standard'
+    assert fragile['support_floors'] == '10/5, 20/10'
+    assert bool(fragile['verdict_eligible']) is False
+
+
+def test_build_variant3_support_ladder_tracks_floor_specific_winners():
+    summary = pd.DataFrame([
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'market',
+            'params': 'market',
+            'N_signals': 100,
+            'N_filled': 100,
+            'fill_pct': 100.0,
+            'skip_pct': 0.0,
+            'PF': 1.2,
+            'AvgPnL': 0.5,
+            'TP_FIRST_pct': 40.0,
+            'SL_FIRST_pct': 30.0,
+            'NEITHER_pct': 30.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'fragile-edge',
+            'N_signals': 100,
+            'N_filled': 20,
+            'fill_pct': 10.0,
+            'skip_pct': 80.0,
+            'PF': 6.0,
+            'AvgPnL': 6.0,
+            'TP_FIRST_pct': 70.0,
+            'SL_FIRST_pct': 10.0,
+            'NEITHER_pct': 20.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'supported-edge',
+            'N_signals': 100,
+            'N_filled': 30,
+            'fill_pct': 10.0,
+            'skip_pct': 70.0,
+            'PF': 3.5,
+            'AvgPnL': 4.0,
+            'TP_FIRST_pct': 60.0,
+            'SL_FIRST_pct': 20.0,
+            'NEITHER_pct': 20.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'cancel-window',
+            'params': 'strong-edge',
+            'N_signals': 100,
+            'N_filled': 40,
+            'fill_pct': 15.0,
+            'skip_pct': 60.0,
+            'PF': 1.8,
+            'AvgPnL': 1.5,
+            'TP_FIRST_pct': 55.0,
+            'SL_FIRST_pct': 20.0,
+            'NEITHER_pct': 25.0,
+        },
+    ])
+
+    ladder = sr.build_variant3_support_ladder(summary, cohorts=['ratio 4-5'])
+
+    assert list(ladder['support_floor']) == ['10/5', '20/10', '30/10', '40/15']
+    assert ladder.loc[ladder['support_floor'] == '10/5', 'params'].iloc[0] == 'fragile-edge'
+    assert ladder.loc[ladder['support_floor'] == '20/10', 'params'].iloc[0] == 'fragile-edge'
+    assert ladder.loc[ladder['support_floor'] == '30/10', 'params'].iloc[0] == 'supported-edge'
+    assert ladder.loc[ladder['support_floor'] == '40/15', 'params'].iloc[0] == 'strong-edge'
+
+
+def test_build_variant3_shortlist_verdict_requires_supported_tier():
+    summary = pd.DataFrame([
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'market',
+            'params': 'market',
+            'N_signals': 100,
+            'N_filled': 100,
+            'fill_pct': 100.0,
+            'skip_pct': 0.0,
+            'PF': 1.2,
+            'AvgPnL': 0.5,
+            'TP_FIRST_pct': 40.0,
+            'SL_FIRST_pct': 30.0,
+            'NEITHER_pct': 30.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'fragile-edge',
+            'N_signals': 100,
+            'N_filled': 20,
+            'fill_pct': 10.0,
+            'skip_pct': 80.0,
+            'PF': 6.0,
+            'AvgPnL': 6.0,
+            'TP_FIRST_pct': 70.0,
+            'SL_FIRST_pct': 10.0,
+            'NEITHER_pct': 20.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'pullback',
+            'params': 'supported-edge',
+            'N_signals': 100,
+            'N_filled': 30,
+            'fill_pct': 10.0,
+            'skip_pct': 70.0,
+            'PF': 3.5,
+            'AvgPnL': 4.0,
+            'TP_FIRST_pct': 60.0,
+            'SL_FIRST_pct': 20.0,
+            'NEITHER_pct': 20.0,
+        },
+        {
+            'cohort': 'ratio 4-5',
+            'scenario': 'cancel-window',
+            'params': 'strong-but-weaker',
+            'N_signals': 100,
+            'N_filled': 40,
+            'fill_pct': 15.0,
+            'skip_pct': 60.0,
+            'PF': 1.8,
+            'AvgPnL': 1.5,
+            'TP_FIRST_pct': 55.0,
+            'SL_FIRST_pct': 20.0,
+            'NEITHER_pct': 25.0,
+        },
+    ])
+
+    verdict = sr.build_variant3_shortlist_verdict(summary)
+
+    assert len(verdict) == 1
+    row = verdict.iloc[0]
+    assert row['cohort'] == 'ratio 4-5'
+    assert row['params'] == 'supported-edge'
+    assert row['support_tier'] == 'Supported'
+
+
 def test_variant3_reports_smoke(capsys):
     summary = pd.DataFrame([
         {
