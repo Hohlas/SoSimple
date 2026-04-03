@@ -3,6 +3,34 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-03] — Signal Path Atlas: standalone research CLI, frozen holdout replication и stage close
+
+### Добавлено
+- Добавлен новый standalone research tool `API/signal_path_atlas.py` для ATR-normalized `discovery / holdout` path atlas без возврата к прямому `PF`-ranking rule search
+- Добавлены discovery-atlas outputs: `path_quantiles`, `first_passage`, `ordering`, numeric/categorical slices, path archetypes, holdout verdicts и optional CSV export
+- `tests/test_signal_path_atlas.py` покрывает split semantics, path tensor, feature screen, slice merging, archetypes, holdout verdicts и CLI smoke
+- Обновлён `API/README.md` с командой запуска path atlas CLI
+
+### Исправлено
+- Убран holdout leakage из `atr_bucket`: ATR bucket edges теперь фиксируются только по discovery и переиспользуются на holdout
+- Исправлен holdout numeric slice matching: повторяющиеся bin boundaries больше не double-count строки между соседними slices
+- `main()` больше не падает, если feature screen убирает все live numeric features
+- Archetype naming стабилизирован для collapsed / role-collision случаев, чтобы нейтральные кластеры не получали ложные recovery labels
+
+### Результаты
+- Новый atlas CLI успешно проходит верификацию:
+  - `pytest tests/test_signal_path_atlas.py -q` → `38 passed`
+  - `python -m API.signal_path_atlas --test-only` → успешно
+  - `python -m API.signal_path_atlas --test-only --export-dir /tmp/signal_path_atlas` → успешно
+- Экспортируемый atlas surface теперь включает `split_summary`, `feature_screen`, `path_quantiles`, `first_passage`, `ordering`, `numeric_slices`, `categorical_slices`, `archetype_summary`, `holdout_verdicts`, `execution_implications`
+- На текущем smoke run path-atlas слой не даёт немедленной execution-рекомендации: `execution_implications = neither`
+
+### Вывод
+Stage B research сместился с narrow winner-specific PF follow-up к reusable path-atlas workflow. Следующий шаг — читать atlas outputs как канонический research artefact и уже из replicated path claims решать, оправдан ли будущий `market`, `pullback`, оба или ни один.
+Подробный отчёт: [docs/reports/2026-04-03-signal-path-atlas.md](docs/reports/2026-04-03-signal-path-atlas.md)
+
+---
+
 ## [2026-04-02] — signal_research Variant 3 robustness pass: support ladder и stricter shortlist
 
 ### Добавлено
