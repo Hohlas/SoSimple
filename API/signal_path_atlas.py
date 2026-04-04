@@ -1,3 +1,31 @@
+# =============================================================================
+# Файл: API/signal_path_atlas.py
+# Назначение: Standalone research CLI для построения ATR-normalized Signal Path Atlas
+#   по ML-сигналам. Скрипт собирает direction-aware post-signal path tensor,
+#   строит discovery-only feature screen и atlas slices, выделяет path archetypes,
+#   замораживает discovery artifacts, проверяет их репликацию на holdout и
+#   печатает/экспортирует итоговые исследовательские таблицы без перехода к
+#   прямому SL/TP rule search.
+# Язык: Python 3.11+
+# Создан: 2026-04-03
+# Зависимости:
+#   Входные данные:
+#     - MT/MQL4/Files/ml_signals.csv
+#     - DATA/XAUUSD_H1_OHLC.csv
+#   Выходные данные:
+#     - stdout tables
+#     - optional CSV export directory
+# Внешние зависимости:
+#   - numpy>=1.24, pandas>=2.0, scikit-learn>=1.0
+# Использование:
+#   python -m API.signal_path_atlas --test-only
+#   python -m API.signal_path_atlas --test-only --export-dir /tmp/signal_path_atlas
+# Примечания:
+#   - `discovery` фиксирован как `<= 2024-12-31 23:59:59`
+#   - `holdout` фиксирован как `>= 2025-01-01 00:00:00`
+#   - ATR bucket edges фитятся только на discovery и затем переиспользуются
+# =============================================================================
+
 import argparse
 import re
 from pathlib import Path

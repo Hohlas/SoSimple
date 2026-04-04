@@ -1,3 +1,26 @@
+# =============================================================================
+# Файл: tests/test_signal_path_atlas.py
+# Назначение: Набор unit и smoke tests для Signal Path Atlas research CLI.
+#   Проверяет корректность fixed calendar split, ATR-normalized path math,
+#   conditioning features, slice construction, archetype labeling, holdout
+#   replication logic, CSV export и базовый CLI flow, чтобы изменения в
+#   исследовательском инструменте не ломали его статистический контракт.
+# Язык: Python 3.11+
+# Создан: 2026-04-03
+# Зависимости:
+#   Входные данные:
+#     - synthetic pandas DataFrame fixtures inside tests
+#   Выходные данные:
+#     - pytest assertions for API/signal_path_atlas.py
+# Внешние зависимости:
+#   - pytest>=8.0, numpy>=1.24, pandas>=2.0
+# Использование:
+#   ./.venv/bin/python -m pytest tests/test_signal_path_atlas.py -q
+# Примечания:
+#   - тесты покрывают split semantics, path tensor, slices, archetypes и CLI smoke
+#   - реальные CLI-прогоны path atlas дополнительно верифицируются вручную перед stage close
+# =============================================================================
+
 import sys
 
 import numpy as np

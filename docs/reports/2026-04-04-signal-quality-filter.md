@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Исследовать, могут ли multi-horizon predictions модели (up_3..dn_48) дать более точный фильтр качества сигнала, чем текущий ratio_12, и скрестить лучшие фильтры с pullback entry из Variant 3
 > **Related plan/spec**: [docs/superpowers/specs/2026-04-03-signal-quality-filter-claude.md](../superpowers/specs/2026-04-03-signal-quality-filter-claude.md), [docs/superpowers/plans/2026-04-03-signal-quality-filter.md](../superpowers/plans/2026-04-03-signal-quality-filter.md)
-> **Related commit**: pending
+> **Related commit**: 36b07e4
 
 ## Context
 

@@ -1,49 +1,49 @@
-# Signal Path Atlas Stage
+# Этап Signal Path Atlas
 
 > **Date**: 2026-04-03
 > **Status**: Completed
-> **Goal**: Build and verify a standalone Python path-atlas tool that describes post-signal price geometry in ATR-normalized discovery/holdout space without returning to direct PF rule search.
+> **Goal**: Построить и проверить standalone Python-инструмент path atlas, который описывает постсигнальную геометрию цены в ATR-нормированном `discovery/holdout` пространстве без возврата к прямому поиску `PF`-правил.
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-03-signal-path-atlas-design.md`, `docs/superpowers/plans/2026-04-03-signal-path-atlas.md`
-> **Related commit**: pending
+> **Related commit**: `898bb36`
 
 ## Context
 
-Variant 2 and Variant 3 established that the current signal is better described as weak drift with selective continuation than as a clean impulse edge. Variant 3 robustness left one narrow execution candidate alive, but its support remained too low for a comfortable transportable conclusion. The next stage therefore changed the research object: instead of searching for the next PF winner in Python, the project moved to a conditional path atlas that describes post-signal geometry first and postpones execution choice to a later step.
+Variant 2 и Variant 3 показали, что текущий сигнал лучше описывается как слабый drift с выборочным continuation, а не как чистый impulse edge. Robustness-pass в Variant 3 оставил один узкий execution-кандидат, но его поддержка всё ещё была слишком маленькой для уверенного transportable вывода. Поэтому на этом этапе изменился сам объект исследования: вместо поиска следующего `PF`-winner в Python проект перешёл к условному `path atlas`, который сначала описывает геометрию движения после сигнала, а уже потом позволяет принимать решения об execution.
 
 ## What Was Done
 
-- Added a new standalone research entry point: `API/signal_path_atlas.py`
-- Implemented the fixed calendar split:
+- Добавлен новый standalone research entry point: `API/signal_path_atlas.py`
+- Реализован фиксированный календарный split:
   - `discovery <= 2024-12-31 23:59:59`
   - `holdout >= 2025-01-01 00:00:00`
-- Built a direction-aware ATR-normalized path tensor on `1..12` bars:
+- Построен direction-aware ATR-normalized path tensor на горизонте `1..12` баров:
   - `signed_ret_h`
   - `fav_h`
   - `adv_h`
-  - first-passage and ordering features
-- Added discovery-only conditioning features and feature screen:
+  - first-passage и ordering features
+- Добавлены discovery-only conditioning features и feature screen:
   - `ratio_h`
   - `spread_h`
   - short-vs-long derived ratios/spreads
   - fixed cohorts `signal_label`, `ratio_bin_12`, `atr_bucket`
-- Added discovery atlas outputs:
+- Добавлены discovery-atlas outputs:
   - global path quantiles
   - first-passage atlas
   - ordering atlas
-  - numeric and categorical slices
+  - numeric и categorical slices
   - path archetypes
-- Added holdout replication layer with structured verdicts:
+- Добавлен holdout replication layer со структурированными verdicts:
   - `Replicated`
   - `Directionally consistent`
   - `Failed`
   - `Exploratory`
-- Hardened the implementation after review:
-  - froze ATR bucket edges on discovery only to avoid holdout leakage
-  - kept zero-support discovery archetypes in holdout verdicts
-  - removed the `main()` crash path when no live numeric features survive screening
-  - made numeric holdout slice membership interval-aware so repeated bin boundaries do not double-count rows
-  - made collapsed/role-collision archetype naming deterministic and neutral
-  - surfaced the full atlas report/export surface instead of only partial tables
+- После review усилена надёжность реализации:
+  - ATR bucket edges теперь фиксируются только на discovery, чтобы исключить holdout leakage
+  - discovery archetypes с нулевой поддержкой на holdout сохраняются в verdict tables
+  - убран crash path в `main()`, если после screening не остаётся live numeric features
+  - holdout numeric slice membership стал interval-aware, поэтому повторяющиеся границы бинов больше не дают double-count
+  - archetype naming при collapsed/role-collision случаях стал детерминированным и нейтральным
+  - CLI/report/export теперь показывают полный atlas surface, а не только его часть
 
 ## Changed Files
 
@@ -56,12 +56,12 @@ Variant 2 and Variant 3 established that the current signal is better described 
 ## Verification
 
 - `./.venv/bin/python -m pytest tests/test_signal_path_atlas.py -q`
-  - result: `38 passed`
+  - результат: `38 passed`
 - `./.venv/bin/python -m API.signal_path_atlas --test-only`
-  - result: completed successfully
+  - результат: успешно завершился
 - `rm -rf /tmp/signal_path_atlas && ./.venv/bin/python -m API.signal_path_atlas --test-only --export-dir /tmp/signal_path_atlas`
-  - result: completed successfully
-- Final export set written by the CLI:
+  - результат: успешно завершился
+- Финальный export set, который пишет CLI:
   - `split_summary.csv`
   - `feature_screen.csv`
   - `path_quantiles.csv`
@@ -75,41 +75,41 @@ Variant 2 and Variant 3 established that the current signal is better described 
 
 ## Results
 
-- The project now has a dedicated path-atlas CLI instead of extending `API/signal_research.py` further.
-- The atlas contract is now explicit and reproducible:
-  - discovery artifacts are frozen before holdout replication
-  - holdout is no longer allowed to leak into ATR bucket construction
-  - replication verdicts are produced for numeric slices, fixed cohorts, and archetypes
-- On the current `--test-only` verification run, the split produced:
+- У проекта теперь есть выделенный path-atlas CLI вместо дальнейшего расширения `API/signal_research.py`.
+- Atlas contract стал явным и воспроизводимым:
+  - discovery artifacts фиксируются до перехода на holdout replication
+  - holdout больше не может протекать в ATR bucket construction
+  - replication verdicts строятся для numeric slices, fixed cohorts и archetypes
+- На текущем `--test-only` verification run split дал:
   - `discovery = 1752`
   - `holdout = 851`
-- The current atlas smoke run shows two surviving reported archetype families on discovery:
+- На текущем atlas smoke run на discovery видны две surviving archetype families:
   - `failure_or_adverse_continuation`
   - `flat_or_noisy_drift`
-- The current holdout verdict surface no longer implies an immediate execution recommendation:
+- Текущий holdout verdict surface больше не даёт немедленной execution-рекомендации:
   - `execution_implications = neither`
 
 ## Conclusions
 
-This stage successfully moved the project away from direct PF winner search and into a reusable path-atlas workflow. The core result is not a new EA rule but a verified research tool that can describe path geometry, freeze discovery artifacts, and check whether those effects replicate on holdout. That is the right methodological base for any later `market` or `pullback` decision.
+Этот этап успешно увёл проект от прямого поиска `PF`-winner и перевёл его в reusable path-atlas workflow. Главный результат этапа — не новое EA rule, а проверенный исследовательский инструмент, который умеет описывать path geometry, фиксировать discovery artifacts и проверять, реплицируются ли найденные эффекты на holdout. Именно это сейчас является правильной методологической базой для любых будущих решений между `market` и `pullback`.
 
-The most important practical change versus the previous handoff is conceptual: the next Python step is no longer a narrow robustness pass around the old locked winner. The new default path is to use the atlas outputs to identify which path claims are actually replicated, and only then derive downstream execution hypotheses.
+Главное практическое изменение относительно предыдущего handoff — концептуальное: следующий Python-шаг больше не является узким robustness pass вокруг старого locked winner. Новый default path — сначала читать atlas outputs и определять, какие path claims реально реплицируются, и только потом выводить из этого downstream execution hypotheses.
 
 ## Limitations / Open Questions
 
-- `API/signal_path_atlas.py` is already a fairly large single-file research tool; maintainability is still acceptable, but future growth should likely split orchestration from analysis helpers.
-- The shallow explanation tree is fitted but not yet surfaced as a first-class report/export artifact.
-- Current verification used the documented `--test-only` path. That is sufficient for the stage close, but the next analytical pass should read the atlas outputs directly and convert them into a canonical human research summary.
-- The current execution implication result is `neither`, which means the atlas layer is now built, but the research interpretation layer is still ahead of us.
+- `API/signal_path_atlas.py` уже стал довольно крупным single-file research tool; по поддержке он ещё приемлем, но при дальнейшем росте, вероятно, стоит разделить orchestration и analysis helpers.
+- Shallow explanation tree уже считается, но пока не вынесен в полноценный report/export artifact.
+- Текущая верификация использовала документированный `--test-only` path. Для stage close этого достаточно, но следующий аналитический проход должен уже читать atlas outputs напрямую и превращать их в канонический human research summary.
+- Текущее значение `execution_implications = neither` означает, что atlas layer уже построен, но слой исследовательской интерпретации ещё впереди.
 
 ## Next Step
 
-Use the new atlas tooling to produce the first canonical path-atlas research readout from the frozen tables:
+Использовать новый atlas tooling, чтобы получить первый канонический path-atlas research readout из frozen tables:
 
-- review global path quantiles, first-passage, and ordering as the primary signal description;
-- identify only the path claims that clearly replicate on holdout;
-- decide whether any replicated cohort/archetype evidence supports a future `market` or `pullback` execution track;
-- keep the old Variant 3 locked winner only as a benchmark, not as the main driver of the next stage.
+- разобрать global path quantiles, first-passage и ordering как основное описание сигнала;
+- выделить только те path claims, которые действительно реплицируются на holdout;
+- решить, поддерживает ли replicated cohort/archetype evidence будущий `market`, `pullback`, оба варианта или ни один;
+- оставить старый Variant 3 locked winner только как benchmark, а не как главный драйвер следующего этапа.
 
 ## Related Materials
 
