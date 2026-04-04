@@ -3,71 +3,65 @@
 Сначала прочитай:
 1. AGENTS.md
 2. CONTEXT_HANDOFF.md
-3. docs/reports/2026-04-03-signal-path-atlas.md
-4. docs/reports/2026-04-02-signal-research-variant-3.md
-5. docs/reports/2026-04-02-signal-research-variant-3-prep.md
-6. docs/reports/2026-04-01-signal-research-variant-2.md
-7. docs/superpowers/specs/2026-04-03-signal-path-atlas-design.md
-8. docs/superpowers/plans/2026-04-03-signal-path-atlas.md
+3. docs/reports/2026-04-04-signal-path-atlas-readout.md
+4. docs/reports/2026-04-04-signal-quality-filter.md
+5. docs/reports/2026-04-03-signal-path-atlas.md
 
 Потом изучи:
 - API/signal_path_atlas.py
-- API/signal_research.py
-- API/README.md
-- CHANGELOG.md (только верхние 200-300 строк)
+- API/signal_quality_research.py
 
 Контекст:
-- Этап path-atlas tooling уже завершён.
-- Код и CLI готовы, тесты проходят.
-- Но канонического исследовательского вывода по atlas results ещё нет.
-- Старый Variant 3 winner `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` остаётся только benchmark, а не default next target.
-- Главная задача сейчас: не писать новый execution rule и не оптимизировать SL/TP, а сделать первый нормальный research readout поверх уже построенного path atlas.
+- Atlas readout показал двумодальную структуру сигнала: 64% failure vs 36% flat_or_noisy_drift.
+- Оба архетипа воспроизведены на holdout. Это самый сильный atlas finding.
+- Winning signals почти не откатываются (adv Q50 = 0.48 ATR), поэтому pullback entry
+  не имеет path-level основания — он работает через механическое улучшение цены + фильтрацию.
+- Variant 4 дал два holdout-подтверждённых фильтра: `fav_3_vs_12 <= 0.653` и `ratio_3_vs_12 > 4.751`.
+- Но пока неизвестно, насколько эти фильтры коррелируют с принадлежностью к winning архетипу.
+- Все отчёты и выводы пиши на русском языке. Английский — только для устоявшихся
+  терминов (PF, ATR, holdout, discovery, SL/TP, BUY/SELL, Q1-Q4).
 
 Твоя задача:
-1. Запусти path-atlas CLI на текущих данных.
-2. Внимательно проанализируй его outputs как исследователь, а не как implementer.
-3. Ответь на вопрос: какие path claims действительно выглядят содержательными и воспроизводимыми, а какие пока шум/artefact.
-4. Отдельно оцени:
-   - global path quantiles
-   - first-passage behavior
-   - ordering behavior
-   - archetype summary
-   - holdout replication verdicts
-   - execution_implications
-5. Сформулируй первый канонический atlas-level вывод:
-   - как в целом ведёт себя сигнал после входа;
-   - какие cohorts/archetypes реально отличаются;
-   - поддерживает ли atlas будущий `market`, `pullback`, оба или ни один;
-   - изменился ли смысл старого locked winner после появления atlas layer.
-6. Если выводы достаточно содержательны, подготовь новый канонический report в docs/reports/.
-7. При необходимости обнови CHANGELOG.md и CONTEXT_HANDOFF.md только если появится новый завершённый исследовательский результат, а не просто промежуточные заметки.
+1. Для каждого из двух фильтров Variant 4 (`fav_3_vs_12 <= 0.653`, `ratio_3_vs_12 > 4.751`)
+   посчитай, какой % отфильтрованных сигналов попадает в flat_or_noisy_drift vs failure.
+   Для этого используй уже готовый atlas pipeline: загрузи данные, построй path tensor,
+   определи архетипы на discovery, присвой архетипы holdout через модель из atlas,
+   затем наложи фильтры и посчитай пропорции.
+
+2. Сравни три варианта на holdout:
+   a) Без фильтра + market entry (baseline)
+   b) Фильтр + market entry
+   c) Фильтр + pullback entry (entry_close-1ATR и entry_close-3ATR)
+   Для каждого посчитай: N, % winning архетипа, медиану signed_ret_12, PF если возможно.
+
+3. Ответь на главный вопрос: если фильтр хорошо отбирает winning архетип,
+   нужен ли pullback вообще, или market entry на отфильтрованных сигналах достаточен?
+
+4. Отдельно проверь: какой fill rate у pullback entry_close-1ATR и entry_close-3ATR
+   на отфильтрованных сигналах, которые попали в winning архетип.
+   Если winning signals почти не откатываются, fill rate должен быть очень низким.
+
+5. Если результаты содержательны, напиши канонический report в docs/reports/.
 
 Критические ограничения:
-- Не уходи обратно в brute-force PF rule search.
-- Не добавляй новые execution scenarios.
+- Не уходи в brute-force PF rule search.
 - Не трогай EA и MT4 код.
-- Не оптимизируй SL/TP geometry.
-- Не расширяй search space без очень сильного основания.
-- Относись критически к красивым slices с малой поддержкой.
-- Если что-то выглядит как artefact, так и напиши.
-- Не считай `Replicated` в таблице автоматическим доказательством без здравой интерпретации.
-- Если увидишь конфликт между автоматическим verdict и реальной экономической интерпретацией, приоритет у интерпретации, но конфликт нужно явно описать.
+- Не оптимизируй SL/TP.
+- Не расширяй набор фильтров — работай только с двумя уже подтверждёнными.
+- Относись критически к малым выборкам (N < 30).
+- Пиши всё на русском.
 
 Ожидаемый результат:
-- короткое, но содержательное summary текущего statistical readout;
-- список 3-6 главных выводов;
-- список 2-4 открытых вопросов/рисков;
-- чёткий recommendation для следующего research step:
-  - `market`
-  - `pullback`
-  - `оба`
-  - `ни один`
-- если пишешь report, он должен быть каноническим stage/research report, а не dump сырых таблиц.
+- Таблица: фильтр × архетип → пропорции (discovery и holdout)
+- Таблица: фильтр × entry → N, медиана ret, PF
+- Ответ: нужен ли pullback поверх фильтра
+- Ответ: какой из двух фильтров лучше коррелирует с winning архетипом
+- Если есть report, он должен быть каноническим
 
 Формат ответа:
 1. Что было прочитано и запущено
-2. Ключевые статистические выводы
-3. Что выглядит устойчивым, а что нет
-4. Практический вывод для дальнейшего research
-5. Какие файлы были изменены, если были
-6. Какие команды верификации были запущены
+2. Ключевые результаты
+3. Что устойчиво, а что нет
+4. Практический вывод
+5. Какие файлы изменены
+6. Какие команды запускались

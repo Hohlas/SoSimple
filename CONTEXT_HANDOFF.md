@@ -1,40 +1,39 @@
 # Context Handoff
 
 ## Current Stage
-Variant 4 (Signal Quality Filter Research) завершён. Два holdout-confirmed кандидата готовы к верификации через Signal Path Atlas.
+Archetype × Filter Bridge завершён. `fav_3_vs_12 <= 0.653` обогащает winning архетип (+6.6 pp на holdout). `ratio_3_vs_12 > 4.751` не коррелирует с winning архетипом. Pullback поверх фильтра не нужен — winning signals не откатываются.
 
 ## Last Completed Stage
-Signal Quality Filter Research (Variant 4) завершён 2026-04-04.
+Archetype × Filter Bridge (2026-04-04).
 
 ## Next Step
-Верифицировать два holdout-confirmed кандидата из Variant 4 cross-analysis через Signal Path Atlas pipeline:
+Принять решение о path forward:
 
-1. **Агрессивный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` (PF=1.62, N=94 holdout)
-2. **Консервативный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` (PF=3.52, N=24 holdout)
+1. **Если приоритет — EA-прототип**: реализовать `fav_3_vs_12 <= 0.653` + market entry в EA. PF=1.78 на 84 holdout trades. Требует:
+   - Добавить вычисление `fav_3_vs_12` в `generate_signals.py` или EA
+   - Порого��ое значение: `pred_fav_3 / pred_fav_12 <= 0.653`
+   - Вход: market entry при выполнении условия
 
-Конкретно:
-- Проверить, поддерживает ли path geometry (first-passage, ordering) pullback entry для cohort `ratio_3_vs_12 > 4.751`
-- Убедиться, что atlas-level replication подтверждает cross-analysis findings
-- Проверить BUY/SELL split внутри фильтров и threshold sensitivity
-- Оставить Variant 3 winner `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` только как benchmark
+2. **Если приоритет — улучшение фильтра**: искать лучший archetype predictor через replicated atlas features (spread slices, cross-horizon ratios). Текущий фильтр обогащает winning с 37% до 44% — это enrichment, не separation. Потенциальные направления:
+   - Комбинация `fav_3_vs_12 <= 0.653` с replicated spread features
+   - Проверить BUY/SELL split внутри фильтра (BUY advantage реплицирован)
+   - Threshold sensitivity analysis
+
+3. **Если приоритет — увеличение N**: `ratio_3_vs_12 > 4.751` даёт больше сигналов (176 vs 84), но работает только через pullback (market PF=0.81). Его edge — mechanical, не archetype-driven. Использовать только если готовы принять pullback mechanics как рабочую модель.
 
 ## Read First
 - `AGENTS.md`
+- `docs/reports/2026-04-04-archetype-filter-bridge.md`
+- `docs/reports/2026-04-04-signal-path-atlas-readout.md`
 - `docs/reports/2026-04-04-signal-quality-filter.md`
-- `docs/reports/2026-04-03-signal-path-atlas.md`
-- `docs/reports/2026-04-02-signal-research-variant-3.md`
-- `docs/superpowers/specs/2026-04-03-signal-quality-filter-claude.md`
-- `docs/superpowers/plans/2026-04-03-signal-quality-filter.md`
-- `API/signal_quality_research.py`
-- `API/signal_path_atlas.py`
 
 ## Open Risks
-- `ratio_3_vs_12 > 4.751 + pullback 3ATR`: holdout N=24 — medium-support, не large-sample.
-- `fav_3_vs_12 <= 0.653` показывает нестабильный year-split на discovery (деградация 2022→2024) с recovery на holdout — может быть mean reversion или артефакт.
-- Pullback entry сам по себе — generic "better price" effect; quality filter добавляет uplift, но не полностью отделим от generic эффекта.
-- Negative control check показал, что `ratio_3_vs_12 > 4.751` частично generic (non_Q4 тоже улучшается).
-- Signal Path Atlas smoke run всё ещё даёт `execution_implications = neither` — atlas interpretation layer ещё не завершён.
-- `API/signal_path_atlas.py` и `API/signal_quality_research.py` — два крупных single-file research modules; при дальнейшем росте может потребоваться разделение.
+- N=84 для `fav_3_vs_12 + market` — medium-sample. Достаточен для directional вывода, но точная PF оценка может сдвинуться.
+- Фильтр `fav_3_vs_12 <= 0.653` enriches winning с 37% до 44% — не separation. 56% отфильтрованных сигналов всё ещё failure.
+- Year-stability `fav_3_vs_12` нестабильна на discovery (деградация 2022→2024 с recovery в holdout).
+- ATR bucket conditioning нестабильно (failed holdout replication при N=530).
+- Locked Variant 3 winner ослаблен: оба pillar (ratio 4-5, ATR Q4) weakly supported.
+- `ratio_3_vs_12 > 4.751` работает на pullback, но его edge = mechanical price improvement на failure сигналах, не archetype selection.
 
 ## Latest Report
-`docs/reports/2026-04-04-signal-quality-filter.md`
+`docs/reports/2026-04-04-archetype-filter-bridge.md`

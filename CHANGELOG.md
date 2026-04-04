@@ -3,6 +3,39 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-04] — Archetype × Filter Bridge: fav_3_vs_12 обогащает winning архетип, pullback не нужен
+
+### Результаты
+- `fav_3_vs_12 <= 0.653` повышает долю winning архетипа на holdout: 44.0% vs 37.4% baseline (+6.6 pp)
+- `ratio_3_vs_12 > 4.751` НЕ обогащает winning архетип: 33.5% на holdout (хуже baseline)
+- Pullback 1ATR заполняет 84% failure vs 20% winning сигналов; pullback 3ATR + фильтр = 0 winning fills
+- `fav_3_vs_12 <= 0.653` + market: PF=1.78, N=84, 44% winning — лучшая комбинация
+- `ratio_3_vs_12 > 4.751` + market: PF=0.81 — не работает без pullback
+
+### Вывод
+`fav_3_vs_12 <= 0.653` — единственный фильтр, коррелирующий с winning архетипом. С ним market entry достаточен (PF=1.78). Pullback поверх фильтра теряет winning сигналы (они не откатываются). `ratio_3_vs_12 > 4.751` работает только через pullback + mechanical price improvement, не через archetype selection. Оба фильтра ортогональны.
+Подробный отчёт: [docs/reports/2026-04-04-archetype-filter-bridge.md](docs/reports/2026-04-04-archetype-filter-bridge.md)
+
+---
+
+## [2026-04-04] — Signal Path Atlas Readout: двумодальная структура сигнала, edge = selection, не timing
+
+### Результаты
+- Первый канонический atlas readout на 1752 discovery + 851 holdout signals
+- Глобальный сигнал direction-neutral: медиана signed_ret_12 = -0.064 ATR, first-passage и ordering практически симметричны
+- Двумодальная архетипная структура реплицирована на holdout: 64% failure (ret Q50 = -0.80 ATR) vs 36% flat_or_noisy_drift (ret Q50 = +1.73 ATR)
+- Winning архетип имеет минимальный adverse excursion (adv Q50 = 0.48 ATR) — у winning signals нет отката для pullback entry
+- ATR Q4 failed holdout replication (N=530) — ATR bucket conditioning нестабильно из-за volatility regime shift
+- ratio_bin_12=4-5 только directionally consistent, не fully replicated
+- 31 artifact Replicated, 45 Failed: spread features переносятся лучше ratio features
+- Execution implications: `neither` — ни market ни pullback не поддержаны как самостоятельные направления; edge — в signal selection
+
+### Вывод
+Atlas переформулирует задачу: проблема edge — в отборе 36% winning signals (flat_or_noisy_drift), а не в оптимизации entry timing на population из 64% failures. Pullback «работает» через mechanical price improvement + selection filtering, а не через direction-level dip-then-rally pattern. Locked Variant 3 winner ослаблен (оба pillar — ratio 4-5 и ATR Q4 — weakly supported). Следующий шаг — проверить, предсказывают ли quality filters принадлежность к winning архетипу.
+Подробный отчёт: [docs/reports/2026-04-04-signal-path-atlas-readout.md](docs/reports/2026-04-04-signal-path-atlas-readout.md)
+
+---
+
 ## [2026-04-04] — Signal Quality Filter Research (Variant 4): multi-horizon quality filters × pullback entry
 
 ### Добавлено
