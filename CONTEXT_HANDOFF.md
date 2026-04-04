@@ -1,33 +1,40 @@
 # Context Handoff
 
 ## Current Stage
-Phase B research now continues through the new Signal Path Atlas workflow.
+Variant 4 (Signal Quality Filter Research) завершён. Два holdout-confirmed кандидата готовы к верификации через Signal Path Atlas.
 
 ## Last Completed Stage
-Signal Path Atlas tooling and stage close completed on 2026-04-03.
+Signal Quality Filter Research (Variant 4) завершён 2026-04-04.
 
 ## Next Step
-Use `API/signal_path_atlas.py` as the primary research entry point and turn its frozen tables into the first canonical atlas readout. The immediate task is not EA prototyping and not another narrow PF pass around the old winner. Instead:
-- review global path quantiles, first-passage and ordering as the main signal description;
-- identify only those atlas claims that truly replicate on holdout;
-- decide whether any replicated cohort/archetype evidence supports a future `market`, `pullback`, both or neither;
-- keep the old Variant 3 winner `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` only as a benchmark, not as the default next implementation target.
+Верифицировать два holdout-confirmed кандидата из Variant 4 cross-analysis через Signal Path Atlas pipeline:
+
+1. **Агрессивный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` (PF=1.62, N=94 holdout)
+2. **Консервативный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` (PF=3.52, N=24 holdout)
+
+Конкретно:
+- Проверить, поддерживает ли path geometry (first-passage, ordering) pullback entry для cohort `ratio_3_vs_12 > 4.751`
+- Убедиться, что atlas-level replication подтверждает cross-analysis findings
+- Проверить BUY/SELL split внутри фильтров и threshold sensitivity
+- Оставить Variant 3 winner `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` только как benchmark
 
 ## Read First
 - `AGENTS.md`
+- `docs/reports/2026-04-04-signal-quality-filter.md`
 - `docs/reports/2026-04-03-signal-path-atlas.md`
 - `docs/reports/2026-04-02-signal-research-variant-3.md`
-- `docs/reports/2026-04-02-signal-research-variant-3-prep.md`
-- `docs/reports/2026-04-01-signal-research-variant-2.md`
-- `docs/superpowers/specs/2026-04-03-signal-path-atlas-design.md`
-- `docs/superpowers/plans/2026-04-03-signal-path-atlas.md`
+- `docs/superpowers/specs/2026-04-03-signal-quality-filter-claude.md`
+- `docs/superpowers/plans/2026-04-03-signal-quality-filter.md`
+- `API/signal_quality_research.py`
 - `API/signal_path_atlas.py`
 
 ## Open Risks
-- The path-atlas layer is now implemented, but its research interpretation still needs a canonical readout; tooling exists before conclusions are fully stabilized.
-- The current smoke run ends with `execution_implications = neither`, so no downstream execution path is justified yet by atlas evidence alone.
-- `API/signal_path_atlas.py` is already a fairly large single-file research module; future growth may require splitting orchestration from analysis helpers.
-- The old Variant 3 winner still exists as a benchmark, but its low-support nature remains unresolved and should not quietly retake the roadmap without atlas-based evidence.
+- `ratio_3_vs_12 > 4.751 + pullback 3ATR`: holdout N=24 — medium-support, не large-sample.
+- `fav_3_vs_12 <= 0.653` показывает нестабильный year-split на discovery (деградация 2022→2024) с recovery на holdout — может быть mean reversion или артефакт.
+- Pullback entry сам по себе — generic "better price" effect; quality filter добавляет uplift, но не полностью отделим от generic эффекта.
+- Negative control check показал, что `ratio_3_vs_12 > 4.751` частично generic (non_Q4 тоже улучшается).
+- Signal Path Atlas smoke run всё ещё даёт `execution_implications = neither` — atlas interpretation layer ещё не завершён.
+- `API/signal_path_atlas.py` и `API/signal_quality_research.py` — два крупных single-file research modules; при дальнейшем росте может потребоваться разделение.
 
 ## Latest Report
-`docs/reports/2026-04-03-signal-path-atlas.md`
+`docs/reports/2026-04-04-signal-quality-filter.md`

@@ -3,6 +3,29 @@
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
 
+## [2026-04-04] — Signal Quality Filter Research (Variant 4): multi-horizon quality filters × pullback entry
+
+### Добавлено
+- Создан новый standalone research tool `API/signal_quality_research.py` с 6-step pipeline: variance check → univariate response maps → shallow tree → pairwise combinations с negative control → score holdout validation → cross-analysis quality filters × pullback entry
+- Реализованы 3 filter feature families (17 features): `ratio_h`, `spread_h`, `short_vs_long` divergence из multi-horizon predictions (up_3..dn_48)
+- Добавлен cross-analysis: quality filters × Variant 3 pullback entry scenarios на discovery и holdout отдельно
+- `tests/test_signal_quality_research.py` (19 тестов)
+
+### Результаты
+- Score-based подход (additive score из нескольких features) не работает — holdout не подтверждает (7/8 NOT CONFIRMED)
+- Индивидуальные правила работают: 7/10 top rules подтверждены на holdout
+- Shallow tree выделил `fav_3_vs_12` (pred_fav_3/pred_fav_12) как доминирующий discriminator (100% importance)
+- Два discovery-confirmed filter axis: `fav_3_vs_12 <= 0.653` и `ratio_3_vs_12 > 4.751`
+- Cross-analysis выявил два holdout-confirmed кандидата:
+  - Агрессивный: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` — PF=1.62, N=94 (holdout)
+  - Консервативный: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` — PF=3.52, N=24 (holdout)
+
+### Вывод
+Multi-horizon predictions дают лучшую фильтрацию, чем ratio_12 alone, но через индивидуальные правила, а не additive scores. Pullback entry без фильтра — generic "better price" effect; quality filter добавляет cohort-specific uplift поверх. Следующий шаг — верификация кандидатов через Signal Path Atlas pipeline.
+Подробный отчёт: [docs/reports/2026-04-04-signal-quality-filter.md](docs/reports/2026-04-04-signal-quality-filter.md)
+
+---
+
 ## [2026-04-03] — Signal Path Atlas: standalone research CLI, frozen holdout replication и stage close
 
 ### Добавлено
