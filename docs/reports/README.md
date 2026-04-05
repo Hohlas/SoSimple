@@ -1,34 +1,34 @@
 # Reports
 
-`docs/reports/` holds detailed reports for completed project stages with significant changes. These are the canonical long-form records for work that changes how the project behaves, how results are interpreted, or how the next stage should be handed off.
+`docs/reports/` хранит подробные отчёты по завершённым этапам проекта с заметными изменениями. Это канонические длинные записи о работах, которые меняют поведение проекта, интерпретацию результатов или то, как передавать задачу на следующий этап.
 
-## When a report is required
+## Когда отчёт обязателен
 
-Create a report when at least one of these is true:
+Отчёт нужно создавать, если выполняется хотя бы одно условие:
 
-- code behavior changed in a way that affects results, signals, trading logic, CLI behavior, or data format;
-- a tool or research scenario was added or substantially expanded;
-- new results were obtained and they led to practical conclusions;
-- a bug was fixed that changes how results are interpreted;
-- a plan or spec stage was completed and is ready for handoff.
+- изменилось поведение кода, и это влияет на результаты, сигналы, торговую логику, поведение CLI или формат данных;
+- добавлен новый инструмент или заметно расширен исследовательский сценарий;
+- получены новые результаты, из которых следуют практические выводы;
+- исправлен баг, который меняет интерпретацию результатов;
+- завершён этап плана или спецификации и он готов к handoff.
 
-## Naming rule
+## Правило именования
 
-- Use `YYYY-MM-DD-topic.md`.
-- The date must be ISO format.
-- Keep `topic` short and descriptive.
+- Используйте формат `YYYY-MM-DD-topic.md`.
+- Дата должна быть в ISO-формате.
+- `topic` должен быть коротким и понятным.
 
-## Minimal report structure
+## Минимальная структура отчёта
 
-Every report has 13 required elements:
+В каждом отчёте должно быть 13 обязательных элементов:
 
-1. title line
-2. date
-3. status
-4. goal
-5-13. the 9 body sections from `Context` through `Related Materials`
+1. строка заголовка
+2. дата
+3. статус
+4. цель
+5-13. 9 секций основного текста от `Context` до `Related Materials`
 
-The body starts after the metadata block and uses the same sections:
+Основной текст идёт после metadata-блока и содержит одни и те же секции:
 
 1. Context
 2. What Was Done
@@ -40,7 +40,7 @@ The body starts after the metadata block and uses the same sections:
 8. Next Step
 9. Related Materials
 
-## Header template
+## Шаблон header
 
 ```md
 # Stage Title
@@ -52,4 +52,4 @@ The body starts after the metadata block and uses the same sections:
 > **Related commit**: pending
 ```
 
-`Related plan/spec` and `Related commit` are recommended extra header fields. They help with traceability, but they are not part of the 13 required elements.
+`Related plan/spec` и `Related commit` — рекомендуемые дополнительные поля header. Они улучшают трассировку, но не входят в список из 13 обязательных элементов.

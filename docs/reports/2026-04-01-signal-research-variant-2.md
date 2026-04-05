@@ -2,87 +2,87 @@
 
 > **Date**: 2026-04-01
 > **Status**: Completed
-> **Goal**: Finish OHLC-oriented signal research before Variant 3
+> **Goal**: Завершить OHLC-ориентированное исследование сигнала перед Variant 3
 > **Related plan/spec**: [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](../superpowers/specs/2026-04-01-signal-research-variant-2-design.md)
 > **Related commit**: pending
 
-## Context
+## Контекст
 
-The goal of this stage was to turn `API/signal_research.py` into a trading-oriented OHLC research tool and answer the practical questions needed before Variant 3: entry timing, pullback behavior, `SL/TP` geometry, and regime splits.
+Цель этапа была в том, чтобы превратить `API/signal_research.py` в OHLC-инструмент для практического исследования и ответить на вопросы перед Variant 3: когда лучше входить, как ведёт себя pullback, как влияет геометрия `SL/TP` и как сигнал ведёт себя в разных режимах.
 
-The work was built on the existing `regression_updn` signal pipeline and the OHLC research design. The stage was explicitly meant to avoid changing the EA yet and instead collect evidence about how the current signal behaves in path-dependent trade mechanics.
+Работа опиралась на действующий pipeline `regression_updn` и проект исследования OHLC. На этом этапе специально не меняли EA, а собирали факты о том, как текущий сигнал ведёт себя по ходу сделки.
 
-The OOS run covered `2022-07-18 11:00:00` to `2026-03-20 06:00:00` on `DATA/XAUUSD_H1_OHLC.csv` with `MT/MQL4/Files/ml_signals.csv` as the signal source.
+OOS run охватил период `2022-07-18 11:00:00` — `2026-03-20 06:00:00` на `DATA/XAUUSD_H1_OHLC.csv`, а источником сигналов был `MT/MQL4/Files/ml_signals.csv`.
 
-## What Was Done
+## Что сделано
 
-- Expanded `API/signal_research.py` for Variant 2 research blocks.
-- Added or extended `tests/test_signal_research.py` to cover the new research behavior.
-- Updated `CHANGELOG.md` with the stage outcome.
-- Ran the Variant 2 verification flow against the OHLC dataset and real BUY/SELL signals.
+- Расширен `API/signal_research.py` блоками исследования Variant 2.
+- Добавлены и расширены тесты в `tests/test_signal_research.py` для нового исследовательского поведения.
+- Обновлён `CHANGELOG.md` итогами этапа.
+- Запущена проверка Variant 2 на OHLC-датасете и реальных BUY/SELL сигналах.
 
-## Changed Files
+## Изменённые файлы
 
 - `API/signal_research.py`
 - `tests/test_signal_research.py`
 - `CHANGELOG.md`
 
-## Verification
+## Проверка
 
-Verification commands used in the stage:
+Команды проверки, использованные на этапе:
 
 ```bash
 python -m pytest tests/test_signal_research.py -q
 python -m API.signal_research --test-only
 ```
 
-## Results
+## Результаты
 
-Key OOS facts from the completed research:
+Ключевые OOS-факты по завершённому исследованию:
 
-| Metric | Value |
+| Метрика | Значение |
 |---|---:|
-| Real BUY/SELL signals | 2603 |
+| Реальные BUY/SELL сигналы | 2603 |
 | `adv_1` | 5.6 |
 | `adv_3` | 8.8 |
 | `adv_6` | 12.2 |
-| Best base setup | `12H / SL=5 / TP=50 / PF=1.05` |
-| Best `ratio_12` bucket | `4-5` |
-| Weak `ratio_12` bucket | `3-4` |
+| Лучший базовый сетап | `12H / SL=5 / TP=50 / PF=1.05` |
+| Лучший `ratio_12` бакет | `4-5` |
+| Слабый `ratio_12` бакет | `3-4` |
 | `BUY PF_12` | 1.35 |
 | `SELL PF_12` | 0.95 |
 | `ATR Q4 PF_12` | 1.23 |
 
-The stage also confirmed that the signal profile is not a strong impulse; it is a weak positive drift with meaningful early adverse movement.
+Этап также подтвердил, что профиль сигнала — это не сильный импульс, а слабый положительный drift с заметным ранним adverse-движением.
 
-## Conclusions
+## Выводы
 
-Variant 2 showed that the current ML signal has a weak positive edge, but not enough of a directional impulse to rely on direction alone.
+Variant 2 показал, что у текущего ML-сигнала есть слабый положительный edge, но направленного импульса недостаточно, чтобы опираться только на направление.
 
-The most important practical conclusions are:
+Главные практические выводы:
 
-- signal behavior is closer to weak drift than to a strong breakout impulse;
-- timing of entry matters because early adverse movement is common;
-- `ratio_12 = 3-4` is dangerous and should not be treated as a preferred subgroup;
-- `ratio_12 = 4-5` is the priority subgroup for the next stage;
-- Variant 2 does not prove that limit entry is better, so that hypothesis remains open for Variant 3.
+- поведение сигнала ближе к слабому drift, чем к сильному breakout-импульсу;
+- момент входа важен, потому что раннее adverse-движение встречается часто;
+- `ratio_12 = 3-4` — рискованный сегмент, его не стоит считать приоритетной подгруппой;
+- `ratio_12 = 4-5` — приоритетная подгруппа для следующего этапа;
+- Variant 2 не доказывает, что limit-вход лучше market-входа, поэтому эта гипотеза остаётся открытой для Variant 3.
 
-## Limitations / Open Questions
+## Ограничения / открытые вопросы
 
-This stage did not answer the algorithmic entry question. It only showed that the current signal often moves against the entry first and that the path-dependent trade profile is sensitive to how entry is timed.
+Этот этап не ответил на алгоритмический вопрос выбора входа. Он только показал, что сигнал часто сначала идёт против входа, и что профиль сделки сильно зависит от времени входа.
 
-Open questions carried into Variant 3:
+Открытые вопросы, которые переносятся в Variant 3:
 
-- Is market entry better than pullback entry?
-- Does a delayed entry improve the path profile?
-- Should some signals be cancelled if the expected setup does not appear quickly enough?
-- Are these effects different for `BUY`, `SELL`, `ratio_12` buckets, and `ATR` regimes?
+- Лучше ли market-вход, чем pullback-вход?
+- Улучшает ли delayed-вход профиль движения?
+- Нужно ли отменять часть сигналов, если ожидаемая конфигурация не появляется достаточно быстро?
+- Отличаются ли эти эффекты для `BUY`, `SELL`, бакетов `ratio_12` и ATR-режимов?
 
-## Next Step
+## Следующий шаг
 
-Compare `market`, `pullback`, `delayed`, and `cancel-window` entry scenarios in Variant 3. Use the current `12H` baseline and keep the comparison explicit across `BUY` / `SELL`, `ratio_12`, and `ATR` subsets.
+Сравнить в Variant 3 сценарии входа `market`, `pullback`, `delayed` и `cancel-window`. Использовать текущий baseline `12H` и делать явное сравнение по `BUY` / `SELL`, по бакетам `ratio_12` и по ATR-подгруппам.
 
-## Related Materials
+## Связанные материалы
 
 - [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](../superpowers/specs/2026-04-01-signal-research-variant-2-design.md)
 - [docs/superpowers/plans/2026-04-01-signal-research-variant-2.md](../superpowers/plans/2026-04-01-signal-research-variant-2.md)

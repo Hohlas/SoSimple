@@ -1,3 +1,22 @@
+# =============================================================================
+# Файл: tests/test_label_updn.py
+# Назначение: Unit-тесты для parse_fractal и label_updn из processing/label_signals.py
+# Язык: Python 3.11+
+# Обновлён: 2026-04-05
+# Зависимости:
+#   Входные данные:
+#     - синтетические строки фракталов (11 и 18 полей), pandas DataFrame
+#   Выходные данные:
+#     - pytest assertions
+# Внешние зависимости:
+#   - pytest>=8.0, pandas>=2.0
+# Использование:
+#   ./.venv/bin/python -m pytest tests/test_label_updn.py -q
+# Примечания:
+#   - проверяет backward-compat для 11-польных фракталов и полный контракт 18-польных
+#   - label_updn: трекинг fractal0 по времени, last-seen логика
+# =============================================================================
+
 import sys
 import pytest
 import pandas as pd

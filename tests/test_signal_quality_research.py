@@ -1,3 +1,24 @@
+# =============================================================================
+# Файл: tests/test_signal_quality_research.py
+# Назначение: Unit и smoke-тесты для API/signal_quality_research.py (Variant 4).
+#   Проверяет контракт filter features, variance check, univariate response maps,
+#   shallow tree discovery, score/holdout validation и вспомогательных утилит.
+# Язык: Python 3.11+
+# Обновлён: 2026-04-05
+# Зависимости:
+#   Входные данные:
+#     - синтетические OHLC и signal DataFrame fixtures внутри тестов
+#   Выходные данные:
+#     - pytest assertions для API/signal_quality_research.py
+# Внешние зависимости:
+#   - pytest>=8.0, numpy>=1.24, pandas>=2.0, scikit-learn
+# Использование:
+#   ./.venv/bin/python -m pytest tests/test_signal_quality_research.py -q
+# Примечания:
+#   - ratio_N = fav/adv с учётом направления сигнала (BUY/SELL)
+#   - discovery/holdout split контролируется DISCOVERY_CUTOFF из sqr
+# =============================================================================
+
 import sys
 
 import numpy as np

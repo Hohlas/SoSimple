@@ -98,6 +98,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 │   ├── checkpoints/     #    Веса моделей (.pt)
 │   ├── reports/         #    Отчёты экспериментов (.md, .json)
 │   └── plots/           #    Графики обучения
+├── tests/               # ✅ Unit/smoke-тесты: processing, API, statistics
 ├── DATA/                #    Обработанные данные
 ├── docs/                # Документация (каталоги = каталоги кода)
 │   ├── DATA_FLOW.md     #    Поток данных + навигация по этапам

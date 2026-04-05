@@ -57,6 +57,16 @@ MT/MQL4/Include/[lib].mqh → docs/MT/[lib].mqh.md
 statistics/[name].ipynb → docs/statistics/[name].ipynb.md
 ```
 
+### tests/
+
+| Файл кода | Документация |
+|-----------|--------------|
+| tests/test_label_updn.py | docs/tests/tests.md |
+| tests/test_inverse_piecewise.py | docs/tests/tests.md |
+| tests/test_signal_research.py | docs/tests/tests.md |
+| tests/test_signal_path_atlas.py | docs/tests/tests.md |
+| tests/test_signal_quality_research.py | docs/tests/tests.md |
+
 ## Правила обработки
 
 1. Если документация не существует → предложить создать

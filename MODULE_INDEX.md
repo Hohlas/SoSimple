@@ -54,6 +54,16 @@
 | [baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | `*_labeled.csv` → `baseline/reports/`, `baseline/plots/` | [docs](docs/ML/baseline_experiments.py.md) | 🏁 |
 | [conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | val CSV + checkpoint → `conformal/conformal_quantiles.json` | [docs](docs/ML/conformal_prediction.md) | 🏁 |
 
+## Tests
+
+| Модуль | Тестирует | Docs | Статус |
+|--------|-----------|------|--------|
+| [test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | [docs](docs/tests/tests.md) | ✅ |
+| [test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | [docs](docs/tests/tests.md) | ✅ |
+| [test_signal_research.py](tests/test_signal_research.py) | `API/signal_research.py` — ATR14, excursions, barriers, split | [docs](docs/tests/tests.md) | ✅ |
+| [test_signal_path_atlas.py](tests/test_signal_path_atlas.py) | `API/signal_path_atlas.py` — calendar split, path tensor, archetypes, CLI | [docs](docs/tests/tests.md) | ✅ |
+| [test_signal_quality_research.py](tests/test_signal_quality_research.py) | `API/signal_quality_research.py` — filter features, variance check, tree, holdout | [docs](docs/tests/tests.md) | ✅ |
+
 ## Docs
 
 | Файл | Назначение |
@@ -77,4 +87,4 @@
 ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
 ---
-**Последнее обновление**: 2026-03-26
+**Последнее обновление**: 2026-04-05

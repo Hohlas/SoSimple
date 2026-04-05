@@ -1,30 +1,30 @@
-# Signal Quality Filter Research (Variant 4)
+# Исследование фильтра качества сигнала (Variant 4)
 
 > **Date**: 2026-04-04
 > **Status**: Completed
-> **Goal**: Исследовать, могут ли multi-horizon predictions модели (up_3..dn_48) дать более точный фильтр качества сигнала, чем текущий ratio_12, и скрестить лучшие фильтры с pullback entry из Variant 3
+> **Goal**: Проверить, могут ли предсказания модели на нескольких горизонтах (`up_3..dn_48`) дать более точный фильтр качества сигнала, чем текущий `ratio_12`, и как лучшие фильтры работают вместе с pullback-входом из Variant 3
 > **Related plan/spec**: [docs/superpowers/specs/2026-04-03-signal-quality-filter-claude.md](../superpowers/specs/2026-04-03-signal-quality-filter-claude.md), [docs/superpowers/plans/2026-04-03-signal-quality-filter.md](../superpowers/plans/2026-04-03-signal-quality-filter.md)
 > **Related commit**: 36b07e4
 
-## Context
+## Контекст
 
-Variant 2/3 показали, что ratio_12 — единственный используемый фильтр качества сигнала, а Filter3/Filter6 как ratio-threshold бесполезны (96% сигналов имеют ratio_3 > 5.0). Модель предсказывает 10 значений (up_3..dn_48), и комбинации горизонтов потенциально могут дать лучшую фильтрацию. Лучший Variant 3 кандидат (`ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`, PF=3.69, 36 fills) имел medium-support.
+Variant 2/3 показали, что `ratio_12` — единственный рабочий фильтр качества сигнала, а `Filter3/Filter6` как порог по `ratio` бесполезны: у 96% сигналов `ratio_3 > 5.0`. Модель предсказывает 10 значений (`up_3..dn_48`), и сочетания разных горизонтов могут дать более точную фильтрацию. Лучший кандидат из Variant 3 (`ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`, PF=3.69, 36 fills) имел лишь среднюю поддержку по числу сделок.
 
-Это исследование построено как гибрид score/ranking + shallow tree + explicit holdout validation, с разделением OOS на discovery (до 2024-12-31) и holdout (2025+).
+Это исследование построено как сочетание `score`-подхода, ранжирования, неглубокого дерева и явной проверки на holdout, с разделением OOS на `discovery` (до 2024-12-31) и `holdout` (2025+).
 
-## What Was Done
+## Что сделано
 
-- Создан новый standalone research tool `API/signal_quality_research.py` с 6-step pipeline
-- Реализованы 3 filter feature families (17 features):
+- Создан новый отдельный исследовательский инструмент `API/signal_quality_research.py` с 6-шаговым конвейером.
+- Реализованы 3 семейства признаков-фильтров (17 признаков):
   - `ratio_h` (5): pred_fav_h / pred_adv_h для h ∈ {3,6,12,24,48}
   - `spread_h` (5): pred_fav_h - pred_adv_h
   - `short_vs_long` (7): ratio/spread divergence между горизонтами (3v12, 6v24, 12v48)
-- Реализован полный pipeline: variance check → discovery/holdout split → univariate response maps → depth-2 decision tree → pairwise combinations с negative control check → score construction + holdout validation
-- Добавлены year-stability split и direct holdout тест для индивидуальных правил
-- Добавлен cross-analysis: quality filters × pullback entry scenarios (market, entry_close-1/2/3ATR) на discovery и holdout отдельно
-- Создан `tests/test_signal_quality_research.py` (19 тестов)
+- Реализован полный конвейер: проверка разброса → разбиение `discovery/holdout` → карты отклика по одному признаку → дерево глубины 2 → парные сочетания с проверкой на отрицательных контролях → построение `score` + проверка на holdout.
+- Добавлены разбиение по годам для проверки устойчивости и прямой holdout-тест для отдельных правил.
+- Добавлен перекрёстный анализ: фильтры качества × варианты pullback-входа (`market`, `entry_close-1/2/3ATR`) отдельно на `discovery` и `holdout`.
+- Создан `tests/test_signal_quality_research.py` (19 тестов).
 
-## Changed Files
+## Изменённые файлы
 
 - `API/signal_quality_research.py` (создан)
 - `tests/test_signal_quality_research.py` (создан)
@@ -32,7 +32,7 @@ Variant 2/3 показали, что ratio_12 — единственный ис�
 - `docs/superpowers/specs/2026-04-03-signal-quality-filter-design.md`
 - `docs/superpowers/plans/2026-04-03-signal-quality-filter.md`
 
-## Verification
+## Проверка
 
 ```bash
 ./.venv/bin/python -m pytest tests/test_signal_quality_research.py -q   # 19 passed
@@ -40,19 +40,19 @@ Variant 2/3 показали, что ratio_12 — единственный ис�
 ./.venv/bin/python -m API.signal_quality_research --test-only           # full pipeline, no crashes
 ```
 
-## Results
+## Результаты
 
-### OOS coverage
+### OOS-покрытие
 
-- 2603 real BUY/SELL signals (OOS 2022-07-18 — 2026-03-20)
+- 2603 реальных BUY/SELL-сигналов (OOS 2022-07-18 — 2026-03-20)
 - Discovery: 1751 signals (до 2024-12-31), BUY 51.6%
 - Holdout: 852 signals (2025+), BUY 55.3%
 
-### Step 0 — Feature Variance Check
+### Step 0 — проверка разброса признаков
 
-Все 17 features прошли kill criterion (ни один не убит). Ожидалось, что ratio_3 будет flat, но его дисперсия оказалась достаточной (mean=200, std=9419), хотя `spread_3_vs_12` и `spread_12_vs_48` имеют узкий диапазон (std≈0.03-0.04).
+Все 17 признаков прошли порог отсечения, ни один не был отброшен. Ожидалось, что `ratio_3` окажется почти плоским, но его разброс оказался достаточным (`mean=200`, `std=9419`). При этом `spread_3_vs_12` и `spread_12_vs_48` всё же имеют узкий диапазон (`std≈0.03-0.04`).
 
-### Step 2 — Univariate Response Maps: top features
+### Step 2 — карты отклика по одному признаку: лучшие признаки
 
 | Feature | Best bin PF | Uplift | N |
 |---------|---:|---:|---:|
@@ -62,19 +62,19 @@ Variant 2/3 показали, что ratio_12 — единственный ис�
 | `spread_12` (mid bin) | 1.30 | +0.30 | 350 |
 | `ratio_3` (low bin) | 1.28 | +0.29 | 351 |
 
-Важная находка: **низкий `ratio_3_vs_12`** (ratio_3 / ratio_12 < 2.99) даёт PF=1.43 на 351 сигнале — когда ratio_3 непропорционально ниже ratio_12, сигнал сильнее.
+Важная находка: **низкий `ratio_3_vs_12`** (`ratio_3 / ratio_12 < 2.99`) даёт `PF=1.43` на 351 сигнале. Это значит, что сигнал выглядит сильнее, когда `ratio_3` заметно ниже `ratio_12`.
 
-### Step 3 — Shallow Tree: `fav_3_vs_12` доминирует
+### Step 3 — неглубокое дерево: доминирует `fav_3_vs_12`
 
-Дерево поставило 100% importance на `fav_3_vs_12` (pred_fav_3 / pred_fav_12). Лучший лист: `fav_3_vs_12 ∈ (0.625, 0.653]` → 172 сигнала, PF=1.98, win_rate=62.2%.
+Дерево дало 100% веса признаку `fav_3_vs_12` (`pred_fav_3 / pred_fav_12`). Лучший лист: `fav_3_vs_12 ∈ (0.625, 0.653]` → 172 сигнала, `PF=1.98`, доля `win=62.2%`.
 
-Интерпретация: сигнал лучше, когда краткосрочный favorable move (3H) составляет 63-65% от среднесрочного (12H) — не слишком "выстреливший", не слишком слабый.
+Простая интерпретация: сигнал лучше, когда краткосрочный favorable move (`3H`) составляет примерно 63-65% от среднесрочного (`12H`). То есть сигнал не должен быть уже слишком «выстрелившим», но и не должен быть слишком слабым.
 
-### Step 5 — Score-based holdout: в основном NOT CONFIRMED
+### Step 5 — score на holdout: в основном `НЕ ПОДТВЕРЖДЁН`
 
-Additive score из top-3/top-5 univariate features не дал устойчивого результата: 7 из 8 вариантов NOT CONFIRMED. Score-подход на этих данных не работает.
+Суммарный `score` из `top-3` и `top-5` признаков не дал устойчивого результата: 7 из 8 вариантов получили статус `НЕ ПОДТВЕРЖДЁН`. На этих данных подход через `score` не работает.
 
-### Step 7 — Direct holdout отдельных правил
+### Step 7 — прямой holdout для отдельных правил
 
 | Rule | N_disc | PF_disc | N_hold | PF_hold | Confirmed |
 |------|---:|---:|---:|---:|:---:|
@@ -86,19 +86,19 @@ Additive score из top-3/top-5 univariate features не дал устойчив
 | `spread_12 > 0.276` | 705 | 1.12 | 423 | 1.40 | YES |
 | `ratio_12_vs_48 > 2.458` | 353 | 1.14 | 127 | 0.99 | NO |
 
-### Step 6 — Year stability
+### Step 6 — устойчивость по годам
 
-`fav_3_vs_12 <= 0.653` — тренд деградации на discovery (2022: PF=3.72, 2023: PF=2.02, 2024: PF=1.02), но holdout (2025+) PF=2.11 — edge вернулся.
+`fav_3_vs_12 <= 0.653` — на discovery есть тренд к ухудшению (`2022: PF=3.72`, `2023: PF=2.02`, `2024: PF=1.02`), но на holdout (`2025+`) `PF=2.11`, то есть edge снова появился.
 
-`ratio_6 > 4.41 AND fav_3_vs_12 <= 0.653` — стабильнее: 2022: PF=2.36, 2023: PF=1.75, 2024: PF=1.64.
+`ratio_6 > 4.41 AND fav_3_vs_12 <= 0.653` — более устойчивый вариант: `2022: PF=2.36`, `2023: PF=1.75`, `2024: PF=1.64`.
 
-`ratio_3_vs_12 > 4.751` — самый объёмный и стабильный: 2022: PF=1.12, 2023: PF=1.30, 2024: PF=1.06.
+`ratio_3_vs_12 > 4.751` — самый объёмный и самый ровный вариант: `2022: PF=1.12`, `2023: PF=1.30`, `2024: PF=1.06`.
 
-### Steps 8-10 — Cross-analysis: Quality Filters × Pullback Entry
+### Steps 8-10 — перекрёстный анализ: фильтры качества × pullback-вход
 
-Ключевая таблица discovery vs holdout:
+Главная таблица по discovery и holdout:
 
-| Filter × Entry | Disc PF (N) | Hold PF (N) | Status |
+| Фильтр × вход | Disc PF (N) | Hold PF (N) | Статус |
 |----------------|---:|---:|:---:|
 | **ALL + market** | 1.06 (1751) | 1.05 (851) | OK |
 | **ALL + pullback 3ATR** | 1.26 (323) | 2.51 (148) | OK |
@@ -110,46 +110,46 @@ Additive score из top-3/top-5 univariate features не дал устойчив
 | **`ratio_3_vs_12>4.751` + pullback 1ATR** | 1.27 (205) | **1.62 (94)** | **OK** |
 | **`ratio_3_vs_12>4.751` + pullback 3ATR** | 1.61 (48) | **3.52 (24)** | **OK** |
 
-(*) N=9 — слишком мало для выводов.
+(*) `N=9` — слишком мало, чтобы делать выводы.
 
-Pullback entry без фильтра — generic "better price" effect (PF растёт с глубиной на всей выборке). Quality filter добавляет cohort-specific uplift поверх этого эффекта.
+Pullback-вход без фильтра даёт общий эффект «лучшей цены»: `PF` растёт по мере углубления входа на всей выборке. Фильтр качества добавляет дополнительное улучшение поверх этого общего эффекта.
 
-`ratio_3_vs_12 > 4.751`: market сам по себе не работает на holdout (0.90), но pullback спасает — 1ATR даёт PF=1.62 на 94 fills, 3ATR даёт PF=3.52 на 24 fills.
+`ratio_3_vs_12 > 4.751`: сам по себе `market` на holdout не работает (`0.90`), но `pullback` меняет картину. `1ATR` даёт `PF=1.62` на 94 fills, а `3ATR` даёт `PF=3.52` на 24 fills.
 
-## Conclusions
+## Выводы
 
-1. **Score-based подход (additive score из нескольких features) не работает** на этих данных — holdout не подтверждает.
+1. **Подход на основе `score`** (суммарный `score` из нескольких признаков) **на этих данных не работает** — holdout его не подтверждает.
 
-2. **Индивидуальные правила работают лучше scores**: 7 из 10 top rules подтверждены на holdout.
+2. **Отдельные правила работают лучше, чем `score`-подход**: 7 из 10 лучших правил подтвердились на holdout.
 
-3. **Два discovery-confirmed filter axis:**
-   - `fav_3_vs_12 <= 0.653` — "сигнал ещё не выстрелил" (short fav < 65% mid fav)
-   - `ratio_3_vs_12 > 4.751` — "модель очень уверена на коротком горизонте"
+3. **Есть две оси фильтрации, которые прошли discovery и holdout:**
+   - `fav_3_vs_12 <= 0.653` — сигнал ещё не «выстрелил» (`short fav < 65% mid fav`)
+   - `ratio_3_vs_12 > 4.751` — модель очень уверена на коротком горизонте
 
-4. **Cross-analysis выявил два практических кандидата** (holdout confirmed, filter + pullback):
-   - **Агрессивный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` — PF=1.62, N=94 (holdout)
-   - **Консервативный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` — PF=3.52, N=24 (holdout)
+4. **Перекрёстный анализ дал двух практических кандидатов** (подтверждены на holdout, фильтр + pullback):
+   - **Более агрессивный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` — `PF=1.62`, `N=94` на holdout
+   - **Более консервативный**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` — `PF=3.52`, `N=24` на holdout
 
-5. **Negative control check** (Step 4): `fav_3_vs_12 <= 0.653` не cohort-specific — non_Q4 даёт PF=1.65 с тем же правилом. `ratio_3_vs_12 > 4.751` тоже частично generic.
+5. **Проверка на отрицательных контролях** (`Step 4`) показывает, что `fav_3_vs_12 <= 0.653` не является чисто cohort-специфичным правилом: `non_Q4` даёт `PF=1.65` с тем же условием. `ratio_3_vs_12 > 4.751` тоже частично выглядит как общий эффект, а не полностью уникальный.
 
-## Limitations / Open Questions
+## Ограничения / открытые вопросы
 
-- `ratio_3_vs_12 > 4.751 + pullback 3ATR`: holdout N=24 — medium-support, не large-sample.
-- `fav_3_vs_12 <= 0.653` показывает нестабильный year-split на discovery (деградация 2022→2024) с recovery на holdout — может быть mean reversion, может быть артефакт.
-- Pullback entry сам по себе — generic "better price" effect; quality filter добавляет uplift, но не полностью отделим от generic эффекта.
-- Не проверено: BUY/SELL split внутри фильтров, sensitivity к точным threshold-ам, сочетание с ATR Q4.
+- `ratio_3_vs_12 > 4.751 + pullback 3ATR`: на holdout только `N=24`, это средняя поддержка, а не большой объём данных.
+- `fav_3_vs_12 <= 0.653` показывает нестабильное поведение по годам на discovery (ухудшение от 2022 к 2024) и затем восстановление на holdout. Это может быть и возврат к среднему, и артефакт.
+- Pullback-вход сам по себе уже даёт общий эффект «лучшей цены»; фильтр качества добавляет улучшение, но полностью отделить его от общего эффекта пока нельзя.
+- Пока не проверены: разбиение `BUY/SELL` внутри фильтров, чувствительность к точным порогам и сочетание с `ATR Q4`.
 
-## Next Step
+## Следующий шаг
 
-Два варианта для EA-прототипа:
+Есть два варианта для EA-прототипа:
 
-1. **Если приоритет — объём**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` (94 holdout fills, PF=1.62). Проверить year-stability cross result, BUY/SELL split, threshold sensitivity.
+1. **Если важнее объём**: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` (94 holdout fills, `PF=1.62`). Нужно отдельно проверить устойчивость по годам, разбиение `BUY/SELL` и чувствительность к порогам.
 
-2. **Если приоритет — PF**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` (24 holdout fills, PF=3.52). Нужно больше данных для подтверждения.
+2. **Если важнее PF**: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` (24 holdout fills, `PF=3.52`). Для уверенности нужно больше данных.
 
-Перед EA: проверить эти кандидаты через Signal Path Atlas pipeline (atlas-level replication), чтобы убедиться, что path geometry поддерживает pullback entry для этих cohorts.
+Перед EA эти кандидаты нужно прогнать через конвейер `Signal Path Atlas`, чтобы проверить, действительно ли геометрия движения цены поддерживает pullback-вход для этих групп.
 
-## Related Materials
+## Связанные материалы
 
 - [docs/reports/2026-04-03-signal-path-atlas.md](2026-04-03-signal-path-atlas.md)
 - [docs/reports/2026-04-02-signal-research-variant-3.md](2026-04-02-signal-research-variant-3.md)

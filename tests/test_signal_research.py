@@ -1,3 +1,23 @@
+# =============================================================================
+# Файл: tests/test_signal_research.py
+# Назначение: Unit и smoke-тесты для API/signal_research.py — статистический контракт
+#   research-инструмента: ATR14, excursions, barrier outcomes, фильтрация, отчёты.
+# Язык: Python 3.11+
+# Обновлён: 2026-04-05
+# Зависимости:
+#   Входные данные:
+#     - синтетические OHLC и signal DataFrame fixtures внутри тестов
+#   Выходные данные:
+#     - pytest assertions для API/signal_research.py
+# Внешние зависимости:
+#   - pytest>=8.0, numpy>=1.24, pandas>=2.0
+# Использование:
+#   ./.venv/bin/python -m pytest tests/test_signal_research.py -q
+# Примечания:
+#   - тесты фиксируют контракт направленных алиасов (pred_fav/pred_adv), ratio_bin,
+#     barrier semantics и discovery/holdout split по calendar boundary
+# =============================================================================
+
 import sys
 
 import numpy as np

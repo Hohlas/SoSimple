@@ -1,3 +1,22 @@
+# =============================================================================
+# Файл: tests/test_inverse_piecewise.py
+# Назначение: Round-trip тесты piecewise_linear_log_transform → inverse для normalize.py / signal_tracer.py
+# Язык: Python 3.11+
+# Обновлён: 2026-04-05
+# Зависимости:
+#   Входные данные:
+#     - синтетические float-значения (линейная и log-зона)
+#   Выходные данные:
+#     - pytest assertions на восстановление исходных значений
+# Внешние зависимости:
+#   - pytest>=8.0, numpy>=1.24
+# Использование:
+#   ./.venv/bin/python -m pytest tests/test_inverse_piecewise.py -q
+# Примечания:
+#   - функции скопированы из normalize.py / signal_tracer.py для изоляции теста
+#   - охватывает линейную зону, log-зону, beyond-cap, zero и реалистичные brk/cap из проекта
+# =============================================================================
+
 """Тесты inverse_piecewise_linear_log: round-trip forward→inverse."""
 import math
 import numpy as np

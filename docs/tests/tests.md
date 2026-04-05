@@ -1,0 +1,102 @@
+# Тесты (tests/)
+
+## Назначение
+
+Набор unit и smoke-тестов для ключевых модулей SoSimple. Фиксируют статистический и функциональный контракт research-инструментов, не требуя реальных данных.
+
+## Использование
+
+```bash
+# Все тесты
+./.venv/bin/python -m pytest tests/ -q
+
+# Конкретный файл
+./.venv/bin/python -m pytest tests/test_signal_path_atlas.py -q
+```
+
+## Модули
+
+### [test_label_updn.py](../../tests/test_label_updn.py)
+
+**Тестирует**: `processing/label_signals.py`
+
+| Тест | Проверяет |
+|------|-----------|
+| `test_parse_fractal_11_fields_backward_compat` | 11-польный фрактал → up_12/dn_12/up_48/fractal_atr = 0.0 |
+| `test_parse_fractal_18_fields` | 18-польный фрактал → корректный парсинг всех up/dn полей |
+| `test_parse_fractal_none_input` | None и пустая строка → None |
+| `test_label_updn_basic` | last-seen логика: значения fractal0 = последние найденные |
+| `test_label_updn_fractal0_missing` | строка без fractal0 → нули |
+
+---
+
+### [test_inverse_piecewise.py](../../tests/test_inverse_piecewise.py)
+
+**Тестирует**: `processing/normalize.py` + `statistics/signal_tracer.py`
+
+Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
+
+| Тест | Зона |
+|------|------|
+| `test_round_trip_linear_zone` | [0, brk] — линейная |
+| `test_round_trip_log_zone` | (brk, cap] — логарифмическая |
+| `test_round_trip_beyond_cap` | >cap клиппируется к 1.0 → inverse = cap |
+| `test_zero_stays_zero` | 0 → 0 |
+| `test_round_trip_realistic_updn` | реалистичные brk/cap из проекта (up_12, dn_12) |
+| `test_normalize_rowwise_returns_updn_params` | normalize_rowwise с return_updn_params=True |
+
+---
+
+### [test_signal_research.py](../../tests/test_signal_research.py)
+
+**Тестирует**: `API/signal_research.py`
+
+| Область | Примеры тестов |
+|---------|----------------|
+| ATR14 | true range semantics, NaN для первых 13 баров |
+| Excursions | pred_fav/pred_adv алиасы по направлению, pullback windows |
+| Barrier outcomes | SL_FIRST при одновременном срабатывании |
+| ratio_bin | `<2` для строк с up_12/dn_12 < 2 |
+| Discovery/holdout split | calendar boundary |
+
+---
+
+### [test_signal_path_atlas.py](../../tests/test_signal_path_atlas.py)
+
+**Тестирует**: `API/signal_path_atlas.py`
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Calendar split | fixed boundary 2025-01-01 |
+| Path tensor | BUY/SELL выровнены в signed ATR-space |
+| Slices | построение срезов по conditioning features |
+| Archetypes | labeling по медиане пути |
+| Holdout replication | репликация discovery-выводов |
+| CLI smoke | базовый прогон без падений |
+
+---
+
+### [test_signal_quality_research.py](../../tests/test_signal_quality_research.py)
+
+**Тестирует**: `API/signal_quality_research.py` (Variant 4)
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Filter features | ratio_N, spread_N, cross-horizon (3vs12, 6vs24, 12vs48) |
+| Direction-aware | BUY: ratio=up/dn; SELL: ratio=dn/up |
+| Variance check | flat feature (>90% в одном бине) убивается |
+| Univariate response map | PF, N, net_ATR, uplift по бинам |
+| Shallow tree | splits, importances, leaf stats |
+| Score / holdout | rank normalization, PF_holdout, confirmed |
+
+## Зависимости
+
+- `pytest>=8.0`
+- `numpy>=1.24`
+- `pandas>=2.0`
+- `scikit-learn` (только `test_signal_quality_research.py`)
+
+## Ограничения
+
+- Все тесты используют синтетические fixtures, не реальные данные.
+- Research-инструменты (signal_path_atlas, signal_research) дополнительно верифицируются вручную на реальном датасете перед stage close.
