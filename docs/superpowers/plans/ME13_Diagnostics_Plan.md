@@ -20,7 +20,7 @@
 
 Для каждой сделки: ML предсказание → формула SL/TP (реплика `lib_ML_Signal.mqh`) → Ground Truth up_12/dn_12 (денормализованные пункты) → классификация TP_CLEAR / SL_CLEAR / BOTH_HIT / TIMEOUT.
 
-Полная документация: [docs/statistics/signal_tracer.py.md](../statistics/signal_tracer.py.md)
+Полная документация: [docs/statistics/signal_tracer.py.md](../../statistics/signal_tracer.py.md)
 
 ---
 

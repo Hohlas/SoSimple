@@ -10,6 +10,70 @@
 
 ---
 
+### Task 0: Re-anchor the current stop point from Archetype × Filter Bridge
+
+**Files:**
+- Modify: `API/signal_quality_research.py`
+- Modify: `API/generate_signals.py`
+- Modify: `tests/test_signal_quality_research.py`
+
+- [ ] **Step 1: Write the failing test for bridge baseline registration**
+
+```python
+# tests/test_signal_quality_research.py
+import API.signal_quality_research as sqr
+
+
+def test_bridge_baselines_include_fav_filter_and_ratio_benchmark():
+    rules = sqr.build_bridge_baselines()
+    names = [rule['name'] for rule in rules]
+    assert 'fav3_market_baseline' in names
+    assert 'ratio3_pullback_benchmark' in names
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `./.venv/bin/python -m pytest tests/test_signal_quality_research.py -q`
+Expected: FAIL with `AttributeError: module 'API.signal_quality_research' has no attribute 'build_bridge_baselines'`
+
+- [ ] **Step 3: Register the current bridge winner and the benchmark candidate**
+
+```python
+# API/signal_quality_research.py
+def build_bridge_baselines() -> list[dict]:
+    return [
+        {
+            'name': 'fav3_market_baseline',
+            'filters': [{'feature': 'fav_3_vs_12', 'op': '<=', 'value': 0.653}],
+            'entry_mode': 'market',
+        },
+        {
+            'name': 'ratio3_pullback_benchmark',
+            'filters': [{'feature': 'ratio_3_vs_12', 'op': '>', 'value': 4.751}],
+            'entry_mode': 'pullback_1atr',
+        },
+    ]
+```
+
+- [ ] **Step 4: Seed the first validation search with replicated spread features**
+
+```python
+# API/signal_quality_research.py
+BRIDGE_SEARCH_FEATURES = [
+    'fav_3_vs_12',
+    'spread_3_vs_12',
+    'spread_6_vs_24',
+    'spread_12_vs_48',
+    'ratio_12_vs_48',
+]
+```
+
+- [ ] **Step 5: Run the bridge baseline smoke check**
+
+Run: `./.venv/bin/python -m API.signal_quality_research --split-profile validation_research`
+Expected: first printed table includes `fav3_market_baseline` as the frozen baseline and `ratio3_pullback_benchmark` as benchmark only
+
+
 ### Task 1: Research-only каталог сигналов с меткой источника
 
 **Files:**
@@ -273,4 +337,3 @@ Expected: enough context to update `Next Step` and `Open Risks`
 
 Run: `./.venv/bin/python -m pytest tests/test_signal_research.py tests/test_signal_quality_research.py tests/test_signal_path_atlas.py tests/test_final_rule_check.py -q`
 Expected: PASS
-

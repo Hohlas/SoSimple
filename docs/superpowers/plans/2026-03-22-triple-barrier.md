@@ -1,5 +1,7 @@
 # Triple Barrier Classification — Implementation Plan
 
+> **Status note (2026-04-07):** This is the original implementation plan for bringing `triple_barrier` online. Core implementation from this document already exists in the codebase. For current continuation, calibration, first-touch relabeling, and final verdict, use [docs/superpowers/plans/2026-04-07-triple-barrier-hardening.md](2026-04-07-triple-barrier-hardening.md).
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add parallel ML task `triple_barrier` — 12 binary classification targets predicting P(TP hit before SL) for 6 SL/TP combos × 2 directions.
@@ -8,7 +10,7 @@
 
 **Tech Stack:** Python 3.11, PyTorch, NumPy, Pandas, scikit-learn (AUC), MQL4
 
-**Spec:** [docs/specs/2026-03-22-triple-barrier-design.md](../specs/2026-03-22-triple-barrier-design.md)
+**Spec:** [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](../specs/2026-03-22-triple-barrier-design.md)
 
 ---
 

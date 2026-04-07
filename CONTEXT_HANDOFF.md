@@ -7,22 +7,24 @@ Archetype × Filter Bridge завершён. `fav_3_vs_12 <= 0.653` обогащ
 Archetype × Filter Bridge (2026-04-04).
 
 ## Next Step
-Принять решение о path forward:
+Path forward выбран: идти по четырёхшаговому roadmap, сохраняя bridge-результат как текущий baseline.
 
-1. **Если приоритет — EA-прототип**: реализовать `fav_3_vs_12 <= 0.653` + market entry в EA. PF=1.78 на 84 holdout trades. Требует:
-   - Добавить вычисление `fav_3_vs_12` в `generate_signals.py` или EA
-   - Порого��ое значение: `pred_fav_3 / pred_fav_12 <= 0.653`
-   - Вход: market entry при выполнении условия
+1. **Сначала — validation-first protocol**: перевести весь search логики входа/выхода на `validation`, а `test` оставить как финальную проверку. Одновременно переякорить текущий bridge winner:
+   - baseline candidate: `fav_3_vs_12 <= 0.653` + market
+   - benchmark only: `ratio_3_vs_12 > 4.751` + pullback
+   - первый search space: replicated spread features + threshold sensitivity
 
-2. **Если приоритет — улучшение фильтра**: искать лучший archetype predictor через replicated atlas features (spread slices, cross-horizon ratios). Текущий фильтр обогащает winning с 37% до 44% — это enrichment, не separation. Потенциальные направления:
-   - Комбинация `fav_3_vs_12 <= 0.653` с replicated spread features
-   - Проверить BUY/SELL split внутри фильтра (BUY advantage реплицирован)
-   - Threshold sensitivity analysis
+2. **Затем — ML exit / position management**: усилить текущий `regression_updn` трек без переобучения.
 
-3. **Если приоритет — увеличение N**: `ratio_3_vs_12 > 4.751` даёт больше сигналов (176 vs 84), но работает только через pullback (market PF=0.81). Его edge — mechanical, не archetype-driven. Использовать только если готовы принять pullback mechanics как рабочую модель.
+3. **Потом — Triple Barrier hardening**: довести parallel-трек до честного финального verdict.
+
+4. **После этого — outcome-aligned retraining**: запускать новый широкий ML-трек под торговый исход, а не под raw excursions.
+
+Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
+- `docs/superpowers/roadmap.md`
 - `docs/reports/2026-04-04-archetype-filter-bridge.md`
 - `docs/reports/2026-04-04-signal-path-atlas-readout.md`
 - `docs/reports/2026-04-04-signal-quality-filter.md`
@@ -37,3 +39,6 @@ Archetype × Filter Bridge (2026-04-04).
 
 ## Latest Report
 `docs/reports/2026-04-04-archetype-filter-bridge.md`
+
+## Active Roadmap
+`docs/superpowers/roadmap.md`

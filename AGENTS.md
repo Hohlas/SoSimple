@@ -72,7 +72,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ### Приоритет источников
 1. Явный запрос пользователя в текущем диалоге.
 2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
-3. Рабочие планы и исследовательские материалы: `docs/plans/`, `docs/superpowers/`, `docs/specs/`.
+3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
 4. Вспомогательная память и архив: `.claude/memory/`, `docs/archive/`.
 
 ## Структура проекта
@@ -108,8 +108,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 │   ├── processing/      #    Docs для processing/
 │   ├── ML/              #    Docs для ML/
 │   ├── MT/              #    Docs для MT/
-│   ├── plans/           #    Планы работы (исследовательские/временные)
-│   ├── superpowers/     #    Планы и спецификации superpowers (исследовательские/временные)
+│   ├── superpowers/     #    Канонический контур roadmap / plans / specs
 │   └── archive/         # 📦 НЕ СМОТРИ без явной просьбы
 ├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
 ├── MODULE_INDEX.md      # Реестр всех модулей со статусами
