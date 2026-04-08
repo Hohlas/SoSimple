@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Собрать первый честный baseline для `entry_path_v1`, найти причину ложных ранних цифр и зафиксировать уже очищенные результаты
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`, `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
-> **Related commit**: pending
+> **Related commit**: `64d9b22`
 
 ## Context
 
