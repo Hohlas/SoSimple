@@ -33,6 +33,7 @@
 движения цены против пробитого фрактала.
 """
 
+import numpy as np
 import pandas as pd
 
 
@@ -41,7 +42,10 @@ def parse_fractal(fractal_str):
     Парсит строку фрактала и возвращает словарь с параметрами.
 
     Формат строки:
-    `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr`
+    - legacy 18 полей:
+      `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
+    - current 22 поля:
+      `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr`
 
     Индексы в строке:
         [0]  time (int): Время формирования
@@ -100,11 +104,11 @@ def parse_fractal(fractal_str):
             'dn_24':       float(parts[14]) if len(parts) > 14 else 0.0,
             'up_48':       float(parts[15]) if len(parts) > 15 else 0.0,
             'dn_48':       float(parts[16]) if len(parts) > 16 else 0.0,
-            'up_3':        float(parts[17]) if len(parts) > 17 else 0.0,
-            'dn_3':        float(parts[18]) if len(parts) > 18 else 0.0,
-            'up_6':        float(parts[19]) if len(parts) > 19 else 0.0,
-            'dn_6':        float(parts[20]) if len(parts) > 20 else 0.0,
-            'fractal_atr': float(parts[21]) if len(parts) > 21 else 0.0,
+            'up_3':        float(parts[17]) if len(parts) > 21 else 0.0,
+            'dn_3':        float(parts[18]) if len(parts) > 21 else 0.0,
+            'up_6':        float(parts[19]) if len(parts) > 21 else 0.0,
+            'dn_6':        float(parts[20]) if len(parts) > 21 else 0.0,
+            'fractal_atr': float(parts[21]) if len(parts) > 21 else (float(parts[17]) if len(parts) > 17 else 0.0),
         }
     except (ValueError, IndexError):
         return None
@@ -424,6 +428,102 @@ def label_updn(df, debug=False):
         print(f"[UPDN] Размечено строк: {found_count} / {n_rows}")
 
     return df
+
+
+ARCHETYPE_MAX_ADVERSE_ATR = 1.0
+
+
+def label_trade_targets(df: pd.DataFrame, ohlc_path=None) -> pd.DataFrame:
+    """
+    Строит outcome-aligned row-level таргеты из directional Up/Dn excursions.
+
+    trade_outcome_h12:
+        1, если directional PnL на 12H положительный, иначе 0.
+    trade_pnl_h12_atr:
+        (favorable - adverse) / ATR в направлении текущего signal.
+    archetype_target:
+        1 для "хорошего" path archetype: положительный directional PnL
+        и неблагоприятный ход не глубже 1 ATR.
+    """
+    out = df.copy()
+
+    signal = pd.to_numeric(out.get('signal', 0), errors='coerce').fillna(0).astype(np.int8).values
+    atr = pd.to_numeric(out.get('ATR', 0.0), errors='coerce').fillna(0.0).astype(np.float32).values
+    atr_safe = np.where(atr > 0, atr, 1.0).astype(np.float32)
+
+    trade_fav_h12 = np.zeros(len(out), dtype=np.float32)
+    trade_adv_h12 = np.zeros(len(out), dtype=np.float32)
+    trade_pnl_h12_atr = np.zeros(len(out), dtype=np.float32)
+    trade_fav_h12_atr = np.zeros(len(out), dtype=np.float32)
+    trade_adv_h12_atr = np.zeros(len(out), dtype=np.float32)
+
+    if ohlc_path is not None:
+        ohlc = pd.read_csv(ohlc_path, sep=';', low_memory=False)
+        ohlc['time'] = pd.to_datetime(ohlc['time'], format='%Y.%m.%d %H:%M', errors='coerce')
+        ohlc = ohlc.dropna(subset=['time']).sort_values('time').reset_index(drop=True)
+
+        time_to_idx = {t: i for i, t in enumerate(ohlc['time'])}
+        highs = pd.to_numeric(ohlc['high'], errors='coerce').ffill().bfill().values
+        lows = pd.to_numeric(ohlc['low'], errors='coerce').ffill().bfill().values
+        closes = pd.to_numeric(ohlc['close'], errors='coerce').ffill().bfill().values
+        ohlc_atr = pd.to_numeric(ohlc.get('atr14', 0.0), errors='coerce').fillna(0.0).values
+        row_times = pd.to_datetime(out['time'], format='%Y.%m.%d %H:%M', errors='coerce')
+
+        for i, (ts, sig) in enumerate(zip(row_times, signal)):
+            if sig == 0 or pd.isna(ts):
+                continue
+            ohlc_idx = time_to_idx.get(ts)
+            if ohlc_idx is None or ohlc_idx + 12 >= len(ohlc):
+                continue
+
+            entry_close = closes[ohlc_idx]
+            exit_close = closes[ohlc_idx + 12]
+            window_high = highs[ohlc_idx + 1: ohlc_idx + 13].max()
+            window_low = lows[ohlc_idx + 1: ohlc_idx + 13].min()
+            entry_atr = ohlc_atr[ohlc_idx] if np.isfinite(ohlc_atr[ohlc_idx]) and ohlc_atr[ohlc_idx] > 0 else atr_safe[i]
+            entry_atr = float(entry_atr) if entry_atr > 0 else 1.0
+
+            if sig == 1:
+                fav = max(window_high - entry_close, 0.0)
+                adv = max(entry_close - window_low, 0.0)
+                net = exit_close - entry_close
+            else:
+                fav = max(entry_close - window_low, 0.0)
+                adv = max(window_high - entry_close, 0.0)
+                net = entry_close - exit_close
+
+            trade_fav_h12[i] = fav
+            trade_adv_h12[i] = adv
+            trade_fav_h12_atr[i] = fav / entry_atr
+            trade_adv_h12_atr[i] = adv / entry_atr
+            trade_pnl_h12_atr[i] = net / entry_atr
+    else:
+        up_12 = pd.to_numeric(out.get('up_12', 0.0), errors='coerce').fillna(0.0).astype(np.float32).values
+        dn_12 = pd.to_numeric(out.get('dn_12', 0.0), errors='coerce').fillna(0.0).astype(np.float32).values
+
+        trade_fav_h12 = np.where(signal > 0, up_12, np.where(signal < 0, dn_12, 0.0)).astype(np.float32)
+        trade_adv_h12 = np.where(signal > 0, dn_12, np.where(signal < 0, up_12, 0.0)).astype(np.float32)
+        trade_fav_h12_atr = (trade_fav_h12 / atr_safe).astype(np.float32)
+        trade_adv_h12_atr = (trade_adv_h12 / atr_safe).astype(np.float32)
+        trade_pnl_h12_atr = ((trade_fav_h12 - trade_adv_h12) / atr_safe).astype(np.float32)
+
+    trade_pnl_h12_atr = np.where(signal != 0, trade_pnl_h12_atr, 0.0).astype(np.float32)
+
+    trade_outcome_h12 = ((signal != 0) & (trade_pnl_h12_atr > 0)).astype(np.int8)
+    archetype_target = (
+        (trade_outcome_h12 == 1) &
+        (trade_adv_h12_atr <= ARCHETYPE_MAX_ADVERSE_ATR)
+    ).astype(np.int8)
+
+    out['trade_fav_h12'] = trade_fav_h12
+    out['trade_adv_h12'] = trade_adv_h12
+    out['trade_fav_h12_atr'] = trade_fav_h12_atr
+    out['trade_adv_h12_atr'] = trade_adv_h12_atr
+    out['trade_outcome_h12'] = trade_outcome_h12
+    out['trade_pnl_h12_atr'] = trade_pnl_h12_atr
+    out['archetype_target'] = archetype_target
+
+    return out
 
 
 # ─── Triple Barrier Labels ────────────────────────────────────────────────

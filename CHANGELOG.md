@@ -2,6 +2,34 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-08] — Outcome-aligned retraining: validation-first verdict = no winner
+
+### Добавлено
+- Новый validation benchmark `ML/benchmark_outcome_targets.py` для трёх outcome-aligned family с общим trade-floor и yearly-stability filter
+- Outcome task tests: `tests/test_trade_target_labels.py`, `tests/test_outcome_tasks.py`, `tests/test_benchmark_outcome_targets.py`
+- Канонический отчёт этапа: [docs/reports/2026-04-08-outcome-aligned-retraining.md](docs/reports/2026-04-08-outcome-aligned-retraining.md)
+
+### Изменено
+- `processing/label_signals.py` и `processing/label_main.py`: добавлены `trade_outcome_h12`, `trade_pnl_h12_atr`, `archetype_target`
+- `ML/data_loader.py`, `ML/train.py`, `ML/evaluate_test.py`, `ML/utils.py`: outcome-aligned задачи встроены в training/evaluation stack
+- Outcome-task loaders переведены на `signal != 0` rows с отдельным signal-only кэшем после отладки objective mismatch
+- `ML/benchmark_outcome_targets.py` теперь умеет корректно фиксировать семьи без viable slice и сценарий “winner отсутствует”
+
+### Результаты
+- После signal-only retraining на `2208` train / `473` validation signal rows:
+  - `trade_outcome_cls`: best val `AUC=0.6534`
+  - `trade_pnl_reg`: best val `pearson_r=0.1099`
+  - `signal_archetype_cls`: best val `AUC=0.6260`
+- Validation benchmark по единым правилам отбора не дал winner-а:
+  - `trade_outcome_cls`: best rejected slice `PF=0.1983`, `N=24`
+  - `trade_pnl_reg`: best rejected slice `PF=0.1105`, `N=24`
+  - `signal_archetype_cls`: best rejected slice `PF=0.1369`, `N=48`
+- Ни одно семейство не прошло shared `min_trades=80` и `stability_ratio>=0.75`
+- `frozen_outcome_target.json` не создан; финальный запуск на `test` не выполнялся
+
+### Вывод
+Validation-first protocol отработал правильно: outcome-aligned track в текущем виде не дал ни одного target family, который можно честно переносить на `test`. Это не “лучший из плохих”, а явный сигнал пересмотреть саму label definition ближе к реальному execution loop MT4. Подробности: [docs/reports/2026-04-08-outcome-aligned-retraining.md](docs/reports/2026-04-08-outcome-aligned-retraining.md)
+
 ## [2026-04-08] — Triple Barrier: найдена причина старого расхождения Python ↔ MT4
 
 ### Исправлено

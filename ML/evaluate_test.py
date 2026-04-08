@@ -6,20 +6,42 @@ import numpy as np
 import pandas as pd
 import torch
 
-from ML.data_loader import create_test_loader, UPDN_REGRESSION_TARGET, TEST_FILE, CSV_SEP, FRACTAL_SEP, UPDN_TARGETS, TB_TARGET, TB_TARGET_NAMES
+from ML.data_loader import (
+    ARCHETYPE_TARGET,
+    BINARY_CLASSIFICATION_TARGETS,
+    CSV_SEP,
+    FRACTAL_SEP,
+    TEST_FILE,
+    TB_TARGET,
+    TB_TARGET_NAMES,
+    TRADE_OUTCOME_TARGET,
+    TRADE_PNL_TARGET,
+    UPDN_REGRESSION_TARGET,
+    UPDN_TARGETS,
+    create_test_loader,
+    task_checkpoint_suffix,
+    task_target_column,
+)
 from ML.models import get_model
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
 )
 from ML.tb_signal_logic import evaluate_tb_signal_rule, tb_proba_to_signals
-from ML.utils import set_seed, get_device, compute_binary_classification_metrics
+from ML.utils import (
+    compute_binary_classification_metrics,
+    compute_regression_metrics,
+    compute_single_binary_classification_metrics,
+    get_device,
+    set_seed,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CHECKPOINTS_DIR = PROJECT_ROOT / 'ML' / 'checkpoints'
 REPORTS_DIR = PROJECT_ROOT / 'ML' / 'reports'
 TB_CALIBRATOR_PATH = REPORTS_DIR / 'tb_probability_calibrator.joblib'
 TB_RULE_PATH = REPORTS_DIR / 'tb_selected_rule.json'
+FROZEN_OUTCOME_TARGET_PATH = REPORTS_DIR / 'frozen_outcome_target.json'
 
 
 def load_test_metadata(task: str = 'regression') -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -43,6 +65,19 @@ def load_test_metadata(task: str = 'regression') -> tuple[np.ndarray, np.ndarray
     return signal, predict_val, direction
 
 
+def load_outcome_test_frame() -> pd.DataFrame:
+    cols = ['time', 'signal', 'trade_pnl_h12_atr', 'trade_outcome_h12', 'archetype_target']
+    frame = pd.read_csv(TEST_FILE, sep=CSV_SEP, usecols=cols, low_memory=False)
+    frame['time'] = pd.to_datetime(frame['time'], format='%Y.%m.%d %H:%M', errors='coerce')
+    return frame
+
+
+def load_frozen_outcome_target() -> dict | None:
+    if not FROZEN_OUTCOME_TARGET_PATH.exists():
+        return None
+    return json.loads(FROZEN_OUTCOME_TARGET_PATH.read_text(encoding='utf-8'))
+
+
 def run_evaluation(
     model_name: str | None = None,
     checkpoint_path: str | None = None,
@@ -50,6 +85,7 @@ def run_evaluation(
     horizon: int = 12,
     theta: float = 2.665,
     min_ev: float = 0.0,
+    score_threshold: float | None = None,
     seed: int = 42,
     optuna_json: str | None = None,
 ):
@@ -61,20 +97,10 @@ def run_evaluation(
     if checkpoint_path:
         ckpt_path = Path(checkpoint_path)
     elif model_name:
-        if task == 'triple_barrier':
-            suffix = '_tb'
-        elif task == 'regression_updn':
-            suffix = '_updn'
-        else:
-            suffix = '_regression'
+        suffix = task_checkpoint_suffix(task)
         ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
     else:
-        if task == 'triple_barrier':
-            suffix = '_tb'
-        elif task == 'regression_updn':
-            suffix = '_updn'
-        else:
-            suffix = '_regression'
+        suffix = task_checkpoint_suffix(task)
         ckpt_path = CHECKPOINTS_DIR / f'best_model{suffix}.pt'
 
     if not ckpt_path.exists():
@@ -113,12 +139,7 @@ def run_evaluation(
 
     # ── Загрузка данных ──────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
-    if task == 'triple_barrier':
-        target_col = TB_TARGET
-    elif task == 'regression_updn':
-        target_col = UPDN_REGRESSION_TARGET
-    else:
-        target_col = 'predict'
+    target_col = task_target_column(task)
     test_loader = create_test_loader(
         batch_size=256,
         target=target_col,
@@ -127,6 +148,16 @@ def run_evaluation(
     )
 
     signal_true, predict_val_true, direction = load_test_metadata(task)
+
+    frozen_outcome = None
+    if task in [TRADE_OUTCOME_TARGET, TRADE_PNL_TARGET, ARCHETYPE_TARGET]:
+        frozen_outcome = load_frozen_outcome_target()
+        if (
+            score_threshold is None and
+            frozen_outcome is not None and
+            frozen_outcome.get('winner', {}).get('task') == task
+        ):
+            score_threshold = float(frozen_outcome['winner']['score_threshold'])
 
     # ── Инференс ─────────────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
@@ -235,6 +266,123 @@ def run_evaluation(
     print(f"\n{'─' * 60}")
     print("📈 Симуляция торгового правила...")
 
+    if task in [TRADE_OUTCOME_TARGET, TRADE_PNL_TARGET, ARCHETYPE_TARGET]:
+        outcome_frame = load_outcome_test_frame()
+        signal_mask = outcome_frame['signal'].values.astype(int) != 0
+        realized_pnl = outcome_frame['trade_pnl_h12_atr'].values.astype(np.float64)
+
+        if task in BINARY_CLASSIFICATION_TARGETS:
+            score = torch.softmax(torch.from_numpy(y_pred), dim=1).numpy()[:, 1]
+            if score_threshold is None:
+                score_threshold = 0.5
+            truth_col = 'trade_outcome_h12' if task == TRADE_OUTCOME_TARGET else 'archetype_target'
+            base_metrics = compute_single_binary_classification_metrics(
+                outcome_frame[truth_col].values.astype(int),
+                score,
+                threshold=score_threshold,
+            )
+            main_metric_name = 'AUC'
+            main_metric_value = base_metrics['auc']
+        else:
+            score = y_pred.astype(np.float64)
+            if score_threshold is None:
+                score_threshold = 0.0
+            base_metrics = compute_regression_metrics(realized_pnl, score)
+            main_metric_name = 'Pearson r'
+            main_metric_value = base_metrics['pearson_r']
+
+        trade_mask = signal_mask & (score >= score_threshold)
+        selected = outcome_frame.loc[trade_mask].copy()
+        selected_pnl = selected['trade_pnl_h12_atr'].values.astype(np.float64)
+
+        trades = int(len(selected))
+        wins = int((selected_pnl > 0).sum())
+        losses = int((selected_pnl <= 0).sum())
+        gross_profit = float(selected_pnl[selected_pnl > 0].sum())
+        gross_loss = float(-selected_pnl[selected_pnl < 0].sum())
+        pf = gross_profit / gross_loss if gross_loss > 0 else (np.inf if gross_profit > 0 else 0.0)
+        win_rate = wins / trades if trades > 0 else 0.0
+        coverage = trades / int(signal_mask.sum()) if signal_mask.sum() > 0 else 0.0
+        mean_pnl = float(selected_pnl.mean()) if trades > 0 else 0.0
+
+        yearly_lines = []
+        if trades > 0:
+            selected['year'] = selected['time'].dt.year
+            for year, group in selected.groupby('year', dropna=True):
+                pnl = group['trade_pnl_h12_atr'].values.astype(np.float64)
+                gp = float(pnl[pnl > 0].sum())
+                gl = float(-pnl[pnl < 0].sum())
+                year_pf = gp / gl if gl > 0 else (np.inf if gp > 0 else 0.0)
+                yearly_lines.append(f"- {int(year)}: trades={len(group)}, pf={year_pf:.4f}, mean_pnl={pnl.mean():.4f}")
+
+        print("\n🏆 Outcome-Aligned Test Performance:")
+        print(f"  {main_metric_name}: {main_metric_value:.4f}")
+        print(f"  Score threshold: {score_threshold:.4f}")
+        print(f"  Trades: {trades} из {int(signal_mask.sum())} signal rows ({coverage*100:.1f}%)")
+        print(f"  Wins / Losses: {wins} / {losses}")
+        print(f"  Win Rate: {win_rate*100:.2f}%")
+        print(f"  Mean PnL (ATR): {mean_pnl:.4f}")
+        print(f"  Profit Factor: {pf:.4f}")
+
+        report_path = REPORTS_DIR / f'evaluate_test_{task}.md'
+        lines = [
+            f"# Outcome-Aligned Test Evaluation",
+            f"",
+            f"**Модель**: {ckpt_model_name}",
+            f"**Задача**: {task}",
+            f"**Набор**: Test ({len(score)} строк)",
+            f"**{main_metric_name}**: {main_metric_value:.4f}",
+            f"**Score threshold**: {score_threshold:.4f}",
+            f"",
+            f"## Trading Summary",
+            f"",
+            f"- Trades: {trades}",
+            f"- Signal rows considered: {int(signal_mask.sum())}",
+            f"- Coverage: {coverage:.1%}",
+            f"- Wins / Losses: {wins} / {losses}",
+            f"- Win Rate: {win_rate:.1%}",
+            f"- Mean PnL (ATR): {mean_pnl:.4f}",
+            f"- Profit Factor: {pf:.4f}",
+        ]
+        if task in BINARY_CLASSIFICATION_TARGETS:
+            lines.extend([
+                f"",
+                f"## Classification Metrics",
+                f"",
+                f"- Precision: {base_metrics['precision']:.4f}",
+                f"- Recall: {base_metrics['recall']:.4f}",
+                f"- F1: {base_metrics['f1']:.4f}",
+            ])
+        else:
+            lines.extend([
+                f"",
+                f"## Regression Metrics",
+                f"",
+                f"- MAE: {base_metrics['mae']:.4f}",
+                f"- RMSE: {base_metrics['rmse']:.4f}",
+                f"- R2: {base_metrics['r2']:.4f}",
+                f"- Pearson r: {base_metrics['pearson_r']:.4f}",
+            ])
+        if yearly_lines:
+            lines.extend([
+                f"",
+                f"## Yearly Stability",
+                f"",
+                *yearly_lines,
+            ])
+        if frozen_outcome and frozen_outcome.get('winner', {}).get('task') == task:
+            lines.extend([
+                f"",
+                f"## Frozen Validation Winner",
+                f"",
+                f"Loaded from `{FROZEN_OUTCOME_TARGET_PATH.name}`",
+            ])
+        report_path.write_text("\n".join(lines), 'utf-8')
+
+        print(f"\n✅ Отчет сохранён в: {report_path.name}")
+        print(f"{'═' * 60}\n")
+        return
+
     if task == 'regression_updn':
         idx_map = {12: 0, 24: 2, 48: 4}
         if horizon not in idx_map:
@@ -319,10 +467,19 @@ def parse_args():
     parser.add_argument('--model', type=str, default='transformer')
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--task', type=str, default='regression_updn',
-                        choices=['regression', 'regression_updn', 'triple_barrier'])
+                        choices=[
+                            'regression',
+                            'regression_updn',
+                            'triple_barrier',
+                            TRADE_OUTCOME_TARGET,
+                            TRADE_PNL_TARGET,
+                            ARCHETYPE_TARGET,
+                        ])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')
     parser.add_argument('--min-ev', type=float, default=0.0, help='Минимальный EV для TB signal rule')
+    parser.add_argument('--score-threshold', type=float, default=None,
+                        help='Порог score для outcome-aligned задач. Если не задан, берётся из frozen_outcome_target.json.')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optuna_json', type=str, default=None)
     return parser.parse_args()
@@ -337,6 +494,7 @@ if __name__ == '__main__':
         horizon=args.horizon,
         theta=args.theta,
         min_ev=args.min_ev,
+        score_threshold=args.score_threshold,
         seed=args.seed,
         optuna_json=args.optuna_json,
     )

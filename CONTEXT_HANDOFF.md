@@ -1,39 +1,42 @@
 # Context Handoff
 
 ## Current Stage
-Этап Triple Barrier: пересчёт разметки и повторная проверка в MT4 завершён. Найдена и исправлена главная причина старого расхождения между Python и MT4: TB-разметка считала исход не от времени строки сигнала, а от более раннего времени `fractal0`. После полной пересборки база вне MT4 стала такой: зафиксированное правило `theta=0.475`, `min_ev=0.10`, test `PF=1.11`, `N=253`. Новый MT4-прогон по свежему `ml_signals_tb.csv` дал `PF=1.27`, `N=92`. По жёстким исходам `TP/SL` совпадение уже `61 из 65`, а средняя разница по уровням SL/TP почти нулевая. Старый вывод “TB не переносится в MT4” больше не актуален.
+Outcome-aligned retraining по плану `2026-04-07-outcome-aligned-retraining.md` завершён, но winner не найден. Построены три новых family (`trade_outcome_cls`, `trade_pnl_reg`, `signal_archetype_cls`), все они добавлены в preprocessing/training/evaluation stack и переобучены на signal-only rows после отладки objective mismatch. Validation-first benchmark завершён честно: ни одно семейство не прошло общий `trade floor + yearly stability` filter, поэтому `frozen_outcome_target.json` не создан и `test` не запускался.
 
 ## Last Completed Stage
-Triple Barrier: причина старого расхождения найдена, цепочка пересобрана и заново проверена в MT4 (2026-04-08).
+Outcome-aligned retraining: validation-first verdict = no winner (2026-04-08).
 
 ## Next Step
-Следующий шаг для TB теперь не в новой переоптимизации, а в честном сравнении по одинаковым торговым правилам.
+Следующий шаг для outcome-aligned track не в запуске `test`, а в пересборке самих таргетов ближе к реальной торговой механике.
 
-1. Добавить в Python режим оценки, который повторяет MT4 один в один: вход на следующем баре, только одна открытая позиция, `HoldOverTime`, `TB_Reversal`, пропуск новых сигналов при открытой позиции.
-2. На этом режиме ещё раз сравнить offline и MT4 по одному и тому же `ml_signals_tb.csv`.
-3. Только после этого решать, продвигать ли TB дальше как отдельный торговый режим и стоит ли строить новые таргеты поверх этой схемы.
-4. `regression_updn` не смешивать с TB: это отдельный трек с другой логикой и другим набором выводов.
+1. Не запускать `test` для outcome-aligned family, пока на validation не появится хотя бы один winner, прошедший shared filters.
+2. Следующую итерацию строить вокруг execution-aware label definition:
+   - вход на следующем баре;
+   - только одна открытая позиция;
+   - явная логика выхода;
+   - при необходимости `HoldOverTime` / `PosBlock` как часть target construction.
+3. Проверить, не нужно ли отказаться от `close[t+12]` как основного outcome proxy в пользу trade simulation, которая ближе к MT4 decision loop.
+4. `regression_updn`, `triple_barrier` и новый outcome-aligned track держать раздельно: это разные hypotheses и разные критерии успеха.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
 - `docs/superpowers/roadmap.md`
-- `docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
-- `docs/reports/2026-04-08-triple-barrier-hardening.md`
-- `ML/reports/threshold_analysis_tb.md`
-- `ML/reports/evaluate_test_tb.md`
-- `ML/reports/tb_selected_rule.json`
-- `MT/MQL4/Files/ml_signals_tb.csv`
+- `docs/reports/2026-04-08-outcome-aligned-retraining.md`
+- `ML/reports/outcome_target_validation_benchmark.md`
+- `docs/reports/2026-04-04-signal-path-atlas-readout.md`
+- `docs/reports/2026-04-04-archetype-filter-bridge.md`
+- `docs/reports/2026-04-04-signal-quality-filter.md`
 
 ## Open Risks
-- Offline и MT4 всё ещё считают не в полностью одинаковых правилах: в MT4 есть `PosBlock`, `HoldOverTime`, `TB_Reversal` и вход на следующем баре.
-- Сравнение `253` offline trades и `92` MT4 trades пока не является сравнением “один к одному”.
-- SELL-часть TB выглядит слабее BUY-части.
-- Есть риск снова начать улучшать модель до того, как будет готов честный offline-режим под правила MT4.
+- Текущие outcome labels всё ещё не повторяют реальный MT4 execution loop и завязаны на `close-to-close` proxy за 12 баров.
+- `trade_outcome_h12` и `archetype_target` на текущих split-файлах почти схлопываются в одну бинарную задачу.
+- После signal-only retraining ни одно семейство не прошло общий validation filter; риск в том, что новые targets просто описывают “плохой universe”, а не отбор хороших сигналов.
+- Любой переход к `test` без нового validation winner-а будет нарушением validation-first discipline.
 
 ## Latest Report
-`docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
+`docs/reports/2026-04-08-outcome-aligned-retraining.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

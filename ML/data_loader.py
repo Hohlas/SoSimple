@@ -2,7 +2,7 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей с кэшированием тензоров
 # Язык: Python 3.11+
-# Обновлён: 2026-03-19
+# Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -76,9 +76,89 @@ INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
 # Имя колонки для регрессионного таргета
 REGRESSION_TARGET = 'predict'  # backward compat default
 UPDN_REGRESSION_TARGET = 'updn'  # multi-task: 6 Up/Dn таргетов
+TRADE_OUTCOME_TARGET = 'trade_outcome_cls'
+TRADE_PNL_TARGET = 'trade_pnl_reg'
+ARCHETYPE_TARGET = 'signal_archetype_cls'
 
 # Доступные up/dn таргеты
 UPDN_TARGETS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+
+TRADE_OUTCOME_COLUMN = 'trade_outcome_h12'
+TRADE_PNL_COLUMN = 'trade_pnl_h12_atr'
+ARCHETYPE_COLUMN = 'archetype_target'
+
+TASK_TARGET_COLUMNS = {
+    TRADE_OUTCOME_TARGET: TRADE_OUTCOME_COLUMN,
+    TRADE_PNL_TARGET: TRADE_PNL_COLUMN,
+    ARCHETYPE_TARGET: ARCHETYPE_COLUMN,
+}
+
+BINARY_CLASSIFICATION_TARGETS = {
+    TRADE_OUTCOME_TARGET,
+    ARCHETYPE_TARGET,
+}
+
+BINARY_CLASSIFICATION_COLUMNS = {
+    TRADE_OUTCOME_COLUMN,
+    ARCHETYPE_COLUMN,
+}
+
+SIGNAL_ONLY_TARGET_COLUMNS = {
+    TRADE_OUTCOME_COLUMN,
+    TRADE_PNL_COLUMN,
+    ARCHETYPE_COLUMN,
+}
+
+SINGLE_REGRESSION_COLUMNS = {
+    REGRESSION_TARGET,
+    TRADE_PNL_COLUMN,
+}
+
+TASK_CHECKPOINT_SUFFIXES = {
+    TRADE_OUTCOME_TARGET: '_trade_outcome_cls',
+    TRADE_PNL_TARGET: '_trade_pnl_reg',
+    ARCHETYPE_TARGET: '_signal_archetype_cls',
+}
+
+BINARY_LABEL_MAP = {0: 0, 1: 1}
+
+
+def task_target_column(task: str) -> str:
+    if task in TASK_TARGET_COLUMNS:
+        return TASK_TARGET_COLUMNS[task]
+    if task == TB_TARGET:
+        return TB_TARGET
+    if task == UPDN_REGRESSION_TARGET:
+        return UPDN_REGRESSION_TARGET
+    if task == REGRESSION_TARGET:
+        return REGRESSION_TARGET
+    return 'signal'
+
+
+def task_checkpoint_suffix(task: str) -> str:
+    if task == TB_TARGET:
+        return '_tb'
+    if task == UPDN_REGRESSION_TARGET:
+        return '_updn'
+    if task == REGRESSION_TARGET:
+        return '_regression'
+    return TASK_CHECKPOINT_SUFFIXES.get(task, '')
+
+
+def target_uses_signal_rows(target: str) -> bool:
+    target_name = TASK_TARGET_COLUMNS.get(target, target)
+    return target_name in SIGNAL_ONLY_TARGET_COLUMNS
+
+
+def cache_profile_suffix(target: str) -> str:
+    return '_signal_rows' if target_uses_signal_rows(target) else ''
+
+
+def filter_signal_rows(frame: pd.DataFrame, target: str) -> pd.DataFrame:
+    if not target_uses_signal_rows(target):
+        return frame
+    signal = pd.to_numeric(frame['signal'], errors='coerce').fillna(0).astype(int)
+    return frame.loc[signal != 0].reset_index(drop=True)
 
 # Triple Barrier targets (12 binary: 6 BUY + 6 SELL)
 TB_TARGET = 'triple_barrier'
@@ -358,6 +438,7 @@ class FractalSequenceDataset(Dataset):
         y: np.ndarray,
         mask: np.ndarray,
         regression: bool = False,
+        label_map: dict[int, int] | None = None,
     ):
         self.X = torch.from_numpy(X).float()
         if regression:
@@ -365,7 +446,8 @@ class FractalSequenceDataset(Dataset):
             self.y = torch.from_numpy(y.astype(np.float32)).float()
         else:
             # Классификация: маппинг {-1, 0, 1} → {0, 1, 2}
-            y_mapped = np.array([LABEL_MAP[label] for label in y], dtype=np.int64)
+            target_map = label_map if label_map is not None else LABEL_MAP
+            y_mapped = np.array([target_map[int(label)] for label in y], dtype=np.int64)
             self.y = torch.from_numpy(y_mapped).long()
         self.mask = torch.from_numpy(mask).bool()
 
@@ -415,14 +497,16 @@ def create_data_loaders(
         ...     logits = model(X_batch, mask_batch)
     """
     print("📦 Загрузка данных...")
-    regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
+    regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
+    binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
 
     def load_or_parse_data(csv_file: Path, target_col: str, prefix: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        x_path = DATA_DIR / f'X_{prefix}.npy'
-        mask_path = DATA_DIR / f'mask_{prefix}.npy'
-        y_path = DATA_DIR / f'y_{prefix}_{target_col}.npy'
+        profile_suffix = cache_profile_suffix(target_col)
+        x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
+        mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
+        y_path = DATA_DIR / f'y_{prefix}_{target_col}{profile_suffix}.npy'
 
         # Список всех файлов кэша для данного набора
         cache_files = [x_path, mask_path, y_path]
@@ -460,6 +544,10 @@ def create_data_loaders(
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)
         validate_csv_columns(df, source=csv_file.name)
         validate_fractal_format(df, source=csv_file.name)
+        if target_uses_signal_rows(target_col):
+            total_rows = len(df)
+            df = filter_signal_rows(df, target_col)
+            print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
         
         # Извлечение таргета
         if multi_target:
@@ -468,7 +556,11 @@ def create_data_loaders(
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
         elif regression:
-            y = np.abs(df[target_col].values.astype(np.float32))
+            y = df[target_col].values.astype(np.float32)
+            if target_col == REGRESSION_TARGET:
+                y = np.abs(y)
+        elif binary_classification:
+            y = df[target_col].values.astype(np.int64)
         else:
             y = df[target_col].values.astype(int)
             
@@ -539,19 +631,23 @@ def create_data_loaders(
     train_dataset = FractalSequenceDataset(
         X_train_norm, y_train, mask_train,
         regression=(regression or triple_barrier),
+        label_map=BINARY_LABEL_MAP if binary_classification else None,
     )
     val_dataset = FractalSequenceDataset(
         X_val_norm, y_val, mask_val,
         regression=(regression or triple_barrier),
+        label_map=BINARY_LABEL_MAP if binary_classification else None,
     )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
     if use_weighted_sampler and not regression:
         # Рассчитываем веса: 1 / freq(class)
-        # Отображаем {-1, 0, 1} → {0, 1, 2} для np.bincount()
-        # Векторизованное преобразование меток
-        y_train_mapped = y_train + 1  # {-1, 0, 1} → {0, 1, 2}
-        class_counts = np.bincount(y_train_mapped)
+        if binary_classification:
+            y_train_mapped = y_train.astype(np.int64)
+            class_counts = np.bincount(y_train_mapped, minlength=2)
+        else:
+            y_train_mapped = y_train + 1  # {-1, 0, 1} → {0, 1, 2}
+            class_counts = np.bincount(y_train_mapped)
         class_weights = 1.0 / class_counts
         sample_weights = class_weights[y_train_mapped]
         sampler = WeightedRandomSampler(
@@ -603,14 +699,16 @@ def create_test_loader(
 ) -> DataLoader:
     """Только для инференса на отложенной выборке. StandardScaler отключён (False)."""
     print("\n📦 Загрузка тестовых данных...")
-    regression = (target == REGRESSION_TARGET) or (target == UPDN_REGRESSION_TARGET)
+    regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
+    binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
     prefix = 'test'
+    profile_suffix = cache_profile_suffix(target)
     
-    x_path = DATA_DIR / f'X_{prefix}.npy'
-    mask_path = DATA_DIR / f'mask_{prefix}.npy'
-    y_path = DATA_DIR / f'y_{prefix}_{target}.npy'
+    x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
+    mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
+    y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
     cache_files = [x_path, mask_path, y_path]
     
     if clear_cache:
@@ -636,11 +734,21 @@ def create_test_loader(
                     X = X[:, :seq_len, :]
                     mask = mask[:, :seq_len]
                 
-                dataset = FractalSequenceDataset(X, y, mask, regression=(regression or triple_barrier))
+                dataset = FractalSequenceDataset(
+                    X,
+                    y,
+                    mask,
+                    regression=(regression or triple_barrier),
+                    label_map=BINARY_LABEL_MAP if binary_classification else None,
+                )
                 return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     print(f"  Кэш не найден. Загрузка {TEST_FILE.name} и парсинг...")
     df = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
+    if target_uses_signal_rows(target):
+        total_rows = len(df)
+        df = filter_signal_rows(df, target)
+        print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
     
     if multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
@@ -648,7 +756,11 @@ def create_test_loader(
         y = df[TB_TARGET_NAMES].values.astype(np.float32)
         y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS
     elif regression:
-        y = np.abs(df[target].values.astype(np.float32))
+        y = df[target].values.astype(np.float32)
+        if target == REGRESSION_TARGET:
+            y = np.abs(y)
+    elif binary_classification:
+        y = df[target].values.astype(np.int64)
     else:
         y = df[target].values.astype(int)
         
@@ -662,7 +774,13 @@ def create_test_loader(
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
         
-    dataset = FractalSequenceDataset(X, y, mask, regression=(regression or triple_barrier))
+    dataset = FractalSequenceDataset(
+        X,
+        y,
+        mask,
+        regression=(regression or triple_barrier),
+        label_map=BINARY_LABEL_MAP if binary_classification else None,
+    )
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
