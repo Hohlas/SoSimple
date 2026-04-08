@@ -67,7 +67,22 @@ except ImportError:
     class TrialPruned(Exception):
         pass
 
-from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES, UPDN_TARGETS, UPDN_REGRESSION_TARGET, TB_TARGET, TB_TARGET_NAMES
+from ML.data_loader import (
+    ARCHETYPE_TARGET,
+    BINARY_CLASSIFICATION_TARGETS,
+    INV_LABEL_MAP,
+    N_FRACTAL_FEATURES,
+    REGRESSION_TARGET,
+    TB_TARGET,
+    TB_TARGET_NAMES,
+    TRADE_OUTCOME_TARGET,
+    TRADE_PNL_TARGET,
+    UPDN_REGRESSION_TARGET,
+    UPDN_TARGETS,
+    create_data_loaders,
+    task_checkpoint_suffix,
+    task_target_column,
+)
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.tb_probability_calibration import (
@@ -78,6 +93,7 @@ from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
     compute_multitarget_regression_metrics,
     compute_binary_classification_metrics,
+    compute_single_binary_classification_metrics,
     count_parameters, get_device,
 )
 from ML.experiment_logger import CSVExperimentLogger
@@ -340,6 +356,43 @@ def validate_triple_barrier(
     return total_loss / n_batches, metrics
 
 
+@torch.no_grad()
+def validate_binary(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    loss_fn: nn.Module,
+    device: torch.device,
+) -> tuple[float, dict]:
+    """Validation for single-target binary classification tasks."""
+    model.eval()
+    total_loss = 0.0
+    n_batches = 0
+    all_probs = []
+    all_targets = []
+
+    for X_batch, y_batch, mask_batch in val_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
+        mask_batch = mask_batch.to(device)
+
+        logits = model(X_batch, mask=mask_batch)
+        loss = loss_fn(logits, y_batch)
+
+        probs = torch.softmax(logits, dim=1)[:, 1].cpu().numpy()
+        all_probs.append(probs)
+        all_targets.append(y_batch.cpu().numpy())
+
+        total_loss += loss.item()
+        n_batches += 1
+
+    metrics = compute_single_binary_classification_metrics(
+        np.concatenate(all_targets),
+        np.concatenate(all_probs),
+    )
+
+    return total_loss / n_batches, metrics
+
+
 def resolve_model_kwargs_for_encoder_transfer(
     model_kwargs: dict | None,
     encoder_model_kwargs: dict | None,
@@ -415,9 +468,10 @@ def train_model(
         - model_name, task, best_metric, best_epoch, num_parameters,
           training_time, history, best_metrics
     """
+    binary_classification = (task in BINARY_CLASSIFICATION_TARGETS)
     multi_target = (task == 'regression_updn')
     triple_barrier = (task == 'triple_barrier')
-    regression = (task == 'regression') or multi_target
+    regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -428,19 +482,12 @@ def train_model(
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Данные ───────────────────────────────────────────────────────────────
-    if triple_barrier:
-        target_col = TB_TARGET
-    elif multi_target:
-        target_col = UPDN_REGRESSION_TARGET
-    elif regression:
-        target_col = 'predict'
-    else:
-        target_col = 'signal'
+    target_col = task_target_column(task)
     train_loader, val_loader, scaler = create_data_loaders(
         batch_size=batch_size,
         target=target_col,
         use_scaler=use_scaler,
-        use_weighted_sampler=use_weighted_sampler if not regression else False,
+        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier) else False,
         seq_len=seq_len,
         clear_cache=clear_cache,
     )
@@ -466,6 +513,8 @@ def train_model(
         num_classes = len(UPDN_TARGETS)     # 6
     elif regression:
         num_classes = 1
+    elif binary_classification:
+        num_classes = 2
     else:
         num_classes = 3
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
@@ -505,6 +554,15 @@ def train_model(
         n_neg = (y_train_np == 0).sum(axis=0).astype(float)
         pos_weight = torch.tensor(n_neg / (n_pos + 1e-6), dtype=torch.float32).to(device)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weight).to(device)
+    elif binary_classification:
+        y_train_all = []
+        for batch in train_loader:
+            y_train_all.append(batch[1].numpy())
+        y_train_np = np.concatenate(y_train_all).astype(np.int64)
+        class_counts = np.bincount(y_train_np, minlength=2).astype(float)
+        class_weights = class_counts.sum() / (2.0 * np.maximum(class_counts, 1.0))
+        weight = torch.tensor(class_weights, dtype=torch.float32).to(device)
+        loss_fn = nn.CrossEntropyLoss(weight=weight).to(device)
     elif regression:
         if regression_loss == 'directional':
             loss_fn = DirectionalAsymmetricLoss(
@@ -549,6 +607,15 @@ def train_model(
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'Mean AUC':>10} | {'LR':>10}")
+    elif binary_classification:
+        history = {
+            'train_loss': [], 'val_loss': [],
+            'val_auc': [], 'val_precision': [], 'val_recall': [], 'lr': [],
+        }
+        metric_name = 'auc'
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'AUC':>8} | {'Prec':>8} | {'Recall':>8} | {'LR':>10}")
     elif regression:
         history = {
             'train_loss': [], 'val_loss': [],
@@ -601,6 +668,21 @@ def train_model(
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['mean_auc']:>10.4f} | "
                       f"{optimizer.param_groups[0]['lr']:>10.6f}")
+        elif binary_classification:
+            val_loss, metrics = validate_binary(model, val_loader, loss_fn, device)
+            val_metric = metrics['auc']
+
+            history['train_loss'].append(train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_auc'].append(metrics['auc'])
+            history['val_precision'].append(metrics['precision'])
+            history['val_recall'].append(metrics['recall'])
+            history['lr'].append(optimizer.param_groups[0]['lr'])
+
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['auc']:>8.4f} | {metrics['precision']:>8.4f} | "
+                      f"{metrics['recall']:>8.4f} | {optimizer.param_groups[0]['lr']:>10.6f}")
         elif regression:
             val_loss, metrics = validate_regression(model, val_loader, loss_fn, device)
             val_metric = metrics['pearson_r']
@@ -670,14 +752,7 @@ def train_model(
             epochs_without_improvement = 0
 
             # Суффикс чекпойнта
-            if triple_barrier:
-                suffix = '_tb'
-            elif multi_target:
-                suffix = '_updn'
-            elif regression:
-                suffix = '_regression'
-            else:
-                suffix = ''
+            suffix = task_checkpoint_suffix(task)
             checkpoint_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
             torch.save({
                 'epoch': epoch,
@@ -717,6 +792,11 @@ def train_model(
             if 'per_target' in best_metrics:
                 for name, tm in best_metrics['per_target'].items():
                     print(f"    {name}: AUC={tm['auc']:.4f}, pos_rate={tm['pos_rate']:.1%}")
+        elif binary_classification:
+            print(f"  AUC:       {best_metrics.get('auc', 0):.4f}")
+            print(f"  Precision: {best_metrics.get('precision', 0):.4f}")
+            print(f"  Recall:    {best_metrics.get('recall', 0):.4f}")
+            print(f"  F1:        {best_metrics.get('f1', 0):.4f}")
         elif not regression:
             print(f"\n{best_metrics.get('classification_report', '')}")
         else:
@@ -730,16 +810,29 @@ def train_model(
 
     # ── Plots (только если не silent) ────────────────────────────────────────
     if not silent:
-        _plot_training_curves(history, model_name, regression=regression)
+        _plot_training_curves(
+            history,
+            model_name,
+            task=task,
+            regression=regression,
+            binary_classification=binary_classification,
+        )
 
         if triple_barrier:
             pass  # No confusion matrix for TB — just training curves
+        elif binary_classification:
+            _plot_confusion_matrix(
+                best_metrics['confusion_matrix'],
+                model_name,
+                labels=['Bad (0)', 'Good (1)'],
+                task=task,
+            )
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
             all_preds, all_targets = _collect_regression_preds(model, val_loader, device)
-            _plot_regression_results(all_targets, all_preds, model_name)
+            _plot_regression_results(all_targets, all_preds, model_name, task=task)
         else:
-            _plot_confusion_matrix(best_metrics['confusion_matrix'], model_name)
+            _plot_confusion_matrix(best_metrics['confusion_matrix'], model_name, task=task)
 
     # Логируем эксперимент в CSV
     _log_experiment(
@@ -772,6 +865,7 @@ def train_model(
         },
         regression=regression,
         triple_barrier=triple_barrier,
+        binary_classification=binary_classification,
     )
 
     if triple_barrier:
@@ -840,6 +934,7 @@ def _log_experiment(
     result: dict,
     regression: bool,
     triple_barrier: bool = False,
+    binary_classification: bool = False,
     model_kwargs: dict | None = None,
 ) -> None:
     """Логирует эксперимент в CSV файл."""
@@ -857,8 +952,8 @@ def _log_experiment(
         'patience': patience,
         'scheduler_patience': scheduler_patience,
         'scheduler_factor': scheduler_factor,
-        'focal_weights': focal_alpha if not regression else None,
-        'focal_gamma': focal_gamma if not regression else None,
+        'focal_weights': focal_alpha if not (regression or binary_classification) else None,
+        'focal_gamma': focal_gamma if not (regression or binary_classification) else None,
         'huber_delta': huber_delta if regression else None,
         'use_scaler': use_scaler,
         'use_weighted_sampler': use_weighted_sampler,
@@ -870,7 +965,10 @@ def _log_experiment(
     
     # Строим metrics_dict
     metrics_dict = {
-        'metric_name': result.get('metric_name', 'f1_macro' if not regression else 'pearson_r'),
+        'metric_name': result.get(
+            'metric_name',
+            'auc' if binary_classification else ('f1_macro' if not regression else 'pearson_r'),
+        ),
         'best_metric': result['best_metric'],
         'best_epoch': result['best_epoch'],
         'training_time': result['training_time'],
@@ -878,6 +976,11 @@ def _log_experiment(
     
     if triple_barrier:
         metrics_dict['val_mean_auc'] = result['best_metrics'].get('mean_auc')
+    elif binary_classification:
+        metrics_dict['val_auc'] = result['best_metrics'].get('auc')
+        metrics_dict['precision'] = result['best_metrics'].get('precision')
+        metrics_dict['recall'] = result['best_metrics'].get('recall')
+        metrics_dict['f1'] = result['best_metrics'].get('f1')
     elif regression:
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
@@ -889,14 +992,7 @@ def _log_experiment(
         metrics_dict['f1_neutral'] = f1_per_class.get(0)
         metrics_dict['f1_buy'] = f1_per_class.get(1)
 
-    if triple_barrier:
-        log_suffix = '_tb'
-    elif task == 'regression_updn':
-        log_suffix = '_updn'
-    elif regression:
-        log_suffix = '_regression'
-    else:
-        log_suffix = ''
+    log_suffix = task_checkpoint_suffix(task)
     checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{log_suffix}_best.pt')
     
     logger = CSVExperimentLogger()
@@ -946,7 +1042,13 @@ def _collect_tb_logits(
 # ВИЗУАЛИЗАЦИЯ
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _plot_training_curves(history: dict, model_name: str, regression: bool = False):
+def _plot_training_curves(
+    history: dict,
+    model_name: str,
+    task: str | None = None,
+    regression: bool = False,
+    binary_classification: bool = False,
+):
     """
     Построение кривых обучения: loss и основная метрика по эпохам.
 
@@ -977,7 +1079,7 @@ def _plot_training_curves(history: dict, model_name: str, regression: bool = Fal
     axes[0].plot(epochs_range, history['train_loss'], label='Train Loss', color='#2196F3')
     axes[0].plot(epochs_range, history['val_loss'], label='Val Loss', color='#F44336')
     axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Huber Loss' if regression else 'Focal Loss')
+    axes[0].set_ylabel('Huber Loss' if regression else 'Classification Loss')
     axes[0].set_title(f'{model_name}: Loss')
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
@@ -997,6 +1099,17 @@ def _plot_training_curves(history: dict, model_name: str, regression: bool = Fal
         lines1, labels1 = axes[1].get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         axes[1].legend(lines1 + lines2, labels1 + labels2, loc='best')
+    elif binary_classification:
+        axes[1].plot(epochs_range, history['val_auc'],
+                     label='AUC', color='#4CAF50', linewidth=2)
+        axes[1].plot(epochs_range, history['val_precision'],
+                     label='Precision', color='#FF9800', linestyle='--')
+        axes[1].plot(epochs_range, history['val_recall'],
+                     label='Recall', color='#03A9F4', linestyle='--')
+        axes[1].set_xlabel('Epoch')
+        axes[1].set_ylabel('Score')
+        axes[1].set_title(f'{model_name}: Validation Binary Metrics')
+        axes[1].legend()
     else:
         # Правый: F1 по классам
         axes[1].plot(epochs_range, history['val_f1_macro'],
@@ -1015,21 +1128,26 @@ def _plot_training_curves(history: dict, model_name: str, regression: bool = Fal
     axes[1].grid(True, alpha=0.3)
     plt.tight_layout()
 
-    suffix = '_regression' if regression else ''
+    suffix = task_checkpoint_suffix(task) if task is not None else ('_regression' if regression else '')
     save_path = PLOTS_DIR / f'training_curves_{model_name}{suffix}.png'
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
     print(f"  📊 Кривые обучения: {save_path.name}")
 
 
-def _plot_confusion_matrix(cm: np.ndarray, model_name: str):
+def _plot_confusion_matrix(
+    cm: np.ndarray,
+    model_name: str,
+    labels: list[str] | None = None,
+    task: str | None = None,
+):
     """
     Сохранение confusion matrix лучшей эпохи (classification).
 
     Сохраняет в ML/plots/cm_<model>.png
     """
     fig, ax = plt.subplots(figsize=(8, 6))
-    labels = ['Sell (-1)', 'Neutral (0)', 'Buy (1)']
+    labels = labels or ['Sell (-1)', 'Neutral (0)', 'Buy (1)']
 
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
                 xticklabels=labels, yticklabels=labels)
@@ -1038,7 +1156,7 @@ def _plot_confusion_matrix(cm: np.ndarray, model_name: str):
     ax.set_title(f'Confusion Matrix: {model_name} (best epoch)', fontsize=14)
 
     plt.tight_layout()
-    save_path = PLOTS_DIR / f'cm_{model_name}.png'
+    save_path = PLOTS_DIR / f'cm_{model_name}{task_checkpoint_suffix(task or "classification")}.png'
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
     print(f"  📊 Confusion matrix: {save_path.name}")
@@ -1048,6 +1166,7 @@ def _plot_regression_results(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     model_name: str,
+    task: str | None = None,
 ):
     """
     Построение scatter plot и гистограммы residuals для регрессии.
@@ -1084,7 +1203,7 @@ def _plot_regression_results(
 
         fig.suptitle(f'{model_name}: Multi-target regression (val)', fontsize=12)
         plt.tight_layout()
-        save_path = PLOTS_DIR / f'regression_{model_name}_updn.png'
+        save_path = PLOTS_DIR / f'regression_{model_name}{task_checkpoint_suffix(task or UPDN_REGRESSION_TARGET)}.png'
         plt.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print(f"  📊 Multi-target regression: {save_path.name}")
@@ -1113,7 +1232,7 @@ def _plot_regression_results(
     axes[1].grid(True, alpha=0.3)
 
     plt.tight_layout()
-    save_path = PLOTS_DIR / f'regression_{model_name}.png'
+    save_path = PLOTS_DIR / f'regression_{model_name}{task_checkpoint_suffix(task or REGRESSION_TARGET)}.png'
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
     print(f"  📊 Regression результаты: {save_path.name}")
@@ -1135,8 +1254,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default='classification',
-        choices=['classification', 'regression', 'regression_updn', 'triple_barrier'],
-        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (10 Up/Dn) | 'triple_barrier'. "
+        choices=[
+            'classification',
+            'regression',
+            'regression_updn',
+            'triple_barrier',
+            TRADE_OUTCOME_TARGET,
+            TRADE_PNL_TARGET,
+            ARCHETYPE_TARGET,
+        ],
+        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (10 Up/Dn) | "
+             "'triple_barrier' | outcome-aligned targets. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -1289,7 +1417,8 @@ def main():
     )
 
     # Сохраняем результат как JSON
-    regression = (args.task in ['regression', 'regression_updn'])
+    regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET])
+    binary_classification = (args.task in BINARY_CLASSIFICATION_TARGETS)
 
     triple_barrier = (args.task == 'triple_barrier')
 
@@ -1303,7 +1432,21 @@ def main():
             'training_time': result['training_time'],
             'per_target': result['best_metrics'].get('per_target', {}),
         }
-        suffix = '_tb'
+        suffix = task_checkpoint_suffix(args.task)
+    elif binary_classification:
+        result_serializable = {
+            'model_name': result['model_name'],
+            'task': result['task'],
+            'best_auc': result['best_metric'],
+            'best_epoch': result['best_epoch'],
+            'num_parameters': result['num_parameters'],
+            'training_time': result['training_time'],
+            'val_metrics': {
+                k: v for k, v in result['best_metrics'].items()
+                if isinstance(v, float)
+            },
+        }
+        suffix = task_checkpoint_suffix(args.task)
     elif regression:
         result_serializable = {
             'model_name': result['model_name'],
@@ -1317,7 +1460,7 @@ def main():
                 if isinstance(v, float)
             },
         }
-        suffix = '_updn' if args.task == 'regression_updn' else '_regression'
+        suffix = task_checkpoint_suffix(args.task)
     else:
         result_serializable = {
             'model_name': result['model_name'],
@@ -1336,7 +1479,7 @@ def main():
             'signal_recall': result['best_metrics'].get('signal_recall'),
             'f1_minority': result['best_metrics'].get('f1_minority'),
         }
-        suffix = ''
+        suffix = task_checkpoint_suffix(args.task)
 
     result_path = CHECKPOINTS_DIR / f'{args.model}{suffix}_result.json'
     with open(result_path, 'w', encoding='utf-8') as f:

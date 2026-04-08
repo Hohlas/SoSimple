@@ -1,0 +1,15 @@
+{
+  "model_name": "transformer",
+  "task": "signal_archetype_cls",
+  "best_auc": 0.6260217070883023,
+  "best_epoch": 2,
+  "num_parameters": 70498,
+  "training_time": 32.59606170654297,
+  "val_metrics": {
+    "auc": 0.6260217070883023,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "positive_rate": 0.07188160676532769
+  }
+}

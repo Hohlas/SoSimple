@@ -262,6 +262,54 @@ def compute_binary_classification_metrics(
     }
 
 
+def compute_single_binary_classification_metrics(
+    y_true: np.ndarray,
+    y_pred_proba: np.ndarray,
+    threshold: float = 0.5,
+) -> dict:
+    """
+    Метрики для single-target binary classification.
+
+    Args:
+        y_true: shape (n_samples,), binary {0, 1}
+        y_pred_proba: shape (n_samples,), probabilities [0, 1]
+        threshold: probability threshold for hard predictions
+
+    Returns:
+        Dict with auc, precision, recall, f1, confusion_matrix, classification_report.
+    """
+    y_true = np.asarray(y_true).astype(int)
+    y_pred_proba = np.asarray(y_pred_proba).astype(np.float64)
+    y_pred = (y_pred_proba >= threshold).astype(int)
+
+    if len(np.unique(y_true)) < 2:
+        auc = 0.5
+    else:
+        auc = float(roc_auc_score(y_true, y_pred_proba))
+
+    precision = float(precision_score(y_true, y_pred, zero_division=0))
+    recall = float(recall_score(y_true, y_pred, zero_division=0))
+    f1 = float(f1_score(y_true, y_pred, zero_division=0))
+    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+    report = classification_report(
+        y_true,
+        y_pred,
+        labels=[0, 1],
+        target_names=['Bad (0)', 'Good (1)'],
+        zero_division=0,
+    )
+
+    return {
+        'auc': auc,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'confusion_matrix': cm,
+        'classification_report': report,
+        'positive_rate': float(y_true.mean()) if len(y_true) else 0.0,
+    }
+
+
 def count_parameters(model: torch.nn.Module) -> int:
     """
     Подсчёт обучаемых параметров модели.

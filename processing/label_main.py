@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-03-19
+# Обновлён: 2026-04-08
 #
 # Зависимости:
 #   Входные данные:
@@ -15,7 +15,7 @@
 #     - DATA/{stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
 #     - DATA/{stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
-#   - label_signals.py (функции label_all, label_updn)
+#   - label_signals.py (функции label_all, label_updn, label_trade_targets)
 #   - normalize.py (функция normalize_rowwise)
 # Внешние зависимости:
 #   - pandas>=2.0.0
@@ -29,7 +29,7 @@
 #   python label_main.py -i MT/MQL4/Files/Nero.csv --no-normalize  # без нормализации
 #
 # Примечания:
-#   - Конвейер: сортировка -> маркировка (signal+predict) -> up/dn таргеты -> нормализация -> split
+#   - Конвейер: сортировка -> маркировка (signal+predict) -> up/dn таргеты -> outcome таргеты -> нормализация -> split
 #   - Построчная нормализация выполняется до split (нет data leakage)
 #   - ATR (Atr.Slow) не нормализуется — используется только как знаменатель для ATR_ratio в data_loader.py
 #   - up_12..dn_48 нормализуются совместно с Up/Dn фичами фракталов (Piecewise Linear-Log, 606 значений на строку)
@@ -52,7 +52,13 @@ import numpy as np
 import pandas as pd
 import os
 from pathlib import Path
-from label_signals import label_all, label_updn, label_triple_barrier, label_first_barrier_hit
+from label_signals import (
+    label_all,
+    label_updn,
+    label_trade_targets,
+    label_triple_barrier,
+    label_first_barrier_hit,
+)
 from normalize import normalize_rowwise
 
 
@@ -333,7 +339,11 @@ def main():
     print(f"\nРазметка Up/Dn таргетов...")
     labeled_df = label_updn(labeled_df, debug=args.debug)
 
-    # 3c. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
+    # 3c. Outcome-aligned targets (before normalization)
+    print(f"\nРазметка outcome-aligned таргетов...")
+    labeled_df = label_trade_targets(labeled_df, ohlc_path=args.ohlc)
+
+    # 3d. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
     print(f"\nРазметка Triple Barrier таргетов (path-ordered, OHLC={args.ohlc})...")
     labeled_df = label_first_barrier_hit(labeled_df, args.ohlc, scan_bars=24, debug=args.debug)
 
@@ -371,7 +381,7 @@ def main():
     print(f"\n" + "=" * 60)
     print("ПОДГОТОВКА ЗАВЕРШЕНА")
     print("=" * 60)
-    print(f"Метки: signal, predict, up_12..dn_48, buy_sl*_tp*, sell_sl*_tp*")
+    print(f"Метки: signal, predict, up_3..dn_48, trade_outcome_h12, trade_pnl_h12_atr, archetype_target, buy_sl*_tp*, sell_sl*_tp*")
     if not args.no_normalize:
         print(f"Нормализация: применена")
         print(f"  Статистика: {stats_path}")

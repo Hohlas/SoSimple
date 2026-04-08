@@ -1,0 +1,15 @@
+{
+  "model_name": "transformer",
+  "task": "trade_pnl_reg",
+  "best_pearson_r": 0.1098625436425209,
+  "best_epoch": 1,
+  "num_parameters": 70465,
+  "training_time": 32.324727296829224,
+  "val_metrics": {
+    "mae": 2.5246505737304688,
+    "rmse": 3.7185135453646727,
+    "r2": -0.13915026187896729,
+    "pearson_r": 0.1098625436425209,
+    "pearson_p": 0.016835978254675865
+  }
+}
