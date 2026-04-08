@@ -3,7 +3,7 @@
 # Назначение: Поиск оптимального порога θ для конвертации регрессионных
 #              предсказаний |predict| в торговые сигналы
 # Язык: Python 3.11+
-# Обновлён: 2026-03-11
+# Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
 #     - ML/checkpoints/*_regression_best.pt (регрессионный чекпоинт)
@@ -51,6 +51,15 @@ from ML.data_loader import (
     TB_TARGET, TB_TARGET_NAMES,
 )
 from ML.models import get_model
+from ML.tb_probability_calibration import (
+    apply_tb_probability_calibration,
+    load_tb_probability_calibrator,
+)
+from ML.tb_signal_logic import (
+    evaluate_tb_signal_rule,
+    expected_value_from_probability,
+    tb_proba_to_signals,
+)
 from ML.utils import set_seed, get_device
 
 
@@ -61,6 +70,7 @@ ML_DIR = PROJECT_ROOT / 'ML'
 CHECKPOINTS_DIR = ML_DIR / 'checkpoints'
 PLOTS_DIR = ML_DIR / 'plots'
 REPORTS_DIR = ML_DIR / 'reports'
+TB_CALIBRATOR_PATH = REPORTS_DIR / 'tb_probability_calibrator.joblib'
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -286,23 +296,22 @@ def analyze_thresholds_tb(
     - Losses include timeouts (conservative — counted as full SL)
 
     Args:
-        y_pred_proba: shape (n, 12), probabilities after sigmoid
-        y_true: shape (n, 12), binary labels {0, 1}
+        y_pred_proba: shape (n, 12), calibrated probabilities
+        y_true: shape (n, 12), raw labels {0, 0.5, 1}
         target_names: list of 12 target names
         n_thresholds: number of threshold steps
 
     Returns:
         DataFrame with columns: target, direction, sl, tp, theta,
-        trades, wins, win_rate, pf, profit, loss
+        trades, wins, losses, timeouts, win_rate, pf, profit, loss
     """
     results = []
 
     for i, name in enumerate(target_names):
-        # Parse SL/TP from name: "buy_sl2_tp6" → sl=2, tp=6
         parts = name.split('_')
-        direction = parts[0]  # 'buy' or 'sell'
-        sl = int(parts[1][2:])  # 'sl2' → 2
-        tp = int(parts[2][2:])  # 'tp6' → 6
+        direction = parts[0]
+        sl = int(parts[1][2:])
+        tp = int(parts[2][2:])
 
         proba = y_pred_proba[:, i]
         true = y_true[:, i]
@@ -315,8 +324,9 @@ def analyze_thresholds_tb(
             if n_trades < 10:
                 continue
 
-            wins = true[mask].sum()
-            losses = n_trades - wins
+            wins = int((true[mask] == 1.0).sum())
+            timeouts = int((true[mask] == 0.5).sum())
+            losses = int(n_trades - wins)
 
             profit = wins * tp
             loss_val = losses * sl
@@ -330,7 +340,9 @@ def analyze_thresholds_tb(
                 'tp': tp,
                 'theta': round(float(theta), 4),
                 'trades': int(n_trades),
-                'wins': int(wins),
+                'wins': wins,
+                'losses': losses,
+                'timeouts': timeouts,
                 'win_rate': round(float(win_rate), 4),
                 'pf': round(float(pf), 4),
                 'profit': round(float(profit), 2),
@@ -338,6 +350,75 @@ def analyze_thresholds_tb(
             })
 
     return pd.DataFrame(results)
+
+
+def select_support_gated_tb_rows(
+    df_results: pd.DataFrame,
+    target_names: list[str],
+    min_trades: int = 80,
+    min_win_rate: float = 0.35,
+) -> list[dict]:
+    selected_rows = []
+
+    for name in target_names:
+        target_df = df_results[df_results['target'] == name]
+        eligible = target_df[
+            (target_df['trades'] >= min_trades) &
+            (target_df['win_rate'] >= min_win_rate) &
+            np.isfinite(target_df['pf'])
+        ]
+        if eligible.empty:
+            continue
+
+        best = eligible.sort_values(['pf', 'trades'], ascending=[False, False]).iloc[0]
+        selected_rows.append(best.to_dict())
+
+    return selected_rows
+
+
+def search_tb_signal_rules(
+    y_pred_proba: np.ndarray,
+    y_true_raw: np.ndarray,
+    theta_values: np.ndarray | None = None,
+    min_ev_values: np.ndarray | None = None,
+) -> pd.DataFrame:
+    theta_grid = (
+        np.linspace(0.35, 0.90, 23)
+        if theta_values is None else np.asarray(theta_values, dtype=np.float64)
+    )
+    min_ev_grid = (
+        np.array([0.0, 0.1, 0.25, 0.5, 0.75, 1.0], dtype=np.float64)
+        if min_ev_values is None else np.asarray(min_ev_values, dtype=np.float64)
+    )
+
+    rows = []
+
+    for theta in theta_grid:
+        for min_ev in min_ev_grid:
+            df_signals = tb_proba_to_signals(
+                y_pred_proba,
+                theta=float(theta),
+                min_ev=float(min_ev),
+                target_names=TB_TARGET_NAMES,
+            )
+            summary = evaluate_tb_signal_rule(df_signals, y_true_raw)
+            rows.append({
+                'theta': round(float(theta), 4),
+                'min_ev': round(float(min_ev), 4),
+                'trades': int(summary['trades']),
+                'wins': int(summary['wins']),
+                'losses': int(summary['losses']),
+                'timeouts': int(summary['timeouts']),
+                'win_rate': round(float(summary['win_rate']), 4),
+                'pf': round(float(summary['pf']), 4) if np.isfinite(summary['pf']) else float('inf'),
+                'profit': round(float(summary['profit']), 2),
+                'loss': round(float(summary['loss']), 2),
+                'avg_ev': round(float(summary['avg_ev']), 4),
+                'dominant_target': summary['dominant_target'],
+                'dominant_target_count': int(summary['dominant_target_count']),
+            })
+
+    return pd.DataFrame(rows)
 
 
 def find_optimal_theta(
@@ -749,6 +830,7 @@ def run_threshold_analysis(
         batch_size=256,
         target=target_col,
         use_scaler=False,
+        num_workers=0,
     )
 
     # Загрузка метаданных (signal, predict, direction) из CSV
@@ -819,7 +901,7 @@ def run_tb_analysis(
     seed: int = 42,
     optuna_json: str | None = None,
 ):
-    """Run threshold analysis for Triple Barrier task."""
+    """Run calibrated validation-only threshold analysis for Triple Barrier."""
     import json
 
     set_seed(seed)
@@ -834,6 +916,11 @@ def run_tb_analysis(
 
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Чекпоинт не найден: {ckpt_path}")
+    if not TB_CALIBRATOR_PATH.exists():
+        raise FileNotFoundError(
+            f"Калибратор вероятностей не найден: {TB_CALIBRATOR_PATH}\n"
+            f"Сначала переобучите TB-модель, чтобы сохранить validation-only calibrator."
+        )
 
     print(f"\n{'═' * 60}")
     print(f"  TRIPLE BARRIER THRESHOLD ANALYSIS")
@@ -857,77 +944,138 @@ def run_tb_analysis(
     model.load_state_dict(ckpt['model_state_dict'])
     model = model.to(device)
     model.eval()
+    calibrator_bundle = load_tb_probability_calibrator(TB_CALIBRATOR_PATH)
 
     # Load validation data
     _, val_loader, _ = create_data_loaders(
         batch_size=256,
         target=TB_TARGET,
         seq_len=model_kwargs.get('seq_len', 20),
+        num_workers=0,
     )
+    df_val = pd.read_csv(VAL_FILE, sep=CSV_SEP, usecols=['time'] + TB_TARGET_NAMES, low_memory=False)
+    y_true_raw = df_val[TB_TARGET_NAMES].values.astype(np.float32)
 
     # Inference
     print("\n🧠 Inference...")
     all_preds = []
-    all_targets = []
     with torch.no_grad():
-        for X_batch, y_batch, mask_batch in val_loader:
+        for X_batch, _y_batch, mask_batch in val_loader:
             X_batch = X_batch.to(device)
             mask_batch = mask_batch.to(device)
             logits = model(X_batch, mask=mask_batch).cpu().numpy()
             all_preds.append(logits)
-            all_targets.append(y_batch.numpy())
 
     y_pred_logits = np.concatenate(all_preds)
-    y_true = np.concatenate(all_targets)
-
-    # Apply sigmoid
     y_pred_proba = 1.0 / (1.0 + np.exp(-y_pred_logits))
+    y_pred_proba = apply_tb_probability_calibration(y_pred_proba, calibrator_bundle)
 
-    # Analyze
-    print("\n📊 Анализ порогов...")
-    df_results = analyze_thresholds_tb(y_pred_proba, y_true, TB_TARGET_NAMES)
+    print("\n📊 Анализ порогов по таргетам...")
+    df_results = analyze_thresholds_tb(y_pred_proba, y_true_raw, TB_TARGET_NAMES)
 
     if df_results.empty:
         print("  ⚠️ Нет результатов (все комбинации имеют < 10 сделок)")
         return
 
-    # Best theta per target
+    best_rows = select_support_gated_tb_rows(df_results, TB_TARGET_NAMES)
+
     print(f"\n{'═' * 60}")
-    print("  ЛУЧШИЙ ПОРОГ ПО КАЖДОМУ ТАРГЕТУ (max PF, trades >= 10)")
+    print("  SUPPORT-GATED TARGET ROWS (validation only)")
     print(f"{'═' * 60}")
-    print(f"  {'Target':<20} {'θ':>6} {'Trades':>8} {'WinRate':>8} {'PF':>8}")
-    print(f"  {'─'*52}")
+    print(f"  {'Target':<20} {'θ':>6} {'Trades':>8} {'Wins':>8} {'TO':>6} {'PF':>8}")
+    print(f"  {'─'*64}")
+    for row in best_rows:
+        print(f"  {row['target']:<20} {row['theta']:>6.3f} {int(row['trades']):>8} "
+              f"{int(row['wins']):>8} {int(row['timeouts']):>6} {row['pf']:>8.2f}")
 
-    best_rows = []
-    for name in TB_TARGET_NAMES:
-        target_df = df_results[df_results['target'] == name]
-        if target_df.empty:
-            continue
-        # Best PF with at least some trades
-        best = target_df.loc[target_df['pf'].idxmax()]
-        best_rows.append(best)
-        print(f"  {name:<20} {best['theta']:>6.3f} {int(best['trades']):>8} "
-              f"{best['win_rate']:>8.1%} {best['pf']:>8.2f}")
+    print("\n📊 Анализ финального signal rule (theta + min_ev)...")
+    df_rules = search_tb_signal_rules(y_pred_proba, y_true_raw)
+    df_rules.to_csv(REPORTS_DIR / 'threshold_tb_signal_rules.csv', index=False)
 
-    # Generate report
+    eligible_rules = df_rules[
+        (df_rules['trades'] >= 80) &
+        (df_rules['win_rate'] >= 0.35) &
+        np.isfinite(df_rules['pf'])
+    ]
+    if eligible_rules.empty:
+        eligible_rules = df_rules[
+            (df_rules['trades'] >= 80) &
+            np.isfinite(df_rules['pf'])
+        ]
+        selection_note = 'fallback: max PF with trades >= 80'
+    else:
+        selection_note = 'support-gated: trades >= 80 & win_rate >= 35%'
+
+    if eligible_rules.empty:
+        best_rule = df_rules.sort_values(['trades', 'pf'], ascending=[False, False]).iloc[0]
+        selection_note = 'fallback: max trades'
+    else:
+        best_rule = eligible_rules.sort_values(['pf', 'trades'], ascending=[False, False]).iloc[0]
+
+    frozen_rule_path = REPORTS_DIR / 'tb_selected_rule.json'
+    frozen_rule = {
+        'theta': float(best_rule['theta']),
+        'min_ev': float(best_rule['min_ev']),
+        'selection_method': selection_note,
+        'trades': int(best_rule['trades']),
+        'wins': int(best_rule['wins']),
+        'losses': int(best_rule['losses']),
+        'timeouts': int(best_rule['timeouts']),
+        'win_rate': float(best_rule['win_rate']),
+        'pf': float(best_rule['pf']),
+        'dominant_target': str(best_rule['dominant_target']),
+        'dominant_target_count': int(best_rule['dominant_target_count']),
+    }
+    frozen_rule_path.write_text(json.dumps(frozen_rule, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    print(f"\n{'═' * 60}")
+    print("  FROZEN TB RULE")
+    print(f"{'═' * 60}")
+    print(f"  Selection: {selection_note}")
+    print(f"  θ = {best_rule['theta']:.3f}")
+    print(f"  min_ev = {best_rule['min_ev']:.2f}")
+    print(f"  Trades = {int(best_rule['trades'])}")
+    print(f"  WinRate = {best_rule['win_rate']:.1%}")
+    print(f"  PF = {best_rule['pf']:.2f}")
+    print(f"  Dominant target = {best_rule['dominant_target']} ({int(best_rule['dominant_target_count'])} trades)")
+
     report_path = REPORTS_DIR / 'threshold_analysis_tb.md'
     lines = [
         f"# Triple Barrier Threshold Analysis",
         f"",
         f"**Дата**: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
         f"**Модель**: {ckpt_model_name}",
+        f"**Калибратор**: `{TB_CALIBRATOR_PATH.name}` (validation-only isotonic)",
         f"",
-        f"## Best θ per Target",
-        f"| Target | θ | Trades | Win Rate | PF |",
-        f"|--------|---|--------|----------|------|",
+        f"## Frozen Signal Rule",
+        f"",
+        f"- Selection: {selection_note}",
+        f"- θ: **{best_rule['theta']:.3f}**",
+        f"- min_ev: **{best_rule['min_ev']:.2f}**",
+        f"- Trades: {int(best_rule['trades'])}",
+        f"- Wins / Losses / Timeouts: {int(best_rule['wins'])} / {int(best_rule['losses'])} / {int(best_rule['timeouts'])}",
+        f"- Win Rate: {best_rule['win_rate']:.1%}",
+        f"- Profit Factor: **{best_rule['pf']:.2f}**",
+        f"- Dominant target: `{best_rule['dominant_target']}` ({int(best_rule['dominant_target_count'])} trades)",
+        f"",
+        f"## Support-Gated Best θ per Target",
+        f"",
+        f"| Target | θ | Trades | Wins | Timeouts | Win Rate | PF |",
+        f"|--------|---|--------|------|----------|----------|------|",
     ]
     for row in best_rows:
-        lines.append(f"| {row['target']} | {row['theta']:.3f} | {int(row['trades'])} | "
-                    f"{row['win_rate']:.1%} | {row['pf']:.2f} |")
+        lines.append(
+            f"| {row['target']} | {row['theta']:.3f} | {int(row['trades'])} | "
+            f"{int(row['wins'])} | {int(row['timeouts'])} | {row['win_rate']:.1%} | {row['pf']:.2f} |"
+        )
 
     lines.extend([
         f"",
-        f"## Full Results",
+        f"## Signal Rule Grid",
+        f"",
+        f"Saved to: `ML/reports/threshold_tb_signal_rules.csv`",
+        f"",
+        f"## Full Per-Target Table",
         f"",
         f"Saved to: `ML/reports/threshold_tb_full.csv`",
     ])
@@ -937,6 +1085,10 @@ def run_tb_analysis(
 
     print(f"\n✅ Отчет: {report_path.name}")
     print(f"✅ Полные данные: threshold_tb_full.csv")
+    print(f"✅ Grid signal rules: threshold_tb_signal_rules.csv")
+    print(f"✅ Frozen rule: {frozen_rule_path.name}")
+
+    return frozen_rule
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

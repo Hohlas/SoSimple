@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-03-16
+# Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -70,6 +70,10 @@ except ImportError:
 from ML.data_loader import create_data_loaders, INV_LABEL_MAP, N_FRACTAL_FEATURES, UPDN_TARGETS, UPDN_REGRESSION_TARGET, TB_TARGET, TB_TARGET_NAMES
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
+from ML.tb_probability_calibration import (
+    fit_tb_probability_calibrator,
+    save_tb_probability_calibrator,
+)
 from ML.utils import (
     set_seed, compute_metrics, compute_regression_metrics,
     compute_multitarget_regression_metrics,
@@ -85,6 +89,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ML_DIR = PROJECT_ROOT / 'ML'
 CHECKPOINTS_DIR = ML_DIR / 'checkpoints'
 PLOTS_DIR = ML_DIR / 'plots'
+REPORTS_DIR = ML_DIR / 'reports'
 
 # ─── Значения по умолчанию ───────────────────────────────────────────────────
 
@@ -335,6 +340,16 @@ def validate_triple_barrier(
     return total_loss / n_batches, metrics
 
 
+def resolve_model_kwargs_for_encoder_transfer(
+    model_kwargs: dict | None,
+    encoder_model_kwargs: dict | None,
+) -> dict:
+    resolved = dict(encoder_model_kwargs or {})
+    if model_kwargs:
+        resolved.update(model_kwargs)
+    return resolved
+
+
 def train_model(
     model_name: str,
     task: str = 'classification',
@@ -410,6 +425,7 @@ def train_model(
 
     CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Данные ───────────────────────────────────────────────────────────────
     if triple_barrier:
@@ -430,6 +446,19 @@ def train_model(
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
+    src_ckpt = None
+    if model_kwargs is None:
+        model_kwargs = {}
+    else:
+        model_kwargs = dict(model_kwargs)
+
+    if encoder_ckpt:
+        src_ckpt = torch.load(encoder_ckpt, map_location=device, weights_only=False)
+        model_kwargs = resolve_model_kwargs_for_encoder_transfer(
+            model_kwargs=model_kwargs,
+            encoder_model_kwargs=src_ckpt.get('model_kwargs', {}),
+        )
+
     # Multi-target: 6 выходов; single regression: 1 выход; classification: 3 выхода
     if triple_barrier:
         num_classes = len(TB_TARGET_NAMES)  # 12
@@ -439,15 +468,12 @@ def train_model(
         num_classes = 1
     else:
         num_classes = 3
-    if model_kwargs is None:
-        model_kwargs = {}
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
 
     # ── Transfer learning: загрузка encoder из другого checkpoint ────────────
-    if encoder_ckpt:
-        src_ckpt = torch.load(encoder_ckpt, map_location=device, weights_only=False)
+    if encoder_ckpt and src_ckpt is not None:
         src_state = src_ckpt['model_state_dict']
         dst_state = model.state_dict()
         encoder_parts = ('input_projection', 'pos_encoding', 'transformer_encoder', 'cls_token')
@@ -748,6 +774,34 @@ def train_model(
         triple_barrier=triple_barrier,
     )
 
+    if triple_barrier:
+        best_ckpt_path = CHECKPOINTS_DIR / f'{model_name}_tb_best.pt'
+        if best_ckpt_path.exists():
+            best_ckpt = torch.load(best_ckpt_path, map_location=device, weights_only=False)
+            model.load_state_dict(best_ckpt['model_state_dict'])
+
+        val_logits, val_targets = _collect_tb_logits(model, val_loader, device)
+        val_proba = 1.0 / (1.0 + np.exp(-val_logits))
+
+        logits_path = REPORTS_DIR / 'tb_validation_logits.npy'
+        targets_path = REPORTS_DIR / 'tb_validation_targets.npy'
+        calibrator_path = REPORTS_DIR / 'tb_probability_calibrator.joblib'
+
+        np.save(logits_path, val_logits)
+        np.save(targets_path, val_targets)
+
+        calibrator_bundle = fit_tb_probability_calibrator(
+            y_pred_proba=val_proba,
+            y_true=val_targets,
+            target_names=TB_TARGET_NAMES,
+        )
+        save_tb_probability_calibrator(calibrator_bundle, calibrator_path)
+
+        if not silent:
+            print(f"  🛡️  TB calibration saved: {calibrator_path.name}")
+            print(f"  📦 Validation logits: {logits_path.name}")
+            print(f"  📦 Validation targets: {targets_path.name}")
+
     return {
         'model_name': model_name,
         'task': task,
@@ -869,6 +923,23 @@ def _collect_regression_preds(
         all_preds.append(logits.cpu().numpy())
         all_targets.append(y_batch.numpy())
     return np.concatenate(all_preds), np.concatenate(all_targets)
+
+
+@torch.no_grad()
+def _collect_tb_logits(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> tuple[np.ndarray, np.ndarray]:
+    model.eval()
+    all_logits, all_targets = [], []
+    for X_batch, y_batch, mask_batch in val_loader:
+        X_batch = X_batch.to(device)
+        mask_batch = mask_batch.to(device)
+        logits = model(X_batch, mask=mask_batch)
+        all_logits.append(logits.cpu().numpy())
+        all_targets.append(y_batch.numpy())
+    return np.concatenate(all_logits), np.concatenate(all_targets)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

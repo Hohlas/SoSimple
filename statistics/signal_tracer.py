@@ -1,16 +1,17 @@
 # =============================================================================
 # Файл: statistics/signal_tracer.py
 # Назначение: Trade-level reconciliation — диагностика расхождения
-#             между Python ML-бэктестом (PF=4.50) и MT4 тестером (PF≈1.0)
+#             между Python и MT4 для legacy regression_updn и Triple Barrier треков
 # Язык: Python 3.11+
-# Обновлён: 2026-03-25
+# Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
-#     - MT/MQL4/Files/ml_signals.csv       (ML предсказания: pred_up, pred_dn, ratio)
-#     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; cols[104-109]: up/dn нормализованные)
+#     - MT/MQL4/Files/ml_signals.csv       (legacy ML предсказания: pred_up, pred_dn, ratio)
+#     - MT/MQL4/Files/ml_signals_tb.csv    (TB сигналы: sl_atr, tp_atr, prob, ev)
+#     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; up/dn и TB labels)
 #     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,2))
-#     - MT/tester/$o$imple.ini             (параметры: ML_MinRatio, ML_ScaleK и др.)
-#     - MT/tester/logs/YYYYMMDD.log        (--from-log: Val/Stp/Prf/ATR из MT4)
+#     - MT/tester/$o$imple.ini             (legacy параметры: ML_MinRatio, ML_ScaleK и др.)
+#     - MT/tester/logs/YYYYMMDD.log        (--from-log: ML BUY/SELL ... или TB BUY/SELL ... из MT4)
 #   Выходные данные:
 #     - stdout (досье сигналов, сводные таблицы)
 #     - [--csv-out PATH].csv               (экспорт для Excel/Python)
@@ -21,11 +22,13 @@
 #   python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
 #   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
 #   python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --csv-out all_trades.csv
+#   python statistics/signal_tracer.py --from-log MT/tester/logs/20260408_tb.log --signals MT/MQL4/Files/ml_signals_tb.csv --csv-out tb_trades.csv
 # Примечания:
 #   - bar_time из лога MT4 = time в ml_signals.csv (EA открывает сделку на следующем баре)
 #   - fractal[i][0] в labeled CSV = триггерный фрактал (отсортированы, cols[4])
 #   - up_12/dn_12 денормализуются per-row через brk/cap из Nero_*_updn_params.npy
-#   - SL/TP: точная реплика lib_ML_Signal.mqh строки 171–193
+#   - legacy SL/TP: точная реплика lib_ML_Signal.mqh строки 171–193
+#   - TB outcome берётся напрямую из path-ordered TB labels в labeled CSV
 # =============================================================================
 import argparse
 import os
@@ -33,7 +36,7 @@ import re
 import csv
 import math
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 # ─── Normalization Stats ─────────────────────────────────────────────────────
@@ -194,15 +197,17 @@ def classify_outcome(sig, up_12, dn_12, sl_dist, tp_dist):
 FRACTAL_FIELDS = [
     'fractal_time', 'price', 'direction', 'front', 'back', 'strong',
     'break_status', 'reverse', 'power', 'count', 'impulse',
-    'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48', 'fractal_atr'
+    'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48',
+    'up_3', 'dn_3', 'up_6', 'dn_6', 'fractal_atr'
 ]
 
 def parse_fractal0(fractal_str):
-    """Парсинг строки fractal0 (18 полей через ':') в dict."""
+    """Парсинг строки fractal0 (legacy 18 полей или current 22 поля) в dict."""
     parts = fractal_str.split(':')
     if len(parts) < 18:
         return None
     try:
+        fractal_atr_idx = 21 if len(parts) >= 22 else 17
         return {
             'fractal_time': int(parts[0]),
             'price': float(parts[1]),
@@ -221,7 +226,7 @@ def parse_fractal0(fractal_str):
             'dn_24': float(parts[14]),
             'up_48': float(parts[15]),
             'dn_48': float(parts[16]),
-            'fractal_atr': float(parts[17])
+            'fractal_atr': float(parts[fractal_atr_idx])
         }
     except (ValueError, IndexError):
         return None
@@ -229,7 +234,7 @@ def parse_fractal0(fractal_str):
 
 def time_str_to_unix(time_str):
     """'YYYY.MM.DD HH:MM' -> unix timestamp."""
-    return int(datetime.strptime(time_str, "%Y.%m.%d %H:%M").timestamp())
+    return int(datetime.strptime(time_str, "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc).timestamp())
 
 
 # ─── Dossier Builder ────────────────────────────────────────────────────────
@@ -245,6 +250,9 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     updn_params_map: dict {time_str: (brk, cap)} из load_updn_params()
     Returns: dict with all diagnostic fields
     """
+    if 'sl_atr' in signal_row and 'tp_atr' in signal_row:
+        return build_tb_dossier(target_time, signal_row, nero_cols, fractal, mt4_trade=mt4_trade)
+
     d = {'time': target_time}
 
     # ML prediction data
@@ -377,11 +385,150 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     return d
 
 
+def build_tb_dossier(target_time, signal_row, nero_cols, fractal, mt4_trade=None):
+    d = {'time': target_time, 'track': 'tb'}
+
+    sig = int(signal_row.get('signal', 0))
+    sl_atr = float(signal_row.get('sl_atr', 0))
+    tp_atr = float(signal_row.get('tp_atr', 0))
+    prob = float(signal_row.get('prob', 0))
+    ev = float(signal_row.get('ev', 0))
+
+    d['signal'] = sig
+    d['direction'] = 'BUY' if sig == 1 else 'SELL' if sig == -1 else 'FLAT'
+    d['ratio'] = prob
+    d['prob'] = prob
+    d['ev'] = ev
+    d['sl_atr'] = sl_atr
+    d['tp_atr'] = tp_atr
+
+    target_name = ''
+    if sig in (1, -1) and sl_atr > 0 and tp_atr > 0:
+        prefix = 'buy' if sig == 1 else 'sell'
+        target_name = f"{prefix}_sl{int(round(sl_atr))}_tp{int(round(tp_atr))}"
+    d['target_name'] = target_name
+
+    if mt4_trade:
+        mt4_sl = abs(mt4_trade['val'] - mt4_trade['stp'])
+        mt4_tp = abs(mt4_trade['prf'] - mt4_trade['val'])
+        d['val'] = mt4_trade['val']
+        d['stp'] = mt4_trade['stp']
+        d['prf'] = mt4_trade['prf']
+        d['atr_mt4'] = mt4_trade['atr_mt4']
+        d['mt4_sl_dist'] = mt4_sl
+        d['mt4_tp_dist'] = mt4_tp
+        d['mt4_sl_atr'] = mt4_sl / mt4_trade['atr_mt4'] if mt4_trade['atr_mt4'] > 0 else 0
+        d['mt4_tp_atr'] = mt4_tp / mt4_trade['atr_mt4'] if mt4_trade['atr_mt4'] > 0 else 0
+        d['close_type'] = mt4_trade['close_type']
+        d['close_price'] = mt4_trade['close_price']
+        ct = mt4_trade['close_type']
+        if ct == 'SL':
+            d['mt4_result'] = 'LOSS(SL)'
+        elif ct == 'TP':
+            d['mt4_result'] = 'WIN(TP)'
+        elif ct == 'MARKET':
+            if mt4_trade['dir'] == 'BUY':
+                d['mt4_result'] = 'WIN(MKT)' if mt4_trade['close_price'] > mt4_trade['val'] else 'LOSS(MKT)'
+            else:
+                d['mt4_result'] = 'WIN(MKT)' if mt4_trade['close_price'] < mt4_trade['val'] else 'LOSS(MKT)'
+        else:
+            d['mt4_result'] = ct
+
+        cp = mt4_trade.get('close_price')
+        atr_mt4 = mt4_trade['atr_mt4']
+        if cp is not None and cp > 0:
+            if mt4_trade['dir'] == 'BUY':
+                d['mt4_pnl_pips'] = cp - mt4_trade['val']
+            else:
+                d['mt4_pnl_pips'] = mt4_trade['val'] - cp
+            d['mt4_pnl_atr'] = d['mt4_pnl_pips'] / atr_mt4 if atr_mt4 > 0 else 0
+        elif ct == 'SL':
+            d['mt4_pnl_pips'] = -mt4_sl
+            d['mt4_pnl_atr'] = -d.get('mt4_sl_atr', 0)
+        elif ct == 'TP':
+            d['mt4_pnl_pips'] = mt4_tp
+            d['mt4_pnl_atr'] = d.get('mt4_tp_atr', 0)
+
+    if fractal is None:
+        d['error'] = 'fractal0 не распарсен'
+        return d
+
+    atr = fractal['fractal_atr']
+    d['price'] = fractal['price']
+    d['atr'] = atr
+    d['sl_dist'] = sl_atr * atr
+    d['tp_dist'] = tp_atr * atr
+
+    outcome_value = np.nan
+    if target_name and nero_cols and target_name in TB_TARGET_NAMES:
+        col_idx = TB_COLUMN_BASE + TB_TARGET_NAMES.index(target_name)
+        if len(nero_cols) > col_idx:
+            try:
+                outcome_value = float(nero_cols[col_idx])
+            except ValueError:
+                outcome_value = np.nan
+
+    d['label_value'] = outcome_value
+    if outcome_value == 1.0:
+        d['category'] = 'TP_FIRST'
+        d['category_detail'] = 'TP reached first in path-ordered TB label'
+    elif outcome_value == 0.5:
+        d['category'] = 'TIMEOUT'
+        d['category_detail'] = 'Neither barrier reached within TB timeout window'
+    elif outcome_value == 0.0:
+        d['category'] = 'SL_FIRST'
+        d['category_detail'] = 'SL reached first in path-ordered TB label'
+    else:
+        d['category'] = 'UNKNOWN'
+        d['category_detail'] = 'TB target not found in labeled row'
+
+    signal_time_unix = time_str_to_unix(target_time)
+    fractal_time_unix = fractal['fractal_time']
+    lag_seconds = signal_time_unix - fractal_time_unix
+    d['lag_bars'] = lag_seconds / 3600
+    d['lag_seconds'] = lag_seconds
+    d['fractal_time_unix'] = fractal_time_unix
+
+    if mt4_trade:
+        d['atr_delta'] = mt4_trade['atr_mt4'] - atr
+        d['sl_delta'] = d['mt4_sl_atr'] - sl_atr
+        d['tp_delta'] = d['mt4_tp_atr'] - tp_atr
+
+    return d
+
+
 def print_dossier(d, params):
     """Печать полного досье одного сигнала."""
     print(f"\n{'='*60}")
     print(f"  ДОСЬЕ СИГНАЛА: {d['time']}")
     print(f"{'='*60}")
+
+    if d.get('track') == 'tb':
+        print(f"\n--- TB Оценка ---")
+        print(f"  Направление : {d['direction']} ({d['signal']})")
+        print(f"  Target      : {d.get('target_name', '')}")
+        print(f"  prob        : {d.get('prob', 0):.4f}")
+        print(f"  ev          : {d.get('ev', 0):.4f}")
+        print(f"  SL / TP ATR : {d.get('sl_atr', 0):.2f} / {d.get('tp_atr', 0):.2f}")
+
+        if 'error' in d:
+            print(f"\n  [!] {d['error']}")
+            return
+
+        print(f"\n--- TB Ground Truth ---")
+        print(f"  Цена фрактала : {d['price']:.5f}")
+        print(f"  ATR (fractal) : {d['atr']:.5f}")
+        print(f"  Label outcome : {d.get('category', '?')} ({d.get('label_value', float('nan'))})")
+
+        if 'mt4_result' in d:
+            print(f"\n--- MT4 Реальные уровни ---")
+            print(f"  MT4 result   : {d.get('mt4_result', '?')}")
+            print(f"  SL / TP ATR  : {d.get('mt4_sl_atr', 0):.2f} / {d.get('mt4_tp_atr', 0):.2f}")
+            print(f"  Δ ATR units  : SL {d.get('sl_delta', 0):+.3f}, TP {d.get('tp_delta', 0):+.3f}")
+
+        print(f"\n--- TB Диагноз ---")
+        print(f"  {d.get('category', '?')}: {d.get('category_detail', '')}")
+        return
 
     # ML prediction
     print(f"\n--- ML Оценка ---")
@@ -414,7 +561,7 @@ def print_dossier(d, params):
 
     # Lag bias
     lag = d['lag_bars']
-    ft = datetime.fromtimestamp(d['fractal_time_unix']).strftime('%Y.%m.%d %H:%M')
+    ft = datetime.fromtimestamp(d['fractal_time_unix'], tz=timezone.utc).strftime('%Y.%m.%d %H:%M')
     print(f"\n--- Lag Bias ---")
     print(f"  Время формирования фрактала: {ft}")
     print(f"  Время сигнального бара:      {d['time']}")
@@ -546,10 +693,31 @@ def load_nero_batch(target_times_set, nero_paths):
 RE_ML_ENTRY = re.compile(
     r'ML (BUY|SELL) ratio=([\d.]+) Val=([\d.]+) Stp=([\d.]+) Prf=([\d.]+) ATR=([\d.]+) bar=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2})'
 )
+RE_TB_ENTRY = re.compile(
+    r'TB (BUY|SELL) prob=([-\d.]+) ev=([-\d.]+) SL=([-\d.]+)ATR TP=([-\d.]+)ATR '
+    r'Val=([\d.]+) Stp=([\d.]+) Prf=([\d.]+) ATR=([\d.]+) bar=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2})'
+)
 RE_OPEN    = re.compile(r'open #(\d+) (buy|sell)')
 RE_SL      = re.compile(r'Tester: stop loss #(\d+)')
 RE_TP      = re.compile(r'Tester: take profit #(\d+)')
 RE_CLOSE   = re.compile(r'close #(\d+) (?:buy|sell) .+? at price ([\d.]+)')
+TB_TARGET_NAMES = [
+    'buy_sl2_tp3', 'buy_sl2_tp6', 'buy_sl2_tp9',
+    'buy_sl3_tp3', 'buy_sl3_tp6', 'buy_sl3_tp9',
+    'sell_sl2_tp3', 'sell_sl2_tp6', 'sell_sl2_tp9',
+    'sell_sl3_tp3', 'sell_sl3_tp6', 'sell_sl3_tp9',
+]
+TB_COLUMN_BASE = 114
+
+
+def parse_tb_signal_line(line: str) -> dict:
+    return {
+        'prob': float(re.search(r'prob=([-\d.]+)', line).group(1)),
+        'ev': float(re.search(r'ev=([-\d.]+)', line).group(1)),
+        'sl_atr': float(re.search(r'SL=([-\d.]+)ATR', line).group(1)),
+        'tp_atr': float(re.search(r'TP=([-\d.]+)ATR', line).group(1)),
+        'bar_time': re.search(r'bar=([0-9. :]+)$', line).group(1),
+    }
 
 
 def parse_log(log_path):
@@ -567,6 +735,7 @@ def parse_log(log_path):
             m = RE_ML_ENTRY.search(line)
             if m:
                 pending = {
+                    'track':    'legacy',
                     'dir':      m.group(1),
                     'ratio':    float(m.group(2)),
                     'val':      float(m.group(3)),
@@ -574,6 +743,26 @@ def parse_log(log_path):
                     'prf':      float(m.group(5)),
                     'atr_mt4':  float(m.group(6)),
                     'bar_time': m.group(7),
+                    'order_num':   None,
+                    'close_type':  None,
+                    'close_price': None,
+                }
+                continue
+
+            m = RE_TB_ENTRY.search(line)
+            if m:
+                pending = {
+                    'track':    'tb',
+                    'dir':      m.group(1),
+                    'prob':     float(m.group(2)),
+                    'ev':       float(m.group(3)),
+                    'sl_atr':   float(m.group(4)),
+                    'tp_atr':   float(m.group(5)),
+                    'val':      float(m.group(6)),
+                    'stp':      float(m.group(7)),
+                    'prf':      float(m.group(8)),
+                    'atr_mt4':  float(m.group(9)),
+                    'bar_time': m.group(10),
                     'order_num':   None,
                     'close_type':  None,
                     'close_price': None,
@@ -662,20 +851,29 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
         sig_row = all_sig_rows.get(bt)
         nero_cols, fractal = nero_data.get(bt, (None, None))
         if sig_row is None:
-            # Данных нет в ml_signals — создаём минимальный sig_row из лога
-            sig_row = {
-                'time': bt,
-                'signal': '1' if t['dir'] == 'BUY' else '-1',
-                'pred_up': '0', 'pred_dn': '0',
-                'ratio_up': str(t['ratio']) if t['dir'] == 'BUY' else '0',
-                'ratio_dn': str(t['ratio']) if t['dir'] == 'SELL' else '0',
-            }
+            if t.get('track') == 'tb':
+                sig_row = {
+                    'time': bt,
+                    'signal': '1' if t['dir'] == 'BUY' else '-1',
+                    'sl_atr': str(t.get('sl_atr', 0)),
+                    'tp_atr': str(t.get('tp_atr', 0)),
+                    'prob': str(t.get('prob', 0)),
+                    'ev': str(t.get('ev', 0)),
+                }
+            else:
+                sig_row = {
+                    'time': bt,
+                    'signal': '1' if t['dir'] == 'BUY' else '-1',
+                    'pred_up': '0', 'pred_dn': '0',
+                    'ratio_up': str(t['ratio']) if t['dir'] == 'BUY' else '0',
+                    'ratio_dn': str(t['ratio']) if t['dir'] == 'SELL' else '0',
+                }
         d = build_dossier(bt, sig_row, nero_cols, fractal, params, mt4_trade=t, updn_params_map=updn_params_map)
         dossiers.append(d)
 
     # Сводная таблица
     counts_mt4  = {}
-    counts_nero = {'TP_CLEAR': 0, 'SL_CLEAR': 0, 'BOTH_HIT': 0, 'TIMEOUT': 0}
+    counts_nero = {}
     total_sl_delta = 0.0
     total_tp_delta = 0.0
     n_delta = 0
@@ -696,8 +894,7 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
         ct = d.get('close_type', '?')
         counts_mt4[ct] = counts_mt4.get(ct, 0) + 1
         nc = d.get('category', '?')
-        if nc in counts_nero:
-            counts_nero[nc] += 1
+        counts_nero[nc] = counts_nero.get(nc, 0) + 1
 
         mt4_sl = f"{d.get('mt4_sl_dist', 0):.2f}" if 'mt4_sl_dist' in d else '?'
         fml_sl = f"{d.get('sl_dist', 0):.2f}"     if 'sl_dist' in d else '?'
@@ -719,8 +916,7 @@ def from_log_reconciliation(log_path, signals_path, nero_path, params, losses_on
               f"{up12:>7} | {dn12:>7} | {nc:<9} | {d.get('mt4_result','?'):<10}")
 
     print(f"\n  MT4 результаты : " + ", ".join(f"{k}={v}" for k, v in sorted(counts_mt4.items())))
-    print(f"  Nero категории : TP_CLEAR={counts_nero['TP_CLEAR']}, SL_CLEAR={counts_nero['SL_CLEAR']}, "
-          f"BOTH_HIT={counts_nero['BOTH_HIT']}, TIMEOUT={counts_nero['TIMEOUT']}")
+    print(f"  Nero категории : " + ", ".join(f"{k}={v}" for k, v in sorted(counts_nero.items())))
     if n_delta > 0:
         print(f"  Ср. погрешность формулы: SL Δ={total_sl_delta/n_delta:+.3f}  TP Δ={total_tp_delta/n_delta:+.3f}")
 

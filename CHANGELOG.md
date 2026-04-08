@@ -2,6 +2,48 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-08] — Triple Barrier: найдена причина старого расхождения Python ↔ MT4
+
+### Исправлено
+- `processing/label_signals.py`: TB-разметка теперь считает исход от времени строки сигнала, а не от `fractal0.time`
+- `statistics/signal_tracer.py`: исправлены разбор 22-польного `fractal0`, расчёт времени в UTC и TB-сверка сделка за сделкой
+- `MT/MQL4/Include/OUTPUT.mqh`: в лог добавлены понятные причины рыночного закрытия TB-сделок
+
+### Результаты
+- Старый отрицательный вывод по MT4 оказался ложным: главная причина была в сдвиге времени в TB-разметке
+- После полной пересборки зафиксированное правило стало таким: `theta=0.475`, `min_ev=0.10`, validation `PF=1.53`, test `PF=1.11`
+- Новый MT4-прогон по свежему `ml_signals_tb.csv` дал `PF=1.27`, `net=2932.44`, `N=92`
+- В новой сверке уровни SL/TP почти совпали с Python, а жёсткие исходы `TP/SL` совпали в `61 из 65` случаев
+- Основная оставшаяся разница теперь связана не с ошибкой разметки, а с правилами торговли в MT4: `PosBlock=113`, `HoldOverTime=22`, `TB_Reversal=4`
+
+### Вывод
+Triple Barrier больше нельзя считать треком, который “ломается” при переносе в MT4. Главная старая ошибка найдена и исправлена. Теперь следующий шаг не в новых порогах, а в оценке вне MT4, которая повторяет правила торговли MT4 один в один. Подробный отчёт: [docs/reports/2026-04-08-triple-barrier-runtime-verdict.md](docs/reports/2026-04-08-triple-barrier-runtime-verdict.md)
+
+## [2026-04-08] — Triple Barrier: усиление схемы и исправленная база вне MT4
+
+### Добавлено
+- `ML/tb_signal_logic.py`: общая TB логика выбора сигнала по calibrated probability + expected value, итоговая оценка rules и no-trade gate по `min_ev`
+- `ML/tb_probability_calibration.py`: validation-only isotonic calibration для `triple_barrier`
+- Новый набор TB-тестов: `tests/test_triple_barrier_first_touch.py`, `tests/test_triple_barrier_calibration.py`, `tests/test_generate_signals_research.py`, `tests/test_signal_tracer_tb.py`, `tests/test_triple_barrier_training.py`
+- Frozen artifacts: `ML/reports/tb_probability_calibrator.joblib`, `ML/reports/tb_selected_rule.json`, `ML/reports/tb_validation_logits.npy`, `ML/reports/tb_validation_targets.npy`
+
+### Изменено
+- TB-разметка переведена на реальное первое касание барьеров по OHLC-path; timeouts теперь хранятся отдельно как `0.5`
+- Исправлена привязка времени в TB-разметке: исход теперь считается от времени строки сигнала
+- `ML.train`, `ML.threshold_analysis`, `ML.evaluate_test` и `API.generate_signals` переведены на calibrated TB probabilities и validation-first freeze
+- Исправлен transfer-learning path для TB: модель теперь наследует недостающие encoder `model_kwargs` из source checkpoint и реально загружает `40` слоёв вместо прежнего частичного матча
+- `statistics/signal_tracer.py` теперь понимает TB-логи `TB BUY/SELL prob=... ev=... SL=...ATR TP=...ATR ...` и умеет строить TB dossier поверх labeled CSV
+
+### Результаты
+- Validation зафиксированное правило:
+  - `theta=0.475`, `min_ev=0.10`, `N=121`, `wins=70`, `losses=51`, `timeouts=14`, `PF=1.53`
+- Final one-shot `test` confirmation:
+  - `theta=0.475`, `min_ev=0.10`, `N=253`, `wins=128`, `losses=125`, `timeouts=24`, `PF=1.11`, `win_rate=50.6%`
+- Fresh `ml_signals_tb.csv` regenerated from calibrated probabilities: `BUY=670`, `SELL=46`, `FLAT=58050`
+
+### Вывод
+Это усиление было нужно и полезно, но старые слишком сильные TB-цифры больше не актуальны: после исправления времени старта сделки база вне MT4 стала заметно слабее, зато честнее. Теперь смысл TB определяется не “бумажным PF”, а тем, что после новой проверки в MT4 он больше не расходится с торговой системой по самой сути сделки. Подробный отчёт: [docs/reports/2026-04-08-triple-barrier-hardening.md](docs/reports/2026-04-08-triple-barrier-hardening.md)
+
 ## [2026-04-08] — Validation-first ML Exit Research: frozen winner = timeout-only
 
 ### Добавлено

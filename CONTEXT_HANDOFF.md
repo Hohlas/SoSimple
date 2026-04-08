@@ -1,36 +1,39 @@
 # Context Handoff
 
 ## Current Stage
-Validation-first ML exit research завершён. Offline simulator на жёстком `validation` / `test` split показал, что ни `reverse`, ни `weak_edge`, ни `profit_guard`, ни layered exit не обгоняют baseline `timeout_only`. Frozen policy зафиксирован в `ML/reports/frozen_exit_policy.json`; новый MQL4 exit rule не переносился, потому что победитель уже совпадает с текущим `ML_Timeout(12H)` поведением.
+Этап Triple Barrier: пересчёт разметки и повторная проверка в MT4 завершён. Найдена и исправлена главная причина старого расхождения между Python и MT4: TB-разметка считала исход не от времени строки сигнала, а от более раннего времени `fractal0`. После полной пересборки база вне MT4 стала такой: зафиксированное правило `theta=0.475`, `min_ev=0.10`, test `PF=1.11`, `N=253`. Новый MT4-прогон по свежему `ml_signals_tb.csv` дал `PF=1.27`, `N=92`. По жёстким исходам `TP/SL` совпадение уже `61 из 65`, а средняя разница по уровням SL/TP почти нулевая. Старый вывод “TB не переносится в MT4” больше не актуален.
 
 ## Last Completed Stage
-Validation-first ML Exit Research (2026-04-08).
+Triple Barrier: причина старого расхождения найдена, цепочка пересобрана и заново проверена в MT4 (2026-04-08).
 
 ## Next Step
-Path forward сужен: ML exit / position management не дал validated uplift против текущего timeout baseline, поэтому следующий содержательный шаг уже вне этого search space.
+Следующий шаг для TB теперь не в новой переоптимизации, а в честном сравнении по одинаковым торговым правилам.
 
-1. **Triple Barrier hardening**: довести parallel-трек до честного финального verdict уже без ожидания “быстрой победы” от exit-логики поверх `regression_updn`.
-2. **Outcome-aligned retraining**: если нужен новый uplift для regression-track, искать его уже не в раннем закрытии, а в новом target / objective, который ближе к реальному торговому исходу.
+1. Добавить в Python режим оценки, который повторяет MT4 один в один: вход на следующем баре, только одна открытая позиция, `HoldOverTime`, `TB_Reversal`, пропуск новых сигналов при открытой позиции.
+2. На этом режиме ещё раз сравнить offline и MT4 по одному и тому же `ml_signals_tb.csv`.
+3. Только после этого решать, продвигать ли TB дальше как отдельный торговый режим и стоит ли строить новые таргеты поверх этой схемы.
+4. `regression_updn` не смешивать с TB: это отдельный трек с другой логикой и другим набором выводов.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
 - `docs/superpowers/roadmap.md`
-- `docs/reports/2026-04-08-ml-exit-validation-first.md`
-- `docs/reports/2026-04-04-archetype-filter-bridge.md`
-- `docs/reports/2026-04-04-signal-path-atlas-readout.md`
-- `docs/reports/2026-04-04-signal-quality-filter.md`
-- `ML/reports/frozen_exit_policy.json`
+- `docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
+- `docs/reports/2026-04-08-triple-barrier-hardening.md`
+- `ML/reports/threshold_analysis_tb.md`
+- `ML/reports/evaluate_test_tb.md`
+- `ML/reports/tb_selected_rule.json`
+- `MT/MQL4/Files/ml_signals_tb.csv`
 
 ## Open Risks
-- Exit-policy uplift поверх `regression_updn` может просто отсутствовать: validation winner остался baseline `timeout_only`.
-- Лучший новый кандидат (`profit_guard_p1.5_k1.8_h2`) близок к baseline по PF, но всё равно хуже него; есть риск переинтерпретировать trade-count uplift как реальное improvement.
-- Position blocking остаётся высоким даже у frozen baseline (`avg_blocked_signals ≈ 3.73` на validation, `≈ 3.34` на test), но попытки лечить это одними exit-правилами пока только ухудшали PF.
-- Если нужен новый edge, вероятнее всего он лежит не в выходе, а в более outcome-aligned target / execution track.
+- Offline и MT4 всё ещё считают не в полностью одинаковых правилах: в MT4 есть `PosBlock`, `HoldOverTime`, `TB_Reversal` и вход на следующем баре.
+- Сравнение `253` offline trades и `92` MT4 trades пока не является сравнением “один к одному”.
+- SELL-часть TB выглядит слабее BUY-части.
+- Есть риск снова начать улучшать модель до того, как будет готов честный offline-режим под правила MT4.
 
 ## Latest Report
-`docs/reports/2026-04-08-ml-exit-validation-first.md`
+`docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

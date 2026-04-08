@@ -140,6 +140,9 @@ void EXPERT::CLOSE_BUY(char price, string comment) { //
         BUY.Val = 0;
         return;
     }
+    float OrderVal = BUY.Val;
+    float OrderStp = BUY.Stp;
+    float OrderPrf = BUY.Prf;
     if (price > 0) {           // двигаем тейк
         float NewProfit = BID; //
         switch (price) {       // тип цены закрытия
@@ -176,6 +179,16 @@ void EXPERT::CLOSE_BUY(char price, string comment) { //
             BUY.Stp = NewStop;
         X("CloseBuy by moveStop: " + comment, NewStop, bar - 1, clrRed);
     }
+    if (BUY.Val == 0) {
+        Print(Mgc, ":: CLOSE_REQ BUY"
+              " reason=", comment,
+              " Open=", DoubleToString(OrderVal, Digits),
+              " Stp=", DoubleToString(OrderStp, Digits),
+              " Prf=", DoubleToString(OrderPrf, Digits),
+              " Bid=", DoubleToString(BID, Digits),
+              " Ask=", DoubleToString(ASK, Digits),
+              " bar=", TimeToString(Time[bar]));
+    }
 }
 void EXPERT::CLOSE_SEL(char price, string comment) {
     if (set.SEL.Val) { // отмена ордера до установки
@@ -189,6 +202,9 @@ void EXPERT::CLOSE_SEL(char price, string comment) {
         SEL.Val = 0;
         return;
     }
+    float OrderVal = SEL.Val;
+    float OrderStp = SEL.Stp;
+    float OrderPrf = SEL.Prf;
     if (price > 0) { // двигаем тейк
         float NewProfit = ASK;
         switch (price) {
@@ -224,6 +240,16 @@ void EXPERT::CLOSE_SEL(char price, string comment) {
         if (SEL.Stp < NewStop && NewStop - ASK > StopLevel)
             SEL.Stp = NewStop;
         X("CloseSELL by moveStop: " + comment, NewStop, bar - 1, clrRed);
+    }
+    if (SEL.Val == 0) {
+        Print(Mgc, ":: CLOSE_REQ SELL"
+              " reason=", comment,
+              " Open=", DoubleToString(OrderVal, Digits),
+              " Stp=", DoubleToString(OrderStp, Digits),
+              " Prf=", DoubleToString(OrderPrf, Digits),
+              " Bid=", DoubleToString(BID, Digits),
+              " Ask=", DoubleToString(ASK, Digits),
+              " bar=", TimeToString(Time[bar]));
     }
 }
 

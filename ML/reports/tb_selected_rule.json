@@ -1,0 +1,13 @@
+{
+  "theta": 0.475,
+  "min_ev": 0.1,
+  "selection_method": "support-gated: trades >= 80 & win_rate >= 35%",
+  "trades": 121,
+  "wins": 70,
+  "losses": 51,
+  "timeouts": 14,
+  "win_rate": 0.5785,
+  "pf": 1.5306,
+  "dominant_target": "buy_sl3_tp3",
+  "dominant_target_count": 105
+}

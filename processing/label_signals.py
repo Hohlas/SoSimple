@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-03-18
+# Обновлён: 2026-04-08
 #
 # Зависимости:
 #   Входные данные:
@@ -508,6 +508,41 @@ def load_ohlc_index(ohlc_path):
     return ohlc, times, time_idx
 
 
+def first_touch_barrier_outcome(bars, direction, entry_price, sl_price, tp_price):
+    """
+    Return first-touch outcome for a path of OHLC bars.
+
+    Returns:
+        1  -> TP hit first
+        0  -> SL hit first
+        -1 -> timeout (neither barrier touched)
+    """
+    del entry_price  # kept for API clarity with labeling call sites
+
+    for _, row in bars.iterrows():
+        row_open = float(row['open'])
+        row_high = float(row['high'])
+        row_low = float(row['low'])
+
+        if direction == 1:
+            hit_sl = row_low <= sl_price
+            hit_tp = row_high >= tp_price
+            if hit_sl and hit_tp:
+                return 0 if abs(row_open - sl_price) <= abs(tp_price - row_open) else 1
+        else:
+            hit_sl = row_high >= sl_price
+            hit_tp = row_low <= tp_price
+            if hit_sl and hit_tp:
+                return 0 if abs(row_open - sl_price) <= abs(row_open - tp_price) else 1
+
+        if hit_tp:
+            return 1
+        if hit_sl:
+            return 0
+
+    return -1
+
+
 def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
     """
     Path-ordered Triple Barrier labels: bar-by-bar scan по H1 OHLC.
@@ -516,11 +551,11 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
     Должна вызываться ПОСЛЕ label_updn() и ДО normalize_rowwise().
 
     Алгоритм для каждой строки:
-      - entry_price = Close[fractal_bar] из H1 OHLC
+      - entry_price = Close[row_time] из H1 OHLC
       - ATR = raw ATR из строки DataFrame
       - Для BUY: SL = entry - sl_atr*ATR, TP = entry + tp_atr*ATR
       - Для SELL: SL = entry + sl_atr*ATR, TP = entry - tp_atr*ATR
-      - Скан баров [bar+1 .. bar+scan_bars]:
+      - Скан баров [row_time+1 .. row_time+scan_bars]:
           High >= TP → TP_FIRST → label = 1
           Low  <= SL → SL_FIRST → label = 0
           Оба в одном баре → порядок по Open (ближе к SL → SL_FIRST)
@@ -552,15 +587,26 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             skipped += 1
             continue
 
-        # Время фрактального бара (unix → datetime UTC)
-        bar_dt = datetime.fromtimestamp(fractal0['time'], tz=timezone.utc)
-        idx0 = time_idx.get(bar_dt)
+        row_time = row.get('time')
+        if pd.isna(row_time) or row_time == '':
+            skipped += 1
+            continue
+
+        # Якорь для TB label = время строки, потому что именно по нему потом
+        # строятся CSV-сигналы и на следующем баре открывается сделка в MT4.
+        try:
+            row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+        except ValueError:
+            skipped += 1
+            continue
+
+        idx0 = time_idx.get(row_dt)
         if idx0 is None:
             skipped += 1
             continue
 
-        # Цена входа = Close фрактального бара
-        entry_price = ohlc[bar_dt][3]  # close
+        # Цена входа = Close сигнального бара (row_time), а не fractal0.time.
+        entry_price = ohlc[row_dt][3]  # close
 
         try:
             atr = float(row['ATR'])
@@ -571,6 +617,17 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             skipped += 1
             continue
 
+        scan_rows = []
+        for k in range(idx0 + 1, min(idx0 + 1 + scan_bars, len(times))):
+            o, h, l, c = ohlc[times[k]]
+            scan_rows.append({
+                'open': o,
+                'high': h,
+                'low': l,
+                'close': c,
+            })
+        bars = pd.DataFrame(scan_rows, columns=['open', 'high', 'low', 'close'])
+
         # Скан для каждой пары (SL_ATR, TP_ATR)
         for sl in TB_SL_LEVELS:
             for tp in TB_TP_LEVELS:
@@ -579,38 +636,23 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
                 sell_sl = entry_price + sl * atr
                 sell_tp = entry_price - tp * atr
 
-                buy_result = sell_result = 0.5  # TIMEOUT
+                buy_result = first_touch_barrier_outcome(
+                    bars=bars,
+                    direction=1,
+                    entry_price=entry_price,
+                    sl_price=buy_sl,
+                    tp_price=buy_tp,
+                )
+                sell_result = first_touch_barrier_outcome(
+                    bars=bars,
+                    direction=-1,
+                    entry_price=entry_price,
+                    sl_price=sell_sl,
+                    tp_price=sell_tp,
+                )
 
-                for k in range(idx0 + 1, min(idx0 + 1 + scan_bars, len(times))):
-                    o, h, l, c = ohlc[times[k]]
-
-                    # BUY
-                    if buy_result == 0.5:
-                        sl_hit = l <= buy_sl
-                        tp_hit = h >= buy_tp
-                        if sl_hit and tp_hit:
-                            buy_result = 1 if (buy_tp - o) < (o - buy_sl) else 0
-                        elif tp_hit:
-                            buy_result = 1
-                        elif sl_hit:
-                            buy_result = 0
-
-                    # SELL
-                    if sell_result == 0.5:
-                        sl_hit = h >= sell_sl
-                        tp_hit = l <= sell_tp
-                        if sl_hit and tp_hit:
-                            sell_result = 1 if (o - sell_tp) < (sell_sl - o) else 0
-                        elif tp_hit:
-                            sell_result = 1
-                        elif sl_hit:
-                            sell_result = 0
-
-                    if buy_result != 0.5 and sell_result != 0.5:
-                        break
-
-                df.at[i, f'buy_sl{sl}_tp{tp}']  = buy_result
-                df.at[i, f'sell_sl{sl}_tp{tp}'] = sell_result
+                df.at[i, f'buy_sl{sl}_tp{tp}'] = 0.5 if buy_result == -1 else float(buy_result)
+                df.at[i, f'sell_sl{sl}_tp{tp}'] = 0.5 if sell_result == -1 else float(sell_result)
 
         found += 1
 

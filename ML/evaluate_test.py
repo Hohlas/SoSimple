@@ -8,11 +8,18 @@ import torch
 
 from ML.data_loader import create_test_loader, UPDN_REGRESSION_TARGET, TEST_FILE, CSV_SEP, FRACTAL_SEP, UPDN_TARGETS, TB_TARGET, TB_TARGET_NAMES
 from ML.models import get_model
+from ML.tb_probability_calibration import (
+    apply_tb_probability_calibration,
+    load_tb_probability_calibrator,
+)
+from ML.tb_signal_logic import evaluate_tb_signal_rule, tb_proba_to_signals
 from ML.utils import set_seed, get_device, compute_binary_classification_metrics
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CHECKPOINTS_DIR = PROJECT_ROOT / 'ML' / 'checkpoints'
 REPORTS_DIR = PROJECT_ROOT / 'ML' / 'reports'
+TB_CALIBRATOR_PATH = REPORTS_DIR / 'tb_probability_calibrator.joblib'
+TB_RULE_PATH = REPORTS_DIR / 'tb_selected_rule.json'
 
 
 def load_test_metadata(task: str = 'regression') -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -42,6 +49,7 @@ def run_evaluation(
     task: str = 'regression',
     horizon: int = 12,
     theta: float = 2.665,
+    min_ev: float = 0.0,
     seed: int = 42,
     optuna_json: str | None = None,
 ):
@@ -78,6 +86,8 @@ def run_evaluation(
     print(f"  Чекпоинт: {ckpt_path.name}")
     print(f"  Задача: {task}, Горизонт: {horizon}H")
     print(f"  Торговый порог θ: {theta}")
+    if task == 'triple_barrier':
+        print(f"  Min EV: {min_ev}")
 
     # ── Загрузка чекпоинта ───────────────────────────────────────────────────
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
@@ -113,6 +123,7 @@ def run_evaluation(
         batch_size=256,
         target=target_col,
         seq_len=model_kwargs.get('seq_len', 20) if optuna_json else 20,
+        num_workers=0,
     )
 
     signal_true, predict_val_true, direction = load_test_metadata(task)
@@ -137,50 +148,47 @@ def run_evaluation(
     if task == 'triple_barrier':
         print(f"\n{'─' * 60}")
         print("📊 Triple Barrier OOS Evaluation...")
+        if not TB_CALIBRATOR_PATH.exists():
+            raise FileNotFoundError(f"Калибратор вероятностей не найден: {TB_CALIBRATOR_PATH}")
 
-        # Apply sigmoid to get probabilities
-        y_proba = 1.0 / (1.0 + np.exp(-y_pred))  # sigmoid
+        y_proba = 1.0 / (1.0 + np.exp(-y_pred))
+        calibrator_bundle = load_tb_probability_calibrator(TB_CALIBRATOR_PATH)
+        y_proba = apply_tb_probability_calibration(y_proba, calibrator_bundle)
 
-        # Load true labels from test CSV
         df_test = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
-        y_true = df_test[TB_TARGET_NAMES].values.astype(np.float32)
+        y_true_raw = df_test[TB_TARGET_NAMES].values.astype(np.float32)
+        y_true_binary = np.where(y_true_raw == 1.0, 1.0, 0.0)
 
-        # Compute binary metrics
-        metrics = compute_binary_classification_metrics(y_true, y_proba, TB_TARGET_NAMES)
+        metrics = compute_binary_classification_metrics(y_true_binary, y_proba, TB_TARGET_NAMES)
+
+        selected_theta = theta
+        selected_min_ev = min_ev
+        selected_rule = None
+        if TB_RULE_PATH.exists() and theta == 2.665 and min_ev == 0.0:
+            selected_rule = json.loads(TB_RULE_PATH.read_text(encoding='utf-8'))
+            selected_theta = float(selected_rule['theta'])
+            selected_min_ev = float(selected_rule.get('min_ev', 0.0))
+
+        df_signals = tb_proba_to_signals(
+            y_proba,
+            theta=selected_theta,
+            min_ev=selected_min_ev,
+            target_names=TB_TARGET_NAMES,
+        )
+        signal_summary = evaluate_tb_signal_rule(df_signals, y_true_raw)
 
         print(f"\n🏆 Out-of-Sample Triple Barrier Results:")
         print(f"  Mean AUC: {metrics['mean_auc']:.4f}")
+        print(f"  Signal rule: θ={selected_theta:.3f}, min_ev={selected_min_ev:.2f}")
+        print(f"  Trades={signal_summary['trades']}, Wins={signal_summary['wins']}, "
+              f"Losses={signal_summary['losses']}, Timeouts={signal_summary['timeouts']}, "
+              f"PF={signal_summary['pf']:.2f}")
         print(f"\n  Per-target results:")
         print(f"  {'Target':<20} {'AUC':>8} {'Prec':>8} {'Recall':>8} {'Pos%':>8}")
         print(f"  {'─'*52}")
         for name, tm in metrics['per_target'].items():
             print(f"  {name:<20} {tm['auc']:>8.4f} {tm['precision']:>8.4f} "
                   f"{tm['recall']:>8.4f} {tm['pos_rate']:>8.1%}")
-
-        # Realistic PF for each SL/TP combo
-        print(f"\n  Realistic PF (θ=0.5, timeouts=full SL loss):")
-        print(f"  {'Target':<20} {'Trades':>8} {'Wins':>8} {'WinRate':>8} {'PF':>8}")
-        print(f"  {'─'*52}")
-        for i, name in enumerate(TB_TARGET_NAMES):
-            parts = name.split('_')
-            sl = int(parts[1][2:])
-            tp = int(parts[2][2:])
-
-            mask = y_proba[:, i] > 0.5
-            n_trades = mask.sum()
-            if n_trades < 10:
-                print(f"  {name:<20} {n_trades:>8} {'skip':>8} {'':>8} {'':>8}")
-                continue
-
-            wins = y_true[mask, i].sum()
-            losses = n_trades - wins
-            win_rate = wins / n_trades
-            profit = wins * tp
-            loss_val = losses * sl
-            pf = profit / loss_val if loss_val > 0 else float('inf')
-
-            print(f"  {name:<20} {int(n_trades):>8} {int(wins):>8} "
-                  f"{win_rate:>8.1%} {pf:>8.2f}")
 
         # Generate report
         report_path = REPORTS_DIR / 'evaluate_test_tb.md'
@@ -190,6 +198,17 @@ def run_evaluation(
             f"**Модель**: {ckpt_model_name}",
             f"**Набор**: Test ({len(y_pred)} строк)",
             f"**Mean AUC**: {metrics['mean_auc']:.4f}",
+            f"**Калибратор**: `{TB_CALIBRATOR_PATH.name}`",
+            f"",
+            f"## Frozen Signal Rule",
+            f"",
+            f"- θ: **{selected_theta:.3f}**",
+            f"- min_ev: **{selected_min_ev:.2f}**",
+            f"- Trades: {signal_summary['trades']}",
+            f"- Wins / Losses / Timeouts: {signal_summary['wins']} / {signal_summary['losses']} / {signal_summary['timeouts']}",
+            f"- Win Rate: {signal_summary['win_rate']:.1%}",
+            f"- Profit Factor: **{signal_summary['pf']:.2f}**",
+            f"- Dominant target: `{signal_summary['dominant_target']}` ({signal_summary['dominant_target_count']} trades)",
             f"",
             f"## Per-target AUC",
             f"| Target | AUC | Precision | Recall | Pos Rate |",
@@ -199,7 +218,15 @@ def run_evaluation(
             lines.append(f"| {name} | {tm['auc']:.4f} | {tm['precision']:.4f} | "
                         f"{tm['recall']:.4f} | {tm['pos_rate']:.1%} |")
 
+        if selected_rule:
+            lines.extend([
+                f"",
+                f"## Rule Source",
+                f"",
+                f"Loaded from `{TB_RULE_PATH.name}`",
+            ])
         report_path.write_text("\n".join(lines), 'utf-8')
+
         print(f"\n✅ Отчет сохранён: {report_path.name}")
         print(f"{'═' * 60}\n")
         return
@@ -295,6 +322,7 @@ def parse_args():
                         choices=['regression', 'regression_updn', 'triple_barrier'])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')
+    parser.add_argument('--min-ev', type=float, default=0.0, help='Минимальный EV для TB signal rule')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optuna_json', type=str, default=None)
     return parser.parse_args()
@@ -308,6 +336,7 @@ if __name__ == '__main__':
         task=args.task,
         horizon=args.horizon,
         theta=args.theta,
+        min_ev=args.min_ev,
         seed=args.seed,
         optuna_json=args.optuna_json,
     )

@@ -1,232 +1,245 @@
 # signal_tracer.py — Trade-Level Reconciliation
 
-> **Версия**: v2.2 (2026-03-25)
-> **Назначение**: Диагностика расхождения Python ML OOS (PF=4.50) vs MT4 Strategy Tester (PF≈1.0)
+> **Версия**: v2.3 (2026-04-08)
+> **Назначение**: Диагностика расхождения между Python и MT4 для двух ML-треков: legacy `regression_updn` и `triple_barrier`
 > **Тип**: Инструмент анализа, 3 режима работы
 
 ---
 
-## 📋 Обзор
+## Обзор
 
-**Основной вопрос**: Почему ML модель с PF=4.50 в Python дает PF=1.0 в MT4?
+`statistics/signal_tracer.py` теперь умеет разбирать **два разных execution track**:
 
-### Гипотезы расхождения
+- **legacy track**: `ml_signals.csv` с полями `pred_up / pred_dn / ratio_up / ratio_dn`, где SL/TP восстанавливаются по формуле `lib_ML_Signal.mqh`;
+- **TB track**: `ml_signals_tb.csv` с полями `sl_atr / tp_atr / prob / ev`, где исход сделки сравнивается с path-ordered TB labels из `DATA/Nero_*_labeled.csv`.
 
-**1. MFE/MAE иллюзия (BOTH_HIT)** — главная гипотеза
-Python OOS оценивал качество предсказания через `up_12/dn_12` — максимальное продвижение цены за 12 баров в каждую сторону. Если `up_12 >= TP` и `dn_12 >= SL`, Python засчитывал профит (цена дошла до TP). Но MT4 закрывает первый достигнутый барьер: если SL был задет раньше TP — убыток. При k%=BOTH_HIT записей Python "видел профит", MT4 — убыток.
+Это означает, что скрипт покрывает и историческую гипотезу про MFE/MAE иллюзию, и новый TB-сценарий, где логика ближе к реальной торговой механике MT4.
 
-**2. TIMEOUT (50% убытков)**
-Сделки, где ни SL ни TP не достигнуты за 12H — закрываются по трейлингу или HoldOverTime. Python OOS эти случаи учитывал иначе.
-
-### Как устроен разбор
-
-Сравниваются 4 источника для каждой сделки:
-1. **ML предсказания** (pred_up, pred_dn, ratio) из `MT/tester/Files/ml_signals.csv`
-2. **Формула SL/TP** (реплика `MT/MQL4/Include/lib_ML_Signal.mqh`)
-3. **MT4 фактические уровни** (Val/Stp/Prf/ATR из лога тестера)
-4. **Ground Truth** (up_12/dn_12 из `DATA/Nero_*_labeled.csv` cols[104-109], денормализованные через `Nero_*_updn_params.npy`)
-
-**Важно**: Время сигнала в `ml_signals.csv` на 1 бар раньше времени открытия сделки в MT4.
-EA читает сигнал закрытого бара T, открывает сделку на баре T+1.
-Пример: `bar=2025.12.29 16:00` в логе → ищем сигнал `2025.12.29 16:00` в ml_signals.csv, сделка открыта в `17:00`.
+Важно: сам tracer готов к TB runtime-сверке, но полноценный verdict всё равно требует **свежий MT4 tester log**.
 
 ---
 
-## 🚀 Быстрый старт
+## Quick Start
 
 ```bash
-# Single-trace: полный разбор одного сигнала (время = bar_time из лога MT4)
+# Single-trace: один сигнал из legacy CSV
 python statistics/signal_tracer.py --time "2023.01.03 04:00"
 
-# Batch: топ-10 высокорейтинговых (ratio ≥ 5)
-python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0
+# Batch: top-N legacy сигналов по ratio
+python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
 
-# From-Log: все убыточные SL-сделки из лога MT4
-python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
-
-# From-Log: все сделки
+# From-Log: все legacy сделки из MT4 лога
 python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --csv-out all_trades.csv
+
+# From-Log: TB сделки из MT4 лога
+python statistics/signal_tracer.py \
+  --from-log MT/tester/logs/20260408_tb.log \
+  --signals MT/MQL4/Files/ml_signals_tb.csv \
+  --csv-out tb_reconciliation.csv
 ```
 
 ---
 
-## 🔧 3 режима работы
+## Поддерживаемые треки
 
-### Режим 1: Single-Trace (--time)
+### 1. Legacy `regression_updn`
 
-**Что выводит:**
-```
-============================================================
-  ДОСЬЕ СИГНАЛА: 2025.12.29 16:00
-============================================================
+Используются:
 
---- ML Оценка ---
-  Направление : SELL (-1)
-  pred_up     : 0.080100
-  pred_dn     : 0.611500
-  ratio_dn    : 7.63
+- `MT/MQL4/Files/ml_signals.csv`
+- `DATA/Nero_*_labeled.csv`
+- `DATA/Nero_*_updn_params.npy`
+- `MT/tester/$o$imple.ini`
 
---- Математика MT4 (lib_ML_Signal.mqh) ---
-  ML_MinRatio = 3.5, ML_MaxRR = 4.0
-  SL = max(pred*ScaleK*ATR, ATR*Min_SL_ATR) = max(26.59, 33.20) = 33.20  [Min_SL_ATR]
-  TP = SL * min(ratio/MinRatio, MaxRR) = 72.39
-  R:R = 1 : 2.18
+Что делает tracer:
 
---- Ground Truth (MFE/MAE за 12H после фрактала) ---
-  Цена фрактала : 3930.60
-  Реальный ВВЕРХ: 56.50
-  Реальный ВНИЗ : 1.60
+- восстанавливает SL/TP по формуле `lib_ML_Signal.mqh`;
+- денормализует `up_12 / dn_12`;
+- классифицирует outcome как:
+  - `TP_CLEAR`
+  - `SL_CLEAR`
+  - `BOTH_HIT`
+  - `TIMEOUT`
+- сравнивает формульные уровни с фактическими уровнями MT4 из лога.
 
---- ДИАГНОЗ ---
-  SL_CLEAR: SL достигнут, TP недосягаем
-```
+Этот режим полезен для поиска причин расхождения legacy Python PF и MT4 PF.
 
----
+### 2. `triple_barrier`
 
-### Режим 2: Batch (--batch)
+Используются:
 
-**Команда:**
-```bash
-python statistics/signal_tracer.py --batch --top 20 --min-ratio 4.0 --csv-out batch.csv
-```
+- `MT/MQL4/Files/ml_signals_tb.csv`
+- `DATA/Nero_*_labeled.csv`
+- MT4 log строки вида:
+  - `TB BUY prob=0.731 ev=3.42 SL=2.0ATR TP=6.0ATR Val=... Stp=... Prf=... ATR=... bar=2025.01.03 04:00`
+  - `TB SELL ...`
 
-**Алгоритм:**
-1. Загружает все сигналы из `ml_signals.csv`
-2. Фильтрует по `ratio >= min_ratio`
-3. Сортирует по ratio descending, берёт top N
-4. Находит ground truth из `DATA/Nero_*_labeled.csv` cols[104-109], денормализует через `Nero_*_updn_params.npy`
-5. Строит досье для каждого, выводит сводную таблицу + CSV
+Что делает tracer:
 
----
+- читает `prob`, `ev`, `sl_atr`, `tp_atr` напрямую из TB CSV или TB log line;
+- восстанавливает target name (`buy_sl2_tp3`, `sell_sl3_tp6` и т.д.);
+- находит соответствующий TB label в `DATA/Nero_*_labeled.csv`;
+- классифицирует outcome как:
+  - `TP_FIRST` (`1.0`)
+  - `SL_FIRST` (`0.0`)
+  - `TIMEOUT` (`0.5`)
+  - `UNKNOWN`
+- сравнивает TB ATR-levels из CSV с фактическими ATR-levels MT4.
 
-### Режим 3: From-Log (--from-log)
-
-**Команда:**
-```bash
-python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log \
-  --losses-only \
-  --csv-out losses.csv
-```
-
-**Алгоритм:**
-1. `parse_log()` — парсит лог MT4, извлекает все ML BUY/SELL сделки
-2. Для каждой сделки: `bar_time` из лога → ищет сигнал по этому времени в `ml_signals.csv`
-3. Сравнивает: **MT4 actual (Val/Stp/Prf/ATR из лога) vs Формула vs Ground Truth**
-4. Классифицирует результат: LOSS(SL), WIN(TP), WIN(MKT), OPEN
-
-**Парсинг лога:**
-```
-ML SELL ratio=7.63 Val=4360.88 Stp=4414.32 Prf=4244.35 ATR=26.72 bar=2025.12.29 16:00
-                          ↓
-2025.12.29 17:00: open #922 sell at 4360.88 sl: 4414.32 tp: 4244.35
-```
+Этот режим нужен для честной runtime-сверки уже после validation-first freeze.
 
 ---
 
-## 🎯 4-категорийная классификация
+## Три режима работы
 
-### TP_CLEAR
-✅ **TP достигнут, SL не задет**
-- У BUY: `up_12 >= tp_dist` И `dn_12 < sl_dist`
+### 1. `--time`
 
-### SL_CLEAR
-❌ **SL достигнут, TP недосягаем**
-- У BUY: `dn_12 >= sl_dist` И `up_12 < tp_dist`
+Показывает полное dossier по одному времени сигнала.
 
-### BOTH_HIT
-⚠️ **Оба барьера достигнуты (порядок неизвестен)**
-- У BUY: `up_12 >= tp_dist` И `dn_12 >= sl_dist`
-- **КЛЮЧ К MFE/MAE ИЛЛЮЗИИ**: Python видел оба как профит, MT4 выбило SL первым
+Подходит для:
 
-### TIMEOUT
-⏳ **Ни SL ни TP за 12H**
-- Сделка закрыта по трейлингу или таймауту HoldOverTime
+- разбора конкретного MT4 кейса;
+- проверки того, какой именно target выбрал TB;
+- просмотра raw diagnostics (`prob`, `ev`, `sl_atr`, `tp_atr`).
 
----
+### 2. `--batch`
 
-## 🔍 Входные данные
+Пакетный режим для top-N сигналов по `ratio`.
 
-### ml_signals.csv — ML предсказания
-```
-time;signal;pred_up;pred_dn;ratio_up;ratio_dn
-2025.12.29 16:00;-1;0.0801;0.6115;0.131;7.6312
-```
-- `time` = время бара, на котором сгенерирован сигнал (= `bar=` в логе MT4)
+Важно:
 
-### DATA/Nero_*_labeled.csv — фрактальные данные
-- Источник: `DATA/Nero_train_labeled.csv`, `DATA/Nero_validation_labeled.csv`, `DATA/Nero_test_labeled.csv`
-- Фракталы отсортированы: `fractal[i][0]` (cols[4]) = новейший = триггерный фрактал
-- Из `fractal[i][0]` берётся: `price`, `fractal_atr`, `direction`
-- **up_12/dn_12 из fractal[i][0] всегда = 0** (фрактал только что сформирован)
+- этот режим по-прежнему **legacy-centric**, потому что фильтрация основана на `ratio`;
+- для TB основным режимом остаётся `--from-log`.
 
-### DATA/Nero_*_labeled.csv — up_12/dn_12 (нормализованные)
-- Формат: `time;signal;predict;ATR;fractal0..fractal99;up_12;dn_12;up_24;dn_24;up_48;dn_48;...`
-- `cols[104]=up_12`, `cols[105]=dn_12` — нормализованные значения [0,1]
-- Денормализация выполняется через per-row `brk/cap` из `Nero_*_updn_params.npy`
+### 3. `--from-log`
 
-### DATA/Nero_*_updn_params.npy — Per-row параметры нормализации
-- `Nero_train_updn_params.npy`, `Nero_validation_updn_params.npy`, `Nero_test_updn_params.npy`
-- Shape: `(N, 2)` — `[brk, cap]` для каждой строки
-- Вычисляются в `normalize_rowwise()` из пула 606 значений: 100 фракталов × 6 updn полей + 6 row targets
-- `brk = p85(non-zero pool)`, `cap = p99(non-zero pool)`
-- Генерируются при запуске `label_main.py` (pipeline должен быть перезапущен после обновления)
-- Соответствие строк: `updn_params[i]` ↔ строка `i` в labeled CSV (один к одному)
+Главный reconciliation mode.
 
-### MT/tester/logs/YYYYMMDD.log (только для --from-log)
-```
-ML BUY ratio=10.71 Val=1838.59 Stp=1830.28 Prf=1864.02 ATR=4.15 bar=2023.01.03 04:00
-Tester: stop loss #1 at 1840.50
-```
+Что происходит:
 
-### MT/tester/$o$imple.ini — параметры MT4
-```
-ML_MinRatio = 3.5      # Порог ratio для входа
-ML_MaxRR = 4.0         # Макс множитель R:R
-ML_ScaleK = 20.0       # Множитель pred → ATR
-ML_Min_SL_ATR = 2.0    # Минимальный SL (в ATR)
-```
+1. Парсится MT4 лог.
+2. Для каждого `bar_time` ищется строка сигнала в CSV.
+3. Для каждой сделки строится dossier:
+   - prediction layer;
+   - labeled ground truth;
+   - фактические уровни и результат MT4;
+   - deltas между Python и MT4.
+4. По желанию пишется `--csv-out`.
+
+`--from-log` понимает и legacy строки `ML BUY/SELL ...`, и TB строки `TB BUY/SELL ...`.
 
 ---
 
-## ⚙️ Формула SL/TP (lib_ML_Signal.mqh)
+## TB-специфика
 
+### Формат `ml_signals_tb.csv`
+
+```text
+time;signal;sl_atr;tp_atr;prob;ev
+2023.01.03 04:00;1;2.0;6.0;0.731;3.42
+2023.01.03 10:00;-1;3.0;3.0;0.642;1.57
+2023.01.03 11:00;0;0;0;0;0
 ```
-// BUY:
-SL = max(pred_dn * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR)
-TP = SL * min(ratio_up / ML_MinRatio, ML_MaxRR)
 
-// SELL:
-SL = max(pred_up * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR)
-TP = SL * min(ratio_dn / ML_MinRatio, ML_MaxRR)
-```
+### Как определяется TB исход
 
-**ATR в формуле**: MT4 использует `Atr.Fast` на баре входа. Скрипт использует `fractal_atr` из `fractal[i][0]` — значение ниже, отсюда погрешность SL/TP Δ ≈ −4/−7 пунктов.
+Tracer ищет target по комбинации:
+
+- направление `signal`
+- `sl_atr`
+- `tp_atr`
+
+Например:
+
+- `signal=1`, `sl_atr=2`, `tp_atr=6` → `buy_sl2_tp6`
+- `signal=-1`, `sl_atr=3`, `tp_atr=3` → `sell_sl3_tp3`
+
+Дальше соответствующее значение читается из labeled CSV:
+
+- `1.0` → `TP_FIRST`
+- `0.5` → `TIMEOUT`
+- `0.0` → `SL_FIRST`
+
+### Что показывает TB dossier
+
+- выбранный `target_name`
+- `prob`
+- `ev`
+- SL/TP в ATR
+- label outcome из Python dataset
+- при наличии лога:
+  - `MT4 result`
+  - фактические `SL / TP ATR`
+  - `Δ ATR units` между CSV и MT4
 
 ---
 
-## 💾 CSV Экспорт
+## Входные данные
 
-```
-time, direction, ratio, sl_dist, tp_dist, sl_atr, tp_atr, sl_source,
-up_12, dn_12, category,
-[для --from-log]:
-val, stp, prf, atr_mt4, mt4_sl_dist, mt4_tp_dist, mt4_sl_atr, mt4_tp_atr,
-sl_delta, tp_delta, atr_delta, mt4_result, close_type, close_price
-```
+### Общие
 
-**Разделитель**: `;` (совместимо с Excel)
+- `DATA/Nero_train_labeled.csv`
+- `DATA/Nero_validation_labeled.csv`
+- `DATA/Nero_test_labeled.csv`
 
----
+### Только legacy
 
-## 📚 Дополнительно
+- `DATA/Nero_*_updn_params.npy`
+- `MT/tester/$o$imple.ini`
+- `MT/MQL4/Files/ml_signals.csv`
 
-- **Исходный код**: [statistics/signal_tracer.py](../../statistics/signal_tracer.py)
-- **Формула MT4**: [MT/MQL4/Include/lib_ML_Signal.mqh](../../MT/MQL4/Include/lib_ML_Signal.mqh)
-- **Нормализация**: [processing/normalize.py](../../processing/normalize.py) (`piecewise_linear_log_transform`)
-- **Поток данных**: [docs/DATA_FLOW.md](../DATA_FLOW.md)
+### Только TB
+
+- `MT/MQL4/Files/ml_signals_tb.csv`
+- MT4 логи с `TB BUY` / `TB SELL`
 
 ---
 
-**Версия**: v2.2 (2026-03-25)
-**Статус**: ✅ Готов
-**Автор**: Antigravity + Claude
+## CLI аргументы
+
+Основные:
+
+- `--time`
+- `--batch`
+- `--from-log`
+- `--signals`
+- `--nero`
+- `--csv-out`
+
+Legacy-specific:
+
+- `--min-ratio`
+- `--ml-min-ratio`
+- `--ml-max-rr`
+- `--ml-scale-k`
+- `--ml-min-sl-atr`
+
+---
+
+## CSV экспорт
+
+`--csv-out` пишет совместимый с Excel `;`-separated файл.
+
+Ключевые поля:
+
+- `time`
+- `direction`
+- `ratio`
+- `sl_dist`, `tp_dist`
+- `sl_atr`, `tp_atr`
+- `category`
+- `mt4_result`
+- `sl_delta`, `tp_delta`, `atr_delta`
+
+Для TB:
+
+- `ratio` фактически хранит `prob`, чтобы не ломать общий export schema;
+- подробные поля `prob`, `ev`, `target_name` видны в stdout dossier и доступны внутри runtime reconciliation.
+
+---
+
+## Практический смысл
+
+Если цель — понять, почему legacy PF в Python разваливается в MT4, используйте legacy `ml_signals.csv` и смотрите на `BOTH_HIT`, `TIMEOUT`, `SL` deltas и lag bias.
+
+Если цель — проверить готовность TB как отдельного EA-mode, используйте `ml_signals_tb.csv` и свежий TB tester log. В этом случае tracer уже умеет показать не только фактический MT4 результат, но и то, совпадает ли он с path-ordered TB label, по которому модель вообще обучалась.
