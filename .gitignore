@@ -252,3 +252,7 @@ DATA/*.npy
 *.png
 *.jpg 
 statistics/*.old_32k
+
+# Git worktrees (изолированные окружения для AI-агентов)
+.worktrees/
+.worktree/
