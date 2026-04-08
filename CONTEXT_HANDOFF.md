@@ -1,42 +1,42 @@
 # Context Handoff
 
 ## Current Stage
-Outcome-aligned retraining по плану `2026-04-07-outcome-aligned-retraining.md` завершён, но winner не найден. Построены три новых family (`trade_outcome_cls`, `trade_pnl_reg`, `signal_archetype_cls`), все они добавлены в preprocessing/training/evaluation stack и переобучены на signal-only rows после отладки objective mismatch. Validation-first benchmark завершён честно: ни одно семейство не прошло общий `trade floor + yearly stability` filter, поэтому `frozen_outcome_target.json` не создан и `test` не запускался.
+Этап `entry_path_v1`: baseline пересчитан честно. Найдена и исправлена причина ложных ранних цифр: `ML.train` принимал `--clear_cache`, но не передавал его в `train_model()`, поэтому обучение шло на старом `entry_path` кэше. После чистой пересборки и нового обучения `ret_*` больше не выглядит ни “чудесно сильным”, ни сломанным: validation `ret_pearson_r=0.2656`, test `ret_pearson_r=0.2450`. Путь цены выглядит ещё лучше: validation `path_reg_pearson_r=0.3004`, test `path_reg_pearson_r=0.2745`.
 
 ## Last Completed Stage
-Outcome-aligned retraining: validation-first verdict = no winner (2026-04-08).
+`entry_path_v1` baseline после исправления кэша и чистого retrain (2026-04-08).
 
 ## Next Step
-Следующий шаг для outcome-aligned track не в запуске `test`, а в пересборке самих таргетов ближе к реальной торговой механике.
+Следующий шаг теперь уже другой: не искать старую причину падения, а решать проблему сильного перекоса нулевых строк.
 
-1. Не запускать `test` для outcome-aligned family, пока на validation не появится хотя бы один winner, прошедший shared filters.
-2. Следующую итерацию строить вокруг execution-aware label definition:
-   - вход на следующем баре;
-   - только одна открытая позиция;
-   - явная логика выхода;
-   - при необходимости `HoldOverTime` / `PosBlock` как часть target construction.
-3. Проверить, не нужно ли отказаться от `close[t+12]` как основного outcome proxy в пользу trade simulation, которая ближе к MT4 decision loop.
-4. `regression_updn`, `triple_barrier` и новый outcome-aligned track держать раздельно: это разные hypotheses и разные критерии успеха.
+1. Проверить вариант обучения, где `ret_*` и `path_6_class` считаются только по активным строкам `signal != 0`.
+2. Сравнить этот вариант с текущим baseline по validation и test.
+3. Отдельно решить судьбу `path_6_class`: оставить, ослабить или временно убрать.
+4. Перед merge в main сделать один чистый полный rebuild датасета и артефактов штатным проходом.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
-- `docs/superpowers/roadmap.md`
+- `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`
+- `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
+- `docs/reports/2026-04-08-entry-path-v1-baseline.md`
+- `ML/checkpoints/transformer_entry_path_v1_result.json`
+- `ML/reports/evaluate_test_entry_path_v1.md`
+- `ML/reports/entry_path_v1_validation_predictions.csv`
+- `ML/reports/entry_path_v1_test_predictions.csv`
 - `docs/reports/2026-04-08-outcome-aligned-retraining.md`
 - `ML/reports/outcome_target_validation_benchmark.md`
-- `docs/reports/2026-04-04-signal-path-atlas-readout.md`
-- `docs/reports/2026-04-04-archetype-filter-bridge.md`
-- `docs/reports/2026-04-04-signal-quality-filter.md`
 
 ## Open Risks
-- Текущие outcome labels всё ещё не повторяют реальный MT4 execution loop и завязаны на `close-to-close` proxy за 12 баров.
-- `trade_outcome_h12` и `archetype_target` на текущих split-файлах почти схлопываются в одну бинарную задачу.
-- После signal-only retraining ни одно семейство не прошло общий validation filter; риск в том, что новые targets просто описывают “плохой universe”, а не отбор хороших сигналов.
-- Любой переход к `test` без нового validation winner-а будет нарушением validation-first discipline.
+- Активных сигналов только около `5%`, поэтому обычный loss сильно забивается строками `signal=0`.
+- `path_6_class` почти вырождается: на активных строках модель в основном предсказывает `0`.
+- Общие метрики по всем строкам полезны, но для реальной сделки нужно обязательно смотреть active-only блок.
+- Перед merge в main нужен один чистый полный rebuild через `label_main`, а не смесь локальных шагов.
+- Outcome-aligned family остаётся отдельным тупиком: winner не найден, `test` там не запускался и этот трек не надо путать с `entry_path_v1`.
 
 ## Latest Report
-`docs/reports/2026-04-08-outcome-aligned-retraining.md`
+`docs/reports/2026-04-08-entry-path-v1-baseline.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

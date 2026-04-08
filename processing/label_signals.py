@@ -1,6 +1,7 @@
 # =============================================================================
 # Файл: label_signals.py
-# Назначение: Маркировка торговых сигналов, predict и up/dn fixed-horizon таргетов
+# Назначение: Маркировка торговых сигналов, predict, up/dn fixed-horizon
+#              таргетов и entry_path_v1 labels
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
@@ -10,14 +11,16 @@
 #   Входные данные:
 #     - CSV файлы с колонками фракталов (22 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr)
 #   Выходные данные:
-#     - pd.DataFrame с колонками 'signal', 'predict', 'up_3'..'dn_48'
+#     - pd.DataFrame с колонками 'signal', 'predict', 'up_3'..'dn_48',
+#       'ret_*_dir_atr', 'fav_*_atr', 'adv_*_atr', 'path_6_class'
 # Внешние зависимости:
 #   - pandas>=2.0.0
 #
 # Использование:
-#   from label_signals import label_all, label_updn
+#   from label_signals import label_all, label_updn, label_entry_path_targets
 #   labeled_df = label_all('input.csv', 'output.csv', debug=True)
 #   labeled_df = label_updn(labeled_df, debug=True)
+#   labeled_df = label_entry_path_targets(labeled_df, 'DATA/XAUUSD_H1_OHLC.csv')
 #
 # Примечания:
 #   - Обратная совместимость: parse_fractal() принимает строки с 7..22 полями
@@ -608,6 +611,31 @@ def load_ohlc_index(ohlc_path):
     return ohlc, times, time_idx
 
 
+def compute_entry_path_slice(bars, direction, entry_price, atr, horizon):
+    window = bars.iloc[:horizon]
+    if direction not in (-1, 1) or horizon <= 0 or len(window) < horizon or atr <= 0:
+        return {'ret_dir_atr': 0.0, 'fav_atr': 0.0, 'adv_atr': 0.0}
+
+    close_h = float(window.iloc[-1]['close'])
+    high_h = float(window['high'].max())
+    low_h = float(window['low'].min())
+
+    if direction == 1:
+        ret_dir_atr = (close_h - entry_price) / atr
+        fav_atr = (high_h - entry_price) / atr
+        adv_atr = (entry_price - low_h) / atr
+    else:
+        ret_dir_atr = (entry_price - close_h) / atr
+        fav_atr = (entry_price - low_h) / atr
+        adv_atr = (high_h - entry_price) / atr
+
+    return {
+        'ret_dir_atr': float(ret_dir_atr),
+        'fav_atr': float(fav_atr),
+        'adv_atr': float(adv_atr),
+    }
+
+
 def first_touch_barrier_outcome(bars, direction, entry_price, sl_price, tp_price):
     """
     Return first-touch outcome for a path of OHLC bars.
@@ -641,6 +669,143 @@ def first_touch_barrier_outcome(bars, direction, entry_price, sl_price, tp_price
             return 0
 
     return -1
+
+
+def first_touch_path_class(bars, direction, entry_price, atr, threshold_atr=1.0):
+    if direction not in (-1, 1) or atr <= 0 or len(bars) == 0:
+        return 0
+
+    if direction == 1:
+        sl_price = entry_price - threshold_atr * atr
+        tp_price = entry_price + threshold_atr * atr
+    else:
+        sl_price = entry_price + threshold_atr * atr
+        tp_price = entry_price - threshold_atr * atr
+
+    outcome = first_touch_barrier_outcome(
+        bars=bars,
+        direction=direction,
+        entry_price=entry_price,
+        sl_price=sl_price,
+        tp_price=tp_price,
+    )
+    if outcome == 1:
+        return 1
+    if outcome == 0:
+        return -1
+    return 0
+
+
+def label_entry_path_targets(
+    df: pd.DataFrame,
+    ohlc_path: str,
+    ret_horizons=(6, 12, 24),
+    path_horizons=(3, 6, 12, 24),
+    debug=False,
+):
+    from datetime import datetime, timezone
+
+    ohlc, times, time_idx = load_ohlc_index(ohlc_path)
+
+    out = df.copy()
+    for h in ret_horizons:
+        out[f'ret_{h}_dir_atr'] = 0.0
+    for h in path_horizons:
+        out[f'fav_{h}_atr'] = 0.0
+        out[f'adv_{h}_atr'] = 0.0
+    out['path_6_class'] = 0
+
+    found = skipped = 0
+    for row_idx, row in out.iterrows():
+        signal = int(row.get('signal', 0))
+        if signal not in (-1, 1):
+            continue
+
+        row_time = row.get('time')
+        if pd.isna(row_time) or row_time == '':
+            skipped += 1
+            continue
+
+        if hasattr(row_time, 'to_pydatetime'):
+            row_time = row_time.to_pydatetime()
+
+        if isinstance(row_time, datetime):
+            row_dt = row_time.astimezone(timezone.utc) if row_time.tzinfo else row_time.replace(tzinfo=timezone.utc)
+        else:
+            try:
+                row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+            except ValueError:
+                skipped += 1
+                continue
+
+        base_idx = time_idx.get(row_dt)
+        if base_idx is None or base_idx + 1 >= len(times):
+            skipped += 1
+            continue
+
+        try:
+            atr = float(row['ATR'])
+        except (ValueError, KeyError, TypeError):
+            skipped += 1
+            continue
+        if atr <= 0:
+            skipped += 1
+            continue
+
+        entry_bar = ohlc[times[base_idx + 1]]
+        entry_price = float(entry_bar[0])
+
+        for h in sorted(set(ret_horizons) | set(path_horizons)):
+            end_idx = base_idx + 1 + h
+            if end_idx > len(times):
+                continue
+            bars = pd.DataFrame(
+                [
+                    {
+                        'open': ohlc[times[k]][0],
+                        'high': ohlc[times[k]][1],
+                        'low': ohlc[times[k]][2],
+                        'close': ohlc[times[k]][3],
+                    }
+                    for k in range(base_idx + 1, end_idx)
+                ],
+                columns=['open', 'high', 'low', 'close'],
+            )
+            stats = compute_entry_path_slice(bars, signal, entry_price, atr, h)
+            if h in ret_horizons:
+                out.at[row_idx, f'ret_{h}_dir_atr'] = stats['ret_dir_atr']
+            if h in path_horizons:
+                out.at[row_idx, f'fav_{h}_atr'] = stats['fav_atr']
+                out.at[row_idx, f'adv_{h}_atr'] = stats['adv_atr']
+
+        bars6_end = base_idx + 7
+        if bars6_end <= len(times):
+            bars6 = pd.DataFrame(
+                [
+                    {
+                        'open': ohlc[times[k]][0],
+                        'high': ohlc[times[k]][1],
+                        'low': ohlc[times[k]][2],
+                        'close': ohlc[times[k]][3],
+                    }
+                    for k in range(base_idx + 1, bars6_end)
+                ],
+                columns=['open', 'high', 'low', 'close'],
+            )
+            out.at[row_idx, 'path_6_class'] = first_touch_path_class(
+                bars=bars6,
+                direction=signal,
+                entry_price=entry_price,
+                atr=atr,
+                threshold_atr=1.0,
+            )
+
+        found += 1
+
+    if debug:
+        print(f"\n[ENTRY_PATH_V1] Обработано: {found}, пропущено: {skipped}")
+
+    return out
 
 
 def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):

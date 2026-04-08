@@ -43,6 +43,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
+from ML.entry_path_task import ENTRY_PATH_TARGET, ENTRY_PATH_REG_TARGETS, split_entry_path_targets
+
 
 # ─── Константы ───────────────────────────────────────────────────────────────
 
@@ -128,6 +130,8 @@ def task_target_column(task: str) -> str:
         return TASK_TARGET_COLUMNS[task]
     if task == TB_TARGET:
         return TB_TARGET
+    if task == ENTRY_PATH_TARGET:
+        return ENTRY_PATH_TARGET
     if task == UPDN_REGRESSION_TARGET:
         return UPDN_REGRESSION_TARGET
     if task == REGRESSION_TARGET:
@@ -138,6 +142,8 @@ def task_target_column(task: str) -> str:
 def task_checkpoint_suffix(task: str) -> str:
     if task == TB_TARGET:
         return '_tb'
+    if task == ENTRY_PATH_TARGET:
+        return f'_{ENTRY_PATH_TARGET}'
     if task == UPDN_REGRESSION_TARGET:
         return '_updn'
     if task == REGRESSION_TARGET:
@@ -458,6 +464,28 @@ class FractalSequenceDataset(Dataset):
         return self.X[idx], self.y[idx], self.mask[idx]
 
 
+class EntryPathDataset(Dataset):
+    def __init__(
+        self,
+        X: np.ndarray,
+        y_reg: np.ndarray,
+        y_cls: np.ndarray,
+        mask: np.ndarray,
+    ):
+        if not (len(X) == len(y_reg) == len(y_cls) == len(mask)):
+            raise ValueError('X, y_reg, y_cls, and mask must have the same length')
+        self.X = torch.from_numpy(X).float()
+        self.y_reg = torch.from_numpy(y_reg.astype(np.float32)).float()
+        self.y_cls = torch.from_numpy(y_cls.astype(np.int64)).long()
+        self.mask = torch.from_numpy(mask).bool()
+
+    def __len__(self) -> int:
+        return len(self.y_cls)
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        return self.X[idx], self.y_reg[idx], self.y_cls[idx], self.mask[idx]
+
+
 # ─── Фабрика DataLoader'ов ───────────────────────────────────────────────────
 
 def create_data_loaders(
@@ -501,16 +529,24 @@ def create_data_loaders(
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
+    entry_path = (target == ENTRY_PATH_TARGET)
 
-    def load_or_parse_data(csv_file: Path, target_col: str, prefix: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def load_or_parse_data(
+        csv_file: Path,
+        target_col: str,
+        prefix: str,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         profile_suffix = cache_profile_suffix(target_col)
         x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
         mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
-        y_path = DATA_DIR / f'y_{prefix}_{target_col}{profile_suffix}.npy'
+        if entry_path:
+            y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
+            y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
+            cache_files = [x_path, mask_path, y_reg_path, y_cls_path]
+        else:
+            y_path = DATA_DIR / f'y_{prefix}_{target_col}{profile_suffix}.npy'
+            cache_files = [x_path, mask_path, y_path]
 
-        # Список всех файлов кэша для данного набора
-        cache_files = [x_path, mask_path, y_path]
-        
         # 1. Принудительная очистка
         if clear_cache:
             print(f"  🧹 Принудительная очистка кэша ({prefix})...")
@@ -537,8 +573,24 @@ def create_data_loaders(
                 else:
                     print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                     mask = np.load(mask_path)
-                    y = np.load(y_path)
-                    return X, mask, y
+                    if entry_path:
+                        y_reg = np.load(y_reg_path)
+                        y_cls = np.load(y_cls_path)
+                        if (
+                            y_reg.ndim != 2
+                            or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
+                            or y_cls.ndim != 1
+                            or len(y_reg) != len(X)
+                            or len(y_cls) != len(X)
+                        ):
+                            print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, y_reg, y_cls
+                    else:
+                        y = np.load(y_path)
+                        return X, mask, y
 
         print(f"  Кэш не найден. Загрузка {csv_file.name} и парсинг...")
         df = pd.read_csv(csv_file, sep=CSV_SEP, low_memory=False)
@@ -550,7 +602,9 @@ def create_data_loaders(
             print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
         
         # Извлечение таргета
-        if multi_target:
+        if entry_path:
+            y_reg, y_cls = split_entry_path_targets(df)
+        elif multi_target:
             y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
@@ -570,13 +624,23 @@ def create_data_loaders(
         # Сохранение кэша
         np.save(x_path, X)
         np.save(mask_path, mask)
-        np.save(y_path, y)
+        if entry_path:
+            np.save(y_reg_path, y_reg)
+            np.save(y_cls_path, y_cls)
+        else:
+            np.save(y_path, y)
         print(f"  ✅ Данные {prefix} сохранены в кэш.")
         
+        if entry_path:
+            return X, mask, y_reg, y_cls
         return X, mask, y
 
-    X_train, mask_train, y_train = load_or_parse_data(TRAIN_FILE, target, 'train')
-    X_val, mask_val, y_val = load_or_parse_data(VAL_FILE, target, 'val')
+    if entry_path:
+        X_train, mask_train, y_train_reg, y_train_cls = load_or_parse_data(TRAIN_FILE, target, 'train')
+        X_val, mask_val, y_val_reg, y_val_cls = load_or_parse_data(VAL_FILE, target, 'val')
+    else:
+        X_train, mask_train, y_train = load_or_parse_data(TRAIN_FILE, target, 'train')
+        X_val, mask_val, y_val = load_or_parse_data(VAL_FILE, target, 'val')
 
     # Truncate sequence length if requested
     if seq_len < 100:
@@ -587,9 +651,16 @@ def create_data_loaders(
         X_val = X_val[:, :seq_len, :]
         mask_val = mask_val[:, :seq_len]
 
-    print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
+    if entry_path:
+        print(f"  Train: {len(y_train_cls)} строк, Val: {len(y_val_cls)} строк")
+    else:
+        print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
 
-    if multi_target:
+    if entry_path:
+        for name, y_reg, y_cls in [('Train', y_train_reg, y_train_cls), ('Val', y_val_reg, y_val_cls)]:
+            print(f"  {name} entry_path reg targets: shape={y_reg.shape}")
+            print(f"  {name} entry_path class targets: shape={y_cls.shape}")
+    elif multi_target:
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} updn targets: shape={y.shape}")
             for i, col in enumerate(UPDN_TARGETS):
@@ -628,19 +699,23 @@ def create_data_loaders(
         print(f"  ✅ Нормализация завершена")
 
     # ── Создание Dataset и DataLoader ────────────────────────────────────────
-    train_dataset = FractalSequenceDataset(
-        X_train_norm, y_train, mask_train,
-        regression=(regression or triple_barrier),
-        label_map=BINARY_LABEL_MAP if binary_classification else None,
-    )
-    val_dataset = FractalSequenceDataset(
-        X_val_norm, y_val, mask_val,
-        regression=(regression or triple_barrier),
-        label_map=BINARY_LABEL_MAP if binary_classification else None,
-    )
+    if entry_path:
+        train_dataset = EntryPathDataset(X_train_norm, y_train_reg, y_train_cls, mask_train)
+        val_dataset = EntryPathDataset(X_val_norm, y_val_reg, y_val_cls, mask_val)
+    else:
+        train_dataset = FractalSequenceDataset(
+            X_train_norm, y_train, mask_train,
+            regression=(regression or triple_barrier),
+            label_map=BINARY_LABEL_MAP if binary_classification else None,
+        )
+        val_dataset = FractalSequenceDataset(
+            X_val_norm, y_val, mask_val,
+            regression=(regression or triple_barrier),
+            label_map=BINARY_LABEL_MAP if binary_classification else None,
+        )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
-    if use_weighted_sampler and not regression:
+    if use_weighted_sampler and not regression and not entry_path:
         # Рассчитываем веса: 1 / freq(class)
         if binary_classification:
             y_train_mapped = y_train.astype(np.int64)
@@ -703,13 +778,20 @@ def create_test_loader(
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
-    prefix = 'test'
     profile_suffix = cache_profile_suffix(target)
-    
+    entry_path = (target == ENTRY_PATH_TARGET)
+    prefix = 'test'
+    missing_entry_path_labels = False
+
     x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
     mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
-    y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
-    cache_files = [x_path, mask_path, y_path]
+    if entry_path:
+        y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
+        y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
+        cache_files = [x_path, mask_path, y_reg_path, y_cls_path]
+    else:
+        y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
+        cache_files = [x_path, mask_path, y_path]
     
     if clear_cache:
         print(f"  🧹 Принудительная очистка кэша ({prefix})...")
@@ -728,20 +810,41 @@ def create_test_loader(
             else:
                 print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                 mask = np.load(mask_path)
-                y = np.load(y_path)
+                if entry_path:
+                    y_reg = np.load(y_reg_path)
+                    y_cls = np.load(y_cls_path)
+                    if (
+                        y_reg.ndim != 2
+                        or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
+                        or y_cls.ndim != 1
+                        or len(y_reg) != len(X)
+                        or len(y_cls) != len(X)
+                    ):
+                        print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+
+                        dataset = EntryPathDataset(X, y_reg, y_cls, mask)
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                else:
+                    y = np.load(y_path)
                 
-                if seq_len < 100:
-                    X = X[:, :seq_len, :]
-                    mask = mask[:, :seq_len]
-                
-                dataset = FractalSequenceDataset(
-                    X,
-                    y,
-                    mask,
-                    regression=(regression or triple_barrier),
-                    label_map=BINARY_LABEL_MAP if binary_classification else None,
-                )
-                return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                    if seq_len < 100:
+                        X = X[:, :seq_len, :]
+                        mask = mask[:, :seq_len]
+                    
+                    dataset = FractalSequenceDataset(
+                        X,
+                        y,
+                        mask,
+                        regression=(regression or triple_barrier),
+                        label_map=BINARY_LABEL_MAP if binary_classification else None,
+                    )
+                    return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     print(f"  Кэш не найден. Загрузка {TEST_FILE.name} и парсинг...")
     df = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
@@ -750,7 +853,15 @@ def create_test_loader(
         df = filter_signal_rows(df, target)
         print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
     
-    if multi_target:
+    if entry_path:
+        if all(col in df.columns for col in ENTRY_PATH_REG_TARGETS + ['path_6_class']):
+            y_reg, y_cls = split_entry_path_targets(df)
+        else:
+            missing_entry_path_labels = True
+            print("  ⚠ entry_path_v1 test labels не найдены в TEST CSV. Используются placeholder targets для inference/export.")
+            y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
+            y_cls = np.zeros(len(df), dtype=np.int64)
+    elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
         y = df[TB_TARGET_NAMES].values.astype(np.float32)
@@ -767,20 +878,28 @@ def create_test_loader(
     X, mask = parse_fractals_to_3d(df)
     np.save(x_path, X)
     np.save(mask_path, mask)
-    np.save(y_path, y)
+    if entry_path:
+        if not missing_entry_path_labels:
+            np.save(y_reg_path, y_reg)
+            np.save(y_cls_path, y_cls)
+    else:
+        np.save(y_path, y)
     print(f"  ✅ Данные {prefix} сохранены в кэш.")
     
     if seq_len < 100:
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
-        
-    dataset = FractalSequenceDataset(
-        X,
-        y,
-        mask,
-        regression=(regression or triple_barrier),
-        label_map=BINARY_LABEL_MAP if binary_classification else None,
-    )
+
+    if entry_path:
+        dataset = EntryPathDataset(X, y_reg, y_cls, mask)
+    else:
+        dataset = FractalSequenceDataset(
+            X,
+            y,
+            mask,
+            regression=(regression or triple_barrier),
+            label_map=BINARY_LABEL_MAP if binary_classification else None,
+        )
     loader = DataLoader(
         dataset,
         batch_size=batch_size,

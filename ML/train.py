@@ -10,6 +10,7 @@
 #   Выходные данные:
 #     - ML/checkpoints/<model>_best.pt            (classification)
 #     - ML/checkpoints/<model>_regression_best.pt (regression)
+#     - ML/checkpoints/<model>_entry_path_v1_best.pt (entry_path_v1)
 #     - ML/plots/training_curves_<model>.png      (classification)
 #     - ML/plots/training_curves_<model>_regression.png (regression)
 #     - ML/plots/cm_<model>.png                   (confusion matrix, classification)
@@ -42,6 +43,7 @@
 Принимает --model и --task аргументы:
   --task classification (default): Focal Loss, AdamW, early stopping на macro F1
   --task regression:               Huber Loss, AdamW, early stopping на pearson_r
+  --task entry_path_v1:            Multi-task Transformer, early stopping на ret_pearson_r
 """
 
 import argparse
@@ -83,8 +85,15 @@ from ML.data_loader import (
     task_checkpoint_suffix,
     task_target_column,
 )
+from ML.entry_path_task import (
+    ENTRY_PATH_INV_CLASS_MAP,
+    ENTRY_PATH_PATH_REG_TARGETS,
+    ENTRY_PATH_RET_TARGETS,
+    ENTRY_PATH_TARGET,
+)
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
+from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.tb_probability_calibration import (
     fit_tb_probability_calibrator,
     save_tb_probability_calibrator,
@@ -393,6 +402,158 @@ def validate_binary(
     return total_loss / n_batches, metrics
 
 
+def compute_named_multitarget_regression_metrics(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    target_names: list[str],
+) -> dict:
+    per_target = {}
+    pearson_rs = []
+
+    for idx, name in enumerate(target_names):
+        target_metrics = compute_regression_metrics(y_true[:, idx], y_pred[:, idx])
+        if not np.isfinite(target_metrics['pearson_r']):
+            target_metrics['pearson_r'] = 0.0
+            target_metrics['pearson_p'] = 1.0
+        per_target[name] = target_metrics
+        pearson_rs.append(target_metrics['pearson_r'])
+
+    return {
+        'mae': float(np.mean([per_target[name]['mae'] for name in target_names])),
+        'rmse': float(np.mean([per_target[name]['rmse'] for name in target_names])),
+        'r2': float(np.mean([per_target[name]['r2'] for name in target_names])),
+        'pearson_r': float(np.mean(pearson_rs)),
+        'pearson_p': 0.0,
+        'per_target': per_target,
+    }
+
+
+def train_one_epoch_entry_path(
+    model: nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    ret_loss_fn: nn.Module,
+    path_reg_loss_fn: nn.Module,
+    path_cls_loss_fn: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+) -> float:
+    model.train()
+    total_loss = 0.0
+    n_batches = 0
+
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch in train_loader:
+        X_batch = X_batch.to(device)
+        y_reg_batch = y_reg_batch.to(device)
+        y_cls_batch = y_cls_batch.to(device)
+        mask_batch = mask_batch.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(X_batch, mask=mask_batch)
+
+        loss_ret = ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)])
+        loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
+        loss_path_cls = path_cls_loss_fn(outputs['path_cls'], y_cls_batch)
+        loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += loss.item()
+        n_batches += 1
+
+    return total_loss / n_batches
+
+
+@torch.no_grad()
+def validate_entry_path(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    ret_loss_fn: nn.Module,
+    path_reg_loss_fn: nn.Module,
+    path_cls_loss_fn: nn.Module,
+    device: torch.device,
+) -> tuple[float, dict]:
+    model.eval()
+    total_loss = 0.0
+    n_batches = 0
+    all_ret_preds = []
+    all_path_reg_preds = []
+    all_path_cls_preds = []
+    all_reg_targets = []
+    all_cls_targets = []
+
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch in val_loader:
+        X_batch = X_batch.to(device)
+        y_reg_batch = y_reg_batch.to(device)
+        y_cls_batch = y_cls_batch.to(device)
+        mask_batch = mask_batch.to(device)
+
+        outputs = model(X_batch, mask=mask_batch)
+
+        loss_ret = ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)])
+        loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
+        loss_path_cls = path_cls_loss_fn(outputs['path_cls'], y_cls_batch)
+        loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
+
+        total_loss += loss.item()
+        n_batches += 1
+
+        all_ret_preds.append(outputs['ret'].cpu().numpy())
+        all_path_reg_preds.append(outputs['path_reg'].cpu().numpy())
+        all_path_cls_preds.append(outputs['path_cls'].argmax(dim=1).cpu().numpy())
+        all_reg_targets.append(y_reg_batch.cpu().numpy())
+        all_cls_targets.append(y_cls_batch.cpu().numpy())
+
+    all_ret_preds = np.concatenate(all_ret_preds)
+    all_path_reg_preds = np.concatenate(all_path_reg_preds)
+    all_path_cls_preds = np.concatenate(all_path_cls_preds)
+    all_reg_targets = np.concatenate(all_reg_targets)
+    all_cls_targets = np.concatenate(all_cls_targets)
+
+    ret_targets = all_reg_targets[:, :len(ENTRY_PATH_RET_TARGETS)]
+    path_reg_targets = all_reg_targets[:, len(ENTRY_PATH_RET_TARGETS):]
+
+    ret_metrics = compute_named_multitarget_regression_metrics(
+        ret_targets,
+        all_ret_preds,
+        ENTRY_PATH_RET_TARGETS,
+    )
+    path_reg_metrics = compute_named_multitarget_regression_metrics(
+        path_reg_targets,
+        all_path_reg_preds,
+        ENTRY_PATH_PATH_REG_TARGETS,
+    )
+
+    unknown_pred = sorted({int(label) for label in all_path_cls_preds if int(label) not in ENTRY_PATH_INV_CLASS_MAP})
+    unknown_true = sorted({int(label) for label in all_cls_targets if int(label) not in ENTRY_PATH_INV_CLASS_MAP})
+    if unknown_pred or unknown_true:
+        raise ValueError(
+            f'Unsupported entry_path class ids: pred={unknown_pred or "ok"}, true={unknown_true or "ok"}'
+        )
+    y_pred_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_path_cls_preds])
+    y_true_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_cls_targets])
+    path_cls_metrics = compute_metrics(y_true_orig, y_pred_orig)
+
+    metrics = {
+        'ret_pearson_r': ret_metrics['pearson_r'],
+        'pearson_r': ret_metrics['pearson_r'],
+        'mae': ret_metrics['mae'],
+        'rmse': ret_metrics['rmse'],
+        'r2': ret_metrics['r2'],
+        'ret_metrics': ret_metrics['per_target'],
+        'ret_per_target': ret_metrics['per_target'],
+        'path_reg_pearson_r': path_reg_metrics['pearson_r'],
+        'path_reg_metrics': path_reg_metrics['per_target'],
+        'path_reg_per_target': path_reg_metrics['per_target'],
+        'path_cls_f1_macro': path_cls_metrics['f1_macro'],
+        'path_cls_metrics': path_cls_metrics,
+        'path_cls_per_class': path_cls_metrics['f1_per_class'],
+    }
+
+    return total_loss / n_batches, metrics
+
+
 def resolve_model_kwargs_for_encoder_transfer(
     model_kwargs: dict | None,
     encoder_model_kwargs: dict | None,
@@ -471,7 +632,11 @@ def train_model(
     binary_classification = (task in BINARY_CLASSIFICATION_TARGETS)
     multi_target = (task == 'regression_updn')
     triple_barrier = (task == 'triple_barrier')
+    entry_path = (task == ENTRY_PATH_TARGET)
     regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
+
+    if entry_path and model_name != 'transformer':
+        raise ValueError(f'{ENTRY_PATH_TARGET} supports only model=transformer in v1')
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -509,6 +674,8 @@ def train_model(
     # Multi-target: 6 выходов; single regression: 1 выход; classification: 3 выхода
     if triple_barrier:
         num_classes = len(TB_TARGET_NAMES)  # 12
+    elif entry_path:
+        num_classes = len(ENTRY_PATH_INV_CLASS_MAP)
     elif multi_target:
         num_classes = len(UPDN_TARGETS)     # 6
     elif regression:
@@ -518,7 +685,10 @@ def train_model(
     else:
         num_classes = 3
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
-    model = get_model(model_name, num_classes=num_classes, **model_kwargs)
+    if entry_path:
+        model = EntryPathTransformer(**model_kwargs)
+    else:
+        model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
 
     # ── Transfer learning: загрузка encoder из другого checkpoint ────────────
@@ -563,6 +733,10 @@ def train_model(
         class_weights = class_counts.sum() / (2.0 * np.maximum(class_counts, 1.0))
         weight = torch.tensor(class_weights, dtype=torch.float32).to(device)
         loss_fn = nn.CrossEntropyLoss(weight=weight).to(device)
+    elif entry_path:
+        ret_loss_fn = HuberLoss(delta=huber_delta).to(device)
+        path_reg_loss_fn = HuberLoss(delta=huber_delta).to(device)
+        path_cls_loss_fn = nn.CrossEntropyLoss().to(device)
     elif regression:
         if regression_loss == 'directional':
             loss_fn = DirectionalAsymmetricLoss(
@@ -616,6 +790,17 @@ def train_model(
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'AUC':>8} | {'Prec':>8} | {'Recall':>8} | {'LR':>10}")
+    elif entry_path:
+        history = {
+            'train_loss': [], 'val_loss': [],
+            'val_pearson_r': [], 'val_mae': [], 'val_rmse': [],
+            'val_r2': [], 'val_path_reg_pearson_r': [],
+            'val_path_cls_f1_macro': [], 'lr': [],
+        }
+        metric_name = 'ret_pearson_r'
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'ret_r':>10} | {'path_r':>10} | {'cls_f1':>8} | {'LR':>10}")
     elif regression:
         history = {
             'train_loss': [], 'val_loss': [],
@@ -649,10 +834,21 @@ def train_model(
 
     for epoch in range(1, epochs + 1):
         # Train
-        train_loss = train_one_epoch(
-            model, train_loader, loss_fn, optimizer, device,
-            regression=(regression or triple_barrier),
-        )
+        if entry_path:
+            train_loss = train_one_epoch_entry_path(
+                model,
+                train_loader,
+                ret_loss_fn,
+                path_reg_loss_fn,
+                path_cls_loss_fn,
+                optimizer,
+                device,
+            )
+        else:
+            train_loss = train_one_epoch(
+                model, train_loader, loss_fn, optimizer, device,
+                regression=(regression or triple_barrier),
+            )
 
         # Validate
         if triple_barrier:
@@ -683,6 +879,32 @@ def train_model(
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['auc']:>8.4f} | {metrics['precision']:>8.4f} | "
                       f"{metrics['recall']:>8.4f} | {optimizer.param_groups[0]['lr']:>10.6f}")
+        elif entry_path:
+            val_loss, metrics = validate_entry_path(
+                model,
+                val_loader,
+                ret_loss_fn,
+                path_reg_loss_fn,
+                path_cls_loss_fn,
+                device,
+            )
+            val_metric = metrics['ret_pearson_r']
+
+            history['train_loss'].append(train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_pearson_r'].append(metrics['ret_pearson_r'])
+            history['val_mae'].append(metrics['mae'])
+            history['val_rmse'].append(metrics['rmse'])
+            history['val_r2'].append(metrics['r2'])
+            history['val_path_reg_pearson_r'].append(metrics['path_reg_pearson_r'])
+            history['val_path_cls_f1_macro'].append(metrics['path_cls_f1_macro'])
+            history['lr'].append(optimizer.param_groups[0]['lr'])
+
+            current_lr = optimizer.param_groups[0]['lr']
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['ret_pearson_r']:>10.4f} | {metrics['path_reg_pearson_r']:>10.4f} | "
+                      f"{metrics['path_cls_f1_macro']:>8.4f} | {current_lr:>10.6f}")
         elif regression:
             val_loss, metrics = validate_regression(model, val_loader, loss_fn, device)
             val_metric = metrics['pearson_r']
@@ -733,6 +955,8 @@ def train_model(
                       f"{f1_per.get(1, 0):>7.4f} | {current_lr:>10.6f}")
 
         # Scheduler step (на основной метрике)
+        if not np.isfinite(val_metric):
+            val_metric = -1.0
         scheduler.step(val_metric)
 
         # ── Optuna Pruning ─────────────────────────────────────────────────────
@@ -797,13 +1021,25 @@ def train_model(
             print(f"  Precision: {best_metrics.get('precision', 0):.4f}")
             print(f"  Recall:    {best_metrics.get('recall', 0):.4f}")
             print(f"  F1:        {best_metrics.get('f1', 0):.4f}")
-        elif not regression:
+        elif not regression and not entry_path:
             print(f"\n{best_metrics.get('classification_report', '')}")
         else:
             print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
             print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
             print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
-            if 'per_target' in best_metrics:
+            if entry_path:
+                print(f"  Ret Pearson r: {best_metrics.get('ret_pearson_r', 0):.4f}")
+                print(f"  PathReg Pearson r: {best_metrics.get('path_reg_pearson_r', 0):.4f}")
+                print(f"  PathCls F1 macro: {best_metrics.get('path_cls_f1_macro', 0):.4f}")
+                if 'ret_per_target' in best_metrics:
+                    print(f"\n  Return-head Pearson r:")
+                    for tname, tm in best_metrics['ret_per_target'].items():
+                        print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
+                if 'path_reg_per_target' in best_metrics:
+                    print(f"\n  Path-reg Pearson r:")
+                    for tname, tm in best_metrics['path_reg_per_target'].items():
+                        print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
+            elif 'per_target' in best_metrics:
                 print(f"\n  Per-target Pearson r:")
                 for tname, tm in best_metrics['per_target'].items():
                     print(f"    {tname:8s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
@@ -814,7 +1050,7 @@ def train_model(
             history,
             model_name,
             task=task,
-            regression=regression,
+            regression=(regression or entry_path),
             binary_classification=binary_classification,
         )
 
@@ -827,6 +1063,8 @@ def train_model(
                 labels=['Bad (0)', 'Good (1)'],
                 task=task,
             )
+        elif entry_path:
+            pass
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
             all_preds, all_targets = _collect_regression_preds(model, val_loader, device)
@@ -863,9 +1101,10 @@ def train_model(
             'history': history,
             'best_metrics': best_metrics,
         },
-        regression=regression,
+        regression=(regression or entry_path),
         triple_barrier=triple_barrier,
         binary_classification=binary_classification,
+        model_kwargs=model_kwargs,
     )
 
     if triple_barrier:
@@ -981,6 +1220,13 @@ def _log_experiment(
         metrics_dict['precision'] = result['best_metrics'].get('precision')
         metrics_dict['recall'] = result['best_metrics'].get('recall')
         metrics_dict['f1'] = result['best_metrics'].get('f1')
+    elif task == ENTRY_PATH_TARGET:
+        metrics_dict['ret_pearson_r'] = result['best_metrics'].get('ret_pearson_r')
+        metrics_dict['mae'] = result['best_metrics'].get('mae')
+        metrics_dict['rmse'] = result['best_metrics'].get('rmse')
+        metrics_dict['r2'] = result['best_metrics'].get('r2')
+        metrics_dict['path_reg_pearson_r'] = result['best_metrics'].get('path_reg_pearson_r')
+        metrics_dict['path_cls_f1_macro'] = result['best_metrics'].get('path_cls_f1_macro')
     elif regression:
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
@@ -1259,12 +1505,13 @@ def parse_args() -> argparse.Namespace:
             'regression',
             'regression_updn',
             'triple_barrier',
+            ENTRY_PATH_TARGET,
             TRADE_OUTCOME_TARGET,
             TRADE_PNL_TARGET,
             ARCHETYPE_TARGET,
         ],
-        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' (10 Up/Dn) | "
-             "'triple_barrier' | outcome-aligned targets. "
+        help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' | "
+             "'triple_barrier' | 'entry_path_v1' | outcome-aligned targets. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -1413,14 +1660,15 @@ def main():
         use_weighted_sampler=args.use_weighted_sampler,
         model_kwargs=model_kwargs,
         seq_len=args.seq_len,
+        clear_cache=args.clear_cache,
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
     )
 
     # Сохраняем результат как JSON
     regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET])
     binary_classification = (args.task in BINARY_CLASSIFICATION_TARGETS)
-
     triple_barrier = (args.task == 'triple_barrier')
+    entry_path = (args.task == ENTRY_PATH_TARGET)
 
     if triple_barrier:
         result_serializable = {
@@ -1444,6 +1692,30 @@ def main():
             'val_metrics': {
                 k: v for k, v in result['best_metrics'].items()
                 if isinstance(v, float)
+            },
+        }
+        suffix = task_checkpoint_suffix(args.task)
+    elif entry_path:
+        result_serializable = {
+            'model_name': result['model_name'],
+            'task': result['task'],
+            'best_ret_pearson_r': result['best_metric'],
+            'best_epoch': result['best_epoch'],
+            'num_parameters': result['num_parameters'],
+            'training_time': result['training_time'],
+            'val_metrics': {
+                'ret_pearson_r': result['best_metrics'].get('ret_pearson_r'),
+                'pearson_r': result['best_metrics'].get('pearson_r'),
+                'mae': result['best_metrics'].get('mae'),
+                'rmse': result['best_metrics'].get('rmse'),
+                'r2': result['best_metrics'].get('r2'),
+                'path_reg_pearson_r': result['best_metrics'].get('path_reg_pearson_r'),
+                'path_cls_f1_macro': result['best_metrics'].get('path_cls_f1_macro'),
+            },
+            'ret_per_target': result['best_metrics'].get('ret_per_target', {}),
+            'path_reg_per_target': result['best_metrics'].get('path_reg_per_target', {}),
+            'path_cls_per_class': {
+                str(k): v for k, v in result['best_metrics'].get('path_cls_per_class', {}).items()
             },
         }
         suffix = task_checkpoint_suffix(args.task)
@@ -1487,41 +1759,6 @@ def main():
     print(f"\n✅ Результат сохранён: {result_path}")
 
     # ── Логирование эксперимента ─────────────────────────────────────────────
-    config_dict = {
-        'model': args.model,
-        'task': args.task,
-        'epochs': args.epochs,
-        'batch_size': args.batch_size,
-        'lr': args.lr,
-        'weight_decay': args.weight_decay,
-        'patience': args.patience,
-        'focal_gamma': args.focal_gamma if not regression else None,
-        'focal_minority_weight': args.focal_minority_weight if not regression else None,
-        'scheduler_patience': args.scheduler_patience,
-        'scheduler_factor': args.scheduler_factor,
-        'use_scaler': args.use_scaler,
-    }
-
-    metrics_dict = {
-        'metric_name': result.get('metric_name', 'f1_macro' if not regression else 'pearson_r'),
-        'best_metric': result['best_metric'],
-        'best_epoch': result['best_epoch'],
-        'training_time': result['training_time'],
-    }
-
-    # Добавляем метрики в зависимости от задачи
-    if regression:
-        metrics_dict['mae'] = result['best_metrics'].get('mae')
-        metrics_dict['rmse'] = result['best_metrics'].get('rmse')
-        metrics_dict['r2'] = result['best_metrics'].get('r2')
-        metrics_dict['dir_acc'] = result['best_metrics'].get('directional_accuracy')
-    else:
-        metrics_dict['f1_macro'] = result['best_metric']
-        f1_per_class = result['best_metrics'].get('f1_per_class', {})
-        metrics_dict['f1_sell'] = f1_per_class.get(-1)
-        metrics_dict['f1_neutral'] = f1_per_class.get(0)
-        metrics_dict['f1_buy'] = f1_per_class.get(1)
-
     checkpoint_path = str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
 
     # Логирование теперь происходит внутри train_model() - дублировать не нужно

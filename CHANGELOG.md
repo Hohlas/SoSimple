@@ -2,6 +2,31 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-08] — Entry Path v1: baseline очищен от старого кэша, результаты пересчитаны
+
+### Добавлено
+- Новый трек `entry_path_v1`: новая разметка `ret_*`, `fav/adv`, `path_6_class`, новый dataset contract, multitask transformer, test-отчёт и research-only exports
+- Новый набор тестов: `tests/test_entry_path_labels.py`, `tests/test_entry_path_task.py`, `tests/test_entry_path_model.py`, `tests/test_entry_path_reports.py`, `tests/test_entry_path_training.py`
+- Baseline artifacts: `transformer_entry_path_v1_best.pt`, `transformer_entry_path_v1_result.json`, `evaluate_test_entry_path_v1.md`, `entry_path_v1_validation_predictions.csv`, `entry_path_v1_test_predictions.csv`
+
+### Исправлено
+- `ML.train`: флаг `--clear_cache` теперь действительно доходит до `train_model()`
+- После этого train/validation cache для `entry_path_v1` был честно пересобран; старые ложные цели у строк `signal=0` исчезли
+
+### Результаты
+- Старые числа `best_ret_pearson_r=0.5253` и `test ret_pearson_r=-0.0216` оказались неактуальны: они были получены на старом cache
+- После чистого retrain новый baseline стал таким:
+  - validation: `ret_pearson_r=0.2656`, `path_reg_pearson_r=0.3004`, `path_cls_f1_macro=0.3261`
+  - test: `ret_pearson_r=0.2450`, `path_reg_pearson_r=0.2745`, `path_cls_f1_macro=0.3259`
+- Active-only test по реальным BUY/SELL строкам тоже живой:
+  - `active ret_pearson_r=0.2039`
+  - top 10% по `pred_ret_24_dir_atr` дают `mean true_ret_24 = 0.2442`
+  - bottom 10% дают `mean true_ret_24 = -2.2741`
+- `path_6_class` остаётся слабым: на активных строках модель почти всегда предсказывает класс `0`
+
+### Вывод
+Теперь baseline выглядит честно: `ret_*` не сломан, а просто заметно слабее старого ложного результата. `entry_path_v1` можно сохранять как рабочий исследовательский трек. Следующий шаг уже уже не в поиске “почему test упал”, а в том, как учить этот трек на реальных сделках при том, что активных строк всего около `5%`. Подробный отчёт: [docs/reports/2026-04-08-entry-path-v1-baseline.md](docs/reports/2026-04-08-entry-path-v1-baseline.md)
+
 ## [2026-04-08] — Outcome-aligned retraining: validation-first verdict = no winner
 
 ### Добавлено

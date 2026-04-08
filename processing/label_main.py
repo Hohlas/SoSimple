@@ -15,7 +15,7 @@
 #     - DATA/{stem}_test_labeled.csv (маркированные + нормализованные данные, 15%)
 #     - DATA/{stem}_normalization_stats.csv (статистика признаков до нормализации)
 # Внутренние зависимости:
-#   - label_signals.py (функции label_all, label_updn, label_trade_targets)
+#   - label_signals.py (функции label_all, label_updn, label_trade_targets, label_entry_path_targets)
 #   - normalize.py (функция normalize_rowwise)
 # Внешние зависимости:
 #   - pandas>=2.0.0
@@ -58,6 +58,7 @@ from label_signals import (
     label_trade_targets,
     label_triple_barrier,
     label_first_barrier_hit,
+    label_entry_path_targets,
 )
 from normalize import normalize_rowwise
 
@@ -346,6 +347,10 @@ def main():
     # 3d. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
     print(f"\nРазметка Triple Barrier таргетов (path-ordered, OHLC={args.ohlc})...")
     labeled_df = label_first_barrier_hit(labeled_df, args.ohlc, scan_bars=24, debug=args.debug)
+
+    # 3d. Entry-path v1 labels (real entry on next bar, before normalization)
+    print(f"\nРазметка entry_path_v1 таргетов (OHLC={args.ohlc})...")
+    labeled_df = label_entry_path_targets(labeled_df, args.ohlc, debug=args.debug)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None

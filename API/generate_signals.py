@@ -1,6 +1,7 @@
 # =============================================================================
 # Файл: API/generate_signals.py
 # Назначение: Генерация CSV с предрассчитанными ML-сигналами для MT4 Strategy Tester
+#            и research-only export для entry_path_v1
 # Язык: Python 3.11+
 # Создан: 2026-03-20
 # Зависимости:
@@ -10,6 +11,7 @@
 #     - DATA/Nero_{train,validation,test}_labeled.csv
 #   Выходные данные:
 #     - MT/MQL4/Files/ml_signals.csv
+#     - ML/reports/<prefix>_{validation,test}_predictions.csv
 # Внешние зависимости:
 #   - torch>=2.0, numpy>=1.24, pandas>=2.0
 # Использование:
@@ -24,10 +26,11 @@
 # =============================================================================
 
 """
-Генерация CSV с ML-сигналами для MT4.
+Генерация CSV с ML-сигналами для MT4 и research-only export для entry_path_v1.
 
 Загружает обученную модель, прогоняет все три датасета (train, validation, test),
 применяет порог θ и пишет результат в MQL4/Files/ml_signals.csv.
+Для entry_path_v1 вместо MT4 CSV формирует validation/test prediction exports.
 """
 
 import argparse
@@ -44,7 +47,9 @@ from ML.data_loader import (
     UPDN_REGRESSION_TARGET, UPDN_TARGETS,
     TB_TARGET, TB_TARGET_NAMES,
 )
+from ML.entry_path_task import ENTRY_PATH_TARGET, build_entry_path_export_frame
 from ML.models import get_model
+from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
@@ -66,6 +71,35 @@ DEFAULT_TASK = 'regression_updn'
 DEFAULT_HORIZON = 12
 DEFAULT_THETA = 2.665
 DEFAULT_OPTUNA_JSON = str(REPORTS_DIR / 'optuna_best_params_transformer_regression_updn.json')
+
+
+def build_entry_path_model(model_kwargs: dict | None) -> EntryPathTransformer:
+    allowed_keys = {
+        'input_features',
+        'd_model',
+        'nhead',
+        'num_layers',
+        'dim_feedforward',
+        'dropout',
+    }
+    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
+    return EntryPathTransformer(**kwargs)
+
+
+def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
+    required = {
+        'ret_6_dir_atr',
+        'ret_12_dir_atr',
+        'ret_24_dir_atr',
+        'fav_6_atr',
+        'adv_6_atr',
+        'fav_12_atr',
+        'adv_12_atr',
+        'fav_24_atr',
+        'adv_24_atr',
+        'path_6_class',
+    }
+    return required.issubset(df.columns)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -296,12 +330,14 @@ def generate_signals(
     optuna_json: str | None = DEFAULT_OPTUNA_JSON,
     seed: int = 42,
     conformal: bool = False,
+    research_out_prefix: str = '',
 ):
     """Полный pipeline: загрузка модели → инференс → запись CSV."""
 
     set_seed(seed)
     device = get_device()
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if task != ENTRY_PATH_TARGET:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Conformal Prediction (опционально) ────────────────────────────────────
     conformal_quantiles = None
@@ -323,7 +359,10 @@ def generate_signals(
     print(f"{'═' * 60}")
 
     # ── Загрузка чекпоинта ───────────────────────────────────────────────────
-    suffix = '_updn' if task == 'regression_updn' else '_regression'
+    if task == ENTRY_PATH_TARGET:
+        suffix = f'_{ENTRY_PATH_TARGET}'
+    else:
+        suffix = '_updn' if task == 'regression_updn' else '_regression'
     ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
 
     if not ckpt_path.exists():
@@ -337,7 +376,7 @@ def generate_signals(
     model_kwargs = ckpt.get('model_kwargs', {})
 
     # Загрузка параметров Optuna
-    if optuna_json and Path(optuna_json).exists():
+    if task != ENTRY_PATH_TARGET and optuna_json and Path(optuna_json).exists():
         with open(optuna_json, 'r', encoding='utf-8') as f:
             optuna_data = json.load(f)
         best_params = optuna_data.get('best_params', {})
@@ -348,12 +387,80 @@ def generate_signals(
 
     seq_len = model_kwargs.get('seq_len', 20)
 
-    model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
+    if task == ENTRY_PATH_TARGET:
+        model = build_entry_path_model(model_kwargs)
+    else:
+        model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
     model = model.to(device)
     model.eval()
     print(f"  ✅ Модель {ckpt_model_name} загружена (seq_len={seq_len})")
     print(f"  📈 Горизонт: {horizon}H, Порог (θ): {theta}")
+
+    if task == ENTRY_PATH_TARGET:
+        if not research_out_prefix:
+            raise ValueError('Для entry_path_v1 нужен --research-out-prefix; MT4 CSV пока не выпускается')
+
+        prefix_path = Path(research_out_prefix)
+        prefix_path.parent.mkdir(parents=True, exist_ok=True)
+
+        print(f"  🔬 Research export prefix: {prefix_path}")
+        _train_loader, val_loader, _scaler = create_data_loaders(
+            batch_size=256,
+            target=ENTRY_PATH_TARGET,
+            use_scaler=False,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+        test_loader = create_test_loader(
+            batch_size=256,
+            target=ENTRY_PATH_TARGET,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+
+        for split_name, loader, csv_path in [
+            ('validation', val_loader, VAL_FILE),
+            ('test', test_loader, TEST_FILE),
+        ]:
+            df_full = pd.read_csv(csv_path, sep=CSV_SEP, low_memory=False)
+            df_meta = df_full[['time', 'signal']].copy()
+            include_truth = has_entry_path_ground_truth(df_full)
+            all_ret = []
+            all_path_reg = []
+            all_path_cls = []
+            all_true_reg = []
+            all_true_cls = []
+
+            with torch.no_grad():
+                for X_batch, y_reg_batch, y_cls_batch, mask_batch in loader:
+                    outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+                    all_ret.append(outputs['ret'].cpu().numpy())
+                    all_path_reg.append(outputs['path_reg'].cpu().numpy())
+                    all_path_cls.append(torch.softmax(outputs['path_cls'], dim=1).cpu().numpy())
+                    all_true_reg.append(y_reg_batch.numpy())
+                    all_true_cls.append(y_cls_batch.numpy())
+
+            export_kwargs = {
+                'times': df_meta['time'].values,
+                'signals': df_meta['signal'].values.astype(int),
+                'pred_ret': np.concatenate(all_ret),
+                'pred_path_reg': np.concatenate(all_path_reg),
+                'pred_path_cls': np.concatenate(all_path_cls),
+            }
+            if include_truth:
+                export_kwargs['true_reg'] = np.concatenate(all_true_reg)
+                export_kwargs['true_cls'] = np.concatenate(all_true_cls)
+
+            export = build_entry_path_export_frame(**export_kwargs)
+            output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
+            export.to_csv(output_path, sep=';', index=False)
+            print(f"  ✅ {split_name}: {len(export)} строк -> {output_path}")
+            if not include_truth:
+                print(f"  ⚠ {split_name}: true entry_path_v1 columns not found; export written without true_* columns.")
+
+        print(f"{'═' * 60}\n")
+        return
 
     # ── Обработка каждого датасета ───────────────────────────────────────────
     target_col = UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
@@ -448,7 +555,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default=DEFAULT_TASK,
-        choices=['regression', 'regression_updn', 'triple_barrier'],
+        choices=['regression', 'regression_updn', 'triple_barrier', ENTRY_PATH_TARGET],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
     parser.add_argument(
@@ -473,6 +580,10 @@ def parse_args() -> argparse.Namespace:
         '--conformal', action='store_true', default=False,
         help="Использовать Conformal Prediction фильтр (требует предварительной калибровки: python -m ML.conformal)"
     )
+    parser.add_argument(
+        '--research-out-prefix', type=str, default='',
+        help='Prefix for entry_path_v1 research CSVs; example ML/reports/entry_path_v1'
+    )
     return parser.parse_args()
 
 
@@ -494,4 +605,5 @@ if __name__ == '__main__':
             optuna_json=args.optuna_json,
             seed=args.seed,
             conformal=args.conformal,
+            research_out_prefix=args.research_out_prefix,
         )
