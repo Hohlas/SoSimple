@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Добавить новый ML-трек `entry_path_v1`, собрать первый baseline с реальным входом на следующем баре, выпустить исследовательские артефакты и честно зафиксировать первые результаты
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`, `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
-> **Related commit**: pending
+> **Related commit**: `63ebd0b`
 
 ## Context
 
