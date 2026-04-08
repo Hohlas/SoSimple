@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Построить offline-симулятор выходов поверх существующего `regression_updn` трека, честно сравнить политики выхода на `validation`, перенести в runtime только validation-winner и сделать одну финальную проверку на `test`
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-07-ml-exit-and-position-management.md`, `docs/superpowers/plans/ME13_Diagnostics_Plan.md`
-> **Related commit**: pending
+> **Related commit**: d861ca6
 
 ## Context
 
