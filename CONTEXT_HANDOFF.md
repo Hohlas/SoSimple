@@ -1,39 +1,47 @@
 # Context Handoff
 
 ## Current Stage
-Этап Triple Barrier: пересчёт разметки и повторная проверка в MT4 завершён. Найдена и исправлена главная причина старого расхождения между Python и MT4: TB-разметка считала исход не от времени строки сигнала, а от более раннего времени `fractal0`. После полной пересборки база вне MT4 стала такой: зафиксированное правило `theta=0.475`, `min_ev=0.10`, test `PF=1.11`, `N=253`. Новый MT4-прогон по свежему `ml_signals_tb.csv` дал `PF=1.27`, `N=92`. По жёстким исходам `TP/SL` совпадение уже `61 из 65`, а средняя разница по уровням SL/TP почти нулевая. Старый вывод “TB не переносится в MT4” больше не актуален.
+Этап `entry_path_v1`: первый baseline собран и зафиксирован. Новый трек теперь существует end-to-end: разметка, DataLoader, multitask transformer, обучение, test-отчёт и исследовательские CSV. Главный вывод этапа такой: на validation `ret_*` выглядит сильно, но на test этот слой пока не переносится. При этом слой пути цены (`fav/adv`) на test выглядит заметно лучше и стабильнее.
 
 ## Last Completed Stage
-Triple Barrier: причина старого расхождения найдена, цепочка пересобрана и заново проверена в MT4 (2026-04-08).
+`entry_path_v1` baseline и рабочие артефакты (2026-04-08).
 
 ## Next Step
-Следующий шаг для TB теперь не в новой переоптимизации, а в честном сравнении по одинаковым торговым правилам.
+Следующий шаг теперь узкий и понятный: не переучивать модель наугад, а разобрать, почему `ret_*` ломается на test.
 
-1. Добавить в Python режим оценки, который повторяет MT4 один в один: вход на следующем баре, только одна открытая позиция, `HoldOverTime`, `TB_Reversal`, пропуск новых сигналов при открытой позиции.
-2. На этом режиме ещё раз сравнить offline и MT4 по одному и тому же `ml_signals_tb.csv`.
-3. Только после этого решать, продвигать ли TB дальше как отдельный торговый режим и стоит ли строить новые таргеты поверх этой схемы.
-4. `regression_updn` не смешивать с TB: это отдельный трек с другой логикой и другим набором выводов.
+1. Сравнить train / validation / test по распределениям `ret_6_dir_atr`, `ret_12_dir_atr`, `ret_24_dir_atr`.
+2. Проверить ranking quality по split:
+   - top/bottom quantiles по `pred_ret_24_dir_atr`
+   - связь `pred_ret_*` с `true_ret_*`
+   - отдельно для BUY и SELL.
+3. Проверить, нет ли перекоса в loss balance:
+   - не тянет ли модель слишком сильно в сторону `path_reg`;
+   - не даёт ли `path_cls` только формальную нагрузку без пользы.
+4. После этого решить, что менять первым:
+   - веса loss;
+   - архитектуру;
+   - или сам главный `ret_*` target.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
-- `docs/superpowers/roadmap.md`
-- `docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
-- `docs/reports/2026-04-08-triple-barrier-hardening.md`
-- `ML/reports/threshold_analysis_tb.md`
-- `ML/reports/evaluate_test_tb.md`
-- `ML/reports/tb_selected_rule.json`
-- `MT/MQL4/Files/ml_signals_tb.csv`
+- `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`
+- `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
+- `docs/reports/2026-04-08-entry-path-v1-baseline.md`
+- `ML/checkpoints/transformer_entry_path_v1_result.json`
+- `ML/reports/evaluate_test_entry_path_v1.md`
+- `ML/reports/entry_path_v1_validation_predictions.csv`
+- `ML/reports/entry_path_v1_test_predictions.csv`
 
 ## Open Risks
-- Offline и MT4 всё ещё считают не в полностью одинаковых правилах: в MT4 есть `PosBlock`, `HoldOverTime`, `TB_Reversal` и вход на следующем баре.
-- Сравнение `253` offline trades и `92` MT4 trades пока не является сравнением “один к одному”.
-- SELL-часть TB выглядит слабее BUY-части.
-- Есть риск снова начать улучшать модель до того, как будет готов честный offline-режим под правила MT4.
+- Главный риск сейчас — ложная сила `ret_*` на validation при слабом переносе на test.
+- `path_6_class` почти вырождается в класс `0`, значит этот слой пока даёт мало полезной структуры.
+- В этой ветке полный `label_main` на всём наборе не был доведён до одного чистого финального прохода: train/validation уже были локально пересчитаны, а test был отдельно дополнен слоем `entry_path_v1`. Перед merge в main нужен полный rebuild.
+- `transformer_entry_path_v1_result.json` был синхронизирован после отдельного validation-pass, поэтому `training_time` там пустой.
 
 ## Latest Report
-`docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
+`docs/reports/2026-04-08-entry-path-v1-baseline.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

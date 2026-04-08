@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-08] — Entry Path v1: собран первый baseline и зафиксированы первые результаты
+
+### Добавлено
+- Новый трек `entry_path_v1`: новая разметка `ret_*`, `fav/adv`, `path_6_class`, новый dataset contract, multitask transformer, test-отчёт и research-only exports
+- Новый набор тестов: `tests/test_entry_path_labels.py`, `tests/test_entry_path_task.py`, `tests/test_entry_path_model.py`, `tests/test_entry_path_reports.py`
+- Baseline artifacts: `transformer_entry_path_v1_best.pt`, `transformer_entry_path_v1_result.json`, `evaluate_test_entry_path_v1.md`, `entry_path_v1_validation_predictions.csv`, `entry_path_v1_test_predictions.csv`
+
+### Результаты
+- Лучший checkpoint на validation: `epoch=5`, `best_ret_pearson_r=0.5253`, `path_reg_pearson_r=0.1641`, `path_cls_f1_macro=0.3247`
+- На test главный слой пока слабый: `ret_pearson_r=-0.0216`
+- Путь цены на test ловится заметно лучше: `path_reg_pearson_r=0.1694`
+- `path_6_class` почти вырождается в класс `0`: `F1(-1)=0.0000`, `F1(0)=0.9777`, `F1(1)=0.0000`
+
+### Вывод
+`entry_path_v1` уже полезен как новый исследовательский трек и даёт рабочие exports для будущего слоя `trade / no-trade`, но как основной сигнал пока не готов. Следующий шаг — не новое обучение вслепую, а разбор, почему `ret_*` выглядит сильным на validation и слабым на test. Подробный отчёт: [docs/reports/2026-04-08-entry-path-v1-baseline.md](docs/reports/2026-04-08-entry-path-v1-baseline.md)
+
 ## [2026-04-08] — Triple Barrier: найдена причина старого расхождения Python ↔ MT4
 
 ### Исправлено
