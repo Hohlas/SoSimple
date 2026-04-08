@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Понять, почему старая TB-разметка плохо сходилась с MT4, исправить причину и заново проверить TB на свежем прогоне тестера
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-08-triple-barrier-runtime-verdict.md`, `docs/reports/2026-04-08-triple-barrier-hardening.md`
-> **Related commit**: pending
+> **Related commit**: `2dcbf90`
 
 ## Context
 

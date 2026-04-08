@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Довести TB до честной схемы вне MT4: реальное первое касание, калибровка вероятностей, выбор порогов только на validation, режим “не торговать” и выпуск нового набора сигналов для MT4
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-07-triple-barrier-hardening.md`, `docs/superpowers/plans/2026-03-22-triple-barrier.md`, `docs/superpowers/specs/2026-03-22-triple-barrier-design.md`
-> **Related commit**: pending
+> **Related commit**: `2dcbf90`
 
 ## Context
 
