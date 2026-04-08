@@ -1537,6 +1537,7 @@ def main():
         use_weighted_sampler=args.use_weighted_sampler,
         model_kwargs=model_kwargs,
         seq_len=args.seq_len,
+        clear_cache=args.clear_cache,
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
     )
 

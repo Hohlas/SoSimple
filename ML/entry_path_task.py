@@ -186,6 +186,52 @@ def build_entry_path_report_markdown(
         slice_row('Top 10%', top_slice),
     ]
 
+    active_frame = frame[frame['signal'] != 0].copy()
+    active_lines = []
+    if len(active_frame) > 0:
+        active_ret_rows = []
+        for name in ENTRY_PATH_RET_TARGETS:
+            y_true = active_frame[f'true_{name}'].to_numpy(dtype=np.float64)
+            y_pred = active_frame[f'pred_{name}'].to_numpy(dtype=np.float64)
+            active_ret_rows.append({
+                'name': name,
+                'pearson_r': _safe_pearson(y_true, y_pred),
+                'mae': float(np.mean(np.abs(y_pred - y_true))),
+            })
+
+        active_ret_pearson_r = float(np.mean([row['pearson_r'] for row in active_ret_rows]))
+        active_sorted = active_frame.sort_values('pred_ret_24_dir_atr')
+        active_n_slice = max(1, int(len(active_frame) * 0.1))
+        active_slice_rows = [
+            slice_row('Bottom 10%', active_sorted.head(active_n_slice)),
+            slice_row('Top 10%', active_sorted.tail(active_n_slice)),
+        ]
+
+        active_lines.extend([
+            '',
+            '## Active Trades Only',
+            '',
+            f'- active_rows: **{len(active_frame)}**',
+            f'- active_ret_pearson_r: **{active_ret_pearson_r:.4f}**',
+            '',
+            '| Target | Pearson r | MAE |',
+            '|--------|-----------|-----|',
+        ])
+        for row in active_ret_rows:
+            active_lines.append(f"| {row['name']} | {row['pearson_r']:.4f} | {row['mae']:.4f} |")
+
+        active_lines.extend([
+            '',
+            '## Active Slice: pred_ret_24_dir_atr',
+            '',
+            '| Slice | Rows | mean true_ret_24_dir_atr | positive share |',
+            '|-------|------|--------------------------|----------------|',
+        ])
+        for row in active_slice_rows:
+            active_lines.append(
+                f"| {row['label']} | {row['rows']} | {row['mean_true_ret_24']:.4f} | {row['positive_share']:.1%} |"
+            )
+
     lines = [
         '# Entry Path v1 Test Set Evaluation',
         '',
@@ -245,4 +291,5 @@ def build_entry_path_report_markdown(
         '',
         f'- Predictions CSV: `{artifact_name}`',
     ])
+    lines.extend(active_lines)
     return '\n'.join(lines)

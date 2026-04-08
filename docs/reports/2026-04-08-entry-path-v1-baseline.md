@@ -1,188 +1,209 @@
-# Entry Path v1: первый baseline и рабочие артефакты
+# Entry Path v1: исправленный первый baseline
 
-> **Date**: 2026-04-08 22:19 MSK
+> **Date**: 2026-04-08 22:49 MSK
 > **Status**: Completed
-> **Goal**: Добавить новый ML-трек `entry_path_v1`, собрать первый baseline с реальным входом на следующем баре, выпустить исследовательские артефакты и честно зафиксировать первые результаты
+> **Goal**: Собрать первый честный baseline для `entry_path_v1`, найти причину ложных ранних цифр и зафиксировать уже очищенные результаты
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`, `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
-> **Related commit**: `63ebd0b`
+> **Related commit**: pending
 
 ## Context
 
-После этапа с Triple Barrier стало ясно, что проекту нужен ещё один трек между двумя крайностями:
+`entry_path_v1` был собран как новый трек между `regression_updn` и `triple_barrier`: с реальным входом на следующем баре, отдельными целями для общего итога сделки и отдельными целями для пути цены.
 
-- `regression_updn` слишком слабо связан с реальной сделкой;
-- `triple_barrier` слишком жёстко привязывает обучение к одной схеме выхода.
-
-`entry_path_v1` задуман как более гибкий слой. Он должен смотреть на реальный вход со следующего бара, отдельно оценивать общий итог идеи и отдельно путь цены после входа.
-
-Главный вопрос этого baseline был простой: можно ли на текущих признаках получить рабочий первый прогноз для новых `ret_*`, `fav/adv` и `path_6_class`.
+Первый baseline уже был собран и даже зафиксирован в коммите, но сразу после этого выяснилось, что его главные числа нельзя считать честными. Причина оказалась не в самой идее `ret_*`, а в ошибке запуска обучения.
 
 ## What Was Done
 
-- В `processing/label_signals.py` добавлены новые цели:
+- В `processing/label_signals.py` и `processing/label_main.py` осталась собранная схема `entry_path_v1`:
   - `ret_6_dir_atr`, `ret_12_dir_atr`, `ret_24_dir_atr`
   - `fav_3_atr`, `adv_3_atr`
   - `fav_6_atr`, `adv_6_atr`
   - `fav_12_atr`, `adv_12_atr`
   - `fav_24_atr`, `adv_24_atr`
   - `path_6_class`
-- В `processing/label_main.py` новый слой разметки подключён в основной pipeline.
-- Добавлен контракт нового трека в `ML/entry_path_task.py`:
-  - списки таргетов;
-  - mapping классов;
-  - export frame для исследовательских CSV;
-  - helper для markdown-отчёта по test.
-- В `ML/data_loader.py` добавлен режим `entry_path_v1` с отдельными регрессионными и классификационными целями.
-- Создана новая модель `ML/models/entry_path_transformer.py`:
-  - общий transformer encoder;
-  - общая голова;
-  - три выхода: `ret`, `path_reg`, `path_cls`.
-- В `ML/train.py` добавлен полный цикл обучения `entry_path_v1`.
-- В `ML/evaluate_test.py` добавлена test-оценка нового трека и подробный markdown-отчёт.
-- В `API/generate_signals.py` добавлен research-only export для `entry_path_v1` без выпуска MT4 CSV.
-- Добавлены тесты:
-  - `tests/test_entry_path_labels.py`
-  - `tests/test_entry_path_task.py`
-  - `tests/test_entry_path_model.py`
-  - `tests/test_entry_path_reports.py`
-- Выпущены baseline-артефакты:
-  - checkpoint;
-  - result JSON;
-  - test-report;
-  - validation/test prediction exports.
+- В `ML` остался весь новый трек:
+  - `ML/entry_path_task.py`
+  - `ML/data_loader.py`
+  - `ML/models/entry_path_transformer.py`
+  - `ML/train.py`
+  - `ML/evaluate_test.py`
+  - `API/generate_signals.py`
+- После первого baseline был найден баг в `ML/train.py`:
+  - CLI принимал `--clear_cache`, но не передавал его в `train_model()`
+  - из-за этого обучение шло на старом `entry_path` кэше
+- Добавлен тест `tests/test_entry_path_training.py`, который ловит именно этот баг.
+- После исправления был сделан чистый rebuild train/validation кэша и повторное обучение.
+- Заново выпущены:
+  - `transformer_entry_path_v1_best.pt`
+  - `transformer_entry_path_v1_result.json`
+  - `evaluate_test_entry_path_v1.md`
+  - `entry_path_v1_validation_predictions.csv`
+  - `entry_path_v1_test_predictions.csv`
+- В `ML/entry_path_task.py` markdown-отчёт расширен active-only секцией, чтобы отдельно видеть качество на реальных BUY/SELL строках.
 
-Дополнительно по ходу этапа:
+## Root Cause
 
-- test split был отдельно доведён до того же формата `entry_path_v1`, что и train/validation;
-- итоговый `transformer_entry_path_v1_result.json` синхронизирован с реальным лучшим checkpoint после отдельного validation-pass.
+Главная причина ложных ранних результатов была такой:
+
+- `--clear_cache` не доходил до `train_model()`;
+- из-за этого `DATA/y_train_entry_path_v1_*.npy` и `DATA/y_val_entry_path_v1_*.npy` не пересобирались;
+- в старом кэше у строк с `signal=0` были ненулевые `ret_*`, чего по текущему дизайну быть не должно.
+
+Проверка это подтвердила прямо:
+
+- до исправления в train `41556` строк с `signal=0` имели ненулевые `ret_*`;
+- до исправления в validation `8905` строк с `signal=0` имели ненулевые `ret_*`;
+- после честной пересборки в обоих split это стало `0`.
+
+Именно поэтому старое значение `best_ret_pearson_r=0.5253` оказалось ложным.
 
 ## Changed Files
 
-- `processing/label_signals.py` (обновлён)
-- `processing/label_main.py` (обновлён)
-- `ML/entry_path_task.py` (создан)
-- `ML/data_loader.py` (обновлён)
-- `ML/models/entry_path_transformer.py` (создан)
 - `ML/train.py` (обновлён)
-- `ML/evaluate_test.py` (обновлён)
-- `API/generate_signals.py` (обновлён)
-- `tests/test_entry_path_labels.py` (создан)
-- `tests/test_entry_path_task.py` (создан)
-- `tests/test_entry_path_model.py` (создан)
-- `tests/test_entry_path_reports.py` (создан)
-- `ML/checkpoints/transformer_entry_path_v1_best.pt` (создан)
-- `ML/checkpoints/transformer_entry_path_v1_result.json` (создан)
-- `ML/reports/evaluate_test_entry_path_v1.md` (создан)
-- `ML/reports/entry_path_test_predictions.csv` (создан)
-- `ML/reports/entry_path_v1_validation_predictions.csv` (создан)
-- `ML/reports/entry_path_v1_test_predictions.csv` (создан)
-- `docs/superpowers/plans/2026-04-08-entry-path-v1.md` (создан)
+- `tests/test_entry_path_training.py` (создан)
+- `ML/checkpoints/transformer_entry_path_v1_best.pt` (обновлён)
+- `ML/checkpoints/transformer_entry_path_v1_result.json` (обновлён)
+- `ML/reports/evaluate_test_entry_path_v1.md` (обновлён)
+- `ML/reports/entry_path_test_predictions.csv` (обновлён)
+- `ML/reports/entry_path_v1_validation_predictions.csv` (обновлён)
+- `ML/reports/entry_path_v1_test_predictions.csv` (обновлён)
+- `ML/entry_path_task.py` (обновлён; добавлен active-only блок в markdown-report)
+- `tests/test_entry_path_reports.py` (обновлён)
+
+Ниже перечислены и файлы самого baseline, которые остаются актуальными после исправления:
+
+- `processing/label_signals.py`
+- `processing/label_main.py`
+- `ML/data_loader.py`
+- `ML/models/entry_path_transformer.py`
+- `ML/evaluate_test.py`
+- `API/generate_signals.py`
+- `tests/test_entry_path_labels.py`
+- `tests/test_entry_path_task.py`
+- `tests/test_entry_path_model.py`
 
 ## Verification
 
 ```bash
-./.venv/bin/python -m pytest tests/test_entry_path_labels.py tests/test_entry_path_task.py tests/test_entry_path_model.py tests/test_entry_path_reports.py -q
-./.venv/bin/python -m ML.train --model transformer --task entry_path_v1 --epochs 50 --seed 42 --clear_cache
+./.venv/bin/python -m pytest tests/test_entry_path_labels.py tests/test_entry_path_task.py tests/test_entry_path_model.py tests/test_entry_path_reports.py tests/test_entry_path_training.py -q
+./.venv/bin/python -m ML.train --model transformer --task entry_path_v1 --epochs 5 --seed 42
 ./.venv/bin/python -m ML.evaluate_test --task entry_path_v1 --model transformer
 ./.venv/bin/python -m API.generate_signals --task entry_path_v1 --model transformer --research-out-prefix ML/reports/entry_path_v1
 ```
 
 Observed:
 
-- `pytest`: `14 passed`
-- В обучении лучший checkpoint был получен на `epoch=5`
-- `ML/reports/evaluate_test_entry_path_v1.md` создан
-- `ML/reports/entry_path_v1_validation_predictions.csv` создан
-- `ML/reports/entry_path_v1_test_predictions.csv` создан
+- `pytest`: `15 passed`
+- чистый retrain завершён на `epoch=5`
+- новый `transformer_entry_path_v1_result.json` сохранён
+- новый `evaluate_test_entry_path_v1.md` сохранён
+- новые validation/test exports сохранены
 
 ## Results
 
-### Лучший checkpoint на validation
+### Что было ложным в старом baseline
 
-| Metric | Value |
+| Metric | Старое значение |
 |---|---:|
-| Best epoch | `5` |
-| `best_ret_pearson_r` | `0.5253` |
-| `path_reg_pearson_r` | `0.1641` |
-| `path_cls_f1_macro` | `0.3247` |
+| `best_ret_pearson_r` на validation | `0.5253` |
+| `ret_pearson_r` на test | `-0.0216` |
 
-### Test summary
+Эти числа больше не актуальны и не должны использоваться.
 
-| Metric | Value |
-|---|---:|
-| Rows | `9378` |
-| `ret_pearson_r` | `-0.0216` |
-| `path_reg_pearson_r` | `0.1694` |
-| `path_cls_f1_macro` | `0.3259` |
+### Чистый baseline после исправления
 
-### Return targets on test
+| Metric | Validation | Test |
+|---|---:|---:|
+| `ret_pearson_r` | `0.2656` | `0.2450` |
+| `path_reg_pearson_r` | `0.3004` | `0.2745` |
+| `path_cls_f1_macro` | `0.3261` | `0.3259` |
+
+### Return targets на test
 
 | Target | Pearson r | MAE |
 |---|---:|---:|
-| `ret_6_dir_atr` | `-0.0296` | `0.1719` |
-| `ret_12_dir_atr` | `-0.0264` | `0.1795` |
-| `ret_24_dir_atr` | `-0.0086` | `0.2248` |
+| `ret_6_dir_atr` | `0.2317` | `0.0991` |
+| `ret_12_dir_atr` | `0.2486` | `0.1327` |
+| `ret_24_dir_atr` | `0.2546` | `0.2027` |
 
-### Path targets on test
+### Path targets на test
 
-| Target group | Range of Pearson r |
+| Target | Pearson r | MAE |
+|---|---:|---:|
+| `fav_6_atr` | `0.2219` | `0.0574` |
+| `adv_6_atr` | `0.3434` | `0.1306` |
+| `fav_12_atr` | `0.1955` | `0.0690` |
+| `adv_12_atr` | `0.3446` | `0.1749` |
+| `fav_24_atr` | `0.1811` | `0.0877` |
+| `adv_24_atr` | `0.3605` | `0.2569` |
+
+### Active-only на test
+
+Это более честный срез только по строкам, где есть BUY или SELL.
+
+| Metric | Value |
 |---|---:|
-| `fav_*` | `0.0715 .. 0.1362` |
-| `adv_*` | `0.1779 .. 0.2660` |
+| active rows | `480` |
+| active `ret_pearson_r` | `0.2039` |
 
-### Срез по `pred_ret_24_dir_atr`
+| Target | Pearson r | MAE |
+|---|---:|---:|
+| `ret_6_dir_atr` | `0.2075` | `1.4417` |
+| `ret_12_dir_atr` | `0.2025` | `1.9800` |
+| `ret_24_dir_atr` | `0.2016` | `3.3222` |
+
+### Active-only срез по `pred_ret_24_dir_atr`
 
 | Slice | Rows | mean `true_ret_24_dir_atr` | positive share |
 |---|---:|---:|---:|
-| Bottom 10% | `937` | `-0.4176` | `2.6%` |
-| Top 10% | `937` | `-0.1612` | `0.2%` |
+| Bottom 10% | `48` | `-2.2741` | `20.8%` |
+| Top 10% | `48` | `0.2442` | `56.2%` |
 
-### `path_6_class` на test
+### `path_6_class`
 
-| Class | F1 |
-|---|---:|
-| `-1` | `0.0000` |
-| `0` | `0.9777` |
-| `1` | `0.0000` |
+Общий F1 по этому слою почти не меняется, но есть важное ограничение:
+
+- на validation и test модель почти всегда предсказывает класс `0`;
+- на реальных активных строках это видно ещё лучше:
+  - validation active true classes: `{-1: 307, 0: 73, 1: 93}`
+  - validation active predicted classes: `{0: 473}`
+  - test active true classes: `{-1: 309, 0: 70, 1: 101}`
+  - test active predicted classes: `{0: 480}`
 
 ## Conclusions
 
-Этап дал рабочий baseline и полезный честный вывод.
+После исправления картина стала гораздо понятнее.
 
-Что уже получилось:
+Что выяснилось:
 
-- новый трек `entry_path_v1` собран end-to-end;
-- train / evaluation / export работают;
-- путь цены после входа модель уже ловит лучше, чем общий итог сделки;
-- исследовательские CSV готовы для будущего слоя `trade / no-trade`.
+- главная старая проблема была не в самих `ret_*`, а в старом кэше обучения;
+- после честной пересборки `ret_*` уже не выглядит ни “чудесно сильным”, ни сломанным;
+- на test `ret_*` и `fav/adv` теперь переносятся похоже на validation;
+- отдельный active-only срез показывает, что в реальных сделках модель уже разделяет плохие и относительно лучшие случаи.
 
-Что пока не получилось:
+Что остаётся слабым:
 
-- главные `ret_*` цели хорошо выглядят на validation, но не держатся на test;
-- ранний класс `path_6_class` почти вырождается в один класс `0`;
-- даже верхний слой по `pred_ret_24_dir_atr` на test остаётся отрицательным.
+- `path_6_class` пока почти не работает как отдельная цель;
+- обучение всё ещё сильно разбавлено строками `signal=0`, которых около `95%`;
+- поэтому общие метрики по всем строкам надо читать осторожно, а не как прямую меру качества реальных сделок.
 
-Иными словами: baseline уже полезен как исследовательский инструмент, но пока не годится как готовый основной сигнал.
+Итог этапа теперь такой: `entry_path_v1` имеет смысл как рабочий baseline и как исследовательский трек. Старый отчёт с отрицательным выводом про `ret_*` больше не актуален.
 
 ## Limitations / Open Questions
 
-- В этой ветке полный `label_main` на всём наборе не был доведён до штатного финала одним проходом: train/validation уже были локально пересчитаны, а test был отдельно дополнен новым слоем `entry_path_v1`. Для merge в main нужен ещё один чистый полный rebuild.
-- Обучение было остановлено после получения устойчивого лучшего checkpoint на `epoch=5`, поэтому `training_time` в `transformer_entry_path_v1_result.json` не заполнен.
-- Главный открытый вопрос этапа: почему `ret_*` выглядит сильно на validation и слабо на test.
-- Отдельно нужно понять, это проблема:
-  - самих новых таргетов;
-  - перекоса train/validation/test;
-  - веса loss между `ret`, `path_reg`, `path_cls`;
-  - или слабости текущих входных признаков именно для `ret_*`.
+- Ветка всё ещё нуждается в одном чистом полном rebuild через штатный `label_main` до merge в main.
+- `path_6_class` почти целиком проигрывает из-за перекоса данных.
+- В loss сейчас все строки участвуют одинаково, хотя активных сигналов только около `5%`.
+- Следующий вопрос уже не “сломаны ли `ret_*`?”, а “как лучше учить реальную сделку при таком сильном перекосе нулевых строк?”
 
 ## Next Step
 
-Не менять таргеты вслепую. Следующий шаг:
+Следующий шаг я считаю таким:
 
-1. разобрать разрыв между validation и test именно по `ret_*`;
-2. сравнить распределения `ret_*` и ranking quality по split;
-3. проверить, не тянет ли модель к ложному улучшению на validation при слабом переносе;
-4. только после этого решать, править loss / архитектуру или менять сам главный таргет.
+1. проверить вариант обучения, где `ret_*` и `path_6_class` считаются только по активным строкам;
+2. сравнить этот вариант с текущим baseline на validation и test;
+3. отдельно решить, нужен ли `path_6_class` в `v1` вообще или его лучше временно ослабить / убрать;
+4. перед merge в main сделать один чистый полный rebuild датасета и артефактов.
 
 ## Related Materials
 

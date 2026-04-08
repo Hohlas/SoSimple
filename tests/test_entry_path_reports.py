@@ -104,3 +104,53 @@ def test_entry_path_report_markdown_contains_target_sections_and_slice():
     assert '## Slice: pred_ret_24_dir_atr' in report
     assert 'Top 10%' in report
     assert 'Bottom 10%' in report
+
+
+def test_entry_path_report_markdown_contains_active_only_section():
+    frame = build_entry_path_export_frame(
+        times=np.array([f'2025.01.01 {hour:02d}:00' for hour in range(12)]),
+        signals=np.array([0, 0, 1, 1, 1, -1, -1, -1, 0, 1, -1, 0]),
+        pred_ret=np.array([
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0],
+            [-0.4, -0.2, -0.6],
+            [-0.2, -0.1, -0.3],
+            [0.1, 0.2, 0.3],
+            [0.2, 0.1, 0.4],
+            [0.3, 0.2, 0.6],
+            [0.4, 0.3, 0.8],
+            [0.0, 0.0, 0.0],
+            [0.5, 0.4, 1.0],
+            [0.6, 0.5, 1.2],
+            [0.0, 0.0, 0.0],
+        ], dtype=np.float32),
+        pred_path_reg=np.tile(np.array([[0.1, 0.2, 0.3, 0.4, 0.5, 0.6]], dtype=np.float32), (12, 1)),
+        pred_path_cls=np.tile(np.array([[0.2, 0.7, 0.1]], dtype=np.float32), (12, 1)),
+        true_reg=np.array([
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [-0.6, -0.3, -1.0, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [-0.4, -0.2, -0.5, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.2, 0.3, 0.6, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.1, 0.2, 0.3, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.3, 0.4, 0.9, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.4, 0.5, 1.1, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.5, 0.6, 1.4, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.6, 0.7, 1.8, 0.2, 0.4, 0.3, 0.6, 0.4, 0.8],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ], dtype=np.float32),
+        true_cls=np.array([1, 1, 0, 0, 2, 2, 2, 2, 1, 2, 2, 1], dtype=np.int64),
+    )
+
+    report = build_entry_path_report_markdown(
+        frame=frame,
+        model_name='transformer',
+        artifact_name='entry_path_test_predictions.csv',
+        split_label='Test',
+    )
+
+    assert '## Active Trades Only' in report
+    assert 'active_rows' in report
+    assert 'active_ret_pearson_r' in report
+    assert '## Active Slice: pred_ret_24_dir_atr' in report
