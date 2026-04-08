@@ -1,0 +1,22 @@
+{
+  "saved_at": "2026-04-08T06:43:46.613732+00:00",
+  "split_profile": "validation_research",
+  "policy": {
+    "name": "timeout_only"
+  },
+  "summary": {
+    "policy": "timeout_only",
+    "trades": 567,
+    "pf": 1.1698779370010186,
+    "win_rate": 50.970017636684304,
+    "avg_hold_bars": 11.998236331569665,
+    "avg_blocked_signals": 3.7319223985890653,
+    "net_atr": 139.7604866867443
+  },
+  "mql_inputs": {
+    "ML_ExitReverseRatio": 0.0,
+    "ML_ExitKeepRatio": 0.0,
+    "ML_ExitProfitATR": 0.0,
+    "ML_ExitMinHoldBars": 0
+  }
+}

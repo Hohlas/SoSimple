@@ -21,6 +21,7 @@ Unit и smoke-тесты для ключевых модулей SoSimple.
 | [test_signal_research.py](test_signal_research.py) | `API/signal_research.py` | ATR14, excursions, barrier outcomes, ratio_bin, discovery/holdout split |
 | [test_signal_path_atlas.py](test_signal_path_atlas.py) | `API/signal_path_atlas.py` | calendar split, path tensor, slices, archetypes, holdout replication, CLI smoke |
 | [test_signal_quality_research.py](test_signal_quality_research.py) | `API/signal_quality_research.py` | filter features, variance check, univariate maps, shallow tree, score/holdout |
+| [test_exit_policy_research.py](test_exit_policy_research.py) | `API/exit_policy_research.py` | exit triggers, split boundary, same-bar reversal, ranking, frozen-policy guard |
 
 ## Зависимости
 

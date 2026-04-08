@@ -1,44 +1,36 @@
 # Context Handoff
 
 ## Current Stage
-Archetype × Filter Bridge завершён. `fav_3_vs_12 <= 0.653` обогащает winning архетип (+6.6 pp на holdout). `ratio_3_vs_12 > 4.751` не коррелирует с winning архетипом. Pullback поверх фильтра не нужен — winning signals не откатываются.
+Validation-first ML exit research завершён. Offline simulator на жёстком `validation` / `test` split показал, что ни `reverse`, ни `weak_edge`, ни `profit_guard`, ни layered exit не обгоняют baseline `timeout_only`. Frozen policy зафиксирован в `ML/reports/frozen_exit_policy.json`; новый MQL4 exit rule не переносился, потому что победитель уже совпадает с текущим `ML_Timeout(12H)` поведением.
 
 ## Last Completed Stage
-Archetype × Filter Bridge (2026-04-04).
+Validation-first ML Exit Research (2026-04-08).
 
 ## Next Step
-Path forward выбран: идти по четырёхшаговому roadmap, сохраняя bridge-результат как текущий baseline.
+Path forward сужен: ML exit / position management не дал validated uplift против текущего timeout baseline, поэтому следующий содержательный шаг уже вне этого search space.
 
-1. **Сначала — validation-first protocol**: перевести весь search логики входа/выхода на `validation`, а `test` оставить как финальную проверку. Одновременно переякорить текущий bridge winner:
-   - baseline candidate: `fav_3_vs_12 <= 0.653` + market
-   - benchmark only: `ratio_3_vs_12 > 4.751` + pullback
-   - первый search space: replicated spread features + threshold sensitivity
-
-2. **Затем — ML exit / position management**: усилить текущий `regression_updn` трек без переобучения.
-
-3. **Потом — Triple Barrier hardening**: довести parallel-трек до честного финального verdict.
-
-4. **После этого — outcome-aligned retraining**: запускать новый широкий ML-трек под торговый исход, а не под raw excursions.
+1. **Triple Barrier hardening**: довести parallel-трек до честного финального verdict уже без ожидания “быстрой победы” от exit-логики поверх `regression_updn`.
+2. **Outcome-aligned retraining**: если нужен новый uplift для regression-track, искать его уже не в раннем закрытии, а в новом target / objective, который ближе к реальному торговому исходу.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
 - `docs/superpowers/roadmap.md`
+- `docs/reports/2026-04-08-ml-exit-validation-first.md`
 - `docs/reports/2026-04-04-archetype-filter-bridge.md`
 - `docs/reports/2026-04-04-signal-path-atlas-readout.md`
 - `docs/reports/2026-04-04-signal-quality-filter.md`
+- `ML/reports/frozen_exit_policy.json`
 
 ## Open Risks
-- N=84 для `fav_3_vs_12 + market` — medium-sample. Достаточен для directional вывода, но точная PF оценка может сдвинуться.
-- Фильтр `fav_3_vs_12 <= 0.653` enriches winning с 37% до 44% — не separation. 56% отфильтрованных сигналов всё ещё failure.
-- Year-stability `fav_3_vs_12` нестабильна на discovery (деградация 2022→2024 с recovery в holdout).
-- ATR bucket conditioning нестабильно (failed holdout replication при N=530).
-- Locked Variant 3 winner ослаблен: оба pillar (ratio 4-5, ATR Q4) weakly supported.
-- `ratio_3_vs_12 > 4.751` работает на pullback, но его edge = mechanical price improvement на failure сигналах, не archetype selection.
+- Exit-policy uplift поверх `regression_updn` может просто отсутствовать: validation winner остался baseline `timeout_only`.
+- Лучший новый кандидат (`profit_guard_p1.5_k1.8_h2`) близок к baseline по PF, но всё равно хуже него; есть риск переинтерпретировать trade-count uplift как реальное improvement.
+- Position blocking остаётся высоким даже у frozen baseline (`avg_blocked_signals ≈ 3.73` на validation, `≈ 3.34` на test), но попытки лечить это одними exit-правилами пока только ухудшали PF.
+- Если нужен новый edge, вероятнее всего он лежит не в выходе, а в более outcome-aligned target / execution track.
 
 ## Latest Report
-`docs/reports/2026-04-04-archetype-filter-bridge.md`
+`docs/reports/2026-04-08-ml-exit-validation-first.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

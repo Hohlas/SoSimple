@@ -2,6 +2,24 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-08] — Validation-first ML Exit Research: frozen winner = timeout-only
+
+### Добавлено
+- Новый standalone research tool `API/exit_policy_research.py` для offline-симуляции выходов и position blocking поверх существующего `MT/MQL4/Files/ml_signals.csv`, с жёстким split по `DATA/Nero_validation_labeled.csv` / `DATA/Nero_test_labeled.csv`
+- `tests/test_exit_policy_research.py` (10 тестов) на exit triggers, split boundary, same-bar reversal, ranking и guard против search-loop на `test_final`
+- Frozen policy artifact `ML/reports/frozen_exit_policy.json`
+
+### Результаты
+- Validation grid-search по exit-policy library (`reverse`, `weak_edge`, `profit_guard`, layered) не обогнал baseline:
+  - `timeout_only`: `PF=1.17`, `N=567`, `win_rate=50.97%`, `avg_hold_bars=12.0`
+  - лучший новый кандидат `profit_guard_p1.5_k1.8_h2`: `PF=1.16`, `N=777`
+- Final one-shot check на `test` по frozen JSON:
+  - `timeout_only`: `PF=1.12`, `N=558`, `win_rate=50.72%`, `avg_hold_bars=11.98`
+
+### Вывод
+Validation-first protocol отработал как intended: ни одно новое ML-exit правило не прошло честную проверку против уже существующего `ML_Timeout(12H)` baseline. Поэтому новый exit rule в MQL4 не переносился; замороженной политикой остаётся `timeout_only`, уже реализованный в `MT/MQL4/Include/OUTPUT.mqh`.
+Подробный отчёт: [docs/reports/2026-04-08-ml-exit-validation-first.md](docs/reports/2026-04-08-ml-exit-validation-first.md)
+
 
 ## [2026-04-04] — Archetype × Filter Bridge: fav_3_vs_12 обогащает winning архетип, pullback не нужен
 
