@@ -1,61 +1,56 @@
 # Context Handoff
 
 ## Current Stage
-Этап `entry_path_v1`: слой `торговать / не торговать` поверх рабочего базового варианта собран и доведён до практического базового варианта. На этом этапе были добавлены:
+Этап финальной MT4-сверки для уже выбранного победителя завершён.
 
-- простой фильтр `A` по `pred_ret_24_dir_atr`;
-- составной фильтр `B` по нескольким выходам модели;
-- скрипт проверки с подбором порога только на validation;
-- защитное правило против слишком маленького и неустойчивого хвоста;
-- отдельный путь по последовательности для головы `path_cls`.
+Что теперь зафиксировано:
 
-Текущая модель после этого этапа:
-- validation: `ret_pearson_r=0.2758`, `path_reg_pearson_r=0.2987`, `path_cls_f1_macro=0.4074`
-- test: `ret_pearson_r=0.2507`, `path_reg_pearson_r=0.2667`, `path_cls_f1_macro=0.4013`
-- active-only test: `ret_pearson_r=0.2241`, `path_cls_f1_macro=0.3208`
+- прямой режим `iSignal=3` в MT4 стабилизирован;
+- финальный `ml_signals.csv` для победителя был подан в `MT/tester/files/ml_signals.csv`;
+- MT4 отработал именно `MLP`, без участия `TB`;
+- финальный однократный прогон на `test` дал:
+  - `8872` строк в `ml_signals.csv`
+  - `22` активных сигнала
+  - `22` сделки
+  - `PF=8.47`
+  - `net=+3077.05`
+  - `DD=5.12%`
 
-Текущий рабочий победитель для слоя отбора:
-- `A @ 7.5%`
-- validation: `36` сделок, `PF=2.67`, `stability_ratio=1.00`
-- test: `44` сделки, `PF=4.29`
-- последовательная проверка: `30` сделок, `PF=2.87`
+Технические правки, которые понадобились для этого этапа:
 
-Важно: составной фильтр `B` уже перестал быть копией `A`, но по общему правилу отбора победителем пока всё ещё остаётся `A`.
+- `MAIN.mqh`: `ml_direct_mode` теперь определяется только после `EXPERT_SET()`;
+- `lib_ML_Signal.mqh`: возвращена `ML_DIAG_PRINT()`;
+- `lib_ML_Signal.mqh`: BUY back-stop зажат снизу и больше не даёт `OrderSend error 4107`.
+
+Важно: в финальном прогоне `ScoreCol=false` было нормальным состоянием, потому что в MT4 использовался уже заранее отфильтрованный файл `time;signal`, а не полный prediction CSV.
 
 ## Last Completed Stage
-`entry_path_v1` слой отбора сделок и защитное правило выбора победителя (2026-04-09).
+Финальная MT4-сверка для замороженного победителя (2026-04-09).
 
 ## Next Step
-Следующий шаг уже не в новой переделке модели и не в новом подборе порогов для `A/B`.
+Следующий шаг уже не в новом выборе победителя и не в повторном прогоне `test`.
 
-1. Взять `A @ 7.5%` как замороженный рабочий базовый вариант для `entry_path_v1`.
-2. Поверх него строить conformal-слой `торговать / не торговать`.
-3. Сравнивать conformal не с сырыми сигналами, а именно с этим базовым вариантом.
-4. `B` держать как вторую исследовательскую ветку и возвращаться к нему только если новый слой отбора даст повод.
+1. Перенести скрипт выпуска CSV и слой отбора из черновой ветки `mt4-execution-trade-selection` в `main`, чтобы победителя можно было выпускать без ручного обходного пути.
+2. При необходимости сохранить отдельную таблицу `Python ↔ MT4` по тем же `22` сделкам.
+3. Только потом решать, нужен ли следующий слой по выходу из сделки или по размеру позиции.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
+- `docs/reports/2026-04-09-mt4-parity-check-winner.md`
 - `docs/reports/2026-04-09-entry-path-trade-filter.md`
-- `docs/reports/2026-04-08-entry-path-v1-baseline.md`
-- `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
-- `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`
-- `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
-- `ML/checkpoints/transformer_entry_path_v1_result.json`
-- `ML/reports/evaluate_validation_entry_path_v1.md`
-- `ML/reports/evaluate_test_entry_path_v1.md`
-- `ML/reports/entry_path_trade_filter_report.md`
-- `ML/reports/entry_path_trade_filter_selected_rule.json`
+- `docs/superpowers/plans/2026-04-09-mt4-execution-trade-selection.md`
+- `docs/MT/trading_strategy.md`
+- `MT/tester/logs/20260409.log`
 
 ## Open Risks
-- Класс `1` в `path_6_class` по-прежнему не ловится.
-- Победитель всё ещё покрывает только узкую часть активных сигналов.
-- `B` уже отличается от `A`, но пока не стал лучшим по текущему правилу отбора.
-- Защитное правило в скрипте проверки пока простое и само по себе не заменяет будущий conformal-слой.
+- Скрипт выпуска CSV и слой отбора, из которых был выпущен финальный CSV, пока ещё живут в черновой ветке, а не в `main`.
+- В текущем окружении нет автоматической компиляции MQL через `MetaEditor`.
+- Подробная таблица `Python ↔ MT4` сделка-за-сделкой ещё не сохранена как отдельный канонический артефакт.
 
 ## Latest Report
-`docs/reports/2026-04-09-entry-path-trade-filter.md`
+`docs/reports/2026-04-09-mt4-parity-check-winner.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

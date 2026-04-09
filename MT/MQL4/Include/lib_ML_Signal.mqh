@@ -312,6 +312,7 @@ void EXPERT::ML_TRADE() {
 
    if (sig == 1) {
       float back_stop = (float)MathMax(ATR * ML_BackStopATR, StopLevel * 2.0);
+      float min_price = (float)MarketInfo(Symbol(), MODE_POINT);
       MLP_cnt_opened++;
       MLP_cnt_buy++;
       MLP_BuySignalTime = MLP_Times[idx];
@@ -321,7 +322,7 @@ void EXPERT::ML_TRADE() {
 
       set.BUY.Sig = GOGO;
       set.BUY.Val = (float)ASK;
-      set.BUY.Stp = set.BUY.Val - back_stop;
+      set.BUY.Stp = (float)MathMax(min_price, set.BUY.Val - back_stop);
       set.BUY.Prf = 0;
 
       Print(Mgc, ":: MLP BUY"
@@ -352,4 +353,23 @@ void EXPERT::ML_TRADE() {
             " score=", DoubleToString(score, 6),
             " Val=", DoubleToString(set.SEL.Val, Digits));
    }
+}
+
+void ML_DIAG_PRINT() {
+   Print("=== MLP DIAGNOSTICS ===");
+   Print("  Total signals:    ", MLP_cnt_total);
+   Print("  Score filtered:   ", MLP_cnt_filtered,
+         "  (", MLP_cnt_total > 0 ? DoubleToString(100.0 * MLP_cnt_filtered / MLP_cnt_total, 1) : "0", "%)");
+   Print("  Position blocked: ", MLP_cnt_posblock,
+         "  (", MLP_cnt_total > 0 ? DoubleToString(100.0 * MLP_cnt_posblock / MLP_cnt_total, 1) : "0", "%)");
+   Print("  Opened:           ", MLP_cnt_opened,
+         "  (BUY=", MLP_cnt_buy, " SELL=", MLP_cnt_sell, ")");
+   Print("  Timeout closes:   ", MLP_cnt_timeout);
+   Print("  Reverse closes:   ", MLP_cnt_reverse);
+   Print("  HoldBars=", ML_HoldBars,
+         "  ScoreFilter=", ML_UseScoreFilter,
+         "  Threshold=", DoubleToString(ML_ScoreThreshold, 6),
+         "  Reversal=", ML_AllowReversal,
+         "  ScoreCol=", MLP_HasScoreColumn);
+   Print("======================");
 }

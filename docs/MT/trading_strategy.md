@@ -19,10 +19,11 @@
 
 1. Сменить `VERSION` в [\$o\$imple.mq4](../../MT/MQL4/Experts/$o$imple.mq4#L2).
 2. Проверить входные параметры эксперта в `MT/tester/$o$imple.ini`.
-3. Запустить тестер вручную.
-4. После теста открыть свежий лог `MT/tester/logs/*.log`.
-5. Сверить `VERSION` из строки `OnInit() SoSimple.V...`.
-6. Для parity-check извлечь строки:
+3. Положить нужный CSV файл именно в `MT/tester/files/ml_signals.csv`.
+4. Запустить тестер вручную.
+5. После теста открыть свежий лог `MT/tester/logs/*.log`.
+6. Сверить `VERSION` из строки `OnInit() SoSimple.V...`.
+7. Для parity-check извлечь строки:
    - `MLP BUY`
    - `MLP SELL`
    - `MLP CLOSE BUY`
@@ -37,13 +38,12 @@
 
 ```c
 void EXPERT::MAIN() {
+   if (!EXPERT_SET(ExpNum)) return;
    bool ml_direct_mode = (iSignal == 3);
-
-   EXPERT_SET(ExpNum);
    ORDER_CHECK();
 
    if (!ml_direct_mode) TIMER();
-   COUNT();
+   if (!COUNT()) return;
 
    if (FINE_TIME()) {
       if (ml_direct_mode) ML_TRADE();
@@ -63,6 +63,7 @@ void EXPERT::MAIN() {
 
 Главное отличие от прежнего режима:
 
+- `iSignal` для `ml_direct_mode` читается только после `EXPERT_SET()`, чтобы строка эксперта успевала подменить параметры;
 - при `iSignal=3` эксперт **не идёт** через `INPUT()`;
 - при `iSignal=3` старые `TIMER()`, `OUTPUT()` и `TRAILING_STOP()` **не участвуют** в управлении сделкой;
 - вся логика входа и выхода для parity-check живёт внутри `ML_TRADE()` из текущего [lib_ML_Signal.mqh](../../MT/MQL4/Include/lib_ML_Signal.mqh).
