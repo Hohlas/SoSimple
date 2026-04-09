@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Построить и проверить слой `торговать / не торговать` поверх `entry_path_v1`, а затем выбрать рабочее правило отбора сделок
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`, `docs/superpowers/plans/2026-04-08-entry-path-v1.md`, `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
-> **Related commit**: pending
+> **Related commit**: `3e2fb45`
 
 ## Context
 
