@@ -12,12 +12,19 @@
 
 ---
 
-## Concepts
-> Synthesized domain knowledge: signals, archetypes, filters, quality gates, exit policies.
-
-*(empty — populate via `Ingest` or `Save this analysis as wiki/concepts/<name>.md`)*
-
 ## Research
-> Synthesis of experiment reports from docs/reports/ — cross-experiment comparisons, evolution of approaches, key findings.
 
-*(empty — populate via `Ingest report <path>`)*
+Cross-report synthesis of experiment results and evolution of approaches.
+
+| Page | Covers | Reports |
+|------|--------|---------|
+| [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
+| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1: parallel execution tracks | 7 reports (04-08 — 04-09) |
+
+## Concepts
+
+Synthesized domain knowledge extracted from multiple reports.
+
+| Page | Description |
+|------|-------------|
+| [signal-archetypes.md](concepts/signal-archetypes.md) | Bimodal signal structure: 64% failure / 36% flat drift. Key insight of the project. |

@@ -1,5 +1,5 @@
 # WIKI Index — SoSimple
-> Auto-generated 2026-04-09 15:28 UTC · git `e687fc5`
+> Auto-generated 2026-04-09 15:42 UTC · git `bd0cfee`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,13 +9,13 @@
 3. Navigate via paths in the tables; use `wiki/pages/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `WIKI_index.md`.
 
-**Tracked**: 554 files  ·  **Commit**: `e687fc5`  ·  **Generated**: 2026-04-09 15:28 UTC
+**Tracked**: 555 files  ·  **Commit**: `bd0cfee`  ·  **Generated**: 2026-04-09 15:42 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-04-09 | 11KB | `9491780b` |
+| [AGENTS.md](AGENTS.md) |  | 2026-04-09 | 12KB | `0f23b7ae` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-09 | 86KB | `f1a5b9a9` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-01 | 3KB | `7eaa5505` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-09 | 3KB | `62dd5500` |
@@ -549,11 +549,12 @@
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [wiki/LLM Wiki_method.md](wiki/LLM Wiki_method.md) |  | 2026-04-09 | 11KB | `68a888b4` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-09 | 1KB | `3fc7afe4` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-09 | 430B | `f51e51d7` |
+| [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-09 | 3KB | `82ee8ffd` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-09 | 1KB | `0f44db0d` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-09 | 1001B | `c8f8699d` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-09 | 6KB | `196861ba` |
+| [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-09 | 8KB | `9c2501d9` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-09 | 13KB | `f4d32948` |
-| [wiki/wiki_index_method.md](wiki/wiki_index_method.md) |  | 2026-04-09 | 3KB | `f302127a` |
 
 ## Agent Config
 
