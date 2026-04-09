@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Довести прямой режим MT4 до корректного финального прогона уже выбранного победителя и проверить его на `test` ровно один раз
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-09-mt4-execution-trade-selection.md`, `docs/reports/2026-04-09-entry-path-trade-filter.md`
-> **Related commit**: pending
+> **Related commit**: `876e14e`
 
 ## Context
 
