@@ -212,6 +212,24 @@ def build_entry_path_report_markdown(
             })
 
         active_ret_pearson_r = float(np.mean([row['pearson_r'] for row in active_ret_rows]))
+        active_y_true_cls = active_frame['true_path_6_class'].to_numpy(dtype=np.int64)
+        active_y_pred_cls = active_frame['pred_path_6_class'].to_numpy(dtype=np.int64)
+        active_class_f1 = f1_score(
+            active_y_true_cls,
+            active_y_pred_cls,
+            labels=class_labels,
+            average=None,
+            zero_division=0,
+        )
+        active_path_cls_f1_macro = float(
+            f1_score(
+                active_y_true_cls,
+                active_y_pred_cls,
+                labels=class_labels,
+                average='macro',
+                zero_division=0,
+            )
+        )
         active_sorted = active_frame.sort_values('pred_ret_24_dir_atr')
         active_n_slice = max(1, int(len(active_frame) * 0.1))
         active_slice_rows = [
@@ -225,12 +243,23 @@ def build_entry_path_report_markdown(
             '',
             f'- active_rows: **{len(active_frame)}**',
             f'- active_ret_pearson_r: **{active_ret_pearson_r:.4f}**',
+            f'- active_path_cls_f1_macro: **{active_path_cls_f1_macro:.4f}**',
             '',
             '| Target | Pearson r | MAE |',
             '|--------|-----------|-----|',
         ])
         for row in active_ret_rows:
             active_lines.append(f"| {row['name']} | {row['pearson_r']:.4f} | {row['mae']:.4f} |")
+
+        active_lines.extend([
+            '',
+            '## Active Path Class',
+            '',
+            '| Class | F1 |',
+            '|-------|----|',
+        ])
+        for label, f1_value in zip(class_labels, active_class_f1):
+            active_lines.append(f'| {label} | {float(f1_value):.4f} |')
 
         active_lines.extend([
             '',

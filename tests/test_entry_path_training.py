@@ -160,7 +160,7 @@ def test_train_one_epoch_entry_path_weights_active_rows_stronger():
         torch.tensor([2], dtype=torch.int64),
         reduction='none',
     ).item()
-    expected_cls = (5.0 * cls_row0 + 1.0 * cls_row1 + 5.0 * cls_row2) / 11.0
+    expected_cls = (20.0 * cls_row0 + 1.0 * cls_row1 + 20.0 * cls_row2) / 41.0
 
     assert loss == pytest.approx(expected_ret + 0.5 * expected_cls, rel=1e-6)
 
@@ -208,7 +208,9 @@ def test_validate_entry_path_weights_active_rows_stronger():
         torch.tensor([2], dtype=torch.int64),
         reduction='none',
     ).item()
-    expected_cls = (5.0 * cls_row0 + 1.0 * cls_row1 + 5.0 * cls_row2) / 11.0
+    expected_cls = (20.0 * cls_row0 + 1.0 * cls_row1 + 20.0 * cls_row2) / 41.0
 
     assert _loss == pytest.approx(expected_ret + 0.5 * expected_cls, rel=1e-6)
     assert 'ret_pearson_r' in metrics
+    assert metrics['active_path_cls_f1_macro'] == pytest.approx(2.0 / 3.0, rel=1e-6)
+    assert metrics['active_path_cls_f1_macro'] > metrics['path_cls_f1_macro']

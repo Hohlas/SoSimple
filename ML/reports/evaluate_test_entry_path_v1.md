@@ -4,47 +4,47 @@
 **Набор**: Test (9378 строк)
 
 **Checkpoint epoch**: 5
-**Best val ret_pearson_r**: 0.2736
+**Best val ret_pearson_r**: 0.2758
 
 ## Summary
 
 - row_count: **9378**
-- ret_pearson_r: **0.2494**
-- path_reg_pearson_r: **0.2722**
-- path_cls_f1_macro: **0.4160**
+- ret_pearson_r: **0.2507**
+- path_reg_pearson_r: **0.2667**
+- path_cls_f1_macro: **0.4013**
 
 ## Return Targets
 
 | Target | Pearson r | MAE |
 |--------|-----------|-----|
-| ret_6_dir_atr | 0.2366 | 0.1570 |
-| ret_12_dir_atr | 0.2539 | 0.2010 |
-| ret_24_dir_atr | 0.2577 | 0.3045 |
+| ret_6_dir_atr | 0.2385 | 0.1361 |
+| ret_12_dir_atr | 0.2564 | 0.1746 |
+| ret_24_dir_atr | 0.2572 | 0.2741 |
 
 ## Path Targets
 
 | Target | Pearson r | MAE |
 |--------|-----------|-----|
-| fav_6_atr | 0.2168 | 0.0590 |
-| adv_6_atr | 0.3452 | 0.1343 |
-| fav_12_atr | 0.1882 | 0.0695 |
-| adv_12_atr | 0.3488 | 0.1787 |
-| fav_24_atr | 0.1747 | 0.0892 |
-| adv_24_atr | 0.3596 | 0.2649 |
+| fav_6_atr | 0.2100 | 0.0577 |
+| adv_6_atr | 0.3419 | 0.1275 |
+| fav_12_atr | 0.1822 | 0.0660 |
+| adv_12_atr | 0.3450 | 0.1713 |
+| fav_24_atr | 0.1677 | 0.0879 |
+| adv_24_atr | 0.3537 | 0.2561 |
 
 ## Path Class
 
 | Class | F1 |
 |-------|----|
-| -1 | 0.2945 |
-| 0 | 0.9534 |
+| -1 | 0.2755 |
+| 0 | 0.9283 |
 | 1 | 0.0000 |
 
 ## Slice: pred_ret_24_dir_atr
 
 | Slice | Rows | mean true_ret_24_dir_atr | positive share |
 |-------|------|--------------------------|----------------|
-| Bottom 10% | 937 | -0.7733 | 3.8% |
+| Bottom 10% | 937 | -0.8063 | 3.5% |
 | Top 10% | 937 | 0.0000 | 0.0% |
 
 ## Artifacts
@@ -54,17 +54,26 @@
 ## Active Trades Only
 
 - active_rows: **480**
-- active_ret_pearson_r: **0.2285**
+- active_ret_pearson_r: **0.2241**
+- active_path_cls_f1_macro: **0.3208**
 
 | Target | Pearson r | MAE |
 |--------|-----------|-----|
-| ret_6_dir_atr | 0.2337 | 1.3135 |
-| ret_12_dir_atr | 0.2283 | 1.7533 |
-| ret_24_dir_atr | 0.2235 | 2.8998 |
+| ret_6_dir_atr | 0.2309 | 1.3421 |
+| ret_12_dir_atr | 0.2318 | 1.8045 |
+| ret_24_dir_atr | 0.2096 | 2.9687 |
+
+## Active Path Class
+
+| Class | F1 |
+|-------|----|
+| -1 | 0.7231 |
+| 0 | 0.2392 |
+| 1 | 0.0000 |
 
 ## Active Slice: pred_ret_24_dir_atr
 
 | Slice | Rows | mean true_ret_24_dir_atr | positive share |
 |-------|------|--------------------------|----------------|
-| Bottom 10% | 48 | -2.7441 | 16.7% |
-| Top 10% | 48 | 0.4343 | 58.3% |
+| Bottom 10% | 48 | -2.6210 | 14.6% |
+| Top 10% | 48 | 2.2129 | 70.8% |

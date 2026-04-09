@@ -134,6 +134,7 @@ DEFAULTS = {
     'seed': 42,
 }
 ENTRY_PATH_ACTIVE_WEIGHT = 5.0
+ENTRY_PATH_PATH_CLS_ACTIVE_WEIGHT = 20.0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -473,7 +474,7 @@ def train_one_epoch_entry_path(
         loss_path_cls = reduce_entry_path_weighted_loss(
             path_cls_loss_fn(outputs['path_cls'], y_cls_batch),
             signal_batch,
-            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+            active_weight=ENTRY_PATH_PATH_CLS_ACTIVE_WEIGHT,
         )
         loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
         loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
@@ -505,6 +506,7 @@ def validate_entry_path(
     all_path_cls_preds = []
     all_reg_targets = []
     all_cls_targets = []
+    all_signals = []
 
     for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
         X_batch = X_batch.to(device)
@@ -522,7 +524,7 @@ def validate_entry_path(
         loss_path_cls = reduce_entry_path_weighted_loss(
             path_cls_loss_fn(outputs['path_cls'], y_cls_batch),
             signal_batch,
-            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+            active_weight=ENTRY_PATH_PATH_CLS_ACTIVE_WEIGHT,
         )
         loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
         loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
@@ -535,12 +537,14 @@ def validate_entry_path(
         all_path_cls_preds.append(outputs['path_cls'].argmax(dim=1).cpu().numpy())
         all_reg_targets.append(y_reg_batch.cpu().numpy())
         all_cls_targets.append(y_cls_batch.cpu().numpy())
+        all_signals.append(signal_batch.cpu().numpy())
 
     all_ret_preds = np.concatenate(all_ret_preds)
     all_path_reg_preds = np.concatenate(all_path_reg_preds)
     all_path_cls_preds = np.concatenate(all_path_cls_preds)
     all_reg_targets = np.concatenate(all_reg_targets)
     all_cls_targets = np.concatenate(all_cls_targets)
+    all_signals = np.concatenate(all_signals)
 
     ret_targets = all_reg_targets[:, :len(ENTRY_PATH_RET_TARGETS)]
     path_reg_targets = all_reg_targets[:, len(ENTRY_PATH_RET_TARGETS):]
@@ -565,6 +569,14 @@ def validate_entry_path(
     y_pred_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_path_cls_preds])
     y_true_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_cls_targets])
     path_cls_metrics = compute_metrics(y_true_orig, y_pred_orig)
+    active_mask = all_signals != 0
+    if np.any(active_mask):
+        active_path_cls_metrics = compute_metrics(y_true_orig[active_mask], y_pred_orig[active_mask])
+    else:
+        active_path_cls_metrics = {
+            'f1_macro': 0.0,
+            'f1_per_class': {-1: 0.0, 0: 0.0, 1: 0.0},
+        }
 
     metrics = {
         'ret_pearson_r': ret_metrics['pearson_r'],
@@ -580,6 +592,8 @@ def validate_entry_path(
         'path_cls_f1_macro': path_cls_metrics['f1_macro'],
         'path_cls_metrics': path_cls_metrics,
         'path_cls_per_class': path_cls_metrics['f1_per_class'],
+        'active_path_cls_f1_macro': active_path_cls_metrics['f1_macro'],
+        'active_path_cls_per_class': active_path_cls_metrics['f1_per_class'],
     }
 
     return total_loss / n_batches, metrics
@@ -826,7 +840,7 @@ def train_model(
             'train_loss': [], 'val_loss': [],
             'val_pearson_r': [], 'val_mae': [], 'val_rmse': [],
             'val_r2': [], 'val_path_reg_pearson_r': [],
-            'val_path_cls_f1_macro': [], 'lr': [],
+            'val_path_cls_f1_macro': [], 'val_active_path_cls_f1_macro': [], 'lr': [],
         }
         metric_name = 'ret_pearson_r'
         if not silent:
@@ -929,6 +943,7 @@ def train_model(
             history['val_r2'].append(metrics['r2'])
             history['val_path_reg_pearson_r'].append(metrics['path_reg_pearson_r'])
             history['val_path_cls_f1_macro'].append(metrics['path_cls_f1_macro'])
+            history['val_active_path_cls_f1_macro'].append(metrics['active_path_cls_f1_macro'])
             history['lr'].append(optimizer.param_groups[0]['lr'])
 
             current_lr = optimizer.param_groups[0]['lr']
@@ -1062,6 +1077,7 @@ def train_model(
                 print(f"  Ret Pearson r: {best_metrics.get('ret_pearson_r', 0):.4f}")
                 print(f"  PathReg Pearson r: {best_metrics.get('path_reg_pearson_r', 0):.4f}")
                 print(f"  PathCls F1 macro: {best_metrics.get('path_cls_f1_macro', 0):.4f}")
+                print(f"  Active PathCls F1 macro: {best_metrics.get('active_path_cls_f1_macro', 0):.4f}")
                 if 'ret_per_target' in best_metrics:
                     print(f"\n  Return-head Pearson r:")
                     for tname, tm in best_metrics['ret_per_target'].items():
@@ -1742,11 +1758,15 @@ def main():
                 'r2': result['best_metrics'].get('r2'),
                 'path_reg_pearson_r': result['best_metrics'].get('path_reg_pearson_r'),
                 'path_cls_f1_macro': result['best_metrics'].get('path_cls_f1_macro'),
+                'active_path_cls_f1_macro': result['best_metrics'].get('active_path_cls_f1_macro'),
             },
             'ret_per_target': result['best_metrics'].get('ret_per_target', {}),
             'path_reg_per_target': result['best_metrics'].get('path_reg_per_target', {}),
             'path_cls_per_class': {
                 str(k): v for k, v in result['best_metrics'].get('path_cls_per_class', {}).items()
+            },
+            'active_path_cls_per_class': {
+                str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
             },
         }
         suffix = task_checkpoint_suffix(args.task)

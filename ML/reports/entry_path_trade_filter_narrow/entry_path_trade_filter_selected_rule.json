@@ -1,0 +1,49 @@
+{
+  "winner": {
+    "candidate": "A",
+    "target_coverage": 0.05,
+    "coverage": 0.0507399577167019,
+    "coverage_gap": 0.0007399577167018986,
+    "score_threshold": -0.00852806125,
+    "trades": 24,
+    "pf": 5.067264646921882,
+    "win_rate": 0.7083333333333334,
+    "mean_pnl_atr": 2.175732710833333,
+    "period_mode": "half_year",
+    "eligible_periods": 0,
+    "stable_periods": 0,
+    "stability_ratio": 0.0,
+    "worst_period_pf": NaN,
+    "period_detail_json": "{\"2019H1\": {\"mean_pnl\": 2.045238, \"pf\": Infinity, \"trades\": 1}, \"2019H2\": {\"mean_pnl\": 3.709390928571428, \"pf\": Infinity, \"trades\": 7}, \"2020H1\": {\"mean_pnl\": 1.1373755142857145, \"pf\": 2.0507248340158064, \"trades\": 7}, \"2021H1\": {\"mean_pnl\": 3.8292663, \"pf\": 8.834815959079284, \"trades\": 4}, \"2021H2\": {\"mean_pnl\": -0.8104097466666667, \"pf\": 0.0, \"trades\": 3}, \"2022H1\": {\"mean_pnl\": 1.679573, \"pf\": 4.839024, \"trades\": 2}}"
+  },
+  "coverage_grid": [
+    0.05,
+    0.075,
+    0.1,
+    0.125,
+    0.15,
+    0.2,
+    0.25,
+    0.3
+  ],
+  "validation_csv": "ML/reports/entry_path_v1_validation_predictions.csv",
+  "test_csv": "ML/reports/entry_path_test_predictions.csv",
+  "sequential_hold_bars": 24,
+  "min_period_trades": 10,
+  "validation_summary_path": "ML/reports/entry_path_trade_filter_narrow/entry_path_trade_filter_validation_summary.csv",
+  "test_summary_path": "ML/reports/entry_path_trade_filter_narrow/entry_path_trade_filter_test_summary.csv",
+  "sequential_summary": {
+    "trades": 5,
+    "accepted_indices": [
+      1641,
+      6780,
+      7259,
+      7665,
+      8297
+    ],
+    "coverage": 1.0,
+    "pf": Infinity,
+    "mean_pnl_atr": 4.656033959999999,
+    "win_rate": 1.0
+  }
+}

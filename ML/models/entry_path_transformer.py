@@ -30,15 +30,33 @@ class EntryPathTransformer(nn.Module):
         )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
-        self.shared_head = nn.Sequential(
+        self.ret_head = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(d_model, 32),
             nn.ReLU(),
             nn.Dropout(dropout),
+            nn.Linear(32, 3),
         )
-        self.ret_head = nn.Linear(32, 3)
-        self.path_reg_head = nn.Linear(32, 6)
-        self.path_cls_head = nn.Linear(32, 3)
+        self.path_reg_head = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 32),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(32, 6),
+        )
+        self.path_cls_sequence_proj = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 32),
+            nn.ReLU(),
+        )
+        self.path_cls_time_pool = nn.Linear(32, 1)
+        self.path_cls_head = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(32, 32),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(32, 3),
+        )
 
     def forward(
         self,
@@ -59,10 +77,18 @@ class EntryPathTransformer(nn.Module):
             src_key_padding_mask = None
 
         x = self.transformer_encoder(x, src_key_padding_mask=src_key_padding_mask)
-        cls_output = self.shared_head(x[:, 0, :])
+        cls_output = x[:, 0, :]
+        sequence_output = x[:, 1:, :]
+
+        path_cls_hidden = self.path_cls_sequence_proj(sequence_output)
+        path_cls_pool_logits = self.path_cls_time_pool(path_cls_hidden).squeeze(-1)
+        if mask is not None:
+            path_cls_pool_logits = path_cls_pool_logits.masked_fill(~mask, float('-inf'))
+        path_cls_pool_weights = torch.softmax(path_cls_pool_logits, dim=1).unsqueeze(-1)
+        path_cls_output = (path_cls_hidden * path_cls_pool_weights).sum(dim=1)
 
         return {
             'ret': self.ret_head(cls_output),
             'path_reg': self.path_reg_head(cls_output),
-            'path_cls': self.path_cls_head(cls_output),
+            'path_cls': self.path_cls_head(path_cls_output),
         }

@@ -46,3 +46,33 @@ def test_entry_path_transformer_supports_masked_backward():
     loss.backward()
 
     assert model.cls_token.grad is not None
+
+
+def test_entry_path_transformer_uses_separate_head_blocks():
+    model = EntryPathTransformer(
+        input_features=20,
+        d_model=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.1,
+    )
+
+    assert not hasattr(model, 'shared_head')
+    assert isinstance(model.ret_head, torch.nn.Sequential)
+    assert isinstance(model.path_reg_head, torch.nn.Sequential)
+    assert isinstance(model.path_cls_head, torch.nn.Sequential)
+
+
+def test_entry_path_transformer_path_cls_has_sequence_pool():
+    model = EntryPathTransformer(
+        input_features=20,
+        d_model=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.1,
+    )
+
+    assert hasattr(model, 'path_cls_sequence_proj')
+    assert hasattr(model, 'path_cls_time_pool')
