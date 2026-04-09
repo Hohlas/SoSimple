@@ -46,7 +46,6 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 - Не трогать `docs/archive/` и архивные модули без явной просьбы.
 - Всегда создавай новую feature-ветку для каждой задачи.
 - `git push` не делать без явной просьбы пользователя.
-- `git commit` делать только по явной просьбе пользователя или при явной просьбе закрыть этап с обновлением отчёта, `CHANGELOG.md` и `CONTEXT_HANDOFF.md`.
 - Для bugfix не делать рефакторинг "заодно".
 
 ### Качество изменений
@@ -75,7 +74,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 1. Явный запрос пользователя в текущем диалоге.
 2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
 3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
-4. Вспомогательная память и архив: `.claude/memory/`, `docs/archive/`.
+4. Вспомогательная память: `.claude/memory/`.
 
 ## Структура проекта
 
@@ -116,7 +115,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 │   ├── statistics/      #    Docs для statistics/
 │   ├── processing/      #    Docs для processing/
 │   ├── ML/              #    Docs для ML/
-│   ├── MT/              #    Docs для MT/
+│   ├── MT/              #    Работа с тестером MT4 и ключевые библиотеки для взаимодействия с ML
 │   ├── superpowers/     #    Канонический контур roadmap / plans / specs
 │   └── archive/         # 📦 НЕ СМОТРИ без явной просьбы
 ├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
