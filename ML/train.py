@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-04-08
+# Обновлён: 2026-04-09
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -133,6 +133,7 @@ DEFAULTS = {
     'huber_delta': 1.0,    # Huber Loss delta
     'seed': 42,
 }
+ENTRY_PATH_ACTIVE_WEIGHT = 5.0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -428,6 +429,20 @@ def compute_named_multitarget_regression_metrics(
     }
 
 
+def reduce_entry_path_weighted_loss(
+    loss_tensor: torch.Tensor,
+    signal_batch: torch.Tensor | None = None,
+    active_weight: float = 1.0,
+) -> torch.Tensor:
+    if loss_tensor.ndim > 1:
+        loss_tensor = loss_tensor.mean(dim=tuple(range(1, loss_tensor.ndim)))
+    if signal_batch is None or active_weight == 1.0:
+        return loss_tensor.mean()
+    weights = torch.ones_like(signal_batch, dtype=loss_tensor.dtype)
+    weights = torch.where(signal_batch != 0, weights * active_weight, weights)
+    return (loss_tensor * weights).sum() / weights.sum().clamp_min(1.0)
+
+
 def train_one_epoch_entry_path(
     model: nn.Module,
     train_loader: torch.utils.data.DataLoader,
@@ -441,18 +456,26 @@ def train_one_epoch_entry_path(
     total_loss = 0.0
     n_batches = 0
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch in train_loader:
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
         X_batch = X_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
+        signal_batch = signal_batch.to(device)
 
         optimizer.zero_grad()
         outputs = model(X_batch, mask=mask_batch)
-
-        loss_ret = ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)])
+        loss_ret = reduce_entry_path_weighted_loss(
+            ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
+            signal_batch,
+            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+        )
+        loss_path_cls = reduce_entry_path_weighted_loss(
+            path_cls_loss_fn(outputs['path_cls'], y_cls_batch),
+            signal_batch,
+            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+        )
         loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
-        loss_path_cls = path_cls_loss_fn(outputs['path_cls'], y_cls_batch)
         loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
 
         loss.backward()
@@ -483,17 +506,25 @@ def validate_entry_path(
     all_reg_targets = []
     all_cls_targets = []
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch in val_loader:
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
         X_batch = X_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
+        signal_batch = signal_batch.to(device)
 
         outputs = model(X_batch, mask=mask_batch)
-
-        loss_ret = ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)])
+        loss_ret = reduce_entry_path_weighted_loss(
+            ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
+            signal_batch,
+            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+        )
+        loss_path_cls = reduce_entry_path_weighted_loss(
+            path_cls_loss_fn(outputs['path_cls'], y_cls_batch),
+            signal_batch,
+            active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+        )
         loss_path_reg = path_reg_loss_fn(outputs['path_reg'], y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):])
-        loss_path_cls = path_cls_loss_fn(outputs['path_cls'], y_cls_batch)
         loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls
 
         total_loss += loss.item()
@@ -734,9 +765,9 @@ def train_model(
         weight = torch.tensor(class_weights, dtype=torch.float32).to(device)
         loss_fn = nn.CrossEntropyLoss(weight=weight).to(device)
     elif entry_path:
-        ret_loss_fn = HuberLoss(delta=huber_delta).to(device)
+        ret_loss_fn = HuberLoss(delta=huber_delta, reduction='none').to(device)
         path_reg_loss_fn = HuberLoss(delta=huber_delta).to(device)
-        path_cls_loss_fn = nn.CrossEntropyLoss().to(device)
+        path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none').to(device)
     elif regression:
         if regression_loss == 'directional':
             loss_fn = DirectionalAsymmetricLoss(

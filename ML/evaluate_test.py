@@ -213,7 +213,7 @@ def run_evaluation(
         all_true_cls = []
 
         with torch.no_grad():
-            for X_batch, y_reg_batch, y_cls_batch, mask_batch in test_loader:
+            for X_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
                 outputs = model(X_batch.to(device), mask=mask_batch.to(device))
                 all_ret.append(outputs['ret'].cpu().numpy())
                 all_path_reg.append(outputs['path_reg'].cpu().numpy())
@@ -248,6 +248,9 @@ def run_evaluation(
                 model_name=ckpt_model_name,
                 artifact_name=export_path.name,
                 split_label='Test',
+                checkpoint_epoch=ckpt.get('epoch'),
+                checkpoint_metric_name=ckpt.get('metric_name'),
+                checkpoint_metric_value=ckpt.get('best_metric'),
             ),
             encoding='utf-8',
         )
@@ -255,6 +258,9 @@ def run_evaluation(
         print(f"  ✅ CSV сохранён: {export_path.name}")
         print(f"  ✅ Отчет сохранён: {report_path.name}")
         print(f"  row_count={row_count}")
+        if ckpt.get('epoch') is not None and ckpt.get('best_metric') is not None:
+            print(f"  checkpoint_epoch={ckpt.get('epoch')}")
+            print(f"  best_val_{ckpt.get('metric_name', 'metric')}={ckpt.get('best_metric'):.4f}")
         if entry_path_gt_available:
             report_text = report_path.read_text(encoding='utf-8')
             summary_lines = [

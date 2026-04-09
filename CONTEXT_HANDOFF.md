@@ -1,18 +1,25 @@
 # Context Handoff
 
 ## Current Stage
-Этап `entry_path_v1`: baseline пересчитан честно. Найдена и исправлена причина ложных ранних цифр: `ML.train` принимал `--clear_cache`, но не передавал его в `train_model()`, поэтому обучение шло на старом `entry_path` кэше. После чистой пересборки и нового обучения `ret_*` больше не выглядит ни “чудесно сильным”, ни сломанным: validation `ret_pearson_r=0.2656`, test `ret_pearson_r=0.2450`. Путь цены выглядит ещё лучше: validation `path_reg_pearson_r=0.3004`, test `path_reg_pearson_r=0.2745`.
+Этап `entry_path_v1`: базовый вариант после перевзвешивания функции потерь выбран и синхронизирован в артефактах. Проверены три режима обучения при сильном перекосе `signal=0`: жёсткий режим только по активным строкам, вес только для `path_6_class`, и вес `5.0` сразу для `ret_*` и `path_6_class`. Выбран последний вариант как рабочая база.
+
+Текущие цифры выбранного варианта:
+- validation: `ret_pearson_r=0.2736`, `path_reg_pearson_r=0.3006`, `path_cls_f1_macro=0.4059`
+- test: `ret_pearson_r=0.2494`, `path_reg_pearson_r=0.2722`, `path_cls_f1_macro=0.4160`
+- active-only test: `ret_pearson_r=0.2285`
+
+Отдельно исправлена и другая рабочая проблема: `evaluate_test` и markdown-отчёт теперь явно показывают `Checkpoint epoch` и лучший `val`-результат, чтобы не путать свежие и старые артефакты.
 
 ## Last Completed Stage
-`entry_path_v1` baseline после исправления кэша и чистого retrain (2026-04-08).
+`entry_path_v1` перевзвешивание функции потерь и выбор рабочего базового варианта (2026-04-09).
 
 ## Next Step
-Следующий шаг теперь уже другой: не искать старую причину падения, а решать проблему сильного перекоса нулевых строк.
+Следующий шаг уже не в новом подборе ручных весов. Базовый цикл обучения для `entry_path_v1` на этом этапе можно считать замороженным.
 
-1. Проверить вариант обучения, где `ret_*` и `path_6_class` считаются только по активным строкам `signal != 0`.
-2. Сравнить этот вариант с текущим baseline по validation и test.
-3. Отдельно решить судьбу `path_6_class`: оставить, ослабить или временно убрать.
-4. Перед merge в main сделать один чистый полный rebuild датасета и артефактов штатным проходом.
+1. Взять текущий вариант с весом `5.0` для активных строк в `ret_*` и `path_6_class` как замороженную базу.
+2. Поверх него строить слой `торговать / не торговать`.
+3. Первым кандидатом проверить conformal-подход для отбора сделок.
+4. Сравнивать уже не только общие test-метрики, но и active-only срез и будущий слой отбора.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
@@ -20,23 +27,22 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 - `AGENTS.md`
 - `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`
 - `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
+- `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
 - `docs/reports/2026-04-08-entry-path-v1-baseline.md`
 - `ML/checkpoints/transformer_entry_path_v1_result.json`
 - `ML/reports/evaluate_test_entry_path_v1.md`
-- `ML/reports/entry_path_v1_validation_predictions.csv`
-- `ML/reports/entry_path_v1_test_predictions.csv`
 - `docs/reports/2026-04-08-outcome-aligned-retraining.md`
 - `ML/reports/outcome_target_validation_benchmark.md`
 
 ## Open Risks
-- Активных сигналов только около `5%`, поэтому обычный loss сильно забивается строками `signal=0`.
-- `path_6_class` почти вырождается: на активных строках модель в основном предсказывает `0`.
-- Общие метрики по всем строкам полезны, но для реальной сделки нужно обязательно смотреть active-only блок.
-- Перед merge в main нужен один чистый полный rebuild через `label_main`, а не смесь локальных шагов.
-- Outcome-aligned family остаётся отдельным тупиком: winner не найден, `test` там не запускался и этот трек не надо путать с `entry_path_v1`.
+- Активных сигналов всё ещё около `5%`, поэтому даже выбранный базовый вариант остаётся чувствительным к перекосу данных.
+- Класс `1` в `path_6_class` по-прежнему почти не ловится.
+- Общие срезы по всем строкам остаются сильно разбавленными `signal=0`; для практики важнее active-only блок и будущий слой отбора.
+- `entry_path_v1` пока ещё не превращён в правило сделки; сейчас это сильнее выглядит как хорошая исследовательская база.
+- Outcome-aligned track остаётся отдельным тупиком и не должен смешиваться с `entry_path_v1`.
 
 ## Latest Report
-`docs/reports/2026-04-08-entry-path-v1-baseline.md`
+`docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

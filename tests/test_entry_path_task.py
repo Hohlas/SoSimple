@@ -108,11 +108,14 @@ def test_entry_path_dataset_returns_mixed_tensors():
         y_reg=np.zeros((1, 9), dtype=np.float32),
         y_cls=np.array([2], dtype=np.int64),
         mask=np.array([[True, True, False, False]]),
+        signal=np.array([1], dtype=np.int64),
     )
 
-    X_item, y_reg_item, y_cls_item, mask_item = dataset[0]
+    X_item, y_reg_item, y_cls_item, mask_item, signal_item = dataset[0]
 
     assert X_item.shape == (4, 3)
     assert y_reg_item.shape == (9,)
     assert y_cls_item.dtype == torch.int64
     assert mask_item.dtype == torch.bool
+    assert signal_item.dtype == torch.int64
+    assert signal_item.item() == 1

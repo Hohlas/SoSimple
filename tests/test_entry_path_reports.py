@@ -154,3 +154,33 @@ def test_entry_path_report_markdown_contains_active_only_section():
     assert 'active_rows' in report
     assert 'active_ret_pearson_r' in report
     assert '## Active Slice: pred_ret_24_dir_atr' in report
+
+
+def test_entry_path_report_markdown_can_include_checkpoint_metadata():
+    frame = build_entry_path_export_frame(
+        times=np.array([f'2025.01.01 {hour:02d}:00' for hour in range(4)]),
+        signals=np.array([1, -1, 0, 1]),
+        pred_ret=np.array([
+            [0.1, 0.2, 0.3],
+            [-0.1, 0.0, 0.1],
+            [0.0, 0.0, 0.0],
+            [0.2, 0.3, 0.4],
+        ], dtype=np.float32),
+        pred_path_reg=np.tile(np.array([[0.1, 0.2, 0.3, 0.4, 0.5, 0.6]], dtype=np.float32), (4, 1)),
+        pred_path_cls=np.tile(np.array([[0.2, 0.7, 0.1]], dtype=np.float32), (4, 1)),
+        true_reg=np.tile(np.array([[0.1, 0.2, 0.3, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]], dtype=np.float32), (4, 1)),
+        true_cls=np.array([1, 1, 1, 1], dtype=np.int64),
+    )
+
+    report = build_entry_path_report_markdown(
+        frame=frame,
+        model_name='transformer',
+        artifact_name='entry_path_test_predictions.csv',
+        split_label='Test',
+        checkpoint_epoch=5,
+        checkpoint_metric_name='ret_pearson_r',
+        checkpoint_metric_value=0.2736,
+    )
+
+    assert '**Checkpoint epoch**: 5' in report
+    assert '**Best val ret_pearson_r**: 0.2736' in report

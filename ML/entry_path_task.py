@@ -107,9 +107,17 @@ def build_entry_path_report_markdown(
     model_name: str,
     artifact_name: str,
     split_label: str = 'Test',
+    checkpoint_epoch: int | None = None,
+    checkpoint_metric_name: str | None = None,
+    checkpoint_metric_value: float | None = None,
 ) -> str:
     row_count = int(len(frame))
     required_true_cols = {f'true_{name}' for name in ENTRY_PATH_REG_TARGETS} | {'true_path_6_class'}
+    checkpoint_lines = []
+    if checkpoint_epoch is not None:
+        checkpoint_lines.append(f'**Checkpoint epoch**: {checkpoint_epoch}')
+    if checkpoint_metric_name is not None and checkpoint_metric_value is not None:
+        checkpoint_lines.append(f'**Best val {checkpoint_metric_name}**: {checkpoint_metric_value:.4f}')
 
     if not required_true_cols.issubset(frame.columns):
         lines = [
@@ -117,6 +125,10 @@ def build_entry_path_report_markdown(
             '',
             f'**Модель**: {model_name}',
             f'**Набор**: {split_label} ({row_count} строк)',
+        ]
+        if checkpoint_lines:
+            lines.extend(['', *checkpoint_lines])
+        lines.extend([
             '',
             '## Summary',
             '',
@@ -132,7 +144,7 @@ def build_entry_path_report_markdown(
             '## Notes',
             '',
             '- В этом CSV нет true entry_path_v1 колонок, поэтому метрики недоступны.',
-        ]
+        ])
         return '\n'.join(lines)
 
     ret_rows = []
@@ -237,6 +249,10 @@ def build_entry_path_report_markdown(
         '',
         f'**Модель**: {model_name}',
         f'**Набор**: {split_label} ({row_count} строк)',
+    ]
+    if checkpoint_lines:
+        lines.extend(['', *checkpoint_lines])
+    lines.extend([
         '',
         '## Summary',
         '',
@@ -249,7 +265,7 @@ def build_entry_path_report_markdown(
         '',
         '| Target | Pearson r | MAE |',
         '|--------|-----------|-----|',
-    ]
+    ])
     for row in ret_rows:
         lines.append(f"| {row['name']} | {row['pearson_r']:.4f} | {row['mae']:.4f} |")
 
