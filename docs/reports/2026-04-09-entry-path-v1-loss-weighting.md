@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, как учить `entry_path_v1` при сильном перекосе строк `signal=0`, и выбрать рабочий вариант функции потерь для следующего этапа
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-08-entry-path-v1-design.md`, `docs/superpowers/plans/2026-04-08-entry-path-v1.md`
-> **Related commit**: `pending`
+> **Related commit**: `0701b1e`
 
 ## Context
 
