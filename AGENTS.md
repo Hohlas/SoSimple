@@ -1,5 +1,5 @@
 # AI Agent Guide (Codex First)
-> Главный индекс SoSimple для Codex. Инструкции для Claude Code вынесены в [CLAUDE.md](CLAUDE.md).
+> Главный индекс SoSimple для Codex.
 
 ## Цель проекта
 ML-бот для прогнозирования разворотов Forex (H1). Детали: [PRD.md](docs/PRD.md).
@@ -31,7 +31,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 
 ### Critical Rules Top-3
 1. Для CSV сначала читать только первые 10 строк.
-2. Не загружать в контекст файлы больше 2MB целиком.
+2. Не загружать в контекст файлы больше 1MB целиком.
 3. Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
 
 ## Pipeline данных
@@ -63,6 +63,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 - Секции: `### Добавлено`, `### Изменено`, `### Исправлено`, `### Результаты`, `### Вывод`
 - `docs/reports/` хранит подробные отчёты завершённых этапов.
 - `CONTEXT_HANDOFF.md` хранит текущее состояние работ: где мы, что дальше, что читать первым и какие риски открыты.
+- При добавлении нового модуля или изменении его назначения/интерфейса обновлять `MODULE_INDEX.md`.
 - Для закрытия этапа и синхронизации `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
 
 ### Память проекта
@@ -85,6 +86,13 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 .
 ├── .claude/memory/      # Долговечная память проекта
 ├── .codex/skills/       # Локальные workflow/skills для Codex
+├── wiki/                # LLM Wiki: синтез знаний проекта
+│   ├── WIKI_index.md    #   авто-генерированная integrity map репо
+│   ├── index.md         #   LLM-каталог wiki-страниц
+│   ├── log.md           #   хронология операций
+│   ├── wiki.py          #   generate / verify
+│   ├── concepts/        #   синтез: сигналы, фильтры, политики (пусто → ingest)
+│   └── research/        #   синтез отчётов из docs/reports/ (пусто → ingest)
 ├── API/                 # ✅ Генерация ML-сигналов для MT4
 ├── MT/MQL4/             # ✅ MetaTrader4 — формирование датасета, торговый робот
 │   ├── Experts/         #    MQL4 советники
@@ -119,7 +127,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 
 ```
 
-Навигация (быстрые точки входа):
+## Навигация (быстрые точки входа):
 - [MODULE_INDEX.md](MODULE_INDEX.md)
 - [docs/DATA_FLOW.md](docs/DATA_FLOW.md)
 - [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md)
@@ -136,6 +144,35 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 | Генерация сигналов | ✅ | [API/generate_signals.py](API/generate_signals.py) |
 | Интеграция с MT4 | ✅ | `ML_TRADE()` + `ML_TRADE_TB()` |
 | Reconciliation | ✅ | `signal_tracer.py` |
+
+## LLM Wiki Access Protocol
+- Источники: весь репозиторий (код, docs/, ML/, MT/, processing/, MODULE_INDEX.md, CONTEXT_HANDOFF.md и т.д.) + локальные файлы (DATA/*.csv, MT/MQL4/Files/*.csv).
+- wiki/: синтезированный слой Markdown-файлов. LLM полностью владеет этим слоем (создаёт, обновляет, связывает).
+- Schema: настоящий раздел AGENTS.md + CONTEXT_HANDOFF.md.
+  
+**Ключевые правила :**
+- wiki — это persistent artifact. Знания компилируются один раз и поддерживаются.
+- LLM пишет всю вики. Human — только направляет (ingest, lint, приоритеты).
+- При ingest: читать источник → обновлять 8–15 страниц → обновлять WIKI_index + log.
+- При query: отвечать преимущественно по wiki/, со ссылкам на оригиналы.
+
+**Структура wiki/ (начальная, агент может эволюционировать):**
+- wiki/index.md — LLM-maintained каталог wiki-страниц из wiki/concepts/ и wiki/research/
+- wiki/WIKI_index.md — авто-генерированная integrity map всего репо (python wiki/wiki.py generate).
+- wiki/log.md — хронология операций.
+- wiki/concepts/ — сигналы, архетипы, filters, exit-policies, quality gates и т.д.
+- wiki/research/ — синтез отчётов из docs/reports/.
+
+
+**Операции:**
+- Ingest: «Ingest report XXX.md» или «Bootstrap initial wiki».
+- Query: обычный вопрос (агент читает wiki/ первым).
+- Lint: «Run wiki lint».
+- Save: «Save this analysis as wiki/concepts/Quality-Filters-v5.md».
+- Check: `wiki/WIKI_index.md` for project map.
+- Начало сессии: python wiki/wiki.py verify — проверить, не устарел ли индекс
+- После изменений в репо: python wiki/wiki.py generate — обновить индекс, потом закоммитить
+
 
 ---
 
