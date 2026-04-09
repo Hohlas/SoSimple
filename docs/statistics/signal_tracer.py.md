@@ -1,6 +1,6 @@
 # signal_tracer.py — Trade-Level Reconciliation
 
-> **Версия**: v2.3 (2026-04-08)
+> **Версия**: v2.4 (2026-04-09)
 > **Назначение**: Диагностика расхождения между Python и MT4 для двух ML-треков: legacy `regression_updn` и `triple_barrier`
 > **Тип**: Инструмент анализа, 3 режима работы
 
@@ -8,12 +8,18 @@
 
 ## Обзор
 
-`statistics/signal_tracer.py` теперь умеет разбирать **два разных execution track**:
+`statistics/signal_tracer.py` сейчас умеет разбирать **два execution track**:
 
-- **legacy track**: `ml_signals.csv` с полями `pred_up / pred_dn / ratio_up / ratio_dn`, где SL/TP восстанавливаются по формуле `lib_ML_Signal.mqh`;
+- **legacy track**: `ml_signals.csv` с полями `pred_up / pred_dn / ratio_up / ratio_dn`, где SL/TP восстанавливаются по формуле legacy runtime из `lib_ML_Signal_back.mqh`;
 - **TB track**: `ml_signals_tb.csv` с полями `sl_atr / tp_atr / prob / ev`, где исход сделки сравнивается с path-ordered TB labels из `DATA/Nero_*_labeled.csv`.
 
-Это означает, что скрипт покрывает и историческую гипотезу про MFE/MAE иллюзию, и новый TB-сценарий, где логика ближе к реальной торговой механике MT4.
+Важно:
+
+- текущий активный `lib_ML_Signal.mqh` уже работает в другом режиме: прямое исполнение parity-check CSV;
+- строки `MLP BUY / SELL / CLOSE / SKIP` этим tracer пока **не разбираются**;
+- для старого `regression_updn` нужно ориентироваться именно на backup-файл `lib_ML_Signal_back.mqh`.
+
+Это означает, что скрипт покрывает исторический legacy runtime и TB runtime, но не новый прямой `MLP`-контур.
 
 Важно: сам tracer готов к TB runtime-сверке, но полноценный verdict всё равно требует **свежий MT4 tester log**.
 
@@ -53,7 +59,7 @@ python statistics/signal_tracer.py \
 
 Что делает tracer:
 
-- восстанавливает SL/TP по формуле `lib_ML_Signal.mqh`;
+- восстанавливает SL/TP по формуле legacy runtime из `lib_ML_Signal_back.mqh`;
 - денормализует `up_12 / dn_12`;
 - классифицирует outcome как:
   - `TP_CLEAR`

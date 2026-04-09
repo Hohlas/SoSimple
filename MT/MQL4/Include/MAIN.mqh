@@ -108,7 +108,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void LINE(string txt, uchar f0, uchar f1, color clr, uchar Width);
    }EXP[1];
 
-#include <lib_ML_Signal.mqh>     // ML-сигналы из предрассчитанного CSV (regression_updn)
+#include <lib_ML_Signal.mqh>     // ML parity-check: прямое исполнение CSV-сигналов
 #include <lib_ML_Signal_TB.mqh>  // ML Triple Barrier сигналы (фиксированные SL/TP)
 
    
@@ -116,18 +116,24 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
 #ifndef PIC_INDICATOR // код компилируется только в эксперте
    
 void EXPERT::MAIN(){
+   bool ml_direct_mode = (iSignal == 3);
    if (!EXPERT_SET(ExpNum)) return; // выбор параметров эксперта из строки Exp массива CSV, сформированного из файла #.csv
    ORDER_CHECK();  // подробности открытых и отложенных поз  Print("SELLSTOP=",SELLSTOP," BUYSTOP=",BUYSTOP);
-   TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
+   if (!ml_direct_mode) TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
    if (!COUNT()) return;
    //TRAILING_PROFIT();
-   if (FINE_TIME()) INPUT();// не торгуем и закрываем все позы в период запрета торговли
-   OUTPUT();
-   TRAILING_STOP();
-   MODIFY();  
-   if (set.BUY.Val || set.SEL.Val) ORDERS_SET(); 
-   AFTER(ExpNum); // сохранение на каждом баре переменных HI,LO,DM,DayBar... и значений индикаторов Real/Test    
-   }  
+   if (FINE_TIME()) {
+      if (ml_direct_mode) ML_TRADE();
+      else INPUT();
+   }// не торгуем и закрываем все позы в период запрета торговли
+   if (!ml_direct_mode) {
+      OUTPUT();
+      TRAILING_STOP();
+   }
+   MODIFY();
+   if (set.BUY.Val || set.SEL.Val) ORDERS_SET();
+   AFTER(ExpNum); // сохранение на каждом баре переменных HI,LO,DM,DayBar... и значений индикаторов Real/Test
+   }
 #endif // -------------------------------------------------------------------------------------------------------------------------------------------------------     
    
 //+------------------------------------------------------------------+

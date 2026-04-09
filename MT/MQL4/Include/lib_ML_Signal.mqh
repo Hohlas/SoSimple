@@ -1,324 +1,355 @@
 //+------------------------------------------------------------------+
-//| lib_ML_Signal.mqh                                 v3.0           |
-//| Назначение: Чтение предрассчитанных ML-сигналов из CSV           |
-//|             для тестера стратегий и торговли                      |
+//| lib_ML_Signal.mqh                                 v4.0           |
+//| Назначение: Прямое исполнение ML-сигналов для parity-check        |
+//|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
-//| Создан: 2026-03-20                                               |
-//| Обновлён: 2026-04-01 — все 10 предсказаний, ratio вычисляется    |
-//|           на лету, фильтры Filter3/Filter6                       |
-//| Зависимости:                                                     |
-//|   Входные данные:                                                |
-//|     - MQL4/Files/ml_signals.csv (откуда: API/generate_signals.py)|
-//|   Формат CSV:                                                    |
-//|     time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48 |
-//|   signal: 1 (BUY), -1 (SELL), 0 (FLAT)                          |
+//| Обновлён: 2026-04-09                                             |
+//| Входные данные:                                                  |
+//|   - MQL4/Files/ml_signals.csv                                    |
+//| Поддерживаемые форматы CSV:                                      |
+//|   - time;signal                                                  |
+//|   - time;signal;...;pred_ret_24_dir_atr;...                      |
+//| Логика:                                                          |
+//|   - сигнал на баре t -> вход по рынку на следующем баре          |
+//|   - одна открытая позиция                                        |
+//|   - закрытие по удержанию либо по обратному сигналу              |
 //+------------------------------------------------------------------+
 #property strict
 
-// ─── Настройки ──────────────────────────────────────────────────────
+#define MLP_SIGNALS_FILE "ml_signals.csv"
+#define MLP_MAX_SIGNALS  200000
+#define MLP_Ver          4.0
 
-#define ML_SIGNALS_FILE  "ml_signals.csv"
-#define ML_MAX_SIGNALS   200000
-#define ML_Ver   3.0
-#define ML_N_PRED_COLS   10  // up_3,dn_3,up_6,dn_6,up_12,dn_12,up_24,dn_24,up_48,dn_48
+int      MLP_SignalCount = 0;
+datetime MLP_Times[];
+char     MLP_Signals[];
+float    MLP_Scores[];
+bool     MLP_HasScoreColumn = false;
 
-// ─── Диагностические счётчики ─────────────────────────────────────
+datetime MLP_BuySignalTime = 0;
+datetime MLP_SellSignalTime = 0;
+double   MLP_BuyScore = 0.0;
+double   MLP_SellScore = 0.0;
 
-int ML_cnt_total    = 0;
-int ML_cnt_trend    = 0;
-int ML_cnt_lowratio = 0;
-int ML_cnt_filter3  = 0;
-int ML_cnt_filter6  = 0;
-int ML_cnt_posblock = 0;
-int ML_cnt_executed = 0;
-int ML_cnt_buy      = 0;
-int ML_cnt_sell     = 0;
+int MLP_cnt_total    = 0;
+int MLP_cnt_filtered = 0;
+int MLP_cnt_posblock = 0;
+int MLP_cnt_opened   = 0;
+int MLP_cnt_buy      = 0;
+int MLP_cnt_sell     = 0;
+int MLP_cnt_timeout  = 0;
+int MLP_cnt_reverse  = 0;
 
-// ─── Хранилище сигналов ─────────────────────────────────────────────
-
-int      ML_SignalCount = 0;
-datetime ML_Times[];
-char     ML_Signals[];
-float    ML_Up3[];
-float    ML_Dn3[];
-float    ML_Up6[];
-float    ML_Dn6[];
-float    ML_Up12[];
-float    ML_Dn12[];
-float    ML_Up24[];
-float    ML_Dn24[];
-float    ML_Up48[];
-float    ML_Dn48[];
-
-// ─── Инициализация: загрузка CSV ────────────────────────────────────
-
-bool ML_INIT() {
-   int handle = FileOpen(ML_SIGNALS_FILE, FILE_READ | FILE_CSV | FILE_ANSI, ';');
-   if (handle < 0) {
-      Print("ML_INIT: Cannot open ", ML_SIGNALS_FILE, " Error=", GetLastError());
-      return false;
-   }
-
-   // Пропускаем заголовок (time + signal + 10 предсказаний = 12 полей)
-   for (int h = 0; h < 2 + ML_N_PRED_COLS; h++)
-      FileReadString(handle);
-
-   // Предварительное выделение памяти
-   ArrayResize(ML_Times,   ML_MAX_SIGNALS);
-   ArrayResize(ML_Signals, ML_MAX_SIGNALS);
-   ArrayResize(ML_Up3,     ML_MAX_SIGNALS);
-   ArrayResize(ML_Dn3,     ML_MAX_SIGNALS);
-   ArrayResize(ML_Up6,     ML_MAX_SIGNALS);
-   ArrayResize(ML_Dn6,     ML_MAX_SIGNALS);
-   ArrayResize(ML_Up12,    ML_MAX_SIGNALS);
-   ArrayResize(ML_Dn12,    ML_MAX_SIGNALS);
-   ArrayResize(ML_Up24,    ML_MAX_SIGNALS);
-   ArrayResize(ML_Dn24,    ML_MAX_SIGNALS);
-   ArrayResize(ML_Up48,    ML_MAX_SIGNALS);
-   ArrayResize(ML_Dn48,    ML_MAX_SIGNALS);
-
-   ML_SignalCount = 0;
-
-   while (!FileIsEnding(handle) && ML_SignalCount < ML_MAX_SIGNALS) {
-      string time_str = FileReadString(handle);
-      if (time_str == "") break;
-
-      int i = ML_SignalCount;
-      ML_Times[i]   = StringToTime(time_str);
-      ML_Signals[i] = (char)StringToInteger(FileReadString(handle));
-      ML_Up3[i]     = (float)StringToDouble(FileReadString(handle));
-      ML_Dn3[i]     = (float)StringToDouble(FileReadString(handle));
-      ML_Up6[i]     = (float)StringToDouble(FileReadString(handle));
-      ML_Dn6[i]     = (float)StringToDouble(FileReadString(handle));
-      ML_Up12[i]    = (float)StringToDouble(FileReadString(handle));
-      ML_Dn12[i]    = (float)StringToDouble(FileReadString(handle));
-      ML_Up24[i]    = (float)StringToDouble(FileReadString(handle));
-      ML_Dn24[i]    = (float)StringToDouble(FileReadString(handle));
-      ML_Up48[i]    = (float)StringToDouble(FileReadString(handle));
-      ML_Dn48[i]    = (float)StringToDouble(FileReadString(handle));
-
-      ML_SignalCount++;
-   }
-
-   FileClose(handle);
-
-   // Обрезаем массивы до реального размера
-   ArrayResize(ML_Times,   ML_SignalCount);
-   ArrayResize(ML_Signals, ML_SignalCount);
-   ArrayResize(ML_Up3,     ML_SignalCount);
-   ArrayResize(ML_Dn3,     ML_SignalCount);
-   ArrayResize(ML_Up6,     ML_SignalCount);
-   ArrayResize(ML_Dn6,     ML_SignalCount);
-   ArrayResize(ML_Up12,    ML_SignalCount);
-   ArrayResize(ML_Dn12,    ML_SignalCount);
-   ArrayResize(ML_Up24,    ML_SignalCount);
-   ArrayResize(ML_Dn24,    ML_SignalCount);
-   ArrayResize(ML_Up48,    ML_SignalCount);
-   ArrayResize(ML_Dn48,    ML_SignalCount);
-
-   Print("ML_INIT: Loaded V",ML_Ver, " ", ML_SignalCount, " signals from ", ML_SIGNALS_FILE,
-         "  Range: ", TimeToString(ML_Times[0]), " — ", TimeToString(ML_Times[ML_SignalCount-1]),
-         "  MinRatio=", DoubleToString(ML_MinRatio,2),
-         "  MaxRatio=", (ML_MaxRatio>0 ? DoubleToString(ML_MaxRatio,2) : "off"),
-         "  RR_Mode=", ML_RR_Mode,
-         "  MaxRR/Cap=", DoubleToString(ML_RR_Mode==0?ML_MaxRR:ML_RR_Cap,1),
-         "  Filter3=", DoubleToString(ML_Filter3,1),
-         "  Filter6=", DoubleToString(ML_Filter6,1),
-         "  Exit=", ML_ExitEnabled, "(thr=", DoubleToString(ML_ExitThreshold,1), ")",
-         "  BypassTrend=", ML_BypassTrend);
-
-   return true;
+bool MLP_PassScore(int idx) {
+   if (!ML_UseScoreFilter || !MLP_HasScoreColumn) return true;
+   return MLP_Scores[idx] >= ML_ScoreThreshold;
 }
 
-// ─── Бинарный поиск сигнала по времени ──────────────────────────────
-
-int ML_FindSignal(datetime barTime) {
-   int lo = 0, hi = ML_SignalCount - 1;
+int MLP_FindSignal(datetime barTime) {
+   int lo = 0;
+   int hi = MLP_SignalCount - 1;
 
    while (lo <= hi) {
       int mid = (lo + hi) / 2;
-      if (ML_Times[mid] == barTime) return mid;
-      else if (ML_Times[mid] < barTime) lo = mid + 1;
+      if (MLP_Times[mid] == barTime) return mid;
+      if (MLP_Times[mid] < barTime) lo = mid + 1;
       else hi = mid - 1;
    }
 
    return -1;
 }
 
-// ─── Вспомогательная функция: расчёт R:R по режиму ─────────────────
-
-float ML_CalcRR(double ratio) {
-   double r = ratio / ML_MinRatio;
-   switch(ML_RR_Mode) {
-      case 1:  return (float)MathMin(MathLog(r) + 1.0, ML_RR_Cap);
-      case 2:  return (float)MathMin(MathSqrt(r),      ML_RR_Cap);
-      default: return (float)MathMin(r,                ML_MaxRR);
+bool MLP_INIT() {
+   int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_CSV | FILE_ANSI, ';');
+   if (handle < 0) {
+      Print("MLP_INIT: Cannot open ", MLP_SIGNALS_FILE, " Error=", GetLastError());
+      return false;
    }
-}
 
-// ─── Торговая функция (вызывается из INPUT) ─────────────────────────
+   string header_time = FileReadString(handle);
+   string header_signal = FileReadString(handle);
+   if (header_time != "time" || header_signal != "signal") {
+      Print("MLP_INIT: Unexpected header in ", MLP_SIGNALS_FILE,
+            " first=", header_time, " second=", header_signal);
+      FileClose(handle);
+      return false;
+   }
+
+   MLP_HasScoreColumn = false;
+   string col3 = "";
+   string col4 = "";
+   string col5 = "";
+   if (!FileIsLineEnding(handle)) col3 = FileReadString(handle);
+   if (!FileIsLineEnding(handle)) col4 = FileReadString(handle);
+   if (!FileIsLineEnding(handle)) col5 = FileReadString(handle);
+   if (col5 == "pred_ret_24_dir_atr") MLP_HasScoreColumn = true;
+   while (!FileIsLineEnding(handle)) FileReadString(handle);
+
+   ArrayResize(MLP_Times, MLP_MAX_SIGNALS);
+   ArrayResize(MLP_Signals, MLP_MAX_SIGNALS);
+   ArrayResize(MLP_Scores, MLP_MAX_SIGNALS);
+   MLP_SignalCount = 0;
+
+   while (!FileIsEnding(handle) && MLP_SignalCount < MLP_MAX_SIGNALS) {
+      string time_str = FileReadString(handle);
+      if (time_str == "") {
+         while (!FileIsEnding(handle) && !FileIsLineEnding(handle)) FileReadString(handle);
+         continue;
+      }
+
+      string sig_str = FileReadString(handle);
+      datetime parsed_time = StringToTime(time_str);
+      char parsed_signal = (char)StringToInteger(sig_str);
+      double parsed_score = 0.0;
+
+      if (!FileIsLineEnding(handle)) FileReadString(handle);
+      if (!FileIsLineEnding(handle)) FileReadString(handle);
+      if (!FileIsLineEnding(handle)) {
+         string value5 = FileReadString(handle);
+         if (MLP_HasScoreColumn) parsed_score = StringToDouble(value5);
+      }
+      while (!FileIsLineEnding(handle)) FileReadString(handle);
+
+      if (MLP_SignalCount > 0 && MLP_Times[MLP_SignalCount - 1] == parsed_time) {
+         MLP_Signals[MLP_SignalCount - 1] = parsed_signal;
+         MLP_Scores[MLP_SignalCount - 1] = (float)parsed_score;
+         continue;
+      }
+
+      MLP_Times[MLP_SignalCount] = parsed_time;
+      MLP_Signals[MLP_SignalCount] = parsed_signal;
+      MLP_Scores[MLP_SignalCount] = (float)parsed_score;
+      MLP_SignalCount++;
+   }
+
+   FileClose(handle);
+
+   ArrayResize(MLP_Times, MLP_SignalCount);
+   ArrayResize(MLP_Signals, MLP_SignalCount);
+   ArrayResize(MLP_Scores, MLP_SignalCount);
+
+   if (MLP_SignalCount <= 0) {
+      Print("MLP_INIT: Loaded 0 rows from ", MLP_SIGNALS_FILE);
+      return true;
+   }
+
+   Print("MLP_INIT: Loaded V", MLP_Ver, " ", MLP_SignalCount, " rows from ", MLP_SIGNALS_FILE,
+         " Range: ", TimeToString(MLP_Times[0]), " — ", TimeToString(MLP_Times[MLP_SignalCount - 1]),
+         " ScoreCol=", MLP_HasScoreColumn,
+         " ScoreFilter=", ML_UseScoreFilter,
+         " Threshold=", DoubleToString(ML_ScoreThreshold, 6),
+         " HoldBars=", ML_HoldBars,
+         " Reversal=", ML_AllowReversal);
+   if (ML_UseScoreFilter && !MLP_HasScoreColumn) {
+      Print("MLP_INIT: pred_ret_24_dir_atr column not found, score filter disabled for this file.");
+   }
+
+   return true;
+}
 
 void EXPERT::ML_TRADE() {
    static bool ml_loaded = false;
    if (!ml_loaded) {
       ml_loaded = true;
-      ML_INIT();
+      MLP_INIT();
    }
-   if (ML_SignalCount <= 0) return;
+   if (MLP_SignalCount <= 0) return;
 
-   int idx = ML_FindSignal(Time[bar]);
-   if (idx < 0) return;
+   set.BUY.Sig = NONE;
+   set.SEL.Sig = NONE;
+   set.BUY.Val = 0;
+   set.BUY.Stp = 0;
+   set.BUY.Prf = 0;
+   set.SEL.Val = 0;
+   set.SEL.Stp = 0;
+   set.SEL.Prf = 0;
 
-   char sig = ML_Signals[idx];
-   if (sig == 0) return;
+   int idx = MLP_FindSignal(Time[bar]);
+   char sig = 0;
+   double score = 0.0;
+   bool score_ok = true;
 
-   // ratio вычисляется на лету из up_12/dn_12
-   float ratio_up = ML_Up12[idx] / (ML_Dn12[idx] + 1e-6f);
-   float ratio_dn = ML_Dn12[idx] / (ML_Up12[idx] + 1e-6f);
-
-   // ─── ML-exit: закрытие позиции при reverse-сигнале ───────────────
-   if (ML_ExitEnabled) {
-      if (sig == -1 && BUY.Typ != NONE && ratio_dn >= ML_ExitThreshold) {
-         CLOSE_BUY(1, "ML_Exit");
-         Print(Mgc,":: ML EXIT BUY reason=ReverseSignal ratio_dn=",
-               DoubleToString(ratio_dn,2), " bar=", TimeToString(Time[bar]));
-      }
-      if (sig == 1 && SEL.Typ != NONE && ratio_up >= ML_ExitThreshold) {
-         CLOSE_SEL(1, "ML_Exit");
-         Print(Mgc,":: ML EXIT SELL reason=ReverseSignal ratio_up=",
-               DoubleToString(ratio_up,2), " bar=", TimeToString(Time[bar]));
-      }
+   if (idx >= 0) {
+      sig = MLP_Signals[idx];
+      score = MLP_Scores[idx];
+      score_ok = MLP_PassScore(idx);
+      if (sig != 0) MLP_cnt_total++;
    }
 
-   ML_cnt_total++;
-
-   // ─── Трендовый фильтр ─────────────────────────────────────────────
-   if (sig == 1 && !UP) {
-      ML_cnt_trend++;
-      if (!ML_BypassTrend) {
-         Print(Mgc,":: ML SKIP reason=TrendFilter sig=1 ratio=",DoubleToString(ratio_up,2),
-               " bar=",TimeToString(Time[bar]));
+   if (BUY.Typ == MARKET) {
+      if (ML_HoldBars > 0 && SHIFT(BUY.T) >= ML_HoldBars) {
+         double exit_price = BID;
+         double pnl_atr = 0.0;
+         if (ATR > 0) pnl_atr = (exit_price - BUY.Val) / ATR;
+         MLP_cnt_timeout++;
+         Print(Mgc, ":: MLP CLOSE BUY"
+               " reason=Timeout"
+               " signal_time=", TimeToString(MLP_BuySignalTime),
+               " entry_time=", TimeToString(BUY.T),
+               " exit_time=", TimeToString(Time[0]),
+               " hold_bars=", SHIFT(BUY.T),
+               " entry=", DoubleToString(BUY.Val, Digits),
+               " exit=", DoubleToString(exit_price, Digits),
+               " atr=", DoubleToString(ATR, Digits),
+               " pnl_atr=", DoubleToString(pnl_atr, 4),
+               " score=", DoubleToString(MLP_BuyScore, 6));
+         CLOSE_BUY(1, "MLP_Timeout");
+         MLP_BuySignalTime = 0;
+         MLP_BuyScore = 0.0;
          return;
       }
-   }
-   if (sig == -1 && !DN) {
-      ML_cnt_trend++;
-      if (!ML_BypassTrend) {
-         Print(Mgc,":: ML SKIP reason=TrendFilter sig=-1 ratio=",DoubleToString(ratio_dn,2),
-               " bar=",TimeToString(Time[bar]));
+      if (sig == -1 && score_ok && ML_AllowReversal) {
+         double exit_price = BID;
+         double pnl_atr = 0.0;
+         if (ATR > 0) pnl_atr = (exit_price - BUY.Val) / ATR;
+         MLP_cnt_reverse++;
+         Print(Mgc, ":: MLP CLOSE BUY"
+               " reason=ReverseSignal"
+               " signal_time=", TimeToString(MLP_BuySignalTime),
+               " reverse_time=", TimeToString(MLP_Times[idx]),
+               " entry_time=", TimeToString(BUY.T),
+               " exit_time=", TimeToString(Time[0]),
+               " entry=", DoubleToString(BUY.Val, Digits),
+               " exit=", DoubleToString(exit_price, Digits),
+               " atr=", DoubleToString(ATR, Digits),
+               " pnl_atr=", DoubleToString(pnl_atr, 4),
+               " score=", DoubleToString(MLP_BuyScore, 6),
+               " reverse_score=", DoubleToString(score, 6));
+         CLOSE_BUY(1, "MLP_ReverseSignal");
+         MLP_BuySignalTime = 0;
+         MLP_BuyScore = 0.0;
          return;
       }
+      if (sig != 0 && score_ok) {
+         MLP_cnt_posblock++;
+         Print(Mgc, ":: MLP SKIP reason=PosBlock"
+               " sig=", sig,
+               " signal_time=", TimeToString(MLP_Times[idx]),
+               " score=", DoubleToString(score, 6),
+               " open=BUY");
+      }
+      return;
    }
 
-   // ─── Фильтр up_3/dn_3 ────────────────────────────────────────────
-   if (ML_Filter3 > 0) {
-      if (sig == 1  && ML_Up3[idx] / (ML_Dn3[idx] + 1e-6f) < ML_Filter3) {
-         ML_cnt_filter3++;
-         Print(Mgc,":: ML SKIP reason=Filter3 sig=1 up_3=",DoubleToString(ML_Up3[idx],4),
-               " dn_3=",DoubleToString(ML_Dn3[idx],4)," bar=",TimeToString(Time[bar]));
+   if (SEL.Typ == MARKET) {
+      if (ML_HoldBars > 0 && SHIFT(SEL.T) >= ML_HoldBars) {
+         double exit_price = ASK;
+         double pnl_atr = 0.0;
+         if (ATR > 0) pnl_atr = (SEL.Val - exit_price) / ATR;
+         MLP_cnt_timeout++;
+         Print(Mgc, ":: MLP CLOSE SELL"
+               " reason=Timeout"
+               " signal_time=", TimeToString(MLP_SellSignalTime),
+               " entry_time=", TimeToString(SEL.T),
+               " exit_time=", TimeToString(Time[0]),
+               " hold_bars=", SHIFT(SEL.T),
+               " entry=", DoubleToString(SEL.Val, Digits),
+               " exit=", DoubleToString(exit_price, Digits),
+               " atr=", DoubleToString(ATR, Digits),
+               " pnl_atr=", DoubleToString(pnl_atr, 4),
+               " score=", DoubleToString(MLP_SellScore, 6));
+         CLOSE_SEL(1, "MLP_Timeout");
+         MLP_SellSignalTime = 0;
+         MLP_SellScore = 0.0;
          return;
       }
-      if (sig == -1 && ML_Dn3[idx] / (ML_Up3[idx] + 1e-6f) < ML_Filter3) {
-         ML_cnt_filter3++;
-         Print(Mgc,":: ML SKIP reason=Filter3 sig=-1 dn_3=",DoubleToString(ML_Dn3[idx],4),
-               " up_3=",DoubleToString(ML_Up3[idx],4)," bar=",TimeToString(Time[bar]));
+      if (sig == 1 && score_ok && ML_AllowReversal) {
+         double exit_price = ASK;
+         double pnl_atr = 0.0;
+         if (ATR > 0) pnl_atr = (SEL.Val - exit_price) / ATR;
+         MLP_cnt_reverse++;
+         Print(Mgc, ":: MLP CLOSE SELL"
+               " reason=ReverseSignal"
+               " signal_time=", TimeToString(MLP_SellSignalTime),
+               " reverse_time=", TimeToString(MLP_Times[idx]),
+               " entry_time=", TimeToString(SEL.T),
+               " exit_time=", TimeToString(Time[0]),
+               " entry=", DoubleToString(SEL.Val, Digits),
+               " exit=", DoubleToString(exit_price, Digits),
+               " atr=", DoubleToString(ATR, Digits),
+               " pnl_atr=", DoubleToString(pnl_atr, 4),
+               " score=", DoubleToString(MLP_SellScore, 6),
+               " reverse_score=", DoubleToString(score, 6));
+         CLOSE_SEL(1, "MLP_ReverseSignal");
+         MLP_SellSignalTime = 0;
+         MLP_SellScore = 0.0;
          return;
       }
-   }
-
-   // ─── Фильтр up_6/dn_6 ────────────────────────────────────────────
-   if (ML_Filter6 > 0) {
-      if (sig == 1  && ML_Up6[idx] / (ML_Dn6[idx] + 1e-6f) < ML_Filter6) {
-         ML_cnt_filter6++;
-         Print(Mgc,":: ML SKIP reason=Filter6 sig=1 up_6=",DoubleToString(ML_Up6[idx],4),
-               " dn_6=",DoubleToString(ML_Dn6[idx],4)," bar=",TimeToString(Time[bar]));
-         return;
+      if (sig != 0 && score_ok) {
+         MLP_cnt_posblock++;
+         Print(Mgc, ":: MLP SKIP reason=PosBlock"
+               " sig=", sig,
+               " signal_time=", TimeToString(MLP_Times[idx]),
+               " score=", DoubleToString(score, 6),
+               " open=SELL");
       }
-      if (sig == -1 && ML_Dn6[idx] / (ML_Up6[idx] + 1e-6f) < ML_Filter6) {
-         ML_cnt_filter6++;
-         Print(Mgc,":: ML SKIP reason=Filter6 sig=-1 dn_6=",DoubleToString(ML_Dn6[idx],4),
-               " up_6=",DoubleToString(ML_Up6[idx],4)," bar=",TimeToString(Time[bar]));
-         return;
+      return;
+   }
+
+   if (BUY.Typ != NONE || SEL.Typ != NONE) {
+      if (sig != 0 && score_ok) {
+         MLP_cnt_posblock++;
+         Print(Mgc, ":: MLP SKIP reason=PosBlock"
+               " sig=", sig,
+               " signal_time=", TimeToString(MLP_Times[idx]),
+               " score=", DoubleToString(score, 6),
+               " open=pending");
       }
+      return;
    }
 
-   // ─── Торговля с адаптивным SL/TP ─────────────────────────────────
-   if (sig == 1 && BUY.Typ == NONE && ratio_up >= ML_MinRatio
-       && (ML_MaxRatio <= 0 || ratio_up <= ML_MaxRatio)) {
-      if (SEL.Typ != NONE) {
-         CLOSE_SEL(1, "ML_Reversal");
-      }
-      ML_cnt_executed++; ML_cnt_buy++;
-      float sl_dist = (float)MathMax(ML_Dn12[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
-      float tp_dist = sl_dist * ML_CalcRR(ratio_up);
+   if (idx < 0 || sig == 0) return;
 
-      set.BUY.Sig=GOGO;
-      set.BUY.Val=(float)Ask+DELTA(D);
-      set.BUY.Stp=set.BUY.Val-sl_dist;
-      set.BUY.Prf=set.BUY.Val+tp_dist;
-      Print(Mgc,":: ML BUY"
-            " ratio=",  DoubleToString(ratio_up,2),
-            " Val=",    DoubleToString(set.BUY.Val,Digits),
-            " Stp=",    DoubleToString(set.BUY.Stp,Digits),
-            " Prf=",    DoubleToString(set.BUY.Prf,Digits),
-            " ATR=",    DoubleToString(ATR,Digits),
-            " bar=",    TimeToString(Time[bar]));
+   if (!score_ok) {
+      MLP_cnt_filtered++;
+      Print(Mgc, ":: MLP SKIP reason=ScoreFilter"
+            " sig=", sig,
+            " signal_time=", TimeToString(MLP_Times[idx]),
+            " score=", DoubleToString(score, 6),
+            " threshold=", DoubleToString(ML_ScoreThreshold, 6));
+      return;
    }
-   else if (sig == -1 && SEL.Typ == NONE && ratio_dn >= ML_MinRatio
-            && (ML_MaxRatio <= 0 || ratio_dn <= ML_MaxRatio)) {
-      if (BUY.Typ != NONE) {
-         CLOSE_BUY(1, "ML_Reversal");
-      }
-      ML_cnt_executed++; ML_cnt_sell++;
-      float sl_dist = (float)MathMax(ML_Up12[idx] * ML_ScaleK * ATR, ATR * ML_Min_SL_ATR);
-      float tp_dist = sl_dist * ML_CalcRR(ratio_dn);
 
-      set.SEL.Sig=GOGO;
-      set.SEL.Val=(float)Bid-DELTA(D);
-      set.SEL.Stp=set.SEL.Val+sl_dist;
-      set.SEL.Prf=set.SEL.Val-tp_dist;
-      Print(Mgc,":: ML SELL"
-            " ratio=",  DoubleToString(ratio_dn,2),
-            " Val=",    DoubleToString(set.SEL.Val,Digits),
-            " Stp=",    DoubleToString(set.SEL.Stp,Digits),
-            " Prf=",    DoubleToString(set.SEL.Prf,Digits),
-            " ATR=",    DoubleToString(ATR,Digits),
-            " bar=",    TimeToString(Time[bar]));
+   if (sig == 1) {
+      float back_stop = (float)MathMax(ATR * ML_BackStopATR, StopLevel * 2.0);
+      MLP_cnt_opened++;
+      MLP_cnt_buy++;
+      MLP_BuySignalTime = MLP_Times[idx];
+      MLP_BuyScore = score;
+      MLP_SellSignalTime = 0;
+      MLP_SellScore = 0.0;
+
+      set.BUY.Sig = GOGO;
+      set.BUY.Val = (float)ASK;
+      set.BUY.Stp = set.BUY.Val - back_stop;
+      set.BUY.Prf = 0;
+
+      Print(Mgc, ":: MLP BUY"
+            " signal_time=", TimeToString(MLP_BuySignalTime),
+            " entry_time=", TimeToString(Time[0]),
+            " score=", DoubleToString(score, 6),
+            " Val=", DoubleToString(set.BUY.Val, Digits));
+      return;
    }
-   else {
-      float ratio = (sig == 1) ? ratio_up : ratio_dn;
-      string skip_reason;
-      if      (ratio < ML_MinRatio)                     { skip_reason = "LowRatio";  ML_cnt_lowratio++; }
-      else if (ML_MaxRatio > 0 && ratio > ML_MaxRatio) { skip_reason = "HighRatio"; ML_cnt_lowratio++; }
-      else                                              { skip_reason = "PosBlock";  ML_cnt_posblock++; }
-      Print(Mgc,":: ML SKIP reason=", skip_reason,
-            " sig=",sig," ratio=",DoubleToString(ratio,2),
-            " BUY.Typ=",BUY.Typ," SEL.Typ=",SEL.Typ,
-            " bar=",TimeToString(Time[bar]));
+
+   if (sig == -1) {
+      float back_stop = (float)MathMax(ATR * ML_BackStopATR, StopLevel * 2.0);
+      MLP_cnt_opened++;
+      MLP_cnt_sell++;
+      MLP_SellSignalTime = MLP_Times[idx];
+      MLP_SellScore = score;
+      MLP_BuySignalTime = 0;
+      MLP_BuyScore = 0.0;
+
+      set.SEL.Sig = GOGO;
+      set.SEL.Val = (float)BID;
+      set.SEL.Stp = set.SEL.Val + back_stop;
+      set.SEL.Prf = 0;
+
+      Print(Mgc, ":: MLP SELL"
+            " signal_time=", TimeToString(MLP_SellSignalTime),
+            " entry_time=", TimeToString(Time[0]),
+            " score=", DoubleToString(score, 6),
+            " Val=", DoubleToString(set.SEL.Val, Digits));
    }
-}
-
-// ─── Диагностический отчёт (вызывается из OnTester) ─────────────────
-
-void ML_DIAG_PRINT() {
-   Print("=== ML DIAGNOSTICS ===");
-   Print("  Total signals:    ", ML_cnt_total);
-   Print("  Trend blocked:    ", ML_cnt_trend,
-         "  (", ML_cnt_total>0 ? DoubleToString(100.0*ML_cnt_trend/ML_cnt_total,1) : "0", "%)");
-   Print("  Filter3 blocked:  ", ML_cnt_filter3,
-         "  (", ML_cnt_total>0 ? DoubleToString(100.0*ML_cnt_filter3/ML_cnt_total,1) : "0", "%)");
-   Print("  Filter6 blocked:  ", ML_cnt_filter6,
-         "  (", ML_cnt_total>0 ? DoubleToString(100.0*ML_cnt_filter6/ML_cnt_total,1) : "0", "%)");
-   Print("  LowRatio blocked: ", ML_cnt_lowratio,
-         "  (", ML_cnt_total>0 ? DoubleToString(100.0*ML_cnt_lowratio/ML_cnt_total,1) : "0", "%)");
-   Print("  Position blocked: ", ML_cnt_posblock,
-         "  (", ML_cnt_total>0 ? DoubleToString(100.0*ML_cnt_posblock/ML_cnt_total,1) : "0", "%)");
-   Print("  Executed:         ", ML_cnt_executed,
-         "  (BUY=",ML_cnt_buy," SELL=",ML_cnt_sell,")");
-   Print("  ML_MinRatio=", DoubleToString(ML_MinRatio,3),
-         "  ML_ScaleK=", DoubleToString(ML_ScaleK,1),
-         "  ML_Filter3=", DoubleToString(ML_Filter3,1),
-         "  ML_Filter6=", DoubleToString(ML_Filter6,1),
-         "  ML_BypassTrend=", ML_BypassTrend);
-   Print("======================");
 }

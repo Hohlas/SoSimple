@@ -28,26 +28,25 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
    DATA/Nero_validation_labeled.csv
    DATA/Nero_test_labeled.csv
           ↓
-    [Обучение NN] (ML/train.py --task regression_updn)
+    [Обучение NN / исследование]
           ↓
-   ML/checkpoints/transformer_updn_best.pt
+   ┌───────────────────────────────────────────────────────────┐
+   │ Ветка A: legacy regression_updn                          │
+   │ ML/train.py --task regression_updn                       │
+   │ API/generate_signals.py --theta 2.665 --horizon 12       │
+   │ ml_signals.csv с up_3..dn_48                             │
+   │ lib_ML_Signal_back.mqh                                   │
+   │ signal_tracer.py -- legacy reconciliation                │
+   └───────────────────────────────────────────────────────────┘
           ↓
-    [Статистическое исследование сигналов] (API/signal_research.py)
-          ↓
-    [Генерация сигналов] (API/generate_signals.py --theta 2.665 --horizon 12)
-          ↓
-   MT/MQL4/Files/ml_signals.csv (58K+ строк)
-          ↓
-    [Торговый эксперт] $o$imple.mq4 → ML_TRADE() → ордера
-          ↓          ↓
-     MT4 Лог    DATA/Nero_*_labeled.csv (Ground Truth)
-          ↓          ↓
-    ════════════════════════════════════
-         ↓
-    [Trade-Level Reconciliation]
-      (statistics/signal_tracer.py)
-         ↓
-    Отчёт: формула SL/TP vs MT4 Actual vs Ground Truth
+   ┌───────────────────────────────────────────────────────────┐
+   │ Ветка B: текущий MT4 parity-check                        │
+   │ prediction/export CSV -> ml_signals.csv                  │
+   │ (time;signal или полный prediction CSV)                  │
+   │ текущий lib_ML_Signal.mqh                                │
+   │ вход на следующем баре, одна позиция, hold/reversal      │
+   │ разбор по строкам MLP BUY/SELL/CLOSE/SKIP                │
+   └───────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -410,52 +409,67 @@ python -m API.signal_research               # весь датасет
 
 ---
 
-## 🔄 Этап 9: Генерация ML-сигналов для MT4
+## 🔄 Этап 9: Выпуск ML CSV для MT4
 
-### Вход
+Сейчас в проекте сосуществуют **два несовместимых формата** `ml_signals.csv`.
+
+### 9A. Legacy regression_updn
+
+Источник:
+
 - `DATA/Nero_{train,validation,test}_labeled.csv`
 - `ML/checkpoints/transformer_updn_best.pt`
+- `API/generate_signals.py`
 
-### Процесс
-**Модуль**: `API/generate_signals.py`
-
-1. Загружает чекпоинт (seq_len читается из `model_kwargs`)
-2. Прогоняет все три датасета через модель
-3. Для каждой строки вычисляет сигнал по `ratio = up_12 / dn_12`:
-   - `ratio > θ` → signal = **1** (BUY)
-   - `1/ratio > θ` → signal = **-1** (SELL)
-   - иначе → signal = **0** (FLAT)
-4. Записывает все 10 предсказаний в CSV
+Команда:
 
 ```bash
-python -m API.generate_signals                        # дефолт: θ=2.665, horizon=12
-python -m API.generate_signals --theta 3.0 --horizon 24
+python -m API.generate_signals
 ```
 
-### Выход — ml_signals.csv (v3.0)
-```
+Формат:
+
+```text
 time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48
-2004.07.07 20:00;0;0.2041;0.0282;0.2573;0.0659;0.3215;0.1227;...
-```
-- ~58K строк, диапазон 2004–2026
-- `ratio_up`/`ratio_dn` не хранятся — вычисляются в EA на лету из up_12/dn_12
-
-### Интеграция с MT4 (lib_ML_Signal.mqh v3.0)
-
-**EA параметры:**
-```
-ML_MinRatio     — порог ratio для входа (текущий: 3.5, рекомендуется 4.0)
-ML_MaxRatio     — верхний порог (0=выкл)
-ML_MaxRR        — макс R:R множитель (текущий: 4.0)
-ML_ScaleK       — pred → ATR для SL (текущий: 20.0)
-ML_Min_SL_ATR   — минимальный SL в ATR (текущий: 2.0)
-ML_Filter3      — порог ratio_3 для фильтра (0=выкл)
-ML_Filter6      — порог ratio_6 для фильтра (0=выкл)
 ```
 
-**SL/TP логика:**
-- BUY:  `sl = max(dn_12 × ScaleK × ATR, ATR × Min_SL_ATR)`, `tp = sl × CalcRR(ratio_12)`
-- SELL: `sl = max(up_12 × ScaleK × ATR, ATR × Min_SL_ATR)`, `tp = sl × CalcRR(ratio_12)`
+Использование:
+
+- исторические исследования;
+- legacy reconciliation;
+- runtime из `lib_ML_Signal_back.mqh`.
+
+### 9B. Текущий прямой parity-check режим
+
+Источник:
+
+- уже подготовленный CSV для исполнения;
+- это может быть либо минимальный `time;signal`, либо полный prediction CSV.
+
+Поддерживаемые форматы:
+
+```text
+time;signal
+```
+
+или
+
+```text
+time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
+```
+
+Использование:
+
+- текущий `iSignal=3`;
+- активный `lib_ML_Signal.mqh`;
+- вход на следующем баре;
+- одна позиция;
+- закрытие по `ML_HoldBars` или по обратному сигналу.
+
+Важно:
+
+- если в файле есть `pred_ret_24_dir_atr`, MT4 может сам применить порог `ML_ScoreThreshold`;
+- если колонки нет, MT4 просто исполняет готовый `signal`.
 
 ---
 

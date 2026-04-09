@@ -1,12 +1,12 @@
 # Neural Networks Pipeline
 
-> **Обновлено**: 2026-03-19 — добавлен multi-task regression (`--task regression_updn`) для 6 Up/Dn таргетов.
+> **Обновлено**: 2026-04-09 — `regression_updn` описан в текущем виде: 10 Up/Dn таргетов на горизонтах 3, 6, 12, 24, 48.
 
 ## Назначение
 Обучение и сравнение 4 архитектур нейронных сетей для решения трёх задач:
 1. **Классификация** (`--task classification`): `signal ∈ {-1, 0, 1}` (направление и сила движения)
 2. **Регрессия** (`--task regression`): `predict ∈ [-p..p]` (непрерывная нормализованная величина ожидаемого движения цены)
-3. **Multi-task регрессия** (`--task regression_updn`): 6 таргетов (up_12, dn_12, up_24, dn_24, up_48, dn_48) — движение цены вверх/вниз на 3 горизонтах. Торговый сигнал: ratio = pred_up/pred_dn > threshold.
+3. **Multi-task регрессия** (`--task regression_updn`): 10 таргетов (`up_3`, `dn_3`, `up_6`, `dn_6`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`) — движение цены вверх/вниз на 5 горизонтах. Торговый сигнал в legacy-контуре строится из отношения `pred_up / pred_dn`.
 Фреймворк: PyTorch.
 
 ### ⚠️ Важно: Ловушка дисбаланса классов
@@ -75,7 +75,7 @@ python -m ML.compare_architectures --task classification
 # Массовое обучение для регрессии (старый predict таргет)
 python -m ML.compare_architectures --task regression
 
-# Массовое обучение multi-task regression (6 Up/Dn таргетов)
+# Массовое обучение multi-task regression (10 Up/Dn таргетов)
 python -m ML.compare_architectures --task regression_updn
 ```
 
@@ -87,7 +87,7 @@ python -m ML.train --model bilstm --task classification
 # Регрессия с кастомными параметрами
 python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
 
-# Multi-task regression (6 Up/Dn таргетов)
+# Multi-task regression (10 Up/Dn таргетов)
 python -m ML.train --model transformer --task regression_updn --epochs 50
 
 # Классификация с оптимизированными параметрами (из Optuna)

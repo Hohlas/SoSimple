@@ -1,5 +1,5 @@
 #define MAX_RISK  10
-#define VERSION "260.327"
+#define VERSION "260.328"
 #property copyright  "Hohla"
 #property link       "hohla.ru"
 #property strict // Указание компилятору на применение особого строгого режима проверки ошибок 
@@ -70,6 +70,11 @@ extern double ML_Filter3       = 0.0;  // ML_Filter3: Фильтр up_3/dn_3 (0=
 extern double ML_Filter6       = 0.0;  // ML_Filter6: Фильтр up_6/dn_6 (0=выкл, 1.0=совпадение направления, >1=усиленный)
 extern double ML_Trl_Start_ATR = 1.0;  // ML_Trl_Start_ATR: Активация ML-трала при профите в ATR (от 0.5 до 2.0)
 extern double ML_Trl_Step_ATR  = 1.5;  // ML_Trl_Step_ATR: Дистанция ML-трала в ATR (от 0.3 до 1.5)
+extern int    ML_HoldBars      = 12;   // ML_HoldBars: сколько баров держать сделку в parity-check
+extern bool   ML_AllowReversal = false;// ML_AllowReversal: закрывать по обратному сигналу из CSV
+extern bool   ML_UseScoreFilter = true;// ML_UseScoreFilter: применять порог по pred_ret_24_dir_atr, если колонка есть
+extern double ML_ScoreThreshold = -0.03594103; // ML_ScoreThreshold: текущий порог отбора winner A@7.5%
+extern double ML_BackStopATR   = 50.0; // ML_BackStopATR: дальний страховочный SL для корректного выставления ордера
 
 datetime BarTime;
 uchar    ExpTotal;
@@ -132,4 +137,3 @@ void OnTick(){ // 2015.10.22. 23:00
 */   
      
 
-   
