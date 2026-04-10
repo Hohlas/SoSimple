@@ -11,6 +11,7 @@
 #     - ML/checkpoints/<model>_best.pt            (classification)
 #     - ML/checkpoints/<model>_regression_best.pt (regression)
 #     - ML/checkpoints/<model>_entry_path_v1_best.pt (entry_path_v1)
+#     - ML/checkpoints/<model>_entry_path_v1_quantile_best.pt (entry_path_v1_quantile)
 #     - ML/plots/training_curves_<model>.png      (classification)
 #     - ML/plots/training_curves_<model>_regression.png (regression)
 #     - ML/plots/cm_<model>.png                   (confusion matrix, classification)
@@ -44,6 +45,7 @@
   --task classification (default): Focal Loss, AdamW, early stopping на macro F1
   --task regression:               Huber Loss, AdamW, early stopping на pearson_r
   --task entry_path_v1:            Multi-task Transformer, early stopping на ret_pearson_r
+  --task entry_path_v1_quantile:    Multi-task Transformer, early stopping на val_score
 """
 
 import argparse
@@ -91,9 +93,14 @@ from ML.entry_path_task import (
     ENTRY_PATH_RET_TARGETS,
     ENTRY_PATH_TARGET,
 )
+from ML.entry_path_v1_quantile_task import (
+    ENTRY_PATH_V1_QUANTILE_TARGET,
+    compute_entry_path_v1_quantile_metrics,
+)
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.models.entry_path_transformer import EntryPathTransformer
+from ML.models.entry_path_v1_quantile_transformer import EntryPathV1QuantileTransformer
 from ML.tb_probability_calibration import (
     fit_tb_probability_calibrator,
     save_tb_probability_calibrator,
@@ -599,6 +606,250 @@ def validate_entry_path(
     return total_loss / n_batches, metrics
 
 
+def _pinball_loss_torch(preds: torch.Tensor, targets: torch.Tensor, quantile: float) -> torch.Tensor:
+    diff = targets - preds
+    return torch.maximum(quantile * diff, (quantile - 1.0) * diff)
+
+
+def compute_entry_path_v1_quantile_losses(
+    outputs: dict[str, torch.Tensor],
+    y_reg_batch: torch.Tensor,
+    y_cls_batch: torch.Tensor,
+    signal_batch: torch.Tensor,
+    ret_loss_fn: nn.Module | None = None,
+    path_reg_loss_fn: nn.Module | None = None,
+    path_cls_loss_fn: nn.Module | None = None,
+) -> dict[str, torch.Tensor | float | int]:
+    if ret_loss_fn is None:
+        ret_loss_fn = nn.HuberLoss(delta=1.0, reduction='none')
+    if path_reg_loss_fn is None:
+        path_reg_loss_fn = nn.HuberLoss(delta=1.0)
+    if path_cls_loss_fn is None:
+        path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none')
+
+    ret_true = y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]
+    path_reg_true = y_reg_batch[:, len(ENTRY_PATH_RET_TARGETS):]
+
+    loss_ret = reduce_entry_path_weighted_loss(
+        ret_loss_fn(outputs['ret'], ret_true),
+        signal_batch,
+        active_weight=ENTRY_PATH_ACTIVE_WEIGHT,
+    )
+    loss_path_cls = reduce_entry_path_weighted_loss(
+        path_cls_loss_fn(outputs['path_cls'], y_cls_batch),
+        signal_batch,
+        active_weight=ENTRY_PATH_PATH_CLS_ACTIVE_WEIGHT,
+    )
+    loss_path_reg = path_reg_loss_fn(outputs['path_reg'], path_reg_true)
+
+    active_mask = signal_batch != 0 if signal_batch is not None else torch.ones(
+        y_reg_batch.size(0), dtype=torch.bool, device=y_reg_batch.device
+    )
+    true_ret24 = ret_true[:, 2:3]
+    if active_mask.any():
+        loss_q10_tensor = _pinball_loss_torch(
+            outputs['ret_q10'][active_mask],
+            true_ret24[active_mask],
+            0.1,
+        )
+        loss_q90_tensor = _pinball_loss_torch(
+            outputs['ret_q90'][active_mask],
+            true_ret24[active_mask],
+            0.9,
+        )
+        loss_q10 = loss_q10_tensor.mean()
+        loss_q90 = loss_q90_tensor.mean()
+        active_count = int(active_mask.sum().item())
+    else:
+        loss_q10 = outputs['ret_q10'].sum() * 0.0
+        loss_q90 = outputs['ret_q90'].sum() * 0.0
+        active_count = 0
+
+    loss = loss_ret + 0.5 * loss_path_reg + 0.5 * loss_path_cls + 0.5 * (loss_q10 + loss_q90)
+    return {
+        'loss': loss,
+        'loss_ret': float(loss_ret.detach().item()),
+        'loss_path_reg': float(loss_path_reg.detach().item()),
+        'loss_path_cls': float(loss_path_cls.detach().item()),
+        'loss_q10': float(loss_q10.detach().item()),
+        'loss_q90': float(loss_q90.detach().item()),
+        'active_count': active_count,
+    }
+
+
+def train_one_epoch_entry_path_v1_quantile(
+    model: nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    ret_loss_fn: nn.Module,
+    path_reg_loss_fn: nn.Module,
+    path_cls_loss_fn: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+) -> float:
+    model.train()
+    total_loss = 0.0
+    n_batches = 0
+
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
+        X_batch = X_batch.to(device)
+        y_reg_batch = y_reg_batch.to(device)
+        y_cls_batch = y_cls_batch.to(device)
+        mask_batch = mask_batch.to(device)
+        signal_batch = signal_batch.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(X_batch, mask=mask_batch)
+        losses = compute_entry_path_v1_quantile_losses(
+            outputs,
+            y_reg_batch,
+            y_cls_batch,
+            signal_batch,
+            ret_loss_fn=ret_loss_fn,
+            path_reg_loss_fn=path_reg_loss_fn,
+            path_cls_loss_fn=path_cls_loss_fn,
+        )
+        loss = losses['loss']
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += float(loss.item())
+        n_batches += 1
+
+    return total_loss / n_batches
+
+
+@torch.no_grad()
+def validate_entry_path_v1_quantile(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    ret_loss_fn: nn.Module | None = None,
+    path_reg_loss_fn: nn.Module | None = None,
+    path_cls_loss_fn: nn.Module | None = None,
+    device: torch.device | None = None,
+) -> tuple[float, dict]:
+    model.eval()
+    if device is None:
+        device = torch.device('cpu')
+
+    total_loss = 0.0
+    n_batches = 0
+    all_ret_preds = []
+    all_path_reg_preds = []
+    all_path_cls_preds = []
+    all_q10_preds = []
+    all_q90_preds = []
+    all_reg_targets = []
+    all_cls_targets = []
+    all_signals = []
+
+    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
+        X_batch = X_batch.to(device)
+        y_reg_batch = y_reg_batch.to(device)
+        y_cls_batch = y_cls_batch.to(device)
+        mask_batch = mask_batch.to(device)
+        signal_batch = signal_batch.to(device)
+
+        outputs = model(X_batch, mask=mask_batch)
+        losses = compute_entry_path_v1_quantile_losses(
+            outputs,
+            y_reg_batch,
+            y_cls_batch,
+            signal_batch,
+            ret_loss_fn=ret_loss_fn,
+            path_reg_loss_fn=path_reg_loss_fn,
+            path_cls_loss_fn=path_cls_loss_fn,
+        )
+        total_loss += float(losses['loss'].item())
+        n_batches += 1
+
+        all_ret_preds.append(outputs['ret'].cpu().numpy())
+        all_path_reg_preds.append(outputs['path_reg'].cpu().numpy())
+        all_path_cls_preds.append(outputs['path_cls'].argmax(dim=1).cpu().numpy())
+        all_q10_preds.append(outputs['ret_q10'].cpu().numpy())
+        all_q90_preds.append(outputs['ret_q90'].cpu().numpy())
+        all_reg_targets.append(y_reg_batch.cpu().numpy())
+        all_cls_targets.append(y_cls_batch.cpu().numpy())
+        all_signals.append(signal_batch.cpu().numpy())
+
+    all_ret_preds = np.concatenate(all_ret_preds)
+    all_path_reg_preds = np.concatenate(all_path_reg_preds)
+    all_path_cls_preds = np.concatenate(all_path_cls_preds)
+    all_q10_preds = np.concatenate(all_q10_preds)
+    all_q90_preds = np.concatenate(all_q90_preds)
+    all_reg_targets = np.concatenate(all_reg_targets)
+    all_cls_targets = np.concatenate(all_cls_targets)
+    all_signals = np.concatenate(all_signals)
+
+    ret_targets = all_reg_targets[:, :len(ENTRY_PATH_RET_TARGETS)]
+    path_reg_targets = all_reg_targets[:, len(ENTRY_PATH_RET_TARGETS):]
+
+    ret_metrics = compute_named_multitarget_regression_metrics(
+        ret_targets,
+        all_ret_preds,
+        ENTRY_PATH_RET_TARGETS,
+    )
+    path_reg_metrics = compute_named_multitarget_regression_metrics(
+        path_reg_targets,
+        all_path_reg_preds,
+        ENTRY_PATH_PATH_REG_TARGETS,
+    )
+
+    unknown_pred = sorted({int(label) for label in all_path_cls_preds if int(label) not in ENTRY_PATH_INV_CLASS_MAP})
+    unknown_true = sorted({int(label) for label in all_cls_targets if int(label) not in ENTRY_PATH_INV_CLASS_MAP})
+    if unknown_pred or unknown_true:
+        raise ValueError(
+            f'Unsupported entry_path class ids: pred={unknown_pred or "ok"}, true={unknown_true or "ok"}'
+        )
+    y_pred_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_path_cls_preds])
+    y_true_orig = np.array([ENTRY_PATH_INV_CLASS_MAP[int(label)] for label in all_cls_targets])
+    path_cls_metrics = compute_metrics(y_true_orig, y_pred_orig)
+
+    active_mask = all_signals != 0
+    if np.any(active_mask):
+        active_path_cls_metrics = compute_metrics(y_true_orig[active_mask], y_pred_orig[active_mask])
+    else:
+        active_path_cls_metrics = {
+            'f1_macro': 0.0,
+            'f1_per_class': {-1: 0.0, 0: 0.0, 1: 0.0},
+        }
+
+    quantile_metrics = compute_entry_path_v1_quantile_metrics(
+        true_ret=ret_targets[:, 2],
+        pred_ret24=all_ret_preds[:, 2],
+        pred_q10=all_q10_preds[:, 0],
+        pred_q90=all_q90_preds[:, 0],
+        path_reg_pearson_r=path_reg_metrics['pearson_r'],
+        path_cls_f1_macro=path_cls_metrics['f1_macro'],
+    )
+
+    metrics = {
+        'ret_pearson_r': ret_metrics['pearson_r'],
+        'pearson_r': ret_metrics['pearson_r'],
+        'mae': ret_metrics['mae'],
+        'rmse': ret_metrics['rmse'],
+        'r2': ret_metrics['r2'],
+        'ret_metrics': ret_metrics['per_target'],
+        'ret_per_target': ret_metrics['per_target'],
+        'path_reg_pearson_r': path_reg_metrics['pearson_r'],
+        'path_reg_metrics': path_reg_metrics['per_target'],
+        'path_reg_per_target': path_reg_metrics['per_target'],
+        'path_cls_f1_macro': path_cls_metrics['f1_macro'],
+        'path_cls_metrics': path_cls_metrics,
+        'path_cls_per_class': path_cls_metrics['f1_per_class'],
+        'active_path_cls_f1_macro': active_path_cls_metrics['f1_macro'],
+        'active_path_cls_per_class': active_path_cls_metrics['f1_per_class'],
+        'interval_coverage': quantile_metrics['interval_coverage'],
+        'median_interval_width': quantile_metrics['median_interval_width'],
+        'coverage_error': quantile_metrics['coverage_error'],
+        'q10_pinball_loss': quantile_metrics['q10_pinball_loss'],
+        'q90_pinball_loss': quantile_metrics['q90_pinball_loss'],
+        'val_score': quantile_metrics['val_score'],
+    }
+
+    return total_loss / n_batches, metrics
+
+
 def resolve_model_kwargs_for_encoder_transfer(
     model_kwargs: dict | None,
     encoder_model_kwargs: dict | None,
@@ -678,9 +929,11 @@ def train_model(
     multi_target = (task == 'regression_updn')
     triple_barrier = (task == 'triple_barrier')
     entry_path = (task == ENTRY_PATH_TARGET)
+    entry_path_quantile = (task == ENTRY_PATH_V1_QUANTILE_TARGET)
+    entry_path_like = entry_path or entry_path_quantile
     regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
 
-    if entry_path and model_name != 'transformer':
+    if entry_path_like and model_name != 'transformer':
         raise ValueError(f'{ENTRY_PATH_TARGET} supports only model=transformer in v1')
 
     # ── Setup ────────────────────────────────────────────────────────────────
@@ -719,7 +972,7 @@ def train_model(
     # Multi-target: 6 выходов; single regression: 1 выход; classification: 3 выхода
     if triple_barrier:
         num_classes = len(TB_TARGET_NAMES)  # 12
-    elif entry_path:
+    elif entry_path_like:
         num_classes = len(ENTRY_PATH_INV_CLASS_MAP)
     elif multi_target:
         num_classes = len(UPDN_TARGETS)     # 6
@@ -732,6 +985,8 @@ def train_model(
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     if entry_path:
         model = EntryPathTransformer(**model_kwargs)
+    elif entry_path_quantile:
+        model = EntryPathV1QuantileTransformer(**model_kwargs)
     else:
         model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
@@ -779,6 +1034,10 @@ def train_model(
         weight = torch.tensor(class_weights, dtype=torch.float32).to(device)
         loss_fn = nn.CrossEntropyLoss(weight=weight).to(device)
     elif entry_path:
+        ret_loss_fn = HuberLoss(delta=huber_delta, reduction='none').to(device)
+        path_reg_loss_fn = HuberLoss(delta=huber_delta).to(device)
+        path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none').to(device)
+    elif entry_path_quantile:
         ret_loss_fn = HuberLoss(delta=huber_delta, reduction='none').to(device)
         path_reg_loss_fn = HuberLoss(delta=huber_delta).to(device)
         path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none').to(device)
@@ -846,6 +1105,19 @@ def train_model(
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'ret_r':>10} | {'path_r':>10} | {'cls_f1':>8} | {'LR':>10}")
+    elif entry_path_quantile:
+        history = {
+            'train_loss': [], 'val_loss': [],
+            'val_score': [], 'val_pearson_r': [], 'val_mae': [], 'val_rmse': [],
+            'val_r2': [], 'val_path_reg_pearson_r': [], 'val_path_cls_f1_macro': [],
+            'val_active_path_cls_f1_macro': [], 'val_interval_coverage': [],
+            'val_median_interval_width': [], 'val_q10_pinball_loss': [],
+            'val_q90_pinball_loss': [], 'lr': [],
+        }
+        metric_name = 'val_score'
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'val_score':>10} | {'path_r':>10} | {'cls_f1':>8} | {'LR':>10}")
     elif regression:
         history = {
             'train_loss': [], 'val_loss': [],
@@ -881,6 +1153,16 @@ def train_model(
         # Train
         if entry_path:
             train_loss = train_one_epoch_entry_path(
+                model,
+                train_loader,
+                ret_loss_fn,
+                path_reg_loss_fn,
+                path_cls_loss_fn,
+                optimizer,
+                device,
+            )
+        elif entry_path_quantile:
+            train_loss = train_one_epoch_entry_path_v1_quantile(
                 model,
                 train_loader,
                 ret_loss_fn,
@@ -950,6 +1232,38 @@ def train_model(
             if not silent:
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['ret_pearson_r']:>10.4f} | {metrics['path_reg_pearson_r']:>10.4f} | "
+                      f"{metrics['path_cls_f1_macro']:>8.4f} | {current_lr:>10.6f}")
+        elif entry_path_quantile:
+            val_loss, metrics = validate_entry_path_v1_quantile(
+                model,
+                val_loader,
+                ret_loss_fn,
+                path_reg_loss_fn,
+                path_cls_loss_fn,
+                device,
+            )
+            val_metric = metrics['val_score']
+
+            history['train_loss'].append(train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_score'].append(metrics['val_score'])
+            history['val_pearson_r'].append(metrics['ret_pearson_r'])
+            history['val_mae'].append(metrics['mae'])
+            history['val_rmse'].append(metrics['rmse'])
+            history['val_r2'].append(metrics['r2'])
+            history['val_path_reg_pearson_r'].append(metrics['path_reg_pearson_r'])
+            history['val_path_cls_f1_macro'].append(metrics['path_cls_f1_macro'])
+            history['val_active_path_cls_f1_macro'].append(metrics.get('active_path_cls_f1_macro', 0.0))
+            history['val_interval_coverage'].append(metrics.get('interval_coverage', 0.0))
+            history['val_median_interval_width'].append(metrics.get('median_interval_width', 0.0))
+            history['val_q10_pinball_loss'].append(metrics.get('q10_pinball_loss', 0.0))
+            history['val_q90_pinball_loss'].append(metrics.get('q90_pinball_loss', 0.0))
+            history['lr'].append(optimizer.param_groups[0]['lr'])
+
+            current_lr = optimizer.param_groups[0]['lr']
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['val_score']:>10.4f} | {metrics['path_reg_pearson_r']:>10.4f} | "
                       f"{metrics['path_cls_f1_macro']:>8.4f} | {current_lr:>10.6f}")
         elif regression:
             val_loss, metrics = validate_regression(model, val_loader, loss_fn, device)
@@ -1073,23 +1387,31 @@ def train_model(
             print(f"  MAE:  {best_metrics.get('mae', 0):.4f}")
             print(f"  RMSE: {best_metrics.get('rmse', 0):.4f}")
             print(f"  R²:   {best_metrics.get('r2', 0):.4f}")
-            if entry_path:
-                print(f"  Ret Pearson r: {best_metrics.get('ret_pearson_r', 0):.4f}")
-                print(f"  PathReg Pearson r: {best_metrics.get('path_reg_pearson_r', 0):.4f}")
-                print(f"  PathCls F1 macro: {best_metrics.get('path_cls_f1_macro', 0):.4f}")
-                print(f"  Active PathCls F1 macro: {best_metrics.get('active_path_cls_f1_macro', 0):.4f}")
-                if 'ret_per_target' in best_metrics:
-                    print(f"\n  Return-head Pearson r:")
-                    for tname, tm in best_metrics['ret_per_target'].items():
-                        print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
-                if 'path_reg_per_target' in best_metrics:
-                    print(f"\n  Path-reg Pearson r:")
-                    for tname, tm in best_metrics['path_reg_per_target'].items():
-                        print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
-            elif 'per_target' in best_metrics:
-                print(f"\n  Per-target Pearson r:")
-                for tname, tm in best_metrics['per_target'].items():
-                    print(f"    {tname:8s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
+        if entry_path:
+            print(f"  Ret Pearson r: {best_metrics.get('ret_pearson_r', 0):.4f}")
+            print(f"  PathReg Pearson r: {best_metrics.get('path_reg_pearson_r', 0):.4f}")
+            print(f"  PathCls F1 macro: {best_metrics.get('path_cls_f1_macro', 0):.4f}")
+            print(f"  Active PathCls F1 macro: {best_metrics.get('active_path_cls_f1_macro', 0):.4f}")
+            if 'ret_per_target' in best_metrics:
+                print(f"\n  Return-head Pearson r:")
+                for tname, tm in best_metrics['ret_per_target'].items():
+                    print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
+            if 'path_reg_per_target' in best_metrics:
+                print(f"\n  Path-reg Pearson r:")
+                for tname, tm in best_metrics['path_reg_per_target'].items():
+                    print(f"    {tname:16s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
+        elif entry_path_quantile:
+            print(f"  Val score: {best_metrics.get('val_score', 0):.4f}")
+            print(f"  Ret Pearson r: {best_metrics.get('ret_pearson_r', 0):.4f}")
+            print(f"  PathReg Pearson r: {best_metrics.get('path_reg_pearson_r', 0):.4f}")
+            print(f"  PathCls F1 macro: {best_metrics.get('path_cls_f1_macro', 0):.4f}")
+            print(f"  Active PathCls F1 macro: {best_metrics.get('active_path_cls_f1_macro', 0):.4f}")
+            print(f"  Interval coverage: {best_metrics.get('interval_coverage', 0):.4f}")
+            print(f"  Median interval width: {best_metrics.get('median_interval_width', 0):.4f}")
+        elif 'per_target' in best_metrics:
+            print(f"\n  Per-target Pearson r:")
+            for tname, tm in best_metrics['per_target'].items():
+                print(f"    {tname:8s}: r={tm['pearson_r']:.4f}  MAE={tm['mae']:.4f}")
 
     # ── Plots (только если не silent) ────────────────────────────────────────
     if not silent:
@@ -1097,7 +1419,7 @@ def train_model(
             history,
             model_name,
             task=task,
-            regression=(regression or entry_path),
+            regression=(regression or entry_path_like),
             binary_classification=binary_classification,
         )
 
@@ -1110,7 +1432,7 @@ def train_model(
                 labels=['Bad (0)', 'Good (1)'],
                 task=task,
             )
-        elif entry_path:
+        elif entry_path or entry_path_quantile:
             pass
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
@@ -1148,7 +1470,7 @@ def train_model(
             'history': history,
             'best_metrics': best_metrics,
         },
-        regression=(regression or entry_path),
+        regression=(regression or entry_path_like),
         triple_barrier=triple_barrier,
         binary_classification=binary_classification,
         model_kwargs=model_kwargs,
@@ -1274,6 +1596,19 @@ def _log_experiment(
         metrics_dict['r2'] = result['best_metrics'].get('r2')
         metrics_dict['path_reg_pearson_r'] = result['best_metrics'].get('path_reg_pearson_r')
         metrics_dict['path_cls_f1_macro'] = result['best_metrics'].get('path_cls_f1_macro')
+    elif task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        metrics_dict['val_score'] = result['best_metrics'].get('val_score')
+        metrics_dict['ret_pearson_r'] = result['best_metrics'].get('ret_pearson_r')
+        metrics_dict['mae'] = result['best_metrics'].get('mae')
+        metrics_dict['rmse'] = result['best_metrics'].get('rmse')
+        metrics_dict['r2'] = result['best_metrics'].get('r2')
+        metrics_dict['path_reg_pearson_r'] = result['best_metrics'].get('path_reg_pearson_r')
+        metrics_dict['path_cls_f1_macro'] = result['best_metrics'].get('path_cls_f1_macro')
+        metrics_dict['active_path_cls_f1_macro'] = result['best_metrics'].get('active_path_cls_f1_macro')
+        metrics_dict['interval_coverage'] = result['best_metrics'].get('interval_coverage')
+        metrics_dict['median_interval_width'] = result['best_metrics'].get('median_interval_width')
+        metrics_dict['q10_pinball_loss'] = result['best_metrics'].get('q10_pinball_loss')
+        metrics_dict['q90_pinball_loss'] = result['best_metrics'].get('q90_pinball_loss')
     elif regression:
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
@@ -1553,12 +1888,13 @@ def parse_args() -> argparse.Namespace:
             'regression_updn',
             'triple_barrier',
             ENTRY_PATH_TARGET,
+            ENTRY_PATH_V1_QUANTILE_TARGET,
             TRADE_OUTCOME_TARGET,
             TRADE_PNL_TARGET,
             ARCHETYPE_TARGET,
         ],
         help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' | "
-             "'triple_barrier' | 'entry_path_v1' | outcome-aligned targets. "
+             "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -1716,6 +2052,8 @@ def main():
     binary_classification = (args.task in BINARY_CLASSIFICATION_TARGETS)
     triple_barrier = (args.task == 'triple_barrier')
     entry_path = (args.task == ENTRY_PATH_TARGET)
+    entry_path_quantile = (args.task == ENTRY_PATH_V1_QUANTILE_TARGET)
+    entry_path_like = entry_path or entry_path_quantile
 
     if triple_barrier:
         result_serializable = {
@@ -1742,33 +2080,62 @@ def main():
             },
         }
         suffix = task_checkpoint_suffix(args.task)
-    elif entry_path:
-        result_serializable = {
-            'model_name': result['model_name'],
-            'task': result['task'],
-            'best_ret_pearson_r': result['best_metric'],
-            'best_epoch': result['best_epoch'],
-            'num_parameters': result['num_parameters'],
-            'training_time': result['training_time'],
-            'val_metrics': {
-                'ret_pearson_r': result['best_metrics'].get('ret_pearson_r'),
-                'pearson_r': result['best_metrics'].get('pearson_r'),
-                'mae': result['best_metrics'].get('mae'),
-                'rmse': result['best_metrics'].get('rmse'),
-                'r2': result['best_metrics'].get('r2'),
-                'path_reg_pearson_r': result['best_metrics'].get('path_reg_pearson_r'),
-                'path_cls_f1_macro': result['best_metrics'].get('path_cls_f1_macro'),
-                'active_path_cls_f1_macro': result['best_metrics'].get('active_path_cls_f1_macro'),
-            },
-            'ret_per_target': result['best_metrics'].get('ret_per_target', {}),
-            'path_reg_per_target': result['best_metrics'].get('path_reg_per_target', {}),
-            'path_cls_per_class': {
-                str(k): v for k, v in result['best_metrics'].get('path_cls_per_class', {}).items()
-            },
-            'active_path_cls_per_class': {
-                str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
-            },
-        }
+    elif entry_path or entry_path_quantile:
+        if entry_path_quantile:
+            result_serializable = {
+                'model_name': result['model_name'],
+                'task': result['task'],
+                'best_val_score': result['best_metric'],
+                'best_epoch': result['best_epoch'],
+                'num_parameters': result['num_parameters'],
+                'training_time': result['training_time'],
+                'val_metrics': {
+                    'val_score': result['best_metrics'].get('val_score'),
+                    'ret_pearson_r': result['best_metrics'].get('ret_pearson_r'),
+                    'path_reg_pearson_r': result['best_metrics'].get('path_reg_pearson_r'),
+                    'path_cls_f1_macro': result['best_metrics'].get('path_cls_f1_macro'),
+                    'active_path_cls_f1_macro': result['best_metrics'].get('active_path_cls_f1_macro'),
+                    'interval_coverage': result['best_metrics'].get('interval_coverage'),
+                    'median_interval_width': result['best_metrics'].get('median_interval_width'),
+                    'q10_pinball_loss': result['best_metrics'].get('q10_pinball_loss'),
+                    'q90_pinball_loss': result['best_metrics'].get('q90_pinball_loss'),
+                },
+                'ret_per_target': result['best_metrics'].get('ret_per_target', {}),
+                'path_reg_per_target': result['best_metrics'].get('path_reg_per_target', {}),
+                'path_cls_per_class': {
+                    str(k): v for k, v in result['best_metrics'].get('path_cls_per_class', {}).items()
+                },
+                'active_path_cls_per_class': {
+                    str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
+                },
+            }
+        else:
+            result_serializable = {
+                'model_name': result['model_name'],
+                'task': result['task'],
+                'best_ret_pearson_r': result['best_metric'],
+                'best_epoch': result['best_epoch'],
+                'num_parameters': result['num_parameters'],
+                'training_time': result['training_time'],
+                'val_metrics': {
+                    'ret_pearson_r': result['best_metrics'].get('ret_pearson_r'),
+                    'pearson_r': result['best_metrics'].get('pearson_r'),
+                    'mae': result['best_metrics'].get('mae'),
+                    'rmse': result['best_metrics'].get('rmse'),
+                    'r2': result['best_metrics'].get('r2'),
+                    'path_reg_pearson_r': result['best_metrics'].get('path_reg_pearson_r'),
+                    'path_cls_f1_macro': result['best_metrics'].get('path_cls_f1_macro'),
+                    'active_path_cls_f1_macro': result['best_metrics'].get('active_path_cls_f1_macro'),
+                },
+                'ret_per_target': result['best_metrics'].get('ret_per_target', {}),
+                'path_reg_per_target': result['best_metrics'].get('path_reg_per_target', {}),
+                'path_cls_per_class': {
+                    str(k): v for k, v in result['best_metrics'].get('path_cls_per_class', {}).items()
+                },
+                'active_path_cls_per_class': {
+                    str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
+                },
+            }
         suffix = task_checkpoint_suffix(args.task)
     elif regression:
         result_serializable = {

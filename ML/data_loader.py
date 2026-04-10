@@ -44,6 +44,7 @@ from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
 from ML.entry_path_task import ENTRY_PATH_TARGET, ENTRY_PATH_REG_TARGETS, split_entry_path_targets
+from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
 
 
 # ─── Константы ───────────────────────────────────────────────────────────────
@@ -128,6 +129,8 @@ BINARY_LABEL_MAP = {0: 0, 1: 1}
 def task_target_column(task: str) -> str:
     if task in TASK_TARGET_COLUMNS:
         return TASK_TARGET_COLUMNS[task]
+    if task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        return ENTRY_PATH_TARGET
     if task == TB_TARGET:
         return TB_TARGET
     if task == ENTRY_PATH_TARGET:
@@ -142,6 +145,8 @@ def task_target_column(task: str) -> str:
 def task_checkpoint_suffix(task: str) -> str:
     if task == TB_TARGET:
         return '_tb'
+    if task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        return '_entry_path_v1_quantile'
     if task == ENTRY_PATH_TARGET:
         return f'_{ENTRY_PATH_TARGET}'
     if task == UPDN_REGRESSION_TARGET:
