@@ -66,15 +66,22 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 - Для закрытия этапа и синхронизации `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
 
 ### Память проекта
-- Точка входа в memory-слой: [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md). Использовать `.claude/memory/` только для устойчивых знаний, стабильных предпочтений и долгоживущих правил/инвариантов.
-- Текущий операционный контекст и следующий шаг держать в `CONTEXT_HANDOFF.md`.
-- Источником актуальных требований считать текущую задачу пользователя и профильные docs в `docs/`.
+
+| Слой | Назначение | Точка входа |
+|------|-----------|-------------|
+| `wiki/` | Синтез знаний: эволюция исследований, ключевые концепты | [`wiki/index.md`](wiki/index.md) |
+| `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
+| `.claude/memory/` | Стабильные правила, предпочтения, долгоживущие инварианты | [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) |
+
+**В начале каждой сессии читать**: `wiki/index.md` → релевантные страницы `wiki/research/` и `wiki/concepts/` → `CONTEXT_HANDOFF.md`.
+Для операций с вики (ingest, save, lint) — см. `.codex/skills/wiki/SKILL.md`.
 
 ### Приоритет источников
 1. Явный запрос пользователя в текущем диалоге.
 2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
 3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
-4. Вспомогательная память: `.claude/memory/`.
+4. Синтезированные знания: `wiki/`.
+5. Вспомогательная память: `.claude/memory/`.
 
 ## Структура проекта
 
@@ -144,33 +151,6 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 | Интеграция с MT4 | ✅ | `ML_TRADE()` + `ML_TRADE_TB()` |
 | Reconciliation | ✅ | `signal_tracer.py` |
 
-## LLM Wiki Access Protocol
-- Источники: весь репозиторий (код, docs/, ML/, MT/, processing/, MODULE_INDEX.md, CONTEXT_HANDOFF.md и т.д.) + локальные файлы (DATA/*.csv, MT/MQL4/Files/*.csv).
-- wiki/: синтезированный слой Markdown-файлов. LLM полностью владеет этим слоем (создаёт, обновляет, связывает).
-- Schema: настоящий раздел AGENTS.md + CONTEXT_HANDOFF.md.
-  
-**Ключевые правила :**
-- wiki — это persistent artifact. Знания компилируются один раз и поддерживаются.
-- LLM пишет всю вики. Human — только направляет (ingest, lint, приоритеты).
-- При ingest: читать источник → обновлять 8–15 страниц → обновлять WIKI_index + log.
-- При query: отвечать преимущественно по wiki/, со ссылкам на оригиналы.
-
-**Структура wiki/ (начальная, агент может эволюционировать):**
-- wiki/index.md — LLM-maintained каталог wiki-страниц из wiki/concepts/ и wiki/research/
-- wiki/WIKI_index.md — авто-генерированная integrity map всего репо (python wiki/wiki.py generate).
-- wiki/log.md — хронология операций.
-- wiki/concepts/ — сигналы, архетипы, filters, exit-policies, quality gates и т.д.
-- wiki/research/ — синтез отчётов из docs/reports/.
-
-
-**Операции:**
-- Ingest: «Ingest report XXX.md» или «Bootstrap initial wiki».
-- Query: обычный вопрос (агент читает wiki/ первым).
-- Lint: «Run wiki lint».
-- Save: «Save this analysis as wiki/concepts/Quality-Filters-v5.md».
-- Check: `wiki/WIKI_index.md` for project map.
-- Начало сессии: python wiki/wiki.py verify — проверить, не устарел ли индекс
-- После изменений в репо: python wiki/wiki.py generate — обновить индекс, потом закоммитить
 
 
 ---
