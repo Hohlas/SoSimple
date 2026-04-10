@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, может ли гибридный `entry_path_v1_quantile` улучшить рабочую базу `A @ 7.5%` через слой `trade / no-trade` на основе `LB/UB`
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-10-entry-path-v1-quantile-design.md`, `docs/superpowers/plans/2026-04-10-entry-path-v1-quantile.md`
-> **Related commit**: pending
+> **Related commit**: 545ee71
 
 ## Context
 
