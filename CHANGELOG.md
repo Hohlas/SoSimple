@@ -2,6 +2,32 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
+
+### Добавлено
+- Новый task `entry_path_v1_quantile`: сохранены головы `entry_path_v1`, добавлены quantile-головы `ret_24_q10/q90`
+- `ML/export_entry_path_v1_quantile_predictions.py`: отдельный экспорт `train/validation/test` для нового трека
+- `ML/benchmark_entry_path_v1_quantile_filter.py`: quantile-layer поверх frozen базы `A @ 7.5%`
+
+### Изменено
+- `ML/evaluate_test.py`: добавлена CLI-поддержка `--task entry_path_v1_quantile`
+- Усилен quantile benchmark:
+  - finite-sample conformal correction
+  - frozen test check только для validation winner
+  - sequential check с `hold_bars` из frozen baseline
+- Quantile report summary переведён на active-only строки и теперь явно показывает `crossed_quantile_rows`
+
+### Результаты
+- Validation (`entry_path_v1_quantile`): `ret_pearson_r=0.1981`, `interval_coverage=0.8013`, `median_interval_width=7.1442`
+- Test: `ret_pearson_r=0.1455`, `interval_coverage=0.7562`, `median_interval_width=7.0826`
+- Quantile filter winner: `lb_gt_m`
+  - validation: `25 trades`, `PF=11.0465`
+  - frozen test: `24 trades`, `PF=inf`
+  - sequential: `11 trades`, `PF=inf`
+
+### Вывод
+`entry_path_v1_quantile` в текущем run проходит success gate и даёт рабочий confidence-layer поверх `A @ 7.5%`. Подробности: [docs/reports/2026-04-10-entry-path-v1-quantile.md](docs/reports/2026-04-10-entry-path-v1-quantile.md)
+
 ## [2026-04-09] — MT4-сверка: замороженный победитель подтверждён одним финальным прогоном
 
 ### Изменено

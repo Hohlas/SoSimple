@@ -1,56 +1,44 @@
 # Context Handoff
 
 ## Current Stage
-Этап финальной MT4-сверки для уже выбранного победителя завершён.
+Этап `entry_path_v1_quantile` завершён.
 
-Что теперь зафиксировано:
+Что зафиксировано:
 
-- прямой режим `iSignal=3` в MT4 стабилизирован;
-- финальный `ml_signals.csv` для победителя был подан в `MT/tester/files/ml_signals.csv`;
-- MT4 отработал именно `MLP`, без участия `TB`;
-- финальный однократный прогон на `test` дал:
-  - `8872` строк в `ml_signals.csv`
-  - `22` активных сигнала
-  - `22` сделки
-  - `PF=8.47`
-  - `net=+3077.05`
-  - `DD=5.12%`
-
-Технические правки, которые понадобились для этого этапа:
-
-- `MAIN.mqh`: `ml_direct_mode` теперь определяется только после `EXPERT_SET()`;
-- `lib_ML_Signal.mqh`: возвращена `ML_DIAG_PRINT()`;
-- `lib_ML_Signal.mqh`: BUY back-stop зажат снизу и больше не даёт `OrderSend error 4107`.
-
-Важно: в финальном прогоне `ScoreCol=false` было нормальным состоянием, потому что в MT4 использовался уже заранее отфильтрованный файл `time;signal`, а не полный prediction CSV.
+- новый трек `entry_path_v1_quantile` встроен в обучение, оценку, экспорт и benchmark;
+- выпущены live-артефакты:
+  - `ML/checkpoints/transformer_entry_path_v1_quantile_best.pt`
+  - `ML/checkpoints/transformer_entry_path_v1_quantile_result.json`
+  - `ML/reports/entry_path_v1_quantile_{train,validation,test}_predictions.csv`
+  - `ML/reports/evaluate_test_entry_path_v1_quantile.md`
+  - `ML/reports/entry_path_v1_quantile_filter_{report,selected_rule,validation_summary,test_summary}.*`
+- по текущему run success gate пройден;
+- winner quantile-layer: `lb_gt_m` поверх frozen baseline `A @ 7.5%`.
 
 ## Last Completed Stage
-Финальная MT4-сверка для замороженного победителя (2026-04-09).
+Entry Path v1 Quantile (2026-04-10).
 
 ## Next Step
-Следующий шаг уже не в новом выборе победителя и не в повторном прогоне `test`.
-
-1. Перенести скрипт выпуска CSV и слой отбора из черновой ветки `mt4-execution-trade-selection` в `main`, чтобы победителя можно было выпускать без ручного обходного пути.
-2. При необходимости сохранить отдельную таблицу `Python ↔ MT4` по тем же `22` сделкам.
-3. Только потом решать, нужен ли следующий слой по выходу из сделки или по размеру позиции.
+1. Слить ветку `entry-path-v1-quantile` в `main`.
+2. Отдельным коротким этапом проверить устойчивость на нескольких seeds.
+3. После подтверждения устойчивости решить вопрос о переносе quantile confidence-layer в MT4-контур.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `AGENTS.md`
-- `docs/reports/2026-04-09-mt4-parity-check-winner.md`
+- `docs/reports/2026-04-10-entry-path-v1-quantile.md`
 - `docs/reports/2026-04-09-entry-path-trade-filter.md`
-- `docs/superpowers/plans/2026-04-09-mt4-execution-trade-selection.md`
-- `docs/MT/trading_strategy.md`
-- `MT/tester/logs/20260409.log`
+- `ML/reports/entry_path_v1_quantile_filter_selected_rule.json`
+- `ML/reports/evaluate_test_entry_path_v1_quantile.md`
 
 ## Open Risks
-- Скрипт выпуска CSV и слой отбора, из которых был выпущен финальный CSV, пока ещё живут в черновой ветке, а не в `main`.
-- В текущем окружении нет автоматической компиляции MQL через `MetaEditor`.
-- Подробная таблица `Python ↔ MT4` сделка-за-сделкой ещё не сохранена как отдельный канонический артефакт.
+- Результат подтверждён одним основным run; multi-seed стабильность ещё не подтверждена.
+- MT4 parity-check для нового quantile-layer ещё не проводился.
+- Класс `path_6_class = +1` в исторических этапах оставался слабым; здесь фокус был на quantile-слое для `ret_24`.
 
 ## Latest Report
-`docs/reports/2026-04-09-mt4-parity-check-winner.md`
+`docs/reports/2026-04-10-entry-path-v1-quantile.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`
