@@ -112,17 +112,33 @@ def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch)
         def forward(self, x, mask=None):
             batch = x.shape[0]
             return {
-                'ret': torch.zeros(batch, 3, dtype=torch.float32),
-                'path_reg': torch.zeros(batch, 6, dtype=torch.float32),
-                'path_cls': torch.zeros(batch, 3, dtype=torch.float32),
-                'ret_q10': torch.tensor([[99.0], [1.0], [2.0]], dtype=torch.float32),
-                'ret_q90': torch.tensor([[199.0], [3.0], [4.0]], dtype=torch.float32),
+                'ret': torch.tensor([
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                    [0.0, 0.0, 2.0],
+                ], dtype=torch.float32, device=x.device),
+                'path_reg': torch.tensor([
+                    [99.0, 99.0, 99.0, 99.0, 99.0, 99.0],
+                    [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+                    [2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+                ], dtype=torch.float32, device=x.device),
+                'path_cls': torch.tensor([
+                    [9.0, 0.0, 0.0],
+                    [9.0, 0.0, 0.0],
+                    [0.0, 0.0, 9.0],
+                ], dtype=torch.float32, device=x.device),
+                'ret_q10': torch.tensor([[99.0], [1.0], [2.0]], dtype=torch.float32, device=x.device),
+                'ret_q90': torch.tensor([[199.0], [3.0], [4.0]], dtype=torch.float32, device=x.device),
             }
 
     dataset = dl.EntryPathDataset(
         X=np.zeros((3, 2, 3), dtype=np.float32),
-        y_reg=np.zeros((3, 9), dtype=np.float32),
-        y_cls=np.array([0, 1, 2], dtype=np.int64),
+        y_reg=np.array([
+            [0.0, 0.0, 0.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0],
+            [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            [0.0, 0.0, 2.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0],
+        ], dtype=np.float32),
+        y_cls=np.array([1, 0, 2], dtype=np.int64),
         mask=np.ones((3, 2), dtype=bool),
         signal=np.array([0, 1, -1], dtype=np.int64),
     )
@@ -137,6 +153,8 @@ def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch)
     assert loss == pytest.approx(0.0, abs=1e-12)
     assert metrics['val_score'] == pytest.approx(0.73)
     assert len(captured['true_ret']) == 2
+    assert captured['path_reg_pearson_r'] == pytest.approx(1.0)
+    assert captured['path_cls_f1_macro'] == pytest.approx(2.0 / 3.0)
     assert captured['pred_q10'].tolist() == [1.0, 2.0]
     assert captured['pred_q90'].tolist() == [3.0, 4.0]
 
