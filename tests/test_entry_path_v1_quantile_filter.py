@@ -21,6 +21,17 @@ def test_conformal_correction_is_positive_for_missed_intervals():
     assert correction >= 0.0
 
 
+def test_conformal_correction_uses_finite_sample_level():
+    correction = bench.compute_conformal_correction(
+        true_ret=pd.Series([0.0, 0.0, 10.0]),
+        pred_q10=pd.Series([0.0, 0.0, 0.0]),
+        pred_q90=pd.Series([0.0, 0.0, 0.0]),
+        alpha=0.10,
+    )
+
+    assert correction == 10.0
+
+
 def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypatch):
     validation_quantile = pd.DataFrame(
         {

@@ -54,7 +54,8 @@ def compute_conformal_correction(
     upper = np.maximum(pred_q10, pred_q90)
     scores = np.maximum(lower - true_ret, true_ret - upper)
     scores = np.maximum(scores, 0.0)
-    return float(np.quantile(scores, 1.0 - alpha, method='higher'))
+    level = min((1.0 - alpha) * (1.0 + 1.0 / len(scores)), 1.0)
+    return float(np.quantile(scores, level, method='higher'))
 
 
 def apply_conformal_correction(frame: pd.DataFrame, correction: float) -> pd.DataFrame:

@@ -80,8 +80,8 @@ def build_entry_path_v1_quantile_export_frame(
     if len(pred_q10) != len(frame) or len(pred_q90) != len(frame):
         raise ValueError('pred_q10 and pred_q90 must have the same row count as times')
 
-    frame['pred_ret_24_q10'] = pred_q10
-    frame['pred_ret_24_q90'] = pred_q90
+    frame['pred_ret_24_q10'] = np.minimum(pred_q10, pred_q90)
+    frame['pred_ret_24_q90'] = np.maximum(pred_q10, pred_q90)
     return frame
 
 
@@ -151,8 +151,10 @@ def build_entry_path_v1_quantile_report_markdown(
     if required_true_cols.issubset(frame.columns):
         true_ret = frame['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
         pred_ret24 = frame['pred_ret_24_dir_atr'].to_numpy(dtype=np.float64)
-        pred_q10 = frame[ENTRY_PATH_V1_QUANTILE_Q10_COLUMN].to_numpy(dtype=np.float64)
-        pred_q90 = frame[ENTRY_PATH_V1_QUANTILE_Q90_COLUMN].to_numpy(dtype=np.float64)
+        pred_q10_raw = frame[ENTRY_PATH_V1_QUANTILE_Q10_COLUMN].to_numpy(dtype=np.float64)
+        pred_q90_raw = frame[ENTRY_PATH_V1_QUANTILE_Q90_COLUMN].to_numpy(dtype=np.float64)
+        pred_q10 = np.minimum(pred_q10_raw, pred_q90_raw)
+        pred_q90 = np.maximum(pred_q10_raw, pred_q90_raw)
         y_true_cls = frame['true_path_6_class'].to_numpy(dtype=np.int64)
         y_pred_cls = frame['pred_path_6_class'].to_numpy(dtype=np.int64)
         class_labels = [-1, 0, 1]

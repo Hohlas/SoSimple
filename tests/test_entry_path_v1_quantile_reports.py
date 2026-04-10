@@ -42,6 +42,13 @@ class _DummyQuantileModel(torch.nn.Module):
         }
 
 
+class _CrossedQuantileModel(_DummyQuantileModel):
+    def forward(self, x, mask=None):
+        out = super().forward(x, mask=mask)
+        out['ret_q10'], out['ret_q90'] = out['ret_q90'], out['ret_q10']
+        return out
+
+
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     pd.DataFrame(rows).to_csv(path, sep=';', index=False)
 
@@ -67,7 +74,10 @@ def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, m
     val_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=2, shuffle=False)
 
+    called = {}
+
     def fake_create_data_loaders(*args, **kwargs):
+        called['target'] = kwargs['target']
         return train_loader, val_loader, None
 
     def fake_create_test_loader(*args, **kwargs):
@@ -108,6 +118,8 @@ def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, m
     (tmp_path / 'checkpoint.pt').write_text('stub', encoding='utf-8')
 
     export_mod.main()
+
+    assert called['target'] == 'entry_path_v1'
 
     for split in ('train', 'validation', 'test'):
         csv_path = tmp_path / f'entry_path_v1_quantile_{split}_predictions.csv'
@@ -161,7 +173,7 @@ def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, mo
     monkeypatch.setattr(eval_mod, 'REPORTS_DIR', tmp_path)
     monkeypatch.setattr(eval_mod, 'CHECKPOINTS_DIR', tmp_path)
     monkeypatch.setattr(eval_mod, 'create_test_loader', lambda *args, **kwargs: loader)
-    monkeypatch.setattr(eval_mod, 'build_entry_path_v1_quantile_model', lambda *_args, **_kwargs: _DummyQuantileModel())
+    monkeypatch.setattr(eval_mod, 'build_entry_path_v1_quantile_model', lambda *_args, **_kwargs: _CrossedQuantileModel())
     monkeypatch.setattr(eval_mod.torch, 'load', lambda *args, **kwargs: {
         'model_name': 'transformer',
         'model_kwargs': {'input_features': 20, 'seq_len': 4},
@@ -194,3 +206,15 @@ def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, mo
     assert 'median_interval_width' in report
     assert 'val_score' in report
     assert 'Entry Path v1 Quantile' in report
+
+
+def test_evaluate_test_parse_args_accepts_entry_path_v1_quantile(monkeypatch):
+    monkeypatch.setattr(
+        sys,
+        'argv',
+        ['prog', '--task', ENTRY_PATH_V1_QUANTILE_TARGET],
+    )
+
+    args = eval_mod.parse_args()
+
+    assert args.task == ENTRY_PATH_V1_QUANTILE_TARGET

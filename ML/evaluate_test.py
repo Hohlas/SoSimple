@@ -674,6 +674,7 @@ def parse_args():
                             'regression_updn',
                             'triple_barrier',
                             ENTRY_PATH_TARGET,
+                            ENTRY_PATH_V1_QUANTILE_TARGET,
                             TRADE_OUTCOME_TARGET,
                             TRADE_PNL_TARGET,
                             ARCHETYPE_TARGET,
