@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 
 from ML.entry_path_trade_filter import compute_pf
+from ML.entry_path_trade_filter import run_sequential_check
+from ML.entry_path_v1_quantile_task import count_crossed_quantile_rows
 
 
 DEFAULT_VALIDATION_CSV = Path('ML/reports/entry_path_v1_quantile_validation_predictions.csv')
@@ -20,6 +22,10 @@ def load_prediction_frame(path) -> pd.DataFrame:
     frame = pd.read_csv(Path(path), sep=';')
     frame['time'] = pd.to_datetime(frame['time'], format='%Y.%m.%d %H:%M', errors='coerce')
     return frame
+
+
+def count_frame_crossed_quantiles(frame: pd.DataFrame) -> int:
+    return count_crossed_quantile_rows(frame)
 
 
 def load_baseline_rule(path) -> dict:
@@ -117,7 +123,15 @@ def pick_winner(table: pd.DataFrame, min_trades: int = DEFAULT_MIN_TRADES) -> pd
     ).iloc[0]
 
 
-def build_report_markdown(validation_best: dict, test_row: dict, baseline_rule_path: str, alpha: float) -> str:
+def build_report_markdown(
+    validation_best: dict,
+    test_row: dict,
+    sequential_summary: dict,
+    validation_crossed_quantile_rows: int,
+    test_crossed_quantile_rows: int,
+    baseline_rule_path: str,
+    alpha: float,
+) -> str:
     return '\n'.join([
         '# Entry Path v1 Quantile Filter Report',
         '',
@@ -141,6 +155,17 @@ def build_report_markdown(validation_best: dict, test_row: dict, baseline_rule_p
         f"- coverage: **{float(test_row.get('coverage', 0.0)):.2%}**",
         f"- median_interval_width: **{float(test_row.get('median_interval_width', 0.0)):.4f}**",
         '',
+        f"- validation_crossed_quantile_rows: **{int(validation_crossed_quantile_rows)}**",
+        f"- test_crossed_quantile_rows: **{int(test_crossed_quantile_rows)}**",
+        '',
+        '## Sequential Check',
+        '',
+        f"- trades: **{int(sequential_summary.get('trades', 0))}**",
+        f"- pf: **{float(sequential_summary.get('pf', 0.0)):.4f}**",
+        f"- coverage_vs_selected: **{float(sequential_summary.get('coverage', 0.0)):.2%}**",
+        f"- mean_pnl_atr: **{float(sequential_summary.get('mean_pnl_atr', 0.0)):.4f}**",
+        f"- win_rate: **{float(sequential_summary.get('win_rate', 0.0)):.2%}**",
+        '',
         '## Frozen Rule',
         '',
         f'- baseline_rule: `{baseline_rule_path}`',
@@ -162,6 +187,7 @@ def run_benchmark(
     validation_frame = load_prediction_frame(validation_csv)
     test_frame = load_prediction_frame(test_csv)
     baseline_rule_data = load_baseline_rule(baseline_rule)
+    sequential_hold_bars = int(baseline_rule_data.get('sequential_hold_bars', 24))
 
     baseline_validation = load_prediction_frame(baseline_rule_data['validation_csv'])
     baseline_test = load_prediction_frame(baseline_rule_data['test_csv'])
@@ -181,6 +207,8 @@ def run_benchmark(
     )
 
     validation_selected = validation.loc[validation['baseline_selected']].copy()
+    validation_crossed_quantile_rows = count_frame_crossed_quantiles(validation_frame)
+    test_crossed_quantile_rows = count_frame_crossed_quantiles(test_frame)
     correction = compute_conformal_correction(
         validation_selected['true_ret_24_dir_atr'].to_numpy(dtype=np.float64),
         validation_selected['pred_ret_24_q10'].to_numpy(dtype=np.float64),
@@ -212,6 +240,14 @@ def run_benchmark(
         w=winner['w'],
     )
     test_summary = pd.DataFrame([frozen_test_row])
+    frozen_selected_mask = build_rule_mask(test, rule=winner['rule'], m=winner['m'], w=winner['w'])
+    sequential_summary = run_sequential_check(test, frozen_selected_mask, hold_bars=sequential_hold_bars)
+
+    if validation_crossed_quantile_rows > 0 or test_crossed_quantile_rows > 0:
+        print(
+            f"⚠ crossed quantile rows detected: "
+            f"validation={validation_crossed_quantile_rows}, test={test_crossed_quantile_rows}"
+        )
 
     validation_summary_path = output_path / 'entry_path_v1_quantile_filter_validation_summary.csv'
     test_summary_path = output_path / 'entry_path_v1_quantile_filter_test_summary.csv'
@@ -235,6 +271,10 @@ def run_benchmark(
         'test_summary_path': str(test_summary_path),
         'validation_m': float(validation_m),
         'validation_w': float(validation_w),
+        'validation_crossed_quantile_rows': int(validation_crossed_quantile_rows),
+        'test_crossed_quantile_rows': int(test_crossed_quantile_rows),
+        'sequential_hold_bars': sequential_hold_bars,
+        'sequential_summary': sequential_summary,
     }
     rule_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
 
@@ -242,6 +282,9 @@ def run_benchmark(
         build_report_markdown(
             validation_best=winner,
             test_row=frozen_test_row,
+            sequential_summary=sequential_summary,
+            validation_crossed_quantile_rows=validation_crossed_quantile_rows,
+            test_crossed_quantile_rows=test_crossed_quantile_rows,
             baseline_rule_path=str(baseline_rule),
             alpha=alpha,
         ),

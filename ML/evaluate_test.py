@@ -32,6 +32,7 @@ from ML.entry_path_v1_quantile_task import (
     build_entry_path_v1_quantile_export_frame,
     build_entry_path_v1_quantile_model,
     build_entry_path_v1_quantile_report_markdown,
+    count_crossed_quantile_rows,
 )
 from ML.models import get_model
 from ML.models.entry_path_transformer import EntryPathTransformer
@@ -327,6 +328,7 @@ def run_evaluation(
         export = build_entry_path_v1_quantile_export_frame(**export_kwargs)
         export_path = REPORTS_DIR / 'entry_path_v1_quantile_test_predictions.csv'
         export.to_csv(export_path, sep=';', index=False)
+        crossed_quantile_rows = count_crossed_quantile_rows(export)
         row_count = int(len(export))
         report_path = REPORTS_DIR / 'evaluate_test_entry_path_v1_quantile.md'
         report_path.write_text(
@@ -338,6 +340,7 @@ def run_evaluation(
                 checkpoint_epoch=ckpt.get('epoch'),
                 checkpoint_metric_name=ckpt.get('metric_name'),
                 checkpoint_metric_value=ckpt.get('best_metric'),
+                crossed_quantile_rows=crossed_quantile_rows,
             ),
             encoding='utf-8',
         )
@@ -348,6 +351,8 @@ def run_evaluation(
         if ckpt.get('epoch') is not None and ckpt.get('best_metric') is not None:
             print(f"  checkpoint_epoch={ckpt.get('epoch')}")
             print(f"  best_val_{ckpt.get('metric_name', 'metric')}={ckpt.get('best_metric'):.4f}")
+        if crossed_quantile_rows > 0:
+            print(f"  ⚠ crossed_quantile_rows={crossed_quantile_rows}")
         if entry_path_gt_available:
             report_text = report_path.read_text(encoding='utf-8')
             summary_lines = [
@@ -356,6 +361,7 @@ def run_evaluation(
                 or line.startswith('- interval_coverage:')
                 or line.startswith('- median_interval_width:')
                 or line.startswith('- val_score:')
+                or line.startswith('- crossed_quantile_rows:')
             ]
             for line in summary_lines:
                 print(f"  {line[2:]}")

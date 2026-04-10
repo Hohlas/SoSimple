@@ -45,8 +45,8 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
             'pred_adv_24_atr': [0.2, 0.3, 0.6, 0.7],
             'pred_path_6_prob_neg': [0.1, 0.2, 0.6, 0.7],
             'pred_path_6_prob_pos': [0.8, 0.7, 0.2, 0.1],
-            'pred_ret_24_q10': [0.2, 0.1, -0.1, -0.2],
-            'pred_ret_24_q90': [1.0, 0.9, 0.3, 0.2],
+            'pred_ret_24_q10': [1.0, 0.1, -0.1, -0.2],
+            'pred_ret_24_q90': [0.2, 0.9, 0.3, 0.2],
             'true_ret_24_dir_atr': [1.0, 0.8, -0.3, -0.4],
         }
     )
@@ -91,12 +91,19 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
 
     summarize_calls = []
     original_summarize_rule = bench.summarize_rule
+    sequential_calls = []
+    original_sequential_check = bench.run_sequential_check
 
     def spy_summarize_rule(frame, candidate, rule, m, w):
         summarize_calls.append(candidate)
         return original_summarize_rule(frame, candidate=candidate, rule=rule, m=m, w=w)
 
+    def spy_sequential_check(frame, selected_mask, hold_bars=24):
+        sequential_calls.append(hold_bars)
+        return original_sequential_check(frame, selected_mask, hold_bars=hold_bars)
+
     monkeypatch.setattr(bench, 'summarize_rule', spy_summarize_rule)
+    monkeypatch.setattr(bench, 'run_sequential_check', spy_sequential_check)
 
     payload = bench.main()
 
@@ -107,9 +114,14 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
     assert (tmp_path / 'entry_path_v1_quantile_filter_validation_summary.csv').exists()
     assert (tmp_path / 'entry_path_v1_quantile_filter_test_summary.csv').exists()
     assert len(summarize_calls) == 5
+    assert sequential_calls == [24]
+    assert payload['sequential_summary']['trades'] >= 0
+    assert payload['validation_crossed_quantile_rows'] >= 1
+    assert payload['test_crossed_quantile_rows'] >= 1
 
     saved = json.loads((tmp_path / 'entry_path_v1_quantile_filter_selected_rule.json').read_text(encoding='utf-8'))
     assert saved['winner']['candidate'] == payload['winner']['candidate']
+    assert saved['sequential_hold_bars'] == 24
 
     test_summary = pd.read_csv(tmp_path / 'entry_path_v1_quantile_filter_test_summary.csv', sep=';')
     assert test_summary.shape[0] == 1

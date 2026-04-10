@@ -80,9 +80,19 @@ def build_entry_path_v1_quantile_export_frame(
     if len(pred_q10) != len(frame) or len(pred_q90) != len(frame):
         raise ValueError('pred_q10 and pred_q90 must have the same row count as times')
 
+    frame['pred_ret_24_q10_raw'] = pred_q10
+    frame['pred_ret_24_q90_raw'] = pred_q90
     frame['pred_ret_24_q10'] = np.minimum(pred_q10, pred_q90)
     frame['pred_ret_24_q90'] = np.maximum(pred_q10, pred_q90)
     return frame
+
+
+def count_crossed_quantile_rows(frame: pd.DataFrame) -> int:
+    q10_col = 'pred_ret_24_q10_raw' if 'pred_ret_24_q10_raw' in frame.columns else 'pred_ret_24_q10'
+    q90_col = 'pred_ret_24_q90_raw' if 'pred_ret_24_q90_raw' in frame.columns else 'pred_ret_24_q90'
+    q10 = frame[q10_col].to_numpy(dtype=np.float64)
+    q90 = frame[q90_col].to_numpy(dtype=np.float64)
+    return int(np.sum(q10 > q90))
 
 
 def compute_entry_path_v1_quantile_metrics(
@@ -139,8 +149,12 @@ def build_entry_path_v1_quantile_report_markdown(
     checkpoint_epoch: int | None = None,
     checkpoint_metric_name: str | None = None,
     checkpoint_metric_value: float | None = None,
+    crossed_quantile_rows: int | None = None,
 ) -> str:
     row_count = int(len(frame))
+    active_frame = frame.loc[frame['signal'] != 0].copy()
+    active_rows = int(len(active_frame))
+    crossed_quantile_rows = count_crossed_quantile_rows(frame) if crossed_quantile_rows is None else int(crossed_quantile_rows)
     checkpoint_lines = []
     if checkpoint_epoch is not None:
         checkpoint_lines.append(f'**Checkpoint epoch**: {checkpoint_epoch}')
@@ -148,15 +162,15 @@ def build_entry_path_v1_quantile_report_markdown(
         checkpoint_lines.append(f'**Best val {checkpoint_metric_name}**: {checkpoint_metric_value:.4f}')
 
     required_true_cols = {f'true_{name}' for name in ENTRY_PATH_REG_TARGETS} | {'true_path_6_class'}
-    if required_true_cols.issubset(frame.columns):
-        true_ret = frame['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
-        pred_ret24 = frame['pred_ret_24_dir_atr'].to_numpy(dtype=np.float64)
-        pred_q10_raw = frame[ENTRY_PATH_V1_QUANTILE_Q10_COLUMN].to_numpy(dtype=np.float64)
-        pred_q90_raw = frame[ENTRY_PATH_V1_QUANTILE_Q90_COLUMN].to_numpy(dtype=np.float64)
+    if required_true_cols.issubset(active_frame.columns) and active_rows > 0:
+        true_ret = active_frame['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
+        pred_ret24 = active_frame['pred_ret_24_dir_atr'].to_numpy(dtype=np.float64)
+        pred_q10_raw = active_frame[ENTRY_PATH_V1_QUANTILE_Q10_COLUMN].to_numpy(dtype=np.float64)
+        pred_q90_raw = active_frame[ENTRY_PATH_V1_QUANTILE_Q90_COLUMN].to_numpy(dtype=np.float64)
         pred_q10 = np.minimum(pred_q10_raw, pred_q90_raw)
         pred_q90 = np.maximum(pred_q10_raw, pred_q90_raw)
-        y_true_cls = frame['true_path_6_class'].to_numpy(dtype=np.int64)
-        y_pred_cls = frame['pred_path_6_class'].to_numpy(dtype=np.int64)
+        y_true_cls = active_frame['true_path_6_class'].to_numpy(dtype=np.int64)
+        y_pred_cls = active_frame['pred_path_6_class'].to_numpy(dtype=np.int64)
         class_labels = [-1, 0, 1]
         metrics = compute_entry_path_v1_quantile_metrics(
             true_ret=true_ret,
@@ -166,8 +180,8 @@ def build_entry_path_v1_quantile_report_markdown(
             path_reg_pearson_r=float(
                 np.mean([
                     _safe_pearson(
-                        frame[f'true_{name}'].to_numpy(dtype=np.float64),
-                        frame[f'pred_{name}'].to_numpy(dtype=np.float64),
+                        active_frame[f'true_{name}'].to_numpy(dtype=np.float64),
+                        active_frame[f'pred_{name}'].to_numpy(dtype=np.float64),
                     )
                     for name in ENTRY_PATH_PATH_REG_TARGETS
                 ])
@@ -178,22 +192,26 @@ def build_entry_path_v1_quantile_report_markdown(
         )
         summary_lines = [
             f'- row_count: **{row_count}**',
+            f'- active_rows: **{active_rows}**',
             f"- ret_pearson_r: **{metrics['ret_pearson_r']:.4f}**",
             f"- interval_coverage: **{metrics['interval_coverage']:.4f}**",
             f"- median_interval_width: **{metrics['median_interval_width']:.4f}**",
             f"- q10_pinball_loss: **{metrics['q10_pinball_loss']:.4f}**",
             f"- q90_pinball_loss: **{metrics['q90_pinball_loss']:.4f}**",
             f"- val_score: **{metrics['val_score']:.4f}**",
+            f"- crossed_quantile_rows: **{crossed_quantile_rows}**",
         ]
     else:
         summary_lines = [
             f'- row_count: **{row_count}**',
+            f'- active_rows: **{active_rows}**',
             '- ret_pearson_r: **N/A**',
             '- interval_coverage: **N/A**',
             '- median_interval_width: **N/A**',
             '- q10_pinball_loss: **N/A**',
             '- q90_pinball_loss: **N/A**',
             '- val_score: **N/A**',
+            f'- crossed_quantile_rows: **{crossed_quantile_rows}**',
         ]
 
     lines = [
@@ -204,6 +222,11 @@ def build_entry_path_v1_quantile_report_markdown(
     ]
     if checkpoint_lines:
         lines.extend(['', *checkpoint_lines])
+    if crossed_quantile_rows > 0:
+        lines.extend([
+            '',
+            f'⚠ crossed_quantile_rows detected: {crossed_quantile_rows}',
+        ])
     lines.extend([
         '',
         '## Summary',

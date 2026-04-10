@@ -65,6 +65,19 @@ def _make_entry_path_dataset() -> EntryPathDataset:
     return EntryPathDataset(X, y_reg, y_cls, mask, signal)
 
 
+def _make_entry_path_dataset_with_inactive() -> EntryPathDataset:
+    X = np.zeros((3, 4, 20), dtype=np.float32)
+    y_reg = np.array([
+        [0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2],
+        [0.4, 0.5, 0.6, 1.3, 1.4, 1.5, 2.3, 2.4, 2.5],
+        [0.7, 0.8, 0.9, 1.6, 1.7, 1.8, 2.6, 2.7, 2.8],
+    ], dtype=np.float32)
+    y_cls = np.array([2, 0, 1], dtype=np.int64)
+    mask = np.ones((3, 4), dtype=bool)
+    signal = np.array([1, 0, -1], dtype=np.int64)
+    return EntryPathDataset(X, y_reg, y_cls, mask, signal)
+
+
 def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, monkeypatch):
     train_dataset = _make_entry_path_dataset()
     val_dataset = _make_entry_path_dataset()
@@ -131,7 +144,7 @@ def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, m
 
 
 def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, monkeypatch):
-    dataset = _make_entry_path_dataset()
+    dataset = _make_entry_path_dataset_with_inactive()
     loader = DataLoader(dataset, batch_size=2, shuffle=False)
 
     csv_path = tmp_path / 'Nero_test_labeled.csv'
@@ -165,6 +178,20 @@ def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, mo
                 'fav_24_atr': 2.0,
                 'adv_24_atr': 2.1,
                 'path_6_class': 1,
+            },
+            {
+                'time': '2024.01.01 02:00',
+                'signal': 0,
+                'ret_6_dir_atr': 10.0,
+                'ret_12_dir_atr': 10.0,
+                'ret_24_dir_atr': 10.0,
+                'fav_6_atr': 2.2,
+                'adv_6_atr': 2.3,
+                'fav_12_atr': 2.4,
+                'adv_12_atr': 2.5,
+                'fav_24_atr': 2.6,
+                'adv_24_atr': 2.7,
+                'path_6_class': 0,
             },
         ],
     )
@@ -205,6 +232,10 @@ def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, mo
     assert 'interval_coverage' in report
     assert 'median_interval_width' in report
     assert 'val_score' in report
+    assert 'interval_coverage: **1.0000**' in report
+    assert 'median_interval_width: **0.4000**' in report
+    assert 'active_rows: **2**' in report
+    assert 'crossed_quantile_rows' in report
     assert 'Entry Path v1 Quantile' in report
 
 

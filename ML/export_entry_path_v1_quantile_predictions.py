@@ -19,6 +19,7 @@ from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
     build_entry_path_v1_quantile_export_frame,
     build_entry_path_v1_quantile_model,
+    count_crossed_quantile_rows,
 )
 from ML.utils import get_device, set_seed
 
@@ -97,7 +98,8 @@ def export_split(
         true_cls=true_cls,
     )
     export.to_csv(output_path, sep=';', index=False)
-    return export
+    crossed_quantile_rows = count_crossed_quantile_rows(export)
+    return export, crossed_quantile_rows
 
 
 def export_predictions(
@@ -152,16 +154,19 @@ def export_predictions(
     results: dict[str, dict[str, object]] = {}
     for split in requested_splits:
         export_path = output_path / f'entry_path_v1_quantile_{split}_predictions.csv'
-        export = export_split(
+        export, crossed_quantile_rows = export_split(
             model=model,
             loader=split_loaders[split],
             frame=split_frames[split],
             output_path=export_path,
             device=device,
         )
+        if crossed_quantile_rows > 0:
+            print(f"  ⚠ {split}: crossed_quantile_rows={crossed_quantile_rows}")
         results[split] = {
             'path': str(export_path),
             'row_count': int(len(export)),
+            'crossed_quantile_rows': int(crossed_quantile_rows),
         }
 
     return results
