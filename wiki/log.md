@@ -17,3 +17,11 @@
 - Updated wiki/index.md with new pages
 - Deleted wiki/LLM Wiki_method.md and wiki/wiki_index_method.md (design inputs, no longer needed)
 - Updated MODULE_INDEX.md (+31 modules)
+
+## [2026-04-10] ingest | Refresh execution tracks with latest reports
+- Re-read all execution-track reports from 2026-04-08 onward
+- Updated wiki/research/execution-tracks.md to include:
+  - MT4 confirmation of frozen entry_path winner (2026-04-09)
+  - quantile layer for entry_path_v1 (2026-04-10)
+- Updated wiki/index.md coverage from 7 to 9 reports
+- Regenerated wiki/REPO_integrity.md

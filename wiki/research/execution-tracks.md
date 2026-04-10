@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-09
-sources: 7
+last_updated: 2026-04-10
+sources: 9
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 7 отчётов (2026-04-08 — 2026-04-09). Параллельные направления execution.
+> Синтез 9 отчётов (2026-04-08 — 2026-04-10). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -63,7 +63,7 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 Источники: [2026-04-08-triple-barrier-hardening.md](../../docs/reports/2026-04-08-triple-barrier-hardening.md), [2026-04-08-triple-barrier-runtime-verdict.md](../../docs/reports/2026-04-08-triple-barrier-runtime-verdict.md)
 
-## 4. Entry Path v1 (04-08 — 04-09, три отчёта)
+## 4. Entry Path v1 (04-08 — 04-10, пять отчётов)
 
 Новый трек между regression_updn и triple_barrier: реальный вход на следующем баре, отдельные цели для итога сделки и пути цены.
 
@@ -99,7 +99,35 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 **Вывод**: entry_path_v1 имеет рабочий слой "торговать / не торговать". Следующий шаг — conformal-слой поверх замороженного baseline.
 
-Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md)
+### MT4 Final Winner Check (04-09)
+
+Замороженный победитель `A @ 7.5%` был доведён до корректного прямого MT4-прогона без повторного поиска на `test`.
+
+| Metric | Value |
+|---|---:|
+| Trades | 22 |
+| PF | **8.47** |
+| Win / Loss | 14 / 8 |
+| Position blocked | 0 |
+| Timeout closes | 22 |
+
+Это важный сдвиг: линия `entry_path_v1` подтвердилась не только в offline-оценке, но и в реальном MT4-контуре для уже замороженного winner-а.
+
+### Quantile Layer (04-10)
+
+Новый гибридный трек `entry_path_v1_quantile` добавил quantile-головы `ret_24_q10` и `ret_24_q90` поверх уже рабочей базы `entry_path_v1`.
+
+**Результат**:
+- winner на validation: `lb_gt_m`
+- validation: `25 trades`, `PF=11.05`
+- frozen test: `24 trades`, `PF=inf`
+- sequential: `11 trades`, `win_rate=100%`, `PF=inf`
+
+Смысл результата не в том, что найден "окончательный победитель", а в том, что quantile-layer выглядит сильнее старой базы `A @ 7.5%`, но пока на слишком малом числе сделок для уверенного практического вывода.
+
+**Вывод**: основной риск линии теперь не в качестве идеи, а в устойчивости. Следующий шаг — не новый поиск, а stress-test по `seed`, годам и MT4 parity для quantile-слоя.
+
+Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md)
 
 ## Сравнение треков (на сегодня)
 
@@ -107,11 +135,12 @@ Offline simulator поверх regression_updn для сравнения сем�
 |---|---:|---|---|
 | regression_updn + exit | PF~1.05 (OOS) | Production | Нет uplift от exit layer |
 | Triple Barrier | PF=1.11 (test), 1.27 (MT4) | Validation-locked | Python-режим = MT4 execution |
-| entry_path_v1 | PF=4.29 (test, 44 trades) | Baseline frozen | Conformal-слой поверх |
+| entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Унести MT4 export path в main |
+| entry_path_v1_quantile | PF=inf (test, 24 trades) | Preliminary, low-N | Проверка устойчивости + MT4 parity |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. entry_path_v1 PF=4.29 на 44 trades — выглядит strong, но малый N. Conformal-слой должен дать понимание, насколько стабилен этот результат.
+1. Устоит ли `entry_path_v1_quantile` на нескольких `seed` и годовых срезах, или текущий результат объясняется малым N?
 2. TB + MT4-matching в Python: насколько сократится разрыв 253 vs 92 trades?
-3. Можно ли объединить entry_path_v1 фильтр с fav_3_vs_12 фильтром из signal quality research?
+3. Нужно ли объединять `entry_path_v1` / quantile-layer с фильтром `fav_3_vs_12`, или это только усложнит рабочую базу без надёжного прироста?
