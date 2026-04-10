@@ -63,8 +63,12 @@
 | [tb_signal_logic.py](ML/tb_signal_logic.py) | Triple Barrier signal logic: parse TB targets, агрегация решений | TB probabilities → signal | — | ✅ |
 | [tb_probability_calibration.py](ML/tb_probability_calibration.py) | Isotonic calibration для TB-вероятностей | val data → calibrated probabilities | — | 🏁 |
 | [entry_path_task.py](ML/entry_path_task.py) | Entry path task: определения targets, метрики, export helpers | — | — | ✅ |
+| [entry_path_v1_quantile_task.py](ML/entry_path_v1_quantile_task.py) | Entry path v1 quantile task: export/report helpers и metrics | — | — | ✅ |
 | [entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | → filtered signals | — | ✅ |
+| [export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | checkpoint → `reports/entry_path_v1_quantile_*_predictions.csv` | — | ✅ |
+| [benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | prediction CSVs + frozen rule → reports | — | ✅ |
 | [models/entry_path_transformer.py](ML/models/entry_path_transformer.py) | EntryPathTransformer — специализированный Transformer для entry_path_v1 | (batch, 100, 20) → multi-head output | — | ✅ |
+| [models/entry_path_v1_quantile_transformer.py](ML/models/entry_path_v1_quantile_transformer.py) | EntryPathV1QuantileTransformer — entry_path_v1 + q10/q90 heads | (batch, 100, 20) → multi-head output | — | ✅ |
 | [ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | DataLoader → отчёт | — | 🏁 |
 | [benchmark_outcome_targets.py](ML/benchmark_outcome_targets.py) | Бенчмарк outcome targets: сравнение качества разных таргетов | DataLoader → JSON отчёт | — | 🏁 |
 | [benchmark_entry_path_trade_filter.py](ML/benchmark_entry_path_trade_filter.py) | Бенчмарк entry_path_v1 trade filter | — → JSON отчёт | — | 🏁 |
@@ -81,10 +85,14 @@
 | [test_trade_target_labels.py](tests/test_trade_target_labels.py) | `processing/label_signals.py` — trade target labels | — | ✅ |
 | [test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | — | ✅ |
 | [test_entry_path_task.py](tests/test_entry_path_task.py) | `ML/entry_path_task.py` — target contract, export helpers | — | ✅ |
+| [test_entry_path_v1_quantile_task.py](tests/test_entry_path_v1_quantile_task.py) | `ML/entry_path_v1_quantile_task.py` — export helpers и quantile metrics | — | ✅ |
 | [test_entry_path_model.py](tests/test_entry_path_model.py) | `ML/models/entry_path_transformer.py` | — | ✅ |
+| [test_entry_path_v1_quantile_model.py](tests/test_entry_path_v1_quantile_model.py) | `ML/models/entry_path_v1_quantile_transformer.py` | — | ✅ |
 | [test_entry_path_training.py](tests/test_entry_path_training.py) | CLI plumbing для entry_path_v1 обучения | — | ✅ |
 | [test_entry_path_trade_filter.py](tests/test_entry_path_trade_filter.py) | `ML/entry_path_trade_filter.py` | — | ✅ |
 | [test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | — | ✅ |
+| [test_entry_path_v1_quantile_reports.py](tests/test_entry_path_v1_quantile_reports.py) | entry_path_v1_quantile export/test report CLI | — | ✅ |
+| [test_entry_path_v1_quantile_filter.py](tests/test_entry_path_v1_quantile_filter.py) | entry_path_v1_quantile frozen-baseline filter benchmark | — | ✅ |
 | [test_benchmark_outcome_targets.py](tests/test_benchmark_outcome_targets.py) | `ML/benchmark_outcome_targets.py` | — | ✅ |
 | [test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | — | ✅ |
 | [test_exit_policy_research.py](tests/test_exit_policy_research.py) | `API/exit_policy_research.py` | — | ✅ |

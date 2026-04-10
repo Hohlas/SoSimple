@@ -27,6 +27,12 @@ from ML.entry_path_task import (
     build_entry_path_export_frame,
     build_entry_path_report_markdown,
 )
+from ML.entry_path_v1_quantile_task import (
+    ENTRY_PATH_V1_QUANTILE_TARGET,
+    build_entry_path_v1_quantile_export_frame,
+    build_entry_path_v1_quantile_model,
+    build_entry_path_v1_quantile_report_markdown,
+)
 from ML.models import get_model
 from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.tb_probability_calibration import (
@@ -168,6 +174,8 @@ def run_evaluation(
 
     if task == ENTRY_PATH_TARGET:
         model = build_entry_path_model(model_kwargs)
+    elif task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        model = build_entry_path_v1_quantile_model(model_kwargs)
     else:
         model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -185,7 +193,7 @@ def run_evaluation(
         num_workers=0,
     )
 
-    if task == ENTRY_PATH_TARGET:
+    if task in (ENTRY_PATH_TARGET, ENTRY_PATH_V1_QUANTILE_TARGET):
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
         df_test = df_test_full[['time', 'signal']].copy()
         entry_path_gt_available = has_entry_path_ground_truth(df_test_full)
@@ -273,6 +281,86 @@ def run_evaluation(
                 print(f"  {line[2:]}")
         else:
             print("  ⚠ Test ground truth для entry_path_v1 отсутствует; report written with N/A metrics.")
+        print(f"{'═' * 60}\n")
+        return
+
+    if task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        all_ret = []
+        all_path_reg = []
+        all_path_cls = []
+        all_q10 = []
+        all_q90 = []
+        all_true_reg = []
+        all_true_cls = []
+
+        with torch.no_grad():
+            for X_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
+                outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+                all_ret.append(outputs['ret'].cpu().numpy())
+                all_path_reg.append(outputs['path_reg'].cpu().numpy())
+                all_path_cls.append(torch.softmax(outputs['path_cls'], dim=1).cpu().numpy())
+                all_q10.append(outputs['ret_q10'].cpu().numpy())
+                all_q90.append(outputs['ret_q90'].cpu().numpy())
+                all_true_reg.append(y_reg_batch.numpy())
+                all_true_cls.append(y_cls_batch.numpy())
+
+        pred_ret = np.concatenate(all_ret)
+        pred_path_reg = np.concatenate(all_path_reg)
+        pred_path_cls = np.concatenate(all_path_cls)
+        pred_q10 = np.concatenate(all_q10)
+        pred_q90 = np.concatenate(all_q90)
+        true_reg = np.concatenate(all_true_reg)
+        true_cls = np.concatenate(all_true_cls)
+
+        export_kwargs = {
+            'times': df_test['time'].values,
+            'signals': df_test['signal'].values.astype(int),
+            'pred_ret': pred_ret,
+            'pred_path_reg': pred_path_reg,
+            'pred_path_cls': pred_path_cls,
+            'pred_q10': pred_q10,
+            'pred_q90': pred_q90,
+        }
+        if entry_path_gt_available:
+            export_kwargs['true_reg'] = true_reg
+            export_kwargs['true_cls'] = true_cls
+        export = build_entry_path_v1_quantile_export_frame(**export_kwargs)
+        export_path = REPORTS_DIR / 'entry_path_v1_quantile_test_predictions.csv'
+        export.to_csv(export_path, sep=';', index=False)
+        row_count = int(len(export))
+        report_path = REPORTS_DIR / 'evaluate_test_entry_path_v1_quantile.md'
+        report_path.write_text(
+            build_entry_path_v1_quantile_report_markdown(
+                frame=export,
+                model_name=ckpt_model_name,
+                artifact_name=export_path.name,
+                split_label='Test',
+                checkpoint_epoch=ckpt.get('epoch'),
+                checkpoint_metric_name=ckpt.get('metric_name'),
+                checkpoint_metric_value=ckpt.get('best_metric'),
+            ),
+            encoding='utf-8',
+        )
+
+        print(f"  ✅ CSV сохранён: {export_path.name}")
+        print(f"  ✅ Отчет сохранён: {report_path.name}")
+        print(f"  row_count={row_count}")
+        if ckpt.get('epoch') is not None and ckpt.get('best_metric') is not None:
+            print(f"  checkpoint_epoch={ckpt.get('epoch')}")
+            print(f"  best_val_{ckpt.get('metric_name', 'metric')}={ckpt.get('best_metric'):.4f}")
+        if entry_path_gt_available:
+            report_text = report_path.read_text(encoding='utf-8')
+            summary_lines = [
+                line for line in report_text.splitlines()
+                if line.startswith('- ret_pearson_r:')
+                or line.startswith('- interval_coverage:')
+                or line.startswith('- median_interval_width:')
+                or line.startswith('- val_score:')
+            ]
+            for line in summary_lines:
+                print(f"  {line[2:]}")
+        else:
+            print("  ⚠ Test ground truth для entry_path_v1_quantile отсутствует; report written with N/A metrics.")
         print(f"{'═' * 60}\n")
         return
 

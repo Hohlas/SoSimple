@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.metrics import f1_score
 
 from ML.entry_path_task import (
     ENTRY_PATH_CLASS_MAP,
@@ -9,8 +10,24 @@ from ML.entry_path_task import (
     ENTRY_PATH_RET_TARGETS,
     build_entry_path_export_frame,
 )
+from ML.models.entry_path_v1_quantile_transformer import EntryPathV1QuantileTransformer
 
 ENTRY_PATH_V1_QUANTILE_TARGET = 'entry_path_v1_quantile'
+ENTRY_PATH_V1_QUANTILE_Q10_COLUMN = 'pred_ret_24_q10'
+ENTRY_PATH_V1_QUANTILE_Q90_COLUMN = 'pred_ret_24_q90'
+
+
+def build_entry_path_v1_quantile_model(model_kwargs: dict | None = None) -> EntryPathV1QuantileTransformer:
+    allowed_keys = {
+        'input_features',
+        'd_model',
+        'nhead',
+        'num_layers',
+        'dim_feedforward',
+        'dropout',
+    }
+    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
+    return EntryPathV1QuantileTransformer(**kwargs)
 
 
 def _safe_pearson(y_true: np.ndarray, y_pred: np.ndarray) -> float:
@@ -112,3 +129,87 @@ def compute_entry_path_v1_quantile_metrics(
         'q90_pinball_loss': q90_pinball_loss,
         'val_score': val_score,
     }
+
+
+def build_entry_path_v1_quantile_report_markdown(
+    frame: pd.DataFrame,
+    model_name: str,
+    artifact_name: str,
+    split_label: str = 'Test',
+    checkpoint_epoch: int | None = None,
+    checkpoint_metric_name: str | None = None,
+    checkpoint_metric_value: float | None = None,
+) -> str:
+    row_count = int(len(frame))
+    checkpoint_lines = []
+    if checkpoint_epoch is not None:
+        checkpoint_lines.append(f'**Checkpoint epoch**: {checkpoint_epoch}')
+    if checkpoint_metric_name is not None and checkpoint_metric_value is not None:
+        checkpoint_lines.append(f'**Best val {checkpoint_metric_name}**: {checkpoint_metric_value:.4f}')
+
+    required_true_cols = {f'true_{name}' for name in ENTRY_PATH_REG_TARGETS} | {'true_path_6_class'}
+    if required_true_cols.issubset(frame.columns):
+        true_ret = frame['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
+        pred_ret24 = frame['pred_ret_24_dir_atr'].to_numpy(dtype=np.float64)
+        pred_q10 = frame[ENTRY_PATH_V1_QUANTILE_Q10_COLUMN].to_numpy(dtype=np.float64)
+        pred_q90 = frame[ENTRY_PATH_V1_QUANTILE_Q90_COLUMN].to_numpy(dtype=np.float64)
+        y_true_cls = frame['true_path_6_class'].to_numpy(dtype=np.int64)
+        y_pred_cls = frame['pred_path_6_class'].to_numpy(dtype=np.int64)
+        class_labels = [-1, 0, 1]
+        metrics = compute_entry_path_v1_quantile_metrics(
+            true_ret=true_ret,
+            pred_ret24=pred_ret24,
+            pred_q10=pred_q10,
+            pred_q90=pred_q90,
+            path_reg_pearson_r=float(
+                np.mean([
+                    _safe_pearson(
+                        frame[f'true_{name}'].to_numpy(dtype=np.float64),
+                        frame[f'pred_{name}'].to_numpy(dtype=np.float64),
+                    )
+                    for name in ENTRY_PATH_PATH_REG_TARGETS
+                ])
+            ),
+            path_cls_f1_macro=float(
+                f1_score(y_true_cls, y_pred_cls, labels=class_labels, average='macro', zero_division=0)
+            ),
+        )
+        summary_lines = [
+            f'- row_count: **{row_count}**',
+            f"- ret_pearson_r: **{metrics['ret_pearson_r']:.4f}**",
+            f"- interval_coverage: **{metrics['interval_coverage']:.4f}**",
+            f"- median_interval_width: **{metrics['median_interval_width']:.4f}**",
+            f"- q10_pinball_loss: **{metrics['q10_pinball_loss']:.4f}**",
+            f"- q90_pinball_loss: **{metrics['q90_pinball_loss']:.4f}**",
+            f"- val_score: **{metrics['val_score']:.4f}**",
+        ]
+    else:
+        summary_lines = [
+            f'- row_count: **{row_count}**',
+            '- ret_pearson_r: **N/A**',
+            '- interval_coverage: **N/A**',
+            '- median_interval_width: **N/A**',
+            '- q10_pinball_loss: **N/A**',
+            '- q90_pinball_loss: **N/A**',
+            '- val_score: **N/A**',
+        ]
+
+    lines = [
+        '# Entry Path v1 Quantile Test Set Evaluation',
+        '',
+        f'**Модель**: {model_name}',
+        f'**Набор**: {split_label} ({row_count} строк)',
+    ]
+    if checkpoint_lines:
+        lines.extend(['', *checkpoint_lines])
+    lines.extend([
+        '',
+        '## Summary',
+        '',
+        *summary_lines,
+        '',
+        '## Artifacts',
+        '',
+        f'- Predictions CSV: `{artifact_name}`',
+    ])
+    return '\n'.join(lines)
