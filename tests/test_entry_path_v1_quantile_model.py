@@ -27,3 +27,23 @@ def test_entry_path_v1_quantile_transformer_outputs_old_and_new_heads():
     assert out['path_cls'].shape == (4, 3)
     assert out['ret_q10'].shape == (4, 1)
     assert out['ret_q90'].shape == (4, 1)
+
+
+def test_entry_path_v1_quantile_transformer_keeps_path_cls_finite_for_fully_masked_sample():
+    model = EntryPathV1QuantileTransformer(
+        input_features=20,
+        d_model=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.1,
+    )
+    x = torch.randn(2, 20, 20)
+    mask = torch.tensor([
+        [False] * 20,
+        [True] * 20,
+    ], dtype=torch.bool)
+
+    out = model(x, mask=mask)
+
+    assert torch.isfinite(out['path_cls'][0]).all()

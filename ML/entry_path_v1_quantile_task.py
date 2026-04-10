@@ -81,6 +81,12 @@ def compute_entry_path_v1_quantile_metrics(
     pred_q10 = _as_1d(pred_q10)
     pred_q90 = _as_1d(pred_q90)
 
+    lengths = {len(true_ret), len(pred_ret24), len(pred_q10), len(pred_q90)}
+    if len(lengths) != 1:
+        raise ValueError('true_ret, pred_ret24, pred_q10, and pred_q90 must have the same length')
+    if np.any(pred_q10 > pred_q90):
+        raise ValueError('pred_q10 must be <= pred_q90 for all rows')
+
     lower = np.minimum(pred_q10, pred_q90)
     upper = np.maximum(pred_q10, pred_q90)
     coverage = float(np.mean((true_ret >= lower) & (true_ret <= upper)))

@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import pytest
 
 sys.path.insert(0, '.')
 
@@ -37,3 +38,27 @@ def test_quantile_metrics_penalize_bad_coverage_and_width():
     assert 'val_score' in metrics
     assert 'interval_coverage' in metrics
     assert 'median_interval_width' in metrics
+
+
+def test_quantile_metrics_reject_mismatched_lengths():
+    with pytest.raises(ValueError, match='must have the same length'):
+        task.compute_entry_path_v1_quantile_metrics(
+            true_ret=np.array([0.0, 1.0], dtype=np.float32),
+            pred_ret24=np.array([0.0], dtype=np.float32),
+            pred_q10=np.array([0.0, 0.0], dtype=np.float32),
+            pred_q90=np.array([1.0, 1.0], dtype=np.float32),
+            path_reg_pearson_r=0.30,
+            path_cls_f1_macro=0.40,
+        )
+
+
+def test_quantile_metrics_reject_crossed_quantiles():
+    with pytest.raises(ValueError, match='pred_q10 must be <= pred_q90'):
+        task.compute_entry_path_v1_quantile_metrics(
+            true_ret=np.array([0.0, 1.0], dtype=np.float32),
+            pred_ret24=np.array([0.0, 1.0], dtype=np.float32),
+            pred_q10=np.array([0.5, 0.7], dtype=np.float32),
+            pred_q90=np.array([0.4, 0.6], dtype=np.float32),
+            path_reg_pearson_r=0.30,
+            path_cls_f1_macro=0.40,
+        )

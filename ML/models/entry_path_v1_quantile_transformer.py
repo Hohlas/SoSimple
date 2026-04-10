@@ -103,9 +103,17 @@ class EntryPathV1QuantileTransformer(nn.Module):
         path_cls_hidden = self.path_cls_sequence_proj(sequence_output)
         path_cls_pool_logits = self.path_cls_time_pool(path_cls_hidden).squeeze(-1)
         if mask is not None:
+            valid_rows = mask.any(dim=1, keepdim=True)
             path_cls_pool_logits = path_cls_pool_logits.masked_fill(~mask, float('-inf'))
+            path_cls_pool_logits = torch.where(
+                valid_rows,
+                path_cls_pool_logits,
+                torch.zeros_like(path_cls_pool_logits),
+            )
         path_cls_pool_weights = torch.softmax(path_cls_pool_logits, dim=1).unsqueeze(-1)
         path_cls_output = (path_cls_hidden * path_cls_pool_weights).sum(dim=1)
+        if mask is not None:
+            path_cls_output = torch.where(valid_rows, path_cls_output, torch.zeros_like(path_cls_output))
 
         return {
             'ret': self.ret_head(cls_output),
