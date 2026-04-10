@@ -203,12 +203,14 @@ def run_benchmark(
 
     winner = pick_winner(validation_summary, min_trades=min_trades).to_dict()
 
-    test_summary = pd.DataFrame([
-        summarize_rule(test, candidate=row['candidate'], rule=row['rule'], m=winner['m'], w=winner['w'])
-        for _, row in validation_summary.iterrows()
-    ])
-
-    frozen_test_row = test_summary.loc[test_summary['candidate'] == winner['candidate']].iloc[0].to_dict()
+    frozen_test_row = summarize_rule(
+        test,
+        candidate=winner['candidate'],
+        rule=winner['rule'],
+        m=winner['m'],
+        w=winner['w'],
+    )
+    test_summary = pd.DataFrame([frozen_test_row])
 
     validation_summary_path = output_path / 'entry_path_v1_quantile_filter_validation_summary.csv'
     test_summary_path = output_path / 'entry_path_v1_quantile_filter_test_summary.csv'

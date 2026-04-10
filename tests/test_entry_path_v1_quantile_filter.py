@@ -78,6 +78,15 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
         ),
     )
 
+    summarize_calls = []
+    original_summarize_rule = bench.summarize_rule
+
+    def spy_summarize_rule(frame, candidate, rule, m, w):
+        summarize_calls.append(candidate)
+        return original_summarize_rule(frame, candidate=candidate, rule=rule, m=m, w=w)
+
+    monkeypatch.setattr(bench, 'summarize_rule', spy_summarize_rule)
+
     payload = bench.main()
 
     assert payload['winner']['candidate'] in {'baseline', 'lb_gt_0', 'lb_gt_m', 'lb_gt_m_width_le_w'}
@@ -86,6 +95,11 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
     assert (tmp_path / 'entry_path_v1_quantile_filter_selected_rule.json').exists()
     assert (tmp_path / 'entry_path_v1_quantile_filter_validation_summary.csv').exists()
     assert (tmp_path / 'entry_path_v1_quantile_filter_test_summary.csv').exists()
+    assert len(summarize_calls) == 5
 
     saved = json.loads((tmp_path / 'entry_path_v1_quantile_filter_selected_rule.json').read_text(encoding='utf-8'))
     assert saved['winner']['candidate'] == payload['winner']['candidate']
+
+    test_summary = pd.read_csv(tmp_path / 'entry_path_v1_quantile_filter_test_summary.csv', sep=';')
+    assert test_summary.shape[0] == 1
+    assert test_summary.iloc[0]['candidate'] == payload['winner']['candidate']
