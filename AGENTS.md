@@ -93,7 +93,7 @@ python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out ba
 ├── .claude/memory/      # Долговечная память проекта
 ├── .codex/skills/       # Локальные workflow/skills для Codex
 ├── wiki/                # LLM Wiki: синтез знаний проекта
-│   ├── WIKI_index.md    #   авто-генерированная integrity map репо
+│   ├── REPO_integrity.md #   авто-генерированная integrity map репо
 │   ├── index.md         #   LLM-каталог wiki-страниц
 │   ├── log.md           #   хронология операций
 │   ├── wiki.py          #   generate / verify

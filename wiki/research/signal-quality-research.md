@@ -1,3 +1,9 @@
+---
+last_updated: 2026-04-09
+sources: 7
+status: completed
+---
+
 # Signal Quality Research: от Variant 2 до Archetype Bridge
 
 > Синтез 7 отчётов (2026-04-01 — 2026-04-04). Главная исследовательская дуга проекта.

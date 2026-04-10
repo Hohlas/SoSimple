@@ -1,3 +1,8 @@
+---
+last_updated: 2026-04-09
+status: confirmed
+---
+
 # Signal Archetypes: двумодальная структура ML-сигнала
 
 > Ключевой концепт проекта. Обнаружен в Signal Path Atlas (2026-04-04), воспроизведён на holdout.

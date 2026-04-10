@@ -1,6 +1,6 @@
 # Wiki Index — SoSimple
 > LLM-maintained catalog of synthesized wiki pages.
-> Auto-generated integrity map of the whole repo: [WIKI_index.md](WIKI_index.md).
+> Auto-generated integrity map of the whole repo: [REPO_integrity.md](REPO_integrity.md).
 > Module registry (canonical, do not duplicate here): [MODULE_INDEX.md](../MODULE_INDEX.md).
 
 ## How to use (agents)

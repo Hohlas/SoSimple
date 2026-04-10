@@ -1,6 +1,6 @@
 ---
 name: wiki
-description: Use for wiki operations — ingest reports into synthesis pages, save new concepts, query wiki for context, lint pages for staleness, regenerate WIKI_index.md
+description: Use for wiki operations — ingest reports into synthesis pages, save new concepts, query wiki for context, lint pages for staleness, regenerate REPO_integrity.md
 ---
 
 # Wiki Operations
@@ -13,7 +13,7 @@ Workflow для работы с LLM Wiki — слоем синтезирован
 - **Save**: при обнаружении нового концепта или инсайта, который не укладывается ни в один существующий файл проекта.
 - **Query**: в начале сессии или при исследовании темы — прочитать релевантные wiki-страницы для контекста.
 - **Lint**: периодически или перед крупным этапом — проверить актуальность wiki-страниц.
-- **Generate**: после любых изменений в файлах репо — обновить `wiki/WIKI_index.md`.
+- **Generate**: после любых изменений в файлах репо — обновить `wiki/REPO_integrity.md`.
 
 ## Принципы
 
@@ -31,7 +31,7 @@ Workflow для работы с LLM Wiki — слоем синтезирован
 ```
 wiki/
 ├── index.md          # Каталог wiki-страниц (LLM-maintained)
-├── WIKI_index.md     # Integrity map всего репо (auto-generated)
+├── REPO_integrity.md # Integrity map всего репо (auto-generated)
 ├── log.md            # Append-only хронология операций
 ├── wiki.py           # Инструмент: generate / verify
 ├── research/         # Синтез отчётов из docs/reports/
@@ -48,7 +48,7 @@ wiki/
 2. Прочитай новые отчёты и существующие wiki-страницы по теме.
 3. Реши: обновить существующую страницу или создать новую.
    - **Обновить**, если отчёт продолжает ту же линию исследования.
-   - **Создать новую**, если отчёт открывает новое направление (≥2 отчётов по теме).
+   - **Создать новую**, если отчёт открывает новое направление.
 4. Напиши/обнови страницу (формат — см. ниже).
 5. Если обнаружен новый концепт — создай страницу в `concepts/`.
 6. Обнови `wiki/index.md` (добавь новые страницы, обнови покрытие).
@@ -71,6 +71,7 @@ wiki/
 1. Прочитай `wiki/index.md` — определи релевантные страницы.
 2. Прочитай нужные страницы из `wiki/research/` и `wiki/concepts/`.
 3. Используй как контекст, но помни: wiki может устареть. При сомнениях — проверяй по `docs/reports/` и коду.
+4. Если ответ содержит новый синтез (сравнение, анализ, выявленная связь) — предложи сохранить результат как wiki-страницу через операцию **Save**. Explorations должны компаундиться в wiki, а не теряться в истории чата.
 
 ### Lint
 
@@ -91,13 +92,19 @@ wiki/
 python wiki/wiki.py generate
 ```
 
-Запускать после любых изменений в файлах репо. Обновляет `wiki/WIKI_index.md` с актуальными хешами.
+Запускать после любых изменений в файлах репо. Обновляет `wiki/REPO_integrity.md` с актуальными хешами.
 
 ## Формат wiki-страниц
 
 ### Research (`wiki/research/`)
 
 ```markdown
+---
+last_updated: YYYY-MM-DD
+sources: N
+status: active | completed | stale
+---
+
 # Название линии исследования
 
 > Одна фраза — что исследовалось и какой главный вывод.
@@ -126,6 +133,11 @@ python wiki/wiki.py generate
 ### Concepts (`wiki/concepts/`)
 
 ```markdown
+---
+last_updated: YYYY-MM-DD
+status: confirmed | preliminary | disputed
+---
+
 # Название концепта
 
 > Одна фраза — суть концепта.
@@ -157,5 +169,6 @@ python wiki/wiki.py generate
 - Всегда указывать источники (`docs/reports/`, код).
 - Каждая операция = запись в `wiki/log.md`.
 - `wiki/index.md` — всегда актуален (обновлять при любом изменении страниц).
-- Не создавать страницу по одному отчёту — минимум 2 связанных отчёта для `research/`, устойчивый инсайт для `concepts/`.
+- Для `research/`: создавать страницу когда отчёт приносит новое знание. Одиночный отчёт по новому направлению — валидный повод для страницы.
+- Для `concepts/`: создавать когда концепт устойчив и подтверждён данными.
 - При обновлении страницы — не переписывать историю, а дополнять хронологию.

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-04-09
+sources: 7
+status: active
+---
+
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
 > Синтез 7 отчётов (2026-04-08 — 2026-04-09). Параллельные направления execution.

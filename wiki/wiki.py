@@ -2,8 +2,10 @@
 wiki/wiki.py — LLM Wiki index generator and verifier for SoSimple.
 
 Subcommands:
-    generate   Build/refresh wiki/WIKI_index.md
+    generate   Build/refresh wiki/REPO_integrity.md
     verify     Check index integrity against current filesystem
+    status     Show wiki coverage gaps and staleness
+    search     Search wiki pages (grep-based)
 """
 from __future__ import annotations
 
@@ -22,7 +24,7 @@ from typing import NamedTuple
 
 REPO_ROOT = Path(__file__).parent.parent
 WIKI_DIR = Path(__file__).parent
-INDEX_FILE = WIKI_DIR / "WIKI_index.md"
+INDEX_FILE = WIKI_DIR / "REPO_integrity.md"
 
 # Directories to skip entirely (relative to REPO_ROOT, use "/" as separator)
 IGNORE_DIRS = {
@@ -53,7 +55,7 @@ MAX_HASH_SIZE = 2 * 1024 * 1024  # 2 MB
 
 # Files to exclude from tracking
 IGNORE_FILENAMES = {
-    "WIKI_index.md",  # avoid self-reference
+    "REPO_integrity.md",  # avoid self-reference
 }
 
 
@@ -269,7 +271,7 @@ def generate_index(entries: list[FileEntry]) -> str:
     commit = git_short_hash()
 
     lines: list[str] = [
-        "# WIKI Index — SoSimple",
+        "# REPO Integrity Map — SoSimple",
         f"> Auto-generated {now} · git `{commit}`",
         f"> Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`",
         "",
@@ -277,8 +279,8 @@ def generate_index(entries: list[FileEntry]) -> str:
         "",
         "1. Read this file first to get a project map (what exists, where, integrity hash).",
         "2. Run `python wiki/wiki.py verify` to detect files changed since last index.",
-        "3. Navigate via paths in the tables; use `wiki/pages/` for synthesized knowledge.",
-        "4. After modifying significant files, run `generate` and commit `WIKI_index.md`.",
+        "3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.",
+        "4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.",
         "",
         f"**Tracked**: {len(entries)} files  ·  **Commit**: `{commit}`  ·  **Generated**: {now}",
         "",
@@ -303,7 +305,7 @@ def generate_index(entries: list[FileEntry]) -> str:
 # ─── Verifier ────────────────────────────────────────────────────────────────
 
 def parse_index_hashes() -> dict[str, str]:
-    """Parse WIKI_index.md and return {path: hash} for all tracked entries."""
+    """Parse REPO_integrity.md and return {path: hash} for all tracked entries."""
     if not INDEX_FILE.exists():
         return {}
 
@@ -322,7 +324,7 @@ def parse_index_hashes() -> dict[str, str]:
 def cmd_verify() -> int:
     indexed = parse_index_hashes()
     if not indexed:
-        print("WIKI_index.md not found or empty. Run: python wiki/wiki.py generate")
+        print("REPO_integrity.md not found or empty. Run: python wiki/wiki.py generate")
         return 1
 
     descriptions = parse_module_index()
@@ -362,6 +364,122 @@ def cmd_verify() -> int:
     return 1
 
 
+# ─── Status command ─────────────────────────────────────────────────────────
+
+def cmd_status() -> int:
+    """Show wiki coverage gaps and staleness indicators."""
+    # 1. Find all reports
+    reports_dir = REPO_ROOT / "docs" / "reports"
+    all_reports: set[str] = set()
+    if reports_dir.exists():
+        for f in reports_dir.glob("*.md"):
+            if f.name == "README.md":
+                continue
+            all_reports.add(f"docs/reports/{f.name}")
+
+    # 2. Scan wiki pages for referenced paths
+    referenced_reports: set[str] = set()
+    wiki_file_refs: set[str] = set()
+    link_re = re.compile(r'\[.*?\]\(([^)]+)\)')
+
+    for subdir in ("research", "concepts"):
+        wiki_subdir = WIKI_DIR / subdir
+        if not wiki_subdir.exists():
+            continue
+        for page in wiki_subdir.glob("*.md"):
+            content = page.read_text(encoding="utf-8")
+            for m in link_re.finditer(content):
+                target = m.group(1)
+                resolved = (page.parent / target).resolve()
+                try:
+                    rel = resolved.relative_to(REPO_ROOT)
+                    rel_str = "/".join(rel.parts)
+                    wiki_file_refs.add(rel_str)
+                    if rel_str.startswith("docs/reports/"):
+                        referenced_reports.add(rel_str)
+                except ValueError:
+                    pass
+
+    # 3. Uncovered reports
+    uncovered = sorted(all_reports - referenced_reports)
+
+    # 4. Changed files (reuse verify logic)
+    indexed = parse_index_hashes()
+    descriptions = parse_module_index()
+    current = {e.path: e for e in scan_repo(descriptions)}
+
+    changed = []
+    for path, old_hash in indexed.items():
+        if path in current and old_hash != "--------" and current[path].hash != old_hash:
+            changed.append(path)
+
+    # 5. Broken wiki links
+    broken = sorted(ref for ref in wiki_file_refs
+                    if not (REPO_ROOT / Path(ref)).exists())
+
+    # Output
+    if not uncovered and not changed and not broken:
+        print("Wiki is up to date. No gaps found.")
+        return 0
+
+    if uncovered:
+        print(f"\nUncovered reports ({len(uncovered)}):")
+        for r in uncovered:
+            print(f"  ? {r}")
+
+    if changed:
+        print(f"\nChanged since last index ({len(changed)}):")
+        for p in sorted(changed):
+            print(f"  ~ {p}")
+
+    if broken:
+        print(f"\nBroken wiki links ({len(broken)}):")
+        for b in broken:
+            print(f"  ! {b}")
+
+    total = len(uncovered) + len(changed) + len(broken)
+    print(f"\n{total} items need attention.")
+    return 1
+
+
+# ─── Search command ─────────────────────────────────────────────────────────
+
+def cmd_search(query: str) -> int:
+    """Search wiki pages for a query string (case-insensitive grep)."""
+    pattern = re.compile(re.escape(query), re.IGNORECASE)
+    results: list[tuple[str, int, str]] = []
+
+    for subdir in ("research", "concepts"):
+        wiki_subdir = WIKI_DIR / subdir
+        if not wiki_subdir.exists():
+            continue
+        for page in sorted(wiki_subdir.glob("*.md")):
+            for i, line in enumerate(
+                page.read_text(encoding="utf-8").splitlines(), 1
+            ):
+                if pattern.search(line):
+                    rel = page.relative_to(WIKI_DIR)
+                    results.append((str(rel), i, line.strip()))
+
+    for name in ("index.md", "log.md"):
+        fp = WIKI_DIR / name
+        if fp.exists():
+            for i, line in enumerate(
+                fp.read_text(encoding="utf-8").splitlines(), 1
+            ):
+                if pattern.search(line):
+                    results.append((name, i, line.strip()))
+
+    if not results:
+        print(f"No matches for '{query}' in wiki/")
+        return 1
+
+    print(f"Found {len(results)} matches for '{query}':\n")
+    for filepath, lineno, line in results:
+        print(f"  {filepath}:{lineno}  {line[:120]}")
+    return 0
+
+
 # ─── Generate command ────────────────────────────────────────────────────────
 
 def cmd_generate() -> int:
@@ -382,19 +500,28 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "examples:\n"
-            "  python wiki/wiki.py generate   # build/refresh WIKI_index.md\n"
-            "  python wiki/wiki.py verify     # check integrity against filesystem"
+            "  python wiki/wiki.py generate   # build/refresh REPO_integrity.md\n"
+            "  python wiki/wiki.py verify     # check integrity against filesystem\n"
+            "  python wiki/wiki.py status     # show wiki coverage gaps\n"
+            "  python wiki/wiki.py search Q   # search wiki pages for Q"
         ),
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("generate", help="Build/refresh wiki/WIKI_index.md")
+    sub.add_parser("generate", help="Build/refresh wiki/REPO_integrity.md")
     sub.add_parser("verify", help="Check index integrity against current filesystem")
+    sub.add_parser("status", help="Show wiki coverage gaps and staleness")
+    search_p = sub.add_parser("search", help="Search wiki pages (grep-based)")
+    search_p.add_argument("query", help="Search query")
 
     args = parser.parse_args()
     if args.cmd == "generate":
         sys.exit(cmd_generate())
     elif args.cmd == "verify":
         sys.exit(cmd_verify())
+    elif args.cmd == "status":
+        sys.exit(cmd_status())
+    elif args.cmd == "search":
+        sys.exit(cmd_search(args.query))
 
 
 if __name__ == "__main__":
