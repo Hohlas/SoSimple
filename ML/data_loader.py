@@ -792,13 +792,13 @@ def create_test_loader(
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
     profile_suffix = cache_profile_suffix(target)
-    entry_path = (target == ENTRY_PATH_TARGET)
+    entry_path_like = (target in (ENTRY_PATH_TARGET, ENTRY_PATH_V1_QUANTILE_TARGET))
     prefix = 'test'
     missing_entry_path_labels = False
 
     x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
     mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
-    if entry_path:
+    if entry_path_like:
         y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
         y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
         signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
@@ -806,25 +806,28 @@ def create_test_loader(
     else:
         y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
         cache_files = [x_path, mask_path, y_path]
-    
+
     if clear_cache:
         print(f"  🧹 Принудительная очистка кэша ({prefix})...")
         for f in cache_files:
-            if f.exists(): f.unlink()
+            if f.exists():
+                f.unlink()
     elif all(f.exists() for f in cache_files):
         csv_mtime = TEST_FILE.stat().st_mtime
         if any(csv_mtime > f.stat().st_mtime for f in cache_files):
             print(f"  🔄 Файл {TEST_FILE.name} обновился. Инвалидация кэша {prefix}...")
-            for f in cache_files: f.unlink()
+            for f in cache_files:
+                f.unlink()
         else:
             X = np.load(x_path)
             if X.shape[2] != N_FRACTAL_FEATURES:
                 print(f"  🔄 Кэш {prefix} устарел. Инвалидация...")
-                for f in cache_files: f.unlink()
+                for f in cache_files:
+                    f.unlink()
             else:
                 print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                 mask = np.load(mask_path)
-                if entry_path:
+                if entry_path_like:
                     y_reg = np.load(y_reg_path)
                     y_cls = np.load(y_cls_path)
                     signal = np.load(signal_path)
@@ -844,16 +847,15 @@ def create_test_loader(
                         if seq_len < 100:
                             X = X[:, :seq_len, :]
                             mask = mask[:, :seq_len]
-
                         dataset = EntryPathDataset(X, y_reg, y_cls, mask, signal)
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 else:
                     y = np.load(y_path)
-                
+
                     if seq_len < 100:
                         X = X[:, :seq_len, :]
                         mask = mask[:, :seq_len]
-                    
+
                     dataset = FractalSequenceDataset(
                         X,
                         y,
@@ -869,8 +871,8 @@ def create_test_loader(
         total_rows = len(df)
         df = filter_signal_rows(df, target)
         print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
-    
-    if entry_path:
+
+    if entry_path_like:
         if all(col in df.columns for col in ENTRY_PATH_REG_TARGETS + ['path_6_class']):
             y_reg, y_cls = split_entry_path_targets(df)
         else:
@@ -892,11 +894,11 @@ def create_test_loader(
         y = df[target].values.astype(np.int64)
     else:
         y = df[target].values.astype(int)
-        
+
     X, mask = parse_fractals_to_3d(df)
     np.save(x_path, X)
     np.save(mask_path, mask)
-    if entry_path:
+    if entry_path_like:
         if not missing_entry_path_labels:
             np.save(y_reg_path, y_reg)
             np.save(y_cls_path, y_cls)
@@ -904,12 +906,15 @@ def create_test_loader(
     else:
         np.save(y_path, y)
     print(f"  ✅ Данные {prefix} сохранены в кэш.")
-    
+
     if seq_len < 100:
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
 
-    if entry_path:
+    if entry_path_like:
+        if missing_entry_path_labels:
+            y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
+            y_cls = np.zeros(len(df), dtype=np.int64)
         dataset = EntryPathDataset(X, y_reg, y_cls, mask, signal)
     else:
         dataset = FractalSequenceDataset(

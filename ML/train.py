@@ -808,20 +808,28 @@ def validate_entry_path_v1_quantile(
     active_mask = all_signals != 0
     if np.any(active_mask):
         active_path_cls_metrics = compute_metrics(y_true_orig[active_mask], y_pred_orig[active_mask])
+        quantile_metrics = compute_entry_path_v1_quantile_metrics(
+            true_ret=ret_targets[active_mask, 2],
+            pred_ret24=all_ret_preds[active_mask, 2],
+            pred_q10=all_q10_preds[active_mask, 0],
+            pred_q90=all_q90_preds[active_mask, 0],
+            path_reg_pearson_r=path_reg_metrics['pearson_r'],
+            path_cls_f1_macro=path_cls_metrics['f1_macro'],
+        )
     else:
         active_path_cls_metrics = {
             'f1_macro': 0.0,
             'f1_per_class': {-1: 0.0, 0: 0.0, 1: 0.0},
         }
-
-    quantile_metrics = compute_entry_path_v1_quantile_metrics(
-        true_ret=ret_targets[:, 2],
-        pred_ret24=all_ret_preds[:, 2],
-        pred_q10=all_q10_preds[:, 0],
-        pred_q90=all_q90_preds[:, 0],
-        path_reg_pearson_r=path_reg_metrics['pearson_r'],
-        path_cls_f1_macro=path_cls_metrics['f1_macro'],
-    )
+        quantile_metrics = {
+            'ret_pearson_r': 0.0,
+            'interval_coverage': 0.0,
+            'median_interval_width': 0.0,
+            'coverage_error': 0.0,
+            'q10_pinball_loss': 0.0,
+            'q90_pinball_loss': 0.0,
+            'val_score': 0.0,
+        }
 
     metrics = {
         'ret_pearson_r': ret_metrics['pearson_r'],

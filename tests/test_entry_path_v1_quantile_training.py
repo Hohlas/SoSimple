@@ -11,6 +11,7 @@ import sys
 import numpy as np
 import pytest
 import torch
+from torch.utils.data import DataLoader
 
 sys.path.insert(0, '.')
 
@@ -74,10 +75,11 @@ def test_compute_entry_path_v1_quantile_losses_ignore_inactive_rows():
 
 
 def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch):
-    monkeypatch.setattr(
-        tr,
-        'compute_entry_path_v1_quantile_metrics',
-        lambda **kwargs: {
+    captured = {}
+
+    def spy_metrics(**kwargs):
+        captured.update(kwargs)
+        return {
             'ret_pearson_r': 0.11,
             'interval_coverage': 0.80,
             'median_interval_width': 0.25,
@@ -85,7 +87,12 @@ def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch)
             'q10_pinball_loss': 0.01,
             'q90_pinball_loss': 0.02,
             'val_score': 0.73,
-        },
+        }
+
+    monkeypatch.setattr(
+        tr,
+        'compute_entry_path_v1_quantile_metrics',
+        spy_metrics,
     )
     monkeypatch.setattr(
         tr,
@@ -101,24 +108,64 @@ def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch)
         },
     )
 
-    dataset = [
-        (
-            torch.zeros(2, 3, dtype=torch.float32),
-            torch.zeros(2, 9, dtype=torch.float32),
-            torch.tensor([1, 2], dtype=torch.int64),
-            torch.ones(2, 2, dtype=torch.bool),
-            torch.tensor([1, 1], dtype=torch.int64),
-        )
-    ]
+    class _ActiveOnlyModel(torch.nn.Module):
+        def forward(self, x, mask=None):
+            batch = x.shape[0]
+            return {
+                'ret': torch.zeros(batch, 3, dtype=torch.float32),
+                'path_reg': torch.zeros(batch, 6, dtype=torch.float32),
+                'path_cls': torch.zeros(batch, 3, dtype=torch.float32),
+                'ret_q10': torch.tensor([[99.0], [1.0], [2.0]], dtype=torch.float32),
+                'ret_q90': torch.tensor([[199.0], [3.0], [4.0]], dtype=torch.float32),
+            }
+
+    dataset = dl.EntryPathDataset(
+        X=np.zeros((3, 2, 3), dtype=np.float32),
+        y_reg=np.zeros((3, 9), dtype=np.float32),
+        y_cls=np.array([0, 1, 2], dtype=np.int64),
+        mask=np.ones((3, 2), dtype=bool),
+        signal=np.array([0, 1, -1], dtype=np.int64),
+    )
+    loader = DataLoader(dataset, batch_size=3, shuffle=False)
 
     loss, metrics = tr.validate_entry_path_v1_quantile(
-        model=_DummyQuantileModel(),
-        val_loader=dataset,
+        model=_ActiveOnlyModel(),
+        val_loader=loader,
         device=torch.device('cpu'),
     )
 
     assert loss == pytest.approx(0.0, abs=1e-12)
     assert metrics['val_score'] == pytest.approx(0.73)
+    assert len(captured['true_ret']) == 2
+    assert captured['pred_q10'].tolist() == [1.0, 2.0]
+    assert captured['pred_q90'].tolist() == [3.0, 4.0]
+
+
+def test_create_test_loader_reuses_entry_path_cache_for_quantile_task(monkeypatch, tmp_path):
+    monkeypatch.setattr(dl, 'DATA_DIR', tmp_path)
+    monkeypatch.setattr(dl, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
+
+    tmp_path.joinpath('Nero_test_labeled.csv').write_text('time;signal;predict;ATR\n1;1;0;1\n', encoding='utf-8')
+    np.save(tmp_path / 'X_test.npy', np.arange(3 * 4 * 20, dtype=np.float32).reshape(3, 4, 20))
+    np.save(tmp_path / 'mask_test.npy', np.ones((3, 4), dtype=bool))
+    np.save(tmp_path / 'y_test_entry_path_v1_reg.npy', np.arange(27, dtype=np.float32).reshape(3, 9))
+    np.save(tmp_path / 'y_test_entry_path_v1_cls.npy', np.array([0, 1, 2], dtype=np.int64))
+    np.save(tmp_path / 'y_test_entry_path_v1_signal.npy', np.array([0, 1, -1], dtype=np.int64))
+
+    loader = dl.create_test_loader(
+        batch_size=3,
+        target=ENTRY_PATH_V1_QUANTILE_TARGET,
+        seq_len=2,
+        clear_cache=False,
+        num_workers=0,
+    )
+
+    batch = next(iter(loader))
+    assert len(batch) == 5
+    assert batch[0].shape == (3, 2, 20)
+    assert batch[1].shape == (3, 9)
+    assert batch[2].tolist() == [0, 1, 2]
+    assert batch[4].tolist() == [0, 1, -1]
 
 
 def test_train_model_routes_entry_path_v1_quantile_through_entry_path_loader_and_checkpoint(monkeypatch, tmp_path):
