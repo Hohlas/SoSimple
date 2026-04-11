@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, устойчив ли `entry_path_v1_quantile` как реальный апгрейд над frozen baseline `A @ 7.5%` на нескольких `seed`, годовых срезах и sequential-проверке
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-11-entry-path-v1-quantile-robustness.md`, `docs/superpowers/plans/2026-04-11-triple-barrier-mt4-matched-python-eval.md`
-> **Related commit**: pending
+> **Related commit**: 11b7005
 
 ## Context
 
