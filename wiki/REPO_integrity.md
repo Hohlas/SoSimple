@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-11 11:17 UTC · git `1c5bf92`
+> Auto-generated 2026-04-11 11:18 UTC · git `379171c`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 605 files  ·  **Commit**: `1c5bf92`  ·  **Generated**: 2026-04-11 11:17 UTC
+**Tracked**: 605 files  ·  **Commit**: `379171c`  ·  **Generated**: 2026-04-11 11:18 UTC
 
 ## Root Docs
 
@@ -103,7 +103,7 @@
 | [docs/reports/2026-04-09-entry-path-v1-loss-weighting.md](docs/reports/2026-04-09-entry-path-v1-loss-weighting.md) |  | 2026-04-09 | 7KB | `79f4b733` |
 | [docs/reports/2026-04-09-mt4-parity-check-winner.md](docs/reports/2026-04-09-mt4-parity-check-winner.md) |  | 2026-04-09 | 8KB | `a8467fad` |
 | [docs/reports/2026-04-10-entry-path-v1-quantile.md](docs/reports/2026-04-10-entry-path-v1-quantile.md) |  | 2026-04-10 | 6KB | `d4fef0e4` |
-| [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md) |  | 2026-04-11 | 8KB | `979dc61a` |
+| [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md) |  | 2026-04-11 | 8KB | `90e12828` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
