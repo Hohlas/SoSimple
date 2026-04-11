@@ -10,7 +10,7 @@
 |------|-----------|--------------|--------|
 | [statistics.py](statistics.py) | Потоковая статистика (Welford, Reservoir sampling) | `Nero.csv` → `.json`, `.csv` | 🏁 |
 | [EDA.ipynb](EDA.ipynb) | Разведочный анализ данных | `Nero_train_labeled.csv` → `plots/`, `reports/` | 🏁 |
-| [signal_tracer.py](signal_tracer.py) | Trade-level reconciliation: ML vs MT4 | ml_signals.csv + labeled CSV + updn_params.npy + MT4 log → dossiers, CSV | ✅ |
+| [signal_tracer.py](signal_tracer.py) | Trade-level reconciliation: legacy ML, direct MLP parity, TB vs MT4 | ml_signals.csv/ml_signals_tb.csv + labeled CSV + updn_params.npy + MT4 log → dossiers, CSV | ✅ |
 
 > Легенда: ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
@@ -33,7 +33,7 @@ python statistics/signal_tracer.py --time "2023.01.03 04:00"
 # signal_tracer: batch-анализ top-N сигналов
 python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
 
-# signal_tracer: разбор сделок из MT4 лога
+# signal_tracer: разбор legacy/TB/MLP сделок из MT4 лога
 python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --losses-only --csv-out losses.csv
 ```
 

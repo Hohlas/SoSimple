@@ -9,6 +9,7 @@
 | Файл | Назначение | Вход → Выход | Статус |
 |------|-----------|--------------|--------|
 | [generate_signals.py](generate_signals.py) | Генерация CSV с ML-сигналами для MT4 тестера | checkpoints + labeled CSV → `MT/MQL4/Files/ml_signals.csv` | ✅ |
+| [export_entry_path_v1_quantile_signals.py](export_entry_path_v1_quantile_signals.py) | Экспорт frozen `entry_path_v1_quantile` winner в `time;signal` CSV для MT4 | seed report dir + frozen rule → `ml_signals.csv` | ✅ |
 | [exit_policy_research.py](exit_policy_research.py) | Validation-first offline research для ML exit / position management | `ml_signals.csv` + OHLC + split catalogs → stdout ranking / frozen policy JSON | 🔬 |
 | [api_server.py](api_server.py) | REST API (FastAPI) для приёма фракталов от MT4 в реальном времени | HTTP request → ML prediction | 🔬 |
 | [test_api_client.py](test_api_client.py) | Тестовый клиент для api_server.py | test CSV → HTTP requests | 🔬 |
@@ -32,6 +33,13 @@ python -m API.generate_signals --conformal
 
 # Triple Barrier сигналы
 python -m API.generate_signals --task triple_barrier --theta 0.6
+
+# Frozen quantile signals for MT4
+python -m API.export_entry_path_v1_quantile_signals \
+  --seed-dir ML/reports/entry_path_v1_quantile_robustness/seed_123 \
+  --split test \
+  --output MT/tester/files/ml_signals.csv \
+  --copy-to-mt4
 
 # Path atlas research
 python -m API.signal_path_atlas --test-only

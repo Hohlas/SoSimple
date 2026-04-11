@@ -47,6 +47,15 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 - при `ML_UseScoreFilter=true` сам применит порог `ML_ScoreThreshold`;
 - если колонки нет, score-фильтр для этого файла автоматически отключится.
 
+Важно: этот вариант подходит для простого score-based runtime, но **не заменяет** quantile winner `lb_gt_m`.
+
+Причина:
+
+- quantile winner зависит не только от `pred_ret_24_dir_atr`;
+- он зависит от `lb`, восстановленного через `q10/q90 + correction`.
+
+Поэтому для `entry_path_v1_quantile` в MT4 нужно подавать уже заранее отфильтрованный `time;signal`, а не рассчитывать, что `ML_ScoreThreshold` внутри эксперта повторит ту же логику.
+
 ---
 
 ## 3. Какой CSV класть в тестер
@@ -68,6 +77,27 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 Если у тебя уже настроен симлинк на каталог проекта, достаточно обновить сам источник.
 
+### Для `entry_path_v1_quantile`
+
+Для quantile parity-check правильный путь теперь такой:
+
+```bash
+./.venv/bin/python -m API.export_entry_path_v1_quantile_signals \
+  --seed-dir ML/reports/entry_path_v1_quantile_robustness/seed_123 \
+  --split test \
+  --output MT/tester/files/ml_signals.csv \
+  --copy-to-mt4
+```
+
+Что делает этот CLI:
+
+- читает frozen rule из `entry_path_v1_quantile_filter_selected_rule.json`;
+- берёт prediction CSV выбранного split;
+- применяет уже замороженный quantile winner без re-fit;
+- пишет полный `time;signal`.
+
+Это и есть канонический способ готовить CSV для MT4 по quantile winner.
+
 ---
 
 ## 4. Как сейчас исполняется сигнал
@@ -87,13 +117,13 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 ## 5. Рекомендуемые параметры для parity-check
 
-Для первого прогона:
+Для базового score-only parity-check:
 
 | Параметр | Значение | Зачем |
 |---|---:|---|
 | `iSignal` | `3` | включает прямой режим |
 | `Risk` | `0` | фиксированный лот в тестере |
-| `ML_HoldBars` | `12` | базовое удержание |
+| `ML_HoldBars` | `12` | базовое удержание для старого score-only прогона |
 | `ML_AllowReversal` | `false` | сначала без досрочного reverse-close |
 | `ML_UseScoreFilter` | `true` | если подаётся полный prediction CSV |
 | `ML_ScoreThreshold` | `-0.03594103` | текущий frozen-порог winner A@7.5% |
@@ -103,6 +133,18 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 - оставить `ML_UseScoreFilter=true` — он сам выключится, если колонки score нет;
 - либо явно поставить `ML_UseScoreFilter=false`.
+
+Для `entry_path_v1_quantile` предпочтителен именно этот режим: уже заранее отфильтрованный `time;signal`.
+
+Для текущего quantile parity-check используйте:
+
+| Параметр | Значение | Почему |
+|---|---:|---|
+| `iSignal` | `3` | прямой parity-mode |
+| `ML_HoldBars` | `24` | совпадает с frozen `sequential_hold_bars` |
+| `ML_AllowReversal` | `false` | соответствует текущему benchmark-контуру |
+| `ML_UseScoreFilter` | `false` | CSV уже предфильтрован в Python |
+| `ML_ScoreThreshold` | не используется | quantile winner не сводится к одному score threshold |
 
 ---
 

@@ -34,3 +34,13 @@
   - final verdict `go_mt4`
 - Updated `wiki/index.md` coverage from 9 to 10 reports
 - Regenerated `wiki/REPO_integrity.md`
+
+## [2026-04-11] ingest | Quantile MT4 parity stage synced into wiki
+- Added report `docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md`
+- Updated `wiki/research/execution-tracks.md` with quantile MT4 parity verdict:
+  - exporter dedupe fix `keep='last'`
+  - canonical export `8872` rows / `8` active signals
+  - MT4 result `PF=58.88`, `7W/1L`, `DD=2.85%`
+  - reconciliation artifact `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`
+- Updated `wiki/index.md` coverage from 10 to 11 reports
+- Regenerated `wiki/REPO_integrity.md`

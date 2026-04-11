@@ -1,25 +1,24 @@
 # signal_tracer.py — Trade-Level Reconciliation
 
-> **Версия**: v2.4 (2026-04-09)
-> **Назначение**: Диагностика расхождения между Python и MT4 для двух ML-треков: legacy `regression_updn` и `triple_barrier`
+> **Версия**: v2.5 (2026-04-11)
+> **Назначение**: Диагностика расхождения между Python и MT4 для трёх ML-треков: legacy `regression_updn`, direct `MLP` parity и `triple_barrier`
 > **Тип**: Инструмент анализа, 3 режима работы
 
 ---
 
 ## Обзор
 
-`statistics/signal_tracer.py` сейчас умеет разбирать **два execution track**:
+`statistics/signal_tracer.py` сейчас умеет разбирать **три execution track**:
 
 - **legacy track**: `ml_signals.csv` с полями `pred_up / pred_dn / ratio_up / ratio_dn`, где SL/TP восстанавливаются по формуле legacy runtime из `lib_ML_Signal_back.mqh`;
+- **MLP direct track**: новый прямой parity-лог `MLP CLOSE BUY/SELL ...`, где сигнал уже предфильтрован в Python как `time;signal`;
 - **TB track**: `ml_signals_tb.csv` с полями `sl_atr / tp_atr / prob / ev`, где исход сделки сравнивается с path-ordered TB labels из `DATA/Nero_*_labeled.csv`.
 
 Важно:
 
-- текущий активный `lib_ML_Signal.mqh` уже работает в другом режиме: прямое исполнение parity-check CSV;
-- строки `MLP BUY / SELL / CLOSE / SKIP` этим tracer пока **не разбираются**;
-- для старого `regression_updn` нужно ориентироваться именно на backup-файл `lib_ML_Signal_back.mqh`.
-
-Это означает, что скрипт покрывает исторический legacy runtime и TB runtime, но не новый прямой `MLP`-контур.
+- для direct-mode основной источник истины — строки `MLP CLOSE BUY/SELL ...`, потому что именно они уже содержат фактический entry/exit и `pnl_atr`;
+- для старого `regression_updn` нужно ориентироваться именно на backup-файл `lib_ML_Signal_back.mqh`;
+- direct `MLP` track не восстанавливает synthetic SL/TP формулу, потому что этот runtime живёт не через legacy ratio-логику.
 
 Важно: сам tracer готов к TB runtime-сверке, но полноценный verdict всё равно требует **свежий MT4 tester log**.
 
@@ -42,6 +41,12 @@ python statistics/signal_tracer.py \
   --from-log MT/tester/logs/20260408_tb.log \
   --signals MT/MQL4/Files/ml_signals_tb.csv \
   --csv-out tb_reconciliation.csv
+
+# From-Log: direct MLP сделки из MT4 лога
+python statistics/signal_tracer.py \
+  --from-log MT/tester/logs/20260411.log \
+  --signals MT/MQL4/Files/ml_signals.csv \
+  --csv-out quantile_reconciliation.csv
 ```
 
 ---
@@ -94,6 +99,26 @@ python statistics/signal_tracer.py \
 
 Этот режим нужен для честной runtime-сверки уже после validation-first freeze.
 
+### 3. Direct `MLP` parity mode
+
+Используются:
+
+- `MT/MQL4/Files/ml_signals.csv` в формате `time;signal`
+- MT4 log строки вида:
+  - `MLP CLOSE BUY reason=Timeout signal_time=... entry_time=... exit_time=... hold_bars=... entry=... exit=... atr=... pnl_atr=...`
+  - `MLP CLOSE SELL ...`
+
+Что делает tracer:
+
+- читает фактические сделки напрямую из `MLP CLOSE ...`;
+- строит reconciliation по `signal_time`;
+- экспортирует `entry_time`, `exit_time`, `close_reason`, `mt4_result`, `mt4_pnl_atr`.
+
+Важно:
+
+- direct `MLP` track не использует legacy формулу `ratio -> SL/TP`;
+- если CSV для MT4 был заранее предфильтрован в Python, это и есть правильный режим для quantile parity-check.
+
 ---
 
 ## Три режима работы
@@ -132,7 +157,11 @@ python statistics/signal_tracer.py \
    - deltas между Python и MT4.
 4. По желанию пишется `--csv-out`.
 
-`--from-log` понимает и legacy строки `ML BUY/SELL ...`, и TB строки `TB BUY/SELL ...`.
+`--from-log` понимает:
+
+- legacy строки `ML BUY/SELL ...`
+- direct строки `MLP CLOSE BUY/SELL ...`
+- TB строки `TB BUY/SELL ...`
 
 ---
 

@@ -100,6 +100,15 @@ void EXPERT::MAIN() {
    - при `ML_AllowReversal=true` может закрыть позицию по обратному сигналу.
 4. Если позиция удерживается дольше `ML_HoldBars`, закрывает её по таймауту.
 
+Практический порядок проверки внутри `ML_TRADE()` такой:
+
+1. сначала `Timeout`;
+2. потом `ReverseSignal`;
+3. потом `PosBlock`;
+4. только если позиции нет, возможен новый вход.
+
+Это значит, что если на одном и том же баре одновременно выполняются условия таймаута и обратного сигнала, в лог и в поведение попадёт именно `Timeout`.
+
 ### 2.4 Временное выравнивание
 
 Практический смысл текущей реализации такой:
@@ -192,6 +201,9 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 Причина в логе: `MLP_ReverseSignal`.
 
+Важный нюанс: reversal срабатывает только если обратный сигнал проходит тот же `score`-фильтр.
+Если обратный сигнал есть, но не проходит `ML_ScoreThreshold`, позиция не закрывается и отдельный `PosBlock` для такого сигнала не пишется.
+
 ### 5.3 Что в этом режиме НЕ используется
 
 При `iSignal=3` не работают старые выходы из [OUTPUT.mqh](../../MT/MQL4/Include/OUTPUT.mqh):
@@ -220,6 +232,12 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 | `ML_UseScoreFilter` | применять ли порог по `pred_ret_24_dir_atr`, если колонка есть |
 | `ML_ScoreThreshold` | порог score для текущего winner |
 | `ML_BackStopATR` | дальний страховочный SL |
+
+Практический нюанс для текущего `entry_path_v1_quantile` parity-check:
+
+- в MT4 должен стоять `ML_HoldBars=24`, потому что frozen Python-rule использует `sequential_hold_bars=24`;
+- если в MT4 подаётся уже выпущенный Python-экспорт `time;signal`, `ML_UseScoreFilter` лучше держать выключенным явно;
+- старый `ML_ScoreThreshold=-0.03594103` относится к baseline `A @ 7.5%` и не воспроизводит quantile winner `lb_gt_m`.
 
 Параметры старого runtime в этом режиме больше не определяют торговое решение:
 
@@ -276,6 +294,12 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 - `MLP SKIP reason=ScoreFilter ...`
 - `MLP SKIP reason=PosBlock ...`
+
+Нюансы текущей реализации:
+
+- `PosBlock` пишется только для ненулевого сигнала, который уже прошёл `score`-фильтр;
+- если сигнал отфильтрован по score, пишется только `ScoreFilter`, без `PosBlock`;
+- `PosBlock` может относиться не только к открытой рыночной позиции, но и к состоянию `open=pending`.
 
 Эти строки и являются основой для последующего разбора parity-check.
 

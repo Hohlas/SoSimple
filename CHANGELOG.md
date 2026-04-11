@@ -2,6 +2,39 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-11] — Entry Path v1 Quantile: MT4 parity подтверждён
+
+### Добавлено
+- `API/export_entry_path_v1_quantile_signals.py`: канонический exporter frozen quantile winner `lb_gt_m` в `time;signal` для MT4
+- `tests/test_export_entry_path_v1_quantile_signals.py`
+- `tests/test_signal_tracer_mlp.py`
+- `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`: trade-level сверка direct `MLP`-прогона
+
+### Изменено
+- `statistics/signal_tracer.py`: добавлена поддержка direct `MLP CLOSE BUY/SELL` логов и отдельный `mlp` dossier path
+- `docs/MT/trading_strategy.md` и `docs/MT/ml_signal_integration.md`: синхронизированы с реальной логикой `ML_TRADE()` и новым quantile export path
+- `MT/tester/$o$imple.ini`: quantile parity зафиксирован на `ML_HoldBars=24`, `ML_AllowReversal=0`, `ML_UseScoreFilter=0`
+
+### Исправлено
+- `API/export_entry_path_v1_quantile_signals.py`: дубликаты `time` теперь схлопываются как в MT4 (`keep='last'`), поэтому Python export и MQL execution больше не расходятся по числу сигналов
+
+### Результаты
+- после исправления exporter-а канонический `ml_signals.csv` для quantile-layer содержит `8872` строк и `8` активных сигналов (`4 BUY`, `4 SELL`)
+- MT4 tester по `20260411.log` показал:
+  - `8` сделок
+  - `PF=58.88`
+  - `net=2951.63`
+  - `DD=2.85%`
+  - `7W / 1L`
+- log counters и reconciliation полностью согласованы:
+  - `Opened=8`
+  - `Timeout closes=8`
+  - `Position blocked=0`
+  - `Score filtered=0`
+
+### Вывод
+`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md](docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
+
 ## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
 
 ### Добавлено

@@ -1,9 +1,10 @@
 # =============================================================================
 # Файл: statistics/signal_tracer.py
 # Назначение: Trade-level reconciliation — диагностика расхождения
-#             между Python и MT4 для legacy regression_updn и Triple Barrier треков
+#             между Python и MT4 для legacy regression_updn, direct MLP parity
+#             и Triple Barrier треков
 # Язык: Python 3.11+
-# Обновлён: 2026-04-08
+# Обновлён: 2026-04-11
 # Зависимости:
 #   Входные данные:
 #     - MT/MQL4/Files/ml_signals.csv       (legacy ML предсказания: pred_up, pred_dn, ratio)
@@ -11,7 +12,7 @@
 #     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; up/dn и TB labels)
 #     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,2))
 #     - MT/tester/$o$imple.ini             (legacy параметры: ML_MinRatio, ML_ScaleK и др.)
-#     - MT/tester/logs/YYYYMMDD.log        (--from-log: ML BUY/SELL ... или TB BUY/SELL ... из MT4)
+#     - MT/tester/logs/YYYYMMDD.log        (--from-log: ML BUY/SELL ..., MLP CLOSE ... или TB BUY/SELL ... из MT4)
 #   Выходные данные:
 #     - stdout (досье сигналов, сводные таблицы)
 #     - [--csv-out PATH].csv               (экспорт для Excel/Python)
@@ -252,6 +253,8 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     """
     if 'sl_atr' in signal_row and 'tp_atr' in signal_row:
         return build_tb_dossier(target_time, signal_row, nero_cols, fractal, mt4_trade=mt4_trade)
+    if mt4_trade and mt4_trade.get('track') == 'mlp':
+        return build_mlp_dossier(target_time, signal_row, fractal, mt4_trade=mt4_trade)
 
     d = {'time': target_time}
 
@@ -385,6 +388,48 @@ def build_dossier(target_time, signal_row, nero_cols, fractal, params, mt4_trade
     return d
 
 
+def build_mlp_dossier(target_time, signal_row, fractal, mt4_trade):
+    sig = int(signal_row.get('signal', 0))
+    d = {
+        'time': target_time,
+        'track': 'mlp',
+        'signal': sig,
+        'direction': 'BUY' if sig == 1 else 'SELL' if sig == -1 else 'FLAT',
+        'ratio': 0.0,
+        'entry_time': mt4_trade.get('entry_time'),
+        'exit_time': mt4_trade.get('exit_time'),
+        'hold_bars': mt4_trade.get('hold_bars'),
+        'close_type': mt4_trade.get('close_type'),
+        'close_reason': mt4_trade.get('close_reason'),
+        'val': mt4_trade.get('val'),
+        'close_price': mt4_trade.get('close_price'),
+        'atr_mt4': mt4_trade.get('atr_mt4'),
+        'mt4_pnl_atr': mt4_trade.get('mt4_pnl_atr'),
+    }
+
+    if fractal is not None:
+        atr = fractal['fractal_atr']
+        d['price'] = fractal['price']
+        d['atr'] = atr
+        signal_time_unix = time_str_to_unix(target_time)
+        fractal_time_unix = fractal['fractal_time']
+        lag_seconds = signal_time_unix - fractal_time_unix
+        d['lag_bars'] = lag_seconds / 3600
+        d['lag_seconds'] = lag_seconds
+
+    cp = mt4_trade.get('close_price')
+    val = mt4_trade.get('val')
+    if cp is not None and val is not None:
+        if mt4_trade['dir'] == 'BUY':
+            d['mt4_pnl_pips'] = cp - val
+            d['mt4_result'] = 'WIN(MKT)' if cp > val else 'LOSS(MKT)'
+        else:
+            d['mt4_pnl_pips'] = val - cp
+            d['mt4_result'] = 'WIN(MKT)' if cp < val else 'LOSS(MKT)'
+
+    return d
+
+
 def build_tb_dossier(target_time, signal_row, nero_cols, fractal, mt4_trade=None):
     d = {'time': target_time, 'track': 'tb'}
 
@@ -502,6 +547,20 @@ def print_dossier(d, params):
     print(f"\n{'='*60}")
     print(f"  ДОСЬЕ СИГНАЛА: {d['time']}")
     print(f"{'='*60}")
+
+    if d.get('track') == 'mlp':
+        print(f"\n--- MLP Direct Mode ---")
+        print(f"  Направление : {d['direction']} ({d['signal']})")
+        print(f"  Entry time  : {d.get('entry_time', '?')}")
+        print(f"  Exit time   : {d.get('exit_time', '?')}")
+        print(f"  Hold bars   : {d.get('hold_bars', '?')}")
+        print(f"  Close reason: {d.get('close_reason', '?')}")
+        print(f"  Entry price : {d.get('val', float('nan'))}")
+        print(f"  Exit price  : {d.get('close_price', float('nan'))}")
+        print(f"  ATR (MT4)   : {d.get('atr_mt4', float('nan'))}")
+        print(f"  MT4 result  : {d.get('mt4_result', '?')}")
+        print(f"  PnL (ATR)   : {d.get('mt4_pnl_atr', float('nan'))}")
+        return
 
     if d.get('track') == 'tb':
         print(f"\n--- TB Оценка ---")
@@ -697,6 +756,14 @@ RE_TB_ENTRY = re.compile(
     r'TB (BUY|SELL) prob=([-\d.]+) ev=([-\d.]+) SL=([-\d.]+)ATR TP=([-\d.]+)ATR '
     r'Val=([\d.]+) Stp=([\d.]+) Prf=([\d.]+) ATR=([\d.]+) bar=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2})'
 )
+RE_MLP_CLOSE = re.compile(
+    r'MLP CLOSE (BUY|SELL) reason=([A-Za-z]+) '
+    r'signal_time=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}) '
+    r'entry_time=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}) '
+    r'exit_time=(\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}) '
+    r'hold_bars=(\d+) '
+    r'entry=([-\d.]+) exit=([-\d.]+) atr=([-\d.]+) pnl_atr=([-\d.]+)'
+)
 RE_OPEN    = re.compile(r'open #(\d+) (buy|sell)')
 RE_SL      = re.compile(r'Tester: stop loss #(\d+)')
 RE_TP      = re.compile(r'Tester: take profit #(\d+)')
@@ -732,6 +799,26 @@ def parse_log(log_path):
 
     with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
         for line in f:
+            m = RE_MLP_CLOSE.search(line)
+            if m:
+                direction = m.group(1)
+                results.append({
+                    'track': 'mlp',
+                    'dir': direction,
+                    'bar_time': m.group(3),
+                    'entry_time': m.group(4),
+                    'exit_time': m.group(5),
+                    'hold_bars': int(m.group(6)),
+                    'val': float(m.group(7)),
+                    'close_price': float(m.group(8)),
+                    'atr_mt4': float(m.group(9)),
+                    'mt4_pnl_atr': float(m.group(10)),
+                    'close_type': 'MARKET',
+                    'close_reason': m.group(2),
+                    'order_num': None,
+                })
+                continue
+
             m = RE_ML_ENTRY.search(line)
             if m:
                 pending = {

@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-11
-sources: 10
+sources: 11
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 10 отчётов (2026-04-08 — 2026-04-11). Параллельные направления execution.
+> Синтез 11 отчётов (2026-04-08 — 2026-04-11). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -149,7 +149,49 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 **Вывод**: `entry_path_v1_quantile` вышел из статуса low-N гипотезы и стал главным подтверждённым кандидатом на следующий MT4 parity-check. Это уже не просто сильный single-run, а устойчивый multi-seed upgrade над baseline `A @ 7.5%`.
 
-Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), [2026-04-11-entry-path-v1-quantile-robustness.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md)
+### Quantile MT4 Parity (04-11)
+
+После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
+
+Ключевой технический результат этапа:
+
+- расхождение оказалось не в MQL, а в Python exporter-е;
+- исходный export содержал дубликаты `time`, поэтому Python видел `9378` строк и `16` активных сигналов;
+- `lib_ML_Signal.mqh` при загрузке CSV оставляет последнюю строку для каждого времени;
+- после исправления exporter-а на `keep='last'` канонический CSV стал совпадать с реальным MT4 runtime.
+
+Итоговый quantile export:
+
+| Metric | Value |
+|---|---:|
+| Rows | `8872` |
+| Active signals | `8` |
+| BUY / SELL | `4 / 4` |
+
+MT4 result по `20260411.log`:
+
+| Metric | Value |
+|---|---:|
+| Trades | `8` |
+| PF | **58.88** |
+| Net profit | `2951.63` |
+| Drawdown | `2.85%` |
+| Win / Loss | `7 / 1` |
+
+Trade-level reconciliation был сохранён отдельно:
+
+- `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`
+
+Счётчики в логе и reconciliation совпали:
+
+- `Opened = 8`
+- `Timeout closes = 8`
+- `Position blocked = 0`
+- `Score filtered = 0`
+
+**Вывод**: `entry_path_v1_quantile` теперь подтверждён не только как robust Python-upgrade, но и как реальный MT4 execution mode. Следующий вопрос уже продуктовый: переводить ли quantile-layer в основной execution contour.
+
+Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), [2026-04-11-entry-path-v1-quantile-robustness.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md), [2026-04-11-entry-path-v1-quantile-mt4-parity.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
 
 ## Сравнение треков (на сегодня)
 
@@ -158,11 +200,11 @@ Offline simulator поверх regression_updn для сравнения сем�
 | regression_updn + exit | PF~1.05 (OOS) | Production | Нет uplift от exit layer |
 | Triple Barrier | PF=1.11 (test), 1.27 (MT4) | Validation-locked | Python-режим = MT4 execution |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Унести MT4 export path в main |
-| entry_path_v1_quantile | PF=inf median (5 seeds), worst support 20 trades | Multi-seed robust | MT4 parity-check |
+| entry_path_v1_quantile | PF=58.88 (MT4, 8 trades), median test PF=inf (5 seeds) | MT4 confirmed | Decide primary execution status |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Подтвердится ли `entry_path_v1_quantile` в MT4 так же, как он подтвердился в Python robustness-pass?
+1. Достаточно ли текущего quantile MT4 support (`8` сделок) для перевода слоя в основной execution mode, или нужен ещё один operational confirmation run?
 2. TB + MT4-matching в Python: насколько сократится разрыв 253 vs 92 trades?
 3. Нужно ли объединять `entry_path_v1` / quantile-layer с фильтром `fav_3_vs_12`, или это только усложнит рабочую базу без надёжного прироста?
