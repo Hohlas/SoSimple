@@ -1,0 +1,9 @@
+{
+  "seed_count": 5,
+  "same_rule_count": 5,
+  "median_test_pf": Infinity,
+  "median_sequential_pf": Infinity,
+  "worst_seed_test_trades": 20,
+  "negative_year_slices": 0,
+  "verdict": "go_mt4"
+}

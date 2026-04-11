@@ -1,0 +1,9 @@
+{
+  "seed_count": 3,
+  "same_rule_count": 3,
+  "median_test_pf": Infinity,
+  "median_sequential_pf": Infinity,
+  "worst_seed_test_trades": 20,
+  "negative_year_slices": 0,
+  "verdict": "needs_more_research"
+}

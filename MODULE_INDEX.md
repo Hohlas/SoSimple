@@ -67,6 +67,10 @@
 | [entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | → filtered signals | — | ✅ |
 | [export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | checkpoint → `reports/entry_path_v1_quantile_*_predictions.csv` | — | ✅ |
 | [benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | prediction CSVs + frozen rule → reports | — | ✅ |
+| [entry_path_v1_quantile_robustness.py](ML/entry_path_v1_quantile_robustness.py) | Multi-seed robustness helpers: per-seed load, yearly/rolling slices, aggregate verdict | seed reports → `runs/yearly/rolling/summary` | — | ✅ |
+| [benchmark_entry_path_v1_quantile_robustness.py](ML/benchmark_entry_path_v1_quantile_robustness.py) | CLI-агрегатор robustness-pass для `entry_path_v1_quantile` | seed report dirs → aggregate CSV/JSON | — | ✅ |
+| [triple_barrier_mt4_execution.py](ML/triple_barrier_mt4_execution.py) | Python MT4-matched execution simulator для Triple Barrier | prediction rows + rules → trade outcomes | — | ✅ |
+| [benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) | CLI benchmark для MT4-matched Triple Barrier Python-режима | TB predictions + rules → report metrics | — | ✅ |
 | [models/entry_path_transformer.py](ML/models/entry_path_transformer.py) | EntryPathTransformer — специализированный Transformer для entry_path_v1 | (batch, 100, 20) → multi-head output | — | ✅ |
 | [models/entry_path_v1_quantile_transformer.py](ML/models/entry_path_v1_quantile_transformer.py) | EntryPathV1QuantileTransformer — entry_path_v1 + q10/q90 heads | (batch, 100, 20) → multi-head output | — | ✅ |
 | [ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | DataLoader → отчёт | — | 🏁 |
@@ -93,6 +97,7 @@
 | [test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | — | ✅ |
 | [test_entry_path_v1_quantile_reports.py](tests/test_entry_path_v1_quantile_reports.py) | entry_path_v1_quantile export/test report CLI | — | ✅ |
 | [test_entry_path_v1_quantile_filter.py](tests/test_entry_path_v1_quantile_filter.py) | entry_path_v1_quantile frozen-baseline filter benchmark | — | ✅ |
+| [test_entry_path_v1_quantile_robustness.py](tests/test_entry_path_v1_quantile_robustness.py) | `ML/entry_path_v1_quantile_robustness.py` | — | ✅ |
 | [test_benchmark_outcome_targets.py](tests/test_benchmark_outcome_targets.py) | `ML/benchmark_outcome_targets.py` | — | ✅ |
 | [test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | — | ✅ |
 | [test_exit_policy_research.py](tests/test_exit_policy_research.py) | `API/exit_policy_research.py` | — | ✅ |
@@ -100,6 +105,7 @@
 | [test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | — | ✅ |
 | [test_triple_barrier_calibration.py](tests/test_triple_barrier_calibration.py) | EV/calibration helper для Triple Barrier | — | ✅ |
 | [test_triple_barrier_first_touch.py](tests/test_triple_barrier_first_touch.py) | first-touch helper для Triple Barrier разметки | — | ✅ |
+| [test_triple_barrier_mt4_execution.py](tests/test_triple_barrier_mt4_execution.py) | `ML/triple_barrier_mt4_execution.py` | — | ✅ |
 | [test_triple_barrier_training.py](tests/test_triple_barrier_training.py) | transfer-learning kwargs для TB обучения | — | ✅ |
 
 ## Docs
@@ -125,4 +131,4 @@
 ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
 ---
-**Последнее обновление**: 2026-04-09
+**Последнее обновление**: 2026-04-11

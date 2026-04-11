@@ -25,3 +25,12 @@
   - quantile layer for entry_path_v1 (2026-04-10)
 - Updated wiki/index.md coverage from 7 to 9 reports
 - Regenerated wiki/REPO_integrity.md
+
+## [2026-04-11] ingest | Quantile robustness stage synced into wiki
+- Added report `docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md`
+- Updated `wiki/research/execution-tracks.md` with multi-seed robustness verdict:
+  - `same_rule_count = 5`
+  - `negative_year_slices = 0`
+  - final verdict `go_mt4`
+- Updated `wiki/index.md` coverage from 9 to 10 reports
+- Regenerated `wiki/REPO_integrity.md`

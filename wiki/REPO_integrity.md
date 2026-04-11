@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-10 20:15 UTC · git `c7879ad`
+> Auto-generated 2026-04-11 11:17 UTC · git `1c5bf92`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 579 files  ·  **Commit**: `c7879ad`  ·  **Generated**: 2026-04-10 20:15 UTC
+**Tracked**: 605 files  ·  **Commit**: `1c5bf92`  ·  **Generated**: 2026-04-11 11:17 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-10 | 10KB | `368c449c` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-10 | 89KB | `51e51cdc` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-11 | 91KB | `1b109c4c` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-01 | 3KB | `7eaa5505` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-10 | 2KB | `c02cb40f` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-10 | 14KB | `7351ca61` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-11 | 2KB | `3e6e7fb4` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-11 | 15KB | `c0858d38` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
 ## Documentation
@@ -33,7 +33,7 @@
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-03-26 | 6KB | `0ba8e976` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-09 | 5KB | `740938cf` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-09 | 11KB | `0a33d798` |
-| [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-01 | 4KB | `8941f1a9` |
+| [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-11 | 4KB | `5df7ce35` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-03-26 | 2KB | `fa1b6aa7` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-03-26 | 1KB | `55dc11a9` |
@@ -63,6 +63,8 @@
 | [docs/superpowers/plans/2026-04-10-entry-path-adaptive-conformal.md](docs/superpowers/plans/2026-04-10-entry-path-adaptive-conformal.md) |  | 2026-04-10 | 31KB | `155a7325` |
 | [docs/superpowers/plans/2026-04-10-entry-path-cqr.md](docs/superpowers/plans/2026-04-10-entry-path-cqr.md) |  | 2026-04-10 | 24KB | `0f832c74` |
 | [docs/superpowers/plans/2026-04-10-llm-wiki-improvements.md](docs/superpowers/plans/2026-04-10-llm-wiki-improvements.md) |  | 2026-04-10 | 15KB | `fe2b2167` |
+| [docs/superpowers/plans/2026-04-11-entry-path-v1-quantile-robustness.md](docs/superpowers/plans/2026-04-11-entry-path-v1-quantile-robustness.md) |  | 2026-04-11 | 14KB | `74ecdfda` |
+| [docs/superpowers/plans/2026-04-11-triple-barrier-mt4-matched-python-eval.md](docs/superpowers/plans/2026-04-11-triple-barrier-mt4-matched-python-eval.md) |  | 2026-04-11 | 12KB | `fb5613dc` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-07 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-07 | 3KB | `c3de40cb` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-03-23 | 12KB | `82b0860f` |
@@ -101,6 +103,7 @@
 | [docs/reports/2026-04-09-entry-path-v1-loss-weighting.md](docs/reports/2026-04-09-entry-path-v1-loss-weighting.md) |  | 2026-04-09 | 7KB | `79f4b733` |
 | [docs/reports/2026-04-09-mt4-parity-check-winner.md](docs/reports/2026-04-09-mt4-parity-check-winner.md) |  | 2026-04-09 | 8KB | `a8467fad` |
 | [docs/reports/2026-04-10-entry-path-v1-quantile.md](docs/reports/2026-04-10-entry-path-v1-quantile.md) |  | 2026-04-10 | 6KB | `d4fef0e4` |
+| [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md) |  | 2026-04-11 | 8KB | `979dc61a` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
@@ -113,17 +116,20 @@
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
 | [ML/benchmark_entry_path_trade_filter.py](ML/benchmark_entry_path_trade_filter.py) | Бенчмарк entry_path_v1 trade filter | 🏁 | 2026-04-09 | 6KB | `1bc86818` |
 | [ML/benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | ✅ | 2026-04-10 | 12KB | `6ae1ec93` |
+| [ML/benchmark_entry_path_v1_quantile_robustness.py](ML/benchmark_entry_path_v1_quantile_robustness.py) | CLI-агрегатор robustness-pass для `entry_path_v1_quantile` | ✅ | 2026-04-11 | 2KB | `e8c9c255` |
 | [ML/benchmark_outcome_targets.py](ML/benchmark_outcome_targets.py) | Бенчмарк outcome targets: сравнение качества разных таргетов | 🏁 | 2026-04-08 | 14KB | `16753618` |
+| [ML/benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) | CLI benchmark для MT4-matched Triple Barrier Python-режима | ✅ | 2026-04-11 | 2KB | `0f33925b` |
 | [ML/compare_architectures.py](ML/compare_architectures.py) | Сравнение 4 архитектур | 🏁 | 2026-03-23 | 13KB | `103ded09` |
 | [ML/conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | 🏁 | 2026-03-20 | 14KB | `d34cb990` |
 | [ML/conformal/conformal_quantiles.json](ML/conformal/conformal_quantiles.json) |  |  | 2026-03-20 | 399B | `6d9e2e03` |
 | [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-04-10 | 42KB | `2d5baa5e` |
 | [ML/entry_path_task.py](ML/entry_path_task.py) | Entry path task: определения targets, метрики, export helpers | ✅ | 2026-04-09 | 12KB | `618cac0e` |
 | [ML/entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | ✅ | 2026-04-09 | 14KB | `54d61050` |
+| [ML/entry_path_v1_quantile_robustness.py](ML/entry_path_v1_quantile_robustness.py) | Multi-seed robustness helpers: per-seed load, yearly/rolling slices, aggregate verdict | ✅ | 2026-04-11 | 8KB | `240bbcc5` |
 | [ML/entry_path_v1_quantile_task.py](ML/entry_path_v1_quantile_task.py) | Entry path v1 quantile task: export/report helpers и metrics | ✅ | 2026-04-10 | 8KB | `6e03b05a` |
-| [ML/evaluate_test.py](ML/evaluate_test.py) | OOS оценка (profit factor, precision) на тестовой выборке | ✅ | 2026-04-10 | 29KB | `cb7ba908` |
+| [ML/evaluate_test.py](ML/evaluate_test.py) | OOS оценка (profit factor, precision) на тестовой выборке | ✅ | 2026-04-11 | 29KB | `1c30c98c` |
 | [ML/experiment_logger.py](ML/experiment_logger.py) | CSV-логгер экспериментов | 🏁 | 2026-03-23 | 20KB | `390bd6fb` |
-| [ML/export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | ✅ | 2026-04-10 | 6KB | `9a532051` |
+| [ML/export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | ✅ | 2026-04-11 | 6KB | `1c846a08` |
 | [ML/losses.py](ML/losses.py) | FocalLoss, HuberLoss, AsymmetricLoss | ✅ | 2026-03-31 | 9KB | `f7313c67` |
 | [ML/models/__init__.py](ML/models/__init__.py) |  |  | 2026-02-18 | 1KB | `f8ff5fa3` |
 | [ML/models/bilstm.py](ML/models/bilstm.py) | Bi-LSTM | 🏁 | 2026-03-12 | 4KB | `f1b6faea` |
@@ -152,6 +158,23 @@
 | [ML/reports/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_trade_filter_selected_rule.json) |  |  | 2026-04-09 | 1KB | `ead9e11c` |
 | [ML/reports/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-10 | 706B | `0d99ebcd` |
 | [ML/reports/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-10 | 1KB | `f665ab0d` |
+| [ML/reports/entry_path_v1_quantile_robustness/aggregate_3seed/summary.json](ML/reports/entry_path_v1_quantile_robustness/aggregate_3seed/summary.json) |  |  | 2026-04-11 | 208B | `05f10170` |
+| [ML/reports/entry_path_v1_quantile_robustness/aggregate_5seed/summary.json](ML/reports/entry_path_v1_quantile_robustness/aggregate_5seed/summary.json) |  |  | 2026-04-11 | 195B | `9d5b1bfb` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-11 | 706B | `3ce3bafa` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-11 | 1KB | `7eafa96c` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_007/evaluate_test_entry_path_v1_quantile.md](ML/reports/entry_path_v1_quantile_robustness/seed_007/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-11 | 523B | `0da7924d` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-11 | 703B | `d7b353c0` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-11 | 1KB | `ff26ccf0` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_017/evaluate_test_entry_path_v1_quantile.md](ML/reports/entry_path_v1_quantile_robustness/seed_017/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-11 | 523B | `df12b1ec` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_042/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_robustness/seed_042/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-11 | 706B | `0d99ebcd` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_042/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_robustness/seed_042/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-11 | 1KB | `cf944e27` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_042/evaluate_test_entry_path_v1_quantile.md](ML/reports/entry_path_v1_quantile_robustness/seed_042/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-11 | 523B | `03c3cfb6` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_077/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_robustness/seed_077/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-11 | 705B | `f3d56557` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_077/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_robustness/seed_077/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-11 | 1KB | `05383533` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_077/evaluate_test_entry_path_v1_quantile.md](ML/reports/entry_path_v1_quantile_robustness/seed_077/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-11 | 523B | `905dcd7d` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_123/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_robustness/seed_123/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-11 | 713B | `41bacfa2` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_123/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_robustness/seed_123/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-11 | 1KB | `5a780990` |
+| [ML/reports/entry_path_v1_quantile_robustness/seed_123/evaluate_test_entry_path_v1_quantile.md](ML/reports/entry_path_v1_quantile_robustness/seed_123/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-11 | 523B | `47d2d998` |
 | [ML/reports/evaluate_test_H12.md](ML/reports/evaluate_test_H12.md) |  |  | 2026-03-19 | 513B | `8b8eb347` |
 | [ML/reports/evaluate_test_entry_path_v1.md](ML/reports/evaluate_test_entry_path_v1.md) |  |  | 2026-04-09 | 1KB | `36f18e23` |
 | [ML/reports/evaluate_test_entry_path_v1_quantile.md](ML/reports/evaluate_test_entry_path_v1_quantile.md) |  |  | 2026-04-10 | 523B | `03c3cfb6` |
@@ -181,7 +204,8 @@
 | [ML/tb_probability_calibration.py](ML/tb_probability_calibration.py) | Isotonic calibration для TB-вероятностей | 🏁 | 2026-04-08 | 2KB | `502427cf` |
 | [ML/tb_signal_logic.py](ML/tb_signal_logic.py) | Triple Barrier signal logic: parse TB targets, агрегация решений | ✅ | 2026-04-08 | 4KB | `fb0aad88` |
 | [ML/threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | ✅ | 2026-04-08 | 47KB | `478e233a` |
-| [ML/train.py](ML/train.py) | Обучение (--task regression_updn / triple_barrier) | ✅ | 2026-04-10 | 93KB | `f3d5366f` |
+| [ML/train.py](ML/train.py) | Обучение (--task regression_updn / triple_barrier) | ✅ | 2026-04-11 | 94KB | `45c60547` |
+| [ML/triple_barrier_mt4_execution.py](ML/triple_barrier_mt4_execution.py) | Python MT4-matched execution simulator для Triple Barrier | ✅ | 2026-04-11 | 5KB | `a9c8f309` |
 | [ML/utils.py](ML/utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ | 2026-04-08 | 11KB | `5458dccf` |
 
 ## Processing
@@ -236,9 +260,10 @@
 | [tests/test_entry_path_training.py](tests/test_entry_path_training.py) | CLI plumbing для entry_path_v1 обучения | ✅ | 2026-04-09 | 7KB | `00d9071b` |
 | [tests/test_entry_path_v1_quantile_filter.py](tests/test_entry_path_v1_quantile_filter.py) | entry_path_v1_quantile frozen-baseline filter benchmark | ✅ | 2026-04-10 | 4KB | `142bfe32` |
 | [tests/test_entry_path_v1_quantile_model.py](tests/test_entry_path_v1_quantile_model.py) | `ML/models/entry_path_v1_quantile_transformer.py` | ✅ | 2026-04-10 | 1KB | `b9a1044c` |
-| [tests/test_entry_path_v1_quantile_reports.py](tests/test_entry_path_v1_quantile_reports.py) | entry_path_v1_quantile export/test report CLI | ✅ | 2026-04-10 | 8KB | `30925a1f` |
+| [tests/test_entry_path_v1_quantile_reports.py](tests/test_entry_path_v1_quantile_reports.py) | entry_path_v1_quantile export/test report CLI | ✅ | 2026-04-11 | 12KB | `2169c8d7` |
+| [tests/test_entry_path_v1_quantile_robustness.py](tests/test_entry_path_v1_quantile_robustness.py) | `ML/entry_path_v1_quantile_robustness.py` | ✅ | 2026-04-11 | 9KB | `0ac75781` |
 | [tests/test_entry_path_v1_quantile_task.py](tests/test_entry_path_v1_quantile_task.py) | `ML/entry_path_v1_quantile_task.py` — export helpers и quantile metrics | ✅ | 2026-04-10 | 2KB | `294562f5` |
-| [tests/test_entry_path_v1_quantile_training.py](tests/test_entry_path_v1_quantile_training.py) |  |  | 2026-04-10 | 9KB | `9a3a0f3e` |
+| [tests/test_entry_path_v1_quantile_training.py](tests/test_entry_path_v1_quantile_training.py) |  |  | 2026-04-11 | 12KB | `086b4be7` |
 | [tests/test_exit_policy_research.py](tests/test_exit_policy_research.py) | `API/exit_policy_research.py` | ✅ | 2026-04-08 | 4KB | `4c75d18c` |
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-04-08 | 831B | `44529dd9` |
 | [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-04-05 | 5KB | `30c6b7c6` |
@@ -251,6 +276,7 @@
 | [tests/test_trade_target_labels.py](tests/test_trade_target_labels.py) | `processing/label_signals.py` — trade target labels | ✅ | 2026-04-08 | 2KB | `6f50053b` |
 | [tests/test_triple_barrier_calibration.py](tests/test_triple_barrier_calibration.py) | EV/calibration helper для Triple Barrier | ✅ | 2026-04-08 | 745B | `591d7e79` |
 | [tests/test_triple_barrier_first_touch.py](tests/test_triple_barrier_first_touch.py) | first-touch helper для Triple Barrier разметки | ✅ | 2026-04-08 | 1KB | `0aef6c1d` |
+| [tests/test_triple_barrier_mt4_execution.py](tests/test_triple_barrier_mt4_execution.py) | `ML/triple_barrier_mt4_execution.py` | ✅ | 2026-04-11 | 4KB | `985224c1` |
 | [tests/test_triple_barrier_training.py](tests/test_triple_barrier_training.py) | transfer-learning kwargs для TB обучения | ✅ | 2026-04-08 | 1KB | `3c7dd827` |
 
 ## MQL
@@ -572,9 +598,9 @@
 |------|-------------|----------|------|------|
 | [wiki/LLM Wiki_method.md](wiki/LLM Wiki_method.md) |  | 2026-04-10 | 11KB | `68a888b4` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-10 | 1KB | `bc00989e` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-10 | 1KB | `7b784755` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-10 | 8KB | `1456fd39` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-11 | 1KB | `5a540f8d` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-11 | 1KB | `015fc6c6` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-11 | 9KB | `4cfbbe56` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 
@@ -632,9 +658,9 @@
 | [.codex/skills/rebuild-module-index/SKILL.md](.codex/skills/rebuild-module-index/SKILL.md) |  | 2026-04-01 | 2KB | `c47376c5` |
 | [.codex/skills/stage-reporting/SKILL.md](.codex/skills/stage-reporting/SKILL.md) |  | 2026-04-09 | 4KB | `94d35eef` |
 | [.codex/skills/update-docs-on-code-change/SKILL.md](.codex/skills/update-docs-on-code-change/SKILL.md) |  | 2026-04-10 | 3KB | `6960bb8e` |
-| [.codex/skills/wiki/SKILL.md](.codex/skills/wiki/SKILL.md) |  | 2026-04-10 | 8KB | `c55a2a05` |
+| [.codex/skills/wiki/SKILL.md](.codex/skills/wiki/SKILL.md) |  | 2026-04-10 | 8KB | `162d22b4` |
 | [.kilocode/mcp.json](.kilocode/mcp.json) |  | 2026-04-10 | 481B | `14bc1e7d` |
-| [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-05 | 60B | `d4bd1521` |
+| [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-11 | 59B | `1190128e` |
 | [.kilocode/rules-architect/user_rules.md](.kilocode/rules-architect/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
 | [.kilocode/rules-ask/user_rules.md](.kilocode/rules-ask/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
 | [.kilocode/skills/csv-processing/SKILL.md](.kilocode/skills/csv-processing/SKILL.md) |  | 2026-04-01 | 2KB | `8081acc8` |

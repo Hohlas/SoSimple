@@ -2,6 +2,33 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
+
+### Добавлено
+- `ML/entry_path_v1_quantile_robustness.py` и `ML/benchmark_entry_path_v1_quantile_robustness.py`: repeatable multi-seed robustness-оценка для `entry_path_v1_quantile`
+- seed-scoped artifact layout для `entry_path_v1_quantile_robustness/seed_{007,017,042,077,123}`
+- `ML/triple_barrier_mt4_execution.py` и `ML/benchmark_triple_barrier_mt4_execution.py`: Python-контур для будущей MT4-matched оценки Triple Barrier
+
+### Изменено
+- `ML/train.py`: добавлены `--checkpoint-dir` и `--result-dir` для изоляции run-артефактов
+- `ML/evaluate_test.py`: добавлен `--output-dir`
+- `ML/export_entry_path_v1_quantile_predictions.py`: экспорт больше не строит лишние split/loaders для незапрошенных наборов
+- yearly/rolling robustness summary теперь считаются по winner-selected сделкам, а не по всей active universe
+
+### Результаты
+- Полный 5-seed pass (`7, 17, 42, 77, 123`) дал:
+  - `same_rule_count = 5`
+  - `median_test_pf = inf`
+  - `median_sequential_pf = inf`
+  - `worst_seed_test_trades = 20`
+  - `negative_year_slices = 0`
+  - final verdict: `go_mt4`
+- Во всех пяти seed validation winner совпал: `lb_gt_m`
+- `seed_123` подтвердил, что линия держится и без `PF=inf`: frozen test `26 trades`, `PF=25.17`
+
+### Вывод
+`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md)
+
 ## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
 
 ### Добавлено

@@ -124,32 +124,35 @@ def export_predictions(
     model.eval()
 
     requested_splits = splits or DEFAULT_SPLITS
-    train_loader, val_loader, _ = create_data_loaders(
-        batch_size=batch_size,
-        target=ENTRY_PATH_TARGET,
-        use_scaler=False,
-        seq_len=ckpt.get('model_kwargs', {}).get('seq_len', 20),
-        clear_cache=clear_cache,
-        num_workers=num_workers,
-    )
+    seq_len = ckpt.get('model_kwargs', {}).get('seq_len', 20)
+    split_loaders: dict[str, object] = {}
+    split_frames: dict[str, pd.DataFrame] = {}
 
-    split_loaders = {
-        'train': build_ordered_loader(train_loader, batch_size=batch_size, num_workers=num_workers),
-        'validation': build_ordered_loader(val_loader, batch_size=batch_size, num_workers=num_workers),
-        'test': create_test_loader(
+    if 'train' in requested_splits or 'validation' in requested_splits:
+        train_loader, val_loader, _ = create_data_loaders(
             batch_size=batch_size,
-            target=ENTRY_PATH_V1_QUANTILE_TARGET,
-            seq_len=ckpt.get('model_kwargs', {}).get('seq_len', 20),
+            target=ENTRY_PATH_TARGET,
+            use_scaler=False,
+            seq_len=seq_len,
             clear_cache=clear_cache,
             num_workers=num_workers,
-        ),
-    }
+        )
+        if 'train' in requested_splits:
+            split_loaders['train'] = build_ordered_loader(train_loader, batch_size=batch_size, num_workers=num_workers)
+            split_frames['train'] = pd.read_csv(TRAIN_FILE, sep=CSV_SEP, low_memory=False)
+        if 'validation' in requested_splits:
+            split_loaders['validation'] = build_ordered_loader(val_loader, batch_size=batch_size, num_workers=num_workers)
+            split_frames['validation'] = pd.read_csv(VAL_FILE, sep=CSV_SEP, low_memory=False)
 
-    split_frames = {
-        'train': pd.read_csv(TRAIN_FILE, sep=CSV_SEP, low_memory=False),
-        'validation': pd.read_csv(VAL_FILE, sep=CSV_SEP, low_memory=False),
-        'test': pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False),
-    }
+    if 'test' in requested_splits:
+        split_loaders['test'] = create_test_loader(
+            batch_size=batch_size,
+            target=ENTRY_PATH_V1_QUANTILE_TARGET,
+            seq_len=seq_len,
+            clear_cache=clear_cache,
+            num_workers=num_workers,
+        )
+        split_frames['test'] = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
 
     results: dict[str, dict[str, object]] = {}
     for split in requested_splits:

@@ -914,6 +914,7 @@ def train_model(
     clear_cache: bool = False,
     # Transfer learning: загрузить encoder из другого checkpoint
     encoder_ckpt: str | None = None,
+    checkpoint_dir: str | Path | None = None,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -957,7 +958,9 @@ def train_model(
     set_seed(seed)
     device = get_device()
 
-    CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
+    checkpoints_dir = Path(checkpoint_dir) if checkpoint_dir is not None else CHECKPOINTS_DIR
+
+    checkpoints_dir.mkdir(parents=True, exist_ok=True)
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -1354,7 +1357,7 @@ def train_model(
 
             # Суффикс чекпойнта
             suffix = task_checkpoint_suffix(task)
-            checkpoint_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
+            checkpoint_path = checkpoints_dir / f'{model_name}{suffix}_best.pt'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -1978,6 +1981,14 @@ def parse_args() -> argparse.Namespace:
         help='Путь к checkpoint для transfer learning (загружает encoder веса, сбрасывает classifier).'
              ' Пример: ML/checkpoints/transformer_updn_best.pt'
     )
+    parser.add_argument(
+        '--checkpoint_dir', type=str, default=None,
+        help='Каталог для сохранения best checkpoint. По умолчанию ML/checkpoints'
+    )
+    parser.add_argument(
+        '--result_dir', type=str, default=None,
+        help='Каталог для сохранения *_result.json. По умолчанию ML/checkpoints'
+    )
 
     return parser.parse_args()
 
@@ -2062,6 +2073,7 @@ def main():
         seq_len=args.seq_len,
         clear_cache=args.clear_cache,
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
+        checkpoint_dir=Path(args.checkpoint_dir) if getattr(args, 'checkpoint_dir', None) is not None else None,
     )
 
     # Сохраняем результат как JSON
@@ -2188,13 +2200,16 @@ def main():
         }
         suffix = task_checkpoint_suffix(args.task)
 
-    result_path = CHECKPOINTS_DIR / f'{args.model}{suffix}_result.json'
+    result_dir = Path(args.result_dir) if getattr(args, 'result_dir', None) is not None else CHECKPOINTS_DIR
+    result_dir.mkdir(parents=True, exist_ok=True)
+    result_path = result_dir / f'{args.model}{suffix}_result.json'
     with open(result_path, 'w', encoding='utf-8') as f:
         json.dump(result_serializable, f, indent=2, ensure_ascii=False)
     print(f"\n✅ Результат сохранён: {result_path}")
 
     # ── Логирование эксперимента ─────────────────────────────────────────────
-    checkpoint_path = str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
+    checkpoint_dir = Path(args.checkpoint_dir) if getattr(args, 'checkpoint_dir', None) is not None else CHECKPOINTS_DIR
+    checkpoint_path = str(checkpoint_dir / f'{args.model}{suffix}_best.pt')
 
     # Логирование теперь происходит внутри train_model() - дублировать не нужно
     # logger = CSVExperimentLogger()

@@ -1,0 +1,61 @@
+{
+  "winner": {
+    "candidate": "lb_gt_m",
+    "rule": "lb_gt_m",
+    "m": -4.122384149999999,
+    "w": 10.02607995,
+    "trades": 25,
+    "pf": 45.52787392584204,
+    "win_rate": 0.84,
+    "mean_pnl_atr": 3.3586739087999997,
+    "coverage": 0.5,
+    "median_interval_width": 9.542811599999999,
+    "gross_profit": 85.85256199999999,
+    "gross_loss": 1.88571428
+  },
+  "frozen_winner": {
+    "candidate": "lb_gt_m",
+    "rule": "lb_gt_m",
+    "m": -4.122384149999999,
+    "w": 10.02607995,
+    "trades": 26,
+    "pf": Infinity,
+    "win_rate": 1.0,
+    "mean_pnl_atr": 4.177907842307693,
+    "coverage": 0.3611111111111111,
+    "median_interval_width": 9.809581199999998,
+    "gross_profit": 108.62560390000002,
+    "gross_loss": -0.0
+  },
+  "baseline_rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+  "baseline_candidate": "A",
+  "baseline_threshold": -0.03594103,
+  "alpha": 0.1,
+  "correction": 1.0744055999999995,
+  "validation_csv": "ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_validation_predictions.csv",
+  "test_csv": "ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_test_predictions.csv",
+  "validation_summary_path": "ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_validation_summary.csv",
+  "test_summary_path": "ML/reports/entry_path_v1_quantile_robustness/seed_017/entry_path_v1_quantile_filter_test_summary.csv",
+  "validation_m": -4.122384149999999,
+  "validation_w": 10.02607995,
+  "validation_crossed_quantile_rows": 0,
+  "test_crossed_quantile_rows": 0,
+  "sequential_hold_bars": 24,
+  "sequential_summary": {
+    "trades": 8,
+    "accepted_indices": [
+      3407,
+      5397,
+      6422,
+      7049,
+      7236,
+      7477,
+      8141,
+      8294
+    ],
+    "coverage": 0.3076923076923077,
+    "pf": Infinity,
+    "mean_pnl_atr": 3.7993198625,
+    "win_rate": 1.0
+  }
+}

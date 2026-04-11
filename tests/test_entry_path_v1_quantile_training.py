@@ -7,6 +7,7 @@
 # =============================================================================
 
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -256,3 +257,84 @@ def test_train_model_routes_entry_path_v1_quantile_through_entry_path_loader_and
     assert str(captured['checkpoint']).endswith('_entry_path_v1_quantile_best.pt')
     assert result['metric_name'] == 'val_score'
     assert result['best_metric'] == pytest.approx(0.73)
+
+
+def test_train_main_writes_quantile_result_json_to_explicit_result_dir(monkeypatch, tmp_path):
+    checkpoint_dir = tmp_path / 'seed_042' / 'checkpoints'
+    result_dir = tmp_path / 'seed_042' / 'reports'
+    captured = {}
+
+    monkeypatch.setattr(
+        tr,
+        'parse_args',
+        lambda: type(
+            'Args',
+            (),
+            {
+                'model': 'transformer',
+                'task': ENTRY_PATH_V1_QUANTILE_TARGET,
+                'epochs': 1,
+                'batch_size': 2,
+                'lr': 1e-3,
+                'patience': 1,
+                'seed': 42,
+                'focal_gamma': 2.0,
+                'focal_minority_weight': 0.45,
+                'weight_decay': 0.0,
+                'scheduler_patience': 1,
+                'scheduler_factor': 0.5,
+                'regression_loss': 'huber',
+                'asym_over_penalty': 1.0,
+                'asym_under_penalty': 10.0,
+                'use_scaler': False,
+                'metric_mode': 'f1_macro',
+                'min_signal_recall': 0.3,
+                'use_weighted_sampler': False,
+                'optuna_json': None,
+                'seq_len': 20,
+                'clear_cache': False,
+                'model_kwargs': None,
+                'encoder_ckpt': None,
+                'checkpoint_dir': str(checkpoint_dir),
+                'result_dir': str(result_dir),
+            },
+        )()
+    )
+
+    def fake_train_model(**kwargs):
+        captured.update(kwargs)
+        return {
+            'model_name': 'transformer',
+            'task': ENTRY_PATH_V1_QUANTILE_TARGET,
+            'best_metric': 0.73,
+            'metric_name': 'val_score',
+            'best_epoch': 1,
+            'num_parameters': 123,
+            'training_time': 0.1,
+            'best_metrics': {
+                'ret_pearson_r': 0.1,
+                'mae': 0.0,
+                'rmse': 0.0,
+                'r2': 0.0,
+                'path_reg_pearson_r': 0.2,
+                'path_cls_f1_macro': 0.3,
+                'active_path_cls_f1_macro': 0.4,
+                'interval_coverage': 0.8,
+                'median_interval_width': 7.1,
+                'coverage_error': 0.0,
+                'q10_pinball_loss': 0.01,
+                'q90_pinball_loss': 0.02,
+                'val_score': 0.73,
+            },
+        }
+
+    monkeypatch.setattr(tr, 'train_model', fake_train_model)
+
+    tr.main()
+
+    result_path = result_dir / 'transformer_entry_path_v1_quantile_result.json'
+    assert captured['checkpoint_dir'] == checkpoint_dir
+    assert result_path.exists()
+    payload = result_path.read_text(encoding='utf-8')
+    assert '"best_val_score": 0.73' in payload
+    assert '"task": "entry_path_v1_quantile"' in payload

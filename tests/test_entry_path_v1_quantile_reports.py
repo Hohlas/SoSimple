@@ -143,6 +143,53 @@ def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, m
         assert len(frame) == 2
 
 
+def test_export_predictions_validation_only_does_not_create_unrequested_loaders(tmp_path, monkeypatch):
+    val_dataset = _make_entry_path_dataset()
+    val_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
+
+    val_csv = tmp_path / 'Nero_validation_labeled.csv'
+    _write_csv(val_csv, [{'time': '2024.01.01 00:00', 'signal': -1} for _ in range(2)])
+
+    monkeypatch.setattr(export_mod, 'VAL_FILE', val_csv)
+    monkeypatch.setattr(export_mod, 'REPORTS_DIR', tmp_path)
+    monkeypatch.setattr(export_mod, 'TRAIN_FILE', tmp_path / 'unused_train.csv')
+    monkeypatch.setattr(export_mod, 'TEST_FILE', tmp_path / 'unused_test.csv')
+    monkeypatch.setattr(
+        export_mod,
+        'create_data_loaders',
+        lambda *args, **kwargs: (None, val_loader, None),
+    )
+    monkeypatch.setattr(
+        export_mod,
+        'create_test_loader',
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError('test loader should not be created')),
+    )
+    monkeypatch.setattr(
+        export_mod,
+        'build_entry_path_v1_quantile_model',
+        lambda *_args, **_kwargs: _DummyQuantileModel(),
+    )
+    monkeypatch.setattr(export_mod.torch, 'load', lambda *args, **kwargs: {
+        'model_name': 'transformer',
+        'model_kwargs': {'input_features': 20, 'seq_len': 4},
+        'model_state_dict': {},
+    })
+
+    checkpoint = tmp_path / 'checkpoint.pt'
+    checkpoint.write_text('stub', encoding='utf-8')
+
+    payload = export_mod.export_predictions(
+        checkpoint=checkpoint,
+        output_dir=tmp_path,
+        splits=['validation'],
+        seed=42,
+    )
+
+    assert set(payload.keys()) == {'validation'}
+    assert (tmp_path / 'entry_path_v1_quantile_validation_predictions.csv').exists()
+    assert not (tmp_path / 'entry_path_v1_quantile_test_predictions.csv').exists()
+
+
 def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, monkeypatch):
     dataset = _make_entry_path_dataset_with_inactive()
     loader = DataLoader(dataset, batch_size=2, shuffle=False)
@@ -249,3 +296,70 @@ def test_evaluate_test_parse_args_accepts_entry_path_v1_quantile(monkeypatch):
     args = eval_mod.parse_args()
 
     assert args.task == ENTRY_PATH_V1_QUANTILE_TARGET
+
+
+def test_evaluate_test_quantile_writes_report_to_explicit_output_dir(tmp_path, monkeypatch):
+    dataset = _make_entry_path_dataset()
+    loader = DataLoader(dataset, batch_size=2, shuffle=False)
+
+    csv_path = tmp_path / 'Nero_test_labeled.csv'
+    _write_csv(
+        csv_path,
+        [
+            {
+                'time': '2024.01.01 00:00',
+                'signal': 1,
+                'ret_6_dir_atr': 0.1,
+                'ret_12_dir_atr': 0.2,
+                'ret_24_dir_atr': 0.3,
+                'fav_6_atr': 1.0,
+                'adv_6_atr': 1.1,
+                'fav_12_atr': 1.2,
+                'adv_12_atr': 1.3,
+                'fav_24_atr': 1.4,
+                'adv_24_atr': 1.5,
+                'path_6_class': -1,
+            },
+            {
+                'time': '2024.01.01 01:00',
+                'signal': -1,
+                'ret_6_dir_atr': 0.4,
+                'ret_12_dir_atr': 0.5,
+                'ret_24_dir_atr': 0.6,
+                'fav_6_atr': 1.6,
+                'adv_6_atr': 1.7,
+                'fav_12_atr': 1.8,
+                'adv_12_atr': 1.9,
+                'fav_24_atr': 2.0,
+                'adv_24_atr': 2.1,
+                'path_6_class': 1,
+            },
+        ],
+    )
+
+    output_dir = tmp_path / 'seed_042' / 'reports'
+    monkeypatch.setattr(eval_mod, 'TEST_FILE', csv_path)
+    monkeypatch.setattr(eval_mod, 'REPORTS_DIR', tmp_path / 'default_reports')
+    monkeypatch.setattr(eval_mod, 'create_test_loader', lambda *args, **kwargs: loader)
+    monkeypatch.setattr(eval_mod, 'build_entry_path_v1_quantile_model', lambda *_args, **_kwargs: _DummyQuantileModel())
+    monkeypatch.setattr(eval_mod.torch, 'load', lambda *args, **kwargs: {
+        'model_name': 'transformer',
+        'model_kwargs': {'input_features': 20, 'seq_len': 4},
+        'model_state_dict': {},
+        'epoch': 3,
+        'metric_name': 'val_score',
+        'best_metric': 0.42,
+    })
+
+    checkpoint = tmp_path / 'transformer_entry_path_v1_quantile_best.pt'
+    checkpoint.write_text('stub', encoding='utf-8')
+
+    eval_mod.run_evaluation(
+        checkpoint_path=str(checkpoint),
+        task=ENTRY_PATH_V1_QUANTILE_TARGET,
+        output_dir=output_dir,
+    )
+
+    assert (output_dir / 'entry_path_v1_quantile_test_predictions.csv').exists()
+    assert (output_dir / 'evaluate_test_entry_path_v1_quantile.md').exists()
+    assert not (tmp_path / 'default_reports' / 'entry_path_v1_quantile_test_predictions.csv').exists()

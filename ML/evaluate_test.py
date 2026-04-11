@@ -130,10 +130,12 @@ def run_evaluation(
     score_threshold: float | None = None,
     seed: int = 42,
     optuna_json: str | None = None,
+    output_dir: str | Path | None = None,
 ):
     set_seed(seed)
     device = get_device()
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    reports_dir = Path(output_dir) if output_dir is not None else REPORTS_DIR
+    reports_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Определяем чекпоинт ──────────────────────────────────────────────────
     if checkpoint_path:
@@ -247,10 +249,10 @@ def run_evaluation(
             export_kwargs['true_reg'] = true_reg
             export_kwargs['true_cls'] = true_cls
         export = build_entry_path_export_frame(**export_kwargs)
-        export_path = REPORTS_DIR / 'entry_path_test_predictions.csv'
+        export_path = reports_dir / 'entry_path_test_predictions.csv'
         export.to_csv(export_path, sep=';', index=False)
         row_count = int(len(export))
-        report_path = REPORTS_DIR / 'evaluate_test_entry_path_v1.md'
+        report_path = reports_dir / 'evaluate_test_entry_path_v1.md'
         report_path.write_text(
             build_entry_path_report_markdown(
                 frame=export,
@@ -326,11 +328,11 @@ def run_evaluation(
             export_kwargs['true_reg'] = true_reg
             export_kwargs['true_cls'] = true_cls
         export = build_entry_path_v1_quantile_export_frame(**export_kwargs)
-        export_path = REPORTS_DIR / 'entry_path_v1_quantile_test_predictions.csv'
+        export_path = reports_dir / 'entry_path_v1_quantile_test_predictions.csv'
         export.to_csv(export_path, sep=';', index=False)
         crossed_quantile_rows = count_crossed_quantile_rows(export)
         row_count = int(len(export))
-        report_path = REPORTS_DIR / 'evaluate_test_entry_path_v1_quantile.md'
+        report_path = reports_dir / 'evaluate_test_entry_path_v1_quantile.md'
         report_path.write_text(
             build_entry_path_v1_quantile_report_markdown(
                 frame=export,
@@ -430,7 +432,7 @@ def run_evaluation(
                   f"{tm['recall']:>8.4f} {tm['pos_rate']:>8.1%}")
 
         # Generate report
-        report_path = REPORTS_DIR / 'evaluate_test_tb.md'
+        report_path = reports_dir / 'evaluate_test_tb.md'
         lines = [
             f"# Triple Barrier Test Set Evaluation",
             f"",
@@ -532,7 +534,7 @@ def run_evaluation(
         print(f"  Mean PnL (ATR): {mean_pnl:.4f}")
         print(f"  Profit Factor: {pf:.4f}")
 
-        report_path = REPORTS_DIR / f'evaluate_test_{task}.md'
+        report_path = reports_dir / f'evaluate_test_{task}.md'
         lines = [
             f"# Outcome-Aligned Test Evaluation",
             f"",
@@ -646,7 +648,7 @@ def run_evaluation(
         return
 
     # Генерация отчета
-    report_path = REPORTS_DIR / f'evaluate_test_H{horizon}.md'
+    report_path = reports_dir / f'evaluate_test_H{horizon}.md'
     lines = [
         f"# Test Set Evaluation Report",
         f"",
@@ -692,6 +694,7 @@ def parse_args():
                         help='Порог score для outcome-aligned задач. Если не задан, берётся из frozen_outcome_target.json.')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--optuna_json', type=str, default=None)
+    parser.add_argument('--output-dir', type=str, default=None)
     return parser.parse_args()
 
 
@@ -707,4 +710,5 @@ if __name__ == '__main__':
         score_threshold=args.score_threshold,
         seed=args.seed,
         optuna_json=args.optuna_json,
+        output_dir=args.output_dir,
     )

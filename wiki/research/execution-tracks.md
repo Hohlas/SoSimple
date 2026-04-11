@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-10
-sources: 9
+last_updated: 2026-04-11
+sources: 10
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 9 отчётов (2026-04-08 — 2026-04-10). Параллельные направления execution.
+> Синтез 10 отчётов (2026-04-08 — 2026-04-11). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -127,7 +127,29 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 **Вывод**: основной риск линии теперь не в качестве идеи, а в устойчивости. Следующий шаг — не новый поиск, а stress-test по `seed`, годам и MT4 parity для quantile-слоя.
 
-Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md)
+### Quantile Robustness (04-11)
+
+Отдельный этап больше не искал новые правила, а проверял, выдерживает ли quantile-layer повторяемость на фиксированном наборе `seed = 7, 17, 42, 77, 123`.
+
+**Результат**:
+- `same_rule_count = 5`
+- winner во всех seed: `lb_gt_m`
+- `median_test_pf = inf`
+- `median_sequential_pf = inf`
+- `worst_seed_test_trades = 20`
+- `negative_year_slices = 0`
+- итоговый verdict: `go_mt4`
+
+По отдельным seed:
+- `007`: test `20 trades`, `PF=inf`; sequential `11 trades`, `PF=inf`
+- `017`: test `26 trades`, `PF=inf`; sequential `8 trades`, `PF=inf`
+- `042`: test `24 trades`, `PF=inf`; sequential `11 trades`, `PF=inf`
+- `077`: test `20 trades`, `PF=inf`; sequential `9 trades`, `PF=inf`
+- `123`: test `26 trades`, `PF=25.17`; sequential `12 trades`, `PF=44.77`
+
+**Вывод**: `entry_path_v1_quantile` вышел из статуса low-N гипотезы и стал главным подтверждённым кандидатом на следующий MT4 parity-check. Это уже не просто сильный single-run, а устойчивый multi-seed upgrade над baseline `A @ 7.5%`.
+
+Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), [2026-04-11-entry-path-v1-quantile-robustness.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md)
 
 ## Сравнение треков (на сегодня)
 
@@ -136,11 +158,11 @@ Offline simulator поверх regression_updn для сравнения сем�
 | regression_updn + exit | PF~1.05 (OOS) | Production | Нет uplift от exit layer |
 | Triple Barrier | PF=1.11 (test), 1.27 (MT4) | Validation-locked | Python-режим = MT4 execution |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Унести MT4 export path в main |
-| entry_path_v1_quantile | PF=inf (test, 24 trades) | Preliminary, low-N | Проверка устойчивости + MT4 parity |
+| entry_path_v1_quantile | PF=inf median (5 seeds), worst support 20 trades | Multi-seed robust | MT4 parity-check |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Устоит ли `entry_path_v1_quantile` на нескольких `seed` и годовых срезах, или текущий результат объясняется малым N?
+1. Подтвердится ли `entry_path_v1_quantile` в MT4 так же, как он подтвердился в Python robustness-pass?
 2. TB + MT4-matching в Python: насколько сократится разрыв 253 vs 92 trades?
 3. Нужно ли объединять `entry_path_v1` / quantile-layer с фильтром `fav_3_vs_12`, или это только усложнит рабочую базу без надёжного прироста?
