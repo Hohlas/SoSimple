@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Подтвердить `entry_path_v1_quantile` в реальном MT4-контуре для frozen winner `lb_gt_m`, убрать расхождения Python ↔ MT4 и сохранить trade-level reconciliation artifact
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-11-entry-path-v1-quantile-mt4-export-design.md`, `docs/superpowers/plans/2026-04-11-entry-path-v1-quantile-mt4-export.md`, `docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md`
-> **Related commit**: pending
+> **Related commit**: 4faead0
 
 ## Context
 
