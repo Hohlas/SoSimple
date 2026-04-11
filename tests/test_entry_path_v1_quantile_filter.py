@@ -126,3 +126,24 @@ def test_benchmark_main_uses_frozen_validation_winner_on_test(tmp_path, monkeypa
     test_summary = pd.read_csv(tmp_path / 'entry_path_v1_quantile_filter_test_summary.csv', sep=';')
     assert test_summary.shape[0] == 1
     assert test_summary.iloc[0]['candidate'] == payload['winner']['candidate']
+
+
+def test_build_rule_mask_lb_gt_m_uses_custom_threshold():
+    """lb_gt_m with m set to a lower quantile should select more rows."""
+    frame = pd.DataFrame({
+        'baseline_selected': [True, True, True, True],
+        'lb': [0.5, 1.0, 1.5, 2.0],
+        'width': [1.0, 1.0, 1.0, 1.0],
+    })
+    mask_median = bench.build_rule_mask(frame, rule='lb_gt_m', m=1.25, w=0.0)
+    mask_q30 = bench.build_rule_mask(frame, rule='lb_gt_m', m=0.65, w=0.0)
+    assert mask_median.sum() < mask_q30.sum()
+
+
+def test_compute_m_at_quantile():
+    frame = pd.DataFrame({
+        'baseline_selected': [True, True, True, True, False],
+        'lb': [1.0, 2.0, 3.0, 4.0, 100.0],
+    })
+    assert bench.compute_m_at_quantile(frame, 0.5) == 2.5
+    assert bench.compute_m_at_quantile(frame, 0.0) == 1.0

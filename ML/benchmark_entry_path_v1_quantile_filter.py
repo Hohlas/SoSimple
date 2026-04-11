@@ -72,6 +72,14 @@ def apply_conformal_correction(frame: pd.DataFrame, correction: float) -> pd.Dat
     return out
 
 
+def compute_m_at_quantile(frame: pd.DataFrame, quantile: float) -> float:
+    """Return the lb value at the given quantile of baseline-selected rows."""
+    selected = frame.loc[frame['baseline_selected'], 'lb']
+    if selected.empty:
+        return 0.0
+    return float(selected.quantile(quantile))
+
+
 def build_rule_mask(frame: pd.DataFrame, rule: str, m: float, w: float) -> pd.Series:
     if rule == 'baseline':
         return frame['baseline_selected']
