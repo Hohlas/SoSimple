@@ -1,0 +1,10 @@
+{
+  "trades": 69,
+  "wins": 29,
+  "losses": 23,
+  "timeouts": 5,
+  "reversals": 17,
+  "posblock_skips": 175,
+  "pf": 1.2777777777777777,
+  "win_rate": 0.42028985507246375
+}

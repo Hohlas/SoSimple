@@ -12,6 +12,22 @@ def build_target_name(signal: int, sl_atr: float, tp_atr: float) -> str:
     return f'{side}_sl{int(round(float(sl_atr)))}_tp{int(round(float(tp_atr)))}'
 
 
+# Triple-barrier label convention (float): 1.0=TP, 0.0=SL, 0.5=Timeout.
+# See processing/label_signals.py:919.
+_TB_OUTCOME_TP = 'tp'
+_TB_OUTCOME_SL = 'sl'
+_TB_OUTCOME_TIMEOUT = 'timeout'
+
+
+def _classify_tb_outcome(raw) -> str:
+    value = float(raw) if raw is not None else 0.5
+    if value >= 0.75:
+        return _TB_OUTCOME_TP
+    if value <= 0.25:
+        return _TB_OUTCOME_SL
+    return _TB_OUTCOME_TIMEOUT
+
+
 def load_tb_signals(path: str | Path, theta: float = 0.0, min_ev: float = 0.0) -> pd.DataFrame:
     frame = pd.read_csv(Path(path), sep=';')
     frame['time'] = pd.to_datetime(frame['time'], format='%Y.%m.%d %H:%M', errors='coerce')
@@ -71,12 +87,12 @@ def simulate_mt4_tb(
 
         if open_position is not None and signal_idx >= open_position['close_index']:
             source_row = market.iloc[open_position['signal_idx']]
-            outcome = int(source_row.get(open_position['source_target'], 0))
+            outcome = _classify_tb_outcome(source_row.get(open_position['source_target'], 0.5))
             exit_time = market.iloc[min(open_position['close_index'], len(market) - 1)]['time']
-            if outcome > 0:
+            if outcome == _TB_OUTCOME_TP:
                 trades.append(_close_trade(open_position, exit_time, 'TP', open_position['tp_atr']))
                 meta['wins'] += 1
-            elif outcome < 0:
+            elif outcome == _TB_OUTCOME_SL:
                 trades.append(_close_trade(open_position, exit_time, 'SL', -open_position['sl_atr']))
                 meta['losses'] += 1
             else:
@@ -111,12 +127,12 @@ def simulate_mt4_tb(
 
     if open_position is not None:
         source_row = market.iloc[open_position['signal_idx']]
-        outcome = int(source_row.get(open_position['source_target'], 0))
+        outcome = _classify_tb_outcome(source_row.get(open_position['source_target'], 0.5))
         exit_time = market.iloc[min(open_position['close_index'], len(market) - 1)]['time']
-        if outcome > 0:
+        if outcome == _TB_OUTCOME_TP:
             trades.append(_close_trade(open_position, exit_time, 'TP', open_position['tp_atr']))
             meta['wins'] += 1
-        elif outcome < 0:
+        elif outcome == _TB_OUTCOME_SL:
             trades.append(_close_trade(open_position, exit_time, 'SL', -open_position['sl_atr']))
             meta['losses'] += 1
         else:

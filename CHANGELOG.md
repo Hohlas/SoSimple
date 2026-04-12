@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-12] — Triple Barrier verdict: не production (gate_fail)
+
+### Исправлено
+- `ML/triple_barrier_mt4_execution.py`: симулятор кастовал outcome через `int(...)` и терял дискриминацию между SL (`0.0`) и Timeout (`0.5`) в float-конвенции labels из `processing/label_signals.py:919`. Обе ветки падали в `else` (HoldOverTime, pnl_atr=+0.5), из-за чего все прогоны давали `losses=0, pf=inf`. Заменено на `_classify_tb_outcome` с порогами `>=0.75` → TP, `<=0.25` → SL, else → Timeout; фикс применён в обеих точках закрытия позиции (регулярная и финальная)
+- `tests/test_triple_barrier_mt4_execution.py`: тесты использовали старую `{1, -1, 0}` int-схему и проходили ложно; переведены на float `{1.0, 0.0, 0.5}`. 6/6 зелёные
+
+### Результаты
+После фикса прогон на `tb_selected_rule.json` (`theta=0.475`, `min_ev=0.1`):
+- **Validation (2019–2022)**: 28 trades, PF=4.33, win_rate=57.1%, все годы положительные
+- **Test (2023–2026)**: 69 trades, PF=1.28, win_rate=42.0%, годовые срезы 2023 (PF=0.55, N=6) и 2026 (PF=0.00, N=8) отрицательные
+
+Gate-проверка (унифицированно с quantile: N≥30, PF>2.0, `negative_year_slices=0`):
+- N_trades: ✅ (69)
+- PF: ❌ (1.28 < 2.0)
+- negative_year_slices: ❌ (2023, 2026)
+
+### Вывод
+TB-слой **не** подключается к MT4 как production или parallel execution mode — gate_fail на test, явный regime shift между validation и test. Production-опора остаётся `regression_updn` baseline + `entry_path_v1_quantile` parallel. `tb_selected_rule.json` зафиксирован как frozen исторический артефакт; пересмотр возможен только после накопления forward-данных post-2026-06. Подробности: [docs/reports/2026-04-12-tb-verdict.md](docs/reports/2026-04-12-tb-verdict.md)
+
 ## [2026-04-12] — Entry Path v1 Quantile: production-ready через n-boost gate
 
 ### Добавлено

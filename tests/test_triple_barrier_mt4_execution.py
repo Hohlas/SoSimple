@@ -11,6 +11,7 @@ from ML import triple_barrier_mt4_execution as tb_exec
 
 
 def _market_frame() -> pd.DataFrame:
+    # Label convention (float): 1.0=TP, 0.0=SL, 0.5=Timeout.
     return pd.DataFrame(
         {
             'time': pd.to_datetime([
@@ -21,8 +22,8 @@ def _market_frame() -> pd.DataFrame:
                 '2024-01-01 04:00',
                 '2024-01-01 05:00',
             ]),
-            'buy_sl3_tp3': [1, 1, 1, 1, 1, 1],
-            'sell_sl3_tp3': [-1, -1, -1, -1, -1, -1],
+            'buy_sl3_tp3': [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            'sell_sl3_tp3': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         }
     )
 
@@ -62,7 +63,7 @@ def test_same_direction_signal_is_skipped_while_position_open():
 
 def test_timeout_closes_position_after_hold_window():
     market = _market_frame().copy()
-    market['buy_sl3_tp3'] = [0, 0, 0, 0, 0, 0]
+    market['buy_sl3_tp3'] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     signals = pd.DataFrame(
         {
             'time': pd.to_datetime(['2024-01-01 00:00']),
@@ -81,7 +82,7 @@ def test_timeout_closes_position_after_hold_window():
 
 def test_opposite_signal_closes_current_position_with_reversal_reason():
     market = _market_frame().copy()
-    market['buy_sl3_tp3'] = [0, 0, 0, 0, 0, 0]
+    market['buy_sl3_tp3'] = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     signals = pd.DataFrame(
         {
             'time': pd.to_datetime(['2024-01-01 00:00', '2024-01-01 01:00']),
@@ -101,7 +102,7 @@ def test_opposite_signal_closes_current_position_with_reversal_reason():
 
 def test_target_name_uses_path_ordered_tb_label_not_close_only_return():
     market = _market_frame().copy()
-    market['buy_sl3_tp3'] = [-1, -1, -1, -1, -1, -1]
+    market['buy_sl3_tp3'] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     signals = pd.DataFrame(
         {
             'time': pd.to_datetime(['2024-01-01 00:00']),
@@ -133,8 +134,8 @@ def test_benchmark_cli_writes_trades_yearly_and_summary(tmp_path):
         {
             'time': ['2024.01.01 00:00', '2024.01.01 01:00', '2024.01.01 02:00', '2024.01.01 03:00'],
             'signal': [1, 0, 0, 0],
-            'buy_sl3_tp3': [1, 1, 1, 1],
-            'sell_sl3_tp3': [-1, -1, -1, -1],
+            'buy_sl3_tp3': [1.0, 1.0, 1.0, 1.0],
+            'sell_sl3_tp3': [0.0, 0.0, 0.0, 0.0],
         }
     )
     rule = {'theta': 0.475, 'min_ev': 0.1}
