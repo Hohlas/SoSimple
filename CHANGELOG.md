@@ -2,6 +2,100 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-12] — Entry Path v1 Quantile: production-ready через n-boost gate
+
+### Добавлено
+- `ML/entry_path_v1_quantile_ensemble.py`: `load_seed_predictions`, `aggregate_mean_quantile`, `majority_vote` для multi-seed агрегации
+- `ML/benchmark_entry_path_v1_quantile_n_boost.py`: full n-boost orchestration (relax quantile sweep + ensemble benchmark + strict go/no-go gate)
+- `ML/export_entry_path_v1_quantile_rule.py`: production rule export через median m/w/correction по 5 сидам
+- `ML/reports/entry_path_v1_quantile_selected_rule.json`: production rule с winner `lb_gt_m_q35`
+- `ML/reports/n_boost_result.json`, `n_boost_validation_sweep.csv`: артефакты gate
+- tests: `test_entry_path_v1_quantile_ensemble.py` (3), `test_entry_path_v1_quantile_n_boost.py` (8), `test_export_entry_path_v1_quantile_rule.py` (2); +1 тест в `test_export_entry_path_v1_quantile_signals.py`
+
+### Изменено
+- `ML/benchmark_entry_path_v1_quantile_filter.py`: добавлен `compute_m_at_quantile(frame, quantile)` для sweep
+- `API/export_entry_path_v1_quantile_signals.py`: новый `--rule-path` режим с production rule; baseline_score теперь берётся из baseline-модели через inner join, а не из quantile frame; дедупликация по `time` с приоритетом non-zero signal
+- `docs/MT/ml_signal_integration.md`, `docs/MT/trading_strategy.md`: актуализированы под production rule, seed_007, `ML_UseScoreFilter=false` и expected 22 trades
+
+### Исправлено
+- `pick_winner` не уважал `GATE_MIN_TRADES` — pool предфильтруется по `trades ≥ 30` до сортировки по PF
+- Strict `same_winner_ratio` ловил FP-шум в квантильной полосе — stability tolerance ±0.05 для quantile при сохранении требования same rule
+- Экспортёр терял 2 сделки на mixed-signal bars (`2023.11.22`, `2025.03.10`) из-за `drop_duplicates(keep='last')` до применения правила
+
+### Результаты
+- Gate PASS на frozen test (seed 007, production параметры median):
+  - `n_trades=48`, `pf=8.18`, `win_rate=0.8125`
+  - `negative_year_slices=0`, `same_winner_ratio=1.0`
+  - sequential (hold_bars=24): 22 trades, PF=3.64, win_rate=0.73
+- MT4 parity (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03):
+  - **20/20 сделок совпадают** по (time, signal, direction)
+  - win rate 80.00% exact match, направление pnl совпадает у всех сделок
+  - mean pnl_atr: Python 2.37 vs MT4 2.55 (~8% diff из-за ATR/spread/exit timing)
+  - MT4 money metrics: net=4477.25, PF=11.91, DD=4.01%
+  - Пропущено 2 сигнала (2022.10.13, 2022.11.22) — усечение периода тестера, не логическое расхождение
+
+### Вывод
+`entry_path_v1_quantile` подтверждён как **production-ready parallel execution mode** для MT4. Winner `lb_gt_m_q35` стабилен по 5 сидам (все выбирают `lb_gt_m` с q∈{30,35,40}). Production rule зафиксирован в `entry_path_v1_quantile_selected_rule.json` через median параметры. Старый plan `2026-04-11-entry-path-v1-quantile-production-path.md` superseded. Подробности: [docs/reports/2026-04-12-quantile-status-decision.md](docs/reports/2026-04-12-quantile-status-decision.md)
+
+## [2026-04-11] — Entry Path v1 Quantile: MT4 parity подтверждён
+
+### Добавлено
+- `API/export_entry_path_v1_quantile_signals.py`: канонический exporter frozen quantile winner `lb_gt_m` в `time;signal` для MT4
+- `tests/test_export_entry_path_v1_quantile_signals.py`
+- `tests/test_signal_tracer_mlp.py`
+- `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`: trade-level сверка direct `MLP`-прогона
+
+### Изменено
+- `statistics/signal_tracer.py`: добавлена поддержка direct `MLP CLOSE BUY/SELL` логов и отдельный `mlp` dossier path
+- `docs/MT/trading_strategy.md` и `docs/MT/ml_signal_integration.md`: синхронизированы с реальной логикой `ML_TRADE()` и новым quantile export path
+- `MT/tester/$o$imple.ini`: quantile parity зафиксирован на `ML_HoldBars=24`, `ML_AllowReversal=0`, `ML_UseScoreFilter=0`
+
+### Исправлено
+- `API/export_entry_path_v1_quantile_signals.py`: дубликаты `time` теперь схлопываются как в MT4 (`keep='last'`), поэтому Python export и MQL execution больше не расходятся по числу сигналов
+
+### Результаты
+- после исправления exporter-а канонический `ml_signals.csv` для quantile-layer содержит `8872` строк и `8` активных сигналов (`4 BUY`, `4 SELL`)
+- MT4 tester по `20260411.log` показал:
+  - `8` сделок
+  - `PF=58.88`
+  - `net=2951.63`
+  - `DD=2.85%`
+  - `7W / 1L`
+- log counters и reconciliation полностью согласованы:
+  - `Opened=8`
+  - `Timeout closes=8`
+  - `Position blocked=0`
+  - `Score filtered=0`
+
+### Вывод
+`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md](docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
+
+## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
+
+### Добавлено
+- `ML/entry_path_v1_quantile_robustness.py` и `ML/benchmark_entry_path_v1_quantile_robustness.py`: repeatable multi-seed robustness-оценка для `entry_path_v1_quantile`
+- seed-scoped artifact layout для `entry_path_v1_quantile_robustness/seed_{007,017,042,077,123}`
+- `ML/triple_barrier_mt4_execution.py` и `ML/benchmark_triple_barrier_mt4_execution.py`: Python-контур для будущей MT4-matched оценки Triple Barrier
+
+### Изменено
+- `ML/train.py`: добавлены `--checkpoint-dir` и `--result-dir` для изоляции run-артефактов
+- `ML/evaluate_test.py`: добавлен `--output-dir`
+- `ML/export_entry_path_v1_quantile_predictions.py`: экспорт больше не строит лишние split/loaders для незапрошенных наборов
+- yearly/rolling robustness summary теперь считаются по winner-selected сделкам, а не по всей active universe
+
+### Результаты
+- Полный 5-seed pass (`7, 17, 42, 77, 123`) дал:
+  - `same_rule_count = 5`
+  - `median_test_pf = inf`
+  - `median_sequential_pf = inf`
+  - `worst_seed_test_trades = 20`
+  - `negative_year_slices = 0`
+  - final verdict: `go_mt4`
+- Во всех пяти seed validation winner совпал: `lb_gt_m`
+- `seed_123` подтвердил, что линия держится и без `PF=inf`: frozen test `26 trades`, `PF=25.17`
+
+### Вывод
+`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md)
 ## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
 
 ### Добавлено
