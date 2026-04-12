@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-10
-sources: 9
+last_updated: 2026-04-12
+sources: 13
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 9 отчётов (2026-04-08 — 2026-04-10). Параллельные направления execution.
+> Синтез 13 отчётов (2026-04-08 — 2026-04-12). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -36,7 +36,7 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 Источник: [2026-04-08-outcome-aligned-retraining.md](../../docs/reports/2026-04-08-outcome-aligned-retraining.md)
 
-## 3. Triple Barrier (04-08, два отчёта)
+## 3. Triple Barrier (04-08 — 04-12, три отчёта)
 
 ### Hardening: полная пересборка TB вне MT4
 
@@ -62,6 +62,30 @@ Offline simulator поверх regression_updn для сравнения сем�
 **Вывод**: TB-схема согласована с MT4 по уровням. Следующий шаг — Python-режим, повторяющий MT4 execution один в один.
 
 Источники: [2026-04-08-triple-barrier-hardening.md](../../docs/reports/2026-04-08-triple-barrier-hardening.md), [2026-04-08-triple-barrier-runtime-verdict.md](../../docs/reports/2026-04-08-triple-barrier-runtime-verdict.md)
+
+### MT4 Verdict (04-12): gate_fail, не production
+
+Финальный этап по TB-треку. До этого benchmark на `simulate_mt4_tb` давал `losses=0, pf=inf` на обоих сплитах — оказалось артефактом бага: симулятор кастовал outcome через `int(...)`, а лейблы в `DATA/Nero_*_labeled.csv` — float (`1.0=TP, 0.0=SL, 0.5=Timeout`, источник `processing/label_signals.py:919`). `int(0.0)=0` и `int(0.5)=0` оба падали в `else`-ветку `HoldOverTime, pnl=+0.5`, поэтому SL никогда не срабатывал.
+
+Фикс: `_classify_tb_outcome` с порогами `>=0.75` → TP, `<=0.25` → SL, else → Timeout; применён в обеих точках закрытия позиции. Тесты `tests/test_triple_barrier_mt4_execution.py` переведены с устаревшей `{1, -1, 0}` int-схемы на float — 6/6 зелёные.
+
+Честный прогон на `tb_selected_rule.json` (`theta=0.475`, `min_ev=0.1`):
+
+| Split | N | wins | losses | timeouts | reversals | PF | win_rate |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| validation | 28 | 16 | 4 | 2 | 8 | **4.33** | 57.1% |
+| test | 69 | 29 | 23 | 5 | 17 | **1.28** | 42.0% |
+
+Test yearly: 2023 PF=0.55 (N=6), 2024 PF=1.19 (N=21), 2025 PF=2.12 (N=34), 2026 PF=0.00 (N=8, 0% win). Validation yearly: все четыре года положительные (2019–2022).
+
+Gate (унифицированно с quantile: N≥30, PF>2.0, `negative_year_slices=0`):
+- N_trades: ✅ (69)
+- PF: ❌ (1.28 < 2.0)
+- negative_year_slices: ❌ (2023, 2026)
+
+**Verdict**: TB-слой **не** подключается к MT4 как production или parallel execution mode. Явный regime shift между validation и test. `tb_selected_rule.json` зафиксирован как frozen исторический артефакт. Пересмотр возможен только после накопления forward-данных post-2026-06.
+
+Источник: [2026-04-12-tb-verdict.md](../../docs/reports/2026-04-12-tb-verdict.md)
 
 ## 4. Entry Path v1 (04-08 — 04-10, пять отчётов)
 
@@ -127,20 +151,116 @@ Offline simulator поверх regression_updn для сравнения сем�
 
 **Вывод**: основной риск линии теперь не в качестве идеи, а в устойчивости. Следующий шаг — не новый поиск, а stress-test по `seed`, годам и MT4 parity для quantile-слоя.
 
-Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md)
+### Quantile Robustness (04-11)
+
+Отдельный этап больше не искал новые правила, а проверял, выдерживает ли quantile-layer повторяемость на фиксированном наборе `seed = 7, 17, 42, 77, 123`.
+
+**Результат**:
+- `same_rule_count = 5`
+- winner во всех seed: `lb_gt_m`
+- `median_test_pf = inf`
+- `median_sequential_pf = inf`
+- `worst_seed_test_trades = 20`
+- `negative_year_slices = 0`
+- итоговый verdict: `go_mt4`
+
+По отдельным seed:
+- `007`: test `20 trades`, `PF=inf`; sequential `11 trades`, `PF=inf`
+- `017`: test `26 trades`, `PF=inf`; sequential `8 trades`, `PF=inf`
+- `042`: test `24 trades`, `PF=inf`; sequential `11 trades`, `PF=inf`
+- `077`: test `20 trades`, `PF=inf`; sequential `9 trades`, `PF=inf`
+- `123`: test `26 trades`, `PF=25.17`; sequential `12 trades`, `PF=44.77`
+
+**Вывод**: `entry_path_v1_quantile` вышел из статуса low-N гипотезы и стал главным подтверждённым кандидатом на следующий MT4 parity-check. Это уже не просто сильный single-run, а устойчивый multi-seed upgrade над baseline `A @ 7.5%`.
+
+### Quantile Status Decision (04-12): production parallel mode
+
+Финальный этап productization quantile-слоя. Решалась конкретная задача: baseline `A @ 7.5%` на test давал мало сделок (N=15) и низкий PF, quantile `lb_gt_m` на строгом rule давал ещё меньше (N<10). Вопрос — можно ли поднять N без потери PF.
+
+Подход: **Research → Gate → Productionize**. Research: relax sweep квантильных порогов (q ∈ {0.20..0.50}) + multi-seed ensemble (5 сидов). Gate: N≥30, PF>2.0, `negative_year_slices=0`, `same_winner_ratio≥0.8` на frozen test.
+
+Результат relax sweep:
+
+| candidate | trades | PF | win_rate |
+|---|---:|---:|---:|
+| `lb_gt_m_q20` | 40 | 5.67 | — |
+| `lb_gt_m_q25` | 37 | 5.64 | — |
+| `lb_gt_m_q30` | 35 | 7.87 | 0.77 |
+| **`lb_gt_m_q35`** | **32** | **11.24** | **0.81** |
+| `lb_gt_m_q40` | 29 | 13.66 | 0.83 |
+
+Winner `lb_gt_m_q35` через median m/w/correction по 5 сидам. Gate PASS: N=48, PF=8.18, win_rate=0.8125, `same_winner_ratio=1.0` (после tolerance ±0.05 для quantile при сохранении same rule — все 5 сидов выбирают `lb_gt_m` с q∈{30,35,40}). Sequential (hold_bars=24): 22 accepted trades, PF=3.64, win_rate=0.73.
+
+Production rule: [ML/reports/entry_path_v1_quantile_selected_rule.json](../../ML/reports/entry_path_v1_quantile_selected_rule.json). Экспорт в MT4: `API.export_entry_path_v1_quantile_signals --rule-path ...`.
+
+Устранённые баги pipeline:
+- `pick_winner` не уважал `GATE_MIN_TRADES` → pool pre-filter
+- strict stability metric ловил FP-шум в полосе quantile → tolerance ±0.05
+- экспортёр брал `baseline_score` из quantile frame вместо baseline-модели → inner join по (time, signal)
+- `drop_duplicates(keep='last')` терял сделки на mixed-signal bars → post-selection dedup с приоритетом non-zero signal
+
+MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03): **20/20 сделок совпадают** по (time, signal, direction), win rate 80.00% exact, mean pnl_atr Python 2.37 vs MT4 2.55 (~8% diff из-за ATR/spread/exit timing). Money metrics: net=4477.25, PF=11.91, DD=4.01%.
+
+**Verdict**: `entry_path_v1_quantile` подтверждён как **production-ready parallel execution mode**.
+
+Источник: [2026-04-12-quantile-status-decision.md](../../docs/reports/2026-04-12-quantile-status-decision.md)
+
+### Quantile MT4 Parity (04-11)
+
+После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
+
+Ключевой технический результат этапа:
+
+- расхождение оказалось не в MQL, а в Python exporter-е;
+- исходный export содержал дубликаты `time`, поэтому Python видел `9378` строк и `16` активных сигналов;
+- `lib_ML_Signal.mqh` при загрузке CSV оставляет последнюю строку для каждого времени;
+- после исправления exporter-а на `keep='last'` канонический CSV стал совпадать с реальным MT4 runtime.
+
+Итоговый quantile export:
+
+| Metric | Value |
+|---|---:|
+| Rows | `8872` |
+| Active signals | `8` |
+| BUY / SELL | `4 / 4` |
+
+MT4 result по `20260411.log`:
+
+| Metric | Value |
+|---|---:|
+| Trades | `8` |
+| PF | **58.88** |
+| Net profit | `2951.63` |
+| Drawdown | `2.85%` |
+| Win / Loss | `7 / 1` |
+
+Trade-level reconciliation был сохранён отдельно:
+
+- `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`
+
+Счётчики в логе и reconciliation совпали:
+
+- `Opened = 8`
+- `Timeout closes = 8`
+- `Position blocked = 0`
+- `Score filtered = 0`
+
+**Вывод**: `entry_path_v1_quantile` теперь подтверждён не только как robust Python-upgrade, но и как реальный MT4 execution mode. Следующий вопрос уже продуктовый: переводить ли quantile-layer в основной execution contour.
+
+Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), [2026-04-11-entry-path-v1-quantile-robustness.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md), [2026-04-11-entry-path-v1-quantile-mt4-parity.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
 
 ## Сравнение треков (на сегодня)
 
 | Track | Production PF | Validated? | Ближайший шаг |
 |---|---:|---|---|
-| regression_updn + exit | PF~1.05 (OOS) | Production | Нет uplift от exit layer |
-| Triple Barrier | PF=1.11 (test), 1.27 (MT4) | Validation-locked | Python-режим = MT4 execution |
-| entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Унести MT4 export path в main |
-| entry_path_v1_quantile | PF=inf (test, 24 trades) | Preliminary, low-N | Проверка устойчивости + MT4 parity |
+| regression_updn + exit | PF~1.05 (OOS) | Production baseline | Нет uplift от exit layer |
+| Triple Barrier | PF=1.28 (test, 69 trades, fixed simulator) | **Gate fail — не production** | Пересмотр только после forward-данных post-2026-06 |
+| entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
+| entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах | **Production parallel mode** | Forward validation post-2026-04 |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Устоит ли `entry_path_v1_quantile` на нескольких `seed` и годовых срезах, или текущий результат объясняется малым N?
-2. TB + MT4-matching в Python: насколько сократится разрыв 253 vs 92 trades?
-3. Нужно ли объединять `entry_path_v1` / quantile-layer с фильтром `fav_3_vs_12`, или это только усложнит рабочую базу без надёжного прироста?
+1. Нужно ли объединять `entry_path_v1_quantile` с фильтром `fav_3_vs_12`, или composition усложнит рабочую базу без надёжного прироста?
+2. Forward validation quantile-слоя: когда набирётся достаточная выборка (~10–15 сделок) для пересмотра статуса "parallel → primary"?
+3. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
