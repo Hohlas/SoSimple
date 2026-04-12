@@ -4,7 +4,7 @@
 > **Status**: Completed — **not production (gate_fail)**
 > **Goal**: Починить симулятор TB под float-конвенцию лейблов и вынести честный verdict по TB-слою как кандидату в MT4 execution
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-11-quantile-status-decision.md` (secondary TB stage)
-> **Related commit**: pending
+> **Related commit**: b71887d
 > **Rule**: [ML/reports/tb_selected_rule.json](../../ML/reports/tb_selected_rule.json) (`theta=0.475`, `min_ev=0.1`, support-gated)
 
 ---
