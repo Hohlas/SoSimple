@@ -1,0 +1,121 @@
+{
+  "winner": {
+    "candidate": "lb_gt_m_q35",
+    "rule": "lb_gt_m",
+    "quantile": 0.35,
+    "m": -11.09161666,
+    "w": 16.7876408,
+    "correction": 4.7510468999999995,
+    "alpha": 0.1,
+    "trades": 48,
+    "pf": 8.178675196069868,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.7264873945833337,
+    "coverage": 0.6666666666666666,
+    "median_interval_width": 16.81214965,
+    "gross_profit": 149.10197249999993,
+    "gross_loss": 18.23057756
+  },
+  "baseline_rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+  "baseline_threshold": -0.03594103,
+  "seeds": [
+    7,
+    17,
+    42,
+    77,
+    123
+  ],
+  "per_seed_params": [
+    {
+      "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_007",
+      "correction": 4.7510468999999995,
+      "m": -11.09161666,
+      "w": 16.7876408,
+      "seed": 7
+    },
+    {
+      "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_017",
+      "correction": 1.0744055999999995,
+      "m": -5.993292164999999,
+      "w": 10.02607995,
+      "seed": 17
+    },
+    {
+      "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_042",
+      "correction": 5.31573725,
+      "m": -11.898007875,
+      "w": 17.657726525,
+      "seed": 42
+    },
+    {
+      "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_077",
+      "correction": 5.4590656,
+      "m": -12.62822855,
+      "w": 18.4161912,
+      "seed": 77
+    },
+    {
+      "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_123",
+      "correction": 4.5648035,
+      "m": -10.157518190000001,
+      "w": 15.8726871,
+      "seed": 123
+    }
+  ],
+  "root_dir": "ML/reports/entry_path_v1_quantile_robustness",
+  "sequential_hold_bars": 24,
+  "sequential_summary": {
+    "trades": 22,
+    "accepted_indices": [
+      116,
+      426,
+      874,
+      918,
+      1815,
+      1862,
+      3407,
+      4004,
+      4835,
+      5202,
+      5397,
+      5604,
+      6422,
+      7049,
+      7236,
+      7477,
+      8023,
+      8141,
+      8294,
+      8463,
+      8573,
+      9159
+    ],
+    "coverage": 0.4583333333333333,
+    "pf": 3.6391541538809236,
+    "mean_pnl_atr": 1.8390798936363637,
+    "win_rate": 0.7272727272727273
+  },
+  "frozen_test": {
+    "candidate": "lb_gt_m_q35",
+    "rule": "lb_gt_m",
+    "m": -11.09161666,
+    "w": 16.7876408,
+    "trades": 48,
+    "pf": 8.178675196069868,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.7264873945833337,
+    "coverage": 0.6666666666666666,
+    "median_interval_width": 16.81214965,
+    "gross_profit": 149.10197249999993,
+    "gross_loss": 18.23057756
+  },
+  "n_boost_gate": {
+    "verdict": "gate_pass",
+    "n_trades": 48,
+    "pf": 8.178675196069868,
+    "negative_year_slices": 0,
+    "same_winner_ratio": 1.0,
+    "reasons": []
+  },
+  "n_boost_result_path": "ML/reports/n_boost_result.json"
+}

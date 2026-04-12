@@ -79,24 +79,37 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 ### Для `entry_path_v1_quantile`
 
-Для quantile parity-check правильный путь теперь такой:
+Актуальный путь после прохождения n-boost gate (2026-04-12) — production rule
+`ML/reports/entry_path_v1_quantile_selected_rule.json` (winner `lb_gt_m_q35`,
+median m/w/correction по 5 сидам). Экспорт в MT4 выполняется так:
 
 ```bash
 ./.venv/bin/python -m API.export_entry_path_v1_quantile_signals \
-  --seed-dir ML/reports/entry_path_v1_quantile_robustness/seed_123 \
+  --seed-dir ML/reports/entry_path_v1_quantile_robustness/seed_007 \
   --split test \
+  --rule-path ML/reports/entry_path_v1_quantile_selected_rule.json \
   --output MT/tester/files/ml_signals.csv \
   --copy-to-mt4
 ```
 
-Что делает этот CLI:
+Что делает этот CLI в production-режиме (`--rule-path` задан):
 
-- читает frozen rule из `entry_path_v1_quantile_filter_selected_rule.json`;
-- берёт prediction CSV выбранного split;
-- применяет уже замороженный quantile winner без re-fit;
+- читает `entry_path_v1_quantile_selected_rule.json` и берёт оттуда
+  `winner.rule`, `winner.m`, `winner.w`, `winner.correction`, `baseline_threshold`;
+- читает baseline predictions CSV из `baseline_rule_path` внутри rule-файла
+  (`ML/reports/entry_path_test_predictions.csv` для split=test),
+  чтобы получить `baseline_score` (это принципиально: baseline score берётся
+  от baseline-модели, а не из предсказаний самой quantile-сети);
+- берёт quantile predictions выбранного seed (`seed_007` — primary, median
+  параметры совпадают с его значениями);
+- применяет conformal correction, строит `lb`/`width`, накладывает правило;
+- для времён с дублирующимися строками оставляет запись с выбранным
+  ненулевым сигналом (а не слепо `keep='last'`);
 - пишет полный `time;signal`.
 
-Это и есть канонический способ готовить CSV для MT4 по quantile winner.
+Legacy-режим (без `--rule-path`) остался для старого single-seed пути
+`entry_path_v1_quantile_filter_selected_rule.json` внутри каждого `seed_*` и
+для обратной совместимости; в текущем production-контуре он не используется.
 
 ---
 
@@ -136,15 +149,19 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 Для `entry_path_v1_quantile` предпочтителен именно этот режим: уже заранее отфильтрованный `time;signal`.
 
-Для текущего quantile parity-check используйте:
+Для текущего quantile parity-check (production `lb_gt_m_q35`, frozen 2026-04-12):
 
 | Параметр | Значение | Почему |
 |---|---:|---|
 | `iSignal` | `3` | прямой parity-mode |
 | `ML_HoldBars` | `24` | совпадает с frozen `sequential_hold_bars` |
 | `ML_AllowReversal` | `false` | соответствует текущему benchmark-контуру |
-| `ML_UseScoreFilter` | `false` | CSV уже предфильтрован в Python |
-| `ML_ScoreThreshold` | не используется | quantile winner не сводится к одному score threshold |
+| `ML_UseScoreFilter` | `false` | CSV уже предфильтрован в Python через baseline-score |
+| `ML_ScoreThreshold` | не используется | quantile winner берёт baseline score не из самого quantile CSV |
+
+Ожидаемое число сделок на test-слое: **22 уникальных bars** (16 BUY / 6 SELL),
+Python sequential PF=3.64, win_rate=72.7%. Эти числа нужно использовать как
+точку отсчёта для MT4 parity-check.
 
 ---
 

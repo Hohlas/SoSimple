@@ -4,12 +4,12 @@
 >
 > **Точка входа**: [MAIN.mqh](../../MT/MQL4/Include/MAIN.mqh), метод `EXPERT::MAIN()`.
 >
-> **Текущий статус на 2026-04-09**:
+> **Текущий статус на 2026-04-12**:
 > - `iSignal=3` теперь означает **прямой parity-check режим** из [lib_ML_Signal.mqh](../../MT/MQL4/Include/lib_ML_Signal.mqh)
 > - старый runtime `regression_updn` сохранён как backup в [lib_ML_Signal_back.mqh](../../MT/MQL4/Include/lib_ML_Signal_back.mqh)
 > - `iSignal=5` по-прежнему использует [lib_ML_Signal_TB.mqh](../../MT/MQL4/Include/lib_ML_Signal_TB.mqh)
 
-> **Последнее обновление**: 2026-04-09
+> **Последнее обновление**: 2026-04-12
 
 ---
 
@@ -233,11 +233,22 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 | `ML_ScoreThreshold` | порог score для текущего winner |
 | `ML_BackStopATR` | дальний страховочный SL |
 
-Практический нюанс для текущего `entry_path_v1_quantile` parity-check:
+Практический нюанс для текущего `entry_path_v1_quantile` parity-check
+(production `lb_gt_m_q35`, frozen 2026-04-12):
 
-- в MT4 должен стоять `ML_HoldBars=24`, потому что frozen Python-rule использует `sequential_hold_bars=24`;
-- если в MT4 подаётся уже выпущенный Python-экспорт `time;signal`, `ML_UseScoreFilter` лучше держать выключенным явно;
-- старый `ML_ScoreThreshold=-0.03594103` относится к baseline `A @ 7.5%` и не воспроизводит quantile winner `lb_gt_m`.
+- в MT4 должен стоять `ML_HoldBars=24`, потому что frozen Python-rule
+  использует `sequential_hold_bars=24`;
+- `ML_UseScoreFilter=false`: CSV уже предфильтрован в Python — причём
+  baseline score там берётся **от baseline-модели** (`A @ 7.5%`), а не от
+  самой quantile-сети, поэтому воспроизвести этот фильтр внутри MT4
+  одним `pred_ret_24_dir_atr`-порогом нельзя;
+- старый `ML_ScoreThreshold=-0.03594103` остаётся релевантным для
+  baseline `A @ 7.5%`, но в текущем quantile-контуре он в MT4 не
+  применяется;
+- канонический канал подготовки CSV:
+  `API.export_entry_path_v1_quantile_signals --rule-path
+  ML/reports/entry_path_v1_quantile_selected_rule.json`
+  (подробности в [ml_signal_integration.md](ml_signal_integration.md)).
 
 Параметры старого runtime в этом режиме больше не определяют торговое решение:
 

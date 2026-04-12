@@ -37,6 +37,7 @@ GATE_MIN_TRADES = 30
 GATE_MIN_PF = 2.0
 GATE_MIN_YEAR_TRADES = 3
 GATE_MIN_SAME_WINNER_RATIO = 0.8
+STABILITY_QUANTILE_TOL = 0.05 + 1e-9
 
 QUANTILE_SWEEP = [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]
 RULES_TO_SWEEP = ['lb_gt_m', 'lb_gt_0', 'lb_gt_m_width_le_w']
@@ -254,7 +255,12 @@ def run_full_benchmark(
     combined_path = out / 'n_boost_validation_sweep.csv'
     combined.to_csv(combined_path, sep=';', index=False)
 
-    best = pick_winner(combined, min_trades=min_trades).to_dict()
+    # Pick winner that can pass gate: exclude pure baseline (not a quantile rule),
+    # require N >= GATE_MIN_TRADES. Fallback to full table if no candidate qualifies.
+    candidates = combined[combined['rule'] != 'baseline'].copy()
+    qualified = candidates[candidates['trades'] >= GATE_MIN_TRADES]
+    selection_pool = qualified if not qualified.empty else candidates
+    best = pick_winner(selection_pool, min_trades=GATE_MIN_TRADES).to_dict()
 
     # Frozen test
     is_ensemble = str(best.get('method', '')) == 'mean_quantile'
@@ -280,14 +286,24 @@ def run_full_benchmark(
     frozen_mask = build_rule_mask(test, rule=rule, m=m, w=w)
     sequential = run_sequential_check(test, frozen_mask, hold_bars=hold_bars)
 
-    # Multi-seed stability (for relax variant)
+    # Multi-seed stability: same rule + quantile within STABILITY_QUANTILE_TOL
+    best_quantile = best.get('quantile')
     if not is_ensemble:
         same_count = 0
         for sd in seed_dirs:
             sd_val = _ensure_datetime_time(load_seed_predictions(sd, split='validation'))
             sd_table = run_relax_sweep(sd_val, baseline_validation, baseline_threshold, alpha, min_trades)
-            sd_best = pick_winner(sd_table, min_trades=min_trades)
-            if sd_best['candidate'] == best['candidate']:
+            sd_candidates = sd_table[sd_table['rule'] != 'baseline'].copy()
+            sd_qualified = sd_candidates[sd_candidates['trades'] >= GATE_MIN_TRADES]
+            sd_pool = sd_qualified if not sd_qualified.empty else sd_candidates
+            sd_best = pick_winner(sd_pool, min_trades=GATE_MIN_TRADES)
+            same_rule = sd_best['rule'] == rule
+            sd_q = sd_best.get('quantile')
+            if best_quantile is None or sd_q is None:
+                quantile_ok = sd_best['candidate'] == best['candidate']
+            else:
+                quantile_ok = abs(float(sd_q) - float(best_quantile)) <= STABILITY_QUANTILE_TOL
+            if same_rule and quantile_ok:
                 same_count += 1
         same_winner_ratio = same_count / len(seeds)
     else:

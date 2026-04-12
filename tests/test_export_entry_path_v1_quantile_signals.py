@@ -128,6 +128,54 @@ def test_export_signals_copy_to_mt4_writes_both_targets(tmp_path):
     assert runtime_path.read_text(encoding='utf-8') == out
 
 
+def test_export_signals_uses_production_rule_path(tmp_path):
+    seed_dir = _write_seed_dir(tmp_path, split='test')
+    (seed_dir / 'entry_path_v1_quantile_filter_selected_rule.json').unlink()
+
+    baseline_frame = pd.DataFrame([
+        {'time': '2025.01.01 00:00', 'signal': 1, 'pred_ret_24_dir_atr': 0.40},
+        {'time': '2025.01.01 01:00', 'signal': -1, 'pred_ret_24_dir_atr': 0.35},
+        {'time': '2025.01.01 02:00', 'signal': 1, 'pred_ret_24_dir_atr': 0.10},
+        {'time': '2025.01.01 03:00', 'signal': 0, 'pred_ret_24_dir_atr': 0.50},
+    ])
+    baseline_csv = tmp_path / 'baseline_test_predictions.csv'
+    baseline_frame.to_csv(baseline_csv, sep=';', index=False)
+
+    baseline_rule_json = {
+        'validation_csv': str(baseline_csv),
+        'test_csv': str(baseline_csv),
+    }
+    baseline_rule_path = tmp_path / 'baseline_rule.json'
+    baseline_rule_path.write_text(json.dumps(baseline_rule_json), encoding='utf-8')
+
+    production_rule = {
+        'winner': {
+            'candidate': 'lb_gt_m_q35',
+            'rule': 'lb_gt_m',
+            'quantile': 0.35,
+            'm': -1.5,
+            'w': 10.0,
+            'correction': 0.5,
+        },
+        'baseline_threshold': 0.2,
+        'baseline_rule_path': str(baseline_rule_path),
+    }
+    rule_path = tmp_path / 'entry_path_v1_quantile_selected_rule.json'
+    rule_path.write_text(json.dumps(production_rule, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    output_path = tmp_path / 'ml_signals.csv'
+    exporter.export_signals(
+        seed_dir=seed_dir,
+        split='test',
+        output_path=output_path,
+        rule_path=rule_path,
+    )
+
+    out = pd.read_csv(output_path, sep=';')
+    assert list(out.columns) == ['time', 'signal']
+    assert out['signal'].tolist() == [1, 0, 0, 0]
+
+
 def test_export_signals_deduplicates_time_with_keep_last(tmp_path):
     seed_dir = tmp_path / 'seed_123'
     seed_dir.mkdir(parents=True, exist_ok=True)
