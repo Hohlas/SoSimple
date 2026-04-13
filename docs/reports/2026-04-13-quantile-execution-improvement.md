@@ -4,7 +4,7 @@
 > **Status**: Blocked — unmatched quantile universe
 > **Goal**: Проверить простые варианты выхода вокруг frozen `entry_path_v1_quantile`, не меняя сам сигнал
 > **Related plan/spec**: [plan](../superpowers/plans/2026-04-13-quantile-execution-improvement.md), [spec](../superpowers/specs/2026-04-13-quantile-execution-improvement-design.md)
-> **Related commit**: pending
+> **Related commit**: 53a29c1
 
 ## Context
 
