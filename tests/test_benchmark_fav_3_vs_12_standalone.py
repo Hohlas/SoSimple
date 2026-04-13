@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pandas as pd
 
 from ML.benchmark_fav_3_vs_12_standalone import (
@@ -8,6 +10,7 @@ from ML.benchmark_fav_3_vs_12_standalone import (
     compute_yearly_breakdown,
     count_negative_year_slices,
     evaluate_threshold_grid,
+    main,
     select_stable_threshold,
 )
 
@@ -260,3 +263,58 @@ def test_negative_year_slices_use_pf_not_net_pnl():
     assert compute_yearly_breakdown(frame).loc[0, "pf"] < 1.0
     assert frame["pnl_atr"].sum() < 0.0
     assert count_negative_year_slices(frame, min_year_trades=3) == 1
+
+
+def test_main_writes_expected_artefacts(tmp_path: Path):
+    source = tmp_path / "updn"
+    source.mkdir()
+    output = tmp_path / "out"
+
+    validation = pd.DataFrame(
+        {
+            "time": [
+                "2022-01-01",
+                "2022-01-02",
+                "2022-01-03",
+                "2023-01-01",
+                "2023-01-02",
+                "2023-01-03",
+            ],
+            "signal": [1, -1, 1, -1, 1, -1],
+            "pred_fav_3": [0.2, 0.3, 0.2, 0.3, 0.2, 0.3],
+            "pred_fav_12": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+            "pnl_atr": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+        }
+    )
+    test = validation.copy()
+    validation.to_csv(source / "validation_active_updn_predictions.csv", index=False)
+    test.to_csv(source / "test_active_updn_predictions.csv", index=False)
+
+    code = main(
+        [
+            "--updn-active-dir",
+            str(source),
+            "--output-dir",
+            str(output),
+            "--thresholds",
+            "0.2,0.3,0.4,0.5,0.6",
+            "--min-trades-validation",
+            "3",
+            "--min-trades-test",
+            "3",
+            "--min-pf-validation",
+            "1.0",
+            "--min-pf-test",
+            "1.0",
+            "--window-size",
+            "3",
+            "--min-passing-in-window",
+            "3",
+        ]
+    )
+
+    assert code == 0
+    assert (output / "threshold_grid_validation.csv").exists()
+    assert (output / "threshold_grid_test.csv").exists()
+    assert (output / "selected_threshold.json").exists()
+    assert (output / "verdict.json").exists()

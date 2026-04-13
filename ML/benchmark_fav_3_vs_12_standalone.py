@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import argparse
+import json
 import math
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
 
 EPS = 1e-6
+DEFAULT_UPDN_ACTIVE_DIR = Path("ML/reports/quantile_fav_composition/updn_active_source")
+DEFAULT_OUTPUT_DIR = Path("ML/reports/fav_3_vs_12_standalone")
+DEFAULT_THRESHOLDS = [round(x / 100, 2) for x in range(20, 121, 2)]
 
 
 def add_fav_ratio(frame: pd.DataFrame) -> pd.DataFrame:
@@ -182,3 +190,208 @@ def select_stable_threshold(
         "pf": float(pf.iloc[best["idx"]]),
         "negative_year_slices": int(negative_year_slices.iloc[best["idx"]]),
     }
+
+
+def _parse_thresholds(value: str) -> list[float]:
+    thresholds = [float(part.strip()) for part in value.split(",") if part.strip()]
+    if len(thresholds) != len(set(thresholds)):
+        raise argparse.ArgumentTypeError("duplicate threshold values are not allowed")
+    return sorted(thresholds)
+
+
+def _json_ready(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _json_ready(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_ready(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_ready(item) for item in value]
+    if pd.isna(value):
+        return None
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if hasattr(value, "item"):
+        return _json_ready(value.item())
+    return value
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(
+        json.dumps(_json_ready(payload), indent=2, sort_keys=True, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _selected_metrics(frame: pd.DataFrame, threshold: float | None, min_year_trades: int) -> dict[str, Any]:
+    if threshold is None:
+        return {
+            "threshold": None,
+            "n_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "gross_profit": 0.0,
+            "gross_loss": 0.0,
+            "pf": None,
+            "win_rate": None,
+            "mean_pnl_atr": None,
+            "negative_year_slices": 0,
+        }
+
+    selected = frame[frame["fav_3_vs_12"] <= threshold]
+    metrics = compute_metrics(selected)
+    metrics["threshold"] = float(threshold)
+    metrics["negative_year_slices"] = count_negative_year_slices(selected, min_year_trades=min_year_trades)
+    return metrics
+
+
+def _passes_gate(
+    metrics: dict[str, Any],
+    *,
+    min_trades: int,
+    min_pf: float,
+    max_negative_year_slices: int,
+) -> bool:
+    pf = metrics.get("pf")
+    pf_value = float(pf) if pf is not None and pd.notna(pf) else -1.0
+    return (
+        int(metrics["n_trades"]) >= min_trades
+        and pf_value >= min_pf
+        and int(metrics["negative_year_slices"]) <= max_negative_year_slices
+    )
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Benchmark fav_3_vs_12 as a standalone threshold filter.")
+    parser.add_argument("--updn-active-dir", type=Path, default=DEFAULT_UPDN_ACTIVE_DIR)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--thresholds", type=_parse_thresholds, default=DEFAULT_THRESHOLDS)
+    parser.add_argument("--min-trades-validation", type=int, default=30)
+    parser.add_argument("--min-trades-test", type=int, default=30)
+    parser.add_argument("--min-pf-validation", type=float, default=2.0)
+    parser.add_argument("--min-pf-test", type=float, default=1.5)
+    parser.add_argument("--max-negative-year-slices-validation", type=int, default=0)
+    parser.add_argument("--max-negative-year-slices-test", type=int, default=0)
+    parser.add_argument("--min-year-trades", type=int, default=3)
+    parser.add_argument("--window-size", type=int, default=5)
+    parser.add_argument("--min-passing-in-window", type=int, default=3)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+    validation_path = args.updn_active_dir / "validation_active_updn_predictions.csv"
+    test_path = args.updn_active_dir / "test_active_updn_predictions.csv"
+    if not validation_path.exists() or not test_path.exists():
+        return 2
+
+    validation = add_fav_ratio(pd.read_csv(validation_path))
+    test = add_fav_ratio(pd.read_csv(test_path))
+
+    validation_grid = evaluate_threshold_grid(validation, args.thresholds)
+    test_grid = evaluate_threshold_grid(test, args.thresholds)
+    validation_grid = annotate_grid_with_yearly_failures(
+        frame=validation,
+        grid=validation_grid,
+        min_year_trades=args.min_year_trades,
+    )
+    test_grid = annotate_grid_with_yearly_failures(
+        frame=test,
+        grid=test_grid,
+        min_year_trades=args.min_year_trades,
+    )
+
+    selected_threshold = select_stable_threshold(
+        validation_grid,
+        min_trades=args.min_trades_validation,
+        min_pf=args.min_pf_validation,
+        max_negative_year_slices=args.max_negative_year_slices_validation,
+        window_size=args.window_size,
+        min_passing_in_window=args.min_passing_in_window,
+    )
+    threshold = selected_threshold["threshold"]
+    validation_selected = _selected_metrics(validation, threshold, args.min_year_trades)
+    test_selected = _selected_metrics(test, threshold, args.min_year_trades)
+
+    validation_passes = _passes_gate(
+        validation_selected,
+        min_trades=args.min_trades_validation,
+        min_pf=args.min_pf_validation,
+        max_negative_year_slices=args.max_negative_year_slices_validation,
+    )
+    test_passes = _passes_gate(
+        test_selected,
+        min_trades=args.min_trades_test,
+        min_pf=args.min_pf_test,
+        max_negative_year_slices=args.max_negative_year_slices_test,
+    )
+    verdict = (
+        "baseline_candidate"
+        if selected_threshold["verdict"] == "selected" and validation_passes and test_passes
+        else "reject_as_standalone"
+    )
+
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    validation_grid.to_csv(args.output_dir / "threshold_grid_validation.csv", index=False)
+    test_grid.to_csv(args.output_dir / "threshold_grid_test.csv", index=False)
+
+    if threshold is None:
+        yearly_validation = compute_yearly_breakdown(validation.iloc[0:0])
+        yearly_test = compute_yearly_breakdown(test.iloc[0:0])
+    else:
+        yearly_validation = compute_yearly_breakdown(validation[validation["fav_3_vs_12"] <= threshold])
+        yearly_test = compute_yearly_breakdown(test[test["fav_3_vs_12"] <= threshold])
+    yearly_validation.to_csv(args.output_dir / "yearly_breakdown_validation.csv", index=False)
+    yearly_test.to_csv(args.output_dir / "yearly_breakdown_test.csv", index=False)
+
+    _write_json(
+        args.output_dir / "selected_threshold.json",
+        {
+            **selected_threshold,
+            "validation": validation_selected,
+            "test": test_selected,
+        },
+    )
+    gates = {
+        "min_trades_validation": args.min_trades_validation,
+        "min_trades_test": args.min_trades_test,
+        "min_pf_validation": args.min_pf_validation,
+        "min_pf_test": args.min_pf_test,
+        "max_negative_year_slices_validation": args.max_negative_year_slices_validation,
+        "max_negative_year_slices_test": args.max_negative_year_slices_test,
+        "min_year_trades": args.min_year_trades,
+        "window_size": args.window_size,
+        "min_passing_in_window": args.min_passing_in_window,
+    }
+    _write_json(
+        args.output_dir / "verdict.json",
+        {
+            "verdict": verdict,
+            "selected_threshold": threshold,
+            "validation_passes": validation_passes,
+            "test_passes": test_passes,
+            "gates": gates,
+            "validation": validation_selected,
+            "test": test_selected,
+        },
+    )
+    _write_json(
+        args.output_dir / "run_metadata.json",
+        {
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "updn_active_dir": str(args.updn_active_dir),
+            "output_dir": str(args.output_dir),
+            "validation_input": str(validation_path),
+            "test_input": str(test_path),
+            "validation_rows": int(len(validation)),
+            "test_rows": int(len(test)),
+            "thresholds": args.thresholds,
+            "gates": gates,
+            "selection_split": "validation",
+            "test_policy": "single_confirmation_after_validation_selection",
+        },
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
