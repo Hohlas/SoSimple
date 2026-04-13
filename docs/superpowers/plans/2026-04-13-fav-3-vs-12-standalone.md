@@ -77,12 +77,14 @@ Use these defaults unless data inspection proves they are inappropriate and the 
 - `min_pf_test = 1.5`
 - `max_negative_year_slices_validation = 0`
 - `max_negative_year_slices_test = 0`
+- `min_year_trades = 3` for counting weak yearly slices
 - stability window size: `5` neighboring thresholds
 - at least `3` thresholds inside the window must pass the basic gates
 - thresholds must be sorted by numeric value before stability checks
 - duplicate thresholds must be rejected instead of silently changing the window meaning
 - the selected threshold must have a full centered stability window, so edge thresholds are not promoted as stable points
 - window robustness has priority over a single-threshold `PF` spike
+- weak yearly slice means yearly `PF < 1.0` after ignoring years with fewer than `min_year_trades`
 
 These values are intentionally weaker than `quantile`, because this stage checks a possible second system, not a replacement for `quantile`.
 
