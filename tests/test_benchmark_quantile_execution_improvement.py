@@ -100,7 +100,8 @@ def test_main_writes_variant_artifacts(tmp_path: Path):
             {
                 "baseline_rule_path": str(baseline_rule),
                 "baseline_threshold": 0.0,
-                "winner": {"correction": 0.0, "rule": "lb_gt_m", "m": 0.0, "w": 0.0},
+                "winner": {"correction": 0.0, "rule": "lb_gt_m", "m": 0.0, "w": 0.0, "trades": 2},
+                "frozen_test": {"trades": 2},
             }
         ),
         encoding="utf-8",
@@ -144,6 +145,65 @@ def test_main_returns_2_for_missing_required_column(tmp_path: Path):
             str(predictions),
             "--output-dir",
             str(tmp_path / "out"),
+        ]
+    )
+
+    assert code == 2
+
+
+def test_main_returns_2_when_selected_test_count_differs_from_frozen_rule(tmp_path: Path):
+    validation = tmp_path / "validation.csv"
+    test = tmp_path / "test.csv"
+    frame = pd.DataFrame(
+        {
+            "time": ["2025-01-01", "2025-01-02"],
+            "signal": [1, -1],
+            "true_ret_12_dir_atr": [1.0, -0.4],
+            "true_ret_24_dir_atr": [2.0, -1.0],
+            "pred_ret_24_dir_atr": [1.0, 1.0],
+            "pred_ret_24_q10": [1.0, 1.0],
+            "pred_ret_24_q90": [2.0, 2.0],
+        }
+    )
+    baseline = frame[["time", "signal", "pred_ret_24_dir_atr"]].copy()
+    rule = tmp_path / "rule.json"
+    baseline_rule = tmp_path / "baseline_rule.json"
+    baseline_rule.write_text(
+        json.dumps(
+            {
+                "validation_csv": str(tmp_path / "baseline_validation.csv"),
+                "test_csv": str(tmp_path / "baseline_test.csv"),
+                "winner": {"score_threshold": 0.0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    rule.write_text(
+        json.dumps(
+            {
+                "baseline_rule_path": str(baseline_rule),
+                "baseline_threshold": 0.0,
+                "winner": {"correction": 0.0, "rule": "lb_gt_m", "m": 0.0, "w": 0.0, "trades": 48},
+                "frozen_test": {"trades": 48},
+            }
+        ),
+        encoding="utf-8",
+    )
+    frame.to_csv(validation, sep=";", index=False)
+    frame.to_csv(test, sep=";", index=False)
+    baseline.to_csv(tmp_path / "baseline_validation.csv", sep=";", index=False)
+    baseline.to_csv(tmp_path / "baseline_test.csv", sep=";", index=False)
+
+    code = main(
+        [
+            "--validation-predictions",
+            str(validation),
+            "--test-predictions",
+            str(test),
+            "--output-dir",
+            str(tmp_path / "out"),
+            "--rule-path",
+            str(rule),
         ]
     )
 

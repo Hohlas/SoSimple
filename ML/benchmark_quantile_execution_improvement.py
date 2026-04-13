@@ -132,6 +132,17 @@ def _decide_verdict(validation_grid: pd.DataFrame, test_grid: pd.DataFrame, winn
     return "execution_uplift_candidate"
 
 
+def _expected_frozen_test_trades(rule_path: str | Path) -> int | None:
+    raw = json.loads(Path(rule_path).read_text(encoding="utf-8"))
+    frozen = raw.get("frozen_test")
+    if isinstance(frozen, dict) and "trades" in frozen:
+        return int(frozen["trades"])
+    winner = raw.get("winner")
+    if isinstance(winner, dict) and "trades" in winner:
+        return int(winner["trades"])
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Benchmark simple execution variants around frozen quantile.")
     parser.add_argument("--validation-predictions", default=str(DEFAULT_VALIDATION_CSV))
@@ -157,6 +168,9 @@ def main(argv: list[str] | None = None) -> int:
             rule_path=args.rule_path,
             baseline_predictions_path=baseline_test,
         )
+        expected_test_trades = _expected_frozen_test_trades(args.rule_path)
+        if expected_test_trades is not None and len(test_selected) != expected_test_trades:
+            return 2
         validation_grid = evaluate_variants(validation_selected, DEFAULT_VARIANTS)
         test_grid = evaluate_variants(test_selected, DEFAULT_VARIANTS)
         winner = choose_validation_winner(validation_grid)
