@@ -208,10 +208,13 @@ def _parse_thresholds(value: str) -> list[float]:
 
 
 def _load_input_frame(path: Path) -> pd.DataFrame:
-    frame = pd.read_csv(path)
+    frame = pd.read_csv(path, sep=";")
     missing = REQUIRED_INPUT_COLUMNS.difference(frame.columns)
     if missing:
         raise ValueError(f"{path} missing required columns: {sorted(missing)}")
+    for column in ["pred_fav_3", "pred_fav_12", "pnl_atr"]:
+        frame[column] = pd.to_numeric(frame[column], errors="raise")
+    pd.to_datetime(frame["time"], errors="raise")
     return add_fav_ratio(frame)
 
 

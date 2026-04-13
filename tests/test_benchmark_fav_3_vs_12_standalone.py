@@ -289,8 +289,8 @@ def test_main_writes_expected_artefacts(tmp_path: Path):
         }
     )
     test = validation.copy()
-    validation.to_csv(source / "validation_active_updn_predictions.csv", index=False)
-    test.to_csv(source / "test_active_updn_predictions.csv", index=False)
+    validation.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
+    test.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
 
     code = main(
         [
@@ -341,8 +341,36 @@ def test_main_returns_2_for_invalid_input_schema(tmp_path: Path):
     source.mkdir()
     output = tmp_path / "out"
     invalid = pd.DataFrame({"time": ["2022-01-01"], "pnl_atr": [1.0]})
-    invalid.to_csv(source / "validation_active_updn_predictions.csv", index=False)
-    invalid.to_csv(source / "test_active_updn_predictions.csv", index=False)
+    invalid.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
+    invalid.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
+
+    code = main(
+        [
+            "--updn-active-dir",
+            str(source),
+            "--output-dir",
+            str(output),
+        ]
+    )
+
+    assert code == 2
+
+
+def test_main_returns_2_for_non_numeric_required_columns(tmp_path: Path):
+    source = tmp_path / "updn"
+    source.mkdir()
+    output = tmp_path / "out"
+    invalid = pd.DataFrame(
+        {
+            "time": ["2022-01-01"],
+            "signal": [1],
+            "pred_fav_3": ["bad"],
+            "pred_fav_12": [1.0],
+            "pnl_atr": [1.0],
+        }
+    )
+    invalid.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
+    invalid.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
 
     code = main(
         [
