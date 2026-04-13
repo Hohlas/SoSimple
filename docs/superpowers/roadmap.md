@@ -7,6 +7,7 @@
 - `ratio_3_vs_12 > 4.751` — полезен только как benchmark механики pullback
 - следующий этап должен идти уже по новой дисциплине: подбор на `validation`, финальная проверка на `test`
 - composition check `entry_path_v1_quantile × fav_3_vs_12` завершён 2026-04-13 с verdict `CLOSED — gate fail`: после честной пересборки источника composition дал `47` test trades vs `48` у quantile, но получил negative year slice в 2023 и therefore не проходит gate
+- quantile forward validation scaffold завершён 2026-04-13: benchmark готов, но verdict пока `watch / no_forward_data`, потому что в репозитории нет strictly-forward prediction CSV после production decision
 
 Подробный текущий handoff: [CONTEXT_HANDOFF.md](../CONTEXT_HANDOFF.md)
 
@@ -65,3 +66,11 @@
   closed
   verdict report: [2026-04-13-fav-3-vs-12-standalone.md](../reports/2026-04-13-fav-3-vs-12-standalone.md)
   reason: no stable threshold found; best validation PF stayed at `0.1379`, so the feature does not work as an independent second system
+
+## Quantile Forward Status
+
+- `entry_path_v1_quantile` forward validation:
+  scaffold ready
+  verdict report: [2026-04-13-quantile-forward-validation.md](../reports/2026-04-13-quantile-forward-validation.md)
+  current verdict: `watch / no_forward_data`
+  next action: collect or generate a strictly newer forward prediction CSV, then run `ML.benchmark_quantile_forward_validation`

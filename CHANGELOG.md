@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-13] - Quantile forward validation scaffold
+
+### Добавлено
+- `ML/benchmark_quantile_forward_validation.py`: frozen forward benchmark для текущего `entry_path_v1_quantile` rule без перенастройки
+- `tests/test_benchmark_quantile_forward_validation.py`: проверки метрик, verdict, квартальных срезов, CLI и ошибочного ввода
+- `ML/reports/quantile_forward_validation/`: артефакты текущего состояния forward validation
+
+### Результаты
+- Инструмент готов: CLI пишет `summary.json`, `time_slices.csv`, `run_metadata.json`
+- Нового strictly-forward prediction CSV в репозитории нет; доступны только historical validation/test prediction-файлы
+- Operational verdict текущего этапа: `watch`, reason: `no_forward_data`
+
+### Вывод
+- `quantile` не подтверждён и не опровергнут на новых данных: нужна новая forward-выборка после production decision
+- Старый frozen test не использован повторно, чтобы не подменять forward validation уже известным окном
+
 ## [2026-04-13] - Composition track verdict (quantile × fav_3_vs_12)
 
 ### Результаты

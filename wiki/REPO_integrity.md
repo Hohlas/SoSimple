@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-13 12:19 UTC · git `07ceea9`
+> Auto-generated 2026-04-13 18:42 UTC · git `368b176`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 617 files  ·  **Commit**: `07ceea9`  ·  **Generated**: 2026-04-13 12:19 UTC
+**Tracked**: 626 files  ·  **Commit**: `368b176`  ·  **Generated**: 2026-04-13 18:42 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-13 | 10KB | `368c449c` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-13 | 102KB | `b282f70e` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-13 | 104KB | `c505a162` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-13 | 3KB | `7eaa5505` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-13 | 9KB | `6c4c96c8` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-13 | 11KB | `7994522e` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-13 | 14KB | `7351ca61` |
 | [README.md](README.md) |  | 2026-04-13 | 969B | `4fc82a41` |
 
@@ -67,9 +67,11 @@
 | [docs/superpowers/plans/2026-04-13-fav-3-vs-12-standalone.md](docs/superpowers/plans/2026-04-13-fav-3-vs-12-standalone.md) |  | 2026-04-13 | 20KB | `80750ee6` |
 | [docs/superpowers/plans/2026-04-13-label-convention-audit.md](docs/superpowers/plans/2026-04-13-label-convention-audit.md) |  | 2026-04-13 | 31KB | `ea55d54a` |
 | [docs/superpowers/plans/2026-04-13-pf-uplift-beyond-ml.md](docs/superpowers/plans/2026-04-13-pf-uplift-beyond-ml.md) |  | 2026-04-13 | 29KB | `74578dba` |
+| [docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md](docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md) |  | 2026-04-13 | 15KB | `50a68d1f` |
 | [docs/superpowers/plans/2026-04-13-quantile-fav-composition.md](docs/superpowers/plans/2026-04-13-quantile-fav-composition.md) |  | 2026-04-13 | 25KB | `20186b5d` |
+| [docs/superpowers/plans/2026-04-13-quantile-forward-validation.md](docs/superpowers/plans/2026-04-13-quantile-forward-validation.md) |  | 2026-04-13 | 13KB | `e4d63c4c` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-13 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-13 | 4KB | `98d9896c` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-13 | 5KB | `e7fed288` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-04-13 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-04-13 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-04-13 | 13KB | `477a2843` |
@@ -86,6 +88,8 @@
 | [docs/superpowers/specs/2026-04-10-entry-path-cqr-design.md](docs/superpowers/specs/2026-04-10-entry-path-cqr-design.md) |  | 2026-04-13 | 12KB | `1a877fcd` |
 | [docs/superpowers/specs/2026-04-10-entry-path-v1-quantile-design.md](docs/superpowers/specs/2026-04-10-entry-path-v1-quantile-design.md) |  | 2026-04-13 | 13KB | `2ef88bef` |
 | [docs/superpowers/specs/2026-04-13-fav-3-vs-12-standalone-design.md](docs/superpowers/specs/2026-04-13-fav-3-vs-12-standalone-design.md) |  | 2026-04-13 | 8KB | `8272fe58` |
+| [docs/superpowers/specs/2026-04-13-quantile-execution-improvement-design.md](docs/superpowers/specs/2026-04-13-quantile-execution-improvement-design.md) |  | 2026-04-13 | 7KB | `7fede3fc` |
+| [docs/superpowers/specs/2026-04-13-quantile-forward-validation-design.md](docs/superpowers/specs/2026-04-13-quantile-forward-validation-design.md) |  | 2026-04-13 | 6KB | `f1f6cae8` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-04-13 | 4KB | `551fd6e9` |
 
 ## Reports
@@ -113,6 +117,7 @@
 | [docs/reports/2026-04-13-fav-3-vs-12-standalone.md](docs/reports/2026-04-13-fav-3-vs-12-standalone.md) |  | 2026-04-13 | 5KB | `8a929a77` |
 | [docs/reports/2026-04-13-label-convention-audit.md](docs/reports/2026-04-13-label-convention-audit.md) |  | 2026-04-13 | 6KB | `3ddc2a23` |
 | [docs/reports/2026-04-13-quantile-fav-composition.md](docs/reports/2026-04-13-quantile-fav-composition.md) |  | 2026-04-13 | 8KB | `8dd53bda` |
+| [docs/reports/2026-04-13-quantile-forward-validation.md](docs/reports/2026-04-13-quantile-forward-validation.md) |  | 2026-04-13 | 4KB | `840f6606` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-13 | 2KB | `ed0769cc` |
 
 ## ML
@@ -129,6 +134,7 @@
 | [ML/benchmark_fav_3_vs_12_standalone.py](ML/benchmark_fav_3_vs_12_standalone.py) |  |  | 2026-04-13 | 16KB | `8e4214fd` |
 | [ML/benchmark_outcome_targets.py](ML/benchmark_outcome_targets.py) | Бенчмарк outcome targets: сравнение качества разных таргетов | 🏁 | 2026-04-13 | 14KB | `16753618` |
 | [ML/benchmark_quantile_fav_composition.py](ML/benchmark_quantile_fav_composition.py) |  |  | 2026-04-13 | 15KB | `97a02b70` |
+| [ML/benchmark_quantile_forward_validation.py](ML/benchmark_quantile_forward_validation.py) |  |  | 2026-04-13 | 5KB | `a3386bcc` |
 | [ML/benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) |  |  | 2026-04-13 | 4KB | `3ef3e057` |
 | [ML/compare_architectures.py](ML/compare_architectures.py) | Сравнение 4 архитектур | 🏁 | 2026-04-13 | 13KB | `103ded09` |
 | [ML/conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | 🏁 | 2026-04-13 | 14KB | `d34cb990` |
@@ -201,6 +207,8 @@
 | [ML/reports/quantile_fav_composition/test_metrics.json](ML/reports/quantile_fav_composition/test_metrics.json) |  |  | 2026-04-13 | 1KB | `86714f9b` |
 | [ML/reports/quantile_fav_composition/updn_active_source/metadata.json](ML/reports/quantile_fav_composition/updn_active_source/metadata.json) |  |  | 2026-04-13 | 619B | `d44841e2` |
 | [ML/reports/quantile_fav_composition/validation_metrics.json](ML/reports/quantile_fav_composition/validation_metrics.json) |  |  | 2026-04-13 | 1KB | `7583bfeb` |
+| [ML/reports/quantile_forward_validation/run_metadata.json](ML/reports/quantile_forward_validation/run_metadata.json) |  |  | 2026-04-13 | 554B | `eeb46771` |
+| [ML/reports/quantile_forward_validation/summary.json](ML/reports/quantile_forward_validation/summary.json) |  |  | 2026-04-13 | 440B | `f208a93b` |
 | [ML/reports/reproducibility_report_12H.md](ML/reports/reproducibility_report_12H.md) |  |  | 2026-04-13 | 1KB | `c9af48ba` |
 | [ML/reports/tb_mt4_verdict/test_summary.json](ML/reports/tb_mt4_verdict/test_summary.json) |  |  | 2026-04-13 | 172B | `6ea3e9d3` |
 | [ML/reports/tb_mt4_verdict/validation_summary.json](ML/reports/tb_mt4_verdict/validation_summary.json) |  |  | 2026-04-13 | 167B | `cc2e7d34` |
@@ -264,6 +272,7 @@
 | [tests/test_benchmark_fav_3_vs_12_standalone.py](tests/test_benchmark_fav_3_vs_12_standalone.py) |  |  | 2026-04-13 | 11KB | `dcdcc7a1` |
 | [tests/test_benchmark_outcome_targets.py](tests/test_benchmark_outcome_targets.py) | `ML/benchmark_outcome_targets.py` | ✅ | 2026-04-13 | 4KB | `e9159813` |
 | [tests/test_benchmark_quantile_fav_composition.py](tests/test_benchmark_quantile_fav_composition.py) |  |  | 2026-04-13 | 6KB | `e7f68596` |
+| [tests/test_benchmark_quantile_forward_validation.py](tests/test_benchmark_quantile_forward_validation.py) |  |  | 2026-04-13 | 6KB | `3dc6e7a3` |
 | [tests/test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | ✅ | 2026-04-13 | 3KB | `abe2c2b4` |
 | [tests/test_entry_path_model.py](tests/test_entry_path_model.py) | `ML/models/entry_path_transformer.py` | ✅ | 2026-04-13 | 1KB | `e0f000fe` |
 | [tests/test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | ✅ | 2026-04-13 | 7KB | `7894f43c` |
@@ -612,9 +621,9 @@
 |------|-------------|----------|------|------|
 | [wiki/LLM Wiki_method.md](wiki/LLM Wiki_method.md) |  | 2026-04-13 | 11KB | `68a888b4` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-13 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-13 | 1KB | `497c03d8` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-13 | 5KB | `a1f9f30d` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-13 | 20KB | `596c16db` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-13 | 1KB | `50cbefde` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-13 | 5KB | `3c84b7f2` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-13 | 22KB | `44eb11f9` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-13 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-13 | 18KB | `4bcfb243` |
 

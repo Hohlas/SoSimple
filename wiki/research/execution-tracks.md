@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-13
-sources: 15
+sources: 16
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 13 отчётов (2026-04-08 — 2026-04-12). Параллельные направления execution.
+> Синтез 16 отчётов (2026-04-08 — 2026-04-13). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -256,6 +256,31 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-13-fav-3-vs-12-standalone.md](../../docs/reports/2026-04-13-fav-3-vs-12-standalone.md)
 
+### Quantile Forward Validation (04-13): scaffold ready, no forward data yet
+
+После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
+
+Добавлен отдельный frozen benchmark:
+- не меняет rule `lb_gt_m_q35`;
+- не ищет новый winner;
+- читает внешний forward prediction CSV;
+- считает `trades`, `PF`, win_rate, mean PnL в ATR;
+- строит квартальные срезы;
+- пишет `summary.json`, `time_slices.csv`, `run_metadata.json`;
+- выдаёт verdict `confirmed / watch / revisit`.
+
+Текущий результат не является подтверждением и не является провалом `quantile`:
+- verdict: `watch`
+- reason: `no_forward_data`
+- forward trades: `0`
+- forward PF: `n/a`
+
+Причина простая: в репозитории нет strictly-forward prediction CSV после production decision. Доступны только historical validation/test prediction-файлы, а повторно использовать старый test как forward validation нельзя.
+
+**Решение:** инструмент готов, но фактический verdict откладывается до появления нового prediction CSV. До этого `entry_path_v1_quantile` остаётся production-ready parallel mode по frozen test и MT4 parity, но не переводится в более сильный статус на основании forward validation.
+
+Источник: [2026-04-13-quantile-forward-validation.md](../../docs/reports/2026-04-13-quantile-forward-validation.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -307,12 +332,12 @@ Trade-level reconciliation был сохранён отдельно:
 | regression_updn + exit | PF~1.05 (OOS) | Production baseline | Нет uplift от exit layer |
 | Triple Barrier | PF=1.28 (test, 69 trades, fixed simulator) | **Gate fail — не production** | Пересмотр только после forward-данных post-2026-06 |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
-| entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах | **Production parallel mode** | Forward validation post-2026-04 |
+| entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах; forward scaffold `watch/no_forward_data` | **Production parallel mode** | Собрать strictly-forward prediction CSV |
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Forward validation quantile-слоя: когда набирётся достаточная выборка (~10–15 сделок) для пересмотра статуса "parallel → primary"?
+1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.

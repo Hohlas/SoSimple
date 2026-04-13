@@ -89,3 +89,14 @@
   - updated comparison table with standalone rejection
 - Updated `wiki/index.md` coverage from 14 to 15 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 15`
+
+## [2026-04-13] ingest | Quantile forward validation scaffold synced into wiki
+- Added report `docs/reports/2026-04-13-quantile-forward-validation.md`
+- Added benchmark `ML/benchmark_quantile_forward_validation.py`
+- Current operational verdict: `watch / no_forward_data`
+- Updated `wiki/research/execution-tracks.md`:
+  - added forward validation scaffold section
+  - clarified that historical test was not reused as forward data
+  - updated comparison table and open question for strictly-forward prediction CSV
+- Updated `wiki/index.md` coverage from 15 to 16 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 16`

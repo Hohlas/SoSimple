@@ -1,6 +1,23 @@
 # Context Handoff
 
 ## Current Stage
+Этап `quantile_forward_validation_scaffold` завершён (2026-04-13).
+
+Что зафиксировано:
+
+- создан frozen benchmark `ML/benchmark_quantile_forward_validation.py` + тесты `tests/test_benchmark_quantile_forward_validation.py` (`16/16` зелёные)
+- benchmark использует только внешний forward prediction CSV и не перенастраивает `entry_path_v1_quantile`
+- CLI пишет:
+  - `ML/reports/quantile_forward_validation/summary.json`
+  - `ML/reports/quantile_forward_validation/time_slices.csv`
+  - `ML/reports/quantile_forward_validation/run_metadata.json`
+- operational verdict текущего состояния:
+  - `verdict = watch`
+  - `reason = no_forward_data`
+- причина: в репозитории нет нового strictly-forward prediction CSV после production decision; доступны только historical validation/test prediction-файлы
+- canonical report: `docs/reports/2026-04-13-quantile-forward-validation.md`
+
+## Previous Stage
 Этап `fav_3_vs_12_standalone_verdict` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -21,7 +38,7 @@
   - на test лучшая диагностическая точка тоже слабая: `threshold=0.24`, `N=164`, `PF=0.3129480021818097`, `negative_year_slices=5`
 - canonical report: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
 
-## Previous Stage
+## Earlier Stage
 Этап `quantile_fav_composition_verdict` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -43,7 +60,7 @@
 - formal verdict: **CLOSED — gate fail**
 - canonical report: `docs/reports/2026-04-13-quantile-fav-composition.md`
 
-## Earlier Stage
+## Historical Stage
 Этап `label_convention_audit` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -68,7 +85,7 @@
   - test summary совпал exactly: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
   - значит найденные bugs в `ML/tb_signal_logic.py` и `ML/threshold_analysis.py` **не меняют** historical verdict из `2026-04-12-tb-verdict.md`
 
-## Historical Stage
+## Older Historical Stage
 Этап `triple_barrier_mt4_verdict` завершён. Этап `entry_path_v1_quantile_productization` закрыт ранее (2026-04-12, коммит `0023d92`).
 
 Что зафиксировано:
@@ -92,17 +109,19 @@
   - пересмотр возможен только после накопления forward-данных post-2026-06
 
 ## Last Completed Stage
-Fav 3 vs 12 Standalone Verdict (2026-04-13).
+Quantile Forward Validation Scaffold (2026-04-13).
 
 ## Next Step
-1. `fav_3_vs_12` как standalone track закрыт. Не возвращаться к нему как к отдельной системе без нового сильного основания.
-2. Composition track тоже закрыт. Не пытаться снова строить `fav_3_vs_12` поверх `quantile`.
-3. Forward validation для quantile-слоя: прогон на реальных post-2026-04 данных после накопления ~10–15 сделок (ожидаемо 2–3 месяца). До этого quantile остаётся parallel mode, а не единственным.
-4. Практический research-фокус возвращается к entry logic / SL-TP / regime analysis как более вероятным источникам PF uplift.
+1. Собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
+2. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
+3. Только после фактического forward verdict решать, остаётся ли `quantile` просто parallel mode или можно усиливать его роль.
+4. Не возвращаться к `fav_3_vs_12` как composition или standalone track без нового сильного основания.
+5. Следующий research-фокус после появления forward-данных: execution improvement вокруг `quantile`, сначала выход, потом вход.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
+- `docs/reports/2026-04-13-quantile-forward-validation.md` — текущий forward validation status (`watch / no_forward_data`)
 - `docs/reports/2026-04-13-fav-3-vs-12-standalone.md` — standalone verdict
 - `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`CLOSED — gate fail`)
 - `AGENTS.md`
@@ -114,12 +133,13 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 - `ML/reports/tb_mt4_verdict/` — артефакты TB прогона (validation/test trades, yearly, summary)
 
 ## Open Risks
+- **No forward data yet**: новый benchmark готов, но не может подтвердить `quantile` без strictly newer prediction CSV.
 - **TB regime shift**: между validation (2019–2022) и test (2023–2026) PF падает с 4.33 до 1.28. Если 2026-ый catastrophic year — локальный всплеск, решение пересмотрится на forward-данных, но сейчас это "не production" definitively.
 - **Quantile low-frequency**: 22 sequential trades на test, PF=3.64. Достаточно для parallel mode, но не для полной замены baseline. Forward validation критична.
 - **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+`docs/reports/2026-04-13-quantile-forward-validation.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`
