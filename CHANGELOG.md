@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-13] — Label convention audit: timeout больше не штрафуется как SL в TB analytics
+
+### Исправлено
+- `ML/tb_signal_logic.py`: `loss_mask = ~win_mask` считал timeout (`0.5`) как loss и завышал `losses`, `loss`, `PF`. Теперь loss считается только по `outcomes == 0.0`, добавлен assert на полное разбиение `TP/SL/Timeout`
+- `ML/threshold_analysis.py`: `losses = n_trades - wins` сливал `SL` и `Timeout`; теперь `losses` считаются только по `true == 0.0`
+- Восстановлен missing baseline module `ML/benchmark_triple_barrier_mt4_execution.py`, чтобы TB regression suite снова проходил collection
+
+### Добавлено
+- `ML/reports/label_convention_audit_inventory.csv`: inventory всех релевантных TB label handling patterns с risk-категориями `R1..R8`
+- `ML/reports/label_convention_audit.md`: полный audit report
+- `tests/test_tb_label_invariants.py`: permanent guards против смешения timeout и loss в TB analytics
+
+### Вывод
+Аудит подтвердил ещё два реальных `R2 not_win_is_loss` бага после уже известного фикса MT4 simulator. Source-of-truth в `processing/label_signals.py` не менялся, frozen `tb_selected_rule.json` не ретюнился. Подробности: [docs/reports/2026-04-13-label-convention-audit.md](docs/reports/2026-04-13-label-convention-audit.md)
+Дополнительный frozen rerun на canonical `ml_signals_tb.csv` + `Nero_{validation,test}_labeled.csv` подтвердил, что historical verdict от `2026-04-12` не меняется: validation/test summary совпали exactly.
+
 ## [2026-04-12] — Triple Barrier verdict: не production (gate_fail)
 
 ### Исправлено

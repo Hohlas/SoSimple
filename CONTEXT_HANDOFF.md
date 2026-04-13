@@ -1,6 +1,31 @@
 # Context Handoff
 
 ## Current Stage
+Этап `label_convention_audit` завершён (2026-04-13).
+
+Что зафиксировано:
+
+- baseline blocker устранён:
+  - отсутствовал `ML/benchmark_triple_barrier_mt4_execution.py`, из-за чего `tests/test_triple_barrier_mt4_execution.py` падал на import во время collection
+  - модуль восстановлен минимально, baseline suite снова зелёный
+- label convention audit завершён:
+  - source of truth `processing/label_signals.py` не менялся
+  - confirmed bugs:
+    - `ML/tb_signal_logic.py`: `loss_mask = ~win_mask` включал timeout в losses
+    - `ML/threshold_analysis.py`: `losses = n_trades - wins` включал timeout в losses
+  - оба места исправлены на явный `SL == 0.0`
+  - добавлены permanent guards: `tests/test_tb_label_invariants.py`
+  - inventory: `ML/reports/label_convention_audit_inventory.csv`
+  - audit report: `ML/reports/label_convention_audit.md`
+- frozen rerun выполнен на canonical artifacts из основного дерева:
+  - `MT/MQL4/Files/ml_signals_tb.csv`
+  - `DATA/Nero_validation_labeled.csv`
+  - `DATA/Nero_test_labeled.csv`
+  - validation summary совпал exactly: `28 / 16 / 4 / 2`, `PF=4.333333333333333`
+  - test summary совпал exactly: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
+  - значит найденные bugs в `ML/tb_signal_logic.py` и `ML/threshold_analysis.py` **не меняют** historical verdict из `2026-04-12-tb-verdict.md`
+
+## Previous Stage
 Этап `triple_barrier_mt4_verdict` завершён. Этап `entry_path_v1_quantile_productization` закрыт ранее (2026-04-12, коммит `0023d92`).
 
 Что зафиксировано:
@@ -45,10 +70,10 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 ## Open Risks
 - **TB regime shift**: между validation (2019–2022) и test (2023–2026) PF падает с 4.33 до 1.28. Если 2026-ый catastrophic year — локальный всплеск, решение пересмотрится на forward-данных, но сейчас это "не production" definitively.
 - **Quantile low-frequency**: 22 sequential trades на test, PF=3.64. Достаточно для parallel mode, но не для полной замены baseline. Forward validation критична.
-- **Label convention risk**: любой новый TB/label simulator должен сравнивать float-пороги, а не `int()`. Убедиться, что все benchmark-скрипты для TB-label прошли аудит после этого фикса.
+- **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-12-tb-verdict.md`
+`docs/reports/2026-04-13-label-convention-audit.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

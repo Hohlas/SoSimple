@@ -326,7 +326,7 @@ def analyze_thresholds_tb(
 
             wins = int((true[mask] == 1.0).sum())
             timeouts = int((true[mask] == 0.5).sum())
-            losses = int(n_trades - wins)
+            losses = int((true[mask] == 0.0).sum())
 
             profit = wins * tp
             loss_val = losses * sl

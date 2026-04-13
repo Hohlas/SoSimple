@@ -56,3 +56,17 @@
 - Updated `wiki/index.md` coverage from 11 to 13 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-12`, `sources: 13`
 - Regenerated `wiki/REPO_integrity.md`
+
+## [2026-04-13] audit | TB float-label convention audit completed
+- Added report `docs/reports/2026-04-13-label-convention-audit.md`
+- Added audit artifacts:
+  - `ML/reports/label_convention_audit.md`
+  - `ML/reports/label_convention_audit_inventory.csv`
+- Fixed two post-verdict TB analytics bugs:
+  - `ML/tb_signal_logic.py`: timeout no longer counted as loss via `~win_mask`
+  - `ML/threshold_analysis.py`: timeout no longer counted as loss via `n_trades - wins`
+- Added permanent guards: `tests/test_tb_label_invariants.py`
+- Additional frozen rerun against canonical main-tree artifacts matched `2026-04-12` exactly:
+  - validation: `28 / 16 / 4 / 2`, `PF=4.333333333333333`
+  - test: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
+- Conclusion: audit fixes did not change historical TB verdict

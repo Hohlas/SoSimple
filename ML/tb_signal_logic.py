@@ -119,12 +119,13 @@ def evaluate_tb_signal_rule(
 
     win_mask = outcomes == 1.0
     timeout_mask = outcomes == 0.5
-    loss_mask = ~win_mask
+    loss_mask = outcomes == 0.0
 
     wins = int(win_mask.sum())
     timeouts = int(timeout_mask.sum())
     losses = int(loss_mask.sum())
     trades = int(len(outcomes))
+    assert wins + losses + timeouts == trades, "TB outcome partition must cover all rows"
 
     profit = float(tp_atrs[win_mask].sum())
     loss = float(sl_atrs[loss_mask].sum())
