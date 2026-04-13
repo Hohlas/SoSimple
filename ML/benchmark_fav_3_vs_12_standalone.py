@@ -5,7 +5,7 @@ import math
 import pandas as pd
 
 
-EPS = 1e-9
+EPS = 1e-6
 
 
 def add_fav_ratio(frame: pd.DataFrame) -> pd.DataFrame:
@@ -35,7 +35,7 @@ def compute_metrics(frame: pd.DataFrame) -> dict[str, float | int | None]:
     gross_profit = float(pnl[pnl > 0].sum())
     gross_loss = float(-pnl[pnl < 0].sum())
     if gross_loss == 0.0:
-        pf = math.inf if gross_profit > 0.0 else None
+        pf = math.inf if gross_profit > 0.0 else 0.0
     else:
         pf = gross_profit / gross_loss
 
