@@ -1,0 +1,41 @@
+{
+  "gates": {
+    "max_negative_year_slices_test": 0,
+    "max_negative_year_slices_validation": 0,
+    "min_passing_in_window": 3,
+    "min_pf_test": 1.5,
+    "min_pf_validation": 2.0,
+    "min_trades_test": 30,
+    "min_trades_validation": 30,
+    "min_year_trades": 3,
+    "window_size": 5
+  },
+  "selected_threshold": null,
+  "test": {
+    "gross_loss": 0.0,
+    "gross_profit": 0.0,
+    "losses": 0,
+    "mean_pnl_atr": null,
+    "n_trades": 0,
+    "negative_year_slices": 0,
+    "pf": null,
+    "threshold": null,
+    "win_rate": null,
+    "wins": 0
+  },
+  "test_passes": false,
+  "validation": {
+    "gross_loss": 0.0,
+    "gross_profit": 0.0,
+    "losses": 0,
+    "mean_pnl_atr": null,
+    "n_trades": 0,
+    "negative_year_slices": 0,
+    "pf": null,
+    "threshold": null,
+    "win_rate": null,
+    "wins": 0
+  },
+  "validation_passes": false,
+  "verdict": "reject_as_standalone"
+}

@@ -1,0 +1,28 @@
+{
+  "test": {
+    "gross_loss": 0.0,
+    "gross_profit": 0.0,
+    "losses": 0,
+    "mean_pnl_atr": null,
+    "n_trades": 0,
+    "negative_year_slices": 0,
+    "pf": null,
+    "threshold": null,
+    "win_rate": null,
+    "wins": 0
+  },
+  "threshold": null,
+  "validation": {
+    "gross_loss": 0.0,
+    "gross_profit": 0.0,
+    "losses": 0,
+    "mean_pnl_atr": null,
+    "n_trades": 0,
+    "negative_year_slices": 0,
+    "pf": null,
+    "threshold": null,
+    "win_rate": null,
+    "wins": 0
+  },
+  "verdict": "no_stable_threshold"
+}
