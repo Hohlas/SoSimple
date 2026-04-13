@@ -4,7 +4,7 @@
 > **Status**: Completed — ОТОБРАНЫ 3 ГИПОТЕЗЫ
 > **Goal**: Найти источники роста PF вне ML-слоя через read-only проверки на тестовых данных без переобучения
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-13-pf-uplift-beyond-ml.md`
-> **Related commit**: pending
+> **Related commit**: 6353714
 
 ---
 
