@@ -1,6 +1,28 @@
 # Context Handoff
 
 ## Current Stage
+Этап `quantile_fav_composition_verdict` завершён (2026-04-13).
+
+Что зафиксировано:
+
+- создан benchmark `ML/benchmark_quantile_fav_composition.py` + тесты `tests/test_benchmark_quantile_fav_composition.py` (`5/5` зелёные)
+- quantile control numbers воспроизведены exactly against `ML/reports/entry_path_v1_quantile_selected_rule.json`:
+  - validation: `N=32`, `PF=11.240091883688192`
+  - test: `N=48`, `PF=8.178675196069868`
+- root cause устранён:
+  - `fav_3_vs_12` больше не берётся из внешнего research CSV
+  - добавлен `ML/export_updn_active_predictions.py`, который считает `pred_fav_3 / pred_fav_12` из `transformer_updn_best.pt` на тех же активных строках validation/test
+  - verified one-to-one alignment: порядок активных строк в `DATA/Nero_{validation,test}_labeled.csv` и quantile predictions совпадает exactly
+- честный composition rerun:
+  - validation: `quantile_only N=32 PF=11.240091883688192`, `composition N=28 PF=21.852917603463066`
+  - test: `quantile_only N=48 PF=8.178675196069868`, `composition N=47 PF=7.860844837655267`
+  - intersection diagnostic: `47 / 48` quantile trades survived (`trades_lost_from_quantile = 1`)
+  - composition почти не режет quantile, но добавляет один отрицательный годовой срез: `2023 PF=0.47526255177309695 (N=5)`
+- `n_boost_composition.json`: `verdict = gate_fail`, `n_trades = 47`, `pf = 7.860844837655267`, `negative_year_slices = 1`
+- formal verdict: **CLOSED — gate fail**
+- canonical report: `docs/reports/2026-04-13-quantile-fav-composition.md`
+
+## Previous Stage
 Этап `label_convention_audit` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -25,7 +47,7 @@
   - test summary совпал exactly: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
   - значит найденные bugs в `ML/tb_signal_logic.py` и `ML/threshold_analysis.py` **не меняют** historical verdict из `2026-04-12-tb-verdict.md`
 
-## Previous Stage
+## Earlier Stage
 Этап `triple_barrier_mt4_verdict` завершён. Этап `entry_path_v1_quantile_productization` закрыт ранее (2026-04-12, коммит `0023d92`).
 
 Что зафиксировано:
@@ -49,16 +71,17 @@
   - пересмотр возможен только после накопления forward-данных post-2026-06
 
 ## Last Completed Stage
-Triple Barrier MT4 Verdict (2026-04-12).
+Quantile × fav_3_vs_12 Composition Verdict (2026-04-13).
 
 ## Next Step
-1. Решить, нужен ли composition-трек `entry_path_v1_quantile` + `fav_3_vs_12` (low priority — quantile уже production, composition может быть излишним усложнением).
+1. Composition track закрыт. Не возвращаться к нему без нового сильного основания.
 2. Forward validation для quantile-слоя: прогон на реальных post-2026-04 данных после накопления ~10–15 сделок (ожидаемо 2–3 месяца). До этого quantile остаётся parallel mode, а не единственным.
-3. Если composition не даёт прирост, фокус смещается на entry logic / SL-TP / regime analysis как источники PF uplift — направление из `project_ml_status`.
+3. Практический research-фокус возвращается к entry logic / SL-TP / regime analysis как более вероятным источникам PF uplift.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
+- `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`INCONCLUSIVE`)
 - `AGENTS.md`
 - `docs/reports/2026-04-12-tb-verdict.md` — TB verdict (не production)
 - `docs/reports/2026-04-12-quantile-status-decision.md` — quantile production verdict
@@ -73,7 +96,7 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 - **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-13-label-convention-audit.md`
+`docs/reports/2026-04-13-quantile-fav-composition.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

@@ -70,3 +70,13 @@
   - validation: `28 / 16 / 4 / 2`, `PF=4.333333333333333`
   - test: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
 - Conclusion: audit fixes did not change historical TB verdict
+
+## [2026-04-13] ingest | Quantile × fav composition verdict synced into wiki
+- Added report `docs/reports/2026-04-13-quantile-fav-composition.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - new section for composition verdict
+  - updated comparison table with `quantile × fav_3_vs_12`
+  - final verdict corrected from initial source-mismatch `INCONCLUSIVE` to honest `gate_fail`
+  - added note about rebuilt aligned `updn` source and 2023 negative yearly slice
+- Updated `wiki/index.md` coverage from 13 to 14 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 14`

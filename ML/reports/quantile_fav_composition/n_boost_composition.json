@@ -1,0 +1,9 @@
+{
+  "verdict": "gate_fail",
+  "n_trades": 47,
+  "pf": 7.860844837655267,
+  "negative_year_slices": 1,
+  "reasons": [
+    "negative_year_slices=1 > 0"
+  ]
+}

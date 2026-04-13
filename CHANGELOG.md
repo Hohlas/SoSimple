@@ -2,6 +2,16 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-13] - Composition track verdict (quantile × fav_3_vs_12)
+
+### Результаты
+- `quantile_only` воспроизведён exactly: validation `N=32, PF=11.240091883688192`; test `N=48, PF=8.178675196069868`
+- после пересборки правильного источника `pred_fav_3/pred_fav_12` на тех же активных строках composition стал честно измерим: test `N=47`, `PF=7.860844837655267`, `n_boost_composition.verdict = gate_fail`
+- composition почти не режет quantile (`47/48` test trades survived), но получает один отрицательный годовой срез в 2023 (`PF=0.47526255177309695`)
+
+### Вывод
+- Направление composition закрыто: дополнительный фильтр почти ничего не добавляет к `quantile`, но ломает yearly stability, поэтому усложнение не оправдано
+
 ## [2026-04-13] — Label convention audit: timeout больше не штрафуется как SL в TB analytics
 
 ### Исправлено

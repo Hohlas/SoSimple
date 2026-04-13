@@ -6,6 +6,7 @@
 - `fav_3_vs_12 <= 0.653` — текущий лучший фильтр по связи с winning archetype
 - `ratio_3_vs_12 > 4.751` — полезен только как benchmark механики pullback
 - следующий этап должен идти уже по новой дисциплине: подбор на `validation`, финальная проверка на `test`
+- composition check `entry_path_v1_quantile × fav_3_vs_12` завершён 2026-04-13 с verdict `CLOSED — gate fail`: после честной пересборки источника composition дал `47` test trades vs `48` у quantile, но получил negative year slice в 2023 и therefore не проходит gate
 
 Подробный текущий handoff: [CONTEXT_HANDOFF.md](../CONTEXT_HANDOFF.md)
 
@@ -51,3 +52,9 @@
 - `docs/superpowers/roadmap.md` — общий порядок работ между несколькими планами
 - `docs/superpowers/plans/*.md` — детальные исполнимые планы по отдельным направлениям
 - `docs/DATA_FLOW.md` — не место для текущего roadmap; этот документ должен оставаться стабильной картой пайплайна, а не рабочим списком исследований
+
+## Composition Status
+
+- `entry_path_v1_quantile × fav_3_vs_12`:
+  closed
+  verdict report: [2026-04-13-quantile-fav-composition.md](../reports/2026-04-13-quantile-fav-composition.md)

@@ -1,0 +1,10 @@
+{
+  "n_quantile": 48,
+  "n_fav": 70,
+  "n_intersection": 47,
+  "n_rows_with_fav_feature": 532,
+  "n_baseline_rows_with_fav_feature": 72,
+  "intersection_over_quantile": 0.9791666666666666,
+  "intersection_over_fav": 0.6714285714285714,
+  "trades_lost_from_quantile": 1
+}

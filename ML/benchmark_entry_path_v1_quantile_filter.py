@@ -72,6 +72,13 @@ def apply_conformal_correction(frame: pd.DataFrame, correction: float) -> pd.Dat
     return out
 
 
+def compute_m_at_quantile(frame: pd.DataFrame, quantile: float) -> float:
+    selected = frame.loc[frame['baseline_selected'], 'lb'] if 'baseline_selected' in frame.columns else frame['lb']
+    if len(selected) == 0:
+        return 0.0
+    return float(selected.quantile(quantile))
+
+
 def build_rule_mask(frame: pd.DataFrame, rule: str, m: float, w: float) -> pd.Series:
     if rule == 'baseline':
         return frame['baseline_selected']
@@ -84,8 +91,7 @@ def build_rule_mask(frame: pd.DataFrame, rule: str, m: float, w: float) -> pd.Se
     raise ValueError(f'Unknown rule: {rule}')
 
 
-def summarize_rule(frame: pd.DataFrame, candidate: str, rule: str, m: float, w: float) -> dict[str, object]:
-    selected_mask = build_rule_mask(frame, rule=rule, m=m, w=w)
+def summarize_selection(frame: pd.DataFrame, selected_mask: pd.Series, candidate: str) -> dict[str, object]:
     selected = frame.loc[selected_mask].copy()
     pnl = selected['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
     trades = int(len(selected))
@@ -99,9 +105,6 @@ def summarize_rule(frame: pd.DataFrame, candidate: str, rule: str, m: float, w: 
 
     return {
         'candidate': candidate,
-        'rule': rule,
-        'm': float(m),
-        'w': float(w),
         'trades': trades,
         'pf': pf,
         'win_rate': win_rate,
@@ -110,6 +113,17 @@ def summarize_rule(frame: pd.DataFrame, candidate: str, rule: str, m: float, w: 
         'median_interval_width': median_interval_width,
         'gross_profit': gross_profit,
         'gross_loss': gross_loss,
+    }
+
+
+def summarize_rule(frame: pd.DataFrame, candidate: str, rule: str, m: float, w: float) -> dict[str, object]:
+    selected_mask = build_rule_mask(frame, rule=rule, m=m, w=w)
+    summary = summarize_selection(frame, selected_mask, candidate=candidate)
+    return {
+        **summary,
+        'rule': rule,
+        'm': float(m),
+        'w': float(w),
     }
 
 

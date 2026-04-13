@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-04-12
-sources: 13
+last_updated: 2026-04-13
+sources: 14
 status: active
 ---
 
@@ -205,6 +205,30 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-12-quantile-status-decision.md](../../docs/reports/2026-04-12-quantile-status-decision.md)
 
+### Quantile × fav_3_vs_12 Composition (04-13): inconclusive, no honest support
+Короткий research-check поверх уже production-ready quantile rule `lb_gt_m_q35`. Цель была бинарной: усиливает ли фиксированный bridge-filter `fav_3_vs_12 <= 0.653` уже готовый quantile-layer, или направление надо закрывать.
+
+Первый прогон дал ложный `INCONCLUSIVE`: `fav_3_vs_12` брался из внешнего research source, который почти не пересекался с quantile universe. Проблема была не в самой идее composition, а в плохом источнике.
+
+Затем источник был пересобран честно:
+- добавлен экспорт активных `updn`-предсказаний из `transformer_updn_best.pt`
+- `pred_fav_3 / pred_fav_12` посчитаны на тех же активных строках `DATA/Nero_{validation,test}_labeled.csv`
+- порядок активных строк verified one-to-one against quantile predictions
+
+После этого composition стал измерим по-настоящему:
+- `quantile_only` test: `48 trades`, `PF=8.18`
+- `composition` test: `47 trades`, `PF=7.86`
+- `trades_lost_from_quantile = 1`
+- composition почти ничего не отрезает, но получает один отрицательный годовой срез:
+  - `2023`: `N=5`, `PF=0.475`
+- итоговый `n_boost_composition.verdict = gate_fail`
+
+**Смысл verdict-а:** composition теперь отклонён не из-за отсутствия данных, а по существу. Фильтр `fav_3_vs_12` поверх quantile почти не меняет набор сделок, но ухудшает yearly stability.
+
+**Решение:** направление composition **closed**. Практической пользы сверх `entry_path_v1_quantile` не найдено.
+
+Источник: [2026-04-13-quantile-fav-composition.md](../../docs/reports/2026-04-13-quantile-fav-composition.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -257,10 +281,10 @@ Trade-level reconciliation был сохранён отдельно:
 | Triple Barrier | PF=1.28 (test, 69 trades, fixed simulator) | **Gate fail — не production** | Пересмотр только после forward-данных post-2026-06 |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
 | entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах | **Production parallel mode** | Forward validation post-2026-04 |
+| quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Нужно ли объединять `entry_path_v1_quantile` с фильтром `fav_3_vs_12`, или composition усложнит рабочую базу без надёжного прироста?
-2. Forward validation quantile-слоя: когда набирётся достаточная выборка (~10–15 сделок) для пересмотра статуса "parallel → primary"?
-3. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
+1. Forward validation quantile-слоя: когда набирётся достаточная выборка (~10–15 сделок) для пересмотра статуса "parallel → primary"?
+2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.

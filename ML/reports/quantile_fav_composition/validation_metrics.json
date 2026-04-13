@@ -1,0 +1,50 @@
+{
+  "baseline": {
+    "candidate": "baseline",
+    "trades": 50,
+    "pf": 4.13304811852324,
+    "win_rate": 0.7,
+    "mean_pnl_atr": 1.9807665944000001,
+    "coverage": 1.0,
+    "median_interval_width": 16.7876408,
+    "gross_profit": 130.6491847,
+    "gross_loss": 31.610854980000003,
+    "rule": "baseline"
+  },
+  "quantile_only": {
+    "candidate": "quantile_only",
+    "trades": 32,
+    "pf": 11.240091883688192,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.78801166625,
+    "coverage": 0.64,
+    "median_interval_width": 16.5597549,
+    "gross_profit": 97.9288316,
+    "gross_loss": 8.71245828,
+    "rule": "quantile_only"
+  },
+  "fav_only": {
+    "candidate": "fav_only",
+    "trades": 46,
+    "pf": 4.441840272353088,
+    "win_rate": 0.6956521739130435,
+    "mean_pnl_atr": 2.0097994004347832,
+    "coverage": 0.92,
+    "median_interval_width": 16.85392665,
+    "gross_profit": 119.31162739999999,
+    "gross_loss": 26.860854980000003,
+    "rule": "fav_only"
+  },
+  "composition": {
+    "candidate": "composition",
+    "trades": 28,
+    "pf": 21.852917603463066,
+    "win_rate": 0.8214285714285714,
+    "mean_pnl_atr": 2.9510291435714286,
+    "coverage": 0.56,
+    "median_interval_width": 16.52221075,
+    "gross_profit": 86.5912743,
+    "gross_loss": 3.9624582800000003,
+    "rule": "composition"
+  }
+}

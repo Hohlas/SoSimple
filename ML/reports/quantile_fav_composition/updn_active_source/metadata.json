@@ -1,0 +1,8 @@
+{
+  "checkpoint_path": "/home/hohla/git/SoSimple/.worktrees/quantile-fav-composition/ML/checkpoints/transformer_updn_best.pt",
+  "output_dir": "/home/hohla/git/SoSimple/.worktrees/quantile-fav-composition/ML/reports/quantile_fav_composition/updn_active_source",
+  "files": {
+    "validation": "/home/hohla/git/SoSimple/.worktrees/quantile-fav-composition/ML/reports/quantile_fav_composition/updn_active_source/validation_active_updn_predictions.csv",
+    "test": "/home/hohla/git/SoSimple/.worktrees/quantile-fav-composition/ML/reports/quantile_fav_composition/updn_active_source/test_active_updn_predictions.csv"
+  }
+}
