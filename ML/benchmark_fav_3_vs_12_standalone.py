@@ -288,15 +288,9 @@ def main(argv: list[str] | None = None) -> int:
     test = add_fav_ratio(pd.read_csv(test_path))
 
     validation_grid = evaluate_threshold_grid(validation, args.thresholds)
-    test_grid = evaluate_threshold_grid(test, args.thresholds)
     validation_grid = annotate_grid_with_yearly_failures(
         frame=validation,
         grid=validation_grid,
-        min_year_trades=args.min_year_trades,
-    )
-    test_grid = annotate_grid_with_yearly_failures(
-        frame=test,
-        grid=test_grid,
         min_year_trades=args.min_year_trades,
     )
 
@@ -311,6 +305,12 @@ def main(argv: list[str] | None = None) -> int:
     threshold = selected_threshold["threshold"]
     validation_selected = _selected_metrics(validation, threshold, args.min_year_trades)
     test_selected = _selected_metrics(test, threshold, args.min_year_trades)
+    test_grid = evaluate_threshold_grid(test, args.thresholds)
+    test_grid = annotate_grid_with_yearly_failures(
+        frame=test,
+        grid=test_grid,
+        min_year_trades=args.min_year_trades,
+    )
 
     validation_passes = _passes_gate(
         validation_selected,
