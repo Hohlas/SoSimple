@@ -6,6 +6,19 @@ from typing import Any
 import pandas as pd
 
 
+METRIC_COLUMNS = [
+    "n_trades",
+    "wins",
+    "losses",
+    "gross_profit",
+    "gross_loss",
+    "pf",
+    "win_rate",
+    "mean_pnl_atr",
+]
+TIME_SLICE_COLUMNS = ["slice", *METRIC_COLUMNS]
+
+
 def compute_forward_metrics(frame: pd.DataFrame) -> dict[str, Any]:
     trades = int(len(frame))
     if trades == 0:
@@ -39,16 +52,16 @@ def compute_forward_metrics(frame: pd.DataFrame) -> dict[str, Any]:
 
 
 def build_time_slices(frame: pd.DataFrame, mode: str = "quarter") -> pd.DataFrame:
-    working = frame.copy()
-    dt = pd.to_datetime(working["time"])
     if mode != "quarter":
         raise ValueError(f"unsupported slice mode: {mode}")
+    working = frame.copy()
+    dt = pd.to_datetime(working["time"])
     working["slice"] = dt.dt.to_period("Q").astype(str).str.replace("Q", "-Q", n=1)
 
     rows: list[dict[str, Any]] = []
     for key, group in working.groupby("slice", sort=True):
         rows.append({"slice": key, **compute_forward_metrics(group)})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=TIME_SLICE_COLUMNS)
 
 
 def decide_operational_verdict(

@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from ML.benchmark_quantile_forward_validation import (
     build_time_slices,
@@ -73,6 +74,35 @@ def test_build_time_slices_groups_rows_by_quarter():
 
     assert list(result["slice"]) == ["2026-Q1", "2026-Q2"]
     assert list(result["n_trades"]) == [2, 1]
+    assert list(result["gross_profit"]) == [1.0, 2.0]
+    assert list(result["gross_loss"]) == [1.0, 0.0]
+    assert list(result["pf"]) == [1.0, float("inf")]
+
+
+def test_build_time_slices_returns_expected_schema_for_empty_frame():
+    frame = pd.DataFrame({"time": [], "true_ret_24_dir_atr": []})
+
+    result = build_time_slices(frame, mode="quarter")
+
+    assert result.empty
+    assert list(result.columns) == [
+        "slice",
+        "n_trades",
+        "wins",
+        "losses",
+        "gross_profit",
+        "gross_loss",
+        "pf",
+        "win_rate",
+        "mean_pnl_atr",
+    ]
+
+
+def test_build_time_slices_rejects_unsupported_mode():
+    frame = pd.DataFrame({"time": ["2026-01-10"], "true_ret_24_dir_atr": [1.0]})
+
+    with pytest.raises(ValueError, match="unsupported slice mode: month"):
+        build_time_slices(frame, mode="month")
 
 
 def test_decide_operational_verdict_returns_watch_for_missing_forward_pf():
