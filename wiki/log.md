@@ -100,3 +100,14 @@
   - updated comparison table and open question for strictly-forward prediction CSV
 - Updated `wiki/index.md` coverage from 15 to 16 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 16`
+
+## [2026-04-13] ingest | Quantile execution improvement blocker synced into wiki
+- Added report `docs/reports/2026-04-13-quantile-execution-improvement.md`
+- Added benchmark `ML/benchmark_quantile_execution_improvement.py`
+- Current verdict: `blocked_by_unmatched_universe`
+- Updated `wiki/research/execution-tracks.md`:
+  - added execution improvement blocker section
+  - recorded expected frozen `32/48` vs available `17/20` and `20/33`
+  - clarified that `timeout_12` must not be accepted or rejected on the wrong universe
+- Updated `wiki/index.md` coverage from 16 to 17 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 17`

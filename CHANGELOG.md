@@ -2,6 +2,21 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-13] - Quantile execution improvement blocked by unmatched universe
+
+### Добавлено
+- `ML/benchmark_quantile_execution_improvement.py`: benchmark простых execution-вариантов вокруг frozen `entry_path_v1_quantile`
+- `tests/test_benchmark_quantile_execution_improvement.py`: проверки exit-вариантов, метрик, winner selection, CLI и защиты от неверной выборки
+
+### Результаты
+- benchmark не меняет сам `quantile` signal и сначала проверяет выходы `baseline_24` vs `timeout_12`
+- добавлена защита: test universe должен совпадать с frozen `entry_path_v1_quantile_selected_rule.json`
+- доступные CSV не воспроизводят frozen `32/48`: root CSV дают `17/20`, локальные `seed_007` artefacts дают `20/33`
+
+### Вывод
+- честный execution verdict пока заблокирован: считать uplift на другой выборке нельзя
+- следующий шаг — восстановить или сгенерировать canonical prediction universe, который reproduces frozen validation `N=32` и test `N=48`
+
 ## [2026-04-13] - Quantile forward validation scaffold
 
 ### Добавлено

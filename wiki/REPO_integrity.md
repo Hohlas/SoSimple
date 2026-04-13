@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-13 18:42 UTC · git `368b176`
+> Auto-generated 2026-04-13 19:49 UTC · git `fdcb5d9`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 626 files  ·  **Commit**: `368b176`  ·  **Generated**: 2026-04-13 18:42 UTC
+**Tracked**: 629 files  ·  **Commit**: `fdcb5d9`  ·  **Generated**: 2026-04-13 19:49 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-13 | 10KB | `368c449c` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-13 | 104KB | `c505a162` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-13 | 105KB | `19f769d8` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-13 | 3KB | `7eaa5505` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-13 | 11KB | `7994522e` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-13 | 12KB | `d53b3bcd` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-13 | 14KB | `7351ca61` |
 | [README.md](README.md) |  | 2026-04-13 | 969B | `4fc82a41` |
 
@@ -116,8 +116,9 @@
 | [docs/reports/2026-04-12-tb-verdict.md](docs/reports/2026-04-12-tb-verdict.md) |  | 2026-04-13 | 7KB | `089642df` |
 | [docs/reports/2026-04-13-fav-3-vs-12-standalone.md](docs/reports/2026-04-13-fav-3-vs-12-standalone.md) |  | 2026-04-13 | 5KB | `8a929a77` |
 | [docs/reports/2026-04-13-label-convention-audit.md](docs/reports/2026-04-13-label-convention-audit.md) |  | 2026-04-13 | 6KB | `3ddc2a23` |
+| [docs/reports/2026-04-13-quantile-execution-improvement.md](docs/reports/2026-04-13-quantile-execution-improvement.md) |  | 2026-04-13 | 5KB | `11f7b863` |
 | [docs/reports/2026-04-13-quantile-fav-composition.md](docs/reports/2026-04-13-quantile-fav-composition.md) |  | 2026-04-13 | 8KB | `8dd53bda` |
-| [docs/reports/2026-04-13-quantile-forward-validation.md](docs/reports/2026-04-13-quantile-forward-validation.md) |  | 2026-04-13 | 4KB | `840f6606` |
+| [docs/reports/2026-04-13-quantile-forward-validation.md](docs/reports/2026-04-13-quantile-forward-validation.md) |  | 2026-04-13 | 4KB | `1364686a` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-13 | 2KB | `ed0769cc` |
 
 ## ML
@@ -133,6 +134,7 @@
 | [ML/benchmark_entry_path_v1_quantile_n_boost.py](ML/benchmark_entry_path_v1_quantile_n_boost.py) |  |  | 2026-04-13 | 13KB | `6538fa97` |
 | [ML/benchmark_fav_3_vs_12_standalone.py](ML/benchmark_fav_3_vs_12_standalone.py) |  |  | 2026-04-13 | 16KB | `8e4214fd` |
 | [ML/benchmark_outcome_targets.py](ML/benchmark_outcome_targets.py) | Бенчмарк outcome targets: сравнение качества разных таргетов | 🏁 | 2026-04-13 | 14KB | `16753618` |
+| [ML/benchmark_quantile_execution_improvement.py](ML/benchmark_quantile_execution_improvement.py) |  |  | 2026-04-13 | 8KB | `eb0d5d8f` |
 | [ML/benchmark_quantile_fav_composition.py](ML/benchmark_quantile_fav_composition.py) |  |  | 2026-04-13 | 15KB | `97a02b70` |
 | [ML/benchmark_quantile_forward_validation.py](ML/benchmark_quantile_forward_validation.py) |  |  | 2026-04-13 | 5KB | `a3386bcc` |
 | [ML/benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) |  |  | 2026-04-13 | 4KB | `3ef3e057` |
@@ -271,6 +273,7 @@
 | [tests/README.md](tests/README.md) |  |  | 2026-04-13 | 1KB | `c1093573` |
 | [tests/test_benchmark_fav_3_vs_12_standalone.py](tests/test_benchmark_fav_3_vs_12_standalone.py) |  |  | 2026-04-13 | 11KB | `dcdcc7a1` |
 | [tests/test_benchmark_outcome_targets.py](tests/test_benchmark_outcome_targets.py) | `ML/benchmark_outcome_targets.py` | ✅ | 2026-04-13 | 4KB | `e9159813` |
+| [tests/test_benchmark_quantile_execution_improvement.py](tests/test_benchmark_quantile_execution_improvement.py) |  |  | 2026-04-13 | 6KB | `d5c29834` |
 | [tests/test_benchmark_quantile_fav_composition.py](tests/test_benchmark_quantile_fav_composition.py) |  |  | 2026-04-13 | 6KB | `e7f68596` |
 | [tests/test_benchmark_quantile_forward_validation.py](tests/test_benchmark_quantile_forward_validation.py) |  |  | 2026-04-13 | 6KB | `3dc6e7a3` |
 | [tests/test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | ✅ | 2026-04-13 | 3KB | `abe2c2b4` |
@@ -621,9 +624,9 @@
 |------|-------------|----------|------|------|
 | [wiki/LLM Wiki_method.md](wiki/LLM Wiki_method.md) |  | 2026-04-13 | 11KB | `68a888b4` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-13 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-13 | 1KB | `50cbefde` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-13 | 5KB | `3c84b7f2` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-13 | 22KB | `44eb11f9` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-13 | 1KB | `c34d0210` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-13 | 6KB | `5ab11a22` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-13 | 24KB | `d44fc703` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-13 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-13 | 18KB | `4bcfb243` |
 

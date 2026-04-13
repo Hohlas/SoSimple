@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-13
-sources: 16
+sources: 17
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 16 отчётов (2026-04-08 — 2026-04-13). Параллельные направления execution.
+> Синтез 17 отчётов (2026-04-08 — 2026-04-13). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -281,6 +281,32 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-13-quantile-forward-validation.md](../../docs/reports/2026-04-13-quantile-forward-validation.md)
 
+### Quantile Execution Improvement (04-13): blocked by unmatched universe
+
+Следующий этап проверял не новый сигнал, а простые варианты выхода вокруг frozen `entry_path_v1_quantile`.
+
+Добавлен benchmark:
+- `baseline_24`: текущий 24H выход;
+- `timeout_12`: ранний 12H выход;
+- выбор winner только на validation;
+- test используется только после freeze.
+
+Ключевая находка этапа не в цифрах uplift, а в защите качества: простой `signal != 0` не равен production `quantile` universe. Поэтому benchmark теперь сначала применяет frozen production rule и проверяет, что test selection совпадает с frozen rule.
+
+Доступные CSV не совпали с expected frozen universe:
+
+| Source | Validation selected | Test selected |
+|---|---:|---:|
+| Expected frozen rule | 32 | 48 |
+| Root CSV | 17 | 20 |
+| Local `seed_007` artefacts | 20 | 33 |
+
+**Verdict:** `blocked_by_unmatched_universe`.
+
+Практический смысл: нельзя принимать или отклонять `timeout_12` на другой выборке. Сначала нужно восстановить canonical prediction universe, который воспроизводит frozen `32/48`.
+
+Источник: [2026-04-13-quantile-execution-improvement.md](../../docs/reports/2026-04-13-quantile-execution-improvement.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -332,12 +358,13 @@ Trade-level reconciliation был сохранён отдельно:
 | regression_updn + exit | PF~1.05 (OOS) | Production baseline | Нет uplift от exit layer |
 | Triple Barrier | PF=1.28 (test, 69 trades, fixed simulator) | **Gate fail — не production** | Пересмотр только после forward-данных post-2026-06 |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
-| entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах; forward scaffold `watch/no_forward_data` | **Production parallel mode** | Собрать strictly-forward prediction CSV |
+| entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах; forward scaffold `watch/no_forward_data`; execution benchmark blocked by unmatched universe | **Production parallel mode** | Восстановить canonical prediction universe `32/48`; затем повторить execution check |
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы
 
-1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
-2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
+1. Execution improvement вокруг quantile: нужен canonical prediction universe, который воспроизводит frozen validation `N=32` и test `N=48`.
+2. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
+3. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
