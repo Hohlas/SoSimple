@@ -58,3 +58,10 @@
 - `entry_path_v1_quantile × fav_3_vs_12`:
   closed
   verdict report: [2026-04-13-quantile-fav-composition.md](../reports/2026-04-13-quantile-fav-composition.md)
+
+## Standalone Status
+
+- `fav_3_vs_12` as standalone system:
+  closed
+  verdict report: [2026-04-13-fav-3-vs-12-standalone.md](../reports/2026-04-13-fav-3-vs-12-standalone.md)
+  reason: no stable threshold found; best validation PF stayed at `0.1379`, so the feature does not work as an independent second system

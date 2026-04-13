@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-04-13
-sources: 14
+sources: 15
 status: active
 ---
 
@@ -205,7 +205,7 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-12-quantile-status-decision.md](../../docs/reports/2026-04-12-quantile-status-decision.md)
 
-### Quantile × fav_3_vs_12 Composition (04-13): inconclusive, no honest support
+### Quantile × fav_3_vs_12 Composition (04-13): closed, gate fail
 Короткий research-check поверх уже production-ready quantile rule `lb_gt_m_q35`. Цель была бинарной: усиливает ли фиксированный bridge-filter `fav_3_vs_12 <= 0.653` уже готовый quantile-layer, или направление надо закрывать.
 
 Первый прогон дал ложный `INCONCLUSIVE`: `fav_3_vs_12` брался из внешнего research source, который почти не пересекался с quantile universe. Проблема была не в самой идее composition, а в плохом источнике.
@@ -228,6 +228,33 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 **Решение:** направление composition **closed**. Практической пользы сверх `entry_path_v1_quantile` не найдено.
 
 Источник: [2026-04-13-quantile-fav-composition.md](../../docs/reports/2026-04-13-quantile-fav-composition.md)
+
+### Fav_3_vs_12 Standalone (04-13): rejected as standalone system
+
+Отдельный этап проверял другой вопрос: может ли `fav_3_vs_12` жить сам по себе, без `quantile` и без другого базового отбора.
+
+Проверка была построена как standalone benchmark:
+- источник `pred_fav_3 / pred_fav_12`: `updn_active_source`
+- источник фактического результата сделки: `entry_path_v1_quantile_*_predictions.csv`
+- выбор порога только на `validation`
+- жёсткая проверка устойчивой зоны:
+  - sorted unique thresholds
+  - full centered window
+  - weak year = yearly `PF < 1.0`
+  - годы с `trades < 3` не используются как самостоятельный gate-fail
+
+Итог оказался однозначно отрицательным:
+- stable threshold: **не найден**
+- `selected_threshold = null`
+- validation best diagnostic point with `N>=30`: `threshold=0.22`, `N=36`, `PF=0.14`, `negative_year_slices=4`
+- test best diagnostic point with `N>=30`: `threshold=0.24`, `N=164`, `PF=0.31`, `negative_year_slices=5`
+- финальный verdict: `reject_as_standalone`
+
+**Смысл verdict-а:** признак `fav_3_vs_12` может быть полезен как вспомогательный фактор внутри другого уже сильного отбора, но как отдельная торговая система он не работает.
+
+**Решение:** standalone-направление **closed**. Не рассматривать `fav_3_vs_12` как вторую независимую систему.
+
+Источник: [2026-04-13-fav-3-vs-12-standalone.md](../../docs/reports/2026-04-13-fav-3-vs-12-standalone.md)
 
 ### Quantile MT4 Parity (04-11)
 
@@ -282,6 +309,7 @@ Trade-level reconciliation был сохранён отдельно:
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
 | entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах | **Production parallel mode** | Forward validation post-2026-04 |
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
+| fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 
 ## Открытые вопросы

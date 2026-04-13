@@ -1,6 +1,27 @@
 # Context Handoff
 
 ## Current Stage
+Этап `fav_3_vs_12_standalone_verdict` завершён (2026-04-13).
+
+Что зафиксировано:
+
+- создан standalone benchmark `ML/benchmark_fav_3_vs_12_standalone.py` + тесты `tests/test_benchmark_fav_3_vs_12_standalone.py` (`17/17` зелёные)
+- benchmark использует:
+  - `ML/reports/quantile_fav_composition/updn_active_source/*` как источник `pred_fav_3`, `pred_fav_12`, `fav_3_vs_12`
+  - `ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_*_predictions.csv` как источник фактического результата сделки `true_ret_24_dir_atr`
+- выбор порога делается только на `validation`, с жёсткой проверкой устойчивой зоны:
+  - отсортированные уникальные пороги
+  - полный центрированный window
+  - приоритет устойчивости окна, а не локального PF-пика
+  - плохой год = `PF < 1.0`, годы с `trades < 3` не считаются самостоятельным gate-fail
+- итог standalone run:
+  - `selected_threshold = null`
+  - `verdict = reject_as_standalone`
+  - на validation лучший порог с `N >= 30` всё равно слабый: `threshold=0.22`, `N=36`, `PF=0.1378609915504136`, `negative_year_slices=4`
+  - на test лучшая диагностическая точка тоже слабая: `threshold=0.24`, `N=164`, `PF=0.3129480021818097`, `negative_year_slices=5`
+- canonical report: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+
+## Previous Stage
 Этап `quantile_fav_composition_verdict` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -22,7 +43,7 @@
 - formal verdict: **CLOSED — gate fail**
 - canonical report: `docs/reports/2026-04-13-quantile-fav-composition.md`
 
-## Previous Stage
+## Earlier Stage
 Этап `label_convention_audit` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -47,7 +68,7 @@
   - test summary совпал exactly: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
   - значит найденные bugs в `ML/tb_signal_logic.py` и `ML/threshold_analysis.py` **не меняют** historical verdict из `2026-04-12-tb-verdict.md`
 
-## Earlier Stage
+## Historical Stage
 Этап `triple_barrier_mt4_verdict` завершён. Этап `entry_path_v1_quantile_productization` закрыт ранее (2026-04-12, коммит `0023d92`).
 
 Что зафиксировано:
@@ -71,17 +92,19 @@
   - пересмотр возможен только после накопления forward-данных post-2026-06
 
 ## Last Completed Stage
-Quantile × fav_3_vs_12 Composition Verdict (2026-04-13).
+Fav 3 vs 12 Standalone Verdict (2026-04-13).
 
 ## Next Step
-1. Composition track закрыт. Не возвращаться к нему без нового сильного основания.
-2. Forward validation для quantile-слоя: прогон на реальных post-2026-04 данных после накопления ~10–15 сделок (ожидаемо 2–3 месяца). До этого quantile остаётся parallel mode, а не единственным.
-3. Практический research-фокус возвращается к entry logic / SL-TP / regime analysis как более вероятным источникам PF uplift.
+1. `fav_3_vs_12` как standalone track закрыт. Не возвращаться к нему как к отдельной системе без нового сильного основания.
+2. Composition track тоже закрыт. Не пытаться снова строить `fav_3_vs_12` поверх `quantile`.
+3. Forward validation для quantile-слоя: прогон на реальных post-2026-04 данных после накопления ~10–15 сделок (ожидаемо 2–3 месяца). До этого quantile остаётся parallel mode, а не единственным.
+4. Практический research-фокус возвращается к entry logic / SL-TP / regime analysis как более вероятным источникам PF uplift.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
-- `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`INCONCLUSIVE`)
+- `docs/reports/2026-04-13-fav-3-vs-12-standalone.md` — standalone verdict
+- `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`CLOSED — gate fail`)
 - `AGENTS.md`
 - `docs/reports/2026-04-12-tb-verdict.md` — TB verdict (не production)
 - `docs/reports/2026-04-12-quantile-status-decision.md` — quantile production verdict
@@ -96,7 +119,7 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 - **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-13-quantile-fav-composition.md`
+`docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

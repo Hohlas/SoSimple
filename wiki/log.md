@@ -80,3 +80,12 @@
   - added note about rebuilt aligned `updn` source and 2023 negative yearly slice
 - Updated `wiki/index.md` coverage from 13 to 14 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 14`
+
+## [2026-04-13] ingest | Fav 3 vs 12 standalone verdict synced into wiki
+- Added report `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - corrected composition subsection header to final closed status
+  - added standalone `fav_3_vs_12` verdict section
+  - updated comparison table with standalone rejection
+- Updated `wiki/index.md` coverage from 14 to 15 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 15`
