@@ -158,6 +158,29 @@ def test_select_stable_threshold_rejects_duplicate_thresholds():
         raise AssertionError("expected ValueError for duplicate thresholds")
 
 
+def test_select_stable_threshold_rejects_even_window_size():
+    grid = pd.DataFrame(
+        {
+            "threshold": [0.1, 0.2, 0.3, 0.4],
+            "n_trades": [35, 36, 37, 38],
+            "pf": [2.1, 2.2, 2.3, 2.4],
+            "negative_year_slices": [0, 0, 0, 0],
+        }
+    )
+
+    selected = select_stable_threshold(
+        grid,
+        min_trades=30,
+        min_pf=2.0,
+        max_negative_year_slices=0,
+        window_size=2,
+        min_passing_in_window=2,
+    )
+
+    assert selected["verdict"] == "no_stable_threshold"
+    assert selected["threshold"] is None
+
+
 def test_sparse_bad_year_is_ignored_below_min_year_trades():
     frame = pd.DataFrame(
         {

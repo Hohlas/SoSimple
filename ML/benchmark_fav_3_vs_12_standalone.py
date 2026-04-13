@@ -142,7 +142,7 @@ def select_stable_threshold(
         & (negative_year_slices <= max_negative_year_slices)
     )
 
-    if window_size <= 0:
+    if window_size <= 0 or window_size % 2 == 0:
         return {"verdict": "no_stable_threshold", "threshold": None}
 
     left_size = window_size // 2
@@ -164,11 +164,12 @@ def select_stable_threshold(
         if window_pf.empty:
             window_pf = pd.to_numeric(window["pf"], errors="coerce").fillna(-1.0)
 
+        window_trades = pd.to_numeric(window.loc[window["passes_basic_gate"], "n_trades"], errors="coerce").fillna(0)
         score = (
             passing,
             float(window_pf.median()),
             float(window_pf.min()),
-            float(pf.iloc[idx]),
+            float(window_trades.median()),
             int(n_trades.iloc[idx]),
         )
         if best is None or score > best["score"]:
