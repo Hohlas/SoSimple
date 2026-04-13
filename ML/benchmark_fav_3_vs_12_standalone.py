@@ -12,9 +12,11 @@ import pandas as pd
 
 EPS = 1e-6
 DEFAULT_UPDN_ACTIVE_DIR = Path("ML/reports/quantile_fav_composition/updn_active_source")
+DEFAULT_SEED_DIR = Path("ML/reports/entry_path_v1_quantile_robustness/seed_007")
 DEFAULT_OUTPUT_DIR = Path("ML/reports/fav_3_vs_12_standalone")
 DEFAULT_THRESHOLDS = [round(x / 100, 2) for x in range(20, 121, 2)]
-REQUIRED_INPUT_COLUMNS = {"time", "pred_fav_3", "pred_fav_12", "pnl_atr"}
+REQUIRED_UPDN_COLUMNS = {"time", "signal", "pred_fav_3", "pred_fav_12"}
+REQUIRED_QUANTILE_COLUMNS = {"time", "signal", "true_ret_24_dir_atr"}
 
 
 def add_fav_ratio(frame: pd.DataFrame) -> pd.DataFrame:
@@ -207,15 +209,39 @@ def _parse_thresholds(value: str) -> list[float]:
     return sorted(thresholds)
 
 
-def _load_input_frame(path: Path) -> pd.DataFrame:
+def _load_updn_frame(path: Path) -> pd.DataFrame:
     frame = pd.read_csv(path, sep=";")
-    missing = REQUIRED_INPUT_COLUMNS.difference(frame.columns)
+    missing = REQUIRED_UPDN_COLUMNS.difference(frame.columns)
     if missing:
         raise ValueError(f"{path} missing required columns: {sorted(missing)}")
-    for column in ["pred_fav_3", "pred_fav_12", "pnl_atr"]:
+    for column in ["pred_fav_3", "pred_fav_12"]:
         frame[column] = pd.to_numeric(frame[column], errors="raise")
     pd.to_datetime(frame["time"], errors="raise")
     return add_fav_ratio(frame)
+
+
+def _quantile_split_path(seed_dir: Path, split: str) -> Path:
+    return seed_dir / f"entry_path_v1_quantile_{split}_predictions.csv"
+
+
+def _load_quantile_active_outcomes(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path, sep=";")
+    missing = REQUIRED_QUANTILE_COLUMNS.difference(frame.columns)
+    if missing:
+        raise ValueError(f"{path} missing required columns: {sorted(missing)}")
+    frame["true_ret_24_dir_atr"] = pd.to_numeric(frame["true_ret_24_dir_atr"], errors="raise")
+    pd.to_datetime(frame["time"], errors="raise")
+    return frame.loc[frame["signal"] != 0, ["time", "signal", "true_ret_24_dir_atr"]].reset_index(drop=True)
+
+
+def attach_outcomes_by_active_row_order(updn_frame: pd.DataFrame, quantile_active_frame: pd.DataFrame) -> pd.DataFrame:
+    out = updn_frame.copy().reset_index(drop=True)
+    expected = out[["time", "signal"]].reset_index(drop=True)
+    actual = quantile_active_frame[["time", "signal"]].reset_index(drop=True)
+    if len(expected) != len(actual) or not expected.equals(actual):
+        raise ValueError("updn active source does not match quantile active outcome row order")
+    out["pnl_atr"] = quantile_active_frame["true_ret_24_dir_atr"].to_numpy()
+    return out
 
 
 def _json_ready(value: Any) -> Any:
@@ -282,6 +308,7 @@ def _passes_gate(
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Benchmark fav_3_vs_12 as a standalone threshold filter.")
     parser.add_argument("--updn-active-dir", type=Path, default=DEFAULT_UPDN_ACTIVE_DIR)
+    parser.add_argument("--seed-dir", type=Path, default=DEFAULT_SEED_DIR)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--thresholds", type=_parse_thresholds, default=DEFAULT_THRESHOLDS)
     parser.add_argument("--min-trades-validation", type=int, default=30)
@@ -300,12 +327,25 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     validation_path = args.updn_active_dir / "validation_active_updn_predictions.csv"
     test_path = args.updn_active_dir / "test_active_updn_predictions.csv"
-    if not validation_path.exists() or not test_path.exists():
+    validation_quantile_path = _quantile_split_path(args.seed_dir, "validation")
+    test_quantile_path = _quantile_split_path(args.seed_dir, "test")
+    if (
+        not validation_path.exists()
+        or not test_path.exists()
+        or not validation_quantile_path.exists()
+        or not test_quantile_path.exists()
+    ):
         return 2
 
     try:
-        validation = _load_input_frame(validation_path)
-        test = _load_input_frame(test_path)
+        validation = attach_outcomes_by_active_row_order(
+            _load_updn_frame(validation_path),
+            _load_quantile_active_outcomes(validation_quantile_path),
+        )
+        test = attach_outcomes_by_active_row_order(
+            _load_updn_frame(test_path),
+            _load_quantile_active_outcomes(test_quantile_path),
+        )
     except (KeyError, ValueError, pd.errors.ParserError):
         return 2
 
@@ -401,9 +441,12 @@ def main(argv: list[str] | None = None) -> int:
         {
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "updn_active_dir": str(args.updn_active_dir),
+            "seed_dir": str(args.seed_dir),
             "output_dir": str(args.output_dir),
             "validation_input": str(validation_path),
             "test_input": str(test_path),
+            "validation_quantile_input": str(validation_quantile_path),
+            "test_quantile_input": str(test_quantile_path),
             "validation_rows": int(len(validation)),
             "test_rows": int(len(test)),
             "thresholds": args.thresholds,

@@ -269,7 +269,9 @@ def test_negative_year_slices_use_pf_not_net_pnl():
 
 def test_main_writes_expected_artefacts(tmp_path: Path):
     source = tmp_path / "updn"
+    seed = tmp_path / "seed"
     source.mkdir()
+    seed.mkdir()
     output = tmp_path / "out"
 
     validation = pd.DataFrame(
@@ -291,11 +293,16 @@ def test_main_writes_expected_artefacts(tmp_path: Path):
     test = validation.copy()
     validation.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
     test.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
+    quantile = validation[["time", "signal", "pnl_atr"]].rename(columns={"pnl_atr": "true_ret_24_dir_atr"})
+    quantile.to_csv(seed / "entry_path_v1_quantile_validation_predictions.csv", sep=";", index=False)
+    quantile.to_csv(seed / "entry_path_v1_quantile_test_predictions.csv", sep=";", index=False)
 
     code = main(
         [
             "--updn-active-dir",
             str(source),
+            "--seed-dir",
+            str(seed),
             "--output-dir",
             str(output),
             "--thresholds",
@@ -342,16 +349,23 @@ def test_parse_thresholds_rejects_empty_and_non_finite_values():
 
 def test_main_returns_2_for_invalid_input_schema(tmp_path: Path):
     source = tmp_path / "updn"
+    seed = tmp_path / "seed"
     source.mkdir()
+    seed.mkdir()
     output = tmp_path / "out"
     invalid = pd.DataFrame({"time": ["2022-01-01"], "pnl_atr": [1.0]})
     invalid.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
     invalid.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
+    quantile = pd.DataFrame({"time": ["2022-01-01"], "signal": [1], "true_ret_24_dir_atr": [1.0]})
+    quantile.to_csv(seed / "entry_path_v1_quantile_validation_predictions.csv", sep=";", index=False)
+    quantile.to_csv(seed / "entry_path_v1_quantile_test_predictions.csv", sep=";", index=False)
 
     code = main(
         [
             "--updn-active-dir",
             str(source),
+            "--seed-dir",
+            str(seed),
             "--output-dir",
             str(output),
         ]
@@ -362,7 +376,9 @@ def test_main_returns_2_for_invalid_input_schema(tmp_path: Path):
 
 def test_main_returns_2_for_non_numeric_required_columns(tmp_path: Path):
     source = tmp_path / "updn"
+    seed = tmp_path / "seed"
     source.mkdir()
+    seed.mkdir()
     output = tmp_path / "out"
     invalid = pd.DataFrame(
         {
@@ -375,11 +391,16 @@ def test_main_returns_2_for_non_numeric_required_columns(tmp_path: Path):
     )
     invalid.to_csv(source / "validation_active_updn_predictions.csv", sep=";", index=False)
     invalid.to_csv(source / "test_active_updn_predictions.csv", sep=";", index=False)
+    quantile = pd.DataFrame({"time": ["2022-01-01"], "signal": [1], "true_ret_24_dir_atr": [1.0]})
+    quantile.to_csv(seed / "entry_path_v1_quantile_validation_predictions.csv", sep=";", index=False)
+    quantile.to_csv(seed / "entry_path_v1_quantile_test_predictions.csv", sep=";", index=False)
 
     code = main(
         [
             "--updn-active-dir",
             str(source),
+            "--seed-dir",
+            str(seed),
             "--output-dir",
             str(output),
         ]
