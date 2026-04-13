@@ -38,6 +38,19 @@ def compute_forward_metrics(frame: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+def build_time_slices(frame: pd.DataFrame, mode: str = "quarter") -> pd.DataFrame:
+    working = frame.copy()
+    dt = pd.to_datetime(working["time"])
+    if mode != "quarter":
+        raise ValueError(f"unsupported slice mode: {mode}")
+    working["slice"] = dt.dt.to_period("Q").astype(str).str.replace("Q", "-Q", n=1)
+
+    rows: list[dict[str, Any]] = []
+    for key, group in working.groupby("slice", sort=True):
+        rows.append({"slice": key, **compute_forward_metrics(group)})
+    return pd.DataFrame(rows)
+
+
 def decide_operational_verdict(
     *,
     historical_pf: float,
