@@ -3,8 +3,10 @@ import pandas as pd
 from ML.benchmark_fav_3_vs_12_standalone import (
     EPS,
     add_fav_ratio,
+    annotate_grid_with_yearly_failures,
     compute_metrics,
     compute_yearly_breakdown,
+    count_negative_year_slices,
     evaluate_threshold_grid,
     select_stable_threshold,
 )
@@ -88,8 +90,8 @@ def test_select_stable_threshold_prefers_passing_window_over_peak():
     grid = pd.DataFrame(
         {
             "threshold": [0.1, 0.2, 0.3, 0.4, 0.5],
-            "n_trades": [35, 36, 37, 38, 39],
-            "pf": [2.1, 2.2, 2.3, 10.0, 1.0],
+            "n_trades": [28, 35, 36, 37, 38],
+            "pf": [1.9, 2.1, 2.2, 10.0, 1.0],
             "negative_year_slices": [0, 0, 0, 1, 0],
         }
     )
@@ -100,8 +102,80 @@ def test_select_stable_threshold_prefers_passing_window_over_peak():
         min_pf=2.0,
         max_negative_year_slices=0,
         window_size=3,
-        min_passing_in_window=3,
+        min_passing_in_window=2,
     )
 
     assert selected["verdict"] == "selected"
     assert selected["threshold"] == 0.3
+    assert selected["pf"] != 10.0
+
+
+def test_select_stable_threshold_sorts_unsorted_thresholds_before_selection():
+    grid = pd.DataFrame(
+        {
+            "threshold": [0.4, 0.1, 0.5, 0.3, 0.2],
+            "n_trades": [37, 28, 38, 36, 35],
+            "pf": [10.0, 1.9, 1.0, 2.2, 2.1],
+            "negative_year_slices": [1, 0, 0, 0, 0],
+        }
+    )
+
+    selected = select_stable_threshold(
+        grid,
+        min_trades=30,
+        min_pf=2.0,
+        max_negative_year_slices=0,
+        window_size=3,
+        min_passing_in_window=2,
+    )
+
+    assert selected["verdict"] == "selected"
+    assert selected["threshold"] == 0.3
+
+
+def test_select_stable_threshold_rejects_duplicate_thresholds():
+    grid = pd.DataFrame(
+        {
+            "threshold": [0.2, 0.2, 0.3],
+            "n_trades": [35, 36, 37],
+            "pf": [2.1, 2.2, 2.3],
+            "negative_year_slices": [0, 0, 0],
+        }
+    )
+
+    try:
+        select_stable_threshold(
+            grid,
+            min_trades=30,
+            min_pf=2.0,
+            max_negative_year_slices=0,
+            window_size=3,
+            min_passing_in_window=2,
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for duplicate thresholds")
+
+
+def test_sparse_bad_year_is_ignored_below_min_year_trades():
+    frame = pd.DataFrame(
+        {
+            "time": [
+                "2022-01-01",
+                "2022-01-02",
+                "2022-01-03",
+                "2023-01-01",
+                "2023-01-02",
+            ],
+            "pnl_atr": [1.0, 1.0, 1.0, -3.0, -1.0],
+            "fav_3_vs_12": [0.2, 0.2, 0.2, 0.2, 0.2],
+        }
+    )
+
+    grid = pd.DataFrame({"threshold": [0.3]})
+    annotated = annotate_grid_with_yearly_failures(frame, grid, min_year_trades=3)
+
+    assert count_negative_year_slices(frame, min_year_trades=3) == 0
+    assert annotated.loc[0, "negative_year_slices"] == 0
+    assert count_negative_year_slices(frame, min_year_trades=2) == 1

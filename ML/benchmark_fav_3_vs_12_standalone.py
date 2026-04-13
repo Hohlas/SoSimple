@@ -84,21 +84,43 @@ def compute_yearly_breakdown(frame: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def count_negative_year_slices(frame: pd.DataFrame) -> int:
-    yearly = compute_yearly_breakdown(frame)
-    if yearly.empty:
+def count_negative_year_slices(frame: pd.DataFrame, min_year_trades: int = 3) -> int:
+    if frame.empty:
         return 0
-    pf = pd.to_numeric(yearly["pf"], errors="coerce")
-    return int((pf < 1.0).sum())
+
+    working = frame.copy()
+    working["year"] = pd.to_datetime(working["time"]).dt.year
+
+    total = 0
+    for _, group in working.groupby("year", sort=True):
+        if len(group) < min_year_trades:
+            continue
+        pnl = group["pnl_atr"].astype(float)
+        if float(pnl.sum()) < 0.0:
+            total += 1
+    return total
 
 
-def annotate_grid_with_yearly_failures(frame: pd.DataFrame, grid: pd.DataFrame) -> pd.DataFrame:
+def annotate_grid_with_yearly_failures(
+    frame: pd.DataFrame,
+    grid: pd.DataFrame,
+    *,
+    min_year_trades: int = 3,
+) -> pd.DataFrame:
     result = grid.copy()
     result["negative_year_slices"] = [
-        count_negative_year_slices(frame[frame["fav_3_vs_12"] <= threshold])
+        count_negative_year_slices(frame[frame["fav_3_vs_12"] <= threshold], min_year_trades=min_year_trades)
         for threshold in result["threshold"]
     ]
     return result
+
+
+def _prepare_threshold_grid(grid: pd.DataFrame) -> pd.DataFrame:
+    working = grid.copy()
+    working["threshold"] = pd.to_numeric(working["threshold"], errors="raise")
+    if working["threshold"].duplicated().any():
+        raise ValueError("duplicate threshold values are not allowed")
+    return working.sort_values("threshold", kind="mergesort").reset_index(drop=True)
 
 
 def select_stable_threshold(
@@ -110,23 +132,45 @@ def select_stable_threshold(
     window_size: int,
     min_passing_in_window: int,
 ) -> dict[str, float | int | str | None]:
-    working = grid.copy().reset_index(drop=True)
+    working = _prepare_threshold_grid(grid)
     pf = pd.to_numeric(working["pf"], errors="coerce").fillna(-1.0)
+    n_trades = pd.to_numeric(working["n_trades"], errors="coerce").fillna(0).astype(int)
+    negative_year_slices = pd.to_numeric(working["negative_year_slices"], errors="coerce").fillna(0).astype(int)
     working["passes_basic_gate"] = (
-        (working["n_trades"] >= min_trades)
+        (n_trades >= min_trades)
         & (pf >= min_pf)
-        & (working["negative_year_slices"] <= max_negative_year_slices)
+        & (negative_year_slices <= max_negative_year_slices)
     )
 
+    if window_size <= 0:
+        return {"verdict": "no_stable_threshold", "threshold": None}
+
+    left_size = window_size // 2
+    right_size = window_size - left_size - 1
     best = None
     for idx, row in working.iterrows():
-        start = max(0, idx - window_size + 1)
-        stop = idx + 1
+        start = idx - left_size
+        stop = idx + right_size + 1
+        if start < 0 or stop > len(working):
+            continue
         window = working.iloc[start:stop]
+        if len(window) != window_size:
+            continue
         passing = int(window["passes_basic_gate"].sum())
         if passing < min_passing_in_window or not bool(row["passes_basic_gate"]):
             continue
-        score = (passing, float(row["pf"]), int(row["n_trades"]))
+
+        window_pf = pd.to_numeric(window.loc[window["passes_basic_gate"], "pf"], errors="coerce").fillna(-1.0)
+        if window_pf.empty:
+            window_pf = pd.to_numeric(window["pf"], errors="coerce").fillna(-1.0)
+
+        score = (
+            passing,
+            float(window_pf.median()),
+            float(window_pf.min()),
+            float(pf.iloc[idx]),
+            int(n_trades.iloc[idx]),
+        )
         if best is None or score > best["score"]:
             best = {"idx": idx, "score": score}
 
@@ -137,7 +181,7 @@ def select_stable_threshold(
     return {
         "verdict": "selected",
         "threshold": float(row["threshold"]),
-        "n_trades": int(row["n_trades"]),
-        "pf": float(row["pf"]),
-        "negative_year_slices": int(row["negative_year_slices"]),
+        "n_trades": int(n_trades.iloc[best["idx"]]),
+        "pf": float(pf.iloc[best["idx"]]),
+        "negative_year_slices": int(negative_year_slices.iloc[best["idx"]]),
     }
