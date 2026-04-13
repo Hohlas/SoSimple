@@ -49,3 +49,12 @@ def compute_metrics(frame: pd.DataFrame) -> dict[str, float | int | None]:
         "win_rate": wins / n_trades,
         "mean_pnl_atr": float(pnl.mean()),
     }
+
+
+def evaluate_threshold_grid(frame: pd.DataFrame, thresholds: list[float]) -> pd.DataFrame:
+    rows = []
+    for threshold in thresholds:
+        selected = frame[frame["fav_3_vs_12"] <= threshold]
+        metrics = compute_metrics(selected)
+        rows.append({"threshold": float(threshold), **metrics})
+    return pd.DataFrame(rows)
