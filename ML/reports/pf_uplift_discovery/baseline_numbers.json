@@ -1,0 +1,90 @@
+{
+  "run_date": "2026-04-13",
+  "test_split": "2023-2026",
+  "regression_updn_unfiltered": {
+    "note": "All signal != 0 rows in test predictions, no score/quantile filter",
+    "source": "ML/reports/entry_path_test_predictions.csv (2023+)",
+    "n": 444,
+    "pf": 0.19450525984921432,
+    "win_rate": 0.17117117117117117,
+    "mean_pnl_atr": -2.327840686400901,
+    "yearly": {
+      "2023": {
+        "n": 140,
+        "pf": 0.23653841304517023,
+        "win_rate": 0.16428571428571428,
+        "mean_pnl_atr": -2.374698768907143
+      },
+      "2024": {
+        "n": 139,
+        "pf": 0.11758503024816676,
+        "win_rate": 0.1510791366906475,
+        "mean_pnl_atr": -2.3745710501223023
+      },
+      "2025": {
+        "n": 140,
+        "pf": 0.21360361134867933,
+        "win_rate": 0.20714285714285716,
+        "mean_pnl_atr": -2.2039867512
+      },
+      "2026": {
+        "n": 25,
+        "pf": 0.23110913965872992,
+        "win_rate": 0.12,
+        "mean_pnl_atr": -2.4991966392
+      }
+    }
+  },
+  "entry_path_v1_baseline_filtered": {
+    "note": "A@7.5% score filter (baseline_threshold=-0.03594103), no quantile",
+    "source": "ML/reports/entry_path_test_predictions.csv filtered",
+    "n": 40,
+    "pf": 6.440936176318603,
+    "win_rate": 0.8,
+    "mean_pnl_atr": 2.8149787655000003,
+    "yearly": {
+      "2023": {
+        "n": 11,
+        "pf": 1.7482791104842232,
+        "win_rate": 0.6363636363636364,
+        "mean_pnl_atr": 1.1281473545454546
+      },
+      "2024": {
+        "n": 10,
+        "pf": 7.8509703484432904,
+        "win_rate": 0.7,
+        "mean_pnl_atr": 2.0592284120000004
+      },
+      "2025": {
+        "n": 16,
+        "pf": Infinity,
+        "win_rate": 1.0,
+        "mean_pnl_atr": 4.2013505250000005
+      },
+      "2026": {
+        "n": 3,
+        "pf": 12.20118408748041,
+        "win_rate": 0.6666666666666666,
+        "mean_pnl_atr": 4.1252124
+      }
+    }
+  },
+  "entry_path_v1_quantile": {
+    "note": "Production rule lb_gt_m_q35 via seed_007 (frozen_test)",
+    "source": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+    "n": 48,
+    "pf": 8.178675196069868,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.7264873945833337,
+    "gross_profit": 149.10197249999993,
+    "gross_loss": 18.23057756
+  },
+  "mt4_tester_quantile": {
+    "note": "MT4 tester log 20260412.log (quantile signals, period 2023.01\u20132025.11)",
+    "source": "MT/tester/logs/20260412.log",
+    "n": 20,
+    "pf": 6.978057747699226,
+    "win_rate": 0.8,
+    "mean_pnl_atr": 2.55281
+  }
+}

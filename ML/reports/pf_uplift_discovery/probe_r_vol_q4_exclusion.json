@@ -1,0 +1,20 @@
+{
+  "hypothesis": "R: vol_q4 exclusion (high realized vol)",
+  "n_in": 42,
+  "n_out": 6,
+  "pf_baseline": 8.179,
+  "pf_in": 10.599,
+  "pf_out": 1.523,
+  "pf_delta": 2.42,
+  "wr_in": 0.81,
+  "wr_out": 0.833,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "winning: 73.8% (baseline: 66.7%)",
+  "note": "Top 25% realized vol (H1\u00d724 lookback) shows PF=1.52. Excluding 6 trades.",
+  "caveats": [
+    "Small N cut (6 trades), results may be noise-dominated",
+    "vol_q4 trades: 5 in vol_q4, WR=83% but large individual losses drag PF",
+    "Path check: mae_atr for vol_q4 vs rest needed"
+  ]
+}

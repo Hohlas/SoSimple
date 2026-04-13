@@ -111,6 +111,18 @@
 ## Last Completed Stage
 Quantile Forward Validation Scaffold (2026-04-13).
 
+Adjacent local stage also present: PF Uplift Discovery — Beyond ML Layer (2026-04-13), verdict **SHORTLISTED (3)**.
+
+PF uplift discovery зафиксировал:
+
+- Read-only discovery прогон на `entry_path_v1_quantile` test set (N=48, PF=8.179)
+- 20 гипотез по 5 категориям (R/S/E/F/X), hard bans соблюдены
+- 6 cheap probes выполнены на `trade_enriched.csv` (N=72 baseline_selected, N=48 quantile)
+- Shortlisted (3 STRONG):
+  1. NY session exclusion: PF=20.276, N=34, pf_delta=+12.097
+  2. Early timeout hold_bars=12: PF=13.731, N=48, pf_delta=+5.552
+  3. pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567
+
 ## Next Step
 1. Собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
 2. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
@@ -122,15 +134,16 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
 - `docs/reports/2026-04-13-quantile-forward-validation.md` — текущий forward validation status (`watch / no_forward_data`)
+- `docs/reports/2026-04-13-pf-uplift-discovery.md` — discovery verdict (SHORTLISTED 3)
+- `docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md` — следующий план
+- `docs/superpowers/plans/2026-04-13-ny-session-filter.md` — skeleton plan #1
+- `docs/superpowers/plans/2026-04-13-early-timeout-bar12.md` — skeleton plan #2
+- `docs/superpowers/plans/2026-04-13-pred-adv-cap.md` — skeleton plan #3
 - `docs/reports/2026-04-13-fav-3-vs-12-standalone.md` — standalone verdict
 - `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`CLOSED — gate fail`)
+- `ML/reports/pf_uplift_discovery/` — артефакты discovery (baseline_numbers.json, trade_enriched.csv, probe_*.json)
 - `AGENTS.md`
-- `docs/reports/2026-04-12-tb-verdict.md` — TB verdict (не production)
-- `docs/reports/2026-04-12-quantile-status-decision.md` — quantile production verdict
-- `docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md`
-- `docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md`
 - `ML/reports/entry_path_v1_quantile_selected_rule.json`
-- `ML/reports/tb_mt4_verdict/` — артефакты TB прогона (validation/test trades, yearly, summary)
 
 ## Open Risks
 - **No forward data yet**: новый benchmark готов, но не может подтвердить `quantile` без strictly newer prediction CSV.

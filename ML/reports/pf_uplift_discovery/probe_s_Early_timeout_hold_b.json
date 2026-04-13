@@ -1,0 +1,20 @@
+{
+  "hypothesis": "S: Early timeout hold_bars=12",
+  "n_in": 48,
+  "n_out": 0,
+  "pf_baseline": 8.179,
+  "pf_in": 13.731,
+  "pf_out": null,
+  "pf_delta": 5.552,
+  "wr_in": 0.771,
+  "wr_out": null,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "N/A (same set)",
+  "note": "bar12 PF=13.731 vs bar24 PF=8.179. 0 wins at 12 that flip by 24.",
+  "caveats": [
+    "PATH-DEP CHECK PASSED: compared bar-12 vs bar-24 trajectories",
+    "Flip-to-loss count is critical for implementation feasibility",
+    "Full session tagging for hold=12 yearly breakdown omitted (same N, same trades)"
+  ]
+}

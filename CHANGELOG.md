@@ -18,6 +18,19 @@
 - `quantile` не подтверждён и не опровергнут на новых данных: нужна новая forward-выборка после production decision
 - Старый frozen test не использован повторно, чтобы не подменять forward validation уже известным окном
 
+## [2026-04-13] - PF uplift discovery beyond ML layer: SHORTLISTED (3)
+
+### Результаты
+- Baseline: `entry_path_v1_quantile` test set N=48, PF=8.179, WR=81.25%, negative_year_slices=0
+- 20 гипотез по 5 категориям проверены, 6 cheap read-only probes на `trade_enriched.csv`, path-dep check через OHLC simulation
+- Shortlisted (3 STRONG):
+  - NY session exclusion: PF=20.276, N=34, pf_delta=+12.097 — все Asia-сделки выигрышные (19/19), failure-архетип в NY даёт PF=0.28
+  - Early timeout hold_bars=12: PF=13.731, N=48, pf_delta=+5.552 — 0 из 37 wins-at-bar-12 перевернулись к bar-24
+  - pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567 — MAE 4x выше для отброшенных сделок (0.35 vs 1.38 ATR)
+
+### Вывод
+Три ортогональных механизма (session / hold duration / predicted adverse) дают значимый PF uplift без переобучения. Skeleton plans созданы. Следующий шаг: `/writing-plans` для любой из трёх. Подробности: [docs/reports/2026-04-13-pf-uplift-discovery.md](docs/reports/2026-04-13-pf-uplift-discovery.md)
+
 ## [2026-04-13] - Composition track verdict (quantile × fav_3_vs_12)
 
 ### Результаты

@@ -1,0 +1,19 @@
+{
+  "hypothesis": "R: vol_q1 exclusion (low realized vol, failure bucket all-loss)",
+  "n_in": 33,
+  "n_out": 15,
+  "pf_baseline": 8.179,
+  "pf_in": 9.39,
+  "pf_out": 5.668,
+  "pf_delta": 1.211,
+  "wr_in": 0.879,
+  "wr_out": 0.667,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "winning: 66.7% (baseline: 66.7%)",
+  "note": "Failure archetype in vol_q1: PF=0.0, WR=0% (all losses). Removing these 5 failure\u00d7q1 trades.",
+  "caveats": [
+    "Only 5 failure\u00d7vol_q1 trades removed (can exclude vol_q1 entirely = 15 trades, larger cut)",
+    "path-dep: MAE trajectory for vol_q1 failures should show early adverse movement"
+  ]
+}

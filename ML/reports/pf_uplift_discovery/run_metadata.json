@@ -1,0 +1,19 @@
+{
+  "run_date": "2026-04-13",
+  "sources": {
+    "test_predictions": "ML/reports/entry_path_v1_quantile_test_predictions.csv",
+    "ohlc": "DATA/XAUUSD_H1_OHLC.csv",
+    "production_rule": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+    "tester_log": "MT/tester/logs/20260412.log"
+  },
+  "production_rule": {
+    "candidate": "lb_gt_m_q35",
+    "m": -11.09161666,
+    "w": 16.7876408,
+    "correction": 4.7510468999999995,
+    "baseline_threshold": -0.03594103
+  },
+  "test_split": "2023-2026",
+  "n_total_signal": 406,
+  "n_quantile": 18
+}

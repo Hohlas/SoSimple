@@ -1,0 +1,20 @@
+{
+  "hypothesis": "F: interval width \u2264 q50 (16.812)",
+  "n_in": 22,
+  "n_out": 26,
+  "pf_baseline": 8.179,
+  "pf_in": Infinity,
+  "pf_out": 3.533,
+  "pf_delta": "inf",
+  "wr_in": 1.0,
+  "wr_out": 0.654,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "winning: 77.3% (baseline: 66.7%)",
+  "note": "Narrower quantile interval \u2192 more confident prediction \u2192 higher quality signals",
+  "caveats": [
+    "N cut from 48 to 22 (46%)",
+    "PATH-DEP: MFE for narrow vs wide intervals",
+    "Width depends on q10/q90 spread \u2014 may correlate with vol regime"
+  ]
+}

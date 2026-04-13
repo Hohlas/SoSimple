@@ -74,3 +74,18 @@
   verdict report: [2026-04-13-quantile-forward-validation.md](../reports/2026-04-13-quantile-forward-validation.md)
   current verdict: `watch / no_forward_data`
   next action: collect or generate a strictly newer forward prediction CSV, then run `ML.benchmark_quantile_forward_validation`
+
+## PF Uplift Beyond ML Layer
+
+Discovery: [2026-04-13-pf-uplift-discovery.md](../reports/2026-04-13-pf-uplift-discovery.md)
+Status: **SHORTLISTED (3)** — skeleton plans written, awaiting `/writing-plans` pass each
+
+| Rank | Plan | pf_delta | N_drop | Status |
+|------|------|:--------:|:------:|--------|
+| 1 | [NY session filter](plans/2026-04-13-ny-session-filter.md) | +12.097 | 29% | Skeleton — TBD |
+| 2 | [Early timeout bar=12](plans/2026-04-13-early-timeout-bar12.md) | +5.552 | 0% | Skeleton — TBD |
+| 3 | [pred_adv12 ≤ Q75 cap](plans/2026-04-13-pred-adv-cap.md) | +4.567 | 23% | Skeleton — TBD |
+
+Candidate #4 (not shortlisted due to limit): vol_q4 exclusion (+2.42 PF, N_drop=12.5%) — first candidate for composition with any of the 3.
+
+Recommended execution order: NY session filter → Early timeout → pred_adv cap. Each requires `/writing-plans` pass before implementation.

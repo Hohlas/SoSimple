@@ -1,0 +1,19 @@
+{
+  "hypothesis": "F: pred_adv12 \u2264 Q75 (0.0313)",
+  "n_in": 37,
+  "n_out": 11,
+  "pf_baseline": 8.179,
+  "pf_in": 12.746,
+  "pf_out": 2.679,
+  "pf_delta": 4.567,
+  "wr_in": 0.865,
+  "wr_out": 0.636,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "winning: 73.0% (baseline: 66.7%)",
+  "note": "Exclude trades where model predicts high adverse excursion (top 25%)",
+  "caveats": [
+    "Q75 threshold=0.0313ATR, N cut from 48 to 37",
+    "PATH-DEP: compare mae_atr of high-pred-adv vs low-pred-adv"
+  ]
+}

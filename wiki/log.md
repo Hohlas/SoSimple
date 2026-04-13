@@ -90,6 +90,17 @@
 - Updated `wiki/index.md` coverage from 14 to 15 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 15`
 
+## [2026-04-13] ingest | PF uplift discovery synced into wiki
+- Added report `docs/reports/2026-04-13-pf-uplift-discovery.md`
+- Added 3 skeleton plans: `docs/superpowers/plans/2026-04-13-{ny-session-filter,early-timeout-bar12,pred-adv-cap}.md`
+- Added artifacts: `ML/reports/pf_uplift_discovery/` (trade_enriched.csv, 6 probe JSON, regime_crosstab.csv, baseline_numbers.json)
+- Updated `wiki/research/execution-tracks.md`:
+  - added "PF Uplift Discovery (04-13)" section with probe results table and path-dep findings
+  - updated open questions with PF uplift реализация item
+- Updated `wiki/index.md` coverage from 16 to 17 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 17`
+- Verdict: 3 STRONG hypotheses shortlisted (NY session +12.1 PF, early timeout bar=12 +5.55 PF, pred_adv12 cap +4.57 PF)
+
 ## [2026-04-13] ingest | Quantile forward validation scaffold synced into wiki
 - Added report `docs/reports/2026-04-13-quantile-forward-validation.md`
 - Added benchmark `ML/benchmark_quantile_forward_validation.py`

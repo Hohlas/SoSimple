@@ -1,0 +1,20 @@
+{
+  "hypothesis": "R: NY session exclusion (keep asia+overlap)",
+  "n_in": 34,
+  "n_out": 14,
+  "pf_baseline": 8.179,
+  "pf_in": 20.276,
+  "pf_out": 2.34,
+  "pf_delta": 12.097,
+  "wr_in": 0.853,
+  "wr_out": 0.714,
+  "negative_years_in": 0,
+  "negative_years_in_baseline": 0,
+  "arch_shift": "winning: 67.6% (baseline: 66.7%)",
+  "note": "NY session (14\u201318h+ broker) shows PF=2.34 vs Asia PF=inf. Excluding 14 NY trades.",
+  "caveats": [
+    "N drop: 48\u219234 (29% drop \u2014 borderline for Strong gate)",
+    "Path-dependent: MFE/MAE used (timeout-only, so path-dep reduces to outcome check)",
+    "Yearly check needed: 2022 2 trades remain"
+  ]
+}
