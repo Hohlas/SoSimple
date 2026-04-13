@@ -132,7 +132,9 @@ def select_stable_threshold(
     working = _prepare_threshold_grid(grid)
     pf = pd.to_numeric(working["pf"], errors="coerce").fillna(-1.0)
     n_trades = pd.to_numeric(working["n_trades"], errors="coerce").fillna(0).astype(int)
-    negative_year_slices = pd.to_numeric(working["negative_year_slices"], errors="coerce").fillna(0).astype(int)
+    negative_year_slices = pd.to_numeric(working["negative_year_slices"], errors="coerce").fillna(
+        max_negative_year_slices + 1
+    ).astype(int)
     working["passes_basic_gate"] = (
         (n_trades >= min_trades)
         & (pf >= min_pf)
@@ -157,10 +159,7 @@ def select_stable_threshold(
         if passing < min_passing_in_window or not bool(row["passes_basic_gate"]):
             continue
 
-        window_pf = pd.to_numeric(window.loc[window["passes_basic_gate"], "pf"], errors="coerce").fillna(-1.0)
-        if window_pf.empty:
-            window_pf = pd.to_numeric(window["pf"], errors="coerce").fillna(-1.0)
-
+        window_pf = pd.to_numeric(window["pf"], errors="coerce").fillna(-1.0)
         window_trades = pd.to_numeric(window.loc[window["passes_basic_gate"], "n_trades"], errors="coerce").fillna(0)
         score = (
             passing,
