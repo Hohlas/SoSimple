@@ -4,7 +4,7 @@
 > **Status**: Completed — watch / no forward data
 > **Goal**: Проверить устойчивость frozen `entry_path_v1_quantile` на новых данных без перенастройки
 > **Related plan/spec**: [plan](../superpowers/plans/2026-04-13-quantile-forward-validation.md), [spec](../superpowers/specs/2026-04-13-quantile-forward-validation-design.md)
-> **Related commit**: pending
+> **Related commit**: 23c5776
 
 ## Context
 
