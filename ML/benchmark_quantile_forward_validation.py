@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import argparse
+import json
 import math
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -80,3 +83,81 @@ def decide_operational_verdict(
     if negative_slices > 1:
         return {"verdict": "watch", "reason": "weak_time_slices"}
     return {"verdict": "confirmed", "reason": "forward_pf_holds"}
+
+
+def _count_negative_slices(time_slices: pd.DataFrame) -> int:
+    if time_slices.empty or "pf" not in time_slices.columns:
+        return 0
+    return int(sum(1 for value in time_slices["pf"] if pd.notna(value) and value < 1.0))
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--forward-predictions", required=True)
+    parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--historical-pf", required=True, type=float)
+    parser.add_argument("--slice-mode", default="quarter")
+    args = parser.parse_args(argv)
+
+    try:
+        frame = pd.read_csv(args.forward_predictions, sep=";")
+        required_columns = {"time", "signal", "true_ret_24_dir_atr"}
+        if not required_columns.issubset(frame.columns):
+            return 2
+        signal = pd.to_numeric(frame["signal"], errors="coerce")
+        active_rows = frame.loc[signal.notna() & (signal != 0)].copy()
+        forward_metrics = compute_forward_metrics(active_rows)
+        time_slices = build_time_slices(active_rows, mode=args.slice_mode)
+        negative_slices = _count_negative_slices(time_slices)
+        verdict = decide_operational_verdict(
+            historical_pf=args.historical_pf,
+            forward_pf=forward_metrics["pf"],
+            n_trades=forward_metrics["n_trades"],
+            negative_slices=negative_slices,
+        )
+    except (OSError, ValueError, KeyError, pd.errors.ParserError):
+        return 2
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    summary = {
+        "input_path": args.forward_predictions,
+        "historical_pf": args.historical_pf,
+        "slice_mode": args.slice_mode,
+        "total_rows": int(len(frame)),
+        "active_rows": int(len(active_rows)),
+        "negative_slices": negative_slices,
+        "forward_metrics": forward_metrics,
+        **verdict,
+    }
+    run_metadata = {
+        "input_path": args.forward_predictions,
+        "historical_pf": args.historical_pf,
+        "slice_mode": args.slice_mode,
+        "total_rows": int(len(frame)),
+        "active_rows": int(len(active_rows)),
+    }
+
+    with (output_dir / "summary.json").open("w", encoding="utf-8") as handle:
+        json.dump(_json_safe(summary), handle, indent=2, ensure_ascii=False, allow_nan=False)
+        handle.write("\n")
+    time_slices.to_csv(output_dir / "time_slices.csv", sep=";", index=False)
+    with (output_dir / "run_metadata.json").open("w", encoding="utf-8") as handle:
+        json.dump(_json_safe(run_metadata), handle, indent=2, ensure_ascii=False, allow_nan=False)
+        handle.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -5,6 +8,7 @@ from ML.benchmark_quantile_forward_validation import (
     build_time_slices,
     compute_forward_metrics,
     decide_operational_verdict,
+    main,
 )
 
 
@@ -169,3 +173,91 @@ def test_decide_operational_verdict_returns_confirmed_when_pf_holds():
     )
 
     assert result == {"verdict": "confirmed", "reason": "forward_pf_holds"}
+
+
+def test_main_writes_summary_and_time_slices(tmp_path: Path):
+    forward_path = tmp_path / "forward.csv"
+    forward_path.write_text(
+        "time;signal;true_ret_24_dir_atr\n"
+        "2026-01-10;1;1.0\n"
+        "2026-02-10;-1;-1.0\n"
+        "2026-05-10;1;2.0\n",
+        encoding="utf-8",
+    )
+
+    output_dir = tmp_path / "out"
+    code = main(
+        [
+            "--forward-predictions",
+            str(forward_path),
+            "--output-dir",
+            str(output_dir),
+            "--historical-pf",
+            "8.18",
+        ]
+    )
+
+    assert code == 0
+    summary_path = output_dir / "summary.json"
+    time_slices_path = output_dir / "time_slices.csv"
+    run_metadata_path = output_dir / "run_metadata.json"
+    assert summary_path.exists()
+    assert time_slices_path.exists()
+    assert run_metadata_path.exists()
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert summary["verdict"] in {"confirmed", "watch", "revisit"}
+    metadata = json.loads(run_metadata_path.read_text(encoding="utf-8"))
+    assert metadata["total_rows"] == 3
+    assert metadata["active_rows"] == 3
+
+
+def test_main_returns_2_for_missing_required_column(tmp_path: Path):
+    forward_path = tmp_path / "forward.csv"
+    forward_path.write_text(
+        "time;signal\n"
+        "2026-01-10;1\n",
+        encoding="utf-8",
+    )
+
+    code = main(
+        [
+            "--forward-predictions",
+            str(forward_path),
+            "--output-dir",
+            str(tmp_path / "out"),
+            "--historical-pf",
+            "8.18",
+        ]
+    )
+
+    assert code == 2
+
+
+def test_main_ignores_missing_signal_values(tmp_path: Path):
+    forward_path = tmp_path / "forward.csv"
+    forward_path.write_text(
+        "time;signal;true_ret_24_dir_atr\n"
+        "2026-01-10;1;1.0\n"
+        "2026-01-11;;100.0\n"
+        "2026-01-12;0;100.0\n",
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "out"
+
+    code = main(
+        [
+            "--forward-predictions",
+            str(forward_path),
+            "--output-dir",
+            str(output_dir),
+            "--historical-pf",
+            "8.18",
+        ]
+    )
+
+    assert code == 0
+    summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
+    assert summary["active_rows"] == 1
+    assert summary["forward_metrics"]["n_trades"] == 1
+    assert summary["forward_metrics"]["pf"] is None
