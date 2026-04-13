@@ -202,3 +202,16 @@ def test_sparse_bad_year_is_ignored_below_min_year_trades():
     assert count_negative_year_slices(frame, min_year_trades=3) == 0
     assert annotated.loc[0, "negative_year_slices"] == 0
     assert count_negative_year_slices(frame, min_year_trades=2) == 1
+
+
+def test_negative_year_slices_use_pf_not_net_pnl():
+    frame = pd.DataFrame(
+        {
+            "time": ["2023-01-01", "2023-01-02", "2023-01-03"],
+            "pnl_atr": [10.0, -6.0, -5.0],
+        }
+    )
+
+    assert compute_yearly_breakdown(frame).loc[0, "pf"] < 1.0
+    assert frame["pnl_atr"].sum() < 0.0
+    assert count_negative_year_slices(frame, min_year_trades=3) == 1

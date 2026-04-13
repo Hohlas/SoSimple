@@ -85,18 +85,15 @@ def compute_yearly_breakdown(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def count_negative_year_slices(frame: pd.DataFrame, min_year_trades: int = 3) -> int:
-    if frame.empty:
+    yearly = compute_yearly_breakdown(frame)
+    if yearly.empty:
         return 0
-
-    working = frame.copy()
-    working["year"] = pd.to_datetime(working["time"]).dt.year
-
     total = 0
-    for _, group in working.groupby("year", sort=True):
-        if len(group) < min_year_trades:
+    for _, row in yearly.iterrows():
+        if int(row["n_trades"]) < min_year_trades:
             continue
-        pnl = group["pnl_atr"].astype(float)
-        if float(pnl.sum()) < 0.0:
+        pf = row["pf"]
+        if pd.notna(pf) and float(pf) < 1.0:
             total += 1
     return total
 
