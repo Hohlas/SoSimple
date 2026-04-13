@@ -353,8 +353,8 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    validation_grid.to_csv(args.output_dir / "threshold_grid_validation.csv", index=False)
-    test_grid.to_csv(args.output_dir / "threshold_grid_test.csv", index=False)
+    validation_grid.to_csv(args.output_dir / "threshold_grid_validation.csv", sep=";", index=False)
+    test_grid.to_csv(args.output_dir / "threshold_grid_test.csv", sep=";", index=False)
 
     if threshold is None:
         yearly_validation = compute_yearly_breakdown(validation.iloc[0:0])
@@ -362,8 +362,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         yearly_validation = compute_yearly_breakdown(validation[validation["fav_3_vs_12"] <= threshold])
         yearly_test = compute_yearly_breakdown(test[test["fav_3_vs_12"] <= threshold])
-    yearly_validation.to_csv(args.output_dir / "yearly_breakdown_validation.csv", index=False)
-    yearly_test.to_csv(args.output_dir / "yearly_breakdown_test.csv", index=False)
+    yearly_validation.to_csv(args.output_dir / "yearly_breakdown_validation.csv", sep=";", index=False)
+    yearly_test.to_csv(args.output_dir / "yearly_breakdown_test.csv", sep=";", index=False)
 
     _write_json(
         args.output_dir / "selected_threshold.json",

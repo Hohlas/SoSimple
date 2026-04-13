@@ -320,6 +320,10 @@ def test_main_writes_expected_artefacts(tmp_path: Path):
     assert (output / "threshold_grid_test.csv").exists()
     assert (output / "selected_threshold.json").exists()
     assert (output / "verdict.json").exists()
+    grid = pd.read_csv(output / "threshold_grid_validation.csv", sep=";")
+    yearly = pd.read_csv(output / "yearly_breakdown_validation.csv", sep=";")
+    assert "threshold" in grid.columns
+    assert "year" in yearly.columns
     selected = json.loads((output / "selected_threshold.json").read_text(encoding="utf-8"))
     verdict = json.loads((output / "verdict.json").read_text(encoding="utf-8"))
     assert selected["validation"]["pf"] == "inf"
