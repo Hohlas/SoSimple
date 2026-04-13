@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -12,6 +13,7 @@ from ML.benchmark_fav_3_vs_12_standalone import (
     evaluate_threshold_grid,
     main,
     select_stable_threshold,
+    _parse_thresholds,
 )
 
 
@@ -318,3 +320,37 @@ def test_main_writes_expected_artefacts(tmp_path: Path):
     assert (output / "threshold_grid_test.csv").exists()
     assert (output / "selected_threshold.json").exists()
     assert (output / "verdict.json").exists()
+    selected = json.loads((output / "selected_threshold.json").read_text(encoding="utf-8"))
+    verdict = json.loads((output / "verdict.json").read_text(encoding="utf-8"))
+    assert selected["validation"]["pf"] == "inf"
+    assert verdict["validation"]["pf"] == "inf"
+
+
+def test_parse_thresholds_rejects_empty_and_non_finite_values():
+    for value in ["", "nan", "inf", "0.2,nan", "0.2,0.2"]:
+        try:
+            _parse_thresholds(value)
+        except Exception:
+            pass
+        else:
+            raise AssertionError(f"expected parse failure for {value!r}")
+
+
+def test_main_returns_2_for_invalid_input_schema(tmp_path: Path):
+    source = tmp_path / "updn"
+    source.mkdir()
+    output = tmp_path / "out"
+    invalid = pd.DataFrame({"time": ["2022-01-01"], "pnl_atr": [1.0]})
+    invalid.to_csv(source / "validation_active_updn_predictions.csv", index=False)
+    invalid.to_csv(source / "test_active_updn_predictions.csv", index=False)
+
+    code = main(
+        [
+            "--updn-active-dir",
+            str(source),
+            "--output-dir",
+            str(output),
+        ]
+    )
+
+    assert code == 2

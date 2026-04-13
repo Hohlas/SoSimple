@@ -14,6 +14,7 @@ EPS = 1e-6
 DEFAULT_UPDN_ACTIVE_DIR = Path("ML/reports/quantile_fav_composition/updn_active_source")
 DEFAULT_OUTPUT_DIR = Path("ML/reports/fav_3_vs_12_standalone")
 DEFAULT_THRESHOLDS = [round(x / 100, 2) for x in range(20, 121, 2)]
+REQUIRED_INPUT_COLUMNS = {"time", "pred_fav_3", "pred_fav_12", "pnl_atr"}
 
 
 def add_fav_ratio(frame: pd.DataFrame) -> pd.DataFrame:
@@ -193,10 +194,25 @@ def select_stable_threshold(
 
 
 def _parse_thresholds(value: str) -> list[float]:
-    thresholds = [float(part.strip()) for part in value.split(",") if part.strip()]
+    try:
+        thresholds = [float(part.strip()) for part in value.split(",") if part.strip()]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("thresholds must be comma-separated numbers") from exc
+    if not thresholds:
+        raise argparse.ArgumentTypeError("threshold list must not be empty")
+    if any(not math.isfinite(threshold) for threshold in thresholds):
+        raise argparse.ArgumentTypeError("thresholds must be finite numbers")
     if len(thresholds) != len(set(thresholds)):
         raise argparse.ArgumentTypeError("duplicate threshold values are not allowed")
     return sorted(thresholds)
+
+
+def _load_input_frame(path: Path) -> pd.DataFrame:
+    frame = pd.read_csv(path)
+    missing = REQUIRED_INPUT_COLUMNS.difference(frame.columns)
+    if missing:
+        raise ValueError(f"{path} missing required columns: {sorted(missing)}")
+    return add_fav_ratio(frame)
 
 
 def _json_ready(value: Any) -> Any:
@@ -206,9 +222,9 @@ def _json_ready(value: Any) -> Any:
         return [_json_ready(item) for item in value]
     if isinstance(value, tuple):
         return [_json_ready(item) for item in value]
-    if pd.isna(value):
-        return None
     if isinstance(value, float) and not math.isfinite(value):
+        return "inf" if value > 0 else "-inf"
+    if pd.isna(value):
         return None
     if hasattr(value, "item"):
         return _json_ready(value.item())
@@ -284,8 +300,11 @@ def main(argv: list[str] | None = None) -> int:
     if not validation_path.exists() or not test_path.exists():
         return 2
 
-    validation = add_fav_ratio(pd.read_csv(validation_path))
-    test = add_fav_ratio(pd.read_csv(test_path))
+    try:
+        validation = _load_input_frame(validation_path)
+        test = _load_input_frame(test_path)
+    except (KeyError, ValueError, pd.errors.ParserError):
+        return 2
 
     validation_grid = evaluate_threshold_grid(validation, args.thresholds)
     validation_grid = annotate_grid_with_yearly_failures(
