@@ -1,0 +1,14 @@
+{
+  "input_path": null,
+  "historical_pf": 8.178675196069868,
+  "slice_mode": "quarter",
+  "total_rows": 0,
+  "active_rows": 0,
+  "forward_data_available": false,
+  "checked_paths": [
+    "ML/reports/entry_path_v1_quantile_test_predictions.csv",
+    "ML/reports/entry_path_v1_quantile_validation_predictions.csv",
+    "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv"
+  ],
+  "note": "Repository contains historical validation/test predictions only; no strictly newer forward prediction CSV was found."
+}

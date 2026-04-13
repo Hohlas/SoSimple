@@ -1,0 +1,17 @@
+{
+  "verdict": "watch",
+  "reason": "no_forward_data",
+  "historical_pf": 8.178675196069868,
+  "forward_metrics": {
+    "n_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0,
+    "pf": null,
+    "win_rate": null,
+    "mean_pnl_atr": null
+  },
+  "negative_slices": 0,
+  "practical_decision": "Forward validation cannot confirm or reject quantile until a strictly newer prediction CSV is available."
+}
