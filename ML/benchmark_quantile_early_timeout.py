@@ -5,11 +5,59 @@ from typing import Any
 
 import pandas as pd
 
+from ML.benchmark_entry_path_v1_quantile_filter import (
+    apply_conformal_correction,
+    attach_baseline_score,
+    build_rule_mask,
+)
+
 
 GATE_MIN_TRADES = 30
 GATE_MIN_PF = 2.0
 GATE_MAX_NEGATIVE_YEAR_SLICES = 0
 GATE_MIN_SEED_PF = 1.0
+
+
+def select_quantile_trades(
+    frame: pd.DataFrame,
+    baseline_frame: pd.DataFrame,
+    selected_rule: dict[str, Any],
+) -> pd.DataFrame:
+    required_columns = {
+        "time",
+        "signal",
+        "pred_ret_24_q10",
+        "pred_ret_24_q90",
+        "true_ret_12_dir_atr",
+        "true_ret_24_dir_atr",
+    }
+    missing = sorted(required_columns.difference(frame.columns))
+    if missing:
+        raise ValueError(f"missing columns: {missing}")
+
+    working = attach_baseline_score(frame, baseline_frame)
+    baseline_threshold = float(selected_rule["baseline_threshold"])
+    winner = selected_rule["winner"]
+
+    working["baseline_selected"] = (
+        (pd.to_numeric(working["signal"], errors="raise") != 0)
+        & (pd.to_numeric(working["baseline_score"], errors="raise") >= baseline_threshold)
+    )
+    working = apply_conformal_correction(working, float(winner["correction"]))
+    selected_mask = build_rule_mask(
+        working,
+        rule=str(winner["rule"]),
+        m=float(winner["m"]),
+        w=float(winner["w"]),
+    )
+    selected = working.loc[selected_mask].copy()
+    selected["pnl_hold12_atr"] = pd.to_numeric(
+        selected["true_ret_12_dir_atr"], errors="raise"
+    ).astype(float)
+    selected["pnl_hold24_atr"] = pd.to_numeric(
+        selected["true_ret_24_dir_atr"], errors="raise"
+    ).astype(float)
+    return selected
 
 
 def _format_invalid_numeric_reason(name: str, value: Any) -> str:

@@ -6,6 +6,7 @@ import pytest
 from ML.benchmark_quantile_early_timeout import (
     compute_metrics,
     decide_hold12_gate,
+    select_quantile_trades,
 )
 
 
@@ -64,6 +65,41 @@ def test_decide_hold12_gate_rejects_pf_collapse():
 
     assert result["verdict"] == "gate_fail"
     assert "hold12_pf=0.9000 <= 2.0" in result["reasons"]
+
+
+def test_select_quantile_trades_uses_baseline_and_lb_rule():
+    frame = pd.DataFrame(
+        {
+            "time": ["2023.01.01 00:00", "2023.01.01 01:00", "2023.01.01 02:00"],
+            "signal": [1, 1, 1],
+            "pred_ret_24_q10": [-1.0, -5.0, -1.0],
+            "pred_ret_24_q90": [3.0, 1.0, 3.0],
+            "true_ret_12_dir_atr": [1.0, 2.0, 3.0],
+            "true_ret_24_dir_atr": [1.5, 2.5, 3.5],
+        }
+    )
+    baseline_frame = pd.DataFrame(
+        {
+            "time": ["2023.01.01 00:00", "2023.01.01 01:00", "2023.01.01 02:00"],
+            "signal": [1, 1, 1],
+            "pred_ret_24_dir_atr": [0.5, 0.5, -0.5],
+        }
+    )
+    selected_rule = {
+        "baseline_threshold": 0.0,
+        "winner": {
+            "rule": "lb_gt_m",
+            "m": -3.0,
+            "w": 10.0,
+            "correction": 1.0,
+        },
+    }
+
+    result = select_quantile_trades(frame, baseline_frame, selected_rule)
+
+    assert list(result["time"]) == ["2023.01.01 00:00"]
+    assert list(result["pnl_hold12_atr"]) == [1.0]
+    assert list(result["pnl_hold24_atr"]) == [1.5]
 
 
 @pytest.mark.parametrize(
