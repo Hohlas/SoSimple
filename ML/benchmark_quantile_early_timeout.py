@@ -12,6 +12,14 @@ GATE_MAX_NEGATIVE_YEAR_SLICES = 0
 GATE_MIN_SEED_PF = 1.0
 
 
+def _format_invalid_numeric_reason(name: str, value: float | None) -> str:
+    return f"{name}={value} is invalid"
+
+
+def _is_nan_value(value: Any) -> bool:
+    return value is not None and pd.isna(value)
+
+
 def compute_metrics(frame: pd.DataFrame, pnl_column: str) -> dict[str, Any]:
     raw_pnl = frame[pnl_column]
     if raw_pnl.isna().any():
@@ -68,20 +76,44 @@ def decide_hold12_gate(
     seed_pf_values: list[float],
 ) -> dict[str, Any]:
     reasons: list[str] = []
+    hold12_pf_is_nan = _is_nan_value(hold12_pf)
+    hold24_pf_is_nan = _is_nan_value(hold24_pf)
+    hold24_mean_pnl_atr_is_nan = _is_nan_value(hold24_mean_pnl_atr)
+    hold12_mean_pnl_atr_is_nan = _is_nan_value(hold12_mean_pnl_atr)
+    mean_pnl_tolerance_atr_is_nan = _is_nan_value(mean_pnl_tolerance_atr)
 
     if hold12_n_trades < GATE_MIN_TRADES:
         reasons.append(f"hold12_n_trades={hold12_n_trades} < {GATE_MIN_TRADES}")
 
-    if hold12_pf is None or hold12_pf <= GATE_MIN_PF:
+    if hold12_pf is None:
         hold12_pf_text = "None" if hold12_pf is None else f"{hold12_pf:.4f}"
         reasons.append(f"hold12_pf={hold12_pf_text} <= {GATE_MIN_PF}")
+    elif hold12_pf_is_nan:
+        reasons.append(_format_invalid_numeric_reason("hold12_pf", hold12_pf))
+    elif hold12_pf <= GATE_MIN_PF:
+        reasons.append(f"hold12_pf={hold12_pf:.4f} <= {GATE_MIN_PF}")
 
-    if hold24_pf is not None and hold12_pf is not None and hold12_pf < hold24_pf:
+    if hold24_pf_is_nan:
+        reasons.append(_format_invalid_numeric_reason("hold24_pf", hold24_pf))
+    elif hold24_pf is not None and hold12_pf is not None and not hold12_pf_is_nan and hold12_pf < hold24_pf:
         reasons.append(f"hold12_pf={hold12_pf:.4f} < hold24_pf={hold24_pf:.4f}")
 
     if (
         hold24_mean_pnl_atr is not None
         and hold12_mean_pnl_atr is not None
+        and mean_pnl_tolerance_atr_is_nan
+    ):
+        reasons.append(_format_invalid_numeric_reason("mean_pnl_tolerance_atr", mean_pnl_tolerance_atr))
+    elif hold24_mean_pnl_atr_is_nan:
+        reasons.append(_format_invalid_numeric_reason("hold24_mean_pnl_atr", hold24_mean_pnl_atr))
+    elif hold12_mean_pnl_atr_is_nan:
+        reasons.append(_format_invalid_numeric_reason("hold12_mean_pnl_atr", hold12_mean_pnl_atr))
+    if (
+        hold24_mean_pnl_atr is not None
+        and hold12_mean_pnl_atr is not None
+        and not hold24_mean_pnl_atr_is_nan
+        and not hold12_mean_pnl_atr_is_nan
+        and not mean_pnl_tolerance_atr_is_nan
         and hold12_mean_pnl_atr < hold24_mean_pnl_atr - mean_pnl_tolerance_atr
     ):
         reasons.append(
@@ -94,6 +126,10 @@ def decide_hold12_gate(
             "hold12_negative_year_slices="
             f"{hold12_negative_year_slices} > {GATE_MAX_NEGATIVE_YEAR_SLICES}"
         )
+
+    seed_pf_nan_values = [value for value in seed_pf_values if _is_nan_value(value)]
+    if seed_pf_nan_values:
+        reasons.append(f"seed_pf_values_contain_invalid_numeric_values: {seed_pf_nan_values}")
 
     weak_seed_values = [value for value in seed_pf_values if value <= GATE_MIN_SEED_PF]
     if weak_seed_values:

@@ -72,6 +72,61 @@ def test_decide_hold12_gate_rejects_pf_collapse():
         (
             dict(
                 hold24_pf=8.0,
+                hold12_pf=float("nan"),
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_pf=nan is invalid",
+        ),
+        (
+            dict(
+                hold24_pf=float("nan"),
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold24_pf=nan is invalid",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, float("nan"), 7.5],
+            ),
+            "seed_pf_values_contain_invalid_numeric_values: [nan]",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold24_mean_pnl_atr=1.25,
+                hold12_mean_pnl_atr=float("nan"),
+                mean_pnl_tolerance_atr=0.1,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_mean_pnl_atr=nan is invalid",
+        ),
+    ],
+)
+def test_decide_hold12_gate_rejects_invalid_numeric_values(kwargs, expected_reason):
+    result = decide_hold12_gate(**kwargs)
+
+    assert result["verdict"] == "gate_fail"
+    assert expected_reason in result["reasons"]
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected_reason",
+    [
+        (
+            dict(
+                hold24_pf=8.0,
                 hold12_pf=10.0,
                 hold12_n_trades=29,
                 hold12_negative_year_slices=0,
