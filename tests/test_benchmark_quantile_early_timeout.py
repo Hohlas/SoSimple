@@ -112,6 +112,27 @@ def test_decide_hold12_gate_rejects_pf_collapse():
             ),
             "hold12_mean_pnl_atr=nan is invalid",
         ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, None, 7.5],
+            ),
+            "seed_pf_values_contain_invalid_numeric_values: [None]",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                mean_pnl_tolerance_atr=float("nan"),
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "mean_pnl_tolerance_atr=nan is invalid",
+        ),
     ],
 )
 def test_decide_hold12_gate_rejects_invalid_numeric_values(kwargs, expected_reason):
