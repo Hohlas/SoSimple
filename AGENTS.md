@@ -4,25 +4,26 @@
 ## Цель проекта
 ML-бот для прогнозирования разворотов Forex (H1). Детали: [PRD.md](docs/PRD.md).
 
+## using search_knowledge (RAG system)
+При поиске текста и документов используй инструменты MCP сервера knowledge-rag
+
+### Pure keyword search — instant, no embedding needed
+search_knowledge("gtfobins suid", hybrid_alpha=0.0)
+
+### Balanced hybrid — both engines equally weighted
+search_knowledge("SQL injection techniques", hybrid_alpha=0.5)
+
+### Pure semantic — embedding similarity only
+search_knowledge("lateral movement strategies", hybrid_alpha=1.0)
+
+### Incremental Indexing: only re-index changed files (fast)
+reindex_documents()
+
+### Smart reindex: detect changes + rebuild BM25
+reindex_documents(force=True)
+
+
 ## Быстрый старт
-
-### Базовые команды
-```bash
-# 1) Активировать окружение
-source ~/git/SoSimple/.venv/bin/activate
-
-# 2) Подготовить датасет (sort -> label -> normalize -> split)
-python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
-
-# 3) Обучить модель regression_updn (пример)
-python -m ML.train --model transformer --task regression_updn
-
-# 4) Сгенерировать сигналы для MT4
-python -m API.generate_signals --theta 2.665 --horizon 12
-
-# 5) Диагностика расхождения Python vs MT4
-python statistics/signal_tracer.py --batch --top 10 --min-ratio 5.0 --csv-out batch.csv
-```
 
 ### Пути к данным
 - Вход: `MT/MQL4/Files/Nero.csv` (UTF-16LE, `;`)

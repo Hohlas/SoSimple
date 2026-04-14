@@ -20,12 +20,3 @@ originSessionId: 98fd8647-310f-41a6-a55c-4f19ad140a3e
 - **TB-слой** (`tb_selected_rule.json`, `theta=0.475`) **не production**: gate_fail на test (N=69, PF=1.28, negative years 2023 и 2026). Validation смотрелся здоровым (PF=4.33), но не обобщается. Пересмотр возможен только после накопления forward-данных post-2026-06. Подробности: `docs/reports/2026-04-12-tb-verdict.md`.
 - **Label convention в `Nero_*_labeled.csv`** — float: `1.0`=TP, `0.0`=SL, `0.5`=Timeout (источник: `processing/label_signals.py:919`). Любой simulator/benchmark по TB-label должен сравнивать по float-порогам, а не через `int(...)` — иначе SL и Timeout сливаются и `losses=0` будет артефактом.
 
-## Опорные документы
-
-- `docs/reports/2026-04-12-tb-verdict.md` — TB gate_fail verdict (не production)
-- `docs/reports/2026-04-12-quantile-status-decision.md` — production verdict для quantile-layer
-- `docs/reports/2026-04-01-signal-research-variant-2.md`
-- `docs/superpowers/specs/2026-03-27-pf-improvement-design.md`
-- `docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md`
-- `docs/superpowers/plans/2026-04-11-quantile-status-decision.md`
-- `API/signal_research.py`

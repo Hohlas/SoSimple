@@ -8,7 +8,8 @@
       "Read(//home/hohla/git/SoSimple/MT/MQL4/Experts/**)",
       "Bash(python3:*)",
       "Bash(source .venv/bin/activate)",
-      "Bash(python statistics/statistics.py DATA/Nero_train_labeled.csv)"
+      "Bash(python statistics/statistics.py DATA/Nero_train_labeled.csv)",
+      "Bash(git branch:*)"
     ]
   }
 }
