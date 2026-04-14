@@ -25,6 +25,13 @@ def _is_invalid_numeric_value(value: Any, *, allow_none: bool = False) -> bool:
         return True
 
 
+def _is_invalid_count_value(value: Any) -> bool:
+    if _is_invalid_numeric_value(value):
+        return True
+    numeric = float(value)
+    return numeric < 0.0 or not numeric.is_integer()
+
+
 def compute_metrics(frame: pd.DataFrame, pnl_column: str) -> dict[str, Any]:
     raw_pnl = frame[pnl_column]
     if raw_pnl.isna().any():
@@ -90,8 +97,8 @@ def decide_hold12_gate(
         hold12_mean_pnl_atr, allow_none=True
     )
     mean_pnl_tolerance_atr_is_invalid = _is_invalid_numeric_value(mean_pnl_tolerance_atr)
-    hold12_n_trades_is_invalid = _is_invalid_numeric_value(hold12_n_trades)
-    hold12_negative_year_slices_is_invalid = _is_invalid_numeric_value(
+    hold12_n_trades_is_invalid = _is_invalid_count_value(hold12_n_trades)
+    hold12_negative_year_slices_is_invalid = _is_invalid_count_value(
         hold12_negative_year_slices
     )
 

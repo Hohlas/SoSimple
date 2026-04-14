@@ -153,6 +153,26 @@ def test_decide_hold12_gate_rejects_pf_collapse():
             ),
             "hold12_negative_year_slices=nan is invalid",
         ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=30.5,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_n_trades=30.5 is invalid",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=-1,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_negative_year_slices=-1 is invalid",
+        ),
     ],
 )
 def test_decide_hold12_gate_rejects_invalid_numeric_values(kwargs, expected_reason):
