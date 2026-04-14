@@ -4,7 +4,7 @@
 > **Status**: Completed — rejected by validation gate
 > **Goal**: Проверить, можно ли заменить `ML_HoldBars=24` на `ML_HoldBars=12` для frozen `entry_path_v1_quantile` без изменения ML-сигнала и quantile rule
 > **Related plan/spec**: [plan](../superpowers/plans/2026-04-13-early-timeout-bar12.md), [spec](../superpowers/specs/2026-04-13-quantile-execution-improvement-design.md)
-> **Related commit**: pending
+> **Related commit**: 08967b4
 
 ## Context
 
