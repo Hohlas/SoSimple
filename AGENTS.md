@@ -5,22 +5,13 @@
 ML-бот для прогнозирования разворотов Forex (H1). Детали: [PRD.md](docs/PRD.md).
 
 ## using search_knowledge (RAG system)
-При поиске текста и документов используй инструменты MCP сервера knowledge-rag
+`knowledge-rag` — retrieval layer для быстрого поиска по проекту. Он помогает найти кандидаты, но не заменяет canonical files и wiki-синтез: после RAG-результата открывай найденный файл и проверяй контекст.
 
-### Pure keyword search — instant, no embedding needed
-search_knowledge("gtfobins suid", hybrid_alpha=0.0)
+- Exact names / paths / metrics: `search_knowledge("entry_path_v1_quantile", hybrid_alpha=0.0)`
+- Technical search: `search_knowledge("triple barrier label convention", hybrid_alpha=0.3)`
+- Conceptual search: `search_knowledge("why quantile execution filter works", hybrid_alpha=0.7)`
 
-### Balanced hybrid — both engines equally weighted
-search_knowledge("SQL injection techniques", hybrid_alpha=0.5)
-
-### Pure semantic — embedding similarity only
-search_knowledge("lateral movement strategies", hybrid_alpha=1.0)
-
-### Incremental Indexing: only re-index changed files (fast)
-reindex_documents()
-
-### Smart reindex: detect changes + rebuild BM25
-reindex_documents(force=True)
+Индексация: `reindex_documents()` — только изменённые файлы; `reindex_documents(force=True)` — smart rebuild BM25.
 
 
 ## Быстрый старт
@@ -71,10 +62,11 @@ reindex_documents(force=True)
 | Слой | Назначение | Точка входа |
 |------|-----------|-------------|
 | `wiki/` | Синтез знаний: эволюция исследований, ключевые концепты | [`wiki/index.md`](wiki/index.md) |
+| `knowledge-rag` | Поиск кандидатов по docs/wiki/code; не source of truth | MCP server `knowledge-rag`, tool `search_knowledge` |
 | `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
 | `.claude/memory/` | Стабильные правила, предпочтения, долгоживущие инварианты | [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) |
 
-**В начале каждой сессии читать**: `wiki/index.md` → релевантные страницы `wiki/research/` и `wiki/concepts/` → `CONTEXT_HANDOFF.md`.
+**В начале каждой сессии читать**: `wiki/index.md` → `CONTEXT_HANDOFF.md` → через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
 Для операций с вики (ingest, save, lint) — см. `.codex/skills/wiki/SKILL.md`.
 
 ### Приоритет источников

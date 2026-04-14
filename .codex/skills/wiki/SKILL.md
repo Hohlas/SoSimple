@@ -25,6 +25,7 @@ Workflow для работы с LLM Wiki — слоем синтезирован
    - Модули → `MODULE_INDEX.md`
    - Текущее состояние → `CONTEXT_HANDOFF.md`
    - Сырые результаты → `docs/reports/`
+5. **knowledge-rag ≠ source of truth**. MCP server `knowledge-rag` нужен для поиска кандидатов; выводы фиксируй только после чтения найденных первоисточников.
 
 ## Структура wiki/
 
@@ -70,18 +71,10 @@ wiki/
 
 Использование wiki как контекста.
 
-1. Для поиска всегда используй **MCP-инструмент knowledge-rag**:
-   - Основной инструмент: `search_similar`
-   - Пример вызова в Claude Code / Codex:
-```bash
-   @knowledge-rag search_similar query="твой запрос" category="ml" limit=8
-```
-   - Можно указывать `category` (research / concepts / ml / mql4 и т.д.) — это сильно повышает точность.
-2. Прочитай нужные страницы из `wiki/research/` и `wiki/concepts/`.
-2. Если нужен обзор всего — сначала прочитай `wiki/index.md` через обычный поиск, потом уточняй через knowledge-rag.
-3. После получения результатов:
-- Если появился новый синтез → сразу предлагай операцию **Save**.
-- Wiki-страницы теперь индексируются автоматически (watchdog).
+1. Сначала прочитай `wiki/index.md`, чтобы понять существующий синтез.
+2. Уточни поиск через MCP server `knowledge-rag`, tool `search_knowledge`.
+3. Открой релевантные `wiki/research/`, `wiki/concepts/` и найденные первоисточники (`docs/reports/`, `docs/`, код).
+4. Если найден новый устойчивый синтез → предложи или выполни **Save**; если новый отчёт не покрыт в `wiki/index.md` → выполни **Ingest**.
 
 ### Lint
 
@@ -93,10 +86,6 @@ wiki/
    - Цифры и выводы соответствуют текущим отчётам.
    - Нет ли новых отчётов, которые дополняют или опровергают синтез.
 3. Обнови устаревшие страницы, добавь запись в `wiki/log.md`.
-4. дополнительно можно проверить через knowledge-rag:
-```bash
-@knowledge-rag evaluate_retrieval query="проверка актуальности research" category="research"
-```
 
 ### Generate
 
