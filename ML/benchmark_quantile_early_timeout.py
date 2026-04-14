@@ -60,6 +60,71 @@ def select_quantile_trades(
     return selected
 
 
+def build_yearly_breakdown(
+    frame: pd.DataFrame, min_year_trades: int = 3
+) -> tuple[pd.DataFrame, int]:
+    columns = [
+        "year",
+        "n_trades_hold12",
+        "pf_hold12",
+        "mean_pnl_hold12_atr",
+        "n_trades_hold24",
+        "pf_hold24",
+        "mean_pnl_hold24_atr",
+    ]
+    if frame.empty:
+        return pd.DataFrame(columns=columns), 0
+
+    working = frame.copy()
+    working["time"] = pd.to_datetime(
+        working["time"], format="%Y.%m.%d %H:%M", errors="coerce"
+    )
+    working = working.loc[working["time"].notna()].copy()
+    if working.empty:
+        return pd.DataFrame(columns=columns), 0
+
+    working["year"] = working["time"].dt.year.astype(int)
+    rows: list[dict[str, Any]] = []
+    negative_years = 0
+
+    for year, group in working.groupby("year", sort=True):
+        hold12 = compute_metrics(group, "pnl_hold12_atr")
+        hold24 = compute_metrics(group, "pnl_hold24_atr")
+        if int(hold12["n_trades"]) >= min_year_trades:
+            hold12_pf = hold12["pf"]
+            if hold12_pf is not None and hold12_pf < 1.0:
+                negative_years += 1
+
+        rows.append(
+            {
+                "year": int(year),
+                "n_trades_hold12": hold12["n_trades"],
+                "pf_hold12": hold12["pf"],
+                "mean_pnl_hold12_atr": hold12["mean_pnl_atr"],
+                "n_trades_hold24": hold24["n_trades"],
+                "pf_hold24": hold24["pf"],
+                "mean_pnl_hold24_atr": hold24["mean_pnl_atr"],
+            }
+        )
+
+    return pd.DataFrame(rows, columns=columns), negative_years
+
+
+def evaluate_split(
+    frame: pd.DataFrame, split: str, min_year_trades: int = 3
+) -> dict[str, Any]:
+    yearly, negative_years = build_yearly_breakdown(
+        frame, min_year_trades=min_year_trades
+    )
+    return {
+        "split": split,
+        "hold12": compute_metrics(frame, "pnl_hold12_atr"),
+        "hold24": compute_metrics(frame, "pnl_hold24_atr"),
+        "negative_year_slices_hold12": negative_years,
+        "yearly": yearly.to_dict(orient="records"),
+    }
+
+
 def _format_invalid_numeric_reason(name: str, value: Any) -> str:
     return f"{name}={value} is invalid"
 
