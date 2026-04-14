@@ -90,8 +90,14 @@ def decide_hold12_gate(
         hold12_mean_pnl_atr, allow_none=True
     )
     mean_pnl_tolerance_atr_is_invalid = _is_invalid_numeric_value(mean_pnl_tolerance_atr)
+    hold12_n_trades_is_invalid = _is_invalid_numeric_value(hold12_n_trades)
+    hold12_negative_year_slices_is_invalid = _is_invalid_numeric_value(
+        hold12_negative_year_slices
+    )
 
-    if hold12_n_trades < GATE_MIN_TRADES:
+    if hold12_n_trades_is_invalid:
+        reasons.append(_format_invalid_numeric_reason("hold12_n_trades", hold12_n_trades))
+    elif hold12_n_trades < GATE_MIN_TRADES:
         reasons.append(f"hold12_n_trades={hold12_n_trades} < {GATE_MIN_TRADES}")
 
     if hold12_pf is None:
@@ -131,7 +137,13 @@ def decide_hold12_gate(
             f"{hold12_mean_pnl_atr:.4f} < hold24_mean_pnl_atr={hold24_mean_pnl_atr:.4f}"
         )
 
-    if hold12_negative_year_slices > GATE_MAX_NEGATIVE_YEAR_SLICES:
+    if hold12_negative_year_slices_is_invalid:
+        reasons.append(
+            _format_invalid_numeric_reason(
+                "hold12_negative_year_slices", hold12_negative_year_slices
+            )
+        )
+    elif hold12_negative_year_slices > GATE_MAX_NEGATIVE_YEAR_SLICES:
         reasons.append(
             "hold12_negative_year_slices="
             f"{hold12_negative_year_slices} > {GATE_MAX_NEGATIVE_YEAR_SLICES}"
