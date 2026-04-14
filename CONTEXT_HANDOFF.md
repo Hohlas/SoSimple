@@ -1,6 +1,34 @@
 # Context Handoff
 
 ## Current Stage
+Этап `quantile_early_timeout_validation` завершён (2026-04-14).
+
+Что зафиксировано:
+
+- создан validation-first benchmark `ML/benchmark_quantile_early_timeout.py` + тесты `tests/test_benchmark_quantile_early_timeout.py` (`28/28` зелёные)
+- benchmark сравнивает `hold_bars=12` против `hold_bars=24` на одном и том же frozen наборе quantile-selected сделок
+- CLI пишет:
+  - `ML/reports/quantile_early_timeout/validation_summary.json`
+  - `ML/reports/quantile_early_timeout/test_summary.json`
+  - `ML/reports/quantile_early_timeout/per_seed_summary.csv`
+  - `ML/reports/quantile_early_timeout/yearly_breakdown.csv`
+  - `ML/reports/quantile_early_timeout/run_metadata.json`
+- canonical validation result:
+  - `hold12 N=27`, `PF=30.9912`, `mean_pnl_atr=1.6348`
+  - `hold24 N=27`, `PF=12.1458`, `mean_pnl_atr=2.7393`
+- operational verdict текущего этапа:
+  - `verdict = gate_fail`
+  - reasons:
+    - `hold12_n_trades=27 < 30`
+    - `hold12_mean_pnl_atr=1.6348 < hold24_mean_pnl_atr=2.7393`
+- frozen test verdict intentionally not evaluated:
+  - `skipped = true`
+  - `skip_reason = validation_gate_failed`
+- multi-seed diagnostic (`7,17,42,77,123`) не показал collapse `PF <= 1.0`, но не переопределяет canonical validation fail
+- MT4 parity stage не запускался, потому что Python gate не пройден
+- canonical report: `docs/reports/2026-04-14-quantile-early-timeout.md`
+
+## Previous Stage
 Этап `quantile_forward_validation_scaffold` завершён (2026-04-13).
 
 Что зафиксировано:
@@ -109,9 +137,11 @@
   - пересмотр возможен только после накопления forward-данных post-2026-06
 
 ## Last Completed Stage
-Quantile Forward Validation Scaffold (2026-04-13).
+Quantile Early Timeout Validation (2026-04-14): **gate_fail**.
 
-Adjacent local stage also present: PF Uplift Discovery — Beyond ML Layer (2026-04-13), verdict **SHORTLISTED (3)**.
+Adjacent completed stages:
+- Quantile Forward Validation Scaffold (2026-04-13): `watch / no_forward_data`
+- PF Uplift Discovery — Beyond ML Layer (2026-04-13): verdict **SHORTLISTED (3)**
 
 PF uplift discovery зафиксировал:
 
@@ -124,20 +154,21 @@ PF uplift discovery зафиксировал:
   3. pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567
 
 ## Next Step
-1. Собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
-2. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
-3. Только после фактического forward verdict решать, остаётся ли `quantile` просто parallel mode или можно усиливать его роль.
-4. Не возвращаться к `fav_3_vs_12` как composition или standalone track без нового сильного основания.
-5. Следующий research-фокус после появления forward-данных: execution improvement вокруг `quantile`, сначала выход, потом вход.
+1. Не продолжать productization по `early_timeout_hold_bars=12`: кандидат закрыт текущим validation verdict.
+2. Сохранить `quantile_forward_validation` как главный operational gate: собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
+3. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
+4. Параллельно следующий execution-uplift candidate проверять уже не через early timeout, а через `NY session exclusion` по той же validation-first дисциплине.
+5. Не возвращаться к `fav_3_vs_12` как composition или standalone track без нового сильного основания.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
+- `docs/reports/2026-04-14-quantile-early-timeout.md` — verdict по `hold_bars=12` (`gate_fail`)
 - `docs/reports/2026-04-13-quantile-forward-validation.md` — текущий forward validation status (`watch / no_forward_data`)
 - `docs/reports/2026-04-13-pf-uplift-discovery.md` — discovery verdict (SHORTLISTED 3)
-- `docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md` — следующий план
-- `docs/superpowers/plans/2026-04-13-ny-session-filter.md` — skeleton plan #1
-- `docs/superpowers/plans/2026-04-13-early-timeout-bar12.md` — skeleton plan #2
+- `docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md` — umbrella plan
+- `docs/superpowers/plans/2026-04-13-ny-session-filter.md` — следующий execution candidate
+- `docs/superpowers/plans/2026-04-13-early-timeout-bar12.md` — closed candidate plan / implementation record
 - `docs/superpowers/plans/2026-04-13-pred-adv-cap.md` — skeleton plan #3
 - `docs/reports/2026-04-13-fav-3-vs-12-standalone.md` — standalone verdict
 - `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`CLOSED — gate fail`)
@@ -147,12 +178,13 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Open Risks
 - **No forward data yet**: новый benchmark готов, но не может подтвердить `quantile` без strictly newer prediction CSV.
+- **Execution discovery vs validation gap**: early-timeout дал сильный uplift на discovery/test и seed diagnostics, но не прошёл canonical validation gate (`N<30`, lower mean PnL). Следующие uplift-кандидаты нельзя продвигать без той же validation-first дисциплины.
 - **TB regime shift**: между validation (2019–2022) и test (2023–2026) PF падает с 4.33 до 1.28. Если 2026-ый catastrophic year — локальный всплеск, решение пересмотрится на forward-данных, но сейчас это "не production" definitively.
 - **Quantile low-frequency**: 22 sequential trades на test, PF=3.64. Достаточно для parallel mode, но не для полной замены baseline. Forward validation критична.
 - **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-13-quantile-forward-validation.md`
+`docs/reports/2026-04-14-quantile-early-timeout.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

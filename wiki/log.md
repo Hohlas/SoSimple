@@ -111,3 +111,13 @@
   - updated comparison table and open question for strictly-forward prediction CSV
 - Updated `wiki/index.md` coverage from 15 to 16 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 16`
+
+## [2026-04-14] ingest | Quantile early-timeout validation verdict synced into wiki
+- Added report `docs/reports/2026-04-14-quantile-early-timeout.md`
+- Added benchmark `ML/benchmark_quantile_early_timeout.py` and artifacts `ML/reports/quantile_early_timeout/`
+- Updated `wiki/research/execution-tracks.md`:
+  - added early-timeout validation verdict section
+  - clarified that strong discovery/test uplift did not pass canonical validation gate
+  - updated comparison table with closed `hold_bars=12` candidate
+- Updated `wiki/index.md` coverage from 17 to 18 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-14`, `sources: 18`

@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-14] - Quantile early timeout benchmark: validation gate fail
+
+### Добавлено
+- `ML/benchmark_quantile_early_timeout.py`: validation-first benchmark для сравнения `hold_bars=12` против текущего `hold_bars=24` на frozen `entry_path_v1_quantile`
+- `tests/test_benchmark_quantile_early_timeout.py`: проверки метрик, gate logic, split evaluation, CLI и multi-seed diagnostics
+- `ML/reports/quantile_early_timeout/`: артефакты benchmark (`validation_summary.json`, `test_summary.json`, `per_seed_summary.csv`, `yearly_breakdown.csv`, `run_metadata.json`)
+
+### Результаты
+- canonical validation дал `hold12 N=27`, `PF=30.9912`, `mean_pnl_atr=1.6348`
+- baseline `hold24` на том же frozen trade set дал `N=27`, `PF=12.1458`, `mean_pnl_atr=2.7393`
+- validation gate verdict: `gate_fail`
+- причины: `hold12_n_trades=27 < 30` и `hold12_mean_pnl_atr < hold24_mean_pnl_atr`
+- frozen test не оценивался как verdict-stage и был помечен `skipped_due_to_validation_gate`
+
+### Вывод
+- `early_timeout_hold_bars=12` не проходит validation-first protocol как следующий execution uplift для `entry_path_v1_quantile`
+- MT4 parity для этого кандидата не запускался, потому что Python gate не пройден
+- discovery uplift по test и multi-seed остаётся диагностикой, но не основанием для productization
+
 ## [2026-04-13] - Quantile forward validation scaffold
 
 ### Добавлено

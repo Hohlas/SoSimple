@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-04-13
-sources: 17
+last_updated: 2026-04-14
+sources: 18
 status: active
 ---
 
@@ -317,6 +317,43 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-13-pf-uplift-discovery.md](../../docs/reports/2026-04-13-pf-uplift-discovery.md)
 
+### Early Timeout Validation (04-14): gate fail on canonical validation
+
+После discovery-гипотезы `hold_bars=12` был проведён уже не read-only probe, а отдельный validation-first benchmark поверх frozen `entry_path_v1_quantile`.
+
+Что фиксировалось жёстко:
+- quantile signal source не меняется;
+- rule `lb_gt_m_q35` не ретюнится;
+- сравнивается один и тот же frozen набор quantile-selected сделок;
+- test allowed only after validation pass;
+- MT4 parity allowed only after Python gate pass.
+
+Canonical validation дал:
+
+| Metric | hold12 | hold24 |
+|---|---:|---:|
+| trades | 27 | 27 |
+| PF | 30.9912 | 12.1458 |
+| win_rate | 0.9630 | 0.8148 |
+| mean_pnl_atr | 1.6348 | 2.7393 |
+| negative_year_slices | 0 | — |
+
+Validation verdict:
+- `gate_fail`
+- reasons:
+  - `hold12_n_trades=27 < 30`
+  - `hold12_mean_pnl_atr=1.6348 < hold24_mean_pnl_atr=2.7393`
+
+Из-за этого frozen test verdict-stage не выполнялся:
+- `skipped = true`
+- `skip_reason = validation_gate_failed`
+
+Multi-seed diagnostics (`7,17,42,77,123`) не показали seed-level collapse ниже `PF <= 1.0`, и на части seed идея даже выглядит сильной. Но это диагностическое наблюдение, а не override canonical validation verdict.
+
+**Решение:** `early_timeout_hold_bars=12` не идёт дальше в productization path. MT4 parity для него не запускался.
+
+Источник: [2026-04-14-quantile-early-timeout.md](../../docs/reports/2026-04-14-quantile-early-timeout.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -369,6 +406,7 @@ Trade-level reconciliation был сохранён отдельно:
 | Triple Barrier | PF=1.28 (test, 69 trades, fixed simulator) | **Gate fail — не production** | Пересмотр только после forward-данных post-2026-06 |
 | entry_path_v1 | PF=4.29 (test, 44 trades), 8.47 (MT4, 22 trades) | Frozen winner confirmed | Superseded by quantile-layer |
 | entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах; forward scaffold `watch/no_forward_data` | **Production parallel mode** | Собрать strictly-forward prediction CSV |
+| quantile early timeout (hold12) | validation: PF=30.99, N=27, mean_pnl lower vs hold24 | **Gate fail — closed** | Do not productize; move to next candidate |
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
@@ -377,4 +415,4 @@ Trade-level reconciliation был сохранён отдельно:
 
 1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
-3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
+3. PF uplift реализация: early-timeout уже показал, что discovery/test uplift может не пройти canonical validation gate. Следующие кандидаты (`NY session`, `pred_adv12 cap`) должны идти по той же validation-first дисциплине.
