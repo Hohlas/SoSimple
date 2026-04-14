@@ -13,7 +13,14 @@ GATE_MIN_SEED_PF = 1.0
 
 
 def compute_metrics(frame: pd.DataFrame, pnl_column: str) -> dict[str, Any]:
-    pnl = pd.to_numeric(frame[pnl_column], errors="raise").astype(float)
+    raw_pnl = frame[pnl_column]
+    if raw_pnl.isna().any():
+        raise ValueError(f"{pnl_column} contains null/NaN pnl values")
+
+    pnl = pd.to_numeric(raw_pnl, errors="raise").astype(float)
+    if pd.isna(pnl).any():
+        raise ValueError(f"{pnl_column} contains null/NaN pnl values")
+
     n_trades = int(len(pnl))
     if n_trades == 0:
         return {
@@ -53,6 +60,9 @@ def decide_hold12_gate(
     *,
     hold24_pf: float | None,
     hold12_pf: float | None,
+    hold24_mean_pnl_atr: float | None = None,
+    hold12_mean_pnl_atr: float | None = None,
+    mean_pnl_tolerance_atr: float = 0.0,
     hold12_n_trades: int,
     hold12_negative_year_slices: int,
     seed_pf_values: list[float],
@@ -68,6 +78,16 @@ def decide_hold12_gate(
 
     if hold24_pf is not None and hold12_pf is not None and hold12_pf < hold24_pf:
         reasons.append(f"hold12_pf={hold12_pf:.4f} < hold24_pf={hold24_pf:.4f}")
+
+    if (
+        hold24_mean_pnl_atr is not None
+        and hold12_mean_pnl_atr is not None
+        and hold12_mean_pnl_atr < hold24_mean_pnl_atr - mean_pnl_tolerance_atr
+    ):
+        reasons.append(
+            "hold12_mean_pnl_atr="
+            f"{hold12_mean_pnl_atr:.4f} < hold24_mean_pnl_atr={hold24_mean_pnl_atr:.4f}"
+        )
 
     if hold12_negative_year_slices > GATE_MAX_NEGATIVE_YEAR_SLICES:
         reasons.append(

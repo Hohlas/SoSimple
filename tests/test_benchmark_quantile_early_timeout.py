@@ -1,6 +1,7 @@
 import math
 
 import pandas as pd
+import pytest
 
 from ML.benchmark_quantile_early_timeout import (
     compute_metrics,
@@ -32,6 +33,14 @@ def test_compute_metrics_returns_inf_pf_without_losses():
     assert result["losses"] == 0
 
 
+@pytest.mark.parametrize("pnl_value", [pd.NA, float("nan")])
+def test_compute_metrics_rejects_null_or_nan_pnl_values(pnl_value):
+    frame = pd.DataFrame({"pnl_atr": [1.0, pnl_value, 2.0]})
+
+    with pytest.raises(ValueError, match=r"pnl_atr contains null/NaN pnl values"):
+        compute_metrics(frame, pnl_column="pnl_atr")
+
+
 def test_decide_hold12_gate_passes_when_hold12_is_stable():
     result = decide_hold12_gate(
         hold24_pf=8.0,
@@ -55,3 +64,78 @@ def test_decide_hold12_gate_rejects_pf_collapse():
 
     assert result["verdict"] == "gate_fail"
     assert "hold12_pf=0.9000 <= 2.0" in result["reasons"]
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected_reason",
+    [
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=29,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_n_trades=29 < 30",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=7.9,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_pf=7.9000 < hold24_pf=8.0000",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=1,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_negative_year_slices=1 > 0",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[0.95, 8.0, 7.5],
+            ),
+            "seed_pf_values_contain_pf<=1.0: [0.95]",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=None,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_pf=None <= 2.0",
+        ),
+        (
+            dict(
+                hold24_pf=8.0,
+                hold12_pf=10.0,
+                hold24_mean_pnl_atr=1.25,
+                hold12_mean_pnl_atr=1.0,
+                mean_pnl_tolerance_atr=0.1,
+                hold12_n_trades=48,
+                hold12_negative_year_slices=0,
+                seed_pf_values=[9.0, 8.0, 7.5],
+            ),
+            "hold12_mean_pnl_atr=1.0000 < hold24_mean_pnl_atr=1.2500",
+        ),
+    ],
+)
+def test_decide_hold12_gate_rejects_expected_branches(kwargs, expected_reason):
+    result = decide_hold12_gate(**kwargs)
+
+    assert result["verdict"] == "gate_fail"
+    assert expected_reason in result["reasons"]
