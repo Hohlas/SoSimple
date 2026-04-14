@@ -1,4 +1,6 @@
+import json
 import math
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -8,6 +10,7 @@ from ML.benchmark_quantile_early_timeout import (
     compute_metrics,
     decide_hold12_gate,
     evaluate_split,
+    main,
     select_quantile_trades,
 )
 
@@ -344,3 +347,63 @@ def test_decide_hold12_gate_rejects_expected_branches(kwargs, expected_reason):
 
     assert result["verdict"] == "gate_fail"
     assert expected_reason in result["reasons"]
+
+
+def test_main_writes_summary_files(tmp_path: Path):
+    predictions = tmp_path / "predictions.csv"
+    predictions.write_text(
+        "time;signal;pred_ret_24_q10;pred_ret_24_q90;true_ret_12_dir_atr;true_ret_24_dir_atr\n"
+        "2023.01.01 00:00;1;-1.0;3.0;2.0;1.0\n"
+        "2023.02.01 00:00;1;-1.0;3.0;-1.0;-1.0\n"
+        "2023.03.01 00:00;1;-1.0;3.0;3.0;1.0\n",
+        encoding="utf-8",
+    )
+    baseline = tmp_path / "baseline.csv"
+    baseline.write_text(
+        "time;signal;pred_ret_24_dir_atr\n"
+        "2023.01.01 00:00;1;0.5\n"
+        "2023.02.01 00:00;1;0.5\n"
+        "2023.03.01 00:00;1;0.5\n",
+        encoding="utf-8",
+    )
+    rule = tmp_path / "rule.json"
+    rule.write_text(
+        json.dumps(
+            {
+                "baseline_threshold": 0.0,
+                "winner": {
+                    "rule": "lb_gt_m",
+                    "m": -3.0,
+                    "w": 10.0,
+                    "correction": 1.0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "out"
+
+    code = main(
+        [
+            "--validation-predictions",
+            str(predictions),
+            "--test-predictions",
+            str(predictions),
+            "--baseline-validation-predictions",
+            str(baseline),
+            "--baseline-test-predictions",
+            str(baseline),
+            "--selected-rule",
+            str(rule),
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+
+    assert code == 0
+    assert (output_dir / "validation_summary.json").exists()
+    assert (output_dir / "test_summary.json").exists()
+    validation = json.loads(
+        (output_dir / "validation_summary.json").read_text(encoding="utf-8")
+    )
+    assert validation["split"] == "validation"

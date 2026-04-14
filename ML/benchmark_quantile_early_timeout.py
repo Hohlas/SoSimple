@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import argparse
+import json
 import math
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -286,3 +289,139 @@ def decide_hold12_gate(
         "verdict": "gate_pass" if not reasons else "gate_fail",
         "reasons": reasons,
     }
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    if hasattr(value, "item"):
+        try:
+            return _json_safe(value.item())
+        except (TypeError, ValueError):
+            pass
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def _load_predictions(path: str | Path) -> pd.DataFrame:
+    return pd.read_csv(Path(path), sep=";")
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(
+            _json_safe(payload),
+            handle,
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+        handle.write("\n")
+
+
+def run_benchmark(
+    *,
+    validation_predictions: str | Path,
+    test_predictions: str | Path,
+    baseline_validation_predictions: str | Path,
+    baseline_test_predictions: str | Path,
+    selected_rule: str | Path,
+    output_dir: str | Path,
+) -> dict[str, Any]:
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    selected_rule_path = Path(selected_rule)
+    rule_payload = json.loads(selected_rule_path.read_text(encoding="utf-8"))
+
+    validation_trades = select_quantile_trades(
+        _load_predictions(validation_predictions),
+        _load_predictions(baseline_validation_predictions),
+        rule_payload,
+    )
+    validation_summary = evaluate_split(validation_trades, split="validation")
+    validation_summary["gate"] = decide_hold12_gate(
+        hold24_pf=validation_summary["hold24"]["pf"],
+        hold12_pf=validation_summary["hold12"]["pf"],
+        hold24_mean_pnl_atr=validation_summary["hold24"]["mean_pnl_atr"],
+        hold12_mean_pnl_atr=validation_summary["hold12"]["mean_pnl_atr"],
+        hold12_n_trades=validation_summary["hold12"]["n_trades"],
+        hold12_negative_year_slices=validation_summary["negative_year_slices_hold12"],
+        seed_pf_values=[],
+    )
+
+    test_trades = select_quantile_trades(
+        _load_predictions(test_predictions),
+        _load_predictions(baseline_test_predictions),
+        rule_payload,
+    )
+    test_summary = evaluate_split(test_trades, split="test")
+    test_summary["gate"] = decide_hold12_gate(
+        hold24_pf=test_summary["hold24"]["pf"],
+        hold12_pf=test_summary["hold12"]["pf"],
+        hold24_mean_pnl_atr=test_summary["hold24"]["mean_pnl_atr"],
+        hold12_mean_pnl_atr=test_summary["hold12"]["mean_pnl_atr"],
+        hold12_n_trades=test_summary["hold12"]["n_trades"],
+        hold12_negative_year_slices=test_summary["negative_year_slices_hold12"],
+        seed_pf_values=[],
+    )
+
+    yearly_rows = [
+        {"split": "validation", **row} for row in validation_summary["yearly"]
+    ] + [{"split": "test", **row} for row in test_summary["yearly"]]
+    pd.DataFrame(yearly_rows).to_csv(
+        output_path / "yearly_breakdown.csv", sep=";", index=False
+    )
+
+    _write_json(output_path / "validation_summary.json", validation_summary)
+    _write_json(output_path / "test_summary.json", test_summary)
+    _write_json(
+        output_path / "run_metadata.json",
+        {
+            "validation_predictions": validation_predictions,
+            "test_predictions": test_predictions,
+            "baseline_validation_predictions": baseline_validation_predictions,
+            "baseline_test_predictions": baseline_test_predictions,
+            "selected_rule": selected_rule,
+            "output_dir": output_dir,
+            "selected_rule_payload": rule_payload,
+        },
+    )
+
+    return {"validation": validation_summary, "test": test_summary}
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--validation-predictions", required=True)
+    parser.add_argument("--test-predictions", required=True)
+    parser.add_argument("--baseline-validation-predictions", required=True)
+    parser.add_argument("--baseline-test-predictions", required=True)
+    parser.add_argument("--selected-rule", required=True)
+    parser.add_argument("--output-dir", required=True)
+    args = parser.parse_args(argv)
+
+    try:
+        run_benchmark(
+            validation_predictions=args.validation_predictions,
+            test_predictions=args.test_predictions,
+            baseline_validation_predictions=args.baseline_validation_predictions,
+            baseline_test_predictions=args.baseline_test_predictions,
+            selected_rule=args.selected_rule,
+            output_dir=args.output_dir,
+        )
+    except (OSError, ValueError, KeyError, json.JSONDecodeError, pd.errors.ParserError):
+        return 2
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

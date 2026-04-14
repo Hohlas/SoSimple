@@ -1,0 +1,68 @@
+{
+  "split": "validation",
+  "hold12": {
+    "n_trades": 32,
+    "wins": 29,
+    "losses": 3,
+    "gross_profit": 52.40088494000001,
+    "gross_loss": 3.2549344000000002,
+    "pf": 16.098906613909026,
+    "win_rate": 0.90625,
+    "mean_pnl_atr": 1.535810954375
+  },
+  "hold24": {
+    "n_trades": 32,
+    "wins": 26,
+    "losses": 6,
+    "gross_profit": 97.9288316,
+    "gross_loss": 8.71245828,
+    "pf": 11.240091883688192,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.78801166625
+  },
+  "negative_year_slices_hold12": 0,
+  "yearly": [
+    {
+      "year": 2019,
+      "n_trades_hold12": 11,
+      "pf_hold12": 30.161850620689652,
+      "mean_pnl_hold12_atr": 1.9220310636363633,
+      "n_trades_hold24": 11,
+      "pf_hold24": null,
+      "mean_pnl_hold24_atr": 3.4748829545454543
+    },
+    {
+      "year": 2020,
+      "n_trades_hold12": 10,
+      "pf_hold12": 9.91358938080227,
+      "mean_pnl_hold12_atr": 1.31189745,
+      "n_trades_hold24": 10,
+      "pf_hold24": 6.269242421052631,
+      "mean_pnl_hold24_atr": 2.50289015
+    },
+    {
+      "year": 2021,
+      "n_trades_hold12": 9,
+      "pf_hold12": 11.730811548873135,
+      "mean_pnl_hold12_atr": 1.2616329599999998,
+      "n_trades_hold24": 9,
+      "pf_hold24": 6.142431965239517,
+      "mean_pnl_hold24_atr": 2.26407468
+    },
+    {
+      "year": 2022,
+      "n_trades_hold12": 2,
+      "pf_hold12": null,
+      "mean_pnl_hold12_atr": 1.7649688499999998,
+      "n_trades_hold24": 2,
+      "pf_hold24": null,
+      "mean_pnl_hold24_atr": 2.7935436
+    }
+  ],
+  "gate": {
+    "verdict": "gate_fail",
+    "reasons": [
+      "hold12_mean_pnl_atr=1.5358 < hold24_mean_pnl_atr=2.7880"
+    ]
+  }
+}
