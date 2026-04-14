@@ -79,9 +79,8 @@ def build_yearly_breakdown(
     working["time"] = pd.to_datetime(
         working["time"], format="%Y.%m.%d %H:%M", errors="coerce"
     )
-    working = working.loc[working["time"].notna()].copy()
-    if working.empty:
-        return pd.DataFrame(columns=columns), 0
+    if working["time"].isna().any():
+        raise ValueError("time contains unparsable timestamps")
 
     working["year"] = working["time"].dt.year.astype(int)
     rows: list[dict[str, Any]] = []

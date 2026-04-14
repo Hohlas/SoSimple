@@ -142,6 +142,19 @@ def test_evaluate_split_compares_hold12_and_hold24():
     assert result["negative_year_slices_hold12"] == 0
 
 
+def test_build_yearly_breakdown_rejects_unparsable_timestamps():
+    frame = pd.DataFrame(
+        {
+            "time": ["2023.01.01 00:00", "bad-time"],
+            "pnl_hold12_atr": [1.0, -1.0],
+            "pnl_hold24_atr": [1.0, -1.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match=r"time contains unparsable timestamps"):
+        build_yearly_breakdown(frame)
+
+
 @pytest.mark.parametrize(
     "kwargs, expected_reason",
     [
