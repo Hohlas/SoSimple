@@ -326,6 +326,40 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         handle.write("\n")
 
 
+def _build_skipped_test_summary(reason: str) -> dict[str, Any]:
+    return {
+        "split": "test",
+        "skipped": True,
+        "skip_reason": reason,
+        "hold12": {
+            "n_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "gross_profit": 0.0,
+            "gross_loss": 0.0,
+            "pf": None,
+            "win_rate": None,
+            "mean_pnl_atr": None,
+        },
+        "hold24": {
+            "n_trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "gross_profit": 0.0,
+            "gross_loss": 0.0,
+            "pf": None,
+            "win_rate": None,
+            "mean_pnl_atr": None,
+        },
+        "negative_year_slices_hold12": 0,
+        "yearly": [],
+        "gate": {
+            "verdict": "skipped_due_to_validation_gate",
+            "reasons": [reason],
+        },
+    }
+
+
 def run_benchmark(
     *,
     validation_predictions: str | Path,
@@ -357,21 +391,26 @@ def run_benchmark(
         seed_pf_values=[],
     )
 
-    test_trades = select_quantile_trades(
-        _load_predictions(test_predictions),
-        _load_predictions(baseline_test_predictions),
-        rule_payload,
-    )
-    test_summary = evaluate_split(test_trades, split="test")
-    test_summary["gate"] = decide_hold12_gate(
-        hold24_pf=test_summary["hold24"]["pf"],
-        hold12_pf=test_summary["hold12"]["pf"],
-        hold24_mean_pnl_atr=test_summary["hold24"]["mean_pnl_atr"],
-        hold12_mean_pnl_atr=test_summary["hold12"]["mean_pnl_atr"],
-        hold12_n_trades=test_summary["hold12"]["n_trades"],
-        hold12_negative_year_slices=test_summary["negative_year_slices_hold12"],
-        seed_pf_values=[],
-    )
+    if validation_summary["gate"]["verdict"] == "gate_pass":
+        test_trades = select_quantile_trades(
+            _load_predictions(test_predictions),
+            _load_predictions(baseline_test_predictions),
+            rule_payload,
+        )
+        test_summary = evaluate_split(test_trades, split="test")
+        test_summary["gate"] = decide_hold12_gate(
+            hold24_pf=test_summary["hold24"]["pf"],
+            hold12_pf=test_summary["hold12"]["pf"],
+            hold24_mean_pnl_atr=test_summary["hold24"]["mean_pnl_atr"],
+            hold12_mean_pnl_atr=test_summary["hold12"]["mean_pnl_atr"],
+            hold12_n_trades=test_summary["hold12"]["n_trades"],
+            hold12_negative_year_slices=test_summary["negative_year_slices_hold12"],
+            seed_pf_values=[],
+        )
+    else:
+        test_summary = _build_skipped_test_summary(
+            "validation_gate_failed"
+        )
 
     yearly_rows = [
         {"split": "validation", **row} for row in validation_summary["yearly"]

@@ -403,7 +403,24 @@ def test_main_writes_summary_files(tmp_path: Path):
     assert code == 0
     assert (output_dir / "validation_summary.json").exists()
     assert (output_dir / "test_summary.json").exists()
+    assert (output_dir / "yearly_breakdown.csv").exists()
+    assert (output_dir / "run_metadata.json").exists()
     validation = json.loads(
         (output_dir / "validation_summary.json").read_text(encoding="utf-8")
     )
+    test_summary = json.loads(
+        (output_dir / "test_summary.json").read_text(encoding="utf-8")
+    )
+    run_metadata = json.loads(
+        (output_dir / "run_metadata.json").read_text(encoding="utf-8")
+    )
+    yearly_breakdown = pd.read_csv(output_dir / "yearly_breakdown.csv", sep=";")
+
     assert validation["split"] == "validation"
+    assert test_summary["split"] == "test"
+    assert test_summary["skipped"] is True
+    assert test_summary["skip_reason"] == "validation_gate_failed"
+    assert test_summary["gate"]["verdict"] == "skipped_due_to_validation_gate"
+    assert test_summary["yearly"] == []
+    assert run_metadata["selected_rule"] == str(rule)
+    assert list(yearly_breakdown["split"].unique()) == ["validation"]

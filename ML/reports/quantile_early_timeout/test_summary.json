@@ -1,69 +1,33 @@
 {
   "split": "test",
+  "skipped": true,
+  "skip_reason": "validation_gate_failed",
   "hold12": {
-    "n_trades": 48,
-    "wins": 37,
-    "losses": 11,
-    "gross_profit": 90.84696136000002,
-    "gross_loss": 6.616257074000001,
-    "pf": 13.730869333509215,
-    "win_rate": 0.7708333333333334,
-    "mean_pnl_atr": 1.7548063392916669
+    "n_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0,
+    "pf": null,
+    "win_rate": null,
+    "mean_pnl_atr": null
   },
   "hold24": {
-    "n_trades": 48,
-    "wins": 39,
-    "losses": 9,
-    "gross_profit": 149.10197249999993,
-    "gross_loss": 18.23057756,
-    "pf": 8.178675196069868,
-    "win_rate": 0.8125,
-    "mean_pnl_atr": 2.7264873945833337
+    "n_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0,
+    "pf": null,
+    "win_rate": null,
+    "mean_pnl_atr": null
   },
-  "negative_year_slices_hold12": 1,
-  "yearly": [
-    {
-      "year": 2022,
-      "n_trades_hold12": 2,
-      "pf_hold12": 0.0,
-      "mean_pnl_hold12_atr": -0.662,
-      "n_trades_hold24": 2,
-      "pf_hold24": 0.0,
-      "mean_pnl_hold24_atr": -3.4650426000000003
-    },
-    {
-      "year": 2023,
-      "n_trades_hold12": 6,
-      "pf_hold12": 0.4037918215790013,
-      "mean_pnl_hold12_atr": -0.3454935923333333,
-      "n_trades_hold24": 6,
-      "pf_hold24": 1.3861029438118457,
-      "mean_pnl_hold24_atr": 0.4093599833333333
-    },
-    {
-      "year": 2024,
-      "n_trades_hold12": 16,
-      "pf_hold12": 11.016895481181868,
-      "mean_pnl_hold12_atr": 1.13650952375,
-      "n_trades_hold24": 16,
-      "pf_hold24": 7.28632420955386,
-      "mean_pnl_hold24_atr": 1.9405412775000002
-    },
-    {
-      "year": 2025,
-      "n_trades_hold12": 24,
-      "pf_hold12": null,
-      "mean_pnl_hold12_atr": 2.8934797274999995,
-      "n_trades_hold24": 24,
-      "pf_hold24": null,
-      "mean_pnl_hold24_atr": 4.345694158333334
-    }
-  ],
+  "negative_year_slices_hold12": 0,
+  "yearly": [],
   "gate": {
-    "verdict": "gate_fail",
+    "verdict": "skipped_due_to_validation_gate",
     "reasons": [
-      "hold12_mean_pnl_atr=1.7548 < hold24_mean_pnl_atr=2.7265",
-      "hold12_negative_year_slices=1 > 0"
+      "validation_gate_failed"
     ]
   }
 }
