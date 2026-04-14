@@ -5,6 +5,14 @@
   "baseline_test_predictions": "ML/reports/entry_path_test_predictions.csv",
   "selected_rule": "ML/reports/entry_path_v1_quantile_selected_rule.json",
   "output_dir": "ML/reports/quantile_early_timeout",
+  "root_dir": "/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness",
+  "seeds": [
+    7,
+    17,
+    42,
+    77,
+    123
+  ],
   "selected_rule_payload": {
     "winner": {
       "candidate": "lb_gt_m_q35",

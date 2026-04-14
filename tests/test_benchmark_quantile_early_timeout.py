@@ -12,6 +12,7 @@ from ML.benchmark_quantile_early_timeout import (
     evaluate_split,
     main,
     select_quantile_trades,
+    summarize_seed_results,
 )
 
 
@@ -70,6 +71,31 @@ def test_decide_hold12_gate_rejects_pf_collapse():
 
     assert result["verdict"] == "gate_fail"
     assert "hold12_pf=0.9000 <= 2.0" in result["reasons"]
+
+
+def test_summarize_seed_results_builds_seed_table_and_gate_values():
+    rows = [
+        {
+            "seed": 7,
+            "split": "validation",
+            "hold12_pf": 4.0,
+            "hold24_pf": 3.0,
+            "hold12_n_trades": 40,
+        },
+        {
+            "seed": 17,
+            "split": "validation",
+            "hold12_pf": 2.5,
+            "hold24_pf": 2.0,
+            "hold12_n_trades": 38,
+        },
+    ]
+
+    result = summarize_seed_results(rows)
+
+    assert list(result["seed"]) == [7, 17]
+    assert list(result["split"]) == ["validation", "validation"]
+    assert list(result["hold12_pf"]) == [4.0, 2.5]
 
 
 def test_select_quantile_trades_uses_baseline_and_lb_rule():

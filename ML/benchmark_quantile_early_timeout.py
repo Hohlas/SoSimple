@@ -360,6 +360,11 @@ def _build_skipped_test_summary(reason: str) -> dict[str, Any]:
     }
 
 
+def summarize_seed_results(rows: list[dict[str, Any]]) -> pd.DataFrame:
+    columns = ["seed", "split", "hold12_pf", "hold24_pf", "hold12_n_trades"]
+    return pd.DataFrame(rows, columns=columns)
+
+
 def run_benchmark(
     *,
     validation_predictions: str | Path,
@@ -368,16 +373,22 @@ def run_benchmark(
     baseline_test_predictions: str | Path,
     selected_rule: str | Path,
     output_dir: str | Path,
+    root_dir: str | Path | None = None,
+    seeds: list[int] | None = None,
 ) -> dict[str, Any]:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
     selected_rule_path = Path(selected_rule)
     rule_payload = json.loads(selected_rule_path.read_text(encoding="utf-8"))
+    baseline_frames = {
+        "validation": _load_predictions(baseline_validation_predictions),
+        "test": _load_predictions(baseline_test_predictions),
+    }
 
     validation_trades = select_quantile_trades(
         _load_predictions(validation_predictions),
-        _load_predictions(baseline_validation_predictions),
+        baseline_frames["validation"],
         rule_payload,
     )
     validation_summary = evaluate_split(validation_trades, split="validation")
@@ -394,7 +405,7 @@ def run_benchmark(
     if validation_summary["gate"]["verdict"] == "gate_pass":
         test_trades = select_quantile_trades(
             _load_predictions(test_predictions),
-            _load_predictions(baseline_test_predictions),
+            baseline_frames["test"],
             rule_payload,
         )
         test_summary = evaluate_split(test_trades, split="test")
@@ -411,6 +422,32 @@ def run_benchmark(
         test_summary = _build_skipped_test_summary(
             "validation_gate_failed"
         )
+
+    seed_rows: list[dict[str, Any]] = []
+    if root_dir is not None and seeds:
+        root = Path(root_dir)
+        for seed in seeds:
+            seed_dir = root / f"seed_{seed:03d}"
+            for split in ["validation", "test"]:
+                seed_path = seed_dir / f"entry_path_v1_quantile_{split}_predictions.csv"
+                seed_trades = select_quantile_trades(
+                    _load_predictions(seed_path),
+                    baseline_frames[split],
+                    rule_payload,
+                )
+                seed_summary = evaluate_split(seed_trades, split=split)
+                seed_rows.append(
+                    {
+                        "seed": seed,
+                        "split": split,
+                        "hold12_pf": seed_summary["hold12"]["pf"],
+                        "hold24_pf": seed_summary["hold24"]["pf"],
+                        "hold12_n_trades": seed_summary["hold12"]["n_trades"],
+                    }
+                )
+    summarize_seed_results(seed_rows).to_csv(
+        output_path / "per_seed_summary.csv", sep=";", index=False
+    )
 
     yearly_rows = [
         {"split": "validation", **row} for row in validation_summary["yearly"]
@@ -430,6 +467,8 @@ def run_benchmark(
             "baseline_test_predictions": baseline_test_predictions,
             "selected_rule": selected_rule,
             "output_dir": output_dir,
+            "root_dir": root_dir,
+            "seeds": seeds or [],
             "selected_rule_payload": rule_payload,
         },
     )
@@ -444,8 +483,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--baseline-validation-predictions", required=True)
     parser.add_argument("--baseline-test-predictions", required=True)
     parser.add_argument("--selected-rule", required=True)
+    parser.add_argument("--root-dir", default=None)
+    parser.add_argument("--seeds", default="")
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args(argv)
+    seed_values = [int(item) for item in args.seeds.split(",") if item]
 
     try:
         run_benchmark(
@@ -455,6 +497,8 @@ def main(argv: list[str] | None = None) -> int:
             baseline_test_predictions=args.baseline_test_predictions,
             selected_rule=args.selected_rule,
             output_dir=args.output_dir,
+            root_dir=args.root_dir,
+            seeds=seed_values,
         )
     except (OSError, ValueError, KeyError, json.JSONDecodeError, pd.errors.ParserError):
         return 2
