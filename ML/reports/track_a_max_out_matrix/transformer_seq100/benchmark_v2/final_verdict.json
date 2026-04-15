@@ -1,0 +1,53 @@
+{
+  "verdict": "reject",
+  "min_pf": 1.0,
+  "target_trades_per_year": 40,
+  "validation_candidate": {
+    "candidate": "ret24_nonflat_confidence",
+    "family": "ret24_nonflat_confidence",
+    "score_threshold": -0.04945895068007179,
+    "trades": 119,
+    "trades_per_year": 29.75,
+    "pf": 0.2334986177781246,
+    "win_rate": 0.19327731092436976,
+    "mean_pnl_atr": -1.8796699878571428,
+    "profit_concentration_top_10": 0.30606670551833015,
+    "negative_year_slices": 4,
+    "ulcer_index_atr": 106.69101672607407,
+    "max_drawdown_atr": 223.38072855500002,
+    "target_coverage": 0.25,
+    "trades_gap": 10.25,
+    "selection_tier": 0
+  },
+  "test_summary": {
+    "candidate": "ret24_nonflat_confidence",
+    "family": "ret24_nonflat_confidence",
+    "score_threshold": -0.04945895068007179,
+    "trades": 108,
+    "trades_per_year": 21.6,
+    "pf": 0.358401030563567,
+    "win_rate": 0.25,
+    "mean_pnl_atr": -1.4621737536759256,
+    "profit_concentration_top_10": 0.268810046418551,
+    "negative_year_slices": 5,
+    "ulcer_index_atr": 103.13308469736933,
+    "max_drawdown_atr": 164.64129633699997
+  },
+  "diagnostics": {
+    "validation_rows": 95,
+    "families": [
+      "edge12_plus_edge24",
+      "fav24_minus_adv24",
+      "fav24_over_adv24",
+      "ret12_plus_ret24",
+      "ret24_fav12_adv12",
+      "ret24_minus_adv24",
+      "ret24_nonflat_confidence",
+      "ret24_only",
+      "ret24_over_adv24"
+    ],
+    "validation_rows_pf_gt_1": 0,
+    "validation_rows_pf_gt_1_2": 0,
+    "validation_rows_pf_gt_1_5": 0
+  }
+}

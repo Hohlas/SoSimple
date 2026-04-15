@@ -133,6 +133,7 @@ def test_validate_entry_path_v1_quantile_uses_task_module_val_score(monkeypatch)
 
     dataset = dl.EntryPathDataset(
         X=np.zeros((3, 2, 3), dtype=np.float32),
+        engineered=None,
         y_reg=np.array([
             [0.0, 0.0, 0.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0],
             [0.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
@@ -252,7 +253,7 @@ def test_train_model_routes_entry_path_v1_quantile_through_entry_path_loader_and
         model_kwargs={},
     )
 
-    assert captured['target'] == ENTRY_PATH_TARGET
+    assert captured['target'] == ENTRY_PATH_V1_QUANTILE_TARGET
     assert str(captured['checkpoint']).endswith('_entry_path_v1_quantile_best.pt')
     assert result['metric_name'] == 'val_score'
     assert result['best_metric'] == pytest.approx(0.73)

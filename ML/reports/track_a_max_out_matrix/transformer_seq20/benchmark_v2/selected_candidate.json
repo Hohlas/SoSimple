@@ -1,0 +1,17 @@
+{
+  "candidate": "ret24_over_adv24",
+  "family": "ret24_over_adv24",
+  "score_threshold": -3.01952929402494,
+  "trades": 119,
+  "trades_per_year": 29.75,
+  "pf": 0.3394283162953885,
+  "win_rate": 0.2605042016806723,
+  "mean_pnl_atr": -1.3536761949327731,
+  "profit_concentration_top_10": 0.3136011747437978,
+  "negative_year_slices": 4,
+  "ulcer_index_atr": 77.27897298737736,
+  "max_drawdown_atr": 155.57635589699996,
+  "target_coverage": 0.25,
+  "trades_gap": 10.25,
+  "selection_tier": 0
+}

@@ -47,9 +47,14 @@ from ML.data_loader import (
     UPDN_REGRESSION_TARGET, UPDN_TARGETS,
     TB_TARGET, TB_TARGET_NAMES,
 )
-from ML.entry_path_task import ENTRY_PATH_TARGET, build_entry_path_export_frame
+from ML.entry_path_task import (
+    ENTRY_PATH_MODEL_NAMES,
+    ENTRY_PATH_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    build_entry_path_export_frame,
+    build_entry_path_model,
+)
 from ML.models import get_model
-from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
@@ -71,21 +76,6 @@ DEFAULT_TASK = 'regression_updn'
 DEFAULT_HORIZON = 12
 DEFAULT_THETA = 2.665
 DEFAULT_OPTUNA_JSON = str(REPORTS_DIR / 'optuna_best_params_transformer_regression_updn.json')
-
-
-def build_entry_path_model(model_kwargs: dict | None) -> EntryPathTransformer:
-    allowed_keys = {
-        'input_features',
-        'd_model',
-        'nhead',
-        'num_layers',
-        'dim_feedforward',
-        'dropout',
-    }
-    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
-    return EntryPathTransformer(**kwargs)
-
-
 def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
     required = {
         'ret_6_dir_atr',
@@ -388,7 +378,9 @@ def generate_signals(
     seq_len = model_kwargs.get('seq_len', 20)
 
     if task == ENTRY_PATH_TARGET:
-        model = build_entry_path_model(model_kwargs)
+        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+        entry_model_name = ckpt_model_name if ckpt_model_name in ENTRY_PATH_MODEL_NAMES else 'transformer'
+        model = build_entry_path_model(entry_model_name, model_kwargs)
     else:
         model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -433,8 +425,12 @@ def generate_signals(
             all_true_cls = []
 
             with torch.no_grad():
-                for X_batch, y_reg_batch, y_cls_batch, mask_batch in loader:
-                    outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+                for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in loader:
+                    outputs = model(
+                        X_batch.to(device),
+                        engineered_batch.to(device),
+                        mask=mask_batch.to(device),
+                    )
                     all_ret.append(outputs['ret'].cpu().numpy())
                     all_path_reg.append(outputs['path_reg'].cpu().numpy())
                     all_path_cls.append(torch.softmax(outputs['path_cls'], dim=1).cpu().numpy())
@@ -550,7 +546,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--model', type=str, default=DEFAULT_MODEL,
-        choices=['bilstm', 'cnn1d', 'transformer', 'hybrid'],
+        choices=['bilstm', 'cnn1d', 'transformer', 'hybrid', 'entry_path_dual_stream'],
         help=f"Модель (default: {DEFAULT_MODEL})"
     )
     parser.add_argument(

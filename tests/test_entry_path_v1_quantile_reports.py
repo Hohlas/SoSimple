@@ -62,7 +62,7 @@ def _make_entry_path_dataset() -> EntryPathDataset:
     y_cls = np.array([2, 0], dtype=np.int64)
     mask = np.ones((2, 4), dtype=bool)
     signal = np.array([1, -1], dtype=np.int64)
-    return EntryPathDataset(X, y_reg, y_cls, mask, signal)
+    return EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
 
 
 def _make_entry_path_dataset_with_inactive() -> EntryPathDataset:
@@ -75,7 +75,7 @@ def _make_entry_path_dataset_with_inactive() -> EntryPathDataset:
     y_cls = np.array([2, 0, 1], dtype=np.int64)
     mask = np.ones((3, 4), dtype=bool)
     signal = np.array([1, 0, -1], dtype=np.int64)
-    return EntryPathDataset(X, y_reg, y_cls, mask, signal)
+    return EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
 
 
 def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, monkeypatch):
@@ -132,7 +132,7 @@ def test_export_cli_writes_train_validation_test_csvs_with_quantiles(tmp_path, m
 
     export_mod.main()
 
-    assert called['target'] == 'entry_path_v1'
+    assert called['target'] == ENTRY_PATH_V1_QUANTILE_TARGET
 
     for split in ('train', 'validation', 'test'):
         csv_path = tmp_path / f'entry_path_v1_quantile_{split}_predictions.csv'

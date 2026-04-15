@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-15] - Track A max-out verdict
+
+### Добавлено
+- `ML/entry_path_feature_bank.py`, `ML/models/entry_path_dual_stream_transformer.py`, `ML/run_track_a_max_out_matrix.py`
+- bounded research contour для short/deep matrix по `entry_path_v1`
+
+### Результаты
+- Short sweep `6 configs x 3 epochs` и deeper rerun лучших `transformer_seq20/seq50` (`10 epochs`) завершены
+- Лучший validation candidate всего этапа: `transformer_seq50 + ret24_over_adv24`, `PF=0.4784297662870411`
+- Во всех конфигурациях `validation_rows_pf_gt_1 = 0`
+
+### Вывод
+- Track A заметно улучшен, но не достиг даже мягкого success gate `PF > 1` на validation
+- Следующий шаг должен менять само обучение или постановку задачи, а не повторять ещё один похожий benchmark-only цикл
+- Подробности: [docs/reports/2026-04-15-track-a-max-out.md](docs/reports/2026-04-15-track-a-max-out.md)
+
 ## [2026-04-13] - Quantile forward validation scaffold
 
 ### Добавлено

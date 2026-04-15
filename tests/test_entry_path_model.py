@@ -10,6 +10,7 @@ from ML.models.entry_path_transformer import EntryPathTransformer
 def test_entry_path_transformer_returns_expected_head_shapes():
     model = EntryPathTransformer(
         input_features=20,
+        engineered_feature_dim=6,
         d_model=32,
         nhead=4,
         num_layers=1,
@@ -17,9 +18,31 @@ def test_entry_path_transformer_returns_expected_head_shapes():
         dropout=0.1,
     )
     x = torch.randn(2, 20, 20)
+    engineered = torch.randn(2, 6)
     mask = torch.ones(2, 20, dtype=torch.bool)
 
-    out = model(x, mask=mask)
+    out = model(x, engineered, mask=mask)
+
+    assert out['ret'].shape == (2, 3)
+    assert out['path_reg'].shape == (2, 6)
+    assert out['path_cls'].shape == (2, 3)
+
+
+def test_entry_path_transformer_accepts_longer_context():
+    model = EntryPathTransformer(
+        input_features=20,
+        engineered_feature_dim=10,
+        d_model=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.1,
+    )
+    x = torch.randn(2, 100, 20)
+    engineered = torch.randn(2, 10)
+    mask = torch.ones(2, 100, dtype=torch.bool)
+
+    out = model(x, engineered, mask=mask)
 
     assert out['ret'].shape == (2, 3)
     assert out['path_reg'].shape == (2, 6)
@@ -29,6 +52,7 @@ def test_entry_path_transformer_returns_expected_head_shapes():
 def test_entry_path_transformer_supports_masked_backward():
     model = EntryPathTransformer(
         input_features=20,
+        engineered_feature_dim=6,
         d_model=32,
         nhead=4,
         num_layers=1,
@@ -36,21 +60,24 @@ def test_entry_path_transformer_supports_masked_backward():
         dropout=0.1,
     )
     x = torch.randn(2, 20, 20, requires_grad=True)
+    engineered = torch.randn(2, 6, requires_grad=True)
     mask = torch.tensor([
         [True] * 12 + [False] * 8,
         [True] * 20,
     ], dtype=torch.bool)
 
-    out = model(x, mask=mask)
+    out = model(x, engineered, mask=mask)
     loss = out['ret'].sum() + out['path_reg'].sum() + out['path_cls'].sum()
     loss.backward()
 
     assert model.cls_token.grad is not None
+    assert engineered.grad is not None
 
 
 def test_entry_path_transformer_uses_separate_head_blocks():
     model = EntryPathTransformer(
         input_features=20,
+        engineered_feature_dim=6,
         d_model=32,
         nhead=4,
         num_layers=1,
@@ -67,6 +94,7 @@ def test_entry_path_transformer_uses_separate_head_blocks():
 def test_entry_path_transformer_path_cls_has_sequence_pool():
     model = EntryPathTransformer(
         input_features=20,
+        engineered_feature_dim=6,
         d_model=32,
         nhead=4,
         num_layers=1,
@@ -76,3 +104,17 @@ def test_entry_path_transformer_path_cls_has_sequence_pool():
 
     assert hasattr(model, 'path_cls_sequence_proj')
     assert hasattr(model, 'path_cls_time_pool')
+
+
+def test_entry_path_transformer_has_engineered_projection():
+    model = EntryPathTransformer(
+        input_features=20,
+        engineered_feature_dim=6,
+        d_model=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.1,
+    )
+
+    assert hasattr(model, 'entry_path_projection')

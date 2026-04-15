@@ -88,10 +88,13 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_INV_CLASS_MAP,
     ENTRY_PATH_PATH_REG_TARGETS,
     ENTRY_PATH_RET_TARGETS,
     ENTRY_PATH_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    build_entry_path_model,
 )
 from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
@@ -99,7 +102,6 @@ from ML.entry_path_v1_quantile_task import (
 )
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
-from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.models.entry_path_v1_quantile_transformer import EntryPathV1QuantileTransformer
 from ML.tb_probability_calibration import (
     fit_tb_probability_calibrator,
@@ -464,15 +466,16 @@ def train_one_epoch_entry_path(
     total_loss = 0.0
     n_batches = 0
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
+    for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
         X_batch = X_batch.to(device)
+        engineered_batch = engineered_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
         signal_batch = signal_batch.to(device)
 
         optimizer.zero_grad()
-        outputs = model(X_batch, mask=mask_batch)
+        outputs = model(X_batch, engineered_batch, mask=mask_batch)
         loss_ret = reduce_entry_path_weighted_loss(
             ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
             signal_batch,
@@ -515,14 +518,15 @@ def validate_entry_path(
     all_cls_targets = []
     all_signals = []
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
+    for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
         X_batch = X_batch.to(device)
+        engineered_batch = engineered_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
         signal_batch = signal_batch.to(device)
 
-        outputs = model(X_batch, mask=mask_batch)
+        outputs = model(X_batch, engineered_batch, mask=mask_batch)
         loss_ret = reduce_entry_path_weighted_loss(
             ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
             signal_batch,
@@ -950,8 +954,11 @@ def train_model(
     entry_path_like = entry_path or entry_path_quantile
     regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
 
-    if entry_path_like and model_name != 'transformer':
-        raise ValueError(f'{ENTRY_PATH_TARGET} supports only model=transformer in v1')
+    if entry_path and model_name not in ENTRY_PATH_MODEL_NAMES:
+        supported = ', '.join(ENTRY_PATH_MODEL_NAMES)
+        raise ValueError(f'{ENTRY_PATH_TARGET} supports only models: {supported}')
+    if entry_path_quantile and model_name != 'transformer':
+        raise ValueError(f'{ENTRY_PATH_V1_QUANTILE_TARGET} supports only model=transformer')
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -962,7 +969,7 @@ def train_model(
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Данные ───────────────────────────────────────────────────────────────
-    target_col = task_target_column(task)
+    target_col = ENTRY_PATH_V1_QUANTILE_TARGET if entry_path_quantile else task_target_column(task)
     train_loader, val_loader, scaler = create_data_loaders(
         batch_size=batch_size,
         target=target_col,
@@ -1001,7 +1008,10 @@ def train_model(
         num_classes = 3
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     if entry_path:
-        model = EntryPathTransformer(**model_kwargs)
+        model_kwargs.setdefault('seq_len', seq_len)
+        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+    if entry_path:
+        model = build_entry_path_model(model_name, model_kwargs)
     elif entry_path_quantile:
         model = EntryPathV1QuantileTransformer(**model_kwargs)
     else:
@@ -1894,8 +1904,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--model', type=str, required=True,
-        choices=list(MODEL_REGISTRY.keys()),
-        help=f"Модель для обучения: {', '.join(MODEL_REGISTRY.keys())}"
+        choices=list(MODEL_REGISTRY.keys()) + list(ENTRY_PATH_MODEL_NAMES[1:]),
+        help=f"Модель для обучения: {', '.join(list(MODEL_REGISTRY.keys()) + list(ENTRY_PATH_MODEL_NAMES[1:]))}"
     )
     parser.add_argument(
         '--task', type=str, default='classification',

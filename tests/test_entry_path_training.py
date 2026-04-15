@@ -41,10 +41,10 @@ class _FixedBatchEntryPathModel(torch.nn.Module):
             [0.0, 0.0, 3.0],
         ], dtype=torch.float32))
 
-    def forward(self, x, mask=None):
+    def forward(self, x, engineered, mask=None):
         batch = x.shape[0]
         return {
-            'ret': self.ret[:batch],
+            'ret': self.ret[:batch] + engineered[:, :3],
             'path_reg': self.path_reg[:batch],
             'path_cls': self.path_cls[:batch],
         }
@@ -118,6 +118,7 @@ def test_main_passes_clear_cache_to_train_model(monkeypatch, tmp_path):
 def test_train_one_epoch_entry_path_weights_active_rows_stronger():
     dataset = EntryPathDataset(
         X=np.zeros((3, 4, 2), dtype=np.float32),
+        engineered=np.zeros((3, 6), dtype=np.float32),
         y_reg=np.array([
             [1, 1, 1, 0, 0, 0, 0, 0, 0],
             [4, 4, 4, 0, 0, 0, 0, 0, 0],
@@ -168,6 +169,7 @@ def test_train_one_epoch_entry_path_weights_active_rows_stronger():
 def test_validate_entry_path_weights_active_rows_stronger():
     dataset = EntryPathDataset(
         X=np.zeros((3, 4, 2), dtype=np.float32),
+        engineered=np.zeros((3, 6), dtype=np.float32),
         y_reg=np.array([
             [1, 1, 1, 0, 0, 0, 0, 0, 0],
             [4, 4, 4, 0, 0, 0, 0, 0, 0],

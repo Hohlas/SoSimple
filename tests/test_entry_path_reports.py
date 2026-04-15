@@ -154,6 +154,9 @@ def test_entry_path_report_markdown_contains_active_only_section():
     assert 'active_rows' in report
     assert 'active_ret_pearson_r' in report
     assert 'active_path_cls_f1_macro' in report
+    assert 'trades_per_year' in report
+    assert 'profit_concentration_top_10' in report
+    assert 'negative_year_slices' in report
     assert '## Active Path Class' in report
     assert '## Active Slice: pred_ret_24_dir_atr' in report
 

@@ -43,7 +43,14 @@ import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from sklearn.preprocessing import StandardScaler
 
-from ML.entry_path_task import ENTRY_PATH_TARGET, ENTRY_PATH_REG_TARGETS, split_entry_path_targets
+from ML.entry_path_task import (
+    ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS,
+    ENTRY_PATH_TARGET,
+    ENTRY_PATH_REG_TARGETS,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    split_entry_path_features,
+    split_entry_path_targets,
+)
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
 
 
@@ -124,6 +131,15 @@ TASK_CHECKPOINT_SUFFIXES = {
 }
 
 BINARY_LABEL_MAP = {0: 0, 1: 1}
+
+
+def validate_seq_len_for_target(target: str, seq_len: int) -> int:
+    if not 1 <= int(seq_len) <= N_FRACTALS:
+        raise ValueError(f'seq_len must be in [1, {N_FRACTALS}], got {seq_len}')
+    if target == ENTRY_PATH_TARGET and seq_len not in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS:
+        allowed = ', '.join(str(value) for value in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS)
+        raise ValueError(f'{target} supports only seq_len values: {allowed}')
+    return int(seq_len)
 
 
 def task_target_column(task: str) -> str:
@@ -473,14 +489,19 @@ class EntryPathDataset(Dataset):
     def __init__(
         self,
         X: np.ndarray,
+        engineered: np.ndarray | None,
         y_reg: np.ndarray,
         y_cls: np.ndarray,
         mask: np.ndarray,
         signal: np.ndarray,
     ):
-        if not (len(X) == len(y_reg) == len(y_cls) == len(mask) == len(signal)):
-            raise ValueError('X, y_reg, y_cls, mask, and signal must have the same length')
+        lengths = [len(X), len(y_reg), len(y_cls), len(mask), len(signal)]
+        if engineered is not None:
+            lengths.append(len(engineered))
+        if len(set(lengths)) != 1:
+            raise ValueError('X, engineered, y_reg, y_cls, mask, and signal must have the same length')
         self.X = torch.from_numpy(X).float()
+        self.engineered = None if engineered is None else torch.from_numpy(engineered.astype(np.float32)).float()
         self.y_reg = torch.from_numpy(y_reg.astype(np.float32)).float()
         self.y_cls = torch.from_numpy(y_cls.astype(np.int64)).long()
         self.mask = torch.from_numpy(mask).bool()
@@ -489,8 +510,10 @@ class EntryPathDataset(Dataset):
     def __len__(self) -> int:
         return len(self.y_cls)
 
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        return self.X[idx], self.y_reg[idx], self.y_cls[idx], self.mask[idx], self.signal[idx]
+    def __getitem__(self, idx: int):
+        if self.engineered is None:
+            return self.X[idx], self.y_reg[idx], self.y_cls[idx], self.mask[idx], self.signal[idx]
+        return self.X[idx], self.engineered[idx], self.y_reg[idx], self.y_cls[idx], self.mask[idx], self.signal[idx]
 
 
 # ─── Фабрика DataLoader'ов ───────────────────────────────────────────────────
@@ -532,21 +555,30 @@ def create_data_loaders(
         ...     logits = model(X_batch, mask_batch)
     """
     print("📦 Загрузка данных...")
+    seq_len = validate_seq_len_for_target(target, seq_len)
     regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
     entry_path = (target == ENTRY_PATH_TARGET)
+    entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
+    entry_path_like = entry_path or entry_path_quantile
 
     def load_or_parse_data(
         csv_file: Path,
         target_col: str,
         prefix: str,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ):
         profile_suffix = cache_profile_suffix(target_col)
         x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
         mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
         if entry_path:
+            engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{profile_suffix}.npy'
+            y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
+            y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
+            signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
+            cache_files = [x_path, mask_path, engineered_path, y_reg_path, y_cls_path, signal_path]
+        elif entry_path_quantile:
             y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
             y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
             signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
@@ -582,6 +614,29 @@ def create_data_loaders(
                     print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                     mask = np.load(mask_path)
                     if entry_path:
+                        engineered = np.load(engineered_path)
+                        y_reg = np.load(y_reg_path)
+                        y_cls = np.load(y_cls_path)
+                        signal = np.load(signal_path)
+                        if (
+                            engineered.ndim != 2
+                            or engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                            or
+                            y_reg.ndim != 2
+                            or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
+                            or y_cls.ndim != 1
+                            or signal.ndim != 1
+                            or len(engineered) != len(X)
+                            or len(y_reg) != len(X)
+                            or len(y_cls) != len(X)
+                            or len(signal) != len(X)
+                        ):
+                            print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, engineered, y_reg, y_cls, signal
+                    elif entry_path_quantile:
                         y_reg = np.load(y_reg_path)
                         y_cls = np.load(y_cls_path)
                         signal = np.load(signal_path)
@@ -594,7 +649,7 @@ def create_data_loaders(
                             or len(y_cls) != len(X)
                             or len(signal) != len(X)
                         ):
-                            print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                            print(f"  🔄 Кэш {prefix} entry_path_v1_quantile повреждён. Инвалидация...")
                             for f in cache_files:
                                 f.unlink()
                         else:
@@ -613,7 +668,8 @@ def create_data_loaders(
             print(f"  🎯 Outcome target profile: signal-only rows {len(df)}/{total_rows}")
         
         # Извлечение таргета
-        if entry_path:
+        if entry_path_like:
+            engineered = split_entry_path_features(df)
             y_reg, y_cls = split_entry_path_targets(df)
             signal = df['signal'].values.astype(np.int64)
         elif multi_target:
@@ -637,6 +693,11 @@ def create_data_loaders(
         np.save(x_path, X)
         np.save(mask_path, mask)
         if entry_path:
+            np.save(engineered_path, engineered)
+            np.save(y_reg_path, y_reg)
+            np.save(y_cls_path, y_cls)
+            np.save(signal_path, signal)
+        elif entry_path_quantile:
             np.save(y_reg_path, y_reg)
             np.save(y_cls_path, y_cls)
             np.save(signal_path, signal)
@@ -645,10 +706,15 @@ def create_data_loaders(
         print(f"  ✅ Данные {prefix} сохранены в кэш.")
         
         if entry_path:
+            return X, mask, engineered, y_reg, y_cls, signal
+        if entry_path_quantile:
             return X, mask, y_reg, y_cls, signal
         return X, mask, y
 
     if entry_path:
+        X_train, mask_train, engineered_train, y_train_reg, y_train_cls, signal_train = load_or_parse_data(TRAIN_FILE, target, 'train')
+        X_val, mask_val, engineered_val, y_val_reg, y_val_cls, signal_val = load_or_parse_data(VAL_FILE, target, 'val')
+    elif entry_path_quantile:
         X_train, mask_train, y_train_reg, y_train_cls, signal_train = load_or_parse_data(TRAIN_FILE, target, 'train')
         X_val, mask_val, y_val_reg, y_val_cls, signal_val = load_or_parse_data(VAL_FILE, target, 'val')
     else:
@@ -664,12 +730,12 @@ def create_data_loaders(
         X_val = X_val[:, :seq_len, :]
         mask_val = mask_val[:, :seq_len]
 
-    if entry_path:
+    if entry_path_like:
         print(f"  Train: {len(y_train_cls)} строк, Val: {len(y_val_cls)} строк")
     else:
         print(f"  Train: {len(y_train)} строк, Val: {len(y_val)} строк")
 
-    if entry_path:
+    if entry_path_like:
         for name, y_reg, y_cls in [('Train', y_train_reg, y_train_cls), ('Val', y_val_reg, y_val_cls)]:
             print(f"  {name} entry_path reg targets: shape={y_reg.shape}")
             print(f"  {name} entry_path class targets: shape={y_cls.shape}")
@@ -713,8 +779,11 @@ def create_data_loaders(
 
     # ── Создание Dataset и DataLoader ────────────────────────────────────────
     if entry_path:
-        train_dataset = EntryPathDataset(X_train_norm, y_train_reg, y_train_cls, mask_train, signal_train)
-        val_dataset = EntryPathDataset(X_val_norm, y_val_reg, y_val_cls, mask_val, signal_val)
+        train_dataset = EntryPathDataset(X_train_norm, engineered_train, y_train_reg, y_train_cls, mask_train, signal_train)
+        val_dataset = EntryPathDataset(X_val_norm, engineered_val, y_val_reg, y_val_cls, mask_val, signal_val)
+    elif entry_path_quantile:
+        train_dataset = EntryPathDataset(X_train_norm, None, y_train_reg, y_train_cls, mask_train, signal_train)
+        val_dataset = EntryPathDataset(X_val_norm, None, y_val_reg, y_val_cls, mask_val, signal_val)
     else:
         train_dataset = FractalSequenceDataset(
             X_train_norm, y_train, mask_train,
@@ -787,18 +856,27 @@ def create_test_loader(
 ) -> DataLoader:
     """Только для инференса на отложенной выборке. StandardScaler отключён (False)."""
     print("\n📦 Загрузка тестовых данных...")
+    seq_len = validate_seq_len_for_target(target, seq_len)
     regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
     profile_suffix = cache_profile_suffix(target)
-    entry_path_like = (target in (ENTRY_PATH_TARGET, ENTRY_PATH_V1_QUANTILE_TARGET))
+    entry_path = (target == ENTRY_PATH_TARGET)
+    entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
+    entry_path_like = entry_path or entry_path_quantile
     prefix = 'test'
     missing_entry_path_labels = False
 
     x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
     mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
-    if entry_path_like:
+    if entry_path:
+        engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{profile_suffix}.npy'
+        y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
+        y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
+        signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
+        cache_files = [x_path, mask_path, engineered_path, y_reg_path, y_cls_path, signal_path]
+    elif entry_path_quantile:
         y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
         y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
         signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
@@ -827,7 +905,34 @@ def create_test_loader(
             else:
                 print(f"  Загрузка кэшированных данных {prefix} из .npy...")
                 mask = np.load(mask_path)
-                if entry_path_like:
+                if entry_path:
+                    engineered = np.load(engineered_path)
+                    y_reg = np.load(y_reg_path)
+                    y_cls = np.load(y_cls_path)
+                    signal = np.load(signal_path)
+                    if (
+                        engineered.ndim != 2
+                        or engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                        or
+                        y_reg.ndim != 2
+                        or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
+                        or y_cls.ndim != 1
+                        or signal.ndim != 1
+                        or len(engineered) != len(X)
+                        or len(y_reg) != len(X)
+                        or len(y_cls) != len(X)
+                        or len(signal) != len(X)
+                    ):
+                        print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+                        dataset = EntryPathDataset(X, engineered, y_reg, y_cls, mask, signal)
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                elif entry_path_quantile:
                     y_reg = np.load(y_reg_path)
                     y_cls = np.load(y_cls_path)
                     signal = np.load(signal_path)
@@ -840,14 +945,14 @@ def create_test_loader(
                         or len(y_cls) != len(X)
                         or len(signal) != len(X)
                     ):
-                        print(f"  🔄 Кэш {prefix} entry_path_v1 повреждён. Инвалидация...")
+                        print(f"  🔄 Кэш {prefix} entry_path_v1_quantile повреждён. Инвалидация...")
                         for f in cache_files:
                             f.unlink()
                     else:
                         if seq_len < 100:
                             X = X[:, :seq_len, :]
                             mask = mask[:, :seq_len]
-                        dataset = EntryPathDataset(X, y_reg, y_cls, mask, signal)
+                        dataset = EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 else:
                     y = np.load(y_path)
@@ -881,6 +986,8 @@ def create_test_loader(
             y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
             y_cls = np.zeros(len(df), dtype=np.int64)
         signal = df['signal'].values.astype(np.int64)
+        if entry_path:
+            engineered = split_entry_path_features(df)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
@@ -898,7 +1005,13 @@ def create_test_loader(
     X, mask = parse_fractals_to_3d(df)
     np.save(x_path, X)
     np.save(mask_path, mask)
-    if entry_path_like:
+    if entry_path:
+        np.save(engineered_path, engineered)
+        if not missing_entry_path_labels:
+            np.save(y_reg_path, y_reg)
+            np.save(y_cls_path, y_cls)
+        np.save(signal_path, signal)
+    elif entry_path_quantile:
         if not missing_entry_path_labels:
             np.save(y_reg_path, y_reg)
             np.save(y_cls_path, y_cls)
@@ -911,11 +1024,16 @@ def create_test_loader(
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
 
-    if entry_path_like:
+    if entry_path:
         if missing_entry_path_labels:
             y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
             y_cls = np.zeros(len(df), dtype=np.int64)
-        dataset = EntryPathDataset(X, y_reg, y_cls, mask, signal)
+        dataset = EntryPathDataset(X, engineered, y_reg, y_cls, mask, signal)
+    elif entry_path_quantile:
+        if missing_entry_path_labels:
+            y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
+            y_cls = np.zeros(len(df), dtype=np.int64)
+        dataset = EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
     else:
         dataset = FractalSequenceDataset(
             X,

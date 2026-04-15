@@ -696,6 +696,32 @@ def first_touch_path_class(bars, direction, entry_price, atr, threshold_atr=1.0)
     return 0
 
 
+def add_entry_path_frequency_features(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+
+    def numeric_series(column: str) -> pd.Series:
+        if column in out.columns:
+            return pd.to_numeric(out[column], errors='coerce')
+        return pd.Series(0.0, index=out.index, dtype=float)
+
+    parsed_time = pd.to_datetime(out.get('time'), format='%Y.%m.%d %H:%M', errors='coerce')
+    atr = numeric_series('ATR').replace(0.0, np.nan)
+
+    high_rolling_6 = numeric_series('high_rolling_6')
+    low_rolling_6 = numeric_series('low_rolling_6')
+    close_lag_3 = numeric_series('close_lag_3')
+    open_lag_3 = numeric_series('open_lag_3')
+    ret_6_dir_atr = numeric_series('ret_6_dir_atr')
+
+    out['session_hour'] = parsed_time.dt.hour.fillna(0).astype(int)
+    out['weekday'] = parsed_time.dt.weekday.fillna(0).astype(int)
+    out['range_atr_6'] = ((high_rolling_6 - low_rolling_6) / atr).fillna(0.0)
+    out['body_atr_3'] = ((close_lag_3 - open_lag_3).abs() / atr).fillna(0.0)
+    out['ret_dir_atr_lag1'] = ret_6_dir_atr.shift(1).fillna(0.0)
+    out['vol_regime_24'] = numeric_series('ATR').rolling(24, min_periods=1).mean().fillna(0.0)
+    return out
+
+
 def label_entry_path_targets(
     df: pd.DataFrame,
     ohlc_path: str,

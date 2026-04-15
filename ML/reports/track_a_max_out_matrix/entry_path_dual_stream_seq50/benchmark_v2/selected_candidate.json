@@ -1,0 +1,17 @@
+{
+  "candidate": "edge12_plus_edge24_w65",
+  "family": "edge12_plus_edge24",
+  "score_threshold": -0.01930214365,
+  "trades": 119,
+  "trades_per_year": 29.75,
+  "pf": 0.1669295378257398,
+  "win_rate": 0.15126050420168066,
+  "mean_pnl_atr": -2.3042632535882355,
+  "profit_concentration_top_10": 0.2214851185160109,
+  "negative_year_slices": 4,
+  "ulcer_index_atr": 148.6797901526166,
+  "max_drawdown_atr": 272.686274577,
+  "target_coverage": 0.25,
+  "trades_gap": 10.25,
+  "selection_tier": 0
+}

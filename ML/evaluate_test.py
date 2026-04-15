@@ -23,7 +23,10 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    build_entry_path_model,
     build_entry_path_export_frame,
     build_entry_path_report_markdown,
 )
@@ -35,7 +38,6 @@ from ML.entry_path_v1_quantile_task import (
     count_crossed_quantile_rows,
 )
 from ML.models import get_model
-from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
@@ -55,21 +57,6 @@ REPORTS_DIR = PROJECT_ROOT / 'ML' / 'reports'
 TB_CALIBRATOR_PATH = REPORTS_DIR / 'tb_probability_calibrator.joblib'
 TB_RULE_PATH = REPORTS_DIR / 'tb_selected_rule.json'
 FROZEN_OUTCOME_TARGET_PATH = REPORTS_DIR / 'frozen_outcome_target.json'
-
-
-def build_entry_path_model(model_kwargs: dict | None) -> EntryPathTransformer:
-    allowed_keys = {
-        'input_features',
-        'd_model',
-        'nhead',
-        'num_layers',
-        'dim_feedforward',
-        'dropout',
-    }
-    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
-    return EntryPathTransformer(**kwargs)
-
-
 def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
     required = {
         'ret_6_dir_atr',
@@ -174,7 +161,9 @@ def run_evaluation(
         print(f"  📥 Загружены параметры архитектуры из {optuna_json}")
 
     if task == ENTRY_PATH_TARGET:
-        model = build_entry_path_model(model_kwargs)
+        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+        entry_model_name = ckpt_model_name if ckpt_model_name in ENTRY_PATH_MODEL_NAMES else 'transformer'
+        model = build_entry_path_model(entry_model_name, model_kwargs)
     elif task == ENTRY_PATH_V1_QUANTILE_TARGET:
         model = build_entry_path_v1_quantile_model(model_kwargs)
     else:
@@ -186,11 +175,11 @@ def run_evaluation(
 
     # ── Загрузка данных ──────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
-    target_col = task_target_column(task)
+    target_col = ENTRY_PATH_V1_QUANTILE_TARGET if task == ENTRY_PATH_V1_QUANTILE_TARGET else task_target_column(task)
     test_loader = create_test_loader(
         batch_size=256,
         target=target_col,
-        seq_len=model_kwargs.get('seq_len', 20) if optuna_json else 20,
+        seq_len=model_kwargs.get('seq_len', 20),
         num_workers=0,
     )
 
@@ -222,8 +211,12 @@ def run_evaluation(
         all_true_cls = []
 
         with torch.no_grad():
-            for X_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
-                outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+            for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
+                outputs = model(
+                    X_batch.to(device),
+                    engineered_batch.to(device),
+                    mask=mask_batch.to(device),
+                )
                 all_ret.append(outputs['ret'].cpu().numpy())
                 all_path_reg.append(outputs['path_reg'].cpu().numpy())
                 all_path_cls.append(torch.softmax(outputs['path_cls'], dim=1).cpu().numpy())
