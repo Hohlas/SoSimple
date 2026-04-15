@@ -4,7 +4,7 @@
 > **Status**: Completed — rejected by validation gate
 > **Goal**: Проверить `pred_adv_12_atr <= Q75(validation)` поверх frozen `entry_path_v1_quantile`
 > **Related plan/spec**: [plan](../superpowers/plans/2026-04-13-pred-adv-cap.md), [spec](../superpowers/specs/2026-04-13-quantile-execution-improvement-design.md)
-> **Related commit**: pending
+> **Related commit**: 12a2609
 
 ## Context
 

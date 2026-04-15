@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-15 05:03 UTC · git `735be72`
+> Auto-generated 2026-04-15 05:03 UTC · git `12a2609`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 657 files  ·  **Commit**: `735be72`  ·  **Generated**: 2026-04-15 05:03 UTC
+**Tracked**: 657 files  ·  **Commit**: `12a2609`  ·  **Generated**: 2026-04-15 05:03 UTC
 
 ## Root Docs
 
@@ -124,7 +124,7 @@
 | [docs/reports/2026-04-13-quantile-forward-validation.md](docs/reports/2026-04-13-quantile-forward-validation.md) |  | 2026-04-15 | 4KB | `1364686a` |
 | [docs/reports/2026-04-14-quantile-early-timeout.md](docs/reports/2026-04-14-quantile-early-timeout.md) |  | 2026-04-15 | 7KB | `bbb7eaec` |
 | [docs/reports/2026-04-15-quantile-ny-session.md](docs/reports/2026-04-15-quantile-ny-session.md) |  | 2026-04-15 | 5KB | `6c07bd14` |
-| [docs/reports/2026-04-15-quantile-pred-adv-cap.md](docs/reports/2026-04-15-quantile-pred-adv-cap.md) |  | 2026-04-15 | 5KB | `876a7d9f` |
+| [docs/reports/2026-04-15-quantile-pred-adv-cap.md](docs/reports/2026-04-15-quantile-pred-adv-cap.md) |  | 2026-04-15 | 5KB | `7eac5762` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-15 | 2KB | `ed0769cc` |
 
 ## ML
