@@ -1,0 +1,38 @@
+{
+  "split": "test",
+  "status": "skipped_due_to_validation_gate",
+  "skip_reason": "validation_gate_failed",
+  "validation_threshold": 0.02345952,
+  "baseline": {
+    "split": "test",
+    "n_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0,
+    "pf": null,
+    "win_rate": null,
+    "mean_pnl_atr": null,
+    "negative_year_slices": 0,
+    "yearly": []
+  },
+  "filtered": {
+    "split": "test",
+    "n_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0,
+    "pf": null,
+    "win_rate": null,
+    "mean_pnl_atr": null,
+    "negative_year_slices": 0,
+    "yearly": []
+  },
+  "gate": {
+    "verdict": "skipped_due_to_validation_gate",
+    "reasons": [
+      "validation_gate_failed"
+    ]
+  }
+}

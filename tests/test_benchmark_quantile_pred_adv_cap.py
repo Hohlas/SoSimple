@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -11,10 +12,11 @@ if str(ROOT) not in sys.path:
 from ML.benchmark_quantile_ny_session import select_quantile_trades as upstream_select_quantile_trades
 from ML.benchmark_quantile_pred_adv_cap import (
     compute_adv_threshold,
-    evaluate_split,
-    decide_adv_cap_gate,
-    filter_by_adv_cap,
     build_validation_first_adv_cap,
+    decide_adv_cap_gate,
+    evaluate_split,
+    filter_by_adv_cap,
+    main,
     select_frozen_quantile_trades,
 )
 
@@ -178,6 +180,84 @@ def _selected_rule():
     }
 
 
+def _write_quantile_predictions(
+    path: Path,
+    pnl_values: list[float],
+    *,
+    pred_adv_values: list[float] | None = None,
+) -> None:
+    if pred_adv_values is None:
+        pred_adv_values = [0.10] * len(pnl_values)
+    rows = []
+    for idx, (pnl, pred_adv) in enumerate(zip(pnl_values, pred_adv_values, strict=True), start=1):
+        rows.append(
+            {
+                "time": f"2025.01.{idx:02d} 00:00",
+                "signal": 1,
+                "pred_ret_24_q10": 0.1,
+                "pred_ret_24_q90": 0.3,
+                "true_ret_12_dir_atr": pnl,
+                "true_ret_24_dir_atr": pnl,
+                "pred_adv_12_atr": pred_adv,
+            }
+        )
+    pd.DataFrame(rows).to_csv(path, sep=";", index=False)
+
+
+def _write_baseline_predictions(path: Path, n_rows: int) -> None:
+    rows = [
+        {
+            "time": f"2025.01.{idx:02d} 00:00",
+            "signal": 1,
+            "pred_ret_24_dir_atr": 0.6,
+        }
+        for idx in range(1, n_rows + 1)
+    ]
+    pd.DataFrame(rows).to_csv(path, sep=";", index=False)
+
+
+def _prepare_cli_inputs(
+    tmp_path: Path,
+    *,
+    validation_pnl: list[float],
+    test_pnl: list[float],
+    seed_ids: list[int],
+) -> tuple[Path, Path, Path, Path, Path, Path]:
+    validation_predictions = tmp_path / "validation_predictions.csv"
+    test_predictions = tmp_path / "test_predictions.csv"
+    baseline_validation_predictions = tmp_path / "baseline_validation_predictions.csv"
+    baseline_test_predictions = tmp_path / "baseline_test_predictions.csv"
+    selected_rule = tmp_path / "selected_rule.json"
+    root_dir = tmp_path / "root"
+
+    _write_quantile_predictions(validation_predictions, validation_pnl)
+    _write_quantile_predictions(test_predictions, test_pnl)
+    _write_baseline_predictions(baseline_validation_predictions, len(validation_pnl))
+    _write_baseline_predictions(baseline_test_predictions, len(test_pnl))
+    selected_rule.write_text(json.dumps(_selected_rule()), encoding="utf-8")
+
+    for seed in seed_ids:
+        seed_dir = root_dir / f"seed_{seed:03d}"
+        seed_dir.mkdir(parents=True, exist_ok=True)
+        _write_quantile_predictions(
+            seed_dir / "entry_path_v1_quantile_validation_predictions.csv",
+            validation_pnl,
+        )
+        _write_quantile_predictions(
+            seed_dir / "entry_path_v1_quantile_test_predictions.csv",
+            test_pnl,
+        )
+
+    return (
+        validation_predictions,
+        test_predictions,
+        baseline_validation_predictions,
+        baseline_test_predictions,
+        selected_rule,
+        root_dir,
+    )
+
+
 def test_select_frozen_quantile_trades_matches_upstream_selection_and_preserves_pred_adv():
     frame, baseline = _make_quantile_frame([0.10, 0.20, 0.90, 0.30])
     selected_rule = _selected_rule()
@@ -253,3 +333,120 @@ def test_evaluate_split_reports_yearly_metrics():
     assert [row["year"] for row in out["yearly"]] == [2023, 2024]
     assert out["yearly"][0]["pf"] == pytest.approx(1 / 3)
     assert out["yearly"][1]["pf"] == pytest.approx(3.0)
+
+
+def test_cli_writes_validation_artifacts_and_skips_test_when_gate_fails(tmp_path: Path):
+    (
+        validation_predictions,
+        test_predictions,
+        baseline_validation_predictions,
+        baseline_test_predictions,
+        selected_rule,
+        root_dir,
+    ) = _prepare_cli_inputs(
+        tmp_path,
+        validation_pnl=[2.0, 1.0, -1.0],
+        test_pnl=[2.0, 1.0, -1.0],
+        seed_ids=[7, 17],
+    )
+    output_dir = tmp_path / "output"
+
+    code = main(
+        [
+            "--validation-predictions",
+            str(validation_predictions),
+            "--test-predictions",
+            str(test_predictions),
+            "--baseline-validation-predictions",
+            str(baseline_validation_predictions),
+            "--baseline-test-predictions",
+            str(baseline_test_predictions),
+            "--selected-rule",
+            str(selected_rule),
+            "--output-dir",
+            str(output_dir),
+            "--root-dir",
+            str(root_dir),
+            "--seeds",
+            "7,17",
+        ]
+    )
+
+    assert code == 0
+    validation_path = output_dir / "validation_summary.json"
+    test_path = output_dir / "test_summary.json"
+    yearly_path = output_dir / "yearly_breakdown.csv"
+    per_seed_path = output_dir / "per_seed_summary.csv"
+    metadata_path = output_dir / "run_metadata.json"
+
+    assert validation_path.exists()
+    assert test_path.exists()
+    assert yearly_path.exists()
+    assert per_seed_path.exists()
+    assert metadata_path.exists()
+
+    validation_summary = json.loads(validation_path.read_text(encoding="utf-8"))
+    test_summary = json.loads(test_path.read_text(encoding="utf-8"))
+    per_seed = pd.read_csv(per_seed_path, sep=";")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+    assert validation_summary["gate"]["verdict"] == "gate_fail"
+    assert metadata["validation_threshold"] == pytest.approx(0.1)
+    assert test_summary["status"] == "skipped_due_to_validation_gate"
+    assert test_summary["gate"]["verdict"] == "skipped_due_to_validation_gate"
+    assert per_seed["seed"].tolist() == [7, 17]
+    assert {"root_dir", "seed_dir"}.issubset(per_seed.columns)
+    assert metadata["seeds"] == [7, 17]
+
+
+def test_cli_evaluates_test_once_when_validation_gate_passes(tmp_path: Path):
+    (
+        validation_predictions,
+        test_predictions,
+        baseline_validation_predictions,
+        baseline_test_predictions,
+        selected_rule,
+        root_dir,
+    ) = _prepare_cli_inputs(
+        tmp_path,
+        validation_pnl=[3.0] * 24 + [-1.0] * 6,
+        test_pnl=[3.0] * 24 + [-1.0] * 6,
+        seed_ids=[7, 17],
+    )
+    output_dir = tmp_path / "output"
+
+    code = main(
+        [
+            "--validation-predictions",
+            str(validation_predictions),
+            "--test-predictions",
+            str(test_predictions),
+            "--baseline-validation-predictions",
+            str(baseline_validation_predictions),
+            "--baseline-test-predictions",
+            str(baseline_test_predictions),
+            "--selected-rule",
+            str(selected_rule),
+            "--output-dir",
+            str(output_dir),
+            "--root-dir",
+            str(root_dir),
+            "--seeds",
+            "7,17",
+        ]
+    )
+
+    assert code == 0
+    validation_summary = json.loads((output_dir / "validation_summary.json").read_text(encoding="utf-8"))
+    test_summary = json.loads((output_dir / "test_summary.json").read_text(encoding="utf-8"))
+    yearly_breakdown = pd.read_csv(output_dir / "yearly_breakdown.csv", sep=";")
+    per_seed = pd.read_csv(output_dir / "per_seed_summary.csv", sep=";")
+    metadata = json.loads((output_dir / "run_metadata.json").read_text(encoding="utf-8"))
+
+    assert validation_summary["gate"]["verdict"] == "gate_pass"
+    assert test_summary["status"] == "evaluated"
+    assert test_summary["gate"]["verdict"] == "gate_pass"
+    assert metadata["validation_threshold"] == pytest.approx(0.1)
+    assert metadata["test_status"] == "evaluated"
+    assert per_seed["seed"].tolist() == [7, 17]
+    assert list(yearly_breakdown["split"].unique()) == ["validation", "test"]
