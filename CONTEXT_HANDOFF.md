@@ -1,6 +1,26 @@
 # Context Handoff
 
 ## Current Stage
+Этап `quantile_pred_adv_cap_validation` завершён (2026-04-15).
+
+Что зафиксировано:
+
+- создан validation-first benchmark `ML/benchmark_quantile_pred_adv_cap.py` + тесты `tests/test_benchmark_quantile_pred_adv_cap.py` (`23/23` зелёные)
+- benchmark фиксирует threshold только на validation selected trades: `Q75(pred_adv_12_atr)=0.02345952`
+- canonical diagnostic:
+  - все `27` validation selected trades имеют одинаковый `pred_adv_12_atr=0.02345952`
+  - filtered path ничего не режет: `N=27`, `PF=12.1458`, same as baseline
+- operational verdict текущего этапа:
+  - `verdict = gate_fail`
+  - reasons:
+    - `filtered_n_trades=27 < 30`
+    - seed diagnostics include empty filtered selections
+- frozen test verdict intentionally not evaluated:
+  - `status = skipped_due_to_validation_gate`
+- exporter и MT4 parity stage не запускались, потому что Python gate не пройден
+- canonical report: `docs/reports/2026-04-15-quantile-pred-adv-cap.md`
+
+## Previous Stage
 Этап `quantile_ny_session_validation` завершён (2026-04-15).
 
 Что зафиксировано:
@@ -162,9 +182,10 @@
   - пересмотр возможен только после накопления forward-данных post-2026-06
 
 ## Last Completed Stage
-Quantile NY Session Validation (2026-04-15): **gate_fail**.
+Quantile pred_adv12 Cap Validation (2026-04-15): **gate_fail**.
 
 Adjacent completed stages:
+- Quantile NY Session Validation (2026-04-15): **gate_fail**
 - Quantile Early Timeout Validation (2026-04-14): **gate_fail**
 - Quantile Forward Validation Scaffold (2026-04-13): `watch / no_forward_data`
 - PF Uplift Discovery — Beyond ML Layer (2026-04-13): verdict **SHORTLISTED (3)**
@@ -180,15 +201,18 @@ PF uplift discovery зафиксировал:
   3. pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567
 
 ## Next Step
-1. Не продолжать productization по `NY session exclusion`: кандидат закрыт текущим validation verdict (`N=24 < 30`).
+1. Не продолжать productization по `pred_adv12 <= Q75(validation)`: кандидат закрыт текущим validation verdict.
 2. Сохранить `quantile_forward_validation` как главный operational gate: собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
 3. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
-4. Следующий execution-uplift candidate из shortlist: `pred_adv12 <= Q75 cap` по той же validation-first дисциплине.
+4. Если продолжать research без forward data, новые планы должны отвечать на другой вопрос:
+   - `session filter` как standalone system;
+   - relaxed quantile + session/pred_adv composition для восстановления support.
 5. Не возвращаться к `fav_3_vs_12` как composition или standalone track без нового сильного основания.
 
 Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Read First
+- `docs/reports/2026-04-15-quantile-pred-adv-cap.md` — verdict по `pred_adv12 <= Q75(validation)` (`gate_fail`)
 - `docs/reports/2026-04-15-quantile-ny-session.md` — verdict по `NY session exclusion` (`gate_fail`)
 - `docs/reports/2026-04-14-quantile-early-timeout.md` — verdict по `hold_bars=12` (`gate_fail`)
 - `docs/reports/2026-04-13-quantile-forward-validation.md` — текущий forward validation status (`watch / no_forward_data`)
@@ -205,13 +229,13 @@ Roadmap doc: `docs/superpowers/roadmap.md`
 
 ## Open Risks
 - **No forward data yet**: новый benchmark готов, но не может подтвердить `quantile` без strictly newer prediction CSV.
-- **Execution discovery vs validation gap**: early-timeout и NY session дали сильный uplift на discovery/test diagnostics, но оба не прошли canonical validation gate. Следующие uplift-кандидаты нельзя продвигать без той же validation-first дисциплины.
+- **Execution discovery vs validation gap**: early-timeout, NY session и pred_adv cap дали сильные discovery/test diagnostics, но все три не прошли canonical validation-first gate. Дальше нужен либо forward data, либо новый research question around support recovery / standalone systems.
 - **TB regime shift**: между validation (2019–2022) и test (2023–2026) PF падает с 4.33 до 1.28. Если 2026-ый catastrophic year — локальный всплеск, решение пересмотрится на forward-данных, но сейчас это "не production" definitively.
 - **Quantile low-frequency**: 22 sequential trades на test, PF=3.64. Достаточно для parallel mode, но не для полной замены baseline. Forward validation критична.
 - **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
 
 ## Latest Report
-`docs/reports/2026-04-15-quantile-ny-session.md`
+`docs/reports/2026-04-15-quantile-pred-adv-cap.md`
 
 ## Active Roadmap
 `docs/superpowers/roadmap.md`

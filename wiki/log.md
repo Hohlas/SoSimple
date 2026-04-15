@@ -131,3 +131,13 @@
   - updated comparison table and open question for next `pred_adv12 cap` candidate
 - Updated `wiki/index.md` coverage from 18 to 19 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-15`, `sources: 19`
+
+## [2026-04-15] ingest | Quantile pred_adv cap validation verdict synced into wiki
+- Added report `docs/reports/2026-04-15-quantile-pred-adv-cap.md`
+- Added benchmark `ML/benchmark_quantile_pred_adv_cap.py` and artifacts `ML/reports/quantile_pred_adv_cap/`
+- Updated `wiki/research/execution-tracks.md`:
+  - added pred_adv cap validation verdict section
+  - clarified that validation Q75 cap filters nothing on canonical selected universe
+  - closed the initial 3-candidate PF uplift shortlist under validation-first discipline
+- Updated `wiki/index.md` coverage from 19 to 20 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-15`, `sources: 20`

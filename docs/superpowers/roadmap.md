@@ -78,14 +78,14 @@
 ## PF Uplift Beyond ML Layer
 
 Discovery: [2026-04-13-pf-uplift-discovery.md](../reports/2026-04-13-pf-uplift-discovery.md)
-Status: **SHORTLISTED (3)** — two implementation checks completed; `early_timeout_hold_bars=12` and `NY session exclusion` rejected by canonical validation gate
+Status: **CLOSED (3/3 rejected by validation-first gates)**
 
 | Rank | Plan | pf_delta | N_drop | Status |
 |------|------|:--------:|:------:|--------|
 | 1 | [NY session filter](plans/2026-04-13-ny-session-filter.md) | +12.097 | 29% | Rejected — validation gate fail (`N=24 < 30`) |
 | 2 | [Early timeout bar=12](plans/2026-04-13-early-timeout-bar12.md) | +5.552 | 0% | Rejected — validation gate fail (`N=27`, lower mean PnL vs hold24) |
-| 3 | [pred_adv12 ≤ Q75 cap](plans/2026-04-13-pred-adv-cap.md) | +4.567 | 23% | Skeleton — TBD |
+| 3 | [pred_adv12 ≤ Q75 cap](plans/2026-04-13-pred-adv-cap.md) | +4.567 | 23% | Rejected — validation cap filters nothing (`N=27`, same PF) |
 
 Candidate #4 (not shortlisted due to limit): vol_q4 exclusion (+2.42 PF, N_drop=12.5%) — first candidate for composition with any of the 3.
 
-Recommended execution order now: pred_adv cap. `Early timeout` and `NY session filter` stay as completed negative verdicts and should not be productized further without new evidence.
+Recommended next research: do not productize any of the three initial uplift candidates. New plans should target either standalone session systems or relaxed quantile + filter composition to recover support.

@@ -2,6 +2,26 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-15] - Quantile pred_adv12 cap benchmark: validation gate fail
+
+### Добавлено
+- `ML/benchmark_quantile_pred_adv_cap.py`: validation-first benchmark для `pred_adv_12_atr <= Q75(validation)` поверх frozen `entry_path_v1_quantile`
+- `tests/test_benchmark_quantile_pred_adv_cap.py`: проверки threshold, inclusive cap, gate logic, frozen selection, split evaluation и CLI artifacts
+- `ML/reports/quantile_pred_adv_cap/`: артефакты benchmark (`validation_summary.json`, `test_summary.json`, `per_seed_summary.csv`, `yearly_breakdown.csv`, `run_metadata.json`)
+
+### Результаты
+- validation threshold: `Q75(pred_adv_12_atr)=0.02345952`
+- canonical validation selected trades имеют константный `pred_adv_12_atr=0.02345952`
+- baseline validation: `N=27`, `PF=12.1458`
+- filtered validation: `N=27`, `PF=12.1458`
+- validation gate verdict: `gate_fail`
+- frozen test не оценивался как verdict-stage и был помечен `skipped_due_to_validation_gate`
+
+### Вывод
+- `pred_adv12 <= Q75(validation)` не даёт рабочего фильтра на current frozen quantile validation universe
+- все три initial PF uplift candidates теперь закрыты под strict validation-first gates
+- следующие исследовательские вопросы: session standalone, relaxed quantile + filter composition, forward validation
+
 ## [2026-04-15] - Quantile NY session filter benchmark: validation gate fail
 
 ### Добавлено

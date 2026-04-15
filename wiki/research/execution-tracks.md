@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-04-15
-sources: 19
+sources: 20
 status: active
 ---
 
@@ -390,6 +390,38 @@ Multi-seed diagnostics mixed:
 
 Источник: [2026-04-15-quantile-ny-session.md](../../docs/reports/2026-04-15-quantile-ny-session.md)
 
+### pred_adv12 Cap Validation (04-15): validation cap filters nothing
+
+Третий shortlisted PF-uplift candidate проверял `pred_adv_12_atr <= Q75(validation)` поверх frozen `entry_path_v1_quantile`.
+
+Canonical validation:
+
+| Metric | Quantile baseline | pred_adv cap |
+|---|---:|---:|
+| trades | 27 | 27 |
+| PF | 12.1458 | 12.1458 |
+| win_rate | 0.8148 | 0.8148 |
+| mean_pnl_atr | 2.7393 | 2.7393 |
+| negative_year_slices | 0 | 0 |
+
+Threshold:
+- `Q75(pred_adv_12_atr)=0.02345952`
+- all 27 validation selected trades have exactly `pred_adv_12_atr=0.02345952`
+
+Therefore the validation cap filters nothing on the canonical selected universe.
+
+Validation verdict:
+- `gate_fail`
+- reasons:
+  - `filtered_n_trades=27 < 30`
+  - seed diagnostics include empty filtered selections
+
+Test verdict-stage не выполнялся: `skipped_due_to_validation_gate`.
+
+**Решение:** `pred_adv12 <= Q75(validation)` не идёт дальше в exporter / MT4 parity path. Strong test discovery не переносится на validation-selected distribution.
+
+Источник: [2026-04-15-quantile-pred-adv-cap.md](../../docs/reports/2026-04-15-quantile-pred-adv-cap.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -444,6 +476,7 @@ Trade-level reconciliation был сохранён отдельно:
 | entry_path_v1_quantile | PF=8.18 (test, 48 trades, gate PASS), MT4 parity 20/20, PF=11.91 в деньгах; forward scaffold `watch/no_forward_data` | **Production parallel mode** | Собрать strictly-forward prediction CSV |
 | quantile early timeout (hold12) | validation: PF=30.99, N=27, mean_pnl lower vs hold24 | **Gate fail — closed** | Do not productize; move to next candidate |
 | quantile NY session filter | validation: PF=41.22, N=24 | **Gate fail — closed** | Do not productize; move to pred_adv cap |
+| quantile pred_adv cap | validation: PF=12.15, N=27, cap filters nothing | **Gate fail — closed** | New research needed |
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
@@ -452,4 +485,4 @@ Trade-level reconciliation был сохранён отдельно:
 
 1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
-3. PF uplift реализация: early-timeout и NY-session уже показали, что discovery/test uplift может не пройти canonical validation gate. Следующий кандидат (`pred_adv12 cap`) должен идти по той же validation-first дисциплине.
+3. PF uplift реализация: all three initial candidates failed validation-first gates. Future work should change the research question: standalone session system, relaxed quantile + filter composition, or true forward data.
