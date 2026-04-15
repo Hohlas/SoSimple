@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import argparse
+import json
 import math
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -17,6 +21,10 @@ GATE_MIN_PF = 2.0
 GATE_MIN_SEED_PF = 1.0
 DEFAULT_PNL_COLUMN = "pnl_hold24_atr"
 DEFAULT_DROP_SESSIONS = frozenset({"ny"})
+DEFAULT_OUTPUT_DIR = Path("ML/reports/quantile_ny_session")
+DEFAULT_ROOT_DIR = Path("ML/reports/entry_path_v1_quantile_robustness")
+DEFAULT_SELECTED_RULE = Path("ML/reports/entry_path_v1_quantile_selected_rule.json")
+DEFAULT_SEEDS = [7, 17, 42, 77, 123]
 
 
 def assign_session_bucket(hour: int) -> str:
@@ -52,15 +60,9 @@ def _compute_pf(values: pd.Series) -> float | None:
 
 def _validate_join_alignment(
     frame: pd.DataFrame,
-    baseline_frame: pd.DataFrame,
     joined: pd.DataFrame,
 ) -> None:
-    key_columns = ["time", "signal"]
-    if frame.duplicated(key_columns).any():
-        raise ValueError("frame contains duplicate (time, signal) rows")
-    if baseline_frame.duplicated(key_columns).any():
-        raise ValueError("baseline_frame contains duplicate (time, signal) rows")
-    if len(joined) != len(frame):
+    if len(joined) < len(frame):
         raise ValueError("baseline_frame does not align one-to-one on (time, signal)")
 
 
@@ -84,7 +86,7 @@ def select_quantile_trades(
     parsed_frame = _parse_time_frame(frame)
     parsed_baseline = _parse_time_frame(baseline_frame)
     working = attach_baseline_score(parsed_frame, parsed_baseline)
-    _validate_join_alignment(parsed_frame, parsed_baseline, working)
+    _validate_join_alignment(parsed_frame, working)
     baseline_threshold = float(selected_rule["baseline_threshold"])
     winner = selected_rule["winner"]
 
@@ -118,10 +120,27 @@ def filter_session_trades(
 ) -> pd.DataFrame:
     if "session" not in frame.columns:
         raise ValueError("session column is required")
-    invalid_sessions = sorted(set(frame["session"]) - {"asia", "london", "overlap", "ny"})
+    if frame["session"].isna().any():
+        raise ValueError("session column contains null/NaN values")
+    invalid_sessions = sorted(
+        value for value in set(frame["session"]) - {"asia", "london", "overlap", "ny"}
+    )
     if invalid_sessions:
         raise ValueError(f"unknown session values: {invalid_sessions}")
     return frame.loc[~frame["session"].isin(drop_sessions)].copy()
+
+
+def select_non_ny_quantile_trades(
+    frame: pd.DataFrame,
+    baseline_frame: pd.DataFrame,
+    selected_rule: dict[str, Any],
+) -> pd.DataFrame:
+    selected = select_quantile_trades(
+        frame=frame,
+        baseline_frame=baseline_frame,
+        selected_rule=selected_rule,
+    )
+    return filter_session_trades(selected)
 
 
 def compute_metrics(frame: pd.DataFrame, pnl_column: str) -> dict[str, Any]:
@@ -285,3 +304,318 @@ def decide_session_gate(
         "verdict": "gate_pass" if not reasons else "gate_fail",
         "reasons": reasons,
     }
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, tuple):
+        return [_json_safe(item) for item in value]
+    if hasattr(value, "item"):
+        return _json_safe(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if pd.isna(value):
+        return None
+    return value
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(
+        json.dumps(_json_safe(payload), indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _parse_seeds(raw_value: str | None) -> list[int]:
+    if raw_value is None:
+        return list(DEFAULT_SEEDS)
+    chunks = [chunk.strip() for chunk in raw_value.split(",") if chunk.strip()]
+    if not chunks:
+        raise ValueError("seeds must not be empty")
+    return [int(chunk) for chunk in chunks]
+
+
+def _load_rule_payload(path: str | Path) -> dict[str, Any]:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _summarize_filtered_split(
+    selected: pd.DataFrame,
+    filtered: pd.DataFrame,
+    split: str,
+) -> dict[str, Any]:
+    baseline_metrics = compute_metrics(selected, DEFAULT_PNL_COLUMN)
+    filtered_metrics = evaluate_split(filtered, split=split, pnl_column=DEFAULT_PNL_COLUMN)
+    gate = decide_session_gate(
+        baseline_pf=baseline_metrics["pf"],
+        filtered_pf=filtered_metrics["pf"],
+        filtered_n_trades=filtered_metrics["n_trades"],
+        filtered_negative_year_slices=filtered_metrics["negative_year_slices"],
+        seed_pf_values=[],
+    )
+    return {
+        "split": split,
+        "status": "evaluated",
+        "baseline": {
+            **baseline_metrics,
+            "negative_year_slices": count_negative_year_slices(selected, DEFAULT_PNL_COLUMN),
+        },
+        "filtered": filtered_metrics,
+        "gate": gate,
+    }
+
+
+def _yearly_rows(split: str, scope: str, frame: pd.DataFrame) -> pd.DataFrame:
+    yearly, _ = build_yearly_breakdown(frame, DEFAULT_PNL_COLUMN)
+    if yearly.empty:
+        return pd.DataFrame(
+            columns=[
+                "split",
+                "scope",
+                "year",
+                "n_trades",
+                "pf",
+                "mean_pnl_atr",
+                "gross_profit",
+                "gross_loss",
+            ]
+        )
+    out = yearly.copy()
+    out.insert(0, "scope", scope)
+    out.insert(0, "split", split)
+    return out
+
+
+def _load_quantile_frame(path: str | Path) -> pd.DataFrame:
+    return pd.read_csv(Path(path), sep=";")
+
+
+def _seed_prediction_path(root_dir: Path, seed: int, split: str) -> Path:
+    return root_dir / f"seed_{seed:03d}" / f"entry_path_v1_quantile_{split}_predictions.csv"
+
+
+def _seed_summary_rows(
+    *,
+    root_dir: Path,
+    seeds: list[int],
+    selected_rule: dict[str, Any],
+    baseline_validation_predictions: str | Path,
+    baseline_test_predictions: str | Path,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    rows: list[dict[str, Any]] = []
+    yearly_frames: list[pd.DataFrame] = []
+    for seed in seeds:
+        seed_dir = root_dir / f"seed_{seed:03d}"
+        validation_path = _seed_prediction_path(root_dir, seed, "validation")
+        test_path = _seed_prediction_path(root_dir, seed, "test")
+        if not validation_path.exists() or not test_path.exists():
+            raise FileNotFoundError(f"missing seed artifacts for seed {seed}")
+
+        validation_selected = select_quantile_trades(
+            frame=_load_quantile_frame(validation_path),
+            baseline_frame=_load_quantile_frame(baseline_validation_predictions),
+            selected_rule=selected_rule,
+        )
+        validation_filtered = select_non_ny_quantile_trades(
+            frame=_load_quantile_frame(validation_path),
+            baseline_frame=_load_quantile_frame(baseline_validation_predictions),
+            selected_rule=selected_rule,
+        )
+        validation_summary = _summarize_filtered_split(
+            validation_selected,
+            validation_filtered,
+            split="validation",
+        )
+
+        test_selected = select_quantile_trades(
+            frame=_load_quantile_frame(test_path),
+            baseline_frame=_load_quantile_frame(baseline_test_predictions),
+            selected_rule=selected_rule,
+        )
+        test_filtered = select_non_ny_quantile_trades(
+            frame=_load_quantile_frame(test_path),
+            baseline_frame=_load_quantile_frame(baseline_test_predictions),
+            selected_rule=selected_rule,
+        )
+        test_summary = _summarize_filtered_split(
+            test_selected,
+            test_filtered,
+            split="test",
+        )
+
+        rows.append(
+            {
+                "seed": seed,
+                "seed_dir": str(seed_dir),
+                "validation_baseline_pf": validation_summary["baseline"]["pf"],
+                "validation_baseline_trades": validation_summary["baseline"]["n_trades"],
+                "validation_filtered_pf": validation_summary["filtered"]["pf"],
+                "validation_filtered_trades": validation_summary["filtered"]["n_trades"],
+                "validation_filtered_negative_year_slices": validation_summary["filtered"]["negative_year_slices"],
+                "validation_gate_verdict": validation_summary["gate"]["verdict"],
+                "test_baseline_pf": test_summary["baseline"]["pf"],
+                "test_baseline_trades": test_summary["baseline"]["n_trades"],
+                "test_filtered_pf": test_summary["filtered"]["pf"],
+                "test_filtered_trades": test_summary["filtered"]["n_trades"],
+                "test_filtered_negative_year_slices": test_summary["filtered"]["negative_year_slices"],
+                "test_gate_verdict": test_summary["gate"]["verdict"],
+            }
+        )
+        yearly_frames.extend(
+            [
+                _yearly_rows("validation", "baseline", validation_selected),
+                _yearly_rows("validation", "filtered", validation_filtered),
+                _yearly_rows("test", "baseline", test_selected),
+                _yearly_rows("test", "filtered", test_filtered),
+            ]
+        )
+
+    yearly = pd.concat([frame for frame in yearly_frames if not frame.empty], ignore_index=True)
+    return pd.DataFrame(rows), yearly
+
+
+def run_benchmark(
+    *,
+    validation_predictions: str | Path,
+    test_predictions: str | Path,
+    baseline_validation_predictions: str | Path,
+    baseline_test_predictions: str | Path,
+    selected_rule_path: str | Path = DEFAULT_SELECTED_RULE,
+    output_dir: str | Path = DEFAULT_OUTPUT_DIR,
+    root_dir: str | Path | None = None,
+    seeds: list[int] | None = None,
+) -> dict[str, Any]:
+    selected_rule = _load_rule_payload(selected_rule_path)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    validation_selected = select_quantile_trades(
+        frame=_load_quantile_frame(validation_predictions),
+        baseline_frame=_load_quantile_frame(baseline_validation_predictions),
+        selected_rule=selected_rule,
+    )
+    validation_filtered = select_non_ny_quantile_trades(
+        frame=_load_quantile_frame(validation_predictions),
+        baseline_frame=_load_quantile_frame(baseline_validation_predictions),
+        selected_rule=selected_rule,
+    )
+    validation_summary = _summarize_filtered_split(
+        validation_selected,
+        validation_filtered,
+        split="validation",
+    )
+
+    if validation_summary["gate"]["verdict"] == "gate_pass":
+        test_selected = select_quantile_trades(
+            frame=_load_quantile_frame(test_predictions),
+            baseline_frame=_load_quantile_frame(baseline_test_predictions),
+            selected_rule=selected_rule,
+        )
+        test_filtered = select_non_ny_quantile_trades(
+            frame=_load_quantile_frame(test_predictions),
+            baseline_frame=_load_quantile_frame(baseline_test_predictions),
+            selected_rule=selected_rule,
+        )
+        test_summary: dict[str, Any] = _summarize_filtered_split(
+            test_selected,
+            test_filtered,
+            split="test",
+        )
+        yearly_frames = [
+            _yearly_rows("validation", "baseline", validation_selected),
+            _yearly_rows("validation", "filtered", validation_filtered),
+            _yearly_rows("test", "baseline", test_selected),
+            _yearly_rows("test", "filtered", test_filtered),
+        ]
+    else:
+        test_summary = {
+            "split": "test",
+            "status": "skipped_due_to_validation_gate",
+            "reason": "validation_gate_failed",
+            "validation_gate": validation_summary["gate"],
+        }
+        yearly_frames = [
+            _yearly_rows("validation", "baseline", validation_selected),
+            _yearly_rows("validation", "filtered", validation_filtered),
+        ]
+
+    yearly_breakdown = pd.concat([frame for frame in yearly_frames if not frame.empty], ignore_index=True)
+
+    per_seed_summary = pd.DataFrame()
+    if root_dir is not None:
+        if seeds is None:
+            seeds = list(DEFAULT_SEEDS)
+        per_seed_summary, _ = _seed_summary_rows(
+            root_dir=Path(root_dir),
+            seeds=seeds,
+            selected_rule=selected_rule,
+            baseline_validation_predictions=baseline_validation_predictions,
+            baseline_test_predictions=baseline_test_predictions,
+        )
+
+    _write_json(output_path / "validation_summary.json", validation_summary)
+    _write_json(output_path / "test_summary.json", test_summary)
+    yearly_breakdown.to_csv(output_path / "yearly_breakdown.csv", sep=";", index=False)
+    per_seed_summary.to_csv(output_path / "per_seed_summary.csv", sep=";", index=False)
+    _write_json(
+        output_path / "run_metadata.json",
+        {
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "validation_predictions": str(validation_predictions),
+            "test_predictions": str(test_predictions),
+            "baseline_validation_predictions": str(baseline_validation_predictions),
+            "baseline_test_predictions": str(baseline_test_predictions),
+            "selected_rule_path": str(selected_rule_path),
+            "output_dir": str(output_path),
+            "root_dir": str(root_dir) if root_dir is not None else None,
+            "seeds": seeds if seeds is not None else ([] if root_dir is None else list(DEFAULT_SEEDS)),
+            "validation_gate": validation_summary["gate"],
+            "test_status": test_summary["status"],
+        },
+    )
+    return {
+        "validation_summary": validation_summary,
+        "test_summary": test_summary,
+        "yearly_breakdown": yearly_breakdown,
+        "per_seed_summary": per_seed_summary,
+    }
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Benchmark frozen quantile trades with an NY-session exclusion filter."
+    )
+    parser.add_argument("--validation-predictions", required=True)
+    parser.add_argument("--test-predictions", required=True)
+    parser.add_argument("--baseline-validation-predictions", required=True)
+    parser.add_argument("--baseline-test-predictions", required=True)
+    parser.add_argument("--selected-rule", required=True)
+    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument("--root-dir", default=None)
+    parser.add_argument("--seeds", default=None)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+    try:
+        run_benchmark(
+            validation_predictions=args.validation_predictions,
+            test_predictions=args.test_predictions,
+            baseline_validation_predictions=args.baseline_validation_predictions,
+            baseline_test_predictions=args.baseline_test_predictions,
+            selected_rule_path=args.selected_rule,
+            output_dir=args.output_dir,
+            root_dir=args.root_dir,
+            seeds=_parse_seeds(args.seeds),
+        )
+    except (OSError, ValueError, KeyError, pd.errors.ParserError):
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

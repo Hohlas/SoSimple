@@ -1,0 +1,67 @@
+{
+  "split": "validation",
+  "status": "evaluated",
+  "baseline": {
+    "n_trades": 27,
+    "wins": 22,
+    "losses": 5,
+    "gross_profit": 80.59583579999999,
+    "gross_loss": 6.635714279999998,
+    "pf": 12.145766438876873,
+    "win_rate": 0.8148148148148148,
+    "mean_pnl_atr": 2.7392637599999996,
+    "negative_year_slices": 0
+  },
+  "filtered": {
+    "split": "validation",
+    "n_trades": 24,
+    "wins": 20,
+    "losses": 4,
+    "gross_profit": 77.7223892,
+    "gross_loss": 1.88571428,
+    "pf": 41.21641864004975,
+    "win_rate": 0.8333333333333334,
+    "mean_pnl_atr": 3.159861455,
+    "negative_year_slices": 0,
+    "yearly": [
+      {
+        "year": 2019,
+        "n_trades": 7,
+        "pf": null,
+        "mean_pnl_atr": 2.952730342857142,
+        "gross_profit": 20.669112399999996,
+        "gross_loss": -0.0
+      },
+      {
+        "year": 2020,
+        "n_trades": 8,
+        "pf": null,
+        "mean_pnl_atr": 3.56000005,
+        "gross_profit": 28.4800004,
+        "gross_loss": -0.0
+      },
+      {
+        "year": 2021,
+        "n_trades": 8,
+        "pf": 12.907114645173074,
+        "mean_pnl_atr": 2.806677015,
+        "gross_profit": 24.3391304,
+        "gross_loss": 1.88571428
+      },
+      {
+        "year": 2022,
+        "n_trades": 1,
+        "pf": null,
+        "mean_pnl_atr": 4.234146,
+        "gross_profit": 4.234146,
+        "gross_loss": -0.0
+      }
+    ]
+  },
+  "gate": {
+    "verdict": "gate_fail",
+    "reasons": [
+      "filtered_n_trades=24 < 30"
+    ]
+  }
+}

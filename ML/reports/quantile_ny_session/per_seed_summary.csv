@@ -1,0 +1,6 @@
+seed;seed_dir;validation_baseline_pf;validation_baseline_trades;validation_filtered_pf;validation_filtered_trades;validation_filtered_negative_year_slices;validation_gate_verdict;test_baseline_pf;test_baseline_trades;test_filtered_pf;test_filtered_trades;test_filtered_negative_year_slices;test_gate_verdict
+7;/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness/seed_007;11.240091883688192;32;21.796991639240673;28;0;gate_fail;8.178675196069868;48;20.276184795301365;34;0;gate_pass
+17;/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness/seed_017;13.003203569985443;41;22.749106606481163;37;0;gate_pass;10.87935141366133;57;15.979706916348997;44;1;gate_fail
+42;/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness/seed_042;12.145766438876873;27;41.21641864004975;24;0;gate_fail;54.239976927309705;28;39.36005456855323;18;0;gate_fail
+77;/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness/seed_077;34.091071474518394;19;34.091071474518394;19;0;gate_fail;inf;17;inf;11;0;gate_fail
+123;/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness/seed_123;7.186226907504098;38;9.369108524431356;34;0;gate_pass;7.65727936465653;53;14.42525549354857;39;0;gate_pass

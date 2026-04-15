@@ -1,0 +1,11 @@
+{
+  "split": "test",
+  "status": "skipped_due_to_validation_gate",
+  "reason": "validation_gate_failed",
+  "validation_gate": {
+    "verdict": "gate_fail",
+    "reasons": [
+      "filtered_n_trades=24 < 30"
+    ]
+  }
+}

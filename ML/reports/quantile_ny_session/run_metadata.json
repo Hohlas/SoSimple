@@ -1,0 +1,24 @@
+{
+  "created_at_utc": "2026-04-15T04:29:54.152140+00:00",
+  "validation_predictions": "ML/reports/entry_path_v1_quantile_validation_predictions.csv",
+  "test_predictions": "ML/reports/entry_path_v1_quantile_test_predictions.csv",
+  "baseline_validation_predictions": "ML/reports/entry_path_v1_validation_predictions.csv",
+  "baseline_test_predictions": "ML/reports/entry_path_test_predictions.csv",
+  "selected_rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+  "output_dir": "ML/reports/quantile_ny_session",
+  "root_dir": "/home/hohla/git/SoSimple/ML/reports/entry_path_v1_quantile_robustness",
+  "seeds": [
+    7,
+    17,
+    42,
+    77,
+    123
+  ],
+  "validation_gate": {
+    "verdict": "gate_fail",
+    "reasons": [
+      "filtered_n_trades=24 < 30"
+    ]
+  },
+  "test_status": "skipped_due_to_validation_gate"
+}

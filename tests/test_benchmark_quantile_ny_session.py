@@ -1,5 +1,6 @@
-import math
+import json
 import sys
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,8 @@ from ML.benchmark_quantile_ny_session import (
     decide_session_gate,
     evaluate_split,
     filter_session_trades,
+    main,
+    select_non_ny_quantile_trades,
     select_quantile_trades,
 )
 
@@ -72,7 +75,7 @@ def test_evaluate_split_does_not_count_all_zero_year_as_negative():
     assert result["yearly"][0]["pf"] is None
 
 
-def test_select_quantile_trades_assigns_sessions_then_filters_non_ny():
+def test_select_non_ny_quantile_trades_drops_passing_ny_session():
     quantile_frame = pd.DataFrame(
         {
             "time": [
@@ -108,25 +111,29 @@ def test_select_quantile_trades_assigns_sessions_then_filters_non_ny():
         },
     }
 
-    selected = select_quantile_trades(
+    selected = select_non_ny_quantile_trades(
         frame=quantile_frame,
         baseline_frame=baseline_frame,
         selected_rule=rule_payload,
     )
 
-    filtered = filter_session_trades(selected)
-
-    assert selected["session"].tolist() == ["asia", "overlap", "ny"]
-    assert filtered["session"].tolist() == ["asia", "overlap"]
-    assert filtered["time"].tolist() == ["2025.01.01 02:00", "2025.01.01 15:00"]
-    assert filtered["year"].tolist() == [2025, 2025]
-    assert filtered["pnl_hold24_atr"].tolist() == [2.0, 3.0]
+    assert selected["session"].tolist() == ["asia", "overlap"]
+    assert selected["time"].tolist() == ["2025.01.01 02:00", "2025.01.01 15:00"]
+    assert selected["year"].tolist() == [2025, 2025]
+    assert selected["pnl_hold24_atr"].tolist() == [2.0, 3.0]
 
 
 def test_filter_session_trades_rejects_unknown_session_values():
     frame = pd.DataFrame({"session": ["asia", "broken"]})
 
     with pytest.raises(ValueError, match=r"unknown session values: \['broken'\]"):
+        filter_session_trades(frame)
+
+
+def test_filter_session_trades_rejects_null_session_values():
+    frame = pd.DataFrame({"session": ["asia", None]})
+
+    with pytest.raises(ValueError, match=r"session column contains null/NaN values"):
         filter_session_trades(frame)
 
 
@@ -225,3 +232,111 @@ def test_decide_session_gate_rejects_non_finite_pf_values():
     assert "filtered_pf=None" in result["reasons"]
     assert "filtered_pf=None <= 2.0" in result["reasons"]
     assert any(reason.startswith("seed_pf_values_contain_non_finite: [nan, None]") for reason in result["reasons"])
+
+
+def test_cli_writes_validation_artifacts_and_skips_test_when_gate_fails(tmp_path: Path):
+    validation_predictions = tmp_path / "validation_predictions.csv"
+    test_predictions = tmp_path / "test_predictions.csv"
+    baseline_validation_predictions = tmp_path / "baseline_validation_predictions.csv"
+    baseline_test_predictions = tmp_path / "baseline_test_predictions.csv"
+    selected_rule = tmp_path / "selected_rule.json"
+    output_dir = tmp_path / "output"
+    root_dir = tmp_path / "root"
+
+    validation_predictions.write_text(
+        "time;signal;pred_ret_24_q10;pred_ret_24_q90;true_ret_12_dir_atr;true_ret_24_dir_atr\n"
+        "2025.01.01 02:00;1;0.1;0.3;1.0;2.0\n"
+        "2025.01.01 15:00;-1;0.1;0.3;1.0;1.0\n"
+        "2025.01.01 21:00;1;0.1;0.3;1.0;-1.0\n",
+        encoding="utf-8",
+    )
+    test_predictions.write_text(
+        "time;signal;pred_ret_24_q10;pred_ret_24_q90;true_ret_12_dir_atr;true_ret_24_dir_atr\n"
+        "2025.01.02 02:00;1;0.1;0.3;1.0;2.0\n"
+        "2025.01.02 15:00;-1;0.1;0.3;1.0;1.0\n"
+        "2025.01.02 21:00;1;0.1;0.3;1.0;-1.0\n",
+        encoding="utf-8",
+    )
+    baseline_validation_predictions.write_text(
+        "time;signal;pred_ret_24_dir_atr\n"
+        "2025.01.01 02:00;1;0.5\n"
+        "2025.01.01 15:00;-1;0.5\n"
+        "2025.01.01 21:00;1;0.5\n",
+        encoding="utf-8",
+    )
+    baseline_test_predictions.write_text(
+        "time;signal;pred_ret_24_dir_atr\n"
+        "2025.01.02 02:00;1;0.5\n"
+        "2025.01.02 15:00;-1;0.5\n"
+        "2025.01.02 21:00;1;0.5\n",
+        encoding="utf-8",
+    )
+    selected_rule.write_text(
+        json.dumps(
+            {
+                "baseline_threshold": 0.0,
+                "winner": {
+                    "rule": "baseline",
+                    "m": 0.0,
+                    "w": 0.0,
+                    "correction": 0.0,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    for seed in (7, 17):
+        seed_dir = root_dir / f"seed_{seed:03d}"
+        seed_dir.mkdir(parents=True, exist_ok=True)
+        (seed_dir / "entry_path_v1_quantile_validation_predictions.csv").write_text(
+            validation_predictions.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+        (seed_dir / "entry_path_v1_quantile_test_predictions.csv").write_text(
+            test_predictions.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
+
+    code = main(
+        [
+            "--validation-predictions",
+            str(validation_predictions),
+            "--test-predictions",
+            str(test_predictions),
+            "--baseline-validation-predictions",
+            str(baseline_validation_predictions),
+            "--baseline-test-predictions",
+            str(baseline_test_predictions),
+            "--selected-rule",
+            str(selected_rule),
+            "--output-dir",
+            str(output_dir),
+            "--root-dir",
+            str(root_dir),
+            "--seeds",
+            "7,17",
+        ]
+    )
+
+    assert code == 0
+    validation_path = output_dir / "validation_summary.json"
+    test_path = output_dir / "test_summary.json"
+    yearly_path = output_dir / "yearly_breakdown.csv"
+    per_seed_path = output_dir / "per_seed_summary.csv"
+    metadata_path = output_dir / "run_metadata.json"
+    assert validation_path.exists()
+    assert test_path.exists()
+    assert yearly_path.exists()
+    assert per_seed_path.exists()
+    assert metadata_path.exists()
+
+    validation_summary = json.loads(validation_path.read_text(encoding="utf-8"))
+    test_summary = json.loads(test_path.read_text(encoding="utf-8"))
+    per_seed = pd.read_csv(per_seed_path, sep=";")
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+
+    assert validation_summary["gate"]["verdict"] == "gate_fail"
+    assert test_summary["status"] == "skipped_due_to_validation_gate"
+    assert per_seed["seed"].tolist() == [7, 17]
+    assert metadata["seeds"] == [7, 17]
