@@ -1,6 +1,6 @@
 ---
 name: rebuild-module-index
-description: Run explicitly when user requests: rebuild module index, refresh MODULE_INDEX.md, regenerate index, регенерация индекса модулей
+description: Use when adding a new file to the project (to register it in MODULE_INDEX.md), OR when user explicitly requests: rebuild module index, refresh MODULE_INDEX.md, regenerate index, регенерация индекса модулей
 ---
 
 # Регенерация MODULE_INDEX.md (Codex-friendly)
@@ -12,7 +12,6 @@ description: Run explicitly when user requests: rebuild module index, refresh MO
 ## Принципы
 - Не придумывать статусы модулей: переносить из текущего `MODULE_INDEX.md` или отмечать `⚠️` для ручной проверки.
 - Не читать большие файлы целиком без необходимости.
-- Для поиска файлов использовать `rg --files`.
 
 ## Шаги
 

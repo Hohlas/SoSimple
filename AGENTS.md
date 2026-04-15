@@ -14,39 +14,27 @@ ML-бот для прогнозирования разворотов Forex (H1).
 Индексация: `reindex_documents()` — только изменённые файлы; `reindex_documents(force=True)` — smart rebuild BM25.
 
 
-## Быстрый старт
-
-### Пути к данным
-- Вход: `MT/MQL4/Files/Nero.csv` (UTF-16LE, `;`)
-- Выход: `DATA/Nero_{train|validation|test}_labeled.csv`
-- Мета: `DATA/Nero_normalization_stats.csv`
-
-### Critical Rules Top-3
-1. Для CSV сначала читать только первые 10 строк.
-2. Не загружать в контекст файлы больше 1MB целиком.
-3. Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
-
-## Pipeline данных
-Схема: `MT4 -> Raw -> Sort -> Label -> Norm -> Split -> Train -> Signals -> MT4`.
-Детали: [docs/DATA_FLOW.md](docs/DATA_FLOW.md)
-
-## Как работать в этом репозитории (Codex)
-
-### Обязательные правила
+## Обязательные правила
+- Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md
+- При добавлении нового файла добавить его в индекс, используя скилл ['.codex/skills/rebuild-module-index/SKILL.md'](.codex/skills/rebuild-module-index/SKILL.md)
+- Рутинная синхронизация после каждого изменения кода [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md).
+- Не загружать в контекст файлы больше 1MB целиком.
+- Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
 - Перед обращением к содержимому каталог сначала читать локальный `README.md` этого каталога.
 - Предпочитать точечное чтение: `rg`, `head`, `sed`, а не полный вывод больших файлов.
 - Не трогать `docs/archive/` и архивные модули без явной просьбы.
 - Всегда создавай новую feature-ветку для каждой задачи.
 - `git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
-- Для закрытия этапа и синхронизации `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
+- При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
 
 
-### Память проекта
+## Память проекта
 
 | Слой | Назначение | Точка входа |
 |------|-----------|-------------|
-| `wiki/` | Синтез знаний: эволюция исследований, ключевые концепты | [`wiki/index.md`](wiki/index.md) |
+| `wiki/index.md` | Каталог синтезированных wiki-страниц: research + concepts. Не дублирует MODULE_INDEX, DATA_FLOW, CONTEXT_HANDOFF | [`wiki/index.md`](wiki/index.md) |
+| `wiki/REPO_integrity.md` | Карта всех файлов репо с хешами — для обнаружения изменений. Не для навигации по коду | `python wiki/wiki.py generate` |
 | `knowledge-rag` | Поиск кандидатов по docs/wiki/code; не source of truth | MCP server `knowledge-rag`, tool `search_knowledge` |
 | `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
 | `docs/reports/` | Канонические отчёты завершённых этапов с результатами и выводами | [`docs/reports/`](docs/reports/) |
@@ -58,7 +46,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 **В начале каждой сессии читать**: `wiki/index.md` → `CONTEXT_HANDOFF.md` → через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
 Для операций с вики (ingest, save, lint) — см. `.codex/skills/wiki/SKILL.md`.
 
-### Приоритет источников
+## Приоритет источников
 1. Явный запрос пользователя в текущем диалоге.
 2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
 3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
@@ -131,5 +119,5 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ---
 
-Последнее обновление: 2026-04-02
+Последнее обновление: 2026-04-15
 Авторы: human + AI agents

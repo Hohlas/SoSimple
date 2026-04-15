@@ -12,7 +12,6 @@ description: Use when working with CSV files - reading, exploring, analyzing lar
 ## Project guardrails (SoSimple)
 - Сначала читать только первые 10 строк CSV.
 - Не печатать и не загружать файл целиком в контекст.
-- Для MT4-файлов использовать `encoding='utf-16-le'` и `sep=';'`.
 
 ## Workflow
 
