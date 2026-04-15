@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-14 20:15 UTC · git `0998c56`
+> Auto-generated 2026-04-15 04:33 UTC · git `e62d396`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 645 files  ·  **Commit**: `0998c56`  ·  **Generated**: 2026-04-14 20:15 UTC
+**Tracked**: 651 files  ·  **Commit**: `e62d396`  ·  **Generated**: 2026-04-15 04:33 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-14 | 10KB | `c0235e5f` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-14 | 106KB | `82eb034c` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-15 | 108KB | `6928160f` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-14 | 3KB | `7eaa5505` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-14 | 13KB | `ff3ca80e` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-15 | 15KB | `03e82598` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-14 | 14KB | `7351ca61` |
 | [README.md](README.md) |  | 2026-04-14 | 969B | `4fc82a41` |
 
@@ -67,14 +67,14 @@
 | [docs/superpowers/plans/2026-04-13-early-timeout-bar12.md](docs/superpowers/plans/2026-04-13-early-timeout-bar12.md) |  | 2026-04-14 | 37KB | `908866bf` |
 | [docs/superpowers/plans/2026-04-13-fav-3-vs-12-standalone.md](docs/superpowers/plans/2026-04-13-fav-3-vs-12-standalone.md) |  | 2026-04-14 | 20KB | `80750ee6` |
 | [docs/superpowers/plans/2026-04-13-label-convention-audit.md](docs/superpowers/plans/2026-04-13-label-convention-audit.md) |  | 2026-04-14 | 31KB | `ea55d54a` |
-| [docs/superpowers/plans/2026-04-13-ny-session-filter.md](docs/superpowers/plans/2026-04-13-ny-session-filter.md) |  | 2026-04-14 | 2KB | `325f4e90` |
+| [docs/superpowers/plans/2026-04-13-ny-session-filter.md](docs/superpowers/plans/2026-04-13-ny-session-filter.md) |  | 2026-04-14 | 16KB | `61bdeff8` |
 | [docs/superpowers/plans/2026-04-13-pf-uplift-beyond-ml.md](docs/superpowers/plans/2026-04-13-pf-uplift-beyond-ml.md) |  | 2026-04-14 | 29KB | `74578dba` |
 | [docs/superpowers/plans/2026-04-13-pred-adv-cap.md](docs/superpowers/plans/2026-04-13-pred-adv-cap.md) |  | 2026-04-14 | 2KB | `51f3e15c` |
 | [docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md](docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md) |  | 2026-04-14 | 15KB | `50a68d1f` |
 | [docs/superpowers/plans/2026-04-13-quantile-fav-composition.md](docs/superpowers/plans/2026-04-13-quantile-fav-composition.md) |  | 2026-04-14 | 25KB | `20186b5d` |
 | [docs/superpowers/plans/2026-04-13-quantile-forward-validation.md](docs/superpowers/plans/2026-04-13-quantile-forward-validation.md) |  | 2026-04-14 | 13KB | `e4d63c4c` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-14 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-14 | 6KB | `9aa88e34` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-15 | 6KB | `4eff40f2` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-04-14 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-04-14 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-04-14 | 13KB | `477a2843` |
@@ -122,7 +122,8 @@
 | [docs/reports/2026-04-13-pf-uplift-discovery.md](docs/reports/2026-04-13-pf-uplift-discovery.md) |  | 2026-04-14 | 14KB | `f93b85c0` |
 | [docs/reports/2026-04-13-quantile-fav-composition.md](docs/reports/2026-04-13-quantile-fav-composition.md) |  | 2026-04-14 | 8KB | `8dd53bda` |
 | [docs/reports/2026-04-13-quantile-forward-validation.md](docs/reports/2026-04-13-quantile-forward-validation.md) |  | 2026-04-14 | 4KB | `1364686a` |
-| [docs/reports/2026-04-14-quantile-early-timeout.md](docs/reports/2026-04-14-quantile-early-timeout.md) |  | 2026-04-14 | 7KB | `9409b8ca` |
+| [docs/reports/2026-04-14-quantile-early-timeout.md](docs/reports/2026-04-14-quantile-early-timeout.md) |  | 2026-04-14 | 7KB | `bbb7eaec` |
+| [docs/reports/2026-04-15-quantile-ny-session.md](docs/reports/2026-04-15-quantile-ny-session.md) |  | 2026-04-15 | 5KB | `d34eabf2` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-14 | 2KB | `ed0769cc` |
 
 ## ML
@@ -141,6 +142,7 @@
 | [ML/benchmark_quantile_early_timeout.py](ML/benchmark_quantile_early_timeout.py) |  |  | 2026-04-14 | 17KB | `7a8acedc` |
 | [ML/benchmark_quantile_fav_composition.py](ML/benchmark_quantile_fav_composition.py) |  |  | 2026-04-14 | 15KB | `97a02b70` |
 | [ML/benchmark_quantile_forward_validation.py](ML/benchmark_quantile_forward_validation.py) |  |  | 2026-04-14 | 5KB | `a3386bcc` |
+| [ML/benchmark_quantile_ny_session.py](ML/benchmark_quantile_ny_session.py) |  |  | 2026-04-15 | 21KB | `d15b9a1d` |
 | [ML/benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) |  |  | 2026-04-14 | 4KB | `3ef3e057` |
 | [ML/compare_architectures.py](ML/compare_architectures.py) | Сравнение 4 архитектур | 🏁 | 2026-04-14 | 13KB | `103ded09` |
 | [ML/conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | 🏁 | 2026-04-14 | 14KB | `d34cb990` |
@@ -227,6 +229,9 @@
 | [ML/reports/quantile_fav_composition/validation_metrics.json](ML/reports/quantile_fav_composition/validation_metrics.json) |  |  | 2026-04-14 | 1KB | `7583bfeb` |
 | [ML/reports/quantile_forward_validation/run_metadata.json](ML/reports/quantile_forward_validation/run_metadata.json) |  |  | 2026-04-14 | 554B | `eeb46771` |
 | [ML/reports/quantile_forward_validation/summary.json](ML/reports/quantile_forward_validation/summary.json) |  |  | 2026-04-14 | 440B | `f208a93b` |
+| [ML/reports/quantile_ny_session/run_metadata.json](ML/reports/quantile_ny_session/run_metadata.json) |  |  | 2026-04-15 | 838B | `5ba42ca8` |
+| [ML/reports/quantile_ny_session/test_summary.json](ML/reports/quantile_ny_session/test_summary.json) |  |  | 2026-04-15 | 219B | `21d48be7` |
+| [ML/reports/quantile_ny_session/validation_summary.json](ML/reports/quantile_ny_session/validation_summary.json) |  |  | 2026-04-15 | 1KB | `2a6c0364` |
 | [ML/reports/reproducibility_report_12H.md](ML/reports/reproducibility_report_12H.md) |  |  | 2026-04-14 | 1KB | `c9af48ba` |
 | [ML/reports/tb_mt4_verdict/test_summary.json](ML/reports/tb_mt4_verdict/test_summary.json) |  |  | 2026-04-14 | 172B | `6ea3e9d3` |
 | [ML/reports/tb_mt4_verdict/validation_summary.json](ML/reports/tb_mt4_verdict/validation_summary.json) |  |  | 2026-04-14 | 167B | `cc2e7d34` |
@@ -292,6 +297,7 @@
 | [tests/test_benchmark_quantile_early_timeout.py](tests/test_benchmark_quantile_early_timeout.py) |  |  | 2026-04-14 | 13KB | `6a8d5a38` |
 | [tests/test_benchmark_quantile_fav_composition.py](tests/test_benchmark_quantile_fav_composition.py) |  |  | 2026-04-14 | 6KB | `e7f68596` |
 | [tests/test_benchmark_quantile_forward_validation.py](tests/test_benchmark_quantile_forward_validation.py) |  |  | 2026-04-14 | 6KB | `3dc6e7a3` |
+| [tests/test_benchmark_quantile_ny_session.py](tests/test_benchmark_quantile_ny_session.py) |  |  | 2026-04-15 | 10KB | `2faf3605` |
 | [tests/test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | ✅ | 2026-04-14 | 3KB | `abe2c2b4` |
 | [tests/test_entry_path_model.py](tests/test_entry_path_model.py) | `ML/models/entry_path_transformer.py` | ✅ | 2026-04-14 | 1KB | `e0f000fe` |
 | [tests/test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | ✅ | 2026-04-14 | 7KB | `7894f43c` |
@@ -640,9 +646,9 @@
 |------|-------------|----------|------|------|
 | [wiki/LLM Wiki_method.md](wiki/LLM Wiki_method.md) |  | 2026-04-14 | 11KB | `68a888b4` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-14 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-14 | 1KB | `694809a1` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-14 | 7KB | `bba40be0` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-14 | 27KB | `be26953a` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-15 | 1KB | `6c24e9b5` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-15 | 7KB | `77309057` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-15 | 28KB | `d21a31b7` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-14 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-14 | 18KB | `4bcfb243` |
 

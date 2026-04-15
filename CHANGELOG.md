@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-15] - Quantile NY session filter benchmark: validation gate fail
+
+### Добавлено
+- `ML/benchmark_quantile_ny_session.py`: validation-first benchmark для исключения NY-сессии поверх frozen `entry_path_v1_quantile`
+- `tests/test_benchmark_quantile_ny_session.py`: проверки session buckets, gate logic, frozen selection, CLI и artifact writing
+- `ML/reports/quantile_ny_session/`: артефакты benchmark (`validation_summary.json`, `test_summary.json`, `per_seed_summary.csv`, `yearly_breakdown.csv`, `run_metadata.json`)
+
+### Результаты
+- canonical validation baseline: `N=27`, `PF=12.1458`, `negative_year_slices=0`
+- filtered non-NY validation: `N=24`, `PF=41.2164`, `negative_year_slices=0`
+- validation gate verdict: `gate_fail`
+- причина: `filtered_n_trades=24 < 30`
+- frozen test не оценивался как verdict-stage и был помечен `skipped_due_to_validation_gate`
+
+### Вывод
+- `NY session exclusion` не проходит validation-first protocol как следующий execution uplift для `entry_path_v1_quantile`
+- exporter и MT4 parity не запускались, потому что Python gate не пройден
+- следующий shortlist-кандидат: `pred_adv12 <= Q75 cap`
+
 ## [2026-04-14] - Quantile early timeout benchmark: validation gate fail
 
 ### Добавлено

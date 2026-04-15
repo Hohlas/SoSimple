@@ -121,3 +121,13 @@
   - updated comparison table with closed `hold_bars=12` candidate
 - Updated `wiki/index.md` coverage from 17 to 18 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-14`, `sources: 18`
+
+## [2026-04-15] ingest | Quantile NY-session validation verdict synced into wiki
+- Added report `docs/reports/2026-04-15-quantile-ny-session.md`
+- Added benchmark `ML/benchmark_quantile_ny_session.py` and artifacts `ML/reports/quantile_ny_session/`
+- Updated `wiki/research/execution-tracks.md`:
+  - added NY-session validation verdict section
+  - clarified that PF uplift was strong but support failed the canonical gate
+  - updated comparison table and open question for next `pred_adv12 cap` candidate
+- Updated `wiki/index.md` coverage from 18 to 19 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-15`, `sources: 19`
