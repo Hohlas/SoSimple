@@ -4,7 +4,7 @@
 > **Status**: Completed — rejected by validation gate
 > **Goal**: Проверить, можно ли исключить NY-сессию из frozen `entry_path_v1_quantile` без изменения ML-сигнала и quantile rule
 > **Related plan/spec**: [plan](../superpowers/plans/2026-04-13-ny-session-filter.md), [spec](../superpowers/specs/2026-04-13-quantile-execution-improvement-design.md)
-> **Related commit**: pending
+> **Related commit**: d187c98
 
 ## Context
 
