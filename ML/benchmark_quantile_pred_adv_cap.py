@@ -5,8 +5,15 @@ from typing import Any
 
 import pandas as pd
 
+from ML.benchmark_quantile_ny_session import (
+    build_yearly_breakdown as _build_yearly_breakdown,
+    evaluate_split as _evaluate_split,
+    select_quantile_trades as _select_quantile_trades,
+)
+
 
 ADV_COLUMN = "pred_adv_12_atr"
+DEFAULT_PNL_COLUMN = "pnl_hold24_atr"
 GATE_MIN_TRADES = 30
 GATE_MIN_PF = 2.0
 GATE_MIN_SEED_PF = 1.0
@@ -49,6 +56,87 @@ def filter_by_adv_cap(frame: pd.DataFrame, threshold: float) -> pd.DataFrame:
         raise ValueError("threshold must be a finite number")
     values = _require_finite_series(_require_adv_column(frame))
     return frame.loc[values <= float(threshold)].copy()
+
+
+def select_frozen_quantile_trades(
+    frame: pd.DataFrame,
+    baseline_frame: pd.DataFrame,
+    selected_rule: dict[str, Any],
+) -> pd.DataFrame:
+    return _select_quantile_trades(
+        frame=frame,
+        baseline_frame=baseline_frame,
+        selected_rule=selected_rule,
+    )
+
+
+def build_yearly_breakdown(
+    frame: pd.DataFrame,
+    pnl_column: str = DEFAULT_PNL_COLUMN,
+    min_year_trades: int = 3,
+) -> tuple[pd.DataFrame, int]:
+    return _build_yearly_breakdown(
+        frame=frame,
+        pnl_column=pnl_column,
+        min_year_trades=min_year_trades,
+    )
+
+
+def evaluate_split(
+    frame: pd.DataFrame,
+    split: str,
+    pnl_column: str = DEFAULT_PNL_COLUMN,
+    min_year_trades: int = 3,
+) -> dict[str, Any]:
+    return _evaluate_split(
+        frame=frame,
+        split=split,
+        pnl_column=pnl_column,
+        min_year_trades=min_year_trades,
+    )
+
+
+def build_validation_first_adv_cap(
+    *,
+    validation_frame: pd.DataFrame,
+    validation_baseline_frame: pd.DataFrame,
+    test_frame: pd.DataFrame,
+    test_baseline_frame: pd.DataFrame,
+    selected_rule: dict[str, Any],
+    quantile: float = 0.75,
+) -> dict[str, Any]:
+    validation_selected = select_frozen_quantile_trades(
+        frame=validation_frame,
+        baseline_frame=validation_baseline_frame,
+        selected_rule=selected_rule,
+    )
+    validation_threshold = compute_adv_threshold(validation_selected, quantile=quantile)
+    validation_filtered = filter_by_adv_cap(validation_selected, threshold=validation_threshold)
+
+    test_selected = select_frozen_quantile_trades(
+        frame=test_frame,
+        baseline_frame=test_baseline_frame,
+        selected_rule=selected_rule,
+    )
+    test_filtered = filter_by_adv_cap(test_selected, threshold=validation_threshold)
+
+    return {
+        "validation_threshold": validation_threshold,
+        "validation_selected": validation_selected,
+        "validation_filtered": validation_filtered,
+        "test_selected": test_selected,
+        "test_filtered": test_filtered,
+        "validation_summary": evaluate_split(
+            validation_filtered,
+            split="validation",
+            pnl_column=DEFAULT_PNL_COLUMN,
+        ),
+        "test_summary": evaluate_split(
+            test_filtered,
+            split="test",
+            pnl_column=DEFAULT_PNL_COLUMN,
+        ),
+    }
 
 
 def decide_adv_cap_gate(
