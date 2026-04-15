@@ -11,5 +11,8 @@
       "Bash(python statistics/statistics.py DATA/Nero_train_labeled.csv)",
       "Bash(git branch:*)"
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }
