@@ -1,0 +1,6 @@
+{
+  "verdict": "relaxed_baseline_not_viable",
+  "target_trades": 64,
+  "candidate": null,
+  "max_trades_in_grid": 42
+}
