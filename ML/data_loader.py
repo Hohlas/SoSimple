@@ -853,7 +853,7 @@ def create_data_loaders(
         )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
-    if use_weighted_sampler and not regression and not entry_path:
+    if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile:
         # Рассчитываем веса: 1 / freq(class)
         if binary_classification:
             y_train_mapped = y_train.astype(np.int64)

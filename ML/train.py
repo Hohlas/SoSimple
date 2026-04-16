@@ -889,6 +889,25 @@ def _pinball_loss_torch(preds: torch.Tensor, targets: torch.Tensor, quantile: fl
     return torch.maximum(quantile * diff, (quantile - 1.0) * diff)
 
 
+def _order_trailing_stop_quantiles(
+    pred_q10: np.ndarray,
+    pred_q50: np.ndarray,
+    pred_q90: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ordered = np.sort(
+        np.stack(
+            [
+                np.asarray(pred_q10, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q50, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q90, dtype=np.float64).reshape(-1),
+            ],
+            axis=1,
+        ),
+        axis=1,
+    )
+    return ordered[:, 0], ordered[:, 1], ordered[:, 2]
+
+
 def compute_trailing_stop_target_quantile_losses(
     outputs: dict[str, torch.Tensor],
     y_batch: torch.Tensor,
@@ -965,9 +984,11 @@ def validate_trailing_stop_target_quantile(
         all_q90.append(outputs['q90'].cpu().numpy())
 
     true_target = np.concatenate(all_targets).reshape(-1)
-    pred_q10 = np.concatenate(all_q10).reshape(-1)
-    pred_q50 = np.concatenate(all_q50).reshape(-1)
-    pred_q90 = np.concatenate(all_q90).reshape(-1)
+    pred_q10, pred_q50, pred_q90 = _order_trailing_stop_quantiles(
+        np.concatenate(all_q10),
+        np.concatenate(all_q50),
+        np.concatenate(all_q90),
+    )
 
     metrics = compute_trailing_stop_quantile_metrics(
         true_target=true_target,
@@ -1086,7 +1107,7 @@ def train_model(
         batch_size=batch_size,
         target=target_col,
         use_scaler=use_scaler,
-        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier) else False,
+        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier or trailing_stop_quantile) else False,
         seq_len=seq_len,
         clear_cache=clear_cache,
     )

@@ -48,7 +48,7 @@ def test_build_export_frame_orders_crossed_quantiles():
     assert frame.loc[0, 'true_trail_48_pnl_atr_x3'] == 0.3
 
 
-def test_compute_quantile_metrics_rejects_crossed_bounds():
+def test_compute_quantile_metrics_still_rejects_crossed_bounds_at_raw_contract_level():
     with pytest.raises(ValueError, match='must satisfy q10 <= q50 <= q90'):
         compute_trailing_stop_quantile_metrics(
             true_target=np.array([0.0, 1.0], dtype=np.float32),
@@ -150,6 +150,7 @@ def test_train_model_routes_trailing_stop_quantile_to_quantile_path(monkeypatch,
 
     def fake_create_data_loaders(*args, **kwargs):
         calls['create_data_target'] = kwargs['target']
+        calls['use_weighted_sampler'] = kwargs['use_weighted_sampler']
         return ['train-batch'], ['val-batch'], None
 
     monkeypatch.setattr(train, 'CHECKPOINTS_DIR', tmp_path / 'checkpoints')
@@ -185,13 +186,14 @@ def test_train_model_routes_trailing_stop_quantile_to_quantile_path(monkeypatch,
         epochs=1,
         batch_size=2,
         use_scaler=False,
-        use_weighted_sampler=False,
+        use_weighted_sampler=True,
         seq_len=20,
         silent=True,
         clear_cache=True,
     )
 
     assert calls['create_data_target'] == TRAILING_STOP_TARGET_QUANTILE_TARGET
+    assert calls['use_weighted_sampler'] is False
     assert result['task'] == TRAILING_STOP_TARGET_QUANTILE_TARGET
     assert result['metric_name'] == 'val_score'
     assert result['best_metric'] == pytest.approx(0.7)
@@ -218,9 +220,9 @@ def test_run_evaluation_uses_trailing_stop_quantile_export_branch(monkeypatch, t
             batch = x.shape[0]
             base = torch.arange(batch, dtype=torch.float32, device=x.device).unsqueeze(1)
             return {
-                'q10': base + 0.1 + self.bias,
+                'q10': base + 0.3 + self.bias,
                 'q50': base + 0.2 + self.bias,
-                'q90': base + 0.3 + self.bias,
+                'q90': base + 0.1 + self.bias,
             }
 
     fake_model = FakeQuantileModel()
@@ -291,6 +293,52 @@ def test_run_evaluation_uses_trailing_stop_quantile_export_branch(monkeypatch, t
     )
 
     assert calls['create_test_loader_seq_len'] == 20
+
+
+def test_validate_trailing_stop_target_quantile_orders_crossed_heads_before_metrics(monkeypatch):
+    captured = {}
+
+    def spy_metrics(**kwargs):
+        captured.update(kwargs)
+        return {
+            'q10_pinball_loss': 0.1,
+            'q50_pinball_loss': 0.2,
+            'q90_pinball_loss': 0.3,
+            'q50_mae': 0.4,
+            'q50_pearson_r': 0.5,
+            'interval_coverage': 0.6,
+            'median_interval_width': 0.7,
+        }
+
+    class FakeQuantileModel(nn.Module):
+        def forward(self, x, mask=None):
+            return {
+                'q10': torch.tensor([[0.8], [0.7]], dtype=torch.float32),
+                'q50': torch.tensor([[0.4], [0.5]], dtype=torch.float32),
+                'q90': torch.tensor([[0.1], [0.3]], dtype=torch.float32),
+            }
+
+    monkeypatch.setattr(train, 'compute_trailing_stop_quantile_metrics', spy_metrics)
+    loader = torch.utils.data.DataLoader(
+        torch.utils.data.TensorDataset(
+            torch.zeros((2, 20, 20), dtype=torch.float32),
+            torch.tensor([0.2, 0.6], dtype=torch.float32),
+            torch.ones((2, 20), dtype=torch.bool),
+        ),
+        batch_size=2,
+    )
+
+    loss, metrics = train.validate_trailing_stop_target_quantile(
+        model=FakeQuantileModel(),
+        val_loader=loader,
+        device=torch.device('cpu'),
+    )
+
+    assert loss >= 0.0
+    assert metrics['val_score'] == pytest.approx(0.5)
+    assert captured['pred_q10'].tolist() == pytest.approx([0.1, 0.3])
+    assert captured['pred_q50'].tolist() == pytest.approx([0.4, 0.5])
+    assert captured['pred_q90'].tolist() == pytest.approx([0.8, 0.7])
 
 
 def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop_quantile(monkeypatch, tmp_path):

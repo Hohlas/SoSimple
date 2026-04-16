@@ -75,6 +75,25 @@ def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) 
     return TrailingStopTargetQuantileTransformer(**(model_kwargs or {}))
 
 
+def _order_trailing_stop_quantiles(
+    pred_q10: np.ndarray,
+    pred_q50: np.ndarray,
+    pred_q90: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ordered = np.sort(
+        np.stack(
+            [
+                np.asarray(pred_q10, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q50, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q90, dtype=np.float64).reshape(-1),
+            ],
+            axis=1,
+        ),
+        axis=1,
+    )
+    return ordered[:, 0], ordered[:, 1], ordered[:, 2]
+
+
 def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
     required = {
         'ret_6_dir_atr',
@@ -406,11 +425,16 @@ def run_evaluation(
         pred_q50 = np.concatenate(all_q50)
         pred_q90 = np.concatenate(all_q90)
         true_target = np.concatenate(all_true).reshape(-1)
+        ordered_q10, ordered_q50, ordered_q90 = _order_trailing_stop_quantiles(
+            pred_q10,
+            pred_q50,
+            pred_q90,
+        )
         metrics = compute_trailing_stop_quantile_metrics(
             true_target=true_target,
-            pred_q10=pred_q10.reshape(-1),
-            pred_q50=pred_q50.reshape(-1),
-            pred_q90=pred_q90.reshape(-1),
+            pred_q10=ordered_q10,
+            pred_q50=ordered_q50,
+            pred_q90=ordered_q90,
         )
         metrics['val_score'] = metrics['q50_pearson_r']
 
