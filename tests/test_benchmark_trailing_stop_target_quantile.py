@@ -80,6 +80,22 @@ def test_candidate_table_fails_on_malformed_time_rows():
         build_candidate_table(frame)
 
 
+def test_candidate_table_fails_on_malformed_inactive_time_rows():
+    frame = pd.DataFrame(
+        {
+            'time': ['2025.01.01 00:00', 'not-a-date'],
+            'signal': [1, 0],
+            'pred_trail_48_pnl_atr_x3_q10': [0.3, -0.4],
+            'pred_trail_48_pnl_atr_x3_q50': [0.7, 0.1],
+            'pred_trail_48_pnl_atr_x3_q90': [1.1, 0.5],
+            'true_trail_48_pnl_atr_x3': [2.0, 0.0],
+        }
+    )
+
+    with pytest.raises(ValueError, match='unparseable time'):
+        build_candidate_table(frame)
+
+
 def test_candidate_table_uses_full_split_coverage_for_trades_per_year():
     frame = pd.DataFrame(
         {
@@ -97,6 +113,25 @@ def test_candidate_table_uses_full_split_coverage_for_trades_per_year():
 
     assert q10_gt_zero['trades'] == 1
     assert q10_gt_zero['trades_per_year'] == pytest.approx(0.5)
+
+
+def test_candidate_table_inactive_boundary_rows_extend_split_coverage():
+    frame = pd.DataFrame(
+        {
+            'time': ['2024.01.01 00:00', '2025.01.01 00:00', '2026.01.01 00:00'],
+            'signal': [0, 1, 0],
+            'pred_trail_48_pnl_atr_x3_q10': [-0.4, 0.4, -0.5],
+            'pred_trail_48_pnl_atr_x3_q50': [0.0, 0.8, 0.0],
+            'pred_trail_48_pnl_atr_x3_q90': [0.5, 1.2, 0.4],
+            'true_trail_48_pnl_atr_x3': [0.0, 1.0, 0.0],
+        }
+    )
+
+    table = build_candidate_table(frame, q10_quantiles=(), include_spread_score=False)
+    q10_gt_zero = table.loc[table['candidate'] == 'q10_gt_zero'].iloc[0]
+
+    assert q10_gt_zero['trades'] == 1
+    assert q10_gt_zero['trades_per_year'] == pytest.approx(1.0 / 3.0)
 
 
 def test_summarize_candidate_fails_when_true_column_is_missing():

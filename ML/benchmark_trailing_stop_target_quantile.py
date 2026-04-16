@@ -153,8 +153,8 @@ def build_candidate_table(
     q10_quantiles: tuple[float, ...] = DEFAULT_Q10_QUANTILES,
     include_spread_score: bool = True,
 ) -> pd.DataFrame:
+    coverage_years = _coverage_years(frame)
     active = _active_rows(frame)
-    coverage_years = _coverage_years(active)
     rows = [
         summarize_candidate(active, candidate='q10_gt_zero', threshold=0.0, true_col=true_col, coverage_years=coverage_years),
         summarize_candidate(active, candidate='q10_q50_positive', threshold=0.0, true_col=true_col, coverage_years=coverage_years),
