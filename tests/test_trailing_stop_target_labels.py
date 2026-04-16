@@ -30,9 +30,9 @@ def test_label_trailing_stop_targets_adds_x2_x3_x5_columns():
 
 def test_simulate_trailing_stop_exit_buy_closes_on_retrace_from_best_high():
     bars = [
-        {'high': 105.0, 'low': 99.0, 'close': 104.0},
+        {'high': 105.0, 'low': 100.0, 'close': 104.0},
         {'high': 112.0, 'low': 103.0, 'close': 111.0},
-        {'high': 110.0, 'low': 101.0, 'close': 102.0},
+        {'high': 110.0, 'low': 105.0, 'close': 102.0},
     ]
 
     pnl_atr = ls.simulate_trailing_stop_exit(
@@ -44,3 +44,19 @@ def test_simulate_trailing_stop_exit_buy_closes_on_retrace_from_best_high():
     )
 
     assert pnl_atr == 3.0
+
+
+def test_simulate_trailing_stop_exit_buy_stops_on_same_bar_retrace_after_new_high():
+    bars = [
+        {'high': 103.0, 'low': 100.0, 'close': 102.0},
+    ]
+
+    pnl_atr = ls.simulate_trailing_stop_exit(
+        bars=bars,
+        direction=1,
+        entry_price=100.0,
+        atr=1.0,
+        trail_atr=2.0,
+    )
+
+    assert pnl_atr == 1.0
