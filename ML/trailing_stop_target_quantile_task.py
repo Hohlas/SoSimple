@@ -13,6 +13,22 @@ def split_trailing_stop_quantile_target(df: pd.DataFrame) -> np.ndarray:
     return df[[TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN]].values.astype(np.float32)
 
 
+def _as_1d_vector(name: str, array, expected_rows: int | None = None) -> np.ndarray:
+    values = np.asarray(array)
+    if values.ndim == 1:
+        result = values
+    elif values.ndim == 2 and values.shape[1] == 1:
+        result = values.reshape(-1)
+    else:
+        shape = tuple(values.shape)
+        raise ValueError(f'{name} must have shape (n, 1) or (n,); got shape {shape}')
+    if expected_rows is not None and len(result) != expected_rows:
+        if name == 'signals':
+            raise ValueError('signals must have the same length as times')
+        raise ValueError(f'{name} must have the same row count as times')
+    return result
+
+
 def build_trailing_stop_quantile_export_frame(
     times,
     signals,
@@ -21,17 +37,23 @@ def build_trailing_stop_quantile_export_frame(
     pred_q90,
     true=None,
 ) -> pd.DataFrame:
-    pred_q10 = np.asarray(pred_q10, dtype=np.float32).reshape(-1)
-    pred_q50 = np.asarray(pred_q50, dtype=np.float32).reshape(-1)
-    pred_q90 = np.asarray(pred_q90, dtype=np.float32).reshape(-1)
-    ordered = np.sort(np.stack([pred_q10, pred_q50, pred_q90], axis=1), axis=1)
+    times = _as_1d_vector('times', times)
+    signals = _as_1d_vector('signals', signals, expected_rows=len(times))
+    pred_q10 = _as_1d_vector('pred_q10', pred_q10, expected_rows=len(times)).astype(np.float32)
+    pred_q50 = _as_1d_vector('pred_q50', pred_q50, expected_rows=len(times)).astype(np.float32)
+    pred_q90 = _as_1d_vector('pred_q90', pred_q90, expected_rows=len(times)).astype(np.float32)
 
     frame = pd.DataFrame({'time': times, 'signal': signals})
+    frame[f'{TRAILING_STOP_TARGET_QUANTILE_Q10_COLUMN}_raw'] = pred_q10
+    frame[f'{TRAILING_STOP_TARGET_QUANTILE_Q50_COLUMN}_raw'] = pred_q50
+    frame[f'{TRAILING_STOP_TARGET_QUANTILE_Q90_COLUMN}_raw'] = pred_q90
+    ordered = np.sort(np.stack([pred_q10, pred_q50, pred_q90], axis=1), axis=1)
     frame[TRAILING_STOP_TARGET_QUANTILE_Q10_COLUMN] = ordered[:, 0]
     frame[TRAILING_STOP_TARGET_QUANTILE_Q50_COLUMN] = ordered[:, 1]
     frame[TRAILING_STOP_TARGET_QUANTILE_Q90_COLUMN] = ordered[:, 2]
     if true is not None:
-        frame[f'true_{TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN}'] = np.asarray(true, dtype=np.float32).reshape(-1)
+        true = _as_1d_vector('true', true, expected_rows=len(times)).astype(np.float32)
+        frame[f'true_{TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN}'] = true
     return frame
 
 

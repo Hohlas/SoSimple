@@ -28,6 +28,9 @@ def test_build_export_frame_orders_crossed_quantiles():
         true=np.array([[0.3]], dtype=np.float32),
     )
 
+    assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q10_raw'] == 0.8
+    assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q50_raw'] == 0.4
+    assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q90_raw'] == 0.1
     assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q10'] == 0.1
     assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q50'] == 0.4
     assert frame.loc[0, 'pred_trail_48_pnl_atr_x3_q90'] == 0.8
@@ -41,4 +44,34 @@ def test_compute_quantile_metrics_rejects_crossed_bounds():
             pred_q10=np.array([0.5, 0.8], dtype=np.float32),
             pred_q50=np.array([0.4, 0.7], dtype=np.float32),
             pred_q90=np.array([0.3, 0.6], dtype=np.float32),
+        )
+
+
+def test_build_export_frame_rejects_mismatched_row_counts():
+    with pytest.raises(ValueError, match='signals must have the same length as times'):
+        build_trailing_stop_quantile_export_frame(
+            times=np.array(['2026.01.01 00:00']),
+            signals=np.array([1, -1]),
+            pred_q10=np.array([[0.1]], dtype=np.float32),
+            pred_q50=np.array([[0.2]], dtype=np.float32),
+            pred_q90=np.array([[0.3]], dtype=np.float32),
+        )
+
+    with pytest.raises(ValueError, match='pred_q10 must have shape'):
+        build_trailing_stop_quantile_export_frame(
+            times=np.array(['2026.01.01 00:00']),
+            signals=np.array([1]),
+            pred_q10=np.array([[0.1, 0.2]], dtype=np.float32),
+            pred_q50=np.array([[0.2]], dtype=np.float32),
+            pred_q90=np.array([[0.3]], dtype=np.float32),
+        )
+
+    with pytest.raises(ValueError, match='true must have the same row count as times'):
+        build_trailing_stop_quantile_export_frame(
+            times=np.array(['2026.01.01 00:00']),
+            signals=np.array([1]),
+            pred_q10=np.array([[0.1]], dtype=np.float32),
+            pred_q50=np.array([[0.2]], dtype=np.float32),
+            pred_q90=np.array([[0.3]], dtype=np.float32),
+            true=np.array([[0.4], [0.5]], dtype=np.float32),
         )
