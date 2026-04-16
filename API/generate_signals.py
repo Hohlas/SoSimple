@@ -57,8 +57,13 @@ from ML.entry_path_task import (
     build_entry_path_export_frame,
     build_entry_path_model,
 )
+from ML.trailing_stop_target_quantile_task import (
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    build_trailing_stop_quantile_export_frame,
+)
 from ML.trailing_stop_target_task import build_trailing_stop_export_frame
 from ML.models import get_model
+from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
@@ -82,8 +87,12 @@ DEFAULT_THETA = 2.665
 DEFAULT_OPTUNA_JSON = str(REPORTS_DIR / 'optuna_best_params_transformer_regression_updn.json')
 
 
+def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) -> TrailingStopTargetQuantileTransformer:
+    return TrailingStopTargetQuantileTransformer(**(model_kwargs or {}))
+
+
 def resolve_optuna_json(task: str, optuna_json: str | None) -> str | None:
-    if task == TRAILING_STOP_TARGET:
+    if task in {TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_QUANTILE_TARGET}:
         if not optuna_json:
             return None
         if Path(optuna_json) == Path(DEFAULT_OPTUNA_JSON):
@@ -339,6 +348,7 @@ def generate_signals(
     seed: int = 42,
     conformal: bool = False,
     research_out_prefix: str = '',
+    seq_len_override: int | None = None,
 ):
     """Полный pipeline: загрузка модели → инференс → запись CSV."""
 
@@ -380,6 +390,7 @@ def generate_signals(
 
     ckpt_model_name = ckpt.get('model_name', model_name)
     num_classes = ckpt.get('num_classes', 1)
+    seq_len = int(seq_len_override if seq_len_override is not None else ckpt.get('seq_len', 20))
     model_kwargs = ckpt.get('model_kwargs', {})
 
     # Загрузка параметров Optuna
@@ -392,12 +403,12 @@ def generate_signals(
                 model_kwargs[k] = best_params[k]
         print(f"  📥 Optuna параметры из {Path(effective_optuna_json).name}")
 
-    seq_len = model_kwargs.get('seq_len', 20)
-
     if task == ENTRY_PATH_TARGET:
         model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
         entry_model_name = ckpt_model_name if ckpt_model_name in ENTRY_PATH_MODEL_NAMES else 'transformer'
         model = build_entry_path_model(entry_model_name, model_kwargs)
+    elif task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        model = build_trailing_stop_target_quantile_model(model_kwargs)
     else:
         model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -524,6 +535,59 @@ def generate_signals(
         print(f"{'═' * 60}\n")
         return
 
+    if task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        if not research_out_prefix:
+            raise ValueError('Для trailing_stop_target_quantile_v1 нужен --research-out-prefix')
+
+        prefix_path = Path(research_out_prefix)
+        prefix_path.parent.mkdir(parents=True, exist_ok=True)
+
+        print(f"  🔬 Research export prefix: {prefix_path}")
+        _train_loader, val_loader, _scaler = create_data_loaders(
+            batch_size=256,
+            target=TRAILING_STOP_TARGET_QUANTILE_TARGET,
+            use_scaler=False,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+        test_loader = create_test_loader(
+            batch_size=256,
+            target=TRAILING_STOP_TARGET_QUANTILE_TARGET,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+
+        for split_name, loader, csv_path in [
+            ('validation', val_loader, VAL_FILE),
+            ('test', test_loader, TEST_FILE),
+        ]:
+            df_full = pd.read_csv(csv_path, sep=CSV_SEP, low_memory=False)
+            all_q10 = []
+            all_q50 = []
+            all_q90 = []
+
+            with torch.no_grad():
+                for X_batch, _y_batch, mask_batch in loader:
+                    outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+                    all_q10.append(outputs['q10'].cpu().numpy())
+                    all_q50.append(outputs['q50'].cpu().numpy())
+                    all_q90.append(outputs['q90'].cpu().numpy())
+
+            export = build_trailing_stop_quantile_export_frame(
+                times=df_full['time'].values,
+                signals=df_full['signal'].values.astype(int),
+                pred_q10=np.concatenate(all_q10),
+                pred_q50=np.concatenate(all_q50),
+                pred_q90=np.concatenate(all_q90),
+                true=df_full['trail_48_pnl_atr_x3'].values.astype(np.float32),
+            )
+            output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
+            export.to_csv(output_path, sep=';', index=False)
+            print(f"  ✅ {split_name}: {len(export)} строк -> {output_path}")
+
+        print(f"{'═' * 60}\n")
+        return
+
     # ── Обработка каждого датасета ───────────────────────────────────────────
     target_col = TRAILING_STOP_TARGET if task == TRAILING_STOP_TARGET else (
         UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
@@ -619,7 +683,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default=DEFAULT_TASK,
-        choices=['regression', 'regression_updn', 'triple_barrier', ENTRY_PATH_TARGET, TRAILING_STOP_TARGET],
+        choices=[
+            'regression',
+            'regression_updn',
+            'triple_barrier',
+            ENTRY_PATH_TARGET,
+            TRAILING_STOP_TARGET,
+            TRAILING_STOP_TARGET_QUANTILE_TARGET,
+        ],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
     parser.add_argument(

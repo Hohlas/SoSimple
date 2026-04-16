@@ -52,6 +52,10 @@ from ML.entry_path_task import (
     split_entry_path_targets,
 )
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
+from ML.trailing_stop_target_quantile_task import (
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    split_trailing_stop_quantile_target,
+)
 from ML.trailing_stop_target_task import (
     TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_COLUMNS,
@@ -107,6 +111,7 @@ TASK_TARGET_COLUMNS = {
     TRADE_PNL_TARGET: TRADE_PNL_COLUMN,
     ARCHETYPE_TARGET: ARCHETYPE_COLUMN,
     TRAILING_STOP_TARGET: TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET: TRAILING_STOP_TARGET_QUANTILE_TARGET,
 }
 
 BINARY_CLASSIFICATION_TARGETS = {
@@ -128,6 +133,7 @@ SIGNAL_ONLY_TARGET_COLUMNS = {
 SINGLE_REGRESSION_COLUMNS = {
     REGRESSION_TARGET,
     TRADE_PNL_COLUMN,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
 }
 
 TASK_CHECKPOINT_SUFFIXES = {
@@ -135,6 +141,7 @@ TASK_CHECKPOINT_SUFFIXES = {
     TRADE_PNL_TARGET: '_trade_pnl_reg',
     ARCHETYPE_TARGET: '_signal_archetype_cls',
     TRAILING_STOP_TARGET: '_trailing_stop_target_v1',
+    TRAILING_STOP_TARGET_QUANTILE_TARGET: '_trailing_stop_target_quantile_v1',
 }
 
 BINARY_LABEL_MAP = {0: 0, 1: 1}
@@ -160,6 +167,8 @@ def task_target_column(task: str) -> str:
         return ENTRY_PATH_TARGET
     if task == UPDN_REGRESSION_TARGET:
         return UPDN_REGRESSION_TARGET
+    if task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        return TRAILING_STOP_TARGET_QUANTILE_TARGET
     if task == TRAILING_STOP_TARGET:
         return TRAILING_STOP_TARGET
     if task == REGRESSION_TARGET:
@@ -577,6 +586,7 @@ def create_data_loaders(
     entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
+    trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
 
     def load_or_parse_data(
         csv_file: Path,
@@ -680,6 +690,14 @@ def create_data_loaders(
                                 f.unlink()
                         else:
                             return X, mask, y
+                    elif trailing_stop_quantile:
+                        y = np.load(y_path)
+                        if y.ndim != 1 or len(y) != len(X):
+                            print(f"  🔄 Кэш {prefix} trailing_stop_target_quantile_v1 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, y
                     else:
                         y = np.load(y_path)
                         return X, mask, y
@@ -702,6 +720,8 @@ def create_data_loaders(
             y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
         elif trailing_stop:
             y = split_trailing_stop_targets(df)
+        elif trailing_stop_quantile:
+            y = split_trailing_stop_quantile_target(df).reshape(-1)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
@@ -906,6 +926,7 @@ def create_test_loader(
     entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
+    trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
     prefix = 'test'
     missing_entry_path_labels = False
 
@@ -1020,6 +1041,24 @@ def create_test_loader(
                             label_map=None,
                         )
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                elif trailing_stop_quantile:
+                    y = np.load(y_path)
+                    if y.ndim != 1 or len(y) != len(X):
+                        print(f"  🔄 Кэш {prefix} trailing_stop_target_quantile_v1 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+                        dataset = FractalSequenceDataset(
+                            X,
+                            y,
+                            mask,
+                            regression=True,
+                            label_map=None,
+                        )
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 else:
                     y = np.load(y_path)
 
@@ -1056,6 +1095,8 @@ def create_test_loader(
             engineered = split_entry_path_features(df)
     elif trailing_stop:
         y = split_trailing_stop_targets(df)
+    elif trailing_stop_quantile:
+        y = split_trailing_stop_quantile_target(df).reshape(-1)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
@@ -1085,6 +1126,8 @@ def create_test_loader(
             np.save(y_cls_path, y_cls)
         np.save(signal_path, signal)
     elif trailing_stop:
+        np.save(y_path, y)
+    elif trailing_stop_quantile:
         np.save(y_path, y)
     else:
         np.save(y_path, y)
