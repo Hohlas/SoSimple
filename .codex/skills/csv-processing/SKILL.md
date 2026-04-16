@@ -3,7 +3,7 @@ name: csv-processing
 description: Use when working with CSV files - reading, exploring, analyzing large datasets
 ---
 
-# Работа с CSV файлами (Codex-friendly)
+# Работа с CSV файлами
 
 ## Когда использовать
 - Любая задача с `*.csv`.
@@ -16,11 +16,13 @@ description: Use when working with CSV files - reading, exploring, analyzing lar
 ## Workflow
 
 ### 1) Быстрый обзор
+
+Получить количество строк (инструмент **Bash**):
 ```bash
 wc -l MT/MQL4/Files/Nero.csv
-head -n 10 MT/MQL4/Files/Nero.csv
 ```
 
+Прочитать первые 10 строк (инструмент **Read** с `limit=10`):
 ```python
 import pandas as pd
 

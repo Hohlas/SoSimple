@@ -1,6 +1,6 @@
 ---
 name: wiki
-description: Use for wiki operations — ingest reports into synthesis pages, save new concepts, query wiki for context, lint pages for staleness, regenerate REPO_integrity.md
+description: Use when working with the project wiki layer — new reports in docs/reports/ are not yet covered in wiki/index.md, a new concept needs to be saved, session needs wiki context, pages may be stale, or REPO_integrity.md needs to be regenerated
 ---
 
 # Wiki Operations

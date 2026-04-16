@@ -1,6 +1,6 @@
 ---
 name: update-docs-on-code-change
-description: Run explicitly when user requests: sync docs, обнови документацию, обнови доки, check docs, create module, doc this, document file, new script
+description: Use when code files change and documentation needs to stay in sync — file headers, docs/, MODULE_INDEX.md, or DATA_FLOW.md are stale relative to implementation
 ---
 
 # Синхронизация документации (Codex-friendly)
@@ -73,13 +73,30 @@ git diff --name-only -- '*.py' '*.mq4' '*.mqh' '*.ipynb' '*.md'
 3. Добавить модуль в `MODULE_INDEX.md`.
 4. При необходимости добавить шаг в `docs/DATA_FLOW.md`.
 
+## Режим 4) `rebuild index` / полная пересборка MODULE_INDEX.md
+
+Используется при добавлении нескольких файлов или явном запросе пересборки индекса.
+
+1. Собрать список кодовых файлов инструментом **Glob** с паттернами:
+   - `**/*.py`, `**/*.mq4`, `**/*.mqh`, `**/*.ipynb`
+   - исключить: `.venv/`, `__pycache__/`, `.git/`, `docs/archive/`
+2. Для каждого файла извлечь минимум метаданных из file header:
+   - `Назначение` — первая строка описания
+   - `Вход → Выход` — из header или `-`
+   - `Docs` — путь по шаблону `docs/<category>/<file>.md` (только если файл существует)
+3. Обновить таблицы по директориям в `MODULE_INDEX.md`:
+   - Секции: `processing`, `statistics`, `API`, `MT/MQL4`, `ML`
+   - Колонки: `Модуль | Назначение | Вход → Выход | Docs | Статус`
+4. Валидация инструментом **Grep**: найти строки `^\| \[` в `MODULE_INDEX.md` — проверить отсутствие битых ссылок.
+
+Правила:
+- Не придумывать статусы: переносить из текущего `MODULE_INDEX.md` или ставить `⚠️`.
+- Если header неполный — ставить `-`, не блокировать обновление.
+- Неоднозначный статус явно помечать `⚠️` и сообщать пользователю.
+
 ## Правила качества
 - Не дублировать подробные docstrings в `.md`; в `.md` оставлять обзор и ссылки.
 - Не писать в `CHANGELOG.md` только из-за правок docs.
-- Проверять размер документов:
-```bash
-wc -l docs/**/*.md
-```
 
 ## Common mistakes
 | Ошибка | Исправление |

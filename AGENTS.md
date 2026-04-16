@@ -16,7 +16,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 ## Обязательные правила
 - Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md
-- При добавлении нового файла добавить его в индекс, используя скилл ['.codex/skills/rebuild-module-index/SKILL.md'](.codex/skills/rebuild-module-index/SKILL.md)
+- При добавлении нового файла добавить его в индекс: использовать Mode 4 скилла [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md)
 - Рутинная синхронизация после каждого изменения кода [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md).
 - Не загружать в контекст файлы больше 1MB целиком.
 - Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
@@ -27,6 +27,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - `git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
 - При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
+- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)).
 
 
 ## Память проекта
@@ -43,8 +44,11 @@ ML-бот для прогнозирования разворотов Forex (H1).
 | `docs/DATA_FLOW.md` | Схема потока данных MT4→ML→MT4 и навигация по этапам pipeline | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) |
 | `.claude/memory/` | Стабильные правила, предпочтения, долгоживущие инварианты | [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) |
 
-**В начале каждой сессии читать**: `wiki/index.md` → `CONTEXT_HANDOFF.md` → через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
-Для операций с вики (ingest, save, lint) — см. `.codex/skills/wiki/SKILL.md`.
+**В начале каждой сессии** (wiki Query-workflow, см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)):
+1. Прочитай `wiki/index.md` — понять существующий синтез.
+2. Прочитай `CONTEXT_HANDOFF.md` — текущее состояние и следующий шаг.
+3. Через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
+4. Если новые отчёты из `docs/reports/` не покрыты в `wiki/index.md` → выполнить wiki **Ingest**.
 
 ## Приоритет источников
 1. Явный запрос пользователя в текущем диалоге.

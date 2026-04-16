@@ -3,7 +3,7 @@ name: stage-reporting
 description: Use when the user explicitly asks to close a project stage, prepare a stage report, or sync report, changelog, and handoff after a completed work phase
 ---
 
-# Отчёт По Этапу
+# Отчёт по этапу
 
 Workflow для фиксации завершённого этапа без потери контекста.
 
@@ -52,7 +52,7 @@ Workflow для фиксации завершённого этапа без по
 ### Добавлено/Изменено/Исправлено
 ### Результаты
 ### Вывод
-[YYYY-MM-DD-topic](docs/reports/YYYY-MM-DD-topic.md)
+<!-- ссылка на отчёт: docs/reports/YYYY-MM-DD-topic.md -->
 
 ```
 

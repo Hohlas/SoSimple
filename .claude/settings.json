@@ -9,7 +9,10 @@
       "Bash(python3:*)",
       "Bash(source .venv/bin/activate)",
       "Bash(python statistics/statistics.py DATA/Nero_train_labeled.csv)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Edit(/.claude/skills/csv-processing/**)",
+      "Edit(/.claude/skills/jupyter-processing/**)",
+      "Edit(/.claude/skills/wiki/**)"
     ]
   },
   "enabledPlugins": {

@@ -3,7 +3,7 @@ name: jupyter-processing
 description: Use when working with Jupyter notebooks - creating, editing, cleaning outputs, exporting, or executing notebooks
 ---
 
-# Работа с Jupyter Notebooks (Codex-friendly)
+# Работа с Jupyter Notebooks
 
 ## Когда использовать
 - Любые задачи по `*.ipynb`: запуск, очистка output, экспорт в `.py`/`.md`.
