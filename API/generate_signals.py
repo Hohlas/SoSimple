@@ -80,6 +80,20 @@ DEFAULT_TASK = 'regression_updn'
 DEFAULT_HORIZON = 12
 DEFAULT_THETA = 2.665
 DEFAULT_OPTUNA_JSON = str(REPORTS_DIR / 'optuna_best_params_transformer_regression_updn.json')
+
+
+def resolve_optuna_json(task: str, optuna_json: str | None) -> str | None:
+    if task == TRAILING_STOP_TARGET:
+        if not optuna_json:
+            return None
+        if Path(optuna_json) == Path(DEFAULT_OPTUNA_JSON):
+            return None
+        return optuna_json if Path(optuna_json).exists() else None
+    if optuna_json is None:
+        return DEFAULT_OPTUNA_JSON
+    return optuna_json if Path(optuna_json).exists() else None
+
+
 def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
     required = {
         'ret_6_dir_atr',
@@ -352,6 +366,8 @@ def generate_signals(
         print(f"  🛡️  Conformal Prediction: ON (alpha={cp_data['alpha']})")
     print(f"{'═' * 60}")
 
+    effective_optuna_json = resolve_optuna_json(task, optuna_json)
+
     # ── Загрузка чекпоинта ───────────────────────────────────────────────────
     suffix = task_checkpoint_suffix(task)
     ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
@@ -367,14 +383,14 @@ def generate_signals(
     model_kwargs = ckpt.get('model_kwargs', {})
 
     # Загрузка параметров Optuna
-    if task != ENTRY_PATH_TARGET and optuna_json and Path(optuna_json).exists():
-        with open(optuna_json, 'r', encoding='utf-8') as f:
+    if task != ENTRY_PATH_TARGET and effective_optuna_json:
+        with open(effective_optuna_json, 'r', encoding='utf-8') as f:
             optuna_data = json.load(f)
         best_params = optuna_data.get('best_params', {})
         for k in ['hidden_size', 'num_layers', 'dropout', 'input_features']:
             if k in best_params:
                 model_kwargs[k] = best_params[k]
-        print(f"  📥 Optuna параметры из {Path(optuna_json).name}")
+        print(f"  📥 Optuna параметры из {Path(effective_optuna_json).name}")
 
     seq_len = model_kwargs.get('seq_len', 20)
 
