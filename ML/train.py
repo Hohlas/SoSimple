@@ -100,6 +100,10 @@ from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
     compute_entry_path_v1_quantile_metrics,
 )
+from ML.trailing_stop_target_task import (
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+)
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
 from ML.models.entry_path_v1_quantile_transformer import EntryPathV1QuantileTransformer
@@ -276,6 +280,7 @@ def validate_regression(
     val_loader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     device: torch.device,
+    target_names: list[str] | None = None,
 ) -> tuple[float, dict]:
     """
     Валидация модели в режиме регрессии.
@@ -330,7 +335,10 @@ def validate_regression(
 
     # Multi-target: per-target metrics + average
     if all_preds.ndim == 2 and all_preds.shape[1] > 1:
-        metrics = compute_multitarget_regression_metrics(all_targets, all_preds)
+        if target_names is not None:
+            metrics = compute_named_multitarget_regression_metrics(all_targets, all_preds, target_names)
+        else:
+            metrics = compute_multitarget_regression_metrics(all_targets, all_preds)
     else:
         metrics = compute_regression_metrics(all_targets, all_preds)
 
@@ -952,7 +960,8 @@ def train_model(
     entry_path = (task == ENTRY_PATH_TARGET)
     entry_path_quantile = (task == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
-    regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
+    trailing_stop = (task == TRAILING_STOP_TARGET)
+    regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target or trailing_stop
 
     if entry_path and model_name not in ENTRY_PATH_MODEL_NAMES:
         supported = ', '.join(ENTRY_PATH_MODEL_NAMES)
@@ -1000,6 +1009,8 @@ def train_model(
         num_classes = len(ENTRY_PATH_INV_CLASS_MAP)
     elif multi_target:
         num_classes = len(UPDN_TARGETS)     # 6
+    elif trailing_stop:
+        num_classes = len(TRAILING_STOP_TARGET_COLUMNS)
     elif regression:
         num_classes = 1
     elif binary_classification:
@@ -1293,7 +1304,13 @@ def train_model(
                       f"{metrics['val_score']:>10.4f} | {metrics['path_reg_pearson_r']:>10.4f} | "
                       f"{metrics['path_cls_f1_macro']:>8.4f} | {current_lr:>10.6f}")
         elif regression:
-            val_loss, metrics = validate_regression(model, val_loader, loss_fn, device)
+            val_loss, metrics = validate_regression(
+                model,
+                val_loader,
+                loss_fn,
+                device,
+                target_names=TRAILING_STOP_TARGET_COLUMNS if trailing_stop else None,
+            )
             val_metric = metrics['pearson_r']
 
             history['train_loss'].append(train_loss)
@@ -1919,9 +1936,11 @@ def parse_args() -> argparse.Namespace:
             TRADE_OUTCOME_TARGET,
             TRADE_PNL_TARGET,
             ARCHETYPE_TARGET,
+            TRAILING_STOP_TARGET,
         ],
         help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' | "
-             "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets. "
+             "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets | "
+             f"'{TRAILING_STOP_TARGET}'. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -2075,7 +2094,7 @@ def main():
     )
 
     # Сохраняем результат как JSON
-    regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET])
+    regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET, TRAILING_STOP_TARGET])
     binary_classification = (args.task in BINARY_CLASSIFICATION_TARGETS)
     triple_barrier = (args.task == 'triple_barrier')
     entry_path = (args.task == ENTRY_PATH_TARGET)

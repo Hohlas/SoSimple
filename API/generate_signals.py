@@ -46,6 +46,9 @@ from ML.data_loader import (
     CSV_SEP, TRAIN_FILE, VAL_FILE, TEST_FILE,
     UPDN_REGRESSION_TARGET, UPDN_TARGETS,
     TB_TARGET, TB_TARGET_NAMES,
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+    task_checkpoint_suffix,
 )
 from ML.entry_path_task import (
     ENTRY_PATH_MODEL_NAMES,
@@ -54,6 +57,7 @@ from ML.entry_path_task import (
     build_entry_path_export_frame,
     build_entry_path_model,
 )
+from ML.trailing_stop_target_task import build_trailing_stop_export_frame
 from ML.models import get_model
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
@@ -349,10 +353,7 @@ def generate_signals(
     print(f"{'═' * 60}")
 
     # ── Загрузка чекпоинта ───────────────────────────────────────────────────
-    if task == ENTRY_PATH_TARGET:
-        suffix = f'_{ENTRY_PATH_TARGET}'
-    else:
-        suffix = '_updn' if task == 'regression_updn' else '_regression'
+    suffix = task_checkpoint_suffix(task)
     ckpt_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
 
     if not ckpt_path.exists():
@@ -458,8 +459,59 @@ def generate_signals(
         print(f"{'═' * 60}\n")
         return
 
+    if task == TRAILING_STOP_TARGET:
+        if not research_out_prefix:
+            raise ValueError('Для trailing_stop_target_v1 нужен --research-out-prefix')
+
+        prefix_path = Path(research_out_prefix)
+        prefix_path.parent.mkdir(parents=True, exist_ok=True)
+
+        print(f"  🔬 Research export prefix: {prefix_path}")
+        _train_loader, val_loader, _scaler = create_data_loaders(
+            batch_size=256,
+            target=TRAILING_STOP_TARGET,
+            use_scaler=False,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+        test_loader = create_test_loader(
+            batch_size=256,
+            target=TRAILING_STOP_TARGET,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+
+        for split_name, loader, csv_path in [
+            ('validation', val_loader, VAL_FILE),
+            ('test', test_loader, TEST_FILE),
+        ]:
+            df_full = pd.read_csv(csv_path, sep=CSV_SEP, low_memory=False)
+            y_true = df_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
+            all_preds = []
+
+            with torch.no_grad():
+                for X_batch, y_batch, mask_batch in loader:
+                    preds = model(X_batch.to(device), mask=mask_batch.to(device)).cpu().numpy()
+                    all_preds.append(preds)
+
+            pred = np.concatenate(all_preds)
+            export = build_trailing_stop_export_frame(
+                times=df_full['time'].values,
+                signals=df_full['signal'].values.astype(int),
+                pred=pred,
+                true=y_true,
+            )
+            output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
+            export.to_csv(output_path, sep=';', index=False)
+            print(f"  ✅ {split_name}: {len(export)} строк -> {output_path}")
+
+        print(f"{'═' * 60}\n")
+        return
+
     # ── Обработка каждого датасета ───────────────────────────────────────────
-    target_col = UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
+    target_col = TRAILING_STOP_TARGET if task == TRAILING_STOP_TARGET else (
+        UPDN_REGRESSION_TARGET if task == 'regression_updn' else 'predict'
+    )
 
     all_results = []
 
@@ -551,7 +603,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--task', type=str, default=DEFAULT_TASK,
-        choices=['regression', 'regression_updn', 'triple_barrier', ENTRY_PATH_TARGET],
+        choices=['regression', 'regression_updn', 'triple_barrier', ENTRY_PATH_TARGET, TRAILING_STOP_TARGET],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
     parser.add_argument(

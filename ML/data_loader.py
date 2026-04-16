@@ -52,6 +52,11 @@ from ML.entry_path_task import (
     split_entry_path_targets,
 )
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
+from ML.trailing_stop_target_task import (
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+    split_trailing_stop_targets,
+)
 
 
 # ─── Константы ───────────────────────────────────────────────────────────────
@@ -101,6 +106,7 @@ TASK_TARGET_COLUMNS = {
     TRADE_OUTCOME_TARGET: TRADE_OUTCOME_COLUMN,
     TRADE_PNL_TARGET: TRADE_PNL_COLUMN,
     ARCHETYPE_TARGET: ARCHETYPE_COLUMN,
+    TRAILING_STOP_TARGET: TRAILING_STOP_TARGET,
 }
 
 BINARY_CLASSIFICATION_TARGETS = {
@@ -128,6 +134,7 @@ TASK_CHECKPOINT_SUFFIXES = {
     TRADE_OUTCOME_TARGET: '_trade_outcome_cls',
     TRADE_PNL_TARGET: '_trade_pnl_reg',
     ARCHETYPE_TARGET: '_signal_archetype_cls',
+    TRAILING_STOP_TARGET: '_trailing_stop_target_v1',
 }
 
 BINARY_LABEL_MAP = {0: 0, 1: 1}
@@ -153,6 +160,8 @@ def task_target_column(task: str) -> str:
         return ENTRY_PATH_TARGET
     if task == UPDN_REGRESSION_TARGET:
         return UPDN_REGRESSION_TARGET
+    if task == TRAILING_STOP_TARGET:
+        return TRAILING_STOP_TARGET
     if task == REGRESSION_TARGET:
         return REGRESSION_TARGET
     return 'signal'
@@ -556,13 +565,18 @@ def create_data_loaders(
     """
     print("📦 Загрузка данных...")
     seq_len = validate_seq_len_for_target(target, seq_len)
-    regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
+    regression = (
+        (target in SINGLE_REGRESSION_COLUMNS)
+        or (target == UPDN_REGRESSION_TARGET)
+        or (target == TRAILING_STOP_TARGET)
+    )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
     entry_path = (target == ENTRY_PATH_TARGET)
     entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
+    trailing_stop = (target == TRAILING_STOP_TARGET)
 
     def load_or_parse_data(
         csv_file: Path,
@@ -654,6 +668,18 @@ def create_data_loaders(
                                 f.unlink()
                         else:
                             return X, mask, y_reg, y_cls, signal
+                    elif trailing_stop:
+                        y = np.load(y_path)
+                        if (
+                            y.ndim != 2
+                            or y.shape[1] != len(TRAILING_STOP_TARGET_COLUMNS)
+                            or len(y) != len(X)
+                        ):
+                            print(f"  🔄 Кэш {prefix} trailing_stop_target_v1 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, y
                     else:
                         y = np.load(y_path)
                         return X, mask, y
@@ -674,6 +700,8 @@ def create_data_loaders(
             signal = df['signal'].values.astype(np.int64)
         elif multi_target:
             y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
+        elif trailing_stop:
+            y = split_trailing_stop_targets(df)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
@@ -701,6 +729,8 @@ def create_data_loaders(
             np.save(y_reg_path, y_reg)
             np.save(y_cls_path, y_cls)
             np.save(signal_path, signal)
+        elif trailing_stop:
+            np.save(y_path, y)
         else:
             np.save(y_path, y)
         print(f"  ✅ Данные {prefix} сохранены в кэш.")
@@ -743,6 +773,12 @@ def create_data_loaders(
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} updn targets: shape={y.shape}")
             for i, col in enumerate(UPDN_TARGETS):
+                print(f"    {col}: mean={y[:, i].mean():.4f}, std={y[:, i].std():.4f}, "
+                      f"min={y[:, i].min():.4f}, max={y[:, i].max():.4f}")
+    elif trailing_stop:
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} trailing_stop targets: shape={y.shape}")
+            for i, col in enumerate(TRAILING_STOP_TARGET_COLUMNS):
                 print(f"    {col}: mean={y[:, i].mean():.4f}, std={y[:, i].std():.4f}, "
                       f"min={y[:, i].min():.4f}, max={y[:, i].max():.4f}")
     elif triple_barrier:
@@ -857,7 +893,11 @@ def create_test_loader(
     """Только для инференса на отложенной выборке. StandardScaler отключён (False)."""
     print("\n📦 Загрузка тестовых данных...")
     seq_len = validate_seq_len_for_target(target, seq_len)
-    regression = (target in SINGLE_REGRESSION_COLUMNS) or (target == UPDN_REGRESSION_TARGET)
+    regression = (
+        (target in SINGLE_REGRESSION_COLUMNS)
+        or (target == UPDN_REGRESSION_TARGET)
+        or (target == TRAILING_STOP_TARGET)
+    )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
     binary_classification = (target in BINARY_CLASSIFICATION_COLUMNS)
@@ -865,6 +905,7 @@ def create_test_loader(
     entry_path = (target == ENTRY_PATH_TARGET)
     entry_path_quantile = (target == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
+    trailing_stop = (target == TRAILING_STOP_TARGET)
     prefix = 'test'
     missing_entry_path_labels = False
 
@@ -881,6 +922,9 @@ def create_test_loader(
         y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
         signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
         cache_files = [x_path, mask_path, y_reg_path, y_cls_path, signal_path]
+    elif trailing_stop:
+        y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
+        cache_files = [x_path, mask_path, y_path]
     else:
         y_path = DATA_DIR / f'y_{prefix}_{target}{profile_suffix}.npy'
         cache_files = [x_path, mask_path, y_path]
@@ -954,6 +998,28 @@ def create_test_loader(
                             mask = mask[:, :seq_len]
                         dataset = EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                elif trailing_stop:
+                    y = np.load(y_path)
+                    if (
+                        y.ndim != 2
+                        or y.shape[1] != len(TRAILING_STOP_TARGET_COLUMNS)
+                        or len(y) != len(X)
+                    ):
+                        print(f"  🔄 Кэш {prefix} trailing_stop_target_v1 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+                        dataset = FractalSequenceDataset(
+                            X,
+                            y,
+                            mask,
+                            regression=True,
+                            label_map=None,
+                        )
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 else:
                     y = np.load(y_path)
 
@@ -988,6 +1054,8 @@ def create_test_loader(
         signal = df['signal'].values.astype(np.int64)
         if entry_path:
             engineered = split_entry_path_features(df)
+    elif trailing_stop:
+        y = split_trailing_stop_targets(df)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
@@ -1016,6 +1084,8 @@ def create_test_loader(
             np.save(y_reg_path, y_reg)
             np.save(y_cls_path, y_cls)
         np.save(signal_path, signal)
+    elif trailing_stop:
+        np.save(y_path, y)
     else:
         np.save(y_path, y)
     print(f"  ✅ Данные {prefix} сохранены в кэш.")
@@ -1034,6 +1104,14 @@ def create_test_loader(
             y_reg = np.zeros((len(df), len(ENTRY_PATH_REG_TARGETS)), dtype=np.float32)
             y_cls = np.zeros(len(df), dtype=np.int64)
         dataset = EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
+    elif trailing_stop:
+        dataset = FractalSequenceDataset(
+            X,
+            y,
+            mask,
+            regression=True,
+            label_map=None,
+        )
     else:
         dataset = FractalSequenceDataset(
             X,

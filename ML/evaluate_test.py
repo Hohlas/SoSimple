@@ -37,6 +37,11 @@ from ML.entry_path_v1_quantile_task import (
     build_entry_path_v1_quantile_report_markdown,
     count_crossed_quantile_rows,
 )
+from ML.trailing_stop_target_task import (
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+    build_trailing_stop_export_frame,
+)
 from ML.models import get_model
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
@@ -187,6 +192,8 @@ def run_evaluation(
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
         df_test = df_test_full[['time', 'signal']].copy()
         entry_path_gt_available = has_entry_path_ground_truth(df_test_full)
+    elif task == TRAILING_STOP_TARGET:
+        df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     else:
         signal_true, predict_val_true, direction = load_test_metadata(task)
 
@@ -360,6 +367,58 @@ def run_evaluation(
                 print(f"  {line[2:]}")
         else:
             print("  ⚠ Test ground truth для entry_path_v1_quantile отсутствует; report written with N/A metrics.")
+        print(f"{'═' * 60}\n")
+        return
+
+    if task == TRAILING_STOP_TARGET:
+        true_targets = df_test_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
+        per_target_metrics = {
+            name: compute_regression_metrics(true_targets[:, idx], y_pred[:, idx])
+            for idx, name in enumerate(TRAILING_STOP_TARGET_COLUMNS)
+        }
+        metrics = {
+            'mae': float(np.mean([item['mae'] for item in per_target_metrics.values()])),
+            'rmse': float(np.mean([item['rmse'] for item in per_target_metrics.values()])),
+            'r2': float(np.mean([item['r2'] for item in per_target_metrics.values()])),
+            'pearson_r': float(np.mean([item['pearson_r'] for item in per_target_metrics.values()])),
+            'per_target': per_target_metrics,
+        }
+        export = build_trailing_stop_export_frame(
+            times=df_test_full['time'].values,
+            signals=df_test_full['signal'].values.astype(int),
+            pred=y_pred,
+            true=true_targets,
+        )
+        export_path = REPORTS_DIR / 'trailing_stop_target_test_predictions.csv'
+        export.to_csv(export_path, sep=';', index=False)
+        report_path = REPORTS_DIR / 'evaluate_test_trailing_stop_target_v1.md'
+        report_lines = [
+            '# Trailing Stop Target Test Set Evaluation',
+            '',
+            f'**Модель**: {ckpt_model_name}',
+            f'**Набор**: Test ({len(export)} строк)',
+            '',
+            '## Summary',
+            '',
+            f"- row_count: **{len(export)}**",
+            f"- mae: **{metrics['mae']:.4f}**",
+            f"- rmse: **{metrics['rmse']:.4f}**",
+            f"- r2: **{metrics['r2']:.4f}**",
+            f"- pearson_r: **{metrics['pearson_r']:.4f}**",
+            '',
+            '## Artifacts',
+            '',
+            f'- Predictions CSV: `{export_path.name}`',
+        ]
+        report_path.write_text('\n'.join(report_lines), encoding='utf-8')
+
+        print(f"  ✅ CSV сохранён: {export_path.name}")
+        print(f"  ✅ Отчет сохранён: {report_path.name}")
+        print(f"  row_count={len(export)}")
+        print(f"  mae={metrics['mae']:.4f}")
+        print(f"  rmse={metrics['rmse']:.4f}")
+        print(f"  r2={metrics['r2']:.4f}")
+        print(f"  pearson_r={metrics['pearson_r']:.4f}")
         print(f"{'═' * 60}\n")
         return
 
@@ -677,6 +736,7 @@ def parse_args():
                             TRADE_OUTCOME_TARGET,
                             TRADE_PNL_TARGET,
                             ARCHETYPE_TARGET,
+                            TRAILING_STOP_TARGET,
                         ])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')
