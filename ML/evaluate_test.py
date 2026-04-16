@@ -370,6 +370,19 @@ def run_evaluation(
         print(f"{'═' * 60}\n")
         return
 
+    all_preds = []
+
+    with torch.no_grad():
+        for X_batch, _y_batch, mask_batch in test_loader:
+            X_batch = X_batch.to(device)
+            mask_batch = mask_batch.to(device)
+            preds = model(X_batch, mask=mask_batch).cpu().numpy()
+            if preds.ndim > 1 and preds.shape[-1] == 1:
+                preds = preds.squeeze(-1)
+            all_preds.append(preds)
+
+    y_pred = np.concatenate(all_preds)
+
     if task == TRAILING_STOP_TARGET:
         true_targets = df_test_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
         per_target_metrics = {
@@ -421,19 +434,6 @@ def run_evaluation(
         print(f"  pearson_r={metrics['pearson_r']:.4f}")
         print(f"{'═' * 60}\n")
         return
-
-    all_preds = []
-    
-    with torch.no_grad():
-        for X_batch, _y_batch, mask_batch in test_loader:
-            X_batch = X_batch.to(device)
-            mask_batch = mask_batch.to(device)
-            preds = model(X_batch, mask=mask_batch).cpu().numpy()
-            if preds.ndim > 1 and preds.shape[-1] == 1:
-                preds = preds.squeeze(-1)
-            all_preds.append(preds)
-
-    y_pred = np.concatenate(all_preds)
 
     # ── Triple Barrier Evaluation ─────────────────────────────────────────────
     if task == 'triple_barrier':
