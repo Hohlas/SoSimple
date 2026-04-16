@@ -696,6 +696,106 @@ def first_touch_path_class(bars, direction, entry_price, atr, threshold_atr=1.0)
     return 0
 
 
+TRAILING_STOP_X_VALUES = (2, 3, 5)
+TRAILING_STOP_HOLD_BARS = 48
+
+
+def _safe_numeric_scalar(value, default=0.0):
+    numeric = pd.to_numeric(value, errors='coerce')
+    if pd.isna(numeric):
+        return default
+    return float(numeric)
+
+
+def _safe_signal_scalar(value):
+    numeric = pd.to_numeric(value, errors='coerce')
+    if pd.isna(numeric):
+        return 0
+    return int(numeric)
+
+
+def simulate_trailing_stop_exit(bars, direction, entry_price, atr, trail_atr):
+    if atr <= 0:
+        return 0.0
+
+    trail_distance = float(trail_atr) * float(atr)
+    entry_price = float(entry_price)
+    exit_price = entry_price
+    best_high = entry_price
+    best_low = entry_price
+
+    for bar in bars:
+        high = float(bar['high'])
+        low = float(bar['low'])
+        close = float(bar['close'])
+
+        if direction == 1:
+            # Canonical convention: same-bar favorable extreme is observed first,
+            # then the trailing stop is evaluated against best_high - X * ATR.
+            best_high = max(best_high, high)
+            stop_price = best_high - trail_distance
+            if low <= stop_price:
+                exit_price = stop_price
+                break
+            exit_price = close
+        else:
+            # Mirror rule for shorts: same-bar favorable extreme is the low,
+            # then the stop is evaluated against best_low + X * ATR.
+            best_low = min(best_low, low)
+            stop_price = best_low + trail_distance
+            if high >= stop_price:
+                exit_price = stop_price
+                break
+            exit_price = close
+
+    if direction == 1:
+        return float((exit_price - entry_price) / float(atr))
+    return float((entry_price - exit_price) / float(atr))
+
+
+def label_trailing_stop_targets(
+    df: pd.DataFrame,
+    hold_bars: int = TRAILING_STOP_HOLD_BARS,
+    atr_col: str = 'ATR',
+    x_values: tuple[int, ...] = TRAILING_STOP_X_VALUES,
+) -> pd.DataFrame:
+    out = df.copy()
+    for x_value in x_values:
+        out[f'trail_48_pnl_atr_x{x_value}'] = 0.0
+
+    for row_label in out.index:
+        signal = _safe_signal_scalar(out.at[row_label, 'signal'])
+        if signal == 0:
+            continue
+        atr = _safe_numeric_scalar(out.at[row_label, atr_col], default=0.0)
+        entry_price = _safe_numeric_scalar(out.at[row_label, 'Close'], default=0.0)
+        bars = []
+        for step in range(1, hold_bars + 1):
+            suffix = f'_{step}'
+            high_col = f'High{suffix}'
+            low_col = f'Low{suffix}'
+            close_col = f'Close{suffix}'
+            if high_col not in out.columns or low_col not in out.columns or close_col not in out.columns:
+                break
+            bars.append(
+                {
+                    'high': _safe_numeric_scalar(out.at[row_label, high_col], default=entry_price),
+                    'low': _safe_numeric_scalar(out.at[row_label, low_col], default=entry_price),
+                    'close': _safe_numeric_scalar(out.at[row_label, close_col], default=entry_price),
+                }
+            )
+        for x_value in x_values:
+            out.at[row_label, f'trail_48_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
+                bars=bars,
+                direction=signal,
+                entry_price=entry_price,
+                atr=atr,
+                trail_atr=float(x_value),
+            )
+
+    return out
+
+
 def add_entry_path_frequency_features(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
 

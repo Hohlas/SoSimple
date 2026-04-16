@@ -60,6 +60,7 @@ from label_signals import (
     label_first_barrier_hit,
     add_entry_path_frequency_features,
     label_entry_path_targets,
+    label_trailing_stop_targets,
 )
 from normalize import normalize_rowwise
 
@@ -353,6 +354,9 @@ def main():
     print(f"\nРазметка entry_path_v1 таргетов (OHLC={args.ohlc})...")
     labeled_df = label_entry_path_targets(labeled_df, args.ohlc, debug=args.debug)
     labeled_df = add_entry_path_frequency_features(labeled_df)
+
+    print(f"\nРазметка trailing-stop таргетов...")
+    labeled_df = label_trailing_stop_targets(labeled_df)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None
