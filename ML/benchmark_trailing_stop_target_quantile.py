@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from ML.trailing_stop_target_quantile_task import (
@@ -28,6 +29,55 @@ def _profit_factor(pnl: pd.Series) -> tuple[float, float, float]:
     gross_loss = float(-values[values < 0].sum())
     pf = gross_profit / gross_loss if gross_loss > 0 else (float('inf') if gross_profit > 0 else 0.0)
     return gross_profit, gross_loss, float(pf)
+
+
+def _series_profit_factor(pnl: pd.Series) -> float:
+    return _profit_factor(pnl)[2]
+
+
+def _trade_years(frame: pd.DataFrame) -> pd.Series:
+    if 'time' not in frame.columns or frame.empty:
+        return pd.Series(dtype='Int64')
+    parsed = pd.to_datetime(frame['time'], format='%Y.%m.%d %H:%M', errors='coerce')
+    return parsed.dt.year.dropna().astype(int)
+
+
+def _trades_per_year(frame: pd.DataFrame) -> float:
+    if frame.empty:
+        return 0.0
+    years = _trade_years(frame)
+    if years.empty:
+        return float(len(frame))
+    return float(len(frame) / years.nunique())
+
+
+def _negative_year_slices(frame: pd.DataFrame, true_col: str) -> int:
+    if frame.empty or 'time' not in frame.columns:
+        return 0
+    years = _trade_years(frame)
+    if years.empty:
+        return 0
+    by_year = frame.loc[years.index].assign(_year=years.to_numpy())
+    return int(sum(_series_profit_factor(group[true_col]) < 1.0 for _, group in by_year.groupby('_year')))
+
+
+def _profit_concentration_top_10(pnl: pd.Series) -> float:
+    profits = np.sort(pnl[pnl > 0].to_numpy(dtype=float))[::-1]
+    total_profit = float(profits.sum())
+    if total_profit <= 0.0:
+        return 0.0
+    top_count = max(1, int(np.ceil(len(profits) * 0.10)))
+    return float(profits[:top_count].sum() / total_profit)
+
+
+def _max_drawdown_atr(pnl: pd.Series) -> float:
+    values = pnl.to_numpy(dtype=float)
+    if len(values) == 0:
+        return 0.0
+    equity = values.cumsum()
+    peaks = np.maximum.accumulate(np.insert(equity, 0, 0.0))[1:]
+    drawdowns = peaks - equity
+    return float(drawdowns.max(initial=0.0))
 
 
 def _spread_aware_score(frame: pd.DataFrame) -> pd.Series:
@@ -59,9 +109,11 @@ def summarize_candidate(
     true_col: str,
 ) -> dict[str, float]:
     live = _select_live_rows(frame, candidate=candidate, threshold=threshold)
-    gross_profit, gross_loss, pf = _profit_factor(live[true_col]) if true_col in live else (0.0, 0.0, 0.0)
-    pnl = live[true_col].to_numpy(dtype=float) if true_col in live else []
-    ulcer_index = float(abs(pd.Series(pnl, dtype=float).cumsum()).mean()) if len(pnl) else 0.0
+    if true_col not in live.columns:
+        raise ValueError(f'true_col {true_col!r} missing from benchmark frame')
+    pnl = live[true_col].astype(float)
+    gross_profit, gross_loss, pf = _profit_factor(pnl)
+    ulcer_index = float(abs(pnl.cumsum()).mean()) if len(pnl) else 0.0
     return {
         'candidate': candidate,
         'threshold': float(threshold),
@@ -69,7 +121,11 @@ def summarize_candidate(
         'gross_profit': gross_profit,
         'gross_loss': gross_loss,
         'pf': pf,
+        'trades_per_year': _trades_per_year(live),
+        'negative_year_slices': _negative_year_slices(live, true_col),
+        'profit_concentration_top_10': _profit_concentration_top_10(pnl),
         'ulcer_index_atr': ulcer_index,
+        'max_drawdown_atr': _max_drawdown_atr(pnl),
     }
 
 
