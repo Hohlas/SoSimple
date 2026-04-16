@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from API.generate_signals import generate_signals
-from ML.benchmark_trailing_stop_target_quantile import _jsonable, run_benchmark
+from ML.benchmark_trailing_stop_target_quantile import jsonable, run_benchmark
 from ML.data_loader import task_checkpoint_suffix
 from ML.evaluate_test import run_evaluation
 from ML.train import CHECKPOINTS_DIR, REPORTS_DIR, train_model
@@ -22,6 +22,15 @@ def _copy_if_exists(source: Path, destination: Path) -> None:
     if source.exists():
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination)
+
+
+def _copy_required(source: Path, destination: Path, label: str) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        destination.unlink()
+    if not source.exists():
+        raise FileNotFoundError(f'required {label} missing: {source}')
+    shutil.copy2(source, destination)
 
 
 def _same_run_config(
@@ -94,7 +103,7 @@ def run_single_config(
     suffix = task_checkpoint_suffix(TRAILING_STOP_TARGET_QUANTILE_TARGET)
     checkpoint_path = CHECKPOINTS_DIR / f'transformer{suffix}_best.pt'
     run_checkpoint_path = run_dir / 'checkpoint.pt'
-    _copy_if_exists(checkpoint_path, run_checkpoint_path)
+    _copy_required(checkpoint_path, run_checkpoint_path, 'checkpoint')
 
     run_evaluation(
         model_name='transformer',
@@ -138,16 +147,16 @@ def run_single_config(
             'seed': seed,
             'min_pf': min_pf,
         },
-        'train_result': _jsonable(train_result),
+        'train_result': jsonable(train_result),
         'checkpoint_path': str(run_checkpoint_path),
         'exports': {
             'validation_csv': str(run_dir / 'trailing_stop_target_quantile_validation_predictions.csv'),
             'test_csv': str(run_dir / 'trailing_stop_target_quantile_test_predictions.csv'),
         },
-        'benchmark': _jsonable(benchmark),
+        'benchmark': jsonable(benchmark),
         'runtime_sec': time.time() - started_at,
     }
-    summary_path.write_text(json.dumps(_jsonable(payload), ensure_ascii=False, indent=2), encoding='utf-8')
+    summary_path.write_text(json.dumps(jsonable(payload), ensure_ascii=False, indent=2), encoding='utf-8')
     return payload
 
 
@@ -177,8 +186,8 @@ def main() -> dict[str, object]:
         min_pf=args.min_pf,
         skip_existing=args.skip_existing,
     )
-    (output_dir / 'manifest.json').write_text(json.dumps(_jsonable({'runs': [result]}), ensure_ascii=False, indent=2), encoding='utf-8')
-    print(json.dumps(_jsonable(result), ensure_ascii=False, indent=2))
+    (output_dir / 'manifest.json').write_text(json.dumps(jsonable({'runs': [result]}), ensure_ascii=False, indent=2), encoding='utf-8')
+    print(json.dumps(jsonable(result), ensure_ascii=False, indent=2))
     return result
 
 

@@ -35,29 +35,38 @@ def _series_profit_factor(pnl: pd.Series) -> float:
     return _profit_factor(pnl)[2]
 
 
-def _trade_years(frame: pd.DataFrame) -> pd.Series:
-    if 'time' not in frame.columns or frame.empty:
-        return pd.Series(dtype='Int64')
+def _parse_time_column(frame: pd.DataFrame) -> pd.Series:
+    if 'time' not in frame.columns:
+        raise ValueError('benchmark frame missing required time column')
     parsed = pd.to_datetime(frame['time'], format='%Y.%m.%d %H:%M', errors='coerce')
-    return parsed.dt.year.dropna().astype(int)
+    invalid = parsed.isna()
+    if invalid.any():
+        raise ValueError(f'unparseable time rows in benchmark frame: {invalid[invalid].index.tolist()}')
+    return parsed
 
 
-def _trades_per_year(frame: pd.DataFrame) -> float:
+def _coverage_years(frame: pd.DataFrame) -> int:
+    if frame.empty:
+        return 0
+    years = _parse_time_column(frame).dt.year
+    return int(years.max() - years.min() + 1)
+
+
+def _trades_per_year(frame: pd.DataFrame, coverage_years: int | None) -> float:
     if frame.empty:
         return 0.0
-    years = _trade_years(frame)
-    if years.empty:
-        return float(len(frame))
-    return float(len(frame) / years.nunique())
+    if coverage_years is None:
+        coverage_years = _coverage_years(frame)
+    if coverage_years <= 0:
+        return 0.0
+    return float(len(frame) / coverage_years)
 
 
 def _negative_year_slices(frame: pd.DataFrame, true_col: str) -> int:
-    if frame.empty or 'time' not in frame.columns:
+    if frame.empty:
         return 0
-    years = _trade_years(frame)
-    if years.empty:
-        return 0
-    by_year = frame.loc[years.index].assign(_year=years.to_numpy())
+    years = _parse_time_column(frame).dt.year
+    by_year = frame.assign(_year=years.to_numpy())
     return int(sum(_series_profit_factor(group[true_col]) < 1.0 for _, group in by_year.groupby('_year')))
 
 
@@ -107,6 +116,7 @@ def summarize_candidate(
     candidate: str,
     threshold: float,
     true_col: str,
+    coverage_years: int | None = None,
 ) -> dict[str, float]:
     live = _select_live_rows(frame, candidate=candidate, threshold=threshold)
     if true_col not in live.columns:
@@ -121,7 +131,7 @@ def summarize_candidate(
         'gross_profit': gross_profit,
         'gross_loss': gross_loss,
         'pf': pf,
-        'trades_per_year': _trades_per_year(live),
+        'trades_per_year': _trades_per_year(live, coverage_years),
         'negative_year_slices': _negative_year_slices(live, true_col),
         'profit_concentration_top_10': _profit_concentration_top_10(pnl),
         'ulcer_index_atr': ulcer_index,
@@ -144,9 +154,10 @@ def build_candidate_table(
     include_spread_score: bool = True,
 ) -> pd.DataFrame:
     active = _active_rows(frame)
+    coverage_years = _coverage_years(active)
     rows = [
-        summarize_candidate(active, candidate='q10_gt_zero', threshold=0.0, true_col=true_col),
-        summarize_candidate(active, candidate='q10_q50_positive', threshold=0.0, true_col=true_col),
+        summarize_candidate(active, candidate='q10_gt_zero', threshold=0.0, true_col=true_col, coverage_years=coverage_years),
+        summarize_candidate(active, candidate='q10_q50_positive', threshold=0.0, true_col=true_col, coverage_years=coverage_years),
     ]
     if not active.empty:
         thresholds = sorted(
@@ -154,7 +165,7 @@ def build_candidate_table(
             reverse=True,
         )
         rows.extend(
-            summarize_candidate(active, candidate='q10_gt_m', threshold=threshold, true_col=true_col)
+            summarize_candidate(active, candidate='q10_gt_m', threshold=threshold, true_col=true_col, coverage_years=coverage_years)
             for threshold in thresholds
         )
         if include_spread_score:
@@ -164,17 +175,23 @@ def build_candidate_table(
                 reverse=True,
             )
             rows.extend(
-                summarize_candidate(active.assign(spread_score=score), candidate='spread_score', threshold=threshold, true_col=true_col)
+                summarize_candidate(
+                    active.assign(spread_score=score),
+                    candidate='spread_score',
+                    threshold=threshold,
+                    true_col=true_col,
+                    coverage_years=coverage_years,
+                )
                 for threshold in score_thresholds
             )
     return pd.DataFrame(rows)
 
 
-def _jsonable(value):
+def jsonable(value):
     if isinstance(value, dict):
-        return {str(key): _jsonable(item) for key, item in value.items()}
+        return {str(key): jsonable(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return [_jsonable(item) for item in value]
+        return [jsonable(item) for item in value]
     if isinstance(value, Path):
         return str(value)
     if hasattr(value, 'tolist'):
@@ -215,12 +232,12 @@ def run_benchmark(
         final_verdict = {
             'verdict': 'go',
             'target_column': TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN,
-            'validation_winner': _jsonable(winner.to_dict()),
-            'test_result': _jsonable(test_result),
+            'validation_winner': jsonable(winner.to_dict()),
+            'test_result': jsonable(test_result),
         }
 
     final_verdict_path = output_dir / 'final_verdict.json'
-    final_verdict_path.write_text(json.dumps(_jsonable(final_verdict), ensure_ascii=False, indent=2), encoding='utf-8')
+    final_verdict_path.write_text(json.dumps(jsonable(final_verdict), ensure_ascii=False, indent=2), encoding='utf-8')
     return {
         'validation_grid_path': str(output_dir / 'validation_grid.csv'),
         'final_verdict_path': str(final_verdict_path),
