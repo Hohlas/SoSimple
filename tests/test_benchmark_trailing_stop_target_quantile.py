@@ -1,7 +1,12 @@
 import pandas as pd
 import pytest
 
-from ML.benchmark_trailing_stop_target_quantile import build_candidate_table, pick_validation_winner, summarize_candidate
+from ML.benchmark_trailing_stop_target_quantile import (
+    build_candidate_table,
+    pick_validation_winner,
+    run_benchmark,
+    summarize_candidate,
+)
 
 
 def test_summarize_candidate_for_q10_gt_zero_rule():
@@ -132,6 +137,79 @@ def test_candidate_table_inactive_boundary_rows_extend_split_coverage():
 
     assert q10_gt_zero['trades'] == 1
     assert q10_gt_zero['trades_per_year'] == pytest.approx(1.0 / 3.0)
+
+
+def test_run_benchmark_test_result_uses_full_test_split_coverage(tmp_path):
+    validation = pd.DataFrame(
+        {
+            'time': ['2025.01.01 00:00', '2025.01.02 00:00'],
+            'signal': [1, 1],
+            'pred_trail_48_pnl_atr_x3_q10': [0.4, 0.3],
+            'pred_trail_48_pnl_atr_x3_q50': [0.8, 0.7],
+            'pred_trail_48_pnl_atr_x3_q90': [1.2, 1.1],
+            'true_trail_48_pnl_atr_x3': [1.0, 0.5],
+        }
+    )
+    test = pd.DataFrame(
+        {
+            'time': ['2024.01.01 00:00', '2025.01.01 00:00', '2026.01.01 00:00'],
+            'signal': [0, 1, 0],
+            'pred_trail_48_pnl_atr_x3_q10': [-0.2, 0.5, -0.3],
+            'pred_trail_48_pnl_atr_x3_q50': [0.0, 0.9, 0.0],
+            'pred_trail_48_pnl_atr_x3_q90': [0.4, 1.3, 0.3],
+            'true_trail_48_pnl_atr_x3': [0.0, 1.0, 0.0],
+        }
+    )
+    validation_csv = tmp_path / 'validation.csv'
+    test_csv = tmp_path / 'test.csv'
+    validation.to_csv(validation_csv, sep=';', index=False)
+    test.to_csv(test_csv, sep=';', index=False)
+
+    result = run_benchmark(
+        validation_csv=validation_csv,
+        test_csv=test_csv,
+        output_dir=tmp_path / 'benchmark',
+        min_pf=1.0,
+    )
+
+    assert result['final_verdict']['verdict'] == 'go'
+    assert result['final_verdict']['test_result']['trades'] == 1
+    assert result['final_verdict']['test_result']['trades_per_year'] == pytest.approx(1.0 / 3.0)
+
+
+def test_run_benchmark_validates_test_dates_even_when_validation_rejects(tmp_path):
+    validation = pd.DataFrame(
+        {
+            'time': ['2025.01.01 00:00'],
+            'signal': [1],
+            'pred_trail_48_pnl_atr_x3_q10': [-0.4],
+            'pred_trail_48_pnl_atr_x3_q50': [0.0],
+            'pred_trail_48_pnl_atr_x3_q90': [0.4],
+            'true_trail_48_pnl_atr_x3': [-1.0],
+        }
+    )
+    test = pd.DataFrame(
+        {
+            'time': ['2026.01.01 00:00', 'not-a-date'],
+            'signal': [0, 0],
+            'pred_trail_48_pnl_atr_x3_q10': [-0.2, -0.3],
+            'pred_trail_48_pnl_atr_x3_q50': [0.0, 0.0],
+            'pred_trail_48_pnl_atr_x3_q90': [0.4, 0.3],
+            'true_trail_48_pnl_atr_x3': [0.0, 0.0],
+        }
+    )
+    validation_csv = tmp_path / 'validation.csv'
+    test_csv = tmp_path / 'test.csv'
+    validation.to_csv(validation_csv, sep=';', index=False)
+    test.to_csv(test_csv, sep=';', index=False)
+
+    with pytest.raises(ValueError, match='unparseable time'):
+        run_benchmark(
+            validation_csv=validation_csv,
+            test_csv=test_csv,
+            output_dir=tmp_path / 'benchmark',
+            min_pf=1.0,
+        )
 
 
 def test_summarize_candidate_fails_when_true_column_is_missing():

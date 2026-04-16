@@ -213,6 +213,7 @@ def run_benchmark(
     test = pd.read_csv(test_csv, sep=';')
 
     validation_table = build_candidate_table(validation)
+    test_coverage_years = _coverage_years(test)
     validation_table.to_csv(output_dir / 'validation_grid.csv', sep=';', index=False)
 
     winner = pick_validation_winner(validation_table, min_pf=min_pf)
@@ -228,6 +229,7 @@ def run_benchmark(
             candidate=str(winner['candidate']),
             threshold=float(winner['threshold']),
             true_col=f'true_{TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN}',
+            coverage_years=test_coverage_years,
         )
         final_verdict = {
             'verdict': 'go',
