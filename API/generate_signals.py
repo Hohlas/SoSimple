@@ -579,7 +579,7 @@ def generate_signals(
                 pred_q10=np.concatenate(all_q10),
                 pred_q50=np.concatenate(all_q50),
                 pred_q90=np.concatenate(all_q90),
-                true=df_full['trail_48_pnl_atr_x3'].values.astype(np.float32),
+                true=df_full['trail_48_pnl_atr_x3'].values.astype(np.float32).reshape(-1, 1),
             )
             output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
             export.to_csv(output_path, sep=';', index=False)

@@ -127,8 +127,8 @@ def test_create_test_loader_trailing_stop_quantile_branch(monkeypatch, tmp_path)
     X_batch, y_batch, mask_batch = next(iter(loader))
     assert X_batch.shape == (2, 20, data_loader.N_FRACTAL_FEATURES)
     assert mask_batch.shape == (2, 20)
-    assert y_batch.shape == (2,)
-    np.testing.assert_allclose(y_batch.numpy(), np.array([0.2, 0.5], dtype=np.float32))
+    assert y_batch.shape == (2, 1)
+    np.testing.assert_allclose(y_batch.numpy(), np.array([[0.2], [0.5]], dtype=np.float32))
 
 
 def test_train_model_routes_trailing_stop_quantile_to_quantile_path(monkeypatch, tmp_path):
@@ -233,7 +233,7 @@ def test_run_evaluation_uses_trailing_stop_quantile_export_branch(monkeypatch, t
         calls['create_test_loader_target'] = kwargs['target']
         calls['create_test_loader_seq_len'] = kwargs['seq_len']
         X = torch.zeros((2, 20, 20), dtype=torch.float32)
-        y = torch.zeros((2,), dtype=torch.float32)
+        y = torch.zeros((2, 1), dtype=torch.float32)
         mask = torch.ones((2, 20), dtype=torch.bool)
         return torch.utils.data.DataLoader(torch.utils.data.TensorDataset(X, y, mask), batch_size=2)
 
@@ -280,7 +280,7 @@ def test_run_evaluation_uses_trailing_stop_quantile_export_branch(monkeypatch, t
     assert calls['export_kwargs']['pred_q10'].shape == (2, 1)
     assert calls['export_kwargs']['pred_q50'].shape == (2, 1)
     assert calls['export_kwargs']['pred_q90'].shape == (2, 1)
-    assert calls['export_kwargs']['true'].shape == (2,)
+    assert calls['export_kwargs']['true'].shape == (2, 1)
     assert (report_dir / 'evaluate_test_trailing_stop_target_quantile_v1.md').exists()
     assert (report_dir / 'trailing_stop_target_quantile_test_predictions.csv').exists()
 
@@ -322,7 +322,7 @@ def test_validate_trailing_stop_target_quantile_orders_crossed_heads_before_metr
     loader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(
             torch.zeros((2, 20, 20), dtype=torch.float32),
-            torch.tensor([0.2, 0.6], dtype=torch.float32),
+            torch.tensor([[0.2], [0.6]], dtype=torch.float32),
             torch.ones((2, 20), dtype=torch.bool),
         ),
         batch_size=2,
@@ -371,7 +371,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop_quantile(mon
         loader = torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(
                 torch.zeros((2, 20, 20), dtype=torch.float32),
-                torch.zeros((2,), dtype=torch.float32),
+                torch.zeros((2, 1), dtype=torch.float32),
                 torch.ones((2, 20), dtype=torch.bool),
             ),
             batch_size=2,
@@ -384,7 +384,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop_quantile(mon
         return torch.utils.data.DataLoader(
             torch.utils.data.TensorDataset(
                 torch.zeros((2, 20, 20), dtype=torch.float32),
-                torch.zeros((2,), dtype=torch.float32),
+                torch.zeros((2, 1), dtype=torch.float32),
                 torch.ones((2, 20), dtype=torch.bool),
             ),
             batch_size=2,
@@ -443,3 +443,6 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop_quantile(mon
     assert calls['test_loader_seq_len'] == 50
     assert (reports_dir / 'tsq_validation_predictions.csv').exists()
     assert (reports_dir / 'tsq_test_predictions.csv').exists()
+
+    validation_export_text = (reports_dir / 'tsq_validation_predictions.csv').read_text(encoding='utf-8')
+    assert 'true_trail_48_pnl_atr_x3' in validation_export_text

@@ -692,7 +692,7 @@ def create_data_loaders(
                             return X, mask, y
                     elif trailing_stop_quantile:
                         y = np.load(y_path)
-                        if y.ndim != 1 or len(y) != len(X):
+                        if y.ndim != 2 or y.shape[1] != 1 or len(y) != len(X):
                             print(f"  🔄 Кэш {prefix} trailing_stop_target_quantile_v1 повреждён. Инвалидация...")
                             for f in cache_files:
                                 f.unlink()
@@ -721,7 +721,7 @@ def create_data_loaders(
         elif trailing_stop:
             y = split_trailing_stop_targets(df)
         elif trailing_stop_quantile:
-            y = split_trailing_stop_quantile_target(df).reshape(-1)
+            y = split_trailing_stop_quantile_target(df)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
@@ -1043,7 +1043,7 @@ def create_test_loader(
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 elif trailing_stop_quantile:
                     y = np.load(y_path)
-                    if y.ndim != 1 or len(y) != len(X):
+                    if y.ndim != 2 or y.shape[1] != 1 or len(y) != len(X):
                         print(f"  🔄 Кэш {prefix} trailing_stop_target_quantile_v1 повреждён. Инвалидация...")
                         for f in cache_files:
                             f.unlink()
@@ -1096,7 +1096,7 @@ def create_test_loader(
     elif trailing_stop:
         y = split_trailing_stop_targets(df)
     elif trailing_stop_quantile:
-        y = split_trailing_stop_quantile_target(df).reshape(-1)
+        y = split_trailing_stop_quantile_target(df)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:

@@ -424,7 +424,7 @@ def run_evaluation(
         pred_q10 = np.concatenate(all_q10)
         pred_q50 = np.concatenate(all_q50)
         pred_q90 = np.concatenate(all_q90)
-        true_target = np.concatenate(all_true).reshape(-1)
+        true_target = np.concatenate(all_true)
         ordered_q10, ordered_q50, ordered_q90 = _order_trailing_stop_quantiles(
             pred_q10,
             pred_q50,
