@@ -52,9 +52,16 @@ from ML.entry_path_task import (
     split_entry_path_targets,
 )
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
+from ML.multi_scale_fractal_features import build_multi_scale_fractal_features
 from ML.take_skip_trailing_stop_task import (
     TAKE_SKIP_TRAILING_STOP_TARGET,
     split_take_skip_targets,
+)
+from ML.take_skip_trailing_stop_v2_task import (
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+    TAKE_SKIP_TRAILING_STOP_V2_COLUMNS,
+    TAKE_SKIP_V2_ROW_FEATURE_COLUMNS,
+    split_take_skip_v2_targets,
 )
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
@@ -82,6 +89,12 @@ N_FRACTALS = 100
 N_RAW_FEATURES = 22   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
 FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 22-полевом CSV (ранее было 17)
 N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
+TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
+TAKE_SKIP_V2_INPUT_FEATURES = (
+    N_FRACTAL_FEATURES
+    + (N_FRACTAL_FEATURES * TAKE_SKIP_V2_SUMMARY_MULTIPLIER)
+    + len(TAKE_SKIP_V2_ROW_FEATURE_COLUMNS)
+)
 
 # Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
 FRACTAL_TIME_IDX = 0
@@ -117,6 +130,7 @@ TASK_TARGET_COLUMNS = {
     TRAILING_STOP_TARGET: TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_QUANTILE_TARGET: TRAILING_STOP_TARGET_QUANTILE_TARGET,
     TAKE_SKIP_TRAILING_STOP_TARGET: TAKE_SKIP_TRAILING_STOP_TARGET,
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET: TAKE_SKIP_TRAILING_STOP_V2_TARGET,
 }
 
 BINARY_CLASSIFICATION_TARGETS = {
@@ -148,6 +162,7 @@ TASK_CHECKPOINT_SUFFIXES = {
     TRAILING_STOP_TARGET: '_trailing_stop_target_v1',
     TRAILING_STOP_TARGET_QUANTILE_TARGET: '_trailing_stop_target_quantile_v1',
     TAKE_SKIP_TRAILING_STOP_TARGET: '_take_skip_trailing_stop_v1',
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET: '_take_skip_trailing_stop_v2',
 }
 
 BINARY_LABEL_MAP = {0: 0, 1: 1}
@@ -156,6 +171,8 @@ BINARY_LABEL_MAP = {0: 0, 1: 1}
 def validate_seq_len_for_target(target: str, seq_len: int) -> int:
     if not 1 <= int(seq_len) <= N_FRACTALS:
         raise ValueError(f'seq_len must be in [1, {N_FRACTALS}], got {seq_len}')
+    if target == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
+        return N_FRACTALS
     if target == ENTRY_PATH_TARGET and seq_len not in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS:
         allowed = ', '.join(str(value) for value in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS)
         raise ValueError(f'{target} supports only seq_len values: {allowed}')
@@ -179,6 +196,8 @@ def task_target_column(task: str) -> str:
         return TRAILING_STOP_TARGET
     if task == TAKE_SKIP_TRAILING_STOP_TARGET:
         return TAKE_SKIP_TRAILING_STOP_TARGET
+    if task == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
+        return TAKE_SKIP_TRAILING_STOP_V2_TARGET
     if task == REGRESSION_TARGET:
         return REGRESSION_TARGET
     return 'signal'
@@ -196,6 +215,24 @@ def task_checkpoint_suffix(task: str) -> str:
     if task == REGRESSION_TARGET:
         return '_regression'
     return TASK_CHECKPOINT_SUFFIXES.get(task, '')
+
+
+def build_take_skip_v2_engineered_features(df: pd.DataFrame, X: np.ndarray) -> np.ndarray:
+    summary = build_multi_scale_fractal_features(X)
+    row_features = (
+        df.reindex(columns=TAKE_SKIP_V2_ROW_FEATURE_COLUMNS)
+        .apply(pd.to_numeric, errors='coerce')
+        .fillna(0.0)
+        .values.astype(np.float32)
+    )
+    return np.concatenate([summary, row_features], axis=1).astype(np.float32, copy=False)
+
+
+def append_take_skip_v2_engineered_channels(X: np.ndarray, engineered: np.ndarray) -> np.ndarray:
+    if len(X) != len(engineered):
+        raise ValueError('X and engineered must have the same row count')
+    repeated = np.repeat(np.asarray(engineered, dtype=np.float32)[:, None, :], X.shape[1], axis=1)
+    return np.concatenate([X.astype(np.float32, copy=False), repeated], axis=2).astype(np.float32, copy=False)
 
 
 def target_uses_signal_rows(target: str) -> bool:
@@ -587,6 +624,7 @@ def create_data_loaders(
         or (target == UPDN_REGRESSION_TARGET)
         or (target == TRAILING_STOP_TARGET)
         or (target == TAKE_SKIP_TRAILING_STOP_TARGET)
+        or (target == TAKE_SKIP_TRAILING_STOP_V2_TARGET)
     )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
@@ -597,6 +635,7 @@ def create_data_loaders(
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
     take_skip_trailing_stop = (target == TAKE_SKIP_TRAILING_STOP_TARGET)
+    take_skip_trailing_stop_v2 = (target == TAKE_SKIP_TRAILING_STOP_V2_TARGET)
 
     def load_or_parse_data(
         csv_file: Path,
@@ -640,8 +679,9 @@ def create_data_loaders(
             else:
                 X = np.load(x_path)
                 # Проверяем совместимость кэша по количеству features
-                if X.shape[2] != N_FRACTAL_FEATURES:
-                    print(f"  🔄 Кэш {prefix} устарел ({X.shape[2]} features, ожидается {N_FRACTAL_FEATURES}). Инвалидация...")
+                expected_feature_dim = TAKE_SKIP_V2_INPUT_FEATURES if take_skip_trailing_stop_v2 else N_FRACTAL_FEATURES
+                if X.shape[2] != expected_feature_dim:
+                    print(f"  🔄 Кэш {prefix} устарел ({X.shape[2]} features, ожидается {expected_feature_dim}). Инвалидация...")
                     for f in cache_files:
                         f.unlink()
                 else:
@@ -716,6 +756,14 @@ def create_data_loaders(
                                 f.unlink()
                         else:
                             return X, mask, y
+                    elif take_skip_trailing_stop_v2:
+                        y = np.load(y_path)
+                        if y.ndim != 2 or y.shape[1] != len(TAKE_SKIP_TRAILING_STOP_V2_COLUMNS) or len(y) != len(X):
+                            print(f"  🔄 Кэш {prefix} take_skip_trailing_stop_v2 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, y
                     else:
                         y = np.load(y_path)
                         return X, mask, y
@@ -742,6 +790,8 @@ def create_data_loaders(
             y = split_trailing_stop_quantile_target(df)
         elif take_skip_trailing_stop:
             y = split_take_skip_targets(df)
+        elif take_skip_trailing_stop_v2:
+            y = split_take_skip_v2_targets(df)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
@@ -756,6 +806,9 @@ def create_data_loaders(
             
         print(f"  🔧 Парсинг фракталов в 3D тензоры ({prefix})...")
         X, mask = parse_fractals_to_3d(df)
+        if take_skip_trailing_stop_v2:
+            engineered = build_take_skip_v2_engineered_features(df, X)
+            X = append_take_skip_v2_engineered_channels(X, engineered)
         
         # Сохранение кэша
         np.save(x_path, X)
@@ -826,6 +879,11 @@ def create_data_loaders(
             print(f"  {name} take_skip targets: shape={y.shape}")
             for i in range(y.shape[1]):
                 print(f"    take_skip_{i}: positive_rate={y[:, i].mean():.4f}")
+    elif take_skip_trailing_stop_v2:
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} take_skip_v2 targets: shape={y.shape}")
+            for i, column in enumerate(TAKE_SKIP_TRAILING_STOP_V2_COLUMNS):
+                print(f"    {column}: positive_rate={y[:, i].mean():.4f}")
     elif triple_barrier:
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} TB targets: shape={y.shape}")
@@ -878,7 +936,7 @@ def create_data_loaders(
         )
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
-    if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile and not take_skip_trailing_stop:
+    if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile and not take_skip_trailing_stop and not take_skip_trailing_stop_v2:
         # Рассчитываем веса: 1 / freq(class)
         if binary_classification:
             y_train_mapped = y_train.astype(np.int64)
@@ -943,6 +1001,7 @@ def create_test_loader(
         or (target == UPDN_REGRESSION_TARGET)
         or (target == TRAILING_STOP_TARGET)
         or (target == TAKE_SKIP_TRAILING_STOP_TARGET)
+        or (target == TAKE_SKIP_TRAILING_STOP_V2_TARGET)
     )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
@@ -954,6 +1013,7 @@ def create_test_loader(
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
     take_skip_trailing_stop = (target == TAKE_SKIP_TRAILING_STOP_TARGET)
+    take_skip_trailing_stop_v2 = (target == TAKE_SKIP_TRAILING_STOP_V2_TARGET)
     prefix = 'test'
     missing_entry_path_labels = False
 
@@ -990,7 +1050,8 @@ def create_test_loader(
                 f.unlink()
         else:
             X = np.load(x_path)
-            if X.shape[2] != N_FRACTAL_FEATURES:
+            expected_feature_dim = TAKE_SKIP_V2_INPUT_FEATURES if take_skip_trailing_stop_v2 else N_FRACTAL_FEATURES
+            if X.shape[2] != expected_feature_dim:
                 print(f"  🔄 Кэш {prefix} устарел. Инвалидация...")
                 for f in cache_files:
                     f.unlink()
@@ -1086,6 +1147,24 @@ def create_test_loader(
                             label_map=None,
                         )
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                elif take_skip_trailing_stop_v2:
+                    y = np.load(y_path)
+                    if y.ndim != 2 or y.shape[1] != len(TAKE_SKIP_TRAILING_STOP_V2_COLUMNS) or len(y) != len(X):
+                        print(f"  🔄 Кэш {prefix} take_skip_trailing_stop_v2 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+                        dataset = FractalSequenceDataset(
+                            X,
+                            y,
+                            mask,
+                            regression=True,
+                            label_map=None,
+                        )
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 elif take_skip_trailing_stop:
                     y = np.load(y_path)
                     if y.ndim != 2 or y.shape[1] != 5 or len(y) != len(X):
@@ -1144,6 +1223,8 @@ def create_test_loader(
         y = split_trailing_stop_quantile_target(df)
     elif take_skip_trailing_stop:
         y = split_take_skip_targets(df)
+    elif take_skip_trailing_stop_v2:
+        y = split_take_skip_v2_targets(df)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
@@ -1159,6 +1240,9 @@ def create_test_loader(
         y = df[target].values.astype(int)
 
     X, mask = parse_fractals_to_3d(df)
+    if take_skip_trailing_stop_v2:
+        engineered = build_take_skip_v2_engineered_features(df, X)
+        X = append_take_skip_v2_engineered_channels(X, engineered)
     np.save(x_path, X)
     np.save(mask_path, mask)
     if entry_path:
@@ -1205,6 +1289,14 @@ def create_test_loader(
             label_map=None,
         )
     elif take_skip_trailing_stop:
+        dataset = FractalSequenceDataset(
+            X,
+            y,
+            mask,
+            regression=True,
+            label_map=None,
+        )
+    elif take_skip_trailing_stop_v2:
         dataset = FractalSequenceDataset(
             X,
             y,

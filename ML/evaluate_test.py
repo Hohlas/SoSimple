@@ -43,6 +43,12 @@ from ML.take_skip_trailing_stop_task import (
     build_take_skip_export_frame,
     compute_take_skip_metrics,
 )
+from ML.take_skip_trailing_stop_v2_task import (
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+    TAKE_SKIP_TRUE_PNL_V2_COLUMNS,
+    build_take_skip_v2_export_frame,
+    compute_take_skip_v2_metrics,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN,
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
@@ -238,7 +244,7 @@ def run_evaluation(
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     elif task == TRAILING_STOP_TARGET:
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
-    elif task == TAKE_SKIP_TRAILING_STOP_TARGET:
+    elif task in {TAKE_SKIP_TRAILING_STOP_TARGET, TAKE_SKIP_TRAILING_STOP_V2_TARGET}:
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     else:
         signal_true, predict_val_true, direction = load_test_metadata(task)
@@ -553,7 +559,7 @@ def run_evaluation(
         print(f"{'═' * 60}\n")
         return
 
-    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+    if task in {TAKE_SKIP_TRAILING_STOP_TARGET, TAKE_SKIP_TRAILING_STOP_V2_TARGET}:
         y_true_parts = []
         y_prob_parts = []
 
@@ -565,20 +571,32 @@ def run_evaluation(
 
         y_prob = np.concatenate(y_prob_parts)
         y_true = np.concatenate(y_true_parts).astype(np.float32)
-        true_pnl = df_test_full[TAKE_SKIP_TRUE_PNL_COLUMNS].values.astype(np.float32)
-        metrics = compute_take_skip_metrics(y_true, y_prob)
+        if task == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
+            true_pnl = df_test_full[TAKE_SKIP_TRUE_PNL_V2_COLUMNS].values.astype(np.float32)
+            metrics = compute_take_skip_v2_metrics(y_true, y_prob)
+            export = build_take_skip_v2_export_frame(
+                times=df_test_full['time'].values,
+                signals=df_test_full['signal'].values.astype(int),
+                pred_prob=y_prob,
+                true_label=y_true,
+                true_pnl=true_pnl,
+            )
+            export_path = REPORTS_DIR / 'take_skip_trailing_stop_v2_test_predictions.csv'
+            report_path = REPORTS_DIR / 'evaluate_test_take_skip_trailing_stop_v2.md'
+        else:
+            true_pnl = df_test_full[TAKE_SKIP_TRUE_PNL_COLUMNS].values.astype(np.float32)
+            metrics = compute_take_skip_metrics(y_true, y_prob)
+            export = build_take_skip_export_frame(
+                times=df_test_full['time'].values,
+                signals=df_test_full['signal'].values.astype(int),
+                pred_prob=y_prob,
+                true_label=y_true,
+                true_pnl=true_pnl,
+            )
+            export_path = REPORTS_DIR / 'take_skip_trailing_stop_test_predictions.csv'
+            report_path = REPORTS_DIR / 'evaluate_test_take_skip_trailing_stop_v1.md'
         metrics['val_score'] = -metrics['bce']
-
-        export = build_take_skip_export_frame(
-            times=df_test_full['time'].values,
-            signals=df_test_full['signal'].values.astype(int),
-            pred_prob=y_prob,
-            true_label=y_true,
-            true_pnl=true_pnl,
-        )
-        export_path = REPORTS_DIR / 'take_skip_trailing_stop_test_predictions.csv'
         export.to_csv(export_path, sep=';', index=False)
-        report_path = REPORTS_DIR / 'evaluate_test_take_skip_trailing_stop_v1.md'
         report_lines = [
             '# Take/Skip Trailing Stop Test Set Evaluation',
             '',
@@ -909,6 +927,7 @@ def parse_args():
                             TRAILING_STOP_TARGET,
                             TRAILING_STOP_TARGET_QUANTILE_TARGET,
                             TAKE_SKIP_TRAILING_STOP_TARGET,
+                            TAKE_SKIP_TRAILING_STOP_V2_TARGET,
                         ])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')

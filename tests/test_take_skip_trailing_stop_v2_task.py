@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import ML.evaluate_test as evaluate_test
+import API.generate_signals as signal_api
+from ML import data_loader
+from ML import train
 from ML.take_skip_trailing_stop_v2_task import (
     TAKE_SKIP_THRESHOLD_ATR_V2,
     TAKE_SKIP_TRAILING_STOP_V2_COLUMNS,
@@ -92,3 +96,128 @@ def test_compute_take_skip_v2_metrics_validates_inputs():
     bad_prob[0, 0] = 1.5
     with pytest.raises(ValueError, match='probabilities in \\[0, 1\\]'):
         compute_take_skip_v2_metrics(y_true, bad_prob)
+
+
+def test_data_loader_task_suffix_for_take_skip_v2():
+    assert data_loader.task_target_column(TAKE_SKIP_TRAILING_STOP_V2_TARGET) == TAKE_SKIP_TRAILING_STOP_V2_TARGET
+    assert data_loader.task_checkpoint_suffix(TAKE_SKIP_TRAILING_STOP_V2_TARGET) == '_take_skip_trailing_stop_v2'
+
+
+def _build_take_skip_v2_frame() -> pd.DataFrame:
+    row = {
+        'time': ['2025.01.01 00:00', '2025.01.01 01:00'],
+        'signal': [1, -1],
+        'predict': [0.1, 0.2],
+        'ATR': [1.0, 2.0],
+        'session_hour': [10, 11],
+        'weekday': [2, 3],
+        'range_atr_6': [0.5, 0.6],
+        'body_atr_3': [0.1, 0.2],
+        'ret_dir_atr_lag1': [0.0, 0.1],
+        'vol_regime_24': [1.0, 1.1],
+        'ret_6_dir_atr': [0.2, 0.3],
+        'ret_12_dir_atr': [0.3, 0.4],
+        'ret_24_dir_atr': [0.4, 0.5],
+        'fav_3_atr': [0.1, 0.2],
+        'adv_3_atr': [0.0, 0.1],
+        'fav_6_atr': [0.2, 0.3],
+        'adv_6_atr': [0.1, 0.2],
+        'fav_12_atr': [0.3, 0.4],
+        'adv_12_atr': [0.2, 0.3],
+        'fav_24_atr': [0.4, 0.5],
+        'adv_24_atr': [0.3, 0.4],
+    }
+    for column in TAKE_SKIP_TRUE_PNL_V2_COLUMNS:
+        row[column] = [0.6, 0.1]
+    return pd.DataFrame(row)
+
+
+def test_create_data_loaders_take_skip_v2_uses_full_sequence_and_wide_targets(monkeypatch, tmp_path):
+    df = _build_take_skip_v2_frame()
+
+    monkeypatch.setattr(data_loader, 'DATA_DIR', tmp_path)
+    monkeypatch.setattr(data_loader, 'TRAIN_FILE', tmp_path / 'Nero_train_labeled.csv')
+    monkeypatch.setattr(data_loader, 'VAL_FILE', tmp_path / 'Nero_validation_labeled.csv')
+    monkeypatch.setattr(data_loader, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
+    monkeypatch.setattr(data_loader.pd, 'read_csv', lambda *args, **kwargs: df)
+    monkeypatch.setattr(data_loader, 'validate_csv_columns', lambda *args, **kwargs: None)
+    monkeypatch.setattr(data_loader, 'validate_fractal_format', lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        data_loader,
+        'parse_fractals_to_3d',
+        lambda frame: (
+            np.ones((len(frame), data_loader.N_FRACTALS, data_loader.N_FRACTAL_FEATURES), dtype=np.float32),
+            np.ones((len(frame), data_loader.N_FRACTALS), dtype=bool),
+        ),
+    )
+
+    train_loader, val_loader, _ = data_loader.create_data_loaders(
+        batch_size=2,
+        target=TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+        seq_len=20,
+        clear_cache=True,
+        num_workers=0,
+    )
+
+    X_train, y_train, mask_train = next(iter(train_loader))
+    X_val, y_val, mask_val = next(iter(val_loader))
+
+    assert X_train.shape == (2, data_loader.N_FRACTALS, X_train.shape[2])
+    assert X_val.shape == (2, data_loader.N_FRACTALS, X_val.shape[2])
+    assert X_train.shape[2] > data_loader.N_FRACTAL_FEATURES
+    assert y_train.shape == (2, 9)
+    assert y_val.shape == (2, 9)
+    assert mask_train.shape == (2, data_loader.N_FRACTALS)
+    assert mask_val.shape == (2, data_loader.N_FRACTALS)
+
+
+def test_create_test_loader_take_skip_v2_branch(monkeypatch, tmp_path):
+    df = _build_take_skip_v2_frame()
+
+    monkeypatch.setattr(data_loader, 'DATA_DIR', tmp_path)
+    monkeypatch.setattr(data_loader, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
+    monkeypatch.setattr(data_loader.pd, 'read_csv', lambda *args, **kwargs: df)
+    monkeypatch.setattr(data_loader, 'validate_csv_columns', lambda *args, **kwargs: None)
+    monkeypatch.setattr(data_loader, 'validate_fractal_format', lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        data_loader,
+        'parse_fractals_to_3d',
+        lambda frame: (
+            np.ones((len(frame), data_loader.N_FRACTALS, data_loader.N_FRACTAL_FEATURES), dtype=np.float32),
+            np.ones((len(frame), data_loader.N_FRACTALS), dtype=bool),
+        ),
+    )
+
+    loader = data_loader.create_test_loader(
+        batch_size=2,
+        target=TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+        seq_len=20,
+        clear_cache=True,
+        num_workers=0,
+    )
+
+    X_batch, y_batch, mask_batch = next(iter(loader))
+    assert X_batch.shape[0] == 2
+    assert X_batch.shape[1] == data_loader.N_FRACTALS
+    assert X_batch.shape[2] > data_loader.N_FRACTAL_FEATURES
+    assert y_batch.shape == (2, 9)
+    assert mask_batch.shape == (2, data_loader.N_FRACTALS)
+
+
+def test_train_initial_best_metric_allows_first_negative_take_skip_v2_score():
+    best_metric = train.initial_best_metric(TAKE_SKIP_TRAILING_STOP_V2_TARGET)
+    assert best_metric == -float('inf')
+
+
+def test_generate_signals_accepts_take_skip_v2_research_task_constant():
+    assert TAKE_SKIP_TRAILING_STOP_V2_TARGET in signal_api.RESEARCH_EXPORT_TASKS
+
+
+def test_evaluate_and_generate_modules_wire_take_skip_v2_exports():
+    evaluate_source = evaluate_test.Path(evaluate_test.__file__).read_text(encoding='utf-8')
+    generate_source = signal_api.Path(signal_api.__file__).read_text(encoding='utf-8')
+
+    assert 'TAKE_SKIP_TRAILING_STOP_V2_TARGET' in evaluate_source
+    assert 'build_take_skip_v2_export_frame' in evaluate_source
+    assert 'TAKE_SKIP_TRAILING_STOP_V2_TARGET' in generate_source
+    assert 'build_take_skip_v2_export_frame' in generate_source
