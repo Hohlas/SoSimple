@@ -25,11 +25,8 @@ python -m pytest tests/test_entry_path_task.py -q
 # Препроцессинг данных
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv
 
-# Обучение модели
-python -m ML.train --model entry_path_v1_quantile_transformer --task entry_path_v1_quantile
-
-# Генерация сигналов (production)
-python API/export_entry_path_v1_quantile_signals --rule-path ML/reports/entry_path_v1_quantile_selected_rule.json
+# Обучение модели (общий вид — конкретную модель/задачу см. в CONTEXT_HANDOFF.md)
+python -m ML.train --model <model_name> --task <task_name>
 
 # Статистика по данным
 python statistics/statistics.py DATA/Nero_train_labeled.csv
@@ -66,17 +63,6 @@ MT4 Expert ($o$imple.mq4)
 | `statistics/signal_tracer.py` | ✅ | Reconciliation ML-сигналов с реальными сделками MT4 |
 | `ML/benchmark_quantile_forward_validation.py` | ✅ | Frozen benchmark для forward validation |
 
-### Production Model
-
-- **Имя**: `entry_path_v1_quantile`, seed `seed_007`
-- **Checkpoint**: `ML/checkpoints/entry_path_v1_quantile_transformer_best.pt`
-- **Production rule (FROZEN)**: `ML/reports/entry_path_v1_quantile_selected_rule.json`
-- **Результаты gate**: validation N=32 PF=11.24, test N=48 PF=8.18, MT4 parity 20/20
-
-### Triple Barrier (TB)
-
-TB **не production**. `tb_selected_rule.json` — frozen исторический артефакт. Пересмотр только после накопления forward-данных post-2026-06. Любой новый TB/label consumer должен явно различать `1.0` (TP) / `0.5` (Timeout) / `0.0` (SL) — нельзя бинаризовать через `int()`.
-
 ## Critical Conventions
 
 ### CSV-файлы из MT/
@@ -91,7 +77,7 @@ pd.read_csv('MT/MQL4/Files/Nero.csv', encoding='utf-16-le', sep=';')
 Обновить file header в изменённом файле + соответствующую документацию в `docs/`. Использовать скилл `update-docs-on-code-change`.
 
 ### Новый файл
-Добавить запись в `MODULE_INDEX.md` через скилл `rebuild-module-index`.
+Добавить запись в `MODULE_INDEX.md` через Mode 4 скилла `update-docs-on-code-change`.
 
 ### Язык
 Документация и комментарии — **русский**. Идентификаторы в коде — **английский**.

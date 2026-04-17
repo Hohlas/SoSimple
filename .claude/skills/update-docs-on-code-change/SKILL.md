@@ -3,7 +3,7 @@ name: update-docs-on-code-change
 description: Use when code files change and documentation needs to stay in sync — file headers, docs/, MODULE_INDEX.md, or DATA_FLOW.md are stale relative to implementation
 ---
 
-# Синхронизация документации (Codex-friendly)
+# Синхронизация документации
 
 ## Когда использовать
 - Пользователь просит обновить документацию после изменений кода.
@@ -33,6 +33,53 @@ description: Use when code files change and documentation needs to stay in sync 
 ```
 
 Обновлять header при изменении: назначения, входов/выходов, CLI-интерфейса. Не обновлять при рефакторинге внутренней логики.
+
+## Docstrings Python (Google Style)
+
+Проект использует **Google Style**. Применяется только к функциям и классам с нетривиальной логикой.
+
+### Функция / метод
+```python
+def compute_quantile_score(predictions: np.ndarray, threshold: float) -> np.ndarray:
+    """Вычисляет бинарный сигнал по квантильному порогу.
+
+    Аргументы:
+        predictions: Массив предсказаний модели, shape (N,).
+        threshold: Квантильный порог отсечения [0.0, 1.0].
+
+    Возвращает:
+        Бинарный массив сигналов shape (N,), 1 = активная позиция.
+
+    Исключения:
+        ValueError: Если threshold выходит за диапазон [0.0, 1.0].
+    """
+```
+
+### Класс
+```python
+class EntryPathFilter:
+    """Фильтр активных сигналов по квантильным предсказаниям.
+
+    Применяет frozen-правило из selected_rule.json к выходу модели.
+    Не изменяет сами предсказания — только выбирает активные строки.
+
+    Атрибуты:
+        rule: Словарь с параметрами rule (threshold, direction).
+        active_count: Количество активных сигналов после фильтрации.
+    """
+```
+
+### Однострочный docstring
+Для вспомогательных функций с очевидным назначением:
+```python
+def load_normalization_stats(path: str) -> pd.DataFrame:
+    """Загружает p85/p99 для up/dn полей из Nero_normalization_stats.csv."""
+```
+
+### Правила
+- **Писать**: публичные функции с нетривиальной логикой, все классы, публичные методы классов.
+- **Не писать**: приватные хелперы (`_foo`), функции с говорящим именем и ≤3 строками тела.
+- Описание shape массивов обязательно: `shape (N, 20)`, `shape (batch, num_classes)`.
 
 ### MQL4 (.mqh / .mq4) — только если есть явная #include-связь с задачей
 
