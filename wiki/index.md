@@ -19,7 +19,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | Page | Covers | Reports |
 |------|--------|---------|
 | [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
-| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier + verdict, Entry Path v1 + MT4 winner + quantile robustness + MT4 parity + production verdict + composition verdict + standalone fav verdict + forward validation scaffold + PF uplift discovery: parallel execution tracks | 17 reports (04-08 — 04-13) |
+| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier + verdict, Entry Path v1 + MT4 winner + quantile robustness + MT4 parity + production verdict + composition verdict + standalone fav verdict + forward validation scaffold + PF uplift discovery + trailing-stop regression/quantile/take-skip verdicts: parallel execution tracks | 20 reports (04-08 — 04-17) |
 
 ## Concepts
 

@@ -111,3 +111,16 @@
   - updated comparison table and open question for strictly-forward prediction CSV
 - Updated `wiki/index.md` coverage from 15 to 16 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 16`
+
+## [2026-04-17] ingest | Trailing-stop retraining chain synced into wiki
+- Added reports:
+  - `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
+  - `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
+  - `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added a new subsection for trailing-stop outcome retraining
+  - summarized three consecutive verdicts: regression, quantile, binary take/skip
+  - updated comparison table with three new rejected tracks
+  - added open question about moving to richer feature representation
+- Updated `wiki/index.md` coverage from 17 to 20 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-17`, `sources: 20`

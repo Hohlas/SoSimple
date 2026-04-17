@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-04-13
-sources: 17
+last_updated: 2026-04-17
+sources: 20
 status: active
 ---
 
@@ -35,6 +35,92 @@ Offline simulator поверх regression_updn для сравнения сем�
 **Вывод**: outcome-aligned подход требует execution-aware labels (next-bar entry, single open position, exit policy) — простой close-at-12h недостаточен.
 
 Источник: [2026-04-08-outcome-aligned-retraining.md](../../docs/reports/2026-04-08-outcome-aligned-retraining.md)
+
+## 2.1. Trailing-Stop Outcome Retraining (04-16 — 04-17, три отчёта)
+
+После неудачи первого outcome-aligned retraining линия была переформулирована вокруг более близкого к торговле результата: не fixed-horizon close, а outcome сделки при простом trailing-stop.
+
+### Trailing-Stop Target First Wave (04-16)
+
+Новый research track `trailing_stop_target_v1` строил непрерывный target по результату сделки при trailing-stop за 48 баров и проверял матрицу:
+
+- `seq_len = 20 / 50 / 100`
+- trailing-stop `X = 2 / 3 / 5`
+
+Лучший validation candidate всего этапа:
+
+| Config | Target | PF | Trades |
+|---|---|---:|---:|
+| `transformer_seq20` | `trail_48_pnl_atr_x3` | **0.4206** | 24 |
+
+Во всех конфигурациях:
+
+- `validation PF > 1` не найден
+- увеличение истории до `50 / 100` не помогло
+
+**Вывод**: более торгово-приближённый continuous target сам по себе не вытянул сигнал. Линия дала полезный отрицательный verdict, но не winner.
+
+Источник: [2026-04-16-trailing-stop-target-first-wave.md](../../docs/reports/2026-04-16-trailing-stop-target-first-wave.md)
+
+### Trailing-Stop Target Quantile First Wave (04-16)
+
+Следующий шаг не менял данные, а менял голову модели: вместо обычной regression была проверена quantile-постановка `trailing_stop_target_quantile_v1` на том же target-е.
+
+Ключевой bounded run:
+
+- `transformer_seq20_x3_quantile`
+- quantiles: `q10 / q50 / q90`
+
+Результат:
+
+| Metric | Value |
+|---|---:|
+| best validation `q50_pearson_r` | `0.0389` |
+| test `q50_pearson_r` | `0.0541` |
+| best validation candidate | `q10_gt_m` |
+| validation PF | **0.1750** |
+| trades | 95 |
+
+**Вывод**: quantile-постановка оказалась хуже обычной regression на том же trailing-stop target-е (`0.1750` против `0.4206`). Это был уже сильный сигнал, что проблема не только в benchmark, а глубже.
+
+Источник: [2026-04-16-trailing-stop-target-quantile-first-wave.md](../../docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md)
+
+### Take/Skip Trailing-Stop Matrix (04-17)
+
+Третий шаг той же линии сменил сам target: вместо предсказания непрерывного PnL модель стала сразу решать задачу `брать / не брать` сделку.
+
+Постановка:
+
+- `take = 1`, если `trail_48_pnl_atr_xN >= 0.5`
+- `take = 0` иначе
+- grid `X = 2 / 3 / 4 / 6 / 8`
+- `seq_len = 20 / 50 / 100`
+
+Model quality по BCE выглядела аккуратно, но trading-benchmark снова провалился:
+
+| Config | Validation BCE | Test BCE | Verdict |
+|---|---:|---:|---|
+| `transformer_seq20` | 0.03841 | 0.0427 | reject |
+| `transformer_seq50` | 0.03834 | 0.0427 | reject |
+| `transformer_seq100` | 0.03788 | 0.0420 | reject |
+
+Диагностика candidate set показала более жёсткую проблему:
+
+- `prob_ge_threshold` полностью пуст на всех порогах `0.50..0.95`
+- весь benchmark жил только на `top_k_probability`
+- кандидатов с `PF > 1` не было вообще
+
+Лучшие validation candidates среди `trades_per_year >= 6`:
+
+| Config | Best candidate | PF | Trades/year |
+|---|---|---:|---:|
+| `seq20` | `take_48_x2 + top_k 5%` | 0.274 | 6.0 |
+| `seq50` | `take_48_x2 + top_k 5%` | 0.202 | 6.0 |
+| `seq100` | `take_48_x8 + top_k 10%` | 0.153 | 12.0 |
+
+**Вывод**: смена постановки на бинарный `take/skip` не спасла Track A. Absolute thresholds не работают, relative top-k лишь выбирает "наименее плохие" сделки. Практический смысл этого этапа — подтвердить, что bottleneck уже не в selection layer, а в слабости сигнала и бедном представлении входа.
+
+Источник: [2026-04-17-take-skip-trailing-stop-matrix.md](../../docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
 
 ## 3. Triple Barrier (04-08 — 04-12, три отчёта)
 
@@ -372,9 +458,13 @@ Trade-level reconciliation был сохранён отдельно:
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
+| trailing-stop regression | PF=0.42 (best validation) | **Reject** | Signal still too weak |
+| trailing-stop quantile | PF=0.175 (best validation) | **Reject** | Worse than regression |
+| trailing-stop take/skip | PF=0.274 (best validation, tpy≥6) | **Reject** | Need richer features, not new benchmark |
 
 ## Открытые вопросы
 
 1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
 3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
+4. Новый post-Track-A training track: все три trailing-stop варианта (regression, quantile, take/skip) дали отрицательный verdict; следующий шаг должен менять feature representation, а не повторять selection-layer search.
