@@ -194,3 +194,15 @@ def test_compute_take_skip_metrics_rejects_non_finite_inputs():
             np.array([[0, 1, 0, 1, 0]], dtype=np.float32),
             np.array([[0.2, np.inf, 0.2, 0.8, 0.2]], dtype=np.float32),
         )
+
+
+def test_data_loader_task_suffix_for_take_skip():
+    from ML.data_loader import task_checkpoint_suffix
+
+    assert task_checkpoint_suffix('take_skip_trailing_stop_v1') == '_take_skip_trailing_stop_v1'
+
+
+def test_generate_signals_accepts_take_skip_research_task_constant():
+    from API.generate_signals import RESEARCH_EXPORT_TASKS
+
+    assert 'take_skip_trailing_stop_v1' in RESEARCH_EXPORT_TASKS

@@ -57,6 +57,11 @@ from ML.entry_path_task import (
     build_entry_path_export_frame,
     build_entry_path_model,
 )
+from ML.take_skip_trailing_stop_task import (
+    TAKE_SKIP_TRAILING_STOP_TARGET,
+    TAKE_SKIP_TRUE_PNL_COLUMNS,
+    build_take_skip_export_frame,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
     build_trailing_stop_quantile_export_frame,
@@ -86,6 +91,12 @@ DEFAULT_TASK = 'regression_updn'
 DEFAULT_HORIZON = 12
 DEFAULT_THETA = 2.665
 DEFAULT_OPTUNA_JSON = str(REPORTS_DIR / 'optuna_best_params_transformer_regression_updn.json')
+RESEARCH_EXPORT_TASKS = {
+    ENTRY_PATH_TARGET,
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    TAKE_SKIP_TRAILING_STOP_TARGET,
+}
 
 
 def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) -> TrailingStopTargetQuantileTransformer:
@@ -93,7 +104,7 @@ def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) 
 
 
 def resolve_optuna_json(task: str, optuna_json: str | None) -> str | None:
-    if task in {TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_QUANTILE_TARGET}:
+    if task in {TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_QUANTILE_TARGET, TAKE_SKIP_TRAILING_STOP_TARGET}:
         if not optuna_json:
             return None
         if Path(optuna_json) == Path(DEFAULT_OPTUNA_JSON):
@@ -487,6 +498,59 @@ def generate_signals(
         print(f"{'═' * 60}\n")
         return
 
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        if not research_out_prefix:
+            raise ValueError('Для take_skip_trailing_stop_v1 нужен --research-out-prefix')
+
+        prefix_path = Path(research_out_prefix)
+        prefix_path.parent.mkdir(parents=True, exist_ok=True)
+
+        print(f"  🔬 Research export prefix: {prefix_path}")
+        _train_loader, val_loader, _scaler = create_data_loaders(
+            batch_size=256,
+            target=TAKE_SKIP_TRAILING_STOP_TARGET,
+            use_scaler=False,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+        test_loader = create_test_loader(
+            batch_size=256,
+            target=TAKE_SKIP_TRAILING_STOP_TARGET,
+            seq_len=seq_len,
+            num_workers=0,
+        )
+
+        for split_name, loader, csv_path in [
+            ('validation', val_loader, VAL_FILE),
+            ('test', test_loader, TEST_FILE),
+        ]:
+            df_full = pd.read_csv(csv_path, sep=CSV_SEP, low_memory=False)
+            true_pnl = df_full[TAKE_SKIP_TRUE_PNL_COLUMNS].values.astype(np.float32)
+            all_prob = []
+            all_true = []
+
+            with torch.no_grad():
+                for X_batch, y_batch, mask_batch in loader:
+                    logits = model(X_batch.to(device), mask=mask_batch.to(device))
+                    all_prob.append(torch.sigmoid(logits).cpu().numpy())
+                    all_true.append(y_batch.numpy())
+
+            pred_prob = np.concatenate(all_prob)
+            true_label = np.concatenate(all_true).astype(np.float32)
+            export = build_take_skip_export_frame(
+                times=df_full['time'].values,
+                signals=df_full['signal'].values.astype(int),
+                pred_prob=pred_prob,
+                true_label=true_label,
+                true_pnl=true_pnl,
+            )
+            output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
+            export.to_csv(output_path, sep=';', index=False)
+            print(f"  ✅ {split_name}: {len(export)} строк -> {output_path}")
+
+        print(f"{'═' * 60}\n")
+        return
+
     if task == TRAILING_STOP_TARGET:
         if not research_out_prefix:
             raise ValueError('Для trailing_stop_target_v1 нужен --research-out-prefix')
@@ -692,6 +756,7 @@ def parse_args() -> argparse.Namespace:
             ENTRY_PATH_TARGET,
             TRAILING_STOP_TARGET,
             TRAILING_STOP_TARGET_QUANTILE_TARGET,
+            TAKE_SKIP_TRAILING_STOP_TARGET,
         ],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
