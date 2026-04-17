@@ -696,7 +696,8 @@ def first_touch_path_class(bars, direction, entry_price, atr, threshold_atr=1.0)
     return 0
 
 
-TRAILING_STOP_X_VALUES = (2, 3, 5)
+TRAILING_STOP_HORIZONS = (12, 24, 48)
+TRAILING_STOP_X_VALUES = (2, 4, 8)
 TRAILING_STOP_HOLD_BARS = 48
 
 
@@ -763,8 +764,9 @@ def label_trailing_stop_targets(
     from datetime import datetime, timezone
 
     out = df.copy()
-    for x_value in x_values:
-        out[f'trail_48_pnl_atr_x{x_value}'] = 0.0
+    for horizon in TRAILING_STOP_HORIZONS:
+        for x_value in x_values:
+            out[f'trail_{horizon}_pnl_atr_x{x_value}'] = 0.0
 
     ohlc = times = time_idx = None
     if ohlc_path is not None:
@@ -829,14 +831,16 @@ def label_trailing_stop_targets(
                         'close': _safe_numeric_scalar(out.at[row_label, close_col], default=entry_price),
                     }
                 )
-        for x_value in x_values:
-            out.at[row_label, f'trail_48_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
-                bars=bars,
-                direction=signal,
-                entry_price=entry_price,
-                atr=atr,
-                trail_atr=float(x_value),
-            )
+        for horizon in TRAILING_STOP_HORIZONS:
+            horizon_bars = bars[:horizon]
+            for x_value in x_values:
+                out.at[row_label, f'trail_{horizon}_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
+                    bars=horizon_bars,
+                    direction=signal,
+                    entry_price=entry_price,
+                    atr=atr,
+                    trail_atr=float(x_value),
+                )
 
     return out
 
