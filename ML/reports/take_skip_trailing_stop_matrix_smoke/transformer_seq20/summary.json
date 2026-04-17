@@ -1,0 +1,73 @@
+{
+  "config": {
+    "seq_len": 20,
+    "epochs": 1,
+    "patience": 1,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0,
+    "min_trades_per_year": 6.0,
+    "target_columns": [
+      "take_48_x2",
+      "take_48_x3",
+      "take_48_x4",
+      "take_48_x6",
+      "take_48_x8"
+    ]
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "take_skip_trailing_stop_v1",
+    "best_metric": -0.03872968629002571,
+    "metric_name": "val_score",
+    "best_epoch": 1,
+    "num_parameters": 70597,
+    "training_time": 19.710312604904175,
+    "history": {
+      "train_loss": [
+        0.0961709488564503
+      ],
+      "val_loss": [
+        0.038730747626490286
+      ],
+      "val_score": [
+        -0.03872968629002571
+      ],
+      "val_bce": [
+        0.03872968629002571
+      ],
+      "lr": [
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "bce": 0.03872968629002571,
+      "positive_rate_take_48_x2": 0.0037321390118449926,
+      "brier_take_48_x2": 0.00372427050024271,
+      "positive_rate_take_48_x3": 0.004371934104710817,
+      "brier_take_48_x3": 0.004359468352049589,
+      "positive_rate_take_48_x4": 0.005224994849413633,
+      "brier_take_48_x4": 0.005208458751440048,
+      "positive_rate_take_48_x6": 0.00821070559322834,
+      "brier_take_48_x6": 0.008164766244590282,
+      "positive_rate_take_48_x8": 0.00917039904743433,
+      "brier_take_48_x8": 0.009105103090405464,
+      "val_score": -0.03872968629002571
+    }
+  },
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_matrix_smoke/transformer_seq20/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/take_skip_trailing_stop_matrix_smoke/transformer_seq20/take_skip_trailing_stop_validation_predictions.csv",
+    "test_csv": "ML/reports/take_skip_trailing_stop_matrix_smoke/transformer_seq20/take_skip_trailing_stop_test_predictions.csv"
+  },
+  "benchmark": {
+    "validation_grid_path": "ML/reports/take_skip_trailing_stop_matrix_smoke/transformer_seq20/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/take_skip_trailing_stop_matrix_smoke/transformer_seq20/benchmark/final_verdict.json",
+    "final_verdict": {
+      "verdict": "reject",
+      "validation_winner": null,
+      "test_result": null
+    }
+  },
+  "runtime_sec": 208.32078671455383
+}
