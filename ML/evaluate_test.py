@@ -23,7 +23,10 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    build_entry_path_model,
     build_entry_path_export_frame,
     build_entry_path_report_markdown,
 )
@@ -34,8 +37,19 @@ from ML.entry_path_v1_quantile_task import (
     build_entry_path_v1_quantile_report_markdown,
     count_crossed_quantile_rows,
 )
+from ML.trailing_stop_target_quantile_task import (
+    TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    build_trailing_stop_quantile_export_frame,
+    compute_trailing_stop_quantile_metrics,
+)
+from ML.trailing_stop_target_task import (
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+    build_trailing_stop_export_frame,
+)
 from ML.models import get_model
-from ML.models.entry_path_transformer import EntryPathTransformer
+from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
 from ML.tb_probability_calibration import (
     apply_tb_probability_calibration,
     load_tb_probability_calibrator,
@@ -57,17 +71,27 @@ TB_RULE_PATH = REPORTS_DIR / 'tb_selected_rule.json'
 FROZEN_OUTCOME_TARGET_PATH = REPORTS_DIR / 'frozen_outcome_target.json'
 
 
-def build_entry_path_model(model_kwargs: dict | None) -> EntryPathTransformer:
-    allowed_keys = {
-        'input_features',
-        'd_model',
-        'nhead',
-        'num_layers',
-        'dim_feedforward',
-        'dropout',
-    }
-    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
-    return EntryPathTransformer(**kwargs)
+def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) -> TrailingStopTargetQuantileTransformer:
+    return TrailingStopTargetQuantileTransformer(**(model_kwargs or {}))
+
+
+def _order_trailing_stop_quantiles(
+    pred_q10: np.ndarray,
+    pred_q50: np.ndarray,
+    pred_q90: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ordered = np.sort(
+        np.stack(
+            [
+                np.asarray(pred_q10, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q50, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q90, dtype=np.float64).reshape(-1),
+            ],
+            axis=1,
+        ),
+        axis=1,
+    )
+    return ordered[:, 0], ordered[:, 1], ordered[:, 2]
 
 
 def has_entry_path_ground_truth(df: pd.DataFrame) -> bool:
@@ -130,6 +154,7 @@ def run_evaluation(
     score_threshold: float | None = None,
     seed: int = 42,
     optuna_json: str | None = None,
+    seq_len_override: int | None = None,
 ):
     set_seed(seed)
     device = get_device()
@@ -161,7 +186,7 @@ def run_evaluation(
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     ckpt_model_name = ckpt.get('model_name', model_name or 'bilstm')
     num_classes = ckpt.get('num_classes', 1)
-
+    seq_len = int(seq_len_override if seq_len_override is not None else ckpt.get('seq_len', 20))
     model_kwargs = ckpt.get('model_kwargs', {})
     
     if optuna_json:
@@ -174,9 +199,13 @@ def run_evaluation(
         print(f"  📥 Загружены параметры архитектуры из {optuna_json}")
 
     if task == ENTRY_PATH_TARGET:
-        model = build_entry_path_model(model_kwargs)
+        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+        entry_model_name = ckpt_model_name if ckpt_model_name in ENTRY_PATH_MODEL_NAMES else 'transformer'
+        model = build_entry_path_model(entry_model_name, model_kwargs)
     elif task == ENTRY_PATH_V1_QUANTILE_TARGET:
         model = build_entry_path_v1_quantile_model(model_kwargs)
+    elif task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        model = build_trailing_stop_target_quantile_model(model_kwargs)
     else:
         model = get_model(ckpt_model_name, num_classes=num_classes, **model_kwargs)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -186,11 +215,11 @@ def run_evaluation(
 
     # ── Загрузка данных ──────────────────────────────────────────────────────
     print(f"\n{'─' * 60}")
-    target_col = task_target_column(task)
+    target_col = ENTRY_PATH_V1_QUANTILE_TARGET if task == ENTRY_PATH_V1_QUANTILE_TARGET else task_target_column(task)
     test_loader = create_test_loader(
         batch_size=256,
         target=target_col,
-        seq_len=model_kwargs.get('seq_len', 20) if optuna_json else 20,
+        seq_len=seq_len,
         num_workers=0,
     )
 
@@ -198,6 +227,10 @@ def run_evaluation(
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
         df_test = df_test_full[['time', 'signal']].copy()
         entry_path_gt_available = has_entry_path_ground_truth(df_test_full)
+    elif task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
+    elif task == TRAILING_STOP_TARGET:
+        df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     else:
         signal_true, predict_val_true, direction = load_test_metadata(task)
 
@@ -222,8 +255,12 @@ def run_evaluation(
         all_true_cls = []
 
         with torch.no_grad():
-            for X_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
-                outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+            for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, _signal_batch in test_loader:
+                outputs = model(
+                    X_batch.to(device),
+                    engineered_batch.to(device),
+                    mask=mask_batch.to(device),
+                )
                 all_ret.append(outputs['ret'].cpu().numpy())
                 all_path_reg.append(outputs['path_reg'].cpu().numpy())
                 all_path_cls.append(torch.softmax(outputs['path_cls'], dim=1).cpu().numpy())
@@ -370,8 +407,79 @@ def run_evaluation(
         print(f"{'═' * 60}\n")
         return
 
+    if task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        all_q10 = []
+        all_q50 = []
+        all_q90 = []
+        all_true = []
+
+        with torch.no_grad():
+            for X_batch, y_batch, mask_batch in test_loader:
+                outputs = model(X_batch.to(device), mask=mask_batch.to(device))
+                all_q10.append(outputs['q10'].cpu().numpy())
+                all_q50.append(outputs['q50'].cpu().numpy())
+                all_q90.append(outputs['q90'].cpu().numpy())
+                all_true.append(y_batch.numpy())
+
+        pred_q10 = np.concatenate(all_q10)
+        pred_q50 = np.concatenate(all_q50)
+        pred_q90 = np.concatenate(all_q90)
+        true_target = np.concatenate(all_true)
+        ordered_q10, ordered_q50, ordered_q90 = _order_trailing_stop_quantiles(
+            pred_q10,
+            pred_q50,
+            pred_q90,
+        )
+        metrics = compute_trailing_stop_quantile_metrics(
+            true_target=true_target,
+            pred_q10=ordered_q10,
+            pred_q50=ordered_q50,
+            pred_q90=ordered_q90,
+        )
+        metrics['val_score'] = metrics['q50_pearson_r']
+
+        export = build_trailing_stop_quantile_export_frame(
+            times=df_test_full['time'].values,
+            signals=df_test_full['signal'].values.astype(int),
+            pred_q10=pred_q10,
+            pred_q50=pred_q50,
+            pred_q90=pred_q90,
+            true=true_target,
+        )
+        export_path = REPORTS_DIR / 'trailing_stop_target_quantile_test_predictions.csv'
+        export.to_csv(export_path, sep=';', index=False)
+        report_path = REPORTS_DIR / 'evaluate_test_trailing_stop_target_quantile_v1.md'
+        report_lines = [
+            '# Trailing Stop Target Quantile Test Set Evaluation',
+            '',
+            f'**Модель**: {ckpt_model_name}',
+            f'**Набор**: Test ({len(export)} строк)',
+            '',
+            '## Summary',
+            '',
+            f"- row_count: **{len(export)}**",
+            f"- val_score: **{metrics['val_score']:.4f}**",
+            f"- q50_pearson_r: **{metrics['q50_pearson_r']:.4f}**",
+            f"- q50_mae: **{metrics['q50_mae']:.4f}**",
+            f"- interval_coverage: **{metrics['interval_coverage']:.4f}**",
+            f"- median_interval_width: **{metrics['median_interval_width']:.4f}**",
+            '',
+            '## Artifacts',
+            '',
+            f'- Predictions CSV: `{export_path.name}`',
+        ]
+        report_path.write_text('\n'.join(report_lines), encoding='utf-8')
+
+        print(f"  ✅ CSV сохранён: {export_path.name}")
+        print(f"  ✅ Отчет сохранён: {report_path.name}")
+        print(f"  row_count={len(export)}")
+        print(f"  val_score={metrics['val_score']:.4f}")
+        print(f"  q50_pearson_r={metrics['q50_pearson_r']:.4f}")
+        print(f"{'═' * 60}\n")
+        return
+
     all_preds = []
-    
+
     with torch.no_grad():
         for X_batch, _y_batch, mask_batch in test_loader:
             X_batch = X_batch.to(device)
@@ -382,6 +490,58 @@ def run_evaluation(
             all_preds.append(preds)
 
     y_pred = np.concatenate(all_preds)
+
+    if task == TRAILING_STOP_TARGET:
+        true_targets = df_test_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
+        per_target_metrics = {
+            name: compute_regression_metrics(true_targets[:, idx], y_pred[:, idx])
+            for idx, name in enumerate(TRAILING_STOP_TARGET_COLUMNS)
+        }
+        metrics = {
+            'mae': float(np.mean([item['mae'] for item in per_target_metrics.values()])),
+            'rmse': float(np.mean([item['rmse'] for item in per_target_metrics.values()])),
+            'r2': float(np.mean([item['r2'] for item in per_target_metrics.values()])),
+            'pearson_r': float(np.mean([item['pearson_r'] for item in per_target_metrics.values()])),
+            'per_target': per_target_metrics,
+        }
+        export = build_trailing_stop_export_frame(
+            times=df_test_full['time'].values,
+            signals=df_test_full['signal'].values.astype(int),
+            pred=y_pred,
+            true=true_targets,
+        )
+        export_path = REPORTS_DIR / 'trailing_stop_target_test_predictions.csv'
+        export.to_csv(export_path, sep=';', index=False)
+        report_path = REPORTS_DIR / 'evaluate_test_trailing_stop_target_v1.md'
+        report_lines = [
+            '# Trailing Stop Target Test Set Evaluation',
+            '',
+            f'**Модель**: {ckpt_model_name}',
+            f'**Набор**: Test ({len(export)} строк)',
+            '',
+            '## Summary',
+            '',
+            f"- row_count: **{len(export)}**",
+            f"- mae: **{metrics['mae']:.4f}**",
+            f"- rmse: **{metrics['rmse']:.4f}**",
+            f"- r2: **{metrics['r2']:.4f}**",
+            f"- pearson_r: **{metrics['pearson_r']:.4f}**",
+            '',
+            '## Artifacts',
+            '',
+            f'- Predictions CSV: `{export_path.name}`',
+        ]
+        report_path.write_text('\n'.join(report_lines), encoding='utf-8')
+
+        print(f"  ✅ CSV сохранён: {export_path.name}")
+        print(f"  ✅ Отчет сохранён: {report_path.name}")
+        print(f"  row_count={len(export)}")
+        print(f"  mae={metrics['mae']:.4f}")
+        print(f"  rmse={metrics['rmse']:.4f}")
+        print(f"  r2={metrics['r2']:.4f}")
+        print(f"  pearson_r={metrics['pearson_r']:.4f}")
+        print(f"{'═' * 60}\n")
+        return
 
     # ── Triple Barrier Evaluation ─────────────────────────────────────────────
     if task == 'triple_barrier':
@@ -684,6 +844,8 @@ def parse_args():
                             TRADE_OUTCOME_TARGET,
                             TRADE_PNL_TARGET,
                             ARCHETYPE_TARGET,
+                            TRAILING_STOP_TARGET,
+                            TRAILING_STOP_TARGET_QUANTILE_TARGET,
                         ])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')

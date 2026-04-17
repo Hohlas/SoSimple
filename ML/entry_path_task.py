@@ -2,8 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
 
+from ML.entry_path_feature_bank import FEATURE_BANK_COLUMNS, build_entry_path_feature_bank
+
 
 ENTRY_PATH_TARGET = 'entry_path_v1'
+ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS = (20, 50, 100)
+ENTRY_PATH_MODEL_NAMES = ('transformer', 'entry_path_dual_stream')
 ENTRY_PATH_RET_TARGETS = ['ret_6_dir_atr', 'ret_12_dir_atr', 'ret_24_dir_atr']
 ENTRY_PATH_PATH_REG_TARGETS = [
     'fav_6_atr',
@@ -14,6 +18,16 @@ ENTRY_PATH_PATH_REG_TARGETS = [
     'adv_24_atr',
 ]
 ENTRY_PATH_CLASS_TARGET = 'path_6_class'
+ENTRY_PATH_V1_BASE_FEATURE_COLUMNS = [
+    'session_hour',
+    'weekday',
+    'range_atr_6',
+    'body_atr_3',
+    'ret_dir_atr_lag1',
+    'vol_regime_24',
+]
+ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS = list(FEATURE_BANK_COLUMNS)
+ENTRY_PATH_V1_FEATURE_COLUMNS = ENTRY_PATH_V1_BASE_FEATURE_COLUMNS + ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS
 ENTRY_PATH_REG_TARGETS = ENTRY_PATH_RET_TARGETS + ENTRY_PATH_PATH_REG_TARGETS
 ENTRY_PATH_CLASS_MAP = {-1: 0, 0: 1, 1: 2}
 ENTRY_PATH_INV_CLASS_MAP = {value: key for key, value in ENTRY_PATH_CLASS_MAP.items()}
@@ -27,6 +41,41 @@ def split_entry_path_targets(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         raise ValueError(f'Unsupported {ENTRY_PATH_CLASS_TARGET} values: {unknown}')
     y_cls = np.array([ENTRY_PATH_CLASS_MAP[int(label)] for label in y_cls_raw], dtype=np.int64)
     return y_reg, y_cls
+
+
+def split_entry_path_features(df: pd.DataFrame) -> np.ndarray:
+    feature_frame = df
+    if any(column not in feature_frame.columns for column in ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS):
+        feature_frame = build_entry_path_feature_bank(feature_frame)
+    return (
+        feature_frame.reindex(columns=ENTRY_PATH_V1_FEATURE_COLUMNS)
+        .apply(pd.to_numeric, errors='coerce')
+        .fillna(0.0)
+        .values.astype(np.float32)
+    )
+
+
+def build_entry_path_model(model_name: str, model_kwargs: dict | None = None):
+    allowed_keys = {
+        'input_features',
+        'engineered_feature_dim',
+        'd_model',
+        'nhead',
+        'num_layers',
+        'dim_feedforward',
+        'dropout',
+    }
+    kwargs = {key: value for key, value in (model_kwargs or {}).items() if key in allowed_keys}
+    if model_name == 'transformer':
+        from ML.models.entry_path_transformer import EntryPathTransformer
+
+        return EntryPathTransformer(**kwargs)
+    if model_name == 'entry_path_dual_stream':
+        from ML.models.entry_path_dual_stream_transformer import EntryPathDualStreamTransformer
+
+        return EntryPathDualStreamTransformer(**kwargs)
+    available = ', '.join(ENTRY_PATH_MODEL_NAMES)
+    raise ValueError(f"Модель '{model_name}' не поддерживается для {ENTRY_PATH_TARGET}. Доступны: {available}")
 
 
 def build_entry_path_export_frame(
@@ -147,6 +196,52 @@ def build_entry_path_report_markdown(
         ])
         return '\n'.join(lines)
 
+    active_frame = frame[frame['signal'] != 0].copy()
+
+    def compute_trade_summary(trades: pd.DataFrame) -> dict[str, float | int]:
+        if trades.empty:
+            return {
+                'trades_per_year': 0.0,
+                'pf': 0.0,
+                'profit_concentration_top_10': 1.0,
+                'negative_year_slices': 0,
+            }
+        pnl = trades['true_ret_24_dir_atr'].to_numpy(dtype=np.float64)
+        gross_profit = float(pnl[pnl > 0].sum())
+        gross_loss = float(-pnl[pnl < 0].sum())
+        pf = gross_profit / gross_loss if gross_loss > 0 else float('inf') if gross_profit > 0 else 0.0
+        top_k = max(1, int(np.ceil(len(pnl) * 0.1)))
+        positive_sorted = np.sort(pnl[pnl > 0])[::-1]
+        profit_concentration = 1.0
+        if gross_profit > 0 and len(positive_sorted) > 0:
+            profit_concentration = float(positive_sorted[:top_k].sum() / gross_profit)
+
+        trade_times = pd.to_datetime(trades['time'], format='%Y.%m.%d %H:%M', errors='coerce')
+        valid_years = trade_times.dt.year.dropna()
+        if len(valid_years) == 0:
+            trades_per_year = float(len(trades))
+            negative_year_slices = 0
+        else:
+            year_count = max(1, int(valid_years.nunique()))
+            trades_per_year = float(len(trades) / year_count)
+            yearly = pd.DataFrame({'year': trade_times.dt.year, 'pnl': pnl}).dropna(subset=['year'])
+            year_pf = yearly.groupby('year')['pnl'].apply(
+                lambda series: (
+                    float(series[series > 0].sum()) / float(-series[series < 0].sum())
+                    if float(-series[series < 0].sum()) > 0
+                    else float('inf') if float(series[series > 0].sum()) > 0 else 0.0
+                )
+            )
+            negative_year_slices = int((year_pf < 1.0).sum())
+        return {
+            'trades_per_year': trades_per_year,
+            'pf': pf,
+            'profit_concentration_top_10': profit_concentration,
+            'negative_year_slices': negative_year_slices,
+        }
+
+    active_trade_summary = compute_trade_summary(active_frame)
+
     ret_rows = []
     path_reg_rows = []
 
@@ -198,7 +293,6 @@ def build_entry_path_report_markdown(
         slice_row('Top 10%', top_slice),
     ]
 
-    active_frame = frame[frame['signal'] != 0].copy()
     active_lines = []
     if len(active_frame) > 0:
         active_ret_rows = []
@@ -244,6 +338,10 @@ def build_entry_path_report_markdown(
             f'- active_rows: **{len(active_frame)}**',
             f'- active_ret_pearson_r: **{active_ret_pearson_r:.4f}**',
             f'- active_path_cls_f1_macro: **{active_path_cls_f1_macro:.4f}**',
+            f"- trades_per_year: **{active_trade_summary['trades_per_year']:.2f}**",
+            f"- PF: **{active_trade_summary['pf']:.4f}**",
+            f"- profit_concentration_top_10: **{active_trade_summary['profit_concentration_top_10']:.4f}**",
+            f"- negative_year_slices: **{active_trade_summary['negative_year_slices']}**",
             '',
             '| Target | Pearson r | MAE |',
             '|--------|-----------|-----|',

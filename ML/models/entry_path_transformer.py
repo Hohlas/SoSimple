@@ -8,6 +8,7 @@ class EntryPathTransformer(nn.Module):
     def __init__(
         self,
         input_features: int = 20,
+        engineered_feature_dim: int | None = None,
         d_model: int = 64,
         nhead: int = 4,
         num_layers: int = 2,
@@ -15,6 +16,10 @@ class EntryPathTransformer(nn.Module):
         dropout: float = 0.3,
     ):
         super().__init__()
+        if engineered_feature_dim is None:
+            from ML.entry_path_task import ENTRY_PATH_V1_FEATURE_COLUMNS
+
+            engineered_feature_dim = len(ENTRY_PATH_V1_FEATURE_COLUMNS)
 
         self.input_projection = nn.Linear(input_features, d_model)
         self.cls_token = nn.Parameter(torch.randn(1, 1, d_model))
@@ -29,6 +34,16 @@ class EntryPathTransformer(nn.Module):
             batch_first=True,
         )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        fusion_hidden_dim = max(d_model, engineered_feature_dim * 4)
+        self.entry_path_projection = nn.Sequential(
+            nn.LayerNorm(d_model + engineered_feature_dim),
+            nn.Linear(d_model + engineered_feature_dim, fusion_hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(fusion_hidden_dim, d_model),
+            nn.LayerNorm(d_model),
+            nn.ReLU(),
+        )
 
         self.ret_head = nn.Sequential(
             nn.Dropout(dropout),
@@ -61,6 +76,7 @@ class EntryPathTransformer(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
+        engineered: torch.Tensor,
         mask: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         batch_size = x.size(0)
@@ -79,12 +95,17 @@ class EntryPathTransformer(nn.Module):
         x = self.transformer_encoder(x, src_key_padding_mask=src_key_padding_mask)
         cls_output = x[:, 0, :]
         sequence_output = x[:, 1:, :]
+        cls_output = self.entry_path_projection(torch.cat([cls_output, engineered], dim=1))
 
         path_cls_hidden = self.path_cls_sequence_proj(sequence_output)
         path_cls_pool_logits = self.path_cls_time_pool(path_cls_hidden).squeeze(-1)
         if mask is not None:
             path_cls_pool_logits = path_cls_pool_logits.masked_fill(~mask, float('-inf'))
-        path_cls_pool_weights = torch.softmax(path_cls_pool_logits, dim=1).unsqueeze(-1)
+        path_cls_pool_weights = torch.softmax(path_cls_pool_logits, dim=1)
+        if mask is not None:
+            path_cls_pool_weights = path_cls_pool_weights.masked_fill(~mask, 0.0)
+            path_cls_pool_weights = path_cls_pool_weights / path_cls_pool_weights.sum(dim=1, keepdim=True).clamp_min(1e-8)
+        path_cls_pool_weights = path_cls_pool_weights.unsqueeze(-1)
         path_cls_output = (path_cls_hidden * path_cls_pool_weights).sum(dim=1)
 
         return {

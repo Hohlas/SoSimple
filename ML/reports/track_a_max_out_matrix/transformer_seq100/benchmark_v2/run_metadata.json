@@ -1,0 +1,12 @@
+{
+  "validation_csv": "ML/reports/track_a_max_out_matrix/transformer_seq100/entry_path_v1_validation_predictions.csv",
+  "test_csv": "ML/reports/track_a_max_out_matrix/transformer_seq100/entry_path_v1_test_predictions.csv",
+  "target_coverages": [
+    0.25,
+    0.35,
+    0.45,
+    0.55,
+    0.65
+  ],
+  "candidate_count": 19
+}

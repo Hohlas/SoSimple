@@ -1,0 +1,317 @@
+{
+  "config": {
+    "model": "entry_path_dual_stream",
+    "seq_len": 100,
+    "epochs": 3,
+    "patience": 2,
+    "batch_size": 256,
+    "seed": 42
+  },
+  "train_result": {
+    "model_name": "entry_path_dual_stream",
+    "task": "entry_path_v1",
+    "best_metric": 0.07544373472531636,
+    "metric_name": "ret_pearson_r",
+    "best_epoch": 3,
+    "num_parameters": 96009,
+    "training_time": 99.52528023719788,
+    "history": {
+      "train_loss": [
+        0.8944769635883688,
+        0.8717788008221409,
+        0.8592391683344256
+      ],
+      "val_loss": [
+        0.8530577501735171,
+        0.8432395168252893,
+        0.8363977412919741
+      ],
+      "val_pearson_r": [
+        0.0427611842751503,
+        0.057426405449708305,
+        0.07544373472531636
+      ],
+      "val_mae": [
+        0.2095500330130259,
+        0.2075793445110321,
+        0.21293563644091287
+      ],
+      "val_rmse": [
+        0.6445638855983816,
+        0.6437422840389616,
+        0.6432897858349363
+      ],
+      "val_r2": [
+        -0.0006762544314066569,
+        0.0015287995338439941,
+        0.002793113390604655
+      ],
+      "val_path_reg_pearson_r": [
+        0.02342730201780796,
+        0.06957736425101757,
+        0.09485559289654096
+      ],
+      "val_path_cls_f1_macro": [
+        0.32606958669281616,
+        0.32606958669281616,
+        0.32606958669281616
+      ],
+      "val_active_path_cls_f1_macro": [
+        0.08913308913308914,
+        0.08913308913308914,
+        0.08913308913308914
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "ret_pearson_r": 0.07544373472531636,
+      "pearson_r": 0.07544373472531636,
+      "mae": 0.21293563644091287,
+      "rmse": 0.6432897858349363,
+      "r2": 0.002793113390604655,
+      "ret_metrics": {
+        "ret_6_dir_atr": {
+          "mae": 0.15331926941871643,
+          "rmse": 0.4728456858443488,
+          "r2": 0.0016437172889709473,
+          "pearson_r": 0.07255679368972778,
+          "pearson_p": 1.9963891650931487e-12
+        },
+        "ret_12_dir_atr": {
+          "mae": 0.18148064613342285,
+          "rmse": 0.5891892547225195,
+          "r2": 0.004000842571258545,
+          "pearson_r": 0.07106238603591919,
+          "pearson_p": 5.5998946799085125e-12
+        },
+        "ret_24_dir_atr": {
+          "mae": 0.30400699377059937,
+          "rmse": 0.8678344169379406,
+          "r2": 0.0027347803115844727,
+          "pearson_r": 0.08271202445030212,
+          "pearson_p": 1.0359544346560706e-15
+        }
+      },
+      "ret_per_target": {
+        "ret_6_dir_atr": {
+          "mae": 0.15331926941871643,
+          "rmse": 0.4728456858443488,
+          "r2": 0.0016437172889709473,
+          "pearson_r": 0.07255679368972778,
+          "pearson_p": 1.9963891650931487e-12
+        },
+        "ret_12_dir_atr": {
+          "mae": 0.18148064613342285,
+          "rmse": 0.5891892547225195,
+          "r2": 0.004000842571258545,
+          "pearson_r": 0.07106238603591919,
+          "pearson_p": 5.5998946799085125e-12
+        },
+        "ret_24_dir_atr": {
+          "mae": 0.30400699377059937,
+          "rmse": 0.8678344169379406,
+          "r2": 0.0027347803115844727,
+          "pearson_r": 0.08271202445030212,
+          "pearson_p": 1.0359544346560706e-15
+        }
+      },
+      "path_reg_pearson_r": 0.09485559289654096,
+      "path_reg_metrics": {
+        "fav_6_atr": {
+          "mae": 0.06531641632318497,
+          "rmse": 0.242288414634557,
+          "r2": 0.003697037696838379,
+          "pearson_r": 0.09383440762758255,
+          "pearson_p": 8.562126487255929e-20
+        },
+        "adv_6_atr": {
+          "mae": 0.14500238001346588,
+          "rmse": 0.6098156338503963,
+          "r2": -0.007496833801269531,
+          "pearson_r": 0.10145681351423264,
+          "pearson_p": 6.90965349475874e-23
+        },
+        "fav_12_atr": {
+          "mae": 0.07575250416994095,
+          "rmse": 0.30426889175810734,
+          "r2": 0.0024036169052124023,
+          "pearson_r": 0.07974626868963242,
+          "pearson_p": 1.0428302034295837e-14
+        },
+        "adv_12_atr": {
+          "mae": 0.18587248027324677,
+          "rmse": 0.7883573346049694,
+          "r2": -0.010785698890686035,
+          "pearson_r": 0.09413550049066544,
+          "pearson_p": 6.530625832788246e-20
+        },
+        "fav_24_atr": {
+          "mae": 0.09094380587339401,
+          "rmse": 0.4023404167555723,
+          "r2": 0.0001499652862548828,
+          "pearson_r": 0.0869331806898117,
+          "pearson_p": 3.35597431552359e-17
+        },
+        "adv_24_atr": {
+          "mae": 0.2663615345954895,
+          "rmse": 1.1382305147047773,
+          "r2": -0.017706751823425293,
+          "pearson_r": 0.11302738636732101,
+          "pearson_p": 4.8055933972621555e-28
+        }
+      },
+      "path_reg_per_target": {
+        "fav_6_atr": {
+          "mae": 0.06531641632318497,
+          "rmse": 0.242288414634557,
+          "r2": 0.003697037696838379,
+          "pearson_r": 0.09383440762758255,
+          "pearson_p": 8.562126487255929e-20
+        },
+        "adv_6_atr": {
+          "mae": 0.14500238001346588,
+          "rmse": 0.6098156338503963,
+          "r2": -0.007496833801269531,
+          "pearson_r": 0.10145681351423264,
+          "pearson_p": 6.90965349475874e-23
+        },
+        "fav_12_atr": {
+          "mae": 0.07575250416994095,
+          "rmse": 0.30426889175810734,
+          "r2": 0.0024036169052124023,
+          "pearson_r": 0.07974626868963242,
+          "pearson_p": 1.0428302034295837e-14
+        },
+        "adv_12_atr": {
+          "mae": 0.18587248027324677,
+          "rmse": 0.7883573346049694,
+          "r2": -0.010785698890686035,
+          "pearson_r": 0.09413550049066544,
+          "pearson_p": 6.530625832788246e-20
+        },
+        "fav_24_atr": {
+          "mae": 0.09094380587339401,
+          "rmse": 0.4023404167555723,
+          "r2": 0.0001499652862548828,
+          "pearson_r": 0.0869331806898117,
+          "pearson_p": 3.35597431552359e-17
+        },
+        "adv_24_atr": {
+          "mae": 0.2663615345954895,
+          "rmse": 1.1382305147047773,
+          "r2": -0.017706751823425293,
+          "pearson_r": 0.11302738636732101,
+          "pearson_p": 4.8055933972621555e-28
+        }
+      },
+      "path_cls_f1_macro": 0.32606958669281616,
+      "path_cls_metrics": {
+        "f1_macro": 0.32606958669281616,
+        "f1_per_class": {
+          "-1": 0.0,
+          "0": 0.9782087600784485,
+          "1": 0.0
+        },
+        "precision_neg": 0.0,
+        "precision_pos": 0.0,
+        "recall_neg": 0.0,
+        "recall_pos": 0.0,
+        "signal_precision": 0.0,
+        "signal_recall": 0.0,
+        "f1_minority": 0.0,
+        "confusion_matrix": [
+          [
+            0,
+            307,
+            0
+          ],
+          [
+            0,
+            8978,
+            0
+          ],
+          [
+            0,
+            93,
+            0
+          ]
+        ],
+        "classification_report": "              precision    recall  f1-score   support\n\n   Sell (-1)       0.00      0.00      0.00       307\n Neutral (0)       0.96      1.00      0.98      8978\n     Buy (1)       0.00      0.00      0.00        93\n\n    accuracy                           0.96      9378\n   macro avg       0.32      0.33      0.33      9378\nweighted avg       0.92      0.96      0.94      9378\n"
+      },
+      "path_cls_per_class": {
+        "-1": 0.0,
+        "0": 0.9782087600784485,
+        "1": 0.0
+      },
+      "active_path_cls_f1_macro": 0.08913308913308914,
+      "active_path_cls_per_class": {
+        "-1": 0.0,
+        "0": 0.2673992673992674,
+        "1": 0.0
+      }
+    }
+  },
+  "checkpoint_path": "ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/entry_path_v1_validation_predictions.csv",
+    "test_csv": "ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/entry_path_v1_test_predictions.csv"
+  },
+  "benchmark_v2": {
+    "verdict": "reject",
+    "min_pf": 1.0,
+    "target_trades_per_year": 40,
+    "validation_candidate": {
+      "candidate": "fav24_minus_adv24_l10",
+      "family": "fav24_minus_adv24",
+      "score_threshold": -0.020353644999999997,
+      "trades": 119,
+      "trades_per_year": 29.75,
+      "pf": 0.1693617157044164,
+      "win_rate": 0.14285714285714285,
+      "mean_pnl_atr": -2.2501162487983195,
+      "profit_concentration_top_10": 0.2229050172695602,
+      "negative_year_slices": 4,
+      "ulcer_index_atr": 144.9214260972858,
+      "max_drawdown_atr": 266.242781007,
+      "target_coverage": 0.25,
+      "trades_gap": 10.25,
+      "selection_tier": 0
+    },
+    "test_summary": {
+      "candidate": "fav24_minus_adv24_l10",
+      "family": "fav24_minus_adv24",
+      "score_threshold": -0.020353644999999997,
+      "trades": 159,
+      "trades_per_year": 31.8,
+      "pf": 0.173825109054359,
+      "win_rate": 0.15723270440251572,
+      "mean_pnl_atr": -2.3920140194968553,
+      "profit_concentration_top_10": 0.2963278456487301,
+      "negative_year_slices": 4,
+      "ulcer_index_atr": 227.03713151689252,
+      "max_drawdown_atr": 387.0567600400001
+    },
+    "diagnostics": {
+      "validation_rows": 95,
+      "families": [
+        "edge12_plus_edge24",
+        "fav24_minus_adv24",
+        "fav24_over_adv24",
+        "ret12_plus_ret24",
+        "ret24_fav12_adv12",
+        "ret24_minus_adv24",
+        "ret24_nonflat_confidence",
+        "ret24_only",
+        "ret24_over_adv24"
+      ],
+      "validation_rows_pf_gt_1": 0,
+      "validation_rows_pf_gt_1_2": 0,
+      "validation_rows_pf_gt_1_5": 0
+    }
+  },
+  "runtime_sec": 115.40445470809937
+}

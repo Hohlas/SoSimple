@@ -111,3 +111,25 @@ def test_first_touch_path_class_returns_zero_on_timeout():
     )
 
     assert out == 0
+
+
+def test_label_entry_path_targets_adds_frequency_features():
+    frame = pd.DataFrame(
+        {
+            'time': ['2024.01.01 00:00'],
+            'signal': [1],
+            'ATR': [1.0],
+        }
+    )
+
+    result = ls.add_entry_path_frequency_features(frame.copy())
+
+    expected = {
+        'session_hour',
+        'weekday',
+        'range_atr_6',
+        'body_atr_3',
+        'ret_dir_atr_lag1',
+        'vol_regime_24',
+    }
+    assert expected.issubset(result.columns)

@@ -14,7 +14,6 @@ from ML.data_loader import (
     create_data_loaders,
     create_test_loader,
 )
-from ML.entry_path_task import ENTRY_PATH_TARGET
 from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
     build_entry_path_v1_quantile_export_frame,
@@ -126,7 +125,7 @@ def export_predictions(
     requested_splits = splits or DEFAULT_SPLITS
     train_loader, val_loader, _ = create_data_loaders(
         batch_size=batch_size,
-        target=ENTRY_PATH_TARGET,
+        target=ENTRY_PATH_V1_QUANTILE_TARGET,
         use_scaler=False,
         seq_len=ckpt.get('model_kwargs', {}).get('seq_len', 20),
         clear_cache=clear_cache,

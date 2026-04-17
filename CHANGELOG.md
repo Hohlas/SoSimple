@@ -2,6 +2,69 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-17] - Trailing-stop target quantile first wave
+
+### Добавлено
+- `ML/trailing_stop_target_quantile_task.py`
+- `ML/models/trailing_stop_target_quantile_transformer.py`
+- `ML/benchmark_trailing_stop_target_quantile.py`
+- `ML/run_trailing_stop_target_quantile.py`
+- tests для quantile task/model/benchmark/runner
+
+### Изменено
+- `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`, `ML/data_loader.py`: task `trailing_stop_target_quantile_v1` протянут через train/evaluate/export stack
+- benchmark hardened: fail-fast date validation, full-split `trades_per_year`, обязательный checkpoint copy без stale reuse
+
+### Результаты
+- bounded run: `transformer_seq20_x3_quantile`, `trail_48_pnl_atr_x3`, `q10/q50/q90`
+- best val `q50_pearson_r=0.0389`, test `q50_pearson_r=0.0541`
+- лучший validation candidate: `q10_gt_m`, `PF=0.1750`, `95` trades
+- `PF >= 1.0` на validation не найден, verdict: `reject`
+
+### Вывод
+- quantile-постановка не улучшила обычную regression-постановку на том же target-е (`0.1750` против `0.4206` best validation PF)
+- дальнейшее расширение этой же family на `seq_len=50/100` без новой идеи не выглядит рациональным
+- следующий содержательный ход: другая целевая постановка, например бинарное `брать/не брать` или ranking внутри периода
+- Подробности: [docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md)
+
+## [2026-04-16] - Trailing-stop target first wave verdict
+
+### Добавлено
+- `ML/trailing_stop_target_task.py`, `ML/benchmark_trailing_stop_target.py`, `ML/run_trailing_stop_target_matrix.py`
+- `tests/test_trailing_stop_target_labels.py`, `tests/test_trailing_stop_target_task.py`, `tests/test_benchmark_trailing_stop_target.py`, `tests/test_run_trailing_stop_target_matrix.py`
+- bounded research contour `trailing_stop_target_v1` для матрицы `seq_len = 20 / 50 / 100`
+
+### Изменено
+- `processing/label_signals.py`, `processing/label_main.py`: trailing-stop targets теперь корректно рассчитываются для split CSV через OHLC lookup
+- `ML/evaluate_test.py`, `API/generate_signals.py`, `ML/train.py`: зафиксирован `seq_len` contract для trailing-stop matrix run
+
+### Результаты
+- Первый bounded run нового target-а завершён для `transformer_seq20/50/100`
+- Лучший validation candidate всего этапа: `transformer_seq20 + trail_48_pnl_atr_x3`, `PF=0.4206`
+- Во всех конфигурациях `validation PF > 1` не найден
+
+### Вывод
+- Новый trailing-stop target в текущем виде не вытягивает вход: даже лучший candidate далеко ниже `PF > 1`
+- Увеличение длины истории до `50 / 100` не помогло
+- Этап дал полезный отрицательный verdict и закрыл два real-world operational defect-а в labeling и export/evaluate wiring
+- Подробности: [docs/reports/2026-04-16-trailing-stop-target-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-first-wave.md)
+
+## [2026-04-15] - Track A max-out verdict
+
+### Добавлено
+- `ML/entry_path_feature_bank.py`, `ML/models/entry_path_dual_stream_transformer.py`, `ML/run_track_a_max_out_matrix.py`
+- bounded research contour для short/deep matrix по `entry_path_v1`
+
+### Результаты
+- Short sweep `6 configs x 3 epochs` и deeper rerun лучших `transformer_seq20/seq50` (`10 epochs`) завершены
+- Лучший validation candidate всего этапа: `transformer_seq50 + ret24_over_adv24`, `PF=0.4784297662870411`
+- Во всех конфигурациях `validation_rows_pf_gt_1 = 0`
+
+### Вывод
+- Track A заметно улучшен, но не достиг даже мягкого success gate `PF > 1` на validation
+- Следующий шаг должен менять само обучение или постановку задачи, а не повторять ещё один похожий benchmark-only цикл
+- Подробности: [docs/reports/2026-04-15-track-a-max-out.md](docs/reports/2026-04-15-track-a-max-out.md)
+
 ## [2026-04-13] - Quantile forward validation scaffold
 
 ### Добавлено

@@ -88,19 +88,30 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_INV_CLASS_MAP,
     ENTRY_PATH_PATH_REG_TARGETS,
     ENTRY_PATH_RET_TARGETS,
     ENTRY_PATH_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
+    build_entry_path_model,
 )
 from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
     compute_entry_path_v1_quantile_metrics,
 )
+from ML.trailing_stop_target_quantile_task import (
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    compute_trailing_stop_quantile_metrics,
+)
+from ML.trailing_stop_target_task import (
+    TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_COLUMNS,
+)
 from ML.losses import FocalLoss, HuberLoss, AsymmetricLoss, DirectionalAsymmetricLoss
 from ML.models import get_model, MODEL_REGISTRY
-from ML.models.entry_path_transformer import EntryPathTransformer
 from ML.models.entry_path_v1_quantile_transformer import EntryPathV1QuantileTransformer
+from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
 from ML.tb_probability_calibration import (
     fit_tb_probability_calibrator,
     save_tb_probability_calibrator,
@@ -274,6 +285,7 @@ def validate_regression(
     val_loader: torch.utils.data.DataLoader,
     loss_fn: nn.Module,
     device: torch.device,
+    target_names: list[str] | None = None,
 ) -> tuple[float, dict]:
     """
     Валидация модели в режиме регрессии.
@@ -328,7 +340,10 @@ def validate_regression(
 
     # Multi-target: per-target metrics + average
     if all_preds.ndim == 2 and all_preds.shape[1] > 1:
-        metrics = compute_multitarget_regression_metrics(all_targets, all_preds)
+        if target_names is not None:
+            metrics = compute_named_multitarget_regression_metrics(all_targets, all_preds, target_names)
+        else:
+            metrics = compute_multitarget_regression_metrics(all_targets, all_preds)
     else:
         metrics = compute_regression_metrics(all_targets, all_preds)
 
@@ -464,15 +479,16 @@ def train_one_epoch_entry_path(
     total_loss = 0.0
     n_batches = 0
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
+    for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in train_loader:
         X_batch = X_batch.to(device)
+        engineered_batch = engineered_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
         signal_batch = signal_batch.to(device)
 
         optimizer.zero_grad()
-        outputs = model(X_batch, mask=mask_batch)
+        outputs = model(X_batch, engineered_batch, mask=mask_batch)
         loss_ret = reduce_entry_path_weighted_loss(
             ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
             signal_batch,
@@ -515,14 +531,15 @@ def validate_entry_path(
     all_cls_targets = []
     all_signals = []
 
-    for X_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
+    for X_batch, engineered_batch, y_reg_batch, y_cls_batch, mask_batch, signal_batch in val_loader:
         X_batch = X_batch.to(device)
+        engineered_batch = engineered_batch.to(device)
         y_reg_batch = y_reg_batch.to(device)
         y_cls_batch = y_cls_batch.to(device)
         mask_batch = mask_batch.to(device)
         signal_batch = signal_batch.to(device)
 
-        outputs = model(X_batch, mask=mask_batch)
+        outputs = model(X_batch, engineered_batch, mask=mask_batch)
         loss_ret = reduce_entry_path_weighted_loss(
             ret_loss_fn(outputs['ret'], y_reg_batch[:, :len(ENTRY_PATH_RET_TARGETS)]),
             signal_batch,
@@ -867,6 +884,122 @@ def validate_entry_path_v1_quantile(
     return total_loss / n_batches, metrics
 
 
+def _pinball_loss_torch(preds: torch.Tensor, targets: torch.Tensor, quantile: float) -> torch.Tensor:
+    diff = targets - preds
+    return torch.maximum(quantile * diff, (quantile - 1.0) * diff)
+
+
+def _order_trailing_stop_quantiles(
+    pred_q10: np.ndarray,
+    pred_q50: np.ndarray,
+    pred_q90: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ordered = np.sort(
+        np.stack(
+            [
+                np.asarray(pred_q10, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q50, dtype=np.float64).reshape(-1),
+                np.asarray(pred_q90, dtype=np.float64).reshape(-1),
+            ],
+            axis=1,
+        ),
+        axis=1,
+    )
+    return ordered[:, 0], ordered[:, 1], ordered[:, 2]
+
+
+def compute_trailing_stop_target_quantile_losses(
+    outputs: dict[str, torch.Tensor],
+    y_batch: torch.Tensor,
+) -> dict[str, torch.Tensor | float]:
+    target = y_batch.reshape(-1, 1)
+    loss_q10 = _pinball_loss_torch(outputs['q10'], target, 0.10).mean()
+    loss_q50 = _pinball_loss_torch(outputs['q50'], target, 0.50).mean()
+    loss_q90 = _pinball_loss_torch(outputs['q90'], target, 0.90).mean()
+    loss = (loss_q10 + loss_q50 + loss_q90) / 3.0
+    return {
+        'loss': loss,
+        'loss_q10': float(loss_q10.detach().item()),
+        'loss_q50': float(loss_q50.detach().item()),
+        'loss_q90': float(loss_q90.detach().item()),
+    }
+
+
+def train_one_epoch_trailing_stop_target_quantile(
+    model: nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+) -> float:
+    model.train()
+    total_loss = 0.0
+    n_batches = 0
+
+    for X_batch, y_batch, mask_batch in train_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
+        mask_batch = mask_batch.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(X_batch, mask=mask_batch)
+        losses = compute_trailing_stop_target_quantile_losses(outputs, y_batch)
+        loss = losses['loss']
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += float(loss.item())
+        n_batches += 1
+
+    return total_loss / n_batches
+
+
+@torch.no_grad()
+def validate_trailing_stop_target_quantile(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> tuple[float, dict]:
+    model.eval()
+    total_loss = 0.0
+    n_batches = 0
+    all_targets = []
+    all_q10 = []
+    all_q50 = []
+    all_q90 = []
+
+    for X_batch, y_batch, mask_batch in val_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device)
+        mask_batch = mask_batch.to(device)
+
+        outputs = model(X_batch, mask=mask_batch)
+        losses = compute_trailing_stop_target_quantile_losses(outputs, y_batch)
+        total_loss += float(losses['loss'].item())
+        n_batches += 1
+
+        all_targets.append(y_batch.cpu().numpy())
+        all_q10.append(outputs['q10'].cpu().numpy())
+        all_q50.append(outputs['q50'].cpu().numpy())
+        all_q90.append(outputs['q90'].cpu().numpy())
+
+    true_target = np.concatenate(all_targets).reshape(-1)
+    pred_q10, pred_q50, pred_q90 = _order_trailing_stop_quantiles(
+        np.concatenate(all_q10),
+        np.concatenate(all_q50),
+        np.concatenate(all_q90),
+    )
+
+    metrics = compute_trailing_stop_quantile_metrics(
+        true_target=true_target,
+        pred_q10=pred_q10,
+        pred_q50=pred_q50,
+        pred_q90=pred_q90,
+    )
+    metrics['val_score'] = metrics['q50_pearson_r']
+    return total_loss / n_batches, metrics
+
+
 def resolve_model_kwargs_for_encoder_transfer(
     model_kwargs: dict | None,
     encoder_model_kwargs: dict | None,
@@ -948,10 +1081,17 @@ def train_model(
     entry_path = (task == ENTRY_PATH_TARGET)
     entry_path_quantile = (task == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
-    regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target
+    trailing_stop = (task == TRAILING_STOP_TARGET)
+    trailing_stop_quantile = (task == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target or trailing_stop
 
-    if entry_path_like and model_name != 'transformer':
-        raise ValueError(f'{ENTRY_PATH_TARGET} supports only model=transformer in v1')
+    if entry_path and model_name not in ENTRY_PATH_MODEL_NAMES:
+        supported = ', '.join(ENTRY_PATH_MODEL_NAMES)
+        raise ValueError(f'{ENTRY_PATH_TARGET} supports only models: {supported}')
+    if entry_path_quantile and model_name != 'transformer':
+        raise ValueError(f'{ENTRY_PATH_V1_QUANTILE_TARGET} supports only model=transformer')
+    if trailing_stop_quantile and model_name != 'transformer':
+        raise ValueError(f'{TRAILING_STOP_TARGET_QUANTILE_TARGET} supports only model=transformer')
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -962,12 +1102,12 @@ def train_model(
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
     # ── Данные ───────────────────────────────────────────────────────────────
-    target_col = task_target_column(task)
+    target_col = ENTRY_PATH_V1_QUANTILE_TARGET if entry_path_quantile else task_target_column(task)
     train_loader, val_loader, scaler = create_data_loaders(
         batch_size=batch_size,
         target=target_col,
         use_scaler=use_scaler,
-        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier) else False,
+        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier or trailing_stop_quantile) else False,
         seq_len=seq_len,
         clear_cache=clear_cache,
     )
@@ -993,6 +1133,10 @@ def train_model(
         num_classes = len(ENTRY_PATH_INV_CLASS_MAP)
     elif multi_target:
         num_classes = len(UPDN_TARGETS)     # 6
+    elif trailing_stop:
+        num_classes = len(TRAILING_STOP_TARGET_COLUMNS)
+    elif trailing_stop_quantile:
+        num_classes = 1
     elif regression:
         num_classes = 1
     elif binary_classification:
@@ -1001,9 +1145,14 @@ def train_model(
         num_classes = 3
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     if entry_path:
-        model = EntryPathTransformer(**model_kwargs)
+        model_kwargs.setdefault('seq_len', seq_len)
+        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+    if entry_path:
+        model = build_entry_path_model(model_name, model_kwargs)
     elif entry_path_quantile:
         model = EntryPathV1QuantileTransformer(**model_kwargs)
+    elif trailing_stop_quantile:
+        model = TrailingStopTargetQuantileTransformer(**model_kwargs)
     else:
         model = get_model(model_name, num_classes=num_classes, **model_kwargs)
     model = model.to(device)
@@ -1058,6 +1207,8 @@ def train_model(
         ret_loss_fn = HuberLoss(delta=huber_delta, reduction='none').to(device)
         path_reg_loss_fn = HuberLoss(delta=huber_delta).to(device)
         path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none').to(device)
+    elif trailing_stop_quantile:
+        loss_fn = None
     elif regression:
         if regression_loss == 'directional':
             loss_fn = DirectionalAsymmetricLoss(
@@ -1135,6 +1286,18 @@ def train_model(
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'val_score':>10} | {'path_r':>10} | {'cls_f1':>8} | {'LR':>10}")
+    elif trailing_stop_quantile:
+        history = {
+            'train_loss': [], 'val_loss': [],
+            'val_score': [], 'val_q50_pearson_r': [], 'val_q50_mae': [],
+            'val_interval_coverage': [], 'val_median_interval_width': [],
+            'val_q10_pinball_loss': [], 'val_q50_pinball_loss': [], 'val_q90_pinball_loss': [],
+            'lr': [],
+        }
+        metric_name = 'val_score'
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'val_score':>10} | {'q50_r':>10} | {'coverage':>10} | {'LR':>10}")
     elif regression:
         history = {
             'train_loss': [], 'val_loss': [],
@@ -1185,6 +1348,13 @@ def train_model(
                 ret_loss_fn,
                 path_reg_loss_fn,
                 path_cls_loss_fn,
+                optimizer,
+                device,
+            )
+        elif trailing_stop_quantile:
+            train_loss = train_one_epoch_trailing_stop_target_quantile(
+                model,
+                train_loader,
                 optimizer,
                 device,
             )
@@ -1282,8 +1452,39 @@ def train_model(
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['val_score']:>10.4f} | {metrics['path_reg_pearson_r']:>10.4f} | "
                       f"{metrics['path_cls_f1_macro']:>8.4f} | {current_lr:>10.6f}")
+        elif trailing_stop_quantile:
+            val_loss, metrics = validate_trailing_stop_target_quantile(
+                model,
+                val_loader,
+                device,
+            )
+            val_metric = metrics['val_score']
+
+            history['train_loss'].append(train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_score'].append(metrics['val_score'])
+            history['val_q50_pearson_r'].append(metrics['q50_pearson_r'])
+            history['val_q50_mae'].append(metrics['q50_mae'])
+            history['val_interval_coverage'].append(metrics['interval_coverage'])
+            history['val_median_interval_width'].append(metrics['median_interval_width'])
+            history['val_q10_pinball_loss'].append(metrics['q10_pinball_loss'])
+            history['val_q50_pinball_loss'].append(metrics['q50_pinball_loss'])
+            history['val_q90_pinball_loss'].append(metrics['q90_pinball_loss'])
+            history['lr'].append(optimizer.param_groups[0]['lr'])
+
+            current_lr = optimizer.param_groups[0]['lr']
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['val_score']:>10.4f} | {metrics['q50_pearson_r']:>10.4f} | "
+                      f"{metrics['interval_coverage']:>10.4f} | {current_lr:>10.6f}")
         elif regression:
-            val_loss, metrics = validate_regression(model, val_loader, loss_fn, device)
+            val_loss, metrics = validate_regression(
+                model,
+                val_loader,
+                loss_fn,
+                device,
+                target_names=TRAILING_STOP_TARGET_COLUMNS if trailing_stop else None,
+            )
             val_metric = metrics['pearson_r']
 
             history['train_loss'].append(train_loss)
@@ -1364,6 +1565,7 @@ def train_model(
                 'model_name': model_name,
                 'task': task,
                 'num_classes': num_classes,
+                'seq_len': seq_len,
                 'model_kwargs': model_kwargs,
             }, checkpoint_path)
             if not silent:
@@ -1398,6 +1600,12 @@ def train_model(
             print(f"  Precision: {best_metrics.get('precision', 0):.4f}")
             print(f"  Recall:    {best_metrics.get('recall', 0):.4f}")
             print(f"  F1:        {best_metrics.get('f1', 0):.4f}")
+        elif trailing_stop_quantile:
+            print(f"  Val score: {best_metrics.get('val_score', 0):.4f}")
+            print(f"  Q50 Pearson r: {best_metrics.get('q50_pearson_r', 0):.4f}")
+            print(f"  Q50 MAE: {best_metrics.get('q50_mae', 0):.4f}")
+            print(f"  Interval coverage: {best_metrics.get('interval_coverage', 0):.4f}")
+            print(f"  Median interval width: {best_metrics.get('median_interval_width', 0):.4f}")
         elif not regression and not entry_path:
             print(f"\n{best_metrics.get('classification_report', '')}")
         else:
@@ -1449,7 +1657,7 @@ def train_model(
                 labels=['Bad (0)', 'Good (1)'],
                 task=task,
             )
-        elif entry_path or entry_path_quantile:
+        elif entry_path or entry_path_quantile or trailing_stop_quantile:
             pass
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
@@ -1626,6 +1834,15 @@ def _log_experiment(
         metrics_dict['median_interval_width'] = result['best_metrics'].get('median_interval_width')
         metrics_dict['q10_pinball_loss'] = result['best_metrics'].get('q10_pinball_loss')
         metrics_dict['q90_pinball_loss'] = result['best_metrics'].get('q90_pinball_loss')
+    elif task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        metrics_dict['val_score'] = result['best_metrics'].get('val_score')
+        metrics_dict['q50_pearson_r'] = result['best_metrics'].get('q50_pearson_r')
+        metrics_dict['q50_mae'] = result['best_metrics'].get('q50_mae')
+        metrics_dict['interval_coverage'] = result['best_metrics'].get('interval_coverage')
+        metrics_dict['median_interval_width'] = result['best_metrics'].get('median_interval_width')
+        metrics_dict['q10_pinball_loss'] = result['best_metrics'].get('q10_pinball_loss')
+        metrics_dict['q50_pinball_loss'] = result['best_metrics'].get('q50_pinball_loss')
+        metrics_dict['q90_pinball_loss'] = result['best_metrics'].get('q90_pinball_loss')
     elif regression:
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
@@ -1715,6 +1932,25 @@ def _plot_training_curves(
         fig.savefig(PLOTS_DIR / f'training_curves_{model_name}_tb.png', dpi=150, bbox_inches='tight')
         plt.close(fig)
         print(f"  Кривые обучения: training_curves_{model_name}_tb.png")
+        return
+    if 'val_q50_pearson_r' in history:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        epochs_range = range(1, len(history['train_loss']) + 1)
+        axes[0].plot(epochs_range, history['train_loss'], label='Train')
+        axes[0].plot(epochs_range, history['val_loss'], label='Val')
+        axes[0].set_title('Loss')
+        axes[0].legend()
+        axes[1].plot(epochs_range, history['val_q50_pearson_r'], label='Q50 Pearson r')
+        axes[1].plot(epochs_range, history['val_interval_coverage'], label='Coverage')
+        axes[1].set_title('Validation Quantile Metrics')
+        axes[1].legend()
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        save_path = PLOTS_DIR / f'training_curves_{model_name}{task_checkpoint_suffix(task or TRAILING_STOP_TARGET_QUANTILE_TARGET)}.png'
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        print(f"  📊 Кривые обучения: {save_path.name}")
         return
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -1894,8 +2130,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--model', type=str, required=True,
-        choices=list(MODEL_REGISTRY.keys()),
-        help=f"Модель для обучения: {', '.join(MODEL_REGISTRY.keys())}"
+        choices=list(MODEL_REGISTRY.keys()) + list(ENTRY_PATH_MODEL_NAMES[1:]),
+        help=f"Модель для обучения: {', '.join(list(MODEL_REGISTRY.keys()) + list(ENTRY_PATH_MODEL_NAMES[1:]))}"
     )
     parser.add_argument(
         '--task', type=str, default='classification',
@@ -1909,9 +2145,12 @@ def parse_args() -> argparse.Namespace:
             TRADE_OUTCOME_TARGET,
             TRADE_PNL_TARGET,
             ARCHETYPE_TARGET,
+            TRAILING_STOP_TARGET,
+            TRAILING_STOP_TARGET_QUANTILE_TARGET,
         ],
         help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' | "
-             "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets. "
+             "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets | "
+             f"'{TRAILING_STOP_TARGET}' | '{TRAILING_STOP_TARGET_QUANTILE_TARGET}'. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -2065,12 +2304,13 @@ def main():
     )
 
     # Сохраняем результат как JSON
-    regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET])
+    regression = (args.task in ['regression', 'regression_updn', TRADE_PNL_TARGET, TRAILING_STOP_TARGET])
     binary_classification = (args.task in BINARY_CLASSIFICATION_TARGETS)
     triple_barrier = (args.task == 'triple_barrier')
     entry_path = (args.task == ENTRY_PATH_TARGET)
     entry_path_quantile = (args.task == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
+    trailing_stop_quantile = (args.task == TRAILING_STOP_TARGET_QUANTILE_TARGET)
 
     if triple_barrier:
         result_serializable = {
@@ -2153,6 +2393,26 @@ def main():
                     str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
                 },
             }
+        suffix = task_checkpoint_suffix(args.task)
+    elif trailing_stop_quantile:
+        result_serializable = {
+            'model_name': result['model_name'],
+            'task': result['task'],
+            'best_val_score': result['best_metric'],
+            'best_epoch': result['best_epoch'],
+            'num_parameters': result['num_parameters'],
+            'training_time': result['training_time'],
+            'val_metrics': {
+                'val_score': result['best_metrics'].get('val_score'),
+                'q50_pearson_r': result['best_metrics'].get('q50_pearson_r'),
+                'q50_mae': result['best_metrics'].get('q50_mae'),
+                'interval_coverage': result['best_metrics'].get('interval_coverage'),
+                'median_interval_width': result['best_metrics'].get('median_interval_width'),
+                'q10_pinball_loss': result['best_metrics'].get('q10_pinball_loss'),
+                'q50_pinball_loss': result['best_metrics'].get('q50_pinball_loss'),
+                'q90_pinball_loss': result['best_metrics'].get('q90_pinball_loss'),
+            },
+        }
         suffix = task_checkpoint_suffix(args.task)
     elif regression:
         result_serializable = {

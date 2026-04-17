@@ -20,17 +20,24 @@ sys.path.insert(0, '.')
 
 from ML.data_loader import EntryPathDataset
 from ML.entry_path_task import (
+    ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS,
+    ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_CLASS_TARGET,
+    ENTRY_PATH_V1_FEATURE_COLUMNS,
     ENTRY_PATH_PATH_REG_TARGETS,
     ENTRY_PATH_RET_TARGETS,
     ENTRY_PATH_TARGET,
+    build_entry_path_model,
     build_entry_path_export_frame,
+    split_entry_path_features,
     split_entry_path_targets,
 )
 
 
 def test_entry_path_target_contract():
     assert ENTRY_PATH_TARGET == 'entry_path_v1'
+    assert ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS == (20, 50, 100)
+    assert ENTRY_PATH_MODEL_NAMES == ('transformer', 'entry_path_dual_stream')
     assert ENTRY_PATH_RET_TARGETS == ['ret_6_dir_atr', 'ret_12_dir_atr', 'ret_24_dir_atr']
     assert ENTRY_PATH_PATH_REG_TARGETS == [
         'fav_6_atr',
@@ -41,6 +48,29 @@ def test_entry_path_target_contract():
         'adv_24_atr',
     ]
     assert ENTRY_PATH_CLASS_TARGET == 'path_6_class'
+
+
+def test_entry_path_task_exposes_frequency_feature_columns():
+    expected = {
+        'session_hour',
+        'weekday',
+        'range_atr_6',
+        'body_atr_3',
+        'ret_dir_atr_lag1',
+        'vol_regime_24',
+    }
+    assert expected.issubset(set(ENTRY_PATH_V1_FEATURE_COLUMNS))
+
+
+def test_entry_path_task_exposes_feature_bank_columns():
+    expected = {
+        'row_strong_share_w5',
+        'row_break_share_w10',
+        'row_direction_balance_w20',
+        'row_back_mean_w50',
+        'row_impulse_mean_w100',
+    }
+    assert expected.issubset(set(ENTRY_PATH_V1_FEATURE_COLUMNS))
 
 
 def test_split_entry_path_targets_returns_reg_and_cls_parts():
@@ -65,6 +95,31 @@ def test_split_entry_path_targets_returns_reg_and_cls_parts():
     assert y_cls.tolist() == [0]
 
 
+def test_split_entry_path_features_is_numeric_and_zero_fills_missing_columns():
+    frame = pd.DataFrame([
+        {
+            'session_hour': '7',
+            'weekday': '2',
+            'range_atr_6': '1.5',
+            'body_atr_3': None,
+            'ret_dir_atr_lag1': 'nan',
+            'vol_regime_24': '3',
+        }
+    ])
+
+    features = split_entry_path_features(frame)
+
+    assert features.shape == (1, len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+    assert features.dtype == np.float32
+    assert features[0, 0] == 7.0
+    assert features[0, 1] == 2.0
+    assert features[0, 2] == 1.5
+    assert features[0, 3] == 0.0
+    assert features[0, 4] == 0.0
+    assert features[0, 5] == 3.0
+    assert np.all(features[0, 6:] == 0.0)
+
+
 def test_split_entry_path_targets_rejects_unknown_class():
     frame = pd.DataFrame([
         {
@@ -83,6 +138,22 @@ def test_split_entry_path_targets_rejects_unknown_class():
 
     with pytest.raises(ValueError, match='Unsupported path_6_class values'):
         split_entry_path_targets(frame)
+
+
+def test_build_entry_path_model_supports_transformer_and_dual_stream():
+    transformer = build_entry_path_model('transformer', {'input_features': 20, 'engineered_feature_dim': 6})
+    dual_stream = build_entry_path_model('entry_path_dual_stream', {'input_features': 20, 'engineered_feature_dim': 6})
+
+    assert transformer.__class__.__name__ == 'EntryPathTransformer'
+    assert dual_stream.__class__.__name__ == 'EntryPathDualStreamTransformer'
+
+
+def test_build_entry_path_model_uses_canonical_engineered_width_by_default():
+    transformer = build_entry_path_model('transformer', {'input_features': 20})
+    dual_stream = build_entry_path_model('entry_path_dual_stream', {'input_features': 20})
+
+    assert transformer.entry_path_projection[0].normalized_shape[0] == len(ENTRY_PATH_V1_FEATURE_COLUMNS) + 64
+    assert dual_stream.engineered_encoder[0].normalized_shape[0] == len(ENTRY_PATH_V1_FEATURE_COLUMNS)
 
 
 def test_build_entry_path_export_frame_contains_core_columns():
@@ -105,15 +176,17 @@ def test_build_entry_path_export_frame_contains_core_columns():
 def test_entry_path_dataset_returns_mixed_tensors():
     dataset = EntryPathDataset(
         X=np.zeros((1, 4, 3), dtype=np.float32),
+        engineered=np.zeros((1, 6), dtype=np.float32),
         y_reg=np.zeros((1, 9), dtype=np.float32),
         y_cls=np.array([2], dtype=np.int64),
         mask=np.array([[True, True, False, False]]),
         signal=np.array([1], dtype=np.int64),
     )
 
-    X_item, y_reg_item, y_cls_item, mask_item, signal_item = dataset[0]
+    X_item, engineered_item, y_reg_item, y_cls_item, mask_item, signal_item = dataset[0]
 
     assert X_item.shape == (4, 3)
+    assert engineered_item.shape == (6,)
     assert y_reg_item.shape == (9,)
     assert y_cls_item.dtype == torch.int64
     assert mask_item.dtype == torch.bool

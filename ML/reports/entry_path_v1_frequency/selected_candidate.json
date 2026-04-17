@@ -1,0 +1,10 @@
+{
+  "candidate": "path6_prob",
+  "score_threshold": -0.33110867499999996,
+  "trades": 166,
+  "trades_per_year": 41.5,
+  "pf": 0.21846728275018024,
+  "profit_concentration_top_10": 0.29821964760141806,
+  "negative_year_slices": 4,
+  "trades_gap": 1.5
+}
