@@ -103,6 +103,12 @@ def test_data_loader_task_suffix_for_take_skip_v2():
     assert data_loader.task_checkpoint_suffix(TAKE_SKIP_TRAILING_STOP_V2_TARGET) == '_take_skip_trailing_stop_v2'
 
 
+def test_take_skip_v2_seq_len_is_respected():
+    assert data_loader.validate_seq_len_for_target(TAKE_SKIP_TRAILING_STOP_V2_TARGET, 20) == 20
+    assert data_loader.validate_seq_len_for_target(TAKE_SKIP_TRAILING_STOP_V2_TARGET, 50) == 50
+    assert data_loader.validate_seq_len_for_target(TAKE_SKIP_TRAILING_STOP_V2_TARGET, 100) == 100
+
+
 def _build_take_skip_v2_frame() -> pd.DataFrame:
     row = {
         'time': ['2025.01.01 00:00', '2025.01.01 01:00'],
@@ -162,13 +168,13 @@ def test_create_data_loaders_take_skip_v2_uses_full_sequence_and_wide_targets(mo
     X_train, y_train, mask_train = next(iter(train_loader))
     X_val, y_val, mask_val = next(iter(val_loader))
 
-    assert X_train.shape == (2, data_loader.N_FRACTALS, X_train.shape[2])
-    assert X_val.shape == (2, data_loader.N_FRACTALS, X_val.shape[2])
+    assert X_train.shape == (2, 20, X_train.shape[2])
+    assert X_val.shape == (2, 20, X_val.shape[2])
     assert X_train.shape[2] > data_loader.N_FRACTAL_FEATURES
     assert y_train.shape == (2, 9)
     assert y_val.shape == (2, 9)
-    assert mask_train.shape == (2, data_loader.N_FRACTALS)
-    assert mask_val.shape == (2, data_loader.N_FRACTALS)
+    assert mask_train.shape == (2, 20)
+    assert mask_val.shape == (2, 20)
 
 
 def test_create_test_loader_take_skip_v2_branch(monkeypatch, tmp_path):
@@ -198,10 +204,10 @@ def test_create_test_loader_take_skip_v2_branch(monkeypatch, tmp_path):
 
     X_batch, y_batch, mask_batch = next(iter(loader))
     assert X_batch.shape[0] == 2
-    assert X_batch.shape[1] == data_loader.N_FRACTALS
+    assert X_batch.shape[1] == 20
     assert X_batch.shape[2] > data_loader.N_FRACTAL_FEATURES
     assert y_batch.shape == (2, 9)
-    assert mask_batch.shape == (2, data_loader.N_FRACTALS)
+    assert mask_batch.shape == (2, 20)
 
 
 def test_train_initial_best_metric_allows_first_negative_take_skip_v2_score():

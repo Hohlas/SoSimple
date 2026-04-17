@@ -171,8 +171,6 @@ BINARY_LABEL_MAP = {0: 0, 1: 1}
 def validate_seq_len_for_target(target: str, seq_len: int) -> int:
     if not 1 <= int(seq_len) <= N_FRACTALS:
         raise ValueError(f'seq_len must be in [1, {N_FRACTALS}], got {seq_len}')
-    if target == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
-        return N_FRACTALS
     if target == ENTRY_PATH_TARGET and seq_len not in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS:
         allowed = ', '.join(str(value) for value in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS)
         raise ValueError(f'{target} supports only seq_len values: {allowed}')
