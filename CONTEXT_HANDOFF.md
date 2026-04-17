@@ -1,6 +1,38 @@
 # Context Handoff
 
 ## Current Stage
+Этап `multi_horizon_take_skip_feature_track` подготовлен к полному server run (2026-04-17).
+
+Что зафиксировано:
+
+- реализован новый research track `take_skip_trailing_stop_v2`
+- целевая постановка:
+  - бинарный `take/skip`
+  - positive class: `trail_pnl >= 0.5 ATR`
+- target grid:
+  - горизонты `12 / 24 / 48`
+  - trailing-stop `X = 2 / 4 / 8`
+- feature representation:
+  - полные `100` фракталов
+  - multi-scale summaries по окнам `5 / 10 / 20 / 50 / 100`
+  - существующие row-wise numeric features
+- реализованы:
+  - `ML/multi_scale_fractal_features.py`
+  - `ML/take_skip_trailing_stop_v2_task.py`
+  - `ML/benchmark_take_skip_trailing_stop_v2.py`
+  - `ML/run_take_skip_trailing_stop_v2_matrix.py`
+- train/evaluate/export stack поддерживает новый task
+- локальный smoke-run `transformer_seq20` прошёл весь контур end-to-end
+- smoke verdict:
+  - `verdict = go`
+  - validation winner: `take_48_x4 + top_k_probability 0.05`
+  - `PF=6.39`, `24` trades, `negative_year_slices=0`
+- важное operational условие:
+  - в `DATA/Nero_{train,validation,test}_labeled.csv` уже должны быть колонки `trail_12_*`, `trail_24_*`, `trail_48_*` для `X = 2 / 4 / 8`
+- canonical handoff report:
+  - `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+
+## Previous Stage
 Этап `take_skip_trailing_stop_matrix` завершён (2026-04-17).
 
 Что зафиксировано:
@@ -9,13 +41,6 @@
 - целевая постановка:
   - `take = 1`, если `trail_48_pnl_atr_xN >= 0.5`
   - `take = 0` иначе
-- проверена широкая сетка trailing-stop параметров:
-  - `X = 2, 3, 4, 6, 8`
-- реализованы:
-  - `ML/take_skip_trailing_stop_task.py`
-  - `ML/benchmark_take_skip_trailing_stop.py`
-  - `ML/run_take_skip_trailing_stop_matrix.py`
-- train/evaluate/export stack поддерживает новый task
 - matrix run для `seq_len = 20 / 50 / 100` завершён на удалённом сервере
 - во всех трёх конфигурациях:
   - `verdict = reject`
@@ -23,16 +48,11 @@
   - `test_result = null`
 - среди всех validation candidates:
   - `PF > 1` не найдено ни разу
-  - `prob_ge_threshold` полностью пуст: на всех порогах `0.50..0.95` число сделок равно нулю
-  - benchmark жил только на `top_k_probability`
-- лучшие validation candidates среди `trades_per_year >= 6`:
-  - `seq20`: `take_48_x2 + top_k_probability 0.05`, `PF=0.274`, `24` trades
-  - `seq50`: `take_48_x2 + top_k_probability 0.05`, `PF=0.202`, `24` trades
-  - `seq100`: `take_48_x8 + top_k_probability 0.10`, `PF=0.153`, `48` trades
+  - `prob_ge_threshold` полностью пуст
 - canonical report:
   - `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
 
-## Previous Stage
+## Earlier Stage
 Этап `trailing_stop_target_quantile_first_wave` завершён (2026-04-16).
 
 Что зафиксировано:
@@ -44,18 +64,6 @@
 - canonical report:
   - `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
 
-## Earlier Stage
-Этап `trailing_stop_target_first_wave` завершён (2026-04-16).
-
-Что зафиксировано:
-
-- новый target `trailing_stop_target_v1` реализован для сетки `seq_len = 20 / 50 / 100`
-- лучший validation candidate всего этапа:
-  - `transformer_seq20 + trail_48_pnl_atr_x3`, `PF=0.4206`
-- `validation PF > 1` не найден ни в одной конфигурации
-- canonical report:
-  - `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
-
 ## Stable Production Context
 
 - `entry_path_v1_quantile` остаётся подтверждённым production-ready parallel execution mode
@@ -64,36 +72,35 @@
 - этот parallel mode не затронут отрицательными результатами новых research-track экспериментов
 
 ## Next Step
-Следующий этап должен менять не selection layer, а само представление данных и обучающий сигнал.
+Следующий шаг уже не в проектировании, а в полном remote matrix run для `take_skip_trailing_stop_v2`.
 
 Практический фокус:
 
-1. Спроектировать новый training track на обновлённом наборе признаков.
-2. Использовать все 100 доступных фракталов вместо текущего урезанного представления.
-3. Добавить multi-scale summaries по нескольким длинам истории.
-4. Сохранить простую торговую логику без лишнего усложнения execution layer.
-5. Только после этого запускать новый тяжёлый train.
+1. Синхронизировать `DATA/` на сервере в уже пересчитанном виде.
+2. Запустить `ML.run_take_skip_trailing_stop_v2_matrix` для `seq_len = 20 / 50 / 100`.
+3. Вернуть `manifest.json`, `summary.json`, `final_verdict.json`, `validation_grid.csv`.
+4. После этого закрыть этап stage-report + wiki ingest по итоговому verdict.
 
 ## Read First
 
 - `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
-- `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
-- `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
-- `docs/superpowers/specs/2026-04-17-take-skip-trailing-stop-design.md`
-- `docs/superpowers/plans/2026-04-17-take-skip-trailing-stop.md`
+- `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+- `docs/superpowers/specs/2026-04-17-multi-horizon-take-skip-feature-track-design.md`
+- `docs/superpowers/plans/2026-04-17-multi-horizon-take-skip-feature-track.md`
 - `CHANGELOG.md`
 - `AGENTS.md`
 
 ## Open Risks
 
-- **Signal weakness**: ни regression, ни quantile, ни binary take/skip не дали даже `PF > 1` на validation.
-- **Feature bottleneck**: текущий research stack, вероятно, упёрся не в benchmark, а в бедное представление входной последовательности.
-- **Extreme imbalance**: positive-class для `take_skip_trailing_stop_v1` лежит в диапазоне `0.37% .. 0.92%`, что само по себе затрудняет обучение.
-- **CSV artifact gap**: `validation_grid.csv` не коммитятся из-за `gitignore`; для последующих этапов полезно либо явно сохранять их вне ignore, либо добавлять агрегированные diagnostics в `summary.json`.
+- **No full verdict yet**: есть только локальный smoke-run, итоговый исследовательский вывод ещё не получен.
+- **Server data dependency**: без новых `trail_12_*` и `trail_24_*` колонок matrix run не стартует.
+- **Extreme imbalance**: positive-class в v2 остаётся очень редким, особенно на коротких горизонтах.
+- **Smoke optimism risk**: локальный `go` на `seq20` и `1 epoch` может быть случайным и не обязан воспроизводиться в полном bounded run.
+- **CSV artifact gap**: `validation_grid.csv` не коммитятся из-за `gitignore`; для итогового этапа их надо переносить вручную или сохранять вне ignore.
 
 ## Latest Report
 
-`docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
+`docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
 
 ## Active Roadmap
 

@@ -2,6 +2,39 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-17] - Multi-horizon take/skip feature track handoff
+
+### Добавлено
+- multi-horizon continuous labels для trailing-stop grid:
+  - горизонты `12 / 24 / 48`
+  - `X = 2 / 4 / 8`
+- `ML/multi_scale_fractal_features.py`
+- `ML/take_skip_trailing_stop_v2_task.py`
+- `ML/benchmark_take_skip_trailing_stop_v2.py`
+- `ML/run_take_skip_trailing_stop_v2_matrix.py`
+
+### Изменено
+- `ML/data_loader.py`: вход `take_skip_trailing_stop_v2` теперь собирается как `100` фракталов + multi-scale summaries + row-wise numeric features
+- `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`: новый task протянут через train/evaluate/export stack
+- после smoke-run исправлены два дефекта:
+  - из v2-ветки убран лишний `seq_len` kwarg для обычного `Transformer`
+  - отключена попытка строить confusion matrix для multi-label BCE-задачи
+
+### Результаты
+- локальный smoke-run `transformer_seq20` завершился end-to-end
+- smoke verdict: `go`
+- validation winner:
+  - `take_48_x4 + top_k_probability 0.05`
+  - `PF=6.39`
+  - `24` trades
+  - `negative_year_slices=0`
+- этап подготовил воспроизводимый server handoff для полного matrix run `seq_len = 20 / 50 / 100`
+
+### Вывод
+- новый feature-track технически собран и готов к тяжёлому прогону на сервере
+- это ещё не итоговый исследовательский verdict: он будет только после полного remote matrix run
+- Подробности: [docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
+
 ## [2026-04-17] - Take/skip trailing-stop matrix verdict
 
 ### Добавлено
