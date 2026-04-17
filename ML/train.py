@@ -1245,7 +1245,6 @@ def train_model(
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     if take_skip_trailing_stop_v2:
         model_kwargs['input_features'] = TAKE_SKIP_V2_INPUT_FEATURES
-        model_kwargs['seq_len'] = seq_len
     if entry_path:
         model_kwargs.setdefault('seq_len', seq_len)
         model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
@@ -1795,7 +1794,7 @@ def train_model(
                 labels=['Bad (0)', 'Good (1)'],
                 task=task,
             )
-        elif entry_path or entry_path_quantile or trailing_stop_quantile or take_skip_trailing_stop:
+        elif entry_path or entry_path_quantile or trailing_stop_quantile or take_skip_trailing_stop or take_skip_trailing_stop_v2:
             pass
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
