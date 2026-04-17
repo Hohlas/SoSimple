@@ -116,6 +116,20 @@ def test_build_take_skip_export_frame_validates_shapes():
             pred_prob=np.array([[0.1, 0.2, 0.3, 0.4]], dtype=np.float32),
         )
 
+    with pytest.raises(ValueError, match='signals must have the same length as times'):
+        build_take_skip_export_frame(
+            times=['2026.01.01 00:00'],
+            signals=[1, -1],
+            pred_prob=np.array([[0.1, 0.2, 0.3, 0.4, 0.5]], dtype=np.float32),
+        )
+
+    with pytest.raises(ValueError, match='pred_prob must have the same row count as times'):
+        build_take_skip_export_frame(
+            times=['2026.01.01 00:00', '2026.01.01 01:00'],
+            signals=[1, -1],
+            pred_prob=np.array([[0.1, 0.2, 0.3, 0.4, 0.5]], dtype=np.float32),
+        )
+
     with pytest.raises(ValueError, match='true_label shape'):
         build_take_skip_export_frame(
             times=['2026.01.01 00:00'],
@@ -141,4 +155,42 @@ def test_compute_take_skip_metrics_reports_positive_rates():
 
     assert metrics['positive_rate_take_48_x2'] == pytest.approx(0.5)
     assert metrics['positive_rate_take_48_x6'] == pytest.approx(0.0)
+    assert metrics['brier_take_48_x3'] == pytest.approx(0.1)
+    assert metrics['bce'] == pytest.approx(0.2720513343811035)
     assert 'brier_take_48_x3' in metrics
+
+
+def test_compute_take_skip_metrics_rejects_invalid_y_true_values():
+    with pytest.raises(ValueError, match='y_true must contain only 0/1 labels'):
+        compute_take_skip_metrics(
+            np.array([[0, 1, 0, 1, 0.5]], dtype=np.float32),
+            np.array([[0.2, 0.8, 0.2, 0.8, 0.2]], dtype=np.float32),
+        )
+
+
+def test_compute_take_skip_metrics_rejects_invalid_y_prob_values():
+    with pytest.raises(ValueError, match='y_prob must contain probabilities in \\[0, 1\\]'):
+        compute_take_skip_metrics(
+            np.array([[0, 1, 0, 1, 0]], dtype=np.float32),
+            np.array([[0.2, -0.1, 0.2, 0.8, 0.2]], dtype=np.float32),
+        )
+
+    with pytest.raises(ValueError, match='y_prob must contain probabilities in \\[0, 1\\]'):
+        compute_take_skip_metrics(
+            np.array([[0, 1, 0, 1, 0]], dtype=np.float32),
+            np.array([[0.2, 1.1, 0.2, 0.8, 0.2]], dtype=np.float32),
+        )
+
+
+def test_compute_take_skip_metrics_rejects_non_finite_inputs():
+    with pytest.raises(ValueError, match='non-finite'):
+        compute_take_skip_metrics(
+            np.array([[0, 1, np.nan, 1, 0]], dtype=np.float32),
+            np.array([[0.2, 0.8, 0.2, 0.8, 0.2]], dtype=np.float32),
+        )
+
+    with pytest.raises(ValueError, match='non-finite'):
+        compute_take_skip_metrics(
+            np.array([[0, 1, 0, 1, 0]], dtype=np.float32),
+            np.array([[0.2, np.inf, 0.2, 0.8, 0.2]], dtype=np.float32),
+        )

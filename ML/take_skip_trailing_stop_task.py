@@ -72,14 +72,24 @@ def build_take_skip_export_frame(
     return frame
 
 
-def compute_take_skip_metrics(y_true: np.ndarray, y_prob: np.ndarray) -> dict[str, float]:
-    y_true = np.asarray(y_true, dtype=np.float32)
-    y_prob = np.asarray(y_prob, dtype=np.float32)
-    expected_cols = len(TAKE_SKIP_TRAILING_STOP_COLUMNS)
+def _validate_metric_inputs(y_true: np.ndarray, y_prob: np.ndarray, expected_cols: int) -> None:
     if y_true.shape != y_prob.shape:
         raise ValueError(f'y_true shape {y_true.shape} does not match y_prob shape {y_prob.shape}')
     if y_true.ndim != 2 or y_true.shape[1] != expected_cols:
         raise ValueError(f'y_true must have shape (n, {expected_cols})')
+    if not np.isfinite(y_true).all() or not np.isfinite(y_prob).all():
+        raise ValueError('non-finite values are not allowed in y_true or y_prob')
+    if not np.isin(y_true, (0.0, 1.0)).all():
+        raise ValueError('y_true must contain only 0/1 labels')
+    if (y_prob < 0.0).any() or (y_prob > 1.0).any():
+        raise ValueError('y_prob must contain probabilities in [0, 1]')
+
+
+def compute_take_skip_metrics(y_true: np.ndarray, y_prob: np.ndarray) -> dict[str, float]:
+    y_true = np.asarray(y_true, dtype=np.float32)
+    y_prob = np.asarray(y_prob, dtype=np.float32)
+    expected_cols = len(TAKE_SKIP_TRAILING_STOP_COLUMNS)
+    _validate_metric_inputs(y_true, y_prob, expected_cols)
 
     clipped = np.clip(y_prob, 1e-7, 1.0 - 1e-7)
     bce = -(y_true * np.log(clipped) + (1.0 - y_true) * np.log(1.0 - clipped))
