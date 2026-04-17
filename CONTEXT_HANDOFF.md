@@ -1,158 +1,100 @@
 # Context Handoff
 
 ## Current Stage
-Этап `quantile_forward_validation_scaffold` завершён (2026-04-13).
+Этап `take_skip_trailing_stop_matrix` завершён (2026-04-17).
 
 Что зафиксировано:
 
-- создан frozen benchmark `ML/benchmark_quantile_forward_validation.py` + тесты `tests/test_benchmark_quantile_forward_validation.py` (`16/16` зелёные)
-- benchmark использует только внешний forward prediction CSV и не перенастраивает `entry_path_v1_quantile`
-- CLI пишет:
-  - `ML/reports/quantile_forward_validation/summary.json`
-  - `ML/reports/quantile_forward_validation/time_slices.csv`
-  - `ML/reports/quantile_forward_validation/run_metadata.json`
-- operational verdict текущего состояния:
-  - `verdict = watch`
-  - `reason = no_forward_data`
-- причина: в репозитории нет нового strictly-forward prediction CSV после production decision; доступны только historical validation/test prediction-файлы
-- canonical report: `docs/reports/2026-04-13-quantile-forward-validation.md`
+- реализован новый research track `take_skip_trailing_stop_v1`
+- целевая постановка:
+  - `take = 1`, если `trail_48_pnl_atr_xN >= 0.5`
+  - `take = 0` иначе
+- проверена широкая сетка trailing-stop параметров:
+  - `X = 2, 3, 4, 6, 8`
+- реализованы:
+  - `ML/take_skip_trailing_stop_task.py`
+  - `ML/benchmark_take_skip_trailing_stop.py`
+  - `ML/run_take_skip_trailing_stop_matrix.py`
+- train/evaluate/export stack поддерживает новый task
+- matrix run для `seq_len = 20 / 50 / 100` завершён на удалённом сервере
+- во всех трёх конфигурациях:
+  - `verdict = reject`
+  - `validation_winner = null`
+  - `test_result = null`
+- среди всех validation candidates:
+  - `PF > 1` не найдено ни разу
+  - `prob_ge_threshold` полностью пуст: на всех порогах `0.50..0.95` число сделок равно нулю
+  - benchmark жил только на `top_k_probability`
+- лучшие validation candidates среди `trades_per_year >= 6`:
+  - `seq20`: `take_48_x2 + top_k_probability 0.05`, `PF=0.274`, `24` trades
+  - `seq50`: `take_48_x2 + top_k_probability 0.05`, `PF=0.202`, `24` trades
+  - `seq100`: `take_48_x8 + top_k_probability 0.10`, `PF=0.153`, `48` trades
+- canonical report:
+  - `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
 
 ## Previous Stage
-Этап `fav_3_vs_12_standalone_verdict` завершён (2026-04-13).
+Этап `trailing_stop_target_quantile_first_wave` завершён (2026-04-16).
 
 Что зафиксировано:
 
-- создан standalone benchmark `ML/benchmark_fav_3_vs_12_standalone.py` + тесты `tests/test_benchmark_fav_3_vs_12_standalone.py` (`17/17` зелёные)
-- benchmark использует:
-  - `ML/reports/quantile_fav_composition/updn_active_source/*` как источник `pred_fav_3`, `pred_fav_12`, `fav_3_vs_12`
-  - `ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_*_predictions.csv` как источник фактического результата сделки `true_ret_24_dir_atr`
-- выбор порога делается только на `validation`, с жёсткой проверкой устойчивой зоны:
-  - отсортированные уникальные пороги
-  - полный центрированный window
-  - приоритет устойчивости окна, а не локального PF-пика
-  - плохой год = `PF < 1.0`, годы с `trades < 3` не считаются самостоятельным gate-fail
-- итог standalone run:
-  - `selected_threshold = null`
-  - `verdict = reject_as_standalone`
-  - на validation лучший порог с `N >= 30` всё равно слабый: `threshold=0.22`, `N=36`, `PF=0.1378609915504136`, `negative_year_slices=4`
-  - на test лучшая диагностическая точка тоже слабая: `threshold=0.24`, `N=164`, `PF=0.3129480021818097`, `negative_year_slices=5`
-- canonical report: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- новый task `trailing_stop_target_quantile_v1` реализован и протянут через train/evaluate/export stack
+- bounded run `transformer_seq20_x3_quantile` завершён
+- лучший validation candidate `q10_gt_m` дал только `PF=0.1750`, `95` trades
+- `PF >= 1.0` не найден, verdict: `reject`
+- canonical report:
+  - `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
 
 ## Earlier Stage
-Этап `quantile_fav_composition_verdict` завершён (2026-04-13).
+Этап `trailing_stop_target_first_wave` завершён (2026-04-16).
 
 Что зафиксировано:
 
-- создан benchmark `ML/benchmark_quantile_fav_composition.py` + тесты `tests/test_benchmark_quantile_fav_composition.py` (`5/5` зелёные)
-- quantile control numbers воспроизведены exactly against `ML/reports/entry_path_v1_quantile_selected_rule.json`:
-  - validation: `N=32`, `PF=11.240091883688192`
-  - test: `N=48`, `PF=8.178675196069868`
-- root cause устранён:
-  - `fav_3_vs_12` больше не берётся из внешнего research CSV
-  - добавлен `ML/export_updn_active_predictions.py`, который считает `pred_fav_3 / pred_fav_12` из `transformer_updn_best.pt` на тех же активных строках validation/test
-  - verified one-to-one alignment: порядок активных строк в `DATA/Nero_{validation,test}_labeled.csv` и quantile predictions совпадает exactly
-- честный composition rerun:
-  - validation: `quantile_only N=32 PF=11.240091883688192`, `composition N=28 PF=21.852917603463066`
-  - test: `quantile_only N=48 PF=8.178675196069868`, `composition N=47 PF=7.860844837655267`
-  - intersection diagnostic: `47 / 48` quantile trades survived (`trades_lost_from_quantile = 1`)
-  - composition почти не режет quantile, но добавляет один отрицательный годовой срез: `2023 PF=0.47526255177309695 (N=5)`
-- `n_boost_composition.json`: `verdict = gate_fail`, `n_trades = 47`, `pf = 7.860844837655267`, `negative_year_slices = 1`
-- formal verdict: **CLOSED — gate fail**
-- canonical report: `docs/reports/2026-04-13-quantile-fav-composition.md`
+- новый target `trailing_stop_target_v1` реализован для сетки `seq_len = 20 / 50 / 100`
+- лучший validation candidate всего этапа:
+  - `transformer_seq20 + trail_48_pnl_atr_x3`, `PF=0.4206`
+- `validation PF > 1` не найден ни в одной конфигурации
+- canonical report:
+  - `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
 
-## Historical Stage
-Этап `label_convention_audit` завершён (2026-04-13).
+## Stable Production Context
 
-Что зафиксировано:
-
-- baseline blocker устранён:
-  - отсутствовал `ML/benchmark_triple_barrier_mt4_execution.py`, из-за чего `tests/test_triple_barrier_mt4_execution.py` падал на import во время collection
-  - модуль восстановлен минимально, baseline suite снова зелёный
-- label convention audit завершён:
-  - source of truth `processing/label_signals.py` не менялся
-  - confirmed bugs:
-    - `ML/tb_signal_logic.py`: `loss_mask = ~win_mask` включал timeout в losses
-    - `ML/threshold_analysis.py`: `losses = n_trades - wins` включал timeout в losses
-  - оба места исправлены на явный `SL == 0.0`
-  - добавлены permanent guards: `tests/test_tb_label_invariants.py`
-  - inventory: `ML/reports/label_convention_audit_inventory.csv`
-  - audit report: `ML/reports/label_convention_audit.md`
-- frozen rerun выполнен на canonical artifacts из основного дерева:
-  - `MT/MQL4/Files/ml_signals_tb.csv`
-  - `DATA/Nero_validation_labeled.csv`
-  - `DATA/Nero_test_labeled.csv`
-  - validation summary совпал exactly: `28 / 16 / 4 / 2`, `PF=4.333333333333333`
-  - test summary совпал exactly: `69 / 29 / 23 / 5`, `PF=1.2777777777777777`
-  - значит найденные bugs в `ML/tb_signal_logic.py` и `ML/threshold_analysis.py` **не меняют** historical verdict из `2026-04-12-tb-verdict.md`
-
-## Older Historical Stage
-Этап `triple_barrier_mt4_verdict` завершён. Этап `entry_path_v1_quantile_productization` закрыт ранее (2026-04-12, коммит `0023d92`).
-
-Что зафиксировано:
-
-- **`entry_path_v1_quantile`** — production-ready parallel execution mode:
-  - winner `lb_gt_m_q35` (median m/w/correction по 5 сидам)
-  - n-boost gate PASS: N=48, PF=8.18, win_rate=0.8125, negative_year_slices=0, same_winner_ratio=1.0
-  - MT4 parity 20/20 сделок, win rate 80% exact, PF=11.91 в деньгах (tester лог `20260412.log`)
-  - production rule: `ML/reports/entry_path_v1_quantile_selected_rule.json`
-  - канонический экспорт: `API.export_entry_path_v1_quantile_signals --rule-path ...`
-  - канонический seed: `seed_007`
-- **Triple Barrier** — **не production**:
-  - в симуляторе `ML/triple_barrier_mt4_execution.py` был баг: `int(outcome)` приводил label в float-конвенции `{1.0=TP, 0.0=SL, 0.5=Timeout}` к целому, SL и Timeout сливались в одну ветку `else → HoldOverTime, pnl=+0.5`. Все прежние прогоны TB давали `losses=0, pf=inf` — это артефакт, а не результат.
-  - фикс: `_classify_tb_outcome` с порогами `>=0.75` → TP, `<=0.25` → SL, else → Timeout; патч применён в обеих точках закрытия позиции
-  - тесты `tests/test_triple_barrier_mt4_execution.py` переведены с устаревшей `{1, -1, 0}` int-схемы на float; 6/6 зелёные
-  - честный прогон `tb_selected_rule.json` (`theta=0.475`, `min_ev=0.1`) на исправленном симуляторе:
-    - validation (2019–2022): N=28, PF=4.33, win_rate=57.1%, все годы положительные
-    - test (2023–2026): N=69, PF=1.28, win_rate=42.0%, negative years: 2023 (PF=0.55), 2026 (PF=0.00)
-  - gate-проверка (унифицированно с quantile: N≥30, PF>2.0, negative_year_slices=0): **fail** (PF и negative years)
-  - `tb_selected_rule.json` зафиксирован как frozen исторический артефакт, в MT4 не подключается
-  - пересмотр возможен только после накопления forward-данных post-2026-06
-
-## Last Completed Stage
-Quantile Forward Validation Scaffold (2026-04-13).
-
-Adjacent local stage also present: PF Uplift Discovery — Beyond ML Layer (2026-04-13), verdict **SHORTLISTED (3)**.
-
-PF uplift discovery зафиксировал:
-
-- Read-only discovery прогон на `entry_path_v1_quantile` test set (N=48, PF=8.179)
-- 20 гипотез по 5 категориям (R/S/E/F/X), hard bans соблюдены
-- 6 cheap probes выполнены на `trade_enriched.csv` (N=72 baseline_selected, N=48 quantile)
-- Shortlisted (3 STRONG):
-  1. NY session exclusion: PF=20.276, N=34, pf_delta=+12.097
-  2. Early timeout hold_bars=12: PF=13.731, N=48, pf_delta=+5.552
-  3. pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567
+- `entry_path_v1_quantile` остаётся подтверждённым production-ready parallel execution mode
+- current production rule:
+  - `ML/reports/entry_path_v1_quantile_selected_rule.json`
+- этот parallel mode не затронут отрицательными результатами новых research-track экспериментов
 
 ## Next Step
-1. Собрать новый forward prediction CSV для `entry_path_v1_quantile` после production decision.
-2. Запустить `ML.benchmark_quantile_forward_validation` на этом CSV с `--historical-pf 8.178675196069868`.
-3. Только после фактического forward verdict решать, остаётся ли `quantile` просто parallel mode или можно усиливать его роль.
-4. Не возвращаться к `fav_3_vs_12` как composition или standalone track без нового сильного основания.
-5. Следующий research-фокус после появления forward-данных: execution improvement вокруг `quantile`, сначала выход, потом вход.
+Следующий этап должен менять не selection layer, а само представление данных и обучающий сигнал.
 
-Roadmap doc: `docs/superpowers/roadmap.md`
+Практический фокус:
+
+1. Спроектировать новый training track на обновлённом наборе признаков.
+2. Использовать все 100 доступных фракталов вместо текущего урезанного представления.
+3. Добавить multi-scale summaries по нескольким длинам истории.
+4. Сохранить простую торговую логику без лишнего усложнения execution layer.
+5. Только после этого запускать новый тяжёлый train.
 
 ## Read First
-- `docs/reports/2026-04-13-quantile-forward-validation.md` — текущий forward validation status (`watch / no_forward_data`)
-- `docs/reports/2026-04-13-pf-uplift-discovery.md` — discovery verdict (SHORTLISTED 3)
-- `docs/superpowers/plans/2026-04-13-quantile-execution-improvement.md` — следующий план
-- `docs/superpowers/plans/2026-04-13-ny-session-filter.md` — skeleton plan #1
-- `docs/superpowers/plans/2026-04-13-early-timeout-bar12.md` — skeleton plan #2
-- `docs/superpowers/plans/2026-04-13-pred-adv-cap.md` — skeleton plan #3
-- `docs/reports/2026-04-13-fav-3-vs-12-standalone.md` — standalone verdict
-- `docs/reports/2026-04-13-quantile-fav-composition.md` — composition verdict (`CLOSED — gate fail`)
-- `ML/reports/pf_uplift_discovery/` — артефакты discovery (baseline_numbers.json, trade_enriched.csv, probe_*.json)
+
+- `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
+- `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
+- `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
+- `docs/superpowers/specs/2026-04-17-take-skip-trailing-stop-design.md`
+- `docs/superpowers/plans/2026-04-17-take-skip-trailing-stop.md`
+- `CHANGELOG.md`
 - `AGENTS.md`
-- `ML/reports/entry_path_v1_quantile_selected_rule.json`
 
 ## Open Risks
-- **No forward data yet**: новый benchmark готов, но не может подтвердить `quantile` без strictly newer prediction CSV.
-- **TB regime shift**: между validation (2019–2022) и test (2023–2026) PF падает с 4.33 до 1.28. Если 2026-ый catastrophic year — локальный всплеск, решение пересмотрится на forward-данных, но сейчас это "не production" definitively.
-- **Quantile low-frequency**: 22 sequential trades на test, PF=3.64. Достаточно для parallel mode, но не для полной замены baseline. Forward validation критична.
-- **Label convention risk**: симулятор и два analytics-consumer уже исправлены, но любой новый TB/label consumer должен явно различать `1.0 / 0.5 / 0.0` или документированно бинаризовать timeout как non-TP.
+
+- **Signal weakness**: ни regression, ни quantile, ни binary take/skip не дали даже `PF > 1` на validation.
+- **Feature bottleneck**: текущий research stack, вероятно, упёрся не в benchmark, а в бедное представление входной последовательности.
+- **Extreme imbalance**: positive-class для `take_skip_trailing_stop_v1` лежит в диапазоне `0.37% .. 0.92%`, что само по себе затрудняет обучение.
+- **CSV artifact gap**: `validation_grid.csv` не коммитятся из-за `gitignore`; для последующих этапов полезно либо явно сохранять их вне ignore, либо добавлять агрегированные diagnostics в `summary.json`.
 
 ## Latest Report
-`docs/reports/2026-04-13-quantile-forward-validation.md`
+
+`docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
 
 ## Active Roadmap
+
 `docs/superpowers/roadmap.md`

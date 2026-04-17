@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
-## [2026-04-17] - Take/skip trailing-stop track scaffold
+## [2026-04-17] - Take/skip trailing-stop matrix verdict
 
 ### Добавлено
 - `take_skip_trailing_stop_v1` для бинарного отбора сделок по `trail_48_pnl_atr_xN >= 0.5`
@@ -10,9 +10,20 @@
 - `ML/benchmark_take_skip_trailing_stop.py`
 - `ML/run_take_skip_trailing_stop_matrix.py`
 
-### Статус
-- локальный smoke готов
-- heavy matrix должен запускаться на удалённом сервере
+### Результаты
+- полный matrix run `seq_len = 20 / 50 / 100` завершён
+- во всех трёх конфигурациях `verdict = reject`, `validation_winner = null`
+- candidates с `PF > 1` не найдено вообще, даже до применения gate `trades_per_year >= 6`
+- семейство `prob_ge_threshold` оказалось полностью пустым: на всех порогах `0.50..0.95` число сделок равно нулю
+- лучшие validation candidates среди `trades_per_year >= 6`:
+  - `seq20`: `take_48_x2 + top_k 5%`, `PF=0.274`
+  - `seq50`: `take_48_x2 + top_k 5%`, `PF=0.202`
+  - `seq100`: `take_48_x8 + top_k 10%`, `PF=0.153`
+
+### Вывод
+- бинарная постановка `take/skip` не решила проблему Track A
+- selection layer исчерпан: следующий шаг должен менять входные признаки и новый training track, а не повторять ещё один benchmark-only цикл
+- Подробности: [docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md](docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
 
 ## [2026-04-17] - Trailing-stop target quantile first wave
 
