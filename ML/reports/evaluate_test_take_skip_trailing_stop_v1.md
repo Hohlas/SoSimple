@@ -6,8 +6,8 @@
 ## Summary
 
 - row_count: **9378**
-- val_score: **-0.0431**
-- bce: **0.0431**
+- val_score: **-0.0420**
+- bce: **0.0420**
 
 ## Artifacts
 
