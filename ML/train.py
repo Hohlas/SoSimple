@@ -1077,6 +1077,12 @@ def resolve_model_kwargs_for_encoder_transfer(
     return resolved
 
 
+def initial_best_metric(task: str) -> float:
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        return -float('inf')
+    return -1.0
+
+
 def train_model(
     model_name: str,
     task: str = 'classification',
@@ -1405,7 +1411,7 @@ def train_model(
     if not silent:
         print(f"{'─' * 90}")
 
-    best_metric = -1.0
+    best_metric = initial_best_metric(task)
     best_epoch = 0
     best_metrics = {}
     epochs_without_improvement = 0

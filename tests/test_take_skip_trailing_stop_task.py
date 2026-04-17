@@ -206,3 +206,12 @@ def test_generate_signals_accepts_take_skip_research_task_constant():
     from API.generate_signals import RESEARCH_EXPORT_TASKS
 
     assert 'take_skip_trailing_stop_v1' in RESEARCH_EXPORT_TASKS
+
+
+def test_train_initial_best_metric_allows_first_negative_take_skip_score():
+    from ML.train import initial_best_metric
+
+    best_metric = initial_best_metric('take_skip_trailing_stop_v1')
+
+    assert best_metric == -float('inf')
+    assert -1.25 > best_metric
