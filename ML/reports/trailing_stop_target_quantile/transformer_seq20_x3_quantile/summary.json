@@ -1,0 +1,103 @@
+{
+  "config": {
+    "seq_len": 20,
+    "target_column": "trail_48_pnl_atr_x3",
+    "epochs": 3,
+    "patience": 2,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "trailing_stop_target_quantile_v1",
+    "best_metric": 0.038856721841915944,
+    "metric_name": "val_score",
+    "best_epoch": 2,
+    "num_parameters": 74691,
+    "training_time": 57.827112436294556,
+    "history": {
+      "train_loss": [
+        0.057691658057316006,
+        0.050637085197700396,
+        0.05020830287919407
+      ],
+      "val_loss": [
+        0.05243684990784606,
+        0.051694300579460895,
+        0.05144673490242378
+      ],
+      "val_score": [
+        -0.0018295147368888776,
+        0.038856721841915944,
+        0.0
+      ],
+      "val_q50_pearson_r": [
+        -0.0018295147368888776,
+        0.038856721841915944,
+        0.0
+      ],
+      "val_q50_mae": [
+        0.1028075930407818,
+        0.10322860849715097,
+        0.10271270833256925
+      ],
+      "val_interval_coverage": [
+        0.9496694391128172,
+        0.9495628065685647,
+        0.9495628065685647
+      ],
+      "val_median_interval_width": [
+        0.041469573974609375,
+        0.00649014359805733,
+        0.00032944517442956567
+      ],
+      "val_q10_pinball_loss": [
+        0.08535083207661494,
+        0.08416951204510377,
+        0.08403445123808112
+      ],
+      "val_q50_pinball_loss": [
+        0.0514037965203909,
+        0.051614304248575486,
+        0.051356354166284625
+      ],
+      "val_q90_pinball_loss": [
+        0.02026031673334715,
+        0.019001264582070507,
+        0.01865126892048534
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "q10_pinball_loss": 0.08416951204510377,
+      "q50_pinball_loss": 0.051614304248575486,
+      "q90_pinball_loss": 0.019001264582070507,
+      "q50_mae": 0.10322860849715097,
+      "q50_pearson_r": 0.038856721841915944,
+      "interval_coverage": 0.9495628065685647,
+      "median_interval_width": 0.00649014359805733,
+      "val_score": 0.038856721841915944
+    }
+  },
+  "checkpoint_path": "ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/trailing_stop_target_quantile_validation_predictions.csv",
+    "test_csv": "ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/trailing_stop_target_quantile_test_predictions.csv"
+  },
+  "benchmark": {
+    "validation_grid_path": "ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/benchmark/final_verdict.json",
+    "final_verdict": {
+      "verdict": "reject",
+      "target_column": "trail_48_pnl_atr_x3",
+      "validation_winner": null,
+      "test_result": null
+    }
+  },
+  "runtime_sec": 264.16493129730225
+}
