@@ -20,7 +20,9 @@ def test_trailing_stop_task_constants_match_design():
     assert TRAILING_STOP_TARGET_COLUMNS == [
         'trail_48_pnl_atr_x2',
         'trail_48_pnl_atr_x3',
-        'trail_48_pnl_atr_x5',
+        'trail_48_pnl_atr_x4',
+        'trail_48_pnl_atr_x6',
+        'trail_48_pnl_atr_x8',
     ]
 
 
@@ -28,18 +30,22 @@ def test_build_trailing_stop_export_frame_adds_pred_columns():
     frame = build_trailing_stop_export_frame(
         times=np.array(['2025.01.01 00:00']),
         signals=np.array([1]),
-        pred=np.array([[0.1, 0.2, 0.3]], dtype=np.float32),
-        true=np.array([[0.4, 0.5, 0.6]], dtype=np.float32),
+        pred=np.array([[0.1, 0.2, 0.3, 0.4, 0.5]], dtype=np.float32),
+        true=np.array([[0.6, 0.7, 0.8, 0.9, 1.0]], dtype=np.float32),
     )
     assert list(frame.columns) == [
         'time',
         'signal',
         'pred_trail_48_pnl_atr_x2',
         'pred_trail_48_pnl_atr_x3',
-        'pred_trail_48_pnl_atr_x5',
+        'pred_trail_48_pnl_atr_x4',
+        'pred_trail_48_pnl_atr_x6',
+        'pred_trail_48_pnl_atr_x8',
         'true_trail_48_pnl_atr_x2',
         'true_trail_48_pnl_atr_x3',
-        'true_trail_48_pnl_atr_x5',
+        'true_trail_48_pnl_atr_x4',
+        'true_trail_48_pnl_atr_x6',
+        'true_trail_48_pnl_atr_x8',
     ]
 
 
@@ -63,7 +69,9 @@ def test_create_test_loader_trailing_stop_branch(monkeypatch, tmp_path):
             'signal': [1, -1],
             'trail_48_pnl_atr_x2': [0.1, 0.4],
             'trail_48_pnl_atr_x3': [0.2, 0.5],
-            'trail_48_pnl_atr_x5': [0.3, 0.6],
+            'trail_48_pnl_atr_x4': [0.3, 0.6],
+            'trail_48_pnl_atr_x6': [0.7, 0.8],
+            'trail_48_pnl_atr_x8': [0.9, 1.0],
         }
     )
 
@@ -92,10 +100,16 @@ def test_create_test_loader_trailing_stop_branch(monkeypatch, tmp_path):
     X_batch, y_batch, mask_batch = next(iter(loader))
     assert X_batch.shape == (2, 20, data_loader.N_FRACTAL_FEATURES)
     assert mask_batch.shape == (2, 20)
-    assert y_batch.shape == (2, 3)
+    assert y_batch.shape == (2, 5)
     np.testing.assert_allclose(
         y_batch.numpy(),
-        np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], dtype=np.float32),
+        np.array(
+            [
+                [0.1, 0.2, 0.3, 0.7, 0.9],
+                [0.4, 0.5, 0.6, 0.8, 1.0],
+            ],
+            dtype=np.float32,
+        ),
     )
 
 
@@ -110,7 +124,7 @@ def test_train_model_routes_trailing_stop_to_regression_path(monkeypatch, tmp_pa
     def fake_get_model(name, **kwargs):
         calls['get_model_kwargs'] = kwargs.copy()
         calls['get_model_name'] = name
-        assert kwargs['num_classes'] == 3
+        assert kwargs['num_classes'] == 5
         return FakeModel(kwargs['input_features'], kwargs['num_classes'])
 
     def fake_create_data_loaders(*args, **kwargs):
@@ -148,7 +162,7 @@ def test_train_model_routes_trailing_stop_to_regression_path(monkeypatch, tmp_pa
 
     assert calls['create_data_target'] == TRAILING_STOP_TARGET
     assert calls['get_model_name'] == 'transformer'
-    assert calls['get_model_kwargs']['num_classes'] == 3
+    assert calls['get_model_kwargs']['num_classes'] == 5
     assert result['task'] == TRAILING_STOP_TARGET
     assert result['best_metric'] == 0.9
     saved_ckpt = torch.load(tmp_path / 'checkpoints' / 'transformer_trailing_stop_target_v1_best.pt', weights_only=False)
@@ -170,7 +184,7 @@ def test_run_evaluation_uses_trailing_stop_export_branch(monkeypatch, tmp_path):
         def forward(self, x, mask=None):
             batch = x.shape[0]
             base = torch.arange(batch, dtype=torch.float32, device=x.device).unsqueeze(1)
-            return base.repeat(1, 3) + self.bias
+            return base.repeat(1, 5) + self.bias
 
     fake_model = FakeModel()
     checkpoint_path = checkpoint_dir / 'transformer_trailing_stop_target_v1_best.pt'
@@ -184,7 +198,7 @@ def test_run_evaluation_uses_trailing_stop_export_branch(monkeypatch, tmp_path):
         calls['create_test_loader_target'] = kwargs['target']
         calls['create_test_loader_seq_len'] = kwargs['seq_len']
         X = torch.zeros((2, 20, 20), dtype=torch.float32)
-        y = torch.zeros((2, 3), dtype=torch.float32)
+        y = torch.zeros((2, 5), dtype=torch.float32)
         mask = torch.ones((2, 20), dtype=torch.bool)
         return torch.utils.data.DataLoader(torch.utils.data.TensorDataset(X, y, mask), batch_size=2)
 
@@ -194,7 +208,9 @@ def test_run_evaluation_uses_trailing_stop_export_branch(monkeypatch, tmp_path):
             'signal': [1, -1],
             'trail_48_pnl_atr_x2': [0.1, 0.4],
             'trail_48_pnl_atr_x3': [0.2, 0.5],
-            'trail_48_pnl_atr_x5': [0.3, 0.6],
+            'trail_48_pnl_atr_x4': [0.3, 0.6],
+            'trail_48_pnl_atr_x6': [0.7, 0.8],
+            'trail_48_pnl_atr_x8': [0.9, 1.0],
         }
     )
 
@@ -225,8 +241,8 @@ def test_run_evaluation_uses_trailing_stop_export_branch(monkeypatch, tmp_path):
 
     assert calls['create_test_loader_target'] == TRAILING_STOP_TARGET
     assert calls['create_test_loader_seq_len'] == 50
-    assert calls['export_kwargs']['pred'].shape == (2, 3)
-    assert calls['export_kwargs']['true'].shape == (2, 3)
+    assert calls['export_kwargs']['pred'].shape == (2, 5)
+    assert calls['export_kwargs']['true'].shape == (2, 5)
     assert (report_dir / 'evaluate_test_trailing_stop_target_v1.md').exists()
     assert (report_dir / 'trailing_stop_target_test_predictions.csv').exists()
 
@@ -250,7 +266,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
             self.bias = nn.Parameter(torch.zeros(1))
 
         def forward(self, x, mask=None):
-            return torch.ones((x.shape[0], 3), dtype=torch.float32, device=x.device) + self.bias
+            return torch.ones((x.shape[0], 5), dtype=torch.float32, device=x.device) + self.bias
 
     fake_model = FakeModel()
     checkpoint_dir = tmp_path / 'checkpoints'
@@ -264,7 +280,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
     def fake_create_data_loaders(*args, **kwargs):
         calls['val_seq_len'] = kwargs['seq_len']
         X = torch.zeros((2, 50, 20), dtype=torch.float32)
-        y = torch.zeros((2, 3), dtype=torch.float32)
+        y = torch.zeros((2, 5), dtype=torch.float32)
         mask = torch.ones((2, 50), dtype=torch.bool)
         loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(X, y, mask), batch_size=2)
         return loader, loader, None
@@ -272,7 +288,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
     def fake_create_test_loader(*args, **kwargs):
         calls['test_seq_len'] = kwargs['seq_len']
         X = torch.zeros((2, 50, 20), dtype=torch.float32)
-        y = torch.zeros((2, 3), dtype=torch.float32)
+        y = torch.zeros((2, 5), dtype=torch.float32)
         mask = torch.ones((2, 50), dtype=torch.bool)
         return torch.utils.data.DataLoader(torch.utils.data.TensorDataset(X, y, mask), batch_size=2)
 
@@ -282,7 +298,9 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
             'signal': [1, -1],
             'trail_48_pnl_atr_x2': [0.1, 0.4],
             'trail_48_pnl_atr_x3': [0.2, 0.5],
-            'trail_48_pnl_atr_x5': [0.3, 0.6],
+            'trail_48_pnl_atr_x4': [0.3, 0.6],
+            'trail_48_pnl_atr_x6': [0.7, 0.8],
+            'trail_48_pnl_atr_x8': [0.9, 1.0],
         }
     )
 
@@ -294,7 +312,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
     monkeypatch.setattr(signal_api.torch, 'load', lambda *args, **kwargs: {
         'model_state_dict': fake_model.state_dict(),
         'model_name': 'transformer',
-        'num_classes': 3,
+        'num_classes': 5,
         'seq_len': 50,
         'model_kwargs': {'input_features': 20},
     })
@@ -305,7 +323,7 @@ def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch,
         research_out_prefix=str(tmp_path / 'trail'),
     )
 
-    assert calls['get_model_kwargs']['num_classes'] == 3
+    assert calls['get_model_kwargs']['num_classes'] == 5
     assert calls['val_seq_len'] == 50
     assert calls['test_seq_len'] == 50
 

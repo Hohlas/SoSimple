@@ -3,7 +3,7 @@ import pandas as pd
 import processing.label_signals as ls
 
 
-def test_label_trailing_stop_targets_adds_x2_x3_x5_columns():
+def test_label_trailing_stop_targets_adds_expanded_grid_columns():
     frame = pd.DataFrame(
         {
             'time': ['2025.01.01 00:00'],
@@ -21,14 +21,21 @@ def test_label_trailing_stop_targets_adds_x2_x3_x5_columns():
         }
     , index=[10])
 
-    out = ls.label_trailing_stop_targets(frame.copy(), hold_bars=2, atr_col='ATR', x_values=(2, 3, 5))
+    out = ls.label_trailing_stop_targets(frame.copy(), hold_bars=2, atr_col='ATR', x_values=(2, 3, 4, 6, 8))
 
-    assert 'trail_48_pnl_atr_x2' in out.columns
-    assert 'trail_48_pnl_atr_x3' in out.columns
-    assert 'trail_48_pnl_atr_x5' in out.columns
+    expected = [
+        'trail_48_pnl_atr_x2',
+        'trail_48_pnl_atr_x3',
+        'trail_48_pnl_atr_x4',
+        'trail_48_pnl_atr_x6',
+        'trail_48_pnl_atr_x8',
+    ]
+    assert [column for column in out.columns if column.startswith('trail_48_pnl_atr_')] == expected
     assert out.loc[10, 'trail_48_pnl_atr_x2'] == 0.4
     assert out.loc[10, 'trail_48_pnl_atr_x3'] == 0.4
-    assert out.loc[10, 'trail_48_pnl_atr_x5'] == 0.4
+    assert out.loc[10, 'trail_48_pnl_atr_x4'] == 0.4
+    assert out.loc[10, 'trail_48_pnl_atr_x6'] == 0.4
+    assert out.loc[10, 'trail_48_pnl_atr_x8'] == 0.4
 
 
 def test_label_trailing_stop_targets_skips_nan_signal_and_atr():

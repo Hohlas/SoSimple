@@ -6,7 +6,9 @@ TRAILING_STOP_TARGET = 'trailing_stop_target_v1'
 TRAILING_STOP_TARGET_COLUMNS = [
     'trail_48_pnl_atr_x2',
     'trail_48_pnl_atr_x3',
-    'trail_48_pnl_atr_x5',
+    'trail_48_pnl_atr_x4',
+    'trail_48_pnl_atr_x6',
+    'trail_48_pnl_atr_x8',
 ]
 
 
