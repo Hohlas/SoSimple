@@ -78,7 +78,7 @@ def run_single_config(
         use_scaler=False,
         use_weighted_sampler=False,
         seq_len=seq_len,
-        clear_cache=False,
+        clear_cache=True,
         silent=False,
         model_kwargs={},
     )

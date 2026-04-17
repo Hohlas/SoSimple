@@ -23,6 +23,7 @@ def test_single_config_writes_summary_and_benchmark(monkeypatch, tmp_path):
     def fake_train_model(**kwargs):
         assert kwargs['task'] == 'take_skip_trailing_stop_v2'
         assert kwargs['seq_len'] == 20
+        assert kwargs['clear_cache'] is True
         (checkpoint_dir / 'transformer_take_skip_trailing_stop_v2_best.pt').write_bytes(b'checkpoint')
         return {'best_metric': -0.1, 'task': kwargs['task']}
 
