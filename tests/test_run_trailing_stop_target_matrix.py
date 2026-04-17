@@ -60,8 +60,12 @@ def test_run_single_config_writes_summary_and_benchmark(monkeypatch, tmp_path):
                 'true_trail_48_pnl_atr_x2': [2.0, -1.0, -0.5],
                 'pred_trail_48_pnl_atr_x3': [1.4, 0.9, 0.3],
                 'true_trail_48_pnl_atr_x3': [1.5, -0.5, -0.2],
-                'pred_trail_48_pnl_atr_x5': [1.0, 0.7, 0.2],
-                'true_trail_48_pnl_atr_x5': [1.0, -0.5, -0.2],
+                'pred_trail_48_pnl_atr_x4': [1.1, 0.8, 0.2],
+                'true_trail_48_pnl_atr_x4': [1.0, -0.5, -0.2],
+                'pred_trail_48_pnl_atr_x6': [0.9, 0.6, 0.1],
+                'true_trail_48_pnl_atr_x6': [0.9, -0.4, -0.1],
+                'pred_trail_48_pnl_atr_x8': [0.7, 0.5, 0.1],
+                'true_trail_48_pnl_atr_x8': [0.7, -0.3, -0.1],
             }
         )
         test = pd.DataFrame(
@@ -72,8 +76,12 @@ def test_run_single_config_writes_summary_and_benchmark(monkeypatch, tmp_path):
                 'true_trail_48_pnl_atr_x2': [1.5, -0.8],
                 'pred_trail_48_pnl_atr_x3': [1.2, 0.2],
                 'true_trail_48_pnl_atr_x3': [1.2, -0.3],
-                'pred_trail_48_pnl_atr_x5': [0.8, 0.1],
-                'true_trail_48_pnl_atr_x5': [0.8, -0.2],
+                'pred_trail_48_pnl_atr_x4': [1.0, 0.1],
+                'true_trail_48_pnl_atr_x4': [0.9, -0.2],
+                'pred_trail_48_pnl_atr_x6': [0.8, 0.1],
+                'true_trail_48_pnl_atr_x6': [0.8, -0.2],
+                'pred_trail_48_pnl_atr_x8': [0.6, 0.1],
+                'true_trail_48_pnl_atr_x8': [0.6, -0.2],
             }
         )
         validation.to_csv(prefix.parent / f'{prefix.name}_validation_predictions.csv', sep=';', index=False)
@@ -98,6 +106,13 @@ def test_run_single_config_writes_summary_and_benchmark(monkeypatch, tmp_path):
     assert summary_path.exists()
     saved = json.loads(summary_path.read_text(encoding='utf-8'))
     assert saved['config']['seq_len'] == 20
+    assert saved['config']['target_columns'] == [
+        'trail_48_pnl_atr_x2',
+        'trail_48_pnl_atr_x3',
+        'trail_48_pnl_atr_x4',
+        'trail_48_pnl_atr_x6',
+        'trail_48_pnl_atr_x8',
+    ]
     assert saved['benchmarks']['trail_48_pnl_atr_x2']['final_verdict']['verdict'] == 'go'
     assert result['benchmarks']['trail_48_pnl_atr_x2']['final_verdict']['validation_winner']['candidate'] == 'pred_trail_48_pnl_atr_x2'
 
@@ -153,7 +168,7 @@ def test_run_single_config_skip_existing_ignores_stale_hyperparams(monkeypatch, 
             {
                 'config': {
                     'seq_len': 20,
-                    'epochs': 9,
+                    'epochs': 1,
                     'patience': 1,
                     'batch_size': 8,
                     'seed': 42,
@@ -187,8 +202,12 @@ def test_run_single_config_skip_existing_ignores_stale_hyperparams(monkeypatch, 
                 'true_trail_48_pnl_atr_x2': [1.0],
                 'pred_trail_48_pnl_atr_x3': [1.0],
                 'true_trail_48_pnl_atr_x3': [1.0],
-                'pred_trail_48_pnl_atr_x5': [1.0],
-                'true_trail_48_pnl_atr_x5': [1.0],
+                'pred_trail_48_pnl_atr_x4': [1.0],
+                'true_trail_48_pnl_atr_x4': [1.0],
+                'pred_trail_48_pnl_atr_x6': [1.0],
+                'true_trail_48_pnl_atr_x6': [1.0],
+                'pred_trail_48_pnl_atr_x8': [1.0],
+                'true_trail_48_pnl_atr_x8': [1.0],
             }
         )
         frame.to_csv(prefix.parent / f'{prefix.name}_validation_predictions.csv', sep=';', index=False)

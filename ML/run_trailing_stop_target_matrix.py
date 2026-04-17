@@ -13,7 +13,7 @@ from ML.benchmark_trailing_stop_target import pick_validation_winner, summarize_
 from ML.data_loader import task_checkpoint_suffix
 from ML.evaluate_test import run_evaluation
 from ML.train import CHECKPOINTS_DIR, REPORTS_DIR, train_model
-from ML.trailing_stop_target_task import TRAILING_STOP_TARGET
+from ML.trailing_stop_target_task import TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_COLUMNS
 
 
 DEFAULT_MATRIX_CONFIGS = [
@@ -126,6 +126,7 @@ def _same_run_config(
     batch_size: int,
     seed: int,
     min_pf: float,
+    target_columns: list[str],
 ) -> bool:
     saved_config = saved_payload.get('config', {})
     if not isinstance(saved_config, dict):
@@ -137,6 +138,7 @@ def _same_run_config(
         'batch_size': batch_size,
         'seed': seed,
         'min_pf': min_pf,
+        'target_columns': target_columns,
     }
 
 
@@ -166,6 +168,7 @@ def run_single_config(
             batch_size=batch_size,
             seed=seed,
             min_pf=min_pf,
+            target_columns=list(TRAILING_STOP_TARGET_COLUMNS),
         ):
             return saved_payload
 
@@ -214,7 +217,7 @@ def run_single_config(
     validation_csv = run_dir / 'trailing_stop_target_validation_predictions.csv'
     test_csv = run_dir / 'trailing_stop_target_test_predictions.csv'
     benchmarks = {}
-    for target_column in ['trail_48_pnl_atr_x2', 'trail_48_pnl_atr_x3', 'trail_48_pnl_atr_x5']:
+    for target_column in TRAILING_STOP_TARGET_COLUMNS:
         benchmarks[target_column] = run_benchmark(
             validation_csv=validation_csv,
             test_csv=test_csv,
@@ -231,6 +234,7 @@ def run_single_config(
             'batch_size': batch_size,
             'seed': seed,
             'min_pf': min_pf,
+            'target_columns': list(TRAILING_STOP_TARGET_COLUMNS),
         },
         'train_result': _jsonable(train_result),
         'checkpoint_path': str(run_checkpoint_path),

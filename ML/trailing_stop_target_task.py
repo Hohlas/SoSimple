@@ -12,6 +12,15 @@ TRAILING_STOP_TARGET_COLUMNS = [
 ]
 
 
+def validate_trailing_stop_prediction_shape(pred: np.ndarray, context: str = 'pred') -> None:
+    expected = len(TRAILING_STOP_TARGET_COLUMNS)
+    if pred.ndim != 2 or pred.shape[1] != expected:
+        raise ValueError(
+            f"Trailing stop target {context} must have shape (N, {expected}); "
+            f"got {pred.shape}"
+        )
+
+
 def split_trailing_stop_targets(df: pd.DataFrame) -> np.ndarray:
     return df[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
 

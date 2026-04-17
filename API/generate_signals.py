@@ -62,6 +62,7 @@ from ML.trailing_stop_target_quantile_task import (
     build_trailing_stop_quantile_export_frame,
 )
 from ML.trailing_stop_target_task import build_trailing_stop_export_frame
+from ML.trailing_stop_target_task import validate_trailing_stop_prediction_shape
 from ML.models import get_model
 from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
 from ML.tb_probability_calibration import (
@@ -522,6 +523,7 @@ def generate_signals(
                     all_preds.append(preds)
 
             pred = np.concatenate(all_preds)
+            validate_trailing_stop_prediction_shape(pred, context='predictions')
             export = build_trailing_stop_export_frame(
                 times=df_full['time'].values,
                 signals=df_full['signal'].values.astype(int),

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 import torch.nn as nn
 
@@ -255,6 +256,66 @@ def test_run_evaluation_uses_trailing_stop_export_branch(monkeypatch, tmp_path):
     )
 
     assert calls['create_test_loader_seq_len'] == 20
+
+
+def test_run_evaluation_rejects_old_three_output_trailing_stop_checkpoint(monkeypatch, tmp_path):
+    report_dir = tmp_path / 'reports'
+    checkpoint_dir = tmp_path / 'checkpoints'
+    checkpoint_dir.mkdir()
+    report_dir.mkdir()
+
+    class FakeModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.bias = nn.Parameter(torch.zeros(1))
+
+        def forward(self, x, mask=None):
+            return torch.zeros((x.shape[0], 3), dtype=torch.float32, device=x.device) + self.bias
+
+    fake_model = FakeModel()
+    (checkpoint_dir / 'transformer_trailing_stop_target_v1_best.pt').write_bytes(b'checkpoint')
+
+    monkeypatch.setattr(evaluate_test, 'CHECKPOINTS_DIR', checkpoint_dir)
+    monkeypatch.setattr(evaluate_test, 'REPORTS_DIR', report_dir)
+    monkeypatch.setattr(evaluate_test, 'get_model', lambda *args, **kwargs: fake_model)
+    monkeypatch.setattr(
+        evaluate_test,
+        'create_test_loader',
+        lambda *args, **kwargs: torch.utils.data.DataLoader(
+            torch.utils.data.TensorDataset(
+                torch.zeros((2, 20, 20), dtype=torch.float32),
+                torch.zeros((2, 5), dtype=torch.float32),
+                torch.ones((2, 20), dtype=torch.bool),
+            ),
+            batch_size=2,
+        ),
+    )
+    monkeypatch.setattr(evaluate_test.pd, 'read_csv', lambda *args, **kwargs: pd.DataFrame(
+        {
+            'time': ['2025.01.01 00:00', '2025.01.01 01:00'],
+            'signal': [1, -1],
+            'trail_48_pnl_atr_x2': [0.1, 0.4],
+            'trail_48_pnl_atr_x3': [0.2, 0.5],
+            'trail_48_pnl_atr_x4': [0.3, 0.6],
+            'trail_48_pnl_atr_x6': [0.7, 0.8],
+            'trail_48_pnl_atr_x8': [0.9, 1.0],
+        }
+    ))
+    monkeypatch.setattr(evaluate_test.torch, 'load', lambda *args, **kwargs: {
+        'model_state_dict': fake_model.state_dict(),
+        'epoch': 1,
+        'metric_name': 'pearson_r',
+        'best_metric': 0.9,
+        'model_name': 'transformer',
+        'seq_len': 50,
+    })
+
+    with pytest.raises(ValueError, match=r'shape \(N, 5\)'):
+        evaluate_test.run_evaluation(
+            model_name='transformer',
+            task=TRAILING_STOP_TARGET,
+            checkpoint_path=None,
+        )
 
 
 def test_generate_signals_uses_checkpoint_seq_len_for_trailing_stop(monkeypatch, tmp_path):

@@ -47,6 +47,7 @@ from ML.trailing_stop_target_task import (
     TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_COLUMNS,
     build_trailing_stop_export_frame,
+    validate_trailing_stop_prediction_shape,
 )
 from ML.models import get_model
 from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
@@ -492,6 +493,7 @@ def run_evaluation(
     y_pred = np.concatenate(all_preds)
 
     if task == TRAILING_STOP_TARGET:
+        validate_trailing_stop_prediction_shape(y_pred, context='predictions')
         true_targets = df_test_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
         per_target_metrics = {
             name: compute_regression_metrics(true_targets[:, idx], y_pred[:, idx])
