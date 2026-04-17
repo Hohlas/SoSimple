@@ -1,0 +1,113 @@
+{
+  "config": {
+    "seq_len": 50,
+    "epochs": 10,
+    "patience": 4,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0,
+    "min_trades_per_year": 6.0,
+    "target_columns": [
+      "take_48_x2",
+      "take_48_x3",
+      "take_48_x4",
+      "take_48_x6",
+      "take_48_x8"
+    ]
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "take_skip_trailing_stop_v1",
+    "best_metric": -0.0383404977619648,
+    "metric_name": "val_score",
+    "best_epoch": 5,
+    "num_parameters": 70597,
+    "training_time": 214.13833236694336,
+    "history": {
+      "train_loss": [
+        0.09588689031896361,
+        0.0406367792884073,
+        0.040634874804544516,
+        0.04035464565852406,
+        0.04076467395613068,
+        0.0396530775690985,
+        0.03966460116098673,
+        0.03949581985280179,
+        0.039148937265405005
+      ],
+      "val_loss": [
+        0.0387453955182856,
+        0.039613400913170865,
+        0.0387712483973922,
+        0.03888286035382063,
+        0.038341047676481506,
+        0.03902777863943295,
+        0.03938884425883156,
+        0.039306973522478666,
+        0.038497567736870936
+      ],
+      "val_score": [
+        -0.0387442521750927,
+        -0.0396130308508873,
+        -0.03877292945981026,
+        -0.03888154774904251,
+        -0.0383404977619648,
+        -0.039027247577905655,
+        -0.03938731178641319,
+        -0.039305541664361954,
+        -0.03849528729915619
+      ],
+      "val_bce": [
+        0.0387442521750927,
+        0.0396130308508873,
+        0.03877292945981026,
+        0.03888154774904251,
+        0.0383404977619648,
+        0.039027247577905655,
+        0.03938731178641319,
+        0.039305541664361954,
+        0.03849528729915619
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "bce": 0.0383404977619648,
+      "positive_rate_take_48_x2": 0.0037321390118449926,
+      "brier_take_48_x2": 0.0037224655970931053,
+      "positive_rate_take_48_x3": 0.004371934104710817,
+      "brier_take_48_x3": 0.004358897916972637,
+      "positive_rate_take_48_x4": 0.005224994849413633,
+      "brier_take_48_x4": 0.005206441972404718,
+      "positive_rate_take_48_x6": 0.00821070559322834,
+      "brier_take_48_x6": 0.00816313549876213,
+      "positive_rate_take_48_x8": 0.00917039904743433,
+      "brier_take_48_x8": 0.009100365452468395,
+      "val_score": -0.0383404977619648
+    }
+  },
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq50/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq50/take_skip_trailing_stop_validation_predictions.csv",
+    "test_csv": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq50/take_skip_trailing_stop_test_predictions.csv"
+  },
+  "benchmark": {
+    "validation_grid_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq50/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq50/benchmark/final_verdict.json",
+    "final_verdict": {
+      "verdict": "reject",
+      "validation_winner": null,
+      "test_result": null
+    }
+  },
+  "runtime_sec": 221.05622506141663
+}
