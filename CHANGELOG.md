@@ -2,6 +2,18 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-17] - Take/skip trailing-stop track scaffold
+
+### Добавлено
+- `take_skip_trailing_stop_v1` для бинарного отбора сделок по `trail_48_pnl_atr_xN >= 0.5`
+- широкая сетка `X = 2, 3, 4, 6, 8`
+- `ML/benchmark_take_skip_trailing_stop.py`
+- `ML/run_take_skip_trailing_stop_matrix.py`
+
+### Статус
+- локальный smoke готов
+- heavy matrix должен запускаться на удалённом сервере
+
 ## [2026-04-17] - Trailing-stop target quantile first wave
 
 ### Добавлено
