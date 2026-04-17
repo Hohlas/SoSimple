@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. `CONTEXT_HANDOFF.md` — текущее состояние, что дальше, открытые риски
 3. `wiki/index.md` — каталог синтезированных знаний
 4. Через `search_knowledge` найти релевантные `wiki/`, `docs/reports/`, код
+5. `using-superpowers` — meta-скилл
 
 Источники знаний по приоритету: явный запрос пользователя → `AGENTS.md` / `docs/` → `docs/superpowers/` → `wiki/` → `.claude/memory/`.
 
