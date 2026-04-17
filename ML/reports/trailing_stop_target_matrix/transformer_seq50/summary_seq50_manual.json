@@ -1,0 +1,35 @@
+{
+  "checkpoint_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/checkpoint.pt",
+  "benchmarks": {
+    "trail_48_pnl_atr_x2": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x2/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x2/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x2",
+        "validation_winner": null,
+        "test_result": null
+      }
+    },
+    "trail_48_pnl_atr_x3": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x3/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x3/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x3",
+        "validation_winner": null,
+        "test_result": null
+      }
+    },
+    "trail_48_pnl_atr_x5": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x5/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq50/benchmark_trail_48_pnl_atr_x5/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x5",
+        "validation_winner": null,
+        "test_result": null
+      }
+    }
+  }
+}

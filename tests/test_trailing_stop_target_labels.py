@@ -56,6 +56,47 @@ def test_label_trailing_stop_targets_skips_nan_signal_and_atr():
     assert out.loc[20, 'trail_48_pnl_atr_x2'] == 0.0
 
 
+def test_label_trailing_stop_targets_uses_ohlc_lookup_when_close_columns_absent(monkeypatch):
+    frame = pd.DataFrame(
+        {
+            'time': ['2025.01.01 00:00'],
+            'signal': [1],
+            'ATR': [1.0],
+        }
+    )
+
+    def fake_load_ohlc_index(_path):
+        ohlc = {
+            't0': (99.0, 101.0, 98.0, 100.0),
+            't1': (100.0, 103.0, 101.0, 102.0),
+            't2': (102.0, 104.0, 101.0, 103.0),
+        }
+        times = ['t0', 't1', 't2']
+        time_idx = {'2025-01-01T00:00:00+00:00': 0}
+        return ohlc, times, time_idx
+
+    class FakeDateTime:
+        @staticmethod
+        def strptime(value, _fmt):
+            class _Parsed:
+                def replace(self, tzinfo=None):
+                    return '2025-01-01T00:00:00+00:00'
+            return _Parsed()
+
+    monkeypatch.setattr(ls, 'load_ohlc_index', fake_load_ohlc_index)
+    monkeypatch.setattr('datetime.datetime', FakeDateTime)
+
+    out = ls.label_trailing_stop_targets(
+        frame.copy(),
+        ohlc_path='unused.csv',
+        hold_bars=2,
+        atr_col='ATR',
+        x_values=(2,),
+    )
+
+    assert out.loc[0, 'trail_48_pnl_atr_x2'] == -1.0
+
+
 def test_simulate_trailing_stop_exit_buy_closes_on_retrace_from_best_high():
     bars = [
         {'high': 105.0, 'low': 100.0, 'close': 104.0},

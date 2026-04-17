@@ -1,0 +1,124 @@
+{
+  "config": {
+    "seq_len": 20,
+    "epochs": 3,
+    "patience": 2,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "trailing_stop_target_v1",
+    "best_metric": 0.09519422550996144,
+    "metric_name": "pearson_r",
+    "best_epoch": 2,
+    "num_parameters": 70531,
+    "training_time": 616.2462906837463,
+    "history": {
+      "train_loss": [
+        0.08769485180140936,
+        0.08591674355386991,
+        0.08582632877586181
+      ],
+      "val_loss": [
+        0.0867197801535194,
+        0.08668912232324884,
+        0.0866854387159283
+      ],
+      "val_pearson_r": [
+        0.0919935554265976,
+        0.09519422550996144,
+        0.00023873266763985157
+      ],
+      "val_mae": [
+        0.13876827309528986,
+        0.14376440395911536,
+        0.1444145863254865
+      ],
+      "val_rmse": [
+        0.5361081487482607,
+        0.5356297390172923,
+        0.5355988169931919
+      ],
+      "val_r2": [
+        -0.008850375811258951,
+        -0.006971518198649089,
+        -0.00666209061940511
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "mae": 0.14376440395911536,
+      "rmse": 0.5356297390172923,
+      "r2": -0.006971518198649089,
+      "pearson_r": 0.09519422550996144,
+      "pearson_p": 0.0,
+      "per_target": {
+        "trail_48_pnl_atr_x2": {
+          "mae": 0.09119590371847153,
+          "rmse": 0.2960235406779235,
+          "r2": -0.001105666160583496,
+          "pearson_r": 0.08169185370206833,
+          "pearson_p": 2.314070930250936e-15
+        },
+        "trail_48_pnl_atr_x3": {
+          "mae": 0.13473577797412872,
+          "rmse": 0.4856048168863364,
+          "r2": -0.009083032608032227,
+          "pearson_r": 0.11554540693759918,
+          "pearson_p": 3.0548866055158363e-29
+        },
+        "trail_48_pnl_atr_x5": {
+          "mae": 0.2053615301847458,
+          "rmse": 0.8252608594876168,
+          "r2": -0.010725855827331543,
+          "pearson_r": 0.08834541589021683,
+          "pearson_p": 1.025921590784917e-17
+        }
+      }
+    }
+  },
+  "checkpoint_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/trailing_stop_target_matrix/transformer_seq20/trailing_stop_target_validation_predictions.csv",
+    "test_csv": "ML/reports/trailing_stop_target_matrix/transformer_seq20/trailing_stop_target_test_predictions.csv"
+  },
+  "benchmarks": {
+    "trail_48_pnl_atr_x2": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x2/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x2/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x2",
+        "validation_winner": null,
+        "test_result": null
+      }
+    },
+    "trail_48_pnl_atr_x3": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x3/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x3/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x3",
+        "validation_winner": null,
+        "test_result": null
+      }
+    },
+    "trail_48_pnl_atr_x5": {
+      "validation_grid_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x5/validation_grid.csv",
+      "final_verdict_path": "ML/reports/trailing_stop_target_matrix/transformer_seq20/benchmark_trail_48_pnl_atr_x5/final_verdict.json",
+      "final_verdict": {
+        "verdict": "reject",
+        "target_column": "trail_48_pnl_atr_x5",
+        "validation_winner": null,
+        "test_result": null
+      }
+    }
+  },
+  "runtime_sec": 1003.1565065383911
+}

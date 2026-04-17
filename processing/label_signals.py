@@ -755,35 +755,80 @@ def simulate_trailing_stop_exit(bars, direction, entry_price, atr, trail_atr):
 
 def label_trailing_stop_targets(
     df: pd.DataFrame,
+    ohlc_path: str | None = None,
     hold_bars: int = TRAILING_STOP_HOLD_BARS,
     atr_col: str = 'ATR',
     x_values: tuple[int, ...] = TRAILING_STOP_X_VALUES,
 ) -> pd.DataFrame:
+    from datetime import datetime, timezone
+
     out = df.copy()
     for x_value in x_values:
         out[f'trail_48_pnl_atr_x{x_value}'] = 0.0
+
+    ohlc = times = time_idx = None
+    if ohlc_path is not None:
+        ohlc, times, time_idx = load_ohlc_index(ohlc_path)
 
     for row_label in out.index:
         signal = _safe_signal_scalar(out.at[row_label, 'signal'])
         if signal == 0:
             continue
         atr = _safe_numeric_scalar(out.at[row_label, atr_col], default=0.0)
-        entry_price = _safe_numeric_scalar(out.at[row_label, 'Close'], default=0.0)
         bars = []
-        for step in range(1, hold_bars + 1):
-            suffix = f'_{step}'
-            high_col = f'High{suffix}'
-            low_col = f'Low{suffix}'
-            close_col = f'Close{suffix}'
-            if high_col not in out.columns or low_col not in out.columns or close_col not in out.columns:
-                break
-            bars.append(
-                {
-                    'high': _safe_numeric_scalar(out.at[row_label, high_col], default=entry_price),
-                    'low': _safe_numeric_scalar(out.at[row_label, low_col], default=entry_price),
-                    'close': _safe_numeric_scalar(out.at[row_label, close_col], default=entry_price),
-                }
-            )
+        if ohlc is not None and times is not None and time_idx is not None:
+            row_time = out.at[row_label, 'time']
+            if pd.isna(row_time) or row_time == '':
+                continue
+            if hasattr(row_time, 'to_pydatetime'):
+                row_time = row_time.to_pydatetime()
+            if isinstance(row_time, datetime):
+                row_dt = row_time.astimezone(timezone.utc) if row_time.tzinfo else row_time.replace(tzinfo=timezone.utc)
+            else:
+                try:
+                    row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+                except ValueError:
+                    continue
+
+            base_idx = time_idx.get(row_dt)
+            if base_idx is None or base_idx + 1 >= len(times):
+                continue
+
+            entry_dt = times[base_idx + 1]
+            entry_bar = ohlc.get(entry_dt)
+            if entry_bar is None:
+                continue
+            entry_price = float(entry_bar[3])
+
+            future_times = times[base_idx + 1:base_idx + 1 + hold_bars]
+            for future_dt in future_times:
+                bar = ohlc.get(future_dt)
+                if bar is None:
+                    break
+                bars.append(
+                    {
+                        'open': float(bar[0]),
+                        'high': float(bar[1]),
+                        'low': float(bar[2]),
+                        'close': float(bar[3]),
+                    }
+                )
+        else:
+            entry_price = _safe_numeric_scalar(out.at[row_label, 'Close'], default=0.0)
+            for step in range(1, hold_bars + 1):
+                suffix = f'_{step}'
+                high_col = f'High{suffix}'
+                low_col = f'Low{suffix}'
+                close_col = f'Close{suffix}'
+                if high_col not in out.columns or low_col not in out.columns or close_col not in out.columns:
+                    break
+                bars.append(
+                    {
+                        'high': _safe_numeric_scalar(out.at[row_label, high_col], default=entry_price),
+                        'low': _safe_numeric_scalar(out.at[row_label, low_col], default=entry_price),
+                        'close': _safe_numeric_scalar(out.at[row_label, close_col], default=entry_price),
+                    }
+                )
         for x_value in x_values:
             out.at[row_label, f'trail_48_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
                 bars=bars,

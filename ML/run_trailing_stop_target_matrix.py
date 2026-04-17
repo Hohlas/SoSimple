@@ -17,21 +17,15 @@ from ML.trailing_stop_target_task import TRAILING_STOP_TARGET
 
 
 DEFAULT_MATRIX_CONFIGS = [
-    {'target_column': 'trail_48_pnl_atr_x2', 'seq_len': 20},
-    {'target_column': 'trail_48_pnl_atr_x2', 'seq_len': 50},
-    {'target_column': 'trail_48_pnl_atr_x2', 'seq_len': 100},
-    {'target_column': 'trail_48_pnl_atr_x3', 'seq_len': 20},
-    {'target_column': 'trail_48_pnl_atr_x3', 'seq_len': 50},
-    {'target_column': 'trail_48_pnl_atr_x3', 'seq_len': 100},
-    {'target_column': 'trail_48_pnl_atr_x5', 'seq_len': 20},
-    {'target_column': 'trail_48_pnl_atr_x5', 'seq_len': 50},
-    {'target_column': 'trail_48_pnl_atr_x5', 'seq_len': 100},
+    {'seq_len': 20},
+    {'seq_len': 50},
+    {'seq_len': 100},
 ]
 DEFAULT_THRESHOLD_QUANTILES = (0.80, 0.85, 0.90, 0.95, 0.975)
 
 
-def config_slug(target_column: str, seq_len: int) -> str:
-    return f'{target_column}_seq{seq_len}'
+def config_slug(seq_len: int) -> str:
+    return f'transformer_seq{seq_len}'
 
 
 def _jsonable(value):
@@ -123,9 +117,31 @@ def run_benchmark(
     }
 
 
+def _same_run_config(
+    saved_payload: dict[str, object],
+    *,
+    seq_len: int,
+    epochs: int,
+    patience: int,
+    batch_size: int,
+    seed: int,
+    min_pf: float,
+) -> bool:
+    saved_config = saved_payload.get('config', {})
+    if not isinstance(saved_config, dict):
+        return False
+    return saved_config == {
+        'seq_len': seq_len,
+        'epochs': epochs,
+        'patience': patience,
+        'batch_size': batch_size,
+        'seed': seed,
+        'min_pf': min_pf,
+    }
+
+
 def run_single_config(
     *,
-    target_column: str,
     seq_len: int,
     output_dir: Path,
     epochs: int,
@@ -135,13 +151,23 @@ def run_single_config(
     min_pf: float,
     skip_existing: bool,
 ) -> dict[str, object]:
-    slug = config_slug(target_column, seq_len)
+    slug = config_slug(seq_len)
     run_dir = output_dir / slug
     run_dir.mkdir(parents=True, exist_ok=True)
 
     summary_path = run_dir / 'summary.json'
     if skip_existing and summary_path.exists():
-        return json.loads(summary_path.read_text(encoding='utf-8'))
+        saved_payload = json.loads(summary_path.read_text(encoding='utf-8'))
+        if _same_run_config(
+            saved_payload,
+            seq_len=seq_len,
+            epochs=epochs,
+            patience=patience,
+            batch_size=batch_size,
+            seed=seed,
+            min_pf=min_pf,
+        ):
+            return saved_payload
 
     started_at = time.time()
     train_result = train_model(
@@ -171,6 +197,7 @@ def run_single_config(
         checkpoint_path=str(run_checkpoint_path),
         task=TRAILING_STOP_TARGET,
         seed=seed,
+        seq_len_override=seq_len,
     )
     _copy_if_exists(REPORTS_DIR / 'evaluate_test_trailing_stop_target_v1.md', run_dir / 'evaluate_test_trailing_stop_target_v1.md')
     _copy_if_exists(REPORTS_DIR / 'trailing_stop_target_test_predictions.csv', run_dir / 'trailing_stop_target_test_predictions.csv')
@@ -181,26 +208,29 @@ def run_single_config(
         task=TRAILING_STOP_TARGET,
         seed=seed,
         research_out_prefix=str(export_prefix),
+        seq_len_override=seq_len,
     )
 
     validation_csv = run_dir / 'trailing_stop_target_validation_predictions.csv'
     test_csv = run_dir / 'trailing_stop_target_test_predictions.csv'
-    benchmark = run_benchmark(
-        validation_csv=validation_csv,
-        test_csv=test_csv,
-        target_column=target_column,
-        output_dir=run_dir / 'benchmark',
-        min_pf=min_pf,
-    )
+    benchmarks = {}
+    for target_column in ['trail_48_pnl_atr_x2', 'trail_48_pnl_atr_x3', 'trail_48_pnl_atr_x5']:
+        benchmarks[target_column] = run_benchmark(
+            validation_csv=validation_csv,
+            test_csv=test_csv,
+            target_column=target_column,
+            output_dir=run_dir / f'benchmark_{target_column}',
+            min_pf=min_pf,
+        )
 
     payload = {
         'config': {
-            'target_column': target_column,
             'seq_len': seq_len,
             'epochs': epochs,
             'patience': patience,
             'batch_size': batch_size,
             'seed': seed,
+            'min_pf': min_pf,
         },
         'train_result': _jsonable(train_result),
         'checkpoint_path': str(run_checkpoint_path),
@@ -208,7 +238,7 @@ def run_single_config(
             'validation_csv': str(validation_csv),
             'test_csv': str(test_csv),
         },
-        'benchmark': _jsonable(benchmark),
+        'benchmarks': _jsonable(benchmarks),
         'runtime_sec': time.time() - started_at,
     }
     summary_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -236,14 +266,13 @@ def main() -> dict[str, object]:
     selected = set(args.configs or [])
     matrix = [
         row for row in DEFAULT_MATRIX_CONFIGS
-        if not selected or config_slug(row['target_column'], row['seq_len']) in selected
+        if not selected or config_slug(row['seq_len']) in selected
     ]
 
     runs: list[dict[str, object]] = []
     for row in matrix:
         runs.append(
             run_single_config(
-                target_column=row['target_column'],
                 seq_len=row['seq_len'],
                 output_dir=output_dir,
                 epochs=args.epochs,
@@ -256,7 +285,7 @@ def main() -> dict[str, object]:
         )
 
     manifest = {
-        'configs': [config_slug(row['target_column'], row['seq_len']) for row in matrix],
+        'configs': [config_slug(row['seq_len']) for row in matrix],
         'runs': runs,
     }
     (output_dir / 'manifest.json').write_text(json.dumps(_jsonable(manifest), ensure_ascii=False, indent=2), encoding='utf-8')
