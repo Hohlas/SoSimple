@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, даст ли новая бинарная постановка `take/skip` торгового кандидата на готовых данных без смены базовой архитектуры.
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-17-take-skip-trailing-stop-design.md`, `docs/superpowers/plans/2026-04-17-take-skip-trailing-stop.md`
-> **Related commit**: pending
+> **Related commit**: 79954ef
 
 ## Context
 
