@@ -63,38 +63,6 @@ void MLP_ResetSellState() {
    MLP_SellBestPrice = 0.0;
 }
 
-void MLP_TrackBuyBestPrice() {
-   if (BUY.Typ != MARKET) return;
-   double entry_price = BUY.Val;
-   if (MLP_BuyBestPrice <= 0.0 || MLP_BuyBestPrice < entry_price) MLP_BuyBestPrice = entry_price;
-   if (High[bar] > MLP_BuyBestPrice) MLP_BuyBestPrice = High[bar];
-}
-
-void MLP_TrackSellBestPrice() {
-   if (SEL.Typ != MARKET) return;
-   double entry_price = SEL.Val;
-   if (MLP_SellBestPrice <= 0.0 || MLP_SellBestPrice > entry_price) MLP_SellBestPrice = entry_price;
-   if (Low[bar] < MLP_SellBestPrice) MLP_SellBestPrice = Low[bar];
-}
-
-bool MLP_ShouldCloseBuyTrailing(double &best_price, double &trail_price, double &pnl_atr) {
-   if (ML_TrailATR <= 0 || ATR <= 0) return false;
-   MLP_TrackBuyBestPrice();
-   best_price = MLP_BuyBestPrice;
-   trail_price = best_price - ATR * ML_TrailATR;
-   pnl_atr = (BID - BUY.Val) / ATR;
-   return BID <= trail_price;
-}
-
-bool MLP_ShouldCloseSellTrailing(double &best_price, double &trail_price, double &pnl_atr) {
-   if (ML_TrailATR <= 0 || ATR <= 0) return false;
-   MLP_TrackSellBestPrice();
-   best_price = MLP_SellBestPrice;
-   trail_price = best_price + ATR * ML_TrailATR;
-   pnl_atr = (SEL.Val - ASK) / ATR;
-   return ASK >= trail_price;
-}
-
 bool MLP_PassScore(int idx) {
    if (!ML_UseScoreFilter || !MLP_HasScoreColumn) return true;
    return MLP_Scores[idx] >= ML_ScoreThreshold;
@@ -238,7 +206,16 @@ void EXPERT::ML_TRADE() {
          double best_price = 0.0;
          double trail_price = 0.0;
          double pnl_atr = 0.0;
-         if (MLP_ShouldCloseBuyTrailing(best_price, trail_price, pnl_atr)) {
+         bool close_trailing = false;
+         if (ML_TrailATR > 0 && ATR > 0) {
+            if (MLP_BuyBestPrice <= 0.0 || MLP_BuyBestPrice < BUY.Val) MLP_BuyBestPrice = BUY.Val;
+            if (High[bar] > MLP_BuyBestPrice) MLP_BuyBestPrice = High[bar];
+            best_price = MLP_BuyBestPrice;
+            trail_price = best_price - ATR * ML_TrailATR;
+            pnl_atr = (BID - BUY.Val) / ATR;
+            close_trailing = (BID <= trail_price);
+         }
+         if (close_trailing) {
             double exit_price = BID;
             MLP_cnt_trailing++;
             Print(Mgc, ":: MLP CLOSE BUY"
@@ -316,7 +293,16 @@ void EXPERT::ML_TRADE() {
          double best_price = 0.0;
          double trail_price = 0.0;
          double pnl_atr = 0.0;
-         if (MLP_ShouldCloseSellTrailing(best_price, trail_price, pnl_atr)) {
+         bool close_trailing = false;
+         if (ML_TrailATR > 0 && ATR > 0) {
+            if (MLP_SellBestPrice <= 0.0 || MLP_SellBestPrice > SEL.Val) MLP_SellBestPrice = SEL.Val;
+            if (Low[bar] < MLP_SellBestPrice) MLP_SellBestPrice = Low[bar];
+            best_price = MLP_SellBestPrice;
+            trail_price = best_price + ATR * ML_TrailATR;
+            pnl_atr = (SEL.Val - ASK) / ATR;
+            close_trailing = (ASK >= trail_price);
+         }
+         if (close_trailing) {
             double exit_price = ASK;
             MLP_cnt_trailing++;
             Print(Mgc, ":: MLP CLOSE SELL"
