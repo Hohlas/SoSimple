@@ -76,6 +76,7 @@
 | [benchmark_entry_path_v2.py](ML/benchmark_entry_path_v2.py) | Расширенный selection benchmark с bounded candidate families и risk diagnostics | prediction CSVs → validation/test verdict | — | ✅ |
 | [benchmark_trailing_stop_target.py](ML/benchmark_trailing_stop_target.py) | Validation-first benchmark для trailing-stop target exports | prediction CSVs → validation/test verdict | — | ✅ |
 | [benchmark_trailing_stop_target_quantile.py](ML/benchmark_trailing_stop_target_quantile.py) | Validation-first benchmark для trailing-stop quantile exports | prediction CSVs → validation/test verdict | — | ✅ |
+| [benchmark_take_skip_mt4_trailing_sequential.py](ML/benchmark_take_skip_mt4_trailing_sequential.py) | Read-only comparison of independent vs single-position trailing-stop execution for take/skip signals | `ml_signals_*.csv` + labeled CSV + OHLC → summary JSON | — | ✅ |
 | [run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | configs → `reports/trailing_stop_target_matrix` | — | ✅ |
 | [run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | config → `reports/trailing_stop_target_quantile` | — | ✅ |
 | [run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | configs → `reports/track_a_max_out_matrix*` | — | ✅ |

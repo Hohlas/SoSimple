@@ -1,0 +1,254 @@
+{
+  "quality": {
+    "name": "quality",
+    "signal_path": "MT/tester/files/ml_signals_quality.csv",
+    "target": "trail_24_pnl_atr_x8",
+    "trail_atr": 8.0,
+    "independent": {
+      "mode": "independent_label",
+      "signals": 26,
+      "opened": 26,
+      "blocked": 0,
+      "pf": 24.58435403109948,
+      "gross_profit_atr": 107.63767883024013,
+      "gross_loss_atr": 4.378300064100821,
+      "net_atr": 103.2593787661393,
+      "win_rate": 0.8461538461538461,
+      "avg_hold_hours": null,
+      "max_hold_hours": null,
+      "yearly": {
+        "2022": {
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 4.889795918367354,
+          "gross_profit_atr": 4.889795918367354,
+          "gross_loss_atr": 0
+        },
+        "2023": {
+          "trades": 10,
+          "wins": 10,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 57.477106583665055,
+          "gross_profit_atr": 57.477106583665055,
+          "gross_loss_atr": 0
+        },
+        "2024": {
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 13.727308531678382,
+          "gross_profit_atr": 13.727308531678382,
+          "gross_loss_atr": 0
+        },
+        "2025": {
+          "trades": 7,
+          "wins": 7,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 25.216028772139122,
+          "gross_profit_atr": 25.216028772139122,
+          "gross_loss_atr": 0
+        },
+        "2026": {
+          "trades": 5,
+          "wins": 1,
+          "losses": 4,
+          "pf": 1.4451816759365241,
+          "net_atr": 1.9491389602893938,
+          "gross_profit_atr": 6.327439024390215,
+          "gross_loss_atr": 4.378300064100821
+        }
+      }
+    },
+    "single_position": {
+      "mode": "single_position_trailing",
+      "signals": 26,
+      "opened": 22,
+      "blocked": 4,
+      "pf": 18.74728737911378,
+      "gross_profit_atr": 228.86570211080573,
+      "gross_loss_atr": 12.207936939494692,
+      "net_atr": 216.65776517131104,
+      "win_rate": 0.8636363636363636,
+      "avg_hold_hours": 242.0909090909091,
+      "max_hold_hours": 716.0,
+      "yearly": {
+        "2022": {
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 7.55279503105588,
+          "gross_profit_atr": 7.55279503105588,
+          "gross_loss_atr": 0
+        },
+        "2023": {
+          "trades": 9,
+          "wins": 8,
+          "losses": 1,
+          "pf": 21.324668729235142,
+          "net_atr": 103.6242177697795,
+          "gross_profit_atr": 108.72266336563445,
+          "gross_loss_atr": 5.098445595854939
+        },
+        "2024": {
+          "trades": 3,
+          "wins": 3,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 17.72287649076086,
+          "gross_profit_atr": 17.72287649076086,
+          "gross_loss_atr": 0
+        },
+        "2025": {
+          "trades": 7,
+          "wins": 7,
+          "losses": 0,
+          "pf": "inf",
+          "net_atr": 94.86736722335455,
+          "gross_profit_atr": 94.86736722335455,
+          "gross_loss_atr": 0
+        },
+        "2026": {
+          "trades": 2,
+          "wins": 0,
+          "losses": 2,
+          "pf": 0.0,
+          "net_atr": -7.109491343639753,
+          "gross_profit_atr": 0,
+          "gross_loss_atr": 7.109491343639753
+        }
+      }
+    }
+  },
+  "frequency": {
+    "name": "frequency",
+    "signal_path": "MT/tester/files/ml_signals_frequency.csv",
+    "target": "trail_24_pnl_atr_x8",
+    "trail_atr": 8.0,
+    "independent": {
+      "mode": "independent_label",
+      "signals": 72,
+      "opened": 72,
+      "blocked": 0,
+      "pf": 5.34890138162554,
+      "gross_profit_atr": 161.22735213228785,
+      "gross_loss_atr": 30.142143335476977,
+      "net_atr": 131.0852087968109,
+      "win_rate": 0.7361111111111112,
+      "avg_hold_hours": null,
+      "max_hold_hours": null,
+      "yearly": {
+        "2022": {
+          "trades": 4,
+          "wins": 3,
+          "losses": 1,
+          "pf": 3.5807862476610315,
+          "net_atr": 5.019629251700687,
+          "gross_profit_atr": 6.96462925170068,
+          "gross_loss_atr": 1.9449999999999927
+        },
+        "2023": {
+          "trades": 18,
+          "wins": 14,
+          "losses": 4,
+          "pf": 10.293004096990641,
+          "net_atr": 62.382176884756475,
+          "gross_profit_atr": 69.09498753604605,
+          "gross_loss_atr": 6.712810651289579
+        },
+        "2024": {
+          "trades": 17,
+          "wins": 16,
+          "losses": 1,
+          "pf": 1428.020071609961,
+          "net_atr": 30.73581692695575,
+          "gross_profit_atr": 30.75735538849419,
+          "gross_loss_atr": 0.0215384615384419
+        },
+        "2025": {
+          "trades": 21,
+          "wins": 18,
+          "losses": 3,
+          "pf": 16.370848862389995,
+          "net_atr": 45.00630542974705,
+          "gross_profit_atr": 47.934335353967455,
+          "gross_loss_atr": 2.9280299242204033
+        },
+        "2026": {
+          "trades": 12,
+          "wins": 2,
+          "losses": 10,
+          "pf": 0.3493998897319961,
+          "net_atr": -12.058719696349083,
+          "gross_profit_atr": 6.476044602079477,
+          "gross_loss_atr": 18.53476429842856
+        }
+      }
+    },
+    "single_position": {
+      "mode": "single_position_trailing",
+      "signals": 72,
+      "opened": 54,
+      "blocked": 18,
+      "pf": 2.3790213281829624,
+      "gross_profit_atr": 281.17511718625286,
+      "gross_loss_atr": 118.1894058095761,
+      "net_atr": 162.98571137667676,
+      "win_rate": 0.5555555555555556,
+      "avg_hold_hours": 204.33333333333334,
+      "max_hold_hours": 573.0,
+      "yearly": {
+        "2022": {
+          "trades": 4,
+          "wins": 1,
+          "losses": 3,
+          "pf": 0.7931005871013206,
+          "net_atr": -1.9703287112431425,
+          "gross_profit_atr": 7.55279503105588,
+          "gross_loss_atr": 9.523123742299022
+        },
+        "2023": {
+          "trades": 15,
+          "wins": 10,
+          "losses": 5,
+          "pf": 4.806505003902032,
+          "net_atr": 100.32574510484397,
+          "gross_profit_atr": 126.68213896272687,
+          "gross_loss_atr": 26.356393857882885
+        },
+        "2024": {
+          "trades": 14,
+          "wins": 7,
+          "losses": 7,
+          "pf": 1.2879871590582699,
+          "net_atr": 9.109675347905686,
+          "gross_profit_atr": 40.741902901712976,
+          "gross_loss_atr": 31.632227553807287
+        },
+        "2025": {
+          "trades": 14,
+          "wins": 12,
+          "losses": 2,
+          "pf": 7.913855241548881,
+          "net_atr": 92.77899511945392,
+          "gross_profit_atr": 106.19828029075714,
+          "gross_loss_atr": 13.419285171303217
+        },
+        "2026": {
+          "trades": 7,
+          "wins": 0,
+          "losses": 7,
+          "pf": 0.0,
+          "net_atr": -37.2583754842837,
+          "gross_profit_atr": 0,
+          "gross_loss_atr": 37.2583754842837
+        }
+      }
+    }
+  }
+}
