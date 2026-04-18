@@ -146,3 +146,11 @@
   - added consumer-layer subsection for take/skip v2
   - recorded that frozen quality/frequency rules are now executable through a dedicated CLI
   - noted optional full-series expansion via `--base-csv`
+
+## [2026-04-18] ingest | MT4 trailing-stop execution synced into wiki
+- Added report `docs/reports/2026-04-18-mt4-trailing-stop-execution.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added MT4 direct trailing-stop execution subsection for `iSignal=3`
+  - recorded new runtime parameters `ML_ExitMode` and `ML_TrailATR`
+  - clarified that timeout path remains default, while trailing-stop is a separate explicit mode
+- Updated `wiki/index.md` coverage from 19 to 20 reports

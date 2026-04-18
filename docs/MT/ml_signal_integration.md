@@ -147,10 +147,26 @@ Frequent-режим:
 2. если на баре есть сигнал, открывает сделку на следующем баре по рынку;
 3. одновременно держит только одну позицию;
 4. закрывает её:
-   - по `ML_HoldBars`;
+   - по `ML_HoldBars`, если `ML_ExitMode=0`;
+   - по bar-based trailing-stop `X * ATR`, если `ML_ExitMode=1`;
    - либо по обратному сигналу, если включён `ML_AllowReversal`.
 
 Старые `INPUT()`, `OUTPUT()`, `TRAILING_STOP()` и старый `TIMER()` в этом режиме не участвуют.
+
+### Режимы выхода
+
+| Параметр | Значение | Смысл |
+|---|---:|---|
+| `ML_ExitMode` | `0` | старый parity-check по `ML_HoldBars` |
+| `ML_ExitMode` | `1` | отдельный trailing-stop по `ML_TrailATR * ATR` |
+| `ML_TrailATR` | `8.0` | ширина trailing-stop; одновременно стартовый стоп и trailing-gap |
+
+Практический смысл trailing-режима такой:
+
+- для BUY эксперт хранит лучший максимум после входа;
+- стоп идёт на уровне `best_high - ATR * ML_TrailATR`;
+- для SELL зеркально хранится лучший минимум и стоп `best_low + ATR * ML_TrailATR`;
+- если благоприятного хода почти не было, правило работает как обычный стоп того же размера.
 
 ---
 
@@ -161,6 +177,8 @@ Frequent-режим:
 | Параметр | Значение | Зачем |
 |---|---:|---|
 | `iSignal` | `3` | включает прямой режим |
+| `ML_ExitMode` | `0` | сначала baseline timeout-mode |
+| `ML_TrailATR` | `8.0` | базовое значение для trailing-mode |
 | `Risk` | `0` | фиксированный лот в тестере |
 | `ML_HoldBars` | `12` | базовое удержание |
 | `ML_AllowReversal` | `false` | сначала без досрочного reverse-close |
@@ -174,6 +192,17 @@ Frequent-режим:
 - либо явно поставить `ML_UseScoreFilter=false`.
 
 Для `entry_path_v1_quantile` предпочтителен именно этот режим: уже заранее отфильтрованный `time;signal`.
+
+Для чистой проверки нового trailing-stop execution:
+
+| Параметр | Значение |
+|---|---:|
+| `iSignal` | `3` |
+| `ML_ExitMode` | `1` |
+| `ML_TrailATR` | `8.0` |
+| `ML_HoldBars` | можно оставить как есть, в этом режиме он не используется |
+| `ML_AllowReversal` | `false` |
+| `ML_UseScoreFilter` | `false`, если CSV уже предфильтрован в Python |
 
 Для текущего quantile parity-check (production `lb_gt_m_q35`, frozen 2026-04-12):
 
@@ -219,6 +248,8 @@ MLP BUY ...
 MLP SELL ...
 MLP CLOSE BUY reason=Timeout ...
 MLP CLOSE SELL reason=Timeout ...
+MLP CLOSE BUY reason=TrailingStop ...
+MLP CLOSE SELL reason=TrailingStop ...
 MLP CLOSE BUY reason=ReverseSignal ...
 MLP CLOSE SELL reason=ReverseSignal ...
 MLP SKIP reason=ScoreFilter ...

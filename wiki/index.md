@@ -19,7 +19,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | Page | Covers | Reports |
 |------|--------|---------|
 | [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
-| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1, trailing-stop family, take/skip v2, frequency follow-up and rule consumer: parallel execution tracks | 19 reports (04-08 — 04-18) |
+| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1, trailing-stop family, take/skip v2, frequency follow-up, rule consumer and MT4 trailing execution: parallel execution tracks | 20 reports (04-08 — 04-18) |
 
 ## Concepts
 

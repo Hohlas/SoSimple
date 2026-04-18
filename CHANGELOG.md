@@ -2,6 +2,29 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-18] - MT4 trailing-stop execution for direct ML mode
+
+### Добавлено
+- `docs/superpowers/plans/2026-04-18-mt4-trailing-stop-execution.md`
+
+### Изменено
+- `MT/MQL4/Experts/$o$imple.mq4`
+- `MT/MQL4/Include/lib_ML_Signal.mqh`
+- `docs/MT/ml_signal_integration.md`
+- `docs/MT/trading_strategy.md`
+
+### Результаты
+- В прямой MT4-контур `iSignal=3` добавлен новый режим выхода:
+  - `ML_ExitMode=0` -> timeout
+  - `ML_ExitMode=1` -> trailing-stop по `ML_TrailATR * ATR`
+- Трейлинг реализован отдельно внутри `ML_TRADE()`, без возврата к старому `OUTPUT()/TRAILING_STOP()`
+- В логах tester появились явные закрытия `reason=TrailingStop`
+
+### Вывод
+- Теперь MT4 может честно проверять не только новый слой входа, но и новый тип выхода, под который строился `take_skip_trailing_stop_v2`
+- Следующий шаг — ручной MT4 прогон `quality` и `frequency` уже в trailing-mode
+- Подробности: [docs/reports/2026-04-18-mt4-trailing-stop-execution.md](docs/reports/2026-04-18-mt4-trailing-stop-execution.md)
+
 ## [2026-04-18] - Take/skip v2 rule consumer
 
 ### Добавлено

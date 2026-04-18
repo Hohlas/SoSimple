@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-18
-sources: 18
+sources: 20
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 16 отчётов (2026-04-08 — 2026-04-13). Параллельные направления execution.
+> Синтез 20 отчётов (2026-04-08 — 2026-04-18). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -355,6 +355,42 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 Смысл этого этапа: `take_skip_trailing_stop_v2_quality_selected_rule.json` и `take_skip_trailing_stop_v2_frequency_selected_rule.json` больше не являются только отчётными артефактами. Они стали прикладным интерфейсом, который можно одинаково запускать на любом готовом prediction CSV.
 
 Источник: [2026-04-18-take-skip-rule-consumer.md](../../docs/reports/2026-04-18-take-skip-rule-consumer.md)
+
+### MT4 Trailing-Stop Execution (04-18): direct mode теперь умеет честный trailing exit
+
+После consumer-слоя выяснилось важное ограничение: MT4 уже мог тестировать новые `quality` и `frequency` входы, но всё ещё закрывал сделки старым способом через `ML_HoldBars`. Это значило, что MT4 подтверждал только новый **entry-layer**, а не тот тип выхода, под который строился `take_skip_trailing_stop_v2`.
+
+Чтобы убрать этот разрыв, в прямой MT4-контур `iSignal=3` был добавлен отдельный режим:
+
+- `ML_ExitMode = 0` -> старый timeout parity-check
+- `ML_ExitMode = 1` -> отдельный trailing-stop по `ML_TrailATR * ATR`
+
+Принцип intentionally простой и совпадает с новой исследовательской линией:
+
+- BUY:
+  - лучший максимум после входа хранится по `High[bar]`
+  - уровень выхода = `best_high - ATR * X`
+- SELL:
+  - лучший минимум хранится по `Low[bar]`
+  - уровень выхода = `best_low + ATR * X`
+
+Что важно practically:
+
+- trailing реализован прямо внутри `lib_ML_Signal.mqh`;
+- старые `OUTPUT()/TRAILING_STOP()` по-прежнему не участвуют в `iSignal=3`;
+- timeout path сохранён как default, поэтому старые parity-check сценарии не сломаны;
+- в tester-логе появились отдельные строки `reason=TrailingStop`, а также поля `best`, `trail`, `trail_atr`.
+
+**Смысл этапа:** теперь MT4 может проверить не только "хорошо ли новый CSV выбирает входы", но и "что будет, если исполнить эти входы именно на trailing-stop-логике".
+
+**Новый практический вопрос:** какой режим лучше проходит через реальное MT4 execution:
+
+- `quality` + trailing `x8`
+- `frequency` + trailing `x8`
+
+Именно этот ручной tester-check теперь стал следующим честным шагом для `take_skip_trailing_stop_v2`.
+
+Источник: [2026-04-18-mt4-trailing-stop-execution.md](../../docs/reports/2026-04-18-mt4-trailing-stop-execution.md)
 
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 

@@ -12,13 +12,16 @@
 //| Логика:                                                          |
 //|   - сигнал на баре t -> вход по рынку на следующем баре          |
 //|   - одна открытая позиция                                        |
-//|   - закрытие по удержанию либо по обратному сигналу              |
+//|   - режим 0: закрытие по удержанию либо по обратному сигналу     |
+//|   - режим 1: отдельный bar-based trailing-stop по X*ATR          |
 //+------------------------------------------------------------------+
 #property strict
 
 #define MLP_SIGNALS_FILE "ml_signals.csv"
 #define MLP_MAX_SIGNALS  200000
 #define MLP_Ver          4.0
+#define MLP_EXIT_TIMEOUT 0
+#define MLP_EXIT_TRAIL   1
 
 int      MLP_SignalCount = 0;
 datetime MLP_Times[];
@@ -30,6 +33,8 @@ datetime MLP_BuySignalTime = 0;
 datetime MLP_SellSignalTime = 0;
 double   MLP_BuyScore = 0.0;
 double   MLP_SellScore = 0.0;
+double   MLP_BuyBestPrice = 0.0;
+double   MLP_SellBestPrice = 0.0;
 
 int MLP_cnt_total    = 0;
 int MLP_cnt_filtered = 0;
@@ -38,7 +43,57 @@ int MLP_cnt_opened   = 0;
 int MLP_cnt_buy      = 0;
 int MLP_cnt_sell     = 0;
 int MLP_cnt_timeout  = 0;
+int MLP_cnt_trailing = 0;
 int MLP_cnt_reverse  = 0;
+
+string MLP_ExitModeName() {
+   if (ML_ExitMode == MLP_EXIT_TRAIL) return "trailing_stop";
+   return "timeout";
+}
+
+void MLP_ResetBuyState() {
+   MLP_BuySignalTime = 0;
+   MLP_BuyScore = 0.0;
+   MLP_BuyBestPrice = 0.0;
+}
+
+void MLP_ResetSellState() {
+   MLP_SellSignalTime = 0;
+   MLP_SellScore = 0.0;
+   MLP_SellBestPrice = 0.0;
+}
+
+void MLP_TrackBuyBestPrice() {
+   if (BUY.Typ != MARKET) return;
+   double entry_price = BUY.Val;
+   if (MLP_BuyBestPrice <= 0.0 || MLP_BuyBestPrice < entry_price) MLP_BuyBestPrice = entry_price;
+   if (High[bar] > MLP_BuyBestPrice) MLP_BuyBestPrice = High[bar];
+}
+
+void MLP_TrackSellBestPrice() {
+   if (SEL.Typ != MARKET) return;
+   double entry_price = SEL.Val;
+   if (MLP_SellBestPrice <= 0.0 || MLP_SellBestPrice > entry_price) MLP_SellBestPrice = entry_price;
+   if (Low[bar] < MLP_SellBestPrice) MLP_SellBestPrice = Low[bar];
+}
+
+bool MLP_ShouldCloseBuyTrailing(double &best_price, double &trail_price, double &pnl_atr) {
+   if (ML_TrailATR <= 0 || ATR <= 0) return false;
+   MLP_TrackBuyBestPrice();
+   best_price = MLP_BuyBestPrice;
+   trail_price = best_price - ATR * ML_TrailATR;
+   pnl_atr = (BID - BUY.Val) / ATR;
+   return BID <= trail_price;
+}
+
+bool MLP_ShouldCloseSellTrailing(double &best_price, double &trail_price, double &pnl_atr) {
+   if (ML_TrailATR <= 0 || ATR <= 0) return false;
+   MLP_TrackSellBestPrice();
+   best_price = MLP_SellBestPrice;
+   trail_price = best_price + ATR * ML_TrailATR;
+   pnl_atr = (SEL.Val - ASK) / ATR;
+   return ASK >= trail_price;
+}
 
 bool MLP_PassScore(int idx) {
    if (!ML_UseScoreFilter || !MLP_HasScoreColumn) return true;
@@ -138,6 +193,8 @@ bool MLP_INIT() {
          " ScoreCol=", MLP_HasScoreColumn,
          " ScoreFilter=", ML_UseScoreFilter,
          " Threshold=", DoubleToString(ML_ScoreThreshold, 6),
+         " ExitMode=", MLP_ExitModeName(),
+         " TrailATR=", DoubleToString(ML_TrailATR, 2),
          " HoldBars=", ML_HoldBars,
          " Reversal=", ML_AllowReversal);
    if (ML_UseScoreFilter && !MLP_HasScoreColumn) {
@@ -177,7 +234,32 @@ void EXPERT::ML_TRADE() {
    }
 
    if (BUY.Typ == MARKET) {
-      if (ML_HoldBars > 0 && SHIFT(BUY.T) >= ML_HoldBars) {
+      if (ML_ExitMode == MLP_EXIT_TRAIL) {
+         double best_price = 0.0;
+         double trail_price = 0.0;
+         double pnl_atr = 0.0;
+         if (MLP_ShouldCloseBuyTrailing(best_price, trail_price, pnl_atr)) {
+            double exit_price = BID;
+            MLP_cnt_trailing++;
+            Print(Mgc, ":: MLP CLOSE BUY"
+                  " reason=TrailingStop"
+                  " signal_time=", TimeToString(MLP_BuySignalTime),
+                  " entry_time=", TimeToString(BUY.T),
+                  " exit_time=", TimeToString(Time[0]),
+                  " entry=", DoubleToString(BUY.Val, Digits),
+                  " best=", DoubleToString(best_price, Digits),
+                  " trail=", DoubleToString(trail_price, Digits),
+                  " exit=", DoubleToString(exit_price, Digits),
+                  " atr=", DoubleToString(ATR, Digits),
+                  " trail_atr=", DoubleToString(ML_TrailATR, 2),
+                  " pnl_atr=", DoubleToString(pnl_atr, 4),
+                  " score=", DoubleToString(MLP_BuyScore, 6));
+            CLOSE_BUY(1, "MLP_TrailingStop");
+            MLP_ResetBuyState();
+            return;
+         }
+      }
+      else if (ML_HoldBars > 0 && SHIFT(BUY.T) >= ML_HoldBars) {
          double exit_price = BID;
          double pnl_atr = 0.0;
          if (ATR > 0) pnl_atr = (exit_price - BUY.Val) / ATR;
@@ -194,8 +276,7 @@ void EXPERT::ML_TRADE() {
                " pnl_atr=", DoubleToString(pnl_atr, 4),
                " score=", DoubleToString(MLP_BuyScore, 6));
          CLOSE_BUY(1, "MLP_Timeout");
-         MLP_BuySignalTime = 0;
-         MLP_BuyScore = 0.0;
+         MLP_ResetBuyState();
          return;
       }
       if (sig == -1 && score_ok && ML_AllowReversal) {
@@ -216,8 +297,7 @@ void EXPERT::ML_TRADE() {
                " score=", DoubleToString(MLP_BuyScore, 6),
                " reverse_score=", DoubleToString(score, 6));
          CLOSE_BUY(1, "MLP_ReverseSignal");
-         MLP_BuySignalTime = 0;
-         MLP_BuyScore = 0.0;
+         MLP_ResetBuyState();
          return;
       }
       if (sig != 0 && score_ok) {
@@ -232,7 +312,32 @@ void EXPERT::ML_TRADE() {
    }
 
    if (SEL.Typ == MARKET) {
-      if (ML_HoldBars > 0 && SHIFT(SEL.T) >= ML_HoldBars) {
+      if (ML_ExitMode == MLP_EXIT_TRAIL) {
+         double best_price = 0.0;
+         double trail_price = 0.0;
+         double pnl_atr = 0.0;
+         if (MLP_ShouldCloseSellTrailing(best_price, trail_price, pnl_atr)) {
+            double exit_price = ASK;
+            MLP_cnt_trailing++;
+            Print(Mgc, ":: MLP CLOSE SELL"
+                  " reason=TrailingStop"
+                  " signal_time=", TimeToString(MLP_SellSignalTime),
+                  " entry_time=", TimeToString(SEL.T),
+                  " exit_time=", TimeToString(Time[0]),
+                  " entry=", DoubleToString(SEL.Val, Digits),
+                  " best=", DoubleToString(best_price, Digits),
+                  " trail=", DoubleToString(trail_price, Digits),
+                  " exit=", DoubleToString(exit_price, Digits),
+                  " atr=", DoubleToString(ATR, Digits),
+                  " trail_atr=", DoubleToString(ML_TrailATR, 2),
+                  " pnl_atr=", DoubleToString(pnl_atr, 4),
+                  " score=", DoubleToString(MLP_SellScore, 6));
+            CLOSE_SEL(1, "MLP_TrailingStop");
+            MLP_ResetSellState();
+            return;
+         }
+      }
+      else if (ML_HoldBars > 0 && SHIFT(SEL.T) >= ML_HoldBars) {
          double exit_price = ASK;
          double pnl_atr = 0.0;
          if (ATR > 0) pnl_atr = (SEL.Val - exit_price) / ATR;
@@ -249,8 +354,7 @@ void EXPERT::ML_TRADE() {
                " pnl_atr=", DoubleToString(pnl_atr, 4),
                " score=", DoubleToString(MLP_SellScore, 6));
          CLOSE_SEL(1, "MLP_Timeout");
-         MLP_SellSignalTime = 0;
-         MLP_SellScore = 0.0;
+         MLP_ResetSellState();
          return;
       }
       if (sig == 1 && score_ok && ML_AllowReversal) {
@@ -271,8 +375,7 @@ void EXPERT::ML_TRADE() {
                " score=", DoubleToString(MLP_SellScore, 6),
                " reverse_score=", DoubleToString(score, 6));
          CLOSE_SEL(1, "MLP_ReverseSignal");
-         MLP_SellSignalTime = 0;
-         MLP_SellScore = 0.0;
+         MLP_ResetSellState();
          return;
       }
       if (sig != 0 && score_ok) {
@@ -317,8 +420,8 @@ void EXPERT::ML_TRADE() {
       MLP_cnt_buy++;
       MLP_BuySignalTime = MLP_Times[idx];
       MLP_BuyScore = score;
-      MLP_SellSignalTime = 0;
-      MLP_SellScore = 0.0;
+      MLP_BuyBestPrice = ASK;
+      MLP_ResetSellState();
 
       set.BUY.Sig = GOGO;
       set.BUY.Val = (float)ASK;
@@ -329,6 +432,7 @@ void EXPERT::ML_TRADE() {
             " signal_time=", TimeToString(MLP_BuySignalTime),
             " entry_time=", TimeToString(Time[0]),
             " score=", DoubleToString(score, 6),
+            " exit_mode=", MLP_ExitModeName(),
             " Val=", DoubleToString(set.BUY.Val, Digits));
       return;
    }
@@ -339,8 +443,8 @@ void EXPERT::ML_TRADE() {
       MLP_cnt_sell++;
       MLP_SellSignalTime = MLP_Times[idx];
       MLP_SellScore = score;
-      MLP_BuySignalTime = 0;
-      MLP_BuyScore = 0.0;
+      MLP_SellBestPrice = BID;
+      MLP_ResetBuyState();
 
       set.SEL.Sig = GOGO;
       set.SEL.Val = (float)BID;
@@ -351,6 +455,7 @@ void EXPERT::ML_TRADE() {
             " signal_time=", TimeToString(MLP_SellSignalTime),
             " entry_time=", TimeToString(Time[0]),
             " score=", DoubleToString(score, 6),
+            " exit_mode=", MLP_ExitModeName(),
             " Val=", DoubleToString(set.SEL.Val, Digits));
    }
 }
@@ -365,8 +470,11 @@ void ML_DIAG_PRINT() {
    Print("  Opened:           ", MLP_cnt_opened,
          "  (BUY=", MLP_cnt_buy, " SELL=", MLP_cnt_sell, ")");
    Print("  Timeout closes:   ", MLP_cnt_timeout);
+   Print("  Trailing closes:  ", MLP_cnt_trailing);
    Print("  Reverse closes:   ", MLP_cnt_reverse);
-   Print("  HoldBars=", ML_HoldBars,
+   Print("  ExitMode=", MLP_ExitModeName(),
+         "  HoldBars=", ML_HoldBars,
+         "  TrailATR=", DoubleToString(ML_TrailATR, 2),
          "  ScoreFilter=", ML_UseScoreFilter,
          "  Threshold=", DoubleToString(ML_ScoreThreshold, 6),
          "  Reversal=", ML_AllowReversal,

@@ -1,6 +1,28 @@
 # Context Handoff
 
 ## Current Stage
+Этап `mt4_trailing_stop_execution` завершён (2026-04-18).
+
+Что зафиксировано:
+
+- в прямой MT4-контур `iSignal=3` добавлен отдельный режим выхода:
+  - `ML_ExitMode=0` -> timeout parity-check
+  - `ML_ExitMode=1` -> trailing-stop по `ML_TrailATR * ATR`
+- добавлен новый параметр:
+  - `ML_TrailATR`
+- реализация сделана внутри `MT/MQL4/Include/lib_ML_Signal.mqh`, без возврата к старому `OUTPUT()/TRAILING_STOP()` контуру
+- trailing-mode хранит лучший ход цены после входа:
+  - BUY: лучший максимум по `High[bar]`
+  - SELL: лучший минимум по `Low[bar]`
+- в лог tester добавлены явные причины:
+  - `MLP_TrailingStop`
+  - диагностика `best`, `trail`, `trail_atr`
+- обновлены:
+  - `docs/MT/ml_signal_integration.md`
+  - `docs/MT/trading_strategy.md`
+- canonical report: `docs/reports/2026-04-18-mt4-trailing-stop-execution.md`
+
+## Previous Stage
 Этап `take_skip_rule_consumer` завершён (2026-04-18).
 
 Что зафиксировано:

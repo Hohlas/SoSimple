@@ -9,7 +9,7 @@
 > - старый runtime `regression_updn` сохранён как backup в [lib_ML_Signal_back.mqh](../../MT/MQL4/Include/lib_ML_Signal_back.mqh)
 > - `iSignal=5` по-прежнему использует [lib_ML_Signal_TB.mqh](../../MT/MQL4/Include/lib_ML_Signal_TB.mqh)
 
-> **Последнее обновление**: 2026-04-12
+> **Последнее обновление**: 2026-04-18
 
 ---
 
@@ -98,7 +98,9 @@ void EXPERT::MAIN() {
    - при пустой позиции готовит рыночный вход;
    - при уже открытой позиции не открывает новую;
    - при `ML_AllowReversal=true` может закрыть позицию по обратному сигналу.
-4. Если позиция удерживается дольше `ML_HoldBars`, закрывает её по таймауту.
+4. Выбирает режим выхода:
+   - `ML_ExitMode=0` -> таймаут по `ML_HoldBars`;
+   - `ML_ExitMode=1` -> bar-based trailing-stop по `ML_TrailATR * ATR`.
 
 ### 2.4 Временное выравнивание
 
@@ -174,7 +176,7 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 ## 5. Как сейчас закрывается сделка
 
-### 5.1 Таймаут
+### 5.1 Таймаут (`ML_ExitMode=0`)
 
 Если позиция открыта и:
 
@@ -183,7 +185,22 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 эксперт вызывает закрытие по рынку с причиной `MLP_Timeout`.
 
-### 5.2 Обратный сигнал
+### 5.2 Trailing-stop (`ML_ExitMode=1`)
+
+Для нового режима эксперт хранит отдельное состояние лучшего хода цены после входа:
+
+- BUY:
+  - обновляет лучший максимум по `High[bar]`;
+  - считает уровень выхода `best_high - ATR * ML_TrailATR`;
+  - закрывает позицию с причиной `MLP_TrailingStop`, если рынок ушёл ниже этого уровня.
+- SELL:
+  - обновляет лучший минимум по `Low[bar]`;
+  - считает уровень выхода `best_low + ATR * ML_TrailATR`;
+  - закрывает позицию с причиной `MLP_TrailingStop`, если рынок ушёл выше этого уровня.
+
+Это bar-based приближение. Оно не повторяет внутрибаравое движение по тикам, но гораздо ближе к новой исследовательской постановке, чем старый timeout-only режим.
+
+### 5.3 Обратный сигнал
 
 Если включён `ML_AllowReversal=true`, то:
 
@@ -192,7 +209,7 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 Причина в логе: `MLP_ReverseSignal`.
 
-### 5.3 Что в этом режиме НЕ используется
+### 5.4 Что в этом режиме НЕ используется
 
 При `iSignal=3` не работают старые выходы из [OUTPUT.mqh](../../MT/MQL4/Include/OUTPUT.mqh):
 
@@ -215,6 +232,8 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 | Параметр | Смысл |
 |---|---|
 | `iSignal=3` | включает прямой parity-check режим |
+| `ML_ExitMode` | выбор между timeout и trailing-stop |
+| `ML_TrailATR` | ширина trailing-stop в ATR |
 | `ML_HoldBars` | сколько баров держать сделку |
 | `ML_AllowReversal` | закрывать ли позицию по обратному сигналу |
 | `ML_UseScoreFilter` | применять ли порог по `pred_ret_24_dir_atr`, если колонка есть |
@@ -275,6 +294,8 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 - `MLP CLOSE BUY reason=Timeout ...`
 - `MLP CLOSE SELL reason=Timeout ...`
+- `MLP CLOSE BUY reason=TrailingStop ...`
+- `MLP CLOSE SELL reason=TrailingStop ...`
 - `MLP CLOSE BUY reason=ReverseSignal ...`
 - `MLP CLOSE SELL reason=ReverseSignal ...`
 
