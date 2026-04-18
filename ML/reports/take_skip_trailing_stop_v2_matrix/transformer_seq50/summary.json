@@ -1,6 +1,6 @@
 {
   "config": {
-    "seq_len": 20,
+    "seq_len": 50,
     "epochs": 10,
     "patience": 4,
     "batch_size": 256,
@@ -26,7 +26,7 @@
     "metric_name": "val_score",
     "best_epoch": 7,
     "num_parameters": 103945,
-    "training_time": 734.8313405513763,
+    "training_time": 743.2344179153442,
     "history": {
       "train_loss": [
         0.11308138941180462,
@@ -112,47 +112,47 @@
       "val_score": -0.01046147383749485
     }
   },
-  "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/checkpoint.pt",
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
   "exports": {
-    "validation_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/take_skip_trailing_stop_v2_validation_predictions.csv",
-    "test_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/take_skip_trailing_stop_v2_test_predictions.csv"
+    "validation_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+    "test_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
   },
   "benchmark": {
-    "validation_grid_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/benchmark/validation_grid.csv",
-    "final_verdict_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/benchmark/final_verdict.json",
+    "validation_grid_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/final_verdict.json",
     "final_verdict": {
       "verdict": "go",
       "validation_winner": {
         "target_column": "take_24_x8",
         "candidate": "prob_ge_threshold",
-        "threshold": 0.75,
-        "trades": 26,
-        "trades_per_year": 6.5,
-        "gross_profit": 86.41234979,
+        "threshold": 0.7,
+        "trades": 27,
+        "trades_per_year": 6.75,
+        "gross_profit": 88.45734979000001,
         "gross_loss": -0.0,
         "pf": Infinity,
         "negative_year_slices": 0,
-        "profit_concentration_top_10": 0.23524358554536653,
-        "ulcer_index_atr": 42.51920621192308,
+        "profit_concentration_top_10": 0.22980511001357234,
+        "ulcer_index_atr": 43.49878672,
         "max_drawdown_atr": 0.0,
-        "positive_rate_selected": 0.9615384615384616
+        "positive_rate_selected": 0.9629629629629629
       },
       "test_result": {
         "target_column": "take_24_x8",
         "candidate": "prob_ge_threshold",
-        "threshold": 0.75,
-        "trades": 38,
-        "trades_per_year": 7.6,
-        "gross_profit": 161.38901439999998,
+        "threshold": 0.7,
+        "trades": 41,
+        "trades_per_year": 8.2,
+        "gross_profit": 174.00273119999994,
         "gross_loss": 4.37830003,
-        "pf": 36.861113513045375,
+        "pf": 39.7420756932457,
         "negative_year_slices": 0,
-        "profit_concentration_top_10": 0.21843403239718895,
-        "ulcer_index_atr": 95.3003382994737,
+        "profit_concentration_top_10": 0.20259942448535542,
+        "ulcer_index_atr": 102.33374631902439,
         "max_drawdown_atr": 4.378300029999991,
-        "positive_rate_selected": 0.8947368421052632
+        "positive_rate_selected": 0.9024390243902439
       }
     }
   },
-  "runtime_sec": 812.308673620224
+  "runtime_sec": 812.1614727973938
 }
