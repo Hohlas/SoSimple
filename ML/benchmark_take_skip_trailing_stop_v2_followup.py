@@ -26,6 +26,14 @@ DEFAULT_MIN_PF = 1.0
 DEFAULT_MIN_TRADES_PER_YEAR = 6.0
 
 
+def _score_x_value(score_target: str) -> int:
+    return int(score_target.rsplit('x', 1)[1])
+
+
+def _eval_x_value(eval_pnl_column: str) -> int:
+    return int(eval_pnl_column.rsplit('x', 1)[1])
+
+
 def pair_score_targets_with_eval_pnl(
     score_targets: list[str] | tuple[str, ...],
     eval_x_values: tuple[int, ...] = DEFAULT_EVAL_X_VALUES,
@@ -122,9 +130,14 @@ def pick_quality_first(table: pd.DataFrame, *, min_pf: float, min_trades_per_yea
     eligible = table.loc[(table['pf'] > min_pf) & (table['trades_per_year'] >= min_trades_per_year)].copy()
     if eligible.empty:
         return None
+    eligible['_x_gap'] = [
+        abs(_eval_x_value(eval_pnl_column) - _score_x_value(score_target))
+        for score_target, eval_pnl_column in zip(eligible['score_target'], eligible['eval_pnl_column'])
+    ]
+    eligible['_eval_x'] = [_eval_x_value(eval_pnl_column) for eval_pnl_column in eligible['eval_pnl_column']]
     ranked = eligible.sort_values(
-        ['pf', 'negative_year_slices', 'max_drawdown_atr', 'trades'],
-        ascending=[False, True, True, False],
+        ['pf', 'negative_year_slices', 'max_drawdown_atr', 'trades', '_x_gap', '_eval_x'],
+        ascending=[False, True, True, False, True, True],
     )
     return ranked.iloc[0]
 
@@ -133,9 +146,47 @@ def pick_frequency_first(table: pd.DataFrame, *, min_pf: float) -> pd.Series | N
     eligible = table.loc[(table['pf'] > min_pf) & (table['negative_year_slices'] == 0)].copy()
     if eligible.empty:
         return None
+    eligible['_x_gap'] = [
+        abs(_eval_x_value(eval_pnl_column) - _score_x_value(score_target))
+        for score_target, eval_pnl_column in zip(eligible['score_target'], eligible['eval_pnl_column'])
+    ]
+    eligible['_eval_x'] = [_eval_x_value(eval_pnl_column) for eval_pnl_column in eligible['eval_pnl_column']]
     ranked = eligible.sort_values(
-        ['trades_per_year', 'pf', 'profit_concentration_top_10', 'max_drawdown_atr'],
-        ascending=[False, False, True, True],
+        ['trades_per_year', 'pf', 'profit_concentration_top_10', 'max_drawdown_atr', '_x_gap', '_eval_x'],
+        ascending=[False, False, True, True, True, True],
+    )
+    return ranked.iloc[0]
+
+
+def pick_anchor_expansion(
+    table: pd.DataFrame,
+    *,
+    anchor_score_target: str,
+    anchor_eval_pnl_column: str,
+    anchor_trades_per_year: float,
+    min_pf: float,
+) -> pd.Series | None:
+    eligible = table.loc[(table['pf'] > min_pf) & (table['negative_year_slices'] == 0)].copy()
+    eligible = eligible.loc[eligible['trades_per_year'] > anchor_trades_per_year].copy()
+    if eligible.empty:
+        return None
+    anchor_eval_x = _eval_x_value(anchor_eval_pnl_column)
+    eligible['_score_match'] = (eligible['score_target'] == anchor_score_target).astype(int)
+    eligible['_eval_match'] = (eligible['eval_pnl_column'] == anchor_eval_pnl_column).astype(int)
+    eligible['_eval_x_gap_to_anchor'] = [
+        abs(_eval_x_value(eval_pnl_column) - anchor_eval_x)
+        for eval_pnl_column in eligible['eval_pnl_column']
+    ]
+    ranked = eligible.sort_values(
+        [
+            '_score_match',
+            '_eval_match',
+            '_eval_x_gap_to_anchor',
+            'trades_per_year',
+            'pf',
+            'max_drawdown_atr',
+        ],
+        ascending=[False, False, True, False, False, True],
     )
     return ranked.iloc[0]
 
@@ -186,6 +237,15 @@ def run_followup_benchmark(
 
     quality_winner = pick_quality_first(table, min_pf=min_pf, min_trades_per_year=min_trades_per_year)
     frequency_winner = pick_frequency_first(table, min_pf=min_pf)
+    anchor_winner = None
+    if quality_winner is not None:
+        anchor_winner = pick_anchor_expansion(
+            table,
+            anchor_score_target=str(quality_winner['score_target']),
+            anchor_eval_pnl_column=str(quality_winner['eval_pnl_column']),
+            anchor_trades_per_year=float(quality_winner['trades_per_year']),
+            min_pf=min_pf,
+        )
     result = {
         'validation_grid_path': str(table_path),
         'quality_first': {
@@ -195,6 +255,10 @@ def run_followup_benchmark(
         'frequency_first': {
             'validation_winner': None if frequency_winner is None else _jsonable(frequency_winner.to_dict()),
             'test_result': _freeze_to_test(frequency_winner, test),
+        },
+        'anchor_expansion': {
+            'validation_winner': None if anchor_winner is None else _jsonable(anchor_winner.to_dict()),
+            'test_result': _freeze_to_test(anchor_winner, test),
         },
     }
     result_path = output_dir / 'followup_summary.json'
