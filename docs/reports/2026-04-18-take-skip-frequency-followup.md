@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, можно ли на уже обученном `take_skip_trailing_stop_v2` увеличить частоту сделок и аккуратно пощупать более широкий trailing-stop `10 / 12 ATR` без нового цикла обучения.
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-18-take-skip-frequency-followup.md`
-> **Related commit**: a764708
+> **Related commit**: 08b929a
 
 ## Context
 
