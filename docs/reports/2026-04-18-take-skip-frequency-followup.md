@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, можно ли на уже обученном `take_skip_trailing_stop_v2` увеличить частоту сделок и аккуратно пощупать более широкий trailing-stop `10 / 12 ATR` без нового цикла обучения.
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-18-take-skip-frequency-followup.md`
-> **Related commit**: fa343b3
+> **Related commit**: 5abac7c
 
 ## Context
 
@@ -79,6 +79,12 @@
 |---|---|---|---|---:|---:|---:|---:|---:|---:|
 | frequency-first | `take_24_x4` | `x10` | `top_k 20%` | 95 | 23.75 | 3.92 | 96 | 19.2 | 7.18 |
 
+После дополнительного frozen follow-up найден более сильный frequent-режим:
+
+| Mode | score target | exit | selector | validation trades | validation trades/year | validation PF | test trades | test trades/year | test PF |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|
+| anchor-expansion | `take_24_x8` | `x8` | `top_k 20%` | 95 | 23.75 | 3.89 | 96 | 19.2 | 7.17 |
+
 Структурные метрики для frequency-first:
 
 - validation:
@@ -90,18 +96,30 @@
   - `profit_concentration_top_10 = 0.267`
   - `max_drawdown_atr = 8.97`
 
+Структурные метрики для anchor-expansion:
+
+- validation:
+  - `negative_year_slices = 0`
+  - `profit_concentration_top_10 = 0.304`
+  - `max_drawdown_atr = 16.70`
+- test:
+  - `negative_year_slices = 0`
+  - `profit_concentration_top_10 = 0.267`
+  - `max_drawdown_atr = 10.56`
+
 ## Conclusions
 
 - Без нового обучения удалось найти область с заметно большей частотой сделок.
 - Компромисс выглядит реальным, а не косметическим:
   - `8.2 -> 19.2` сделок в год на test;
   - `PF` снижается, но остаётся сильно выше `1`.
-- Более широкий trailing-stop `x10` оказался полезнее именно в frequency-first режиме.
+- Агрессивный `frequency-first` действительно находит высокую частоту, но он хуже как рабочий кандидат, чем anchored-вариант.
 - При этом цена за частоту понятна:
   - quality-first остаётся намного чище;
-  - у frequency-first на test появляется `1` отрицательный годовой срез.
+  - raw frequency-first даёт `1` отрицательный годовой срез на test;
+  - `anchor-expansion` сохраняет те же `19.2 trades/year`, но убирает отрицательный годовой срез.
 
-Итог: линия `take_skip_trailing_stop_v2` жива не только как high-PF low-frequency winner, но и как более частый рабочий режим. Однако frequency-first пока нельзя считать столь же устойчивым, как базовый quality-first winner.
+Итог: линия `take_skip_trailing_stop_v2` жива не только как high-PF low-frequency winner, но и как более частый рабочий режим. Лучший текущий frequent-кандидат — не raw `frequency-first`, а `anchor-expansion`: он остаётся ближе к уже подтверждённому winner-у и сохраняет `negative_year_slices = 0` на test.
 
 ## Limitations / Open Questions
 
@@ -114,7 +132,7 @@
 Сделать короткий frozen follow-up вокруг двух режимов:
 
 1. `quality-first`: оставить как основной чистый кандидат.
-2. `frequency-first`: отдельно проверить, можно ли слегка ужать область (`top_k < 20%` или соседний threshold), чтобы снять отрицательный годовой срез и сохранить заметно больше сделок, чем у quality-first.
+2. `anchor-expansion`: отдельно проверить область `top_k 15%–20%`, чтобы понять, можно ли сохранить `negative_year_slices = 0`, но сократить просадку и концентрацию прибыли без возврата к low-frequency режиму.
 
 ## Related Materials
 

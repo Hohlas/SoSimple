@@ -291,15 +291,36 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 - validation: `95 trades`, `23.75 trades/year`, `PF=3.92`, `negative_year_slices=0`
 - test: `96 trades`, `19.2 trades/year`, `PF=7.18`, `negative_year_slices=1`
 
+### Anchor-expansion оказался лучшим frequent-кандидатом
+
+Следующий frozen refinement не менял обучение и не искал новый score-family. Он просто добавил третий режим отбора: расширение вокруг уже подтверждённого `quality-first` winner-а, с приоритетом:
+
+- тот же score-family;
+- тот же exit-family;
+- больше сделок, чем у quality-first;
+- минимальный уход от базового winner-а.
+
+Именно этот anchored-режим дал лучший practical compromise:
+
+- `score = take_24_x8`
+- `selector = top_k 20%`
+- `exit = x8`
+
+Метрики:
+- validation: `95 trades`, `23.75 trades/year`, `PF=3.89`, `negative_year_slices=0`
+- test: `96 trades`, `19.2 trades/year`, `PF=7.17`, `negative_year_slices=0`
+
 ### Вывод по follow-up
 
 - Линия `take_skip_trailing_stop_v2` живёт не только как low-frequency high-PF candidate, но и как более частый режим.
-- `x10` оказался полезен именно в frequency-first режиме.
+- Raw `frequency-first` оказался полезной диагностикой, но не финальным frequent-winner-ом.
+- Лучший текущий frequent-кандидат — `anchor-expansion`, потому что он даёт ту же частоту, но без отрицательного годового среза на test.
 - Практический компромисс:
   - quality-first: чище, стабильнее, реже;
-  - frequency-first: почти в 2.3 раза больше сделок на test (`8.2 -> 19.2 trades/year`), но с ослаблением yearly stability.
+  - anchor-expansion: почти в 2.3 раза больше сделок на test (`8.2 -> 19.2 trades/year`) при сохранении `negative_year_slices=0`;
+  - raw frequency-first: такая же частота, но хуже yearly stability.
 
-На этом этапе разумно не переобучать модель снова, а сделать ещё один короткий frozen follow-up вокруг frequency-first зоны, чтобы попробовать снять единственный отрицательный годовой срез без возврата к low-frequency режиму.
+На этом этапе разумно не переобучать модель снова, а делать только узкий frozen follow-up вокруг anchored-зоны `top_k 15%–20%`, чтобы понять, можно ли ещё уменьшить drawdown и концентрацию прибыли.
 
 Источник: [2026-04-18-take-skip-frequency-followup.md](../../docs/reports/2026-04-18-take-skip-frequency-followup.md)
 

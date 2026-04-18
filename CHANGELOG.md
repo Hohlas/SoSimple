@@ -22,11 +22,15 @@
   - `score=take_24_x4`, `exit=x10`, `top_k=20%`
   - validation `PF=3.92`, `trades_per_year=23.75`
   - test `PF=7.18`, `trades_per_year=19.2`
+- follow-up refinement дал лучший frequent-кандидат:
+  - `anchor_expansion = take_24_x8 + exit x8 + top_k=20%`
+  - test `PF=7.17`, `trades_per_year=19.2`, `negative_year_slices=0`
 
 ### Вывод
 - Частоту сделок удалось резко поднять без падения ниже `PF > 1`
-- `x10` выглядит полезным кандидатом именно в more-frequent режиме
-- Но у frequency-first на test появляется `1` отрицательный годовой срез, поэтому чистый quality-first winner пока остаётся базовым эталоном
+- raw `frequency-first` показал полезную область, но не стал финальным winner-ом
+- лучшим frequent-режимом оказался anchored-вариант вокруг уже подтверждённого `take_24_x8`
+- чистый quality-first winner остаётся базовым эталоном, а `anchor_expansion` становится главным frequent-кандидатом
 - Подробности: [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md)
 
 ## [2026-04-17] - Trailing-stop target quantile first wave

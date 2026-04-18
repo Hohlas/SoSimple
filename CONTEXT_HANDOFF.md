@@ -11,6 +11,7 @@
 - follow-up сделан поверх уже обученного `take_skip_trailing_stop_v2` winner-а `seq50`;
 - из-за отсутствия канонически сохранённых `v2` prediction CSV score был локально восстановлен из checkpoint, без обучения, с тем же feature representation (`539` входов);
 - получены два полезных режима:
+- получены три полезных режима:
   - `quality-first`:
     - `score = take_24_x8`
     - `selector = prob >= 0.70`
@@ -21,6 +22,11 @@
     - `selector = top_k 20%`
     - `exit = x10`
     - test: `PF=7.18`, `trades_per_year=19.2`, `negative_year_slices=1`
+  - `anchor-expansion`:
+    - `score = take_24_x8`
+    - `selector = top_k 20%`
+    - `exit = x8`
+    - test: `PF=7.17`, `trades_per_year=19.2`, `negative_year_slices=0`
 - canonical report: `docs/reports/2026-04-18-take-skip-frequency-followup.md`
 
 ## Current Stage

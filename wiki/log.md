@@ -120,3 +120,10 @@
   - recorded practical trade-off: `8.2 -> 19.2` trades/year on test at the cost of one negative year slice
 - Updated `wiki/index.md` coverage from 17 to 18 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-18`, `sources: 18`
+
+## [2026-04-18] ingest | Anchored frequency refinement synced into wiki
+- Re-read `docs/reports/2026-04-18-take-skip-frequency-followup.md` after follow-up refinement
+- Updated `wiki/research/execution-tracks.md`:
+  - added `anchor-expansion` as the main frequent candidate
+  - corrected frequent-mode conclusion: raw `frequency-first` is exploratory, anchored mode is the better frozen candidate
+- No new report added; synthesis updated in place
