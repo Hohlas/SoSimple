@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-18 12:29 UTC · git `f268a78`
+> Auto-generated 2026-04-18 16:19 UTC · git `d407c27`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 773 files  ·  **Commit**: `f268a78`  ·  **Generated**: 2026-04-18 12:29 UTC
+**Tracked**: 775 files  ·  **Commit**: `d407c27`  ·  **Generated**: 2026-04-18 16:19 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-18 | 10KB | `58a59f0e` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-18 | 111KB | `4029ad81` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-18 | 112KB | `df118701` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-18 | 12KB | `7745ac6f` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-18 | 13KB | `895fd7ec` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-18 | 19KB | `04c801df` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
@@ -137,7 +137,7 @@
 | [docs/reports/2026-04-15-track-a-max-out.md](docs/reports/2026-04-15-track-a-max-out.md) |  | 2026-04-17 | 9KB | `ca11c38f` |
 | [docs/reports/2026-04-16-trailing-stop-target-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-first-wave.md) |  | 2026-04-17 | 6KB | `5b0b7b8b` |
 | [docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md) |  | 2026-04-17 | 6KB | `e812d460` |
-| [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md) |  | 2026-04-18 | 7KB | `3ef984b0` |
+| [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md) |  | 2026-04-18 | 9KB | `af319e3e` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
@@ -161,7 +161,7 @@
 | [ML/benchmark_quantile_relaxed_composition.py](ML/benchmark_quantile_relaxed_composition.py) |  |  | 2026-04-15 | 8KB | `67b8d711` |
 | [ML/benchmark_take_skip_trailing_stop.py](ML/benchmark_take_skip_trailing_stop.py) |  |  | 2026-04-18 | 7KB | `fd3fe635` |
 | [ML/benchmark_take_skip_trailing_stop_v2.py](ML/benchmark_take_skip_trailing_stop_v2.py) |  |  | 2026-04-18 | 5KB | `f1ef638b` |
-| [ML/benchmark_take_skip_trailing_stop_v2_followup.py](ML/benchmark_take_skip_trailing_stop_v2_followup.py) |  |  | 2026-04-18 | 7KB | `23ed5379` |
+| [ML/benchmark_take_skip_trailing_stop_v2_followup.py](ML/benchmark_take_skip_trailing_stop_v2_followup.py) |  |  | 2026-04-18 | 10KB | `106613ee` |
 | [ML/benchmark_trailing_stop_target.py](ML/benchmark_trailing_stop_target.py) | Validation-first benchmark для trailing-stop target exports | ✅ | 2026-04-17 | 1KB | `7c96419a` |
 | [ML/benchmark_trailing_stop_target_quantile.py](ML/benchmark_trailing_stop_target_quantile.py) | Validation-first benchmark для trailing-stop quantile exports | ✅ | 2026-04-17 | 8KB | `d8cf04ba` |
 | [ML/benchmark_triple_barrier_mt4_execution.py](ML/benchmark_triple_barrier_mt4_execution.py) |  |  | 2026-04-13 | 4KB | `3ef3e057` |
@@ -263,7 +263,8 @@
 | [ML/reports/quantile_forward_validation/summary.json](ML/reports/quantile_forward_validation/summary.json) |  |  | 2026-04-13 | 440B | `f208a93b` |
 | [ML/reports/quantile_relaxed_composition/selected_baseline.json](ML/reports/quantile_relaxed_composition/selected_baseline.json) |  |  | 2026-04-15 | 118B | `3c6efae0` |
 | [ML/reports/reproducibility_report_12H.md](ML/reports/reproducibility_report_12H.md) |  |  | 2026-03-11 | 1KB | `c9af48ba` |
-| [ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json](ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json) |  |  | 2026-04-18 | 2KB | `caad9d0a` |
+| [ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json](ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json) |  |  | 2026-04-18 | 3KB | `c5aa0bfc` |
+| [ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json](ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json) |  |  | 2026-04-18 | 723B | `071ea894` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/manifest.json](ML/reports/take_skip_trailing_stop_v2_matrix/manifest.json) |  |  | 2026-04-18 | 16KB | `5a4d337a` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq100/benchmark/final_verdict.json](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq100/benchmark/final_verdict.json) |  |  | 2026-04-18 | 964B | `04c514f5` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq100/evaluate_test_take_skip_trailing_stop_v2.md](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq100/evaluate_test_take_skip_trailing_stop_v2.md) |  |  | 2026-04-18 | 277B | `20c0004a` |
@@ -274,6 +275,7 @@
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/final_verdict.json](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/final_verdict.json) |  |  | 2026-04-18 | 962B | `f4370930` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/evaluate_test_take_skip_trailing_stop_v2.md](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/evaluate_test_take_skip_trailing_stop_v2.md) |  |  | 2026-04-18 | 277B | `ab926937` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/summary.json](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/summary.json) |  |  | 2026-04-18 | 4KB | `416def03` |
+| [ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json](ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json) |  |  | 2026-04-18 | 903B | `3d56d55f` |
 | [ML/reports/tb_mt4_verdict/test_summary.json](ML/reports/tb_mt4_verdict/test_summary.json) |  |  | 2026-04-12 | 172B | `6ea3e9d3` |
 | [ML/reports/tb_mt4_verdict/validation_summary.json](ML/reports/tb_mt4_verdict/validation_summary.json) |  |  | 2026-04-12 | 167B | `cc2e7d34` |
 | [ML/reports/tb_selected_rule.json](ML/reports/tb_selected_rule.json) |  |  | 2026-04-08 | 279B | `3329dfb8` |
@@ -411,7 +413,7 @@
 | [tests/test_benchmark_quantile_forward_validation.py](tests/test_benchmark_quantile_forward_validation.py) |  |  | 2026-04-13 | 6KB | `3dc6e7a3` |
 | [tests/test_benchmark_quantile_relaxed_composition.py](tests/test_benchmark_quantile_relaxed_composition.py) |  |  | 2026-04-15 | 5KB | `c7115be5` |
 | [tests/test_benchmark_take_skip_trailing_stop_v2.py](tests/test_benchmark_take_skip_trailing_stop_v2.py) |  |  | 2026-04-18 | 4KB | `d9fdae18` |
-| [tests/test_benchmark_take_skip_trailing_stop_v2_followup.py](tests/test_benchmark_take_skip_trailing_stop_v2_followup.py) |  |  | 2026-04-18 | 4KB | `f1cf05c1` |
+| [tests/test_benchmark_take_skip_trailing_stop_v2_followup.py](tests/test_benchmark_take_skip_trailing_stop_v2_followup.py) |  |  | 2026-04-18 | 8KB | `0195683d` |
 | [tests/test_benchmark_trailing_stop_target.py](tests/test_benchmark_trailing_stop_target.py) | `ML/benchmark_trailing_stop_target.py` | ✅ | 2026-04-17 | 2KB | `fb9d2a36` |
 | [tests/test_benchmark_trailing_stop_target_quantile.py](tests/test_benchmark_trailing_stop_target_quantile.py) | `ML/benchmark_trailing_stop_target_quantile.py` | ✅ | 2026-04-17 | 8KB | `05ca8680` |
 | [tests/test_entry_path_dual_stream_transformer.py](tests/test_entry_path_dual_stream_transformer.py) | `ML/models/entry_path_dual_stream_transformer.py` | ✅ | 2026-04-17 | 1KB | `e9c80f90` |
@@ -775,8 +777,8 @@
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
 | [wiki/index.md](wiki/index.md) |  | 2026-04-18 | 1KB | `48dd21f6` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-18 | 7KB | `49e062e8` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-18 | 28KB | `698d3335` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-18 | 8KB | `3d0dbb56` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-18 | 29KB | `901af201` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 

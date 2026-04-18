@@ -28,6 +28,9 @@
 - узкий frozen-sweep `top_k 16%–20%` дал ещё более сильную рабочую точку:
   - `anchor_sweet_spot = take_24_x8 + exit x8 + top_k=17%`
   - test `PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
+- зафиксированы два канонических frozen rule-артефакта:
+  - `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+  - `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
 
 ### Вывод
 - Частоту сделок удалось резко поднять без падения ниже `PF > 1`

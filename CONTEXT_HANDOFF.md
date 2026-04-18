@@ -10,7 +10,6 @@
 - trailing-stop grid для labels и `take_skip_v2` contract расширен до `x10 / x12`;
 - follow-up сделан поверх уже обученного `take_skip_trailing_stop_v2` winner-а `seq50`;
 - из-за отсутствия канонически сохранённых `v2` prediction CSV score был локально восстановлен из checkpoint, без обучения, с тем же feature representation (`539` входов);
-- получены два полезных режима:
 - получены три полезных режима:
   - `quality-first`:
     - `score = take_24_x8`
@@ -33,6 +32,9 @@
     - `exit = x8`
     - test: `PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
 - canonical report: `docs/reports/2026-04-18-take-skip-frequency-followup.md`
+- canonical rules:
+  - `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+  - `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
 
 ## Current Stage
 Этап `quantile_forward_validation_scaffold` завершён (2026-04-13).

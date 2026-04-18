@@ -218,16 +218,6 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 После этого composition стал измерим по-настоящему:
 - `quantile_only` test: `48 trades`, `PF=8.18`
 - `composition` test: `47 trades`, `PF=7.86`
-- `trades_lost_from_quantile = 1`
-- composition почти ничего не отрезает, но получает один отрицательный годовой срез:
-  - `2023`: `N=5`, `PF=0.475`
-- итоговый `n_boost_composition.verdict = gate_fail`
-
-**Смысл verdict-а:** composition теперь отклонён не из-за отсутствия данных, а по существу. Фильтр `fav_3_vs_12` поверх quantile почти не меняет набор сделок, но ухудшает yearly stability.
-
-**Решение:** направление composition **closed**. Практической пользы сверх `entry_path_v1_quantile` не найдено.
-
-Источник: [2026-04-13-quantile-fav-composition.md](../../docs/reports/2026-04-13-quantile-fav-composition.md)
 
 ### Fav_3_vs_12 Standalone (04-13): rejected as standalone system
 
@@ -258,7 +248,7 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 ### Quantile Forward Validation (04-13): scaffold ready, no forward data yet
 
-## 6. Take/Skip v2 Frequency Follow-Up (04-18)
+## 5. Take/Skip v2 Frequency Follow-Up (04-18)
 
 Короткий follow-up уже после первого положительного verdict-а `take_skip_trailing_stop_v2`. Цель была не искать новый winner через переобучение, а понять две вещи:
 
@@ -335,6 +325,9 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
   - anchor-expansion: почти в 2.3 раза больше сделок на test (`8.2 -> 19.2 trades/year`) при сохранении `negative_year_slices=0`;
   - anchor sweet spot 17%: `16.4 trades/year`, `PF=13.12`, `negative_year_slices=0`, то есть лучший компромисс под floor `>15/year`;
   - raw frequency-first: такая же частота, но хуже yearly stability.
+- Для следующего шага зафиксированы два канонических frozen rule-артефакта:
+  - `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+  - `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
 
 На этом этапе разумно не переобучать модель снова. Если продолжать, то только узко вокруг anchored sweet spot `top_k 16%–18%`.
 

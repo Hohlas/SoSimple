@@ -44,6 +44,8 @@
 - `tests/test_trailing_stop_target_labels.py`
 - `tests/test_take_skip_trailing_stop_v2_task.py`
 - `tests/test_benchmark_take_skip_trailing_stop_v2_followup.py`
+- `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+- `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
 - `ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json`
 - `ML/reports/take_skip_trailing_stop_v2_followup/seq50/validation_followup_grid.csv`
 
@@ -142,6 +144,11 @@
 
 Итог: линия `take_skip_trailing_stop_v2` жива не только как high-PF low-frequency winner, но и как более частый рабочий режим. Лучший текущий frequent-кандидат — anchored sweet spot `top_k 17%`: он остаётся ближе к уже подтверждённому winner-у, держит `negative_year_slices = 0` и даёт более сильную структуру результата, чем `top_k 20%`.
 
+Дополнительно зафиксированы два канонических rule-артефакта для следующего шага:
+
+- quality mode: `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+- frequent mode: `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
+
 ## Limitations / Open Questions
 
 - Follow-up был сделан только на базе лучшего контура `seq50`; `seq20/seq100` здесь не переоценивались.
@@ -160,3 +167,5 @@
 - `docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md`
 - `ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/summary.json`
 - `ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json`
+- `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
+- `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`

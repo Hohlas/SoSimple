@@ -133,3 +133,9 @@
 - Updated `wiki/research/execution-tracks.md`:
   - added `top_k 17%` as current best anchored sweet spot
   - recorded improved frequent compromise: `test PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`
+
+## [2026-04-18] ingest | Take/skip v2 rule artifacts synced into wiki
+- Re-read `docs/reports/2026-04-18-take-skip-frequency-followup.md` after packaging frozen rule artifacts
+- Updated `wiki/research/execution-tracks.md`:
+  - added canonical paths for quality and frequent frozen rules
+  - clarified that `take_24_x8 + top_k 17%` is the current packaged frequent candidate

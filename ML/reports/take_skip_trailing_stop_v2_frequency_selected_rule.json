@@ -1,0 +1,25 @@
+{
+  "mode": "anchor_sweet_spot",
+  "winner": {
+    "score_target": "take_24_x8",
+    "selector": "top_k_probability",
+    "threshold": 0.17,
+    "exit_atr_multiplier": 8
+  },
+  "frozen_validation": {
+    "trades_per_year": 20.25,
+    "pf": 7.64,
+    "negative_year_slices": 0
+  },
+  "frozen_test": {
+    "trades_per_year": 16.4,
+    "pf": 13.12,
+    "negative_year_slices": 0,
+    "max_drawdown_atr": 4.03
+  },
+  "source": {
+    "report": "docs/reports/2026-04-18-take-skip-frequency-followup.md",
+    "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+    "selection_note": "Frozen follow-up refinement around anchored top_k 16%-20%; current sweet spot is top_k 17%."
+  }
+}
