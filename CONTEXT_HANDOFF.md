@@ -27,6 +27,11 @@
     - `selector = top_k 20%`
     - `exit = x8`
     - test: `PF=7.17`, `trades_per_year=19.2`, `negative_year_slices=0`
+  - `anchor-sweet-spot`:
+    - `score = take_24_x8`
+    - `selector = top_k 17%`
+    - `exit = x8`
+    - test: `PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
 - canonical report: `docs/reports/2026-04-18-take-skip-frequency-followup.md`
 
 ## Current Stage

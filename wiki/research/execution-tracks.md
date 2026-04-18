@@ -310,17 +310,33 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 - validation: `95 trades`, `23.75 trades/year`, `PF=3.89`, `negative_year_slices=0`
 - test: `96 trades`, `19.2 trades/year`, `PF=7.17`, `negative_year_slices=0`
 
+### Узкий sweet spot внутри anchored-зоны
+
+После этого был сделан ещё более узкий frozen-sweep только по `top_k` в диапазоне `16%–20%`, уже без смены score-family и exit-family.
+
+Лучший practical compromise под критерий **`>15 trades/year`** оказался не на `20%`, а на `17%`:
+
+- `score = take_24_x8`
+- `selector = top_k 17%`
+- `exit = x8`
+
+Метрики:
+- validation: `20.25 trades/year`, `PF=7.64`, `negative_year_slices=0`
+- test: `16.4 trades/year`, `PF=13.12`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
+
 ### Вывод по follow-up
 
 - Линия `take_skip_trailing_stop_v2` живёт не только как low-frequency high-PF candidate, но и как более частый режим.
 - Raw `frequency-first` оказался полезной диагностикой, но не финальным frequent-winner-ом.
 - Лучший текущий frequent-кандидат — `anchor-expansion`, потому что он даёт ту же частоту, но без отрицательного годового среза на test.
+- Ещё лучше оказался узкий sweet spot внутри anchored-зоны: `top_k 17%` сохраняет частоту выше 15 сделок в год, но заметно улучшает PF и drawdown относительно `20%`.
 - Практический компромисс:
   - quality-first: чище, стабильнее, реже;
   - anchor-expansion: почти в 2.3 раза больше сделок на test (`8.2 -> 19.2 trades/year`) при сохранении `negative_year_slices=0`;
+  - anchor sweet spot 17%: `16.4 trades/year`, `PF=13.12`, `negative_year_slices=0`, то есть лучший компромисс под floor `>15/year`;
   - raw frequency-first: такая же частота, но хуже yearly stability.
 
-На этом этапе разумно не переобучать модель снова, а делать только узкий frozen follow-up вокруг anchored-зоны `top_k 15%–20%`, чтобы понять, можно ли ещё уменьшить drawdown и концентрацию прибыли.
+На этом этапе разумно не переобучать модель снова. Если продолжать, то только узко вокруг anchored sweet spot `top_k 16%–18%`.
 
 Источник: [2026-04-18-take-skip-frequency-followup.md](../../docs/reports/2026-04-18-take-skip-frequency-followup.md)
 

@@ -127,3 +127,9 @@
   - added `anchor-expansion` as the main frequent candidate
   - corrected frequent-mode conclusion: raw `frequency-first` is exploratory, anchored mode is the better frozen candidate
 - No new report added; synthesis updated in place
+
+## [2026-04-18] ingest | Anchored sweet-spot refinement synced into wiki
+- Re-read `docs/reports/2026-04-18-take-skip-frequency-followup.md` after narrow `16%–20%` frozen sweep
+- Updated `wiki/research/execution-tracks.md`:
+  - added `top_k 17%` as current best anchored sweet spot
+  - recorded improved frequent compromise: `test PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`

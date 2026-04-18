@@ -25,12 +25,16 @@
 - follow-up refinement дал лучший frequent-кандидат:
   - `anchor_expansion = take_24_x8 + exit x8 + top_k=20%`
   - test `PF=7.17`, `trades_per_year=19.2`, `negative_year_slices=0`
+- узкий frozen-sweep `top_k 16%–20%` дал ещё более сильную рабочую точку:
+  - `anchor_sweet_spot = take_24_x8 + exit x8 + top_k=17%`
+  - test `PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
 
 ### Вывод
 - Частоту сделок удалось резко поднять без падения ниже `PF > 1`
 - raw `frequency-first` показал полезную область, но не стал финальным winner-ом
 - лучшим frequent-режимом оказался anchored-вариант вокруг уже подтверждённого `take_24_x8`
-- чистый quality-first winner остаётся базовым эталоном, а `anchor_expansion` становится главным frequent-кандидатом
+- внутри anchored-зоны лучший practical compromise сейчас даёт `top_k 17%`, а не `20%`
+- чистый quality-first winner остаётся базовым эталоном, а anchored sweet spot становится главным frequent-кандидатом
 - Подробности: [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md)
 
 ## [2026-04-17] - Trailing-stop target quantile first wave
