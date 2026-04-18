@@ -111,3 +111,12 @@
   - updated comparison table and open question for strictly-forward prediction CSV
 - Updated `wiki/index.md` coverage from 15 to 16 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-13`, `sources: 16`
+
+## [2026-04-18] ingest | Take/skip frequency follow-up synced into wiki
+- Added report `docs/reports/2026-04-18-take-skip-frequency-followup.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added take/skip v2 frequency follow-up section
+  - captured split between `quality-first` and `frequency-first`
+  - recorded practical trade-off: `8.2 -> 19.2` trades/year on test at the cost of one negative year slice
+- Updated `wiki/index.md` coverage from 17 to 18 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-18`, `sources: 18`

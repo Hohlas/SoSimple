@@ -1,6 +1,29 @@
 # Context Handoff
 
 ## Current Stage
+Этап `take_skip_frequency_followup` завершён (2026-04-18).
+
+Что зафиксировано:
+
+- новый training-cycle не запускался;
+- добавлен read-only benchmark `ML/benchmark_take_skip_trailing_stop_v2_followup.py`;
+- trailing-stop grid для labels и `take_skip_v2` contract расширен до `x10 / x12`;
+- follow-up сделан поверх уже обученного `take_skip_trailing_stop_v2` winner-а `seq50`;
+- из-за отсутствия канонически сохранённых `v2` prediction CSV score был локально восстановлен из checkpoint, без обучения, с тем же feature representation (`539` входов);
+- получены два полезных режима:
+  - `quality-first`:
+    - `score = take_24_x8`
+    - `selector = prob >= 0.70`
+    - `exit = x8`
+    - test: `PF=39.74`, `trades_per_year=8.2`, `negative_year_slices=0`
+  - `frequency-first`:
+    - `score = take_24_x4`
+    - `selector = top_k 20%`
+    - `exit = x10`
+    - test: `PF=7.18`, `trades_per_year=19.2`, `negative_year_slices=1`
+- canonical report: `docs/reports/2026-04-18-take-skip-frequency-followup.md`
+
+## Current Stage
 Этап `quantile_forward_validation_scaffold` завершён (2026-04-13).
 
 Что зафиксировано:

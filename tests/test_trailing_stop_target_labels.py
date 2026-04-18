@@ -5,7 +5,7 @@ import processing.label_signals as ls
 
 def test_trailing_stop_default_grid_matches_design():
     assert ls.TRAILING_STOP_HORIZONS == (12, 24, 48)
-    assert ls.TRAILING_STOP_X_VALUES == (2, 4, 8)
+    assert ls.TRAILING_STOP_X_VALUES == (2, 4, 8, 10, 12)
 
 
 def test_label_trailing_stop_targets_adds_expanded_grid_columns():
@@ -32,12 +32,18 @@ def test_label_trailing_stop_targets_adds_expanded_grid_columns():
         'trail_12_pnl_atr_x2',
         'trail_12_pnl_atr_x4',
         'trail_12_pnl_atr_x8',
+        'trail_12_pnl_atr_x10',
+        'trail_12_pnl_atr_x12',
         'trail_24_pnl_atr_x2',
         'trail_24_pnl_atr_x4',
         'trail_24_pnl_atr_x8',
+        'trail_24_pnl_atr_x10',
+        'trail_24_pnl_atr_x12',
         'trail_48_pnl_atr_x2',
         'trail_48_pnl_atr_x4',
         'trail_48_pnl_atr_x8',
+        'trail_48_pnl_atr_x10',
+        'trail_48_pnl_atr_x12',
     ]
     assert [column for column in out.columns if column.startswith('trail_')] == expected
     for column in expected:
@@ -69,12 +75,18 @@ def test_label_trailing_stop_targets_uses_default_grid_when_x_values_omitted():
         'trail_12_pnl_atr_x2',
         'trail_12_pnl_atr_x4',
         'trail_12_pnl_atr_x8',
+        'trail_12_pnl_atr_x10',
+        'trail_12_pnl_atr_x12',
         'trail_24_pnl_atr_x2',
         'trail_24_pnl_atr_x4',
         'trail_24_pnl_atr_x8',
+        'trail_24_pnl_atr_x10',
+        'trail_24_pnl_atr_x12',
         'trail_48_pnl_atr_x2',
         'trail_48_pnl_atr_x4',
         'trail_48_pnl_atr_x8',
+        'trail_48_pnl_atr_x10',
+        'trail_48_pnl_atr_x12',
     ]
     assert [column for column in out.columns if column.startswith('trail_')] == expected
 

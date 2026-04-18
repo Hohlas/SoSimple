@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-04-13
-sources: 17
+last_updated: 2026-04-18
+sources: 18
 status: active
 ---
 
@@ -257,6 +257,51 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 Источник: [2026-04-13-fav-3-vs-12-standalone.md](../../docs/reports/2026-04-13-fav-3-vs-12-standalone.md)
 
 ### Quantile Forward Validation (04-13): scaffold ready, no forward data yet
+
+## 6. Take/Skip v2 Frequency Follow-Up (04-18)
+
+Короткий follow-up уже после первого положительного verdict-а `take_skip_trailing_stop_v2`. Цель была не искать новый winner через переобучение, а понять две вещи:
+
+- можно ли заметно поднять частоту сделок;
+- помогает ли более широкий trailing-stop `x10 / x12`, если использовать уже найденный score-контур.
+
+Важное ограничение этапа: в репозитории не было канонически сохранённых `take_skip_trailing_stop_v2` prediction CSV, поэтому score для `seq50` был локально восстановлен из checkpoint без нового обучения, но с тем же feature representation (`539` input features).
+
+### Quality-first остался базовым эталоном
+
+Лучший чистый режим не изменился:
+
+- `score = take_24_x8`
+- `selector = prob >= 0.70`
+- `exit = x8`
+
+Метрики:
+- validation: `27 trades`, `6.75 trades/year`, `PF=inf`, `negative_year_slices=0`
+- test: `41 trades`, `8.2 trades/year`, `PF=39.74`, `negative_year_slices=0`
+
+### Frequency-first дал отдельный рабочий режим
+
+Новый follow-up нашёл уже не самый "красивый" PF, а более плотную область по числу сделок:
+
+- `score = take_24_x4`
+- `selector = top_k 20%`
+- `exit = x10`
+
+Метрики:
+- validation: `95 trades`, `23.75 trades/year`, `PF=3.92`, `negative_year_slices=0`
+- test: `96 trades`, `19.2 trades/year`, `PF=7.18`, `negative_year_slices=1`
+
+### Вывод по follow-up
+
+- Линия `take_skip_trailing_stop_v2` живёт не только как low-frequency high-PF candidate, но и как более частый режим.
+- `x10` оказался полезен именно в frequency-first режиме.
+- Практический компромисс:
+  - quality-first: чище, стабильнее, реже;
+  - frequency-first: почти в 2.3 раза больше сделок на test (`8.2 -> 19.2 trades/year`), но с ослаблением yearly stability.
+
+На этом этапе разумно не переобучать модель снова, а сделать ещё один короткий frozen follow-up вокруг frequency-first зоны, чтобы попробовать снять единственный отрицательный годовой срез без возврата к low-frequency режиму.
+
+Источник: [2026-04-18-take-skip-frequency-followup.md](../../docs/reports/2026-04-18-take-skip-frequency-followup.md)
 
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 

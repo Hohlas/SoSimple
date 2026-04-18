@@ -697,7 +697,7 @@ def first_touch_path_class(bars, direction, entry_price, atr, threshold_atr=1.0)
 
 
 TRAILING_STOP_HORIZONS = (12, 24, 48)
-TRAILING_STOP_X_VALUES = (2, 4, 8)
+TRAILING_STOP_X_VALUES = (2, 4, 8, 10, 12)
 TRAILING_STOP_HOLD_BARS = 48
 
 

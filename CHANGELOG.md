@@ -2,6 +2,33 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-18] - Take/skip frequency follow-up
+
+### Добавлено
+- `ML/benchmark_take_skip_trailing_stop.py`
+- `ML/benchmark_take_skip_trailing_stop_v2_followup.py`
+- `tests/test_benchmark_take_skip_trailing_stop_v2_followup.py`
+
+### Изменено
+- `processing/label_signals.py`: trailing-stop grid расширен до `x10 / x12`
+- `ML/take_skip_trailing_stop_v2_task.py`: `take_skip_v2` contract расширен до `x10 / x12`
+
+### Результаты
+- На базе уже обученного `seq50` без нового training-cycle выполнен follow-up benchmark
+- quality-first winner сохранился:
+  - `take_24_x8 + prob >= 0.70`
+  - test `PF=39.74`, `trades_per_year=8.2`
+- frequency-first winner найден:
+  - `score=take_24_x4`, `exit=x10`, `top_k=20%`
+  - validation `PF=3.92`, `trades_per_year=23.75`
+  - test `PF=7.18`, `trades_per_year=19.2`
+
+### Вывод
+- Частоту сделок удалось резко поднять без падения ниже `PF > 1`
+- `x10` выглядит полезным кандидатом именно в more-frequent режиме
+- Но у frequency-first на test появляется `1` отрицательный годовой срез, поэтому чистый quality-first winner пока остаётся базовым эталоном
+- Подробности: [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md)
+
 ## [2026-04-17] - Trailing-stop target quantile first wave
 
 ### Добавлено

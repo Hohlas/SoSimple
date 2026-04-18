@@ -7,7 +7,7 @@ import pandas as pd
 TAKE_SKIP_TRAILING_STOP_V2_TARGET = 'take_skip_trailing_stop_v2'
 TAKE_SKIP_THRESHOLD_ATR_V2 = 0.5
 TAKE_SKIP_V2_HORIZONS = (12, 24, 48)
-TAKE_SKIP_V2_X_VALUES = (2, 4, 8)
+TAKE_SKIP_V2_X_VALUES = (2, 4, 8, 10, 12)
 
 TAKE_SKIP_TRAILING_STOP_V2_COLUMNS = [
     f'take_{horizon}_x{x_value}'
