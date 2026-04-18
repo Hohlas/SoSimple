@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Добавить единый consumer-слой для frozen `take_skip_trailing_stop_v2` rules, чтобы применять `quality` и `frequency` режимы к готовым prediction CSV без ручного разбора параметров.
 > **Related plan/spec**: follow-up from `docs/reports/2026-04-18-take-skip-frequency-followup.md`
-> **Related commit**: pending
+> **Related commit**: c72be6c
 
 ## Context
 
