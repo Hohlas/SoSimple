@@ -1,11 +1,11 @@
 # Context Handoff
 
 ## Current Stage
-Этап `multi_horizon_take_skip_feature_track` подготовлен к полному server run (2026-04-17).
+Этап `multi_horizon_take_skip_feature_track` завершён положительным verdict (2026-04-18).
 
 Что зафиксировано:
 
-- реализован новый research track `take_skip_trailing_stop_v2`
+- реализован и проверен новый research track `take_skip_trailing_stop_v2`
 - целевая постановка:
   - бинарный `take/skip`
   - positive class: `trail_pnl >= 0.5 ATR`
@@ -23,14 +23,20 @@
   - `ML/run_take_skip_trailing_stop_v2_matrix.py`
 - train/evaluate/export stack поддерживает новый task
 - локальный smoke-run `transformer_seq20` прошёл весь контур end-to-end
-- smoke verdict:
-  - `verdict = go`
-  - validation winner: `take_48_x4 + top_k_probability 0.05`
-  - `PF=6.39`, `24` trades, `negative_year_slices=0`
-- важное operational условие:
-  - в `DATA/Nero_{train,validation,test}_labeled.csv` уже должны быть колонки `trail_12_*`, `trail_24_*`, `trail_48_*` для `X = 2 / 4 / 8`
-- canonical handoff report:
-  - `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+- после первых server run найдены и исправлены два критических дефекта интерпретации:
+  - runner переиспользовал кэш между `seq_len`
+  - `take_skip_trailing_stop_v2` насильно форсил `seq_len=100`
+- после bugfix rerun полный matrix `seq_len = 20 / 50 / 100` дал валидный `go` во всех трёх конфигурациях
+- общий winner-pattern:
+  - `target = take_24_x8`
+  - `candidate = prob_ge_threshold`
+- лучший текущий candidate:
+  - `seq50`
+  - `threshold = 0.70`
+  - validation: `27` trades, `PF=inf`, `negative_year_slices=0`
+  - test: `41` trades, `PF=39.74`, `trades_per_year=8.2`
+- canonical report:
+  - `docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md`
 
 ## Previous Stage
 Этап `take_skip_trailing_stop_matrix` завершён (2026-04-17).
@@ -72,19 +78,20 @@
 - этот parallel mode не затронут отрицательными результатами новых research-track экспериментов
 
 ## Next Step
-Следующий шаг уже не в проектировании, а в полном remote matrix run для `take_skip_trailing_stop_v2`.
+Следующий шаг уже не в большом retraining, а в короткой диагностике и frozen follow-up вокруг winner-а.
 
 Практический фокус:
 
-1. Синхронизировать `DATA/` на сервере в уже пересчитанном виде.
-2. Запустить `ML.run_take_skip_trailing_stop_v2_matrix` для `seq_len = 20 / 50 / 100`.
-3. Вернуть `manifest.json`, `summary.json`, `final_verdict.json`, `validation_grid.csv`.
-4. После этого закрыть этап stage-report + wiki ingest по итоговому verdict.
+1. Разобрать, почему history обучения почти совпадает по `seq20 / 50 / 100`.
+2. Отдельно зафиксировать winner:
+   - `seq50`
+   - `take_24_x8`
+   - `prob_ge_threshold >= 0.70`
+3. Решить, считать ли это уже candidate-level production path или делать ещё один короткий frozen check.
 
 ## Read First
 
-- `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
-- `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+- `docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md`
 - `docs/superpowers/specs/2026-04-17-multi-horizon-take-skip-feature-track-design.md`
 - `docs/superpowers/plans/2026-04-17-multi-horizon-take-skip-feature-track.md`
 - `CHANGELOG.md`
@@ -92,15 +99,14 @@
 
 ## Open Risks
 
-- **No full verdict yet**: есть только локальный smoke-run, итоговый исследовательский вывод ещё не получен.
-- **Server data dependency**: без новых `trail_12_*` и `trail_24_*` колонок matrix run не стартует.
+- **Residual symmetry**: train history и validation BCE у `seq20 / 50 / 100` остались почти одинаковыми; это требует отдельной короткой диагностики.
 - **Extreme imbalance**: positive-class в v2 остаётся очень редким, особенно на коротких горизонтах.
-- **Smoke optimism risk**: локальный `go` на `seq20` и `1 epoch` может быть случайным и не обязан воспроизводиться в полном bounded run.
+- **Infinity PF caution**: validation winner не имеет отрицательных сделок в выбранном окне; это сильный сигнал, но его нужно трактовать осторожно.
 - **CSV artifact gap**: `validation_grid.csv` не коммитятся из-за `gitignore`; для итогового этапа их надо переносить вручную или сохранять вне ignore.
 
 ## Latest Report
 
-`docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+`docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md`
 
 ## Active Roadmap
 

@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-04-17
-sources: 20
+last_updated: 2026-04-18
+sources: 21
 status: active
 ---
 
@@ -121,6 +121,45 @@ Model quality по BCE выглядела аккуратно, но trading-bench
 **Вывод**: смена постановки на бинарный `take/skip` не спасла Track A. Absolute thresholds не работают, relative top-k лишь выбирает "наименее плохие" сделки. Практический смысл этого этапа — подтвердить, что bottleneck уже не в selection layer, а в слабости сигнала и бедном представлении входа.
 
 Источник: [2026-04-17-take-skip-trailing-stop-matrix.md](../../docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
+
+### Multi-Horizon Take/Skip Feature Track Verdict (04-18)
+
+Следующий шаг не менял базовую архитектуру, а менял вход и target одновременно:
+
+- все `100` фракталов;
+- multi-scale summaries по окнам `5 / 10 / 20 / 50 / 100`;
+- multi-horizon binary target:
+  - горизонты `12 / 24 / 48`
+  - trailing-stop `X = 2 / 4 / 8`
+  - positive class: `trail_pnl >= 0.5 ATR`
+
+Первый server run этой линии оказался методологически испорчен двумя bug-ами:
+
+- runner переиспользовал кэш между `seq_len`
+- `take_skip_trailing_stop_v2` насильно форсил `seq_len = 100`
+
+После исправления и повторного bounded run `seq_len = 20 / 50 / 100` получен первый валидный положительный verdict:
+
+| Config | Winner | Validation PF | Test PF | Trades/year test |
+|---|---|---:|---:|---:|
+| `seq20` | `take_24_x8 @ 0.75` | `inf` | 36.86 | 7.6 |
+| `seq50` | `take_24_x8 @ 0.70` | `inf` | **39.74** | **8.2** |
+| `seq100` | `take_24_x8 @ 0.75` | `inf` | 37.45 | 7.8 |
+
+Общий паттерн winner-а:
+
+- horizon = `24`
+- trailing-stop = `X=8`
+- candidate family = `prob_ge_threshold`
+
+Это важно по двум причинам:
+
+1. absolute probability threshold впервые перестал быть пустым;
+2. richer feature representation реально дал новый живой candidate, а не просто очередной `reject`.
+
+**Вывод**: линия trailing-stop retraining больше не выглядит исчерпанной. Новый feature-track дал первый устойчивый `go`, а лучший текущий candidate — `seq50 + take_24_x8 + threshold 0.70`.
+
+Источник: [2026-04-18-multi-horizon-take-skip-feature-track.md](../../docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md)
 
 ## 3. Triple Barrier (04-08 — 04-12, три отчёта)
 

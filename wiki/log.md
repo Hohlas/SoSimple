@@ -124,3 +124,13 @@
   - added open question about moving to richer feature representation
 - Updated `wiki/index.md` coverage from 17 to 20 reports
 - Header `execution-tracks.md`: `last_updated: 2026-04-17`, `sources: 20`
+
+## [2026-04-18] ingest | Multi-horizon take/skip feature-track verdict synced into wiki
+- Added report `docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added a new subsection for the positive `take_skip_trailing_stop_v2` verdict
+  - recorded two bugfixes that invalidated the earlier `v2` matrix attempts
+  - summarized final winners for `seq20 / 50 / 100`
+  - recorded best current candidate: `seq50 + take_24_x8 + prob_ge_threshold 0.70`
+- Updated `wiki/index.md` coverage from 20 to 21 reports
+- Header `execution-tracks.md`: `last_updated: 2026-04-18`, `sources: 21`

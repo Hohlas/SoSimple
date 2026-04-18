@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
-## [2026-04-17] - Multi-horizon take/skip feature track handoff
+## [2026-04-18] - Multi-horizon take/skip feature track verdict
 
 ### Добавлено
 - multi-horizon continuous labels для trailing-stop grid:
@@ -16,24 +16,30 @@
 ### Изменено
 - `ML/data_loader.py`: вход `take_skip_trailing_stop_v2` теперь собирается как `100` фракталов + multi-scale summaries + row-wise numeric features
 - `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`: новый task протянут через train/evaluate/export stack
-- после smoke-run исправлены два дефекта:
+- после smoke-run и первых server run исправлены три дефекта:
   - из v2-ветки убран лишний `seq_len` kwarg для обычного `Transformer`
   - отключена попытка строить confusion matrix для multi-label BCE-задачи
+  - runner теперь инвалидирует кэш между `seq_len`
+  - `take_skip_trailing_stop_v2` больше не форсит `seq_len=100`
 
 ### Результаты
 - локальный smoke-run `transformer_seq20` завершился end-to-end
-- smoke verdict: `go`
-- validation winner:
-  - `take_48_x4 + top_k_probability 0.05`
-  - `PF=6.39`
-  - `24` trades
-  - `negative_year_slices=0`
-- этап подготовил воспроизводимый server handoff для полного matrix run `seq_len = 20 / 50 / 100`
+- полный server matrix run `seq_len = 20 / 50 / 100` после bugfix rerun завершён успешно
+- во всех трёх конфигурациях найден `go`
+- общий паттерн winner-а:
+  - `take_24_x8`
+  - `prob_ge_threshold`
+- лучший текущий candidate:
+  - `seq50`
+  - `threshold = 0.70`
+  - validation `27` trades, `PF=inf`, `negative_year_slices=0`
+  - test `41` trades, `PF=39.74`, `trades_per_year=8.2`
 
 ### Вывод
-- новый feature-track технически собран и готов к тяжёлому прогону на сервере
-- это ещё не итоговый исследовательский verdict: он будет только после полного remote matrix run
-- Подробности: [docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
+- новый feature-track дал первый валидный положительный verdict после trailing-stop retraining chain
+- линия `Track A` / richer feature representation снова жива: новый вход действительно изменил качество selection layer
+- сохраняется короткий follow-up вопрос, почему train history почти совпадает по `seq_len`
+- Подробности: [docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md](docs/reports/2026-04-18-multi-horizon-take-skip-feature-track.md)
 
 ## [2026-04-17] - Take/skip trailing-stop matrix verdict
 
