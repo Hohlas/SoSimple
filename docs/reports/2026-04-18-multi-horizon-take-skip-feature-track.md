@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить, даёт ли новый feature-track на 100 фракталах и multi-scale summaries живой `take/skip` candidate, который проходит мягкий trade gate и не разваливается по годам.
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-17-multi-horizon-take-skip-feature-track-design.md`, `docs/superpowers/plans/2026-04-17-multi-horizon-take-skip-feature-track.md`
-> **Related commit**: pending
+> **Related commit**: ac5d66b
 
 ## Context
 
