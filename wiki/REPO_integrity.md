@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-18 20:12 UTC · git `94eaf92`
+> Auto-generated 2026-04-18 20:13 UTC · git `63f4a44`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 780 files  ·  **Commit**: `94eaf92`  ·  **Generated**: 2026-04-18 20:12 UTC
+**Tracked**: 780 files  ·  **Commit**: `63f4a44`  ·  **Generated**: 2026-04-18 20:13 UTC
 
 ## Root Docs
 
@@ -138,7 +138,7 @@
 | [docs/reports/2026-04-15-track-a-max-out.md](docs/reports/2026-04-15-track-a-max-out.md) |  | 2026-04-17 | 9KB | `ca11c38f` |
 | [docs/reports/2026-04-16-trailing-stop-target-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-first-wave.md) |  | 2026-04-17 | 6KB | `5b0b7b8b` |
 | [docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md) |  | 2026-04-17 | 6KB | `e812d460` |
-| [docs/reports/2026-04-18-mt4-trailing-stop-execution.md](docs/reports/2026-04-18-mt4-trailing-stop-execution.md) |  | 2026-04-18 | 4KB | `710e8807` |
+| [docs/reports/2026-04-18-mt4-trailing-stop-execution.md](docs/reports/2026-04-18-mt4-trailing-stop-execution.md) |  | 2026-04-18 | 5KB | `db5e5c66` |
 | [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md) |  | 2026-04-18 | 9KB | `edb6385b` |
 | [docs/reports/2026-04-18-take-skip-rule-consumer.md](docs/reports/2026-04-18-take-skip-rule-consumer.md) |  | 2026-04-18 | 5KB | `bf29f837` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |

@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Добавить в прямой MT4-контур `iSignal=3` отдельный режим выхода по простому трейлинг-стопу `X * ATR`, чтобы проверять `take_skip_trailing_stop_v2` на той же логике выхода, под которую этот трек отбирался в Python.
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-18-mt4-trailing-stop-execution.md`
-> **Related commit**: pending
+> **Related commit**: `94eaf92`, `63f4a44`
 
 ## Context
 
@@ -48,6 +48,7 @@ rg -n "ML_ExitMode|ML_TrailATR|TrailingStop" MT/MQL4/Experts/\$o\$imple.mq4 MT/M
 ```
 
 Ручной MT4 runtime-check на новом trailing-mode в этот этап не входил.
+После первой компиляции исправлен MQL4 scope bug: расчёт trailing-stop перенесён внутрь `EXPERT::ML_TRADE()`, где доступны `BUY`, `SEL` и `ATR`.
 
 ## Results
 
