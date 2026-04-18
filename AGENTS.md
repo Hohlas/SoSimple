@@ -15,9 +15,9 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 
 ## Обязательные правила
-- Для чтения CSV файлов используй скилл .claude/skills/csv-processing/SKILL.md
-- При добавлении нового файла добавить его в индекс: использовать Mode 4 скилла [`.claude/skills/update-docs-on-code-change/SKILL.md`](.claude/skills/update-docs-on-code-change/SKILL.md)
-- Рутинная синхронизация после каждого изменения кода [`.claude/skills/update-docs-on-code-change/SKILL.md`](.claude/skills/update-docs-on-code-change/SKILL.md).
+- Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md
+- При добавлении нового файла добавить его в индекс: использовать Mode 4 скилла [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md)
+- Рутинная синхронизация после каждого изменения кода [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md).
 - Не загружать в контекст файлы больше 1MB целиком.
 - Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
 - Перед обращением к содержимому каталог сначала читать локальный `README.md` этого каталога.
@@ -27,8 +27,8 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - Не используй worktree.
 - `git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
-- При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.claude/skills/stage-reporting/SKILL.md`](.claude/skills/stage-reporting/SKILL.md).
-- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.claude/skills/wiki/SKILL.md`](.claude/skills/wiki/SKILL.md)).
+- При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
+- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)).
 
 
 ## Память проекта
@@ -45,7 +45,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 | `docs/DATA_FLOW.md` | Схема потока данных MT4→ML→MT4 и навигация по этапам pipeline | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) |
 | `.claude/memory/` | Стабильные правила, предпочтения, долгоживущие инварианты | [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) |
 
-**В начале каждой сессии** (wiki Query-workflow, см. [`.claude/skills/wiki/SKILL.md`](.claude/skills/wiki/SKILL.md)):
+**В начале каждой сессии** (wiki Query-workflow, см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)):
 1. Прочитай `wiki/index.md` — понять существующий синтез.
 2. Прочитай `CONTEXT_HANDOFF.md` — текущее состояние и следующий шаг.
 3. Через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
@@ -66,7 +66,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ```
 .
 ├── .claude/memory/      # Долговечная память проекта
-├── .claude/skills/      # Локальные workflow/skills для Codex
+├── .codex/skills/       # Локальные workflow/skills для Codex
 ├── wiki/                # LLM Wiki: синтез знаний проекта
 │   ├── REPO_integrity.md #   авто-генерированная integrity map репо
 │   ├── index.md         #   LLM-каталог wiki-страниц
