@@ -1,0 +1,158 @@
+{
+  "config": {
+    "seq_len": 20,
+    "epochs": 10,
+    "patience": 4,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0,
+    "min_trades_per_year": 6.0,
+    "target_columns": [
+      "take_12_x2",
+      "take_12_x4",
+      "take_12_x8",
+      "take_24_x2",
+      "take_24_x4",
+      "take_24_x8",
+      "take_48_x2",
+      "take_48_x4",
+      "take_48_x8"
+    ]
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "take_skip_trailing_stop_v2",
+    "best_metric": -0.010285966098308563,
+    "metric_name": "val_score",
+    "best_epoch": 10,
+    "num_parameters": 103945,
+    "training_time": 3950.0589537620544,
+    "history": {
+      "train_loss": [
+        0.11363652798929932,
+        0.01773586178781214,
+        0.015175152486952686,
+        0.014164628282635969,
+        0.013550771683882051,
+        0.013080540747308222,
+        0.01318112664926819,
+        0.013627192376546388,
+        0.012614272543697546,
+        0.012261286418073489
+      ],
+      "val_loss": [
+        0.01550100272445864,
+        0.012560524744912982,
+        0.011309576302615774,
+        0.010793867967771115,
+        0.010774219792487251,
+        0.010643948712763755,
+        0.012497554111571328,
+        0.013188528822030168,
+        0.010568832544408538,
+        0.01030257106381091
+      ],
+      "val_score": [
+        -0.01548224501311779,
+        -0.012570361606776714,
+        -0.011313427239656448,
+        -0.010785219259560108,
+        -0.010760338976979256,
+        -0.010626365430653095,
+        -0.012504687532782555,
+        -0.013170788064599037,
+        -0.010559618473052979,
+        -0.010285966098308563
+      ],
+      "val_bce": [
+        0.01548224501311779,
+        0.012570361606776714,
+        0.011313427239656448,
+        0.010785219259560108,
+        0.010760338976979256,
+        0.010626365430653095,
+        0.012504687532782555,
+        0.013170788064599037,
+        0.010559618473052979,
+        0.010285966098308563
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "bce": 0.010285966098308563,
+      "positive_rate_take_12_x2": 0.0055448925122618675,
+      "brier_take_12_x2": 0.0035611570347100496,
+      "positive_rate_take_12_x4": 0.006504585035145283,
+      "brier_take_12_x4": 0.002896695164963603,
+      "positive_rate_take_12_x8": 0.006611217744648457,
+      "brier_take_12_x8": 0.0028115129098296165,
+      "positive_rate_take_24_x2": 0.004158669151365757,
+      "brier_take_24_x2": 0.0027127740904688835,
+      "positive_rate_take_24_x4": 0.005224994849413633,
+      "brier_take_24_x4": 0.0020157047547399998,
+      "positive_rate_take_24_x8": 0.006611217744648457,
+      "brier_take_24_x8": 0.0022585797123610973,
+      "positive_rate_take_48_x2": 0.0037321390118449926,
+      "brier_take_48_x2": 0.0024381824769079685,
+      "positive_rate_take_48_x4": 0.005224994849413633,
+      "brier_take_48_x4": 0.0028081340715289116,
+      "positive_rate_take_48_x8": 0.00917039904743433,
+      "brier_take_48_x8": 0.005470789037644863,
+      "val_score": -0.010285966098308563
+    }
+  },
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/take_skip_trailing_stop_v2_validation_predictions.csv",
+    "test_csv": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/take_skip_trailing_stop_v2_test_predictions.csv"
+  },
+  "benchmark": {
+    "validation_grid_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq20/benchmark/final_verdict.json",
+    "final_verdict": {
+      "verdict": "go",
+      "validation_winner": {
+        "target_column": "take_24_x8",
+        "candidate": "prob_ge_threshold",
+        "threshold": 0.65,
+        "trades": 31,
+        "trades_per_year": 7.75,
+        "gross_profit": 107.24242426,
+        "gross_loss": -0.0,
+        "pf": Infinity,
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.260297244235385,
+        "ulcer_index_atr": 52.52995878838709,
+        "max_drawdown_atr": 0.0,
+        "positive_rate_selected": 1.0
+      },
+      "test_result": {
+        "target_column": "take_24_x8",
+        "candidate": "prob_ge_threshold",
+        "threshold": 0.65,
+        "trades": 48,
+        "trades_per_year": 9.6,
+        "gross_profit": 197.5283733,
+        "gross_loss": 4.37830003,
+        "pf": 45.11531232362803,
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.21564350421347792,
+        "ulcer_index_atr": 115.74769311208333,
+        "max_drawdown_atr": 4.378300029999991,
+        "positive_rate_selected": 0.9166666666666666
+      }
+    }
+  },
+  "runtime_sec": 4506.711899280548
+}
