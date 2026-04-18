@@ -2,6 +2,32 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-18] - Take/skip v2 rule consumer
+
+### Добавлено
+- `API/export_take_skip_trailing_stop_v2_signals.py`
+- `tests/test_export_take_skip_trailing_stop_v2_signals.py`
+
+### Изменено
+- `API/README.md`
+- `docs/MT/ml_signal_integration.md`
+- `MODULE_INDEX.md`
+
+### Результаты
+- Добавлен единый CLI для применения frozen `take_skip_trailing_stop_v2` rules к готовому prediction CSV
+- Поддержаны оба зафиксированных режима:
+  - `quality`: `prob_ge_threshold`
+  - `frequency`: `top_k_probability`
+- Exporter умеет:
+  - писать sparse `time;signal`;
+  - разворачивать результат в полный ряд через `--base-csv`;
+  - копировать результат сразу в tester/runtime MT4 paths
+
+### Вывод
+- `take_skip_trailing_stop_v2_*_selected_rule.json` теперь стали не только отчётными артефактами, но и рабочим интерфейсом применения
+- Следующий шаг уже операционный: сравнивать `quality` и `frequency` режимы на одном и том же prediction CSV без ручного разбора rule JSON
+- Подробности: [docs/reports/2026-04-18-take-skip-rule-consumer.md](docs/reports/2026-04-18-take-skip-rule-consumer.md)
+
 ## [2026-04-18] - Take/skip frequency follow-up
 
 ### Добавлено

@@ -1,6 +1,26 @@
 # Context Handoff
 
 ## Current Stage
+Этап `take_skip_rule_consumer` завершён (2026-04-18).
+
+Что зафиксировано:
+
+- добавлен новый прикладной exporter `API/export_take_skip_trailing_stop_v2_signals.py`
+- exporter читает:
+  - prediction CSV
+  - frozen rule JSON
+  - optional `base-csv`
+- поддержаны оба frozen selector-а:
+  - `prob_ge_threshold`
+  - `top_k_probability`
+- exporter может:
+  - писать sparse `time;signal`
+  - разворачивать sparse export в полный временной ряд
+  - копировать результат сразу в tester/runtime каталоги MT4
+- добавлены тесты `tests/test_export_take_skip_trailing_stop_v2_signals.py` (`5/5` зелёные)
+- canonical report: `docs/reports/2026-04-18-take-skip-rule-consumer.md`
+
+## Previous Stage
 Этап `take_skip_frequency_followup` завершён (2026-04-18).
 
 Что зафиксировано:

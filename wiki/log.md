@@ -139,3 +139,10 @@
 - Updated `wiki/research/execution-tracks.md`:
   - added canonical paths for quality and frequent frozen rules
   - clarified that `take_24_x8 + top_k 17%` is the current packaged frequent candidate
+
+## [2026-04-18] ingest | Take/skip rule consumer synced into wiki
+- Added report `docs/reports/2026-04-18-take-skip-rule-consumer.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added consumer-layer subsection for take/skip v2
+  - recorded that frozen quality/frequency rules are now executable through a dedicated CLI
+  - noted optional full-series expansion via `--base-csv`

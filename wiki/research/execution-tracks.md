@@ -333,6 +333,29 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-18-take-skip-frequency-followup.md](../../docs/reports/2026-04-18-take-skip-frequency-followup.md)
 
+### Rule Consumer (04-18): frozen rules стали рабочим интерфейсом
+
+После фиксации двух frozen rule JSON был добавлен отдельный consumer-слой:
+
+- `API/export_take_skip_trailing_stop_v2_signals.py`
+
+Его задача не в новом исследовании и не в переобучении, а в стандартном применении уже выбранных правил к готовому prediction CSV.
+
+Поддержаны оба режима:
+- `quality`: `take_24_x8 + prob_ge_threshold >= 0.70`
+- `frequency`: `take_24_x8 + top_k_probability = 17%`
+
+Что умеет exporter:
+- читать frozen rule JSON и доставать `score_target`, `selector`, `threshold`;
+- применять rule к колонке `pred_<score_target>`;
+- писать `time;signal`;
+- при `--base-csv` разворачивать sparse predictions обратно в полный временной ряд;
+- при `--copy-to-mt4` сразу класть результат в tester/runtime `ml_signals.csv`.
+
+Смысл этого этапа: `take_skip_trailing_stop_v2_quality_selected_rule.json` и `take_skip_trailing_stop_v2_frequency_selected_rule.json` больше не являются только отчётными артефактами. Они стали прикладным интерфейсом, который можно одинаково запускать на любом готовом prediction CSV.
+
+Источник: [2026-04-18-take-skip-rule-consumer.md](../../docs/reports/2026-04-18-take-skip-rule-consumer.md)
+
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 
 Добавлен отдельный frozen benchmark:

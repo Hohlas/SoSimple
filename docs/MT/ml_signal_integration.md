@@ -101,6 +101,42 @@ median m/w/correction по 5 сидам). Экспорт в MT4 выполняе
 Legacy-режим (без `--rule-path`) остался для старого single-seed пути
 `entry_path_v1_quantile_filter_selected_rule.json` внутри каждого `seed_*` и
 для обратной совместимости; в текущем production-контуре он не используется.
+
+### Для `take_skip_trailing_stop_v2`
+
+Для нового take/skip-контура можно применять уже зафиксированные rule JSON
+на готовый prediction CSV без ручного разбора параметров правила.
+
+Quality-режим:
+
+```bash
+./.venv/bin/python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --rule-path ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json \
+  --output MT/tester/files/ml_signals.csv \
+  --copy-to-mt4
+```
+
+Frequent-режим:
+
+```bash
+./.venv/bin/python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --rule-path ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json \
+  --output MT/tester/files/ml_signals.csv \
+  --copy-to-mt4
+```
+
+Что делает этот CLI:
+
+- читает rule JSON и берёт оттуда `score_target`, `selector`, `threshold`;
+- находит колонку `pred_<score_target>` в prediction CSV;
+- применяет frozen selector:
+  - `prob_ge_threshold`
+  - или `top_k_probability`;
+- пишет `time;signal` с обнулением невыбранных строк;
+- при `--base-csv` может развернуть sparse predictions обратно в полный временной ряд;
+- при `--copy-to-mt4` копирует один и тот же результат в `MT/tester/files` и `MT/MQL4/Files`.
 ---
 
 ## 4. Как сейчас исполняется сигнал
