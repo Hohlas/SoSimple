@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-19 10:56 UTC · git `556309f`
+> Auto-generated 2026-04-19 10:57 UTC · git `dbbd8eb`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 788 files  ·  **Commit**: `556309f`  ·  **Generated**: 2026-04-19 10:56 UTC
+**Tracked**: 788 files  ·  **Commit**: `dbbd8eb`  ·  **Generated**: 2026-04-19 10:57 UTC
 
 ## Root Docs
 
@@ -142,7 +142,7 @@
 | [docs/reports/2026-04-18-mt4-trailing-stop-execution.md](docs/reports/2026-04-18-mt4-trailing-stop-execution.md) |  | 2026-04-18 | 5KB | `db5e5c66` |
 | [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md) |  | 2026-04-18 | 9KB | `edb6385b` |
 | [docs/reports/2026-04-18-take-skip-rule-consumer.md](docs/reports/2026-04-18-take-skip-rule-consumer.md) |  | 2026-04-18 | 5KB | `bf29f837` |
-| [docs/reports/2026-04-19-execution-policy-v2.md](docs/reports/2026-04-19-execution-policy-v2.md) |  | 2026-04-19 | 8KB | `ce4b1967` |
+| [docs/reports/2026-04-19-execution-policy-v2.md](docs/reports/2026-04-19-execution-policy-v2.md) |  | 2026-04-19 | 8KB | `f124b341` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML

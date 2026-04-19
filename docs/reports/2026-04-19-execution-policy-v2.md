@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить варианты выхода для готовых `quality` и `frequency` ML-сигналов без нового обучения, затем подтвердить ключевые варианты в MT4.
 > **Related plan/spec**: `docs/reports/2026-04-18-take-skip-frequency-followup.md`, `docs/reports/2026-04-18-take-skip-rule-consumer.md`, `docs/reports/2026-04-18-mt4-trailing-stop-execution.md`
-> **Related commit**: pending
+> **Related commit**: dbbd8eb
 
 ## Context
 
