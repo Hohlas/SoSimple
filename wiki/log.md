@@ -154,3 +154,13 @@
   - recorded new runtime parameters `ML_ExitMode` and `ML_TrailATR`
   - clarified that timeout path remains default, while trailing-stop is a separate explicit mode
 - Updated `wiki/index.md` coverage from 19 to 20 reports
+
+## [2026-04-19] ingest | Execution policy v2 synced into wiki
+- Added report `docs/reports/2026-04-19-execution-policy-v2.md`
+- Added benchmark `ML/benchmark_execution_policy_v2.py` and tests
+- Updated `wiki/research/execution-tracks.md`:
+  - added Python + MT4 execution policy v2 subsection
+  - recorded `ML_TakeProfitATR` as a broker-side TP parameter for direct ML mode
+  - captured final frequent candidate: `ML_TrailATR=8`, `ML_TakeProfitATR=0`
+  - captured cautious frequent alternative: `ML_TrailATR=6`, `ML_TakeProfitATR=0`
+- Updated `wiki/index.md` coverage from 20 to 21 reports

@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-18
-sources: 20
+last_updated: 2026-04-19
+sources: 21
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 20 отчётов (2026-04-08 — 2026-04-18). Параллельные направления execution.
+> Синтез 21 отчёта (2026-04-08 — 2026-04-19). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -392,6 +392,63 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 
 Источник: [2026-04-18-mt4-trailing-stop-execution.md](../../docs/reports/2026-04-18-mt4-trailing-stop-execution.md)
 
+### Execution Policy v2 (04-19): выходы проверены в Python и MT4
+
+Следующий этап закрыл практический вопрос после добавления MT4 trailing execution: какой выход использовать для уже готовых `quality` и `frequency` сигналов.
+
+Добавлен `ML/benchmark_execution_policy_v2.py`:
+
+- работает без нового обучения;
+- читает готовые `ml_signals_quality.csv` и `ml_signals_frequency.csv`;
+- использует `DATA/XAUUSD_H1_OHLC.csv`;
+- сравнивает варианты выхода в ATR;
+- считает не только PF, но и форму equity.
+
+Ключевые метрики:
+
+- `max_drawdown_atr`;
+- `ulcer_index_atr`;
+- `equity_linearity_r2`;
+- `profit_concentration_top_1/3/10`;
+- `negative_months / negative_years`;
+- худшая сделка и худшие серии.
+
+В MT4 добавлен `ML_TakeProfitATR`: обычный broker-side take profit в ATR от входа. `0` означает, что take profit выключен.
+
+#### Quality
+
+MT4:
+
+| Mode | Net Profit | Trades | PF | Max Relative DD | Max Win |
+|---|---:|---:|---:|---:|---:|
+| `TrailATR=8, TP=0` | 18037.59 | 20 | 51.95 | 11.70% | 7996.90 |
+| `TrailATR=8, TP=12` | 11544.89 | 20 | 33.61 | 4.97% | 1817.00 |
+
+**Вывод:** take profit `12 ATR` сильно режет одиночную экстремальную сделку и снижает просадку, но уменьшает прибыль. Для `quality` это допустимый более ровный режим.
+
+#### Frequency
+
+MT4:
+
+| Mode | Net Profit | Trades | PF | Max Relative DD |
+|---|---:|---:|---:|---:|
+| `TrailATR=6, TP=0` | 18455.93 | 56 | 4.22 | 16.78% |
+| `TrailATR=8, TP=0` | 24521.88 | 56 | 3.77 | 25.71% |
+| `TrailATR=10, TP=0` | 26137.10 | 56 | 3.31 | 27.44% |
+| `TrailATR=8, TP=12` | 12085.05 | 56 | 2.37 | 17.27% |
+
+Python `frequency_trail_scan`:
+
+| Policy | PF | Net ATR | Max DD ATR | Ulcer | R2 | Top 1 | Top 3 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `trail_x6` | 4.08 | 169.72 | 18.00 | 5.79 | 0.821 | 13.8% | 37.3% |
+| `trail_x8` | 3.73 | 215.77 | 22.54 | 7.28 | 0.766 | 18.9% | 38.1% |
+| `trail_x10` | 4.12 | 323.09 | 39.66 | 16.52 | 0.564 | 30.3% | 56.7% |
+
+**Вывод:** для `frequency` take profit режет главный источник прибыли. Основной practical candidate — `ML_TrailATR=8`, `ML_TakeProfitATR=0`; осторожная альтернатива — `ML_TrailATR=6`, `ML_TakeProfitATR=0`. `TrailATR=10` даёт больше прибыли, но слишком ухудшает форму equity: просадка, ulcer, концентрация прибыли и линейность хуже.
+
+Источник: [2026-04-19-execution-policy-v2.md](../../docs/reports/2026-04-19-execution-policy-v2.md)
+
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 
 Добавлен отдельный frozen benchmark:
@@ -506,9 +563,11 @@ Trade-level reconciliation был сохранён отдельно:
 | quantile × fav_3_vs_12 | PF=7.86 (test, 47 trades) | **Gate fail — closed** | No uplift, worsens yearly stability |
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
+| take/skip v2 frequency execution | MT4 `TrailATR=8, TP=0`: PF=3.77, 56 trades, net=24521.88 | **Основной frequent candidate** | Искать независимую систему, не подбирать TP дальше |
 
 ## Открытые вопросы
 
 1. Forward validation quantile-слоя: нужен strictly-forward prediction CSV; текущий scaffold готов, но данных после production decision пока нет.
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
 3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
+4. Нужна следующая независимая некоррелированная система; дальнейшая подгонка `TrailATR/TP` внутри текущего `frequency` набора имеет убывающую ценность.

@@ -1,6 +1,57 @@
 # Context Handoff
 
 ## Current Stage
+Этап `execution_policy_v2` завершён (2026-04-19).
+
+Что зафиксировано:
+
+- добавлен `ML/benchmark_execution_policy_v2.py` для сравнения вариантов выхода на готовых `quality` и `frequency` ML-сигналах без нового обучения;
+- benchmark пишет:
+  - `ML/reports/execution_policy_v2/summary.csv`
+  - `ML/reports/execution_policy_v2/summary.json`
+  - `ML/reports/execution_policy_v2/trades.csv`
+  - отдельный узкий прогон `ML/reports/execution_policy_v2/frequency_trail_scan/`
+- добавлены метрики формы equity:
+  - `max_drawdown_atr`
+  - `ulcer_index_atr`
+  - `equity_linearity_r2`
+  - `profit_concentration_top_1/3/10`
+  - `negative_months / negative_years`
+  - худшая сделка и худшие серии
+- в MT4 добавлен `ML_TakeProfitATR`:
+  - `0` -> take profit выключен
+  - `>0` -> broker-side take profit в ATR от входа
+- MT4 direct ML mode теперь умеет:
+  - `ML_ExitMode=1`
+  - `ML_TrailATR`
+  - `ML_TakeProfitATR`
+  - `ML_MaxPositions` как аварийный потолок, не как торговое правило
+
+Главные результаты:
+
+- `quality`:
+  - `TrailATR=8, TP=0`: net `18037.59`, `20` trades, `PF=51.95`, DD `11.70%`
+  - `TrailATR=8, TP=12`: net `11544.89`, `20` trades, `PF=33.61`, DD `4.97%`
+  - вывод: TP=12 делает equity ровнее и режет экстремальную сделку, но снижает прибыль
+- `frequency`:
+  - `TrailATR=6, TP=0`: net `18455.93`, `56` trades, `PF=4.22`, DD `16.78%`
+  - `TrailATR=8, TP=0`: net `24521.88`, `56` trades, `PF=3.77`, DD `25.71%`
+  - `TrailATR=10, TP=0`: net `26137.10`, `56` trades, `PF=3.31`, DD `27.44%`
+  - `TrailATR=8, TP=12`: net `12085.05`, `56` trades, `PF=2.37`, DD `17.27%`
+  - вывод: для `frequency` take profit временно снят, основной режим — чистый trailing
+- Python scan по `frequency`:
+  - `trail_x6`: PF `4.08`, net `169.72 ATR`, DD `18.00 ATR`, R2 `0.821`, top1 `13.8%`
+  - `trail_x8`: PF `3.73`, net `215.77 ATR`, DD `22.54 ATR`, R2 `0.766`, top1 `18.9%`
+  - `trail_x10`: PF `4.12`, net `323.09 ATR`, DD `39.66 ATR`, R2 `0.564`, top1 `30.3%`
+
+Решение:
+
+- основной practical candidate для `frequency`: `ML_TrailATR=8`, `ML_TakeProfitATR=0`
+- осторожный candidate: `ML_TrailATR=6`, `ML_TakeProfitATR=0`
+- `TrailATR=10` оставить как агрессивный диагностический вариант, но не основной из-за худшей формы equity и высокой концентрации прибыли
+- canonical report: `docs/reports/2026-04-19-execution-policy-v2.md`
+
+## Previous Stage
 Этап `mt4_trailing_stop_execution` завершён (2026-04-18).
 
 Что зафиксировано:

@@ -2,6 +2,29 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-19] - Execution policy v2: Python benchmark + MT4 confirmation
+
+### Добавлено
+- `ML/benchmark_execution_policy_v2.py`
+- `tests/test_benchmark_execution_policy_v2.py`
+- `docs/ML/benchmark_execution_policy_v2.py.md`
+
+### Изменено
+- `MT/MQL4/Experts/$o$imple.mq4`
+- `MT/MQL4/Include/lib_ML_Signal.mqh`
+
+### Результаты
+- Добавлен benchmark вариантов выхода для готовых `quality` и `frequency` ML-сигналов без нового обучения.
+- В MT4 добавлен `ML_TakeProfitATR`: take profit в ATR от входа, `0=выключен`.
+- Для `quality` MT4 подтвердил, что `TrailATR=8, TP=12` снижает зависимость от одной большой сделки: net `18037.59 -> 11544.89`, PF `51.95 -> 33.61`, DD `11.70% -> 4.97%`.
+- Для `frequency` MT4 подтвердил, что take profit режет прибыль: `TrailATR=8, TP=12` дал net `12085.05`, PF `2.37` против `TrailATR=8, TP=0` net `24521.88`, PF `3.77`.
+- Узкий Python scan показал лучший practical candidate для `frequency`: `TrailATR=8, TP=0`; осторожная альтернатива — `TrailATR=6, TP=0`.
+
+### Вывод
+- Для `frequency` take profit временно снимается: основной выход — чистый trailing.
+- `TrailATR=10` не выбран основным, потому что даёт больше прибыли ценой худшей формы equity и высокой концентрации прибыли.
+- Подробности: [docs/reports/2026-04-19-execution-policy-v2.md](docs/reports/2026-04-19-execution-policy-v2.md)
+
 ## [2026-04-18] - MT4 trailing-stop execution for direct ML mode
 
 ### Добавлено

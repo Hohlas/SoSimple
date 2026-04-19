@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//| lib_ML_Signal.mqh                                 v4.1           |
+//| lib_ML_Signal.mqh                                 v4.2           |
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
@@ -19,7 +19,7 @@
 
 #define MLP_SIGNALS_FILE "ml_signals.csv"
 #define MLP_MAX_SIGNALS  200000
-#define MLP_Ver          4.1
+#define MLP_Ver          4.2
 #define MLP_EXIT_TIMEOUT 0
 #define MLP_EXIT_TRAIL   1
 
@@ -209,6 +209,7 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
    double stop_price = (sig == 1)
       ? MathMax(min_price, entry_price - back_stop)
       : entry_price + back_stop;
+   double take_profit_price = 0.0;
 
    if (Real && Risk > 0) {
       double trade_risk = CHECK_RISK(lot_to_send, back_stop, sym);
@@ -227,8 +228,15 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
       stop_price = (sig == 1)
          ? MathMax(min_price, entry_price - back_stop)
          : entry_price + back_stop;
+      take_profit_price = 0.0;
+      if (ML_TakeProfitATR > 0) {
+         take_profit_price = (sig == 1)
+            ? entry_price + atr_value * ML_TakeProfitATR
+            : entry_price - atr_value * ML_TakeProfitATR;
+         if (MathAbs(take_profit_price - entry_price) <= StopLevel) take_profit_price = 0.0;
+      }
       ticket = OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), 3,
-                         N5(stop_price, sym), 0, S0(magic) + "-MLP", magic, 0,
+                         N5(stop_price, sym), N5(take_profit_price, sym), S0(magic) + "-MLP", magic, 0,
                          (sig == 1 ? clrGreen : clrRed));
       ok = (ticket > 0);
       if (ok) break;
@@ -248,9 +256,11 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             " score=", DoubleToString(score, 6),
             " exit_mode=", MLP_ExitModeName(),
             " TrailATR=", DoubleToString(ML_TrailATR, 2),
+            " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
             " MaxPositions=", ML_MaxPositions,
             " Val=", DoubleToString(entry_price, Digits),
             " Stp=", DoubleToString(stop_price, Digits),
+            " Prf=", DoubleToString(take_profit_price, Digits),
             " Lot=", DoubleToString(lot_to_send, 2));
    }
    return ok;
@@ -351,6 +361,7 @@ bool MLP_INIT() {
          " Threshold=", DoubleToString(ML_ScoreThreshold, 6),
          " ExitMode=", MLP_ExitModeName(),
          " TrailATR=", DoubleToString(ML_TrailATR, 2),
+         " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
          " MaxPositions=", ML_MaxPositions,
          " HoldBars=", ML_HoldBars,
          " Reversal=", ML_AllowReversal);
@@ -633,12 +644,14 @@ void EXPERT::ML_TRADE() {
       set.BUY.Val = (float)ASK;
       set.BUY.Stp = (float)MathMax(min_price, set.BUY.Val - back_stop);
       set.BUY.Prf = 0;
+      if (ML_TakeProfitATR > 0) set.BUY.Prf = (float)(set.BUY.Val + ATR * ML_TakeProfitATR);
 
       Print(Mgc, ":: MLP BUY"
             " signal_time=", TimeToString(MLP_BuySignalTime),
             " entry_time=", TimeToString(Time[0]),
             " score=", DoubleToString(score, 6),
             " exit_mode=", MLP_ExitModeName(),
+            " take_profit_atr=", DoubleToString(ML_TakeProfitATR, 2),
             " Val=", DoubleToString(set.BUY.Val, Digits));
       return;
    }
@@ -656,12 +669,14 @@ void EXPERT::ML_TRADE() {
       set.SEL.Val = (float)BID;
       set.SEL.Stp = set.SEL.Val + back_stop;
       set.SEL.Prf = 0;
+      if (ML_TakeProfitATR > 0) set.SEL.Prf = (float)(set.SEL.Val - ATR * ML_TakeProfitATR);
 
       Print(Mgc, ":: MLP SELL"
             " signal_time=", TimeToString(MLP_SellSignalTime),
             " entry_time=", TimeToString(Time[0]),
             " score=", DoubleToString(score, 6),
             " exit_mode=", MLP_ExitModeName(),
+            " take_profit_atr=", DoubleToString(ML_TakeProfitATR, 2),
             " Val=", DoubleToString(set.SEL.Val, Digits));
    }
 }
@@ -681,6 +696,7 @@ void ML_DIAG_PRINT() {
    Print("  ExitMode=", MLP_ExitModeName(),
          "  HoldBars=", ML_HoldBars,
          "  TrailATR=", DoubleToString(ML_TrailATR, 2),
+         "  TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
          "  MaxPositions=", ML_MaxPositions,
          "  ScoreFilter=", ML_UseScoreFilter,
          "  Threshold=", DoubleToString(ML_ScoreThreshold, 6),
