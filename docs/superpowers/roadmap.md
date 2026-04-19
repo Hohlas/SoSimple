@@ -30,6 +30,10 @@
 
 **Выход:** таблица важности групп, список признаков-кандидатов для усиления и список бесполезных/опасных признаков.
 
+План: [2026-04-19-current-feature-importance-diagnostics.md](plans/2026-04-19-current-feature-importance-diagnostics.md)
+
+Первый отчёт: [2026-04-19-current-feature-importance-diagnostics.md](../reports/2026-04-19-current-feature-importance-diagnostics.md)
+
 ### 3. Feature export/design decision
 
 **Контекст:** часть полезных состояний может уже считаться в MQL4, но не попадать в данные.

@@ -1,0 +1,16 @@
+{
+  "target": "trail_24_pnl_atr_x8",
+  "train_rows": 12000,
+  "validation_rows": 6000,
+  "feature_count": 261,
+  "baseline_r2": 0.05882697104756385,
+  "baseline_mae": 0.2812132774288853,
+  "directional_accuracy": 0.839344262295082,
+  "seq_len": 20,
+  "max_train_rows": 12000,
+  "max_validation_rows": 6000,
+  "n_estimators": 120,
+  "seed": 42,
+  "train_path": "/home/hohla/git/SoSimple/DATA/Nero_train_labeled.csv",
+  "validation_path": "/home/hohla/git/SoSimple/DATA/Nero_validation_labeled.csv"
+}
