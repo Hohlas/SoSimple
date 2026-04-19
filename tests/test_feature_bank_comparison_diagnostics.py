@@ -48,16 +48,20 @@ def _frame(rows: int = 18, seq_len: int = 5) -> pd.DataFrame:
 def test_build_variant_features_adds_expected_banks():
     frame = _frame(seq_len=5)
 
-    baseline = build_variant_features(frame, variant='baseline', seq_len=5)
-    geometry = build_variant_features(frame, variant='baseline_geometry', seq_len=5)
-    path = build_variant_features(frame, variant='baseline_path', seq_len=5)
-    both = build_variant_features(frame, variant='baseline_geometry_path', seq_len=5)
+    baseline = build_variant_features(frame, variant='baseline_full', seq_len=5)
+    clean = build_variant_features(frame, variant='baseline_clean', seq_len=5)
+    full_path = build_variant_features(frame, variant='baseline_full_path', seq_len=5)
+    clean_path = build_variant_features(frame, variant='baseline_clean_path', seq_len=5)
+    clean_both = build_variant_features(frame, variant='baseline_clean_geometry_path', seq_len=5)
 
-    assert len(geometry.columns) > len(baseline.columns)
-    assert len(path.columns) > len(baseline.columns)
-    assert len(both.columns) > len(geometry.columns)
-    assert any(column.startswith('pic_geom_') for column in geometry.columns)
-    assert any(column.startswith('pic_path_') for column in path.columns)
+    assert len(clean.columns) < len(baseline.columns)
+    assert len(full_path.columns) > len(baseline.columns)
+    assert len(clean_path.columns) > len(clean.columns)
+    assert len(clean_both.columns) > len(clean_path.columns)
+    assert any(column.startswith('pic_geom_') for column in clean_both.columns)
+    assert any(column.startswith('pic_path_') for column in clean_path.columns)
+    assert not any(column.startswith('direction_') for column in clean.columns)
+    assert not any(column.startswith('up_') for column in clean.columns)
 
 
 def test_run_comparison_writes_outputs(tmp_path):
@@ -77,7 +81,7 @@ def test_run_comparison_writes_outputs(tmp_path):
         chunksize=10,
         n_estimators=5,
         seed=1,
-        variants=('baseline', 'baseline_geometry'),
+        variants=('baseline_full', 'baseline_clean'),
     )
 
     assert len(results) == 2

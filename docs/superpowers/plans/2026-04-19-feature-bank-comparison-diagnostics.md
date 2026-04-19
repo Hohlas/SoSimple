@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use `.codex/skills/using-superpowers/SKILL.md` before starting, then use the most specific available superpowers skill for execution. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Сравнить baseline, geometry-bank, path-reaction-bank и их сочетание на одной дешёвой диагностике до запуска нового training track.
+**Goal:** Сравнить baseline, clean-baseline, geometry-bank, path-reaction-bank и их сочетания на одной дешёвой диагностике до запуска нового training track.
 
 **Architecture:** Read-only. Не менять `lib_PIC`, `Nero.csv`, targets или MT4. Все варианты используют одну train/validation выборку, одну цель и одинаковую лёгкую модель.
 
@@ -41,10 +41,11 @@
 - Не менять `lib_PIC.mqh`.
 - Не менять формат данных.
 - Сравнивать только заранее заданные варианты:
-  - baseline;
-  - baseline + geometry;
-  - baseline + path;
-  - baseline + geometry + path.
+  - baseline_full;
+  - baseline_clean;
+  - baseline_full + path;
+  - baseline_clean + path;
+  - baseline_clean + geometry + path.
 - Результат считать диагностикой признаков, не торговым verdict.
 
 ---
@@ -52,6 +53,7 @@
 ## Task 1: Implement Comparison Runner
 
 - [x] Reuse existing baseline grouped features.
+- [x] Add clean baseline by removing weak/noisy raw groups.
 - [x] Reuse geometry feature-bank.
 - [x] Reuse path-reaction feature-bank.
 - [x] Train the same cheap model for each variant.

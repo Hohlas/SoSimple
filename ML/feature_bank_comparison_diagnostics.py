@@ -1,6 +1,6 @@
 # =============================================================================
 # Файл: feature_bank_comparison_diagnostics.py
-# Назначение: Bounded comparison baseline/geometry/path feature-bank variants.
+# Назначение: Bounded comparison full/clean/geometry/path feature-bank variants.
 # Обновлён: 2026-04-19
 # Входные данные:
 #   - DATA/Nero_train_labeled.csv
@@ -40,7 +40,15 @@ from ML.lib_pic_path_reaction_feature_bank import PATH_REACTION_FEATURE_PREFIX, 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'ML' / 'reports' / 'feature_bank_comparison'
 
-VARIANTS = ('baseline', 'baseline_geometry', 'baseline_path', 'baseline_geometry_path')
+BASELINE_CLEAN_DROP_GROUPS = ('direction', 'price_position', 'path_long', 'path_short')
+
+VARIANTS = (
+    'baseline_full',
+    'baseline_clean',
+    'baseline_full_path',
+    'baseline_clean_path',
+    'baseline_clean_geometry_path',
+)
 
 
 @dataclass(frozen=True)
@@ -64,13 +72,22 @@ def _validate_variant(variant: str) -> None:
         raise ValueError(f'unknown variant: {variant}')
 
 
+def _clean_baseline_columns(base: pd.DataFrame, groups: dict[str, list[str]]) -> pd.DataFrame:
+    drop_columns: set[str] = set()
+    for group in BASELINE_CLEAN_DROP_GROUPS:
+        drop_columns.update(groups.get(group, []))
+    keep_columns = [column for column in base.columns if column not in drop_columns]
+    return base[keep_columns].copy()
+
+
 def build_feature_parts(frame: pd.DataFrame, seq_len: int) -> dict[str, pd.DataFrame]:
     """Строит базовые, geometry и path признаки один раз для всех вариантов."""
-    base, _ = build_grouped_features(frame, seq_len=seq_len)
+    base, groups = build_grouped_features(frame, seq_len=seq_len)
     geometry = build_lib_pic_geometry_feature_bank(frame)
     path = build_lib_pic_path_reaction_feature_bank(frame)
     return {
-        'baseline': base,
+        'baseline_full': base,
+        'baseline_clean': _clean_baseline_columns(base, groups),
         'geometry': _prefixed_columns(geometry, GEOMETRY_FEATURE_PREFIX),
         'path': _prefixed_columns(path, PATH_REACTION_FEATURE_PREFIX),
     }
@@ -79,11 +96,12 @@ def build_feature_parts(frame: pd.DataFrame, seq_len: int) -> dict[str, pd.DataF
 def assemble_variant_features(parts: dict[str, pd.DataFrame], variant: str) -> pd.DataFrame:
     """Собирает один вариант из заранее построенных feature parts."""
     _validate_variant(variant)
-    frames = [parts['baseline']]
-    if variant in ('baseline_geometry', 'baseline_geometry_path'):
-        frames.append(parts['geometry'])
-    if variant in ('baseline_path', 'baseline_geometry_path'):
+    baseline_key = 'baseline_clean' if variant.startswith('baseline_clean') else 'baseline_full'
+    frames = [parts[baseline_key]]
+    if variant in ('baseline_full_path', 'baseline_clean_path', 'baseline_clean_geometry_path'):
         frames.append(parts['path'])
+    if variant == 'baseline_clean_geometry_path':
+        frames.append(parts['geometry'])
     return pd.concat(frames, axis=1).replace([np.inf, -np.inf], 0.0).fillna(0.0)
 
 
@@ -222,17 +240,17 @@ def write_report(path: Path, payload: dict, summary: pd.DataFrame) -> None:
         '',
         '## Interpretation',
         '',
-        '- `baseline` uses the existing grouped fractal summaries from `feature_importance_diagnostics`.',
-        '- `baseline_geometry` adds the geometry bank.',
-        '- `baseline_path` adds the path-reaction bank.',
-        '- `baseline_geometry_path` adds both banks.',
+        f'- `baseline_clean` removes raw groups: `{", ".join(BASELINE_CLEAN_DROP_GROUPS)}`.',
+        '- `baseline_full_path` adds the path-reaction bank to the full baseline.',
+        '- `baseline_clean_path` adds the path-reaction bank to the cleaned baseline.',
+        '- `baseline_clean_geometry_path` adds both banks to the cleaned baseline.',
         '- This is a feature diagnostic, not a trading verdict.',
     ]
     path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description='Compare feature bank variants on existing labeled CSV.')
+    parser = argparse.ArgumentParser(description='Compare clean/full feature-bank variants on existing labeled CSV.')
     parser.add_argument('--train', type=Path, default=DATA_DIR / 'Nero_train_labeled.csv')
     parser.add_argument('--validation', type=Path, default=DATA_DIR / 'Nero_validation_labeled.csv')
     parser.add_argument('--target', default='trail_24_pnl_atr_x8')

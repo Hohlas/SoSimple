@@ -58,6 +58,8 @@
 
 Отчёт: [2026-04-19-feature-bank-comparison-diagnostics.md](../reports/2026-04-19-feature-bank-comparison-diagnostics.md)
 
+Clean comparison: [2026-04-19-feature-bank-clean-comparison.md](../reports/2026-04-19-feature-bank-clean-comparison.md)
+
 ### 4. New training track with revised inputs
 
 **Контекст:** если диагностика признаков покажет полезные группы, их нужно проверить в новом обучении, а не только в отдельных статистиках.
