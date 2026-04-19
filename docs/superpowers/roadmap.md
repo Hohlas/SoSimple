@@ -50,6 +50,10 @@
 
 Отчёт: [2026-04-19-lib-pic-geometry-feature-bank.md](../reports/2026-04-19-lib-pic-geometry-feature-bank.md)
 
+Второй Python-only шаг: [2026-04-19-lib-pic-path-reaction-feature-bank.md](plans/2026-04-19-lib-pic-path-reaction-feature-bank.md)
+
+Отчёт: [2026-04-19-lib-pic-path-reaction-feature-bank.md](../reports/2026-04-19-lib-pic-path-reaction-feature-bank.md)
+
 ### 4. New training track with revised inputs
 
 **Контекст:** если диагностика признаков покажет полезные группы, их нужно проверить в новом обучении, а не только в отдельных статистиках.
