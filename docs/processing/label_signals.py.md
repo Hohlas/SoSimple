@@ -5,16 +5,16 @@
 
 ## Входные данные
 - DataFrame с отсортированными фракталами.
-- Формат строки фрактала: `T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr` (18 полей; обратная совместимость с 7+)
+- Формат строки фрактала: `T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr` (22 поля; обратная совместимость с 7+)
 
 ## Выходные данные
-- DataFrame с колонками `signal`, `predict`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`.
+- DataFrame с колонками `signal`, `predict`, `up_3`, `dn_3`, `up_6`, `dn_6`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`.
 
 ## Ключевые функции
 
 | Функция | Описание |
 |---------|----------|
-| `parse_fractal(str)` | Парсинг строки фрактала → dict (18 полей, fallback 0.0 для отсутствующих) |
+| `parse_fractal(str)` | Парсинг строки фрактала → dict (22 поля, fallback 0.0 для отсутствующих) |
 | `find_fractal_by_time(row, cols, t)` | Поиск фрактала по времени в строке |
 | `label_all(input, output, debug)` | Маркировка signal + predict (forward-scan до пробоя/вытеснения) |
 | `label_updn(df, debug)` | Извлечение up/dn таргетов: для fractal0 сканирует вперёд до вытеснения, берёт последние накопленные Up/Dn |

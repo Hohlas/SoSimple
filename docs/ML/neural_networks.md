@@ -49,7 +49,7 @@ ML/
 
 ## Входные данные
 - **Файл**: `DATA/Nero_train_labeled.csv`, `DATA/Nero_validation_labeled.csv`
-- **Формат**: CSV (`;`), 100 фракталов × 18 полей через `:`
+- **Формат**: CSV (`;`), 100 фракталов × 22 поля через `:`
 - **Источник**: `processing/label_main.py`
 
 ## Выходные данные

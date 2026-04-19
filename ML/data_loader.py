@@ -19,8 +19,8 @@
 #   from ML.data_loader import create_data_loaders
 # Примечания:
 #   - fractal_time (индекс 0) исключается из features, но используется для вычисления time-фич
-#   - N_RAW_FEATURES=18: поле 17 (fractal_atr) → log(ATR_ratio) = log(fractal_atr / Atr.Slow)
-#   - N_FRACTAL_FEATURES=20: 17 исходных + 3 time-фичи (hour_sin, hour_cos, time_pos); форма X: (n, 100, 20)
+#   - N_RAW_FEATURES=22: полный формат фрактала из Nero.csv
+#   - N_FRACTAL_FEATURES=20: 17 входных полей + 3 time-фичи (hour_sin, hour_cos, time_pos); форма X: (n, 100, 20)
 #   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
 #   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
@@ -77,7 +77,7 @@ FRACTAL_SEP = ':'
 N_FRACTALS = 100
 N_RAW_FEATURES = 22   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
 FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 22-полевом CSV (ранее было 17)
-N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
+N_FRACTAL_FEATURES = 20  # 17 входных полей + 3 time-фичи (hour_sin, hour_cos, time_pos)
 
 # Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
 FRACTAL_TIME_IDX = 0
@@ -324,7 +324,7 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Парсит колонки fractal0..fractal99 из DataFrame.
     Исключает fractal_time (индекс 0) из features.
-    Парсит 18 полей на фрактал; поле 17 (fractal_atr) заменяется ATR_ratio in-place.
+    Парсит 22 поля на фрактал; поле 21 (fractal_atr) заменяется ATR_ratio in-place.
 
     Аргументы:
         df: DataFrame с колонками fractal0..fractal99, ATR, signal
@@ -341,7 +341,7 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 20 features: 17 из CSV (fields 1-17) + 3 time-фичи (вычисляются из fractal_time)
+    # 20 features: CSV fields 1-16 plus field 21 (fractal_atr) + 3 time-фичи.
     n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)

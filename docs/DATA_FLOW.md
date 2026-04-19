@@ -8,7 +8,7 @@
 ```
 [Торговый эксперт] $o$imple.mq4 → NERO_CSV_CREATE() (lib_PIC.mqh)
           ↓
-MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
+MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозитории: ASCII/CRLF)
           ↓
     [Сортировка фракталов]
           ↓
@@ -79,6 +79,7 @@ MT/MQL4/Files/Nero.csv (raw, UTF-16LE)
 - **Формат**:
   - Columns: `time`, `signal`, `predict`, `ATR`, `fractal0`…`fractal99`
   - Separator: `;`
+  - Encoding: текущий `MT/MQL4/Files/Nero.csv` в проекте определяется как ASCII text с CRLF. Старые выгрузки могут отличаться, поэтому при чтении CSV нужно проверять кодировку по фактическому файлу, а не считать UTF-16LE обязательным.
   - **Fractal format (22 поля)**:
     ```
     T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr

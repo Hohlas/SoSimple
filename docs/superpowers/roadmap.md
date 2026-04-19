@@ -1,91 +1,96 @@
-# Post-Bridge Roadmap
+# SoSimple Research Roadmap
 
 ## Контекст
 
-Точка остановки после `Archetype × Filter Bridge`:
-- `fav_3_vs_12 <= 0.653` — текущий лучший фильтр по связи с winning archetype
-- `ratio_3_vs_12 > 4.751` — полезен только как benchmark механики pullback
-- следующий этап должен идти уже по новой дисциплине: подбор на `validation`, финальная проверка на `test`
-- composition check `entry_path_v1_quantile × fav_3_vs_12` завершён 2026-04-13 с verdict `CLOSED — gate fail`: после честной пересборки источника composition дал `47` test trades vs `48` у quantile, но получил negative year slice в 2023 и therefore не проходит gate
-- quantile forward validation scaffold завершён 2026-04-13: benchmark готов, но verdict пока `watch / no_forward_data`, потому что в репозитории нет strictly-forward prediction CSV после production decision
+Проект прошёл несколько веток Track A: quantile/entry-path, take-skip trailing-stop, execution policy в MT4 и проверку разных режимов выхода. Лучший текущий практический результат подтверждён в MT4 через frequency-сигналы и trailing-stop execution, но это всё ещё одна система, построенная на текущем представлении фракталов.
+
+Следующий главный вопрос: можно ли получить новые независимые торговые системы за счёт лучшего использования исходной логики `lib_PIC.mqh` и входных данных, а не за счёт очередной подгонки фильтров поверх уже найденного сигнала.
 
 Подробный текущий handoff: [CONTEXT_HANDOFF.md](../CONTEXT_HANDOFF.md)
 
-## Главный порядок выполнения
+---
 
-1. **Validation-first protocol**
-   [docs/superpowers/plans/2026-04-07-validation-first-research.md](plans/2026-04-07-validation-first-research.md)
-   Сначала фиксируем новую дисциплину проверки, переносим поиск правил на `validation` и повторно ставим на рельсы текущий bridge baseline.
+## Главный порядок работ
 
-2. **ML exit and position management**
-   [docs/superpowers/plans/2026-04-07-ml-exit-and-position-management.md](plans/2026-04-07-ml-exit-and-position-management.md)
-   После этого усиливаем текущий `regression_updn` трек без переобучения: выходим умнее, а не только входим.
+### 1. `lib_PIC` feature-source audit
 
-3. **Triple Barrier hardening**
-   [docs/superpowers/plans/2026-04-07-triple-barrier-hardening.md](plans/2026-04-07-triple-barrier-hardening.md)
-   Доводим уже начатый parallel-трек до честного финального вердикта.
+**Контекст:** `lib_PIC.mqh` считает больше рыночного состояния, чем сейчас экспортируется в `Nero.csv` и используется Python-моделью.
 
-4. **Outcome-aligned retraining**
-   [docs/superpowers/plans/2026-04-07-outcome-aligned-retraining.md](plans/2026-04-07-outcome-aligned-retraining.md)
-   Только после этого запускаем более широкий новый трек обучения под торговый исход.
+**Задача:** построить карту `lib_PIC` -> `Nero.csv` -> Python features -> ML model; отделить проверенные факты от гипотез.
 
-## Как это связано с текущим handoff
+**Выход:** отчёт с картой полей, списком потерянных признаков и рисками утечки будущего.
 
-Этот roadmap не отменяет `CONTEXT_HANDOFF.md`, а разворачивает его решение в исполнимую последовательность:
+План: [2026-04-19-lib-pic-feature-source-audit.md](plans/2026-04-19-lib-pic-feature-source-audit.md)
 
-- пункт handoff про `fav_3_vs_12 + market` становится стартовым baseline внутри плана `validation-first`
-- пункт handoff про улучшение фильтра через replicated spread features тоже входит в первый план
-- пункт handoff про `ratio_3_vs_12 + pullback` сохраняется только как benchmark, не как основной путь
+### 2. Current-feature importance diagnostics
 
-## Как это связано со старым Triple Barrier планом
+**Контекст:** прежде чем менять `lib_PIC`, нужно понять, какие уже экспортируемые признаки реально влияют на результат.
 
-Исходный план:
-[docs/superpowers/plans/2026-03-22-triple-barrier.md](plans/2026-03-22-triple-barrier.md)
+**Задача:** проверить важность групп признаков: геометрия уровня, сила, пробой, импульс, время, ATR, Up/Dn, сводки по окнам.
 
-Статус:
-- базовая реализация из плана 2026-03-22 уже сделана
-- текущая задача — не повторить запуск сначала, а усилить и проверить трек
-- для продолжения использовать новый план hardening, а старый документ держать как исходный implementation record
+**Выход:** таблица важности групп, список признаков-кандидатов для усиления и список бесполезных/опасных признаков.
+
+### 3. Feature export/design decision
+
+**Контекст:** часть полезных состояний может уже считаться в MQL4, но не попадать в данные.
+
+**Задача:** выбрать один из трёх путей для каждого кандидата:
+
+- построить признак на Python-стороне из уже существующего CSV;
+- расширить `Nero.csv` новыми полями;
+- изменить сам алгоритм `lib_PIC`.
+
+**Выход:** точная спецификация нового набора входных данных без изменения торговой логики “наугад”.
+
+### 4. New training track with revised inputs
+
+**Контекст:** если диагностика признаков покажет полезные группы, их нужно проверить в новом обучении, а не только в отдельных статистиках.
+
+**Задача:** обучить новый трек с улучшенными входами и заранее зафиксированной целевой постановкой.
+
+**Выход:** validation-first benchmark, frozen test check, MT4-ready signal export only if validation/test не конфликтуют.
+
+### 5. Cross-instrument robustness check
+
+**Контекст:** ждать годы forward-истории непрактично. Более быстрый способ проверить робастность — похожие инструменты.
+
+**Задача:** прогнать текущую систему и будущие кандидаты на других схожих инструментах при той же логике данных и исполнения.
+
+**Выход:** таблица устойчивости по инструментам: сделки, PF, просадка, концентрация прибыли, провалы по периодам.
+
+### 6. System correlation and portfolio check
+
+**Контекст:** цель проекта — не один красивый бэктест, а набор независимых или слабо связанных систем.
+
+**Задача:** сравнить сделки текущих систем: пересечение по времени, совпадение направления, корреляция дневной/недельной прибыли, общие провалы.
+
+**Выход:** матрица совместимости систем и решение, какие системы можно объединять.
+
+### 7. Risk filters only after system discovery
+
+**Контекст:** фильтры поверх уже найденного сигнала часто сокращают сделки и повышают риск подгонки.
+
+**Задача:** применять риск-фильтры только после того, как найден самостоятельный источник прибыли.
+
+**Выход:** отдельный bounded benchmark для фильтра, где заранее ограничены число правил и критерии успеха.
+
+---
 
 ## Где держать что
 
-- `CONTEXT_HANDOFF.md` — текущая точка остановки, ближайший следующий шаг, риски
-- `docs/superpowers/roadmap.md` — общий порядок работ между несколькими планами
-- `docs/superpowers/plans/*.md` — детальные исполнимые планы по отдельным направлениям
-- `docs/DATA_FLOW.md` — не место для текущего roadmap; этот документ должен оставаться стабильной картой пайплайна, а не рабочим списком исследований
+- `CONTEXT_HANDOFF.md` — текущая точка остановки, ближайший следующий шаг, риски.
+- `docs/superpowers/roadmap.md` — общий порядок работ между несколькими планами.
+- `docs/superpowers/plans/*.md` — детальные исполнимые планы по отдельным направлениям.
+- `docs/reports/*.md` — канонические отчёты завершённых этапов.
+- `docs/DATA_FLOW.md` — стабильная карта пайплайна, не рабочий список исследований.
 
-## Composition Status
+---
 
-- `entry_path_v1_quantile × fav_3_vs_12`:
-  closed
-  verdict report: [2026-04-13-quantile-fav-composition.md](../reports/2026-04-13-quantile-fav-composition.md)
+## Закрытые или superseded направления
 
-## Standalone Status
+Эти направления не удалены из истории, но больше не являются активным roadmap:
 
-- `fav_3_vs_12` as standalone system:
-  closed
-  verdict report: [2026-04-13-fav-3-vs-12-standalone.md](../reports/2026-04-13-fav-3-vs-12-standalone.md)
-  reason: no stable threshold found; best validation PF stayed at `0.1379`, so the feature does not work as an independent second system
-
-## Quantile Forward Status
-
-- `entry_path_v1_quantile` forward validation:
-  scaffold ready
-  verdict report: [2026-04-13-quantile-forward-validation.md](../reports/2026-04-13-quantile-forward-validation.md)
-  current verdict: `watch / no_forward_data`
-  next action: collect or generate a strictly newer forward prediction CSV, then run `ML.benchmark_quantile_forward_validation`
-
-## PF Uplift Beyond ML Layer
-
-Discovery: [2026-04-13-pf-uplift-discovery.md](../reports/2026-04-13-pf-uplift-discovery.md)
-Status: **SHORTLISTED (3)** — skeleton plans written, awaiting `/writing-plans` pass each
-
-| Rank | Plan | pf_delta | N_drop | Status |
-|------|------|:--------:|:------:|--------|
-| 1 | [NY session filter](plans/2026-04-13-ny-session-filter.md) | +12.097 | 29% | Skeleton — TBD |
-| 2 | [Early timeout bar=12](plans/2026-04-13-early-timeout-bar12.md) | +5.552 | 0% | Skeleton — TBD |
-| 3 | [pred_adv12 ≤ Q75 cap](plans/2026-04-13-pred-adv-cap.md) | +4.567 | 23% | Skeleton — TBD |
-
-Candidate #4 (not shortlisted due to limit): vol_q4 exclusion (+2.42 PF, N_drop=12.5%) — first candidate for composition with any of the 3.
-
-Recommended execution order: NY session filter → Early timeout → pred_adv cap. Each requires `/writing-plans` pass before implementation.
+- `entry_path_v1_quantile × fav_3_vs_12` composition: закрыто, gate fail.
+- `fav_3_vs_12` standalone: закрыто, validation PF слишком слабый.
+- `PF uplift beyond ML layer`: использовано как источник идей, но текущий фокус смещён на входные данные и независимые системы.
+- старые validation-first / ML-exit / triple-barrier hardening планы: выполнены или superseded более поздними отчётами и MT4-проверками.
