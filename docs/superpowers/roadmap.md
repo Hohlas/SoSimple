@@ -54,6 +54,10 @@
 
 Отчёт: [2026-04-19-lib-pic-path-reaction-feature-bank.md](../reports/2026-04-19-lib-pic-path-reaction-feature-bank.md)
 
+Сравнение feature-bank вариантов: [2026-04-19-feature-bank-comparison-diagnostics.md](plans/2026-04-19-feature-bank-comparison-diagnostics.md)
+
+Отчёт: [2026-04-19-feature-bank-comparison-diagnostics.md](../reports/2026-04-19-feature-bank-comparison-diagnostics.md)
+
 ### 4. New training track with revised inputs
 
 **Контекст:** если диагностика признаков покажет полезные группы, их нужно проверить в новом обучении, а не только в отдельных статистиках.

@@ -1,0 +1,48 @@
+{
+  "target": "trail_24_pnl_atr_x8",
+  "seq_len": 20,
+  "max_train_rows": 12000,
+  "max_validation_rows": 6000,
+  "n_estimators": 80,
+  "seed": 42,
+  "train_path": "/home/hohla/git/SoSimple/DATA/Nero_train_labeled.csv",
+  "validation_path": "/home/hohla/git/SoSimple/DATA/Nero_validation_labeled.csv",
+  "results": [
+    {
+      "variant": "baseline_path",
+      "train_rows": 12000,
+      "validation_rows": 6000,
+      "feature_count": 566,
+      "validation_r2": 0.07435871461016019,
+      "validation_mae": 0.2676211697019378,
+      "directional_accuracy": 0.839344262295082
+    },
+    {
+      "variant": "baseline_geometry_path",
+      "train_rows": 12000,
+      "validation_rows": 6000,
+      "feature_count": 711,
+      "validation_r2": 0.07282914891715675,
+      "validation_mae": 0.26134010357865034,
+      "directional_accuracy": 0.8327868852459016
+    },
+    {
+      "variant": "baseline_geometry",
+      "train_rows": 12000,
+      "validation_rows": 6000,
+      "feature_count": 406,
+      "validation_r2": 0.06931631693532381,
+      "validation_mae": 0.26688352155977263,
+      "directional_accuracy": 0.8262295081967214
+    },
+    {
+      "variant": "baseline",
+      "train_rows": 12000,
+      "validation_rows": 6000,
+      "feature_count": 261,
+      "validation_r2": 0.06076319469289504,
+      "validation_mae": 0.280380680271397,
+      "directional_accuracy": 0.8360655737704918
+    }
+  ]
+}
