@@ -72,6 +72,7 @@ extern double ML_Trl_Start_ATR = 1.0;  // ML_Trl_Start_ATR: Активация M
 extern double ML_Trl_Step_ATR  = 1.5;  // ML_Trl_Step_ATR: Дистанция ML-трала в ATR (от 0.3 до 1.5)
 extern int    ML_ExitMode      = 0;    // ML_ExitMode: 0=timeout parity-check, 1=trailing-stop по X*ATR
 extern double ML_TrailATR      = 8.0;  // ML_TrailATR: X в трейлинг-стопе; одновременно стартовый стоп и trailing-gap
+extern int    ML_MaxPositions  = 1;    // ML_MaxPositions: 1=старый режим, >1=несколько одновременных ML-позиций
 extern int    ML_HoldBars      = 12;   // ML_HoldBars: сколько баров держать сделку в parity-check
 extern bool   ML_AllowReversal = false;// ML_AllowReversal: закрывать по обратному сигналу из CSV
 extern bool   ML_UseScoreFilter = true;// ML_UseScoreFilter: применять порог по pred_ret_24_dir_atr, если колонка есть

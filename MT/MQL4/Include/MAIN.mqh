@@ -118,6 +118,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
 void EXPERT::MAIN(){
    if (!EXPERT_SET(ExpNum)) return; // выбор параметров эксперта из строки Exp массива CSV, сформированного из файла #.csv
    bool ml_direct_mode = (iSignal == 3); // только после EXPERT_SET(): iSignal мог быть перезаписан из строки эксперта
+   bool ml_multi_position_mode = (ml_direct_mode && ML_MaxPositions > 1);
    ORDER_CHECK();  // подробности открытых и отложенных поз  Print("SELLSTOP=",SELLSTOP," BUYSTOP=",BUYSTOP);
    if (!ml_direct_mode) TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
    if (!COUNT()) return;
@@ -130,8 +131,10 @@ void EXPERT::MAIN(){
       OUTPUT();
       TRAILING_STOP();
    }
-   MODIFY();
-   if (set.BUY.Val || set.SEL.Val) ORDERS_SET();
+   if (!ml_multi_position_mode) {
+      MODIFY();
+      if (set.BUY.Val || set.SEL.Val) ORDERS_SET();
+   }
    AFTER(ExpNum); // сохранение на каждом баре переменных HI,LO,DM,DayBar... и значений индикаторов Real/Test
    }
 #endif // -------------------------------------------------------------------------------------------------------------------------------------------------------     

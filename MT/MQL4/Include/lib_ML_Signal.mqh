@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//| lib_ML_Signal.mqh                                 v4.0           |
+//| lib_ML_Signal.mqh                                 v4.1           |
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
@@ -11,7 +11,7 @@
 //|   - time;signal;...;pred_ret_24_dir_atr;...                      |
 //| Логика:                                                          |
 //|   - сигнал на баре t -> вход по рынку на следующем баре          |
-//|   - одна открытая позиция                                        |
+//|   - одна или несколько открытых позиций, если ML_MaxPositions > 1|
 //|   - режим 0: закрытие по удержанию либо по обратному сигналу     |
 //|   - режим 1: отдельный bar-based trailing-stop по X*ATR          |
 //+------------------------------------------------------------------+
@@ -19,7 +19,7 @@
 
 #define MLP_SIGNALS_FILE "ml_signals.csv"
 #define MLP_MAX_SIGNALS  200000
-#define MLP_Ver          4.0
+#define MLP_Ver          4.1
 #define MLP_EXIT_TIMEOUT 0
 #define MLP_EXIT_TRAIL   1
 
@@ -66,6 +66,194 @@ void MLP_ResetSellState() {
 bool MLP_PassScore(int idx) {
    if (!ML_UseScoreFilter || !MLP_HasScoreColumn) return true;
    return MLP_Scores[idx] >= ML_ScoreThreshold;
+}
+
+bool MLP_IsOwnMarketOrder(int magic, string sym) {
+   if (OrderMagicNumber() != magic) return false;
+   if (OrderSymbol() != sym) return false;
+   int typ = OrderType();
+   return (typ == OP_BUY || typ == OP_SELL);
+}
+
+int MLP_CountOwnMarketOrders(int magic, string sym) {
+   int count = 0;
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (MLP_IsOwnMarketOrder(magic, sym)) count++;
+   }
+   return count;
+}
+
+double MLP_BestBuySince(datetime open_time, double entry_price) {
+   double best = entry_price;
+   int start_shift = iBarShift(Symbol(), Period(), open_time, false);
+   if (start_shift < bar) start_shift = bar;
+   if (start_shift >= Bars) start_shift = Bars - 1;
+
+   for (int s = start_shift; s >= bar; s--) {
+      if (High[s] > best) best = High[s];
+   }
+   return best;
+}
+
+double MLP_BestSellSince(datetime open_time, double entry_price) {
+   double best = entry_price;
+   int start_shift = iBarShift(Symbol(), Period(), open_time, false);
+   if (start_shift < bar) start_shift = bar;
+   if (start_shift >= Bars) start_shift = Bars - 1;
+
+   for (int s = start_shift; s >= bar; s--) {
+      if (Low[s] < best) best = Low[s];
+   }
+   return best;
+}
+
+bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string reason, double best_price, double trail_price) {
+   int ticket = OrderTicket();
+   int typ = OrderType();
+   double lots = OrderLots();
+   double entry_price = OrderOpenPrice();
+   datetime entry_time = OrderOpenTime();
+   bool ok = false;
+
+   WAITING(magic, "Terminal", 20);
+   for (int repeat = 3; repeat > 0 && !ok; repeat--) {
+      RefreshRates();
+      double close_price = (typ == OP_BUY) ? Bid : Ask;
+      ok = OrderClose(ticket, lots, close_price, 3, clrRed);
+      if (ok) break;
+      if (!ERROR_CHECK("MLP_Close Ticket=" + S0(ticket), exp_num)) break;
+   }
+   FREE(magic, "Terminal");
+
+   RefreshRates();
+   double exit_price = (typ == OP_BUY) ? Bid : Ask;
+   double pnl_atr = 0.0;
+   if (atr_value > 0) {
+      if (typ == OP_BUY) pnl_atr = (exit_price - entry_price) / atr_value;
+      else pnl_atr = (entry_price - exit_price) / atr_value;
+   }
+
+   if (ok) {
+      if (reason == "TrailingStop") MLP_cnt_trailing++;
+      else if (reason == "Timeout") MLP_cnt_timeout++;
+      else if (reason == "ReverseSignal") MLP_cnt_reverse++;
+      Print(magic, ":: MLP CLOSE ", (typ == OP_BUY ? "BUY" : "SELL"),
+            " reason=", reason,
+            " ticket=", ticket,
+            " entry_time=", TimeToString(entry_time),
+            " exit_time=", TimeToString(Time[0]),
+            " entry=", DoubleToString(entry_price, Digits),
+            " best=", DoubleToString(best_price, Digits),
+            " trail=", DoubleToString(trail_price, Digits),
+            " exit=", DoubleToString(exit_price, Digits),
+            " atr=", DoubleToString(atr_value, Digits),
+            " trail_atr=", DoubleToString(ML_TrailATR, 2),
+            " pnl_atr=", DoubleToString(pnl_atr, 4));
+   }
+   return ok;
+}
+
+void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_value) {
+   if (atr_value <= 0) return;
+
+   for (int i = OrdersTotal() - 1; i >= 0; i--) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (!MLP_IsOwnMarketOrder(magic, sym)) continue;
+
+      int typ = OrderType();
+      double entry_price = OrderOpenPrice();
+      double best_price = entry_price;
+      double trail_price = entry_price;
+      bool should_close = false;
+      string close_reason = "";
+
+      if (ML_ExitMode == MLP_EXIT_TIMEOUT && ML_HoldBars > 0 && SHIFT(OrderOpenTime()) >= ML_HoldBars) {
+         should_close = true;
+         close_reason = "Timeout";
+      }
+      else if (ML_ExitMode == MLP_EXIT_TRAIL && ML_TrailATR > 0 && typ == OP_BUY) {
+         best_price = MLP_BestBuySince(OrderOpenTime(), entry_price);
+         trail_price = best_price - atr_value * ML_TrailATR;
+         should_close = (Bid <= trail_price);
+         if (should_close) close_reason = "TrailingStop";
+      }
+      else if (ML_ExitMode == MLP_EXIT_TRAIL && ML_TrailATR > 0 && typ == OP_SELL) {
+         best_price = MLP_BestSellSince(OrderOpenTime(), entry_price);
+         trail_price = best_price + atr_value * ML_TrailATR;
+         should_close = (Ask >= trail_price);
+         if (should_close) close_reason = "TrailingStop";
+      }
+
+      if (should_close) {
+         MLP_CloseSelectedOrder(magic, exp_num, atr_value, close_reason, best_price, trail_price);
+      }
+   }
+}
+
+bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double score, datetime signal_time, double atr_value) {
+   if (atr_value <= 0) return false;
+   if (sig != 1 && sig != -1) return false;
+
+   RefreshRates();
+   double back_stop = MathMax(atr_value * ML_BackStopATR, StopLevel * 2.0);
+   double min_price = MarketInfo(sym, MODE_POINT);
+   double lot_to_send = Lot;
+   if (Risk == 0 || IsTesting()) lot_to_send = 0.1;
+   else lot_to_send = MM((float)back_stop, CurExp);
+   lot_to_send = NormalizeDouble(lot_to_send, LotDigits);
+   if (lot_to_send <= 0) return false;
+
+   int order_type = (sig == 1) ? OP_BUY : OP_SELL;
+   double entry_price = (sig == 1) ? Ask : Bid;
+   double stop_price = (sig == 1)
+      ? MathMax(min_price, entry_price - back_stop)
+      : entry_price + back_stop;
+
+   if (Real && Risk > 0) {
+      double trade_risk = CHECK_RISK(lot_to_send, back_stop, sym);
+      if (trade_risk > MaxRisk) {
+         REPORT(exp_num, "MLP risk too big: " + S2(trade_risk) + "% Lot=" + S2(lot_to_send));
+         return false;
+      }
+   }
+
+   int ticket = -1;
+   bool ok = false;
+   WAITING(magic, "Terminal", 20);
+   for (int repeat = 3; repeat > 0 && !ok; repeat--) {
+      RefreshRates();
+      entry_price = (sig == 1) ? Ask : Bid;
+      stop_price = (sig == 1)
+         ? MathMax(min_price, entry_price - back_stop)
+         : entry_price + back_stop;
+      ticket = OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), 3,
+                         N5(stop_price, sym), 0, S0(magic) + "-MLP", magic, 0,
+                         (sig == 1 ? clrGreen : clrRed));
+      ok = (ticket > 0);
+      if (ok) break;
+      if (!ERROR_CHECK("MLP_OpenMarketOrder", exp_num)) break;
+   }
+   FREE(magic, "Terminal");
+
+   if (ok) {
+      MLP_cnt_opened++;
+      if (sig == 1) MLP_cnt_buy++;
+      else MLP_cnt_sell++;
+      Print(magic, ":: MLP ", (sig == 1 ? "BUY" : "SELL"),
+            " mode=multi_position",
+            " ticket=", ticket,
+            " signal_time=", TimeToString(signal_time),
+            " entry_time=", TimeToString(Time[0]),
+            " score=", DoubleToString(score, 6),
+            " exit_mode=", MLP_ExitModeName(),
+            " TrailATR=", DoubleToString(ML_TrailATR, 2),
+            " MaxPositions=", ML_MaxPositions,
+            " Val=", DoubleToString(entry_price, Digits),
+            " Stp=", DoubleToString(stop_price, Digits),
+            " Lot=", DoubleToString(lot_to_send, 2));
+   }
+   return ok;
 }
 
 int MLP_FindSignal(datetime barTime) {
@@ -163,6 +351,7 @@ bool MLP_INIT() {
          " Threshold=", DoubleToString(ML_ScoreThreshold, 6),
          " ExitMode=", MLP_ExitModeName(),
          " TrailATR=", DoubleToString(ML_TrailATR, 2),
+         " MaxPositions=", ML_MaxPositions,
          " HoldBars=", ML_HoldBars,
          " Reversal=", ML_AllowReversal);
    if (ML_UseScoreFilter && !MLP_HasScoreColumn) {
@@ -199,6 +388,37 @@ void EXPERT::ML_TRADE() {
       score = MLP_Scores[idx];
       score_ok = MLP_PassScore(idx);
       if (sig != 0) MLP_cnt_total++;
+   }
+
+   if (ML_MaxPositions > 1) {
+      MLP_ManageMultiPositions(Mgc, ExpNum, Sym, ATR);
+
+      if (idx < 0 || sig == 0) return;
+
+      if (!score_ok) {
+         MLP_cnt_filtered++;
+         Print(Mgc, ":: MLP SKIP reason=ScoreFilter"
+               " sig=", sig,
+               " signal_time=", TimeToString(MLP_Times[idx]),
+               " score=", DoubleToString(score, 6),
+               " threshold=", DoubleToString(ML_ScoreThreshold, 6));
+         return;
+      }
+
+      int open_positions = MLP_CountOwnMarketOrders(Mgc, Sym);
+      if (open_positions >= ML_MaxPositions) {
+         MLP_cnt_posblock++;
+         Print(Mgc, ":: MLP SKIP reason=MaxPositions"
+               " sig=", sig,
+               " signal_time=", TimeToString(MLP_Times[idx]),
+               " score=", DoubleToString(score, 6),
+               " open_positions=", open_positions,
+               " max_positions=", ML_MaxPositions);
+         return;
+      }
+
+      MLP_OpenMarketOrder(Mgc, ExpNum, Sym, sig, score, MLP_Times[idx], ATR);
+      return;
    }
 
    if (BUY.Typ == MARKET) {
@@ -461,6 +681,7 @@ void ML_DIAG_PRINT() {
    Print("  ExitMode=", MLP_ExitModeName(),
          "  HoldBars=", ML_HoldBars,
          "  TrailATR=", DoubleToString(ML_TrailATR, 2),
+         "  MaxPositions=", ML_MaxPositions,
          "  ScoreFilter=", ML_UseScoreFilter,
          "  Threshold=", DoubleToString(ML_ScoreThreshold, 6),
          "  Reversal=", ML_AllowReversal,
