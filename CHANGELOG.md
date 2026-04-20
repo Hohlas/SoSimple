@@ -2,6 +2,26 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-20] - take_skip_v2 lib_PIC feature training
+
+### Добавлено
+- `ML/run_take_skip_lib_pic_feature_matrix.py`
+- `ML/models/take_skip_dual_stream_transformer.py`
+- `tests/test_take_skip_lib_pic_feature_matrix.py`
+
+### Результаты
+- Проверен training track, где модель получает фрактальную последовательность и `lib_PIC` feature profile внутри одной dual-stream модели.
+- Полная сетка: `baseline_clean`, `baseline_clean_path`, `baseline_clean_geometry_path` × `seq_len 20/50/100`.
+- Все 9 конфигураций получили `verdict=reject`.
+- В validation grid найдено `79` строк с `PF > 1`, но `0` строк с `PF > 1` и `trades_per_year >= 6`.
+- Лучший practical-area результат при `trades_per_year >= 6`: `baseline_clean_seq20`, `take_12_x2`, `top_k=5%`, validation `PF=0.9476`.
+
+### Вывод
+- Простое добавление `lib_PIC`-признаков внутрь этой модели не создало рабочий selection layer.
+- `lib_PIC`-признаки пока выглядят полезнее как внешний фильтр, чем как добавка во вход dual-stream модели.
+- Следующий шаг — controlled ablation: добавить сильные `lib_PIC`-признаки к исходному baseline-контракту и сравнить с воспроизведённым старым baseline.
+- Подробности: [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md)
+
 ## [2026-04-20] - take_skip_v2 lib_PIC external selection benchmark
 
 ### Добавлено

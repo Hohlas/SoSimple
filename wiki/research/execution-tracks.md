@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-04-20
-sources: 22
+sources: 23
 status: active
 ---
 
@@ -473,6 +473,43 @@ Python `frequency_trail_scan`:
 Практическое следствие: не стоит дальше усложнять внешний selection-layer. Более рационально использовать этот результат как аргумент для нового training track, где `lib_PIC`-производные признаки будут доступны самой модели при обучении.
 
 Источник: [2026-04-20-take-skip-lib-pic-selection.md](../../docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
+
+### lib_PIC Feature Training (04-20): добавление признаков внутрь модели не прошло gate
+
+Следующий этап проверил более сильную гипотезу: если внешний `lib_PIC`-фильтр даёт устойчивостный сигнал, сможет ли модель использовать эти признаки напрямую во время обучения.
+
+Добавлен отдельный dual-stream training contour:
+
+- sequence branch читает `fractal0..fractal99`;
+- engineered branch читает профиль `lib_PIC`;
+- проверены `baseline_clean`, `baseline_clean_path`, `baseline_clean_geometry_path`;
+- проверены `seq_len = 20 / 50 / 100`;
+- runner автоматически ограничивает цели теми `take_skip_v2` target columns, которые есть в текущих CSV.
+
+Результат полной серверной сетки:
+
+| Metric | Value |
+|---|---:|
+| Configs | 9 |
+| Runtime | 3123.32 sec |
+| Verdicts | 9 reject |
+| validation grid rows | 1377 |
+| rows with `PF > 1` | 79 |
+| rows with `PF > 1` and `trades_per_year >= 6` | 0 |
+
+Лучшие редкие точки были только на 3-5 сделках за validation (`0.75-1.25` trades/year). При практической частоте `>=6` trades/year лучший validation PF был ниже единицы:
+
+| Run | Target | Selector | Trades/year | Validation PF |
+|---|---|---|---:|---:|
+| `baseline_clean_seq20` | `take_12_x2` | `top_k=5%` | 6.0 | 0.9476 |
+| `baseline_clean_seq100` | `take_12_x2` | `top_k=5%` | 6.0 | 0.9020 |
+| `baseline_clean_seq20` | `take_24_x2` | `top_k=5%` | 6.0 | 0.8416 |
+
+**Вывод:** простое добавление `lib_PIC`-профилей внутрь dual-stream модели не создало рабочий selection layer. `lib_PIC` пока выглядит полезнее как внешний фильтр, чем как прямое расширение входа модели.
+
+Важное ограничение: это не доказывает, что новые признаки вредят старой прибыльной модели. Контур обучения изменился: новый runner, доступная старая target-сетка `x2/x4/x8`, очищенные профили, BCE-обучение и post-hoc PF benchmark. Следующий честный шаг — controlled ablation: воспроизвести исходный baseline и добавить к нему сильные `lib_PIC` path-признаки.
+
+Источник: [2026-04-20-take-skip-lib-pic-feature-training.md](../../docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md)
 
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 

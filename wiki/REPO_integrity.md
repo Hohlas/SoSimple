@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 10:48 UTC · git `2eb9927`
+> Auto-generated 2026-04-20 11:31 UTC · git `97fbf42`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 831 files  ·  **Commit**: `2eb9927`  ·  **Generated**: 2026-04-20 10:48 UTC
+**Tracked**: 851 files  ·  **Commit**: `97fbf42`  ·  **Generated**: 2026-04-20 11:31 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-19 | 10KB | `58a59f0e` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 119KB | `295d7ebf` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 120KB | `b681609b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 20KB | `0a57348c` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 22KB | `864f2683` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-20 | 24KB | `e98b6ecf` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
@@ -162,6 +162,7 @@
 | [docs/reports/2026-04-19-lib-pic-feature-source-audit.md](docs/reports/2026-04-19-lib-pic-feature-source-audit.md) |  | 2026-04-20 | 8KB | `0b903977` |
 | [docs/reports/2026-04-19-lib-pic-geometry-feature-bank.md](docs/reports/2026-04-19-lib-pic-geometry-feature-bank.md) |  | 2026-04-20 | 4KB | `c80ac4eb` |
 | [docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `64b8dea4` |
+| [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md) |  | 2026-04-20 | 9KB | `81c863f2` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
@@ -306,6 +307,25 @@
 | [ML/reports/quantile_forward_validation/summary.json](ML/reports/quantile_forward_validation/summary.json) |  |  | 2026-04-13 | 440B | `f208a93b` |
 | [ML/reports/quantile_relaxed_composition/selected_baseline.json](ML/reports/quantile_relaxed_composition/selected_baseline.json) |  |  | 2026-04-15 | 118B | `3c6efae0` |
 | [ML/reports/reproducibility_report_12H.md](ML/reports/reproducibility_report_12H.md) |  |  | 2026-03-11 | 1KB | `c9af48ba` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq100/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq100/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq100/summary.json) |  |  | 2026-04-20 | 13KB | `18845574` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq20/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq20/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq20/summary.json) |  |  | 2026-04-20 | 13KB | `45f40666` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq50/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_geometry_path_seq50/summary.json) |  |  | 2026-04-20 | 13KB | `5ace345e` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq100/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq100/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq100/summary.json) |  |  | 2026-04-20 | 13KB | `67c7c6b4` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq20/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq20/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq20/summary.json) |  |  | 2026-04-20 | 13KB | `9d6d29f3` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq50/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_path_seq50/summary.json) |  |  | 2026-04-20 | 13KB | `066a4de4` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq100/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq100/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq100/summary.json) |  |  | 2026-04-20 | 13KB | `8033d24e` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq20/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq20/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq20/summary.json) |  |  | 2026-04-20 | 13KB | `66813a54` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/benchmark/final_verdict.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 77B | `187c03e9` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/summary.json) |  |  | 2026-04-20 | 13KB | `9e9f484e` |
+| [ML/reports/take_skip_lib_pic_feature_matrix/manifest.json](ML/reports/take_skip_lib_pic_feature_matrix/manifest.json) |  |  | 2026-04-20 | 136KB | `f5ddd710` |
 | [ML/reports/take_skip_lib_pic_selection/final_verdict.json](ML/reports/take_skip_lib_pic_selection/final_verdict.json) |  |  | 2026-04-20 | 5KB | `d5323101` |
 | [ML/reports/take_skip_mt4_trailing_sequential/summary.json](ML/reports/take_skip_mt4_trailing_sequential/summary.json) |  |  | 2026-04-19 | 6KB | `80ed09d0` |
 | [ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json](ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json) |  |  | 2026-04-19 | 3KB | `c5aa0bfc` |
@@ -832,9 +852,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-20 | 1KB | `1eb92271` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 10KB | `db28f418` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 39KB | `6f15b726` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-20 | 1KB | `f372d760` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 10KB | `ec24fd6d` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 42KB | `8040e99f` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 

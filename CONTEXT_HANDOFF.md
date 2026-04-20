@@ -1,6 +1,51 @@
 # Context Handoff
 
 ## Current Stage
+Этап `take_skip_lib_pic_feature_training` завершён (2026-04-20).
+
+Что зафиксировано:
+
+- добавлен `ML/run_take_skip_lib_pic_feature_matrix.py`;
+- добавлена модель `ML/models/take_skip_dual_stream_transformer.py`;
+- добавлены тесты `tests/test_take_skip_lib_pic_feature_matrix.py`;
+- runner поддерживает:
+  - `baseline_clean`;
+  - `baseline_clean_path`;
+  - `baseline_clean_geometry_path`;
+  - `seq_len 20/50/100`;
+  - авто-выбор доступных `take_skip_v2` target columns по CSV;
+  - параллельный запуск через `--jobs`;
+  - авто-настройку CPU через `--jobs auto --torch-threads auto --cpu-load`.
+- canonical report: `docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md`.
+
+Главные результаты:
+
+- полный серверный runtime: `3123.32 sec`;
+- проверено `9` конфигураций;
+- все `9` конфигураций получили `verdict=reject`;
+- validation grid:
+  - всего строк: `1377`;
+  - `PF > 1`: `79`;
+  - `PF > 1` и `trades_per_year >= 6`: `0`;
+- лучший practical-area результат:
+  - `baseline_clean_seq20`;
+  - `take_12_x2`;
+  - `top_k=5%`;
+  - `trades_per_year=6.0`;
+  - validation `PF=0.9476`.
+
+Решение:
+
+- simple dual-stream добавление `lib_PIC`-признаков внутрь модели не дало рабочего торгового отбора;
+- `lib_PIC`-признаки пока полезнее как внешний фильтр, чем как простая добавка во вход модели;
+- этот результат не доказывает, что “новые признаки вредят старой модели”, потому что training contour отличается от старого прибыльного baseline;
+- следующий рациональный шаг — controlled ablation:
+  - воспроизвести исходный прибыльный baseline в максимально близком контуре;
+  - добавить к нему сильные `lib_PIC` path-признаки;
+  - отдельно проверить полный `baseline + path + geometry`;
+  - сравнить validation-first и только потом смотреть frozen test.
+
+## Previous Stage
 Этап `take_skip_lib_pic_external_selection` завершён (2026-04-20).
 
 Что зафиксировано:

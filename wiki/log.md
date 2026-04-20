@@ -158,6 +158,14 @@
 ## [2026-04-19] ingest | Execution policy v2 synced into wiki
 - Added report `docs/reports/2026-04-19-execution-policy-v2.md`
 - Added benchmark `ML/benchmark_execution_policy_v2.py` and tests
+
+## [2026-04-20] ingest | take_skip lib_PIC feature training synced into wiki
+- Added report `docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added dual-stream `take_skip_v2` feature training verdict
+  - recorded 9/9 rejects, `PF > 1` rows only at very low trade frequency
+  - recorded next step: controlled ablation against the original baseline contract
+- Updated `wiki/index.md` coverage from 22 to 23 reports
 - Updated `wiki/research/execution-tracks.md`:
   - added Python + MT4 execution policy v2 subsection
   - recorded `ML_TakeProfitATR` as a broker-side TP parameter for direct ML mode
