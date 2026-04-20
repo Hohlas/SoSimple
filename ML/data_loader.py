@@ -2,7 +2,7 @@
 # Файл: data_loader.py
 # Назначение: Dataset и DataLoader для фрактальных последовательностей с кэшированием тензоров
 # Язык: Python 3.11+
-# Обновлён: 2026-04-08
+# Обновлён: 2026-04-19
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -24,6 +24,7 @@
 #   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
 #   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
+#   - Для entry_path_v1 кэш инженерных признаков разделяется по feature profile
 # =============================================================================
 
 """
@@ -45,11 +46,13 @@ from sklearn.preprocessing import StandardScaler
 
 from ML.entry_path_task import (
     ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS,
+    ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
     ENTRY_PATH_TARGET,
     ENTRY_PATH_REG_TARGETS,
     ENTRY_PATH_V1_FEATURE_COLUMNS,
     split_entry_path_features,
     split_entry_path_targets,
+    validate_entry_path_feature_profile,
 )
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
 from ML.trailing_stop_target_quantile_task import (
@@ -197,6 +200,13 @@ def target_uses_signal_rows(target: str) -> bool:
 
 def cache_profile_suffix(target: str) -> str:
     return '_signal_rows' if target_uses_signal_rows(target) else ''
+
+
+def entry_path_feature_cache_suffix(feature_profile: str) -> str:
+    validate_entry_path_feature_profile(feature_profile)
+    if feature_profile == ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+        return ''
+    return f'_features_{feature_profile}'
 
 
 def filter_signal_rows(frame: pd.DataFrame, target: str) -> pd.DataFrame:
@@ -544,6 +554,7 @@ def create_data_loaders(
     use_weighted_sampler: bool = False,
     seq_len: int = 100,
     clear_cache: bool = False,
+    entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -587,6 +598,8 @@ def create_data_loaders(
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    if entry_path:
+        validate_entry_path_feature_profile(entry_path_feature_profile)
 
     def load_or_parse_data(
         csv_file: Path,
@@ -594,13 +607,15 @@ def create_data_loaders(
         prefix: str,
     ):
         profile_suffix = cache_profile_suffix(target_col)
+        entry_path_profile_suffix = entry_path_feature_cache_suffix(entry_path_feature_profile) if entry_path else ''
         x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
         mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
         if entry_path:
-            engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{profile_suffix}.npy'
-            y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
-            y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
-            signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
+            cache_suffix = f'{profile_suffix}{entry_path_profile_suffix}'
+            engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{cache_suffix}.npy'
+            y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{cache_suffix}.npy'
+            y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{cache_suffix}.npy'
+            signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{cache_suffix}.npy'
             cache_files = [x_path, mask_path, engineered_path, y_reg_path, y_cls_path, signal_path]
         elif entry_path_quantile:
             y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
@@ -644,7 +659,10 @@ def create_data_loaders(
                         signal = np.load(signal_path)
                         if (
                             engineered.ndim != 2
-                            or engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                            or (
+                                entry_path_feature_profile == ENTRY_PATH_DEFAULT_FEATURE_PROFILE
+                                and engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                            )
                             or
                             y_reg.ndim != 2
                             or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
@@ -713,7 +731,11 @@ def create_data_loaders(
         
         # Извлечение таргета
         if entry_path_like:
-            engineered = split_entry_path_features(df)
+            engineered = split_entry_path_features(
+                df,
+                feature_profile=entry_path_feature_profile,
+                seq_len=seq_len,
+            )
             y_reg, y_cls = split_entry_path_targets(df)
             signal = df['signal'].values.astype(np.int64)
         elif multi_target:
@@ -909,6 +931,7 @@ def create_test_loader(
     seq_len: int = 100,
     clear_cache: bool = False,
     num_workers: int = 4,
+    entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
 ) -> DataLoader:
     """Только для инференса на отложенной выборке. StandardScaler отключён (False)."""
     print("\n📦 Загрузка тестовых данных...")
@@ -927,16 +950,19 @@ def create_test_loader(
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    if entry_path:
+        validate_entry_path_feature_profile(entry_path_feature_profile)
     prefix = 'test'
     missing_entry_path_labels = False
 
     x_path = DATA_DIR / f'X_{prefix}{profile_suffix}.npy'
     mask_path = DATA_DIR / f'mask_{prefix}{profile_suffix}.npy'
     if entry_path:
-        engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{profile_suffix}.npy'
-        y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
-        y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{profile_suffix}.npy'
-        signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{profile_suffix}.npy'
+        cache_suffix = f'{profile_suffix}{entry_path_feature_cache_suffix(entry_path_feature_profile)}'
+        engineered_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{cache_suffix}.npy'
+        y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{cache_suffix}.npy'
+        y_cls_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{cache_suffix}.npy'
+        signal_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{cache_suffix}.npy'
         cache_files = [x_path, mask_path, engineered_path, y_reg_path, y_cls_path, signal_path]
     elif entry_path_quantile:
         y_reg_path = DATA_DIR / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{profile_suffix}.npy'
@@ -977,7 +1003,10 @@ def create_test_loader(
                     signal = np.load(signal_path)
                     if (
                         engineered.ndim != 2
-                        or engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                        or (
+                            entry_path_feature_profile == ENTRY_PATH_DEFAULT_FEATURE_PROFILE
+                            and engineered.shape[1] != len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+                        )
                         or
                         y_reg.ndim != 2
                         or y_reg.shape[1] != len(ENTRY_PATH_REG_TARGETS)
@@ -1092,7 +1121,11 @@ def create_test_loader(
             y_cls = np.zeros(len(df), dtype=np.int64)
         signal = df['signal'].values.astype(np.int64)
         if entry_path:
-            engineered = split_entry_path_features(df)
+            engineered = split_entry_path_features(
+                df,
+                feature_profile=entry_path_feature_profile,
+                seq_len=seq_len,
+            )
     elif trailing_stop:
         y = split_trailing_stop_targets(df)
     elif trailing_stop_quantile:

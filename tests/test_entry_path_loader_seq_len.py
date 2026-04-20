@@ -26,6 +26,23 @@ def _write_entry_path_cache(root: Path, prefix: str, rows: int = 3) -> None:
     np.save(root / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal.npy', signal)
 
 
+def _write_entry_path_profile_cache(root: Path, prefix: str, profile: str, rows: int = 3, width: int = 4) -> None:
+    x = np.arange(rows * 100 * dl.N_FRACTAL_FEATURES, dtype=np.float32).reshape(rows, 100, dl.N_FRACTAL_FEATURES)
+    mask = np.ones((rows, 100), dtype=bool)
+    engineered = np.ones((rows, width), dtype=np.float32)
+    y_reg = np.zeros((rows, 9), dtype=np.float32)
+    y_cls = np.zeros(rows, dtype=np.int64)
+    signal = np.ones(rows, dtype=np.int64)
+    suffix = f'_features_{profile}'
+
+    np.save(root / f'X_{prefix}.npy', x)
+    np.save(root / f'mask_{prefix}.npy', mask)
+    np.save(root / f'y_{prefix}_{ENTRY_PATH_TARGET}_engineered{suffix}.npy', engineered)
+    np.save(root / f'y_{prefix}_{ENTRY_PATH_TARGET}_reg{suffix}.npy', y_reg)
+    np.save(root / f'y_{prefix}_{ENTRY_PATH_TARGET}_cls{suffix}.npy', y_cls)
+    np.save(root / f'y_{prefix}_{ENTRY_PATH_TARGET}_signal{suffix}.npy', signal)
+
+
 def test_create_data_loaders_supports_entry_path_seq_len_20_50_100(monkeypatch, tmp_path):
     train_csv = tmp_path / 'Nero_train_labeled.csv'
     val_csv = tmp_path / 'Nero_validation_labeled.csv'
@@ -72,3 +89,27 @@ def test_create_data_loaders_rejects_unsupported_entry_path_seq_len(monkeypatch,
         assert 'supports only seq_len values' in str(exc)
     else:
         raise AssertionError('Expected ValueError for unsupported entry_path seq_len')
+
+
+def test_create_data_loaders_keeps_non_default_entry_path_feature_profile_cache_separate(monkeypatch, tmp_path):
+    train_csv = tmp_path / 'Nero_train_labeled.csv'
+    val_csv = tmp_path / 'Nero_validation_labeled.csv'
+    pd.DataFrame({'time': ['2026.01.01 00:00'], 'signal': [1]}).to_csv(train_csv, sep=';', index=False)
+    pd.DataFrame({'time': ['2026.01.02 00:00'], 'signal': [1]}).to_csv(val_csv, sep=';', index=False)
+    _write_entry_path_profile_cache(tmp_path, 'train', 'baseline_clean', width=4)
+    _write_entry_path_profile_cache(tmp_path, 'val', 'baseline_clean', width=4)
+
+    monkeypatch.setattr(dl, 'DATA_DIR', tmp_path)
+    monkeypatch.setattr(dl, 'TRAIN_FILE', train_csv)
+    monkeypatch.setattr(dl, 'VAL_FILE', val_csv)
+
+    train_loader, _, _ = dl.create_data_loaders(
+        batch_size=2,
+        target=ENTRY_PATH_TARGET,
+        seq_len=20,
+        num_workers=0,
+        entry_path_feature_profile='baseline_clean',
+    )
+
+    batch = next(iter(train_loader))
+    assert batch[1].shape[1] == 4

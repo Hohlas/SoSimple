@@ -27,28 +27,20 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 
-from ML.feature_importance_diagnostics import (
-    DATA_DIR,
-    _directional_accuracy,
-    build_grouped_features,
-    load_sample,
+from ML.feature_importance_diagnostics import DATA_DIR, _directional_accuracy, load_sample
+from ML.lib_pic_feature_profiles import (
+    BASELINE_CLEAN_DROP_GROUPS,
+    LIB_PIC_FEATURE_PROFILES,
+    assemble_lib_pic_feature_profile,
+    build_lib_pic_feature_parts,
+    build_lib_pic_feature_profile,
 )
-from ML.lib_pic_geometry_feature_bank import GEOMETRY_FEATURE_PREFIX, build_lib_pic_geometry_feature_bank
-from ML.lib_pic_path_reaction_feature_bank import PATH_REACTION_FEATURE_PREFIX, build_lib_pic_path_reaction_feature_bank
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'ML' / 'reports' / 'feature_bank_comparison'
 
-BASELINE_CLEAN_DROP_GROUPS = ('direction', 'price_position', 'path_long', 'path_short')
-
-VARIANTS = (
-    'baseline_full',
-    'baseline_clean',
-    'baseline_full_path',
-    'baseline_clean_path',
-    'baseline_clean_geometry_path',
-)
+VARIANTS = LIB_PIC_FEATURE_PROFILES
 
 
 @dataclass(frozen=True)
@@ -62,52 +54,19 @@ class VariantResult:
     directional_accuracy: float | None
 
 
-def _prefixed_columns(frame: pd.DataFrame, prefix: str) -> pd.DataFrame:
-    columns = [column for column in frame.columns if column.startswith(prefix)]
-    return frame[columns].replace([np.inf, -np.inf], 0.0).fillna(0.0)
-
-
-def _validate_variant(variant: str) -> None:
-    if variant not in VARIANTS:
-        raise ValueError(f'unknown variant: {variant}')
-
-
-def _clean_baseline_columns(base: pd.DataFrame, groups: dict[str, list[str]]) -> pd.DataFrame:
-    drop_columns: set[str] = set()
-    for group in BASELINE_CLEAN_DROP_GROUPS:
-        drop_columns.update(groups.get(group, []))
-    keep_columns = [column for column in base.columns if column not in drop_columns]
-    return base[keep_columns].copy()
-
-
 def build_feature_parts(frame: pd.DataFrame, seq_len: int) -> dict[str, pd.DataFrame]:
     """Строит базовые, geometry и path признаки один раз для всех вариантов."""
-    base, groups = build_grouped_features(frame, seq_len=seq_len)
-    geometry = build_lib_pic_geometry_feature_bank(frame)
-    path = build_lib_pic_path_reaction_feature_bank(frame)
-    return {
-        'baseline_full': base,
-        'baseline_clean': _clean_baseline_columns(base, groups),
-        'geometry': _prefixed_columns(geometry, GEOMETRY_FEATURE_PREFIX),
-        'path': _prefixed_columns(path, PATH_REACTION_FEATURE_PREFIX),
-    }
+    return build_lib_pic_feature_parts(frame, seq_len=seq_len)
 
 
 def assemble_variant_features(parts: dict[str, pd.DataFrame], variant: str) -> pd.DataFrame:
     """Собирает один вариант из заранее построенных feature parts."""
-    _validate_variant(variant)
-    baseline_key = 'baseline_clean' if variant.startswith('baseline_clean') else 'baseline_full'
-    frames = [parts[baseline_key]]
-    if variant in ('baseline_full_path', 'baseline_clean_path', 'baseline_clean_geometry_path'):
-        frames.append(parts['path'])
-    if variant == 'baseline_clean_geometry_path':
-        frames.append(parts['geometry'])
-    return pd.concat(frames, axis=1).replace([np.inf, -np.inf], 0.0).fillna(0.0)
+    return assemble_lib_pic_feature_profile(parts, profile=variant)
 
 
 def build_variant_features(frame: pd.DataFrame, variant: str, seq_len: int) -> pd.DataFrame:
     """Строит признаки для одного comparison-варианта."""
-    return assemble_variant_features(build_feature_parts(frame, seq_len=seq_len), variant=variant)
+    return build_lib_pic_feature_profile(frame, profile=variant, seq_len=seq_len)
 
 
 def _fit_score_variant(

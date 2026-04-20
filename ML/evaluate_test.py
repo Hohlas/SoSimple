@@ -23,6 +23,7 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
     ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_TARGET,
     ENTRY_PATH_V1_FEATURE_COLUMNS,
@@ -144,6 +145,12 @@ def load_frozen_outcome_target() -> dict | None:
     return json.loads(FROZEN_OUTCOME_TARGET_PATH.read_text(encoding='utf-8'))
 
 
+def entry_path_feature_artifact_suffix(feature_profile: str) -> str:
+    if feature_profile == ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+        return ''
+    return f'_features_{feature_profile}'
+
+
 def run_evaluation(
     model_name: str | None = None,
     checkpoint_path: str | None = None,
@@ -186,8 +193,13 @@ def run_evaluation(
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     ckpt_model_name = ckpt.get('model_name', model_name or 'bilstm')
     num_classes = ckpt.get('num_classes', 1)
-    seq_len = int(seq_len_override if seq_len_override is not None else ckpt.get('seq_len', 20))
     model_kwargs = ckpt.get('model_kwargs', {})
+    seq_len = int(
+        seq_len_override
+        if seq_len_override is not None
+        else ckpt.get('seq_len', model_kwargs.get('seq_len', 20))
+    )
+    entry_path_feature_profile = ckpt.get('entry_path_feature_profile', ENTRY_PATH_DEFAULT_FEATURE_PROFILE)
     
     if optuna_json:
         with open(optuna_json, 'r', encoding='utf-8') as f:
@@ -221,6 +233,7 @@ def run_evaluation(
         target=target_col,
         seq_len=seq_len,
         num_workers=0,
+        entry_path_feature_profile=entry_path_feature_profile,
     )
 
     if task in (ENTRY_PATH_TARGET, ENTRY_PATH_V1_QUANTILE_TARGET):
@@ -284,10 +297,11 @@ def run_evaluation(
             export_kwargs['true_reg'] = true_reg
             export_kwargs['true_cls'] = true_cls
         export = build_entry_path_export_frame(**export_kwargs)
-        export_path = REPORTS_DIR / 'entry_path_test_predictions.csv'
+        feature_suffix = entry_path_feature_artifact_suffix(entry_path_feature_profile)
+        export_path = REPORTS_DIR / f'entry_path{feature_suffix}_test_predictions.csv'
         export.to_csv(export_path, sep=';', index=False)
         row_count = int(len(export))
-        report_path = REPORTS_DIR / 'evaluate_test_entry_path_v1.md'
+        report_path = REPORTS_DIR / f'evaluate_test_entry_path_v1{feature_suffix}.md'
         report_path.write_text(
             build_entry_path_report_markdown(
                 frame=export,

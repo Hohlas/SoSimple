@@ -90,6 +90,10 @@ python -m ML.train --model cnn1d --task regression --epochs 30 --batch_size 512
 # Multi-task regression (10 Up/Dn таргетов)
 python -m ML.train --model transformer --task regression_updn --epochs 50
 
+# Entry path с очищенным профилем признаков lib_PIC
+python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
+  --entry_path_feature_profile baseline_clean --seq_len 20 --clear_cache
+
 # Классификация с оптимизированными параметрами (из Optuna)
 python -m ML.train --model cnn1d --task classification \
   --lr 0.004012 --batch_size 64 --patience 7 \
@@ -128,6 +132,7 @@ python -m ML.train --model transformer --task classification \
 | `--metric_mode` | Целевая метрика для early stopping (classification): `f1_macro`, `f1_minority`, `signal_precision` | `f1_macro` |
 | `--min_signal_recall` | Минимальный recall для сигнальных классов (-1 и 1), используется только при `--metric_mode=signal_precision` | `0.3` |
 | `--regression_loss` | Функция потерь для регрессии: `huber` или `asymmetric` | `huber` |
+| `--entry_path_feature_profile` | Профиль инженерных признаков для `entry_path_v1`: `entry_path_v1`, `baseline_full`, `baseline_clean`, `baseline_full_path`, `baseline_clean_path`, `baseline_clean_geometry_path` | `entry_path_v1` |
 | `--asym_over_penalty` | Штраф за перепрогноз (over-prediction) в `asymmetric` | `1.0` |
 | `--asym_under_penalty` | Штраф за недопрогноз (under-prediction) в `asymmetric` | `10.0` |
 | `--use_weighted_sampler` | Использовать WeightedRandomSampler для балансировки train-батчей (классификация только) | `False` (выключено) |

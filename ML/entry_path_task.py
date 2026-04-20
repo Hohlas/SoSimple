@@ -3,11 +3,14 @@ import pandas as pd
 from sklearn.metrics import f1_score
 
 from ML.entry_path_feature_bank import FEATURE_BANK_COLUMNS, build_entry_path_feature_bank
+from ML.lib_pic_feature_profiles import LIB_PIC_FEATURE_PROFILES, build_lib_pic_feature_profile
 
 
 ENTRY_PATH_TARGET = 'entry_path_v1'
 ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS = (20, 50, 100)
 ENTRY_PATH_MODEL_NAMES = ('transformer', 'entry_path_dual_stream')
+ENTRY_PATH_DEFAULT_FEATURE_PROFILE = 'entry_path_v1'
+ENTRY_PATH_FEATURE_PROFILES = (ENTRY_PATH_DEFAULT_FEATURE_PROFILE, *LIB_PIC_FEATURE_PROFILES)
 ENTRY_PATH_RET_TARGETS = ['ret_6_dir_atr', 'ret_12_dir_atr', 'ret_24_dir_atr']
 ENTRY_PATH_PATH_REG_TARGETS = [
     'fav_6_atr',
@@ -43,7 +46,22 @@ def split_entry_path_targets(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     return y_reg, y_cls
 
 
-def split_entry_path_features(df: pd.DataFrame) -> np.ndarray:
+def validate_entry_path_feature_profile(feature_profile: str) -> None:
+    """Проверяет имя профиля инженерных признаков для `entry_path_v1`."""
+    if feature_profile not in ENTRY_PATH_FEATURE_PROFILES:
+        available = ', '.join(ENTRY_PATH_FEATURE_PROFILES)
+        raise ValueError(f'unknown entry_path feature profile: {feature_profile}. Available: {available}')
+
+
+def split_entry_path_features(
+    df: pd.DataFrame,
+    feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+    seq_len: int = 100,
+) -> np.ndarray:
+    validate_entry_path_feature_profile(feature_profile)
+    if feature_profile != ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+        return build_lib_pic_feature_profile(df, profile=feature_profile, seq_len=seq_len).to_numpy(dtype=np.float32)
+
     feature_frame = df
     if any(column not in feature_frame.columns for column in ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS):
         feature_frame = build_entry_path_feature_bank(feature_frame)

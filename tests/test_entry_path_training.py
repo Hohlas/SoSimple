@@ -81,6 +81,7 @@ def test_main_passes_clear_cache_to_train_model(monkeypatch, tmp_path):
             encoder_ckpt=None,
             optuna_json=None,
             clear_cache=True,
+            entry_path_feature_profile='baseline_clean',
         ),
     )
 
@@ -113,6 +114,28 @@ def test_main_passes_clear_cache_to_train_model(monkeypatch, tmp_path):
     tr.main()
 
     assert captured['clear_cache'] is True
+    assert captured['entry_path_feature_profile'] == 'baseline_clean'
+    assert (tmp_path / 'transformer_entry_path_v1_features_baseline_clean_result.json').exists()
+
+
+def test_plot_training_curves_uses_profile_artifact_suffix(monkeypatch, tmp_path):
+    monkeypatch.setattr(tr, 'PLOTS_DIR', tmp_path)
+    history = {
+        'train_loss': [1.0],
+        'val_loss': [0.9],
+        'val_pearson_r': [0.2],
+        'val_mae': [0.3],
+    }
+
+    tr._plot_training_curves(
+        history,
+        'entry_path_dual_stream',
+        task='entry_path_v1',
+        regression=True,
+        artifact_suffix='_entry_path_v1_features_baseline_clean',
+    )
+
+    assert (tmp_path / 'training_curves_entry_path_dual_stream_entry_path_v1_features_baseline_clean.png').exists()
 
 
 def test_train_one_epoch_entry_path_weights_active_rows_stronger():

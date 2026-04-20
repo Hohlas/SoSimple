@@ -12,6 +12,7 @@ sys.path.insert(0, '.')
 
 from ML import evaluate_test as eval_mod
 from ML import export_entry_path_v1_quantile_predictions as export_mod
+from ML.entry_path_task import ENTRY_PATH_TARGET
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
 from ML.data_loader import EntryPathDataset
 
@@ -49,6 +50,30 @@ class _CrossedQuantileModel(_DummyQuantileModel):
         return out
 
 
+class _DummyEntryPathModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.bias = torch.nn.Parameter(torch.zeros(1))
+
+    def load_state_dict(self, state_dict, strict=True):
+        return torch.nn.modules.module._IncompatibleKeys([], [])
+
+    def to(self, device):
+        return self
+
+    def eval(self):
+        return self
+
+    def forward(self, x, engineered, mask=None):
+        batch = x.shape[0]
+        base = torch.linspace(0.1, 0.4, batch, device=x.device, dtype=x.dtype).unsqueeze(-1)
+        return {
+            'ret': torch.cat([base, base + 0.1, base + 0.2], dim=1),
+            'path_reg': torch.cat([base + i for i in range(6)], dim=1),
+            'path_cls': torch.cat([base + 0.3, base + 0.2, base + 0.5], dim=1),
+        }
+
+
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     pd.DataFrame(rows).to_csv(path, sep=';', index=False)
 
@@ -63,6 +88,19 @@ def _make_entry_path_dataset() -> EntryPathDataset:
     mask = np.ones((2, 4), dtype=bool)
     signal = np.array([1, -1], dtype=np.int64)
     return EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
+
+
+def _make_entry_path_dataset_with_engineered(width: int = 117) -> EntryPathDataset:
+    X = np.zeros((2, 4, 20), dtype=np.float32)
+    engineered = np.zeros((2, width), dtype=np.float32)
+    y_reg = np.array([
+        [0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2],
+        [0.4, 0.5, 0.6, 1.3, 1.4, 1.5, 2.3, 2.4, 2.5],
+    ], dtype=np.float32)
+    y_cls = np.array([2, 0], dtype=np.int64)
+    mask = np.ones((2, 4), dtype=bool)
+    signal = np.array([1, -1], dtype=np.int64)
+    return EntryPathDataset(X, engineered, y_reg, y_cls, mask, signal)
 
 
 def _make_entry_path_dataset_with_inactive() -> EntryPathDataset:
@@ -237,6 +275,81 @@ def test_evaluate_test_quantile_writes_report_with_quantile_metrics(tmp_path, mo
     assert 'active_rows: **2**' in report
     assert 'crossed_quantile_rows' in report
     assert 'Entry Path v1 Quantile' in report
+
+
+def test_evaluate_entry_path_v1_uses_feature_profile_from_checkpoint(tmp_path, monkeypatch):
+    loader = DataLoader(_make_entry_path_dataset_with_engineered(), batch_size=2)
+    csv_path = tmp_path / 'Nero_test_labeled.csv'
+    calls = {}
+    _write_csv(
+        csv_path,
+        [
+            {
+                'time': '2026.01.01 00:00',
+                'signal': 1,
+                'ret_6_dir_atr': 0.1,
+                'ret_12_dir_atr': 0.2,
+                'ret_24_dir_atr': 0.3,
+                'fav_6_atr': 1.0,
+                'adv_6_atr': 1.1,
+                'fav_12_atr': 1.2,
+                'adv_12_atr': 1.3,
+                'fav_24_atr': 1.4,
+                'adv_24_atr': 1.5,
+                'path_6_class': 1,
+            },
+            {
+                'time': '2026.01.01 01:00',
+                'signal': -1,
+                'ret_6_dir_atr': 0.4,
+                'ret_12_dir_atr': 0.5,
+                'ret_24_dir_atr': 0.6,
+                'fav_6_atr': 2.0,
+                'adv_6_atr': 2.1,
+                'fav_12_atr': 2.2,
+                'adv_12_atr': 2.3,
+                'fav_24_atr': 2.4,
+                'adv_24_atr': 2.5,
+                'path_6_class': -1,
+            },
+        ],
+    )
+
+    def fake_create_test_loader(*args, **kwargs):
+        calls['entry_path_feature_profile'] = kwargs.get('entry_path_feature_profile')
+        calls['target'] = kwargs['target']
+        calls['seq_len'] = kwargs['seq_len']
+        return loader
+
+    monkeypatch.setattr(eval_mod, 'TEST_FILE', csv_path)
+    monkeypatch.setattr(eval_mod, 'REPORTS_DIR', tmp_path)
+    monkeypatch.setattr(eval_mod, 'create_test_loader', fake_create_test_loader)
+    monkeypatch.setattr(eval_mod, 'build_entry_path_model', lambda *_args, **_kwargs: _DummyEntryPathModel())
+    monkeypatch.setattr(eval_mod.torch, 'load', lambda *args, **kwargs: {
+        'model_name': 'transformer',
+        'model_kwargs': {'input_features': 20, 'seq_len': 4, 'engineered_feature_dim': 117},
+        'model_state_dict': {},
+        'epoch': 2,
+        'metric_name': 'ret_pearson_r',
+        'best_metric': 0.29,
+        'entry_path_feature_profile': 'baseline_clean',
+    })
+
+    checkpoint = tmp_path / 'transformer_entry_path_v1_features_baseline_clean_best.pt'
+    checkpoint.write_text('stub', encoding='utf-8')
+
+    eval_mod.run_evaluation(
+        checkpoint_path=str(checkpoint),
+        task=ENTRY_PATH_TARGET,
+    )
+
+    assert calls == {
+        'entry_path_feature_profile': 'baseline_clean',
+        'target': ENTRY_PATH_TARGET,
+        'seq_len': 4,
+    }
+    assert (tmp_path / 'entry_path_features_baseline_clean_test_predictions.csv').exists()
+    assert (tmp_path / 'evaluate_test_entry_path_v1_features_baseline_clean.md').exists()
 
 
 def test_evaluate_test_parse_args_accepts_entry_path_v1_quantile(monkeypatch):

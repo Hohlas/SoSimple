@@ -2,6 +2,18 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-19] - Clean lib_PIC feature profile diagnostic
+
+### Результаты
+- В `ML/reports/feature_bank_clean_comparison/report.md` зафиксирована read-only диагностика признаков для цели `trail_24_pnl_atr_x8`.
+- Лучший диагностический вариант: `baseline_clean` — 117 признаков, validation R² `0.083736`, MAE `0.238819`, совпадение знака `0.842623`.
+- Для сравнения, `baseline_full` — 261 признак, validation R² `0.060763`, MAE `0.280381`, совпадение знака `0.836066`.
+
+### Вывод
+- Чистка групп `direction`, `price_position`, `path_long`, `path_short` выглядит полезной на диагностике признаков.
+- Follow-up `entry_path_v1` training не подтвердил улучшение: `transformer + baseline_clean seq20` дал validation `ret_pearson_r=0.2920` против старого `0.2921`, но test `ret_pearson_r=0.2269` против старого `0.2681`.
+- Вывод ограничен модельными метриками; trading verdict для этого профиля не формировался, потому что test-метрики стали хуже baseline.
+
 ## [2026-04-19] - Execution policy v2: Python benchmark + MT4 confirmation
 
 ### Добавлено

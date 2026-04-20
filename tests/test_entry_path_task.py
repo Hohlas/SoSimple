@@ -21,6 +21,7 @@ sys.path.insert(0, '.')
 from ML.data_loader import EntryPathDataset
 from ML.entry_path_task import (
     ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS,
+    ENTRY_PATH_FEATURE_PROFILES,
     ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_CLASS_TARGET,
     ENTRY_PATH_V1_FEATURE_COLUMNS,
@@ -32,12 +33,43 @@ from ML.entry_path_task import (
     split_entry_path_features,
     split_entry_path_targets,
 )
+from ML.lib_pic_feature_profiles import build_lib_pic_feature_profile
+
+
+def _fractal(seed: int) -> str:
+    fields = [
+        1_700_000_000 + seed,
+        100.0 + seed,
+        1 if seed % 2 == 0 else -1,
+        2.0 + seed,
+        3.0 + seed,
+        1,
+        seed % 3,
+        0.5 + seed,
+        4.0 + seed,
+        2,
+        1.2 + seed,
+        0.1 + seed,
+        0.2 + seed,
+        0.3 + seed,
+        0.4 + seed,
+        0.5 + seed,
+        0.6 + seed,
+        0.7 + seed,
+        0.8 + seed,
+        0.9 + seed,
+        1.0 + seed,
+        1.5 + seed,
+    ]
+    return ':'.join(str(value) for value in fields)
 
 
 def test_entry_path_target_contract():
     assert ENTRY_PATH_TARGET == 'entry_path_v1'
     assert ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS == (20, 50, 100)
     assert ENTRY_PATH_MODEL_NAMES == ('transformer', 'entry_path_dual_stream')
+    assert 'entry_path_v1' in ENTRY_PATH_FEATURE_PROFILES
+    assert 'baseline_clean' in ENTRY_PATH_FEATURE_PROFILES
     assert ENTRY_PATH_RET_TARGETS == ['ret_6_dir_atr', 'ret_12_dir_atr', 'ret_24_dir_atr']
     assert ENTRY_PATH_PATH_REG_TARGETS == [
         'fav_6_atr',
@@ -118,6 +150,27 @@ def test_split_entry_path_features_is_numeric_and_zero_fills_missing_columns():
     assert features[0, 4] == 0.0
     assert features[0, 5] == 3.0
     assert np.all(features[0, 6:] == 0.0)
+
+
+def test_split_entry_path_features_supports_clean_lib_pic_profile():
+    frame = pd.DataFrame(
+        {
+            'ATR': [1.0, 1.1],
+            'session_hour': [7, 8],
+            'weekday': [2, 3],
+            **{
+                f'fractal{fractal_idx}': [_fractal(fractal_idx), _fractal(fractal_idx + 1)]
+                for fractal_idx in range(5)
+            },
+        }
+    )
+
+    expected = build_lib_pic_feature_profile(frame, profile='baseline_clean', seq_len=5)
+    features = split_entry_path_features(frame, feature_profile='baseline_clean', seq_len=5)
+
+    assert features.shape == expected.shape
+    assert features.dtype == np.float32
+    assert np.allclose(features, expected.to_numpy(dtype=np.float32))
 
 
 def test_split_entry_path_targets_rejects_unknown_class():

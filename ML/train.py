@@ -2,7 +2,7 @@
 # Файл: train.py
 # Назначение: Единый скрипт обучения нейросетевых моделей
 # Язык: Python 3.11+
-# Обновлён: 2026-04-09
+# Обновлён: 2026-04-19
 # Зависимости:
 #   Входные данные:
 #     - DATA/Nero_train_labeled.csv (откуда: processing/label_main.py)
@@ -28,6 +28,7 @@
 #   python -m ML.train --model bilstm --task classification
 #   python -m ML.train --model bilstm --task regression --regression_loss asymmetric
 #   python -m ML.train --model cnn1d  --task regression --epochs 30 --batch_size 512
+#   python -m ML.train --model entry_path_dual_stream --task entry_path_v1 --entry_path_feature_profile baseline_clean
 # Примечания:
 #   Classification:
 #     - Early stopping на val macro F1 (или f1_minority/signal_precision)
@@ -88,6 +89,8 @@ from ML.data_loader import (
     task_target_column,
 )
 from ML.entry_path_task import (
+    ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+    ENTRY_PATH_FEATURE_PROFILES,
     ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_INV_CLASS_MAP,
     ENTRY_PATH_PATH_REG_TARGETS,
@@ -133,6 +136,17 @@ ML_DIR = PROJECT_ROOT / 'ML'
 CHECKPOINTS_DIR = ML_DIR / 'checkpoints'
 PLOTS_DIR = ML_DIR / 'plots'
 REPORTS_DIR = ML_DIR / 'reports'
+
+
+def training_artifact_suffix(
+    task: str,
+    entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+) -> str:
+    """Возвращает суффикс checkpoint/result с учётом профиля признаков entry_path."""
+    suffix = task_checkpoint_suffix(task)
+    if task == ENTRY_PATH_TARGET and entry_path_feature_profile != ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+        suffix = f'{suffix}_features_{entry_path_feature_profile}'
+    return suffix
 
 # ─── Значения по умолчанию ───────────────────────────────────────────────────
 
@@ -1047,6 +1061,7 @@ def train_model(
     clear_cache: bool = False,
     # Transfer learning: загрузить encoder из другого checkpoint
     encoder_ckpt: str | None = None,
+    entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -1110,6 +1125,7 @@ def train_model(
         use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier or trailing_stop_quantile) else False,
         seq_len=seq_len,
         clear_cache=clear_cache,
+        entry_path_feature_profile=entry_path_feature_profile,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -1146,7 +1162,9 @@ def train_model(
     model_kwargs.setdefault('input_features', N_FRACTAL_FEATURES)
     if entry_path:
         model_kwargs.setdefault('seq_len', seq_len)
-        model_kwargs.setdefault('engineered_feature_dim', len(ENTRY_PATH_V1_FEATURE_COLUMNS))
+        engineered = getattr(train_loader.dataset, 'engineered', None)
+        engineered_feature_dim = int(engineered.shape[1]) if engineered is not None else len(ENTRY_PATH_V1_FEATURE_COLUMNS)
+        model_kwargs.setdefault('engineered_feature_dim', engineered_feature_dim)
     if entry_path:
         model = build_entry_path_model(model_name, model_kwargs)
     elif entry_path_quantile:
@@ -1554,7 +1572,7 @@ def train_model(
             epochs_without_improvement = 0
 
             # Суффикс чекпойнта
-            suffix = task_checkpoint_suffix(task)
+            suffix = training_artifact_suffix(task, entry_path_feature_profile)
             checkpoint_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
             torch.save({
                 'epoch': epoch,
@@ -1567,6 +1585,7 @@ def train_model(
                 'num_classes': num_classes,
                 'seq_len': seq_len,
                 'model_kwargs': model_kwargs,
+                'entry_path_feature_profile': entry_path_feature_profile if entry_path else None,
             }, checkpoint_path)
             if not silent:
                 print(f"      ✅ Новый лучший {metric_name}={best_metric:.4f}, "
@@ -1646,6 +1665,7 @@ def train_model(
             task=task,
             regression=(regression or entry_path_like),
             binary_classification=binary_classification,
+            artifact_suffix=training_artifact_suffix(task, entry_path_feature_profile),
         )
 
         if triple_barrier:
@@ -1699,6 +1719,7 @@ def train_model(
         triple_barrier=triple_barrier,
         binary_classification=binary_classification,
         model_kwargs=model_kwargs,
+        entry_path_feature_profile=entry_path_feature_profile,
     )
 
     if triple_barrier:
@@ -1739,6 +1760,7 @@ def train_model(
         'training_time': training_time,
         'history': history,
         'best_metrics': best_metrics,
+        'entry_path_feature_profile': entry_path_feature_profile if entry_path else None,
     }
 
 
@@ -1769,6 +1791,7 @@ def _log_experiment(
     triple_barrier: bool = False,
     binary_classification: bool = False,
     model_kwargs: dict | None = None,
+    entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
 ) -> None:
     """Логирует эксперимент в CSV файл."""
     from ML.experiment_logger import CSVExperimentLogger
@@ -1854,7 +1877,7 @@ def _log_experiment(
         metrics_dict['f1_neutral'] = f1_per_class.get(0)
         metrics_dict['f1_buy'] = f1_per_class.get(1)
 
-    log_suffix = task_checkpoint_suffix(task)
+    log_suffix = training_artifact_suffix(task, entry_path_feature_profile)
     checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{log_suffix}_best.pt')
     
     logger = CSVExperimentLogger()
@@ -1910,6 +1933,7 @@ def _plot_training_curves(
     task: str | None = None,
     regression: bool = False,
     binary_classification: bool = False,
+    artifact_suffix: str | None = None,
 ):
     """
     Построение кривых обучения: loss и основная метрика по эпохам.
@@ -1947,7 +1971,8 @@ def _plot_training_curves(
         for ax in axes:
             ax.grid(True, alpha=0.3)
         plt.tight_layout()
-        save_path = PLOTS_DIR / f'training_curves_{model_name}{task_checkpoint_suffix(task or TRAILING_STOP_TARGET_QUANTILE_TARGET)}.png'
+        suffix = artifact_suffix or task_checkpoint_suffix(task or TRAILING_STOP_TARGET_QUANTILE_TARGET)
+        save_path = PLOTS_DIR / f'training_curves_{model_name}{suffix}.png'
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print(f"  📊 Кривые обучения: {save_path.name}")
@@ -2009,7 +2034,7 @@ def _plot_training_curves(
     axes[1].grid(True, alpha=0.3)
     plt.tight_layout()
 
-    suffix = task_checkpoint_suffix(task) if task is not None else ('_regression' if regression else '')
+    suffix = artifact_suffix or (task_checkpoint_suffix(task) if task is not None else ('_regression' if regression else ''))
     save_path = PLOTS_DIR / f'training_curves_{model_name}{suffix}.png'
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close(fig)
@@ -2202,6 +2227,13 @@ def parse_args() -> argparse.Namespace:
                         help="Путь к JSON файлу с лучшими параметрами Optuna")
     parser.add_argument('--seq_len', type=int, default=20,
                         help="Количество фракталов в последовательности (default: 20)")
+    parser.add_argument(
+        '--entry_path_feature_profile',
+        type=str,
+        default=ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+        choices=ENTRY_PATH_FEATURE_PROFILES,
+        help='Профиль инженерных признаков для entry_path_v1. Default: entry_path_v1',
+    )
     
     parser.add_argument(
         '--clear_cache', action='store_true',
@@ -2266,6 +2298,8 @@ def main():
     print("  NEURAL NETWORK TRAINING")
     print(f"  Модель: {args.model}  |  Задача: {args.task}")
     print(f"  Epochs: {args.epochs}, Batch: {args.batch_size}, LR: {args.lr}, SeqLen: {args.seq_len}")
+    if args.task == ENTRY_PATH_TARGET:
+        print(f"  EntryPath feature profile: {args.entry_path_feature_profile}")
     if model_kwargs:
         print(f"  Model kwargs: {model_kwargs}")
     print("=" * 60)
@@ -2301,6 +2335,7 @@ def main():
         seq_len=args.seq_len,
         clear_cache=args.clear_cache,
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
+        entry_path_feature_profile=args.entry_path_feature_profile,
     )
 
     # Сохраняем результат как JSON
@@ -2322,7 +2357,7 @@ def main():
             'training_time': result['training_time'],
             'per_target': result['best_metrics'].get('per_target', {}),
         }
-        suffix = task_checkpoint_suffix(args.task)
+        suffix = training_artifact_suffix(args.task, args.entry_path_feature_profile)
     elif binary_classification:
         result_serializable = {
             'model_name': result['model_name'],
@@ -2336,7 +2371,7 @@ def main():
                 if isinstance(v, float)
             },
         }
-        suffix = task_checkpoint_suffix(args.task)
+        suffix = training_artifact_suffix(args.task, args.entry_path_feature_profile)
     elif entry_path or entry_path_quantile:
         if entry_path_quantile:
             result_serializable = {
@@ -2374,6 +2409,7 @@ def main():
                 'best_epoch': result['best_epoch'],
                 'num_parameters': result['num_parameters'],
                 'training_time': result['training_time'],
+                'entry_path_feature_profile': result.get('entry_path_feature_profile'),
                 'val_metrics': {
                     'ret_pearson_r': result['best_metrics'].get('ret_pearson_r'),
                     'pearson_r': result['best_metrics'].get('pearson_r'),
@@ -2393,7 +2429,7 @@ def main():
                     str(k): v for k, v in result['best_metrics'].get('active_path_cls_per_class', {}).items()
                 },
             }
-        suffix = task_checkpoint_suffix(args.task)
+        suffix = training_artifact_suffix(args.task, args.entry_path_feature_profile)
     elif trailing_stop_quantile:
         result_serializable = {
             'model_name': result['model_name'],

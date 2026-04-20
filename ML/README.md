@@ -24,6 +24,7 @@
 | [losses.py](losses.py) | FocalLoss, HuberLoss, AsymmetricLoss | ✅ |
 | [utils.py](utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ |
 | [experiment_logger.py](experiment_logger.py) | CSV-логгер экспериментов | 🏁 |
+| [lib_pic_feature_profiles.py](lib_pic_feature_profiles.py) | Профили признаков `lib_PIC` для диагностики и `entry_path_v1` | ✅ |
 
 ### Models
 
@@ -94,4 +95,8 @@ python -m ML.threshold_analysis --task regression_updn --horizon 12
 # Triple Barrier (transfer learning обязателен!)
 python -m ML.train --model transformer --task triple_barrier --epochs 100 --patience 20 \
   --encoder_ckpt ML/checkpoints/transformer_updn_best.pt
+
+# Entry path с очищенным профилем признаков lib_PIC
+python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
+  --entry_path_feature_profile baseline_clean --seq_len 20 --clear_cache
 ```
