@@ -164,3 +164,12 @@
   - captured final frequent candidate: `ML_TrailATR=8`, `ML_TakeProfitATR=0`
   - captured cautious frequent alternative: `ML_TrailATR=6`, `ML_TakeProfitATR=0`
 - Updated `wiki/index.md` coverage from 20 to 21 reports
+
+## [2026-04-20] ingest | take_skip lib_PIC external selection synced into wiki
+- Added report `docs/reports/2026-04-20-take-skip-lib-pic-selection.md`
+- Added benchmark `ML/benchmark_take_skip_lib_pic_selection.py` and tests
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded that `lib_PIC` filters did not replace the current quality/frequency rules
+  - captured feature-frequency candidate: `pic_path_win_proxy24_share_w20 >= 0.25`, test `PF=5.30`, `trades_per_year=14.8`, `negative_year_slices=0`
+  - clarified next step: use `lib_PIC` features inside a new training track rather than making a more complex external selector
+- Updated `wiki/index.md` coverage from 21 to 22 reports

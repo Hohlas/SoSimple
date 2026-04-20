@@ -1,6 +1,39 @@
 # Context Handoff
 
 ## Current Stage
+Этап `take_skip_lib_pic_external_selection` завершён (2026-04-20).
+
+Что зафиксировано:
+
+- добавлен `ML/benchmark_take_skip_lib_pic_selection.py`;
+- добавлены тесты `tests/test_benchmark_take_skip_lib_pic_selection.py`;
+- benchmark проверяет внешний слой отбора поверх готовых `take_skip_trailing_stop_v2` prediction CSV без нового обучения;
+- prediction CSV соединяется с source/labeled CSV по порядку строк и `time`;
+- используется профиль признаков `baseline_clean_geometry_path`;
+- пороги `lib_PIC`-признаков выбираются только на validation и frozen-применяются на test;
+- canonical report: `docs/reports/2026-04-20-take-skip-lib-pic-selection.md`.
+
+Главные результаты:
+
+- `quality-first` снова выбрал старое правило без feature-фильтра:
+  - `take_24_x8`, `prob >= 0.70`, exit `x8`;
+  - test: `PF=39.74`, `trades_per_year=8.2`, `negative_year_slices=0`.
+- raw `frequency-first` без feature-фильтра:
+  - `take_24_x4`, `top_k 20%`, exit `x10`;
+  - test: `PF=7.18`, `trades_per_year=19.2`, `negative_year_slices=1`.
+- лучший режим с обязательным `lib_PIC`-фильтром:
+  - `take_24_x8`, `top_k 20%`, exit `x10`;
+  - `pic_path_win_proxy24_share_w20 >= 0.25`;
+  - test: `PF=5.30`, `trades_per_year=14.8`, `negative_year_slices=0`.
+
+Решение:
+
+- внешний `lib_PIC`-фильтр не заменяет текущие `quality` / `frequency` правила;
+- фильтр выглядит полезным как диагностический устойчивостный сигнал;
+- не усложнять внешний selection-layer дальше;
+- следующий рациональный шаг — новый training track, где `lib_PIC`-производные признаки участвуют внутри модели.
+
+## Previous Stage
 Этап `execution_policy_v2` завершён (2026-04-19).
 
 Что зафиксировано:

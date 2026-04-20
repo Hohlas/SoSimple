@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-19
-sources: 21
+last_updated: 2026-04-20
+sources: 22
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 21 отчёта (2026-04-08 — 2026-04-19). Параллельные направления execution.
+> Синтез 22 отчётов (2026-04-08 — 2026-04-20). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -448,6 +448,31 @@ Python `frequency_trail_scan`:
 **Вывод:** для `frequency` take profit режет главный источник прибыли. Основной practical candidate — `ML_TrailATR=8`, `ML_TakeProfitATR=0`; осторожная альтернатива — `ML_TrailATR=6`, `ML_TakeProfitATR=0`. `TrailATR=10` даёт больше прибыли, но слишком ухудшает форму equity: просадка, ulcer, концентрация прибыли и линейность хуже.
 
 Источник: [2026-04-19-execution-policy-v2.md](../../docs/reports/2026-04-19-execution-policy-v2.md)
+
+### lib_PIC External Selection (04-20): признаки полезны как диагностика, но не заменяют rule
+
+Следующий быстрый шаг проверил идею внешнего слоя отбора поверх уже готовых `take_skip_trailing_stop_v2` prediction CSV. Модель не переобучалась: benchmark просто добавлял к строкам prediction производные признаки `lib_PIC` и выбирал порог признака только на validation.
+
+Добавлен `ML/benchmark_take_skip_lib_pic_selection.py`:
+
+- соединяет prediction CSV и source/labeled CSV по порядку строк и `time`;
+- строит профиль `baseline_clean_geometry_path`;
+- проверяет ограниченную сетку feature-фильтров вида `feature >= validation_quantile`;
+- замораживает числовой порог признака и применяет его на test без пересчёта.
+
+Ключевой результат:
+
+| Mode | Rule | Feature filter | Test trades/year | Test PF | Negative years |
+|---|---|---|---:|---:|---:|
+| quality-first | `take_24_x8`, `prob >= 0.70`, exit `x8` | none | 8.2 | 39.74 | 0 |
+| raw frequency-first | `take_24_x4`, `top_k 20%`, exit `x10` | none | 19.2 | 7.18 | 1 |
+| feature-frequency-first | `take_24_x8`, `top_k 20%`, exit `x10` | `pic_path_win_proxy24_share_w20 >= 0.25` | 14.8 | 5.30 | 0 |
+
+**Вывод:** внешний `lib_PIC`-фильтр не улучшил quality-кандидат и не стал новым главным правилом. Но он показал полезный устойчивостный сигнал: фильтр по доле свежих фракталов с благоприятным ходом выше неблагоприятного режет часть сделок и убирает отрицательный годовой срез на test.
+
+Практическое следствие: не стоит дальше усложнять внешний selection-layer. Более рационально использовать этот результат как аргумент для нового training track, где `lib_PIC`-производные признаки будут доступны самой модели при обучении.
+
+Источник: [2026-04-20-take-skip-lib-pic-selection.md](../../docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
 
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 

@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-20] - take_skip_v2 lib_PIC external selection benchmark
+
+### Добавлено
+- `ML/benchmark_take_skip_lib_pic_selection.py`
+- `tests/test_benchmark_take_skip_lib_pic_selection.py`
+- `docs/ML/benchmark_take_skip_lib_pic_selection.py.md`
+
+### Результаты
+- Проверен внешний слой отбора поверх готовых `take_skip_trailing_stop_v2` exports без нового обучения.
+- Quality-first снова выбрал старый rule без `lib_PIC`-фильтра: test `PF=39.74`, `trades_per_year=8.2`, `negative_year_slices=0`.
+- Raw frequency-first без фильтра: test `PF=7.18`, `trades_per_year=19.2`, но `negative_year_slices=1`.
+- Лучший feature-frequency вариант: `take_24_x8`, `top_k=20%`, exit `x10`, фильтр `pic_path_win_proxy24_share_w20 >= 0.25`; test `PF=5.30`, `trades_per_year=14.8`, `negative_year_slices=0`.
+
+### Вывод
+- `lib_PIC`-фильтр не заменяет текущие `quality` / `frequency` правила.
+- Признак `pic_path_win_proxy24_share_w20` выглядит полезным как диагностический фильтр устойчивости: он режет часть сделок, но убирает отрицательный годовой срез.
+- Следующий шаг — не усложнять внешний слой, а проверить новые `lib_PIC`-производные признаки внутри нового training track.
+- Подробности: [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
+
 ## [2026-04-19] - Clean lib_PIC feature profile diagnostic
 
 ### Результаты
