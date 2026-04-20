@@ -21,6 +21,7 @@ import argparse
 import contextlib
 import json
 import math
+import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -53,6 +54,7 @@ from ML.utils import get_device, set_seed
 DEFAULT_FEATURE_PROFILES = ('baseline_clean', 'baseline_clean_path', 'baseline_clean_geometry_path')
 DEFAULT_SEQ_LENS = (20, 50, 100)
 DEFAULT_TARGET_COLUMNS = tuple(TAKE_SKIP_TRAILING_STOP_V2_COLUMNS)
+AUTO_VALUE = 'auto'
 
 
 @dataclass(frozen=True)
@@ -161,6 +163,61 @@ def _json_safe(value):
 
 def config_slug(feature_profile: str, seq_len: int) -> str:
     return f'{feature_profile}_seq{seq_len}'
+
+
+def _parse_auto_int(value: int | str | None, *, name: str) -> int | str | None:
+    if value is None:
+        return None
+    if isinstance(value, str) and value.lower() == AUTO_VALUE:
+        return AUTO_VALUE
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f'{name} must be a positive integer or "auto"') from exc
+    if parsed < 1:
+        raise ValueError(f'{name} must be >= 1')
+    return parsed
+
+
+def resolve_cpu_schedule(
+    *,
+    config_count: int,
+    jobs: int | str = AUTO_VALUE,
+    torch_threads: int | str | None = AUTO_VALUE,
+    cpu_load: float = 0.5,
+    cpu_count: int | None = None,
+) -> dict[str, int | float]:
+    if config_count < 1:
+        raise ValueError('config_count must be >= 1')
+    if not 0.0 < cpu_load <= 1.0:
+        raise ValueError('cpu_load must be in (0.0, 1.0]')
+
+    detected_cpu = int(cpu_count or os.cpu_count() or 1)
+    target_threads = max(1, int(math.floor(detected_cpu * cpu_load)))
+    parsed_jobs = _parse_auto_int(jobs, name='jobs')
+    parsed_torch_threads = _parse_auto_int(torch_threads, name='torch_threads')
+
+    default_threads_per_job = 4
+    if parsed_jobs == AUTO_VALUE and (parsed_torch_threads == AUTO_VALUE or parsed_torch_threads is None):
+        resolved_jobs = min(config_count, max(1, target_threads // default_threads_per_job))
+        resolved_torch_threads = max(1, target_threads // resolved_jobs)
+    elif parsed_jobs == AUTO_VALUE:
+        resolved_torch_threads = int(parsed_torch_threads)
+        resolved_jobs = min(config_count, max(1, target_threads // resolved_torch_threads))
+    elif parsed_torch_threads == AUTO_VALUE or parsed_torch_threads is None:
+        resolved_jobs = min(config_count, int(parsed_jobs))
+        resolved_torch_threads = max(1, target_threads // resolved_jobs)
+    else:
+        resolved_jobs = min(config_count, int(parsed_jobs))
+        resolved_torch_threads = int(parsed_torch_threads)
+
+    return {
+        'cpu_count': detected_cpu,
+        'cpu_load': float(cpu_load),
+        'target_threads': target_threads,
+        'jobs': resolved_jobs,
+        'torch_threads': resolved_torch_threads,
+    }
 
 
 def build_take_skip_feature_arrays(
@@ -466,8 +523,9 @@ def run_matrix(
     min_pf: float,
     min_trades_per_year: float,
     target_columns: tuple[str, ...] | None = None,
-    jobs: int = 1,
-    torch_threads: int | None = None,
+    jobs: int | str = AUTO_VALUE,
+    torch_threads: int | str | None = AUTO_VALUE,
+    cpu_load: float = 0.5,
 ) -> dict[str, object]:
     started_at = time.time()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -479,12 +537,24 @@ def run_matrix(
         for feature_profile in feature_profiles
         for seq_len in seq_lens
     ]
+    cpu_schedule = resolve_cpu_schedule(
+        config_count=len(configs),
+        jobs=jobs,
+        torch_threads=torch_threads,
+        cpu_load=cpu_load,
+    )
+    resolved_jobs = int(cpu_schedule['jobs'])
+    resolved_torch_threads = int(cpu_schedule['torch_threads'])
     print(
-        f'[matrix-start] configs={len(configs)} jobs={jobs} torch_threads={torch_threads or "default"} targets={len(resolved_target_columns)}',
+        f'[cpu-auto] cpu_count={cpu_schedule["cpu_count"]} cpu_load={cpu_schedule["cpu_load"]:.2f} target_threads={cpu_schedule["target_threads"]} jobs={resolved_jobs} torch_threads={resolved_torch_threads}',
+        flush=True,
+    )
+    print(
+        f'[matrix-start] configs={len(configs)} jobs={resolved_jobs} torch_threads={resolved_torch_threads} targets={len(resolved_target_columns)}',
         flush=True,
     )
     runs = []
-    if jobs <= 1:
+    if resolved_jobs <= 1:
         print(f'[matrix-load] validation={VAL_FILE}', flush=True)
         validation_frame = _read_labeled_csv(VAL_FILE)
         print(f'[matrix-load] test={TEST_FILE}', flush=True)
@@ -506,11 +576,11 @@ def run_matrix(
                     min_pf=min_pf,
                     min_trades_per_year=min_trades_per_year,
                     target_columns=resolved_target_columns,
-                    torch_threads=torch_threads,
+                    torch_threads=resolved_torch_threads,
                 )
             )
     else:
-        with ProcessPoolExecutor(max_workers=jobs) as executor:
+        with ProcessPoolExecutor(max_workers=resolved_jobs) as executor:
             futures = {
                 executor.submit(
                     _run_single_config_from_files,
@@ -524,7 +594,7 @@ def run_matrix(
                     min_pf=min_pf,
                     min_trades_per_year=min_trades_per_year,
                     target_columns=resolved_target_columns,
-                    torch_threads=torch_threads,
+                    torch_threads=resolved_torch_threads,
                 ): config_slug(feature_profile, seq_len)
                 for feature_profile, seq_len in configs
             }
@@ -538,8 +608,9 @@ def run_matrix(
         'feature_profiles': list(feature_profiles),
         'seq_lens': list(seq_lens),
         'target_columns': list(resolved_target_columns),
-        'jobs': jobs,
-        'torch_threads': torch_threads,
+        'jobs': resolved_jobs,
+        'torch_threads': resolved_torch_threads,
+        'cpu_schedule': cpu_schedule,
         'runtime_sec': time.time() - started_at,
     }
     (output_dir / 'manifest.json').write_text(json.dumps(_json_safe(manifest), ensure_ascii=False, indent=2), encoding='utf-8')
@@ -559,8 +630,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--min-pf', type=float, default=1.0)
     parser.add_argument('--min-trades-per-year', type=float, default=6.0)
     parser.add_argument('--target-columns', nargs='+', default=None)
-    parser.add_argument('--jobs', type=int, default=1)
-    parser.add_argument('--torch-threads', type=int, default=None)
+    parser.add_argument('--jobs', default=AUTO_VALUE)
+    parser.add_argument('--torch-threads', default=AUTO_VALUE)
+    parser.add_argument('--cpu-load', type=float, default=0.5)
     return parser.parse_args()
 
 
@@ -579,6 +651,7 @@ def main() -> dict[str, object]:
         target_columns=tuple(args.target_columns) if args.target_columns else None,
         jobs=args.jobs,
         torch_threads=args.torch_threads,
+        cpu_load=args.cpu_load,
     )
     print(json.dumps(_json_safe(manifest), ensure_ascii=False, indent=2))
     return manifest

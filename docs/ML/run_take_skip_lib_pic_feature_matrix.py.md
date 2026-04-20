@@ -67,11 +67,12 @@ MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
   --batch-size 256 \
   --min-pf 1.0 \
   --min-trades-per-year 6 \
-  --jobs 4 \
-  --torch-threads 4
+  --jobs auto \
+  --torch-threads auto \
+  --cpu-load 0.5
 ```
 
-`--jobs` задаёт число независимых конфигураций, обучаемых одновременно. `--torch-threads` задаёт число CPU-потоков внутри одного процесса PyTorch. Для сервера на 32 ядра разумная стартовая настройка: `--jobs 4 --torch-threads 4`.
+`--jobs` задаёт число независимых конфигураций, обучаемых одновременно. `--torch-threads` задаёт число CPU-потоков внутри одного процесса PyTorch. Значение `auto` рассчитывает безопасную загрузку по `--cpu-load`: при 32 CPU и `--cpu-load 0.5` получится примерно `jobs=4`, `torch_threads=4`.
 
 Для принудительного запуска только старой сетки:
 
@@ -87,8 +88,9 @@ MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
   --batch-size 256 \
   --min-pf 1.0 \
   --min-trades-per-year 6 \
-  --jobs 4 \
-  --torch-threads 4
+  --jobs auto \
+  --torch-threads auto \
+  --cpu-load 0.5
 ```
 
 ## Ограничения
@@ -96,5 +98,6 @@ MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
 - Это отдельный research runner, общий `ML.train` не меняется.
 - Полная сетка читает большие CSV и обучает несколько моделей, поэтому её лучше запускать на удалённом сервере.
 - Если в DATA нет `x10/x12`, это не ошибка: runner обучится только на доступных целях.
+- При ручной настройке можно задать `--jobs 6 --torch-threads 4`; это полностью отключает авто-расчёт для этих двух параметров.
 - При `--jobs > 1` подробный лог каждого конфига пишется в `<feature_profile>_seq<seq_len>/logs/run.log`, а общий stdout показывает старт и завершение конфигов.
 - Результат нужно оценивать не только по PF, но и по числу сделок в год, отрицательным годовым срезам и концентрации прибыли.

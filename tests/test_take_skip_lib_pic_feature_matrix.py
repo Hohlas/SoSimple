@@ -183,3 +183,24 @@ def test_run_matrix_accepts_parallel_jobs_and_torch_threads(monkeypatch, tmp_pat
     assert all(call['torch_threads'] == 3 for call in calls)
     assert manifest['jobs'] == 1
     assert manifest['torch_threads'] == 3
+
+
+def test_resolve_cpu_schedule_auto_uses_requested_cpu_load():
+    from ML.run_take_skip_lib_pic_feature_matrix import resolve_cpu_schedule
+
+    schedule = resolve_cpu_schedule(config_count=9, jobs='auto', torch_threads='auto', cpu_load=0.5, cpu_count=32)
+
+    assert schedule['cpu_count'] == 32
+    assert schedule['target_threads'] == 16
+    assert schedule['jobs'] == 4
+    assert schedule['torch_threads'] == 4
+
+
+def test_resolve_cpu_schedule_respects_manual_jobs():
+    from ML.run_take_skip_lib_pic_feature_matrix import resolve_cpu_schedule
+
+    schedule = resolve_cpu_schedule(config_count=9, jobs=6, torch_threads='auto', cpu_load=0.66, cpu_count=32)
+
+    assert schedule['target_threads'] == 21
+    assert schedule['jobs'] == 6
+    assert schedule['torch_threads'] == 3
