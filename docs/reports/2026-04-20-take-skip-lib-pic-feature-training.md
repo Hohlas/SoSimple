@@ -3,7 +3,7 @@
 Дата: 2026-04-20
 Ветка: `lib-pic-feature-training-track`
 Статус: completed
-Related commit: pending
+Related commit: 885aa7a
 
 ## Цель
 
