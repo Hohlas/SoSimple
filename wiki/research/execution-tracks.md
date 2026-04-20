@@ -511,6 +511,53 @@ Python `frequency_trail_scan`:
 
 Источник: [2026-04-20-take-skip-lib-pic-feature-training.md](../../docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md)
 
+### Original Contour Feature Ablation (04-20): `path` признаки дают practical uplift
+
+После провала dual-stream feature training был выполнен более строгий controlled ablation: новые `lib_PIC` признаки добавлялись не в новую архитектуру, а поверх старого single-tensor `take_skip_v2` контура.
+
+Добавлен `ML/run_take_skip_original_contour_feature_matrix.py`:
+
+- `original_baseline` восстанавливает старый input contract;
+- `original_plus_path` добавляет path-reaction признаки;
+- `original_plus_geometry_path` добавляет path + geometry признаки;
+- проверены `seq_len = 20 / 50 / 100`;
+- все engineered-признаки повторяются на каждом шаге sequence tensor.
+
+Контроль `original_baseline_seq50` прошёл gate:
+
+| Metric | Value |
+|---|---:|
+| input_features | 539 |
+| target / selector | `take_24_x8`, `prob>=0.70` |
+| validation trades/year | 7.75 |
+| validation PF | inf |
+| test trades/year | 9.2 |
+| test PF | 49.58 |
+| test negative years | 0 |
+
+Полная матрица `3 × 3` завершилась за `2840.42 sec`; все 9 конфигураций получили `go`.
+
+Лучший practical candidate:
+
+| Run | Rule | Validation | Test |
+|---|---|---|---|
+| `original_plus_path_seq50` | `take_24_x8`, `prob>=0.60`, exit `x8` | `9.75` trades/year, PF `16.07` | `10.2` trades/year, PF `38.78`, negative years `0` |
+
+Сравнение с `original_baseline_seq50`:
+
+- test trades/year выросли `8.4 -> 10.2`;
+- test PF снизился `43.35 -> 38.78`, но остался очень высоким;
+- negative years остались `0`;
+- max drawdown снизился `4.38 -> 3.89 ATR`.
+
+Geometry-ветка не выбрана: PF высокий, но test частота только `4.8` trades/year, ниже practical gate.
+
+**Вывод:** `lib_PIC` path-признаки не ломают старый прибыльный контур и дают полезный trade-off: больше сделок при сохранении высокого PF. Это первый положительный результат именно от добавления `lib_PIC` признаков внутрь модели.
+
+Практическое следствие: `original_plus_path_seq50` стоит проверить в MT4 как третью систему рядом с текущими `quality` и `frequency`. `original_baseline_seq50/100` остаётся quality anchor.
+
+Источник: [2026-04-20-take-skip-original-contour-feature-ablation.md](../../docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
+
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 
 Добавлен отдельный frozen benchmark:

@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
-## [2026-04-20] - take_skip_v2 original contour feature ablation scaffold
+## [2026-04-20] - take_skip_v2 original contour feature ablation
 
 ### Добавлено
 - `ML/run_take_skip_original_contour_feature_matrix.py`
@@ -19,11 +19,15 @@
 - Поддержаны режимы `original_baseline`, `original_plus_path`, `original_plus_geometry_path`.
 - Runner пишет checkpoint, validation/test prediction CSV, benchmark и summary.
 - Фокусные тесты: `15 passed`, одно предупреждение PyTorch про nested tensors.
+- Полная серверная матрица `3 feature modes × seq_len 20/50/100` завершилась за `2840.42 sec`; все 9 конфигураций получили `go`.
+- Контроль подтвердил восстановление старого контура: `input_features=539`, `take_24_x8`, validation `PF=inf`, test `PF=49.58`.
+- Лучший practical candidate: `original_plus_path_seq50`, `take_24_x8`, `prob>=0.60`; validation `9.75` trades/year, `PF=16.07`; test `10.2` trades/year, `PF=38.78`, negative years `0`.
 
-### Следующий шаг
-- Запустить контрольный прогон `original_baseline_seq50`.
-- Если контроль не воспроизводит старую прибыльную область, остановиться и диагностировать разницу контура.
-- Если контроль проходит, запускать полную матрицу `original_baseline/original_plus_path/original_plus_geometry_path × seq_len 20/50/100`.
+### Вывод
+- `path` признаки дают полезный trade-off: больше сделок, PF остаётся высоким.
+- `geometry` не выбран как practical candidate: высокий PF, но test частота только `4.8` trades/year.
+- Следующий шаг — selected rule для `original_plus_path_seq50`, экспорт сигналов и MT4 trailing execution check.
+- Подробности: [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
 
 ## [2026-04-20] - take_skip_v2 lib_PIC feature training
 

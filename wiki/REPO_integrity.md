@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 16:07 UTC · git `5e8b8a5`
+> Auto-generated 2026-04-20 17:31 UTC · git `66d85e6`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 856 files  ·  **Commit**: `5e8b8a5`  ·  **Generated**: 2026-04-20 16:07 UTC
+**Tracked**: 879 files  ·  **Commit**: `66d85e6`  ·  **Generated**: 2026-04-20 17:31 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-19 | 10KB | `58a59f0e` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 122KB | `63f36710` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 122KB | `4f21515d` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 25KB | `82a56380` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 25KB | `6fec2fa9` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-20 | 25KB | `716c038d` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
@@ -166,6 +166,7 @@
 | [docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `64b8dea4` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md) |  | 2026-04-20 | 9KB | `ac47d800` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
+| [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 10KB | `b046b660` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
@@ -330,6 +331,28 @@
 | [ML/reports/take_skip_lib_pic_feature_matrix/manifest.json](ML/reports/take_skip_lib_pic_feature_matrix/manifest.json) |  |  | 2026-04-20 | 136KB | `f5ddd710` |
 | [ML/reports/take_skip_lib_pic_selection/final_verdict.json](ML/reports/take_skip_lib_pic_selection/final_verdict.json) |  |  | 2026-04-20 | 5KB | `d5323101` |
 | [ML/reports/take_skip_mt4_trailing_sequential/summary.json](ML/reports/take_skip_mt4_trailing_sequential/summary.json) |  |  | 2026-04-19 | 6KB | `80ed09d0` |
+| [ML/reports/take_skip_original_contour_feature_matrix/manifest.json](ML/reports/take_skip_original_contour_feature_matrix/manifest.json) |  |  | 2026-04-20 | 141KB | `16fd569e` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 947B | `80f24abc` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/summary.json) |  |  | 2026-04-20 | 14KB | `9dc199bf` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq20/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 942B | `d3601dcb` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq20/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq20/summary.json) |  |  | 2026-04-20 | 14KB | `9d268fe8` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq50/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 940B | `d803eebc` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq50/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq50/summary.json) |  |  | 2026-04-20 | 14KB | `633b3988` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq100/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 995B | `ab51ed64` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq100/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq100/summary.json) |  |  | 2026-04-20 | 13KB | `5a9a3e85` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq20/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 985B | `4b87cdfa` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq20/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq20/summary.json) |  |  | 2026-04-20 | 15KB | `dde6609b` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 990B | `6ed19a6a` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq50/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_geometry_path_seq50/summary.json) |  |  | 2026-04-20 | 11KB | `c198bea1` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq100/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 995B | `9f7ffd5d` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq100/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq100/summary.json) |  |  | 2026-04-20 | 13KB | `d6217569` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq20/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq20/benchmark/final_verdict.json) |  |  | 2026-04-20 | 1009B | `7348dd7a` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq20/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq20/summary.json) |  |  | 2026-04-20 | 15KB | `b649eff8` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 1002B | `a27dd761` |
+| [ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/summary.json](ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/summary.json) |  |  | 2026-04-20 | 15KB | `cab95008` |
+| [ML/reports/take_skip_original_contour_feature_matrix_control/manifest.json](ML/reports/take_skip_original_contour_feature_matrix_control/manifest.json) |  |  | 2026-04-20 | 16KB | `7f73680d` |
+| [ML/reports/take_skip_original_contour_feature_matrix_control/original_baseline_seq50/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix_control/original_baseline_seq50/benchmark/final_verdict.json) |  |  | 2026-04-20 | 949B | `3089f610` |
+| [ML/reports/take_skip_original_contour_feature_matrix_control/original_baseline_seq50/summary.json](ML/reports/take_skip_original_contour_feature_matrix_control/original_baseline_seq50/summary.json) |  |  | 2026-04-20 | 14KB | `d54f4bea` |
 | [ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json](ML/reports/take_skip_trailing_stop_v2_followup/seq50/followup_summary.json) |  |  | 2026-04-19 | 3KB | `c5aa0bfc` |
 | [ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json](ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json) |  |  | 2026-04-19 | 723B | `071ea894` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/manifest.json](ML/reports/take_skip_trailing_stop_v2_matrix/manifest.json) |  |  | 2026-04-18 | 16KB | `5a4d337a` |
@@ -856,9 +879,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-20 | 1KB | `f372d760` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 10KB | `ec24fd6d` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 42KB | `8040e99f` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-20 | 1KB | `df21e3d6` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 11KB | `b5a2f578` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 45KB | `a7112d90` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 

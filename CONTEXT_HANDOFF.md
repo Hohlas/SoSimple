@@ -1,15 +1,16 @@
 # Context Handoff
 
 ## Current Stage
-Этап `take_skip_original_contour_feature_ablation` в разработке (2026-04-20).
+Этап `take_skip_original_contour_feature_ablation` завершён (2026-04-20).
 
-Что уже зафиксировано локально:
+Что зафиксировано:
 
 - создан план: `docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md`;
 - добавлен runner `ML/run_take_skip_original_contour_feature_matrix.py`;
 - добавлены тесты `tests/test_take_skip_original_contour_feature_matrix.py`;
 - добавлена документация `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`;
 - обновлены `ML/README.md`, `MODULE_INDEX.md`, `CHANGELOG.md`.
+- canonical report: `docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md`.
 
 Смысл runner-а:
 
@@ -23,33 +24,33 @@
   - `/home/hohla/git/SoSimple/.venv/bin/python -m pytest tests/test_take_skip_original_contour_feature_matrix.py tests/test_take_skip_trailing_stop_v2_task.py tests/test_take_skip_lib_pic_feature_matrix.py -q`
   - результат: `15 passed`, одно стандартное предупреждение PyTorch про nested tensors.
 
+Главные результаты:
+
+- контроль `original_baseline_seq50` восстановил старый контур:
+  - `input_features=539`;
+  - `take_24_x8`, `prob>=0.70`;
+  - validation `PF=inf`, `7.75` trades/year;
+  - test `PF=49.58`, `9.2` trades/year, negative years `0`.
+- полная матрица `3 feature modes × seq_len 20/50/100`:
+  - runtime `2840.42 sec`;
+  - все 9 конфигураций получили `go`;
+  - лучший practical candidate: `original_plus_path_seq50`;
+  - rule: `take_24_x8`, `prob_ge_threshold >= 0.60`, exit `x8`;
+  - validation: `9.75` trades/year, `PF=16.07`, negative years `0`;
+  - test: `10.2` trades/year, `PF=38.78`, negative years `0`, max DD `3.89 ATR`.
+
+Решение:
+
+- `path` признаки полезны как practical frequency uplift поверх quality-системы;
+- `geometry` не продвигать в MT4 сейчас: высокий PF, но test частота только `4.8` trades/year;
+- `original_baseline_seq50/100` оставить как quality anchor;
+- `original_plus_path_seq50` проверить в MT4 как третий candidate рядом с `quality` и `frequency`.
+
 Следующий шаг:
 
-1. Закоммитить scaffold.
-2. Запустить контрольный прогон:
-
-```bash
-PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
-  -m ML.run_take_skip_original_contour_feature_matrix \
-  --output-dir ML/reports/take_skip_original_contour_feature_matrix_control \
-  --feature-modes original_baseline \
-  --seq-lens 50 \
-  --epochs 10 \
-  --patience 4 \
-  --batch-size 256 \
-  --min-pf 1.0 \
-  --min-trades-per-year 6 \
-  --jobs 1 \
-  --torch-threads auto \
-  --cpu-load 0.5 \
-  --clear-cache \
-  2>&1 | tee ML/reports/take_skip_original_contour_feature_matrix_control/run.log
-```
-
-Stop rule:
-
-- если `original_baseline_seq50` не воспроизводит старую прибыльную область (`take_24_x8`, `prob_ge_threshold` около `0.70`, `PF > 1`, не меньше `6` сделок/год), не запускать feature-addition matrix;
-- если контроль проходит, запускать полную матрицу `original_baseline/original_plus_path/original_plus_geometry_path × seq_len 20/50/100`.
+1. Сформировать selected rule для `original_plus_path_seq50`.
+2. Экспортировать сигналы из `take_skip_original_contour_feature_matrix/original_plus_path_seq50`.
+3. Проверить в MT4 с `ML_TrailATR=8`, `ML_TakeProfitATR=0`.
 
 ## Previous Stage
 Этап `take_skip_lib_pic_feature_training` завершён (2026-04-20).

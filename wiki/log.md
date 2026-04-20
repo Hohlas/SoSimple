@@ -181,3 +181,12 @@
   - captured feature-frequency candidate: `pic_path_win_proxy24_share_w20 >= 0.25`, test `PF=5.30`, `trades_per_year=14.8`, `negative_year_slices=0`
   - clarified next step: use `lib_PIC` features inside a new training track rather than making a more complex external selector
 - Updated `wiki/index.md` coverage from 21 to 22 reports
+
+## [2026-04-20] ingest | take_skip original-contour feature ablation synced into wiki
+- Added report `docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md`
+- Added runner `ML/run_take_skip_original_contour_feature_matrix.py` and tests
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded that the old single-tensor contour was reproduced with `input_features=539`
+  - captured `original_plus_path_seq50` as practical candidate: `take_24_x8`, `prob>=0.60`, test `PF=38.78`, `trades_per_year=10.2`, negative years `0`
+  - recorded that geometry candidates are not promoted because frozen test frequency falls to `4.8` trades/year
+- Updated `wiki/index.md` coverage from 23 to 24 reports
