@@ -2,6 +2,29 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-20] - take_skip_v2 original contour feature ablation scaffold
+
+### Добавлено
+- `ML/run_take_skip_original_contour_feature_matrix.py`
+- `tests/test_take_skip_original_contour_feature_matrix.py`
+- `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`
+
+### Изменено
+- `ML/README.md`
+- `MODULE_INDEX.md`
+
+### Результаты
+- Реализован отдельный runner для проверки `lib_PIC` path/geometry признаков в старом single-tensor `take_skip_v2` контуре.
+- Старый baseline не заменяется на `baseline_clean`: новые признаки добавляются поверх исходного engineered-представления.
+- Поддержаны режимы `original_baseline`, `original_plus_path`, `original_plus_geometry_path`.
+- Runner пишет checkpoint, validation/test prediction CSV, benchmark и summary.
+- Фокусные тесты: `15 passed`, одно предупреждение PyTorch про nested tensors.
+
+### Следующий шаг
+- Запустить контрольный прогон `original_baseline_seq50`.
+- Если контроль не воспроизводит старую прибыльную область, остановиться и диагностировать разницу контура.
+- Если контроль проходит, запускать полную матрицу `original_baseline/original_plus_path/original_plus_geometry_path × seq_len 20/50/100`.
+
 ## [2026-04-20] - take_skip_v2 lib_PIC feature training
 
 ### Добавлено

@@ -1,6 +1,57 @@
 # Context Handoff
 
 ## Current Stage
+Этап `take_skip_original_contour_feature_ablation` в разработке (2026-04-20).
+
+Что уже зафиксировано локально:
+
+- создан план: `docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md`;
+- добавлен runner `ML/run_take_skip_original_contour_feature_matrix.py`;
+- добавлены тесты `tests/test_take_skip_original_contour_feature_matrix.py`;
+- добавлена документация `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`;
+- обновлены `ML/README.md`, `MODULE_INDEX.md`, `CHANGELOG.md`.
+
+Смысл runner-а:
+
+- проверить `lib_PIC` path/geometry признаки не в новом dual-stream контуре, а в старом single-tensor `take_skip_v2` представлении;
+- `original_baseline` воспроизводит старый подход: parsed fractals + multi-scale summaries + старые row-wise признаки;
+- `original_plus_path` и `original_plus_geometry_path` добавляют новые признаки поверх старого baseline, а не заменяют его.
+
+Проверка:
+
+- выполнено:
+  - `/home/hohla/git/SoSimple/.venv/bin/python -m pytest tests/test_take_skip_original_contour_feature_matrix.py tests/test_take_skip_trailing_stop_v2_task.py tests/test_take_skip_lib_pic_feature_matrix.py -q`
+  - результат: `15 passed`, одно стандартное предупреждение PyTorch про nested tensors.
+
+Следующий шаг:
+
+1. Закоммитить scaffold.
+2. Запустить контрольный прогон:
+
+```bash
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
+  -m ML.run_take_skip_original_contour_feature_matrix \
+  --output-dir ML/reports/take_skip_original_contour_feature_matrix_control \
+  --feature-modes original_baseline \
+  --seq-lens 50 \
+  --epochs 10 \
+  --patience 4 \
+  --batch-size 256 \
+  --min-pf 1.0 \
+  --min-trades-per-year 6 \
+  --jobs 1 \
+  --torch-threads auto \
+  --cpu-load 0.5 \
+  --clear-cache \
+  2>&1 | tee ML/reports/take_skip_original_contour_feature_matrix_control/run.log
+```
+
+Stop rule:
+
+- если `original_baseline_seq50` не воспроизводит старую прибыльную область (`take_24_x8`, `prob_ge_threshold` около `0.70`, `PF > 1`, не меньше `6` сделок/год), не запускать feature-addition matrix;
+- если контроль проходит, запускать полную матрицу `original_baseline/original_plus_path/original_plus_geometry_path × seq_len 20/50/100`.
+
+## Previous Stage
 Этап `take_skip_lib_pic_feature_training` завершён (2026-04-20).
 
 Что зафиксировано:

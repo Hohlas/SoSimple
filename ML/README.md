@@ -51,6 +51,7 @@
 | [threshold_analysis.py](threshold_analysis.py) | Поиск оптимального θ для торговых сигналов | checkpoint + val CSV → reports/ | ✅ |
 | [compare_architectures.py](compare_architectures.py) | Сравнение 4 архитектур | DataLoader → reports/ | 🏁 |
 | [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
+| [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для проверки `lib_PIC` признаков в старом single-tensor `take_skip_v2` контуре | labeled CSV → reports/take_skip_original_contour_feature_matrix/ | 🚧 |
 | [benchmark_take_skip_lib_pic_selection.py](benchmark_take_skip_lib_pic_selection.py) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → reports/take_skip_lib_pic_selection/ | ✅ |
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
@@ -108,6 +109,13 @@ MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_lib_pic_feature_matrix \
   --feature-profiles baseline_clean baseline_clean_path baseline_clean_geometry_path \
   --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256 \
   --jobs auto --torch-threads auto --cpu-load 0.5
+
+# Take/skip v2: старый single-tensor контур + новые lib_PIC признаки
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_original_contour_feature_matrix \
+  --feature-modes original_baseline original_plus_path original_plus_geometry_path \
+  --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256 \
+  --jobs auto --torch-threads auto --cpu-load 0.5 --clear-cache
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
+`run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, но проверяет добавление новых признаков поверх старого single-tensor представления.

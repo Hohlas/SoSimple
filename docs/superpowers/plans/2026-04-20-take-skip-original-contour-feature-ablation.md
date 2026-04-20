@@ -61,7 +61,7 @@ Do not use `baseline_clean` as the baseline for this plan. The point is to test 
 
 ## Task 1: Reconstruct Original Feature Builder
 
-- [ ] **Step 1: Write failing unit test for original baseline width**
+- [x] **Step 1: Write failing unit test for original baseline width**
 
 Test file: `tests/test_take_skip_original_contour_feature_matrix.py`
 
@@ -79,7 +79,7 @@ Run:
 
 Expected: fail with missing module/function.
 
-- [ ] **Step 2: Implement original feature builder**
+- [x] **Step 2: Implement original feature builder**
 
 In `ML/run_take_skip_original_contour_feature_matrix.py`, implement:
 
@@ -97,7 +97,7 @@ Use the old known behavior:
 - repeat engineered features over sequence length;
 - concatenate with parsed fractal tensor.
 
-- [ ] **Step 3: Run green unit test**
+- [x] **Step 3: Run green unit test**
 
 Run:
 
@@ -109,7 +109,7 @@ Expected: pass.
 
 ## Task 2: Add Feature Modes
 
-- [ ] **Step 1: Write failing test for feature modes**
+- [x] **Step 1: Write failing test for feature modes**
 
 Test behavior:
 
@@ -126,7 +126,7 @@ Run:
 
 Expected: fail until modes are wired.
 
-- [ ] **Step 2: Implement feature modes**
+- [x] **Step 2: Implement feature modes**
 
 Use existing `ML/lib_pic_feature_profiles.py` only as source for additional feature columns. Do not replace the old baseline with `baseline_clean`.
 
@@ -136,7 +136,7 @@ Implementation rule:
 - `original_plus_path` = old baseline + path features from `baseline_clean_path` minus `baseline_clean`;
 - `original_plus_geometry_path` = old baseline + all extra columns from `baseline_clean_geometry_path` minus `baseline_clean`.
 
-- [ ] **Step 3: Run green feature-mode test**
+- [x] **Step 3: Run green feature-mode test**
 
 Run:
 
@@ -148,7 +148,7 @@ Expected: pass.
 
 ## Task 3: Training Runner and Exports
 
-- [ ] **Step 1: Write failing smoke test**
+- [x] **Step 1: Write failing smoke test**
 
 Test behavior:
 
@@ -166,7 +166,7 @@ Run:
 
 Expected: fail with missing runner entry point.
 
-- [ ] **Step 2: Implement bounded runner**
+- [x] **Step 2: Implement bounded runner**
 
 Implement CLI:
 
@@ -198,7 +198,7 @@ Runner requirements:
 - write `manifest.json`;
 - print unbuffered progress lines: `[matrix-start]`, `[matrix-complete]`, `[matrix-failed]`, `[matrix-done]`.
 
-- [ ] **Step 3: Run smoke test**
+- [x] **Step 3: Run smoke test**
 
 Run:
 
@@ -296,9 +296,9 @@ Do not select a feature mode by test performance. Test is only confirmation afte
 
 ## Task 6: Documentation
 
-- [ ] Update `ML/README.md`.
-- [ ] Update `MODULE_INDEX.md`.
-- [ ] Add `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`.
+- [x] Update `ML/README.md`.
+- [x] Update `MODULE_INDEX.md`.
+- [x] Add `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`.
 - [ ] Add report `docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md`.
 - [ ] Update `CHANGELOG.md`.
 - [ ] Update `CONTEXT_HANDOFF.md`.
