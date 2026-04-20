@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-20
-sources: 23
+sources: 24
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 22 отчётов (2026-04-08 — 2026-04-20). Параллельные направления execution.
+> Синтез 24 отчётов (2026-04-08 — 2026-04-20). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -554,7 +554,18 @@ Geometry-ветка не выбрана: PF высокий, но test часто
 
 **Вывод:** `lib_PIC` path-признаки не ломают старый прибыльный контур и дают полезный trade-off: больше сделок при сохранении высокого PF. Это первый положительный результат именно от добавления `lib_PIC` признаков внутрь модели.
 
-Практическое следствие: `original_plus_path_seq50` стоит проверить в MT4 как третью систему рядом с текущими `quality` и `frequency`. `original_baseline_seq50/100` остаётся quality anchor.
+MT4 confirmation:
+
+| Exit | Trades | Net profit | PF | Relative DD |
+|---|---:|---:|---:|---:|
+| `TrailATR=8`, `TP=0` | 29 | 22294.65 | 23.79 | 14.74% |
+| `TrailATR=8`, `TP=12` | 29 | 15873.12 | 17.23 | 6.64% |
+
+MT4 log for `TP=0` confirmed `Position blocked=0`, `Score filtered=0`, `Opened=29`, `Trailing closes=29`. `TP=0` keeps trend tails and gives higher net profit; `TP=12` cuts tails and lowers drawdown.
+
+Trade-count caveat: Python exported `51` non-zero rows across the full test split, while MT4 opened `29` trades in the `2023-2025` tester interval. Main reason: exported rows can contain duplicate `time+signal` rows for the same H1 bar, while MT4 consumes direct ML signals by bar time. Before production packaging, add a parity benchmark for rows vs unique timestamps vs MT4 opened trades.
+
+Практическое следствие: `original_plus_path_seq50` становится третьей MT4-подтверждённой системой рядом с текущими `quality` и `frequency`. `original_baseline_seq50/100` остаётся quality anchor.
 
 Источник: [2026-04-20-take-skip-original-contour-feature-ablation.md](../../docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
 

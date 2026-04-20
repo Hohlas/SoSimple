@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 17:31 UTC · git `66d85e6`
+> Auto-generated 2026-04-20 17:53 UTC · git `d4f6790`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 879 files  ·  **Commit**: `66d85e6`  ·  **Generated**: 2026-04-20 17:31 UTC
+**Tracked**: 880 files  ·  **Commit**: `d4f6790`  ·  **Generated**: 2026-04-20 17:53 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-04-19 | 10KB | `58a59f0e` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 122KB | `4f21515d` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 123KB | `d61cf6a0` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 25KB | `6fec2fa9` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 26KB | `6e0b689b` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-20 | 25KB | `716c038d` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
@@ -166,7 +166,7 @@
 | [docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `64b8dea4` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md) |  | 2026-04-20 | 9KB | `ac47d800` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
-| [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 10KB | `b046b660` |
+| [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 13KB | `e15dbdd2` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
@@ -365,6 +365,7 @@
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/final_verdict.json](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/benchmark/final_verdict.json) |  |  | 2026-04-18 | 962B | `f4370930` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/evaluate_test_take_skip_trailing_stop_v2.md](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/evaluate_test_take_skip_trailing_stop_v2.md) |  |  | 2026-04-18 | 277B | `ab926937` |
 | [ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/summary.json](ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/summary.json) |  |  | 2026-04-18 | 4KB | `416def03` |
+| [ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json](ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json) |  |  | 2026-04-20 | 1KB | `297c1f74` |
 | [ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json](ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json) |  |  | 2026-04-19 | 903B | `3d56d55f` |
 | [ML/reports/tb_mt4_verdict/test_summary.json](ML/reports/tb_mt4_verdict/test_summary.json) |  |  | 2026-04-12 | 172B | `6ea3e9d3` |
 | [ML/reports/tb_mt4_verdict/validation_summary.json](ML/reports/tb_mt4_verdict/validation_summary.json) |  |  | 2026-04-12 | 167B | `cc2e7d34` |
@@ -880,8 +881,8 @@
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
 | [wiki/index.md](wiki/index.md) |  | 2026-04-20 | 1KB | `df21e3d6` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 11KB | `b5a2f578` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 45KB | `a7112d90` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-20 | 12KB | `9d615c09` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-20 | 46KB | `4b31e44f` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 

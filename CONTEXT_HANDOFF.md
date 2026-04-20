@@ -38,19 +38,32 @@
   - rule: `take_24_x8`, `prob_ge_threshold >= 0.60`, exit `x8`;
   - validation: `9.75` trades/year, `PF=16.07`, negative years `0`;
   - test: `10.2` trades/year, `PF=38.78`, negative years `0`, max DD `3.89 ATR`.
+- frozen rule создан:
+  - `ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json`.
+- MT4 confirmation на `XAUUSD,H1`, `2023-2025`:
+  - `ML_ExitMode=1`, `ML_TrailATR=8`, `ML_TakeProfitATR=0`, `ML_MaxPositions=100`;
+  - `29` сделок, net `22294.65`, PF `23.79`, relative DD `14.74%`;
+  - все `29` закрытий через trailing stop, `Position blocked=0`, `Score filtered=0`.
+- осторожная MT4-альтернатива:
+  - `ML_TrailATR=8`, `ML_TakeProfitATR=12`;
+  - `29` сделок, net `15873.12`, PF `17.23`, relative DD `6.64%`.
 
 Решение:
 
 - `path` признаки полезны как practical frequency uplift поверх quality-системы;
 - `geometry` не продвигать в MT4 сейчас: высокий PF, но test частота только `4.8` trades/year;
 - `original_baseline_seq50/100` оставить как quality anchor;
-- `original_plus_path_seq50` проверить в MT4 как третий candidate рядом с `quality` и `frequency`.
+- `original_plus_path_seq50` считать третьим MT4-подтверждённым candidate рядом с `quality` и `frequency`.
 
 Следующий шаг:
 
-1. Сформировать selected rule для `original_plus_path_seq50`.
-2. Экспортировать сигналы из `take_skip_original_contour_feature_matrix/original_plus_path_seq50`.
-3. Проверить в MT4 с `ML_TrailATR=8`, `ML_TakeProfitATR=0`.
+1. Сделать короткий parity benchmark для exported signals:
+   - full rows;
+   - non-zero rows;
+   - unique timestamps;
+   - MT4 opened trades.
+2. Сравнить `quality`, `frequency`, `original_plus_path` по одному MT4 execution protocol.
+3. После этого переходить к следующему независимому trading track.
 
 ## Previous Stage
 Этап `take_skip_lib_pic_feature_training` завершён (2026-04-20).

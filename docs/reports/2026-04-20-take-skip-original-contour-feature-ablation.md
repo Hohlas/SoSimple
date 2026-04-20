@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить `lib_PIC` path/geometry признаки в старом прибыльном single-tensor `take_skip_v2` контуре.
 > **Related plan**: `docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md`
-> **Related commit**: 879f01a
+> **Related commits**: 879f01a, d4f6790, pending
 
 ## Context
 
@@ -211,21 +211,104 @@ exit: x8
 
 `geometry` оставить как диагностическую ветку, но не двигать в MT4 без отдельной причины.
 
+## MT4 Confirmation
+
+После формирования frozen rule:
+
+- `ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json`
+
+и экспорта сигналов:
+
+- `ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/ml_signals_original_plus_path.csv`
+- `MT/tester/files/ml_signals.csv`
+- `MT/MQL4/Files/ml_signals.csv`
+
+кандидат был проверен в MT4 tester на `XAUUSD,H1`.
+
+Проверенный режим:
+
+| Parameter | Value |
+|---|---:|
+| `iSignal` | 3 |
+| `ML_ExitMode` | 1 |
+| `ML_TrailATR` | 8 |
+| `ML_TakeProfitATR` | 0 |
+| `ML_MaxPositions` | 100 |
+
+MT4 log подтверждает режим:
+
+```text
+ExitMode=trailing_stop  HoldBars=12  TrailATR=8.00  TakeProfitATR=0.00  MaxPositions=100
+Opened: 29 (BUY=16 SELL=13)
+Trailing closes: 29
+Position blocked: 0
+Score filtered: 0
+```
+
+MT4 result:
+
+| Metric | Value |
+|---|---:|
+| Net profit | 22294.65 |
+| Gross profit | 23272.89 |
+| Gross loss | -978.24 |
+| Profit factor | 23.79 |
+| Trades | 29 |
+| Expected payoff | 768.78 |
+| Max drawdown | 5413.20 |
+| Relative drawdown | 14.74% |
+| Win rate | 79.31% |
+| Largest win | 7996.90 |
+| Largest loss | -358.49 |
+
+For comparison, the same signals with `ML_TakeProfitATR=12` produced:
+
+| Exit | Net profit | PF | Trades | Relative DD |
+|---|---:|---:|---:|---:|
+| `TrailATR=8`, `TP=0` | 22294.65 | 23.79 | 29 | 14.74% |
+| `TrailATR=8`, `TP=12` | 15873.12 | 17.23 | 29 | 6.64% |
+
+Interpretation:
+
+- `TP=0` leaves trend tails open and gives higher profit;
+- `TP=12` cuts the largest trend tails and gives a smoother but smaller result;
+- both variants keep high PF on the same entry set.
+
+### Python-vs-MT4 trade count note
+
+The exported test signal CSV contains `51` non-zero rows across the full test split. MT4 opened `29` trades in the tested `2023-2025` period.
+
+This difference is expected from the current export/MT4 contract:
+
+- the full test split includes rows outside the tested `2023-01-01` to `2025-12-31` interval;
+- within `2023-2025`, the CSV has `43` non-zero rows but only `32` unique signal timestamps;
+- repeated rows with the same `time` and same `signal` are duplicate signal rows for the same H1 bar;
+- MT4 consumes signals by bar time, so one timestamp can create at most one direct ML entry in this mode.
+
+Three unique timestamps from the CSV did not appear in MT4 `MLP` opened trades:
+
+- `2023.08.25 17:00`;
+- `2023.11.22 21:00`;
+- `2025.03.10 22:00`.
+
+Because MT4 diagnostics show `Position blocked=0` and `Score filtered=0`, these three rows should be treated as reconciliation residue, not as a trading rule rejection. Before production packaging, exporter/MT4 parity should be tightened so the exported signal count, unique timestamps and tester diagnostics are reported side by side.
+
 ## Limitations
 
 - Test остаётся историческим frozen split, не forward.
 - Использована старая target-сетка `x2/x4/x8`; `x10/x12` не проверялись в этом training run.
-- Результат нужно подтвердить через export signals и MT4 trailing execution.
+- MT4 подтвердил candidate на `2023-2025`, но exporter/MT4 parity по duplicate timestamps нужно явно вынести в отдельную диагностику перед production.
 - Разные запуски могут немного отличаться из-за PyTorch/CPU недетерминизма; критерий — область результата, а не идентичные числа.
 
 ## Next Step
 
-Сформировать selected rule для `original_plus_path_seq50`, экспортировать сигналы и проверить в MT4:
+Считать `original_plus_path_seq50` третьим подтверждённым MT4-кандидатом рядом с `quality` и `frequency`.
 
-- сначала `ML_TrailATR=8`, `ML_TakeProfitATR=0`;
-- затем сравнить с текущими `quality` и `frequency` сигналами по тем же правилам execution.
+Следующий практический шаг:
 
-Если MT4 подтверждает качество, новый кандидат становится третьей независимой системой рядом с `quality` и `frequency`.
+1. сделать короткий parity benchmark для exported signals: rows vs unique timestamps vs MT4 opened trades;
+2. затем сравнить три системы (`quality`, `frequency`, `original_plus_path`) по одному MT4 execution protocol;
+3. после этого переходить к поиску следующего независимого trading track.
 
 ## Related Materials
 

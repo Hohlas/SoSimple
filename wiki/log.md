@@ -190,3 +190,11 @@
   - captured `original_plus_path_seq50` as practical candidate: `take_24_x8`, `prob>=0.60`, test `PF=38.78`, `trades_per_year=10.2`, negative years `0`
   - recorded that geometry candidates are not promoted because frozen test frequency falls to `4.8` trades/year
 - Updated `wiki/index.md` coverage from 23 to 24 reports
+
+## [2026-04-20] ingest | original_plus_path MT4 confirmation synced into wiki
+- Updated report `docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded MT4 confirmation for `original_plus_path_seq50`
+  - captured `TrailATR=8, TP=0`: `29` trades, net `22294.65`, PF `23.79`, relative DD `14.74%`
+  - captured cautious `TrailATR=8, TP=12`: `29` trades, net `15873.12`, PF `17.23`, relative DD `6.64%`
+  - recorded parity caveat: exported rows can duplicate the same H1 timestamp, while MT4 consumes one direct ML signal per bar time

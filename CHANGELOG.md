@@ -18,15 +18,19 @@
 - Старый baseline не заменяется на `baseline_clean`: новые признаки добавляются поверх исходного engineered-представления.
 - Поддержаны режимы `original_baseline`, `original_plus_path`, `original_plus_geometry_path`.
 - Runner пишет checkpoint, validation/test prediction CSV, benchmark и summary.
+- Зафиксован executable rule `ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json`.
 - Фокусные тесты: `15 passed`, одно предупреждение PyTorch про nested tensors.
 - Полная серверная матрица `3 feature modes × seq_len 20/50/100` завершилась за `2840.42 sec`; все 9 конфигураций получили `go`.
 - Контроль подтвердил восстановление старого контура: `input_features=539`, `take_24_x8`, validation `PF=inf`, test `PF=49.58`.
 - Лучший practical candidate: `original_plus_path_seq50`, `take_24_x8`, `prob>=0.60`; validation `9.75` trades/year, `PF=16.07`; test `10.2` trades/year, `PF=38.78`, negative years `0`.
+- MT4 подтвердил candidate: `TrailATR=8`, `TP=0`, `29` сделок, net `22294.65`, PF `23.79`, relative DD `14.74%`.
+- Осторожный MT4-вариант с `TP=12`: net `15873.12`, PF `17.23`, relative DD `6.64%`.
 
 ### Вывод
 - `path` признаки дают полезный trade-off: больше сделок, PF остаётся высоким.
 - `geometry` не выбран как practical candidate: высокий PF, но test частота только `4.8` trades/year.
-- Следующий шаг — selected rule для `original_plus_path_seq50`, экспорт сигналов и MT4 trailing execution check.
+- `original_plus_path_seq50` становится третьим MT4-подтверждённым кандидатом рядом с `quality` и `frequency`.
+- Перед production packaging нужен короткий parity benchmark: exported rows vs unique timestamps vs MT4 opened trades.
 - Подробности: [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
 
 ## [2026-04-20] - take_skip_v2 lib_PIC feature training
