@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить `lib_PIC` path/geometry признаки в старом прибыльном single-tensor `take_skip_v2` контуре.
 > **Related plan**: `docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md`
-> **Related commit**: pending
+> **Related commit**: 879f01a
 
 ## Context
 
