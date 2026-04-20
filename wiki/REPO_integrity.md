@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 17:53 UTC · git `d4f6790`
+> Auto-generated 2026-04-20 17:55 UTC · git `f2e3f24`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 880 files  ·  **Commit**: `d4f6790`  ·  **Generated**: 2026-04-20 17:53 UTC
+**Tracked**: 880 files  ·  **Commit**: `f2e3f24`  ·  **Generated**: 2026-04-20 17:55 UTC
 
 ## Root Docs
 
@@ -166,7 +166,7 @@
 | [docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `64b8dea4` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md) |  | 2026-04-20 | 9KB | `ac47d800` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
-| [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 13KB | `e15dbdd2` |
+| [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 13KB | `3e9f8318` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
