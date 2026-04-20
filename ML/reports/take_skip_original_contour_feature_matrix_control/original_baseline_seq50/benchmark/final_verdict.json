@@ -1,0 +1,33 @@
+{
+  "verdict": "go",
+  "validation_winner": {
+    "target_column": "take_24_x8",
+    "candidate": "prob_ge_threshold",
+    "threshold": 0.7,
+    "trades": 31,
+    "trades_per_year": 7.75,
+    "gross_profit": 107.72760946,
+    "gross_loss": -0.0,
+    "pf": Infinity,
+    "negative_year_slices": 0,
+    "profit_concentration_top_10": 0.2591249136588795,
+    "ulcer_index_atr": 52.375329759354834,
+    "max_drawdown_atr": 0.0,
+    "positive_rate_selected": 1.0
+  },
+  "test_result": {
+    "target_column": "take_24_x8",
+    "candidate": "prob_ge_threshold",
+    "threshold": 0.7,
+    "trades": 46,
+    "trades_per_year": 9.2,
+    "gross_profit": 199.6759808,
+    "gross_loss": 4.0275659500000005,
+    "pf": 49.5773336250397,
+    "negative_year_slices": 0,
+    "profit_concentration_top_10": 0.21332415861607723,
+    "ulcer_index_atr": 111.80138073260869,
+    "max_drawdown_atr": 4.027565949999996,
+    "positive_rate_selected": 0.9347826086956522
+  }
+}
