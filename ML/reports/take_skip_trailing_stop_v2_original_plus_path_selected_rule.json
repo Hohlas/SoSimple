@@ -1,0 +1,31 @@
+{
+  "mode": "original_plus_path_seq50",
+  "winner": {
+    "score_target": "take_24_x8",
+    "selector": "prob_ge_threshold",
+    "threshold": 0.6,
+    "exit_atr_multiplier": 8
+  },
+  "frozen_validation": {
+    "trades": 39,
+    "trades_per_year": 9.75,
+    "pf": 16.066373619045343,
+    "negative_year_slices": 0,
+    "profit_concentration_top_10": 0.24196552111981073,
+    "max_drawdown_atr": 7.068421000000001
+  },
+  "frozen_test": {
+    "trades": 51,
+    "trades_per_year": 10.2,
+    "pf": 38.78282241608527,
+    "negative_year_slices": 0,
+    "profit_concentration_top_10": 0.20927742350252315,
+    "max_drawdown_atr": 3.8900000000000006
+  },
+  "source": {
+    "report": "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md",
+    "matrix_dir": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50",
+    "final_verdict": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/benchmark/final_verdict.json",
+    "prediction_csv": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+  }
+}
