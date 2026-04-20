@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 07:44 UTC · git `4fb18e2`
+> Auto-generated 2026-04-20 07:56 UTC · git `39020d8`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 826 files  ·  **Commit**: `4fb18e2`  ·  **Generated**: 2026-04-20 07:44 UTC
+**Tracked**: 831 files  ·  **Commit**: `39020d8`  ·  **Generated**: 2026-04-20 07:56 UTC
 
 ## Root Docs
 
@@ -19,7 +19,7 @@
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-20 | 119KB | `295d7ebf` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-20 | 20KB | `0a57348c` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-20 | 23KB | `857b45df` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-20 | 24KB | `e98b6ecf` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
 ## Documentation
@@ -37,6 +37,7 @@
 | [docs/ML/lib_pic_geometry_feature_bank.py.md](docs/ML/lib_pic_geometry_feature_bank.py.md) | Производные признаки геометрии уровней `lib_PIC` | 2026-04-20 | 3KB | `1da45c79` |
 | [docs/ML/lib_pic_path_reaction_feature_bank.py.md](docs/ML/lib_pic_path_reaction_feature_bank.py.md) | Производные признаки исторической реакции цены `Up/Dn` после уровней | 2026-04-20 | 2KB | `9d18b5e1` |
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-04-20 | 24KB | `b00080ac` |
+| [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 2KB | `7234e134` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-19 | 11KB | `40b6a8bb` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-19 | 14KB | `84bb5246` |
@@ -93,6 +94,7 @@
 | [docs/superpowers/plans/2026-04-19-lib-pic-feature-source-audit.md](docs/superpowers/plans/2026-04-19-lib-pic-feature-source-audit.md) |  | 2026-04-20 | 6KB | `35ba356d` |
 | [docs/superpowers/plans/2026-04-19-lib-pic-geometry-feature-bank.md](docs/superpowers/plans/2026-04-19-lib-pic-geometry-feature-bank.md) |  | 2026-04-20 | 2KB | `53f8ce75` |
 | [docs/superpowers/plans/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/superpowers/plans/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `e0278dfc` |
+| [docs/superpowers/plans/2026-04-20-lib-pic-feature-training-track.md](docs/superpowers/plans/2026-04-20-lib-pic-feature-training-track.md) |  | 2026-04-20 | 5KB | `e82f744a` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-07 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-20 | 8KB | `579eceb3` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-03-23 | 12KB | `82b0860f` |
@@ -167,7 +169,7 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-04-20 | 5KB | `a37f1b18` |
+| [ML/README.md](ML/README.md) |  |  | 2026-04-20 | 6KB | `b20b6c98` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
@@ -218,6 +220,7 @@
 | [ML/models/entry_path_transformer.py](ML/models/entry_path_transformer.py) | EntryPathTransformer — специализированный Transformer для entry_path_v1 | ✅ | 2026-04-17 | 4KB | `41ffb003` |
 | [ML/models/entry_path_v1_quantile_transformer.py](ML/models/entry_path_v1_quantile_transformer.py) | EntryPathV1QuantileTransformer — entry_path_v1 + q10/q90 heads | ✅ | 2026-04-10 | 4KB | `a25b4776` |
 | [ML/models/hybrid_cnn_lstm.py](ML/models/hybrid_cnn_lstm.py) | Hybrid CNN+LSTM | 🏁 | 2026-03-12 | 5KB | `069a6018` |
+| [ML/models/take_skip_dual_stream_transformer.py](ML/models/take_skip_dual_stream_transformer.py) | Dual-stream Transformer для `take_skip_v2`: sequence branch + `lib_PIC` feature branch | ✅ | 2026-04-20 | 3KB | `d645930f` |
 | [ML/models/trailing_stop_target_quantile_transformer.py](ML/models/trailing_stop_target_quantile_transformer.py) | TrailingStopTargetQuantileTransformer — q10/q50/q90 heads для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 2KB | `61f57808` |
 | [ML/models/transformer.py](ML/models/transformer.py) | Transformer Encoder (лучшая архитектура) | ✅ | 2026-03-12 | 7KB | `27645ebe` |
 | [ML/multi_scale_fractal_features.py](ML/multi_scale_fractal_features.py) |  |  | 2026-04-18 | 1KB | `c73c28c3` |
@@ -389,6 +392,7 @@
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md) |  |  | 2026-04-17 | 385B | `e972ae90` |
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json) |  |  | 2026-04-17 | 2KB | `255c26ad` |
 | [ML/reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | 🏁 | 2026-03-11 | 7KB | `756dd1c8` |
+| [ML/run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | 🚧 | 2026-04-20 | 14KB | `1645e67f` |
 | [ML/run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | ✅ | 2026-04-17 | 6KB | `0d1d781d` |
 | [ML/run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | ✅ | 2026-04-18 | 9KB | `b18488e5` |
 | [ML/run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 6KB | `ac5afba9` |
@@ -496,6 +500,7 @@
 | [tests/test_signal_quality_research.py](tests/test_signal_quality_research.py) | `API/signal_quality_research.py` — filter features, variance check, tree, holdout | ✅ | 2026-04-08 | 12KB | `60b730b0` |
 | [tests/test_signal_research.py](tests/test_signal_research.py) | `API/signal_research.py` — ATR14, excursions, barriers, split | ✅ | 2026-04-08 | 41KB | `2eeb81b2` |
 | [tests/test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | ✅ | 2026-04-08 | 2KB | `cfe94d2f` |
+| [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-04-20 | 3KB | `0eaea28c` |
 | [tests/test_take_skip_trailing_stop_v2_task.py](tests/test_take_skip_trailing_stop_v2_task.py) |  |  | 2026-04-19 | 3KB | `df306b0d` |
 | [tests/test_tb_label_invariants.py](tests/test_tb_label_invariants.py) |  |  | 2026-04-13 | 1KB | `46510bd4` |
 | [tests/test_track_a_max_out_matrix.py](tests/test_track_a_max_out_matrix.py) | `ML/run_track_a_max_out_matrix.py` | ✅ | 2026-04-17 | 706B | `da3502cc` |

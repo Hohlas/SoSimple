@@ -34,6 +34,7 @@
 | [models/bilstm.py](models/bilstm.py) | Bi-LSTM | 🏁 |
 | [models/cnn1d.py](models/cnn1d.py) | 1D-CNN | 🏁 |
 | [models/hybrid_cnn_lstm.py](models/hybrid_cnn_lstm.py) | Hybrid CNN+LSTM | 🏁 |
+| [models/take_skip_dual_stream_transformer.py](models/take_skip_dual_stream_transformer.py) | Dual-stream Transformer для `take_skip_v2`: фракталы + признаки `lib_PIC` | ✅ |
 
 ### Training
 
@@ -49,6 +50,7 @@
 | [evaluate_test.py](evaluate_test.py) | OOS оценка на тестовой выборке | checkpoint + test CSV → reports/ | ✅ |
 | [threshold_analysis.py](threshold_analysis.py) | Поиск оптимального θ для торговых сигналов | checkpoint + val CSV → reports/ | ✅ |
 | [compare_architectures.py](compare_architectures.py) | Сравнение 4 архитектур | DataLoader → reports/ | 🏁 |
+| [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
 | [benchmark_take_skip_lib_pic_selection.py](benchmark_take_skip_lib_pic_selection.py) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → reports/take_skip_lib_pic_selection/ | ✅ |
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
@@ -100,4 +102,9 @@ python -m ML.train --model transformer --task triple_barrier --epochs 100 --pati
 # Entry path с очищенным профилем признаков lib_PIC
 python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
   --entry_path_feature_profile baseline_clean --seq_len 20 --clear_cache
+
+# Take/skip v2: обучение с признаками lib_PIC внутри модели
+MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_lib_pic_feature_matrix \
+  --feature-profiles baseline_clean baseline_clean_path baseline_clean_geometry_path \
+  --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256
 ```
