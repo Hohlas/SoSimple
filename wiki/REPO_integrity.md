@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-20 08:45 UTC · git `47fba69`
+> Auto-generated 2026-04-20 09:42 UTC · git `2c67863`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 831 files  ·  **Commit**: `47fba69`  ·  **Generated**: 2026-04-20 08:45 UTC
+**Tracked**: 831 files  ·  **Commit**: `2c67863`  ·  **Generated**: 2026-04-20 09:42 UTC
 
 ## Root Docs
 
@@ -37,7 +37,7 @@
 | [docs/ML/lib_pic_geometry_feature_bank.py.md](docs/ML/lib_pic_geometry_feature_bank.py.md) | Производные признаки геометрии уровней `lib_PIC` | 2026-04-20 | 3KB | `1da45c79` |
 | [docs/ML/lib_pic_path_reaction_feature_bank.py.md](docs/ML/lib_pic_path_reaction_feature_bank.py.md) | Производные признаки исторической реакции цены `Up/Dn` после уровней | 2026-04-20 | 2KB | `9d18b5e1` |
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-04-20 | 24KB | `b00080ac` |
-| [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 3KB | `46e7fd49` |
+| [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 4KB | `874c551a` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-19 | 11KB | `40b6a8bb` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-19 | 14KB | `84bb5246` |
@@ -169,7 +169,7 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-04-20 | 6KB | `011f18bf` |
+| [ML/README.md](ML/README.md) |  |  | 2026-04-20 | 6KB | `c47aebb3` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
@@ -392,7 +392,7 @@
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md) |  |  | 2026-04-17 | 385B | `e972ae90` |
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json) |  |  | 2026-04-17 | 2KB | `255c26ad` |
 | [ML/reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | 🏁 | 2026-03-11 | 7KB | `756dd1c8` |
-| [ML/run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | 🚧 | 2026-04-20 | 18KB | `9a955b99` |
+| [ML/run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | 🚧 | 2026-04-20 | 23KB | `78656271` |
 | [ML/run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | ✅ | 2026-04-17 | 6KB | `0d1d781d` |
 | [ML/run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | ✅ | 2026-04-18 | 9KB | `b18488e5` |
 | [ML/run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 6KB | `ac5afba9` |
@@ -500,7 +500,7 @@
 | [tests/test_signal_quality_research.py](tests/test_signal_quality_research.py) | `API/signal_quality_research.py` — filter features, variance check, tree, holdout | ✅ | 2026-04-08 | 12KB | `60b730b0` |
 | [tests/test_signal_research.py](tests/test_signal_research.py) | `API/signal_research.py` — ATR14, excursions, barriers, split | ✅ | 2026-04-08 | 41KB | `2eeb81b2` |
 | [tests/test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | ✅ | 2026-04-08 | 2KB | `cfe94d2f` |
-| [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-04-20 | 4KB | `d94925b1` |
+| [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-04-20 | 5KB | `abfe4408` |
 | [tests/test_take_skip_trailing_stop_v2_task.py](tests/test_take_skip_trailing_stop_v2_task.py) |  |  | 2026-04-19 | 3KB | `df306b0d` |
 | [tests/test_tb_label_invariants.py](tests/test_tb_label_invariants.py) |  |  | 2026-04-13 | 1KB | `46510bd4` |
 | [tests/test_track_a_max_out_matrix.py](tests/test_track_a_max_out_matrix.py) | `ML/run_track_a_max_out_matrix.py` | ✅ | 2026-04-17 | 706B | `da3502cc` |
