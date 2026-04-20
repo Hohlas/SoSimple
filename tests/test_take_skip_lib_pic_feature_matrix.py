@@ -55,6 +55,12 @@ def _source_frame(rows: int = 6) -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
+def _source_frame_old_grid(rows: int = 6) -> pd.DataFrame:
+    frame = _source_frame(rows=rows)
+    drop_cols = [column for column in TAKE_SKIP_TRUE_PNL_V2_COLUMNS if column.endswith('_x10') or column.endswith('_x12')]
+    return frame.drop(columns=drop_cols)
+
+
 def test_take_skip_dual_stream_model_outputs_logits():
     from ML.models.take_skip_dual_stream_transformer import TakeSkipDualStreamTransformer
 
@@ -76,15 +82,28 @@ def test_build_feature_dataset_uses_profile_and_targets():
         _source_frame(rows=4),
         feature_profile='baseline_clean_path',
         seq_len=20,
+        target_columns=('take_12_x2', 'take_24_x4', 'take_48_x8'),
     )
 
     assert arrays.X.shape == (4, 20, 20)
     assert arrays.mask.shape == (4, 20)
     assert arrays.engineered.shape[0] == 4
     assert arrays.engineered.shape[1] > 100
-    assert arrays.y.shape == (4, 15)
+    assert arrays.y.shape == (4, 3)
     assert np.isfinite(arrays.X).all()
     assert np.isfinite(arrays.engineered).all()
+
+
+def test_resolve_target_columns_uses_available_old_grid():
+    from ML.run_take_skip_lib_pic_feature_matrix import resolve_target_columns
+
+    target_columns = resolve_target_columns(_source_frame_old_grid(rows=4))
+
+    assert target_columns == (
+        'take_12_x2', 'take_12_x4', 'take_12_x8',
+        'take_24_x2', 'take_24_x4', 'take_24_x8',
+        'take_48_x2', 'take_48_x4', 'take_48_x8',
+    )
 
 
 def test_run_single_config_writes_summary_and_exports(tmp_path: Path):
@@ -107,6 +126,7 @@ def test_run_single_config_writes_summary_and_exports(tmp_path: Path):
         seed=42,
         min_pf=1.0,
         min_trades_per_year=0.1,
+        target_columns=('take_12_x2', 'take_24_x4', 'take_48_x8'),
         model_kwargs={'d_model': 16, 'nhead': 4, 'num_layers': 1, 'dim_feedforward': 32, 'dropout': 0.0},
     )
 
@@ -118,4 +138,5 @@ def test_run_single_config_writes_summary_and_exports(tmp_path: Path):
     assert (run_dir / 'benchmark' / 'final_verdict.json').exists()
     saved = json.loads((run_dir / 'summary.json').read_text(encoding='utf-8'))
     assert saved['config']['feature_profile'] == 'baseline_clean'
+    assert saved['config']['target_columns'] == ['take_12_x2', 'take_24_x4', 'take_48_x8']
     assert result['benchmark']['validation_grid_path'].endswith('validation_grid.csv')

@@ -17,6 +17,13 @@
 
 CSV должны содержать исходные фракталы и колонки `take_skip_v2`, включая `trail_*_pnl_atr_x*`.
 
+Runner поддерживает два формата `take_skip_v2`:
+
+- старую сетку `x2/x4/x8`;
+- расширенную сетку `x2/x4/x8/x10/x12`.
+
+Если `--target-columns` не задан, используются только те цели, для которых в CSV реально есть source-колонки `trail_*_pnl_atr_x*`.
+
 ## Выходные данные
 
 По каждой конфигурации создаётся каталог:
@@ -62,8 +69,25 @@ MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
   --min-trades-per-year 6
 ```
 
+Для принудительного запуска только старой сетки:
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
+  -m ML.run_take_skip_lib_pic_feature_matrix \
+  --output-dir ML/reports/take_skip_lib_pic_feature_matrix \
+  --feature-profiles baseline_clean baseline_clean_path baseline_clean_geometry_path \
+  --seq-lens 20 50 100 \
+  --target-columns take_12_x2 take_12_x4 take_12_x8 take_24_x2 take_24_x4 take_24_x8 take_48_x2 take_48_x4 take_48_x8 \
+  --epochs 10 \
+  --patience 4 \
+  --batch-size 256 \
+  --min-pf 1.0 \
+  --min-trades-per-year 6
+```
+
 ## Ограничения
 
 - Это отдельный research runner, общий `ML.train` не меняется.
 - Полная сетка читает большие CSV и обучает несколько моделей, поэтому её лучше запускать на удалённом сервере.
+- Если в DATA нет `x10/x12`, это не ошибка: runner обучится только на доступных целях.
 - Результат нужно оценивать не только по PF, но и по числу сделок в год, отрицательным годовым срезам и концентрации прибыли.

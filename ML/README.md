@@ -108,3 +108,5 @@ MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_lib_pic_feature_matrix \
   --feature-profiles baseline_clean baseline_clean_path baseline_clean_geometry_path \
   --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256
 ```
+
+`run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
