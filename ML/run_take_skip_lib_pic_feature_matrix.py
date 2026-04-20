@@ -9,7 +9,7 @@
 # Выходные данные:
 #   - ML/reports/take_skip_lib_pic_feature_matrix/
 # Использование:
-#   python -m ML.run_take_skip_lib_pic_feature_matrix --feature-profiles baseline_clean --seq-lens 20
+#   python -m ML.run_take_skip_lib_pic_feature_matrix --feature-profiles baseline_clean --seq-lens 20 --jobs 1
 # Примечания:
 #   - Это отдельный research runner; общий ML.train не меняется.
 #   - Если --target-columns не задан, используются только цели, присутствующие в CSV.
@@ -18,9 +18,11 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import math
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -282,14 +284,19 @@ def run_single_config_from_frames(
     min_pf: float,
     min_trades_per_year: float,
     target_columns: tuple[str, ...] | None = None,
+    torch_threads: int | None = None,
     model_kwargs: dict | None = None,
 ) -> dict[str, object]:
+    if torch_threads is not None and torch_threads > 0:
+        torch.set_num_threads(int(torch_threads))
     set_seed(seed)
     started_at = time.time()
     run_dir = output_root / config_slug(feature_profile, seq_len)
     run_dir.mkdir(parents=True, exist_ok=True)
+    print(f'[start] {run_dir.name}: profile={feature_profile} seq_len={seq_len}', flush=True)
 
     target_columns = resolve_target_columns(train_frame, target_columns)
+    print(f'[targets] {run_dir.name}: {", ".join(target_columns)}', flush=True)
     for split_name, frame in [('validation', validation_frame), ('test', test_frame)]:
         split_targets = resolve_target_columns(frame, target_columns)
         if split_targets != target_columns:
@@ -325,6 +332,10 @@ def run_single_config_from_frames(
         val_loss, metrics = _validate(model, validation_loader, loss_fn, device, target_columns)
         score = float(metrics['val_score'])
         history.append({'epoch': epoch, 'train_loss': train_loss, 'val_loss': val_loss, **metrics})
+        print(
+            f'[epoch] {run_dir.name}: {epoch}/{epochs} train_loss={train_loss:.6f} val_loss={val_loss:.6f} bce={metrics["bce"]:.6f}',
+            flush=True,
+        )
         if score > best_score:
             best_score = score
             best_epoch = epoch
@@ -393,7 +404,54 @@ def run_single_config_from_frames(
         'runtime_sec': time.time() - started_at,
     }
     (run_dir / 'summary.json').write_text(json.dumps(_json_safe(summary), ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f'[done] {run_dir.name}: runtime_sec={summary["runtime_sec"]:.1f}', flush=True)
     return summary
+
+
+def _run_single_config_from_files(
+    *,
+    output_root: Path,
+    feature_profile: str,
+    seq_len: int,
+    epochs: int,
+    patience: int,
+    batch_size: int,
+    seed: int,
+    min_pf: float,
+    min_trades_per_year: float,
+    target_columns: tuple[str, ...] | None,
+    torch_threads: int | None,
+) -> dict[str, object]:
+    if torch_threads is not None and torch_threads > 0:
+        torch.set_num_threads(int(torch_threads))
+    run_dir = output_root / config_slug(feature_profile, seq_len)
+    log_dir = run_dir / 'logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / 'run.log'
+    with log_path.open('w', encoding='utf-8') as log_file:
+        with contextlib.redirect_stdout(log_file), contextlib.redirect_stderr(log_file):
+            print(f'[worker-start] {run_dir.name}', flush=True)
+            train_frame = _read_labeled_csv(TRAIN_FILE)
+            validation_frame = _read_labeled_csv(VAL_FILE)
+            test_frame = _read_labeled_csv(TEST_FILE)
+            result = run_single_config_from_frames(
+                train_frame=train_frame,
+                validation_frame=validation_frame,
+                test_frame=test_frame,
+                output_root=output_root,
+                feature_profile=feature_profile,
+                seq_len=seq_len,
+                epochs=epochs,
+                patience=patience,
+                batch_size=batch_size,
+                seed=seed,
+                min_pf=min_pf,
+                min_trades_per_year=min_trades_per_year,
+                target_columns=target_columns,
+                torch_threads=torch_threads,
+            )
+            print(f'[worker-done] {run_dir.name}', flush=True)
+            return result
 
 
 def run_matrix(
@@ -408,13 +466,31 @@ def run_matrix(
     min_pf: float,
     min_trades_per_year: float,
     target_columns: tuple[str, ...] | None = None,
+    jobs: int = 1,
+    torch_threads: int | None = None,
 ) -> dict[str, object]:
+    started_at = time.time()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f'[matrix-load] train={TRAIN_FILE}', flush=True)
     train_frame = _read_labeled_csv(TRAIN_FILE)
-    validation_frame = _read_labeled_csv(VAL_FILE)
-    test_frame = _read_labeled_csv(TEST_FILE)
+    resolved_target_columns = resolve_target_columns(train_frame, target_columns)
+    configs = [
+        (feature_profile, seq_len)
+        for feature_profile in feature_profiles
+        for seq_len in seq_lens
+    ]
+    print(
+        f'[matrix-start] configs={len(configs)} jobs={jobs} torch_threads={torch_threads or "default"} targets={len(resolved_target_columns)}',
+        flush=True,
+    )
     runs = []
-    for feature_profile in feature_profiles:
-        for seq_len in seq_lens:
+    if jobs <= 1:
+        print(f'[matrix-load] validation={VAL_FILE}', flush=True)
+        validation_frame = _read_labeled_csv(VAL_FILE)
+        print(f'[matrix-load] test={TEST_FILE}', flush=True)
+        test_frame = _read_labeled_csv(TEST_FILE)
+        for feature_profile, seq_len in configs:
+            print(f'[matrix-run] {config_slug(feature_profile, seq_len)}', flush=True)
             runs.append(
                 run_single_config_from_frames(
                     train_frame=train_frame,
@@ -429,17 +505,45 @@ def run_matrix(
                     seed=seed,
                     min_pf=min_pf,
                     min_trades_per_year=min_trades_per_year,
-                    target_columns=target_columns,
+                    target_columns=resolved_target_columns,
+                    torch_threads=torch_threads,
                 )
             )
+    else:
+        with ProcessPoolExecutor(max_workers=jobs) as executor:
+            futures = {
+                executor.submit(
+                    _run_single_config_from_files,
+                    output_root=output_dir,
+                    feature_profile=feature_profile,
+                    seq_len=seq_len,
+                    epochs=epochs,
+                    patience=patience,
+                    batch_size=batch_size,
+                    seed=seed,
+                    min_pf=min_pf,
+                    min_trades_per_year=min_trades_per_year,
+                    target_columns=resolved_target_columns,
+                    torch_threads=torch_threads,
+                ): config_slug(feature_profile, seq_len)
+                for feature_profile, seq_len in configs
+            }
+            for future in as_completed(futures):
+                slug = futures[future]
+                result = future.result()
+                print(f'[matrix-complete] {slug}', flush=True)
+                runs.append(result)
     manifest = {
         'runs': runs,
         'feature_profiles': list(feature_profiles),
         'seq_lens': list(seq_lens),
-        'target_columns': list(resolve_target_columns(train_frame, target_columns)),
+        'target_columns': list(resolved_target_columns),
+        'jobs': jobs,
+        'torch_threads': torch_threads,
+        'runtime_sec': time.time() - started_at,
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / 'manifest.json').write_text(json.dumps(_json_safe(manifest), ensure_ascii=False, indent=2), encoding='utf-8')
+    print(f'[matrix-done] runtime_sec={manifest["runtime_sec"]:.1f}', flush=True)
     return manifest
 
 
@@ -455,6 +559,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--min-pf', type=float, default=1.0)
     parser.add_argument('--min-trades-per-year', type=float, default=6.0)
     parser.add_argument('--target-columns', nargs='+', default=None)
+    parser.add_argument('--jobs', type=int, default=1)
+    parser.add_argument('--torch-threads', type=int, default=None)
     return parser.parse_args()
 
 
@@ -471,6 +577,8 @@ def main() -> dict[str, object]:
         min_pf=args.min_pf,
         min_trades_per_year=args.min_trades_per_year,
         target_columns=tuple(args.target_columns) if args.target_columns else None,
+        jobs=args.jobs,
+        torch_threads=args.torch_threads,
     )
     print(json.dumps(_json_safe(manifest), ensure_ascii=False, indent=2))
     return manifest

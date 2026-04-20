@@ -140,3 +140,46 @@ def test_run_single_config_writes_summary_and_exports(tmp_path: Path):
     assert saved['config']['feature_profile'] == 'baseline_clean'
     assert saved['config']['target_columns'] == ['take_12_x2', 'take_24_x4', 'take_48_x8']
     assert result['benchmark']['validation_grid_path'].endswith('validation_grid.csv')
+
+
+def test_run_matrix_accepts_parallel_jobs_and_torch_threads(monkeypatch, tmp_path: Path):
+    from ML import run_take_skip_lib_pic_feature_matrix as runner
+
+    calls = []
+
+    def fake_read_labeled_csv(_path):
+        return _source_frame_old_grid(rows=4)
+
+    def fake_run_single_config_from_frames(**kwargs):
+        calls.append(kwargs)
+        return {
+            'config': {
+                'feature_profile': kwargs['feature_profile'],
+                'seq_len': kwargs['seq_len'],
+                'torch_threads': kwargs['torch_threads'],
+            }
+        }
+
+    monkeypatch.setattr(runner, '_read_labeled_csv', fake_read_labeled_csv)
+    monkeypatch.setattr(runner, 'run_single_config_from_frames', fake_run_single_config_from_frames)
+
+    manifest = runner.run_matrix(
+        output_dir=tmp_path / 'matrix',
+        feature_profiles=('baseline_clean',),
+        seq_lens=(20, 50),
+        epochs=1,
+        patience=1,
+        batch_size=4,
+        seed=42,
+        min_pf=1.0,
+        min_trades_per_year=0.1,
+        target_columns=None,
+        jobs=1,
+        torch_threads=3,
+    )
+
+    assert len(calls) == 2
+    assert {call['seq_len'] for call in calls} == {20, 50}
+    assert all(call['torch_threads'] == 3 for call in calls)
+    assert manifest['jobs'] == 1
+    assert manifest['torch_threads'] == 3
