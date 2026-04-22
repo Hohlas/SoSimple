@@ -3,7 +3,7 @@
 > **Date**: 2026-04-22
 > **Status**: Completed
 > **Goal**: Закрыть расхождение между количеством строк в exported `ml_signals.csv` и количеством сделок, реально открытых MT4.
-> **Related commit**: pending
+> **Related commit**: 2b8d1c8
 
 ## Context
 

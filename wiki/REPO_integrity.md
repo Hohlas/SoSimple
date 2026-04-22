@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-22 07:31 UTC · git `efab585`
+> Auto-generated 2026-04-22 07:31 UTC · git `2b8d1c8`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 886 files  ·  **Commit**: `efab585`  ·  **Generated**: 2026-04-22 07:31 UTC
+**Tracked**: 886 files  ·  **Commit**: `2b8d1c8`  ·  **Generated**: 2026-04-22 07:31 UTC
 
 ## Root Docs
 
@@ -168,7 +168,7 @@
 | [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md) |  | 2026-04-20 | 9KB | `ac47d800` |
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
 | [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 13KB | `3e9f8318` |
-| [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md) |  | 2026-04-22 | 5KB | `2dd65073` |
+| [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md) |  | 2026-04-22 | 5KB | `64f8d26c` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
