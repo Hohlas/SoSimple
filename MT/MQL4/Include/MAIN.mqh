@@ -108,13 +108,12 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void LINE(string txt, uchar f0, uchar f1, color clr, uchar Width);
    }EXP[1];
 
+// -----------------------------------------------------------------------------------------------------------------------------------------------------------
+#ifndef PIC_INDICATOR // код компилируется только в эксперте
+
 #include <lib_ML_Signal.mqh>     // ML parity-check: прямое исполнение CSV-сигналов
 #include <lib_ML_Signal_TB.mqh>  // ML Triple Barrier сигналы (фиксированные SL/TP)
 
-   
-// -----------------------------------------------------------------------------------------------------------------------------------------------------------     
-#ifndef PIC_INDICATOR // код компилируется только в эксперте
-   
 void EXPERT::MAIN(){
    if (!EXPERT_SET(ExpNum)) return; // выбор параметров эксперта из строки Exp массива CSV, сформированного из файла #.csv
    bool ml_direct_mode = (iSignal == 3); // только после EXPERT_SET(): iSignal мог быть перезаписан из строки эксперта
