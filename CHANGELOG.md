@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-22] - Signal export parity benchmark
+
+### Добавлено
+- `ML/benchmark_signal_export_parity.py`
+- `tests/test_signal_export_parity.py`
+- `docs/ML/benchmark_signal_export_parity.py.md`
+
+### Результаты
+- Добавлен инструмент, который сравнивает exported `ml_signals.csv` с MT4 tester log.
+- Для `original_plus_path_20260420`: `51` ненулевая строка export, `37` уникальных `time+signal`, `29` MT4 opened trades.
+- Найдено `14` повторов одного `time+signal`; противоположных сигналов на одном времени нет.
+- MT4 diagnostics: `Position blocked=0`, `Score filtered=0`, `Opened=29`, `Trailing closes=29`.
+
+### Вывод
+- Дубли времени в DATA являются ожидаемыми разными пиками одного бара и не должны схлопываться.
+- Runtime-формат `time;signal` грубее DATA: он исполняет сигнал на уровне времени бара.
+- Parity-хвост закрыт; следующий крупный шаг — cross-instrument robustness check.
+- Подробности: [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md)
+
 ## [2026-04-20] - take_skip_v2 original contour feature ablation
 
 ### Добавлено

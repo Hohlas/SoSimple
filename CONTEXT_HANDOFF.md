@@ -1,6 +1,50 @@
 # Context Handoff
 
 ## Current Stage
+Этап `signal_export_parity` завершён (2026-04-22).
+
+Что зафиксировано:
+
+- добавлен `ML/benchmark_signal_export_parity.py`;
+- добавлены тесты `tests/test_signal_export_parity.py`;
+- добавлена документация `docs/ML/benchmark_signal_export_parity.py.md`;
+- создан отчёт `docs/reports/2026-04-22-signal-export-parity.md`;
+- результат записан в `ML/reports/signal_export_parity/original_plus_path_20260420/summary.json` и `summary.md`.
+
+Зачем:
+
+- закрыть расхождение между `51` ненулевой строкой exported `ml_signals.csv` и `29` сделками MT4;
+- не менять DATA и не схлопывать пики одного бара;
+- явно разделить уровни детализации:
+  - DATA/export rows;
+  - unique `time`;
+  - unique `time+signal`;
+  - MT4 opened trades.
+
+Главные результаты для `original_plus_path_20260420`:
+
+- `rows_total=9378`;
+- `nonzero_rows=51`;
+- `nonzero_unique_time=37`;
+- `nonzero_unique_time_signal=37`;
+- `duplicate_time_signal_rows=14`;
+- `same_time_opposite_signal_groups=0`;
+- MT4 `opened_trades_from_events=29`;
+- MT4 diagnostics: `total_signals=29`, `score_filtered=0`, `position_blocked=0`, `opened=29`, `trailing_closes=29`.
+
+Решение:
+
+- одинаковые `time` в DATA ожидаемы: это разные пики/уровни одного H1-бара;
+- DATA не схлопывать;
+- перед future MT4-сравнениями запускать `benchmark_signal_export_parity.py`, чтобы сразу видеть rows vs unique timestamps vs opened trades.
+
+Следующий шаг по `docs/superpowers/roadmap.md`:
+
+1. Начать `Cross-instrument robustness check`.
+2. Проверить текущие рабочие системы (`quality`, `frequency`, `original_plus_path`) на похожих инструментах.
+3. Для каждого инструмента фиксировать сделки, PF, просадку, концентрацию прибыли и провалы по периодам.
+
+## Previous Stage
 Этап `take_skip_original_contour_feature_ablation` завершён (2026-04-20).
 
 Что зафиксировано:

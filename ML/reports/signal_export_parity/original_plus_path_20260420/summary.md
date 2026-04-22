@@ -1,0 +1,52 @@
+# Signal Export Parity — original_plus_path_20260420
+
+## Export
+
+| Metric | Value |
+|---|---:|
+| rows_total | 9378 |
+| nonzero_rows | 51 |
+| nonzero_unique_time | 37 |
+| nonzero_unique_time_signal | 37 |
+| duplicate_time_rows | 14 |
+| duplicate_time_signal_rows | 14 |
+| same_time_opposite_signal_groups | 0 |
+
+## MT4
+
+| Metric | Value |
+|---|---:|
+| opened_trades_from_events | 29 |
+| opened_buy_from_events | 16 |
+| opened_sell_from_events | 13 |
+| unique_signal_times_opened | 29 |
+| diagnostics.opened | 29 |
+| diagnostics.position_blocked | 0 |
+| diagnostics.score_filtered | 0 |
+
+## Comparison
+
+| Metric | Value |
+|---|---:|
+| nonzero_rows_minus_opened_events | 22 |
+| unique_time_minus_opened_events | 8 |
+| unique_time_signal_minus_opened_events | 8 |
+
+## Duplicate time+signal examples
+
+| time | signal | rows |
+|---|---:|---:|
+| 2022.10.21 11:00 | 1 | 2 |
+| 2022.12.02 16:00 | 1 | 2 |
+| 2023.01.12 16:00 | 1 | 2 |
+| 2023.07.06 15:00 | 1 | 2 |
+| 2023.09.14 15:00 | 1 | 2 |
+| 2024.02.05 17:00 | 1 | 2 |
+| 2024.07.25 20:00 | 1 | 2 |
+| 2025.02.14 23:00 | 1 | 2 |
+| 2025.04.09 02:00 | 1 | 2 |
+| 2025.05.15 09:00 | 1 | 2 |
+| 2025.06.30 01:00 | 1 | 2 |
+| 2025.07.17 15:00 | 1 | 2 |
+| 2025.08.20 04:00 | 1 | 2 |
+| 2026.01.21 22:00 | 1 | 2 |

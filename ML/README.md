@@ -54,6 +54,7 @@
 | [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для проверки `lib_PIC` признаков в старом single-tensor `take_skip_v2` контуре | labeled CSV → reports/take_skip_original_contour_feature_matrix/ | 🚧 |
 | [benchmark_take_skip_lib_pic_selection.py](benchmark_take_skip_lib_pic_selection.py) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → reports/take_skip_lib_pic_selection/ | ✅ |
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
+| [benchmark_signal_export_parity.py](benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → reports/signal_export_parity/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
 
 ### Отдельные эксперименты
@@ -115,6 +116,12 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_origi
   --feature-modes original_baseline original_plus_path original_plus_geometry_path \
   --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256 \
   --jobs auto --torch-threads auto --cpu-load 0.5 --clear-cache
+
+# Parity: exported signals vs MT4 tester log
+python -m ML.benchmark_signal_export_parity \
+  --signals MT/tester/files/ml_signals.csv \
+  --mt4-log MT/tester/logs/20260420.log \
+  --output-dir ML/reports/signal_export_parity/original_plus_path_20260420
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.

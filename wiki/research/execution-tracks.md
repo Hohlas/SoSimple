@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-20
-sources: 24
+last_updated: 2026-04-22
+sources: 25
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 24 отчётов (2026-04-08 — 2026-04-20). Параллельные направления execution.
+> Синтез 25 отчётов (2026-04-08 — 2026-04-22). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -563,11 +563,24 @@ MT4 confirmation:
 
 MT4 log for `TP=0` confirmed `Position blocked=0`, `Score filtered=0`, `Opened=29`, `Trailing closes=29`. `TP=0` keeps trend tails and gives higher net profit; `TP=12` cuts tails and lowers drawdown.
 
-Trade-count caveat: Python exported `51` non-zero rows across the full test split, while MT4 opened `29` trades in the `2023-2025` tester interval. Main reason: exported rows can contain duplicate `time+signal` rows for the same H1 bar, while MT4 consumes direct ML signals by bar time. Before production packaging, add a parity benchmark for rows vs unique timestamps vs MT4 opened trades.
+Signal-export parity was closed on 2026-04-22:
+
+| Metric | Value |
+|---|---:|
+| export nonzero rows | 51 |
+| export unique `time` | 37 |
+| export unique `time+signal` | 37 |
+| duplicate `time+signal` rows | 14 |
+| same-time opposite signal groups | 0 |
+| MT4 opened trades | 29 |
+| MT4 position blocked | 0 |
+| MT4 score filtered | 0 |
+
+Interpretation: duplicate timestamps are expected in DATA because one H1 bar can form multiple different `lib_PIC` peaks/levels. They should not be collapsed in DATA. The runtime signal format `time;signal` is coarser: MT4 consumes direct ML signals by bar time, not by DATA row id.
 
 Практическое следствие: `original_plus_path_seq50` становится третьей MT4-подтверждённой системой рядом с текущими `quality` и `frequency`. `original_baseline_seq50/100` остаётся quality anchor.
 
-Источник: [2026-04-20-take-skip-original-contour-feature-ablation.md](../../docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
+Источники: [2026-04-20-take-skip-original-contour-feature-ablation.md](../../docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md), [2026-04-22-signal-export-parity.md](../../docs/reports/2026-04-22-signal-export-parity.md)
 
 После закрытия composition и standalone `fav_3_vs_12` главный практический вопрос по `entry_path_v1_quantile` стал не поисковым, а операционным: держится ли production rule на новых данных после принятого решения.
 

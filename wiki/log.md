@@ -198,3 +198,12 @@
   - captured `TrailATR=8, TP=0`: `29` trades, net `22294.65`, PF `23.79`, relative DD `14.74%`
   - captured cautious `TrailATR=8, TP=12`: `29` trades, net `15873.12`, PF `17.23`, relative DD `6.64%`
   - recorded parity caveat: exported rows can duplicate the same H1 timestamp, while MT4 consumes one direct ML signal per bar time
+
+## [2026-04-22] ingest | signal export parity benchmark synced into wiki
+- Added report `docs/reports/2026-04-22-signal-export-parity.md`
+- Added benchmark `ML/benchmark_signal_export_parity.py` and tests
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded that duplicate timestamps are expected because one H1 bar can form multiple different `lib_PIC` peaks/levels
+  - captured `original_plus_path_20260420`: `51` nonzero rows, `37` unique `time+signal`, `29` MT4 opened trades
+  - clarified that DATA should not be collapsed; runtime `time;signal` is coarser than DATA row identity
+- Updated `wiki/index.md` coverage from 24 to 25 reports
