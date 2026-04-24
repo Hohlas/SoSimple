@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Отделить эффект смены провайдера котировок на `XAUUSD` от реального переноса frozen-систем на новые инструменты и получить каноническую матрицу робастности.
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md`
-> **Related commit**: pending
+> **Related commit**: 7d25c8a
 
 ## Context
 
