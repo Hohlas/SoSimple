@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Проверить перенос frozen execution-систем `entry_path_v1` и `entry_path_v1_quantile` без переобучения, без нового threshold search и с отдельными verdict для `provider drift` и `cross-instrument transfer`
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`
-> **Related commit**: pending
+> **Related commit**: `f8d6314`
 
 ## Context
 
