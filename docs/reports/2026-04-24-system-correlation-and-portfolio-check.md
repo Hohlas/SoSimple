@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Построить канонический pairwise benchmark по сделкам и PnL-рядам, чтобы понять, какие зрелые `XAUUSD` системы можно объединять в портфель без дублирования риска
 > **Related plan/spec**: `docs/superpowers/plans/2026-04-24-system-correlation-and-portfolio-check.md`
-> **Related commit**: pending
+> **Related commit**: `2642834`
 
 ## Context
 
