@@ -57,6 +57,7 @@
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
 | [benchmark_signal_export_parity.py](benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → reports/signal_export_parity/ | ✅ |
 | [benchmark_cross_instrument_robustness.py](benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | manifest JSON + signal CSV + OHLC + baseline reference → reports/cross_instrument_robustness/ | ✅ |
+| [benchmark_system_correlation.py](benchmark_system_correlation.py) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | manifest JSON + trade CSV / entry_path predictions → reports/system_correlation_portfolio/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
 
 ### Отдельные эксперименты
@@ -142,4 +143,5 @@ python -m ML.benchmark_cross_instrument_robustness \
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
 `run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, но проверяет добавление новых признаков поверх старого single-tensor представления.
 `benchmark_cross_instrument_robustness.py` не меняет frozen rules и не ретюнит пороги: он только измеряет `provider_drift` и `cross_instrument_transfer` на уже зафиксированных системах.
+`benchmark_system_correlation.py` не выбирает новые trading modes: он только нормализует существующие сделки и считает pairwise overlap/correlation verdicts.
 `export_entry_path_predictions.py` нужен именно для frozen transfer-проверок: он не переобучает модели и ожидает полный entry-path labeled contract на входе.

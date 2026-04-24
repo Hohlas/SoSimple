@@ -2,6 +2,39 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-24] - System correlation and portfolio check
+
+### Добавлено
+- `ML/benchmark_system_correlation.py`
+- `tests/test_benchmark_system_correlation.py`
+- `docs/ML/benchmark_system_correlation.py.md`
+- `ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json`
+- benchmark-артефакты в `ML/reports/system_correlation_portfolio/xauusd_system_correlation/`
+
+### Изменено
+- `ML/README.md`
+- `MODULE_INDEX.md`
+
+### Результаты
+- Построен канонический pairwise benchmark по пяти зрелым `XAUUSD` системам:
+  - `quality`
+  - `frequency`
+  - `original_plus_path`
+  - `entry_path_v1`
+  - `entry_path_v1_quantile`
+- Для `entry_path_v1` и `entry_path_v1_quantile` trade-level baseline был честно восстановлен из frozen checkpoints и fixed-hold execution, потому что в baseline-каталоге не было готового `trades.csv`.
+- Pairwise split на `XAUUSD`:
+  - `portfolio_redundant`: `frequency × original_plus_path`
+  - `portfolio_complementary`: `quality × entry_path_v1`, `quality × entry_path_v1_quantile`, `original_plus_path × entry_path_v1`, `original_plus_path × entry_path_v1_quantile`
+  - `portfolio_partially_overlapping`: ещё 5 пар
+- `entry_path_v1_quantile` подтвердился как другой risk-profile относительно `quality` и `original_plus_path`, но не как независимый слой поверх `entry_path_v1`.
+
+### Вывод
+- На `XAUUSD` нельзя считать `frequency` и `original_plus_path` двумя независимыми portfolio sleeves.
+- Прагматичный первый portfolio-layer: `quality + entry_path_v1_quantile`; baseline `entry_path_v1` не нужно ставить рядом с quantile-версией как отдельный слой.
+- Следующий шаг — уже не поиск новой пары систем, а bounded benchmark composite portfolio без новых trading modes.
+- Подробности: [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md)
+
 ## [2026-04-24] - Entry path cross-instrument robustness
 
 ### Добавлено

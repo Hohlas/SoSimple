@@ -1,0 +1,6 @@
+{
+  "manifest_path": "ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json",
+  "instrument": "XAUUSD",
+  "system_count": 5,
+  "pair_count": 10
+}

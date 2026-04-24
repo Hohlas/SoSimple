@@ -1,0 +1,58 @@
+{
+  "systems": [
+    {
+      "system_name": "quality",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "source_type": "trade_csv",
+      "trade_csv": "ML/reports/cross_instrument_robustness/metaquotes_baseline/trades.csv",
+      "dataset_name": "xauusd_metaquotes",
+      "policy_name": "trail_x8_tp12"
+    },
+    {
+      "system_name": "frequency",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "source_type": "trade_csv",
+      "trade_csv": "ML/reports/cross_instrument_robustness/metaquotes_baseline/trades.csv",
+      "dataset_name": "xauusd_metaquotes",
+      "policy_name": "trail_x8"
+    },
+    {
+      "system_name": "original_plus_path",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "source_type": "trade_csv",
+      "trade_csv": "ML/reports/cross_instrument_robustness/metaquotes_baseline/trades.csv",
+      "dataset_name": "xauusd_metaquotes",
+      "policy_name": "trail_x8"
+    },
+    {
+      "system_name": "entry_path_v1",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "source_type": "entry_path_predictions",
+      "prediction_csv": "ML/reports/system_correlation_portfolio/generated/entry_path_v1_test_predictions.csv",
+      "ohlc_csv": "DATA/XAUUSD_H1_OHLC.csv",
+      "entry_path_kind": "entry_path_v1",
+      "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+      "policy_name": "hold_24_backstop_50",
+      "hold_bars": 24,
+      "split": "test"
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "source_type": "entry_path_predictions",
+      "prediction_csv": "ML/reports/system_correlation_portfolio/generated/entry_path_v1_quantile_test_predictions.csv",
+      "baseline_predictions_path": "ML/reports/system_correlation_portfolio/generated/entry_path_v1_test_predictions.csv",
+      "ohlc_csv": "DATA/XAUUSD_H1_OHLC.csv",
+      "entry_path_kind": "entry_path_v1_quantile",
+      "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+      "policy_name": "hold_24_backstop_50",
+      "hold_bars": 24,
+      "split": "test"
+    }
+  ]
+}

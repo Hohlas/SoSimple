@@ -1,6 +1,77 @@
 # Context Handoff
 
 ## Current Stage
+Этап `system_correlation_and_portfolio_check` завершён (2026-04-24).
+
+Что зафиксировано:
+
+- добавлен `ML/benchmark_system_correlation.py`;
+- добавлены тесты:
+  - `tests/test_benchmark_system_correlation.py`
+- добавлена документация `docs/ML/benchmark_system_correlation.py.md`;
+- обновлены `ML/README.md`, `MODULE_INDEX.md`;
+- создан canonical report: `docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`;
+- зафиксирован manifest:
+  - `ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json`
+- для честного baseline восстановления `entry_path` пересобраны frozen prediction artifacts:
+  - `ML/reports/system_correlation_portfolio/generated/entry_path_v1_test_predictions.csv`
+  - `ML/reports/system_correlation_portfolio/generated/entry_path_v1_quantile_test_predictions.csv`
+- собраны benchmark-артефакты:
+  - `ML/reports/system_correlation_portfolio/xauusd_system_correlation/pairwise_matrix.csv`
+  - `ML/reports/system_correlation_portfolio/xauusd_system_correlation/system_summary.csv`
+  - `ML/reports/system_correlation_portfolio/xauusd_system_correlation/daily_pnl_matrix.csv`
+  - `ML/reports/system_correlation_portfolio/xauusd_system_correlation/weekly_pnl_matrix.csv`
+  - `ML/reports/system_correlation_portfolio/xauusd_system_correlation/drawdown_overlap.csv`
+
+Зачем:
+
+- построить канонический benchmark совместимости зрелых execution-систем по сделкам и PnL-рядам;
+- отделить действительно дополняющие пары от пар, которые дублируют риск;
+- не делать portfolio verdict по одному `PF`;
+- сначала принять главный вывод только на `XAUUSD`.
+
+Системы под тестом:
+
+- `quality`
+- `frequency`
+- `original_plus_path`
+- `entry_path_v1`
+- `entry_path_v1_quantile`
+
+Главные результаты:
+
+- category split:
+  - `portfolio_redundant`: `1`
+  - `portfolio_complementary`: `4`
+  - `portfolio_partially_overlapping`: `5`
+  - `portfolio_unclear`: `0`
+- явный redundant pair:
+  - `frequency × original_plus_path`
+- complementary pairs:
+  - `quality × entry_path_v1`
+  - `quality × entry_path_v1_quantile`
+  - `original_plus_path × entry_path_v1`
+  - `original_plus_path × entry_path_v1_quantile`
+- structurally important partially overlapping pairs:
+  - `quality × frequency`
+  - `entry_path_v1 × entry_path_v1_quantile`
+
+Решение:
+
+- не считать `frequency` и `original_plus_path` двумя независимыми portfolio sleeves;
+- считать `entry_path_v1_quantile` новым risk-profile относительно `quality` и `original_plus_path`, но не отдельным слоем рядом с `entry_path_v1`;
+- для первого portfolio-layer использовать `quality + entry_path_v1_quantile` как базовую пару;
+- если нужен третий sleeve, выбирать один из `frequency` / `original_plus_path`, а не обе системы сразу.
+
+Следующий шаг по `docs/superpowers/roadmap.md`:
+
+1. Собрать bounded portfolio-layer benchmark для `quality + entry_path_v1_quantile`.
+2. Отдельно сравнить третий sleeve:
+   - `frequency`
+   - `original_plus_path`
+3. Измерить уже composite equity / drawdown / concentration без добавления новых trading modes.
+
+## Previous Stage
 Этап `entry_path_cross_instrument_robustness` завершён (2026-04-24).
 
 Что зафиксировано:
@@ -21,7 +92,7 @@
   - `ML/reports/entry_path_cross_instrument_robustness/usdchf_transfer/transfer_matrix.csv`
   - `ML/reports/entry_path_cross_instrument_robustness/xagusd_transfer/transfer_matrix.csv`
 
-Зачем:
+Смысл:
 
 - проверить перенос двух зрелых execution-систем:
   - `entry_path_v1`
@@ -51,7 +122,7 @@
 - считать `entry_path_v1_quantile` более живучим вариантом baseline `entry_path_v1`;
 - не продвигать instrument-specific retuning на этом этапе.
 
-Следующий шаг по `docs/superpowers/roadmap.md`:
+Следующий шаг:
 
 1. Начать `System correlation and portfolio check`.
 2. Сравнить сделки `quality`, `frequency`, `original_plus_path`, `entry_path_v1`, `entry_path_v1_quantile` по времени, направлению и корреляции результата.

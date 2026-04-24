@@ -225,3 +225,13 @@
   - captured transfer matrix across `EURUSD/GBPUSD/USDCHF/XAGUSD`
   - recorded breadth conclusion: quantile variant is more robust than baseline `entry_path_v1`
 - Updated `wiki/index.md` coverage from 26 to 27 reports
+
+## [2026-04-24] ingest | system correlation and portfolio check synced into wiki
+- Added report `docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`
+- Added benchmark `ML/benchmark_system_correlation.py` and tests
+- Updated `wiki/research/execution-tracks.md`:
+  - added portfolio-level subsection for pairwise system correlation on `XAUUSD`
+  - recorded explicit split between `redundant`, `complementary` and `partially_overlapping` pairs
+  - captured main redundant pair: `frequency × original_plus_path`
+  - captured main complementary line: `quality` / `original_plus_path` versus `entry_path` systems
+- Updated `wiki/index.md` coverage from 27 to 28 reports
