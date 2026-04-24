@@ -7,11 +7,12 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ## using search_knowledge (RAG system)
 `knowledge-rag` — retrieval layer для быстрого поиска по проекту. Он помогает найти кандидаты, но не заменяет canonical files и wiki-синтез: после RAG-результата открывай найденный файл и проверяй контекст.
 
-- Exact names / paths / metrics: `search_knowledge("entry_path_v1_quantile", hybrid_alpha=0.0)`
-- Technical search: `search_knowledge("triple barrier label convention", hybrid_alpha=0.3)`
-- Conceptual search: `search_knowledge("why quantile execution filter works", hybrid_alpha=0.7)`
+- Exact names / paths / metrics: `hybrid_alpha=0.0`
+- Technical search: `hybrid_alpha=0.3`
+- Conceptual search: `hybrid_alpha=0.7`
 
-Индексация: `reindex_documents()` — только изменённые файлы; `reindex_documents(force=True)` — smart rebuild BM25.
+После значимых изменений кода/доков, влияющих на поиск: `reindex_documents(force=True)`.
+
 
 
 ## Обязательные правила
@@ -126,7 +127,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 Если во время выполнения задачи обнаружена ошибка, кратко сообщи о ней в конце ответа.
 
 Типы ошибок:
-- MCP — нет ответа / ошибка / пустой результат
+- MCP — 'ошибка' / 'нет ответа' / 'пустой результат'
 - DOC — битая ссылка или отсутствующий файл
 - STRUCT — ссылка на несуществующий модуль/путь
 
