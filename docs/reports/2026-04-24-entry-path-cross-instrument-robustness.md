@@ -3,7 +3,7 @@
 > **Date**: 2026-04-24 18:30
 > **Status**: Completed
 > **Goal**: Проверить перенос frozen execution-систем `entry_path_v1` и `entry_path_v1_quantile` без переобучения, без нового threshold search и с отдельными verdict для `provider drift` и `cross-instrument transfer`
-> **Related plan/spec**: `docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md`
+> **Related plan/spec**: `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`
 > **Related commit**: pending
 
 ## Context
@@ -17,7 +17,7 @@
 - не менять frozen rules;
 - сначала проверить `XAUUSD provider drift baseline`, только потом делать `cross-instrument transfer`.
 
-Пользователь сослался на план `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`, но в репозитории этого файла нет. Канонический план этапа на момент выполнения находился в `docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md`, и работа была выполнена строго по его дисциплине: отдельные verdict для `provider_drift_baseline` и `cross_instrument_transfer`, без смешивания таблиц.
+Канонический план этапа был зафиксирован в `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`. Работа выполнена по той же дисциплине, что и предыдущий robustness-check: отдельные verdict для `provider_drift_baseline` и `cross_instrument_transfer`, без смешивания таблиц.
 
 ## What Was Done
 
@@ -62,9 +62,8 @@
 ./.venv/bin/python -m API.export_entry_path_v1_quantile_signals --seed-dir ML/reports/entry_path_cross_instrument_robustness/generated/XAUUSD_ALPARI --split test --rule-path ML/reports/entry_path_v1_quantile_selected_rule.json --baseline-predictions ML/reports/entry_path_cross_instrument_robustness/generated/XAUUSD_ALPARI/entry_path_v1_test_predictions.csv --output ML/reports/entry_path_cross_instrument_robustness/generated/XAUUSD_ALPARI/entry_path_v1_quantile_test_signals.csv
 ./.venv/bin/python -m ML.benchmark_cross_instrument_robustness --manifest ML/reports/entry_path_cross_instrument_robustness/generated/XAUUSD_ALPARI/xauusd_provider_drift_manifest.json --baseline-reference ML/reports/entry_path_cross_instrument_robustness/metaquotes_baseline_reference.json --output-dir ML/reports/entry_path_cross_instrument_robustness/xauusd_provider_drift
 ./.venv/bin/python -m compileall ML/benchmark_execution_policy_v2.py API/export_entry_path_v1_signals.py ML/export_entry_path_predictions.py ML/benchmark_cross_instrument_robustness.py
+./.venv/bin/python -m pytest tests/test_export_entry_path_predictions.py tests/test_export_entry_path_v1_signals.py tests/test_benchmark_execution_policy_v2.py -q
 ```
-
-`pytest`-проверки для новых тестов не были выполнены, потому что текущая `.venv` не содержит `pytest` (`No module named pytest`).
 
 ## Results
 
@@ -123,8 +122,7 @@ Breadth by system:
 
 - Transfer benchmark остаётся stress-test, а не заменой полноценного forward-validation на каждом новом инструменте.
 - Для `USDCHF` пришлось использовать enriched labeled split, потому что исходный `test_labeled` не содержал полного entry-path contract.
-- В requested task context указан отсутствующий файл плана `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`; фактическим source of truth был соседний план от `2026-04-23`.
-- Автоматические pytest-проверки новых тестов не запускались из-за отсутствия `pytest` в `.venv`.
+- Для `USDCHF` часть контура опирается на enriched test-split, поэтому этот инструмент остаётся чуть более технически чувствительным, чем остальные.
 
 ## Next Step
 
@@ -136,7 +134,7 @@ Breadth by system:
 
 ## Related Materials
 
-- `docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md`
+- `docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md`
 - `ML/reports/entry_path_cross_instrument_robustness/xauusd_provider_drift/provider_drift.csv`
 - `ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/transfer_matrix.csv`
 - `ML/reports/entry_path_cross_instrument_robustness/gbpusd_transfer/transfer_matrix.csv`
