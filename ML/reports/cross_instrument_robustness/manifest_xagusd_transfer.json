@@ -1,0 +1,28 @@
+{
+  "datasets": [
+    {
+      "dataset_name": "xagusd_alpari_transfer",
+      "instrument": "XAGUSD",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/XAGUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/quality_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/frequency_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/original_plus_path_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "quality": {
+    "trades": 26,
+    "pf": 22.808066089749527,
+    "max_drawdown_atr": 5.879313031977944,
+    "profit_concentration_top_1": 0.055783359417029665
+  },
+  "frequency": {
+    "trades": 72,
+    "pf": 2.2656122095968105,
+    "max_drawdown_atr": 44.131809187887654,
+    "profit_concentration_top_1": 0.18128320281627294
+  },
+  "original_plus_path": {
+    "trades": 33,
+    "pf": 16.052200461296216,
+    "max_drawdown_atr": 3.968354430379735,
+    "profit_concentration_top_1": 0.22945574625229995
+  }
+}

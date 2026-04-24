@@ -2,6 +2,35 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-24] - Cross-instrument robustness check
+
+### Добавлено
+- `ML/benchmark_cross_instrument_robustness.py`
+- `tests/test_benchmark_cross_instrument_robustness.py`
+- `docs/ML/benchmark_cross_instrument_robustness.py.md`
+- manifest/run-helpers в `ML/reports/cross_instrument_robustness/`
+
+### Изменено
+- `ML/export_take_skip_v2_predictions.py`
+- `ML/README.md`
+- `MODULE_INDEX.md`
+
+### Результаты
+- Этап разделён на `provider_drift_baseline` и `cross_instrument_transfer`, чтобы не смешивать эффект нового провайдера и эффект нового рынка.
+- На `XAUUSD MetaQuotes -> Alpari` все три режима сохранили статус `provider_stable`.
+- Полная transfer-матрица по `XAGUSD/EURUSD/GBPUSD/USDCHF` завершена без ретюнинга frozen rules.
+- Итог transfer verdicts:
+  - `quality`: `1 supported / 1 inconclusive / 2 failed`
+  - `frequency`: `2 supported / 1 inconclusive / 1 failed`
+  - `original_plus_path`: `2 supported / 0 inconclusive / 2 failed`
+- `USDCHF` дал лучший перенос: все три режима получили `transfer_supported`.
+
+### Вывод
+- Drift котировок сам по себе не ломает текущие системы на `XAUUSD`.
+- Реальный перенос на новые инструменты частичный, а не универсальный: `EURUSD` провалился полностью, `USDCHF` прошёл полностью.
+- Следующий этап — не новый transfer, а `System correlation and portfolio check`.
+- Подробности: [docs/reports/2026-04-24-cross-instrument-robustness-check.md](docs/reports/2026-04-24-cross-instrument-robustness-check.md)
+
 ## [2026-04-22] - Signal export parity benchmark
 
 ### Добавлено

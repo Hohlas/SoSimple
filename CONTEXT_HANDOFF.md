@@ -1,48 +1,56 @@
 # Context Handoff
 
 ## Current Stage
-Этап `signal_export_parity` завершён (2026-04-22).
+Этап `cross_instrument_robustness_check` завершён (2026-04-24).
 
 Что зафиксировано:
 
-- добавлен `ML/benchmark_signal_export_parity.py`;
-- добавлены тесты `tests/test_signal_export_parity.py`;
-- добавлена документация `docs/ML/benchmark_signal_export_parity.py.md`;
-- создан отчёт `docs/reports/2026-04-22-signal-export-parity.md`;
-- результат записан в `ML/reports/signal_export_parity/original_plus_path_20260420/summary.json` и `summary.md`.
+- добавлен `ML/benchmark_cross_instrument_robustness.py`;
+- добавлены тесты `tests/test_benchmark_cross_instrument_robustness.py`;
+- добавлена документация `docs/ML/benchmark_cross_instrument_robustness.py.md`;
+- добавлены manifest/run helpers в `ML/reports/cross_instrument_robustness/`;
+- создан отчёт `docs/reports/2026-04-24-cross-instrument-robustness-check.md`;
+- собраны канонические benchmark-артефакты:
+  - `ML/reports/cross_instrument_robustness/xauusd_provider_drift/provider_drift.csv`
+  - `ML/reports/cross_instrument_robustness/xagusd_transfer_test_labeled/transfer_matrix.csv`
+  - `ML/reports/cross_instrument_robustness/eurusd_transfer_test_labeled/transfer_matrix.csv`
+  - `ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/transfer_matrix.csv`
+  - `ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/transfer_matrix.csv`
 
 Зачем:
 
-- закрыть расхождение между `51` ненулевой строкой exported `ml_signals.csv` и `29` сделками MT4;
-- не менять DATA и не схлопывать пики одного бара;
-- явно разделить уровни детализации:
-  - DATA/export rows;
-  - unique `time`;
-  - unique `time+signal`;
-  - MT4 opened trades.
+- отделить drift котировок `MetaQuotes -> Alpari` на том же `XAUUSD` от реального переноса системы на новые инструменты;
+- получить единую матрицу робастности для `quality`, `frequency`, `original_plus_path` без ретюнинга frozen rules;
+- закрыть roadmap step `Cross-instrument robustness check` каноническим benchmark-артефактом.
 
-Главные результаты для `original_plus_path_20260420`:
+Главные результаты:
 
-- `rows_total=9378`;
-- `nonzero_rows=51`;
-- `nonzero_unique_time=37`;
-- `nonzero_unique_time_signal=37`;
-- `duplicate_time_signal_rows=14`;
-- `same_time_opposite_signal_groups=0`;
-- MT4 `opened_trades_from_events=29`;
-- MT4 diagnostics: `total_signals=29`, `score_filtered=0`, `position_blocked=0`, `opened=29`, `trailing_closes=29`.
+- `XAUUSD provider drift baseline`:
+  - `quality` -> `provider_stable`
+  - `frequency` -> `provider_stable`
+  - `original_plus_path` -> `provider_stable`
+- `cross-instrument transfer`:
+  - `XAGUSD`: `failed / supported / failed`
+  - `EURUSD`: `failed / failed / failed`
+  - `GBPUSD`: `inconclusive / inconclusive / supported`
+  - `USDCHF`: `supported / supported / supported`
+- breadth by system:
+  - `quality`: `1 supported / 1 inconclusive / 2 failed`
+  - `frequency`: `2 supported / 1 inconclusive / 1 failed`
+  - `original_plus_path`: `2 supported / 0 inconclusive / 2 failed`
 
 Решение:
 
-- одинаковые `time` в DATA ожидаемы: это разные пики/уровни одного H1-бара;
-- DATA не схлопывать;
-- перед future MT4-сравнениями запускать `benchmark_signal_export_parity.py`, чтобы сразу видеть rows vs unique timestamps vs opened trades.
+- не смешивать provider swap и instrument transfer в одном verdict;
+- считать `frequency` самым живучим режимом по ширине переноса;
+- считать `original_plus_path` сильнее `quality` по breadth, но не универсальным;
+- не продвигать никакой новый instrument-specific retuning на этом этапе.
 
 Следующий шаг по `docs/superpowers/roadmap.md`:
 
-1. Начать `Cross-instrument robustness check`.
-2. Проверить текущие рабочие системы (`quality`, `frequency`, `original_plus_path`) на похожих инструментах.
-3. Для каждого инструмента фиксировать сделки, PF, просадку, концентрацию прибыли и провалы по периодам.
+1. Начать `System correlation and portfolio check`.
+2. Сравнить сделки `quality`, `frequency`, `original_plus_path` по времени, направлению и корреляции результата.
+3. Решить, какие системы можно объединять в один portfolio-layer без дублирования риска.
 
 ## Previous Stage
 Этап `take_skip_original_contour_feature_ablation` завершён (2026-04-20).

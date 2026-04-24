@@ -207,3 +207,12 @@
   - captured `original_plus_path_20260420`: `51` nonzero rows, `37` unique `time+signal`, `29` MT4 opened trades
   - clarified that DATA should not be collapsed; runtime `time;signal` is coarser than DATA row identity
 - Updated `wiki/index.md` coverage from 24 to 25 reports
+
+## [2026-04-24] ingest | cross-instrument robustness check synced into wiki
+- Added report `docs/reports/2026-04-24-cross-instrument-robustness-check.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded explicit split between `provider_drift_baseline` and `cross_instrument_transfer`
+  - captured that `XAUUSD MetaQuotes -> Alpari` stayed `provider_stable` for all three systems
+  - captured transfer matrix across `XAGUSD/EURUSD/GBPUSD/USDCHF`
+  - recorded breadth conclusion: `frequency` is most robust by transfer width, `USDCHF` is strongest positive case, `EURUSD` is strongest negative case
+- Updated `wiki/index.md` coverage from 25 to 26 reports

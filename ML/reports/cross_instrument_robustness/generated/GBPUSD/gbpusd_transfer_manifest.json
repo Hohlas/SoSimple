@@ -1,0 +1,28 @@
+{
+  "datasets": [
+    {
+      "dataset_name": "gbpusd_alpari_transfer_test_labeled",
+      "instrument": "GBPUSD",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/GBPUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "/home/hohla/git/SoSimple/ML/reports/cross_instrument_robustness/generated/GBPUSD/quality_test_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "/home/hohla/git/SoSimple/ML/reports/cross_instrument_robustness/generated/GBPUSD/frequency_test_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "/home/hohla/git/SoSimple/ML/reports/cross_instrument_robustness/generated/GBPUSD/original_plus_path_test_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    }
+  ]
+}

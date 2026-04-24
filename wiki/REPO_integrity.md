@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-22 10:52 UTC · git `7e0e3bb`
+> Auto-generated 2026-04-24 05:51 UTC · git `b274c9f`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 886 files  ·  **Commit**: `7e0e3bb`  ·  **Generated**: 2026-04-22 10:52 UTC
+**Tracked**: 919 files  ·  **Commit**: `b274c9f`  ·  **Generated**: 2026-04-24 05:51 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-04-19 | 10KB | `58a59f0e` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-22 | 124KB | `02bfa0d2` |
+| [AGENTS.md](AGENTS.md) |  | 2026-04-23 | 10KB | `672414a9` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-24 | 126KB | `705a4076` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-22 | 28KB | `0c14c5ad` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-22 | 26KB | `42be1878` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-24 | 29KB | `5eb5d59c` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-23 | 27KB | `bac1807f` |
 | [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
 
 ## Documentation
@@ -28,6 +28,7 @@
 |------|-------------|----------|------|------|
 | [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-04-20 | 24KB | `47f6ffc5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-04-01 | 2KB | `8dc50028` |
+| [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-04-23 | 3KB | `9c9044d1` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-04-19 | 3KB | `0aaec907` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-04-22 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_take_skip_lib_pic_selection.py.md](docs/ML/benchmark_take_skip_lib_pic_selection.py.md) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` | 2026-04-20 | 2KB | `085cc039` |
@@ -98,6 +99,7 @@
 | [docs/superpowers/plans/2026-04-19-lib-pic-path-reaction-feature-bank.md](docs/superpowers/plans/2026-04-19-lib-pic-path-reaction-feature-bank.md) |  | 2026-04-20 | 2KB | `e0278dfc` |
 | [docs/superpowers/plans/2026-04-20-lib-pic-feature-training-track.md](docs/superpowers/plans/2026-04-20-lib-pic-feature-training-track.md) |  | 2026-04-20 | 5KB | `c19d12dc` |
 | [docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/superpowers/plans/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 14KB | `c5fafc2a` |
+| [docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md](docs/superpowers/plans/2026-04-23-cross-instrument-robustness-check.md) |  | 2026-04-23 | 18KB | `773510b6` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-07 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-20 | 8KB | `579eceb3` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-03-23 | 12KB | `82b0860f` |
@@ -169,16 +171,18 @@
 | [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md) |  | 2026-04-20 | 4KB | `51a438b8` |
 | [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md) |  | 2026-04-20 | 13KB | `3e9f8318` |
 | [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md) |  | 2026-04-22 | 5KB | `64f8d26c` |
+| [docs/reports/2026-04-24-cross-instrument-robustness-check.md](docs/reports/2026-04-24-cross-instrument-robustness-check.md) |  | 2026-04-24 | 8KB | `0f3d9aa3` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
 
 ## ML
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-04-22 | 7KB | `f6397013` |
+| [ML/README.md](ML/README.md) |  |  | 2026-04-23 | 8KB | `d58400b8` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
+| [ML/benchmark_cross_instrument_robustness.py](ML/benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 🚧 | 2026-04-23 | 13KB | `d59921e5` |
 | [ML/benchmark_entry_path_trade_filter.py](ML/benchmark_entry_path_trade_filter.py) | Бенчмарк entry_path_v1 trade filter | 🏁 | 2026-04-09 | 6KB | `1bc86818` |
 | [ML/benchmark_entry_path_v1_frequency.py](ML/benchmark_entry_path_v1_frequency.py) | Frequency benchmark для базового entry_path_v1 selection layer | 🏁 | 2026-04-17 | 7KB | `e469b58a` |
 | [ML/benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | ✅ | 2026-04-13 | 13KB | `40bbefc1` |
@@ -212,6 +216,7 @@
 | [ML/experiment_logger.py](ML/experiment_logger.py) | CSV-логгер экспериментов | 🏁 | 2026-03-23 | 20KB | `390bd6fb` |
 | [ML/export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | ✅ | 2026-04-17 | 6KB | `38bc75e8` |
 | [ML/export_entry_path_v1_quantile_rule.py](ML/export_entry_path_v1_quantile_rule.py) |  |  | 2026-04-12 | 7KB | `aa96afd9` |
+| [ML/export_take_skip_v2_predictions.py](ML/export_take_skip_v2_predictions.py) |  |  | 2026-04-23 | 10KB | `a904d007` |
 | [ML/export_updn_active_predictions.py](ML/export_updn_active_predictions.py) |  |  | 2026-04-13 | 4KB | `515bde2e` |
 | [ML/feature_bank_comparison_diagnostics.py](ML/feature_bank_comparison_diagnostics.py) | Сравнение baseline/geometry/path feature-bank вариантов | ✅ | 2026-04-20 | 9KB | `3599f7fa` |
 | [ML/feature_importance_diagnostics.py](ML/feature_importance_diagnostics.py) | Диагностика важности групп текущих fractal-признаков | ✅ | 2026-04-20 | 16KB | `a68fad5b` |
@@ -235,6 +240,32 @@
 | [ML/reports/architecture_comparison_classification.md](ML/reports/architecture_comparison_classification.md) |  |  | 2026-02-24 | 3KB | `c0fe9f2d` |
 | [ML/reports/architecture_comparison_regression.md](ML/reports/architecture_comparison_regression.md) |  |  | 2026-03-11 | 1KB | `3fe65254` |
 | [ML/reports/architecture_comparison_regression_updn.md](ML/reports/architecture_comparison_regression_updn.md) |  |  | 2026-03-19 | 1KB | `bc5e1dc4` |
+| [ML/reports/cross_instrument_robustness/eurusd_transfer_test_labeled/run_metadata.json](ML/reports/cross_instrument_robustness/eurusd_transfer_test_labeled/run_metadata.json) |  |  | 2026-04-23 | 95B | `b8c4d5ef` |
+| [ML/reports/cross_instrument_robustness/eurusd_transfer_test_labeled/summary.json](ML/reports/cross_instrument_robustness/eurusd_transfer_test_labeled/summary.json) |  |  | 2026-04-23 | 15KB | `d8c4143b` |
+| [ML/reports/cross_instrument_robustness/finalize_labeled_temp.py](ML/reports/cross_instrument_robustness/finalize_labeled_temp.py) |  |  | 2026-04-23 | 2KB | `e8aae810` |
+| [ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/run_metadata.json](ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/run_metadata.json) |  |  | 2026-04-23 | 95B | `b8c4d5ef` |
+| [ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/summary.json](ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/summary.json) |  |  | 2026-04-23 | 15KB | `d7897cc3` |
+| [ML/reports/cross_instrument_robustness/generated/EURUSD/eurusd_transfer_manifest.json](ML/reports/cross_instrument_robustness/generated/EURUSD/eurusd_transfer_manifest.json) |  |  | 2026-04-23 | 987B | `5134c6b8` |
+| [ML/reports/cross_instrument_robustness/generated/GBPUSD/gbpusd_transfer_manifest.json](ML/reports/cross_instrument_robustness/generated/GBPUSD/gbpusd_transfer_manifest.json) |  |  | 2026-04-23 | 987B | `67ce56ee` |
+| [ML/reports/cross_instrument_robustness/generated/USDCHF/usdchf_transfer_manifest.json](ML/reports/cross_instrument_robustness/generated/USDCHF/usdchf_transfer_manifest.json) |  |  | 2026-04-24 | 912B | `b7cef6eb` |
+| [ML/reports/cross_instrument_robustness/manifest_cross_instrument_transfer.json](ML/reports/cross_instrument_robustness/manifest_cross_instrument_transfer.json) |  |  | 2026-04-23 | 3KB | `1e7814b0` |
+| [ML/reports/cross_instrument_robustness/manifest_metaquotes_baseline.json](ML/reports/cross_instrument_robustness/manifest_metaquotes_baseline.json) |  |  | 2026-04-23 | 824B | `61aa0027` |
+| [ML/reports/cross_instrument_robustness/manifest_xagusd_transfer.json](ML/reports/cross_instrument_robustness/manifest_xagusd_transfer.json) |  |  | 2026-04-23 | 885B | `6f8aaed0` |
+| [ML/reports/cross_instrument_robustness/manifest_xagusd_transfer_qf.json](ML/reports/cross_instrument_robustness/manifest_xagusd_transfer_qf.json) |  |  | 2026-04-23 | 667B | `236d2bff` |
+| [ML/reports/cross_instrument_robustness/manifest_xagusd_transfer_test_labeled.json](ML/reports/cross_instrument_robustness/manifest_xagusd_transfer_test_labeled.json) |  |  | 2026-04-23 | 913B | `974ca96f` |
+| [ML/reports/cross_instrument_robustness/manifest_xauusd_provider_drift.json](ML/reports/cross_instrument_robustness/manifest_xauusd_provider_drift.json) |  |  | 2026-04-23 | 825B | `3d686bf2` |
+| [ML/reports/cross_instrument_robustness/metaquotes_baseline/run_metadata.json](ML/reports/cross_instrument_robustness/metaquotes_baseline/run_metadata.json) |  |  | 2026-04-23 | 95B | `543171a5` |
+| [ML/reports/cross_instrument_robustness/metaquotes_baseline/summary.json](ML/reports/cross_instrument_robustness/metaquotes_baseline/summary.json) |  |  | 2026-04-23 | 30KB | `a8a1e20d` |
+| [ML/reports/cross_instrument_robustness/metaquotes_baseline_reference.json](ML/reports/cross_instrument_robustness/metaquotes_baseline_reference.json) |  |  | 2026-04-23 | 512B | `033d5470` |
+| [ML/reports/cross_instrument_robustness/run_single_instrument_transfer.py](ML/reports/cross_instrument_robustness/run_single_instrument_transfer.py) |  |  | 2026-04-23 | 5KB | `7d257dff` |
+| [ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/run_metadata.json](ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/run_metadata.json) |  |  | 2026-04-24 | 95B | `b8c4d5ef` |
+| [ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/summary.json](ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/summary.json) |  |  | 2026-04-24 | 14KB | `233fd4ed` |
+| [ML/reports/cross_instrument_robustness/xagusd_transfer_qf/run_metadata.json](ML/reports/cross_instrument_robustness/xagusd_transfer_qf/run_metadata.json) |  |  | 2026-04-23 | 95B | `5cc06b98` |
+| [ML/reports/cross_instrument_robustness/xagusd_transfer_qf/summary.json](ML/reports/cross_instrument_robustness/xagusd_transfer_qf/summary.json) |  |  | 2026-04-23 | 8KB | `9432f622` |
+| [ML/reports/cross_instrument_robustness/xagusd_transfer_test_labeled/run_metadata.json](ML/reports/cross_instrument_robustness/xagusd_transfer_test_labeled/run_metadata.json) |  |  | 2026-04-23 | 95B | `b8c4d5ef` |
+| [ML/reports/cross_instrument_robustness/xagusd_transfer_test_labeled/summary.json](ML/reports/cross_instrument_robustness/xagusd_transfer_test_labeled/summary.json) |  |  | 2026-04-23 | 14KB | `e79a0708` |
+| [ML/reports/cross_instrument_robustness/xauusd_provider_drift/run_metadata.json](ML/reports/cross_instrument_robustness/xauusd_provider_drift/run_metadata.json) |  |  | 2026-04-23 | 95B | `543171a5` |
+| [ML/reports/cross_instrument_robustness/xauusd_provider_drift/summary.json](ML/reports/cross_instrument_robustness/xauusd_provider_drift/summary.json) |  |  | 2026-04-23 | 31KB | `6f9ff316` |
 | [ML/reports/current_feature_importance/report.md](ML/reports/current_feature_importance/report.md) |  |  | 2026-04-20 | 2KB | `c58147a6` |
 | [ML/reports/current_feature_importance/summary.json](ML/reports/current_feature_importance/summary.json) |  |  | 2026-04-20 | 498B | `a286b27a` |
 | [ML/reports/entry_path_trade_filter_after_head_split/entry_path_trade_filter_report.md](ML/reports/entry_path_trade_filter_after_head_split/entry_path_trade_filter_report.md) |  |  | 2026-04-09 | 536B | `2dbd3e0a` |
@@ -503,6 +534,7 @@
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
 | [tests/README.md](tests/README.md) |  |  | 2026-04-08 | 1KB | `c1093573` |
+| [tests/test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | ✅ | 2026-04-23 | 9KB | `745821a7` |
 | [tests/test_benchmark_entry_path_v1_frequency.py](tests/test_benchmark_entry_path_v1_frequency.py) | `ML/benchmark_entry_path_v1_frequency.py` | ✅ | 2026-04-17 | 739B | `40f6843e` |
 | [tests/test_benchmark_entry_path_v2.py](tests/test_benchmark_entry_path_v2.py) | `ML/benchmark_entry_path_v2.py` | ✅ | 2026-04-17 | 2KB | `78d542d3` |
 | [tests/test_benchmark_execution_policy_v2.py](tests/test_benchmark_execution_policy_v2.py) | `ML/benchmark_execution_policy_v2.py` | ✅ | 2026-04-19 | 2KB | `35ce24ab` |
@@ -535,6 +567,7 @@
 | [tests/test_export_entry_path_v1_quantile_rule.py](tests/test_export_entry_path_v1_quantile_rule.py) |  |  | 2026-04-12 | 2KB | `8a808fd4` |
 | [tests/test_export_entry_path_v1_quantile_signals.py](tests/test_export_entry_path_v1_quantile_signals.py) |  |  | 2026-04-12 | 7KB | `237d172f` |
 | [tests/test_export_take_skip_trailing_stop_v2_signals.py](tests/test_export_take_skip_trailing_stop_v2_signals.py) |  |  | 2026-04-19 | 4KB | `7bf99876` |
+| [tests/test_export_take_skip_v2_predictions.py](tests/test_export_take_skip_v2_predictions.py) |  |  | 2026-04-23 | 7KB | `35d5c947` |
 | [tests/test_feature_bank_comparison_diagnostics.py](tests/test_feature_bank_comparison_diagnostics.py) | `ML/feature_bank_comparison_diagnostics.py` | ✅ | 2026-04-20 | 3KB | `9423cafb` |
 | [tests/test_feature_importance_diagnostics.py](tests/test_feature_importance_diagnostics.py) | `ML/feature_importance_diagnostics.py` | ✅ | 2026-04-20 | 2KB | `a821e722` |
 | [tests/test_feature_screen_entry_path.py](tests/test_feature_screen_entry_path.py) | `ML/feature_screen_entry_path.py` | ✅ | 2026-04-17 | 567B | `b99a62db` |
@@ -886,9 +919,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-22 | 1KB | `5b97d6d1` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-22 | 12KB | `5e7b20ea` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-22 | 46KB | `39b5986c` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-24 | 1KB | `d436ef25` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-24 | 13KB | `1b960f68` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-24 | 48KB | `e5d1254d` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
 
@@ -948,7 +981,7 @@
 | [.claude/skills/writing-skills/testing-skills-with-subagents.md](.claude/skills/writing-skills/testing-skills-with-subagents.md) |  | 2026-03-02 | 12KB | `24475f71` |
 | [.kilocode/mcp.json](.kilocode/mcp.json) |  | 2026-04-10 | 481B | `14bc1e7d` |
 | [.kilocode/package-lock.json](.kilocode/package-lock.json) |  | 2026-04-20 | 3KB | `ca4a6cad` |
-| [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-20 | 60B | `6aacd23e` |
+| [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-22 | 60B | `31099cfb` |
 | [.kilocode/rules-architect/user_rules.md](.kilocode/rules-architect/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
 | [.kilocode/rules-ask/user_rules.md](.kilocode/rules-ask/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
 

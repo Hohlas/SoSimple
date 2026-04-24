@@ -1,0 +1,1153 @@
+{
+  "manifest_path": "ML/reports/cross_instrument_robustness/manifest_metaquotes_baseline.json",
+  "baseline_reference_path": null,
+  "summary": [
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8_tp12",
+      "trades": 26,
+      "trades_per_year": 7.739608801955991,
+      "pf": 22.808066089749527,
+      "net_atr": 205.68625594461585,
+      "gross_profit_atr": 215.11791554699096,
+      "gross_loss_atr": 9.431659602375053,
+      "mean_pnl_atr": 7.9110098440236865,
+      "median_pnl_atr": 11.999999999999988,
+      "win_rate": 0.8461538461538461,
+      "max_drawdown_atr": 5.879313031977944,
+      "ulcer_index_atr": 1.6921179128277293,
+      "equity_linearity_r2": 0.9827216568149706,
+      "profit_concentration_top_1": 0.055783359417029665,
+      "profit_concentration_top_3": 0.1673500782510889,
+      "profit_concentration_top_10": 0.5578335941702955,
+      "negative_months": 1,
+      "negative_years": 0,
+      "worst_trade_atr": -3.5523465703971233,
+      "best_trade_atr": 12.00000000000003,
+      "max_consecutive_losses": 3,
+      "max_consecutive_loss_atr": -5.879313031977929,
+      "max_consecutive_wins": 16,
+      "max_consecutive_win_atr": 154.82932791156057,
+      "avg_hold_hours": 156.46153846153845,
+      "max_hold_hours": 444.0,
+      "system_name": "quality",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "MT/tester/files/ml_signals_quality.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 42,
+        "zero_rows": 9336,
+        "long_rows": 33,
+        "short_rows": 9,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 30,
+        "nonzero_unique_time_signal": 30,
+        "duplicate_time_rows": 12,
+        "duplicate_time_signal_rows": 12,
+        "duplicate_time_groups": 12,
+        "duplicate_time_signal_groups": 12,
+        "same_time_opposite_signal_groups": 0,
+        "first_nonzero_time": "2022.10.21 11:00",
+        "last_nonzero_time": "2026.02.16 02:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    },
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8",
+      "trades": 72,
+      "trades_per_year": 21.105939004815408,
+      "pf": 2.2656122095968105,
+      "net_atr": 171.1943551357959,
+      "gross_profit_atr": 306.4603977969469,
+      "gross_loss_atr": 135.26604266115106,
+      "mean_pnl_atr": 2.377699376886054,
+      "median_pnl_atr": 0.23077822629541994,
+      "win_rate": 0.5138888888888888,
+      "max_drawdown_atr": 44.131809187887654,
+      "ulcer_index_atr": 11.359164177124756,
+      "equity_linearity_r2": 0.8551179086850001,
+      "profit_concentration_top_1": 0.18128320281627294,
+      "profit_concentration_top_3": 0.36648980317410595,
+      "profit_concentration_top_10": 0.6507642310802942,
+      "negative_months": 14,
+      "negative_years": 3,
+      "worst_trade_atr": -8.000000000000012,
+      "best_trade_atr": 55.55612244897961,
+      "max_consecutive_losses": 6,
+      "max_consecutive_loss_atr": -35.71768325609737,
+      "max_consecutive_wins": 6,
+      "max_consecutive_win_atr": 103.8178464343824,
+      "avg_hold_hours": 198.41666666666666,
+      "max_hold_hours": 716.0,
+      "system_name": "frequency",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "MT/tester/files/ml_signals_frequency.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 95,
+        "zero_rows": 9283,
+        "long_rows": 67,
+        "short_rows": 28,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 76,
+        "nonzero_unique_time_signal": 78,
+        "duplicate_time_rows": 19,
+        "duplicate_time_signal_rows": 17,
+        "duplicate_time_groups": 19,
+        "duplicate_time_signal_groups": 17,
+        "same_time_opposite_signal_groups": 2,
+        "first_nonzero_time": "2022.10.13 15:00",
+        "last_nonzero_time": "2026.03.10 18:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.06.13 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.01.23 10:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.11.26 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.26 03:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.10.31 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.01.23 10:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.11.26 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.26 03:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    },
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8",
+      "trades": 33,
+      "trades_per_year": 10.002697095435684,
+      "pf": 16.052200461296216,
+      "net_atr": 227.03792408183233,
+      "gross_profit_atr": 242.12129509231124,
+      "gross_loss_atr": 15.08337101047889,
+      "mean_pnl_atr": 6.879937093388858,
+      "median_pnl_atr": 5.359867330016611,
+      "win_rate": 0.8181818181818182,
+      "max_drawdown_atr": 3.968354430379735,
+      "ulcer_index_atr": 1.1784488201316805,
+      "equity_linearity_r2": 0.949126470813788,
+      "profit_concentration_top_1": 0.22945574625229995,
+      "profit_concentration_top_3": 0.4168667735468659,
+      "profit_concentration_top_10": 0.722603975240797,
+      "negative_months": 4,
+      "negative_years": 1,
+      "worst_trade_atr": -3.968354430379735,
+      "best_trade_atr": 55.55612244897961,
+      "max_consecutive_losses": 1,
+      "max_consecutive_loss_atr": -3.968354430379735,
+      "max_consecutive_wins": 12,
+      "max_consecutive_win_atr": 115.73801445693768,
+      "avg_hold_hours": 236.3030303030303,
+      "max_hold_hours": 716.0,
+      "system_name": "original_plus_path",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/ml_signals_original_plus_path.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 51,
+        "zero_rows": 9327,
+        "long_rows": 38,
+        "short_rows": 13,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 37,
+        "nonzero_unique_time_signal": 37,
+        "duplicate_time_rows": 14,
+        "duplicate_time_signal_rows": 14,
+        "duplicate_time_groups": 14,
+        "duplicate_time_signal_groups": 14,
+        "same_time_opposite_signal_groups": 0,
+        "first_nonzero_time": "2022.10.13 15:00",
+        "last_nonzero_time": "2026.01.21 22:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    }
+  ],
+  "provider_drift": [
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8_tp12",
+      "trades": 26,
+      "trades_per_year": 7.739608801955991,
+      "pf": 22.808066089749527,
+      "net_atr": 205.68625594461585,
+      "gross_profit_atr": 215.11791554699096,
+      "gross_loss_atr": 9.431659602375053,
+      "mean_pnl_atr": 7.9110098440236865,
+      "median_pnl_atr": 11.999999999999988,
+      "win_rate": 0.8461538461538461,
+      "max_drawdown_atr": 5.879313031977944,
+      "ulcer_index_atr": 1.6921179128277293,
+      "equity_linearity_r2": 0.9827216568149706,
+      "profit_concentration_top_1": 0.055783359417029665,
+      "profit_concentration_top_3": 0.1673500782510889,
+      "profit_concentration_top_10": 0.5578335941702955,
+      "negative_months": 1,
+      "negative_years": 0,
+      "worst_trade_atr": -3.5523465703971233,
+      "best_trade_atr": 12.00000000000003,
+      "max_consecutive_losses": 3,
+      "max_consecutive_loss_atr": -5.879313031977929,
+      "max_consecutive_wins": 16,
+      "max_consecutive_win_atr": 154.82932791156057,
+      "avg_hold_hours": 156.46153846153845,
+      "max_hold_hours": 444.0,
+      "system_name": "quality",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "MT/tester/files/ml_signals_quality.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 42,
+        "zero_rows": 9336,
+        "long_rows": 33,
+        "short_rows": 9,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 30,
+        "nonzero_unique_time_signal": 30,
+        "duplicate_time_rows": 12,
+        "duplicate_time_signal_rows": 12,
+        "duplicate_time_groups": 12,
+        "duplicate_time_signal_groups": 12,
+        "same_time_opposite_signal_groups": 0,
+        "first_nonzero_time": "2022.10.21 11:00",
+        "last_nonzero_time": "2026.02.16 02:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    },
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8",
+      "trades": 72,
+      "trades_per_year": 21.105939004815408,
+      "pf": 2.2656122095968105,
+      "net_atr": 171.1943551357959,
+      "gross_profit_atr": 306.4603977969469,
+      "gross_loss_atr": 135.26604266115106,
+      "mean_pnl_atr": 2.377699376886054,
+      "median_pnl_atr": 0.23077822629541994,
+      "win_rate": 0.5138888888888888,
+      "max_drawdown_atr": 44.131809187887654,
+      "ulcer_index_atr": 11.359164177124756,
+      "equity_linearity_r2": 0.8551179086850001,
+      "profit_concentration_top_1": 0.18128320281627294,
+      "profit_concentration_top_3": 0.36648980317410595,
+      "profit_concentration_top_10": 0.6507642310802942,
+      "negative_months": 14,
+      "negative_years": 3,
+      "worst_trade_atr": -8.000000000000012,
+      "best_trade_atr": 55.55612244897961,
+      "max_consecutive_losses": 6,
+      "max_consecutive_loss_atr": -35.71768325609737,
+      "max_consecutive_wins": 6,
+      "max_consecutive_win_atr": 103.8178464343824,
+      "avg_hold_hours": 198.41666666666666,
+      "max_hold_hours": 716.0,
+      "system_name": "frequency",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "MT/tester/files/ml_signals_frequency.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 95,
+        "zero_rows": 9283,
+        "long_rows": 67,
+        "short_rows": 28,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 76,
+        "nonzero_unique_time_signal": 78,
+        "duplicate_time_rows": 19,
+        "duplicate_time_signal_rows": 17,
+        "duplicate_time_groups": 19,
+        "duplicate_time_signal_groups": 17,
+        "same_time_opposite_signal_groups": 2,
+        "first_nonzero_time": "2022.10.13 15:00",
+        "last_nonzero_time": "2026.03.10 18:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.06.13 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.01.23 10:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.11.26 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.26 03:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.10.31 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.01.23 10:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.11.26 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.26 03:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    },
+    {
+      "dataset": "xauusd_metaquotes",
+      "policy": "trail_x8",
+      "trades": 33,
+      "trades_per_year": 10.002697095435684,
+      "pf": 16.052200461296216,
+      "net_atr": 227.03792408183233,
+      "gross_profit_atr": 242.12129509231124,
+      "gross_loss_atr": 15.08337101047889,
+      "mean_pnl_atr": 6.879937093388858,
+      "median_pnl_atr": 5.359867330016611,
+      "win_rate": 0.8181818181818182,
+      "max_drawdown_atr": 3.968354430379735,
+      "ulcer_index_atr": 1.1784488201316805,
+      "equity_linearity_r2": 0.949126470813788,
+      "profit_concentration_top_1": 0.22945574625229995,
+      "profit_concentration_top_3": 0.4168667735468659,
+      "profit_concentration_top_10": 0.722603975240797,
+      "negative_months": 4,
+      "negative_years": 1,
+      "worst_trade_atr": -3.968354430379735,
+      "best_trade_atr": 55.55612244897961,
+      "max_consecutive_losses": 1,
+      "max_consecutive_loss_atr": -3.968354430379735,
+      "max_consecutive_wins": 12,
+      "max_consecutive_win_atr": 115.73801445693768,
+      "avg_hold_hours": 236.3030303030303,
+      "max_hold_hours": 716.0,
+      "system_name": "original_plus_path",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "alignment": {
+        "signals_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/ml_signals_original_plus_path.csv",
+        "rows_total": 9378,
+        "nonzero_rows": 51,
+        "zero_rows": 9327,
+        "long_rows": 38,
+        "short_rows": 13,
+        "unique_time_total": 8872,
+        "nonzero_unique_time": 37,
+        "nonzero_unique_time_signal": 37,
+        "duplicate_time_rows": 14,
+        "duplicate_time_signal_rows": 14,
+        "duplicate_time_groups": 14,
+        "duplicate_time_signal_groups": 14,
+        "same_time_opposite_signal_groups": 0,
+        "first_nonzero_time": "2022.10.13 15:00",
+        "last_nonzero_time": "2026.01.21 22:00",
+        "duplicate_time_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "rows": 2
+          }
+        ],
+        "duplicate_time_signal_examples": [
+          {
+            "time": "2022.10.21 11:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2022.12.02 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.01.12 16:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.07.06 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2023.09.14 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.02.05 17:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2024.07.25 20:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.02.14 23:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.04.09 02:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.05.15 09:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.06.30 01:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.07.17 15:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2025.08.20 04:00",
+            "signal": 1,
+            "rows": 2
+          },
+          {
+            "time": "2026.01.21 22:00",
+            "signal": 1,
+            "rows": 2
+          }
+        ],
+        "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+        "ohlc_unique_time_total": 126637,
+        "missing_ohlc_times": 0,
+        "missing_ohlc_examples": []
+      }
+    }
+  ],
+  "transfer_matrix": []
+}

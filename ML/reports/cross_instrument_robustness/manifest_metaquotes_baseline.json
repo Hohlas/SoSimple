@@ -1,0 +1,28 @@
+{
+  "datasets": [
+    {
+      "dataset_name": "xauusd_metaquotes",
+      "instrument": "XAUUSD",
+      "provider": "MetaQuotes",
+      "kind": "provider_drift_baseline",
+      "ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "MT/tester/files/ml_signals_quality.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "MT/tester/files/ml_signals_frequency.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/ml_signals_original_plus_path.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-22
-sources: 25
+last_updated: 2026-04-24
+sources: 26
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 25 отчётов (2026-04-08 — 2026-04-22). Параллельные направления execution.
+> Синтез 26 отчётов (2026-04-08 — 2026-04-24). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -704,3 +704,49 @@ Trade-level reconciliation был сохранён отдельно:
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
 3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
 4. Нужна следующая независимая некоррелированная система; дальнейшая подгонка `TrailATR/TP` внутри текущего `frequency` набора имеет убывающую ценность.
+
+## 6. Cross-Instrument Robustness Check (04-24)
+
+Этап был специально разделён на две независимые проверки:
+
+- `provider_drift_baseline` на том же `XAUUSD`;
+- `cross_instrument_transfer` на `XAGUSD`, `EURUSD`, `GBPUSD`, `USDCHF`.
+
+Это убрало главную методологическую ошибку: нельзя объяснять провал переноса на новом рынке только сменой провайдера котировок.
+
+### Provider drift baseline
+
+Для `XAUUSD MetaQuotes -> Alpari` все три системы сохранили статус `provider_stable`:
+
+- `quality`
+- `frequency`
+- `original_plus_path`
+
+Практический вывод: drift котировок заметен в сыром `OHLC/Nero`, но сам по себе не разрушает текущие frozen execution-tracks на том же инструменте.
+
+### Cross-instrument transfer
+
+| Instrument | `quality` | `frequency` | `original_plus_path` |
+|---|---|---|---|
+| `XAGUSD` | failed | supported | failed |
+| `EURUSD` | failed | failed | failed |
+| `GBPUSD` | inconclusive | inconclusive | supported |
+| `USDCHF` | supported | supported | supported |
+
+Итог по breadth:
+
+- `quality`: `1 supported / 1 inconclusive / 2 failed`
+- `frequency`: `2 supported / 1 inconclusive / 1 failed`
+- `original_plus_path`: `2 supported / 0 inconclusive / 2 failed`
+
+Ключевые наблюдения:
+
+- `EURUSD` — самый жёсткий negative case: все три режима провалились.
+- `USDCHF` — strongest positive case: все три режима сохранили practical viability.
+- `frequency` оказался самым живучим по ширине переноса.
+- `original_plus_path` не универсален, но по breadth выглядит сильнее `quality`.
+- `quality` остаётся самым строгим режимом по качеству отдельных прогонов, но не самым устойчивым по переносу.
+
+Структурный вывод: после этого этапа главный следующий вопрос уже не “переносится ли система вообще”, а “какие из подтверждённых систем достаточно независимы, чтобы их объединять в portfolio-layer”.
+
+Источник: [2026-04-24-cross-instrument-robustness-check.md](../../docs/reports/2026-04-24-cross-instrument-robustness-check.md)

@@ -1,0 +1,100 @@
+{
+  "datasets": [
+    {
+      "dataset_name": "eurusd_alpari_transfer_test_labeled",
+      "instrument": "EURUSD",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/EURUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/EURUSD/quality_test_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/EURUSD/frequency_test_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/EURUSD/original_plus_path_test_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    },
+    {
+      "dataset_name": "gbpusd_alpari_transfer_test_labeled",
+      "instrument": "GBPUSD",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/GBPUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/GBPUSD/quality_test_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/GBPUSD/frequency_test_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/GBPUSD/original_plus_path_test_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    },
+    {
+      "dataset_name": "usdchf_alpari_transfer_test_labeled",
+      "instrument": "USDCHF",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/USDCHF_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/USDCHF/quality_test_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/USDCHF/frequency_test_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/USDCHF/original_plus_path_test_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    },
+    {
+      "dataset_name": "xagusd_alpari_transfer_test_labeled",
+      "instrument": "XAGUSD",
+      "provider": "Alpari",
+      "kind": "cross_instrument_transfer",
+      "ohlc_path": "MT/MQL4/Files/XAGUSD_H1_OHLC.csv",
+      "signals": [
+        {
+          "system_name": "quality",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/quality_test_signals.csv",
+          "policy_name": "trail_x8_tp12"
+        },
+        {
+          "system_name": "frequency",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/frequency_test_signals.csv",
+          "policy_name": "trail_x8"
+        },
+        {
+          "system_name": "original_plus_path",
+          "signal_csv": "ML/reports/cross_instrument_robustness/generated/XAGUSD/original_plus_path_test_signals.csv",
+          "policy_name": "trail_x8"
+        }
+      ]
+    }
+  ]
+}
