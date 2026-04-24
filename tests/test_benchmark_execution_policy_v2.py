@@ -52,3 +52,29 @@ def test_shrinking_trailing_closes_after_profit_gives_back_less():
 
     assert fixed.empty
     assert shrinking.iloc[0]["pnl_atr"] == 4.0
+
+
+def test_hold_policy_closes_on_fixed_bar_horizon():
+    bars = [
+        {"time": pd.Timestamp("2024-01-01 00:00"), "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0, "atr14": 1.0},
+        {"time": pd.Timestamp("2024-01-01 01:00"), "open": 101.0, "high": 102.0, "low": 100.0, "close": 101.5, "atr14": 1.0},
+        {"time": pd.Timestamp("2024-01-01 02:00"), "open": 101.5, "high": 104.0, "low": 101.0, "close": 103.0, "atr14": 1.0},
+        {"time": pd.Timestamp("2024-01-01 03:00"), "open": 103.0, "high": 106.0, "low": 102.0, "close": 105.0, "atr14": 1.0},
+        {"time": pd.Timestamp("2024-01-01 04:00"), "open": 105.0, "high": 108.0, "low": 104.0, "close": 107.0, "atr14": 1.0},
+    ]
+    index_by_time = {row["time"]: idx for idx, row in enumerate(bars)}
+    signals = pd.DataFrame({"time": [pd.Timestamp("2024-01-01 00:00")], "signal": [1]})
+
+    trades = simulate_policy(
+        signals,
+        bars,
+        index_by_time,
+        ExitPolicy(name="hold_3_backstop_50", stop_atr=50.0, trail_atr=None, hold_bars=3),
+    )
+
+    assert len(trades) == 1
+    trade = trades.iloc[0]
+    assert trade["entry_time"] == pd.Timestamp("2024-01-01 01:00")
+    assert trade["exit_time"] == pd.Timestamp("2024-01-01 03:00")
+    assert trade["hold_hours"] == 2.0
+    assert trade["pnl_atr"] == 4.0

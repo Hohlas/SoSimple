@@ -68,6 +68,26 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 Если у тебя уже настроен симлинк на каталог проекта, достаточно обновить сам источник.
 
+### Для `entry_path_v1`
+
+Baseline execution-system для `entry_path_v1` после frozen trade-filter export работает через отдельный consumer:
+
+```bash
+./.venv/bin/python -m API.export_entry_path_v1_signals \
+  --predictions ML/reports/entry_path_test_predictions.csv \
+  --rule-path ML/reports/entry_path_trade_filter_selected_rule.json \
+  --output MT/tester/files/ml_signals.csv \
+  --copy-to-mt4
+```
+
+Что делает этот CLI:
+
+- читает `entry_path_trade_filter_selected_rule.json`;
+- поддерживает production winner `A`, который использует `pred_ret_24_dir_atr`;
+- обнуляет строки вне frozen rule;
+- схлопывает runtime до единого `time;signal` с приоритетом ненулевого сигнала на баре;
+- при `--copy-to-mt4` пишет одинаковый export в tester/runtime paths.
+
 ### Для `entry_path_v1_quantile`
 
 Актуальный путь после прохождения n-boost gate (2026-04-12) — production rule
@@ -192,6 +212,17 @@ Frequent-режим:
 - либо явно поставить `ML_UseScoreFilter=false`.
 
 Для `entry_path_v1_quantile` предпочтителен именно этот режим: уже заранее отфильтрованный `time;signal`.
+
+Для обоих `entry_path` execution-систем канонический runtime protocol сейчас одинаковый:
+
+| Параметр | Значение | Почему |
+|---|---:|---|
+| `iSignal` | `3` | direct CSV execution |
+| `ML_ExitMode` | `0` | fixed-hold parity mode |
+| `ML_HoldBars` | `24` | frozen sequential horizon |
+| `ML_BackStopATR` | `50.0` | дальний страховочный stop |
+| `ML_AllowReversal` | `false` | benchmark и MT4 parity без reverse-close |
+| `ML_UseScoreFilter` | `false` | CSV уже предфильтрован в Python |
 
 Для чистой проверки нового trailing-stop execution:
 

@@ -33,6 +33,7 @@ class ExitPolicy:
     stop_atr: float = 8.0
     trail_atr: float | None = 8.0
     take_profit_atr: float | None = None
+    hold_bars: int | None = None
     shrink_tiers: tuple[tuple[float, float], ...] = ()
 
 
@@ -40,6 +41,7 @@ DEFAULT_POLICIES: tuple[ExitPolicy, ...] = (
     ExitPolicy(name="trail_x6", stop_atr=6.0, trail_atr=6.0),
     ExitPolicy(name="trail_x8", stop_atr=8.0, trail_atr=8.0),
     ExitPolicy(name="trail_x10", stop_atr=10.0, trail_atr=10.0),
+    ExitPolicy(name="hold_24_backstop_50", stop_atr=50.0, trail_atr=None, hold_bars=24),
     ExitPolicy(name="trail_x8_tp8", stop_atr=8.0, trail_atr=8.0, take_profit_atr=8.0),
     ExitPolicy(name="trail_x8_tp12", stop_atr=8.0, trail_atr=8.0, take_profit_atr=12.0),
     ExitPolicy(name="trail_x8_tp16", stop_atr=8.0, trail_atr=8.0, take_profit_atr=16.0),
@@ -260,6 +262,11 @@ def simulate_policy(signals: pd.DataFrame, bars: list[dict], index_by_time: dict
         exit_price = entry_price
         exit_reason = "no_exit"
         exit_atr = entry_atr
+        hold_exit_idx = None
+        if policy.hold_bars is not None:
+            hold_exit_idx = entry_idx + int(policy.hold_bars) - 1
+            if hold_exit_idx >= len(bars):
+                hold_exit_idx = None
 
         for i in range(entry_idx, len(bars)):
             bar = bars[i]
@@ -299,6 +306,13 @@ def simulate_policy(signals: pd.DataFrame, bars: list[dict], index_by_time: dict
                     exit_price = active_stop if stop_hit else float(take_profit_price)
                     exit_atr = current_atr
                     break
+
+            if hold_exit_idx is not None and i >= hold_exit_idx:
+                exit_idx = i
+                exit_reason = "fixed_hold"
+                exit_price = float(bar["close"])
+                exit_atr = current_atr
+                break
 
         if exit_idx is None:
             continue

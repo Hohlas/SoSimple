@@ -27,6 +27,9 @@
 - `trail_x8_tp8/12/16/24` — трейлинг `8 ATR` плюс take profit.
 - `stop_x8_tp8/12/16/24` — стартовый стоп `8 ATR` плюс take profit без трейлинга.
 - `shrinking_trail_8_6_4_3` — широкий стартовый трейлинг, который сужается при росте накопленной прибыли.
+- `hold_24_backstop_50` — фиксированное удержание `24` бара с дальним защитным стопом `50 ATR`.
+
+Последний режим добавлен как research-adapter для `entry_path` execution-систем, потому что их MT4/runtime protocol не использует trailing на этом этапе, а держит позицию `24` бара с backstop.
 
 ## Метрики
 
@@ -70,6 +73,14 @@ python -m ML.benchmark_execution_policy_v2 \
   --policy-set frequency_trail_scan \
   --datasets frequency \
   --output-dir ML/reports/execution_policy_v2/frequency_trail_scan
+```
+
+Переиспользование fixed-hold policy из других benchmark-скриптов:
+
+```python
+from ML.benchmark_execution_policy_v2 import DEFAULT_POLICIES
+
+policy = next(p for p in DEFAULT_POLICIES if p.name == "hold_24_backstop_50")
 ```
 
 ## Выходные файлы

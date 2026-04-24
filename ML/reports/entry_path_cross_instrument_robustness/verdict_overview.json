@@ -1,0 +1,132 @@
+{
+  "provider_drift": [
+    {
+      "system_name": "entry_path_v1",
+      "instrument": "XAUUSD",
+      "provider": "Alpari",
+      "trades": 27,
+      "pf": 25.016483972112066,
+      "max_drawdown_atr": 1.631578947368421,
+      "trades_ratio": 1.173913043478261,
+      "drawdown_ratio": 1.1293271700305458,
+      "top1_increase": -0.007768252754379534,
+      "verdict": "provider_stable"
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "instrument": "XAUUSD",
+      "provider": "Alpari",
+      "trades": 10,
+      "pf": "inf",
+      "max_drawdown_atr": 0.0,
+      "trades_ratio": 0.7692307692307693,
+      "drawdown_ratio": 0.0,
+      "top1_increase": 0.11480082414358159,
+      "verdict": "provider_stable"
+    }
+  ],
+  "cross_instrument_transfer": [
+    {
+      "instrument": "EURUSD",
+      "system_name": "entry_path_v1",
+      "trades": 31,
+      "pf": 2.3260817657413146,
+      "max_drawdown_atr": 7.356334598561844,
+      "trades_ratio": 1.3478260869565217,
+      "drawdown_ratio": 5.091821359543262,
+      "top1_increase": 0.1239731868055293,
+      "verdict": "transfer_failed"
+    },
+    {
+      "instrument": "EURUSD",
+      "system_name": "entry_path_v1_quantile",
+      "trades": 9,
+      "pf": 4.856894921358276,
+      "max_drawdown_atr": 1.6845637583892703,
+      "trades_ratio": 0.6923076923076923,
+      "drawdown_ratio": 2.193691547435999,
+      "top1_increase": 0.35841648267728,
+      "verdict": "transfer_failed"
+    },
+    {
+      "instrument": "GBPUSD",
+      "system_name": "entry_path_v1",
+      "trades": 28,
+      "pf": 3.759937599877128,
+      "max_drawdown_atr": 5.004016064257087,
+      "trades_ratio": 1.2173913043478262,
+      "drawdown_ratio": 3.4636211197439377,
+      "top1_increase": -0.024315566964688062,
+      "verdict": "transfer_failed"
+    },
+    {
+      "instrument": "GBPUSD",
+      "system_name": "entry_path_v1_quantile",
+      "trades": 10,
+      "pf": 2.2515950499394086,
+      "max_drawdown_atr": 5.004016064257083,
+      "trades_ratio": 0.7692307692307693,
+      "drawdown_ratio": 6.516386030939461,
+      "top1_increase": 0.06282796944837685,
+      "verdict": "transfer_failed"
+    },
+    {
+      "instrument": "USDCHF",
+      "system_name": "entry_path_v1",
+      "trades": 31,
+      "pf": 12.667276793910737,
+      "max_drawdown_atr": 5.024442846872718,
+      "trades_ratio": 1.3478260869565217,
+      "drawdown_ratio": 3.477759890436798,
+      "top1_increase": -0.00019599670920825152,
+      "verdict": "transfer_failed"
+    },
+    {
+      "instrument": "USDCHF",
+      "system_name": "entry_path_v1_quantile",
+      "trades": 16,
+      "pf": 378.6881069395722,
+      "max_drawdown_atr": 0.1282051282051171,
+      "trades_ratio": 1.2307692307692308,
+      "drawdown_ratio": 0.16695272273364686,
+      "top1_increase": -0.009735556605986878,
+      "verdict": "transfer_supported"
+    },
+    {
+      "instrument": "XAGUSD",
+      "system_name": "entry_path_v1",
+      "trades": 20,
+      "pf": "inf",
+      "max_drawdown_atr": 0.0,
+      "trades_ratio": 0.8695652173913043,
+      "drawdown_ratio": 0.0,
+      "top1_increase": 0.010053966723062524,
+      "verdict": "transfer_supported"
+    },
+    {
+      "instrument": "XAGUSD",
+      "system_name": "entry_path_v1_quantile",
+      "trades": 8,
+      "pf": "inf",
+      "max_drawdown_atr": 0.0,
+      "trades_ratio": 0.6153846153846154,
+      "drawdown_ratio": 0.0,
+      "top1_increase": 0.0570826378424697,
+      "verdict": "transfer_supported"
+    }
+  ],
+  "breadth_by_system": [
+    {
+      "system_name": "entry_path_v1",
+      "transfer_supported": 1,
+      "transfer_inconclusive": 0,
+      "transfer_failed": 3
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "transfer_supported": 2,
+      "transfer_inconclusive": 0,
+      "transfer_failed": 2
+    }
+  ]
+}

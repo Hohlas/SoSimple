@@ -1,0 +1,14 @@
+{
+  "entry_path_v1": {
+    "trades": 23,
+    "pf": 24.665642338485032,
+    "max_drawdown_atr": 1.4447354058826818,
+    "profit_concentration_top_1": 0.10744169141492199
+  },
+  "entry_path_v1_quantile": {
+    "trades": 13,
+    "pf": 51.556928629185514,
+    "max_drawdown_atr": 0.7679127725856443,
+    "profit_concentration_top_1": 0.192271360251049
+  }
+}
