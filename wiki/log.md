@@ -216,3 +216,12 @@
   - captured transfer matrix across `XAGUSD/EURUSD/GBPUSD/USDCHF`
   - recorded breadth conclusion: `frequency` is most robust by transfer width, `USDCHF` is strongest positive case, `EURUSD` is strongest negative case
 - Updated `wiki/index.md` coverage from 25 to 26 reports
+
+## [2026-04-24] ingest | entry_path cross-instrument robustness synced into wiki
+- Added report `docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md`
+- Updated `wiki/research/execution-tracks.md`:
+  - added fixed-hold `entry_path` transfer subsection with `hold_24_backstop_50`
+  - recorded `XAUUSD MetaQuotes -> Alpari` as `provider_stable` for both `entry_path_v1` and `entry_path_v1_quantile`
+  - captured transfer matrix across `EURUSD/GBPUSD/USDCHF/XAGUSD`
+  - recorded breadth conclusion: quantile variant is more robust than baseline `entry_path_v1`
+- Updated `wiki/index.md` coverage from 26 to 27 reports

@@ -2,6 +2,46 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-24] - Entry path cross-instrument robustness
+
+### Добавлено
+- `API/export_entry_path_v1_signals.py`
+- `ML/export_entry_path_predictions.py`
+- `tests/test_export_entry_path_v1_signals.py`
+- `tests/test_export_entry_path_predictions.py`
+- `docs/ML/export_entry_path_predictions.py.md`
+- stage artifacts в `ML/reports/entry_path_cross_instrument_robustness/`
+
+### Изменено
+- `ML/benchmark_execution_policy_v2.py`
+- `tests/test_benchmark_execution_policy_v2.py`
+- `docs/ML/benchmark_execution_policy_v2.py.md`
+- `docs/ML/benchmark_cross_instrument_robustness.py.md`
+- `docs/MT/ml_signal_integration.md`
+- `ML/README.md`
+- `API/README.md`
+- `MODULE_INDEX.md`
+
+### Результаты
+- Для `entry_path_v1` и `entry_path_v1_quantile` введён единый export-contract `time;signal`.
+- `XAUUSD MetaQuotes -> Alpari` проверен отдельно как `provider drift baseline`:
+  - `entry_path_v1` -> `provider_stable`
+  - `entry_path_v1_quantile` -> `provider_stable`
+- `cross-instrument transfer` без retraining и без новых порогов:
+  - `entry_path_v1`: `1 supported / 0 inconclusive / 3 failed`
+  - `entry_path_v1_quantile`: `2 supported / 0 inconclusive / 2 failed`
+- Сильнейший положительный перенос:
+  - `XAGUSD` для обеих систем
+  - `USDCHF` для `entry_path_v1_quantile`
+- Явный провал переноса:
+  - `EURUSD` и `GBPUSD` для обеих систем
+
+### Вывод
+- Provider drift на том же `XAUUSD` не является основной проблемой для `entry_path` execution-систем.
+- Перенос baseline `entry_path_v1` узкий; quantile-версия заметно живучее, но тоже не универсальна.
+- Следующий этап должен быть portfolio-level: `System correlation and portfolio check`.
+- Подробности: [docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md](docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md)
+
 ## [2026-04-24] - Cross-instrument robustness check
 
 ### Добавлено

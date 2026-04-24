@@ -36,6 +36,13 @@
 5. При наличии baseline reference присваивает verdict и reason.
 6. Пишет отдельные представления для `provider_drift` и `transfer`.
 
+Для `entry_path` систем benchmark может использовать тот же fixed-hold protocol, что и MT4/runtime:
+
+- `policy_name = hold_24_backstop_50`
+- вход на следующем баре
+- удержание `24` бара
+- дальний защитный stop `50 ATR`
+
 ## Метрики
 
 Основные метрики совпадают с `benchmark_execution_policy_v2.py`:
@@ -99,3 +106,4 @@ python -m ML.benchmark_cross_instrument_robustness \
 - Это research benchmark, а не замена MT4 forward-check.
 - Модуль не переобучает модель и не ретюнит thresholds.
 - Если signal timestamps не покрываются OHLC, benchmark должен падать с явной ошибкой, а не молча пропускать строки.
+- `provider_drift` и `cross_instrument_transfer` надо читать как две разные таблицы: один и тот же output-dir может содержать оба вида verdict, но их нельзя смешивать в одну итоговую интерпретацию.

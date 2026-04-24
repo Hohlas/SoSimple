@@ -1,6 +1,63 @@
 # Context Handoff
 
 ## Current Stage
+Этап `entry_path_cross_instrument_robustness` завершён (2026-04-24).
+
+Что зафиксировано:
+
+- добавлен fixed-hold adapter `hold_24_backstop_50` в `ML/benchmark_execution_policy_v2.py`;
+- добавлен exporter `API/export_entry_path_v1_signals.py`;
+- добавлен arbitrary-split inference модуль `ML/export_entry_path_predictions.py`;
+- добавлены тесты:
+  - `tests/test_export_entry_path_v1_signals.py`
+  - `tests/test_export_entry_path_predictions.py`
+  - обновлён `tests/test_benchmark_execution_policy_v2.py`
+- обновлены `docs/ML/benchmark_execution_policy_v2.py.md`, `docs/ML/benchmark_cross_instrument_robustness.py.md`, `docs/MT/ml_signal_integration.md`, `ML/README.md`, `API/README.md`, `MODULE_INDEX.md`;
+- создан canonical report: `docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md`;
+- собраны benchmark-артефакты:
+  - `ML/reports/entry_path_cross_instrument_robustness/xauusd_provider_drift/provider_drift.csv`
+  - `ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/transfer_matrix.csv`
+  - `ML/reports/entry_path_cross_instrument_robustness/gbpusd_transfer/transfer_matrix.csv`
+  - `ML/reports/entry_path_cross_instrument_robustness/usdchf_transfer/transfer_matrix.csv`
+  - `ML/reports/entry_path_cross_instrument_robustness/xagusd_transfer/transfer_matrix.csv`
+
+Зачем:
+
+- проверить перенос двух зрелых execution-систем:
+  - `entry_path_v1`
+  - `entry_path_v1_quantile`
+- отделить `provider drift` (`XAUUSD MetaQuotes -> Alpari`) от реального `cross-instrument transfer`;
+- не менять frozen rules и не переобучать модели;
+- закрыть следующий entry-path-specific stress-test каноническими benchmark-артефактами.
+
+Главные результаты:
+
+- `XAUUSD provider drift baseline`:
+  - `entry_path_v1` -> `provider_stable`
+  - `entry_path_v1_quantile` -> `provider_stable`
+- `cross-instrument transfer`:
+  - `EURUSD`: `failed / failed`
+  - `GBPUSD`: `failed / failed`
+  - `USDCHF`: `failed / supported`
+  - `XAGUSD`: `supported / supported`
+- breadth by system:
+  - `entry_path_v1`: `1 supported / 0 inconclusive / 3 failed`
+  - `entry_path_v1_quantile`: `2 supported / 0 inconclusive / 2 failed`
+
+Решение:
+
+- зафиксировать единый export-contract `time;signal` для обеих `entry_path` execution-систем;
+- не смешивать `provider drift` и `cross-instrument transfer` в одной таблице;
+- считать `entry_path_v1_quantile` более живучим вариантом baseline `entry_path_v1`;
+- не продвигать instrument-specific retuning на этом этапе.
+
+Следующий шаг по `docs/superpowers/roadmap.md`:
+
+1. Начать `System correlation and portfolio check`.
+2. Сравнить сделки `quality`, `frequency`, `original_plus_path`, `entry_path_v1`, `entry_path_v1_quantile` по времени, направлению и корреляции результата.
+3. Решить, какие системы можно объединять в один portfolio-layer без дублирования риска.
+
+## Previous Stage
 Этап `cross_instrument_robustness_check` завершён (2026-04-24).
 
 Что зафиксировано:
@@ -17,7 +74,7 @@
   - `ML/reports/cross_instrument_robustness/gbpusd_transfer_test_labeled/transfer_matrix.csv`
   - `ML/reports/cross_instrument_robustness/usdchf_transfer_test_labeled/transfer_matrix.csv`
 
-Зачем:
+Смысл:
 
 - отделить drift котировок `MetaQuotes -> Alpari` на том же `XAUUSD` от реального переноса системы на новые инструменты;
 - получить единую матрицу робастности для `quality`, `frequency`, `original_plus_path` без ретюнинга frozen rules;
@@ -46,11 +103,10 @@
 - считать `original_plus_path` сильнее `quality` по breadth, но не универсальным;
 - не продвигать никакой новый instrument-specific retuning на этом этапе.
 
-Следующий шаг по `docs/superpowers/roadmap.md`:
+Следующий шаг:
 
-1. Начать `System correlation and portfolio check`.
-2. Сравнить сделки `quality`, `frequency`, `original_plus_path` по времени, направлению и корреляции результата.
-3. Решить, какие системы можно объединять в один portfolio-layer без дублирования риска.
+1. Сделать такой же отдельный stress-test для зрелых `entry_path` execution-систем.
+2. Проверить, сохраняется ли separation `provider drift` vs `cross-instrument transfer` и для них.
 
 ## Previous Stage
 Этап `take_skip_original_contour_feature_ablation` завершён (2026-04-20).

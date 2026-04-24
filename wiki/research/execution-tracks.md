@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-04-24
-sources: 26
+sources: 27
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 26 отчётов (2026-04-08 — 2026-04-24). Параллельные направления execution.
+> Синтез 27 отчётов (2026-04-08 — 2026-04-24). Параллельные направления execution.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -604,6 +604,71 @@ Interpretation: duplicate timestamps are expected in DATA because one H1 bar can
 **Решение:** инструмент готов, но фактический verdict откладывается до появления нового prediction CSV. До этого `entry_path_v1_quantile` остаётся production-ready parallel mode по frozen test и MT4 parity, но не переводится в более сильный статус на основании forward validation.
 
 Источник: [2026-04-13-quantile-forward-validation.md](../../docs/reports/2026-04-13-quantile-forward-validation.md)
+
+### Entry Path Cross-Instrument Robustness (04-24)
+
+Следующий stress-test после `quality/frequency/original_plus_path` был уже не про `take_skip`, а про две зрелые `entry_path` execution-системы:
+
+- `entry_path_v1`
+- `entry_path_v1_quantile`
+
+Методология была сохранена жёстко:
+
+- без retraining;
+- без новых thresholds;
+- без изменения frozen rules;
+- сначала `provider drift baseline` на `XAUUSD MetaQuotes -> Alpari`;
+- потом `cross-instrument transfer` на `EURUSD/GBPUSD/USDCHF/XAGUSD`;
+- verdict для drift и transfer считаются отдельно.
+
+Для этого пришлось зафиксировать реальный execution protocol `entry_path` систем и переиспользовать его в benchmark как `hold_24_backstop_50`:
+
+- вход на следующем баре;
+- `ML_HoldBars=24`;
+- `ML_BackStopATR=50`;
+- без reversal-close.
+
+Дополнительно были добавлены два operational модуля:
+
+- `API/export_entry_path_v1_signals.py` — frozen baseline rule -> единый `time;signal`;
+- `ML/export_entry_path_predictions.py` — inference frozen `entry_path_v1` и `entry_path_v1_quantile` на arbitrary labeled CSV.
+
+#### Provider drift
+
+На том же `XAUUSD` новый провайдер не сломал обе системы:
+
+| System | Trades | PF | Max DD ATR | Verdict |
+|---|---:|---:|---:|---|
+| `entry_path_v1` | 27 | 25.02 | 1.63 | `provider_stable` |
+| `entry_path_v1_quantile` | 10 | `inf` | 0.00 | `provider_stable` |
+
+Это важный отрицательный результат: сам по себе drift котировок не объясняет будущие провалы переноса на новые рынки.
+
+#### Cross-instrument transfer
+
+| Instrument | `entry_path_v1` | `entry_path_v1_quantile` |
+|---|---|---|
+| `EURUSD` | `transfer_failed` | `transfer_failed` |
+| `GBPUSD` | `transfer_failed` | `transfer_failed` |
+| `USDCHF` | `transfer_failed` | `transfer_supported` |
+| `XAGUSD` | `transfer_supported` | `transfer_supported` |
+
+Breadth by system:
+
+| System | supported | failed |
+|---|---:|---:|
+| `entry_path_v1` | 1 | 3 |
+| `entry_path_v1_quantile` | 2 | 2 |
+
+Практический вывод по линии:
+
+- baseline `entry_path_v1` переносится узко;
+- quantile-версия живучее baseline и удерживает два supported-case;
+- `XAGUSD` стал лучшим общим positive case для обеих систем;
+- `EURUSD` и `GBPUSD` дали общий отрицательный сигнал;
+- separation `provider drift` vs `transfer` оказался методологически правильным и для `entry_path` трека.
+
+Источник: [2026-04-24-entry-path-cross-instrument-robustness.md](../../docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md)
 
 ### PF Uplift Discovery (04-13): ОТОБРАНЫ 3 ГИПОТЕЗЫ
 
