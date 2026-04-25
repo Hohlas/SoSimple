@@ -10,6 +10,7 @@
 | [label_main.py](processing/label_main.py) | CLI оркестратор pipeline | `Nero.csv` → `*_labeled.csv` | [docs](docs/processing/label_main.py.md) | 🏁 |
 | [label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | sorted CSV → labeled CSV | [docs](docs/processing/label_signals.py.md) | 🏁 |
 | [normalize.py](processing/normalize.py) | Построчная нормализация признаков | labeled CSV → normalized CSV + `*.npy` | [docs](docs/processing/normalize.py.md) | 🏁 |
+| [trim_pre2004_csv.py](processing/trim_pre2004_csv.py) | Утилита обрезки строк старше cutoff в выбранных CSV | `DATA/*.csv`, `MT/MQL4/Files/*.csv` → те же файлы | [docs](docs/processing/trim_pre2004_csv.py.md) | ✅ |
 
 ## Statistics
 
@@ -172,6 +173,7 @@
 | [label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора |
 | [label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict |
 | [normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков |
+| [trim_pre2004_csv.py.md](docs/processing/trim_pre2004_csv.py.md) | Документация утилиты обрезки CSV |
 | [statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике |
 | [EDA.ipynb.md](docs/statistics/EDA.ipynb.md) | Отчет по разведочному анализу |
 | [signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF |
