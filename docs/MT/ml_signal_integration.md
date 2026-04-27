@@ -4,7 +4,8 @@
 >
 > Подробная логика эксперта описана в [trading_strategy.md](trading_strategy.md).
 > Daily reconciliation описан в [telemetry_daily_reconciliation.py.md](../ML/telemetry_daily_reconciliation.py.md).
-> Фоновый online watcher описан в [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md).
+> Online watcher описан в [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md).
+> Если нужен один документ с общим operational-контекстом, начинать лучше с [trading_strategy.md](trading_strategy.md): он связывает MQL, `#.csv`, watcher и сверку.
 
 ---
 
@@ -219,8 +220,8 @@ tmux new -s telemetry-watcher
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher \
-  --poll-interval-sec 10 \
-  --heartbeat-sec 30 \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
   --verbose
 ```
 

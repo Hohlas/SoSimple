@@ -67,8 +67,8 @@ tmux new -s telemetry-watcher
 
 # Внутри окна tmux
 ./.venv/bin/python -m API.telemetry_signal_watcher \
-  --poll-interval-sec 10 \
-  --heartbeat-sec 30 \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
   --verbose
 ```
 

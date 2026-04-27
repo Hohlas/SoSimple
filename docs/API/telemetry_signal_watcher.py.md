@@ -2,6 +2,12 @@
 
 ## Назначение
 
+Связанные документы:
+
+- [../MT/trading_strategy.md](../MT/trading_strategy.md) - общая логика online-контура, `#.csv`, MQL-исполнение и operational checklist;
+- [../MT/ml_signal_integration.md](../MT/ml_signal_integration.md) - контракт `ml_signals.csv` и роль watcher-а в общей MT4-интеграции;
+- [../ML/telemetry_daily_reconciliation.py.md](../ML/telemetry_daily_reconciliation.py.md) - ежедневная сверка expected/open/close/skip после online/test прогона.
+
 `API/telemetry_signal_watcher.py` - фоновый Python-процесс для online telemetry-контура:
 
 `MT4 -> Nero.csv -> prediction CSV -> ml_signals.csv -> MT4`
@@ -107,8 +113,8 @@ tmux new -s telemetry-watcher
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher \
-  --poll-interval-sec 10 \
-  --heartbeat-sec 30 \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
   --verbose
 ```
 
@@ -181,4 +187,5 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 - используется polling, а не OS-level file events;
 - если `Nero.csv` испорчен или checkpoint/rule недоступны, rebuild не завершится, а ошибка уйдёт в log;
 - `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара;
-- для наблюдаемого server-режима основным способом запуска считается `tmux`, а не `nohup`.
+- для наблюдаемого server-режима основным способом запуска считается `tmux`, а не `nohup`;
+- практические дефолты для сильного сервера: `poll=1s`, `heartbeat=60s`.

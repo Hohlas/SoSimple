@@ -12,7 +12,7 @@
 #   - metadata JSON + state JSON + log
 # Использование:
 #   python -m API.telemetry_signal_watcher --once
-#   python -m API.telemetry_signal_watcher --poll-interval-sec 10 --heartbeat-sec 30 --verbose
+#   python -m API.telemetry_signal_watcher --poll-interval-sec 1 --heartbeat-sec 60 --verbose
 # Примечания:
 #   - Пересчёт запускается только при появлении нового последнего `time` в Nero.csv.
 #   - Готовый ml_signals.csv пишется атомарно через существующий exporter.
@@ -218,8 +218,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metadata-output", default=str(DEFAULT_METADATA_PATH))
     parser.add_argument("--state-path", default=str(DEFAULT_STATE_PATH))
     parser.add_argument("--log-path", default=str(DEFAULT_LOG_PATH))
-    parser.add_argument("--poll-interval-sec", type=int, default=10)
-    parser.add_argument("--heartbeat-sec", type=int, default=30)
+    parser.add_argument("--poll-interval-sec", type=int, default=1)
+    parser.add_argument("--heartbeat-sec", type=int, default=60)
     parser.add_argument("--diagnostic-target-signals-per-year", type=int, default=500)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--once", action="store_true")

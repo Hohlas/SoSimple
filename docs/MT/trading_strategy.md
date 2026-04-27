@@ -17,6 +17,13 @@
 - [telemetry_daily_reconciliation.py.md](../ML/telemetry_daily_reconciliation.py.md) - ежедневная сверка expected/open/close/skip;
 - [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md) - фоновый online watcher `Nero.csv -> ml_signals.csv`.
 
+Если нужен один основной документ, который связывает весь online diagnostic-контур
+целиком, использовать именно эту страницу. Остальные два документа являются
+специализированными приложениями:
+
+- `ml_signal_integration.md` - про контракт и форматы `ml_signals.csv`;
+- `telemetry_signal_watcher.py.md` - про отдельный Python watcher и его эксплуатацию.
+
 ---
 
 ## 0. Инструкция по тесту
@@ -370,8 +377,8 @@ tmux new -s telemetry-watcher
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher \
-  --poll-interval-sec 10 \
-  --heartbeat-sec 30 \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
   --verbose
 ```
 

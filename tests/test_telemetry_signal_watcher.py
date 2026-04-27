@@ -68,6 +68,15 @@ def test_format_heartbeat_message_for_idle_state(tmp_path):
     assert "last_bar=2025.01.01 00:00" in message
 
 
+def test_parse_args_uses_fast_poll_and_slower_heartbeat_defaults(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["telemetry_signal_watcher"])
+
+    args = watcher.parse_args()
+
+    assert args.poll_interval_sec == 1
+    assert args.heartbeat_sec == 60
+
+
 def test_run_once_rebuilds_and_updates_state(tmp_path, monkeypatch):
     input_csv = tmp_path / "Nero.csv"
     input_csv.write_text(
