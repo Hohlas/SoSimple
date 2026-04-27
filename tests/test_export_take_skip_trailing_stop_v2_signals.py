@@ -122,6 +122,42 @@ def test_export_signals_copy_to_mt4_writes_both_targets(tmp_path):
     assert runtime_path.read_text(encoding='utf-8') == out
 
 
+def test_export_signals_writes_mt4_targets_atomically(tmp_path, monkeypatch):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)
+    output = tmp_path / 'ml_signals.csv'
+    tester_path = tmp_path / 'tester' / 'files' / 'ml_signals.csv'
+    runtime_path = tmp_path / 'MQL4' / 'Files' / 'ml_signals.csv'
+
+    exporter.MT4_TESTER_SIGNALS = tester_path
+    exporter.MT4_RUNTIME_SIGNALS = runtime_path
+
+    replaced: list[tuple[Path, Path]] = []
+    original_replace = exporter.os.replace
+
+    def _record_replace(src, dst):
+        replaced.append((Path(src), Path(dst)))
+        original_replace(src, dst)
+
+    monkeypatch.setattr(exporter.os, 'replace', _record_replace)
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        copy_to_mt4=True,
+    )
+
+    assert replaced == [
+        (output.with_suffix('.csv.tmp'), output),
+        (tester_path.with_suffix('.csv.tmp'), tester_path),
+        (runtime_path.with_suffix('.csv.tmp'), runtime_path),
+    ]
+    assert not output.with_suffix('.csv.tmp').exists()
+    assert not tester_path.with_suffix('.csv.tmp').exists()
+    assert not runtime_path.with_suffix('.csv.tmp').exists()
+
+
 def test_export_signals_writes_reproducible_metadata(tmp_path):
     predictions_path = _write_prediction_csv(tmp_path)
     rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)

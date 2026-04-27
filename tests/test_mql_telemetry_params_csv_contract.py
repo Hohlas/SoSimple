@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FUNCTIONS = ROOT / "MT/MQL4/Include/FUNCTIONS.mqh"
 MAIN = ROOT / "MT/MQL4/Include/MAIN.mqh"
+ML_SIGNAL = ROOT / "MT/MQL4/Include/lib_ML_Signal.mqh"
 PARAMS_CSV = ROOT / "MT/MQL4/Files/#.csv"
 TESTER_PARAMS_CSV = ROOT / "MT/tester/files/#.csv"
 TESTER_INI = ROOT / "MT/tester/$o$imple.ini"
@@ -146,3 +147,14 @@ def test_service_logs_loaded_csv_parameters():
 
     assert "PRINT_TO_LOG.EXTERN_VARS(e)" in service
     assert "CSV parameters loaded" in functions
+
+
+def test_ml_signal_runtime_reload_uses_file_modify_time():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert "MLP_LoadedFileModifyTime" in text
+    assert "MLP_FileModifyTime()" in text
+    assert "FILE_MODIFY_DATE" in text
+    assert "MLP_RELOAD_IF_CHANGED()" in text
+    assert "MLP_RELOAD: file changed" in text
+    assert "MLP_INIT()" in text

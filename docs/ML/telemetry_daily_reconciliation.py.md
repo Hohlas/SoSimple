@@ -25,10 +25,15 @@ python -m ML.telemetry_daily_reconciliation \
   --mt4-log MT/tester/logs/20260427.log \
   --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
   --output-dir ML/reports/telemetry_frequency_v1/daily/2026-04-27 \
-  --label telemetry_frequency_v1
+  --label telemetry_frequency_v1 \
+  --start-time "2025.01.01 00:00" \
+  --end-time "2025.12.31 23:59"
 ```
 
 Если есть критичные расхождения, CLI завершится с кодом `1`. Это позволяет использовать его в ежедневной автоматической проверке.
+
+`--start-time` и `--end-time` необязательны, но для tester-сверок их нужно
+задавать явно, если `ml_signals.csv` покрывает более широкий период, чем лог.
 
 ## Выходные файлы
 
@@ -50,3 +55,6 @@ python -m ML.telemetry_daily_reconciliation \
 ## Ограничения
 
 Парсер опирается на текущий формат `MLP`-строк из `MT/MQL4/Include/lib_ML_Signal.mqh`. Если формат логов меняется, нужно одновременно обновлять этот CLI и его тесты.
+
+При чтении `ml_signals.csv` инструмент повторяет поведение MQL-библиотеки:
+если есть несколько строк с одним `time`, оставляет последнюю.

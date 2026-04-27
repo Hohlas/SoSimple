@@ -84,6 +84,49 @@ def test_run_daily_reconciliation_writes_required_outputs(tmp_path):
     assert (tmp_path / "out" / "trades_reconciliation.csv").exists()
 
 
+def test_run_daily_reconciliation_filters_expected_signals_by_time_range(tmp_path):
+    signals = tmp_path / "ml_signals.csv"
+    pd.DataFrame(
+        [
+            {"time": "2024.12.31 23:00", "signal": 1},
+            {"time": "2025.01.01 00:00", "signal": 1},
+            {"time": "2025.01.01 01:00", "signal": -1},
+            {"time": "2026.01.01 00:00", "signal": -1},
+        ]
+    ).to_csv(signals, sep=";", index=False)
+    log = _write_log(tmp_path / "tester.log")
+
+    summary = daily.run_daily_reconciliation(
+        signals_path=signals,
+        mt4_log_path=log,
+        output_dir=tmp_path / "out",
+        label="telemetry_frequency_v1",
+        start_time="2025.01.01 00:00",
+        end_time="2025.01.01 23:59",
+    )
+
+    diff = pd.read_csv(tmp_path / "out" / "signals_diff.csv", sep=";")
+    assert summary["expected_signals"] == 2
+    assert diff["signal_time"].tolist() == ["2025.01.01 00:00", "2025.01.01 01:00"]
+
+
+def test_load_signal_export_matches_mql_duplicate_time_keep_last(tmp_path):
+    signals = tmp_path / "ml_signals.csv"
+    pd.DataFrame(
+        [
+            {"time": "2025.01.01 00:00", "signal": 1},
+            {"time": "2025.01.01 00:00", "signal": -1},
+            {"time": "2025.01.01 01:00", "signal": 0},
+        ]
+    ).to_csv(signals, sep=";", index=False)
+
+    loaded = daily.load_signal_export(signals)
+
+    assert loaded[["signal_time", "signal", "direction"]].to_dict("records") == [
+        {"signal_time": "2025.01.01 00:00", "signal": -1, "direction": "SELL"}
+    ]
+
+
 def test_critical_mismatch_sets_nonzero_exit_code(tmp_path):
     signals = _write_signals(tmp_path / "ml_signals.csv")
     log = _write_log(tmp_path / "tester.log")

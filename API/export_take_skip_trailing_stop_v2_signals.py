@@ -21,6 +21,7 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from collections import Counter
 from pathlib import Path
 
@@ -30,6 +31,14 @@ import pandas as pd
 MT4_TESTER_SIGNALS = Path('MT/tester/files/ml_signals.csv')
 MT4_RUNTIME_SIGNALS = Path('MT/MQL4/Files/ml_signals.csv')
 SUPPORTED_SELECTORS = {'prob_ge_threshold', 'top_k_probability'}
+
+
+def write_csv_atomic(frame: pd.DataFrame, path: str | Path) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.with_suffix(target.suffix + '.tmp')
+    frame.to_csv(temp, sep=';', index=False)
+    os.replace(temp, target)
 
 
 def sha256_file(path: str | Path) -> str:
@@ -141,8 +150,7 @@ def export_signals(
         ]
 
     output = Path(output_path)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    export.to_csv(output, sep=';', index=False)
+    write_csv_atomic(export, output)
 
     if metadata_output is not None:
         metadata = build_export_metadata(
@@ -157,10 +165,8 @@ def export_signals(
         metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding='utf-8')
 
     if copy_to_mt4:
-        MT4_TESTER_SIGNALS.parent.mkdir(parents=True, exist_ok=True)
-        MT4_RUNTIME_SIGNALS.parent.mkdir(parents=True, exist_ok=True)
-        export.to_csv(MT4_TESTER_SIGNALS, sep=';', index=False)
-        export.to_csv(MT4_RUNTIME_SIGNALS, sep=';', index=False)
+        write_csv_atomic(export, MT4_TESTER_SIGNALS)
+        write_csv_atomic(export, MT4_RUNTIME_SIGNALS)
 
     return output
 

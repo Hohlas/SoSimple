@@ -1,0 +1,109 @@
+{
+  "label": "telemetry_frequency_v1_tester",
+  "export": {
+    "signals_path": "MT/tester/files/ml_signals.csv",
+    "rows_total": 8887,
+    "nonzero_rows": 454,
+    "zero_rows": 8433,
+    "long_rows": 238,
+    "short_rows": 216,
+    "unique_time_total": 8872,
+    "nonzero_unique_time": 439,
+    "nonzero_unique_time_signal": 454,
+    "duplicate_time_rows": 15,
+    "duplicate_time_signal_rows": 0,
+    "duplicate_time_groups": 15,
+    "duplicate_time_signal_groups": 0,
+    "same_time_opposite_signal_groups": 15,
+    "first_nonzero_time": "2022.10.04 20:00",
+    "last_nonzero_time": "2026.03.10 18:00",
+    "duplicate_time_examples": [
+      {
+        "time": "2023.02.20 11:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.04.13 17:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.05.10 15:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.05.15 17:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.06.13 15:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.08.25 17:00",
+        "rows": 2
+      },
+      {
+        "time": "2023.11.22 21:00",
+        "rows": 2
+      },
+      {
+        "time": "2024.01.09 16:00",
+        "rows": 2
+      },
+      {
+        "time": "2024.08.20 16:00",
+        "rows": 2
+      },
+      {
+        "time": "2025.03.10 22:00",
+        "rows": 2
+      },
+      {
+        "time": "2025.06.16 01:00",
+        "rows": 2
+      },
+      {
+        "time": "2025.08.08 01:00",
+        "rows": 2
+      },
+      {
+        "time": "2025.09.17 21:00",
+        "rows": 2
+      },
+      {
+        "time": "2025.10.31 01:00",
+        "rows": 2
+      },
+      {
+        "time": "2026.01.16 18:00",
+        "rows": 2
+      }
+    ],
+    "duplicate_time_signal_examples": []
+  },
+  "mt4": {
+    "mt4_log_path": "MT/tester/logs/20260427.log",
+    "opened_trades_from_events": 127,
+    "opened_buy_from_events": 64,
+    "opened_sell_from_events": 63,
+    "unique_signal_times_opened": 127,
+    "duplicate_open_signal_time_rows": 0,
+    "first_open_signal_time": "2025.01.03 06:00",
+    "last_open_signal_time": "2025.12.31 09:00",
+    "diagnostics": {
+      "total_signals": 127,
+      "score_filtered": 0,
+      "position_blocked": 0,
+      "opened": 127,
+      "timeout_closes": 35,
+      "trailing_closes": 0,
+      "reverse_closes": 0
+    }
+  },
+  "comparison": {
+    "nonzero_rows_minus_opened_events": 327,
+    "unique_time_minus_opened_events": 312,
+    "unique_time_signal_minus_opened_events": 327,
+    "mt4_diagnostics_opened_minus_opened_events": 0
+  }
+}

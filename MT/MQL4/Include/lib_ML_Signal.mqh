@@ -28,6 +28,8 @@ datetime MLP_Times[];
 char     MLP_Signals[];
 float    MLP_Scores[];
 bool     MLP_HasScoreColumn = false;
+bool     MLP_Loaded = false;
+datetime MLP_LoadedFileModifyTime = 0;
 
 datetime MLP_BuySignalTime = 0;
 datetime MLP_SellSignalTime = 0;
@@ -66,6 +68,14 @@ void MLP_ResetSellState() {
 bool MLP_PassScore(int idx) {
    if (!ML_UseScoreFilter || !MLP_HasScoreColumn) return true;
    return MLP_Scores[idx] >= ML_ScoreThreshold;
+}
+
+datetime MLP_FileModifyTime() {
+   int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_BIN);
+   if (handle < 0) return 0;
+   datetime modified = (datetime)FileGetInteger(handle, FILE_MODIFY_DATE);
+   FileClose(handle);
+   return modified;
 }
 
 bool MLP_IsOwnMarketOrder(int magic, string sym) {
@@ -298,6 +308,7 @@ int MLP_FindSignal(datetime barTime) {
 }
 
 bool MLP_INIT() {
+   datetime file_modify_time = MLP_FileModifyTime();
    int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_CSV | FILE_ANSI, ';');
    if (handle < 0) {
       Print("MLP_INIT: Cannot open ", MLP_SIGNALS_FILE, " Error=", GetLastError());
@@ -365,6 +376,8 @@ bool MLP_INIT() {
    ArrayResize(MLP_Times, MLP_SignalCount);
    ArrayResize(MLP_Signals, MLP_SignalCount);
    ArrayResize(MLP_Scores, MLP_SignalCount);
+   MLP_Loaded = true;
+   MLP_LoadedFileModifyTime = file_modify_time;
 
    if (MLP_SignalCount <= 0) {
       Print("MLP_INIT: Loaded 0 rows from ", MLP_SIGNALS_FILE);
@@ -389,12 +402,22 @@ bool MLP_INIT() {
    return true;
 }
 
-void EXPERT::ML_TRADE() {
-   static bool ml_loaded = false;
-   if (!ml_loaded) {
-      ml_loaded = true;
+void MLP_RELOAD_IF_CHANGED() {
+   datetime file_modify_time = MLP_FileModifyTime();
+   if (!MLP_Loaded) {
+      MLP_INIT();
+      return;
+   }
+   if (file_modify_time > 0 && file_modify_time != MLP_LoadedFileModifyTime) {
+      Print("MLP_RELOAD: file changed ", MLP_SIGNALS_FILE,
+            " old=", TimeToString(MLP_LoadedFileModifyTime),
+            " new=", TimeToString(file_modify_time));
       MLP_INIT();
    }
+}
+
+void EXPERT::ML_TRADE() {
+   MLP_RELOAD_IF_CHANGED();
    if (MLP_SignalCount <= 0) return;
 
    set.BUY.Sig = NONE;

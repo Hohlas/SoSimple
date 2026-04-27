@@ -114,10 +114,32 @@ def load_signal_export(signals_path: str | Path) -> pd.DataFrame:
     frame = pd.read_csv(Path(signals_path), sep=";", usecols=["time", "signal"])
     frame["time"] = frame["time"].astype(str)
     frame["signal"] = pd.to_numeric(frame["signal"], errors="coerce").fillna(0).astype(int)
+    frame = frame.drop_duplicates(subset=["time"], keep="last").reset_index(drop=True)
     expected = frame.loc[frame["signal"] != 0].copy()
     expected["direction"] = expected["signal"].map({1: "BUY", -1: "SELL"}).fillna("UNKNOWN")
     expected = expected.rename(columns={"time": "signal_time"})
     return expected[["signal_time", "signal", "direction"]].reset_index(drop=True)
+
+
+def filter_signals_by_time_range(
+    signals: pd.DataFrame,
+    *,
+    start_time: str | None = None,
+    end_time: str | None = None,
+) -> pd.DataFrame:
+    """Оставляет ожидаемые сигналы только внутри периода сверки."""
+    if signals.empty or (start_time is None and end_time is None):
+        return signals.reset_index(drop=True)
+
+    parsed = pd.to_datetime(signals["signal_time"], format="%Y.%m.%d %H:%M", errors="coerce")
+    mask = pd.Series(True, index=signals.index)
+    if start_time is not None:
+        start = pd.to_datetime(start_time, format="%Y.%m.%d %H:%M", errors="raise")
+        mask &= parsed >= start
+    if end_time is not None:
+        end = pd.to_datetime(end_time, format="%Y.%m.%d %H:%M", errors="raise")
+        mask &= parsed <= end
+    return signals.loc[mask].reset_index(drop=True)
 
 
 def reconcile_expected_vs_opened(signals: pd.DataFrame, opens: pd.DataFrame) -> pd.DataFrame:
@@ -242,8 +264,11 @@ def run_daily_reconciliation(
     output_dir: str | Path,
     label: str,
     export_metadata_path: str | Path | None = None,
+    start_time: str | None = None,
+    end_time: str | None = None,
 ) -> dict[str, Any]:
     signals = load_signal_export(signals_path)
+    signals = filter_signals_by_time_range(signals, start_time=start_time, end_time=end_time)
     events = parse_mlp_events(mt4_log_path)
     opens = events["opens"]
     closes = events["closes"]
@@ -283,6 +308,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--export-metadata", default=None, help="Optional export metadata JSON.")
     parser.add_argument("--output-dir", required=True, help="Output directory.")
     parser.add_argument("--label", default="telemetry_frequency_v1", help="Label stored in summary.")
+    parser.add_argument("--start-time", default=None, help="Optional inclusive start time, format YYYY.MM.DD HH:MM.")
+    parser.add_argument("--end-time", default=None, help="Optional inclusive end time, format YYYY.MM.DD HH:MM.")
     return parser.parse_args()
 
 
@@ -294,6 +321,8 @@ def main() -> dict[str, Any]:
         export_metadata_path=args.export_metadata,
         output_dir=args.output_dir,
         label=args.label,
+        start_time=args.start_time,
+        end_time=args.end_time,
     )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     sys.exit(exit_code_from_summary(summary))
