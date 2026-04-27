@@ -209,10 +209,19 @@ High-frequency diagnostic export:
 Практический способ запустить такой процесс сейчас:
 
 ```bash
+mkdir -p ML/reports/telemetry_frequency_v1/runtime
+
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
 nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
   > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+```
+
+Если `Nero.csv` пока содержит только заголовок, watcher не должен падать. Это
+штатное состояние ожидания первого закрытого бара. В логах будет строка вида:
+
+```text
+WATCHER wait: MT/MQL4/Files/Nero.csv has header only, no completed bars yet
 ```
 ---
 

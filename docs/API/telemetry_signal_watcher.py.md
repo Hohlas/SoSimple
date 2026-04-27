@@ -73,6 +73,11 @@ Watcher хранит `runtime_state.json` и сравнивает:
 
 Если нового закрытого бара нет, пересчёт не делается.
 
+Если `Nero.csv` уже создан, но пока содержит только заголовок без строк данных,
+watcher не считает это ошибкой. Он пишет в `runtime_state.json`
+`last_status=waiting_for_first_row`, делает запись в лог и продолжает ждать
+первый закрытый бар.
+
 Если новый бар появился:
 
 1. строится `runtime_predictions.csv`;
@@ -93,11 +98,58 @@ Watcher хранит `runtime_state.json` и сравнивает:
 Фоновый polling:
 
 ```bash
+mkdir -p ML/reports/telemetry_frequency_v1/runtime
+
 nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
   --verbose \
   > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
 ```
+
+## Короткий operational checklist
+
+1. Убедиться, что expert уже запущен и создал `MT/MQL4/Files/Nero.csv`.
+2. Проверить, что в `Nero.csv` появилась хотя бы одна строка данных помимо заголовка.
+3. Создать runtime-каталог:
+
+```bash
+mkdir -p ML/reports/telemetry_frequency_v1/runtime
+```
+
+4. Для первой проверки безопаснее выполнить один проход:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
+```
+
+5. Если одноразовый запуск прошёл, запускать фоновый polling.
+6. Проверить процесс:
+
+```bash
+ps -eo pid,cmd | rg telemetry_signal_watcher
+```
+
+7. Проверить логи:
+
+```bash
+tail -n 50 ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log
+tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
+```
+
+8. Нормальные первые состояния:
+   - `WATCHER wait: ... has header only, no completed bars yet`
+   - `WATCHER rebuild start: ...`
+   - `WATCHER rebuild done: ...`
+
+9. После первого rebuild проверить, что обновились:
+   - `MT/MQL4/Files/ml_signals.csv`
+   - `MT/tester/files/ml_signals.csv`
+   - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
+
+10. В MT4 на следующем баре проверить строки вида:
+   - `MLP_RELOAD: file changed`
+   - `MLP BUY` / `MLP SELL`
+   - затем `MLP CLOSE` / `MLP SKIP`
 
 ## Выходные файлы
 
@@ -111,4 +163,5 @@ nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
 
 - watcher сейчас реализует только telemetry take/skip v2 contour;
 - используется polling, а не OS-level file events;
-- если `Nero.csv` испорчен или checkpoint/rule недоступны, rebuild не завершится, а ошибка уйдёт в log.
+- если `Nero.csv` испорчен или checkpoint/rule недоступны, rebuild не завершится, а ошибка уйдёт в log;
+- `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара.

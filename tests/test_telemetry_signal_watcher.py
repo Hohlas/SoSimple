@@ -21,6 +21,13 @@ def test_read_last_time_returns_last_csv_row(tmp_path):
     assert watcher.read_last_time(csv_path) == "2025.01.01 01:00"
 
 
+def test_read_last_time_returns_none_for_header_only_csv(tmp_path):
+    csv_path = tmp_path / "Nero.csv"
+    csv_path.write_text("time;signal;predict\n", encoding="utf-8")
+
+    assert watcher.read_last_time(csv_path) is None
+
+
 def test_should_rebuild_when_last_time_changed():
     state = watcher.WatcherState(last_processed_time="2025.01.01 00:00", source_mtime_ns=100)
 
@@ -113,3 +120,26 @@ def test_run_once_skips_when_no_new_bar(tmp_path, monkeypatch):
     )
 
     assert changed is False
+
+
+def test_run_once_skips_and_updates_state_for_header_only_csv(tmp_path, monkeypatch):
+    input_csv = tmp_path / "Nero.csv"
+    input_csv.write_text("time;signal;predict\n", encoding="utf-8")
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(watcher, "rebuild_signals", lambda **kwargs: (_ for _ in ()).throw(AssertionError("should not rebuild")))
+
+    changed = watcher.run_once(
+        input_csv=input_csv,
+        checkpoint_path=tmp_path / "ckpt.pt",
+        rule_path=tmp_path / "rule.json",
+        predictions_path=tmp_path / "predictions.csv",
+        signals_output_path=tmp_path / "signals.csv",
+        metadata_output_path=tmp_path / "metadata.json",
+        state_path=state_path,
+        diagnostic_target_signals_per_year=500,
+        batch_size=256,
+    )
+
+    assert changed is False
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["last_status"] == "waiting_for_first_row"

@@ -327,9 +327,12 @@ MQL не должен запускать ML-модель внутри себя. 
 
 1. эксперт в MT4 пишет новые строки в `Nero.csv`;
 2. отдельный Python watcher работает в фоне и ждёт новый закрытый бар;
-3. watcher пересчитывает prediction CSV и обновляет `ml_signals.csv`;
-4. MT4 на новом баре видит изменение файла и пишет `MLP_RELOAD: file changed`;
-5. дальше в логах нужно наблюдать уже торговые строки:
+3. если `Nero.csv` пока содержит только заголовок, watcher остаётся в состоянии
+   `waiting_for_first_row`, пишет это в лог и ждёт первый закрытый бар;
+4. после появления строки данных watcher пересчитывает prediction CSV и
+   обновляет `ml_signals.csv`;
+5. MT4 на новом баре видит изменение файла и пишет `MLP_RELOAD: file changed`;
+6. дальше в логах нужно наблюдать уже торговые строки:
    - `MLP BUY`
    - `MLP SELL`
    - `MLP CLOSE`
@@ -338,6 +341,61 @@ MQL не должен запускать ML-модель внутри себя. 
 Если в online-режиме нет `MLP_RELOAD: file changed`, проблема уже не в MQL
 торговом исполнении, а в том, что внешний Python watcher не обновил runtime
 `ml_signals.csv`.
+
+### 3.6 Operational checklist для watcher на сервере
+
+1. Убедиться, что expert уже создал `MT/MQL4/Files/Nero.csv`.
+2. Проверить содержимое `Nero.csv`:
+   - только заголовок -> это нормально сразу после старта;
+   - есть хотя бы одна строка данных -> watcher уже может делать rebuild.
+3. Создать runtime-каталог:
+
+```bash
+mkdir -p ML/reports/telemetry_frequency_v1/runtime
+```
+
+4. Для первой проверки выполнить один проход:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
+```
+
+5. Затем запустить watcher в фоне:
+
+```bash
+nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 10 \
+  --verbose \
+  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+```
+
+6. Проверить процесс:
+
+```bash
+ps -eo pid,cmd | rg telemetry_signal_watcher
+```
+
+7. Проверить логи:
+
+```bash
+tail -n 50 ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log
+tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
+```
+
+8. Нормальные состояния в логах:
+   - `WATCHER wait: ... has header only, no completed bars yet`
+   - `WATCHER rebuild start: ...`
+   - `WATCHER rebuild done: ...`
+
+9. После первого rebuild проверить обновление:
+   - `MT/MQL4/Files/ml_signals.csv`
+   - `MT/tester/files/ml_signals.csv`
+   - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
+
+10. На следующем баре в MT4 проверить:
+   - `MLP_RELOAD: file changed ...`
+   - `MLP BUY` / `MLP SELL`
+   - затем `MLP CLOSE` / `MLP SKIP`
 
 Диагностический профиль `telemetry_frequency_v1_highfreq500` нужен только для
 ускоренного набора статистики взаимодействия. Он выбирает кандидатов из всех

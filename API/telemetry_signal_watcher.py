@@ -83,10 +83,10 @@ def save_state(path: Path, state: WatcherState) -> None:
     path.write_text(json.dumps(asdict(state), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def read_last_time(input_csv: Path) -> str:
+def read_last_time(input_csv: Path) -> str | None:
     frame = pd.read_csv(input_csv, sep=";", usecols=["time"], dtype={"time": str}, low_memory=False)
     if frame.empty:
-        raise ValueError(f"{input_csv} contains no rows")
+        return None
     return str(frame.iloc[-1]["time"])
 
 
@@ -146,6 +146,17 @@ def run_once(
     state = load_state(state_path)
     source_mtime_ns = input_csv.stat().st_mtime_ns
     current_last_time = read_last_time(input_csv)
+
+    if current_last_time is None:
+        waiting_state = WatcherState(
+            last_processed_time="",
+            source_mtime_ns=source_mtime_ns,
+            updated_at_unix=int(time.time()),
+            last_status="waiting_for_first_row",
+        )
+        save_state(state_path, waiting_state)
+        logging.info("WATCHER wait: %s has header only, no completed bars yet", input_csv)
+        return False
 
     if not should_rebuild(
         current_last_time=current_last_time,

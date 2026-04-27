@@ -62,6 +62,7 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
 python -m API.telemetry_signal_watcher --once --verbose
 
 # Online watcher: фоновый polling
+mkdir -p ML/reports/telemetry_frequency_v1/runtime
 nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
   > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
