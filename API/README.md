@@ -11,7 +11,7 @@
 | [generate_signals.py](generate_signals.py) | Генерация CSV с ML-сигналами для MT4 тестера | checkpoints + labeled CSV → `MT/MQL4/Files/ml_signals.csv` | ✅ |
 | [export_entry_path_v1_signals.py](export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
 | [export_entry_path_v1_quantile_signals.py](export_entry_path_v1_quantile_signals.py) | Применение frozen `entry_path_v1_quantile` rule к prediction CSV и экспорт `time;signal` | quantile prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
-| [export_take_skip_trailing_stop_v2_signals.py](export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
+| [export_take_skip_trailing_stop_v2_signals.py](export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` с optional metadata | prediction CSV + selected_rule.json → `ml_signals.csv` + optional metadata JSON | ✅ |
 | [exit_policy_research.py](exit_policy_research.py) | Validation-first offline research для ML exit / position management | `ml_signals.csv` + OHLC + split catalogs → stdout ranking / frozen policy JSON | 🔬 |
 | [api_server.py](api_server.py) | REST API (FastAPI) для приёма фракталов от MT4 в реальном времени | HTTP request → ML prediction | 🔬 |
 | [test_api_client.py](test_api_client.py) | Тестовый клиент для api_server.py | test CSV → HTTP requests | 🔬 |
@@ -48,6 +48,14 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
   --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
   --rule-path ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json \
   --output MT/tester/files/ml_signals.csv
+
+# Telemetry export с metadata для daily reconciliation
+python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
+  --output MT/tester/files/ml_signals.csv \
+  --metadata-output ML/reports/telemetry_frequency_v1/export_metadata.json \
+  --label telemetry_frequency_v1
 
 # С Conformal Prediction
 python -m API.generate_signals --conformal

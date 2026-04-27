@@ -27,7 +27,7 @@
 | [generate_signals.py](API/generate_signals.py) | Генерация ML-сигналов для MT4 | `Nero_*_labeled.csv` + checkpoint → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | [export_entry_path_v1_signals.py](API/export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | [export_entry_path_v1_quantile_signals.py](API/export_entry_path_v1_quantile_signals.py) | Применение frozen `entry_path_v1_quantile` rule к prediction CSV и экспорт `time;signal` | quantile prediction CSV + selected_rule.json → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
-| [export_take_skip_trailing_stop_v2_signals.py](API/export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
+| [export_take_skip_trailing_stop_v2_signals.py](API/export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` с optional metadata | prediction CSV + selected_rule.json → `ml_signals.csv` + optional metadata JSON | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | [api_server.py](API/api_server.py) | REST API сервер: приём фракталов из MT4, отдача ML-сигналов | HTTP → `ml_signals.csv` | — | 🏁 |
 | [signal_research.py](API/signal_research.py) | Research CLI: качество ML-сигналов по реальным OHLC (Variant 2/3) | `ml_signals.csv` + OHLC → отчёт | — | 🏁 |
 | [signal_path_atlas.py](API/signal_path_atlas.py) | Research CLI: ATR-normalized Signal Path Atlas, path archetypes, holdout validation | ML-сигналы → path tensor, archetypes | — | 🏁 |
@@ -40,7 +40,7 @@
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
 | [lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | Tick data → `Nero.csv` | [docs](docs/MT/lib_PIC.mqh.md) | ⚠️ |
-| [lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, торговля | `ml_signals.csv` → `OPEN_BUY/SELL` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
+| [lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | `ml_signals.csv` → MLP open/close logs | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | `Вспомогательные .mqh` | Торговая логика и индикаторы | — | — | 📦 |
 
 ## ML
@@ -89,6 +89,8 @@
 | [benchmark_take_skip_lib_pic_selection.py](ML/benchmark_take_skip_lib_pic_selection.py) | Внешний слой отбора `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → `reports/take_skip_lib_pic_selection/` | [docs](docs/ML/benchmark_take_skip_lib_pic_selection.py.md) | ✅ |
 | [benchmark_execution_policy_v2.py](ML/benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → `reports/execution_policy_v2/` | [docs](docs/ML/benchmark_execution_policy_v2.py.md) | ✅ |
 | [benchmark_signal_export_parity.py](ML/benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → `reports/signal_export_parity/` | [docs](docs/ML/benchmark_signal_export_parity.py.md) | ✅ |
+| [benchmark_telemetry_frequency_calibration.py](ML/benchmark_telemetry_frequency_calibration.py) | Калибровка частого diagnostic telemetry режима поверх take/skip score | prediction CSV → `reports/telemetry_frequency_v1/calibration/` | [docs](docs/ML/benchmark_telemetry_frequency_calibration.py.md) | ✅ |
+| [telemetry_daily_reconciliation.py](ML/telemetry_daily_reconciliation.py) | Ежедневная сверка telemetry `ml_signals.csv` с MT4 MLP open/close log | `ml_signals.csv` + MT4 log → daily reconciliation report | [docs](docs/ML/telemetry_daily_reconciliation.py.md) | ✅ |
 | [benchmark_cross_instrument_robustness.py](ML/benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | manifest JSON + signal CSV + OHLC + baseline reference → `reports/cross_instrument_robustness/` | [docs](docs/ML/benchmark_cross_instrument_robustness.py.md) | ✅ |
 | [benchmark_system_correlation.py](ML/benchmark_system_correlation.py) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | manifest JSON + trade CSV / entry_path predictions → `reports/system_correlation_portfolio/` | [docs](docs/ML/benchmark_system_correlation.py.md) | ✅ |
 | [run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → `reports/take_skip_lib_pic_feature_matrix/` | [docs](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | 🚧 |
@@ -149,6 +151,8 @@
 | [test_export_entry_path_predictions.py](tests/test_export_entry_path_predictions.py) | `ML/export_entry_path_predictions.py` | — | ✅ |
 | [test_export_entry_path_v1_signals.py](tests/test_export_entry_path_v1_signals.py) | `API/export_entry_path_v1_signals.py` | — | ✅ |
 | [test_signal_export_parity.py](tests/test_signal_export_parity.py) | `ML/benchmark_signal_export_parity.py` | — | ✅ |
+| [test_benchmark_telemetry_frequency_calibration.py](tests/test_benchmark_telemetry_frequency_calibration.py) | `ML/benchmark_telemetry_frequency_calibration.py` | — | ✅ |
+| [test_telemetry_daily_reconciliation.py](tests/test_telemetry_daily_reconciliation.py) | `ML/telemetry_daily_reconciliation.py` | — | ✅ |
 | [test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | — | ✅ |
 | [test_benchmark_system_correlation.py](tests/test_benchmark_system_correlation.py) | `ML/benchmark_system_correlation.py` | — | ✅ |
 | [test_run_trailing_stop_target_quantile.py](tests/test_run_trailing_stop_target_quantile.py) | `ML/run_trailing_stop_target_quantile.py` | — | ✅ |
@@ -182,6 +186,8 @@
 | [run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки |
 | [benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов |
 | [benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log |
+| [benchmark_telemetry_frequency_calibration.py.md](docs/ML/benchmark_telemetry_frequency_calibration.py.md) | Калибровка частого diagnostic telemetry режима |
+| [telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов |
 | [benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты |
 | [benchmark_system_correlation.py.md](docs/ML/benchmark_system_correlation.py.md) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам |
 | [export_entry_path_predictions.py.md](docs/ML/export_entry_path_predictions.py.md) | Inference entry_path-моделей на arbitrary labeled CSV без переобучения |
@@ -199,4 +205,4 @@
 ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
 ---
-**Последнее обновление**: 2026-04-24
+**Последнее обновление**: 2026-04-27

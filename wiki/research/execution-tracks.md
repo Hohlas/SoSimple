@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-24
-sources: 28
+last_updated: 2026-04-27
+sources: 29
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 27 отчётов (2026-04-08 — 2026-04-24). Параллельные направления execution.
+> Синтез 29 отчётов (2026-04-08 — 2026-04-27). Параллельные направления execution и текущая подготовка telemetry demo launch.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -861,3 +861,43 @@ Trade-level reconciliation был сохранён отдельно:
 Это важный сдвиг в roadmap: после этого этапа вопрос уже не “найти ещё один красивый single-system backtest”, а “собрать bounded portfolio-layer без скрытого дублирования риска”.
 
 Источник: [2026-04-24-system-correlation-and-portfolio-check.md](../../docs/reports/2026-04-24-system-correlation-and-portfolio-check.md)
+
+## 8. Telemetry Frequency Demo Launch (04-27)
+
+После portfolio/correlation этапа появился операционный риск: самые качественные режимы слишком редкие, поэтому на demo-счёте техническая статистика исполнения будет накапливаться годами. Для проверки цепочки `MT -> Nero.csv -> ML -> ml_signals.csv -> MT` выделен отдельный diagnostic режим `telemetry_frequency_v1`.
+
+### Решение
+
+- Частота сделок важнее PF: режим может быть убыточным.
+- Frozen diagnostic rule поверх take/skip score:
+  - `score_target=take_24_x8`;
+  - `selector=top_k_probability`;
+  - `threshold=1.0`;
+  - `SL=3 ATR`;
+  - `TP=5 ATR`;
+  - `max_hold_bars=24`;
+  - `max_positions=10`.
+- Export теперь может писать metadata JSON с hash выходного CSV, числом ненулевых строк, BUY/SELL, дублями времени и same-time opposite groups.
+- В MQL diagnostic multi-position режим расширяет существующую `EXPERT::ML_TRADE()`, а не создаёт новый контур.
+
+### Reuse decision по MQL
+
+`ORDERS.mqh` полезен как источник проверенных паттернов (`MARKET_UPDATE`, retry/error/reporting style), но его core contract хранит только один `BUY` и один `SELL`. Поэтому прямой multi-position executor оставлен на ticket-level helpers внутри `lib_ML_Signal.mqh`. `SERVICE.mqh` остаётся источником reporting/tester/monitoring helpers для совместимого расширения.
+
+### Diagnostic observability
+
+`MLP BUY/SELL` и `MLP CLOSE` теперь должны нести поля, достаточные для ежедневной сверки:
+
+- `ticket`;
+- `signal_time`, `entry_time`, `exit_time`;
+- `atr`, `spread`, `spread_atr`;
+- `open_positions`, `MaxPositions`;
+- `hold_bars`, `pnl_atr`, `profit`.
+
+Добавлен `ML.telemetry_daily_reconciliation`: сверяет `ml_signals.csv` с MT4 `MLP` log, пишет `signals_diff.csv`, `trades_reconciliation.csv`, `summary.json`, `summary.md`, и возвращает exit code `1` при критичных расхождениях (`missing_open`, `wrong_direction`, `unexpected_open`).
+
+### Открытый пункт
+
+MT4 tester/demo proof ещё нужен: CLI и MQL logging подготовлены, но фактическое online/test соответствие можно подтвердить только на свежем tester/demo логе.
+
+Источник: [2026-04-27-telemetry-frequency-demo-launch.md](../../docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)

@@ -40,12 +40,13 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
    └───────────────────────────────────────────────────────────┘
           ↓
    ┌───────────────────────────────────────────────────────────┐
-   │ Ветка B: текущий MT4 parity-check                        │
+   │ Ветка B: текущий MT4 parity-check / telemetry launch     │
    │ prediction/export CSV -> ml_signals.csv                  │
    │ (time;signal или полный prediction CSV)                  │
    │ текущий lib_ML_Signal.mqh                                │
-   │ вход на следующем баре, одна позиция, hold/reversal      │
+   │ вход на следующем баре, single/multi-position, hold/TP   │
    │ разбор по строкам MLP BUY/SELL/CLOSE/SKIP                │
+   │ ML.telemetry_daily_reconciliation -> daily report        │
    └───────────────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +66,7 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
 | 8 | Статистическое исследование сигналов | `API/` | — | ✅ |
 | 9 | Генерация ML-сигналов для MT4 | `API/` | `docs/MT/` | ✅ |
 | 9b| Triple Barrier (параллельный трек) | `ML/` | `docs/ML/` | 🚧 |
-| 10 | Trade-Level Reconciliation | `statistics/` | `docs/statistics/` | 🚧 |
+| 10 | Trade-Level Reconciliation | `statistics/`, `ML/telemetry_daily_reconciliation.py` | `docs/statistics/`, `docs/ML/telemetry_daily_reconciliation.py.md` | ✅ |
 
 > Легенда: ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 

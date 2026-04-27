@@ -9,7 +9,7 @@
 > - старый runtime `regression_updn` сохранён как backup в [lib_ML_Signal_back.mqh](../../MT/MQL4/Include/lib_ML_Signal_back.mqh)
 > - `iSignal=5` по-прежнему использует [lib_ML_Signal_TB.mqh](../../MT/MQL4/Include/lib_ML_Signal_TB.mqh)
 
-> **Последнее обновление**: 2026-04-18
+> **Последнее обновление**: 2026-04-27
 
 ---
 
@@ -95,8 +95,8 @@ void EXPERT::MAIN() {
 1. Один раз загружает `ml_signals.csv`.
 2. Ищет строку по времени `Time[bar]`.
 3. Если на баре есть сигнал:
-   - при пустой позиции готовит рыночный вход;
-   - при уже открытой позиции не открывает новую;
+   - при `ML_MaxPositions=1` работает в старом single-position режиме;
+   - при `ML_MaxPositions>1` разрешает несколько одновременных ML-позиций;
    - при `ML_AllowReversal=true` может закрыть позицию по обратному сигналу.
 4. Выбирает режим выхода:
    - `ML_ExitMode=0` -> таймаут по `ML_HoldBars`;
@@ -153,9 +153,14 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 - `signal = 1` -> BUY по текущему `ASK`
 - `signal = -1` -> SELL по текущему `BID`
-- одновременно может быть только одна активная позиция
+- при `ML_MaxPositions=1` одновременно может быть только одна активная позиция
+- при `ML_MaxPositions>1` открытие идёт напрямую через ticket-level order helper,
+  и старое ограничение `BUY.Typ/SEL.Typ` не блокирует вторую позицию того же направления
 
-`set.BUY` / `set.SEL` заполняются прямо в `ML_TRADE()`, затем сделка проходит через обычные `MODIFY()` и `ORDERS_SET()`.
+В single-position режиме `set.BUY` / `set.SEL` заполняются прямо в `ML_TRADE()`,
+затем сделка проходит через обычные `MODIFY()` и `ORDERS_SET()`. В multi-position
+режиме используется локальный `MLP_OpenMarketOrder()`, чтобы работать по ticket,
+а не через один общий `set.BUY` / `set.SEL`.
 
 ### Защитный стоп
 
@@ -171,6 +176,16 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 - не ломать parity-check нулевым `SL`.
 
 Целевой выход при этом всё равно идёт не по этому стопу, а по таймауту или обратному сигналу.
+
+В telemetry diagnostic режиме стоп можно сделать рабочим:
+
+- `ML_BackStopATR=3.0`;
+- `ML_TakeProfitATR=5.0`;
+- `ML_MaxPositions=10`.
+
+Так размер сделки в ATR остаётся сопоставимым с исходной стратегией, а влияние
+спреда на результат не становится искусственно завышенным из-за слишком коротких
+целей.
 
 ---
 
@@ -234,6 +249,8 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 | `iSignal=3` | включает прямой parity-check режим |
 | `ML_ExitMode` | выбор между timeout и trailing-stop |
 | `ML_TrailATR` | ширина trailing-stop в ATR |
+| `ML_TakeProfitATR` | take profit в ATR; `0` выключает TP |
+| `ML_MaxPositions` | лимит одновременных ML-позиций |
 | `ML_HoldBars` | сколько баров держать сделку |
 | `ML_AllowReversal` | закрывать ли позицию по обратному сигналу |
 | `ML_UseScoreFilter` | применять ли порог по `pred_ret_24_dir_atr`, если колонка есть |
@@ -285,9 +302,15 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 Поля:
 
+- `ticket`
 - `signal_time`
 - `entry_time`
 - `score`
+- `atr`
+- `spread`
+- `spread_atr`
+- `open_positions`
+- `MaxPositions`
 - `Val`
 
 ### Выход
@@ -301,18 +324,23 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 Поля:
 
+- `ticket`
 - `signal_time`
 - `entry_time`
 - `exit_time`
+- `hold_bars`
 - `entry`
 - `exit`
 - `atr`
+- `spread`
+- `spread_atr`
 - `pnl_atr`
+- `profit`
 
 ### Пропуск сигнала
 
 - `MLP SKIP reason=ScoreFilter ...`
-- `MLP SKIP reason=PosBlock ...`
+- `MLP SKIP reason=MaxPositions ...`
 
 Эти строки и являются основой для последующего разбора parity-check.
 

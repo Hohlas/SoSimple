@@ -251,3 +251,12 @@
 - Scoped `docs/README.md` to artifacts inside `docs/`.
 - Moved agent/navigation responsibility back to `AGENTS.md`.
 - Added explicit `MODULE_INDEX.md` point-read rule to `AGENTS.md`.
+
+## [2026-04-27] ingest | telemetry frequency demo launch synced into wiki
+- Added report `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - added `telemetry_frequency_v1` diagnostic launch section;
+  - recorded frequency-first rule selection and ATR-sized SL/TP preset;
+  - captured MQL reuse decision: extend `lib_ML_Signal.mqh::ML_TRADE()`, keep ticket-level helpers for multi-position, reuse `SERVICE.mqh` where compatible;
+  - captured daily reconciliation CLI and required MLP log fields.
+- Updated `wiki/index.md` coverage from 28 to 29 reports.

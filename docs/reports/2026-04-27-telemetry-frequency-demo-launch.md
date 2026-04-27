@@ -57,6 +57,25 @@
 
 Главный вывод аудита: старый `ORDERS.mqh` полезен как источник проверенных паттернов и service helpers, но его основной order contract не подходит как прямой исполнитель multi-position ML-сделок. Для `telemetry_frequency_v1` допустимо оставить ticket-level open/close в `lib_ML_Signal.mqh`, при этом использовать `REPORT(...)`, `MARKET_UPDATE(...)` и service/report механизмы там, где они совместимы.
 
+### MQL telemetry logging
+
+- `lib_ML_Signal.mqh` расширен для diagnostic multi-position режима через существующую `EXPERT::ML_TRADE()`.
+- При `ML_MaxPositions>1` старое ограничение одной позиции через `BUY.Typ/SEL.Typ` не блокирует новые сделки.
+- `MLP BUY/SELL` теперь пишет `mode=telemetry_frequency_v1`, `ticket`, `atr`, `spread`, `spread_atr`, `open_positions`, `MaxPositions`.
+- `MLP CLOSE` теперь пишет `ticket`, `hold_bars`, `spread`, `spread_atr`, `profit`.
+- `ML_TakeProfitATR` используется как broker-side take profit; для diagnostic preset цель `5 ATR`, стоп `3 ATR`.
+
+### Daily reconciliation CLI
+
+- Добавлен `ML/telemetry_daily_reconciliation.py`.
+- CLI сверяет `ml_signals.csv` с MT4 `MLP`-логом:
+  - `missing_open`;
+  - `wrong_direction`;
+  - `unexpected_open`;
+  - `missing_close`.
+- Выходы: `signals_diff.csv`, `trades_reconciliation.csv`, `summary.json`, `summary.md`.
+- При критичных расхождениях CLI возвращает exit code `1`, поэтому подходит для ежедневной автоматизации.
+
 ## Changed Files
 
 - `ML/benchmark_telemetry_frequency_calibration.py`
@@ -66,6 +85,12 @@
 - `ML/reports/telemetry_frequency_v1/calibration/*`
 - `ML/reports/telemetry_frequency_v1/export_metadata.json`
 - `ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1.csv`
+- `MT/MQL4/Include/lib_ML_Signal.mqh`
+- `MT/MQL4/Experts/$o$imple.mq4`
+- `ML/telemetry_daily_reconciliation.py`
+- `tests/test_telemetry_daily_reconciliation.py`
+- `docs/ML/benchmark_telemetry_frequency_calibration.py.md`
+- `docs/ML/telemetry_daily_reconciliation.py.md`
 - `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`
 
 ## Verification
@@ -84,6 +109,12 @@
   --output ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1.csv \
   --metadata-output ML/reports/telemetry_frequency_v1/export_metadata.json \
   --label telemetry_frequency_v1
+./.venv/bin/python -m pytest tests/test_telemetry_daily_reconciliation.py tests/test_signal_export_parity.py -q
+./.venv/bin/python -m pytest \
+  tests/test_benchmark_telemetry_frequency_calibration.py \
+  tests/test_export_take_skip_trailing_stop_v2_signals.py \
+  tests/test_telemetry_daily_reconciliation.py \
+  tests/test_signal_export_parity.py -q
 ```
 
 ## Results
@@ -107,22 +138,25 @@ The selected preset intentionally maximizes diagnostic signal flow. Same-time co
 - The current diagnostic export is much denser than production candidates and is suitable for stress-testing the execution pipeline.
 - `ORDERS.mqh` should not be forced into the multi-position ML open/close path because its core contract is one `BUY` and one `SELL` state.
 - `SERVICE.mqh` should be reused for reporting/monitoring/tester metadata where compatible.
+- Daily reconciliation now has an automated CLI, but it still depends on actual MT4 demo/tester logs.
 
 ## Limitations / Open Questions
 
-- MQL multi-position logging has not yet been hardened.
-- Daily reconciliation CLI has not yet been implemented.
 - MT4 tester proof has not yet been run.
 - Same-time opposite signal groups are present in the diagnostic export; downstream MT4 behavior must be verified explicitly.
 
 ## Next Step
 
-Implement Task 4 from the plan:
+Run a manual MT4 tester proof with the telemetry export, then feed the fresh tester log into:
 
-1. harden `lib_ML_Signal.mqh` multi-position logs;
-2. include `ticket`, spread/ATR, open-position count and close details;
-3. preserve `ML_MaxPositions=1` behavior;
-4. then add daily reconciliation CLI.
+```bash
+./.venv/bin/python -m ML.telemetry_daily_reconciliation \
+  --signals MT/tester/files/ml_signals.csv \
+  --mt4-log MT/tester/logs/<fresh-log>.log \
+  --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
+  --output-dir ML/reports/telemetry_frequency_v1/daily/<date> \
+  --label telemetry_frequency_v1
+```
 
 ## Related Materials
 

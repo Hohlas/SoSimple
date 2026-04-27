@@ -157,6 +157,23 @@ Frequent-режим:
 - пишет `time;signal` с обнулением невыбранных строк;
 - при `--base-csv` может развернуть sparse predictions обратно в полный временной ряд;
 - при `--copy-to-mt4` копирует один и тот же результат в `MT/tester/files` и `MT/MQL4/Files`.
+- при `--metadata-output` пишет JSON с hash выходного CSV, числом ненулевых строк,
+  BUY/SELL-счётчиками, дублями времени и группами с противоположными сигналами.
+
+Telemetry diagnostic export:
+
+```bash
+./.venv/bin/python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
+  --output MT/tester/files/ml_signals.csv \
+  --metadata-output ML/reports/telemetry_frequency_v1/export_metadata.json \
+  --label telemetry_frequency_v1 \
+  --copy-to-mt4
+```
+
+Этот режим намеренно увеличивает частоту сделок. Его задача - проверить
+операционную цепочку и логи, а не доказать прибыльность стратегии.
 ---
 
 ## 4. Как сейчас исполняется сигнал
@@ -165,10 +182,12 @@ Frequent-режим:
 
 1. эксперт ищет строку по `Time[bar]`;
 2. если на баре есть сигнал, открывает сделку на следующем баре по рынку;
-3. одновременно держит только одну позицию;
+3. при `ML_MaxPositions=1` держит только одну позицию, при `ML_MaxPositions>1`
+   включает диагностический multi-position режим;
 4. закрывает её:
    - по `ML_HoldBars`, если `ML_ExitMode=0`;
    - по bar-based trailing-stop `X * ATR`, если `ML_ExitMode=1`;
+   - по broker-side take profit, если `ML_TakeProfitATR>0`;
    - либо по обратному сигналу, если включён `ML_AllowReversal`.
 
 Старые `INPUT()`, `OUTPUT()`, `TRAILING_STOP()` и старый `TIMER()` в этом режиме не участвуют.
@@ -180,6 +199,8 @@ Frequent-режим:
 | `ML_ExitMode` | `0` | старый parity-check по `ML_HoldBars` |
 | `ML_ExitMode` | `1` | отдельный trailing-stop по `ML_TrailATR * ATR` |
 | `ML_TrailATR` | `8.0` | ширина trailing-stop; одновременно стартовый стоп и trailing-gap |
+| `ML_TakeProfitATR` | `0.0` | broker-side take profit; `0` = выключен |
+| `ML_MaxPositions` | `1` | старый single-position режим; `>1` = diagnostic multi-position |
 
 Практический смысл trailing-режима такой:
 
@@ -235,6 +256,19 @@ Frequent-режим:
 | `ML_AllowReversal` | `false` |
 | `ML_UseScoreFilter` | `false`, если CSV уже предфильтрован в Python |
 
+Для telemetry diagnostic launch:
+
+| Параметр | Значение | Почему |
+|---|---:|---|
+| `iSignal` | `3` | прямое исполнение `ml_signals.csv` |
+| `ML_MaxPositions` | `10` | разрешает частые и перекрывающиеся диагностические сделки |
+| `ML_ExitMode` | `0` | основной выход через timeout или broker SL/TP |
+| `ML_TakeProfitATR` | `5.0` | размер цели сопоставим с исходной стратегией |
+| `ML_BackStopATR` | `3.0` | стоп в ATR сопоставим с исходной стратегией |
+| `ML_HoldBars` | `24` | ограничение времени жизни диагностической сделки |
+| `ML_AllowReversal` | `false` | не смешивать reversal-close с проверкой исполнения |
+| `ML_UseScoreFilter` | `false` | CSV уже отобран frozen telemetry rule |
+
 Для текущего quantile parity-check (production `lb_gt_m_q35`, frozen 2026-04-12):
 
 | Параметр | Значение | Почему |
@@ -284,10 +318,27 @@ MLP CLOSE SELL reason=TrailingStop ...
 MLP CLOSE BUY reason=ReverseSignal ...
 MLP CLOSE SELL reason=ReverseSignal ...
 MLP SKIP reason=ScoreFilter ...
-MLP SKIP reason=PosBlock ...
+MLP SKIP reason=MaxPositions ...
 ```
 
 Именно они нужны для сравнения MT4 и Python сделка-в-сделку.
+
+Для daily reconciliation обязательны поля:
+
+- вход: `ticket`, `signal_time`, `entry_time`, `atr`, `spread`, `spread_atr`,
+  `open_positions`, `MaxPositions`;
+- выход: `ticket`, `entry_time`, `exit_time`, `hold_bars`, `pnl_atr`, `profit`.
+
+Ежедневная автоматическая сверка:
+
+```bash
+./.venv/bin/python -m ML.telemetry_daily_reconciliation \
+  --signals MT/tester/files/ml_signals.csv \
+  --mt4-log MT/tester/logs/20260427.log \
+  --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
+  --output-dir ML/reports/telemetry_frequency_v1/daily/2026-04-27 \
+  --label telemetry_frequency_v1
+```
 
 ---
 

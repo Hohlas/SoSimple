@@ -56,6 +56,8 @@
 | [benchmark_take_skip_lib_pic_selection.py](benchmark_take_skip_lib_pic_selection.py) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → reports/take_skip_lib_pic_selection/ | ✅ |
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
 | [benchmark_signal_export_parity.py](benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → reports/signal_export_parity/ | ✅ |
+| [benchmark_telemetry_frequency_calibration.py](benchmark_telemetry_frequency_calibration.py) | Калибровка частого diagnostic telemetry режима поверх take/skip score | prediction CSV → reports/telemetry_frequency_v1/calibration/ | ✅ |
+| [telemetry_daily_reconciliation.py](telemetry_daily_reconciliation.py) | Ежедневная сверка telemetry `ml_signals.csv` с MT4 MLP open/close log | `ml_signals.csv` + MT4 log → daily reconciliation report | ✅ |
 | [benchmark_cross_instrument_robustness.py](benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | manifest JSON + signal CSV + OHLC + baseline reference → reports/cross_instrument_robustness/ | ✅ |
 | [benchmark_system_correlation.py](benchmark_system_correlation.py) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | manifest JSON + trade CSV / entry_path predictions → reports/system_correlation_portfolio/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
@@ -138,6 +140,19 @@ python -m ML.benchmark_cross_instrument_robustness \
   --manifest ML/reports/cross_instrument_robustness/manifest.json \
   --baseline-reference ML/reports/cross_instrument_robustness/metaquotes_baseline_reference.json \
   --output-dir ML/reports/cross_instrument_robustness/full_matrix
+
+# Telemetry frequency calibration
+python -m ML.benchmark_telemetry_frequency_calibration \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --score-target take_24_x8 \
+  --output-dir ML/reports/telemetry_frequency_v1/calibration
+
+# Daily telemetry reconciliation
+python -m ML.telemetry_daily_reconciliation \
+  --signals MT/tester/files/ml_signals.csv \
+  --mt4-log MT/tester/logs/20260427.log \
+  --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
+  --output-dir ML/reports/telemetry_frequency_v1/daily/2026-04-27
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
@@ -145,3 +160,4 @@ python -m ML.benchmark_cross_instrument_robustness \
 `benchmark_cross_instrument_robustness.py` не меняет frozen rules и не ретюнит пороги: он только измеряет `provider_drift` и `cross_instrument_transfer` на уже зафиксированных системах.
 `benchmark_system_correlation.py` не выбирает новые trading modes: он только нормализует существующие сделки и считает pairwise overlap/correlation verdicts.
 `export_entry_path_predictions.py` нужен именно для frozen transfer-проверок: он не переобучает модели и ожидает полный entry-path labeled contract на входе.
+`benchmark_telemetry_frequency_calibration.py` выбирает частоту, а не прибыльность; `telemetry_daily_reconciliation.py` нужен для ежедневной проверки demo/test исполнения по MLP-логам.
