@@ -180,6 +180,16 @@ void EXPERT_PARENT_CLASS::EXTERN_VARS(){// функция родительско
    DATA("T0",  T0);
    DATA("T1",  T1);
    DATA("tp",  tp);
+   DATA(" -  M L  - ");
+   DATA("ML_ExitMode", ML_ExitMode);
+   DATA("ML_TrailATR", ML_TrailATR);
+   DATA("ML_TakeProfitATR", ML_TakeProfitATR);
+   DATA("ML_MaxPositions", ML_MaxPositions);
+   DATA("ML_HoldBars", ML_HoldBars);
+   DATA("ML_AllowReversal", ML_AllowReversal);
+   DATA("ML_UseScoreFilter", ML_UseScoreFilter);
+   DATA("ML_ScoreThreshold", ML_ScoreThreshold);
+   DATA("ML_BackStopATR", ML_BackStopATR);
    }  
         
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ 

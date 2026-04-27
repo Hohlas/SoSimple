@@ -115,7 +115,7 @@ uchar CurExp=0;
 class EXPERT_PARENT_CLASS { // общие функции во всех последующих версиях 
    #define LOAD 1
    #define SAVE 2
-   #define PARAMS 50 // максимальное количество входных параметров эксперта
+   #define PARAMS 80 // максимальное количество входных параметров эксперта
    #define MAX_EXPERTS_AMOUNT 100 // 
    private: // переменные только этого класса
       uchar    cnt1, cnt2, mode;
@@ -128,7 +128,7 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
    public: // переменные доступные отовсюду
       short    Per, HistDD, LastTestDD, Back;
       datetime Bar, TestEndTime, ExpMemory, BarSeconds, PicPerSeconds; // кол-во секунд в баре, в периоде расчета пика     
-      char     PRM[PARAMS];
+      double   PRM[PARAMS];
       string   ID, Sym, Name, Hist, OptPer;
       float    ATR, atr, Rsk;
       double   Ver;
@@ -193,7 +193,10 @@ class EXPERT_PARENT_CLASS { // общие функции во всех посл�
               
       void EXTERN_VARS(); // ф. обработки внешних переменных (модифицируется в дочерних классах)
       virtual void DATA(string head){} // в разных дочерних классах выполняются разные функции DATA
-      virtual void DATA(string name, char& value){} // в разных дочерних классах выполняются разные функции DATA 
+      virtual void DATA(string name, char& value){} // в разных дочерних классах выполняются разные функции DATA
+      virtual void DATA(string name, int& value){}
+      virtual void DATA(string name, double& value){}
+      virtual void DATA(string name, bool& value){}
 
 
    }; 
@@ -208,6 +211,9 @@ class PRINT_TO_CHART_CLASS : public EXPERT_PARENT_CLASS { // дочерний к
    public:     
       virtual void DATA(string head)               {LABEL(head);}                // печать заголовка (... - O U T P U T - ...)
       virtual void DATA(string name, char& value)  {LABEL(name+"="+S0(value));}  // печать списка входных параметров (ATR=4)     
+      virtual void DATA(string name, int& value)   {LABEL(name+"="+S0(value));}
+      virtual void DATA(string name, double& value){LABEL(name+"="+DoubleToString(value, 6));}
+      virtual void DATA(string name, bool& value)  {LABEL(name+"="+S0(value));}
    }PRINT_TO_CHART;
 
 class WRITE_TO_FILE_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс записи внешних переменных в файл
@@ -218,6 +224,9 @@ class WRITE_TO_FILE_CLASS : public EXPERT_PARENT_CLASS { // дочерний к�
          EXTERN_VARS();
          }   
       virtual void DATA(string name, char& value)  {FileWrite(file,name+"=",S0(value));}
+      virtual void DATA(string name, int& value)   {FileWrite(file,name+"=",S0(value));}
+      virtual void DATA(string name, double& value){FileWrite(file,name+"=",DoubleToString(value, 8));}
+      virtual void DATA(string name, bool& value)  {FileWrite(file,name+"=",S0(value));}
    }CREATE_SET_FILE;
 
 class READ_ARRAY_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс создания массива внешних переменных
@@ -229,8 +238,11 @@ class READ_ARRAY_CLASS : public EXPERT_PARENT_CLASS { // дочерний кла
          EXTERN_VARS();
          }        
       virtual void DATA(string name, char& value){ // ф. DATA выполняет разные функции в зависимости от дочернего класса
-         value=      EXP[ExpertNum].PRM[index];    index++;
+         value=char(EXP[ExpertNum].PRM[index]);    index++;
          }
+      virtual void DATA(string name, int& value)   {value=int(EXP[ExpertNum].PRM[index]); index++;}
+      virtual void DATA(string name, double& value){value=EXP[ExpertNum].PRM[index]; index++;}
+      virtual void DATA(string name, bool& value)  {value=(EXP[ExpertNum].PRM[index] != 0.0); index++;}
    }READ_ARRAY;
 
 class READ_FROM_FILE_CLASS : public EXPERT_PARENT_CLASS {// дочерний класс чтения внешних переменных из файла 
@@ -241,6 +253,9 @@ class READ_FROM_FILE_CLASS : public EXPERT_PARENT_CLASS {// дочерний к�
          EXTERN_VARS();
          }   
       virtual void DATA(string name, char& value)  {value=char(StrToDouble(FileReadString(file)));}
+      virtual void DATA(string name, int& value)   {value=int(StrToDouble(FileReadString(file)));}
+      virtual void DATA(string name, double& value){value=StrToDouble(FileReadString(file));}
+      virtual void DATA(string name, bool& value)  {value=(StrToDouble(FileReadString(file)) != 0.0);}
    }READ_FROM_FILE;  
    
 class WRITE_HEAD_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс записи в файл заголовков внешних переменных
@@ -251,6 +266,9 @@ class WRITE_HEAD_CLASS : public EXPERT_PARENT_CLASS { // дочерний кла
          EXTERN_VARS();
          }   
       virtual void DATA(string name, char& value)  {FileSeek (file,-2,SEEK_END); FileWrite(file,"",name);}
+      virtual void DATA(string name, int& value)   {FileSeek (file,-2,SEEK_END); FileWrite(file,"",name);}
+      virtual void DATA(string name, double& value){FileSeek (file,-2,SEEK_END); FileWrite(file,"",name);}
+      virtual void DATA(string name, bool& value)  {FileSeek (file,-2,SEEK_END); FileWrite(file,"",name);}
    }WRITE_HEAD_TO_FILE;    
 
 class WRITE_PARAM_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс записи в файо значений внешних переменных
@@ -261,16 +279,24 @@ class WRITE_PARAM_CLASS : public EXPERT_PARENT_CLASS { // дочерний кл�
          EXTERN_VARS();
          }   
       virtual void DATA(string name, char& value)  {FileSeek (file,-2,SEEK_END); FileWrite(file,"",value);}
+      virtual void DATA(string name, int& value)   {FileSeek (file,-2,SEEK_END); FileWrite(file,"",value);}
+      virtual void DATA(string name, double& value){FileSeek (file,-2,SEEK_END); FileWrite(file,"",DoubleToString(value, 8));}
+      virtual void DATA(string name, bool& value)  {FileSeek (file,-2,SEEK_END); FileWrite(file,"",value);}
    }WRITE_TO_FILE;
 
 class MAGIC_GEN_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс генерации Magic из внешних переменных
-   public:   
-      virtual void DATA(string name, char& value){ // ф. DATA выполняет разные функции в зависимости от дочернего класса
-         char i=2;
-         while (i<value) {i*=2; if (i>4) break;} // кол-во зарзрядов (бит), необходимое для добавления нового параметра, но не более 3, чтобы не сильно растягивать число
-         MagicLong*=i; // сдвиг MagicLong на i кол-во зарзрядов  
-         MagicLong+=value; // Добавление очередного параметра
+   public:
+      void MAGIC_ADD(double value){
+         long scaled=(long)MathRound(value*100000.0);
+         ulong add=(ulong)(scaled+2147483647);
+         MagicLong=MagicLong*1315423911+add+1;
          }
+      virtual void DATA(string name, char& value){ // ф. DATA выполняет разные функции в зависимости от дочернего класса
+         MAGIC_ADD(value);
+         }
+      virtual void DATA(string name, int& value)   {MAGIC_ADD(value);}
+      virtual void DATA(string name, double& value){MAGIC_ADD(value);}
+      virtual void DATA(string name, bool& value)  {MAGIC_ADD(value ? 1 : 0);}
    }MAGIC_GENERATE;
    
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
