@@ -866,18 +866,14 @@ Trade-level reconciliation был сохранён отдельно:
 
 После portfolio/correlation этапа появился операционный риск: самые качественные режимы слишком редкие, поэтому на demo-счёте техническая статистика исполнения будет накапливаться годами. Для проверки цепочки `MT -> Nero.csv -> ML -> ml_signals.csv -> MT` выделен отдельный diagnostic режим `telemetry_frequency_v1`.
 
-### Решение
+### Решение и финальный статус
 
-- Частота сделок важнее PF: режим может быть убыточным.
-- Frozen diagnostic rule поверх take/skip score:
-  - `score_target=take_24_x8`;
-  - `selector=top_k_probability`;
-  - `threshold=1.0`;
-  - `SL=3 ATR`;
-  - `TP=5 ATR`;
-  - `max_hold_bars=24`;
-  - `max_positions=10`.
-- Export теперь может писать metadata JSON с hash выходного CSV, числом ненулевых строк, BUY/SELL, дублями времени и same-time opposite groups.
+- Частота сделок важнее PF: режим может быть убыточным, потому что его цель - диагностика pipeline.
+- Итоговый diagnostic profile: `telemetry_frequency_v1_highfreq500`.
+- High-frequency export даёт `8872` строк, `495` ненулевых сигналов в 2025, дублей времени `0`.
+- SL/TP сохранены в масштабе исходной идеи: `SL=3 ATR`, `TP=5 ATR`, чтобы влияние spread было сопоставимо с нормальной стратегией.
+- `max_hold_bars=24`, `max_positions=10`.
+- Export пишет atomically через временный файл и замену целевого `ml_signals.csv`.
 - В MQL diagnostic multi-position режим расширяет существующую `EXPERT::ML_TRADE()`, а не создаёт новый контур.
 
 ### Reuse decision по MQL
@@ -886,7 +882,7 @@ Trade-level reconciliation был сохранён отдельно:
 
 ### Diagnostic observability
 
-`MLP BUY/SELL` и `MLP CLOSE` теперь должны нести поля, достаточные для ежедневной сверки:
+`MLP BUY/SELL` и `MLP CLOSE` теперь несут поля, достаточные для ежедневной сверки:
 
 - `ticket`;
 - `signal_time`, `entry_time`, `exit_time`;
@@ -896,8 +892,23 @@ Trade-level reconciliation был сохранён отдельно:
 
 Добавлен `ML.telemetry_daily_reconciliation`: сверяет `ml_signals.csv` с MT4 `MLP` log, пишет `signals_diff.csv`, `trades_reconciliation.csv`, `summary.json`, `summary.md`, и возвращает exit code `1` при критичных расхождениях (`missing_open`, `wrong_direction`, `unexpected_open`).
 
-### Открытый пункт
+Для закрытий, которые выполнил брокер/тестер по `TakeProfit` или `StopLoss`, `lib_ML_Signal.mqh` сканирует историю ордеров и пишет структурированную строку `MLP CLOSE ... source=broker_history`. Это убирает зависимость daily reconciliation от нестабильного формата стандартных строк MT4 tester log.
 
-MT4 tester/demo proof ещё нужен: CLI и MQL logging подготовлены, но фактическое online/test соответствие можно подтвердить только на свежем tester/demo логе.
+### Tester proof
+
+Финальный MT4 tester proof на `XAUUSD,H1`, 2025:
+
+| Metric | Value |
+|---|---:|
+| expected_signals | 495 |
+| opened_trades | 468 |
+| position_blocked | 27 |
+| broker_tp_closes | 77 |
+| broker_sl_closes | 138 |
+| critical_mismatch_count | 0 |
+| missing_close_count | 1 |
+| OnTester returns | 15064.255859375 |
+
+`missing_close_count=1` объясняется открытой позицией на конце периода. Вывод: diagnostic-контур готов к online demo launch. Прибыльность tester-прогона не считать production-доказательством качества стратегии.
 
 Источник: [2026-04-27-telemetry-frequency-demo-launch.md](../../docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)

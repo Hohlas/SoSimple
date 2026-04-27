@@ -1,0 +1,9 @@
+{
+  "label": "telemetry_frequency_v1_highfreq500_final",
+  "expected_signals": 495,
+  "opened_trades": 468,
+  "closed_trades": 467,
+  "critical_mismatch_count": 0,
+  "missing_close_count": 1,
+  "export_metadata": null
+}

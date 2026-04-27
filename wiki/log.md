@@ -260,3 +260,11 @@
   - captured MQL reuse decision: extend `lib_ML_Signal.mqh::ML_TRADE()`, keep ticket-level helpers for multi-position, reuse `SERVICE.mqh` where compatible;
   - captured daily reconciliation CLI and required MLP log fields.
 - Updated `wiki/index.md` coverage from 28 to 29 reports.
+
+## [2026-04-27] ingest | telemetry frequency demo launch completed
+- Updated report `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md` to `Completed`.
+- Updated `wiki/research/execution-tracks.md` with final tester proof:
+  - `495` expected signals, `468` opened trades;
+  - `critical_mismatch_count=0`;
+  - broker-side `TakeProfit` / `StopLoss` closes logged via `source=broker_history`;
+  - diagnostic contour ready for online demo launch.

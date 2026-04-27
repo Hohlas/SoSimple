@@ -2,6 +2,30 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-27] - Telemetry frequency demo launch
+
+### Добавлено
+- High-frequency diagnostic export `telemetry_frequency_v1_highfreq500`.
+- Runtime reload `ml_signals.csv` в `lib_ML_Signal.mqh`.
+- Multi-position diagnostic режим через существующую `EXPERT::ML_TRADE()`.
+- Structured MQL logs `MLP BUY/SELL/CLOSE/SKIP`, включая `source=broker_history` для SL/TP.
+- Daily reconciliation CLI `ML/telemetry_daily_reconciliation.py`.
+
+### Результаты
+- MT4 tester proof на `XAUUSD,H1` за 2025:
+  - `495` ожидаемых сигналов;
+  - `468` открытых сделок;
+  - `27` ожидаемых пропусков по `ML_MaxPositions=10`;
+  - `77` broker-side TP, `138` broker-side SL;
+  - `critical_mismatch_count=0`;
+  - `missing_close_count=1` из-за открытой позиции на конце периода.
+- `OnTester returns 15064.255859375`.
+
+### Вывод
+- Diagnostic-контур готов к online demo launch.
+- Результат тестера не является production-доказательством прибыльности: профиль выбран для частоты сделок и проверки pipeline.
+- Подробности: [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
+
 ## [2026-04-24] - System correlation and portfolio check
 
 ### Добавлено

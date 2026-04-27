@@ -1,166 +1,140 @@
 # Telemetry Frequency Demo Launch
 
-> **Date**: 2026-04-27
-> **Status**: In Progress
-> **Goal**: Подготовить частый diagnostic-режим `telemetry_frequency_v1` для проверки онлайн demo-контура `MT -> Nero.csv -> ML -> ml_signals.csv -> MT`
+> **Date**: 2026-04-27 21:25
+> **Status**: Completed
+> **Goal**: Подготовить частый diagnostic-режим `telemetry_frequency_v1` для онлайн demo-проверки цепочки `MT -> Nero.csv -> ML -> ml_signals.csv -> MT`
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`, `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
-> **Related commit**: pending
+> **Related commit**: `b06d2e0`
 
 ## Context
 
-Проект дошёл до операционного этапа: есть frozen ML-rules, direct `time;signal` export для MT4 и несколько MT4-подтверждённых режимов. Но сильные режимы остаются редкими, поэтому они плохо подходят для быстрой проверки live pipeline на demo-счёте.
+Проект подошёл к этапу demo-запуска. Production-кандидаты остаются редкими, поэтому на реальном demo-счёте техническая статистика исполнения накапливалась бы слишком долго.
 
-Для этого вводится отдельный diagnostic-режим `telemetry_frequency_v1`. Его цель — наработать статистику технического исполнения, сверки online/tester и влияния spread/slippage. Этот режим не является production verdict и не должен смешиваться с portfolio-метриками.
+Для проверки транспорта, параметров, сигналов, исполнения, логов и ежедневной сверки выделен отдельный diagnostic-режим `telemetry_frequency_v1`. Его задача - не доказать прибыльность стратегии, а быстро набрать события для проверки online pipeline.
 
 ## What Was Done
 
-### Diagnostic calibration
-
-- Добавлен `ML/benchmark_telemetry_frequency_calibration.py`.
-- Добавлены тесты `tests/test_benchmark_telemetry_frequency_calibration.py`.
-- Выполнена calibration на `ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv`.
-- Выбран diagnostic rule:
-  - `score_target = take_24_x8`;
-  - `selector = top_k_probability`;
-  - `threshold = 1.0`;
-  - `SL = 3 ATR`;
-  - `TP = 5 ATR`;
-  - `max_hold_bars = 24`;
-  - `max_positions = 10`.
-
-Выбор сделан по частоте, а не по PF. `PF` и same-time conflicts считаются только диагностикой.
-
-### Export metadata
-
-- `API/export_take_skip_trailing_stop_v2_signals.py` расширен optional metadata output.
-- Metadata фиксирует пути, SHA256-хеши, число строк, число ненулевых сигналов, BUY/SELL и дубли времени.
-- Созданы:
-  - `ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1.csv`;
-  - `ML/reports/telemetry_frequency_v1/export_metadata.json`.
-
-### MQL reuse audit
-
-Проверены `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Include/ORDERS.mqh`, `MT/MQL4/Include/SERVICE.mqh`.
-
-| Area | Existing file/function | Verdict | Reason |
-|---|---|---|---|
-| Direct ML entry point | `lib_ML_Signal.mqh::EXPERT::ML_TRADE()` | `extend_existing_function` | Уже является активным `iSignal=3` контуром; менять нужно его, а не создавать новый path. |
-| Multi-position open | `lib_ML_Signal.mqh::MLP_OpenMarketOrder(...)` | `keep_local_in_lib_ML_Signal_with_reason` | Работает с ticket-level market orders и не зависит от одиночного `set.BUY/set.SEL` состояния. |
-| Multi-position close | `lib_ML_Signal.mqh::MLP_CloseSelectedOrder(...)` | `keep_local_in_lib_ML_Signal_with_reason` | Закрывает выбранный ticket; это лучше соответствует нескольким позициям одного направления. |
-| Open wrappers | `ORDERS.mqh::SET_BUY()`, `SET_SEL()`, `ORDERS_SET()` | `keep_local_in_lib_ML_Signal_with_reason` | Контракт основан на одном `set.BUY` и одном `set.SEL`; для multi-position same-direction это слишком грубое состояние. |
-| Modify/close wrapper | `ORDERS.mqh::MODIFY()` | `reuse_as_reference_only` | Полезен как паттерн retry/REPORT/ERROR_CHECK, но управляет всеми ордерами через одиночные `BUY/SEL` states. |
-| Order state scan | `ORDERS.mqh::ORDER_CHECK()` | `reuse_as_reference_only` | Запоминает только один BUY и один SELL state, поэтому не может быть source-of-truth для нескольких позиций одного направления. |
-| Market data | `ORDERS.mqh::MARKET_UPDATE(...)`, globals `Spred`, `StopLevel` | `reuse_as_is` | Подходит для расчёта spread/stop-level; можно использовать в MQL telemetry. |
-| Reporting | `SERVICE.mqh::REPORT(...)` | `reuse_as_is` | Уже централизует сообщения и печатает `Magic:: message`; стоит использовать для service-level сообщений. |
-| Tester file/report | `SERVICE.mqh::TESTER_FILE_CREATE(...)`, `OnTester()` | `reuse_or_extend_existing_function` | Подходит для tester-side summary/report metadata; расширять совместимо при необходимости. |
-| Online monitoring | `SERVICE.mqh` missed-bars / persistence helpers | `reuse_or_extend_existing_function` | Полезно для demo monitoring; новые telemetry поля лучше добавлять совместимо. |
-
-Главный вывод аудита: старый `ORDERS.mqh` полезен как источник проверенных паттернов и service helpers, но его основной order contract не подходит как прямой исполнитель multi-position ML-сделок. Для `telemetry_frequency_v1` допустимо оставить ticket-level open/close в `lib_ML_Signal.mqh`, при этом использовать `REPORT(...)`, `MARKET_UPDATE(...)` и service/report механизмы там, где они совместимы.
-
-### MQL telemetry logging
-
-- `lib_ML_Signal.mqh` расширен для diagnostic multi-position режима через существующую `EXPERT::ML_TRADE()`.
-- При `ML_MaxPositions>1` старое ограничение одной позиции через `BUY.Typ/SEL.Typ` не блокирует новые сделки.
-- `MLP BUY/SELL` теперь пишет `mode=telemetry_frequency_v1`, `ticket`, `atr`, `spread`, `spread_atr`, `open_positions`, `MaxPositions`.
-- `MLP CLOSE` теперь пишет `ticket`, `hold_bars`, `spread`, `spread_atr`, `profit`.
-- `ML_TakeProfitATR` используется как broker-side take profit; для diagnostic preset цель `5 ATR`, стоп `3 ATR`.
-
-### Daily reconciliation CLI
-
-- Добавлен `ML/telemetry_daily_reconciliation.py`.
-- CLI сверяет `ml_signals.csv` с MT4 `MLP`-логом:
-  - `missing_open`;
-  - `wrong_direction`;
-  - `unexpected_open`;
-  - `missing_close`.
-- Выходы: `signals_diff.csv`, `trades_reconciliation.csv`, `summary.json`, `summary.md`.
-- При критичных расхождениях CLI возвращает exit code `1`, поэтому подходит для ежедневной автоматизации.
+- Введён high-frequency export поверх `API/export_take_skip_trailing_stop_v2_signals.py`.
+- Добавлен diagnostic режим `--diagnostic-all-rows` / `--diagnostic-target-signals-per-year`, который строит частый поток сигналов из ML score и направления `predict`.
+- Зафиксирован профиль `highfreq500`: `495` ненулевых сигналов в 2025 году.
+- Runtime-файл `ml_signals.csv` пишется атомарно через временный файл и замену целевого файла.
+- `lib_ML_Signal.mqh` расширен внутри существующей `EXPERT::ML_TRADE()`, без отдельного нового торгового path.
+- Для diagnostic режима разрешены несколько одновременных позиций через `ML_MaxPositions`.
+- Добавлена перезагрузка `ml_signals.csv` по времени изменения файла.
+- Добавлено подробное MQL-логирование `MLP BUY`, `MLP SELL`, `MLP CLOSE`, `MLP SKIP`.
+- Добавлено логирование закрытий, выполненных брокером/тестером по `TakeProfit` и `StopLoss`, через `source=broker_history`.
+- Добавлен `ML/telemetry_daily_reconciliation.py` для ежедневной сверки `ml_signals.csv` и MT4 log.
+- Описана схема `MT -> Python watcher/exporter -> ml_signals.csv -> MT` в MT-документации.
+- Описана логика `#.csv`: файл внешних параметров, выбор строки через `BackTest`, magic/hash, запуск нескольких стратегий с одного графика.
 
 ## Changed Files
 
-- `ML/benchmark_telemetry_frequency_calibration.py`
-- `tests/test_benchmark_telemetry_frequency_calibration.py`
 - `API/export_take_skip_trailing_stop_v2_signals.py`
-- `tests/test_export_take_skip_trailing_stop_v2_signals.py`
-- `ML/reports/telemetry_frequency_v1/calibration/*`
-- `ML/reports/telemetry_frequency_v1/export_metadata.json`
-- `ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1.csv`
-- `MT/MQL4/Include/lib_ML_Signal.mqh`
-- `MT/MQL4/Experts/$o$imple.mq4`
 - `ML/telemetry_daily_reconciliation.py`
-- `tests/test_telemetry_daily_reconciliation.py`
-- `docs/ML/benchmark_telemetry_frequency_calibration.py.md`
+- `MT/MQL4/Include/lib_ML_Signal.mqh`
+- `MT/MQL4/Files/#.csv`
+- `ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1_highfreq500.csv`
+- `ML/reports/telemetry_frequency_v1/tester_reconciliation_highfreq500_2025_final/*`
+- `docs/MT/trading_strategy.md`
+- `docs/MT/ml_signal_integration.md`
 - `docs/ML/telemetry_daily_reconciliation.py.md`
-- `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`
+- `tests/test_export_take_skip_trailing_stop_v2_signals.py`
+- `tests/test_mql_telemetry_params_csv_contract.py`
+- `tests/test_telemetry_daily_reconciliation.py`
+- `tests/test_signal_export_parity.py`
 
 ## Verification
 
 ```bash
-./.venv/bin/python -m pytest tests/test_benchmark_telemetry_frequency_calibration.py -q
-./.venv/bin/python -m pytest tests/test_export_take_skip_trailing_stop_v2_signals.py -q
-./.venv/bin/python -m pytest tests/test_benchmark_telemetry_frequency_calibration.py tests/test_export_take_skip_trailing_stop_v2_signals.py -q
-./.venv/bin/python -m ML.benchmark_telemetry_frequency_calibration \
-  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
-  --score-target take_24_x8 \
-  --output-dir ML/reports/telemetry_frequency_v1/calibration
-./.venv/bin/python -m API.export_take_skip_trailing_stop_v2_signals \
-  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
-  --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
-  --output ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1.csv \
-  --metadata-output ML/reports/telemetry_frequency_v1/export_metadata.json \
-  --label telemetry_frequency_v1
-./.venv/bin/python -m pytest tests/test_telemetry_daily_reconciliation.py tests/test_signal_export_parity.py -q
 ./.venv/bin/python -m pytest \
-  tests/test_benchmark_telemetry_frequency_calibration.py \
   tests/test_export_take_skip_trailing_stop_v2_signals.py \
+  tests/test_mql_telemetry_params_csv_contract.py \
   tests/test_telemetry_daily_reconciliation.py \
   tests/test_signal_export_parity.py -q
+# 28 passed in 0.70s
+
+./.venv/bin/python -m ML.telemetry_daily_reconciliation \
+  --signals MT/tester/files/ml_signals.csv \
+  --mt4-log MT/tester/logs/20260427.log \
+  --output-dir ML/reports/telemetry_frequency_v1/tester_reconciliation_highfreq500_2025_final \
+  --label telemetry_frequency_v1_highfreq500_final \
+  --start-time "2025.01.01 00:00" \
+  --end-time "2025.12.31 23:59"
 ```
 
 ## Results
 
-Current telemetry export:
+High-frequency signal file:
 
 | Metric | Value |
 |---|---:|
-| rows_total | 8887 |
-| nonzero_rows | 454 |
-| buy_rows | 238 |
-| sell_rows | 216 |
-| duplicate_time_rows | 15 |
-| same_time_opposite_signal_groups | 15 |
+| rows_total | 8872 |
+| nonzero_signals_2025 | 495 |
+| BUY_2025 | 242 |
+| SELL_2025 | 253 |
+| duplicate_time_rows | 0 |
+| sha256 | `8728da8e71d78e2f6aba4ae0743b17300be6a102c117f0267fcb33a798f6ff57` |
 
-The selected preset intentionally maximizes diagnostic signal flow. Same-time conflicts are tracked in metadata and must be handled/understood before demo launch.
+MT4 tester proof on `XAUUSD,H1`, 2025:
+
+| Metric | Value |
+|---|---:|
+| Total signals | 495 |
+| Score filtered | 0 |
+| Position blocked | 27 |
+| Opened | 468 |
+| BUY opened | 231 |
+| SELL opened | 237 |
+| Timeout closes | 252 |
+| Broker TP closes | 77 |
+| Broker SL closes | 138 |
+| Broker other closes | 0 |
+| OnTester returns | 15064.255859375 |
+
+Final reconciliation:
+
+| Metric | Value |
+|---|---:|
+| expected_signals | 495 |
+| opened_trades | 468 |
+| closed_trades | 467 |
+| critical_mismatch_count | 0 |
+| missing_close_count | 1 |
+
+`missing_close_count=1` объясняется открытой сделкой на конце периода теста, а не ошибкой исполнения.
 
 ## Conclusions
 
-- `telemetry_frequency_v1` now has a reproducible calibration/export path.
-- The current diagnostic export is much denser than production candidates and is suitable for stress-testing the execution pipeline.
-- `ORDERS.mqh` should not be forced into the multi-position ML open/close path because its core contract is one `BUY` and one `SELL` state.
-- `SERVICE.mqh` should be reused for reporting/monitoring/tester metadata where compatible.
-- Daily reconciliation now has an automated CLI, but it still depends on actual MT4 demo/tester logs.
+- Контур `MT -> ML signal file -> MT` готов к demo-запуску в diagnostic режиме.
+- Несколько одновременных позиций работают: `ML_MaxPositions=10`, в тесте были реальные параллельные позиции и ожидаемые `MaxPositions` пропуски.
+- Ошибок `OrderSend` и нехватки денег в тестовом логе не обнаружено.
+- Закрытия по SL/TP теперь видны в структурированном `MLP CLOSE` формате, поэтому daily reconciliation больше не зависит от нестабильного формата стандартных строк тестера.
+- Положительный результат тестера не является production-доказательством прибыльности: текущий профиль выбран для частоты и диагностики.
 
 ## Limitations / Open Questions
 
-- MT4 tester proof has not yet been run.
-- Same-time opposite signal groups are present in the diagnostic export; downstream MT4 behavior must be verified explicitly.
+- Онлайн demo ещё не запущен; итоговое online/test соответствие нужно подтвердить на удалённом сервере.
+- Для online-режима нужен всегда запущенный Python watcher/exporter или эквивалентный сервис, который атомарно обновляет `ml_signals.csv`.
+- Runtime CSV-файлы в `MT/MQL4/Files/` и `MT/tester/files/` частично игнорируются git, поэтому их нужно синхронизировать отдельно.
+- `knowledge-rag` reindex в конце этапа падал с `Transport closed`; индекс может отставать от последних правок.
 
 ## Next Step
 
-Run a manual MT4 tester proof with the telemetry export, then feed the fresh tester log into:
-
-```bash
-./.venv/bin/python -m ML.telemetry_daily_reconciliation \
-  --signals MT/tester/files/ml_signals.csv \
-  --mt4-log MT/tester/logs/<fresh-log>.log \
-  --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
-  --output-dir ML/reports/telemetry_frequency_v1/daily/<date> \
-  --label telemetry_frequency_v1
-```
+1. Слить ветку `telemetry-frequency-demo-launch` в `main`.
+2. Обновить удалённый сервер через `git pull`.
+3. Отдельно скопировать ignored runtime files:
+   - `MT/MQL4/Files/ml_signals.csv`
+   - `MT/tester/files/#.csv`
+   - `MT/tester/files/ml_signals.csv`
+4. На сервере перекомпилировать MT4 expert и запустить online demo на `XAUUSD,H1`.
+5. Ежедневно запускать `ML.telemetry_daily_reconciliation` по свежему MT4 log.
 
 ## Related Materials
 
+- `docs/MT/trading_strategy.md`
+- `docs/MT/ml_signal_integration.md`
+- `docs/ML/telemetry_daily_reconciliation.py.md`
 - `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`
 - `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
-- `ML/reports/telemetry_frequency_v1/calibration/selected_rule.json`
-- `ML/reports/telemetry_frequency_v1/export_metadata.json`
+- `ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1_highfreq500.csv`
+- `ML/reports/telemetry_frequency_v1/tester_reconciliation_highfreq500_2025_final/summary.json`
