@@ -8,6 +8,7 @@
 - For modules and code: use [MODULE_INDEX.md](../MODULE_INDEX.md), not wiki pages.
 - For pipeline/architecture: use [docs/DATA_FLOW.md](../docs/DATA_FLOW.md) and [AGENTS.md](../AGENTS.md).
 - For current operational state: use [CONTEXT_HANDOFF.md](../CONTEXT_HANDOFF.md).
+- For docs/ artifacts: use [docs/README.md](../docs/README.md).
 - Wiki pages below represent synthesis that has no canonical home in the project files.
 
 ---

@@ -235,3 +235,19 @@
   - captured main redundant pair: `frequency × original_plus_path`
   - captured main complementary line: `quality` / `original_plus_path` versus `entry_path` systems
 - Updated `wiki/index.md` coverage from 27 to 28 reports
+
+## [2026-04-27] docs | documentation architecture compacted
+- Added `docs/README.md` as the documentation entry map.
+- Added `docs/DOCS_ARCHITECTURE.md` as the source-of-truth matrix.
+- Shortened `CONTEXT_HANDOFF.md` to current baton only.
+- Converted `CLAUDE.md` into a thin Claude Code adapter to `AGENTS.md`.
+- Updated `wiki/index.md` to point agents to the documentation architecture contract.
+
+## [2026-04-27] docs | documentation map merged
+- Merged `docs/DOCS_ARCHITECTURE.md` into `docs/README.md` to keep one documentation entrypoint.
+- Updated agent and wiki references to use `docs/README.md`.
+
+## [2026-04-27] docs | docs readme scoped to docs directory
+- Scoped `docs/README.md` to artifacts inside `docs/`.
+- Moved agent/navigation responsibility back to `AGENTS.md`.
+- Added explicit `MODULE_INDEX.md` point-read rule to `AGENTS.md`.

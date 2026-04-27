@@ -4,6 +4,7 @@
 
 ## Документация
 - 🤖 **[AGENTS.md](AGENTS.md)** — руководство для работы с проектом (для ИИ-агентов и разработчиков)
+- 🧭 **[docs/README.md](docs/README.md)** — карта документации
 - 📋 **[CHANGELOG.md](CHANGELOG.md)** — история изменений
 - 📊 **[DATA_FLOW.md](docs/DATA_FLOW.md)** — поток данных через пайплайн
 

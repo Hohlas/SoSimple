@@ -528,7 +528,7 @@ TB-слой **не** подключается к MT4 как production или pa
   - `Score filtered=0`
 
 ### Вывод
-`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md](docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
+`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Синтез: [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md)
 
 ## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
 
@@ -555,7 +555,7 @@ TB-слой **не** подключается к MT4 как production или pa
 - `seed_123` подтвердил, что линия держится и без `PF=inf`: frozen test `26 trades`, `PF=25.17`
 
 ### Вывод
-`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Подробности: [docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md](docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md)
+`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Синтез: [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md)
 ## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
 
 ### Добавлено

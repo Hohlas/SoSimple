@@ -40,7 +40,7 @@ last_updated: 2026-02-18
 ### Данные
 - **Источник**: MetaTrader 4 (только котировки XAUUSD, H1)
 - **Глубина истории**: 10+ лет
-- **Тип данных**: [массив списков признаков фракталов](docs/dataset_description.md)
+- **Тип данных**: [массив списков признаков фракталов](dataset_description.md)
 
 ### Модель
 - **Обучение**: Offline на исторических данных
@@ -82,7 +82,9 @@ last_updated: 2026-02-18
   - Mitigation: периодическое переобучение (каждые 6-12 мес)
 
 
-## Roadmap
+## Product Phases
+
+Активный research roadmap живёт отдельно: [docs/superpowers/roadmap.md](superpowers/roadmap.md).
 
 ### Фаза 1: MVP (текущая) ✅
 - [x] Сбор данных (lib_PIC.mqh)
@@ -108,4 +110,3 @@ last_updated: 2026-02-18
 - Online learning
 - High-frequency trading (HFT)
 - Альтернативные источники данных (Twitter, новости)
-

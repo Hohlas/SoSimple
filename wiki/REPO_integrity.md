@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-24 19:12 UTC · git `7116a83`
+> Auto-generated 2026-04-27 10:29 UTC · git `0bc436b`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,18 +9,18 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 954 files  ·  **Commit**: `7116a83`  ·  **Generated**: 2026-04-24 19:12 UTC
+**Tracked**: 955 files  ·  **Commit**: `0bc436b`  ·  **Generated**: 2026-04-27 10:29 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-04-24 | 10KB | `3f9f3bb7` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-24 | 130KB | `5dedeb49` |
-| [CLAUDE.md](CLAUDE.md) |  | 2026-04-18 | 5KB | `f0c0cdff` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-24 | 35KB | `9ce6af36` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-24 | 29KB | `b95dfe26` |
-| [README.md](README.md) |  | 2026-04-09 | 969B | `4fc82a41` |
+| [AGENTS.md](AGENTS.md) |  | 2026-04-27 | 11KB | `ac336129` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-27 | 130KB | `fd6cdbd8` |
+| [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-27 | 3KB | `776411ee` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-27 | 29KB | `b8ccf93c` |
+| [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
 
@@ -46,7 +46,8 @@
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-24 | 13KB | `1db1d972` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-19 | 14KB | `84bb5246` |
-| [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-12 | 4KB | `5df7ce35` |
+| [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-27 | 4KB | `dba0c943` |
+| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-27 | 3KB | `ebde07dc` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-04-20 | 2KB | `3f1ffcb9` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-04-20 | 1KB | `3fd26730` |
@@ -105,7 +106,7 @@
 | [docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md](docs/superpowers/plans/2026-04-24-entry-path-cross-instrument-robustness.md) |  | 2026-04-24 | 12KB | `9dce2437` |
 | [docs/superpowers/plans/2026-04-24-system-correlation-and-portfolio-check.md](docs/superpowers/plans/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 15KB | `5f85893f` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-07 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-20 | 8KB | `579eceb3` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-04-27 | 8KB | `d6a0bb67` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-03-23 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-03-27 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-04-01 | 13KB | `477a2843` |
@@ -177,8 +178,8 @@
 | [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md) |  | 2026-04-22 | 5KB | `64f8d26c` |
 | [docs/reports/2026-04-24-cross-instrument-robustness-check.md](docs/reports/2026-04-24-cross-instrument-robustness-check.md) |  | 2026-04-24 | 8KB | `374bd822` |
 | [docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md](docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md) |  | 2026-04-24 | 10KB | `29106e47` |
-| [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 10KB | `46f56804` |
-| [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-05 | 2KB | `ed0769cc` |
+| [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 10KB | `77d28ff4` |
+| [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
 
@@ -676,7 +677,7 @@
 | [MT/MQL4/Libraries/stderror.mqh](MT/MQL4/Libraries/stderror.mqh) |  |  | 2026-02-17 | 9KB | `47505e6c` |
 | [MT/MQL4/Libraries/stdlib.mq4](MT/MQL4/Libraries/stdlib.mq4) |  |  | 2026-03-19 | 19KB | `cdb0a440` |
 | [MT/MQL4/Libraries/stdlib.mqh](MT/MQL4/Libraries/stdlib.mqh) |  |  | 2026-02-17 | 648B | `5695494a` |
-| [MT/MQL4/README.md](MT/MQL4/README.md) |  |  | 2026-02-17 | 146B | `4e32d804` |
+| [MT/MQL4/README.md](MT/MQL4/README.md) |  |  | 2026-04-27 | 728B | `88e64c48` |
 | [MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4](MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4) |  |  | 2026-03-19 | 2KB | `7d447b15` |
 | [MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4) |  |  | 2026-03-19 | 3KB | `d0dbff33` |
 | [MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4) |  |  | 2026-03-19 | 4KB | `c0c67ebe` |
@@ -954,8 +955,8 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-24 | 1KB | `a3135f41` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-24 | 14KB | `b1b1b9be` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-27 | 1KB | `18b96c8e` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-27 | 15KB | `1c985301` |
 | [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-24 | 55KB | `eae6a71e` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |

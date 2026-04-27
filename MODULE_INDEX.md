@@ -166,6 +166,7 @@
 
 | Файл | Назначение |
 |------|------------|
+| [README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления |
 | [DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам |
 | [dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv |
 | [PRD.md](docs/PRD.md) | Product Requirements Document |
