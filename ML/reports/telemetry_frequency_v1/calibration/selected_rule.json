@@ -1,0 +1,17 @@
+{
+  "mode": "telemetry_frequency_v1",
+  "diagnostic": true,
+  "winner": {
+    "score_target": "take_24_x8",
+    "selector": "prob_ge_threshold",
+    "threshold": 0.4,
+    "exit_atr_multiplier": 8
+  },
+  "execution": {
+    "stop_atr": 3.0,
+    "take_profit_atr": 5.0,
+    "max_hold_bars": 24,
+    "max_positions": 10
+  },
+  "selection_note": "Diagnostic preset selected by trade frequency; PF is diagnostic only."
+}
