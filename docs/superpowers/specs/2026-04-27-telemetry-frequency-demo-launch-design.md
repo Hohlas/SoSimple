@@ -4,7 +4,7 @@
 > **Status**: Draft
 > **Track**: Подготовка проекта к онлайн demo-launch
 > **Goal**: Получить частый диагностический режим для проверки контура `MT -> Nero.csv -> ML -> ml_signals.csv -> MT`, не смешивая его с production-кандидатами по прибыльности
-> **Related materials**: `docs/MT/ml_signal_integration.md`, `docs/reports/2026-04-18-take-skip-frequency-followup.md`, `docs/reports/2026-04-19-execution-policy-v2.md`, `docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`
+> **Related materials**: `docs/MT/ml_signal_integration.md`, `MT/MQL4/Include/ORDERS.mqh`, `MT/MQL4/Include/SERVICE.mqh`, `docs/reports/2026-04-18-take-skip-frequency-followup.md`, `docs/reports/2026-04-19-execution-policy-v2.md`, `docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`
 
 ---
 
@@ -35,7 +35,7 @@
 
 - не переобучать ML как первый шаг;
 - не создавать случайный probe-режим;
-- взять существующий ML score/rule contour и ослабить отбор до высокой частоты.
+- взять существующий ML score/rule contour и ослабить отбор до максимально высокой частоты.
 
 Режим называется:
 
@@ -58,8 +58,6 @@
 ---
 
 ## 3. Frequency Policy
-
-Цель по частоте не ограничивается `1-2` сделками в день.
 
 Практический принцип:
 
@@ -121,6 +119,13 @@
 - менять существующий direct ML path в `lib_ML_Signal.mqh`;
 - точка входа остаётся `EXPERT::ML_TRADE()`;
 - внешний переключатель остаётся `iSignal=3`.
+
+Дополнительное reuse-правило:
+
+- старые функции открытия, закрытия и изменения позиций находятся в `MT/MQL4/Include/ORDERS.mqh`;
+- при доработке multi-position исполнения сначала проверить, можно ли использовать или аккуратно расширить существующие функции из `ORDERS.mqh`;
+- прямые вызовы `OrderSend`, `OrderClose`, `OrderModify` в `lib_ML_Signal.mqh` допустимы только если существующие функции `ORDERS.mqh` не подходят по контракту для diagnostic ML flow;
+- если потребуется менять торговую операцию, предпочтение отдаётся модификации уже имеющейся функции, а не созданию параллельной реализации.
 
 В текущем коде уже есть параметры и функции, связанные с multi-position режимом:
 
@@ -279,6 +284,20 @@
 - `statistics/signal_tracer.py`;
 - existing MT4 log lines from `lib_ML_Signal.mqh`.
 
+Для MQL-side мониторинга и сравнения online/test нужно отдельно проверить и использовать существующие функции из:
+
+- `MT/MQL4/Include/SERVICE.mqh`.
+
+Ожидаемый reuse scope для `SERVICE.mqh`:
+
+- tester/report file creation;
+- `OnTester()` metrics/reporting;
+- `REPORT(...)` pipeline;
+- текущие механизмы online monitoring, включая контроль missed bars;
+- сохранение параметров и magic-linked service metadata.
+
+Если текущий формат `SERVICE.mqh` не покрывает нужные поля telemetry, его нужно расширять совместимо, а не строить отдельный MQL-сервисный слой.
+
 Не нужно сразу строить тяжёлую систему мониторинга. Нужен воспроизводимый CLI, который можно запускать каждый день.
 
 ---
@@ -367,6 +386,7 @@ MQL-specific acceptance:
 - frozen diagnostic preset for `telemetry_frequency_v1`;
 - updated/export CLI if needed;
 - updated existing MQL direct ML path if current multi-position behavior incomplete;
+- documented reuse or modification points for `ORDERS.mqh` and `SERVICE.mqh`;
 - automated daily reconciliation CLI;
 - docs for demo launch checklist;
 - tester proof before demo account run.
