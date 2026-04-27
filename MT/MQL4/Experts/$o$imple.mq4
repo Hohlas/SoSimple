@@ -1,5 +1,5 @@
 #define MAX_RISK  10
-#define VERSION "260.328"
+#define VERSION "260.329"
 #property copyright  "Hohla"
 #property link       "hohla.ru"
 #property strict // Указание компилятору на применение особого строгого режима проверки ошибок 

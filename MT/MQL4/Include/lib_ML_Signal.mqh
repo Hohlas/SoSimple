@@ -3,7 +3,7 @@
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
-//| Обновлён: 2026-04-09                                             |
+//| Обновлён: 2026-04-27                                             |
 //| Входные данные:                                                  |
 //|   - MQL4/Files/ml_signals.csv                                    |
 //| Поддерживаемые форматы CSV:                                      |
@@ -114,6 +114,7 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
    double lots = OrderLots();
    double entry_price = OrderOpenPrice();
    datetime entry_time = OrderOpenTime();
+   int hold_bars = SHIFT(entry_time);
    bool ok = false;
 
    WAITING(magic, "Terminal", 20);
@@ -128,11 +129,15 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
 
    RefreshRates();
    double exit_price = (typ == OP_BUY) ? Bid : Ask;
+   double spread_value = Ask - Bid;
+   double spread_atr = 0.0;
+   if (atr_value > 0) spread_atr = spread_value / atr_value;
    double pnl_atr = 0.0;
    if (atr_value > 0) {
       if (typ == OP_BUY) pnl_atr = (exit_price - entry_price) / atr_value;
       else pnl_atr = (entry_price - exit_price) / atr_value;
    }
+   double profit_value = OrderProfit() + OrderSwap() + OrderCommission();
 
    if (ok) {
       if (reason == "TrailingStop") MLP_cnt_trailing++;
@@ -143,13 +148,17 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
             " ticket=", ticket,
             " entry_time=", TimeToString(entry_time),
             " exit_time=", TimeToString(Time[0]),
+            " hold_bars=", hold_bars,
             " entry=", DoubleToString(entry_price, Digits),
             " best=", DoubleToString(best_price, Digits),
             " trail=", DoubleToString(trail_price, Digits),
             " exit=", DoubleToString(exit_price, Digits),
             " atr=", DoubleToString(atr_value, Digits),
+            " spread=", DoubleToString(spread_value, Digits),
+            " spread_atr=", DoubleToString(spread_atr, 4),
             " trail_atr=", DoubleToString(ML_TrailATR, 2),
-            " pnl_atr=", DoubleToString(pnl_atr, 4));
+            " pnl_atr=", DoubleToString(pnl_atr, 4),
+            " profit=", DoubleToString(profit_value, 2));
    }
    return ok;
 }
@@ -191,7 +200,7 @@ void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_v
    }
 }
 
-bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double score, datetime signal_time, double atr_value) {
+bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double score, datetime signal_time, double atr_value, int open_positions_before) {
    if (atr_value <= 0) return false;
    if (sig != 1 && sig != -1) return false;
 
@@ -245,18 +254,26 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
    FREE(magic, "Terminal");
 
    if (ok) {
+      RefreshRates();
+      double spread_value = Ask - Bid;
+      double spread_atr = 0.0;
+      if (atr_value > 0) spread_atr = spread_value / atr_value;
       MLP_cnt_opened++;
       if (sig == 1) MLP_cnt_buy++;
       else MLP_cnt_sell++;
       Print(magic, ":: MLP ", (sig == 1 ? "BUY" : "SELL"),
-            " mode=multi_position",
+            " mode=telemetry_frequency_v1",
             " ticket=", ticket,
             " signal_time=", TimeToString(signal_time),
             " entry_time=", TimeToString(Time[0]),
             " score=", DoubleToString(score, 6),
+            " atr=", DoubleToString(atr_value, Digits),
+            " spread=", DoubleToString(spread_value, Digits),
+            " spread_atr=", DoubleToString(spread_atr, 4),
             " exit_mode=", MLP_ExitModeName(),
             " TrailATR=", DoubleToString(ML_TrailATR, 2),
             " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
+            " open_positions=", open_positions_before,
             " MaxPositions=", ML_MaxPositions,
             " Val=", DoubleToString(entry_price, Digits),
             " Stp=", DoubleToString(stop_price, Digits),
@@ -428,7 +445,7 @@ void EXPERT::ML_TRADE() {
          return;
       }
 
-      MLP_OpenMarketOrder(Mgc, ExpNum, Sym, sig, score, MLP_Times[idx], ATR);
+      MLP_OpenMarketOrder(Mgc, ExpNum, Sym, sig, score, MLP_Times[idx], ATR, open_positions);
       return;
    }
 
