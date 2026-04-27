@@ -284,6 +284,20 @@ class WRITE_PARAM_CLASS : public EXPERT_PARENT_CLASS { // дочерний кл�
       virtual void DATA(string name, bool& value)  {FileSeek (file,-2,SEEK_END); FileWrite(file,"",value);}
    }WRITE_TO_FILE;
 
+class PRINT_TO_LOG_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс печати считанных внешних переменных в лог
+   private: string Line;
+   public:
+      void EXTERN_VARS(uchar ExpertNum){
+         Line="CSV parameters loaded e="+S0(ExpertNum)+" PARAMS_LOADED";
+         EXTERN_VARS();
+         Print(EXP[ExpertNum].Mgc,":: ",Line);
+         }
+      virtual void DATA(string name, char& value)  {Line=Line+" "+name+"="+S0(value)+";";}
+      virtual void DATA(string name, int& value)   {Line=Line+" "+name+"="+S0(value)+";";}
+      virtual void DATA(string name, double& value){Line=Line+" "+name+"="+DoubleToString(value, 8)+";";}
+      virtual void DATA(string name, bool& value)  {Line=Line+" "+name+"="+S0(value)+";";}
+   }PRINT_TO_LOG;
+
 class MAGIC_GEN_CLASS : public EXPERT_PARENT_CLASS { // дочерний класс генерации Magic из внешних переменных
    public:
       void MAGIC_ADD(double value){

@@ -180,6 +180,7 @@ bool INPUT_FILE_READ (){// считывание из csv файла входны
       EXP[e].Hist="";
       EXP[e].Bar=BarTime; 
       READ_ARRAY.EXTERN_VARS(e); // Print("2: HistDD=",HistDD," LastTestDD=",LastTestDD," OptPeriod=",OptPeriod);
+      PRINT_TO_LOG.EXTERN_VARS(e); // лог всех параметров строки #.csv после применения
       EXP[e].CLASS_INIT(e); // запись порядкового номера эксперта в глобальную переменную класса
       EXP[e].INIT();
       Print("--",EXP[e].Name," v",EXP[e].Ver," Magic[",e,"]=",EXP[e].Mgc," Back=",EXP[e].Back," HistDD=",EXP[e].HistDD," LastTestDD=",EXP[e].LastTestDD," Risk=",EXP[e].Rsk," PRM=",EXP[e].PRM[0],",",EXP[e].PRM[1],",",EXP[e].PRM[2],",",EXP[e].PRM[3]," mem.BUY=",EXP[e].mem.BUY.Val," memSELL=",EXP[e].mem.SEL.Val," ExpBar=",EXP[e].Bar," ExpMemory=",EXP[e].ExpMemory," TestEndTime=",DTIME(EXP[e].TestEndTime));

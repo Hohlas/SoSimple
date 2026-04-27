@@ -5,6 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FUNCTIONS = ROOT / "MT/MQL4/Include/FUNCTIONS.mqh"
 MAIN = ROOT / "MT/MQL4/Include/MAIN.mqh"
 PARAMS_CSV = ROOT / "MT/MQL4/Files/#.csv"
+TESTER_PARAMS_CSV = ROOT / "MT/tester/files/#.csv"
 TESTER_INI = ROOT / "MT/tester/$o$imple.ini"
 
 
@@ -16,6 +17,8 @@ def test_mql_parameter_storage_supports_ml_types():
     assert "virtual void DATA(string name, double& value)" in text
     assert "virtual void DATA(string name, bool& value)" in text
     assert "void MAGIC_ADD" in text
+    assert "PRINT_TO_LOG_CLASS" in text
+    assert "PARAMS_LOADED" in text
 
 
 def test_extern_vars_tracks_active_ml_parameters():
@@ -54,6 +57,7 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
     assert values["SymPer"] == "XAUUSD60"
     assert values["Risk"] == "1"
     assert values["iSignal"] == "3"
+    assert values["T1"] == "8"
     assert values["ML_ExitMode"] == "0"
     assert values["ML_TrailATR"] == "8"
     assert values["ML_TakeProfitATR"] == "5"
@@ -64,6 +68,10 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
     assert values["ML_ScoreThreshold"] == "0"
     assert values["ML_BackStopATR"] == "3"
     assert int(values["Magic"]) == _mql_magic_from_row(header, row)
+
+
+def test_runtime_and_tester_params_csv_are_identical():
+    assert TESTER_PARAMS_CSV.read_text(encoding="utf-8") == PARAMS_CSV.read_text(encoding="utf-8")
 
 
 def _mql_magic_from_row(header: list[str], row: list[str]) -> int:
@@ -130,3 +138,11 @@ def test_tester_ini_selects_telemetry_backtest_row():
     assert "ML_MaxPositions=10" in text
     assert "ML_HoldBars=24" in text
     assert "ML_BackStopATR=3.00000000" in text
+
+
+def test_service_logs_loaded_csv_parameters():
+    service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
+    functions = FUNCTIONS.read_text(encoding="utf-8", errors="replace")
+
+    assert "PRINT_TO_LOG.EXTERN_VARS(e)" in service
+    assert "CSV parameters loaded" in functions
