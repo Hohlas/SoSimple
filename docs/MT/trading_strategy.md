@@ -246,6 +246,10 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 
 Если в CSV есть несколько строк с одним и тем же `time`, библиотека оставляет **последнюю**.
 
+Для диагностического профиля `telemetry_frequency_v1_highfreq500` exporter
+сразу удаляет дубли времени, чтобы MT4 и Python-сверка видели один и тот же
+ряд сигналов.
+
 ### 3.4 Online update без `ready`-файла
 
 Для online-режима не нужен отдельный `ml_signals.ready`, если Python пишет

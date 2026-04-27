@@ -1,0 +1,15 @@
+{
+  "label": "telemetry_frequency_v1_highfreq500",
+  "predictions_path": "ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv",
+  "rule_path": "ML/reports/telemetry_frequency_v1/calibration/selected_rule.json",
+  "output_path": "ML/reports/telemetry_frequency_v1/ml_signals_telemetry_frequency_v1_highfreq500.csv",
+  "predictions_sha256": "a9664eb5456ffe72c0712a25ae57196e2926f9a6b0f4384db64b7ca5505406cc",
+  "rule_sha256": "5ec5fff245b719c2b97604ceaee7f398a532d1e9ff6b4cc5a7d24a779c7d39ec",
+  "output_sha256": "8728da8e71d78e2f6aba4ae0743b17300be6a102c117f0267fcb33a798f6ff57",
+  "rows_total": 8872,
+  "nonzero_rows": 2485,
+  "buy_rows": 1243,
+  "sell_rows": 1242,
+  "duplicate_time_rows": 0,
+  "same_time_opposite_signal_groups": 0
+}

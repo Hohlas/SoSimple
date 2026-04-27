@@ -92,6 +92,96 @@ def test_export_signals_can_expand_to_full_base_series(tmp_path):
     assert out['signal'].tolist() == [1, -1, 0, 0, 0, 0]
 
 
+def test_export_signals_diagnostic_all_rows_uses_predict_direction_and_yearly_target(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='top_k_probability', threshold=1.0)
+    base_path = tmp_path / 'base.csv'
+    pd.DataFrame(
+        [
+            {'time': '2025.01.01 00:00', 'signal': 0, 'predict': 0.1},
+            {'time': '2025.01.01 01:00', 'signal': 0, 'predict': -0.8},
+            {'time': '2025.01.01 02:00', 'signal': 0, 'predict': 0.6},
+            {'time': '2025.01.01 03:00', 'signal': 0, 'predict': -0.2},
+            {'time': '2025.01.01 04:00', 'signal': 0, 'predict': -0.7},
+        ]
+    ).to_csv(base_path, sep=';', index=False)
+    output = tmp_path / 'ml_signals.csv'
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        base_csv=base_path,
+        diagnostic_all_rows=True,
+        diagnostic_target_signals_per_year=3,
+    )
+
+    out = pd.read_csv(output, sep=';')
+    assert out['signal'].tolist() == [1, -1, 0, -1, 0]
+
+
+def test_export_signals_diagnostic_all_rows_keeps_last_base_duplicate_time(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='top_k_probability', threshold=1.0)
+    base_path = tmp_path / 'base.csv'
+    pd.DataFrame(
+        [
+            {'time': '2025.01.01 00:00', 'signal': 0, 'predict': -0.1},
+            {'time': '2025.01.01 00:00', 'signal': 0, 'predict': 0.1},
+            {'time': '2025.01.01 01:00', 'signal': 0, 'predict': -0.8},
+            {'time': '2025.01.01 02:00', 'signal': 0, 'predict': 0.6},
+            {'time': '2025.01.01 03:00', 'signal': 0, 'predict': -0.2},
+            {'time': '2025.01.01 04:00', 'signal': 0, 'predict': -0.7},
+        ]
+    ).to_csv(base_path, sep=';', index=False)
+    output = tmp_path / 'ml_signals.csv'
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        base_csv=base_path,
+        diagnostic_all_rows=True,
+        diagnostic_target_signals_per_year=3,
+    )
+
+    out = pd.read_csv(output, sep=';')
+    assert out.loc[0, 'signal'] == 1
+
+
+def test_export_signals_diagnostic_all_rows_deduplicates_output_time(tmp_path):
+    predictions_path = tmp_path / 'predictions.csv'
+    pd.DataFrame(
+        [
+            {'time': '2025.01.01 00:00', 'signal': 1, 'pred_take_24_x8': 0.5},
+            {'time': '2025.01.01 00:00', 'signal': -1, 'pred_take_24_x8': 0.9},
+            {'time': '2025.01.01 01:00', 'signal': 0, 'pred_take_24_x8': 0.8},
+        ]
+    ).to_csv(predictions_path, sep=';', index=False)
+    rule_path = _write_rule(tmp_path, selector='top_k_probability', threshold=1.0)
+    base_path = tmp_path / 'base.csv'
+    pd.DataFrame(
+        [
+            {'time': '2025.01.01 00:00', 'signal': 0, 'predict': -0.1},
+            {'time': '2025.01.01 01:00', 'signal': 0, 'predict': 0.2},
+        ]
+    ).to_csv(base_path, sep=';', index=False)
+    output = tmp_path / 'ml_signals.csv'
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        base_csv=base_path,
+        diagnostic_all_rows=True,
+        diagnostic_target_signals_per_year=2,
+    )
+
+    out = pd.read_csv(output, sep=';')
+    assert out['time'].tolist() == ['2025.01.01 00:00', '2025.01.01 01:00']
+    assert out['signal'].tolist() == [-1, 1]
+
+
 def test_export_signals_rejects_unknown_selector(tmp_path):
     _write_prediction_csv(tmp_path)
     rule_path = _write_rule(tmp_path, selector='mystery_selector', threshold=0.7)

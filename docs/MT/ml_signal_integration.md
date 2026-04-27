@@ -177,6 +177,26 @@ Telemetry diagnostic export:
 Этот режим намеренно увеличивает частоту сделок. Его задача - проверить
 операционную цепочку и логи, а не доказать прибыльность стратегии.
 
+High-frequency diagnostic export:
+
+```bash
+./.venv/bin/python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/take_skip_trailing_stop_v2_followup_tmp/seq50_exports/test.csv \
+  --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
+  --base-csv DATA/Nero_test_labeled.csv \
+  --output MT/tester/files/ml_signals.csv \
+  --metadata-output ML/reports/telemetry_frequency_v1/tester_export_metadata_highfreq500.json \
+  --label telemetry_frequency_v1_highfreq500 \
+  --diagnostic-all-rows \
+  --diagnostic-target-signals-per-year 500 \
+  --copy-to-mt4
+```
+
+Этот режим выбирает кандидатов не только из старых строк `signal != 0`, а из
+всех строк. Направление берётся из знака `predict` в `base-csv`, сила отбора -
+из ML-score `pred_<score_target>`. Для 2025 года текущий профиль даёт 495
+сигналов без дублей времени.
+
 Для online-режима MQL-библиотека не держит `ml_signals.csv` неизменным до
 перезапуска советника: на новом баре она проверяет время изменения файла и
 перезагружает сигналы при изменении. Поэтому внешний Python-процесс может быть

@@ -115,6 +115,43 @@ def apply_rule(frame: pd.DataFrame, rule_payload: dict) -> pd.Series:
     return selected
 
 
+def build_diagnostic_all_rows_export(
+    *,
+    frame: pd.DataFrame,
+    base: pd.DataFrame,
+    rule_payload: dict,
+    target_signals_per_year: int,
+) -> pd.DataFrame:
+    winner = rule_payload['winner']
+    score_col = f"pred_{winner['score_target']}"
+    if score_col not in frame.columns:
+        raise ValueError(f'missing score column: {score_col}')
+    if 'predict' not in base.columns:
+        raise ValueError('diagnostic_all_rows requires base_csv with predict column')
+    if target_signals_per_year <= 0:
+        raise ValueError('diagnostic_target_signals_per_year must be positive')
+
+    base = base.drop_duplicates(subset=['time'], keep='last').reset_index(drop=True)
+    merged = frame[['time', score_col]].merge(base[['time', 'predict']], on='time', how='left', validate='many_to_one')
+    merged['score'] = pd.to_numeric(merged[score_col], errors='coerce').fillna(float('-inf'))
+    predict = pd.to_numeric(merged['predict'], errors='coerce').fillna(0.0)
+    merged['diagnostic_signal'] = 0
+    merged.loc[predict > 0, 'diagnostic_signal'] = 1
+    merged.loc[predict < 0, 'diagnostic_signal'] = -1
+    merged['year'] = pd.to_datetime(merged['time'], format='%Y.%m.%d %H:%M', errors='coerce').dt.year
+
+    selected = pd.Series(False, index=merged.index)
+    candidates = merged.loc[(merged['diagnostic_signal'] != 0) & merged['year'].notna()].copy()
+    for _, group in candidates.groupby('year', sort=False):
+        top_idx = group.nlargest(int(target_signals_per_year), 'score').index
+        selected.loc[top_idx] = True
+
+    export = frame[['time']].copy()
+    export['signal'] = 0
+    export.loc[selected, 'signal'] = merged.loc[selected, 'diagnostic_signal'].astype(int)
+    return export.drop_duplicates(subset=['time'], keep='last').reset_index(drop=True)
+
+
 def export_signals(
     *,
     predictions_path: str | Path,
@@ -124,30 +161,45 @@ def export_signals(
     copy_to_mt4: bool = False,
     metadata_output: str | Path | None = None,
     label: str = 'take_skip_trailing_stop_v2',
+    diagnostic_all_rows: bool = False,
+    diagnostic_target_signals_per_year: int | None = None,
 ) -> Path:
     frame = load_prediction_frame(predictions_path)
     rule_payload = load_rule_payload_from_file(rule_path)
-    selected_mask = apply_rule(frame, rule_payload)
-
-    selected = frame[['time', 'signal']].copy()
-    selected.loc[~selected_mask, 'signal'] = 0
-
-    if base_csv is None:
-        export = selected
-    else:
-        base = pd.read_csv(Path(base_csv), sep=';', usecols=['time', 'signal'])
-        original_signal = pd.to_numeric(base['signal'], errors='coerce').fillna(0).astype(int)
-        chosen_pairs = set(
-            zip(
-                selected.loc[selected['signal'] != 0, 'time'].astype(str),
-                selected.loc[selected['signal'] != 0, 'signal'].astype(int),
-            )
+    if diagnostic_all_rows:
+        if base_csv is None:
+            raise ValueError('diagnostic_all_rows requires base_csv')
+        if diagnostic_target_signals_per_year is None:
+            raise ValueError('diagnostic_all_rows requires diagnostic_target_signals_per_year')
+        base = pd.read_csv(Path(base_csv), sep=';', usecols=['time', 'predict'])
+        export = build_diagnostic_all_rows_export(
+            frame=frame,
+            base=base,
+            rule_payload=rule_payload,
+            target_signals_per_year=int(diagnostic_target_signals_per_year),
         )
-        export = base[['time', 'signal']].copy()
-        export['signal'] = [
-            sig if (str(time), int(sig)) in chosen_pairs else 0
-            for time, sig in zip(base['time'], original_signal)
-        ]
+    else:
+        selected_mask = apply_rule(frame, rule_payload)
+
+        selected = frame[['time', 'signal']].copy()
+        selected.loc[~selected_mask, 'signal'] = 0
+
+        if base_csv is None:
+            export = selected
+        else:
+            base = pd.read_csv(Path(base_csv), sep=';', usecols=['time', 'signal'])
+            original_signal = pd.to_numeric(base['signal'], errors='coerce').fillna(0).astype(int)
+            chosen_pairs = set(
+                zip(
+                    selected.loc[selected['signal'] != 0, 'time'].astype(str),
+                    selected.loc[selected['signal'] != 0, 'signal'].astype(int),
+                )
+            )
+            export = base[['time', 'signal']].copy()
+            export['signal'] = [
+                sig if (str(time), int(sig)) in chosen_pairs else 0
+                for time, sig in zip(base['time'], original_signal)
+            ]
 
     output = Path(output_path)
     write_csv_atomic(export, output)
@@ -210,6 +262,8 @@ def parse_args():
     parser.add_argument('--copy-to-mt4', action='store_true', help='Also copy exported CSV to tester/runtime ml_signals.csv paths.')
     parser.add_argument('--metadata-output', default=None, help='Optional JSON metadata output with hashes and signal counts.')
     parser.add_argument('--label', default='take_skip_trailing_stop_v2', help='Label stored in metadata output.')
+    parser.add_argument('--diagnostic-all-rows', action='store_true', help='Build diagnostic signals from all rows using base_csv predict sign as direction.')
+    parser.add_argument('--diagnostic-target-signals-per-year', type=int, default=None, help='Top-N diagnostic signals per calendar year.')
     return parser.parse_args()
 
 
@@ -223,6 +277,8 @@ def main():
         copy_to_mt4=args.copy_to_mt4,
         metadata_output=args.metadata_output,
         label=args.label,
+        diagnostic_all_rows=args.diagnostic_all_rows,
+        diagnostic_target_signals_per_year=args.diagnostic_target_signals_per_year,
     )
     print(path)
     return path
