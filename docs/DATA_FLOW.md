@@ -41,6 +41,7 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
           ↓
    ┌───────────────────────────────────────────────────────────┐
    │ Ветка B: текущий MT4 parity-check / telemetry launch     │
+   │ Nero.csv -> watcher -> prediction/export CSV             │
    │ prediction/export CSV -> ml_signals.csv                  │
    │ (time;signal или полный prediction CSV)                  │
    │ текущий lib_ML_Signal.mqh                                │

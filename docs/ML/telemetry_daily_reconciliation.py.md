@@ -4,6 +4,12 @@
 
 `ML/telemetry_daily_reconciliation.py` делает ежедневную сверку между ожидаемыми ML-сигналами и фактическими строками MT4 `MLP BUY/SELL/CLOSE`.
 
+Связанные документы:
+
+- [trading_strategy.md](../MT/trading_strategy.md) - логика эксперта и MLP-строки;
+- [ml_signal_integration.md](../MT/ml_signal_integration.md) - Python export/runtime контракт;
+- [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md) - фоновый online watcher.
+
 Инструмент нужен для demo-этапа, где важно быстро находить расхождения в цепочке:
 
 - сигнал есть в `ml_signals.csv`, но сделка не открылась;

@@ -3,6 +3,8 @@
 > **Назначение**: операционный гайд для текущего `iSignal=3`, где MT4 исполняет уже подготовленный CSV и нужен для parity-check.
 >
 > Подробная логика эксперта описана в [trading_strategy.md](trading_strategy.md).
+> Daily reconciliation описан в [telemetry_daily_reconciliation.py.md](../ML/telemetry_daily_reconciliation.py.md).
+> Фоновый online watcher описан в [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md).
 
 ---
 
@@ -203,6 +205,15 @@ High-frequency diagnostic export:
 постоянным наблюдателем за `Nero.csv`: при появлении нового завершенного бара он
 пересчитывает прогноз, атомарно обновляет `ml_signals.csv`, а MT4 подхватывает
 это на следующем баре.
+
+Практический способ запустить такой процесс сейчас:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
+nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 10 \
+  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+```
 ---
 
 ## 4. Как сейчас исполняется сигнал

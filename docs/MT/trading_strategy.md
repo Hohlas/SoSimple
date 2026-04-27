@@ -11,6 +11,12 @@
 
 > **Последнее обновление**: 2026-04-27
 
+Связанные документы:
+
+- [ml_signal_integration.md](ml_signal_integration.md) - операционный Python -> `ml_signals.csv` -> MT4 контур;
+- [telemetry_daily_reconciliation.py.md](../ML/telemetry_daily_reconciliation.py.md) - ежедневная сверка expected/open/close/skip;
+- [telemetry_signal_watcher.py.md](../API/telemetry_signal_watcher.py.md) - фоновый online watcher `Nero.csv -> ml_signals.csv`.
+
 ---
 
 ## 0. Инструкция по тесту
@@ -303,6 +309,35 @@ MQL не должен запускать ML-модель внутри себя. 
 данные, читать готовый `ml_signals.csv`, открывать/закрывать сделки и подробно
 логировать исполнение. Python отвечает за модель, нормализацию, отбор сигналов,
 атомарную запись файла и диагностические отчёты.
+
+Важное уточнение по preprocessing:
+
+- полный offline pipeline проекта действительно включает сортировку, разметку,
+  добавление target-колонок и нормализацию;
+- но текущий online telemetry watcher не гоняет весь `processing/label_main.py`
+  в реальном времени;
+- для `telemetry_frequency_v1` он работает от raw runtime `Nero.csv` через
+  специализированный `ML.export_take_skip_v2_predictions`, который сам строит
+  вход модели из `signal/predict/ATR/fractal*`.
+
+То есть в текущем online-контуре нужно не "повторить весь train preprocessing",
+а "повторить именно тот inference-contract, который ожидает frozen checkpoint".
+
+Для online-наблюдения ключевой operational смысл такой:
+
+1. эксперт в MT4 пишет новые строки в `Nero.csv`;
+2. отдельный Python watcher работает в фоне и ждёт новый закрытый бар;
+3. watcher пересчитывает prediction CSV и обновляет `ml_signals.csv`;
+4. MT4 на новом баре видит изменение файла и пишет `MLP_RELOAD: file changed`;
+5. дальше в логах нужно наблюдать уже торговые строки:
+   - `MLP BUY`
+   - `MLP SELL`
+   - `MLP CLOSE`
+   - `MLP SKIP`
+
+Если в online-режиме нет `MLP_RELOAD: file changed`, проблема уже не в MQL
+торговом исполнении, а в том, что внешний Python watcher не обновил runtime
+`ml_signals.csv`.
 
 Диагностический профиль `telemetry_frequency_v1_highfreq500` нужен только для
 ускоренного набора статистики взаимодействия. Он выбирает кандидатов из всех
