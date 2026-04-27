@@ -27,6 +27,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - `MODULE_INDEX.md` читать точечно через `rg`/`sed`; целиком открывать только при пересборке индекса или аудите всей структуры.
 - Всегда создавай новую feature-ветку для каждой задачи.
 - Не используй worktree.
+- Используй окружение: ~/git/SoSimple/.venv/bin/activate
 - `git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
 - При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).

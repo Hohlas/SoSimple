@@ -4,7 +4,7 @@
 
 **Goal:** Build `telemetry_frequency_v1`: a high-frequency diagnostic ML execution mode plus automated daily reconciliation for demo-account launch readiness.
 
-**Architecture:** Reuse the existing `take_skip_trailing_stop_v2` score/export contour and the existing MT4 direct ML execution path (`EXPERT::ML_TRADE()`, `iSignal=3`). Add bounded diagnostic calibration in Python, tighten/extend existing MQL multi-position behavior only where needed, and build a daily reconciliation CLI that compares exported signals, MT4 logs, and optional tester output. Use `ORDERS.mqh` and `SERVICE.mqh` as first-choice reuse points for trade operations and MQL-side reporting/monitoring.
+**Architecture:** Reuse the existing `take_skip_trailing_stop_v2` score/export contour and the existing MT4 direct ML execution path (`EXPERT::ML_TRADE()`, `iSignal=3`). Add bounded diagnostic calibration in Python, tighten/extend existing MQL multi-position behavior only where needed, and build a daily reconciliation CLI that compares exported signals, MT4 logs, and optional tester output. Use `ORDERS.mqh` `INPUT.mqh` `OUTPUT.mqh` and `SERVICE.mqh` as first-choice reuse points for trade operations and MQL-side reporting/monitoring.
 
 **Tech Stack:** Python 3, pandas, pytest, existing SoSimple CLI modules, MQL4 (`$o$imple.mq4`, `lib_ML_Signal.mqh`, `ORDERS.mqh`, `SERVICE.mqh`), MT4 Strategy Tester logs.
 
