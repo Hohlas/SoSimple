@@ -15,7 +15,9 @@
 - structured MQL logs `MLP BUY/SELL/CLOSE/SKIP`;
 - broker-side SL/TP закрытия логируются как `MLP CLOSE ... source=broker_history`;
 - daily reconciliation CLI `ML/telemetry_daily_reconciliation.py`;
-- документация online pipeline и `#.csv` contract.
+- документация online pipeline и `#.csv` contract;
+- watcher переведён в наблюдаемый `tmux`-режим с heartbeat в stdout;
+- `header-only` `Nero.csv` считается штатным ожиданием первого бара.
 
 Главный вывод:
 - diagnostic-контур готов к online demo launch на удалённом сервере;
@@ -31,8 +33,12 @@
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/#.csv`
    - `MT/tester/files/ml_signals.csv`
-4. На сервере перекомпилировать expert и запустить online demo на `XAUUSD,H1`.
-5. Ежедневно запускать `ML.telemetry_daily_reconciliation` по свежему MT4 log.
+4. Если на сервере ещё жив старый `nohup` watcher, остановить его:
+   - `ps -eo pid,cmd | rg telemetry_signal_watcher`
+   - `kill <PID>`
+5. На сервере перекомпилировать expert и запустить online demo на `XAUUSD,H1`.
+6. Запускать watcher в отдельном окне `tmux`, а не через `nohup`.
+7. Ежедневно запускать `ML.telemetry_daily_reconciliation` по свежему MT4 log.
 
 ## Read First
 
@@ -45,7 +51,7 @@
 ## Open Risks
 
 - Online demo ещё не запущен; online/test соответствие нужно подтвердить на сервере.
-- Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract.
+- Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
 - `knowledge-rag` reindex в конце этапа падал с `Transport closed`; RAG может отставать от последних правок.
 

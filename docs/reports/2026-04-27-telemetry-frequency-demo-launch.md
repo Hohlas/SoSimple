@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Подготовить частый diagnostic-режим `telemetry_frequency_v1` для онлайн demo-проверки цепочки `MT -> Nero.csv -> ML -> ml_signals.csv -> MT`
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`, `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
-> **Related commit**: `504cf02`
+> **Related commit**: `32d7c41`
 
 ## Context
 
@@ -26,6 +26,9 @@
 - Добавлен `ML/telemetry_daily_reconciliation.py` для ежедневной сверки `ml_signals.csv` и MT4 log.
 - Описана схема `MT -> Python watcher/exporter -> ml_signals.csv -> MT` в MT-документации.
 - Описана логика `#.csv`: файл внешних параметров, выбор строки через `BackTest`, magic/hash, запуск нескольких стратегий с одного графика.
+- Watcher переведён в наблюдаемый operational-режим: основной запуск теперь в отдельном окне `tmux`, а не скрытым `nohup`-процессом.
+- Добавлен heartbeat в stdout watcher-а: `WAIT`, `IDLE`, `REBUILT`, чтобы оператор видел, что процесс жив.
+- `header-only` состояние `Nero.csv` признано штатным: watcher ждёт первый закрытый бар, а не падает с ошибкой.
 
 ## Changed Files
 
@@ -42,6 +45,9 @@
 - `tests/test_mql_telemetry_params_csv_contract.py`
 - `tests/test_telemetry_daily_reconciliation.py`
 - `tests/test_signal_export_parity.py`
+- `API/telemetry_signal_watcher.py`
+- `tests/test_telemetry_signal_watcher.py`
+- `docs/API/telemetry_signal_watcher.py.md`
 
 ## Verification
 
@@ -52,6 +58,13 @@
   tests/test_telemetry_daily_reconciliation.py \
   tests/test_signal_export_parity.py -q
 # 28 passed in 0.70s
+
+./.venv/bin/python -m pytest \
+  tests/test_telemetry_signal_watcher.py \
+  tests/test_export_take_skip_v2_predictions.py \
+  tests/test_export_take_skip_trailing_stop_v2_signals.py \
+  tests/test_telemetry_daily_reconciliation.py -q
+# 32 passed, 1 warning
 
 ./.venv/bin/python -m ML.telemetry_daily_reconciliation \
   --signals MT/tester/files/ml_signals.csv \
@@ -106,6 +119,7 @@ Final reconciliation:
 ## Conclusions
 
 - Контур `MT -> ML signal file -> MT` готов к demo-запуску в diagnostic режиме.
+- Для оператора теперь есть наблюдаемый server-режим: watcher штатно живёт в `tmux` и регулярно пишет heartbeat в stdout.
 - Несколько одновременных позиций работают: `ML_MaxPositions=10`, в тесте были реальные параллельные позиции и ожидаемые `MaxPositions` пропуски.
 - Ошибок `OrderSend` и нехватки денег в тестовом логе не обнаружено.
 - Закрытия по SL/TP теперь видны в структурированном `MLP CLOSE` формате, поэтому daily reconciliation больше не зависит от нестабильного формата стандартных строк тестера.
@@ -115,6 +129,7 @@ Final reconciliation:
 
 - Онлайн demo ещё не запущен; итоговое online/test соответствие нужно подтвердить на удалённом сервере.
 - Для online-режима нужен всегда запущенный Python watcher/exporter или эквивалентный сервис, который атомарно обновляет `ml_signals.csv`.
+- При переходе со старого `nohup`-запуска на `tmux` на сервере нужно отдельно остановить старый watcher-процесс, иначе можно получить два параллельных exporter-а.
 - Runtime CSV-файлы в `MT/MQL4/Files/` и `MT/tester/files/` частично игнорируются git, поэтому их нужно синхронизировать отдельно.
 - `knowledge-rag` reindex в конце этапа падал с `Transport closed`; индекс может отставать от последних правок.
 
@@ -127,7 +142,11 @@ Final reconciliation:
    - `MT/tester/files/#.csv`
    - `MT/tester/files/ml_signals.csv`
 4. На сервере перекомпилировать MT4 expert и запустить online demo на `XAUUSD,H1`.
-5. Ежедневно запускать `ML.telemetry_daily_reconciliation` по свежему MT4 log.
+5. Если на сервере ещё жив старый watcher-процесс, остановить его перед новым запуском:
+   - `ps -eo pid,cmd | rg telemetry_signal_watcher`
+   - `kill <PID>`
+6. Запускать watcher в отдельном окне `tmux`, а не через `nohup`.
+7. Ежедневно запускать `ML.telemetry_daily_reconciliation` по свежему MT4 log.
 
 ## Related Materials
 

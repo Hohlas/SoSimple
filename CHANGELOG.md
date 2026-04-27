@@ -10,6 +10,7 @@
 - Multi-position diagnostic режим через существующую `EXPERT::ML_TRADE()`.
 - Structured MQL logs `MLP BUY/SELL/CLOSE/SKIP`, включая `source=broker_history` для SL/TP.
 - Daily reconciliation CLI `ML/telemetry_daily_reconciliation.py`.
+- Наблюдаемый watcher `API.telemetry_signal_watcher` для server-режима через `tmux` с heartbeat в stdout.
 
 ### Результаты
 - MT4 tester proof на `XAUUSD,H1` за 2025:
@@ -20,9 +21,11 @@
   - `critical_mismatch_count=0`;
   - `missing_close_count=1` из-за открытой позиции на конце периода.
 - `OnTester returns 15064.255859375`.
+- Watcher больше не падает на `header-only` `Nero.csv`: это штатное ожидание первого закрытого бара.
 
 ### Вывод
 - Diagnostic-контур готов к online demo launch.
+- Операционный запуск watcher-а переведён из скрытого `nohup`-режима в наблюдаемый `tmux`-режим.
 - Результат тестера не является production-доказательством прибыльности: профиль выбран для частоты сделок и проверки pipeline.
 - Подробности: [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 
