@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-27 10:29 UTC · git `0bc436b`
+> Auto-generated 2026-04-27 13:09 UTC · git `a024977`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 955 files  ·  **Commit**: `0bc436b`  ·  **Generated**: 2026-04-27 10:29 UTC
+**Tracked**: 951 files  ·  **Commit**: `a024977`  ·  **Generated**: 2026-04-27 13:09 UTC
 
 ## Root Docs
 
@@ -129,6 +129,7 @@
 | [docs/superpowers/specs/2026-04-15-track-a-max-out-design.md](docs/superpowers/specs/2026-04-15-track-a-max-out-design.md) |  | 2026-04-17 | 12KB | `2b4ee2f7` |
 | [docs/superpowers/specs/2026-04-16-trailing-stop-target-design.md](docs/superpowers/specs/2026-04-16-trailing-stop-target-design.md) |  | 2026-04-17 | 13KB | `299a938f` |
 | [docs/superpowers/specs/2026-04-16-trailing-stop-target-quantile-design.md](docs/superpowers/specs/2026-04-16-trailing-stop-target-quantile-design.md) |  | 2026-04-17 | 10KB | `48c918e2` |
+| [docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md](docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md) |  | 2026-04-27 | 15KB | `04c61b9a` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-04-05 | 4KB | `551fd6e9` |
 
 ## Reports
@@ -965,13 +966,8 @@
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [.claude/memory/MEMORY.md](.claude/memory/MEMORY.md) |  | 2026-04-02 | 694B | `ca8a831e` |
-| [.claude/memory/feedback_cyclic_encoding.md](.claude/memory/feedback_cyclic_encoding.md) |  | 2026-04-05 | 1KB | `7e05fc7c` |
-| [.claude/memory/feedback_ml_approach.md](.claude/memory/feedback_ml_approach.md) |  | 2026-04-02 | 2KB | `1480e999` |
-| [.claude/memory/feedback_no_auto_commit.md](.claude/memory/feedback_no_auto_commit.md) |  | 2026-04-05 | 752B | `e07d0571` |
-| [.claude/memory/feedback_russian_reports.md](.claude/memory/feedback_russian_reports.md) |  | 2026-04-05 | 1KB | `e4464dc5` |
-| [.claude/memory/project_ml_status.md](.claude/memory/project_ml_status.md) |  | 2026-04-13 | 2KB | `07fbf165` |
-| [.claude/memory/user_profile.md](.claude/memory/user_profile.md) |  | 2026-03-18 | 890B | `8ca314d1` |
+| [.claude/memory/MEMORY.md](.claude/memory/MEMORY.md) |  | 2026-04-27 | 2KB | `0e250613` |
+| [.claude/memory/user_profile.md](.claude/memory/user_profile.md) |  | 2026-04-27 | 167B | `464e82c4` |
 | [.claude/settings.json](.claude/settings.json) |  | 2026-04-16 | 742B | `8100fea3` |
 | [.claude/settings.local.json](.claude/settings.local.json) |  | 2026-03-17 | 99B | `997fe658` |
 | [.claude/skills/brainstorming/SKILL.md](.claude/skills/brainstorming/SKILL.md) |  | 2026-03-17 | 10KB | `3f82fad8` |
