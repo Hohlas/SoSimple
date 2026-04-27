@@ -1,0 +1,48 @@
+{
+  "label": "telemetry_frequency_v1_highfreq500_tester_log",
+  "export": {
+    "signals_path": "MT/tester/files/ml_signals.csv",
+    "rows_total": 8872,
+    "nonzero_rows": 2485,
+    "zero_rows": 6387,
+    "long_rows": 1243,
+    "short_rows": 1242,
+    "unique_time_total": 8872,
+    "nonzero_unique_time": 2485,
+    "nonzero_unique_time_signal": 2485,
+    "duplicate_time_rows": 0,
+    "duplicate_time_signal_rows": 0,
+    "duplicate_time_groups": 0,
+    "duplicate_time_signal_groups": 0,
+    "same_time_opposite_signal_groups": 0,
+    "first_nonzero_time": "2022.09.29 18:00",
+    "last_nonzero_time": "2026.03.20 06:00",
+    "duplicate_time_examples": [],
+    "duplicate_time_signal_examples": []
+  },
+  "mt4": {
+    "mt4_log_path": "MT/tester/logs/20260427.log",
+    "opened_trades_from_events": 468,
+    "opened_buy_from_events": 231,
+    "opened_sell_from_events": 237,
+    "unique_signal_times_opened": 468,
+    "duplicate_open_signal_time_rows": 0,
+    "first_open_signal_time": "2025.01.03 06:00",
+    "last_open_signal_time": "2025.12.31 09:00",
+    "diagnostics": {
+      "total_signals": 495,
+      "score_filtered": 0,
+      "position_blocked": 27,
+      "opened": 468,
+      "timeout_closes": 251,
+      "trailing_closes": 0,
+      "reverse_closes": 0
+    }
+  },
+  "comparison": {
+    "nonzero_rows_minus_opened_events": 2017,
+    "unique_time_minus_opened_events": 2017,
+    "unique_time_signal_minus_opened_events": 2017,
+    "mt4_diagnostics_opened_minus_opened_events": 0
+  }
+}

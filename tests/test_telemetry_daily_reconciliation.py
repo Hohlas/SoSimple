@@ -24,6 +24,18 @@ def _write_log(path: Path) -> Path:
     return path
 
 
+def _write_log_with_skip(path: Path) -> Path:
+    path.write_text(
+        "\n".join(
+            [
+                "0 2025.01.01 01:00 MLP SKIP reason=MaxPositions sig=1 signal_time=2025.01.01 00:00 score=0.00 open_positions=10 max_positions=10",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _write_signals(path: Path) -> Path:
     pd.DataFrame(
         [
@@ -60,6 +72,17 @@ def test_reconciliation_flags_missing_opened_trade(tmp_path):
     missing = diff.loc[diff["status"] == "missing_open"]
     assert missing["signal_time"].tolist() == ["2025.01.01 01:00"]
     assert missing.iloc[0]["critical"] is True
+
+
+def test_reconciliation_treats_max_positions_skip_as_explained(tmp_path):
+    signals = daily.load_signal_export(_write_signals(tmp_path / "ml_signals.csv"))
+    events = daily.parse_mlp_events(_write_log_with_skip(tmp_path / "tester.log"))
+
+    diff = daily.reconcile_expected_vs_opened(signals, events["opens"], events["skips"])
+
+    skipped = diff.loc[diff["status"] == "skipped_max_positions"]
+    assert skipped["signal_time"].tolist() == ["2025.01.01 00:00"]
+    assert skipped.iloc[0]["critical"] is False
 
 
 def test_run_daily_reconciliation_writes_required_outputs(tmp_path):

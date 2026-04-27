@@ -28,6 +28,7 @@ import pandas as pd
 
 OPEN_RE = re.compile(r"\bMLP\s+(BUY|SELL)\b(?!.*reason=)")
 CLOSE_RE = re.compile(r"\bMLP\s+CLOSE\s+(BUY|SELL)\b")
+SKIP_RE = re.compile(r"\bMLP\s+SKIP\b")
 KEY_VALUE_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)=(.*?)(?=\s+[A-Za-z_][A-Za-z0-9_]*=|$)")
 
 
@@ -53,9 +54,27 @@ def parse_mlp_events(log_path: str | Path) -> dict[str, pd.DataFrame]:
     """Парсит MLP open/close события из MT4 log."""
     opens: list[dict[str, Any]] = []
     closes: list[dict[str, Any]] = []
+    skips: list[dict[str, Any]] = []
     text = Path(log_path).read_text(encoding="utf-8", errors="replace")
 
     for line in text.splitlines():
+        skip_match = SKIP_RE.search(line)
+        if skip_match:
+            fields = _parse_key_values(line)
+            sig = _to_int(fields.get("sig"))
+            skips.append(
+                {
+                    "reason": fields.get("reason", ""),
+                    "signal_time": fields.get("signal_time", ""),
+                    "signal": sig,
+                    "direction": "BUY" if sig > 0 else "SELL" if sig < 0 else "UNKNOWN",
+                    "open_positions": _to_int(fields.get("open_positions")),
+                    "max_positions": _to_int(fields.get("max_positions") or fields.get("MaxPositions")),
+                    "raw_line": line,
+                }
+            )
+            continue
+
         close_match = CLOSE_RE.search(line)
         if close_match:
             fields = _parse_key_values(line)
@@ -106,6 +125,7 @@ def parse_mlp_events(log_path: str | Path) -> dict[str, pd.DataFrame]:
     return {
         "opens": pd.DataFrame(opens),
         "closes": pd.DataFrame(closes),
+        "skips": pd.DataFrame(skips),
     }
 
 
@@ -142,18 +162,28 @@ def filter_signals_by_time_range(
     return signals.loc[mask].reset_index(drop=True)
 
 
-def reconcile_expected_vs_opened(signals: pd.DataFrame, opens: pd.DataFrame) -> pd.DataFrame:
+def reconcile_expected_vs_opened(signals: pd.DataFrame, opens: pd.DataFrame, skips: pd.DataFrame | None = None) -> pd.DataFrame:
     """Сравнивает ожидаемые signal rows с фактическими MLP open events."""
     rows: list[dict[str, Any]] = []
     open_pairs = set()
     if not opens.empty:
         open_pairs = set(zip(opens["signal_time"].astype(str), opens["direction"].astype(str)))
+    skip_pairs: dict[tuple[str, str], str] = {}
+    if skips is not None and not skips.empty:
+        skip_pairs = {
+            (str(item["signal_time"]), str(item["direction"])): str(item["reason"])
+            for item in skips.to_dict("records")
+        }
 
     for signal in signals.to_dict("records"):
         pair = (str(signal["signal_time"]), str(signal["direction"]))
         time_opens = opens.loc[opens["signal_time"].astype(str) == pair[0]] if not opens.empty else pd.DataFrame()
         if pair in open_pairs:
             status = "opened"
+            critical = False
+        elif pair in skip_pairs:
+            reason = skip_pairs[pair]
+            status = "skipped_max_positions" if reason == "MaxPositions" else f"skipped_{reason}"
             critical = False
         elif not time_opens.empty:
             status = "wrong_direction"
@@ -272,7 +302,8 @@ def run_daily_reconciliation(
     events = parse_mlp_events(mt4_log_path)
     opens = events["opens"]
     closes = events["closes"]
-    signals_diff = reconcile_expected_vs_opened(signals, opens)
+    skips = events["skips"]
+    signals_diff = reconcile_expected_vs_opened(signals, opens, skips)
     trades = reconcile_open_close(opens, closes)
     export_metadata = None
     if export_metadata_path is not None:
