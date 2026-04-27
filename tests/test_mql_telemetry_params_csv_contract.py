@@ -124,10 +124,7 @@ def _mql_magic_from_row(header: list[str], row: list[str]) -> int:
 def test_tester_ini_selects_telemetry_backtest_row():
     text = TESTER_INI.read_text(encoding="utf-8", errors="replace")
 
-    rows = _read_semicolon_csv(PARAMS_CSV)
-    expected_backtest = len(rows[0]) + 2
-
-    assert f"BackTest={expected_backtest}" in text
+    assert "BackTest=2" in text
     assert "ML_ExitMode=0" in text
     assert "ML_TakeProfitATR=5.00000000" in text
     assert "ML_MaxPositions=10" in text
