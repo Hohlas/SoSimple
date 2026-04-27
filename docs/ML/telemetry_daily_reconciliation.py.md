@@ -17,6 +17,9 @@
 
 - `ml_signals.csv` в формате `time;signal`.
 - MT4 tester/runtime log со строками `MLP BUY`, `MLP SELL`, `MLP CLOSE BUY`, `MLP CLOSE SELL`.
+  Закрытия по `TakeProfit` и `StopLoss` ожидаются как структурированные строки
+  `MLP CLOSE ... source=broker_history`, которые пишет MQL после чтения истории
+  своих ордеров.
 - Опционально `export_metadata.json` от `API.export_take_skip_trailing_stop_v2_signals`.
 
 ## Запуск
@@ -55,7 +58,11 @@ python -m ML.telemetry_daily_reconciliation \
 `skipped_max_positions` не считается критичным расхождением: это ожидаемое
 поведение, если в логе есть `MLP SKIP reason=MaxPositions`.
 
-`missing_close` считается отдельно: на demo это может быть нормой, если день закончился с открытой позицией.
+`missing_close` считается отдельно. На demo это может быть нормой, если день
+закончился с открытой позицией. Если тест уже завершён, но `missing_close`
+больше нуля, сначала проверь, что лог был получен после версии
+[lib_ML_Signal.mqh](../../MT/MQL4/Include/lib_ML_Signal.mqh), которая пишет
+`source=broker_history` для закрытий по SL/TP.
 
 ## Ограничения
 

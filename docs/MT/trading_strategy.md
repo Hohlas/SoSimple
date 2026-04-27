@@ -486,6 +486,10 @@ MQL не должен запускать ML-модель внутри себя. 
 - `MLP CLOSE SELL reason=TrailingStop ...`
 - `MLP CLOSE BUY reason=ReverseSignal ...`
 - `MLP CLOSE SELL reason=ReverseSignal ...`
+- `MLP CLOSE BUY reason=TakeProfit source=broker_history ...`
+- `MLP CLOSE SELL reason=TakeProfit source=broker_history ...`
+- `MLP CLOSE BUY reason=StopLoss source=broker_history ...`
+- `MLP CLOSE SELL reason=StopLoss source=broker_history ...`
 
 Поля:
 
@@ -501,6 +505,16 @@ MQL не должен запускать ML-модель внутри себя. 
 - `spread_atr`
 - `pnl_atr`
 - `profit`
+
+Закрытия `Timeout`, `TrailingStop` и `ReverseSignal` инициирует сам
+`ML_TRADE()`. Закрытия `TakeProfit` и `StopLoss` выполняет сервер MT4/тестер
+по выставленным уровням ордера, поэтому эксперт дополнительно сканирует историю
+своих ордеров и разово пишет такую сделку как `source=broker_history`.
+
+Если цена закрытия не совпала с `OrderTakeProfit()` или `OrderStopLoss()` в
+допуске нескольких пунктов, причина пишется как `BrokerClose`. Это лучше, чем
+угадывать причину: для сверки важен сам факт закрытия по `ticket`, а причину
+можно разобрать отдельно.
 
 ### Пропуск сигнала
 

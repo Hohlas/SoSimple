@@ -30,6 +30,7 @@ float    MLP_Scores[];
 bool     MLP_HasScoreColumn = false;
 bool     MLP_Loaded = false;
 datetime MLP_LoadedFileModifyTime = 0;
+datetime MLP_RuntimeStartTime = 0;
 
 datetime MLP_BuySignalTime = 0;
 datetime MLP_SellSignalTime = 0;
@@ -47,6 +48,12 @@ int MLP_cnt_sell     = 0;
 int MLP_cnt_timeout  = 0;
 int MLP_cnt_trailing = 0;
 int MLP_cnt_reverse  = 0;
+int MLP_cnt_broker_take = 0;
+int MLP_cnt_broker_stop = 0;
+int MLP_cnt_broker_other = 0;
+
+int MLP_LoggedCloseTickets[];
+int MLP_LoggedCloseCount = 0;
 
 string MLP_ExitModeName() {
    if (ML_ExitMode == MLP_EXIT_TRAIL) return "trailing_stop";
@@ -92,6 +99,90 @@ int MLP_CountOwnMarketOrders(int magic, string sym) {
       if (MLP_IsOwnMarketOrder(magic, sym)) count++;
    }
    return count;
+}
+
+bool MLP_CloseTicketWasLogged(int ticket) {
+   for (int i = 0; i < MLP_LoggedCloseCount; i++) {
+      if (MLP_LoggedCloseTickets[i] == ticket) return true;
+   }
+   return false;
+}
+
+void MLP_MarkCloseTicketLogged(int ticket) {
+   if (ticket <= 0 || MLP_CloseTicketWasLogged(ticket)) return;
+   ArrayResize(MLP_LoggedCloseTickets, MLP_LoggedCloseCount + 1);
+   MLP_LoggedCloseTickets[MLP_LoggedCloseCount] = ticket;
+   MLP_LoggedCloseCount++;
+}
+
+string MLP_BrokerCloseReason(int typ, double close_price, double stop_loss, double take_profit, string sym) {
+   double tolerance = MathMax(MarketInfo(sym, MODE_POINT) * 5.0, 0.0000001);
+   if (take_profit > 0) {
+      if (typ == OP_BUY && close_price >= take_profit - tolerance) return "TakeProfit";
+      if (typ == OP_SELL && close_price <= take_profit + tolerance) return "TakeProfit";
+   }
+   if (stop_loss > 0) {
+      if (typ == OP_BUY && close_price <= stop_loss + tolerance) return "StopLoss";
+      if (typ == OP_SELL && close_price >= stop_loss - tolerance) return "StopLoss";
+   }
+   return "BrokerClose";
+}
+
+int MLP_HoldBars(datetime entry_time, datetime exit_time, string sym) {
+   int entry_shift = iBarShift(sym, Period(), entry_time, false);
+   int exit_shift = iBarShift(sym, Period(), exit_time, false);
+   if (entry_shift < 0 || exit_shift < 0) return 0;
+   return MathMax(0, entry_shift - exit_shift);
+}
+
+void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
+   for (int i = OrdersHistoryTotal() - 1; i >= 0; i--) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_HISTORY)) continue;
+      if (OrderMagicNumber() != magic || OrderSymbol() != sym) continue;
+
+      int typ = OrderType();
+      if (typ != OP_BUY && typ != OP_SELL) continue;
+
+      int ticket = OrderTicket();
+      if (MLP_CloseTicketWasLogged(ticket)) continue;
+
+      datetime close_time = OrderCloseTime();
+      if (close_time <= 0) continue;
+      if (MLP_RuntimeStartTime > 0 && close_time < MLP_RuntimeStartTime) continue;
+
+      double entry_price = OrderOpenPrice();
+      double close_price = OrderClosePrice();
+      double stop_loss = OrderStopLoss();
+      double take_profit = OrderTakeProfit();
+      double profit_value = OrderProfit() + OrderSwap() + OrderCommission();
+      double pnl_atr = 0.0;
+      if (atr_value > 0) {
+         if (typ == OP_BUY) pnl_atr = (close_price - entry_price) / atr_value;
+         else pnl_atr = (entry_price - close_price) / atr_value;
+      }
+
+      string reason = MLP_BrokerCloseReason(typ, close_price, stop_loss, take_profit, sym);
+      if (reason == "TakeProfit") MLP_cnt_broker_take++;
+      else if (reason == "StopLoss") MLP_cnt_broker_stop++;
+      else MLP_cnt_broker_other++;
+
+      Print(magic, ":: MLP CLOSE ", (typ == OP_BUY ? "BUY" : "SELL"),
+            " reason=", reason,
+            " source=broker_history",
+            " ticket=", ticket,
+            " entry_time=", TimeToString(OrderOpenTime()),
+            " exit_time=", TimeToString(close_time),
+            " hold_bars=", MLP_HoldBars(OrderOpenTime(), close_time, sym),
+            " entry=", DoubleToString(entry_price, Digits),
+            " stop=", DoubleToString(stop_loss, Digits),
+            " take_profit=", DoubleToString(take_profit, Digits),
+            " exit=", DoubleToString(close_price, Digits),
+            " atr=", DoubleToString(atr_value, Digits),
+            " pnl_atr=", DoubleToString(pnl_atr, 4),
+            " profit=", DoubleToString(profit_value, 2));
+
+      MLP_MarkCloseTicketLogged(ticket);
+   }
 }
 
 double MLP_BestBuySince(datetime open_time, double entry_price) {
@@ -150,6 +241,7 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
    double profit_value = OrderProfit() + OrderSwap() + OrderCommission();
 
    if (ok) {
+      MLP_MarkCloseTicketLogged(ticket);
       if (reason == "TrailingStop") MLP_cnt_trailing++;
       else if (reason == "Timeout") MLP_cnt_timeout++;
       else if (reason == "ReverseSignal") MLP_cnt_reverse++;
@@ -378,6 +470,7 @@ bool MLP_INIT() {
    ArrayResize(MLP_Scores, MLP_SignalCount);
    MLP_Loaded = true;
    MLP_LoadedFileModifyTime = file_modify_time;
+   if (MLP_RuntimeStartTime <= 0) MLP_RuntimeStartTime = Time[0];
 
    if (MLP_SignalCount <= 0) {
       Print("MLP_INIT: Loaded 0 rows from ", MLP_SIGNALS_FILE);
@@ -419,6 +512,7 @@ void MLP_RELOAD_IF_CHANGED() {
 void EXPERT::ML_TRADE() {
    MLP_RELOAD_IF_CHANGED();
    if (MLP_SignalCount <= 0) return;
+   MLP_LogBrokerClosedOrders(Mgc, Sym, ATR);
 
    set.BUY.Sig = NONE;
    set.SEL.Sig = NONE;
@@ -733,6 +827,9 @@ void ML_DIAG_PRINT() {
    Print("  Timeout closes:   ", MLP_cnt_timeout);
    Print("  Trailing closes:  ", MLP_cnt_trailing);
    Print("  Reverse closes:   ", MLP_cnt_reverse);
+   Print("  Broker TP closes: ", MLP_cnt_broker_take);
+   Print("  Broker SL closes: ", MLP_cnt_broker_stop);
+   Print("  Broker other closes: ", MLP_cnt_broker_other);
    Print("  ExitMode=", MLP_ExitModeName(),
          "  HoldBars=", ML_HoldBars,
          "  TrailATR=", DoubleToString(ML_TrailATR, 2),

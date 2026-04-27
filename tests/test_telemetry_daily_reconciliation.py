@@ -36,6 +36,19 @@ def _write_log_with_skip(path: Path) -> Path:
     return path
 
 
+def _write_log_with_broker_history_close(path: Path) -> Path:
+    path.write_text(
+        "\n".join(
+            [
+                "0 2025.01.01 01:00 MLP SELL mode=telemetry_frequency_v1 ticket=202 signal_time=2025.01.01 00:00 entry_time=2025.01.01 01:00 score=0.42 atr=10.00 spread=0.20 spread_atr=0.0200 open_positions=0 MaxPositions=10 Val=2500.00 Stp=2530.00 Prf=2450.00 Lot=0.10",
+                "0 2025.01.01 05:00 MLP CLOSE SELL reason=StopLoss source=broker_history ticket=202 entry_time=2025.01.01 01:00 exit_time=2025.01.01 05:00 hold_bars=4 entry=2500.00 stop=2530.00 take_profit=2450.00 exit=2530.00 atr=10.00 pnl_atr=-3.0000 profit=-300.00",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _write_signals(path: Path) -> Path:
     pd.DataFrame(
         [
@@ -61,6 +74,19 @@ def test_parse_mlp_open_close_events_links_by_ticket(tmp_path):
     linked = daily.reconcile_open_close(events["opens"], events["closes"])
     assert linked.iloc[0]["close_status"] == "closed"
     assert linked.iloc[0]["pnl_atr"] == 5.0
+
+
+def test_parse_broker_history_close_links_by_ticket(tmp_path):
+    log = _write_log_with_broker_history_close(tmp_path / "tester.log")
+
+    events = daily.parse_mlp_events(log)
+    linked = daily.reconcile_open_close(events["opens"], events["closes"])
+
+    assert events["closes"].iloc[0]["ticket"] == 202
+    assert events["closes"].iloc[0]["reason"] == "StopLoss"
+    assert linked.iloc[0]["close_status"] == "closed"
+    assert linked.iloc[0]["close_reason"] == "StopLoss"
+    assert linked.iloc[0]["profit"] == -300.0
 
 
 def test_reconciliation_flags_missing_opened_trade(tmp_path):
