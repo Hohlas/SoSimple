@@ -7,8 +7,8 @@
 | Field | Value |
 |---|---:|
 | score_target | take_24_x8 |
-| selector | prob_ge_threshold |
-| threshold | 0.4 |
+| selector | top_k_probability |
+| threshold | 1.0 |
 | stop_atr | 3.0 |
 | take_profit_atr | 5.0 |
 | max_hold_bars | 24 |

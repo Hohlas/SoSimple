@@ -145,8 +145,8 @@ def select_diagnostic_preset(
         eligible = results.copy()
 
     ranked = eligible.sort_values(
-        ["same_time_opposite_signal_groups", "trades_per_day", "trades"],
-        ascending=[True, False, False],
+        ["trades_per_day", "trades", "same_time_opposite_signal_groups"],
+        ascending=[False, False, True],
     )
     winner = ranked.iloc[0]
 
@@ -165,7 +165,7 @@ def select_diagnostic_preset(
             "max_hold_bars": int(max_hold_bars),
             "max_positions": int(max_positions),
         },
-        "selection_note": "Diagnostic preset selected by trade frequency; PF is diagnostic only.",
+        "selection_note": "Diagnostic preset selected by trade frequency; PF and same-time conflicts are diagnostic only.",
     }
 
 

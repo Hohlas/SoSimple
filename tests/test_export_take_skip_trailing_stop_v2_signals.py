@@ -120,3 +120,33 @@ def test_export_signals_copy_to_mt4_writes_both_targets(tmp_path):
     out = output.read_text(encoding='utf-8')
     assert tester_path.read_text(encoding='utf-8') == out
     assert runtime_path.read_text(encoding='utf-8') == out
+
+
+def test_export_signals_writes_reproducible_metadata(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)
+    output = tmp_path / 'ml_signals.csv'
+    metadata = tmp_path / 'metadata.json'
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        metadata_output=metadata,
+        label='telemetry_frequency_v1',
+    )
+
+    payload = json.loads(metadata.read_text(encoding='utf-8'))
+    assert payload['label'] == 'telemetry_frequency_v1'
+    assert payload['predictions_path'] == str(predictions_path)
+    assert payload['rule_path'] == str(rule_path)
+    assert payload['output_path'] == str(output)
+    assert len(payload['predictions_sha256']) == 64
+    assert len(payload['rule_sha256']) == 64
+    assert len(payload['output_sha256']) == 64
+    assert payload['rows_total'] == 5
+    assert payload['nonzero_rows'] == 2
+    assert payload['buy_rows'] == 1
+    assert payload['sell_rows'] == 1
+    assert payload['duplicate_time_rows'] == 0
+    assert payload['same_time_opposite_signal_groups'] == 0

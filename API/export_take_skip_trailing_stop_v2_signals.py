@@ -18,8 +18,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+from collections import Counter
 from pathlib import Path
 
 import pandas as pd
@@ -28,6 +30,14 @@ import pandas as pd
 MT4_TESTER_SIGNALS = Path('MT/tester/files/ml_signals.csv')
 MT4_RUNTIME_SIGNALS = Path('MT/MQL4/Files/ml_signals.csv')
 SUPPORTED_SELECTORS = {'prob_ge_threshold', 'top_k_probability'}
+
+
+def sha256_file(path: str | Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def load_prediction_frame(path: str | Path) -> pd.DataFrame:
@@ -103,6 +113,8 @@ def export_signals(
     output_path: str | Path,
     base_csv: str | Path | None = None,
     copy_to_mt4: bool = False,
+    metadata_output: str | Path | None = None,
+    label: str = 'take_skip_trailing_stop_v2',
 ) -> Path:
     frame = load_prediction_frame(predictions_path)
     rule_payload = load_rule_payload_from_file(rule_path)
@@ -132,6 +144,18 @@ def export_signals(
     output.parent.mkdir(parents=True, exist_ok=True)
     export.to_csv(output, sep=';', index=False)
 
+    if metadata_output is not None:
+        metadata = build_export_metadata(
+            label=label,
+            predictions_path=predictions_path,
+            rule_path=rule_path,
+            output_path=output,
+            export=export,
+        )
+        metadata_path = Path(metadata_output)
+        metadata_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding='utf-8')
+
     if copy_to_mt4:
         MT4_TESTER_SIGNALS.parent.mkdir(parents=True, exist_ok=True)
         MT4_RUNTIME_SIGNALS.parent.mkdir(parents=True, exist_ok=True)
@@ -141,6 +165,36 @@ def export_signals(
     return output
 
 
+def build_export_metadata(
+    *,
+    label: str,
+    predictions_path: str | Path,
+    rule_path: str | Path,
+    output_path: str | Path,
+    export: pd.DataFrame,
+) -> dict:
+    signals = pd.to_numeric(export['signal'], errors='coerce').fillna(0).astype(int)
+    nonzero = export.loc[signals != 0].copy()
+    nonzero_signals = signals.loc[signals != 0]
+    time_counts = Counter(nonzero['time'].astype(str))
+    by_time = nonzero.assign(signal=nonzero_signals.values).groupby('time')['signal'].nunique() if not nonzero.empty else pd.Series(dtype=int)
+    return {
+        'label': label,
+        'predictions_path': str(predictions_path),
+        'rule_path': str(rule_path),
+        'output_path': str(output_path),
+        'predictions_sha256': sha256_file(predictions_path),
+        'rule_sha256': sha256_file(rule_path),
+        'output_sha256': sha256_file(output_path),
+        'rows_total': int(len(export)),
+        'nonzero_rows': int(len(nonzero)),
+        'buy_rows': int((nonzero_signals > 0).sum()),
+        'sell_rows': int((nonzero_signals < 0).sum()),
+        'duplicate_time_rows': int(sum(count - 1 for count in time_counts.values() if count > 1)),
+        'same_time_opposite_signal_groups': int((by_time > 1).sum()) if not by_time.empty else 0,
+    }
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Apply frozen take/skip v2 rule to prediction CSV and export time;signal.')
     parser.add_argument('--predictions', required=True, help='Prediction CSV with pred_take_* columns.')
@@ -148,6 +202,8 @@ def parse_args():
     parser.add_argument('--output', required=True, help='Output CSV path for time;signal')
     parser.add_argument('--base-csv', default=None, help='Optional full time/signal CSV to expand sparse predictions into full series.')
     parser.add_argument('--copy-to-mt4', action='store_true', help='Also copy exported CSV to tester/runtime ml_signals.csv paths.')
+    parser.add_argument('--metadata-output', default=None, help='Optional JSON metadata output with hashes and signal counts.')
+    parser.add_argument('--label', default='take_skip_trailing_stop_v2', help='Label stored in metadata output.')
     return parser.parse_args()
 
 
@@ -159,6 +215,8 @@ def main():
         output_path=args.output,
         base_csv=args.base_csv,
         copy_to_mt4=args.copy_to_mt4,
+        metadata_output=args.metadata_output,
+        label=args.label,
     )
     print(path)
     return path

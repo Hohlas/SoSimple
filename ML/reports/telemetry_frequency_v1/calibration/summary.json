@@ -5,8 +5,8 @@
     "diagnostic": true,
     "winner": {
       "score_target": "take_24_x8",
-      "selector": "prob_ge_threshold",
-      "threshold": 0.4,
+      "selector": "top_k_probability",
+      "threshold": 1.0,
       "exit_atr_multiplier": 8
     },
     "execution": {
@@ -15,7 +15,7 @@
       "max_hold_bars": 24,
       "max_positions": 10
     },
-    "selection_note": "Diagnostic preset selected by trade frequency; PF is diagnostic only."
+    "selection_note": "Diagnostic preset selected by trade frequency; PF and same-time conflicts are diagnostic only."
   },
   "grid": {
     "candidates": 13,
