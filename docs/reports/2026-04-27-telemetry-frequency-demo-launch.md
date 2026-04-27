@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Подготовить частый diagnostic-режим `telemetry_frequency_v1` для онлайн demo-проверки цепочки `MT -> Nero.csv -> ML -> ml_signals.csv -> MT`
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`, `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
-> **Related commit**: `b06d2e0`
+> **Related commit**: `504cf02`
 
 ## Context
 
