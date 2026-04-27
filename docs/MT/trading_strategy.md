@@ -360,39 +360,51 @@ mkdir -p ML/reports/telemetry_frequency_v1/runtime
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
 ```
 
-5. Затем запустить watcher в фоне:
+5. Затем запустить watcher в отдельном окне `tmux`:
 
 ```bash
-nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+tmux new -s telemetry-watcher
+```
+
+Внутри окна `tmux`:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
-  --verbose \
-  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+  --heartbeat-sec 30 \
+  --verbose
 ```
 
-6. Проверить процесс:
+6. Отсоединиться от окна без остановки watcher-а:
 
 ```bash
-ps -eo pid,cmd | rg telemetry_signal_watcher
+Ctrl+B, затем D
 ```
 
-7. Проверить логи:
+7. Вернуться в окно watcher-а:
 
 ```bash
-tail -n 50 ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log
+tmux attach -t telemetry-watcher
+```
+
+8. Проверить логи:
+
+```bash
 tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
 ```
 
-8. Нормальные состояния в логах:
-   - `WATCHER wait: ... has header only, no completed bars yet`
+9. Нормальные состояния на экране и в логах:
+   - `WATCHER HEARTBEAT: status=WAIT ...`
+   - `WATCHER HEARTBEAT: status=IDLE ...`
    - `WATCHER rebuild start: ...`
    - `WATCHER rebuild done: ...`
 
-9. После первого rebuild проверить обновление:
+10. После первого rebuild проверить обновление:
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/ml_signals.csv`
    - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
 
-10. На следующем баре в MT4 проверить:
+11. На следующем баре в MT4 проверить:
    - `MLP_RELOAD: file changed ...`
    - `MLP BUY` / `MLP SELL`
    - затем `MLP CLOSE` / `MLP SKIP`

@@ -95,15 +95,31 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
 ```
 
-Фоновый polling:
+Основной режим эксплуатации: отдельное окно `tmux`:
 
 ```bash
 mkdir -p ML/reports/telemetry_frequency_v1/runtime
 
-nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+tmux new -s telemetry-watcher
+```
+
+Внутри открывшегося окна `tmux`:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
-  --verbose \
-  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+  --heartbeat-sec 30 \
+  --verbose
+```
+
+Для выхода без остановки процесса:
+
+- `Ctrl+B`, затем `D`
+
+Для возврата в окно:
+
+```bash
+tmux attach -t telemetry-watcher
 ```
 
 ## Короткий operational checklist
@@ -122,22 +138,22 @@ mkdir -p ML/reports/telemetry_frequency_v1/runtime
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
 ```
 
-5. Если одноразовый запуск прошёл, запускать фоновый polling.
-6. Проверить процесс:
+5. Если одноразовый запуск прошёл, запускать watcher в отдельном окне `tmux`.
+6. При необходимости проверить процесс:
 
 ```bash
 ps -eo pid,cmd | rg telemetry_signal_watcher
 ```
 
-7. Проверить логи:
+7. Проверить файл-лог:
 
 ```bash
-tail -n 50 ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log
 tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
 ```
 
-8. Нормальные первые состояния:
-   - `WATCHER wait: ... has header only, no completed bars yet`
+8. Нормальные состояния на экране:
+   - `WATCHER HEARTBEAT: status=WAIT ...`
+   - `WATCHER HEARTBEAT: status=IDLE ...`
    - `WATCHER rebuild start: ...`
    - `WATCHER rebuild done: ...`
 
@@ -164,4 +180,5 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 - watcher сейчас реализует только telemetry take/skip v2 contour;
 - используется polling, а не OS-level file events;
 - если `Nero.csv` испорчен или checkpoint/rule недоступны, rebuild не завершится, а ошибка уйдёт в log;
-- `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара.
+- `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара;
+- для наблюдаемого server-режима основным способом запуска считается `tmux`, а не `nohup`.

@@ -61,11 +61,16 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
 # Online watcher: один проход
 python -m API.telemetry_signal_watcher --once --verbose
 
-# Online watcher: фоновый polling
+# Online watcher: основной interactive-режим в tmux
 mkdir -p ML/reports/telemetry_frequency_v1/runtime
-nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+tmux new -s telemetry-watcher
+
+# Внутри окна tmux
+./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
-  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+  --heartbeat-sec 30 \
+  --verbose
+```
 
 # С Conformal Prediction
 python -m API.generate_signals --conformal

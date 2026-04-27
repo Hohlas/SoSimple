@@ -212,16 +212,30 @@ High-frequency diagnostic export:
 mkdir -p ML/reports/telemetry_frequency_v1/runtime
 
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
-nohup ./.venv/bin/python -m API.telemetry_signal_watcher \
+tmux new -s telemetry-watcher
+```
+
+Внутри окна `tmux`:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 10 \
-  > ML/reports/telemetry_frequency_v1/runtime/watcher.stdout.log 2>&1 &
+  --heartbeat-sec 30 \
+  --verbose
 ```
 
 Если `Nero.csv` пока содержит только заголовок, watcher не должен падать. Это
 штатное состояние ожидания первого закрытого бара. В логах будет строка вида:
 
 ```text
-WATCHER wait: MT/MQL4/Files/Nero.csv has header only, no completed bars yet
+WATCHER HEARTBEAT: status=WAIT input=MT/MQL4/Files/Nero.csv
+```
+
+Если новых баров пока нет, watcher должен продолжать жить и периодически писать
+heartbeat, например:
+
+```text
+WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Nero.csv
 ```
 ---
 

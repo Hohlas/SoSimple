@@ -48,6 +48,26 @@ def test_should_not_rebuild_when_time_and_mtime_unchanged():
     ) is False
 
 
+def test_format_heartbeat_message_for_wait_state(tmp_path):
+    message = watcher.format_heartbeat_message(
+        watcher.WatcherState(last_status="waiting_for_first_row"),
+        input_csv=tmp_path / "Nero.csv",
+    )
+
+    assert "WATCHER HEARTBEAT" in message
+    assert "status=WAIT" in message
+
+
+def test_format_heartbeat_message_for_idle_state(tmp_path):
+    message = watcher.format_heartbeat_message(
+        watcher.WatcherState(last_processed_time="2025.01.01 00:00", last_status="idle"),
+        input_csv=tmp_path / "Nero.csv",
+    )
+
+    assert "status=IDLE" in message
+    assert "last_bar=2025.01.01 00:00" in message
+
+
 def test_run_once_rebuilds_and_updates_state(tmp_path, monkeypatch):
     input_csv = tmp_path / "Nero.csv"
     input_csv.write_text(
@@ -120,6 +140,9 @@ def test_run_once_skips_when_no_new_bar(tmp_path, monkeypatch):
     )
 
     assert changed is False
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["last_status"] == "idle"
+    assert state["last_processed_time"] == "2025.01.01 00:00"
 
 
 def test_run_once_skips_and_updates_state_for_header_only_csv(tmp_path, monkeypatch):

@@ -1,6 +1,6 @@
 # =============================================================================
 # Файл: telemetry_signal_watcher.py
-# Назначение: Фоновый watcher online telemetry-контура MT4 -> Nero.csv -> ML -> ml_signals.csv.
+# Назначение: Наблюдаемый watcher online telemetry-контура MT4 -> Nero.csv -> ML -> ml_signals.csv для запуска в tmux.
 # Обновлён: 2026-04-27
 # Входные данные:
 #   - MT/MQL4/Files/Nero.csv (откуда: MT4 expert)
@@ -12,10 +12,11 @@
 #   - metadata JSON + state JSON + log
 # Использование:
 #   python -m API.telemetry_signal_watcher --once
-#   python -m API.telemetry_signal_watcher --poll-interval-sec 10
+#   python -m API.telemetry_signal_watcher --poll-interval-sec 10 --heartbeat-sec 30 --verbose
 # Примечания:
 #   - Пересчёт запускается только при появлении нового последнего `time` в Nero.csv.
 #   - Готовый ml_signals.csv пишется атомарно через существующий exporter.
+#   - Для server-эксплуатации основной режим - отдельное окно tmux с heartbeat в stdout.
 # =============================================================================
 
 from __future__ import annotations
@@ -81,6 +82,20 @@ def load_state(path: Path) -> WatcherState:
 def save_state(path: Path, state: WatcherState) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(asdict(state), ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def format_heartbeat_message(state: WatcherState, *, input_csv: Path) -> str:
+    status_map = {
+        "waiting_for_first_row": "WAIT",
+        "idle": "IDLE",
+        "rebuilt": "REBUILT",
+    }
+    label = status_map.get(state.last_status, state.last_status.upper() or "UNKNOWN")
+    parts = [f"WATCHER HEARTBEAT: status={label}"]
+    if state.last_processed_time:
+        parts.append(f"last_bar={state.last_processed_time}")
+    parts.append(f"input={input_csv}")
+    return " ".join(parts)
 
 
 def read_last_time(input_csv: Path) -> str | None:
@@ -155,7 +170,6 @@ def run_once(
             last_status="waiting_for_first_row",
         )
         save_state(state_path, waiting_state)
-        logging.info("WATCHER wait: %s has header only, no completed bars yet", input_csv)
         return False
 
     if not should_rebuild(
@@ -163,7 +177,13 @@ def run_once(
         source_mtime_ns=source_mtime_ns,
         state=state,
     ):
-        logging.info("WATCHER skip: no new completed bar time=%s", current_last_time)
+        idle_state = WatcherState(
+            last_processed_time=current_last_time,
+            source_mtime_ns=source_mtime_ns,
+            updated_at_unix=int(time.time()),
+            last_status="idle",
+        )
+        save_state(state_path, idle_state)
         return False
 
     logging.info("WATCHER rebuild start: time=%s input=%s", current_last_time, input_csv)
@@ -189,7 +209,7 @@ def run_once(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Background watcher for telemetry MT4 -> Nero.csv -> ML -> ml_signals.csv.")
+    parser = argparse.ArgumentParser(description="Observable watcher for telemetry MT4 -> Nero.csv -> ML -> ml_signals.csv.")
     parser.add_argument("--input-csv", default=str(DEFAULT_INPUT_CSV))
     parser.add_argument("--checkpoint", default=str(DEFAULT_CHECKPOINT))
     parser.add_argument("--rule-path", default=str(DEFAULT_RULE_PATH))
@@ -199,6 +219,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--state-path", default=str(DEFAULT_STATE_PATH))
     parser.add_argument("--log-path", default=str(DEFAULT_LOG_PATH))
     parser.add_argument("--poll-interval-sec", type=int, default=10)
+    parser.add_argument("--heartbeat-sec", type=int, default=30)
     parser.add_argument("--diagnostic-target-signals-per-year", type=int, default=500)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--once", action="store_true")
@@ -232,6 +253,7 @@ def main() -> int:
         )
         return 0
 
+    last_heartbeat_at = 0.0
     while True:
         try:
             run_once(
@@ -245,6 +267,11 @@ def main() -> int:
                 diagnostic_target_signals_per_year=int(args.diagnostic_target_signals_per_year),
                 batch_size=int(args.batch_size),
             )
+            now = time.time()
+            if now - last_heartbeat_at >= max(1, int(args.heartbeat_sec)):
+                state = load_state(state_path)
+                logging.info(format_heartbeat_message(state, input_csv=input_csv))
+                last_heartbeat_at = now
         except Exception as exc:
             logging.exception("WATCHER error: %s", exc)
         time.sleep(max(1, int(args.poll_interval_sec)))
