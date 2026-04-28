@@ -215,6 +215,9 @@ __marimo__/
 *.log
 *.dat
 
+# Runtime-артефакты online telemetry watcher-а.
+ML/reports/telemetry_frequency_v1/runtime/
+
 # Временные файлы MT4
 *.log
 *.hst
