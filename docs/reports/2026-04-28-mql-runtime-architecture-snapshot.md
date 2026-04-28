@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Зафиксировать текущую архитектуру MQL runtime-контура `Nero.csv -> watcher -> ml_signals.csv` перед дальнейшей диагностикой online-сигналов.
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`, `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
-> **Related commit**: `b28a0b7`
+> **Related commit**: `211cea9`
 
 ## Context
 
