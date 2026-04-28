@@ -92,6 +92,23 @@ Clean comparison: [2026-04-19-feature-bank-clean-comparison.md](../reports/2026-
 
 **Выход:** отдельный bounded benchmark для фильтра, где заранее ограничены число правил и критерии успеха.
 
+### 8. Central multi-profile inference service
+
+**Контекст:** текущий online telemetry-контур требует отдельного watcher-процесса
+для связки `Nero.csv -> ml_signals.csv`. Если появится несколько MT4 experts с
+разными ML-моделями, ручной запуск отдельных watcher-ов станет операционным
+риском.
+
+**Задача:** заменить ручной single-profile watcher одним Python-сервисом, который
+по конфигу обслуживает несколько runtime-профилей: входной `Nero*.csv`,
+checkpoint, frozen rule, output `ml_signals*.csv`, state/log/metadata.
+
+**Выход:** managed service без обязательного `tmux`, при сохранении текущего
+Python training/inference pipeline и совместимости с Strategy Tester через CSV
+exports.
+
+Design note: [2026-04-28-central-inference-service-design.md](specs/2026-04-28-central-inference-service-design.md)
+
 ---
 
 ## Где держать что
