@@ -58,6 +58,17 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
   --metadata-output ML/reports/telemetry_frequency_v1/export_metadata.json \
   --label telemetry_frequency_v1
 
+# Diagnostic all-rows export для raw online Nero.csv:
+# направление берётся из fractal0.direction, а не из offline predict.
+python -m API.export_take_skip_trailing_stop_v2_signals \
+  --predictions ML/reports/telemetry_frequency_v1/runtime/runtime_predictions.csv \
+  --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
+  --output ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv \
+  --base-csv ML/reports/telemetry_frequency_v1/runtime/runtime_input_snapshot.csv \
+  --diagnostic-all-rows \
+  --diagnostic-target-signals-per-year 500 \
+  --diagnostic-direction-source fractal0_direction
+
 # Online watcher: один проход
 python -m API.telemetry_signal_watcher --once --verbose
 
@@ -69,6 +80,7 @@ tmux new -s telemetry-watcher
 ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
+  --max-runtime-rows 12000 \
   --verbose
 ```
 

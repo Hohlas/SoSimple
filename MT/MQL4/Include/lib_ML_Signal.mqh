@@ -22,6 +22,7 @@
 #define MLP_Ver          4.2
 #define MLP_EXIT_TIMEOUT 0
 #define MLP_EXIT_TRAIL   1
+#define MLP_WAIT_SIGNAL_SEC 120
 
 int      MLP_SignalCount = 0;
 datetime MLP_Times[];
@@ -399,6 +400,60 @@ int MLP_FindSignal(datetime barTime) {
    return -1;
 }
 
+int MLP_FindSignalInsertPos(datetime barTime) {
+   int lo = 0;
+   int hi = MLP_SignalCount;
+
+   while (lo < hi) {
+      int mid = (lo + hi) / 2;
+      if (MLP_Times[mid] < barTime) lo = mid + 1;
+      else hi = mid;
+   }
+
+   return lo;
+}
+
+void MLP_LogNoSignal(int magic, datetime barTime) {
+   if (MLP_SignalCount <= 0) {
+      Print(magic, ":: MLP NO_SIGNAL"
+            " bar_time=", TimeToString(barTime),
+            " count=0");
+      return;
+   }
+
+   int pos = MLP_FindSignalInsertPos(barTime);
+   string prev_time = "none";
+   string next_time = "none";
+   int prev_sig = 0;
+   int next_sig = 0;
+
+   if (pos > 0) {
+      prev_time = TimeToString(MLP_Times[pos - 1]);
+      prev_sig = MLP_Signals[pos - 1];
+   }
+   if (pos < MLP_SignalCount) {
+      next_time = TimeToString(MLP_Times[pos]);
+      next_sig = MLP_Signals[pos];
+   }
+
+   Print(magic, ":: MLP NO_SIGNAL"
+         " bar_time=", TimeToString(barTime),
+         " first=", TimeToString(MLP_Times[0]),
+         " last=", TimeToString(MLP_Times[MLP_SignalCount - 1]),
+         " count=", MLP_SignalCount,
+         " prev=", prev_time,
+         " prev_sig=", prev_sig,
+         " next=", next_time,
+         " next_sig=", next_sig);
+}
+
+void MLP_LogZeroSignal(int magic, datetime barTime, int idx) {
+   Print(magic, ":: MLP ZERO_SIGNAL"
+         " bar_time=", TimeToString(barTime),
+         " signal_time=", TimeToString(MLP_Times[idx]),
+         " count=", MLP_SignalCount);
+}
+
 bool MLP_INIT() {
    datetime file_modify_time = MLP_FileModifyTime();
    int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_CSV | FILE_ANSI, ';');
@@ -509,8 +564,44 @@ void MLP_RELOAD_IF_CHANGED() {
    }
 }
 
-void EXPERT::ML_TRADE() {
+void MLP_WAIT_RELOAD_IF_NEEDED(datetime barTime) {
+   if (Real) {
+      datetime start_time = TimeLocal();
+      bool ready = false;
+      while (TimeLocal() - start_time < MLP_WAIT_SIGNAL_SEC) {
+         datetime file_modify_time = MLP_FileModifyTime();
+         if (!MLP_Loaded || (file_modify_time > 0 && file_modify_time != MLP_LoadedFileModifyTime)) {
+            int waited_sec = (int)(TimeLocal() - start_time);
+            Print("MLP_WAIT: file changed after ", waited_sec,
+                  " sec bar_time=", TimeToString(barTime),
+                  " file_time=", TimeToString(file_modify_time));
+            MLP_RELOAD_IF_CHANGED();
+            if (MLP_SignalCount > 0 && MLP_Times[MLP_SignalCount - 1] >= barTime) {
+               ready = true;
+               break;
+            }
+            if (MLP_SignalCount > 0) {
+               Print("MLP_WAIT: file still behind"
+                     " bar_time=", TimeToString(barTime),
+                     " last=", TimeToString(MLP_Times[MLP_SignalCount - 1]),
+                     " count=", MLP_SignalCount);
+            }
+         }
+         Sleep(1000);
+      }
+      if (!ready && MLP_SignalCount > 0 && MLP_Times[MLP_SignalCount - 1] < barTime) {
+         Print("MLP_WAIT: timeout"
+               " bar_time=", TimeToString(barTime),
+               " last=", TimeToString(MLP_Times[MLP_SignalCount - 1]),
+               " count=", MLP_SignalCount);
+      }
+      return;
+   }
    MLP_RELOAD_IF_CHANGED();
+}
+
+void EXPERT::ML_TRADE() {
+   MLP_WAIT_RELOAD_IF_NEEDED(Time[bar]);
    if (MLP_SignalCount <= 0) {
       return;
    }
@@ -540,7 +631,14 @@ void EXPERT::ML_TRADE() {
    if (ML_MaxPositions > 1) {
       MLP_ManageMultiPositions(Mgc, ExpNum, Sym, ATR);
 
-      if (idx < 0 || sig == 0) return;
+      if (idx < 0) {
+         MLP_LogNoSignal(Mgc, Time[bar]);
+         return;
+      }
+      if (sig == 0) {
+         MLP_LogZeroSignal(Mgc, Time[bar], idx);
+         return;
+      }
 
       if (!score_ok) {
          MLP_cnt_filtered++;
@@ -754,7 +852,14 @@ void EXPERT::ML_TRADE() {
       return;
    }
 
-   if (idx < 0 || sig == 0) return;
+   if (idx < 0) {
+      MLP_LogNoSignal(Mgc, Time[bar]);
+      return;
+   }
+   if (sig == 0) {
+      MLP_LogZeroSignal(Mgc, Time[bar], idx);
+      return;
+   }
 
    if (!score_ok) {
       MLP_cnt_filtered++;

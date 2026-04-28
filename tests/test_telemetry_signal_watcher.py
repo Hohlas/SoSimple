@@ -238,6 +238,7 @@ def test_rebuild_signals_uses_runtime_snapshot_for_exports(monkeypatch, tmp_path
         "2025.01.01 01:00;-1;-1",
     ]
     assert Path(captured_signals["base_csv"]) == snapshot_path
+    assert captured_signals["diagnostic_direction_source"] == "fractal0_direction"
 
 
 def test_run_once_skips_when_no_new_bar(tmp_path, monkeypatch):

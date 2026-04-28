@@ -950,13 +950,30 @@ Full-vs-12000 проверка на хвосте:
 | max `pred_*` abs diff | `<= 3.37e-7` |
 | signal mismatches | 0 |
 
-### Open finding: live direction is missing
+### Online diagnostic direction source
 
-Текущий live `Nero.csv` уже формируется и дописывается, но все строки имеют:
+Live `Nero.csv` уже формируется и дописывается, но raw строки имеют:
 
 - `signal=0`;
 - `predict=0`.
 
-Для diagnostic exporter-а это критично, потому что направление сделки берётся из знака `predict`. Значит следующий этап должен восстановить online-формирование направления `predict/signal` в соответствии с offline/test pipeline или явно заменить источник направления в diagnostic rule.
+Это не считается MQL-ошибкой: `predict` в offline pipeline формируется
+разметкой с просмотром будущих строк (`predict = -back * direction`), поэтому
+такой же `predict` нельзя честно получить в live-момент появления строки.
+
+Для diagnostic online-export источник направления заменён на текущий
+`fractal0.direction` с обратным знаком:
+
+- `fractal0.direction = -1` -> BUY;
+- `fractal0.direction = 1` -> SELL.
+
+Локальный watcher rebuild после изменения дал `11459` строк,
+`500` ненулевых сигналов (`444` BUY, `56` SELL), без duplicate time rows и
+same-time opposite-signal groups.
+
+Ограничение: это решение относится к diagnostic telemetry-режиму для набора
+статистики исполнения. Перед production-переходом нужно отдельно проверить,
+что выбранный online-источник направления соответствует финальной обучающей
+постановке.
 
 Источник: [2026-04-28-mql-runtime-architecture-snapshot.md](../../docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)

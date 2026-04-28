@@ -193,6 +193,7 @@ def rebuild_signals(
         metadata_output=metadata_output_path,
         label="telemetry_frequency_v1_online",
         diagnostic_all_rows=True,
+        diagnostic_direction_source="fractal0_direction",
         diagnostic_target_signals_per_year=diagnostic_target_signals_per_year,
     )
 

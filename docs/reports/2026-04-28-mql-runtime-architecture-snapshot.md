@@ -1,6 +1,6 @@
 # MQL Runtime Architecture Snapshot
 
-> **Date**: 2026-04-28 11:45
+> **Date**: 2026-04-28 19:40
 > **Status**: Completed
 > **Goal**: Зафиксировать текущую архитектуру MQL runtime-контура `Nero.csv -> watcher -> ml_signals.csv` перед дальнейшей диагностикой online-сигналов.
 > **Related plan/spec**: `docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md`, `docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md`
@@ -8,7 +8,8 @@
 
 ## Context
 
-После подготовки `telemetry_frequency_v1` был начат локальный M1-прогон, чтобы не ждать H1-бары при проверке online-связки.
+После подготовки `telemetry_frequency_v1` был начат локальный ускоренный прогон
+сначала на M1, затем на M5, чтобы не ждать H1-бары при проверке online-связки.
 
 Проверка подтвердила, что MT4 expert стартует, читает `#.csv`, обрабатывает новые бары и вызывает `ML_TRADE()`. Отдельно была проверена цепочка `MT4 -> Nero.csv -> Python watcher -> ml_signals.csv`.
 
@@ -141,7 +142,7 @@ if (ReadyAgeSec<=0) ReadyAgeSec=EXP[e].Per*60;
 
 Дополнительно проверены окна `1000`, `2000`, `4000`, `8000` против `12000`. На пересечении prediction отличались только на уровне float-шума, а итоговые `signal` не расходились.
 
-## Current Open Finding
+## Diagnostic Direction Update
 
 Текущий live `Nero.csv` содержит:
 
@@ -152,30 +153,89 @@ predict_nonzero: 0
 
 То есть MT4 уже пишет строки `Nero.csv`, но поля `signal` и `predict` в online-файле остаются нулевыми.
 
-Для текущего diagnostic exporter-а это критично: направление сделки берётся из знака `predict`.
+Причина: `predict` формируется в offline-разметке через просмотр будущих строк:
 
 ```text
-predict > 0 -> BUY
-predict < 0 -> SELL
-predict = 0 -> no trade
+predict = -back * direction
 ```
 
-Поэтому при текущем online `Nero.csv` итоговый `ml_signals.csv` будет содержать только `signal=0`, даже если ML predictions успешно считаются.
+Такой же `predict` нельзя честно вычислить в live-момент появления строки.
+
+Поэтому online diagnostic-export переведён на доступный текущий источник
+направления - `fractal0.direction` с обратным знаком:
+
+```text
+fractal0.direction = -1 -> BUY
+fractal0.direction =  1 -> SELL
+```
+
+Это сохраняет знак старого diagnostic-подхода через `predict`, но не использует
+будущие данные.
+
+Локальная проверка после изменения:
+
+```text
+rows_total=11459
+nonzero_rows=500
+buy_rows=444
+sell_rows=56
+duplicate_time_rows=0
+same_time_opposite_signal_groups=0
+```
+
+## Current Online Signal Passage State
+
+На M5 подтверждена текущая последовательность `MT4 -> Nero.csv -> watcher ->
+ml_signals.csv -> MT4`:
+
+1. `ML_TRADE()` ждёт обновления `ml_signals.csv`;
+2. при новом файле пишет `MLP_WAIT: file changed after ...`;
+3. перечитывает файл через `MLP_RELOAD` / `MLP_INIT`;
+4. принимает файл только если последний `time` в `ml_signals.csv` дошёл до
+   текущего `bar_time`;
+5. если файл отстаёт, пишет `MLP_WAIT: file still behind ...`;
+6. если за `MLP_WAIT_SIGNAL_SEC=120` файл не дошёл до бара, пишет
+   `MLP_WAIT: timeout ...`;
+7. если строка есть, но `signal=0`, пишет `MLP ZERO_SIGNAL`;
+8. если точной строки нет, пишет `MLP NO_SIGNAL`.
+
+Примеры наблюдений на M5:
+
+```text
+bar_time=2026.04.28 18:15 -> last=2026.04.28 18:05 -> MLP_WAIT timeout -> MLP NO_SIGNAL
+bar_time=2026.04.28 18:20 -> last=2026.04.28 18:20 -> MLP ZERO_SIGNAL
+bar_time=2026.04.28 18:30 -> last=2026.04.28 18:30 -> MLP ZERO_SIGNAL
+```
+
+Интерпретация: `Nero.csv` пишется не на каждый M5-бар, а при появлении нового
+уровня. Поэтому timeout/`NO_SIGNAL` на барах без новой строки `Nero.csv` не
+является самостоятельной ошибкой торгового исполнения.
 
 ## Conclusions
 
 - MQL runtime теперь стартует не в холодном состоянии: `RECOUNT_HISTORY()` восстанавливает уровни по истории до online-работы.
 - `Nero.csv` формируется и дописывается на новых уровнях.
 - Python watcher теперь использует правильный checkpoint contract и ограничивает рабочее окно, что делает его пригоднее для менее дорогого сервера.
-- Главный следующий вопрос не в памяти watcher-а и не в запуске MQL, а в соответствии live `Nero.csv` offline/test pipeline: нужно восстановить online-формирование ненулевого направления `predict/signal` или изменить diagnostic rule на другой источник направления.
+- Diagnostic online-export теперь получает ненулевые `ml_signals.csv` из raw `Nero.csv`, не требуя future-derived `predict`.
+- M5-наблюдение показывает, что MQL уже различает три случая: файл ещё отстаёт,
+  точной строки нет, строка есть с `signal=0`.
+- Для production-перехода остаётся отдельная проверка: соответствует ли выбранный online-источник направления финальной обучающей постановке, а не только diagnostic-задаче набора статистики.
 
 ## Next Step
 
-Разобрать offline postprocessing `Nero.csv` перед обучением и тестированием:
+Оставить M5-наблюдение примерно на 10 часов, не меняя диагностический сигнал, и
+собрать статистику runtime-строк:
 
-1. найти, где формировались ненулевые `signal` / `predict`;
-2. определить, должно ли это вычисляться в MQL, Python watcher-е или отдельном lightweight preprocessing step;
-3. после правки снова проверить `MT4 -> Nero.csv -> watcher -> ml_signals.csv` на M1 и затем переносить на H1/server.
+1. `MLP_WAIT: file changed after ...`;
+2. `MLP_WAIT: timeout ...`;
+3. `MLP NO_SIGNAL`;
+4. `MLP ZERO_SIGNAL`;
+5. `MLP BUY` / `MLP SELL`;
+6. `MLP CLOSE` / `MLP SKIP`.
+
+После этого решить, достаточно ли текущей частоты/баланса сигналов для
+диагностики, и затем вернуть профиль на H1/server либо продолжить M5
+online-наблюдение на удалённом сервере.
 
 ## Related Materials
 

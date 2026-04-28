@@ -31,6 +31,7 @@ import pandas as pd
 MT4_TESTER_SIGNALS = Path('MT/tester/files/ml_signals.csv')
 MT4_RUNTIME_SIGNALS = Path('MT/MQL4/Files/ml_signals.csv')
 SUPPORTED_SELECTORS = {'prob_ge_threshold', 'top_k_probability'}
+SUPPORTED_DIAGNOSTIC_DIRECTION_SOURCES = {'predict', 'fractal0_direction'}
 
 
 def write_csv_atomic(frame: pd.DataFrame, path: str | Path) -> None:
@@ -115,29 +116,52 @@ def apply_rule(frame: pd.DataFrame, rule_payload: dict) -> pd.Series:
     return selected
 
 
+def diagnostic_signal_from_fractal0(fractal0: pd.Series) -> pd.Series:
+    direction = fractal0.astype(str).str.split(':', n=3).str[2]
+    direction = pd.to_numeric(direction, errors='coerce').fillna(0).astype(int)
+
+    diagnostic_signal = pd.Series(0, index=fractal0.index, dtype='int64')
+    diagnostic_signal.loc[direction == -1] = 1
+    diagnostic_signal.loc[direction == 1] = -1
+    return diagnostic_signal
+
+
 def build_diagnostic_all_rows_export(
     *,
     frame: pd.DataFrame,
     base: pd.DataFrame,
     rule_payload: dict,
     target_signals_per_year: int,
+    direction_source: str = 'predict',
 ) -> pd.DataFrame:
     winner = rule_payload['winner']
     score_col = f"pred_{winner['score_target']}"
     if score_col not in frame.columns:
         raise ValueError(f'missing score column: {score_col}')
-    if 'predict' not in base.columns:
-        raise ValueError('diagnostic_all_rows requires base_csv with predict column')
+    if direction_source not in SUPPORTED_DIAGNOSTIC_DIRECTION_SOURCES:
+        supported = ', '.join(sorted(SUPPORTED_DIAGNOSTIC_DIRECTION_SOURCES))
+        raise ValueError(f'unsupported diagnostic_direction_source: {direction_source}. Supported: {supported}')
+    if direction_source == 'predict' and 'predict' not in base.columns:
+        raise ValueError('diagnostic_all_rows with predict direction requires base_csv with predict column')
+    if direction_source == 'fractal0_direction' and 'fractal0' not in base.columns:
+        raise ValueError('diagnostic_all_rows with fractal0_direction requires base_csv with fractal0 column')
     if target_signals_per_year <= 0:
         raise ValueError('diagnostic_target_signals_per_year must be positive')
 
     base = base.drop_duplicates(subset=['time'], keep='last').reset_index(drop=True)
-    merged = frame[['time', score_col]].merge(base[['time', 'predict']], on='time', how='left', validate='many_to_one')
+    direction_cols = ['time', 'predict'] if direction_source == 'predict' else ['time', 'fractal0']
+    merged = frame[['time', score_col]].merge(base[direction_cols], on='time', how='left', validate='many_to_one')
     merged['score'] = pd.to_numeric(merged[score_col], errors='coerce').fillna(float('-inf'))
-    predict = pd.to_numeric(merged['predict'], errors='coerce').fillna(0.0)
-    merged['diagnostic_signal'] = 0
-    merged.loc[predict > 0, 'diagnostic_signal'] = 1
-    merged.loc[predict < 0, 'diagnostic_signal'] = -1
+    if direction_source == 'predict':
+        predict = pd.to_numeric(merged['predict'], errors='coerce').fillna(0.0)
+        merged['diagnostic_signal'] = 0
+        merged.loc[predict > 0, 'diagnostic_signal'] = 1
+        merged.loc[predict < 0, 'diagnostic_signal'] = -1
+    else:
+        # Offline diagnostic used sign(predict), and predict = -back * direction.
+        # Online raw Nero.csv has no future-derived predict, so use the equivalent
+        # reversal sign from current fractal0 direction.
+        merged['diagnostic_signal'] = diagnostic_signal_from_fractal0(merged['fractal0'])
     merged['year'] = pd.to_datetime(merged['time'], format='%Y.%m.%d %H:%M', errors='coerce').dt.year
 
     selected = pd.Series(False, index=merged.index)
@@ -163,6 +187,7 @@ def export_signals(
     label: str = 'take_skip_trailing_stop_v2',
     diagnostic_all_rows: bool = False,
     diagnostic_target_signals_per_year: int | None = None,
+    diagnostic_direction_source: str = 'predict',
 ) -> Path:
     frame = load_prediction_frame(predictions_path)
     rule_payload = load_rule_payload_from_file(rule_path)
@@ -171,12 +196,14 @@ def export_signals(
             raise ValueError('diagnostic_all_rows requires base_csv')
         if diagnostic_target_signals_per_year is None:
             raise ValueError('diagnostic_all_rows requires diagnostic_target_signals_per_year')
-        base = pd.read_csv(Path(base_csv), sep=';', usecols=['time', 'predict'])
+        direction_usecols = ['time', 'predict'] if diagnostic_direction_source == 'predict' else ['time', 'fractal0']
+        base = pd.read_csv(Path(base_csv), sep=';', usecols=direction_usecols)
         export = build_diagnostic_all_rows_export(
             frame=frame,
             base=base,
             rule_payload=rule_payload,
             target_signals_per_year=int(diagnostic_target_signals_per_year),
+            direction_source=diagnostic_direction_source,
         )
     else:
         selected_mask = apply_rule(frame, rule_payload)
@@ -264,6 +291,12 @@ def parse_args():
     parser.add_argument('--label', default='take_skip_trailing_stop_v2', help='Label stored in metadata output.')
     parser.add_argument('--diagnostic-all-rows', action='store_true', help='Build diagnostic signals from all rows using base_csv predict sign as direction.')
     parser.add_argument('--diagnostic-target-signals-per-year', type=int, default=None, help='Top-N diagnostic signals per calendar year.')
+    parser.add_argument(
+        '--diagnostic-direction-source',
+        choices=sorted(SUPPORTED_DIAGNOSTIC_DIRECTION_SOURCES),
+        default='predict',
+        help='Direction source for diagnostic_all_rows: predict for labeled offline data, fractal0_direction for raw online Nero.csv.',
+    )
     return parser.parse_args()
 
 
@@ -279,6 +312,7 @@ def main():
         label=args.label,
         diagnostic_all_rows=args.diagnostic_all_rows,
         diagnostic_target_signals_per_year=args.diagnostic_target_signals_per_year,
+        diagnostic_direction_source=args.diagnostic_direction_source,
     )
     print(path)
     return path

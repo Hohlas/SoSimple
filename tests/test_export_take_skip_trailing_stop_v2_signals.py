@@ -120,6 +120,35 @@ def test_export_signals_diagnostic_all_rows_uses_predict_direction_and_yearly_ta
     assert out['signal'].tolist() == [1, -1, 0, -1, 0]
 
 
+def test_export_signals_diagnostic_all_rows_can_use_fractal0_direction_without_predict(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='top_k_probability', threshold=1.0)
+    base_path = tmp_path / 'base.csv'
+    pd.DataFrame(
+        [
+            {'time': '2025.01.01 00:00', 'signal': 0, 'fractal0': '100:1.1:-1:0:0:0:0'},
+            {'time': '2025.01.01 01:00', 'signal': 0, 'fractal0': '101:1.2:1:0:0:0:0'},
+            {'time': '2025.01.01 02:00', 'signal': 0, 'fractal0': '102:1.3:-1:0:0:0:0'},
+            {'time': '2025.01.01 03:00', 'signal': 0, 'fractal0': '103:1.4:1:0:0:0:0'},
+            {'time': '2025.01.01 04:00', 'signal': 0, 'fractal0': '104:1.5:1:0:0:0:0'},
+        ]
+    ).to_csv(base_path, sep=';', index=False)
+    output = tmp_path / 'ml_signals.csv'
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        base_csv=base_path,
+        diagnostic_all_rows=True,
+        diagnostic_target_signals_per_year=3,
+        diagnostic_direction_source='fractal0_direction',
+    )
+
+    out = pd.read_csv(output, sep=';')
+    assert out['signal'].tolist() == [1, -1, 0, -1, 0]
+
+
 def test_export_signals_diagnostic_all_rows_keeps_last_base_duplicate_time(tmp_path):
     predictions_path = _write_prediction_csv(tmp_path)
     rule_path = _write_rule(tmp_path, selector='top_k_probability', threshold=1.0)

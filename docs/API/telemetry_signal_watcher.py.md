@@ -61,6 +61,19 @@ pipeline явно. Он ожидает, что MT4 уже пишет `Nero.csv` 
 - прогоняет checkpoint;
 - выдаёт `pred_take_*` для frozen telemetry rule.
 
+Направление diagnostic-сделки в online-режиме берётся не из `predict`, а из
+`fractal0.direction` с обратным знаком:
+
+```text
+fractal0.direction = -1 -> BUY
+fractal0.direction =  1 -> SELL
+```
+
+Причина: offline `predict` является обучающей меткой с просмотром будущих строк
+(`predict = -back * direction`). В live `Nero.csv` будущего ещё нет, поэтому
+watcher использует текущий `fractal0.direction` как online-эквивалент знака
+старого diagnostic `predict`.
+
 ## Почему это отдельный процесс
 
 MT4 не должен запускать модель внутри MQL. Его роль:
