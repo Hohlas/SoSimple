@@ -152,14 +152,21 @@ bool EXPERT::PIC() { // ОСНОВНОЙ ЦИКЛ ПОИСКА УРОВНЕЙ
    C = (float)Close[bar]; // O0=(float)Open[bar-1]; // Open[0]=Bid
    if (Days && NEW_DAY(bar))
       TimeFrom = DAYS_TIME(ABS(Days)); // временной предел расчета уровней в днях
-   if ((float)High[bar + PicPer] == HIGHEST(PicPer * 2 + 1, bar)) { // Новый hi
+   float hi_candidate = (float)High[bar + PicPer];
+   float hi_extreme = HIGHEST(PicPer * 2 + 1, bar);
+   float lo_candidate = (float)Low[bar + PicPer];
+   float lo_extreme = LOWEST(PicPer * 2 + 1, bar);
+   bool new_hi = (hi_candidate == hi_extreme);
+   bool new_lo = (lo_candidate == lo_extreme);
+   if (new_hi) { // Новый hi
       NEW_LEVEL(1, (float)High[bar + PicPer]); // ФОРМИРОВАНИЕ И УДАЛЕНИЕ УРОВНЕЙ
    }
-   if ((float)Low[bar + PicPer] == LOWEST(PicPer * 2 + 1, bar)) { // Новый lo
+   if (new_lo) { // Новый lo
       NEW_LEVEL(-1, (float)Low[bar + PicPer]); // ФОРМИРОВАНИЕ И УДАЛЕНИЕ УРОВНЕЙ
    }
    LEVELS_FIND_AROUND(); // ПОИСК СИЛЬНЫХ УРОВНЕЙ
    LOCAL_TREND();
+   POC_SIMPLE();  // ОПРЕДЕЛЕНИЕ ПЛОТНОГО СКОПЛЕНИЯ БАР БЕЗ ПРОПУСКОВ
    return (true);
 }
 

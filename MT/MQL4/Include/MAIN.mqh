@@ -122,9 +122,14 @@ void EXPERT::MAIN(){
    if (!ml_direct_mode) TIMER(); // // ВРЕМЯ УДЕРЖАНИЯ ОТКРЫТЫХ ПОЗ Tper (В Барах)
    if (!COUNT()) return;
    //TRAILING_PROFIT();
-   if (FINE_TIME()) {
-      if (ml_direct_mode) ML_TRADE();
-      else INPUT();
+   bool fine_time = FINE_TIME();
+   if (fine_time) {
+      if (ml_direct_mode) {
+         ML_TRADE();
+      }
+      else {
+         INPUT();
+      }
    }// не торгуем и закрываем все позы в период запрета торговли
    if (!ml_direct_mode) {
       OUTPUT();

@@ -15,6 +15,7 @@
 Скрипт не обучает модель и не меняет frozen rule. Он только:
 
 - ждёт новый закрытый бар в `Nero.csv`;
+- строит компактный `runtime_input_snapshot.csv` из хвоста `Nero.csv`;
 - строит свежий prediction CSV через `ML.export_take_skip_v2_predictions`;
 - применяет frozen telemetry rule через `API.export_take_skip_trailing_stop_v2_signals`;
 - атомарно обновляет `ml_signals.csv` в runtime/tester каталогах;
@@ -23,13 +24,14 @@
 Важно: watcher не повторяет весь offline pipeline `processing/label_main.py`.
 Для текущего telemetry-контура это не нужно. Он работает через
 `ML.export_take_skip_v2_predictions`, который сам строит вход модели из raw
-`Nero.csv`.
+`Nero.csv` в режиме `original_contour` / `original_baseline` / `seq_len=50`.
 
 ## Что именно он использует
 
 - входной CSV: `MT/MQL4/Files/Nero.csv`
 - checkpoint: `ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt`
 - frozen rule: `ML/reports/telemetry_frequency_v1/calibration/selected_rule.json`
+- inference contract: `mode=original_contour`, `feature_mode=original_baseline`, `seq_len=50`
 
 Текущий watcher заточен под diagnostic профиль `telemetry_frequency_v1_highfreq500`.
 
@@ -55,7 +57,7 @@ pipeline явно. Он ожидает, что MT4 уже пишет `Nero.csv` 
 После этого `ML.export_take_skip_v2_predictions` сам:
 
 - парсит fractal-структуру;
-- собирает тензор входов;
+- собирает `original_contour` входы (`20 fractal features + summaries + row-wise features = 539`);
 - прогоняет checkpoint;
 - выдаёт `pred_take_*` для frozen telemetry rule.
 
@@ -86,12 +88,28 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 
 Если новый бар появился:
 
-1. строится `runtime_predictions.csv`;
-2. строится `runtime_ml_signals.csv`;
-3. exporter атомарно копирует готовый `ml_signals.csv` в:
+1. из полного `Nero.csv` собирается `runtime_input_snapshot.csv` только по последним `max_runtime_rows`;
+2. по snapshot строится `runtime_predictions.csv`;
+3. по snapshot строится `runtime_ml_signals.csv`;
+4. exporter атомарно копирует готовый `ml_signals.csv` в:
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/ml_signals.csv`
-4. state обновляется только после успешного rebuild.
+5. state обновляется только после успешного rebuild.
+
+По умолчанию `max_runtime_rows=12000`.
+
+Зачем это сделано:
+
+- цель: не перечитывать и не держать в памяти весь многолетний `Nero.csv` на каждом новом уровне;
+- причина: полный single-tensor inference на десятках тысяч строк легко уходит в двузначные гигабайты RAM;
+- последствие: watcher стал пригоден для более дешёвого сервера;
+- ограничение: `runtime_predictions.csv` и `ml_signals.csv` теперь содержат только рабочее окно snapshot-а, а не всю историю `Nero.csv`.
+
+Практический смысл ограничения:
+
+- для планового online H1-режима это безопасно, если окно заметно больше фактического числа runtime-строк за год;
+- для M1 debug-режима это осознанный компромисс ради памяти;
+- если понадобится полный исторический export, его нужно запускать отдельным offline/one-shot прогоном, а не постоянным watcher-ом.
 
 ## Запуск
 
@@ -115,6 +133,7 @@ tmux new -s telemetry-watcher
 ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
+  --max-runtime-rows 12000 \
   --verbose
 ```
 
@@ -177,6 +196,7 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_predictions.csv`
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv`
+- `ML/reports/telemetry_frequency_v1/runtime/runtime_input_snapshot.csv`
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json`
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
 - `ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log`
@@ -189,3 +209,4 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 - `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара;
 - для наблюдаемого server-режима основным способом запуска считается `tmux`, а не `nohup`;
 - практические дефолты для сильного сервера: `poll=1s`, `heartbeat=60s`.
+- практический лимит памяти задаётся через `--max-runtime-rows`; по умолчанию watcher держит только последние `12000` строк `Nero.csv`.

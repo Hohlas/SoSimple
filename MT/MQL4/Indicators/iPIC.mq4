@@ -120,7 +120,6 @@ void start(){
          BarTime=Time[bar];
          if (!EXP[0].PIC()) continue; // ОСНОВНОЙ ЦИКЛ ПОИСКА УРОВНЕЙ 
          if (TimeDayOfWeek(Time[bar])==1 && TimeHour(Time[bar])<TimeHour(Time[bar+1])) LINE("NewWeek",  bar, EXP[0].L,   bar,EXP[0].H, clrDeepSkyBlue,2);
-         EXP[0].POC_SIMPLE();  // ОПРЕДЕЛЕНИЕ ПЛОТНОГО СКОПЛЕНИЯ БАР БЕЗ ПРОПУСКОВ
          }
       
      

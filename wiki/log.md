@@ -268,3 +268,13 @@
   - `critical_mismatch_count=0`;
   - broker-side `TakeProfit` / `StopLoss` closes logged via `source=broker_history`;
   - diagnostic contour ready for online demo launch.
+
+## [2026-04-28] ingest | MQL runtime architecture snapshot
+- Added report `docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded `RECOUNT_HISTORY()` startup warmup for `PIC()` / `F[]`;
+  - recorded `POC_SIMPLE()` as part of the atomic `PIC()` step;
+  - recorded watcher runtime snapshot window (`--max-runtime-rows 12000`);
+  - captured full-vs-12000 parity result (`signal_mismatch_rows=0`, `pred_* <= 3.37e-7`);
+  - captured open finding: live `Nero.csv` has `signal=0` and `predict=0`, so diagnostic export cannot produce trades yet.
+- Updated `wiki/index.md` coverage from 29 to 30 reports.

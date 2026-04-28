@@ -511,7 +511,9 @@ void MLP_RELOAD_IF_CHANGED() {
 
 void EXPERT::ML_TRADE() {
    MLP_RELOAD_IF_CHANGED();
-   if (MLP_SignalCount <= 0) return;
+   if (MLP_SignalCount <= 0) {
+      return;
+   }
    MLP_LogBrokerClosedOrders(Mgc, Sym, ATR);
 
    set.BUY.Sig = NONE;

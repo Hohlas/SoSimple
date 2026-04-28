@@ -22,7 +22,7 @@ bool EXPERT::ATR_COUNT(){
    Atr.Fast=0; 
    for (int b=bar; b<bar+FastAtrPer; b++) Atr.Fast+=float(High[b]-Low[b]);    
    Atr.Fast/=FastAtrPer;
-   if (TimeDay(Time[bar])!=TimeDay(Time[bar+1])){  // медленный АТР считается раз в сутки (при А=15 его период около 9 дней)
+   if (Atr.Slow<=0 || TimeDay(Time[bar])!=TimeDay(Time[bar+1])){  // первый расчет нужен сразу после старта, дальше медленный АТР считается раз в сутки
       Atr.Slow=0;   
       for (int b=bar; b<bar+SlowAtrPer; b++) Atr.Slow+=float(High[b]-Low[b]);    
       Atr.Slow/=SlowAtrPer;

@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-27
-sources: 29
+last_updated: 2026-04-28
+sources: 30
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 29 отчётов (2026-04-08 — 2026-04-27). Параллельные направления execution и текущая подготовка telemetry demo launch.
+> Синтез 30 отчётов (2026-04-08 — 2026-04-28). Параллельные направления execution и текущая подготовка telemetry demo launch.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -912,3 +912,51 @@ Trade-level reconciliation был сохранён отдельно:
 `missing_close_count=1` объясняется открытой позицией на конце периода. Вывод: diagnostic-контур готов к online demo launch. Прибыльность tester-прогона не считать production-доказательством качества стратегии.
 
 Источник: [2026-04-27-telemetry-frequency-demo-launch.md](../../docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
+
+## 9. MQL Runtime Architecture Snapshot (04-28)
+
+После локального M1-прогона стало понятно, что online demo требует отдельной фиксации runtime-архитектуры MQL и watcher-а.
+
+### MQL startup state
+
+Эксперт больше не стартует в холодном состоянии:
+
+- `OnInit()` читает `#.csv`, создаёт активные `EXP[]` строки и вызывает `EXP[e].INIT()`;
+- затем выполняется `RECOUNT_HISTORY()`;
+- `RECOUNT_HISTORY()` прогоняет доступную историю от старых баров к новым через `EXP[e].PIC()`;
+- после прогрева восстанавливаются `bar=1` и `BarTime=Time[0]`.
+
+Цель не просто набрать первые 100 уровней, а восстановить `F[]` с учётом старых сильных фракталов, которые важны из-за критерия удаления слабых уровней.
+
+### PIC as atomic calculation step
+
+`POC_SIMPLE()` перенесён внутрь `PIC()` и выполняется после `NEW_LEVEL()`, `LEVELS_FIND_AROUND()` и `LOCAL_TREND()`. Поэтому historical warmup и online bar-by-bar проход теперь используют один расчётный шаг.
+
+### Watcher memory contract
+
+Watcher больше не держит весь `Nero.csv` в памяти на каждом новом уровне:
+
+- строит `runtime_input_snapshot.csv` из хвоста `Nero.csv`;
+- default window: `--max-runtime-rows 12000`;
+- запускает checkpoint в контракте `original_contour / original_baseline / seq_len=50`;
+- затем применяет frozen diagnostic rule и обновляет `ml_signals.csv`.
+
+Full-vs-12000 проверка на хвосте:
+
+| Metric | Value |
+|---|---:|
+| full prediction rows | 63010 |
+| snapshot rows | 12000 |
+| max `pred_*` abs diff | `<= 3.37e-7` |
+| signal mismatches | 0 |
+
+### Open finding: live direction is missing
+
+Текущий live `Nero.csv` уже формируется и дописывается, но все строки имеют:
+
+- `signal=0`;
+- `predict=0`.
+
+Для diagnostic exporter-а это критично, потому что направление сделки берётся из знака `predict`. Значит следующий этап должен восстановить online-формирование направления `predict/signal` в соответствии с offline/test pipeline или явно заменить источник направления в diagnostic rule.
+
+Источник: [2026-04-28-mql-runtime-architecture-snapshot.md](../../docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)

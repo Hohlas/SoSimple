@@ -55,8 +55,10 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
 
     assert len(header) == 16 + 80
     assert len(row) == len(header)
-    assert values["SymPer"] == "XAUUSD60"
+    assert values["SymPer"] == "XAUUSD1"
     assert values["Risk"] == "1"
+    assert values["A"] == "5"
+    assert values["a"] == "3"
     assert values["iSignal"] == "3"
     assert values["T1"] == "8"
     assert values["ML_ExitMode"] == "0"
@@ -158,3 +160,32 @@ def test_ml_signal_runtime_reload_uses_file_modify_time():
     assert "MLP_RELOAD_IF_CHANGED()" in text
     assert "MLP_RELOAD: file changed" in text
     assert "MLP_INIT()" in text
+
+
+def test_history_recount_and_pic_contract_are_present_in_mql_flow():
+    service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
+    pic = (ROOT / "MT/MQL4/Include/lib_PIC.mqh").read_text(encoding="utf-8", errors="replace")
+    count = (ROOT / "MT/MQL4/Include/COUNT.mqh").read_text(encoding="utf-8", errors="replace")
+    expert = (ROOT / "MT/MQL4/Experts/$o$imple.mq4").read_text(encoding="utf-8", errors="replace")
+
+    assert "POC_SIMPLE();" in pic
+    assert "POC_SIMPLE();" not in count
+    assert "void RECOUNT_HISTORY()" in expert
+    assert "for (bar=UnCounted; bar>1; bar--)" in expert
+    assert "for (uchar e=0; e<ExpTotal; e++)" in expert
+    assert "if (!EXP[e].PIC()) continue;" in expert
+    assert "RECOUNT_HISTORY();" in service
+
+
+def test_atr_slow_initializes_without_waiting_for_next_day():
+    atr = (ROOT / "MT/MQL4/Include/lib_ATR.mqh").read_text(encoding="utf-8", errors="replace")
+
+    assert "if (Atr.Slow<=0 || TimeDay(Time[bar])!=TimeDay(Time[bar+1]))" in atr
+
+
+def test_end_ready_window_handles_m1_without_negative_freshness():
+    service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
+
+    assert "int ReadyAgeSec=EXP[e].Per*60-300;" in service
+    assert "if (ReadyAgeSec<=0) ReadyAgeSec=EXP[e].Per*60;" in service
+    assert "TimeCurrent() - GlobalVariableGet(NameSymPer) < ReadyAgeSec" in service

@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-28] - MQL runtime architecture snapshot
+
+### Изменено
+- MT4 expert теперь прогревает `PIC()` по истории через `RECOUNT_HISTORY()` при старте, чтобы восстановить массив сильных уровней до online-работы.
+- `POC_SIMPLE()` перенесён внутрь `PIC()`, чтобы исторический прогрев и обычный bar-by-bar проход использовали один расчётный шаг.
+- Watcher переведён на runtime snapshot из хвоста `Nero.csv` через `--max-runtime-rows`, чтобы не держать весь многолетний CSV в RAM.
+
+### Результаты
+- `Nero.csv` локально пересобирается по истории и дописывается при новых уровнях.
+- Full-vs-12000 проверка на хвосте дала `signal_mismatch_rows=0`, максимальное отличие `pred_* <= 3.37e-7`.
+- Найдено ключевое расхождение live-контура: текущий online `Nero.csv` содержит `signal=0` и `predict=0` во всех строках, поэтому diagnostic exporter не создаёт ненулевые `ml_signals.csv`.
+
+### Вывод
+- Следующий этап - восстановить online-формирование направления `predict/signal` в соответствии с offline/test pipeline.
+- Подробности: [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
+
 ## [2026-04-27] - Telemetry frequency demo launch
 
 ### Добавлено
