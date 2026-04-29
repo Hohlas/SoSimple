@@ -2,6 +2,28 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-04-29] - Online inference contract hardening
+
+### Добавлено
+- `processing.online_causal_preprocessing` теперь проверяет порядок
+  `fractal*` после сортировки и запускает `normalize_rowwise(verbose=False)`
+  для runtime-процессов.
+- `API.telemetry_signal_watcher` получил online contract guard: legacy
+  `original_contour/original_baseline` заблокирован по умолчанию, потому что
+  его training/test input включает future-derived row features (`predict`,
+  `ret_*`, `fav_*`, `adv_*`).
+- `API.api_server` переведён на общий live-safe preprocessing вместо прямого
+  вызова `normalize_rowwise()`.
+- Добавлены тесты на CSV I/O preprocessing, legacy 18-field фракталы,
+  validation сортировки, quiet runtime, watcher guard и REST preprocessing path.
+
+### Вывод
+- Старый watcher можно использовать с `--allow-unsafe-future-features` только
+  для механической диагностики связи MT4 -> Python -> CSV -> MT4.
+- ML-корректный online/test этап требует отдельного live-safe retrain без
+  future-derived входных признаков.
+- Подробности: [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md)
+
 ## [2026-04-28] - MQL runtime architecture snapshot
 
 ### Добавлено
@@ -45,7 +67,9 @@
 - Watcher больше не падает на `header-only` `Nero.csv`: это штатное ожидание первого закрытого бара.
 
 ### Вывод
-- Diagnostic-контур готов к online demo launch.
+- На дату 2026-04-27 diagnostic-контур считался готовым к online demo launch
+  как механическая цепочка; 2026-04-29 этот вывод уточнён: legacy
+  `original_baseline` не является ML-корректным online-контрактом.
 - Операционный запуск watcher-а переведён из скрытого `nohup`-режима в наблюдаемый `tmux`-режим.
 - Результат тестера не является production-доказательством прибыльности: профиль выбран для частоты сделок и проверки pipeline.
 - Подробности: [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)

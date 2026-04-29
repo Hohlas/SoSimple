@@ -20,7 +20,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | Page | Covers | Reports |
 |------|--------|---------|
 | [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
-| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1, trailing-stop family, take/skip v2, frequency follow-up, rule consumer, MT4 trailing execution, execution policy v2, lib_PIC external selection, lib_PIC feature training, original-contour ablation, signal-export parity, cross-instrument robustness, entry-path transfer robustness, portfolio correlation check, telemetry demo launch and MQL runtime architecture snapshot: parallel execution tracks | 30 reports (04-08 — 04-28) |
+| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1, trailing-stop family, take/skip v2, frequency follow-up, rule consumer, MT4 trailing execution, execution policy v2, lib_PIC external selection, lib_PIC feature training, original-contour ablation, signal-export parity, cross-instrument robustness, entry-path transfer robustness, portfolio correlation check, telemetry demo launch, MQL runtime architecture snapshot, online inference contract hardening: parallel execution tracks | 31 reports (04-08 — 04-29) |
 
 ## Concepts
 

@@ -278,3 +278,19 @@
   - captured full-vs-12000 parity result (`signal_mismatch_rows=0`, `pred_* <= 3.37e-7`);
   - captured open finding: live `Nero.csv` has `signal=0` and `predict=0`, so diagnostic export cannot produce trades yet.
 - Updated `wiki/index.md` coverage from 29 to 30 reports.
+
+## [2026-04-29] save | online causal preprocessing contract
+- Updated `wiki/research/execution-tracks.md` with the new online watcher contract:
+  - raw `runtime_input_snapshot.csv` is no longer fed directly to inference;
+  - `runtime_input_preprocessed.csv` applies fractal sorting and rowwise normalization;
+  - diagnostic direction now refers to `fractal0.direction` after sorting.
+
+## [2026-04-29] save | online inference contract guard
+- Updated `wiki/research/execution-tracks.md` after audit of online/test parity:
+  - recorded that legacy `original_baseline` used future-derived row features as model input;
+  - recorded watcher contract guard and `--allow-unsafe-future-features` override;
+  - clarified that unsafe override is only mechanical chain diagnostics, not ML-correct online validation.
+
+## [2026-04-29] ingest | online inference contract hardening report
+- Added `docs/reports/2026-04-29-online-inference-contract-hardening.md`.
+- Updated `wiki/research/execution-tracks.md` and `wiki/index.md` coverage from 30 to 31 reports.

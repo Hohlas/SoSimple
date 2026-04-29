@@ -36,8 +36,8 @@ python label_main.py --no-normalize
 
 ## Ключевые функции
 - `main()`: Точка входа, оркестрация этапов.
-- `process_row_fractals()`: Парсинг и сортировка фракталов в строке.
-- `sort_fractals_in_dataframe()`: Применение сортировки ко всему датасету.
+- `processing.fractal_preprocessing.sort_row_fractals()`: Парсинг и сортировка фракталов в строке.
+- `processing.fractal_preprocessing.sort_fractals_in_dataframe()`: Применение сортировки ко всему датасету.
 - `verify_sorting_quality()`: Проверка хронологии фракталов.
 - `split_train_val_test()`: Разделение данных (70/15/15%).
 - `save_datasets()`: Сохранение CSV файлов.

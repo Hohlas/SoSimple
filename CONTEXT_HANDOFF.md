@@ -4,7 +4,7 @@
 
 ## Current Stage
 
-Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime и online diagnostic direction update.
+Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime и 2026-04-29 online inference contract hardening.
 
 Канонические отчёты:
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
@@ -32,26 +32,42 @@
 - diagnostic online-export переведён на текущий доступный источник направления: `fractal0.direction` с обратным знаком (`-1 -> BUY`, `1 -> SELL`);
 - локальная проверка после изменения дала `nonzero_rows=500`, `buy_rows=444`, `sell_rows=56`, `duplicate_time_rows=0`, `same_time_opposite_signal_groups=0`.
 
+Что добавлено 2026-04-29:
+- watcher строит raw `runtime_input_snapshot.csv`, затем
+  `runtime_input_preprocessed.csv` через sorting + validation +
+  `normalize_rowwise(verbose=False)`;
+- `API.api_server` использует тот же `preprocess_online_frame()`, а не прямой
+  `normalize_rowwise()`;
+- найден критичный ML-contract разрыв: legacy `original_baseline` обучался и
+  проверялся с future-derived row features (`predict`, `ret_*`, `fav_*`,
+  `adv_*`) как входом модели;
+- `API.telemetry_signal_watcher` теперь блокирует
+  `original_contour/original_baseline` online по умолчанию через
+  `OnlineInferenceContractError`;
+- `--allow-unsafe-future-features` оставлен только для старой механической
+  диагностики связи MT4 -> Python -> CSV -> MT4.
+
 Главный вывод:
-- diagnostic-контур готов к online demo launch / наблюдению на удалённом сервере;
+- механическая цепочка diagnostic-контурa была доведена до наблюдаемого вида,
+  но legacy ML-контракт `original_baseline` больше не считается online-ready;
 - свежий MT4 tester proof за 2025 дал `critical_mismatch_count=0`;
 - `missing_close_count=1` объясняется открытой позицией на конце периода;
 - прибыльный tester result не считать production-доказательством качества стратегии.
-- online diagnostic больше не зависит от future-derived `predict`;
-- перед production-переходом нужно отдельно проверить, соответствует ли `fractal0.direction` финальной обучающей постановке, а не только задаче набора telemetry-событий.
+- online diagnostic больше не зависит от future-derived `predict` для
+  направления, но сам checkpoint `original_baseline` требует future-derived
+  row features и поэтому заблокирован для ML-корректной online-проверки;
+- перед production-переходом нужен live-safe retrain: один и тот же набор
+  признаков в training/test и online, без future-derived входов.
 
 ## Next Step
 
-1. Оставить M5-наблюдение примерно на 10 часов без изменения diagnostic-сигнала.
-2. Собрать статистику runtime-строк:
-   - `MLP_WAIT: file changed after ...`;
-   - `MLP_WAIT: timeout ...`;
-   - `MLP NO_SIGNAL`;
-   - `MLP ZERO_SIGNAL`;
-   - `MLP BUY` / `MLP SELL`;
-   - `MLP CLOSE` / `MLP SKIP`.
-3. По статистике решить, достаточно ли текущей частоты и баланса сигналов для diagnostic demo.
-4. Затем вернуть профиль на H1/server либо продолжить M5 online-наблюдение на удалённом сервере.
+1. Закрыть этап отчётом: mechanical online chain hardened, legacy ML contract
+   blocked as unsafe.
+2. Спроектировать live-safe retrain:
+   - убрать `predict`, `ret_*`, `fav_*`, `adv_*` из входных признаков;
+   - оставить только признаки, доступные на момент бара;
+   - training/test и online должны использовать один builder.
+3. После retrain заново сравнивать online/backtest.
 
 ## Read First
 
@@ -64,7 +80,10 @@
 
 ## Open Risks
 
-- Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но зависит от корректного парсинга `fractal0.direction`.
+- Legacy `original_baseline` нельзя считать online-ready: historical test был
+  загрязнён future-derived входными признаками, а live `Nero.csv` этих признаков
+  не имеет.
+- Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
 - `knowledge-rag` reindex в конце этапа ранее падал с `Transport closed`; RAG может отставать от части последних правок.

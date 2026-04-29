@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-28
-sources: 30
+last_updated: 2026-04-29
+sources: 31
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 30 отчётов (2026-04-08 — 2026-04-28). Параллельные направления execution и текущая подготовка telemetry demo launch.
+> Синтез 31 отчёта (2026-04-08 — 2026-04-29). Параллельные направления execution и текущая подготовка telemetry demo launch.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -909,7 +909,12 @@ Trade-level reconciliation был сохранён отдельно:
 | missing_close_count | 1 |
 | OnTester returns | 15064.255859375 |
 
-`missing_close_count=1` объясняется открытой позицией на конце периода. Вывод: diagnostic-контур готов к online demo launch. Прибыльность tester-прогона не считать production-доказательством качества стратегии.
+`missing_close_count=1` объясняется открытой позицией на конце периода. На
+дату 2026-04-27 diagnostic-контур считался готовым к online demo launch как
+механическая цепочка. Этот вывод позже уточнён contract hardening-ом
+2026-04-29: legacy `original_baseline` не является ML-корректным online
+контрактом. Прибыльность tester-прогона не считать production-доказательством
+качества стратегии.
 
 Источник: [2026-04-27-telemetry-frequency-demo-launch.md](../../docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 
@@ -938,7 +943,15 @@ Watcher больше не держит весь `Nero.csv` в памяти на 
 
 - строит `runtime_input_snapshot.csv` из хвоста `Nero.csv`;
 - default window: `--max-runtime-rows 12000`;
-- запускает checkpoint в контракте `original_contour / original_baseline / seq_len=50`;
+- с 2026-04-29 строит `runtime_input_preprocessed.csv` через causal subset
+  training pipeline: сортировка фракталов по времени и `normalize_rowwise()`
+  без future-derived labels;
+- проверяет сортировку фракталов после preprocessing;
+- запускает `normalize_rowwise(verbose=False)`, чтобы runtime log не засорялся;
+- блокирует legacy checkpoint в контракте
+  `original_contour / original_baseline / seq_len=50` по умолчанию, потому что
+  его training/test input включает future-derived row features (`predict`,
+  `ret_*`, `fav_*`, `adv_*`);
 - затем применяет frozen diagnostic rule и обновляет `ml_signals.csv`.
 
 Full-vs-12000 проверка на хвосте:
@@ -962,7 +975,7 @@ Live `Nero.csv` уже формируется и дописывается, но 
 такой же `predict` нельзя честно получить в live-момент появления строки.
 
 Для diagnostic online-export источник направления заменён на текущий
-`fractal0.direction` с обратным знаком:
+`fractal0.direction` после сортировки с обратным знаком:
 
 - `fractal0.direction = -1` -> BUY;
 - `fractal0.direction = 1` -> SELL.
@@ -976,4 +989,17 @@ same-time opposite-signal groups.
 что выбранный online-источник направления соответствует финальной обучающей
 постановке.
 
-Источник: [2026-04-28-mql-runtime-architecture-snapshot.md](../../docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
+2026-04-29 update: текущий watcher больше не подаёт raw `Nero.csv` напрямую в
+модель. Raw snapshot сохраняется отдельно, затем online preprocessing приводит
+фракталы и масштабы признаков к обучающему контракту в live-safe части.
+
+2026-04-29 contract hardening: последующий аудит выявил, что
+`original_baseline` использовал future-derived row features как вход модели.
+Поэтому watcher теперь не запускает этот legacy contract online без явного
+`--allow-unsafe-future-features`. Такой override допустим только для проверки
+механической цепочки MT4 -> Python -> CSV -> MT4, а не для вывода о качестве
+ML. Следующий ML-корректный шаг - live-safe retrain с тем же набором признаков
+в training/test и online.
+
+Источники: [2026-04-28-mql-runtime-architecture-snapshot.md](../../docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md),
+[2026-04-29-online-inference-contract-hardening.md](../../docs/reports/2026-04-29-online-inference-contract-hardening.md)

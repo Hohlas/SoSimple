@@ -360,12 +360,22 @@ MQL не должен запускать ML-модель внутри себя. 
   добавление target-колонок и нормализацию;
 - но текущий online telemetry watcher не гоняет весь `processing/label_main.py`
   в реальном времени;
-- для `telemetry_frequency_v1` он работает от raw runtime `Nero.csv` через
-  специализированный `ML.export_take_skip_v2_predictions`, который сам строит
-  вход модели из `signal/predict/ATR/fractal*`.
+- для `telemetry_frequency_v1` он сначала применяет causal subset preprocessing:
+  сортирует `fractal0..fractal99` по времени убыванию и выполняет
+  `normalize_rowwise()`;
+- после сортировки выполняется проверка порядка фракталов;
+- `normalize_rowwise()` запускается в тихом режиме, чтобы не засорять runtime
+  log watcher-а;
+- legacy checkpoint в режиме `original_contour` / `original_baseline` теперь
+  заблокирован online contract guard по умолчанию, потому что его training/test
+  input включал future-derived row features (`predict`, `ret_*`, `fav_*`,
+  `adv_*`). Такой checkpoint нельзя считать ML-корректным online.
 
-То есть в текущем online-контуре нужно не "повторить весь train preprocessing",
-а "повторить именно тот inference-contract, который ожидает frozen checkpoint".
+То есть для будущего корректного online-контура нужно не "повторить весь train
+preprocessing", а использовать один и тот же live-safe набор признаков в
+training/test и online. Старый `original_baseline` можно запускать только с
+явным `--allow-unsafe-future-features` для механической диагностики связи,
+но не для вывода о качестве ML.
 
 Важное уточнение по направлению online-сигнала, найденное 2026-04-28:
 
@@ -376,7 +386,8 @@ MQL не должен запускать ML-модель внутри себя. 
   `predict = -back * direction`;
 - поэтому в live-контуре нельзя честно досчитать тот же `predict` в момент
   появления строки;
-- для diagnostic online-export watcher использует `fractal0.direction` как
+- для diagnostic online-export watcher использует `fractal0.direction` после
+  сортировки как
   доступный текущий источник направления:
   - `fractal0.direction = -1 -> BUY`;
   - `fractal0.direction = 1 -> SELL`.
@@ -396,9 +407,10 @@ MT4↔ML↔MT4. Он не доказывает, что production-стратег
 2. отдельный Python watcher работает в фоне и ждёт новый закрытый бар;
 3. если `Nero.csv` пока содержит только заголовок, watcher остаётся в состоянии
    `waiting_for_first_row`, пишет это в лог и ждёт первый закрытый бар;
-4. после появления строки данных watcher сначала собирает компактный
-   `runtime_input_snapshot.csv` из хвоста `Nero.csv`, затем пересчитывает
-   prediction CSV и обновляет `ml_signals.csv`;
+4. после появления строки данных watcher сначала собирает raw
+   `runtime_input_snapshot.csv` из хвоста `Nero.csv`, затем строит
+   `runtime_input_preprocessed.csv`, пересчитывает prediction CSV и обновляет
+   `ml_signals.csv`;
 5. MT4 на новом баре видит изменение файла и пишет `MLP_RELOAD: file changed`;
 6. дальше в логах нужно наблюдать уже торговые строки:
    - `MLP BUY`
@@ -499,28 +511,34 @@ tmux attach -t telemetry-watcher
 tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
 ```
 
-9. Нормальные состояния на экране и в логах:
+9. Нормальные состояния на экране и в логах для live-safe checkpoint:
    - `WATCHER HEARTBEAT: status=WAIT ...`
    - `WATCHER HEARTBEAT: status=IDLE ...`
    - `WATCHER rebuild start: ...`
    - `WATCHER rebuild done: ...`
 
-10. После первого rebuild проверить обновление:
+10. Если используется legacy `original_baseline`, нормальный исход - остановка
+   на `OnlineInferenceContractError`: это защита от запуска модели, которая
+   ждёт future-derived признаки. Для старой механической диагностики можно
+   добавить `--allow-unsafe-future-features`, но такой прогон не является
+   проверкой соответствия online и test.
+
+11. После первого rebuild проверить обновление:
    - `ML/reports/telemetry_frequency_v1/runtime/runtime_input_snapshot.csv`
+   - `ML/reports/telemetry_frequency_v1/runtime/runtime_input_preprocessed.csv`
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/ml_signals.csv`
    - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
 
-11. На следующем баре в MT4 проверить:
+12. На следующем баре в MT4 проверить:
    - `MLP_RELOAD: file changed ...`
    - `MLP BUY` / `MLP SELL`
    - затем `MLP CLOSE` / `MLP SKIP`
 
 Диагностический профиль `telemetry_frequency_v1_highfreq500` нужен только для
-ускоренного набора статистики взаимодействия. Он выбирает кандидатов из всех
-строк, направление берёт из знака `predict`, а частоту ограничивает через
-`--diagnostic-target-signals-per-year`. Для боевой стратегии такой профиль не
-считать доказательством прибыльности без отдельной out-of-sample проверки.
+ускоренного набора статистики взаимодействия. Если он запущен через unsafe
+override, его считать проверкой механической цепочки MT4 -> Python -> CSV ->
+MT4, а не доказательством прибыльности или соответствия online/test.
 
 ---
 

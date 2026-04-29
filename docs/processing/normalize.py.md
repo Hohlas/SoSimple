@@ -3,6 +3,10 @@
 ## Назначение
 Нормализация признаков для нейросети. Реализует специфичные методы для финансовых данных с тяжелыми хвостами распределений.
 
+Поддерживает текущий 22-польный формат фрактала и legacy 18-польный формат:
+для старых строк `fractal_atr` из позиции 17 переносится в современную позицию
+21 перед записью в рабочий массив.
+
 ## Методы нормализации
 
 | Метод | Признаки | Диапазон | Особенности |
@@ -13,7 +17,7 @@
 | **Без изменений** | `direction`, `strong`, `fractal_atr` | {-1, 0, 1} / raw | Категориальные и служебные признаки. |
 
 ## Ключевые функции
-- `normalize_rowwise(df, return_updn_params=False)`: Построчная нормализация (fractals, predict, Up/Dn таргеты) — **без утечки данных (No Data Leakage)**. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`.
+- `normalize_rowwise(df, return_updn_params=False, verbose=True)`: Построчная нормализация (fractals, predict, Up/Dn таргеты) — **без утечки данных (No Data Leakage)**. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`. Для runtime watcher-а используется `verbose=False`, чтобы не писать progress в stdout.
 - `piecewise_linear_log_transform()`: Реализация алгоритма PLL.
 - `normalize_atr_train()` / `normalize_atr_inference()`: Устаревшие, не используются (ATR не нормализуется, используется как знаменатель для ATR_ratio в data_loader.py).
 
@@ -40,6 +44,9 @@ df = normalize_rowwise(df, stats_path="stats.csv")
 # С сохранением per-row brk/cap для последующей денормализации
 df, updn_params = normalize_rowwise(df, stats_path="stats.csv", return_updn_params=True)
 # updn_params.shape == (N, 2), updn_params[i] = [brk, cap] для строки i
+
+# Тихий режим для runtime/inference-процессов
+df = normalize_rowwise(df, verbose=False)
 
 # ... сплит на train/val/test ...
 # ATR не нормализуется — используется как знаменатель для ATR_ratio в data_loader.py

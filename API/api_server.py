@@ -2,7 +2,7 @@
 # Файл: API/api_server.py
 # Назначение: REST API Сервер для приема фракталов из MT4 и отдачи ML-сигналов
 # Язык: Python 3.11+
-# Обновлён: 2026-03-19
+# Обновлён: 2026-04-29
 # =============================================================================
 
 import json
@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from ML.data_loader import parse_fractals_to_3d, N_FRACTALS
 from ML.models import get_model
 from ML.utils import get_device
-from processing.normalize import normalize_rowwise
+from processing.online_causal_preprocessing import preprocess_online_frame
 
 # Конфигурация
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -119,8 +119,8 @@ def predict_signal(request: PredictRequest):
     
     df = pd.DataFrame([row_data])
     
-    # 2. Построчная нормализация (из processing.normalize)
-    df_norm = normalize_rowwise(df)
+    # 2. Общая live-safe подготовка: сортировка фракталов + тихая rowwise-нормализация.
+    df_norm = preprocess_online_frame(df)
     
     # 3. Парсинг в 3D тензор
     X_np, mask_np = parse_fractals_to_3d(df_norm)

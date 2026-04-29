@@ -63,90 +63,17 @@ from label_signals import (
     label_trailing_stop_targets,
 )
 from normalize import normalize_rowwise
+try:
+    from processing.fractal_preprocessing import (
+        sort_fractals_in_dataframe,
+        sort_row_fractals as process_row_fractals,
+    )
+except ModuleNotFoundError:
+    from fractal_preprocessing import (
+        sort_fractals_in_dataframe,
+        sort_row_fractals as process_row_fractals,
+    )
 
-
-
-def process_row_fractals(row_data, fractal_columns, debug=False, row_idx=None):
-    """
-    Парсит и сортирует фракталы в конкретной строке DataFrame.
-
-    Логика: собирает все непустые значения из колонок 'fractalN',
-    извлекает время формирования из каждого значения и сортирует
-    фракталы так, чтобы самые свежие (наибольшее время) шли первыми.
-
-    Args:
-        row_data (pd.Series): Данные одной строки DataFrame.
-        fractal_columns (List[str]): Список имен колонок с фракталами.
-        debug (bool): Флаг включения отладки.
-        row_idx (int, optional): Индекс строки для вывода в логах.
-
-    Returns:
-        List[str]: Список отсортированных строк-фракталов.
-    """
-    fractals = []
-    
-    # Собираем и парсим все фракталы
-    for col_name in fractal_columns:
-        fractal_str = row_data[col_name]
-        if pd.isna(fractal_str) or fractal_str == '':
-            continue
-            
-        parts = str(fractal_str).split(':')
-        if len(parts) >= 1:  # Нам нужно хотя бы время
-            try:
-                time_val = int(parts[0])  # time
-                fractals.append({
-                    'time': time_val,
-                    'data': fractal_str
-                })
-            except (ValueError, IndexError) as e:
-                if debug:
-                    print(f"  [Строка {row_idx}] Ошибка парсинга фрактала в {col_name}: {e}")
-                continue
-    
-    # Сортируем по времени в обратном порядке (новые первые)
-    fractals.sort(key=lambda x: x['time'], reverse=True)
-    
-    # Возвращаем отсортированные фракталы
-    return [f['data'] for f in fractals]
-
-
-def sort_fractals_in_dataframe(df, debug=False):
-    """
-    Выполняет сортировку фракталов во всем DataFrame.
-
-    Проходит по каждой строке и переупорядочивает значения в колонках
-    'fractal0', 'fractal1', ... на основе времени их появления.
-
-    Args:
-        df (pd.DataFrame): Исходный DataFrame с неструктурированными фракталами.
-        debug (bool): Флаг отладки.
-
-    Returns:
-        pd.DataFrame: DataFrame, где в каждой строке фракталы упорядочены (новые первые).
-    """
-    if debug:
-        print(f"\n[СОРТИРОВКА] Начало сортировки фракталов в {len(df)} строках")
-    
-    # Получаем список колонок с фракталами
-    fractal_columns = [col for col in df.columns if col.startswith('fractal')]
-    
-    for idx, row in df.iterrows():
-        sorted_fractals = process_row_fractals(row, fractal_columns, debug=debug, row_idx=idx)
-        
-        # Перезаписываем отсортированные фракталы обратно в DataFrame
-        for i, fractal_data in enumerate(sorted_fractals):
-            if i < len(fractal_columns):
-                df.at[idx, fractal_columns[i]] = fractal_data
-        
-        # Очищаем оставшиеся колонки
-        for i in range(len(sorted_fractals), len(fractal_columns)):
-            df.at[idx, fractal_columns[i]] = ''
-            
-    if debug:
-        print(f"[СОРТИРОВКА] Завершена")
-    
-    return df
 
 
 def verify_sorting_quality(df, debug=False):

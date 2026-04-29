@@ -4,7 +4,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: 2026-02-07
-# Обновлён: 2026-03-19
+# Обновлён: 2026-04-29
 #
 # Зависимости:
 #   Входные данные:
@@ -30,6 +30,7 @@
 #   - ATR нормализация глобальная — требует fit на train, transform на val/test
 #   - Признаки direction и strong не нормализуются (уже в {-1,0,1})
 #   - fractal_time исключается из нормализации (служебное поле)
+#   - Legacy 18-польные фракталы поддерживаются: fractal_atr переносится в поле 21.
 # =============================================================================
 
 """
@@ -116,7 +117,11 @@ def parse_fractal(fractal_str: str) -> Optional[List[float]]:
         return None
 
     try:
-        return [float(p) for p in parts[:22]] if len(parts) >= 22 else [float(p) for p in parts[:18]]
+        values = [float(p) for p in parts[:22]] if len(parts) >= 22 else [float(p) for p in parts[:18]]
+        if len(values) == 18:
+            legacy_fractal_atr = values[17]
+            values = values[:17] + [np.nan, np.nan, np.nan, np.nan, legacy_fractal_atr]
+        return values
     except (ValueError, IndexError):
         return None
 
@@ -281,7 +286,8 @@ def normalize_rowwise(
     stats_path: Optional[str] = None,
     debug: bool = False,
     piecewise_params: Optional[dict] = None,
-    return_updn_params: bool = False
+    return_updn_params: bool = False,
+    verbose: bool = True,
 ) -> pd.DataFrame:
     """
     Выполняет построчную нормализацию всех признаков (кроме ATR).
@@ -301,12 +307,18 @@ def normalize_rowwise(
         stats_path: Путь для сохранения статистики (опционально).
         debug: Флаг отладки для вывода примеров до/после.
         piecewise_params: Параметры piecewise linear-log (опционально).
+        return_updn_params: Вернуть per-row параметры нормализации Up/Dn.
+        verbose: Печатать progress в stdout. В runtime watcher используется False.
 
     Returns:
         DataFrame с нормализованными признаками.
     """
     if piecewise_params is None:
         piecewise_params = DEFAULT_PIECEWISE_PARAMS
+
+    def log(message: str = "") -> None:
+        if verbose:
+            print(message)
     
     q_break = piecewise_params['q_break']
     q_cap = piecewise_params['q_cap']
@@ -314,22 +326,22 @@ def normalize_rowwise(
     tail_strength = piecewise_params['tail_strength']
     eps = piecewise_params['eps']
     
-    print("\n" + "=" * 60)
-    print("НОРМАЛИЗАЦИЯ ПРИЗНАКОВ (построчная)")
-    print("=" * 60)
+    log("\n" + "=" * 60)
+    log("НОРМАЛИЗАЦИЯ ПРИЗНАКОВ (построчная)")
+    log("=" * 60)
     
     # Парсим фракталы в numpy array
-    print("\n[1/4] Парсинг фракталов в numpy array...")
+    log("\n[1/4] Парсинг фракталов в numpy array...")
     fractals, fractal_columns = parse_fractals_to_array(df)
     n_rows, n_fractals, n_features = fractals.shape
-    print(f"      Shape: ({n_rows}, {n_fractals}, {n_features})")
+    log(f"      Shape: ({n_rows}, {n_fractals}, {n_features})")
     
     # Собираем статистику до нормализации
     if stats_path:
-        print(f"\n[2/4] Сбор статистики до нормализации...")
+        log(f"\n[2/4] Сбор статистики до нормализации...")
         stats = collect_statistics(df, fractals)
         save_statistics(stats, stats_path)
-        print(f"      Сохранено: {stats_path}")
+        log(f"      Сохранено: {stats_path}")
     
     # Индексы признаков
     idx_front = FRACTAL_INDICES['front']
@@ -363,7 +375,7 @@ def normalize_rowwise(
                 'price': fractals[i, :3, idx_price].copy(),
             })
     
-    print(f"\n[3/4] Нормализация строк...")
+    log(f"\n[3/4] Нормализация строк...")
     
     for i in range(n_rows):
         # === 1. Совместная нормализация predict + front + back ===
@@ -460,7 +472,7 @@ def normalize_rowwise(
 
         # Прогресс
         if (i + 1) % 10000 == 0 or i == n_rows - 1:
-            print(f"      Обработано: {i + 1}/{n_rows} строк")
+            log(f"      Обработано: {i + 1}/{n_rows} строк")
     
     # Записываем нормализованный predict обратно
     df['predict'] = predict_normalized
@@ -471,27 +483,27 @@ def normalize_rowwise(
             df[col] = updn_targets[col].astype(np.float32)
     
     # Записываем фракталы обратно в DataFrame
-    print(f"\n[4/4] Запись нормализованных фракталов...")
+    log(f"\n[4/4] Запись нормализованных фракталов...")
     df = array_to_fractal_strings(fractals, df, fractal_columns)
     
     # Логирование: примеры после нормализации
     if debug:
-        print("\n" + "-" * 60)
-        print("ПРИМЕРЫ НОРМАЛИЗАЦИИ (первые 3 строки)")
-        print("-" * 60)
+        log("\n" + "-" * 60)
+        log("ПРИМЕРЫ НОРМАЛИЗАЦИИ (первые 3 строки)")
+        log("-" * 60)
         
         for i in range(min(3, n_rows)):
-            print(f"\n[Строка {i}]")
-            print(f"  predict: {samples_before[i]['predict']:.6f} -> {df.iloc[i]['predict']:.6f}")
+            log(f"\n[Строка {i}]")
+            log(f"  predict: {samples_before[i]['predict']:.6f} -> {df.iloc[i]['predict']:.6f}")
             
             # Парсим нормализованные фракталы для сравнения
             frac_norm = parse_fractal(df.iloc[i]['fractal0'])
             if frac_norm:
-                print(f"  front[0]: {samples_before[i]['front'][0]:.6f} -> {frac_norm[idx_front]:.6f}")
-                print(f"  back[0]:  {samples_before[i]['back'][0]:.6f} -> {frac_norm[idx_back]:.6f}")
-                print(f"  price[0]: {samples_before[i]['price'][0]:.6f} -> {frac_norm[idx_price]:.6f}")
+                log(f"  front[0]: {samples_before[i]['front'][0]:.6f} -> {frac_norm[idx_front]:.6f}")
+                log(f"  back[0]:  {samples_before[i]['back'][0]:.6f} -> {frac_norm[idx_back]:.6f}")
+                log(f"  price[0]: {samples_before[i]['price'][0]:.6f} -> {frac_norm[idx_price]:.6f}")
     
-    print(f"\n[ГОТОВО] Построчная нормализация завершена")
+    log(f"\n[ГОТОВО] Построчная нормализация завершена")
 
     if return_updn_params:
         return df, updn_params

@@ -259,6 +259,7 @@ statistics/*.old_32k
 # Git worktrees (изолированные окружения для AI-агентов)
 .worktrees/
 .worktree/
+.kilo/
 
 # Локальное runtime-хранилище индекса knowledge-rag.
 .knowledge-rag-data/

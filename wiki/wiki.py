@@ -38,6 +38,11 @@ IGNORE_DIRS = {
     "node_modules",      # catches top-level node_modules
     ".github",           # CI config, not relevant to agents
     ".worktrees",        # git worktrees — copies of repo, not source
+    ".codex",            # Codex runtime worktrees — copies of repo, not source
+    ".claude",
+    ".kilo",
+    ".knowledge-rag-data",
+    ".pytest_cache",
     ".vscode",           # editor config
 }
 

@@ -138,6 +138,7 @@ def test_run_once_rebuilds_and_updates_state(tmp_path, monkeypatch):
     changed = watcher.run_once(
         input_csv=input_csv,
         runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
         checkpoint_path=tmp_path / "ckpt.pt",
         rule_path=tmp_path / "rule.json",
         predictions_path=tmp_path / "predictions.csv",
@@ -173,12 +174,21 @@ def test_rebuild_signals_uses_original_contour_baseline(monkeypatch, tmp_path):
         Path(kwargs["output_path"]).write_text("sig", encoding="utf-8")
         Path(kwargs["metadata_output"]).write_text("{}", encoding="utf-8")
 
+    monkeypatch.setattr(
+        watcher,
+        "preprocess_online_csv",
+        lambda **kwargs: Path(kwargs["output_csv"]).write_text(
+            Path(kwargs["input_csv"]).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        ),
+    )
     monkeypatch.setattr(watcher, "export_predictions", _fake_export_predictions)
     monkeypatch.setattr(watcher, "export_signals", _fake_export_signals)
 
     watcher.rebuild_signals(
         input_csv=input_csv,
         runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
         checkpoint_path=tmp_path / "ckpt.pt",
         predictions_path=tmp_path / "pred.csv",
         rule_path=tmp_path / "rule.json",
@@ -187,6 +197,7 @@ def test_rebuild_signals_uses_original_contour_baseline(monkeypatch, tmp_path):
         diagnostic_target_signals_per_year=500,
         batch_size=256,
         max_runtime_rows=100,
+        allow_unsafe_future_features=True,
     )
 
     assert captured["mode"] == "original_contour"
@@ -215,12 +226,21 @@ def test_rebuild_signals_uses_runtime_snapshot_for_exports(monkeypatch, tmp_path
         Path(kwargs["output_path"]).write_text("sig", encoding="utf-8")
         Path(kwargs["metadata_output"]).write_text("{}", encoding="utf-8")
 
+    monkeypatch.setattr(
+        watcher,
+        "preprocess_online_csv",
+        lambda **kwargs: Path(kwargs["output_csv"]).write_text(
+            Path(kwargs["input_csv"]).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        ),
+    )
     monkeypatch.setattr(watcher, "export_predictions", _fake_export_predictions)
     monkeypatch.setattr(watcher, "export_signals", _fake_export_signals)
 
     watcher.rebuild_signals(
         input_csv=input_csv,
         runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
         checkpoint_path=tmp_path / "ckpt.pt",
         predictions_path=tmp_path / "pred.csv",
         rule_path=tmp_path / "rule.json",
@@ -229,16 +249,115 @@ def test_rebuild_signals_uses_runtime_snapshot_for_exports(monkeypatch, tmp_path
         diagnostic_target_signals_per_year=500,
         batch_size=256,
         max_runtime_rows=1,
+        allow_unsafe_future_features=True,
     )
 
-    snapshot_path = Path(captured_predictions["input_csv"])
-    assert snapshot_path == tmp_path / "snapshot.csv"
-    assert snapshot_path.read_text(encoding="utf-8").splitlines() == [
+    preprocessed_path = Path(captured_predictions["input_csv"])
+    assert preprocessed_path == tmp_path / "preprocessed.csv"
+    assert (tmp_path / "snapshot.csv").read_text(encoding="utf-8").splitlines() == [
         "time;signal;predict",
         "2025.01.01 01:00;-1;-1",
     ]
-    assert Path(captured_signals["base_csv"]) == snapshot_path
+    assert preprocessed_path.read_text(encoding="utf-8").splitlines() == [
+        "time;signal;predict",
+        "2025.01.01 01:00;-1;-1",
+    ]
+    assert Path(captured_signals["base_csv"]) == preprocessed_path
     assert captured_signals["diagnostic_direction_source"] == "fractal0_direction"
+
+
+def test_rebuild_signals_preprocesses_snapshot_before_inference(monkeypatch, tmp_path):
+    captured_predictions: dict[str, object] = {}
+    captured_signals: dict[str, object] = {}
+    captured_preprocess: dict[str, object] = {}
+    input_csv = tmp_path / "Nero.csv"
+    input_csv.write_text(
+        "time;signal;predict\n"
+        "2025.01.01 00:00;1;1\n",
+        encoding="utf-8",
+    )
+    preprocessed_csv = tmp_path / "preprocessed.csv"
+
+    def _fake_preprocess_online_csv(**kwargs):
+        captured_preprocess.update(kwargs)
+        Path(kwargs["output_csv"]).write_text(
+            "time;signal;predict\n2025.01.01 00:00;0;0\n",
+            encoding="utf-8",
+        )
+
+    def _fake_export_predictions(**kwargs):
+        captured_predictions.update(kwargs)
+        Path(kwargs["output_path"]).write_text("pred", encoding="utf-8")
+
+    def _fake_export_signals(**kwargs):
+        captured_signals.update(kwargs)
+        Path(kwargs["output_path"]).write_text("sig", encoding="utf-8")
+        Path(kwargs["metadata_output"]).write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(watcher, "preprocess_online_csv", _fake_preprocess_online_csv)
+    monkeypatch.setattr(watcher, "export_predictions", _fake_export_predictions)
+    monkeypatch.setattr(watcher, "export_signals", _fake_export_signals)
+
+    watcher.rebuild_signals(
+        input_csv=input_csv,
+        runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=preprocessed_csv,
+        checkpoint_path=tmp_path / "ckpt.pt",
+        predictions_path=tmp_path / "pred.csv",
+        rule_path=tmp_path / "rule.json",
+        signals_output_path=tmp_path / "signals.csv",
+        metadata_output_path=tmp_path / "metadata.json",
+        diagnostic_target_signals_per_year=500,
+        batch_size=256,
+        max_runtime_rows=100,
+        allow_unsafe_future_features=True,
+    )
+
+    assert Path(captured_preprocess["input_csv"]) == tmp_path / "snapshot.csv"
+    assert Path(captured_preprocess["output_csv"]) == preprocessed_csv
+    assert Path(captured_predictions["input_csv"]) == preprocessed_csv
+    assert Path(captured_signals["base_csv"]) == preprocessed_csv
+
+
+def test_rebuild_signals_blocks_unsafe_original_baseline_by_default(monkeypatch, tmp_path):
+    input_csv = tmp_path / "Nero.csv"
+    input_csv.write_text(
+        "time;signal;predict\n"
+        "2025.01.01 00:00;1;1\n",
+        encoding="utf-8",
+    )
+    called = {"preprocess": 0, "predictions": 0}
+
+    def _fake_preprocess_online_csv(**kwargs):
+        called["preprocess"] += 1
+
+    def _fake_export_predictions(**kwargs):
+        called["predictions"] += 1
+
+    monkeypatch.setattr(watcher, "preprocess_online_csv", _fake_preprocess_online_csv)
+    monkeypatch.setattr(watcher, "export_predictions", _fake_export_predictions)
+
+    try:
+        watcher.rebuild_signals(
+            input_csv=input_csv,
+            runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+            runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
+            checkpoint_path=tmp_path / "ckpt.pt",
+            predictions_path=tmp_path / "pred.csv",
+            rule_path=tmp_path / "rule.json",
+            signals_output_path=tmp_path / "signals.csv",
+            metadata_output_path=tmp_path / "metadata.json",
+            diagnostic_target_signals_per_year=500,
+            batch_size=256,
+            max_runtime_rows=100,
+        )
+    except watcher.OnlineInferenceContractError as exc:
+        assert "original_baseline" in str(exc)
+        assert "future-derived" in str(exc)
+    else:
+        raise AssertionError("expected OnlineInferenceContractError")
+
+    assert called == {"preprocess": 0, "predictions": 0}
 
 
 def test_run_once_skips_when_no_new_bar(tmp_path, monkeypatch):
@@ -266,6 +385,7 @@ def test_run_once_skips_when_no_new_bar(tmp_path, monkeypatch):
     changed = watcher.run_once(
         input_csv=input_csv,
         runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
         checkpoint_path=tmp_path / "ckpt.pt",
         rule_path=tmp_path / "rule.json",
         predictions_path=tmp_path / "predictions.csv",
@@ -292,6 +412,7 @@ def test_run_once_skips_and_updates_state_for_header_only_csv(tmp_path, monkeypa
     changed = watcher.run_once(
         input_csv=input_csv,
         runtime_input_snapshot_path=tmp_path / "snapshot.csv",
+        runtime_input_preprocessed_path=tmp_path / "preprocessed.csv",
         checkpoint_path=tmp_path / "ckpt.pt",
         rule_path=tmp_path / "rule.json",
         predictions_path=tmp_path / "predictions.csv",

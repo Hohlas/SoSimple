@@ -112,7 +112,7 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
 Инвариант pipeline: все поля `Nero.csv` должны отражать только состояние, известное на момент записи строки. Это относится и к `Up/Dn`.
 
 ### Процесс
-**Модуль**: `processing/label_main.py` → `sort_fractals_in_dataframe()`
+**Модуль**: `processing/fractal_preprocessing.py` → `sort_fractals_in_dataframe()`
 
 1. Парсит каждую строку `fractalN`
 2. Извлекает `time` (первое поле до `:`)

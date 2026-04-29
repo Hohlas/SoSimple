@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-28 18:45 UTC · git `98d53fa`
+> Auto-generated 2026-04-29 20:33 UTC · git `b33903f`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,25 +9,26 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 997 files  ·  **Commit**: `98d53fa`  ·  **Generated**: 2026-04-28 18:45 UTC
+**Tracked**: 960 files  ·  **Commit**: `b33903f`  ·  **Generated**: 2026-04-29 20:33 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-04-27 | 11KB | `f0c8c113` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-28 | 134KB | `c535cf4c` |
+| [AGENTS.md](AGENTS.md) |  | 2026-04-29 | 11KB | `9be86aed` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-04-29 | 136KB | `3e58122c` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-28 | 6KB | `1b8ca3fe` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-27 | 31KB | `1f8a8800` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-04-29 | 7KB | `efe2f953` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-04-29 | 32KB | `f395ded8` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-04-28 | 10KB | `0e80159a` |
-| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-04-27 | 24KB | `dcc3fe00` |
+| [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-04-29 | 1KB | `061e7df2` |
+| [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-04-29 | 13KB | `d22db703` |
+| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-04-29 | 24KB | `1bf36282` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-04-01 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-04-24 | 3KB | `facaa586` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-04-24 | 4KB | `03bec021` |
@@ -48,13 +49,15 @@
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-04-27 | 4KB | `b708037f` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-27 | 20KB | `709955e7` |
-| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-28 | 39KB | `86818af4` |
+| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-04-29 | 40KB | `a6532217` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-27 | 4KB | `dba0c943` |
-| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-27 | 3KB | `ebde07dc` |
+| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-29 | 3KB | `a2fb0a8a` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
-| [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-04-20 | 2KB | `3f1ffcb9` |
+| [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-04-29 | 856B | `876e71c9` |
+| [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-04-29 | 2KB | `bcc8644c` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-04-20 | 1KB | `3fd26730` |
-| [docs/processing/normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков | 2026-03-26 | 3KB | `06e43e08` |
+| [docs/processing/normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков | 2026-04-29 | 4KB | `d243647f` |
+| [docs/processing/online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing | 2026-04-29 | 2KB | `5ae62419` |
 | [docs/statistics/EDA.ipynb.md](docs/statistics/EDA.ipynb.md) | Отчет по разведочному анализу | 2026-04-01 | 17KB | `914b3a5e` |
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-04-12 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-03-26 | 6KB | `9835a477` |
@@ -187,6 +190,7 @@
 | [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 10KB | `77d28ff4` |
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
+| [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-29 | 6KB | `bc68e3ce` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
@@ -461,8 +465,8 @@
 | [ML/reports/telemetry_frequency_v1/highfreq500_tester_log_parity/summary.json](ML/reports/telemetry_frequency_v1/highfreq500_tester_log_parity/summary.json) |  |  | 2026-04-27 | 1KB | `f61e6e6c` |
 | [ML/reports/telemetry_frequency_v1/highfreq500_tester_log_parity/summary.md](ML/reports/telemetry_frequency_v1/highfreq500_tester_log_parity/summary.md) |  |  | 2026-04-27 | 798B | `398dcef2` |
 | [ML/reports/telemetry_frequency_v1/runtime/full_chunked_compare/full_chunked_metadata.json](ML/reports/telemetry_frequency_v1/runtime/full_chunked_compare/full_chunked_metadata.json) |  |  | 2026-04-28 | 749B | `bf5cdd0d` |
-| [ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json](ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json) |  |  | 2026-04-28 | 724B | `25df6be3` |
-| [ML/reports/telemetry_frequency_v1/runtime/runtime_state.json](ML/reports/telemetry_frequency_v1/runtime/runtime_state.json) |  |  | 2026-04-28 | 147B | `ce1edd8c` |
+| [ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json](ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json) |  |  | 2026-04-29 | 726B | `b1c6b12c` |
+| [ML/reports/telemetry_frequency_v1/runtime/runtime_state.json](ML/reports/telemetry_frequency_v1/runtime/runtime_state.json) |  |  | 2026-04-29 | 148B | `b400c977` |
 | [ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_1000.json](ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_1000.json) |  |  | 2026-04-28 | 703B | `d41af1ed` |
 | [ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_12000.json](ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_12000.json) |  |  | 2026-04-28 | 708B | `948b2452` |
 | [ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_2000.json](ML/reports/telemetry_frequency_v1/runtime/window_sweep/meta_2000.json) |  |  | 2026-04-28 | 704B | `13f41ca3` |
@@ -567,17 +571,19 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [processing/README.md](processing/README.md) |  |  | 2026-03-26 | 1KB | `0013c357` |
-| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-04-17 | 17KB | `bcafa9e8` |
+| [processing/README.md](processing/README.md) |  |  | 2026-04-29 | 2KB | `0bf2a3ec` |
+| [processing/fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | ✅ | 2026-04-29 | 3KB | `37670f70` |
+| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-04-29 | 14KB | `8aeebde8` |
 | [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-04-19 | 43KB | `ca81b6dd` |
-| [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-04-01 | 25KB | `62ee241c` |
+| [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-04-29 | 26KB | `c20442dd` |
+| [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | ✅ | 2026-04-29 | 4KB | `c9ee4514` |
 
 ## API
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [API/README.md](API/README.md) |  |  | 2026-04-28 | 5KB | `106e99df` |
-| [API/api_server.py](API/api_server.py) | REST API сервер: приём фракталов из MT4, отдача ML-сигналов | 🏁 | 2026-03-19 | 6KB | `6c418d6e` |
+| [API/README.md](API/README.md) |  |  | 2026-04-29 | 6KB | `6d270367` |
+| [API/api_server.py](API/api_server.py) | REST API сервер: приём фракталов из MT4, общий live-safe preprocessing, ML-сигнал |  | 2026-04-29 | 6KB | `17cf9bf1` |
 | [API/exit_policy_research.py](API/exit_policy_research.py) | Offline research: сравнение ML-политик выхода и position management | 🏁 | 2026-04-08 | 14KB | `1d29b812` |
 | [API/export_entry_path_v1_quantile_signals.py](API/export_entry_path_v1_quantile_signals.py) | Применение frozen `entry_path_v1_quantile` rule к prediction CSV и экспорт `time;signal` | ✅ | 2026-04-12 | 8KB | `a5a84e1a` |
 | [API/export_entry_path_v1_signals.py](API/export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule к prediction CSV и экспорт `time;signal` | ✅ | 2026-04-24 | 4KB | `970c0139` |
@@ -586,7 +592,7 @@
 | [API/signal_path_atlas.py](API/signal_path_atlas.py) | Research CLI: ATR-normalized Signal Path Atlas, path archetypes, holdout validation | 🏁 | 2026-04-08 | 37KB | `e2c123fe` |
 | [API/signal_quality_research.py](API/signal_quality_research.py) | Signal Quality Filter Research (Variant 4): multi-horizon prediction features как фильтры | 🏁 | 2026-04-08 | 29KB | `ad2482f8` |
 | [API/signal_research.py](API/signal_research.py) | Research CLI: качество ML-сигналов по реальным OHLC (Variant 2/3) | 🏁 | 2026-04-08 | 72KB | `c723fb6f` |
-| [API/telemetry_signal_watcher.py](API/telemetry_signal_watcher.py) | Фоновый online watcher telemetry-контура: `Nero.csv` → prediction CSV → `ml_signals.csv` | ✅ | 2026-04-28 | 13KB | `b5ce3998` |
+| [API/telemetry_signal_watcher.py](API/telemetry_signal_watcher.py) | Фоновый online watcher telemetry-контура с contract guard: `Nero.csv` → causal preprocessing → prediction CSV → `ml_signals.csv` | ✅ | 2026-04-29 | 16KB | `78fc0198` |
 | [API/test_api_client.py](API/test_api_client.py) | Интеграционный тест REST API-сервера (MT4) | 🏁 | 2026-03-19 | 1KB | `83309207` |
 
 ## Statistics
@@ -609,7 +615,8 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [tests/README.md](tests/README.md) |  |  | 2026-04-08 | 1KB | `c1093573` |
+| [tests/README.md](tests/README.md) |  |  | 2026-04-29 | 2KB | `9f4584cb` |
+| [tests/test_api_server_preprocessing.py](tests/test_api_server_preprocessing.py) | `API/api_server.py` shared online preprocessing contract | ✅ | 2026-04-29 | 1KB | `03d98baf` |
 | [tests/test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | ✅ | 2026-04-24 | 9KB | `745821a7` |
 | [tests/test_benchmark_entry_path_v1_frequency.py](tests/test_benchmark_entry_path_v1_frequency.py) | `ML/benchmark_entry_path_v1_frequency.py` | ✅ | 2026-04-17 | 739B | `40f6843e` |
 | [tests/test_benchmark_entry_path_v2.py](tests/test_benchmark_entry_path_v2.py) | `ML/benchmark_entry_path_v2.py` | ✅ | 2026-04-17 | 2KB | `78d542d3` |
@@ -659,6 +666,7 @@
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-04-20 | 3KB | `1ab56954` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-04-28 | 6KB | `074a90f7` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-04-18 | 1KB | `de0eeac6` |
+| [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-04-29 | 5KB | `fee35d8b` |
 | [tests/test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | ✅ | 2026-04-08 | 1KB | `8be56a6e` |
 | [tests/test_run_trailing_stop_target_matrix.py](tests/test_run_trailing_stop_target_matrix.py) | `ML/run_trailing_stop_target_matrix.py` | ✅ | 2026-04-18 | 7KB | `348a3ac4` |
 | [tests/test_run_trailing_stop_target_quantile.py](tests/test_run_trailing_stop_target_quantile.py) | `ML/run_trailing_stop_target_quantile.py` | ✅ | 2026-04-17 | 4KB | `9f4fc6e6` |
@@ -672,7 +680,7 @@
 | [tests/test_take_skip_trailing_stop_v2_task.py](tests/test_take_skip_trailing_stop_v2_task.py) |  |  | 2026-04-19 | 3KB | `df306b0d` |
 | [tests/test_tb_label_invariants.py](tests/test_tb_label_invariants.py) |  |  | 2026-04-13 | 1KB | `46510bd4` |
 | [tests/test_telemetry_daily_reconciliation.py](tests/test_telemetry_daily_reconciliation.py) | `ML/telemetry_daily_reconciliation.py` | ✅ | 2026-04-27 | 7KB | `ff563d2d` |
-| [tests/test_telemetry_signal_watcher.py](tests/test_telemetry_signal_watcher.py) | `API/telemetry_signal_watcher.py` | ✅ | 2026-04-28 | 10KB | `1d37467c` |
+| [tests/test_telemetry_signal_watcher.py](tests/test_telemetry_signal_watcher.py) | `API/telemetry_signal_watcher.py` | ✅ | 2026-04-29 | 14KB | `7d42d74f` |
 | [tests/test_track_a_max_out_matrix.py](tests/test_track_a_max_out_matrix.py) | `ML/run_track_a_max_out_matrix.py` | ✅ | 2026-04-17 | 706B | `da3502cc` |
 | [tests/test_trade_target_labels.py](tests/test_trade_target_labels.py) | `processing/label_signals.py` — trade target labels | ✅ | 2026-04-08 | 2KB | `6f50053b` |
 | [tests/test_trailing_stop_target_labels.py](tests/test_trailing_stop_target_labels.py) | `processing/label_signals.py` — trailing-stop target labels | ✅ | 2026-04-19 | 5KB | `1a95f11e` |
@@ -1002,61 +1010,16 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-04-28 | 1KB | `b7e7c78e` |
-| [wiki/log.md](wiki/log.md) |  | 2026-04-28 | 17KB | `74201f70` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-28 | 62KB | `b0fba4d5` |
+| [wiki/index.md](wiki/index.md) |  | 2026-04-29 | 1KB | `4159c2bd` |
+| [wiki/log.md](wiki/log.md) |  | 2026-04-29 | 18KB | `9b31625f` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-04-29 | 64KB | `af2d7a56` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
-| [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-10 | 18KB | `4bcfb243` |
+| [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-29 | 18KB | `ec64d51c` |
 
 ## Agent Config
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [.claude/memory/MEMORY.md](.claude/memory/MEMORY.md) |  | 2026-04-27 | 2KB | `0e250613` |
-| [.claude/memory/user_profile.md](.claude/memory/user_profile.md) |  | 2026-04-27 | 167B | `464e82c4` |
-| [.claude/settings.json](.claude/settings.json) |  | 2026-04-16 | 742B | `8100fea3` |
-| [.claude/settings.local.json](.claude/settings.local.json) |  | 2026-03-17 | 99B | `997fe658` |
-| [.claude/skills/brainstorming/SKILL.md](.claude/skills/brainstorming/SKILL.md) |  | 2026-03-17 | 10KB | `3f82fad8` |
-| [.claude/skills/brainstorming/spec-document-reviewer-prompt.md](.claude/skills/brainstorming/spec-document-reviewer-prompt.md) |  | 2026-03-17 | 1KB | `06b0277a` |
-| [.claude/skills/brainstorming/visual-companion.md](.claude/skills/brainstorming/visual-companion.md) |  | 2026-03-17 | 11KB | `37305635` |
-| [.claude/skills/csv-processing/SKILL.md](.claude/skills/csv-processing/SKILL.md) |  | 2026-04-16 | 2KB | `ae2e22e1` |
-| [.claude/skills/dispatching-parallel-agents/SKILL.md](.claude/skills/dispatching-parallel-agents/SKILL.md) |  | 2026-03-17 | 6KB | `645864ea` |
-| [.claude/skills/executing-plans/SKILL.md](.claude/skills/executing-plans/SKILL.md) |  | 2026-03-17 | 2KB | `1eedec6a` |
-| [.claude/skills/finishing-a-development-branch/SKILL.md](.claude/skills/finishing-a-development-branch/SKILL.md) |  | 2026-03-02 | 4KB | `5068e5c2` |
-| [.claude/skills/jupyter-processing/SKILL.md](.claude/skills/jupyter-processing/SKILL.md) |  | 2026-04-16 | 3KB | `6e2f7f1a` |
-| [.claude/skills/receiving-code-review/SKILL.md](.claude/skills/receiving-code-review/SKILL.md) |  | 2026-03-02 | 6KB | `7bdb2c2c` |
-| [.claude/skills/requesting-code-review/SKILL.md](.claude/skills/requesting-code-review/SKILL.md) |  | 2026-03-17 | 2KB | `03ae853d` |
-| [.claude/skills/requesting-code-review/code-reviewer.md](.claude/skills/requesting-code-review/code-reviewer.md) |  | 2026-03-02 | 3KB | `a17ab05f` |
-| [.claude/skills/stage-reporting/SKILL.md](.claude/skills/stage-reporting/SKILL.md) |  | 2026-04-16 | 4KB | `12338720` |
-| [.claude/skills/subagent-driven-development/SKILL.md](.claude/skills/subagent-driven-development/SKILL.md) |  | 2026-03-18 | 11KB | `0a35f71a` |
-| [.claude/skills/subagent-driven-development/code-quality-reviewer-prompt.md](.claude/skills/subagent-driven-development/code-quality-reviewer-prompt.md) |  | 2026-03-17 | 1KB | `923a1c03` |
-| [.claude/skills/subagent-driven-development/implementer-prompt.md](.claude/skills/subagent-driven-development/implementer-prompt.md) |  | 2026-03-18 | 4KB | `4c6c977c` |
-| [.claude/skills/subagent-driven-development/spec-reviewer-prompt.md](.claude/skills/subagent-driven-development/spec-reviewer-prompt.md) |  | 2026-03-02 | 1KB | `70330453` |
-| [.claude/skills/systematic-debugging/CREATION-LOG.md](.claude/skills/systematic-debugging/CREATION-LOG.md) |  | 2026-03-02 | 4KB | `c0a1bd0d` |
-| [.claude/skills/systematic-debugging/SKILL.md](.claude/skills/systematic-debugging/SKILL.md) |  | 2026-03-02 | 9KB | `05a9d191` |
-| [.claude/skills/systematic-debugging/condition-based-waiting.md](.claude/skills/systematic-debugging/condition-based-waiting.md) |  | 2026-03-02 | 3KB | `84c01c63` |
-| [.claude/skills/systematic-debugging/defense-in-depth.md](.claude/skills/systematic-debugging/defense-in-depth.md) |  | 2026-03-02 | 3KB | `f1213004` |
-| [.claude/skills/systematic-debugging/root-cause-tracing.md](.claude/skills/systematic-debugging/root-cause-tracing.md) |  | 2026-03-02 | 5KB | `aa760aed` |
-| [.claude/skills/systematic-debugging/test-academic.md](.claude/skills/systematic-debugging/test-academic.md) |  | 2026-03-02 | 653B | `f93a550e` |
-| [.claude/skills/systematic-debugging/test-pressure-1.md](.claude/skills/systematic-debugging/test-pressure-1.md) |  | 2026-03-02 | 1KB | `3fbf9df1` |
-| [.claude/skills/systematic-debugging/test-pressure-2.md](.claude/skills/systematic-debugging/test-pressure-2.md) |  | 2026-03-02 | 2KB | `dc10de1a` |
-| [.claude/skills/systematic-debugging/test-pressure-3.md](.claude/skills/systematic-debugging/test-pressure-3.md) |  | 2026-03-02 | 2KB | `4c1b5df1` |
-| [.claude/skills/test-driven-development/SKILL.md](.claude/skills/test-driven-development/SKILL.md) |  | 2026-03-02 | 9KB | `847d3947` |
-| [.claude/skills/test-driven-development/testing-anti-patterns.md](.claude/skills/test-driven-development/testing-anti-patterns.md) |  | 2026-03-02 | 8KB | `70d9ec22` |
-| [.claude/skills/update-docs-on-code-change/SKILL.md](.claude/skills/update-docs-on-code-change/SKILL.md) |  | 2026-04-17 | 8KB | `37b3b5b2` |
-| [.claude/skills/using-git-worktrees/SKILL.md](.claude/skills/using-git-worktrees/SKILL.md) |  | 2026-03-02 | 5KB | `fb693c90` |
-| [.claude/skills/using-superpowers/SKILL.md](.claude/skills/using-superpowers/SKILL.md) |  | 2026-03-17 | 5KB | `ecc31260` |
-| [.claude/skills/using-superpowers/references/codex-tools.md](.claude/skills/using-superpowers/references/codex-tools.md) |  | 2026-03-17 | 960B | `70fe0aeb` |
-| [.claude/skills/using-superpowers/references/gemini-tools.md](.claude/skills/using-superpowers/references/gemini-tools.md) |  | 2026-03-17 | 1KB | `5f43b981` |
-| [.claude/skills/verification-before-completion/SKILL.md](.claude/skills/verification-before-completion/SKILL.md) |  | 2026-03-02 | 4KB | `830cfbe3` |
-| [.claude/skills/wiki/SKILL.md](.claude/skills/wiki/SKILL.md) |  | 2026-04-16 | 8KB | `5e368d44` |
-| [.claude/skills/writing-plans/SKILL.md](.claude/skills/writing-plans/SKILL.md) |  | 2026-03-17 | 5KB | `26d892e5` |
-| [.claude/skills/writing-plans/plan-document-reviewer-prompt.md](.claude/skills/writing-plans/plan-document-reviewer-prompt.md) |  | 2026-03-17 | 1KB | `412ec6bb` |
-| [.claude/skills/writing-skills/SKILL.md](.claude/skills/writing-skills/SKILL.md) |  | 2026-03-02 | 21KB | `5cfc05f1` |
-| [.claude/skills/writing-skills/anthropic-best-practices.md](.claude/skills/writing-skills/anthropic-best-practices.md) |  | 2026-03-02 | 44KB | `95ea2856` |
-| [.claude/skills/writing-skills/examples/CLAUDE_MD_TESTING.md](.claude/skills/writing-skills/examples/CLAUDE_MD_TESTING.md) |  | 2026-03-02 | 5KB | `9d292f89` |
-| [.claude/skills/writing-skills/persuasion-principles.md](.claude/skills/writing-skills/persuasion-principles.md) |  | 2026-03-02 | 5KB | `672d4b80` |
-| [.claude/skills/writing-skills/testing-skills-with-subagents.md](.claude/skills/writing-skills/testing-skills-with-subagents.md) |  | 2026-03-02 | 12KB | `24475f71` |
 | [.kilocode/mcp.json](.kilocode/mcp.json) |  | 2026-04-10 | 481B | `14bc1e7d` |
 | [.kilocode/package-lock.json](.kilocode/package-lock.json) |  | 2026-04-20 | 3KB | `ca4a6cad` |
 | [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-22 | 60B | `31099cfb` |

@@ -8,6 +8,8 @@
 | Модуль | Назначение | Вход → Выход | Docs | Статус |
 |--------|-----------|--------------|------|--------|
 | [label_main.py](processing/label_main.py) | CLI оркестратор pipeline | `Nero.csv` → `*_labeled.csv` | [docs](docs/processing/label_main.py.md) | 🏁 |
+| [fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | DataFrame `fractal*` → отсортированный DataFrame | [docs](docs/processing/fractal_preprocessing.py.md) | ✅ |
+| [online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | runtime snapshot → preprocessed snapshot | [docs](docs/processing/online_causal_preprocessing.py.md) | ✅ |
 | [label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | sorted CSV → labeled CSV | [docs](docs/processing/label_signals.py.md) | 🏁 |
 | [normalize.py](processing/normalize.py) | Построчная нормализация признаков | labeled CSV → normalized CSV + `*.npy` | [docs](docs/processing/normalize.py.md) | 🏁 |
 
@@ -28,8 +30,8 @@
 | [export_entry_path_v1_signals.py](API/export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | [export_entry_path_v1_quantile_signals.py](API/export_entry_path_v1_quantile_signals.py) | Применение frozen `entry_path_v1_quantile` rule к prediction CSV и экспорт `time;signal` | quantile prediction CSV + selected_rule.json → `ml_signals.csv` | [docs](docs/MT/ml_signal_integration.md) | ✅ |
 | [export_take_skip_trailing_stop_v2_signals.py](API/export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` с optional metadata | prediction CSV + selected_rule.json → `ml_signals.csv` + optional metadata JSON | [docs](docs/MT/ml_signal_integration.md) | ✅ |
-| [telemetry_signal_watcher.py](API/telemetry_signal_watcher.py) | Фоновый online watcher telemetry-контура: `Nero.csv` → prediction CSV → `ml_signals.csv` | `Nero.csv` + checkpoint + rule → runtime `ml_signals.csv` + state/log | [docs](docs/API/telemetry_signal_watcher.py.md) | ✅ |
-| [api_server.py](API/api_server.py) | REST API сервер: приём фракталов из MT4, отдача ML-сигналов | HTTP → `ml_signals.csv` | — | 🏁 |
+| [telemetry_signal_watcher.py](API/telemetry_signal_watcher.py) | Фоновый online watcher telemetry-контура с contract guard: `Nero.csv` → causal preprocessing → prediction CSV → `ml_signals.csv` | `Nero.csv` + live-safe checkpoint + rule → runtime `ml_signals.csv` + state/log | [docs](docs/API/telemetry_signal_watcher.py.md) | ✅ |
+| [api_server.py](API/api_server.py) | REST API сервер: приём фракталов из MT4, общий live-safe preprocessing, ML-сигнал | HTTP → ML prediction | [docs](docs/API/api_server.py.md) | 🔬 |
 | [signal_research.py](API/signal_research.py) | Research CLI: качество ML-сигналов по реальным OHLC (Variant 2/3) | `ml_signals.csv` + OHLC → отчёт | — | 🏁 |
 | [signal_path_atlas.py](API/signal_path_atlas.py) | Research CLI: ATR-normalized Signal Path Atlas, path archetypes, holdout validation | ML-сигналы → path tensor, archetypes | — | 🏁 |
 | [signal_quality_research.py](API/signal_quality_research.py) | Signal Quality Filter Research (Variant 4): multi-horizon prediction features как фильтры | → отчёт, artifacts | — | 🏁 |
@@ -156,6 +158,8 @@
 | [test_telemetry_daily_reconciliation.py](tests/test_telemetry_daily_reconciliation.py) | `ML/telemetry_daily_reconciliation.py` | — | ✅ |
 | [test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | — | ✅ |
 | [test_telemetry_signal_watcher.py](tests/test_telemetry_signal_watcher.py) | `API/telemetry_signal_watcher.py` | — | ✅ |
+| [test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | — | ✅ |
+| [test_api_server_preprocessing.py](tests/test_api_server_preprocessing.py) | `API/api_server.py` shared online preprocessing contract | — | ✅ |
 | [test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | — | ✅ |
 | [test_benchmark_system_correlation.py](tests/test_benchmark_system_correlation.py) | `ML/benchmark_system_correlation.py` | — | ✅ |
 | [test_run_trailing_stop_target_quantile.py](tests/test_run_trailing_stop_target_quantile.py) | `ML/run_trailing_stop_target_quantile.py` | — | ✅ |
@@ -178,6 +182,9 @@
 | [dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv |
 | [PRD.md](docs/PRD.md) | Product Requirements Document |
 | [label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора |
+| [fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов |
+| [online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing |
+| [api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути |
 | [label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict |
 | [normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков |
 | [statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике |
