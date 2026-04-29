@@ -4,7 +4,7 @@
 > **Status**: Completed
 > **Goal**: Закрыть аудит online preprocessing и заблокировать некорректный запуск legacy ML-контракта, который требует future-derived входные признаки.
 > **Related plan/spec**: текущий online diagnostic audit
-> **Related commit**: b33903f
+> **Related commit**: 2b09aec
 
 ## Context
 

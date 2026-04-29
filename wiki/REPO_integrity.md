@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-04-29 20:33 UTC · git `b33903f`
+> Auto-generated 2026-04-29 20:57 UTC · git `2b09aec`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 960 files  ·  **Commit**: `b33903f`  ·  **Generated**: 2026-04-29 20:33 UTC
+**Tracked**: 960 files  ·  **Commit**: `2b09aec`  ·  **Generated**: 2026-04-29 20:57 UTC
 
 ## Root Docs
 
@@ -190,7 +190,7 @@
 | [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 10KB | `77d28ff4` |
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
-| [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-29 | 6KB | `bc68e3ce` |
+| [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-29 | 6KB | `7a79ada9` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
