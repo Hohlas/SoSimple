@@ -6,6 +6,7 @@
 |---|---|---|---|
 | [`PRD.md`](PRD.md) | Продуктовая цель, scope, критерии успеха | Меняются продуктовые цели, ограничения или scope | Краткие разделы: цель, проблема, требования, риски, product phases |
 | [`DATA_FLOW.md`](DATA_FLOW.md) | Source of truth по pipeline, форматам данных и leakage-инвариантам | Меняется поток данных, CSV contract, split, target, inference/export формат | Этапы pipeline: вход, процесс, выход, требования |
+| [`ML/ml_leakage_preflight_checklist.md`](ML/ml_leakage_preflight_checklist.md) | Чеклист перед test/MT4/online ML-запуском, чтобы исключить заглядывание вперёд | Перед запуском нового ML-кандидата или при изменении feature contract | PASS/FAIL проверки: split, признаки, preprocessing, export, MT4 parity |
 | [`dataset_description.md`](dataset_description.md) | Формат исходного датасета `Nero.csv` | Меняется структура исходных колонок или смысл признаков | Описание колонок, типов, целевых меток |
 | [`reports/`](reports/) | Канонические отчёты завершённых этапов | Завершён этап, получены выводы, изменилось поведение или интерпретация результатов | См. [`reports/README.md`](reports/README.md) |
 | [`superpowers/roadmap.md`](superpowers/roadmap.md) | Активный research roadmap | Меняется порядок крупных направлений работ | Короткий ordered backlog + ссылки на планы/отчёты |
