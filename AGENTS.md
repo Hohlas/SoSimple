@@ -7,9 +7,9 @@ ML-бот для прогнозирования разворотов Forex (H1).
 ## using search_knowledge (RAG system)
 `knowledge-rag` — retrieval layer для быстрого поиска по проекту. Он помогает найти кандидаты, но не заменяет canonical files и wiki-синтез: после RAG-результата открывай найденный файл и проверяй контекст.
 
-- Exact names / paths / metrics: `hybrid_alpha=0.0`
-- Technical search: `hybrid_alpha=0.3`
-- Conceptual search: `hybrid_alpha=0.7`
+- Pure keyword search — exact names / paths / metrics: `search_knowledge("gtfobins suid", hybrid_alpha=0.0)`
+- Balanced hybrid — both engines equally weighted: `search_knowledge("SQL injection techniques", hybrid_alpha=0.5)`
+- Pure semantic — embedding similarity only: `search_knowledge("lateral movement strategies", hybrid_alpha=1.0)`
 
 После значимых изменений кода/доков, влияющих на поиск: `reindex_documents(force=True)`.
 
