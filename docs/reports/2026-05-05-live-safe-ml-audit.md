@@ -187,6 +187,62 @@ Artifacts:
 - `ML/reports/entry_path_v1_live_safe/multi_seed_summary.json`
 - `ML/reports/entry_path_v1_live_safe/seed_*/`
 
+## Entry Path v1 Quantile Over Live-Safe Baseline
+
+The next rebuild target was `entry_path_v1_quantile`.
+
+Old quantile results were invalid for online approval because the production
+quantile rule used the old `entry_path_v1` baseline score. This follow-up kept
+the quantile model family, but replaced the baseline dependency with the new
+`entry_path_v1_live_safe` baseline rule.
+
+Baseline dependency:
+
+- `ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json`
+- baseline winner: `A`
+- baseline threshold: `-0.131882885`
+
+Five quantile retrains were run with seeds `7`, `17`, `42`, `77`, `123`.
+
+| Seed | Val ret r | Validation winner | Frozen test trades | Frozen test PF | Sequential trades | Sequential PF |
+|---:|---:|---|---:|---:|---:|---:|
+| 7 | 0.2335 | `lb_gt_m_width_le_w` | 0 | 0.0000 | 0 | 0.0000 |
+| 17 | 0.2570 | `lb_gt_m` | 28 | `inf` | 10 | `inf` |
+| 42 | 0.1925 | `lb_gt_m` | 23 | 7.1133 | 13 | 3.0604 |
+| 77 | 0.0935 | `baseline` | 58 | 5.3972 | 25 | 2.3419 |
+| 123 | 0.2506 | `lb_gt_m` | 17 | `inf` | 8 | `inf` |
+
+Summary:
+
+- PF > 2.0 on sequential check: `4 / 5` seeds;
+- PF <= 1.0 on sequential check: `1 / 5` seeds;
+- sequential trade count range: `0..25`;
+- one seed selected no frozen test trades;
+- one seed fell back to the live-safe baseline rather than a quantile rule.
+
+N-boost follow-up:
+
+| Check | Candidate | Trades | PF | Win rate | Verdict |
+|---|---|---:|---:|---:|---|
+| frozen test | `lb_gt_m_q40` | 35 | 32.4125 | 88.57% | `gate_fail` |
+| sequential | `lb_gt_m_q40` | 14 | 48.7214 | 92.86% | diagnostic |
+
+The n-boost gate failed only on stability:
+`same_winner_ratio=0.60 < 0.80`.
+
+Updated quantile verdict: the quantile layer remains promising, but it is not
+validated as a production candidate over the new live-safe baseline. The
+profitability signal did not disappear, but the selected rule is unstable and
+the sequential trade count is still low.
+
+Artifacts:
+
+- `ML/entry_path_v1_quantile_ensemble.py`
+- `ML/reports/entry_path_v1_quantile_live_safe_baseline/`
+- `ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.csv`
+- `ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json`
+- `ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/`
+
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
@@ -197,10 +253,13 @@ The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
 production approval, but it is enough to reject the worst fear: removing
 `ret_dir_atr_lag1` did not make the system unprofitable.
 
-Next decision, before any MT4 work: either freeze the exporter-supported `A`
-rule family, or extend the signal exporter for `B` / `B_no_path6`. Only after a
-chosen live-safe baseline is fixed should `entry_path_v1_quantile` be rebuilt
-and judged again.
+`entry_path_v1_quantile` was then rebuilt over that live-safe baseline. The
+result is not a production approval either: some runs are very profitable, but
+the selected quantile rule is not stable enough across seeds.
+
+Next decision, before any MT4 work: either continue stabilizing the live-safe
+entry path family, or move to the next previously profitable system and repeat
+the same live-safe audit pattern.
 
 ## Verification
 
@@ -210,6 +269,7 @@ Commands run:
 ./.venv/bin/python -m pytest tests/test_live_safe_audit.py -q
 ./.venv/bin/python -m ML.run_live_safe_ml_audit --phase all --output-dir ML/reports/live_safe_ml_audit
 ./.venv/bin/python -m pytest tests/test_entry_path_task.py tests/test_entry_path_training.py tests/test_entry_path_v1_quantile_reports.py tests/test_live_safe_audit.py -q
+./.venv/bin/python -m ML.benchmark_entry_path_v1_quantile_n_boost --root-dir ML/reports/entry_path_v1_quantile_live_safe_baseline --seeds 7 17 42 77 123 --baseline-rule ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json --output-dir ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost
 ```
 
 Results:
@@ -219,3 +279,5 @@ Results:
 - audit files generated for all five systems
 - legacy export replay generated for all five systems
 - live-safe `entry_path_v1` retrain and multi-seed artifacts generated
+- live-safe-baseline `entry_path_v1_quantile` retrain, multi-seed artifacts,
+  and n-boost gate generated

@@ -1,0 +1,105 @@
+{
+  "seeds": [
+    7,
+    17,
+    42,
+    77,
+    123
+  ],
+  "seed_count": 5,
+  "sequential_pf_values": [
+    0.0,
+    "Infinity",
+    3.060407327807594,
+    2.3418651709156997,
+    "Infinity"
+  ],
+  "sequential_trades_values": [
+    0,
+    10,
+    13,
+    25,
+    8
+  ],
+  "sequential_pf_gt_2_count": 4,
+  "sequential_pf_le_1_count": 1,
+  "sequential_min_trades": 0,
+  "sequential_max_trades": 25,
+  "n_boost": {
+    "best_candidate": {
+      "candidate": "lb_gt_m_q40",
+      "trades": 30,
+      "pf": 50.233407788586085,
+      "win_rate": 0.8666666666666667,
+      "mean_pnl_atr": 3.094671337333333,
+      "coverage": 0.6,
+      "median_interval_width": 13.82852205,
+      "gross_profit": 94.7258544,
+      "gross_loss": 1.88571428,
+      "rule": "lb_gt_m",
+      "m": -8.17776526,
+      "w": 13.7778196,
+      "quantile": 0.4,
+      "correction": 2.9239271,
+      "method": null
+    },
+    "frozen_test": {
+      "candidate": "lb_gt_m_q40",
+      "trades": 35,
+      "pf": 32.41252912689736,
+      "win_rate": 0.8857142857142857,
+      "mean_pnl_atr": 3.470336455428572,
+      "coverage": 0.603448275862069,
+      "median_interval_width": 14.0964072,
+      "gross_profit": 125.32844250000002,
+      "gross_loss": 3.86666656,
+      "rule": "lb_gt_m",
+      "m": -8.17776526,
+      "w": 13.7778196
+    },
+    "sequential": {
+      "trades": 14,
+      "accepted_indices": [
+        1815,
+        3407,
+        5202,
+        5397,
+        5604,
+        6422,
+        7049,
+        7236,
+        7477,
+        8023,
+        8141,
+        8294,
+        8463,
+        9159
+      ],
+      "coverage": 0.4,
+      "pf": 48.72144703369509,
+      "mean_pnl_atr": 3.295052204285714,
+      "win_rate": 0.9285714285714286
+    },
+    "gate": {
+      "verdict": "gate_fail",
+      "n_trades": 35,
+      "pf": 32.41252912689736,
+      "negative_year_slices": 0,
+      "same_winner_ratio": 0.6,
+      "reasons": [
+        "same_winner_ratio=0.60 < 0.8"
+      ]
+    },
+    "is_ensemble": false,
+    "seeds": [
+      7,
+      17,
+      42,
+      77,
+      123
+    ],
+    "sweep_path": "ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/n_boost_validation_sweep.csv"
+  },
+  "verdict": "promising_but_not_validated",
+  "reason": "Single seeds can be profitable, but trade counts are small and n-boost gate failed because selected rule stability was 0.60 below required 0.80."
+}

@@ -1,0 +1,6 @@
+seed;best_epoch;val_score;ret_pearson_r;interval_coverage;median_interval_width;validation_winner;validation_trades;validation_pf;test_trades;test_pf;test_win_rate;sequential_trades;sequential_pf;sequential_win_rate
+7;5;;;;;lb_gt_m_width_le_w;12;52.234247915861346;0;0.0;0.0;0;0.0;0.0
+17;4;;;;;lb_gt_m;24;41.21641864004975;28;inf;1.0;10;inf;1.0
+42;5;;;;;lb_gt_m;24;8.180556824480664;23;7.113262252985198;0.8695652173913043;13;3.060407327807594;0.7692307692307693
+77;5;;;;;baseline;50;4.493476050132173;58;5.397174967975359;0.7758620689655172;25;2.3418651709156997;0.68
+123;4;;;;;lb_gt_m;24;41.21641864004975;17;inf;1.0;8;inf;1.0

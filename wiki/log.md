@@ -3,6 +3,15 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-05] update | Entry path v1 quantile over live-safe baseline
+- Repeated `entry_path_v1_quantile` over the new `entry_path_v1_live_safe` baseline.
+- Updated `wiki/research/execution-tracks.md`:
+  - sequential PF > 2.0 for 4/5 seeds
+  - one seed selected 0 sequential trades
+  - n-boost `lb_gt_m_q40`: frozen test 35 trades, PF 32.4125
+  - gate failed on stability: `same_winner_ratio=0.60 < 0.80`
+- Kept `wiki/index.md` coverage at 32 reports because the canonical report remained `2026-05-05-live-safe-ml-audit.md`
+
 ## [2026-05-05] ingest | Entry path v1 live-safe retrain synced into wiki
 - Extended report `docs/reports/2026-05-05-live-safe-ml-audit.md`
 - Updated `wiki/research/execution-tracks.md` with `entry_path_v1_live_safe`:

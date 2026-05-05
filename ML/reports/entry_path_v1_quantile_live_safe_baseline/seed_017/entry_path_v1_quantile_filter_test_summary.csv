@@ -1,0 +1,2 @@
+candidate;trades;pf;win_rate;mean_pnl_atr;coverage;median_interval_width;gross_profit;gross_loss;rule;m;w
+lb_gt_m;28;inf;1.0;4.1415304892857145;0.4827586206896552;12.87234595;115.96285370000001;-0.0;lb_gt_m;-6.8924946;12.9925026

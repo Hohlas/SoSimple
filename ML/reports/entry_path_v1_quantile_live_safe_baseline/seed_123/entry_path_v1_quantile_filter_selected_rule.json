@@ -1,0 +1,61 @@
+{
+  "winner": {
+    "candidate": "lb_gt_m",
+    "trades": 24,
+    "pf": 41.21641864004975,
+    "win_rate": 0.8333333333333334,
+    "mean_pnl_atr": 3.159861455,
+    "coverage": 0.48,
+    "median_interval_width": 16.306195449999997,
+    "gross_profit": 77.7223892,
+    "gross_loss": 1.88571428,
+    "rule": "lb_gt_m",
+    "m": -10.634519399999999,
+    "w": 16.736675899999998
+  },
+  "frozen_winner": {
+    "candidate": "lb_gt_m",
+    "trades": 17,
+    "pf": Infinity,
+    "win_rate": 1.0,
+    "mean_pnl_atr": 4.623791194117648,
+    "coverage": 0.29310344827586204,
+    "median_interval_width": 16.5668698,
+    "gross_profit": 78.60445030000001,
+    "gross_loss": -0.0,
+    "rule": "lb_gt_m",
+    "m": -10.634519399999999,
+    "w": 16.736675899999998
+  },
+  "baseline_rule_path": "ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json",
+  "baseline_candidate": "A",
+  "baseline_threshold": -0.131882885,
+  "alpha": 0.1,
+  "correction": 4.815778999999999,
+  "validation_csv": "ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_validation_predictions.csv",
+  "test_csv": "ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_test_predictions.csv",
+  "validation_summary_path": "ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_validation_summary.csv",
+  "test_summary_path": "ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_test_summary.csv",
+  "validation_m": -10.634519399999999,
+  "validation_w": 16.736675899999998,
+  "validation_crossed_quantile_rows": 0,
+  "test_crossed_quantile_rows": 0,
+  "sequential_hold_bars": 24,
+  "sequential_summary": {
+    "trades": 8,
+    "accepted_indices": [
+      1815,
+      3407,
+      5397,
+      6422,
+      7051,
+      7236,
+      7477,
+      8294
+    ],
+    "coverage": 0.47058823529411764,
+    "pf": Infinity,
+    "mean_pnl_atr": 3.8780179125,
+    "win_rate": 1.0
+  }
+}

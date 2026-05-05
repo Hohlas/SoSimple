@@ -1068,8 +1068,40 @@ Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
 | same winner | `A` in 3 / 5 |
 
 Вывод уточнён: результат живой, но переменный. MT4 signal export сейчас
-поддерживает `A`, а два seed выбрали `B` / `B_no_path6`. Следующий шаг:
-заморозить поддерживаемую rule-family `A` или расширить exporter, затем делать
-MT4 parity. После нового baseline можно повторно оценить `entry_path_v1_quantile`.
+поддерживает `A`, а два seed выбрали `B` / `B_no_path6`. MT4 parity отложен по
+решению пользователя.
+
+Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
+
+## 12. Entry Path v1 Quantile Over Live-Safe Baseline (05-05)
+
+После пересборки baseline повторно проверен `entry_path_v1_quantile`. Старый
+quantile-результат был `FAIL` для online не из-за самой quantile-идеи, а потому
+что production rule зависел от старого `entry_path_v1` baseline score.
+
+Новая проверка использовала baseline:
+`ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json`.
+
+Multi-seed (`7`, `17`, `42`, `77`, `123`):
+
+| Metric | Value |
+|---|---:|
+| sequential PF > 2.0 seeds | 4 / 5 |
+| sequential PF <= 1.0 seeds | 1 / 5 |
+| sequential trades range | 0..25 |
+| seed with 0 sequential trades | 1 / 5 |
+
+N-boost candidate `lb_gt_m_q40`:
+
+| Check | Trades | PF | Win rate |
+|---|---:|---:|---:|
+| frozen test | 35 | 32.4125 | 88.57% |
+| sequential | 14 | 48.7214 | 92.86% |
+
+Gate result: `gate_fail`, because `same_winner_ratio=0.60 < 0.80`.
+
+Вывод: quantile-слой не развалился после замены старого baseline на live-safe
+baseline, но production-кандидатом пока не подтверждён. Прибыльность есть,
+однако выбранное правило нестабильно между seed, а sequential-сделок мало.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

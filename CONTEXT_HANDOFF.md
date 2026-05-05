@@ -4,7 +4,7 @@
 
 ## Current Stage
 
-Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening и 2026-05-05 live-safe ML audit с `entry_path_v1` live-safe retrain.
+Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening и 2026-05-05 live-safe ML audit с `entry_path_v1` live-safe retrain и повторной quantile-проверкой поверх live-safe baseline.
 
 Канонические отчёты:
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
@@ -77,17 +77,24 @@
 - вывод: прибыльность не сохранилась один в один, но система не развалилась.
   Результат живой, но переменный; перед MT4 parity нужно заморозить
   поддерживаемую rule-family `A` или расширить exporter для `B` / `B_no_path6`.
+- `entry_path_v1_quantile` повторно проверен поверх нового live-safe baseline:
+  sequential PF > 2.0 у `4/5` seed, но сделок мало (`0..25`), один seed дал
+  `0` sequential trades.
+- n-boost candidate `lb_gt_m_q40` дал frozen test `35` trades, PF `32.4125`,
+  sequential `14` trades, PF `48.7214`, но gate=`fail`, потому что
+  `same_winner_ratio=0.60 < 0.80`.
+- вывод по quantile: прибыльность не исчезла, но production-кандидатом слой
+  пока считать нельзя; правило выбора нестабильно между seed.
 
 ## Next Step
 
-1. Решить правило production-кандидата для `entry_path_v1_live_safe`:
-   ограничиться exporter-supported `A` или добавить export для `B` /
-   `B_no_path6`.
-2. Выполнить MT4 parity для выбранного live-safe signal export.
-3. После нового baseline повторно оценить `entry_path_v1_quantile`, потому что
-   production rule зависит от baseline score.
-4. Только после PASS по feature contract переходить к MT4 parity,
-   forward validation и online dry-run.
+1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
+2. Перейти к следующей ранее прибыльной системе и повторить live-safe audit:
+   сначала воспроизвести старый результат, затем проверить/пересобрать без
+   future-derived входов.
+3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
+   исследовательский шаг - стабилизировать rule-family и увеличить число
+   последовательных сделок, но текущий вывод не является production approval.
 
 ## Read First
 
@@ -96,11 +103,12 @@
 3. [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md) - текущий verdict по прибыльным ML-системам и первый retrain без `ret_dir_atr_lag1`.
 4. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
 5. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - retrain и multi-seed artifacts.
-6. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
-7. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-8. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-9. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-10. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+6. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - quantile retrain поверх live-safe baseline.
+7. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
+8. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
+9. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+10. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+11. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
@@ -110,8 +118,10 @@
 - `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
   Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
   от baseline score.
-- `entry_path_v1_live_safe` пока проверен только одним seed и ещё не прошёл MT4
-  parity; это кандидат, не production approval.
+- `entry_path_v1_live_safe` проверен на пяти seed, но ещё не прошёл MT4 parity;
+  это кандидат, не production approval.
+- `entry_path_v1_quantile_live_safe_baseline` показал прибыльные участки, но
+  n-boost gate не прошёл из-за нестабильности выбранного правила.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.

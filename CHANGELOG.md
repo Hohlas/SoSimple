@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
-## [2026-05-05] - Live-safe ML audit and entry_path_v1 retrain
+## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
 
 ### Добавлено
 - `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`,
@@ -14,6 +14,10 @@
   `entry_path_v1` набор без `ret_dir_atr_lag1`.
 - Live-safe checkpoint и prediction/signal артефакты в
   `ML/reports/entry_path_v1_live_safe/`.
+- Повторный `entry_path_v1_quantile` retrain поверх нового live-safe baseline:
+  `ML/reports/entry_path_v1_quantile_live_safe_baseline/`.
+- Восстановлен вспомогательный модуль `ML/entry_path_v1_quantile_ensemble.py`,
+  который нужен для n-boost проверки quantile-слоя.
 
 ### Результаты аудита
 - `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
@@ -31,6 +35,12 @@
 - Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
   median sequential PF 2.3419, min 1.5171, max 4.5985;
   PF > 2.0 у 3/5 seed, PF <= 1.0 у 0/5 seed.
+- `entry_path_v1_quantile` поверх live-safe baseline:
+  sequential PF > 2.0 у 4/5 seed, но сделок мало (`0..25`) и один seed дал
+  0 sequential trades.
+- N-boost candidate `lb_gt_m_q40`: frozen test 35 trades, PF 32.4125,
+  sequential 14 trades, PF 48.7214, но gate=`fail` из-за stability:
+  `same_winner_ratio=0.60 < 0.80`.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
@@ -38,6 +48,9 @@
 - Но система не развалилась после удаления опасного признака. Результат живой,
   но переменный: перед MT4 parity нужно заморозить поддерживаемую rule-family
   `A` или расширить exporter для `B` / `B_no_path6`.
+- Quantile-слой тоже не развалился после замены старого baseline на live-safe
+  baseline, но пока не подтвержден как production-кандидат: прибыльность есть,
+  правило выбора нестабильно между seed.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening
