@@ -1,5 +1,6 @@
 from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, verdict_from_features
 from ML.live_safe_audit_registry import get_audited_systems
+from ML.run_live_safe_ml_audit import build_artifact_inventory
 
 
 def test_unknown_feature_blocks_online_pass():
@@ -38,3 +39,28 @@ def test_audit_registry_entries_have_required_fields():
         assert system.report_paths
         assert system.expected_risk_note
         assert system.checkpoint_path or system.rule_path
+
+
+def test_artifact_inventory_reports_existing_and_missing_paths(tmp_path):
+    existing = tmp_path / "rule.json"
+    existing.write_text("{}", encoding="utf-8")
+    missing = tmp_path / "missing.pt"
+    system = get_audited_systems()[0]
+    patched = type(system)(
+        system_name=system.system_name,
+        checkpoint_path=str(missing),
+        rule_path=str(existing),
+        prediction_paths=(),
+        report_paths=(),
+        expected_risk_note=system.expected_risk_note,
+    )
+
+    inventory = build_artifact_inventory(patched)
+
+    assert inventory["system_name"] == "quality"
+    assert str(existing) in inventory["existing_paths"]
+    assert str(missing) in inventory["missing_paths"]
+    assert inventory["checkpoint_path"] == str(missing)
+    assert inventory["rule_path"] == str(existing)
+    assert inventory["prediction_paths"] == []
+    assert inventory["report_paths"] == []
