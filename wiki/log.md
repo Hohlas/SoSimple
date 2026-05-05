@@ -299,7 +299,7 @@
 - Added `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 - Updated `wiki/research/execution-tracks.md`:
   - recorded legacy PF vs live-safe verdict for five profitable systems;
-  - marked `quality`, `frequency`, `original_plus_path` as `FAIL`;
-  - marked `entry_path_v1` and `entry_path_v1_quantile` as `UNKNOWN`;
-  - recorded `ret_dir_atr_lag1` source/timing audit as the next blocker.
+  - marked all five audited systems as `FAIL`;
+  - recorded `ret_dir_atr_lag1` as future-derived after source/timing audit;
+  - recorded live-safe `entry_path_v1` rebuild/retrain as the next blocker.
 - Updated `wiki/index.md` coverage from 31 to 32 reports.

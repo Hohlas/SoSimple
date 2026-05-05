@@ -77,10 +77,10 @@ def test_known_future_derived_features_are_classified_as_fail():
         assert trace.live_safe_status == LiveSafeStatus.FAIL
 
 
-def test_ret_dir_atr_lag1_stays_unknown_until_source_timing_is_proven():
+def test_ret_dir_atr_lag1_fails_after_source_timing_audit():
     trace = classify_feature_name("ret_dir_atr_lag1")
 
-    assert trace.live_safe_status == LiveSafeStatus.UNKNOWN
+    assert trace.live_safe_status == LiveSafeStatus.FAIL
     assert "shift" in trace.transformation
 
 
@@ -96,7 +96,7 @@ def test_feature_contract_for_original_plus_path_contains_forbidden_inputs():
     by_name = {trace.name: trace for trace in traces}
 
     assert by_name["predict"].live_safe_status == LiveSafeStatus.FAIL
-    assert by_name["ret_dir_atr_lag1"].live_safe_status == LiveSafeStatus.UNKNOWN
+    assert by_name["ret_dir_atr_lag1"].live_safe_status == LiveSafeStatus.FAIL
 
 
 def test_initial_system_verdicts_match_expected_risk_model():
@@ -106,8 +106,8 @@ def test_initial_system_verdicts_match_expected_risk_model():
         "quality": "FAIL",
         "frequency": "FAIL",
         "original_plus_path": "FAIL",
-        "entry_path_v1": "UNKNOWN",
-        "entry_path_v1_quantile": "UNKNOWN",
+        "entry_path_v1": "FAIL",
+        "entry_path_v1_quantile": "FAIL",
     }
 
 

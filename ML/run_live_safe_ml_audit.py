@@ -65,7 +65,7 @@ def write_feature_csv(path: Path, traces: Iterable[FeatureTrace]) -> None:
         "notes",
     ]
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for trace in traces:
             writer.writerow(
@@ -111,6 +111,21 @@ def build_feature_contract(system: AuditedSystem) -> list[FeatureTrace]:
                     live_safe_status=classify_feature_name("ret_dir_atr_lag1").live_safe_status,
                     evidence="docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md",
                     notes="Production quantile rule depends on entry_path_v1, so it inherits unresolved baseline timing risk.",
+                )
+            )
+        elif name in {"pred_ret_24_q10", "pred_ret_24_q90"}:
+            traces.append(
+                FeatureTrace(
+                    name=name,
+                    role="filter_input",
+                    source_path="ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+                    producer="entry_path_v1_quantile model output",
+                    consumer="API/export_entry_path_v1_quantile_signals.py",
+                    transformation="quantile model prediction used by frozen rule",
+                    availability_time="after_model_inference",
+                    live_safe_status=classify_feature_name("session_hour").live_safe_status,
+                    evidence="ML/reports/entry_path_v1_quantile_selected_rule.json",
+                    notes="This is a model output, not a raw future-derived training input; final system still fails through baseline dependency.",
                 )
             )
         else:

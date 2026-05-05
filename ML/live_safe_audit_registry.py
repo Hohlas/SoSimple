@@ -59,7 +59,7 @@ AUDITED_SYSTEMS: tuple[AuditedSystem, ...] = (
             "docs/reports/2026-04-09-entry-path-trade-filter.md",
             "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md",
         ),
-        expected_risk_note="Feature contract includes ret_dir_atr_lag1, which is UNKNOWN until source timing is audited.",
+        expected_risk_note="Feature contract includes ret_dir_atr_lag1, proven future-derived by source timing audit.",
     ),
     AuditedSystem(
         system_name="entry_path_v1_quantile",

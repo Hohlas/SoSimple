@@ -59,15 +59,16 @@ contains future-derived fields:
 - `fav_3_atr`, `adv_3_atr`, `fav_6_atr`, `adv_6_atr`
 - `fav_12_atr`, `adv_12_atr`, `fav_24_atr`, `adv_24_atr`
 
-They also contain `ret_dir_atr_lag1`, which remains unresolved. A lag does not
-prove safety if the source field already used future bars.
+They also contain `ret_dir_atr_lag1`. Follow-up source audit closed this as
+future-derived: `processing/label_signals.py:add_entry_path_frequency_features`
+builds it as `ret_6_dir_atr.shift(1)`, while `label_entry_path_targets()` builds
+`ret_6_dir_atr` from future bars after the signal row.
 
 `entry_path_v1` does not include the take/skip forbidden row fields, but it does
-include `ret_dir_atr_lag1`. Therefore it cannot be marked live-safe until this
-field is traced from its source calculation and decision time.
+include `ret_dir_atr_lag1`. Therefore the current checkpoint is not live-safe.
 
 `entry_path_v1_quantile` depends on the `entry_path_v1` baseline score in the
-production rule. Therefore it inherits the unresolved baseline risk.
+production rule. Therefore it inherits the failed baseline risk.
 
 ## Verdicts
 
@@ -76,10 +77,10 @@ production rule. Therefore it inherits the unresolved baseline risk.
 | `quality` | `FAIL` | future-derived model inputs | reject old checkpoint for online or retrain/rebuild |
 | `frequency` | `FAIL` | future-derived model inputs | reject old checkpoint for online or retrain/rebuild |
 | `original_plus_path` | `FAIL` | future-derived model inputs | reject old checkpoint for online or retrain/rebuild |
-| `entry_path_v1` | `UNKNOWN` | unresolved `ret_dir_atr_lag1` timing | trace source before any online ML-quality test |
-| `entry_path_v1_quantile` | `UNKNOWN` | unresolved baseline dependency | resolve `entry_path_v1` first |
+| `entry_path_v1` | `FAIL` | `ret_dir_atr_lag1` is derived from future `ret_6_dir_atr` | rebuild/retrain without that input |
+| `entry_path_v1_quantile` | `FAIL` | production rule depends on failed `entry_path_v1` baseline score | rebuild baseline dependency first |
 
-`UNKNOWN` is unsafe for online trading until resolved.
+No audited system currently has `PASS`.
 
 ## Conclusions
 
@@ -87,10 +88,10 @@ The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
 online ML quality.
 
-The best next investigation target is `entry_path_v1`: audit
-`ret_dir_atr_lag1` from code and data. If it fails, rebuild/retrain
-`entry_path_v1` without that field or with a proven live-safe replacement. Only
-after that can `entry_path_v1_quantile` be judged.
+The best next implementation target is a live-safe rebuild/retrain of
+`entry_path_v1` without `ret_dir_atr_lag1`, or with a replacement whose source
+and decision-time availability are proven. Only after that can
+`entry_path_v1_quantile` be rebuilt and judged.
 
 ## Verification
 

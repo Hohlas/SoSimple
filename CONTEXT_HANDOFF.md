@@ -60,18 +60,21 @@
 - перед production-переходом нужен live-safe retrain: один и тот же набор
   признаков в training/test и online, без future-derived входов.
 - live-safe ML audit зафиксировал verdict:
-  `quality`, `frequency`, `original_plus_path` = `FAIL`;
-  `entry_path_v1`, `entry_path_v1_quantile` = `UNKNOWN`.
+  `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
+  `entry_path_v1_quantile` = `FAIL`.
+- source audit закрыл `ret_dir_atr_lag1` как future-derived:
+  это `ret_6_dir_atr.shift(1)`, а `ret_6_dir_atr` строится по будущим барам
+  в `label_entry_path_targets()`.
 - audit evidence лежит в `ML/reports/live_safe_ml_audit/`.
 
 ## Next Step
 
-1. Разобрать `entry_path_v1` глубже: проверить по коду и данным источник
-   `ret_dir_atr_lag1`, включая исходный `ret_6_dir_atr` и момент доступности.
-2. Если `ret_dir_atr_lag1` не проходит gate, спроектировать live-safe rebuild /
-   retrain для `entry_path_v1` без этого поля или с доказанно безопасной заменой.
-3. После решения по `entry_path_v1` повторно оценить `entry_path_v1_quantile`,
-   потому что production rule зависит от baseline score.
+1. Спроектировать live-safe rebuild / retrain для `entry_path_v1` без
+   `ret_dir_atr_lag1` или с доказанно безопасной заменой.
+2. После нового baseline повторно оценить `entry_path_v1_quantile`, потому что
+   production rule зависит от baseline score.
+3. Только после PASS по feature contract переходить к MT4 parity,
+   forward validation и online dry-run.
 
 ## Read First
 
@@ -90,8 +93,9 @@
 - Legacy `original_baseline` нельзя считать online-ready: historical test был
   загрязнён future-derived входными признаками, а live `Nero.csv` этих признаков
   не имеет.
-- `entry_path_v1` и `entry_path_v1_quantile` пока `UNKNOWN`, не `PASS`.
-  Причина: `ret_dir_atr_lag1` и baseline dependency требуют source/timing audit.
+- `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
+  Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
+  от baseline score.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.

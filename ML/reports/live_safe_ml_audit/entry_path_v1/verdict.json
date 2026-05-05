@@ -1,15 +1,15 @@
 {
   "system_name": "entry_path_v1",
-  "verdict": "UNKNOWN",
-  "reason": "Feature contract has unresolved source or timing evidence.",
-  "failed_checks": [],
-  "unknown_checks": [
-    "unresolved_feature_timing"
+  "verdict": "FAIL",
+  "reason": "Feature contract includes future-derived or otherwise invalid inputs.",
+  "failed_checks": [
+    "future_derived_input_features"
   ],
-  "forbidden_features": [],
-  "unknown_features": [
+  "unknown_checks": [],
+  "forbidden_features": [
     "ret_dir_atr_lag1"
   ],
-  "allowed_next_step": "Gather source/timing evidence before any ML-quality online test",
+  "unknown_features": [],
+  "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
   "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
 }

@@ -84,9 +84,14 @@ def classify_feature_name(name: str) -> FeatureTrace:
     elif name == "ret_dir_atr_lag1":
         producer = "processing/label_signals.py:add_entry_path_frequency_features"
         transformation = "ret_6_dir_atr.shift(1).fillna(0.0)"
-        availability_time = "unknown"
-        status = LiveSafeStatus.UNKNOWN
-        notes = "Lag does not prove safety because source ret_6_dir_atr is future-derived for its own row."
+        availability_time = "future_bars"
+        status = LiveSafeStatus.FAIL
+        evidence = (
+            "processing/label_signals.py:add_entry_path_frequency_features uses "
+            "ret_6_dir_atr.shift(1); label_entry_path_targets builds ret_6_dir_atr "
+            "from bars base_idx+1..base_idx+1+h."
+        )
+        notes = "The lagged source is a future-derived 6-bar return, so the lag does not make it live-safe."
     elif name in {"session_hour", "weekday", "ATR"}:
         producer = "current row"
         transformation = "current bar metadata/raw ATR"

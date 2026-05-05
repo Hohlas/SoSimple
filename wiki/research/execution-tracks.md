@@ -1016,19 +1016,21 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 | `quality` | PF `39.74` | `FAIL` |
 | `frequency` | PF `13.12` | `FAIL` |
 | `original_plus_path` | PF `38.78` | `FAIL` |
-| `entry_path_v1` | PF `2.87` sequential | `UNKNOWN` |
-| `entry_path_v1_quantile` | PF `8.18` frozen test, `3.64` sequential | `UNKNOWN` |
+| `entry_path_v1` | PF `2.87` sequential | `FAIL` |
+| `entry_path_v1_quantile` | PF `8.18` frozen test, `3.64` sequential | `FAIL` |
 
 Главный вывод:
 
 - take/skip контуры (`quality`, `frequency`, `original_plus_path`) используют
   future-derived входы: `predict`, `ret_*`, `fav_*`, `adv_*`;
-- `entry_path_v1` пока нельзя считать PASS из-за `ret_dir_atr_lag1`;
-- `entry_path_v1_quantile` наследует этот риск через baseline dependency;
+- `entry_path_v1` нельзя считать PASS: `ret_dir_atr_lag1` доказан как
+  future-derived (`ret_6_dir_atr.shift(1)`, где `ret_6_dir_atr` строится по
+  будущим барам);
+- `entry_path_v1_quantile` наследует этот fail через baseline dependency;
 - ни одна из пяти систем не готова к online trading как ML-quality proof.
 
-Следующий шаг: source/timing audit для `entry_path_v1.ret_dir_atr_lag1`. Если
-поле не проходит gate, нужен live-safe rebuild/retrain `entry_path_v1`, после
-чего можно заново судить `entry_path_v1_quantile`.
+Следующий шаг: live-safe rebuild/retrain `entry_path_v1` без
+`ret_dir_atr_lag1` или с доказанно безопасной заменой. После нового baseline
+можно заново судить `entry_path_v1_quantile`.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

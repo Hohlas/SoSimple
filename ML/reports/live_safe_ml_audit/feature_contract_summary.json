@@ -3,32 +3,32 @@
     {
       "system_name": "quality",
       "feature_count": 19,
-      "fail_count": 12,
-      "unknown_count": 1
+      "fail_count": 13,
+      "unknown_count": 0
     },
     {
       "system_name": "frequency",
       "feature_count": 19,
-      "fail_count": 12,
-      "unknown_count": 1
+      "fail_count": 13,
+      "unknown_count": 0
     },
     {
       "system_name": "original_plus_path",
       "feature_count": 19,
-      "fail_count": 12,
-      "unknown_count": 1
+      "fail_count": 13,
+      "unknown_count": 0
     },
     {
       "system_name": "entry_path_v1",
       "feature_count": 46,
-      "fail_count": 0,
-      "unknown_count": 1
+      "fail_count": 1,
+      "unknown_count": 0
     },
     {
       "system_name": "entry_path_v1_quantile",
       "feature_count": 3,
-      "fail_count": 0,
-      "unknown_count": 3
+      "fail_count": 1,
+      "unknown_count": 0
     }
   ]
 }

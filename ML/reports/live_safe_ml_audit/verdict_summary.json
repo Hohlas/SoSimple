@@ -7,11 +7,10 @@
       "failed_checks": [
         "future_derived_input_features"
       ],
-      "unknown_checks": [
-        "unresolved_feature_timing"
-      ],
+      "unknown_checks": [],
       "forbidden_features": [
         "predict",
+        "ret_dir_atr_lag1",
         "ret_6_dir_atr",
         "ret_12_dir_atr",
         "ret_24_dir_atr",
@@ -24,9 +23,7 @@
         "fav_24_atr",
         "adv_24_atr"
       ],
-      "unknown_features": [
-        "ret_dir_atr_lag1"
-      ],
+      "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
       "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
     },
@@ -37,11 +34,10 @@
       "failed_checks": [
         "future_derived_input_features"
       ],
-      "unknown_checks": [
-        "unresolved_feature_timing"
-      ],
+      "unknown_checks": [],
       "forbidden_features": [
         "predict",
+        "ret_dir_atr_lag1",
         "ret_6_dir_atr",
         "ret_12_dir_atr",
         "ret_24_dir_atr",
@@ -54,9 +50,7 @@
         "fav_24_atr",
         "adv_24_atr"
       ],
-      "unknown_features": [
-        "ret_dir_atr_lag1"
-      ],
+      "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
       "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
     },
@@ -67,11 +61,10 @@
       "failed_checks": [
         "future_derived_input_features"
       ],
-      "unknown_checks": [
-        "unresolved_feature_timing"
-      ],
+      "unknown_checks": [],
       "forbidden_features": [
         "predict",
+        "ret_dir_atr_lag1",
         "ret_6_dir_atr",
         "ret_12_dir_atr",
         "ret_24_dir_atr",
@@ -84,42 +77,38 @@
         "fav_24_atr",
         "adv_24_atr"
       ],
-      "unknown_features": [
-        "ret_dir_atr_lag1"
-      ],
+      "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
       "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
     },
     {
       "system_name": "entry_path_v1",
-      "verdict": "UNKNOWN",
-      "reason": "Feature contract has unresolved source or timing evidence.",
-      "failed_checks": [],
-      "unknown_checks": [
-        "unresolved_feature_timing"
+      "verdict": "FAIL",
+      "reason": "Feature contract includes future-derived or otherwise invalid inputs.",
+      "failed_checks": [
+        "future_derived_input_features"
       ],
-      "forbidden_features": [],
-      "unknown_features": [
+      "unknown_checks": [],
+      "forbidden_features": [
         "ret_dir_atr_lag1"
       ],
-      "allowed_next_step": "Gather source/timing evidence before any ML-quality online test",
+      "unknown_features": [],
+      "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
       "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
     },
     {
       "system_name": "entry_path_v1_quantile",
-      "verdict": "UNKNOWN",
-      "reason": "Feature contract has unresolved source or timing evidence.",
-      "failed_checks": [],
-      "unknown_checks": [
-        "unresolved_feature_timing"
+      "verdict": "FAIL",
+      "reason": "Feature contract includes future-derived or otherwise invalid inputs.",
+      "failed_checks": [
+        "future_derived_input_features"
       ],
-      "forbidden_features": [],
-      "unknown_features": [
-        "baseline_dependency:entry_path_v1",
-        "pred_ret_24_q10",
-        "pred_ret_24_q90"
+      "unknown_checks": [],
+      "forbidden_features": [
+        "baseline_dependency:entry_path_v1"
       ],
-      "allowed_next_step": "Gather source/timing evidence before any ML-quality online test",
+      "unknown_features": [],
+      "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
       "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
     }
   ]
