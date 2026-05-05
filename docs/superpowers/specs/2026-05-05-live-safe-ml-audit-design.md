@@ -24,6 +24,12 @@ not safe: it used row-wise inputs derived from future bars, including
 `predict`, `ret_*`, `fav_*`, and `adv_*`. The current leakage checklist also
 marks `ret_dir_atr_lag1` as forbidden until proven safe.
 
+Normative gate for this audit:
+[`docs/ML/ml_leakage_preflight_checklist.md`](../../ML/ml_leakage_preflight_checklist.md).
+Every ML quality claim in this plan must pass that checklist. If a check is
+`FAIL` or `UNKNOWN`, the result can only be marked `DIAGNOSTIC_ONLY` until the
+cause is resolved.
+
 Feature names are not enough for a verdict. The audit must trace where each
 field is calculated in code and when its value becomes known. A field is
 live-safe only if the source code proves it is available at the decision time.

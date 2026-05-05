@@ -12,6 +12,24 @@
 
 ## Главный порядок работ
 
+### 0. Live-safe ML audit before online trading
+
+**Контекст:** старые прибыльные ML-результаты нужно отделить от честных
+online-safe результатов. Высокий PF больше не считается доказательством, пока
+не пройден [`ML Leakage Preflight Checklist`](../ML/ml_leakage_preflight_checklist.md).
+
+**Задача:** повторно проверить `quality`, `frequency`, `original_plus_path`,
+`entry_path_v1`, `entry_path_v1_quantile`: воспроизвести старые результаты,
+построить паспорт признаков, применить leakage gate и выдать verdict.
+
+**Выход:** `ML/reports/live_safe_ml_audit/`, отчёт в `docs/reports/` и решение,
+какие системы можно вести в live-safe retrain / forward validation / online
+dry-run.
+
+Spec: [2026-05-05-live-safe-ml-audit-design.md](specs/2026-05-05-live-safe-ml-audit-design.md)
+
+Plan: [2026-05-05-live-safe-ml-audit.md](plans/2026-05-05-live-safe-ml-audit.md)
+
 ### 1. `lib_PIC` feature-source audit
 
 **Контекст:** `lib_PIC.mqh` считает больше рыночного состояния, чем сейчас экспортируется в `Nero.csv` и используется Python-моделью.
