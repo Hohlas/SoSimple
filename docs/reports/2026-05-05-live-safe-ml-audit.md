@@ -39,6 +39,11 @@ Generated evidence lives in:
 
 No model was retrained. No threshold was changed. No online trading was run.
 
+The follow-up `entry_path_v1_live_safe` retrain below was added after the audit
+verdict. It is part of the same decision chain: first reject the unsafe old
+checkpoint, then test whether the same trading idea survives without the
+future-derived input.
+
 ## Legacy Results
 
 These numbers are historical artifact summaries. They are useful for comparing
@@ -102,16 +107,100 @@ production rule. Therefore it inherits the failed baseline risk.
 
 No audited system currently has `PASS`.
 
+## Entry Path v1 Live-Safe Retrain
+
+The first rebuild target was `entry_path_v1`, because it failed only on
+`ret_dir_atr_lag1`, while the rest of its built-in feature profile could be
+kept.
+
+New profile: `entry_path_v1_live_safe`.
+
+Feature change:
+
+- old profile: `session_hour`, `weekday`, `range_atr_6`, `body_atr_3`,
+  `ret_dir_atr_lag1`, `vol_regime_24`, row feature-bank columns;
+- new profile: same columns, but without `ret_dir_atr_lag1`.
+
+The old `entry_path_v1` profile is kept for legacy reproduction only.
+
+### Single-Seed Result
+
+Seed `42` retrain:
+
+| Check | Trades | PF | Win rate | Notes |
+|---|---:|---:|---:|---|
+| validation winner `A @ 7.5%` | 36 | 2.8881 | 66.67% | selected on validation |
+| frozen test | 37 | 3.6567 | 72.97% | same validation threshold |
+| sequential test | 25 | 2.3419 | 68.00% | fixed 24-bar single-position check |
+
+Signal export:
+
+| File | Rows | Non-zero | BUY | SELL |
+|---|---:|---:|---:|---:|
+| `entry_path_v1_live_safe_test_signals.csv` | 8872 | 26 | 19 | 7 |
+
+Comparison with old invalid `entry_path_v1`:
+
+- old sequential: 30 trades, PF 2.87, win rate 66.67%;
+- new live-safe sequential: 25 trades, PF 2.3419, win rate 68.00%.
+
+Meaning: profitability did not survive unchanged. Trade count and PF are lower,
+but the system did not collapse after removing the unsafe input.
+
+### Multi-Seed Follow-Up
+
+The retrain was repeated with seeds `7`, `17`, `42`, `77`, `123`.
+
+`seed` means the starting number for controlled randomness. With the same seed,
+training is repeatable. With different seeds, the model starts differently, so
+the check shows whether a result is stable or just lucky.
+
+| Seed | Val ret r | Winner | Test PF | Sequential trades | Sequential PF | Export supported |
+|---:|---:|---|---:|---:|---:|---|
+| 7 | 0.2792 | `B_no_path6` | 4.3044 | 32 | 2.7922 | no |
+| 17 | 0.2796 | `B` | 6.3893 | 25 | 4.5985 | no |
+| 42 | 0.2681 | `A` | 3.6567 | 25 | 2.3419 | yes |
+| 77 | 0.2844 | `A` | 2.0024 | 32 | 1.5171 | yes |
+| 123 | 0.2767 | `A` | 2.7762 | 33 | 1.8633 | yes |
+
+Summary:
+
+- median sequential PF: `2.3419`;
+- min sequential PF: `1.5171`;
+- max sequential PF: `4.5985`;
+- PF > 2.0: `3 / 5` seeds;
+- PF <= 1.0: `0 / 5` seeds;
+- same winner: `A` in `3 / 5` seeds;
+- MT4 signal export is currently supported only for `A` winners.
+
+Updated retrain verdict: the live-safe `entry_path_v1` idea is alive but not
+fully stable. Removing `ret_dir_atr_lag1` did not destroy profitability, but the
+result is weaker and more variable than the old invalid system. MT4 parity is
+intentionally deferred.
+
+Artifacts:
+
+- `ML/checkpoints/transformer_entry_path_v1_features_entry_path_v1_live_safe_best.pt`
+- `ML/checkpoints/transformer_entry_path_v1_features_entry_path_v1_live_safe_result.json`
+- `ML/reports/entry_path_v1_live_safe/`
+- `ML/reports/entry_path_v1_live_safe/multi_seed_summary.csv`
+- `ML/reports/entry_path_v1_live_safe/multi_seed_summary.json`
+- `ML/reports/entry_path_v1_live_safe/seed_*/`
+
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
 online ML quality.
 
-The best next implementation target is a live-safe rebuild/retrain of
-`entry_path_v1` without `ret_dir_atr_lag1`, or with a replacement whose source
-and decision-time availability are proven. Only after that can
-`entry_path_v1_quantile` be rebuilt and judged.
+The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
+production approval, but it is enough to reject the worst fear: removing
+`ret_dir_atr_lag1` did not make the system unprofitable.
+
+Next decision, before any MT4 work: either freeze the exporter-supported `A`
+rule family, or extend the signal exporter for `B` / `B_no_path6`. Only after a
+chosen live-safe baseline is fixed should `entry_path_v1_quantile` be rebuilt
+and judged again.
 
 ## Verification
 
@@ -120,10 +209,13 @@ Commands run:
 ```bash
 ./.venv/bin/python -m pytest tests/test_live_safe_audit.py -q
 ./.venv/bin/python -m ML.run_live_safe_ml_audit --phase all --output-dir ML/reports/live_safe_ml_audit
+./.venv/bin/python -m pytest tests/test_entry_path_task.py tests/test_entry_path_training.py tests/test_entry_path_v1_quantile_reports.py tests/test_live_safe_audit.py -q
 ```
 
 Results:
 
 - `12 passed`
+- `34 passed`
 - audit files generated for all five systems
 - legacy export replay generated for all five systems
+- live-safe `entry_path_v1` retrain and multi-seed artifacts generated

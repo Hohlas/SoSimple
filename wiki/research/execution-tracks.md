@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-05-05
-sources: 33
+sources: 32
 status: active
 ---
 
@@ -1036,7 +1036,7 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 помечено как `diagnostic_only=true`, потому что источник входных признаков уже
 провалил live-safe gate.
 
-Следующий шаг был выполнен отдельным retrain: `entry_path_v1_live_safe`.
+Следующий шаг был выполнен в том же этапе: retrain `entry_path_v1_live_safe`.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
 
@@ -1072,4 +1072,4 @@ Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
 заморозить поддерживаемую rule-family `A` или расширить exporter, затем делать
 MT4 parity. После нового baseline можно повторно оценить `entry_path_v1_quantile`.
 
-Источник: [2026-05-05-entry-path-v1-live-safe-retrain.md](../../docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)
+Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
-## [2026-05-05] - Live-safe ML audit
+## [2026-05-05] - Live-safe ML audit and entry_path_v1 retrain
 
 ### Добавлено
 - `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`,
@@ -10,8 +10,12 @@
 - Generated audit evidence в `ML/reports/live_safe_ml_audit/`.
 - Повторная legacy export replay проверка: старые prediction/rule входы снова
   дают сигналы для пяти систем.
+- Новый профиль признаков `entry_path_v1_live_safe`: старый встроенный
+  `entry_path_v1` набор без `ret_dir_atr_lag1`.
+- Live-safe checkpoint и prediction/signal артефакты в
+  `ML/reports/entry_path_v1_live_safe/`.
 
-### Результаты
+### Результаты аудита
 - `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
   `entry_path_v1_quantile` получили verdict `FAIL`.
 - `ret_dir_atr_lag1` доказан как future-derived: это лаг от `ret_6_dir_atr`,
@@ -19,22 +23,7 @@
 - Legacy export replay помечен `diagnostic_only=true`: он подтверждает старую
   механику выгрузки, но не доказывает пригодность модели для online.
 
-### Вывод
-- Старые прибыльные checkpoint/rule артефакты нельзя использовать online как
-  ML-quality proof.
-- Следующий шаг - live-safe rebuild/retrain без future-derived входных
-  признаков, начиная с `entry_path_v1`.
-- Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
-
-## [2026-05-05] - Entry path v1 live-safe retrain
-
-### Добавлено
-- Новый профиль признаков `entry_path_v1_live_safe`: старый встроенный
-  `entry_path_v1` набор без `ret_dir_atr_lag1`.
-- Live-safe checkpoint и prediction/signal артефакты в
-  `ML/reports/entry_path_v1_live_safe/`.
-
-### Результаты
+### Результаты retrain
 - Validation `ret_pearson_r = 0.2681`.
 - Validation winner `A @ 7.5%`: 36 trades, PF 2.8881.
 - Frozen test: 37 trades, PF 3.6567.
@@ -49,7 +38,7 @@
 - Но система не развалилась после удаления опасного признака. Результат живой,
   но переменный: перед MT4 parity нужно заморозить поддерживаемую rule-family
   `A` или расширить exporter для `B` / `B_no_path6`.
-- Подробности: [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)
+- Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening
 

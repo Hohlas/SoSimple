@@ -4,13 +4,13 @@
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
 ## [2026-05-05] ingest | Entry path v1 live-safe retrain synced into wiki
-- Added report `docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md`
+- Extended report `docs/reports/2026-05-05-live-safe-ml-audit.md`
 - Updated `wiki/research/execution-tracks.md` with `entry_path_v1_live_safe`:
   - removed `ret_dir_atr_lag1` from the new built-in profile
   - validation winner PF 2.8881
   - frozen test PF 3.6567
   - sequential test 25 trades, PF 2.3419
-- Updated `wiki/index.md` coverage from 32 to 33 reports
+- Kept `wiki/index.md` coverage at 32 reports after merging the separate retrain report into the audit report
 
 ## [2026-05-05] update | Entry path v1 live-safe multi-seed follow-up
 - Repeated retrain for seeds `7`, `17`, `42`, `77`, `123`
