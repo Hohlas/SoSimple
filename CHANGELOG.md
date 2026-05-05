@@ -39,12 +39,16 @@
 - Validation winner `A @ 7.5%`: 36 trades, PF 2.8881.
 - Frozen test: 37 trades, PF 3.6567.
 - Sequential test: 25 trades, PF 2.3419, win rate 68.00%.
+- Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
+  median sequential PF 2.3419, min 1.5171, max 4.5985;
+  PF > 2.0 у 3/5 seed, PF <= 1.0 у 0/5 seed.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
   чем у старого `entry_path_v1` sequential результата.
-- Но система не развалилась после удаления опасного признака и остаётся
-  прибыльным кандидатом для multi-seed и MT4 parity проверок.
+- Но система не развалилась после удаления опасного признака. Результат живой,
+  но переменный: перед MT4 parity нужно заморозить поддерживаемую rule-family
+  `A` или расширить exporter для `B` / `B_no_path6`.
 - Подробности: [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)
 
 ## [2026-04-29] - Online inference contract hardening

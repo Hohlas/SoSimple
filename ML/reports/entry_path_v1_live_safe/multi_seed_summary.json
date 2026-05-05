@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "seed_count": 5,
+    "same_winner_count": 3,
+    "same_winner": "A",
+    "median_sequential_pf": 2.3418651709156997,
+    "min_sequential_pf": 1.5171433511048498,
+    "max_sequential_pf": 4.598480869765845,
+    "median_sequential_trades": 32.0,
+    "negative_or_flat_seed_count": 0,
+    "pf_above_2_count": 3,
+    "signal_export_supported_count": 3
+  },
+  "rows": [
+    {
+      "seed": 7,
+      "val_ret_pearson_r": 0.2792083223660787,
+      "winner": "B_no_path6",
+      "target_coverage": 0.1,
+      "validation_pf": 1.2375234086461016,
+      "validation_trades": 48,
+      "test_pf": 4.304432878155644,
+      "test_trades": 49,
+      "sequential_pf": 2.7922047197769952,
+      "sequential_trades": 32,
+      "sequential_win_rate": 0.65625,
+      "signal_export_supported": false
+    },
+    {
+      "seed": 17,
+      "val_ret_pearson_r": 0.2795976201693217,
+      "winner": "B",
+      "target_coverage": 0.075,
+      "validation_pf": 2.551243198321603,
+      "validation_trades": 36,
+      "test_pf": 6.389259807201566,
+      "test_trades": 37,
+      "sequential_pf": 4.598480869765845,
+      "sequential_trades": 25,
+      "sequential_win_rate": 0.76,
+      "signal_export_supported": false
+    },
+    {
+      "seed": 42,
+      "val_ret_pearson_r": 0.26814931134382886,
+      "winner": "A",
+      "target_coverage": 0.075,
+      "validation_pf": 2.8880904438217803,
+      "validation_trades": 36,
+      "test_pf": 3.656705910568241,
+      "test_trades": 37,
+      "sequential_pf": 2.3418651709156997,
+      "sequential_trades": 25,
+      "sequential_win_rate": 0.68,
+      "signal_export_supported": true
+    },
+    {
+      "seed": 77,
+      "val_ret_pearson_r": 0.28435303767522174,
+      "winner": "A",
+      "target_coverage": 0.075,
+      "validation_pf": 2.2116844919397147,
+      "validation_trades": 36,
+      "test_pf": 2.0023586259089146,
+      "test_trades": 49,
+      "sequential_pf": 1.5171433511048498,
+      "sequential_trades": 32,
+      "sequential_win_rate": 0.59375,
+      "signal_export_supported": true
+    },
+    {
+      "seed": 123,
+      "val_ret_pearson_r": 0.27670586109161377,
+      "winner": "A",
+      "target_coverage": 0.1,
+      "validation_pf": 1.2794847114398658,
+      "validation_trades": 48,
+      "test_pf": 2.7761685581153306,
+      "test_trades": 49,
+      "sequential_pf": 1.86333260985839,
+      "sequential_trades": 33,
+      "sequential_win_rate": 0.6060606060606061,
+      "signal_export_supported": true
+    }
+  ]
+}

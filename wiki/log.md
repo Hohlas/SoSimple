@@ -12,6 +12,15 @@
   - sequential test 25 trades, PF 2.3419
 - Updated `wiki/index.md` coverage from 32 to 33 reports
 
+## [2026-05-05] update | Entry path v1 live-safe multi-seed follow-up
+- Repeated retrain for seeds `7`, `17`, `42`, `77`, `123`
+- Updated `wiki/research/execution-tracks.md`:
+  - median sequential PF 2.3419
+  - min sequential PF 1.5171, max 4.5985
+  - PF > 2.0 for 3/5 seeds
+  - PF <= 1.0 for 0/5 seeds
+- Recorded exporter limitation: `A` supported, `B` / `B_no_path6` not yet supported
+
 ## [2026-04-09] bootstrap | Initial wiki structure created
 - Created wiki/wiki.py (generate/verify tool)
 - Created wiki/WIKI_index.md (552 files tracked)

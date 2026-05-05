@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-05 13:25 UTC · git `7bc993f`
+> Auto-generated 2026-05-05 14:27 UTC · git `80b4d0c`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 999 files  ·  **Commit**: `7bc993f`  ·  **Generated**: 2026-05-05 13:25 UTC
+**Tracked**: 1015 files  ·  **Commit**: `80b4d0c`  ·  **Generated**: 2026-05-05 14:27 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 138KB | `d45d1106` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 139KB | `3868601c` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 10KB | `0bb85c9b` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 10KB | `98e183f7` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-05 | 34KB | `cb4773ec` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
@@ -197,7 +197,7 @@
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
 | [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
-| [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md) |  | 2026-05-05 | 4KB | `115362d6` |
+| [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md) |  | 2026-05-05 | 6KB | `95b9d4e2` |
 | [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-05 | 5KB | `9c30dd52` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
@@ -342,6 +342,22 @@
 | [ML/reports/entry_path_v1_frequency_v2/selected_candidate.json](ML/reports/entry_path_v1_frequency_v2/selected_candidate.json) |  |  | 2026-04-17 | 513B | `b69272ad` |
 | [ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 519B | `db1d2a0f` |
 | [ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `29edc3c4` |
+| [ML/reports/entry_path_v1_live_safe/multi_seed_summary.json](ML/reports/entry_path_v1_live_safe/multi_seed_summary.json) |  |  | 2026-05-05 | 2KB | `42281776` |
+| [ML/reports/entry_path_v1_live_safe/seed_007/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_007/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 557B | `09c8c388` |
+| [ML/reports/entry_path_v1_live_safe/seed_007/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_007/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `1b9cf711` |
+| [ML/reports/entry_path_v1_live_safe/seed_007/result.json](ML/reports/entry_path_v1_live_safe/seed_007/result.json) |  |  | 2026-05-05 | 2KB | `21ed6ab7` |
+| [ML/reports/entry_path_v1_live_safe/seed_017/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_017/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 528B | `4b967a95` |
+| [ML/reports/entry_path_v1_live_safe/seed_017/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_017/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `a5bedf83` |
+| [ML/reports/entry_path_v1_live_safe/seed_017/result.json](ML/reports/entry_path_v1_live_safe/seed_017/result.json) |  |  | 2026-05-05 | 2KB | `3729f8b9` |
+| [ML/reports/entry_path_v1_live_safe/seed_042/result.json](ML/reports/entry_path_v1_live_safe/seed_042/result.json) |  |  | 2026-05-05 | 2KB | `f8445a1d` |
+| [ML/reports/entry_path_v1_live_safe/seed_042/selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_042/selected_rule.json) |  |  | 2026-05-05 | 1KB | `29edc3c4` |
+| [ML/reports/entry_path_v1_live_safe/seed_042/trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_042/trade_filter_report.md) |  |  | 2026-05-05 | 519B | `db1d2a0f` |
+| [ML/reports/entry_path_v1_live_safe/seed_077/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_077/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 529B | `b10386a1` |
+| [ML/reports/entry_path_v1_live_safe/seed_077/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_077/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `c9132626` |
+| [ML/reports/entry_path_v1_live_safe/seed_077/result.json](ML/reports/entry_path_v1_live_safe/seed_077/result.json) |  |  | 2026-05-05 | 2KB | `9ae2053a` |
+| [ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 530B | `1410cf6d` |
+| [ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `b0da3773` |
+| [ML/reports/entry_path_v1_live_safe/seed_123/result.json](ML/reports/entry_path_v1_live_safe/seed_123/result.json) |  |  | 2026-05-05 | 2KB | `1deffb2e` |
 | [ML/reports/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-10 | 706B | `0d99ebcd` |
 | [ML/reports/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-10 | 1KB | `f665ab0d` |
 | [ML/reports/entry_path_v1_quantile_selected_rule.json](ML/reports/entry_path_v1_quantile_selected_rule.json) |  |  | 2026-04-12 | 2KB | `a2fce0f7` |
@@ -1050,8 +1066,8 @@
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
 | [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 1KB | `4a8cf55c` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 19KB | `f362cae1` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 67KB | `9acee3e3` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 19KB | `bdbafae2` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 68KB | `43c16998` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-30 | 18KB | `ec64d51c` |
 

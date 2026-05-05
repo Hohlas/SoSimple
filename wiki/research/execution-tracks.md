@@ -1056,8 +1056,20 @@ win rate 66.67%. Значит, прибыльность не сохранила�
 стало меньше. Но система не развалилась после удаления опасного признака и
 остаётся прибыльным кандидатом.
 
-Следующий шаг: multi-seed проверка `entry_path_v1_live_safe`, затем MT4 parity
-по `entry_path_v1_live_safe_test_signals.csv`. После нового baseline можно
-повторно оценить `entry_path_v1_quantile`.
+Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
+
+| Metric | Value |
+|---|---:|
+| median sequential PF | 2.3419 |
+| min sequential PF | 1.5171 |
+| max sequential PF | 4.5985 |
+| PF > 2.0 seeds | 3 / 5 |
+| PF <= 1.0 seeds | 0 / 5 |
+| same winner | `A` in 3 / 5 |
+
+Вывод уточнён: результат живой, но переменный. MT4 signal export сейчас
+поддерживает `A`, а два seed выбрали `B` / `B_no_path6`. Следующий шаг:
+заморозить поддерживаемую rule-family `A` или расширить exporter, затем делать
+MT4 parity. После нового baseline можно повторно оценить `entry_path_v1_quantile`.
 
 Источник: [2026-05-05-entry-path-v1-live-safe-retrain.md](../../docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)

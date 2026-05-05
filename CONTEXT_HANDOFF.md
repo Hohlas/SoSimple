@@ -73,14 +73,18 @@
 - live-safe retrain `entry_path_v1_live_safe` удалил `ret_dir_atr_lag1` и дал:
   validation `ret_pearson_r=0.2681`, frozen test PF `3.6567`,
   sequential test `25` trades, PF `2.3419`, win rate `68.00%`.
-- вывод: прибыльность не сохранилась один в один, но система не развалилась и
-  остаётся кандидатом для multi-seed и MT4 parity.
+- multi-seed follow-up (`7`, `17`, `42`, `77`, `123`): median sequential PF
+  `2.3419`, min `1.5171`, max `4.5985`; PF > 2.0 у `3/5`, PF <= 1.0 у `0/5`.
+- вывод: прибыльность не сохранилась один в один, но система не развалилась.
+  Результат живой, но переменный; перед MT4 parity нужно заморозить
+  поддерживаемую rule-family `A` или расширить exporter для `B` / `B_no_path6`.
 
 ## Next Step
 
-1. Повторить `entry_path_v1_live_safe` на нескольких seed, чтобы проверить
-   устойчивость результата после удаления `ret_dir_atr_lag1`.
-2. Выполнить MT4 parity для `entry_path_v1_live_safe_test_signals.csv`.
+1. Решить правило production-кандидата для `entry_path_v1_live_safe`:
+   ограничиться exporter-supported `A` или добавить export для `B` /
+   `B_no_path6`.
+2. Выполнить MT4 parity для выбранного live-safe signal export.
 3. После нового baseline повторно оценить `entry_path_v1_quantile`, потому что
    production rule зависит от baseline score.
 4. Только после PASS по feature contract переходить к MT4 parity,
