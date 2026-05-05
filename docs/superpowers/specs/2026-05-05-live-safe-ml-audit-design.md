@@ -24,6 +24,10 @@ not safe: it used row-wise inputs derived from future bars, including
 `predict`, `ret_*`, `fav_*`, and `adv_*`. The current leakage checklist also
 marks `ret_dir_atr_lag1` as forbidden until proven safe.
 
+Feature names are not enough for a verdict. The audit must trace where each
+field is calculated in code and when its value becomes known. A field is
+live-safe only if the source code proves it is available at the decision time.
+
 Therefore high PF alone is not enough. Each system must be re-audited from
 source artifacts and feature contracts before its result can be trusted for
 online trading.
@@ -106,14 +110,33 @@ before live-safe claims.
 Before any retest, write a table with:
 
 - feature name
+- raw field index or raw source field, if applicable
 - source file/function
 - source group: fractal, row-wise, model prediction, label, execution metric
+- producer code path: where the value is calculated or exported
+- consumer code path: where the model reads the value
+- transformation path: parsing, sorting, normalization, aggregation, lagging
+- role: model input, target, label, filter input, normalization-only field
 - availability time: current bar, past-only history, future bars, unknown
 - live-safe status
+- evidence: code path and report/doc path used for the classification
 - notes
 
 The feature list must be reviewed before running live-safe training or online
 tests.
+
+Use `docs/reports/2026-04-19-lib-pic-feature-source-audit.md` as the pattern
+for this table. That report maps each `Nero.csv` fractal field to its MQL4
+source, for example CSV index, field name, `F[f]` source, and current meaning.
+The same idea must be applied to every audited ML system, including fields that
+are created later in Python.
+
+The practical question for every field is:
+
+- where is this number created?
+- from which earlier numbers is it created?
+- at which bar time is it first known?
+- is it used directly by the model, or only to build a target/report?
 
 ### 4.3. No Zero-Fill Compatibility
 
@@ -133,6 +156,25 @@ validation. Test is only a final frozen check.
 
 If a rule was changed after looking at test, the result is not a valid final
 test result.
+
+### 4.5. Classify by Source and Timing, Not by Name Alone
+
+Do not mechanically ban or approve a field only by its name.
+
+Examples:
+
+- `ret_*`, `fav_*`, and `adv_*` are usually future outcome fields in the
+  current labeling code, so they are unsafe as inputs unless code proves a
+  different meaning.
+- `Up/Dn` fields inside exported fractal strings may be accumulated historical
+  state for an older fractal, or they may act like a future outcome for the
+  current decision. The verdict depends on the producer code and decision time.
+- `ret_dir_atr_lag1` is not automatically safe just because it is lagged. The
+  audit must check whether the pre-lag source already contains future bars
+  relative to the current decision.
+
+For each doubtful field, inspect the calculation site in code before assigning
+the verdict.
 
 ---
 
@@ -277,16 +319,20 @@ Mandatory checks:
 
 - exact model input count
 - exact feature names where available
+- raw source field or raw CSV index where applicable
+- calculation site for every row-wise field
 - row-wise feature list
 - fractal feature parser contract
 - target/label columns
 - normalization path
 - scaler behavior, if any
 - train/validation/test split order
+- proof that source and decision time were inspected for doubtful fields
 
 Output:
 
 - published feature tables;
+- source trace table for fields with non-obvious timing;
 - per-feature live-safe classification;
 - system verdict draft.
 
@@ -326,7 +372,24 @@ For systems that pass Phase E:
 - explain any mismatch by period boundaries, duplicate timestamps, spread,
   ATR differences, or execution timing.
 
-### Phase G: Online Dry-Run
+### Phase G: Forward Validation
+
+Before online dry-run, run a frozen rule on data that is strictly newer than the
+data used to select that rule.
+
+Purpose:
+
+- prove that the selected rule still works after the research decision;
+- avoid treating an old test slice as fresh forward evidence;
+- decide whether the system is strong enough to justify an online dry-run.
+
+Output:
+
+- forward prediction/export evidence;
+- forward metrics;
+- explicit pass/fail reason.
+
+### Phase H: Online Dry-Run
 
 Before trading:
 
@@ -347,7 +410,9 @@ The audit should produce:
 - `ML/reports/live_safe_ml_audit/manifest.json`
 - `ML/reports/live_safe_ml_audit/<system>/artifact_inventory.json`
 - `ML/reports/live_safe_ml_audit/<system>/feature_contract.csv`
+- `ML/reports/live_safe_ml_audit/<system>/source_trace.csv`
 - `ML/reports/live_safe_ml_audit/<system>/legacy_reproduction.json`
+- `ML/reports/live_safe_ml_audit/<system>/forward_validation.json`, if applicable
 - `ML/reports/live_safe_ml_audit/<system>/verdict.json`
 - `docs/reports/YYYY-MM-DD-live-safe-ml-audit.md`
 
@@ -394,6 +459,8 @@ The audit succeeds when:
 - Do not call a system production-ready only because PF is high.
 - Do not fill missing live features with zero and call it compatible.
 - Do not choose thresholds on test.
+- Do not approve or reject doubtful fields by name alone; inspect their source
+  code and decision-time availability.
 - Do not run online trading before feature contract, test, and MT4 parity are
   clear.
 - Treat `UNKNOWN` as unsafe until proven otherwise.

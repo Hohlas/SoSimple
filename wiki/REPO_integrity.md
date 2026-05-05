@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-05 05:30 UTC · git `ffc7daf`
+> Auto-generated 2026-05-05 06:09 UTC · git `093eafb`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 962 files  ·  **Commit**: `ffc7daf`  ·  **Generated**: 2026-05-05 05:30 UTC
+**Tracked**: 962 files  ·  **Commit**: `093eafb`  ·  **Generated**: 2026-05-05 06:09 UTC
 
 ## Root Docs
 
@@ -139,7 +139,7 @@
 | [docs/superpowers/specs/2026-04-16-trailing-stop-target-quantile-design.md](docs/superpowers/specs/2026-04-16-trailing-stop-target-quantile-design.md) |  | 2026-04-17 | 10KB | `48c918e2` |
 | [docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md](docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md) |  | 2026-04-27 | 17KB | `b852c2fa` |
 | [docs/superpowers/specs/2026-04-28-central-inference-service-design.md](docs/superpowers/specs/2026-04-28-central-inference-service-design.md) |  | 2026-04-28 | 7KB | `ecc8e915` |
-| [docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md](docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md) |  | 2026-05-05 | 10KB | `a847a042` |
+| [docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md](docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md) |  | 2026-05-05 | 13KB | `c1679335` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-04-05 | 4KB | `551fd6e9` |
 
 ## Reports
