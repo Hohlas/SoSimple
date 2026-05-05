@@ -124,6 +124,43 @@ def test_feature_modes_expand_original_contour_without_row_drift():
     assert np.allclose(with_geometry_path.X[:, :, : baseline.X.shape[2]], baseline.X)
 
 
+def test_live_safe_baseline_excludes_future_derived_row_features():
+    from ML.run_take_skip_original_contour_feature_matrix import (
+        LIVE_SAFE_BASELINE_ROW_FEATURE_COLUMNS,
+        ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS,
+        build_live_safe_baseline_features,
+        build_original_baseline_features,
+        build_original_contour_arrays,
+    )
+
+    frame = _source_frame(rows=4)
+    arrays = build_original_contour_arrays(frame, feature_mode='live_safe_baseline', seq_len=20)
+    original_features = build_original_baseline_features(frame, arrays.parsed_X)
+    live_safe_features = build_live_safe_baseline_features(frame, arrays.parsed_X)
+
+    forbidden = {
+        'predict',
+        'ret_dir_atr_lag1',
+        'ret_6_dir_atr',
+        'ret_12_dir_atr',
+        'ret_24_dir_atr',
+        'fav_3_atr',
+        'adv_3_atr',
+        'fav_6_atr',
+        'adv_6_atr',
+        'fav_12_atr',
+        'adv_12_atr',
+        'fav_24_atr',
+        'adv_24_atr',
+    }
+
+    assert not forbidden.intersection(LIVE_SAFE_BASELINE_ROW_FEATURE_COLUMNS)
+    assert forbidden.issubset(set(ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS))
+    assert live_safe_features.shape[1] < original_features.shape[1]
+    assert arrays.X.shape[2] == 20 + live_safe_features.shape[1]
+    assert np.allclose(arrays.X[:, 0, 20:], live_safe_features)
+
+
 def test_original_contour_runner_writes_summary_and_benchmark(tmp_path: Path):
     from ML.run_take_skip_original_contour_feature_matrix import run_single_config_from_frames
 

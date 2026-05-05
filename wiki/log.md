@@ -3,6 +3,13 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-05] update | Take/skip live-safe baseline probe
+- Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`
+- Recorded that direct take/skip rebuild without `predict`, `ret_dir_atr_lag1`,
+  `ret_*`, `fav_*`, `adv_*` produced no validation winner
+- Best observed validation PF was 1.5178 on only 3 trades; verdict `reject`
+- Kept `wiki/index.md` coverage at 32 reports because the canonical report remained `2026-05-05-live-safe-ml-audit.md`
+
 ## [2026-05-05] update | Entry path v1 quantile over live-safe baseline
 - Repeated `entry_path_v1_quantile` over the new `entry_path_v1_live_safe` baseline.
 - Updated `wiki/research/execution-tracks.md`:

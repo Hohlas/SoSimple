@@ -1105,3 +1105,43 @@ baseline, но production-кандидатом пока не подтвержд�
 однако выбранное правило нестабильно между seed, а sequential-сделок мало.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
+
+## 13. Take/Skip v2 Live-Safe Baseline Probe (05-05)
+
+Первый live-safe rebuild для старого take/skip семейства (`quality`,
+`frequency`, `original_plus_path`) проверил прямой вопрос: сохранится ли старая
+прибыльность, если оставить single-tensor runner, но убрать будущие row-признаки.
+
+Новый режим: `live_safe_baseline`.
+
+Оставлены row-признаки:
+
+- `ATR`
+- `session_hour`
+- `weekday`
+- `range_atr_6`
+- `body_atr_3`
+- `vol_regime_24`
+
+Удалены из входов модели: `predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`,
+`adv_*`.
+
+Запуск `live_safe_baseline_seq50`, seed `42`:
+
+| Metric | Value |
+|---|---:|
+| best epoch | 4 |
+| validation BCE | 0.036112 |
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | 1.5178 |
+| best observed validation trades | 3 |
+| best observed trades/year | 0.75 |
+| best observed negative year slices | 1 |
+
+Вывод: это не близкий проход. Прямой rebuild старого take/skip baseline без
+future-derived row-признаков не воспроизвёл tradable validation region. Старые
+`quality/frequency` результаты пока нужно считать зависимыми от запрещённых
+входов, пока не найден другой live-safe feature family.
+
+Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

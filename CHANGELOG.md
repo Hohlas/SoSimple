@@ -18,6 +18,10 @@
   `ML/reports/entry_path_v1_quantile_live_safe_baseline/`.
 - Восстановлен вспомогательный модуль `ML/entry_path_v1_quantile_ensemble.py`,
   который нужен для n-boost проверки quantile-слоя.
+- Новый режим `live_safe_baseline` в
+  `ML/run_take_skip_original_contour_feature_matrix.py`: старый take/skip
+  single-tensor runner без `predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`,
+  `adv_*` row-признаков.
 
 ### Результаты аудита
 - `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
@@ -41,6 +45,9 @@
 - N-boost candidate `lb_gt_m_q40`: frozen test 35 trades, PF 32.4125,
   sequential 14 trades, PF 48.7214, но gate=`fail` из-за stability:
   `same_winner_ratio=0.60 < 0.80`.
+- Первый take/skip live-safe probe (`live_safe_baseline_seq50`, seed 42):
+  validation winner не найден, verdict=`reject`; лучший validation PF только
+  `1.5178` при `3` сделках и `1` отрицательном годовом срезе.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
@@ -51,6 +58,9 @@
 - Quantile-слой тоже не развалился после замены старого baseline на live-safe
   baseline, но пока не подтвержден как production-кандидат: прибыльность есть,
   правило выбора нестабильно между seed.
+- Старый take/skip baseline после удаления future-derived row-признаков пока
+  не воспроизвёл прибыльную область. Это усиливает вывод, что старые
+  `quality/frequency` результаты нельзя переносить в online как есть.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening

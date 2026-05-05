@@ -243,11 +243,58 @@ Artifacts:
 - `ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json`
 - `ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/`
 
+## Take/Skip v2 Live-Safe Baseline Probe
+
+The next system family was the old take/skip group: `quality`, `frequency`,
+and `original_plus_path`.
+
+The first probe kept the old single-tensor runner shape, but added a new
+feature mode: `live_safe_baseline`.
+
+Feature change:
+
+- old row inputs: `predict`, `ATR`, `session_hour`, `weekday`, `range_atr_6`,
+  `body_atr_3`, `ret_dir_atr_lag1`, `vol_regime_24`, `ret_*`, `fav_*`,
+  `adv_*`;
+- new row inputs: `ATR`, `session_hour`, `weekday`, `range_atr_6`,
+  `body_atr_3`, `vol_regime_24`.
+
+Run:
+
+- feature mode: `live_safe_baseline`;
+- sequence length: `50`;
+- seed: `42`;
+- targets available in current labeled CSV: 9 (`x2/x4/x8`, horizons
+  `12/24/48`);
+- best epoch: `4`;
+- validation BCE: `0.036112`.
+
+Frozen benchmark result:
+
+| Check | Result |
+|---|---|
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | `1.5178` |
+| best observed validation trades | `3` |
+| best observed validation trades/year | `0.75` |
+| best observed negative year slices | `1` |
+
+Meaning: this was not a near miss. After removing future-derived row inputs,
+the old take/skip baseline did not reproduce a tradable validation region under
+the existing benchmark gate.
+
+Artifacts:
+
+- `ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/`
+
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
-online ML quality.
+online ML quality. The first live-safe take/skip probe now supports the stricter
+interpretation: the old take/skip profitability did not survive removal of
+future-derived row inputs in the direct baseline rebuild.
 
 The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
 production approval, but it is enough to reject the worst fear: removing
@@ -258,8 +305,8 @@ result is not a production approval either: some runs are very profitable, but
 the selected quantile rule is not stable enough across seeds.
 
 Next decision, before any MT4 work: either continue stabilizing the live-safe
-entry path family, or move to the next previously profitable system and repeat
-the same live-safe audit pattern.
+entry path family, or investigate whether take/skip can be rebuilt from a
+different live-safe feature family rather than the old row-feature baseline.
 
 ## Verification
 
@@ -270,6 +317,8 @@ Commands run:
 ./.venv/bin/python -m ML.run_live_safe_ml_audit --phase all --output-dir ML/reports/live_safe_ml_audit
 ./.venv/bin/python -m pytest tests/test_entry_path_task.py tests/test_entry_path_training.py tests/test_entry_path_v1_quantile_reports.py tests/test_live_safe_audit.py -q
 ./.venv/bin/python -m ML.benchmark_entry_path_v1_quantile_n_boost --root-dir ML/reports/entry_path_v1_quantile_live_safe_baseline --seeds 7 17 42 77 123 --baseline-rule ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json --output-dir ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost
+./.venv/bin/python -m pytest tests/test_take_skip_original_contour_feature_matrix.py -q
+./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_baseline --feature-modes live_safe_baseline --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 4
 ```
 
 Results:
@@ -281,3 +330,4 @@ Results:
 - live-safe `entry_path_v1` retrain and multi-seed artifacts generated
 - live-safe-baseline `entry_path_v1_quantile` retrain, multi-seed artifacts,
   and n-boost gate generated
+- take/skip `live_safe_baseline_seq50` probe generated; verdict `reject`

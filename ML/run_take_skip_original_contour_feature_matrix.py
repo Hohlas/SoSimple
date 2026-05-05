@@ -68,7 +68,20 @@ ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS = (
     'fav_24_atr',
     'adv_24_atr',
 )
-FEATURE_MODES = ('original_baseline', 'original_plus_path', 'original_plus_geometry_path')
+LIVE_SAFE_BASELINE_ROW_FEATURE_COLUMNS = (
+    'ATR',
+    'session_hour',
+    'weekday',
+    'range_atr_6',
+    'body_atr_3',
+    'vol_regime_24',
+)
+FEATURE_MODES = (
+    'original_baseline',
+    'original_plus_path',
+    'original_plus_geometry_path',
+    'live_safe_baseline',
+)
 DEFAULT_SEQ_LENS = (20, 50, 100)
 AUTO_VALUE = 'auto'
 
@@ -152,6 +165,19 @@ def build_original_baseline_features(frame: pd.DataFrame, parsed_X: np.ndarray) 
     return np.nan_to_num(engineered, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32, copy=False)
 
 
+def build_live_safe_baseline_features(frame: pd.DataFrame, parsed_X: np.ndarray) -> np.ndarray:
+    """Строит take/skip baseline без future-derived row-признаков."""
+    summary = build_multi_scale_fractal_features(parsed_X)
+    row_features = (
+        frame.reindex(columns=LIVE_SAFE_BASELINE_ROW_FEATURE_COLUMNS)
+        .apply(pd.to_numeric, errors='coerce')
+        .fillna(0.0)
+        .to_numpy(dtype=np.float32)
+    )
+    engineered = np.concatenate([summary, row_features], axis=1)
+    return np.nan_to_num(engineered, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32, copy=False)
+
+
 def build_original_contour_engineered_features(
     frame: pd.DataFrame,
     parsed_X: np.ndarray,
@@ -163,6 +189,9 @@ def build_original_contour_engineered_features(
     if feature_mode not in FEATURE_MODES:
         available = ', '.join(FEATURE_MODES)
         raise ValueError(f'unknown feature_mode: {feature_mode}. Available: {available}')
+
+    if feature_mode == 'live_safe_baseline':
+        return build_live_safe_baseline_features(frame, parsed_X)
 
     blocks = [build_original_baseline_features(frame, parsed_X)]
     if feature_mode != 'original_baseline':

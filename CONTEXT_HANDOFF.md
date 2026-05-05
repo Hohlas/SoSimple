@@ -85,13 +85,19 @@
   `same_winner_ratio=0.60 < 0.80`.
 - вывод по quantile: прибыльность не исчезла, но production-кандидатом слой
   пока считать нельзя; правило выбора нестабильно между seed.
+- первый take/skip live-safe probe выполнен для `live_safe_baseline_seq50`
+  (`seed=42`): старый single-tensor runner без `predict`, `ret_dir_atr_lag1`,
+  `ret_*`, `fav_*`, `adv_*`; validation winner не найден, verdict=`reject`,
+  лучший validation PF `1.5178` только на `3` сделках.
+- вывод по take/skip baseline: старые `quality/frequency` результаты пока не
+  сохранились после удаления future-derived row-признаков.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. Перейти к следующей ранее прибыльной системе и повторить live-safe audit:
-   сначала воспроизвести старый результат, затем проверить/пересобрать без
-   future-derived входов.
+2. Для take/skip решить, есть ли смысл проверять другую live-safe feature
+   family (`lib_PIC` path/geometry после отдельного source audit), или считать
+   старый row-feature baseline закрытым.
 3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
    исследовательский шаг - стабилизировать rule-family и увеличить число
    последовательных сделок, но текущий вывод не является production approval.
@@ -104,11 +110,12 @@
 4. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
 5. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - retrain и multi-seed artifacts.
 6. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - quantile retrain поверх live-safe baseline.
-7. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
-8. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-9. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-10. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-11. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+7. [`ML/reports/take_skip_live_safe_baseline/`](ML/reports/take_skip_live_safe_baseline/) - first take/skip live-safe baseline probe.
+8. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
+9. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
+10. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+11. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+12. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
@@ -122,6 +129,8 @@
   это кандидат, не production approval.
 - `entry_path_v1_quantile_live_safe_baseline` показал прибыльные участки, но
   n-boost gate не прошёл из-за нестабильности выбранного правила.
+- `take_skip_live_safe_baseline` в первом seed не нашёл validation winner;
+  прямой rebuild старого baseline без будущих row-признаков пока провален.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.

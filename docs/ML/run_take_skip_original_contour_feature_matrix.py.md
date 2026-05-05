@@ -32,8 +32,14 @@ CSV должны содержать:
 - `original_baseline` — старый baseline: multi-scale summaries по parsed fractals + старые row-wise признаки.
 - `original_plus_path` — `original_baseline` + path-reaction признаки из `lib_PIC`.
 - `original_plus_geometry_path` — `original_baseline` + path-reaction + geometry признаки.
+- `live_safe_baseline` — multi-scale summaries + только row-wise признаки,
+  доступные без будущей разметки: `ATR`, `session_hour`, `weekday`,
+  `range_atr_6`, `body_atr_3`, `vol_regime_24`.
 
 Важно: `baseline_clean` здесь не используется как замена старого baseline. Новые признаки добавляются поверх исходного представления.
+
+`live_safe_baseline` не использует старые future-derived поля: `predict`,
+`ret_dir_atr_lag1`, `ret_*`, `fav_*`, `adv_*`.
 
 ## Выходные данные
 
@@ -98,6 +104,26 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/b
   --cpu-load 0.5 \
   --clear-cache \
   2>&1 | tee ML/reports/take_skip_original_contour_feature_matrix/run.log
+```
+
+## Live-safe контроль
+
+Проверка старой take/skip идеи без future-derived row-признаков:
+
+```bash
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/bin/python \
+  -m ML.run_take_skip_original_contour_feature_matrix \
+  --output-dir ML/reports/take_skip_live_safe_baseline \
+  --feature-modes live_safe_baseline \
+  --seq-lens 50 \
+  --epochs 10 \
+  --patience 4 \
+  --batch-size 256 \
+  --seed 42 \
+  --min-pf 1.0 \
+  --min-trades-per-year 6 \
+  --jobs 1 \
+  --torch-threads 4
 ```
 
 ## Ограничения

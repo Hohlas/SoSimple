@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-05 16:55 UTC · git `4e6e5e4`
+> Auto-generated 2026-05-05 18:39 UTC · git `9a78bb0`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1032 files  ·  **Commit**: `4e6e5e4`  ·  **Generated**: 2026-05-05 16:55 UTC
+**Tracked**: 1035 files  ·  **Commit**: `9a78bb0`  ·  **Generated**: 2026-05-05 18:39 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 139KB | `156cff3e` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 140KB | `3c59ea8d` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 11KB | `77e0b929` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-05 | 34KB | `b5bc52d7` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 12KB | `cba330e0` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-05 | 34KB | `978168c7` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -49,7 +49,7 @@
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-05 | 24KB | `1505ae08` |
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-05-05 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 4KB | `8d21f1a7` |
-| [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-04-20 | 4KB | `e71f4335` |
+| [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-05-05 | 5KB | `e658e267` |
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-04-27 | 4KB | `b708037f` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-04-27 | 20KB | `709955e7` |
@@ -197,14 +197,14 @@
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
 | [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
-| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-05 | 11KB | `d56d6bc4` |
+| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-05 | 13KB | `83ae4cb8` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-05-05 | 12KB | `e79bb371` |
+| [ML/README.md](ML/README.md) |  |  | 2026-05-05 | 12KB | `d58a2fd8` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
@@ -481,6 +481,9 @@
 | [ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/summary.json](ML/reports/take_skip_lib_pic_feature_matrix/baseline_clean_seq50/summary.json) |  |  | 2026-04-20 | 13KB | `9e9f484e` |
 | [ML/reports/take_skip_lib_pic_feature_matrix/manifest.json](ML/reports/take_skip_lib_pic_feature_matrix/manifest.json) |  |  | 2026-04-20 | 136KB | `f5ddd710` |
 | [ML/reports/take_skip_lib_pic_selection/final_verdict.json](ML/reports/take_skip_lib_pic_selection/final_verdict.json) |  |  | 2026-04-20 | 5KB | `d5323101` |
+| [ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/benchmark/final_verdict.json) |  |  | 2026-05-05 | 77B | `187c03e9` |
+| [ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/summary.json](ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/summary.json) |  |  | 2026-05-05 | 11KB | `230648aa` |
+| [ML/reports/take_skip_live_safe_baseline/manifest.json](ML/reports/take_skip_live_safe_baseline/manifest.json) |  |  | 2026-05-05 | 13KB | `b69fcca8` |
 | [ML/reports/take_skip_mt4_trailing_sequential/summary.json](ML/reports/take_skip_mt4_trailing_sequential/summary.json) |  |  | 2026-04-19 | 6KB | `80ed09d0` |
 | [ML/reports/take_skip_original_contour_feature_matrix/manifest.json](ML/reports/take_skip_original_contour_feature_matrix/manifest.json) |  |  | 2026-04-20 | 141KB | `16fd569e` |
 | [ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/benchmark/final_verdict.json](ML/reports/take_skip_original_contour_feature_matrix/original_baseline_seq100/benchmark/final_verdict.json) |  |  | 2026-04-20 | 947B | `80f24abc` |
@@ -623,7 +626,7 @@
 | [ML/reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | 🏁 | 2026-03-11 | 7KB | `756dd1c8` |
 | [ML/run_live_safe_ml_audit.py](ML/run_live_safe_ml_audit.py) | CLI для audit inventory, feature trace, legacy replay и verdict | ✅ | 2026-05-05 | 16KB | `e4bac0c6` |
 | [ML/run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | 🚧 | 2026-04-20 | 25KB | `68fde791` |
-| [ML/run_take_skip_original_contour_feature_matrix.py](ML/run_take_skip_original_contour_feature_matrix.py) | Training matrix для проверки `lib_PIC` признаков в старом single-tensor `take_skip_v2` контуре | 🚧 | 2026-04-20 | 28KB | `09bc35a3` |
+| [ML/run_take_skip_original_contour_feature_matrix.py](ML/run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline без будущих row-признаков | 🚧 | 2026-05-05 | 29KB | `a8fe3cbb` |
 | [ML/run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | ✅ | 2026-04-17 | 6KB | `0d1d781d` |
 | [ML/run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | ✅ | 2026-04-18 | 9KB | `b18488e5` |
 | [ML/run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 6KB | `ac5afba9` |
@@ -748,7 +751,7 @@
 | [tests/test_signal_research.py](tests/test_signal_research.py) | `API/signal_research.py` — ATR14, excursions, barriers, split | ✅ | 2026-04-08 | 41KB | `2eeb81b2` |
 | [tests/test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | ✅ | 2026-04-08 | 2KB | `cfe94d2f` |
 | [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-04-20 | 6KB | `17c1a137` |
-| [tests/test_take_skip_original_contour_feature_matrix.py](tests/test_take_skip_original_contour_feature_matrix.py) | `ML/run_take_skip_original_contour_feature_matrix.py` | ✅ | 2026-04-20 | 6KB | `60cda300` |
+| [tests/test_take_skip_original_contour_feature_matrix.py](tests/test_take_skip_original_contour_feature_matrix.py) | `ML/run_take_skip_original_contour_feature_matrix.py` | ✅ | 2026-05-05 | 7KB | `a7de4cfc` |
 | [tests/test_take_skip_trailing_stop_v2_task.py](tests/test_take_skip_trailing_stop_v2_task.py) |  |  | 2026-04-19 | 3KB | `df306b0d` |
 | [tests/test_tb_label_invariants.py](tests/test_tb_label_invariants.py) |  |  | 2026-04-13 | 1KB | `46510bd4` |
 | [tests/test_telemetry_daily_reconciliation.py](tests/test_telemetry_daily_reconciliation.py) | `ML/telemetry_daily_reconciliation.py` | ✅ | 2026-04-27 | 7KB | `ff563d2d` |
@@ -1082,9 +1085,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 2KB | `ef00ca06` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 20KB | `a7386374` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 69KB | `d64946b2` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 2KB | `8937c961` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 20KB | `751fca1e` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 71KB | `e5d5569a` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-30 | 18KB | `ec64d51c` |
 

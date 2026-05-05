@@ -53,7 +53,7 @@
 | [export_entry_path_predictions.py](export_entry_path_predictions.py) | Inference `entry_path_v1` / `entry_path_v1_quantile` на arbitrary labeled CSV без переобучения | labeled CSV + checkpoint → prediction CSV | ✅ |
 | [entry_path_v1_quantile_ensemble.py](entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | ✅ |
 | [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
-| [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для проверки `lib_PIC` признаков в старом single-tensor `take_skip_v2` контуре | labeled CSV → reports/take_skip_original_contour_feature_matrix/ | 🚧 |
+| [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline без будущих row-признаков | labeled CSV → reports/take_skip_original_contour_feature_matrix/ / reports/take_skip_live_safe_baseline/ | 🚧 |
 | [benchmark_take_skip_lib_pic_selection.py](benchmark_take_skip_lib_pic_selection.py) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` без нового обучения | prediction CSV + source CSV → reports/take_skip_lib_pic_selection/ | ✅ |
 | [benchmark_execution_policy_v2.py](benchmark_execution_policy_v2.py) | Сравнение вариантов выхода для готовых ML-сигналов | `ml_signals_*.csv` + OHLC → reports/execution_policy_v2/ | ✅ |
 | [benchmark_signal_export_parity.py](benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → reports/signal_export_parity/ | ✅ |
@@ -133,6 +133,13 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_origi
   --seq-lens 20 50 100 --epochs 10 --patience 4 --batch-size 256 \
   --jobs auto --torch-threads auto --cpu-load 0.5 --clear-cache
 
+# Take/skip v2: live-safe контроль без predict/ret/fav/adv row-признаков
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_original_contour_feature_matrix \
+  --output-dir ML/reports/take_skip_live_safe_baseline \
+  --feature-modes live_safe_baseline \
+  --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 \
+  --jobs 1 --torch-threads 4
+
 # Parity: exported signals vs MT4 tester log
 python -m ML.benchmark_signal_export_parity \
   --signals MT/tester/files/ml_signals.csv \
@@ -160,7 +167,7 @@ python -m ML.telemetry_daily_reconciliation \
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
-`run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, но проверяет добавление новых признаков поверх старого single-tensor представления.
+`run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, проверяет добавление новых признаков поверх старого single-tensor представления и имеет режим `live_safe_baseline` для контроля без future-derived row-признаков.
 `benchmark_cross_instrument_robustness.py` не меняет frozen rules и не ретюнит пороги: он только измеряет `provider_drift` и `cross_instrument_transfer` на уже зафиксированных системах.
 `benchmark_system_correlation.py` не выбирает новые trading modes: он только нормализует существующие сделки и считает pairwise overlap/correlation verdicts.
 `export_entry_path_predictions.py` нужен именно для frozen transfer-проверок: он не переобучает модели и ожидает полный entry-path labeled contract на входе.
