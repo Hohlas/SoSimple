@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-04-29
-sources: 31
+last_updated: 2026-05-05
+sources: 32
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 31 отчёта (2026-04-08 — 2026-04-29). Параллельные направления execution и текущая подготовка telemetry demo launch.
+> Синтез 32 отчётов (2026-04-08 — 2026-05-05). Параллельные направления execution и текущая live-safe проверка прибыльных ML-систем.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1003,3 +1003,32 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 
 Источники: [2026-04-28-mql-runtime-architecture-snapshot.md](../../docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md),
 [2026-04-29-online-inference-contract-hardening.md](../../docs/reports/2026-04-29-online-inference-contract-hardening.md)
+
+## 10. Live-Safe ML Audit (05-05)
+
+Повторный аудит прибыльных ML-систем отделил старую прибыльность от права идти
+в online. Нормативный gate: `docs/ML/ml_leakage_preflight_checklist.md`.
+
+Проверены пять систем:
+
+| System | Legacy result | Live-safe verdict |
+|---|---:|---|
+| `quality` | PF `39.74` | `FAIL` |
+| `frequency` | PF `13.12` | `FAIL` |
+| `original_plus_path` | PF `38.78` | `FAIL` |
+| `entry_path_v1` | PF `2.87` sequential | `UNKNOWN` |
+| `entry_path_v1_quantile` | PF `8.18` frozen test, `3.64` sequential | `UNKNOWN` |
+
+Главный вывод:
+
+- take/skip контуры (`quality`, `frequency`, `original_plus_path`) используют
+  future-derived входы: `predict`, `ret_*`, `fav_*`, `adv_*`;
+- `entry_path_v1` пока нельзя считать PASS из-за `ret_dir_atr_lag1`;
+- `entry_path_v1_quantile` наследует этот риск через baseline dependency;
+- ни одна из пяти систем не готова к online trading как ML-quality proof.
+
+Следующий шаг: source/timing audit для `entry_path_v1.ret_dir_atr_lag1`. Если
+поле не проходит gate, нужен live-safe rebuild/retrain `entry_path_v1`, после
+чего можно заново судить `entry_path_v1_quantile`.
+
+Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

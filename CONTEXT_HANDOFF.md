@@ -4,11 +4,12 @@
 
 ## Current Stage
 
-Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime и 2026-04-29 online inference contract hardening.
+Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening и 2026-05-05 live-safe ML audit.
 
 Канонические отчёты:
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 - [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
+- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 Что было зафиксировано 2026-04-27:
 - high-frequency diagnostic export `telemetry_frequency_v1_highfreq500`;
@@ -58,36 +59,39 @@
   row features и поэтому заблокирован для ML-корректной online-проверки;
 - перед production-переходом нужен live-safe retrain: один и тот же набор
   признаков в training/test и online, без future-derived входов.
+- live-safe ML audit зафиксировал verdict:
+  `quality`, `frequency`, `original_plus_path` = `FAIL`;
+  `entry_path_v1`, `entry_path_v1_quantile` = `UNKNOWN`.
+- audit evidence лежит в `ML/reports/live_safe_ml_audit/`.
 
 ## Next Step
 
-1. Закрыть этап отчётом: mechanical online chain hardened, legacy ML contract
-   blocked as unsafe.
-2. Спроектировать live-safe retrain:
-   - сначала применить
-     [`docs/ML/ml_leakage_preflight_checklist.md`](docs/ML/ml_leakage_preflight_checklist.md)
-     как обязательный gate для feature contract, split, preprocessing,
-     export, MT4 parity и online;
-   - убрать `predict`, `ret_*`, `fav_*`, `adv_*` из входных признаков;
-   - оставить только признаки, доступные на момент бара;
-   - training/test и online должны использовать один builder.
-3. После retrain заново сравнивать online/backtest.
+1. Разобрать `entry_path_v1` глубже: проверить по коду и данным источник
+   `ret_dir_atr_lag1`, включая исходный `ret_6_dir_atr` и момент доступности.
+2. Если `ret_dir_atr_lag1` не проходит gate, спроектировать live-safe rebuild /
+   retrain для `entry_path_v1` без этого поля или с доказанно безопасной заменой.
+3. После решения по `entry_path_v1` повторно оценить `entry_path_v1_quantile`,
+   потому что production rule зависит от baseline score.
 
 ## Read First
 
 1. [`AGENTS.md`](AGENTS.md) - правила агента и карта источников.
 2. [`docs/ML/ml_leakage_preflight_checklist.md`](docs/ML/ml_leakage_preflight_checklist.md) - обязательный leakage/preflight gate для всех ML test/MT4/online выводов.
-3. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог текущего этапа.
-4. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-5. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-6. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-7. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+3. [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md) - текущий verdict по прибыльным ML-системам.
+4. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
+5. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
+6. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
+7. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+8. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+9. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
 - Legacy `original_baseline` нельзя считать online-ready: historical test был
   загрязнён future-derived входными признаками, а live `Nero.csv` этих признаков
   не имеет.
+- `entry_path_v1` и `entry_path_v1_quantile` пока `UNKNOWN`, не `PASS`.
+  Причина: `ret_dir_atr_lag1` и baseline dependency требуют source/timing audit.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
@@ -97,5 +101,6 @@
 
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 - [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
+- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
 - [`docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md)
 - [`docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md`](docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md)

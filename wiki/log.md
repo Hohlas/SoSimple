@@ -294,3 +294,12 @@
 ## [2026-04-29] ingest | online inference contract hardening report
 - Added `docs/reports/2026-04-29-online-inference-contract-hardening.md`.
 - Updated `wiki/research/execution-tracks.md` and `wiki/index.md` coverage from 30 to 31 reports.
+
+## [2026-05-05] ingest | live-safe ML audit
+- Added `docs/reports/2026-05-05-live-safe-ml-audit.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded legacy PF vs live-safe verdict for five profitable systems;
+  - marked `quality`, `frequency`, `original_plus_path` as `FAIL`;
+  - marked `entry_path_v1` and `entry_path_v1_quantile` as `UNKNOWN`;
+  - recorded `ret_dir_atr_lag1` source/timing audit as the next blocker.
+- Updated `wiki/index.md` coverage from 31 to 32 reports.

@@ -30,6 +30,12 @@ Spec: [2026-05-05-live-safe-ml-audit-design.md](specs/2026-05-05-live-safe-ml-au
 
 Plan: [2026-05-05-live-safe-ml-audit.md](plans/2026-05-05-live-safe-ml-audit.md)
 
+Report: [2026-05-05-live-safe-ml-audit.md](../reports/2026-05-05-live-safe-ml-audit.md)
+
+Current verdict: `quality`, `frequency`, `original_plus_path` are `FAIL`;
+`entry_path_v1` and `entry_path_v1_quantile` are `UNKNOWN`. No system should
+go to online trading before the unresolved fields are closed.
+
 ### 1. `lib_PIC` feature-source audit
 
 **Контекст:** `lib_PIC.mqh` считает больше рыночного состояния, чем сейчас экспортируется в `Nero.csv` и используется Python-моделью.
