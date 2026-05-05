@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-05 12:39 UTC · git `e08d061`
+> Auto-generated 2026-05-05 13:25 UTC · git `7bc993f`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 996 files  ·  **Commit**: `e08d061`  ·  **Generated**: 2026-05-05 12:39 UTC
+**Tracked**: 999 files  ·  **Commit**: `7bc993f`  ·  **Generated**: 2026-05-05 13:25 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 137KB | `a089a0df` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-05 | 138KB | `d45d1106` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 9KB | `70ca322d` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-05 | 10KB | `0bb85c9b` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-05 | 34KB | `cb4773ec` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
@@ -40,13 +40,13 @@
 | [docs/ML/export_entry_path_predictions.py.md](docs/ML/export_entry_path_predictions.py.md) | Inference entry_path-моделей на arbitrary labeled CSV без переобучения | 2026-04-24 | 3KB | `cec68b97` |
 | [docs/ML/feature_bank_comparison_diagnostics.py.md](docs/ML/feature_bank_comparison_diagnostics.py.md) | Сравнение baseline/geometry/path feature-bank вариантов | 2026-04-20 | 2KB | `5bfce017` |
 | [docs/ML/feature_importance_diagnostics.py.md](docs/ML/feature_importance_diagnostics.py.md) | Диагностика важности групп текущих fractal-признаков | 2026-04-20 | 2KB | `fd76dcaf` |
-| [docs/ML/lib_pic_feature_profiles.py.md](docs/ML/lib_pic_feature_profiles.py.md) | Единая сборка профилей признаков `lib_PIC` | 2026-04-20 | 2KB | `988ba17b` |
+| [docs/ML/lib_pic_feature_profiles.py.md](docs/ML/lib_pic_feature_profiles.py.md) | Единая сборка профилей признаков `lib_PIC` | 2026-05-05 | 2KB | `3947bb49` |
 | [docs/ML/lib_pic_geometry_feature_bank.py.md](docs/ML/lib_pic_geometry_feature_bank.py.md) | Производные признаки геометрии уровней `lib_PIC` | 2026-04-20 | 3KB | `1da45c79` |
 | [docs/ML/lib_pic_path_reaction_feature_bank.py.md](docs/ML/lib_pic_path_reaction_feature_bank.py.md) | Производные признаки исторической реакции цены `Up/Dn` после уровней | 2026-04-20 | 2KB | `9d18b5e1` |
 | [docs/ML/live_safe_audit.py.md](docs/ML/live_safe_audit.py.md) | Core-типы live-safe audit и свод feature verdict → system verdict | 2026-05-05 | 556B | `8341abc1` |
 | [docs/ML/live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit | 2026-05-05 | 469B | `8d81d796` |
 | [docs/ML/ml_leakage_preflight_checklist.md](docs/ML/ml_leakage_preflight_checklist.md) | Чеклист перед test/MT4/online ML-запуском для исключения заглядывания вперёд | 2026-04-30 | 16KB | `924087f2` |
-| [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-04-20 | 24KB | `b00080ac` |
+| [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-05 | 24KB | `1505ae08` |
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-05-05 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 4KB | `8d21f1a7` |
 | [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-04-20 | 4KB | `e71f4335` |
@@ -197,6 +197,7 @@
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
 | [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
+| [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md) |  | 2026-05-05 | 4KB | `115362d6` |
 | [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-05 | 5KB | `9c30dd52` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
@@ -237,7 +238,7 @@
 | [ML/conformal/conformal_quantiles.json](ML/conformal/conformal_quantiles.json) |  |  | 2026-03-20 | 399B | `6d9e2e03` |
 | [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-04-20 | 55KB | `52e42b36` |
 | [ML/entry_path_feature_bank.py](ML/entry_path_feature_bank.py) | Entry path feature bank: оконные сводки строки и row-wise context features | ✅ | 2026-04-17 | 3KB | `0c7004b2` |
-| [ML/entry_path_task.py](ML/entry_path_task.py) | Entry path task: определения targets, метрики, export helpers | ✅ | 2026-04-20 | 17KB | `cb38faa5` |
+| [ML/entry_path_task.py](ML/entry_path_task.py) | Entry path task: определения targets, метрики, export helpers | ✅ | 2026-05-05 | 18KB | `2bdfb3cf` |
 | [ML/entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | ✅ | 2026-04-09 | 14KB | `54d61050` |
 | [ML/entry_path_v1_quantile_task.py](ML/entry_path_v1_quantile_task.py) | Entry path v1 quantile task: export/report helpers и metrics | ✅ | 2026-04-10 | 8KB | `6e03b05a` |
 | [ML/evaluate_test.py](ML/evaluate_test.py) | OOS оценка (profit factor, precision) на тестовой выборке | ✅ | 2026-04-20 | 37KB | `a215c472` |
@@ -339,6 +340,8 @@
 | [ML/reports/entry_path_v1_frequency_v2/final_verdict.json](ML/reports/entry_path_v1_frequency_v2/final_verdict.json) |  |  | 2026-04-17 | 1KB | `3fa39482` |
 | [ML/reports/entry_path_v1_frequency_v2/run_metadata.json](ML/reports/entry_path_v1_frequency_v2/run_metadata.json) |  |  | 2026-04-17 | 243B | `6316d165` |
 | [ML/reports/entry_path_v1_frequency_v2/selected_candidate.json](ML/reports/entry_path_v1_frequency_v2/selected_candidate.json) |  |  | 2026-04-17 | 513B | `b69272ad` |
+| [ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 519B | `db1d2a0f` |
+| [ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `29edc3c4` |
 | [ML/reports/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-10 | 706B | `0d99ebcd` |
 | [ML/reports/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-10 | 1KB | `f665ab0d` |
 | [ML/reports/entry_path_v1_quantile_selected_rule.json](ML/reports/entry_path_v1_quantile_selected_rule.json) |  |  | 2026-04-12 | 2KB | `a2fce0f7` |
@@ -675,7 +678,7 @@
 | [tests/test_entry_path_loader_seq_len.py](tests/test_entry_path_loader_seq_len.py) | `ML/data_loader.py` — `entry_path_v1` sequence length contract | ✅ | 2026-04-20 | 4KB | `e5f1a2ce` |
 | [tests/test_entry_path_model.py](tests/test_entry_path_model.py) | `ML/models/entry_path_transformer.py` | ✅ | 2026-04-17 | 3KB | `2975dc23` |
 | [tests/test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | ✅ | 2026-04-17 | 7KB | `8c945ae2` |
-| [tests/test_entry_path_task.py](tests/test_entry_path_task.py) | `ML/entry_path_task.py` — target contract, export helpers | ✅ | 2026-04-20 | 7KB | `9d299d99` |
+| [tests/test_entry_path_task.py](tests/test_entry_path_task.py) | `ML/entry_path_task.py` — target contract, export helpers | ✅ | 2026-05-05 | 8KB | `59cc940c` |
 | [tests/test_entry_path_trade_filter.py](tests/test_entry_path_trade_filter.py) | `ML/entry_path_trade_filter.py` | ✅ | 2026-04-09 | 12KB | `8390258c` |
 | [tests/test_entry_path_training.py](tests/test_entry_path_training.py) | CLI plumbing для entry_path_v1 обучения | ✅ | 2026-04-20 | 8KB | `7be46178` |
 | [tests/test_entry_path_v1_quantile_filter.py](tests/test_entry_path_v1_quantile_filter.py) | entry_path_v1_quantile frozen-baseline filter benchmark | ✅ | 2026-04-12 | 4KB | `142bfe32` |
@@ -699,7 +702,7 @@
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-04-20 | 3KB | `24e7d32d` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-04-20 | 2KB | `9c204a8c` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-04-20 | 3KB | `1ab56954` |
-| [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-05-05 | 4KB | `8b66cc69` |
+| [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-05-05 | 4KB | `ff25cc1e` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-04-28 | 6KB | `074a90f7` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-04-18 | 1KB | `de0eeac6` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-04-30 | 5KB | `fee35d8b` |
@@ -1046,9 +1049,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 1KB | `6723bf5d` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 18KB | `7309061c` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 66KB | `385a140c` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 1KB | `4a8cf55c` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-05 | 19KB | `f362cae1` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-05 | 67KB | `9acee3e3` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-30 | 18KB | `ec64d51c` |
 

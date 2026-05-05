@@ -3,6 +3,15 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-05] ingest | Entry path v1 live-safe retrain synced into wiki
+- Added report `docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md`
+- Updated `wiki/research/execution-tracks.md` with `entry_path_v1_live_safe`:
+  - removed `ret_dir_atr_lag1` from the new built-in profile
+  - validation winner PF 2.8881
+  - frozen test PF 3.6567
+  - sequential test 25 trades, PF 2.3419
+- Updated `wiki/index.md` coverage from 32 to 33 reports
+
 ## [2026-04-09] bootstrap | Initial wiki structure created
 - Created wiki/wiki.py (generate/verify tool)
 - Created wiki/WIKI_index.md (552 files tracked)

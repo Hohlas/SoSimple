@@ -1,3 +1,4 @@
+from ML.entry_path_task import ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS
 from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import get_audited_systems
 from ML.run_live_safe_ml_audit import (
@@ -83,6 +84,15 @@ def test_ret_dir_atr_lag1_fails_after_source_timing_audit():
 
     assert trace.live_safe_status == LiveSafeStatus.FAIL
     assert "shift" in trace.transformation
+
+
+def test_entry_path_live_safe_feature_profile_has_no_failed_features():
+    traces = [classify_feature_name(name) for name in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS]
+
+    verdict = verdict_from_features(traces)
+
+    assert verdict.verdict == "PASS"
+    assert verdict.failing_features == []
 
 
 def test_current_bar_features_are_classified_as_pass():

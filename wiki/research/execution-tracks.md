@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-05-05
-sources: 32
+sources: 33
 status: active
 ---
 
@@ -1036,8 +1036,28 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 помечено как `diagnostic_only=true`, потому что источник входных признаков уже
 провалил live-safe gate.
 
-Следующий шаг: live-safe rebuild/retrain `entry_path_v1` без
-`ret_dir_atr_lag1` или с доказанно безопасной заменой. После нового baseline
-можно заново судить `entry_path_v1_quantile`.
+Следующий шаг был выполнен отдельным retrain: `entry_path_v1_live_safe`.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
+
+## 11. Entry Path v1 Live-Safe Retrain (05-05)
+
+Первый rebuild `entry_path_v1` без `ret_dir_atr_lag1`. Старый профиль сохранён
+для воспроизводимости, новый профиль называется `entry_path_v1_live_safe`.
+
+| Check | Trades | PF | Win rate |
+|---|---:|---:|---:|
+| validation winner `A @ 7.5%` | 36 | 2.8881 | 66.67% |
+| frozen test | 37 | 3.6567 | 72.97% |
+| sequential test | 25 | 2.3419 | 68.00% |
+
+Сравнение со старым `entry_path_v1`: sequential было 30 trades, PF 2.87,
+win rate 66.67%. Значит, прибыльность не сохранилась один в один: сделок и PF
+стало меньше. Но система не развалилась после удаления опасного признака и
+остаётся прибыльным кандидатом.
+
+Следующий шаг: multi-seed проверка `entry_path_v1_live_safe`, затем MT4 parity
+по `entry_path_v1_live_safe_test_signals.csv`. После нового baseline можно
+повторно оценить `entry_path_v1_quantile`.
+
+Источник: [2026-05-05-entry-path-v1-live-safe-retrain.md](../../docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)

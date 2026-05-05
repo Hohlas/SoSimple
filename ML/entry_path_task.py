@@ -10,7 +10,9 @@ ENTRY_PATH_TARGET = 'entry_path_v1'
 ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS = (20, 50, 100)
 ENTRY_PATH_MODEL_NAMES = ('transformer', 'entry_path_dual_stream')
 ENTRY_PATH_DEFAULT_FEATURE_PROFILE = 'entry_path_v1'
-ENTRY_PATH_FEATURE_PROFILES = (ENTRY_PATH_DEFAULT_FEATURE_PROFILE, *LIB_PIC_FEATURE_PROFILES)
+ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE = 'entry_path_v1_live_safe'
+ENTRY_PATH_BUILTIN_FEATURE_PROFILES = (ENTRY_PATH_DEFAULT_FEATURE_PROFILE, ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE)
+ENTRY_PATH_FEATURE_PROFILES = (*ENTRY_PATH_BUILTIN_FEATURE_PROFILES, *LIB_PIC_FEATURE_PROFILES)
 ENTRY_PATH_RET_TARGETS = ['ret_6_dir_atr', 'ret_12_dir_atr', 'ret_24_dir_atr']
 ENTRY_PATH_PATH_REG_TARGETS = [
     'fav_6_atr',
@@ -31,6 +33,9 @@ ENTRY_PATH_V1_BASE_FEATURE_COLUMNS = [
 ]
 ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS = list(FEATURE_BANK_COLUMNS)
 ENTRY_PATH_V1_FEATURE_COLUMNS = ENTRY_PATH_V1_BASE_FEATURE_COLUMNS + ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS
+ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS = [
+    column for column in ENTRY_PATH_V1_FEATURE_COLUMNS if column != 'ret_dir_atr_lag1'
+]
 ENTRY_PATH_REG_TARGETS = ENTRY_PATH_RET_TARGETS + ENTRY_PATH_PATH_REG_TARGETS
 ENTRY_PATH_CLASS_MAP = {-1: 0, 0: 1, 1: 2}
 ENTRY_PATH_INV_CLASS_MAP = {value: key for key, value in ENTRY_PATH_CLASS_MAP.items()}
@@ -59,14 +64,19 @@ def split_entry_path_features(
     seq_len: int = 100,
 ) -> np.ndarray:
     validate_entry_path_feature_profile(feature_profile)
-    if feature_profile != ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+    if feature_profile not in ENTRY_PATH_BUILTIN_FEATURE_PROFILES:
         return build_lib_pic_feature_profile(df, profile=feature_profile, seq_len=seq_len).to_numpy(dtype=np.float32)
 
     feature_frame = df
     if any(column not in feature_frame.columns for column in ENTRY_PATH_V1_WINDOW_FEATURE_COLUMNS):
         feature_frame = build_entry_path_feature_bank(feature_frame)
+    feature_columns = (
+        ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS
+        if feature_profile == ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE
+        else ENTRY_PATH_V1_FEATURE_COLUMNS
+    )
     return (
-        feature_frame.reindex(columns=ENTRY_PATH_V1_FEATURE_COLUMNS)
+        feature_frame.reindex(columns=feature_columns)
         .apply(pd.to_numeric, errors='coerce')
         .fillna(0.0)
         .values.astype(np.float32)

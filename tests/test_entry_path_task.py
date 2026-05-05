@@ -24,6 +24,8 @@ from ML.entry_path_task import (
     ENTRY_PATH_FEATURE_PROFILES,
     ENTRY_PATH_MODEL_NAMES,
     ENTRY_PATH_CLASS_TARGET,
+    ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE,
+    ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS,
     ENTRY_PATH_V1_FEATURE_COLUMNS,
     ENTRY_PATH_PATH_REG_TARGETS,
     ENTRY_PATH_RET_TARGETS,
@@ -94,6 +96,12 @@ def test_entry_path_task_exposes_frequency_feature_columns():
     assert expected.issubset(set(ENTRY_PATH_V1_FEATURE_COLUMNS))
 
 
+def test_entry_path_task_exposes_live_safe_profile_without_future_lag():
+    assert ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE in ENTRY_PATH_FEATURE_PROFILES
+    assert 'ret_dir_atr_lag1' not in ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS
+    assert set(ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS).issubset(set(ENTRY_PATH_V1_FEATURE_COLUMNS))
+
+
 def test_entry_path_task_exposes_feature_bank_columns():
     expected = {
         'row_strong_share_w5',
@@ -150,6 +158,24 @@ def test_split_entry_path_features_is_numeric_and_zero_fills_missing_columns():
     assert features[0, 4] == 0.0
     assert features[0, 5] == 3.0
     assert np.all(features[0, 6:] == 0.0)
+
+
+def test_split_entry_path_features_live_safe_profile_excludes_future_lag():
+    frame = pd.DataFrame([
+        {
+            'session_hour': '7',
+            'weekday': '2',
+            'range_atr_6': '1.5',
+            'body_atr_3': '0.5',
+            'ret_dir_atr_lag1': '999.0',
+            'vol_regime_24': '3',
+        }
+    ])
+
+    features = split_entry_path_features(frame, feature_profile=ENTRY_PATH_LIVE_SAFE_FEATURE_PROFILE)
+
+    assert features.shape == (1, len(ENTRY_PATH_V1_LIVE_SAFE_FEATURE_COLUMNS))
+    assert 999.0 not in features[0].tolist()
 
 
 def test_split_entry_path_features_supports_clean_lib_pic_profile():

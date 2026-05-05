@@ -26,6 +26,27 @@
   признаков, начиная с `entry_path_v1`.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
+## [2026-05-05] - Entry path v1 live-safe retrain
+
+### Добавлено
+- Новый профиль признаков `entry_path_v1_live_safe`: старый встроенный
+  `entry_path_v1` набор без `ret_dir_atr_lag1`.
+- Live-safe checkpoint и prediction/signal артефакты в
+  `ML/reports/entry_path_v1_live_safe/`.
+
+### Результаты
+- Validation `ret_pearson_r = 0.2681`.
+- Validation winner `A @ 7.5%`: 36 trades, PF 2.8881.
+- Frozen test: 37 trades, PF 3.6567.
+- Sequential test: 25 trades, PF 2.3419, win rate 68.00%.
+
+### Вывод
+- Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
+  чем у старого `entry_path_v1` sequential результата.
+- Но система не развалилась после удаления опасного признака и остаётся
+  прибыльным кандидатом для multi-seed и MT4 parity проверок.
+- Подробности: [docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md](docs/reports/2026-05-05-entry-path-v1-live-safe-retrain.md)
+
 ## [2026-04-29] - Online inference contract hardening
 
 ### Добавлено

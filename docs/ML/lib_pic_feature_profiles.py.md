@@ -48,6 +48,10 @@ python -m ML.train \
   --clear_cache
 ```
 
+Для нового live-safe retrain используется встроенный профиль
+`entry_path_v1_live_safe`. Он повторяет старый `entry_path_v1` feature bank, но
+исключает `ret_dir_atr_lag1`.
+
 ## Ограничения
 
 - Модуль не читает CSV и не запускает обучение.
