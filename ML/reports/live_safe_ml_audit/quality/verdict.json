@@ -1,0 +1,30 @@
+{
+  "system_name": "quality",
+  "verdict": "FAIL",
+  "reason": "Feature contract includes future-derived or otherwise invalid inputs.",
+  "failed_checks": [
+    "future_derived_input_features"
+  ],
+  "unknown_checks": [
+    "unresolved_feature_timing"
+  ],
+  "forbidden_features": [
+    "predict",
+    "ret_6_dir_atr",
+    "ret_12_dir_atr",
+    "ret_24_dir_atr",
+    "fav_3_atr",
+    "adv_3_atr",
+    "fav_6_atr",
+    "adv_6_atr",
+    "fav_12_atr",
+    "adv_12_atr",
+    "fav_24_atr",
+    "adv_24_atr"
+  ],
+  "unknown_features": [
+    "ret_dir_atr_lag1"
+  ],
+  "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
+  "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+}

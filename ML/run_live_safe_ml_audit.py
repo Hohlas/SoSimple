@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from ML.entry_path_task import ENTRY_PATH_V1_FEATURE_COLUMNS
-from ML.live_safe_audit import FeatureTrace, classify_feature_name
+from ML.live_safe_audit import FeatureTrace, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import AuditedSystem, get_audited_systems
 from ML.run_take_skip_original_contour_feature_matrix import ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS
 
@@ -156,9 +156,55 @@ def run_feature_contract(output_dir: Path, systems: Iterable[AuditedSystem] | No
     return summary
 
 
+def build_system_verdict(system: AuditedSystem) -> dict:
+    traces = build_feature_contract(system)
+    verdict = verdict_from_features(traces)
+    forbidden_features = verdict.failing_features
+    unknown_features = verdict.unknown_features
+    allowed_next_step = {
+        "PASS": "MT4 tester parity, forward validation, then online dry-run",
+        "FAIL": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
+        "UNKNOWN": "Gather source/timing evidence before any ML-quality online test",
+    }[verdict.verdict]
+    return {
+        "system_name": system.system_name,
+        "verdict": verdict.verdict,
+        "reason": verdict.reason,
+        "failed_checks": ["future_derived_input_features"] if forbidden_features else [],
+        "unknown_checks": ["unresolved_feature_timing"] if unknown_features else [],
+        "forbidden_features": forbidden_features,
+        "unknown_features": unknown_features,
+        "allowed_next_step": allowed_next_step,
+        "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md",
+    }
+
+
+def run_verdicts(output_dir: Path, systems: Iterable[AuditedSystem] | None = None) -> dict:
+    selected_systems = tuple(systems or get_audited_systems())
+    verdicts = []
+    for system in selected_systems:
+        verdict = build_system_verdict(system)
+        verdicts.append(verdict)
+        write_json(output_dir / system.system_name / "verdict.json", verdict)
+    summary = {"systems": verdicts}
+    write_json(output_dir / "verdict_summary.json", summary)
+    return summary
+
+
+def run_all(output_dir: Path) -> dict:
+    manifest = run_inventory(output_dir)
+    feature_summary = run_feature_contract(output_dir)
+    verdict_summary = run_verdicts(output_dir)
+    return {
+        "manifest": manifest,
+        "feature_contract": feature_summary,
+        "verdicts": verdict_summary,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run live-safe ML audit phases.")
-    parser.add_argument("--phase", choices=("inventory", "feature-contract"), required=True)
+    parser.add_argument("--phase", choices=("inventory", "feature-contract", "verdicts", "all"), required=True)
     parser.add_argument("--output-dir", default="ML/reports/live_safe_ml_audit")
     return parser.parse_args()
 
@@ -172,6 +218,20 @@ def main() -> None:
     elif args.phase == "feature-contract":
         summary = run_feature_contract(output_dir)
         print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
+    elif args.phase == "verdicts":
+        summary = run_verdicts(output_dir)
+        print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
+    elif args.phase == "all":
+        summary = run_all(output_dir)
+        print(
+            json.dumps(
+                {
+                    "phase": args.phase,
+                    "output_dir": str(output_dir),
+                    "systems": summary["manifest"]["systems"],
+                }
+            )
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import get_audited_systems
-from ML.run_live_safe_ml_audit import build_artifact_inventory, build_feature_contract
+from ML.run_live_safe_ml_audit import build_artifact_inventory, build_feature_contract, build_system_verdict
 
 
 def test_unknown_feature_blocks_online_pass():
@@ -92,3 +92,15 @@ def test_feature_contract_for_original_plus_path_contains_forbidden_inputs():
 
     assert by_name["predict"].live_safe_status == LiveSafeStatus.FAIL
     assert by_name["ret_dir_atr_lag1"].live_safe_status == LiveSafeStatus.UNKNOWN
+
+
+def test_initial_system_verdicts_match_expected_risk_model():
+    verdicts = {system.system_name: build_system_verdict(system)["verdict"] for system in get_audited_systems()}
+
+    assert verdicts == {
+        "quality": "FAIL",
+        "frequency": "FAIL",
+        "original_plus_path": "FAIL",
+        "entry_path_v1": "UNKNOWN",
+        "entry_path_v1_quantile": "UNKNOWN",
+    }

@@ -1,0 +1,17 @@
+{
+  "system_name": "entry_path_v1_quantile",
+  "verdict": "UNKNOWN",
+  "reason": "Feature contract has unresolved source or timing evidence.",
+  "failed_checks": [],
+  "unknown_checks": [
+    "unresolved_feature_timing"
+  ],
+  "forbidden_features": [],
+  "unknown_features": [
+    "baseline_dependency:entry_path_v1",
+    "pred_ret_24_q10",
+    "pred_ret_24_q90"
+  ],
+  "allowed_next_step": "Gather source/timing evidence before any ML-quality online test",
+  "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+}

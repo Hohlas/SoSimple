@@ -1,0 +1,195 @@
+{
+  "systems": [
+    "quality",
+    "frequency",
+    "original_plus_path",
+    "entry_path_v1",
+    "entry_path_v1_quantile"
+  ],
+  "system_count": 5,
+  "artifacts": [
+    {
+      "system_name": "quality",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "existing_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+        "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "missing_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "expected_risk_note": "Shares the original_baseline checkpoint family with future-derived row inputs."
+    },
+    {
+      "system_name": "frequency",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "existing_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+        "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "missing_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "expected_risk_note": "Shares the original_baseline checkpoint family with future-derived row inputs."
+    },
+    {
+      "system_name": "original_plus_path",
+      "checkpoint_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+      ],
+      "existing_paths": [
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+        "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+        "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+      ],
+      "missing_paths": [],
+      "expected_risk_note": "Explicitly covered by the unsafe original_contour online contract finding."
+    },
+    {
+      "system_name": "entry_path_v1",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_best.pt",
+      "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/entry_path_v1_validation_predictions.csv",
+        "ML/reports/entry_path_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-09-entry-path-trade-filter.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "existing_paths": [
+        "ML/checkpoints/transformer_entry_path_v1_best.pt",
+        "ML/reports/entry_path_trade_filter_selected_rule.json",
+        "ML/reports/entry_path_v1_validation_predictions.csv",
+        "ML/reports/entry_path_test_predictions.csv",
+        "docs/reports/2026-04-09-entry-path-trade-filter.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "missing_paths": [],
+      "expected_risk_note": "Feature contract includes ret_dir_atr_lag1, which is UNKNOWN until source timing is audited."
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+      "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_validation_predictions.csv",
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-12-quantile-status-decision.md",
+        "docs/reports/2026-04-13-quantile-forward-validation.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "existing_paths": [
+        "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+        "ML/reports/entry_path_v1_quantile_selected_rule.json",
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_validation_predictions.csv",
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv",
+        "docs/reports/2026-04-12-quantile-status-decision.md",
+        "docs/reports/2026-04-13-quantile-forward-validation.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "missing_paths": [],
+      "expected_risk_note": "Quantile checkpoint appears cleaner, but production rule depends on entry_path_v1 baseline score."
+    }
+  ],
+  "registry": [
+    {
+      "system_name": "quality",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "expected_risk_note": "Shares the original_baseline checkpoint family with future-derived row inputs."
+    },
+    {
+      "system_name": "frequency",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "expected_risk_note": "Shares the original_baseline checkpoint family with future-derived row inputs."
+    },
+    {
+      "system_name": "original_plus_path",
+      "checkpoint_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+        "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+      ],
+      "expected_risk_note": "Explicitly covered by the unsafe original_contour online contract finding."
+    },
+    {
+      "system_name": "entry_path_v1",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_best.pt",
+      "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/entry_path_v1_validation_predictions.csv",
+        "ML/reports/entry_path_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-09-entry-path-trade-filter.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "expected_risk_note": "Feature contract includes ret_dir_atr_lag1, which is UNKNOWN until source timing is audited."
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+      "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+      "prediction_paths": [
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_validation_predictions.csv",
+        "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv"
+      ],
+      "report_paths": [
+        "docs/reports/2026-04-12-quantile-status-decision.md",
+        "docs/reports/2026-04-13-quantile-forward-validation.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "expected_risk_note": "Quantile checkpoint appears cleaner, but production rule depends on entry_path_v1 baseline score."
+    }
+  ]
+}

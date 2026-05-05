@@ -1,0 +1,25 @@
+{
+  "system_name": "entry_path_v1_quantile",
+  "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+  "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+  "prediction_paths": [
+    "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_validation_predictions.csv",
+    "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv"
+  ],
+  "report_paths": [
+    "docs/reports/2026-04-12-quantile-status-decision.md",
+    "docs/reports/2026-04-13-quantile-forward-validation.md",
+    "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+  ],
+  "existing_paths": [
+    "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+    "ML/reports/entry_path_v1_quantile_selected_rule.json",
+    "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_validation_predictions.csv",
+    "ML/reports/entry_path_v1_quantile_robustness/seed_007/entry_path_v1_quantile_test_predictions.csv",
+    "docs/reports/2026-04-12-quantile-status-decision.md",
+    "docs/reports/2026-04-13-quantile-forward-validation.md",
+    "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+  ],
+  "missing_paths": [],
+  "expected_risk_note": "Quantile checkpoint appears cleaner, but production rule depends on entry_path_v1 baseline score."
+}

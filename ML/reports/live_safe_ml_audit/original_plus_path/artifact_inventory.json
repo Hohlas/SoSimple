@@ -1,0 +1,21 @@
+{
+  "system_name": "original_plus_path",
+  "checkpoint_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+  "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+  "prediction_paths": [
+    "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+    "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv"
+  ],
+  "report_paths": [
+    "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+  ],
+  "existing_paths": [
+    "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+    "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+    "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
+    "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+    "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+  ],
+  "missing_paths": [],
+  "expected_risk_note": "Explicitly covered by the unsafe original_contour online contract finding."
+}
