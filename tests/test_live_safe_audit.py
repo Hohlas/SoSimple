@@ -1,6 +1,6 @@
-from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, verdict_from_features
+from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import get_audited_systems
-from ML.run_live_safe_ml_audit import build_artifact_inventory
+from ML.run_live_safe_ml_audit import build_artifact_inventory, build_feature_contract
 
 
 def test_unknown_feature_blocks_online_pass():
@@ -64,3 +64,31 @@ def test_artifact_inventory_reports_existing_and_missing_paths(tmp_path):
     assert inventory["rule_path"] == str(existing)
     assert inventory["prediction_paths"] == []
     assert inventory["report_paths"] == []
+
+
+def test_known_future_derived_features_are_classified_as_fail():
+    for name in ("predict", "ret_6_dir_atr", "ret_12_dir_atr", "ret_24_dir_atr", "fav_6_atr", "adv_24_atr"):
+        trace = classify_feature_name(name)
+        assert trace.live_safe_status == LiveSafeStatus.FAIL
+
+
+def test_ret_dir_atr_lag1_stays_unknown_until_source_timing_is_proven():
+    trace = classify_feature_name("ret_dir_atr_lag1")
+
+    assert trace.live_safe_status == LiveSafeStatus.UNKNOWN
+    assert "shift" in trace.transformation
+
+
+def test_current_bar_features_are_classified_as_pass():
+    for name in ("session_hour", "weekday", "ATR"):
+        assert classify_feature_name(name).live_safe_status == LiveSafeStatus.PASS
+
+
+def test_feature_contract_for_original_plus_path_contains_forbidden_inputs():
+    system = next(system for system in get_audited_systems() if system.system_name == "original_plus_path")
+
+    traces = build_feature_contract(system)
+    by_name = {trace.name: trace for trace in traces}
+
+    assert by_name["predict"].live_safe_status == LiveSafeStatus.FAIL
+    assert by_name["ret_dir_atr_lag1"].live_safe_status == LiveSafeStatus.UNKNOWN
