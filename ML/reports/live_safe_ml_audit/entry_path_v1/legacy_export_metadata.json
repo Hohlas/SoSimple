@@ -1,0 +1,10 @@
+{
+  "label": "entry_path_v1_legacy_export",
+  "predictions_path": "ML/reports/entry_path_test_predictions.csv",
+  "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+  "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export.csv",
+  "rows_total": 8872,
+  "nonzero_rows": 23,
+  "buy_rows": 17,
+  "sell_rows": 6
+}

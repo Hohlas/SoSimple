@@ -1,0 +1,11 @@
+{
+  "label": "entry_path_v1_quantile_legacy_export",
+  "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_007",
+  "baseline_predictions_path": "ML/reports/entry_path_test_predictions.csv",
+  "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+  "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1_quantile/legacy_export.csv",
+  "rows_total": 8872,
+  "nonzero_rows": 18,
+  "buy_rows": 13,
+  "sell_rows": 5
+}

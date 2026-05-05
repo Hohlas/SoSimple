@@ -1,0 +1,15 @@
+{
+  "label": "quality_legacy_export",
+  "predictions_path": "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
+  "rule_path": "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+  "output_path": "ML/reports/live_safe_ml_audit/quality/legacy_export.csv",
+  "predictions_sha256": "b251b883dc6be737347da313f620f163eed5a8a1338d25c4d01d0b91828134ad",
+  "rule_sha256": "6ca5006a7dbcac0f65a51887aaadc9e0b4841990d8ae1344fe50730c0bfc2d7d",
+  "output_sha256": "1cb19e3bdffacc9eb6a29056b09ddbf10f66eedc620cff028ce331a575b0a61a",
+  "rows_total": 8887,
+  "nonzero_rows": 30,
+  "buy_rows": 21,
+  "sell_rows": 9,
+  "duplicate_time_rows": 0,
+  "same_time_opposite_signal_groups": 0
+}

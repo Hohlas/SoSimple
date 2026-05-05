@@ -1,0 +1,15 @@
+{
+  "label": "original_plus_path_legacy_export",
+  "predictions_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+  "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+  "output_path": "ML/reports/live_safe_ml_audit/original_plus_path/legacy_export.csv",
+  "predictions_sha256": "6509421047cfb6abf6f1f9936fc753a39947fcfc6e3a9cae87c695c13918a6f3",
+  "rule_sha256": "48011e4c8a2676a084f20096baf592731512c5fa8c935b28b3cdd7f564838e0b",
+  "output_sha256": "a6743e55badac124ed99b1df189b75078e83513698d8506e8d92865ff24cb20f",
+  "rows_total": 8887,
+  "nonzero_rows": 37,
+  "buy_rows": 24,
+  "sell_rows": 13,
+  "duplicate_time_rows": 0,
+  "same_time_opposite_signal_groups": 0
+}

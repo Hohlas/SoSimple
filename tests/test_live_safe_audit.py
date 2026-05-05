@@ -4,6 +4,7 @@ from ML.run_live_safe_ml_audit import (
     build_artifact_inventory,
     build_feature_contract,
     build_legacy_reproduction,
+    summarize_signal_csv,
     build_system_verdict,
 )
 
@@ -120,3 +121,17 @@ def test_legacy_reproduction_reads_frozen_rule_metrics_without_retraining():
     assert legacy["reproduction_mode"] == "artifact_only"
     assert legacy["frozen_test"]["pf"] == 39.7420751708579
     assert legacy["model_changed"] is False
+
+
+def test_summarize_signal_csv_counts_legacy_export_rows(tmp_path):
+    path = tmp_path / "signals.csv"
+    path.write_text("time;signal\n2025.01.01 00:00;1\n2025.01.01 01:00;0\n2025.01.01 02:00;-1\n", encoding="utf-8")
+
+    summary = summarize_signal_csv(path)
+
+    assert summary == {
+        "rows_total": 3,
+        "nonzero_rows": 2,
+        "buy_rows": 1,
+        "sell_rows": 1,
+    }

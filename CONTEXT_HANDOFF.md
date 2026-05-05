@@ -62,6 +62,9 @@
 - live-safe ML audit зафиксировал verdict:
   `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
   `entry_path_v1_quantile` = `FAIL`.
+- legacy export replay выполнен по старым prediction/rule входам:
+  старый путь генерации сигналов воспроизводится для всех пяти систем, но
+  помечен `diagnostic_only=true` и не доказывает online-valid качество.
 - source audit закрыл `ret_dir_atr_lag1` как future-derived:
   это `ret_6_dir_atr.shift(1)`, а `ret_6_dir_atr` строится по будущим барам
   в `label_entry_path_targets()`.

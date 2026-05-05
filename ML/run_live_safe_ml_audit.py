@@ -7,6 +7,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Iterable
 
+import pandas as pd
+
 from ML.entry_path_task import ENTRY_PATH_V1_FEATURE_COLUMNS
 from ML.live_safe_audit import FeatureTrace, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import AuditedSystem, get_audited_systems
@@ -238,6 +240,90 @@ def build_legacy_reproduction(system: AuditedSystem) -> dict:
     }
 
 
+def summarize_signal_csv(path: Path) -> dict:
+    frame = pd.read_csv(path, sep=";")
+    signals = pd.to_numeric(frame["signal"], errors="coerce").fillna(0).astype(int)
+    nonzero = signals != 0
+    return {
+        "rows_total": int(len(frame)),
+        "nonzero_rows": int(nonzero.sum()),
+        "buy_rows": int((signals[nonzero] > 0).sum()),
+        "sell_rows": int((signals[nonzero] < 0).sum()),
+    }
+
+
+def build_legacy_export(system: AuditedSystem, output_dir: Path) -> dict:
+    system_dir = output_dir / system.system_name
+    output_path = system_dir / "legacy_export.csv"
+    metadata_path = system_dir / "legacy_export_metadata.json"
+
+    if system.system_name in {"quality", "frequency", "original_plus_path"}:
+        from API.export_take_skip_trailing_stop_v2_signals import export_signals
+
+        predictions_path = system.prediction_paths[-1]
+        export_signals(
+            predictions_path=predictions_path,
+            rule_path=system.rule_path,
+            output_path=output_path,
+            metadata_output=metadata_path,
+            label=f"{system.system_name}_legacy_export",
+        )
+    elif system.system_name == "entry_path_v1":
+        from API.export_entry_path_v1_signals import export_signals
+
+        predictions_path = system.prediction_paths[-1]
+        export_signals(
+            predictions_path=predictions_path,
+            rule_path=system.rule_path,
+            output_path=output_path,
+        )
+        write_json(
+            metadata_path,
+            {
+                "label": f"{system.system_name}_legacy_export",
+                "predictions_path": predictions_path,
+                "rule_path": system.rule_path,
+                "output_path": str(output_path),
+                **summarize_signal_csv(output_path),
+            },
+        )
+    elif system.system_name == "entry_path_v1_quantile":
+        from API.export_entry_path_v1_quantile_signals import export_signals
+
+        seed_dir = Path(system.prediction_paths[-1]).parent
+        baseline_predictions_path = "ML/reports/entry_path_test_predictions.csv"
+        export_signals(
+            seed_dir=seed_dir,
+            split="test",
+            output_path=output_path,
+            rule_path=system.rule_path,
+            baseline_predictions_path=baseline_predictions_path,
+        )
+        write_json(
+            metadata_path,
+            {
+                "label": f"{system.system_name}_legacy_export",
+                "seed_dir": str(seed_dir),
+                "baseline_predictions_path": baseline_predictions_path,
+                "rule_path": system.rule_path,
+                "output_path": str(output_path),
+                **summarize_signal_csv(output_path),
+            },
+        )
+    else:
+        raise ValueError(f"unsupported legacy export system: {system.system_name}")
+
+    metadata = _read_json_if_present(str(metadata_path))
+    return {
+        "system_name": system.system_name,
+        "mode": "legacy_inputs_old_features",
+        "diagnostic_only": True,
+        "output_path": str(output_path),
+        "metadata_path": str(metadata_path),
+        "metadata": metadata,
+    }
+
+
 def run_legacy_reproduction(output_dir: Path, systems: Iterable[AuditedSystem] | None = None) -> dict:
     selected_systems = tuple(systems or get_audited_systems())
     reproductions = []
@@ -250,16 +336,26 @@ def run_legacy_reproduction(output_dir: Path, systems: Iterable[AuditedSystem] |
     return summary
 
 
+def run_legacy_exports(output_dir: Path, systems: Iterable[AuditedSystem] | None = None) -> dict:
+    selected_systems = tuple(systems or get_audited_systems())
+    exports = [build_legacy_export(system, output_dir) for system in selected_systems]
+    summary = {"systems": exports}
+    write_json(output_dir / "legacy_export_summary.json", summary)
+    return summary
+
+
 def run_all(output_dir: Path) -> dict:
     manifest = run_inventory(output_dir)
     feature_summary = run_feature_contract(output_dir)
     verdict_summary = run_verdicts(output_dir)
     legacy_summary = run_legacy_reproduction(output_dir)
+    export_summary = run_legacy_exports(output_dir)
     return {
         "manifest": manifest,
         "feature_contract": feature_summary,
         "verdicts": verdict_summary,
         "legacy_reproduction": legacy_summary,
+        "legacy_exports": export_summary,
     }
 
 
@@ -267,7 +363,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run live-safe ML audit phases.")
     parser.add_argument(
         "--phase",
-        choices=("inventory", "feature-contract", "verdicts", "legacy-reproduction", "all"),
+        choices=("inventory", "feature-contract", "verdicts", "legacy-reproduction", "legacy-export", "all"),
         required=True,
     )
     parser.add_argument("--output-dir", default="ML/reports/live_safe_ml_audit")
@@ -288,6 +384,9 @@ def main() -> None:
         print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
     elif args.phase == "legacy-reproduction":
         summary = run_legacy_reproduction(output_dir)
+        print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
+    elif args.phase == "legacy-export":
+        summary = run_legacy_exports(output_dir)
         print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
     elif args.phase == "all":
         summary = run_all(output_dir)

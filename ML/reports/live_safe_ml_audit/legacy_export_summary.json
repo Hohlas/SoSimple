@@ -1,0 +1,105 @@
+{
+  "systems": [
+    {
+      "system_name": "quality",
+      "mode": "legacy_inputs_old_features",
+      "diagnostic_only": true,
+      "output_path": "ML/reports/live_safe_ml_audit/quality/legacy_export.csv",
+      "metadata_path": "ML/reports/live_safe_ml_audit/quality/legacy_export_metadata.json",
+      "metadata": {
+        "label": "quality_legacy_export",
+        "predictions_path": "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
+        "rule_path": "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+        "output_path": "ML/reports/live_safe_ml_audit/quality/legacy_export.csv",
+        "predictions_sha256": "b251b883dc6be737347da313f620f163eed5a8a1338d25c4d01d0b91828134ad",
+        "rule_sha256": "6ca5006a7dbcac0f65a51887aaadc9e0b4841990d8ae1344fe50730c0bfc2d7d",
+        "output_sha256": "1cb19e3bdffacc9eb6a29056b09ddbf10f66eedc620cff028ce331a575b0a61a",
+        "rows_total": 8887,
+        "nonzero_rows": 30,
+        "buy_rows": 21,
+        "sell_rows": 9,
+        "duplicate_time_rows": 0,
+        "same_time_opposite_signal_groups": 0
+      }
+    },
+    {
+      "system_name": "frequency",
+      "mode": "legacy_inputs_old_features",
+      "diagnostic_only": true,
+      "output_path": "ML/reports/live_safe_ml_audit/frequency/legacy_export.csv",
+      "metadata_path": "ML/reports/live_safe_ml_audit/frequency/legacy_export_metadata.json",
+      "metadata": {
+        "label": "frequency_legacy_export",
+        "predictions_path": "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
+        "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+        "output_path": "ML/reports/live_safe_ml_audit/frequency/legacy_export.csv",
+        "predictions_sha256": "b251b883dc6be737347da313f620f163eed5a8a1338d25c4d01d0b91828134ad",
+        "rule_sha256": "0d57ef827801a37b62ba455f6ad27c14f288c488ae5a7a57f1b6aef9137aecce",
+        "output_sha256": "7ee78c5dc42f04da613f3092b08bbd35b215cceedb1feb2dc7f5a12c81832829",
+        "rows_total": 8887,
+        "nonzero_rows": 78,
+        "buy_rows": 50,
+        "sell_rows": 28,
+        "duplicate_time_rows": 2,
+        "same_time_opposite_signal_groups": 2
+      }
+    },
+    {
+      "system_name": "original_plus_path",
+      "mode": "legacy_inputs_old_features",
+      "diagnostic_only": true,
+      "output_path": "ML/reports/live_safe_ml_audit/original_plus_path/legacy_export.csv",
+      "metadata_path": "ML/reports/live_safe_ml_audit/original_plus_path/legacy_export_metadata.json",
+      "metadata": {
+        "label": "original_plus_path_legacy_export",
+        "predictions_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+        "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+        "output_path": "ML/reports/live_safe_ml_audit/original_plus_path/legacy_export.csv",
+        "predictions_sha256": "6509421047cfb6abf6f1f9936fc753a39947fcfc6e3a9cae87c695c13918a6f3",
+        "rule_sha256": "48011e4c8a2676a084f20096baf592731512c5fa8c935b28b3cdd7f564838e0b",
+        "output_sha256": "a6743e55badac124ed99b1df189b75078e83513698d8506e8d92865ff24cb20f",
+        "rows_total": 8887,
+        "nonzero_rows": 37,
+        "buy_rows": 24,
+        "sell_rows": 13,
+        "duplicate_time_rows": 0,
+        "same_time_opposite_signal_groups": 0
+      }
+    },
+    {
+      "system_name": "entry_path_v1",
+      "mode": "legacy_inputs_old_features",
+      "diagnostic_only": true,
+      "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export.csv",
+      "metadata_path": "ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export_metadata.json",
+      "metadata": {
+        "label": "entry_path_v1_legacy_export",
+        "predictions_path": "ML/reports/entry_path_test_predictions.csv",
+        "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+        "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export.csv",
+        "rows_total": 8872,
+        "nonzero_rows": 23,
+        "buy_rows": 17,
+        "sell_rows": 6
+      }
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "mode": "legacy_inputs_old_features",
+      "diagnostic_only": true,
+      "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1_quantile/legacy_export.csv",
+      "metadata_path": "ML/reports/live_safe_ml_audit/entry_path_v1_quantile/legacy_export_metadata.json",
+      "metadata": {
+        "label": "entry_path_v1_quantile_legacy_export",
+        "seed_dir": "ML/reports/entry_path_v1_quantile_robustness/seed_007",
+        "baseline_predictions_path": "ML/reports/entry_path_test_predictions.csv",
+        "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+        "output_path": "ML/reports/live_safe_ml_audit/entry_path_v1_quantile/legacy_export.csv",
+        "rows_total": 8872,
+        "nonzero_rows": 18,
+        "buy_rows": 13,
+        "sell_rows": 5
+      }
+    }
+  ]
+}

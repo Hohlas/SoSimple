@@ -60,6 +60,9 @@
 | [telemetry_daily_reconciliation.py](telemetry_daily_reconciliation.py) | Ежедневная сверка telemetry `ml_signals.csv` с MT4 MLP open/close log | `ml_signals.csv` + MT4 log → daily reconciliation report | ✅ |
 | [benchmark_cross_instrument_robustness.py](benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | manifest JSON + signal CSV + OHLC + baseline reference → reports/cross_instrument_robustness/ | ✅ |
 | [benchmark_system_correlation.py](benchmark_system_correlation.py) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | manifest JSON + trade CSV / entry_path predictions → reports/system_correlation_portfolio/ | ✅ |
+| [live_safe_audit.py](live_safe_audit.py) | Core-типы и правила verdict для проверки признаков на online-безопасность | feature traces → PASS/FAIL/UNKNOWN | ✅ |
+| [live_safe_audit_registry.py](live_safe_audit_registry.py) | Реестр прибыльных ML-систем, проверяемых live-safe audit | frozen artifacts → audit scope | ✅ |
+| [run_live_safe_ml_audit.py](run_live_safe_ml_audit.py) | Полный live-safe audit: inventory, feature trace, legacy replay, verdict | registry + artifacts → reports/live_safe_ml_audit/ | ✅ |
 | [reproducibility_tests.py](reproducibility_tests.py) | Тесты детерминизма seed | — → reports/ | 🏁 |
 
 ### Отдельные эксперименты

@@ -1029,6 +1029,13 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 - `entry_path_v1_quantile` наследует этот fail через baseline dependency;
 - ни одна из пяти систем не готова к online trading как ML-quality proof.
 
+Дополнительно воспроизведён старый export по старым prediction/rule входам:
+`quality` дал 30 ненулевых сигналов, `frequency` - 78,
+`original_plus_path` - 37, `entry_path_v1` - 23,
+`entry_path_v1_quantile` - 18. Это проверяет старую механику выгрузки, но
+помечено как `diagnostic_only=true`, потому что источник входных признаков уже
+провалил live-safe gate.
+
 Следующий шаг: live-safe rebuild/retrain `entry_path_v1` без
 `ret_dir_atr_lag1` или с доказанно безопасной заменой. После нового baseline
 можно заново судить `entry_path_v1_quantile`.

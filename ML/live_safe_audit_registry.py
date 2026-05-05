@@ -19,8 +19,7 @@ AUDITED_SYSTEMS: tuple[AuditedSystem, ...] = (
         checkpoint_path="ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
         rule_path="ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
         prediction_paths=(
-            "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
-            "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+            "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
         ),
         report_paths=("docs/reports/2026-04-18-take-skip-frequency-followup.md",),
         expected_risk_note="Shares the original_baseline checkpoint family with future-derived row inputs.",
@@ -30,8 +29,7 @@ AUDITED_SYSTEMS: tuple[AuditedSystem, ...] = (
         checkpoint_path="ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
         rule_path="ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
         prediction_paths=(
-            "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_validation_predictions.csv",
-            "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/take_skip_trailing_stop_v2_test_predictions.csv",
+            "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
         ),
         report_paths=("docs/reports/2026-04-18-take-skip-frequency-followup.md",),
         expected_risk_note="Shares the original_baseline checkpoint family with future-derived row inputs.",

@@ -1,0 +1,15 @@
+{
+  "label": "frequency_legacy_export",
+  "predictions_path": "ML/reports/take_skip_trailing_stop_v2_exports/seq50_test_predictions.csv",
+  "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+  "output_path": "ML/reports/live_safe_ml_audit/frequency/legacy_export.csv",
+  "predictions_sha256": "b251b883dc6be737347da313f620f163eed5a8a1338d25c4d01d0b91828134ad",
+  "rule_sha256": "0d57ef827801a37b62ba455f6ad27c14f288c488ae5a7a57f1b6aef9137aecce",
+  "output_sha256": "7ee78c5dc42f04da613f3092b08bbd35b215cceedb1feb2dc7f5a12c81832829",
+  "rows_total": 8887,
+  "nonzero_rows": 78,
+  "buy_rows": 50,
+  "sell_rows": 28,
+  "duplicate_time_rows": 2,
+  "same_time_opposite_signal_groups": 2
+}

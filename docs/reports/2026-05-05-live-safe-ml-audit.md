@@ -22,6 +22,8 @@ Generated evidence lives in:
 - `ML/reports/live_safe_ml_audit/<system>/feature_contract.csv`
 - `ML/reports/live_safe_ml_audit/<system>/source_trace.csv`
 - `ML/reports/live_safe_ml_audit/<system>/legacy_reproduction.json`
+- `ML/reports/live_safe_ml_audit/<system>/legacy_export.csv`
+- `ML/reports/live_safe_ml_audit/<system>/legacy_export_metadata.json`
 - `ML/reports/live_safe_ml_audit/<system>/verdict.json`
 
 ## What Was Done
@@ -32,6 +34,7 @@ Generated evidence lives in:
 - Built feature/source trace tables.
 - Applied the leakage/preflight gate.
 - Summarized old frozen metrics from existing artifacts only.
+- Replayed legacy signal export from old predictions and old frozen rules.
 - Wrote explicit verdicts for each system.
 
 No model was retrained. No threshold was changed. No online trading was run.
@@ -48,6 +51,23 @@ ideas, but not by themselves enough for online approval.
 | `original_plus_path` | `38.78` | 51 trades | `take_skip_trailing_stop_v2_original_plus_path_selected_rule.json` |
 | `entry_path_v1` | `2.87` sequential | 30 trades | `entry_path_trade_filter_selected_rule.json` |
 | `entry_path_v1_quantile` | `8.18` frozen test, `3.64` sequential | 48 / 22 trades | `entry_path_v1_quantile_selected_rule.json` |
+
+## Legacy Export Replay
+
+This is a diagnostic check with old inputs and old rules. Its goal is to prove
+that the saved prediction/rule/export path still runs and produces trade
+signals. It does not prove that the model is valid for online trading.
+
+| System | Export rows | Non-zero signals | BUY | SELL |
+|---|---:|---:|---:|---:|
+| `quality` | 8887 | 30 | 21 | 9 |
+| `frequency` | 8887 | 78 | 50 | 28 |
+| `original_plus_path` | 8887 | 37 | 24 | 13 |
+| `entry_path_v1` | 8872 | 23 | 17 | 6 |
+| `entry_path_v1_quantile` | 8872 | 18 | 13 | 5 |
+
+All replay outputs are marked `diagnostic_only=true` in
+`ML/reports/live_safe_ml_audit/legacy_export_summary.json`.
 
 ## Feature Findings
 
@@ -104,5 +124,6 @@ Commands run:
 
 Results:
 
-- `11 passed`
+- `12 passed`
 - audit files generated for all five systems
+- legacy export replay generated for all five systems

@@ -2,6 +2,30 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-05] - Live-safe ML audit
+
+### Добавлено
+- `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`,
+  `ML/run_live_safe_ml_audit.py`.
+- Generated audit evidence в `ML/reports/live_safe_ml_audit/`.
+- Повторная legacy export replay проверка: старые prediction/rule входы снова
+  дают сигналы для пяти систем.
+
+### Результаты
+- `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
+  `entry_path_v1_quantile` получили verdict `FAIL`.
+- `ret_dir_atr_lag1` доказан как future-derived: это лаг от `ret_6_dir_atr`,
+  который строится по будущим барам.
+- Legacy export replay помечен `diagnostic_only=true`: он подтверждает старую
+  механику выгрузки, но не доказывает пригодность модели для online.
+
+### Вывод
+- Старые прибыльные checkpoint/rule артефакты нельзя использовать online как
+  ML-quality proof.
+- Следующий шаг - live-safe rebuild/retrain без future-derived входных
+  признаков, начиная с `entry_path_v1`.
+- Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
+
 ## [2026-04-29] - Online inference contract hardening
 
 ### Добавлено
