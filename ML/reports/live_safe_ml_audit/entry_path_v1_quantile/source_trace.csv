@@ -1,0 +1,4 @@
+feature_name,raw_field_index,raw_source_field,producer_code_path,consumer_code_path,transformation_path,role,availability_time,live_safe_status,evidence,notes
+baseline_dependency:entry_path_v1,,baseline_dependency:entry_path_v1,entry_path_v1 baseline score,API/export_entry_path_v1_quantile_signals.py,baseline score gate before quantile rule,filter_dependency,unknown,UNKNOWN,docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md,"Production quantile rule depends on entry_path_v1, so it inherits unresolved baseline timing risk."
+pred_ret_24_q10,,pred_ret_24_q10,unknown,ML model input,direct,model_input,unknown,UNKNOWN,docs/ML/ml_leakage_preflight_checklist.md,
+pred_ret_24_q90,,pred_ret_24_q90,unknown,ML model input,direct,model_input,unknown,UNKNOWN,docs/ML/ml_leakage_preflight_checklist.md,

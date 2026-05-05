@@ -1,0 +1,53 @@
+{
+  "system_name": "entry_path_v1_quantile",
+  "reproduction_mode": "artifact_only",
+  "model_changed": false,
+  "threshold_changed": false,
+  "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+  "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+  "source_report_paths": [
+    "docs/reports/2026-04-12-quantile-status-decision.md",
+    "docs/reports/2026-04-13-quantile-forward-validation.md",
+    "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+  ],
+  "frozen_validation": {},
+  "frozen_test": {
+    "candidate": "lb_gt_m_q35",
+    "rule": "lb_gt_m",
+    "m": -11.09161666,
+    "w": 16.7876408,
+    "trades": 48,
+    "pf": 8.178675196069868,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.7264873945833337,
+    "coverage": 0.6666666666666666,
+    "median_interval_width": 16.81214965,
+    "gross_profit": 149.10197249999993,
+    "gross_loss": 18.23057756
+  },
+  "winner": {
+    "candidate": "lb_gt_m_q35",
+    "rule": "lb_gt_m",
+    "quantile": 0.35,
+    "m": -11.09161666,
+    "w": 16.7876408,
+    "correction": 4.7510468999999995,
+    "alpha": 0.1,
+    "trades": 48,
+    "pf": 8.178675196069868,
+    "win_rate": 0.8125,
+    "mean_pnl_atr": 2.7264873945833337,
+    "coverage": 0.6666666666666666,
+    "median_interval_width": 16.81214965,
+    "gross_profit": 149.10197249999993,
+    "gross_loss": 18.23057756
+  },
+  "mt4_or_parity_evidence": {
+    "known_from_reports": [
+      "docs/reports/2026-04-12-quantile-status-decision.md",
+      "docs/reports/2026-04-13-quantile-forward-validation.md",
+      "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+    ]
+  },
+  "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+}

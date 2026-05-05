@@ -1,0 +1,34 @@
+{
+  "system_name": "frequency",
+  "reproduction_mode": "artifact_only",
+  "model_changed": false,
+  "threshold_changed": false,
+  "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+  "source_report_paths": [
+    "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+  ],
+  "frozen_validation": {
+    "trades_per_year": 20.25,
+    "pf": 7.64,
+    "negative_year_slices": 0
+  },
+  "frozen_test": {
+    "trades_per_year": 16.4,
+    "pf": 13.12,
+    "negative_year_slices": 0,
+    "max_drawdown_atr": 4.03
+  },
+  "winner": {
+    "score_target": "take_24_x8",
+    "selector": "top_k_probability",
+    "threshold": 0.17,
+    "exit_atr_multiplier": 8
+  },
+  "mt4_or_parity_evidence": {
+    "known_from_reports": [
+      "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+    ]
+  },
+  "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+}

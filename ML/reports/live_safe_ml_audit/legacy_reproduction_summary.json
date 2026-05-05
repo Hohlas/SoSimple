@@ -1,0 +1,245 @@
+{
+  "systems": [
+    {
+      "system_name": "quality",
+      "reproduction_mode": "artifact_only",
+      "model_changed": false,
+      "threshold_changed": false,
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "source_report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "frozen_validation": {
+        "trades": 27,
+        "trades_per_year": 6.75,
+        "pf": "inf",
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.22980510568943602,
+        "max_drawdown_atr": 0.0
+      },
+      "frozen_test": {
+        "trades": 41,
+        "trades_per_year": 8.2,
+        "pf": 39.7420751708579,
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.2025994181567417,
+        "max_drawdown_atr": 4.3783000641007845
+      },
+      "winner": {
+        "score_target": "take_24_x8",
+        "selector": "prob_ge_threshold",
+        "threshold": 0.7,
+        "exit_atr_multiplier": 8
+      },
+      "mt4_or_parity_evidence": {
+        "known_from_reports": [
+          "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+        ]
+      },
+      "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+    },
+    {
+      "system_name": "frequency",
+      "reproduction_mode": "artifact_only",
+      "model_changed": false,
+      "threshold_changed": false,
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json",
+      "checkpoint_path": "ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt",
+      "source_report_paths": [
+        "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+      ],
+      "frozen_validation": {
+        "trades_per_year": 20.25,
+        "pf": 7.64,
+        "negative_year_slices": 0
+      },
+      "frozen_test": {
+        "trades_per_year": 16.4,
+        "pf": 13.12,
+        "negative_year_slices": 0,
+        "max_drawdown_atr": 4.03
+      },
+      "winner": {
+        "score_target": "take_24_x8",
+        "selector": "top_k_probability",
+        "threshold": 0.17,
+        "exit_atr_multiplier": 8
+      },
+      "mt4_or_parity_evidence": {
+        "known_from_reports": [
+          "docs/reports/2026-04-18-take-skip-frequency-followup.md"
+        ]
+      },
+      "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+    },
+    {
+      "system_name": "original_plus_path",
+      "reproduction_mode": "artifact_only",
+      "model_changed": false,
+      "threshold_changed": false,
+      "rule_path": "ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json",
+      "checkpoint_path": "ML/reports/take_skip_original_contour_feature_matrix/original_plus_path_seq50/checkpoint.pt",
+      "source_report_paths": [
+        "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+      ],
+      "frozen_validation": {
+        "trades": 39,
+        "trades_per_year": 9.75,
+        "pf": 16.066373619045343,
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.24196552111981073,
+        "max_drawdown_atr": 7.068421000000001
+      },
+      "frozen_test": {
+        "trades": 51,
+        "trades_per_year": 10.2,
+        "pf": 38.78282241608527,
+        "negative_year_slices": 0,
+        "profit_concentration_top_10": 0.20927742350252315,
+        "max_drawdown_atr": 3.8900000000000006
+      },
+      "winner": {
+        "score_target": "take_24_x8",
+        "selector": "prob_ge_threshold",
+        "threshold": 0.6,
+        "exit_atr_multiplier": 8
+      },
+      "mt4_or_parity_evidence": {
+        "known_from_reports": [
+          "docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md"
+        ]
+      },
+      "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+    },
+    {
+      "system_name": "entry_path_v1",
+      "reproduction_mode": "artifact_only",
+      "model_changed": false,
+      "threshold_changed": false,
+      "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_best.pt",
+      "source_report_paths": [
+        "docs/reports/2026-04-09-entry-path-trade-filter.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "frozen_validation": {},
+      "frozen_test": {
+        "trades": 30,
+        "accepted_indices": [
+          104,
+          392,
+          467,
+          796,
+          836,
+          1034,
+          1412,
+          1640,
+          1684,
+          2048,
+          2576,
+          3085,
+          3614,
+          4379,
+          4716,
+          4897,
+          5084,
+          5820,
+          6393,
+          6560,
+          6779,
+          7044,
+          7259,
+          7367,
+          7506,
+          7665,
+          7757,
+          8297,
+          8921,
+          9246
+        ],
+        "coverage": 0.6818181818181818,
+        "pf": 2.8712073942106633,
+        "mean_pnl_atr": 1.7694280853333333,
+        "win_rate": 0.6666666666666666
+      },
+      "winner": {
+        "candidate": "A",
+        "target_coverage": 0.075,
+        "coverage": 0.07610993657505286,
+        "coverage_gap": 0.0011099365750528584,
+        "score_threshold": -0.03594103,
+        "trades": 36,
+        "pf": 2.668363540617753,
+        "win_rate": 0.6388888888888888,
+        "mean_pnl_atr": 1.4212602627777775,
+        "period_mode": "year",
+        "eligible_periods": 2,
+        "stable_periods": 2,
+        "stability_ratio": 1.0,
+        "worst_period_pf": 1.060796258840901,
+        "period_detail_json": "{\"2019\": {\"mean_pnl\": 3.5013718124999995, \"pf\": Infinity, \"trades\": 8}, \"2020\": {\"mean_pnl\": 0.08905641000000006, \"pf\": 1.060796258840901, \"trades\": 10}, \"2021\": {\"mean_pnl\": 0.9580903690909089, \"pf\": 1.9561526700743024, \"trades\": 11}, \"2022\": {\"mean_pnl\": 1.6749766857142856, \"pf\": 3.3462021662000705, \"trades\": 7}}"
+      },
+      "mt4_or_parity_evidence": {
+        "known_from_reports": [
+          "docs/reports/2026-04-09-entry-path-trade-filter.md",
+          "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+        ]
+      },
+      "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+    },
+    {
+      "system_name": "entry_path_v1_quantile",
+      "reproduction_mode": "artifact_only",
+      "model_changed": false,
+      "threshold_changed": false,
+      "rule_path": "ML/reports/entry_path_v1_quantile_selected_rule.json",
+      "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_quantile_best.pt",
+      "source_report_paths": [
+        "docs/reports/2026-04-12-quantile-status-decision.md",
+        "docs/reports/2026-04-13-quantile-forward-validation.md",
+        "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+      ],
+      "frozen_validation": {},
+      "frozen_test": {
+        "candidate": "lb_gt_m_q35",
+        "rule": "lb_gt_m",
+        "m": -11.09161666,
+        "w": 16.7876408,
+        "trades": 48,
+        "pf": 8.178675196069868,
+        "win_rate": 0.8125,
+        "mean_pnl_atr": 2.7264873945833337,
+        "coverage": 0.6666666666666666,
+        "median_interval_width": 16.81214965,
+        "gross_profit": 149.10197249999993,
+        "gross_loss": 18.23057756
+      },
+      "winner": {
+        "candidate": "lb_gt_m_q35",
+        "rule": "lb_gt_m",
+        "quantile": 0.35,
+        "m": -11.09161666,
+        "w": 16.7876408,
+        "correction": 4.7510468999999995,
+        "alpha": 0.1,
+        "trades": 48,
+        "pf": 8.178675196069868,
+        "win_rate": 0.8125,
+        "mean_pnl_atr": 2.7264873945833337,
+        "coverage": 0.6666666666666666,
+        "median_interval_width": 16.81214965,
+        "gross_profit": 149.10197249999993,
+        "gross_loss": 18.23057756
+      },
+      "mt4_or_parity_evidence": {
+        "known_from_reports": [
+          "docs/reports/2026-04-12-quantile-status-decision.md",
+          "docs/reports/2026-04-13-quantile-forward-validation.md",
+          "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+        ]
+      },
+      "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+    }
+  ]
+}

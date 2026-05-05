@@ -1,6 +1,11 @@
 from ML.live_safe_audit import FeatureTrace, LiveSafeStatus, classify_feature_name, verdict_from_features
 from ML.live_safe_audit_registry import get_audited_systems
-from ML.run_live_safe_ml_audit import build_artifact_inventory, build_feature_contract, build_system_verdict
+from ML.run_live_safe_ml_audit import (
+    build_artifact_inventory,
+    build_feature_contract,
+    build_legacy_reproduction,
+    build_system_verdict,
+)
 
 
 def test_unknown_feature_blocks_online_pass():
@@ -104,3 +109,14 @@ def test_initial_system_verdicts_match_expected_risk_model():
         "entry_path_v1": "UNKNOWN",
         "entry_path_v1_quantile": "UNKNOWN",
     }
+
+
+def test_legacy_reproduction_reads_frozen_rule_metrics_without_retraining():
+    system = next(system for system in get_audited_systems() if system.system_name == "quality")
+
+    legacy = build_legacy_reproduction(system)
+
+    assert legacy["system_name"] == "quality"
+    assert legacy["reproduction_mode"] == "artifact_only"
+    assert legacy["frozen_test"]["pf"] == 39.7420751708579
+    assert legacy["model_changed"] is False

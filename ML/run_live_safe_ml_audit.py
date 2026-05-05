@@ -191,20 +191,70 @@ def run_verdicts(output_dir: Path, systems: Iterable[AuditedSystem] | None = Non
     return summary
 
 
+def _read_json_if_present(path: str) -> dict:
+    if not path or not Path(path).exists():
+        return {}
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def build_legacy_reproduction(system: AuditedSystem) -> dict:
+    rule_payload = _read_json_if_present(system.rule_path)
+    source = rule_payload.get("source", {})
+    frozen_validation = rule_payload.get("frozen_validation", {})
+    frozen_test = rule_payload.get("frozen_test", {})
+    if not frozen_test and "sequential_summary" in rule_payload:
+        frozen_test = rule_payload["sequential_summary"]
+
+    return {
+        "system_name": system.system_name,
+        "reproduction_mode": "artifact_only",
+        "model_changed": False,
+        "threshold_changed": False,
+        "rule_path": system.rule_path,
+        "checkpoint_path": system.checkpoint_path or source.get("checkpoint_path", ""),
+        "source_report_paths": list(system.report_paths),
+        "frozen_validation": frozen_validation,
+        "frozen_test": frozen_test,
+        "winner": rule_payload.get("winner", {}),
+        "mt4_or_parity_evidence": {
+            "known_from_reports": list(system.report_paths),
+        },
+        "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run.",
+    }
+
+
+def run_legacy_reproduction(output_dir: Path, systems: Iterable[AuditedSystem] | None = None) -> dict:
+    selected_systems = tuple(systems or get_audited_systems())
+    reproductions = []
+    for system in selected_systems:
+        legacy = build_legacy_reproduction(system)
+        reproductions.append(legacy)
+        write_json(output_dir / system.system_name / "legacy_reproduction.json", legacy)
+    summary = {"systems": reproductions}
+    write_json(output_dir / "legacy_reproduction_summary.json", summary)
+    return summary
+
+
 def run_all(output_dir: Path) -> dict:
     manifest = run_inventory(output_dir)
     feature_summary = run_feature_contract(output_dir)
     verdict_summary = run_verdicts(output_dir)
+    legacy_summary = run_legacy_reproduction(output_dir)
     return {
         "manifest": manifest,
         "feature_contract": feature_summary,
         "verdicts": verdict_summary,
+        "legacy_reproduction": legacy_summary,
     }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run live-safe ML audit phases.")
-    parser.add_argument("--phase", choices=("inventory", "feature-contract", "verdicts", "all"), required=True)
+    parser.add_argument(
+        "--phase",
+        choices=("inventory", "feature-contract", "verdicts", "legacy-reproduction", "all"),
+        required=True,
+    )
     parser.add_argument("--output-dir", default="ML/reports/live_safe_ml_audit")
     return parser.parse_args()
 
@@ -220,6 +270,9 @@ def main() -> None:
         print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
     elif args.phase == "verdicts":
         summary = run_verdicts(output_dir)
+        print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
+    elif args.phase == "legacy-reproduction":
+        summary = run_legacy_reproduction(output_dir)
         print(json.dumps({"phase": args.phase, "output_dir": str(output_dir), "systems": summary["systems"]}))
     elif args.phase == "all":
         summary = run_all(output_dir)

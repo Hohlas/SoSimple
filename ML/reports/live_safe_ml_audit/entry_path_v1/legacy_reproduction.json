@@ -1,0 +1,76 @@
+{
+  "system_name": "entry_path_v1",
+  "reproduction_mode": "artifact_only",
+  "model_changed": false,
+  "threshold_changed": false,
+  "rule_path": "ML/reports/entry_path_trade_filter_selected_rule.json",
+  "checkpoint_path": "ML/checkpoints/transformer_entry_path_v1_best.pt",
+  "source_report_paths": [
+    "docs/reports/2026-04-09-entry-path-trade-filter.md",
+    "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+  ],
+  "frozen_validation": {},
+  "frozen_test": {
+    "trades": 30,
+    "accepted_indices": [
+      104,
+      392,
+      467,
+      796,
+      836,
+      1034,
+      1412,
+      1640,
+      1684,
+      2048,
+      2576,
+      3085,
+      3614,
+      4379,
+      4716,
+      4897,
+      5084,
+      5820,
+      6393,
+      6560,
+      6779,
+      7044,
+      7259,
+      7367,
+      7506,
+      7665,
+      7757,
+      8297,
+      8921,
+      9246
+    ],
+    "coverage": 0.6818181818181818,
+    "pf": 2.8712073942106633,
+    "mean_pnl_atr": 1.7694280853333333,
+    "win_rate": 0.6666666666666666
+  },
+  "winner": {
+    "candidate": "A",
+    "target_coverage": 0.075,
+    "coverage": 0.07610993657505286,
+    "coverage_gap": 0.0011099365750528584,
+    "score_threshold": -0.03594103,
+    "trades": 36,
+    "pf": 2.668363540617753,
+    "win_rate": 0.6388888888888888,
+    "mean_pnl_atr": 1.4212602627777775,
+    "period_mode": "year",
+    "eligible_periods": 2,
+    "stable_periods": 2,
+    "stability_ratio": 1.0,
+    "worst_period_pf": 1.060796258840901,
+    "period_detail_json": "{\"2019\": {\"mean_pnl\": 3.5013718124999995, \"pf\": Infinity, \"trades\": 8}, \"2020\": {\"mean_pnl\": 0.08905641000000006, \"pf\": 1.060796258840901, \"trades\": 10}, \"2021\": {\"mean_pnl\": 0.9580903690909089, \"pf\": 1.9561526700743024, \"trades\": 11}, \"2022\": {\"mean_pnl\": 1.6749766857142856, \"pf\": 3.3462021662000705, \"trades\": 7}}"
+  },
+  "mt4_or_parity_evidence": {
+    "known_from_reports": [
+      "docs/reports/2026-04-09-entry-path-trade-filter.md",
+      "docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md"
+    ]
+  },
+  "notes": "Legacy result was summarized from frozen artifacts only; no retrain or threshold search was run."
+}
