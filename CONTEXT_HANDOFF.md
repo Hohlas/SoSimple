@@ -98,13 +98,18 @@
   `live_safe_geometry_path`; полный `live_safe_path_seq50` нужно запускать на
   мощном сервере, потому что локально построение path/geometry признаков
   слишком долгое.
+- серверный `live_safe_path_seq50` выполнен (`seed=42`, `torch_threads=16`):
+  validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
+  на `15` сделках, а при минимуме `6` сделок/год PF `0.6155`.
+- вывод: добавление MT-накопленных `Up/Dn` path-признаков не восстановило
+  take/skip прибыльность; прямой live-safe rebuild старого take/skip семейства
+  сейчас отклонён.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. После push/pull на сервере запустить `take_skip` `live_safe_path_seq50` с
-   тем же кодом и теми же CSV; затем вернуть `ML/reports/take_skip_live_safe_path/`
-   в локальный репозиторий для анализа.
+2. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline и
+   path-вариант оба получили `reject`.
 3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
    исследовательский шаг - стабилизировать rule-family и увеличить число
    последовательных сделок, но текущий вывод не является production approval.
@@ -118,11 +123,12 @@
 5. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - retrain и multi-seed artifacts.
 6. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - quantile retrain поверх live-safe baseline.
 7. [`ML/reports/take_skip_live_safe_baseline/`](ML/reports/take_skip_live_safe_baseline/) - first take/skip live-safe baseline probe.
-8. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
-9. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-10. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-11. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-12. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+8. [`ML/reports/take_skip_live_safe_path/`](ML/reports/take_skip_live_safe_path/) - server-side take/skip live-safe path probe.
+9. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
+10. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
+11. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+12. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+13. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
@@ -138,8 +144,8 @@
   n-boost gate не прошёл из-за нестабильности выбранного правила.
 - `take_skip_live_safe_baseline` в первом seed не нашёл validation winner;
   прямой rebuild старого baseline без будущих row-признаков пока провален.
-- `take_skip live_safe_path` ещё не оценён торгово; текущий риск технический:
-  тяжёлая сборка признаков на локальной машине.
+- `take_skip_live_safe_path` тоже не нашёл validation winner; прямой rebuild
+  старого take/skip семейства сейчас отклонён.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.

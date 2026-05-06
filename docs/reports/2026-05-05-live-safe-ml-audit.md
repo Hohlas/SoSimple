@@ -300,30 +300,44 @@ Follow-up source decision:
   feature construction is too slow on this workstation. This is a compute
   placement issue, not a model/training change.
 
-Remote run plan:
+Remote run:
 
-```bash
-./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix \
-  --output-dir ML/reports/take_skip_live_safe_path \
-  --feature-modes live_safe_path \
-  --seq-lens 50 \
-  --epochs 10 \
-  --patience 4 \
-  --batch-size 256 \
-  --seed 42 \
-  --min-pf 1.0 \
-  --min-trades-per-year 6.0 \
-  --jobs 1 \
-  --torch-threads 16
-```
+- feature mode: `live_safe_path`;
+- sequence length: `50`;
+- seed: `42`;
+- input features: `770`;
+- engineered features: `750`;
+- best epoch: `5`;
+- validation BCE: `0.034260`;
+- runtime on Ryzen 9 7950X3D server: `~369s`.
+
+`live_safe_path` result:
+
+| Check | Result |
+|---|---|
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | `0.9893` |
+| best observed validation trades | `15` |
+| best observed validation trades/year | `3.75` |
+| best candidate meeting 6 trades/year | `take_12_x2`, top_k `5%`, PF `0.6155` |
+
+Meaning: adding MT-accumulated `Up/Dn` path-reaction features did not restore
+the old take/skip profitability. This was worse than the direct
+`live_safe_baseline` probe by validation PF.
+
+Artifacts:
+
+- `ML/reports/take_skip_live_safe_path/live_safe_path_seq50/`
 
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
-online ML quality. The first live-safe take/skip probe now supports the stricter
-interpretation: the old take/skip profitability did not survive removal of
-future-derived row inputs in the direct baseline rebuild.
+online ML quality. The first two take/skip rebuilds now support the stricter
+interpretation: old take/skip profitability did not survive removal of
+future-derived Python row inputs, even after adding MT-accumulated `Up/Dn`
+path-reaction features.
 
 The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
 production approval, but it is enough to reject the worst fear: removing
@@ -333,10 +347,10 @@ production approval, but it is enough to reject the worst fear: removing
 result is not a production approval either: some runs are very profitable, but
 the selected quantile rule is not stable enough across seeds.
 
-Next decision, before any MT4 work: run `take_skip` `live_safe_path_seq50` on
-the remote server with the same code, same inputs, same training settings, and
-more CPU resources. If that still rejects, the old take/skip family is much
-less likely to survive as a live-safe rebuild.
+Next decision, before any MT4 work: treat the old take/skip row-feature family
+as rejected for direct live-safe rebuild. Further work should only continue if
+we define a materially different live-safe feature family or a narrower
+hypothesis.
 
 ## Verification
 
@@ -349,6 +363,7 @@ Commands run:
 ./.venv/bin/python -m ML.benchmark_entry_path_v1_quantile_n_boost --root-dir ML/reports/entry_path_v1_quantile_live_safe_baseline --seeds 7 17 42 77 123 --baseline-rule ML/reports/entry_path_v1_live_safe/entry_path_trade_filter_selected_rule.json --output-dir ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost
 ./.venv/bin/python -m pytest tests/test_take_skip_original_contour_feature_matrix.py -q
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_baseline --feature-modes live_safe_baseline --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 4
+./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_path --feature-modes live_safe_path --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
 ```
 
 Results:
@@ -361,5 +376,4 @@ Results:
 - live-safe-baseline `entry_path_v1_quantile` retrain, multi-seed artifacts,
   and n-boost gate generated
 - take/skip `live_safe_baseline_seq50` probe generated; verdict `reject`
-- take/skip `live_safe_path` / `live_safe_geometry*` modes added for remote
-  resource-heavy follow-up; local full probes intentionally not completed
+- take/skip `live_safe_path_seq50` generated on remote server; verdict `reject`

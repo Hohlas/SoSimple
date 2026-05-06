@@ -52,6 +52,9 @@
 - Первый take/skip live-safe probe (`live_safe_baseline_seq50`, seed 42):
   validation winner не найден, verdict=`reject`; лучший validation PF только
   `1.5178` при `3` сделках и `1` отрицательном годовом срезе.
+- Серверный take/skip `live_safe_path_seq50` (`Up/Dn` из MT `Nero.csv`):
+  validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
+  при `15` сделках, а при минимуме `6` сделок/год PF только `0.6155`.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
@@ -65,8 +68,9 @@
 - Старый take/skip baseline после удаления future-derived row-признаков пока
   не воспроизвёл прибыльную область. Это усиливает вывод, что старые
   `quality/frequency` результаты нельзя переносить в online как есть.
-- Полный `live_safe_path_seq50` переносится на мощный сервер: это не меняет
-  обучение или признаки, только место выполнения ресурсоёмкого расчёта.
+- Добавление MT-накопленных `Up/Dn` path-признаков тоже не восстановило старую
+  take/skip прибыльность. Прямой live-safe rebuild старого take/skip семейства
+  сейчас следует считать отклонённым.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening

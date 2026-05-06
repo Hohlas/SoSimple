@@ -1155,4 +1155,22 @@ Follow-up уточнение: `Up/Dn` внутри `fractal*` считаются
 машины. Это не меняет методику обучения; следующий запуск нужно выполнить на
 мощном сервере с тем же кодом и теми же CSV.
 
+Серверный `live_safe_path_seq50` выполнен на том же коде и тех же CSV:
+
+| Metric | Value |
+|---|---:|
+| input features | 770 |
+| engineered features | 750 |
+| best epoch | 5 |
+| validation BCE | 0.034260 |
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | 0.9893 |
+| best observed validation trades | 15 |
+| best candidate meeting 6 trades/year | PF 0.6155 |
+
+Вывод усилен: добавление MT-накопленных `Up/Dn` path-reaction признаков не
+восстановило старую take/skip прибыльность. Прямой live-safe rebuild старого
+take/skip семейства сейчас отклонён.
+
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

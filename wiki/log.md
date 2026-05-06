@@ -11,6 +11,8 @@
 - Added follow-up note: MT-origin `Up/Dn` in `Nero.csv` are treated as live-safe
   accumulated `lib_PIC` state; `live_safe_path_seq50` is planned for remote
   server execution because local feature construction is too slow
+- Updated with server result: `live_safe_path_seq50` verdict `reject`, best
+  validation PF 0.9893, no validation winner
 - Kept `wiki/index.md` coverage at 32 reports because the canonical report remained `2026-05-05-live-safe-ml-audit.md`
 
 ## [2026-05-05] update | Entry path v1 quantile over live-safe baseline
