@@ -100,6 +100,14 @@ def test_current_bar_features_are_classified_as_pass():
         assert classify_feature_name(name).live_safe_status == LiveSafeStatus.PASS
 
 
+def test_mt_origin_fractal_features_are_classified_as_pass():
+    trace = classify_feature_name("fractal0")
+
+    assert trace.live_safe_status == LiveSafeStatus.PASS
+    assert trace.availability_time == "mt_origin_current_export"
+    assert "Nero.csv" in trace.notes
+
+
 def test_feature_contract_for_original_plus_path_contains_forbidden_inputs():
     system = next(system for system in get_audited_systems() if system.system_name == "original_plus_path")
 

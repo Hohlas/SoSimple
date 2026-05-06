@@ -4,6 +4,24 @@
 
 ## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
 
+### Исправлено после review
+- Проверена нормализационная утечка `predict -> front/back`: в
+  `95.93%` строк нормализованные `front/back` менялись при включении
+  `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.
+- `normalize_rowwise()` получил параметр
+  `include_predict_in_front_back_pool`. Старый режим сохранён по умолчанию,
+  а live-safe online preprocessing теперь вызывает
+  `include_predict_in_front_back_pool=False`.
+- `label_main.py` получил флаг
+  `--exclude-predict-from-front-back-pool` для пересборки train/validation/test
+  CSV под честный live-safe retrain.
+- `fractal*` в `ML/live_safe_audit.py` переведены из `UNKNOWN` в `PASS` для
+  MT-origin полей из `Nero.csv`; это не распространяется на Python-added
+  `predict`, `ret_*`, `fav_*`, `adv_*` и row-level labels.
+- Статус `entry_path_v1_live_safe + A` до повторного retrain: кандидат
+  заблокирован для MT4 parity, пока не проверена прибыльность без `predict`
+  в пуле нормализации `front/back`.
+
 ### Добавлено
 - `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`,
   `ML/run_live_safe_ml_audit.py`.

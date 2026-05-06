@@ -95,6 +95,16 @@
   как универсальная шкала (sequential median PF `0.9032`). Production-кандидат
   сейчас - конкретный frozen seed `42` rule, а не любой retrained checkpoint с
   тем же численным порогом.
+- review 2026-05-06 нашёл измеримое нарушение контракта нормализации:
+  training `predict` входил в пул `front/back`, а online `predict=0`.
+  Измерение на `Nero_predict_probe_labeled_temp.csv`: `front/back` менялись в
+  `95.93%` строк, среднее изменение `0.0010`, максимум `0.166`.
+- исправление: `normalize_rowwise(..., include_predict_in_front_back_pool=False)`
+  и `processing/label_main.py --exclude-predict-from-front-back-pool`. Старый
+  режим сохранён по умолчанию для legacy reproduction. До retrain на новых CSV
+  `entry_path_v1_live_safe + A` остаётся кандидатом, но не готов к MT4 parity.
+- `fractal*` в live-safe audit переведены из `UNKNOWN` в `PASS` для MT-origin
+  полей из `Nero.csv`; это не распространяется на Python-added future labels.
 - `entry_path_v1_quantile` повторно проверен поверх нового live-safe baseline:
   sequential PF > 2.0 у `4/5` seed, но сделок мало (`0..25`), один seed дал
   `0` sequential trades.
@@ -171,8 +181,9 @@
 - `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
   Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
   от baseline score.
-- `entry_path_v1_live_safe` проверен на пяти seed, но ещё не прошёл MT4 parity;
-  это кандидат, не production approval.
+- `entry_path_v1_live_safe` проверен на пяти seed, но после review 2026-05-06
+  требует retrain без `predict` в пуле нормализации `front/back`; до этого MT4
+  parity откладывается.
 - `entry_path_v1_quantile_live_safe_baseline` показал прибыльные участки, но
   n-boost gate не прошёл из-за нестабильности выбранного правила.
 - `take_skip_live_safe_baseline` в первом seed не нашёл validation winner;

@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 
 from processing.online_causal_preprocessing import preprocess_online_csv, preprocess_online_frame
 from processing.online_causal_preprocessing import validate_fractal_sorting
+from processing.normalize import parse_fractal
 
 
 def _fractal(ts: int, price: float, direction: int, front: float, back: float) -> str:
@@ -103,6 +104,27 @@ def test_preprocess_online_frame_normalizes_price_but_preserves_online_targets()
     assert prices == [1.0, 0.5, 0.0]
     assert processed.loc[0, "signal"] == 0
     assert processed.loc[0, "predict"] == 0
+
+
+def test_preprocess_online_frame_does_not_let_predict_scale_front_back():
+    base = {
+        "time": ["2026.04.29 03:55"],
+        "signal": [0],
+        "ATR": [2.1],
+        "fractal0": [_fractal(300, 4620.0, -1, 10, 20)],
+        "fractal1": [_fractal(200, 4610.0, 1, 20, 30)],
+        "fractal2": [_fractal(100, 4600.0, 1, 30, 40)],
+    }
+    low_predict = preprocess_online_frame(pd.DataFrame({**base, "predict": [0]}))
+    high_predict = preprocess_online_frame(pd.DataFrame({**base, "predict": [10_000]}))
+
+    for column in ("fractal0", "fractal1", "fractal2"):
+        low = parse_fractal(low_predict.loc[0, column])
+        high = parse_fractal(high_predict.loc[0, column])
+        assert low is not None
+        assert high is not None
+        assert low[3] == high[3]
+        assert low[4] == high[4]
 
 
 def test_preprocess_online_csv_writes_preprocessed_file(tmp_path):

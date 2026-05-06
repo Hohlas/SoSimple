@@ -13,7 +13,7 @@ live-safe подготовку, что и watcher:
 
 - сортировка `fractal0..fractal99` по `fractal_time` descending;
 - проверка порядка фракталов;
-- `normalize_rowwise(verbose=False)`;
+- `normalize_rowwise(verbose=False, include_predict_in_front_back_pool=False)`;
 - без `label_all()` и без future-derived target-разметки.
 
 Для этого endpoint `/predict` вызывает

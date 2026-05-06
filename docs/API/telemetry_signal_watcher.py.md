@@ -72,8 +72,9 @@ MT4 пишет raw `Nero.csv` в рабочем runtime формате:
 
 - сортирует фракталы в каждой строке по `fractal_time` descending;
 - проверяет, что фракталы отсортированы;
-- применяет `normalize_rowwise(verbose=False)`, чтобы runtime log не засорялся
-  progress-выводом нормализации;
+- применяет `normalize_rowwise(verbose=False, include_predict_in_front_back_pool=False)`,
+  чтобы runtime log не засорялся progress-выводом нормализации и чтобы
+  `predict=0` не менял масштаб `front/back`;
 - сохраняет `runtime_input_preprocessed.csv`.
 
 Затем `ML.export_take_skip_v2_predictions`:

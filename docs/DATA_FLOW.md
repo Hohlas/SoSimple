@@ -221,9 +221,10 @@ fractals = parse_fractals_to_array(df)  # shape: (n_rows, 100, 22)
 
 #### 3.2. Нормализация по группам
 
-**Группа A**: Piecewise Linear-Log (совместная — front/back/predict)
-- **Признаки**: `|predict|`, `front`, `back`
-- Вычисляем `lo`, `brk` (85%), `cap` (99%); применяем piecewise transform; возвращаем знак `predict`
+**Группа A**: Piecewise Linear-Log (front/back и legacy predict)
+- **Старый режим**: общий пул `|predict|`, `front`, `back`.
+- **Live-safe режим**: общий пул только `front`, `back`, без `|predict|`.
+- Вычисляем `lo`, `brk` (85%), `cap` (99%); применяем piecewise transform. Если `predict` нормализуется, его знак возвращается после transform.
 
 **Группа B**: Piecewise Linear-Log (раздельная)
 - **Признаки**: `impulse`, `count`, `reverse`, `power`, `break`

@@ -17,7 +17,7 @@
 | **Без изменений** | `direction`, `strong`, `fractal_atr` | {-1, 0, 1} / raw | Категориальные и служебные признаки. |
 
 ## Ключевые функции
-- `normalize_rowwise(df, return_updn_params=False, verbose=True)`: Построчная нормализация (fractals, predict, Up/Dn таргеты) — **без утечки данных (No Data Leakage)**. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`. Для runtime watcher-а используется `verbose=False`, чтобы не писать progress в stdout.
+- `normalize_rowwise(df, return_updn_params=False, verbose=True, include_predict_in_front_back_pool=True)`: Построчная нормализация (fractals, predict, Up/Dn таргеты). Старый режим по умолчанию считает общий пул `|predict| + front + back`. Для live-safe контуров нужно передавать `include_predict_in_front_back_pool=False`, чтобы future-derived `predict` не влиял на нормализацию `front/back`. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`. Для runtime watcher-а используется `verbose=False`, чтобы не писать progress в stdout.
 - `piecewise_linear_log_transform()`: Реализация алгоритма PLL.
 - `normalize_atr_train()` / `normalize_atr_inference()`: Устаревшие, не используются (ATR не нормализуется, используется как знаменатель для ATR_ratio в data_loader.py).
 
@@ -47,6 +47,9 @@ df, updn_params = normalize_rowwise(df, stats_path="stats.csv", return_updn_para
 
 # Тихий режим для runtime/inference-процессов
 df = normalize_rowwise(df, verbose=False)
+
+# Live-safe режим: predict не участвует в пуле front/back
+df = normalize_rowwise(df, include_predict_in_front_back_pool=False, verbose=False)
 
 # ... сплит на train/val/test ...
 # ATR не нормализуется — используется как знаменатель для ATR_ratio в data_loader.py

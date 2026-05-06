@@ -117,7 +117,12 @@ def preprocess_online_frame(df: pd.DataFrame, *, debug: bool = False) -> pd.Data
         return sorted_df
     if _looks_rowwise_normalized(sorted_df):
         return sorted_df
-    processed = normalize_rowwise(sorted_df, debug=debug, verbose=debug)
+    processed = normalize_rowwise(
+        sorted_df,
+        debug=debug,
+        verbose=debug,
+        include_predict_in_front_back_pool=False,
+    )
     validate_fractal_sorting(processed)
     return processed
 

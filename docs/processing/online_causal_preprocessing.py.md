@@ -10,7 +10,8 @@ Live-safe подготовка runtime `Nero.csv` перед online inference.
 - CSV с теми же строками, где:
   - `fractal0..fractalN` отсортированы по времени убыванию;
   - сортировка проверена: `fractal_time[i] >= fractal_time[i+1]`;
-  - признаки нормализованы через `processing.normalize.normalize_rowwise()`;
+  - признаки нормализованы через `processing.normalize.normalize_rowwise()`
+    в live-safe режиме: `predict` не входит в пул нормализации `front/back`;
   - future-derived разметка не создаётся.
 
 ## Использование
@@ -26,8 +27,10 @@ preprocess_online_csv(
 ## Ограничения
 - Не вызывает `label_all()`, `label_updn()` и другие функции, которым нужны будущие строки.
 - Ожидает, что вход содержит колонки, необходимые `normalize_rowwise()`: `time`, `signal`, `predict`, `ATR`, `fractal*`.
-- По умолчанию вызывает `normalize_rowwise(verbose=False)`, чтобы watcher не
-  засорял runtime log служебным progress-выводом.
+- По умолчанию вызывает
+  `normalize_rowwise(verbose=False, include_predict_in_front_back_pool=False)`,
+  чтобы watcher не засорял runtime log служебным progress-выводом и чтобы
+  `predict=0` из online CSV не менял масштаб `front/back`.
 - Если вход уже выглядит как rowwise-normalized snapshot, повторная
   нормализация пропускается. Это защищает от случайного двойного запуска
   preprocessing на `runtime_input_preprocessed.csv`.

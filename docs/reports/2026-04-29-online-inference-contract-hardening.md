@@ -20,7 +20,7 @@ Online diagnostic показал два разных класса проблем
 - Добавлен общий live-safe preprocessing:
   - сортировка `fractal0..fractalN` по `fractal_time` descending;
   - проверка сортировки после preprocessing;
-  - `normalize_rowwise(verbose=False)`;
+  - `normalize_rowwise(verbose=False, include_predict_in_front_back_pool=False)`;
   - защита от случайной повторной нормализации уже preprocessed snapshot.
 - `API.telemetry_signal_watcher` получил `OnlineInferenceContractError`.
 - Legacy `original_contour/original_baseline` теперь заблокирован online по умолчанию.

@@ -111,11 +111,18 @@ def classify_feature_name(name: str) -> FeatureTrace:
         status = LiveSafeStatus.PASS
         notes = "Window feature derived from already exported fractal state."
     elif name.startswith("fractal"):
-        producer = "ML/data_loader.py:parse_fractals_to_3d"
-        transformation = "parsed Nero.csv fractal field"
-        availability_time = "unknown"
-        status = LiveSafeStatus.UNKNOWN
-        notes = "Fractal fields need source/timing trace from lib_PIC before final PASS."
+        producer = "MT/MQL4/Include/lib_PIC.mqh:NERO_CSV_CREATE -> ML/data_loader.py:parse_fractals_to_3d"
+        transformation = "parsed MT-origin Nero.csv fractal field"
+        availability_time = "mt_origin_current_export"
+        status = LiveSafeStatus.PASS
+        evidence = (
+            "lib_PIC.mqh writes fractal0..fractal99 from PICS F[] into Nero.csv; "
+            "ML/data_loader.py parses those fields without adding future labels."
+        )
+        notes = (
+            "PASS applies to MT-origin fractal* fields exported in Nero.csv. "
+            "It does not apply to Python-added predict, ret_*, fav_*, adv_* or row-level up/dn labels."
+        )
 
     return FeatureTrace(
         name=name,

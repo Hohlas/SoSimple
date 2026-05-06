@@ -130,3 +130,45 @@ def test_normalize_rowwise_returns_updn_params():
     brk, cap = updn_params[0]
     assert brk > 0, f"brk должен быть > 0, got {brk}"
     assert cap >= brk, f"cap должен быть >= brk, got cap={cap}, brk={brk}"
+
+
+def test_normalize_rowwise_can_exclude_predict_from_front_back_pool():
+    """Live-safe режим не должен давать predict менять front/back."""
+    import pandas as pd
+
+    def fractal(front, back):
+        return (
+            "1700000000:1000.0:1:"
+            f"{front}:{back}:0:0:0:1.0:1:0.5:"
+            "10.0:8.0:15.0:12.0:20.0:16.0:0.0:0.0:0.0:0.0:2.5"
+        )
+
+    base = {
+        'time': ['2025.01.01 00:00'],
+        'signal': [0],
+        'ATR': [2.5],
+        'fractal0': [fractal(10.0, 20.0)],
+        'fractal1': [fractal(20.0, 30.0)],
+        'fractal2': [fractal(30.0, 40.0)],
+    }
+
+    from processing.normalize import normalize_rowwise, parse_fractal
+
+    low_predict = normalize_rowwise(
+        pd.DataFrame({**base, 'predict': [0.0]}),
+        include_predict_in_front_back_pool=False,
+        verbose=False,
+    )
+    high_predict = normalize_rowwise(
+        pd.DataFrame({**base, 'predict': [10_000.0]}),
+        include_predict_in_front_back_pool=False,
+        verbose=False,
+    )
+
+    for column in ('fractal0', 'fractal1', 'fractal2'):
+        low = parse_fractal(low_predict.loc[0, column])
+        high = parse_fractal(high_predict.loc[0, column])
+        assert low is not None
+        assert high is not None
+        assert low[3] == high[3]
+        assert low[4] == high[4]

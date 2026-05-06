@@ -17,8 +17,8 @@ Unit и smoke-тесты для ключевых модулей SoSimple.
 | Файл | Тестирует | Охват |
 |------|-----------|-------|
 | [test_label_updn.py](test_label_updn.py) | `processing/label_signals.py` | `parse_fractal` (11/18 полей), `label_updn` (last-seen логика) |
-| [test_inverse_piecewise.py](test_inverse_piecewise.py) | `processing/normalize.py`, `statistics/signal_tracer.py` | round-trip `piecewise_linear_log ↔ inverse` (линейная / log / beyond-cap зоны) |
-| [test_online_causal_preprocessing.py](test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | сортировка и validation фракталов, CSV I/O, legacy 18-field, quiet runtime, live-safe отсутствие future labels |
+| [test_inverse_piecewise.py](test_inverse_piecewise.py) | `processing/normalize.py`, `statistics/signal_tracer.py` | round-trip `piecewise_linear_log ↔ inverse` (линейная / log / beyond-cap зоны), live-safe исключение `predict` из пула `front/back` |
+| [test_online_causal_preprocessing.py](test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | сортировка и validation фракталов, CSV I/O, legacy 18-field, quiet runtime, live-safe отсутствие future labels, `predict` не меняет масштаб `front/back` |
 | [test_api_server_preprocessing.py](test_api_server_preprocessing.py) | `API/api_server.py` | REST inference путь использует общий online preprocessing |
 | [test_signal_research.py](test_signal_research.py) | `API/signal_research.py` | ATR14, excursions, barrier outcomes, ratio_bin, discovery/holdout split |
 | [test_signal_path_atlas.py](test_signal_path_atlas.py) | `API/signal_path_atlas.py` | calendar split, path tensor, slices, archetypes, holdout replication, CLI smoke |

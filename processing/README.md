@@ -24,6 +24,9 @@ source ~/git/SoSimple/.venv/bin/activate
 # Полный pipeline: сортировка + маркировка + нормализация + split
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug
 
+# Live-safe пересборка: predict не влияет на нормализацию front/back
+python processing/label_main.py --input MT/MQL4/Files/Nero.csv --exclude-predict-from-front-back-pool
+
 # Без нормализации (для отладки)
 python processing/label_main.py --input MT/MQL4/Files/Nero.csv --no-normalize
 ```

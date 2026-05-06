@@ -232,6 +232,11 @@ def main():
         help="Пропустить этап нормализации",
     )
     parser.add_argument(
+        "--exclude-predict-from-front-back-pool",
+        action="store_true",
+        help="Live-safe нормализация: не добавлять |predict| в пул front/back",
+    )
+    parser.add_argument(
         "--ohlc",
         default="DATA/XAUUSD_H1_OHLC.csv",
         help="Путь к H1 OHLC CSV для path-ordered Triple Barrier (по умолчанию DATA/XAUUSD_H1_OHLC.csv)",
@@ -292,7 +297,8 @@ def main():
             labeled_df,
             stats_path=stats_path,
             debug=args.debug,
-            return_updn_params=True
+            return_updn_params=True,
+            include_predict_in_front_back_pool=not args.exclude_predict_from_front_back_pool,
         )
 
     # 5. Разделяем на train/validation/test (70/15/15)
