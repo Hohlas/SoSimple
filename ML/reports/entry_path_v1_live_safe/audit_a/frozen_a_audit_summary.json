@@ -1,0 +1,47 @@
+{
+  "rule": {
+    "candidate": "A",
+    "score_column": "pred_ret_24_dir_atr",
+    "threshold": -0.131882885,
+    "source_seed": 42,
+    "target_coverage": 0.075,
+    "hold_bars": 24
+  },
+  "validation": {
+    "pf_min": 0.34111384614221607,
+    "pf_median": 0.8956142882160985,
+    "pf_max": 2.8880904438217803,
+    "trades_min": 36,
+    "trades_median": 58.0,
+    "trades_max": 106
+  },
+  "test_frozen": {
+    "pf_min": 0.8657086375344757,
+    "pf_median": 1.3990547053138245,
+    "pf_max": 3.6567059105682413,
+    "trades_min": 37,
+    "trades_median": 59.0,
+    "trades_max": 91,
+    "pf_above_2_count": 2,
+    "pf_lte_1_count": 2
+  },
+  "test_sequential": {
+    "pf_min": 0.5436055735672931,
+    "pf_median": 0.9031580972719955,
+    "pf_max": 2.3418651709156997,
+    "trades_min": 25,
+    "trades_median": 40.0,
+    "trades_max": 62,
+    "pf_above_2_count": 1,
+    "pf_lte_1_count": 3,
+    "win_rate_median": 0.525
+  },
+  "overlap": {
+    "selected_pair_jaccard_median": 0.6051424828037995,
+    "sequential_pair_jaccard_median": 0.5971153846153846,
+    "sequential_times_total": 72,
+    "sequential_times_in_5_seeds": 22,
+    "sequential_times_in_4plus_seeds": 29,
+    "sequential_times_in_3plus_seeds": 40
+  }
+}

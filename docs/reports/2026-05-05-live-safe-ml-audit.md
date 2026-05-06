@@ -204,6 +204,52 @@ Rule-family decision: freeze `A` as the live-safe baseline rule family. Reason:
 remain valid research variants and are exportable, but they are not the primary
 baseline for the next step.
 
+### Follow-Up Audit: `A` Rule Family
+
+After freezing `A`, two checks were separated:
+
+1. **A-family robustness**: use `A` in every seed, but let each seed take its
+   own validation-only `7.5%` threshold. This asks whether the idea "use
+   `pred_ret_24_dir_atr` only" is stable.
+2. **Exact frozen rule transfer**: apply the exact seed `42` threshold
+   `-0.131882885` to every seed. This asks whether one numeric threshold
+   transfers across independently trained checkpoints.
+
+`A` family, per-seed validation threshold:
+
+| Check | Result |
+|---|---:|
+| validation PF range | `2.2117 .. 2.8881` |
+| frozen test PF range | `2.0024 .. 6.2050` |
+| sequential PF range | `1.5171 .. 4.1370` |
+| sequential median PF | `2.8425` |
+| sequential trades range | `25 .. 32` |
+| sequential PF > 2.0 | `4 / 5` seeds |
+| sequential PF <= 1.0 | `0 / 5` seeds |
+| median pairwise sequential signal overlap | `0.7759` |
+| sequential signals selected by all 5 seeds | `21` |
+
+Meaning: the `A` rule family is much more stable than the mixed winner table
+suggested. Most accepted sequential signals repeat across seeds.
+
+Exact seed `42` threshold applied to all seeds:
+
+| Check | Result |
+|---|---:|
+| frozen test median PF | `1.3991` |
+| sequential median PF | `0.9032` |
+| sequential PF > 2.0 | `1 / 5` seeds |
+| sequential PF <= 1.0 | `3 / 5` seeds |
+
+Meaning: the `A` idea is robust, but the numeric score scale is not fully
+calibrated across different checkpoints. The production candidate remains the
+specific frozen seed `42` rule, not "reuse seed `42` threshold on any retrained
+checkpoint". Before MT4 parity, treat calibration as a known ML risk.
+
+Artifacts:
+
+- `ML/reports/entry_path_v1_live_safe/audit_a/`
+
 Artifacts:
 
 - `ML/checkpoints/transformer_entry_path_v1_features_entry_path_v1_live_safe_best.pt`

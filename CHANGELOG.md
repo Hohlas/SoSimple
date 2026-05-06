@@ -71,6 +71,13 @@
   baseline rule-family: это самый простой вариант и он повторился в `3/5`
   seed. `B` / `B_no_path6` остаются исследовательскими, но не основным
   следующим путем.
+- Follow-up audit для `entry_path_v1_live_safe + A`: если в каждом seed
+  использовать семейство `A` и выбирать порог только на validation, sequential
+  PF range `1.5171..4.1370`, median PF `2.8425`, PF > 2.0 у `4/5` seed,
+  21 sequential signal повторился во всех 5 seed.
+- Важное ограничение: точный seed-42 threshold `-0.131882885` плохо переносится
+  на другие seed (sequential median PF `0.9032`, PF > 2.0 только у `1/5`).
+  Значит, robust именно rule-family `A`, а не универсальная численная шкала.
 - `entry_path_v1_quantile_live_safe_baseline` повторно сверен после фиксации
   baseline `A`: n-boost снова даёт сильный PF, но gate остаётся `fail` из-за
   `same_winner_ratio=0.60 < 0.80`. Quantile оставлен research-only, не

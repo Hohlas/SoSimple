@@ -88,6 +88,13 @@
 - decision: для `entry_path_v1_live_safe` заморожен baseline `A`, потому что
   это самый простой вариант и он повторился в `3/5` seed. `B` / `B_no_path6`
   остаются исследовательскими вариантами, но не основным следующим путем.
+- follow-up audit по `A`: как rule-family с per-seed validation threshold
+  результат устойчивый (sequential PF `1.5171..4.1370`, median `2.8425`,
+  PF > 2.0 у `4/5`, 21 sequential signal повторился во всех 5 seed).
+- риск: точный seed-42 threshold `-0.131882885` не переносится на другие seed
+  как универсальная шкала (sequential median PF `0.9032`). Production-кандидат
+  сейчас - конкретный frozen seed `42` rule, а не любой retrained checkpoint с
+  тем же численным порогом.
 - `entry_path_v1_quantile` повторно проверен поверх нового live-safe baseline:
   sequential PF > 2.0 у `4/5` seed, но сделок мало (`0..25`), один seed дал
   `0` sequential trades.
@@ -129,8 +136,8 @@
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
 2. Текущий следующий фокус - `entry_path_v1_live_safe` с замороженным baseline
-   `A`. Exporter поддерживает все winners, но основной путь теперь
-   консервативно зафиксирован на `A`.
+   `A`. Следующий разумный шаг перед MT4 parity - решить, устраивает ли нас
+   конкретный frozen seed `42` rule, учитывая риск калибровки порога между seed.
 3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 4. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации

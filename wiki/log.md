@@ -14,6 +14,9 @@
   it is simplest and repeated in `3 / 5` seeds.
 - Recorded quantile follow-up after baseline `A`: n-boost remains
   `gate_fail` on stability, so quantile stays research-only.
+- Added follow-up audit for `entry_path_v1_live_safe + A`: rule-family is
+  robust with per-seed validation thresholds, but exact seed-42 threshold does
+  not transfer across seed score scales.
 
 ## [2026-05-05] update | Take/skip live-safe baseline probe
 - Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`

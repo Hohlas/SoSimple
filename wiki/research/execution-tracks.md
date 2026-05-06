@@ -1083,6 +1083,21 @@ Decision: baseline rule-family заморожен на `A`, потому что 
 исследовательскими вариантами, но не основным следующим путем. MT4 parity
 отложен по решению пользователя.
 
+Follow-up audit по `A` разделил family-устойчивость и точный frozen threshold:
+
+| Check | Result |
+|---|---:|
+| `A` per-seed validation threshold sequential PF | `1.5171 .. 4.1370` |
+| `A` per-seed median sequential PF | `2.8425` |
+| `A` per-seed PF > 2.0 | `4 / 5` seeds |
+| sequential signals repeated in all 5 seeds | `21` |
+| exact seed-42 threshold median sequential PF across seeds | `0.9032` |
+
+Вывод: `A` как простая rule-family выглядит устойчиво, но численная шкала
+score между seed не калибрована. Основной production-кандидат сейчас - именно
+frozen seed `42` rule, а не любой заново обученный checkpoint с тем же численным
+порогом.
+
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## 12. Entry Path v1 Quantile Over Live-Safe Baseline (05-05)
