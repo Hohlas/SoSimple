@@ -174,8 +174,8 @@ the check shows whether a result is stable or just lucky.
 
 | Seed | Val ret r | Winner | Test PF | Sequential trades | Sequential PF | Export supported |
 |---:|---:|---|---:|---:|---:|---|
-| 7 | 0.2792 | `B_no_path6` | 4.3044 | 32 | 2.7922 | no |
-| 17 | 0.2796 | `B` | 6.3893 | 25 | 4.5985 | no |
+| 7 | 0.2792 | `B_no_path6` | 4.3044 | 32 | 2.7922 | yes |
+| 17 | 0.2796 | `B` | 6.3893 | 25 | 4.5985 | yes |
 | 42 | 0.2681 | `A` | 3.6567 | 25 | 2.3419 | yes |
 | 77 | 0.2844 | `A` | 2.0024 | 32 | 1.5171 | yes |
 | 123 | 0.2767 | `A` | 2.7762 | 33 | 1.8633 | yes |
@@ -188,12 +188,16 @@ Summary:
 - PF > 2.0: `3 / 5` seeds;
 - PF <= 1.0: `0 / 5` seeds;
 - same winner: `A` in `3 / 5` seeds;
-- MT4 signal export is currently supported only for `A` winners.
+- MT4 signal export is now supported for `A`, `B`, and `B_no_path6` winners.
+  `B` / `B_no_path6` use the frozen validation CSV referenced by the rule to
+  reproduce the same score normalization.
 
 Updated retrain verdict: the live-safe `entry_path_v1` idea is alive but not
 fully stable. Removing `ret_dir_atr_lag1` did not destroy profitability, but the
-result is weaker and more variable than the old invalid system. MT4 parity is
-intentionally deferred.
+result is weaker and more variable than the old invalid system. The previous
+exporter limitation for `B` / `B_no_path6` is removed; the remaining issue is
+rule-family stability, not signal export capability. MT4 parity is intentionally
+deferred.
 
 Artifacts:
 

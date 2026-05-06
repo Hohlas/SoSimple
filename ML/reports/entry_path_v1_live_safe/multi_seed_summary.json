@@ -9,7 +9,7 @@
     "median_sequential_trades": 32.0,
     "negative_or_flat_seed_count": 0,
     "pf_above_2_count": 3,
-    "signal_export_supported_count": 3
+    "signal_export_supported_count": 5
   },
   "rows": [
     {
@@ -24,7 +24,7 @@
       "sequential_pf": 2.7922047197769952,
       "sequential_trades": 32,
       "sequential_win_rate": 0.65625,
-      "signal_export_supported": false
+      "signal_export_supported": true
     },
     {
       "seed": 17,
@@ -38,7 +38,7 @@
       "sequential_pf": 4.598480869765845,
       "sequential_trades": 25,
       "sequential_win_rate": 0.76,
-      "signal_export_supported": false
+      "signal_export_supported": true
     },
     {
       "seed": 42,

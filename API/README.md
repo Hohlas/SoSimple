@@ -9,7 +9,7 @@
 | Файл | Назначение | Вход → Выход | Статус |
 |------|-----------|--------------|--------|
 | [generate_signals.py](generate_signals.py) | Генерация CSV с ML-сигналами для MT4 тестера | checkpoints + labeled CSV → `MT/MQL4/Files/ml_signals.csv` | ✅ |
-| [export_entry_path_v1_signals.py](export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
+| [export_entry_path_v1_signals.py](export_entry_path_v1_signals.py) | Применение frozen `entry_path_v1` rule (`A`, `B`, `B_no_path6`) к prediction CSV и экспорт `time;signal` | prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
 | [export_entry_path_v1_quantile_signals.py](export_entry_path_v1_quantile_signals.py) | Применение frozen `entry_path_v1_quantile` rule к prediction CSV и экспорт `time;signal` | quantile prediction CSV + selected_rule.json → `ml_signals.csv` | ✅ |
 | [export_take_skip_trailing_stop_v2_signals.py](export_take_skip_trailing_stop_v2_signals.py) | Применение frozen take/skip v2 rule к prediction CSV и экспорт `time;signal` с optional metadata | prediction CSV + selected_rule.json → `ml_signals.csv` + optional metadata JSON | ✅ |
 | [telemetry_signal_watcher.py](telemetry_signal_watcher.py) | Фоновый watcher для online telemetry-контура `Nero.csv -> causal preprocessing -> prediction CSV -> ml_signals.csv`; legacy `original_baseline` заблокирован contract guard по умолчанию | `Nero.csv` + checkpoint + rule → runtime `ml_signals.csv` | ✅ |
@@ -31,7 +31,8 @@ python -m API.generate_signals
 # Кастомные параметры
 python -m API.generate_signals --theta 3.0 --horizon 24
 
-# Применение frozen entry_path_v1 rule к prediction CSV
+# Применение frozen entry_path_v1 rule к prediction CSV.
+# Для B/B_no_path6 rule JSON должен ссылаться на frozen validation_csv.
 python -m API.export_entry_path_v1_signals \
   --predictions ML/reports/entry_path_test_predictions.csv \
   --rule-path ML/reports/entry_path_trade_filter_selected_rule.json \

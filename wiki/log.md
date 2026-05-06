@@ -8,6 +8,8 @@
 - Synced `wiki/research/execution-tracks.md` with the current follow-up order:
   focus `entry_path_v1_live_safe` first, then revisit quantile, keep take/skip
   paused unless a new live-safe hypothesis appears.
+- Updated `entry_path_v1_live_safe` note after exporter support for `B` and
+  `B_no_path6`; remaining question is rule-family stability, not export.
 
 ## [2026-05-05] update | Take/skip live-safe baseline probe
 - Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`

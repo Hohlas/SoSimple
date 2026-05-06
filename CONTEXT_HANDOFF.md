@@ -78,9 +78,13 @@
   sequential test `25` trades, PF `2.3419`, win rate `68.00%`.
 - multi-seed follow-up (`7`, `17`, `42`, `77`, `123`): median sequential PF
   `2.3419`, min `1.5171`, max `4.5985`; PF > 2.0 у `3/5`, PF <= 1.0 у `0/5`.
+- `API.export_entry_path_v1_signals` теперь поддерживает `A`, `B`,
+  `B_no_path6`; для `B` / `B_no_path6` применяется frozen
+  validation-нормировка из `validation_csv` внутри rule JSON. Все пять
+  `entry_path_v1_live_safe` seed теперь экспортируемы.
 - вывод: прибыльность не сохранилась один в один, но система не развалилась.
   Результат живой, но переменный; перед MT4 parity нужно заморозить
-  поддерживаемую rule-family `A` или расширить exporter для `B` / `B_no_path6`.
+  rule-family; exporter больше не является блокером.
 - `entry_path_v1_quantile` повторно проверен поверх нового live-safe baseline:
   sequential PF > 2.0 у `4/5` seed, но сделок мало (`0..25`), один seed дал
   `0` sequential trades.
@@ -118,8 +122,8 @@
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
 2. Текущий следующий фокус - `entry_path_v1_live_safe`: прибыльность сохранилась
-   на пяти seed, но нужно заморозить поддерживаемую rule-family. Сейчас экспорт
-   поддерживает `A`, а два лучших seed выбрали `B` / `B_no_path6`.
+   на пяти seed, exporter поддерживает все выбранные winners, но нужно
+   заморозить rule-family.
 3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 4. `entry_path_v1_quantile` вернуться проверять после решения по live-safe

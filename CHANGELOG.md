@@ -64,6 +64,9 @@
 - Добавлен явный Audit Tracker по всем пяти исторически прибыльным системам,
   чтобы не потерять `quality`, `frequency`, `original_plus_path`,
   `entry_path_v1`, `entry_path_v1_quantile` при дальнейших проверках.
+- `API.export_entry_path_v1_signals` теперь поддерживает winners `B` и
+  `B_no_path6`: для них применяется frozen validation-нормировка из rule JSON.
+  Поэтому все пять `entry_path_v1_live_safe` seed теперь экспортируемы.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,

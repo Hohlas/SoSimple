@@ -1075,9 +1075,11 @@ Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
 | PF <= 1.0 seeds | 0 / 5 |
 | same winner | `A` in 3 / 5 |
 
-Вывод уточнён: результат живой, но переменный. MT4 signal export сейчас
-поддерживает `A`, а два seed выбрали `B` / `B_no_path6`. MT4 parity отложен по
-решению пользователя.
+Вывод уточнён: результат живой, но переменный. MT4 signal export теперь
+поддерживает `A`, `B` и `B_no_path6`; для `B` / `B_no_path6` используется
+frozen validation-нормировка из rule JSON. Значит, exporter больше не блокер.
+Остаётся решить, какую rule-family замораживать. MT4 parity отложен по решению
+пользователя.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
 

@@ -86,7 +86,10 @@ Baseline execution-system для `entry_path_v1` после frozen trade-filter 
 Что делает этот CLI:
 
 - читает `entry_path_trade_filter_selected_rule.json`;
-- поддерживает production winner `A`, который использует `pred_ret_24_dir_atr`;
+- поддерживает winners `A`, `B`, `B_no_path6`;
+- для `A` использует `pred_ret_24_dir_atr`;
+- для `B` / `B_no_path6` использует frozen validation-нормировку из
+  `validation_csv`, указанного в rule JSON;
 - обнуляет строки вне frozen rule;
 - схлопывает runtime до единого `time;signal` с приоритетом ненулевого сигнала на баре;
 - при `--copy-to-mt4` пишет одинаковый export в tester/runtime paths.
