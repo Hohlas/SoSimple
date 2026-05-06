@@ -12,6 +12,8 @@
   `B_no_path6`; remaining question is rule-family stability, not export.
 - Recorded decision: freeze `A` as the conservative live-safe baseline because
   it is simplest and repeated in `3 / 5` seeds.
+- Recorded quantile follow-up after baseline `A`: n-boost remains
+  `gate_fail` on stability, so quantile stays research-only.
 
 ## [2026-05-05] update | Take/skip live-safe baseline probe
 - Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`

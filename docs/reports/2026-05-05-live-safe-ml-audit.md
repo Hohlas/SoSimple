@@ -68,7 +68,7 @@ rebuild proceeds.
 | `frequency` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
 | `original_plus_path` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Optional closure: run `live_safe_geometry_path` only to complete the feature-mode matrix. |
 | `entry_path_v1` | `FAIL` | Rebuilt as `entry_path_v1_live_safe`; still profitable across five seeds, but weaker and variable. | Freeze `A` as the baseline rule family; decide later whether MT4 parity is worth running. |
-| `entry_path_v1_quantile` | `FAIL` | Rebuilt over `entry_path_v1_live_safe`; profitable pockets remain, but rule selection is unstable. | Revisit after the live-safe baseline rule is frozen. |
+| `entry_path_v1_quantile` | `FAIL` | Rebuilt over frozen live-safe baseline `A`; profitable pockets remain, but rule selection is unstable. | Keep as research-only; do not promote as the next production layer. |
 
 This table separates historical systems from follow-up feature modes. For
 example, `live_safe_path`, `live_safe_geometry`, and `live_safe_geometry_path`
@@ -256,10 +256,12 @@ N-boost follow-up:
 The n-boost gate failed only on stability:
 `same_winner_ratio=0.60 < 0.80`.
 
-Updated quantile verdict: the quantile layer remains promising, but it is not
-validated as a production candidate over the new live-safe baseline. The
-profitability signal did not disappear, but the selected rule is unstable and
-the sequential trade count is still low.
+Updated quantile verdict after freezing baseline `A`: the quantile layer remains
+promising, but it is not validated as a production candidate over the new
+live-safe baseline. The profitability signal did not disappear, but the selected
+rule is unstable, one seed produces no trades, one seed falls back to baseline,
+and the sequential trade count is still low. Keep this track as research-only
+until a rule repeats more reliably across seeds.
 
 Artifacts:
 

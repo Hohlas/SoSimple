@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-06 17:28 UTC · git `20f9ef4`
+> Auto-generated 2026-05-06 17:38 UTC · git `dded7e5`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1041 files  ·  **Commit**: `20f9ef4`  ·  **Generated**: 2026-05-06 17:28 UTC
+**Tracked**: 1041 files  ·  **Commit**: `dded7e5`  ·  **Generated**: 2026-05-06 17:38 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-06 | 143KB | `762a4d55` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-06 | 143KB | `716c6c60` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-06 | 16KB | `c11b0b88` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-06 | 16KB | `2908a0ee` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-06 | 34KB | `cea781b3` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
@@ -197,7 +197,7 @@
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
 | [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
-| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-06 | 19KB | `0d7a6ec9` |
+| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-06 | 20KB | `085176ec` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
@@ -361,7 +361,7 @@
 | [ML/reports/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-10 | 706B | `0d99ebcd` |
 | [ML/reports/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-10 | 1KB | `f665ab0d` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json) |  |  | 2026-05-05 | 2KB | `c04294b8` |
-| [ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/n_boost_result.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/n_boost_result.json) |  |  | 2026-05-05 | 1KB | `bc8ca1d1` |
+| [ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/n_boost_result.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/n_boost/n_boost_result.json) |  |  | 2026-05-06 | 1KB | `bc8ca1d1` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-05 | 784B | `e322b4af` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `75b5246c` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/result.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_007/result.json) |  |  | 2026-05-05 | 2KB | `eae94c0a` |
@@ -730,7 +730,7 @@
 | [tests/test_entry_path_v1_quantile_training.py](tests/test_entry_path_v1_quantile_training.py) |  |  | 2026-04-17 | 9KB | `3de68254` |
 | [tests/test_exit_policy_research.py](tests/test_exit_policy_research.py) | `API/exit_policy_research.py` | ✅ | 2026-04-08 | 4KB | `4c75d18c` |
 | [tests/test_export_entry_path_predictions.py](tests/test_export_entry_path_predictions.py) | `ML/export_entry_path_predictions.py` | ✅ | 2026-04-24 | 4KB | `1639db8f` |
-| [tests/test_export_entry_path_v1_quantile_rule.py](tests/test_export_entry_path_v1_quantile_rule.py) |  |  | 2026-04-12 | 2KB | `8a808fd4` |
+| [tests/test_export_entry_path_v1_quantile_rule.py](tests/test_export_entry_path_v1_quantile_rule.py) |  |  | 2026-05-06 | 3KB | `e06bdfbb` |
 | [tests/test_export_entry_path_v1_quantile_signals.py](tests/test_export_entry_path_v1_quantile_signals.py) |  |  | 2026-04-12 | 7KB | `237d172f` |
 | [tests/test_export_entry_path_v1_signals.py](tests/test_export_entry_path_v1_signals.py) | `API/export_entry_path_v1_signals.py` | ✅ | 2026-05-06 | 4KB | `0fe2559e` |
 | [tests/test_export_take_skip_trailing_stop_v2_signals.py](tests/test_export_take_skip_trailing_stop_v2_signals.py) |  |  | 2026-04-28 | 11KB | `9f208917` |
@@ -1092,8 +1092,8 @@
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
 | [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 2KB | `8937c961` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-06 | 21KB | `f64d780c` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-06 | 75KB | `143fad6f` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-06 | 22KB | `3601b904` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-06 | 75KB | `ac86decb` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 

@@ -96,6 +96,10 @@
   `same_winner_ratio=0.60 < 0.80`.
 - вывод по quantile: прибыльность не исчезла, но production-кандидатом слой
   пока считать нельзя; правило выбора нестабильно между seed.
+- после фиксации baseline `A` quantile повторно сверен через n-boost:
+  `lb_gt_m_q40` даёт frozen PF `32.4125` на `35` сделках и sequential PF
+  `48.7214` на `14` сделках, но gate остаётся `fail` из-за
+  `same_winner_ratio=0.60 < 0.80`. Decision: quantile оставить research-only.
 - первый take/skip live-safe probe выполнен для `live_safe_baseline_seq50`
   (`seed=42`): старый single-tensor runner без `predict`, `ret_dir_atr_lag1`,
   `ret_*`, `fav_*`, `adv_*`; validation winner не найден, verdict=`reject`,
@@ -129,9 +133,8 @@
    консервативно зафиксирован на `A`.
 3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
-4. `entry_path_v1_quantile` вернуться проверять после решения по live-safe
-   baseline rule-family; текущий quantile-слой прибыльный местами, но rule
-   selection нестабилен.
+4. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
+   baseline `A` прибыльные участки есть, но rule selection нестабилен.
 5. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
    `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
    внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.

@@ -1023,8 +1023,8 @@ Current follow-up order:
 
 | System | Follow-up state | Next action |
 |---|---|---|
-| `entry_path_v1` | `entry_path_v1_live_safe` profitable across five seeds, but rule-family is not fully stable. | Freeze/export supported rule family first. |
-| `entry_path_v1_quantile` | Rebuilt over live-safe baseline; profitable pockets remain, rule selection unstable. | Revisit after baseline rule is frozen. |
+| `entry_path_v1` | `entry_path_v1_live_safe` profitable across five seeds; baseline rule-family frozen on `A`. | Main live-safe candidate if MT4 parity resumes. |
+| `entry_path_v1_quantile` | Rebuilt over frozen live-safe baseline `A`; profitable pockets remain, rule selection unstable. | Keep research-only; do not promote as next production layer. |
 | `quality` / `frequency` / `original_plus_path` | Direct take/skip baseline/path/geometry rebuilds rejected. | Pause unless a new live-safe hypothesis is defined. |
 
 Главный вывод:
@@ -1112,9 +1112,11 @@ N-boost candidate `lb_gt_m_q40`:
 
 Gate result: `gate_fail`, because `same_winner_ratio=0.60 < 0.80`.
 
-Вывод: quantile-слой не развалился после замены старого baseline на live-safe
-baseline, но production-кандидатом пока не подтверждён. Прибыльность есть,
-однако выбранное правило нестабильно между seed, а sequential-сделок мало.
+Вывод после фиксации baseline `A`: quantile-слой не развалился, но
+production-кандидатом считать нельзя. Прибыльность есть, однако выбранное
+правило нестабильно между seed, один seed даёт 0 sequential trades, один seed
+fallback-ится на baseline, а sequential-сделок мало. Это research-promising,
+но не production approval.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
 

@@ -7,7 +7,29 @@ import pandas as pd
 sys.path.insert(0, '.')
 
 from ML import export_entry_path_v1_quantile_rule as export_mod
-from tests.test_entry_path_v1_quantile_n_boost import _write_minimal_seed
+
+
+def _write_minimal_seed(root: Path, seed: int, n_rows: int = 40) -> Path:
+    seed_dir = root / f'seed_{seed:03d}'
+    seed_dir.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+    for i in range(n_rows):
+        active = i % 2 == 0
+        score = 0.8 if active else 0.1
+        true_ret = 2.0 if i % 4 == 0 else -0.5
+        rows.append({
+            'time': f'2025.01.{(i % 28) + 1:02d} {i % 24:02d}:00',
+            'signal': 1 if active else 0,
+            'pred_ret_24_dir_atr': score,
+            'true_ret_24_dir_atr': true_ret,
+            'pred_ret_24_q10': true_ret - 0.6 - seed * 0.001,
+            'pred_ret_24_q90': true_ret + 0.8 + seed * 0.001,
+        })
+    frame = pd.DataFrame(rows)
+    frame.to_csv(seed_dir / 'entry_path_v1_quantile_validation_predictions.csv', sep=';', index=False)
+    frame.to_csv(seed_dir / 'entry_path_v1_quantile_test_predictions.csv', sep=';', index=False)
+    return seed_dir
 
 
 def _make_baseline_rule(tmp_path, seed_dir):
