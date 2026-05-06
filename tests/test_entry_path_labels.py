@@ -18,6 +18,7 @@ import sys
 
 import pandas as pd
 import pytest
+import numpy as np
 
 sys.path.insert(0, 'processing')
 import label_signals as ls
@@ -133,3 +134,25 @@ def test_label_entry_path_targets_adds_frequency_features():
         'vol_regime_24',
     }
     assert expected.issubset(result.columns)
+
+
+def test_label_entry_path_targets_treats_nan_signal_as_inactive(tmp_path):
+    ohlc_path = tmp_path / "ohlc.csv"
+    ohlc_path.write_text(
+        "time;open;high;low;close;volume\n"
+        "2024.01.01 00:00;100;101;99;100.5;1\n"
+        "2024.01.01 01:00;100.5;102;100;101;1\n",
+        encoding="utf-8",
+    )
+    frame = pd.DataFrame(
+        {
+            "time": ["2024.01.01 00:00"],
+            "signal": [np.nan],
+            "ATR": [1.0],
+        }
+    )
+
+    result = ls.label_entry_path_targets(frame, str(ohlc_path))
+
+    assert result.loc[0, "ret_6_dir_atr"] == 0.0
+    assert result.loc[0, "path_6_class"] == 0

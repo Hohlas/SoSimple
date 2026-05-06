@@ -892,7 +892,8 @@ def label_entry_path_targets(
 
     found = skipped = 0
     for row_idx, row in out.iterrows():
-        signal = int(row.get('signal', 0))
+        signal_raw = row.get('signal', 0)
+        signal = 0 if pd.isna(signal_raw) else int(signal_raw)
         if signal not in (-1, 1):
             continue
 
