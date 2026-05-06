@@ -10,6 +10,8 @@
   paused unless a new live-safe hypothesis appears.
 - Updated `entry_path_v1_live_safe` note after exporter support for `B` and
   `B_no_path6`; remaining question is rule-family stability, not export.
+- Recorded decision: freeze `A` as the conservative live-safe baseline because
+  it is simplest and repeated in `3 / 5` seeds.
 
 ## [2026-05-05] update | Take/skip live-safe baseline probe
 - Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`

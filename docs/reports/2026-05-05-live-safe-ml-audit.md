@@ -67,7 +67,7 @@ rebuild proceeds.
 | `quality` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
 | `frequency` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
 | `original_plus_path` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Optional closure: run `live_safe_geometry_path` only to complete the feature-mode matrix. |
-| `entry_path_v1` | `FAIL` | Rebuilt as `entry_path_v1_live_safe`; still profitable across five seeds, but weaker and variable. | Current focus: freeze/export a supported rule family, then decide whether MT4 parity is worth running. |
+| `entry_path_v1` | `FAIL` | Rebuilt as `entry_path_v1_live_safe`; still profitable across five seeds, but weaker and variable. | Freeze `A` as the baseline rule family; decide later whether MT4 parity is worth running. |
 | `entry_path_v1_quantile` | `FAIL` | Rebuilt over `entry_path_v1_live_safe`; profitable pockets remain, but rule selection is unstable. | Revisit after the live-safe baseline rule is frozen. |
 
 This table separates historical systems from follow-up feature modes. For
@@ -198,6 +198,11 @@ result is weaker and more variable than the old invalid system. The previous
 exporter limitation for `B` / `B_no_path6` is removed; the remaining issue is
 rule-family stability, not signal export capability. MT4 parity is intentionally
 deferred.
+
+Rule-family decision: freeze `A` as the live-safe baseline rule family. Reason:
+`A` is the simplest rule and repeats in `3 / 5` seeds. `B` and `B_no_path6`
+remain valid research variants and are exportable, but they are not the primary
+baseline for the next step.
 
 Artifacts:
 
