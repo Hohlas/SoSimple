@@ -1149,6 +1149,13 @@ Follow-up уточнение: `Up/Dn` внутри `fractal*` считаются
 момент строки. Запрещёнными остаются Python future-label поля:
 `predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`, `adv_*`.
 
+Повторная сверка источников подтвердила различие: `predict` в
+`processing/label_signals.py` ищет будущие строки того же `fractal0.time`;
+`ret_*`, `fav_*`, `adv_*` строятся по будущему OHLC-окну после входа;
+`ret_dir_atr_lag1` является лагом от уже будущего `ret_6_dir_atr`. Поэтому
+эти Python-поля нельзя использовать как online-входы, даже если похожие по
+смыслу MT-поля уже известны в строке `Nero.csv`.
+
 Для следующей проверки добавлены режимы `live_safe_path`, `live_safe_geometry`,
 `live_safe_geometry_path`. Полный `live_safe_path_seq50` не завершался локально:
 построение path/geometry признаков оказалось слишком дорогим для текущей
@@ -1170,7 +1177,24 @@ Follow-up уточнение: `Up/Dn` внутри `fractal*` считаются
 | best candidate meeting 6 trades/year | PF 0.6155 |
 
 Вывод усилен: добавление MT-накопленных `Up/Dn` path-reaction признаков не
-восстановило старую take/skip прибыльность. Прямой live-safe rebuild старого
-take/skip семейства сейчас отклонён.
+восстановило старую take/skip прибыльность.
+
+Следующий серверный запуск проверил `live_safe_geometry_seq50`:
+
+| Metric | Value |
+|---|---:|
+| input features | 642 |
+| engineered features | 622 |
+| best epoch | 7 |
+| validation BCE | 0.033775 |
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | 0.5726 |
+| best observed validation trades | 5 |
+| best candidate meeting 6 trades/year | PF 0.4125 |
+
+Вывод: geometry-признаки тоже не восстановили старую прибыльность. Прямой
+live-safe rebuild старого take/skip семейства сейчас отклонён; продолжать его
+стоит только при новой узкой гипотезе, а не простым перебором близких режимов.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)

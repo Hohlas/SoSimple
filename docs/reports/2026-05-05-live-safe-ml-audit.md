@@ -300,6 +300,20 @@ Follow-up source decision:
   feature construction is too slow on this workstation. This is a compute
   placement issue, not a model/training change.
 
+Confirmed Python future-derived inputs:
+
+| Input family | Code source | Why it is not live-safe as model input |
+|---|---|---|
+| `predict` | `processing/label_signals.py:272-303` | For row `i`, Python walks rows strictly after `i` for the same `fractal0.time` and stores the maximum future `back` before break/drop. |
+| `ret_*` | `processing/label_signals.py:930-951` | Uses future OHLC bars from `base_idx + 1` through the target horizon and stores the future return. |
+| `fav_*`, `adv_*` | `processing/label_signals.py:930-954` | Uses future highs/lows inside the post-entry window and stores favorable/adverse future path movement. |
+| `ret_dir_atr_lag1` | `processing/label_signals.py:863-869` | It is a one-row lag of `ret_6_dir_atr`; the source value is already a future outcome. |
+| old take/skip row inputs | `ML/run_take_skip_original_contour_feature_matrix.py:56-75` | The old baseline included those Python future-derived fields directly as model inputs. |
+
+Important distinction: MT-origin `Up/Dn` in `Nero.csv` and Python-added
+`up_*/dn_*` labels are not the same source. The former can be known at the row
+time as accumulated MT state; the latter must be audited separately if used.
+
 Remote run:
 
 - feature mode: `live_safe_path`;
@@ -330,14 +344,45 @@ Artifacts:
 
 - `ML/reports/take_skip_live_safe_path/live_safe_path_seq50/`
 
+Second remote run:
+
+- feature mode: `live_safe_geometry`;
+- sequence length: `50`;
+- seed: `42`;
+- input features: `642`;
+- engineered features: `622`;
+- best epoch: `7`;
+- validation BCE: `0.033775`;
+- runtime on Ryzen 9 7950X3D server: `~358s`.
+
+`live_safe_geometry` result:
+
+| Check | Result |
+|---|---|
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | `0.5726` |
+| best observed validation trades | `5` |
+| best observed validation trades/year | `1.25` |
+| best candidate meeting 6 trades/year | `take_48_x8`, top_k `5%`, PF `0.4125` |
+
+Meaning: adding MT-accumulated geometry features also did not restore the old
+take/skip profitability. This result is not a close miss: among candidates with
+the required minimum trade frequency, validation losses were much larger than
+profits.
+
+Artifacts:
+
+- `ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/`
+
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
-online ML quality. The first two take/skip rebuilds now support the stricter
+online ML quality. The first three take/skip rebuilds now support the stricter
 interpretation: old take/skip profitability did not survive removal of
 future-derived Python row inputs, even after adding MT-accumulated `Up/Dn`
-path-reaction features.
+path-reaction or geometry features.
 
 The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
 production approval, but it is enough to reject the worst fear: removing
@@ -364,6 +409,7 @@ Commands run:
 ./.venv/bin/python -m pytest tests/test_take_skip_original_contour_feature_matrix.py -q
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_baseline --feature-modes live_safe_baseline --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 4
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_path --feature-modes live_safe_path --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
+./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_geometry --feature-modes live_safe_geometry --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
 ```
 
 Results:
@@ -377,3 +423,5 @@ Results:
   and n-boost gate generated
 - take/skip `live_safe_baseline_seq50` probe generated; verdict `reject`
 - take/skip `live_safe_path_seq50` generated on remote server; verdict `reject`
+- take/skip `live_safe_geometry_seq50` generated on remote server; verdict
+  `reject`

@@ -44,6 +44,7 @@ IGNORE_DIRS = {
     ".knowledge-rag-data",
     ".pytest_cache",
     ".vscode",           # editor config
+    ".qoder",            # IDE-generated repo wiki/cache, not project source
 }
 
 # Directory names that should be skipped wherever they appear in the tree

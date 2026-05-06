@@ -32,6 +32,9 @@
   `entry_path_v1_quantile` получили verdict `FAIL`.
 - `ret_dir_atr_lag1` доказан как future-derived: это лаг от `ret_6_dir_atr`,
   который строится по будущим барам.
+- Повторно подтвержден источник удаленных Python-признаков:
+  `predict`, `ret_*`, `fav_*`, `adv_*` считаются после `Nero.csv` по будущим
+  барам; MT-origin `Up/Dn` в `Nero.csv` отделены от этих Python labels.
 - Legacy export replay помечен `diagnostic_only=true`: он подтверждает старую
   механику выгрузки, но не доказывает пригодность модели для online.
 
@@ -55,6 +58,9 @@
 - Серверный take/skip `live_safe_path_seq50` (`Up/Dn` из MT `Nero.csv`):
   validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
   при `15` сделках, а при минимуме `6` сделок/год PF только `0.6155`.
+- Серверный take/skip `live_safe_geometry_seq50`: validation winner не найден,
+  verdict=`reject`; лучший validation PF `0.5726` при `5` сделках, а при
+  минимуме `6` сделок/год PF только `0.4125`.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
@@ -69,8 +75,9 @@
   не воспроизвёл прибыльную область. Это усиливает вывод, что старые
   `quality/frequency` результаты нельзя переносить в online как есть.
 - Добавление MT-накопленных `Up/Dn` path-признаков тоже не восстановило старую
-  take/skip прибыльность. Прямой live-safe rebuild старого take/skip семейства
-  сейчас следует считать отклонённым.
+  take/skip прибыльность. Geometry-вариант тоже провалил benchmark. Прямой
+  live-safe rebuild старого take/skip семейства сейчас следует считать
+  отклонённым.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening

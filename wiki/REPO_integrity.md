@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-06 08:06 UTC · git `d2a064d`
+> Auto-generated 2026-05-06 14:05 UTC · git `19729bd`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1038 files  ·  **Commit**: `d2a064d`  ·  **Generated**: 2026-05-06 08:06 UTC
+**Tracked**: 1041 files  ·  **Commit**: `19729bd`  ·  **Generated**: 2026-05-06 14:05 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-06 | 141KB | `1caa0580` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-06 | 142KB | `75d8a14d` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-06 | 14KB | `455ef857` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-06 | 15KB | `7810bc84` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-06 | 34KB | `cea781b3` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
@@ -197,7 +197,7 @@
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
 | [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
-| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-06 | 15KB | `4bb364bb` |
+| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-06 | 18KB | `7f03585b` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
@@ -484,6 +484,9 @@
 | [ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/benchmark/final_verdict.json) |  |  | 2026-05-05 | 77B | `187c03e9` |
 | [ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/summary.json](ML/reports/take_skip_live_safe_baseline/live_safe_baseline_seq50/summary.json) |  |  | 2026-05-05 | 11KB | `230648aa` |
 | [ML/reports/take_skip_live_safe_baseline/manifest.json](ML/reports/take_skip_live_safe_baseline/manifest.json) |  |  | 2026-05-05 | 13KB | `b69fcca8` |
+| [ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/benchmark/final_verdict.json) |  |  | 2026-05-06 | 77B | `187c03e9` |
+| [ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/summary.json](ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/summary.json) |  |  | 2026-05-06 | 13KB | `a256cdf5` |
+| [ML/reports/take_skip_live_safe_geometry/manifest.json](ML/reports/take_skip_live_safe_geometry/manifest.json) |  |  | 2026-05-06 | 15KB | `166e9b6b` |
 | [ML/reports/take_skip_live_safe_path/live_safe_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_path/live_safe_path_seq50/benchmark/final_verdict.json) |  |  | 2026-05-06 | 77B | `187c03e9` |
 | [ML/reports/take_skip_live_safe_path/live_safe_path_seq50/summary.json](ML/reports/take_skip_live_safe_path/live_safe_path_seq50/summary.json) |  |  | 2026-05-06 | 12KB | `ca389d9e` |
 | [ML/reports/take_skip_live_safe_path/manifest.json](ML/reports/take_skip_live_safe_path/manifest.json) |  |  | 2026-05-06 | 14KB | `3e2117d0` |
@@ -1089,10 +1092,10 @@
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
 | [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 2KB | `8937c961` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-06 | 21KB | `8a7fe32a` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-06 | 72KB | `62147e47` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-06 | 21KB | `1f79054e` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-06 | 74KB | `bbebb46a` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
-| [wiki/wiki.py](wiki/wiki.py) |  | 2026-04-30 | 18KB | `ec64d51c` |
+| [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 
 ## Agent Config
 

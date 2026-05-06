@@ -68,6 +68,10 @@
 - source audit закрыл `ret_dir_atr_lag1` как future-derived:
   это `ret_6_dir_atr.shift(1)`, а `ret_6_dir_atr` строится по будущим барам
   в `label_entry_path_targets()`.
+- повторная source-сверка подтвердила: Python `predict`, `ret_*`, `fav_*`,
+  `adv_*` считаются после `Nero.csv` по будущим барам; MT-origin `Up/Dn` в
+  `Nero.csv` отделены от этих Python labels и сами по себе не считаются
+  leakage, если известны на текущем баре.
 - audit evidence лежит в `ML/reports/live_safe_ml_audit/`.
 - live-safe retrain `entry_path_v1_live_safe` удалил `ret_dir_atr_lag1` и дал:
   validation `ret_pearson_r=0.2681`, frozen test PF `3.6567`,
@@ -101,15 +105,20 @@
 - серверный `live_safe_path_seq50` выполнен (`seed=42`, `torch_threads=16`):
   validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
   на `15` сделках, а при минимуме `6` сделок/год PF `0.6155`.
+- серверный `live_safe_geometry_seq50` выполнен (`seed=42`,
+  `torch_threads=16`): validation winner не найден, verdict=`reject`; лучший
+  validation PF `0.5726` на `5` сделках, а при минимуме `6` сделок/год PF
+  `0.4125`.
 - вывод: добавление MT-накопленных `Up/Dn` path-признаков не восстановило
-  take/skip прибыльность; прямой live-safe rebuild старого take/skip семейства
-  сейчас отклонён.
+  take/skip прибыльность; geometry-вариант тоже не восстановил старую
+  прибыльность; прямой live-safe rebuild старого take/skip семейства сейчас
+  отклонён.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline и
-   path-вариант оба получили `reject`.
+2. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
+   path и geometry варианты получили `reject`.
 3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
    исследовательский шаг - стабилизировать rule-family и увеличить число
    последовательных сделок, но текущий вывод не является production approval.
@@ -124,11 +133,12 @@
 6. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - quantile retrain поверх live-safe baseline.
 7. [`ML/reports/take_skip_live_safe_baseline/`](ML/reports/take_skip_live_safe_baseline/) - first take/skip live-safe baseline probe.
 8. [`ML/reports/take_skip_live_safe_path/`](ML/reports/take_skip_live_safe_path/) - server-side take/skip live-safe path probe.
-9. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
-10. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-11. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-12. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-13. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+9. [`ML/reports/take_skip_live_safe_geometry/`](ML/reports/take_skip_live_safe_geometry/) - server-side take/skip live-safe geometry probe.
+10. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
+11. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
+12. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+13. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+14. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
@@ -146,6 +156,8 @@
   прямой rebuild старого baseline без будущих row-признаков пока провален.
 - `take_skip_live_safe_path` тоже не нашёл validation winner; прямой rebuild
   старого take/skip семейства сейчас отклонён.
+- `take_skip_live_safe_geometry` тоже не нашёл validation winner; добавление
+  geometry-признаков не спасло прямой rebuild.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
