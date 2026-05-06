@@ -57,6 +57,23 @@ ideas, but not by themselves enough for online approval.
 | `entry_path_v1` | `2.87` sequential | 30 trades | `entry_path_trade_filter_selected_rule.json` |
 | `entry_path_v1_quantile` | `8.18` frozen test, `3.64` sequential | 48 / 22 trades | `entry_path_v1_quantile_selected_rule.json` |
 
+## Audit Tracker
+
+Purpose: keep every profitable historical system visible while the live-safe
+rebuild proceeds.
+
+| Historical system | Old verdict | Live-safe state | Next action |
+|---|---|---|---|
+| `quality` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
+| `frequency` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
+| `original_plus_path` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Optional closure: run `live_safe_geometry_path` only to complete the feature-mode matrix. |
+| `entry_path_v1` | `FAIL` | Rebuilt as `entry_path_v1_live_safe`; still profitable across five seeds, but weaker and variable. | Current focus: freeze/export a supported rule family, then decide whether MT4 parity is worth running. |
+| `entry_path_v1_quantile` | `FAIL` | Rebuilt over `entry_path_v1_live_safe`; profitable pockets remain, but rule selection is unstable. | Revisit after the live-safe baseline rule is frozen. |
+
+This table separates historical systems from follow-up feature modes. For
+example, `live_safe_path`, `live_safe_geometry`, and `live_safe_geometry_path`
+are probes for the take/skip family, not separate production systems.
+
 ## Legacy Export Replay
 
 This is a diagnostic check with old inputs and old rules. Its goal is to prove

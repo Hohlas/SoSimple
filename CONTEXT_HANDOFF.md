@@ -117,11 +117,17 @@
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
+2. Текущий следующий фокус - `entry_path_v1_live_safe`: прибыльность сохранилась
+   на пяти seed, но нужно заморозить поддерживаемую rule-family. Сейчас экспорт
+   поддерживает `A`, а два лучших seed выбрали `B` / `B_no_path6`.
+3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
-3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
-   исследовательский шаг - стабилизировать rule-family и увеличить число
-   последовательных сделок, но текущий вывод не является production approval.
+4. `entry_path_v1_quantile` вернуться проверять после решения по live-safe
+   baseline rule-family; текущий quantile-слой прибыльный местами, но rule
+   selection нестабилен.
+5. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
+   `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
+   внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 
 ## Read First
 

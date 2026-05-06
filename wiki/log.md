@@ -3,6 +3,12 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-06] update | live-safe system tracker
+- Added an Audit Tracker to `docs/reports/2026-05-05-live-safe-ml-audit.md`.
+- Synced `wiki/research/execution-tracks.md` with the current follow-up order:
+  focus `entry_path_v1_live_safe` first, then revisit quantile, keep take/skip
+  paused unless a new live-safe hypothesis appears.
+
 ## [2026-05-05] update | Take/skip live-safe baseline probe
 - Added `live_safe_baseline_seq50` result to `wiki/research/execution-tracks.md`
 - Recorded that direct take/skip rebuild without `predict`, `ret_dir_atr_lag1`,

@@ -61,6 +61,9 @@
 - Серверный take/skip `live_safe_geometry_seq50`: validation winner не найден,
   verdict=`reject`; лучший validation PF `0.5726` при `5` сделках, а при
   минимуме `6` сделок/год PF только `0.4125`.
+- Добавлен явный Audit Tracker по всем пяти исторически прибыльным системам,
+  чтобы не потерять `quality`, `frequency`, `original_plus_path`,
+  `entry_path_v1`, `entry_path_v1_quantile` при дальнейших проверках.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,

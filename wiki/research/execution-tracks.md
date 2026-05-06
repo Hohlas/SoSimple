@@ -1019,6 +1019,14 @@ ML. Следующий ML-корректный шаг - live-safe retrain с т�
 | `entry_path_v1` | PF `2.87` sequential | `FAIL` |
 | `entry_path_v1_quantile` | PF `8.18` frozen test, `3.64` sequential | `FAIL` |
 
+Current follow-up order:
+
+| System | Follow-up state | Next action |
+|---|---|---|
+| `entry_path_v1` | `entry_path_v1_live_safe` profitable across five seeds, but rule-family is not fully stable. | Freeze/export supported rule family first. |
+| `entry_path_v1_quantile` | Rebuilt over live-safe baseline; profitable pockets remain, rule selection unstable. | Revisit after baseline rule is frozen. |
+| `quality` / `frequency` / `original_plus_path` | Direct take/skip baseline/path/geometry rebuilds rejected. | Pause unless a new live-safe hypothesis is defined. |
+
 Главный вывод:
 
 - take/skip контуры (`quality`, `frequency`, `original_plus_path`) используют
