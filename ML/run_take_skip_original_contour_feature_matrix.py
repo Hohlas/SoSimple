@@ -37,6 +37,12 @@ from ML.benchmark_take_skip_trailing_stop_v2 import run_benchmark
 from ML.data_loader import parse_fractals_to_3d
 from ML.data_loader import TEST_FILE, TRAIN_FILE, VAL_FILE
 from ML.lib_pic_feature_profiles import build_lib_pic_feature_parts
+from ML.lib_pic_geometry_feature_bank import GEOMETRY_FEATURE_PREFIX, GEOMETRY_WINDOWS, build_lib_pic_geometry_feature_bank
+from ML.lib_pic_path_reaction_feature_bank import (
+    PATH_REACTION_FEATURE_PREFIX,
+    PATH_REACTION_WINDOWS,
+    build_lib_pic_path_reaction_feature_bank,
+)
 from ML.models.transformer import TransformerClassifier
 from ML.multi_scale_fractal_features import build_multi_scale_fractal_features
 from ML.take_skip_trailing_stop_v2_task import (
@@ -81,6 +87,9 @@ FEATURE_MODES = (
     'original_plus_path',
     'original_plus_geometry_path',
     'live_safe_baseline',
+    'live_safe_path',
+    'live_safe_geometry',
+    'live_safe_geometry_path',
 )
 DEFAULT_SEQ_LENS = (20, 50, 100)
 AUTO_VALUE = 'auto'
@@ -178,6 +187,21 @@ def build_live_safe_baseline_features(frame: pd.DataFrame, parsed_X: np.ndarray)
     return np.nan_to_num(engineered, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32, copy=False)
 
 
+def _windows_for_seq_len(windows: tuple[int, ...], seq_len: int) -> tuple[int, ...]:
+    selected = tuple(window for window in windows if window <= int(seq_len))
+    return selected or (min(windows),)
+
+
+def _prefixed_feature_values(frame: pd.DataFrame, prefix: str) -> np.ndarray:
+    columns = [column for column in frame.columns if column.startswith(prefix)]
+    return (
+        frame[columns]
+        .replace([np.inf, -np.inf], 0.0)
+        .fillna(0.0)
+        .to_numpy(dtype=np.float32)
+    )
+
+
 def build_original_contour_engineered_features(
     frame: pd.DataFrame,
     parsed_X: np.ndarray,
@@ -190,8 +214,22 @@ def build_original_contour_engineered_features(
         available = ', '.join(FEATURE_MODES)
         raise ValueError(f'unknown feature_mode: {feature_mode}. Available: {available}')
 
-    if feature_mode == 'live_safe_baseline':
-        return build_live_safe_baseline_features(frame, parsed_X)
+    if feature_mode in {'live_safe_baseline', 'live_safe_path', 'live_safe_geometry', 'live_safe_geometry_path'}:
+        blocks = [build_live_safe_baseline_features(frame, parsed_X)]
+        if feature_mode in {'live_safe_path', 'live_safe_geometry_path'}:
+            path = build_lib_pic_path_reaction_feature_bank(
+                frame,
+                windows=_windows_for_seq_len(PATH_REACTION_WINDOWS, seq_len),
+            )
+            blocks.append(_prefixed_feature_values(path, PATH_REACTION_FEATURE_PREFIX))
+        if feature_mode in {'live_safe_geometry', 'live_safe_geometry_path'}:
+            geometry = build_lib_pic_geometry_feature_bank(
+                frame,
+                windows=_windows_for_seq_len(GEOMETRY_WINDOWS, seq_len),
+            )
+            blocks.append(_prefixed_feature_values(geometry, GEOMETRY_FEATURE_PREFIX))
+        engineered = np.concatenate(blocks, axis=1)
+        return np.nan_to_num(engineered, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32, copy=False)
 
     blocks = [build_original_baseline_features(frame, parsed_X)]
     if feature_mode != 'original_baseline':

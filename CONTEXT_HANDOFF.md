@@ -91,13 +91,20 @@
   лучший validation PF `1.5178` только на `3` сделках.
 - вывод по take/skip baseline: старые `quality/frequency` результаты пока не
   сохранились после удаления future-derived row-признаков.
+- уточнение по `Up/Dn`: если они пришли из MT в `Nero.csv` как накопленное
+  состояние `lib_PIC`, считаем их live-safe; запрещены именно Python future
+  labels (`predict`, `ret_*`, `fav_*`, `adv_*`, `ret_dir_atr_lag1`).
+- добавлены режимы `live_safe_path`, `live_safe_geometry`,
+  `live_safe_geometry_path`; полный `live_safe_path_seq50` нужно запускать на
+  мощном сервере, потому что локально построение path/geometry признаков
+  слишком долгое.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. Для take/skip решить, есть ли смысл проверять другую live-safe feature
-   family (`lib_PIC` path/geometry после отдельного source audit), или считать
-   старый row-feature baseline закрытым.
+2. После push/pull на сервере запустить `take_skip` `live_safe_path_seq50` с
+   тем же кодом и теми же CSV; затем вернуть `ML/reports/take_skip_live_safe_path/`
+   в локальный репозиторий для анализа.
 3. Для `entry_path_v1_live_safe` и `entry_path_v1_quantile` возможный следующий
    исследовательский шаг - стабилизировать rule-family и увеличить число
    последовательных сделок, но текущий вывод не является production approval.
@@ -131,6 +138,8 @@
   n-boost gate не прошёл из-за нестабильности выбранного правила.
 - `take_skip_live_safe_baseline` в первом seed не нашёл validation winner;
   прямой rebuild старого baseline без будущих row-признаков пока провален.
+- `take_skip live_safe_path` ещё не оценён торгово; текущий риск технический:
+  тяжёлая сборка признаков на локальной машине.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.

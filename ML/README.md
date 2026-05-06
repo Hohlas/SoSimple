@@ -140,6 +140,14 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_origi
   --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 \
   --jobs 1 --torch-threads 4
 
+# Take/skip v2: live-safe path-контроль для мощного сервера
+PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_original_contour_feature_matrix \
+  --output-dir ML/reports/take_skip_live_safe_path \
+  --feature-modes live_safe_path \
+  --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 \
+  --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 \
+  --jobs 1 --torch-threads 16
+
 # Parity: exported signals vs MT4 tester log
 python -m ML.benchmark_signal_export_parity \
   --signals MT/tester/files/ml_signals.csv \
@@ -167,7 +175,7 @@ python -m ML.telemetry_daily_reconciliation \
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
-`run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, проверяет добавление новых признаков поверх старого single-tensor представления и имеет режим `live_safe_baseline` для контроля без future-derived row-признаков.
+`run_take_skip_original_contour_feature_matrix.py` делает то же ограничение по доступным целям, проверяет добавление новых признаков поверх старого single-tensor представления и имеет live-safe режимы без Python future-derived row-признаков. `live_safe_path` использует `Up/Dn` только как MT-накопленное состояние из `Nero.csv`; его полный прогон лучше запускать на мощном сервере.
 `benchmark_cross_instrument_robustness.py` не меняет frozen rules и не ретюнит пороги: он только измеряет `provider_drift` и `cross_instrument_transfer` на уже зафиксированных системах.
 `benchmark_system_correlation.py` не выбирает новые trading modes: он только нормализует существующие сделки и считает pairwise overlap/correlation verdicts.
 `export_entry_path_predictions.py` нужен именно для frozen transfer-проверок: он не переобучает модели и ожидает полный entry-path labeled contract на входе.

@@ -22,6 +22,10 @@
   `ML/run_take_skip_original_contour_feature_matrix.py`: старый take/skip
   single-tensor runner без `predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`,
   `adv_*` row-признаков.
+- Добавлены follow-up режимы `live_safe_path`, `live_safe_geometry`,
+  `live_safe_geometry_path`. `Up/Dn` из `fractal*` считаются допустимыми
+  входами, если они пришли из MT `Nero.csv` как накопленное состояние `lib_PIC`;
+  Python future-label поля остаются запрещены.
 
 ### Результаты аудита
 - `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
@@ -61,6 +65,8 @@
 - Старый take/skip baseline после удаления future-derived row-признаков пока
   не воспроизвёл прибыльную область. Это усиливает вывод, что старые
   `quality/frequency` результаты нельзя переносить в online как есть.
+- Полный `live_safe_path_seq50` переносится на мощный сервер: это не меняет
+  обучение или признаки, только место выполнения ресурсоёмкого расчёта.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening

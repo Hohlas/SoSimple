@@ -161,6 +161,50 @@ def test_live_safe_baseline_excludes_future_derived_row_features():
     assert np.allclose(arrays.X[:, 0, 20:], live_safe_features)
 
 
+def test_live_safe_geometry_expands_live_safe_baseline_without_path_fields():
+    from ML.run_take_skip_original_contour_feature_matrix import build_original_contour_arrays
+
+    frame = _source_frame(rows=5)
+    baseline = build_original_contour_arrays(frame, feature_mode='live_safe_baseline', seq_len=20)
+    geometry = build_original_contour_arrays(frame, feature_mode='live_safe_geometry', seq_len=20)
+
+    assert geometry.X.shape[0] == baseline.X.shape[0] == 5
+    assert geometry.X.shape[1] == baseline.X.shape[1] == 20
+    assert geometry.y.shape == baseline.y.shape
+    assert geometry.target_columns == baseline.target_columns
+    assert np.array_equal(geometry.mask, baseline.mask)
+    assert geometry.X.shape[2] > baseline.X.shape[2]
+    assert np.allclose(geometry.X[:, :, : baseline.X.shape[2]], baseline.X)
+
+
+def test_live_safe_path_expands_live_safe_baseline_with_mt_updn_features():
+    from ML.run_take_skip_original_contour_feature_matrix import build_original_contour_arrays
+
+    frame = _source_frame(rows=5)
+    baseline = build_original_contour_arrays(frame, feature_mode='live_safe_baseline', seq_len=20)
+    path = build_original_contour_arrays(frame, feature_mode='live_safe_path', seq_len=20)
+
+    assert path.X.shape[0] == baseline.X.shape[0] == 5
+    assert path.X.shape[1] == baseline.X.shape[1] == 20
+    assert path.y.shape == baseline.y.shape
+    assert path.target_columns == baseline.target_columns
+    assert np.array_equal(path.mask, baseline.mask)
+    assert path.X.shape[2] > baseline.X.shape[2]
+    assert np.allclose(path.X[:, :, : baseline.X.shape[2]], baseline.X)
+
+
+def test_live_safe_path_uses_windows_limited_by_seq_len():
+    from ML.run_take_skip_original_contour_feature_matrix import build_original_contour_arrays
+
+    frame = _source_frame(rows=5)
+    seq20 = build_original_contour_arrays(frame, feature_mode='live_safe_path', seq_len=20)
+    seq50 = build_original_contour_arrays(frame, feature_mode='live_safe_path', seq_len=50)
+
+    assert seq50.engineered.shape[1] > seq20.engineered.shape[1]
+    assert seq20.X.shape[2] == 20 + seq20.engineered.shape[1]
+    assert seq50.X.shape[2] == 20 + seq50.engineered.shape[1]
+
+
 def test_original_contour_runner_writes_summary_and_benchmark(tmp_path: Path):
     from ML.run_take_skip_original_contour_feature_matrix import run_single_config_from_frames
 

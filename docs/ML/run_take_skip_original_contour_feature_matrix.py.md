@@ -35,11 +35,19 @@ CSV должны содержать:
 - `live_safe_baseline` — multi-scale summaries + только row-wise признаки,
   доступные без будущей разметки: `ATR`, `session_hour`, `weekday`,
   `range_atr_6`, `body_atr_3`, `vol_regime_24`.
+- `live_safe_path` — `live_safe_baseline` + MT-накопленные `Up/Dn`
+  path-reaction признаки из `fractal*`.
+- `live_safe_geometry` — `live_safe_baseline` + geometry признаки без `Up/Dn`.
+- `live_safe_geometry_path` — `live_safe_baseline` + path-reaction + geometry.
 
 Важно: `baseline_clean` здесь не используется как замена старого baseline. Новые признаки добавляются поверх исходного представления.
 
-`live_safe_baseline` не использует старые future-derived поля: `predict`,
+Live-safe режимы не используют старые Python future-derived поля: `predict`,
 `ret_dir_atr_lag1`, `ret_*`, `fav_*`, `adv_*`.
+
+Важно по `Up/Dn`: в рамках текущего проекта они считаются live-safe, если
+пришли из MT в `Nero.csv` как уже накопленное состояние `lib_PIC`. Будущие
+Python-разметки `ret_*`, `fav_*`, `adv_*` остаются запрещёнными входами.
 
 ## Выходные данные
 
@@ -132,3 +140,7 @@ PYTHONUNBUFFERED=1 MPLCONFIGDIR=/tmp/matplotlib /home/hohla/git/SoSimple/.venv/b
 - Это research runner; общий `ML.train` не меняется.
 - Выбор winner-а делается по validation. Test используется только как frozen-проверка.
 - Сравнение имеет смысл только если `original_baseline` сначала воспроизводит старую область результата.
+- `live_safe_path` / `live_safe_geometry*` могут долго строить признаки на
+  полном `train/validation/test`, потому что текущая реализация парсит
+  `fractal*` строки построчно. Для полноценных multi-seed прогонов нужен
+  отдельный кэш/materializer признаков.

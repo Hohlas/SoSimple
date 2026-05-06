@@ -1144,4 +1144,15 @@ future-derived row-признаков не воспроизвёл tradable valid
 `quality/frequency` результаты пока нужно считать зависимыми от запрещённых
 входов, пока не найден другой live-safe feature family.
 
+Follow-up уточнение: `Up/Dn` внутри `fractal*` считаются live-safe, если они
+пришли из MT `Nero.csv` как накопленное состояние `lib_PIC`, известное на
+момент строки. Запрещёнными остаются Python future-label поля:
+`predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`, `adv_*`.
+
+Для следующей проверки добавлены режимы `live_safe_path`, `live_safe_geometry`,
+`live_safe_geometry_path`. Полный `live_safe_path_seq50` не завершался локально:
+построение path/geometry признаков оказалось слишком дорогим для текущей
+машины. Это не меняет методику обучения; следующий запуск нужно выполнить на
+мощном сервере с тем же кодом и теми же CSV.
+
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
