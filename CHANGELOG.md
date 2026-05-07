@@ -5,6 +5,12 @@
 ## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
 
 ### Исправлено после review
+- `ML.train` получил флаг `--output-dir`: checkpoint и result JSON можно
+  сохранять в отдельную папку конкретного seed/device запуска. Result JSON и
+  checkpoint теперь пишут runtime metadata: seed, device, версии Python/Torch/
+  NumPy, deterministic flags и sha256 train/validation CSV. Это закрывает риск
+  путаницы, когда общий `ML/checkpoints/*_best.pt` перетирался следующим
+  обучением.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.

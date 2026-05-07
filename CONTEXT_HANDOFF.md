@@ -141,13 +141,29 @@
   take/skip прибыльность; geometry-вариант тоже не восстановил старую
   прибыльность; прямой live-safe rebuild старого take/skip семейства сейчас
   отклонён.
+- после повторного retrain без `predict` в пуле нормализации выяснено:
+  `entry_path_v1_live_safe` на правильном H1 источнике
+  `MT/MQL4/Files/Nero_XAUUSD.csv` сохраняет качество модели
+  (`ret_pearson_r` около `0.27`). Провал до `~0.004` был вызван тем, что
+  текущий `MT/MQL4/Files/Nero.csv` содержит M5-строки, а `entry_path_v1`
+  требует H1-время.
+- локальный GPU seed 42 воспроизводится стабильно: sequential PF `2.4897`.
+  Локальный CPU seed 42 и серверный CPU seed 42 тоже воспроизводимы внутри
+  своего вычислительного пути, но выбирают другую верхушку сделок и дают
+  слабый sequential PF (`~1.05..1.21`). Это не отменяет качества модели, но
+  показывает чувствительность торгового фильтра к переобучению.
+- для защиты от путаницы артефактов `ML.train` получил `--output-dir`: теперь
+  checkpoint/result можно сохранять в отдельную папку seed/device запуска.
+  JSON и checkpoint включают runtime metadata: seed, device, версии библиотек,
+  deterministic flags и sha256 train/validation CSV.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
 2. Текущий следующий фокус - `entry_path_v1_live_safe` с замороженным baseline
-   `A`. Следующий разумный шаг перед MT4 parity - решить, устраивает ли нас
-   конкретный frozen seed `42` rule, учитывая риск калибровки порога между seed.
+   `A`. Перед MT4 parity нужно прогонять новые seed/device эксперименты только
+   через `ML.train --output-dir ...`, затем экспортировать прогнозы из
+   seed-specific checkpoint, а не из общего `ML/checkpoints/*_best.pt`.
 3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 4. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации

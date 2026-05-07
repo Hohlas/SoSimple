@@ -55,6 +55,7 @@ ML/
 ## Выходные данные
 - **Файл**: `ML/checkpoints/<model>_best.pt` или `<model>_regression_best.pt` или `<model>_updn_best.pt`
 - **Файл**: `ML/checkpoints/<model>_result.json`
+- **Опционально**: при `--output-dir <dir>` checkpoint и result JSON пишутся в указанную папку, чтобы разные seed/устройства не перетирали общий `ML/checkpoints`.
 - **Файл**: `ML/plots/training_curves_*.png`
 - **Файл**: `ML/plots/cm_*.png` (классификация), `ML/plots/regression_*.png` (регрессия), `ML/plots/regression_*_updn.png` (multi-target)
 
@@ -94,6 +95,12 @@ python -m ML.train --model transformer --task regression_updn --epochs 50
 python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
   --entry_path_feature_profile baseline_clean --seq_len 20 --clear_cache
 
+# Entry path с отдельной папкой артефактов для конкретного seed/device
+python -m ML.train --model transformer --task entry_path_v1 \
+  --entry_path_feature_profile entry_path_v1_live_safe \
+  --epochs 5 --seed 42 --clear_cache \
+  --output-dir ML/reports/entry_path_v1_live_safe/seed_042_gpu
+
 # Классификация с оптимизированными параметрами (из Optuna)
 python -m ML.train --model cnn1d --task classification \
   --lr 0.004012 --batch_size 64 --patience 7 \
@@ -124,6 +131,7 @@ python -m ML.train --model transformer --task classification \
 | `--lr` | Скорость обучения (Learning Rate) | `1e-3` |
 | `--weight_decay` | L2 регуляризация (AdamW) | `1e-4` |
 | `--patience` | Patience для раннего останова | `10` |
+| `--output-dir` | Папка для checkpoint/result конкретного запуска; JSON включает seed, device, версии библиотек и sha256 train/validation CSV | `ML/checkpoints` |
 | `--scheduler_patience` | Patience для ReduceLROnPlateau | `5` |
 | `--scheduler_factor` | Factor уменьшения LR | `0.5` |
 | `--focal_gamma` | Gamma параметр Focal Loss (classification) | `2.0` |
@@ -343,6 +351,10 @@ python -m ML.optimize --model cnn1d --task classification --trials 50 \
 ## Содержимое каталога `ML/checkpoints/`
 
 Каталог `ML/checkpoints/` хранит артефакты обучения моделей:
+
+Для аудита воспроизводимости лучше использовать `--output-dir` и сохранять
+каждый запуск в отдельную папку, например `ML/reports/<experiment>/seed_042_cpu/`.
+Иначе общий `<model>..._best.pt` перезаписывается следующим запуском.
 
 ### Файлы весов (`.pt`)
 Сохранённые state_dict моделей PyTorch, загружаемые через `torch.load()`:

@@ -50,7 +50,9 @@
 """
 
 import argparse
+import hashlib
 import json
+import platform
 import time
 from pathlib import Path
 
@@ -82,8 +84,10 @@ from ML.data_loader import (
     TB_TARGET_NAMES,
     TRADE_OUTCOME_TARGET,
     TRADE_PNL_TARGET,
+    TRAIN_FILE,
     UPDN_REGRESSION_TARGET,
     UPDN_TARGETS,
+    VAL_FILE,
     create_data_loaders,
     task_checkpoint_suffix,
     task_target_column,
@@ -147,6 +151,42 @@ def training_artifact_suffix(
     if task == ENTRY_PATH_TARGET and entry_path_feature_profile != ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
         suffix = f'{suffix}_features_{entry_path_feature_profile}'
     return suffix
+
+
+def _sha256_file(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    hasher = hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _runtime_metadata(seed: int, device: torch.device) -> dict:
+    cuda_device = None
+    if torch.cuda.is_available():
+        cuda_device = torch.cuda.get_device_name(0)
+    return {
+        'seed': int(seed),
+        'device': str(device),
+        'python': platform.python_version(),
+        'platform': platform.platform(),
+        'torch': torch.__version__,
+        'torch_cuda': torch.version.cuda,
+        'cuda_available': bool(torch.cuda.is_available()),
+        'cuda_device': cuda_device,
+        'numpy': np.__version__,
+        'deterministic': {
+            'cudnn_deterministic': bool(torch.backends.cudnn.deterministic),
+            'cudnn_benchmark': bool(torch.backends.cudnn.benchmark),
+            'deterministic_algorithms': bool(torch.are_deterministic_algorithms_enabled()),
+        },
+        'input_files': {
+            str(TRAIN_FILE): _sha256_file(TRAIN_FILE),
+            str(VAL_FILE): _sha256_file(VAL_FILE),
+        },
+    }
 
 # ─── Значения по умолчанию ───────────────────────────────────────────────────
 
@@ -1062,6 +1102,7 @@ def train_model(
     # Transfer learning: загрузить encoder из другого checkpoint
     encoder_ckpt: str | None = None,
     entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+    output_dir: str | Path | None = None,
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -1111,8 +1152,10 @@ def train_model(
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
     device = get_device()
+    artifact_dir = Path(output_dir) if output_dir is not None else CHECKPOINTS_DIR
 
     CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
+    artifact_dir.mkdir(parents=True, exist_ok=True)
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -1573,7 +1616,7 @@ def train_model(
 
             # Суффикс чекпойнта
             suffix = training_artifact_suffix(task, entry_path_feature_profile)
-            checkpoint_path = CHECKPOINTS_DIR / f'{model_name}{suffix}_best.pt'
+            checkpoint_path = artifact_dir / f'{model_name}{suffix}_best.pt'
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -1586,10 +1629,11 @@ def train_model(
                 'seq_len': seq_len,
                 'model_kwargs': model_kwargs,
                 'entry_path_feature_profile': entry_path_feature_profile if entry_path else None,
+                'runtime_metadata': _runtime_metadata(seed, device),
             }, checkpoint_path)
             if not silent:
                 print(f"      ✅ Новый лучший {metric_name}={best_metric:.4f}, "
-                      f"сохранено: {checkpoint_path.name}")
+                      f"сохранено: {checkpoint_path}")
         else:
             epochs_without_improvement += 1
             if epochs_without_improvement >= patience:
@@ -1723,7 +1767,7 @@ def train_model(
     )
 
     if triple_barrier:
-        best_ckpt_path = CHECKPOINTS_DIR / f'{model_name}_tb_best.pt'
+        best_ckpt_path = artifact_dir / f'{model_name}_tb_best.pt'
         if best_ckpt_path.exists():
             best_ckpt = torch.load(best_ckpt_path, map_location=device, weights_only=False)
             model.load_state_dict(best_ckpt['model_state_dict'])
@@ -1761,6 +1805,9 @@ def train_model(
         'history': history,
         'best_metrics': best_metrics,
         'entry_path_feature_profile': entry_path_feature_profile if entry_path else None,
+        'checkpoint_path': str(artifact_dir / f'{model_name}{training_artifact_suffix(task, entry_path_feature_profile)}_best.pt'),
+        'artifact_dir': str(artifact_dir),
+        'runtime_metadata': _runtime_metadata(seed, device),
     }
 
 
@@ -1878,7 +1925,7 @@ def _log_experiment(
         metrics_dict['f1_buy'] = f1_per_class.get(1)
 
     log_suffix = training_artifact_suffix(task, entry_path_feature_profile)
-    checkpoint_path = str(CHECKPOINTS_DIR / f'{model_name}{log_suffix}_best.pt')
+    checkpoint_path = result.get('checkpoint_path') or str(CHECKPOINTS_DIR / f'{model_name}{log_suffix}_best.pt')
     
     logger = CSVExperimentLogger()
     logger.log_experiment(config_dict, metrics_dict, checkpoint_path=checkpoint_path)
@@ -2249,6 +2296,10 @@ def parse_args() -> argparse.Namespace:
         help='Путь к checkpoint для transfer learning (загружает encoder веса, сбрасывает classifier).'
              ' Пример: ML/checkpoints/transformer_updn_best.pt'
     )
+    parser.add_argument(
+        '--output-dir', type=str, default=None,
+        help='Папка для checkpoint/result этого запуска. Если не задана, используется ML/checkpoints.'
+    )
 
     return parser.parse_args()
 
@@ -2336,6 +2387,7 @@ def main():
         clear_cache=args.clear_cache,
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
         entry_path_feature_profile=args.entry_path_feature_profile,
+        output_dir=getattr(args, 'output_dir', None),
     )
 
     # Сохраняем результат как JSON
@@ -2484,13 +2536,20 @@ def main():
         }
         suffix = task_checkpoint_suffix(args.task)
 
-    result_path = CHECKPOINTS_DIR / f'{args.model}{suffix}_result.json'
+    result_serializable['runtime_metadata'] = result.get('runtime_metadata', {})
+    result_serializable['checkpoint_path'] = result.get('checkpoint_path')
+    result_serializable['artifact_dir'] = result.get('artifact_dir')
+
+    output_dir_arg = getattr(args, 'output_dir', None)
+    artifact_dir = Path(output_dir_arg) if output_dir_arg is not None else CHECKPOINTS_DIR
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    result_path = artifact_dir / f'{args.model}{suffix}_result.json'
     with open(result_path, 'w', encoding='utf-8') as f:
         json.dump(result_serializable, f, indent=2, ensure_ascii=False)
     print(f"\n✅ Результат сохранён: {result_path}")
 
     # ── Логирование эксперимента ─────────────────────────────────────────────
-    checkpoint_path = str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
+    checkpoint_path = result.get('checkpoint_path') or str(CHECKPOINTS_DIR / f'{args.model}{suffix}_best.pt')
 
     # Логирование теперь происходит внутри train_model() - дублировать не нужно
     # logger = CSVExperimentLogger()
