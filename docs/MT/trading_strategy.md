@@ -4,7 +4,7 @@
 >
 > **Точка входа**: [MAIN.mqh](../../MT/MQL4/Include/MAIN.mqh), метод `EXPERT::MAIN()`.
 >
-> **Текущий статус на 2026-04-12**:
+> **Текущий статус на 2026-05-07**:
 > - `iSignal=3` теперь означает **прямой parity-check режим** из [lib_ML_Signal.mqh](../../MT/MQL4/Include/lib_ML_Signal.mqh)
 > - старый runtime `regression_updn` сохранён как backup в [lib_ML_Signal_back.mqh](../../MT/MQL4/Include/lib_ML_Signal_back.mqh)
 > - `iSignal=5` по-прежнему использует [lib_ML_Signal_TB.mqh](../../MT/MQL4/Include/lib_ML_Signal_TB.mqh)
@@ -90,9 +90,22 @@ SoSimple260.330 2022.10.04-2026.03.10, Sprd=0, StpLev=0, OPT-telemetry_frequency
 BackTest=2
 ```
 
-На 2026-04-28 текущая рабочая строка временно переключена на `XAUUSD5` для
-ускоренного прогона online-логики на M5. Это не новый торговый режим, а
-временный диагностический preset перед возвратом на H1/server-профиль.
+На 2026-05-07 текущая рабочая строка переключена на `XAUUSD60` для MT4 parity
+кандидата `entry_path_v1_live_safe + A @ 7.5%`. Это H1-контур; M5 `Nero.csv`
+для него не подходит.
+
+Для этого parity preset ключевые ML-параметры такие:
+
+- `ML_ExitMode=0`;
+- `ML_MaxPositions=1`;
+- `ML_HoldBars=24`;
+- `ML_TakeProfitATR=0`;
+- `ML_BackStopATR=999`;
+- `ML_AllowReversal=0`;
+- `ML_UseScoreFilter=0`.
+
+Смысл: MT4 должен проверить тот же fixed-hold контракт, что Python sequential
+check: один вход, удержание 24 бара, без take-profit и без близкого stop-loss.
 
 ### Онлайн-торговля
 

@@ -471,6 +471,13 @@ time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48
 
 - уже подготовленный CSV для исполнения;
 - это может быть либо минимальный `time;signal`, либо полный prediction CSV.
+- для текущего `entry_path_v1_live_safe + A @ 7.5%` каноническая подготовка:
+
+```bash
+./.venv/bin/python -m ML.prepare_entry_path_mt4_parity \
+  --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity \
+  --copy-to-mt4
+```
 
 Поддерживаемые форматы:
 
@@ -489,8 +496,9 @@ time;signal;pred_ret_6_dir_atr;pred_ret_12_dir_atr;pred_ret_24_dir_atr;...
 - текущий `iSignal=3`;
 - активный `lib_ML_Signal.mqh`;
 - вход на следующем баре;
-- одна позиция;
-- закрытие по `ML_HoldBars` или по обратному сигналу.
+- для `entry_path_v1_live_safe` parity: одна позиция, `ML_HoldBars=24`,
+  `ML_TakeProfitATR=0`, `ML_BackStopATR=999`;
+- закрытие по `ML_HoldBars`; обратный сигнал отключён.
 
 Важно:
 

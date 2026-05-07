@@ -73,7 +73,29 @@ cp <ваш_источник>.csv MT/tester/files/ml_signals.csv
 
 ### Для `entry_path_v1`
 
-Baseline execution-system для `entry_path_v1` после frozen trade-filter export работает через отдельный consumer:
+Для текущего live-safe кандидата `entry_path_v1_live_safe + A @ 7.5%` не
+использовать seed-specific `entry_path_trade_filter_selected_rule.json`
+напрямую: у seed 42 он может содержать auto-winner `B`, а production baseline
+зафиксирован как `A`.
+
+Каноническая подготовка MT4 parity export:
+
+```bash
+./.venv/bin/python -m ML.prepare_entry_path_mt4_parity \
+  --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity \
+  --copy-to-mt4
+```
+
+Эта команда:
+
+- строит frozen rule `A @ 7.5%` по validation predictions;
+- применяет его к test predictions;
+- пишет `ML/reports/mt4_entry_path_v1_live_safe_parity/ml_signals.csv`;
+- копирует тот же файл в `MT/tester/files/ml_signals.csv` и
+  `MT/MQL4/Files/ml_signals.csv`;
+- пишет metadata с threshold, counts и sha256.
+
+Legacy/general consumer для уже готового frozen rule:
 
 ```bash
 ./.venv/bin/python -m API.export_entry_path_v1_signals \

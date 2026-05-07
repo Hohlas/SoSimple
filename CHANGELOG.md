@@ -36,6 +36,14 @@
   нестабилен (`2/5`, `2/5`, `1/5` по трём правилам), а sequential trades часто
   слишком мало (`3..28`, median `8`). Отчёт:
   `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`.
+- Добавлен `ML/prepare_entry_path_mt4_parity.py`: фиксирует именно
+  `entry_path_v1_live_safe + A @ 7.5%`, пишет rule JSON, metadata и
+  `ml_signals.csv`, затем при `--copy-to-mt4` копирует один и тот же CSV в
+  `MT/tester/files/` и `MT/MQL4/Files/`. Это защищает MT4 parity от
+  случайного использования auto-winner `B` из seed-specific rule-файла.
+- MT4 preset `#.csv` переключён на H1 parity contract:
+  `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
+  `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.

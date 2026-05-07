@@ -191,22 +191,33 @@
 
 ## Next Step
 
-1. Следующий рабочий фокус - MT4 parity для `entry_path_v1_live_safe + A @
-   7.5%`: проверить, что MT4 получает те же входы и выдаёт те же сделки/сигналы,
-   которые подтверждены в Python.
-2. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
+1. Следующий рабочий фокус - запустить MT4 Strategy Tester для
+   `entry_path_v1_live_safe + A @ 7.5%` и затем выполнить reconciliation по
+   свежему `MT/tester/logs/*.log`.
+2. Python-side MT4 export уже подготовлен командой
+   `./.venv/bin/python -m ML.prepare_entry_path_mt4_parity --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity --copy-to-mt4`.
+   Ожидаемый файл: `MT/tester/files/ml_signals.csv`, sha256
+   `f213a8689bcac8fee0f7294bc56c5fc647e63cf58ab83321eda505d82d2af852`,
+   `29` ненулевых сигналов (`21` BUY, `8` SELL). Python sequential check:
+   `27` trades, PF `5.9352`.
+3. MT4 preset уже переключён на H1 fixed-hold contract:
+   `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
+   `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
+4. После MT4 test run выполнить:
+   `./.venv/bin/python -m ML.telemetry_daily_reconciliation --signals MT/tester/files/ml_signals.csv --mt4-log <fresh-log> --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation --label entry_path_v1_live_safe_a075_mt4_parity --export-metadata ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json`.
+5. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
    общий `ML/checkpoints/*_best.pt`. Если retrain всё же нужен, использовать
    только `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы прогнозы
    экспортировались из seed-specific checkpoint.
-3. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
+6. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
    research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner.
    Повторный `entry_path_v1_quantile` поверх CPU baseline тоже закрыт:
    прибыльность есть, но production-gate не пройден.
-4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
+7. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path, geometry и geometry_path варианты получили `reject`.
-5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
+8. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
    baseline `A` прибыльные участки есть, но rule selection нестабилен.
-6. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
+9. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
    `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
    внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 
@@ -218,12 +229,13 @@
 4. [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md) - подтверждение CPU baseline `A @ 7.5%`.
 5. [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md) - почему production retrain только CPU.
 6. [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md) - quantile поверх CPU baseline, verdict research-only.
-7. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
-8. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - ранние retrain и multi-seed artifacts.
-9. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - ранний quantile retrain поверх live-safe baseline.
-10. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-11. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-12. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+7. [`docs/ML/prepare_entry_path_mt4_parity.py.md`](docs/ML/prepare_entry_path_mt4_parity.py.md) - подготовка `ml_signals.csv` для MT4 parity текущего кандидата.
+8. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
+9. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - ранние retrain и multi-seed artifacts.
+10. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - ранний quantile retrain поверх live-safe baseline.
+11. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+12. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+13. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
