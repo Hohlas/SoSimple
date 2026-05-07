@@ -50,7 +50,9 @@ split, а не на M5 `Nero.csv`.
 `0.05 0.075 0.10 0.125 0.15 0.20 0.25 0.30`.
 
 Обучение внутри runner-а идёт через `ML.train` на CPU по умолчанию. Это
-нужно, чтобы production checkpoint был воспроизводимым на сервере.
+нужно, чтобы production checkpoint был воспроизводимым на сервере. Причина
+зафиксирована в отчёте
+[`2026-05-07-cpu-gpu-reproducibility.md`](../reports/2026-05-07-cpu-gpu-reproducibility.md).
 
 ## Назначение
 

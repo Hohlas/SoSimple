@@ -31,6 +31,8 @@ baseline после аудита зафиксирован как простой 
 
 Обучение внутри runner-а идёт через `ML.train` на CPU по умолчанию. Это
 нужно, чтобы итоговые checkpoint совпадали с production-средой сервера.
+Причина зафиксирована в отчёте
+[`2026-05-07-cpu-gpu-reproducibility.md`](../reports/2026-05-07-cpu-gpu-reproducibility.md).
 
 ## Команда Для Сервера
 
