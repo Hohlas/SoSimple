@@ -4,12 +4,15 @@
 
 ## Current Stage
 
-Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening и 2026-05-05 live-safe ML audit с `entry_path_v1` live-safe retrain и повторной quantile-проверкой поверх live-safe baseline.
+Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening, 2026-05-05 live-safe ML audit и 2026-05-07 закрытием воспроизводимости `entry_path_v1_live_safe + A @ 7.5%`.
 
 Канонические отчёты:
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 - [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
 - [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
+- [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
+- [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
+- [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
 
 Что было зафиксировано 2026-04-27:
 - high-frequency diagnostic export `telemetry_frequency_v1_highfreq500`;
@@ -188,17 +191,17 @@
 
 ## Next Step
 
-1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
-2. Текущий следующий фокус - `entry_path_v1_live_safe` с замороженным baseline
-   `A`. Перед MT4 parity нужно прогонять новые seed/device эксперименты только
-   через `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы
-   прогнозы экспортировались из seed-specific checkpoint, а не из общего
-   `ML/checkpoints/*_best.pt`.
+1. Следующий рабочий фокус - MT4 parity для `entry_path_v1_live_safe + A @
+   7.5%`: проверить, что MT4 получает те же входы и выдаёт те же сделки/сигналы,
+   которые подтверждены в Python.
+2. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
+   общий `ML/checkpoints/*_best.pt`. Если retrain всё же нужен, использовать
+   только `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы прогнозы
+   экспортировались из seed-specific checkpoint.
 3. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
    research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner.
    Повторный `entry_path_v1_quantile` поверх CPU baseline тоже закрыт:
-   прибыльность есть, но production-gate не пройден. Следующий рабочий фокус -
-   аудит других систем.
+   прибыльность есть, но production-gate не пройден.
 4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path, geometry и geometry_path варианты получили `reject`.
 5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
@@ -212,18 +215,15 @@
 1. [`AGENTS.md`](AGENTS.md) - правила агента и карта источников.
 2. [`docs/ML/ml_leakage_preflight_checklist.md`](docs/ML/ml_leakage_preflight_checklist.md) - обязательный leakage/preflight gate для всех ML test/MT4/online выводов.
 3. [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md) - текущий verdict по прибыльным ML-системам и первый retrain без `ret_dir_atr_lag1`.
-4. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
-5. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - retrain и multi-seed artifacts.
-6. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - quantile retrain поверх live-safe baseline.
-7. [`ML/reports/take_skip_live_safe_baseline/`](ML/reports/take_skip_live_safe_baseline/) - first take/skip live-safe baseline probe.
-8. [`ML/reports/take_skip_live_safe_path/`](ML/reports/take_skip_live_safe_path/) - server-side take/skip live-safe path probe.
-9. [`ML/reports/take_skip_live_safe_geometry/`](ML/reports/take_skip_live_safe_geometry/) - server-side take/skip live-safe geometry probe.
-10. [`ML/reports/take_skip_live_safe_geometry_path/`](ML/reports/take_skip_live_safe_geometry_path/) - server-side take/skip live-safe geometry+path probe.
-10. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
-11. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
-12. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-13. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-14. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+4. [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md) - подтверждение CPU baseline `A @ 7.5%`.
+5. [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md) - почему production retrain только CPU.
+6. [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md) - quantile поверх CPU baseline, verdict research-only.
+7. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
+8. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - ранние retrain и multi-seed artifacts.
+9. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - ранний quantile retrain поверх live-safe baseline.
+10. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
+11. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
+12. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
 
 ## Open Risks
 
@@ -233,17 +233,19 @@
 - `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
   Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
   от baseline score.
-- `entry_path_v1_live_safe` проверен на пяти seed, но после review 2026-05-06
-  требует retrain без `predict` в пуле нормализации `front/back`; до этого MT4
-  parity откладывается.
-- `entry_path_v1_quantile_live_safe_baseline` показал прибыльные участки, но
-  n-boost gate не прошёл из-за нестабильности выбранного правила.
-- `take_skip_live_safe_baseline` в первом seed не нашёл validation winner;
-  прямой rebuild старого baseline без будущих row-признаков пока провален.
-- `take_skip_live_safe_path` тоже не нашёл validation winner; прямой rebuild
-  старого take/skip семейства сейчас отклонён.
-- `take_skip_live_safe_geometry` тоже не нашёл validation winner; добавление
-  geometry-признаков не спасло прямой rebuild.
+- MT4 parity для `entry_path_v1_live_safe + A @ 7.5%` ещё не выполнен: Python
+  proof есть, MT4 proof пока нет.
+- Для `entry_path_v1_live_safe` критично использовать H1 источник
+  `MT/MQL4/Files/Nero_XAUUSD.csv`; текущий `MT/MQL4/Files/Nero.csv` может
+  содержать M5-строки и ломает смысл entry_path targets.
+- Production retrain должен быть CPU-only. GPU training допустим только как
+  research, потому что даёт другой checkpoint даже при том же seed.
+- `entry_path_v1_quantile` показал прибыльные участки поверх CPU baseline, но
+  production-gate не прошёл из-за нестабильности выбранного правила и малого
+  числа сделок.
+- Прямой take/skip rebuild старых `quality`, `frequency`, `original_plus_path`
+  отклонён: baseline, path, geometry и geometry_path варианты не нашли
+  пригодный validation winner.
 - Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
 - Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
 - Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
@@ -251,8 +253,9 @@
 
 ## Latest Reports
 
+- [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
+- [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
+- [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
+- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
 - [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
 - [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
-- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
-- [`docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md)
-- [`docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md`](docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md)

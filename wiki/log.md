@@ -362,3 +362,15 @@
   - recorded `ret_dir_atr_lag1` as future-derived after source/timing audit;
   - recorded live-safe `entry_path_v1` rebuild/retrain as the next blocker.
 - Updated `wiki/index.md` coverage from 31 to 32 reports.
+
+## [2026-05-07] ingest | entry path live-safe CPU baseline
+- Added wiki coverage for:
+  - `docs/reports/2026-05-07-cpu-gpu-reproducibility.md`;
+  - `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`;
+  - `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded CPU-only production retrain decision;
+  - recorded `entry_path_v1_live_safe + A @ 7.5%` as the main live-safe candidate;
+  - recorded `entry_path_v1_quantile` as research-only over the CPU baseline;
+  - recorded final take/skip `geometry_path` reject.
+- Updated `wiki/index.md` coverage from 32 to 35 reports.

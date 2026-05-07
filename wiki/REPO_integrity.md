@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-06 18:08 UTC · git `44d4974`
+> Auto-generated 2026-05-07 13:15 UTC · git `10ee3cb`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,26 +9,26 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1043 files  ·  **Commit**: `44d4974`  ·  **Generated**: 2026-05-06 18:08 UTC
+**Tracked**: 1105 files  ·  **Commit**: `10ee3cb`  ·  **Generated**: 2026-05-07 13:15 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-06 | 144KB | `783cdf59` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-07 | 148KB | `eda172ad` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-06 | 17KB | `145fd3fd` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-06 | 34KB | `cea781b3` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-07 | 23KB | `3fce3715` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-07 | 35KB | `2754fc99` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-04-30 | 1KB | `061e7df2` |
-| [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-04-30 | 13KB | `d22db703` |
-| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-04-30 | 25KB | `79cf441f` |
+| [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-05-06 | 1KB | `c7573738` |
+| [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-05-06 | 13KB | `f825b93e` |
+| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-05-06 | 25KB | `0f274025` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-04-01 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-04-24 | 3KB | `facaa586` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-04-24 | 4KB | `03bec021` |
@@ -46,7 +46,9 @@
 | [docs/ML/live_safe_audit.py.md](docs/ML/live_safe_audit.py.md) | Core-типы live-safe audit и свод feature verdict → system verdict | 2026-05-05 | 556B | `8341abc1` |
 | [docs/ML/live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit | 2026-05-05 | 469B | `8d81d796` |
 | [docs/ML/ml_leakage_preflight_checklist.md](docs/ML/ml_leakage_preflight_checklist.md) | Чеклист перед test/MT4/online ML-запуском для исключения заглядывания вперёд | 2026-04-30 | 16KB | `924087f2` |
-| [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-05 | 24KB | `1505ae08` |
+| [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-07 | 25KB | `a7ea744f` |
+| [docs/ML/run_entry_path_live_safe_retrain.py.md](docs/ML/run_entry_path_live_safe_retrain.py.md) |  | 2026-05-07 | 2KB | `72abe04a` |
+| [docs/ML/run_entry_path_quantile_live_safe_retrain.py.md](docs/ML/run_entry_path_quantile_live_safe_retrain.py.md) |  | 2026-05-07 | 2KB | `82076ca6` |
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-05-05 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-20 | 4KB | `8d21f1a7` |
 | [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-05-06 | 6KB | `133b0f2e` |
@@ -58,10 +60,10 @@
 | [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-30 | 3KB | `db162f09` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-04-30 | 856B | `876e71c9` |
-| [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-04-30 | 2KB | `bcc8644c` |
+| [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-05-06 | 3KB | `d018efa2` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-04-20 | 1KB | `3fd26730` |
-| [docs/processing/normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков | 2026-04-30 | 4KB | `d243647f` |
-| [docs/processing/online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing | 2026-04-30 | 2KB | `5ae62419` |
+| [docs/processing/normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков | 2026-05-06 | 4KB | `1a5d5908` |
+| [docs/processing/online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing | 2026-05-06 | 2KB | `a59d1bf7` |
 | [docs/statistics/EDA.ipynb.md](docs/statistics/EDA.ipynb.md) | Отчет по разведочному анализу | 2026-04-01 | 17KB | `914b3a5e` |
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-04-12 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-03-26 | 6KB | `9835a477` |
@@ -196,15 +198,18 @@
 | [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md) |  | 2026-04-24 | 10KB | `77d28ff4` |
 | [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 9KB | `3e6208c0` |
 | [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) |  | 2026-04-28 | 11KB | `e1210726` |
-| [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-04-30 | 6KB | `7a79ada9` |
-| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-06 | 21KB | `317eb0c4` |
+| [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md) |  | 2026-05-06 | 6KB | `26968f89` |
+| [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-07 | 23KB | `151350c7` |
+| [docs/reports/2026-05-07-cpu-gpu-reproducibility.md](docs/reports/2026-05-07-cpu-gpu-reproducibility.md) |  | 2026-05-07 | 8KB | `589d954f` |
+| [docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md) |  | 2026-05-07 | 6KB | `fe2f9819` |
+| [docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md) |  | 2026-05-07 | 3KB | `10ba83c4` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-05-06 | 13KB | `9d94ab0e` |
+| [ML/README.md](ML/README.md) |  |  | 2026-05-07 | 14KB | `c7999b8c` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
@@ -235,7 +240,7 @@
 | [ML/compare_architectures.py](ML/compare_architectures.py) | Сравнение 4 архитектур | 🏁 | 2026-03-23 | 13KB | `103ded09` |
 | [ML/conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | 🏁 | 2026-03-20 | 14KB | `d34cb990` |
 | [ML/conformal/conformal_quantiles.json](ML/conformal/conformal_quantiles.json) |  |  | 2026-03-20 | 399B | `6d9e2e03` |
-| [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-04-20 | 55KB | `52e42b36` |
+| [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-05-07 | 55KB | `3b0649c7` |
 | [ML/entry_path_feature_bank.py](ML/entry_path_feature_bank.py) | Entry path feature bank: оконные сводки строки и row-wise context features | ✅ | 2026-04-17 | 3KB | `0c7004b2` |
 | [ML/entry_path_task.py](ML/entry_path_task.py) | Entry path task: определения targets, метрики, export helpers | ✅ | 2026-05-05 | 18KB | `2bdfb3cf` |
 | [ML/entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | ✅ | 2026-04-09 | 14KB | `54d61050` |
@@ -254,7 +259,7 @@
 | [ML/lib_pic_feature_profiles.py](ML/lib_pic_feature_profiles.py) | Единая сборка профилей признаков `lib_PIC` для диагностики и `entry_path_v1` | ✅ | 2026-04-20 | 4KB | `6da69e68` |
 | [ML/lib_pic_geometry_feature_bank.py](ML/lib_pic_geometry_feature_bank.py) | Производные признаки геометрии уровней `lib_PIC` | ✅ | 2026-04-20 | 7KB | `24dd7aaa` |
 | [ML/lib_pic_path_reaction_feature_bank.py](ML/lib_pic_path_reaction_feature_bank.py) | Производные признаки исторической реакции цены `Up/Dn` после уровней | ✅ | 2026-04-20 | 8KB | `a47b0ff1` |
-| [ML/live_safe_audit.py](ML/live_safe_audit.py) | Core-типы live-safe audit и свод feature verdict → system verdict | ✅ | 2026-05-05 | 5KB | `7468e7aa` |
+| [ML/live_safe_audit.py](ML/live_safe_audit.py) | Core-типы live-safe audit и свод feature verdict → system verdict | ✅ | 2026-05-06 | 5KB | `e9b48e68` |
 | [ML/live_safe_audit_registry.py](ML/live_safe_audit_registry.py) | Реестр прибыльных ML-систем для повторного live-safe audit | ✅ | 2026-05-05 | 3KB | `20c94868` |
 | [ML/losses.py](ML/losses.py) | FocalLoss, HuberLoss, AsymmetricLoss | ✅ | 2026-03-31 | 9KB | `f7313c67` |
 | [ML/models/__init__.py](ML/models/__init__.py) |  |  | 2026-02-18 | 1KB | `f8ff5fa3` |
@@ -360,6 +365,29 @@
 | [ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_report.md) |  |  | 2026-05-05 | 530B | `1410cf6d` |
 | [ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe/seed_123/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `b0da3773` |
 | [ML/reports/entry_path_v1_live_safe/seed_123/result.json](ML/reports/entry_path_v1_live_safe/seed_123/result.json) |  |  | 2026-05-05 | 2KB | `1deffb2e` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 542B | `8361ec30` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 1KB | `757d948e` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 561B | `c85bc415` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `ab2fcf22` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 562B | `a61f01ce` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `e066e959` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/manifest.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/manifest.json) |  |  | 2026-05-07 | 77KB | `1c34773b` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/multi_seed_summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/multi_seed_summary.json) |  |  | 2026-05-07 | 3KB | `8e390e0e` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 568B | `dab58f2f` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `e03c5e81` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_007/summary.json) |  |  | 2026-05-07 | 13KB | `e83beaa4` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 571B | `4d3a7871` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `b042a4ee` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_017/summary.json) |  |  | 2026-05-07 | 13KB | `58ae1f30` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 570B | `d797c57d` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `7283f968` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/summary.json) |  |  | 2026-05-07 | 13KB | `2594d8dd` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 568B | `bd0ec8d3` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `ed97172f` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_077/summary.json) |  |  | 2026-05-07 | 12KB | `d8cbd80b` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/entry_path_trade_filter_report.md](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/entry_path_trade_filter_report.md) |  |  | 2026-05-07 | 568B | `9e5bdf39` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/entry_path_trade_filter_selected_rule.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/entry_path_trade_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `4ac5eeff` |
+| [ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/summary.json](ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_123/summary.json) |  |  | 2026-05-07 | 13KB | `a413b33e` |
 | [ML/reports/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_filter_report.md) |  |  | 2026-04-10 | 706B | `0d99ebcd` |
 | [ML/reports/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-04-10 | 1KB | `f665ab0d` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json) |  |  | 2026-05-05 | 2KB | `c04294b8` |
@@ -379,6 +407,33 @@
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-05 | 729B | `0f00805b` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-05 | 1KB | `7d0d2ea6` |
 | [ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/result.json](ML/reports/entry_path_v1_quantile_live_safe_baseline/seed_123/result.json) |  |  | 2026-05-05 | 2KB | `4485f5d3` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/manifest.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/manifest.json) |  |  | 2026-05-07 | 94KB | `d4261fa7` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/multi_seed_summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/multi_seed_summary.json) |  |  | 2026-05-07 | 5KB | `6ef74aaa` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/baseline_a_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/baseline_a_report.md) |  |  | 2026-05-07 | 537B | `bd5e4b28` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/baseline_a_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/baseline_a_selected_rule.json) |  |  | 2026-05-07 | 1KB | `ff0cbc4b` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-07 | 806B | `497ccee3` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-07 | 1KB | `2df1f6c4` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_007/summary.json) |  |  | 2026-05-07 | 15KB | `8a6ef129` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/baseline_a_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/baseline_a_report.md) |  |  | 2026-05-07 | 537B | `eab7a343` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/baseline_a_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/baseline_a_selected_rule.json) |  |  | 2026-05-07 | 2KB | `bfdd4e83` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-07 | 746B | `b49223e2` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-07 | 1KB | `ee820fe5` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_017/summary.json) |  |  | 2026-05-07 | 15KB | `29503eaa` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/baseline_a_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/baseline_a_report.md) |  |  | 2026-05-07 | 537B | `8b3b53e3` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/baseline_a_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/baseline_a_selected_rule.json) |  |  | 2026-05-07 | 2KB | `1946e03d` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-07 | 759B | `12838781` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `5271f8fc` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_042/summary.json) |  |  | 2026-05-07 | 16KB | `13b80583` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/baseline_a_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/baseline_a_report.md) |  |  | 2026-05-07 | 537B | `1ea158a1` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/baseline_a_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/baseline_a_selected_rule.json) |  |  | 2026-05-07 | 1KB | `e1675839` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-07 | 807B | `079a6cba` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-07 | 2KB | `e44e6d28` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_077/summary.json) |  |  | 2026-05-07 | 15KB | `b6196236` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/baseline_a_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/baseline_a_report.md) |  |  | 2026-05-07 | 537B | `96a6a122` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/baseline_a_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/baseline_a_selected_rule.json) |  |  | 2026-05-07 | 1KB | `165812ed` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/entry_path_v1_quantile_filter_report.md](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/entry_path_v1_quantile_filter_report.md) |  |  | 2026-05-07 | 743B | `ce12591c` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/entry_path_v1_quantile_filter_selected_rule.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/entry_path_v1_quantile_filter_selected_rule.json) |  |  | 2026-05-07 | 1KB | `5129e82b` |
+| [ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/summary.json](ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/seed_123/summary.json) |  |  | 2026-05-07 | 15KB | `ffbf4300` |
 | [ML/reports/entry_path_v1_quantile_selected_rule.json](ML/reports/entry_path_v1_quantile_selected_rule.json) |  |  | 2026-04-12 | 2KB | `a2fce0f7` |
 | [ML/reports/evaluate_test_H12.md](ML/reports/evaluate_test_H12.md) |  |  | 2026-03-19 | 513B | `8b8eb347` |
 | [ML/reports/evaluate_test_entry_path_v1.md](ML/reports/evaluate_test_entry_path_v1.md) |  |  | 2026-04-19 | 1KB | `a6f68803` |
@@ -489,6 +544,9 @@
 | [ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/benchmark/final_verdict.json) |  |  | 2026-05-06 | 77B | `187c03e9` |
 | [ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/summary.json](ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/summary.json) |  |  | 2026-05-06 | 13KB | `a256cdf5` |
 | [ML/reports/take_skip_live_safe_geometry/manifest.json](ML/reports/take_skip_live_safe_geometry/manifest.json) |  |  | 2026-05-06 | 15KB | `166e9b6b` |
+| [ML/reports/take_skip_live_safe_geometry_path/live_safe_geometry_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_geometry_path/live_safe_geometry_path_seq50/benchmark/final_verdict.json) |  |  | 2026-05-07 | 77B | `187c03e9` |
+| [ML/reports/take_skip_live_safe_geometry_path/live_safe_geometry_path_seq50/summary.json](ML/reports/take_skip_live_safe_geometry_path/live_safe_geometry_path_seq50/summary.json) |  |  | 2026-05-07 | 21KB | `95ef2fd4` |
+| [ML/reports/take_skip_live_safe_geometry_path/manifest.json](ML/reports/take_skip_live_safe_geometry_path/manifest.json) |  |  | 2026-05-07 | 23KB | `d436d29a` |
 | [ML/reports/take_skip_live_safe_path/live_safe_path_seq50/benchmark/final_verdict.json](ML/reports/take_skip_live_safe_path/live_safe_path_seq50/benchmark/final_verdict.json) |  |  | 2026-05-06 | 77B | `187c03e9` |
 | [ML/reports/take_skip_live_safe_path/live_safe_path_seq50/summary.json](ML/reports/take_skip_live_safe_path/live_safe_path_seq50/summary.json) |  |  | 2026-05-06 | 12KB | `ca389d9e` |
 | [ML/reports/take_skip_live_safe_path/manifest.json](ML/reports/take_skip_live_safe_path/manifest.json) |  |  | 2026-05-06 | 14KB | `3e2117d0` |
@@ -632,6 +690,8 @@
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/evaluate_test_trailing_stop_target_quantile_v1.md) |  |  | 2026-04-17 | 385B | `e972ae90` |
 | [ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json](ML/reports/trailing_stop_target_quantile/transformer_seq20_x3_quantile/summary.json) |  |  | 2026-04-17 | 2KB | `255c26ad` |
 | [ML/reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | 🏁 | 2026-03-11 | 7KB | `756dd1c8` |
+| [ML/run_entry_path_live_safe_retrain.py](ML/run_entry_path_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_live_safe` с seed-specific checkpoint папками | ✅ | 2026-05-07 | 8KB | `4d781bf1` |
+| [ML/run_entry_path_quantile_live_safe_retrain.py](ML/run_entry_path_quantile_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_quantile` поверх CPU baseline `A @ 7.5%` | ✅ | 2026-05-07 | 13KB | `6ebfd944` |
 | [ML/run_live_safe_ml_audit.py](ML/run_live_safe_ml_audit.py) | CLI для audit inventory, feature trace, legacy replay и verdict | ✅ | 2026-05-05 | 16KB | `e4bac0c6` |
 | [ML/run_take_skip_lib_pic_feature_matrix.py](ML/run_take_skip_lib_pic_feature_matrix.py) | Training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | 🚧 | 2026-04-20 | 25KB | `68fde791` |
 | [ML/run_take_skip_original_contour_feature_matrix.py](ML/run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline/path/geometry без Python future-признаков | 🚧 | 2026-05-06 | 31KB | `1d7c7b3c` |
@@ -645,20 +705,20 @@
 | [ML/threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | ✅ | 2026-04-13 | 47KB | `b03bf490` |
 | [ML/trailing_stop_target_quantile_task.py](ML/trailing_stop_target_quantile_task.py) | Quantile task для `trail_48_pnl_atr_x3`: contract, export helpers, metrics | ✅ | 2026-04-17 | 4KB | `9e87baba` |
 | [ML/trailing_stop_target_task.py](ML/trailing_stop_target_task.py) | Trailing-stop target task: target contract, export helpers и metrics | ✅ | 2026-04-18 | 765B | `9e1ad543` |
-| [ML/train.py](ML/train.py) | Обучение (--task regression_updn / triple_barrier) | ✅ | 2026-04-20 | 106KB | `ab7e2643` |
+| [ML/train.py](ML/train.py) | Обучение ML-моделей; `--output-dir` изолирует checkpoint/result для seed/device аудита | ✅ | 2026-05-07 | 109KB | `d5840ee0` |
 | [ML/triple_barrier_mt4_execution.py](ML/triple_barrier_mt4_execution.py) |  |  | 2026-04-12 | 6KB | `e2520e9d` |
-| [ML/utils.py](ML/utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ | 2026-04-08 | 11KB | `5458dccf` |
+| [ML/utils.py](ML/utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ | 2026-05-07 | 12KB | `74a36c00` |
 
 ## Processing
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [processing/README.md](processing/README.md) |  |  | 2026-04-30 | 2KB | `0bf2a3ec` |
+| [processing/README.md](processing/README.md) |  |  | 2026-05-06 | 2KB | `a045f749` |
 | [processing/fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | ✅ | 2026-04-30 | 3KB | `37670f70` |
-| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-04-30 | 14KB | `8aeebde8` |
-| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-04-19 | 43KB | `ca81b6dd` |
-| [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-04-30 | 26KB | `c20442dd` |
-| [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | ✅ | 2026-04-30 | 4KB | `c9ee4514` |
+| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-05-06 | 14KB | `90a1c8c0` |
+| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-05-06 | 43KB | `2487e8b2` |
+| [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-05-06 | 27KB | `06653bd4` |
+| [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | ✅ | 2026-05-06 | 4KB | `3a43f088` |
 
 ## API
 
@@ -697,7 +757,7 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [tests/README.md](tests/README.md) |  |  | 2026-04-30 | 2KB | `9f4584cb` |
+| [tests/README.md](tests/README.md) |  |  | 2026-05-06 | 2KB | `4d2c2f12` |
 | [tests/test_api_server_preprocessing.py](tests/test_api_server_preprocessing.py) | `API/api_server.py` shared online preprocessing contract | ✅ | 2026-04-30 | 1KB | `03d98baf` |
 | [tests/test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | ✅ | 2026-04-24 | 9KB | `745821a7` |
 | [tests/test_benchmark_entry_path_v1_frequency.py](tests/test_benchmark_entry_path_v1_frequency.py) | `ML/benchmark_entry_path_v1_frequency.py` | ✅ | 2026-04-17 | 739B | `40f6843e` |
@@ -718,7 +778,7 @@
 | [tests/test_benchmark_trailing_stop_target_quantile.py](tests/test_benchmark_trailing_stop_target_quantile.py) | `ML/benchmark_trailing_stop_target_quantile.py` | ✅ | 2026-04-17 | 8KB | `05ca8680` |
 | [tests/test_entry_path_dual_stream_transformer.py](tests/test_entry_path_dual_stream_transformer.py) | `ML/models/entry_path_dual_stream_transformer.py` | ✅ | 2026-04-17 | 1KB | `e9c80f90` |
 | [tests/test_entry_path_feature_bank.py](tests/test_entry_path_feature_bank.py) | `ML/entry_path_feature_bank.py` | ✅ | 2026-04-17 | 3KB | `295c827b` |
-| [tests/test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | ✅ | 2026-04-17 | 3KB | `d562f24d` |
+| [tests/test_entry_path_labels.py](tests/test_entry_path_labels.py) | `processing/label_signals.py` — entry_path_v1 helpers | ✅ | 2026-05-06 | 4KB | `1875a212` |
 | [tests/test_entry_path_loader_seq_len.py](tests/test_entry_path_loader_seq_len.py) | `ML/data_loader.py` — `entry_path_v1` sequence length contract | ✅ | 2026-04-20 | 4KB | `e5f1a2ce` |
 | [tests/test_entry_path_model.py](tests/test_entry_path_model.py) | `ML/models/entry_path_transformer.py` | ✅ | 2026-04-17 | 3KB | `2975dc23` |
 | [tests/test_entry_path_reports.py](tests/test_entry_path_reports.py) | entry_path_v1 report generation | ✅ | 2026-04-17 | 7KB | `8c945ae2` |
@@ -741,16 +801,18 @@
 | [tests/test_feature_importance_diagnostics.py](tests/test_feature_importance_diagnostics.py) | `ML/feature_importance_diagnostics.py` | ✅ | 2026-04-20 | 2KB | `a821e722` |
 | [tests/test_feature_screen_entry_path.py](tests/test_feature_screen_entry_path.py) | `ML/feature_screen_entry_path.py` | ✅ | 2026-04-17 | 567B | `b99a62db` |
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-04-08 | 831B | `44529dd9` |
-| [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-04-05 | 5KB | `30c6b7c6` |
+| [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-05-06 | 7KB | `412681b8` |
 | [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-04-05 | 4KB | `be2af292` |
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-04-20 | 3KB | `24e7d32d` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-04-20 | 2KB | `9c204a8c` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-04-20 | 3KB | `1ab56954` |
-| [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-05-05 | 4KB | `ff25cc1e` |
+| [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-05-06 | 5KB | `5826ce9a` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-04-28 | 6KB | `074a90f7` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-04-18 | 1KB | `de0eeac6` |
-| [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-04-30 | 5KB | `fee35d8b` |
+| [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-05-06 | 6KB | `204596a3` |
 | [tests/test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | ✅ | 2026-04-08 | 1KB | `8be56a6e` |
+| [tests/test_run_entry_path_live_safe_retrain.py](tests/test_run_entry_path_live_safe_retrain.py) |  |  | 2026-05-07 | 3KB | `0ed8f0c4` |
+| [tests/test_run_entry_path_quantile_live_safe_retrain.py](tests/test_run_entry_path_quantile_live_safe_retrain.py) |  |  | 2026-05-07 | 6KB | `5f3b4b02` |
 | [tests/test_run_trailing_stop_target_matrix.py](tests/test_run_trailing_stop_target_matrix.py) | `ML/run_trailing_stop_target_matrix.py` | ✅ | 2026-04-18 | 7KB | `348a3ac4` |
 | [tests/test_run_trailing_stop_target_quantile.py](tests/test_run_trailing_stop_target_quantile.py) | `ML/run_trailing_stop_target_quantile.py` | ✅ | 2026-04-17 | 4KB | `9f4fc6e6` |
 | [tests/test_signal_export_parity.py](tests/test_signal_export_parity.py) | `ML/benchmark_signal_export_parity.py` | ✅ | 2026-04-22 | 3KB | `5ff4a4e3` |
@@ -807,7 +869,7 @@
 | [MT/MQL4/Indicators/ATR_original.mq4](MT/MQL4/Indicators/ATR_original.mq4) |  |  | 2026-03-22 | 3KB | `efe79c20` |
 | [MT/MQL4/Indicators/iATR.mq4](MT/MQL4/Indicators/iATR.mq4) |  |  | 2026-03-22 | 3KB | `2053ea50` |
 | [MT/MQL4/Indicators/iATRcycle.mq4](MT/MQL4/Indicators/iATRcycle.mq4) |  |  | 2026-03-22 | 2KB | `3a5033e7` |
-| [MT/MQL4/Indicators/iPIC.mq4](MT/MQL4/Indicators/iPIC.mq4) |  |  | 2026-04-28 | 13KB | `929ebd3e` |
+| [MT/MQL4/Indicators/iPIC.mq4](MT/MQL4/Indicators/iPIC.mq4) |  |  | 2026-05-07 | 13KB | `2c0bcb40` |
 | [MT/MQL4/Indicators/iPOC.mq4](MT/MQL4/Indicators/iPOC.mq4) |  |  | 2026-03-22 | 7KB | `4b4df898` |
 | [MT/MQL4/Indicators/iVolumeCluster.mq4](MT/MQL4/Indicators/iVolumeCluster.mq4) |  |  | 2026-03-22 | 44KB | `db9c3442` |
 | [MT/MQL4/Libraries/StdLibErr.mqh](MT/MQL4/Libraries/StdLibErr.mqh) |  |  | 2026-02-17 | 673B | `01044c60` |
@@ -1093,9 +1155,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-05 | 2KB | `8937c961` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-06 | 22KB | `f3cbbb87` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-06 | 76KB | `d341c068` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-07 | 2KB | `8a17dee6` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-07 | 22KB | `9abe2d6a` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-07 | 80KB | `baa64888` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 

@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-05
-sources: 32
+last_updated: 2026-05-07
+sources: 35
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 32 отчётов (2026-04-08 — 2026-05-05). Параллельные направления execution и текущая live-safe проверка прибыльных ML-систем.
+> Синтез 35 отчётов (2026-04-08 — 2026-05-07). Параллельные направления execution, live-safe аудит прибыльных ML-систем и текущий основной кандидат `entry_path_v1_live_safe + A @ 7.5%`.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1222,8 +1222,89 @@ Follow-up уточнение: `Up/Dn` внутри `fractal*` считаются
 | best observed validation trades | 5 |
 | best candidate meeting 6 trades/year | PF 0.4125 |
 
-Вывод: geometry-признаки тоже не восстановили старую прибыльность. Прямой
-live-safe rebuild старого take/skip семейства сейчас отклонён; продолжать его
-стоит только при новой узкой гипотезе, а не простым перебором близких режимов.
+Следующий серверный запуск закрыл optional `live_safe_geometry_path_seq50`:
+
+| Metric | Value |
+|---|---:|
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | 3.7229 |
+| best observed validation trades | 5 |
+| best observed trades/year | 1.25 |
+| best candidate meeting 6 trades/year | PF 0.4899 |
+
+Вывод: path, geometry и geometry+path не восстановили старую прибыльность.
+Прямой live-safe rebuild старого take/skip семейства сейчас отклонён;
+продолжать его стоит только при новой узкой гипотезе, а не простым перебором
+близких режимов.
 
 Источник: [2026-05-05-live-safe-ml-audit.md](../../docs/reports/2026-05-05-live-safe-ml-audit.md)
+
+## 14. CPU/GPU Reproducibility (05-07)
+
+После исправления нормализации `predict -> front/back` возник вопрос, почему
+один и тот же seed даёт разные checkpoint и разные верхние сделки на CPU и GPU.
+
+Проверка показала две разные проблемы:
+
+| Area | Result |
+|---|---|
+| initial weights | CPU и GPU одинаковые (`max_diff=0`) |
+| eval forward without dropout | отличие около `1e-7`, практически ноль |
+| train forward with dropout | отличие большое: dropout создаёт разные маски |
+| full training without dropout | малые отличия матричных операций накапливаются до `~0.2` в весах |
+| deterministic algorithms | помогают внутри одного устройства, но не делают CPU и GPU одинаковыми |
+| same CPU-trained checkpoint inference on CPU/GPU | top-5% overlap `100%`, correlation `1.0` |
+
+Вывод: проблема не в применении готовой модели, а в обучении. Production
+retrain должен быть CPU-only. GPU можно использовать для research или для
+inference готового CPU-trained checkpoint, если нужен быстрый расчёт.
+
+Источник: [2026-05-07-cpu-gpu-reproducibility.md](../../docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
+
+## 15. Entry Path v1 Live-Safe Reproducibility (05-07)
+
+После исправления нормализации без `predict` в пуле `front/back` первый
+провал retrain (`ret_pearson_r ~= 0.004`) оказался не следствием исправления,
+а ошибкой источника данных: текущий `MT/MQL4/Files/Nero.csv` содержал M5, а
+`entry_path_v1` требует H1. Проверка перенесена на
+`MT/MQL4/Files/Nero_XAUUSD.csv`.
+
+Серверный CPU multi-seed (`7`, `17`, `42`, `77`, `123`) показал:
+
+| Check | Result |
+|---|---:|
+| model `ret_pearson_r` range | `0.2703..0.2807` |
+| auto-winner median sequential PF | 1.6183 |
+| auto-winner PF > 2.0 | 1 / 5 |
+| production baseline `A @ 7.5%` median sequential PF | 2.3249 |
+| production baseline min sequential PF | 1.8188 |
+| production baseline PF > 2.0 | 4 / 5 |
+| production baseline PF <= 1.0 | 0 / 5 |
+
+Вывод: подтверждён не автоматический выбор лучшего validation winner, а заранее
+выбранный простой baseline `A @ 7.5%`. Это текущий главный live-safe кандидат.
+Следующий practical gate - MT4 parity: проверить, что MT4 воспроизводит тот же
+контракт входов и сигналов.
+
+Источник: [2026-05-07-entry-path-live-safe-reproducibility.md](../../docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
+
+## 16. Entry Path Quantile Over CPU Baseline (05-07)
+
+`entry_path_v1_quantile` повторно проверен поверх нового CPU baseline
+`entry_path_v1_live_safe + A @ 7.5%`.
+
+| Metric | Result |
+|---|---:|
+| quantile sequential PF > 2.0 | 5 / 5 seeds |
+| finite sequential PF median | 5.9134 |
+| sequential trades range | 3..28 |
+| median sequential trades | 8 |
+| same quantile rule max ratio | 2 / 5 |
+
+Вывод: прибыльная область у quantile не исчезла, но слой всё ещё не готов в
+ production. Причина простая: правило выбора нестабильно между seed, а число
+сделок после фильтра слишком маленькое. Главным кандидатом остаётся plain
+baseline `A @ 7.5%`; quantile - только research-only.
+
+Источник: [2026-05-07-entry-path-quantile-cpu-baseline.md](../../docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
