@@ -137,10 +137,13 @@
   `torch_threads=16`): validation winner не найден, verdict=`reject`; лучший
   validation PF `0.5726` на `5` сделках, а при минимуме `6` сделок/год PF
   `0.4125`.
-- вывод: добавление MT-накопленных `Up/Dn` path-признаков не восстановило
-  take/skip прибыльность; geometry-вариант тоже не восстановил старую
-  прибыльность; прямой live-safe rebuild старого take/skip семейства сейчас
-  отклонён.
+- серверный `live_safe_geometry_path_seq50` выполнен (`seed=42`,
+  `torch_threads=16`): validation winner не найден, verdict=`reject`; лучший
+  validation PF `3.7229` только на `5` сделках и `1.25` сделок/год; при
+  минимуме `6` сделок/год лучший PF `0.4899`.
+- вывод: добавление MT-накопленных `Up/Dn` path-признаков, geometry-признаков
+  и их комбинации не восстановило take/skip прибыльность; прямой live-safe
+  rebuild старого take/skip семейства сейчас отклонён.
 - после повторного retrain без `predict` в пуле нормализации выяснено:
   `entry_path_v1_live_safe` на правильном H1 источнике
   `MT/MQL4/Files/Nero_XAUUSD.csv` сохраняет качество модели
@@ -197,7 +200,7 @@
    прибыльность есть, но production-gate не пройден. Следующий рабочий фокус -
    аудит других систем.
 4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
-   path и geometry варианты получили `reject`.
+   path, geometry и geometry_path варианты получили `reject`.
 5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
    baseline `A` прибыльные участки есть, но rule selection нестабилен.
 6. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
@@ -215,6 +218,7 @@
 7. [`ML/reports/take_skip_live_safe_baseline/`](ML/reports/take_skip_live_safe_baseline/) - first take/skip live-safe baseline probe.
 8. [`ML/reports/take_skip_live_safe_path/`](ML/reports/take_skip_live_safe_path/) - server-side take/skip live-safe path probe.
 9. [`ML/reports/take_skip_live_safe_geometry/`](ML/reports/take_skip_live_safe_geometry/) - server-side take/skip live-safe geometry probe.
+10. [`ML/reports/take_skip_live_safe_geometry_path/`](ML/reports/take_skip_live_safe_geometry_path/) - server-side take/skip live-safe geometry+path probe.
 10. [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md) - итог online telemetry этапа.
 11. [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md) - текущая MQL/runtime архитектура и открытый вопрос `signal/predict`.
 12. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.

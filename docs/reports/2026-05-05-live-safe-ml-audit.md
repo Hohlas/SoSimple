@@ -66,7 +66,7 @@ rebuild proceeds.
 |---|---|---|---|
 | `quality` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
 | `frequency` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
-| `original_plus_path` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry probes rejected. | Optional closure: run `live_safe_geometry_path` only to complete the feature-mode matrix. |
+| `original_plus_path` | `FAIL` | Covered by take/skip family rebuilds; direct baseline/path/geometry/geometry_path probes rejected. | Do not use old checkpoint online; revisit only with a new live-safe hypothesis. |
 | `entry_path_v1` | `FAIL` | Rebuilt as `entry_path_v1_live_safe`; still profitable across five seeds, but weaker and variable. | Freeze `A` as the baseline rule family; decide later whether MT4 parity is worth running. |
 | `entry_path_v1_quantile` | `FAIL` | Rebuilt over frozen live-safe baseline `A`; profitable pockets remain, but rule selection is unstable. | Keep as research-only; do not promote as the next production layer. |
 
@@ -449,14 +449,50 @@ Artifacts:
 
 - `ML/reports/take_skip_live_safe_geometry/live_safe_geometry_seq50/`
 
+### Take/Skip Live-Safe Geometry + Path Closure
+
+The final optional closure probe was `live_safe_geometry_path_seq50`: the old
+single-tensor take/skip contour without future-derived row fields, plus both
+MT-accumulated `Up/Dn` path-reaction features and geometry features.
+
+Run configuration:
+
+- feature mode: `live_safe_geometry_path`;
+- sequence length: `50`;
+- seed: `42`;
+- input features: `886`;
+- engineered features: `866`;
+- best epoch: `6`;
+- validation BCE: `0.037535`.
+
+`live_safe_geometry_path` result:
+
+| Check | Result |
+|---|---|
+| validation winner | none |
+| final verdict | `reject` |
+| best observed validation PF | `3.7229` |
+| best observed validation trades | `5` |
+| best observed validation trades/year | `1.25` |
+| best candidate meeting 6 trades/year | `take_48_x12`, top_k `5%`, PF `0.4899` |
+
+Meaning: combining MT-accumulated path-reaction and geometry features still did
+not restore old take/skip profitability. The only high-PF rows were too rare
+and still had negative year slices; candidates with the required trade
+frequency were loss-making.
+
+Artifacts:
+
+- `ML/reports/take_skip_live_safe_geometry_path/live_safe_geometry_path_seq50/`
+
 ## Conclusions
 
 The old high-PF take/skip checkpoints are not valid online candidates as-is.
 They can still guide a live-safe rebuild, but they must not be used as proof of
-online ML quality. The first three take/skip rebuilds now support the stricter
+online ML quality. The completed take/skip rebuild matrix now supports the stricter
 interpretation: old take/skip profitability did not survive removal of
 future-derived Python row inputs, even after adding MT-accumulated `Up/Dn`
-path-reaction or geometry features.
+path-reaction and/or geometry features.
 
 The first live-safe rebuild of `entry_path_v1` has now been run. It is not a
 production approval, but it is enough to reject the worst fear: removing
@@ -484,6 +520,7 @@ Commands run:
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_baseline --feature-modes live_safe_baseline --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 4
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_path --feature-modes live_safe_path --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
 ./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_geometry --feature-modes live_safe_geometry --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
+./.venv/bin/python -m ML.run_take_skip_original_contour_feature_matrix --output-dir ML/reports/take_skip_live_safe_geometry_path --feature-modes live_safe_geometry_path --seq-lens 50 --epochs 10 --patience 4 --batch-size 256 --seed 42 --min-pf 1.0 --min-trades-per-year 6.0 --jobs 1 --torch-threads 16
 ```
 
 Results:
@@ -498,4 +535,6 @@ Results:
 - take/skip `live_safe_baseline_seq50` probe generated; verdict `reject`
 - take/skip `live_safe_path_seq50` generated on remote server; verdict `reject`
 - take/skip `live_safe_geometry_seq50` generated on remote server; verdict
+  `reject`
+- take/skip `live_safe_geometry_path_seq50` generated on remote server; verdict
   `reject`

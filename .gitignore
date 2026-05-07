@@ -224,6 +224,7 @@ ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/
 ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/
 ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/
 ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/
+ML/reports/take_skip_live_safe_geometry_path/
 
 # Временные файлы MT4
 *.log

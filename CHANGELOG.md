@@ -110,6 +110,10 @@
 - Серверный take/skip `live_safe_geometry_seq50`: validation winner не найден,
   verdict=`reject`; лучший validation PF `0.5726` при `5` сделках, а при
   минимуме `6` сделок/год PF только `0.4125`.
+- Серверный take/skip `live_safe_geometry_path_seq50`: validation winner не
+  найден, verdict=`reject`; лучший validation PF `3.7229`, но только при `5`
+  сделках и `1.25` сделок/год, а при минимуме `6` сделок/год лучший PF
+  `0.4899`.
 - Добавлен явный Audit Tracker по всем пяти исторически прибыльным системам,
   чтобы не потерять `quality`, `frequency`, `original_plus_path`,
   `entry_path_v1`, `entry_path_v1_quantile` при дальнейших проверках.
@@ -151,9 +155,9 @@
   не воспроизвёл прибыльную область. Это усиливает вывод, что старые
   `quality/frequency` результаты нельзя переносить в online как есть.
 - Добавление MT-накопленных `Up/Dn` path-признаков тоже не восстановило старую
-  take/skip прибыльность. Geometry-вариант тоже провалил benchmark. Прямой
-  live-safe rebuild старого take/skip семейства сейчас следует считать
-  отклонённым.
+  take/skip прибыльность. Geometry и geometry+path варианты тоже провалили
+  benchmark. Прямой live-safe rebuild старого take/skip семейства сейчас
+  следует считать отклонённым.
 - Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
 
 ## [2026-04-29] - Online inference contract hardening
