@@ -64,6 +64,16 @@ extern double ML_ExitThreshold = 2.0;  // ML_ExitThreshold: Мин. ratio для
 extern double ML_Trl_Start_ATR = 1.0;  // ML_Trl_Start_ATR: Активация ML-трала при профите в ATR (от 0.5 до 2.0)
 extern double ML_Trl_Step_ATR  = 1.5;  // ML_Trl_Step_ATR: Дистанция ML-трала в ATR (от 0.3 до 1.5)
 
+extern int    ML_ExitMode      = 0;
+extern double ML_TrailATR      = 8.0;
+extern double ML_TakeProfitATR = 0.0;
+extern int    ML_MaxPositions  = 1;
+extern int    ML_HoldBars      = 12;
+extern bool   ML_AllowReversal = false;
+extern bool   ML_UseScoreFilter = true;
+extern double ML_ScoreThreshold = -0.03594103;
+extern double ML_BackStopATR   = 50.0;
+
 ushort   PocScale = 5;  // PocScale=1..10 множитель длины РОС
 double   I0[],I1[]; //  ложняки    
 bool    PocAllocation=1, Real=false, Modify;  // PocAllocation=0..1 показывать/скрыть распределение POC
