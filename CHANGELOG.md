@@ -95,25 +95,6 @@
 - Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
   median sequential PF 2.3419, min 1.5171, max 4.5985;
   PF > 2.0 у 3/5 seed, PF <= 1.0 у 0/5 seed.
-- `entry_path_v1_quantile` поверх live-safe baseline:
-  sequential PF > 2.0 у 4/5 seed, но сделок мало (`0..25`) и один seed дал
-  0 sequential trades.
-- N-boost candidate `lb_gt_m_q40`: frozen test 35 trades, PF 32.4125,
-  sequential 14 trades, PF 48.7214, но gate=`fail` из-за stability:
-  `same_winner_ratio=0.60 < 0.80`.
-- Первый take/skip live-safe probe (`live_safe_baseline_seq50`, seed 42):
-  validation winner не найден, verdict=`reject`; лучший validation PF только
-  `1.5178` при `3` сделках и `1` отрицательном годовом срезе.
-- Серверный take/skip `live_safe_path_seq50` (`Up/Dn` из MT `Nero.csv`):
-  validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
-  при `15` сделках, а при минимуме `6` сделок/год PF только `0.6155`.
-- Серверный take/skip `live_safe_geometry_seq50`: validation winner не найден,
-  verdict=`reject`; лучший validation PF `0.5726` при `5` сделках, а при
-  минимуме `6` сделок/год PF только `0.4125`.
-- Серверный take/skip `live_safe_geometry_path_seq50`: validation winner не
-  найден, verdict=`reject`; лучший validation PF `3.7229`, но только при `5`
-  сделках и `1.25` сделок/год, а при минимуме `6` сделок/год лучший PF
-  `0.4899`.
 - Добавлен явный Audit Tracker по всем пяти исторически прибыльным системам,
   чтобы не потерять `quality`, `frequency`, `original_plus_path`,
   `entry_path_v1`, `entry_path_v1_quantile` при дальнейших проверках.
@@ -141,6 +122,17 @@
 - Исправлен тест `tests/test_export_entry_path_v1_quantile_rule.py`: helper для
   минимального seed теперь живёт в самом тесте, без ссылки на отсутствующий
   модуль.
+
+### Закрытые / отклонённые live-safe направления
+- `entry_path_v1_quantile`: прибыльная область есть, но слой оставлен
+  research-only. Причина: правило выбора нестабильно между seed, сделок мало;
+  n-boost gate=`fail` (`same_winner_ratio=0.60 < 0.80`), CPU-only повтор
+  подтвердил тот же вывод.
+- Take/skip rebuild для старых `quality`, `frequency`, `original_plus_path`
+  закрыт как прямой путь: `live_safe_baseline`, `live_safe_path`,
+  `live_safe_geometry`, `live_safe_geometry_path` все получили `reject`.
+  Лучшие PF без нужной частоты держались на `3..15` сделках; при минимуме
+  `6` сделок/год варианты были убыточны или ниже gate.
 
 ### Вывод
 - Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
