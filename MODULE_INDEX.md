@@ -82,6 +82,7 @@
 | [trailing_stop_target_quantile_task.py](ML/trailing_stop_target_quantile_task.py) | Quantile task для `trail_48_pnl_atr_x3`: contract, export helpers, metrics | — | — | ✅ |
 | [entry_path_trade_filter.py](ML/entry_path_trade_filter.py) | Entry path trade filter: candidate B score, weighted loss baseline | → filtered signals | — | ✅ |
 | [export_entry_path_predictions.py](ML/export_entry_path_predictions.py) | Inference `entry_path_v1` / `entry_path_v1_quantile` на arbitrary labeled CSV без переобучения | labeled CSV + checkpoint → prediction CSV | [docs](docs/ML/export_entry_path_predictions.py.md) | ✅ |
+| [run_entry_path_live_safe_retrain.py](ML/run_entry_path_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_live_safe` с seed-specific checkpoint папками | `DATA/Nero_*` → `reports/entry_path_v1_live_safe*/seed_*/` | [docs](docs/ML/run_entry_path_live_safe_retrain.py.md) | ✅ |
 | [export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | checkpoint → `reports/entry_path_v1_quantile_*_predictions.csv` | — | ✅ |
 | [benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | prediction CSVs + frozen rule → reports | — | ✅ |
 | [entry_path_v1_quantile_ensemble.py](ML/entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | — | ✅ |

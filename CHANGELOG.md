@@ -11,6 +11,10 @@
   NumPy, deterministic flags и sha256 train/validation CSV. Это закрывает риск
   путаницы, когда общий `ML/checkpoints/*_best.pt` перетирался следующим
   обучением.
+- Добавлен `ML/run_entry_path_live_safe_retrain.py`: единый runner для
+  `entry_path_v1_live_safe`, который по каждому seed запускает train →
+  export validation/test → benchmark и пишет `multi_seed_summary.csv/json`.
+  Экспорт идёт из seed-specific checkpoint, а не из общего `ML/checkpoints`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.

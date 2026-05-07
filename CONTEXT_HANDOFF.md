@@ -156,14 +156,19 @@
   checkpoint/result можно сохранять в отдельную папку seed/device запуска.
   JSON и checkpoint включают runtime metadata: seed, device, версии библиотек,
   deterministic flags и sha256 train/validation CSV.
+- добавлен `ML/run_entry_path_live_safe_retrain.py`: канонический runner для
+  закрытия воспроизводимости `entry_path_v1_live_safe`. Он по каждому seed
+  делает train → export validation/test → benchmark и пишет
+  `multi_seed_summary.csv/json`, используя только seed-specific checkpoint.
 
 ## Next Step
 
 1. Не делать MT4 parity пока пользователь держит этот этап на паузе.
 2. Текущий следующий фокус - `entry_path_v1_live_safe` с замороженным baseline
    `A`. Перед MT4 parity нужно прогонять новые seed/device эксперименты только
-   через `ML.train --output-dir ...`, затем экспортировать прогнозы из
-   seed-specific checkpoint, а не из общего `ML/checkpoints/*_best.pt`.
+   через `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы
+   прогнозы экспортировались из seed-specific checkpoint, а не из общего
+   `ML/checkpoints/*_best.pt`.
 3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 4. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
