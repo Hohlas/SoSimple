@@ -21,6 +21,7 @@
 подсчёт параметров модели.
 """
 
+import os
 import random
 
 import numpy as np
@@ -49,12 +50,14 @@ def set_seed(seed: int = 42):
     Аргументы:
         seed: Значение seed (по умолчанию 42)
     """
+    os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True, warn_only=True)
 
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
@@ -323,17 +326,30 @@ def count_parameters(model: torch.nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def get_device() -> torch.device:
+def get_device(device_override: str | None = None) -> torch.device:
     """
-    Определение доступного устройства (GPU/CPU).
+    Определение устройства (GPU/CPU).
 
     Возвращает:
-        torch.device — cuda если GPU доступен, иначе cpu
+        torch.device — выбранное устройство
     """
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-        print(f"  🖥️  Используется GPU: {torch.cuda.get_device_name(0)}")
-    else:
+    if device_override is not None:
+        device_override = device_override.lower()
+    if device_override == 'cpu':
         device = torch.device('cpu')
         print("  🖥️  Используется CPU")
+    elif device_override == 'cuda':
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDA недоступна, нельзя использовать --device cuda')
+        device = torch.device('cuda')
+        print(f"  🖥️  Используется GPU: {torch.cuda.get_device_name(0)}")
+    elif device_override in (None, 'auto'):
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
+            print(f"  🖥️  Используется GPU: {torch.cuda.get_device_name(0)}")
+        else:
+            device = torch.device('cpu')
+            print("  🖥️  Используется CPU")
+    else:
+        raise ValueError(f"unknown device override: {device_override}")
     return device

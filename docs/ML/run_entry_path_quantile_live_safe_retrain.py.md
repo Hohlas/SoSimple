@@ -29,6 +29,9 @@ Runner проверяет quantile поверх per-seed baseline `A @ 7.5%`.
 Он не выбирает лучший baseline из `A/B/B_no_path6`, потому что production
 baseline после аудита зафиксирован как простой `A`.
 
+Обучение внутри runner-а идёт через `ML.train` на CPU по умолчанию. Это
+нужно, чтобы итоговые checkpoint совпадали с production-средой сервера.
+
 ## Команда Для Сервера
 
 ```bash

@@ -117,6 +117,7 @@ python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
   --entry_path_feature_profile baseline_clean --seq_len 20 --clear_cache
 
 # Entry path live-safe: multi-seed retrain/export/benchmark без перетирания checkpoint
+# Обучение по умолчанию идёт на CPU; GPU для production retrain не использовать.
 python -m ML.run_entry_path_live_safe_retrain \
   --output-dir ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed \
   --seeds 7 17 42 77 123 --epochs 5 --batch-size 256 --clear-cache

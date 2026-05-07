@@ -36,6 +36,7 @@ Dataset и DataLoader для фрактальных последовательн
 Создаёт padding mask для Transformer (NaN позиции).
 """
 
+import random
 from pathlib import Path
 
 import numpy as np
@@ -555,6 +556,7 @@ def create_data_loaders(
     seq_len: int = 100,
     clear_cache: bool = False,
     entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
+    seed: int = 42,
 ) -> tuple[DataLoader, DataLoader, StandardScaler | None]:
     """
     Создание train и val DataLoader'ов.
@@ -874,6 +876,14 @@ def create_data_loaders(
             label_map=BINARY_LABEL_MAP if binary_classification else None,
         )
 
+    generator = torch.Generator()
+    generator.manual_seed(int(seed))
+
+    def worker_init_fn(worker_id: int):
+        worker_seed = int(seed) + int(worker_id)
+        np.random.seed(worker_seed)
+        random.seed(worker_seed)
+
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
     if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile:
         # Рассчитываем веса: 1 / freq(class)
@@ -888,7 +898,8 @@ def create_data_loaders(
         sampler = WeightedRandomSampler(
             weights=sample_weights,
             num_samples=len(train_dataset),
-            replacement=True
+            replacement=True,
+            generator=generator,
         )
         train_loader = DataLoader(
             train_dataset,
@@ -897,6 +908,8 @@ def create_data_loaders(
             num_workers=num_workers,
             pin_memory=torch.cuda.is_available(),
             drop_last=False,
+            generator=generator,
+            worker_init_fn=worker_init_fn,
         )
         sampler_info = " (WeightedRandomSampler)"
     else:
@@ -907,6 +920,8 @@ def create_data_loaders(
             num_workers=num_workers,
             pin_memory=torch.cuda.is_available(),
             drop_last=False,
+            generator=generator,
+            worker_init_fn=worker_init_fn,
         )
         sampler_info = ""
 
@@ -917,6 +932,7 @@ def create_data_loaders(
         num_workers=num_workers,
         pin_memory=torch.cuda.is_available(),
         drop_last=False,
+        worker_init_fn=worker_init_fn,
     )
 
     print(f"\n✅ DataLoaders: train={len(train_loader)} batches{sampler_info}, "

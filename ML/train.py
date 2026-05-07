@@ -52,6 +52,7 @@
 import argparse
 import hashlib
 import json
+import os
 import platform
 import time
 from pathlib import Path
@@ -181,6 +182,7 @@ def _runtime_metadata(seed: int, device: torch.device) -> dict:
             'cudnn_deterministic': bool(torch.backends.cudnn.deterministic),
             'cudnn_benchmark': bool(torch.backends.cudnn.benchmark),
             'deterministic_algorithms': bool(torch.are_deterministic_algorithms_enabled()),
+            'cublas_workspace_config': os.environ.get('CUBLAS_WORKSPACE_CONFIG'),
         },
         'input_files': {
             str(TRAIN_FILE): _sha256_file(TRAIN_FILE),
@@ -1103,6 +1105,7 @@ def train_model(
     encoder_ckpt: str | None = None,
     entry_path_feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
     output_dir: str | Path | None = None,
+    device_override: str = 'cpu',
 ) -> dict:
     """
     Полный цикл обучения модели.
@@ -1151,7 +1154,13 @@ def train_model(
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
-    device = get_device()
+    try:
+        device = get_device(device_override)
+    except TypeError:
+        device = get_device()
+    if device.type == 'cuda':
+        print("  ⚠️  CUDA training may produce a different checkpoint than CPU for the same seed.")
+        print("  ⚠️  Use --device cpu for production reproducibility.")
     artifact_dir = Path(output_dir) if output_dir is not None else CHECKPOINTS_DIR
 
     CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1169,6 +1178,7 @@ def train_model(
         seq_len=seq_len,
         clear_cache=clear_cache,
         entry_path_feature_profile=entry_path_feature_profile,
+        seed=seed,
     )
 
     # ── Модель ───────────────────────────────────────────────────────────────
@@ -2300,6 +2310,12 @@ def parse_args() -> argparse.Namespace:
         '--output-dir', type=str, default=None,
         help='Папка для checkpoint/result этого запуска. Если не задана, используется ML/checkpoints.'
     )
+    parser.add_argument(
+        '--device',
+        choices=['cpu', 'cuda', 'auto'],
+        default='cpu',
+        help='Устройство для обучения. Default: cpu, чтобы production checkpoint был воспроизводимым.',
+    )
 
     return parser.parse_args()
 
@@ -2388,6 +2404,7 @@ def main():
         encoder_ckpt=getattr(args, 'encoder_ckpt', None),
         entry_path_feature_profile=args.entry_path_feature_profile,
         output_dir=getattr(args, 'output_dir', None),
+        device_override=getattr(args, 'device', 'cpu'),
     )
 
     # Сохраняем результат как JSON
