@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-07 13:29 UTC · git `bd12625`
+> Auto-generated 2026-05-07 19:02 UTC · git `7310ecd`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1110 files  ·  **Commit**: `bd12625`  ·  **Generated**: 2026-05-07 13:29 UTC
+**Tracked**: 1110 files  ·  **Commit**: `7310ecd`  ·  **Generated**: 2026-05-07 19:02 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-05 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-07 | 148KB | `9ce83604` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-07 | 149KB | `846c4ac7` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-07 | 24KB | `0feab250` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-07 | 24KB | `1e8fb045` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-07 | 35KB | `a773476f` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
@@ -56,7 +56,7 @@
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-04-27 | 4KB | `b708037f` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-20 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-05-07 | 21KB | `bd02f885` |
-| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-05-07 | 41KB | `49922044` |
+| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-05-07 | 41KB | `b7e2e461` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-27 | 4KB | `dba0c943` |
 | [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-30 | 3KB | `db162f09` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
@@ -811,7 +811,7 @@
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-04-20 | 2KB | `9c204a8c` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-04-20 | 3KB | `1ab56954` |
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-05-06 | 5KB | `5826ce9a` |
-| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-05-07 | 6KB | `3ab46e1c` |
+| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-05-07 | 6KB | `0a8e7adf` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-04-18 | 1KB | `de0eeac6` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-05-06 | 6KB | `204596a3` |
 | [tests/test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | ✅ | 2026-04-08 | 1KB | `8be56a6e` |
@@ -848,7 +848,7 @@
 |------|-------------|--------|----------|------|------|
 | [MT/.vscode/settings.json](MT/.vscode/settings.json) |  |  | 2026-02-09 | 928B | `d6834b74` |
 | [MT/MQL4/.vscode/settings.json](MT/MQL4/.vscode/settings.json) |  |  | 2026-02-17 | 927B | `c3c0af89` |
-| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-04-28 | 12KB | `e0e2b746` |
+| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-05-07 | 12KB | `a6124c7a` |
 | [MT/MQL4/Include/COUNT.mqh](MT/MQL4/Include/COUNT.mqh) |  |  | 2026-04-28 | 8KB | `2ec8513b` |
 | [MT/MQL4/Include/ERRORs.mqh](MT/MQL4/Include/ERRORs.mqh) |  |  | 2026-03-22 | 20KB | `09c555ab` |
 | [MT/MQL4/Include/FUNCTIONS.mqh](MT/MQL4/Include/FUNCTIONS.mqh) |  |  | 2026-04-27 | 18KB | `038b6541` |
@@ -857,7 +857,7 @@
 | [MT/MQL4/Include/MM.mqh](MT/MQL4/Include/MM.mqh) |  |  | 2026-03-22 | 10KB | `c7d3005a` |
 | [MT/MQL4/Include/ORDERS.mqh](MT/MQL4/Include/ORDERS.mqh) |  |  | 2026-03-22 | 40KB | `fbab4671` |
 | [MT/MQL4/Include/OUTPUT.mqh](MT/MQL4/Include/OUTPUT.mqh) |  |  | 2026-04-08 | 19KB | `7ff1d32e` |
-| [MT/MQL4/Include/SERVICE.mqh](MT/MQL4/Include/SERVICE.mqh) |  |  | 2026-04-28 | 80KB | `3fe844d3` |
+| [MT/MQL4/Include/SERVICE.mqh](MT/MQL4/Include/SERVICE.mqh) |  |  | 2026-05-07 | 80KB | `7bca54c9` |
 | [MT/MQL4/Include/StdLibErr.mqh](MT/MQL4/Include/StdLibErr.mqh) |  |  | 2026-03-22 | 673B | `8a094f85` |
 | [MT/MQL4/Include/WinUser32.mqh](MT/MQL4/Include/WinUser32.mqh) |  |  | 2026-03-22 | 17KB | `05085603` |
 | [MT/MQL4/Include/head_PIC.mqh](MT/MQL4/Include/head_PIC.mqh) |  |  | 2026-03-31 | 9KB | `b5a78736` |

@@ -44,6 +44,9 @@
 - MT4 preset `#.csv` переключён на H1 parity contract:
   `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
   `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
+- Исправлен MQL4 bugfix для MT4 parity: `SERVICE.mqh` больше не приводит все
+  `PARAMS` из `#.csv` к `char`. Это ломало `ML_BackStopATR=999` в `-25` и
+  давало `EXP[0].Mgc != Magic`. Версия эксперта поднята до `260.332`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.

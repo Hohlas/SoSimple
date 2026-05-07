@@ -203,21 +203,28 @@
 3. MT4 preset уже переключён на H1 fixed-hold contract:
    `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
    `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
-4. После MT4 test run выполнить:
+4. Важно: после bugfix `SERVICE.mqh` эксперт должен быть перекомпилирован.
+   Ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Старый `.ex4`
+   может давать `EXP[0].Mgc != Magic`, потому что раньше `PARAMS` читались как
+   `char` и `ML_BackStopATR=999` превращался в `-25`.
+5. Рекомендуемый период первого полного MT4 parity: с `2022.10.28` по
+   `2026.04.22`, то есть диапазон `ml_signals.csv`. Для быстрой проверки логов
+   можно запускать только `2025.01.01` - `2025.12.31`.
+6. После MT4 test run выполнить:
    `./.venv/bin/python -m ML.telemetry_daily_reconciliation --signals MT/tester/files/ml_signals.csv --mt4-log <fresh-log> --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation --label entry_path_v1_live_safe_a075_mt4_parity --export-metadata ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json`.
-5. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
+7. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
    общий `ML/checkpoints/*_best.pt`. Если retrain всё же нужен, использовать
    только `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы прогнозы
    экспортировались из seed-specific checkpoint.
-6. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
+8. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
    research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner.
    Повторный `entry_path_v1_quantile` поверх CPU baseline тоже закрыт:
    прибыльность есть, но production-gate не пройден.
-7. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
+9. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path, geometry и geometry_path варианты получили `reject`.
-8. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
+10. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
    baseline `A` прибыльные участки есть, но rule selection нестабилен.
-9. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
+11. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
    `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
    внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 

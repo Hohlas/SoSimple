@@ -177,7 +177,7 @@ bool INPUT_FILE_READ (){// считывание из csv файла входны
          TheSameChart++; 
          }
       if (!GlobalVariableCheck(EXP[e].Name+EXP[e].Sym+S0(EXP[e].Per)))     GlobalVariableSet(EXP[e].Name+EXP[e].Sym+S0(EXP[e].Per), iTime(EXP[e].Sym,EXP[e].Per,0));  // глобал чарта эксперта для проверки готовности в ф. END()
-      for (chr=0; chr<PARAMS; chr++) EXP[e].PRM[chr]=char(StrToDouble(FileReadString(File)));
+      for (chr=0; chr<PARAMS; chr++) EXP[e].PRM[chr]=StrToDouble(FileReadString(File));
       READ_EXPERT_VARIABLES_FROM_FILE(e);// Print(EXP[e].Magic," ",Symbol(),Period()," RealParamRestore");
       EXP[e].Hist="";
       EXP[e].Bar=BarTime; 

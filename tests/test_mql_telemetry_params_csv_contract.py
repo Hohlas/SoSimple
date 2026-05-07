@@ -12,6 +12,7 @@ TESTER_INI = ROOT / "MT/tester/$o$imple.ini"
 
 def test_mql_parameter_storage_supports_ml_types():
     text = FUNCTIONS.read_text(encoding="utf-8", errors="replace")
+    service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
 
     assert "double   PRM[PARAMS];" in text
     assert "virtual void DATA(string name, int& value)" in text
@@ -20,6 +21,8 @@ def test_mql_parameter_storage_supports_ml_types():
     assert "void MAGIC_ADD" in text
     assert "PRINT_TO_LOG_CLASS" in text
     assert "PARAMS_LOADED" in text
+    assert "EXP[e].PRM[chr]=StrToDouble(FileReadString(File));" in service
+    assert "EXP[e].PRM[chr]=char(StrToDouble(FileReadString(File)))" not in service
 
 
 def test_extern_vars_tracks_active_ml_parameters():
