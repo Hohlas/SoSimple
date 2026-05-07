@@ -31,6 +31,11 @@
   выбранный production baseline `A @ 7.5%` устойчивее: median sequential PF
   `2.3249`, min `1.8188`, PF > 2.0 у `4/5`, PF <= 1.0 у `0/5`.
   Отчёт: `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
+- Серверный CPU retrain `entry_path_v1_quantile` поверх нового baseline
+  `A @ 7.5%` завершён: sequential PF > 2.0 у `5/5` seed, но rule selection
+  нестабилен (`2/5`, `2/5`, `1/5` по трём правилам), а sequential trades часто
+  слишком мало (`3..28`, median `8`). Отчёт:
+  `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.
@@ -126,6 +131,9 @@
   baseline `A`: n-boost снова даёт сильный PF, но gate остаётся `fail` из-за
   `same_winner_ratio=0.60 < 0.80`. Quantile оставлен research-only, не
   production-кандидатом.
+- `entry_path_v1_quantile_live_safe_cpu_baseline` повторно подтвердил тот же
+  вывод уже на CPU-only retrain: прибыльная область есть, но production-gate
+  не пройден из-за нестабильного выбора правила и малого числа сделок.
 - Исправлен тест `tests/test_export_entry_path_v1_quantile_rule.py`: helper для
   минимального seed теперь живёт в самом тесте, без ссылки на отсутствующий
   модуль.

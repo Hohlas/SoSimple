@@ -170,6 +170,12 @@
   добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`. Он по каждому
   seed обучает quantile, экспортирует predictions, строит per-seed baseline
   `A @ 7.5%` rule из CPU baseline predictions и запускает quantile benchmark.
+- серверный CPU retrain `entry_path_v1_quantile` поверх нового baseline
+  завершён. Quantile sequential PF > 2.0 у `5/5` seed, но rule selection
+  нестабилен (`lb_gt_m_width_le_w` у `2/5`, `lb_gt_m` у `2/5`, `baseline` у
+  `1/5`) и сделок мало (`3..28`, median `8`). Канонический отчёт:
+  `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`. Verdict:
+  research-only, не production.
 - отчёт `docs/reports/2026-05-07-cpu-gpu-reproducibility.md` закрыл причину
   CPU/GPU расхождений: CPU/GPU training создаёт разные checkpoint из-за
   dropout RNG и порядка матричных операций, но inference одного CPU-trained
@@ -186,10 +192,10 @@
    прогнозы экспортировались из seed-specific checkpoint, а не из общего
    `ML/checkpoints/*_best.pt`.
 3. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
-   research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner. Следующий
-   рабочий фокус - аудит других систем, начиная с
-   повторного `entry_path_v1_quantile` запуска через
-   `ML.run_entry_path_quantile_live_safe_retrain` поверх нового CPU baseline.
+   research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner.
+   Повторный `entry_path_v1_quantile` поверх CPU baseline тоже закрыт:
+   прибыльность есть, но production-gate не пройден. Следующий рабочий фокус -
+   аудит других систем.
 4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
