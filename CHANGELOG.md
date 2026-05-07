@@ -20,9 +20,10 @@
   baseline `A @ 7.5%`. По каждому seed он обучает quantile, экспортирует
   prediction CSV, строит per-seed baseline `A` rule и запускает quantile
   benchmark без обращения к устаревшему baseline rule.
-- По отчёту `worktree/FINAL_REPORT.md` production retrain переведён в
-  CPU-first режим: `ML.train` получил `--device cpu|cuda|auto` с default
-  `cpu`, `set_seed()` включает deterministic algorithms и
+- По отчёту
+  `docs/reports/2026-05-07-cpu-gpu-reproducibility.md` production retrain
+  переведён в CPU-first режим: `ML.train` получил `--device cpu|cuda|auto` с
+  default `cpu`, `set_seed()` включает deterministic algorithms и
   `CUBLAS_WORKSPACE_CONFIG`, а `DataLoader` получает seed-bound generator.
   GPU training оставлен только как явный research-режим.
 - Серверный CPU multi-seed для `entry_path_v1_live_safe` показал: auto-winner

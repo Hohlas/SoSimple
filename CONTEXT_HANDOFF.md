@@ -170,12 +170,12 @@
   добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`. Он по каждому
   seed обучает quantile, экспортирует predictions, строит per-seed baseline
   `A @ 7.5%` rule из CPU baseline predictions и запускает quantile benchmark.
-- отчёт `worktree/FINAL_REPORT.md` закрыл причину CPU/GPU расхождений:
-  CPU/GPU training создаёт разные checkpoint из-за dropout RNG и порядка
-  матричных операций, но inference одного CPU-trained checkpoint на CPU/GPU
-  даёт одинаковый рейтинг сделок. Решение: production retrain только на CPU.
-  `ML.train` получил `--device cpu|cuda|auto` с default `cpu`; GPU training
-  теперь только явный research-режим.
+- отчёт `docs/reports/2026-05-07-cpu-gpu-reproducibility.md` закрыл причину
+  CPU/GPU расхождений: CPU/GPU training создаёт разные checkpoint из-за
+  dropout RNG и порядка матричных операций, но inference одного CPU-trained
+  checkpoint на CPU/GPU даёт одинаковый рейтинг сделок. Решение: production
+  retrain только на CPU. `ML.train` получил `--device cpu|cuda|auto` с default
+  `cpu`; GPU training теперь только явный research-режим.
 
 ## Next Step
 
