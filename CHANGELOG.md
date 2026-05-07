@@ -15,6 +15,11 @@
   `entry_path_v1_live_safe`, который по каждому seed запускает train →
   export validation/test → benchmark и пишет `multi_seed_summary.csv/json`.
   Экспорт идёт из seed-specific checkpoint, а не из общего `ML/checkpoints`.
+- Серверный CPU multi-seed для `entry_path_v1_live_safe` показал: auto-winner
+  слабее (median sequential PF `1.6183`, PF > 2.0 у `1/5`), но заранее
+  выбранный production baseline `A @ 7.5%` устойчивее: median sequential PF
+  `2.3249`, min `1.8188`, PF > 2.0 у `4/5`, PF <= 1.0 у `0/5`.
+  Отчёт: `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.

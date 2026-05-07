@@ -160,6 +160,12 @@
   закрытия воспроизводимости `entry_path_v1_live_safe`. Он по каждому seed
   делает train → export validation/test → benchmark и пишет
   `multi_seed_summary.csv/json`, используя только seed-specific checkpoint.
+- серверный CPU multi-seed (`7`, `17`, `42`, `77`, `123`) закрыт:
+  auto-winner среди `A/B/B_no_path6` слабее (median sequential PF `1.6183`,
+  PF > 2.0 у `1/5`), но заранее выбранный production baseline `A @ 7.5%`
+  устойчивее: median sequential PF `2.3249`, min `1.8188`, PF > 2.0 у
+  `4/5`, PF <= 1.0 у `0/5`. Канонический отчёт:
+  `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
 
 ## Next Step
 
@@ -169,11 +175,15 @@
    через `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы
    прогнозы экспортировались из seed-specific checkpoint, а не из общего
    `ML/checkpoints/*_best.pt`.
-3. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
+3. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
+   research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner. Следующий
+   рабочий фокус - аудит других систем, начиная с
+   `entry_path_v1_quantile_live_safe_baseline` как research-only слоя.
+4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
-4. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
+5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
    baseline `A` прибыльные участки есть, но rule selection нестабилен.
-5. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
+6. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
    `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
    внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 
