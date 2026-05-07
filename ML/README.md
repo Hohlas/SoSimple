@@ -52,6 +52,7 @@
 | [compare_architectures.py](compare_architectures.py) | Сравнение 4 архитектур | DataLoader → reports/ | 🏁 |
 | [export_entry_path_predictions.py](export_entry_path_predictions.py) | Inference `entry_path_v1` / `entry_path_v1_quantile` на arbitrary labeled CSV без переобучения | labeled CSV + checkpoint → prediction CSV | ✅ |
 | [run_entry_path_live_safe_retrain.py](run_entry_path_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_live_safe` с отдельными checkpoint-папками | `DATA/Nero_*` → reports/entry_path_v1_live_safe*/seed_*/ | ✅ |
+| [run_entry_path_quantile_live_safe_retrain.py](run_entry_path_quantile_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_quantile` поверх CPU baseline `A @ 7.5%` | baseline reports + `DATA/Nero_*` → reports/entry_path_v1_quantile*/seed_*/ | ✅ |
 | [entry_path_v1_quantile_ensemble.py](entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | ✅ |
 | [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
 | [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline без будущих row-признаков | labeled CSV → reports/take_skip_original_contour_feature_matrix/ / reports/take_skip_live_safe_baseline/ | 🚧 |
@@ -118,6 +119,12 @@ python -m ML.train --model entry_path_dual_stream --task entry_path_v1 \
 # Entry path live-safe: multi-seed retrain/export/benchmark без перетирания checkpoint
 python -m ML.run_entry_path_live_safe_retrain \
   --output-dir ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed \
+  --seeds 7 17 42 77 123 --epochs 5 --batch-size 256 --clear-cache
+
+# Entry path quantile live-safe: перепроверка поверх CPU baseline A @ 7.5%
+python -m ML.run_entry_path_quantile_live_safe_retrain \
+  --output-dir ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline \
+  --baseline-root ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed \
   --seeds 7 17 42 77 123 --epochs 5 --batch-size 256 --clear-cache
 
 # Export entry_path predictions for frozen transfer/provider-drift benchmark

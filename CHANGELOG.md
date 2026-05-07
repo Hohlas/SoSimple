@@ -15,6 +15,11 @@
   `entry_path_v1_live_safe`, который по каждому seed запускает train →
   export validation/test → benchmark и пишет `multi_seed_summary.csv/json`.
   Экспорт идёт из seed-specific checkpoint, а не из общего `ML/checkpoints`.
+- Добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`: единый runner
+  для повторной проверки `entry_path_v1_quantile` поверх нового серверного CPU
+  baseline `A @ 7.5%`. По каждому seed он обучает quantile, экспортирует
+  prediction CSV, строит per-seed baseline `A` rule и запускает quantile
+  benchmark без обращения к устаревшему baseline rule.
 - Серверный CPU multi-seed для `entry_path_v1_live_safe` показал: auto-winner
   слабее (median sequential PF `1.6183`, PF > 2.0 у `1/5`), но заранее
   выбранный production baseline `A @ 7.5%` устойчивее: median sequential PF

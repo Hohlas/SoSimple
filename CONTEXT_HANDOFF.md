@@ -166,6 +166,10 @@
   устойчивее: median sequential PF `2.3249`, min `1.8188`, PF > 2.0 у
   `4/5`, PF <= 1.0 у `0/5`. Канонический отчёт:
   `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
+- для перепроверки `entry_path_v1_quantile` поверх этого нового CPU baseline
+  добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`. Он по каждому
+  seed обучает quantile, экспортирует predictions, строит per-seed baseline
+  `A @ 7.5%` rule из CPU baseline predictions и запускает quantile benchmark.
 
 ## Next Step
 
@@ -178,7 +182,8 @@
 3. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
    research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner. Следующий
    рабочий фокус - аудит других систем, начиная с
-   `entry_path_v1_quantile_live_safe_baseline` как research-only слоя.
+   повторного `entry_path_v1_quantile` запуска через
+   `ML.run_entry_path_quantile_live_safe_retrain` поверх нового CPU baseline.
 4. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
    path и geometry варианты получили `reject`.
 5. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
