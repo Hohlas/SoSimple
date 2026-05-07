@@ -218,6 +218,13 @@ __marimo__/
 # Runtime-артефакты online telemetry watcher-а.
 ML/reports/telemetry_frequency_v1/runtime/
 
+# Локальные retrain/probe артефакты: выводы перенесены в docs/reports/.
+ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool/
+ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_cpu_seed42/
+ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_local_repeat_seed42/
+ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/
+ML/reports/entry_path_v1_quantile_live_safe_cpu_baseline/
+
 # Временные файлы MT4
 *.log
 *.hst
