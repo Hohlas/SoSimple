@@ -1,307 +1,322 @@
 # Context Handoff
 
-Короткий baton для следующего агента. Историю этапов читать в `docs/reports/`, краткую хронологию - в `CHANGELOG.md`, синтез - в `wiki/research/`.
+Дата контекста: 2026-05-11.
 
-## Current Stage
+## Текущая работа
 
-Этап `telemetry_frequency_demo_launch` дополнен 2026-04-28 архитектурным снимком MQL runtime, 2026-04-29 online inference contract hardening, 2026-05-05 live-safe ML audit и 2026-05-07 закрытием воспроизводимости `entry_path_v1_live_safe + A @ 7.5%`.
+Идёт локальная проверка тракта `MT4 -> Nero.csv -> Python watcher -> ml_signals.csv -> MT4` на M5.
 
-Канонические отчёты:
-- [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
-- [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
-- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
-- [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
-- [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
-- [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
-- [`docs/reports/2026-05-07-entry-path-mt4-parity.md`](docs/reports/2026-05-07-entry-path-mt4-parity.md)
+Цель этого этапа не прибыльность. Цель - проверить механику:
 
-Что было зафиксировано 2026-04-27:
-- high-frequency diagnostic export `telemetry_frequency_v1_highfreq500`;
-- `ml_signals.csv` atomic export/copy и runtime reload в MT4;
-- multi-position diagnostic режим в существующей `EXPERT::ML_TRADE()`;
-- structured MQL logs `MLP BUY/SELL/CLOSE/SKIP`;
-- broker-side SL/TP закрытия логируются как `MLP CLOSE ... source=broker_history`;
-- daily reconciliation CLI `ML/telemetry_daily_reconciliation.py`;
-- документация online pipeline и `#.csv` contract;
-- watcher переведён в наблюдаемый `tmux`-режим с heartbeat в stdout;
-- `header-only` `Nero.csv` считается штатным ожиданием первого бара.
+- MT4 пишет свежий `MT/MQL4/Files/Nero.csv`;
+- watcher пересобирает `ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv`;
+- watcher копирует сигналы в `MT/MQL4/Files/ml_signals.csv` и `MT/tester/files/ml_signals.csv`;
+- советник MT4 видит свежий `ml_signals.csv`;
+- советник открывает/закрывает сделки по тем же правилам, что потом будем сравнивать с тестером;
+- новый файл `ml_trade_events.csv` должен дать подробный журнал сделок для сверки времени, цены, стопа, тейка, спреда, bid/ask и причины закрытия.
 
-Что добавлено 2026-04-28:
-- MQL expert при старте прогревает `PIC()` по истории через `RECOUNT_HISTORY()`;
-- `POC_SIMPLE()` теперь вызывается внутри `PIC()`, чтобы historical warmup и online bar-by-bar проход совпадали;
-- `Nero.csv` локально пересобирается по истории и дописывается при новых уровнях;
-- watcher использует `runtime_input_snapshot.csv` из хвоста `Nero.csv` (`--max-runtime-rows`, default `12000`), а не весь файл в RAM;
-- full-vs-12000 проверка на хвосте дала `signal_mismatch_rows=0`, `pred_*` отличаются только на уровне float-шума (`<=3.37e-7`);
-- найдено текущее расхождение online pipeline: live `Nero.csv` содержит `signal=0` и `predict=0` во всех строках;
-- причина: offline `predict` формируется через future-derived разметку (`predict = -back * direction`) и не может честно вычисляться в live-момент;
-- diagnostic online-export переведён на текущий доступный источник направления: `fractal0.direction` с обратным знаком (`-1 -> BUY`, `1 -> SELL`);
-- локальная проверка после изменения дала `nonzero_rows=500`, `buy_rows=444`, `sell_rows=56`, `duplicate_time_rows=0`, `same_time_opposite_signal_groups=0`.
+## Ветка и состояние Git
 
-Что добавлено 2026-04-29:
-- watcher строит raw `runtime_input_snapshot.csv`, затем
-  `runtime_input_preprocessed.csv` через sorting + validation +
-  `normalize_rowwise(verbose=False)`;
-- `API.api_server` использует тот же `preprocess_online_frame()`, а не прямой
-  `normalize_rowwise()`;
-- найден критичный ML-contract разрыв: legacy `original_baseline` обучался и
-  проверялся с future-derived row features (`predict`, `ret_*`, `fav_*`,
-  `adv_*`) как входом модели;
-- `API.telemetry_signal_watcher` теперь блокирует
-  `original_contour/original_baseline` online по умолчанию через
-  `OnlineInferenceContractError`;
-- `--allow-unsafe-future-features` оставлен только для старой механической
-  диагностики связи MT4 -> Python -> CSV -> MT4.
+Текущая ветка: `telemetry-maxpositions-20`.
 
-Главный вывод:
-- механическая цепочка diagnostic-контурa была доведена до наблюдаемого вида,
-  но legacy ML-контракт `original_baseline` больше не считается online-ready;
-- свежий MT4 tester proof за 2025 дал `critical_mismatch_count=0`;
-- `missing_close_count=1` объясняется открытой позицией на конце периода;
-- прибыльный tester result не считать production-доказательством качества стратегии.
-- online diagnostic больше не зависит от future-derived `predict` для
-  направления, но сам checkpoint `original_baseline` требует future-derived
-  row features и поэтому заблокирован для ML-корректной online-проверки;
-- перед production-переходом нужен live-safe retrain: один и тот же набор
-  признаков в training/test и online, без future-derived входов.
-- live-safe ML audit зафиксировал verdict:
-  `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
-  `entry_path_v1_quantile` = `FAIL`.
-- legacy export replay выполнен по старым prediction/rule входам:
-  старый путь генерации сигналов воспроизводится для всех пяти систем, но
-  помечен `diagnostic_only=true` и не доказывает online-valid качество.
-- source audit закрыл `ret_dir_atr_lag1` как future-derived:
-  это `ret_6_dir_atr.shift(1)`, а `ret_6_dir_atr` строится по будущим барам
-  в `label_entry_path_targets()`.
-- повторная source-сверка подтвердила: Python `predict`, `ret_*`, `fav_*`,
-  `adv_*` считаются после `Nero.csv` по будущим барам; MT-origin `Up/Dn` в
-  `Nero.csv` отделены от этих Python labels и сами по себе не считаются
-  leakage, если известны на текущем баре.
-- audit evidence лежит в `ML/reports/live_safe_ml_audit/`.
-- live-safe retrain `entry_path_v1_live_safe` удалил `ret_dir_atr_lag1` и дал:
-  validation `ret_pearson_r=0.2681`, frozen test PF `3.6567`,
-  sequential test `25` trades, PF `2.3419`, win rate `68.00%`.
-- multi-seed follow-up (`7`, `17`, `42`, `77`, `123`): median sequential PF
-  `2.3419`, min `1.5171`, max `4.5985`; PF > 2.0 у `3/5`, PF <= 1.0 у `0/5`.
-- `API.export_entry_path_v1_signals` теперь поддерживает `A`, `B`,
-  `B_no_path6`; для `B` / `B_no_path6` применяется frozen
-  validation-нормировка из `validation_csv` внутри rule JSON. Все пять
-  `entry_path_v1_live_safe` seed теперь экспортируемы.
-- вывод: прибыльность не сохранилась один в один, но система не развалилась.
-  Результат живой, но переменный; перед MT4 parity нужно заморозить
-  rule-family; exporter больше не является блокером.
-- decision: для `entry_path_v1_live_safe` заморожен baseline `A`, потому что
-  это самый простой вариант и он повторился в `3/5` seed. `B` / `B_no_path6`
-  остаются исследовательскими вариантами, но не основным следующим путем.
-- follow-up audit по `A`: как rule-family с per-seed validation threshold
-  результат устойчивый (sequential PF `1.5171..4.1370`, median `2.8425`,
-  PF > 2.0 у `4/5`, 21 sequential signal повторился во всех 5 seed).
-- риск: точный seed-42 threshold `-0.131882885` не переносится на другие seed
-  как универсальная шкала (sequential median PF `0.9032`). Production-кандидат
-  сейчас - конкретный frozen seed `42` rule, а не любой retrained checkpoint с
-  тем же численным порогом.
-- review 2026-05-06 нашёл измеримое нарушение контракта нормализации:
-  training `predict` входил в пул `front/back`, а online `predict=0`.
-  Измерение на `Nero_predict_probe_labeled_temp.csv`: `front/back` менялись в
-  `95.93%` строк, среднее изменение `0.0010`, максимум `0.166`.
-- исправление: `normalize_rowwise(..., include_predict_in_front_back_pool=False)`
-  и `processing/label_main.py --exclude-predict-from-front-back-pool`. Старый
-  режим сохранён по умолчанию для legacy reproduction. До retrain на новых CSV
-  `entry_path_v1_live_safe + A` остаётся кандидатом, но не готов к MT4 parity.
-- `fractal*` в live-safe audit переведены из `UNKNOWN` в `PASS` для MT-origin
-  полей из `Nero.csv`; это не распространяется на Python-added future labels.
-- `entry_path_v1_quantile` повторно проверен поверх нового live-safe baseline:
-  sequential PF > 2.0 у `4/5` seed, но сделок мало (`0..25`), один seed дал
-  `0` sequential trades.
-- n-boost candidate `lb_gt_m_q40` дал frozen test `35` trades, PF `32.4125`,
-  sequential `14` trades, PF `48.7214`, но gate=`fail`, потому что
-  `same_winner_ratio=0.60 < 0.80`.
-- вывод по quantile: прибыльность не исчезла, но production-кандидатом слой
-  пока считать нельзя; правило выбора нестабильно между seed.
-- после фиксации baseline `A` quantile повторно сверен через n-boost:
-  `lb_gt_m_q40` даёт frozen PF `32.4125` на `35` сделках и sequential PF
-  `48.7214` на `14` сделках, но gate остаётся `fail` из-за
-  `same_winner_ratio=0.60 < 0.80`. Decision: quantile оставить research-only.
-- первый take/skip live-safe probe выполнен для `live_safe_baseline_seq50`
-  (`seed=42`): старый single-tensor runner без `predict`, `ret_dir_atr_lag1`,
-  `ret_*`, `fav_*`, `adv_*`; validation winner не найден, verdict=`reject`,
-  лучший validation PF `1.5178` только на `3` сделках.
-- вывод по take/skip baseline: старые `quality/frequency` результаты пока не
-  сохранились после удаления future-derived row-признаков.
-- уточнение по `Up/Dn`: если они пришли из MT в `Nero.csv` как накопленное
-  состояние `lib_PIC`, считаем их live-safe; запрещены именно Python future
-  labels (`predict`, `ret_*`, `fav_*`, `adv_*`, `ret_dir_atr_lag1`).
-- добавлены режимы `live_safe_path`, `live_safe_geometry`,
-  `live_safe_geometry_path`; полный `live_safe_path_seq50` нужно запускать на
-  мощном сервере, потому что локально построение path/geometry признаков
-  слишком долгое.
-- серверный `live_safe_path_seq50` выполнен (`seed=42`, `torch_threads=16`):
-  validation winner не найден, verdict=`reject`; лучший validation PF `0.9893`
-  на `15` сделках, а при минимуме `6` сделок/год PF `0.6155`.
-- серверный `live_safe_geometry_seq50` выполнен (`seed=42`,
-  `torch_threads=16`): validation winner не найден, verdict=`reject`; лучший
-  validation PF `0.5726` на `5` сделках, а при минимуме `6` сделок/год PF
-  `0.4125`.
-- серверный `live_safe_geometry_path_seq50` выполнен (`seed=42`,
-  `torch_threads=16`): validation winner не найден, verdict=`reject`; лучший
-  validation PF `3.7229` только на `5` сделках и `1.25` сделок/год; при
-  минимуме `6` сделок/год лучший PF `0.4899`.
-- вывод: добавление MT-накопленных `Up/Dn` path-признаков, geometry-признаков
-  и их комбинации не восстановило take/skip прибыльность; прямой live-safe
-  rebuild старого take/skip семейства сейчас отклонён.
-- после повторного retrain без `predict` в пуле нормализации выяснено:
-  `entry_path_v1_live_safe` на правильном H1 источнике
-  `MT/MQL4/Files/Nero_XAUUSD.csv` сохраняет качество модели
-  (`ret_pearson_r` около `0.27`). Провал до `~0.004` был вызван тем, что
-  текущий `MT/MQL4/Files/Nero.csv` содержит M5-строки, а `entry_path_v1`
-  требует H1-время.
-- локальный GPU seed 42 воспроизводится стабильно: sequential PF `2.4897`.
-  Локальный CPU seed 42 и серверный CPU seed 42 тоже воспроизводимы внутри
-  своего вычислительного пути, но выбирают другую верхушку сделок и дают
-  слабый sequential PF (`~1.05..1.21`). Это не отменяет качества модели, но
-  показывает чувствительность торгового фильтра к переобучению.
-- для защиты от путаницы артефактов `ML.train` получил `--output-dir`: теперь
-  checkpoint/result можно сохранять в отдельную папку seed/device запуска.
-  JSON и checkpoint включают runtime metadata: seed, device, версии библиотек,
-  deterministic flags и sha256 train/validation CSV.
-- добавлен `ML/run_entry_path_live_safe_retrain.py`: канонический runner для
-  закрытия воспроизводимости `entry_path_v1_live_safe`. Он по каждому seed
-  делает train → export validation/test → benchmark и пишет
-  `multi_seed_summary.csv/json`, используя только seed-specific checkpoint.
-- серверный CPU multi-seed (`7`, `17`, `42`, `77`, `123`) закрыт:
-  auto-winner среди `A/B/B_no_path6` слабее (median sequential PF `1.6183`,
-  PF > 2.0 у `1/5`), но заранее выбранный production baseline `A @ 7.5%`
-  устойчивее: median sequential PF `2.3249`, min `1.8188`, PF > 2.0 у
-  `4/5`, PF <= 1.0 у `0/5`. Канонический отчёт:
-  `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
-- для перепроверки `entry_path_v1_quantile` поверх этого нового CPU baseline
-  добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`. Он по каждому
-  seed обучает quantile, экспортирует predictions, строит per-seed baseline
-  `A @ 7.5%` rule из CPU baseline predictions и запускает quantile benchmark.
-- серверный CPU retrain `entry_path_v1_quantile` поверх нового baseline
-  завершён. Quantile sequential PF > 2.0 у `5/5` seed, но rule selection
-  нестабилен (`lb_gt_m_width_le_w` у `2/5`, `lb_gt_m` у `2/5`, `baseline` у
-  `1/5`) и сделок мало (`3..28`, median `8`). Канонический отчёт:
-  `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`. Verdict:
-  research-only, не production.
-- отчёт `docs/reports/2026-05-07-cpu-gpu-reproducibility.md` закрыл причину
-  CPU/GPU расхождений: CPU/GPU training создаёт разные checkpoint из-за
-  dropout RNG и порядка матричных операций, но inference одного CPU-trained
-  checkpoint на CPU/GPU даёт одинаковый рейтинг сделок. Решение: production
-  retrain только на CPU. `ML.train` получил `--device cpu|cuda|auto` с default
-  `cpu`; GPU training теперь только явный research-режим.
-- первый MT4 parity-прогон для `entry_path_v1_live_safe + A @ 7.5%` закрыт
-  на периоде `2022.10.28` - `2025.12.31`: MT4 открыл `26` сделок, отчет
-  тестера показал PF `9.03`, net `5217.70`; reconciliation:
-  `expected_signals=26`, `opened_trades=26`, `closed_trades=26`,
-  `critical_mismatch_count=0`, `missing_close_count=0`.
-- этот MT4-прогон не покрывает весь файл `ml_signals.csv`: после
-  `2025.12.31` остаются 3 ненулевых сигнала (`2026.01.21 22:00`,
-  `2026.03.24 05:00`, `2026.03.27 00:00`). Принято решение не блокировать
-  следующий этап: 26 совпавших сделок достаточно, чтобы считать механическую
-  MT4-цепочку подтверждённой. Полный прогон до конца файла сигналов остаётся
-  optional closure.
+Локальный коммит в этой ветке:
 
-## Next Step
+- `0205049 feat: add mt4 trade event log`
 
-1. Следующий рабочий фокус - подготовить online/forward diagnostic для
-   `entry_path_v1_live_safe + A @ 7.5%` на сервере.
-2. Основная идея для быстрого набора статистики: отдельный M5 diagnostic
-   контур. Это не перенос H1-модели как production-решение, а новый
-   исследовательский режим с ожидаемой потерей качества и большим числом
-   сделок. Перед запуском нужно явно решить: переобучаем M5-модель или
-   используем M5 только как high-frequency diagnostic.
-3. На 2026-05-11 выбран первый practical step: M5 high-frequency diagnostic
-   через существующий `telemetry_frequency_v1_highfreq500`. Текущий `#.csv`
-   переключён на `SymPer=XAUUSD5`, `ML_MaxPositions=20`,
-   `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`,
-   `ML_ExitMode=0`. Это fixed-hold / broker SL/TP diagnostic, не PF-test.
-   В online-режиме ставить `BackTest=0`, чтобы советник перебрал все строки
-   `#.csv` и сам выбрал строку текущего графика. `BackTest=2` нужен только
-   Strategy Tester для ручного выбора строки.
-4. Успех M5 diagnostic измерять через логи и reconciliation, а не через
-   прибыльность: watcher rebuild, MT4 reload, opened/skipped signals,
-   timeout/broker SL/broker TP closes, `critical_mismatch_count`.
-   Для точного сравнения online/test дополнительно забирать
-   `MT/MQL4/Files/ml_trade_events.csv`.
-5. H1 MT4 export уже подготовлен командой
-   `./.venv/bin/python -m ML.prepare_entry_path_mt4_parity --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity --copy-to-mt4`.
-   Ожидаемый файл: `MT/tester/files/ml_signals.csv`, sha256
-   `f213a8689bcac8fee0f7294bc56c5fc647e63cf58ab83321eda505d82d2af852`,
-   `29` ненулевых сигналов (`21` BUY, `8` SELL). Python sequential check:
-   `27` trades, PF `5.9352`.
-6. Для возврата к H1 fixed-hold parity contract вернуть:
-   `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
-   `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
-7. Важно: после bugfix `SERVICE.mqh` эксперт должен быть перекомпилирован.
-   Ожидаемая версия в логе: `OnInit() SoSimple.V260.333`. Старый `.ex4`
-   может давать `EXP[0].Mgc != Magic`, потому что раньше `PARAMS` читались как
-   `char` и `ML_BackStopATR=999` превращался в `-25`.
-8. Полный H1 MT4 parity до `2026.04.22` больше не является блокером; при
-   желании его можно выполнить позже как optional closure.
-9. Перед новыми retrain/forward экспериментами не запускать seed/device вручную через
-   общий `ML/checkpoints/*_best.pt`. Если retrain всё же нужен, использовать
-   только `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы прогнозы
-   экспортировались из seed-specific checkpoint.
-8. Воспроизводимость `entry_path_v1_live_safe + A` считать закрытой для
-   research-этапа: подтверждён baseline `A @ 7.5%`, не auto-winner.
-   Повторный `entry_path_v1_quantile` поверх CPU baseline тоже закрыт:
-   прибыльность есть, но production-gate не пройден.
-9. Не продолжать прямой take/skip rebuild без новой узкой гипотезы: baseline,
-   path, geometry и geometry_path варианты получили `reject`.
-10. `entry_path_v1_quantile` сейчас не продвигать в production: после фиксации
-   baseline `A` прибыльные участки есть, но rule selection нестабилен.
-11. Чтобы не забыть системы: `quality`, `frequency`, `original_plus_path`,
-   `entry_path_v1`, `entry_path_v1_quantile` теперь сведены в Audit Tracker
-   внутри `docs/reports/2026-05-05-live-safe-ml-audit.md`.
+Коммит ещё не слит в `main` и не запушен.
 
-## Read First
+На момент handoff есть незакоммиченные файлы после локальной компиляции MetaEditor:
 
-1. [`AGENTS.md`](AGENTS.md) - правила агента и карта источников.
-2. [`docs/ML/ml_leakage_preflight_checklist.md`](docs/ML/ml_leakage_preflight_checklist.md) - обязательный leakage/preflight gate для всех ML test/MT4/online выводов.
-3. [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md) - текущий verdict по прибыльным ML-системам и первый retrain без `ret_dir_atr_lag1`.
-4. [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md) - подтверждение CPU baseline `A @ 7.5%`.
-5. [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md) - почему production retrain только CPU.
-6. [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md) - quantile поверх CPU baseline, verdict research-only.
-7. [`docs/ML/prepare_entry_path_mt4_parity.py.md`](docs/ML/prepare_entry_path_mt4_parity.py.md) - подготовка `ml_signals.csv` для MT4 parity текущего кандидата.
-8. [`ML/reports/live_safe_ml_audit/`](ML/reports/live_safe_ml_audit/) - generated audit evidence.
-9. [`ML/reports/entry_path_v1_live_safe/`](ML/reports/entry_path_v1_live_safe/) - ранние retrain и multi-seed artifacts.
-10. [`ML/reports/entry_path_v1_quantile_live_safe_baseline/`](ML/reports/entry_path_v1_quantile_live_safe_baseline/) - ранний quantile retrain поверх live-safe baseline.
-11. [`docs/MT/trading_strategy.md`](docs/MT/trading_strategy.md) - online pipeline, `#.csv`, MQL logging.
-12. [`docs/MT/ml_signal_integration.md`](docs/MT/ml_signal_integration.md) - MT4 `ml_signals.csv` contract.
-13. [`docs/ML/telemetry_daily_reconciliation.py.md`](docs/ML/telemetry_daily_reconciliation.py.md) - daily reconciliation.
+- `MT/MQL4/Experts/$o$imple.ex4` - новый скомпилированный эксперт;
+- `MT/MQL4/Include/SERVICE.mqh` - вероятно, только изменение переводов строк после MetaEditor;
+- `MT/MQL4/Indicators/iPIC.mq4` - вероятно, только изменение переводов строк после MetaEditor.
 
-## Open Risks
+Эти три файла нужно проверить перед коммитом. Нельзя вслепую откатывать чужие изменения, но если diff покажет только смену переводов строк, лучше не тащить это в коммит.
 
-- Legacy `original_baseline` нельзя считать online-ready: historical test был
-  загрязнён future-derived входными признаками, а live `Nero.csv` этих признаков
-  не имеет.
-- `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
-  Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
-  от baseline score.
-- MT4 parity для `entry_path_v1_live_safe + A @ 7.5%` выполнен на 26 сделках
-  до `2025.12.31`; `critical_mismatch_count=0`. Полный диапазон файла сигналов
-  не проверен, но больше не считается блокером.
-- Для `entry_path_v1_live_safe` критично использовать H1 источник
-  `MT/MQL4/Files/Nero_XAUUSD.csv`; текущий `MT/MQL4/Files/Nero.csv` может
-  содержать M5-строки и ломает смысл entry_path targets.
-- Production retrain должен быть CPU-only. GPU training допустим только как
-  research, потому что даёт другой checkpoint даже при том же seed.
-- `entry_path_v1_quantile` показал прибыльные участки поверх CPU baseline, но
-  production-gate не прошёл из-за нестабильности выбранного правила и малого
-  числа сделок.
-- Прямой take/skip rebuild старых `quality`, `frequency`, `original_plus_path`
-  отклонён: baseline, path, geometry и geometry_path варианты не нашли
-  пригодный validation winner.
-- Diagnostic online demo больше не требует ненулевого `predict/signal` в live `Nero.csv`, но unsafe override проверяет только механику цепочки.
-- Python watcher/exporter должен быть запущен постоянно или заменён сервисом с тем же atomic write contract; текущий штатный режим - отдельное окно `tmux`.
-- Runtime CSV-файлы частично игнорируются git, поэтому их нужно синхронизировать отдельно.
-- `knowledge-rag` reindex в конце этапа ранее падал с `Transport closed`; RAG может отставать от части последних правок.
+## Что уже изменено в коде
 
-## Latest Reports
+В коммите `0205049`:
 
-- [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
-- [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
-- [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
-- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](docs/reports/2026-05-05-live-safe-ml-audit.md)
-- [`docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
-- [`docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
+- `MT/MQL4/Experts/$o$imple.mq4` поднят до версии `260.333`;
+- `MT/MQL4/Include/lib_ML_Signal.mqh` поднят до `v4.3`;
+- добавлен торговый журнал `MT/MQL4/Files/ml_trade_events.csv`;
+- `ML_MaxPositions` увеличен с `10` до `20`;
+- обновлены тесты и документация.
+
+Новый `ml_trade_events.csv` пишет события:
+
+- `OPEN` - после успешного открытия сделки;
+- `CLOSE` - при закрытии советником или при обнаружении закрытой сделки в истории брокера.
+
+Поля журнала:
+
+`event;ticket;direction;signal_time;entry_time;exit_time;reason;score;atr;bid;ask;spread;spread_atr;bar_open;bar_high;bar_low;bar_close;requested_price;order_open_price;order_close_price;slippage_points;entry;stop;take_profit;close;profit;swap;commission;hold_bars;open_positions;max_positions;balance;equity`
+
+Смысл: потом можно точно сравнить онлайн и тестер - не только количество сделок, но и время входа, цену входа, стоп, тейк, закрытие, spread, bid/ask и проскальзывание.
+
+## Важная правка `#.csv`
+
+Была ошибка чтения параметров:
+
+`INPUT_FILE_READ-165: invalid function parameter value! ERROR-4051`
+
+Причина: строка `INFO` в `#.csv` начиналась с текста `M5-diagnostic ...`. В MQL-парсере первый дефис после начала строки воспринимается как разделитель даты, поэтому дефис в `M5-diagnostic` ломал чтение.
+
+Исправлено: `INFO` теперь начинается с версии и даты без лишнего дефиса до даты.
+
+Текущие строки в:
+
+- `MT/MQL4/Files/#.csv`
+- `MT/tester/files/#.csv`
+
+Ключевые параметры:
+
+- `INFO=SoSimple260.333 2025.11.14-2026.05.11, Sprd=0, StpLev=0, OPT-telemetry_frequency_v1_highfreq500_M5_fixed_hold`
+- `SymPer=XAUUSD5`
+- `Risk=1`
+- `Magic=662427296`
+- `ML_ExitMode=0`
+- `ML_TrailATR=0`
+- `ML_TakeProfitATR=5`
+- `ML_MaxPositions=20`
+- `ML_HoldBars=24`
+- `ML_AllowReversal=0`
+- `ML_UseScoreFilter=0`
+- `ML_ScoreThreshold=0`
+- `ML_BackStopATR=3`
+
+После этой правки тест прошёл:
+
+```bash
+./.venv/bin/python -m pytest tests/test_mql_telemetry_params_csv_contract.py -q
+```
+
+Результат: `11 passed`.
+
+До текущего handoff также проходили:
+
+```bash
+./.venv/bin/python -m pytest tests/test_mql_telemetry_params_csv_contract.py tests/test_telemetry_daily_reconciliation.py tests/test_telemetry_signal_watcher.py -q
+```
+
+Результат: `36 passed`.
+
+```bash
+./.venv/bin/python wiki/wiki.py verify
+```
+
+Результат: `OK`.
+
+## Локальный MT4: состояние советника
+
+Пользователь скомпилировал эксперта и запустил локальный MT4.
+
+Проверенный лог:
+
+- `MT/MQL4/Logs/20260511.log`
+
+Советник успешно загрузил новую версию и параметры:
+
+- `OnInit() SoSimple.V260.333`
+- `CSV parameters loaded ... ML_MaxPositions=20 ... ML_HoldBars=24 ... ML_TakeProfitATR=5 ... ML_BackStopATR=3`
+- `MLP_INIT: Loaded V4.3 ... MaxPositions=20 ... TrailATR=0.00 TakeProfitATR=5.00`
+
+Это значит: новый код советника и новые параметры применились.
+
+На момент проверки советник не открыл сделку, потому что `ml_signals.csv` отставал от текущего бара:
+
+- MT4 ждал `bar_time=2026.05.11 22:00`;
+- `ml_signals.csv` тогда заканчивался на `2026.05.11 21:10`;
+- после первой пересборки watcher файл дошёл до `2026.05.11 21:35`;
+- затем watcher завершил вторую пересборку до `2026.05.11 22:05`.
+
+В логе MT4 было:
+
+- `MLP_WAIT: file still behind bar_time=2026.05.11 22:00 last=2026.05.11 21:10`
+- затем `MLP NO_SIGNAL bar_time=2026.05.11 22:00 ... last=2026.05.11 21:10`
+- после этого watcher уже обновил `ml_signals.csv` до `2026.05.11 22:05`, но в логе MT4 ещё не было свежего `MLP_RELOAD` после этой пересборки.
+
+Это не ошибка торговли. Это означает, что на тот момент watcher ещё не догнал свежий бар.
+
+Файл `MT/MQL4/Files/ml_trade_events.csv` на момент проверки ещё не создан. Это нормально: он появится только после первого `OPEN` или `CLOSE`.
+
+Побочные ошибки в логе:
+
+- `MAIL_SEND-647: requested history data is in update state! ERROR-4066`
+- `MAIL_SEND-702: function is not confirmed! ERROR-4060`
+
+Они относятся к почте/истории и пока не выглядят блокером для ML-тракта.
+
+## Локальный watcher: состояние
+
+Пользователь запустил локальный watcher.
+
+Команда процесса:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --max-runtime-rows 12000 \
+  --diagnostic-target-signals-per-year 5000 \
+  --allow-unsafe-future-features \
+  --verbose
+```
+
+Процесс найден:
+
+- PID `512758`
+- команда совпадает с watcher выше;
+- на момент проверки процесс был жив и потреблял CPU.
+
+Важно: используется `--allow-unsafe-future-features`. Это осознанно, потому что текущая задача диагностическая: нам нужно много сигналов для проверки механики MT4, а не честная ML-прибыльность.
+
+Лог watcher:
+
+- `ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log`
+
+Свежие строки:
+
+- `2026-05-11 23:09:20 INFO WATCHER rebuild start: time=2026.05.11 21:35`
+- `2026-05-11 23:09:20 WARNING WATCHER unsafe online contract override enabled: mode=original_contour feature_mode=original_baseline`
+- `2026-05-11 23:12:15 INFO WATCHER rebuild done: time=2026.05.11 21:35`
+- `2026-05-11 23:12:15 INFO WATCHER HEARTBEAT: status=REBUILT last_bar=2026.05.11 21:35`
+- `2026-05-11 23:12:17 INFO WATCHER rebuild start: time=2026.05.11 22:05`
+- `2026-05-11 23:15:11 INFO WATCHER rebuild done: time=2026.05.11 22:05`
+- `2026-05-11 23:15:11 INFO WATCHER HEARTBEAT: status=REBUILT last_bar=2026.05.11 22:05`
+- `2026-05-11 23:18:13 INFO WATCHER HEARTBEAT: status=IDLE last_bar=2026.05.11 22:05`
+
+На момент последней проверки watcher догнал `Nero.csv` до `2026.05.11 22:05` и ушёл в `IDLE`.
+
+Текущий `MT/MQL4/Files/ml_signals.csv` после первой пересборки заканчивался так:
+
+```text
+2026.05.11 20:40;-1
+2026.05.11 20:50;1
+2026.05.11 21:00;-1
+2026.05.11 21:05;1
+2026.05.11 21:10;-1
+2026.05.11 21:35;1
+2026.05.11 22:05;-1
+```
+
+`runtime_export_metadata.json` после первой пересборки:
+
+- `rows_total=11441`
+- `nonzero_rows=5677`
+- `buy_rows=2871`
+- `sell_rows=2806`
+- `duplicate_time_rows=0`
+- `same_time_opposite_signal_groups=0`
+
+Hash трёх файлов сигналов совпал:
+
+```text
+261d924b260e9a2f5fa462b58453c086f902fc71494dff207df63e8dcc2ef5f3  ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv
+261d924b260e9a2f5fa462b58453c086f902fc71494dff207df63e8dcc2ef5f3  MT/MQL4/Files/ml_signals.csv
+261d924b260e9a2f5fa462b58453c086f902fc71494dff207df63e8dcc2ef5f3  MT/tester/files/ml_signals.csv
+```
+
+Вывод: watcher работает и копирование сигналов работает. Осталось дождаться реакции MT4 на обновлённый `ml_signals.csv` после `22:05`: нужен свежий `MLP_RELOAD`, затем `MLP BUY`/`MLP SELL` или понятный `MLP NO_SIGNAL`.
+
+## Что проверить следующим
+
+1. Проверить, не появилась ли новая пересборка watcher после `22:05`:
+
+```bash
+tail -60 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
+```
+
+Если `Nero.csv` обновился, ждём строки вида:
+
+```text
+WATCHER rebuild done: time=...
+WATCHER HEARTBEAT: status=REBUILT last_bar=...
+```
+
+2. Проверить хвост сигналов:
+
+```bash
+tail -30 MT/MQL4/Files/ml_signals.csv
+tail -30 ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv
+sha256sum ML/reports/telemetry_frequency_v1/runtime/runtime_ml_signals.csv MT/MQL4/Files/ml_signals.csv MT/tester/files/ml_signals.csv
+```
+
+Цель: три файла должны совпадать по hash, а хвост должен быть не старее текущего бара MT4.
+
+3. Проверить лог MT4:
+
+```bash
+tail -120 MT/MQL4/Logs/20260511.log
+```
+
+Искать:
+
+- `MLP_RELOAD` - MT4 увидел изменение `ml_signals.csv`;
+- `MLP_INIT: Loaded V4.3` - MT4 перечитал сигналы новым кодом;
+- `MLP BUY` или `MLP SELL` - сделка открылась;
+- `MLP WAIT` - MT4 ещё ждёт файл;
+- `MLP NO_SIGNAL` - на бар нет подходящего сигнала.
+
+4. Если появится сделка, проверить новый подробный журнал:
+
+```bash
+tail -20 MT/MQL4/Files/ml_trade_events.csv
+```
+
+Первый `OPEN` должен содержать ticket, direction, signal_time, entry_time, bid, ask, spread, spread_atr, requested_price, order_open_price, stop, take_profit, open_positions и max_positions.
+
+5. Если `ml_signals.csv` всё ещё отстаёт:
+
+```bash
+ps -o pid,etime,pcpu,pmem,cmd -p 512758
+tail -80 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log
+```
+
+Если watcher долго висит без `rebuild done`, смотреть ошибку в конце лога. `Nero.csv` большой, поэтому несколько минут на пересборку допустимы.
+
+## Что делать после локальной проверки
+
+Когда локально будет видно, что:
+
+- watcher догоняет текущие M5-бары;
+- MT4 делает `MLP_RELOAD`;
+- появляется хотя бы один `MLP BUY` или `MLP SELL`;
+- `ml_trade_events.csv` пишет событие `OPEN`;
+
+тогда можно переносить на сервер.
+
+Перед сервером нужно:
+
+1. Решить, коммитить ли новый `.ex4` после локальной компиляции.
+2. Проверить и убрать случайные line-ending изменения в `SERVICE.mqh` и `iPIC.mq4`, если там нет смысловых изменений.
+3. Слить ветку в `main`, если пользователь подтвердит.
+4. Запушить только по явной просьбе пользователя.
+5. На сервере сделать `git pull`.
+6. Передать нужные CSV через `rsync`.
+
+Команда rsync для отправки файлов на сервер `hohla`:
+
+```bash
+rsync -az --progress --partial --inplace --timeout=60 \
+  /home/hohla/git/SoSimple/MT/MQL4/Files/#.csv \
+  /home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals.csv \
+  hohla:/home/hohla/git/SoSimple/MT/MQL4/Files/
+```
+
+И отдельно для tester:
+
+```bash
+rsync -az --progress --partial --inplace --timeout=60 \
+  /home/hohla/git/SoSimple/MT/tester/files/#.csv \
+  /home/hohla/git/SoSimple/MT/tester/files/ml_signals.csv \
+  hohla:/home/hohla/git/SoSimple/MT/tester/files/
+```
+
+## Важные ограничения
+
+- `telemetry_frequency_v1` в этом режиме - диагностический контур, а не честная ML-система.
+- `--allow-unsafe-future-features` разрешён только для проверки механики торговли.
+- Для прибыльной/честной online-системы остаётся основной кандидат `entry_path_v1_live_safe + A`, но сейчас мы не его торгуем, а проверяем механику MT4 на частых M5-сигналах.
+- `ml_trade_events.csv` не появится до первой сделки.
+- `BackTest=0` на online-торговле правильный для текущего советника: он последовательно читает строки `#.csv`.
