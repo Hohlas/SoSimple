@@ -212,7 +212,7 @@
    используем M5 только как high-frequency diagnostic.
 3. На 2026-05-11 выбран первый practical step: M5 high-frequency diagnostic
    через существующий `telemetry_frequency_v1_highfreq500`. Текущий `#.csv`
-   переключён на `SymPer=XAUUSD5`, `ML_MaxPositions=10`,
+   переключён на `SymPer=XAUUSD5`, `ML_MaxPositions=20`,
    `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`,
    `ML_ExitMode=0`. Это fixed-hold / broker SL/TP diagnostic, не PF-test.
    В online-режиме ставить `BackTest=0`, чтобы советник перебрал все строки
@@ -221,6 +221,8 @@
 4. Успех M5 diagnostic измерять через логи и reconciliation, а не через
    прибыльность: watcher rebuild, MT4 reload, opened/skipped signals,
    timeout/broker SL/broker TP closes, `critical_mismatch_count`.
+   Для точного сравнения online/test дополнительно забирать
+   `MT/MQL4/Files/ml_trade_events.csv`.
 5. H1 MT4 export уже подготовлен командой
    `./.venv/bin/python -m ML.prepare_entry_path_mt4_parity --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity --copy-to-mt4`.
    Ожидаемый файл: `MT/tester/files/ml_signals.csv`, sha256
@@ -231,7 +233,7 @@
    `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
    `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
 7. Важно: после bugfix `SERVICE.mqh` эксперт должен быть перекомпилирован.
-   Ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Старый `.ex4`
+   Ожидаемая версия в логе: `OnInit() SoSimple.V260.333`. Старый `.ex4`
    может давать `EXP[0].Mgc != Magic`, потому что раньше `PARAMS` читались как
    `char` и `ML_BackStopATR=999` превращался в `-25`.
 8. Полный H1 MT4 parity до `2026.04.22` больше не является блокером; при

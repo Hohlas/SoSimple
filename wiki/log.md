@@ -379,3 +379,9 @@
 - Updated `wiki/research/execution-tracks.md` to record the operational split:
   - online/forward diagnostic uses `BackTest=0`;
   - Strategy Tester uses `BackTest=2` to select the current telemetry row.
+
+## [2026-05-11] save | M5 online diagnostic event log
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded `ML_MaxPositions=20` for the long-run M5 diagnostic;
+  - recorded `MT/MQL4/Files/ml_trade_events.csv` as the detailed online/test
+    trade-event log for price, spread, slippage, commission and swap analysis.

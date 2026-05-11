@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
-//| lib_ML_Signal.mqh                                 v4.2           |
+//| lib_ML_Signal.mqh                                 v4.3           |
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
-//| Обновлён: 2026-04-27                                             |
+//| Обновлён: 2026-05-11                                             |
 //| Входные данные:                                                  |
 //|   - MQL4/Files/ml_signals.csv                                    |
 //| Поддерживаемые форматы CSV:                                      |
@@ -18,8 +18,9 @@
 #property strict
 
 #define MLP_SIGNALS_FILE "ml_signals.csv"
+#define MLP_EVENTS_FILE "ml_trade_events.csv"
 #define MLP_MAX_SIGNALS  200000
-#define MLP_Ver          4.2
+#define MLP_Ver          4.3
 #define MLP_EXIT_TIMEOUT 0
 #define MLP_EXIT_TRAIL   1
 #define MLP_WAIT_SIGNAL_SEC 120
@@ -55,6 +56,126 @@ int MLP_cnt_broker_other = 0;
 
 int MLP_LoggedCloseTickets[];
 int MLP_LoggedCloseCount = 0;
+
+void MLP_WriteEventHeaderIfNeeded(int handle) {
+   if (FileSize(handle) > 0) return;
+   FileWrite(handle,
+      "event",
+      "ticket",
+      "direction",
+      "signal_time",
+      "entry_time",
+      "exit_time",
+      "reason",
+      "score",
+      "atr",
+      "bid",
+      "ask",
+      "spread",
+      "spread_atr",
+      "bar_open",
+      "bar_high",
+      "bar_low",
+      "bar_close",
+      "requested_price",
+      "order_open_price",
+      "order_close_price",
+      "slippage_points",
+      "entry",
+      "stop",
+      "take_profit",
+      "close",
+      "profit",
+      "swap",
+      "commission",
+      "hold_bars",
+      "open_positions",
+      "max_positions",
+      "balance",
+      "equity");
+}
+
+void MLP_LogTradeEvent(
+   string event_name,
+   int ticket,
+   string direction,
+   datetime signal_time,
+   datetime entry_time,
+   datetime exit_time,
+   string reason,
+   double score,
+   double atr_value,
+   double requested_price,
+   double order_open_price,
+   double stop_price,
+   double take_profit_price,
+   double order_close_price,
+   double profit_value,
+   double swap_value,
+   double commission_value,
+   int hold_bars,
+   int open_positions,
+   int max_positions
+) {
+   int handle = FileOpen(MLP_EVENTS_FILE, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ | FILE_SHARE_WRITE, ';');
+   if (handle < 0) return;
+
+   MLP_WriteEventHeaderIfNeeded(handle);
+   FileSeek(handle, 0, SEEK_END);
+   RefreshRates();
+
+   double spread_value = Ask - Bid;
+   double spread_atr = 0.0;
+   if (atr_value > 0) spread_atr = spread_value / atr_value;
+   double point_value = MarketInfo(Symbol(), MODE_POINT);
+   double slippage_points = 0.0;
+   if (point_value > 0 && requested_price > 0) {
+      if (event_name == "OPEN" && order_open_price > 0) {
+         slippage_points = (order_open_price - requested_price) / point_value;
+         if (direction == "SELL") slippage_points = -slippage_points;
+      }
+      else if (event_name == "CLOSE" && order_close_price > 0) {
+         slippage_points = (order_close_price - requested_price) / point_value;
+         if (direction == "BUY") slippage_points = -slippage_points;
+      }
+   }
+
+   FileWrite(handle,
+      event_name,
+      ticket,
+      direction,
+      TimeToString(signal_time),
+      TimeToString(entry_time),
+      TimeToString(exit_time),
+      reason,
+      DoubleToString(score, 6),
+      DoubleToString(atr_value, Digits),
+      DoubleToString(Bid, Digits),
+      DoubleToString(Ask, Digits),
+      DoubleToString(spread_value, Digits),
+      DoubleToString(spread_atr, 4),
+      DoubleToString(Open[bar], Digits),
+      DoubleToString(High[bar], Digits),
+      DoubleToString(Low[bar], Digits),
+      DoubleToString(Close[bar], Digits),
+      DoubleToString(requested_price, Digits),
+      DoubleToString(order_open_price, Digits),
+      DoubleToString(order_close_price, Digits),
+      DoubleToString(slippage_points, 1),
+      DoubleToString(order_open_price, Digits),
+      DoubleToString(stop_price, Digits),
+      DoubleToString(take_profit_price, Digits),
+      DoubleToString(order_close_price, Digits),
+      DoubleToString(profit_value, 2),
+      DoubleToString(swap_value, 2),
+      DoubleToString(commission_value, 2),
+      hold_bars,
+      open_positions,
+      max_positions,
+      DoubleToString(AccountBalance(), 2),
+      DoubleToString(AccountEquity(), 2));
+   FileClose(handle);
+}
 
 string MLP_ExitModeName() {
    if (ML_ExitMode == MLP_EXIT_TRAIL) return "trailing_stop";
@@ -181,6 +302,26 @@ void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
             " atr=", DoubleToString(atr_value, Digits),
             " pnl_atr=", DoubleToString(pnl_atr, 4),
             " profit=", DoubleToString(profit_value, 2));
+      MLP_LogTradeEvent("CLOSE",
+            ticket,
+            (typ == OP_BUY ? "BUY" : "SELL"),
+            0,
+            OrderOpenTime(),
+            close_time,
+            reason,
+            0.0,
+            atr_value,
+            close_price,
+            entry_price,
+            stop_loss,
+            take_profit,
+            close_price,
+            profit_value,
+            OrderSwap(),
+            OrderCommission(),
+            MLP_HoldBars(OrderOpenTime(), close_time, sym),
+            0,
+            ML_MaxPositions);
 
       MLP_MarkCloseTicketLogged(ticket);
    }
@@ -240,6 +381,19 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
       else pnl_atr = (entry_price - exit_price) / atr_value;
    }
    double profit_value = OrderProfit() + OrderSwap() + OrderCommission();
+   double swap_value = OrderSwap();
+   double commission_value = OrderCommission();
+   double actual_close_price = exit_price;
+   double close_stop_price = OrderStopLoss();
+   double close_take_profit_price = OrderTakeProfit();
+   if (ok && OrderSelect(ticket, SELECT_BY_TICKET, MODE_HISTORY)) {
+      actual_close_price = OrderClosePrice();
+      close_stop_price = OrderStopLoss();
+      close_take_profit_price = OrderTakeProfit();
+      profit_value = OrderProfit() + OrderSwap() + OrderCommission();
+      swap_value = OrderSwap();
+      commission_value = OrderCommission();
+   }
 
    if (ok) {
       MLP_MarkCloseTicketLogged(ticket);
@@ -262,6 +416,26 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
             " trail_atr=", DoubleToString(ML_TrailATR, 2),
             " pnl_atr=", DoubleToString(pnl_atr, 4),
             " profit=", DoubleToString(profit_value, 2));
+      MLP_LogTradeEvent("CLOSE",
+            ticket,
+            (typ == OP_BUY ? "BUY" : "SELL"),
+            0,
+            entry_time,
+            Time[0],
+            reason,
+            0.0,
+            atr_value,
+            exit_price,
+            entry_price,
+            close_stop_price,
+            close_take_profit_price,
+            actual_close_price,
+            profit_value,
+            swap_value,
+            commission_value,
+            hold_bars,
+            MLP_CountOwnMarketOrders(magic, Symbol()),
+            ML_MaxPositions);
    }
    return ok;
 }
@@ -358,6 +532,14 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
 
    if (ok) {
       RefreshRates();
+      double actual_open_price = entry_price;
+      double actual_stop_price = stop_price;
+      double actual_take_profit_price = take_profit_price;
+      if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) {
+         actual_open_price = OrderOpenPrice();
+         actual_stop_price = OrderStopLoss();
+         actual_take_profit_price = OrderTakeProfit();
+      }
       double spread_value = Ask - Bid;
       double spread_atr = 0.0;
       if (atr_value > 0) spread_atr = spread_value / atr_value;
@@ -382,6 +564,26 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             " Stp=", DoubleToString(stop_price, Digits),
             " Prf=", DoubleToString(take_profit_price, Digits),
             " Lot=", DoubleToString(lot_to_send, 2));
+      MLP_LogTradeEvent("OPEN",
+            ticket,
+            (sig == 1 ? "BUY" : "SELL"),
+            signal_time,
+            Time[0],
+            0,
+            "",
+            score,
+            atr_value,
+            entry_price,
+            actual_open_price,
+            actual_stop_price,
+            actual_take_profit_price,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            open_positions_before,
+            ML_MaxPositions);
    }
    return ok;
 }

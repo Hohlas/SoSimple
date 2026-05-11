@@ -60,11 +60,16 @@
   diagnostic. Отчёт: `docs/reports/2026-05-07-entry-path-mt4-parity.md`.
 - Текущий `#.csv` / tester preset переключён с H1 parity на M5 diagnostic
   `telemetry_frequency_v1_highfreq500`: `SymPer=XAUUSD5`,
-  `ML_MaxPositions=10`, `ML_TakeProfitATR=5`, `ML_BackStopATR=3`,
+  `ML_MaxPositions=20`, `ML_TakeProfitATR=5`, `ML_BackStopATR=3`,
   `ML_HoldBars=24`. Цель - быстро набрать события и проверить механику
   `MT -> ML -> MT`; PF не является критерием успеха. Для online запуска
   использовать `BackTest=0`, чтобы советник сам выбрал строку `XAUUSD5`;
   `BackTest=2` оставлен для Strategy Tester.
+- Эксперт поднят до `260.333`: `lib_ML_Signal.mqh` теперь пишет
+  `MT/MQL4/Files/ml_trade_events.csv` с подробными `OPEN`/`CLOSE` событиями
+  (`Bid/Ask`, spread, OHLC бара, фактическая цена, проскальзывание, SL/TP,
+  profit, swap, commission, balance/equity). Цель - объяснять расхождения
+  online/test по торговым метрикам.
 - `ML.telemetry_daily_reconciliation` теперь различает связанные закрытые
   сделки (`closed_trades`) и сырые строки закрытия в MT4 логе
   (`parsed_close_events`). Это убирает путаницу, когда одно закрытие по

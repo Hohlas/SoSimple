@@ -120,7 +120,7 @@ Final reconciliation:
 
 Update 2026-05-11: этот diagnostic-контур выбран как следующий practical
 online/forward шаг после MT4 proof `entry_path_v1_live_safe + A`. Активный
-`#.csv` переключён на `XAUUSD5`, `ML_MaxPositions=10`,
+`#.csv` переключён на `XAUUSD5`, `ML_MaxPositions=20`,
 `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`.
 Критерий успеха - не PF, а механическая сверка `MT -> ML -> MT`: rebuild
 watcher-а, reload в MT4, открытие/пропуск сигналов и корректные закрытия.
@@ -131,7 +131,12 @@ watcher-а, reload в MT4, открытие/пропуск сигналов и �
 
 - Контур `MT -> ML signal file -> MT` готов к demo-запуску в diagnostic режиме.
 - Для оператора теперь есть наблюдаемый server-режим: watcher штатно живёт в `tmux` и регулярно пишет heartbeat в stdout.
-- Несколько одновременных позиций работают: `ML_MaxPositions=10`, в тесте были реальные параллельные позиции и ожидаемые `MaxPositions` пропуски.
+- Несколько одновременных позиций работают: текущий long-run diagnostic поднят
+  до `ML_MaxPositions=20`, чтобы ловить больше сигналов и реже упираться в
+  лимит позиций.
+- Для точной сверки online/test эксперт пишет
+  `MT/MQL4/Files/ml_trade_events.csv` с `Bid/Ask`, spread, OHLC бара,
+  фактическими ценами, проскальзыванием, SL/TP, profit, swap и commission.
 - Ошибок `OrderSend` и нехватки денег в тестовом логе не обнаружено.
 - Закрытия по SL/TP теперь видны в структурированном `MLP CLOSE` формате, поэтому daily reconciliation больше не зависит от нестабильного формата стандартных строк тестера.
 - Положительный результат тестера не является production-доказательством прибыльности: текущий профиль выбран для частоты и диагностики.

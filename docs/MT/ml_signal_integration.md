@@ -351,7 +351,7 @@ WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Ner
 |---|---:|---|
 | `iSignal` | `3` | прямое исполнение `ml_signals.csv` |
 | `SymPer` | `XAUUSD5` | M5 нужен для быстрого набора событий |
-| `ML_MaxPositions` | `10` | разрешает частые и перекрывающиеся диагностические сделки |
+| `ML_MaxPositions` | `20` | уменьшает пропуски `MaxPositions` в долгом online diagnostic |
 | `ML_ExitMode` | `0` | основной выход через timeout или broker SL/TP |
 | `ML_TakeProfitATR` | `5.0` | размер цели сопоставим с исходной стратегией |
 | `ML_BackStopATR` | `3.0` | стоп в ATR сопоставим с исходной стратегией |
@@ -435,6 +435,13 @@ MLP SKIP reason=MaxPositions ...
 - вход: `ticket`, `signal_time`, `entry_time`, `atr`, `spread`, `spread_atr`,
   `open_positions`, `MaxPositions`;
 - выход: `ticket`, `entry_time`, `exit_time`, `hold_bars`, `pnl_atr`, `profit`.
+
+Для более точного сравнения online/test эксперт также пишет
+`MT/MQL4/Files/ml_trade_events.csv`. Это CSV-журнал торговых событий с
+`OPEN`/`CLOSE`, `Bid/Ask`, spread, OHLC бара, запрошенной и фактической ценой,
+проскальзыванием, SL/TP, profit, swap, commission, balance и equity. Его
+использовать, когда простой reconciliation показывает расхождение в торговых
+метриках и нужно понять причину.
 
 Ежедневная автоматическая сверка:
 

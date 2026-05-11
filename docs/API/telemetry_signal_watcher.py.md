@@ -269,6 +269,10 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
    - `MLP BUY` / `MLP SELL`
    - затем `MLP CLOSE` / `MLP SKIP`
 
+11. Для точного разбора торговых расхождений дополнительно забирать
+    `MT/MQL4/Files/ml_trade_events.csv`: в нём есть `Bid/Ask`, spread, OHLC
+    бара, фактические цены ордера, profit, swap и commission.
+
 ## Выходные файлы
 
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_input_snapshot.csv`
