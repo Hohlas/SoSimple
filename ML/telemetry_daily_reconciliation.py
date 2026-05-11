@@ -261,11 +261,13 @@ def build_daily_summary(
 ) -> dict[str, Any]:
     critical_count = int(signals_diff["critical"].map(bool).sum()) if not signals_diff.empty else 0
     missing_closes = int((trades["close_status"] == "missing_close").sum()) if not trades.empty else 0
+    closed_trades = int((trades["close_status"] == "closed").sum()) if not trades.empty else 0
     return {
         "label": label,
         "expected_signals": int(len(signals)),
         "opened_trades": int(len(opens)),
-        "closed_trades": int(len(closes)),
+        "closed_trades": closed_trades,
+        "parsed_close_events": int(len(closes)),
         "critical_mismatch_count": critical_count,
         "missing_close_count": missing_closes,
         "export_metadata": export_metadata,
@@ -281,6 +283,7 @@ def render_summary_markdown(summary: dict[str, Any]) -> str:
         f"| expected_signals | {summary['expected_signals']} |",
         f"| opened_trades | {summary['opened_trades']} |",
         f"| closed_trades | {summary['closed_trades']} |",
+        f"| parsed_close_events | {summary['parsed_close_events']} |",
         f"| critical_mismatch_count | {summary['critical_mismatch_count']} |",
         f"| missing_close_count | {summary['missing_close_count']} |",
     ]

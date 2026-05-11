@@ -1,0 +1,27 @@
+signal_time;expected_direction;status;critical
+2022.12.02 16:00;BUY;opened;False
+2023.01.18 20:00;SELL;opened;False
+2023.01.24 18:00;BUY;opened;False
+2023.04.13 18:00;SELL;opened;False
+2023.04.20 16:00;SELL;opened;False
+2023.05.19 21:00;BUY;opened;False
+2023.11.01 21:00;BUY;opened;False
+2023.11.03 15:00;SELL;opened;False
+2023.11.22 21:00;BUY;opened;False
+2024.02.05 17:00;BUY;opened;False
+2024.05.20 22:00;BUY;opened;False
+2024.07.01 18:00;BUY;opened;False
+2024.07.25 21:00;BUY;opened;False
+2024.08.20 17:00;SELL;opened;False
+2024.11.26 02:00;BUY;opened;False
+2024.11.27 16:00;SELL;opened;False
+2025.02.11 05:00;SELL;opened;False
+2025.02.14 23:00;BUY;opened;False
+2025.03.10 22:00;BUY;opened;False
+2025.04.09 03:00;BUY;opened;False
+2025.05.15 10:00;BUY;opened;False
+2025.06.30 02:00;BUY;opened;False
+2025.07.04 12:00;BUY;opened;False
+2025.07.17 16:00;BUY;opened;False
+2025.08.20 05:00;BUY;opened;False
+2025.10.31 01:00;SELL;opened;False

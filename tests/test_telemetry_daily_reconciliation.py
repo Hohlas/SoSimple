@@ -49,6 +49,20 @@ def _write_log_with_broker_history_close(path: Path) -> Path:
     return path
 
 
+def _write_log_with_timeout_and_broker_history_close(path: Path) -> Path:
+    path.write_text(
+        "\n".join(
+            [
+                "0 2025.01.01 01:00 MLP BUY mode=entry_path ticket=303 signal_time=2025.01.01 00:00 entry_time=2025.01.01 01:00 score=0.00 atr=10.00 spread=0.20 spread_atr=0.0200 open_positions=0 MaxPositions=1 Val=2500.00 Stp=0.00 Prf=0.00 Lot=0.10",
+                "0 2025.01.02 01:00 MLP CLOSE BUY reason=Timeout ticket=303 entry_time=2025.01.01 01:00 exit_time=2025.01.02 01:00 hold_bars=24 entry=2500.00 exit=2510.00 atr=10.00 pnl_atr=1.0000 profit=100.00",
+                "0 2025.01.02 01:00 MLP CLOSE BUY reason=Timeout source=broker_history ticket=303 entry_time=2025.01.01 01:00 exit_time=2025.01.02 01:00 hold_bars=24 entry=2500.00 exit=2510.00 atr=10.00 pnl_atr=1.0000 profit=100.00",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _write_signals(path: Path) -> Path:
     pd.DataFrame(
         [
@@ -131,6 +145,24 @@ def test_run_daily_reconciliation_writes_required_outputs(tmp_path):
     assert (tmp_path / "out" / "summary.md").exists()
     assert (tmp_path / "out" / "signals_diff.csv").exists()
     assert (tmp_path / "out" / "trades_reconciliation.csv").exists()
+
+
+def test_summary_counts_linked_closed_trades_not_raw_close_events(tmp_path):
+    signals = tmp_path / "ml_signals.csv"
+    pd.DataFrame([{"time": "2025.01.01 00:00", "signal": 1}]).to_csv(signals, sep=";", index=False)
+    log = _write_log_with_timeout_and_broker_history_close(tmp_path / "tester.log")
+
+    summary = daily.run_daily_reconciliation(
+        signals_path=signals,
+        mt4_log_path=log,
+        output_dir=tmp_path / "out",
+        label="entry_path",
+    )
+
+    assert summary["opened_trades"] == 1
+    assert summary["closed_trades"] == 1
+    assert summary["parsed_close_events"] == 2
+    assert summary["missing_close_count"] == 0
 
 
 def test_run_daily_reconciliation_filters_expected_signals_by_time_range(tmp_path):

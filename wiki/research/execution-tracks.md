@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-05-07
-sources: 35
+sources: 36
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 35 отчётов (2026-04-08 — 2026-05-07). Параллельные направления execution, live-safe аудит прибыльных ML-систем и текущий основной кандидат `entry_path_v1_live_safe + A @ 7.5%`.
+> Синтез 36 отчётов (2026-04-08 — 2026-05-07). Параллельные направления execution, live-safe аудит прибыльных ML-систем и текущий основной кандидат `entry_path_v1_live_safe + A @ 7.5%`.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1308,3 +1308,39 @@ inference готового CPU-trained checkpoint, если нужен быст�
 baseline `A @ 7.5%`; quantile - только research-only.
 
 Источник: [2026-05-07-entry-path-quantile-cpu-baseline.md](../../docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
+
+## 17. Entry Path v1 Live-Safe MT4 Parity (05-07)
+
+Первый MT4 parity-прогон выполнен для frozen кандидата
+`entry_path_v1_live_safe + A @ 7.5%`.
+
+Проверенный период: `2022.10.28` - `2025.12.31`. Это не весь диапазон
+`ml_signals.csv`, но уже покрывает 26 из 29 ненулевых сигналов.
+
+MT4 tester:
+
+| Metric | Result |
+|---|---:|
+| Expert version | `260.332` |
+| Symbol/timeframe | `XAUUSD,H1` |
+| Trades | 26 |
+| BUY / SELL | 18 / 8 |
+| Net profit | 5217.70 |
+| Profit Factor | 9.03 |
+| Chart mismatch errors | 0 |
+
+Reconciliation:
+
+| Metric | Result |
+|---|---:|
+| expected_signals | 26 |
+| opened_trades | 26 |
+| closed_trades | 26 |
+| critical_mismatch_count | 0 |
+| missing_close_count | 0 |
+
+Вывод: механическая цепочка `Python rule -> ml_signals.csv -> MT4` для
+проверенного периода совпадает. Осталось закрыть полный диапазон файла
+сигналов: после `2025.12.31` остаются 3 BUY-сигнала в 2026 году.
+
+Источник: [2026-05-07-entry-path-mt4-parity.md](../../docs/reports/2026-05-07-entry-path-mt4-parity.md)

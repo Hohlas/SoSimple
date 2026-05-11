@@ -13,6 +13,7 @@
 - [`docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md)
 - [`docs/reports/2026-05-07-cpu-gpu-reproducibility.md`](docs/reports/2026-05-07-cpu-gpu-reproducibility.md)
 - [`docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md)
+- [`docs/reports/2026-05-07-entry-path-mt4-parity.md`](docs/reports/2026-05-07-entry-path-mt4-parity.md)
 
 Что было зафиксировано 2026-04-27:
 - high-frequency diagnostic export `telemetry_frequency_v1_highfreq500`;
@@ -188,12 +189,22 @@
   checkpoint на CPU/GPU даёт одинаковый рейтинг сделок. Решение: production
   retrain только на CPU. `ML.train` получил `--device cpu|cuda|auto` с default
   `cpu`; GPU training теперь только явный research-режим.
+- первый MT4 parity-прогон для `entry_path_v1_live_safe + A @ 7.5%` закрыт
+  на периоде `2022.10.28` - `2025.12.31`: MT4 открыл `26` сделок, отчет
+  тестера показал PF `9.03`, net `5217.70`; reconciliation:
+  `expected_signals=26`, `opened_trades=26`, `closed_trades=26`,
+  `critical_mismatch_count=0`, `missing_close_count=0`.
+- этот MT4-прогон не покрывает весь файл `ml_signals.csv`: после
+  `2025.12.31` остаются 3 ненулевых сигнала (`2026.01.21 22:00`,
+  `2026.03.24 05:00`, `2026.03.27 00:00`). Для полного parity нужен прогон
+  до конца файла сигналов, лучше до `2026.04.22` плюс запас на закрытие.
 
 ## Next Step
 
-1. Следующий рабочий фокус - запустить MT4 Strategy Tester для
-   `entry_path_v1_live_safe + A @ 7.5%` и затем выполнить reconciliation по
-   свежему `MT/tester/logs/*.log`.
+1. Следующий рабочий фокус - закрыть полный MT4 parity для
+   `entry_path_v1_live_safe + A @ 7.5%`: запустить Strategy Tester до конца
+   файла сигналов (`2026.04.22` плюс запас на закрытие последней позиции) и
+   выполнить reconciliation по свежему `MT/tester/logs/*.log`.
 2. Python-side MT4 export уже подготовлен командой
    `./.venv/bin/python -m ML.prepare_entry_path_mt4_parity --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity --copy-to-mt4`.
    Ожидаемый файл: `MT/tester/files/ml_signals.csv`, sha256
@@ -207,9 +218,10 @@
    Ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Старый `.ex4`
    может давать `EXP[0].Mgc != Magic`, потому что раньше `PARAMS` читались как
    `char` и `ML_BackStopATR=999` превращался в `-25`.
-5. Рекомендуемый период первого полного MT4 parity: с `2022.10.28` по
-   `2026.04.22`, то есть диапазон `ml_signals.csv`. Для быстрой проверки логов
-   можно запускать только `2025.01.01` - `2025.12.31`.
+5. Первый короткий MT4 parity до `2025.12.31` уже прошёл без критических
+   расхождений. Рекомендуемый период полного MT4 parity: с `2022.10.28` по
+   `2026.04.22` плюс запас на закрытие последней позиции, то есть диапазон
+   `ml_signals.csv`.
 6. После MT4 test run выполнить:
    `./.venv/bin/python -m ML.telemetry_daily_reconciliation --signals MT/tester/files/ml_signals.csv --mt4-log <fresh-log> --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation --label entry_path_v1_live_safe_a075_mt4_parity --export-metadata ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json`.
 7. Перед MT4 parity не запускать новые seed/device эксперименты вручную через

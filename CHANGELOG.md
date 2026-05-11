@@ -47,6 +47,17 @@
 - Исправлен MQL4 bugfix для MT4 parity: `SERVICE.mqh` больше не приводит все
   `PARAMS` из `#.csv` к `char`. Это ломало `ML_BackStopATR=999` в `-25` и
   давало `EXP[0].Mgc != Magic`. Версия эксперта поднята до `260.332`.
+- Первый MT4 parity-прогон для `entry_path_v1_live_safe + A @ 7.5%` прошёл
+  на `XAUUSD,H1` до `2025.12.31`: MT4 отчет дал `26` сделок, PF `9.03`,
+  net `5217.70`. Reconciliation по тому же периоду:
+  `expected_signals=26`, `opened_trades=26`, `closed_trades=26`,
+  `critical_mismatch_count=0`, `missing_close_count=0`. Полный диапазон
+  `ml_signals.csv` ещё требует отдельного прогона до 2026. Отчёт:
+  `docs/reports/2026-05-07-entry-path-mt4-parity.md`.
+- `ML.telemetry_daily_reconciliation` теперь различает связанные закрытые
+  сделки (`closed_trades`) и сырые строки закрытия в MT4 логе
+  (`parsed_close_events`). Это убирает путаницу, когда одно закрытие по
+  времени пишет две строки `MLP CLOSE`.
 - Проверена нормализационная утечка `predict -> front/back`: в
   `95.93%` строк нормализованные `front/back` менялись при включении
   `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.
