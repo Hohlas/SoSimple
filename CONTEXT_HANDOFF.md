@@ -215,6 +215,9 @@
    переключён на `SymPer=XAUUSD5`, `ML_MaxPositions=10`,
    `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`,
    `ML_ExitMode=0`. Это fixed-hold / broker SL/TP diagnostic, не PF-test.
+   В online-режиме ставить `BackTest=0`, чтобы советник перебрал все строки
+   `#.csv` и сам выбрал строку текущего графика. `BackTest=2` нужен только
+   Strategy Tester для ручного выбора строки.
 4. Успех M5 diagnostic измерять через логи и reconciliation, а не через
    прибыльность: watcher rebuild, MT4 reload, opened/skipped signals,
    timeout/broker SL/broker TP closes, `critical_mismatch_count`.

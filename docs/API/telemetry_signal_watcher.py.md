@@ -190,6 +190,25 @@ tmux new -s telemetry-watcher
 заблокирован contract guard. Добавлять `--allow-unsafe-future-features` можно
 только если цель - проверить механическую цепочку, а не ML-корректность.
 
+Для текущего M5 diagnostic `telemetry_frequency_v1_highfreq500` цель именно
+механическая: быстро проверить `MT -> Nero.csv -> watcher -> ml_signals.csv ->
+MT`, открытие, пропуски и закрытия. Поэтому на 2026-05-11 watcher запускается
+с явным unsafe-флагом:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --max-runtime-rows 12000 \
+  --diagnostic-target-signals-per-year 5000 \
+  --allow-unsafe-future-features \
+  --verbose
+```
+
+MT4 online при этом запускается с `BackTest=0`, чтобы советник перебрал все
+строки `#.csv` и выбрал строку `XAUUSD5`. `BackTest=2` оставлять только для
+Strategy Tester.
+
 Для выхода без остановки процесса:
 
 - `Ctrl+B`, затем `D`

@@ -124,6 +124,10 @@ online/forward шаг после MT4 proof `entry_path_v1_live_safe + A`. Акт
 `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`.
 Критерий успеха - не PF, а механическая сверка `MT -> ML -> MT`: rebuild
 watcher-а, reload в MT4, открытие/пропуск сигналов и корректные закрытия.
+В online-режиме для этого запуска ставится `BackTest=0`: советник читает все
+строки `#.csv` и выбирает подходящую строку `XAUUSD5` сам. `BackTest=2`
+используется только в Strategy Tester, где нужно явно выбрать единственную
+рабочую строку.
 
 - Контур `MT -> ML signal file -> MT` готов к demo-запуску в diagnostic режиме.
 - Для оператора теперь есть наблюдаемый server-режим: watcher штатно живёт в `tmux` и регулярно пишет heartbeat в stdout.

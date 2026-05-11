@@ -62,7 +62,9 @@
   `telemetry_frequency_v1_highfreq500`: `SymPer=XAUUSD5`,
   `ML_MaxPositions=10`, `ML_TakeProfitATR=5`, `ML_BackStopATR=3`,
   `ML_HoldBars=24`. Цель - быстро набрать события и проверить механику
-  `MT -> ML -> MT`; PF не является критерием успеха.
+  `MT -> ML -> MT`; PF не является критерием успеха. Для online запуска
+  использовать `BackTest=0`, чтобы советник сам выбрал строку `XAUUSD5`;
+  `BackTest=2` оставлен для Strategy Tester.
 - `ML.telemetry_daily_reconciliation` теперь различает связанные закрытые
   сделки (`closed_trades`) и сырые строки закрытия в MT4 логе
   (`parsed_close_events`). Это убирает путаницу, когда одно закрытие по

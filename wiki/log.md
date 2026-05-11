@@ -374,3 +374,8 @@
   - recorded `entry_path_v1_quantile` as research-only over the CPU baseline;
   - recorded final take/skip `geometry_path` reject.
 - Updated `wiki/index.md` coverage from 32 to 35 reports.
+
+## [2026-05-11] save | online BackTest mode clarification
+- Updated `wiki/research/execution-tracks.md` to record the operational split:
+  - online/forward diagnostic uses `BackTest=0`;
+  - Strategy Tester uses `BackTest=2` to select the current telemetry row.
