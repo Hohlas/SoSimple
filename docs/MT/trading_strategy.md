@@ -90,22 +90,28 @@ SoSimple260.330 2022.10.04-2026.03.10, Sprd=0, StpLev=0, OPT-telemetry_frequency
 BackTest=2
 ```
 
-На 2026-05-07 текущая рабочая строка переключена на `XAUUSD60` для MT4 parity
-кандидата `entry_path_v1_live_safe + A @ 7.5%`. Это H1-контур; M5 `Nero.csv`
-для него не подходит.
+На 2026-05-11 текущая рабочая строка переключена на `XAUUSD5` для M5
+diagnostic-контура `telemetry_frequency_v1_highfreq500`. Цель этого режима -
+быстро набрать много событий и проверить тракт `MT -> ML -> MT`, а не
+прибыльность.
 
-Для этого parity preset ключевые ML-параметры такие:
+Для этого diagnostic preset ключевые ML-параметры такие:
 
 - `ML_ExitMode=0`;
-- `ML_MaxPositions=1`;
+- `ML_MaxPositions=10`;
 - `ML_HoldBars=24`;
-- `ML_TakeProfitATR=0`;
-- `ML_BackStopATR=999`;
+- `ML_TakeProfitATR=5`;
+- `ML_BackStopATR=3`;
 - `ML_AllowReversal=0`;
 - `ML_UseScoreFilter=0`.
 
-Смысл: MT4 должен проверить тот же fixed-hold контракт, что Python sequential
-check: один вход, удержание 24 бара, без take-profit и без близкого stop-loss.
+Смысл: MT4 должен часто открывать заранее отобранные diagnostic-сигналы,
+закрывать их по timeout или broker SL/TP и писать достаточно подробные логи
+для reconciliation. PF в этом режиме не используется как критерий успеха.
+
+Для возврата к H1 parity `entry_path_v1_live_safe + A @ 7.5%` нужно вернуть
+`SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_TakeProfitATR=0`,
+`ML_BackStopATR=999`.
 
 После изменения `#.csv` обязательно перекомпилировать советник. Для этого
 этапа ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Версии ниже могут

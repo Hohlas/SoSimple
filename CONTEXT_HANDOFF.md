@@ -196,35 +196,44 @@
   `critical_mismatch_count=0`, `missing_close_count=0`.
 - этот MT4-прогон не покрывает весь файл `ml_signals.csv`: после
   `2025.12.31` остаются 3 ненулевых сигнала (`2026.01.21 22:00`,
-  `2026.03.24 05:00`, `2026.03.27 00:00`). Для полного parity нужен прогон
-  до конца файла сигналов, лучше до `2026.04.22` плюс запас на закрытие.
+  `2026.03.24 05:00`, `2026.03.27 00:00`). Принято решение не блокировать
+  следующий этап: 26 совпавших сделок достаточно, чтобы считать механическую
+  MT4-цепочку подтверждённой. Полный прогон до конца файла сигналов остаётся
+  optional closure.
 
 ## Next Step
 
-1. Следующий рабочий фокус - закрыть полный MT4 parity для
-   `entry_path_v1_live_safe + A @ 7.5%`: запустить Strategy Tester до конца
-   файла сигналов (`2026.04.22` плюс запас на закрытие последней позиции) и
-   выполнить reconciliation по свежему `MT/tester/logs/*.log`.
-2. Python-side MT4 export уже подготовлен командой
+1. Следующий рабочий фокус - подготовить online/forward diagnostic для
+   `entry_path_v1_live_safe + A @ 7.5%` на сервере.
+2. Основная идея для быстрого набора статистики: отдельный M5 diagnostic
+   контур. Это не перенос H1-модели как production-решение, а новый
+   исследовательский режим с ожидаемой потерей качества и большим числом
+   сделок. Перед запуском нужно явно решить: переобучаем M5-модель или
+   используем M5 только как high-frequency diagnostic.
+3. На 2026-05-11 выбран первый practical step: M5 high-frequency diagnostic
+   через существующий `telemetry_frequency_v1_highfreq500`. Текущий `#.csv`
+   переключён на `SymPer=XAUUSD5`, `ML_MaxPositions=10`,
+   `ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`,
+   `ML_ExitMode=0`. Это fixed-hold / broker SL/TP diagnostic, не PF-test.
+4. Успех M5 diagnostic измерять через логи и reconciliation, а не через
+   прибыльность: watcher rebuild, MT4 reload, opened/skipped signals,
+   timeout/broker SL/broker TP closes, `critical_mismatch_count`.
+5. H1 MT4 export уже подготовлен командой
    `./.venv/bin/python -m ML.prepare_entry_path_mt4_parity --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity --copy-to-mt4`.
    Ожидаемый файл: `MT/tester/files/ml_signals.csv`, sha256
    `f213a8689bcac8fee0f7294bc56c5fc647e63cf58ab83321eda505d82d2af852`,
    `29` ненулевых сигналов (`21` BUY, `8` SELL). Python sequential check:
    `27` trades, PF `5.9352`.
-3. MT4 preset уже переключён на H1 fixed-hold contract:
+6. Для возврата к H1 fixed-hold parity contract вернуть:
    `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
    `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
-4. Важно: после bugfix `SERVICE.mqh` эксперт должен быть перекомпилирован.
+7. Важно: после bugfix `SERVICE.mqh` эксперт должен быть перекомпилирован.
    Ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Старый `.ex4`
    может давать `EXP[0].Mgc != Magic`, потому что раньше `PARAMS` читались как
    `char` и `ML_BackStopATR=999` превращался в `-25`.
-5. Первый короткий MT4 parity до `2025.12.31` уже прошёл без критических
-   расхождений. Рекомендуемый период полного MT4 parity: с `2022.10.28` по
-   `2026.04.22` плюс запас на закрытие последней позиции, то есть диапазон
-   `ml_signals.csv`.
-6. После MT4 test run выполнить:
-   `./.venv/bin/python -m ML.telemetry_daily_reconciliation --signals MT/tester/files/ml_signals.csv --mt4-log <fresh-log> --output-dir ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation --label entry_path_v1_live_safe_a075_mt4_parity --export-metadata ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json`.
-7. Перед MT4 parity не запускать новые seed/device эксперименты вручную через
+8. Полный H1 MT4 parity до `2026.04.22` больше не является блокером; при
+   желании его можно выполнить позже как optional closure.
+9. Перед новыми retrain/forward экспериментами не запускать seed/device вручную через
    общий `ML/checkpoints/*_best.pt`. Если retrain всё же нужен, использовать
    только `ML.run_entry_path_live_safe_retrain --output-dir ...`, чтобы прогнозы
    экспортировались из seed-specific checkpoint.
@@ -264,8 +273,9 @@
 - `entry_path_v1` и `entry_path_v1_quantile` теперь `FAIL`, не `UNKNOWN`.
   Причина: `ret_dir_atr_lag1` доказан как future-derived, а quantile зависит
   от baseline score.
-- MT4 parity для `entry_path_v1_live_safe + A @ 7.5%` ещё не выполнен: Python
-  proof есть, MT4 proof пока нет.
+- MT4 parity для `entry_path_v1_live_safe + A @ 7.5%` выполнен на 26 сделках
+  до `2025.12.31`; `critical_mismatch_count=0`. Полный диапазон файла сигналов
+  не проверен, но больше не считается блокером.
 - Для `entry_path_v1_live_safe` критично использовать H1 источник
   `MT/MQL4/Files/Nero_XAUUSD.csv`; текущий `MT/MQL4/Files/Nero.csv` может
   содержать M5-строки и ломает смысл entry_path targets.

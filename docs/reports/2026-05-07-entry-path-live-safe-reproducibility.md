@@ -120,6 +120,11 @@ baseline `A @ 7.5%`, а не автоматический выбор любог�
   для production.
 - Проверка сделана на XAUUSD H1 split. M5 `Nero.csv` не подходит для этого
   контура.
+- Для текущей очищенной `entry_path_v1_live_safe + A @ 7.5%` cross-instrument
+  проверка на других валютных парах ещё не выполнялась. Старые проверки
+  `entry_path_v1` / `entry_path_v1_quantile` на `EURUSD`, `GBPUSD`, `USDCHF`,
+  `XAGUSD` относятся к до-audit контуру и не доказывают переносимость текущей
+  live-safe версии.
 
 ## Next Step
 

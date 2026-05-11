@@ -350,6 +350,7 @@ WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Ner
 | Параметр | Значение | Почему |
 |---|---:|---|
 | `iSignal` | `3` | прямое исполнение `ml_signals.csv` |
+| `SymPer` | `XAUUSD5` | M5 нужен для быстрого набора событий |
 | `ML_MaxPositions` | `10` | разрешает частые и перекрывающиеся диагностические сделки |
 | `ML_ExitMode` | `0` | основной выход через timeout или broker SL/TP |
 | `ML_TakeProfitATR` | `5.0` | размер цели сопоставим с исходной стратегией |
@@ -357,6 +358,13 @@ WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Ner
 | `ML_HoldBars` | `24` | ограничение времени жизни диагностической сделки |
 | `ML_AllowReversal` | `false` | не смешивать reversal-close с проверкой исполнения |
 | `ML_UseScoreFilter` | `false` | CSV уже отобран frozen telemetry rule |
+
+Успех этого режима измеряется не PF, а совпадением механики:
+
+- watcher обновляет `ml_signals.csv` после новых строк `Nero.csv`;
+- MT4 перезагружает файл;
+- ожидаемые сигналы открываются или получают объяснимый `MLP SKIP`;
+- закрытия соответствуют выбранной тактике: timeout, broker SL или broker TP.
 
 Для текущего quantile parity-check (production `lb_gt_m_q35`, frozen 2026-04-12):
 

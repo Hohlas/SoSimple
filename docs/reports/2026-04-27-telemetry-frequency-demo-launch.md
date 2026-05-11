@@ -118,6 +118,13 @@ Final reconciliation:
 
 ## Conclusions
 
+Update 2026-05-11: этот diagnostic-контур выбран как следующий practical
+online/forward шаг после MT4 proof `entry_path_v1_live_safe + A`. Активный
+`#.csv` переключён на `XAUUSD5`, `ML_MaxPositions=10`,
+`ML_TakeProfitATR=5`, `ML_BackStopATR=3`, `ML_HoldBars=24`.
+Критерий успеха - не PF, а механическая сверка `MT -> ML -> MT`: rebuild
+watcher-а, reload в MT4, открытие/пропуск сигналов и корректные закрытия.
+
 - Контур `MT -> ML signal file -> MT` готов к demo-запуску в diagnostic режиме.
 - Для оператора теперь есть наблюдаемый server-режим: watcher штатно живёт в `tmux` и регулярно пишет heartbeat в stdout.
 - Несколько одновременных позиций работают: `ML_MaxPositions=10`, в тесте были реальные параллельные позиции и ожидаемые `MaxPositions` пропуски.
@@ -141,7 +148,7 @@ Final reconciliation:
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/#.csv`
    - `MT/tester/files/ml_signals.csv`
-4. На сервере перекомпилировать MT4 expert и запустить online demo на `XAUUSD,H1`.
+4. На сервере перекомпилировать MT4 expert и запустить online demo на `XAUUSD,M5`.
 5. Если на сервере ещё жив старый watcher-процесс, остановить его перед новым запуском:
    - `ps -eo pid,cmd | rg telemetry_signal_watcher`
    - `kill <PID>`

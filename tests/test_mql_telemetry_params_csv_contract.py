@@ -58,7 +58,7 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
 
     assert len(header) == 16 + 80
     assert len(row) == len(header)
-    assert values["SymPer"] == "XAUUSD60"
+    assert values["SymPer"] == "XAUUSD5"
     assert values["Risk"] == "1"
     assert values["A"] == "5"
     assert values["a"] == "3"
@@ -66,13 +66,13 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
     assert values["T1"] == "8"
     assert values["ML_ExitMode"] == "0"
     assert values["ML_TrailATR"] == "0"
-    assert values["ML_TakeProfitATR"] == "0"
-    assert values["ML_MaxPositions"] == "1"
+    assert values["ML_TakeProfitATR"] == "5"
+    assert values["ML_MaxPositions"] == "10"
     assert values["ML_HoldBars"] == "24"
     assert values["ML_AllowReversal"] == "0"
     assert values["ML_UseScoreFilter"] == "0"
     assert values["ML_ScoreThreshold"] == "0"
-    assert values["ML_BackStopATR"] == "999"
+    assert values["ML_BackStopATR"] == "3"
     assert int(values["Magic"]) == _mql_magic_from_row(header, row)
 
 
@@ -140,10 +140,10 @@ def test_tester_ini_selects_telemetry_backtest_row():
 
     assert "BackTest=2" in text
     assert "ML_ExitMode=0" in text
-    assert "ML_TakeProfitATR=0.00000000" in text
-    assert "ML_MaxPositions=1" in text
+    assert "ML_TakeProfitATR=5.00000000" in text
+    assert "ML_MaxPositions=10" in text
     assert "ML_HoldBars=24" in text
-    assert "ML_BackStopATR=999.00000000" in text
+    assert "ML_BackStopATR=3.00000000" in text
 
 
 def test_service_logs_loaded_csv_parameters():
