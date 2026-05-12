@@ -41,7 +41,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 | `wiki/index.md` | Каталог синтезированных wiki-страниц: research + concepts. Не дублирует MODULE_INDEX, DATA_FLOW, CONTEXT_HANDOFF | [`wiki/index.md`](wiki/index.md) |
 | `wiki/REPO_integrity.md` | Карта всех файлов репо с хешами — для обнаружения изменений. Не для навигации по коду | `python wiki/wiki.py generate` |
 | `knowledge-rag` | Поиск кандидатов по docs/wiki/code; не source of truth | MCP server `knowledge-rag`, tool `search_knowledge` |
-| `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, чистый контекст текущего этапа | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
+| `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
 | `docs/reports/` | Канонические отчёты завершённых этапов с результатами и выводами | [`docs/reports/`](docs/reports/) |
 | `CHANGELOG.md` | История значимых изменений: фичи, багфиксы, результаты экспериментов | [`CHANGELOG.md`](CHANGELOG.md) — первые 300 строк |
 | `MODULE_INDEX.md` | Реестр всех модулей со статусами, назначением и точками входа | [`MODULE_INDEX.md`](MODULE_INDEX.md) |
