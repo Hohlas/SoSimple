@@ -67,7 +67,7 @@ def test_hash_csv_contains_single_telemetry_row_with_ml_values():
     assert values["ML_ExitMode"] == "0"
     assert values["ML_TrailATR"] == "0"
     assert values["ML_TakeProfitATR"] == "5"
-    assert values["ML_MaxPositions"] == "10"
+    assert values["ML_MaxPositions"] == "20"
     assert values["ML_HoldBars"] == "24"
     assert values["ML_AllowReversal"] == "0"
     assert values["ML_UseScoreFilter"] == "0"
@@ -141,7 +141,7 @@ def test_tester_ini_selects_telemetry_backtest_row():
     assert "BackTest=2" in text
     assert "ML_ExitMode=0" in text
     assert "ML_TakeProfitATR=5.00000000" in text
-    assert "ML_MaxPositions=10" in text
+    assert "ML_MaxPositions=20" in text
     assert "ML_HoldBars=24" in text
     assert "ML_BackStopATR=3.00000000" in text
 
@@ -163,6 +163,38 @@ def test_ml_signal_runtime_reload_uses_file_modify_time():
     assert "MLP_RELOAD_IF_CHANGED()" in text
     assert "MLP_RELOAD: file changed" in text
     assert "MLP_INIT()" in text
+
+
+def test_ml_signal_writes_structured_trade_event_csv():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert '#define MLP_EVENTS_FILE "ml_trade_events.csv"' in text
+    assert "MLP_WriteEventHeaderIfNeeded" in text
+    assert "MLP_LogTradeEvent(" in text
+    for field in (
+        "event",
+        "ticket",
+        "direction",
+        "signal_time",
+        "entry_time",
+        "exit_time",
+        "bid",
+        "ask",
+        "spread",
+        "bar_open",
+        "bar_high",
+        "bar_low",
+        "bar_close",
+        "entry",
+        "stop",
+        "take_profit",
+        "close",
+        "profit",
+        "swap",
+        "commission",
+        "reason",
+    ):
+        assert field in text
 
 
 def test_history_recount_and_pic_contract_are_present_in_mql_flow():

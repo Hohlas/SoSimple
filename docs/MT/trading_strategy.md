@@ -98,7 +98,7 @@ diagnostic-контура `telemetry_frequency_v1_highfreq500`. Цель это�
 Для этого diagnostic preset ключевые ML-параметры такие:
 
 - `ML_ExitMode=0`;
-- `ML_MaxPositions=10`;
+- `ML_MaxPositions=20`;
 - `ML_HoldBars=24`;
 - `ML_TakeProfitATR=5`;
 - `ML_BackStopATR=3`;
@@ -114,7 +114,7 @@ diagnostic-контура `telemetry_frequency_v1_highfreq500`. Цель это�
 `ML_BackStopATR=999`.
 
 После изменения `#.csv` обязательно перекомпилировать советник. Для этого
-этапа ожидаемая версия в логе: `OnInit() SoSimple.V260.332`. Версии ниже могут
+этапа ожидаемая версия в логе: `OnInit() SoSimple.V260.333`. Версии ниже могут
 читать `PARAMS` как `char`, из-за чего большие значения вроде
 `ML_BackStopATR=999` искажаются и `Magic` не совпадает.
 
@@ -611,7 +611,7 @@ MT4, а не доказательством прибыльности или со
 
 - `ML_BackStopATR=3.0`;
 - `ML_TakeProfitATR=5.0`;
-- `ML_MaxPositions=10`.
+- `ML_MaxPositions=20`.
 
 Так размер сделки в ATR остаётся сопоставимым с исходной стратегией, а влияние
 спреда на результат не становится искусственно завышенным из-за слишком коротких
@@ -787,6 +787,28 @@ MT4, а не доказательством прибыльности или со
 - `MLP SKIP reason=MaxPositions ...`
 
 Эти строки и являются основой для последующего разбора parity-check.
+
+Дополнительно эксперт пишет машинно-читаемый CSV:
+
+```text
+MT/MQL4/Files/ml_trade_events.csv
+```
+
+Цель файла - не заменить журнал MT4, а упростить точную сверку online/test.
+В нём одна строка на торговое событие `OPEN` или `CLOSE` с полями:
+
+- `ticket`, `direction`, `signal_time`, `entry_time`, `exit_time`, `reason`;
+- `bid`, `ask`, `spread`, `spread_atr`;
+- `bar_open`, `bar_high`, `bar_low`, `bar_close`;
+- `requested_price`, `order_open_price`, `order_close_price`,
+  `slippage_points`;
+- `entry`, `stop`, `take_profit`, `close`;
+- `profit`, `swap`, `commission`, `balance`, `equity`;
+- `atr`, `score`, `hold_bars`, `open_positions`, `max_positions`.
+
+Практический смысл: если online и tester расходятся по прибыли, можно увидеть
+не только факт сделки, но и причину расхождения - цена `Bid/Ask`, spread,
+проскальзывание, комиссия, swap, баровый OHLC или другой момент закрытия.
 
 ---
 

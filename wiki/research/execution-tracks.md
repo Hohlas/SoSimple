@@ -875,7 +875,7 @@ Trade-level reconciliation был сохранён отдельно:
   относится к Strategy Tester, где вручную выбирается одна строка параметров.
 - High-frequency export даёт `8872` строк, `495` ненулевых сигналов в 2025, дублей времени `0`.
 - SL/TP сохранены в масштабе исходной идеи: `SL=3 ATR`, `TP=5 ATR`, чтобы влияние spread было сопоставимо с нормальной стратегией.
-- `max_hold_bars=24`, `max_positions=10`.
+- `max_hold_bars=24`, `max_positions=20` для long-run online diagnostic.
 - Export пишет atomically через временный файл и замену целевого `ml_signals.csv`.
 - В MQL diagnostic multi-position режим расширяет существующую `EXPERT::ML_TRADE()`, а не создаёт новый контур.
 
@@ -896,6 +896,11 @@ Trade-level reconciliation был сохранён отдельно:
 Добавлен `ML.telemetry_daily_reconciliation`: сверяет `ml_signals.csv` с MT4 `MLP` log, пишет `signals_diff.csv`, `trades_reconciliation.csv`, `summary.json`, `summary.md`, и возвращает exit code `1` при критичных расхождениях (`missing_open`, `wrong_direction`, `unexpected_open`).
 
 Для закрытий, которые выполнил брокер/тестер по `TakeProfit` или `StopLoss`, `lib_ML_Signal.mqh` сканирует историю ордеров и пишет структурированную строку `MLP CLOSE ... source=broker_history`. Это убирает зависимость daily reconciliation от нестабильного формата стандартных строк MT4 tester log.
+
+Для последующего объяснения расхождений online/test добавлен отдельный
+машинный журнал `MT/MQL4/Files/ml_trade_events.csv`: `OPEN`/`CLOSE`, `Bid/Ask`,
+spread, OHLC бара, фактические цены ордера, проскальзывание, SL/TP, profit,
+swap, commission, balance/equity.
 
 ### Tester proof
 

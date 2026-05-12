@@ -202,11 +202,15 @@ bool INPUT_FILE_READ (){// считывание из csv файла входны
       for (int i=0; i<OrdersTotal(); i++){// перебераем все открытые и отложенные ордера всех экспертов счета 
          if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES)!=true) continue;
          if (OrderType()==6) continue; // ролловеры 
-         bool MustDie=true;
+         bool MustDie=true; int OrphanType=OrderType(), OrphanTicket=OrderTicket(); double OrphanLots=OrderLots(); string OrphanSymbol=OrderSymbol();
          for (e=0; e<ExpTotal; e++) if (EXP[e].Mgc==OrderMagicNumber()) MustDie=false; // если мэджик ордера есть в списке, не трогаем его         
          if (MustDie){
             Alert("Expert ",OrderMagicNumber()," does not exist in #.csv, It's orders will be deleted"); 
-            EXP[e].EMPTY_EXPERTS_DELETE();
+            MARKET_UPDATE(OrphanSymbol); bool OrphanDone=false;
+            if (OrphanType==OP_BUY)       OrphanDone=OrderClose(OrphanTicket,OrphanLots,BID,3,clrRed);
+            else if (OrphanType==OP_SELL) OrphanDone=OrderClose(OrphanTicket,OrphanLots,ASK,3,clrRed);
+            else                          OrphanDone=OrderDelete(OrphanTicket,clrRed);
+            if (OrphanDone) i=-1; else ERROR_CHECK("Delete orphan order Ticket="+S0(OrphanTicket));
       }  }  }
    if (Real && TheSameChart==0){
       if (!IsTesting() && !IsOptimization()) 
