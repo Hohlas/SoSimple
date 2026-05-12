@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: telemetry_signal_watcher.py
 # Назначение: Наблюдаемый watcher online telemetry-контура MT4 -> Nero.csv -> ML -> ml_signals.csv для запуска в tmux.
-# Обновлён: 2026-04-29
+# Обновлён: 2026-05-12
 # Входные данные:
 #   - MT/MQL4/Files/Nero.csv (откуда: MT4 expert)
 #   - checkpoint.pt для take_skip_v2 contour (откуда: ML/reports/*/checkpoint.pt)
@@ -19,7 +19,7 @@
 #   - Пересчёт запускается только при появлении нового последнего `time` в Nero.csv.
 #   - Перед inference watcher строит runtime snapshot и применяет causal preprocessing:
 #     сортировка фракталов по времени + rowwise-нормализация без future labels.
-#   - Готовый ml_signals.csv пишется атомарно через существующий exporter.
+#   - Online MT4 ml_signals.csv публикуется append-only: старые строки не меняются.
 #   - Для server-эксплуатации основной режим - отдельное окно tmux с heartbeat в stdout.
 #   - Legacy original_baseline online заблокирован contract guard по умолчанию.
 # =============================================================================
@@ -254,6 +254,7 @@ def rebuild_signals(
         diagnostic_all_rows=True,
         diagnostic_direction_source="fractal0_direction",
         diagnostic_target_signals_per_year=diagnostic_target_signals_per_year,
+        append_to_mt4=True,
     )
 
 

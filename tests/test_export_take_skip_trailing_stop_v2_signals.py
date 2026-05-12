@@ -277,6 +277,53 @@ def test_export_signals_writes_mt4_targets_atomically(tmp_path, monkeypatch):
     assert not runtime_path.with_suffix('.csv.tmp').exists()
 
 
+def test_export_signals_can_append_only_new_mt4_rows(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)
+    output = tmp_path / 'ml_signals.csv'
+    tester_path = tmp_path / 'tester' / 'files' / 'ml_signals.csv'
+    runtime_path = tmp_path / 'MQL4' / 'Files' / 'ml_signals.csv'
+    existing = 'time;signal\n2025.01.01 00:00;1\n'
+    tester_path.parent.mkdir(parents=True)
+    runtime_path.parent.mkdir(parents=True)
+    tester_path.write_text(existing, encoding='utf-8')
+    runtime_path.write_text(existing, encoding='utf-8')
+
+    exporter.MT4_TESTER_SIGNALS = tester_path
+    exporter.MT4_RUNTIME_SIGNALS = runtime_path
+
+    exporter.export_signals(
+        predictions_path=predictions_path,
+        rule_path=rule_path,
+        output_path=output,
+        copy_to_mt4=True,
+        append_to_mt4=True,
+    )
+
+    assert tester_path.read_text(encoding='utf-8').splitlines() == [
+        'time;signal',
+        '2025.01.01 00:00;1',
+        '2025.01.01 01:00;-1',
+        '2025.01.01 02:00;0',
+        '2025.01.01 03:00;0',
+        '2025.01.01 04:00;0',
+    ]
+    assert runtime_path.read_text(encoding='utf-8') == tester_path.read_text(encoding='utf-8')
+
+
+def test_export_signals_rejects_append_to_mt4_without_copy_to_mt4(tmp_path):
+    predictions_path = _write_prediction_csv(tmp_path)
+    rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)
+
+    with pytest.raises(ValueError, match='append_to_mt4 requires copy_to_mt4'):
+        exporter.export_signals(
+            predictions_path=predictions_path,
+            rule_path=rule_path,
+            output_path=tmp_path / 'ml_signals.csv',
+            append_to_mt4=True,
+        )
+
+
 def test_export_signals_writes_reproducible_metadata(tmp_path):
     predictions_path = _write_prediction_csv(tmp_path)
     rule_path = _write_rule(tmp_path, selector='prob_ge_threshold', threshold=0.7)

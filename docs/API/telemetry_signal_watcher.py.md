@@ -21,7 +21,8 @@
   которым нужны future-derived row features;
 - строит свежий prediction CSV через `ML.export_take_skip_v2_predictions`;
 - применяет frozen telemetry rule через `API.export_take_skip_trailing_stop_v2_signals`;
-- атомарно обновляет `ml_signals.csv` в runtime/tester каталогах;
+- публикует новые строки `ml_signals.csv` в runtime/tester каталогах в
+  append-only режиме через временный файл и замену;
 - пишет state/log/metadata.
 
 Важно: watcher не повторяет весь offline pipeline `processing/label_main.py`.
@@ -129,8 +130,8 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 3. contract guard проверяет, можно ли честно запускать выбранный checkpoint
    online;
 4. по preprocessed snapshot строится `runtime_predictions.csv`;
-5. по preprocessed snapshot строится `runtime_ml_signals.csv`;
-6. exporter атомарно копирует готовый `ml_signals.csv` в:
+5. по preprocessed snapshot строится полный diagnostic `runtime_ml_signals.csv`;
+6. exporter публикует новые строки в append-only режиме в:
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/ml_signals.csv`
 7. state обновляется только после успешного rebuild.
@@ -142,7 +143,10 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 - цель: не перечитывать и не держать в памяти весь многолетний `Nero.csv` на каждом новом уровне;
 - причина: полный single-tensor inference на десятках тысяч строк легко уходит в двузначные гигабайты RAM;
 - последствие: watcher стал пригоден для более дешёвого сервера;
-- ограничение: `runtime_predictions.csv` и `ml_signals.csv` теперь содержат только рабочее окно snapshot-а, а не всю историю `Nero.csv`.
+- ограничение: `runtime_predictions.csv` и `runtime_ml_signals.csv` содержат только рабочее окно snapshot-а, а не всю историю `Nero.csv`;
+- online `MT/MQL4/Files/ml_signals.csv` и `MT/tester/files/ml_signals.csv`
+  сохраняют старые строки и добавляют только строки новее текущего хвоста файла.
+  Это защищает сверку от заднего изменения уже прожитых баров.
 
 Практический смысл ограничения:
 
@@ -269,9 +273,10 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
    - `MLP BUY` / `MLP SELL`
    - затем `MLP CLOSE` / `MLP SKIP`
 
-11. Для точного разбора торговых расхождений дополнительно забирать
-    `MT/MQL4/Files/ml_trade_events.csv`: в нём есть `Bid/Ask`, spread, OHLC
-    бара, фактические цены ордера, profit, swap и commission.
+11. Для точного разбора торговых расхождений дополнительно забирать per-magic
+    файл `MT/MQL4/Files/ML_Trade_Events_<NAME>_<magic>.csv`: в нём есть
+    `OPEN`, `OPEN_FAILED`, `CLOSE`, `Bid/Ask`, spread, OHLC бара, фактические
+    цены ордера, profit, swap и commission.
 
 ## Выходные файлы
 
@@ -282,6 +287,8 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_export_metadata.json`
 - `ML/reports/telemetry_frequency_v1/runtime/runtime_state.json`
 - `ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.log`
+- `MT/MQL4/Files/ml_signals.csv` и `MT/tester/files/ml_signals.csv`
+  обновляются append-only через временный файл и замену.
 
 ## Ограничения
 

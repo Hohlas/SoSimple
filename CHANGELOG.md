@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-12] - Online/tester execution reconciliation
+
+- По логам 2026-05-12 проверена M5-цепочка `MT4 -> ML -> MT4`:
+  online/tester `ml_signals.csv` совпали, но старое online-исполнение
+  пропустило 6 входов против tester на общей исполнимой части. Первые три
+  пропуска подтверждены как `requote ERROR-138`.
+- Матожидание на стабильном закрытом срезе `2026.05.12 00:10` ->
+  `2026.05.12 13:05`: online `-10.1522` на закрытую сделку, tester
+  `-7.6853`; по парным 65 закрытым сделкам разница матожидания `-0.7431`.
+  Основной вред дали пропущенные online-сделки, а не парные PnL-расхождения.
+- `ML.online_tester_reconciliation` обновлён под текущий event-log contract:
+  сравнение online/tester идёт по `signal_time + direction`, `OPEN_FAILED`
+  считается отдельным статусом, добавлены `--start-time` / `--end-time`,
+  `signal_basis` и paired-метрики матожидания.
+- Отчёт: `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`.
+
 ## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
 
 ### Исправлено после review

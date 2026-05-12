@@ -61,6 +61,7 @@
 | [benchmark_signal_export_parity.py](benchmark_signal_export_parity.py) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | `ml_signals.csv` + optional tester log → reports/signal_export_parity/ | ✅ |
 | [benchmark_telemetry_frequency_calibration.py](benchmark_telemetry_frequency_calibration.py) | Калибровка частого diagnostic telemetry режима поверх take/skip score | prediction CSV → reports/telemetry_frequency_v1/calibration/ | ✅ |
 | [telemetry_daily_reconciliation.py](telemetry_daily_reconciliation.py) | Ежедневная сверка telemetry `ml_signals.csv` с MT4 MLP open/close log | `ml_signals.csv` + MT4 log → daily reconciliation report | ✅ |
+| [online_tester_reconciliation.py](online_tester_reconciliation.py) | Сверка online/tester `ml_trade_events.csv` по `signal_time + direction` | `ml_signals.csv` + online/tester event-log → reconciliation report | ✅ |
 | [benchmark_cross_instrument_robustness.py](benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | manifest JSON + signal CSV + OHLC + baseline reference → reports/cross_instrument_robustness/ | ✅ |
 | [benchmark_system_correlation.py](benchmark_system_correlation.py) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | manifest JSON + trade CSV / entry_path predictions → reports/system_correlation_portfolio/ | ✅ |
 | [live_safe_audit.py](live_safe_audit.py) | Core-типы и правила verdict для проверки признаков на online-безопасность | feature traces → PASS/FAIL/UNKNOWN | ✅ |

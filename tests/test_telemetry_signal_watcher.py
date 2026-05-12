@@ -264,6 +264,7 @@ def test_rebuild_signals_uses_runtime_snapshot_for_exports(monkeypatch, tmp_path
     ]
     assert Path(captured_signals["base_csv"]) == preprocessed_path
     assert captured_signals["diagnostic_direction_source"] == "fractal0_direction"
+    assert captured_signals["append_to_mt4"] is True
 
 
 def test_rebuild_signals_preprocesses_snapshot_before_inference(monkeypatch, tmp_path):

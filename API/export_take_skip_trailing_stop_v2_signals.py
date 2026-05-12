@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: export_take_skip_trailing_stop_v2_signals.py
 # Назначение: Применение frozen take/skip v2 rule к prediction CSV и экспорт time;signal для MT4
-# Обновлён: 2026-04-18
+# Обновлён: 2026-05-12
 # Входные данные:
 #   - prediction CSV с колонками time, signal, pred_take_* (откуда: evaluate/export или frozen reconstruction)
 #   - rule JSON из ML/reports/take_skip_trailing_stop_v2_*_selected_rule.json
@@ -40,6 +40,27 @@ def write_csv_atomic(frame: pd.DataFrame, path: str | Path) -> None:
     temp = target.with_suffix(target.suffix + '.tmp')
     frame.to_csv(temp, sep=';', index=False)
     os.replace(temp, target)
+
+
+def append_newer_signal_rows_atomic(frame: pd.DataFrame, path: str | Path) -> None:
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.exists() or target.stat().st_size == 0:
+        write_csv_atomic(frame, target)
+        return
+
+    existing = pd.read_csv(target, sep=';')
+    if {'time', 'signal'}.difference(existing.columns):
+        raise ValueError(f'existing signal CSV must contain time and signal columns: {target}')
+    if existing.empty:
+        merged = frame
+    else:
+        last_time = str(existing['time'].astype(str).iloc[-1])
+        new_rows = frame.loc[frame['time'].astype(str) > last_time].copy()
+        if new_rows.empty:
+            return
+        merged = pd.concat([existing, new_rows], ignore_index=True)
+    write_csv_atomic(merged, target)
 
 
 def sha256_file(path: str | Path) -> str:
@@ -188,7 +209,11 @@ def export_signals(
     diagnostic_all_rows: bool = False,
     diagnostic_target_signals_per_year: int | None = None,
     diagnostic_direction_source: str = 'predict',
+    append_to_mt4: bool = False,
 ) -> Path:
+    if append_to_mt4 and not copy_to_mt4:
+        raise ValueError('append_to_mt4 requires copy_to_mt4')
+
     frame = load_prediction_frame(predictions_path)
     rule_payload = load_rule_payload_from_file(rule_path)
     if diagnostic_all_rows:
@@ -244,8 +269,9 @@ def export_signals(
         metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding='utf-8')
 
     if copy_to_mt4:
-        write_csv_atomic(export, MT4_TESTER_SIGNALS)
-        write_csv_atomic(export, MT4_RUNTIME_SIGNALS)
+        writer = append_newer_signal_rows_atomic if append_to_mt4 else write_csv_atomic
+        writer(export, MT4_TESTER_SIGNALS)
+        writer(export, MT4_RUNTIME_SIGNALS)
 
     return output
 
@@ -287,6 +313,7 @@ def parse_args():
     parser.add_argument('--output', required=True, help='Output CSV path for time;signal')
     parser.add_argument('--base-csv', default=None, help='Optional full time/signal CSV to expand sparse predictions into full series.')
     parser.add_argument('--copy-to-mt4', action='store_true', help='Also copy exported CSV to tester/runtime ml_signals.csv paths.')
+    parser.add_argument('--append-to-mt4', action='store_true', help='When copying to MT4, preserve existing rows and append only rows newer than the current file tail.')
     parser.add_argument('--metadata-output', default=None, help='Optional JSON metadata output with hashes and signal counts.')
     parser.add_argument('--label', default='take_skip_trailing_stop_v2', help='Label stored in metadata output.')
     parser.add_argument('--diagnostic-all-rows', action='store_true', help='Build diagnostic signals from all rows using base_csv predict sign as direction.')
@@ -313,6 +340,7 @@ def main():
         diagnostic_all_rows=args.diagnostic_all_rows,
         diagnostic_target_signals_per_year=args.diagnostic_target_signals_per_year,
         diagnostic_direction_source=args.diagnostic_direction_source,
+        append_to_mt4=args.append_to_mt4,
     )
     print(path)
     return path

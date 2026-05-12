@@ -3,7 +3,7 @@
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
-//| Обновлён: 2026-05-11                                             |
+//| Обновлён: 2026-05-12                                             |
 //| Входные данные:                                                  |
 //|   - MQL4/Files/ml_signals.csv                                    |
 //| Поддерживаемые форматы CSV:                                      |
@@ -18,7 +18,7 @@
 #property strict
 
 #define MLP_SIGNALS_FILE "ml_signals.csv"
-#define MLP_EVENTS_FILE "ml_trade_events.csv"
+#define MLP_EVENTS_FILE_PREFIX "ML_Trade_Events_"
 #define MLP_MAX_SIGNALS  200000
 #define MLP_Ver          4.3
 #define MLP_EXIT_TIMEOUT 0
@@ -56,6 +56,10 @@ int MLP_cnt_broker_other = 0;
 
 int MLP_LoggedCloseTickets[];
 int MLP_LoggedCloseCount = 0;
+
+string MLP_EventsFileName(int magic) {
+   return MLP_EVENTS_FILE_PREFIX + NAME + "_" + S0(magic) + ".csv";
+}
 
 void MLP_WriteEventHeaderIfNeeded(int handle) {
    if (FileSize(handle) > 0) return;
@@ -96,6 +100,7 @@ void MLP_WriteEventHeaderIfNeeded(int handle) {
 }
 
 void MLP_LogTradeEvent(
+   int magic,
    string event_name,
    int ticket,
    string direction,
@@ -117,7 +122,7 @@ void MLP_LogTradeEvent(
    int open_positions,
    int max_positions
 ) {
-   int handle = FileOpen(MLP_EVENTS_FILE, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ | FILE_SHARE_WRITE, ';');
+   int handle = FileOpen(MLP_EventsFileName(magic), FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ | FILE_SHARE_WRITE, ';');
    if (handle < 0) return;
 
    MLP_WriteEventHeaderIfNeeded(handle);
@@ -302,7 +307,8 @@ void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
             " atr=", DoubleToString(atr_value, Digits),
             " pnl_atr=", DoubleToString(pnl_atr, 4),
             " profit=", DoubleToString(profit_value, 2));
-      MLP_LogTradeEvent("CLOSE",
+      MLP_LogTradeEvent(magic,
+            "CLOSE",
             ticket,
             (typ == OP_BUY ? "BUY" : "SELL"),
             0,
@@ -416,7 +422,8 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
             " trail_atr=", DoubleToString(ML_TrailATR, 2),
             " pnl_atr=", DoubleToString(pnl_atr, 4),
             " profit=", DoubleToString(profit_value, 2));
-      MLP_LogTradeEvent("CLOSE",
+      MLP_LogTradeEvent(magic,
+            "CLOSE",
             ticket,
             (typ == OP_BUY ? "BUY" : "SELL"),
             0,
@@ -564,7 +571,8 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             " Stp=", DoubleToString(stop_price, Digits),
             " Prf=", DoubleToString(take_profit_price, Digits),
             " Lot=", DoubleToString(lot_to_send, 2));
-      MLP_LogTradeEvent("OPEN",
+      MLP_LogTradeEvent(magic,
+            "OPEN",
             ticket,
             (sig == 1 ? "BUY" : "SELL"),
             signal_time,
@@ -577,6 +585,47 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             actual_open_price,
             actual_stop_price,
             actual_take_profit_price,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            open_positions_before,
+            ML_MaxPositions);
+   }
+   else {
+      double fail_spread = Ask - Bid;
+      double fail_spread_atr = 0.0;
+      if (atr_value > 0) fail_spread_atr = fail_spread / atr_value;
+      Print(magic, ":: MLP OPEN_FAILED",
+            " reason=OrderSendFailed",
+            " sig=", sig,
+            " signal_time=", TimeToString(signal_time),
+            " entry_time=", TimeToString(Time[0]),
+            " score=", DoubleToString(score, 6),
+            " atr=", DoubleToString(atr_value, Digits),
+            " spread=", DoubleToString(fail_spread, Digits),
+            " spread_atr=", DoubleToString(fail_spread_atr, 4),
+            " open_positions=", open_positions_before,
+            " MaxPositions=", ML_MaxPositions,
+            " Val=", DoubleToString(entry_price, Digits),
+            " Stp=", DoubleToString(stop_price, Digits),
+            " Prf=", DoubleToString(take_profit_price, Digits),
+            " Lot=", DoubleToString(lot_to_send, 2));
+      MLP_LogTradeEvent(magic,
+            "OPEN_FAILED",
+            ticket,
+            (sig == 1 ? "BUY" : "SELL"),
+            signal_time,
+            Time[0],
+            0,
+            "OrderSendFailed",
+            score,
+            atr_value,
+            entry_price,
+            0.0,
+            stop_price,
+            take_profit_price,
             0.0,
             0.0,
             0.0,

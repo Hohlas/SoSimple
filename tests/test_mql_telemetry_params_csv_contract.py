@@ -168,9 +168,12 @@ def test_ml_signal_runtime_reload_uses_file_modify_time():
 def test_ml_signal_writes_structured_trade_event_csv():
     text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
 
-    assert '#define MLP_EVENTS_FILE "ml_trade_events.csv"' in text
+    assert '#define MLP_EVENTS_FILE_PREFIX "ML_Trade_Events_"' in text
+    assert 'string MLP_EventsFileName(int magic)' in text
+    assert 'MLP_EventsFileName(magic)' in text
     assert "MLP_WriteEventHeaderIfNeeded" in text
     assert "MLP_LogTradeEvent(" in text
+    assert '"OPEN_FAILED"' in text
     for field in (
         "event",
         "ticket",

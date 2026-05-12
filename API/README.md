@@ -61,6 +61,8 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
 
 # Diagnostic all-rows export для online Nero.csv после causal preprocessing:
 # направление берётся из fractal0.direction после сортировки, а не из offline predict.
+# Для online-публикации в MT4 добавьте --copy-to-mt4 --append-to-mt4:
+# старые строки ml_signals.csv сохраняются, новые добавляются после хвоста файла.
 python -m API.export_take_skip_trailing_stop_v2_signals \
   --predictions ML/reports/telemetry_frequency_v1/runtime/runtime_predictions.csv \
   --rule-path ML/reports/telemetry_frequency_v1/calibration/selected_rule.json \
@@ -68,7 +70,9 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
   --base-csv ML/reports/telemetry_frequency_v1/runtime/runtime_input_preprocessed.csv \
   --diagnostic-all-rows \
   --diagnostic-target-signals-per-year 500 \
-  --diagnostic-direction-source fractal0_direction
+  --diagnostic-direction-source fractal0_direction \
+  --copy-to-mt4 \
+  --append-to-mt4
 
 # Online watcher: один проход. С текущим legacy original_baseline остановится
 # на contract guard до live-safe retrain.
