@@ -2,6 +2,28 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-13] - Live-safe entry_path online watcher
+
+- `API.telemetry_signal_watcher` переведён на production-кандидат
+  `entry_path_v1_live_safe + A @ 7.5%` по умолчанию; legacy take/skip watcher
+  оставлен отдельным `telemetry_frequency_v1_legacy` mode и по-прежнему требует
+  явный unsafe override.
+- M5 diagnostic для `entry_path_v1_live_safe` зафиксирован как threshold
+  override: тот же checkpoint/rule/feature profile, тот же gate `signal != 0`,
+  то же направление из prediction/export frame; меняется только
+  `score_threshold`.
+- `--entry-path-diagnostic-all-rows` оставлен только как отдельный mechanical
+  stress mode, не parity с production candidate.
+- Benchmark runtime window: полный 60k rebuild остановлен после 5 минут;
+  high-frequency diagnostic занял `17.217s` на 1000 строках, `3.541s` на 100,
+  `2.149s` на 24 и `2.084s` на latest-row; последний сигнал совпал.
+- Watcher ускорен для online polling: при неизменном `mtime` он не читает
+  `Nero.csv`, а при rebuild берёт последние строки seek-чтением с конца файла.
+- Runtime default уменьшен до `1` строки: watcher использует compatibility
+  substitution `vol_regime_24 := ATR`, проверенную на validation/test с
+  `signal_mismatch_rows=0`; тяжёлые legacy stress-окна задаются только через
+  явный `--max-runtime-rows`.
+
 ## [2026-05-12] - Online/tester execution reconciliation
 
 - Проверена M5-цепочка `MT4 -> ML -> MT4` на online/tester срезах: сигналы и

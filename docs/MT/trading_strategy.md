@@ -90,10 +90,12 @@ SoSimple260.330 2022.10.04-2026.03.10, Sprd=0, StpLev=0, OPT-telemetry_frequency
 BackTest=2
 ```
 
-На 2026-05-11 текущая рабочая строка переключена на `XAUUSD5` для M5
-diagnostic-контура `telemetry_frequency_v1_highfreq500`. Цель этого режима -
-быстро набрать много событий и проверить тракт `MT -> ML -> MT`, а не
-прибыльность.
+На 2026-05-13 основной online watcher переведён на live-safe candidate
+`entry_path_v1_live_safe + A @ 7.5%`. Для быстрого M5-набора событий можно
+использовать threshold override: та же модель, тот же rule, тот же gate
+`signal != 0`, то же направление из prediction/export frame, но ниже score
+threshold. Цель этого режима - проверить тракт `MT -> ML -> MT`, исполнение,
+пропуски и закрытия, а не прибыльность.
 
 Для этого diagnostic preset ключевые ML-параметры такие:
 
@@ -105,9 +107,14 @@ diagnostic-контура `telemetry_frequency_v1_highfreq500`. Цель это�
 - `ML_AllowReversal=0`;
 - `ML_UseScoreFilter=0`.
 
-Смысл: MT4 должен часто открывать заранее отобранные diagnostic-сигналы,
-закрывать их по timeout или broker SL/TP и писать достаточно подробные логи
-для reconciliation. PF в этом режиме не используется как критерий успеха.
+Смысл M5 diagnostic: MT4 должен открывать заранее отобранные diagnostic-сигналы,
+закрывать их по timeout или broker SL/TP и писать достаточно подробные логи для
+reconciliation. PF в этом режиме не используется как критерий успеха.
+Ослабленный threshold всегда помечать как diagnostic-only.
+
+All-rows top-N selection с direction из `fractal0.direction` не является parity
+с production candidate. Это отдельный mechanical stress mode, а не основной M5
+diagnostic.
 
 Для возврата к H1 parity `entry_path_v1_live_safe + A @ 7.5%` нужно вернуть
 `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_TakeProfitATR=0`,
@@ -421,7 +428,7 @@ training/test и online. Старый `original_baseline` можно запус�
 явным `--allow-unsafe-future-features` для механической диагностики связи,
 но не для вывода о качестве ML.
 
-Важное уточнение по направлению online-сигнала, найденное 2026-04-28:
+Историческое уточнение по legacy take/skip diagnostic, найденное 2026-04-28:
 
 - эксперт пересобирает и дописывает `Nero.csv` по истории и новым уровням;
 - `signal` и `predict` в raw online `Nero.csv` остаются нулевыми, и это не
@@ -430,7 +437,7 @@ training/test и online. Старый `original_baseline` можно запус�
   `predict = -back * direction`;
 - поэтому в live-контуре нельзя честно досчитать тот же `predict` в момент
   появления строки;
-- для diagnostic online-export watcher использует `fractal0.direction` после
+- для legacy diagnostic online-export watcher использовал `fractal0.direction` после
   сортировки как
   доступный текущий источник направления:
   - `fractal0.direction = -1 -> BUY`;
@@ -439,10 +446,10 @@ training/test и online. Старый `original_baseline` можно запус�
 Так сохраняется знак старого diagnostic-подхода через `predict`, но без
 использования будущих данных.
 
-Ограничение этого решения: это diagnostic-режим для набора статистики
-MT4↔ML↔MT4. Он не доказывает, что production-стратегия должна использовать
-ровно тот же источник направления. Для production-перехода нужно отдельно
-проверить соответствие выбранного online-направления обучающей постановке.
+Ограничение этого решения: это legacy diagnostic/stress режим для набора
+статистики MT4↔ML↔MT4. Для текущего production candidate
+`entry_path_v1_live_safe + A @ 7.5%` направление должно идти из
+prediction/export frame, а не из `fractal0.direction`.
 
 Для online-наблюдения ключевой operational смысл такой:
 
@@ -451,8 +458,8 @@ MT4↔ML↔MT4. Он не доказывает, что production-стратег
 2. отдельный Python watcher работает в фоне и ждёт новый закрытый бар;
 3. если `Nero.csv` пока содержит только заголовок, watcher остаётся в состоянии
    `waiting_for_first_row`, пишет это в лог и ждёт первый закрытый бар;
-4. после появления строки данных watcher сначала собирает raw
-   `runtime_input_snapshot.csv` из хвоста `Nero.csv`, затем строит
+4. после изменения `Nero.csv` watcher берёт последний `time` и raw
+   `runtime_input_snapshot.csv` seek-чтением из хвоста файла, затем строит
    `runtime_input_preprocessed.csv`, пересчитывает prediction CSV и обновляет
    `ml_signals.csv`;
 5. MT4 на новом баре видит изменение файла и пишет `MLP_RELOAD: file changed`;
@@ -533,7 +540,6 @@ tmux new -s telemetry-watcher
 ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
-  --max-runtime-rows 12000 \
   --verbose
 ```
 

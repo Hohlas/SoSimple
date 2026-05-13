@@ -17,10 +17,12 @@
 - ждёт новый закрытый бар в `Nero.csv`;
 - строит компактный `runtime_input_snapshot.csv` из хвоста `Nero.csv`;
 - строит `runtime_input_preprocessed.csv`: сортирует фракталы и выполняет rowwise-нормализацию без future labels;
-- проверяет online inference contract и по умолчанию блокирует модели,
-  которым нужны future-derived row features;
-- строит свежий prediction CSV через `ML.export_take_skip_v2_predictions`;
-- применяет frozen telemetry rule через `API.export_take_skip_trailing_stop_v2_signals`;
+- проверяет online inference contract и блокирует legacy модели, которым нужны
+  future-derived row features;
+- в режиме по умолчанию строит prediction CSV через
+  `ML.export_entry_path_predictions` с `feature_profile=entry_path_v1_live_safe`;
+- применяет frozen rule `entry_path_v1_live_safe + A @ 7.5%` через
+  `API.export_entry_path_v1_signals`;
 - публикует новые строки `ml_signals.csv` в runtime/tester каталогах в
   append-only режиме через временный файл и замену;
 - пишет state/log/metadata.
@@ -34,11 +36,13 @@
 ## Что именно он использует
 
 - входной CSV: `MT/MQL4/Files/Nero.csv`
-- checkpoint: `ML/reports/take_skip_trailing_stop_v2_matrix/transformer_seq50/checkpoint.pt`
-- frozen rule: `ML/reports/telemetry_frequency_v1/calibration/selected_rule.json`
+- default checkpoint:
+  `ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/transformer_entry_path_v1_features_entry_path_v1_live_safe_best.pt`
+- default frozen rule:
+  `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`
 - preprocessing contract: `fractal0` = самый свежий фрактал после сортировки, rowwise-normalized признаки;
-- legacy inference contract: `mode=original_contour`,
-  `feature_mode=original_baseline`, `seq_len=50`
+- default inference contract: `task=entry_path_v1`,
+  `feature_profile=entry_path_v1_live_safe`, true targets disabled.
 
 Важно: этот legacy contract теперь заблокирован по умолчанию для online-запуска.
 Причина - `original_baseline` обучался и проверялся с row-wise признаками
@@ -49,7 +53,8 @@
 передать `--allow-unsafe-future-features`, но такой запуск нельзя считать
 проверкой соответствия online и test.
 
-Текущий watcher заточен под diagnostic профиль `telemetry_frequency_v1_highfreq500`.
+Legacy `telemetry_frequency_v1_legacy` оставлен только для старой механической
+диагностики и требует `--allow-unsafe-future-features`.
 
 ### Что из preprocessing реально нужно online
 
@@ -78,25 +83,19 @@ MT4 пишет raw `Nero.csv` в рабочем runtime формате:
   `predict=0` не менял масштаб `front/back`;
 - сохраняет `runtime_input_preprocessed.csv`.
 
-Затем `ML.export_take_skip_v2_predictions`:
+Затем default mode запускает `ML.export_entry_path_predictions`:
 
 - парсит fractal-структуру;
-- собирает `original_contour` входы (`20 fractal features + summaries + row-wise features = 539`);
-- прогоняет checkpoint;
-- выдаёт `pred_take_*` для frozen telemetry rule.
+- строит `entry_path_v1_live_safe` feature profile;
+- использует runtime compatibility mode `vol_regime_24 := ATR`;
+- не требует future target columns (`--no-true-targets` path);
+- прогоняет seed 42 live-safe checkpoint;
+- выдаёт `pred_ret_24_dir_atr` и другие prediction columns для frozen rule.
 
-Направление diagnostic-сделки в online-режиме берётся не из `predict`, а из
-`fractal0.direction` после сортировки и нормализации с обратным знаком:
-
-```text
-fractal0.direction = -1 -> BUY
-fractal0.direction =  1 -> SELL
-```
-
-Причина: offline `predict` является обучающей меткой с просмотром будущих строк
-(`predict = -back * direction`). В live `Nero.csv` будущего ещё нет, поэтому
-watcher использует текущий `fractal0.direction` как online-эквивалент знака
-старого diagnostic `predict`.
+Направление сигнала в production и threshold-diagnostic режимах берётся только
+из prediction/export frame: `API.export_entry_path_v1_signals` сохраняет
+исходный `signal` для строк, прошедших score threshold, и обнуляет остальные.
+`fractal0.direction` в этих режимах не используется.
 
 ## Почему это отдельный процесс
 
@@ -116,7 +115,10 @@ Watcher хранит `runtime_state.json` и сравнивает:
 - последнее значение `time` в `Nero.csv`;
 - `mtime` исходного файла.
 
-Если нового закрытого бара нет, пересчёт не делается.
+Если `mtime` не изменился, watcher сразу пишет `IDLE` и не читает хвост
+`Nero.csv`. Если `mtime` изменился, watcher читает последнюю непустую строку
+через seek от конца файла, а не полным проходом по многолетнему CSV. Если
+нового закрытого бара нет, пересчёт не делается.
 
 Если `Nero.csv` уже создан, но пока содержит только заголовок без строк данных,
 watcher не считает это ошибкой. Он пишет в `runtime_state.json`
@@ -125,18 +127,21 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 
 Если новый бар появился:
 
-1. из полного `Nero.csv` собирается raw `runtime_input_snapshot.csv` только по последним `max_runtime_rows`;
+1. из хвоста `Nero.csv` собирается raw `runtime_input_snapshot.csv` только по последним `max_runtime_rows`;
 2. из snapshot строится `runtime_input_preprocessed.csv`;
 3. contract guard проверяет, можно ли честно запускать выбранный checkpoint
    online;
 4. по preprocessed snapshot строится `runtime_predictions.csv`;
-5. по preprocessed snapshot строится полный diagnostic `runtime_ml_signals.csv`;
+5. exporter строит `runtime_ml_signals.csv`;
 6. exporter публикует новые строки в append-only режиме в:
    - `MT/MQL4/Files/ml_signals.csv`
    - `MT/tester/files/ml_signals.csv`
 7. state обновляется только после успешного rebuild.
 
-По умолчанию `max_runtime_rows=12000`.
+Mode-dependent default:
+
+- `entry_path_v1_live_safe_online`: `max_runtime_rows=1`;
+- `telemetry_frequency_v1_legacy`: `max_runtime_rows=1`.
 
 Зачем это сделано:
 
@@ -150,32 +155,103 @@ watcher не считает это ошибкой. Он пишет в `runtime_s
 
 Практический смысл ограничения:
 
+- для исходного training/offline контракта одной строки было недостаточно из-за
+  `vol_regime_24 = rolling_mean(ATR, 24 rows)`;
+- для frozen training/offline contract `vol_regime_24` считался как
+  `rolling_mean(ATR, 24 rows)`, но watcher применяет runtime compatibility
+  substitution `vol_regime_24 := ATR`;
+- validation/test сравнение подтвердило `signal_mismatch_rows=0`, поэтому
+  текущий production-like online/tester watcher читает только последнюю строку;
+- legacy mode не получает скрытый большой default: если нужен старый
+  batch/stress top-N по большому окну, `--max-runtime-rows 12000` нужно указать
+  явно;
 - для планового online H1-режима это безопасно, если окно заметно больше фактического числа runtime-строк за год;
 - для M1 debug-режима это осознанный компромисс ради памяти;
 - если понадобится полный исторический export, его нужно запускать отдельным offline/one-shot прогоном, а не постоянным watcher-ом.
 
+## Runtime window benchmark 2026-05-13
+
+Benchmark выполнен на `MT/MQL4/Files/Nero.csv` с последним временем
+`2026.05.11 22:35`. Полный режим на `60178` строк был остановлен после 5 минут
+без результата, поэтому он непригоден для online rebuild на каждом новом баре.
+
+Production baseline `A @ 7.5%` на M5-хвосте дал `0` ненулевых сигналов во всех
+проверенных окнах, потому что production export уважает исходный gate
+`signal != 0`. Threshold override сохраняет этот же gate и направление из
+prediction/export frame; если в runtime window нет строк `signal != 0`, он тоже
+не создаст сделок.
+
+Предыдущий all-rows stress benchmark (`top-N=5000/year`) не является parity с
+production candidate, потому что игнорирует `signal != 0` и берёт direction из
+`fractal0.direction`:
+
+| Runtime window | Total rebuild | Preprocess | Prediction | Non-zero | Last time | Last signal |
+|---:|---:|---:|---:|---:|---|---:|
+| 1000 | 17.2170s | 10.8151s | 5.3111s | 953 | 2026.05.11 22:35 | -1 |
+| 100 | 3.5414s | 1.0904s | 1.2909s | 98 | 2026.05.11 22:35 | -1 |
+| 24 | 2.1494s | 0.2653s | 0.7697s | 24 | 2026.05.11 22:35 | -1 |
+| 1 | 2.0840s | 0.0458s | 1.0477s | 1 | 2026.05.11 22:35 | -1 |
+
+Последний сигнал совпал с окном `1000` для окон `100`, `24` и `1`.
+Тяжёлые intermediate CSV benchmark не сохраняются в репозитории; итоговые числа
+зафиксированы в этой секции.
+
+Минимальный контекст:
+
+- модель использует текущую строку `Nero.csv` и до `100` фракталов внутри этой
+  строки; это не требует тысяч прошлых строк;
+- в training/offline contract `vol_regime_24` использует rolling mean `ATR` по
+  последним 24 строкам;
+- в runtime watcher `vol_regime_24` заполняется текущим `ATR`; имя и позиция
+  колонки сохраняются, поэтому frozen checkpoint можно использовать без
+  переобучения;
+- `session_hour` и `weekday` берутся из `time`;
+- `range_atr_6` и `body_atr_3` остаются `0`, если в runtime `Nero.csv` нет
+  OHLC rolling columns;
+- окно `1` является текущим production-like runtime default. Для следующего
+  retrain нужно либо честно обучать с `vol_regime_24 := ATR`, либо удалить этот
+  признак из feature profile и заново выбрать rule.
+
 ## Запуск
 
-Один проход. Для текущего legacy `original_baseline` этот запуск остановится
-на contract guard до появления live-safe checkpoint:
+Один проход live-safe production baseline `A @ 7.5%`:
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher --once --verbose
 ```
 
-Только для старой механической диагностики связи MT4 -> Python -> CSV -> MT4:
+M5 high-frequency diagnostic, рекомендуемый путь: тот же checkpoint, та же
+rule, тот же feature profile, тот же production gate `signal != 0`, то же
+направление из prediction/export frame. Отличается только score threshold:
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher \
-  --once \
-  --verbose \
-  --allow-unsafe-future-features
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --entry-path-score-threshold-override -0.50 \
+  --verbose
 ```
+
+Это diagnostic-only threshold. Его нельзя трактовать как проверку прибыльности;
+production baseline остаётся `entry_path_v1_live_safe + A @ 7.5%`.
+
+Отдельный mechanical stress mode, не parity с production candidate:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --entry-path-diagnostic-all-rows \
+  --diagnostic-target-signals-per-year 5000 \
+  --verbose
+```
+
+Этот режим игнорирует production gate `signal != 0`, выбирает top-N строк по
+score внутри года и берёт direction из `fractal0.direction`. Его нельзя
+использовать как основной M5 diagnostic для `entry_path_v1_live_safe`.
 
 Основной режим эксплуатации: отдельное окно `tmux`:
 
 ```bash
-mkdir -p ML/reports/telemetry_frequency_v1/runtime
+mkdir -p ML/reports/entry_path_v1_live_safe/runtime
 
 tmux new -s telemetry-watcher
 ```
@@ -186,28 +262,23 @@ tmux new -s telemetry-watcher
 ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
-  --max-runtime-rows 12000 \
   --verbose
 ```
 
-Пока используется legacy `original_baseline`, этот tmux-запуск также будет
-заблокирован contract guard. Добавлять `--allow-unsafe-future-features` можно
-только если цель - проверить механическую цепочку, а не ML-корректность.
-
-Для текущего M5 diagnostic `telemetry_frequency_v1_highfreq500` цель именно
-механическая: быстро проверить `MT -> Nero.csv -> watcher -> ml_signals.csv ->
-MT`, открытие, пропуски и закрытия. Поэтому на 2026-05-11 watcher запускается
-с явным unsafe-флагом:
+Только для старой механической диагностики связи MT4 -> Python -> CSV -> MT4:
 
 ```bash
 ./.venv/bin/python -m API.telemetry_signal_watcher \
+  --watcher-mode telemetry_frequency_v1_legacy \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
-  --max-runtime-rows 12000 \
   --diagnostic-target-signals-per-year 5000 \
   --allow-unsafe-future-features \
   --verbose
 ```
+
+Если нужен именно старый тяжёлый batch/stress-прогон legacy top-N по большому
+окну, добавь `--max-runtime-rows 12000` явно. Это не production default.
 
 MT4 online при этом запускается с `BackTest=0`, чтобы советник перебрал все
 строки `#.csv` и выбрал строку `XAUUSD5`. `BackTest=2` оставлять только для
@@ -292,10 +363,13 @@ tail -n 50 ML/reports/telemetry_frequency_v1/runtime/telemetry_signal_watcher.lo
 
 ## Ограничения
 
-- watcher сейчас реализует только telemetry take/skip v2 contour;
+- watcher поддерживает основной `entry_path_v1_live_safe_online` contour и
+  отдельный legacy `telemetry_frequency_v1_legacy` diagnostic/stress contour;
 - используется polling, а не OS-level file events;
 - если `Nero.csv` испорчен или checkpoint/rule недоступны, rebuild не завершится, а ошибка уйдёт в log;
 - `header-only` состояние `Nero.csv` допустимо сразу после старта expert: это не ошибка, а ожидание первого завершённого бара;
 - для наблюдаемого server-режима основным способом запуска считается `tmux`, а не `nohup`;
 - практические дефолты для сильного сервера: `poll=1s`, `heartbeat=60s`.
-- практический лимит памяти задаётся через `--max-runtime-rows`; по умолчанию watcher держит только последние `12000` строк `Nero.csv`.
+- практический лимит памяти задаётся через `--max-runtime-rows`; по умолчанию
+  watcher держит последние `24` строки; большие legacy stress-окна задаются
+  только явно через CLI.
