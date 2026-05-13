@@ -188,6 +188,15 @@ python -m ML.telemetry_daily_reconciliation \
   --mt4-log MT/tester/logs/20260427.log \
   --export-metadata ML/reports/telemetry_frequency_v1/export_metadata.json \
   --output-dir ML/reports/telemetry_frequency_v1/daily/2026-04-27
+
+# Online/tester reconciliation by event-log
+python -m ML.online_tester_reconciliation \
+  --events MT/MQL4/Files/ML_Trade_Events_SoSimple_662427296.csv \
+  --signals MT/MQL4/Files/ml_signals.csv \
+  --tester-events MT/tester/files/ML_Trade_Events_SoSimple_662427296.csv \
+  --output-dir ML/reports/online_tester_reconciliation/2026-05-12 \
+  --start-time "2026.05.12 00:10" \
+  --end-time "2026.05.12 13:05"
 ```
 
 `run_take_skip_lib_pic_feature_matrix.py` сам ограничивает цели теми `trail_*_pnl_atr_x*`, которые есть в текущих labeled CSV. Для старых DATA это обычно `x2/x4/x8`; для расширенных DATA добавятся `x10/x12`.
@@ -196,3 +205,4 @@ python -m ML.telemetry_daily_reconciliation \
 `benchmark_system_correlation.py` не выбирает новые trading modes: он только нормализует существующие сделки и считает pairwise overlap/correlation verdicts.
 `export_entry_path_predictions.py` нужен именно для frozen transfer-проверок: он не переобучает модели и ожидает полный entry-path labeled contract на входе.
 `benchmark_telemetry_frequency_calibration.py` выбирает частоту, а не прибыльность; `telemetry_daily_reconciliation.py` нужен для ежедневной проверки demo/test исполнения по MLP-логам.
+`online_tester_reconciliation.py` нужен для сверки online и tester event-log по `signal_time + direction`; подробная инструкция: [docs/ML/online_tester_reconciliation.py.md](../docs/ML/online_tester_reconciliation.py.md).

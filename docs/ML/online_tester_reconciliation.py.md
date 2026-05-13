@@ -4,6 +4,8 @@
 
 `ML/online_tester_reconciliation.py` сверяет online `ml_trade_events.csv` с ожидаемыми `ml_signals.csv` и, при наличии tester event-log, сравнивает online/tester сделки.
 
+Это основной документ для повторных online/tester diagnostic-сверок. Отчёты в `docs/reports/` должны фиксировать конкретный результат прогона, а не дублировать здесь описание входов, команды запуска и метрик.
+
 Инструмент нужен для проверки цепочки `MT4 -> ML -> MT4` перед реальным счетом:
 
 - сигнал есть, но сделки нет;
@@ -22,7 +24,7 @@
 ## Запуск
 
 ```bash
-python -m ML.online_tester_reconciliation \
+./.venv/bin/python -m ML.online_tester_reconciliation \
   --events MT/MQL4/Files/ML_Trade_Events_SoSimple_662427296.csv \
   --signals MT/MQL4/Files/ml_signals.csv \
   --tester-events MT/tester/files/ML_Trade_Events_SoSimple_662427296.csv \

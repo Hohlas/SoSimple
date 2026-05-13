@@ -179,7 +179,7 @@ online даже лучше tester на `+31.6`, поэтому отрицате�
 ## Related Materials
 
 - `ML/online_tester_reconciliation.py`
-- `docs/ML/online_tester_reconciliation.py.md`
+- `docs/ML/online_tester_reconciliation.py.md` - основной документ для повторных online/tester-сверок; этот отчёт фиксирует только результат прогона 2026-05-12.
 - `MT/MQL4/Include/lib_ML_Signal.mqh`
 - `docs/MT/ml_signal_integration.md`
 - `docs/MT/trading_strategy.md`

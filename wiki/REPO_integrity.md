@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-12 13:53 UTC · git `f8ed9e1`
+> Auto-generated 2026-05-13 06:15 UTC · git `e766d54`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,14 +9,14 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1119 files  ·  **Commit**: `f8ed9e1`  ·  **Generated**: 2026-05-12 13:53 UTC
+**Tracked**: 1119 files  ·  **Commit**: `e766d54`  ·  **Generated**: 2026-05-13 06:15 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-12 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-12 | 152KB | `4e12dfcb` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-13 | 153KB | `1a96fce8` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-12 | 9KB | `d7e05aed` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-12 | 36KB | `3e133fc7` |
@@ -47,7 +47,7 @@
 | [docs/ML/live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit | 2026-05-05 | 469B | `8d81d796` |
 | [docs/ML/ml_leakage_preflight_checklist.md](docs/ML/ml_leakage_preflight_checklist.md) | Чеклист перед test/MT4/online ML-запуском для исключения заглядывания вперёд | 2026-04-30 | 16KB | `924087f2` |
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-11 | 25KB | `a7ea744f` |
-| [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md) |  | 2026-05-12 | 3KB | `631a4358` |
+| [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md) |  | 2026-05-13 | 3KB | `28aa6c93` |
 | [docs/ML/prepare_entry_path_mt4_parity.py.md](docs/ML/prepare_entry_path_mt4_parity.py.md) | Подготовка frozen `entry_path_v1_live_safe + A @ 7.5%` export для MT4 parity | 2026-05-11 | 1KB | `5e881e55` |
 | [docs/ML/run_entry_path_live_safe_retrain.py.md](docs/ML/run_entry_path_live_safe_retrain.py.md) |  | 2026-05-11 | 2KB | `72abe04a` |
 | [docs/ML/run_entry_path_quantile_live_safe_retrain.py.md](docs/ML/run_entry_path_quantile_live_safe_retrain.py.md) |  | 2026-05-11 | 2KB | `82076ca6` |
@@ -59,7 +59,7 @@
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-05-12 | 22KB | `4220b36c` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-05-12 | 44KB | `41d3c3ca` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-04-27 | 4KB | `dba0c943` |
-| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-04-30 | 3KB | `db162f09` |
+| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-05-13 | 4KB | `817644ee` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-01 | 10KB | `7d9009ee` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-04-30 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-05-11 | 3KB | `d018efa2` |
@@ -206,14 +206,14 @@
 | [docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md) |  | 2026-05-11 | 6KB | `329c7872` |
 | [docs/reports/2026-05-07-entry-path-mt4-parity.md](docs/reports/2026-05-07-entry-path-mt4-parity.md) |  | 2026-05-11 | 4KB | `b8c63e3c` |
 | [docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md](docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md) |  | 2026-05-11 | 3KB | `10ba83c4` |
-| [docs/reports/2026-05-12-online-tester-execution-reconciliation.md](docs/reports/2026-05-12-online-tester-execution-reconciliation.md) |  | 2026-05-12 | 7KB | `e7547620` |
+| [docs/reports/2026-05-12-online-tester-execution-reconciliation.md](docs/reports/2026-05-12-online-tester-execution-reconciliation.md) |  | 2026-05-13 | 11KB | `251ff527` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [ML/README.md](ML/README.md) |  |  | 2026-05-12 | 14KB | `ef498102` |
+| [ML/README.md](ML/README.md) |  |  | 2026-05-13 | 15KB | `89e0bc05` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-03-12 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-02-25 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-01 | 4KB | `66cbf52f` |
@@ -1169,9 +1169,9 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-10 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-11 | 2KB | `9f93f579` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-12 | 23KB | `a61537e5` |
-| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-12 | 82KB | `45f7e334` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-13 | 2KB | `8bafa275` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-13 | 23KB | `358eefe9` |
+| [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md) |  | 2026-05-13 | 84KB | `106d02c3` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-10 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 

@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-07
-sources: 36
+last_updated: 2026-05-13
+sources: 37
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 36 отчётов (2026-04-08 — 2026-05-07). Параллельные направления execution, live-safe аудит прибыльных ML-систем и текущий основной кандидат `entry_path_v1_live_safe + A @ 7.5%`.
+> Синтез 37 отчётов (2026-04-08 — 2026-05-12). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity и online/tester diagnostic-сверка.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1352,3 +1352,32 @@ Reconciliation:
 сигналов: после `2025.12.31` остаются 3 BUY-сигнала в 2026 году.
 
 Источник: [2026-05-07-entry-path-mt4-parity.md](../../docs/reports/2026-05-07-entry-path-mt4-parity.md)
+
+## 18. Online/Tester Execution Reconciliation (05-12)
+
+M5 diagnostic-прогон проверял механику `MT4 -> ML -> MT4`, а не прибыльность
+стратегии. Online и tester `ml_signals.csv` совпали: сигнальный слой
+воспроизводится, расхождение возникло на этапе исполнения сделок в MT4.
+
+Стабильный закрытый срез `2026.05.12 00:10` - `2026.05.12 13:05`:
+
+| Metric | Online | Tester |
+|---|---:|---:|
+| closed trades | 67 | 68 |
+| PnL | -680.2 | -522.6 |
+| E[PnL] per closed trade | -10.1522 | -7.6853 |
+
+На общей исполнимой части online пропустил 6 входов против tester. Первые три
+пропуска подтверждены в MT4-логе как `requote ERROR-138`. В парных 65 закрытых
+сделках разница матожидания была небольшой: online `-11.4615`, tester
+`-10.7185`, delta `-0.7431`.
+
+Вывод: главный вред старого прогона дали пропущенные online-входы, а не PnL
+расхождение по уже открытым парным сделкам. Для следующих прогонов нужно
+использовать append-only `ml_signals.csv`, event-log с `OPEN_FAILED` и запускать
+`ML.online_tester_reconciliation` с явными `--start-time` / `--end-time`.
+Инструкция по инструменту живёт в
+[docs/ML/online_tester_reconciliation.py.md](../../docs/ML/online_tester_reconciliation.py.md);
+отчёты должны фиксировать только конкретные результаты прогонов.
+
+Источник: [2026-05-12-online-tester-execution-reconciliation.md](../../docs/reports/2026-05-12-online-tester-execution-reconciliation.md)

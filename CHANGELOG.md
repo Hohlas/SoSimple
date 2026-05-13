@@ -16,6 +16,9 @@
   сравнение online/tester идёт по `signal_time + direction`, `OPEN_FAILED`
   считается отдельным статусом, добавлены `--start-time` / `--end-time`,
   `signal_basis` и paired-метрики матожидания.
+- Инструкция для повторных запусков зафиксирована в
+  `docs/ML/online_tester_reconciliation.py.md`; отчёт ниже хранит результат
+  конкретного прогона, а не является основной инструкцией по инструменту.
 - Отчёт: `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`.
 
 ## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
