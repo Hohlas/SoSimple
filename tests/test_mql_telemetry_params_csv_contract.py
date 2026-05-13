@@ -200,6 +200,15 @@ def test_ml_signal_writes_structured_trade_event_csv():
         assert field in text
 
 
+def test_ml_signal_resets_tester_trade_event_csv_once():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert "MLP_EventsFilePrepared" in text
+    assert "void MLP_PrepareEventFileIfNeeded(int magic)" in text
+    assert "if (IsTesting()) FileDelete(MLP_EventsFileName(magic));" in text
+    assert "MLP_PrepareEventFileIfNeeded(magic);" in text
+
+
 def test_history_recount_and_pic_contract_are_present_in_mql_flow():
     service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
     pic = (ROOT / "MT/MQL4/Include/lib_PIC.mqh").read_text(encoding="utf-8", errors="replace")

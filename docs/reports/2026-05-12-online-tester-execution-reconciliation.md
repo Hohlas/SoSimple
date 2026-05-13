@@ -26,7 +26,7 @@
 
 Проверено построчное соответствие `ml_signals.csv` online/tester. Затем события сделок сопоставлены по `signal_time + direction`, а не по `ticket`, потому что ticket в online и tester не обязан совпадать.
 
-Для повторного прогона tester event-log предварительно дедуплицирован: в исходном `MT/tester/files/ML_Trade_Events_SoSimple_662427296.csv` большинство `OPEN`/`CLOSE` событий были записаны дважды. Без дедупликации `build_trades()` создаёт декартово произведение `2 OPEN x 2 CLOSE = 4` строки на одну сделку и завышает tester-метрики.
+Для повторного прогона tester event-log предварительно дедуплицирован: в исходном `MT/tester/files/ML_Trade_Events_SoSimple_662427296.csv` первый блок из `309` строк был повторён вторым блоком с теми же `ticket` и полями. Причина была не в двойном `FileWrite()` каждого события, а в том, что tester event-log не очищался перед новым tester-прогоном и дописывал события в старый файл. Без дедупликации `build_trades()` создаёт декартово произведение `2 OPEN x 2 CLOSE = 4` строки на одну сделку и завышает tester-метрики.
 
 Отдельно посчитаны:
 
@@ -38,7 +38,10 @@
 ## Changed Files
 
 - `ML/online_tester_reconciliation.py` - исправлен и расширен CLI сверки online/tester event-log.
+- `MT/MQL4/Include/lib_ML_Signal.mqh` - исправлен tester event-log: файл очищается один раз перед первой записью tester-прогона.
+- `MT/MQL4/Experts/$o$imple.mq4` - версия поднята до `260.334` для трассировки MQL bugfix в MT4-логе.
 - `tests/test_online_tester_reconciliation.py` - добавлены unit-тесты на текущий CSV-контракт.
+- `tests/test_mql_telemetry_params_csv_contract.py` - добавлен контрактный тест на очистку tester event-log.
 - `docs/ML/online_tester_reconciliation.py.md` - добавлена документация модуля.
 - `ML/README.md`, `MODULE_INDEX.md` - добавлена навигация по модулю.
 - `docs/reports/2026-05-12-online-tester-execution-reconciliation.md` - этот отчет.
@@ -68,6 +71,14 @@
 ```
 
 Результат unit-тестов: `4 passed`.
+
+После фикса очистки tester event-log:
+
+```bash
+./.venv/bin/python -m pytest tests/test_mql_telemetry_params_csv_contract.py -q
+```
+
+Результат: `12 passed`.
 
 ## Results
 
@@ -278,7 +289,7 @@ Spread:
 ## Limitations / Open Questions
 
 - Старый event-log 2026-05-12 не содержит `OPEN_FAILED`, поэтому часть причин видна только через текстовый MT4-лог.
-- Tester event-log 2026-05-13 содержит систематические дубли `OPEN`/`CLOSE`; перед сравнением его нужно дедуплицировать. Иначе `build_trades()` создаёт кратные строки на одну сделку.
+- Tester event-log 2026-05-13 содержал систематические дубли `OPEN`/`CLOSE`, потому что файл не очищался перед новым tester-прогоном. Исправлено в `lib_ML_Signal.mqh`: в tester-режиме CSV удаляется один раз перед первой записью текущего прогона.
 - Правый край tester-лога содержит неполные сделки и `TestGenerator: unmatched data error` около `2026.05.12 14:15`; правый край не должен использоваться как строгий verdict.
 - Матожидание на ожидаемый сигнал считает пропущенные и открытые хвостовые сделки как `0`, чтобы не смешивать realized PnL с неизвестным будущим результатом.
 - Причина 65-минутной задержки входа `2026.05.12 22:55 -> 2026.05.13 00:00` не доказана. Широкий online-spread сопутствует этому случаю, но tester тоже задержал вход до `00:00`.
@@ -287,7 +298,7 @@ Spread:
 
 Перед реальным счётом нужно снизить риск исполнения от `requote ERROR-138`: добавить или проверить retry-механику `OrderSend`/`OrderClose`, логировать итоговую причину после всех попыток и отдельно контролировать случаи `hold_bars=25`.
 
-Для инструмента сверки нужно добавить защиту от дублей tester event-log: либо автоматическую дедупликацию по `event + signal_time + direction` / `ticket`, либо явную ошибку с понятным сообщением.
+Для инструмента сверки всё ещё полезно добавить защиту от дублей tester event-log: явную ошибку с понятным сообщением, если входной CSV содержит повторный полный блок или дубли `event + ticket`.
 
 ## Related Materials
 

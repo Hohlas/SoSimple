@@ -3,7 +3,7 @@
 //| Назначение: Прямое исполнение ML-сигналов для parity-check        |
 //|             без старого INPUT/OUTPUT контура                      |
 //| Автор: SoSimple                                                  |
-//| Обновлён: 2026-05-12                                             |
+//| Обновлён: 2026-05-13                                             |
 //| Входные данные:                                                  |
 //|   - MQL4/Files/ml_signals.csv                                    |
 //| Поддерживаемые форматы CSV:                                      |
@@ -56,6 +56,8 @@ int MLP_cnt_broker_other = 0;
 
 int MLP_LoggedCloseTickets[];
 int MLP_LoggedCloseCount = 0;
+int MLP_EventsFilePrepared[];
+int MLP_EventsFilePreparedCount = 0;
 
 string MLP_EventsFileName(int magic) {
    return MLP_EVENTS_FILE_PREFIX + NAME + "_" + S0(magic) + ".csv";
@@ -99,6 +101,26 @@ void MLP_WriteEventHeaderIfNeeded(int handle) {
       "equity");
 }
 
+bool MLP_EventFileWasPrepared(int magic) {
+   for (int i = 0; i < MLP_EventsFilePreparedCount; i++) {
+      if (MLP_EventsFilePrepared[i] == magic) return true;
+   }
+   return false;
+}
+
+void MLP_MarkEventFilePrepared(int magic) {
+   if (MLP_EventFileWasPrepared(magic)) return;
+   ArrayResize(MLP_EventsFilePrepared, MLP_EventsFilePreparedCount + 1);
+   MLP_EventsFilePrepared[MLP_EventsFilePreparedCount] = magic;
+   MLP_EventsFilePreparedCount++;
+}
+
+void MLP_PrepareEventFileIfNeeded(int magic) {
+   if (MLP_EventFileWasPrepared(magic)) return;
+   if (IsTesting()) FileDelete(MLP_EventsFileName(magic));
+   MLP_MarkEventFilePrepared(magic);
+}
+
 void MLP_LogTradeEvent(
    int magic,
    string event_name,
@@ -122,6 +144,7 @@ void MLP_LogTradeEvent(
    int open_positions,
    int max_positions
 ) {
+   MLP_PrepareEventFileIfNeeded(magic);
    int handle = FileOpen(MLP_EventsFileName(magic), FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ | FILE_SHARE_WRITE, ';');
    if (handle < 0) return;
 

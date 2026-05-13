@@ -24,6 +24,11 @@
 - Найден риск качества данных: tester event-log `2026-05-13` пишет дубли
   `OPEN`/`CLOSE`; перед сверкой его нужно дедуплицировать, иначе одна сделка
   превращается в кратные строки.
+- Root cause дублей найден и исправлен: tester event-log не очищался перед
+  новым tester-прогоном, поэтому старый блок событий оставался в CSV. В
+  `lib_ML_Signal.mqh` tester-режим теперь удаляет
+  `ML_Trade_Events_<NAME>_<magic>.csv` один раз перед первой записью, online
+  append-only поведение сохранено. Версия эксперта поднята до `260.334`.
 - `ML.online_tester_reconciliation` обновлён под текущий event-log contract:
   сравнение online/tester идёт по `signal_time + direction`, `OPEN_FAILED`
   считается отдельным статусом, добавлены `--start-time` / `--end-time`,
