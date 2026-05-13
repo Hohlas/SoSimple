@@ -24,6 +24,8 @@
 #define MLP_EXIT_TIMEOUT 0
 #define MLP_EXIT_TRAIL   1
 #define MLP_WAIT_SIGNAL_SEC 120
+#define MLP_TRADE_RETRIES 5
+#define MLP_MAX_SLIPPAGE_ATR 0.25
 
 int      MLP_SignalCount = 0;
 datetime MLP_Times[];
@@ -380,6 +382,24 @@ double MLP_BestSellSince(datetime open_time, double entry_price) {
    return best;
 }
 
+bool MLP_IsTimeoutDue(int hold_bars) {
+   return (ML_HoldBars > 0 && hold_bars >= ML_HoldBars);
+}
+
+int MLP_TradeSlippagePoints(string sym, double atr_value) {
+   int spread_points = (int)MarketInfo(sym, MODE_SPREAD);
+   int slippage = spread_points + 5;
+   if (slippage < 3) slippage = 3;
+
+   double point = MarketInfo(sym, MODE_POINT);
+   if (atr_value > 0 && point > 0) {
+      int atr_cap = (int)MathFloor(atr_value * MLP_MAX_SLIPPAGE_ATR / point);
+      if (atr_cap < 3) atr_cap = 3;
+      if (slippage > atr_cap) slippage = atr_cap;
+   }
+   return slippage;
+}
+
 bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string reason, double best_price, double trail_price) {
    int ticket = OrderTicket();
    int typ = OrderType();
@@ -390,10 +410,10 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
    bool ok = false;
 
    WAITING(magic, "Terminal", 20);
-   for (int repeat = 3; repeat > 0 && !ok; repeat--) {
+   for (int repeat = MLP_TRADE_RETRIES; repeat > 0 && !ok; repeat--) {
       RefreshRates();
       double close_price = (typ == OP_BUY) ? Bid : Ask;
-      ok = OrderClose(ticket, lots, close_price, 3, clrRed);
+      ok = OrderClose(ticket, lots, close_price, MLP_TradeSlippagePoints(OrderSymbol(), atr_value), clrRed);
       if (ok) break;
       if (!ERROR_CHECK("MLP_Close Ticket=" + S0(ticket), exp_num)) break;
    }
@@ -484,7 +504,8 @@ void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_v
       bool should_close = false;
       string close_reason = "";
 
-      if (ML_ExitMode == MLP_EXIT_TIMEOUT && ML_HoldBars > 0 && SHIFT(OrderOpenTime()) >= ML_HoldBars) {
+      int hold_bars = SHIFT(OrderOpenTime());
+      if (ML_ExitMode == MLP_EXIT_TIMEOUT && MLP_IsTimeoutDue(hold_bars)) {
          should_close = true;
          close_reason = "Timeout";
       }
@@ -538,7 +559,7 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
    int ticket = -1;
    bool ok = false;
    WAITING(magic, "Terminal", 20);
-   for (int repeat = 3; repeat > 0 && !ok; repeat--) {
+   for (int repeat = MLP_TRADE_RETRIES; repeat > 0 && !ok; repeat--) {
       RefreshRates();
       entry_price = (sig == 1) ? Ask : Bid;
       stop_price = (sig == 1)
@@ -551,7 +572,7 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             : entry_price - atr_value * ML_TakeProfitATR;
          if (MathAbs(take_profit_price - entry_price) <= StopLevel) take_profit_price = 0.0;
       }
-      ticket = OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), 3,
+      ticket = OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), MLP_TradeSlippagePoints(sym, atr_value),
                          N5(stop_price, sym), N5(take_profit_price, sym), S0(magic) + "-MLP", magic, 0,
                          (sig == 1 ? clrGreen : clrRed));
       ok = (ticket > 0);

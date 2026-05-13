@@ -209,6 +209,27 @@ def test_ml_signal_resets_tester_trade_event_csv_once():
     assert "MLP_PrepareEventFileIfNeeded(magic);" in text
 
 
+def test_ml_trading_uses_explicit_hold_boundary_adaptive_slippage_and_retries():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert "bool MLP_IsTimeoutDue(int hold_bars)" in text
+    assert "#define MLP_TRADE_RETRIES 5" in text
+    assert "#define MLP_MAX_SLIPPAGE_ATR 0.25" in text
+    assert "int MLP_TradeSlippagePoints(string sym, double atr_value)" in text
+    assert "int slippage = spread_points + 5;" in text
+    assert "if (slippage < 3) slippage = 3;" in text
+    assert "int atr_cap = (int)MathFloor(atr_value * MLP_MAX_SLIPPAGE_ATR / point);" in text
+    assert "if (slippage > atr_cap) slippage = atr_cap;" in text
+    assert "slippage > 500" not in text
+    assert "int hold_bars = SHIFT(OrderOpenTime());" in text
+    assert "MLP_IsTimeoutDue(hold_bars)" in text
+    assert "for (int repeat = MLP_TRADE_RETRIES; repeat > 0 && !ok; repeat--)" in text
+    assert "OrderClose(ticket, lots, close_price, MLP_TradeSlippagePoints(OrderSymbol(), atr_value), clrRed)" in text
+    assert "OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), MLP_TradeSlippagePoints(sym, atr_value)," in text
+    assert "OrderClose(ticket, lots, close_price, 3, clrRed)" not in text
+    assert "N5(entry_price, sym), 3," not in text
+
+
 def test_history_recount_and_pic_contract_are_present_in_mql_flow():
     service = (ROOT / "MT/MQL4/Include/SERVICE.mqh").read_text(encoding="utf-8", errors="replace")
     pic = (ROOT / "MT/MQL4/Include/lib_PIC.mqh").read_text(encoding="utf-8", errors="replace")

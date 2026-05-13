@@ -38,10 +38,10 @@
 ## Changed Files
 
 - `ML/online_tester_reconciliation.py` - исправлен и расширен CLI сверки online/tester event-log.
-- `MT/MQL4/Include/lib_ML_Signal.mqh` - исправлен tester event-log: файл очищается один раз перед первой записью tester-прогона.
-- `MT/MQL4/Experts/$o$imple.mq4` - версия поднята до `260.334` для трассировки MQL bugfix в MT4-логе.
+- `MT/MQL4/Include/lib_ML_Signal.mqh` - исправлен tester event-log: файл очищается один раз перед первой записью tester-прогона; `OrderSend`/`OrderClose` ML-сделок переведены на адаптивный slippage с ATR-потолком и 5 попыток.
+- `MT/MQL4/Experts/$o$imple.mq4` - версия поднята до `260.336` для трассировки MQL fixes в MT4-логе.
 - `tests/test_online_tester_reconciliation.py` - добавлены unit-тесты на текущий CSV-контракт.
-- `tests/test_mql_telemetry_params_csv_contract.py` - добавлен контрактный тест на очистку tester event-log.
+- `tests/test_mql_telemetry_params_csv_contract.py` - добавлены контрактные тесты на очистку tester event-log и Timeout boundary/slippage.
 - `docs/ML/online_tester_reconciliation.py.md` - добавлена документация модуля.
 - `ML/README.md`, `MODULE_INDEX.md` - добавлена навигация по модулю.
 - `docs/reports/2026-05-12-online-tester-execution-reconciliation.md` - этот отчет.
@@ -275,6 +275,13 @@ Spread:
 Формулировка "online-spread не хуже tester" верна только по медиане; по среднему online немного хуже из-за ночного выброса `22:55 -> 00:00`.
 
 В online MT4-логах найдено `requote ERROR-138`: `48` строк за `2026-05-12` и `114` строк за `2026-05-13`. Они встречаются и при открытии, и при закрытии. При открытии критический результат - `OPEN_FAILED`; при закрытии чаще появляется задержка до следующей успешной попытки, что может давать `hold_bars=25` вместо `24`.
+
+Follow-up `2026-05-13`: MQL-граница Timeout проверена как `hold_bars >= ML_HoldBars`.
+Причина `hold_bars=25` - не арифметика границы, а неуспешный `OrderClose` на
+ожидаемом баре, чаще всего `requote ERROR-138`. В версии `260.336`
+`OrderSend`/`OrderClose` ML-сделок переведены с фиксированного slippage `3`
+пункта на адаптивный slippage по текущему спреду инструмента, ATR-потолок и 5
+попыток.
 
 ## Conclusions
 

@@ -284,6 +284,12 @@ WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Ner
    - по broker-side take profit, если `ML_TakeProfitATR>0`;
    - либо по обратному сигналу, если включён `ML_AllowReversal`.
 
+Для `ML_ExitMode=0` граница таймаута считается как `hold_bars >= ML_HoldBars`.
+В версии `260.336` `OrderSend` и `OrderClose` используют 5 попыток и адаптивный
+slippage по текущему спреду инструмента. Верхний предел slippage ограничен
+долей ATR, чтобы снизить риск `requote ERROR-138` без принятия чрезмерно плохих
+цен исполнения.
+
 Старые `INPUT()`, `OUTPUT()`, `TRAILING_STOP()` и старый `TIMER()` в этом режиме не участвуют.
 
 ### Режимы выхода

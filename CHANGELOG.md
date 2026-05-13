@@ -10,6 +10,9 @@
 - Основной практический риск перед реальным счётом - `requote ERROR-138` при
   исполнении; PnL-расхождения по парным сделкам заметно меньше, чем эффект
   пропущенных входов.
+- Follow-up: в `260.336` `OrderSend`/`OrderClose` для ML-сделок используют
+  адаптивный slippage с ATR-потолком и 5 попыток, чтобы снизить частоту
+  `requote ERROR-138` без принятия чрезмерно плохих цен.
 - Подробности и команды повторной сверки:
   [docs/reports/2026-05-12-online-tester-execution-reconciliation.md](docs/reports/2026-05-12-online-tester-execution-reconciliation.md),
   [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md).
