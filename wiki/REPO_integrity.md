@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-13 11:19 UTC · git `c3ef6c6`
+> Auto-generated 2026-05-13 11:36 UTC · git `d44230c`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,14 +9,14 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1119 files  ·  **Commit**: `c3ef6c6`  ·  **Generated**: 2026-05-13 11:19 UTC
+**Tracked**: 1119 files  ·  **Commit**: `d44230c`  ·  **Generated**: 2026-05-13 11:36 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-12 | 11KB | `9be86aed` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-13 | 154KB | `73477910` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-13 | 138KB | `ce63252b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-12 | 9KB | `d7e05aed` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-12 | 36KB | `3e133fc7` |

@@ -4,227 +4,33 @@
 
 ## [2026-05-12] - Online/tester execution reconciliation
 
-- По логам 2026-05-12 проверена M5-цепочка `MT4 -> ML -> MT4`:
-  online/tester `ml_signals.csv` совпали, но старое online-исполнение
-  пропустило 6 входов против tester на общей исполнимой части. Первые три
-  пропуска подтверждены как `requote ERROR-138`.
-- Матожидание на стабильном закрытом срезе `2026.05.12 00:10` ->
-  `2026.05.12 13:05`: online `-10.1522` на закрытую сделку, tester
-  `-7.6853`; по парным 65 закрытым сделкам разница матожидания `-0.7431`.
-  Основной вред дали пропущенные online-сделки, а не парные PnL-расхождения.
-- Follow-up по логам `2026.05.12 16:20` -> `2026.05.13 09:10` после
-  добавления `OPEN_FAILED`: 87 ожидаемых сигналов, 79 `OPEN`, 8
-  `OPEN_FAILED`, потерянных сигналов без следа `0`, неверных направлений `0`.
-  Все 8 отказов открытия связаны с `requote ERROR-138`; tester PnL этих
-  неоткрытых online-сделок `-445.4`.
-- По 79 парным закрытым сделкам нового среза online близок к tester:
-  online EV `-6.3785`, tester EV `-6.7775`, разница `+0.3990` на сделку.
-  Причина закрытия совпала в `76/79` случаев; одинаковые SL/TP закрытия почти
-  полностью совпали по PnL, а Timeout ожидаемо расходится по рыночной цене.
-- Найден риск качества данных: tester event-log `2026-05-13` пишет дубли
-  `OPEN`/`CLOSE`; перед сверкой его нужно дедуплицировать, иначе одна сделка
-  превращается в кратные строки.
-- Root cause дублей найден и исправлен: tester event-log не очищался перед
-  новым tester-прогоном, поэтому старый блок событий оставался в CSV. В
-  `lib_ML_Signal.mqh` tester-режим теперь удаляет
-  `ML_Trade_Events_<NAME>_<magic>.csv` один раз перед первой записью, online
-  append-only поведение сохранено. Версия эксперта поднята до `260.334`.
-- `ML.online_tester_reconciliation` обновлён под текущий event-log contract:
-  сравнение online/tester идёт по `signal_time + direction`, `OPEN_FAILED`
-  считается отдельным статусом, добавлены `--start-time` / `--end-time`,
-  `signal_basis` и paired-метрики матожидания.
-- Инструкция для повторных запусков зафиксирована в
-  `docs/ML/online_tester_reconciliation.py.md`; отчёт ниже хранит результат
-  конкретного прогона, а не является основной инструкцией по инструменту.
-- Отчёт: `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`.
+- Проверена M5-цепочка `MT4 -> ML -> MT4` на online/tester срезах: сигналы и
+  направления совпадают, `OPEN_FAILED` фиксируется явно, потерянных сигналов
+  без следа в новом срезе нет.
+- Основной практический риск перед реальным счётом - `requote ERROR-138` при
+  исполнении; PnL-расхождения по парным сделкам заметно меньше, чем эффект
+  пропущенных входов.
+- Подробности и команды повторной сверки:
+  [docs/reports/2026-05-12-online-tester-execution-reconciliation.md](docs/reports/2026-05-12-online-tester-execution-reconciliation.md),
+  [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md).
 
 ## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
 
-### Исправлено после review
-- `ML.train` получил флаг `--output-dir`: checkpoint и result JSON можно
-  сохранять в отдельную папку конкретного seed/device запуска. Result JSON и
-  checkpoint теперь пишут runtime metadata: seed, device, версии Python/Torch/
-  NumPy, deterministic flags и sha256 train/validation CSV. Это закрывает риск
-  путаницы, когда общий `ML/checkpoints/*_best.pt` перетирался следующим
-  обучением.
-- Добавлен `ML/run_entry_path_live_safe_retrain.py`: единый runner для
-  `entry_path_v1_live_safe`, который по каждому seed запускает train →
-  export validation/test → benchmark и пишет `multi_seed_summary.csv/json`.
-  Экспорт идёт из seed-specific checkpoint, а не из общего `ML/checkpoints`.
-- Добавлен `ML/run_entry_path_quantile_live_safe_retrain.py`: единый runner
-  для повторной проверки `entry_path_v1_quantile` поверх нового серверного CPU
-  baseline `A @ 7.5%`. По каждому seed он обучает quantile, экспортирует
-  prediction CSV, строит per-seed baseline `A` rule и запускает quantile
-  benchmark без обращения к устаревшему baseline rule.
-- По отчёту
-  `docs/reports/2026-05-07-cpu-gpu-reproducibility.md` production retrain
-  переведён в CPU-first режим: `ML.train` получил `--device cpu|cuda|auto` с
-  default `cpu`, `set_seed()` включает deterministic algorithms и
-  `CUBLAS_WORKSPACE_CONFIG`, а `DataLoader` получает seed-bound generator.
-  GPU training оставлен только как явный research-режим.
-- Серверный CPU multi-seed для `entry_path_v1_live_safe` показал: auto-winner
-  слабее (median sequential PF `1.6183`, PF > 2.0 у `1/5`), но заранее
-  выбранный production baseline `A @ 7.5%` устойчивее: median sequential PF
-  `2.3249`, min `1.8188`, PF > 2.0 у `4/5`, PF <= 1.0 у `0/5`.
-  Отчёт: `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`.
-- Для текущей очищенной `entry_path_v1_live_safe + A @ 7.5%` ещё нет
-  cross-instrument проверки на других парах. Старые transfer-результаты
-  `entry_path_v1` / `entry_path_v1_quantile` относятся к до-audit контуру.
-- Серверный CPU retrain `entry_path_v1_quantile` поверх нового baseline
-  `A @ 7.5%` завершён: sequential PF > 2.0 у `5/5` seed, но rule selection
-  нестабилен (`2/5`, `2/5`, `1/5` по трём правилам), а sequential trades часто
-  слишком мало (`3..28`, median `8`). Отчёт:
-  `docs/reports/2026-05-07-entry-path-quantile-cpu-baseline.md`.
-- Добавлен `ML/prepare_entry_path_mt4_parity.py`: фиксирует именно
-  `entry_path_v1_live_safe + A @ 7.5%`, пишет rule JSON, metadata и
-  `ml_signals.csv`, затем при `--copy-to-mt4` копирует один и тот же CSV в
-  `MT/tester/files/` и `MT/MQL4/Files/`. Это защищает MT4 parity от
-  случайного использования auto-winner `B` из seed-specific rule-файла.
-- MT4 preset `#.csv` переключён на H1 parity contract:
-  `SymPer=XAUUSD60`, `ML_MaxPositions=1`, `ML_HoldBars=24`,
-  `ML_TakeProfitATR=0`, `ML_BackStopATR=999`, `ML_UseScoreFilter=0`.
-- Исправлен MQL4 bugfix для MT4 parity: `SERVICE.mqh` больше не приводит все
-  `PARAMS` из `#.csv` к `char`. Это ломало `ML_BackStopATR=999` в `-25` и
-  давало `EXP[0].Mgc != Magic`. Версия эксперта поднята до `260.332`.
-- Первый MT4 parity-прогон для `entry_path_v1_live_safe + A @ 7.5%` прошёл
-  на `XAUUSD,H1` до `2025.12.31`: MT4 отчет дал `26` сделок, PF `9.03`,
-  net `5217.70`. Reconciliation по тому же периоду:
-  `expected_signals=26`, `opened_trades=26`, `closed_trades=26`,
-  `critical_mismatch_count=0`, `missing_close_count=0`. Принято решение
-  считать 26 совпавших сделок достаточным MT4 proof; три оставшихся сигнала в
-  2026 можно проверить optional, но они не блокируют переход к online/forward
-  diagnostic. Отчёт: `docs/reports/2026-05-07-entry-path-mt4-parity.md`.
-- Текущий `#.csv` / tester preset переключён с H1 parity на M5 diagnostic
-  `telemetry_frequency_v1_highfreq500`: `SymPer=XAUUSD5`,
-  `ML_MaxPositions=20`, `ML_TakeProfitATR=5`, `ML_BackStopATR=3`,
-  `ML_HoldBars=24`. Цель - быстро набрать события и проверить механику
-  `MT -> ML -> MT`; PF не является критерием успеха. Для online запуска
-  использовать `BackTest=0`, чтобы советник сам выбрал строку `XAUUSD5`;
-  `BackTest=2` оставлен для Strategy Tester.
-- Эксперт поднят до `260.333`: `lib_ML_Signal.mqh` теперь пишет
-  `MT/MQL4/Files/ml_trade_events.csv` с подробными `OPEN`/`CLOSE` событиями
-  (`Bid/Ask`, spread, OHLC бара, фактическая цена, проскальзывание, SL/TP,
-  profit, swap, commission, balance/equity). Цель - объяснять расхождения
-  online/test по торговым метрикам.
-- `ML.telemetry_daily_reconciliation` теперь различает связанные закрытые
-  сделки (`closed_trades`) и сырые строки закрытия в MT4 логе
-  (`parsed_close_events`). Это убирает путаницу, когда одно закрытие по
-  времени пишет две строки `MLP CLOSE`.
-- Проверена нормализационная утечка `predict -> front/back`: в
-  `95.93%` строк нормализованные `front/back` менялись при включении
-  `|predict|` в общий пул; среднее изменение `0.0010`, максимум `0.166`.
-- `normalize_rowwise()` получил параметр
-  `include_predict_in_front_back_pool`. Старый режим сохранён по умолчанию,
-  а live-safe online preprocessing теперь вызывает
-  `include_predict_in_front_back_pool=False`.
-- `label_main.py` получил флаг
-  `--exclude-predict-from-front-back-pool` для пересборки train/validation/test
-  CSV под честный live-safe retrain.
-- `fractal*` в `ML/live_safe_audit.py` переведены из `UNKNOWN` в `PASS` для
-  MT-origin полей из `Nero.csv`; это не распространяется на Python-added
-  `predict`, `ret_*`, `fav_*`, `adv_*` и row-level labels.
-- Статус `entry_path_v1_live_safe + A` до повторного retrain: кандидат
-  заблокирован для MT4 parity, пока не проверена прибыльность без `predict`
-  в пуле нормализации `front/back`.
-
-### Добавлено
-- `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`,
-  `ML/run_live_safe_ml_audit.py`.
-- Generated audit evidence в `ML/reports/live_safe_ml_audit/`.
-- Повторная legacy export replay проверка: старые prediction/rule входы снова
-  дают сигналы для пяти систем.
-- Новый профиль признаков `entry_path_v1_live_safe`: старый встроенный
-  `entry_path_v1` набор без `ret_dir_atr_lag1`.
-- Live-safe checkpoint и prediction/signal артефакты в
-  `ML/reports/entry_path_v1_live_safe/`.
-- Повторный `entry_path_v1_quantile` retrain поверх нового live-safe baseline:
-  `ML/reports/entry_path_v1_quantile_live_safe_baseline/`.
-- Восстановлен вспомогательный модуль `ML/entry_path_v1_quantile_ensemble.py`,
-  который нужен для n-boost проверки quantile-слоя.
-- Новый режим `live_safe_baseline` в
-  `ML/run_take_skip_original_contour_feature_matrix.py`: старый take/skip
-  single-tensor runner без `predict`, `ret_dir_atr_lag1`, `ret_*`, `fav_*`,
-  `adv_*` row-признаков.
-- Добавлены follow-up режимы `live_safe_path`, `live_safe_geometry`,
-  `live_safe_geometry_path`. `Up/Dn` из `fractal*` считаются допустимыми
-  входами, если они пришли из MT `Nero.csv` как накопленное состояние `lib_PIC`;
-  Python future-label поля остаются запрещены.
-
-### Результаты аудита
-- `quality`, `frequency`, `original_plus_path`, `entry_path_v1`,
-  `entry_path_v1_quantile` получили verdict `FAIL`.
-- `ret_dir_atr_lag1` доказан как future-derived: это лаг от `ret_6_dir_atr`,
-  который строится по будущим барам.
-- Повторно подтвержден источник удаленных Python-признаков:
-  `predict`, `ret_*`, `fav_*`, `adv_*` считаются после `Nero.csv` по будущим
-  барам; MT-origin `Up/Dn` в `Nero.csv` отделены от этих Python labels.
-- Legacy export replay помечен `diagnostic_only=true`: он подтверждает старую
-  механику выгрузки, но не доказывает пригодность модели для online.
-
-### Результаты retrain
-- Validation `ret_pearson_r = 0.2681`.
-- Validation winner `A @ 7.5%`: 36 trades, PF 2.8881.
-- Frozen test: 37 trades, PF 3.6567.
-- Sequential test: 25 trades, PF 2.3419, win rate 68.00%.
-- Multi-seed follow-up (`7`, `17`, `42`, `77`, `123`):
-  median sequential PF 2.3419, min 1.5171, max 4.5985;
-  PF > 2.0 у 3/5 seed, PF <= 1.0 у 0/5 seed.
-- Добавлен явный Audit Tracker по всем пяти исторически прибыльным системам,
-  чтобы не потерять `quality`, `frequency`, `original_plus_path`,
-  `entry_path_v1`, `entry_path_v1_quantile` при дальнейших проверках.
-- `API.export_entry_path_v1_signals` теперь поддерживает winners `B` и
-  `B_no_path6`: для них применяется frozen validation-нормировка из rule JSON.
-  Поэтому все пять `entry_path_v1_live_safe` seed теперь экспортируемы.
-- Для `entry_path_v1_live_safe` принято решение заморозить `A` как основной
-  baseline rule-family: это самый простой вариант и он повторился в `3/5`
-  seed. `B` / `B_no_path6` остаются исследовательскими, но не основным
-  следующим путем.
-- Follow-up audit для `entry_path_v1_live_safe + A`: если в каждом seed
-  использовать семейство `A` и выбирать порог только на validation, sequential
-  PF range `1.5171..4.1370`, median PF `2.8425`, PF > 2.0 у `4/5` seed,
-  21 sequential signal повторился во всех 5 seed.
-- Важное ограничение: точный seed-42 threshold `-0.131882885` плохо переносится
-  на другие seed (sequential median PF `0.9032`, PF > 2.0 только у `1/5`).
-  Значит, robust именно rule-family `A`, а не универсальная численная шкала.
-- `entry_path_v1_quantile_live_safe_baseline` повторно сверен после фиксации
-  baseline `A`: n-boost снова даёт сильный PF, но gate остаётся `fail` из-за
-  `same_winner_ratio=0.60 < 0.80`. Quantile оставлен research-only, не
-  production-кандидатом.
-- `entry_path_v1_quantile_live_safe_cpu_baseline` повторно подтвердил тот же
-  вывод уже на CPU-only retrain: прибыльная область есть, но production-gate
-  не пройден из-за нестабильного выбора правила и малого числа сделок.
-- Исправлен тест `tests/test_export_entry_path_v1_quantile_rule.py`: helper для
-  минимального seed теперь живёт в самом тесте, без ссылки на отсутствующий
-  модуль.
-
-### Закрытые / отклонённые live-safe направления
-- `entry_path_v1_quantile`: прибыльная область есть, но слой оставлен
-  research-only. Причина: правило выбора нестабильно между seed, сделок мало;
-  n-boost gate=`fail` (`same_winner_ratio=0.60 < 0.80`), CPU-only повтор
-  подтвердил тот же вывод.
-- Take/skip rebuild для старых `quality`, `frequency`, `original_plus_path`
-  закрыт как прямой путь: `live_safe_baseline`, `live_safe_path`,
-  `live_safe_geometry`, `live_safe_geometry_path` все получили `reject`.
-  Лучшие PF без нужной частоты держались на `3..15` сделках; при минимуме
-  `6` сделок/год варианты были убыточны или ниже gate.
-
-### Вывод
-- Старая прибыльность не сохранилась один в один: сделок и PF стало меньше,
-  чем у старого `entry_path_v1` sequential результата.
-- Но система не развалилась после удаления опасного признака. Результат живой,
-  но переменный: для следующего шага выбран более консервативный baseline
-  `A`, а не лучший одиночный seed.
-- Quantile-слой тоже не развалился после замены старого baseline на live-safe
-  baseline, но не подтвержден как production-кандидат: прибыльность есть,
-  правило выбора нестабильно между seed.
-- Старый take/skip baseline после удаления future-derived row-признаков пока
-  не воспроизвёл прибыльную область. Это усиливает вывод, что старые
-  `quality/frequency` результаты нельзя переносить в online как есть.
-- Добавление MT-накопленных `Up/Dn` path-признаков тоже не восстановило старую
-  take/skip прибыльность. Geometry и geometry+path варианты тоже провалили
-  benchmark. Прямой live-safe rebuild старого take/skip семейства сейчас
-  следует считать отклонённым.
-- Подробности: [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md)
+- Проведён live-safe аудит исторически прибыльных контуров: старые `quality`,
+  `frequency`, `original_plus_path`, `entry_path_v1` и
+  `entry_path_v1_quantile` нельзя переносить в online как есть из-за
+  future-derived признаков (`predict`, `ret_*`, `fav_*`, `adv_*`,
+  `ret_dir_atr_lag1`).
+- Основным production-кандидатом после очистки выбран
+  `entry_path_v1_live_safe + A @ 7.5%`; он прошёл retrain, CPU
+  reproducibility follow-up и MT4 parity. Quantile-слой оставлен research-only
+  из-за нестабильного выбора правила и малого числа сделок.
+- Для online/forward diagnostic подготовлен M5 telemetry-контур с подробным
+  MT4 trade event-log; PF этого режима не является критерием успеха.
+- Подробности:
+  [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md),
+  [docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md),
+  [docs/reports/2026-05-07-entry-path-mt4-parity.md](docs/reports/2026-05-07-entry-path-mt4-parity.md).
 
 ## [2026-04-29] - Online inference contract hardening
 
