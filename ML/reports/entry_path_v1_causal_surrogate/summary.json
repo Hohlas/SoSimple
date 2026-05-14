@@ -1,0 +1,170 @@
+{
+  "train_source": "DATA/Nero_XAUUSD_train_labeled.csv",
+  "validation_source": "DATA/Nero_XAUUSD_validation_labeled.csv",
+  "test_source": "DATA/Nero_XAUUSD_test_labeled.csv",
+  "validation_predictions": "ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/validation_predictions.csv",
+  "test_predictions": "ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/test_predictions.csv",
+  "ohlc": "DATA/XAUUSD_H1_OHLC.csv",
+  "score_threshold": -0.07158749,
+  "probability_grid": [
+    0.05,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6
+  ],
+  "min_period_trades": 10,
+  "sequential_hold_bars": 24,
+  "horizon": 24,
+  "random_state": 42,
+  "n_estimators": 160,
+  "feature_columns": [
+    "atr",
+    "session_hour",
+    "weekday",
+    "fractal_dir",
+    "fractal_front",
+    "fractal_back",
+    "fractal_strong",
+    "fractal_break",
+    "fractal_reverse",
+    "fractal_power",
+    "fractal_count",
+    "fractal_impulse",
+    "fractal_atr"
+  ],
+  "winner": {
+    "threshold": 0.5,
+    "trades": 43,
+    "pf": 1.0507156355389105,
+    "win_rate": 0.5348837209302325,
+    "mean_pnl_atr": 0.07526777377197011,
+    "eligible_years": 2,
+    "negative_years": [
+      2020
+    ],
+    "yearly": [
+      {
+        "year": 2019,
+        "trades": 14,
+        "pf": 2.086470465394432,
+        "win_rate": 0.5,
+        "mean_pnl_atr": 1.0914803371344042
+      },
+      {
+        "year": 2020,
+        "trades": 18,
+        "pf": 0.4270576252291207,
+        "win_rate": 0.4444444444444444,
+        "mean_pnl_atr": -1.3716261158530567
+      },
+      {
+        "year": 2021,
+        "trades": 3,
+        "pf": 0.3631699846860517,
+        "win_rate": 0.6666666666666666,
+        "mean_pnl_atr": -0.8943010752688388
+      },
+      {
+        "year": 2022,
+        "trades": 8,
+        "pf": 7.263038589376901,
+        "win_rate": 0.75,
+        "mean_pnl_atr": 1.915995357934325
+      }
+    ],
+    "active_precision": 0.2111055527763882,
+    "active_recall": 0.8828451882845189,
+    "direction_accuracy_on_true_active": 0.8828451882845189
+  },
+  "test": {
+    "trades": 36,
+    "pf": 1.15369532372922,
+    "win_rate": 0.5833333333333334,
+    "mean_pnl_atr": 0.23185934420278867,
+    "eligible_years": 1,
+    "negative_years": [],
+    "yearly": [
+      {
+        "year": 2022,
+        "trades": 1,
+        "pf": 0.0,
+        "win_rate": 0.0,
+        "mean_pnl_atr": -6.641463414634152
+      },
+      {
+        "year": 2023,
+        "trades": 8,
+        "pf": 1.052166341319406,
+        "win_rate": 0.625,
+        "mean_pnl_atr": 0.07953805950924608
+      },
+      {
+        "year": 2024,
+        "trades": 21,
+        "pf": 1.610479644664468,
+        "win_rate": 0.5714285714285714,
+        "mean_pnl_atr": 0.7628117577273776
+      },
+      {
+        "year": 2025,
+        "trades": 5,
+        "pf": 10.887997620969712,
+        "win_rate": 0.8,
+        "mean_pnl_atr": 1.3735327604402152
+      },
+      {
+        "year": 2026,
+        "trades": 1,
+        "pf": 0.0,
+        "win_rate": 0.0,
+        "mean_pnl_atr": -8.534615384615432
+      }
+    ],
+    "active_precision": 0.20405278039585298,
+    "active_recall": 0.8909465020576132,
+    "direction_accuracy_on_true_active": 0.8909465020576132
+  },
+  "sequential": {
+    "trades": 31,
+    "accepted_indices": [
+      266,
+      1023,
+      1152,
+      1250,
+      1290,
+      1359,
+      2390,
+      2653,
+      2987,
+      3261,
+      3414,
+      3463,
+      3651,
+      3780,
+      3825,
+      3876,
+      4000,
+      4033,
+      4137,
+      4198,
+      4393,
+      5006,
+      5139,
+      5254,
+      5299,
+      5528,
+      5912,
+      6661,
+      7677,
+      8030,
+      8731
+    ],
+    "coverage": 0.8611111111111112,
+    "pf": 1.4111072605039299,
+    "mean_pnl_atr": 0.5854442845282316,
+    "win_rate": 0.6451612903225806
+  }
+}

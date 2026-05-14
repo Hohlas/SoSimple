@@ -13,10 +13,16 @@
   пересчитан по OHLC. Validation winner `5%` coverage уже слабый
   (`471` trades, PF `0.9661`), frozen test убыточен (`329` trades, PF
   `0.9134`), sequential test ещё хуже (`133` trades, PF `0.5908`).
-- Вывод: просто снять `signal != 0` gate нельзя. Следующий кандидат -
-  causal surrogate для `label_all().signal`.
+- Проверен causal surrogate для `label_all().signal`: RandomForest по
+  live-доступным полям текущего `fractal0` + старый score gate. Frozen test
+  слабоположительный (`36` trades, PF `1.1537`), sequential test лучше
+  (`31` trades, PF `1.4111`), но precision active-сигнала низкий (`20.41%`).
+- Вывод: просто снять `signal != 0` gate нельзя; causal surrogate не провалился,
+  но пока не production-ready. Следующий кандидат - модель, которая сама
+  выдаёт score и direction для каждого бара.
 - Подробности:
-  [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md).
+  [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md),
+  [docs/reports/2026-05-14-entry-path-causal-surrogate.md](docs/reports/2026-05-14-entry-path-causal-surrogate.md).
 
 ## [2026-05-13] - Live-safe entry_path online watcher
 

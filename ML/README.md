@@ -55,6 +55,7 @@
 | [run_entry_path_quantile_live_safe_retrain.py](run_entry_path_quantile_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_quantile` поверх CPU baseline `A @ 7.5%` | baseline reports + `DATA/Nero_*` → reports/entry_path_v1_quantile*/seed_*/ | ✅ |
 | [benchmark_entry_path_signal_only_ablation.py](benchmark_entry_path_signal_only_ablation.py) | Ablation benchmark вклада offline `signal != 0` без ML score-фильтра | prediction CSV → reports/entry_path_v1_signal_only_ablation/ | ✅ |
 | [benchmark_entry_path_all_rows_ranking.py](benchmark_entry_path_all_rows_ranking.py) | All-rows ranking benchmark без offline `signal != 0` gate | prediction/source/OHLC CSV → reports/entry_path_v1_all_rows_ranking/ | ✅ |
+| [benchmark_entry_path_causal_surrogate.py](benchmark_entry_path_causal_surrogate.py) | Causal surrogate benchmark для offline `label_all().signal` | source/prediction/OHLC CSV → reports/entry_path_v1_causal_surrogate/ | ✅ |
 | [entry_path_v1_quantile_ensemble.py](entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | ✅ |
 | [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
 | [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline без будущих row-признаков | labeled CSV → reports/take_skip_original_contour_feature_matrix/ / reports/take_skip_live_safe_baseline/ | 🚧 |
@@ -144,6 +145,9 @@ python -m ML.benchmark_entry_path_signal_only_ablation
 
 # Entry path all-rows ranking: проверка score на всех строках без offline signal gate
 python -m ML.benchmark_entry_path_all_rows_ranking
+
+# Entry path causal surrogate: причинная замена offline signal candidate-source
+python -m ML.benchmark_entry_path_causal_surrogate
 
 # Take/skip v2: обучение с признаками lib_PIC внутри модели
 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_lib_pic_feature_matrix \

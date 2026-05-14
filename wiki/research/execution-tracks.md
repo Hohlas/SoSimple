@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-05-14
-sources: 38
+sources: 39
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 38 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
+> Синтез 39 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1414,3 +1414,19 @@ all-rows universe без новой постановки обучения. Сл�
 surrogate для `label_all().signal`.
 
 Источник: [2026-05-14-entry-path-all-rows-ranking.md](../../docs/reports/2026-05-14-entry-path-all-rows-ranking.md)
+
+Causal surrogate проверил, можно ли приблизить `label_all().signal` только по
+текущим live-safe PIC-состояниям, без будущих строк:
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, prob >= 0.50 | 43 | 1.0507 | 53.49% | 0.0753 |
+| frozen test | 36 | 1.1537 | 58.33% | 0.2319 |
+| frozen test sequential | 31 | 1.4111 | 64.52% | 0.5854 |
+
+Качество приближения слабое: на test active precision только 20.41%, но recall
+89.09%, direction accuracy на true-active строках 89.09%. Вывод: направление и
+часть candidate-source можно восстановить причинно, но точность кандидатов пока
+низкая; это исследовательский baseline, не production-rule.
+
+Источник: [2026-05-14-entry-path-causal-surrogate.md](../../docs/reports/2026-05-14-entry-path-causal-surrogate.md)

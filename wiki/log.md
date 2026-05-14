@@ -399,3 +399,12 @@
 - Updated `wiki/index.md` coverage from 36 to 37 execution-track reports.
 - Linked `docs/ML/online_tester_reconciliation.py.md` as the canonical
   instruction for repeat online/tester reconciliation runs.
+
+## [2026-05-14] ingest | entry path causal surrogate
+
+- Added `docs/reports/2026-05-14-entry-path-causal-surrogate.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded causal surrogate validation/test/sequential metrics;
+  - recorded low active precision and high active recall;
+  - marked the surrogate as research baseline, not production-rule.
+- Updated `wiki/index.md` coverage for the new report.
