@@ -17,12 +17,18 @@
   live-доступным полям текущего `fractal0` + старый score gate. Frozen test
   слабоположительный (`36` trades, PF `1.1537`), sequential test лучше
   (`31` trades, PF `1.4111`), но precision active-сигнала низкий (`20.41%`).
+- Проверена прямая модель `BUY / SELL / SKIP` для каждого бара без offline
+  `signal != 0` gate. Validation winner `threshold=0.80` дал `1450` trades,
+  PF `1.1673`; frozen test дал `1277` trades, PF `1.1141`; sequential test
+  дал `274` trades, PF `1.1334`.
 - Вывод: просто снять `signal != 0` gate нельзя; causal surrogate не провалился,
-  но пока не production-ready. Следующий кандидат - модель, которая сама
-  выдаёт score и direction для каждого бара.
+  а прямой score+direction выглядит лучшим направлением. Но это ещё не
+  production-ready: test PF слабый, 2022 год отрицательный, направление среди
+  выбранных active-строк почти случайное (`~50.5%`).
 - Подробности:
   [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md),
-  [docs/reports/2026-05-14-entry-path-causal-surrogate.md](docs/reports/2026-05-14-entry-path-causal-surrogate.md).
+  [docs/reports/2026-05-14-entry-path-causal-surrogate.md](docs/reports/2026-05-14-entry-path-causal-surrogate.md),
+  [docs/reports/2026-05-14-entry-path-direct-bar-model.md](docs/reports/2026-05-14-entry-path-direct-bar-model.md).
 
 ## [2026-05-13] - Live-safe entry_path online watcher
 

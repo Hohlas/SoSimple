@@ -1430,3 +1430,21 @@ Causal surrogate проверил, можно ли приблизить `label_a
 низкая; это исследовательский baseline, не production-rule.
 
 Источник: [2026-05-14-entry-path-causal-surrogate.md](../../docs/reports/2026-05-14-entry-path-causal-surrogate.md)
+
+Direct bar model проверил постановку, где модель сама выбирает `BUY`, `SELL`
+или `SKIP` для каждого бара. Обучающая цель строилась по будущей OHLC-доходности
+от следующего бара до close через 24 бара; offline `signal` не использовался как
+gate.
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, prob >= 0.80 | 1450 | 1.1673 | 51.17% | 0.2392 |
+| frozen test | 1277 | 1.1141 | 48.24% | 0.1631 |
+| frozen test sequential | 274 | 1.1334 | 45.26% | 0.1660 |
+
+Вывод: direct score+direction лучше all-rows ranking и не зависит от offline
+`signal != 0`. Но результат пока слабый: test PF `1.1141`, 2022 год
+отрицательный, correct signal precision на test `45.50%`. Это направление для
+следующего retrain, не готовая production-rule.
+
+Источник: [2026-05-14-entry-path-direct-bar-model.md](../../docs/reports/2026-05-14-entry-path-direct-bar-model.md)

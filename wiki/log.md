@@ -408,3 +408,13 @@
   - recorded low active precision and high active recall;
   - marked the surrogate as research baseline, not production-rule.
 - Updated `wiki/index.md` coverage for the new report.
+
+## [2026-05-14] ingest | entry path direct bar model
+
+- Added `docs/reports/2026-05-14-entry-path-direct-bar-model.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded direct `BUY/SELL/SKIP` validation/test/sequential metrics;
+  - recorded that offline `signal` is not used as gate;
+  - marked direct score+direction as the best next research direction, not
+    production-ready yet.
+- Updated `wiki/index.md` coverage from 39 to 40 execution-track reports.
