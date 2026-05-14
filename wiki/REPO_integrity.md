@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-14 18:29 UTC · git `8bb1d78`
+> Auto-generated 2026-05-14 18:41 UTC · git `310019b`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1143 files  ·  **Commit**: `8bb1d78`  ·  **Generated**: 2026-05-14 18:29 UTC
+**Tracked**: 1143 files  ·  **Commit**: `310019b`  ·  **Generated**: 2026-05-14 18:41 UTC
 
 ## Root Docs
 
@@ -152,7 +152,7 @@
 | [docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md](docs/superpowers/specs/2026-04-27-telemetry-frequency-demo-launch-design.md) |  | 2026-04-27 | 17KB | `b852c2fa` |
 | [docs/superpowers/specs/2026-04-28-central-inference-service-design.md](docs/superpowers/specs/2026-04-28-central-inference-service-design.md) |  | 2026-04-28 | 7KB | `ecc8e915` |
 | [docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md](docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md) |  | 2026-05-05 | 13KB | `853958cf` |
-| [docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов | 2026-05-14 | 27KB | `5b61a6d1` |
+| [docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов | 2026-05-14 | 33KB | `e6814842` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-04-05 | 4KB | `551fd6e9` |
 
 ## Reports
