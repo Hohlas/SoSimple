@@ -199,6 +199,7 @@
 | [DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам |
 | [dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv |
 | [PRD.md](docs/PRD.md) | Product Requirements Document |
+| [2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов |
 | [label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора |
 | [fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов |
 | [online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing |
