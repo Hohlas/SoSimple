@@ -3,6 +3,12 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-14] ingest | Entry path candidate-source audit
+- Added `docs/reports/2026-05-14-entry-path-all-rows-ranking.md`.
+- Updated `wiki/research/execution-tracks.md` with signal-only ablation and all-rows ranking result.
+- Recorded verdict: all-rows ranking with `fractal0.direction` is rejected as a production path.
+- Next research step: causal surrogate for `label_all().signal`.
+
 ## [2026-05-06] update | live-safe system tracker
 - Added an Audit Tracker to `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 - Synced `wiki/research/execution-tracks.md` with the current follow-up order:

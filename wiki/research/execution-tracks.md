@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-13
-sources: 37
+last_updated: 2026-05-14
+sources: 38
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 37 отчётов (2026-04-08 — 2026-05-12). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity и online/tester diagnostic-сверка.
+> Синтез 38 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1381,3 +1381,36 @@ M5 diagnostic-прогон проверял механику `MT4 -> ML -> MT4`,
 отчёты должны фиксировать только конкретные результаты прогонов.
 
 Источник: [2026-05-12-online-tester-execution-reconciliation.md](../../docs/reports/2026-05-12-online-tester-execution-reconciliation.md)
+
+## 19. Entry Path Candidate-Source Audit (05-14)
+
+После online watcher проверки обнаружен разрыв уровнем выше model inputs:
+`entry_path_v1_live_safe` не использует future-derived признаки в `X`, но export
+по-прежнему требует `signal != 0`. В offline этот `signal` приходит из
+`label_all()`, а в live raw `Nero.csv` равен нулю.
+
+Первый ablation отделил offline candidate universe от ML score:
+
+| Mode | Trades | PF | Sequential trades | Sequential PF |
+|---|---:|---:|---:|---:|
+| `signal_only` | 486 | 0.1757 | 237 | 0.1696 |
+| `current_score_gate` | 41 | 7.5737 | 27 | 5.9352 |
+
+Вывод: offline `signal != 0` сам по себе убыточен; положительный вклад даёт
+score-фильтр модели. Но этот score всё ещё применяется поверх недоступного live
+candidate-source.
+
+Затем проверен all-rows ranking без offline gate:
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, 5% coverage | 471 | 0.9661 | 47.77% | -0.0503 |
+| frozen test | 329 | 0.9134 | 46.20% | -0.1275 |
+| frozen test sequential | 133 | 0.5908 | 40.60% | -0.6768 |
+
+Вывод: просто снять `signal != 0` gate и брать направление из
+`fractal0.direction` нельзя. Текущий `pred_ret_24_dir_atr` не переносится на
+all-rows universe без новой постановки обучения. Следующая проверка - causal
+surrogate для `label_all().signal`.
+
+Источник: [2026-05-14-entry-path-all-rows-ranking.md](../../docs/reports/2026-05-14-entry-path-all-rows-ranking.md)

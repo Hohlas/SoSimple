@@ -2,6 +2,22 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-14] - Entry path candidate-source audit
+
+- Проведён `signal_only` ablation для `entry_path_v1_live_safe`: сам offline
+  `signal != 0` на test убыточен (`486` trades, PF `0.1757`; sequential
+  `237` trades, PF `0.1696`), а текущий score gate даёт основной положительный
+  вклад (`41` trades, PF `7.5737`; sequential `27` trades, PF `5.9352`).
+- Проверен all-rows ranking без offline `signal != 0` gate: score
+  `pred_ret_24_dir_atr`, направление из `fractal0.direction`, результат сделки
+  пересчитан по OHLC. Validation winner `5%` coverage уже слабый
+  (`471` trades, PF `0.9661`), frozen test убыточен (`329` trades, PF
+  `0.9134`), sequential test ещё хуже (`133` trades, PF `0.5908`).
+- Вывод: просто снять `signal != 0` gate нельзя. Следующий кандидат -
+  causal surrogate для `label_all().signal`.
+- Подробности:
+  [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md).
+
 ## [2026-05-13] - Live-safe entry_path online watcher
 
 - `API.telemetry_signal_watcher` переведён на production-кандидат
