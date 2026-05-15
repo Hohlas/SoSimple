@@ -6,7 +6,7 @@
 
 **Architecture:** A sequence of experiments sharing existing infrastructure (feature builder, target builder, benchmark runner). Each experiment produces its own output directory under `ML/reports/`. Experiments run one at a time. **All experiments use only train/validation. Frozen test runs exactly once after selecting the single best validation winner across all experiments.**
 
-**Tech Stack:** Python 3.12, pandas, numpy, scikit-learn (RandomForestClassifier, HistGradientBoostingClassifier), pytest, existing `processing.label_signals`, existing entry-path benchmark helpers.
+**Tech Stack:** Python 3.12, pandas, numpy, scikit-learn (RandomForestClassifier, HistGradientBoostingClassifier, LogisticRegression), pytest, existing `processing.label_signals`, existing entry-path benchmark helpers.
 
 ---
 
@@ -37,6 +37,76 @@ Feature count: 97 (nearest_k4). All 3-class models produce direction probabiliti
 - Do not run test before the overall validation winner is frozen.
 - After each experiment: checkpoint commit or report changed files. Code changes to shared modules use CLI arguments (`--model`, `--input-family`, `--target-d-params`), not code branching.
 - Do not use `source["signal"]` as production candidate gate. It is offline/unsafe and can only appear as a diagnostic baseline.
+
+---
+
+## Experiment 0: Feature Ablation
+
+**Rationale:** Before trying new models or architectures, check whether current features carry signal at all. This is a cheap diagnostic that runs on existing code with minor parameter changes. If even the best feature/model combo barely beats random, the problem is in features or target, not in the model.
+
+### Ablation Matrix
+
+Run existing `benchmark_entry_path_fractal_level_direct_direction.py` with the following variants. All use Target D, RandomForest, threshold grid `[0.10, 0.20, 0.30, 0.40]`:
+
+| Variant | input_family | k | Notes |
+|---------|-------------|---|-------|
+| E0a | nearest_k | 4 | Current baseline (already run) |
+| E0b | nearest_k | 6 | More neighbors |
+| E0c | nearest_k | 8 | Even more neighbors |
+| E0d | nearest_k | 16 | Original plan k (389 features, overfitting risk) |
+| E0e | nearest_k | 4, geometry_only | k=4 without up_*/dn_* fields |
+
+### What E0e (geometry_only) Removes
+
+From nearest_k4, remove all `nearest_XX_up_*` and `nearest_XX_dn_*` columns (up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48 per slot = 10 columns per slot × 4 slots = 40 columns). Keeps: atr, fractal0_direction, fractal0_price_rank, fractals_above/below_count, nearest_XX_valid, source_index, raw_distance_atr, abs_distance_atr, direction, front, back, strong, break, reverse, power, count, impulse, fractal_atr.
+
+### Diagnostic Questions E0 Answers
+
+1. Does increasing k (4→6→8→16) improve PF or just increase overfitting?
+2. Do up/dn fields inside fractals help or hurt? (E0e vs E0a)
+3. Is the signal in features at all, or is it all in `fractal0_direction`? (Feature importance already shows `fractal0_direction` = 17.3% for Target A — does geometry_only match this?)
+
+### Steps
+
+- [ ] **E0-S1: Add `--k` and `--geometry-only` arguments to benchmark CLI**
+
+Modify `ML/benchmark_entry_path_fractal_level_direct_direction.py`:
+- Add `--k` argument (default: 4, choices: [4, 6, 8, 16])
+- Add `--geometry-only` flag (default: False, removes up_*/dn_* from features)
+- Both affect `build_fractal_level_features` call and output directory
+
+- [ ] **E0-S2: Write tests for k variants and geometry_only flag**
+
+```python
+def test_k4_produces_97_features():
+    ...
+
+def test_k6_produces_expected_feature_count():
+    ...
+
+def test_geometry_only_removes_updn_columns():
+    # Verify no up_*/dn_* columns in output
+    ...
+```
+
+- [ ] **E0-S3: Run ablation matrix**
+
+```bash
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 6
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 8
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 16
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 4 --geometry-only
+```
+
+- [ ] **E0-S4: Analyze ablation results**
+
+For each variant, record:
+- Best standalone validation PF and sequential PF
+- Feature count and overfitting risk
+- BUY/SELL PF separately
+- Top-5 feature importances
+
+Decide whether to proceed to E1 or adjust feature selection.
 
 ---
 
@@ -206,16 +276,25 @@ Record validation results. Do NOT run frozen test. Move to E2.
 - Modify: `tests/test_benchmark_entry_path_fractal_level_direct_direction.py`
 - Output: `ML/reports/entry_path_v1_fractal_level_direct_direction_hgb/`
 
-### Model
+### Models
 
 ```python
+# Primary: HistGradientBoostingClassifier
 HistGradientBoostingClassifier(
     max_iter=300, max_depth=5, min_samples_leaf=40,
     learning_rate=0.05, random_state=42,
 )
+
+# Balanced classes via sample_weight:
+from sklearn.utils.class_weight import compute_sample_weight
+sample_weight = compute_sample_weight("balanced", y_train)
+# Pass to .fit(X, y, sample_weight=sample_weight)
+
+# Linear control: LogisticRegression (diagnostic only, cannot become winner)
+LogisticRegression(max_iter=1000, C=1.0, solver="lbfgs", multi_class="multinomial")
 ```
 
-For balanced classes, use `compute_sample_weight("balanced", y_train)` and pass `sample_weight` to `.fit()`.
+**LR diagnostic purpose:** If LR achieves similar PF to RF/HGB, the signal is in simple linear combinations and complex models are unnecessary. If LR is much worse, non-linear interactions matter. LR rows are marked `mode=lr_standalone` in the validation grid and cannot become frozen winner.
 
 ### Feature Importance for HGB
 
@@ -230,7 +309,8 @@ For balanced classes, use `compute_sample_weight("balanced", y_train)` and pass 
 
 Add `--model` CLI argument to `benchmark_entry_path_fractal_level_direct_direction.py`:
 - `rf` (default, current RandomForest) — existing behavior unchanged
-- `hgb` — HistGradientBoostingClassifier
+- `hgb` — HistGradientBoostingClassifier with balanced sample_weight
+- `lr` — LogisticRegression (diagnostic only)
 
 When `--model hgb`:
 - Use `HistGradientBoostingClassifier` with `sample_weight=compute_sample_weight("balanced", y_train)`
@@ -398,9 +478,21 @@ No frozen test. Compare against nearest_k4 baseline.
 ### Parameter Grid
 
 ```text
+# Target D (existing and tighter)
+D0: trail_n=2.0, profit_z=1.0, horizon=24  (current baseline)
 D1: trail_n=1.5, profit_z=1.5, horizon=24  (tighter stop, larger profit)
 D2: trail_n=2.0, profit_z=2.0, horizon=24  (same stop, larger profit)
 D3: trail_n=1.5, profit_z=1.0, horizon=48  (tighter stop, longer horizon)
+
+# Target A (now passes frequency gate)
+A0: stop_n=0.2, take_y=0.3  (current)
+A1: stop_n=0.15, take_y=0.25  (softer)
+A2: stop_n=0.25, take_y=0.35  (tighter adverse)
+
+# Target C (now passes frequency gate)
+C0: take_x=0.5, adverse_y=0.3  (current)
+C1: take_x=0.4, adverse_y=0.25  (softer take)
+C2: take_x=0.6, adverse_y=0.35  (tighter adverse)
 ```
 
 ### Sparsity Gates
@@ -597,17 +689,18 @@ Apply per experiment:
 ## Experiment Execution Order
 
 ```text
-E1 (binary BUY/SELL) ─→ E2 (HGB 3-class) ─→ E3 (zones) ─→ E4 (tighter D) ─→ E5 (score direction)
-                                                                                  │
-                                                                         E6 only if E1-E3 show PF 1.05-1.15
+E0 (ablation) ─→ E1 (binary) ─→ E2 (HGB + LR) ─→ E3 (zones) ─→ E4 (target grid) ─→ E5 (score dir)
+                                                                                           │
+                                                                                E6 only if E0-E3 show PF 1.05-1.15
 ```
 
-**Recommended execution order:** E1 → E2 → E3 → E4 → E5 → E6 (conditional)
+**Recommended execution order:** E0 → E1 → E2 → E3 → E4 → E5 → E6 (conditional)
 
+- **E0 (ablation)** is the cheapest diagnostic: clarify whether features carry signal before investing in new models
 - E1 (binary) addresses the core problem (3-class too hard)
-- E2 (HGB) is quick to add and tests model capacity
-- E3 (zones) tests complementary feature set
-- E4 (tighter targets) adjusts the learning signal — only if E1/E2/E3 missing
+- E2 (HGB) tests model capacity; LR shows whether signal is linearly separable
+- E3 (zones) adds complementary feature engineering
+- E4 (target grid) adjusts the learning signal for all three target families (A/C/D with parameter grids)
 - E5 (score direction) tests the most practical hybrid architecture
-- E6 (sequence) is speculative research, conditional on E1-E3
+- E6 (sequence) is speculative research, conditional on E0-E3
 - **One frozen test** after all experiments, for the single best validation winner
