@@ -86,6 +86,17 @@ SELL считается так, будто мы открыли продажу н
 Для каждой стороны строятся те же семейства целей, но без опоры на
 `fractal0.direction`.
 
+Top-level поля `up_3..dn_48` из labeled CSV разрешены только для построения
+target. Они не являются входными признаками модели.
+
+Правило для `feature_contract.json`:
+
+```text
+up_*/dn_* -> source_type=target_only, available_at=target_only, model_input=false
+fav_*/adv_* -> source_type=target_only, available_at=target_only, model_input=false
+source["signal"] -> source_type=diagnostic_only, available_at=diagnostic_only, model_input=false
+```
+
 ### Target A: быстрый отскок
 
 Для BUY:
@@ -154,6 +165,39 @@ buy_good=False, sell_good=True  -> SELL
 неоднозначная строка, и на первом этапе лучше не учить модель на спорном
 направлении.
 
+Для каждой target family обязательно считать:
+
+- `ambiguous_count`;
+- `ambiguous_rate`;
+- BUY/SELL/SKIP баланс;
+- BUY/SELL positives по годам.
+
+Если ambiguous rows занимают большую долю target, это сигнал, что target плохо
+задаёт направление.
+
+## Торговая проверка
+
+Validation/test PF считается отдельно от target construction.
+
+Базовая торговая симуляция первого этапа:
+
+```text
+entry = open следующего бара после строки сигнала
+exit = close через 24 бара
+hold_bars = 24
+spread/commission/slippage = 0
+```
+
+Sequential test использует тот же `hold_bars=24`: новая сделка не открывается,
+пока предыдущая ещё удерживается.
+
+Target A может описывать быстрый отскок за 6 баров, но trading PF всё равно
+считается по общей 24-bar проверке. Это допустимое расхождение, потому что target
+задаёт обучающую цель, а benchmark проверяет единый торговый выход. Если для
+Target D нужно дополнительно проверить trailing exit, это пишется отдельным
+режимом `execution_mode=target_d_trailing_diagnostic`, а не смешивается с базовым
+PF.
+
 ## Входные признаки
 
 Вход модели строится по текущей строке фракталов:
@@ -166,6 +210,7 @@ time, ATR, fractal0..fractal99
 
 - `source["signal"]`;
 - `predict`;
+- top-level `up_3..dn_48`;
 - будущие `ret_*`;
 - будущие `fav_*` / `adv_*`;
 - target D outcomes;
@@ -208,6 +253,11 @@ mode = old_score_diagnostic
 original_score_threshold = -0.07158749
 ```
 
+Источник порога: frozen MT4 parity rule
+`ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`.
+Runner должен принимать `--old-score-threshold`; значение выше используется
+только как default.
+
 Основное доказательство качества:
 
 ```text
@@ -238,6 +288,22 @@ mode = standalone
 - нет очевидной зависимости от old-score diagnostic режима;
 - leakage preflight = PASS.
 
+Validation-winner не должен быть слабее базового уровня уже на validation:
+
+- standalone validation PF >= 1.15;
+- standalone validation sequential PF >= 1.1;
+- validation trades >= 100;
+- если validation direct-bar baseline доступен, winner сравнивается с ним;
+- результат не должен держаться только на одной стороне без явной пометки
+  `one_sided_candidate`.
+
+В отчёте метрики считаются не только общими, но и отдельно для BUY и SELL:
+
+- trades;
+- PF;
+- win rate;
+- mean PnL ATR.
+
 Production-candidate этим этапом не объявляется. Для production позже нужны:
 
 - spread/commission/slippage;
@@ -255,4 +321,6 @@ Production-candidate этим этапом не объявляется. Для p
 - validation не даёт standalone-кандидата с достаточным числом сделок;
 - победитель появляется только в `old_score_diagnostic`;
 - winner выбран на конфигурации с высоким риском переобучения.
-
+- standalone winner проходит только за счёт одной стороны и не помечен как
+  `one_sided_candidate`;
+- ambiguous target rate слишком высок для интерпретации направления.

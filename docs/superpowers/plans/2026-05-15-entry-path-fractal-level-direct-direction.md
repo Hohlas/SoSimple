@@ -19,6 +19,8 @@
 - Do not use `fractal0.direction` as fixed trade direction.
 - `fractal0.direction` may be used only as one live-safe input feature.
 - Old score mode is diagnostic only.
+- Trading validation/test uses next-bar open entry, 24-bar close exit, no spread/commission/slippage, and sequential hold of 24 bars unless a step explicitly says diagnostic trailing mode.
+- Top-level `up_*` / `dn_*` columns are target-only fields. Feature builder must not read them.
 - Do not run test before validation winner is frozen.
 - Checkpoint commits are optional. If commits are not approved in the execution session, report changed files and test status instead.
 
@@ -75,7 +77,7 @@ The runner must expose CLI arguments for these paths and use these defaults:
 - `docs/ML/fractal_level_feature_builder.py.md`
 - `docs/ML/entry_path_direct_direction_targets.py.md`
 - `docs/ML/benchmark_entry_path_fractal_level_direct_direction.py.md`
-- `docs/reports/YYYY-MM-DD-entry-path-fractal-level-direct-direction.md`
+- `docs/reports/2026-05-15-entry-path-fractal-level-direct-direction.md`
 
 ### Modify
 
@@ -158,11 +160,20 @@ Write `feature_contract.json` with each feature:
 - `name`;
 - `source_column`;
 - `source_type`;
+- `available_at`;
 - `live_safe`;
 - `normalization`;
 - `model_input`.
 
+Required `available_at` values:
+
+- `current_row`;
+- `historical_fractal_state`;
+- `target_only`;
+- `diagnostic_only`.
+
 `source["signal"]` must be `diagnostic_only`, `model_input=false`.
+Top-level `up_*`, `dn_*`, generated `fav_*`, `adv_*`, and trailing outcomes must be `target_only`, `model_input=false`.
 
 - [ ] **Step A4: Add CLI stage**
 
@@ -299,6 +310,8 @@ Output columns:
 - BUY count;
 - SELL count;
 - SKIP count;
+- ambiguous count;
+- ambiguous rate;
 - positive rate;
 - min yearly BUY/SELL count;
 - overlap with old `source["signal"]`;
@@ -309,7 +322,11 @@ Gate:
 - train BUY + SELL positives >= 500;
 - validation BUY + SELL positives >= 100;
 - both sides have at least 50 validation positives unless explicitly running one-sided diagnostic;
-- major years have enough positives.
+- major year = year with at least 500 rows in the split;
+- each major validation year has at least 20 BUY+SELL positives;
+- each major validation year has at least 5 BUY positives and 5 SELL positives, otherwise mark `one_sided_or_sparse_year=True`.
+
+If `ambiguous_rate > 0.20`, do not use that target family as winner without explicit user approval.
 
 - [ ] **Step B8: Checkpoint Task B**
 
@@ -369,6 +386,18 @@ Commit only if checkpoint commits are approved. Otherwise report changed files a
 - Test: `tests/test_benchmark_entry_path_fractal_level_direct_direction.py`
 - Output: `validation_grid.csv`, `feature_importance.csv`, `score_distribution.csv`
 
+Trading metrics in this task use the baseline benchmark execution:
+
+```text
+entry = open of next bar
+exit = close after 24 bars
+hold_bars = 24
+spread/commission/slippage = 0
+sequential test = skip overlapping signals for 24 bars
+```
+
+Target D may additionally write a diagnostic trailing-exit metric, but winner selection uses the baseline 24-bar trading metric unless the user explicitly approves changing execution mode.
+
 - [ ] **Step D1: Write failing test for winner selection**
 
 ```python
@@ -377,7 +406,8 @@ def test_pick_winner_rejects_old_score_and_tiny_trade_count():
         [
             {"config": "old_score", "mode": "old_score_diagnostic", "validation_pf": 3.0, "validation_trades": 500, "validation_sequential_pf": 2.0, "overfitting_risk": False},
             {"config": "tiny", "mode": "standalone", "validation_pf": 4.0, "validation_trades": 12, "validation_sequential_pf": 2.0, "overfitting_risk": False},
-            {"config": "stable", "mode": "standalone", "validation_pf": 1.4, "validation_trades": 500, "validation_sequential_pf": 1.2, "overfitting_risk": False},
+            {"config": "weak", "mode": "standalone", "validation_pf": 1.05, "validation_trades": 500, "validation_sequential_pf": 1.2, "overfitting_risk": False},
+            {"config": "stable", "mode": "standalone", "validation_pf": 1.4, "validation_trades": 500, "validation_sequential_pf": 1.2, "negative_years": 1, "overfitting_risk": False},
         ]
     )
 
@@ -438,6 +468,13 @@ elif P(SELL) >= threshold and P(SELL) > P(BUY): candidate_signal = -1
 else: candidate_signal = 0
 ```
 
+For diagnostics also compute:
+
+```text
+direction_margin = abs(P(BUY) - P(SELL))
+max_direction_probability = max(P(BUY), P(SELL))
+```
+
 - [ ] **Step D5: Write validation grid**
 
 Columns:
@@ -446,11 +483,21 @@ Columns:
 - target family and params;
 - input family;
 - threshold;
+- direction margin summary;
+- max direction probability distribution;
 - validation trades;
 - validation PF;
 - validation sequential PF;
 - BUY trades;
 - SELL trades;
+- BUY PF;
+- SELL PF;
+- BUY win rate;
+- SELL win rate;
+- BUY mean PnL ATR;
+- SELL mean PnL ATR;
+- BUY/SELL balance by threshold;
+- confusion-like target stats;
 - yearly PF;
 - negative years;
 - feature count;
@@ -462,18 +509,36 @@ Winner gates:
 
 - `mode == "standalone"`;
 - validation trades >= 100;
+- validation PF >= 1.15;
 - validation sequential PF >= 1.1;
-- validation PF > 1.0;
 - no obvious yearly instability;
 - `overfitting_risk == False`.
+- if validation direct-bar baseline is available, compare against it and report the result;
+- if one side has < 20% of selected trades, mark `one_sided_candidate=True`.
+
+`one_sided_candidate=True` is not a full `SELL/SKIP/BUY` success. It may still be useful, but the report must classify it as a one-sided candidate.
 
 - [ ] **Step D6: Old-score diagnostic**
 
 Run old score only after standalone validation:
 
 ```python
-selected = (candidate_signal != 0) & (score >= -0.07158749)
+selected = (candidate_signal != 0) & (score >= old_score_threshold)
 ```
+
+Default:
+
+```text
+old_score_threshold = -0.07158749
+```
+
+Source:
+
+```text
+ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json
+```
+
+The runner must expose `--old-score-threshold`.
 
 Write rows with:
 
@@ -507,7 +572,7 @@ Commit only if checkpoint commits are approved. Otherwise report changed files a
 
 **Files:**
 - Modify: `ML/benchmark_entry_path_fractal_level_direct_direction.py`
-- Create: `docs/reports/YYYY-MM-DD-entry-path-fractal-level-direct-direction.md`
+- Create: `docs/reports/2026-05-15-entry-path-fractal-level-direct-direction.md`
 - Modify: `docs/ML/benchmark_entry_path_fractal_level_direct_direction.py.md`
 - Modify: `docs/ML/entry_path_direct_direction_targets.py.md`
 - Modify: `ML/README.md`
@@ -527,6 +592,7 @@ Write frozen config into `summary.json` before test. Include:
 - threshold;
 - input paths;
 - old-score threshold for diagnostics only.
+- execution mode: baseline 24-bar close exit, plus any diagnostic modes.
 
 - [ ] **Step E2: Run frozen test once**
 
@@ -551,6 +617,16 @@ Include:
 | direct bar model | 1.1141 | 1.1334 | 1277 / 274 |
 | fractal level direct direction | computed | computed | computed |
 
+Also include BUY/SELL separate metrics:
+
+- trades;
+- PF;
+- win rate;
+- mean PnL ATR;
+- yearly stability.
+
+If the winner is `one_sided_candidate=True`, classify the result as one-sided, not as a full `SELL/SKIP/BUY` success.
+
 - [ ] **Step E4: Write ML Leakage Preflight**
 
 Report PASS/FAIL:
@@ -561,6 +637,7 @@ Report PASS/FAIL:
 - target-only fields excluded;
 - train-only normalization;
 - ATR contract;
+- execution contract: next-bar open entry, 24-bar close exit, sequential hold 24;
 - no test tuning.
 
 - [ ] **Step E5: Update docs**
@@ -573,6 +650,7 @@ Update:
 - `CHANGELOG.md`;
 - `CONTEXT_HANDOFF.md`;
 - `wiki/REPO_integrity.md`.
+- wiki ingest/update if the new report is not covered by `wiki/index.md`.
 
 - [ ] **Step E6: Verification**
 
@@ -606,6 +684,8 @@ Run:
 ./.venv/bin/python wiki/wiki.py generate
 ```
 
+If `docs/reports/2026-05-15-entry-path-fractal-level-direct-direction.md` is created and not represented in `wiki/index.md`, run the project wiki ingest/update workflow before final status.
+
 - [ ] **Step E7: Checkpoint final report**
 
 Commit only if checkpoint commits are approved. Otherwise report changed files and test status.
@@ -618,6 +698,6 @@ Commit only if checkpoint commits are approved. Otherwise report changed files a
 - If target frequencies are too low: stop and propose simpler targets.
 - If validation has no standalone winner: stop and do not run test.
 - If winner only works with old score: report diagnostic result, not production progress.
+- If standalone winner is `one_sided_candidate=True`: report it as one-sided candidate, not as general direct direction success.
 - If frozen test is worse than direct-bar baseline: close as weak research result.
 - If frozen test passes research criteria: write a follow-up plan for costs, drawdown, MT4 parity, and confidence intervals.
-
