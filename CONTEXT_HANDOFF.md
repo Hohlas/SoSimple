@@ -1,146 +1,110 @@
 # Context Handoff
 
-Дата: 2026-05-13.
+Дата: 2026-05-15.
 
 ## Текущий этап
 
-Идёт подготовка SoSimple к реальному счёту. Старый unsafe take/skip online
-watcher больше не является основным production diagnostic. Основной watcher
-переведён на live-safe candidate:
+Завершён эксперимент `entry-path-fractal-level-direct-direction` (Task E из плана
+`2026-05-15-entry-path-fractal-level-direct-direction.md`). Результат: standalone
+validation winner не найден. Все 3-class SELL/SKIP/BUY конфигурации не прошли
+gate (PF < 1.15).
 
-`entry_path_v1_live_safe + A @ 7.5%`
-
-Цель M5 diagnostic остаётся прежней: проверить механику
-`MT4 -> Nero.csv -> watcher -> ml_signals.csv -> MT4 -> ml_trade_events.csv`,
-а не прибыльность. Частый режим должен быть явно помечен diagnostic-only.
+Следующий этап: итеративное улучшение direct-direction по плану
+`docs/superpowers/plans/2026-05-15-improving-direct-direction-results.md`.
 
 ## Git
 
-Локальная ветка: `live-safe-entry-path-watcher`.
+Локальная ветка: `entry-path-all-rows-spec`.
 
 Не трогать `AGENTS.md` без явной просьбы пользователя.
 
 ## Что уже сделано
 
-- `API.telemetry_signal_watcher` получил `--watcher-mode`.
-  - default: `entry_path_v1_live_safe_online`;
-  - legacy: `telemetry_frequency_v1_legacy` только с `--allow-unsafe-future-features`.
-- Default paths теперь ведут в
-  `ML/reports/entry_path_v1_live_safe/runtime/`.
-- Entry-path runtime inference использует:
-  - checkpoint seed 42 live-safe;
-  - rule `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`;
-  - `feature_profile=entry_path_v1_live_safe`;
-  - `include_true_targets=False`.
-- `API.export_entry_path_v1_signals` поддерживает metadata, append-to-MT4,
-  threshold override и отдельный diagnostic all-rows stress export.
-- Основной M5 high-frequency diagnostic:
-  - флаг `--entry-path-score-threshold-override`;
-  - использует тот же checkpoint, rule, feature profile;
-  - сохраняет production gate `signal != 0`;
-  - сохраняет направление из prediction/export frame;
-  - пишет `diagnostic_only=true` в metadata;
-  - production baseline остаётся `A @ 7.5%`.
-- `--entry-path-diagnostic-all-rows` оставлен только как mechanical stress mode,
-  не parity с production candidate.
+### Direct-direction fractal-level (завершён, без winner)
 
-## Итоги online/tester сверки 2026-05-12
+Созданы файлы:
 
-Создан краткий отчёт:
+- `ML/fractal_level_feature_builder.py` — парсинг фракталов, аудит, nearest_k признаки
+- `ML/entry_path_direct_direction_targets.py` — BUY/SELL target families A/C/D
+- `ML/benchmark_entry_path_fractal_level_direct_direction.py` — benchmark runner
+- `tests/test_fractal_level_feature_builder.py`
+- `tests/test_entry_path_direct_direction_targets.py`
+- `tests/test_benchmark_entry_path_fractal_level_direct_direction.py`
 
-- `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`.
+Артефакты в `ML/reports/entry_path_v1_fractal_level_direct_direction/`.
 
-Ключевой вывод: `ml_signals.csv` online/tester совпали, но старое online-исполнение
-пропустило 6 входов на общей исполнимой части. Первые три подтверждены в
-online MT4-логе как `requote ERROR-138`.
+#### Исправленный баг: двойная нормализация ATR
 
-Стабильный закрытый срез `2026.05.12 00:10` -> `2026.05.12 13:05`:
+`up_*/dn_*` в `Nero_*_labeled.csv` уже ATR-нормализованы через `normalize_rowwise()`.
+Первоначально `build_buy_sell_fav_adv()` делил их на ATR ещё раз — median вместо ~0.1.
+Исправлено: теперь `up_*/dn_*` используются напрямую, пороги пересчитаны
+(A: `stop_n=0.2, take_y=0.3`; C: `take_x=0.5, adverse_y=0.3`).
 
-- online: 67 закрытых сделок, PnL `-680.2`, матожидание `-10.1522`;
-- tester: 68 закрытых сделок, PnL `-522.6`, матожидание `-7.6853`;
-- парные 65 закрытых сделок: online `-745.0`, tester `-696.7`,
-  разница матожидания `-0.7431`.
+После исправления все три target family прошли frequency gate.
 
-Главный вред дали пропущенные online-входы, а не расхождения PnL по парным
-сделкам.
+#### Результаты nearest_k4 (97 features), RandomForest, Target D
 
-`ML/online_tester_reconciliation.py` обновлён:
+| Threshold | Trades | PF | Seq PF | BUY/SELL | Gate fail |
+|-----------|--------|-----|--------|----------|-----------|
+| 0.1 | 9415 | 1.11 | 1.15 | 3656/5759 | PF < 1.15 |
+| 0.3 | 9280 | 1.11 | 0.99 | 3583/5697 | PF < 1.15 |
+| 0.4 | 227 | 1.17 | 1.10 | 83/144 | overfitting_risk |
+| 0.5+ | 0 | — | — | — | — |
 
-- сравнение online/tester по `signal_time + direction`;
-- `OPEN_FAILED` учитывается отдельным статусом;
-- добавлены `--start-time` / `--end-time`;
-- summary считает `closed_trades`, `signal_basis` и paired-метрики.
+Для Target A и C: PF ≈ 1.0 при низких threshold, degrade при высоких.
+Все модели дают вероятности BUY/SELL ≈ 1/3 (едва выше random).
+Top feature importance плоская (~0.004–0.005). Для Target A `fractal0_direction` = 17.3%.
 
-`OPEN_FAILED` уже реализован в `MT/MQL4/Include/lib_ML_Signal.mqh`; для старых
-логов таких строк ещё нет, поэтому они видны как `missing_open`.
+#### Ключевой вывод
+
+3-class SELL/SKIP/BUY на fractal-level признаках с RandomForest не даёт
+торгового преимущества без score-фильтра. Direction signal слишком слаб.
+
+### Утверждённый план улучшений
+
+Файл: `docs/superpowers/plans/2026-05-15-improving-direct-direction-results.md`
+
+Эксперименты (все на train/validation, frozen test один раз в конце):
+
+| # | Эксперимент | Суть |
+|---|-------------|------|
+| E0 | Feature Ablation | k=4/6/8/16, geometry_only vs с Up/Dn |
+| E1 | Binary BUY/SELL модели | Две бинарных HGB, margin rule |
+| E2 | HGB + LR 3-class | HistGradientBoosting + LogisticRegression контроль |
+| E3 | Zone Features (Input A) | Агрегация фракталов по ценовым зонам |
+| E4 | Target Grid A/C/D | Параметрические сетки для всех трёх family |
+| E5 | Score Direction | HGB direction resolver на score-filtered universe |
+| E6 | Sequence Features | Условный: только если E0-E3 дают PF 1.05–1.15 |
+
+Порядок: E0 → E1 → E2 → E3 → E4 → E5 → E6(conditional).
+
+Критические правила (из рецензии):
+- Один frozen test после выбора общего validation winner, не после каждого эксперимента
+- `signal != 0` — только diagnostic, не production gate (в E5)
+- Ambiguous BUY+SELL rows остаются positive для обеих моделей (E1)
+- `features / validation_candidates >= 0.20` — skip config (E3)
+- Sparsity gates: `major-year min BUY/SELL >= 10`, `ambiguous_rate <= 0.20` (E4)
+- HGB: `compute_sample_weight("balanced", y)` + permutation importance (E2)
 
 ## Открытые вопросы
 
-1. Проверить новый live-safe watcher на online M5 в tmux без
-   `--allow-unsafe-future-features`.
+1. Production watcher `entry_path_v1_live_safe + A @ 7.5%` на M5 — не проверен
+   после рефакторинга. Вопрос отложен до завершения direct-direction исследований.
 
-2. Найден один вход с задержкой `65` минут:
-   - ticket `1581716381`;
-   - `BUY`;
-   - signal_time `2026.05.11 22:55`;
-   - entry_time `2026.05.12 00:00`;
-   - spread `0.92`;
-   - ATR `1.81`.
+2. Задержка входа ticket `1581716381` (65 мин) — не исследована.
 
-   Нужно понять, это стартовый/ночной эффект, задержка файла, ожидание цены, перезапуск, широкий спред или логическая ошибка.
-
-3. Были `requote ERROR-138` при открытии/закрытии. Старый online/tester анализ
-   показал, что часть входов из-за этого не открылась. В новом тесте нужно
-   проверить, что такие случаи попадают в `OPEN_FAILED`, а не теряются.
-
-4. `MAIL_SEND-706 ERROR-4060` встречается в логах, но относится к почте и не блокирует торговый тракт.
-
-5. Прибыльность diagnostic режима не является критерием успеха текущего этапа.
-
-## Runtime benchmark 2026-05-13
-
-Тяжёлые intermediate CSV benchmark не оставлены в рабочем дереве; итоговые
-числа зафиксированы ниже и в `docs/API/telemetry_signal_watcher.py.md`.
-
-Production baseline `A @ 7.5%` на текущем M5-хвосте дал `0` ненулевых
-сигналов: raw `Nero.csv` не даёт production `signal != 0` в проверенном окне.
-
-Предыдущий all-rows stress benchmark (`top-N=5000/year`), не production parity:
-
-| Window | Rebuild | Non-zero | Last time | Last signal |
-|---:|---:|---:|---|---:|
-| 1000 | 17.217s | 953 | 2026.05.11 22:35 | -1 |
-| 100 | 3.541s | 98 | 2026.05.11 22:35 | -1 |
-| 24 | 2.149s | 24 | 2026.05.11 22:35 | -1 |
-| 1 | 2.084s | 1 | 2026.05.11 22:35 | -1 |
-
-Полный rebuild `60178` строк остановлен после 5 минут без результата.
-Для frozen training/offline контракта `vol_regime_24` считался как rolling ATR
-по 24 строкам, но validation/test проверка показала `signal_mismatch_rows=0`
-при runtime substitution `vol_regime_24 := ATR`.
-Watcher больше не сканирует весь `Nero.csv` на каждом poll: при неизменном
-`mtime` он сразу уходит в `IDLE`, а при rebuild читает последние строки
-seek-чтением с конца файла. Default runtime window уменьшен до `1` строки.
+3. `requote ERROR-138` — не проверена обработка в новом коде.
 
 ## Следующий шаг
 
-Продолжить с online-запуска live-safe diagnostic watcher:
+Начать выполнение плана с Experiment 0: Feature Ablation.
 
 ```bash
-./.venv/bin/python -m API.telemetry_signal_watcher \
-  --poll-interval-sec 1 \
-  --heartbeat-sec 60 \
-  --entry-path-score-threshold-override -0.50 \
-  --verbose
+# E0: k variants
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 6
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 8
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 16
+.venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --k 4 --geometry-only
 ```
 
-После этого:
-
-1. Провести online-тест несколько часов уже без unsafe watcher.
-2. Запустить `ML.online_tester_reconciliation` по новому online/tester участку
-   с явными `--start-time` / `--end-time`.
-3. Разобрать задержку входа ticket `1581716381`, если она повторится вне края
-   файла.
-4. Перед финальным закрытием этапа сжать handoff ещё раз до актуального
-   состояния, а подробные итоги перенести в `docs/reports/` и коротко в
-   `CHANGELOG.md`.
+Новый агент должен прочитать AGENTS.md → CONTEXT_HANDOFF.md → план.
