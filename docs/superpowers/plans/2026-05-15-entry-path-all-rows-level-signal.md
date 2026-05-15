@@ -4,7 +4,7 @@
 
 **Goal:** Проверить гипотезу live-safe `signal_candidate` по всей строке фракталов: найти сильный уровень вокруг `fractal0.price`, взять направление из `fractal0.direction`, оценить candidate отдельно и только потом диагностически проверить старый score-фильтр.
 
-**Architecture:** Один master-plan с последовательными early gates A/B/C. Если gates проходят, строится новый feature layer (`zones`, nearest `K=16`, mixed), новый target layer (A/C/D), и один benchmark runner с validation-first выбором winner и single frozen test. Старый `label_all().signal` остаётся только сравнительной меткой, старый score — только диагностическим фильтром.
+**Architecture:** Один master-plan с последовательными early gates A/B/C. Если gates проходят, строится новый feature layer, новый target layer (A/C/D), и один benchmark runner с validation-first выбором winner и single frozen test. Первый запуск идёт от простого к сложному: сначала nearest `K=16`, затем `zones` и mixed только при наличии пользы. Старый `label_all().signal` остаётся только сравнительной меткой, старый score — только диагностическим фильтром.
 
 **Tech Stack:** Python 3.12, pandas, numpy, scikit-learn, pytest, существующие `processing.label_signals`, `processing.fractal_preprocessing`, `ML.entry_path_trade_filter`, `ML.benchmark_entry_path_all_rows_ranking`
 
@@ -20,6 +20,8 @@
 - Do not run full benchmark before A/B/C pass.
 - Do not run test set before validation winner is frozen.
 - Do not push without explicit user request.
+- Use `original_score_threshold = -0.07158749` for old-score diagnostics. Source: `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`.
+- Report file date is the actual execution date: `docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md`.
 
 ## Read First
 
@@ -70,7 +72,7 @@
 - `docs/ML/fractal_level_feature_builder.py.md`
 - `docs/ML/entry_path_level_targets.py.md`
 - `docs/ML/benchmark_entry_path_fractal_level_signal.py.md`
-- `docs/reports/2026-05-15-entry-path-fractal-level-signal.md`
+- `docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md`
 
 ### Modify
 
@@ -85,6 +87,7 @@
 - `ML/reports/entry_path_v1_fractal_level_signal/direction_baseline.json`
 - `ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv`
 - `ML/reports/entry_path_v1_fractal_level_signal/validation_grid.csv`
+- `ML/reports/entry_path_v1_fractal_level_signal/feature_importance.csv`
 - `ML/reports/entry_path_v1_fractal_level_signal/score_distribution.csv`
 - `ML/reports/entry_path_v1_fractal_level_signal/summary.json`
 - `ML/reports/entry_path_v1_fractal_level_signal/summary.md`
@@ -335,8 +338,11 @@ def summarize_direction_baseline(
 It must report:
 
 - trades by `fractal0.direction`;
-- PF;
+- PF as diagnostic only;
 - win rate;
+- conditional win rate for `fractal0.direction`;
+- conditional win rate for reverse direction;
+- binomial test or equivalent confidence check against 50%;
 - mean PnL ATR;
 - same stats for reverse direction;
 - BUY-only stats;
@@ -346,10 +352,12 @@ It must report:
 
 Gate fails if:
 
-- `fractal0.direction` PF <= 1.0;
-- reverse direction is better;
-- correct direction rate is around 50%;
+- reverse direction is better than `fractal0.direction`;
+- correct direction rate is around 50% and not statistically better than chance;
+- conditional win rate advantage over reverse direction is less than 2 percentage points;
 - BUY-only or SELL-only is clearly damaging the combined result.
+
+Do not fail the gate only because all-rows PF is below 1.0. All-rows PF is expected to be weak before a candidate-source filters rows. The gate asks whether `fractal0.direction` contains useful direction information, not whether it is already a profitable strategy by itself.
 
 - [ ] **Step B5: Add CLI direction stage**
 
@@ -396,11 +404,54 @@ git commit -m "Add entry path level direction gate"
 - Test: `tests/test_entry_path_level_targets.py`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv`
 
-- [ ] **Step C1: Write failing tests for target A and C**
+- [ ] **Step C1: Write failing tests for trade direction and path columns**
+
+Targets must use trade direction derived from `fractal0.direction`, not the historical `signal` column.
+
+```python
+def test_trade_direction_comes_from_fractal0_direction_not_signal():
+    frame = pd.DataFrame(
+        {
+            "signal": [0, 0],
+            "fractal0": [
+                "1:100:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1",
+                "2:100:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1",
+            ],
+        }
+    )
+
+    direction = build_trade_direction_from_fractal0(frame)
+
+    assert direction.tolist() == [1, -1]
+```
+
+- [ ] **Step C2: Write failing tests for `fav/adv` on all rows**
+
+The old `fav_* / adv_*` columns may be tied to `signal != 0`. Build local future path columns for every row with valid `fractal0.direction`.
+
+```python
+def test_build_future_moves_uses_fractal0_direction_for_signal_zero_rows():
+    frame = pd.DataFrame(
+        {
+            "signal": [0, 0],
+            "trade_direction": [1, -1],
+            "ATR": [2.0, 2.0],
+            "up_6": [5.0, 1.0],
+            "dn_6": [1.0, 5.0],
+        }
+    )
+
+    moves = build_fav_adv_from_trade_direction(frame, horizons=(6,))
+
+    assert moves["fav_6_atr"].tolist() == [2.5, 2.5]
+    assert moves["adv_6_atr"].tolist() == [0.5, 0.5]
+```
+
+- [ ] **Step C3: Write failing tests for target A and C**
 
 ```python
 def test_target_a_fast_bounce_uses_fav_and_adv_thresholds():
-    frame = pd.DataFrame({"signal": [1, -1], "ATR": [2.0, 2.0], "up_6": [5.0, 1.0], "dn_6": [1.0, 5.0]})
+    frame = pd.DataFrame({"fav_6_atr": [2.5, 2.5], "adv_6_atr": [0.5, 0.5]})
 
     target = build_target_a_fast_bounce(frame, stop_n=2.0, take_y=2.0)
 
@@ -409,28 +460,49 @@ def test_target_a_fast_bounce_uses_fav_and_adv_thresholds():
 
 ```python
 def test_target_c_rejects_large_early_adverse_move():
-    frame = pd.DataFrame({"signal": [1], "ATR": [2.0], "up_24": [10.0], "dn_12": [8.0]})
+    frame = pd.DataFrame({"fav_24_atr": [5.0], "adv_12_atr": [4.0]})
 
     target = build_target_c_limited_risk(frame, take_x=4.0, adverse_y=2.0)
 
     assert target.tolist() == [0]
 ```
 
-- [ ] **Step C2: Implement target A and C**
+- [ ] **Step C4: Implement trade direction and `fav/adv` for all rows**
+
+Implement:
+
+```python
+def build_trade_direction_from_fractal0(source: pd.DataFrame) -> pd.Series:
+    ...
+
+def build_fav_adv_from_trade_direction(
+    source: pd.DataFrame,
+    horizons: tuple[int, ...] = (3, 6, 12, 24, 48),
+) -> pd.DataFrame:
+    ...
+```
+
+Rules:
+
+- `fractal0.direction == -1 -> trade_direction = 1` (BUY);
+- `fractal0.direction == 1 -> trade_direction = -1` (SELL);
+- old `signal` is ignored for target construction;
+- for BUY: `fav_H = up_H / ATR`, `adv_H = dn_H / ATR`;
+- for SELL: `fav_H = dn_H / ATR`, `adv_H = up_H / ATR`;
+- rows without valid direction get neutral target inputs and cannot become positive target rows.
+
+- [ ] **Step C5: Implement target A and C**
 
 Rules:
 
 ```text
-A: adv_6 < N * ATR and fav_6 >= Y * ATR
-C: fav_24 >= X * ATR and adv_12 <= Y * ATR
+A: adv_6_atr < N and fav_6_atr >= Y
+C: fav_24_atr >= X and adv_12_atr <= Y
 ```
 
-Use `signal` as the candidate direction:
+Use `trade_direction` from `fractal0.direction` indirectly through the local `fav/adv` columns. Do not use the historical `signal` column.
 
-- BUY: `fav=up`, `adv=dn`;
-- SELL: `fav=dn`, `adv=up`.
-
-- [ ] **Step C3: Write failing test for Target D OHLC path**
+- [ ] **Step C6: Write failing test for Target D OHLC path**
 
 Test that Target D cannot be built from only `fav/adv`; it needs OHLC path.
 
@@ -447,7 +519,7 @@ target = build_target_d_trailing_profit(source, ohlc_path, trail_n=2.0, profit_z
 assert target.iloc[0] == 1
 ```
 
-- [ ] **Step C4: Implement Target D using OHLC path**
+- [ ] **Step C7: Implement Target D using OHLC path**
 
 Use the same semantics as `processing.label_signals.simulate_trailing_stop_exit()`:
 
@@ -465,7 +537,9 @@ If existing simulator returns only PnL and not exit reason, implement a local he
 {"pnl_atr": float, "exit_reason": "trailing_stop" | "timeout"}
 ```
 
-- [ ] **Step C5: Implement target frequency summary**
+Do not call `label_trailing_stop_targets()` for this target. It is tied to historical `signal` direction. Target D here must use `trade_direction` derived from `fractal0.direction` for all rows.
+
+- [ ] **Step C8: Implement target frequency summary**
 
 Implement:
 
@@ -495,7 +569,7 @@ validation positives >= 100
 major validation/test years >= 20 positives
 ```
 
-- [ ] **Step C6: Add CLI target-frequency stage**
+- [ ] **Step C9: Add CLI target-frequency stage**
 
 Run:
 
@@ -509,7 +583,7 @@ Output:
 ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv
 ```
 
-- [ ] **Step C7: Run real target frequency gate**
+- [ ] **Step C10: Run real target frequency gate**
 
 Run:
 
@@ -519,7 +593,7 @@ Run:
 
 If all A/C/D fail, stop and report. If only one or two pass, benchmark only passing target families.
 
-- [ ] **Step C8: Commit Task C**
+- [ ] **Step C11: Commit Task C**
 
 ```bash
 git add ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_entry_path_level_targets.py ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv
@@ -547,6 +621,7 @@ def test_build_distance_features_mirrors_sell_direction():
     features = build_fractal_level_features(frame, input_family="nearest_k", k=1)
 
     assert features.loc[0, "nearest_00_raw_distance_atr"] == -2.0
+    # SELL mirrors the coordinate system: a lower price is in the trade direction.
     assert features.loc[0, "nearest_00_directed_distance_atr"] == 2.0
 ```
 
@@ -630,7 +705,19 @@ Rules:
 - leave already local ratio/distance features unscaled if no scaling is needed;
 - if scaling is used, save stats in summary JSON.
 
-- [ ] **Step D8: Run feature tests**
+- [ ] **Step D8: Measure feature build runtime**
+
+Add a small runtime measurement to the validation runner output:
+
+```python
+t0 = time.perf_counter()
+features = build_fractal_level_features(train_source, input_family="nearest_k", k=16)
+elapsed_sec = time.perf_counter() - t0
+```
+
+Write `feature_build_seconds` and `feature_build_rows_per_second` into `summary.json` or the stage output. If full train feature build takes more than 60 seconds, keep it acceptable for offline research but state that online inference speed is not approved by this benchmark.
+
+- [ ] **Step D9: Run feature tests**
 
 Run:
 
@@ -638,7 +725,7 @@ Run:
 ./.venv/bin/python -m pytest tests/test_fractal_level_feature_builder.py -q
 ```
 
-- [ ] **Step D9: Commit Task D**
+- [ ] **Step D10: Commit Task D**
 
 ```bash
 git add ML/fractal_level_feature_builder.py tests/test_fractal_level_feature_builder.py
@@ -674,15 +761,13 @@ def test_pick_validation_winner_prefers_pf_then_trade_count():
     assert winner["config"] == "b"
 ```
 
-- [ ] **Step E2: Implement classifier matrix**
+- [ ] **Step E2: Implement staged classifier matrix**
 
-First-pass matrix:
+Stage 1 matrix:
 
 ```text
 Inputs:
-- zones
 - nearest_k16
-- zones_plus_nearest_k16
 
 Targets:
 - A
@@ -694,7 +779,24 @@ Feature variants:
 - geometry-only
 ```
 
-Do not include Target B, K=8, K=32, Input C, or Input D in first-pass matrix.
+This gives 6 configs before threshold selection. If all six have validation PF <= 1.0 or too few trades, stop the validation matrix and report. Do not run `zones` or mixed variants.
+
+Stage 2 matrix, only if Stage 1 shows potential:
+
+```text
+Inputs:
+- zones
+- zones_plus_nearest_k16
+
+Targets:
+- only target families that passed Stage 1 or target-frequency gates
+
+Feature variants:
+- with old-fractal Up/Dn
+- geometry-only
+```
+
+Do not include Target B, K=8, K=32, Input C, or Input D in this first implementation plan.
 
 Use a simple, bounded model first:
 
@@ -727,7 +829,16 @@ For each config write:
 - validation sequential PF;
 - yearly PF;
 - feature count;
-- `features / validation_candidates`.
+- `features / validation_candidates`;
+- `overfitting_risk`.
+
+Set `overfitting_risk=True` when:
+
+```text
+features / validation_candidates >= 0.10
+```
+
+Such config cannot be selected as winner without explicit user approval.
 
 - [ ] **Step E4: Standalone candidate validation**
 
@@ -739,7 +850,33 @@ selected = signal_candidate != 0
 
 This is the main evidence for level-candidate quality.
 
-- [ ] **Step E5: Old score distribution diagnostic**
+Also report overlap with historical offline signal:
+
+```python
+overlap_with_signal = (signal_candidate != 0) & (source["signal"] != 0)
+overlap_rate = overlap_with_signal.sum() / max((signal_candidate != 0).sum(), 1)
+```
+
+If `overlap_rate > 0.8`, mark the candidate as too close to old offline `label_all().signal`. It can remain diagnostic, but it does not solve the live-inference problem by itself.
+
+- [ ] **Step E5: Write feature importance summary**
+
+For each trained `RandomForestClassifier`, write top-20 feature importances to the validation output:
+
+```text
+config_id
+rank
+feature
+importance
+```
+
+Use this for diagnostics:
+
+- understand which zones/fields matter;
+- find suspicious features that may indicate leakage;
+- simplify the next iteration.
+
+- [ ] **Step E6: Old score distribution diagnostic**
 
 For each validation candidate universe compare:
 
@@ -765,7 +902,7 @@ Columns:
 - median_shift_over_old_std;
 - transfer_warning.
 
-- [ ] **Step E6: Old score diagnostic filter**
+- [ ] **Step E7: Old score diagnostic filter**
 
 Run:
 
@@ -773,9 +910,17 @@ Run:
 selected = (signal_candidate != 0) & (score >= original_threshold)
 ```
 
+Use:
+
+```python
+original_threshold = -0.07158749
+```
+
+Source: `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`.
+
 Mark it as diagnostic. Do not treat as production approval.
 
-- [ ] **Step E7: Run validation benchmark**
+- [ ] **Step E8: Run validation benchmark**
 
 Run:
 
@@ -786,13 +931,14 @@ Run:
 Expected outputs:
 
 - `validation_grid.csv`;
+- `feature_importance.csv`;
 - `score_distribution.csv`;
 - no test metrics yet.
 
-- [ ] **Step E8: Commit Task E**
+- [ ] **Step E9: Commit Task E**
 
 ```bash
-git add ML/benchmark_entry_path_fractal_level_signal.py tests/test_benchmark_entry_path_fractal_level_signal.py ML/reports/entry_path_v1_fractal_level_signal/validation_grid.csv ML/reports/entry_path_v1_fractal_level_signal/score_distribution.csv
+git add ML/benchmark_entry_path_fractal_level_signal.py tests/test_benchmark_entry_path_fractal_level_signal.py ML/reports/entry_path_v1_fractal_level_signal/validation_grid.csv ML/reports/entry_path_v1_fractal_level_signal/feature_importance.csv ML/reports/entry_path_v1_fractal_level_signal/score_distribution.csv
 git commit -m "Add entry path level validation benchmark"
 ```
 
@@ -806,7 +952,7 @@ git commit -m "Add entry path level validation benchmark"
 
 **Files:**
 - Modify: `ML/benchmark_entry_path_fractal_level_signal.py`
-- Create: `docs/reports/2026-05-15-entry-path-fractal-level-signal.md`
+- Create: `docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md`
 - Modify: `ML/README.md`
 - Modify: `MODULE_INDEX.md`
 - Modify: `CHANGELOG.md`
@@ -817,6 +963,8 @@ git commit -m "Add entry path level validation benchmark"
 - [ ] **Step F1: Freeze validation winner**
 
 Load `validation_grid.csv`, choose one winner, and write frozen config into `summary.json` before running test.
+
+Do not choose rows with `overfitting_risk=True` unless the user explicitly approves that exception.
 
 The frozen config must include:
 
@@ -875,9 +1023,17 @@ Production-candidate requires more and is not expected in this phase:
 - bootstrap/confidence interval;
 - execution parity.
 
+Treat the result as worse than direct-bar baseline if any of these is true:
+
+- `test_PF < 1.1141`;
+- `sequential_PF < 1.1334`;
+- `test_trades < 100` and `test_PF < 1.5`.
+
 - [ ] **Step F5: Write report**
 
-Create `docs/reports/2026-05-15-entry-path-fractal-level-signal.md` with:
+Create `docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md` with the actual execution date in the filename.
+
+Include:
 
 - context;
 - gates A/B/C results;
@@ -933,7 +1089,7 @@ Run:
 - [ ] **Step F8: Commit final report**
 
 ```bash
-git add ML/fractal_level_feature_builder.py ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py tests/test_entry_path_level_targets.py tests/test_benchmark_entry_path_fractal_level_signal.py docs/ML/fractal_level_feature_builder.py.md docs/ML/entry_path_level_targets.py.md docs/ML/benchmark_entry_path_fractal_level_signal.py.md docs/reports/2026-05-15-entry-path-fractal-level-signal.md ML/reports/entry_path_v1_fractal_level_signal ML/README.md MODULE_INDEX.md CHANGELOG.md wiki/REPO_integrity.md
+git add ML/fractal_level_feature_builder.py ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py tests/test_entry_path_level_targets.py tests/test_benchmark_entry_path_fractal_level_signal.py docs/ML/fractal_level_feature_builder.py.md docs/ML/entry_path_level_targets.py.md docs/ML/benchmark_entry_path_fractal_level_signal.py.md docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md ML/reports/entry_path_v1_fractal_level_signal ML/README.md MODULE_INDEX.md CHANGELOG.md wiki/REPO_integrity.md
 git commit -m "Add entry path fractal level signal benchmark"
 ```
 
@@ -962,6 +1118,12 @@ Do not run test. Report validation failure.
 - [ ] **If frozen test is worse than direct-bar baseline**
 
 Report as research failure or weak diagnostic result. Do not call it production-ready.
+
+Use this definition of worse:
+
+- `test_PF < direct_bar_PF`;
+- or `sequential_PF < direct_bar_sequential_PF`;
+- or `test_trades < 100` and `test_PF < 1.5`.
 
 - [ ] **If frozen test passes research criteria**
 
