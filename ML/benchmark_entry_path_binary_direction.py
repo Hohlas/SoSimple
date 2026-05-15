@@ -438,9 +438,140 @@ def _feature_importance_frame_binary(
     ])
 
 
+def run_frozen_test(
+    *,
+    train_source: str | Path,
+    validation_source: str | Path,
+    test_source: str | Path,
+    validation_predictions: str | Path,
+    test_predictions: str | Path,
+    ohlc: str | Path,
+    output_dir: str | Path,
+    old_score_threshold: float,
+    k: int = DEFAULT_NEAREST_K,
+    model_type: str = "rf",
+    buy_threshold: float = 0.4,
+    sell_threshold: float = 0.6,
+    margin: float = 0.10,
+    target_family: str = "D",
+) -> dict[str, Any]:
+    """Frozen test: retrain on train+validation, evaluate on test with frozen config."""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    source_usecols = ["time", "signal", "ATR", *[f"fractal{idx}" for idx in range(100)]]
+    target_usecols = ["time", "signal", "ATR", "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
+
+    train_features = pd.read_csv(Path(train_source), sep=";", usecols=source_usecols)
+    validation_features = pd.read_csv(Path(validation_source), sep=";", usecols=source_usecols)
+    test_features = pd.read_csv(Path(test_source), sep=";", usecols=source_usecols)
+    train_target = pd.read_csv(Path(train_source), sep=";", usecols=target_usecols)
+    validation_target = pd.read_csv(Path(validation_source), sep=";", usecols=target_usecols)
+    test_target = pd.read_csv(Path(test_source), sep=";", usecols=target_usecols)
+
+    combined_features = pd.concat([train_features, validation_features], ignore_index=True)
+    combined_target = pd.concat([train_target, validation_target], ignore_index=True)
+
+    x_combined_raw = build_fractal_level_features(combined_features, input_family="nearest_k", k=k)
+    x_test_raw = build_fractal_level_features(test_features, input_family="nearest_k", k=k)
+    normalizer = fit_feature_normalizer(x_combined_raw)
+    x_combined = _model_feature_frame(apply_feature_normalizer(x_combined_raw, normalizer))
+    x_test = _model_feature_frame(apply_feature_normalizer(x_test_raw, normalizer))
+
+    combined_buy_good, combined_sell_good = build_target_d_masks(
+        combined_target, ohlc, trail_n=2.0, profit_z=1.0, horizon=24
+    )
+    test_buy_good, test_sell_good = build_target_d_masks(
+        test_target, ohlc, trail_n=2.0, profit_z=1.0, horizon=24
+    )
+    test_returns = compute_buy_sell_returns(test_target, ohlc, horizon=24)
+
+    y_buy_combined = combined_buy_good.astype(int)
+    y_sell_combined = combined_sell_good.astype(int)
+
+    model_variants = {"rf": _make_rf, "hgb": _make_hgb}
+    model_factory = model_variants.get(model_type)
+    if model_factory is None:
+        raise ValueError(f"unsupported model_type for frozen test: {model_type}")
+
+    buy_model = model_factory()
+    buy_sw = compute_sample_weight("balanced", y_buy_combined)
+    buy_model.fit(x_combined, y_buy_combined, sample_weight=buy_sw)
+
+    sell_model = model_factory()
+    sell_sw = compute_sample_weight("balanced", y_sell_combined)
+    sell_model.fit(x_combined, y_sell_combined, sample_weight=sell_sw)
+
+    p_buy = buy_model.predict_proba(x_test)[:, 1]
+    p_sell = sell_model.predict_proba(x_test)[:, 1]
+
+    signals = _binary_signal(p_buy, p_sell, buy_threshold, sell_threshold, margin)
+    selected = signals != 0
+    true_ret = np.zeros(len(signals), dtype=float)
+    buy_mask = signals == 1
+    sell_mask = signals == -1
+    true_ret[buy_mask] = test_returns.loc[buy_mask, "buy_ret_atr"].values if buy_mask.any() else 0.0
+    true_ret[sell_mask] = test_returns.loc[sell_mask, "sell_ret_atr"].values if sell_mask.any() else 0.0
+
+    eval_frame = pd.DataFrame({
+        "time": pd.to_datetime(test_target["time"], format="%Y.%m.%d %H:%M", errors="coerce"),
+        "candidate_signal": signals,
+        "true_ret_24_dir_atr": true_ret,
+        "p_buy": p_buy,
+        "p_sell": p_sell,
+        "selected": selected,
+    })
+
+    selected_df = eval_frame.loc[eval_frame["selected"]].copy()
+    buy = selected_df.loc[selected_df["candidate_signal"] == 1, "true_ret_24_dir_atr"].to_numpy(dtype=np.float64)
+    sell = selected_df.loc[selected_df["candidate_signal"] == -1, "true_ret_24_dir_atr"].to_numpy(dtype=np.float64)
+    pnl = selected_df["true_ret_24_dir_atr"].to_numpy(dtype=np.float64)
+    sequential = run_sequential_all_rows(
+        eval_frame.rename(columns={"candidate_signal": "signal"}),
+        eval_frame["selected"],
+        hold_bars=24,
+    )
+    yearly = _yearly_pf(selected_df)
+
+    result = {
+        "stage": "frozen-test",
+        "config": f"{target_family}_{model_type}_buy{buy_threshold:.2f}_sell{sell_threshold:.2f}_m{margin:.2f}",
+        "model_type": model_type,
+        "buy_threshold": buy_threshold,
+        "sell_threshold": sell_threshold,
+        "margin": margin,
+        "target_family": target_family,
+        "input_family": f"nearest_k{k}",
+        "test_trades": int(len(selected_df)),
+        "test_pf": compute_pf(pnl),
+        "test_sequential_pf": float(sequential["pf"]),
+        "test_sequential_trades": int(sequential["trades"]),
+        "test_buy_trades": int(len(buy)),
+        "test_sell_trades": int(len(sell)),
+        "test_buy_pf": compute_pf(buy),
+        "test_sell_pf": compute_pf(sell),
+        "test_buy_win_rate": float((buy > 0).mean()) if len(buy) else 0.0,
+        "test_sell_win_rate": float((sell > 0).mean()) if len(sell) else 0.0,
+        "test_buy_sell_balance": float(min(len(buy), len(sell)) / max(len(selected_df), 1)),
+        "test_yearly_pf": yearly,
+        "negative_years": sum(1 for y in yearly if y["trades"] >= 20 and y["pf"] < 1.0),
+        "feature_count": int(x_combined.shape[1]),
+        "train_combined_rows": int(len(combined_features)),
+    }
+
+    result_path = output_path / "frozen_test.json"
+    result_path.write_text(json.dumps(_jsonable(result), ensure_ascii=False, indent=2), encoding="utf-8")
+
+    frozen_grid_path = output_path / "frozen_test_grid.csv"
+    eval_frame.to_csv(frozen_grid_path, sep=";", index=False)
+
+    print(json.dumps(_jsonable(result), ensure_ascii=False, indent=2))
+    return result
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Binary BUY/SELL direction benchmark.")
-    parser.add_argument("--stage", choices=["target-frequency", "validation-matrix"], required=True)
+    parser.add_argument("--stage", choices=["target-frequency", "validation-matrix", "frozen-test"], required=True)
     parser.add_argument("--train-source", default=str(DEFAULT_TRAIN_SOURCE))
     parser.add_argument("--validation-source", default=str(DEFAULT_VALIDATION_SOURCE))
     parser.add_argument("--test-source", default=str(DEFAULT_TEST_SOURCE))
@@ -450,6 +581,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--old-score-threshold", type=float, default=DEFAULT_OLD_SCORE_THRESHOLD)
     parser.add_argument("--k", type=int, default=DEFAULT_NEAREST_K, choices=[4, 6, 8, 16])
+    parser.add_argument("--model", type=str, default="rf", choices=["rf", "hgb"])
+    parser.add_argument("--buy-threshold", type=float, default=0.4)
+    parser.add_argument("--sell-threshold", type=float, default=0.6)
+    parser.add_argument("--margin", type=float, default=0.10)
     return parser.parse_args()
 
 
@@ -471,6 +606,22 @@ def main() -> dict[str, Any]:
             output_dir=args.output_dir,
             old_score_threshold=args.old_score_threshold,
             k=args.k,
+        )
+    elif args.stage == "frozen-test":
+        result = run_frozen_test(
+            train_source=args.train_source,
+            validation_source=args.validation_source,
+            test_source=args.test_source,
+            validation_predictions=args.validation_predictions,
+            test_predictions=args.test_predictions,
+            ohlc=args.ohlc,
+            output_dir=args.output_dir,
+            old_score_threshold=args.old_score_threshold,
+            k=args.k,
+            model_type=args.model,
+            buy_threshold=args.buy_threshold,
+            sell_threshold=args.sell_threshold,
+            margin=args.margin,
         )
     else:
         raise ValueError(f"unsupported stage: {args.stage}")

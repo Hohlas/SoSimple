@@ -1,0 +1,51 @@
+{
+  "stage": "frozen-test",
+  "config": "D_rf_buy0.40_sell0.60_m0.10",
+  "model_type": "rf",
+  "buy_threshold": 0.4,
+  "sell_threshold": 0.6,
+  "margin": 0.1,
+  "target_family": "D",
+  "input_family": "nearest_k4",
+  "test_trades": 2045,
+  "test_pf": 1.2260080270323968,
+  "test_sequential_pf": 1.537360787980927,
+  "test_sequential_trades": 330,
+  "test_buy_trades": 1202,
+  "test_sell_trades": 843,
+  "test_buy_pf": 1.9042097025434523,
+  "test_sell_pf": 0.6178347394623491,
+  "test_buy_win_rate": 0.5274542429284526,
+  "test_sell_win_rate": 0.4068801897983393,
+  "test_buy_sell_balance": 0.41222493887530565,
+  "test_yearly_pf": [
+    {
+      "year": 2022,
+      "trades": 92,
+      "pf": 0.35044226900984204
+    },
+    {
+      "year": 2023,
+      "trades": 512,
+      "pf": 0.9387381662928673
+    },
+    {
+      "year": 2024,
+      "trades": 600,
+      "pf": 1.3093977816768665
+    },
+    {
+      "year": 2025,
+      "trades": 620,
+      "pf": 1.4818482570086817
+    },
+    {
+      "year": 2026,
+      "trades": 221,
+      "pf": 2.4296792648791237
+    }
+  ],
+  "negative_years": 2,
+  "feature_count": 97,
+  "train_combined_rows": 53349
+}
