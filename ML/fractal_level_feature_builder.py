@@ -204,21 +204,129 @@ def audit_fractal_rows(frame: pd.DataFrame) -> dict[str, int | float]:
     }
 
 
-def build_zone_features(frame: pd.DataFrame) -> pd.DataFrame:
-    """Строит минимальные zone-признаки для live-safe audit gate."""
-    out = pd.DataFrame(index=frame.index)
-    for field in _UPDN_FIELDS:
-        out[f"old_{field}_sum"] = 0.0
+ATR_ZONE_BOUNDS = [0.00, 0.25, 0.50, 1.00, 2.00, 4.00]
 
-    fractal_columns = [col for col in fractal_columns_in_order(frame.columns) if col != "fractal0"]
-    for idx, row in frame.iterrows():
+
+def build_zone_features(
+    frame: pd.DataFrame,
+    *,
+    atr_zone_bounds: list[float] | None = None,
+    include_updn: bool = True,
+) -> pd.DataFrame:
+    """Строит zone-признаки: агрегация фракталов по ценовым зонам относительно fractal0.price."""
+    bounds = atr_zone_bounds if atr_zone_bounds is not None else ATR_ZONE_BOUNDS
+    zone_count = (len(bounds) - 1) * 2 + 1
+    zone_names = []
+    for i in range(len(bounds) - 1):
+        zone_names.append(f"zone_{2*i}_above_{bounds[i]:.2f}_{bounds[i+1]:.2f}")
+        zone_names.append(f"zone_{2*i+1}_below_{bounds[i]:.2f}_{bounds[i+1]:.2f}")
+    zone_names.append("zone_10_far")
+
+    zone_agg_fields = [
+        "count", "direction_sum", "direction_abs_sum",
+        "strong_count", "break_count",
+        "power_sum", "power_max",
+        "impulse_sum", "impulse_max",
+    ]
+    if include_updn:
+        zone_agg_fields.extend(["up_24_sum", "dn_24_sum"])
+
+    global_fields = [
+        "fractals_above_count", "fractals_below_count",
+        "fractal0_price_rank", "total_count",
+        "closest_above_distance_atr", "closest_below_distance_atr",
+    ]
+    all_columns = []
+    for zname in zone_names:
+        for field in zone_agg_fields:
+            all_columns.append(f"{zname}_{field}")
+    all_columns.extend(global_fields)
+
+    out_rows: list[dict[str, float | int]] = []
+    fractal_columns = fractal_columns_in_order(frame.columns)
+    for _, row in frame.iterrows():
+        row_features: dict[str, float | int] = {}
+        atr = _safe_float(row.get("ATR"), default=0.0)
+        if atr <= 0:
+            atr = 1.0
+        fractal0 = parse_fractal(row.get("fractal0", ""))
+        base_price = float(fractal0.get("price", 0.0)) if fractal0 else 0.0
+        row_features["fractal0_price_rank"] = 0.0
+
+        zone_data: dict[str, dict[str, float]] = {zname: {f: 0.0 for f in zone_agg_fields} for zname in zone_names}
+
+        above_count = 0
+        below_count = 0
+        total_count = 0
+        closest_above = float("inf")
+        closest_below = float("inf")
+
         for col in fractal_columns:
             parsed = parse_fractal(row.get(col, ""))
             if parsed is None:
                 continue
-            for field in _UPDN_FIELDS:
-                out.at[idx, f"old_{field}_sum"] += float(parsed.get(field, 0.0) or 0.0)
-    return out
+            source_index = _fractal_index(col)
+            if source_index == 0:
+                continue
+            price = float(parsed.get("price", 0.0) or 0.0)
+            direction = float(parsed.get("direction", 0) or 0)
+            distance_atr = (price - base_price) / atr
+            abs_distance = abs(distance_atr)
+
+            if price > base_price:
+                above_count += 1
+                closest_above = min(closest_above, abs_distance)
+            else:
+                below_count += 1
+                closest_below = min(closest_below, abs_distance)
+            total_count += 1
+
+            if abs_distance > bounds[-1]:
+                zone = "zone_10_far"
+            else:
+                zone = None
+                for i in range(len(bounds) - 1):
+                    if bounds[i] <= abs_distance < bounds[i + 1]:
+                        if distance_atr >= 0:
+                            zone = zone_names[2 * i]
+                        else:
+                            zone = zone_names[2 * i + 1]
+                        break
+                if zone is None:
+                    zone = "zone_10_far"
+
+            zone_data[zone]["count"] += 1
+            zone_data[zone]["direction_sum"] += direction
+            zone_data[zone]["direction_abs_sum"] += abs(direction)
+            zone_data[zone]["strong_count"] += float(parsed.get("strong", 0) or 0)
+            zone_data[zone]["break_count"] += float(parsed.get("break", 0) or 0)
+            zone_data[zone]["power_sum"] += float(parsed.get("power", 0) or 0)
+            zone_data[zone]["power_max"] = max(zone_data[zone]["power_max"], float(parsed.get("power", 0) or 0))
+            zone_data[zone]["impulse_sum"] += float(parsed.get("impulse", 0) or 0)
+            zone_data[zone]["impulse_max"] = max(zone_data[zone]["impulse_max"], float(parsed.get("impulse", 0) or 0))
+            if include_updn:
+                zone_data[zone]["up_24_sum"] += float(parsed.get("up_24", 0) or 0)
+                zone_data[zone]["dn_24_sum"] += float(parsed.get("dn_24", 0) or 0)
+
+        if total_count > 0:
+            row_features["fractal0_price_rank"] = float(below_count / max(total_count - 1, 1))
+        row_features["fractals_above_count"] = int(above_count)
+        row_features["fractals_below_count"] = int(below_count)
+        row_features["total_count"] = int(total_count)
+        row_features["closest_above_distance_atr"] = float(closest_above) if closest_above != float("inf") else 0.0
+        row_features["closest_below_distance_atr"] = float(closest_below) if closest_below != float("inf") else 0.0
+
+        for zname in zone_names:
+            for field in zone_agg_fields:
+                row_features[f"{zname}_{field}"] = zone_data[zname][field]
+
+        out_rows.append(row_features)
+
+    result = pd.DataFrame(out_rows, index=frame.index)
+    for col in all_columns:
+        if col not in result.columns:
+            result[col] = 0.0
+    return result.reindex(columns=all_columns).fillna(0.0)
 
 
 def build_fractal_level_features(
@@ -229,9 +337,17 @@ def build_fractal_level_features(
     geometry_only: bool = False,
 ) -> pd.DataFrame:
     """Строит model inputs из текущей строки фракталов."""
-    if input_family != "nearest_k":
-        raise ValueError(f"unsupported input_family: {input_family}")
-    return _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
+    if input_family == "nearest_k":
+        return _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
+    if input_family == "zones":
+        return build_zone_features(frame, include_updn=not geometry_only)
+    if input_family == "zones_plus_nearest_k":
+        zone_df = build_zone_features(frame, include_updn=not geometry_only)
+        nearest_df = _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
+        shared_cols = set(zone_df.columns) & set(nearest_df.columns)
+        next_cols = nearest_df[[c for c in nearest_df.columns if c not in shared_cols]]
+        return pd.concat([zone_df, next_cols], axis=1)
+    raise ValueError(f"unsupported input_family: {input_family}")
 
 
 def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: bool = False) -> pd.DataFrame:

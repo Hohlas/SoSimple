@@ -207,6 +207,7 @@ def run_validation_matrix(
     geometry_only: bool = False,
     threshold_grid: list[float] | None = None,
     model_type: str = "rf",
+    input_family: str = "nearest_k",
 ) -> dict[str, Any]:
     """Train direct-direction 3-class model and write validation grid."""
     output_path = Path(output_dir)
@@ -224,8 +225,12 @@ def run_validation_matrix(
     if not passed_targets:
         return {"stage": "validation-matrix", "stopped": True, "reason": "target_D_gate_not_passed"}
 
-    input_family_label = f"nearest_k{k}" if not geometry_only else f"nearest_k{k}_geometry_only"
-    model_label = model_type
+    if input_family == "nearest_k":
+        input_family_label = f"nearest_k{k}" if not geometry_only else f"nearest_k{k}_geometry_only"
+    elif input_family == "zones":
+        input_family_label = "zones"
+    else:
+        input_family_label = f"zones_plus_nearest_k{k}"
     source_usecols = ["time", "signal", "ATR", *[f"fractal{idx}" for idx in range(100)]]
     target_usecols = ["time", "signal", "ATR", "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
     train_features_source = pd.read_csv(Path(train_source), sep=";", usecols=source_usecols)
@@ -234,9 +239,9 @@ def run_validation_matrix(
     validation_target_source = pd.read_csv(Path(validation_source), sep=";", usecols=target_usecols)
 
     t0 = time.perf_counter()
-    x_train_raw = build_fractal_level_features(train_features_source, input_family="nearest_k", k=k, geometry_only=geometry_only)
+    x_train_raw = build_fractal_level_features(train_features_source, input_family=input_family, k=k, geometry_only=geometry_only)
     feature_build_seconds = time.perf_counter() - t0
-    x_validation_raw = build_fractal_level_features(validation_features_source, input_family="nearest_k", k=k, geometry_only=geometry_only)
+    x_validation_raw = build_fractal_level_features(validation_features_source, input_family=input_family, k=k, geometry_only=geometry_only)
     normalizer = fit_feature_normalizer(x_train_raw)
     x_train = _model_feature_frame(apply_feature_normalizer(x_train_raw, normalizer))
     x_validation = _model_feature_frame(apply_feature_normalizer(x_validation_raw, normalizer))
@@ -258,7 +263,7 @@ def run_validation_matrix(
         model, sample_weight = _make_model(model_type, y_train)
         model.fit(x_train, y_train, **({"sample_weight": sample_weight} if sample_weight is not None else {}))
         probabilities = _class_probability_frame(model, x_validation)
-        config_id = f"{target_family}_{input_family_label}_{model_label}"
+        config_id = f"{target_family}_{input_family_label}_{model_type}"
         feature_importance_frames.append(_feature_importance_frame(model, list(x_train.columns), config_id=config_id))
         for threshold in effective_threshold_grid:
             eval_frame = _build_eval_frame_from_probabilities(validation_target_source, probabilities, returns, threshold)
@@ -314,7 +319,7 @@ def run_validation_matrix(
         "feature_build_rows_per_second": float(len(train_features_source) / feature_build_seconds) if feature_build_seconds > 0 else 0.0,
         "feature_count": int(x_train.shape[1]),
         "input_family": input_family_label,
-        "model_type": model_label,
+        "model_type": model_type,
         "normalizer": normalizer,
     }
     summary_path.write_text(json.dumps(_jsonable(summary), ensure_ascii=False, indent=2), encoding="utf-8")
@@ -570,6 +575,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--geometry-only", action="store_true", default=False, help="Exclude up_*/dn_* features from nearest_k")
     parser.add_argument("--e0-grid", action="store_true", default=False, help="Use E0 threshold grid [0.10, 0.20, 0.30, 0.40]")
     parser.add_argument("--model", type=str, default="rf", choices=["rf", "hgb", "lr"], help="Model type: rf (RandomForest), hgb (HistGradientBoosting), lr (LogisticRegression)")
+    parser.add_argument("--input-family", type=str, default="nearest_k", choices=["nearest_k", "zones", "zones_plus_nearest_k"], help="Feature input family")
     return parser.parse_args()
 
 
@@ -593,7 +599,13 @@ def main() -> dict[str, Any]:
         k = args.k
         geometry_only = args.geometry_only
         model_type = args.model
-        input_suffix = f"_nearest_k{k}" if not geometry_only else f"_nearest_k{k}_geometry_only"
+        input_family = args.input_family
+        if input_family == "nearest_k":
+            input_suffix = f"_nearest_k{k}" if not geometry_only else f"_nearest_k{k}_geometry_only"
+        elif input_family == "zones":
+            input_suffix = "_zones"
+        else:
+            input_suffix = f"_zones_plus_nearest_k{k}"
         model_suffix = f"_{model_type}" if model_type != "rf" else ""
         if args.output_dir == str(DEFAULT_OUTPUT_DIR):
             effective_output_dir = str(args.output_dir).replace("_fractal_level_direct_direction", f"{input_suffix}{model_suffix}")
@@ -611,6 +623,7 @@ def main() -> dict[str, Any]:
             geometry_only=geometry_only,
             threshold_grid=threshold_grid,
             model_type=model_type,
+            input_family=input_family,
         )
     else:
         raise ValueError(f"unsupported stage: {args.stage}")

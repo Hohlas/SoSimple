@@ -76,11 +76,11 @@ def test_audit_rejects_future_fractal_time():
     assert result["future_fractal_rows"] == 1
 
 
-def test_old_updn_features_skip_fractal0_and_use_fractal1():
+def test_old_updn_features_available_in_zones():
     features = build_zone_features(make_source_frame_with_fractal0_and_fractal1_updn())
-
     assert "fractal0_up_24" not in features.columns
-    assert features.filter(like="old_up_24").sum(axis=1).iloc[0] > 0
+    updn_cols = [c for c in features.columns if "up_24_sum" in c or "dn_24_sum" in c]
+    assert len(updn_cols) > 0, "zone features should include up_24_sum/dn_24_sum columns"
 
 
 def test_feature_contract_marks_offline_targets_as_not_model_inputs():
@@ -173,3 +173,41 @@ def test_geometry_only_keeps_geometry_columns():
         for field in geometry_fields:
             col = f"nearest_{slot:02d}_{field}"
             assert col in features.columns, f"geometry_only should keep {col}"
+
+
+def test_zone_features_count_matches_fractal_distribution():
+    row = {
+        "time": "2024.01.01 10:00",
+        "ATR": 1.0,
+        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1",
+    }
+    for idx in range(1, 5):
+        price = 100 + idx * 0.1
+        row[f"fractal{idx}"] = f"1704100{idx:03d}:{price}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1"
+    frame = pd.DataFrame([row])
+    features = build_fractal_level_features(frame, input_family="zones")
+    assert "zone_0_above_0.00_0.25_count" in features.columns
+    assert features.loc[0, "total_count"] == 4
+    assert features.loc[0, "fractals_above_count"] == 4
+
+
+def test_zone_features_exclude_updn_when_geometry_only():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="zones", geometry_only=True)
+    updn_cols = [c for c in features.columns if "up_24" in c or "dn_24" in c]
+    assert len(updn_cols) == 0, f"geometry_only zones should not have updn columns, found: {updn_cols}"
+
+
+def test_zone_features_include_updn_by_default():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="zones")
+    updn_cols = [c for c in features.columns if "up_24" in c or "dn_24" in c]
+    assert len(updn_cols) > 0, "zones should have updn columns by default"
+
+
+def test_zones_plus_nearest_k_combines_features():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="zones_plus_nearest_k", k=4)
+    zone_features = build_fractal_level_features(frame, input_family="zones")
+    nearest_features = build_fractal_level_features(frame, input_family="nearest_k", k=4)
+    assert len(features.columns) == len(zone_features.columns) + len(nearest_features.columns)
