@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-15 07:10 UTC · git `d4f23be`
+> Auto-generated 2026-05-15 07:46 UTC · git `3167bb8`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1144 files  ·  **Commit**: `d4f23be`  ·  **Generated**: 2026-05-15 07:10 UTC
+**Tracked**: 1146 files  ·  **Commit**: `3167bb8`  ·  **Generated**: 2026-05-15 07:46 UTC
 
 ## Root Docs
 
@@ -19,7 +19,7 @@
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-14 | 142KB | `b3d014e4` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-04-27 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-13 | 7KB | `fcd4cfce` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-15 | 39KB | `6246571c` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-15 | 39KB | `1b8a1da0` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -126,6 +126,7 @@
 | [docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md](docs/superpowers/plans/2026-04-27-telemetry-frequency-demo-launch.md) |  | 2026-04-27 | 25KB | `115736bf` |
 | [docs/superpowers/plans/2026-05-05-live-safe-ml-audit.md](docs/superpowers/plans/2026-05-05-live-safe-ml-audit.md) |  | 2026-05-05 | 12KB | `3c73b664` |
 | [docs/superpowers/plans/2026-05-15-entry-path-all-rows-level-signal.md](docs/superpowers/plans/2026-05-15-entry-path-all-rows-level-signal.md) | План реализации live-safe `signal_candidate` по всей строке фракталов | 2026-05-15 | 38KB | `e504adff` |
+| [docs/superpowers/plans/2026-05-15-entry-path-fractal-level-direct-direction.md](docs/superpowers/plans/2026-05-15-entry-path-fractal-level-direct-direction.md) | План реализации direct `SELL/SKIP/BUY` модели по всей строке фракталов | 2026-05-15 | 17KB | `a9c0abff` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-04-07 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-05-05 | 10KB | `b44e4541` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-03-23 | 12KB | `82b0860f` |
@@ -154,6 +155,7 @@
 | [docs/superpowers/specs/2026-04-28-central-inference-service-design.md](docs/superpowers/specs/2026-04-28-central-inference-service-design.md) |  | 2026-04-28 | 7KB | `ecc8e915` |
 | [docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md](docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md) |  | 2026-05-05 | 13KB | `853958cf` |
 | [docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов | 2026-05-15 | 43KB | `d9f3365c` |
+| [docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md](docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) | Спецификация direct `SELL/SKIP/BUY` модели по всей строке фракталов | 2026-05-15 | 8KB | `b8cad704` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-04-05 | 4KB | `551fd6e9` |
 
 ## Reports
@@ -1209,4 +1211,3 @@
 | [.kilocode/package.json](.kilocode/package.json) |  | 2026-04-22 | 60B | `31099cfb` |
 | [.kilocode/rules-architect/user_rules.md](.kilocode/rules-architect/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
 | [.kilocode/rules-ask/user_rules.md](.kilocode/rules-ask/user_rules.md) |  | 2026-03-26 | 1KB | `351b6484` |
-
