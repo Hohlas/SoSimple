@@ -1,0 +1,11 @@
+{
+  "stage": "validation-matrix",
+  "test_set_used": false,
+  "target_family": "D",
+  "winner": {},
+  "feature_build_seconds": 58.63728647000971,
+  "feature_count": 97,
+  "input_family": "nearest_k4",
+  "candidate_universe": 6174,
+  "old_score_threshold": -0.07158749
+}
