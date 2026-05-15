@@ -226,14 +226,15 @@ def build_fractal_level_features(
     *,
     input_family: str = "nearest_k",
     k: int = 16,
+    geometry_only: bool = False,
 ) -> pd.DataFrame:
     """Строит model inputs из текущей строки фракталов."""
     if input_family != "nearest_k":
         raise ValueError(f"unsupported input_family: {input_family}")
-    return _build_nearest_k_features(frame, k=k)
+    return _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
 
 
-def _build_nearest_k_features(frame: pd.DataFrame, *, k: int) -> pd.DataFrame:
+def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: bool = False) -> pd.DataFrame:
     fractal_columns = fractal_columns_in_order(frame.columns)
     out_rows: list[dict[str, float | int]] = []
     for _, row in frame.iterrows():
@@ -276,9 +277,10 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int) -> pd.DataFrame:
         for slot in range(int(k)):
             prefix = f"nearest_{slot:02d}"
             if slot >= len(candidates):
-                _fill_nearest_slot(row_features, prefix, valid=0)
+                _fill_nearest_slot(row_features, prefix, valid=0, geometry_only=geometry_only)
                 continue
             _, source_index, raw_distance, parsed = candidates[slot]
+            include_updn = (not geometry_only) and (source_index != 0)
             _fill_nearest_slot(
                 row_features,
                 prefix,
@@ -286,7 +288,8 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int) -> pd.DataFrame:
                 source_index=source_index,
                 raw_distance_atr=raw_distance,
                 parsed=parsed,
-                include_updn=source_index != 0,
+                include_updn=include_updn,
+                geometry_only=geometry_only,
             )
         out_rows.append(row_features)
     return pd.DataFrame(out_rows, index=frame.index).fillna(0.0)
@@ -301,6 +304,7 @@ def _fill_nearest_slot(
     raw_distance_atr: float = 0.0,
     parsed: dict[str, Any] | None = None,
     include_updn: bool = False,
+    geometry_only: bool = False,
 ) -> None:
     parsed = parsed or {}
     row_features[f"{prefix}_valid"] = int(valid)
@@ -309,8 +313,9 @@ def _fill_nearest_slot(
     row_features[f"{prefix}_abs_distance_atr"] = abs(float(raw_distance_atr))
     for field in ("direction", "front", "back", "strong", "break", "reverse", "power", "count", "impulse", "fractal_atr"):
         row_features[f"{prefix}_{field}"] = float(parsed.get(field, 0.0) or 0.0)
-    for field in _UPDN_FIELDS:
-        row_features[f"{prefix}_{field}"] = float(parsed.get(field, 0.0) or 0.0) if include_updn else 0.0
+    if not geometry_only:
+        for field in _UPDN_FIELDS:
+            row_features[f"{prefix}_{field}"] = float(parsed.get(field, 0.0) or 0.0) if include_updn else 0.0
 
 
 def _fractal_index(column: str) -> int:

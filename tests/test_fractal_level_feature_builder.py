@@ -117,3 +117,59 @@ def test_feature_normalizer_uses_train_frozen_statistics():
     assert normalized.loc[0, "a"] == 1.0
     assert normalized.loc[0, "nearest_00_valid"] == 1
     assert normalized.loc[0, "nearest_00_source_index"] == 9
+
+
+def _make_multi_fractal_frame(n_fractals: int = 20) -> pd.DataFrame:
+    row = {
+        "time": "2024.01.01 10:00",
+        "ATR": 1.0,
+        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1",
+    }
+    for idx in range(1, n_fractals):
+        row[f"fractal{idx}"] = (
+            f"1704103200:{100 + idx}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1"
+        )
+    return pd.DataFrame([row])
+
+
+def test_k4_produces_97_features():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="nearest_k", k=4)
+    model_cols = [c for c in features.columns if not c.endswith("_source_index")]
+    assert len(model_cols) == 97
+
+
+def test_k6_produces_143_features():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="nearest_k", k=6)
+    model_cols = [c for c in features.columns if not c.endswith("_source_index")]
+    assert len(model_cols) == 143
+
+
+def test_k16_produces_373_features():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="nearest_k", k=16)
+    model_cols = [c for c in features.columns if not c.endswith("_source_index")]
+    assert len(model_cols) == 373
+
+
+def test_geometry_only_removes_updn_columns():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="nearest_k", k=4, geometry_only=True)
+    updn_fields = ["up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
+    for slot in range(4):
+        for field in updn_fields:
+            col = f"nearest_{slot:02d}_{field}"
+            assert col not in features.columns, f"geometry_only should remove {col}"
+    model_cols = [c for c in features.columns if not c.endswith("_source_index")]
+    assert len(model_cols) == 57
+
+
+def test_geometry_only_keeps_geometry_columns():
+    frame = _make_multi_fractal_frame()
+    features = build_fractal_level_features(frame, input_family="nearest_k", k=4, geometry_only=True)
+    geometry_fields = ["direction", "front", "back", "strong", "break", "reverse", "power", "count", "impulse", "fractal_atr"]
+    for slot in range(4):
+        for field in geometry_fields:
+            col = f"nearest_{slot:02d}_{field}"
+            assert col in features.columns, f"geometry_only should keep {col}"

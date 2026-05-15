@@ -47,6 +47,7 @@ DEFAULT_OUTPUT_DIR = Path("ML/reports/entry_path_v1_fractal_level_direct_directi
 DEFAULT_OLD_SCORE_THRESHOLD = -0.07158749
 DEFAULT_THRESHOLD_GRID = [0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90]
 DEFAULT_NEAREST_K = 4
+E0_THRESHOLD_GRID = [0.10, 0.20, 0.30, 0.40]
 
 
 def pick_validation_winner(grid: pd.DataFrame) -> dict[str, Any]:
@@ -200,6 +201,9 @@ def run_validation_matrix(
     ohlc: str | Path,
     output_dir: str | Path,
     old_score_threshold: float,
+    k: int = DEFAULT_NEAREST_K,
+    geometry_only: bool = False,
+    threshold_grid: list[float] | None = None,
 ) -> dict[str, Any]:
     """Train Stage 1 nearest_k16 direct-direction model and write validation grid."""
     output_path = Path(output_dir)
@@ -210,13 +214,14 @@ def run_validation_matrix(
             train_source=train_source,
             validation_source=validation_source,
             ohlc=ohlc,
-            output_dir=output_dir,
+            output_dir=output_path,
         )
     target_frequency = pd.read_csv(target_frequency_path, sep=";")
     passed_targets = set(target_frequency.loc[target_frequency["gate_pass"].astype(bool), "target_family"].unique())
     if not passed_targets:
         return {"stage": "validation-matrix", "stopped": True, "reason": "target_D_gate_not_passed"}
 
+    input_family_label = f"nearest_k{k}" if not geometry_only else f"nearest_k{k}_geometry_only"
     source_usecols = ["time", "signal", "ATR", *[f"fractal{idx}" for idx in range(100)]]
     target_usecols = ["time", "signal", "ATR", "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
     train_features_source = pd.read_csv(Path(train_source), sep=";", usecols=source_usecols)
@@ -225,9 +230,9 @@ def run_validation_matrix(
     validation_target_source = pd.read_csv(Path(validation_source), sep=";", usecols=target_usecols)
 
     t0 = time.perf_counter()
-    x_train_raw = build_fractal_level_features(train_features_source, input_family="nearest_k", k=DEFAULT_NEAREST_K)
+    x_train_raw = build_fractal_level_features(train_features_source, input_family="nearest_k", k=k, geometry_only=geometry_only)
     feature_build_seconds = time.perf_counter() - t0
-    x_validation_raw = build_fractal_level_features(validation_features_source, input_family="nearest_k", k=DEFAULT_NEAREST_K)
+    x_validation_raw = build_fractal_level_features(validation_features_source, input_family="nearest_k", k=k, geometry_only=geometry_only)
     normalizer = fit_feature_normalizer(x_train_raw)
     x_train = _model_feature_frame(apply_feature_normalizer(x_train_raw, normalizer))
     x_validation = _model_feature_frame(apply_feature_normalizer(x_validation_raw, normalizer))
@@ -235,6 +240,7 @@ def run_validation_matrix(
     validation_pred = pd.read_csv(Path(validation_predictions), sep=";")
     score = pd.to_numeric(validation_pred["pred_ret_24_dir_atr"], errors="coerce").fillna(float("-inf"))
 
+    effective_threshold_grid = threshold_grid if threshold_grid is not None else DEFAULT_THRESHOLD_GRID
     rows = []
     frames_by_threshold: dict[str, pd.DataFrame] = {}
     feature_importance_frames = []
@@ -254,9 +260,9 @@ def run_validation_matrix(
         )
         model.fit(x_train, y_train)
         probabilities = _class_probability_frame(model, x_validation)
-        config_id = f"{target_family}_nearest_k{DEFAULT_NEAREST_K}"
+        config_id = f"{target_family}_{input_family_label}"
         feature_importance_frames.append(_feature_importance_frame(model, list(x_train.columns), config_id=config_id))
-        for threshold in DEFAULT_THRESHOLD_GRID:
+        for threshold in effective_threshold_grid:
             eval_frame = _build_eval_frame_from_probabilities(validation_target_source, probabilities, returns, threshold)
             frames_by_threshold[f"{target_family}_{threshold:.2f}"] = eval_frame
             rows.append(
@@ -269,7 +275,7 @@ def run_validation_matrix(
                     validation_candidates=int((eval_frame["candidate_signal"] != 0).sum()),
                     target_family=target_family,
                     target_params=target_params,
-                    input_family=f"nearest_k{DEFAULT_NEAREST_K}",
+                    input_family=input_family_label,
                 )
             )
             old_score_frame = eval_frame.copy()
@@ -284,7 +290,7 @@ def run_validation_matrix(
                     validation_candidates=int(old_score_frame["selected"].sum()),
                     target_family=target_family,
                     target_params=target_params,
-                    input_family=f"nearest_k{DEFAULT_NEAREST_K}",
+                    input_family=input_family_label,
                 )
             )
 
@@ -309,8 +315,18 @@ def run_validation_matrix(
         "feature_build_seconds": float(feature_build_seconds),
         "feature_build_rows_per_second": float(len(train_features_source) / feature_build_seconds) if feature_build_seconds > 0 else 0.0,
         "feature_count": int(x_train.shape[1]),
-        "input_family": f"nearest_k{DEFAULT_NEAREST_K}",
+        "input_family": input_family_label,
         "normalizer": normalizer,
+    }
+    summary_path.write_text(json.dumps(_jsonable(summary), ensure_ascii=False, indent=2), encoding="utf-8")
+    return {
+        "stage": "validation-matrix",
+        "validation_grid_path": str(validation_grid_path),
+        "feature_importance_path": str(feature_importance_path),
+        "score_distribution_path": str(score_distribution_path),
+        "summary_path": str(summary_path),
+        "winner_found": bool(winner),
+        "winner": winner,
     }
     summary_path.write_text(json.dumps(_jsonable(summary), ensure_ascii=False, indent=2), encoding="utf-8")
     return {
@@ -531,6 +547,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ohlc", default=str(DEFAULT_OHLC))
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--old-score-threshold", type=float, default=DEFAULT_OLD_SCORE_THRESHOLD)
+    parser.add_argument("--k", type=int, default=DEFAULT_NEAREST_K, choices=[4, 6, 8, 16], help="Number of nearest fractal neighbors")
+    parser.add_argument("--geometry-only", action="store_true", default=False, help="Exclude up_*/dn_* features from nearest_k")
+    parser.add_argument("--e0-grid", action="store_true", default=False, help="Use E0 threshold grid [0.10, 0.20, 0.30, 0.40]")
     return parser.parse_args()
 
 
@@ -551,13 +570,21 @@ def main() -> dict[str, Any]:
             output_dir=args.output_dir,
         )
     elif args.stage == "validation-matrix":
+        k = args.k
+        geometry_only = args.geometry_only
+        suffix = f"_nearest_k{k}" if not geometry_only else f"_nearest_k{k}_geometry_only"
+        effective_output_dir = str(args.output_dir).replace("_fractal_level_direct_direction", suffix) if args.output_dir == str(DEFAULT_OUTPUT_DIR) else args.output_dir
+        threshold_grid = E0_THRESHOLD_GRID if args.e0_grid else None
         result = run_validation_matrix(
             train_source=args.train_source,
             validation_source=args.validation_source,
             validation_predictions=args.validation_predictions,
             ohlc=args.ohlc,
-            output_dir=args.output_dir,
+            output_dir=effective_output_dir,
             old_score_threshold=args.old_score_threshold,
+            k=k,
+            geometry_only=geometry_only,
+            threshold_grid=threshold_grid,
         )
     else:
         raise ValueError(f"unsupported stage: {args.stage}")
