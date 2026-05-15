@@ -22,7 +22,9 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.utils.class_weight import compute_sample_weight
 
 from ML.benchmark_entry_path_all_rows_ranking import run_sequential_all_rows
 from ML.benchmark_entry_path_direct_bar_model import compute_buy_sell_returns
@@ -51,14 +53,14 @@ E0_THRESHOLD_GRID = [0.10, 0.20, 0.30, 0.40]
 
 
 def pick_validation_winner(grid: pd.DataFrame) -> dict[str, Any]:
-    """Select standalone validation winner; old-score diagnostics cannot win."""
+    """Select standalone validation winner; old-score and LR diagnostics cannot win."""
     if grid.empty:
         return {}
     work = grid.copy()
     if "negative_years" not in work.columns:
         work["negative_years"] = 0
     candidates = work[
-        (work["mode"] == "standalone")
+        (work["mode"].isin(["standalone"]))
         & (work["validation_trades"] >= 100)
         & (work["validation_pf"] >= 1.15)
         & (work["validation_sequential_pf"] >= 1.1)
@@ -204,8 +206,9 @@ def run_validation_matrix(
     k: int = DEFAULT_NEAREST_K,
     geometry_only: bool = False,
     threshold_grid: list[float] | None = None,
+    model_type: str = "rf",
 ) -> dict[str, Any]:
-    """Train Stage 1 nearest_k16 direct-direction model and write validation grid."""
+    """Train direct-direction 3-class model and write validation grid."""
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     target_frequency_path = output_path / "target_frequency.csv"
@@ -222,6 +225,7 @@ def run_validation_matrix(
         return {"stage": "validation-matrix", "stopped": True, "reason": "target_D_gate_not_passed"}
 
     input_family_label = f"nearest_k{k}" if not geometry_only else f"nearest_k{k}_geometry_only"
+    model_label = model_type
     source_usecols = ["time", "signal", "ATR", *[f"fractal{idx}" for idx in range(100)]]
     target_usecols = ["time", "signal", "ATR", "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
     train_features_source = pd.read_csv(Path(train_source), sep=";", usecols=source_usecols)
@@ -251,16 +255,10 @@ def run_validation_matrix(
             validation_target_source,
             ohlc=ohlc,
         )
-        model = RandomForestClassifier(
-            n_estimators=160,
-            min_samples_leaf=20,
-            class_weight="balanced_subsample",
-            random_state=42,
-            n_jobs=-1,
-        )
-        model.fit(x_train, y_train)
+        model, sample_weight = _make_model(model_type, y_train)
+        model.fit(x_train, y_train, **({"sample_weight": sample_weight} if sample_weight is not None else {}))
         probabilities = _class_probability_frame(model, x_validation)
-        config_id = f"{target_family}_{input_family_label}"
+        config_id = f"{target_family}_{input_family_label}_{model_label}"
         feature_importance_frames.append(_feature_importance_frame(model, list(x_train.columns), config_id=config_id))
         for threshold in effective_threshold_grid:
             eval_frame = _build_eval_frame_from_probabilities(validation_target_source, probabilities, returns, threshold)
@@ -270,7 +268,7 @@ def run_validation_matrix(
                     eval_frame,
                     y_validation,
                     threshold=float(threshold),
-                    mode="standalone",
+                    mode="standalone" if model_type != "lr" else "lr_standalone",
                     feature_count=int(x_train.shape[1]),
                     validation_candidates=int((eval_frame["candidate_signal"] != 0).sum()),
                     target_family=target_family,
@@ -316,6 +314,7 @@ def run_validation_matrix(
         "feature_build_rows_per_second": float(len(train_features_source) / feature_build_seconds) if feature_build_seconds > 0 else 0.0,
         "feature_count": int(x_train.shape[1]),
         "input_family": input_family_label,
+        "model_type": model_label,
         "normalizer": normalizer,
     }
     summary_path.write_text(json.dumps(_jsonable(summary), ensure_ascii=False, indent=2), encoding="utf-8")
@@ -343,6 +342,24 @@ def run_validation_matrix(
 def _model_feature_frame(features: pd.DataFrame) -> pd.DataFrame:
     """Drops diagnostic-only feature columns before model fit/predict."""
     return features[[column for column in features.columns if not str(column).endswith("_source_index")]].copy()
+
+
+def _make_model(model_type: str, y_train: pd.Series) -> tuple[Any, np.ndarray | None]:
+    if model_type == "rf":
+        return RandomForestClassifier(
+            n_estimators=160, min_samples_leaf=20,
+            class_weight="balanced_subsample", random_state=42, n_jobs=-1,
+        ), None
+    if model_type == "hgb":
+        return HistGradientBoostingClassifier(
+            max_iter=300, max_depth=5, min_samples_leaf=40,
+            learning_rate=0.05, random_state=42,
+        ), compute_sample_weight("balanced", y_train)
+    if model_type == "lr":
+        return LogisticRegression(
+            max_iter=1000, C=1.0, solver="lbfgs", random_state=42,
+        ), compute_sample_weight("balanced", y_train)
+    raise ValueError(f"unsupported model_type: {model_type}")
 
 
 def _build_target_classes_for_family(
@@ -492,19 +509,21 @@ def _yearly_pf(selected: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
-def _feature_importance_frame(model: RandomForestClassifier, feature_names: list[str], *, config_id: str) -> pd.DataFrame:
-    order = np.argsort(model.feature_importances_)[::-1][:20]
-    return pd.DataFrame(
-        [
-            {
-                "config_id": config_id,
-                "rank": int(rank + 1),
-                "feature": feature_names[idx],
-                "importance": float(model.feature_importances_[idx]),
-            }
-            for rank, idx in enumerate(order)
-        ]
-    )
+def _feature_importance_frame(model: Any, feature_names: list[str], *, config_id: str) -> pd.DataFrame:
+    if hasattr(model, "feature_importances_"):
+        order = np.argsort(model.feature_importances_)[::-1][:20]
+        return pd.DataFrame(
+            [
+                {
+                    "config_id": config_id,
+                    "rank": int(rank + 1),
+                    "feature": feature_names[idx],
+                    "importance": float(model.feature_importances_[idx]),
+                }
+                for rank, idx in enumerate(order)
+            ]
+        )
+    return pd.DataFrame([{"config_id": config_id, "rank": 0, "feature": "not_available", "importance": 0.0}])
 
 
 def _score_distribution_frame(
@@ -550,6 +569,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--k", type=int, default=DEFAULT_NEAREST_K, choices=[4, 6, 8, 16], help="Number of nearest fractal neighbors")
     parser.add_argument("--geometry-only", action="store_true", default=False, help="Exclude up_*/dn_* features from nearest_k")
     parser.add_argument("--e0-grid", action="store_true", default=False, help="Use E0 threshold grid [0.10, 0.20, 0.30, 0.40]")
+    parser.add_argument("--model", type=str, default="rf", choices=["rf", "hgb", "lr"], help="Model type: rf (RandomForest), hgb (HistGradientBoosting), lr (LogisticRegression)")
     return parser.parse_args()
 
 
@@ -572,8 +592,13 @@ def main() -> dict[str, Any]:
     elif args.stage == "validation-matrix":
         k = args.k
         geometry_only = args.geometry_only
-        suffix = f"_nearest_k{k}" if not geometry_only else f"_nearest_k{k}_geometry_only"
-        effective_output_dir = str(args.output_dir).replace("_fractal_level_direct_direction", suffix) if args.output_dir == str(DEFAULT_OUTPUT_DIR) else args.output_dir
+        model_type = args.model
+        input_suffix = f"_nearest_k{k}" if not geometry_only else f"_nearest_k{k}_geometry_only"
+        model_suffix = f"_{model_type}" if model_type != "rf" else ""
+        if args.output_dir == str(DEFAULT_OUTPUT_DIR):
+            effective_output_dir = str(args.output_dir).replace("_fractal_level_direct_direction", f"{input_suffix}{model_suffix}")
+        else:
+            effective_output_dir = args.output_dir
         threshold_grid = E0_THRESHOLD_GRID if args.e0_grid else None
         result = run_validation_matrix(
             train_source=args.train_source,
@@ -585,6 +610,7 @@ def main() -> dict[str, Any]:
             k=k,
             geometry_only=geometry_only,
             threshold_grid=threshold_grid,
+            model_type=model_type,
         )
     else:
         raise ValueError(f"unsupported stage: {args.stage}")
