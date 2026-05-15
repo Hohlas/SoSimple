@@ -37,6 +37,37 @@ Date: 2026-05-15
 - `tests/test_fractal_level_feature_builder.py` — k variants, geometry_only, zones tests
 - `tests/test_benchmark_entry_path_binary_direction.py` — new file, binary signal logic tests
 
+## E0 Diagnostic Answers
+
+1. **Does increasing k improve PF?** No. k=4 (97 features) remains best at PF=1.11. Adding neighbors (k=6 PF=1.03, k=8 PF=1.05, k=16 PF=1.08) degrades or does not improve.
+2. **Do up/dn fields help or hurt?** Marginally. E0e geometry_only (57 features, no up/dn) achieves PF=1.07 at threshold=0.30. In baseline, up/dn importance ~0.016 vs geometry ~0.017 — essentially flat.
+3. **Is signal all in fractal0_direction?** No. fractal0_direction not in top-20 for any variant. Top features: front, back, impulse from nearest fractals. Signal distributed but weak.
+
+## E2 Diagnostic Conclusion (LR vs RF vs HGB)
+
+- LR comparable to RF only at high thresholds (LR PF=1.11 at thr=0.40). At low thresholds, LR much worse (PF=1.05 at thr=0.10).
+- Non-linear interactions matter at lower thresholds. Signal is partially linear but RF extracts more.
+- HGB 3-class is worse than RF (PF=1.01), likely due to different class weighting behavior.
+
+## E1 Detailed Binary Winners Table
+
+| Config | Model | BUY thr | SELL thr | Margin | Trades | PF | Seq PF | BUY PF | SELL PF | Balance | Neg Yrs |
+|--------|-------|---------|----------|--------|--------|------|--------|--------|---------|---------|---------|
+| rf_buy0.60_sell0.60_m0.10 | RF | 0.6 | 0.6 | 0.10 | 1828 | 1.257 | 1.192 | 1.342 | 1.209 | 0.337 | 0 |
+| **rf_buy0.40_sell0.60_m0.10** | **RF** | **0.4** | **0.6** | **0.10** | **1923** | **1.251** | **1.300** | **1.315** | **1.209** | **0.370** | **0** |
+| rf_buy0.30_sell0.60_m0.10 | RF | 0.3 | 0.6 | 0.10 | 1923 | 1.251 | 1.300 | 1.315 | 1.209 | 0.370 | 0 |
+| hgb_buy0.30_sell0.30_m0.05 | HGB | 0.3 | 0.3 | 0.05 | 4637 | 1.208 | 1.237 | 1.362 | 1.112 | 0.379 | 0 |
+| hgb_buy0.50_sell0.50_m0.00 | HGB | 0.5 | 0.5 | 0.00 | 5182 | 1.160 | 1.398 | 1.396 | 1.019 | 0.380 | 0 |
+
+## Frozen Test Baselines (from plan)
+
+| Baseline | Test PF | Seq PF | Trades / seq trades |
+|----------|---------|--------|---------------------|
+| all-rows ranking | 0.9134 | 0.5908 | 329 / 133 |
+| causal surrogate | 1.1537 | 1.4111 | 36 / 31 |
+| direct bar model | 1.1141 | 1.1334 | 1277 / 274 |
+| fractal level direct direction (D nearest_k4) | computed | computed | computed |
+
 ## Next Step
 
 Per the plan: select the E1 binary RF winner and run one frozen test.
