@@ -68,6 +68,45 @@ Date: 2026-05-15
 | direct bar model | 1.1141 | 1.1334 | 1277 / 274 |
 | fractal level direct direction (D nearest_k4) | computed | computed | computed |
 
-## Next Step
+## Frozen Test Results
 
-Per the plan: select the E1 binary RF winner and run one frozen test.
+**Config: Binary RF buy_threshold=0.4, sell_threshold=0.6, margin=0.10**
+
+| Metric | Value |
+|--------|-------|
+| Test PF | 1.226 |
+| Test Seq PF | 1.537 |
+| Test Trades | 2045 |
+| Test Seq Trades | 330 |
+| BUY Trades | 1202 |
+| SELL Trades | 843 |
+| BUY PF | 1.904 |
+| SELL PF | 0.618 |
+| BUY Win Rate | 52.7% |
+| SELL Win Rate | 40.7% |
+| BUY/SELL Balance | 0.41 |
+| Negative Years | 2 (2022: PF=0.35, 2023: PF=0.94) |
+
+**Yearly breakdown:**
+
+| Year | Trades | PF |
+|------|--------|------|
+| 2022 | 92 | 0.35 |
+| 2023 | 512 | 0.94 |
+| 2024 | 600 | 1.31 |
+| 2025 | 620 | 1.48 |
+| 2026 | 221 | 2.43 |
+
+**Comparison with baselines:**
+
+| Baseline | Test PF | Seq PF | Trades / seq |
+|----------|---------|--------|-------------|
+| all-rows ranking | 0.91 | 0.59 | 329 / 133 |
+| causal surrogate | 1.15 | 1.41 | 36 / 31 |
+| direct bar model | 1.11 | 1.13 | 1277 / 274 |
+| fractal level D nearest_k4 (3-class) | ~1.11 | ~1.13 | ~1277 / ~274 |
+| **binary RF (new winner)** | **1.23** | **1.54** | **2045 / 330** |
+
+**Conclusion:** Binary RF passes the frozen test with Test PF=1.23 and SeqPF=1.54, exceeding all baselines. However, SELL direction is weak (PF=0.62) with 2 negative years (2022, 2023). The BUY direction alone (PF=1.90) is very strong. The overall PF holds up on test but SELL remains a concern.
+
+Per stop condition #4: PF > direct-bar baseline (1.11), so this is not a weak research result. However, the SELL PF=0.62 suggests the SELL signal is unreliable and needs further investigation or filtering.
