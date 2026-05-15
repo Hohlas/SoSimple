@@ -1,8 +1,8 @@
 # Entry Path All-Rows Level Signal Implementation Plan
 
-> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** If the environment and user instructions allow subagents, use superpowers:subagent-driven-development. Otherwise use superpowers:executing-plans in the current session. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Проверить гипотезу live-safe `signal_candidate` по всей строке фракталов: найти сильный уровень вокруг `fractal0.price`, взять направление из `fractal0.direction`, оценить candidate отдельно и только потом диагностически проверить старый score-фильтр.
+**Goal:** Проверить гипотезу live-safe `candidate_signal` по всей строке фракталов: найти сильный уровень вокруг `fractal0.price`, взять направление из `fractal0.direction`, оценить candidate отдельно и только потом диагностически проверить старый score-фильтр.
 
 **Architecture:** Один master-plan с последовательными early gates A/B/C. Если gates проходят, строится новый feature layer, новый target layer (A/C/D), и один benchmark runner с validation-first выбором winner и single frozen test. Первый запуск идёт от простого к сложному: сначала nearest `K=16`, затем `zones` и mixed только при наличии пользы. Старый `label_all().signal` остаётся только сравнительной меткой, старый score — только диагностическим фильтром.
 
@@ -22,6 +22,24 @@
 - Do not push without explicit user request.
 - Use `original_score_threshold = -0.07158749` for old-score diagnostics. Source: `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`.
 - Report file date is the actual execution date: `docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md`.
+- Use `candidate_direction = candidate_signal_from_fractal0_direction(fractal0.direction)` for the live-safe trade direction.
+- Use `candidate_signal = candidate_direction` only after the level-candidate rule/model selects the row; otherwise `candidate_signal = 0`.
+- Do not use `source["signal"]` as input for target A/C/D or candidate construction. It is allowed only for overlap and comparison diagnostics.
+- Checkpoint commits are optional. If the user has not requested commits during execution, leave changes staged/unstaged and report status instead of committing.
+
+## Default Inputs
+
+The new runner must expose CLI arguments for every path below and use these defaults:
+
+- Train source CSV: `DATA/Nero_XAUUSD_train_labeled.csv`
+- Validation source CSV: `DATA/Nero_XAUUSD_validation_labeled.csv`
+- Test source CSV: `DATA/Nero_XAUUSD_test_labeled.csv`
+- Validation old-score predictions: `ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/validation_predictions.csv`
+- Test old-score predictions: `ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042/test_predictions.csv`
+- OHLC path: `DATA/XAUUSD_H1_OHLC.csv`
+- Output dir: `ML/reports/entry_path_v1_fractal_level_signal`
+
+The source CSV files are labeled files, but Task A must audit only current-row fields copied from `Nero.csv`: `time`, `ATR`, and `fractal0..fractal99`. Columns created by offline labeling, including `signal`, are not evidence that a feature is live-safe.
 
 ## Read First
 
@@ -79,11 +97,13 @@
 - `ML/README.md`
 - `MODULE_INDEX.md`
 - `CHANGELOG.md`
+- `CONTEXT_HANDOFF.md`
 - `wiki/REPO_integrity.md`
 
 ### Output Artifacts
 
 - `ML/reports/entry_path_v1_fractal_level_signal/feature_audit.json`
+- `ML/reports/entry_path_v1_fractal_level_signal/feature_contract.json`
 - `ML/reports/entry_path_v1_fractal_level_signal/direction_baseline.json`
 - `ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv`
 - `ML/reports/entry_path_v1_fractal_level_signal/validation_grid.csv`
@@ -105,6 +125,7 @@
 - Create: `ML/fractal_level_feature_builder.py`
 - Create: `tests/test_fractal_level_feature_builder.py`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/feature_audit.json`
+- Output: `ML/reports/entry_path_v1_fractal_level_signal/feature_contract.json`
 
 - [ ] **Step A1: Write failing tests for fractal parsing**
 
@@ -168,7 +189,40 @@ FRACTAL_FIELDS = {
 
 Use tolerant parsing: invalid or missing values become `None`/`0.0` according to existing `processing.label_signals.parse_fractal` behavior.
 
-- [ ] **Step A3: Write failing tests for feature audit**
+- [ ] **Step A3: Write failing tests for time parsing**
+
+The audit must compare row time and fractal time in one unit. Use UTC-naive pandas timestamps for both values.
+
+```python
+def test_parse_row_time_and_fractal_time_use_same_unit():
+    row_time = parse_row_time("2024.01.01 10:00")
+    fractal_time = parse_fractal_time("2024.01.01 09:00")
+
+    assert fractal_time <= row_time
+```
+
+If a fractal time is numeric and cannot be proven to use the same unit as row time, the audit must mark it as `unknown_time_format_rows`, not silently pass.
+
+- [ ] **Step A4: Implement time parsing helpers**
+
+Implement:
+
+```python
+def parse_row_time(value: object) -> pd.Timestamp | None:
+    ...
+
+def parse_fractal_time(value: object) -> pd.Timestamp | None:
+    ...
+```
+
+Rules:
+
+- `row_time` format is `%Y.%m.%d %H:%M` unless existing code proves another format;
+- `fractal_time` is parsed with the same format when it is a date string;
+- numeric fractal time must be converted only if the unit is documented in current project code;
+- unknown time format is reported separately and does not count as a pass.
+
+- [ ] **Step A5: Write failing tests for feature audit**
 
 Tests:
 
@@ -201,7 +255,7 @@ Run:
 
 Expected: FAIL until audit/features are implemented.
 
-- [ ] **Step A4: Implement audit helpers**
+- [ ] **Step A6: Implement audit helpers**
 
 Implement:
 
@@ -215,11 +269,31 @@ Checks:
 - row count;
 - rows with missing/invalid `fractal0`;
 - rows where any used fractal has `fractal_time > row_time`;
+- rows where time formats cannot be compared safely;
 - rows where `fractal0.Up/Dn` nonzero;
 - share of rows where `fractal1..fractal99.Up/Dn` are nonzero;
 - sort sanity: `fractal0` exists after preprocessing.
 
-- [ ] **Step A5: Add CLI audit mode**
+- [ ] **Step A7: Add feature contract manifest**
+
+Create:
+
+```text
+ML/reports/entry_path_v1_fractal_level_signal/feature_contract.json
+```
+
+Each feature entry must include:
+
+- `name`;
+- `source_column`;
+- `source_type`: `current_row_fractal`, `current_row_meta`, `derived_current_row`, `target_only`, or `diagnostic_only`;
+- `live_safe`: true/false;
+- `normalization`: none/train_frozen/local_ratio;
+- `model_input`: true/false.
+
+Fields from `source["signal"]` must be marked `diagnostic_only` and `model_input=false`.
+
+- [ ] **Step A8: Add CLI audit mode**
 
 In `ML/benchmark_entry_path_fractal_level_signal.py`, add a minimal CLI mode:
 
@@ -231,9 +305,10 @@ It writes:
 
 ```text
 ML/reports/entry_path_v1_fractal_level_signal/feature_audit.json
+ML/reports/entry_path_v1_fractal_level_signal/feature_contract.json
 ```
 
-- [ ] **Step A6: Run real feature audit**
+- [ ] **Step A9: Run real feature audit**
 
 Run:
 
@@ -243,16 +318,20 @@ Run:
 
 Expected:
 
+- audit reads only `time`, `ATR`, and `fractal0..fractal99` from the source CSV;
+- offline columns such as `signal`, `predict`, `ret_*`, `fav_*`, and `adv_*` are ignored for feature safety proof;
 - no future fractal rows;
 - `fractal0.Up/Dn` excluded from features even if present;
 - old-fractal `Up/Dn` availability reported for `fractal1..fractal99`.
 
-- [ ] **Step A7: Commit Task A**
+- [ ] **Step A10: Checkpoint Task A**
 
 ```bash
-git add ML/fractal_level_feature_builder.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py ML/reports/entry_path_v1_fractal_level_signal/feature_audit.json
+git add ML/fractal_level_feature_builder.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py ML/reports/entry_path_v1_fractal_level_signal/feature_audit.json ML/reports/entry_path_v1_fractal_level_signal/feature_contract.json
 git commit -m "Add entry path level feature audit"
 ```
+
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
 
 ---
 
@@ -271,13 +350,13 @@ git commit -m "Add entry path level feature audit"
 - [ ] **Step B1: Write failing tests for direction mapping**
 
 ```python
-from ML.entry_path_level_targets import signal_from_fractal0_direction
+from ML.entry_path_level_targets import candidate_signal_from_fractal0_direction
 
 
 def test_signal_from_fractal0_direction_uses_entry_path_convention():
-    assert signal_from_fractal0_direction(-1) == 1
-    assert signal_from_fractal0_direction(1) == -1
-    assert signal_from_fractal0_direction(0) == 0
+    assert candidate_signal_from_fractal0_direction(-1) == 1
+    assert candidate_signal_from_fractal0_direction(1) == -1
+    assert candidate_signal_from_fractal0_direction(0) == 0
 ```
 
 Run:
@@ -293,13 +372,15 @@ Expected: FAIL until module exists.
 Implement:
 
 ```python
-def signal_from_fractal0_direction(fractal_direction: int) -> int:
+def candidate_signal_from_fractal0_direction(fractal_direction: int) -> int:
     if fractal_direction == -1:
         return 1
     if fractal_direction == 1:
         return -1
     return 0
 ```
+
+The output column name is `candidate_direction`. Later stages create `candidate_signal` by applying the level-candidate selection mask to `candidate_direction`. Do not overwrite or reinterpret the historical `source["signal"]` column.
 
 Also implement reverse direction:
 
@@ -353,9 +434,13 @@ It must report:
 Gate fails if:
 
 - reverse direction is better than `fractal0.direction`;
-- correct direction rate is around 50% and not statistically better than chance;
+- correct direction rate <= 52% when the valid-row count is large enough for a stable estimate;
+- correct direction rate is not statistically better than 50% by binomial test or equivalent confidence check;
 - conditional win rate advantage over reverse direction is less than 2 percentage points;
-- BUY-only or SELL-only is clearly damaging the combined result.
+- reverse mean PnL ATR >= direct mean PnL ATR;
+- BUY-only or SELL-only PF < 0.9 when that side has at least 100 observations.
+
+Always report mean PnL ATR next to PF. PF is unstable when the number of trades is small.
 
 Do not fail the gate only because all-rows PF is below 1.0. All-rows PF is expected to be weak before a candidate-source filters rows. The gate asks whether `fractal0.direction` contains useful direction information, not whether it is already a profitable strategy by itself.
 
@@ -383,12 +468,14 @@ Run:
 
 If gate fails, stop implementation and report. Do not continue to Task C until user decides whether to switch to `SELL/SKIP/BUY`.
 
-- [ ] **Step B7: Commit Task B**
+- [ ] **Step B7: Checkpoint Task B**
 
 ```bash
 git add ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_entry_path_level_targets.py ML/reports/entry_path_v1_fractal_level_signal/direction_baseline.json
 git commit -m "Add entry path level direction gate"
 ```
+
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
 
 ---
 
@@ -404,12 +491,12 @@ git commit -m "Add entry path level direction gate"
 - Test: `tests/test_entry_path_level_targets.py`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv`
 
-- [ ] **Step C1: Write failing tests for trade direction and path columns**
+- [ ] **Step C1: Write failing tests for candidate signal and path columns**
 
-Targets must use trade direction derived from `fractal0.direction`, not the historical `signal` column.
+Targets must use `candidate_direction` derived from `fractal0.direction`, not the historical `source["signal"]` column.
 
 ```python
-def test_trade_direction_comes_from_fractal0_direction_not_signal():
+def test_candidate_direction_comes_from_fractal0_direction_not_signal():
     frame = pd.DataFrame(
         {
             "signal": [0, 0],
@@ -420,9 +507,9 @@ def test_trade_direction_comes_from_fractal0_direction_not_signal():
         }
     )
 
-    direction = build_trade_direction_from_fractal0(frame)
+    candidate_direction = build_candidate_direction_from_fractal0(frame)
 
-    assert direction.tolist() == [1, -1]
+    assert candidate_direction.tolist() == [1, -1]
 ```
 
 - [ ] **Step C2: Write failing tests for `fav/adv` on all rows**
@@ -434,7 +521,7 @@ def test_build_future_moves_uses_fractal0_direction_for_signal_zero_rows():
     frame = pd.DataFrame(
         {
             "signal": [0, 0],
-            "trade_direction": [1, -1],
+            "candidate_direction": [1, -1],
             "ATR": [2.0, 2.0],
             "up_6": [5.0, 1.0],
             "dn_6": [1.0, 5.0],
@@ -467,15 +554,15 @@ def test_target_c_rejects_large_early_adverse_move():
     assert target.tolist() == [0]
 ```
 
-- [ ] **Step C4: Implement trade direction and `fav/adv` for all rows**
+- [ ] **Step C4: Implement candidate signal and `fav/adv` for all rows**
 
 Implement:
 
 ```python
-def build_trade_direction_from_fractal0(source: pd.DataFrame) -> pd.Series:
+def build_candidate_direction_from_fractal0(source: pd.DataFrame) -> pd.Series:
     ...
 
-def build_fav_adv_from_trade_direction(
+def build_fav_adv_from_candidate_direction(
     source: pd.DataFrame,
     horizons: tuple[int, ...] = (3, 6, 12, 24, 48),
 ) -> pd.DataFrame:
@@ -484,9 +571,9 @@ def build_fav_adv_from_trade_direction(
 
 Rules:
 
-- `fractal0.direction == -1 -> trade_direction = 1` (BUY);
-- `fractal0.direction == 1 -> trade_direction = -1` (SELL);
-- old `signal` is ignored for target construction;
+- `fractal0.direction == -1 -> candidate_direction = 1` (BUY);
+- `fractal0.direction == 1 -> candidate_direction = -1` (SELL);
+- old `source["signal"]` is ignored for target construction;
 - for BUY: `fav_H = up_H / ATR`, `adv_H = dn_H / ATR`;
 - for SELL: `fav_H = dn_H / ATR`, `adv_H = up_H / ATR`;
 - rows without valid direction get neutral target inputs and cannot become positive target rows.
@@ -500,7 +587,7 @@ A: adv_6_atr < N and fav_6_atr >= Y
 C: fav_24_atr >= X and adv_12_atr <= Y
 ```
 
-Use `trade_direction` from `fractal0.direction` indirectly through the local `fav/adv` columns. Do not use the historical `signal` column.
+Use `candidate_direction` from `fractal0.direction` indirectly through the local `fav/adv` columns. Do not use the historical `source["signal"]` column.
 
 - [ ] **Step C6: Write failing test for Target D OHLC path**
 
@@ -537,7 +624,9 @@ If existing simulator returns only PnL and not exit reason, implement a local he
 {"pnl_atr": float, "exit_reason": "trailing_stop" | "timeout"}
 ```
 
-Do not call `label_trailing_stop_targets()` for this target. It is tied to historical `signal` direction. Target D here must use `trade_direction` derived from `fractal0.direction` for all rows.
+Do not call `label_trailing_stop_targets()` for this target. It is tied to historical `signal` direction. Target D here must use `candidate_direction` derived from `fractal0.direction` for all rows.
+
+Handle same-bar ambiguity conservatively. If one OHLC bar could contain both a new best extreme and a trailing stop hit, assume the less favorable order for the candidate. This prevents Target D from being inflated by unknown intra-bar order.
 
 - [ ] **Step C8: Implement target frequency summary**
 
@@ -558,6 +647,8 @@ Columns:
 - `buy_positive_count`;
 - `sell_positive_count`;
 - `min_year_positive_count`;
+- `overlap_with_old_signal_count`;
+- `overlap_with_old_signal_rate`;
 - `gate_pass`.
 
 Gate passes if:
@@ -593,18 +684,20 @@ Run:
 
 If all A/C/D fail, stop and report. If only one or two pass, benchmark only passing target families.
 
-- [ ] **Step C11: Commit Task C**
+- [ ] **Step C11: Checkpoint Task C**
 
 ```bash
 git add ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_entry_path_level_targets.py ML/reports/entry_path_v1_fractal_level_signal/target_frequency.csv
 git commit -m "Add entry path level target gates"
 ```
 
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
+
 ---
 
 ## Task D: Level Feature Builder
 
-**Agent mode:** can be assigned to a subagent after A/B/C pass.
+**Agent mode:** can be assigned to a subagent after A/B/C pass only if the environment and user instructions allow subagents.
 
 **Purpose:** Build the three first-pass input representations: zones, nearest `K=16`, and mixed.
 
@@ -725,18 +818,20 @@ Run:
 ./.venv/bin/python -m pytest tests/test_fractal_level_feature_builder.py -q
 ```
 
-- [ ] **Step D10: Commit Task D**
+- [ ] **Step D10: Checkpoint Task D**
 
 ```bash
 git add ML/fractal_level_feature_builder.py tests/test_fractal_level_feature_builder.py
 git commit -m "Add entry path level feature builder"
 ```
 
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
+
 ---
 
 ## Task E: Validation Benchmark Runner
 
-**Agent mode:** can be assigned to a subagent after Task D.
+**Agent mode:** can be assigned to a subagent after Task D only if the environment and user instructions allow subagents.
 
 **Purpose:** Train simple classifiers on validation-safe targets and choose one winner on validation.
 
@@ -748,17 +843,33 @@ git commit -m "Add entry path level feature builder"
 - [ ] **Step E1: Write failing test for validation-only winner selection**
 
 ```python
-def test_pick_validation_winner_prefers_pf_then_trade_count():
+def test_pick_validation_winner_rejects_tiny_high_pf_slice():
     grid = pd.DataFrame(
         [
-            {"config": "a", "validation_pf": 1.1, "validation_trades": 500},
-            {"config": "b", "validation_pf": 1.3, "validation_trades": 120},
+            {
+                "config": "tiny",
+                "mode": "standalone",
+                "validation_pf": 3.0,
+                "validation_trades": 12,
+                "validation_sequential_pf": 2.0,
+                "negative_years": 0,
+                "overfitting_risk": False,
+            },
+            {
+                "config": "stable",
+                "mode": "standalone",
+                "validation_pf": 1.4,
+                "validation_trades": 500,
+                "validation_sequential_pf": 1.2,
+                "negative_years": 1,
+                "overfitting_risk": False,
+            },
         ]
     )
 
     winner = pick_validation_winner(grid)
 
-    assert winner["config"] == "b"
+    assert winner["config"] == "stable"
 ```
 
 - [ ] **Step E2: Implement staged classifier matrix**
@@ -820,6 +931,7 @@ Select threshold on validation only. Grid:
 
 For each config write:
 
+- `mode`: `standalone` or `old_score_diagnostic`;
 - target family;
 - input family;
 - with/without old-fractal `Up/Dn`;
@@ -840,12 +952,23 @@ features / validation_candidates >= 0.10
 
 Such config cannot be selected as winner without explicit user approval.
 
+`pick_validation_winner()` must only choose rows where:
+
+- `mode == "standalone"`;
+- `validation_trades >= 100`;
+- `validation_sequential_pf >= 1.1`;
+- `validation_pf > 1.0`;
+- `negative_years` does not show obvious yearly instability;
+- `overfitting_risk == False`.
+
+Within rows that pass these gates, prefer higher validation PF, then higher sequential PF, then higher trade count.
+
 - [ ] **Step E4: Standalone candidate validation**
 
 Validate first without old score:
 
 ```python
-selected = signal_candidate != 0
+selected = candidate_signal != 0
 ```
 
 This is the main evidence for level-candidate quality.
@@ -853,8 +976,8 @@ This is the main evidence for level-candidate quality.
 Also report overlap with historical offline signal:
 
 ```python
-overlap_with_signal = (signal_candidate != 0) & (source["signal"] != 0)
-overlap_rate = overlap_with_signal.sum() / max((signal_candidate != 0).sum(), 1)
+overlap_with_signal = (candidate_signal != 0) & (source["signal"] != 0)
+overlap_rate = overlap_with_signal.sum() / max((candidate_signal != 0).sum(), 1)
 ```
 
 If `overlap_rate > 0.8`, mark the candidate as too close to old offline `label_all().signal`. It can remain diagnostic, but it does not solve the live-inference problem by itself.
@@ -881,7 +1004,7 @@ Use this for diagnostics:
 For each validation candidate universe compare:
 
 - old `signal != 0`;
-- new `signal_candidate != 0`;
+- new `candidate_signal != 0`;
 - all rows.
 
 Write:
@@ -907,7 +1030,7 @@ Columns:
 Run:
 
 ```python
-selected = (signal_candidate != 0) & (score >= original_threshold)
+selected = (candidate_signal != 0) & (score >= original_threshold)
 ```
 
 Use:
@@ -918,7 +1041,7 @@ original_threshold = -0.07158749
 
 Source: `ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json`.
 
-Mark it as diagnostic. Do not treat as production approval.
+Write these rows into `validation_grid.csv` with `mode="old_score_diagnostic"`. Mark it as diagnostic. Do not treat as production approval or allow it to become the frozen winner in this phase.
 
 - [ ] **Step E8: Run validation benchmark**
 
@@ -935,12 +1058,14 @@ Expected outputs:
 - `score_distribution.csv`;
 - no test metrics yet.
 
-- [ ] **Step E9: Commit Task E**
+- [ ] **Step E9: Checkpoint Task E**
 
 ```bash
 git add ML/benchmark_entry_path_fractal_level_signal.py tests/test_benchmark_entry_path_fractal_level_signal.py ML/reports/entry_path_v1_fractal_level_signal/validation_grid.csv ML/reports/entry_path_v1_fractal_level_signal/feature_importance.csv ML/reports/entry_path_v1_fractal_level_signal/score_distribution.csv
 git commit -m "Add entry path level validation benchmark"
 ```
+
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
 
 ---
 
@@ -956,6 +1081,7 @@ git commit -m "Add entry path level validation benchmark"
 - Modify: `ML/README.md`
 - Modify: `MODULE_INDEX.md`
 - Modify: `CHANGELOG.md`
+- Modify: `CONTEXT_HANDOFF.md`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/summary.json`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/summary.md`
 - Output: `ML/reports/entry_path_v1_fractal_level_signal/test_selected_rows.csv`
@@ -973,6 +1099,7 @@ The frozen config must include:
 - input family;
 - old-fractal `Up/Dn` on/off;
 - model params;
+- input paths actually used;
 - feature normalizer stats path or inline stats;
 - candidate threshold;
 - old score threshold used only for diagnostics.
@@ -1040,8 +1167,19 @@ Include:
 - validation matrix;
 - frozen test;
 - baseline comparison;
+- `ML Leakage Preflight` section;
 - verdict;
 - next step.
+
+`ML Leakage Preflight` must include PASS/FAIL for:
+
+- decision time: all model inputs are known at current row;
+- split: validation chooses winner, test is used once;
+- feature allowlist: only `feature_contract.json` fields with `model_input=true` are used;
+- target-only fields: `up_*`, `dn_*`, `fav_*`, `adv_*`, trail outcomes are not in model input;
+- normalization: any fitted statistics are train-only;
+- ATR contract: ATR is current-row ATR, not future ATR;
+- no test tuning: no threshold/model/feature changes after frozen test.
 
 - [ ] **Step F6: Update docs and indexes**
 
@@ -1053,6 +1191,7 @@ Update:
 - `ML/README.md`;
 - `MODULE_INDEX.md`;
 - `CHANGELOG.md`.
+- `CONTEXT_HANDOFF.md`.
 
 - [ ] **Step F7: Run verification**
 
@@ -1086,12 +1225,14 @@ Run:
 ./.venv/bin/python wiki/wiki.py generate
 ```
 
-- [ ] **Step F8: Commit final report**
+- [ ] **Step F8: Checkpoint final report**
 
 ```bash
-git add ML/fractal_level_feature_builder.py ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py tests/test_entry_path_level_targets.py tests/test_benchmark_entry_path_fractal_level_signal.py docs/ML/fractal_level_feature_builder.py.md docs/ML/entry_path_level_targets.py.md docs/ML/benchmark_entry_path_fractal_level_signal.py.md docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md ML/reports/entry_path_v1_fractal_level_signal ML/README.md MODULE_INDEX.md CHANGELOG.md wiki/REPO_integrity.md
+git add ML/fractal_level_feature_builder.py ML/entry_path_level_targets.py ML/benchmark_entry_path_fractal_level_signal.py tests/test_fractal_level_feature_builder.py tests/test_entry_path_level_targets.py tests/test_benchmark_entry_path_fractal_level_signal.py docs/ML/fractal_level_feature_builder.py.md docs/ML/entry_path_level_targets.py.md docs/ML/benchmark_entry_path_fractal_level_signal.py.md docs/reports/YYYY-MM-DD-entry-path-fractal-level-signal.md ML/reports/entry_path_v1_fractal_level_signal ML/README.md MODULE_INDEX.md CHANGELOG.md CONTEXT_HANDOFF.md wiki/REPO_integrity.md
 git commit -m "Add entry path fractal level signal benchmark"
 ```
+
+Commit only if checkpoint commits are approved for the execution session. Otherwise report the changed files and test status.
 
 ---
 
