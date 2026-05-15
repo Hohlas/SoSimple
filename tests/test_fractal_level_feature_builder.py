@@ -210,4 +210,6 @@ def test_zones_plus_nearest_k_combines_features():
     features = build_fractal_level_features(frame, input_family="zones_plus_nearest_k", k=4)
     zone_features = build_fractal_level_features(frame, input_family="zones")
     nearest_features = build_fractal_level_features(frame, input_family="nearest_k", k=4)
-    assert len(features.columns) == len(zone_features.columns) + len(nearest_features.columns)
+    overlap = set(zone_features.columns) & set(nearest_features.columns)
+    expected = len(zone_features.columns) + len(nearest_features.columns) - len(overlap)
+    assert len(features.columns) == expected
