@@ -1,0 +1,7 @@
+target_family;params;split;row_count;buy_count;sell_count;skip_count;ambiguous_count;ambiguous_rate;positive_count;positive_rate;major_year_min_positive_count;one_sided_or_sparse_year;overlap_with_old_signal_count;overlap_with_old_signal_rate;gate_pass
+A;"{""stop_n"":0.2,""take_y"":0.3}";train;43934;5250;5234;33450;0;0.0;10484;0.23863067328265125;227;False;1237;0.11798931705455933;True
+A;"{""stop_n"":0.2,""take_y"":0.3}";validation;9415;1108;1092;7215;0;0.0;2200;0.23366967604885822;404;False;283;0.12863636363636363;True
+C;"{""adverse_y"":0.3,""take_x"":0.5}";train;43934;7524;7262;29148;15;0.0003414212227432057;14786;0.33655027996540265;328;False;1414;0.09563100229947247;True
+C;"{""adverse_y"":0.3,""take_x"":0.5}";validation;9415;1450;1424;6541;2;0.00021242697822623473;2874;0.3052575677110993;565;False;299;0.10403618649965206;True
+D;"{""horizon"":24,""profit_z"":1.0,""trail_n"":2.0}";train;43934;10530;10640;22764;0;0.0;21170;0.481859152364911;539;False;1269;0.059943316013226264;True
+D;"{""horizon"":24,""profit_z"":1.0,""trail_n"":2.0}";validation;9415;2309;2090;5016;0;0.0;4399;0.46723313860860327;764;False;280;0.06365082973403047;True
