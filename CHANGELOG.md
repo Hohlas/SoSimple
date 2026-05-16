@@ -2,6 +2,27 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-15] - Direct direction improvement experiments E0–E5
+
+### Добавлено
+- Binary BUY/SELL direction benchmark (`ML/benchmark_entry_path_binary_direction.py`) — две независимых модели (BUY-vs-REST, SELL-vs-REST) с RF и HGB, threshold/margin grid, frozen-test stage
+- Score-filtered direction resolver (`ML/benchmark_entry_path_score_direction.py`) — HGB direction resolver на score universe
+- Zone features в `fractal_level_feature_builder.py` — `input_family="zones"` и `"zones_plus_nearest_k"`, `geometry_only` параметр
+- Model variant support в `benchmark_entry_path_fractal_level_direct_direction.py` — `--model rf/hgb/lr`, `--input-family`, `--k`, `--geometry-only`, `--e0-grid`
+- Test coverage: k variants (97/143/373 features), geometry_only (57 features), zones, binary signal logic
+
+### Результаты
+- **E0 Feature Ablation**: k=4 (97 features) — лучший вариант. Увеличение k ухудшает PF. up/dn признаки дают маргинальный вклад.
+- **E1 Binary Models**: RF margin=0.10 — **validation winner** (PF=1.25, SeqPF=1.30, 1923 trades, BUY/SELL balance=0.37)
+- **E1 Frozen Test**: Test PF=1.226, SeqPF=1.537, 2045 trades. BUY PF=1.90, **SELL PF=0.62** — слабое SELL направление.
+- **E2 HGB/LR 3-class**: Оба хуже RF (HGB PF=1.01, LR PF=1.05). Линейный сигнал частично присутствует.
+- **E3 Zone Features**: Хуже baseline (zones PF=1.08, zones+k4 PF=1.04). Агрегация теряет proximity-информацию.
+- **E5 Score Direction**: HGB на score universe PF=1.09, лучше fractal0.direction (PF=0.98), но ниже gate.
+
+### Вывод
+3-class SELL/SKIP/BUY нежизнеспособна. Binary BUY/SELL RF с margin rule — лучший результат (Test PF=1.23 > direct bar baseline PF=1.11). SELL направление слабое, требует отдельного решения.
+<!-- подробности: docs/reports/2026-05-15-direct-direction-improvement.md -->
+
 ## [2026-05-14] - Entry path candidate-source audit
 
 - Проведён `signal_only` ablation для `entry_path_v1_live_safe`: сам offline
