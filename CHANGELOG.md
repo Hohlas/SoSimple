@@ -2,6 +2,17 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-16] - Wiki: execution-tracks.md decomposition
+
+### Изменено
+- Монолит `wiki/research/execution-tracks.md` (1450 строк, 39 отчётов) разбит на 8 тематических подстраниц + 1 overview. Каждая подстраница 50-340 строк — агент читает только релевантный трек.
+- `wiki/index.md` обновлён: одна строка заменена на дерево из 9 строк с ссылками на подстраницы.
+
+### Результат
+- `search_knowledge("Triple Barrier")` вернёт `execution-tracks-early-research.md` (84 строки) вместо монолита.
+- `search_knowledge("live safe retrain")` вернёт `execution-tracks-live-safe-audit.md` (243 строки).
+- Экономия токенов: агент получает ~200 строк вместо 1450 при поиске по конкретной теме.
+
 ## [2026-05-15] - Direct direction improvement experiments E0–E5
 
 ### Добавлено
