@@ -53,6 +53,10 @@
 | [export_entry_path_predictions.py](export_entry_path_predictions.py) | Inference `entry_path_v1` / `entry_path_v1_quantile` на arbitrary labeled CSV без переобучения | labeled CSV + checkpoint → prediction CSV | ✅ |
 | [run_entry_path_live_safe_retrain.py](run_entry_path_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_live_safe` с отдельными checkpoint-папками | `DATA/Nero_*` → reports/entry_path_v1_live_safe*/seed_*/ | ✅ |
 | [run_entry_path_quantile_live_safe_retrain.py](run_entry_path_quantile_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_quantile` поверх CPU baseline `A @ 7.5%` | baseline reports + `DATA/Nero_*` → reports/entry_path_v1_quantile*/seed_*/ | ✅ |
+| [benchmark_entry_path_signal_only_ablation.py](benchmark_entry_path_signal_only_ablation.py) | Ablation benchmark вклада offline `signal != 0` без ML score-фильтра | prediction CSV → reports/entry_path_v1_signal_only_ablation/ | ✅ |
+| [benchmark_entry_path_all_rows_ranking.py](benchmark_entry_path_all_rows_ranking.py) | All-rows ranking benchmark без offline `signal != 0` gate | prediction/source/OHLC CSV → reports/entry_path_v1_all_rows_ranking/ | ✅ |
+| [benchmark_entry_path_causal_surrogate.py](benchmark_entry_path_causal_surrogate.py) | Causal surrogate benchmark для offline `label_all().signal` | source/prediction/OHLC CSV → reports/entry_path_v1_causal_surrogate/ | ✅ |
+| [benchmark_entry_path_direct_bar_model.py](benchmark_entry_path_direct_bar_model.py) | Direct BUY/SELL/SKIP benchmark для каждого бара без offline signal gate | source/OHLC CSV → reports/entry_path_v1_direct_bar_model/ | ✅ |
 | [entry_path_v1_quantile_ensemble.py](entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | ✅ |
 | [run_take_skip_lib_pic_feature_matrix.py](run_take_skip_lib_pic_feature_matrix.py) | Отдельная training matrix для `take_skip_v2` с профилями признаков `lib_PIC` внутри модели | labeled CSV → reports/take_skip_lib_pic_feature_matrix/ | 🚧 |
 | [run_take_skip_original_contour_feature_matrix.py](run_take_skip_original_contour_feature_matrix.py) | Training matrix для старого single-tensor `take_skip_v2` контура, включая live-safe baseline без будущих row-признаков | labeled CSV → reports/take_skip_original_contour_feature_matrix/ / reports/take_skip_live_safe_baseline/ | 🚧 |
@@ -136,6 +140,18 @@ python -m ML.export_entry_path_predictions \
   --input-csv DATA/Nero_XAUUSD_test_labeled.csv \
   --checkpoint ML/checkpoints/transformer_entry_path_v1_best.pt \
   --output ML/reports/entry_path_cross_instrument_robustness/generated/XAUUSD_ALPARI/entry_path_v1_test_predictions.csv
+
+# Entry path signal-only ablation: оценка вклада offline signal!=0 без score-фильтра
+python -m ML.benchmark_entry_path_signal_only_ablation
+
+# Entry path all-rows ranking: проверка score на всех строках без offline signal gate
+python -m ML.benchmark_entry_path_all_rows_ranking
+
+# Entry path causal surrogate: причинная замена offline signal candidate-source
+python -m ML.benchmark_entry_path_causal_surrogate
+
+# Entry path direct bar model: модель сама выбирает BUY/SELL/SKIP для каждого бара
+python -m ML.benchmark_entry_path_direct_bar_model
 
 # Take/skip v2: обучение с признаками lib_PIC внутри модели
 MPLCONFIGDIR=/tmp/matplotlib python -m ML.run_take_skip_lib_pic_feature_matrix \

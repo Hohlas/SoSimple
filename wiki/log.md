@@ -3,6 +3,12 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-14] ingest | Entry path candidate-source audit
+- Added `docs/reports/2026-05-14-entry-path-all-rows-ranking.md`.
+- Updated `wiki/research/execution-tracks.md` with signal-only ablation and all-rows ranking result.
+- Recorded verdict: all-rows ranking with `fractal0.direction` is rejected as a production path.
+- Next research step: causal surrogate for `label_all().signal`.
+
 ## [2026-05-06] update | live-safe system tracker
 - Added an Audit Tracker to `docs/reports/2026-05-05-live-safe-ml-audit.md`.
 - Synced `wiki/research/execution-tracks.md` with the current follow-up order:
@@ -393,3 +399,22 @@
 - Updated `wiki/index.md` coverage from 36 to 37 execution-track reports.
 - Linked `docs/ML/online_tester_reconciliation.py.md` as the canonical
   instruction for repeat online/tester reconciliation runs.
+
+## [2026-05-14] ingest | entry path causal surrogate
+
+- Added `docs/reports/2026-05-14-entry-path-causal-surrogate.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded causal surrogate validation/test/sequential metrics;
+  - recorded low active precision and high active recall;
+  - marked the surrogate as research baseline, not production-rule.
+- Updated `wiki/index.md` coverage for the new report.
+
+## [2026-05-14] ingest | entry path direct bar model
+
+- Added `docs/reports/2026-05-14-entry-path-direct-bar-model.md`.
+- Updated `wiki/research/execution-tracks.md`:
+  - recorded direct `BUY/SELL/SKIP` validation/test/sequential metrics;
+  - recorded that offline `signal` is not used as gate;
+  - marked direct score+direction as the best next research direction, not
+    production-ready yet.
+- Updated `wiki/index.md` coverage from 39 to 40 execution-track reports.

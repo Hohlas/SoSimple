@@ -1,0 +1,105 @@
+{
+  "stage": "direction-baseline",
+  "inputs": {
+    "train": "DATA/Nero_XAUUSD_train_labeled.csv",
+    "validation": "DATA/Nero_XAUUSD_validation_labeled.csv",
+    "ohlc": "DATA/XAUUSD_H1_OHLC.csv"
+  },
+  "horizon": 24,
+  "test_set_used": false,
+  "train_diagnostic": {
+    "horizon": 24,
+    "valid_rows": 43934,
+    "trades_by_candidate_direction": {
+      "-1": 23254,
+      "0": 0,
+      "1": 20680
+    },
+    "direct": {
+      "trades": 43934,
+      "pf": 0.9870346306150314,
+      "win_rate": 0.4958346610825329,
+      "mean_pnl_atr": -0.018900638456921016
+    },
+    "reverse": {
+      "trades": 43934,
+      "pf": 1.0131356783063323,
+      "win_rate": 0.5,
+      "mean_pnl_atr": 0.018900638456921016
+    },
+    "buy_only": {
+      "trades": 20680,
+      "pf": 1.103081113613011,
+      "win_rate": 0.5202611218568666,
+      "mean_pnl_atr": 0.14195088332316896
+    },
+    "sell_only": {
+      "trades": 23254,
+      "pf": 0.894120548797303,
+      "win_rate": 0.4741119807344973,
+      "mean_pnl_atr": -0.16194740333230853
+    },
+    "direct_win_count": 21784,
+    "reverse_win_count": 21967,
+    "correct_direction_rate": 0.4958346610825329,
+    "binomial_p_value_vs_50pct": 0.08078547418754889,
+    "conditional_win_rate_advantage": -0.004165338917467121,
+    "gate_pass": false,
+    "gate_failures": [
+      "reverse_direction_better",
+      "correct_direction_rate_lte_52pct",
+      "not_statistically_above_50pct",
+      "win_rate_advantage_lt_2pp",
+      "reverse_mean_pnl_gte_direct",
+      "sell_only_pf_lt_0_9"
+    ]
+  },
+  "validation_gate": {
+    "horizon": 24,
+    "valid_rows": 9415,
+    "trades_by_candidate_direction": {
+      "-1": 4984,
+      "0": 0,
+      "1": 4431
+    },
+    "direct": {
+      "trades": 9415,
+      "pf": 0.985242146430473,
+      "win_rate": 0.4961232076473712,
+      "mean_pnl_atr": -0.02040159030252236
+    },
+    "reverse": {
+      "trades": 9415,
+      "pf": 1.0149789101318845,
+      "win_rate": 0.5035581518852894,
+      "mean_pnl_atr": 0.02040159030252236
+    },
+    "buy_only": {
+      "trades": 4431,
+      "pf": 1.1133339358942875,
+      "win_rate": 0.5299029564432408,
+      "mean_pnl_atr": 0.1472877939654761
+    },
+    "sell_only": {
+      "trades": 4984,
+      "pf": 0.8836005405644803,
+      "win_rate": 0.46609149277688605,
+      "mean_pnl_atr": -0.16948498951831314
+    },
+    "direct_win_count": 4671,
+    "reverse_win_count": 4741,
+    "correct_direction_rate": 0.4961232076473712,
+    "binomial_p_value_vs_50pct": 0.45184813401375723,
+    "conditional_win_rate_advantage": -0.007434944237918184,
+    "gate_pass": false,
+    "gate_failures": [
+      "reverse_direction_better",
+      "correct_direction_rate_lte_52pct",
+      "not_statistically_above_50pct",
+      "win_rate_advantage_lt_2pp",
+      "reverse_mean_pnl_gte_direct",
+      "sell_only_pf_lt_0_9"
+    ]
+  },
+  "gate_pass": false
+}

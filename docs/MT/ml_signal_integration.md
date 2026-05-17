@@ -114,7 +114,42 @@ Legacy/general consumer для уже готового frozen rule:
   `validation_csv`, указанного в rule JSON;
 - обнуляет строки вне frozen rule;
 - схлопывает runtime до единого `time;signal` с приоритетом ненулевого сигнала на баре;
-- при `--copy-to-mt4` пишет одинаковый export в tester/runtime paths.
+- при `--copy-to-mt4` пишет одинаковый export в tester/runtime paths;
+- при `--append-to-mt4` добавляет только строки новее текущего хвоста MT4-файла;
+- при `--metadata-output` пишет hash, counts, effective threshold и признак
+  `diagnostic_only`.
+
+Online watcher по умолчанию теперь использует именно live-safe путь
+`entry_path_v1_live_safe + A @ 7.5%`:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --verbose
+```
+
+Для M5 high-frequency diagnostic использовать threshold override. Это тот же
+checkpoint, тот же rule JSON, тот же `feature_profile=entry_path_v1_live_safe`,
+тот же production gate `signal != 0` и то же направление из prediction/export
+frame. Меняется только score threshold:
+
+```bash
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --entry-path-score-threshold-override -0.50 \
+  --verbose
+```
+
+Этот threshold нужен только для набора событий `MT4 -> ML -> MT4`. Его нельзя
+использовать как доказательство прибыльности; production baseline остаётся
+`A @ 7.5%`.
+
+Отдельный флаг `--entry-path-diagnostic-all-rows` оставлен только как
+mechanical stress mode. Он не является parity с production candidate: игнорирует
+`signal != 0`, выбирает top-N строк по score и берёт direction из
+`fractal0.direction`.
 
 ### Для `entry_path_v1_quantile`
 
@@ -231,9 +266,10 @@ High-frequency diagnostic export:
 Для online-режима MQL-библиотека не держит `ml_signals.csv` неизменным до
 перезапуска советника: на новом баре она проверяет время изменения файла и
 перезагружает сигналы при изменении. Поэтому внешний Python-процесс может быть
-постоянным наблюдателем за `Nero.csv`: при появлении нового завершенного бара он
-пересчитывает прогноз, пишет полный diagnostic export в runtime-каталог и
-публикует в MT4-файлы только строки новее текущего хвоста `ml_signals.csv`.
+постоянным наблюдателем за `Nero.csv`: при неизменном `mtime` он не читает CSV,
+при изменении берёт хвост файла seek-чтением с конца, пересчитывает прогноз,
+пишет runtime export и публикует в MT4-файлы только строки новее текущего хвоста
+`ml_signals.csv`.
 Запись идёт через временный файл и замену, поэтому MT4 видит целый CSV, но
 старые строки не меняются задним числом.
 

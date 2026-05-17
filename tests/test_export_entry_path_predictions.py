@@ -94,6 +94,47 @@ def test_export_predictions_writes_plain_entry_path_contract(tmp_path, monkeypat
     assert "true_ret_24_dir_atr" in out.columns
 
 
+def test_export_predictions_supports_runtime_atr_vol_regime_substitution(tmp_path, monkeypatch):
+    input_csv = tmp_path / "instrument.csv"
+    output_csv = tmp_path / "entry_path_v1_predictions.csv"
+    _write_input_csv(input_csv)
+    captured: dict[str, pd.DataFrame] = {}
+
+    def _capture_features(df, feature_profile, seq_len):
+        captured["frame"] = df.copy()
+        return np.zeros((len(df), 6), dtype=np.float32)
+
+    monkeypatch.setattr(exporter, "set_seed", lambda seed: None)
+    monkeypatch.setattr(exporter, "get_device", lambda: torch.device("cpu"))
+    monkeypatch.setattr(exporter, "parse_fractals_to_3d", lambda df: (np.zeros((len(df), 5, 20), dtype=np.float32), np.ones((len(df), 5), dtype=bool)))
+    monkeypatch.setattr(exporter, "split_entry_path_features", _capture_features)
+    monkeypatch.setattr(
+        exporter,
+        "split_entry_path_targets",
+        lambda df: (
+            np.zeros((len(df), 9), dtype=np.float32),
+            np.ones(len(df), dtype=np.int64),
+        ),
+    )
+    monkeypatch.setattr(exporter, "build_entry_path_model", lambda model_name, model_kwargs=None: _FakeEntryPathModel())
+    monkeypatch.setattr(
+        exporter,
+        "load_checkpoint",
+        lambda checkpoint_path, device: {"model_name": "transformer", "model_state_dict": {}, "model_kwargs": {"seq_len": 5}},
+    )
+    monkeypatch.setattr(torch.nn.Module, "load_state_dict", lambda self, state_dict: None)
+
+    exporter.export_predictions(
+        input_csv=input_csv,
+        checkpoint="dummy.pt",
+        output_csv=output_csv,
+        task="entry_path_v1",
+        vol_regime_24_mode="atr",
+    )
+
+    assert captured["frame"]["vol_regime_24"].tolist() == captured["frame"]["ATR"].tolist()
+
+
 def test_export_predictions_writes_quantile_contract(tmp_path, monkeypatch):
     input_csv = tmp_path / "instrument.csv"
     output_csv = tmp_path / "entry_path_v1_quantile_predictions.csv"

@@ -74,23 +74,41 @@ python -m API.export_take_skip_trailing_stop_v2_signals \
   --copy-to-mt4 \
   --append-to-mt4
 
-# Online watcher: один проход. С текущим legacy original_baseline остановится
-# на contract guard до live-safe retrain.
+# Live-safe entry_path watcher: production baseline A @ 7.5%, без unsafe override.
 python -m API.telemetry_signal_watcher --once --verbose
 
-# Online watcher: основной interactive-режим в tmux
-mkdir -p ML/reports/telemetry_frequency_v1/runtime
+# Online watcher: основной interactive-режим в tmux.
+# Default max_runtime_rows = 1: watcher использует runtime vol_regime_24 := ATR.
+# При неизменном mtime watcher не читает Nero.csv; при изменении читает хвост
+# через seek от конца файла и не сканирует многолетнюю историю.
+mkdir -p ML/reports/entry_path_v1_live_safe/runtime
 tmux new -s telemetry-watcher
 
 # Внутри окна tmux
 ./.venv/bin/python -m API.telemetry_signal_watcher \
   --poll-interval-sec 1 \
   --heartbeat-sec 60 \
-  --max-runtime-rows 12000 \
   --verbose
+
+# Entry_path M5 high-frequency diagnostic: тот же checkpoint/rule/gate/direction,
+# отличается только score threshold. Это не проверка прибыльности.
+./.venv/bin/python -m API.telemetry_signal_watcher \
+  --poll-interval-sec 1 \
+  --heartbeat-sec 60 \
+  --entry-path-score-threshold-override -0.50 \
+  --verbose
+
+# Отдельный mechanical stress mode, не parity с production candidate:
+# игнорирует signal!=0 gate, выбирает top-N all-rows, direction из fractal0.direction.
+# Не использовать как основной M5 diagnostic.
+# ./.venv/bin/python -m API.telemetry_signal_watcher \
+#   --entry-path-diagnostic-all-rows \
+#   --diagnostic-target-signals-per-year 5000 \
+#   --verbose
 
 # Только для старой механической диагностики связи, не для ML-корректной проверки:
 ./.venv/bin/python -m API.telemetry_signal_watcher \
+  --watcher-mode telemetry_frequency_v1_legacy \
   --once \
   --verbose \
   --allow-unsafe-future-features

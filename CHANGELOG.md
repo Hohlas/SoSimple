@@ -2,6 +2,77 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-15] - Direct direction improvement experiments E0–E5
+
+### Добавлено
+- Binary BUY/SELL direction benchmark (`ML/benchmark_entry_path_binary_direction.py`) — две независимых модели (BUY-vs-REST, SELL-vs-REST) с RF и HGB, threshold/margin grid, frozen-test stage
+- Score-filtered direction resolver (`ML/benchmark_entry_path_score_direction.py`) — HGB direction resolver на score universe
+- Zone features в `fractal_level_feature_builder.py` — `input_family="zones"` и `"zones_plus_nearest_k"`, `geometry_only` параметр
+- Model variant support в `benchmark_entry_path_fractal_level_direct_direction.py` — `--model rf/hgb/lr`, `--input-family`, `--k`, `--geometry-only`, `--e0-grid`
+- Test coverage: k variants (97/143/373 features), geometry_only (57 features), zones, binary signal logic
+
+### Результаты
+- **E0 Feature Ablation**: k=4 (97 features) — лучший вариант. Увеличение k ухудшает PF. up/dn признаки дают маргинальный вклад.
+- **E1 Binary Models**: RF margin=0.10 — **validation winner** (PF=1.25, SeqPF=1.30, 1923 trades, BUY/SELL balance=0.37)
+- **E1 Frozen Test**: Test PF=1.226, SeqPF=1.537, 2045 trades. BUY PF=1.90, **SELL PF=0.62** — слабое SELL направление.
+- **E2 HGB/LR 3-class**: Оба хуже RF (HGB PF=1.01, LR PF=1.05). Линейный сигнал частично присутствует.
+- **E3 Zone Features**: Хуже baseline (zones PF=1.08, zones+k4 PF=1.04). Агрегация теряет proximity-информацию.
+- **E5 Score Direction**: HGB на score universe PF=1.09, лучше fractal0.direction (PF=0.98), но ниже gate.
+
+### Вывод
+3-class SELL/SKIP/BUY нежизнеспособна. Binary BUY/SELL RF с margin rule — лучший результат (Test PF=1.23 > direct bar baseline PF=1.11). SELL направление слабое, требует отдельного решения.
+<!-- подробности: docs/reports/2026-05-15-direct-direction-improvement.md -->
+
+## [2026-05-14] - Entry path candidate-source audit
+
+- Проведён `signal_only` ablation для `entry_path_v1_live_safe`: сам offline
+  `signal != 0` на test убыточен (`486` trades, PF `0.1757`; sequential
+  `237` trades, PF `0.1696`), а текущий score gate даёт основной положительный
+  вклад (`41` trades, PF `7.5737`; sequential `27` trades, PF `5.9352`).
+- Проверен all-rows ranking без offline `signal != 0` gate: score
+  `pred_ret_24_dir_atr`, направление из `fractal0.direction`, результат сделки
+  пересчитан по OHLC. Validation winner `5%` coverage уже слабый
+  (`471` trades, PF `0.9661`), frozen test убыточен (`329` trades, PF
+  `0.9134`), sequential test ещё хуже (`133` trades, PF `0.5908`).
+- Проверен causal surrogate для `label_all().signal`: RandomForest по
+  live-доступным полям текущего `fractal0` + старый score gate. Frozen test
+  слабоположительный (`36` trades, PF `1.1537`), sequential test лучше
+  (`31` trades, PF `1.4111`), но precision active-сигнала низкий (`20.41%`).
+- Проверена прямая модель `BUY / SELL / SKIP` для каждого бара без offline
+  `signal != 0` gate. Validation winner `threshold=0.80` дал `1450` trades,
+  PF `1.1673`; frozen test дал `1277` trades, PF `1.1141`; sequential test
+  дал `274` trades, PF `1.1334`.
+- Вывод: просто снять `signal != 0` gate нельзя; causal surrogate не провалился,
+  а прямой score+direction выглядит лучшим направлением. Но это ещё не
+  production-ready: test PF слабый, 2022 год отрицательный, направление среди
+  выбранных active-строк почти случайное (`~50.5%`).
+- Подробности:
+  [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md),
+  [docs/reports/2026-05-14-entry-path-causal-surrogate.md](docs/reports/2026-05-14-entry-path-causal-surrogate.md),
+  [docs/reports/2026-05-14-entry-path-direct-bar-model.md](docs/reports/2026-05-14-entry-path-direct-bar-model.md).
+
+## [2026-05-13] - Live-safe entry_path online watcher
+
+- `API.telemetry_signal_watcher` переведён на production-кандидат
+  `entry_path_v1_live_safe + A @ 7.5%` по умолчанию; legacy take/skip watcher
+  оставлен отдельным `telemetry_frequency_v1_legacy` mode и по-прежнему требует
+  явный unsafe override.
+- M5 diagnostic для `entry_path_v1_live_safe` зафиксирован как threshold
+  override: тот же checkpoint/rule/feature profile, тот же gate `signal != 0`,
+  то же направление из prediction/export frame; меняется только
+  `score_threshold`.
+- `--entry-path-diagnostic-all-rows` оставлен только как отдельный mechanical
+  stress mode, не parity с production candidate.
+- Benchmark runtime window: полный 60k rebuild остановлен после 5 минут;
+  high-frequency diagnostic занял `17.217s` на 1000 строках, `3.541s` на 100,
+  `2.149s` на 24 и `2.084s` на latest-row; последний сигнал совпал.
+- Watcher ускорен для online polling: при неизменном `mtime` он не читает
+  `Nero.csv`, а при rebuild берёт последние строки seek-чтением с конца файла.
+- Runtime default уменьшен до `1` строки: watcher использует compatibility
+  substitution `vol_regime_24 := ATR`, проверенную на validation/test с
+  `signal_mismatch_rows=0`; тяжёлые legacy stress-окна задаются только через
+  явный `--max-runtime-rows`.
+
 ## [2026-05-12] - Online/tester execution reconciliation
 
 - Проверена M5-цепочка `MT4 -> ML -> MT4` на online/tester срезах: сигналы и

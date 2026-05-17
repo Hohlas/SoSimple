@@ -36,6 +36,9 @@ from ML.entry_path_v1_quantile_task import build_entry_path_v1_quantile_export_f
 from ML.entry_path_v1_quantile_task import build_entry_path_v1_quantile_model
 from ML.utils import get_device
 from ML.utils import set_seed
+from processing.label_signals import add_entry_path_frequency_features
+
+VOL_REGIME_24_MODES = ("rolling", "atr")
 
 
 def load_checkpoint(checkpoint_path: str | Path, device: torch.device) -> dict:
@@ -58,13 +61,18 @@ def _build_entry_path_loader(
     batch_size: int,
     num_workers: int,
     feature_profile: str,
+    include_true_targets: bool,
 ) -> DataLoader:
     X, mask = parse_fractals_to_3d(frame)
     if X.shape[1] > seq_len:
         X = X[:, :seq_len, :]
         mask = mask[:, :seq_len]
 
-    y_reg, y_cls = split_entry_path_targets(frame)
+    if include_true_targets:
+        y_reg, y_cls = split_entry_path_targets(frame)
+    else:
+        y_reg = np.zeros((len(frame), 9), dtype=np.float32)
+        y_cls = np.zeros(len(frame), dtype=np.int64)
     signal = pd.to_numeric(frame["signal"], errors="coerce").fillna(0).astype(int).to_numpy(dtype=np.int64)
     engineered = None
     if task == ENTRY_PATH_TARGET:
@@ -91,14 +99,21 @@ def export_predictions(
     num_workers: int = 0,
     feature_profile: str = ENTRY_PATH_DEFAULT_FEATURE_PROFILE,
     seed: int = 42,
+    include_true_targets: bool = True,
+    vol_regime_24_mode: str = "rolling",
 ) -> Path:
     if task not in {ENTRY_PATH_TARGET, ENTRY_PATH_V1_QUANTILE_TARGET}:
         raise ValueError(f"unsupported task: {task}")
+    if vol_regime_24_mode not in VOL_REGIME_24_MODES:
+        available = ", ".join(VOL_REGIME_24_MODES)
+        raise ValueError(f"unsupported vol_regime_24_mode: {vol_regime_24_mode}. Available: {available}")
 
     set_seed(seed)
     device = get_device()
     checkpoint_payload = load_checkpoint(checkpoint, device)
-    frame = load_input_frame(input_csv)
+    frame = add_entry_path_frequency_features(load_input_frame(input_csv))
+    if vol_regime_24_mode == "atr":
+        frame["vol_regime_24"] = pd.to_numeric(frame["ATR"], errors="coerce").fillna(0.0)
     seq_len = _seq_len_from_checkpoint(checkpoint_payload)
     loader = _build_entry_path_loader(
         frame,
@@ -107,6 +122,7 @@ def export_predictions(
         batch_size=batch_size,
         num_workers=num_workers,
         feature_profile=feature_profile,
+        include_true_targets=include_true_targets,
     )
 
     if task == ENTRY_PATH_TARGET:
@@ -161,6 +177,10 @@ def export_predictions(
         "true_reg": np.concatenate(all_true_reg),
         "true_cls": np.concatenate(all_true_cls),
     }
+    if not include_true_targets:
+        export_kwargs["true_reg"] = None
+        export_kwargs["true_cls"] = None
+
     if task == ENTRY_PATH_TARGET:
         export = build_entry_path_export_frame(**export_kwargs)
     else:
@@ -186,6 +206,13 @@ def parse_args():
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--feature-profile", default=ENTRY_PATH_DEFAULT_FEATURE_PROFILE)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-true-targets", action="store_true")
+    parser.add_argument(
+        "--vol-regime-24-mode",
+        choices=VOL_REGIME_24_MODES,
+        default="rolling",
+        help="rolling keeps the training contract; atr uses runtime-compatible vol_regime_24 := ATR.",
+    )
     return parser.parse_args()
 
 
@@ -200,6 +227,8 @@ def main():
         num_workers=args.num_workers,
         feature_profile=args.feature_profile,
         seed=args.seed,
+        include_true_targets=not args.no_true_targets,
+        vol_regime_24_mode=args.vol_regime_24_mode,
     )
     print(path)
     return path

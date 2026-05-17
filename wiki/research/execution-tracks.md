@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-13
-sources: 37
+last_updated: 2026-05-14
+sources: 39
 status: active
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1
 
-> Синтез 37 отчётов (2026-04-08 — 2026-05-12). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity и online/tester diagnostic-сверка.
+> Синтез 39 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
 
 ## 1. Exit Policy Research (04-08)
 
@@ -1381,3 +1381,70 @@ M5 diagnostic-прогон проверял механику `MT4 -> ML -> MT4`,
 отчёты должны фиксировать только конкретные результаты прогонов.
 
 Источник: [2026-05-12-online-tester-execution-reconciliation.md](../../docs/reports/2026-05-12-online-tester-execution-reconciliation.md)
+
+## 19. Entry Path Candidate-Source Audit (05-14)
+
+После online watcher проверки обнаружен разрыв уровнем выше model inputs:
+`entry_path_v1_live_safe` не использует future-derived признаки в `X`, но export
+по-прежнему требует `signal != 0`. В offline этот `signal` приходит из
+`label_all()`, а в live raw `Nero.csv` равен нулю.
+
+Первый ablation отделил offline candidate universe от ML score:
+
+| Mode | Trades | PF | Sequential trades | Sequential PF |
+|---|---:|---:|---:|---:|
+| `signal_only` | 486 | 0.1757 | 237 | 0.1696 |
+| `current_score_gate` | 41 | 7.5737 | 27 | 5.9352 |
+
+Вывод: offline `signal != 0` сам по себе убыточен; положительный вклад даёт
+score-фильтр модели. Но этот score всё ещё применяется поверх недоступного live
+candidate-source.
+
+Затем проверен all-rows ranking без offline gate:
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, 5% coverage | 471 | 0.9661 | 47.77% | -0.0503 |
+| frozen test | 329 | 0.9134 | 46.20% | -0.1275 |
+| frozen test sequential | 133 | 0.5908 | 40.60% | -0.6768 |
+
+Вывод: просто снять `signal != 0` gate и брать направление из
+`fractal0.direction` нельзя. Текущий `pred_ret_24_dir_atr` не переносится на
+all-rows universe без новой постановки обучения. Следующая проверка - causal
+surrogate для `label_all().signal`.
+
+Источник: [2026-05-14-entry-path-all-rows-ranking.md](../../docs/reports/2026-05-14-entry-path-all-rows-ranking.md)
+
+Causal surrogate проверил, можно ли приблизить `label_all().signal` только по
+текущим live-safe PIC-состояниям, без будущих строк:
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, prob >= 0.50 | 43 | 1.0507 | 53.49% | 0.0753 |
+| frozen test | 36 | 1.1537 | 58.33% | 0.2319 |
+| frozen test sequential | 31 | 1.4111 | 64.52% | 0.5854 |
+
+Качество приближения слабое: на test active precision только 20.41%, но recall
+89.09%, direction accuracy на true-active строках 89.09%. Вывод: направление и
+часть candidate-source можно восстановить причинно, но точность кандидатов пока
+низкая; это исследовательский baseline, не production-rule.
+
+Источник: [2026-05-14-entry-path-causal-surrogate.md](../../docs/reports/2026-05-14-entry-path-causal-surrogate.md)
+
+Direct bar model проверил постановку, где модель сама выбирает `BUY`, `SELL`
+или `SKIP` для каждого бара. Обучающая цель строилась по будущей OHLC-доходности
+от следующего бара до close через 24 бара; offline `signal` не использовался как
+gate.
+
+| Check | Trades | PF | Win rate | Mean pnl ATR |
+|---|---:|---:|---:|---:|
+| validation winner, prob >= 0.80 | 1450 | 1.1673 | 51.17% | 0.2392 |
+| frozen test | 1277 | 1.1141 | 48.24% | 0.1631 |
+| frozen test sequential | 274 | 1.1334 | 45.26% | 0.1660 |
+
+Вывод: direct score+direction лучше all-rows ranking и не зависит от offline
+`signal != 0`. Но результат пока слабый: test PF `1.1141`, 2022 год
+отрицательный, correct signal precision на test `45.50%`. Это направление для
+следующего retrain, не готовая production-rule.
+
+Источник: [2026-05-14-entry-path-direct-bar-model.md](../../docs/reports/2026-05-14-entry-path-direct-bar-model.md)
