@@ -1,7 +1,21 @@
 ---
-last_updated: 2026-05-14
+last_updated: 2026-05-16
 sources: 39
-status: active
+status: deprecated
+---
+
+# Execution Tracks (deprecated monolith)
+
+> **Этот файл заменён на 9 подстраниц.** См. [execution-tracks-overview.md](execution-tracks-overview.md) для навигации.
+
+Оригинальный монолит (1450 строк, 39 отчётов) разбит 2026-05-16 на тематические подстраницы. Агентам рекомендуется использовать `search_knowledge` для поиска по конкретному направлению — результаты будут указывать на соответствующую подстраницу вместо этого файла.
+
+Полное содержимое сохранено ниже для обратной совместимости ссылок из внешних отчётов.
+
+---
+
+Ниже — оригинальное содержимое (deprecated, не использовать для навигации):
+
 ---
 
 # Execution Tracks: Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1

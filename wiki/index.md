@@ -20,7 +20,15 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | Page | Covers | Reports |
 |------|--------|---------|
 | [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
-| [execution-tracks.md](research/execution-tracks.md) | Exit Policy, Outcome-Aligned, Triple Barrier, Entry Path v1, trailing-stop family, take/skip v2, frequency follow-up, rule consumer, MT4 trailing execution, execution policy v2, lib_PIC external selection, lib_PIC feature training, original-contour ablation, signal-export parity, cross-instrument robustness, entry-path transfer robustness, portfolio correlation check, telemetry demo launch, MQL runtime architecture snapshot, online inference contract hardening, live-safe ML audit, CPU/GPU reproducibility, entry_path_v1 live-safe CPU baseline, quantile over CPU baseline, MT4 parity for entry_path_v1 live-safe, online/tester execution reconciliation, entry_path candidate-source audit, causal surrogate, direct bar model: parallel execution tracks | 40 reports (04-08 — 05-14) |
+| [execution-tracks-overview.md](research/execution-tracks-overview.md) | Обзорная страница execution-треков: сравнение треков, открытые вопросы, навигация по подстраницам | 39 reports |
+| &nbsp;&nbsp;↳ [execution-tracks-early-research.md](research/execution-tracks-early-research.md) | §1-3: Exit Policy, Outcome-Aligned, Triple Barrier | 4 reports (04-08) |
+| &nbsp;&nbsp;↳ [execution-tracks-entry-path-v1.md](research/execution-tracks-entry-path-v1.md) | §4: Entry Path v1 + quantile research + cross-instrument + PF uplift | 14 reports (04-08 — 04-24) |
+| &nbsp;&nbsp;↳ [execution-tracks-take-skip-v2.md](research/execution-tracks-take-skip-v2.md) | §5: Take/Skip v2 + trailing stop + execution policy + feature ablation | 8 reports (04-18 — 04-22) |
+| &nbsp;&nbsp;↳ [execution-tracks-robustness-plus-portfolio.md](research/execution-tracks-robustness-plus-portfolio.md) | §6-7: Cross-Instrument Robustness + Portfolio Correlation | 2 reports (04-24) |
+| &nbsp;&nbsp;↳ [execution-tracks-telemetry-plus-mql.md](research/execution-tracks-telemetry-plus-mql.md) | §8-9: Telemetry Demo + MQL Runtime Architecture + Contract Hardening | 2 reports (04-27 — 04-29) |
+| &nbsp;&nbsp;↳ [execution-tracks-live-safe-audit.md](research/execution-tracks-live-safe-audit.md) | §10-13: Live-Safe ML Audit + Retrain + Quantile + Take/Skip Probe | 4 reports (05-05) |
+| &nbsp;&nbsp;↳ [execution-tracks-reproducibility-plus-parity.md](research/execution-tracks-reproducibility-plus-parity.md) | §14-17: CPU/GPU Reproducibility + Live-Safe Reproducibility + MT4 Parity | 4 reports (05-07) |
+| &nbsp;&nbsp;↳ [execution-tracks-reconciliation-plus-audit.md](research/execution-tracks-reconciliation-plus-audit.md) | §18-19: Online/Tester Reconciliation + Candidate-Source Audit | 2 reports (05-12 — 05-14) |
 
 ## Concepts
 
