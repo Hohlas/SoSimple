@@ -27,7 +27,7 @@ Feature count: 97 (nearest_k4). All 3-class models produce direction probabiliti
 ## Execution Rules
 
 - Do not use a git worktree; project rules forbid it.
-- Create a new branch from current `entry-path-all-rows-spec` or current branch.
+- Create a new branch from current `entry-path-all-rows-spec` or current branch. Recommended branch name: `improve-direct-direction-results`.
 - Use `./.venv/bin/python`.
 - Each experiment uses its own output directory: `ML/reports/entry_path_v1_<experiment_name>/`.
 - Do not modify existing working code without tests.
@@ -58,7 +58,7 @@ Run existing `benchmark_entry_path_fractal_level_direct_direction.py` with the f
 
 ### What E0e (geometry_only) Removes
 
-From nearest_k4, remove all `nearest_XX_up_*` and `nearest_XX_dn_*` columns (up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48 per slot = 10 columns per slot × 4 slots = 40 columns). Keeps: atr, fractal0_direction, fractal0_price_rank, fractals_above/below_count, nearest_XX_valid, source_index, raw_distance_atr, abs_distance_atr, direction, front, back, strong, break, reverse, power, count, impulse, fractal_atr.
+From nearest_k4, remove all `nearest_XX_up_*` and `nearest_XX_dn_*` columns (up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48 per slot = 10 columns per slot × 4 slots = 40 columns). Keeps model inputs: atr, fractal0_direction, fractal0_price_rank, fractals_above/below_count, nearest_XX_valid, raw_distance_atr, abs_distance_atr, direction, front, back, strong, break, reverse, power, count, impulse, fractal_atr. `source_index` may remain in diagnostic output but must not be included in model input.
 
 ### Diagnostic Questions E0 Answers
 
@@ -194,6 +194,8 @@ else:
 Threshold grid: `0.30, 0.40, 0.50, 0.60`
 Margin grid: `0.00, 0.05, 0.10, 0.15`
 (margin=0.00 is Variant A)
+
+Early stop: if both model variants produce near-degenerate probabilities (for example, fewer than 100 selected validation trades at all thresholds/margins) or all standalone configs have validation PF < 1.0, stop E1 and record a negative result without running the full remaining diagnostic grid.
 
 ### Validation Grid Columns
 
@@ -335,7 +337,7 @@ def test_hgb_uses_balanced_sample_weights():
 .venv/bin/python -m ML.benchmark_entry_path_fractal_level_direct_direction --stage validation-matrix --model hgb
 ```
 
-Using Target D only.
+First pass uses Target D only. If HGB materially improves Target D versus the RF baseline (for example, standalone PF increases by at least 0.03 or crosses a gate boundary), repeat the same HGB validation for A and C before overall winner selection.
 
 - [ ] **E2-S4: Record validation results and move to next experiment**
 
@@ -414,10 +416,12 @@ Before running validation for any config, check:
 if feature_count / estimated_validation_candidates >= 0.10:
     mark overfitting_risk = True
     if feature_count / estimated_validation_candidates >= 0.20:
-        skip config entirely  # not even worth running
+        skip config entirely  # only when the estimate is clearly reliable
 ```
 
 For `zones` (~138 features): need at least 1380 candidates. For `zones_plus_nearest_k4` (~235 features): need at least 2350 candidates.
+
+`estimated_validation_candidates` is only a pre-training filter. Use it conservatively: skip only when the candidate universe is clearly too small from target-frequency results or prior threshold behavior. If the estimate is uncertain, run validation and let the actual `feature_count / validation_candidates` winner gate reject overfit configs.
 
 ### Steps
 
@@ -471,9 +475,9 @@ No frozen test. Compare against nearest_k4 baseline.
 
 ---
 
-## Experiment 4: Tighter Target D Parameters
+## Experiment 4: Target Parameter Grid
 
-**Rationale:** Current Target D (`trail_n=2.0, profit_z=1.0, horizon=24`) yields 46.7% positive rate, making SKIP too easy to predict. Tighter targets produce fewer but potentially higher-quality positives.
+**Rationale:** Current Target D (`trail_n=2.0, profit_z=1.0, horizon=24`) yields 46.7% positive rate, making SKIP too easy to predict. A/C now also pass frequency gates after the normalization fix. This experiment checks whether tighter or softer target thresholds produce a learning signal better aligned with the 24-bar trading validation metric.
 
 ### Parameter Grid
 
@@ -643,9 +647,12 @@ Only execute if direction signal exists but needs improvement. Otherwise skip en
 After ALL experiments E1–E5 complete:
 
 1. Compare all validation results across experiments.
-2. Select the single best validation winner (highest sequential PF among configs passing all gates).
-3. If no config passes all gates: report aggregate results, close as weak research, update CHANGELOG.md and CONTEXT_HANDOFF.md.
-4. If a winner exists: freeze its configuration and run **one** frozen test.
+2. Write aggregate comparison artifacts:
+   - `ML/reports/entry_path_v1_direct_direction_improvement/validation_leaderboard.csv`
+   - `ML/reports/entry_path_v1_direct_direction_improvement/summary.json`
+3. Select the single best validation winner (highest sequential PF among configs passing all gates).
+4. If no config passes all gates: report aggregate results, close as weak research, update CHANGELOG.md and CONTEXT_HANDOFF.md.
+5. If a winner exists: freeze its configuration and run **one** frozen test.
 
 ```bash
 # Example: if E1 binary HGB with margin=0.10 wins
@@ -653,7 +660,7 @@ After ALL experiments E1–E5 complete:
   --config "<frozen_config>"
 ```
 
-5. Compare frozen test against baselines:
+6. Compare frozen test against baselines:
 
 | Baseline | Test PF | Sequential PF | Trades / sequential trades |
 |---|---:|---:|---:|
@@ -681,6 +688,7 @@ Apply per experiment:
 
 - **After adding a new module** (new .py file): update `MODULE_INDEX.md` and `ML/README.md`.
 - **After each experiment**: report changed files and validation results, but do NOT update `CHANGELOG.md` or `CONTEXT_HANDOFF.md` yet.
+- **After each experiment**: append its best validation rows to the aggregate leaderboard inputs, so overall winner selection is reproducible rather than manual.
 - **After all experiments complete or at stop point**: update `CHANGELOG.md` and `CONTEXT_HANDOFF.md`.
 - **After frozen test** (if winner found): write `docs/reports/2026-05-1X-entry-path-<experiment>.md` with full results.
 
