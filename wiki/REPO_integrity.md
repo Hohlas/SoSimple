@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-19 10:18 UTC · git `aec8a42`
+> Auto-generated 2026-05-19 16:05 UTC · git `27564df`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1190 files  ·  **Commit**: `aec8a42`  ·  **Generated**: 2026-05-19 10:18 UTC
+**Tracked**: 1191 files  ·  **Commit**: `27564df`  ·  **Generated**: 2026-05-19 16:05 UTC
 
 ## Root Docs
 
@@ -1232,12 +1232,13 @@
 |------|-------------|----------|------|------|
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-05-17 | 89KB | `11a5246a` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-05-16 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-19 | 3KB | `1993181b` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-19 | 25KB | `bb08da04` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-19 | 3KB | `52c7ed2e` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-19 | 25KB | `bb58aa31` |
+| [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-05-19 | 3KB | `ef311229` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-05-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-05-17 | 20KB | `97413667` |
 | [wiki/research/execution-tracks-live-safe-audit.md](wiki/research/execution-tracks-live-safe-audit.md) |  | 2026-05-17 | 11KB | `0b99a094` |
-| [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md) |  | 2026-05-19 | 3KB | `e2a89d4d` |
+| [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md) |  | 2026-05-19 | 4KB | `ee531018` |
 | [wiki/research/execution-tracks-reconciliation-plus-audit.md](wiki/research/execution-tracks-reconciliation-plus-audit.md) |  | 2026-05-17 | 5KB | `f3395a90` |
 | [wiki/research/execution-tracks-reproducibility-plus-parity.md](wiki/research/execution-tracks-reproducibility-plus-parity.md) |  | 2026-05-17 | 5KB | `1ab23523` |
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-05-17 | 6KB | `91183bdb` |

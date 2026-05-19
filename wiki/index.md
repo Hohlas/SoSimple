@@ -20,7 +20,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | Page | Covers | Reports |
 |------|--------|---------|
 | [signal-quality-research.md](research/signal-quality-research.md) | V2 -> V3 -> Path Atlas -> Quality Filter -> Archetype Bridge: main research arc | 7 reports (04-01 — 04-04) |
-| [execution-tracks-overview.md](research/execution-tracks-overview.md) | Обзорная страница execution-треков: сравнение треков, открытые вопросы, навигация по подстраницам | 39 reports |
+| [execution-tracks-overview.md](research/execution-tracks-overview.md) | Обзорная страница execution-треков: сравнение треков, открытые вопросы, навигация по подстраницам | 41 reports |
 | &nbsp;&nbsp;↳ [execution-tracks-early-research.md](research/execution-tracks-early-research.md) | §1-3: Exit Policy, Outcome-Aligned, Triple Barrier | 4 reports (04-08) |
 | &nbsp;&nbsp;↳ [execution-tracks-entry-path-v1.md](research/execution-tracks-entry-path-v1.md) | §4: Entry Path v1 + quantile research + cross-instrument + PF uplift | 14 reports (04-08 — 04-24) |
 | &nbsp;&nbsp;↳ [execution-tracks-take-skip-v2.md](research/execution-tracks-take-skip-v2.md) | §5: Take/Skip v2 + trailing stop + execution policy + feature ablation | 8 reports (04-18 — 04-22) |
@@ -29,6 +29,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-live-safe-audit.md](research/execution-tracks-live-safe-audit.md) | §10-13: Live-Safe ML Audit + Retrain + Quantile + Take/Skip Probe | 4 reports (05-05) |
 | &nbsp;&nbsp;↳ [execution-tracks-reproducibility-plus-parity.md](research/execution-tracks-reproducibility-plus-parity.md) | §14-17: CPU/GPU Reproducibility + Live-Safe Reproducibility + MT4 Parity | 4 reports (05-07) |
 | &nbsp;&nbsp;↳ [execution-tracks-reconciliation-plus-audit.md](research/execution-tracks-reconciliation-plus-audit.md) | §18-19: Online/Tester Reconciliation + Candidate-Source Audit | 2 reports (05-12 — 05-14) |
+| &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §20-21: Direct Direction Improvement + Chain Audit | 2 reports (05-15 — 05-18) |
 
 ## Concepts
 
