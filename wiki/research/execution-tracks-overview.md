@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-16
-sources: 39
+last_updated: 2026-05-18
+sources: 41
 status: active
 ---
 
 # Execution Tracks: Overview
 
-> Синтез 39 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
+> Синтез 41 отчёта (2026-04-08 — 2026-05-18). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка, candidate-source audit и direct-direction chain audit.
 
 ## Сравнение треков (на сегодня)
 
@@ -20,6 +20,7 @@ status: active
 | fav_3_vs_12 standalone | no stable threshold | **Rejected — closed** | Not viable as independent second system |
 | outcome-aligned | Нет winner | Failed validation | Execution-aware labels |
 | take/skip v2 frequency execution | MT4 `TrailATR=8, TP=0`: PF=3.77, 56 trades, net=24521.88 | **Основной frequent candidate** | Искать независимую систему, не подбирать TP дальше |
+| direct-direction binary RF | PF=1.226, SeqPF=1.537, BUY PF=1.904, SELL PF=0.618 | **Audit fail for continuation** | Rebuild raw/current-row feature and target contract before any tuning |
 
 ## Открытые вопросы
 
@@ -27,6 +28,7 @@ status: active
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
 3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
 4. Нужна следующая независимая некоррелированная система; дальнейшая подгонка `TrailATR/TP` внутри текущего `frequency` набора имеет убывающую ценность.
+5. Direct-direction ветку нельзя продолжать подбором порогов: найден target-dependent feature normalization и неверные единицы distance/ATR.
 
 ## Содержание (подстраницы)
 
@@ -42,3 +44,4 @@ status: active
 | [execution-tracks-live-safe-audit.md](execution-tracks-live-safe-audit.md) | §10-13 Live-Safe Audit + Retrain | 4 |
 | [execution-tracks-reproducibility-plus-parity.md](execution-tracks-reproducibility-plus-parity.md) | §14-17 Reproducibility + MT4 Parity | 4 |
 | [execution-tracks-reconciliation-plus-audit.md](execution-tracks-reconciliation-plus-audit.md) | §18-19 Reconciliation + Candidate-Source | 2 |
+| [execution-tracks-direct-direction-audit.md](execution-tracks-direct-direction-audit.md) | §20-21 Direct Direction + Chain Audit | 2 |
