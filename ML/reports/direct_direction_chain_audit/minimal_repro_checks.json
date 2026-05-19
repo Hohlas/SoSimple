@@ -1,0 +1,52 @@
+{
+  "date": "2026-05-18",
+  "status": "audit_only",
+  "test_policy": "No new model or threshold was selected from test. Test artifacts were inspected only because the 2026-05-15 frozen test had already been published.",
+  "checks": [
+    {
+      "name": "binary_summary_winner_vs_frozen_config",
+      "source_files": [
+        "ML/reports/entry_path_v1_binary_direction/summary.json",
+        "ML/reports/entry_path_v1_binary_direction/frozen_test.json"
+      ],
+      "command": "./.venv/bin/python -c \"import json; s=json.load(open('ML/reports/entry_path_v1_binary_direction/summary.json')); f=json.load(open('ML/reports/entry_path_v1_binary_direction/frozen_test.json')); print(s['winner']['config'], s['winner']['one_sided_candidate'], s['winner']['buy_sell_balance'], f['config'], s['winner']['config']==f['config'])\"",
+      "observed": {
+        "summary_winner": "D_hgb_buy0.30_sell0.60_m0.05_standalone",
+        "summary_one_sided": true,
+        "summary_balance": 0.08959088555152771,
+        "frozen_config": "D_rf_buy0.40_sell0.60_m0.10",
+        "same_config": false
+      },
+      "conclusion": "Automatic winner artifact and frozen-test config are inconsistent. The RF frozen test can still be valid, but candidate selection is not mechanically reproducible from summary.json."
+    },
+    {
+      "name": "frozen_test_side_year_breakdown",
+      "source_file": "ML/reports/entry_path_v1_binary_direction/frozen_test_grid.csv",
+      "command": "./.venv/bin/python -c \"import pandas as pd; from ML.entry_path_trade_filter import compute_pf; f=pd.read_csv('ML/reports/entry_path_v1_binary_direction/frozen_test_grid.csv', sep=';', usecols=['time','candidate_signal','true_ret_24_dir_atr','selected']); f=f[f['selected'].astype(str).str.lower().isin(['true','1'])].copy(); f['year']=pd.to_datetime(f['time']).dt.year; print(f.groupby(['year','candidate_signal']).size())\"",
+      "observed_summary": {
+        "buy_pf": 1.9042097025434523,
+        "sell_pf": 0.6178347394623491,
+        "sell_years": {
+          "2022": {"trades": 47, "pf": 0.189417, "mean_pnl_atr": -2.492869},
+          "2023": {"trades": 347, "pf": 0.858061, "mean_pnl_atr": -0.195795},
+          "2024": {"trades": 285, "pf": 0.531298, "mean_pnl_atr": -0.698040},
+          "2025": {"trades": 158, "pf": 0.577995, "mean_pnl_atr": -0.673088},
+          "2026": {"trades": 6, "pf": 0.001369, "mean_pnl_atr": -1.698474}
+        }
+      },
+      "conclusion": "SELL weakness is not one isolated bad year. It is structurally bad across the already-used frozen test artifact."
+    },
+    {
+      "name": "top_level_updn_perturbation_changes_fractal_updn_normalization",
+      "source_file": "processing/normalize.py",
+      "command": "Synthetic one-row check: keep fractal0/fractal1 identical, change only top-level up_*/dn_* from 1.0 to 10000.0, run normalize_rowwise(include_predict_in_front_back_pool=False), compare normalized fractal1 Up/Dn fields.",
+      "observed": {
+        "top_level_only_changed": true,
+        "fractal1_equal": false,
+        "changed_fields": ["up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"]
+      },
+      "conclusion": "Top-level target columns influence normalized fractal Up/Dn feature values. Any model trained from already-normalized labeled split CSV can inherit target-dependent feature scaling."
+    }
+  ],
+  "primary_verdict": "Do not continue threshold tuning on the current normalized split features. First rebuild direct-direction features from raw/current-row data with a feature normalization path that is independent of target-only columns."
+}
