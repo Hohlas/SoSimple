@@ -57,6 +57,12 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
 
 Перед любым запуском, который будет интерпретироваться как проверка качества ML, выполнить [`ML Leakage Preflight Checklist`](ML/ml_leakage_preflight_checklist.md). Если чеклист не проходит, запуск допускается только как `DIAGNOSTIC_ONLY`: можно проверять механику файлов и логов, но нельзя делать вывод о прибыльности или соответствии online/test.
 
+Связанные источники:
+- [`docs/ML/ml_leakage_preflight_checklist.md`](ML/ml_leakage_preflight_checklist.md) — обязательный gate перед ML test / MT4 / online.
+- [`docs/reports/2026-05-05-live-safe-ml-audit.md`](reports/2026-05-05-live-safe-ml-audit.md) — доказанные unsafe-признаки и verdict старых систем.
+- [`docs/processing/online_causal_preprocessing.py.md`](processing/online_causal_preprocessing.py.md) — online-safe preprocessing contract.
+- [`docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md`](superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) — direct-direction правила: target-only `up_*/dn_*`, diagnostic-only `source["signal"]`, правила по `fractal*.Up/Dn`.
+
 | # | Этап | Код | Docs | Статус |
 |---|------|-----|------|--------|
 | 1 | Сортировка фракталов | `processing/` | `docs/processing/` | 🏁 |
