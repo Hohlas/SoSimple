@@ -1,144 +1,65 @@
 # ML Leakage Preflight Checklist
 
-> Назначение: обязательная проверка перед historical test, MT4 tester-прогоном или online-запуском ML-сигналов. Главная цель — не допустить заглядывания вперёд: модель не должна получать признаки, которые на реальном баре ещё неизвестны.
+> Canonical gate перед training, validation/test benchmark, signal export, MT4 tester и online runner. Цель: модель получает только данные, доступные на момент торгового решения.
 
-## Когда применять
+Если любой пункт `FAIL` или `UNKNOWN`, запуск допустим только как `DIAGNOSTIC_ONLY`: можно проверять механику файлов/логов, но нельзя делать вывод о качестве ML или прибыльности.
 
-Применять перед каждым запуском, где результат может быть использован как доказательство качества ML:
+## Role Contract
 
-- обучение новой модели;
-- validation/test benchmark;
-- экспорт `ml_signals.csv`;
-- MT4 tester-прогон;
-- online watcher / runner;
-- сравнение online и historical test.
+Перед запуском каждое поле должно иметь роль:
 
-Не применять как строгий production-gate только для явно помеченной механической диагностики цепочки `MT4 -> Python -> CSV -> MT4`, если её результаты не интерпретируются как качество модели.
+| Роль | Можно во вход модели | Правило |
+|---|---:|---|
+| `live_safe_input` | да | Доступно на decision time и воспроизводимо online тем же способом |
+| `row_level_target` | нет | Будущий результат для обучения/оценки текущей строки; только для target construction |
+| `future_derived_label` | нет | Любая offline-разметка из будущих баров или будущего path |
+| `diagnostic_only` | нет | Поле/score/rule для replay, сверки или анализа; не production input |
+| `unknown` | нет | Запрещено, пока не доказаны источник и момент доступности |
 
-## Критерий допуска
+Known legacy examples only: `predict`, `ret_*`, `fav_*`, `adv_*`, row-level `up_3..dn_48` are not inputs. `fractal*.Up/Dn` is classified by source and decision-time availability, not by name.
 
-Запуск разрешён только если все пункты из раздела **Обязательные проверки** имеют статус `PASS`.
+## Required Gates
 
-Если хотя бы один пункт имеет `FAIL` или `UNKNOWN`, запуск можно делать только в режиме диагностики механики, с явной пометкой:
+| # | Gate | PASS | FAIL |
+|---:|---|---|---|
+| 1 | Decision time | Зафиксированы bar, open/close, timeframe, instrument | Непонятно, что известно модели на момент решения |
+| 2 | Temporal split | Train / validation / test идут по времени; no shuffle | Будущее попало в train/validation |
+| 3 | Feature role audit | Есть feature/source contract: name, role, source, available_at, normalization, model_input | Есть input с ролью target/future/diagnostic/unknown |
+| 4 | Training-online parity | Feature names/count/order/source/normalization совпадают | Online не может создать training features или заполняет пропуски нулями |
+| 5 | Online preprocessing | Только sort/validate/live-safe normalize; no future labels | Online вызывает labeling или строит future-derived поля |
+| 6 | Fractal order | Проверено убывание времени внутри `fractal*`; равные timestamps допустимы | `fractal0`/слоты имеют разный смысл между режимами |
+| 7 | Normalization pools | Input transforms считаются только из live-safe inputs; global scaler fit only train | Input масштаб зависит от target/future/diagnostic fields или full dataset |
+| 8 | ATR units | Зафиксировано raw/scaled/ratio и одинаково во всех режимах | Training и online используют разные единицы ATR |
+| 9 | Constant inputs | Проверены unique/variance/NaN/zero-rate на train | Константный input оставлен как информативный без решения |
+| 10 | Model/rule freeze | Checkpoint, target, threshold, filter, exit frozen до test | Test использован для выбора гипотезы, модели или порога |
+| 11 | Target quality | BUY/SELL/SKIP balance, ambiguous rate, yearly BUY/SELL positives проверены на validation | Target слишком редкий, односторонний или неоднозначный без решения |
+| 12 | Trading benchmark separation | Target construction отделён от PF/sequential PF/execution-mode checks | Метрика target смешана с trading PF или exit-policy diagnostic |
+| 13 | Direction source | Direction heuristic используется как input only, если не доказано обратное | Heuristic direction принят как готовое направление сделки без проверки |
+| 14 | Export/MT4 parity | Сверены rows, nonzero, unique time, direction counts, opened trades | Python и MT4 исполняют разные сигналы |
+| 15 | Runtime fail-closed | Несовместимый checkpoint/rule блокирует export | Watcher пишет `ml_signals.csv` при неподдержанном contract |
 
-```text
-ML result is not valid for production/backtest comparison.
-Reason: unresolved leakage/preprocessing contract risk.
-```
+## Normalization Rules
 
-## Обязательные проверки
+- Row-level targets и input features нормализуются раздельно.
+- Per-row normalization pool может содержать только поля, доступные в этой строке на decision time.
+- Global-fit transforms fit-ятся только на train и затем применяются к validation/test/online.
+- Online `predict=0` или отсутствующее поле не считается эквивалентом training-значения.
+- Повторная runtime-нормализация должна пропускаться, если snapshot уже нормализован.
 
-| # | Проверка | Зачем | Чем подтвердить | FAIL, если |
-|---:|---|---|---|---|
-| 1 | Зафиксирован момент принятия решения | Нужно знать, какие данные доступны модели на баре `t` | В отчёте указан `decision_time`: open/close бара, таймфрейм, инструмент | Непонятно, на каком баре и в какой момент модель "видит" данные |
-| 2 | Split строго временной | Будущее не должно попадать в train/validation | Указаны границы train / validation / test; нет shuffle по строкам | Есть случайное перемешивание временных строк до split |
-| 3 | Целевые и future-derived поля не входят во вход модели | Модель должна предсказывать результат, а не читать ответ | Список input columns сравнен со списком target/label/future-derived columns | Во входе есть `predict`, `ret_*`, `ret_dir_atr_lag1`, `fav_*`, `adv_*` или другие поля из будущих баров |
-| 4 | Row features разделены на live-safe и future-derived | Часть строковых признаков может быть доступна online, часть нет | Есть явный allowlist live-safe полей | Недостающие online-поля молча заполняются нулями и подаются в модель |
-| 5 | Training и online feature contract совпадают | Модель должна получать одинаковое число признаков с одинаковым смыслом | Для checkpoint зафиксированы input feature names/count; online builder воспроизводит их без заглушек | Training builder создаёт N признаков, online честно создаёт M<N, а недостающие признаки заполняются `0` |
-| 6 | Фракталы отсортированы одинаково | `fractal0` должен означать одно и то же в train/test/online | Проверка `fractal_time[i] >= fractal_time[i+1]` после подготовки | `fractal0` в одном режиме свежий, а в другом старый или случайный |
-| 7 | Нормализация применена тем же способом | Модель не должна получать другой масштаб чисел | Проверка диапазонов: prices после normalize в ожидаемом диапазоне; raw prices не попали в model input | Training использовал нормализованные поля, а online подаёт raw цены |
-| 8 | Нормализационные пулы не зависят от future-derived полей | Даже построчная нормализация может исказить live-признаки, если в её пул добавлен будущий признак | Описано, какие поля входят в per-row pools; `predict` и future targets не влияют на live feature normalization | В training `predict` участвует в пуле `front/back`, а online вместо него используется `0` |
-| 9 | Labeling не запускается в online-пути | Online не знает будущий исход сделки | В online runner нет вызова `label_all()` или аналогов future label build | Online перед inference создаёт `ret_*`, `fav_*`, `adv_*` по будущим барам |
-| 10 | Глобальная нормализация не использует будущий test/online период | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train, inference применяет сохранённые параметры | scaler fit-ится на полном датасете включая validation/test/forward |
-| 11 | ATR-контракт совпадает в train/test/online | ATR может быть raw, ratio или scaled; checkpoint должен ждать ровно один вариант | В отчёте указано, ждёт ли checkpoint raw `ATR`, `ATR_ratio` или scaler-normalized ATR | Training использовал scaler-normalized ATR, а online подаёт raw ATR, или наоборот |
-| 12 | Константные признаки выявлены до retrain | Мёртвые признаки не дают информации и маскируют реальный feature contract | В отчёте есть проверка variance/unique count по input columns | Признак константный во всём train, но оставлен как якобы информативный input без явного решения |
-| 13 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test; в отчёте указан путь | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
-| 14 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Есть сверка количества сигналов: rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без отдельной сверки |
-| 15 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка, а не silent fallback | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
+## Diagnostic Rules
 
-## Быстрая ручная проверка признаков
+- Высокий historical PF не доказывает online-valid систему без `PASS` по этому gate.
+- Legacy replay/export доказывает только воспроизводимость старого пути, не live-safe качество.
+- Система, зависящая от failed baseline/checkpoint/score, наследует его `FAIL` до rebuild.
+- Old score, old threshold и offline signal можно использовать только в явно помеченном diagnostic mode.
 
-Перед запуском открыть список входных колонок модели и разделить его на три группы:
-
-| Группа | Примеры | Допуск |
-|---|---|---|
-| Доступно на текущем баре | `time`, `ATR`, `session_hour`, `weekday`, отсортированные `fractal*.price/time/direction` | Можно использовать |
-| Доступно только после будущих баров | `predict`, `ret_*`, `ret_dir_atr_lag1`, `fav_*`, `adv_*`, future outcome, future path | Нельзя использовать как input |
-| Неясно | любые engineered-поля без описания времени доступности | Запуск запрещён до уточнения |
-
-Правило простое: если непонятно, когда поле становится известно, считать его запрещённым до доказательства обратного.
-
-### Особый случай: `predict`
-
-`predict` нельзя считать обычным live-признаком.
-
-В training pipeline `predict` строится через будущую цель, поэтому это future-derived поле. В live `Nero.csv` значение `predict=0` не является эквивалентом training `predict`: это не "нейтральное значение", а другой смысл поля. Если checkpoint обучался с `predict` во входе, online не должен подменять его нулём.
-
-Отдельный риск: `normalize_rowwise()` исторически нормализует `abs(predict)` в одном пуле с `front/back`. Если в training в этот пул входит реальный future-derived `predict`, а online туда попадает `0`, то меняется не только сам `predict`, но и нормализация `front/back`. Для live-safe retrain нужно либо исключить `predict` из входа и из live-нормализационных пулов, либо явно доказать другой эквивалентный контракт.
-
-### Особый случай: `ret_dir_atr_lag1`
-
-`ret_dir_atr_lag1` не становится безопасным только потому, что он сдвинут на одну строку. Если он вычислен из `ret_6_dir_atr.shift(1)`, то исходный `ret_6_dir_atr` уже содержит будущие бары относительно своей строки. Значит, сдвиг всё ещё может смотреть вперёд относительно текущего решения.
-
-## Нормализация
-
-`normalize_rowwise()` сама по себе не является leakage, если её параметры считаются только внутри текущей строки по уже известным фракталам. Это отличается от глобальных scaler-ов, где параметры считаются по набору строк.
-
-Проверять нужно две разные вещи:
-
-- для rowwise-нормализации: в её пул не должны попадать future-derived поля, влияющие на live-признаки;
-- для глобальной нормализации (`StandardScaler`, `RobustScaler`, min/max по датасету): параметры должны fit-иться только на train и затем применяться к validation/test/online.
-
-ATR нужно проверять отдельно. Если checkpoint обучался на raw `ATR`, online должен подавать raw `ATR`. Если checkpoint обучался на scaler-normalized `ATR`, online обязан применять тот же scaler с сохранёнными train-параметрами. В текущем documented path `normalize_atr_train()` / `normalize_atr_inference()` считаются устаревшими, но каждый новый checkpoint должен явно фиксировать свой ATR-контракт.
-
-## Проверка информативности признаков
-
-Перед retrain проверить каждый input feature:
-
-- `unique_count`;
-- долю `NaN`;
-- долю нулей;
-- стандартное отклонение на train.
-
-Если признак константный на всём train, его нельзя оставлять как "информативный" вход без явного решения. Например, если `range_atr_6` или `body_atr_3` получаются нулями из-за отсутствующих OHLC rolling columns, это не leakage, но такой признак нужно удалить из feature builder до retrain или явно пометить как intentionally disabled.
-
-## Равенство training и online feature contract
-
-Для каждого checkpoint должен быть сохранён контракт входа:
-
-- список feature names;
-- количество признаков;
-- порядок признаков;
-- источник каждого признака;
-- момент времени, когда признак становится известен;
-- способ нормализации.
-
-Если training builder создаёт 19 row features, а online может честно создать только 5, это `FAIL`. Оставшиеся 14 признаков нельзя заполнять нулями. Их нужно убрать из training до обучения новой модели или заменить live-safe признаками с тем же смыслом.
-
-## Минимальный пакет доказательств в отчёте
+## Minimal Evidence
 
 Каждый test/online отчёт должен содержать:
 
-- путь к checkpoint;
-- путь к rule JSON, если правило отбора есть;
-- список input columns или ссылку на feature builder;
-- список запрещённых future-derived колонок и подтверждение, что их нет во входе;
-- feature count и порядок признаков для checkpoint;
-- границы train / validation / test;
-- результат проверки сортировки фракталов;
-- результат проверки нормализации;
-- ATR-контракт: raw / ratio / scaler-normalized;
-- результат проверки константных признаков;
-- количество сигналов в Python export;
-- количество реально открытых сделок в MT4, если был MT4 tester;
-- явный verdict: `PASS`, `FAIL` или `DIAGNOSTIC_ONLY`.
-
-## Запрещённые практики
-
-- Заполнять отсутствующие online-признаки нулями без явного разрешения в контракте модели.
-- Подменять future-derived `predict` нулём в online и считать это совместимым с training.
-- Оставлять в training признаки, которые online не может честно воспроизвести.
-- Давать future-derived полям влиять на нормализацию live-признаков.
-- Использовать один и тот же `test` для подбора порогов и для финального доказательства.
-- Сравнивать online и backtest, если online preprocessing отличается от training/test preprocessing.
-- Считать высокий `PF` доказательством качества, если не пройдены проверки входных признаков.
-- Называть diagnostic watcher production-ready, если он проверяет только файловую цепочку.
-
-## Решение по итогам проверки
-
-| Итог | Что делать |
-|---|---|
-| `PASS` | Можно запускать test/MT4/online и интерпретировать результат как ML-проверку |
-| `FAIL` | Остановить ML-проверку, исправить контракт данных или переобучить модель |
-| `UNKNOWN` | Считать как `FAIL`, пока не найдено подтверждение |
-| `DIAGNOSTIC_ONLY` | Можно проверять механику файлов и логов, но нельзя делать вывод о прибыльности модели |
+- checkpoint/rule paths и frozen timestamp или commit;
+- feature/source contract или ссылку на builder, который его генерирует;
+- split boundaries и подтверждение, что test не использовался для выбора;
+- результаты gates 1-15: `PASS`/`FAIL`/`UNKNOWN`;
+- export counts и MT4 opened trades, если был tester;
+- final verdict: `PASS`, `FAIL`, `UNKNOWN` или `DIAGNOSTIC_ONLY`.
