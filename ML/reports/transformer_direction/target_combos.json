@@ -1,0 +1,23 @@
+{
+  "total_combos": 18,
+  "combo_names": [
+    "reg_h12",
+    "reg_h6",
+    "tb_h12_tp2_sl1",
+    "tb_h12_tp2_sl2",
+    "tb_h12_tp4_sl1",
+    "tb_h12_tp4_sl2",
+    "tb_h12_tp6_sl1",
+    "tb_h12_tp6_sl2",
+    "tb_h24_tp2_sl1",
+    "tb_h24_tp2_sl2",
+    "tb_h24_tp4_sl1",
+    "tb_h24_tp4_sl2",
+    "tb_h24_tp6_sl1",
+    "tb_h24_tp6_sl2",
+    "tb_h6_tp2_sl1",
+    "tb_h6_tp2_sl2",
+    "tb_h6_tp4_sl1",
+    "tb_h6_tp4_sl2"
+  ]
+}
