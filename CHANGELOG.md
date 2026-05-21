@@ -1,6 +1,27 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
-> **Предупреждение**: Читай только первые 200 строк этого файла.
+> **Предупреждение**: Читай только первые 300 строк этого файла.
+
+## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
+
+### Добавлено
+- `ML/prepare_raw_features.py` — raw up_N/dn_N из OHLC (1000 колонок, sliding_window_view)
+- `ML/transformer_direction_train.py` — DataLoader, frozen RF baseline, fine-tune loop
+- 18 жизнеспособных комбинаций таргетов: 16 TB + 2 Reg (Trail — on-demand)
+
+### Результаты
+- **TB**: 16 комбинаций, лучший BUY PF=1.35 (val), Gate A провален
+- **Reg**: r_up=0.36, r_dn=0.41, лучший PF=1.21 (margin=4, 41 сделка) — провален
+- **Trail**: BUY PF=2.41 (58 сделок, 0.6% utilisation) — формально пройден, но ненадёжно
+- **Fine-tune Transformer**: хуже frozen RF на всех комбинациях
+- **SeqPF признан невалидной метрикой**: shuffle-тест показал разброс 0.68–4728 при одном и том же PF=1.10
+- **Вердикт**: fractal features не несут direction-сигнала. Тупик для direct direction prediction.
+
+### Исправлено
+- Raw up/dn баг: fractal.price нормализован (ratio), исправлено на OHLC close
+- Checkpoint загрузка: num_classes=10 не был в model_kwargs
+
+<!-- подробности: docs/reports/2026-05-21-transformer-direction.md -->
 
 ## [2026-05-21] - Direct Direction Rebuild (E0–E5 audit + исправление)
 
