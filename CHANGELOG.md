@@ -2,6 +2,28 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-21] - Direct Direction Rebuild (E0–E5 audit + исправление)
+
+### Добавлено
+- `ML/prepare_raw_features.py` — извлечение сырых признаков из OHLC (raw prices, raw ATR)
+- `ML/benchmark_buy_only_direction.py` — BUY-only RF с исправленными признаками, directional close target, corrected winner protocol
+
+### Исправлено (6 критических ошибок)
+- Feature-in-target contamination: признаки строятся из OHLC raw prices (не из normalized CSV)
+- Неверные единицы расстояния: `(raw_price_i − raw_price_0) / raw_ATR`
+- A/C targets из normalized значений: таргеты строятся из OHLC
+- Winner selection protocol: negative_years=0 gate, сортировка по sequential PF
+- SELL anti-signal: полный отказ от SELL (BUY-only)
+- Шумный trailing-profit таргет: заменён на directional close
+
+### Результаты
+- Phase A validation: PF=1.77, SeqPF=1.99 (83 сделки) — gate passed
+- Phase B (+regime features): PF=1.64, SeqPF=2.22 — regime features не улучшили
+- Phase D frozen test: **PF=0.99, SeqPF=1.96** (639 сделок) — gate FAILED
+- **Вердикт**: fractal-level признаки не несут direction-сигнала. Test BUY win rate 50.5% (случайный).
+- Рекомендация: не деплоить; исследовать Transformer encoder + score gate.
+<!-- подробности: docs/reports/2026-05-18-direct-direction-rebuild.md -->
+
 ## [2026-05-16] - Wiki: execution-tracks.md decomposition
 
 ### Изменено

@@ -1,0 +1,45 @@
+{
+  "phase": "D (frozen test)",
+  "config": {
+    "target_threshold_atr": 0.0,
+    "model_type": "rf",
+    "buy_threshold": 0.6,
+    "feature_count": 54,
+    "validation_trades": 83,
+    "validation_pf": 1.7707654695323707,
+    "validation_sequential_pf": 1.9889440958324898,
+    "validation_sequential_trades": 35,
+    "buy_trades": 83,
+    "sell_trades": 0,
+    "buy_pf": 1.7707654695323707,
+    "sell_pf": 0.0,
+    "buy_win_rate": 0.6024096385542169,
+    "sell_win_rate": 0.0,
+    "negative_years": 0,
+    "yearly_pf": {
+      "2019": 6.188652290381063,
+      "2020": 1.3699228994070727,
+      "2021": 1.2115116759904203,
+      "2022": 2.786780352082775
+    }
+  },
+  "feature_count": 54,
+  "validation_trades": 639,
+  "validation_pf": 0.9892166466271776,
+  "validation_sequential_pf": 1.962377559865915,
+  "validation_sequential_trades": 52,
+  "buy_trades": 639,
+  "sell_trades": 0,
+  "buy_pf": 0.9892166466271776,
+  "sell_pf": 0.0,
+  "buy_win_rate": 0.5054773082942097,
+  "sell_win_rate": 0.0,
+  "negative_years": 0,
+  "yearly_pf": {
+    "2022": Infinity,
+    "2023": 1.8049489607324052,
+    "2024": Infinity,
+    "2025": 0.8687985740036369,
+    "2026": 0.9992811428228336
+  }
+}

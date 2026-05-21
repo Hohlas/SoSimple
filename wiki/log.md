@@ -422,3 +422,4 @@
 ## 2026-05-18 - Ingest direct-direction audit
 - Added `wiki/research/execution-tracks-direct-direction-audit.md` covering `docs/reports/2026-05-15-direct-direction-improvement.md` and `docs/audit/2026-05-18-codex-direct-direction-chain-audit.md`.
 - Updated `wiki/index.md` and `wiki/research/execution-tracks-overview.md` coverage from 39/40 to 41 execution-track reports.
+2026-05-21 23:00 — Ingest: added Direct Direction Rebuild (§22) to execution-tracks-direct-direction-audit.md; updated index (3 reports). Ran wiki.py generate.

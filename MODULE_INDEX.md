@@ -120,6 +120,9 @@
 | [ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | DataLoader → отчёт | — | 🏁 |
 | [benchmark_outcome_targets.py](ML/benchmark_outcome_targets.py) | Бенчмарк outcome targets: сравнение качества разных таргетов | DataLoader → JSON отчёт | — | 🏁 |
 | [benchmark_entry_path_trade_filter.py](ML/benchmark_entry_path_trade_filter.py) | Бенчмарк entry_path_v1 trade filter | — → JSON отчёт | — | 🏁 |
+| [prepare_raw_features.py](ML/prepare_raw_features.py) | Извлечение сырых признаков из OHLC для direct-direction (Phase 0) | OHLC → raw features CSV | — | ✅ |
+| [benchmark_buy_only_direction.py](ML/benchmark_buy_only_direction.py) | BUY-only RF с исправленными признаками (Phase A/B/D rebuild) | raw features + OHLC → benchmark report | — | ✅ |
+| **Direct Direction Rebuild** | Эксперименты завершены с честным отрицательным вердиктом: frozen test провален (PF < 0.8 на test). Направление признано бесперспективным в текущей постановке. | — | — | 🏁 |
 
 ## Tests
 
@@ -246,4 +249,4 @@
 ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 
 ---
-**Последнее обновление**: 2026-04-27
+**Последнее обновление**: 2026-05-21

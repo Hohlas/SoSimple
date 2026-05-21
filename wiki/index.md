@@ -29,7 +29,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-live-safe-audit.md](research/execution-tracks-live-safe-audit.md) | §10-13: Live-Safe ML Audit + Retrain + Quantile + Take/Skip Probe | 4 reports (05-05) |
 | &nbsp;&nbsp;↳ [execution-tracks-reproducibility-plus-parity.md](research/execution-tracks-reproducibility-plus-parity.md) | §14-17: CPU/GPU Reproducibility + Live-Safe Reproducibility + MT4 Parity | 4 reports (05-07) |
 | &nbsp;&nbsp;↳ [execution-tracks-reconciliation-plus-audit.md](research/execution-tracks-reconciliation-plus-audit.md) | §18-19: Online/Tester Reconciliation + Candidate-Source Audit | 2 reports (05-12 — 05-14) |
-| &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §20-21: Direct Direction Improvement + Chain Audit | 2 reports (05-15 — 05-18) |
+| &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §20-22: Direct Direction Improvement + Chain Audit + Rebuild | 3 reports (05-15 — 05-21) |
 
 ## Concepts
 
