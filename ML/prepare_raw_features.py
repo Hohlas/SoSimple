@@ -30,6 +30,7 @@ import pickle
 
 import numpy as np
 import pandas as pd
+from numpy.lib.stride_tricks import sliding_window_view
 
 from ML.fractal_level_feature_builder import FRACTAL_FIELDS, parse_fractal
 
@@ -58,6 +59,57 @@ CONTAMINATED_FIELDS = {
     "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48",
     "up_3", "dn_3", "up_6", "dn_6",
 }
+
+HORIZONS_FOR_RAW = (3, 6, 12, 24, 48)
+
+
+def _build_ohlc_arrays(
+    ohlc_dict: dict, ohlc_times: list
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Преобразует OHLC словарь в numpy-массивы (O, H, L, C)."""
+    n = len(ohlc_times)
+    opens = np.zeros(n, dtype=np.float64)
+    highs = np.zeros(n, dtype=np.float64)
+    lows = np.zeros(n, dtype=np.float64)
+    closes = np.zeros(n, dtype=np.float64)
+    for i, t in enumerate(ohlc_times):
+        o, h, l, c = ohlc_dict[t]
+        opens[i] = o
+        highs[i] = h
+        lows[i] = l
+        closes[i] = c
+    return opens, highs, lows, closes
+
+
+def _precompute_rolling_maxmin(
+    highs: np.ndarray, lows: np.ndarray, horizons: tuple
+) -> tuple[dict, dict]:
+    """Предвычисляет rolling max(highs[i:i+1+h]) и min(lows[i:i+1+h]) для всех горизонтов.
+    rolling_max[h][fidx+1] = max(highs[fidx+1 : fidx+1+h]) — bars AFTER formation.
+    Pad хвост NaN для неполных окон."""
+    n = len(highs)
+    rolling_max: dict[int, np.ndarray] = {}
+    rolling_min: dict[int, np.ndarray] = {}
+    for h in horizons:
+        if n >= h + 1:
+            # raw window: max(highs[i : i+h]), затем сдвиг на +1 через индекс
+            win_max = np.max(sliding_window_view(highs, h), axis=1)
+            win_min = np.min(sliding_window_view(lows, h), axis=1)
+            # pad: sliding_window_view(N, h) → длина N-h+1; pad до N
+            rolling_max[h] = np.pad(win_max, (0, n - (n - h + 1)), mode="constant", constant_values=np.nan)
+            rolling_min[h] = np.pad(win_min, (0, n - (n - h + 1)), mode="constant", constant_values=np.nan)
+        else:
+            rolling_max[h] = np.full(n, np.nan)
+            rolling_min[h] = np.full(n, np.nan)
+    return rolling_max, rolling_min
+
+
+def _build_unix_ohlc_idx(ohlc_times: list) -> dict[int, int]:
+    """Строит unix_time → ohlc_index для быстрого O(1) lookup."""
+    unix_idx: dict[int, int] = {}
+    for i, t in enumerate(ohlc_times):
+        unix_idx[int(t.timestamp())] = i
+    return unix_idx
 
 
 def load_ohlc(path: Path) -> tuple[dict, list, dict]:
@@ -105,6 +157,13 @@ def build_raw_features(
     """Строит датасет сырых признаков из labeled CSV + OHLC."""
     ohlc, ohlc_times, ohlc_time_idx = load_ohlc(ohlc_path)
     print(f"OHLC загружен: {len(ohlc)} баров, {ohlc_times[0]} – {ohlc_times[-1]}")
+
+    # Precompute OHLC arrays + rolling max/min for raw up/dn
+    ohlc_opens, ohlc_highs, ohlc_lows, ohlc_closes = _build_ohlc_arrays(ohlc, ohlc_times)
+    n_ohlc = len(ohlc_highs)
+    rolling_max, rolling_min = _precompute_rolling_maxmin(ohlc_highs, ohlc_lows, HORIZONS_FOR_RAW)
+    unix_ohlc_idx = _build_unix_ohlc_idx(ohlc_times)
+    print(f"Rolling max/min precomputed for {HORIZONS_FOR_RAW} horizons, {n_ohlc} bars")
 
     frames = []
     for split_name, path in labeled_paths.items():
@@ -163,6 +222,10 @@ def build_raw_features(
             # Сырые таргеты из labeled CSV (для справки)
             record["signal"] = row.get("signal", 0)
             record["predict"] = row.get("predict", 0.0)
+            # Row-level up/dn from labeled CSV (label_updn output, для корреляции)
+            for h in HORIZONS_FOR_RAW:
+                record[f"row_up_{h}_labeled"] = float(row.get(f"up_{h}", 0.0))
+                record[f"row_dn_{h}_labeled"] = float(row.get(f"dn_{h}", 0.0))
 
             # Все фракталы: raw prices + ключевые поля
             for fi in range(100):
@@ -182,9 +245,32 @@ def build_raw_features(
                     record[f"{prefix}_strong"] = fdict.get("strong", 0)
                     record[f"{prefix}_fractal_atr"] = fdict.get("fractal_atr", 0.0)
                     # Up/dn из labeled CSV (нормализованы, с contamination)
-                    for h in (3, 6, 12, 24, 48):
+                    for h in HORIZONS_FOR_RAW:
                         record[f"{prefix}_up_{h}_labeled"] = fdict.get(f"up_{h}", 0.0)
                         record[f"{prefix}_dn_{h}_labeled"] = fdict.get(f"dn_{h}", 0.0)
+                    # Raw up/dn из OHLC (чистые, без row-level contamination)
+                    # Use raw_prices (OHLC close) as baseline — fractal.price is normalized
+                    _raw_p = raw_prices.get(fi)
+                    _ftime_val = fdict.get("time", 0)
+                    if isinstance(_ftime_val, (int, float)) and _ftime_val > 0 and _raw_p is not None and _raw_p > 0:
+                        _fidx = unix_ohlc_idx.get(int(_ftime_val))
+                        if _fidx is not None and _fidx + 1 < n_ohlc:
+                            _fidx1 = _fidx + 1
+                            for h in HORIZONS_FOR_RAW:
+                                if _fidx1 < len(rolling_max[h]) and not np.isnan(rolling_max[h][_fidx1]):
+                                    record[f"{prefix}_up_{h}_raw"] = max(0.0, rolling_max[h][_fidx1] - _raw_p)
+                                    record[f"{prefix}_dn_{h}_raw"] = max(0.0, _raw_p - rolling_min[h][_fidx1])
+                                else:
+                                    record[f"{prefix}_up_{h}_raw"] = np.nan
+                                    record[f"{prefix}_dn_{h}_raw"] = np.nan
+                        else:
+                            for h in HORIZONS_FOR_RAW:
+                                record[f"{prefix}_up_{h}_raw"] = np.nan
+                                record[f"{prefix}_dn_{h}_raw"] = np.nan
+                    else:
+                        for h in HORIZONS_FOR_RAW:
+                            record[f"{prefix}_up_{h}_raw"] = np.nan
+                            record[f"{prefix}_dn_{h}_raw"] = np.nan
                     record[f"{prefix}_time"] = fdict.get("time", 0)
                 else:
                     record[f"{prefix}_direction"] = 0
@@ -197,9 +283,11 @@ def build_raw_features(
                     record[f"{prefix}_reverse"] = 0.0
                     record[f"{prefix}_strong"] = 0
                     record[f"{prefix}_fractal_atr"] = 0.0
-                    for h in (3, 6, 12, 24, 48):
+                    for h in HORIZONS_FOR_RAW:
                         record[f"{prefix}_up_{h}_labeled"] = 0.0
                         record[f"{prefix}_dn_{h}_labeled"] = 0.0
+                        record[f"{prefix}_up_{h}_raw"] = np.nan
+                        record[f"{prefix}_dn_{h}_raw"] = np.nan
                     record[f"{prefix}_time"] = 0
 
             # OHLC данные для расчёта таргетов

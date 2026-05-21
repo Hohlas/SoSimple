@@ -1,0 +1,316 @@
+{
+  "rows_total": 62764,
+  "splits": {
+    "train": 43934,
+    "validation": 9415,
+    "test": 9415
+  },
+  "columns": 3223,
+  "tb": {
+    "H=6": {
+      "coverage": 0.993595054489835,
+      "up_atr": {
+        "min": 0.0,
+        "p25": 0.42814503205129983,
+        "p50": 0.9408249158249099,
+        "p75": 1.7178365384615546,
+        "p95": 3.7880652418447722,
+        "max": 25.592307692307678
+      },
+      "dn_atr": {
+        "min": 0.0,
+        "p25": 0.4081370021337096,
+        "p50": 0.9090909090909091,
+        "p75": 1.735609243697479,
+        "p95": 3.8733125000000377,
+        "max": 26.918918918918894
+      },
+      "combos": [
+        {
+          "tp": 2,
+          "sl": 1,
+          "buy_all": 9563,
+          "buy_train": 6580,
+          "sell_all": 9768,
+          "sell_train": 7003,
+          "buy_pct": 15.3,
+          "sell_pct": 15.7,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 2,
+          "sl": 2,
+          "buy_all": 11391,
+          "buy_train": 7871,
+          "sell_all": 11756,
+          "sell_train": 8412,
+          "buy_pct": 18.3,
+          "sell_pct": 18.9,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 1,
+          "buy_all": 2166,
+          "buy_train": 1565,
+          "sell_all": 2278,
+          "sell_train": 1630,
+          "buy_pct": 3.5,
+          "sell_pct": 3.7,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 2,
+          "buy_all": 2549,
+          "buy_train": 1850,
+          "sell_all": 2670,
+          "sell_train": 1892,
+          "buy_pct": 4.1,
+          "sell_pct": 4.3,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 1,
+          "buy_all": 606,
+          "buy_train": 429,
+          "sell_all": 714,
+          "sell_train": 525,
+          "buy_pct": 1.0,
+          "sell_pct": 1.1,
+          "sparse_buy_train": true,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 2,
+          "buy_all": 701,
+          "buy_train": 499,
+          "sell_all": 841,
+          "sell_train": 605,
+          "buy_pct": 1.1,
+          "sell_pct": 1.3,
+          "sparse_buy_train": true,
+          "sparse_sell_train": false
+        }
+      ]
+    },
+    "H=12": {
+      "coverage": 0.9935472563890128,
+      "up_atr": {
+        "min": 0.0,
+        "p25": 0.6666666666667236,
+        "p50": 1.4470588235293664,
+        "p75": 2.629999999999984,
+        "p95": 5.461964285714297,
+        "max": 28.357894736842105
+      },
+      "dn_atr": {
+        "min": 0.0,
+        "p25": 0.624828767123284,
+        "p50": 1.3978723404255182,
+        "p75": 2.6128345916266307,
+        "p95": 5.5,
+        "max": 31.061111111111092
+      },
+      "combos": [
+        {
+          "tp": 2,
+          "sl": 1,
+          "buy_all": 14584,
+          "buy_train": 10022,
+          "sell_all": 14090,
+          "sell_train": 10160,
+          "buy_pct": 23.4,
+          "sell_pct": 22.6,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 2,
+          "sl": 2,
+          "buy_all": 19537,
+          "buy_train": 13525,
+          "sell_all": 19085,
+          "sell_train": 13737,
+          "buy_pct": 31.3,
+          "sell_pct": 30.6,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 1,
+          "buy_all": 4986,
+          "buy_train": 3486,
+          "sell_all": 5074,
+          "sell_train": 3693,
+          "buy_pct": 8.0,
+          "sell_pct": 8.1,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 2,
+          "buy_all": 6322,
+          "buy_train": 4447,
+          "sell_all": 6373,
+          "sell_train": 4615,
+          "buy_pct": 10.1,
+          "sell_pct": 10.2,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 1,
+          "buy_all": 1697,
+          "buy_train": 1197,
+          "sell_all": 1821,
+          "sell_train": 1356,
+          "buy_pct": 2.7,
+          "sell_pct": 2.9,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 2,
+          "buy_all": 2100,
+          "buy_train": 1480,
+          "sell_all": 2285,
+          "sell_train": 1691,
+          "buy_pct": 3.4,
+          "sell_pct": 3.7,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        }
+      ]
+    },
+    "H=24": {
+      "coverage": 0.9934516601873685,
+      "up_atr": {
+        "min": 0.0,
+        "p25": 1.0344827586206897,
+        "p50": 2.23749999999999,
+        "p75": 4.040909090909136,
+        "p95": 7.620000000000014,
+        "max": 28.357894736842105
+      },
+      "dn_atr": {
+        "min": 0.0,
+        "p25": 0.9545454545454648,
+        "p50": 2.1363636363636567,
+        "p75": 3.8705882352941416,
+        "p95": 7.761603927986921,
+        "max": 44.497222222222234
+      },
+      "combos": [
+        {
+          "tp": 2,
+          "sl": 1,
+          "buy_all": 15116,
+          "buy_train": 10387,
+          "sell_all": 14030,
+          "sell_train": 10113,
+          "buy_pct": 24.2,
+          "sell_pct": 22.5,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 2,
+          "sl": 2,
+          "buy_all": 24479,
+          "buy_train": 16864,
+          "sell_all": 23315,
+          "sell_train": 16881,
+          "buy_pct": 39.3,
+          "sell_pct": 37.4,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 1,
+          "buy_all": 9288,
+          "buy_train": 6525,
+          "sell_all": 8617,
+          "sell_train": 6319,
+          "buy_pct": 14.9,
+          "sell_pct": 13.8,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 4,
+          "sl": 2,
+          "buy_all": 13087,
+          "buy_train": 9203,
+          "sell_all": 12283,
+          "sell_train": 9026,
+          "buy_pct": 21.0,
+          "sell_pct": 19.7,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 1,
+          "buy_all": 4249,
+          "buy_train": 2959,
+          "sell_all": 4147,
+          "sell_train": 3075,
+          "buy_pct": 6.8,
+          "sell_pct": 6.7,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        },
+        {
+          "tp": 6,
+          "sl": 2,
+          "buy_all": 5726,
+          "buy_train": 3968,
+          "sell_all": 5622,
+          "sell_train": 4191,
+          "buy_pct": 9.2,
+          "sell_pct": 9.0,
+          "sparse_buy_train": false,
+          "sparse_sell_train": false
+        }
+      ]
+    }
+  },
+  "correlation": {
+    "up_3": {
+      "r": 0.4657,
+      "n": 41148
+    },
+    "up_6": {
+      "r": 0.4992,
+      "n": 46854
+    },
+    "up_12": {
+      "r": 0.5222,
+      "n": 51244
+    },
+    "up_24": {
+      "r": 0.532,
+      "n": 54860
+    },
+    "up_48": {
+      "r": 0.4947,
+      "n": 57111
+    }
+  },
+  "gate_correlation": {
+    "up_24_r": 0.532,
+    "passed": true
+  }
+}
