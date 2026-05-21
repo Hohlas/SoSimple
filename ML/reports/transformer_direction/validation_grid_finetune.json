@@ -1,0 +1,62 @@
+[
+  {
+    "combo": "tb_h12_tp6_sl2",
+    "buy_pf": 1.0262,
+    "buy_seq_pf": 1.8362,
+    "buy_trades": 4377,
+    "buy_win_rate": 0.5077,
+    "buy_threshold": 0.4,
+    "buy_lr": 0.0001,
+    "sell_pf": 1.2189,
+    "sell_seq_pf": 35.036,
+    "sell_trades": 612,
+    "sell_win_rate": 0.4771,
+    "sell_threshold": 0.7,
+    "sell_lr": 0.0001
+  },
+  {
+    "combo": "tb_h12_tp6_sl1",
+    "buy_pf": 1.0188,
+    "buy_seq_pf": 0.7464,
+    "buy_trades": 5523,
+    "buy_win_rate": 0.5068,
+    "buy_threshold": 0.3,
+    "buy_lr": 0.0001,
+    "sell_pf": 1.1452,
+    "sell_seq_pf": 36.3731,
+    "sell_trades": 804,
+    "sell_win_rate": 0.4776,
+    "sell_threshold": 0.7,
+    "sell_lr": 0.0001
+  },
+  {
+    "combo": "tb_h24_tp6_sl1",
+    "buy_pf": 0.9228,
+    "buy_seq_pf": 0.3873,
+    "buy_trades": 73,
+    "buy_win_rate": 0.4521,
+    "buy_threshold": 0.8,
+    "buy_lr": 0.0001,
+    "sell_pf": 1.1877,
+    "sell_seq_pf": 12.0169,
+    "sell_trades": 155,
+    "sell_win_rate": 0.5032,
+    "sell_threshold": 0.8,
+    "sell_lr": 0.0001
+  },
+  {
+    "combo": "tb_h12_tp4_sl2",
+    "buy_pf": 1.042,
+    "buy_seq_pf": 4.1582,
+    "buy_trades": 6287,
+    "buy_win_rate": 0.5082,
+    "buy_threshold": 0.3,
+    "buy_lr": 0.0001,
+    "sell_pf": 1.2453,
+    "sell_seq_pf": 13.4246,
+    "sell_trades": 194,
+    "sell_win_rate": 0.5,
+    "sell_threshold": 0.8,
+    "sell_lr": 0.0001
+  }
+]

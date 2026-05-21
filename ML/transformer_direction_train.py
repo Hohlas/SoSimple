@@ -446,14 +446,18 @@ def stat_validate():
 def main():
     parser = argparse.ArgumentParser(description="Transformer Direction Fine-Tune")
     parser.add_argument("--task", default="prepare",
-                        choices=["prepare", "stat", "grid", "test"])
+                        choices=["prepare", "stat", "grid_rf", "grid_ft", "test"])
     args = parser.parse_args()
 
     if args.task == "prepare":
         prepare_data()
     elif args.task == "stat":
         stat_validate()
-    elif args.task in ("grid", "test"):
+    elif args.task == "grid_rf":
+        run_frozen_rf_grid()
+    elif args.task == "grid_ft":
+        run_fine_tune_grid()
+    elif args.task == "test":
         print(f"Task {args.task} not implemented yet")
     else:
         parser.print_help()
@@ -461,4 +465,401 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ===========================================================================
+# FROZEN RF BASELINE
+# ===========================================================================
+
+def extract_all_frozen_features(model, device='cpu'):
+    prep = np.load(REPORTS_DIR / 'prepared_features.npz')
+    X_train = prep['X_train']
+    mask_train = prep['mask_train']
+    X_val = prep['X_val']
+    mask_val = prep['mask_val']
+
+    print('Extracting frozen features (train)...')
+    ft_train = extract_frozen_features(model, X_train, mask_train, device)
+    print('Extracting frozen features (val)...')
+    ft_val = extract_frozen_features(model, X_val, mask_val, device)
+
+    train_time = pd.read_csv(LABELED_PATHS['train'], sep=';')['time'].values
+    train_atr = pd.to_numeric(pd.read_csv(LABELED_PATHS['train'], sep=';')['ATR'], errors='coerce').fillna(0).values
+    val_time = pd.read_csv(LABELED_PATHS['validation'], sep=';')['time'].values
+    val_atr = pd.to_numeric(pd.read_csv(LABELED_PATHS['validation'], sep=';')['ATR'], errors='coerce').fillna(0).values
+
+    return ft_train, ft_val, train_time, train_atr, val_time, val_atr
+
+
+def train_rf_classifier(X_train, y_train, n_estimators=100, max_depth=10):
+    from sklearn.ensemble import RandomForestClassifier
+    clf = RandomForestClassifier(
+        n_estimators=n_estimators, max_depth=max_depth,
+        class_weight='balanced', random_state=42, n_jobs=-1,
+    )
+    clf.fit(X_train, y_train)
+    return clf
+
+
+def evaluate_rf_predictions(clf, X, y_true, atr, time_vals, ohlc_path, direction, thresholds=(0.5, 0.6, 0.7, 0.8)):
+    proba = clf.predict_proba(X)[:, 1]
+
+    best = dict(pf=0.0, seq_pf=0.0, trades=0, win_rate=0.0, threshold=0.5)
+    for thr in thresholds:
+        signals = (proba >= thr).astype(np.int64)
+        trades = simulate_trades(signals, atr, time_vals, str(ohlc_path), direction)
+        if len(trades) < 50:
+            continue
+        pf = compute_pf(trades)
+        seq_pf = compute_seq_pf(trades)
+        win_rate = sum(1 for t in trades if t['pnl'] > 0) / len(trades)
+        if seq_pf > best['seq_pf']:
+            best = dict(pf=pf, seq_pf=seq_pf, trades=len(trades),
+                    win_rate=win_rate, threshold=thr)
+    return best
+
+
+def run_frozen_rf_grid():
+    print('=== Frozen RF Baseline Grid Search ===')
+    print()
+
+    model, _ = load_pretrained_encoder(device='cpu')
+    ft_train, ft_val, train_time, train_atr, val_time, val_atr = extract_all_frozen_features(model, device='cpu')
+    print(f'Frozen features: train={ft_train.shape}, val={ft_val.shape}')
+    print()
+
+    with open(REPORTS_DIR / 'target_combos.json', 'r') as f:
+        combos_meta = json.load(f)
+    combo_names = combos_meta['combo_names']
+    print(f'Total combos: {len(combo_names)}')
+
+    results = []
+    for name in combo_names:
+        if name.startswith('reg_'):
+            print(f'  SKIP {name}: regression target, handled by fine-tune')
+            continue
+
+        print('')
+        print(f'--- {name} ---')
+        data = np.load(REPORTS_DIR / f'targets_{name}.npz')
+        buy_train = data['buy_train']
+        sell_train = data['sell_train']
+        buy_val = data['buy_validation']
+        sell_val = data['sell_validation']
+
+        clf_buy = train_rf_classifier(ft_train, buy_train)
+        buy_result = evaluate_rf_predictions(clf_buy, ft_val, buy_val, val_atr, val_time, OHLC_PATH, 'buy')
+
+        clf_sell = train_rf_classifier(ft_train, sell_train)
+        sell_result = evaluate_rf_predictions(clf_sell, ft_val, sell_val, val_atr, val_time, OHLC_PATH, 'sell')
+
+        row = dict(
+            combo=name,
+            buy_pf=round(buy_result['pf'], 4),
+            buy_seq_pf=round(buy_result['seq_pf'], 4),
+            buy_trades=buy_result['trades'],
+            buy_win_rate=round(buy_result['win_rate'], 4),
+            buy_threshold=buy_result['threshold'],
+            sell_pf=round(sell_result['pf'], 4),
+            sell_seq_pf=round(sell_result['seq_pf'], 4),
+            sell_trades=sell_result['trades'],
+            sell_win_rate=round(sell_result['win_rate'], 4),
+            sell_threshold=sell_result['threshold'],
+        )
+        results.append(row)
+        print(f'  BUY: PF={row["buy_pf"]}, SeqPF={row["buy_seq_pf"]}, trades={buy_result["trades"]}, thr={buy_result["threshold"]}')
+        print(f'  SELL: PF={row["sell_pf"]}, SeqPF={row["sell_seq_pf"]}, trades={sell_result["trades"]}, thr={sell_result["threshold"]}')
+
+    with open(REPORTS_DIR / 'validation_grid_frozen.json', 'w') as f:
+        json.dump(results, f, indent=2)
+    print("")
+    print(f"Saved validation_grid_frozen.json ({len(results)} rows)")
+
+    print("")
+    print("=== Top combos by min(buy_seq_pf, sell_seq_pf) ===")
+    sorted_results = sorted(results, key=lambda r: min(r['buy_seq_pf'], r['sell_seq_pf']), reverse=True)
+    for r in sorted_results[:10]:
+        min_pf = min(r['buy_seq_pf'], r['sell_seq_pf'])
+        print(f'  {r["combo"]}: min_seq_pf={min_pf:.4f} (BUY={r["buy_seq_pf"]}, SELL={r["sell_seq_pf"]})')
+
+    return results
+
+
+# ===========================================================================
+# FINE-TUNE TRANSFORMER
+# ===========================================================================
+
+def build_fine_tune_model(model_kwargs, device='cpu'):
+    model = TransformerClassifier(**model_kwargs)
+    model, _ = load_pretrained_encoder(device)  # load pretrained weights
+    return model
+
+
+def replace_head_for_binary(model, dropout=None):
+    if dropout is None:
+        dropout = ENC_DROPOUT
+    model.classifier = nn.Sequential(
+        nn.Dropout(dropout),
+        nn.Linear(ENC_D_MODEL, 32),
+        nn.ReLU(),
+        nn.Dropout(dropout),
+        nn.Linear(32, 1),  # single logit for BCEWithLogitsLoss
+    )
+    return model
+
+
+def train_transformer_binary(model, X_train, mask_train, y_train, X_val, mask_val, y_val,
+                              lr=1e-4, epochs=20, patience=5, batch_size=256, device='cpu'):
+    from sklearn.metrics import f1_score
+
+    # Compute pos_weight for class balance
+    pos_count = y_train.sum()
+    neg_count = len(y_train) - pos_count
+    pos_weight = torch.tensor([neg_count / max(pos_count, 1)], device=device)
+
+    train_dataset = DirectionDataset(X_train, mask_train, y_train, np.zeros_like(y_train))
+    val_dataset = DirectionDataset(X_val, mask_val, y_val, np.zeros_like(y_val))
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
+
+    # Build optimizer: different LR for encoder vs head
+    encoder_params = []
+    head_params = []
+    for name, param in model.named_parameters():
+        if name.startswith('classifier'):
+            head_params.append(param)
+        else:
+            encoder_params.append(param)
+
+    optimizer = torch.optim.AdamW([
+        dict(params=encoder_params, lr=lr),
+        dict(params=head_params, lr=lr * 10),
+    ])
+
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5, patience=3, min_lr=1e-6
+    )
+
+    model.train()
+    best_val_f1 = 0.0
+    best_state = None
+    epochs_no_improve = 0
+
+    for epoch in range(epochs):
+        model.train()
+        total_loss = 0.0
+        for batch_X, batch_mask, batch_buy, batch_sell in train_loader:
+            batch_X = batch_X.to(device)
+            batch_mask = batch_mask.to(device)
+            batch_y = batch_buy.float().unsqueeze(1).to(device)
+
+            optimizer.zero_grad()
+            hidden = forward_encoder(model, batch_X, batch_mask)
+            cls_out = hidden[:, 0, :]
+            logits = model.classifier(cls_out)
+            loss = criterion(logits, batch_y)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+            total_loss += loss.item()
+
+        # Validation F1
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch_X, batch_mask, batch_buy, batch_sell in val_loader:
+                batch_X = batch_X.to(device)
+                batch_mask = batch_mask.to(device)
+                batch_y = batch_buy.float().numpy()
+                hidden = forward_encoder(model, batch_X, batch_mask)
+                cls_out = hidden[:, 0, :]
+                logits = model.classifier(cls_out)
+                preds = (torch.sigmoid(logits).squeeze().cpu().numpy() >= 0.5).astype(int)
+                all_preds.extend(preds)
+                all_labels.extend(batch_y)
+
+        val_f1 = f1_score(all_labels, all_preds, zero_division=0)
+        scheduler.step(val_f1)
+
+        if val_f1 > best_val_f1:
+            best_val_f1 = val_f1
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
+
+        if epoch % 5 == 0:
+            print(f'    epoch {epoch}: loss={total_loss/len(train_loader):.4f}, val_f1={val_f1:.4f}, best={best_val_f1:.4f}')
+
+        if epochs_no_improve >= patience:
+            print(f'    early stopping at epoch {epoch}')
+            break
+
+    # Restore best
+    if best_state is not None:
+        model.load_state_dict(best_state)
+
+    return model, best_val_f1
+
+
+def evaluate_transformer_model(model, X, mask, y_true, atr, time_vals, ohlc_path, direction,
+                                device='cpu', thresholds=(0.3, 0.4, 0.5, 0.6, 0.7, 0.8)):
+    dataset = DirectionDataset(X, mask, y_true, np.zeros_like(y_true))
+    loader = DataLoader(dataset, batch_size=512, shuffle=False, drop_last=False)
+
+    model.eval()
+    all_probs = []
+    with torch.no_grad():
+        for batch_X, batch_mask, batch_buy, batch_sell in loader:
+            batch_X = batch_X.to(device)
+            batch_mask = batch_mask.to(device)
+            hidden = forward_encoder(model, batch_X, batch_mask)
+            cls_out = hidden[:, 0, :]
+            logits = model.classifier(cls_out)
+            probs = torch.sigmoid(logits).squeeze().cpu().numpy()
+            all_probs.extend(probs)
+
+    all_probs = np.array(all_probs)
+
+    best = dict(pf=0.0, seq_pf=0.0, trades=0, win_rate=0.0, threshold=0.5)
+    for thr in thresholds:
+        signals = (all_probs >= thr).astype(np.int64)
+        trades = simulate_trades(signals, atr, time_vals, str(ohlc_path), direction)
+        if len(trades) < 50:
+            continue
+        pf = compute_pf(trades)
+        seq_pf = compute_seq_pf(trades)
+        win_rate = sum(1 for t in trades if t['pnl'] > 0) / len(trades)
+        if seq_pf > best['seq_pf']:
+            best = dict(pf=pf, seq_pf=seq_pf, trades=len(trades),
+                    win_rate=win_rate, threshold=thr)
+    return best
+
+
+def run_fine_tune_grid(combo_names=None, lrs=(1e-4, 5e-5), device='cpu'):
+    print('=== Transformer Fine-Tune Grid Search ===')
+    print()
+
+    prep = np.load(REPORTS_DIR / 'prepared_features.npz')
+    X_train = prep['X_train']
+    mask_train = prep['mask_train']
+    X_val = prep['X_val']
+    mask_val = prep['mask_val']
+
+    val_time = pd.read_csv(LABELED_PATHS['validation'], sep=';')['time'].values
+    val_atr = pd.to_numeric(pd.read_csv(LABELED_PATHS['validation'], sep=';')['ATR'],
+                            errors='coerce').fillna(0).values
+
+    # Load pretrained weights + kwargs
+    pretrained, model_kwargs = load_pretrained_encoder(device)
+    del pretrained  # we recreate from scratch each time
+
+    with open(REPORTS_DIR / 'target_combos.json', 'r') as f:
+        combos_meta = json.load(f)
+
+    if combo_names is None:
+        # Default: top TB combos from frozen RF + Reg combos
+        with open(REPORTS_DIR / 'validation_grid_frozen.json', 'r') as f:
+            frozen_results = json.load(f)
+        sorted_rf = sorted(frozen_results, key=lambda r: min(r['buy_seq_pf'], r['sell_seq_pf']), reverse=True)
+        combo_names = [r['combo'] for r in sorted_rf[:4]]
+        # Add Reg combos
+        for name in combos_meta['combo_names']:
+            if name.startswith('reg_'):
+                combo_names.append(name)
+        print(f'Selected combos: {combo_names}')
+    else:
+        print(f'Selected combos: {combo_names}')
+
+    print()
+    results = []
+
+    for name in combo_names:
+        is_reg = name.startswith('reg_')
+        if is_reg:
+            print(f'--- {name} ---')
+            print('  SKIP: regression fine-tune not implemented yet')
+            continue
+
+        print('')
+        print(f'=== {name} ===')
+        data = np.load(REPORTS_DIR / f'targets_{name}.npz')
+        buy_train = data['buy_train']
+        sell_train = data['sell_train']
+        buy_val = data['buy_validation']
+        sell_val = data['sell_validation']
+
+        best_buy = None
+        best_sell = None
+        best_buy_lr = 0
+        best_sell_lr = 0
+
+        for lr in lrs:
+            # BUY
+            print(f'  BUY lr={lr}...')
+            model = TransformerClassifier(**model_kwargs)
+            model.load_state_dict(load_pretrained_encoder(device)[0].state_dict())
+            replace_head_for_binary(model)
+            model.to(device)
+            model, val_f1 = train_transformer_binary(
+                model, X_train, mask_train, buy_train, X_val, mask_val, buy_val,
+                lr=lr, device=device,
+            )
+            buy_result = evaluate_transformer_model(
+                model, X_val, mask_val, buy_val, val_atr, val_time, OHLC_PATH, 'buy', device=device,
+            )
+            print(f'    BUY lr={lr}: PF={buy_result["pf"]:.4f}, SeqPF={buy_result["seq_pf"]:.4f}, '
+                  f'trades={buy_result["trades"]}, thr={buy_result["threshold"]}')
+            if best_buy is None or buy_result['seq_pf'] > best_buy['seq_pf']:
+                best_buy = buy_result
+                best_buy_lr = lr
+                best_buy_model = model
+
+            # SELL
+            print(f'  SELL lr={lr}...')
+            model = TransformerClassifier(**model_kwargs)
+            model.load_state_dict(load_pretrained_encoder(device)[0].state_dict())
+            replace_head_for_binary(model)
+            model.to(device)
+            model, val_f1 = train_transformer_binary(
+                model, X_train, mask_train, sell_train, X_val, mask_val, sell_val,
+                lr=lr, device=device,
+            )
+            sell_result = evaluate_transformer_model(
+                model, X_val, mask_val, sell_val, val_atr, val_time, OHLC_PATH, 'sell', device=device,
+            )
+            print(f'    SELL lr={lr}: PF={sell_result["pf"]:.4f}, SeqPF={sell_result["seq_pf"]:.4f}, '
+                  f'trades={sell_result["trades"]}, thr={sell_result["threshold"]}')
+            if best_sell is None or sell_result['seq_pf'] > best_sell['seq_pf']:
+                best_sell = sell_result
+                best_sell_lr = lr
+                best_sell_model = model
+
+        row = dict(
+            combo=name,
+            buy_pf=round(best_buy['pf'], 4),
+            buy_seq_pf=round(best_buy['seq_pf'], 4),
+            buy_trades=best_buy['trades'],
+            buy_win_rate=round(best_buy['win_rate'], 4),
+            buy_threshold=best_buy['threshold'],
+            buy_lr=best_buy_lr,
+            sell_pf=round(best_sell['pf'], 4),
+            sell_seq_pf=round(best_sell['seq_pf'], 4),
+            sell_trades=best_sell['trades'],
+            sell_win_rate=round(best_sell['win_rate'], 4),
+            sell_threshold=best_sell['threshold'],
+            sell_lr=best_sell_lr,
+        )
+        results.append(row)
+        print(f'  BEST BUY: PF={row["buy_pf"]}, SeqPF={row["buy_seq_pf"]}, trades={best_buy["trades"]}')
+        print(f'  BEST SELL: PF={row["sell_pf"]}, SeqPF={row["sell_seq_pf"]}, trades={best_sell["trades"]}')
+
+    with open(REPORTS_DIR / 'validation_grid_finetune.json', 'w') as f:
+        json.dump(results, f, indent=2)
+    print('')
+    print(f'Saved validation_grid_finetune.json ({len(results)} rows)')
+
+    return results
 
