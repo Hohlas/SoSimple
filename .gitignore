@@ -271,3 +271,5 @@ statistics/*.old_32k
 
 # Локальное runtime-хранилище индекса knowledge-rag.
 .knowledge-rag-data/
+DATA/raw_features_for_direction.pkl
+ML/reports/entry_path_v1_live_safe/runtime/
