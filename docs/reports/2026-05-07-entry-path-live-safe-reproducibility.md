@@ -3,7 +3,7 @@
 > **Date**: 2026-05-07
 > **Status**: Completed
 > **Goal**: Проверить воспроизводимость `entry_path_v1_live_safe` после исправления нормализации и отделить качество модели от устойчивости торгового фильтра.
-> **Related plan/spec**: `docs/ML/ml_leakage_preflight_checklist.md`
+> **Related plan/spec**: `docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`
 > **Related commit**: pending
 
 ## Context
@@ -138,4 +138,4 @@ production-кандидат.
 - `ML/run_entry_path_live_safe_retrain.py`
 - `ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/`
 - `docs/reports/2026-05-05-live-safe-ml-audit.md`
-- `docs/ML/ml_leakage_preflight_checklist.md`
+- `docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`

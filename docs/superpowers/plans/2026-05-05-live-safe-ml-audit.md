@@ -13,7 +13,7 @@
 ## Read First
 
 - `AGENTS.md`
-- `docs/ML/ml_leakage_preflight_checklist.md`
+- `docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`
 - `docs/superpowers/specs/2026-05-05-live-safe-ml-audit-design.md`
 - `docs/reports/2026-04-19-lib-pic-feature-source-audit.md`
 - `docs/reports/2026-04-29-online-inference-contract-hardening.md`
@@ -316,7 +316,7 @@ Each `verdict.json` must contain:
 - `forbidden_features`
 - `unknown_features`
 - `allowed_next_step`
-- `checklist_path`: `docs/ML/ml_leakage_preflight_checklist.md`
+- `leakage_gate_path`: `docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`
 
 - [ ] **Step 5.3: Run full audit dry run**
 

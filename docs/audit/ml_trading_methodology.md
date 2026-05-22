@@ -1,8 +1,36 @@
 # Методика разработки и аудита ML-моделей торговых систем
 
-> Статус: рабочая методика для проекта SoSimple.
+> Статус: основной пайплайн разработки и аудита ML-моделей торговых систем в проекте SoSimple.
 > Область: ML-модели торговых систем на событийных и временных данных Forex.
+> Роль в проекте: управляющий документ качества ML-разработки. `docs/DATA_FLOW.md` описывает маршрут данных, а эта методика задаёт обязательные проверки, критерии перехода между этапами и правила интерпретации результатов.
 > Главный принцип: результат нельзя считать качеством модели, пока не доказано, что данные, признаки, разметка, split, правило отбора, экспорт и исполнение соответствуют моменту торгового решения.
+
+## Оглавление
+
+- [Как использовать методику](#как-использовать-методику)
+- [0. Управление исследованием](#0-управление-исследованием)
+- [1. Инвентаризация сырых данных](#1-инвентаризация-сырых-данных)
+- [2. Формирование исходного pipeline данных](#2-формирование-исходного-pipeline-данных)
+- [3. Feature Contract и Leakage Gate](#3-feature-contract-и-leakage-gate)
+- [4. Разметка целей](#4-разметка-целей)
+- [5. Data Quality, EDA и статистический аудит](#5-data-quality-eda-и-статистический-аудит)
+- [6. Временное разделение и протокол валидации](#6-временное-разделение-и-протокол-валидации)
+- [7. Baseline-first этап](#7-baseline-first-этап)
+- [8. Разработка модели](#8-разработка-модели)
+- [9. Validation selection и freeze-протокол](#9-validation-selection-и-freeze-протокол)
+- [10. Frozen test, OOS и walk-forward](#10-frozen-test-oos-и-walk-forward)
+- [11. Устойчивость и robustness](#11-устойчивость-и-robustness)
+- [12. Backtest с торговыми издержками](#12-backtest-с-торговыми-издержками)
+- [13. Export, MT4 parity и reconciliation](#13-export-mt4-parity-и-reconciliation)
+- [14. Forward-test и online diagnostic](#14-forward-test-и-online-diagnostic)
+- [15. Monitoring и retraining policy](#15-monitoring-и-retraining-policy)
+- [16. Отчётность и аудит ошибок](#16-отчётность-и-аудит-ошибок)
+- [Сводный чеклист разработки](#сводный-чеклист-разработки)
+- [Сводный чеклист аудита готового результата](#сводный-чеклист-аудита-готового-результата)
+- [Типовые причины ложных выводов в проекте](#типовые-причины-ложных-выводов-в-проекте)
+- [Verdict-статусы кандидатов](#verdict-статусы-кандидатов)
+- [Stop conditions](#stop-conditions)
+- [Примеры первичных источников для проверки](#примеры-первичных-источников-для-проверки)
 
 ## Как использовать методику
 
@@ -31,7 +59,7 @@
 
 - pipeline и leakage-инварианты: [`docs/DATA_FLOW.md`](../DATA_FLOW.md);
 - формат датасета: [`docs/dataset_description.md`](../dataset_description.md);
-- обязательный leakage gate: [`docs/ML/ml_leakage_preflight_checklist.md`](../ML/ml_leakage_preflight_checklist.md);
+- обязательный leakage gate: [`Feature Contract и Leakage Gate`](#3-feature-contract-и-leakage-gate);
 - отчёты по прошлым ошибкам: [`docs/reports/`](../reports/);
 - wiki использовать как навигацию, но выводы проверять по первичным отчётам.
 
@@ -166,20 +194,24 @@
 1. Зафиксировать raw producer: например, торговая платформа формирует строковые snapshots.
 2. Проверить сортировку внутри строки, если строка содержит массив событий или фракталов.
 3. Выполнить labeling только в offline-пути.
-4. Выполнить нормализацию строго по разрешённой схеме.
-5. Выполнить последовательный split.
-6. Сохранить подготовленные файлы и metadata:
+4. Присвоить всем новым target/label колонкам говорящий префикс, например `target_`, `label_` или `outcome_`.
+5. Выполнить нормализацию строго по разрешённой схеме.
+6. Выполнить последовательный split.
+7. Сохранить подготовленные файлы и metadata:
    - источник raw;
    - команды запуска;
    - параметры нормализации;
    - размеры split;
    - hash или manifest.
-7. Проверить, что runtime/inference path не запускает offline-labeling.
+8. Проверить, что runtime/inference path не запускает offline-labeling.
+
+Пример текущего проекта: `Nero.csv` -> сортировка фракталов внутри строки -> offline labeling -> row-wise normalization -> sequential split -> train/validation/test. Это пример структуры pipeline, а не разрешение переносить конкретные решения без нового source audit.
 
 ### Обязательные проверки
 
 - Сортировка независима по строкам или доказано, почему межстрочная операция не создаёт leakage.
 - Offline labels не попадают в online preprocessing.
+- Target/label колонки имеют явный префикс и не маскируются под обычные признаки.
 - Row-wise normalization не использует future-derived поля в пулах live-признаков.
 - Global scaler fit-ится только на train.
 - `ATR` или другой volatility contract явно описан: raw, ratio или scaled.
@@ -195,6 +227,7 @@
 
 - Использовать старый normalization mode, где future-derived поле влияет на масштаб live-признаков.
 - Запускать target builder в online-пути.
+- Называть будущую метку обычным feature-like именем, из-за чего она позже попадает в input по wildcard/regex.
 - Полагаться на cache после смены feature contract.
 - Не проверять, что `fractal0` или аналогичный свежий элемент означает одно и то же в train/test/online.
 
@@ -210,21 +243,51 @@
 
 ### Цель
 
-Исключить заглядывание вперёд и несовпадение training/online feature contract.
+Исключить заглядывание вперёд, target-derived inputs и несовпадение training/online feature contract до того, как метрики validation/test/MT4/online будут интерпретированы как качество ML.
+
+### Когда применять
+
+Применять перед каждым запуском, где результат может быть использован как доказательство качества ML:
+
+- обучение или retrain модели;
+- validation/test/frozen-test benchmark;
+- изменение feature builder, target builder, preprocessing, normalization или split logic;
+- экспорт `ml_signals.csv`;
+- MT4 tester-прогон;
+- online watcher / runner;
+- сравнение online и historical test.
+
+Не применять как строгий production-gate только для явно помеченной механической диагностики цепочки `MT4 -> Python -> CSV -> MT4`, если её результаты не интерпретируются как качество модели. Такие запуски получают статус `DIAGNOSTIC_ONLY`.
+
+### Критерий допуска
+
+Запуск разрешено интерпретировать как ML-quality evidence только если все проверки этого раздела имеют статус `PASS`.
+
+Если хотя бы один пункт имеет `FAIL` или `UNKNOWN`, запуск можно делать только как диагностику механики с явной пометкой:
+
+```text
+ML result is not valid for production/backtest comparison.
+Reason: unresolved leakage/preprocessing contract risk.
+```
 
 ### Входы
 
 - список input features;
-- список target/label columns;
+- список target/label/future-derived columns;
 - feature builder;
+- target builder;
+- preprocessing/normalization code;
+- split manifest;
 - online/runtime preprocessing path;
-- leakage preflight checklist;
+- exporter / MT4 consumer, если есть execution layer;
 - checkpoint metadata, если модель уже существует.
 
 ### Пошаговые действия
 
-1. Для каждого признака заполнить feature contract:
+1. Зафиксировать `decision_time`: open/close бара, таймфрейм, инструмент, момент входа.
+2. Для каждого признака заполнить feature contract:
    - имя;
+   - роль: input, target, diagnostic, metadata;
    - источник;
    - producer;
    - transformation;
@@ -232,10 +295,11 @@
    - момент доступности;
    - способ нормализации;
    - live-safe verdict.
-2. Отдельно проверить candidate-source: откуда берётся сама строка или сигнал-кандидат.
-3. Проверить прямое попадание targets в input.
-4. Проверить косвенное попадание future outcome через lag, rolling, ratio, normalization pool или feature selection.
-5. Сравнить training и online contract:
+3. Отдельно проверить candidate-source: откуда берётся сама строка или сигнал-кандидат.
+4. Проверить прямое попадание targets в input.
+5. Проверить косвенное попадание future outcome через lag, rolling, ratio, normalization pool или feature selection.
+6. Проверить, что feature builder использует явный allowlist input-признаков или строгий denylist target/future-derived колонок.
+7. Сравнить training и online contract:
    - names;
    - order;
    - count;
@@ -244,23 +308,118 @@
    - missing value policy;
    - ATR contract;
    - sequence length.
-6. Запретить silent fallback: отсутствующий online-признак не заменяется нулём без явного контракта.
-7. Выполнить [`ML Leakage Preflight Checklist`](../ML/ml_leakage_preflight_checklist.md).
+8. Запретить silent fallback: отсутствующий online-признак не заменяется нулём без явного контракта.
+9. Зафиксировать итоговый verdict: `PASS`, `FAIL`, `UNKNOWN` или `DIAGNOSTIC_ONLY`.
 
-### Обязательные проверки
+### ML Leakage Preflight Checklist
 
-- Future-derived поля не входят во вход модели.
-- `UNKNOWN` считается `FAIL`.
-- Labeling не запускается в inference path.
-- Candidate-source live-safe.
-- Online runner падает при несовместимом contract, а не публикует сигнал.
-- Rule/checkpoint/exporter совместимы с одним и тем же feature contract.
+| # | Проверка | Зачем | Чем подтвердить | `FAIL`, если |
+|---:|---|---|---|---|
+| 1 | Зафиксирован `decision_time` | Нужно знать, какие данные доступны модели на баре `t` | В отчёте указан open/close бара, таймфрейм, инструмент, момент входа | Непонятно, на каком баре и в какой момент модель видит данные |
+| 2 | Split строго временной | Будущее не должно попадать в train/validation | Указаны границы train/validation/test; нет shuffle по строкам | Есть случайное перемешивание временных строк до split |
+| 3 | Целевые и future-derived поля не входят во вход модели | Модель должна предсказывать результат, а не читать ответ | Input columns сравнены со списком target/label/future-derived columns | Во входе есть `predict`, `ret_*`, `ret_dir_atr_lag1`, `fav_*`, `adv_*`, `target_*`, `label_*`, `outcome_*` или другие поля из будущих баров |
+| 4 | Row features разделены на live-safe и future-derived | Часть строковых признаков может быть доступна online, часть нет | Есть явный allowlist live-safe полей и denylist target/future-derived полей | Недостающие online-поля молча заполняются нулями и подаются в модель |
+| 5 | Training и online feature contract совпадают | Модель должна получать одинаковое число признаков с одинаковым смыслом | Для checkpoint зафиксированы input names/count/order; online builder воспроизводит их без заглушек | Training builder создаёт N признаков, online честно создаёт M<N, а остальные заполняются `0` |
+| 6 | Фракталы или другие event elements отсортированы одинаково | `fractal0` должен означать одно и то же в train/test/online | Проверка порядка, например `fractal_time[i] >= fractal_time[i+1]` | `fractal0` в одном режиме свежий, а в другом старый или случайный |
+| 7 | Нормализация применена тем же способом | Модель не должна получать другой масштаб чисел | Проверка диапазонов и normalization metadata | Training использовал нормализованные поля, а online подаёт raw значения, или наоборот |
+| 8 | Нормализационные пулы не зависят от future-derived полей | Даже row-wise normalization может исказить live-признаки | Описано, какие поля входят в per-row pools | `predict` или future targets влияют на normalization pool live-признаков |
+| 9 | Labeling не запускается в online path | Online не знает будущий исход сделки | В online runner нет вызова future label builders | Online перед inference создаёт `ret_*`, `fav_*`, `adv_*` или аналоги по будущим барам |
+| 10 | Global scaler не использует future validation/test/online | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train | Scaler fit-ится на полном датасете включая validation/test/forward |
+| 11 | ATR/volatility contract совпадает | ATR может быть raw, ratio или scaled | В отчёте указано, ждёт ли checkpoint raw `ATR`, `ATR_ratio` или scaler-normalized ATR | Training использовал один ATR contract, online подаёт другой |
+| 12 | Константные признаки выявлены до retrain | Мёртвые признаки маскируют реальный feature contract | Есть variance/unique-count check по train input columns | Признак константный на train, но оставлен как информативный input без решения |
+| 13 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
+| 14 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Сверка rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без parity |
+| 15 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
+
+### Быстрая ручная проверка признаков
+
+Перед запуском открыть список входных колонок модели и разделить его на три группы:
+
+| Группа | Примеры | Допуск |
+|---|---|---|
+| Доступно на текущем баре | `time`, `ATR`, `session_hour`, `weekday`, отсортированные `fractal*.price/time/direction` | Можно использовать при совпадении training/online contract |
+| Доступно только после будущих баров | `predict`, `ret_*`, `ret_dir_atr_lag1`, `fav_*`, `adv_*`, future outcome, future path | Нельзя использовать как input |
+| Неясно | engineered-поля без описания времени доступности | Запуск запрещён до source audit |
+
+Правило простое: если непонятно, когда поле становится известно, считать его запрещённым до доказательства обратного.
+
+### Особые случаи проекта
+
+#### `predict`
+
+`predict` нельзя считать обычным live-признаком. В training pipeline `predict` строится через будущую цель, поэтому это future-derived поле. В live `Nero.csv` значение `predict=0` не является эквивалентом training `predict`: это не нейтральное значение, а другой смысл поля. Если checkpoint обучался с `predict` во входе, online не должен подменять его нулём.
+
+Отдельный риск: исторически `normalize_rowwise()` нормализует `abs(predict)` в одном пуле с `front/back`. Если в training в этот пул входит реальный future-derived `predict`, а online туда попадает `0`, то меняется не только сам `predict`, но и нормализация `front/back`. Для live-safe retrain нужно исключить `predict` из входа и из live-нормализационных пулов или явно доказать другой эквивалентный контракт.
+
+#### `ret_dir_atr_lag1`
+
+`ret_dir_atr_lag1` не становится безопасным только потому, что он сдвинут на одну строку. Если он вычислен из `ret_6_dir_atr.shift(1)`, то исходный `ret_6_dir_atr` уже содержит будущие бары относительно своей строки. Значит, сдвиг всё ещё может смотреть вперёд относительно текущего решения.
+
+#### `Up/Dn` из MT `Nero.csv`
+
+`Up/Dn` внутри `fractal*` допустимы как live-safe историческое состояние только если доказано, что они накоплены producer-ом к моменту строки и не пересчитаны Python-постобработкой по будущим барам. Если похожие поля построены как supervised targets или future OHLC outcome, они относятся к target/future-derived группе и не допускаются во вход.
+
+### Нормализация
+
+`normalize_rowwise()` сама по себе не является leakage, если её параметры считаются только внутри текущей строки по уже известным фракталам. Проверять нужно две разные вещи:
+
+- для row-wise normalization: в её pool не должны попадать future-derived поля, влияющие на live-признаки;
+- для global scaler (`StandardScaler`, `RobustScaler`, min-max по датасету): параметры fit-ятся только на train и затем применяются к validation/test/online.
+
+ATR нужно проверять отдельно. Если checkpoint обучался на raw `ATR`, online должен подавать raw `ATR`. Если checkpoint обучался на scaler-normalized ATR, online обязан применять тот же scaler с сохранёнными train-параметрами. Каждый новый checkpoint явно фиксирует свой ATR/volatility contract.
+
+### Проверка информативности признаков
+
+Перед retrain проверить каждый input feature:
+
+- `unique_count`;
+- долю `NaN`;
+- долю нулей;
+- стандартное отклонение на train.
+
+Если признак константный на всём train, его нельзя оставлять как информативный вход без явного решения. Его нужно удалить из feature builder до retrain или пометить как intentionally disabled.
+
+### Минимальный пакет доказательств
+
+Каждый test/online отчёт должен содержать:
+
+- путь к checkpoint;
+- путь к rule JSON, если правило отбора есть;
+- список input columns или ссылку на feature builder;
+- список запрещённых target/future-derived колонок и подтверждение, что их нет во входе;
+- feature count и порядок признаков для checkpoint;
+- границы train/validation/test;
+- результат проверки сортировки фракталов или других event elements;
+- результат проверки нормализации;
+- ATR/volatility contract: raw, ratio или scaler-normalized;
+- результат проверки константных признаков;
+- количество сигналов в Python export;
+- количество реально открытых сделок в MT4, если был MT4 tester;
+- явный verdict: `PASS`, `FAIL`, `UNKNOWN` или `DIAGNOSTIC_ONLY`.
+
+### Запрещённые практики
+
+- Заполнять отсутствующие online-признаки нулями без явного разрешения в контракте модели.
+- Подменять future-derived `predict` нулём в online и считать это совместимым с training.
+- Оставлять в training признаки, которые online не может честно воспроизвести.
+- Давать future-derived полям влиять на нормализацию live-признаков.
+- Выбирать model inputs как "все числовые колонки".
+- Использовать `target_*`, `label_*`, `outcome_*` wildcard как input.
+- Использовать один и тот же `test` для подбора порогов и для финального доказательства.
+- Сравнивать online и backtest, если online preprocessing отличается от training/test preprocessing.
+- Считать высокий `PF` доказательством качества, если не пройдены проверки этого раздела.
+- Называть diagnostic watcher production-ready, если он проверяет только файловую цепочку.
 
 ### Критерии успешного завершения
 
 - Все input features имеют `PASS`.
+- `UNKNOWN` отсутствует.
 - Есть frozen feature list.
+- Есть frozen target/future-derived denylist.
 - Есть ссылка на builder или metadata.
+- Candidate-source live-safe.
+- Rule/checkpoint/exporter совместимы с одним и тем же feature contract.
+- Online runner падает при несовместимом contract, а не публикует сигнал.
 - Есть явный verdict preflight: `PASS`.
 
 ### Типовые ошибки
@@ -270,6 +429,7 @@
 - Обучить модель с признаками, которые online нельзя честно создать.
 - Подменить недоступный input нулём.
 - Оставить offline candidate gate, который нельзя воспроизвести live.
+- Строить input как "все числовые колонки", из-за чего новые target columns автоматически попадают в модель.
 
 ### Ветвления
 
@@ -297,21 +457,26 @@
 ### Пошаговые действия
 
 1. Описать label convention: значения, классы, timeout, neutral/skip, reversal.
-2. Зафиксировать момент входа и выхода для расчёта результата.
-3. Для fixed horizon указать горизонт и единицы: price, ATR, пункты, деньги.
-4. Для SL/TP или triple barrier определить:
+2. Назвать target/label колонки так, чтобы их нельзя было спутать с input-признаками:
+   - обязательный префикс для новых колонок: `target_`, `label_` или `outcome_`;
+   - legacy-колонки без префикса допустимы только при явном allowlist/denylist contract;
+   - feature builders должны выбирать input по allowlist, а не по схеме "всё, кроме нескольких известных targets".
+3. Зафиксировать момент входа и выхода для расчёта результата.
+4. Для fixed horizon указать горизонт и единицы: price, ATR, пункты, деньги.
+5. Для SL/TP или triple barrier определить:
    - что делать, если TP и SL задеты в одном окне;
    - как трактуется timeout;
    - как считать reversal;
    - какие цены используются: open, close, high/low, bid/ask.
-5. Проверить distribution targets по train/validation/test.
-6. Проверить distribution по сторонам BUY/SELL.
-7. Добавить invariant tests или воспроизводимый audit label convention.
+6. Проверить distribution targets по train/validation/test.
+7. Проверить distribution по сторонам BUY/SELL.
+8. Добавить invariant tests или воспроизводимый audit label convention.
 
 ### Обязательные проверки
 
 - Target строится из будущего только как label.
 - Все target columns исключены из input.
+- Новые target/label columns имеют говорящий префикс; legacy-имена без префикса внесены в denylist.
 - Timeout не смешивается с SL, если это разные исходы.
 - BUY и SELL считаются симметрично или асимметрия явно описана.
 - Target не зависит от test-selected threshold.
@@ -319,6 +484,7 @@
 ### Критерии успешного завершения
 
 - Есть target contract.
+- Есть список target/label column names и denylist для feature builder-а.
 - Есть sanity check распределения классов и сторон.
 - Есть тесты или audit для edge cases.
 - Известно, какие target-колонки являются production labels, а какие diagnostic.
@@ -329,10 +495,12 @@
 - Подбор target по лучшему test PF.
 - Смешивание timeout, SL и neutral без явного смысла.
 - Использование future target как feature из-за удобного расположения в CSV.
+- Использование `target_*`/`label_*` wildcard как input из-за нестрогого парсинга колонок.
 
 ### Ветвления
 
 - Если label convention неоднозначна: не обучать модель, пока не описаны edge cases.
+- Если target columns названы как обычные features: переименовать новые колонки или добавить явный denylist для legacy-полей до обучения.
 - Если класс слишком редкий: перейти к take/skip, ranking, binary one-vs-rest или изменить задачу.
 - Если одна сторона имеет другой режим: рассмотреть отдельные BUY/SELL модели, но как новый кандидат.
 
@@ -920,7 +1088,87 @@
 
 ---
 
-## 15. Отчётность и аудит ошибок
+## 15. Monitoring и retraining policy
+
+### Цель
+
+Не допустить, чтобы после допуска к online frozen candidate незаметно устарел, начал работать в другом data regime или был заменён новой моделью без полного validation cycle.
+
+### Входы
+
+- production candidate или confirmed model;
+- online predictions;
+- trade event-log;
+- post-factum outcomes;
+- baseline distributions train/validation/test;
+- feature contract version;
+- risk limits.
+
+### Пошаговые действия
+
+1. Логировать каждый prediction:
+   - timestamp;
+   - feature contract version;
+   - checkpoint/rule version;
+   - score/probability;
+   - signal;
+   - skip/take reason.
+2. Логировать каждую сделку:
+   - signal_time;
+   - entry_time;
+   - direction;
+   - Bid/Ask;
+   - spread;
+   - slippage;
+   - commission;
+   - swap;
+   - close reason;
+   - PnL.
+3. Мониторить signal frequency, BUY/SELL balance, score distribution и skip rate.
+4. Мониторить drift live-safe признаков относительно train/validation baseline.
+5. Мониторить trading metrics: net PF, EV/trade, drawdown, missed opens, requotes, timeout PnL.
+6. Задать retraining triggers:
+   - календарный;
+   - degradation по заранее заданным метрикам;
+   - data drift;
+   - feature/data contract change;
+   - broker/provider change.
+7. Новый retrain проводить только через полный cycle методики: feature contract -> validation -> frozen test -> robustness/parity -> forward.
+8. Поддерживать rollback: предыдущий frozen checkpoint/rule остаётся доступен до принятия нового.
+
+### Обязательные проверки
+
+- Monitoring не меняет threshold/rule online без нового validation cycle.
+- Drift alert означает audit, а не автоматическое включение новой модели.
+- Метрики исполнения отделены от метрик качества сигнала.
+- Feature contract version сохранён рядом с prediction и trade event.
+- Retrain не использует forward/test как validation.
+
+### Критерии успешного завершения
+
+- Есть monitoring checklist и incident procedure.
+- Есть политика: когда кандидат остаётся `watch`, когда отключается, когда допускается retrain.
+- Есть rollback procedure.
+- Есть минимальный набор полей логов для post-factum reconciliation.
+
+### Типовые ошибки
+
+- Менять threshold по live PnL без нового validation cycle.
+- Смешивать broker execution failure с деградацией модели.
+- Не хранить feature contract version рядом с prediction.
+- Автоматически заменять production candidate свежим retrain checkpoint.
+- Считать drift proof of failure без проверки trading impact и execution layer.
+
+### Ветвления
+
+- Если drift есть, а PnL и risk limits нормальные: статус `watch`, усилить monitoring.
+- Если execution failures растут: чинить MT4/broker layer, не модель.
+- Если signal quality деградировала на достаточном N: остановить candidate и запустить новый research cycle.
+- Если contract изменился: старый checkpoint нельзя использовать без compatibility audit.
+
+---
+
+## 16. Отчётность и аудит ошибок
 
 ### Цель
 
@@ -949,17 +1197,31 @@
    - Related Materials.
 2. Указать команды, версии, paths, hashes, rules, checkpoints.
 3. Явно перечислить invalidated assumptions.
-4. Если найден баг прошлого вывода:
+4. Для принятого кандидата создать model card:
+   - назначение модели;
+   - instrument/timeframe;
+   - `decision_time`;
+   - feature contract version;
+   - target/label contract;
+   - training/validation/test/forward windows;
+   - checkpoint/rule/export paths;
+   - cost assumptions;
+   - validation/test/forward verdict;
+   - known risks;
+   - monitoring/retraining policy;
+   - stop conditions.
+5. Если найден баг прошлого вывода:
    - доказать минимальным reproducer;
    - оценить material impact;
    - пометить старые выводы как invalid, superseded или unchanged.
-5. Обновить changelog/handoff/wiki только если этап действительно закрыт или выводы изменили проектное знание.
+6. Обновить changelog/handoff/wiki только если этап действительно закрыт или выводы изменили проектное знание.
 
 ### Обязательные проверки
 
 - Отчёт отделяет факты от гипотез.
 - Есть список limitations.
 - Все источники результата доступны.
+- Для принятого кандидата есть model card.
 - Старые противоречащие выводы помечены.
 - Документировано, что запрещено делать дальше.
 
@@ -972,6 +1234,7 @@
 ### Типовые ошибки
 
 - Писать только итоговый PF без команд.
+- Повышать статус кандидата без model card.
 - Не фиксировать, почему candidate rejected.
 - Удалять неудачные эксперименты из истории.
 - Не обновлять вывод после найденной ошибки симулятора.
@@ -1013,6 +1276,8 @@
 - [ ] Export parity выполнен перед MT4 verdict.
 - [ ] MT4 tester/reconciliation выполнены для execution candidate.
 - [ ] Forward/online diagnostic не смешан с historical test.
+- [ ] Monitoring/retraining policy описана для production candidate.
+- [ ] Для принятого кандидата создан model card.
 - [ ] Итоговый отчёт содержит commands, artifacts, limitations, next step.
 
 ## Сводный чеклист аудита готового результата
@@ -1036,7 +1301,10 @@
 - [ ] Python export соответствует MT4 opened trades.
 - [ ] Online/tester расхождения классифицированы.
 - [ ] Все open failures и requote видимы в логах.
+- [ ] Feature contract version сохраняется рядом с prediction/trade event.
+- [ ] Monitoring не меняет rule без нового validation cycle.
 - [ ] Reproducibility metadata сохранена.
+- [ ] Для production/confirmed кандидата есть model card.
 - [ ] Старые противоречащие выводы обновлены или помечены.
 
 ## Типовые причины ложных выводов в проекте
@@ -1058,6 +1326,7 @@
 - Online/tester PnL-разница смешивала ML signal risk и execution risk.
 - Spread, slippage, requote и missed opens не были включены в ранний вывод.
 - Aggregate PF скрывал слабую сторону SELL или отрицательный год.
+- BUY-only или SELL-filter объявлялись улучшением после test, хотя это новая гипотеза и требует нового validation cycle.
 - Рост PF объяснялся "лучшим сигналом", хотя фактически мог идти от лучшей цены входа на провальных сигналах.
 
 ## Verdict-статусы кандидатов
@@ -1068,8 +1337,8 @@
 | `diagnostic_only` | Проверялась механика, но ML quality не доказана | Использовать только для отладки pipeline |
 | `research_only` | Есть сигнал, но не хватает устойчивости или contract неполный | Продолжать исследования, не подключать к production |
 | `candidate` | Прошёл validation/test, но нет полного execution/forward подтверждения | Готовить parity, robustness, forward |
-| `production_candidate` | Прошёл data contract, frozen test, robustness, MT4 parity | Допускается controlled forward/online diagnostic |
-| `confirmed` | Forward подтвердил frozen rule | Поддерживать мониторинг и periodic retrain policy |
+| `production_candidate` | Прошёл data contract, baseline comparison, frozen test, net-cost backtest, robustness или walk-forward, MT4 parity/reconciliation | Допускается controlled forward/online diagnostic; forward ещё не обязателен |
+| `confirmed` | Forward подтвердил frozen rule на заранее заданных критериях | Поддерживать monitoring, rollback и periodic retrain policy |
 
 ## Stop conditions
 

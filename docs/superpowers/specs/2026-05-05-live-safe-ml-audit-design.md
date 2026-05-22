@@ -25,7 +25,7 @@ not safe: it used row-wise inputs derived from future bars, including
 marks `ret_dir_atr_lag1` as forbidden until proven safe.
 
 Normative gate for this audit:
-[`docs/ML/ml_leakage_preflight_checklist.md`](../../ML/ml_leakage_preflight_checklist.md).
+[`docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`](../../audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate).
 Every ML quality claim in this plan must pass that checklist. If a check is
 `FAIL` or `UNKNOWN`, the result can only be marked `DIAGNOSTIC_ONLY` until the
 cause is resolved.

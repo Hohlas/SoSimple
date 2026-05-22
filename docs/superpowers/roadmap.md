@@ -16,7 +16,7 @@
 
 **Контекст:** старые прибыльные ML-результаты нужно отделить от честных
 online-safe результатов. Высокий PF больше не считается доказательством, пока
-не пройден [`ML Leakage Preflight Checklist`](../ML/ml_leakage_preflight_checklist.md).
+не пройден [`Feature Contract и Leakage Gate`](../audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate).
 
 **Задача:** повторно проверить `quality`, `frequency`, `original_plus_path`,
 `entry_path_v1`, `entry_path_v1_quantile`: воспроизвести старые результаты,

@@ -2,7 +2,7 @@
 
 > **Date**: 2026-05-05
 > **Goal**: Re-audit profitable ML systems before any online trading decision.
-> **Gate**: [`docs/ML/ml_leakage_preflight_checklist.md`](../ML/ml_leakage_preflight_checklist.md)
+> **Gate**: [`docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`](../audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate)
 
 ## Context
 

@@ -25,7 +25,7 @@
       ],
       "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
-      "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+      "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     },
     {
       "system_name": "frequency",
@@ -52,7 +52,7 @@
       ],
       "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
-      "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+      "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     },
     {
       "system_name": "original_plus_path",
@@ -79,7 +79,7 @@
       ],
       "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
-      "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+      "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     },
     {
       "system_name": "entry_path_v1",
@@ -94,7 +94,7 @@
       ],
       "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
-      "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+      "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     },
     {
       "system_name": "entry_path_v1_quantile",
@@ -109,7 +109,7 @@
       ],
       "unknown_features": [],
       "allowed_next_step": "Reject old checkpoint for online use or retrain/rebuild with live-safe features",
-      "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md"
+      "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     }
   ]
 }

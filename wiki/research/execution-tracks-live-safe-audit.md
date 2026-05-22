@@ -9,7 +9,7 @@ status: active
 ## 10. Live-Safe ML Audit (05-05)
 
 Повторный аудит прибыльных ML-систем отделил старую прибыльность от права идти
-в online. Нормативный gate: `docs/ML/ml_leakage_preflight_checklist.md`.
+в online. Нормативный gate: `docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate`.
 
 Проверены пять систем:
 

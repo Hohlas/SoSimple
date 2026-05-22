@@ -192,7 +192,7 @@ def build_system_verdict(system: AuditedSystem) -> dict:
         "forbidden_features": forbidden_features,
         "unknown_features": unknown_features,
         "allowed_next_step": allowed_next_step,
-        "checklist_path": "docs/ML/ml_leakage_preflight_checklist.md",
+        "leakage_gate_path": "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate",
     }
 
 

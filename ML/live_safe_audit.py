@@ -59,7 +59,7 @@ def classify_feature_name(name: str) -> FeatureTrace:
     transformation = "direct"
     availability_time = "unknown"
     status = LiveSafeStatus.UNKNOWN
-    evidence = "docs/ML/ml_leakage_preflight_checklist.md"
+    evidence = "docs/audit/ml_trading_methodology.md#3-feature-contract-и-leakage-gate"
     notes = ""
     role = "model_input"
 
