@@ -1,10 +1,10 @@
 ---
-last_updated: 2026-05-14
-sources: 2
+last_updated: 2026-05-21
+sources: 3
 status: active
 ---
 
-# Execution Tracks: Reconciliation + Candidate-Source Audit (05-12 — 05-14)
+# Execution Tracks: Reconciliation + Candidate-Source Audit (05-12 — 05-15)
 
 ## 18. Online/Tester Execution Reconciliation (05-12)
 
@@ -101,3 +101,40 @@ gate.
 следующего retrain, не готовая production-rule.
 
 Источник: [2026-05-14-entry-path-direct-bar-model.md](../../docs/reports/2026-05-14-entry-path-direct-bar-model.md)
+
+## 20. Direct Direction Improvement (05-15)
+
+Следующая итерация проверяла, можно ли улучшить direct-direction постановку
+после слабого 3-class `SELL/SKIP/BUY` результата. Главный методологический
+вывод: проблема была не только в признаках, а в самой 3-class формулировке.
+
+Validation experiments:
+
+| Experiment | Best PF | Best sequential PF | Verdict |
+|---|---:|---:|---|
+| k variants / geometry-only | 1.03-1.11 | 0.82-1.15 | gate fail |
+| binary RF BUY/SELL margin=0.10 | 1.25 | 1.30 | gate pass |
+| HGB / LR 3-class | 1.01-1.05 | 0.83-1.05 | gate fail |
+| zone features | 1.04-1.08 | 0.87 | gate fail |
+| score-filtered direction | 1.09 | 1.16 | gate fail |
+
+Frozen test для validation-winner `Binary RF buy=0.4, sell=0.6,
+margin=0.10`:
+
+| Metric | Value |
+|---|---:|
+| test PF | 1.226 |
+| sequential PF | 1.537 |
+| trades | 2045 |
+| BUY PF | 1.904 |
+| SELL PF | 0.618 |
+| negative years | 2 |
+
+Вывод: binary BUY/SELL заметно лучше 3-class и превосходит all-rows,
+surrogate и direct-bar baselines. Но это ещё не production-доказательство:
+SELL сторона убыточна, два года test отрицательные, а frozen test был выполнен
+для одной выбранной конфигурации. Следующие решения должны рассматривать
+BUY-only или отдельный SELL-фильтр как новые кандидаты, а не как post-test
+подкрутку текущего результата.
+
+Источник: [2026-05-15-direct-direction-improvement.md](../../docs/reports/2026-05-15-direct-direction-improvement.md)

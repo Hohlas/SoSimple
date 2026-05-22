@@ -3,6 +3,12 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-21] ingest | Direct direction improvement synced into wiki
+- Added coverage for `docs/reports/2026-05-15-direct-direction-improvement.md`.
+- Updated `wiki/research/execution-tracks-reconciliation-plus-audit.md` with §20 Direct Direction Improvement.
+- Updated `wiki/research/execution-tracks-overview.md` from 39 to 40 reports and recorded the open SELL-side risk.
+- Updated `wiki/index.md` report counts and coverage range for the reconciliation/candidate-source track.
+
 ## [2026-05-14] ingest | Entry path candidate-source audit
 - Added `docs/reports/2026-05-14-entry-path-all-rows-ranking.md`.
 - Updated `wiki/research/execution-tracks.md` with signal-only ablation and all-rows ranking result.

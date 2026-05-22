@@ -10,6 +10,7 @@
 | [`ML/online_tester_reconciliation.py.md`](ML/online_tester_reconciliation.py.md) | Инструкция для повторной сверки online/tester `ml_trade_events.csv` | Перед и после online/tester diagnostic-прогонов MT4 | Входы, команда запуска, выходные CSV/JSON, метрики и ограничения |
 | [`dataset_description.md`](dataset_description.md) | Формат исходного датасета `Nero.csv` | Меняется структура исходных колонок или смысл признаков | Описание колонок, типов, целевых меток |
 | [`reports/`](reports/) | Канонические отчёты завершённых этапов | Завершён этап, получены выводы, изменилось поведение или интерпретация результатов | См. [`reports/README.md`](reports/README.md) |
+| [`audit/`](audit/) | Рабочие методики и audit-gates для разработки ML-моделей торговых систем | Меняются обязательные проверки, leakage-инварианты, validation/test/forward протокол или типовые ошибки | См. [`audit/README.md`](audit/README.md) |
 | [`superpowers/roadmap.md`](superpowers/roadmap.md) | Активный research roadmap | Меняется порядок крупных направлений работ | Короткий ordered backlog + ссылки на планы/отчёты |
 | [`superpowers/plans/`](superpowers/plans/) | Исполнимые планы отдельных задач | Перед реализацией многошаговой задачи | Чеклист задач, файлы, проверки, expected outputs |
 | [`superpowers/specs/`](superpowers/specs/) | Design/spec материалы | Нужно зафиксировать проектное решение до плана | Контекст, решение, альтернативы, риски |

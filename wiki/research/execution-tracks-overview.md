@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-16
-sources: 39
+last_updated: 2026-05-21
+sources: 40
 status: active
 ---
 
 # Execution Tracks: Overview
 
-> Синтез 39 отчётов (2026-04-08 — 2026-05-14). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка и candidate-source audit.
+> Синтез 40 отчётов (2026-04-08 — 2026-05-15). Параллельные направления execution, live-safe аудит прибыльных ML-систем, MT4 parity, online/tester diagnostic-сверка, candidate-source audit и direct-direction улучшения.
 
 ## Сравнение треков (на сегодня)
 
@@ -27,6 +27,7 @@ status: active
 2. TB regime shift 2023–2026 — локальный всплеск или системный? Ответ придёт только с накоплением forward-данных.
 3. PF uplift реализация: три отобранных гипотезы требуют `/writing-plans` перед реализацией; пороги нужно фиксировать на проверочном периоде, не на тестовом.
 4. Нужна следующая независимая некоррелированная система; дальнейшая подгонка `TrailATR/TP` внутри текущего `frequency` набора имеет убывающую ценность.
+5. Direct-direction binary RF улучшил all-rows/direct-bar baselines, но SELL PF=0.62 и два отрицательных года блокируют production verdict без отдельного BUY-only или SELL-filter follow-up.
 
 ## Содержание (подстраницы)
 
@@ -41,4 +42,4 @@ status: active
 | [execution-tracks-telemetry-plus-mql.md](execution-tracks-telemetry-plus-mql.md) | §8 Telemetry, §9 MQL Runtime | 2 |
 | [execution-tracks-live-safe-audit.md](execution-tracks-live-safe-audit.md) | §10-13 Live-Safe Audit + Retrain | 4 |
 | [execution-tracks-reproducibility-plus-parity.md](execution-tracks-reproducibility-plus-parity.md) | §14-17 Reproducibility + MT4 Parity | 4 |
-| [execution-tracks-reconciliation-plus-audit.md](execution-tracks-reconciliation-plus-audit.md) | §18-19 Reconciliation + Candidate-Source | 2 |
+| [execution-tracks-reconciliation-plus-audit.md](execution-tracks-reconciliation-plus-audit.md) | §18-20 Reconciliation + Candidate-Source + Direct Direction | 3 |
