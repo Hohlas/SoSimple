@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from ML.benchmark_entry_path_binary_direction import pick_validation_winner
+from ML.benchmark_entry_path_binary_direction import selection_policy
 from ML.entry_path_direct_direction_targets import build_buy_sell_fav_adv
 from ML.entry_path_direct_direction_targets import build_target_d_masks
 
@@ -92,3 +94,90 @@ def test_margin_zero_equivalent_to_simple_threshold():
     with_margin[buy_fire & buy_margin] = 1
     with_margin[sell_fire & sell_margin] = -1
     np.testing.assert_array_equal(simple, with_margin)
+
+def test_pick_validation_winner_rejects_one_sided_candidates():
+    grid = pd.DataFrame(
+        [
+            {
+                "config": "one_sided_high_pf",
+                "mode": "standalone",
+                "validation_trades": 200,
+                "validation_pf": 1.8,
+                "validation_sequential_pf": 1.4,
+                "negative_years": 0,
+                "one_sided_candidate": True,
+                "overfitting_risk": False,
+            },
+            {
+                "config": "balanced_lower_pf",
+                "mode": "standalone",
+                "validation_trades": 200,
+                "validation_pf": 1.3,
+                "validation_sequential_pf": 1.3,
+                "negative_years": 0,
+                "one_sided_candidate": False,
+                "overfitting_risk": False,
+            },
+        ]
+    )
+
+    assert pick_validation_winner(grid)["config"] == "balanced_lower_pf"
+
+
+def test_pick_validation_winner_rejects_negative_years():
+    grid = pd.DataFrame(
+        [
+            {
+                "config": "unstable_high_seq",
+                "mode": "standalone",
+                "validation_trades": 200,
+                "validation_pf": 1.8,
+                "validation_sequential_pf": 1.8,
+                "negative_years": 1,
+                "one_sided_candidate": False,
+                "overfitting_risk": False,
+            },
+            {
+                "config": "stable_lower_seq",
+                "mode": "standalone",
+                "validation_trades": 200,
+                "validation_pf": 1.2,
+                "validation_sequential_pf": 1.2,
+                "negative_years": 0,
+                "one_sided_candidate": False,
+                "overfitting_risk": False,
+            },
+        ]
+    )
+
+    assert pick_validation_winner(grid)["config"] == "stable_lower_seq"
+
+
+def test_pick_validation_winner_uses_sequential_pf_as_primary_metric():
+    grid = pd.DataFrame(
+        [
+            {
+                "config": "higher_pf",
+                "mode": "standalone",
+                "validation_trades": 300,
+                "validation_pf": 1.5,
+                "validation_sequential_pf": 1.2,
+                "negative_years": 0,
+                "one_sided_candidate": False,
+                "overfitting_risk": False,
+            },
+            {
+                "config": "higher_seq",
+                "mode": "standalone",
+                "validation_trades": 250,
+                "validation_pf": 1.3,
+                "validation_sequential_pf": 1.4,
+                "negative_years": 0,
+                "one_sided_candidate": False,
+                "overfitting_risk": False,
+            },
+        ]
+    )
+
+    assert selection_policy()["primary_metric"] == "validation_sequential_pf"
+    assert pick_validation_winner(grid)["config"] == "higher_seq"

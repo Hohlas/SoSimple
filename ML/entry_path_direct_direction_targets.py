@@ -28,11 +28,15 @@ def build_buy_sell_fav_adv(
     source: pd.DataFrame,
     horizons: tuple[int, ...] = (3, 6, 12, 24, 48),
 ) -> pd.DataFrame:
-    """Строит независимые BUY/SELL moves из top-level normalized up/dn targets."""
+    """Строит BUY/SELL moves в ATR units из raw up/dn price distances."""
     out = pd.DataFrame(index=source.index)
+    atr = pd.to_numeric(source.get("ATR", pd.Series(0.0, index=source.index)), errors="coerce").fillna(0.0).astype(float)
+    safe_atr = atr.where(atr > 0.0, np.nan)
     for horizon in horizons:
-        up = pd.to_numeric(source[f"up_{horizon}"], errors="coerce").fillna(0.0)
-        dn = pd.to_numeric(source[f"dn_{horizon}"], errors="coerce").fillna(0.0)
+        up_raw = pd.to_numeric(source[f"up_{horizon}"], errors="coerce").fillna(0.0).astype(float)
+        dn_raw = pd.to_numeric(source[f"dn_{horizon}"], errors="coerce").fillna(0.0).astype(float)
+        up = (up_raw / safe_atr).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        dn = (dn_raw / safe_atr).replace([np.inf, -np.inf], np.nan).fillna(0.0)
         out[f"buy_fav_{horizon}_atr"] = up.astype(float)
         out[f"buy_adv_{horizon}_atr"] = dn.astype(float)
         out[f"sell_fav_{horizon}_atr"] = dn.astype(float)
@@ -128,14 +132,23 @@ def summarize_target_frequencies(
     splits: dict[str, pd.DataFrame],
     *,
     ohlc_path: str | Path,
+    include_ac_targets: bool = False,
 ) -> pd.DataFrame:
-    """Считает частоты target families A/C/D для train/validation gate."""
+    """Считает частоты target families для train/validation gate.
+
+    A/C включаются только для raw up/dn sources. Нормализованные split CSV не
+    являются корректным ATR-source для этих target families.
+    """
     rows: list[dict[str, Any]] = []
     specs = [
-        {"target_family": "A", "params": {"stop_n": 0.2, "take_y": 0.3}},
-        {"target_family": "C", "params": {"take_x": 0.5, "adverse_y": 0.3}},
         {"target_family": "D", "params": {"trail_n": 2.0, "profit_z": 1.0, "horizon": 24}},
     ]
+    if include_ac_targets:
+        specs = [
+            {"target_family": "A", "params": {"stop_n": 0.2, "take_y": 0.3}},
+            {"target_family": "C", "params": {"take_x": 0.5, "adverse_y": 0.3}},
+            *specs,
+        ]
     for spec in specs:
         split_rows = []
         for split, source in splits.items():

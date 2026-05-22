@@ -212,6 +212,7 @@ def build_zone_features(
     *,
     atr_zone_bounds: list[float] | None = None,
     include_updn: bool = True,
+    raw_price_frame: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Строит zone-признаки: агрегация фракталов по ценовым зонам относительно fractal0.price."""
     bounds = atr_zone_bounds if atr_zone_bounds is not None else ATR_ZONE_BOUNDS
@@ -244,13 +245,16 @@ def build_zone_features(
 
     out_rows: list[dict[str, float | int]] = []
     fractal_columns = fractal_columns_in_order(frame.columns)
-    for _, row in frame.iterrows():
+    raw_frame = raw_price_frame if raw_price_frame is not None else frame
+    for row_pos, (_, row) in enumerate(frame.iterrows()):
+        raw_row = raw_frame.iloc[row_pos] if row_pos < len(raw_frame) else row
         row_features: dict[str, float | int] = {}
         atr = _safe_float(row.get("ATR"), default=0.0)
         if atr <= 0:
             atr = 1.0
         fractal0 = parse_fractal(row.get("fractal0", ""))
-        base_price = float(fractal0.get("price", 0.0)) if fractal0 else 0.0
+        raw_fractal0 = parse_fractal(raw_row.get("fractal0", ""))
+        base_price = float(raw_fractal0.get("price", 0.0)) if raw_fractal0 else (float(fractal0.get("price", 0.0)) if fractal0 else 0.0)
         row_features["fractal0_price_rank"] = 0.0
 
         zone_data: dict[str, dict[str, float]] = {zname: {f: 0.0 for f in zone_agg_fields} for zname in zone_names}
@@ -268,7 +272,8 @@ def build_zone_features(
             source_index = _fractal_index(col)
             if source_index == 0:
                 continue
-            price = float(parsed.get("price", 0.0) or 0.0)
+            raw_parsed = parse_fractal(raw_row.get(col, "")) or parsed
+            price = float(raw_parsed.get("price", 0.0) or 0.0)
             direction = float(parsed.get("direction", 0) or 0)
             distance_atr = (price - base_price) / atr
             abs_distance = abs(distance_atr)
@@ -335,31 +340,41 @@ def build_fractal_level_features(
     input_family: str = "nearest_k",
     k: int = 16,
     geometry_only: bool = False,
+    raw_price_frame: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Строит model inputs из текущей строки фракталов."""
     if input_family == "nearest_k":
-        return _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
+        return _build_nearest_k_features(frame, k=k, geometry_only=geometry_only, raw_price_frame=raw_price_frame)
     if input_family == "zones":
-        return build_zone_features(frame, include_updn=not geometry_only)
+        return build_zone_features(frame, include_updn=not geometry_only, raw_price_frame=raw_price_frame)
     if input_family == "zones_plus_nearest_k":
-        zone_df = build_zone_features(frame, include_updn=not geometry_only)
-        nearest_df = _build_nearest_k_features(frame, k=k, geometry_only=geometry_only)
+        zone_df = build_zone_features(frame, include_updn=not geometry_only, raw_price_frame=raw_price_frame)
+        nearest_df = _build_nearest_k_features(frame, k=k, geometry_only=geometry_only, raw_price_frame=raw_price_frame)
         shared_cols = set(zone_df.columns) & set(nearest_df.columns)
         next_cols = nearest_df[[c for c in nearest_df.columns if c not in shared_cols]]
         return pd.concat([zone_df, next_cols], axis=1)
     raise ValueError(f"unsupported input_family: {input_family}")
 
 
-def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: bool = False) -> pd.DataFrame:
+def _build_nearest_k_features(
+    frame: pd.DataFrame,
+    *,
+    k: int,
+    geometry_only: bool = False,
+    raw_price_frame: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     fractal_columns = fractal_columns_in_order(frame.columns)
+    raw_frame = raw_price_frame if raw_price_frame is not None else frame
     out_rows: list[dict[str, float | int]] = []
-    for _, row in frame.iterrows():
+    for row_pos, (_, row) in enumerate(frame.iterrows()):
+        raw_row = raw_frame.iloc[row_pos] if row_pos < len(raw_frame) else row
         row_features: dict[str, float | int] = {}
         atr = _safe_float(row.get("ATR"), default=0.0)
         if atr <= 0:
             atr = 1.0
         fractal0 = parse_fractal(row.get("fractal0", ""))
-        base_price = float(fractal0.get("price", 0.0)) if fractal0 else 0.0
+        raw_fractal0 = parse_fractal(raw_row.get("fractal0", ""))
+        base_price = float(raw_fractal0.get("price", 0.0)) if raw_fractal0 else (float(fractal0.get("price", 0.0)) if fractal0 else 0.0)
         base_direction = int(fractal0.get("direction", 0)) if fractal0 else 0
         row_features["atr"] = float(atr)
         row_features["fractal0_direction"] = int(base_direction)
@@ -373,9 +388,11 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: boo
                 continue
             source_index = _fractal_index(col)
             if source_index == 0:
-                prices.append(float(parsed.get("price", 0.0) or 0.0))
+                raw_parsed = parse_fractal(raw_row.get(col, "")) or parsed
+                prices.append(float(raw_parsed.get("price", 0.0) or 0.0))
                 continue
-            price = float(parsed.get("price", 0.0) or 0.0)
+            raw_parsed = parse_fractal(raw_row.get(col, "")) or parsed
+            price = float(raw_parsed.get("price", 0.0) or 0.0)
             raw_distance = (price - base_price) / atr
             candidates.append((abs(raw_distance), source_index, raw_distance, parsed))
             prices.append(price)
@@ -494,7 +511,7 @@ def build_feature_contract(fractal_count: int = 100) -> list[dict[str, Any]]:
                     "source_type": source_type,
                     "available_at": available_at,
                     "live_safe": True,
-                    "normalization": "local_ratio" if field == "price" and not is_price else "none",
+                    "normalization": "raw_price_distance_over_raw_atr" if field == "price" and not is_price else "none",
                     "model_input": bool(model_input),
                 }
             )

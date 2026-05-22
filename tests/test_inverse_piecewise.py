@@ -172,3 +172,45 @@ def test_normalize_rowwise_can_exclude_predict_from_front_back_pool():
         assert high is not None
         assert low[3] == high[3]
         assert low[4] == high[4]
+
+
+def test_normalize_rowwise_can_exclude_top_level_targets_from_updn_pool():
+    """Direct-direction features must not depend on top-level target columns."""
+    import pandas as pd
+
+    def fractal(up12, dn12, up24, dn24, up48, dn48):
+        return (
+            "1700000000:1000.0:1:10.0:20.0:0:0:0:1.0:1:0.5:"
+            f"{up12}:{dn12}:{up24}:{dn24}:{up48}:{dn48}:0.0:0.0:0.0:0.0:2.5"
+        )
+
+    base = {
+        "time": ["2025.01.01 00:00"],
+        "signal": [0],
+        "predict": [0.0],
+        "ATR": [2.5],
+        "fractal0": [fractal(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)],
+        "fractal1": [fractal(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)],
+        "up_3": [1.0],
+        "dn_3": [1.0],
+        "up_6": [1.0],
+        "dn_6": [1.0],
+        "up_12": [1.0],
+        "dn_12": [1.0],
+        "up_24": [1.0],
+        "dn_24": [1.0],
+        "up_48": [1.0],
+        "dn_48": [1.0],
+    }
+
+    from processing.normalize import normalize_rowwise, parse_fractal
+
+    low_targets = normalize_rowwise(pd.DataFrame(base), include_targets_in_updn_pool=False, verbose=False)
+    high = {**base, "up_48": [10_000.0], "dn_48": [10_000.0]}
+    high_targets = normalize_rowwise(pd.DataFrame(high), include_targets_in_updn_pool=False, verbose=False)
+
+    low_fractal1 = parse_fractal(low_targets.loc[0, "fractal1"])
+    high_fractal1 = parse_fractal(high_targets.loc[0, "fractal1"])
+    assert low_fractal1 is not None
+    assert high_fractal1 is not None
+    assert low_fractal1[11:17] == high_fractal1[11:17]

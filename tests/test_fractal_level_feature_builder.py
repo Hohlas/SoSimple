@@ -107,6 +107,64 @@ def test_nearest_k_sorts_by_price_distance_not_fractal_index():
     assert "fractal0_up_24" not in features.columns
 
 
+
+
+def test_nearest_k_can_use_raw_price_source_for_distance_units():
+    normalized = pd.DataFrame(
+        [
+            {
+                "time": "2024.01.01 10:00",
+                "ATR": 2.0,
+                "fractal0": "1:0.10:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1",
+                "fractal1": "2:0.20:1:0:0:1:0:0:0.5:1:0.1:1:2:3:4:5:6:7:8:9:10:1",
+            }
+        ]
+    )
+    raw = pd.DataFrame(
+        [
+            {
+                "time": "2024.01.01 10:00",
+                "ATR": 2.0,
+                "fractal0": "1:100.0:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1",
+                "fractal1": "2:102.0:1:0:0:1:0:0:0.5:1:0.1:1:2:3:4:5:6:7:8:9:10:1",
+            }
+        ]
+    )
+
+    features = build_fractal_level_features(
+        normalized,
+        raw_price_frame=raw,
+        input_family="nearest_k",
+        k=1,
+    )
+
+    assert features.loc[0, "nearest_00_raw_distance_atr"] == 1.0
+
+
+def test_model_inputs_do_not_change_when_top_level_targets_are_perturbed():
+    frame = _make_multi_fractal_frame()
+    with_targets = frame.assign(
+        up_3=1.0,
+        dn_3=1.0,
+        up_6=1.0,
+        dn_6=1.0,
+        up_12=1.0,
+        dn_12=1.0,
+        up_24=1.0,
+        dn_24=1.0,
+        up_48=1.0,
+        dn_48=1.0,
+    )
+    perturbed = with_targets.copy()
+    perturbed["up_48"] = 10_000.0
+    perturbed["dn_48"] = 10_000.0
+
+    left = build_fractal_level_features(with_targets, input_family="nearest_k", k=4)
+    right = build_fractal_level_features(perturbed, input_family="nearest_k", k=4)
+
+    pd.testing.assert_frame_equal(left, right)
+
+
 def test_feature_normalizer_uses_train_frozen_statistics():
     train = pd.DataFrame({"a": [1.0, 3.0], "nearest_00_valid": [1, 1], "nearest_00_source_index": [2, 9]})
     validation = pd.DataFrame({"a": [3.0], "nearest_00_valid": [1], "nearest_00_source_index": [9]})

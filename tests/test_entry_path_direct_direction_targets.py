@@ -7,26 +7,25 @@ from ML.entry_path_direct_direction_targets import build_target_d_classes
 from ML.entry_path_direct_direction_targets import target_pair_to_class
 
 
-def test_buy_and_sell_fav_adv_are_built_independently():
+def test_buy_and_sell_fav_adv_are_built_independently_in_atr_units():
     frame = pd.DataFrame({"ATR": [2.0], "up_6": [0.6], "dn_6": [0.2]})
 
     moves = build_buy_sell_fav_adv(frame, horizons=(6,))
 
-    assert moves.loc[0, "buy_fav_6_atr"] == 0.6
-    assert moves.loc[0, "buy_adv_6_atr"] == 0.2
-    assert moves.loc[0, "sell_fav_6_atr"] == 0.2
-    assert moves.loc[0, "sell_adv_6_atr"] == 0.6
+    assert moves.loc[0, "buy_fav_6_atr"] == 0.3
+    assert moves.loc[0, "buy_adv_6_atr"] == 0.1
+    assert moves.loc[0, "sell_fav_6_atr"] == 0.1
+    assert moves.loc[0, "sell_adv_6_atr"] == 0.3
 
 
-def test_buy_sell_fav_adv_uses_normalized_top_level_targets_directly():
+def test_buy_sell_fav_adv_rejects_non_positive_atr_for_atr_targets():
     frame = pd.DataFrame({"ATR": [2.0], "up_6": [0.6], "dn_6": [0.2]})
 
     moves = build_buy_sell_fav_adv(frame, horizons=(6,))
 
-    assert moves.loc[0, "buy_fav_6_atr"] == 0.6
-    assert moves.loc[0, "buy_adv_6_atr"] == 0.2
-    assert moves.loc[0, "sell_fav_6_atr"] == 0.2
-    assert moves.loc[0, "sell_adv_6_atr"] == 0.6
+    assert moves.loc[0, "buy_fav_6_atr"] == 0.3
+    bad = build_buy_sell_fav_adv(pd.DataFrame({"ATR": [0.0], "up_6": [0.6], "dn_6": [0.2]}), horizons=(6,))
+    assert bad.loc[0, "buy_fav_6_atr"] == 0.0
 
 
 def test_target_pair_to_class_skips_ambiguous_rows():

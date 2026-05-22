@@ -1,0 +1,35 @@
+{
+  "test_set_used": false,
+  "policy": {
+    "candidate_scope": "validation_only",
+    "excluded_modes": [
+      "old_score_diagnostic"
+    ],
+    "required_mode": "standalone",
+    "min_validation_trades": 100,
+    "min_validation_pf": 1.15,
+    "min_validation_sequential_pf": 1.1,
+    "max_negative_years": 0,
+    "exclude_one_sided_candidate": true,
+    "exclude_overfitting_risk": true,
+    "primary_metric": "validation_sequential_pf",
+    "sort_order": [
+      {
+        "column": "validation_sequential_pf",
+        "ascending": false
+      },
+      {
+        "column": "validation_pf",
+        "ascending": false
+      },
+      {
+        "column": "validation_trades",
+        "ascending": false
+      }
+    ]
+  },
+  "automatic_winner": {},
+  "selected_config": {},
+  "decision_type": "automatic",
+  "reason": "no validation winner"
+}

@@ -89,6 +89,9 @@
 | [benchmark_entry_path_all_rows_ranking.py](ML/benchmark_entry_path_all_rows_ranking.py) | All-rows ranking benchmark без offline `signal != 0` gate | prediction/source/OHLC CSV → `reports/entry_path_v1_all_rows_ranking/` | [docs](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | ✅ |
 | [benchmark_entry_path_causal_surrogate.py](ML/benchmark_entry_path_causal_surrogate.py) | Causal surrogate benchmark для offline `label_all().signal` | source/prediction/OHLC CSV → `reports/entry_path_v1_causal_surrogate/` | [docs](docs/ML/benchmark_entry_path_causal_surrogate.py.md) | ✅ |
 | [benchmark_entry_path_direct_bar_model.py](ML/benchmark_entry_path_direct_bar_model.py) | Direct BUY/SELL/SKIP benchmark для каждого бара без offline signal gate | source/OHLC CSV → `reports/entry_path_v1_direct_bar_model/` | [docs](docs/ML/benchmark_entry_path_direct_bar_model.py.md) | ✅ |
+| [entry_path_direct_direction_targets.py](ML/entry_path_direct_direction_targets.py) | Target families A/C/D для direct-direction; A/C только из raw up/dn/ATR, D из OHLC | source/OHLC CSV → target masks | [docs](docs/ML/entry_path_direct_direction_targets.py.md) | ✅ |
+| [fractal_level_feature_builder.py](ML/fractal_level_feature_builder.py) | Fractal-level nearest-k/zones признаки с raw price / raw ATR distance contract | labeled frame + optional raw frame → feature frame | [docs](docs/ML/fractal_level_feature_builder.py.md) | ✅ |
+| [benchmark_entry_path_binary_direction.py](ML/benchmark_entry_path_binary_direction.py) | Validation-first binary BUY/SELL direct-direction benchmark с protocol gates | train/validation + raw source + OHLC → `reports/direct_direction_*` | [docs](docs/ML/benchmark_entry_path_binary_direction.py.md) | ✅ |
 | [export_entry_path_v1_quantile_predictions.py](ML/export_entry_path_v1_quantile_predictions.py) | Export train/validation/test predictions for entry_path_v1_quantile | checkpoint → `reports/entry_path_v1_quantile_*_predictions.csv` | — | ✅ |
 | [benchmark_entry_path_v1_quantile_filter.py](ML/benchmark_entry_path_v1_quantile_filter.py) | Quantile filter benchmark on frozen A @ 7.5% baseline | prediction CSVs + frozen rule → reports | — | ✅ |
 | [entry_path_v1_quantile_ensemble.py](ML/entry_path_v1_quantile_ensemble.py) | Агрегация quantile-прогнозов по нескольким seed для n-boost проверки | seed prediction CSVs → mean/vote masks | — | ✅ |
@@ -162,6 +165,9 @@
 | [test_benchmark_entry_path_all_rows_ranking.py](tests/test_benchmark_entry_path_all_rows_ranking.py) | `ML/benchmark_entry_path_all_rows_ranking.py` | — | ✅ |
 | [test_benchmark_entry_path_causal_surrogate.py](tests/test_benchmark_entry_path_causal_surrogate.py) | `ML/benchmark_entry_path_causal_surrogate.py` | — | ✅ |
 | [test_benchmark_entry_path_direct_bar_model.py](tests/test_benchmark_entry_path_direct_bar_model.py) | `ML/benchmark_entry_path_direct_bar_model.py` | — | ✅ |
+| [test_entry_path_direct_direction_targets.py](tests/test_entry_path_direct_direction_targets.py) | `ML/entry_path_direct_direction_targets.py` | — | ✅ |
+| [test_fractal_level_feature_builder.py](tests/test_fractal_level_feature_builder.py) | `ML/fractal_level_feature_builder.py` | — | ✅ |
+| [test_benchmark_entry_path_binary_direction.py](tests/test_benchmark_entry_path_binary_direction.py) | `ML/benchmark_entry_path_binary_direction.py` | — | ✅ |
 | [test_benchmark_entry_path_v2.py](tests/test_benchmark_entry_path_v2.py) | `ML/benchmark_entry_path_v2.py` | — | ✅ |
 | [test_benchmark_trailing_stop_target.py](tests/test_benchmark_trailing_stop_target.py) | `ML/benchmark_trailing_stop_target.py` | — | ✅ |
 | [test_run_trailing_stop_target_matrix.py](tests/test_run_trailing_stop_target_matrix.py) | `ML/run_trailing_stop_target_matrix.py` | — | ✅ |
@@ -232,6 +238,9 @@
 | [benchmark_entry_path_all_rows_ranking.py.md](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | All-rows ranking benchmark без offline `signal != 0` gate |
 | [benchmark_entry_path_causal_surrogate.py.md](docs/ML/benchmark_entry_path_causal_surrogate.py.md) | Causal surrogate benchmark для offline `label_all().signal` |
 | [benchmark_entry_path_direct_bar_model.py.md](docs/ML/benchmark_entry_path_direct_bar_model.py.md) | Direct BUY/SELL/SKIP benchmark для каждого бара |
+| [entry_path_direct_direction_targets.py.md](docs/ML/entry_path_direct_direction_targets.py.md) | Target families A/C/D для direct-direction |
+| [fractal_level_feature_builder.py.md](docs/ML/fractal_level_feature_builder.py.md) | Fractal-level nearest-k/zones feature builder |
+| [benchmark_entry_path_binary_direction.py.md](docs/ML/benchmark_entry_path_binary_direction.py.md) | Binary BUY/SELL direct-direction benchmark с protocol gates |
 | [feature_importance_diagnostics.py.md](docs/ML/feature_importance_diagnostics.py.md) | Диагностика важности групп текущих fractal-признаков |
 | [feature_bank_comparison_diagnostics.py.md](docs/ML/feature_bank_comparison_diagnostics.py.md) | Сравнение baseline/geometry/path feature-bank вариантов |
 | [lib_pic_feature_profiles.py.md](docs/ML/lib_pic_feature_profiles.py.md) | Единая сборка профилей признаков `lib_PIC` |

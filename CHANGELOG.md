@@ -2,6 +2,23 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 200 строк этого файла.
 
+## [2026-05-19] - Direct direction corrected validation chain
+
+### Исправлено
+- Direct-direction selection теперь имеет machine-readable protocol gates: primary metric `validation_sequential_pf`, запрет `one_sided_candidate`, `negative_years > 0` и `overfitting_risk`, плюс `selection_decision.json`.
+- `normalize_rowwise()` по умолчанию не даёт top-level `up_*/dn_*` таргетам задавать scaling фрактальных Up/Dn features.
+- Fractal-level distance features могут считаться из raw price / raw ATR через `raw_price_frame`.
+- A/C `_atr` targets переведены на raw `up/dn / ATR` contract; для normalized split source они не включаются в default target frequency gate.
+
+### Результаты
+- Corrected validation-only baseline (`nearest_k4`, Target D, RF/HGB) не нашёл protocol-valid winner.
+- BUY-only high-PF slice имеет только 73 сделки и не проходит support floor; SELL и combined gates не пройдены.
+- Frozen test не запускался.
+
+### Вывод
+Текущую two-sided direct-direction ветку закрыть без нового frozen test. BUY-only можно рассматривать только как отдельную будущую validation-only гипотезу с достаточным support и yearly/rolling stability.
+<!-- подробности: docs/reports/2026-05-19-direct-direction-corrected-validation-chain.md -->
+
 ## [2026-05-15] - Direct direction improvement experiments E0–E5
 
 ### Добавлено

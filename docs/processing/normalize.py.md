@@ -12,20 +12,21 @@
 | Метод | Признаки | Диапазон | Особенности |
 |-------|----------|----------|-------------|
 | **Piecewise Linear-Log** | `predict`, `front`, `back`, `impulse`, `count`, `reverse`, `power`, `break` | [0, 1] | Линейная часть до 85-го перцентиля, логарифмическое сжатие хвоста до 99-го. |
-| **Piecewise Linear-Log (joint Up/Dn)** | `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48` | [0, 1] | 606 значений на строку (100 фракталов × 6 + 6 таргетов), общие p85/p99. |
+| **Piecewise Linear-Log (joint Up/Dn)** | `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48` | [0, 1] | По умолчанию p85/p99 считаются только по фрактальным Up/Dn текущей строки; legacy-режим может добавить top-level таргеты через `include_targets_in_updn_pool=True`. |
 | **Min-Max** | `price` | [0, 1] | Классическое масштабирование. |
 | **Без изменений** | `direction`, `strong`, `fractal_atr` | {-1, 0, 1} / raw | Категориальные и служебные признаки. |
 
 ## Ключевые функции
-- `normalize_rowwise(df, return_updn_params=False, verbose=True, include_predict_in_front_back_pool=True)`: Построчная нормализация (fractals, predict, Up/Dn таргеты). Старый режим по умолчанию считает общий пул `|predict| + front + back`. Для live-safe контуров нужно передавать `include_predict_in_front_back_pool=False`, чтобы future-derived `predict` не влиял на нормализацию `front/back`. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`. Для runtime watcher-а используется `verbose=False`, чтобы не писать progress в stdout.
+- `normalize_rowwise(df, return_updn_params=False, verbose=True, include_predict_in_front_back_pool=True, include_targets_in_updn_pool=False)`: Построчная нормализация (fractals, predict, Up/Dn таргеты). Старый front/back режим по умолчанию считает общий пул `|predict| + front + back`; live-safe контуры передают `include_predict_in_front_back_pool=False`. Up/Dn параметры по умолчанию считаются без top-level target columns, чтобы target-only значения не меняли нормализованные фрактальные признаки. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 2)` с per-row `[brk, cap]`. Для runtime watcher-а используется `verbose=False`, чтобы не писать progress в stdout.
 - `piecewise_linear_log_transform()`: Реализация алгоритма PLL.
 - `normalize_atr_train()` / `normalize_atr_inference()`: Устаревшие, не используются (ATR не нормализуется, используется как знаменатель для ATR_ratio в data_loader.py).
 
 ## Per-row параметры нормализации (brk/cap)
 
-При нормализации up/dn таргетов каждая строка использует **собственные** `brk` (p85) и `cap` (p99), вычисленные из пула 606 значений:
+При нормализации up/dn таргетов каждая строка использует **собственные** `brk` (p85) и `cap` (p99). По умолчанию они вычисляются только из фрактальных Up/Dn полей текущей строки:
 - 100 фракталов × 6 up/dn полей = 600 значений
-- 6 row-level таргетов (up_12..dn_48) = 6 значений
+
+Legacy-режим `include_targets_in_updn_pool=True` дополнительно добавляет top-level row targets, но для direct-direction/live-safe исследований он запрещён, потому что target-only значения начинают влиять на model inputs.
 
 Эти параметры необходимы для **точной инверсии** (денормализации) — без них невозможно восстановить исходные значения в пунктах. Сохраняются через `label_main.py` в `DATA/Nero_*_updn_params.npy`.
 
@@ -48,8 +49,14 @@ df, updn_params = normalize_rowwise(df, stats_path="stats.csv", return_updn_para
 # Тихий режим для runtime/inference-процессов
 df = normalize_rowwise(df, verbose=False)
 
-# Live-safe режим: predict не участвует в пуле front/back
-df = normalize_rowwise(df, include_predict_in_front_back_pool=False, verbose=False)
+# Live-safe режим: predict не участвует в пуле front/back,
+# а top-level targets не участвуют в пуле Up/Dn-фичей
+df = normalize_rowwise(
+    df,
+    include_predict_in_front_back_pool=False,
+    include_targets_in_updn_pool=False,
+    verbose=False,
+)
 
 # ... сплит на train/val/test ...
 # ATR не нормализуется — используется как знаменатель для ATR_ratio в data_loader.py

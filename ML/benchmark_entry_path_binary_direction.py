@@ -30,6 +30,7 @@ from ML.fractal_level_feature_builder import apply_feature_normalizer
 from ML.fractal_level_feature_builder import build_fractal_level_features
 from ML.fractal_level_feature_builder import fit_feature_normalizer
 from ML.entry_path_trade_filter import compute_pf
+from processing.fractal_preprocessing import sort_fractals_in_dataframe
 
 
 DEFAULT_ROOT = Path("ML/reports/entry_path_v1_live_safe_xauusd_no_predict_pool_server_multiseed/seed_042")
@@ -40,32 +41,91 @@ DEFAULT_VALIDATION_PREDICTIONS = DEFAULT_ROOT / "validation_predictions.csv"
 DEFAULT_TEST_PREDICTIONS = DEFAULT_ROOT / "test_predictions.csv"
 DEFAULT_OHLC = Path("DATA/XAUUSD_H1_OHLC.csv")
 DEFAULT_OUTPUT_DIR = Path("ML/reports/entry_path_v1_binary_direction")
+DEFAULT_RAW_FEATURE_SOURCE = Path("MT/MQL4/Files/Nero.csv")
 DEFAULT_OLD_SCORE_THRESHOLD = -0.07158749
 DEFAULT_THRESHOLD_GRID = [0.30, 0.40, 0.50, 0.60]
 DEFAULT_MARGIN_GRID = [0.00, 0.05, 0.10, 0.15]
 DEFAULT_NEAREST_K = 4
 
 
+def selection_policy() -> dict[str, Any]:
+    """Возвращает машинно-читаемые gates и порядок сортировки validation winner."""
+    return {
+        "candidate_scope": "validation_only",
+        "excluded_modes": ["old_score_diagnostic"],
+        "required_mode": "standalone",
+        "min_validation_trades": 100,
+        "min_validation_pf": 1.15,
+        "min_validation_sequential_pf": 1.10,
+        "max_negative_years": 0,
+        "exclude_one_sided_candidate": True,
+        "exclude_overfitting_risk": True,
+        "primary_metric": "validation_sequential_pf",
+        "sort_order": [
+            {"column": "validation_sequential_pf", "ascending": False},
+            {"column": "validation_pf", "ascending": False},
+            {"column": "validation_trades", "ascending": False},
+        ],
+    }
+
+
 def pick_validation_winner(grid: pd.DataFrame) -> dict[str, Any]:
     if grid.empty:
         return {}
+    policy = selection_policy()
     work = grid.copy()
-    if "negative_years" not in work.columns:
-        work["negative_years"] = 0
+    defaults = {
+        "negative_years": 0,
+        "one_sided_candidate": False,
+        "overfitting_risk": False,
+    }
+    for column, default in defaults.items():
+        if column not in work.columns:
+            work[column] = default
     candidates = work[
-        (work["mode"] == "standalone")
-        & (work["validation_trades"] >= 100)
-        & (work["validation_pf"] >= 1.15)
-        & (work["validation_sequential_pf"] >= 1.1)
+        (work["mode"] == policy["required_mode"])
+        & (work["validation_trades"] >= policy["min_validation_trades"])
+        & (work["validation_pf"] >= policy["min_validation_pf"])
+        & (work["validation_sequential_pf"] >= policy["min_validation_sequential_pf"])
+        & (work["negative_years"] <= policy["max_negative_years"])
+        & (~work["one_sided_candidate"].astype(bool))
         & (~work["overfitting_risk"].astype(bool))
     ].copy()
     if candidates.empty:
         return {}
-    candidates = candidates.sort_values(
-        ["validation_pf", "validation_sequential_pf", "validation_trades"],
-        ascending=[False, False, False],
-    )
+    sort_columns = [item["column"] for item in policy["sort_order"]]
+    ascending = [bool(item["ascending"]) for item in policy["sort_order"]]
+    candidates = candidates.sort_values(sort_columns, ascending=ascending)
     return candidates.iloc[0].to_dict()
+
+
+def write_selection_decision(
+    output_dir: str | Path,
+    *,
+    automatic_winner: dict[str, Any],
+    selected_config: dict[str, Any] | None = None,
+    reason: str | None = None,
+) -> Path:
+    """Пишет selection_decision.json для reproducible validation-only selection."""
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    selected = selected_config or automatic_winner
+    automatic_config = automatic_winner.get("config") if automatic_winner else None
+    selected_config_id = selected.get("config") if selected else None
+    is_override = bool(automatic_config and selected_config_id and automatic_config != selected_config_id)
+    if is_override and not reason:
+        raise ValueError("selection override requires an explicit reason")
+    payload = {
+        "test_set_used": False,
+        "policy": selection_policy(),
+        "automatic_winner": automatic_winner,
+        "selected_config": selected,
+        "decision_type": "manual_override" if is_override else "automatic",
+        "reason": reason or ("automatic validation winner" if selected else "no validation winner"),
+    }
+    path = output_path / "selection_decision.json"
+    path.write_text(json.dumps(_jsonable(payload), ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
 
 
 def _jsonable(value: Any) -> Any:
@@ -149,6 +209,7 @@ def run_validation_matrix(
     ohlc: str | Path,
     output_dir: str | Path,
     old_score_threshold: float,
+    raw_feature_source: str | Path | None = None,
     k: int = DEFAULT_NEAREST_K,
     threshold_grid: list[float] | None = None,
     margin_grid: list[float] | None = None,
@@ -174,11 +235,32 @@ def run_validation_matrix(
     validation_features_source = pd.read_csv(Path(validation_source), sep=";", usecols=source_usecols)
     train_target_source = pd.read_csv(Path(train_source), sep=";", usecols=target_usecols)
     validation_target_source = pd.read_csv(Path(validation_source), sep=";", usecols=target_usecols)
+    raw_train_features = None
+    raw_validation_features = None
+    feature_source = "labeled_split_fractals"
+    if raw_feature_source is not None:
+        raw_nrows = len(train_features_source) + len(validation_features_source)
+        raw_all = pd.read_csv(Path(raw_feature_source), sep=";", usecols=source_usecols, nrows=raw_nrows)
+        raw_all.columns = [str(c).strip() for c in raw_all.columns]
+        raw_all = sort_fractals_in_dataframe(raw_all, debug=False)
+        raw_train_features = raw_all.iloc[: len(train_features_source)].reset_index(drop=True)
+        raw_validation_features = raw_all.iloc[len(train_features_source): raw_nrows].reset_index(drop=True)
+        feature_source = str(raw_feature_source)
 
     t0 = time.perf_counter()
-    x_train_raw = build_fractal_level_features(train_features_source, input_family="nearest_k", k=k)
+    x_train_raw = build_fractal_level_features(
+        train_features_source,
+        raw_price_frame=raw_train_features,
+        input_family="nearest_k",
+        k=k,
+    )
     feature_build_seconds = time.perf_counter() - t0
-    x_validation_raw = build_fractal_level_features(validation_features_source, input_family="nearest_k", k=k)
+    x_validation_raw = build_fractal_level_features(
+        validation_features_source,
+        raw_price_frame=raw_validation_features,
+        input_family="nearest_k",
+        k=k,
+    )
     normalizer = fit_feature_normalizer(x_train_raw)
     x_train = _model_feature_frame(apply_feature_normalizer(x_train_raw, normalizer))
     x_validation = _model_feature_frame(apply_feature_normalizer(x_validation_raw, normalizer))
@@ -275,6 +357,7 @@ def run_validation_matrix(
 
     grid = pd.DataFrame(rows)
     winner = pick_validation_winner(grid)
+    selection_decision_path = write_selection_decision(output_path, automatic_winner=winner)
     validation_grid_path = output_path / "validation_grid.csv"
     feature_importance_path = output_path / "feature_importance.csv"
     summary_path = output_path / "summary.json"
@@ -283,14 +366,30 @@ def run_validation_matrix(
         pd.concat(feature_importance_frames, ignore_index=True).to_csv(
             feature_importance_path, sep=";", index=False
         )
+    feature_manifest = {
+        "feature_source": feature_source,
+        "target_source": str(validation_source),
+        "diagnostic_source": str(validation_predictions),
+        "raw_price_distance_source": feature_source,
+        "test_artifacts_used_for_selection": False,
+        "notes": [
+            "distance features use raw_price_frame when raw_feature_source is provided",
+            "Target D is OHLC-derived; A/C ATR targets require raw up/dn over raw ATR",
+        ],
+    }
+    feature_manifest_path = output_path / "feature_manifest.json"
+    feature_manifest_path.write_text(json.dumps(_jsonable(feature_manifest), ensure_ascii=False, indent=2), encoding="utf-8")
     summary = {
         "stage": "validation-matrix",
         "test_set_used": False,
         "target_family": "D",
         "winner": winner,
+        "selection_policy": selection_policy(),
+        "selection_decision_path": str(selection_decision_path),
         "feature_build_seconds": float(feature_build_seconds),
         "feature_count": int(x_train.shape[1]),
         "input_family": f"nearest_k{k}",
+        "feature_manifest_path": str(feature_manifest_path),
     }
     summary_path.write_text(json.dumps(_jsonable(summary), ensure_ascii=False, indent=2), encoding="utf-8")
     return {
@@ -298,6 +397,7 @@ def run_validation_matrix(
         "validation_grid_path": str(validation_grid_path),
         "feature_importance_path": str(feature_importance_path) if feature_importance_frames else None,
         "summary_path": str(summary_path),
+        "selection_decision_path": str(selection_decision_path),
         "winner_found": bool(winner),
         "winner": winner,
     }
@@ -580,6 +680,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ohlc", default=str(DEFAULT_OHLC))
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--old-score-threshold", type=float, default=DEFAULT_OLD_SCORE_THRESHOLD)
+    parser.add_argument("--raw-feature-source", default=str(DEFAULT_RAW_FEATURE_SOURCE))
     parser.add_argument("--k", type=int, default=DEFAULT_NEAREST_K, choices=[4, 6, 8, 16])
     parser.add_argument("--model", type=str, default="rf", choices=["rf", "hgb"])
     parser.add_argument("--buy-threshold", type=float, default=0.4)
@@ -605,6 +706,7 @@ def main() -> dict[str, Any]:
             ohlc=args.ohlc,
             output_dir=args.output_dir,
             old_score_threshold=args.old_score_threshold,
+            raw_feature_source=args.raw_feature_source,
             k=args.k,
         )
     elif args.stage == "frozen-test":

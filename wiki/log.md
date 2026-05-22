@@ -418,3 +418,8 @@
   - marked direct score+direction as the best next research direction, not
     production-ready yet.
 - Updated `wiki/index.md` coverage from 39 to 40 execution-track reports.
+
+## [2026-05-19] ingest | Direct-direction corrected validation chain
+- Added `docs/reports/2026-05-19-direct-direction-corrected-validation-chain.md`.
+- Updated `wiki/research/execution-tracks.md` with corrected validation-only result.
+- Recorded verdict: no protocol-valid validation winner, no frozen test; close current two-sided direct-direction candidate.

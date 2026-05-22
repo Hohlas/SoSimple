@@ -1448,3 +1448,32 @@ gate.
 следующего retrain, не готовая production-rule.
 
 Источник: [2026-05-14-entry-path-direct-bar-model.md](../../docs/reports/2026-05-14-entry-path-direct-bar-model.md)
+
+
+## 20. Direct Direction Audit Follow-up (05-19)
+
+После combined audit direct-direction chain был пересобран с исправлением
+methodology/provenance blockers.
+
+Что изменилось:
+
+- winner selection стал машинно-воспроизводимым: primary metric
+  `validation_sequential_pf`, запрет `one_sided_candidate`, отрицательных годов
+  и `overfitting_risk`;
+- top-level `up_*/dn_*` больше не задают scaling фрактальных Up/Dn features в
+  default `normalize_rowwise()`;
+- distance/zone features могут считаться из raw price / raw ATR через
+  `raw_price_frame`;
+- A/C `_atr` targets требуют raw `up/dn / ATR`; normalized split source не
+  используется для default A/C gate.
+
+Corrected validation-only baseline (`nearest_k4`, Target D, RF/HGB) не нашёл
+protocol-valid winner. Лучшие high-PF slices оказались one-sided, ниже support
+floor, unstable by year или overfitting-risk. Side policy тоже не прошла:
+BUY-only fail, SELL fail, combined fail. Frozen test не запускался.
+
+Вывод: текущую two-sided direct-direction ветку нужно закрыть без нового frozen
+test. BUY-only остаётся только будущей гипотезой, если будет отдельный
+validation-only прогон с достаточным support и rolling/yearly stability.
+
+Источник: [2026-05-19-direct-direction-corrected-validation-chain.md](../../docs/reports/2026-05-19-direct-direction-corrected-validation-chain.md)

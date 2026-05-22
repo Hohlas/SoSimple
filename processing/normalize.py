@@ -289,6 +289,7 @@ def normalize_rowwise(
     return_updn_params: bool = False,
     verbose: bool = True,
     include_predict_in_front_back_pool: bool = True,
+    include_targets_in_updn_pool: bool = False,
 ) -> pd.DataFrame:
     """
     Выполняет построчную нормализацию всех признаков (кроме ATR).
@@ -314,6 +315,9 @@ def normalize_rowwise(
             front/back. Старое поведение=True; live-safe контур должен
             передавать False, чтобы future-derived predict не влиял на
             нормализацию live-признаков.
+        include_targets_in_updn_pool: Добавлять top-level up_*/dn_* таргеты
+            в пул, который задаёт параметры нормализации фрактальных Up/Dn.
+            Для direct-direction и live-safe контуров должно быть False.
 
     Returns:
         DataFrame с нормализованными признаками.
@@ -450,10 +454,12 @@ def normalize_rowwise(
         # === 4. Joint piecewise нормализация Up/Dn (фичи + таргеты) ===
         updn_indices = [FRACTAL_INDICES[name] for name in UPDN_FIELDS]
 
-        # 600 значений из фракталов + 6 значений из таргетов строки = 606
         updn_fractal_vals = fractals[i, :, updn_indices].flatten()
-        updn_target_vals = np.array([updn_targets[col][i] for col in UPDN_TARGET_COLUMNS])
-        updn_pool = np.concatenate([updn_fractal_vals, updn_target_vals])
+        if include_targets_in_updn_pool:
+            updn_target_vals = np.array([updn_targets[col][i] for col in UPDN_TARGET_COLUMNS])
+            updn_pool = np.concatenate([updn_fractal_vals, updn_target_vals])
+        else:
+            updn_pool = updn_fractal_vals
 
         # Перцентили считаем по ненулевым (нули — "цена не двигалась" — не должны сдвигать p85)
         updn_valid = updn_pool[np.isfinite(updn_pool) & (updn_pool > 0)]
