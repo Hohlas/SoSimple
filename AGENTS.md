@@ -38,14 +38,19 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - Предпочитать точечное чтение: `rg`, `head`, `sed`, а не полный вывод больших файлов.
 - Не трогать `docs/archive/` и архивные модули без явной просьбы.
 - `MODULE_INDEX.md` читать точечно через `rg`/`sed`; целиком открывать только при пересборке индекса или аудите всей структуры.
-- Всегда создавай новую feature-ветку для каждой задачи.
-- Не используй worktree.
 - Используй окружение: ~/git/SoSimple/.venv/bin/activate
 - `git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
 - При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
 - После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)).
 
+## Изоляция задач: ветки и worktree
+- Всегда создавай новую feature-ветку для каждой задачи.
+- При создании worktree использовать общий venv через symlink:
+  `.venv -> /home/hohla/git/SoSimple/.venv`.
+- Если нужные файлы/каталоги не tracked и отсутствуют в worktree, делать symlink из основного репозитория в текущий worktree:
+  `ln -s /home/hohla/git/SoSimple/DATA <worktree>/DATA`.
+- Общие symlink-данные и общий `.venv` использовать только для чтения: не изменять данные, checkpoint-ы и зависимости из worktree.
 
 ## Память проекта
 

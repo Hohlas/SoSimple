@@ -424,3 +424,7 @@
   - marked direct score+direction as the best next research direction, not
     production-ready yet.
 - Updated `wiki/index.md` coverage from 39 to 40 execution-track reports.
+
+## 2026-05-18 - Ingest direct-direction audit
+- Added `wiki/research/execution-tracks-direct-direction-audit.md` covering `docs/reports/2026-05-15-direct-direction-improvement.md` and `docs/audit/2026-05-18-codex-direct-direction-chain-audit.md`.
+- Updated `wiki/index.md` and `wiki/research/execution-tracks-overview.md` coverage from 39/40 to 41 execution-track reports.
