@@ -423,6 +423,37 @@
 - Следующий шаг — не усложнять внешний слой, а проверить новые `lib_PIC`-производные признаки внутри нового training track.
 - Подробности: [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
 
+## [2026-04-17] - Take/skip trailing-stop matrix verdict
+
+### Добавлено
+- `take_skip_trailing_stop_v1`: бинарный `take/skip` по `trail_48_pnl_atr_xN >= 0.5`
+- `ML/benchmark_take_skip_trailing_stop.py`, `ML/run_take_skip_trailing_stop_matrix.py`
+- candidate families: `prob_ge_threshold`, `top_k_probability`
+
+### Результаты
+- Во всех трёх конфигурациях `seq20/50/100`: `verdict = reject`
+- Ни один кандидат не прошёл gate `PF >= 1.0`
+- Вывод: смена постановки с regression/quantile на бинарный `take/skip` не решила проблему. Модель выдаёт слишком слабый и сжатый скор. Текущий Track A почти исчерпан.
+- Подробности: [docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md](docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
+
+## [2026-04-17] - Multi-horizon take/skip feature track handoff
+
+### Добавлено
+- multi-horizon trailing-stop grid: горизонты `12/24/48`, `X = 2/4/8`
+- `ML/multi_scale_fractal_features.py` — сводки по окнам `5/10/20/50/100`
+- `ML/take_skip_trailing_stop_v2_task.py` — 9 бинарных targets `take_H_xX`
+- `ML/benchmark_take_skip_trailing_stop_v2.py`, `ML/run_take_skip_trailing_stop_v2_matrix.py`
+
+### Изменено
+- `ML/data_loader.py`: вход v2 собирается как 100 фракталов + multi-scale summaries + row-wise features
+- `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`: новый task протянут через stack
+
+### Результаты
+- Локальный smoke-run `transformer_seq20`: `verdict = go`
+- Validation winner: `take_48_x4 + top_k_probability 0.05`, `PF=6.39`, 24 сделки, `negative_year_slices=0`
+- Это не итоговый verdict — ждёт полного remote matrix run
+- Подробности: [docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
+
 ## [2026-04-19] - Clean lib_PIC feature profile diagnostic
 
 ### Результаты
