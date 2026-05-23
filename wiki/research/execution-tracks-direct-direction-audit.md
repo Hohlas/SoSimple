@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-05-21
-sources: 3
+last_updated: 2026-05-23
+sources: 4
 status: completed
 ---
 
@@ -91,8 +91,22 @@ tuning. Приоритет:
 
 **Рекомендация**: не деплоить fractal-level direct direction. Следующий шаг — Transformer encoder как feature extractor, или альтернативный подход (score gate + direction resolver).
 
+### Transformer Encoder Direction (05-21)
+
+Финальная проверка гипотезы: может ли frozen Transformer encoder (32-dim CLS token, Pearson r=0.56) предсказывать направление на чистых OHLC-таргетах.
+
+Три семейства таргетов:
+- **TB** (16 комбинаций): `BUY если up/ATR >= tp И dn/ATR < sl`. Лучший BUY PF=1.35 (73 сделки). Gate A провален.
+- **Reg** (2 комбинации): `BUY если up_pred − dn_pred > margin`. r_up=0.36, r_dn=0.41. Лучший PF=1.21. Провален.
+- **Trail** (6 комбинаций): `BUY если trailing-stop-profit >= profit_z × ATR`. BUY PF=2.41 (58 сделок, 0.6% utilisation). Формально пройден, но на сверхмалой выборке.
+
+Fine-tune Transformer (end-to-end) хуже frozen RF на всех комбинациях.
+
+**Итог**: fractal features Transformer-энкодера не несут direction-сигнала. Подтверждено на трёх независимых семействах таргетов. SeqPF признан невалидной метрикой (shuffle-тест показал разброс 0.68–4728 при PF=1.10). Direct direction prediction из fractal features — тупик.
+
 ## Источники
 
 - [docs/reports/2026-05-15-direct-direction-improvement.md](../../docs/reports/2026-05-15-direct-direction-improvement.md)
 - [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](../../docs/audit/2026-05-18-codex-direct-direction-chain-audit.md)
 - [docs/reports/2026-05-18-direct-direction-rebuild.md](../../docs/reports/2026-05-18-direct-direction-rebuild.md)
+- [docs/reports/2026-05-21-transformer-direction.md](../../docs/reports/2026-05-21-transformer-direction.md)

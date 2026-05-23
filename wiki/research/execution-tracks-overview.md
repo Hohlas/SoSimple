@@ -43,3 +43,4 @@ status: active
 | [execution-tracks-live-safe-audit.md](execution-tracks-live-safe-audit.md) | §10-13 Live-Safe Audit + Retrain | 4 |
 | [execution-tracks-reproducibility-plus-parity.md](execution-tracks-reproducibility-plus-parity.md) | §14-17 Reproducibility + MT4 Parity | 4 |
 | [execution-tracks-reconciliation-plus-audit.md](execution-tracks-reconciliation-plus-audit.md) | §18-20 Reconciliation + Candidate-Source + Direct Direction | 3 |
+| [execution-tracks-direct-direction-audit.md](execution-tracks-direct-direction-audit.md) | §21 Direct Direction: Audit + Rebuild + Transformer (05-15 — 05-21) | 4 |

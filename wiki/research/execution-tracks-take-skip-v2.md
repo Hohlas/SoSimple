@@ -1,10 +1,44 @@
 ---
-last_updated: 2026-05-14
-sources: 8
+last_updated: 2026-05-23
+sources: 10
 status: active
 ---
 
-# Execution Tracks: Take/Skip v2 + Trailing Stop + Execution Policy (04-18 — 04-22)
+# Execution Tracks: Take/Skip v1/v2 + Trailing Stop + Execution Policy (04-17 — 04-22)
+
+## 4a. Take/Skip Trailing-Stop Matrix (04-17) — v1 reject
+
+Первая проверка бинарной постановки `take/skip`: модель должна решать, стоит ли
+брать вход при trailing-stop логике.
+
+Постановка: `take = 1` если `trail_48_pnl_atr_xN >= 0.5`, иначе `skip`.
+
+Результат полного matrix run (seq20/50/100):
+
+- Все три конфигурации: `verdict = reject`
+- Ни один кандидат не прошёл gate `PF >= 1.0`
+- Абсолютный probability threshold неработоспособен: модель выдаёт слишком сжатый скор
+
+**Вывод**: смена постановки с regression/quantile на бинарный `take/skip` не решила проблему. Track A почти исчерпан не только на уровне selection layer, но и на уровне самого обучающего сигнала.
+
+Источник: [2026-04-17-take-skip-trailing-stop-matrix.md](../../docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
+
+## 4b. Multi-Horizon Take/Skip Feature Track Handoff (04-17) — v2 scaffold
+
+После провала v1 гипотеза сместилась: проблема не в selection layer, а в
+представлении данных. Новая постановка `take_skip_trailing_stop_v2`:
+
+- Полные 100 фракталов (вместо усечённой последовательности)
+- Multi-scale сводки по окнам 5/10/20/50/100 (mean, std, slope proxy, range)
+- Multi-horizon бинарные targets: `take_H_xX` для H ∈ {12,24,48}, X ∈ {2,4,8}
+- Positive class: `trail_pnl >= 0.5 ATR`
+
+Локальный smoke-run `transformer_seq20`: `verdict = go`.
+Validation winner: `take_48_x4 + top_k_probability 0.05`, PF=6.39, 24 сделки, negative_year_slices=0.
+
+**Статус**: контур готов к полному server matrix run. Это не итоговый verdict.
+
+Источник: [2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](../../docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
 
 ## 5. Take/Skip v2 Frequency Follow-Up (04-18)
 
