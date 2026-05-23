@@ -56,6 +56,10 @@ from ML.entry_path_task import (
     validate_entry_path_feature_profile,
 )
 from ML.entry_path_v1_quantile_task import ENTRY_PATH_V1_QUANTILE_TARGET
+from ML.take_skip_trailing_stop_task import (
+    TAKE_SKIP_TRAILING_STOP_TARGET,
+    split_take_skip_targets,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
     split_trailing_stop_quantile_target,
@@ -116,6 +120,7 @@ TASK_TARGET_COLUMNS = {
     ARCHETYPE_TARGET: ARCHETYPE_COLUMN,
     TRAILING_STOP_TARGET: TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_QUANTILE_TARGET: TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    TAKE_SKIP_TRAILING_STOP_TARGET: TAKE_SKIP_TRAILING_STOP_TARGET,
 }
 
 BINARY_CLASSIFICATION_TARGETS = {
@@ -146,6 +151,7 @@ TASK_CHECKPOINT_SUFFIXES = {
     ARCHETYPE_TARGET: '_signal_archetype_cls',
     TRAILING_STOP_TARGET: '_trailing_stop_target_v1',
     TRAILING_STOP_TARGET_QUANTILE_TARGET: '_trailing_stop_target_quantile_v1',
+    TAKE_SKIP_TRAILING_STOP_TARGET: '_take_skip_trailing_stop_v1',
 }
 
 BINARY_LABEL_MAP = {0: 0, 1: 1}
@@ -175,6 +181,8 @@ def task_target_column(task: str) -> str:
         return TRAILING_STOP_TARGET_QUANTILE_TARGET
     if task == TRAILING_STOP_TARGET:
         return TRAILING_STOP_TARGET
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        return TAKE_SKIP_TRAILING_STOP_TARGET
     if task == REGRESSION_TARGET:
         return REGRESSION_TARGET
     return 'signal'
@@ -591,6 +599,7 @@ def create_data_loaders(
         (target in SINGLE_REGRESSION_COLUMNS)
         or (target == UPDN_REGRESSION_TARGET)
         or (target == TRAILING_STOP_TARGET)
+        or (target == TAKE_SKIP_TRAILING_STOP_TARGET)
     )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
@@ -600,6 +609,7 @@ def create_data_loaders(
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    take_skip_trailing_stop = (target == TAKE_SKIP_TRAILING_STOP_TARGET)
     if entry_path:
         validate_entry_path_feature_profile(entry_path_feature_profile)
 
@@ -718,6 +728,14 @@ def create_data_loaders(
                                 f.unlink()
                         else:
                             return X, mask, y
+                    elif take_skip_trailing_stop:
+                        y = np.load(y_path)
+                        if y.ndim != 2 or y.shape[1] != 5 or len(y) != len(X):
+                            print(f"  🔄 Кэш {prefix} take_skip_trailing_stop_v1 повреждён. Инвалидация...")
+                            for f in cache_files:
+                                f.unlink()
+                        else:
+                            return X, mask, y
                     else:
                         y = np.load(y_path)
                         return X, mask, y
@@ -746,6 +764,8 @@ def create_data_loaders(
             y = split_trailing_stop_targets(df)
         elif trailing_stop_quantile:
             y = split_trailing_stop_quantile_target(df)
+        elif take_skip_trailing_stop:
+            y = split_take_skip_targets(df)
         elif triple_barrier:
             y = df[TB_TARGET_NAMES].values.astype(np.float32)  # shape (n, 12)
             y = np.where(y == 0.5, 0.0, y)  # TIMEOUT → LOSS (didn't reach TP in scan window)
@@ -825,6 +845,11 @@ def create_data_loaders(
             for i, col in enumerate(TRAILING_STOP_TARGET_COLUMNS):
                 print(f"    {col}: mean={y[:, i].mean():.4f}, std={y[:, i].std():.4f}, "
                       f"min={y[:, i].min():.4f}, max={y[:, i].max():.4f}")
+    elif take_skip_trailing_stop:
+        for name, y in [('Train', y_train), ('Val', y_val)]:
+            print(f"  {name} take_skip targets: shape={y.shape}")
+            for i in range(y.shape[1]):
+                print(f"    take_skip_{i}: positive_rate={y[:, i].mean():.4f}")
     elif triple_barrier:
         for name, y in [('Train', y_train), ('Val', y_val)]:
             print(f"  {name} TB targets: shape={y.shape}")
@@ -885,7 +910,7 @@ def create_data_loaders(
         random.seed(worker_seed)
 
     # Если use_weighted_sampler: создаём WeightedRandomSampler только для train
-    if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile:
+    if use_weighted_sampler and not regression and not entry_path and not trailing_stop_quantile and not take_skip_trailing_stop:
         # Рассчитываем веса: 1 / freq(class)
         if binary_classification:
             y_train_mapped = y_train.astype(np.int64)
@@ -956,6 +981,7 @@ def create_test_loader(
         (target in SINGLE_REGRESSION_COLUMNS)
         or (target == UPDN_REGRESSION_TARGET)
         or (target == TRAILING_STOP_TARGET)
+        or (target == TAKE_SKIP_TRAILING_STOP_TARGET)
     )
     multi_target = (target == UPDN_REGRESSION_TARGET)
     triple_barrier = (target == TB_TARGET)
@@ -966,6 +992,7 @@ def create_test_loader(
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (target == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (target == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    take_skip_trailing_stop = (target == TAKE_SKIP_TRAILING_STOP_TARGET)
     if entry_path:
         validate_entry_path_feature_profile(entry_path_feature_profile)
     prefix = 'test'
@@ -1104,6 +1131,24 @@ def create_test_loader(
                             label_map=None,
                         )
                         return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+                elif take_skip_trailing_stop:
+                    y = np.load(y_path)
+                    if y.ndim != 2 or y.shape[1] != 5 or len(y) != len(X):
+                        print(f"  🔄 Кэш {prefix} take_skip_trailing_stop_v1 повреждён. Инвалидация...")
+                        for f in cache_files:
+                            f.unlink()
+                    else:
+                        if seq_len < 100:
+                            X = X[:, :seq_len, :]
+                            mask = mask[:, :seq_len]
+                        dataset = FractalSequenceDataset(
+                            X,
+                            y,
+                            mask,
+                            regression=True,
+                            label_map=None,
+                        )
+                        return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
                 else:
                     y = np.load(y_path)
 
@@ -1146,6 +1191,8 @@ def create_test_loader(
         y = split_trailing_stop_targets(df)
     elif trailing_stop_quantile:
         y = split_trailing_stop_quantile_target(df)
+    elif take_skip_trailing_stop:
+        y = split_take_skip_targets(df)
     elif multi_target:
         y = df[UPDN_TARGETS].values.astype(np.float32)
     elif triple_barrier:
@@ -1178,6 +1225,8 @@ def create_test_loader(
         np.save(y_path, y)
     elif trailing_stop_quantile:
         np.save(y_path, y)
+    elif take_skip_trailing_stop:
+        np.save(y_path, y)
     else:
         np.save(y_path, y)
     print(f"  ✅ Данные {prefix} сохранены в кэш.")
@@ -1197,6 +1246,14 @@ def create_test_loader(
             y_cls = np.zeros(len(df), dtype=np.int64)
         dataset = EntryPathDataset(X, None, y_reg, y_cls, mask, signal)
     elif trailing_stop:
+        dataset = FractalSequenceDataset(
+            X,
+            y,
+            mask,
+            regression=True,
+            label_map=None,
+        )
+    elif take_skip_trailing_stop:
         dataset = FractalSequenceDataset(
             X,
             y,

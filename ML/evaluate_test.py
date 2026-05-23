@@ -38,6 +38,12 @@ from ML.entry_path_v1_quantile_task import (
     build_entry_path_v1_quantile_report_markdown,
     count_crossed_quantile_rows,
 )
+from ML.take_skip_trailing_stop_task import (
+    TAKE_SKIP_TRAILING_STOP_TARGET,
+    TAKE_SKIP_TRUE_PNL_COLUMNS,
+    build_take_skip_export_frame,
+    compute_take_skip_metrics,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_BASE_COLUMN,
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
@@ -48,6 +54,7 @@ from ML.trailing_stop_target_task import (
     TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_COLUMNS,
     build_trailing_stop_export_frame,
+    validate_trailing_stop_prediction_shape,
 )
 from ML.models import get_model
 from ML.models.trailing_stop_target_quantile_transformer import TrailingStopTargetQuantileTransformer
@@ -243,6 +250,8 @@ def run_evaluation(
     elif task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     elif task == TRAILING_STOP_TARGET:
+        df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
+    elif task == TAKE_SKIP_TRAILING_STOP_TARGET:
         df_test_full = pd.read_csv(TEST_FILE, sep=CSV_SEP, low_memory=False)
     else:
         signal_true, predict_val_true, direction = load_test_metadata(task)
@@ -506,6 +515,7 @@ def run_evaluation(
     y_pred = np.concatenate(all_preds)
 
     if task == TRAILING_STOP_TARGET:
+        validate_trailing_stop_prediction_shape(y_pred, context='predictions')
         true_targets = df_test_full[TRAILING_STOP_TARGET_COLUMNS].values.astype(np.float32)
         per_target_metrics = {
             name: compute_regression_metrics(true_targets[:, idx], y_pred[:, idx])
@@ -554,6 +564,58 @@ def run_evaluation(
         print(f"  rmse={metrics['rmse']:.4f}")
         print(f"  r2={metrics['r2']:.4f}")
         print(f"  pearson_r={metrics['pearson_r']:.4f}")
+        print(f"{'═' * 60}\n")
+        return
+
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        y_true_parts = []
+        y_prob_parts = []
+
+        with torch.no_grad():
+            for X_batch, y_batch, mask_batch in test_loader:
+                logits = model(X_batch.to(device), mask=mask_batch.to(device))
+                y_prob_parts.append(torch.sigmoid(logits).cpu().numpy())
+                y_true_parts.append(y_batch.numpy())
+
+        y_prob = np.concatenate(y_prob_parts)
+        y_true = np.concatenate(y_true_parts).astype(np.float32)
+        true_pnl = df_test_full[TAKE_SKIP_TRUE_PNL_COLUMNS].values.astype(np.float32)
+        metrics = compute_take_skip_metrics(y_true, y_prob)
+        metrics['val_score'] = -metrics['bce']
+
+        export = build_take_skip_export_frame(
+            times=df_test_full['time'].values,
+            signals=df_test_full['signal'].values.astype(int),
+            pred_prob=y_prob,
+            true_label=y_true,
+            true_pnl=true_pnl,
+        )
+        export_path = REPORTS_DIR / 'take_skip_trailing_stop_test_predictions.csv'
+        export.to_csv(export_path, sep=';', index=False)
+        report_path = REPORTS_DIR / 'evaluate_test_take_skip_trailing_stop_v1.md'
+        report_lines = [
+            '# Take/Skip Trailing Stop Test Set Evaluation',
+            '',
+            f'**Модель**: {ckpt_model_name}',
+            f'**Набор**: Test ({len(export)} строк)',
+            '',
+            '## Summary',
+            '',
+            f"- row_count: **{len(export)}**",
+            f"- val_score: **{metrics['val_score']:.4f}**",
+            f"- bce: **{metrics['bce']:.4f}**",
+            '',
+            '## Artifacts',
+            '',
+            f'- Predictions CSV: `{export_path.name}`',
+        ]
+        report_path.write_text('\n'.join(report_lines), encoding='utf-8')
+
+        print(f"  ✅ CSV сохранён: {export_path.name}")
+        print(f"  ✅ Отчет сохранён: {report_path.name}")
+        print(f"  row_count={len(export)}")
+        print(f"  val_score={metrics['val_score']:.4f}")
+        print(f"  bce={metrics['bce']:.4f}")
         print(f"{'═' * 60}\n")
         return
 
@@ -860,6 +922,7 @@ def parse_args():
                             ARCHETYPE_TARGET,
                             TRAILING_STOP_TARGET,
                             TRAILING_STOP_TARGET_QUANTILE_TARGET,
+                            TAKE_SKIP_TRAILING_STOP_TARGET,
                         ])
     parser.add_argument('--horizon', type=int, default=12)
     parser.add_argument('--theta', type=float, default=2.665, help='Торговый порог (ratio pred_up/pred_dn)')

@@ -1,0 +1,118 @@
+{
+  "config": {
+    "seq_len": 100,
+    "epochs": 10,
+    "patience": 4,
+    "batch_size": 256,
+    "seed": 42,
+    "min_pf": 1.0,
+    "min_trades_per_year": 6.0,
+    "target_columns": [
+      "take_48_x2",
+      "take_48_x3",
+      "take_48_x4",
+      "take_48_x6",
+      "take_48_x8"
+    ]
+  },
+  "train_result": {
+    "model_name": "transformer",
+    "task": "take_skip_trailing_stop_v1",
+    "best_metric": -0.037876829504966736,
+    "metric_name": "val_score",
+    "best_epoch": 8,
+    "num_parameters": 70597,
+    "training_time": 693.942892074585,
+    "history": {
+      "train_loss": [
+        0.09568920970093786,
+        0.04131081667647027,
+        0.040757267264790877,
+        0.04051814686060388,
+        0.03978038456683096,
+        0.039794541944406535,
+        0.04013477038995129,
+        0.039487181697040796,
+        0.03943085085807575,
+        0.039296596744016074
+      ],
+      "val_loss": [
+        0.03874608173311965,
+        0.03937102601284514,
+        0.039698443916701784,
+        0.038583982503041625,
+        0.03844992009092223,
+        0.039040179935762205,
+        0.0392515583756707,
+        0.03787924222195068,
+        0.038551268979554645,
+        0.03952973179292638
+      ],
+      "val_score": [
+        -0.03874533623456955,
+        -0.03937281295657158,
+        -0.039697010070085526,
+        -0.0385831780731678,
+        -0.03844911977648735,
+        -0.03903942555189133,
+        -0.0392492301762104,
+        -0.037876829504966736,
+        -0.03855038806796074,
+        -0.039530299603939056
+      ],
+      "val_bce": [
+        0.03874533623456955,
+        0.03937281295657158,
+        0.039697010070085526,
+        0.0385831780731678,
+        0.03844911977648735,
+        0.03903942555189133,
+        0.0392492301762104,
+        0.037876829504966736,
+        0.03855038806796074,
+        0.039530299603939056
+      ],
+      "lr": [
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001,
+        0.001
+      ]
+    },
+    "best_metrics": {
+      "bce": 0.037876829504966736,
+      "positive_rate_take_48_x2": 0.0037321390118449926,
+      "brier_take_48_x2": 0.0037219738587737083,
+      "positive_rate_take_48_x3": 0.004371934104710817,
+      "brier_take_48_x3": 0.004358443431556225,
+      "positive_rate_take_48_x4": 0.005224994849413633,
+      "brier_take_48_x4": 0.0052031283266842365,
+      "positive_rate_take_48_x6": 0.00821070559322834,
+      "brier_take_48_x6": 0.008155765011906624,
+      "positive_rate_take_48_x8": 0.00917039904743433,
+      "brier_take_48_x8": 0.00909426249563694,
+      "val_score": -0.037876829504966736
+    }
+  },
+  "checkpoint_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq100/checkpoint.pt",
+  "exports": {
+    "validation_csv": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq100/take_skip_trailing_stop_validation_predictions.csv",
+    "test_csv": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq100/take_skip_trailing_stop_test_predictions.csv"
+  },
+  "benchmark": {
+    "validation_grid_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq100/benchmark/validation_grid.csv",
+    "final_verdict_path": "ML/reports/take_skip_trailing_stop_matrix/transformer_seq100/benchmark/final_verdict.json",
+    "final_verdict": {
+      "verdict": "reject",
+      "validation_winner": null,
+      "test_result": null
+    }
+  },
+  "runtime_sec": 704.5574898719788
+}

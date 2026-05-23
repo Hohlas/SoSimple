@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ML.take_skip_trailing_stop_task import TAKE_SKIP_TRAILING_STOP_COLUMNS
+
 
 DEFAULT_THRESHOLDS = (0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
 DEFAULT_TOP_K = (0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.10)
@@ -186,7 +188,7 @@ def run_benchmark(
     output_dir: Path,
     min_pf: float,
     min_trades_per_year: float,
-    targets: tuple[str, ...] = (),
+    targets: tuple[str, ...] = tuple(TAKE_SKIP_TRAILING_STOP_COLUMNS),
 ) -> dict[str, object]:
     output_dir.mkdir(parents=True, exist_ok=True)
     validation = pd.read_csv(validation_csv, sep=';')
@@ -201,7 +203,11 @@ def run_benchmark(
     validation_table.to_csv(validation_grid_path, sep=';', index=False)
 
     winner = pick_validation_winner(validation_table, min_pf=min_pf, min_trades_per_year=min_trades_per_year)
-    final_verdict: dict[str, object] = {'verdict': 'reject', 'validation_winner': None, 'test_result': None}
+    final_verdict: dict[str, object] = {
+        'verdict': 'reject',
+        'validation_winner': None,
+        'test_result': None,
+    }
     if winner is not None:
         test_result = summarize_candidate(
             test,

@@ -108,6 +108,11 @@ from ML.entry_path_v1_quantile_task import (
     ENTRY_PATH_V1_QUANTILE_TARGET,
     compute_entry_path_v1_quantile_metrics,
 )
+from ML.take_skip_trailing_stop_task import (
+    TAKE_SKIP_TRAILING_STOP_COLUMNS,
+    TAKE_SKIP_TRAILING_STOP_TARGET,
+    compute_take_skip_metrics,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
     compute_trailing_stop_quantile_metrics,
@@ -1056,6 +1061,68 @@ def validate_trailing_stop_target_quantile(
     return total_loss / n_batches, metrics
 
 
+def train_one_epoch_take_skip(
+    model: nn.Module,
+    train_loader: torch.utils.data.DataLoader,
+    loss_fn: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+) -> float:
+    """Train one epoch for multi-label take/skip classification."""
+    model.train()
+    total_loss = 0.0
+    n_batches = 0
+
+    for X_batch, y_batch, mask_batch in train_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device).float()
+        mask_batch = mask_batch.to(device)
+
+        optimizer.zero_grad()
+        logits = model(X_batch, mask=mask_batch)
+        loss = loss_fn(logits, y_batch)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+        total_loss += float(loss.item())
+        n_batches += 1
+
+    return total_loss / max(1, n_batches)
+
+
+@torch.no_grad()
+def validate_take_skip(
+    model: nn.Module,
+    val_loader: torch.utils.data.DataLoader,
+    loss_fn: nn.Module,
+    device: torch.device,
+) -> tuple[float, dict]:
+    """Validate multi-label take/skip task using sigmoid probabilities."""
+    model.eval()
+    total_loss = 0.0
+    n_batches = 0
+    y_true_parts = []
+    y_prob_parts = []
+
+    for X_batch, y_batch, mask_batch in val_loader:
+        X_batch = X_batch.to(device)
+        y_batch = y_batch.to(device).float()
+        mask_batch = mask_batch.to(device)
+
+        logits = model(X_batch, mask=mask_batch)
+        loss = loss_fn(logits, y_batch)
+        total_loss += float(loss.item())
+        n_batches += 1
+
+        y_true_parts.append(y_batch.cpu().numpy())
+        y_prob_parts.append(torch.sigmoid(logits).cpu().numpy())
+
+    metrics = compute_take_skip_metrics(np.vstack(y_true_parts), np.vstack(y_prob_parts))
+    metrics['val_score'] = -metrics['bce']
+    return total_loss / max(1, n_batches), metrics
+
+
 def resolve_model_kwargs_for_encoder_transfer(
     model_kwargs: dict | None,
     encoder_model_kwargs: dict | None,
@@ -1064,6 +1131,12 @@ def resolve_model_kwargs_for_encoder_transfer(
     if model_kwargs:
         resolved.update(model_kwargs)
     return resolved
+
+
+def initial_best_metric(task: str) -> float:
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        return -float('inf')
+    return -1.0
 
 
 def train_model(
@@ -1142,6 +1215,7 @@ def train_model(
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop = (task == TRAILING_STOP_TARGET)
     trailing_stop_quantile = (task == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    take_skip_trailing_stop = (task == TAKE_SKIP_TRAILING_STOP_TARGET)
     regression = (task in ['regression', TRADE_PNL_TARGET]) or multi_target or trailing_stop
 
     if entry_path and model_name not in ENTRY_PATH_MODEL_NAMES:
@@ -1151,6 +1225,8 @@ def train_model(
         raise ValueError(f'{ENTRY_PATH_V1_QUANTILE_TARGET} supports only model=transformer')
     if trailing_stop_quantile and model_name != 'transformer':
         raise ValueError(f'{TRAILING_STOP_TARGET_QUANTILE_TARGET} supports only model=transformer')
+    if take_skip_trailing_stop and model_name != 'transformer':
+        raise ValueError(f'{TAKE_SKIP_TRAILING_STOP_TARGET} supports only model=transformer')
 
     # ── Setup ────────────────────────────────────────────────────────────────
     set_seed(seed)
@@ -1174,7 +1250,7 @@ def train_model(
         batch_size=batch_size,
         target=target_col,
         use_scaler=use_scaler,
-        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier or trailing_stop_quantile) else False,
+        use_weighted_sampler=use_weighted_sampler if not (regression or triple_barrier or trailing_stop_quantile or take_skip_trailing_stop) else False,
         seq_len=seq_len,
         clear_cache=clear_cache,
         entry_path_feature_profile=entry_path_feature_profile,
@@ -1206,6 +1282,8 @@ def train_model(
         num_classes = len(TRAILING_STOP_TARGET_COLUMNS)
     elif trailing_stop_quantile:
         num_classes = 1
+    elif take_skip_trailing_stop:
+        num_classes = len(TAKE_SKIP_TRAILING_STOP_COLUMNS)
     elif regression:
         num_classes = 1
     elif binary_classification:
@@ -1280,6 +1358,8 @@ def train_model(
         path_cls_loss_fn = nn.CrossEntropyLoss(reduction='none').to(device)
     elif trailing_stop_quantile:
         loss_fn = None
+    elif take_skip_trailing_stop:
+        loss_fn = nn.BCEWithLogitsLoss().to(device)
     elif regression:
         if regression_loss == 'directional':
             loss_fn = DirectionalAsymmetricLoss(
@@ -1369,6 +1449,15 @@ def train_model(
         if not silent:
             print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
                   f"{'val_score':>10} | {'q50_r':>10} | {'coverage':>10} | {'LR':>10}")
+    elif take_skip_trailing_stop:
+        history = {
+            'train_loss': [], 'val_loss': [],
+            'val_score': [], 'val_bce': [], 'lr': [],
+        }
+        metric_name = 'val_score'
+        if not silent:
+            print(f"\n{'Epoch':>5} | {'Train Loss':>10} | {'Val Loss':>10} | "
+                  f"{'val_score':>10} | {'BCE':>10} | {'LR':>10}")
     elif regression:
         history = {
             'train_loss': [], 'val_loss': [],
@@ -1393,7 +1482,7 @@ def train_model(
     if not silent:
         print(f"{'─' * 90}")
 
-    best_metric = -1.0
+    best_metric = initial_best_metric(task)
     best_epoch = 0
     best_metrics = {}
     epochs_without_improvement = 0
@@ -1426,6 +1515,14 @@ def train_model(
             train_loss = train_one_epoch_trailing_stop_target_quantile(
                 model,
                 train_loader,
+                optimizer,
+                device,
+            )
+        elif take_skip_trailing_stop:
+            train_loss = train_one_epoch_take_skip(
+                model,
+                train_loader,
+                loss_fn,
                 optimizer,
                 device,
             )
@@ -1548,6 +1645,20 @@ def train_model(
                 print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
                       f"{metrics['val_score']:>10.4f} | {metrics['q50_pearson_r']:>10.4f} | "
                       f"{metrics['interval_coverage']:>10.4f} | {current_lr:>10.6f}")
+        elif take_skip_trailing_stop:
+            val_loss, metrics = validate_take_skip(model, val_loader, loss_fn, device)
+            val_metric = metrics['val_score']
+
+            history['train_loss'].append(train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_score'].append(metrics['val_score'])
+            history['val_bce'].append(metrics['bce'])
+            history['lr'].append(optimizer.param_groups[0]['lr'])
+
+            current_lr = optimizer.param_groups[0]['lr']
+            if not silent:
+                print(f"{epoch:>5} | {train_loss:>10.4f} | {val_loss:>10.4f} | "
+                      f"{metrics['val_score']:>10.4f} | {metrics['bce']:>10.4f} | {current_lr:>10.6f}")
         elif regression:
             val_loss, metrics = validate_regression(
                 model,
@@ -1679,6 +1790,9 @@ def train_model(
             print(f"  Q50 MAE: {best_metrics.get('q50_mae', 0):.4f}")
             print(f"  Interval coverage: {best_metrics.get('interval_coverage', 0):.4f}")
             print(f"  Median interval width: {best_metrics.get('median_interval_width', 0):.4f}")
+        elif take_skip_trailing_stop:
+            print(f"  Val score: {best_metrics.get('val_score', 0):.4f}")
+            print(f"  BCE: {best_metrics.get('bce', 0):.4f}")
         elif not regression and not entry_path:
             print(f"\n{best_metrics.get('classification_report', '')}")
         else:
@@ -1731,7 +1845,7 @@ def train_model(
                 labels=['Bad (0)', 'Good (1)'],
                 task=task,
             )
-        elif entry_path or entry_path_quantile or trailing_stop_quantile:
+        elif entry_path or entry_path_quantile or trailing_stop_quantile or take_skip_trailing_stop:
             pass
         elif regression:
             # Для scatter нужны предсказания на val — пересчитываем
@@ -1923,6 +2037,9 @@ def _log_experiment(
         metrics_dict['q10_pinball_loss'] = result['best_metrics'].get('q10_pinball_loss')
         metrics_dict['q50_pinball_loss'] = result['best_metrics'].get('q50_pinball_loss')
         metrics_dict['q90_pinball_loss'] = result['best_metrics'].get('q90_pinball_loss')
+    elif task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        metrics_dict['val_score'] = result['best_metrics'].get('val_score')
+        metrics_dict['bce'] = result['best_metrics'].get('bce')
     elif regression:
         metrics_dict['mae'] = result['best_metrics'].get('mae')
         metrics_dict['rmse'] = result['best_metrics'].get('rmse')
@@ -2030,6 +2147,26 @@ def _plot_training_curves(
         plt.tight_layout()
         suffix = artifact_suffix or task_checkpoint_suffix(task or TRAILING_STOP_TARGET_QUANTILE_TARGET)
         save_path = PLOTS_DIR / f'training_curves_{model_name}{suffix}.png'
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        print(f"  📊 Кривые обучения: {save_path.name}")
+        return
+
+    if 'val_bce' in history:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        epochs_range = range(1, len(history['train_loss']) + 1)
+        axes[0].plot(epochs_range, history['train_loss'], label='Train')
+        axes[0].plot(epochs_range, history['val_loss'], label='Val')
+        axes[0].set_title('BCE Loss')
+        axes[0].legend()
+        axes[1].plot(epochs_range, history['val_score'], label='Val Score')
+        axes[1].plot(epochs_range, history['val_bce'], label='BCE')
+        axes[1].set_title('Validation Take/Skip Metrics')
+        axes[1].legend()
+        for ax in axes:
+            ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        save_path = PLOTS_DIR / f'training_curves_{model_name}{task_checkpoint_suffix(task or TAKE_SKIP_TRAILING_STOP_TARGET)}.png'
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close(fig)
         print(f"  📊 Кривые обучения: {save_path.name}")
@@ -2229,10 +2366,12 @@ def parse_args() -> argparse.Namespace:
             ARCHETYPE_TARGET,
             TRAILING_STOP_TARGET,
             TRAILING_STOP_TARGET_QUANTILE_TARGET,
+            TAKE_SKIP_TRAILING_STOP_TARGET,
         ],
         help="Задача: 'classification' | 'regression' (predict) | 'regression_updn' | "
              "'triple_barrier' | 'entry_path_v1' | 'entry_path_v1_quantile' | outcome-aligned targets | "
-             f"'{TRAILING_STOP_TARGET}' | '{TRAILING_STOP_TARGET_QUANTILE_TARGET}'. "
+             f"'{TRAILING_STOP_TARGET}' | '{TRAILING_STOP_TARGET_QUANTILE_TARGET}' | "
+             f"'{TAKE_SKIP_TRAILING_STOP_TARGET}'. "
              "Default: classification"
     )
     parser.add_argument('--epochs', type=int, default=DEFAULTS['epochs'],
@@ -2415,6 +2554,7 @@ def main():
     entry_path_quantile = (args.task == ENTRY_PATH_V1_QUANTILE_TARGET)
     entry_path_like = entry_path or entry_path_quantile
     trailing_stop_quantile = (args.task == TRAILING_STOP_TARGET_QUANTILE_TARGET)
+    take_skip_trailing_stop = (args.task == TAKE_SKIP_TRAILING_STOP_TARGET)
 
     if triple_barrier:
         result_serializable = {
@@ -2516,6 +2656,20 @@ def main():
                 'q10_pinball_loss': result['best_metrics'].get('q10_pinball_loss'),
                 'q50_pinball_loss': result['best_metrics'].get('q50_pinball_loss'),
                 'q90_pinball_loss': result['best_metrics'].get('q90_pinball_loss'),
+            },
+        }
+        suffix = task_checkpoint_suffix(args.task)
+    elif take_skip_trailing_stop:
+        result_serializable = {
+            'model_name': result['model_name'],
+            'task': result['task'],
+            'best_val_score': result['best_metric'],
+            'best_epoch': result['best_epoch'],
+            'num_parameters': result['num_parameters'],
+            'training_time': result['training_time'],
+            'val_metrics': {
+                k: v for k, v in result['best_metrics'].items()
+                if isinstance(v, float)
             },
         }
         suffix = task_checkpoint_suffix(args.task)

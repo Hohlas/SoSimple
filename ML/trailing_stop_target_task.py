@@ -6,8 +6,19 @@ TRAILING_STOP_TARGET = 'trailing_stop_target_v1'
 TRAILING_STOP_TARGET_COLUMNS = [
     'trail_48_pnl_atr_x2',
     'trail_48_pnl_atr_x3',
-    'trail_48_pnl_atr_x5',
+    'trail_48_pnl_atr_x4',
+    'trail_48_pnl_atr_x6',
+    'trail_48_pnl_atr_x8',
 ]
+
+
+def validate_trailing_stop_prediction_shape(pred: np.ndarray, context: str = 'pred') -> None:
+    expected = len(TRAILING_STOP_TARGET_COLUMNS)
+    if pred.ndim != 2 or pred.shape[1] != expected:
+        raise ValueError(
+            f"Trailing stop target {context} must have shape (N, {expected}); "
+            f"got {pred.shape}"
+        )
 
 
 def split_trailing_stop_targets(df: pd.DataFrame) -> np.ndarray:
