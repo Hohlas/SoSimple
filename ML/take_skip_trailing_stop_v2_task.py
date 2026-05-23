@@ -7,7 +7,28 @@ import pandas as pd
 TAKE_SKIP_TRAILING_STOP_V2_TARGET = 'take_skip_trailing_stop_v2'
 TAKE_SKIP_THRESHOLD_ATR_V2 = 0.5
 TAKE_SKIP_V2_HORIZONS = (12, 24, 48)
-TAKE_SKIP_V2_X_VALUES = (2, 4, 8, 10, 12)
+TAKE_SKIP_V2_X_VALUES = (2, 4, 8)
+TAKE_SKIP_V2_ROW_FEATURE_COLUMNS = [
+    'predict',
+    'ATR',
+    'session_hour',
+    'weekday',
+    'range_atr_6',
+    'body_atr_3',
+    'ret_dir_atr_lag1',
+    'vol_regime_24',
+    'ret_6_dir_atr',
+    'ret_12_dir_atr',
+    'ret_24_dir_atr',
+    'fav_3_atr',
+    'adv_3_atr',
+    'fav_6_atr',
+    'adv_6_atr',
+    'fav_12_atr',
+    'adv_12_atr',
+    'fav_24_atr',
+    'adv_24_atr',
+]
 
 TAKE_SKIP_TRAILING_STOP_V2_COLUMNS = [
     f'take_{horizon}_x{x_value}'

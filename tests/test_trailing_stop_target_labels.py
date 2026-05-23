@@ -5,7 +5,7 @@ import processing.label_signals as ls
 
 def test_trailing_stop_default_grid_matches_design():
     assert ls.TRAILING_STOP_HORIZONS == (12, 24, 48)
-    assert ls.TRAILING_STOP_X_VALUES == (2, 3, 4, 6, 8)
+    assert ls.TRAILING_STOP_X_VALUES == (2, 4, 8)
 
 
 def test_label_trailing_stop_targets_adds_expanded_grid_columns():
@@ -26,21 +26,22 @@ def test_label_trailing_stop_targets_adds_expanded_grid_columns():
         }
     , index=[10])
 
-    out = ls.label_trailing_stop_targets(frame.copy(), hold_bars=2, atr_col='ATR', x_values=(2, 3, 4, 6, 8))
+    out = ls.label_trailing_stop_targets(frame.copy(), hold_bars=2, atr_col='ATR')
 
     expected = [
+        'trail_12_pnl_atr_x2',
+        'trail_12_pnl_atr_x4',
+        'trail_12_pnl_atr_x8',
+        'trail_24_pnl_atr_x2',
+        'trail_24_pnl_atr_x4',
+        'trail_24_pnl_atr_x8',
         'trail_48_pnl_atr_x2',
-        'trail_48_pnl_atr_x3',
         'trail_48_pnl_atr_x4',
-        'trail_48_pnl_atr_x6',
         'trail_48_pnl_atr_x8',
     ]
-    assert [column for column in out.columns if column.startswith('trail_48_pnl_atr_')] == expected
-    assert out.loc[10, 'trail_48_pnl_atr_x2'] == 0.4
-    assert out.loc[10, 'trail_48_pnl_atr_x3'] == 0.4
-    assert out.loc[10, 'trail_48_pnl_atr_x4'] == 0.4
-    assert out.loc[10, 'trail_48_pnl_atr_x6'] == 0.4
-    assert out.loc[10, 'trail_48_pnl_atr_x8'] == 0.4
+    assert [column for column in out.columns if column.startswith('trail_')] == expected
+    for column in expected:
+        assert out.loc[10, column] == 0.4
 
 
 def test_label_trailing_stop_targets_uses_default_grid_when_x_values_omitted():
@@ -65,13 +66,17 @@ def test_label_trailing_stop_targets_uses_default_grid_when_x_values_omitted():
     out = ls.label_trailing_stop_targets(frame.copy(), hold_bars=2, atr_col='ATR')
 
     expected = [
+        'trail_12_pnl_atr_x2',
+        'trail_12_pnl_atr_x4',
+        'trail_12_pnl_atr_x8',
+        'trail_24_pnl_atr_x2',
+        'trail_24_pnl_atr_x4',
+        'trail_24_pnl_atr_x8',
         'trail_48_pnl_atr_x2',
-        'trail_48_pnl_atr_x3',
         'trail_48_pnl_atr_x4',
-        'trail_48_pnl_atr_x6',
         'trail_48_pnl_atr_x8',
     ]
-    assert [column for column in out.columns if column.startswith('trail_48_pnl_atr_')] == expected
+    assert [column for column in out.columns if column.startswith('trail_')] == expected
 
 
 def test_label_trailing_stop_targets_skips_nan_signal_and_atr():

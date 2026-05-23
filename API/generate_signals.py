@@ -62,6 +62,11 @@ from ML.take_skip_trailing_stop_task import (
     TAKE_SKIP_TRUE_PNL_COLUMNS,
     build_take_skip_export_frame,
 )
+from ML.take_skip_trailing_stop_v2_task import (
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+    TAKE_SKIP_TRUE_PNL_V2_COLUMNS,
+    build_take_skip_v2_export_frame,
+)
 from ML.trailing_stop_target_quantile_task import (
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
     build_trailing_stop_quantile_export_frame,
@@ -96,6 +101,7 @@ RESEARCH_EXPORT_TASKS = {
     TRAILING_STOP_TARGET,
     TRAILING_STOP_TARGET_QUANTILE_TARGET,
     TAKE_SKIP_TRAILING_STOP_TARGET,
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET,
 }
 
 
@@ -104,7 +110,7 @@ def build_trailing_stop_target_quantile_model(model_kwargs: dict | None = None) 
 
 
 def resolve_optuna_json(task: str, optuna_json: str | None) -> str | None:
-    if task in {TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_QUANTILE_TARGET, TAKE_SKIP_TRAILING_STOP_TARGET}:
+    if task in {TRAILING_STOP_TARGET, TRAILING_STOP_TARGET_QUANTILE_TARGET, TAKE_SKIP_TRAILING_STOP_TARGET, TAKE_SKIP_TRAILING_STOP_V2_TARGET}:
         if not optuna_json:
             return None
         if Path(optuna_json) == Path(DEFAULT_OPTUNA_JSON):
@@ -498,9 +504,9 @@ def generate_signals(
         print(f"{'═' * 60}\n")
         return
 
-    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+    if task in {TAKE_SKIP_TRAILING_STOP_TARGET, TAKE_SKIP_TRAILING_STOP_V2_TARGET}:
         if not research_out_prefix:
-            raise ValueError('Для take_skip_trailing_stop_v1 нужен --research-out-prefix')
+            raise ValueError(f'Для {task} нужен --research-out-prefix')
 
         prefix_path = Path(research_out_prefix)
         prefix_path.parent.mkdir(parents=True, exist_ok=True)
@@ -508,14 +514,14 @@ def generate_signals(
         print(f"  🔬 Research export prefix: {prefix_path}")
         _train_loader, val_loader, _scaler = create_data_loaders(
             batch_size=256,
-            target=TAKE_SKIP_TRAILING_STOP_TARGET,
+            target=task,
             use_scaler=False,
             seq_len=seq_len,
             num_workers=0,
         )
         test_loader = create_test_loader(
             batch_size=256,
-            target=TAKE_SKIP_TRAILING_STOP_TARGET,
+            target=task,
             seq_len=seq_len,
             num_workers=0,
         )
@@ -525,7 +531,8 @@ def generate_signals(
             ('test', test_loader, TEST_FILE),
         ]:
             df_full = pd.read_csv(csv_path, sep=CSV_SEP, low_memory=False)
-            true_pnl = df_full[TAKE_SKIP_TRUE_PNL_COLUMNS].values.astype(np.float32)
+            true_pnl_cols = TAKE_SKIP_TRUE_PNL_V2_COLUMNS if task == TAKE_SKIP_TRAILING_STOP_V2_TARGET else TAKE_SKIP_TRUE_PNL_COLUMNS
+            true_pnl = df_full[true_pnl_cols].values.astype(np.float32)
             all_prob = []
             all_true = []
 
@@ -537,13 +544,22 @@ def generate_signals(
 
             pred_prob = np.concatenate(all_prob)
             true_label = np.concatenate(all_true).astype(np.float32)
-            export = build_take_skip_export_frame(
-                times=df_full['time'].values,
-                signals=df_full['signal'].values.astype(int),
-                pred_prob=pred_prob,
-                true_label=true_label,
-                true_pnl=true_pnl,
-            )
+            if task == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
+                export = build_take_skip_v2_export_frame(
+                    times=df_full['time'].values,
+                    signals=df_full['signal'].values.astype(int),
+                    pred_prob=pred_prob,
+                    true_label=true_label,
+                    true_pnl=true_pnl,
+                )
+            else:
+                export = build_take_skip_export_frame(
+                    times=df_full['time'].values,
+                    signals=df_full['signal'].values.astype(int),
+                    pred_prob=pred_prob,
+                    true_label=true_label,
+                    true_pnl=true_pnl,
+                )
             output_path = prefix_path.parent / f'{prefix_path.name}_{split_name}_predictions.csv'
             export.to_csv(output_path, sep=';', index=False)
             print(f"  ✅ {split_name}: {len(export)} строк -> {output_path}")
@@ -757,6 +773,7 @@ def parse_args() -> argparse.Namespace:
             TRAILING_STOP_TARGET,
             TRAILING_STOP_TARGET_QUANTILE_TARGET,
             TAKE_SKIP_TRAILING_STOP_TARGET,
+            TAKE_SKIP_TRAILING_STOP_V2_TARGET,
         ],
         help=f"Тип таргета (default: {DEFAULT_TASK})"
     )
