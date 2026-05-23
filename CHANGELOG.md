@@ -1,6 +1,49 @@
 # Changelog SoSimple
 Хронология значимых изменений проекта (major milestones).
-> **Предупреждение**: Читай только первые 200 строк этого файла.
+> **Предупреждение**: Читай только первые 300 строк этого файла.
+
+## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
+
+### Добавлено
+- `ML/prepare_raw_features.py` — raw up_N/dn_N из OHLC (1000 колонок, sliding_window_view)
+- `ML/transformer_direction_train.py` — DataLoader, frozen RF baseline, fine-tune loop
+- 18 жизнеспособных комбинаций таргетов: 16 TB + 2 Reg (Trail — on-demand)
+
+### Результаты
+- **TB**: 16 комбинаций, лучший BUY PF=1.35 (val), Gate A провален
+- **Reg**: r_up=0.36, r_dn=0.41, лучший PF=1.21 (margin=4, 41 сделка) — провален
+- **Trail**: BUY PF=2.41 (58 сделок, 0.6% utilisation) — формально пройден, но ненадёжно
+- **Fine-tune Transformer**: хуже frozen RF на всех комбинациях
+- **SeqPF признан невалидной метрикой**: shuffle-тест показал разброс 0.68–4728 при одном и том же PF=1.10
+- **Вердикт**: fractal features не несут direction-сигнала. Тупик для direct direction prediction.
+
+### Исправлено
+- Raw up/dn баг: fractal.price нормализован (ratio), исправлено на OHLC close
+- Checkpoint загрузка: num_classes=10 не был в model_kwargs
+
+<!-- подробности: docs/reports/2026-05-21-transformer-direction.md -->
+
+## [2026-05-21] - Direct Direction Rebuild (E0–E5 audit + исправление)
+
+### Добавлено
+- `ML/prepare_raw_features.py` — извлечение сырых признаков из OHLC (raw prices, raw ATR)
+- `ML/benchmark_buy_only_direction.py` — BUY-only RF с исправленными признаками, directional close target, corrected winner protocol
+
+### Исправлено (6 критических ошибок)
+- Feature-in-target contamination: признаки строятся из OHLC raw prices (не из normalized CSV)
+- Неверные единицы расстояния: `(raw_price_i − raw_price_0) / raw_ATR`
+- A/C targets из normalized значений: таргеты строятся из OHLC
+- Winner selection protocol: negative_years=0 gate, сортировка по sequential PF
+- SELL anti-signal: полный отказ от SELL (BUY-only)
+- Шумный trailing-profit таргет: заменён на directional close
+
+### Результаты
+- Phase A validation: PF=1.77, SeqPF=1.99 (83 сделки) — gate passed
+- Phase B (+regime features): PF=1.64, SeqPF=2.22 — regime features не улучшили
+- Phase D frozen test: **PF=0.99, SeqPF=1.96** (639 сделок) — gate FAILED
+- **Вердикт**: fractal-level признаки не несут direction-сигнала. Test BUY win rate 50.5% (случайный).
+- Рекомендация: не деплоить; исследовать Transformer encoder + score gate.
+<!-- подробности: docs/reports/2026-05-18-direct-direction-rebuild.md -->
 
 ## [2026-05-16] - Wiki: execution-tracks.md decomposition
 

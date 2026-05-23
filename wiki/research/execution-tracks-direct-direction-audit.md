@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-18
-sources: 2
-status: active
+last_updated: 2026-05-21
+sources: 3
+status: completed
 ---
 
-# Execution Tracks: Direct Direction + Chain Audit (05-15 - 05-18)
+# Execution Tracks: Direct Direction + Audit + Rebuild (05-15 - 05-21)
 
-> Direct-direction ветка дала weak-positive frozen result, но аудит показал, что её нельзя продолжать тюнингом порогов: сначала нужен rebuild feature/target contract.
+> Direct-direction ветка прошла полный цикл: эксперименты → аудит → исправление ошибок → честный отрицательный вердикт.
 
 ## Хронология
 
@@ -63,14 +63,36 @@ tuning. Приоритет:
 
 ## Открытые вопросы
 
-- Сохранится ли BUY edge после raw/current-row feature rebuild?
-- Можно ли восстановить SELL без test tuning?
-- Нужен ли balanced BUY/SELL кандидат или честный BUY-only product decision
-  лучше слабого симметричного решения?
-- Если corrected validation не даст PF/SeqPF > 2.0, следующий безопасный шаг -
-  forward data collection, а не дальнейшая historical подгонка.
+- Сохранился ли BUY edge после raw/current-row feature rebuild? **Нет**: test win rate 50.5% (случайный).
+- Можно ли восстановить SELL без test tuning? Не проверялось (BUY-only только).
+- Нужен ли balanced BUY/SELL кандидат или честный BUY-only product decision лучше слабого симметричного решения? BUY-only — правильный выбор, но и он не работает.
+- Если corrected validation не даст PF/SeqPF > 2.0, следующий безопасный шаг — forward data collection, а не дальнейшая historical подгонка. **Подтверждено**: validation PF=1.77, но test PF=0.99.
+
+### Direct Direction Rebuild (05-21)
+
+Исполнение промпта `docs/audit/2026-05-18-redo-prompt.md`: полный rebuild с исправлением всех 6 ошибок аудита.
+
+| Phase | Что сделано | Gate |
+|-------|------------|------|
+| Phase 0 | Извлечение сырых признаков из OHLC (raw prices) | Passed |
+| Phase A | BUY-only RF, directional close target, 54 features | Passed (val PF=1.77, SeqPF=1.99) |
+| Phase B | +Regime (trend_strength, vol_regime) + direction-specific features | Passed (но хуже A) |
+| Phase D | Frozen test (Phase A winner, thr=0.0, buy_thr=0.6) | **Failed** (Test PF=0.99) |
+
+**Исправленные ошибки**:
+1. Feature-in-target contamination: OHLC raw prices вместо normalized CSV
+2. Неверные единицы расстояния: `(raw_price_i − raw_price_0) / raw_ATR`
+3. A/C targets: directional close из OHLC вместо normalized up/dn
+4. Winner protocol: negative_years=0 gate, сортировка по sequential PF
+5. SELL anti-signal: полный отказ от SELL
+6. Trailing-profit target: заменён на directional close
+
+**Итог**: Fractal-level признаки (front/back/impulse) не несут direction-сигнала. Test BUY win rate = 50.5% (статистически неотличимо от случайного). Sequential PF=1.96 на 52 сделках — положительный, но недостаточный для production.
+
+**Рекомендация**: не деплоить fractal-level direct direction. Следующий шаг — Transformer encoder как feature extractor, или альтернативный подход (score gate + direction resolver).
 
 ## Источники
 
 - [docs/reports/2026-05-15-direct-direction-improvement.md](../../docs/reports/2026-05-15-direct-direction-improvement.md)
 - [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](../../docs/audit/2026-05-18-codex-direct-direction-chain-audit.md)
+- [docs/reports/2026-05-18-direct-direction-rebuild.md](../../docs/reports/2026-05-18-direct-direction-rebuild.md)
