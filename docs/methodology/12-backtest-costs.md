@@ -1,0 +1,94 @@
+## 12. Backtest с торговыми издержками
+
+### Цель
+
+Проверить, сохраняется ли edge после реалистичного исполнения.
+
+### Входы
+
+- frozen signals или trades;
+- OHLC/tick/tester data;
+- trading protocol;
+- cost assumptions;
+- position constraints.
+
+### Пошаговые действия
+
+1. Описать cost model:
+   - spread;
+   - commission;
+   - swap;
+   - slippage;
+   - requote/open failure;
+   - latency;
+   - next-bar entry;
+   - position limits.
+
+   Типовые источники и порядок величин:
+
+   | Издержка | Источник | Типовой диапазон |
+   |----------|----------|-----------------|
+   | Spread | Средний спред инструмента (из MT4 логов или спецификации счёта) | XAUUSD: 20–35 пунктов |
+   | Commission | Спецификация счёта (на лот или на сделку) | Зависит от брокера |
+   | Slippage | Тестировать 0, 0.5, 1.0, 2.0 ATR (не пунктов) | Реалистично: 0.5–1.0 ATR |
+   | Swap | Для H1 обычно пренебрежим, проверить при hold >= 24 бара | Зависит от брокера |
+   | Missed opens | Из MT4 tester log: OPEN_FAILED / total_signals | Допустимо < 5% |
+
+   Проверить устойчивость Net PF к удвоению каждой издержки по отдельности.
+
+2. Считать gross и net results отдельно.
+3. Запустить offline backtest по тому же trading protocol.
+4. Запустить sequential simulation для single-position или max-positions ограничения.
+5. Проверить повышенные costs.
+6. Разделить close reasons: SL, TP, timeout, reversal, manual/forced close.
+7. Для MT4-кандидата выполнить tester run.
+
+### Обязательные проверки
+
+- Cost assumptions указаны до final verdict.
+- Entry timing совпадает с target и export.
+- Spread/commission/slippage не оставлены "на потом".
+- Timeout PnL и SL/TP PnL анализируются отдельно.
+- Пропущенные входы не считаются нулевым риском без обоснования.
+
+### Критерии успешного завершения
+
+- Net PF и drawdown проходят gates.
+- Известно, какие издержки убивают стратегию.
+- Есть список расхождений offline vs tester.
+- Gross-only результат не выдан за production.
+
+### Типовые ошибки
+
+- Игнорировать комиссии и spread при PF около 1.
+- Считать OHLC close эквивалентом tick execution.
+- Не учитывать requote и missed opens.
+- Делать вывод о модели по M5 diagnostic, если production H1.
+
+### Проверка симулятора сделок
+
+Симулятор сделок — такой же источник ошибок, как feature builder. Его логика должна быть проверена до использования результатов для verdict.
+
+#### Обязательные проверки
+- Label convention симулятора совпадает с label convention датасета (типы, диапазоны, edge cases: timeout, double-touch, reversal).
+- До использования симулятора для verdict написать тесты на синтетических сделках с известным исходом:
+  - TP-only → PnL положительный, close_reason=TP;
+  - SL-only → PnL отрицательный, close_reason=SL;
+  - Timeout → корректный timeout PnL;
+  - TP+SL в одном окне → поведение соответствует конвенции.
+- Не использовать simulator PF > 10 без ручной проверки первых 10 сделок.
+- При изменении label convention перепроверить симулятор.
+
+#### Типовые ошибки
+- Приведение типов (int/float), маскирующее разные исходы под один.
+- Ветка else, съедающая SL и timeout без разбора.
+- Timeout считается loss без явного решения.
+
+### Ветвления
+
+- Если edge исчезает после costs: reject или redesign target/rule.
+- Если расхождения только в timeout: отделить market-close risk от signal risk.
+- Если requote/open failures частые: сначала чинить execution reliability, не модель.
+
+---
+
