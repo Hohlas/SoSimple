@@ -1,6 +1,6 @@
 ---
 name: ml-methodology
-description: Use when developing, auditing, or evaluating ML models — feature engineering, labeling, data leakage checks, splits, baselines, training, backtesting, MT4 parity, or production preparation
+description: Use when developing, auditing, or evaluating ML models — feature engineering, labeling, data leakage checks, splits, baselines, training, backtesting, MT4 parity, reconciliation, or production preparation
 ---
 
 # Методика разработки ML-моделей

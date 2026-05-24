@@ -22,7 +22,7 @@
 - [ ] Все open failures и requote видимы в логах.
 - [ ] Feature contract version сохраняется рядом с prediction/trade event.
 - [ ] Monitoring не меняет rule без нового validation cycle.
-- [ ] SeqPF не используется как gate-критерий.
+- [ ] SeqPF не используется как gate-критерий (diagnostic-only допустим).
 - [ ] Reproducibility metadata сохранена.
 - [ ] Для production/confirmed кандидата есть model card.
 - [ ] Старые противоречащие выводы обновлены или помечены.

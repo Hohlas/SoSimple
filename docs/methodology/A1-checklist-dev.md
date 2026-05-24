@@ -16,7 +16,7 @@
 - [ ] Split строго временной. Для событийного ряда учтена специфика неравномерного сэмплирования.
 - [ ] Validation/test/forward границы указаны.
 - [ ] Baseline-модели запущены.
-- [ ] Метрики и gates заданы до validation sweep. SeqPF исключён из gate-критериев.
+- [ ] Метрики и gates заданы до validation sweep. SeqPF допустим только diagnostic-only, исключён из gate-критериев.
 - [ ] Hyperparameter/model selection не использует test.
 - [ ] Один frozen candidate выбран на validation.
 - [ ] Rule/checkpoint/exporter заморожены до test.

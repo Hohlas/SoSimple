@@ -66,6 +66,4 @@
 | Финальная проверка перед запуском кандидата | [A1-checklist-dev.md](A1-checklist-dev.md) |
 | Аудит готового результата | [A2-checklist-audit.md](A2-checklist-audit.md) |
 | Известные ошибки проекта (реестр) | [A3-typical-false-conclusions.md](A3-typical-false-conclusions.md) |
-| Verdict-статусы кандидатов | [A4-verdicts.md](A4-verdicts.md) |
-| Когда остановить цикл разработки | [A5-stop-conditions.md](A5-stop-conditions.md) |
-| Первичные источники для проверки | [A6-primary-sources.md](A6-primary-sources.md) |
+| Verdict-статусы и stop conditions | [A4-verdicts-stop-conditions.md](A4-verdicts-stop-conditions.md) |
