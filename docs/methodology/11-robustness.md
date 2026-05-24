@@ -29,6 +29,7 @@
 - Transfer не заявляется без отдельного теста.
 - Provider drift и instrument transfer не смешиваются.
 - Side-specific failure не скрывается balance metric.
+- SeqPF sequential simulation — только diagnostic для position-constraint анализа, не доказательство качества модели.
 
 ### Критерии успешного завершения
 

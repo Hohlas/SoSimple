@@ -31,8 +31,10 @@
 ### Обязательные проверки
 
 - Winner selection уважает minimum trades и другие gates.
+- Для winner рассчитан confidence interval или bootstrap PF/EV/trade; при малом N оценён overfit risk.
 - Нельзя выбирать максимальный PF среди кандидатов, которые не проходят gate.
 - Test не участвует в выборе threshold/top-k/exit/filter.
+- SeqPF не используется как gate-критерий выбора winner (допустим только diagnostic-only).
 - Если используется ensemble/stacking, нужен out-of-fold protocol или отдельный holdout.
 
 ### Критерии успешного завершения
@@ -40,11 +42,12 @@
 - Есть ровно один frozen candidate.
 - Есть frozen artifacts.
 - Есть validation report с rejected alternatives.
+- Если winner держится на малом числе сделок, статус не выше research_only.
 - Известно, какой baseline кандидат должен побить на test.
 
 ### Типовые ошибки
 
-- `pick_winner` выбирает высокий PF на малом N.
+- `pick_winner` выбирает высокий PF на малом N без оценки статистической неопределённости.
 - Менять threshold после test.
 - Выбирать rule-family по test, а параметры по validation.
 - Считать структурную стабильность между seeds доказанной без формального tolerance.

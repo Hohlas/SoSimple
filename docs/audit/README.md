@@ -5,6 +5,7 @@
 | Артефакт | Роль | Когда обновлять |
 |---|---|---|
 | [`ml_trading_methodology.md`](ml_trading_methodology.md) | Основной регламент разработки и аудита ML-моделей ТС в рамках проекта, включая обязательный Feature Contract / Leakage Gate | Меняются обязательные gates, leakage-инварианты, схема validation/test/forward или выводы по типовым ошибкам |
+| [`2026-05-24-methodology-review-notes.md`](2026-05-24-methodology-review-notes.md) | Замечания по актуальной `docs/methodology/` и trigger-у `ml-methodology` как вход для доработки регламента | Использовать как audit note; переносить в методику только после отдельного решения |
 | [`old_plan_example.md`](old_plan_example.md) | Старый пример плана; использовать только для сравнения полноты структуры | Не обновлять как методику без отдельного пересмотра |
 
 ## Правила

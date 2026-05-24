@@ -203,6 +203,7 @@
 | [dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv |
 | [PRD.md](docs/PRD.md) | Product Requirements Document |
 | [audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления |
+| [2026-05-24-methodology-review-notes.md](docs/audit/2026-05-24-methodology-review-notes.md) | Замечания по `docs/methodology/` и trigger-у `ml-methodology` |
 | [methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + приложения) |
 | [old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры |
 | [2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов |

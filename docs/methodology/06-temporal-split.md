@@ -16,7 +16,7 @@
 1. Отсортировать строки по времени в направлении, соответствующем pipeline.
 2. Задать train/validation/test границы датами и индексами.
 3. Проверить, что shuffle временных строк не применяется.
-4. Если label horizon пересекает границу split, оценить нужен ли embargo gap.
+4. Если label horizon пересекает границу split: применить embargo gap ИЛИ письменно доказать, что ни один label/результат не пересекает границу.
 5. Если проводится hyperparameter search, использовать только train/validation.
 6. Если нужен walk-forward, заранее задать rolling или expanding windows.
 7. Сохранить split manifest.
