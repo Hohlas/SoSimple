@@ -1,0 +1,50 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "methodology_stage": "07-baseline-first",
+  "stage_verdict": "PASS",
+  "target": "buy_sl3_tp3 (SL=3ATR, TP=3ATR, timeout=24 bars)",
+  "feature_config": {
+    "builder": "ML/fractal_level_feature_builder.py",
+    "input_family": "nearest_k",
+    "k": 16,
+    "n_features": 455
+  },
+  "validation_results": {
+    "dummy_most_frequent": {"PF": 1.04, "trades": 9451, "win_rate": 0.510},
+    "dummy_stratified": {"PF": 1.05, "trades": 3420, "win_rate": 0.511},
+    "dummy_uniform": {"PF": 1.04, "trades": 9451, "win_rate": 0.510},
+    "RF_160": {
+      "PF": 1.58,
+      "trades": 281,
+      "win_rate": 0.612,
+      "threshold": 0.40,
+      "negative_years": 1,
+      "gate_pf_ge_1_5": true,
+      "gate_zero_neg_years": false
+    },
+    "HGB": {"PF": 1.12, "trades": 3985, "win_rate": 0.529, "threshold": 0.35}
+  },
+  "baseline_to_beat": {
+    "model": "RF_160",
+    "val_pf": 1.58,
+    "note": "Best validation baseline. Does NOT pass full gate (1 neg year). Model candidates must beat PF ≥ 1.58 AND have 0 negative years."
+  },
+  "dummy_floor": {
+    "dummy_stratified_pf": 1.05,
+    "interpretation": "buy_sl3_tp3 has near-balanced TP/SL ratio (35.9/35.5), so random ~ PF=1.05. Any model with PF ≤ 1.05 is not extracting signal beyond class prior."
+  },
+  "methodology_compliance": {
+    "split": "train/val only, test NOT viewed",
+    "feature_contract": "live-safe only (feature_contract.csv), no predict/ret_*/fav_*/adv_*",
+    "target_prefixed": "buy_sl3_tp3 — not in feature builder's input allowlist",
+    "baseline_not_tuned_on_test": true
+  },
+  "risks": [
+    "RF_160 PF=1.58 on 281 trades — statistical significance borderline. Need bootstrap CI.",
+    "1 negative year means model failed in one validation year. Per-year robustness needed.",
+    "HGB significantly underperforms RF — gradient boosting may need different hyperparameters for 3-class TB target.",
+    "Signal appears weak: dummy floor PF=1.05 means target itself carries little edge beyond class balance."
+  ],
+  "next_allowed_stage": "08-model-development"
+}

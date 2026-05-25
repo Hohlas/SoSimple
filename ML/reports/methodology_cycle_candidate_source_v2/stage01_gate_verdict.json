@@ -47,6 +47,18 @@
       "stage05_eda_audit.json"
     ]
   },
-  "next_allowed_stage": "06-temporal-split",
+  "stage06": {
+    "verdict": "PASS",
+    "reason": "Sequential split verified in Stage 03: train 2004-2019, val 2019-2022, test 2022-2026. No overlap. No shuffle. 0 sorting errors."
+  },
+  "stage07": {
+    "verdict": "PASS",
+    "reason": "Dummy baselines (most_frequent, stratified, uniform) + ML baselines (RF_160, HGB) on buy_sl3_tp3. Best: RF_160 val PF=1.58 (281 trades, 61.2% wr) but 1 negative year. Dummy floor PF=1.05. Baseline to beat: PF≥1.58 + 0 neg years. Test NOT viewed.",
+    "artifacts": [
+      "stage07_baselines.json",
+      "ML/baseline_candidate_source.py"
+    ]
+  },
+  "next_allowed_stage": "08-model-development",
   "requires_user_pass_to_continue": true
 }
