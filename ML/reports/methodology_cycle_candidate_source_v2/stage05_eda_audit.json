@@ -1,0 +1,69 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "methodology_stage": "05-eda-data-quality",
+  "stage_verdict": "PASS",
+  "data_scope": "train + validation only. Test split NOT viewed — preserved for Stage 10 frozen test.",
+  "data_quality_checks": {
+    "missing_data": {
+      "nan_rate": "0.0% across all key columns on train",
+      "inf_rate": "0.0%",
+      "verdict": "PASS"
+    },
+    "constant_features": {
+      "identified": ["body_atr_3", "range_atr_6"],
+      "reason": "zero_rate=100% in train + validation",
+      "action": "excluded from model inputs",
+      "verdict": "PASS"
+    },
+    "class_balance_signal": {
+      "train": "BUY=2.56%, SELL=2.48%, neutral=94.96%",
+      "val": "BUY=2.58%, SELL=2.50%, neutral=94.92%",
+      "verdict": "PASS — stable ~5% signal rate, no leakage"
+    },
+    "tb_class_balance": {
+      "train_buy_sl3_tp3": "SL=35.5%, timeout=28.6%, TP=35.9%",
+      "val_buy_sl3_tp3": "SL=31.9%, timeout=34.9%, TP=33.2%",
+      "verdict": "PASS — moderate shift (val has fewer SL, more timeouts), reflects regime change"
+    },
+    "monotonic_invariants": {
+      "up_3<=up_6<=up_12<=up_24<=up_48": "0 violations on train",
+      "dn_3<=dn_6<=dn_12<=dn_24<=dn_48": "0 violations on train",
+      "fractal_time order": "0 sorting errors in pipeline",
+      "verdict": "PASS"
+    }
+  },
+  "distribution_analysis": {
+    "signal_concentration_by_hour": {
+      "train_peak": "h16-19: 12.3% signal rate",
+      "val_peak": "h16-19: 10.2% signal rate",
+      "train_lowest": "h4-7: 2.5% signal rate",
+      "val_lowest": "h4-7: 3.2% signal rate",
+      "interpretation": "US session overlap peak. Consistent across splits. Risk: model may learn time-of-day bias."
+    },
+    "atr_regime_shift_train_val": {
+      "train_atr_mean": 3.00,
+      "val_atr_mean": 4.85,
+      "ratio": 1.62,
+      "train_val_ks_stat": 0.561,
+      "vol_regime_24": {
+        "train": {"mean": 3.00, "median": 2.80, "p95": 5.48},
+        "val": {"mean": 4.84, "median": 4.47, "p95": 8.42}
+      },
+      "vol_regime_ks": 0.562,
+      "risk": "CRITICAL — 1.6x ATR increase from train to val (KS=0.56). Gold volatility regime changed significantly. Validates need for per-year and per-volatility-regime slices in robustness evaluation (Stage 11).",
+      "test_warning": "Test period (2022-2026) likely even higher volatility given gold bull market. Frozen test will need regime-aware evaluation."
+    }
+  },
+  "known_defects": [
+    {"defect": "body_atr_3, range_atr_6 constant zero", "action": "excluded", "fix": "regenerate pipeline with OHLC features if needed"},
+    {"defect": "archetype_target 99.3% zero", "action": "DIAGNOSTIC_ONLY"},
+    {"defect": "extreme TB imbalance (sl2_tp9: 2.3% TP on train)", "action": "class_weight or oversampling"}
+  ],
+  "risks": [
+    "Volatility regime shift: train(2004-2019, low vol) → val(2019-2022, med vol). Models trained on low vol may fail on higher vol. Requires per-regime evaluation.",
+    "Signal time-of-day concentration: h16-19 has 5x higher signal rate than h4-7.",
+    "Test split NOT viewed in this stage — frozen test purity preserved for Stage 10."
+  ],
+  "next_allowed_stage": "06-temporal-split"
+}

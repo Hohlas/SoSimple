@@ -1,9 +1,9 @@
-# Methodology Cycle: Stages 00–04 — Foundation Complete
+# Methodology Cycle: Stages 00–05 — Foundation Complete
 
 > **Date**: 2026-05-25 18:00
-> **Status**: Completed (Stages 00–04 PASS)
-> **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules from research contract through labeling audit
-> **Related commit**: 62ae27f
+> **Status**: Completed (Stages 00–05 PASS)
+> **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules from research contract through EDA
+> **Related commit**: 3e0cc3e
 
 ## Context
 
@@ -162,7 +162,20 @@ Audited 56 target/label columns from pipeline output:
 
 ## Next Step
 
-Stage 05 — EDA / Data Quality: full distribution analysis, class balance across splits, regime shift detection, outlier audit. Scale audit already provides min/p50/p95/p99/std/zero_rate; EDA adds distribution shape, split-drift, feature-feature correlations.
+Stage 06 — Temporal Split: already verified (sequential, no overlap, confirmed in Stage 03). Stage 07 — Baseline First: train dummy/naive baselines before complex models.
+
+### Stage 05 — EDA / Data Quality
+
+Ran on train + validation only. Test split NOT viewed (preserved for Stage 10 frozen test).
+
+Key findings:
+- No NaN/Inf in any key column.
+- `body_atr_3`, `range_atr_6` — constant zero, excluded.
+- Signal rate stable at ~5% across train and val.
+- TB class balance shifts moderately (val has fewer SL, more timeouts) — consistent with regime change.
+- Monotonic invariants: 0 violations in up/dn tiers and fractal sorting.
+- Signal concentration: peak at h16-19 (~12%), trough at h4-7 (~3%). US session dominance.
+- **CRITICAL: ATR regime shift.** Train=3.0, Val=4.85 (KS=0.56, ratio=1.62). Gold volatility increased significantly from 2004-2019 to 2019-2022. Further increase expected in test period (2022-2026 gold bull). Requires per-year and per-volatility-regime slices in robustness evaluation.
 
 ## Related Materials
 

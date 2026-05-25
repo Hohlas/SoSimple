@@ -40,6 +40,13 @@
       "stage04_labeling_audit.json"
     ]
   },
-  "next_allowed_stage": "05-eda-data-quality",
+  "stage05": {
+    "verdict": "PASS",
+    "reason": "No NaN/Inf. Constant features identified and excluded. Class balance stable across splits. Monotonic invariants verified. CRITICAL finding: ATR regime shift — train=3.0, val=4.85, test=9.55 (KS=0.561). Gold volatility 3x higher in test period. Requires per-regime evaluation.",
+    "artifacts": [
+      "stage05_eda_audit.json"
+    ]
+  },
+  "next_allowed_stage": "06-temporal-split",
   "requires_user_pass_to_continue": true
 }
