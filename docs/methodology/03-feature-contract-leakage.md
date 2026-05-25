@@ -67,8 +67,14 @@ Reason: unresolved leakage/preprocessing contract risk.
    - missing value policy;
    - ATR contract;
    - sequence length.
-8. Запретить silent fallback: отсутствующий online-признак не заменяется нулём без явного контракта.
-9. Зафиксировать итоговый verdict: `PASS`, `FAIL`, `UNKNOWN` или `DIAGNOSTIC_ONLY`.
+8. Проверить normalization contract:
+   - input-признаки и target/label колонки нормализуются раздельно;
+   - grouping внутри каждой роли основан на scale audit;
+   - в каждом pool нет dominance одного поля над остальными;
+   - target scaler не влияет на input scaler;
+   - online path может воспроизвести input normalization без offline labels.
+9. Запретить silent fallback: отсутствующий online-признак не заменяется нулём без явного контракта.
+10. Зафиксировать итоговый verdict: `PASS`, `FAIL`, `UNKNOWN` или `DIAGNOSTIC_ONLY`.
 
 ### ML Leakage Preflight Checklist
 
@@ -82,13 +88,16 @@ Reason: unresolved leakage/preprocessing contract risk.
 | 6 | Фракталы или другие event elements отсортированы одинаково | `fractal0` должен означать одно и то же в train/test/online | Проверка порядка, например `fractal_time[i] >= fractal_time[i+1]` | `fractal0` в одном режиме свежий, а в другом старый или случайный |
 | 7 | Нормализация применена тем же способом | Модель не должна получать другой масштаб чисел | Проверка диапазонов и normalization metadata | Training использовал нормализованные поля, а online подаёт raw значения, или наоборот |
 | 8 | Нормализационные пулы не зависят от future-derived полей | Даже row-wise normalization может исказить live-признаки | Описано, какие поля входят в per-row pools | `predict` или future targets влияют на normalization pool live-признаков |
-| 9 | Labeling не запускается в online path | Online не знает будущий исход сделки | В online runner нет вызова future label builders | Online перед inference создаёт `ret_*`, `fav_*`, `adv_*` или аналоги по будущим барам |
-| 10 | Global scaler не использует future validation/test/online | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train | Scaler fit-ится на полном датасете включая validation/test/forward |
-| 11 | ATR/volatility contract совпадает | ATR может быть raw, ratio или scaled | В отчёте указано, ждёт ли checkpoint raw `ATR`, `ATR_ratio` или scaler-normalized ATR | Training использовал один ATR contract, online подаёт другой |
-| 12 | Константные признаки выявлены до retrain | Мёртвые признаки маскируют реальный feature contract | Есть variance/unique-count check по train input columns | Признак константный на train, но оставлен как информативный input без решения |
-| 13 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
-| 14 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Сверка rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без parity |
-| 15 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
+| 9 | Scale audit выполнен до утверждения normalization groups | Поля одного типа могут иметь разные масштабы и задавить друг друга | Есть отдельные таблицы scale audit для inputs и targets: min/p50/p85/p95/p99/max/std/IQR/zero_rate/nan_rate | Группы выбраны без фактического анализа масштабов |
+| 10 | Input и target normalization разделены | Метки могут менять масштаб признаков и создавать косвенную утечку | Есть отдельные input scaler/pools и target scaler/pools | Один pool содержит одновременно input-признаки и target/label/future-derived поля |
+| 11 | Внутри normalization pool нет dominance | Крупные величины могут затмить мелкие и исказить обучение | Есть dominance-check по каждому proposed pool | Одно поле определяет p85/p99/std pool настолько, что остальные становятся почти константными |
+| 12 | Labeling не запускается в online path | Online не знает будущий исход сделки | В online runner нет вызова future label builders | Online перед inference создаёт `ret_*`, `fav_*`, `adv_*` или аналоги по будущим барам |
+| 13 | Global scaler не использует future validation/test/online | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train | Scaler fit-ится на полном датасете включая validation/test/forward |
+| 14 | ATR/volatility contract совпадает | ATR может быть raw, ratio или scaled | В отчёте указано, ждёт ли checkpoint raw `ATR`, `ATR_ratio` или scaler-normalized ATR | Training использовал один ATR contract, online подаёт другой |
+| 15 | Константные признаки выявлены до retrain | Мёртвые признаки маскируют реальный feature contract | Есть variance/unique-count check по train input columns | Признак константный на train, но оставлен как информативный input без решения |
+| 16 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
+| 17 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Сверка rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без parity |
+| 18 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
 
 ### Быстрая ручная проверка признаков
 
@@ -125,6 +134,24 @@ Reason: unresolved leakage/preprocessing contract risk.
 - для row-wise normalization: в её pool не должны попадать future-derived поля, влияющие на live-признаки;
 - для global scaler (`StandardScaler`, `RobustScaler`, min-max по датасету): параметры fit-ятся только на train и затем применяются к validation/test/online.
 
+Перед утверждением normalization groups нужен scale audit. Сначала поля разделяются по роли:
+
+- `input`: признаки, которые модель может увидеть в live;
+- `target/label`: будущие величины, классы, outcomes и diagnostic labels;
+- `metadata/diagnostic`: поля для отчётов, но не для обучения.
+
+Затем внутри каждой роли поля группируются по фактическому масштабу и смыслу. Минимальный scale audit по каждому полю или семейству:
+
+- `min`, `p1`, `p5`, `p50`, `p85`, `p95`, `p99`, `max`;
+- `mean`, `std`, `IQR`;
+- `zero_rate`, `nan_rate`, `inf_rate`;
+- `unique_count`;
+- train/validation drift для ключевых групп.
+
+Для каждого proposed normalization pool нужен dominance-check: одно поле не должно определять общие параметры масштаба так, что остальные поля сжимаются в почти константный диапазон. Если dominance найден, pool нужно разделить или выбрать другой способ масштабирования.
+
+Target normalization разрешена и часто нужна, но только отдельно от input normalization. Параметры target scaler не должны участвовать в нормализации input-признаков. Общий pool `input + target/label` запрещён.
+
 ATR нужно проверять отдельно. Если checkpoint обучался на raw `ATR`, online должен подавать raw `ATR`. Если checkpoint обучался на scaler-normalized ATR, online обязан применять тот же scaler с сохранёнными train-параметрами. Каждый новый checkpoint явно фиксирует свой ATR/volatility contract.
 
 ### Проверка информативности признаков
@@ -149,6 +176,8 @@ ATR нужно проверять отдельно. Если checkpoint обуч
 - feature count и порядок признаков для checkpoint;
 - границы train/validation/test;
 - результат проверки сортировки фракталов или других event elements;
+- scale audit inputs/targets;
+- normalization groups и dominance-check;
 - результат проверки нормализации;
 - ATR/volatility contract: raw, ratio или scaler-normalized;
 - результат проверки константных признаков;
@@ -184,6 +213,9 @@ Leakage Preflight (пункты 1–15 выше) проверяет, что мо
 - Подменять future-derived `predict` нулём в online и считать это совместимым с training.
 - Оставлять в training признаки, которые online не может честно воспроизвести.
 - Давать future-derived полям влиять на нормализацию live-признаков.
+- Утверждать normalization groups без scale audit inputs/targets.
+- Смешивать input-признаки и target/label колонки в одном scaler или row-wise pool.
+- Игнорировать dominance крупномасштабных полей внутри общего pool.
 - Выбирать model inputs как "все числовые колонки".
 - Использовать `target_*`, `label_*`, `outcome_*` wildcard как input.
 - Использовать один и тот же `test` для подбора порогов и для финального доказательства.
@@ -197,6 +229,8 @@ Leakage Preflight (пункты 1–15 выше) проверяет, что мо
 - `UNKNOWN` отсутствует.
 - Есть frozen feature list.
 - Есть frozen target/future-derived denylist.
+- Есть scale audit отдельно для input-признаков и target/label колонок.
+- Есть frozen normalization groups с dominance-check.
 - Есть ссылка на builder или metadata.
 - Candidate-source live-safe.
 - Rule/checkpoint/exporter совместимы с одним и тем же feature contract.
@@ -211,6 +245,7 @@ Leakage Preflight (пункты 1–15 выше) проверяет, что мо
 - Подменить недоступный input нулём.
 - Оставить offline candidate gate, который нельзя воспроизвести live.
 - Строить input как "все числовые колонки", из-за чего новые target columns автоматически попадают в модель.
+- Нормализовать метки и признаки одним общим scaler/pool.
 
 ### Ветвления
 
@@ -220,4 +255,3 @@ Leakage Preflight (пункты 1–15 выше) проверяет, что мо
 - Если старый profitable contour не проходит contract: его выводы использовать только как research hints.
 
 ---
-
