@@ -43,6 +43,7 @@ FRACTAL_FIELDS = {
     "up_6": 19,
     "dn_6": 20,
     "fractal_atr": 21,
+    "shift": 22,
 }
 
 _INT_FIELDS = {"direction", "strong", "break", "count"}
@@ -50,7 +51,7 @@ _UPDN_FIELDS = ("up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_2
 
 
 def parse_fractal(fractal_str: object) -> dict[str, Any] | None:
-    """Парсит строку фрактала в словарь с 22 полями."""
+    """Парсит строку фрактала в словарь с 23 полями."""
     if pd.isna(fractal_str) or fractal_str == "":
         return None
 
@@ -76,7 +77,7 @@ def parse_fractal(fractal_str: object) -> dict[str, Any] | None:
     except (TypeError, ValueError):
         return None
 
-    if len(parts) < 22:
+    if len(parts) < 23:
         parsed["fractal_atr"] = float(parts[17]) if len(parts) > 17 else 0.0
         for name in ("up_3", "dn_3", "up_6", "dn_6"):
             parsed[name] = 0.0
@@ -377,7 +378,8 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: boo
                 continue
             price = float(parsed.get("price", 0.0) or 0.0)
             raw_distance = (price - base_price) / atr
-            candidates.append((abs(raw_distance), source_index, raw_distance, parsed))
+            shift_val = int(parsed.get("shift", 0) or 0)
+            candidates.append((abs(raw_distance), source_index, raw_distance, parsed, shift_val))
             prices.append(price)
 
         if prices:
@@ -394,8 +396,11 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: boo
             prefix = f"nearest_{slot:02d}"
             if slot >= len(candidates):
                 _fill_nearest_slot(row_features, prefix, valid=0, geometry_only=geometry_only)
+                row_features[f"{prefix}_log_price_rel"] = 0.0
+                for band_x in (4, 12):
+                    row_features[f"{prefix}_atr_band_{band_x}"] = 0.0
                 continue
-            _, source_index, raw_distance, parsed = candidates[slot]
+            _, source_index, raw_distance, parsed, _ = candidates[slot]
             include_updn = (not geometry_only) and (source_index != 0)
             _fill_nearest_slot(
                 row_features,
@@ -407,6 +412,28 @@ def _build_nearest_k_features(frame: pd.DataFrame, *, k: int, geometry_only: boo
                 include_updn=include_updn,
                 geometry_only=geometry_only,
             )
+            price_i = float(parsed.get("price", 0.0) or 0.0)
+            if base_price > 0 and price_i > 0:
+                row_features[f"{prefix}_log_price_rel"] = float(np.log(price_i / base_price))
+            else:
+                row_features[f"{prefix}_log_price_rel"] = 0.0
+            for band_x in (4, 12):
+                row_features[f"{prefix}_atr_band_{band_x}"] = float(np.clip(raw_distance / band_x, -1.0, 1.0))
+
+        for band_x in (4, 12):
+            row_features[f"count_in_band_{band_x}"] = int(
+                sum(1 for _, _, rd, _, _ in candidates if abs(rd) <= band_x)
+            )
+
+        shifts = sorted(
+            [s for _, _, _, _, s in candidates if s > 0],
+            reverse=True,
+        )
+        for i in range(k):
+            if i < len(shifts) - 1:
+                row_features[f"delta_shift_{i:02d}"] = int(shifts[i] - shifts[i + 1])
+            else:
+                row_features[f"delta_shift_{i:02d}"] = 0
         out_rows.append(row_features)
     return pd.DataFrame(out_rows, index=frame.index).fillna(0.0)
 

@@ -1,0 +1,31 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-24",
+  "updated_at": "2026-05-25",
+  "stage00": {
+    "verdict": "PASS",
+    "reason": "Hypothesis, decision_time, decision unit, split protocol, gates, feature contract requirement, and expected artifacts are fixed before experiments."
+  },
+  "stage01": {
+    "verdict": "PASS",
+    "reason": "Raw Nero/PIC field statuses are classified; no unknown field is allowed as model input; old offline signal candidate-source is explicitly rejected; new candidate universe is all-row current snapshot state.",
+    "restrictions": [
+      "Do not use provider-transfer conclusions until provider metadata is documented.",
+      "Do not use timezone-sensitive conclusions until MT4 server timezone is documented.",
+      "Do not use offline signal != 0 gate as production candidate-source.",
+      "Do not use current small raw Nero.csv as forward profitability proof."
+    ]
+  },
+  "stage02": {
+    "verdict": "PASS",
+    "reason": "Pipeline runs reproducibly: sort (0 errors) → label → split (70/15/15). PLL normalization implemented in ML layer (8 groups, fit train only). No future-derived fields in model inputs. New features (log_price_rel, atr_band, count_in_band, delta_shift) added. Shift field added to MQL producer.",
+    "artifacts": [
+      "stage02_data_pipeline.json",
+      "ML/pll_normalizer.py",
+      "ML/checkpoints/pll_normalizer_v1.pkl",
+      "DATA/Nero_{train,validation,test}_labeled.csv"
+    ]
+  },
+  "next_allowed_stage": "03-feature-contract-leakage",
+  "requires_user_pass_to_continue": true
+}

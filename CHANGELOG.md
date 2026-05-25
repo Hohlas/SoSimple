@@ -2,6 +2,27 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-05-25] — Methodology Cycle: Stages 00–02 — Pipeline Foundation
+
+### Добавлено
+- Полный контракт methodology-цикла: гипотеза live-safe candidate-source, gate-критерии, split-протокол
+- 23-е поле `Shift` в fractal CSV формате (`SHIFT(F[f].T)` — bar index без искажений выходных)
+- 4 новых семейства признаков в `fractal_level_feature_builder.py`: `log_price_rel`, `atr_band_4/12`, `count_in_band_4/12`, `delta_shift_N`
+- `ML/pll_normalizer.py` — Piecewise Linear-Log нормализатор с per-group scalers (8 групп, fit train only)
+- `ML/checkpoints/pll_normalizer_v1.pkl` — fit на 44104 train samples
+- Artifacts: `stage00_research_contract.json`, `stage01_raw_data_inventory.json`, `stage01_gate_verdict.json`, `stage02_data_pipeline.json`, `feature_contract.csv`, `candidate_source_live_safe_audit.md`, `stage02_scale_audit_*.csv`
+
+### Результаты
+- Pipeline: 63006 rows (2004–2026) → sort (0 errors) → label (3192 signals, 63006 predicts) → split 44104/9451/9451
+- Все raw поля классифицированы (live_safe / target_only / future_derived / unknown)
+- Старый `signal != 0` gate явно отвергнут как future-derived
+- PLL группы: price, front_back, impulse, power, count, updn_h12/h24/h48. Break clip 5.
+
+### Вывод
+Фундамент live-safe candidate-source цикла заложен. Данные готовы к baseline-экспериментам.
+
+<!-- подробности: docs/reports/2026-05-25-methodology-cycle-stages-00-02.md -->
+
 ## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
 
 ### Добавлено

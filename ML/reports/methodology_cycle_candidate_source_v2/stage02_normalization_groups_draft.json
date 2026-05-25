@@ -1,0 +1,145 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "status": "draft_requires_design_review",
+  "reason": "Scale audit was computed on no-normalize historical splits rebuilt from updated MT/MQL4/Files/Nero.csv. Pools with dominance_flag=true require split/review before PASS.",
+  "hard_rules": [
+    "input normalization and target normalization are separate",
+    "no pool may contain both input and target/label fields",
+    "future-derived columns may not influence input scaling",
+    "dominance_flag=true requires splitting or explicit justification before PASS"
+  ],
+  "input_groups_draft": [
+    {
+      "name": "input_price_rowwise",
+      "members": [
+        "fractal*.P"
+      ],
+      "method": "rowwise_minmax",
+      "status": "scale_audited_raw"
+    },
+    {
+      "name": "input_front_back",
+      "members": [
+        "fractal*.FrntVal",
+        "fractal*.BackVal"
+      ],
+      "method": "rowwise_piecewise_linear_log",
+      "status": "scale_audited_raw"
+    },
+    {
+      "name": "input_impulse",
+      "members": [
+        "fractal*.Imp"
+      ],
+      "method": "separate_rowwise_piecewise_linear_log",
+      "status": "scale_audited_raw"
+    },
+    {
+      "name": "input_break",
+      "members": [
+        "fractal*.Brk"
+      ],
+      "method": "separate_or_categorical_numeric",
+      "status": "scale_audited_raw"
+    },
+    {
+      "name": "input_power_count_reverse",
+      "members": [
+        "fractal*.PwrSum",
+        "fractal*.Cnt",
+        "fractal*.Rev"
+      ],
+      "method": "split_or_transform_before_pooling_if_dominance",
+      "status": "scale_audited_raw"
+    },
+    {
+      "name": "input_fractal_updn_mt_state",
+      "members": [
+        "fractal*.Up/Dn"
+      ],
+      "method": "separate_input_updn_pool_only",
+      "status": "scale_audited_raw_no_top_level_targets"
+    },
+    {
+      "name": "input_atr_contract",
+      "members": [
+        "ATR",
+        "fractal*.FractalAtr"
+      ],
+      "method": "prefer_ratio_or_train_fit_scaler",
+      "status": "open_design_decision"
+    },
+    {
+      "name": "input_calendar",
+      "members": [
+        "session_hour",
+        "weekday"
+      ],
+      "method": "cyclic_or_categorical_encoding",
+      "status": "open_design_decision"
+    },
+    {
+      "name": "input_causal_row_atr",
+      "members": [
+        "range_atr_6",
+        "body_atr_3",
+        "vol_regime_24"
+      ],
+      "method": "train_fit_or_raw_ratio_contract",
+      "status": "scale_audited_raw"
+    }
+  ],
+  "target_groups_draft": [
+    {
+      "name": "target_updn",
+      "members": [
+        "top-level up_*/dn_*"
+      ],
+      "method": "separate_target_scaler",
+      "status": "scale_audited_raw_target_only"
+    },
+    {
+      "name": "target_ret",
+      "members": [
+        "ret_*"
+      ],
+      "method": "separate_target_or_eval_scaler",
+      "status": "split_from_fav_adv_due_dominance"
+    },
+    {
+      "name": "target_fav_adv",
+      "members": [
+        "fav_*",
+        "adv_*"
+      ],
+      "method": "separate_by_horizon_and_side_or_no_pool",
+      "status": "dominance_review_required"
+    },
+    {
+      "name": "target_trail",
+      "members": [
+        "trail_*"
+      ],
+      "method": "separate_target_scaler_by_horizon/x",
+      "status": "scale_audited_raw_target_only"
+    },
+    {
+      "name": "labels_binary_class",
+      "members": [
+        "signal",
+        "trade_outcome_h12",
+        "buy_sl*_tp*",
+        "sell_sl*_tp*",
+        "path_6_class"
+      ],
+      "method": "no_normalization_class_labels",
+      "status": "label_only"
+    }
+  ],
+  "artifacts": {
+    "scale_audit_inputs": "ML/reports/methodology_cycle_candidate_source_v2/stage02_scale_audit_inputs.csv",
+    "scale_audit_targets": "ML/reports/methodology_cycle_candidate_source_v2/stage02_scale_audit_targets.csv",
+    "dominance_check": "ML/reports/methodology_cycle_candidate_source_v2/stage02_dominance_check.csv"
+  }
+}

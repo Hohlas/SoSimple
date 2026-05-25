@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-23 13:28 UTC · git `147c149`
+> Auto-generated 2026-05-25 12:12 UTC · git `0e7341f`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1232 files  ·  **Commit**: `147c149`  ·  **Generated**: 2026-05-23 13:28 UTC
+**Tracked**: 1262 files  ·  **Commit**: `0e7341f`  ·  **Generated**: 2026-05-25 12:12 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-05-23 | 13KB | `e6f9e48f` |
+| [AGENTS.md](AGENTS.md) |  | 2026-05-24 | 14KB | `f71f0ac2` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-23 | 150KB | `36c8484b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-23 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-23 | 2KB | `444d01d5` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-23 | 40KB | `b24fb453` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-24 | 40KB | `171181fc` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -28,7 +28,7 @@
 |------|-------------|----------|------|------|
 | [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-05-13 | 1KB | `c7573738` |
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-05-18 | 20KB | `bb5a5097` |
-| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-05-23 | 25KB | `8d9b43fa` |
+| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-05-23 | 26KB | `a4f0be48` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-04-16 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-04-27 | 3KB | `facaa586` |
 | [docs/ML/benchmark_entry_path_all_rows_ranking.py.md](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | All-rows ranking benchmark без offline `signal != 0` gate | 2026-05-18 | 1KB | `0bc4a19a` |
@@ -69,10 +69,32 @@
 | [docs/audit/2026-05-18-kimi-independent-audit.md](docs/audit/2026-05-18-kimi-independent-audit.md) |  | 2026-05-23 | 15KB | `7dabafae` |
 | [docs/audit/2026-05-18-kimi-phase-ii-plan.md](docs/audit/2026-05-18-kimi-phase-ii-plan.md) |  | 2026-05-23 | 17KB | `74b6b95a` |
 | [docs/audit/2026-05-18-redo-prompt.md](docs/audit/2026-05-18-redo-prompt.md) |  | 2026-05-23 | 19KB | `6ca4032a` |
-| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-05-23 | 1KB | `f0dcd1c9` |
-| [docs/audit/ml_trading_methodology.md](docs/audit/ml_trading_methodology.md) | Методика разработки и аудита ML-моделей торговых систем | 2026-05-23 | 80KB | `5f6764ac` |
+| [docs/audit/2026-05-24-methodology-review-notes.md](docs/audit/2026-05-24-methodology-review-notes.md) | Замечания по `docs/methodology/` и trigger-у `ml-methodology` | 2026-05-24 | 8KB | `6c948cab` |
+| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-05-24 | 2KB | `cd550abd` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-23 | 34KB | `bdb0edad` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-04-16 | 10KB | `7d9009ee` |
+| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-05-24 | 3KB | `aa9975ba` |
+| [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-23 | 5KB | `6bf55f21` |
+| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-05-25 | 5KB | `0f86e056` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-05-25 | 24KB | `2b3e9662` |
+| [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-05-23 | 5KB | `5412d9c3` |
+| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-05-23 | 3KB | `513b6abc` |
+| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-05-24 | 4KB | `fd036064` |
+| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-05-23 | 2KB | `f567188e` |
+| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-05-23 | 6KB | `5e5d3fce` |
+| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-05-25 | 3KB | `d384ad62` |
+| [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-05-24 | 2KB | `82b020b8` |
+| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-05-24 | 2KB | `6260afba` |
+| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-05-24 | 4KB | `ee78de92` |
+| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-05-23 | 2KB | `c1028a82` |
+| [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-05-23 | 2KB | `c11c0bbb` |
+| [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-05-23 | 3KB | `c9457c9b` |
+| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-05-23 | 3KB | `3d06dc34` |
+| [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-05-25 | 3KB | `65b04277` |
+| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-05-25 | 2KB | `5c954c44` |
+| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-05-23 | 2KB | `7eabd8d5` |
+| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-05-24 | 2KB | `f236f9e2` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + приложения) | 2026-05-24 | 5KB | `3fc25ca0` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-05-06 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-05-13 | 3KB | `d018efa2` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-04-27 | 1KB | `3fd26730` |
@@ -560,6 +582,14 @@
 | [ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json](ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json) |  |  | 2026-05-06 | 1KB | `ddcff55b` |
 | [ML/reports/live_safe_ml_audit/quality/verdict.json](ML/reports/live_safe_ml_audit/quality/verdict.json) |  |  | 2026-05-23 | 727B | `6e173e29` |
 | [ML/reports/live_safe_ml_audit/verdict_summary.json](ML/reports/live_safe_ml_audit/verdict_summary.json) |  |  | 2026-05-23 | 3KB | `d1d7c226` |
+| [ML/reports/methodology_cycle_candidate_source_v2/README.md](ML/reports/methodology_cycle_candidate_source_v2/README.md) |  |  | 2026-05-25 | 1KB | `7bb0ec4a` |
+| [ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md](ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md) |  |  | 2026-05-25 | 2KB | `87798cc8` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json](ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json) |  |  | 2026-05-25 | 3KB | `929dd33f` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json) |  |  | 2026-05-25 | 1011B | `592978cb` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json) |  |  | 2026-05-25 | 4KB | `ab4f45ad` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage02_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_gate_verdict.json) |  |  | 2026-05-25 | 936B | `958f4b59` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage02_normalization_groups_draft.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_normalization_groups_draft.json) |  |  | 2026-05-25 | 3KB | `6154a866` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage02_pipeline_manifest.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_pipeline_manifest.json) |  |  | 2026-05-25 | 1KB | `e5cba05b` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json](ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json) |  |  | 2026-05-13 | 3KB | `14b7cc3f` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json](ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json) |  |  | 2026-05-13 | 3KB | `bacc13b6` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json) |  |  | 2026-05-13 | 3KB | `5cb5fe58` |

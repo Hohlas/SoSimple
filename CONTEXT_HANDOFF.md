@@ -1,47 +1,53 @@
 # Context Handoff
 
-Дата: 2026-05-21.
+Дата: 2026-05-25.
 
 ## Текущий этап
 
-Завершён Transformer Encoder Direction experiment — проверка трёх семейств таргетов (TB, Reg, Trail) на frozen encoder признаках.
+Завершены Stages 00–02 methodology-цикла `candidate_source_v2` на ветке `ml-cycle-methodology-stage-0-1`.
 
-### Результаты
+## Гипотеза
 
-| Семейство | Лучший val PF | Сделок | Gate A (>=1.5) |
-|-----------|-------------|--------|-----------------|
-| TB (16 комбо) | 1.35 BUY | 73 | провален |
-| Reg (2 комбо) | 1.21 SELL | 41 | провален |
-| Trail (6 комбо) | 2.41 BUY | 58 | пройден (0.6% util) |
+Live-safe candidate-source модель на текущем срезе Nero/PIC может заменить оффлайновый `signal != 0` gate и улучшить baselines (direct_bar_model PF 1.1141, all_rows_ranking PF 0.9134).
 
-**Вердикт**: Fractal features Transformer-энкодера не несут direction-сигнала. Trail даёт иллюзию на 58 сделках, но не масштабируется. Fine-tune Transformer хуже frozen RF на всех комбинациях.
+## Что сделано
 
-### Ключевые находки
+- Nero.csv перегенерирован (63006 строк, 2004–2026, 23-полный fractal формат с `Shift`)
+- Python-парсеры обновлены под 23 поля
+- Добавлены новые признаки: `log_price_rel`, `atr_band_4/12`, `count_in_band_4/12`, `delta_shift_N`
+- Pipeline: sort → label → split (44104/9451/9451), без in-pipeline нормализации
+- PLL-нормализатор: 8 групп (price, front_back, impulse, power, count, updn_h12/24/48), fit на train, checkpoint сохранён
+- Feature contract: 32 live_safe поля, 0 unknown в model inputs
+- Старый `signal != 0` gate отвергнут для production
 
-1. 32-dim CLS token признаки (front/back/impulse/цена) не коррелируют с будущим направлением
-2. Очистка таргетов от contamination (OHLC-derived) снизила PF до ~1.0 — честный результат
-3. SeqPF — невалидная метрика: shuffle-тест показал разброс 0.68–4728 при PF=1.10
-4. Trail — единственное семейство с PF > 1.5, но на 0.6% utilisation
-5. Frozen RF > Transformer fine-tune: энкодер не дообучается на малом датасете
+## Git
 
-### Git
+Ветка: `ml-cycle-methodology-stage-0-1`.
 
-Ветка: `DeepSeek-direct-direction-results`.
+## Ключевые файлы
 
-### Созданные/изменённые файлы
+- `ML/reports/methodology_cycle_candidate_source_v2/` — все stage-артефакты
+- `ML/pll_normalizer.py` + `ML/checkpoints/pll_normalizer_v1.pkl` — PLL нормализатор
+- `ML/fractal_level_feature_builder.py` — обновлён (+shift, +price features, +temporal density)
+- `MT/MQL4/Include/lib_PIC.mqh` — +Shift поле в CSV экспорте
+- `MT/MQL4/Files/Nero.csv` — 63007 строк, 2004–2026
+- `DATA/Nero_{train,validation,test}_labeled.csv` — raw размеченные сплиты
+- `docs/reports/2026-05-25-methodology-cycle-stages-00-02.md` — отчёт
 
-- `ML/prepare_raw_features.py` — raw up/dn из OHLC (+1000 колонок)
-- `ML/transformer_direction_train.py` — DataLoader, frozen RF grid, fine-tune loop
-- `DATA/raw_features_for_direction.pkl` — 1544 MB, 3223 колонки
-- `ML/reports/transformer_direction/` — все артефакты (prepared_features, targets_*.npz, validation_grid_frozen.json, feature_statistics.json)
-- `docs/reports/2026-05-21-transformer-direction.md` — финальный отчёт
+## Gate-критерии (зафиксированы)
 
-## Открытые вопросы
-
-1. **Direction prediction из fractal features — тупик.** Нужны признаки другого типа (макро, альтернативные данные)
-2. **Entry_path_v1_live_safe** остаётся лучшим production-кандидатом (не-direction подход, Test PF ~1.4)
-3. **Куда дальше?** Принять ограничения fractal features и либо: (а) искать direction signal в других данных, (б) фокусироваться на execution/risk management, (в) улучшать существующий entry_path подход
+- Validation PF ≥ 1.5, ≥6 сделок/год, 0 отрицательных лет
+- BUY и SELL PF ≥ 1.0 (если гипотеза не односторонняя)
+- Test PF ≥ 1.5, те же пороги
+- Uplift над baselines: direct_bar_model PF 1.1141, all_rows_ranking PF 0.9134
 
 ## Следующий шаг
 
-Обсудить стратегию: признать тупик direct direction и выбрать новое направление исследований.
+Stage 03 — Feature Contract / Leakage Gate: формальная валидация отсутствия future-derived полей в model inputs, проверка изоляции normalization pool, верификация online/training contract match.
+
+## Открытые риски
+
+- `body_atr_3`, `range_atr_6` — constant zero, исключены; нужен фикс pipeline для их заполнения из OHLC
+- `provider`, `timezone` — metadata gaps; transfer/provider-drift claims запрещены
+- PLL параметры (percentile=0.95, band widths 4/12) — начальные, могут потребовать ablation
+- Flat feature path (tree models) не пропущен через тот же PLL normalizer — для деревьев не критично

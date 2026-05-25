@@ -19,7 +19,7 @@
 #   from ML.data_loader import create_data_loaders
 # Примечания:
 #   - fractal_time (индекс 0) исключается из features, но используется для вычисления time-фич
-#   - N_RAW_FEATURES=22: полный формат фрактала из Nero.csv
+#   - N_RAW_FEATURES=23: полный формат фрактала из Nero.csv
 #   - N_FRACTAL_FEATURES=20: 17 входных полей + 3 time-фичи (hour_sin, hour_cos, time_pos); форма X: (n, 100, 20)
 #   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
@@ -90,8 +90,8 @@ TEST_FILE = DATA_DIR / 'Nero_test_labeled.csv'
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
-N_RAW_FEATURES = 22   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
-FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 22-полевом CSV (ранее было 17)
+N_RAW_FEATURES = 23   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
+FRACTAL_ATR_RAW_IDX = 21  # fractal_atr (индекс не изменился при добавлении Shift=22)
 N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
 TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
 TAKE_SKIP_V2_INPUT_FEATURES = (
@@ -102,6 +102,7 @@ TAKE_SKIP_V2_INPUT_FEATURES = (
 
 # Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
 FRACTAL_TIME_IDX = 0
+FRACTAL_SHIFT_IDX = 22  # shift (bar index), metadata — не попадает в X
 
 # Индексы вычисляемых features в X
 ATR_RATIO_IDX = 16      # fractal_atr → ATR_ratio (in-place)
@@ -378,7 +379,7 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Парсит колонки fractal0..fractal99 из DataFrame.
     Исключает fractal_time (индекс 0) из features.
-    Парсит 22 поля на фрактал; поле 21 (fractal_atr) заменяется ATR_ratio in-place.
+    Парсит 23 поля на фрактал; поле 21 (fractal_atr) заменяется ATR_ratio in-place; поле 22 (shift) пропускается.
 
     Аргументы:
         df: DataFrame с колонками fractal0..fractal99, ATR, signal
@@ -411,7 +412,7 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         split = series.str.split(FRACTAL_SEP, expand=True)
 
         if split.shape[1] >= N_RAW_FEATURES:
-            # Парсим поля: time → fractal_times, fields 1-16 → X[0-15], field 21 (fractal_atr) → X[16]
+            # k=0 (time) → fractal_times; k=1..16 → X[0..15]; k=21 (fractal_atr) → X[16]; k=22 (shift) → skip
             for k in range(N_RAW_FEATURES):
                 if k == FRACTAL_TIME_IDX:
                     vals = pd.to_numeric(split[k], errors='coerce')
@@ -419,6 +420,8 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
                     continue
                 if k >= 17 and k < FRACTAL_ATR_RAW_IDX:
                     continue  # поля up_3/dn_3/up_6/dn_6 (17-20) пропускаем в X
+                if k == FRACTAL_SHIFT_IDX:
+                    continue  # shift — bar index metadata
                 # k=1..16 → feat_idx=0..15; k=21 (fractal_atr) → feat_idx=16
                 feat_idx = k - 1 if k <= 16 else ATR_RATIO_IDX
                 vals = pd.to_numeric(split[k], errors='coerce')

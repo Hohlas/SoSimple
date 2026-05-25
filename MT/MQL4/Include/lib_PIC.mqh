@@ -777,7 +777,7 @@ string S_NORM(float value) {
 /// @param cur_bar текущий номер бара
 /// @details Формат строки CSV (для каждого фрактала):
 ///   time;signal;predict;ATR;fractal0;fractal1;...
-///   где fractal = T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
+///   где fractal = T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
 /// @note При USE_NORMALIZED_OUTPUT=true применяется нормализация:
 ///   - Price, Brk: Min-Max нормализация
 ///   - FrntVal, BackVal, PwrSum, Rev, Imp, Cnt: Piecewise нормализация
@@ -898,7 +898,7 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
                     S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
                     S4(F[f].Up[H3])  + ":" + S4(F[f].Dn[H3])  + ":" +
-                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr);
+                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr) + ":" + S0(SHIFT(F[f].T));
       } else {
          NeroInfo = NeroInfo + ";" +
                     S0(F[f].T) + ":" +
@@ -916,7 +916,7 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
                     S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
                     S4(F[f].Up[H3])  + ":" + S4(F[f].Dn[H3])  + ":" +
-                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr);
+                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr) + ":" + S0(SHIFT(F[f].T));
       }
       cnt++;
    }

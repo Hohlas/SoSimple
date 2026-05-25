@@ -12,7 +12,9 @@
 - [ ] Target contract описан и проверен.
 - [ ] Для multi-target регрессии проверены корреляция, монотонность и метрики по каждому горизонту.
 - [ ] Preprocessing воспроизводим.
-- [ ] Нормализация не использует будущие поля.
+- [ ] Scale audit выполнен отдельно для input-признаков и target/label колонок.
+- [ ] Normalization groups выбраны по роли, фактическому масштабу и смыслу; dominance внутри pool проверен.
+- [ ] Нормализация не использует будущие поля и не смешивает input с target/label в одном pool.
 - [ ] Split строго временной. Для событийного ряда учтена специфика неравномерного сэмплирования.
 - [ ] Validation/test/forward границы указаны.
 - [ ] Baseline-модели запущены.
@@ -33,4 +35,3 @@
 - [ ] Monitoring/retraining policy описана для production candidate.
 - [ ] Для принятого кандидата создан model card.
 - [ ] Итоговый отчёт содержит commands, artifacts, limitations, next step.
-
