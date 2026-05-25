@@ -3,7 +3,7 @@
 > **Date**: 2026-05-25 18:00
 > **Status**: Completed (Stages 00–02 PASS)
 > **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules
-> **Related commit**: pending
+> **Related commit**: c68416a
 
 ## Context
 

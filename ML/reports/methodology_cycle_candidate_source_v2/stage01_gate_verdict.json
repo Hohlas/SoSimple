@@ -26,6 +26,13 @@
       "DATA/Nero_{train,validation,test}_labeled.csv"
     ]
   },
-  "next_allowed_stage": "03-feature-contract-leakage",
+  "stage03": {
+    "verdict": "PASS",
+    "reason": "14/18 checks PASS, 4 DEFERRED (model/online path not yet built). No future-derived fields in X tensor. Normalization pools isolated from targets. Dominance issues resolved by group splitting. ATR contract documented. Constant features excluded.",
+    "artifacts": [
+      "stage03_leakage_gate.json"
+    ]
+  },
+  "next_allowed_stage": "04-labeling",
   "requires_user_pass_to_continue": true
 }
