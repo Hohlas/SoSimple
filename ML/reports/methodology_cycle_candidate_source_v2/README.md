@@ -1,39 +1,31 @@
 # Methodology Cycle: Candidate Source v2
 
-Date: 2026-05-24
+Date: 2026-05-25
 
-This directory contains Stage 0-2 artifacts for the new ML cycle run under `docs/methodology/README.md`.
+This directory contains Stage 00-04 artifacts for the ML cycle run under `docs/methodology/README.md`.
 
 ## Files
 
-- `stage00_research_contract.json` - hypothesis, decision time, decision unit, split protocol, gates, and expected artifacts.
-- `stage01_raw_data_inventory.json` - raw CSV and producer inventory.
-- `feature_contract.csv` - field-level live-safe contract.
-- `candidate_source_live_safe_audit.md` - candidate-source verdict and restrictions.
-- `stage01_gate_verdict.json` - stage verdicts and next allowed stage.
-- `stage02_scale_audit_inputs.csv` - scale audit for current prepared input fields/families.
-- `stage02_scale_audit_targets.csv` - scale audit for current prepared target/label fields.
-- `stage02_dominance_check.csv` - p99 dominance check for draft normalization pools.
-- `stage02_normalization_groups_draft.json` - draft normalization groups and hard rules.
-- `stage02_pipeline_manifest.json` - Stage 2 data source and artifact manifest.
-- `stage02_gate_verdict.json` - Stage 2 verdict.
+- `stage00_research_contract.json` — hypothesis, decision time, decision unit, split protocol, gates, expected artifacts
+- `stage01_raw_data_inventory.json` — raw CSV and producer inventory
+- `stage01_gate_verdict.json` — unified verdicts for all stages, next allowed stage
+- `feature_contract.csv` — field-level live-safe contract (32 rows)
+- `candidate_source_live_safe_audit.md` — candidate-source verdict and restrictions
+- `stage02_data_pipeline.json` — pipeline manifest: commands, split, normalization groups, hashes
+- `stage02_scale_audit_inputs.csv` — scale audit for input fields/families
+- `stage02_scale_audit_targets.csv` — scale audit for target/label fields
+- `stage02_dominance_check.csv` — p99 dominance check for normalization pools
+- `stage03_leakage_gate.json` — ML Leakage Preflight: 14 checks PASS, 4 inapplicable
+- `stage04_labeling_audit.json` — label convention audit: 56 targets, TB/updn/trail conventions
 
-## Current Verdict
+## Current Verdicts
 
-Stage 0: `PASS`
+| Stage | Verdict | Note |
+|-------|---------|------|
+| 00 — Research Management | PASS | Hypothesis, gates, split protocol fixed |
+| 01 — Raw Data Inventory | PASS | All fields classified, producer audited |
+| 02 — Data Pipeline | PASS | Sort→label→split, PLL normalizer, dominance resolved |
+| 03 — Feature Contract / Leakage | PASS | 14/18 checks PASS, 4 not applicable (no model yet) |
+| 04 — Labeling | PASS | TB convention explicit, up/dn monotonic, timeout separated |
 
-Stage 1: `PASS`
-
-Stage 2: `FAIL`
-
-Reason: `DATA/Nero_*_labeled.csv` were rebuilt from the updated historical raw
-`MT/MQL4/Files/Nero.csv` with `--no-normalize`, and scale audit artifacts were
-generated. Final Stage 2 `PASS` is still blocked by normalization design issues:
-
-- `input_power_count_reverse_break` has dominance (`p99_ratio=32.5`);
-- `target_ret_fav_adv` has dominance (`p99_ratio=1693.0`);
-- final ATR/volatility contract is still open.
-
-Next allowed action: split/revise those normalization pools and freeze the
-normalization contract. Stage 3 is blocked until Stage 2 receives explicit
-`PASS`.
+Next allowed stage: `05-eda-data-quality`

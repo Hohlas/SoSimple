@@ -1,0 +1,85 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "methodology_stage": "04-labeling",
+  "stage_verdict": "PASS",
+  "label_sources": {
+    "label_all": "processing/label_signals.py::label_all — signal={-1,0,1}, predict=pnl in raw units",
+    "label_updn": "processing/label_signals.py::label_updn — up_3..dn_48 (10 targets), MFE/MAE from OHLC",
+    "label_first_barrier_hit": "processing/label_signals.py::label_first_barrier_hit — 12 TB combos, bar-by-bar OHLC scan, 24 bars forward",
+    "label_entry_path_targets": "processing/label_signals.py::label_entry_path_targets — real entry on next bar",
+    "label_trailing_stop_targets": "processing/label_signals.py::label_trailing_stop_targets — trail_12/24/48 × x2/x4/x8 (9 targets)"
+  },
+  "target_summary": {
+    "total_target_columns": 56,
+    "target_groups": {
+      "updn_regression": {
+        "columns": ["up_3","up_6","up_12","up_24","up_48","dn_3","dn_6","dn_12","dn_24","dn_48"],
+        "type": "continuous (ATR-relative MFE/MAE)",
+        "monotonicity": "verified: 0 violations, up_N >= up_{N-1}, all non-negative",
+        "note": "monotonic across horizons. Multi-target regression compatible."
+      },
+      "tb_binary": {
+        "columns": ["buy_sl2_tp3","buy_sl2_tp6","buy_sl2_tp9","buy_sl3_tp3","buy_sl3_tp6","buy_sl3_tp9","sell_sl2_tp3","sell_sl2_tp6","sell_sl2_tp9","sell_sl3_tp3","sell_sl3_tp6","sell_sl3_tp9"],
+        "convention": "0=SL hit, 0.5=timeout (24 bars expired), 1=TP hit",
+        "timeout_separation": "PASS — timeout (0.5) clearly separated from SL (0) and TP (1). No mixing.",
+        "class_imbalance": {
+          "worst_case": "buy_sl2_tp9: TP=2.3%, SL=54.0%, timeout=43.7%",
+          "best_case": "buy_sl3_tp3: TP=35.9%, SL=35.5%, timeout=28.6%"
+        },
+        "buy_sell_symmetry": {
+          "buy_sl3_tp3": {"win_rate": 0.503},
+          "sell_sl3_tp3": {"win_rate": 0.497},
+          "verdict": "PASS — nearly symmetric"
+        }
+      },
+      "signal": {
+        "columns": ["signal"],
+        "convention": "-1=SELL, 0=neutral, 1=BUY",
+        "distribution": "train: BUY=2.6%, SELL=2.5%, neutral=95.0%",
+        "production_status": "FORBIDDEN as input (future-derived in label_all). Allowed as target only.",
+        "candidate_source_gate": "old signal != 0 gate REJECTED — not reproducible in live."
+      },
+      "ret_fav_adv": {
+        "columns": ["ret_6_dir_atr","ret_12_dir_atr","ret_24_dir_atr","fav_3_atr","fav_6_atr","fav_12_atr","fav_24_atr","adv_3_atr","adv_6_atr","adv_12_atr","adv_24_atr"],
+        "type": "continuous, ~95% zero-inflated",
+        "note": "ret = signed directional return; fav/adv = favorable/adverse path extremes. Zero for rows without signal."
+      },
+      "trail": {
+        "columns": ["trail_12_pnl_atr_x2","trail_12_pnl_atr_x4","trail_12_pnl_atr_x8","trail_24_pnl_atr_x2","trail_24_pnl_atr_x4","trail_24_pnl_atr_x8","trail_48_pnl_atr_x2","trail_48_pnl_atr_x4","trail_48_pnl_atr_x8"],
+        "type": "continuous PnL in ATR units with trailing stop",
+        "note": "horizon (12/24/48) × multiplier (x2/x4/x8). ~95% zero (no signal row)."
+      },
+      "diagnostic": {
+        "columns": ["archetype_target","path_6_class","trade_outcome_h12","trade_pnl_h12_atr","trade_fav_h12","trade_adv_h12","trade_fav_h12_atr","trade_adv_h12_atr","ret_dir_atr_lag1"],
+        "type": "diagnostic/legacy labels",
+        "archetype_target": "0.7% positive — essentially constant, DIAGNOSTIC_ONLY",
+        "ret_dir_atr_lag1": "FORBIDDEN as input (lag of future-derived ret_6_dir_atr)"
+      },
+      "metadata_not_targets": {
+        "columns": ["session_hour","weekday","vol_regime_24"],
+        "note": "These are live-safe input features, not targets. Included in CSV for convenience but classified as input in feature_contract.csv."
+      },
+      "excluded": {
+        "columns": ["range_atr_6","body_atr_3"],
+        "reason": "constant zero in all splits. Excluded from model inputs."
+      }
+    }
+  },
+  "label_convention_checks": {
+    "future_only": "PASS — all labels computed from future OHLC/data, never used as input",
+    "excluded_from_input": "PASS — all target columns added to forbidden list, verified absent in X tensor",
+    "timeout_sl_separation": "PASS — TB uses distinct values (0, 0.5, 1), no ambiguity",
+    "buy_sell_symmetry": "PASS — sl3_tp3: buy_win=50.3%, sell_win=49.7%",
+    "splits_consistency": "PASS — buy_sl3_tp3 win rates: train=50.3%, val=51.0%, test=56.0% (test higher due to bull market 2022-26)",
+    "monotonicity": "PASS — 0 violations in up/dn labels, all non-negative",
+    "worst_case_class": "sl2_tp9 has 2.3% TP rate — extreme imbalance, requires class_weight or specialized loss"
+  },
+  "risks": {
+    "extreme_imbalance": "TB targets with TP < 5% (sl2_tp6/9, sl3_tp6/9) may be untrainable without oversampling or class weighting",
+    "zero_inflation": "ret/fav/adv/trail targets are ~95% zero — regression models may predict zero for everything",
+    "test_bull_bias": "2022-2026 bull market inflates BUY win rates on test — NOT a model quality signal",
+    "archetype_useless": "archetype_target is 99.3% zero — should not be used as primary target"
+  },
+  "next_allowed_stage": "05-eda-data-quality"
+}

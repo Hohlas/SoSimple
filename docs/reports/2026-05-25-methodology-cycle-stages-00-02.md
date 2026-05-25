@@ -1,9 +1,9 @@
-# Methodology Cycle: Stages 00–02 — Pipeline Foundation
+# Methodology Cycle: Stages 00–04 — Foundation Complete
 
 > **Date**: 2026-05-25 18:00
-> **Status**: Completed (Stages 00–02 PASS)
-> **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules
-> **Related commit**: c68416a
+> **Status**: Completed (Stages 00–04 PASS)
+> **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules from research contract through labeling audit
+> **Related commit**: bd1f1d9
 
 ## Context
 
@@ -124,12 +124,52 @@ assert 'nearest_00_log_price_rel' in r.columns
 
 ## Next Step
 
-Stage 03 — Feature Contract / Leakage Gate: validate that no future-derived field leaks into model inputs, check normalization pool isolation, verify online/training contract match.
+Stage 05 — EDA / Data Quality: full distribution analysis, class balance across splits, regime shift detection, outlier audit. Scale audit is already done; EDA adds distribution visualization and split-drift checks.
+
+### Stage 03 — Feature Contract / Leakage Gate
+
+Ran ML Leakage Preflight (18 checks). Results:
+- 14 PASS — all applicable checks passed
+- 4 NOT_APPLICABLE_BEFORE_MODEL — online contract, online labeling, rule freeze, MT4 parity/runner (require model to exist)
+- 0 FAIL
+
+Key verifications:
+- X tensor (20 features) contains only live-safe fractal fields + time features. No predict, ret_*, fav_*, adv_*, trade_*, trail_*, buy_sl*, sell_sl*.
+- PLL normalizer operates on input-only indices. Targets not in any normalization pool.
+- Dominance issues resolved: `input_power_count_reverse_break` split into power/count/break+reverse groups. `target_ret_fav_adv` not normalized.
+- ATR contract: `ATR_ratio = log(fractal_atr / ATR_slow)`. No further scaling.
+- Constant features (body_atr_3, range_atr_6) excluded.
+- Fractal-level up_12/dn_12 (input) explicitly distinguished from top-level up_12/dn_12 (target) via `fractal*.` prefix convention.
+
+### Stage 04 — Labeling Audit
+
+Audited 56 target/label columns from pipeline output:
+- **TB convention**: explicit — 0=SL, 0.5=timeout, 1=TP. No timeout/SL mixing.
+- **up/dn monotonicity**: 0 violations, all non-negative. Multi-target regression compatible.
+- **BUY/SELL label distribution**: nearly symmetric (buy_sl3_tp3: 50.3% vs sell_sl3_tp3: 49.7% TP rate in labeling, not trading result).
+- **Class imbalance**: noted for extreme cases (sl2_tp9: 2.3% TP) — requires class_weight or specialized loss. Does not block pipeline.
+- **archetype_target**: 0.7% positive — DIAGNOSTIC_ONLY, not usable as primary target.
+- All target columns excluded from X tensor input (verified in Stage 03).
+- Old `signal != 0` gate remains REJECTED for production.
+
+## Conclusions
+
+1. Stages 00–04 completed per methodology. All gates PASS.
+2. Stale draft artifacts (stage02_gate_verdict.json=FAIL) removed — canon verdict is unified stage01_gate_verdict.json.
+3. Stage 03 DEFERRED → NOT_APPLICABLE_BEFORE_MODEL — checks will re-run at model export stage.
+4. Naming convention enacted: fractal-level fields use `fractal*.` prefix to distinguish from same-name top-level targets.
+5. Pipeline outputs are raw (no normalization in CSV), keeping data reproducible. PLL normalizer saved as checkpoint.
+
+## Next Step
+
+Stage 05 — EDA / Data Quality: full distribution analysis, class balance across splits, regime shift detection, outlier audit. Scale audit already provides min/p50/p95/p99/std/zero_rate; EDA adds distribution shape, split-drift, feature-feature correlations.
 
 ## Related Materials
 
 - `docs/methodology/00-research-management.md`
 - `docs/methodology/01-raw-data-inventory.md`
 - `docs/methodology/02-data-pipeline.md`
+- `docs/methodology/03-feature-contract-leakage.md`
+- `docs/methodology/04-labeling.md`
 - `docs/reports/2026-05-18-direct-direction-rebuild.md`
 - `docs/reports/2026-05-21-transformer-direction.md`

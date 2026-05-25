@@ -5,34 +5,42 @@
   "stage_verdict": "PASS",
   "preflight_checks": {
     "passed": 14,
-    "deferred": 4,
+    "not_applicable_before_model": 4,
     "failed": 0,
     "details": {
       "1_decision_time": {"verdict": "PASS", "ref": "stage00_research_contract.json"},
       "2_sequential_split": {"verdict": "PASS", "detail": "train 2004-2019, val 2019-2022, test 2022-2026, no overlap"},
       "3_target_not_in_input": {"verdict": "PASS", "detail": "X tensor (20 features) contains only fractal-level + time features. predict, ret_*, fav_*, adv_*, trade_*, trail_*, buy_sl*, sell_sl* absent."},
       "4_live_safe_separation": {"verdict": "PASS", "ref": "feature_contract.csv"},
-      "5_online_contract_match": {"verdict": "DEFERRED", "reason": "no online inference path yet"},
+      "5_online_contract_match": {"verdict": "NOT_APPLICABLE_BEFORE_MODEL", "reason": "no online inference path yet. Check will be re-run at model export / MT4 integration."},
       "6_fractal_order": {"verdict": "PASS", "detail": "0 sorting errors in 63006 rows"},
       "7_normalization_consistency": {"verdict": "PASS", "detail": "PLL, percentile=0.95, checkpoint saved, 8 groups"},
       "8_pool_isolation": {"verdict": "PASS", "detail": "PLL groups use input indices only. Targets not in any pool. No-norm indices: [1,4,5,6,16,17,18,19]."},
       "9_scale_audit": {"verdict": "PASS", "ref": "stage02_scale_audit_inputs.csv, targets.csv"},
       "10_input_target_separation": {"verdict": "PASS", "detail": "Input PLL normalizer operates on selected indices only; targets not scaled."},
       "11_dominance": {"verdict": "PASS", "detail": "2 flagged pools in raw audit (input_power_count_reverse_break ratio=32.5, target_ret_fav_adv ratio=1693). Both resolved by splitting into smaller groups / not normalizing."},
-      "12_online_labeling": {"verdict": "DEFERRED", "reason": "no online path yet"},
+      "12_online_labeling": {"verdict": "NOT_APPLICABLE_BEFORE_MODEL", "reason": "no online path yet"},
       "13_scaler_fit_train_only": {"verdict": "PASS", "detail": "PLLFeatureNormalizer.fit() called on X_train (44104 samples). Transform applied to val/test."},
       "14_atr_contract": {"verdict": "PASS", "detail": "ATR_ratio = log(fractal_atr / ATR_slow). No further normalization. Raw ATR not used as direct input."},
       "15_constant_features": {"verdict": "PASS", "detail": "body_atr_3 and range_atr_6 excluded (zero_rate=100%)."},
-      "16_export_rule_freeze": {"verdict": "DEFERRED", "reason": "no model/rule yet"},
-      "17_mt4_parity": {"verdict": "DEFERRED", "reason": "no model/MT4 execution yet"},
-      "18_online_runner_blocks": {"verdict": "DEFERRED", "reason": "no online runner yet"}
+      "16_export_rule_freeze": {"verdict": "NOT_APPLICABLE_BEFORE_MODEL", "reason": "no model/rule yet"},
+      "17_mt4_parity": {"verdict": "NOT_APPLICABLE_BEFORE_MODEL", "reason": "no model/MT4 execution yet"},
+      "18_online_runner_blocks": {"verdict": "NOT_APPLICABLE_BEFORE_MODEL", "reason": "no online runner yet"}
     }
   },
   "x_tensor_features": [
     "price", "direction", "front", "back", "strong", "break", "reverse",
-    "power", "count", "impulse", "up_12", "dn_12", "up_24", "dn_24",
-    "up_48", "dn_48", "ATR_ratio", "hour_sin", "hour_cos", "time_pos"
+    "power", "count", "impulse",
+    "fractal*.up_12", "fractal*.dn_12", "fractal*.up_24", "fractal*.dn_24",
+    "fractal*.up_48", "fractal*.dn_48",
+    "ATR_ratio", "hour_sin", "hour_cos", "time_pos"
   ],
+  "naming_convention": {
+    "rule": "fractal-level fields use fractal*. prefix; top-level targets use bare target name",
+    "input_updn": "fractal*.up_12, fractal*.dn_12, ... — live-safe accumulated state from MQL producer",
+    "target_updn": "target up_12, dn_12, ... — future MFE/MAE from Python labeling, used as regression targets only",
+    "note": "Same horizon name (e.g. up_12) means different thing depending on source: fractal-level = past accumulation, top-level = future outcome"
+  },
   "forbidden_in_x": [
     "predict", "ret_*", "ret_dir_atr_lag1", "fav_*", "adv_*",
     "trade_*", "trail_*", "buy_sl*", "sell_sl*", "path_6_class",

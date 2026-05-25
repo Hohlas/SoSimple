@@ -28,11 +28,18 @@
   },
   "stage03": {
     "verdict": "PASS",
-    "reason": "14/18 checks PASS, 4 DEFERRED (model/online path not yet built). No future-derived fields in X tensor. Normalization pools isolated from targets. Dominance issues resolved by group splitting. ATR contract documented. Constant features excluded.",
+    "reason": "14/18 preflight checks PASS, 4 NOT_APPLICABLE_BEFORE_MODEL (online contract, online labeling, rule freeze, MT4 parity — require model/online path to exist). No future-derived fields in X tensor. Normalization pools isolated from targets. ATR contract documented. Constant features excluded. Fractal-level up/dn input distinguished from top-level target up/dn.",
     "artifacts": [
       "stage03_leakage_gate.json"
     ]
   },
-  "next_allowed_stage": "04-labeling",
+  "stage04": {
+    "verdict": "PASS",
+    "reason": "56 target columns audited. TB convention explicit (0=SL, 0.5=timeout, 1=TP). No timeout/SL mixing. BUY/SELL nearly symmetric. Up/dn monotonicity verified (0 violations). All targets future-derived, excluded from X tensor. Extreme imbalance noted (sl2_tp9: 2.3% TP) but does not block pipeline.",
+    "artifacts": [
+      "stage04_labeling_audit.json"
+    ]
+  },
+  "next_allowed_stage": "05-eda-data-quality",
   "requires_user_pass_to_continue": true
 }
