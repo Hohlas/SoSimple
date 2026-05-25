@@ -3,7 +3,7 @@
 > **Date**: 2026-05-25 18:00
 > **Status**: Completed (Stages 00–04 PASS)
 > **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules from research contract through labeling audit
-> **Related commit**: bd1f1d9
+> **Related commit**: 62ae27f
 
 ## Context
 

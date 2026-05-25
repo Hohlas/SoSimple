@@ -28,7 +28,7 @@
   },
   "stage03": {
     "verdict": "PASS",
-    "reason": "14/18 preflight checks PASS, 4 NOT_APPLICABLE_BEFORE_MODEL (online contract, online labeling, rule freeze, MT4 parity — require model/online path to exist). No future-derived fields in X tensor. Normalization pools isolated from targets. ATR contract documented. Constant features excluded. Fractal-level up/dn input distinguished from top-level target up/dn.",
+    "reason": "14/14 preflight checks PASS. 5 production-gate checks (5,12,16,17,18) require model/online path — deferred to stages 08-14. No future-derived fields in X tensor. Pools isolated. ATR contract documented. fractal*.up/dn vs target up/dn naming convention enacted.",
     "artifacts": [
       "stage03_leakage_gate.json"
     ]
