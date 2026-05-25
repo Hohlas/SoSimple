@@ -18,15 +18,19 @@
 2. Проверить сортировку внутри строки, если строка содержит массив событий или фракталов.
 3. Выполнить labeling только в offline-пути (механический запуск pipeline. Полный аудит label convention — в Этапе 4).
 4. Присвоить всем новым target/label колонкам говорящий префикс, например `target_`, `label_` или `outcome_`.
-5. Выполнить нормализацию строго по разрешённой схеме.
-6. Выполнить последовательный split.
-7. Сохранить подготовленные файлы и metadata:
+5. До выбора схемы нормализации выполнить scale audit отдельно для input-признаков и target/label колонок.
+6. Зафиксировать normalization groups: сначала по роли (`input` отдельно от `target/label`), затем внутри роли по фактическому масштабу и смыслу.
+7. Выполнить нормализацию строго по разрешённой схеме.
+8. Выполнить последовательный split.
+9. Сохранить подготовленные файлы и metadata:
    - источник raw;
    - команды запуска;
    - параметры нормализации;
+   - scale audit inputs/targets;
+   - normalization groups;
    - размеры split;
    - hash или manifest.
-8. Проверить, что runtime/inference path не запускает offline-labeling.
+10. Проверить, что runtime/inference path не запускает offline-labeling.
 
 Пример текущего проекта: `Nero.csv` -> сортировка фракталов внутри строки -> offline labeling -> row-wise normalization -> sequential split -> train/validation/test. Это пример структуры pipeline, а не разрешение переносить конкретные решения без нового source audit.
 
@@ -35,6 +39,8 @@
 - Сортировка независима по строкам или доказано, почему межстрочная операция не создаёт leakage.
 - Offline labels не попадают в online preprocessing.
 - Target/label колонки имеют явный префикс и не маскируются под обычные признаки.
+- Есть scale audit отдельно для input-признаков и target/label колонок.
+- Normalization groups утверждены только после scale audit; общий pool `input + target/label` запрещён.
 - Row-wise normalization не использует future-derived поля в пулах live-признаков.
 - Global scaler fit-ится только на train.
 - `ATR` или другой volatility contract явно описан: raw, ratio или scaled.
@@ -44,11 +50,16 @@
 - Pipeline запускается одной воспроизводимой командой или документированной последовательностью команд.
 - Все выходные файлы имеют ожидаемые колонки и размеры.
 - Есть проверка формата вложенных структур.
+- Есть `scale_audit_inputs` и `scale_audit_targets` или эквивалентные таблицы с диапазонами и dominance-check.
+- Есть сохранённая схема `normalization_groups`, по которой можно повторить группировку.
 - Есть metadata, по которой можно повторить подготовку.
 
 ### Типовые ошибки
 
 - Использовать старый normalization mode, где future-derived поле влияет на масштаб live-признаков.
+- Выбирать normalization groups только по типу данных без проверки фактических масштабов.
+- Смешивать input-признаки и target/label колонки в одном normalization pool.
+- Смешивать крупномасштабные и мелкомасштабные поля без dominance-check.
 - Запускать target builder в online-пути.
 - Называть будущую метку обычным feature-like именем, из-за чего она позже попадает в input по wildcard/regex.
 - Полагаться на cache после смены feature contract.
@@ -59,6 +70,6 @@
 - Если preprocessing не воспроизводится: остановить модельные эксперименты.
 - Если online path не может создать те же признаки: переобучить модель на live-safe contract.
 - Если найден риск в normalization pool: пересчитать данные и считать старые результаты `DIAGNOSTIC_ONLY`.
+- Если scale audit не выполнен или показывает dominance внутри pool: не утверждать normalization groups, пересобрать группы и повторить audit.
 
 ---
-
