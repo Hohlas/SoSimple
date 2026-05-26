@@ -1,16 +1,25 @@
 # =============================================================================
-# File: model_sweep_candidate_source.py
-# Purpose: Stage 08 — model development sweep for candidate-source.
-# Models: XGBoost, CatBoost, MLP (flat) + Transformer, BiLSTM (3D PLL-normalized).
-# Target: buy_sl3_tp3 (binary classification: TP vs SL, timeout excluded).
-# Data: train (fit) + validation (evaluate). Test NOT viewed.
-# Updated: 2026-05-25
+# Файл: model_sweep_candidate_source.py
+# Назначение: Stage 08 — model development sweep for candidate-source.
+# Обновлён: 2026-05-26
+# Входные данные:
+#   - DATA/Nero_train_labeled.csv
+#   - DATA/Nero_validation_labeled.csv
+# Выходные данные:
+#   - ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json
+# Использование:
+#   ./.venv/bin/python ML/model_sweep_candidate_source.py
+# Примечания:
+#   - Test split is never read.
+#   - Binary sweep excludes timeout rows from both threshold selection and PF calculation.
 # =============================================================================
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
+import sys
 import numpy as np
 import pandas as pd
 import torch
@@ -24,6 +33,10 @@ from sklearn.metrics import classification_report
 import warnings
 warnings.filterwarnings("ignore")
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from ML.fractal_level_feature_builder import build_fractal_level_features
 from ML.data_loader import parse_fractals_to_3d
 from ML.pll_normalizer import PLLFeatureNormalizer
@@ -31,6 +44,30 @@ from ML.pll_normalizer import PLLFeatureNormalizer
 DATA_DIR = Path("DATA")
 REPORT_DIR = Path("ML/reports/methodology_cycle_candidate_source_v2")
 TARGET_COL = "buy_sl3_tp3"
+SEED = 42
+
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+
+
+def sanitize_for_json(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float):
+        if obj == float("inf"):
+            return "inf"
+        if obj == float("-inf"):
+            return "-inf"
+        if obj != obj:
+            return None
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    return obj
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -88,15 +125,20 @@ def per_year_pf(val_raw, proba, threshold):
 def run_flat_models(X_train, y_train_enc, y_mask_train,
                     X_val, y_val_enc, y_mask_val, val_raw, thresholds):
     results = []
+    predictions = {}
 
     # RF
     print("  RF...")
     clf = RandomForestClassifier(n_estimators=160, min_samples_leaf=20,
-                                  class_weight="balanced", random_state=42, n_jobs=-1)
+                                  class_weight="balanced", random_state=SEED, n_jobs=-1)
     clf.fit(X_train[y_mask_train], y_train_enc[y_mask_train])
-    proba = clf.predict_proba(X_val)[:, 1]
-    best = threshold_sweep(y_val_enc, proba, thresholds)
+    proba = clf.predict_proba(X_val[y_mask_val])[:, 1]
+    full_proba = np.full(len(val_raw), np.nan)
+    full_proba[y_mask_val] = proba
+    predictions["RF_160_proba_tp"] = full_proba
+    best = threshold_sweep(y_val_enc[y_mask_val], proba, thresholds)
     best["model"] = "RF_160"
+    best["binary_timeout_excluded"] = True
     results.append(best)
     print(f"    PF={best['PF']:.2f} trades={best['trades']} wr={best['wr']:.1%}")
 
@@ -105,12 +147,16 @@ def run_flat_models(X_train, y_train_enc, y_mask_train,
         from xgboost import XGBClassifier
         print("  XGB...")
         clf = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                            scale_pos_weight=(y_train_enc == 0).sum() / max((y_train_enc == 1).sum(), 1),
-                            random_state=42, n_jobs=-1, verbosity=0)
+	                            scale_pos_weight=(y_train_enc == 0).sum() / max((y_train_enc == 1).sum(), 1),
+	                            random_state=SEED, n_jobs=-1, verbosity=0)
         clf.fit(X_train[y_mask_train], y_train_enc[y_mask_train])
-        proba = clf.predict_proba(X_val)[:, 1]
-        best = threshold_sweep(y_val_enc, proba, thresholds)
+        proba = clf.predict_proba(X_val[y_mask_val])[:, 1]
+        full_proba = np.full(len(val_raw), np.nan)
+        full_proba[y_mask_val] = proba
+        predictions["XGB_proba_tp"] = full_proba
+        best = threshold_sweep(y_val_enc[y_mask_val], proba, thresholds)
         best["model"] = "XGB"
+        best["binary_timeout_excluded"] = True
         results.append(best)
         print(f"    PF={best['PF']:.2f} trades={best['trades']} wr={best['wr']:.1%}")
     except ImportError:
@@ -121,11 +167,15 @@ def run_flat_models(X_train, y_train_enc, y_mask_train,
         from catboost import CatBoostClassifier
         print("  CatBoost...")
         clf = CatBoostClassifier(iterations=200, depth=6, learning_rate=0.1,
-                                  random_seed=42, verbose=0, allow_writing_files=False)
+	                                  random_seed=SEED, verbose=0, allow_writing_files=False)
         clf.fit(X_train[y_mask_train], y_train_enc[y_mask_train])
-        proba = clf.predict_proba(X_val)[:, 1]
-        best = threshold_sweep(y_val_enc, proba, thresholds)
+        proba = clf.predict_proba(X_val[y_mask_val])[:, 1]
+        full_proba = np.full(len(val_raw), np.nan)
+        full_proba[y_mask_val] = proba
+        predictions["CatBoost_proba_tp"] = full_proba
+        best = threshold_sweep(y_val_enc[y_mask_val], proba, thresholds)
         best["model"] = "CatBoost"
+        best["binary_timeout_excluded"] = True
         results.append(best)
         print(f"    PF={best['PF']:.2f} trades={best['trades']} wr={best['wr']:.1%}")
     except ImportError:
@@ -135,15 +185,19 @@ def run_flat_models(X_train, y_train_enc, y_mask_train,
     print("  MLP...")
     clf = MLPClassifier(hidden_layer_sizes=(256, 128, 64), activation="relu",
                          alpha=0.001, batch_size=256, max_iter=100,
-                         random_state=42, early_stopping=True, verbose=False)
+	                         random_state=SEED, early_stopping=True, verbose=False)
     clf.fit(X_train[y_mask_train], y_train_enc[y_mask_train])
-    proba = clf.predict_proba(X_val)[:, 1]
-    best = threshold_sweep(y_val_enc, proba, thresholds)
+    proba = clf.predict_proba(X_val[y_mask_val])[:, 1]
+    full_proba = np.full(len(val_raw), np.nan)
+    full_proba[y_mask_val] = proba
+    predictions["MLP_flat_proba_tp"] = full_proba
+    best = threshold_sweep(y_val_enc[y_mask_val], proba, thresholds)
     best["model"] = "MLP_flat"
+    best["binary_timeout_excluded"] = True
     results.append(best)
     print(f"    PF={best['PF']:.2f} trades={best['trades']} wr={best['wr']:.1%}")
 
-    return results
+    return results, predictions
 
 
 # ─── 3D (PyTorch) models ─────────────────────────────────────────────────────
@@ -238,6 +292,7 @@ def eval_model(model, loader, device):
 def run_3d_models(X_train_3d, mask_train, y_train_enc, y_mask_train,
                    X_val_3d, mask_val, y_val_enc, y_mask_val, val_raw, thresholds):
     results = []
+    predictions = {}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"  Device: {device}")
 
@@ -249,7 +304,7 @@ def run_3d_models(X_train_3d, mask_train, y_train_enc, y_mask_train,
     # Subsample for CPU training speed
     max_train = 8000
     if len(Xt) > max_train:
-        idx = np.random.RandomState(42).choice(len(Xt), max_train, replace=False)
+        idx = np.random.RandomState(SEED).choice(len(Xt), max_train, replace=False)
         Xt, mt, yt = Xt[idx], mt[idx], yt[idx]
     print(f"    train samples: {len(Xt)}, val: {len(Xv)}")
 
@@ -260,7 +315,8 @@ def run_3d_models(X_train_3d, mask_train, y_train_enc, y_mask_train,
                               torch.from_numpy(yt).long())
     val_ds = TensorDataset(torch.from_numpy(Xv).float(), torch.from_numpy(mv).bool(),
                             torch.from_numpy(yv).long())
-    train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_ds, batch_size=64, shuffle=True,
+                              generator=torch.Generator().manual_seed(SEED))
     val_loader = DataLoader(val_ds, batch_size=256, shuffle=False)
 
     for name, ModelClass in [("Transformer", TransformerEncoder), ("BiLSTM", BiLSTMModel)]:
@@ -290,15 +346,17 @@ def run_3d_models(X_train_3d, mask_train, y_train_enc, y_mask_train,
             y_true_final = y_true
 
         # Recompute on full val set (including timeout rows) for fair comparison
-        all_proba = np.zeros(len(val_raw))
-        all_proba[y_mask_val] = best_proba
-        y_full, _ = prepare_labels(val_raw)
-        best = threshold_sweep(y_full, all_proba, thresholds)
+        best = threshold_sweep(yv, best_proba, thresholds)
+        full_proba = np.full(len(val_raw), np.nan)
+        full_proba[y_mask_val] = best_proba
+        predictions[f"{name}_proba_tp"] = full_proba
         best["model"] = name
+        best["best_epoch"] = best_epoch
+        best["binary_timeout_excluded"] = True
         results.append(best)
         print(f"    best_epoch={best_epoch} PF={best['PF']:.2f} trades={best['trades']} wr={best['wr']:.1%}")
 
-    return results
+    return results, predictions
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -332,8 +390,8 @@ def main():
     X_val_flat_norm = scaler.transform(X_val_flat)
 
     print("\n=== Flat Models ===")
-    flat_results = run_flat_models(X_train_flat_norm, y_train, y_mask_train,
-                                    X_val_flat_norm, y_val, y_mask_val, val_raw, thresholds)
+    flat_results, flat_predictions = run_flat_models(X_train_flat_norm, y_train, y_mask_train,
+                                                     X_val_flat_norm, y_val, y_mask_val, val_raw, thresholds)
 
     # ─── 3D tensor + PLL ───
     print("\nBuilding 3D tensors...")
@@ -347,8 +405,8 @@ def main():
     X_val_3d = norm.transform(X_val_3d)
 
     print("\n=== 3D Sequence Models ===")
-    seq_results = run_3d_models(X_train_3d, mask_train, y_train, y_mask_train,
-                                 X_val_3d, mask_val, y_val, y_mask_val, val_raw, thresholds)
+    seq_results, seq_predictions = run_3d_models(X_train_3d, mask_train, y_train, y_mask_train,
+                                                 X_val_3d, mask_val, y_val, y_mask_val, val_raw, thresholds)
 
     # ─── Report ───
     all_results = flat_results + seq_results
@@ -359,15 +417,46 @@ def main():
     output = {
         "cycle_id": "methodology_cycle_candidate_source_v2",
         "stage": "08-model-development",
+        "methodology_stage": "08-model-development",
+        "stage_verdict": "PASS",
         "created_at": "2026-05-25",
+        "updated_at": "2026-05-26",
         "target": TARGET_COL,
+        "formulation": "binary TP-vs-SL model sweep; timeout rows excluded from training/evaluation masks",
+        "reproducibility": {
+            "seed": SEED,
+            "python": sys.version.split()[0],
+            "torch": torch.__version__,
+            "device_policy": "cuda if available for Stage 08 exploratory sweep; Stage 09 freeze is CPU deterministic",
+            "deterministic_stage": "Stage 08 is model-family exploration; deterministic freeze is enforced in Stage 09",
+        },
+        "feature_contract": {
+            "flat_builder": "ML/fractal_level_feature_builder.py",
+            "sequence_builder": "ML.data_loader.parse_fractals_to_3d",
+            "normalizer": "PLLFeatureNormalizer fit on train only for 3D models; StandardScaler fit on train only for flat models",
+            "test_viewed": False,
+        },
+        "validation_predictions": "ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv",
+        "limitations": [
+            "Stage 08 is exploratory and validation-only; no checkpoint is promoted here.",
+            "Neural results are single-seed exploratory results. Stage 09 performs deterministic freeze and stability checks.",
+            "Trading metrics are gross diagnostic; costs and drawdown are handled in later methodology stages."
+        ],
         "results": all_results,
     }
     out_path = REPORT_DIR / "stage08_model_sweep.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
-        json.dump(output, f, indent=2, default=str)
+        json.dump(sanitize_for_json(output), f, indent=2, allow_nan=False)
+    pred_path = REPORT_DIR / "stage08_validation_predictions.csv"
+    pred_df = val_raw[["time", TARGET_COL]].copy()
+    pred_df["binary_eval_row"] = y_mask_val
+    pred_df["binary_target"] = y_val
+    for name, values in {**flat_predictions, **seq_predictions}.items():
+        pred_df[name] = values
+    pred_df.to_csv(pred_path, index=False)
     print(f"\nSaved: {out_path}")
+    print(f"Saved: {pred_path}")
 
 
 if __name__ == "__main__":

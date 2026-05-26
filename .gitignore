@@ -257,6 +257,7 @@ MT/tester/logs/*
 # CSV, XLSX files
 *.csv
 *.xlsx
+!ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv
 DATA/*.npy
 
 # pictures

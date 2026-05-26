@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-25 12:12 UTC · git `0e7341f`
+> Auto-generated 2026-05-26 20:27 UTC · git `e4397db`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1262 files  ·  **Commit**: `0e7341f`  ·  **Generated**: 2026-05-25 12:12 UTC
+**Tracked**: 1278 files  ·  **Commit**: `e4397db`  ·  **Generated**: 2026-05-26 20:27 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-05-24 | 14KB | `f71f0ac2` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-23 | 150KB | `36c8484b` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-25 | 152KB | `5b05b29b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-23 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-23 | 2KB | `444d01d5` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-24 | 40KB | `171181fc` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-25 | 2KB | `2dc4cc5b` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-26 | 41KB | `904bb138` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -29,6 +29,7 @@
 | [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-05-13 | 1KB | `c7573738` |
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-05-18 | 20KB | `bb5a5097` |
 | [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-05-23 | 26KB | `a4f0be48` |
+| [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-05-26 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-04-16 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-04-27 | 3KB | `facaa586` |
 | [docs/ML/benchmark_entry_path_all_rows_ranking.py.md](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | All-rows ranking benchmark без offline `signal != 0` gate | 2026-05-18 | 1KB | `0bc4a19a` |
@@ -49,6 +50,7 @@
 | [docs/ML/lib_pic_path_reaction_feature_bank.py.md](docs/ML/lib_pic_path_reaction_feature_bank.py.md) | Производные признаки исторической реакции цены `Up/Dn` после уровней | 2026-04-27 | 2KB | `9d18b5e1` |
 | [docs/ML/live_safe_audit.py.md](docs/ML/live_safe_audit.py.md) | Core-типы live-safe audit и свод feature verdict → system verdict | 2026-05-06 | 556B | `8341abc1` |
 | [docs/ML/live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit | 2026-05-06 | 469B | `8d81d796` |
+| [docs/ML/model_sweep_candidate_source.py.md](docs/ML/model_sweep_candidate_source.py.md) |  | 2026-05-26 | 970B | `8867924b` |
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-05-13 | 25KB | `a7ea744f` |
 | [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md) |  | 2026-05-13 | 3KB | `28aa6c93` |
 | [docs/ML/prepare_entry_path_mt4_parity.py.md](docs/ML/prepare_entry_path_mt4_parity.py.md) | Подготовка frozen `entry_path_v1_live_safe + A @ 7.5%` export для MT4 parity | 2026-05-13 | 1KB | `5e881e55` |
@@ -57,6 +59,7 @@
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-05-06 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-27 | 4KB | `8d21f1a7` |
 | [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-05-06 | 6KB | `133b0f2e` |
+| [docs/ML/stage09_stability_refreeze.py.md](docs/ML/stage09_stability_refreeze.py.md) |  | 2026-05-26 | 1KB | `8a220fb0` |
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-05-13 | 4KB | `b02fd806` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-27 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-05-18 | 25KB | `aa7313db` |
@@ -259,6 +262,7 @@
 | [docs/reports/2026-05-15-direct-direction-improvement.md](docs/reports/2026-05-15-direct-direction-improvement.md) |  | 2026-05-18 | 12KB | `edc04acb` |
 | [docs/reports/2026-05-18-direct-direction-rebuild.md](docs/reports/2026-05-18-direct-direction-rebuild.md) |  | 2026-05-23 | 14KB | `c12d5722` |
 | [docs/reports/2026-05-21-transformer-direction.md](docs/reports/2026-05-21-transformer-direction.md) |  | 2026-05-23 | 6KB | `510eda23` |
+| [docs/reports/2026-05-25-methodology-cycle-stages-00-04.md](docs/reports/2026-05-25-methodology-cycle-stages-00-04.md) |  | 2026-05-26 | 16KB | `5b0191bb` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
@@ -269,6 +273,7 @@
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-04-16 | 4KB | `390f9209` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-04-16 | 40KB | `d214b051` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-04-16 | 4KB | `66cbf52f` |
+| [ML/baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | ✅ | 2026-05-26 | 9KB | `e15dbd88` |
 | [ML/benchmark_buy_only_direction.py](ML/benchmark_buy_only_direction.py) | BUY-only RF с исправленными признаками (Phase A/B/D rebuild) | ✅ | 2026-05-23 | 37KB | `59b3a74c` |
 | [ML/benchmark_cross_instrument_robustness.py](ML/benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | ✅ | 2026-04-27 | 13KB | `d59921e5` |
 | [ML/benchmark_entry_path_all_rows_ranking.py](ML/benchmark_entry_path_all_rows_ranking.py) | All-rows ranking benchmark без offline `signal != 0` gate | ✅ | 2026-05-18 | 16KB | `56cff1e7` |
@@ -305,7 +310,7 @@
 | [ML/compare_architectures.py](ML/compare_architectures.py) | Сравнение 4 архитектур | 🏁 | 2026-04-16 | 13KB | `103ded09` |
 | [ML/conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | 🏁 | 2026-04-16 | 14KB | `d34cb990` |
 | [ML/conformal/conformal_quantiles.json](ML/conformal/conformal_quantiles.json) |  |  | 2026-04-16 | 399B | `6d9e2e03` |
-| [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-05-23 | 62KB | `5a13083e` |
+| [ML/data_loader.py](ML/data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ | 2026-05-25 | 63KB | `fd8e4ebf` |
 | [ML/entry_path_direct_direction_targets.py](ML/entry_path_direct_direction_targets.py) |  |  | 2026-05-18 | 11KB | `4d77c81d` |
 | [ML/entry_path_feature_bank.py](ML/entry_path_feature_bank.py) | Entry path feature bank: оконные сводки строки и row-wise context features | ✅ | 2026-04-17 | 3KB | `0c7004b2` |
 | [ML/entry_path_level_targets.py](ML/entry_path_level_targets.py) |  |  | 2026-05-18 | 7KB | `0e33bad7` |
@@ -323,13 +328,14 @@
 | [ML/feature_bank_comparison_diagnostics.py](ML/feature_bank_comparison_diagnostics.py) | Сравнение baseline/geometry/path feature-bank вариантов | ✅ | 2026-04-27 | 9KB | `3599f7fa` |
 | [ML/feature_importance_diagnostics.py](ML/feature_importance_diagnostics.py) | Диагностика важности групп текущих fractal-признаков | ✅ | 2026-04-27 | 16KB | `a68fad5b` |
 | [ML/feature_screen_entry_path.py](ML/feature_screen_entry_path.py) | Диагностический feature screening для entry_path_v1 | ✅ | 2026-04-17 | 782B | `473127c5` |
-| [ML/fractal_level_feature_builder.py](ML/fractal_level_feature_builder.py) |  |  | 2026-05-18 | 22KB | `564f14c3` |
+| [ML/fractal_level_feature_builder.py](ML/fractal_level_feature_builder.py) |  |  | 2026-05-25 | 23KB | `e17bfeba` |
 | [ML/lib_pic_feature_profiles.py](ML/lib_pic_feature_profiles.py) | Единая сборка профилей признаков `lib_PIC` для диагностики и `entry_path_v1` | ✅ | 2026-04-27 | 4KB | `6da69e68` |
 | [ML/lib_pic_geometry_feature_bank.py](ML/lib_pic_geometry_feature_bank.py) | Производные признаки геометрии уровней `lib_PIC` | ✅ | 2026-04-27 | 7KB | `24dd7aaa` |
 | [ML/lib_pic_path_reaction_feature_bank.py](ML/lib_pic_path_reaction_feature_bank.py) | Производные признаки исторической реакции цены `Up/Dn` после уровней | ✅ | 2026-04-27 | 8KB | `a47b0ff1` |
 | [ML/live_safe_audit.py](ML/live_safe_audit.py) | Core-типы live-safe audit и свод feature verdict → system verdict | ✅ | 2026-05-23 | 5KB | `b22c6ec4` |
 | [ML/live_safe_audit_registry.py](ML/live_safe_audit_registry.py) | Реестр прибыльных ML-систем для повторного live-safe audit | ✅ | 2026-05-06 | 3KB | `20c94868` |
 | [ML/losses.py](ML/losses.py) | FocalLoss, HuberLoss, AsymmetricLoss | ✅ | 2026-04-16 | 9KB | `f7313c67` |
+| [ML/model_sweep_candidate_source.py](ML/model_sweep_candidate_source.py) | Stage 08 exploratory model sweep для candidate-source v2 | ✅ | 2026-05-26 | 19KB | `c614b4a0` |
 | [ML/models/__init__.py](ML/models/__init__.py) |  |  | 2026-04-16 | 1KB | `f8ff5fa3` |
 | [ML/models/bilstm.py](ML/models/bilstm.py) | Bi-LSTM | 🏁 | 2026-04-16 | 4KB | `f1b6faea` |
 | [ML/models/cnn1d.py](ML/models/cnn1d.py) | 1D-CNN | 🏁 | 2026-04-16 | 4KB | `61595f42` |
@@ -343,6 +349,7 @@
 | [ML/multi_scale_fractal_features.py](ML/multi_scale_fractal_features.py) |  |  | 2026-04-27 | 1KB | `c73c28c3` |
 | [ML/online_tester_reconciliation.py](ML/online_tester_reconciliation.py) | Сверка online/tester `ml_trade_events.csv` по `signal_time + direction` | ✅ | 2026-05-13 | 21KB | `24040876` |
 | [ML/optimize.py](ML/optimize.py) | Optuna оптимизация гиперпараметров | 🏁 | 2026-04-16 | 19KB | `f6c18a03` |
+| [ML/pll_normalizer.py](ML/pll_normalizer.py) |  |  | 2026-05-26 | 8KB | `3ac39fd4` |
 | [ML/prepare_entry_path_mt4_parity.py](ML/prepare_entry_path_mt4_parity.py) | Подготовка frozen `entry_path_v1_live_safe + A @ 7.5%` export для MT4 parity | ✅ | 2026-05-13 | 7KB | `0227d595` |
 | [ML/prepare_raw_features.py](ML/prepare_raw_features.py) | Извлечение сырых признаков из OHLC для direct-direction (Phase 0) | ✅ | 2026-05-23 | 19KB | `e2098ef4` |
 | [ML/reports/architecture_comparison_classification.md](ML/reports/architecture_comparison_classification.md) |  |  | 2026-04-16 | 3KB | `c0fe9f2d` |
@@ -582,14 +589,20 @@
 | [ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json](ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json) |  |  | 2026-05-06 | 1KB | `ddcff55b` |
 | [ML/reports/live_safe_ml_audit/quality/verdict.json](ML/reports/live_safe_ml_audit/quality/verdict.json) |  |  | 2026-05-23 | 727B | `6e173e29` |
 | [ML/reports/live_safe_ml_audit/verdict_summary.json](ML/reports/live_safe_ml_audit/verdict_summary.json) |  |  | 2026-05-23 | 3KB | `d1d7c226` |
-| [ML/reports/methodology_cycle_candidate_source_v2/README.md](ML/reports/methodology_cycle_candidate_source_v2/README.md) |  |  | 2026-05-25 | 1KB | `7bb0ec4a` |
+| [ML/reports/methodology_cycle_candidate_source_v2/README.md](ML/reports/methodology_cycle_candidate_source_v2/README.md) |  |  | 2026-05-26 | 2KB | `28e36cbe` |
 | [ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md](ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md) |  |  | 2026-05-25 | 2KB | `87798cc8` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json](ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json) |  |  | 2026-05-25 | 3KB | `929dd33f` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json) |  |  | 2026-05-25 | 1011B | `592978cb` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json) |  |  | 2026-05-26 | 5KB | `57440072` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json) |  |  | 2026-05-25 | 4KB | `ab4f45ad` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage02_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_gate_verdict.json) |  |  | 2026-05-25 | 936B | `958f4b59` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage02_normalization_groups_draft.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_normalization_groups_draft.json) |  |  | 2026-05-25 | 3KB | `6154a866` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage02_pipeline_manifest.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_pipeline_manifest.json) |  |  | 2026-05-25 | 1KB | `e5cba05b` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage02_data_pipeline.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_data_pipeline.json) |  |  | 2026-05-25 | 3KB | `cffbff43` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage03_leakage_gate.json](ML/reports/methodology_cycle_candidate_source_v2/stage03_leakage_gate.json) |  |  | 2026-05-25 | 4KB | `5f498f87` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage04_labeling_audit.json](ML/reports/methodology_cycle_candidate_source_v2/stage04_labeling_audit.json) |  |  | 2026-05-25 | 5KB | `d5009b71` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage05_eda_audit.json](ML/reports/methodology_cycle_candidate_source_v2/stage05_eda_audit.json) |  |  | 2026-05-26 | 3KB | `48862ccc` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage06_temporal_split_manifest.json](ML/reports/methodology_cycle_candidate_source_v2/stage06_temporal_split_manifest.json) |  |  | 2026-05-26 | 2KB | `29823971` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json](ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json) |  |  | 2026-05-26 | 14KB | `8afb68eb` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json](ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json) |  |  | 2026-05-26 | 2KB | `4d07ed46` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json) |  |  | 2026-05-26 | 2KB | `b6635e2c` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json) |  |  | 2026-05-26 | 87KB | `cfcaa002` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json](ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json) |  |  | 2026-05-13 | 3KB | `14b7cc3f` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json](ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json) |  |  | 2026-05-13 | 3KB | `bacc13b6` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json) |  |  | 2026-05-13 | 3KB | `5cb5fe58` |
@@ -827,6 +840,7 @@
 | [ML/run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | ✅ | 2026-04-17 | 6KB | `0d1d781d` |
 | [ML/run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | ✅ | 2026-05-23 | 9KB | `8c2ac272` |
 | [ML/run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 6KB | `ac5afba9` |
+| [ML/stage09_stability_refreeze.py](ML/stage09_stability_refreeze.py) | Validation-only stability scan для frozen Transformer rule | ✅ | 2026-05-26 | 10KB | `73177d29` |
 | [ML/take_skip_trailing_stop_task.py](ML/take_skip_trailing_stop_task.py) |  |  | 2026-05-23 | 4KB | `8e0a93f6` |
 | [ML/take_skip_trailing_stop_v2_task.py](ML/take_skip_trailing_stop_v2_task.py) |  |  | 2026-05-23 | 4KB | `227844ec` |
 | [ML/tb_probability_calibration.py](ML/tb_probability_calibration.py) | Isotonic calibration для TB-вероятностей | 🏁 | 2026-04-16 | 2KB | `502427cf` |
@@ -839,6 +853,7 @@
 | [ML/transformer_direction_train.py](ML/transformer_direction_train.py) |  |  | 2026-05-23 | 32KB | `6833bf35` |
 | [ML/triple_barrier_mt4_execution.py](ML/triple_barrier_mt4_execution.py) |  |  | 2026-04-16 | 6KB | `e2520e9d` |
 | [ML/utils.py](ML/utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ | 2026-05-13 | 12KB | `74a36c00` |
+| [ML/validation_freeze.py](ML/validation_freeze.py) |  |  | 2026-05-26 | 11KB | `fd3b6308` |
 
 ## Processing
 
@@ -846,8 +861,8 @@
 |------|-------------|--------|----------|------|------|
 | [processing/README.md](processing/README.md) |  |  | 2026-05-13 | 2KB | `a045f749` |
 | [processing/fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | ✅ | 2026-05-06 | 3KB | `37670f70` |
-| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-05-13 | 14KB | `90a1c8c0` |
-| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-05-23 | 43KB | `ea1463d4` |
+| [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-05-26 | 14KB | `aadec355` |
+| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-05-26 | 43KB | `9a8183d9` |
 | [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-05-13 | 27KB | `06653bd4` |
 | [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | ✅ | 2026-05-13 | 4KB | `3a43f088` |
 
@@ -1008,7 +1023,7 @@
 | [MT/MQL4/Include/lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | ✅ | 2026-05-13 | 43KB | `961e7c47` |
 | [MT/MQL4/Include/lib_ML_Signal_TB.mqh](MT/MQL4/Include/lib_ML_Signal_TB.mqh) |  |  | 2026-04-16 | 8KB | `86f9658b` |
 | [MT/MQL4/Include/lib_ML_Signal_back.mqh](MT/MQL4/Include/lib_ML_Signal_back.mqh) |  |  | 2026-04-16 | 14KB | `996e3367` |
-| [MT/MQL4/Include/lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | ⚠️ | 2026-04-28 | 57KB | `dc7d08ca` |
+| [MT/MQL4/Include/lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | ⚠️ | 2026-05-25 | 57KB | `6c585a17` |
 | [MT/MQL4/Include/stderror.mqh](MT/MQL4/Include/stderror.mqh) |  |  | 2026-04-16 | 9KB | `1678c440` |
 | [MT/MQL4/Include/stdlib.mqh](MT/MQL4/Include/stdlib.mqh) |  |  | 2026-04-16 | 648B | `fa321ad4` |
 | [MT/MQL4/Indicators/ATR.mq4](MT/MQL4/Indicators/ATR.mq4) |  |  | 2026-04-16 | 3KB | `dc211832` |
@@ -1302,8 +1317,8 @@
 |------|-------------|----------|------|------|
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-05-18 | 89KB | `11a5246a` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-04-16 | 3KB | `01af7dbd` |
-| [wiki/index.md](wiki/index.md) |  | 2026-05-23 | 3KB | `22a853ed` |
-| [wiki/log.md](wiki/log.md) |  | 2026-05-23 | 26KB | `9b968e93` |
+| [wiki/index.md](wiki/index.md) |  | 2026-05-26 | 3KB | `b83fdf39` |
+| [wiki/log.md](wiki/log.md) |  | 2026-05-26 | 26KB | `4527a2ce` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-05-23 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-05-18 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-05-23 | 20KB | `97413667` |
@@ -1314,6 +1329,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-05-18 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-05-23 | 23KB | `8fad0c8d` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-05-18 | 10KB | `7b5c0cf0` |
+| [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-05-26 | 2KB | `747087e7` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-16 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 

@@ -18,9 +18,12 @@ This directory contains Stage 00-09 artifacts for the ML cycle run under `docs/m
 - `stage03_leakage_gate.json` — ML Leakage Preflight: 14 checks PASS
 - `stage04_labeling_audit.json` — label convention audit: 56 targets, TB/updn/trail conventions
 - `stage05_eda_audit.json` — EDA: no NaN/Inf, regime shift detected, test NOT viewed
+- `stage06_temporal_split_manifest.json` — sequential split manifest and validation/test use rules
 - `stage07_baselines.json` — Baselines: RF PF=1.58 (all 12 TB + trail tested)
-- `stage08_model_sweep.json` — Model sweep: BiLSTM PF=4.78, Transformer PF=2.83
-- `stage09_frozen_rule.json` — Frozen winner: Transformer 3-class, PF=2.57, deterministic
+- `stage08_model_sweep.json` — Model sweep: Transformer PF=11.60, BiLSTM PF=1.74 (binary TP-vs-SL, timeout excluded)
+- `stage08_validation_predictions.csv` — Validation predictions from Stage 08 exploratory sweep
+- `stage09_frozen_rule.json` — Frozen winner: Transformer 3-class, stability-refrozen threshold, PF=1.97, 142 trades
+- `stage09_stability_refreeze.json` — Validation-only threshold/top-k stability scan; test not viewed
 
 ## Current Verdicts
 
@@ -32,9 +35,9 @@ This directory contains Stage 00-09 artifacts for the ML cycle run under `docs/m
 | 03 — Feature Contract / Leakage | PASS | 14/14 preflight PASS, 5 production-gate pending model |
 | 04 — Labeling | PASS | TB convention explicit, up/dn monotonic, timeout separated |
 | 05 — EDA / Data Quality | PASS | Train+val only. Regime shift detected (ATR KS=0.56). Test NOT viewed. |
-| 06 — Temporal Split | PASS | Sequential, no overlap, 0 sorting errors |
-| 07 — Baselines | PASS | RF PF=1.58 (281 trades), dummy floor 1.05. Trail: all PF<1.5 |
-| 08 — Model Sweep | PASS | Transformer PF=2.83, BiLSTM PF=4.78 on 3D+PLL |
-| **09 — Validation Freeze** | **PASS** | **Transformer winner PF=2.57, 35 trades, 0 neg yrs, deterministic** |
+| 06 — Temporal Split | PASS | Sequential manifest added; no overlap, no shuffle, 0 sorting errors |
+| 07 — Baselines | PASS | RF baseline plus confusion/classification/per-year diagnostics; RF has 1 neg year |
+| 08 — Model Sweep | PASS | Exploratory validation-only sweep with timeout-excluded binary formulation |
+| **09 — Validation Freeze** | **PASS** | **Transformer stability rule PF=1.97, 142 trades, 0 neg yrs, 4 active years** |
 
 Next allowed stage: `10-frozen-test-oos`

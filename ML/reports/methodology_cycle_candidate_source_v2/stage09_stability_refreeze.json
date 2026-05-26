@@ -1,0 +1,3934 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "09-validation-freeze-stability-refreeze",
+  "scope": "validation-only; test not read",
+  "source_rule": "stage09_frozen_rule.json",
+  "checkpoint": "ML/checkpoints/transformer_winner.pt",
+  "checkpoint_sha256": "2944a17701e3fbce",
+  "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
+  "normalizer_sha256": "ea0b3db7e3a4360e",
+  "target": "buy_sl3_tp3",
+  "seq_len": 50,
+  "search_space": {
+    "thresholds": [
+      0.3,
+      0.32,
+      0.35,
+      0.38,
+      0.4,
+      0.43,
+      0.45,
+      0.48,
+      0.5,
+      0.53,
+      0.55,
+      0.58,
+      0.6,
+      0.63,
+      0.65,
+      0.68,
+      0.7,
+      0.73,
+      0.75
+    ],
+    "top_k_pcts": [
+      0.5,
+      0.75,
+      1.0,
+      1.5,
+      2.0,
+      3.0,
+      5.0,
+      7.5,
+      10.0,
+      12.5,
+      15.0,
+      20.0,
+      25.0,
+      30.0
+    ]
+  },
+  "stability_gates": {
+    "min_pf": 1.5,
+    "min_trades_per_year": 6.0,
+    "min_active_years": 3,
+    "max_year_trade_share": 0.6,
+    "max_negative_years": 0,
+    "min_bootstrap_ci_low": 1.0
+  },
+  "eligible_count": 4,
+  "selected_rule": {
+    "family": "top_k_pct",
+    "value": 1.5,
+    "threshold_equivalent": 0.5359389781951904,
+    "PF": 1.9722,
+    "trades": 142,
+    "wr": 0.6636,
+    "tp": 71,
+    "sl": 36,
+    "trades_per_year": 40.5714,
+    "negative_years": 0,
+    "active_years": 4,
+    "max_year_trade_share": 0.4789,
+    "per_year": {
+      "2019": {
+        "PF": 1.8824,
+        "trades": 68,
+        "wr": 0.6531,
+        "tp": 32,
+        "sl": 17
+      },
+      "2020": {
+        "PF": 3.0,
+        "trades": 18,
+        "wr": 0.75,
+        "tp": 12,
+        "sl": 4
+      },
+      "2021": {
+        "PF": 2.1,
+        "trades": 38,
+        "wr": 0.6774,
+        "tp": 21,
+        "sl": 10
+      },
+      "2022": {
+        "PF": 1.2,
+        "trades": 18,
+        "wr": 0.5455,
+        "tp": 6,
+        "sl": 5
+      }
+    },
+    "bootstrap": {
+      "mean": 2.0315,
+      "ci95_low": 1.3554,
+      "ci95_high": 3.0,
+      "n_bootstrap": 1000,
+      "finite_samples": 1000
+    },
+    "gates": {
+      "pf_ge_1_5": true,
+      "trades_per_year_ge_6": true,
+      "negative_years_eq_0": true,
+      "active_years_ge_3": true,
+      "max_year_trade_share_le_0_60": true,
+      "bootstrap_ci_low_ge_1_0": true
+    },
+    "all_stability_gates_pass": true,
+    "stability_score": 2.055532
+  },
+  "best_by_pf_top10": [
+    {
+      "family": "threshold",
+      "value": 0.65,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 10,
+      "wr": 1.0,
+      "tp": 6,
+      "sl": 0,
+      "trades_per_year": 2.8571,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 10,
+          "wr": 1.0,
+          "tp": 6,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.68,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 4,
+      "wr": 1.0,
+      "tp": 3,
+      "sl": 0,
+      "trades_per_year": 1.1429,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 4,
+          "wr": 1.0,
+          "tp": 3,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.7,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "trades_per_year": 0.2857,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.63,
+      "threshold_equivalent": null,
+      "PF": 8.0,
+      "trades": 16,
+      "wr": 0.8889,
+      "tp": 8,
+      "sl": 1,
+      "trades_per_year": 4.5714,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 8.0,
+          "trades": 16,
+          "wr": 0.8889,
+          "tp": 8,
+          "sl": 1
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": {
+        "mean": 5.9748,
+        "ci95_low": 1.6667,
+        "ci95_high": 11.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 637
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.6,
+      "threshold_equivalent": null,
+      "PF": 2.5714,
+      "trades": 35,
+      "wr": 0.72,
+      "tp": 18,
+      "sl": 7,
+      "trades_per_year": 10.0,
+      "negative_years": 0,
+      "active_years": 3,
+      "max_year_trade_share": 0.7714,
+      "per_year": {
+        "2019": {
+          "PF": 3.25,
+          "trades": 27,
+          "wr": 0.7647,
+          "tp": 13,
+          "sl": 4
+        },
+        "2020": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 1.3333,
+          "trades": 7,
+          "wr": 0.5714,
+          "tp": 4,
+          "sl": 3
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": {
+        "mean": 3.1534,
+        "ci95_low": 1.0998,
+        "ci95_high": 8.3375,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.734686
+    },
+    {
+      "family": "top_k_pct",
+      "value": 0.5,
+      "threshold_equivalent": 0.5891655087471008,
+      "PF": 2.0909,
+      "trades": 47,
+      "wr": 0.6765,
+      "tp": 23,
+      "sl": 11,
+      "trades_per_year": 13.4286,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.7234,
+      "per_year": {
+        "2019": {
+          "PF": 3.4,
+          "trades": 34,
+          "wr": 0.7727,
+          "tp": 17,
+          "sl": 5
+        },
+        "2020": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.8,
+          "trades": 9,
+          "wr": 0.4444,
+          "tp": 4,
+          "sl": 5
+        },
+        "2022": {
+          "PF": 1.0,
+          "trades": 3,
+          "wr": 0.5,
+          "tp": 1,
+          "sl": 1
+        }
+      },
+      "bootstrap": {
+        "mean": 2.3536,
+        "ci95_low": 1.0624,
+        "ci95_high": 4.8333,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.156668
+    },
+    {
+      "family": "top_k_pct",
+      "value": 1.5,
+      "threshold_equivalent": 0.5359389781951904,
+      "PF": 1.9722,
+      "trades": 142,
+      "wr": 0.6636,
+      "tp": 71,
+      "sl": 36,
+      "trades_per_year": 40.5714,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4789,
+      "per_year": {
+        "2019": {
+          "PF": 1.8824,
+          "trades": 68,
+          "wr": 0.6531,
+          "tp": 32,
+          "sl": 17
+        },
+        "2020": {
+          "PF": 3.0,
+          "trades": 18,
+          "wr": 0.75,
+          "tp": 12,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.1,
+          "trades": 38,
+          "wr": 0.6774,
+          "tp": 21,
+          "sl": 10
+        },
+        "2022": {
+          "PF": 1.2,
+          "trades": 18,
+          "wr": 0.5455,
+          "tp": 6,
+          "sl": 5
+        }
+      },
+      "bootstrap": {
+        "mean": 2.0315,
+        "ci95_low": 1.3554,
+        "ci95_high": 3.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 2.055532
+    },
+    {
+      "family": "threshold",
+      "value": 0.55,
+      "threshold_equivalent": null,
+      "PF": 1.8966,
+      "trades": 111,
+      "wr": 0.6548,
+      "tp": 55,
+      "sl": 29,
+      "trades_per_year": 31.7143,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.5135,
+      "per_year": {
+        "2019": {
+          "PF": 1.9286,
+          "trades": 57,
+          "wr": 0.6585,
+          "tp": 27,
+          "sl": 14
+        },
+        "2020": {
+          "PF": 2.25,
+          "trades": 15,
+          "wr": 0.6923,
+          "tp": 9,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 25,
+          "wr": 0.6667,
+          "tp": 14,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 1.25,
+          "trades": 14,
+          "wr": 0.5556,
+          "tp": 5,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.9501,
+        "ci95_low": 1.2142,
+        "ci95_high": 3.0476,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.845341
+    },
+    {
+      "family": "threshold",
+      "value": 0.53,
+      "threshold_equivalent": null,
+      "PF": 1.7778,
+      "trades": 162,
+      "wr": 0.64,
+      "tp": 80,
+      "sl": 45,
+      "trades_per_year": 46.2857,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4506,
+      "per_year": {
+        "2019": {
+          "PF": 1.7,
+          "trades": 73,
+          "wr": 0.6296,
+          "tp": 34,
+          "sl": 20
+        },
+        "2020": {
+          "PF": 1.8571,
+          "trades": 22,
+          "wr": 0.65,
+          "tp": 13,
+          "sl": 7
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 45,
+          "wr": 0.6667,
+          "tp": 24,
+          "sl": 12
+        },
+        "2022": {
+          "PF": 1.5,
+          "trades": 22,
+          "wr": 0.6,
+          "tp": 9,
+          "sl": 6
+        }
+      },
+      "bootstrap": {
+        "mean": 1.8043,
+        "ci95_low": 1.2407,
+        "ci95_high": 2.5758,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.953385
+    },
+    {
+      "family": "top_k_pct",
+      "value": 1.0,
+      "threshold_equivalent": 0.5564892292022705,
+      "PF": 1.6154,
+      "trades": 95,
+      "wr": 0.6176,
+      "tp": 42,
+      "sl": 26,
+      "trades_per_year": 27.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.5368,
+      "per_year": {
+        "2019": {
+          "PF": 1.9167,
+          "trades": 51,
+          "wr": 0.6571,
+          "tp": 23,
+          "sl": 12
+        },
+        "2020": {
+          "PF": 2.0,
+          "trades": 11,
+          "wr": 0.6667,
+          "tp": 6,
+          "sl": 3
+        },
+        "2021": {
+          "PF": 1.4286,
+          "trades": 21,
+          "wr": 0.5882,
+          "tp": 10,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 0.75,
+          "trades": 12,
+          "wr": 0.4286,
+          "tp": 3,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.6447,
+        "ci95_low": 0.9706,
+        "ci95_high": 2.6111,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.496371
+    }
+  ],
+  "best_by_trades_top10": [
+    {
+      "family": "threshold",
+      "value": 0.3,
+      "threshold_equivalent": null,
+      "PF": 1.0551,
+      "trades": 4939,
+      "wr": 0.5134,
+      "tp": 1743,
+      "sl": 1652,
+      "trades_per_year": 1411.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3037,
+      "per_year": {
+        "2019": {
+          "PF": 1.3953,
+          "trades": 874,
+          "wr": 0.5825,
+          "tp": 353,
+          "sl": 253
+        },
+        "2020": {
+          "PF": 1.2344,
+          "trades": 1369,
+          "wr": 0.5525,
+          "tp": 495,
+          "sl": 401
+        },
+        "2021": {
+          "PF": 0.8694,
+          "trades": 1500,
+          "wr": 0.4651,
+          "tp": 466,
+          "sl": 536
+        },
+        "2022": {
+          "PF": 0.9286,
+          "trades": 1196,
+          "wr": 0.4815,
+          "tp": 429,
+          "sl": 462
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0567,
+        "ci95_low": 0.9842,
+        "ci95_high": 1.1303,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.469321
+    },
+    {
+      "family": "threshold",
+      "value": 0.32,
+      "threshold_equivalent": null,
+      "PF": 1.0503,
+      "trades": 4290,
+      "wr": 0.5123,
+      "tp": 1524,
+      "sl": 1451,
+      "trades_per_year": 1225.7143,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3026,
+      "per_year": {
+        "2019": {
+          "PF": 1.3879,
+          "trades": 803,
+          "wr": 0.5812,
+          "tp": 322,
+          "sl": 232
+        },
+        "2020": {
+          "PF": 1.2341,
+          "trades": 1173,
+          "wr": 0.5524,
+          "tp": 427,
+          "sl": 346
+        },
+        "2021": {
+          "PF": 0.8665,
+          "trades": 1298,
+          "wr": 0.4642,
+          "tp": 409,
+          "sl": 472
+        },
+        "2022": {
+          "PF": 0.9127,
+          "trades": 1016,
+          "wr": 0.4772,
+          "tp": 366,
+          "sl": 401
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0494,
+        "ci95_low": 0.9785,
+        "ci95_high": 1.123,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.465034
+    },
+    {
+      "family": "threshold",
+      "value": 0.35,
+      "threshold_equivalent": null,
+      "PF": 1.0389,
+      "trades": 3286,
+      "wr": 0.5095,
+      "tp": 1175,
+      "sl": 1131,
+      "trades_per_year": 938.8571,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3022,
+      "per_year": {
+        "2019": {
+          "PF": 1.3613,
+          "trades": 663,
+          "wr": 0.5765,
+          "tp": 260,
+          "sl": 191
+        },
+        "2020": {
+          "PF": 1.1923,
+          "trades": 866,
+          "wr": 0.5439,
+          "tp": 310,
+          "sl": 260
+        },
+        "2021": {
+          "PF": 0.9123,
+          "trades": 993,
+          "wr": 0.4771,
+          "tp": 333,
+          "sl": 365
+        },
+        "2022": {
+          "PF": 0.8635,
+          "trades": 764,
+          "wr": 0.4634,
+          "tp": 272,
+          "sl": 315
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0393,
+        "ci95_low": 0.9556,
+        "ci95_high": 1.1334,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.449907
+    },
+    {
+      "family": "top_k_pct",
+      "value": 30.0,
+      "threshold_equivalent": 0.3637249171733856,
+      "PF": 1.0181,
+      "trades": 2835,
+      "wr": 0.5045,
+      "tp": 1012,
+      "sl": 994,
+      "trades_per_year": 810.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2981,
+      "per_year": {
+        "2019": {
+          "PF": 1.3793,
+          "trades": 603,
+          "wr": 0.5797,
+          "tp": 240,
+          "sl": 174
+        },
+        "2020": {
+          "PF": 1.0647,
+          "trades": 733,
+          "wr": 0.5157,
+          "tp": 247,
+          "sl": 232
+        },
+        "2021": {
+          "PF": 0.9268,
+          "trades": 845,
+          "wr": 0.481,
+          "tp": 291,
+          "sl": 314
+        },
+        "2022": {
+          "PF": 0.854,
+          "trades": 654,
+          "wr": 0.4606,
+          "tp": 234,
+          "sl": 274
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0188,
+        "ci95_low": 0.9349,
+        "ci95_high": 1.1094,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.42929
+    },
+    {
+      "family": "top_k_pct",
+      "value": 25.0,
+      "threshold_equivalent": 0.37935972213745117,
+      "PF": 0.9882,
+      "trades": 2363,
+      "wr": 0.497,
+      "tp": 841,
+      "sl": 851,
+      "trades_per_year": 675.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2945,
+      "per_year": {
+        "2019": {
+          "PF": 1.2812,
+          "trades": 525,
+          "wr": 0.5616,
+          "tp": 205,
+          "sl": 160
+        },
+        "2020": {
+          "PF": 1.0753,
+          "trades": 599,
+          "wr": 0.5181,
+          "tp": 200,
+          "sl": 186
+        },
+        "2021": {
+          "PF": 0.8996,
+          "trades": 696,
+          "wr": 0.4736,
+          "tp": 242,
+          "sl": 269
+        },
+        "2022": {
+          "PF": 0.822,
+          "trades": 543,
+          "wr": 0.4512,
+          "tp": 194,
+          "sl": 236
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9911,
+        "ci95_low": 0.9,
+        "ci95_high": 1.0858,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.394269
+    },
+    {
+      "family": "threshold",
+      "value": 0.38,
+      "threshold_equivalent": null,
+      "PF": 0.9882,
+      "trades": 2349,
+      "wr": 0.497,
+      "tp": 837,
+      "sl": 847,
+      "trades_per_year": 671.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2937,
+      "per_year": {
+        "2019": {
+          "PF": 1.2975,
+          "trades": 522,
+          "wr": 0.5647,
+          "tp": 205,
+          "sl": 158
+        },
+        "2020": {
+          "PF": 1.0645,
+          "trades": 596,
+          "wr": 0.5156,
+          "tp": 198,
+          "sl": 186
+        },
+        "2021": {
+          "PF": 0.8989,
+          "trades": 690,
+          "wr": 0.4734,
+          "tp": 240,
+          "sl": 267
+        },
+        "2022": {
+          "PF": 0.822,
+          "trades": 541,
+          "wr": 0.4512,
+          "tp": 194,
+          "sl": 236
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9896,
+        "ci95_low": 0.8974,
+        "ci95_high": 1.0825,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.395848
+    },
+    {
+      "family": "top_k_pct",
+      "value": 20.0,
+      "threshold_equivalent": 0.3970574736595154,
+      "PF": 0.9583,
+      "trades": 1890,
+      "wr": 0.4893,
+      "tp": 666,
+      "sl": 695,
+      "trades_per_year": 540.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2926,
+      "per_year": {
+        "2019": {
+          "PF": 1.3435,
+          "trades": 435,
+          "wr": 0.5733,
+          "tp": 176,
+          "sl": 131
+        },
+        "2020": {
+          "PF": 1.0205,
+          "trades": 464,
+          "wr": 0.5051,
+          "tp": 149,
+          "sl": 146
+        },
+        "2021": {
+          "PF": 0.907,
+          "trades": 553,
+          "wr": 0.4756,
+          "tp": 195,
+          "sl": 215
+        },
+        "2022": {
+          "PF": 0.7192,
+          "trades": 438,
+          "wr": 0.4183,
+          "tp": 146,
+          "sl": 203
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9611,
+        "ci95_low": 0.8699,
+        "ci95_high": 1.0622,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.355817
+    },
+    {
+      "family": "threshold",
+      "value": 0.4,
+      "threshold_equivalent": null,
+      "PF": 0.9561,
+      "trades": 1798,
+      "wr": 0.4888,
+      "tp": 632,
+      "sl": 661,
+      "trades_per_year": 513.7143,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.292,
+      "per_year": {
+        "2019": {
+          "PF": 1.371,
+          "trades": 421,
+          "wr": 0.5782,
+          "tp": 170,
+          "sl": 124
+        },
+        "2020": {
+          "PF": 1.0072,
+          "trades": 434,
+          "wr": 0.5018,
+          "tp": 139,
+          "sl": 138
+        },
+        "2021": {
+          "PF": 0.8883,
+          "trades": 525,
+          "wr": 0.4704,
+          "tp": 183,
+          "sl": 206
+        },
+        "2022": {
+          "PF": 0.7254,
+          "trades": 418,
+          "wr": 0.4204,
+          "tp": 140,
+          "sl": 193
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9571,
+        "ci95_low": 0.8575,
+        "ci95_high": 1.0663,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.353855
+    },
+    {
+      "family": "top_k_pct",
+      "value": 15.0,
+      "threshold_equivalent": 0.4149622917175293,
+      "PF": 0.9788,
+      "trades": 1418,
+      "wr": 0.4946,
+      "tp": 508,
+      "sl": 519,
+      "trades_per_year": 405.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2969,
+      "per_year": {
+        "2019": {
+          "PF": 1.3019,
+          "trades": 356,
+          "wr": 0.5656,
+          "tp": 138,
+          "sl": 106
+        },
+        "2020": {
+          "PF": 1.0556,
+          "trades": 335,
+          "wr": 0.5135,
+          "tp": 114,
+          "sl": 108
+        },
+        "2021": {
+          "PF": 0.9747,
+          "trades": 421,
+          "wr": 0.4936,
+          "tp": 154,
+          "sl": 158
+        },
+        "2022": {
+          "PF": 0.6939,
+          "trades": 306,
+          "wr": 0.4096,
+          "tp": 102,
+          "sl": 147
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9805,
+        "ci95_low": 0.8656,
+        "ci95_high": 1.1008,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.376394
+    },
+    {
+      "family": "top_k_pct",
+      "value": 12.5,
+      "threshold_equivalent": 0.42633602023124695,
+      "PF": 1.007,
+      "trades": 1181,
+      "wr": 0.5018,
+      "tp": 429,
+      "sl": 426,
+      "trades_per_year": 337.4286,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3006,
+      "per_year": {
+        "2019": {
+          "PF": 1.1633,
+          "trades": 310,
+          "wr": 0.5377,
+          "tp": 114,
+          "sl": 98
+        },
+        "2020": {
+          "PF": 1.1548,
+          "trades": 269,
+          "wr": 0.5359,
+          "tp": 97,
+          "sl": 84
+        },
+        "2021": {
+          "PF": 1.0385,
+          "trades": 355,
+          "wr": 0.5094,
+          "tp": 135,
+          "sl": 130
+        },
+        "2022": {
+          "PF": 0.7281,
+          "trades": 247,
+          "wr": 0.4213,
+          "tp": 83,
+          "sl": 114
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0132,
+        "ci95_low": 0.8824,
+        "ci95_high": 1.1487,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.408606
+    }
+  ],
+  "best_by_stability_top10": [
+    {
+      "family": "top_k_pct",
+      "value": 1.5,
+      "threshold_equivalent": 0.5359389781951904,
+      "PF": 1.9722,
+      "trades": 142,
+      "wr": 0.6636,
+      "tp": 71,
+      "sl": 36,
+      "trades_per_year": 40.5714,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4789,
+      "per_year": {
+        "2019": {
+          "PF": 1.8824,
+          "trades": 68,
+          "wr": 0.6531,
+          "tp": 32,
+          "sl": 17
+        },
+        "2020": {
+          "PF": 3.0,
+          "trades": 18,
+          "wr": 0.75,
+          "tp": 12,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.1,
+          "trades": 38,
+          "wr": 0.6774,
+          "tp": 21,
+          "sl": 10
+        },
+        "2022": {
+          "PF": 1.2,
+          "trades": 18,
+          "wr": 0.5455,
+          "tp": 6,
+          "sl": 5
+        }
+      },
+      "bootstrap": {
+        "mean": 2.0315,
+        "ci95_low": 1.3554,
+        "ci95_high": 3.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 2.055532
+    },
+    {
+      "family": "threshold",
+      "value": 0.53,
+      "threshold_equivalent": null,
+      "PF": 1.7778,
+      "trades": 162,
+      "wr": 0.64,
+      "tp": 80,
+      "sl": 45,
+      "trades_per_year": 46.2857,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4506,
+      "per_year": {
+        "2019": {
+          "PF": 1.7,
+          "trades": 73,
+          "wr": 0.6296,
+          "tp": 34,
+          "sl": 20
+        },
+        "2020": {
+          "PF": 1.8571,
+          "trades": 22,
+          "wr": 0.65,
+          "tp": 13,
+          "sl": 7
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 45,
+          "wr": 0.6667,
+          "tp": 24,
+          "sl": 12
+        },
+        "2022": {
+          "PF": 1.5,
+          "trades": 22,
+          "wr": 0.6,
+          "tp": 9,
+          "sl": 6
+        }
+      },
+      "bootstrap": {
+        "mean": 1.8043,
+        "ci95_low": 1.2407,
+        "ci95_high": 2.5758,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.953385
+    },
+    {
+      "family": "threshold",
+      "value": 0.55,
+      "threshold_equivalent": null,
+      "PF": 1.8966,
+      "trades": 111,
+      "wr": 0.6548,
+      "tp": 55,
+      "sl": 29,
+      "trades_per_year": 31.7143,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.5135,
+      "per_year": {
+        "2019": {
+          "PF": 1.9286,
+          "trades": 57,
+          "wr": 0.6585,
+          "tp": 27,
+          "sl": 14
+        },
+        "2020": {
+          "PF": 2.25,
+          "trades": 15,
+          "wr": 0.6923,
+          "tp": 9,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 25,
+          "wr": 0.6667,
+          "tp": 14,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 1.25,
+          "trades": 14,
+          "wr": 0.5556,
+          "tp": 5,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.9501,
+        "ci95_low": 1.2142,
+        "ci95_high": 3.0476,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.845341
+    },
+    {
+      "family": "top_k_pct",
+      "value": 2.0,
+      "threshold_equivalent": 0.5233010053634644,
+      "PF": 1.5254,
+      "trades": 189,
+      "wr": 0.604,
+      "tp": 90,
+      "sl": 59,
+      "trades_per_year": 54.0,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4497,
+      "per_year": {
+        "2019": {
+          "PF": 1.2759,
+          "trades": 85,
+          "wr": 0.5606,
+          "tp": 37,
+          "sl": 29
+        },
+        "2020": {
+          "PF": 1.5556,
+          "trades": 26,
+          "wr": 0.6087,
+          "tp": 14,
+          "sl": 9
+        },
+        "2021": {
+          "PF": 2.2308,
+          "trades": 52,
+          "wr": 0.6905,
+          "tp": 29,
+          "sl": 13
+        },
+        "2022": {
+          "PF": 1.25,
+          "trades": 26,
+          "wr": 0.5556,
+          "tp": 10,
+          "sl": 8
+        }
+      },
+      "bootstrap": {
+        "mean": 1.5554,
+        "ci95_low": 1.1045,
+        "ci95_high": 2.0852,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.678747
+    },
+    {
+      "family": "top_k_pct",
+      "value": 1.0,
+      "threshold_equivalent": 0.5564892292022705,
+      "PF": 1.6154,
+      "trades": 95,
+      "wr": 0.6176,
+      "tp": 42,
+      "sl": 26,
+      "trades_per_year": 27.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.5368,
+      "per_year": {
+        "2019": {
+          "PF": 1.9167,
+          "trades": 51,
+          "wr": 0.6571,
+          "tp": 23,
+          "sl": 12
+        },
+        "2020": {
+          "PF": 2.0,
+          "trades": 11,
+          "wr": 0.6667,
+          "tp": 6,
+          "sl": 3
+        },
+        "2021": {
+          "PF": 1.4286,
+          "trades": 21,
+          "wr": 0.5882,
+          "tp": 10,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 0.75,
+          "trades": 12,
+          "wr": 0.4286,
+          "tp": 3,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.6447,
+        "ci95_low": 0.9706,
+        "ci95_high": 2.6111,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.496371
+    },
+    {
+      "family": "threshold",
+      "value": 0.3,
+      "threshold_equivalent": null,
+      "PF": 1.0551,
+      "trades": 4939,
+      "wr": 0.5134,
+      "tp": 1743,
+      "sl": 1652,
+      "trades_per_year": 1411.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3037,
+      "per_year": {
+        "2019": {
+          "PF": 1.3953,
+          "trades": 874,
+          "wr": 0.5825,
+          "tp": 353,
+          "sl": 253
+        },
+        "2020": {
+          "PF": 1.2344,
+          "trades": 1369,
+          "wr": 0.5525,
+          "tp": 495,
+          "sl": 401
+        },
+        "2021": {
+          "PF": 0.8694,
+          "trades": 1500,
+          "wr": 0.4651,
+          "tp": 466,
+          "sl": 536
+        },
+        "2022": {
+          "PF": 0.9286,
+          "trades": 1196,
+          "wr": 0.4815,
+          "tp": 429,
+          "sl": 462
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0567,
+        "ci95_low": 0.9842,
+        "ci95_high": 1.1303,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.469321
+    },
+    {
+      "family": "threshold",
+      "value": 0.32,
+      "threshold_equivalent": null,
+      "PF": 1.0503,
+      "trades": 4290,
+      "wr": 0.5123,
+      "tp": 1524,
+      "sl": 1451,
+      "trades_per_year": 1225.7143,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3026,
+      "per_year": {
+        "2019": {
+          "PF": 1.3879,
+          "trades": 803,
+          "wr": 0.5812,
+          "tp": 322,
+          "sl": 232
+        },
+        "2020": {
+          "PF": 1.2341,
+          "trades": 1173,
+          "wr": 0.5524,
+          "tp": 427,
+          "sl": 346
+        },
+        "2021": {
+          "PF": 0.8665,
+          "trades": 1298,
+          "wr": 0.4642,
+          "tp": 409,
+          "sl": 472
+        },
+        "2022": {
+          "PF": 0.9127,
+          "trades": 1016,
+          "wr": 0.4772,
+          "tp": 366,
+          "sl": 401
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0494,
+        "ci95_low": 0.9785,
+        "ci95_high": 1.123,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.465034
+    },
+    {
+      "family": "threshold",
+      "value": 0.43,
+      "threshold_equivalent": null,
+      "PF": 1.0325,
+      "trades": 1117,
+      "wr": 0.508,
+      "tp": 413,
+      "sl": 400,
+      "trades_per_year": 319.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.2972,
+      "per_year": {
+        "2019": {
+          "PF": 1.1649,
+          "trades": 306,
+          "wr": 0.5381,
+          "tp": 113,
+          "sl": 97
+        },
+        "2020": {
+          "PF": 1.1688,
+          "trades": 250,
+          "wr": 0.5389,
+          "tp": 90,
+          "sl": 77
+        },
+        "2021": {
+          "PF": 1.0917,
+          "trades": 332,
+          "wr": 0.5219,
+          "tp": 131,
+          "sl": 120
+        },
+        "2022": {
+          "PF": 0.7453,
+          "trades": 229,
+          "wr": 0.427,
+          "tp": 79,
+          "sl": 106
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0348,
+        "ci95_low": 0.9016,
+        "ci95_high": 1.1835,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.451231
+    },
+    {
+      "family": "threshold",
+      "value": 0.35,
+      "threshold_equivalent": null,
+      "PF": 1.0389,
+      "trades": 3286,
+      "wr": 0.5095,
+      "tp": 1175,
+      "sl": 1131,
+      "trades_per_year": 938.8571,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3022,
+      "per_year": {
+        "2019": {
+          "PF": 1.3613,
+          "trades": 663,
+          "wr": 0.5765,
+          "tp": 260,
+          "sl": 191
+        },
+        "2020": {
+          "PF": 1.1923,
+          "trades": 866,
+          "wr": 0.5439,
+          "tp": 310,
+          "sl": 260
+        },
+        "2021": {
+          "PF": 0.9123,
+          "trades": 993,
+          "wr": 0.4771,
+          "tp": 333,
+          "sl": 365
+        },
+        "2022": {
+          "PF": 0.8635,
+          "trades": 764,
+          "wr": 0.4634,
+          "tp": 272,
+          "sl": 315
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0393,
+        "ci95_low": 0.9556,
+        "ci95_high": 1.1334,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.449907
+    },
+    {
+      "family": "top_k_pct",
+      "value": 30.0,
+      "threshold_equivalent": 0.3637249171733856,
+      "PF": 1.0181,
+      "trades": 2835,
+      "wr": 0.5045,
+      "tp": 1012,
+      "sl": 994,
+      "trades_per_year": 810.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2981,
+      "per_year": {
+        "2019": {
+          "PF": 1.3793,
+          "trades": 603,
+          "wr": 0.5797,
+          "tp": 240,
+          "sl": 174
+        },
+        "2020": {
+          "PF": 1.0647,
+          "trades": 733,
+          "wr": 0.5157,
+          "tp": 247,
+          "sl": 232
+        },
+        "2021": {
+          "PF": 0.9268,
+          "trades": 845,
+          "wr": 0.481,
+          "tp": 291,
+          "sl": 314
+        },
+        "2022": {
+          "PF": 0.854,
+          "trades": 654,
+          "wr": 0.4606,
+          "tp": 234,
+          "sl": 274
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0188,
+        "ci95_low": 0.9349,
+        "ci95_high": 1.1094,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.42929
+    }
+  ],
+  "all_results": [
+    {
+      "family": "threshold",
+      "value": 0.3,
+      "threshold_equivalent": null,
+      "PF": 1.0551,
+      "trades": 4939,
+      "wr": 0.5134,
+      "tp": 1743,
+      "sl": 1652,
+      "trades_per_year": 1411.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3037,
+      "per_year": {
+        "2019": {
+          "PF": 1.3953,
+          "trades": 874,
+          "wr": 0.5825,
+          "tp": 353,
+          "sl": 253
+        },
+        "2020": {
+          "PF": 1.2344,
+          "trades": 1369,
+          "wr": 0.5525,
+          "tp": 495,
+          "sl": 401
+        },
+        "2021": {
+          "PF": 0.8694,
+          "trades": 1500,
+          "wr": 0.4651,
+          "tp": 466,
+          "sl": 536
+        },
+        "2022": {
+          "PF": 0.9286,
+          "trades": 1196,
+          "wr": 0.4815,
+          "tp": 429,
+          "sl": 462
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0567,
+        "ci95_low": 0.9842,
+        "ci95_high": 1.1303,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.469321
+    },
+    {
+      "family": "threshold",
+      "value": 0.32,
+      "threshold_equivalent": null,
+      "PF": 1.0503,
+      "trades": 4290,
+      "wr": 0.5123,
+      "tp": 1524,
+      "sl": 1451,
+      "trades_per_year": 1225.7143,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3026,
+      "per_year": {
+        "2019": {
+          "PF": 1.3879,
+          "trades": 803,
+          "wr": 0.5812,
+          "tp": 322,
+          "sl": 232
+        },
+        "2020": {
+          "PF": 1.2341,
+          "trades": 1173,
+          "wr": 0.5524,
+          "tp": 427,
+          "sl": 346
+        },
+        "2021": {
+          "PF": 0.8665,
+          "trades": 1298,
+          "wr": 0.4642,
+          "tp": 409,
+          "sl": 472
+        },
+        "2022": {
+          "PF": 0.9127,
+          "trades": 1016,
+          "wr": 0.4772,
+          "tp": 366,
+          "sl": 401
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0494,
+        "ci95_low": 0.9785,
+        "ci95_high": 1.123,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.465034
+    },
+    {
+      "family": "threshold",
+      "value": 0.35,
+      "threshold_equivalent": null,
+      "PF": 1.0389,
+      "trades": 3286,
+      "wr": 0.5095,
+      "tp": 1175,
+      "sl": 1131,
+      "trades_per_year": 938.8571,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3022,
+      "per_year": {
+        "2019": {
+          "PF": 1.3613,
+          "trades": 663,
+          "wr": 0.5765,
+          "tp": 260,
+          "sl": 191
+        },
+        "2020": {
+          "PF": 1.1923,
+          "trades": 866,
+          "wr": 0.5439,
+          "tp": 310,
+          "sl": 260
+        },
+        "2021": {
+          "PF": 0.9123,
+          "trades": 993,
+          "wr": 0.4771,
+          "tp": 333,
+          "sl": 365
+        },
+        "2022": {
+          "PF": 0.8635,
+          "trades": 764,
+          "wr": 0.4634,
+          "tp": 272,
+          "sl": 315
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0393,
+        "ci95_low": 0.9556,
+        "ci95_high": 1.1334,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.449907
+    },
+    {
+      "family": "threshold",
+      "value": 0.38,
+      "threshold_equivalent": null,
+      "PF": 0.9882,
+      "trades": 2349,
+      "wr": 0.497,
+      "tp": 837,
+      "sl": 847,
+      "trades_per_year": 671.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2937,
+      "per_year": {
+        "2019": {
+          "PF": 1.2975,
+          "trades": 522,
+          "wr": 0.5647,
+          "tp": 205,
+          "sl": 158
+        },
+        "2020": {
+          "PF": 1.0645,
+          "trades": 596,
+          "wr": 0.5156,
+          "tp": 198,
+          "sl": 186
+        },
+        "2021": {
+          "PF": 0.8989,
+          "trades": 690,
+          "wr": 0.4734,
+          "tp": 240,
+          "sl": 267
+        },
+        "2022": {
+          "PF": 0.822,
+          "trades": 541,
+          "wr": 0.4512,
+          "tp": 194,
+          "sl": 236
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9896,
+        "ci95_low": 0.8974,
+        "ci95_high": 1.0825,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.395848
+    },
+    {
+      "family": "threshold",
+      "value": 0.4,
+      "threshold_equivalent": null,
+      "PF": 0.9561,
+      "trades": 1798,
+      "wr": 0.4888,
+      "tp": 632,
+      "sl": 661,
+      "trades_per_year": 513.7143,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.292,
+      "per_year": {
+        "2019": {
+          "PF": 1.371,
+          "trades": 421,
+          "wr": 0.5782,
+          "tp": 170,
+          "sl": 124
+        },
+        "2020": {
+          "PF": 1.0072,
+          "trades": 434,
+          "wr": 0.5018,
+          "tp": 139,
+          "sl": 138
+        },
+        "2021": {
+          "PF": 0.8883,
+          "trades": 525,
+          "wr": 0.4704,
+          "tp": 183,
+          "sl": 206
+        },
+        "2022": {
+          "PF": 0.7254,
+          "trades": 418,
+          "wr": 0.4204,
+          "tp": 140,
+          "sl": 193
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9571,
+        "ci95_low": 0.8575,
+        "ci95_high": 1.0663,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.353855
+    },
+    {
+      "family": "threshold",
+      "value": 0.43,
+      "threshold_equivalent": null,
+      "PF": 1.0325,
+      "trades": 1117,
+      "wr": 0.508,
+      "tp": 413,
+      "sl": 400,
+      "trades_per_year": 319.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.2972,
+      "per_year": {
+        "2019": {
+          "PF": 1.1649,
+          "trades": 306,
+          "wr": 0.5381,
+          "tp": 113,
+          "sl": 97
+        },
+        "2020": {
+          "PF": 1.1688,
+          "trades": 250,
+          "wr": 0.5389,
+          "tp": 90,
+          "sl": 77
+        },
+        "2021": {
+          "PF": 1.0917,
+          "trades": 332,
+          "wr": 0.5219,
+          "tp": 131,
+          "sl": 120
+        },
+        "2022": {
+          "PF": 0.7453,
+          "trades": 229,
+          "wr": 0.427,
+          "tp": 79,
+          "sl": 106
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0348,
+        "ci95_low": 0.9016,
+        "ci95_high": 1.1835,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.451231
+    },
+    {
+      "family": "threshold",
+      "value": 0.45,
+      "threshold_equivalent": null,
+      "PF": 1.0138,
+      "trades": 791,
+      "wr": 0.5034,
+      "tp": 294,
+      "sl": 290,
+      "trades_per_year": 226.0,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.311,
+      "per_year": {
+        "2019": {
+          "PF": 1.1139,
+          "trades": 238,
+          "wr": 0.5269,
+          "tp": 88,
+          "sl": 79
+        },
+        "2020": {
+          "PF": 1.1667,
+          "trades": 157,
+          "wr": 0.5385,
+          "tp": 56,
+          "sl": 48
+        },
+        "2021": {
+          "PF": 1.1705,
+          "trades": 246,
+          "wr": 0.5393,
+          "tp": 103,
+          "sl": 88
+        },
+        "2022": {
+          "PF": 0.6267,
+          "trades": 150,
+          "wr": 0.3852,
+          "tp": 47,
+          "sl": 75
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0156,
+        "ci95_low": 0.863,
+        "ci95_high": 1.1938,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.397019
+    },
+    {
+      "family": "threshold",
+      "value": 0.48,
+      "threshold_equivalent": null,
+      "PF": 1.069,
+      "trades": 463,
+      "wr": 0.5167,
+      "tp": 186,
+      "sl": 174,
+      "trades_per_year": 132.2857,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3693,
+      "per_year": {
+        "2019": {
+          "PF": 1.0806,
+          "trades": 171,
+          "wr": 0.5194,
+          "tp": 67,
+          "sl": 62
+        },
+        "2020": {
+          "PF": 1.24,
+          "trades": 74,
+          "wr": 0.5536,
+          "tp": 31,
+          "sl": 25
+        },
+        "2021": {
+          "PF": 1.1887,
+          "trades": 146,
+          "wr": 0.5431,
+          "tp": 63,
+          "sl": 53
+        },
+        "2022": {
+          "PF": 0.7353,
+          "trades": 72,
+          "wr": 0.4237,
+          "tp": 25,
+          "sl": 34
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0774,
+        "ci95_low": 0.8776,
+        "ci95_high": 1.3379,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.348371
+    },
+    {
+      "family": "threshold",
+      "value": 0.5,
+      "threshold_equivalent": null,
+      "PF": 1.1228,
+      "trades": 306,
+      "wr": 0.5289,
+      "tp": 128,
+      "sl": 114,
+      "trades_per_year": 87.4286,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.4248,
+      "per_year": {
+        "2019": {
+          "PF": 1.0612,
+          "trades": 130,
+          "wr": 0.5149,
+          "tp": 52,
+          "sl": 49
+        },
+        "2020": {
+          "PF": 0.8947,
+          "trades": 41,
+          "wr": 0.4722,
+          "tp": 17,
+          "sl": 19
+        },
+        "2021": {
+          "PF": 1.72,
+          "trades": 88,
+          "wr": 0.6324,
+          "tp": 43,
+          "sl": 25
+        },
+        "2022": {
+          "PF": 0.7619,
+          "trades": 47,
+          "wr": 0.4324,
+          "tp": 16,
+          "sl": 21
+        }
+      },
+      "bootstrap": {
+        "mean": 1.1357,
+        "ci95_low": 0.8607,
+        "ci95_high": 1.4314,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.291587
+    },
+    {
+      "family": "threshold",
+      "value": 0.53,
+      "threshold_equivalent": null,
+      "PF": 1.7778,
+      "trades": 162,
+      "wr": 0.64,
+      "tp": 80,
+      "sl": 45,
+      "trades_per_year": 46.2857,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4506,
+      "per_year": {
+        "2019": {
+          "PF": 1.7,
+          "trades": 73,
+          "wr": 0.6296,
+          "tp": 34,
+          "sl": 20
+        },
+        "2020": {
+          "PF": 1.8571,
+          "trades": 22,
+          "wr": 0.65,
+          "tp": 13,
+          "sl": 7
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 45,
+          "wr": 0.6667,
+          "tp": 24,
+          "sl": 12
+        },
+        "2022": {
+          "PF": 1.5,
+          "trades": 22,
+          "wr": 0.6,
+          "tp": 9,
+          "sl": 6
+        }
+      },
+      "bootstrap": {
+        "mean": 1.8043,
+        "ci95_low": 1.2407,
+        "ci95_high": 2.5758,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.953385
+    },
+    {
+      "family": "threshold",
+      "value": 0.55,
+      "threshold_equivalent": null,
+      "PF": 1.8966,
+      "trades": 111,
+      "wr": 0.6548,
+      "tp": 55,
+      "sl": 29,
+      "trades_per_year": 31.7143,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.5135,
+      "per_year": {
+        "2019": {
+          "PF": 1.9286,
+          "trades": 57,
+          "wr": 0.6585,
+          "tp": 27,
+          "sl": 14
+        },
+        "2020": {
+          "PF": 2.25,
+          "trades": 15,
+          "wr": 0.6923,
+          "tp": 9,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.0,
+          "trades": 25,
+          "wr": 0.6667,
+          "tp": 14,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 1.25,
+          "trades": 14,
+          "wr": 0.5556,
+          "tp": 5,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.9501,
+        "ci95_low": 1.2142,
+        "ci95_high": 3.0476,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.845341
+    },
+    {
+      "family": "threshold",
+      "value": 0.58,
+      "threshold_equivalent": null,
+      "PF": 1.5294,
+      "trades": 59,
+      "wr": 0.6047,
+      "tp": 26,
+      "sl": 17,
+      "trades_per_year": 16.8571,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.6441,
+      "per_year": {
+        "2019": {
+          "PF": 2.5714,
+          "trades": 38,
+          "wr": 0.72,
+          "tp": 18,
+          "sl": 7
+        },
+        "2020": {
+          "PF": 0.5,
+          "trades": 3,
+          "wr": 0.3333,
+          "tp": 1,
+          "sl": 2
+        },
+        "2021": {
+          "PF": 1.2,
+          "trades": 12,
+          "wr": 0.5455,
+          "tp": 6,
+          "sl": 5
+        },
+        "2022": {
+          "PF": 0.3333,
+          "trades": 6,
+          "wr": 0.25,
+          "tp": 1,
+          "sl": 3
+        }
+      },
+      "bootstrap": {
+        "mean": 1.6399,
+        "ci95_low": 0.8,
+        "ci95_high": 3.0911,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.088725
+    },
+    {
+      "family": "threshold",
+      "value": 0.6,
+      "threshold_equivalent": null,
+      "PF": 2.5714,
+      "trades": 35,
+      "wr": 0.72,
+      "tp": 18,
+      "sl": 7,
+      "trades_per_year": 10.0,
+      "negative_years": 0,
+      "active_years": 3,
+      "max_year_trade_share": 0.7714,
+      "per_year": {
+        "2019": {
+          "PF": 3.25,
+          "trades": 27,
+          "wr": 0.7647,
+          "tp": 13,
+          "sl": 4
+        },
+        "2020": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 1.3333,
+          "trades": 7,
+          "wr": 0.5714,
+          "tp": 4,
+          "sl": 3
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": {
+        "mean": 3.1534,
+        "ci95_low": 1.0998,
+        "ci95_high": 8.3375,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.734686
+    },
+    {
+      "family": "threshold",
+      "value": 0.63,
+      "threshold_equivalent": null,
+      "PF": 8.0,
+      "trades": 16,
+      "wr": 0.8889,
+      "tp": 8,
+      "sl": 1,
+      "trades_per_year": 4.5714,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 8.0,
+          "trades": 16,
+          "wr": 0.8889,
+          "tp": 8,
+          "sl": 1
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": {
+        "mean": 5.9748,
+        "ci95_low": 1.6667,
+        "ci95_high": 11.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 637
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.65,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 10,
+      "wr": 1.0,
+      "tp": 6,
+      "sl": 0,
+      "trades_per_year": 2.8571,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 10,
+          "wr": 1.0,
+          "tp": 6,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.68,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 4,
+      "wr": 1.0,
+      "tp": 3,
+      "sl": 0,
+      "trades_per_year": 1.1429,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 4,
+          "wr": 1.0,
+          "tp": 3,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.7,
+      "threshold_equivalent": null,
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "trades_per_year": 0.2857,
+      "negative_years": 0,
+      "active_years": 1,
+      "max_year_trade_share": 1.0,
+      "per_year": {
+        "2019": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.73,
+      "threshold_equivalent": null,
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "trades_per_year": 0.0,
+      "negative_years": 0,
+      "active_years": 0,
+      "max_year_trade_share": 0.0,
+      "per_year": {
+        "2019": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "threshold",
+      "value": 0.75,
+      "threshold_equivalent": null,
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "trades_per_year": 0.0,
+      "negative_years": 0,
+      "active_years": 0,
+      "max_year_trade_share": 0.0,
+      "per_year": {
+        "2019": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0
+        }
+      },
+      "bootstrap": null,
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": false,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": false,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 0.0
+    },
+    {
+      "family": "top_k_pct",
+      "value": 0.5,
+      "threshold_equivalent": 0.5891655087471008,
+      "PF": 2.0909,
+      "trades": 47,
+      "wr": 0.6765,
+      "tp": 23,
+      "sl": 11,
+      "trades_per_year": 13.4286,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.7234,
+      "per_year": {
+        "2019": {
+          "PF": 3.4,
+          "trades": 34,
+          "wr": 0.7727,
+          "tp": 17,
+          "sl": 5
+        },
+        "2020": {
+          "PF": 99.0,
+          "trades": 1,
+          "wr": 1.0,
+          "tp": 1,
+          "sl": 0
+        },
+        "2021": {
+          "PF": 0.8,
+          "trades": 9,
+          "wr": 0.4444,
+          "tp": 4,
+          "sl": 5
+        },
+        "2022": {
+          "PF": 1.0,
+          "trades": 3,
+          "wr": 0.5,
+          "tp": 1,
+          "sl": 1
+        }
+      },
+      "bootstrap": {
+        "mean": 2.3536,
+        "ci95_low": 1.0624,
+        "ci95_high": 4.8333,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.156668
+    },
+    {
+      "family": "top_k_pct",
+      "value": 0.75,
+      "threshold_equivalent": 0.5691271424293518,
+      "PF": 1.3636,
+      "trades": 71,
+      "wr": 0.5769,
+      "tp": 30,
+      "sl": 22,
+      "trades_per_year": 20.2857,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.6056,
+      "per_year": {
+        "2019": {
+          "PF": 1.9,
+          "trades": 43,
+          "wr": 0.6552,
+          "tp": 19,
+          "sl": 10
+        },
+        "2020": {
+          "PF": 1.5,
+          "trades": 7,
+          "wr": 0.6,
+          "tp": 3,
+          "sl": 2
+        },
+        "2021": {
+          "PF": 1.1667,
+          "trades": 14,
+          "wr": 0.5385,
+          "tp": 7,
+          "sl": 6
+        },
+        "2022": {
+          "PF": 0.25,
+          "trades": 7,
+          "wr": 0.2,
+          "tp": 1,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.4364,
+        "ci95_low": 0.7692,
+        "ci95_high": 2.5725,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": false,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.075515
+    },
+    {
+      "family": "top_k_pct",
+      "value": 1.0,
+      "threshold_equivalent": 0.5564892292022705,
+      "PF": 1.6154,
+      "trades": 95,
+      "wr": 0.6176,
+      "tp": 42,
+      "sl": 26,
+      "trades_per_year": 27.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.5368,
+      "per_year": {
+        "2019": {
+          "PF": 1.9167,
+          "trades": 51,
+          "wr": 0.6571,
+          "tp": 23,
+          "sl": 12
+        },
+        "2020": {
+          "PF": 2.0,
+          "trades": 11,
+          "wr": 0.6667,
+          "tp": 6,
+          "sl": 3
+        },
+        "2021": {
+          "PF": 1.4286,
+          "trades": 21,
+          "wr": 0.5882,
+          "tp": 10,
+          "sl": 7
+        },
+        "2022": {
+          "PF": 0.75,
+          "trades": 12,
+          "wr": 0.4286,
+          "tp": 3,
+          "sl": 4
+        }
+      },
+      "bootstrap": {
+        "mean": 1.6447,
+        "ci95_low": 0.9706,
+        "ci95_high": 2.6111,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.496371
+    },
+    {
+      "family": "top_k_pct",
+      "value": 1.5,
+      "threshold_equivalent": 0.5359389781951904,
+      "PF": 1.9722,
+      "trades": 142,
+      "wr": 0.6636,
+      "tp": 71,
+      "sl": 36,
+      "trades_per_year": 40.5714,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4789,
+      "per_year": {
+        "2019": {
+          "PF": 1.8824,
+          "trades": 68,
+          "wr": 0.6531,
+          "tp": 32,
+          "sl": 17
+        },
+        "2020": {
+          "PF": 3.0,
+          "trades": 18,
+          "wr": 0.75,
+          "tp": 12,
+          "sl": 4
+        },
+        "2021": {
+          "PF": 2.1,
+          "trades": 38,
+          "wr": 0.6774,
+          "tp": 21,
+          "sl": 10
+        },
+        "2022": {
+          "PF": 1.2,
+          "trades": 18,
+          "wr": 0.5455,
+          "tp": 6,
+          "sl": 5
+        }
+      },
+      "bootstrap": {
+        "mean": 2.0315,
+        "ci95_low": 1.3554,
+        "ci95_high": 3.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 2.055532
+    },
+    {
+      "family": "top_k_pct",
+      "value": 2.0,
+      "threshold_equivalent": 0.5233010053634644,
+      "PF": 1.5254,
+      "trades": 189,
+      "wr": 0.604,
+      "tp": 90,
+      "sl": 59,
+      "trades_per_year": 54.0,
+      "negative_years": 0,
+      "active_years": 4,
+      "max_year_trade_share": 0.4497,
+      "per_year": {
+        "2019": {
+          "PF": 1.2759,
+          "trades": 85,
+          "wr": 0.5606,
+          "tp": 37,
+          "sl": 29
+        },
+        "2020": {
+          "PF": 1.5556,
+          "trades": 26,
+          "wr": 0.6087,
+          "tp": 14,
+          "sl": 9
+        },
+        "2021": {
+          "PF": 2.2308,
+          "trades": 52,
+          "wr": 0.6905,
+          "tp": 29,
+          "sl": 13
+        },
+        "2022": {
+          "PF": 1.25,
+          "trades": 26,
+          "wr": 0.5556,
+          "tp": 10,
+          "sl": 8
+        }
+      },
+      "bootstrap": {
+        "mean": 1.5554,
+        "ci95_low": 1.1045,
+        "ci95_high": 2.0852,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": true,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": true,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": true,
+      "stability_score": 1.678747
+    },
+    {
+      "family": "top_k_pct",
+      "value": 3.0,
+      "threshold_equivalent": 0.5043119192123413,
+      "PF": 1.1619,
+      "trades": 284,
+      "wr": 0.5374,
+      "tp": 122,
+      "sl": 105,
+      "trades_per_year": 81.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.4366,
+      "per_year": {
+        "2019": {
+          "PF": 1.0638,
+          "trades": 124,
+          "wr": 0.5155,
+          "tp": 50,
+          "sl": 47
+        },
+        "2020": {
+          "PF": 0.8889,
+          "trades": 39,
+          "wr": 0.4706,
+          "tp": 16,
+          "sl": 18
+        },
+        "2021": {
+          "PF": 1.8696,
+          "trades": 82,
+          "wr": 0.6515,
+          "tp": 43,
+          "sl": 23
+        },
+        "2022": {
+          "PF": 0.7647,
+          "trades": 39,
+          "wr": 0.4333,
+          "tp": 13,
+          "sl": 17
+        }
+      },
+      "bootstrap": {
+        "mean": 1.1738,
+        "ci95_low": 0.9043,
+        "ci95_high": 1.5234,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.309183
+    },
+    {
+      "family": "top_k_pct",
+      "value": 5.0,
+      "threshold_equivalent": 0.4786313474178314,
+      "PF": 1.0678,
+      "trades": 473,
+      "wr": 0.5164,
+      "tp": 189,
+      "sl": 177,
+      "trades_per_year": 135.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3615,
+      "per_year": {
+        "2019": {
+          "PF": 1.0806,
+          "trades": 171,
+          "wr": 0.5194,
+          "tp": 67,
+          "sl": 62
+        },
+        "2020": {
+          "PF": 1.1923,
+          "trades": 77,
+          "wr": 0.5439,
+          "tp": 31,
+          "sl": 26
+        },
+        "2021": {
+          "PF": 1.2222,
+          "trades": 151,
+          "wr": 0.55,
+          "tp": 66,
+          "sl": 54
+        },
+        "2022": {
+          "PF": 0.7143,
+          "trades": 74,
+          "wr": 0.4167,
+          "tp": 25,
+          "sl": 35
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0719,
+        "ci95_low": 0.8781,
+        "ci95_high": 1.3376,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.363533
+    },
+    {
+      "family": "top_k_pct",
+      "value": 7.5,
+      "threshold_equivalent": 0.4561549425125122,
+      "PF": 1.035,
+      "trades": 709,
+      "wr": 0.5086,
+      "tp": 266,
+      "sl": 257,
+      "trades_per_year": 202.5714,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3117,
+      "per_year": {
+        "2019": {
+          "PF": 1.0959,
+          "trades": 216,
+          "wr": 0.5229,
+          "tp": 80,
+          "sl": 73
+        },
+        "2020": {
+          "PF": 1.0889,
+          "trades": 142,
+          "wr": 0.5213,
+          "tp": 49,
+          "sl": 45
+        },
+        "2021": {
+          "PF": 1.2208,
+          "trades": 221,
+          "wr": 0.5497,
+          "tp": 94,
+          "sl": 77
+        },
+        "2022": {
+          "PF": 0.6935,
+          "trades": 130,
+          "wr": 0.4095,
+          "tp": 43,
+          "sl": 62
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0379,
+        "ci95_low": 0.883,
+        "ci95_high": 1.2203,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.424767
+    },
+    {
+      "family": "top_k_pct",
+      "value": 10.0,
+      "threshold_equivalent": 0.4395698308944702,
+      "PF": 1.0116,
+      "trades": 945,
+      "wr": 0.5029,
+      "tp": 348,
+      "sl": 344,
+      "trades_per_year": 270.0,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3079,
+      "per_year": {
+        "2019": {
+          "PF": 1.186,
+          "trades": 271,
+          "wr": 0.5426,
+          "tp": 102,
+          "sl": 86
+        },
+        "2020": {
+          "PF": 1.1186,
+          "trades": 191,
+          "wr": 0.528,
+          "tp": 66,
+          "sl": 59
+        },
+        "2021": {
+          "PF": 1.1132,
+          "trades": 291,
+          "wr": 0.5268,
+          "tp": 118,
+          "sl": 106
+        },
+        "2022": {
+          "PF": 0.6667,
+          "trades": 192,
+          "wr": 0.4,
+          "tp": 62,
+          "sl": 93
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0124,
+        "ci95_low": 0.8694,
+        "ci95_high": 1.1771,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.400183
+    },
+    {
+      "family": "top_k_pct",
+      "value": 12.5,
+      "threshold_equivalent": 0.42633602023124695,
+      "PF": 1.007,
+      "trades": 1181,
+      "wr": 0.5018,
+      "tp": 429,
+      "sl": 426,
+      "trades_per_year": 337.4286,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3006,
+      "per_year": {
+        "2019": {
+          "PF": 1.1633,
+          "trades": 310,
+          "wr": 0.5377,
+          "tp": 114,
+          "sl": 98
+        },
+        "2020": {
+          "PF": 1.1548,
+          "trades": 269,
+          "wr": 0.5359,
+          "tp": 97,
+          "sl": 84
+        },
+        "2021": {
+          "PF": 1.0385,
+          "trades": 355,
+          "wr": 0.5094,
+          "tp": 135,
+          "sl": 130
+        },
+        "2022": {
+          "PF": 0.7281,
+          "trades": 247,
+          "wr": 0.4213,
+          "tp": 83,
+          "sl": 114
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0132,
+        "ci95_low": 0.8824,
+        "ci95_high": 1.1487,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.408606
+    },
+    {
+      "family": "top_k_pct",
+      "value": 15.0,
+      "threshold_equivalent": 0.4149622917175293,
+      "PF": 0.9788,
+      "trades": 1418,
+      "wr": 0.4946,
+      "tp": 508,
+      "sl": 519,
+      "trades_per_year": 405.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2969,
+      "per_year": {
+        "2019": {
+          "PF": 1.3019,
+          "trades": 356,
+          "wr": 0.5656,
+          "tp": 138,
+          "sl": 106
+        },
+        "2020": {
+          "PF": 1.0556,
+          "trades": 335,
+          "wr": 0.5135,
+          "tp": 114,
+          "sl": 108
+        },
+        "2021": {
+          "PF": 0.9747,
+          "trades": 421,
+          "wr": 0.4936,
+          "tp": 154,
+          "sl": 158
+        },
+        "2022": {
+          "PF": 0.6939,
+          "trades": 306,
+          "wr": 0.4096,
+          "tp": 102,
+          "sl": 147
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9805,
+        "ci95_low": 0.8656,
+        "ci95_high": 1.1008,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.376394
+    },
+    {
+      "family": "top_k_pct",
+      "value": 20.0,
+      "threshold_equivalent": 0.3970574736595154,
+      "PF": 0.9583,
+      "trades": 1890,
+      "wr": 0.4893,
+      "tp": 666,
+      "sl": 695,
+      "trades_per_year": 540.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2926,
+      "per_year": {
+        "2019": {
+          "PF": 1.3435,
+          "trades": 435,
+          "wr": 0.5733,
+          "tp": 176,
+          "sl": 131
+        },
+        "2020": {
+          "PF": 1.0205,
+          "trades": 464,
+          "wr": 0.5051,
+          "tp": 149,
+          "sl": 146
+        },
+        "2021": {
+          "PF": 0.907,
+          "trades": 553,
+          "wr": 0.4756,
+          "tp": 195,
+          "sl": 215
+        },
+        "2022": {
+          "PF": 0.7192,
+          "trades": 438,
+          "wr": 0.4183,
+          "tp": 146,
+          "sl": 203
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9611,
+        "ci95_low": 0.8699,
+        "ci95_high": 1.0622,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.355817
+    },
+    {
+      "family": "top_k_pct",
+      "value": 25.0,
+      "threshold_equivalent": 0.37935972213745117,
+      "PF": 0.9882,
+      "trades": 2363,
+      "wr": 0.497,
+      "tp": 841,
+      "sl": 851,
+      "trades_per_year": 675.1429,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2945,
+      "per_year": {
+        "2019": {
+          "PF": 1.2812,
+          "trades": 525,
+          "wr": 0.5616,
+          "tp": 205,
+          "sl": 160
+        },
+        "2020": {
+          "PF": 1.0753,
+          "trades": 599,
+          "wr": 0.5181,
+          "tp": 200,
+          "sl": 186
+        },
+        "2021": {
+          "PF": 0.8996,
+          "trades": 696,
+          "wr": 0.4736,
+          "tp": 242,
+          "sl": 269
+        },
+        "2022": {
+          "PF": 0.822,
+          "trades": 543,
+          "wr": 0.4512,
+          "tp": 194,
+          "sl": 236
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9911,
+        "ci95_low": 0.9,
+        "ci95_high": 1.0858,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.394269
+    },
+    {
+      "family": "top_k_pct",
+      "value": 30.0,
+      "threshold_equivalent": 0.3637249171733856,
+      "PF": 1.0181,
+      "trades": 2835,
+      "wr": 0.5045,
+      "tp": 1012,
+      "sl": 994,
+      "trades_per_year": 810.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.2981,
+      "per_year": {
+        "2019": {
+          "PF": 1.3793,
+          "trades": 603,
+          "wr": 0.5797,
+          "tp": 240,
+          "sl": 174
+        },
+        "2020": {
+          "PF": 1.0647,
+          "trades": 733,
+          "wr": 0.5157,
+          "tp": 247,
+          "sl": 232
+        },
+        "2021": {
+          "PF": 0.9268,
+          "trades": 845,
+          "wr": 0.481,
+          "tp": 291,
+          "sl": 314
+        },
+        "2022": {
+          "PF": 0.854,
+          "trades": 654,
+          "wr": 0.4606,
+          "tp": 234,
+          "sl": 274
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0188,
+        "ci95_low": 0.9349,
+        "ci95_high": 1.1094,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.42929
+    }
+  ],
+  "environment": {
+    "python": "3.10.12",
+    "torch": "2.11.0+cu130",
+    "deterministic_enabled": true,
+    "num_threads": 16,
+    "mkldnn_enabled": true,
+    "seed": 42
+  },
+  "verdict": "PASS",
+  "interpretation": "A PASS here means an alternative validation-only selection rule passed the stricter stability gates. It does not authorize Stage 10 by itself; Stage 09 canonical rule must be updated explicitly before frozen test."
+}

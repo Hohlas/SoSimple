@@ -1,9 +1,9 @@
-# Methodology Cycle: Stages 00–08 — First Model Sweep
+# Methodology Cycle: Stages 00–09 — Candidate Source v2
 
 > **Date**: 2026-05-25
-> **Status**: Stages 00–08 completed. BiLSTM/Transformer show strong signal.
-> **Goal**: Build live-safe candidate-source pipeline and find first viable model
-> **Related commit**: 82d3fe1
+> **Status**: Stages 00–09 PASS. Transformer validation freeze remains research-only pending frozen test.
+> **Goal**: Build a live-safe candidate-source pipeline and freeze a validation-selected candidate without viewing test.
+> **Related commit**: pending
 
 ## Context
 
@@ -11,7 +11,7 @@ Previous research (`direct-direction-rebuild`, `transformer-direction`) conclude
 
 This cycle tests a new hypothesis: a live-safe candidate-source model built from current-row Nero/PIC state can replace the offline `signal != 0` gate.
 
-Stages 00–02 establish the research contract, raw data inventory, feature contract, MQL producer extension, and a reproducible data pipeline with PLL normalization.
+Stages 00–09 establish the research contract, raw data inventory, feature contract, MQL producer extension, reproducible data pipeline with PLL normalization, data-quality checks, temporal split protocol, baselines, model sweep, and validation freeze.
 
 ## What Was Done
 
@@ -47,6 +47,13 @@ Stages 00–02 establish the research contract, raw data inventory, feature cont
   - Fit on train only, break clipped at 5, direction/strong/reverse/time_features left as-is
   - Checkpoint saved: `ML/checkpoints/pll_normalizer_v1.pkl`
 
+### Stage 05–09 — Validation Candidate Path
+- Stage 05 EDA was restricted to train+validation; test was not inspected.
+- Stage 06 added an explicit temporal split manifest and validation/test use policy.
+- Stage 07 baselines now include confusion matrices, classification metrics, per-year slices, and diagnostic BUY/SELL slices.
+- Stage 08 was rerun after fixing binary timeout handling; timeout rows are excluded from TP-vs-SL threshold/PF evaluation.
+- Stage 09 froze a deterministic Transformer checkpoint and replaced the high-PF concentrated rule with a validation-calibrated stability rule.
+
 ## Changed Files
 
 | File | Change |
@@ -66,30 +73,39 @@ Stages 00–02 establish the research contract, raw data inventory, feature cont
 | `MT/MQL4/Files/Nero.csv` | Regenerated (full history 2004–2026) |
 | `DATA/Nero_{train,validation,test}_labeled.csv` | Regenerated (no normalization, trail uses fractal0.Dir) |
 | `ML/baseline_candidate_source.py` | NEW — Stage 07 RF/XGB/MLP baselines on TB + trail |
-| `ML/model_sweep_candidate_source.py` | NEW — Stage 08 model sweep (BiLSTM, Transformer, RF, XGB, MLP) |
+| `ML/model_sweep_candidate_source.py` | NEW — Stage 08 model sweep (BiLSTM, Transformer, RF, XGB, MLP), timeout-excluded binary evaluation |
 | `processing/label_signals.py` | +`use_fractal0_direction` for trail labeling (99% non-zero) |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage05_eda_audit.json` | NEW |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage06_temporal_split_manifest.json` | NEW — split manifest and allowed-use policy |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json` | NEW |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json` | NEW |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv` | NEW — validation predictions for Stage 08 audit |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json` | NEW — deterministic Transformer frozen rule |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json` | NEW — validation-only stability refreeze scan |
+| `ML/validation_freeze.py` | NEW — deterministic Stage 09 Transformer freeze |
+| `ML/stage09_stability_refreeze.py` | NEW — validation-only threshold/top-k stability scan |
+| `docs/ML/baseline_candidate_source.py.md` | NEW — Stage 07 script docs |
+| `docs/ML/model_sweep_candidate_source.py.md` | NEW — Stage 08 script docs |
+| `docs/ML/stage09_stability_refreeze.py.md` | NEW — Stage 09 stability scan docs |
 
 ## Verification
 
 ```bash
-# Pipeline run
-python processing/label_main.py --input MT/MQL4/Files/Nero.csv --no-normalize
+# Pipeline run (Stage 02)
+./.venv/bin/python processing/label_main.py --input MT/MQL4/Files/Nero.csv --no-normalize
 # Sorting: 63006/63006 correct
 # Labels: 3192 signals, 63006 predicts, 12 TB combos, 9 trail targets
 # Split: 44104/9451/9451
 
 # PLL normalizer test
-python -c "
+./.venv/bin/python -c "
 from ML.pll_normalizer import PLLFeatureNormalizer
 norm = PLLFeatureNormalizer.load('ML/checkpoints/pll_normalizer_v1.pkl')
 # All groups produce [0,1] output, break clipped to 5, non-norm indices unchanged
 "
 
 # New features in fractal_level_feature_builder.py
-python -c "
+./.venv/bin/python -c "
 from ML.fractal_level_feature_builder import build_fractal_level_features
 import pandas as pd
 df = pd.read_csv('MT/MQL4/Files/Nero.csv', sep=';', nrows=10)
@@ -99,6 +115,30 @@ assert 'count_in_band_4' in r.columns
 assert 'nearest_00_log_price_rel' in r.columns
 # OK — 119 columns total
 "
+
+# Stage 07 baseline rerun
+./.venv/bin/python ML/baseline_candidate_source.py --thresholds 0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.75
+# RF_160 PF=1.5761, 281 trades, 1 negative year
+
+# Stage 08 model sweep rerun after timeout-mask fix
+./.venv/bin/python ML/model_sweep_candidate_source.py
+# Transformer PF=11.60/63 trades; BiLSTM PF=1.7383/293 trades
+# stage08_validation_predictions.csv saved, 9451 validation rows + header
+
+# Stage 09 stability refreeze
+./.venv/bin/python ML/stage09_stability_refreeze.py
+# selected validation-calibrated threshold=0.5359389781951904
+# PF=1.9722, 142 trades, 0 negative years, 4 active years
+
+# Artifact validation
+./.venv/bin/python -m py_compile ML/baseline_candidate_source.py ML/model_sweep_candidate_source.py ML/stage09_stability_refreeze.py ML/validation_freeze.py
+./.venv/bin/python - <<'PY'
+import json
+from pathlib import Path
+for p in Path('ML/reports/methodology_cycle_candidate_source_v2').glob('stage*.json'):
+    json.loads(p.read_text(), parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
+print('all_stage_json_strict_ok')
+PY
 ```
 
 ## Results
@@ -128,19 +168,21 @@ Train+val only, test NOT viewed. ATR regime shift: KS=0.56 (train=3.0, val=4.85)
 
 ### Stage 06 — Temporal Split
 
-Sequential, no overlap, 0 sorting errors. PASS.
+Sequential split manifest added. Train/validation/test boundaries are explicit, shuffle is disabled, row overlap is false, and sorting errors are 0. No purged embargo was applied; this is recorded as a restriction rather than hidden. Stage 11 must perform per-year/regime robustness because Stage 05 found a train-validation volatility shift.
 
 ### Stage 07 — Baselines
 
-**TB combos (RF, all 12):**
+Baseline-first report now includes dummy baselines, RF/HGB baselines, confusion matrices, classification reports, per-year slices, and diagnostic BUY/SELL slices. Trading metrics are gross diagnostics; costs are deferred to Stage 12.
 
-| Combo | PF | Trades | WR |
-|-------|-----|--------|-----|
-| buy_sl3_tp3 | **1.58** | 281 | 61.2% |
-| sell_sl3_tp3 | 0.92 | 3922 | 48.0% |
-| Все остальные | <1.1 | <30 | <50% |
+| Model | PF | Trades | WR | Negative years | Note |
+|-------|----|--------|----|----------------|------|
+| RF_160 | **1.5761** | 281 | 61.2% | 1 | Best simple baseline, not production-ready |
+| HGB | 1.1217 | 3985 | 52.9% | 1 | Higher frequency, weaker edge |
+| dummy_stratified | 1.0454 | 3420 | 51.1% | — | Class-prior floor |
+| dummy_most_frequent | 1.0391 | 9451 | 51.0% | — | Always TP probability above low threshold |
+| dummy_uniform | 0.0 | 0 | 0.0% | — | No selected trades at grid threshold |
 
-Dummy floor: PF=1.05 (stratified). Only `buy_sl3_tp3` shows signal above random.
+Baseline to beat: RF_160 validation PF plus 0 negative years. RF_160 itself does not satisfy the full robustness gate because it has one negative validation year.
 
 **Trail targets — доработка разметки:** trail-таргеты были только для signal-строк (5%). Добавлен `use_fractal0_direction=True` → 99% строк получают trail PnL (направление из fractal0.Dir вместо signal).
 
@@ -163,38 +205,53 @@ Dummy floor: PF=1.05 (stratified). Only `buy_sl3_tp3` shows signal above random.
 
 ### Stage 08 — Model Sweep
 
-Тестированы 6 моделей на бинарном `buy_sl3_tp3` (TP vs SL, timeout excluded). 3D-модели используют PLL-нормализацию, плоские — StandardScaler.
+Тестированы модели на бинарном `buy_sl3_tp3` (TP vs SL, timeout excluded). 3D-модели используют PLL-нормализацию, плоские — StandardScaler. После исправления Stage 08 timeout-строки исключаются и из threshold/PF расчёта, а validation predictions сохраняются в `stage08_validation_predictions.csv`.
 
 | Model | Input | PF | Trades | WR |
 |-------|-------|-----|--------|-----|
-| **BiLSTM** | 3D+PLL | **4.78** | 52 | 82.7% |
-| **Transformer** | 3D+PLL | **2.83** | 69 | 73.9% |
-| RF | flat | 1.33 | 57 | 57.1% |
-| XGBoost | flat | 1.08 | 2262 | 51.8% |
-| MLP | flat | 1.06 | 5687 | 51.3% |
+| **Transformer** | 3D+PLL | **11.60** | 63 | 92.1% |
+| **BiLSTM** | 3D+PLL | **1.74** | 293 | 63.5% |
+| RF | flat | 1.33 | 42 | 57.1% |
+| XGBoost | flat | 1.08 | 1487 | 51.8% |
+| MLP | flat | 1.06 | 3652 | 51.3% |
 | CatBoost | — | не установлен | — | — |
 
-Важно: NN обучены на 8k/31k трейн-сэмплов, 10 эпох, d_model=32, 1 слой. Полное обучение ожидаемо улучшит результат.
+Важно: Stage 08 — exploratory validation-only sweep. NN обучены на подвыборке 8k binary train-сэмплов, 10 эпох, d_model=32, 1 слой. Высокий PF Transformer на Stage 08 не является frozen rule: детерминированная заморозка, checkpoint, round-trip и stability refreeze выполняются отдельно в Stage 09.
+
+### Stage 09 — Validation Freeze
+
+Transformer 3-class заморожен детерминированно (`torch.use_deterministic_algorithms(True)`), checkpoint и PLL normalizer сохранены с SHA-16 hash. Первичный high-PF порог `0.60` дал PF=2.57 на 35 сделках, но был отвергнут как canonical rule из-за концентрации: 27/35 сделок (77%) в 2019, 0 сделок в 2022.
+
+Validation-only stability refreeze выбрал порог `0.5359389781951904`, откалиброванный из top 1.5% validation scores:
+
+| Rule | PF | Trades | Trades/year | WR | Neg years | Active years | Max year share | Bootstrap CI |
+|------|----|--------|-------------|----|-----------|--------------|----------------|--------------|
+| threshold=0.53594 | **1.97** | **142** | **40.6** | 66.4% | 0 | 4 | 47.9% | [1.36, 3.00] |
+
+Per-year: 2019 PF=1.88 (68 trades), 2020 PF=3.00 (18), 2021 PF=2.10 (38), 2022 PF=1.20 (18). Test was not viewed.
 
 ## Conclusions
 
-1. Stages 00–08: все PASS. Pipeline от сырых данных до model sweep работает.
-2. 3D sequence models (BiLSTM, Transformer) радикально превосходят плоские модели — временная структура фракталов несёт сигнал, недоступный агрегированным признакам.
-3. Trail-таргеты не работают на flat-признаках. Требуют либо нейросетей (не тестировались в sweep), либо других подходов к разметке.
+1. Stages 00–09: все PASS. Pipeline от сырых данных до validation freeze работает.
+2. 3D sequence models радикально превосходят плоские модели на exploratory validation sweep, but Stage 09 is the only frozen validation rule.
+3. Trail-таргеты не работают на flat-признаках. Требуют либо нейросетей, либо других подходов к разметке.
 4. TB `buy_sl3_tp3` — единственный viable target для текущего candidate-source цикла.
 5. Test ни разу не использовался — frozen test purity сохранена.
+6. Stage 09 canonical rule предпочитает устойчивость и частоту сделок максимальному validation PF.
 
 ## Limitations / Open Questions
 
-- BiLSTM/Transformer результаты — на подвыборке 8k и 10 эпохах. Нужно обучить на полном трейне и проверить per-year/per-side.
-- Результаты 3D-моделей от одного seed — нужна проверка на нескольких seed'ах.
+- Stage 09 Transformer всё ещё validation-only: production claims запрещены до frozen test, robustness, costs и MT4 parity.
+- Stage 09 выбран по одному seed; для production-grade вывода нужна multi-seed проверка или формальное решение оставить deterministic single-seed research candidate.
 - Trail-таргеты не тестировались с нейросетями — потенциально перспективное направление.
+- Stage 06 split has no purged embargo; this is accepted for the current candidate-source workflow but must not be interpreted as purged-CV evidence.
+- Stage 08 exploratory Transformer PF is inflated-looking and based on a single seed/subsample; Stage 09 stability rule is the canonical candidate, not Stage 08 max-PF row.
 - `provider` и `timezone` — metadata gaps.
 - PLL параметры (percentile=0.95, band widths 4/12) — начальные, могут потребовать ablation.
 
 ## Next Step
 
-Stage 09 — Validation Freeze: выбрать winner (BiLSTM или Transformer), обучить на полном трейне, заморозить checkpoint, проверить per-year PF и negative years на валидации. Только после этого — frozen test (Stage 10).
+Stage 10 — Frozen Test OOS: один раз применить замороженный Transformer rule (`threshold=0.5359389781951904`) к test без изменения checkpoint, normalizer, threshold, target или execution mapping.
 
 ## Related Materials
 
@@ -203,5 +260,10 @@ Stage 09 — Validation Freeze: выбрать winner (BiLSTM или Transformer
 - `docs/methodology/02-data-pipeline.md`
 - `docs/methodology/03-feature-contract-leakage.md`
 - `docs/methodology/04-labeling.md`
+- `docs/methodology/05-eda-data-quality.md`
+- `docs/methodology/06-temporal-split.md`
+- `docs/methodology/07-baseline-first.md`
+- `docs/methodology/08-model-development.md`
+- `docs/methodology/09-validation-freeze.md`
 - `docs/reports/2026-05-18-direct-direction-rebuild.md`
 - `docs/reports/2026-05-21-transformer-direction.md`

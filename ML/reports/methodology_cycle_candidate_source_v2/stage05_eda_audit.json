@@ -52,7 +52,7 @@
       },
       "vol_regime_ks": 0.562,
       "risk": "CRITICAL — 1.6x ATR increase from train to val (KS=0.56). Gold volatility regime changed significantly. Validates need for per-year and per-volatility-regime slices in robustness evaluation (Stage 11).",
-      "test_warning": "Test period (2022-2026) likely even higher volatility given gold bull market. Frozen test will need regime-aware evaluation."
+      "test_policy": "Test split not inspected at Stage 05. Frozen test will need regime-aware evaluation only after Stage 09 PASS."
     }
   },
   "known_defects": [
@@ -63,7 +63,8 @@
   "risks": [
     "Volatility regime shift: train(2004-2019, low vol) → val(2019-2022, med vol). Models trained on low vol may fail on higher vol. Requires per-regime evaluation.",
     "Signal time-of-day concentration: h16-19 has 5x higher signal rate than h4-7.",
-    "Test split NOT viewed in this stage — frozen test purity preserved for Stage 10."
+    "Test split NOT viewed in this stage — frozen test purity preserved for Stage 10.",
+    "Stage 05 findings are limited to train-validation EDA and must not be treated as evidence about the frozen test period."
   ],
   "next_allowed_stage": "06-temporal-split"
 }

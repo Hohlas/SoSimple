@@ -1,50 +1,635 @@
 {
   "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "07-baseline-first",
   "created_at": "2026-05-25",
+  "updated_at": "2026-05-26",
   "methodology_stage": "07-baseline-first",
   "stage_verdict": "PASS",
-  "target": "buy_sl3_tp3 (SL=3ATR, TP=3ATR, timeout=24 bars)",
+  "target": "buy_sl3_tp3",
   "feature_config": {
-    "builder": "ML/fractal_level_feature_builder.py",
     "input_family": "nearest_k",
     "k": 16,
     "n_features": 455
   },
-  "validation_results": {
-    "dummy_most_frequent": {"PF": 1.04, "trades": 9451, "win_rate": 0.510},
-    "dummy_stratified": {"PF": 1.05, "trades": 3420, "win_rate": 0.511},
-    "dummy_uniform": {"PF": 1.04, "trades": 9451, "win_rate": 0.510},
-    "RF_160": {
-      "PF": 1.58,
-      "trades": 281,
-      "win_rate": 0.612,
-      "threshold": 0.40,
-      "negative_years": 1,
-      "gate_pf_ge_1_5": true,
-      "gate_zero_neg_years": false
-    },
-    "HGB": {"PF": 1.12, "trades": 3985, "win_rate": 0.529, "threshold": 0.35}
-  },
-  "baseline_to_beat": {
-    "model": "RF_160",
-    "val_pf": 1.58,
-    "note": "Best validation baseline. Does NOT pass full gate (1 neg year). Model candidates must beat PF ≥ 1.58 AND have 0 negative years."
-  },
-  "dummy_floor": {
-    "dummy_stratified_pf": 1.05,
-    "interpretation": "buy_sl3_tp3 has near-balanced TP/SL ratio (35.9/35.5), so random ~ PF=1.05. Any model with PF ≤ 1.05 is not extracting signal beyond class prior."
+  "split": {
+    "train_rows": 44104,
+    "val_rows": 9451
   },
   "methodology_compliance": {
-    "split": "train/val only, test NOT viewed",
-    "feature_contract": "live-safe only (feature_contract.csv), no predict/ret_*/fav_*/adv_*",
-    "target_prefixed": "buy_sl3_tp3 — not in feature builder's input allowlist",
-    "baseline_not_tuned_on_test": true
+    "split": "train/validation only; test not read",
+    "trading_metrics": "gross diagnostic; costs deferred to Stage 12",
+    "classification_metrics_included": true,
+    "confusion_matrix_included": true,
+    "buy_sell_slices": "diagnostic only because signal label is future-derived and not a live candidate-source input"
   },
-  "risks": [
-    "RF_160 PF=1.58 on 281 trades — statistical significance borderline. Need bootstrap CI.",
-    "1 negative year means model failed in one validation year. Per-year robustness needed.",
-    "HGB significantly underperforms RF — gradient boosting may need different hyperparameters for 3-class TB target.",
-    "Signal appears weak: dummy floor PF=1.05 means target itself carries little edge beyond class balance."
+  "results": [
+    {
+      "PF": 1.0391,
+      "trades": 9451,
+      "win_rate": 0.5096,
+      "tp": 3135,
+      "sl": 3017,
+      "timeout": 3299,
+      "threshold": 0.35,
+      "model": "dummy_most_frequent",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            0,
+            0,
+            3017
+          ],
+          [
+            0,
+            0,
+            3299
+          ],
+          [
+            0,
+            0,
+            3135
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 3017.0
+          },
+          "timeout": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 3299.0
+          },
+          "TP": {
+            "precision": 0.3317109300603111,
+            "recall": 1.0,
+            "f1-score": 0.4981725726998252,
+            "support": 3135.0
+          },
+          "accuracy": 0.3317109300603111,
+          "macro avg": {
+            "precision": 0.1105703100201037,
+            "recall": 0.3333333333333333,
+            "f1-score": 0.16605752423327505,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.1100321411214766,
+            "recall": 0.3317109300603111,
+            "f1-score": 0.16524928742079695,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.0
+      },
+      "per_year": {
+        "2019": {
+          "PF": 1.1885,
+          "trades": 1539,
+          "win_rate": 0.5431,
+          "tp": 536,
+          "sl": 451,
+          "timeout": 552
+        },
+        "2020": {
+          "PF": 1.2046,
+          "trades": 2774,
+          "win_rate": 0.5464,
+          "tp": 936,
+          "sl": 777,
+          "timeout": 1061
+        },
+        "2021": {
+          "PF": 0.9056,
+          "trades": 2686,
+          "win_rate": 0.4752,
+          "tp": 844,
+          "sl": 932,
+          "timeout": 910
+        },
+        "2022": {
+          "PF": 0.9557,
+          "trades": 2452,
+          "win_rate": 0.4887,
+          "tp": 819,
+          "sl": 857,
+          "timeout": 776
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.1987,
+          "trades": 244,
+          "win_rate": 0.1658,
+          "tp": 31,
+          "sl": 156,
+          "timeout": 57
+        },
+        "SELL": {
+          "PF": 14.3636,
+          "trades": 236,
+          "win_rate": 0.9349,
+          "tp": 158,
+          "sl": 11,
+          "timeout": 67
+        }
+      }
+    },
+    {
+      "PF": 1.0454,
+      "trades": 3420,
+      "win_rate": 0.5111,
+      "tp": 1152,
+      "sl": 1102,
+      "timeout": 1166,
+      "threshold": 0.35,
+      "model": "dummy_stratified",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1051,
+            864,
+            1102
+          ],
+          [
+            1158,
+            975,
+            1166
+          ],
+          [
+            1053,
+            930,
+            1152
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.3221949724095647,
+            "recall": 0.3483592973152138,
+            "f1-score": 0.33476668259276954,
+            "support": 3017.0
+          },
+          "timeout": {
+            "precision": 0.352112676056338,
+            "recall": 0.29554410427402245,
+            "f1-score": 0.32135794330916284,
+            "support": 3299.0
+          },
+          "TP": {
+            "precision": 0.3368421052631579,
+            "recall": 0.3674641148325359,
+            "f1-score": 0.351487414187643,
+            "support": 3135.0
+          },
+          "accuracy": 0.3362607131520474,
+          "macro avg": {
+            "precision": 0.33704991790968686,
+            "recall": 0.33712250547392403,
+            "f1-score": 0.3358706800298585,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.33749676754518204,
+            "recall": 0.3362607131520474,
+            "f1-score": 0.3356326293342054,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.005675487536200199
+      },
+      "per_year": {
+        "2019": {
+          "PF": 1.3091,
+          "trades": 551,
+          "win_rate": 0.5669,
+          "tp": 216,
+          "sl": 165,
+          "timeout": 170
+        },
+        "2020": {
+          "PF": 1.1847,
+          "trades": 1009,
+          "win_rate": 0.5423,
+          "tp": 340,
+          "sl": 287,
+          "timeout": 382
+        },
+        "2021": {
+          "PF": 0.8249,
+          "trades": 975,
+          "win_rate": 0.452,
+          "tp": 292,
+          "sl": 354,
+          "timeout": 329
+        },
+        "2022": {
+          "PF": 1.027,
+          "trades": 885,
+          "win_rate": 0.5067,
+          "tp": 304,
+          "sl": 296,
+          "timeout": 285
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.1724,
+          "trades": 94,
+          "win_rate": 0.1471,
+          "tp": 10,
+          "sl": 58,
+          "timeout": 26
+        },
+        "SELL": {
+          "PF": 19.0,
+          "trades": 85,
+          "win_rate": 0.95,
+          "tp": 57,
+          "sl": 3,
+          "timeout": 25
+        }
+      }
+    },
+    {
+      "PF": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 0,
+      "threshold": 0.35,
+      "model": "dummy_uniform",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            996,
+            1031,
+            990
+          ],
+          [
+            1099,
+            1088,
+            1112
+          ],
+          [
+            1072,
+            1050,
+            1013
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.314493211240922,
+            "recall": 0.33012926748425586,
+            "f1-score": 0.3221216041397154,
+            "support": 3017.0
+          },
+          "timeout": {
+            "precision": 0.34332597033764595,
+            "recall": 0.32979690815398605,
+            "f1-score": 0.3364254792826221,
+            "support": 3299.0
+          },
+          "TP": {
+            "precision": 0.32520064205457466,
+            "recall": 0.3231259968102073,
+            "f1-score": 0.32416,
+            "support": 3135.0
+          },
+          "accuracy": 0.3276901915141255,
+          "macro avg": {
+            "precision": 0.32767327454438083,
+            "recall": 0.3276840574828164,
+            "f1-score": 0.32756902780744585,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.3281094495078666,
+            "recall": 0.3276901915141255,
+            "f1-score": 0.3277907243511683,
+            "support": 9451.0
+          }
+        },
+        "mcc": -0.008486088154565165
+      },
+      "per_year": {
+        "2019": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "SELL": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        }
+      }
+    },
+    {
+      "PF": 1.5761,
+      "trades": 281,
+      "win_rate": 0.6118,
+      "tp": 145,
+      "sl": 92,
+      "timeout": 44,
+      "threshold": 0.4,
+      "model": "RF_160",
+      "negative_years": 1,
+      "per_year": {
+        "2019": {
+          "PF": 1.7619,
+          "trades": 63,
+          "win_rate": 0.6379,
+          "tp": 37,
+          "sl": 21,
+          "timeout": 5
+        },
+        "2020": {
+          "PF": 2.0,
+          "trades": 113,
+          "win_rate": 0.6667,
+          "tp": 62,
+          "sl": 31,
+          "timeout": 20
+        },
+        "2021": {
+          "PF": 1.6364,
+          "trades": 38,
+          "win_rate": 0.6207,
+          "tp": 18,
+          "sl": 11,
+          "timeout": 9
+        },
+        "2022": {
+          "PF": 0.9655,
+          "trades": 67,
+          "win_rate": 0.4912,
+          "tp": 28,
+          "sl": 29,
+          "timeout": 10
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.0909,
+          "trades": 14,
+          "win_rate": 0.0833,
+          "tp": 1,
+          "sl": 11,
+          "timeout": 2
+        },
+        "SELL": {
+          "PF": 10.0,
+          "trades": 11,
+          "win_rate": 0.9091,
+          "tp": 10,
+          "sl": 1,
+          "timeout": 0
+        }
+      },
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1138,
+            1464,
+            415
+          ],
+          [
+            1136,
+            1806,
+            357
+          ],
+          [
+            1303,
+            1268,
+            564
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.3181436958344982,
+            "recall": 0.37719588995691083,
+            "f1-score": 0.34516226872914774,
+            "support": 3017.0
+          },
+          "timeout": {
+            "precision": 0.39797267518730717,
+            "recall": 0.5474386177629584,
+            "f1-score": 0.46089064693122367,
+            "support": 3299.0
+          },
+          "TP": {
+            "precision": 0.4221556886227545,
+            "recall": 0.1799043062200957,
+            "f1-score": 0.2522925520017893,
+            "support": 3135.0
+          },
+          "accuracy": 0.37117765315839596,
+          "macro avg": {
+            "precision": 0.37942401988151997,
+            "recall": 0.368179604646655,
+            "f1-score": 0.35278182255405355,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.38051100091079704,
+            "recall": 0.37117765315839596,
+            "f1-score": 0.35475293191276636,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.05642737377381601
+      }
+    },
+    {
+      "PF": 1.1217,
+      "trades": 3985,
+      "win_rate": 0.5287,
+      "tp": 1429,
+      "sl": 1274,
+      "timeout": 1282,
+      "threshold": 0.35,
+      "model": "HGB",
+      "negative_years": 1,
+      "per_year": {
+        "2019": {
+          "PF": 1.1235,
+          "trades": 819,
+          "win_rate": 0.5291,
+          "tp": 273,
+          "sl": 243,
+          "timeout": 303
+        },
+        "2020": {
+          "PF": 1.269,
+          "trades": 1102,
+          "win_rate": 0.5593,
+          "tp": 401,
+          "sl": 316,
+          "timeout": 385
+        },
+        "2021": {
+          "PF": 0.9653,
+          "trades": 1143,
+          "win_rate": 0.4912,
+          "tp": 390,
+          "sl": 404,
+          "timeout": 349
+        },
+        "2022": {
+          "PF": 1.1736,
+          "trades": 921,
+          "win_rate": 0.5399,
+          "tp": 365,
+          "sl": 311,
+          "timeout": 245
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.2581,
+          "trades": 97,
+          "win_rate": 0.2051,
+          "tp": 16,
+          "sl": 62,
+          "timeout": 19
+        },
+        "SELL": {
+          "PF": 37.0,
+          "trades": 99,
+          "win_rate": 0.9737,
+          "tp": 74,
+          "sl": 2,
+          "timeout": 23
+        }
+      },
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1223,
+            765,
+            1029
+          ],
+          [
+            1329,
+            940,
+            1030
+          ],
+          [
+            1299,
+            725,
+            1111
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.3175798493897689,
+            "recall": 0.4053695724229367,
+            "f1-score": 0.3561444379732091,
+            "support": 3017.0
+          },
+          "timeout": {
+            "precision": 0.3868312757201646,
+            "recall": 0.2849348287359806,
+            "f1-score": 0.3281550008727527,
+            "support": 3299.0
+          },
+          "TP": {
+            "precision": 0.3504731861198738,
+            "recall": 0.3543859649122807,
+            "f1-score": 0.35241871530531327,
+            "support": 3135.0
+          },
+          "accuracy": 0.34641836842662155,
+          "macro avg": {
+            "precision": 0.35162810374326914,
+            "recall": 0.34823012202373266,
+            "f1-score": 0.34557271805042505,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.35266408027674956,
+            "recall": 0.34641836842662155,
+            "f1-score": 0.34513848161321975,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.02320529581561233
+      }
+    }
   ],
-  "next_allowed_stage": "08-model-development"
+  "baseline_to_beat": {
+    "model": "RF_160",
+    "validation_pf": 1.5761,
+    "requirement_for_models": "beat RF_160 validation PF and satisfy 0 negative years",
+    "note": "Best simple baseline may be gross-profitable but is not production-ready until it satisfies robustness/cost gates."
+  }
 }

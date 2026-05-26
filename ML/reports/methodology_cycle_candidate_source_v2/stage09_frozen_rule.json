@@ -4,57 +4,86 @@
   "checkpoint_sha256": "2944a17701e3fbce",
   "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
   "normalizer_sha256": "ea0b3db7e3a4360e",
-  "threshold": 0.6,
+  "selection_rule": {
+    "type": "validation_calibrated_threshold",
+    "threshold": 0.5359389781951904,
+    "calibrated_from": {
+      "family": "top_k_pct",
+      "value": 1.5,
+      "source": "stage09_stability_refreeze.json"
+    },
+    "reason": "Chosen by validation-only stability gates: PF>=1.5, >=6 trades/year, 0 negative years, >=3 active years, max year trade share <=0.60, bootstrap CI low >=1.0."
+  },
+  "threshold": 0.5359389781951904,
   "seq_len": 50,
   "target": "buy_sl3_tp3",
   "n_classes": 3,
   "epochs": 10,
   "best_epoch": 8,
-  "val_pf": 2.5714,
-  "val_trades": 35,
-  "val_wr": 0.72,
+  "val_pf": 1.9722,
+  "val_trades": 142,
+  "val_trades_per_year": 40.5714,
+  "val_wr": 0.6636,
+  "val_tp": 71,
+  "val_sl": 36,
   "negative_years": 0,
+  "active_years": 4,
+  "max_year_trade_share": 0.4789,
   "per_year": {
     "2019": {
-      "PF": 3.25,
-      "trades": 27,
-      "wr": 0.7647,
-      "tp": 13,
-      "sl": 4
+      "PF": 1.8824,
+      "trades": 68,
+      "wr": 0.6531,
+      "tp": 32,
+      "sl": 17
     },
     "2020": {
-      "PF": 99.0,
-      "trades": 1,
-      "wr": 1.0,
-      "tp": 1,
-      "sl": 0
+      "PF": 3.0,
+      "trades": 18,
+      "wr": 0.75,
+      "tp": 12,
+      "sl": 4
     },
     "2021": {
-      "PF": 1.3333,
-      "trades": 7,
-      "wr": 0.5714,
-      "tp": 4,
-      "sl": 3
+      "PF": 2.1,
+      "trades": 38,
+      "wr": 0.6774,
+      "tp": 21,
+      "sl": 10
     },
     "2022": {
-      "PF": 0.0,
-      "trades": 0,
-      "wr": 0.0,
-      "tp": 0,
-      "sl": 0
+      "PF": 1.2,
+      "trades": 18,
+      "wr": 0.5455,
+      "tp": 6,
+      "sl": 5
     }
   },
   "bootstrap": {
-    "mean": 3.1,
-    "ci95_low": 1.12,
-    "ci95_high": 8.5,
-    "n_bootstrap": 1000
+    "mean": 2.0315,
+    "ci95_low": 1.3554,
+    "ci95_high": 3.0,
+    "n_bootstrap": 1000,
+    "finite_samples": 1000
   },
   "round_trip_max_diff": 0.0,
-  "round_trip_pf": 2.5714,
+  "round_trip_pf": 1.9722,
   "gate_pf_ge_1_5": true,
   "gate_trades_per_year": true,
   "gate_neg_years": true,
+  "stability_gates": {
+    "active_years_ge_3": true,
+    "max_year_trade_share_le_0_60": true,
+    "bootstrap_ci_low_ge_1_0": true
+  },
+  "superseded_high_pf_rule": {
+    "threshold": 0.6,
+    "val_pf": 2.5714,
+    "val_trades": 35,
+    "negative_years": 0,
+    "max_year_trade_share": 0.7714,
+    "reason": "Rejected as canonical frozen rule because 77% of validation trades concentrate in 2019 and 2022 has zero trades."
+  },
   "environment": {
     "python": "3.10.12",
     "torch": "2.11.0+cu130",
@@ -63,5 +92,5 @@
     "mkldnn_enabled": true,
     "seed": 42
   },
-  "overfit_risk": "35 trades on validation (2019-2022, ~3.5 yrs) passes >=6/yr gate but is a small sample. 27/35 trades (77%) in 2019 alone. 2020=1 trade, 2022=0 trades. Performance concentrated in low-volatility regime years. Bootstrap CI and out-of-sample frozen test (Stage 10) required before production claims."
+  "overfit_risk": "Stability refreeze reduces concentration versus the high-PF threshold: 142 trades, all 4 validation years active, max year share 47.9%, bootstrap CI low 1.36. Still validation-only and research_only until frozen test, robustness, costs, and MT4 parity pass."
 }

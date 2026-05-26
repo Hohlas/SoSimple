@@ -65,6 +65,9 @@
 | [evaluate_test.py](ML/evaluate_test.py) | OOS оценка (profit factor, precision) на тестовой выборке | checkpoint + test CSV → `reports/evaluate_test_*.md` | — | ✅ |
 | [threshold_analysis.py](ML/threshold_analysis.py) | Поиск оптимального порога θ (regression → signal) | checkpoint + val CSV → `reports/threshold_analysis.md` | — | ✅ |
 | [reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | — → `reports/reproducibility_report.md` | — | 🏁 |
+| [baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | train/validation labeled CSV → `stage07_baselines.json` | [docs](docs/ML/baseline_candidate_source.py.md) | ✅ |
+| [model_sweep_candidate_source.py](ML/model_sweep_candidate_source.py) | Stage 08 exploratory model sweep для candidate-source v2 | train/validation labeled CSV → `stage08_model_sweep.json`, predictions CSV | [docs](docs/ML/model_sweep_candidate_source.py.md) | ✅ |
+| [stage09_stability_refreeze.py](ML/stage09_stability_refreeze.py) | Validation-only stability scan для frozen Transformer rule | validation split + checkpoint + normalizer → `stage09_stability_refreeze.json` | [docs](docs/ML/stage09_stability_refreeze.py.md) | ✅ |
 | [baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | `*_labeled.csv` → `baseline/reports/`, `baseline/plots/` | [docs](docs/ML/baseline_experiments.py.md) | 🏁 |
 | [conformal/calibrate.py](ML/conformal/calibrate.py) | Split Conformal Prediction калибровка | val CSV + checkpoint → `conformal/conformal_quantiles.json` | [docs](docs/ML/conformal_prediction.md) | 🏁 |
 | [tb_signal_logic.py](ML/tb_signal_logic.py) | Triple Barrier signal logic: parse TB targets, агрегация решений | TB probabilities → signal | — | ✅ |

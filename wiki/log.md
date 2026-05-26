@@ -3,6 +3,13 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-05-26] ingest | Methodology cycle candidate-source v2 synced into wiki
+- Added `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md`.
+- Created `wiki/research/methodology-cycle-candidate-source-v2.md`.
+- Recorded Stage 09 stability refreeze: threshold `0.5359389781951904`, validation PF `1.97`, `142` trades, `0` negative years, `4` active years.
+- Updated after Stage 05-08 corrections: Stage 06 split manifest added; Stage 07 baseline report now includes confusion/classification/per-year diagnostics; Stage 08 timeout-excluded binary sweep now saves validation predictions.
+- Status remains research-only until frozen test, robustness, costs, and MT4 parity.
+
 ## [2026-05-21] ingest | Direct direction improvement synced into wiki
 - Added coverage for `docs/reports/2026-05-15-direct-direction-improvement.md`.
 - Updated `wiki/research/execution-tracks-reconciliation-plus-audit.md` with §20 Direct Direction Improvement.
