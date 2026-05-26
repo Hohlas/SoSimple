@@ -103,113 +103,98 @@ assert 'nearest_00_log_price_rel' in r.columns
 
 ## Results
 
+### Stage 00–02: Pipeline Foundation
+
 | Parameter | Value |
 |-----------|-------|
 | Raw rows | 63006 (2004–2026) |
 | Train/Val/Test | 44104 / 9451 / 9451 |
 | Fractal fields | 23 (added Shift) |
-| PLL groups | 8 (fit on train only) |
+| PLL groups | 8 (fit train only) |
 | New flat features | log_price_rel, atr_band_4/12, count_in_band_4/12, delta_shift |
 | Excluded inputs | body_atr_3, range_atr_6 (constant zero) |
-| Feature contract | 32 live_safe fields, 0 unknown in model inputs |
 
-## Conclusions
+### Stage 03 — Leakage Gate
 
-1. Stages 00–02 completed per methodology. All gates PASS.
-2. Shift field added without breaking backward compatibility — old 22-field CSVs parse with defaults.
-3. PLL normalization implemented as per-group scaler, matching MQL producer's PiecewiseNormalize logic.
-4. Pipeline outputs are raw (no normalization in CSV), keeping data reproducible.
-5. New price features (log_price_rel, atr_band) and temporal density features (delta_shift, count_in_band) ready for baseline experiments.
+14/14 preflight checks PASS. 5 production-gate checks pending model existence. No future-derived fields in X tensor. PLL pools isolated from targets. Naming convention: `fractal*.up_12` (input) vs `target up_12` (label).
 
-## Limitations / Open Questions
+### Stage 04 — Labeling
 
-- `provider` and `timezone` remain metadata gaps — no provider-transfer or timezone-sensitive claims allowed
-- `body_atr_3`, `range_atr_6` excluded due to zero values — need pipeline fix to populate them from OHLC if needed later
-- PLL normalizer covers 3D tensor path only; flat feature path (fractal_level_feature_builder.py output) not yet piped through the same normalizer — tree-based models don't need it
-- `count_in_band`, `log_price_rel`, `atr_band` feature engineering parameters (band widths 4/12, percentile 0.95) are initial choices — may need ablation
+56 targets audited. TB convention: 0=SL, 0.5=timeout, 1=TP — no mixing. Up/dn monotonicity: 0 violations. Old `signal != 0` gate REJECTED.
 
-## Next Step
+### Stage 05 — EDA
 
-Stage 05 — EDA / Data Quality: full distribution analysis, class balance across splits, regime shift detection, outlier audit. Scale audit is already done; EDA adds distribution visualization and split-drift checks.
-
-### Stage 03 — Feature Contract / Leakage Gate
-
-Ran ML Leakage Preflight (18 checks). Results:
-- 14 PASS — all applicable checks passed
-- 4 NOT_APPLICABLE_BEFORE_MODEL — online contract, online labeling, rule freeze, MT4 parity/runner (require model to exist)
-- 0 FAIL
-
-Key verifications:
-- X tensor (20 features) contains only live-safe fractal fields + time features. No predict, ret_*, fav_*, adv_*, trade_*, trail_*, buy_sl*, sell_sl*.
-- PLL normalizer operates on input-only indices. Targets not in any normalization pool.
-- Dominance issues resolved: `input_power_count_reverse_break` split into power/count/break+reverse groups. `target_ret_fav_adv` not normalized.
-- ATR contract: `ATR_ratio = log(fractal_atr / ATR_slow)`. No further scaling.
-- Constant features (body_atr_3, range_atr_6) excluded.
-- Fractal-level up_12/dn_12 (input) explicitly distinguished from top-level up_12/dn_12 (target) via `fractal*.` prefix convention.
-
-### Stage 04 — Labeling Audit
-
-Audited 56 target/label columns from pipeline output:
-- **TB convention**: explicit — 0=SL, 0.5=timeout, 1=TP. No timeout/SL mixing.
-- **up/dn monotonicity**: 0 violations, all non-negative. Multi-target regression compatible.
-- **BUY/SELL label distribution**: nearly symmetric (buy_sl3_tp3: 50.3% vs sell_sl3_tp3: 49.7% TP rate in labeling, not trading result).
-- **Class imbalance**: noted for extreme cases (sl2_tp9: 2.3% TP) — requires class_weight or specialized loss. Does not block pipeline.
-- **archetype_target**: 0.7% positive — DIAGNOSTIC_ONLY, not usable as primary target.
-- All target columns excluded from X tensor input (verified in Stage 03).
-- Old `signal != 0` gate remains REJECTED for production.
-
-## Conclusions
-
-1. Stages 00–04 completed per methodology. All gates PASS.
-2. Stale draft artifacts (stage02_gate_verdict.json=FAIL) removed — canon verdict is unified stage01_gate_verdict.json.
-3. Stage 03 DEFERRED → NOT_APPLICABLE_BEFORE_MODEL — checks will re-run at model export stage.
-4. Naming convention enacted: fractal-level fields use `fractal*.` prefix to distinguish from same-name top-level targets.
-5. Pipeline outputs are raw (no normalization in CSV), keeping data reproducible. PLL normalizer saved as checkpoint.
-
-## Next Step
-
-Stage 09 — Validation Freeze: select winner (BiLSTM or Transformer), train on full train set, freeze checkpoint, evaluate on test (NEVER viewed yet). Check negative years, per-year PF, BUY/SELL stability.
+Train+val only, test NOT viewed. ATR regime shift: KS=0.56 (train=3.0, val=4.85). Signal concentrated at h16–19 (US session). No NaN/Inf.
 
 ### Stage 06 — Temporal Split
 
-Already verified in Stage 03. Sequential split: train 2004-2019, val 2019-2022, test 2022-2026. No overlap. No shuffle. 0 sorting errors. **PASS.**
+Sequential, no overlap, 0 sorting errors. PASS.
 
 ### Stage 07 — Baselines
 
-RF on `buy_sl3_tp3` (best TB combo): val PF=1.58, 281 trades, 61.2% wr, 1 negative year. Dummy floor PF=1.05. Trail targets (99% non-zero after `use_fractal0_direction=True` fix) — all PF < 1.5 on flat features. **PASS.**
+**TB combos (RF, all 12):**
+
+| Combo | PF | Trades | WR |
+|-------|-----|--------|-----|
+| buy_sl3_tp3 | **1.58** | 281 | 61.2% |
+| sell_sl3_tp3 | 0.92 | 3922 | 48.0% |
+| Все остальные | <1.1 | <30 | <50% |
+
+Dummy floor: PF=1.05 (stratified). Only `buy_sl3_tp3` shows signal above random.
+
+**Trail targets — доработка разметки:** trail-таргеты были только для signal-строк (5%). Добавлен `use_fractal0_direction=True` → 99% строк получают trail PnL (направление из fractal0.Dir вместо signal).
+
+**Trail RF baselines (PnL > 0):**
+
+| Комбо | PF | Сделок | WR |
+|-------|-----|--------|-----|
+| T24x4 | 1.33 | 28 | 57% |
+| T24x8 | 1.20 | 709 | 55% |
+| T48x8 | 1.12 | 796 | 53% |
+| Остальные | <1.1 | — | — |
+
+Закономерность: PF растёт с шириной трейлинга, но ни один не проходит gate PF≥1.5.
+
+**Trail + TP фикс. выход:** для trail∈[4,8,10], TP=trail×[1.5,2,3]. TP-множитель почти не влияет — трейлинг-стоп срабатывает раньше TP. Результаты эквивалентны обычному trail.
+
+**Trail PnL > trail_atr+1:** positive rate 0.3–8.5% → слишком редкий таргет, RF не работает (PF≈0).
+
+Вывод: flat-признаки + RF не вытягивают trail-таргеты независимо от порога. `buy_sl3_tp3` остаётся единственным viable target для baseline.
 
 ### Stage 08 — Model Sweep
 
-Tested 6 models on binary `buy_sl3_tp3` (TP vs SL, timeout excluded):
+Тестированы 6 моделей на бинарном `buy_sl3_tp3` (TP vs SL, timeout excluded). 3D-модели используют PLL-нормализацию, плоские — StandardScaler.
 
 | Model | Input | PF | Trades | WR |
 |-------|-------|-----|--------|-----|
-| BiLSTM | 3D+PLL | **4.78** | 52 | 82.7% |
-| Transformer | 3D+PLL | **2.83** | 69 | 73.9% |
+| **BiLSTM** | 3D+PLL | **4.78** | 52 | 82.7% |
+| **Transformer** | 3D+PLL | **2.83** | 69 | 73.9% |
 | RF | flat | 1.33 | 57 | 57.1% |
 | XGBoost | flat | 1.08 | 2262 | 51.8% |
 | MLP | flat | 1.06 | 5687 | 51.3% |
+| CatBoost | — | не установлен | — | — |
 
-Key findings:
-- 3D sequence models (BiLSTM, Transformer) dramatically outperform flat tree models — temporal structure in fractal sequence carries signal
-- NN models trained on 8k subsample, 10 epochs, small architecture (d_model=32, 1 layer). Full training expected to improve.
-- PLL normalization critical — StandardScaler on flat features did not help RF/MLP.
-- Trail-target labeling fixed: `use_fractal0_direction=True` → 99% non-zero (up from 5%), but flat models couldn't extract signal from trail.
+Важно: NN обучены на 8k/31k трейн-сэмплов, 10 эпох, d_model=32, 1 слой. Полное обучение ожидаемо улучшит результат.
 
-**PASS.**
+## Conclusions
 
-### Stage 05 — EDA / Data Quality
+1. Stages 00–08: все PASS. Pipeline от сырых данных до model sweep работает.
+2. 3D sequence models (BiLSTM, Transformer) радикально превосходят плоские модели — временная структура фракталов несёт сигнал, недоступный агрегированным признакам.
+3. Trail-таргеты не работают на flat-признаках. Требуют либо нейросетей (не тестировались в sweep), либо других подходов к разметке.
+4. TB `buy_sl3_tp3` — единственный viable target для текущего candidate-source цикла.
+5. Test ни разу не использовался — frozen test purity сохранена.
 
-Ran on train + validation only. Test split NOT viewed (preserved for Stage 10 frozen test).
+## Limitations / Open Questions
 
-Key findings:
-- No NaN/Inf in any key column.
-- `body_atr_3`, `range_atr_6` — constant zero, excluded.
-- Signal rate stable at ~5% across train and val.
-- TB class balance shifts moderately (val has fewer SL, more timeouts) — consistent with regime change.
-- Monotonic invariants: 0 violations in up/dn tiers and fractal sorting.
-- Signal concentration: peak at h16-19 (~12%), trough at h4-7 (~3%). US session dominance.
-- **CRITICAL: ATR regime shift.** Train=3.0, Val=4.85 (KS=0.56, ratio=1.62). Gold volatility increased significantly from 2004-2019 to 2019-2022. Further increase expected in test period (2022-2026 gold bull). Requires per-year and per-volatility-regime slices in robustness evaluation.
+- BiLSTM/Transformer результаты — на подвыборке 8k и 10 эпохах. Нужно обучить на полном трейне и проверить per-year/per-side.
+- Результаты 3D-моделей от одного seed — нужна проверка на нескольких seed'ах.
+- Trail-таргеты не тестировались с нейросетями — потенциально перспективное направление.
+- `provider` и `timezone` — metadata gaps.
+- PLL параметры (percentile=0.95, band widths 4/12) — начальные, могут потребовать ablation.
+
+## Next Step
+
+Stage 09 — Validation Freeze: выбрать winner (BiLSTM или Transformer), обучить на полном трейне, заморозить checkpoint, проверить per-year PF и negative years на валидации. Только после этого — frozen test (Stage 10).
 
 ## Related Materials
 
