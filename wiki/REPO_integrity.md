@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-26 20:27 UTC · git `e4397db`
+> Auto-generated 2026-05-26 20:30 UTC · git `6cb85fa`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1278 files  ·  **Commit**: `e4397db`  ·  **Generated**: 2026-05-26 20:27 UTC
+**Tracked**: 1278 files  ·  **Commit**: `6cb85fa`  ·  **Generated**: 2026-05-26 20:30 UTC
 
 ## Root Docs
 
