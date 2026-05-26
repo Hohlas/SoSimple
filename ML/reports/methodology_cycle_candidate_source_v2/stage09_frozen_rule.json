@@ -1,7 +1,7 @@
 {
   "model": "Transformer",
   "checkpoint": "ML/checkpoints/transformer_winner.pt",
-  "checkpoint_sha256": "a45c7e8e47be1d72",
+  "checkpoint_sha256": "2944a17701e3fbce",
   "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
   "normalizer_sha256": "ea0b3db7e3a4360e",
   "threshold": 0.6,
@@ -23,7 +23,7 @@
       "sl": 4
     },
     "2020": {
-      "PF": Infinity,
+      "PF": 99.0,
       "trades": 1,
       "wr": 1.0,
       "tp": 1,
@@ -50,8 +50,8 @@
     "ci95_high": 8.5,
     "n_bootstrap": 1000
   },
-  "round_trip_max_diff": 0.06207667291164398,
-  "round_trip_pf": 2.4286,
+  "round_trip_max_diff": 0.0,
+  "round_trip_pf": 2.5714,
   "gate_pf_ge_1_5": true,
   "gate_trades_per_year": true,
   "gate_neg_years": true,

@@ -90,6 +90,22 @@ class TransformerEncoder3Class(nn.Module):
 
 # ─── Metrics ──────────────────────────────────────────────────────────────────
 
+def sanitize_for_json(obj):
+    """Recursively replace inf/-inf with 'inf' string, nan with null for strict JSON."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float):
+        if obj == float("inf"):
+            return "inf"
+        if obj == float("-inf"):
+            return "-inf"
+        if obj != obj:  # NaN
+            return None
+    return obj
+
+
 def compute_pf(y_true: np.ndarray, proba: np.ndarray, threshold: float) -> dict:
     pred = (proba >= threshold).astype(int)
     n = pred.sum()
@@ -97,7 +113,7 @@ def compute_pf(y_true: np.ndarray, proba: np.ndarray, threshold: float) -> dict:
         return {"PF": 0.0, "trades": 0, "wr": 0.0, "tp": 0, "sl": 0}
     tp = int(((pred == 1) & (y_true == 2)).sum())
     sl = int(((pred == 1) & (y_true == 0)).sum())
-    pf = float("inf") if sl == 0 else tp / sl
+    pf = 99.0 if sl == 0 else tp / sl
     wr = tp / max(tp + sl, 1)
     return {"PF": round(pf, 4), "trades": int(n), "wr": round(wr, 4), "tp": tp, "sl": sl}
 
@@ -125,7 +141,7 @@ def bootstrap_pf_ci(y_true, proba, thr, n_bootstrap=1000):
     for _ in range(n_bootstrap):
         idx = rng.choice(n, n, replace=True)
         r = compute_pf(y_true[idx], proba[idx], thr)
-        if r["PF"] > 0 and r["PF"] != float("inf"):
+        if 0 < r["PF"] < 99.0:
             pfs.append(r["PF"])
     if len(pfs) < 2:
         return None
@@ -178,7 +194,7 @@ def main():
     crit = nn.CrossEntropyLoss(weight=cw)
 
     print(f"Training {EPOCHS} epochs...")
-    best_pf, best_proba, best_epoch = 0, None, 0
+    best_pf, best_state_dict, best_proba, best_epoch = 0, None, None, 0
     for epoch in range(EPOCHS):
         model.train()
         for xb, mb, yb in tl:
@@ -201,6 +217,7 @@ def main():
         if r["PF"] > best_pf and r["trades"] >= 6:
             best_pf = r["PF"]
             best_proba = proba.copy()
+            best_state_dict = {k: v.cpu().clone() for k, v in model.state_dict().items()}
             best_epoch = epoch
         if (epoch + 1) % 2 == 0:
             print(f"  epoch {epoch+1}: PF={best_pf:.2f}")
@@ -223,7 +240,7 @@ def main():
     norm_path = str(CKPT_DIR / "pll_normalizer_v1.pkl")
     ckpt_path = str(CKPT_DIR / "transformer_winner.pt")
     norm.save(norm_path)
-    torch.save({"model_state_dict": model.state_dict(), "seed": SEED, "target": TARGET,
+    torch.save({"model_state_dict": best_state_dict, "seed": SEED, "target": TARGET,
                  "n_classes": N_CLASSES, "seq_len": SEQ_LEN}, ckpt_path)
 
     # Round-trip verification: reload raw data, re-apply loaded normalizer
@@ -250,7 +267,7 @@ def main():
     print(f"  max proba diff={diff:.2e}, PF={r2['PF']:.2f} trades={r2['trades']}")
 
     # Rule
-    rule = {
+    rule = sanitize_for_json({
         "model": "Transformer",
         "checkpoint": ckpt_path,
         "checkpoint_sha256": file_sha256(ckpt_path),
@@ -280,10 +297,10 @@ def main():
             "Performance concentrated in low-volatility regime years. "
             "Bootstrap CI and out-of-sample frozen test (Stage 10) required before production claims."
         ),
-    }
+    })
     rule_path = str(REPORT_DIR / "stage09_frozen_rule.json")
     with open(rule_path, "w") as f:
-        json.dump(rule, f, indent=2, default=str)
+        json.dump(rule, f, indent=2, default=str, allow_nan=False)
 
     print(f"\nRule saved: {rule_path}")
     print(f"All gates: PF={rule['gate_pf_ge_1_5']} trades={rule['gate_trades_per_year']} neg_yrs={rule['gate_neg_years']}")
