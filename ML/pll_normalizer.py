@@ -113,6 +113,7 @@ class PLLGroupScaler:
             out[log_mask] = self.percentile + (1.0 - self.percentile) * tail
 
         result[finite_mask] = out.astype(np.float32)
+        result = np.nan_to_num(result, nan=0.0)
         return result
 
 

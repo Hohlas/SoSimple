@@ -760,6 +760,7 @@ def label_trailing_stop_targets(
     hold_bars: int = TRAILING_STOP_HOLD_BARS,
     atr_col: str = 'ATR',
     x_values: tuple[int, ...] = TRAILING_STOP_X_VALUES,
+    use_fractal0_direction: bool = False,
 ) -> pd.DataFrame:
     from datetime import datetime, timezone
 
@@ -773,9 +774,19 @@ def label_trailing_stop_targets(
         ohlc, times, time_idx = load_ohlc_index(ohlc_path)
 
     for row_label in out.index:
-        signal = _safe_signal_scalar(out.at[row_label, 'signal'])
-        if signal == 0:
-            continue
+        if use_fractal0_direction:
+            f0_str = out.at[row_label, 'fractal0'] if 'fractal0' in out.columns else ''
+            f0 = parse_fractal(f0_str)
+            if f0 is None:
+                continue
+            direction = int(f0.get('direction', 0))
+            if direction == 0:
+                continue
+        else:
+            signal = _safe_signal_scalar(out.at[row_label, 'signal'])
+            if signal == 0:
+                continue
+            direction = signal
         atr = _safe_numeric_scalar(out.at[row_label, atr_col], default=0.0)
         bars = []
         if ohlc is not None and times is not None and time_idx is not None:
@@ -836,7 +847,7 @@ def label_trailing_stop_targets(
             for x_value in x_values:
                 out.at[row_label, f'trail_{horizon}_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
                     bars=horizon_bars,
-                    direction=signal,
+                    direction=direction,
                     entry_price=entry_price,
                     atr=atr,
                     trail_atr=float(x_value),

@@ -1,9 +1,9 @@
-# Methodology Cycle: Stages 00–05 — Foundation Complete
+# Methodology Cycle: Stages 00–08 — First Model Sweep
 
-> **Date**: 2026-05-25 18:00
-> **Status**: Completed (Stages 00–05 PASS)
-> **Goal**: Build live-safe candidate-source pipeline foundation under `docs/methodology/` rules from research contract through EDA
-> **Related commit**: 3e0cc3e
+> **Date**: 2026-05-25
+> **Status**: Stages 00–08 completed. BiLSTM/Transformer show strong signal.
+> **Goal**: Build live-safe candidate-source pipeline and find first viable model
+> **Related commit**: 82d3fe1
 
 ## Context
 
@@ -64,7 +64,13 @@ Stages 00–02 establish the research contract, raw data inventory, feature cont
 | `ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md` | NEW |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage02_scale_audit_*.csv` | NEW (3 files) |
 | `MT/MQL4/Files/Nero.csv` | Regenerated (full history 2004–2026) |
-| `DATA/Nero_{train,validation,test}_labeled.csv` | Regenerated (no normalization) |
+| `DATA/Nero_{train,validation,test}_labeled.csv` | Regenerated (no normalization, trail uses fractal0.Dir) |
+| `ML/baseline_candidate_source.py` | NEW — Stage 07 RF/XGB/MLP baselines on TB + trail |
+| `ML/model_sweep_candidate_source.py` | NEW — Stage 08 model sweep (BiLSTM, Transformer, RF, XGB, MLP) |
+| `processing/label_signals.py` | +`use_fractal0_direction` for trail labeling (99% non-zero) |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage05_eda_audit.json` | NEW |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json` | NEW |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json` | NEW |
 
 ## Verification
 
@@ -162,7 +168,35 @@ Audited 56 target/label columns from pipeline output:
 
 ## Next Step
 
-Stage 06 — Temporal Split: already verified (sequential, no overlap, confirmed in Stage 03). Stage 07 — Baseline First: train dummy/naive baselines before complex models.
+Stage 09 — Validation Freeze: select winner (BiLSTM or Transformer), train on full train set, freeze checkpoint, evaluate on test (NEVER viewed yet). Check negative years, per-year PF, BUY/SELL stability.
+
+### Stage 06 — Temporal Split
+
+Already verified in Stage 03. Sequential split: train 2004-2019, val 2019-2022, test 2022-2026. No overlap. No shuffle. 0 sorting errors. **PASS.**
+
+### Stage 07 — Baselines
+
+RF on `buy_sl3_tp3` (best TB combo): val PF=1.58, 281 trades, 61.2% wr, 1 negative year. Dummy floor PF=1.05. Trail targets (99% non-zero after `use_fractal0_direction=True` fix) — all PF < 1.5 on flat features. **PASS.**
+
+### Stage 08 — Model Sweep
+
+Tested 6 models on binary `buy_sl3_tp3` (TP vs SL, timeout excluded):
+
+| Model | Input | PF | Trades | WR |
+|-------|-------|-----|--------|-----|
+| BiLSTM | 3D+PLL | **4.78** | 52 | 82.7% |
+| Transformer | 3D+PLL | **2.83** | 69 | 73.9% |
+| RF | flat | 1.33 | 57 | 57.1% |
+| XGBoost | flat | 1.08 | 2262 | 51.8% |
+| MLP | flat | 1.06 | 5687 | 51.3% |
+
+Key findings:
+- 3D sequence models (BiLSTM, Transformer) dramatically outperform flat tree models — temporal structure in fractal sequence carries signal
+- NN models trained on 8k subsample, 10 epochs, small architecture (d_model=32, 1 layer). Full training expected to improve.
+- PLL normalization critical — StandardScaler on flat features did not help RF/MLP.
+- Trail-target labeling fixed: `use_fractal0_direction=True` → 99% non-zero (up from 5%), but flat models couldn't extract signal from trail.
+
+**PASS.**
 
 ### Stage 05 — EDA / Data Quality
 

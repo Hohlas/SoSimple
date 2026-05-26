@@ -1,0 +1,53 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "08-model-development",
+  "created_at": "2026-05-25",
+  "target": "buy_sl3_tp3",
+  "results": [
+    {
+      "PF": 1.3333,
+      "trades": 57,
+      "wr": 0.5714,
+      "tp": 24,
+      "sl": 18,
+      "threshold": 0.6,
+      "model": "RF_160"
+    },
+    {
+      "PF": 1.0768,
+      "trades": 2262,
+      "wr": 0.5185,
+      "tp": 771,
+      "sl": 716,
+      "threshold": 0.55,
+      "model": "XGB"
+    },
+    {
+      "PF": 1.0551,
+      "trades": 5687,
+      "wr": 0.5134,
+      "tp": 1875,
+      "sl": 1777,
+      "threshold": 0.4,
+      "model": "MLP_flat"
+    },
+    {
+      "PF": 2.8333,
+      "trades": 69,
+      "wr": 0.7391,
+      "tp": 51,
+      "sl": 18,
+      "threshold": 0.5,
+      "model": "Transformer"
+    },
+    {
+      "PF": 4.7778,
+      "trades": 52,
+      "wr": 0.8269,
+      "tp": 43,
+      "sl": 9,
+      "threshold": 0.5,
+      "model": "BiLSTM"
+    }
+  ]
+}

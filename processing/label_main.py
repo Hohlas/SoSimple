@@ -288,7 +288,7 @@ def main():
     labeled_df = add_entry_path_frequency_features(labeled_df)
 
     print(f"\nРазметка trailing-stop таргетов...")
-    labeled_df = label_trailing_stop_targets(labeled_df, ohlc_path=args.ohlc)
+    labeled_df = label_trailing_stop_targets(labeled_df, ohlc_path=args.ohlc, use_fractal0_direction=True)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None
