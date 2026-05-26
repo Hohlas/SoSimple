@@ -1,0 +1,42 @@
+{
+  "model": "Transformer",
+  "checkpoint": "ML/checkpoints/transformer_winner.pt",
+  "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
+  "threshold": 0.6,
+  "seq_len": 50,
+  "target": "buy_sl3_tp3",
+  "n_classes": 3,
+  "val_pf": 2.57,
+  "val_trades": 35,
+  "val_wr": 0.72,
+  "negative_years": 0,
+  "per_year": {
+    "2019": {
+      "PF": 3.25,
+      "trades": 27,
+      "tp": 13,
+      "sl": 4
+    },
+    "2020": {
+      "PF": 99.0,
+      "trades": 1,
+      "tp": 1,
+      "sl": 0
+    },
+    "2021": {
+      "PF": 1.33,
+      "trades": 7,
+      "tp": 4,
+      "sl": 3
+    },
+    "2022": {
+      "PF": 0.0,
+      "trades": 0,
+      "tp": 0,
+      "sl": 0
+    }
+  },
+  "gate_pf": "True",
+  "gate_trades": "True",
+  "gate_neg_years": true
+}
