@@ -1,12 +1,16 @@
 {
   "model": "Transformer",
   "checkpoint": "ML/checkpoints/transformer_winner.pt",
+  "checkpoint_sha256": "a45c7e8e47be1d72",
   "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
+  "normalizer_sha256": "ea0b3db7e3a4360e",
   "threshold": 0.6,
   "seq_len": 50,
   "target": "buy_sl3_tp3",
   "n_classes": 3,
-  "val_pf": 2.57,
+  "epochs": 10,
+  "best_epoch": 8,
+  "val_pf": 2.5714,
   "val_trades": 35,
   "val_wr": 0.72,
   "negative_years": 0,
@@ -14,29 +18,50 @@
     "2019": {
       "PF": 3.25,
       "trades": 27,
+      "wr": 0.7647,
       "tp": 13,
       "sl": 4
     },
     "2020": {
-      "PF": 99.0,
+      "PF": Infinity,
       "trades": 1,
+      "wr": 1.0,
       "tp": 1,
       "sl": 0
     },
     "2021": {
-      "PF": 1.33,
+      "PF": 1.3333,
       "trades": 7,
+      "wr": 0.5714,
       "tp": 4,
       "sl": 3
     },
     "2022": {
       "PF": 0.0,
       "trades": 0,
+      "wr": 0.0,
       "tp": 0,
       "sl": 0
     }
   },
-  "gate_pf": "True",
-  "gate_trades": "True",
-  "gate_neg_years": true
+  "bootstrap": {
+    "mean": 3.1,
+    "ci95_low": 1.12,
+    "ci95_high": 8.5,
+    "n_bootstrap": 1000
+  },
+  "round_trip_max_diff": 0.06207667291164398,
+  "round_trip_pf": 2.4286,
+  "gate_pf_ge_1_5": true,
+  "gate_trades_per_year": true,
+  "gate_neg_years": true,
+  "environment": {
+    "python": "3.10.12",
+    "torch": "2.11.0+cu130",
+    "deterministic_enabled": true,
+    "num_threads": 16,
+    "mkldnn_enabled": true,
+    "seed": 42
+  },
+  "overfit_risk": "35 trades on validation (2019-2022, ~3.5 yrs) passes >=6/yr gate but is a small sample. 27/35 trades (77%) in 2019 alone. 2020=1 trade, 2022=0 trades. Performance concentrated in low-volatility regime years. Bootstrap CI and out-of-sample frozen test (Stage 10) required before production claims."
 }
