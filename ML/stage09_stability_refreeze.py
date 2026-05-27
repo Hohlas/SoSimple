@@ -1,17 +1,21 @@
 # =============================================================================
 # Файл: stage09_stability_refreeze.py
-# Назначение: Stage 09 validation-only stability scan for the frozen Transformer.
-# Обновлён: 2026-05-26
+# Назначение: Stage 09 — validation-only stability scan + canonical frozen rule.
+#   SOURCE OF TRUTH for stage09_frozen_rule.json.
+#   Run AFTER validation_freeze.py (which trains and saves the checkpoint).
+# Обновлён: 2026-05-27
 # Входные данные:
 #   - DATA/Nero_validation_labeled.csv
 #   - ML/checkpoints/transformer_winner.pt
 #   - ML/checkpoints/pll_normalizer_v1.pkl
 # Выходные данные:
-#   - ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json
+#   - ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json  ← canonical rule
+#   - ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json  ← full scan
 # Использование:
 #   ./.venv/bin/python ML/stage09_stability_refreeze.py
 # Примечания:
-#   - Test split is never read. Top-k candidates are converted to validation-calibrated thresholds for live/test safety.
+#   - Test split is never read.
+#   - Top-k candidates are converted to validation-calibrated thresholds for live/test safety.
 # =============================================================================
 
 from __future__ import annotations
@@ -38,6 +42,9 @@ from ML.validation_freeze import (
     SEED,
     SEQ_LEN,
     TARGET,
+    THRESHOLD as TRAINING_THRESHOLD,
+    EPOCHS,
+    N_CLASSES,
     TransformerEncoder3Class,
     compute_pf,
     env_info,
@@ -56,7 +63,8 @@ REPORT_DIR = Path("ML/reports/methodology_cycle_candidate_source_v2")
 
 CHECKPOINT = CKPT_DIR / "transformer_winner.pt"
 NORMALIZER = CKPT_DIR / "pll_normalizer_v1.pkl"
-OUT_PATH = REPORT_DIR / "stage09_stability_refreeze.json"
+FROZEN_RULE_PATH = REPORT_DIR / "stage09_frozen_rule.json"
+SCAN_PATH = REPORT_DIR / "stage09_stability_refreeze.json"
 
 THRESHOLDS = [round(x, 2) for x in np.arange(0.30, 0.76, 0.025)]
 TOP_K_PCTS = [0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 7.5, 10.0, 12.5, 15.0, 20.0, 25.0, 30.0]
@@ -229,54 +237,129 @@ def main() -> None:
     by_trades = sorted(rows, key=lambda r: (r["trades"], r["PF"]), reverse=True)[:10]
     by_stability = sorted(rows, key=lambda r: (r["stability_score"], r["PF"]), reverse=True)[:10]
 
-    output = sanitize_for_json(
-        {
-            "cycle_id": "methodology_cycle_candidate_source_v2",
-            "stage": "09-validation-freeze-stability-refreeze",
-            "scope": "validation-only; test not read",
-            "source_rule": "stage09_frozen_rule.json",
-            "checkpoint": str(CHECKPOINT),
-            "checkpoint_sha256": file_sha256(str(CHECKPOINT)),
-            "normalizer": str(NORMALIZER),
-            "normalizer_sha256": file_sha256(str(NORMALIZER)),
-            "target": TARGET,
-            "seq_len": SEQ_LEN,
-            "search_space": {
-                "thresholds": THRESHOLDS,
-                "top_k_pcts": TOP_K_PCTS,
+    # ─── Canonical frozen rule ──────────────────────────────────────────────────
+
+    # Find training-threshold rule (THRESHOLD=0.60) in scan results as superseded
+    superseded = next((r for r in rows if r["family"] == "threshold" and r["value"] == TRAINING_THRESHOLD), None)
+
+    selected = eligible[0]
+    canonical_threshold = selected.get("threshold_equivalent", selected["value"])
+
+    frozen_rule = sanitize_for_json({
+        "model": "Transformer",
+        "checkpoint": str(CHECKPOINT),
+        "checkpoint_sha256": file_sha256(str(CHECKPOINT)),
+        "normalizer": str(NORMALIZER),
+        "normalizer_sha256": file_sha256(str(NORMALIZER)),
+        "selection_rule": {
+            "type": "validation_calibrated_threshold",
+            "threshold": canonical_threshold,
+            "calibrated_from": {
+                "family": selected["family"],
+                "value": selected["value"],
+                "source": "stage09_stability_refreeze.json",
             },
-            "stability_gates": {
-                "min_pf": MIN_PF,
-                "min_trades_per_year": MIN_TRADES_PER_YEAR,
-                "min_active_years": MIN_ACTIVE_YEARS,
-                "max_year_trade_share": MAX_YEAR_TRADE_SHARE,
-                "max_negative_years": 0,
-                "min_bootstrap_ci_low": MIN_BOOTSTRAP_CI_LOW,
-            },
-            "eligible_count": len(eligible),
-            "selected_rule": eligible[0] if eligible else None,
-            "best_by_pf_top10": by_pf,
-            "best_by_trades_top10": by_trades,
-            "best_by_stability_top10": by_stability,
-            "all_results": rows,
-            "environment": env_info(),
-            "verdict": "PASS" if eligible else "NO_STABLE_RULE_FOUND",
-            "interpretation": (
-                "A PASS here means an alternative validation-only selection rule passed the stricter "
-                "stability gates. It does not authorize Stage 10 by itself; Stage 09 canonical rule "
-                "must be updated explicitly before frozen test."
+            "reason": (
+                "Chosen by validation-only stability gates: PF>=1.5, >=6 trades/year, "
+                "0 negative years, >=3 active years, max year trade share <=0.60, "
+                "bootstrap CI low >=1.0."
+            ),
+        },
+        "threshold": canonical_threshold,
+        "seq_len": SEQ_LEN,
+        "target": TARGET,
+        "n_classes": N_CLASSES,
+        "epochs": EPOCHS,
+        "val_pf": selected["PF"],
+        "val_trades": selected["trades"],
+        "val_trades_per_year": selected["trades_per_year"],
+        "val_wr": selected["wr"],
+        "val_tp": selected["tp"],
+        "val_sl": selected["sl"],
+        "negative_years": selected["negative_years"],
+        "active_years": selected["active_years"],
+        "max_year_trade_share": selected["max_year_trade_share"],
+        "per_year": selected["per_year"],
+        "bootstrap": selected["bootstrap"],
+        "stability_gates": {
+            "active_years_ge_3": selected["active_years"] >= MIN_ACTIVE_YEARS,
+            "max_year_trade_share_le_0_60": selected["max_year_trade_share"] <= MAX_YEAR_TRADE_SHARE,
+            "bootstrap_ci_low_ge_1_0": bool(selected["bootstrap"] and selected["bootstrap"]["ci95_low"] >= MIN_BOOTSTRAP_CI_LOW),
+        },
+    })
+
+    if superseded and superseded != selected:
+        frozen_rule["superseded_high_pf_rule"] = {
+            "threshold": TRAINING_THRESHOLD,
+            "val_pf": superseded["PF"],
+            "val_trades": superseded["trades"],
+            "negative_years": superseded["negative_years"],
+            "max_year_trade_share": superseded["max_year_trade_share"],
+            "reason": (
+                f"Rejected as canonical frozen rule because "
+                f"{superseded['max_year_trade_share']*100:.0f}% of validation trades concentrate "
+                f"in max year and active_years={superseded['active_years']} < 4."
             ),
         }
+
+    frozen_rule["environment"] = env_info()
+    frozen_rule["overfit_risk"] = (
+        f"Stability refreeze reduces concentration versus the high-PF threshold: "
+        f"{selected['trades']} trades, all {selected['active_years']} validation years active, "
+        f"max year share {selected['max_year_trade_share']:.1%}, "
+        f"bootstrap CI low {selected['bootstrap']['ci95_low']:.2f}. "
+        f"Still validation-only and research_only until frozen test, robustness, costs, and MT4 parity pass."
     )
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_PATH, "w") as f:
-        json.dump(output, f, indent=2, allow_nan=False)
-    print(f"Saved: {OUT_PATH}")
-    print(f"Eligible stable rules: {len(eligible)}")
+
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+    with open(FROZEN_RULE_PATH, "w") as f:
+        json.dump(frozen_rule, f, indent=2, allow_nan=False)
+    print(f"Canonical frozen rule: {FROZEN_RULE_PATH}")
+
+    # ─── Full stability scan (for audit/reproducibility) ────────────────────────
+    scan_output = sanitize_for_json({
+        "cycle_id": "methodology_cycle_candidate_source_v2",
+        "stage": "09-validation-freeze-stability-refreeze",
+        "scope": "validation-only; test not read",
+        "canonical_rule": str(FROZEN_RULE_PATH),
+        "checkpoint": str(CHECKPOINT),
+        "checkpoint_sha256": file_sha256(str(CHECKPOINT)),
+        "normalizer": str(NORMALIZER),
+        "normalizer_sha256": file_sha256(str(NORMALIZER)),
+        "target": TARGET,
+        "seq_len": SEQ_LEN,
+        "search_space": {
+            "thresholds": THRESHOLDS,
+            "top_k_pcts": TOP_K_PCTS,
+        },
+        "stability_gates": {
+            "min_pf": MIN_PF,
+            "min_trades_per_year": MIN_TRADES_PER_YEAR,
+            "min_active_years": MIN_ACTIVE_YEARS,
+            "max_year_trade_share": MAX_YEAR_TRADE_SHARE,
+            "max_negative_years": 0,
+            "min_bootstrap_ci_low": MIN_BOOTSTRAP_CI_LOW,
+        },
+        "eligible_count": len(eligible),
+        "selected_rule": eligible[0] if eligible else None,
+        "best_by_pf_top10": by_pf,
+        "best_by_trades_top10": by_trades,
+        "best_by_stability_top10": by_stability,
+        "all_results": rows,
+        "environment": env_info(),
+        "verdict": "PASS" if eligible else "NO_STABLE_RULE_FOUND",
+    })
+    with open(SCAN_PATH, "w") as f:
+        json.dump(scan_output, f, indent=2, allow_nan=False)
+    print(f"Full scan: {SCAN_PATH}")
+
+    print(f"\nEligible stable rules: {len(eligible)}")
     if eligible:
         r = eligible[0]
         print(
-            f"Selected: {r['family']}={r['value']} PF={r['PF']} trades={r['trades']} "
+            f"Selected: {r['family']}={r['value']} thr={canonical_threshold} "
+            f"PF={r['PF']} trades={r['trades']} "
             f"active_years={r['active_years']} max_year_share={r['max_year_trade_share']}"
         )
     else:

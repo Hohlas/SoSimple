@@ -19,7 +19,6 @@
   "target": "buy_sl3_tp3",
   "n_classes": 3,
   "epochs": 10,
-  "best_epoch": 8,
   "val_pf": 1.9722,
   "val_trades": 142,
   "val_trades_per_year": 40.5714,
@@ -66,11 +65,6 @@
     "n_bootstrap": 1000,
     "finite_samples": 1000
   },
-  "round_trip_max_diff": 0.0,
-  "round_trip_pf": 1.9722,
-  "gate_pf_ge_1_5": true,
-  "gate_trades_per_year": true,
-  "gate_neg_years": true,
   "stability_gates": {
     "active_years_ge_3": true,
     "max_year_trade_share_le_0_60": true,
@@ -82,7 +76,7 @@
     "val_trades": 35,
     "negative_years": 0,
     "max_year_trade_share": 0.7714,
-    "reason": "Rejected as canonical frozen rule because 77% of validation trades concentrate in 2019 and 2022 has zero trades."
+    "reason": "Rejected as canonical frozen rule because 77% of validation trades concentrate in max year and active_years=3 < 4."
   },
   "environment": {
     "python": "3.10.12",

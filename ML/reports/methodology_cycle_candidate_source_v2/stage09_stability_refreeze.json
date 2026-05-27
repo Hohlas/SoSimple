@@ -2,7 +2,7 @@
   "cycle_id": "methodology_cycle_candidate_source_v2",
   "stage": "09-validation-freeze-stability-refreeze",
   "scope": "validation-only; test not read",
-  "source_rule": "stage09_frozen_rule.json",
+  "canonical_rule": "ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json",
   "checkpoint": "ML/checkpoints/transformer_winner.pt",
   "checkpoint_sha256": "2944a17701e3fbce",
   "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
@@ -3929,6 +3929,5 @@
     "mkldnn_enabled": true,
     "seed": 42
   },
-  "verdict": "PASS",
-  "interpretation": "A PASS here means an alternative validation-only selection rule passed the stricter stability gates. It does not authorize Stage 10 by itself; Stage 09 canonical rule must be updated explicitly before frozen test."
+  "verdict": "PASS"
 }
