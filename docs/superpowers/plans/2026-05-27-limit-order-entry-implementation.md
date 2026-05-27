@@ -731,13 +731,16 @@ done
 
 Проверить: на каком spread fill rate падает ниже ~30%? Это определяет запас прочности гипотезы.
 
-- [ ] **Step 3: Сохранить отчёт аудита spread grid, НЕ коммитить CSV датасеты**
+- [ ] **Step 3: Сохранить агрегированный отчёт spread grid**
 
 ```bash
 mkdir -p ML/baseline/reports
-.venv/bin/python processing/label_audit.py \
-  --new DATA/limit_order/Nero_train_labeled.csv \
-  --primary-target buy_sl3_tp3 2>&1 | tee ML/baseline/reports/limit_order_spread_audit.md
+for spread in 0 0.20 0.40 0.80; do
+  echo "=== SPREAD=$spread ==="
+  .venv/bin/python processing/label_audit.py \
+    --new "DATA/spread_${spread}/Nero_train_labeled.csv" \
+    --primary-target buy_sl3_tp3
+done | tee ML/baseline/reports/limit_order_spread_audit.md
 ```
 
 CSV-датасеты в `DATA/limit_order/` и `DATA/spread_*/` — generated artifacts, не коммитить. Коммитить только отчёты (*.md, *.json).
@@ -869,7 +872,7 @@ def main():
     print(f"New sizes: train={len(train_purged)} val={len(val_purged)} test={len(test_purged)}")
 
     output_dir = args.output_dir or os.path.dirname(args.train)
-    for name, df in [('train', train_purged), ('val', val_purged), ('test', test_purged)]:
+    for name, df in [('train', train_purged), ('validation', val_purged), ('test', test_purged)]:
         path = os.path.join(output_dir, f'Nero_{name}_labeled.csv')
         df.to_csv(path, sep=';', index=False)
         print(f"Saved: {path}")
@@ -879,13 +882,14 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: Запустить purge на дефолтных лейблах (spread=0)**
+- [ ] **Step 2: Запустить purge на DATA/limit_order/ (НЕ на основном DATA/)**
 
 ```bash
 .venv/bin/python processing/purge_split.py \
-  --train DATA/Nero_train_labeled.csv \
-  --val DATA/Nero_validation_labeled.csv \
-  --test DATA/Nero_test_labeled.csv \
+  --train DATA/limit_order/Nero_train_labeled.csv \
+  --val DATA/limit_order/Nero_validation_labeled.csv \
+  --test DATA/limit_order/Nero_test_labeled.csv \
+  --output-dir DATA/limit_order/ \
   --purge-hours 30
 ```
 
@@ -1089,15 +1093,6 @@ from label_signals import (
 )
 
 
-def load_data(path, fill_only=True):
-    """Загрузить labeled CSV. fill_only: исключить NO_FILL строки."""
-    df = pd.read_csv(path, sep=';')
-    mask = df['fill_lag'] >= 0
-    if fill_only:
-        return df[mask].copy(), mask
-    return df, mask
-
-
 def parse_fractal_to_features(df):
     """Извлечь плоские признаки из fractal0..fractal99 (как в baseline_experiments.py)."""
     features = []
@@ -1192,9 +1187,17 @@ def evaluate_threshold(scores, pnl_values, fill_mask, time_col,
     fill_rate_val = n_filled / n_selected if n_selected > 0 else 0.0
 
     if time_col is not None:
-        years = (time_col.max() - time_col.min()).days / 365.25
-        tpy = n_filled / max(years, 0.5)
+        filled_times = time_col[selected_fill]
+        if len(filled_times) > 0:
+            years_series = filled_times.dt.year
+            yearly_pnl = pd.Series(pnl_values[selected_fill]).groupby(years_series).sum()
+            negative_years_val = int((yearly_pnl < 0).sum())
+        else:
+            negative_years_val = 0
+        total_years = (time_col.max() - time_col.min()).days / 365.25
+        tpy = n_filled / max(total_years, 0.5)
     else:
+        negative_years_val = 0
         tpy = 0.0
 
     return {
@@ -1205,6 +1208,7 @@ def evaluate_threshold(scores, pnl_values, fill_mask, time_col,
         'mean_r_per_signal': mean_r_signal,
         'mean_r_per_trade': mean_r_trade,
         'trades_per_year': tpy,
+        'negative_years': negative_years_val,
     }
 
 
@@ -1306,14 +1310,15 @@ def main():
         valid = [r for r in results
                  if r['fill_rate'] >= 0.20
                  and r['trades_per_year'] >= 6
-                 and 'negative_years' not in r or r.get('negative_years', 0) == 0]
+                 and r['negative_years'] == 0]
         if valid:
             best = max(valid, key=lambda r: r['pf'])
             best['model'] = name
             print(f"  Best threshold: {best['threshold']:.4f}")
             print(f"  PF={best['pf']:.3f}  fill_rate={best['fill_rate']:.1%}  "
                   f"trades/year={best['trades_per_year']:.1f}  "
-                  f"selected={best['n_selected']}  filled={best['n_filled']}")
+                  f"selected={best['n_selected']}  filled={best['n_filled']}  "
+                  f"neg_years={best['negative_years']}")
             if best['pf'] >= 1.3:
                 gate_pass = True
                 if best_result is None or best['pf'] > best_result['pf']:

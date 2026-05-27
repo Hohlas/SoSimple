@@ -130,9 +130,11 @@ OHLC не даёт порядка тиков внутри бара. Возмож
       Примечание: BUY закрывается по Bid, BUY entry=Ask=Close[row], spread уже в entry.
                  SELL закрывается по Ask ≈ Bid + spread, поэтому TIMEOUT корректируется.
   8. Выходные колонки:
-      fill_lag: int (0..5 = баров после сигнала до fill, -1 = NO_FILL)
+      buy_fill_lag: int (0..5 = баров после сигнала до BUY fill, -1 = NO_FILL)
+      sell_fill_lag: int (0..5 = баров после сигнала до SELL fill, -1 = NO_FILL)
       ambiguous_flag_{target}: int per target combo (0=чистый, 1=fill+SL, 2=fill+TP,
                                 3=fill+TP+SL, 4=post-fill TP+SL)
+      {target}_pnl_r: float (R-multiple PnL для каждого TB-комбо)
 ```
 
 #### Implementation notes
@@ -179,7 +181,7 @@ PF = gross_profit / gross_loss в R-кратном выражении (Timeout �
 
 #### Stratification по fill_lag
 
-PF, Win rate, и число сигналов — раздельно по группам:
+PF, Win rate, и число сигналов — раздельно по сторонам (buy_fill_lag / sell_fill_lag) и группам:
 
 | Группа | fill_lag | Интерпретация |
 |--------|----------|---------------|
@@ -197,7 +199,7 @@ PF, Win rate, и число сигналов — раздельно по гру�
 **Phase 1 — Labeling + Audit (без модели)**
 - Реализовать `label_limit_order_barriers()` с conservative/optimistic/ambiguous режимами
 - Регенерировать лейблы на полном датасете
-- Аудит: распределение fill_lag, ambiguous_flag по target combo, доля NO_FILL
+- Аудит: распределение buy_fill_lag / sell_fill_lag, ambiguous_flag по target combo, доля NO_FILL по сторонам
 - Аудит: сравнение `label_first_barrier_hit` (старый, entry=Close) vs `label_limit_order_barriers` (новый) на пересекающихся строках
 - Purge/embargo: 30 H1 баров (по времени, не по числу строк), обновить split
 
@@ -223,7 +225,7 @@ PF, Win rate, и число сигналов — раздельно по гру�
 |------|--------|
 | `processing/label_signals.py` | +`label_limit_order_barriers()` с параметрами `fill_window`, `barrier_window`, `spread`, `mode` |
 | `processing/label_main.py` | Условный вызов: `--limit-order` флаг, добавляет вызов новой функции в pipeline |
-| `processing/label_audit.py` (новый) | Аудит fill_lag распределения, ambiguous_flag по target, сравнение со старыми лейблами |
+| `processing/label_audit.py` (новый) | Аудит buy_fill_lag / sell_fill_lag распределения, ambiguous_flag по target, сравнение со старыми лейблами |
 
 **Phase 2 (RF/HGB baseline):**
 
