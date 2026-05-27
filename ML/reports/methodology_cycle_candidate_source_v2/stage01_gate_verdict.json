@@ -83,6 +83,16 @@
       "ML/checkpoints/pll_normalizer_v1.pkl"
     ]
   },
-  "next_allowed_stage": "10-frozen-test-oos",
+  "stage10": {
+    "verdict": "PASS",
+    "reason": "Frozen test/OOS was run once with the unchanged Stage 09 rule: threshold=0.5359389781951904, checkpoint and normalizer hashes matched the frozen rule, no training/refit/threshold search. Test PF=3.00, 37 trades, 10.6 trades/year, 0 negative years, RF_160 validation baseline uplift +1.4239 PF. Model verdict: candidate, not production. Limitations: sparse trades, 72.97% of test trades in 2023, 2022 idle, gross metrics only, side slices diagnostic only.",
+    "artifacts": [
+      "stage10_frozen_test_oos.json",
+      "stage10_test_predictions.csv",
+      "stage10_test_trades.csv",
+      "ML/stage10_frozen_test_oos.py"
+    ]
+  },
+  "next_allowed_stage": "11-robustness",
   "requires_user_pass_to_continue": true
 }

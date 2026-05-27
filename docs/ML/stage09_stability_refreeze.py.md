@@ -31,3 +31,5 @@ Run AFTER `validation_freeze.py` (which trains and saves the checkpoint + normal
 - Top-k validation candidates are converted to an equivalent validation-calibrated threshold before promotion, so the frozen rule can be applied to test/live without peeking at the target period distribution.
 - Stability gates include PF, trades/year, active years, negative years, max year trade share, and bootstrap CI lower bound.
 - This script is the ONLY source of truth for `stage09_frozen_rule.json`. `validation_freeze.py` does not overwrite it.
+- If no candidate passes stability gates, the script writes only `stage09_stability_refreeze.json` with `verdict=NO_STABLE_RULE_FOUND` and does not overwrite the canonical frozen rule.
+- Bootstrap PF uses the shared `compute_pf()` convention from `validation_freeze.py`, including the capped no-loss PF policy.

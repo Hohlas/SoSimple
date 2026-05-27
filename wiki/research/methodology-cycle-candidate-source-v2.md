@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-05-26
+last_updated: 2026-05-27
 sources: 1
 status: active
 ---
 
 # Methodology Cycle Candidate Source v2
 
-> Live-safe candidate-source cycle rebuilt the Nero/PIC pipeline and reached a validation-only Transformer freeze; the current rule is research-only pending frozen test.
+> Live-safe candidate-source cycle rebuilt the Nero/PIC pipeline and reached a Stage 10 frozen-test candidate; production claims still require robustness, costs, MT4 parity and forward-test.
 
 ## Хронология
 
@@ -18,6 +18,10 @@ Stages 07-08 established baselines and a first model sweep. Flat RF found `buy_s
 
 Stage 09 froze a deterministic Transformer checkpoint. The initial high-PF threshold (`0.60`) produced PF `2.57` on only `35` validation trades, with `77%` of trades in 2019. A validation-only stability refreeze replaced it with threshold `0.5359389781951904`, calibrated from top `1.5%` validation scores.
 
+Stage 09 script ownership is split deliberately: `validation_freeze.py` trains and round-trip verifies the checkpoint/normalizer, while `stage09_stability_refreeze.py` is the source of truth for the canonical `stage09_frozen_rule.json`.
+
+Stage 10 applied the unchanged Stage 09 rule to the test split once. Aggregate gates passed (PF `3.00`, `37` trades, `0` negative years), but the result has structural risk: `27/37` trades were in 2023, 2022 had no trades, and most selected rows had `signal=0`, so BUY/SELL slices are diagnostic rather than live execution-side proof.
+
 ## Ключевые результаты
 
 | Stage | Result |
@@ -27,17 +31,17 @@ Stage 09 froze a deterministic Transformer checkpoint. The initial high-PF thres
 | Model sweep | Transformer PF `11.60` / `63` trades, BiLSTM PF `1.74` / `293` trades on timeout-excluded binary validation |
 | Initial freeze | Transformer threshold `0.60`, PF `2.57`, `35` trades, max year share `77%` |
 | Stability refreeze | threshold `0.5359389781951904`, PF `1.97`, `142` trades, `0` negative years, `4` active years, max year share `47.9%`, bootstrap CI `[1.36, 3.00]` |
+| Frozen test | threshold `0.5359389781951904`, PF `3.00`, `37` trades, `10.6` trades/year, `0` negative years, max year share `72.97%` |
 
 ## Выводы
 
-The current Transformer rule is a better validation candidate after stability refreeze: it trades more often and no longer depends mostly on 2019. It is still not production evidence. The status remains research-only until frozen test, robustness, costs, and MT4 parity pass with the unchanged checkpoint, normalizer, threshold, target, and execution mapping.
+The current Transformer rule passed the one-shot frozen test aggregate gates and can proceed to robustness as a candidate. It is still not production evidence. The high test concentration means Stage 11 must specifically stress yearly/regime stability before costs, export, MT4 parity or forward-test claims.
 
 ## Открытые вопросы
 
-- Whether the validation-stable threshold survives Stage 10 frozen test.
 - Whether robustness holds across volatility regimes, years, and future forward data.
 - Whether single-seed deterministic training is enough, or a multi-seed rule is required before production candidacy.
 
 ## Источники
 
-- `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md` — methodology cycle Stages 00-09 and Stage 09 stability refreeze.
+- `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md` — methodology cycle Stages 00-10, Stage 09 stability refreeze, and Stage 10 frozen test.

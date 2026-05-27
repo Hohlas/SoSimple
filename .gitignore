@@ -258,6 +258,8 @@ MT/tester/logs/*
 *.csv
 *.xlsx
 !ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv
+!ML/reports/methodology_cycle_candidate_source_v2/stage10_test_predictions.csv
+!ML/reports/methodology_cycle_candidate_source_v2/stage10_test_trades.csv
 DATA/*.npy
 
 # pictures

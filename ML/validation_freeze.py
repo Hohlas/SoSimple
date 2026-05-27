@@ -33,6 +33,7 @@ DATA_DIR = Path("DATA")
 CKPT_DIR = Path("ML/checkpoints")
 REPORT_DIR = Path("ML/reports/methodology_cycle_candidate_source_v2")
 TARGET = "buy_sl3_tp3"
+PNL_COL = "buy_sl3_tp3_pnl_r"
 SEQ_LEN = 50
 N_CLASSES = 3
 THRESHOLD = 0.60
@@ -107,27 +108,42 @@ def sanitize_for_json(obj):
     return obj
 
 
-def compute_pf(y_true: np.ndarray, proba: np.ndarray, threshold: float) -> dict:
-    pred = (proba >= threshold).astype(int)
+def compute_pf(pnl_r: np.ndarray, proba: np.ndarray | None = None,
+               threshold: float | None = None, selected: np.ndarray | None = None) -> dict:
+    if selected is not None:
+        pred = selected.astype(int)
+    elif proba is not None and threshold is not None:
+        pred = (proba >= threshold).astype(int)
+    else:
+        raise ValueError("Either (proba, threshold) or selected must be provided")
     n = pred.sum()
     if n == 0:
-        return {"PF": 0.0, "trades": 0, "wr": 0.0, "tp": 0, "sl": 0}
-    tp = int(((pred == 1) & (y_true == 2)).sum())
-    sl = int(((pred == 1) & (y_true == 0)).sum())
-    pf = 99.0 if sl == 0 else tp / sl
-    wr = tp / max(tp + sl, 1)
-    return {"PF": round(pf, 4), "trades": int(n), "wr": round(wr, 4), "tp": tp, "sl": sl}
+        return {"PF": 0.0, "trades": 0, "wr": 0.0, "tp": 0, "sl": 0, "timeout": 0,
+                "gross_profit_r": 0.0, "gross_loss_r": 0.0}
+    sel = pnl_r[pred == 1]
+    pos = sel[sel > 0]
+    neg = sel[sel < 0]
+    gross_profit = float(pos.sum())
+    gross_loss = float(abs(neg.sum()))
+    pf = 99.0 if gross_loss == 0 else gross_profit / gross_loss
+    tp = int(len(pos))
+    sl = int(len(neg))
+    timeout = int(n) - tp - sl
+    wr = tp / max(tp + sl, 1) if tp + sl > 0 else 0.0
+    return {"PF": round(float(pf), 4), "trades": int(n), "wr": round(float(wr), 4),
+            "tp": tp, "sl": sl, "timeout": timeout,
+            "gross_profit_r": round(gross_profit, 4),
+            "gross_loss_r": round(gross_loss, 4)}
 
 
-def per_year_pf(val_raw, yv, proba, thr):
+def per_year_pf(val_raw, pnl_r, proba, thr):
     df = val_raw.copy()
     df["year"] = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M", errors="coerce").dt.year
     result = {}
     neg_yrs = 0
     for yr, g in df.groupby("year"):
         idx = g.index
-        r = compute_pf(yv[idx], proba[idx], thr)
-        # PF=0 with 0 trades means model stayed out — not a negative year
+        r = compute_pf(pnl_r[idx], proba[idx], thr)
         is_neg = r["PF"] < 1.0 and r["trades"] > 0
         if is_neg:
             neg_yrs += 1
@@ -135,13 +151,13 @@ def per_year_pf(val_raw, yv, proba, thr):
     return result, neg_yrs
 
 
-def bootstrap_pf_ci(y_true, proba, thr, n_bootstrap=1000):
+def bootstrap_pf_ci(pnl_r, proba, thr, n_bootstrap=1000):
     pfs = []
-    n = len(y_true)
+    n = len(pnl_r)
     rng = np.random.RandomState(SEED)
     for _ in range(n_bootstrap):
         idx = rng.choice(n, n, replace=True)
-        r = compute_pf(y_true[idx], proba[idx], thr)
+        r = compute_pf(pnl_r[idx], proba[idx], thr)
         if 0 < r["PF"] < 99.0:
             pfs.append(r["PF"])
     if len(pfs) < 2:
@@ -163,6 +179,7 @@ def main():
 
     yt = train_raw[TARGET].map(LABEL_MAP).fillna(0).astype(int).values
     yv = val_raw[TARGET].map(LABEL_MAP).fillna(0).astype(int).values
+    pnl_val = pd.to_numeric(val_raw[PNL_COL], errors="coerce").fillna(0.0).astype(float).values
     print(f"  Classes: {dict(zip(*np.unique(yt, return_counts=True)))}")
 
     print("Building 3D tensors...")
@@ -214,7 +231,7 @@ def main():
                 ay.append(yb.cpu())
         proba = torch.cat(ap).numpy()
         y_true = torch.cat(ay).numpy()
-        r = compute_pf(y_true, proba, THRESHOLD)
+        r = compute_pf(pnl_val, proba, THRESHOLD)
         if r["PF"] > best_pf and r["trades"] >= 6:
             best_pf = r["PF"]
             best_proba = proba.copy()
@@ -236,6 +253,7 @@ def main():
     print("Round-trip verification...")
     val_raw2 = pd.read_csv(DATA_DIR / "Nero_validation_labeled.csv", sep=";")
     yv2 = val_raw2[TARGET].map(LABEL_MAP).fillna(0).astype(int).values
+    pnl_val2 = pd.to_numeric(val_raw2[PNL_COL], errors="coerce").fillna(0.0).astype(float).values
     Xv_raw, mask_v2 = parse_fractals_to_3d(val_raw2)
     Xv_raw, mask_v2 = Xv_raw[:, :SEQ_LEN, :], mask_v2[:, :SEQ_LEN]
     norm2 = PLLFeatureNormalizer.load(norm_path)
@@ -252,7 +270,7 @@ def main():
             ap2.append(F.softmax(model2(xb, mb), 1)[:, 2].cpu())
     proba_rt = torch.cat(ap2).numpy()
     diff = float(np.abs(best_proba - proba_rt).max())
-    r2 = compute_pf(yv2, proba_rt, THRESHOLD)
+    r2 = compute_pf(pnl_val2, proba_rt, THRESHOLD)
     print(f"  max proba diff={diff:.2e}, PF={r2['PF']:.2f} trades={r2['trades']}")
 
     # ─── Summary ──────────────────────────────────────────────────────────────────
@@ -260,9 +278,9 @@ def main():
     # after the checkpoint is saved. The diagnostics below are training-time
     # metrics at THRESHOLD={THRESHOLD} — they are NOT the canonical rule.
 
-    high_pf = compute_pf(yv, best_proba, THRESHOLD)
-    high_per_year, high_neg = per_year_pf(val_raw, yv, best_proba, THRESHOLD)
-    high_bootstrap = bootstrap_pf_ci(yv, best_proba, THRESHOLD)
+    high_pf = compute_pf(pnl_val, best_proba, THRESHOLD)
+    high_per_year, high_neg = per_year_pf(val_raw, pnl_val, best_proba, THRESHOLD)
+    high_bootstrap = bootstrap_pf_ci(pnl_val, best_proba, THRESHOLD)
 
     print(f"\nTraining threshold diagnostics (t={THRESHOLD}):")
     print(f"  PF={high_pf['PF']} trades={high_pf['trades']} wr={high_pf['wr']:.1%} neg_yrs={high_neg}")

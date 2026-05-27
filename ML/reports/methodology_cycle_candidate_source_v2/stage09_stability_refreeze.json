@@ -2,9 +2,9 @@
   "cycle_id": "methodology_cycle_candidate_source_v2",
   "stage": "09-validation-freeze-stability-refreeze",
   "scope": "validation-only; test not read",
-  "canonical_rule": "ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json",
+  "canonical_rule": null,
   "checkpoint": "ML/checkpoints/transformer_winner.pt",
-  "checkpoint_sha256": "2944a17701e3fbce",
+  "checkpoint_sha256": "0595da35c7325043",
   "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
   "normalizer_sha256": "ea0b3db7e3a4360e",
   "target": "buy_sl3_tp3",
@@ -56,652 +56,608 @@
     "max_negative_years": 0,
     "min_bootstrap_ci_low": 1.0
   },
-  "eligible_count": 4,
-  "selected_rule": {
-    "family": "top_k_pct",
-    "value": 1.5,
-    "threshold_equivalent": 0.5359389781951904,
-    "PF": 1.9722,
-    "trades": 142,
-    "wr": 0.6636,
-    "tp": 71,
-    "sl": 36,
-    "trades_per_year": 40.5714,
-    "negative_years": 0,
-    "active_years": 4,
-    "max_year_trade_share": 0.4789,
-    "per_year": {
-      "2019": {
-        "PF": 1.8824,
-        "trades": 68,
-        "wr": 0.6531,
-        "tp": 32,
-        "sl": 17
-      },
-      "2020": {
-        "PF": 3.0,
-        "trades": 18,
-        "wr": 0.75,
-        "tp": 12,
-        "sl": 4
-      },
-      "2021": {
-        "PF": 2.1,
-        "trades": 38,
-        "wr": 0.6774,
-        "tp": 21,
-        "sl": 10
-      },
-      "2022": {
-        "PF": 1.2,
-        "trades": 18,
-        "wr": 0.5455,
-        "tp": 6,
-        "sl": 5
-      }
-    },
-    "bootstrap": {
-      "mean": 2.0315,
-      "ci95_low": 1.3554,
-      "ci95_high": 3.0,
-      "n_bootstrap": 1000,
-      "finite_samples": 1000
-    },
-    "gates": {
-      "pf_ge_1_5": true,
-      "trades_per_year_ge_6": true,
-      "negative_years_eq_0": true,
-      "active_years_ge_3": true,
-      "max_year_trade_share_le_0_60": true,
-      "bootstrap_ci_low_ge_1_0": true
-    },
-    "all_stability_gates_pass": true,
-    "stability_score": 2.055532
-  },
+  "eligible_count": 0,
+  "selected_rule": null,
   "best_by_pf_top10": [
     {
       "family": "threshold",
       "value": 0.65,
       "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 10,
-      "wr": 1.0,
-      "tp": 6,
-      "sl": 0,
-      "trades_per_year": 2.8571,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "PF": 1.5,
+      "trades": 5,
+      "wr": 0.6,
+      "tp": 3,
+      "sl": 2,
+      "timeout": 0,
+      "gross_profit_r": 9.0,
+      "gross_loss_r": 6.0,
+      "trades_per_year": 1.4286,
+      "negative_years": 2,
+      "active_years": 3,
+      "max_year_trade_share": 0.6,
       "per_year": {
         "2019": {
-          "PF": 99.0,
-          "trades": 10,
-          "wr": 1.0,
-          "tp": 6,
-          "sl": 0
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 1,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 1,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 3.0
         },
         "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
-        },
-        "2022": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
-        }
-      },
-      "bootstrap": null,
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 0.0
-    },
-    {
-      "family": "threshold",
-      "value": 0.68,
-      "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 4,
-      "wr": 1.0,
-      "tp": 3,
-      "sl": 0,
-      "trades_per_year": 1.1429,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
-      "per_year": {
-        "2019": {
           "PF": 99.0,
-          "trades": 4,
+          "trades": 3,
           "wr": 1.0,
           "tp": 3,
-          "sl": 0
-        },
-        "2020": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
-        },
-        "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 9.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 1,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 1,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 3.0
         }
       },
-      "bootstrap": null,
+      "bootstrap": {
+        "mean": 8.251,
+        "ci95_low": 0.5,
+        "ci95_high": 99.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 982
+      },
       "gates": {
         "pf_ge_1_5": true,
         "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.0
+      "stability_score": 0.107143
     },
     {
       "family": "threshold",
-      "value": 0.7,
+      "value": 0.35,
       "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 1,
-      "wr": 1.0,
-      "tp": 1,
-      "sl": 0,
-      "trades_per_year": 0.2857,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "PF": 1.0746,
+      "trades": 3923,
+      "wr": 0.5221,
+      "tp": 2047,
+      "sl": 1874,
+      "timeout": 2,
+      "gross_profit_r": 4903.7375,
+      "gross_loss_r": 4563.1852,
+      "trades_per_year": 1120.8571,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3352,
       "per_year": {
         "2019": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
+          "PF": 1.0679,
+          "trades": 716,
+          "wr": 0.5147,
+          "tp": 368,
+          "sl": 347,
+          "timeout": 1,
+          "gross_profit_r": 886.4197,
+          "gross_loss_r": 830.0956
         },
         "2020": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 1.2434,
+          "trades": 1013,
+          "wr": 0.5607,
+          "tp": 568,
+          "sl": 445,
+          "timeout": 0,
+          "gross_profit_r": 1308.4816,
+          "gross_loss_r": 1052.3053
         },
         "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 0.9518,
+          "trades": 1315,
+          "wr": 0.4939,
+          "tp": 649,
+          "sl": 665,
+          "timeout": 1,
+          "gross_profit_r": 1534.9644,
+          "gross_loss_r": 1612.721
         },
         "2022": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 1.0991,
+          "trades": 879,
+          "wr": 0.5256,
+          "tp": 462,
+          "sl": 417,
+          "timeout": 0,
+          "gross_profit_r": 1173.8717,
+          "gross_loss_r": 1068.0634
         }
       },
-      "bootstrap": null,
+      "bootstrap": {
+        "mean": 1.0731,
+        "ci95_low": 1.014,
+        "ci95_high": 1.1308,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
       "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.428782
+    },
+    {
+      "family": "threshold",
+      "value": 0.38,
+      "threshold_equivalent": null,
+      "PF": 1.07,
+      "trades": 3055,
+      "wr": 0.5228,
+      "tp": 1596,
+      "sl": 1457,
+      "timeout": 2,
+      "gross_profit_r": 3851.4556,
+      "gross_loss_r": 3599.6154,
+      "trades_per_year": 872.8571,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3473,
+      "per_year": {
+        "2019": {
+          "PF": 1.0377,
+          "trades": 579,
+          "wr": 0.5104,
+          "tp": 295,
+          "sl": 283,
+          "timeout": 1,
+          "gross_profit_r": 713.9398,
+          "gross_loss_r": 688.0005
+        },
+        "2020": {
+          "PF": 1.1957,
+          "trades": 752,
+          "wr": 0.5545,
+          "tp": 417,
+          "sl": 335,
+          "timeout": 0,
+          "gross_profit_r": 966.2063,
+          "gross_loss_r": 808.0936
+        },
+        "2021": {
+          "PF": 0.97,
+          "trades": 1061,
+          "wr": 0.4991,
+          "tp": 529,
+          "sl": 531,
+          "timeout": 1,
+          "gross_profit_r": 1262.9603,
+          "gross_loss_r": 1301.9651
+        },
+        "2022": {
+          "PF": 1.1332,
+          "trades": 663,
+          "wr": 0.5354,
+          "tp": 355,
+          "sl": 308,
+          "timeout": 0,
+          "gross_profit_r": 908.3492,
+          "gross_loss_r": 801.5562
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0704,
+        "ci95_low": 1.0084,
+        "ci95_high": 1.1328,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.396779
+    },
+    {
+      "family": "top_k_pct",
+      "value": 30.0,
+      "threshold_equivalent": 0.38808342814445496,
+      "PF": 1.0579,
+      "trades": 2835,
+      "wr": 0.5208,
+      "tp": 1476,
+      "sl": 1358,
+      "timeout": 1,
+      "gross_profit_r": 3551.6517,
+      "gross_loss_r": 3357.3765,
+      "trades_per_year": 810.0,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.351,
+      "per_year": {
+        "2019": {
+          "PF": 1.0476,
+          "trades": 527,
+          "wr": 0.5133,
+          "tp": 270,
+          "sl": 256,
+          "timeout": 1,
+          "gross_profit_r": 649.6012,
+          "gross_loss_r": 620.0946
+        },
+        "2020": {
+          "PF": 1.1377,
+          "trades": 699,
+          "wr": 0.5451,
+          "tp": 381,
+          "sl": 318,
+          "timeout": 0,
+          "gross_profit_r": 876.9694,
+          "gross_loss_r": 770.8415
+        },
+        "2021": {
+          "PF": 0.9671,
+          "trades": 995,
+          "wr": 0.4985,
+          "tp": 496,
+          "sl": 499,
+          "timeout": 0,
+          "gross_profit_r": 1188.1454,
+          "gross_loss_r": 1228.5641
+        },
+        "2022": {
+          "PF": 1.1342,
+          "trades": 614,
+          "wr": 0.5358,
+          "tp": 329,
+          "sl": 285,
+          "timeout": 0,
+          "gross_profit_r": 836.9356,
+          "gross_loss_r": 737.8763
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0601,
+        "ci95_low": 0.9969,
+        "ci95_high": 1.1239,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.0
+      "stability_score": 1.373218
     },
     {
       "family": "threshold",
       "value": 0.63,
       "threshold_equivalent": null,
-      "PF": 8.0,
-      "trades": 16,
-      "wr": 0.8889,
-      "tp": 8,
-      "sl": 1,
-      "trades_per_year": 4.5714,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "PF": 1.0576,
+      "trades": 14,
+      "wr": 0.5,
+      "tp": 7,
+      "sl": 7,
+      "timeout": 0,
+      "gross_profit_r": 21.0,
+      "gross_loss_r": 19.8568,
+      "trades_per_year": 4.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.5714,
       "per_year": {
         "2019": {
-          "PF": 8.0,
-          "trades": 16,
-          "wr": 0.8889,
-          "tp": 8,
-          "sl": 1
+          "PF": 99.0,
+          "trades": 2,
+          "wr": 1.0,
+          "tp": 2,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 6.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 2,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 2,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 6.0
         },
         "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 1.9092,
+          "trades": 8,
+          "wr": 0.625,
+          "tp": 5,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 15.0,
+          "gross_loss_r": 7.8568
         },
         "2022": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 2,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 2,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 6.0
         }
       },
       "bootstrap": {
-        "mean": 5.9748,
-        "ci95_low": 1.6667,
-        "ci95_high": 11.0,
+        "mean": 1.1715,
+        "ci95_low": 0.433,
+        "ci95_high": 2.5043,
         "n_bootstrap": 1000,
-        "finite_samples": 637
+        "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": true
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.0
+      "stability_score": 0.302171
     },
     {
       "family": "threshold",
-      "value": 0.6,
+      "value": 0.3,
       "threshold_equivalent": null,
-      "PF": 2.5714,
-      "trades": 35,
-      "wr": 0.72,
-      "tp": 18,
-      "sl": 7,
-      "trades_per_year": 10.0,
-      "negative_years": 0,
-      "active_years": 3,
-      "max_year_trade_share": 0.7714,
-      "per_year": {
-        "2019": {
-          "PF": 3.25,
-          "trades": 27,
-          "wr": 0.7647,
-          "tp": 13,
-          "sl": 4
-        },
-        "2020": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
-        },
-        "2021": {
-          "PF": 1.3333,
-          "trades": 7,
-          "wr": 0.5714,
-          "tp": 4,
-          "sl": 3
-        },
-        "2022": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
-        }
-      },
-      "bootstrap": {
-        "mean": 3.1534,
-        "ci95_low": 1.0998,
-        "ci95_high": 8.3375,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 0.734686
-    },
-    {
-      "family": "top_k_pct",
-      "value": 0.5,
-      "threshold_equivalent": 0.5891655087471008,
-      "PF": 2.0909,
-      "trades": 47,
-      "wr": 0.6765,
-      "tp": 23,
-      "sl": 11,
-      "trades_per_year": 13.4286,
-      "negative_years": 1,
+      "PF": 1.0527,
+      "trades": 5448,
+      "wr": 0.5188,
+      "tp": 2825,
+      "sl": 2620,
+      "timeout": 3,
+      "gross_profit_r": 6649.8501,
+      "gross_loss_r": 6317.0314,
+      "trades_per_year": 1556.5714,
+      "negative_years": 2,
       "active_years": 4,
-      "max_year_trade_share": 0.7234,
+      "max_year_trade_share": 0.3174,
       "per_year": {
         "2019": {
-          "PF": 3.4,
-          "trades": 34,
-          "wr": 0.7727,
-          "tp": 17,
-          "sl": 5
+          "PF": 1.1225,
+          "trades": 936,
+          "wr": 0.5283,
+          "tp": 494,
+          "sl": 441,
+          "timeout": 1,
+          "gross_profit_r": 1179.0728,
+          "gross_loss_r": 1050.3725
         },
         "2020": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
+          "PF": 1.2451,
+          "trades": 1445,
+          "wr": 0.5599,
+          "tp": 809,
+          "sl": 636,
+          "timeout": 0,
+          "gross_profit_r": 1848.3118,
+          "gross_loss_r": 1484.4776
         },
         "2021": {
-          "PF": 0.8,
-          "trades": 9,
-          "wr": 0.4444,
-          "tp": 4,
-          "sl": 5
+          "PF": 0.9424,
+          "trades": 1729,
+          "wr": 0.4951,
+          "tp": 855,
+          "sl": 872,
+          "timeout": 2,
+          "gross_profit_r": 1980.4031,
+          "gross_loss_r": 2101.4024
         },
         "2022": {
-          "PF": 1.0,
-          "trades": 3,
-          "wr": 0.5,
-          "tp": 1,
-          "sl": 1
+          "PF": 0.977,
+          "trades": 1338,
+          "wr": 0.4985,
+          "tp": 667,
+          "sl": 671,
+          "timeout": 0,
+          "gross_profit_r": 1642.0624,
+          "gross_loss_r": 1680.7789
         }
       },
       "bootstrap": {
-        "mean": 2.3536,
-        "ci95_low": 1.0624,
-        "ci95_high": 4.8333,
+        "mean": 1.0538,
+        "ci95_low": 1.0093,
+        "ci95_high": 1.0991,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.156668
-    },
-    {
-      "family": "top_k_pct",
-      "value": 1.5,
-      "threshold_equivalent": 0.5359389781951904,
-      "PF": 1.9722,
-      "trades": 142,
-      "wr": 0.6636,
-      "tp": 71,
-      "sl": 36,
-      "trades_per_year": 40.5714,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.4789,
-      "per_year": {
-        "2019": {
-          "PF": 1.8824,
-          "trades": 68,
-          "wr": 0.6531,
-          "tp": 32,
-          "sl": 17
-        },
-        "2020": {
-          "PF": 3.0,
-          "trades": 18,
-          "wr": 0.75,
-          "tp": 12,
-          "sl": 4
-        },
-        "2021": {
-          "PF": 2.1,
-          "trades": 38,
-          "wr": 0.6774,
-          "tp": 21,
-          "sl": 10
-        },
-        "2022": {
-          "PF": 1.2,
-          "trades": 18,
-          "wr": 0.5455,
-          "tp": 6,
-          "sl": 5
-        }
-      },
-      "bootstrap": {
-        "mean": 2.0315,
-        "ci95_low": 1.3554,
-        "ci95_high": 3.0,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 2.055532
+      "stability_score": 1.437221
     },
     {
       "family": "threshold",
-      "value": 0.55,
+      "value": 0.32,
       "threshold_equivalent": null,
-      "PF": 1.8966,
-      "trades": 111,
-      "wr": 0.6548,
-      "tp": 55,
-      "sl": 29,
-      "trades_per_year": 31.7143,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.5135,
-      "per_year": {
-        "2019": {
-          "PF": 1.9286,
-          "trades": 57,
-          "wr": 0.6585,
-          "tp": 27,
-          "sl": 14
-        },
-        "2020": {
-          "PF": 2.25,
-          "trades": 15,
-          "wr": 0.6923,
-          "tp": 9,
-          "sl": 4
-        },
-        "2021": {
-          "PF": 2.0,
-          "trades": 25,
-          "wr": 0.6667,
-          "tp": 14,
-          "sl": 7
-        },
-        "2022": {
-          "PF": 1.25,
-          "trades": 14,
-          "wr": 0.5556,
-          "tp": 5,
-          "sl": 4
-        }
-      },
-      "bootstrap": {
-        "mean": 1.9501,
-        "ci95_low": 1.2142,
-        "ci95_high": 3.0476,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.845341
-    },
-    {
-      "family": "threshold",
-      "value": 0.53,
-      "threshold_equivalent": null,
-      "PF": 1.7778,
-      "trades": 162,
-      "wr": 0.64,
-      "tp": 80,
-      "sl": 45,
-      "trades_per_year": 46.2857,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.4506,
-      "per_year": {
-        "2019": {
-          "PF": 1.7,
-          "trades": 73,
-          "wr": 0.6296,
-          "tp": 34,
-          "sl": 20
-        },
-        "2020": {
-          "PF": 1.8571,
-          "trades": 22,
-          "wr": 0.65,
-          "tp": 13,
-          "sl": 7
-        },
-        "2021": {
-          "PF": 2.0,
-          "trades": 45,
-          "wr": 0.6667,
-          "tp": 24,
-          "sl": 12
-        },
-        "2022": {
-          "PF": 1.5,
-          "trades": 22,
-          "wr": 0.6,
-          "tp": 9,
-          "sl": 6
-        }
-      },
-      "bootstrap": {
-        "mean": 1.8043,
-        "ci95_low": 1.2407,
-        "ci95_high": 2.5758,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.953385
-    },
-    {
-      "family": "top_k_pct",
-      "value": 1.0,
-      "threshold_equivalent": 0.5564892292022705,
-      "PF": 1.6154,
-      "trades": 95,
-      "wr": 0.6176,
-      "tp": 42,
-      "sl": 26,
-      "trades_per_year": 27.1429,
+      "PF": 1.0507,
+      "trades": 4857,
+      "wr": 0.5183,
+      "tp": 2516,
+      "sl": 2338,
+      "timeout": 3,
+      "gross_profit_r": 5959.2025,
+      "gross_loss_r": 5671.4175,
+      "trades_per_year": 1387.7143,
       "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.5368,
+      "max_year_trade_share": 0.3249,
       "per_year": {
         "2019": {
-          "PF": 1.9167,
-          "trades": 51,
-          "wr": 0.6571,
-          "tp": 23,
-          "sl": 12
+          "PF": 1.0942,
+          "trades": 856,
+          "wr": 0.5228,
+          "tp": 447,
+          "sl": 408,
+          "timeout": 1,
+          "gross_profit_r": 1067.0321,
+          "gross_loss_r": 975.1483
         },
         "2020": {
-          "PF": 2.0,
-          "trades": 11,
-          "wr": 0.6667,
-          "tp": 6,
-          "sl": 3
+          "PF": 1.2373,
+          "trades": 1278,
+          "wr": 0.5587,
+          "tp": 714,
+          "sl": 564,
+          "timeout": 0,
+          "gross_profit_r": 1641.2982,
+          "gross_loss_r": 1326.5051
         },
         "2021": {
-          "PF": 1.4286,
-          "trades": 21,
-          "wr": 0.5882,
-          "tp": 10,
-          "sl": 7
+          "PF": 0.9366,
+          "trades": 1578,
+          "wr": 0.4924,
+          "tp": 776,
+          "sl": 800,
+          "timeout": 2,
+          "gross_profit_r": 1813.5385,
+          "gross_loss_r": 1936.2971
         },
         "2022": {
-          "PF": 0.75,
-          "trades": 12,
-          "wr": 0.4286,
-          "tp": 3,
-          "sl": 4
+          "PF": 1.0027,
+          "trades": 1145,
+          "wr": 0.5057,
+          "tp": 579,
+          "sl": 566,
+          "timeout": 0,
+          "gross_profit_r": 1437.3336,
+          "gross_loss_r": 1433.467
         }
       },
       "bootstrap": {
-        "mean": 1.6447,
-        "ci95_low": 0.9706,
-        "ci95_high": 2.6111,
+        "mean": 1.051,
+        "ci95_low": 1.0038,
+        "ci95_high": 1.0978,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.418672
+    },
+    {
+      "family": "threshold",
+      "value": 0.4,
+      "threshold_equivalent": null,
+      "PF": 1.0388,
+      "trades": 2519,
+      "wr": 0.5179,
+      "tp": 1304,
+      "sl": 1214,
+      "timeout": 1,
+      "gross_profit_r": 3130.976,
+      "gross_loss_r": 3013.9457,
+      "trades_per_year": 719.7143,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3497,
+      "per_year": {
+        "2019": {
+          "PF": 1.0523,
+          "trades": 465,
+          "wr": 0.5108,
+          "tp": 237,
+          "sl": 227,
+          "timeout": 1,
+          "gross_profit_r": 577.8154,
+          "gross_loss_r": 549.1068
+        },
+        "2020": {
+          "PF": 1.1183,
+          "trades": 607,
+          "wr": 0.542,
+          "tp": 329,
+          "sl": 278,
+          "timeout": 0,
+          "gross_profit_r": 749.4409,
+          "gross_loss_r": 670.1527
+        },
+        "2021": {
+          "PF": 0.9312,
+          "trades": 881,
+          "wr": 0.4938,
+          "tp": 435,
+          "sl": 446,
+          "timeout": 0,
+          "gross_profit_r": 1035.5172,
+          "gross_loss_r": 1112.0245
+        },
+        "2022": {
+          "PF": 1.1253,
+          "trades": 566,
+          "wr": 0.5353,
+          "tp": 303,
+          "sl": 263,
+          "timeout": 0,
+          "gross_profit_r": 768.2025,
+          "gross_loss_r": 682.6616
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0387,
+        "ci95_low": 0.9695,
+        "ci95_high": 1.111,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
@@ -709,7 +665,159 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.496371
+      "stability_score": 1.350976
+    },
+    {
+      "family": "top_k_pct",
+      "value": 25.0,
+      "threshold_equivalent": 0.4058828055858612,
+      "PF": 1.0296,
+      "trades": 2363,
+      "wr": 0.5169,
+      "tp": 1221,
+      "sl": 1141,
+      "timeout": 1,
+      "gross_profit_r": 2923.1126,
+      "gross_loss_r": 2838.9943,
+      "trades_per_year": 675.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3479,
+      "per_year": {
+        "2019": {
+          "PF": 1.0201,
+          "trades": 435,
+          "wr": 0.5046,
+          "tp": 219,
+          "sl": 215,
+          "timeout": 1,
+          "gross_profit_r": 532.438,
+          "gross_loss_r": 521.9607
+        },
+        "2020": {
+          "PF": 1.1244,
+          "trades": 565,
+          "wr": 0.5416,
+          "tp": 306,
+          "sl": 259,
+          "timeout": 0,
+          "gross_profit_r": 692.7211,
+          "gross_loss_r": 616.0589
+        },
+        "2021": {
+          "PF": 0.9314,
+          "trades": 822,
+          "wr": 0.4964,
+          "tp": 408,
+          "sl": 414,
+          "timeout": 0,
+          "gross_profit_r": 966.9837,
+          "gross_loss_r": 1038.186
+        },
+        "2022": {
+          "PF": 1.1029,
+          "trades": 541,
+          "wr": 0.5323,
+          "tp": 288,
+          "sl": 253,
+          "timeout": 0,
+          "gross_profit_r": 730.9698,
+          "gross_loss_r": 662.7888
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0319,
+        "ci95_low": 0.9661,
+        "ci95_high": 1.101,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.342881
+    },
+    {
+      "family": "top_k_pct",
+      "value": 20.0,
+      "threshold_equivalent": 0.42694345116615295,
+      "PF": 1.0058,
+      "trades": 1890,
+      "wr": 0.5109,
+      "tp": 965,
+      "sl": 924,
+      "timeout": 1,
+      "gross_profit_r": 2317.8647,
+      "gross_loss_r": 2304.5343,
+      "trades_per_year": 540.0,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3481,
+      "per_year": {
+        "2019": {
+          "PF": 1.024,
+          "trades": 342,
+          "wr": 0.5044,
+          "tp": 172,
+          "sl": 169,
+          "timeout": 1,
+          "gross_profit_r": 419.1987,
+          "gross_loss_r": 409.3869
+        },
+        "2020": {
+          "PF": 1.0276,
+          "trades": 453,
+          "wr": 0.521,
+          "tp": 236,
+          "sl": 217,
+          "timeout": 0,
+          "gross_profit_r": 530.5842,
+          "gross_loss_r": 516.3145
+        },
+        "2021": {
+          "PF": 0.9358,
+          "trades": 658,
+          "wr": 0.4939,
+          "tp": 325,
+          "sl": 333,
+          "timeout": 0,
+          "gross_profit_r": 783.7778,
+          "gross_loss_r": 837.589
+        },
+        "2022": {
+          "PF": 1.0796,
+          "trades": 437,
+          "wr": 0.5309,
+          "tp": 232,
+          "sl": 205,
+          "timeout": 0,
+          "gross_profit_r": 584.304,
+          "gross_loss_r": 541.2439
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0063,
+        "ci95_low": 0.9363,
+        "ci95_high": 1.0868,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.311265
     }
   ],
   "best_by_trades_top10": [
@@ -717,49 +825,64 @@
       "family": "threshold",
       "value": 0.3,
       "threshold_equivalent": null,
-      "PF": 1.0551,
-      "trades": 4939,
-      "wr": 0.5134,
-      "tp": 1743,
-      "sl": 1652,
-      "trades_per_year": 1411.1429,
+      "PF": 1.0527,
+      "trades": 5448,
+      "wr": 0.5188,
+      "tp": 2825,
+      "sl": 2620,
+      "timeout": 3,
+      "gross_profit_r": 6649.8501,
+      "gross_loss_r": 6317.0314,
+      "trades_per_year": 1556.5714,
       "negative_years": 2,
       "active_years": 4,
-      "max_year_trade_share": 0.3037,
+      "max_year_trade_share": 0.3174,
       "per_year": {
         "2019": {
-          "PF": 1.3953,
-          "trades": 874,
-          "wr": 0.5825,
-          "tp": 353,
-          "sl": 253
+          "PF": 1.1225,
+          "trades": 936,
+          "wr": 0.5283,
+          "tp": 494,
+          "sl": 441,
+          "timeout": 1,
+          "gross_profit_r": 1179.0728,
+          "gross_loss_r": 1050.3725
         },
         "2020": {
-          "PF": 1.2344,
-          "trades": 1369,
-          "wr": 0.5525,
-          "tp": 495,
-          "sl": 401
+          "PF": 1.2451,
+          "trades": 1445,
+          "wr": 0.5599,
+          "tp": 809,
+          "sl": 636,
+          "timeout": 0,
+          "gross_profit_r": 1848.3118,
+          "gross_loss_r": 1484.4776
         },
         "2021": {
-          "PF": 0.8694,
-          "trades": 1500,
-          "wr": 0.4651,
-          "tp": 466,
-          "sl": 536
+          "PF": 0.9424,
+          "trades": 1729,
+          "wr": 0.4951,
+          "tp": 855,
+          "sl": 872,
+          "timeout": 2,
+          "gross_profit_r": 1980.4031,
+          "gross_loss_r": 2101.4024
         },
         "2022": {
-          "PF": 0.9286,
-          "trades": 1196,
-          "wr": 0.4815,
-          "tp": 429,
-          "sl": 462
+          "PF": 0.977,
+          "trades": 1338,
+          "wr": 0.4985,
+          "tp": 667,
+          "sl": 671,
+          "timeout": 0,
+          "gross_profit_r": 1642.0624,
+          "gross_loss_r": 1680.7789
         }
       },
       "bootstrap": {
-        "mean": 1.0567,
-        "ci95_low": 0.9842,
-        "ci95_high": 1.1303,
+        "mean": 1.0538,
+        "ci95_low": 1.0093,
+        "ci95_high": 1.0991,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -769,58 +892,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.469321
+      "stability_score": 1.437221
     },
     {
       "family": "threshold",
       "value": 0.32,
       "threshold_equivalent": null,
-      "PF": 1.0503,
-      "trades": 4290,
-      "wr": 0.5123,
-      "tp": 1524,
-      "sl": 1451,
-      "trades_per_year": 1225.7143,
-      "negative_years": 2,
+      "PF": 1.0507,
+      "trades": 4857,
+      "wr": 0.5183,
+      "tp": 2516,
+      "sl": 2338,
+      "timeout": 3,
+      "gross_profit_r": 5959.2025,
+      "gross_loss_r": 5671.4175,
+      "trades_per_year": 1387.7143,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3026,
+      "max_year_trade_share": 0.3249,
       "per_year": {
         "2019": {
-          "PF": 1.3879,
-          "trades": 803,
-          "wr": 0.5812,
-          "tp": 322,
-          "sl": 232
+          "PF": 1.0942,
+          "trades": 856,
+          "wr": 0.5228,
+          "tp": 447,
+          "sl": 408,
+          "timeout": 1,
+          "gross_profit_r": 1067.0321,
+          "gross_loss_r": 975.1483
         },
         "2020": {
-          "PF": 1.2341,
-          "trades": 1173,
-          "wr": 0.5524,
-          "tp": 427,
-          "sl": 346
+          "PF": 1.2373,
+          "trades": 1278,
+          "wr": 0.5587,
+          "tp": 714,
+          "sl": 564,
+          "timeout": 0,
+          "gross_profit_r": 1641.2982,
+          "gross_loss_r": 1326.5051
         },
         "2021": {
-          "PF": 0.8665,
-          "trades": 1298,
-          "wr": 0.4642,
-          "tp": 409,
-          "sl": 472
+          "PF": 0.9366,
+          "trades": 1578,
+          "wr": 0.4924,
+          "tp": 776,
+          "sl": 800,
+          "timeout": 2,
+          "gross_profit_r": 1813.5385,
+          "gross_loss_r": 1936.2971
         },
         "2022": {
-          "PF": 0.9127,
-          "trades": 1016,
-          "wr": 0.4772,
-          "tp": 366,
-          "sl": 401
+          "PF": 1.0027,
+          "trades": 1145,
+          "wr": 0.5057,
+          "tp": 579,
+          "sl": 566,
+          "timeout": 0,
+          "gross_profit_r": 1437.3336,
+          "gross_loss_r": 1433.467
         }
       },
       "bootstrap": {
-        "mean": 1.0494,
-        "ci95_low": 0.9785,
-        "ci95_high": 1.123,
+        "mean": 1.051,
+        "ci95_low": 1.0038,
+        "ci95_high": 1.0978,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -830,58 +968,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.465034
+      "stability_score": 1.418672
     },
     {
       "family": "threshold",
       "value": 0.35,
       "threshold_equivalent": null,
-      "PF": 1.0389,
-      "trades": 3286,
-      "wr": 0.5095,
-      "tp": 1175,
-      "sl": 1131,
-      "trades_per_year": 938.8571,
-      "negative_years": 2,
+      "PF": 1.0746,
+      "trades": 3923,
+      "wr": 0.5221,
+      "tp": 2047,
+      "sl": 1874,
+      "timeout": 2,
+      "gross_profit_r": 4903.7375,
+      "gross_loss_r": 4563.1852,
+      "trades_per_year": 1120.8571,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3022,
+      "max_year_trade_share": 0.3352,
       "per_year": {
         "2019": {
-          "PF": 1.3613,
-          "trades": 663,
-          "wr": 0.5765,
-          "tp": 260,
-          "sl": 191
+          "PF": 1.0679,
+          "trades": 716,
+          "wr": 0.5147,
+          "tp": 368,
+          "sl": 347,
+          "timeout": 1,
+          "gross_profit_r": 886.4197,
+          "gross_loss_r": 830.0956
         },
         "2020": {
-          "PF": 1.1923,
-          "trades": 866,
-          "wr": 0.5439,
-          "tp": 310,
-          "sl": 260
+          "PF": 1.2434,
+          "trades": 1013,
+          "wr": 0.5607,
+          "tp": 568,
+          "sl": 445,
+          "timeout": 0,
+          "gross_profit_r": 1308.4816,
+          "gross_loss_r": 1052.3053
         },
         "2021": {
-          "PF": 0.9123,
-          "trades": 993,
-          "wr": 0.4771,
-          "tp": 333,
-          "sl": 365
+          "PF": 0.9518,
+          "trades": 1315,
+          "wr": 0.4939,
+          "tp": 649,
+          "sl": 665,
+          "timeout": 1,
+          "gross_profit_r": 1534.9644,
+          "gross_loss_r": 1612.721
         },
         "2022": {
-          "PF": 0.8635,
-          "trades": 764,
-          "wr": 0.4634,
-          "tp": 272,
-          "sl": 315
+          "PF": 1.0991,
+          "trades": 879,
+          "wr": 0.5256,
+          "tp": 462,
+          "sl": 417,
+          "timeout": 0,
+          "gross_profit_r": 1173.8717,
+          "gross_loss_r": 1068.0634
         }
       },
       "bootstrap": {
-        "mean": 1.0393,
-        "ci95_low": 0.9556,
-        "ci95_high": 1.1334,
+        "mean": 1.0731,
+        "ci95_low": 1.014,
+        "ci95_high": 1.1308,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -891,180 +1044,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.449907
-    },
-    {
-      "family": "top_k_pct",
-      "value": 30.0,
-      "threshold_equivalent": 0.3637249171733856,
-      "PF": 1.0181,
-      "trades": 2835,
-      "wr": 0.5045,
-      "tp": 1012,
-      "sl": 994,
-      "trades_per_year": 810.0,
-      "negative_years": 2,
-      "active_years": 4,
-      "max_year_trade_share": 0.2981,
-      "per_year": {
-        "2019": {
-          "PF": 1.3793,
-          "trades": 603,
-          "wr": 0.5797,
-          "tp": 240,
-          "sl": 174
-        },
-        "2020": {
-          "PF": 1.0647,
-          "trades": 733,
-          "wr": 0.5157,
-          "tp": 247,
-          "sl": 232
-        },
-        "2021": {
-          "PF": 0.9268,
-          "trades": 845,
-          "wr": 0.481,
-          "tp": 291,
-          "sl": 314
-        },
-        "2022": {
-          "PF": 0.854,
-          "trades": 654,
-          "wr": 0.4606,
-          "tp": 234,
-          "sl": 274
-        }
-      },
-      "bootstrap": {
-        "mean": 1.0188,
-        "ci95_low": 0.9349,
-        "ci95_high": 1.1094,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": false,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": false,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 1.42929
-    },
-    {
-      "family": "top_k_pct",
-      "value": 25.0,
-      "threshold_equivalent": 0.37935972213745117,
-      "PF": 0.9882,
-      "trades": 2363,
-      "wr": 0.497,
-      "tp": 841,
-      "sl": 851,
-      "trades_per_year": 675.1429,
-      "negative_years": 2,
-      "active_years": 4,
-      "max_year_trade_share": 0.2945,
-      "per_year": {
-        "2019": {
-          "PF": 1.2812,
-          "trades": 525,
-          "wr": 0.5616,
-          "tp": 205,
-          "sl": 160
-        },
-        "2020": {
-          "PF": 1.0753,
-          "trades": 599,
-          "wr": 0.5181,
-          "tp": 200,
-          "sl": 186
-        },
-        "2021": {
-          "PF": 0.8996,
-          "trades": 696,
-          "wr": 0.4736,
-          "tp": 242,
-          "sl": 269
-        },
-        "2022": {
-          "PF": 0.822,
-          "trades": 543,
-          "wr": 0.4512,
-          "tp": 194,
-          "sl": 236
-        }
-      },
-      "bootstrap": {
-        "mean": 0.9911,
-        "ci95_low": 0.9,
-        "ci95_high": 1.0858,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": false,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": false,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 1.394269
+      "stability_score": 1.428782
     },
     {
       "family": "threshold",
       "value": 0.38,
       "threshold_equivalent": null,
-      "PF": 0.9882,
-      "trades": 2349,
-      "wr": 0.497,
-      "tp": 837,
-      "sl": 847,
-      "trades_per_year": 671.1429,
-      "negative_years": 2,
+      "PF": 1.07,
+      "trades": 3055,
+      "wr": 0.5228,
+      "tp": 1596,
+      "sl": 1457,
+      "timeout": 2,
+      "gross_profit_r": 3851.4556,
+      "gross_loss_r": 3599.6154,
+      "trades_per_year": 872.8571,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2937,
+      "max_year_trade_share": 0.3473,
       "per_year": {
         "2019": {
-          "PF": 1.2975,
-          "trades": 522,
-          "wr": 0.5647,
-          "tp": 205,
-          "sl": 158
+          "PF": 1.0377,
+          "trades": 579,
+          "wr": 0.5104,
+          "tp": 295,
+          "sl": 283,
+          "timeout": 1,
+          "gross_profit_r": 713.9398,
+          "gross_loss_r": 688.0005
         },
         "2020": {
-          "PF": 1.0645,
-          "trades": 596,
-          "wr": 0.5156,
-          "tp": 198,
-          "sl": 186
+          "PF": 1.1957,
+          "trades": 752,
+          "wr": 0.5545,
+          "tp": 417,
+          "sl": 335,
+          "timeout": 0,
+          "gross_profit_r": 966.2063,
+          "gross_loss_r": 808.0936
         },
         "2021": {
-          "PF": 0.8989,
-          "trades": 690,
-          "wr": 0.4734,
-          "tp": 240,
-          "sl": 267
+          "PF": 0.97,
+          "trades": 1061,
+          "wr": 0.4991,
+          "tp": 529,
+          "sl": 531,
+          "timeout": 1,
+          "gross_profit_r": 1262.9603,
+          "gross_loss_r": 1301.9651
         },
         "2022": {
-          "PF": 0.822,
-          "trades": 541,
-          "wr": 0.4512,
-          "tp": 194,
-          "sl": 236
+          "PF": 1.1332,
+          "trades": 663,
+          "wr": 0.5354,
+          "tp": 355,
+          "sl": 308,
+          "timeout": 0,
+          "gross_profit_r": 908.3492,
+          "gross_loss_r": 801.5562
         }
       },
       "bootstrap": {
-        "mean": 0.9896,
-        "ci95_low": 0.8974,
-        "ci95_high": 1.0825,
+        "mean": 1.0704,
+        "ci95_low": 1.0084,
+        "ci95_high": 1.1328,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1074,58 +1120,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.395848
+      "stability_score": 1.396779
     },
     {
       "family": "top_k_pct",
-      "value": 20.0,
-      "threshold_equivalent": 0.3970574736595154,
-      "PF": 0.9583,
-      "trades": 1890,
-      "wr": 0.4893,
-      "tp": 666,
-      "sl": 695,
-      "trades_per_year": 540.0,
-      "negative_years": 2,
+      "value": 30.0,
+      "threshold_equivalent": 0.38808342814445496,
+      "PF": 1.0579,
+      "trades": 2835,
+      "wr": 0.5208,
+      "tp": 1476,
+      "sl": 1358,
+      "timeout": 1,
+      "gross_profit_r": 3551.6517,
+      "gross_loss_r": 3357.3765,
+      "trades_per_year": 810.0,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2926,
+      "max_year_trade_share": 0.351,
       "per_year": {
         "2019": {
-          "PF": 1.3435,
-          "trades": 435,
-          "wr": 0.5733,
-          "tp": 176,
-          "sl": 131
+          "PF": 1.0476,
+          "trades": 527,
+          "wr": 0.5133,
+          "tp": 270,
+          "sl": 256,
+          "timeout": 1,
+          "gross_profit_r": 649.6012,
+          "gross_loss_r": 620.0946
         },
         "2020": {
-          "PF": 1.0205,
-          "trades": 464,
-          "wr": 0.5051,
-          "tp": 149,
-          "sl": 146
+          "PF": 1.1377,
+          "trades": 699,
+          "wr": 0.5451,
+          "tp": 381,
+          "sl": 318,
+          "timeout": 0,
+          "gross_profit_r": 876.9694,
+          "gross_loss_r": 770.8415
         },
         "2021": {
-          "PF": 0.907,
-          "trades": 553,
-          "wr": 0.4756,
-          "tp": 195,
-          "sl": 215
+          "PF": 0.9671,
+          "trades": 995,
+          "wr": 0.4985,
+          "tp": 496,
+          "sl": 499,
+          "timeout": 0,
+          "gross_profit_r": 1188.1454,
+          "gross_loss_r": 1228.5641
         },
         "2022": {
-          "PF": 0.7192,
-          "trades": 438,
-          "wr": 0.4183,
-          "tp": 146,
-          "sl": 203
+          "PF": 1.1342,
+          "trades": 614,
+          "wr": 0.5358,
+          "tp": 329,
+          "sl": 285,
+          "timeout": 0,
+          "gross_profit_r": 836.9356,
+          "gross_loss_r": 737.8763
         }
       },
       "bootstrap": {
-        "mean": 0.9611,
-        "ci95_low": 0.8699,
-        "ci95_high": 1.0622,
+        "mean": 1.0601,
+        "ci95_low": 0.9969,
+        "ci95_high": 1.1239,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1138,177 +1199,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.355817
+      "stability_score": 1.373218
     },
     {
       "family": "threshold",
       "value": 0.4,
       "threshold_equivalent": null,
-      "PF": 0.9561,
-      "trades": 1798,
-      "wr": 0.4888,
-      "tp": 632,
-      "sl": 661,
-      "trades_per_year": 513.7143,
-      "negative_years": 2,
-      "active_years": 4,
-      "max_year_trade_share": 0.292,
-      "per_year": {
-        "2019": {
-          "PF": 1.371,
-          "trades": 421,
-          "wr": 0.5782,
-          "tp": 170,
-          "sl": 124
-        },
-        "2020": {
-          "PF": 1.0072,
-          "trades": 434,
-          "wr": 0.5018,
-          "tp": 139,
-          "sl": 138
-        },
-        "2021": {
-          "PF": 0.8883,
-          "trades": 525,
-          "wr": 0.4704,
-          "tp": 183,
-          "sl": 206
-        },
-        "2022": {
-          "PF": 0.7254,
-          "trades": 418,
-          "wr": 0.4204,
-          "tp": 140,
-          "sl": 193
-        }
-      },
-      "bootstrap": {
-        "mean": 0.9571,
-        "ci95_low": 0.8575,
-        "ci95_high": 1.0663,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": false,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": false,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 1.353855
-    },
-    {
-      "family": "top_k_pct",
-      "value": 15.0,
-      "threshold_equivalent": 0.4149622917175293,
-      "PF": 0.9788,
-      "trades": 1418,
-      "wr": 0.4946,
-      "tp": 508,
-      "sl": 519,
-      "trades_per_year": 405.1429,
-      "negative_years": 2,
-      "active_years": 4,
-      "max_year_trade_share": 0.2969,
-      "per_year": {
-        "2019": {
-          "PF": 1.3019,
-          "trades": 356,
-          "wr": 0.5656,
-          "tp": 138,
-          "sl": 106
-        },
-        "2020": {
-          "PF": 1.0556,
-          "trades": 335,
-          "wr": 0.5135,
-          "tp": 114,
-          "sl": 108
-        },
-        "2021": {
-          "PF": 0.9747,
-          "trades": 421,
-          "wr": 0.4936,
-          "tp": 154,
-          "sl": 158
-        },
-        "2022": {
-          "PF": 0.6939,
-          "trades": 306,
-          "wr": 0.4096,
-          "tp": 102,
-          "sl": 147
-        }
-      },
-      "bootstrap": {
-        "mean": 0.9805,
-        "ci95_low": 0.8656,
-        "ci95_high": 1.1008,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": false,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": false,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 1.376394
-    },
-    {
-      "family": "top_k_pct",
-      "value": 12.5,
-      "threshold_equivalent": 0.42633602023124695,
-      "PF": 1.007,
-      "trades": 1181,
-      "wr": 0.5018,
-      "tp": 429,
-      "sl": 426,
-      "trades_per_year": 337.4286,
+      "PF": 1.0388,
+      "trades": 2519,
+      "wr": 0.5179,
+      "tp": 1304,
+      "sl": 1214,
+      "timeout": 1,
+      "gross_profit_r": 3130.976,
+      "gross_loss_r": 3013.9457,
+      "trades_per_year": 719.7143,
       "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3006,
+      "max_year_trade_share": 0.3497,
       "per_year": {
         "2019": {
-          "PF": 1.1633,
-          "trades": 310,
-          "wr": 0.5377,
-          "tp": 114,
-          "sl": 98
+          "PF": 1.0523,
+          "trades": 465,
+          "wr": 0.5108,
+          "tp": 237,
+          "sl": 227,
+          "timeout": 1,
+          "gross_profit_r": 577.8154,
+          "gross_loss_r": 549.1068
         },
         "2020": {
-          "PF": 1.1548,
-          "trades": 269,
-          "wr": 0.5359,
-          "tp": 97,
-          "sl": 84
+          "PF": 1.1183,
+          "trades": 607,
+          "wr": 0.542,
+          "tp": 329,
+          "sl": 278,
+          "timeout": 0,
+          "gross_profit_r": 749.4409,
+          "gross_loss_r": 670.1527
         },
         "2021": {
-          "PF": 1.0385,
-          "trades": 355,
-          "wr": 0.5094,
-          "tp": 135,
-          "sl": 130
+          "PF": 0.9312,
+          "trades": 881,
+          "wr": 0.4938,
+          "tp": 435,
+          "sl": 446,
+          "timeout": 0,
+          "gross_profit_r": 1035.5172,
+          "gross_loss_r": 1112.0245
         },
         "2022": {
-          "PF": 0.7281,
-          "trades": 247,
-          "wr": 0.4213,
-          "tp": 83,
-          "sl": 114
+          "PF": 1.1253,
+          "trades": 566,
+          "wr": 0.5353,
+          "tp": 303,
+          "sl": 263,
+          "timeout": 0,
+          "gross_profit_r": 768.2025,
+          "gross_loss_r": 682.6616
         }
       },
       "bootstrap": {
-        "mean": 1.0132,
-        "ci95_low": 0.8824,
-        "ci95_high": 1.1487,
+        "mean": 1.0387,
+        "ci95_low": 0.9695,
+        "ci95_high": 1.111,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1321,362 +1275,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.408606
-    }
-  ],
-  "best_by_stability_top10": [
-    {
-      "family": "top_k_pct",
-      "value": 1.5,
-      "threshold_equivalent": 0.5359389781951904,
-      "PF": 1.9722,
-      "trades": 142,
-      "wr": 0.6636,
-      "tp": 71,
-      "sl": 36,
-      "trades_per_year": 40.5714,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.4789,
-      "per_year": {
-        "2019": {
-          "PF": 1.8824,
-          "trades": 68,
-          "wr": 0.6531,
-          "tp": 32,
-          "sl": 17
-        },
-        "2020": {
-          "PF": 3.0,
-          "trades": 18,
-          "wr": 0.75,
-          "tp": 12,
-          "sl": 4
-        },
-        "2021": {
-          "PF": 2.1,
-          "trades": 38,
-          "wr": 0.6774,
-          "tp": 21,
-          "sl": 10
-        },
-        "2022": {
-          "PF": 1.2,
-          "trades": 18,
-          "wr": 0.5455,
-          "tp": 6,
-          "sl": 5
-        }
-      },
-      "bootstrap": {
-        "mean": 2.0315,
-        "ci95_low": 1.3554,
-        "ci95_high": 3.0,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 2.055532
-    },
-    {
-      "family": "threshold",
-      "value": 0.53,
-      "threshold_equivalent": null,
-      "PF": 1.7778,
-      "trades": 162,
-      "wr": 0.64,
-      "tp": 80,
-      "sl": 45,
-      "trades_per_year": 46.2857,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.4506,
-      "per_year": {
-        "2019": {
-          "PF": 1.7,
-          "trades": 73,
-          "wr": 0.6296,
-          "tp": 34,
-          "sl": 20
-        },
-        "2020": {
-          "PF": 1.8571,
-          "trades": 22,
-          "wr": 0.65,
-          "tp": 13,
-          "sl": 7
-        },
-        "2021": {
-          "PF": 2.0,
-          "trades": 45,
-          "wr": 0.6667,
-          "tp": 24,
-          "sl": 12
-        },
-        "2022": {
-          "PF": 1.5,
-          "trades": 22,
-          "wr": 0.6,
-          "tp": 9,
-          "sl": 6
-        }
-      },
-      "bootstrap": {
-        "mean": 1.8043,
-        "ci95_low": 1.2407,
-        "ci95_high": 2.5758,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.953385
-    },
-    {
-      "family": "threshold",
-      "value": 0.55,
-      "threshold_equivalent": null,
-      "PF": 1.8966,
-      "trades": 111,
-      "wr": 0.6548,
-      "tp": 55,
-      "sl": 29,
-      "trades_per_year": 31.7143,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.5135,
-      "per_year": {
-        "2019": {
-          "PF": 1.9286,
-          "trades": 57,
-          "wr": 0.6585,
-          "tp": 27,
-          "sl": 14
-        },
-        "2020": {
-          "PF": 2.25,
-          "trades": 15,
-          "wr": 0.6923,
-          "tp": 9,
-          "sl": 4
-        },
-        "2021": {
-          "PF": 2.0,
-          "trades": 25,
-          "wr": 0.6667,
-          "tp": 14,
-          "sl": 7
-        },
-        "2022": {
-          "PF": 1.25,
-          "trades": 14,
-          "wr": 0.5556,
-          "tp": 5,
-          "sl": 4
-        }
-      },
-      "bootstrap": {
-        "mean": 1.9501,
-        "ci95_low": 1.2142,
-        "ci95_high": 3.0476,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.845341
+      "stability_score": 1.350976
     },
     {
       "family": "top_k_pct",
-      "value": 2.0,
-      "threshold_equivalent": 0.5233010053634644,
-      "PF": 1.5254,
-      "trades": 189,
-      "wr": 0.604,
-      "tp": 90,
-      "sl": 59,
-      "trades_per_year": 54.0,
-      "negative_years": 0,
-      "active_years": 4,
-      "max_year_trade_share": 0.4497,
-      "per_year": {
-        "2019": {
-          "PF": 1.2759,
-          "trades": 85,
-          "wr": 0.5606,
-          "tp": 37,
-          "sl": 29
-        },
-        "2020": {
-          "PF": 1.5556,
-          "trades": 26,
-          "wr": 0.6087,
-          "tp": 14,
-          "sl": 9
-        },
-        "2021": {
-          "PF": 2.2308,
-          "trades": 52,
-          "wr": 0.6905,
-          "tp": 29,
-          "sl": 13
-        },
-        "2022": {
-          "PF": 1.25,
-          "trades": 26,
-          "wr": 0.5556,
-          "tp": 10,
-          "sl": 8
-        }
-      },
-      "bootstrap": {
-        "mean": 1.5554,
-        "ci95_low": 1.1045,
-        "ci95_high": 2.0852,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
-      },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.678747
-    },
-    {
-      "family": "top_k_pct",
-      "value": 1.0,
-      "threshold_equivalent": 0.5564892292022705,
-      "PF": 1.6154,
-      "trades": 95,
-      "wr": 0.6176,
-      "tp": 42,
-      "sl": 26,
-      "trades_per_year": 27.1429,
+      "value": 25.0,
+      "threshold_equivalent": 0.4058828055858612,
+      "PF": 1.0296,
+      "trades": 2363,
+      "wr": 0.5169,
+      "tp": 1221,
+      "sl": 1141,
+      "timeout": 1,
+      "gross_profit_r": 2923.1126,
+      "gross_loss_r": 2838.9943,
+      "trades_per_year": 675.1429,
       "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.5368,
+      "max_year_trade_share": 0.3479,
       "per_year": {
         "2019": {
-          "PF": 1.9167,
-          "trades": 51,
-          "wr": 0.6571,
-          "tp": 23,
-          "sl": 12
+          "PF": 1.0201,
+          "trades": 435,
+          "wr": 0.5046,
+          "tp": 219,
+          "sl": 215,
+          "timeout": 1,
+          "gross_profit_r": 532.438,
+          "gross_loss_r": 521.9607
         },
         "2020": {
-          "PF": 2.0,
-          "trades": 11,
-          "wr": 0.6667,
-          "tp": 6,
-          "sl": 3
+          "PF": 1.1244,
+          "trades": 565,
+          "wr": 0.5416,
+          "tp": 306,
+          "sl": 259,
+          "timeout": 0,
+          "gross_profit_r": 692.7211,
+          "gross_loss_r": 616.0589
         },
         "2021": {
-          "PF": 1.4286,
-          "trades": 21,
-          "wr": 0.5882,
-          "tp": 10,
-          "sl": 7
+          "PF": 0.9314,
+          "trades": 822,
+          "wr": 0.4964,
+          "tp": 408,
+          "sl": 414,
+          "timeout": 0,
+          "gross_profit_r": 966.9837,
+          "gross_loss_r": 1038.186
         },
         "2022": {
-          "PF": 0.75,
-          "trades": 12,
-          "wr": 0.4286,
-          "tp": 3,
-          "sl": 4
+          "PF": 1.1029,
+          "trades": 541,
+          "wr": 0.5323,
+          "tp": 288,
+          "sl": 253,
+          "timeout": 0,
+          "gross_profit_r": 730.9698,
+          "gross_loss_r": 662.7888
         }
       },
       "bootstrap": {
-        "mean": 1.6447,
-        "ci95_low": 0.9706,
-        "ci95_high": 2.6111,
-        "n_bootstrap": 1000,
-        "finite_samples": 1000
-      },
-      "gates": {
-        "pf_ge_1_5": true,
-        "trades_per_year_ge_6": true,
-        "negative_years_eq_0": false,
-        "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
-      },
-      "all_stability_gates_pass": false,
-      "stability_score": 1.496371
-    },
-    {
-      "family": "threshold",
-      "value": 0.3,
-      "threshold_equivalent": null,
-      "PF": 1.0551,
-      "trades": 4939,
-      "wr": 0.5134,
-      "tp": 1743,
-      "sl": 1652,
-      "trades_per_year": 1411.1429,
-      "negative_years": 2,
-      "active_years": 4,
-      "max_year_trade_share": 0.3037,
-      "per_year": {
-        "2019": {
-          "PF": 1.3953,
-          "trades": 874,
-          "wr": 0.5825,
-          "tp": 353,
-          "sl": 253
-        },
-        "2020": {
-          "PF": 1.2344,
-          "trades": 1369,
-          "wr": 0.5525,
-          "tp": 495,
-          "sl": 401
-        },
-        "2021": {
-          "PF": 0.8694,
-          "trades": 1500,
-          "wr": 0.4651,
-          "tp": 466,
-          "sl": 536
-        },
-        "2022": {
-          "PF": 0.9286,
-          "trades": 1196,
-          "wr": 0.4815,
-          "tp": 429,
-          "sl": 462
-        }
-      },
-      "bootstrap": {
-        "mean": 1.0567,
-        "ci95_low": 0.9842,
-        "ci95_high": 1.1303,
+        "mean": 1.0319,
+        "ci95_low": 0.9661,
+        "ci95_high": 1.101,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1689,55 +1351,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.469321
+      "stability_score": 1.342881
     },
     {
-      "family": "threshold",
-      "value": 0.32,
-      "threshold_equivalent": null,
-      "PF": 1.0503,
-      "trades": 4290,
-      "wr": 0.5123,
-      "tp": 1524,
-      "sl": 1451,
-      "trades_per_year": 1225.7143,
-      "negative_years": 2,
+      "family": "top_k_pct",
+      "value": 20.0,
+      "threshold_equivalent": 0.42694345116615295,
+      "PF": 1.0058,
+      "trades": 1890,
+      "wr": 0.5109,
+      "tp": 965,
+      "sl": 924,
+      "timeout": 1,
+      "gross_profit_r": 2317.8647,
+      "gross_loss_r": 2304.5343,
+      "trades_per_year": 540.0,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3026,
+      "max_year_trade_share": 0.3481,
       "per_year": {
         "2019": {
-          "PF": 1.3879,
-          "trades": 803,
-          "wr": 0.5812,
-          "tp": 322,
-          "sl": 232
+          "PF": 1.024,
+          "trades": 342,
+          "wr": 0.5044,
+          "tp": 172,
+          "sl": 169,
+          "timeout": 1,
+          "gross_profit_r": 419.1987,
+          "gross_loss_r": 409.3869
         },
         "2020": {
-          "PF": 1.2341,
-          "trades": 1173,
-          "wr": 0.5524,
-          "tp": 427,
-          "sl": 346
+          "PF": 1.0276,
+          "trades": 453,
+          "wr": 0.521,
+          "tp": 236,
+          "sl": 217,
+          "timeout": 0,
+          "gross_profit_r": 530.5842,
+          "gross_loss_r": 516.3145
         },
         "2021": {
-          "PF": 0.8665,
-          "trades": 1298,
-          "wr": 0.4642,
-          "tp": 409,
-          "sl": 472
+          "PF": 0.9358,
+          "trades": 658,
+          "wr": 0.4939,
+          "tp": 325,
+          "sl": 333,
+          "timeout": 0,
+          "gross_profit_r": 783.7778,
+          "gross_loss_r": 837.589
         },
         "2022": {
-          "PF": 0.9127,
-          "trades": 1016,
-          "wr": 0.4772,
-          "tp": 366,
-          "sl": 401
+          "PF": 1.0796,
+          "trades": 437,
+          "wr": 0.5309,
+          "tp": 232,
+          "sl": 205,
+          "timeout": 0,
+          "gross_profit_r": 584.304,
+          "gross_loss_r": 541.2439
         }
       },
       "bootstrap": {
-        "mean": 1.0494,
-        "ci95_low": 0.9785,
-        "ci95_high": 1.123,
+        "mean": 1.0063,
+        "ci95_low": 0.9363,
+        "ci95_high": 1.0868,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1750,55 +1427,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.465034
+      "stability_score": 1.311265
     },
     {
       "family": "threshold",
       "value": 0.43,
       "threshold_equivalent": null,
-      "PF": 1.0325,
-      "trades": 1117,
-      "wr": 0.508,
-      "tp": 413,
-      "sl": 400,
-      "trades_per_year": 319.1429,
-      "negative_years": 1,
+      "PF": 0.9897,
+      "trades": 1811,
+      "wr": 0.5077,
+      "tp": 919,
+      "sl": 891,
+      "timeout": 1,
+      "gross_profit_r": 2201.6029,
+      "gross_loss_r": 2224.4172,
+      "trades_per_year": 517.4286,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.2972,
+      "max_year_trade_share": 0.3462,
       "per_year": {
         "2019": {
-          "PF": 1.1649,
-          "trades": 306,
-          "wr": 0.5381,
-          "tp": 113,
-          "sl": 97
+          "PF": 0.9959,
+          "trades": 330,
+          "wr": 0.5015,
+          "tp": 165,
+          "sl": 164,
+          "timeout": 1,
+          "gross_profit_r": 398.1987,
+          "gross_loss_r": 399.8577
         },
         "2020": {
-          "PF": 1.1688,
-          "trades": 250,
-          "wr": 0.5389,
-          "tp": 90,
-          "sl": 77
+          "PF": 0.9818,
+          "trades": 431,
+          "wr": 0.5104,
+          "tp": 220,
+          "sl": 211,
+          "timeout": 0,
+          "gross_profit_r": 493.4952,
+          "gross_loss_r": 502.663
         },
         "2021": {
-          "PF": 1.0917,
-          "trades": 332,
-          "wr": 0.5219,
-          "tp": 131,
-          "sl": 120
+          "PF": 0.9447,
+          "trades": 627,
+          "wr": 0.496,
+          "tp": 311,
+          "sl": 316,
+          "timeout": 0,
+          "gross_profit_r": 748.9859,
+          "gross_loss_r": 792.8552
         },
         "2022": {
-          "PF": 0.7453,
-          "trades": 229,
-          "wr": 0.427,
-          "tp": 79,
-          "sl": 106
+          "PF": 1.0603,
+          "trades": 423,
+          "wr": 0.5272,
+          "tp": 223,
+          "sl": 200,
+          "timeout": 0,
+          "gross_profit_r": 560.9232,
+          "gross_loss_r": 529.0412
         }
       },
       "bootstrap": {
-        "mean": 1.0348,
-        "ci95_low": 0.9016,
-        "ci95_high": 1.1835,
+        "mean": 0.9906,
+        "ci95_low": 0.917,
+        "ci95_high": 1.0673,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1811,55 +1503,224 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.451231
+      "stability_score": 1.294097
+    },
+    {
+      "family": "threshold",
+      "value": 0.45,
+      "threshold_equivalent": null,
+      "PF": 0.9771,
+      "trades": 1420,
+      "wr": 0.5025,
+      "tp": 713,
+      "sl": 706,
+      "timeout": 1,
+      "gross_profit_r": 1724.1031,
+      "gross_loss_r": 1764.5795,
+      "trades_per_year": 405.7143,
+      "negative_years": 3,
+      "active_years": 4,
+      "max_year_trade_share": 0.3338,
+      "per_year": {
+        "2019": {
+          "PF": 0.9039,
+          "trades": 262,
+          "wr": 0.4866,
+          "tp": 127,
+          "sl": 134,
+          "timeout": 1,
+          "gross_profit_r": 303.2735,
+          "gross_loss_r": 335.5199
+        },
+        "2020": {
+          "PF": 1.0067,
+          "trades": 349,
+          "wr": 0.51,
+          "tp": 178,
+          "sl": 171,
+          "timeout": 0,
+          "gross_profit_r": 407.7142,
+          "gross_loss_r": 405.0172
+        },
+        "2021": {
+          "PF": 0.9909,
+          "trades": 474,
+          "wr": 0.5021,
+          "tp": 238,
+          "sl": 236,
+          "timeout": 0,
+          "gross_profit_r": 583.4333,
+          "gross_loss_r": 588.7675
+        },
+        "2022": {
+          "PF": 0.9872,
+          "trades": 335,
+          "wr": 0.5075,
+          "tp": 170,
+          "sl": 165,
+          "timeout": 0,
+          "gross_profit_r": 429.6821,
+          "gross_loss_r": 435.2748
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9785,
+        "ci95_low": 0.897,
+        "ci95_high": 1.0651,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.301883
+    }
+  ],
+  "best_by_stability_top10": [
+    {
+      "family": "threshold",
+      "value": 0.3,
+      "threshold_equivalent": null,
+      "PF": 1.0527,
+      "trades": 5448,
+      "wr": 0.5188,
+      "tp": 2825,
+      "sl": 2620,
+      "timeout": 3,
+      "gross_profit_r": 6649.8501,
+      "gross_loss_r": 6317.0314,
+      "trades_per_year": 1556.5714,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.3174,
+      "per_year": {
+        "2019": {
+          "PF": 1.1225,
+          "trades": 936,
+          "wr": 0.5283,
+          "tp": 494,
+          "sl": 441,
+          "timeout": 1,
+          "gross_profit_r": 1179.0728,
+          "gross_loss_r": 1050.3725
+        },
+        "2020": {
+          "PF": 1.2451,
+          "trades": 1445,
+          "wr": 0.5599,
+          "tp": 809,
+          "sl": 636,
+          "timeout": 0,
+          "gross_profit_r": 1848.3118,
+          "gross_loss_r": 1484.4776
+        },
+        "2021": {
+          "PF": 0.9424,
+          "trades": 1729,
+          "wr": 0.4951,
+          "tp": 855,
+          "sl": 872,
+          "timeout": 2,
+          "gross_profit_r": 1980.4031,
+          "gross_loss_r": 2101.4024
+        },
+        "2022": {
+          "PF": 0.977,
+          "trades": 1338,
+          "wr": 0.4985,
+          "tp": 667,
+          "sl": 671,
+          "timeout": 0,
+          "gross_profit_r": 1642.0624,
+          "gross_loss_r": 1680.7789
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0538,
+        "ci95_low": 1.0093,
+        "ci95_high": 1.0991,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.437221
     },
     {
       "family": "threshold",
       "value": 0.35,
       "threshold_equivalent": null,
-      "PF": 1.0389,
-      "trades": 3286,
-      "wr": 0.5095,
-      "tp": 1175,
-      "sl": 1131,
-      "trades_per_year": 938.8571,
-      "negative_years": 2,
+      "PF": 1.0746,
+      "trades": 3923,
+      "wr": 0.5221,
+      "tp": 2047,
+      "sl": 1874,
+      "timeout": 2,
+      "gross_profit_r": 4903.7375,
+      "gross_loss_r": 4563.1852,
+      "trades_per_year": 1120.8571,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3022,
+      "max_year_trade_share": 0.3352,
       "per_year": {
         "2019": {
-          "PF": 1.3613,
-          "trades": 663,
-          "wr": 0.5765,
-          "tp": 260,
-          "sl": 191
+          "PF": 1.0679,
+          "trades": 716,
+          "wr": 0.5147,
+          "tp": 368,
+          "sl": 347,
+          "timeout": 1,
+          "gross_profit_r": 886.4197,
+          "gross_loss_r": 830.0956
         },
         "2020": {
-          "PF": 1.1923,
-          "trades": 866,
-          "wr": 0.5439,
-          "tp": 310,
-          "sl": 260
+          "PF": 1.2434,
+          "trades": 1013,
+          "wr": 0.5607,
+          "tp": 568,
+          "sl": 445,
+          "timeout": 0,
+          "gross_profit_r": 1308.4816,
+          "gross_loss_r": 1052.3053
         },
         "2021": {
-          "PF": 0.9123,
-          "trades": 993,
-          "wr": 0.4771,
-          "tp": 333,
-          "sl": 365
+          "PF": 0.9518,
+          "trades": 1315,
+          "wr": 0.4939,
+          "tp": 649,
+          "sl": 665,
+          "timeout": 1,
+          "gross_profit_r": 1534.9644,
+          "gross_loss_r": 1612.721
         },
         "2022": {
-          "PF": 0.8635,
-          "trades": 764,
-          "wr": 0.4634,
-          "tp": 272,
-          "sl": 315
+          "PF": 1.0991,
+          "trades": 879,
+          "wr": 0.5256,
+          "tp": 462,
+          "sl": 417,
+          "timeout": 0,
+          "gross_profit_r": 1173.8717,
+          "gross_loss_r": 1068.0634
         }
       },
       "bootstrap": {
-        "mean": 1.0393,
-        "ci95_low": 0.9556,
-        "ci95_high": 1.1334,
+        "mean": 1.0731,
+        "ci95_low": 1.014,
+        "ci95_high": 1.1308,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1869,58 +1730,225 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.449907
+      "stability_score": 1.428782
+    },
+    {
+      "family": "threshold",
+      "value": 0.32,
+      "threshold_equivalent": null,
+      "PF": 1.0507,
+      "trades": 4857,
+      "wr": 0.5183,
+      "tp": 2516,
+      "sl": 2338,
+      "timeout": 3,
+      "gross_profit_r": 5959.2025,
+      "gross_loss_r": 5671.4175,
+      "trades_per_year": 1387.7143,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3249,
+      "per_year": {
+        "2019": {
+          "PF": 1.0942,
+          "trades": 856,
+          "wr": 0.5228,
+          "tp": 447,
+          "sl": 408,
+          "timeout": 1,
+          "gross_profit_r": 1067.0321,
+          "gross_loss_r": 975.1483
+        },
+        "2020": {
+          "PF": 1.2373,
+          "trades": 1278,
+          "wr": 0.5587,
+          "tp": 714,
+          "sl": 564,
+          "timeout": 0,
+          "gross_profit_r": 1641.2982,
+          "gross_loss_r": 1326.5051
+        },
+        "2021": {
+          "PF": 0.9366,
+          "trades": 1578,
+          "wr": 0.4924,
+          "tp": 776,
+          "sl": 800,
+          "timeout": 2,
+          "gross_profit_r": 1813.5385,
+          "gross_loss_r": 1936.2971
+        },
+        "2022": {
+          "PF": 1.0027,
+          "trades": 1145,
+          "wr": 0.5057,
+          "tp": 579,
+          "sl": 566,
+          "timeout": 0,
+          "gross_profit_r": 1437.3336,
+          "gross_loss_r": 1433.467
+        }
+      },
+      "bootstrap": {
+        "mean": 1.051,
+        "ci95_low": 1.0038,
+        "ci95_high": 1.0978,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.418672
+    },
+    {
+      "family": "threshold",
+      "value": 0.38,
+      "threshold_equivalent": null,
+      "PF": 1.07,
+      "trades": 3055,
+      "wr": 0.5228,
+      "tp": 1596,
+      "sl": 1457,
+      "timeout": 2,
+      "gross_profit_r": 3851.4556,
+      "gross_loss_r": 3599.6154,
+      "trades_per_year": 872.8571,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3473,
+      "per_year": {
+        "2019": {
+          "PF": 1.0377,
+          "trades": 579,
+          "wr": 0.5104,
+          "tp": 295,
+          "sl": 283,
+          "timeout": 1,
+          "gross_profit_r": 713.9398,
+          "gross_loss_r": 688.0005
+        },
+        "2020": {
+          "PF": 1.1957,
+          "trades": 752,
+          "wr": 0.5545,
+          "tp": 417,
+          "sl": 335,
+          "timeout": 0,
+          "gross_profit_r": 966.2063,
+          "gross_loss_r": 808.0936
+        },
+        "2021": {
+          "PF": 0.97,
+          "trades": 1061,
+          "wr": 0.4991,
+          "tp": 529,
+          "sl": 531,
+          "timeout": 1,
+          "gross_profit_r": 1262.9603,
+          "gross_loss_r": 1301.9651
+        },
+        "2022": {
+          "PF": 1.1332,
+          "trades": 663,
+          "wr": 0.5354,
+          "tp": 355,
+          "sl": 308,
+          "timeout": 0,
+          "gross_profit_r": 908.3492,
+          "gross_loss_r": 801.5562
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0704,
+        "ci95_low": 1.0084,
+        "ci95_high": 1.1328,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": true
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.396779
     },
     {
       "family": "top_k_pct",
       "value": 30.0,
-      "threshold_equivalent": 0.3637249171733856,
-      "PF": 1.0181,
+      "threshold_equivalent": 0.38808342814445496,
+      "PF": 1.0579,
       "trades": 2835,
-      "wr": 0.5045,
-      "tp": 1012,
-      "sl": 994,
+      "wr": 0.5208,
+      "tp": 1476,
+      "sl": 1358,
+      "timeout": 1,
+      "gross_profit_r": 3551.6517,
+      "gross_loss_r": 3357.3765,
       "trades_per_year": 810.0,
-      "negative_years": 2,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2981,
+      "max_year_trade_share": 0.351,
       "per_year": {
         "2019": {
-          "PF": 1.3793,
-          "trades": 603,
-          "wr": 0.5797,
-          "tp": 240,
-          "sl": 174
+          "PF": 1.0476,
+          "trades": 527,
+          "wr": 0.5133,
+          "tp": 270,
+          "sl": 256,
+          "timeout": 1,
+          "gross_profit_r": 649.6012,
+          "gross_loss_r": 620.0946
         },
         "2020": {
-          "PF": 1.0647,
-          "trades": 733,
-          "wr": 0.5157,
-          "tp": 247,
-          "sl": 232
+          "PF": 1.1377,
+          "trades": 699,
+          "wr": 0.5451,
+          "tp": 381,
+          "sl": 318,
+          "timeout": 0,
+          "gross_profit_r": 876.9694,
+          "gross_loss_r": 770.8415
         },
         "2021": {
-          "PF": 0.9268,
-          "trades": 845,
-          "wr": 0.481,
-          "tp": 291,
-          "sl": 314
+          "PF": 0.9671,
+          "trades": 995,
+          "wr": 0.4985,
+          "tp": 496,
+          "sl": 499,
+          "timeout": 0,
+          "gross_profit_r": 1188.1454,
+          "gross_loss_r": 1228.5641
         },
         "2022": {
-          "PF": 0.854,
-          "trades": 654,
-          "wr": 0.4606,
-          "tp": 234,
-          "sl": 274
+          "PF": 1.1342,
+          "trades": 614,
+          "wr": 0.5358,
+          "tp": 329,
+          "sl": 285,
+          "timeout": 0,
+          "gross_profit_r": 836.9356,
+          "gross_loss_r": 737.8763
         }
       },
       "bootstrap": {
-        "mean": 1.0188,
-        "ci95_low": 0.9349,
-        "ci95_high": 1.1094,
+        "mean": 1.0601,
+        "ci95_low": 0.9969,
+        "ci95_high": 1.1239,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1933,7 +1961,387 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.42929
+      "stability_score": 1.373218
+    },
+    {
+      "family": "threshold",
+      "value": 0.4,
+      "threshold_equivalent": null,
+      "PF": 1.0388,
+      "trades": 2519,
+      "wr": 0.5179,
+      "tp": 1304,
+      "sl": 1214,
+      "timeout": 1,
+      "gross_profit_r": 3130.976,
+      "gross_loss_r": 3013.9457,
+      "trades_per_year": 719.7143,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3497,
+      "per_year": {
+        "2019": {
+          "PF": 1.0523,
+          "trades": 465,
+          "wr": 0.5108,
+          "tp": 237,
+          "sl": 227,
+          "timeout": 1,
+          "gross_profit_r": 577.8154,
+          "gross_loss_r": 549.1068
+        },
+        "2020": {
+          "PF": 1.1183,
+          "trades": 607,
+          "wr": 0.542,
+          "tp": 329,
+          "sl": 278,
+          "timeout": 0,
+          "gross_profit_r": 749.4409,
+          "gross_loss_r": 670.1527
+        },
+        "2021": {
+          "PF": 0.9312,
+          "trades": 881,
+          "wr": 0.4938,
+          "tp": 435,
+          "sl": 446,
+          "timeout": 0,
+          "gross_profit_r": 1035.5172,
+          "gross_loss_r": 1112.0245
+        },
+        "2022": {
+          "PF": 1.1253,
+          "trades": 566,
+          "wr": 0.5353,
+          "tp": 303,
+          "sl": 263,
+          "timeout": 0,
+          "gross_profit_r": 768.2025,
+          "gross_loss_r": 682.6616
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0387,
+        "ci95_low": 0.9695,
+        "ci95_high": 1.111,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.350976
+    },
+    {
+      "family": "top_k_pct",
+      "value": 25.0,
+      "threshold_equivalent": 0.4058828055858612,
+      "PF": 1.0296,
+      "trades": 2363,
+      "wr": 0.5169,
+      "tp": 1221,
+      "sl": 1141,
+      "timeout": 1,
+      "gross_profit_r": 2923.1126,
+      "gross_loss_r": 2838.9943,
+      "trades_per_year": 675.1429,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3479,
+      "per_year": {
+        "2019": {
+          "PF": 1.0201,
+          "trades": 435,
+          "wr": 0.5046,
+          "tp": 219,
+          "sl": 215,
+          "timeout": 1,
+          "gross_profit_r": 532.438,
+          "gross_loss_r": 521.9607
+        },
+        "2020": {
+          "PF": 1.1244,
+          "trades": 565,
+          "wr": 0.5416,
+          "tp": 306,
+          "sl": 259,
+          "timeout": 0,
+          "gross_profit_r": 692.7211,
+          "gross_loss_r": 616.0589
+        },
+        "2021": {
+          "PF": 0.9314,
+          "trades": 822,
+          "wr": 0.4964,
+          "tp": 408,
+          "sl": 414,
+          "timeout": 0,
+          "gross_profit_r": 966.9837,
+          "gross_loss_r": 1038.186
+        },
+        "2022": {
+          "PF": 1.1029,
+          "trades": 541,
+          "wr": 0.5323,
+          "tp": 288,
+          "sl": 253,
+          "timeout": 0,
+          "gross_profit_r": 730.9698,
+          "gross_loss_r": 662.7888
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0319,
+        "ci95_low": 0.9661,
+        "ci95_high": 1.101,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.342881
+    },
+    {
+      "family": "threshold",
+      "value": 0.48,
+      "threshold_equivalent": null,
+      "PF": 0.9775,
+      "trades": 919,
+      "wr": 0.5054,
+      "tp": 464,
+      "sl": 454,
+      "timeout": 1,
+      "gross_profit_r": 1130.1334,
+      "gross_loss_r": 1156.1561,
+      "trades_per_year": 262.5714,
+      "negative_years": 3,
+      "active_years": 4,
+      "max_year_trade_share": 0.3275,
+      "per_year": {
+        "2019": {
+          "PF": 0.9563,
+          "trades": 170,
+          "wr": 0.5089,
+          "tp": 86,
+          "sl": 83,
+          "timeout": 1,
+          "gross_profit_r": 207.7389,
+          "gross_loss_r": 217.2216
+        },
+        "2020": {
+          "PF": 1.0475,
+          "trades": 215,
+          "wr": 0.5256,
+          "tp": 113,
+          "sl": 102,
+          "timeout": 0,
+          "gross_profit_r": 255.5774,
+          "gross_loss_r": 243.9924
+        },
+        "2021": {
+          "PF": 0.9828,
+          "trades": 301,
+          "wr": 0.4983,
+          "tp": 150,
+          "sl": 151,
+          "timeout": 0,
+          "gross_profit_r": 376.6254,
+          "gross_loss_r": 383.2254
+        },
+        "2022": {
+          "PF": 0.9309,
+          "trades": 233,
+          "wr": 0.4936,
+          "tp": 115,
+          "sl": 118,
+          "timeout": 0,
+          "gross_profit_r": 290.1917,
+          "gross_loss_r": 311.7168
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9797,
+        "ci95_low": 0.8799,
+        "ci95_high": 1.0879,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.314679
+    },
+    {
+      "family": "top_k_pct",
+      "value": 10.0,
+      "threshold_equivalent": 0.4783015847206116,
+      "PF": 0.9689,
+      "trades": 945,
+      "wr": 0.5032,
+      "tp": 475,
+      "sl": 469,
+      "timeout": 1,
+      "gross_profit_r": 1156.2526,
+      "gross_loss_r": 1193.3165,
+      "trades_per_year": 270.0,
+      "negative_years": 3,
+      "active_years": 4,
+      "max_year_trade_share": 0.3228,
+      "per_year": {
+        "2019": {
+          "PF": 0.9326,
+          "trades": 176,
+          "wr": 0.5029,
+          "tp": 88,
+          "sl": 87,
+          "timeout": 1,
+          "gross_profit_r": 211.4753,
+          "gross_loss_r": 226.7646
+        },
+        "2020": {
+          "PF": 1.0019,
+          "trades": 226,
+          "wr": 0.5133,
+          "tp": 116,
+          "sl": 110,
+          "timeout": 0,
+          "gross_profit_r": 263.1024,
+          "gross_loss_r": 262.6097
+        },
+        "2021": {
+          "PF": 0.9941,
+          "trades": 305,
+          "wr": 0.5016,
+          "tp": 153,
+          "sl": 152,
+          "timeout": 0,
+          "gross_profit_r": 383.9413,
+          "gross_loss_r": 386.2254
+        },
+        "2022": {
+          "PF": 0.9371,
+          "trades": 238,
+          "wr": 0.4958,
+          "tp": 118,
+          "sl": 120,
+          "timeout": 0,
+          "gross_profit_r": 297.7337,
+          "gross_loss_r": 317.7168
+        }
+      },
+      "bootstrap": {
+        "mean": 0.9697,
+        "ci95_low": 0.8754,
+        "ci95_high": 1.0818,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.312372
+    },
+    {
+      "family": "top_k_pct",
+      "value": 20.0,
+      "threshold_equivalent": 0.42694345116615295,
+      "PF": 1.0058,
+      "trades": 1890,
+      "wr": 0.5109,
+      "tp": 965,
+      "sl": 924,
+      "timeout": 1,
+      "gross_profit_r": 2317.8647,
+      "gross_loss_r": 2304.5343,
+      "trades_per_year": 540.0,
+      "negative_years": 1,
+      "active_years": 4,
+      "max_year_trade_share": 0.3481,
+      "per_year": {
+        "2019": {
+          "PF": 1.024,
+          "trades": 342,
+          "wr": 0.5044,
+          "tp": 172,
+          "sl": 169,
+          "timeout": 1,
+          "gross_profit_r": 419.1987,
+          "gross_loss_r": 409.3869
+        },
+        "2020": {
+          "PF": 1.0276,
+          "trades": 453,
+          "wr": 0.521,
+          "tp": 236,
+          "sl": 217,
+          "timeout": 0,
+          "gross_profit_r": 530.5842,
+          "gross_loss_r": 516.3145
+        },
+        "2021": {
+          "PF": 0.9358,
+          "trades": 658,
+          "wr": 0.4939,
+          "tp": 325,
+          "sl": 333,
+          "timeout": 0,
+          "gross_profit_r": 783.7778,
+          "gross_loss_r": 837.589
+        },
+        "2022": {
+          "PF": 1.0796,
+          "trades": 437,
+          "wr": 0.5309,
+          "tp": 232,
+          "sl": 205,
+          "timeout": 0,
+          "gross_profit_r": 584.304,
+          "gross_loss_r": 541.2439
+        }
+      },
+      "bootstrap": {
+        "mean": 1.0063,
+        "ci95_low": 0.9363,
+        "ci95_high": 1.0868,
+        "n_bootstrap": 1000,
+        "finite_samples": 1000
+      },
+      "gates": {
+        "pf_ge_1_5": false,
+        "trades_per_year_ge_6": true,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
+      },
+      "all_stability_gates_pass": false,
+      "stability_score": 1.311265
     }
   ],
   "all_results": [
@@ -1941,49 +2349,64 @@
       "family": "threshold",
       "value": 0.3,
       "threshold_equivalent": null,
-      "PF": 1.0551,
-      "trades": 4939,
-      "wr": 0.5134,
-      "tp": 1743,
-      "sl": 1652,
-      "trades_per_year": 1411.1429,
+      "PF": 1.0527,
+      "trades": 5448,
+      "wr": 0.5188,
+      "tp": 2825,
+      "sl": 2620,
+      "timeout": 3,
+      "gross_profit_r": 6649.8501,
+      "gross_loss_r": 6317.0314,
+      "trades_per_year": 1556.5714,
       "negative_years": 2,
       "active_years": 4,
-      "max_year_trade_share": 0.3037,
+      "max_year_trade_share": 0.3174,
       "per_year": {
         "2019": {
-          "PF": 1.3953,
-          "trades": 874,
-          "wr": 0.5825,
-          "tp": 353,
-          "sl": 253
+          "PF": 1.1225,
+          "trades": 936,
+          "wr": 0.5283,
+          "tp": 494,
+          "sl": 441,
+          "timeout": 1,
+          "gross_profit_r": 1179.0728,
+          "gross_loss_r": 1050.3725
         },
         "2020": {
-          "PF": 1.2344,
-          "trades": 1369,
-          "wr": 0.5525,
-          "tp": 495,
-          "sl": 401
+          "PF": 1.2451,
+          "trades": 1445,
+          "wr": 0.5599,
+          "tp": 809,
+          "sl": 636,
+          "timeout": 0,
+          "gross_profit_r": 1848.3118,
+          "gross_loss_r": 1484.4776
         },
         "2021": {
-          "PF": 0.8694,
-          "trades": 1500,
-          "wr": 0.4651,
-          "tp": 466,
-          "sl": 536
+          "PF": 0.9424,
+          "trades": 1729,
+          "wr": 0.4951,
+          "tp": 855,
+          "sl": 872,
+          "timeout": 2,
+          "gross_profit_r": 1980.4031,
+          "gross_loss_r": 2101.4024
         },
         "2022": {
-          "PF": 0.9286,
-          "trades": 1196,
-          "wr": 0.4815,
-          "tp": 429,
-          "sl": 462
+          "PF": 0.977,
+          "trades": 1338,
+          "wr": 0.4985,
+          "tp": 667,
+          "sl": 671,
+          "timeout": 0,
+          "gross_profit_r": 1642.0624,
+          "gross_loss_r": 1680.7789
         }
       },
       "bootstrap": {
-        "mean": 1.0567,
-        "ci95_low": 0.9842,
-        "ci95_high": 1.1303,
+        "mean": 1.0538,
+        "ci95_low": 1.0093,
+        "ci95_high": 1.0991,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -1993,58 +2416,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.469321
+      "stability_score": 1.437221
     },
     {
       "family": "threshold",
       "value": 0.32,
       "threshold_equivalent": null,
-      "PF": 1.0503,
-      "trades": 4290,
-      "wr": 0.5123,
-      "tp": 1524,
-      "sl": 1451,
-      "trades_per_year": 1225.7143,
-      "negative_years": 2,
+      "PF": 1.0507,
+      "trades": 4857,
+      "wr": 0.5183,
+      "tp": 2516,
+      "sl": 2338,
+      "timeout": 3,
+      "gross_profit_r": 5959.2025,
+      "gross_loss_r": 5671.4175,
+      "trades_per_year": 1387.7143,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3026,
+      "max_year_trade_share": 0.3249,
       "per_year": {
         "2019": {
-          "PF": 1.3879,
-          "trades": 803,
-          "wr": 0.5812,
-          "tp": 322,
-          "sl": 232
+          "PF": 1.0942,
+          "trades": 856,
+          "wr": 0.5228,
+          "tp": 447,
+          "sl": 408,
+          "timeout": 1,
+          "gross_profit_r": 1067.0321,
+          "gross_loss_r": 975.1483
         },
         "2020": {
-          "PF": 1.2341,
-          "trades": 1173,
-          "wr": 0.5524,
-          "tp": 427,
-          "sl": 346
+          "PF": 1.2373,
+          "trades": 1278,
+          "wr": 0.5587,
+          "tp": 714,
+          "sl": 564,
+          "timeout": 0,
+          "gross_profit_r": 1641.2982,
+          "gross_loss_r": 1326.5051
         },
         "2021": {
-          "PF": 0.8665,
-          "trades": 1298,
-          "wr": 0.4642,
-          "tp": 409,
-          "sl": 472
+          "PF": 0.9366,
+          "trades": 1578,
+          "wr": 0.4924,
+          "tp": 776,
+          "sl": 800,
+          "timeout": 2,
+          "gross_profit_r": 1813.5385,
+          "gross_loss_r": 1936.2971
         },
         "2022": {
-          "PF": 0.9127,
-          "trades": 1016,
-          "wr": 0.4772,
-          "tp": 366,
-          "sl": 401
+          "PF": 1.0027,
+          "trades": 1145,
+          "wr": 0.5057,
+          "tp": 579,
+          "sl": 566,
+          "timeout": 0,
+          "gross_profit_r": 1437.3336,
+          "gross_loss_r": 1433.467
         }
       },
       "bootstrap": {
-        "mean": 1.0494,
-        "ci95_low": 0.9785,
-        "ci95_high": 1.123,
+        "mean": 1.051,
+        "ci95_low": 1.0038,
+        "ci95_high": 1.0978,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2054,58 +2492,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.465034
+      "stability_score": 1.418672
     },
     {
       "family": "threshold",
       "value": 0.35,
       "threshold_equivalent": null,
-      "PF": 1.0389,
-      "trades": 3286,
-      "wr": 0.5095,
-      "tp": 1175,
-      "sl": 1131,
-      "trades_per_year": 938.8571,
-      "negative_years": 2,
+      "PF": 1.0746,
+      "trades": 3923,
+      "wr": 0.5221,
+      "tp": 2047,
+      "sl": 1874,
+      "timeout": 2,
+      "gross_profit_r": 4903.7375,
+      "gross_loss_r": 4563.1852,
+      "trades_per_year": 1120.8571,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.3022,
+      "max_year_trade_share": 0.3352,
       "per_year": {
         "2019": {
-          "PF": 1.3613,
-          "trades": 663,
-          "wr": 0.5765,
-          "tp": 260,
-          "sl": 191
+          "PF": 1.0679,
+          "trades": 716,
+          "wr": 0.5147,
+          "tp": 368,
+          "sl": 347,
+          "timeout": 1,
+          "gross_profit_r": 886.4197,
+          "gross_loss_r": 830.0956
         },
         "2020": {
-          "PF": 1.1923,
-          "trades": 866,
-          "wr": 0.5439,
-          "tp": 310,
-          "sl": 260
+          "PF": 1.2434,
+          "trades": 1013,
+          "wr": 0.5607,
+          "tp": 568,
+          "sl": 445,
+          "timeout": 0,
+          "gross_profit_r": 1308.4816,
+          "gross_loss_r": 1052.3053
         },
         "2021": {
-          "PF": 0.9123,
-          "trades": 993,
-          "wr": 0.4771,
-          "tp": 333,
-          "sl": 365
+          "PF": 0.9518,
+          "trades": 1315,
+          "wr": 0.4939,
+          "tp": 649,
+          "sl": 665,
+          "timeout": 1,
+          "gross_profit_r": 1534.9644,
+          "gross_loss_r": 1612.721
         },
         "2022": {
-          "PF": 0.8635,
-          "trades": 764,
-          "wr": 0.4634,
-          "tp": 272,
-          "sl": 315
+          "PF": 1.0991,
+          "trades": 879,
+          "wr": 0.5256,
+          "tp": 462,
+          "sl": 417,
+          "timeout": 0,
+          "gross_profit_r": 1173.8717,
+          "gross_loss_r": 1068.0634
         }
       },
       "bootstrap": {
-        "mean": 1.0393,
-        "ci95_low": 0.9556,
-        "ci95_high": 1.1334,
+        "mean": 1.0731,
+        "ci95_low": 1.014,
+        "ci95_high": 1.1308,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2115,58 +2568,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.449907
+      "stability_score": 1.428782
     },
     {
       "family": "threshold",
       "value": 0.38,
       "threshold_equivalent": null,
-      "PF": 0.9882,
-      "trades": 2349,
-      "wr": 0.497,
-      "tp": 837,
-      "sl": 847,
-      "trades_per_year": 671.1429,
-      "negative_years": 2,
+      "PF": 1.07,
+      "trades": 3055,
+      "wr": 0.5228,
+      "tp": 1596,
+      "sl": 1457,
+      "timeout": 2,
+      "gross_profit_r": 3851.4556,
+      "gross_loss_r": 3599.6154,
+      "trades_per_year": 872.8571,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2937,
+      "max_year_trade_share": 0.3473,
       "per_year": {
         "2019": {
-          "PF": 1.2975,
-          "trades": 522,
-          "wr": 0.5647,
-          "tp": 205,
-          "sl": 158
+          "PF": 1.0377,
+          "trades": 579,
+          "wr": 0.5104,
+          "tp": 295,
+          "sl": 283,
+          "timeout": 1,
+          "gross_profit_r": 713.9398,
+          "gross_loss_r": 688.0005
         },
         "2020": {
-          "PF": 1.0645,
-          "trades": 596,
-          "wr": 0.5156,
-          "tp": 198,
-          "sl": 186
+          "PF": 1.1957,
+          "trades": 752,
+          "wr": 0.5545,
+          "tp": 417,
+          "sl": 335,
+          "timeout": 0,
+          "gross_profit_r": 966.2063,
+          "gross_loss_r": 808.0936
         },
         "2021": {
-          "PF": 0.8989,
-          "trades": 690,
-          "wr": 0.4734,
-          "tp": 240,
-          "sl": 267
+          "PF": 0.97,
+          "trades": 1061,
+          "wr": 0.4991,
+          "tp": 529,
+          "sl": 531,
+          "timeout": 1,
+          "gross_profit_r": 1262.9603,
+          "gross_loss_r": 1301.9651
         },
         "2022": {
-          "PF": 0.822,
-          "trades": 541,
-          "wr": 0.4512,
-          "tp": 194,
-          "sl": 236
+          "PF": 1.1332,
+          "trades": 663,
+          "wr": 0.5354,
+          "tp": 355,
+          "sl": 308,
+          "timeout": 0,
+          "gross_profit_r": 908.3492,
+          "gross_loss_r": 801.5562
         }
       },
       "bootstrap": {
-        "mean": 0.9896,
-        "ci95_low": 0.8974,
-        "ci95_high": 1.0825,
+        "mean": 1.0704,
+        "ci95_low": 1.0084,
+        "ci95_high": 1.1328,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2176,58 +2644,73 @@
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": false
+        "bootstrap_ci_low_ge_1_0": true
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.395848
+      "stability_score": 1.396779
     },
     {
       "family": "threshold",
       "value": 0.4,
       "threshold_equivalent": null,
-      "PF": 0.9561,
-      "trades": 1798,
-      "wr": 0.4888,
-      "tp": 632,
-      "sl": 661,
-      "trades_per_year": 513.7143,
-      "negative_years": 2,
+      "PF": 1.0388,
+      "trades": 2519,
+      "wr": 0.5179,
+      "tp": 1304,
+      "sl": 1214,
+      "timeout": 1,
+      "gross_profit_r": 3130.976,
+      "gross_loss_r": 3013.9457,
+      "trades_per_year": 719.7143,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.292,
+      "max_year_trade_share": 0.3497,
       "per_year": {
         "2019": {
-          "PF": 1.371,
-          "trades": 421,
-          "wr": 0.5782,
-          "tp": 170,
-          "sl": 124
+          "PF": 1.0523,
+          "trades": 465,
+          "wr": 0.5108,
+          "tp": 237,
+          "sl": 227,
+          "timeout": 1,
+          "gross_profit_r": 577.8154,
+          "gross_loss_r": 549.1068
         },
         "2020": {
-          "PF": 1.0072,
-          "trades": 434,
-          "wr": 0.5018,
-          "tp": 139,
-          "sl": 138
+          "PF": 1.1183,
+          "trades": 607,
+          "wr": 0.542,
+          "tp": 329,
+          "sl": 278,
+          "timeout": 0,
+          "gross_profit_r": 749.4409,
+          "gross_loss_r": 670.1527
         },
         "2021": {
-          "PF": 0.8883,
-          "trades": 525,
-          "wr": 0.4704,
-          "tp": 183,
-          "sl": 206
+          "PF": 0.9312,
+          "trades": 881,
+          "wr": 0.4938,
+          "tp": 435,
+          "sl": 446,
+          "timeout": 0,
+          "gross_profit_r": 1035.5172,
+          "gross_loss_r": 1112.0245
         },
         "2022": {
-          "PF": 0.7254,
-          "trades": 418,
-          "wr": 0.4204,
-          "tp": 140,
-          "sl": 193
+          "PF": 1.1253,
+          "trades": 566,
+          "wr": 0.5353,
+          "tp": 303,
+          "sl": 263,
+          "timeout": 0,
+          "gross_profit_r": 768.2025,
+          "gross_loss_r": 682.6616
         }
       },
       "bootstrap": {
-        "mean": 0.9571,
-        "ci95_low": 0.8575,
-        "ci95_high": 1.0663,
+        "mean": 1.0387,
+        "ci95_low": 0.9695,
+        "ci95_high": 1.111,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2240,55 +2723,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.353855
+      "stability_score": 1.350976
     },
     {
       "family": "threshold",
       "value": 0.43,
       "threshold_equivalent": null,
-      "PF": 1.0325,
-      "trades": 1117,
-      "wr": 0.508,
-      "tp": 413,
-      "sl": 400,
-      "trades_per_year": 319.1429,
-      "negative_years": 1,
+      "PF": 0.9897,
+      "trades": 1811,
+      "wr": 0.5077,
+      "tp": 919,
+      "sl": 891,
+      "timeout": 1,
+      "gross_profit_r": 2201.6029,
+      "gross_loss_r": 2224.4172,
+      "trades_per_year": 517.4286,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.2972,
+      "max_year_trade_share": 0.3462,
       "per_year": {
         "2019": {
-          "PF": 1.1649,
-          "trades": 306,
-          "wr": 0.5381,
-          "tp": 113,
-          "sl": 97
+          "PF": 0.9959,
+          "trades": 330,
+          "wr": 0.5015,
+          "tp": 165,
+          "sl": 164,
+          "timeout": 1,
+          "gross_profit_r": 398.1987,
+          "gross_loss_r": 399.8577
         },
         "2020": {
-          "PF": 1.1688,
-          "trades": 250,
-          "wr": 0.5389,
-          "tp": 90,
-          "sl": 77
+          "PF": 0.9818,
+          "trades": 431,
+          "wr": 0.5104,
+          "tp": 220,
+          "sl": 211,
+          "timeout": 0,
+          "gross_profit_r": 493.4952,
+          "gross_loss_r": 502.663
         },
         "2021": {
-          "PF": 1.0917,
-          "trades": 332,
-          "wr": 0.5219,
-          "tp": 131,
-          "sl": 120
+          "PF": 0.9447,
+          "trades": 627,
+          "wr": 0.496,
+          "tp": 311,
+          "sl": 316,
+          "timeout": 0,
+          "gross_profit_r": 748.9859,
+          "gross_loss_r": 792.8552
         },
         "2022": {
-          "PF": 0.7453,
-          "trades": 229,
-          "wr": 0.427,
-          "tp": 79,
-          "sl": 106
+          "PF": 1.0603,
+          "trades": 423,
+          "wr": 0.5272,
+          "tp": 223,
+          "sl": 200,
+          "timeout": 0,
+          "gross_profit_r": 560.9232,
+          "gross_loss_r": 529.0412
         }
       },
       "bootstrap": {
-        "mean": 1.0348,
-        "ci95_low": 0.9016,
-        "ci95_high": 1.1835,
+        "mean": 0.9906,
+        "ci95_low": 0.917,
+        "ci95_high": 1.0673,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2301,55 +2799,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.451231
+      "stability_score": 1.294097
     },
     {
       "family": "threshold",
       "value": 0.45,
       "threshold_equivalent": null,
-      "PF": 1.0138,
-      "trades": 791,
-      "wr": 0.5034,
-      "tp": 294,
-      "sl": 290,
-      "trades_per_year": 226.0,
-      "negative_years": 1,
+      "PF": 0.9771,
+      "trades": 1420,
+      "wr": 0.5025,
+      "tp": 713,
+      "sl": 706,
+      "timeout": 1,
+      "gross_profit_r": 1724.1031,
+      "gross_loss_r": 1764.5795,
+      "trades_per_year": 405.7143,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.311,
+      "max_year_trade_share": 0.3338,
       "per_year": {
         "2019": {
-          "PF": 1.1139,
-          "trades": 238,
-          "wr": 0.5269,
-          "tp": 88,
-          "sl": 79
+          "PF": 0.9039,
+          "trades": 262,
+          "wr": 0.4866,
+          "tp": 127,
+          "sl": 134,
+          "timeout": 1,
+          "gross_profit_r": 303.2735,
+          "gross_loss_r": 335.5199
         },
         "2020": {
-          "PF": 1.1667,
-          "trades": 157,
-          "wr": 0.5385,
-          "tp": 56,
-          "sl": 48
+          "PF": 1.0067,
+          "trades": 349,
+          "wr": 0.51,
+          "tp": 178,
+          "sl": 171,
+          "timeout": 0,
+          "gross_profit_r": 407.7142,
+          "gross_loss_r": 405.0172
         },
         "2021": {
-          "PF": 1.1705,
-          "trades": 246,
-          "wr": 0.5393,
-          "tp": 103,
-          "sl": 88
+          "PF": 0.9909,
+          "trades": 474,
+          "wr": 0.5021,
+          "tp": 238,
+          "sl": 236,
+          "timeout": 0,
+          "gross_profit_r": 583.4333,
+          "gross_loss_r": 588.7675
         },
         "2022": {
-          "PF": 0.6267,
-          "trades": 150,
-          "wr": 0.3852,
-          "tp": 47,
-          "sl": 75
+          "PF": 0.9872,
+          "trades": 335,
+          "wr": 0.5075,
+          "tp": 170,
+          "sl": 165,
+          "timeout": 0,
+          "gross_profit_r": 429.6821,
+          "gross_loss_r": 435.2748
         }
       },
       "bootstrap": {
-        "mean": 1.0156,
-        "ci95_low": 0.863,
-        "ci95_high": 1.1938,
+        "mean": 0.9785,
+        "ci95_low": 0.897,
+        "ci95_high": 1.0651,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2362,55 +2875,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.397019
+      "stability_score": 1.301883
     },
     {
       "family": "threshold",
       "value": 0.48,
       "threshold_equivalent": null,
-      "PF": 1.069,
-      "trades": 463,
-      "wr": 0.5167,
-      "tp": 186,
-      "sl": 174,
-      "trades_per_year": 132.2857,
-      "negative_years": 1,
+      "PF": 0.9775,
+      "trades": 919,
+      "wr": 0.5054,
+      "tp": 464,
+      "sl": 454,
+      "timeout": 1,
+      "gross_profit_r": 1130.1334,
+      "gross_loss_r": 1156.1561,
+      "trades_per_year": 262.5714,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.3693,
+      "max_year_trade_share": 0.3275,
       "per_year": {
         "2019": {
-          "PF": 1.0806,
-          "trades": 171,
-          "wr": 0.5194,
-          "tp": 67,
-          "sl": 62
+          "PF": 0.9563,
+          "trades": 170,
+          "wr": 0.5089,
+          "tp": 86,
+          "sl": 83,
+          "timeout": 1,
+          "gross_profit_r": 207.7389,
+          "gross_loss_r": 217.2216
         },
         "2020": {
-          "PF": 1.24,
-          "trades": 74,
-          "wr": 0.5536,
-          "tp": 31,
-          "sl": 25
+          "PF": 1.0475,
+          "trades": 215,
+          "wr": 0.5256,
+          "tp": 113,
+          "sl": 102,
+          "timeout": 0,
+          "gross_profit_r": 255.5774,
+          "gross_loss_r": 243.9924
         },
         "2021": {
-          "PF": 1.1887,
-          "trades": 146,
-          "wr": 0.5431,
-          "tp": 63,
-          "sl": 53
+          "PF": 0.9828,
+          "trades": 301,
+          "wr": 0.4983,
+          "tp": 150,
+          "sl": 151,
+          "timeout": 0,
+          "gross_profit_r": 376.6254,
+          "gross_loss_r": 383.2254
         },
         "2022": {
-          "PF": 0.7353,
-          "trades": 72,
-          "wr": 0.4237,
-          "tp": 25,
-          "sl": 34
+          "PF": 0.9309,
+          "trades": 233,
+          "wr": 0.4936,
+          "tp": 115,
+          "sl": 118,
+          "timeout": 0,
+          "gross_profit_r": 290.1917,
+          "gross_loss_r": 311.7168
         }
       },
       "bootstrap": {
-        "mean": 1.0774,
-        "ci95_low": 0.8776,
-        "ci95_high": 1.3379,
+        "mean": 0.9797,
+        "ci95_low": 0.8799,
+        "ci95_high": 1.0879,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2423,55 +2951,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.348371
+      "stability_score": 1.314679
     },
     {
       "family": "threshold",
       "value": 0.5,
       "threshold_equivalent": null,
-      "PF": 1.1228,
-      "trades": 306,
-      "wr": 0.5289,
-      "tp": 128,
-      "sl": 114,
-      "trades_per_year": 87.4286,
-      "negative_years": 2,
+      "PF": 0.9584,
+      "trades": 687,
+      "wr": 0.5044,
+      "tp": 346,
+      "sl": 340,
+      "timeout": 1,
+      "gross_profit_r": 831.7272,
+      "gross_loss_r": 867.834,
+      "trades_per_year": 196.2857,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.4248,
+      "max_year_trade_share": 0.3348,
       "per_year": {
         "2019": {
-          "PF": 1.0612,
-          "trades": 130,
-          "wr": 0.5149,
-          "tp": 52,
-          "sl": 49
+          "PF": 1.2768,
+          "trades": 133,
+          "wr": 0.5682,
+          "tp": 75,
+          "sl": 57,
+          "timeout": 1,
+          "gross_profit_r": 185.1989,
+          "gross_loss_r": 145.0455
         },
         "2020": {
-          "PF": 0.8947,
-          "trades": 41,
+          "PF": 0.7545,
+          "trades": 144,
           "wr": 0.4722,
-          "tp": 17,
-          "sl": 19
+          "tp": 68,
+          "sl": 76,
+          "timeout": 0,
+          "gross_profit_r": 141.0354,
+          "gross_loss_r": 186.9377
         },
         "2021": {
-          "PF": 1.72,
-          "trades": 88,
-          "wr": 0.6324,
-          "tp": 43,
-          "sl": 25
+          "PF": 0.9725,
+          "trades": 230,
+          "wr": 0.5,
+          "tp": 115,
+          "sl": 115,
+          "timeout": 0,
+          "gross_profit_r": 285.4985,
+          "gross_loss_r": 293.5572
         },
         "2022": {
-          "PF": 0.7619,
-          "trades": 47,
-          "wr": 0.4324,
-          "tp": 16,
-          "sl": 21
+          "PF": 0.908,
+          "trades": 180,
+          "wr": 0.4889,
+          "tp": 88,
+          "sl": 92,
+          "timeout": 0,
+          "gross_profit_r": 219.9944,
+          "gross_loss_r": 242.2935
         }
       },
       "bootstrap": {
-        "mean": 1.1357,
-        "ci95_low": 0.8607,
-        "ci95_high": 1.4314,
+        "mean": 0.9606,
+        "ci95_low": 0.8472,
+        "ci95_high": 1.0802,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -2484,418 +3027,529 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.291587
+      "stability_score": 1.275077
     },
     {
       "family": "threshold",
       "value": 0.53,
       "threshold_equivalent": null,
-      "PF": 1.7778,
-      "trades": 162,
-      "wr": 0.64,
-      "tp": 80,
-      "sl": 45,
-      "trades_per_year": 46.2857,
-      "negative_years": 0,
+      "PF": 0.7625,
+      "trades": 371,
+      "wr": 0.4514,
+      "tp": 167,
+      "sl": 203,
+      "timeout": 1,
+      "gross_profit_r": 400.9593,
+      "gross_loss_r": 525.8335,
+      "trades_per_year": 106.0,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.4506,
+      "max_year_trade_share": 0.3585,
       "per_year": {
         "2019": {
-          "PF": 1.7,
-          "trades": 73,
-          "wr": 0.6296,
-          "tp": 34,
-          "sl": 20
+          "PF": 1.2652,
+          "trades": 74,
+          "wr": 0.5753,
+          "tp": 42,
+          "sl": 31,
+          "timeout": 1,
+          "gross_profit_r": 103.0925,
+          "gross_loss_r": 81.4824
         },
         "2020": {
-          "PF": 1.8571,
-          "trades": 22,
-          "wr": 0.65,
-          "tp": 13,
-          "sl": 7
+          "PF": 0.5806,
+          "trades": 69,
+          "wr": 0.4203,
+          "tp": 29,
+          "sl": 40,
+          "timeout": 0,
+          "gross_profit_r": 55.7323,
+          "gross_loss_r": 95.9974
         },
         "2021": {
-          "PF": 2.0,
-          "trades": 45,
-          "wr": 0.6667,
-          "tp": 24,
-          "sl": 12
+          "PF": 0.6245,
+          "trades": 133,
+          "wr": 0.3985,
+          "tp": 53,
+          "sl": 80,
+          "timeout": 0,
+          "gross_profit_r": 130.3807,
+          "gross_loss_r": 208.7636
         },
         "2022": {
-          "PF": 1.5,
-          "trades": 22,
-          "wr": 0.6,
-          "tp": 9,
-          "sl": 6
+          "PF": 0.8006,
+          "trades": 95,
+          "wr": 0.4526,
+          "tp": 43,
+          "sl": 52,
+          "timeout": 0,
+          "gross_profit_r": 111.7539,
+          "gross_loss_r": 139.5901
         }
       },
       "bootstrap": {
-        "mean": 1.8043,
-        "ci95_low": 1.2407,
-        "ci95_high": 2.5758,
+        "mean": 0.7636,
+        "ci95_low": 0.6417,
+        "ci95_high": 0.8968,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
+        "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
+        "bootstrap_ci_low_ge_1_0": false
       },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.953385
+      "all_stability_gates_pass": false,
+      "stability_score": 0.978302
     },
     {
       "family": "threshold",
       "value": 0.55,
       "threshold_equivalent": null,
-      "PF": 1.8966,
-      "trades": 111,
-      "wr": 0.6548,
-      "tp": 55,
-      "sl": 29,
-      "trades_per_year": 31.7143,
-      "negative_years": 0,
+      "PF": 0.705,
+      "trades": 227,
+      "wr": 0.4361,
+      "tp": 99,
+      "sl": 128,
+      "timeout": 0,
+      "gross_profit_r": 238.1596,
+      "gross_loss_r": 337.8086,
+      "trades_per_year": 64.8571,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.5135,
+      "max_year_trade_share": 0.3568,
       "per_year": {
         "2019": {
-          "PF": 1.9286,
-          "trades": 57,
-          "wr": 0.6585,
-          "tp": 27,
-          "sl": 14
+          "PF": 1.188,
+          "trades": 43,
+          "wr": 0.5814,
+          "tp": 25,
+          "sl": 18,
+          "timeout": 0,
+          "gross_profit_r": 56.4451,
+          "gross_loss_r": 47.513
         },
         "2020": {
-          "PF": 2.25,
-          "trades": 15,
-          "wr": 0.6923,
-          "tp": 9,
-          "sl": 4
+          "PF": 0.3553,
+          "trades": 37,
+          "wr": 0.3243,
+          "tp": 12,
+          "sl": 25,
+          "timeout": 0,
+          "gross_profit_r": 23.0116,
+          "gross_loss_r": 64.759
         },
         "2021": {
-          "PF": 2.0,
-          "trades": 25,
-          "wr": 0.6667,
-          "tp": 14,
-          "sl": 7
+          "PF": 0.6461,
+          "trades": 81,
+          "wr": 0.3951,
+          "tp": 32,
+          "sl": 49,
+          "timeout": 0,
+          "gross_profit_r": 83.5837,
+          "gross_loss_r": 129.3577
         },
         "2022": {
-          "PF": 1.25,
-          "trades": 14,
-          "wr": 0.5556,
-          "tp": 5,
-          "sl": 4
+          "PF": 0.781,
+          "trades": 66,
+          "wr": 0.4545,
+          "tp": 30,
+          "sl": 36,
+          "timeout": 0,
+          "gross_profit_r": 75.1192,
+          "gross_loss_r": 96.1788
         }
       },
       "bootstrap": {
-        "mean": 1.9501,
-        "ci95_low": 1.2142,
-        "ci95_high": 3.0476,
+        "mean": 0.7083,
+        "ci95_low": 0.5686,
+        "ci95_high": 0.8628,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
+        "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
+        "bootstrap_ci_low_ge_1_0": false
       },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.845341
+      "all_stability_gates_pass": false,
+      "stability_score": 0.906872
     },
     {
       "family": "threshold",
       "value": 0.58,
       "threshold_equivalent": null,
-      "PF": 1.5294,
-      "trades": 59,
-      "wr": 0.6047,
-      "tp": 26,
-      "sl": 17,
-      "trades_per_year": 16.8571,
-      "negative_years": 2,
+      "PF": 0.6458,
+      "trades": 100,
+      "wr": 0.4,
+      "tp": 40,
+      "sl": 60,
+      "timeout": 0,
+      "gross_profit_r": 103.3363,
+      "gross_loss_r": 160.0176,
+      "trades_per_year": 28.5714,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.6441,
+      "max_year_trade_share": 0.39,
       "per_year": {
         "2019": {
-          "PF": 2.5714,
-          "trades": 38,
-          "wr": 0.72,
-          "tp": 18,
-          "sl": 7
+          "PF": 2.0357,
+          "trades": 20,
+          "wr": 0.7,
+          "tp": 14,
+          "sl": 6,
+          "timeout": 0,
+          "gross_profit_r": 35.0854,
+          "gross_loss_r": 17.2348
         },
         "2020": {
-          "PF": 0.5,
-          "trades": 3,
-          "wr": 0.3333,
-          "tp": 1,
-          "sl": 2
+          "PF": 0.1646,
+          "trades": 12,
+          "wr": 0.1667,
+          "tp": 2,
+          "sl": 10,
+          "timeout": 0,
+          "gross_profit_r": 4.4527,
+          "gross_loss_r": 27.0583
         },
         "2021": {
-          "PF": 1.2,
-          "trades": 12,
-          "wr": 0.5455,
-          "tp": 6,
-          "sl": 5
+          "PF": 0.5844,
+          "trades": 39,
+          "wr": 0.3333,
+          "tp": 13,
+          "sl": 26,
+          "timeout": 0,
+          "gross_profit_r": 39.0,
+          "gross_loss_r": 66.7337
         },
         "2022": {
-          "PF": 0.3333,
-          "trades": 6,
-          "wr": 0.25,
-          "tp": 1,
-          "sl": 3
+          "PF": 0.5062,
+          "trades": 29,
+          "wr": 0.3793,
+          "tp": 11,
+          "sl": 18,
+          "timeout": 0,
+          "gross_profit_r": 24.7982,
+          "gross_loss_r": 48.9908
         }
       },
       "bootstrap": {
-        "mean": 1.6399,
-        "ci95_low": 0.8,
-        "ci95_high": 3.0911,
+        "mean": 0.653,
+        "ci95_low": 0.4671,
+        "ci95_high": 0.8719,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.088725
+      "stability_score": 0.787876
     },
     {
       "family": "threshold",
       "value": 0.6,
       "threshold_equivalent": null,
-      "PF": 2.5714,
+      "PF": 0.7613,
       "trades": 35,
-      "wr": 0.72,
-      "tp": 18,
-      "sl": 7,
+      "wr": 0.4286,
+      "tp": 15,
+      "sl": 20,
+      "timeout": 0,
+      "gross_profit_r": 42.9145,
+      "gross_loss_r": 56.369,
       "trades_per_year": 10.0,
-      "negative_years": 0,
-      "active_years": 3,
-      "max_year_trade_share": 0.7714,
+      "negative_years": 3,
+      "active_years": 4,
+      "max_year_trade_share": 0.5714,
       "per_year": {
         "2019": {
-          "PF": 3.25,
-          "trades": 27,
-          "wr": 0.7647,
-          "tp": 13,
-          "sl": 4
+          "PF": 1.5,
+          "trades": 5,
+          "wr": 0.6,
+          "tp": 3,
+          "sl": 2,
+          "timeout": 0,
+          "gross_profit_r": 9.0,
+          "gross_loss_r": 6.0
         },
         "2020": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
-        },
-        "2021": {
-          "PF": 1.3333,
-          "trades": 7,
-          "wr": 0.5714,
-          "tp": 4,
-          "sl": 3
-        },
-        "2022": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 4,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 4,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 12.0
+        },
+        "2021": {
+          "PF": 0.9193,
+          "trades": 20,
+          "wr": 0.45,
+          "tp": 9,
+          "sl": 11,
+          "timeout": 0,
+          "gross_profit_r": 27.0,
+          "gross_loss_r": 29.369
+        },
+        "2022": {
+          "PF": 0.7683,
+          "trades": 6,
+          "wr": 0.5,
+          "tp": 3,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 6.9145,
+          "gross_loss_r": 9.0
         }
       },
       "bootstrap": {
-        "mean": 3.1534,
-        "ci95_low": 1.0998,
-        "ci95_high": 8.3375,
+        "mean": 0.796,
+        "ci95_low": 0.4572,
+        "ci95_high": 1.2794,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
+        "negative_years_eq_0": false,
         "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": true
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.734686
+      "stability_score": 0.543786
     },
     {
       "family": "threshold",
       "value": 0.63,
       "threshold_equivalent": null,
-      "PF": 8.0,
-      "trades": 16,
-      "wr": 0.8889,
-      "tp": 8,
-      "sl": 1,
-      "trades_per_year": 4.5714,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "PF": 1.0576,
+      "trades": 14,
+      "wr": 0.5,
+      "tp": 7,
+      "sl": 7,
+      "timeout": 0,
+      "gross_profit_r": 21.0,
+      "gross_loss_r": 19.8568,
+      "trades_per_year": 4.0,
+      "negative_years": 2,
+      "active_years": 4,
+      "max_year_trade_share": 0.5714,
       "per_year": {
         "2019": {
-          "PF": 8.0,
-          "trades": 16,
-          "wr": 0.8889,
-          "tp": 8,
-          "sl": 1
+          "PF": 99.0,
+          "trades": 2,
+          "wr": 1.0,
+          "tp": 2,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 6.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 2,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 2,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 6.0
         },
         "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 1.9092,
+          "trades": 8,
+          "wr": 0.625,
+          "tp": 5,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 15.0,
+          "gross_loss_r": 7.8568
         },
         "2022": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 2,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 2,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 6.0
         }
       },
       "bootstrap": {
-        "mean": 5.9748,
-        "ci95_low": 1.6667,
-        "ci95_high": 11.0,
+        "mean": 1.1715,
+        "ci95_low": 0.433,
+        "ci95_high": 2.5043,
         "n_bootstrap": 1000,
-        "finite_samples": 637
+        "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": true
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.0
+      "stability_score": 0.302171
     },
     {
       "family": "threshold",
       "value": 0.65,
       "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 10,
-      "wr": 1.0,
-      "tp": 6,
-      "sl": 0,
-      "trades_per_year": 2.8571,
-      "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "PF": 1.5,
+      "trades": 5,
+      "wr": 0.6,
+      "tp": 3,
+      "sl": 2,
+      "timeout": 0,
+      "gross_profit_r": 9.0,
+      "gross_loss_r": 6.0,
+      "trades_per_year": 1.4286,
+      "negative_years": 2,
+      "active_years": 3,
+      "max_year_trade_share": 0.6,
       "per_year": {
         "2019": {
-          "PF": 99.0,
-          "trades": 10,
-          "wr": 1.0,
-          "tp": 6,
-          "sl": 0
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 1,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 1,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 3.0
         },
         "2021": {
-          "PF": 0.0,
-          "trades": 0,
-          "wr": 0.0,
-          "tp": 0,
-          "sl": 0
+          "PF": 99.0,
+          "trades": 3,
+          "wr": 1.0,
+          "tp": 3,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 9.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
-          "trades": 0,
+          "trades": 1,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 1,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 3.0
         }
       },
-      "bootstrap": null,
+      "bootstrap": {
+        "mean": 8.251,
+        "ci95_low": 0.5,
+        "ci95_high": 99.0,
+        "n_bootstrap": 1000,
+        "finite_samples": 982
+      },
       "gates": {
         "pf_ge_1_5": true,
         "trades_per_year_ge_6": false,
-        "negative_years_eq_0": true,
-        "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
+        "negative_years_eq_0": false,
+        "active_years_ge_3": true,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 0.0
+      "stability_score": 0.107143
     },
     {
       "family": "threshold",
       "value": 0.68,
       "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 4,
-      "wr": 1.0,
-      "tp": 3,
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
       "sl": 0,
-      "trades_per_year": 1.1429,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0,
+      "trades_per_year": 0.0,
       "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "active_years": 0,
+      "max_year_trade_share": 0.0,
       "per_year": {
         "2019": {
-          "PF": 99.0,
-          "trades": 4,
-          "wr": 1.0,
-          "tp": 3,
-          "sl": 0
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2021": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         }
       },
       "bootstrap": null,
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": false,
         "negative_years_eq_0": true,
         "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
@@ -2905,52 +3559,67 @@
       "family": "threshold",
       "value": 0.7,
       "threshold_equivalent": null,
-      "PF": 99.0,
-      "trades": 1,
-      "wr": 1.0,
-      "tp": 1,
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
       "sl": 0,
-      "trades_per_year": 0.2857,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0,
+      "trades_per_year": 0.0,
       "negative_years": 0,
-      "active_years": 1,
-      "max_year_trade_share": 1.0,
+      "active_years": 0,
+      "max_year_trade_share": 0.0,
       "per_year": {
         "2019": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
+          "PF": 0.0,
+          "trades": 0,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2021": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         }
       },
       "bootstrap": null,
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": false,
         "negative_years_eq_0": true,
         "active_years_ge_3": false,
-        "max_year_trade_share_le_0_60": false,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
@@ -2965,6 +3634,9 @@
       "wr": 0.0,
       "tp": 0,
       "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0,
       "trades_per_year": 0.0,
       "negative_years": 0,
       "active_years": 0,
@@ -2975,28 +3647,40 @@
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2021": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         }
       },
       "bootstrap": null,
@@ -3020,6 +3704,9 @@
       "wr": 0.0,
       "tp": 0,
       "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0,
       "trades_per_year": 0.0,
       "negative_years": 0,
       "active_years": 0,
@@ -3030,28 +3717,40 @@
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2020": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2021": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         },
         "2022": {
           "PF": 0.0,
           "trades": 0,
           "wr": 0.0,
           "tp": 0,
-          "sl": 0
+          "sl": 0,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 0.0
         }
       },
       "bootstrap": null,
@@ -3069,111 +3768,141 @@
     {
       "family": "top_k_pct",
       "value": 0.5,
-      "threshold_equivalent": 0.5891655087471008,
-      "PF": 2.0909,
+      "threshold_equivalent": 0.5977261066436768,
+      "PF": 0.731,
       "trades": 47,
-      "wr": 0.6765,
-      "tp": 23,
-      "sl": 11,
+      "wr": 0.4043,
+      "tp": 19,
+      "sl": 28,
+      "timeout": 0,
+      "gross_profit_r": 54.9145,
+      "gross_loss_r": 75.1257,
       "trades_per_year": 13.4286,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.7234,
+      "max_year_trade_share": 0.5106,
       "per_year": {
         "2019": {
-          "PF": 3.4,
-          "trades": 34,
-          "wr": 0.7727,
-          "tp": 17,
-          "sl": 5
+          "PF": 1.6667,
+          "trades": 8,
+          "wr": 0.625,
+          "tp": 5,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 15.0,
+          "gross_loss_r": 9.0
         },
         "2020": {
-          "PF": 99.0,
-          "trades": 1,
-          "wr": 1.0,
-          "tp": 1,
-          "sl": 0
+          "PF": 0.0,
+          "trades": 5,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 5,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 15.0
         },
         "2021": {
-          "PF": 0.8,
-          "trades": 9,
-          "wr": 0.4444,
-          "tp": 4,
-          "sl": 5
+          "PF": 0.7474,
+          "trades": 24,
+          "wr": 0.375,
+          "tp": 9,
+          "sl": 15,
+          "timeout": 0,
+          "gross_profit_r": 27.0,
+          "gross_loss_r": 36.1257
         },
         "2022": {
-          "PF": 1.0,
-          "trades": 3,
+          "PF": 0.861,
+          "trades": 10,
           "wr": 0.5,
-          "tp": 1,
-          "sl": 1
+          "tp": 5,
+          "sl": 5,
+          "timeout": 0,
+          "gross_profit_r": 12.9145,
+          "gross_loss_r": 15.0
         }
       },
       "bootstrap": {
-        "mean": 2.3536,
-        "ci95_low": 1.0624,
-        "ci95_high": 4.8333,
+        "mean": 0.7389,
+        "ci95_low": 0.4412,
+        "ci95_high": 1.1013,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
-        "bootstrap_ci_low_ge_1_0": true
+        "max_year_trade_share_le_0_60": true,
+        "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.156668
+      "stability_score": 0.715447
     },
     {
       "family": "top_k_pct",
       "value": 0.75,
-      "threshold_equivalent": 0.5691271424293518,
-      "PF": 1.3636,
+      "threshold_equivalent": 0.5904090404510498,
+      "PF": 0.634,
       "trades": 71,
-      "wr": 0.5769,
-      "tp": 30,
-      "sl": 22,
+      "wr": 0.3944,
+      "tp": 28,
+      "sl": 43,
+      "timeout": 0,
+      "gross_profit_r": 72.7745,
+      "gross_loss_r": 114.7921,
       "trades_per_year": 20.2857,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.6056,
+      "max_year_trade_share": 0.4225,
       "per_year": {
         "2019": {
-          "PF": 1.9,
-          "trades": 43,
-          "wr": 0.6552,
-          "tp": 19,
-          "sl": 10
+          "PF": 2.0246,
+          "trades": 11,
+          "wr": 0.7273,
+          "tp": 8,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 18.2217,
+          "gross_loss_r": 9.0
         },
         "2020": {
-          "PF": 1.5,
-          "trades": 7,
-          "wr": 0.6,
-          "tp": 3,
-          "sl": 2
+          "PF": 0.0,
+          "trades": 8,
+          "wr": 0.0,
+          "tp": 0,
+          "sl": 8,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 21.0583
         },
         "2021": {
-          "PF": 1.1667,
-          "trades": 14,
-          "wr": 0.5385,
-          "tp": 7,
-          "sl": 6
+          "PF": 0.7216,
+          "trades": 30,
+          "wr": 0.3667,
+          "tp": 11,
+          "sl": 19,
+          "timeout": 0,
+          "gross_profit_r": 33.0,
+          "gross_loss_r": 45.7337
         },
         "2022": {
-          "PF": 0.25,
-          "trades": 7,
-          "wr": 0.2,
-          "tp": 1,
-          "sl": 4
+          "PF": 0.5526,
+          "trades": 22,
+          "wr": 0.4091,
+          "tp": 9,
+          "sl": 13,
+          "timeout": 0,
+          "gross_profit_r": 21.5527,
+          "gross_loss_r": 39.0
         }
       },
       "bootstrap": {
-        "mean": 1.4364,
-        "ci95_low": 0.7692,
-        "ci95_high": 2.5725,
+        "mean": 0.6417,
+        "ci95_low": 0.4102,
+        "ci95_high": 0.9117,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3182,64 +3911,79 @@
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
-        "max_year_trade_share_le_0_60": false,
+        "max_year_trade_share_le_0_60": true,
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.075515
+      "stability_score": 0.732225
     },
     {
       "family": "top_k_pct",
       "value": 1.0,
-      "threshold_equivalent": 0.5564892292022705,
-      "PF": 1.6154,
+      "threshold_equivalent": 0.5818774104118347,
+      "PF": 0.6445,
       "trades": 95,
-      "wr": 0.6176,
-      "tp": 42,
-      "sl": 26,
+      "wr": 0.4,
+      "tp": 38,
+      "sl": 57,
+      "timeout": 0,
+      "gross_profit_r": 97.3363,
+      "gross_loss_r": 151.0176,
       "trades_per_year": 27.1429,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.5368,
+      "max_year_trade_share": 0.4,
       "per_year": {
         "2019": {
-          "PF": 1.9167,
-          "trades": 51,
-          "wr": 0.6571,
-          "tp": 23,
-          "sl": 12
+          "PF": 1.6876,
+          "trades": 18,
+          "wr": 0.6667,
+          "tp": 12,
+          "sl": 6,
+          "timeout": 0,
+          "gross_profit_r": 29.0854,
+          "gross_loss_r": 17.2348
         },
         "2020": {
-          "PF": 2.0,
-          "trades": 11,
-          "wr": 0.6667,
-          "tp": 6,
-          "sl": 3
+          "PF": 0.2114,
+          "trades": 10,
+          "wr": 0.2,
+          "tp": 2,
+          "sl": 8,
+          "timeout": 0,
+          "gross_profit_r": 4.4527,
+          "gross_loss_r": 21.0583
         },
         "2021": {
-          "PF": 1.4286,
-          "trades": 21,
-          "wr": 0.5882,
-          "tp": 10,
-          "sl": 7
+          "PF": 0.6119,
+          "trades": 38,
+          "wr": 0.3421,
+          "tp": 13,
+          "sl": 25,
+          "timeout": 0,
+          "gross_profit_r": 39.0,
+          "gross_loss_r": 63.7337
         },
         "2022": {
-          "PF": 0.75,
-          "trades": 12,
-          "wr": 0.4286,
-          "tp": 3,
-          "sl": 4
+          "PF": 0.5062,
+          "trades": 29,
+          "wr": 0.3793,
+          "tp": 11,
+          "sl": 18,
+          "timeout": 0,
+          "gross_profit_r": 24.7982,
+          "gross_loss_r": 48.9908
         }
       },
       "bootstrap": {
-        "mean": 1.6447,
-        "ci95_low": 0.9706,
-        "ci95_high": 2.6111,
+        "mean": 0.6577,
+        "ci95_low": 0.4551,
+        "ci95_high": 0.9148,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
         "negative_years_eq_0": false,
         "active_years_ge_3": true,
@@ -3247,177 +3991,222 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.496371
+      "stability_score": 0.7734
     },
     {
       "family": "top_k_pct",
       "value": 1.5,
-      "threshold_equivalent": 0.5359389781951904,
-      "PF": 1.9722,
+      "threshold_equivalent": 0.5685657858848572,
+      "PF": 0.6244,
       "trades": 142,
-      "wr": 0.6636,
-      "tp": 71,
-      "sl": 36,
+      "wr": 0.4085,
+      "tp": 58,
+      "sl": 84,
+      "timeout": 0,
+      "gross_profit_r": 138.2787,
+      "gross_loss_r": 221.4547,
       "trades_per_year": 40.5714,
-      "negative_years": 0,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.4789,
+      "max_year_trade_share": 0.3803,
       "per_year": {
         "2019": {
-          "PF": 1.8824,
-          "trades": 68,
-          "wr": 0.6531,
-          "tp": 32,
-          "sl": 17
+          "PF": 2.1372,
+          "trades": 26,
+          "wr": 0.6923,
+          "tp": 18,
+          "sl": 8,
+          "timeout": 0,
+          "gross_profit_r": 44.1217,
+          "gross_loss_r": 20.6451
         },
         "2020": {
-          "PF": 3.0,
-          "trades": 18,
-          "wr": 0.75,
-          "tp": 12,
-          "sl": 4
+          "PF": 0.3664,
+          "trades": 21,
+          "wr": 0.3333,
+          "tp": 7,
+          "sl": 14,
+          "timeout": 0,
+          "gross_profit_r": 13.5748,
+          "gross_loss_r": 37.0501
         },
         "2021": {
-          "PF": 2.1,
-          "trades": 38,
-          "wr": 0.6774,
-          "tp": 21,
-          "sl": 10
+          "PF": 0.4334,
+          "trades": 54,
+          "wr": 0.3148,
+          "tp": 17,
+          "sl": 37,
+          "timeout": 0,
+          "gross_profit_r": 42.5876,
+          "gross_loss_r": 98.2735
         },
         "2022": {
-          "PF": 1.2,
-          "trades": 18,
-          "wr": 0.5455,
-          "tp": 6,
-          "sl": 5
+          "PF": 0.5802,
+          "trades": 41,
+          "wr": 0.3902,
+          "tp": 16,
+          "sl": 25,
+          "timeout": 0,
+          "gross_profit_r": 37.9945,
+          "gross_loss_r": 65.486
         }
       },
       "bootstrap": {
-        "mean": 2.0315,
-        "ci95_low": 1.3554,
-        "ci95_high": 3.0,
+        "mean": 0.6323,
+        "ci95_low": 0.4717,
+        "ci95_high": 0.8152,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
+        "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
+        "bootstrap_ci_low_ge_1_0": false
       },
-      "all_stability_gates_pass": true,
-      "stability_score": 2.055532
+      "all_stability_gates_pass": false,
+      "stability_score": 0.773904
     },
     {
       "family": "top_k_pct",
       "value": 2.0,
-      "threshold_equivalent": 0.5233010053634644,
-      "PF": 1.5254,
+      "threshold_equivalent": 0.5565924048423767,
+      "PF": 0.6875,
       "trades": 189,
-      "wr": 0.604,
-      "tp": 90,
-      "sl": 59,
+      "wr": 0.4339,
+      "tp": 82,
+      "sl": 107,
+      "timeout": 0,
+      "gross_profit_r": 194.5927,
+      "gross_loss_r": 283.0638,
       "trades_per_year": 54.0,
-      "negative_years": 0,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.4497,
+      "max_year_trade_share": 0.3598,
       "per_year": {
         "2019": {
-          "PF": 1.2759,
-          "trades": 85,
-          "wr": 0.5606,
-          "tp": 37,
-          "sl": 29
+          "PF": 1.6975,
+          "trades": 33,
+          "wr": 0.6667,
+          "tp": 22,
+          "sl": 11,
+          "timeout": 0,
+          "gross_profit_r": 50.3217,
+          "gross_loss_r": 29.6451
         },
         "2020": {
-          "PF": 1.5556,
-          "trades": 26,
-          "wr": 0.6087,
-          "tp": 14,
-          "sl": 9
+          "PF": 0.4069,
+          "trades": 30,
+          "wr": 0.3667,
+          "tp": 11,
+          "sl": 19,
+          "timeout": 0,
+          "gross_profit_r": 20.0116,
+          "gross_loss_r": 49.1761
         },
         "2021": {
-          "PF": 2.2308,
-          "trades": 52,
-          "wr": 0.6905,
-          "tp": 29,
-          "sl": 13
+          "PF": 0.5223,
+          "trades": 68,
+          "wr": 0.3529,
+          "tp": 24,
+          "sl": 44,
+          "timeout": 0,
+          "gross_profit_r": 61.1405,
+          "gross_loss_r": 117.0637
         },
         "2022": {
-          "PF": 1.25,
-          "trades": 26,
-          "wr": 0.5556,
-          "tp": 10,
-          "sl": 8
+          "PF": 0.724,
+          "trades": 58,
+          "wr": 0.431,
+          "tp": 25,
+          "sl": 33,
+          "timeout": 0,
+          "gross_profit_r": 63.1188,
+          "gross_loss_r": 87.1788
         }
       },
       "bootstrap": {
-        "mean": 1.5554,
-        "ci95_low": 1.1045,
-        "ci95_high": 2.0852,
+        "mean": 0.6914,
+        "ci95_low": 0.5313,
+        "ci95_high": 0.8875,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
       "gates": {
-        "pf_ge_1_5": true,
+        "pf_ge_1_5": false,
         "trades_per_year_ge_6": true,
-        "negative_years_eq_0": true,
+        "negative_years_eq_0": false,
         "active_years_ge_3": true,
         "max_year_trade_share_le_0_60": true,
-        "bootstrap_ci_low_ge_1_0": true
+        "bootstrap_ci_low_ge_1_0": false
       },
-      "all_stability_gates_pass": true,
-      "stability_score": 1.678747
+      "all_stability_gates_pass": false,
+      "stability_score": 0.880291
     },
     {
       "family": "top_k_pct",
       "value": 3.0,
-      "threshold_equivalent": 0.5043119192123413,
-      "PF": 1.1619,
+      "threshold_equivalent": 0.5417648553848267,
+      "PF": 0.6897,
       "trades": 284,
-      "wr": 0.5374,
-      "tp": 122,
-      "sl": 105,
+      "wr": 0.4331,
+      "tp": 123,
+      "sl": 161,
+      "timeout": 0,
+      "gross_profit_r": 292.3714,
+      "gross_loss_r": 423.8922,
       "trades_per_year": 81.1429,
-      "negative_years": 2,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.4366,
+      "max_year_trade_share": 0.3627,
       "per_year": {
         "2019": {
-          "PF": 1.0638,
-          "trades": 124,
-          "wr": 0.5155,
-          "tp": 50,
-          "sl": 47
+          "PF": 1.0844,
+          "trades": 54,
+          "wr": 0.5556,
+          "tp": 30,
+          "sl": 24,
+          "timeout": 0,
+          "gross_profit_r": 68.7566,
+          "gross_loss_r": 63.4061
         },
         "2020": {
-          "PF": 0.8889,
-          "trades": 39,
-          "wr": 0.4706,
-          "tp": 16,
-          "sl": 18
+          "PF": 0.4154,
+          "trades": 50,
+          "wr": 0.38,
+          "tp": 19,
+          "sl": 31,
+          "timeout": 0,
+          "gross_profit_r": 33.2189,
+          "gross_loss_r": 79.9696
         },
         "2021": {
-          "PF": 1.8696,
-          "trades": 82,
-          "wr": 0.6515,
-          "tp": 43,
-          "sl": 23
+          "PF": 0.5674,
+          "trades": 103,
+          "wr": 0.3689,
+          "tp": 38,
+          "sl": 65,
+          "timeout": 0,
+          "gross_profit_r": 97.2767,
+          "gross_loss_r": 171.457
         },
         "2022": {
-          "PF": 0.7647,
-          "trades": 39,
-          "wr": 0.4333,
-          "tp": 13,
-          "sl": 17
+          "PF": 0.8538,
+          "trades": 77,
+          "wr": 0.4675,
+          "tp": 36,
+          "sl": 41,
+          "timeout": 0,
+          "gross_profit_r": 93.1192,
+          "gross_loss_r": 109.0595
         }
       },
       "bootstrap": {
-        "mean": 1.1738,
-        "ci95_low": 0.9043,
-        "ci95_high": 1.5234,
+        "mean": 0.6949,
+        "ci95_low": 0.5711,
+        "ci95_high": 0.8262,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3430,55 +4219,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.309183
+      "stability_score": 0.879125
     },
     {
       "family": "top_k_pct",
       "value": 5.0,
-      "threshold_equivalent": 0.4786313474178314,
-      "PF": 1.0678,
+      "threshold_equivalent": 0.5195214748382568,
+      "PF": 0.8588,
       "trades": 473,
-      "wr": 0.5164,
-      "tp": 189,
-      "sl": 177,
+      "wr": 0.4767,
+      "tp": 225,
+      "sl": 247,
+      "timeout": 1,
+      "gross_profit_r": 546.9665,
+      "gross_loss_r": 636.8623,
       "trades_per_year": 135.1429,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.3615,
+      "max_year_trade_share": 0.3467,
       "per_year": {
         "2019": {
-          "PF": 1.0806,
-          "trades": 171,
-          "wr": 0.5194,
-          "tp": 67,
-          "sl": 62
+          "PF": 1.3365,
+          "trades": 92,
+          "wr": 0.5934,
+          "tp": 54,
+          "sl": 37,
+          "timeout": 1,
+          "gross_profit_r": 129.0718,
+          "gross_loss_r": 96.5779
         },
         "2020": {
-          "PF": 1.1923,
-          "trades": 77,
-          "wr": 0.5439,
-          "tp": 31,
-          "sl": 26
+          "PF": 0.6427,
+          "trades": 93,
+          "wr": 0.4301,
+          "tp": 40,
+          "sl": 53,
+          "timeout": 0,
+          "gross_profit_r": 82.1714,
+          "gross_loss_r": 127.8537
         },
         "2021": {
-          "PF": 1.2222,
-          "trades": 151,
-          "wr": 0.55,
-          "tp": 66,
-          "sl": 54
+          "PF": 0.7629,
+          "trades": 164,
+          "wr": 0.439,
+          "tp": 72,
+          "sl": 92,
+          "timeout": 0,
+          "gross_profit_r": 183.1388,
+          "gross_loss_r": 240.0413
         },
         "2022": {
-          "PF": 0.7143,
-          "trades": 74,
-          "wr": 0.4167,
-          "tp": 25,
-          "sl": 35
+          "PF": 0.8851,
+          "trades": 124,
+          "wr": 0.4758,
+          "tp": 59,
+          "sl": 65,
+          "timeout": 0,
+          "gross_profit_r": 152.5845,
+          "gross_loss_r": 172.3893
         }
       },
       "bootstrap": {
-        "mean": 1.0719,
-        "ci95_low": 0.8781,
-        "ci95_high": 1.3376,
+        "mean": 0.8624,
+        "ci95_low": 0.7398,
+        "ci95_high": 0.9875,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3491,55 +4295,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.363533
+      "stability_score": 1.122068
     },
     {
       "family": "top_k_pct",
       "value": 7.5,
-      "threshold_equivalent": 0.4561549425125122,
-      "PF": 1.035,
+      "threshold_equivalent": 0.49782872200012207,
+      "PF": 0.9683,
       "trades": 709,
-      "wr": 0.5086,
-      "tp": 266,
-      "sl": 257,
+      "wr": 0.5056,
+      "tp": 358,
+      "sl": 350,
+      "timeout": 1,
+      "gross_profit_r": 861.0594,
+      "gross_loss_r": 889.2887,
       "trades_per_year": 202.5714,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.3117,
+      "max_year_trade_share": 0.3371,
       "per_year": {
         "2019": {
-          "PF": 1.0959,
-          "trades": 216,
-          "wr": 0.5229,
-          "tp": 80,
-          "sl": 73
+          "PF": 1.2302,
+          "trades": 137,
+          "wr": 0.5588,
+          "tp": 76,
+          "sl": 60,
+          "timeout": 1,
+          "gross_profit_r": 187.0886,
+          "gross_loss_r": 152.0755
         },
         "2020": {
-          "PF": 1.0889,
-          "trades": 142,
-          "wr": 0.5213,
-          "tp": 49,
-          "sl": 45
+          "PF": 0.7995,
+          "trades": 148,
+          "wr": 0.4797,
+          "tp": 71,
+          "sl": 77,
+          "timeout": 0,
+          "gross_profit_r": 150.0354,
+          "gross_loss_r": 187.6666
         },
         "2021": {
-          "PF": 1.2208,
-          "trades": 221,
-          "wr": 0.5497,
-          "tp": 94,
-          "sl": 77
+          "PF": 0.9642,
+          "trades": 239,
+          "wr": 0.4979,
+          "tp": 119,
+          "sl": 120,
+          "timeout": 0,
+          "gross_profit_r": 295.1462,
+          "gross_loss_r": 306.1158
         },
         "2022": {
-          "PF": 0.6935,
-          "trades": 130,
-          "wr": 0.4095,
-          "tp": 43,
-          "sl": 62
+          "PF": 0.9399,
+          "trades": 185,
+          "wr": 0.4973,
+          "tp": 92,
+          "sl": 93,
+          "timeout": 0,
+          "gross_profit_r": 228.7892,
+          "gross_loss_r": 243.4308
         }
       },
       "bootstrap": {
-        "mean": 1.0379,
-        "ci95_low": 0.883,
-        "ci95_high": 1.2203,
+        "mean": 0.9688,
+        "ci95_low": 0.859,
+        "ci95_high": 1.0864,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3552,55 +4371,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.424767
+      "stability_score": 1.283783
     },
     {
       "family": "top_k_pct",
       "value": 10.0,
-      "threshold_equivalent": 0.4395698308944702,
-      "PF": 1.0116,
+      "threshold_equivalent": 0.4783015847206116,
+      "PF": 0.9689,
       "trades": 945,
-      "wr": 0.5029,
-      "tp": 348,
-      "sl": 344,
+      "wr": 0.5032,
+      "tp": 475,
+      "sl": 469,
+      "timeout": 1,
+      "gross_profit_r": 1156.2526,
+      "gross_loss_r": 1193.3165,
       "trades_per_year": 270.0,
-      "negative_years": 1,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.3079,
+      "max_year_trade_share": 0.3228,
       "per_year": {
         "2019": {
-          "PF": 1.186,
-          "trades": 271,
-          "wr": 0.5426,
-          "tp": 102,
-          "sl": 86
+          "PF": 0.9326,
+          "trades": 176,
+          "wr": 0.5029,
+          "tp": 88,
+          "sl": 87,
+          "timeout": 1,
+          "gross_profit_r": 211.4753,
+          "gross_loss_r": 226.7646
         },
         "2020": {
-          "PF": 1.1186,
-          "trades": 191,
-          "wr": 0.528,
-          "tp": 66,
-          "sl": 59
+          "PF": 1.0019,
+          "trades": 226,
+          "wr": 0.5133,
+          "tp": 116,
+          "sl": 110,
+          "timeout": 0,
+          "gross_profit_r": 263.1024,
+          "gross_loss_r": 262.6097
         },
         "2021": {
-          "PF": 1.1132,
-          "trades": 291,
-          "wr": 0.5268,
-          "tp": 118,
-          "sl": 106
+          "PF": 0.9941,
+          "trades": 305,
+          "wr": 0.5016,
+          "tp": 153,
+          "sl": 152,
+          "timeout": 0,
+          "gross_profit_r": 383.9413,
+          "gross_loss_r": 386.2254
         },
         "2022": {
-          "PF": 0.6667,
-          "trades": 192,
-          "wr": 0.4,
-          "tp": 62,
-          "sl": 93
+          "PF": 0.9371,
+          "trades": 238,
+          "wr": 0.4958,
+          "tp": 118,
+          "sl": 120,
+          "timeout": 0,
+          "gross_profit_r": 297.7337,
+          "gross_loss_r": 317.7168
         }
       },
       "bootstrap": {
-        "mean": 1.0124,
-        "ci95_low": 0.8694,
-        "ci95_high": 1.1771,
+        "mean": 0.9697,
+        "ci95_low": 0.8754,
+        "ci95_high": 1.0818,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3613,55 +4447,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.400183
+      "stability_score": 1.312372
     },
     {
       "family": "top_k_pct",
       "value": 12.5,
-      "threshold_equivalent": 0.42633602023124695,
-      "PF": 1.007,
+      "threshold_equivalent": 0.4648068845272064,
+      "PF": 0.9416,
       "trades": 1181,
-      "wr": 0.5018,
-      "tp": 429,
-      "sl": 426,
+      "wr": 0.4958,
+      "tp": 585,
+      "sl": 595,
+      "timeout": 1,
+      "gross_profit_r": 1405.8641,
+      "gross_loss_r": 1492.998,
       "trades_per_year": 337.4286,
-      "negative_years": 1,
+      "negative_years": 4,
       "active_years": 4,
-      "max_year_trade_share": 0.3006,
+      "max_year_trade_share": 0.3251,
       "per_year": {
         "2019": {
-          "PF": 1.1633,
-          "trades": 310,
-          "wr": 0.5377,
-          "tp": 114,
-          "sl": 98
+          "PF": 0.8442,
+          "trades": 219,
+          "wr": 0.4771,
+          "tp": 104,
+          "sl": 114,
+          "timeout": 1,
+          "gross_profit_r": 244.341,
+          "gross_loss_r": 289.4389
         },
         "2020": {
-          "PF": 1.1548,
-          "trades": 269,
-          "wr": 0.5359,
-          "tp": 97,
-          "sl": 84
+          "PF": 0.9626,
+          "trades": 285,
+          "wr": 0.5053,
+          "tp": 144,
+          "sl": 141,
+          "timeout": 0,
+          "gross_profit_r": 318.3347,
+          "gross_loss_r": 330.6942
         },
         "2021": {
-          "PF": 1.0385,
-          "trades": 355,
-          "wr": 0.5094,
-          "tp": 135,
-          "sl": 130
+          "PF": 0.9717,
+          "trades": 384,
+          "wr": 0.4922,
+          "tp": 189,
+          "sl": 195,
+          "timeout": 0,
+          "gross_profit_r": 473.349,
+          "gross_loss_r": 487.1543
         },
         "2022": {
-          "PF": 0.7281,
-          "trades": 247,
-          "wr": 0.4213,
-          "tp": 83,
-          "sl": 114
+          "PF": 0.9589,
+          "trades": 293,
+          "wr": 0.5051,
+          "tp": 148,
+          "sl": 145,
+          "timeout": 0,
+          "gross_profit_r": 369.8394,
+          "gross_loss_r": 385.7107
         }
       },
       "bootstrap": {
-        "mean": 1.0132,
-        "ci95_low": 0.8824,
-        "ci95_high": 1.1487,
+        "mean": 0.9436,
+        "ci95_low": 0.8589,
+        "ci95_high": 1.0345,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3674,55 +4523,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.408606
+      "stability_score": 1.270881
     },
     {
       "family": "top_k_pct",
       "value": 15.0,
-      "threshold_equivalent": 0.4149622917175293,
-      "PF": 0.9788,
+      "threshold_equivalent": 0.45012736320495605,
+      "PF": 0.977,
       "trades": 1418,
-      "wr": 0.4946,
-      "tp": 508,
-      "sl": 519,
+      "wr": 0.5025,
+      "tp": 712,
+      "sl": 705,
+      "timeout": 1,
+      "gross_profit_r": 1721.1031,
+      "gross_loss_r": 1761.5795,
       "trades_per_year": 405.1429,
-      "negative_years": 2,
+      "negative_years": 3,
       "active_years": 4,
-      "max_year_trade_share": 0.2969,
+      "max_year_trade_share": 0.3336,
       "per_year": {
         "2019": {
-          "PF": 1.3019,
-          "trades": 356,
-          "wr": 0.5656,
-          "tp": 138,
-          "sl": 106
+          "PF": 0.9039,
+          "trades": 262,
+          "wr": 0.4866,
+          "tp": 127,
+          "sl": 134,
+          "timeout": 1,
+          "gross_profit_r": 303.2735,
+          "gross_loss_r": 335.5199
         },
         "2020": {
-          "PF": 1.0556,
-          "trades": 335,
-          "wr": 0.5135,
-          "tp": 114,
-          "sl": 108
+          "PF": 1.0067,
+          "trades": 349,
+          "wr": 0.51,
+          "tp": 178,
+          "sl": 171,
+          "timeout": 0,
+          "gross_profit_r": 407.7142,
+          "gross_loss_r": 405.0172
         },
         "2021": {
-          "PF": 0.9747,
-          "trades": 421,
-          "wr": 0.4936,
-          "tp": 154,
-          "sl": 158
+          "PF": 0.9858,
+          "trades": 473,
+          "wr": 0.5011,
+          "tp": 237,
+          "sl": 236,
+          "timeout": 0,
+          "gross_profit_r": 580.4333,
+          "gross_loss_r": 588.7675
         },
         "2022": {
-          "PF": 0.6939,
-          "trades": 306,
-          "wr": 0.4096,
-          "tp": 102,
-          "sl": 147
+          "PF": 0.994,
+          "trades": 334,
+          "wr": 0.509,
+          "tp": 170,
+          "sl": 164,
+          "timeout": 0,
+          "gross_profit_r": 429.6821,
+          "gross_loss_r": 432.2748
         }
       },
       "bootstrap": {
-        "mean": 0.9805,
-        "ci95_low": 0.8656,
-        "ci95_high": 1.1008,
+        "mean": 0.978,
+        "ci95_low": 0.8942,
+        "ci95_high": 1.0612,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3735,55 +4599,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.376394
+      "stability_score": 1.302207
     },
     {
       "family": "top_k_pct",
       "value": 20.0,
-      "threshold_equivalent": 0.3970574736595154,
-      "PF": 0.9583,
+      "threshold_equivalent": 0.42694345116615295,
+      "PF": 1.0058,
       "trades": 1890,
-      "wr": 0.4893,
-      "tp": 666,
-      "sl": 695,
+      "wr": 0.5109,
+      "tp": 965,
+      "sl": 924,
+      "timeout": 1,
+      "gross_profit_r": 2317.8647,
+      "gross_loss_r": 2304.5343,
       "trades_per_year": 540.0,
-      "negative_years": 2,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2926,
+      "max_year_trade_share": 0.3481,
       "per_year": {
         "2019": {
-          "PF": 1.3435,
-          "trades": 435,
-          "wr": 0.5733,
-          "tp": 176,
-          "sl": 131
+          "PF": 1.024,
+          "trades": 342,
+          "wr": 0.5044,
+          "tp": 172,
+          "sl": 169,
+          "timeout": 1,
+          "gross_profit_r": 419.1987,
+          "gross_loss_r": 409.3869
         },
         "2020": {
-          "PF": 1.0205,
-          "trades": 464,
-          "wr": 0.5051,
-          "tp": 149,
-          "sl": 146
+          "PF": 1.0276,
+          "trades": 453,
+          "wr": 0.521,
+          "tp": 236,
+          "sl": 217,
+          "timeout": 0,
+          "gross_profit_r": 530.5842,
+          "gross_loss_r": 516.3145
         },
         "2021": {
-          "PF": 0.907,
-          "trades": 553,
-          "wr": 0.4756,
-          "tp": 195,
-          "sl": 215
+          "PF": 0.9358,
+          "trades": 658,
+          "wr": 0.4939,
+          "tp": 325,
+          "sl": 333,
+          "timeout": 0,
+          "gross_profit_r": 783.7778,
+          "gross_loss_r": 837.589
         },
         "2022": {
-          "PF": 0.7192,
-          "trades": 438,
-          "wr": 0.4183,
-          "tp": 146,
-          "sl": 203
+          "PF": 1.0796,
+          "trades": 437,
+          "wr": 0.5309,
+          "tp": 232,
+          "sl": 205,
+          "timeout": 0,
+          "gross_profit_r": 584.304,
+          "gross_loss_r": 541.2439
         }
       },
       "bootstrap": {
-        "mean": 0.9611,
-        "ci95_low": 0.8699,
-        "ci95_high": 1.0622,
+        "mean": 1.0063,
+        "ci95_low": 0.9363,
+        "ci95_high": 1.0868,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3796,55 +4675,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.355817
+      "stability_score": 1.311265
     },
     {
       "family": "top_k_pct",
       "value": 25.0,
-      "threshold_equivalent": 0.37935972213745117,
-      "PF": 0.9882,
+      "threshold_equivalent": 0.4058828055858612,
+      "PF": 1.0296,
       "trades": 2363,
-      "wr": 0.497,
-      "tp": 841,
-      "sl": 851,
+      "wr": 0.5169,
+      "tp": 1221,
+      "sl": 1141,
+      "timeout": 1,
+      "gross_profit_r": 2923.1126,
+      "gross_loss_r": 2838.9943,
       "trades_per_year": 675.1429,
-      "negative_years": 2,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2945,
+      "max_year_trade_share": 0.3479,
       "per_year": {
         "2019": {
-          "PF": 1.2812,
-          "trades": 525,
-          "wr": 0.5616,
-          "tp": 205,
-          "sl": 160
+          "PF": 1.0201,
+          "trades": 435,
+          "wr": 0.5046,
+          "tp": 219,
+          "sl": 215,
+          "timeout": 1,
+          "gross_profit_r": 532.438,
+          "gross_loss_r": 521.9607
         },
         "2020": {
-          "PF": 1.0753,
-          "trades": 599,
-          "wr": 0.5181,
-          "tp": 200,
-          "sl": 186
+          "PF": 1.1244,
+          "trades": 565,
+          "wr": 0.5416,
+          "tp": 306,
+          "sl": 259,
+          "timeout": 0,
+          "gross_profit_r": 692.7211,
+          "gross_loss_r": 616.0589
         },
         "2021": {
-          "PF": 0.8996,
-          "trades": 696,
-          "wr": 0.4736,
-          "tp": 242,
-          "sl": 269
+          "PF": 0.9314,
+          "trades": 822,
+          "wr": 0.4964,
+          "tp": 408,
+          "sl": 414,
+          "timeout": 0,
+          "gross_profit_r": 966.9837,
+          "gross_loss_r": 1038.186
         },
         "2022": {
-          "PF": 0.822,
-          "trades": 543,
-          "wr": 0.4512,
-          "tp": 194,
-          "sl": 236
+          "PF": 1.1029,
+          "trades": 541,
+          "wr": 0.5323,
+          "tp": 288,
+          "sl": 253,
+          "timeout": 0,
+          "gross_profit_r": 730.9698,
+          "gross_loss_r": 662.7888
         }
       },
       "bootstrap": {
-        "mean": 0.9911,
-        "ci95_low": 0.9,
-        "ci95_high": 1.0858,
+        "mean": 1.0319,
+        "ci95_low": 0.9661,
+        "ci95_high": 1.101,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3857,55 +4751,70 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.394269
+      "stability_score": 1.342881
     },
     {
       "family": "top_k_pct",
       "value": 30.0,
-      "threshold_equivalent": 0.3637249171733856,
-      "PF": 1.0181,
+      "threshold_equivalent": 0.38808342814445496,
+      "PF": 1.0579,
       "trades": 2835,
-      "wr": 0.5045,
-      "tp": 1012,
-      "sl": 994,
+      "wr": 0.5208,
+      "tp": 1476,
+      "sl": 1358,
+      "timeout": 1,
+      "gross_profit_r": 3551.6517,
+      "gross_loss_r": 3357.3765,
       "trades_per_year": 810.0,
-      "negative_years": 2,
+      "negative_years": 1,
       "active_years": 4,
-      "max_year_trade_share": 0.2981,
+      "max_year_trade_share": 0.351,
       "per_year": {
         "2019": {
-          "PF": 1.3793,
-          "trades": 603,
-          "wr": 0.5797,
-          "tp": 240,
-          "sl": 174
+          "PF": 1.0476,
+          "trades": 527,
+          "wr": 0.5133,
+          "tp": 270,
+          "sl": 256,
+          "timeout": 1,
+          "gross_profit_r": 649.6012,
+          "gross_loss_r": 620.0946
         },
         "2020": {
-          "PF": 1.0647,
-          "trades": 733,
-          "wr": 0.5157,
-          "tp": 247,
-          "sl": 232
+          "PF": 1.1377,
+          "trades": 699,
+          "wr": 0.5451,
+          "tp": 381,
+          "sl": 318,
+          "timeout": 0,
+          "gross_profit_r": 876.9694,
+          "gross_loss_r": 770.8415
         },
         "2021": {
-          "PF": 0.9268,
-          "trades": 845,
-          "wr": 0.481,
-          "tp": 291,
-          "sl": 314
+          "PF": 0.9671,
+          "trades": 995,
+          "wr": 0.4985,
+          "tp": 496,
+          "sl": 499,
+          "timeout": 0,
+          "gross_profit_r": 1188.1454,
+          "gross_loss_r": 1228.5641
         },
         "2022": {
-          "PF": 0.854,
-          "trades": 654,
-          "wr": 0.4606,
-          "tp": 234,
-          "sl": 274
+          "PF": 1.1342,
+          "trades": 614,
+          "wr": 0.5358,
+          "tp": 329,
+          "sl": 285,
+          "timeout": 0,
+          "gross_profit_r": 836.9356,
+          "gross_loss_r": 737.8763
         }
       },
       "bootstrap": {
-        "mean": 1.0188,
-        "ci95_low": 0.9349,
-        "ci95_high": 1.1094,
+        "mean": 1.0601,
+        "ci95_low": 0.9969,
+        "ci95_high": 1.1239,
         "n_bootstrap": 1000,
         "finite_samples": 1000
       },
@@ -3918,7 +4827,7 @@
         "bootstrap_ci_low_ge_1_0": false
       },
       "all_stability_gates_pass": false,
-      "stability_score": 1.42929
+      "stability_score": 1.373218
     }
   ],
   "environment": {
@@ -3929,5 +4838,5 @@
     "mkldnn_enabled": true,
     "seed": 42
   },
-  "verdict": "PASS"
+  "verdict": "NO_STABLE_RULE_FOUND"
 }

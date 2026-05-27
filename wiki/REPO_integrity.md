@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-05-26 20:30 UTC · git `6cb85fa`
+> Auto-generated 2026-05-27 06:37 UTC · git `5a98691`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1278 files  ·  **Commit**: `6cb85fa`  ·  **Generated**: 2026-05-26 20:30 UTC
+**Tracked**: 1281 files  ·  **Commit**: `5a98691`  ·  **Generated**: 2026-05-27 06:37 UTC
 
 ## Root Docs
 
@@ -18,8 +18,8 @@
 | [AGENTS.md](AGENTS.md) |  | 2026-05-24 | 14KB | `f71f0ac2` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-05-25 | 152KB | `5b05b29b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-23 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-25 | 2KB | `2dc4cc5b` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-26 | 41KB | `904bb138` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-05-27 | 6KB | `439bfa3f` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-05-27 | 42KB | `786f8cbb` |
 | [README.md](README.md) |  | 2026-04-27 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -59,7 +59,8 @@
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-05-06 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-04-27 | 4KB | `8d21f1a7` |
 | [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-05-06 | 6KB | `133b0f2e` |
-| [docs/ML/stage09_stability_refreeze.py.md](docs/ML/stage09_stability_refreeze.py.md) |  | 2026-05-26 | 1KB | `8a220fb0` |
+| [docs/ML/stage09_stability_refreeze.py.md](docs/ML/stage09_stability_refreeze.py.md) |  | 2026-05-27 | 1KB | `833582b8` |
+| [docs/ML/stage10_frozen_test_oos.py.md](docs/ML/stage10_frozen_test_oos.py.md) |  | 2026-05-27 | 1KB | `54f914b6` |
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-05-13 | 4KB | `b02fd806` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-04-27 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-05-18 | 25KB | `aa7313db` |
@@ -79,7 +80,7 @@
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-05-24 | 3KB | `aa9975ba` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-23 | 5KB | `6bf55f21` |
 | [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-05-25 | 5KB | `0f86e056` |
-| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-05-25 | 24KB | `2b3e9662` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-05-27 | 24KB | `2b3e9662` |
 | [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-05-23 | 5KB | `5412d9c3` |
 | [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-05-23 | 3KB | `513b6abc` |
 | [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-05-24 | 4KB | `fd036064` |
@@ -262,7 +263,7 @@
 | [docs/reports/2026-05-15-direct-direction-improvement.md](docs/reports/2026-05-15-direct-direction-improvement.md) |  | 2026-05-18 | 12KB | `edc04acb` |
 | [docs/reports/2026-05-18-direct-direction-rebuild.md](docs/reports/2026-05-18-direct-direction-rebuild.md) |  | 2026-05-23 | 14KB | `c12d5722` |
 | [docs/reports/2026-05-21-transformer-direction.md](docs/reports/2026-05-21-transformer-direction.md) |  | 2026-05-23 | 6KB | `510eda23` |
-| [docs/reports/2026-05-25-methodology-cycle-stages-00-04.md](docs/reports/2026-05-25-methodology-cycle-stages-00-04.md) |  | 2026-05-26 | 16KB | `5b0191bb` |
+| [docs/reports/2026-05-25-methodology-cycle-stages-00-04.md](docs/reports/2026-05-25-methodology-cycle-stages-00-04.md) |  | 2026-05-27 | 18KB | `c6ae1287` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-04-27 | 2KB | `e07ce60f` |
 
 ## ML
@@ -589,10 +590,10 @@
 | [ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json](ML/reports/live_safe_ml_audit/quality/legacy_reproduction.json) |  |  | 2026-05-06 | 1KB | `ddcff55b` |
 | [ML/reports/live_safe_ml_audit/quality/verdict.json](ML/reports/live_safe_ml_audit/quality/verdict.json) |  |  | 2026-05-23 | 727B | `6e173e29` |
 | [ML/reports/live_safe_ml_audit/verdict_summary.json](ML/reports/live_safe_ml_audit/verdict_summary.json) |  |  | 2026-05-23 | 3KB | `d1d7c226` |
-| [ML/reports/methodology_cycle_candidate_source_v2/README.md](ML/reports/methodology_cycle_candidate_source_v2/README.md) |  |  | 2026-05-26 | 2KB | `28e36cbe` |
+| [ML/reports/methodology_cycle_candidate_source_v2/README.md](ML/reports/methodology_cycle_candidate_source_v2/README.md) |  |  | 2026-05-27 | 3KB | `73b0030a` |
 | [ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md](ML/reports/methodology_cycle_candidate_source_v2/candidate_source_live_safe_audit.md) |  |  | 2026-05-25 | 2KB | `87798cc8` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json](ML/reports/methodology_cycle_candidate_source_v2/stage00_research_contract.json) |  |  | 2026-05-25 | 3KB | `929dd33f` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json) |  |  | 2026-05-26 | 5KB | `57440072` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_gate_verdict.json) |  |  | 2026-05-27 | 5KB | `1281ca02` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json](ML/reports/methodology_cycle_candidate_source_v2/stage01_raw_data_inventory.json) |  |  | 2026-05-25 | 4KB | `ab4f45ad` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage02_data_pipeline.json](ML/reports/methodology_cycle_candidate_source_v2/stage02_data_pipeline.json) |  |  | 2026-05-25 | 3KB | `cffbff43` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage03_leakage_gate.json](ML/reports/methodology_cycle_candidate_source_v2/stage03_leakage_gate.json) |  |  | 2026-05-25 | 4KB | `5f498f87` |
@@ -601,8 +602,9 @@
 | [ML/reports/methodology_cycle_candidate_source_v2/stage06_temporal_split_manifest.json](ML/reports/methodology_cycle_candidate_source_v2/stage06_temporal_split_manifest.json) |  |  | 2026-05-26 | 2KB | `29823971` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json](ML/reports/methodology_cycle_candidate_source_v2/stage07_baselines.json) |  |  | 2026-05-26 | 14KB | `8afb68eb` |
 | [ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json](ML/reports/methodology_cycle_candidate_source_v2/stage08_model_sweep.json) |  |  | 2026-05-26 | 2KB | `4d07ed46` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json) |  |  | 2026-05-26 | 2KB | `b6635e2c` |
-| [ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json) |  |  | 2026-05-26 | 87KB | `cfcaa002` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json) |  |  | 2026-05-27 | 2KB | `b0280abd` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json](ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json) |  |  | 2026-05-27 | 88KB | `9b853895` |
+| [ML/reports/methodology_cycle_candidate_source_v2/stage10_frozen_test_oos.json](ML/reports/methodology_cycle_candidate_source_v2/stage10_frozen_test_oos.json) |  |  | 2026-05-27 | 5KB | `9a17ded3` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json](ML/reports/mt4_entry_path_v1_live_safe_parity/entry_path_v1_live_safe_a075_rule.json) |  |  | 2026-05-13 | 3KB | `14b7cc3f` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json](ML/reports/mt4_entry_path_v1_live_safe_parity/metadata.json) |  |  | 2026-05-13 | 3KB | `bacc13b6` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json) |  |  | 2026-05-13 | 3KB | `5cb5fe58` |
@@ -840,7 +842,8 @@
 | [ML/run_track_a_max_out_matrix.py](ML/run_track_a_max_out_matrix.py) | Оркестратор bounded matrix: train → export → benchmark_v2 для Track A | ✅ | 2026-04-17 | 6KB | `0d1d781d` |
 | [ML/run_trailing_stop_target_matrix.py](ML/run_trailing_stop_target_matrix.py) | Оркестратор bounded matrix для `trailing_stop_target_v1` | ✅ | 2026-05-23 | 9KB | `8c2ac272` |
 | [ML/run_trailing_stop_target_quantile.py](ML/run_trailing_stop_target_quantile.py) | Оркестратор bounded quantile run для `trail_48_pnl_atr_x3` | ✅ | 2026-04-17 | 6KB | `ac5afba9` |
-| [ML/stage09_stability_refreeze.py](ML/stage09_stability_refreeze.py) | Validation-only stability scan для frozen Transformer rule | ✅ | 2026-05-26 | 10KB | `73177d29` |
+| [ML/stage09_stability_refreeze.py](ML/stage09_stability_refreeze.py) | Stage 09 — stability scan + canonical frozen rule (SOURCE OF TRUTH for stage09_frozen_rule.json) | ✅ | 2026-05-27 | 13KB | `a8014a7e` |
+| [ML/stage10_frozen_test_oos.py](ML/stage10_frozen_test_oos.py) | Stage 10 — one-shot frozen test/OOS evaluation for candidate-source v2 | ✅ | 2026-05-27 | 11KB | `2e4945ab` |
 | [ML/take_skip_trailing_stop_task.py](ML/take_skip_trailing_stop_task.py) |  |  | 2026-05-23 | 4KB | `8e0a93f6` |
 | [ML/take_skip_trailing_stop_v2_task.py](ML/take_skip_trailing_stop_v2_task.py) |  |  | 2026-05-23 | 4KB | `227844ec` |
 | [ML/tb_probability_calibration.py](ML/tb_probability_calibration.py) | Isotonic calibration для TB-вероятностей | 🏁 | 2026-04-16 | 2KB | `502427cf` |
@@ -853,7 +856,7 @@
 | [ML/transformer_direction_train.py](ML/transformer_direction_train.py) |  |  | 2026-05-23 | 32KB | `6833bf35` |
 | [ML/triple_barrier_mt4_execution.py](ML/triple_barrier_mt4_execution.py) |  |  | 2026-04-16 | 6KB | `e2520e9d` |
 | [ML/utils.py](ML/utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ | 2026-05-13 | 12KB | `74a36c00` |
-| [ML/validation_freeze.py](ML/validation_freeze.py) |  |  | 2026-05-26 | 11KB | `fd3b6308` |
+| [ML/validation_freeze.py](ML/validation_freeze.py) | Stage 09 — deterministic Transformer training + checkpoint + round-trip verification (does NOT generate frozen rule) | ✅ | 2026-05-27 | 11KB | `c79db543` |
 
 ## Processing
 
@@ -1329,7 +1332,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-05-18 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-05-23 | 23KB | `8fad0c8d` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-05-18 | 10KB | `7b5c0cf0` |
-| [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-05-26 | 2KB | `747087e7` |
+| [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-05-27 | 3KB | `233b0dc4` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-04-16 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-05-06 | 18KB | `0d2c8d8e` |
 

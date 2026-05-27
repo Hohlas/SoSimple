@@ -37,6 +37,7 @@ from ML.fractal_level_feature_builder import build_fractal_level_features
 DATA_DIR = Path("DATA")
 REPORT_DIR = Path("ML/reports/methodology_cycle_candidate_source_v2")
 TARGET_COL = "buy_sl3_tp3"
+PNL_COL = "buy_sl3_tp3_pnl_r"
 FEATURE_K = 16
 LABEL_MAP = {0.0: 0, 0.5: 1, 1.0: 2}
 LABEL_NAMES = ["SL", "timeout", "TP"]
@@ -70,27 +71,30 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     return build_fractal_level_features(df, input_family="nearest_k", k=FEATURE_K)
 
 
-def compute_pf(df: pd.DataFrame, proba_col: str, threshold: float) -> dict:
-    """Profit factor for buy_sl3_tp3: TP hit=+3ATR, SL hit=-3ATR, timeout=0.
-    Raw labels: 0.0=SL, 0.5=timeout, 1.0=TP."""
-    pred = (df[proba_col] >= threshold).astype(int)
-    mask = pred == 1
-    n = mask.sum()
-    if n == 0:
+def compute_pf(val_df: pd.DataFrame, proba_col: str, threshold: float) -> dict:
+    """PF from R-multiples using pnl_r column."""
+    n = len(val_df)
+    pnl = pd.to_numeric(val_df.get(PNL_COL, pd.Series(0, index=val_df.index)),
+                        errors="coerce").fillna(0.0).values.astype(float)
+    proba = pd.to_numeric(val_df[proba_col], errors="coerce").fillna(0.0).values
+    pred = (proba >= threshold).astype(int)
+    sel = pnl[pred == 1]
+    pos = sel[sel > 0]
+    neg = sel[sel < 0]
+    nt = len(pred[pred == 1])
+    if nt == 0:
         return {"PF": 0.0, "trades": 0, "win_rate": 0.0, "tp": 0, "sl": 0, "timeout": 0}
-
-    outcomes = df.loc[mask, TARGET_COL]
-    tp = int((outcomes == 1.0).sum())
-    sl = int((outcomes == 0.0).sum())
-    timeout = int((outcomes == 0.5).sum())
-
-    gross_profit = tp * 3.0
-    gross_loss = sl * 3.0
-
-    pf = float("inf") if gross_loss == 0 else gross_profit / gross_loss
-    wr = tp / max(tp + sl, 1)
-    return {"PF": round(pf, 4), "trades": int(n), "win_rate": round(wr, 4),
-            "tp": tp, "sl": sl, "timeout": timeout}
+    gross_profit = float(pos.sum())
+    gross_loss = float(abs(neg.sum()))
+    pf = 99.0 if gross_loss == 0 else gross_profit / gross_loss
+    tp = int(len(pos))
+    sl = int(len(neg))
+    timeout = int(nt) - tp - sl
+    wr = tp / max(tp + sl, 1) if tp + sl > 0 else 0.0
+    return {"PF": round(pf, 4), "trades": int(nt), "win_rate": round(wr, 4),
+            "tp": tp, "sl": sl, "timeout": timeout,
+            "gross_profit_r": round(gross_profit, 4),
+            "gross_loss_r": round(gross_loss, 4)}
 
 
 def per_year_pf(df: pd.DataFrame, proba_col: str, threshold: float) -> dict[int, dict]:

@@ -1,0 +1,334 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "10-frozen-test-oos",
+  "scope": "one-shot frozen test; no tuning",
+  "stage_verdict": "PASS",
+  "model_verdict": "candidate",
+  "rule": {
+    "path": "ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json",
+    "threshold": 0.5359389781951904,
+    "checkpoint": "ML/checkpoints/transformer_winner.pt",
+    "checkpoint_sha256_rule": "2944a17701e3fbce",
+    "checkpoint_sha256_current": "0595da35c7325043",
+    "normalizer": "ML/checkpoints/pll_normalizer_v1.pkl",
+    "normalizer_sha256_rule": "ea0b3db7e3a4360e",
+    "normalizer_sha256_current": "ea0b3db7e3a4360e",
+    "target": "buy_sl3_tp3",
+    "seq_len": 50
+  },
+  "frozen_protocol_checks": {
+    "test_read_by_stage10_only": true,
+    "threshold_unchanged_from_rule": true,
+    "checkpoint_hash_matches_rule": false,
+    "normalizer_hash_matches_rule": true,
+    "no_training_or_refit": true,
+    "no_threshold_or_topk_search": true
+  },
+  "test_window": {
+    "rows": 9451,
+    "start": "2022-11-23 16:00:00",
+    "end": "2026-05-25 18:00:00",
+    "elapsed_years": 3.5017
+  },
+  "metrics": {
+    "PF": 1.9861,
+    "trades": 131,
+    "wr": 0.6316,
+    "tp": 72,
+    "sl": 42,
+    "timeout": 17,
+    "gross_profit_r": 199.419,
+    "gross_loss_r": 100.4098,
+    "trades_per_year": 37.4103,
+    "negative_years": 0,
+    "active_years": 5,
+    "idle_years": [],
+    "max_year_trades": 69,
+    "max_years": [
+      "2023"
+    ],
+    "max_year_trade_share": 0.5267,
+    "max_drawdown_r": 23.6894,
+    "ending_pnl_r": 99.0092,
+    "min_equity_r": -20.6894
+  },
+  "per_year": {
+    "2022": {
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 3.0,
+      "gross_loss_r": 0.0
+    },
+    "2023": {
+      "PF": 1.6315,
+      "trades": 69,
+      "wr": 0.5797,
+      "tp": 40,
+      "sl": 29,
+      "timeout": 0,
+      "gross_profit_r": 114.7594,
+      "gross_loss_r": 70.3377
+    },
+    "2024": {
+      "PF": 2.375,
+      "trades": 35,
+      "wr": 0.7143,
+      "tp": 25,
+      "sl": 10,
+      "timeout": 0,
+      "gross_profit_r": 63.6597,
+      "gross_loss_r": 26.8036
+    },
+    "2025": {
+      "PF": 5.5071,
+      "trades": 9,
+      "wr": 0.6667,
+      "tp": 6,
+      "sl": 3,
+      "timeout": 0,
+      "gross_profit_r": 18.0,
+      "gross_loss_r": 3.2685
+    },
+    "2026": {
+      "PF": 99.0,
+      "trades": 17,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 17,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0
+    }
+  },
+  "per_quarter": {
+    "2022Q4": {
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 3.0,
+      "gross_loss_r": 0.0
+    },
+    "2023Q1": {
+      "PF": 0.0,
+      "trades": 8,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 8,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 20.6894
+    },
+    "2023Q2": {
+      "PF": 1.8124,
+      "trades": 31,
+      "wr": 0.5806,
+      "tp": 18,
+      "sl": 13,
+      "timeout": 0,
+      "gross_profit_r": 48.7594,
+      "gross_loss_r": 26.9036
+    },
+    "2023Q3": {
+      "PF": 3.0457,
+      "trades": 23,
+      "wr": 0.7391,
+      "tp": 17,
+      "sl": 6,
+      "timeout": 0,
+      "gross_profit_r": 51.0,
+      "gross_loss_r": 16.7447
+    },
+    "2023Q4": {
+      "PF": 2.5,
+      "trades": 7,
+      "wr": 0.7143,
+      "tp": 5,
+      "sl": 2,
+      "timeout": 0,
+      "gross_profit_r": 15.0,
+      "gross_loss_r": 6.0
+    },
+    "2024Q1": {
+      "PF": 2.7671,
+      "trades": 13,
+      "wr": 0.6923,
+      "tp": 9,
+      "sl": 4,
+      "timeout": 0,
+      "gross_profit_r": 24.3604,
+      "gross_loss_r": 8.8036
+    },
+    "2024Q2": {
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0
+    },
+    "2024Q3": {
+      "PF": 2.081,
+      "trades": 19,
+      "wr": 0.6842,
+      "tp": 13,
+      "sl": 6,
+      "timeout": 0,
+      "gross_profit_r": 37.4581,
+      "gross_loss_r": 18.0
+    },
+    "2024Q4": {
+      "PF": 99.0,
+      "trades": 3,
+      "wr": 1.0,
+      "tp": 3,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 1.8412,
+      "gross_loss_r": 0.0
+    },
+    "2025Q1": {
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 3.0,
+      "gross_loss_r": 0.0
+    },
+    "2025Q2": {
+      "PF": 3.6714,
+      "trades": 7,
+      "wr": 0.5714,
+      "tp": 4,
+      "sl": 3,
+      "timeout": 0,
+      "gross_profit_r": 12.0,
+      "gross_loss_r": 3.2685
+    },
+    "2025Q3": {
+      "PF": 99.0,
+      "trades": 1,
+      "wr": 1.0,
+      "tp": 1,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 3.0,
+      "gross_loss_r": 0.0
+    },
+    "2025Q4": {
+      "PF": 0.0,
+      "trades": 0,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 0,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0
+    },
+    "2026Q1": {
+      "PF": 99.0,
+      "trades": 12,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 12,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0
+    },
+    "2026Q2": {
+      "PF": 99.0,
+      "trades": 5,
+      "wr": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 5,
+      "gross_profit_r": 0.0,
+      "gross_loss_r": 0.0
+    }
+  },
+  "per_side_diagnostic": {
+    "BUY": {
+      "PF": 4.1399,
+      "trades": 7,
+      "wr": 0.7143,
+      "tp": 5,
+      "sl": 2,
+      "timeout": 0,
+      "gross_profit_r": 15.0,
+      "gross_loss_r": 3.6233
+    },
+    "SELL": {
+      "PF": 3.7817,
+      "trades": 6,
+      "wr": 0.8,
+      "tp": 4,
+      "sl": 1,
+      "timeout": 1,
+      "gross_profit_r": 11.3451,
+      "gross_loss_r": 3.0
+    },
+    "SIGNAL_0": {
+      "PF": 1.8454,
+      "trades": 118,
+      "wr": 0.6176,
+      "tp": 63,
+      "sl": 39,
+      "timeout": 16,
+      "gross_profit_r": 173.0739,
+      "gross_loss_r": 93.7865
+    }
+  },
+  "selected_signal_distribution": {
+    "-1": {
+      "trades": 6,
+      "share": 0.0458
+    },
+    "0": {
+      "trades": 118,
+      "share": 0.9008
+    },
+    "1": {
+      "trades": 7,
+      "share": 0.0534
+    }
+  },
+  "baseline": {
+    "reference": "Stage 07 RF_160 validation baseline; test baseline not retuned/read before this Stage 10 run",
+    "rf160_validation_pf": 1.5761,
+    "uplift_pf": 0.41
+  },
+  "gates": {
+    "pf_ge_1_5": true,
+    "trades_per_year_ge_6": true,
+    "negative_years_eq_0": true,
+    "baseline_uplift_over_rf160_validation_pf": true
+  },
+  "limitations": [
+    "Gross TP/SL metrics only; costs and slippage are deferred to Stage 12.",
+    "BUY/SELL side slices use the existing signal label diagnostically; most selected rows may have signal=0, so side slices do not define a live execution side.",
+    "Test trades are sparse and year-concentrated; this must be stress-tested in Stage 11 before any production claim.",
+    "A candidate verdict is not production approval; robustness, costs, export, MT4 parity and forward-test remain required."
+  ],
+  "outputs": {
+    "predictions": "ML/reports/methodology_cycle_candidate_source_v2/stage10_test_predictions.csv",
+    "trades": "ML/reports/methodology_cycle_candidate_source_v2/stage10_test_trades.csv"
+  },
+  "environment": {
+    "python": "3.10.12",
+    "torch": "2.11.0+cu130",
+    "deterministic_enabled": true,
+    "num_threads": 16,
+    "mkldnn_enabled": true,
+    "seed": 42
+  }
+}

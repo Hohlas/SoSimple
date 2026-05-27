@@ -39,6 +39,7 @@ from ML.data_loader import parse_fractals_to_3d
 from ML.pll_normalizer import PLLFeatureNormalizer
 from ML.validation_freeze import (
     LABEL_MAP,
+    PNL_COL,
     SEED,
     SEQ_LEN,
     TARGET,
@@ -77,9 +78,10 @@ MIN_BOOTSTRAP_CI_LOW = 1.0
 VALIDATION_YEARS = 3.5
 
 
-def load_validation_proba() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
+def load_validation_proba() -> tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray]:
     val_raw = pd.read_csv(DATA_DIR / "Nero_validation_labeled.csv", sep=";")
     yv = val_raw[TARGET].map(LABEL_MAP).fillna(0).astype(int).values
+    pnl_r = pd.to_numeric(val_raw[PNL_COL], errors="coerce").fillna(0.0).astype(float).values
 
     x_val, mask_val = parse_fractals_to_3d(val_raw)
     x_val, mask_val = x_val[:, :SEQ_LEN, :], mask_val[:, :SEQ_LEN]
@@ -100,10 +102,11 @@ def load_validation_proba() -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
     with torch.no_grad():
         for xb, mb, _ in DataLoader(ds, batch_size=256, shuffle=False):
             probs.append(F.softmax(model(xb, mb), 1)[:, 2].cpu())
-    return val_raw, yv, torch.cat(probs).numpy()
+    return val_raw, yv, torch.cat(probs).numpy(), pnl_r
 
 
-def bootstrap_pf_ci(y_true: np.ndarray, selected: np.ndarray, n_bootstrap: int = 1000) -> dict | None:
+def bootstrap_pf_ci(pnl_r: np.ndarray, selected: np.ndarray, n_bootstrap: int = 1000) -> dict | None:
+    """Bootstrap PF for selected trades using the shared Stage 09 PF convention."""
     idx_selected = np.flatnonzero(selected)
     if len(idx_selected) < 2:
         return None
@@ -111,13 +114,11 @@ def bootstrap_pf_ci(y_true: np.ndarray, selected: np.ndarray, n_bootstrap: int =
     pfs = []
     for _ in range(n_bootstrap):
         sample_idx = rng.choice(idx_selected, len(idx_selected), replace=True)
-        tp = int((y_true[sample_idx] == 2).sum())
-        sl = int((y_true[sample_idx] == 0).sum())
-        if sl == 0:
-            continue
-        pf = tp / sl
-        if pf > 0:
-            pfs.append(pf)
+        sel_mask = np.zeros(len(selected), dtype=bool)
+        sel_mask[sample_idx] = True
+        r = compute_pf(pnl_r, selected=sel_mask)
+        if r["trades"] > 0 and r["PF"] > 0:
+            pfs.append(r["PF"])
     if len(pfs) < 20:
         return None
     pfs_arr = np.asarray(pfs, dtype=float)
@@ -132,6 +133,7 @@ def bootstrap_pf_ci(y_true: np.ndarray, selected: np.ndarray, n_bootstrap: int =
 
 def evaluate_selection(
     val_raw: pd.DataFrame,
+    pnl_r: np.ndarray,
     y_true: np.ndarray,
     proba: np.ndarray,
     selected: np.ndarray,
@@ -140,8 +142,7 @@ def evaluate_selection(
     threshold_equivalent: float | None = None,
 ) -> dict:
     selected = selected.astype(bool)
-    pred = selected.astype(int)
-    base = compute_pf(y_true, proba=np.where(selected, 1.0, 0.0), threshold=0.5)
+    base = compute_pf(pnl_r, selected=selected)
 
     years = pd.to_datetime(val_raw["time"], format="%Y.%m.%d %H:%M", errors="coerce").dt.year
     per_year = {}
@@ -150,7 +151,7 @@ def evaluate_selection(
     max_year_trades = 0
     for year in sorted(years.dropna().unique()):
         mask = (years.values == year)
-        r = compute_pf(y_true[mask], proba=pred[mask].astype(float), threshold=0.5)
+        r = compute_pf(pnl_r[mask], selected=selected[mask])
         per_year[str(int(year))] = r
         max_year_trades = max(max_year_trades, r["trades"])
         if r["trades"] > 0:
@@ -160,7 +161,7 @@ def evaluate_selection(
 
     trades = base["trades"]
     max_year_trade_share = max_year_trades / trades if trades else 0.0
-    bootstrap = bootstrap_pf_ci(y_true, selected)
+    bootstrap = bootstrap_pf_ci(pnl_r, selected)
 
     gates = {
         "pf_ge_1_5": base["PF"] >= MIN_PF,
@@ -196,13 +197,14 @@ def evaluate_selection(
 
 
 def main() -> None:
-    val_raw, y_true, proba = load_validation_proba()
+    val_raw, y_true, proba, pnl_r = load_validation_proba()
     rows = []
 
     for threshold in THRESHOLDS:
         rows.append(
             evaluate_selection(
                 val_raw,
+                pnl_r,
                 y_true,
                 proba,
                 proba >= threshold,
@@ -221,6 +223,7 @@ def main() -> None:
         rows.append(
             evaluate_selection(
                 val_raw,
+                pnl_r,
                 y_true,
                 proba,
                 selected,
@@ -237,9 +240,59 @@ def main() -> None:
     by_trades = sorted(rows, key=lambda r: (r["trades"], r["PF"]), reverse=True)[:10]
     by_stability = sorted(rows, key=lambda r: (r["stability_score"], r["PF"]), reverse=True)[:10]
 
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ─── Full stability scan (for audit/reproducibility) ────────────────────────
+    scan_output = sanitize_for_json({
+        "cycle_id": "methodology_cycle_candidate_source_v2",
+        "stage": "09-validation-freeze-stability-refreeze",
+        "scope": "validation-only; test not read",
+        "canonical_rule": str(FROZEN_RULE_PATH) if eligible else None,
+        "checkpoint": str(CHECKPOINT),
+        "checkpoint_sha256": file_sha256(str(CHECKPOINT)),
+        "normalizer": str(NORMALIZER),
+        "normalizer_sha256": file_sha256(str(NORMALIZER)),
+        "target": TARGET,
+        "seq_len": SEQ_LEN,
+        "search_space": {
+            "thresholds": THRESHOLDS,
+            "top_k_pcts": TOP_K_PCTS,
+        },
+        "stability_gates": {
+            "min_pf": MIN_PF,
+            "min_trades_per_year": MIN_TRADES_PER_YEAR,
+            "min_active_years": MIN_ACTIVE_YEARS,
+            "max_year_trade_share": MAX_YEAR_TRADE_SHARE,
+            "max_negative_years": 0,
+            "min_bootstrap_ci_low": MIN_BOOTSTRAP_CI_LOW,
+        },
+        "eligible_count": len(eligible),
+        "selected_rule": eligible[0] if eligible else None,
+        "best_by_pf_top10": by_pf,
+        "best_by_trades_top10": by_trades,
+        "best_by_stability_top10": by_stability,
+        "all_results": rows,
+        "environment": env_info(),
+        "verdict": "PASS" if eligible else "NO_STABLE_RULE_FOUND",
+    })
+    with open(SCAN_PATH, "w") as f:
+        json.dump(scan_output, f, indent=2, allow_nan=False)
+    print(f"Full scan: {SCAN_PATH}")
+
+    print(f"\nEligible stable rules: {len(eligible)}")
+    if not eligible:
+        best = by_stability[0]
+        print(
+            f"No stable rule. Best stability: {best['family']}={best['value']} PF={best['PF']} "
+            f"trades={best['trades']} active_years={best['active_years']} "
+            f"max_year_share={best['max_year_trade_share']}"
+        )
+        print("Canonical frozen rule was not written because no rule passed stability gates.")
+        return
+
     # ─── Canonical frozen rule ──────────────────────────────────────────────────
 
-    # Find training-threshold rule (THRESHOLD=0.60) in scan results as superseded
+    # Find training-threshold rule (THRESHOLD=0.60) in scan results as superseded.
     superseded = next((r for r in rows if r["family"] == "threshold" and r["value"] == TRAINING_THRESHOLD), None)
 
     selected = eligible[0]
@@ -311,64 +364,15 @@ def main() -> None:
         f"Still validation-only and research_only until frozen test, robustness, costs, and MT4 parity pass."
     )
 
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-
     with open(FROZEN_RULE_PATH, "w") as f:
         json.dump(frozen_rule, f, indent=2, allow_nan=False)
     print(f"Canonical frozen rule: {FROZEN_RULE_PATH}")
 
-    # ─── Full stability scan (for audit/reproducibility) ────────────────────────
-    scan_output = sanitize_for_json({
-        "cycle_id": "methodology_cycle_candidate_source_v2",
-        "stage": "09-validation-freeze-stability-refreeze",
-        "scope": "validation-only; test not read",
-        "canonical_rule": str(FROZEN_RULE_PATH),
-        "checkpoint": str(CHECKPOINT),
-        "checkpoint_sha256": file_sha256(str(CHECKPOINT)),
-        "normalizer": str(NORMALIZER),
-        "normalizer_sha256": file_sha256(str(NORMALIZER)),
-        "target": TARGET,
-        "seq_len": SEQ_LEN,
-        "search_space": {
-            "thresholds": THRESHOLDS,
-            "top_k_pcts": TOP_K_PCTS,
-        },
-        "stability_gates": {
-            "min_pf": MIN_PF,
-            "min_trades_per_year": MIN_TRADES_PER_YEAR,
-            "min_active_years": MIN_ACTIVE_YEARS,
-            "max_year_trade_share": MAX_YEAR_TRADE_SHARE,
-            "max_negative_years": 0,
-            "min_bootstrap_ci_low": MIN_BOOTSTRAP_CI_LOW,
-        },
-        "eligible_count": len(eligible),
-        "selected_rule": eligible[0] if eligible else None,
-        "best_by_pf_top10": by_pf,
-        "best_by_trades_top10": by_trades,
-        "best_by_stability_top10": by_stability,
-        "all_results": rows,
-        "environment": env_info(),
-        "verdict": "PASS" if eligible else "NO_STABLE_RULE_FOUND",
-    })
-    with open(SCAN_PATH, "w") as f:
-        json.dump(scan_output, f, indent=2, allow_nan=False)
-    print(f"Full scan: {SCAN_PATH}")
-
-    print(f"\nEligible stable rules: {len(eligible)}")
-    if eligible:
-        r = eligible[0]
-        print(
-            f"Selected: {r['family']}={r['value']} thr={canonical_threshold} "
-            f"PF={r['PF']} trades={r['trades']} "
-            f"active_years={r['active_years']} max_year_share={r['max_year_trade_share']}"
-        )
-    else:
-        best = by_stability[0]
-        print(
-            f"No stable rule. Best stability: {best['family']}={best['value']} PF={best['PF']} "
-            f"trades={best['trades']} active_years={best['active_years']} "
-            f"max_year_share={best['max_year_trade_share']}"
-        )
+    print(
+        f"Selected: {selected['family']}={selected['value']} thr={canonical_threshold} "
+        f"PF={selected['PF']} trades={selected['trades']} "
+        f"active_years={selected['active_years']} max_year_share={selected['max_year_trade_share']}"
+    )
 
 
 if __name__ == "__main__":

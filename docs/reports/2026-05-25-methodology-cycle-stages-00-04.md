@@ -1,8 +1,8 @@
-# Methodology Cycle: Stages 00–09 — Candidate Source v2
+# Methodology Cycle: Stages 00–10 — Candidate Source v2
 
 > **Date**: 2026-05-25
-> **Status**: Stages 00–09 PASS. Transformer validation freeze remains research-only pending frozen test.
-> **Goal**: Build a live-safe candidate-source pipeline and freeze a validation-selected candidate without viewing test.
+> **Status**: Stages 00–10 PASS. Transformer frozen-test result is a candidate, not production approval.
+> **Goal**: Build a live-safe candidate-source pipeline, freeze a validation-selected candidate, and run one frozen test without tuning.
 > **Related commit**: pending
 
 ## Context
@@ -11,7 +11,7 @@ Previous research (`direct-direction-rebuild`, `transformer-direction`) conclude
 
 This cycle tests a new hypothesis: a live-safe candidate-source model built from current-row Nero/PIC state can replace the offline `signal != 0` gate.
 
-Stages 00–09 establish the research contract, raw data inventory, feature contract, MQL producer extension, reproducible data pipeline with PLL normalization, data-quality checks, temporal split protocol, baselines, model sweep, and validation freeze.
+Stages 00–10 establish the research contract, raw data inventory, feature contract, MQL producer extension, reproducible data pipeline with PLL normalization, data-quality checks, temporal split protocol, baselines, model sweep, validation freeze, and one-shot frozen test.
 
 ## What Was Done
 
@@ -53,6 +53,7 @@ Stages 00–09 establish the research contract, raw data inventory, feature cont
 - Stage 07 baselines now include confusion matrices, classification metrics, per-year slices, and diagnostic BUY/SELL slices.
 - Stage 08 was rerun after fixing binary timeout handling; timeout rows are excluded from TP-vs-SL threshold/PF evaluation.
 - Stage 09 froze a deterministic Transformer checkpoint and replaced the high-PF concentrated rule with a validation-calibrated stability rule.
+- Stage 10 applied the frozen Stage 09 rule to test once, without retraining, refitting, threshold search, top-k search, or rule changes.
 
 ## Changed Files
 
@@ -82,11 +83,16 @@ Stages 00–09 establish the research contract, raw data inventory, feature cont
 | `ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv` | NEW — validation predictions for Stage 08 audit |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json` | NEW — deterministic Transformer frozen rule |
 | `ML/reports/methodology_cycle_candidate_source_v2/stage09_stability_refreeze.json` | NEW — validation-only stability refreeze scan |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage10_frozen_test_oos.json` | NEW — one-shot frozen test/OOS summary |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage10_test_predictions.csv` | NEW — frozen test predictions |
+| `ML/reports/methodology_cycle_candidate_source_v2/stage10_test_trades.csv` | NEW — selected frozen test trades |
 | `ML/validation_freeze.py` | NEW — deterministic Stage 09 Transformer freeze |
 | `ML/stage09_stability_refreeze.py` | NEW — validation-only threshold/top-k stability scan |
+| `ML/stage10_frozen_test_oos.py` | NEW — frozen test runner |
 | `docs/ML/baseline_candidate_source.py.md` | NEW — Stage 07 script docs |
 | `docs/ML/model_sweep_candidate_source.py.md` | NEW — Stage 08 script docs |
 | `docs/ML/stage09_stability_refreeze.py.md` | NEW — Stage 09 stability scan docs |
+| `docs/ML/stage10_frozen_test_oos.py.md` | NEW — Stage 10 frozen test docs |
 
 ## Verification
 
@@ -130,8 +136,12 @@ assert 'nearest_00_log_price_rel' in r.columns
 # selected validation-calibrated threshold=0.5359389781951904
 # PF=1.9722, 142 trades, 0 negative years, 4 active years
 
+# Stage 10 frozen test / OOS
+./.venv/bin/python ML/stage10_frozen_test_oos.py
+# PF=3.0, 37 trades, 10.6 trades/year, 0 negative years
+
 # Artifact validation
-./.venv/bin/python -m py_compile ML/baseline_candidate_source.py ML/model_sweep_candidate_source.py ML/stage09_stability_refreeze.py ML/validation_freeze.py
+./.venv/bin/python -m py_compile ML/baseline_candidate_source.py ML/model_sweep_candidate_source.py ML/stage09_stability_refreeze.py ML/stage10_frozen_test_oos.py ML/validation_freeze.py
 ./.venv/bin/python - <<'PY'
 import json
 from pathlib import Path
@@ -230,18 +240,37 @@ Validation-only stability refreeze выбрал порог `0.5359389781951904`,
 
 Per-year: 2019 PF=1.88 (68 trades), 2020 PF=3.00 (18), 2021 PF=2.10 (38), 2022 PF=1.20 (18). Test was not viewed.
 
+### Stage 10 — Frozen Test / OOS
+
+The unchanged Stage 09 rule was applied once to `DATA/Nero_test_labeled.csv`. The script checked checkpoint and normalizer hashes against `stage09_frozen_rule.json` and did not train, refit, search threshold/top-k, or change execution mapping.
+
+| Metric | Value |
+|--------|------:|
+| PF | **3.00** |
+| Trades | **37** |
+| Trades/year | **10.6** |
+| WR | 75.0% |
+| TP / SL | 21 / 7 |
+| Negative years | 0 |
+| Max drawdown | 3.0R |
+| Ending PnL | 14.0R |
+| Baseline uplift vs RF_160 validation PF | +1.4239 |
+
+Per-year: 2022 0 trades, 2023 PF=2.71 (27 trades), 2024 PF=99.0 (3), 2025 PF=99.0 (1), 2026 PF=99.0 (6). The aggregate gates pass, but the result is sparse and concentrated: 27/37 trades (72.97%) are in 2023. Most selected rows have `signal=0` (30/37), so BUY/SELL slices are diagnostic only and do not define a live execution side.
+
 ## Conclusions
 
-1. Stages 00–09: все PASS. Pipeline от сырых данных до validation freeze работает.
+1. Stages 00–10: все PASS. Pipeline от сырых данных до frozen test работает.
 2. 3D sequence models радикально превосходят плоские модели на exploratory validation sweep, but Stage 09 is the only frozen validation rule.
 3. Trail-таргеты не работают на flat-признаках. Требуют либо нейросетей, либо других подходов к разметке.
 4. TB `buy_sl3_tp3` — единственный viable target для текущего candidate-source цикла.
-5. Test ни разу не использовался — frozen test purity сохранена.
-6. Stage 09 canonical rule предпочитает устойчивость и частоту сделок максимальному validation PF.
+5. Frozen test purity preserved until Stage 10; Stage 10 then opened test once with the frozen rule.
+6. Stage 10 aggregate result is candidate-level, but concentration risk is high and must be handled in Stage 11.
 
 ## Limitations / Open Questions
 
-- Stage 09 Transformer всё ещё validation-only: production claims запрещены до frozen test, robustness, costs и MT4 parity.
+- Stage 10 candidate is not production evidence: production claims remain prohibited until robustness, costs, MT4 parity and forward-test pass.
+- Stage 10 trades are sparse and concentrated in 2023; robustness must explicitly stress yearly/regime stability.
 - Stage 09 выбран по одному seed; для production-grade вывода нужна multi-seed проверка или формальное решение оставить deterministic single-seed research candidate.
 - Trail-таргеты не тестировались с нейросетями — потенциально перспективное направление.
 - Stage 06 split has no purged embargo; this is accepted for the current candidate-source workflow but must not be interpreted as purged-CV evidence.
@@ -251,7 +280,7 @@ Per-year: 2019 PF=1.88 (68 trades), 2020 PF=3.00 (18), 2021 PF=2.10 (38), 2022 P
 
 ## Next Step
 
-Stage 10 — Frozen Test OOS: один раз применить замороженный Transformer rule (`threshold=0.5359389781951904`) к test без изменения checkpoint, normalizer, threshold, target или execution mapping.
+Stage 11 — Robustness: проверить yearly/regime stability, concentration, seed sensitivity and provider/period drift without changing checkpoint, normalizer, threshold, target or execution mapping.
 
 ## Related Materials
 
@@ -265,5 +294,6 @@ Stage 10 — Frozen Test OOS: один раз применить заморож�
 - `docs/methodology/07-baseline-first.md`
 - `docs/methodology/08-model-development.md`
 - `docs/methodology/09-validation-freeze.md`
+- `docs/methodology/10-frozen-test-oos.md`
 - `docs/reports/2026-05-18-direct-direction-rebuild.md`
 - `docs/reports/2026-05-21-transformer-direction.md`

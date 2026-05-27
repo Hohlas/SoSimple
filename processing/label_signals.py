@@ -995,6 +995,24 @@ def label_entry_path_targets(
     return out
 
 
+def _barrier_pnl(outcome, direction, entry_price, sl_price, tp_price, timeout_close, atr):
+    """Вычисляет PnL в R-единицах для first-barrier-hit outcome.
+
+    outcome: 1=TP, 0=SL, -1=timeout
+    Для TP/SL: direction * (barrier_price - entry_price) / ATR = ±barrier_level
+    Для timeout: direction * (timeout_close - entry_price) / ATR
+    """
+    if atr <= 0:
+        return 0.0
+    if outcome == 1:
+        exit_price = tp_price
+    elif outcome == 0:
+        exit_price = sl_price
+    else:
+        exit_price = timeout_close
+    return float(direction) * (exit_price - entry_price) / atr
+
+
 def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
     """
     Path-ordered Triple Barrier labels: bar-by-bar scan по H1 OHLC.
@@ -1003,15 +1021,19 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
     Должна вызываться ПОСЛЕ label_updn() и ДО normalize_rowwise().
 
     Алгоритм для каждой строки:
-      - entry_price = Close[row_time] из H1 OHLC
+      - entry_price = Open[row_time+1] (первый бар после сигнала)
       - ATR = raw ATR из строки DataFrame
       - Для BUY: SL = entry - sl_atr*ATR, TP = entry + tp_atr*ATR
       - Для SELL: SL = entry + sl_atr*ATR, TP = entry - tp_atr*ATR
-      - Скан баров [row_time+1 .. row_time+scan_bars]:
+      - Скан баров [row_time+1 .. row_time+scan_bars] (включительно):
           High >= TP → TP_FIRST → label = 1
           Low  <= SL → SL_FIRST → label = 0
           Оба в одном баре → порядок по Open (ближе к SL → SL_FIRST)
           Ни одного за scan_bars → TIMEOUT → label = 0.5
+      - PnL в R-единицах:
+          TP  → +tp_r
+          SL  → -sl_r
+          timeout → direction * (Close[last_bar] - entry_price) / ATR
 
     Args:
         df:        DataFrame с колонками fractal0, ATR (до нормализации).
@@ -1020,17 +1042,16 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
         debug:     Печатать статистику.
 
     Returns:
-        DataFrame с теми же колонками TB_TARGET_NAMES (перезаписывает path-independent).
+        DataFrame с колонками TB_TARGET_NAMES и TB_TARGET_NAMES_pnl_r.
     """
     from datetime import datetime, timezone
 
     ohlc, times, time_idx = load_ohlc_index(ohlc_path)
 
-    # Инициализация колонок
     for name in TB_TARGET_NAMES:
-        df[name] = 0.5  # default: TIMEOUT
+        df[name] = 0.5
+        df[f'{name}_pnl_r'] = 0.0
 
-    fractal_columns = [col for col in df.columns if col.startswith('fractal')]
     found = skipped = 0
 
     for i, row in df.iterrows():
@@ -1044,8 +1065,6 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             skipped += 1
             continue
 
-        # Якорь для TB label = время строки, потому что именно по нему потом
-        # строятся CSV-сигналы и на следующем баре открывается сделка в MT4.
         try:
             row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
         except ValueError:
@@ -1057,8 +1076,12 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             skipped += 1
             continue
 
-        # Цена входа = Close сигнального бара (row_time), а не fractal0.time.
-        entry_price = ohlc[row_dt][3]  # close
+        if idx0 + 1 >= len(times):
+            skipped += 1
+            continue
+
+        first_scan_bar = ohlc[times[idx0 + 1]]
+        entry_price = float(first_scan_bar[0])
 
         try:
             atr = float(row['ATR'])
@@ -1080,7 +1103,12 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             })
         bars = pd.DataFrame(scan_rows, columns=['open', 'high', 'low', 'close'])
 
-        # Скан для каждой пары (SL_ATR, TP_ATR)
+        if len(bars) == 0:
+            skipped += 1
+            continue
+
+        timeout_close = float(bars.iloc[-1]['close'])
+
         for sl in TB_SL_LEVELS:
             for tp in TB_TP_LEVELS:
                 buy_sl = entry_price - sl * atr
@@ -1106,6 +1134,17 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
                 df.at[i, f'buy_sl{sl}_tp{tp}'] = 0.5 if buy_result == -1 else float(buy_result)
                 df.at[i, f'sell_sl{sl}_tp{tp}'] = 0.5 if sell_result == -1 else float(sell_result)
 
+                df.at[i, f'buy_sl{sl}_tp{tp}_pnl_r'] = _barrier_pnl(
+                    outcome=buy_result, direction=1,
+                    entry_price=entry_price, sl_price=buy_sl, tp_price=buy_tp,
+                    timeout_close=timeout_close, atr=atr,
+                )
+                df.at[i, f'sell_sl{sl}_tp{tp}_pnl_r'] = _barrier_pnl(
+                    outcome=sell_result, direction=-1,
+                    entry_price=entry_price, sl_price=sell_sl, tp_price=sell_tp,
+                    timeout_close=timeout_close, atr=atr,
+                )
+
         found += 1
 
     if debug:
@@ -1116,9 +1155,14 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
             win  = (vals == 1).sum()
             loss = (vals == 0).sum()
             tout = (vals == 0.5).sum()
+            pnl_col = f'{name}_pnl_r'
+            pnl_vals = df[pnl_col]
+            pos_pnl = pnl_vals[pnl_vals > 0].sum()
+            neg_pnl = abs(pnl_vals[pnl_vals < 0].sum())
+            pf_str = f"{pos_pnl/neg_pnl:.2f}" if neg_pnl > 0 else "inf"
             print(f"  {name:20s}: WIN={win:5d} ({win/total*100:.1f}%)  "
                   f"LOSS={loss:5d} ({loss/total*100:.1f}%)  "
-                  f"TIMEOUT={tout:5d} ({tout/total*100:.1f}%)")
+                  f"TIMEOUT={tout:5d} ({tout/total*100:.1f}%)  PF_r={pf_str}")
 
     return df
 

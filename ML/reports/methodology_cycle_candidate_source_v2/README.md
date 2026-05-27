@@ -2,7 +2,7 @@
 
 Date: 2026-05-25
 
-This directory contains Stage 00-09 artifacts for the ML cycle run under `docs/methodology/README.md`.
+This directory contains Stage 00-10 artifacts for the ML cycle run under `docs/methodology/README.md`.
 
 ## Files
 
@@ -24,6 +24,9 @@ This directory contains Stage 00-09 artifacts for the ML cycle run under `docs/m
 - `stage08_validation_predictions.csv` — Validation predictions from Stage 08 exploratory sweep
 - `stage09_frozen_rule.json` — Frozen winner: Transformer 3-class, stability-refrozen threshold, PF=1.97, 142 trades
 - `stage09_stability_refreeze.json` — Validation-only threshold/top-k stability scan; test not viewed
+- `stage10_frozen_test_oos.json` — Frozen test/OOS summary: PF=3.00, 37 trades, 0 negative years, candidate with concentration risk
+- `stage10_test_predictions.csv` — Test predictions from the frozen Stage 09 rule
+- `stage10_test_trades.csv` — Selected test trades from the frozen Stage 09 rule
 
 ## Current Verdicts
 
@@ -39,5 +42,6 @@ This directory contains Stage 00-09 artifacts for the ML cycle run under `docs/m
 | 07 — Baselines | PASS | RF baseline plus confusion/classification/per-year diagnostics; RF has 1 neg year |
 | 08 — Model Sweep | PASS | Exploratory validation-only sweep with timeout-excluded binary formulation |
 | **09 — Validation Freeze** | **PASS** | **Transformer stability rule PF=1.97, 142 trades, 0 neg yrs, 4 active years** |
+| **10 — Frozen Test / OOS** | **PASS** | **Frozen rule PF=3.00, 37 trades, 0 neg yrs; candidate, sparse/concentrated trades** |
 
-Next allowed stage: `10-frozen-test-oos`
+Next allowed stage: `11-robustness`
