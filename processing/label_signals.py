@@ -1112,6 +1112,276 @@ def label_first_barrier_hit(df, ohlc_path, scan_bars=24, debug=False):
     return df
 
 
+# =============================================================================
+# Limit-order entry convention constants
+# =============================================================================
+LIMIT_FILL_WINDOW = 6
+LIMIT_BARRIER_WINDOW = 24
+LIMIT_NO_FILL_SENTINEL = -999.0
+LIMIT_AMBIGUOUS_SENTINEL = -888.0
+
+
+def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
+                                spread=0.0, mode="conservative", debug=False):
+    """
+    Limit-order Triple Barrier labels: pending BUY/SELL LIMIT на Close[row_time].
+
+    Симулирует pending order на уровне Close[row] с ожиданием fill до fill_window баров.
+    Барьерный скан стартует от бара fill (fill_idx+1 .. fill_idx+barrier_window).
+
+    BUY и SELL имеют РАЗДЕЛЬНЫЕ fill-состояния (buy_fill_lag / sell_fill_lag).
+
+    Args:
+        df:            DataFrame с колонками fractal0, ATR (до нормализации).
+        ohlc_path:     Путь к DATA/XAUUSD_H1_OHLC.csv.
+        fill_window:   Макс. баров ожидания fill (default 6).
+        barrier_window: Баров барьерного скана после fill (default 24).
+        spread:        Спред в ценовых единицах (default 0.0).
+        mode:          "conservative" | "optimistic" | "ambiguous".
+        debug:         Печатать статистику.
+
+    Returns:
+        DataFrame с колонками TB_TARGET_NAMES, buy_fill_lag, sell_fill_lag,
+        _pnl_r, и ambiguous_flag_{target}.
+    """
+    from datetime import datetime, timezone
+
+    ohlc, times, time_idx = load_ohlc_index(ohlc_path)
+
+    for name in TB_TARGET_NAMES:
+        df[name] = 0.5
+        amb_col = f'ambiguous_flag_{name}'
+        if amb_col not in df.columns:
+            df[amb_col] = 0
+        pnl_col = f'{name}_pnl_r'
+        if pnl_col not in df.columns:
+            df[pnl_col] = 0.0
+
+    for side in ['buy', 'sell']:
+        lag_col = f'{side}_fill_lag'
+        if lag_col not in df.columns:
+            df[lag_col] = -1
+
+    found = skipped = 0
+    buy_fills = sell_fills = both_nofill = 0
+
+    for i, row in df.iterrows():
+        fractal0 = parse_fractal(row.get('fractal0'))
+        if fractal0 is None:
+            skipped += 1
+            continue
+
+        row_time = row.get('time')
+        if pd.isna(row_time) or row_time == '':
+            skipped += 1
+            continue
+
+        try:
+            row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+        except ValueError:
+            skipped += 1
+            continue
+
+        row_idx = time_idx.get(row_dt)
+        if row_idx is None:
+            skipped += 1
+            continue
+
+        entry_exec_price = ohlc[row_dt][3]  # Bid close
+
+        try:
+            atr = float(row['ATR'])
+        except (ValueError, KeyError):
+            skipped += 1
+            continue
+        if atr <= 0:
+            skipped += 1
+            continue
+
+        buy_fill_bid_level = entry_exec_price - spread
+        sell_fill_bid_level = entry_exec_price
+
+        # Раздельный fill-скан для BUY и SELL
+        buy_fill_idx = -1
+        sell_fill_idx = -1
+        for k in range(row_idx + 1, min(row_idx + 1 + fill_window, len(times))):
+            o, h, l, c = ohlc[times[k]]
+            if buy_fill_idx == -1 and l <= buy_fill_bid_level:
+                buy_fill_idx = k
+            if sell_fill_idx == -1 and h >= sell_fill_bid_level:
+                sell_fill_idx = k
+            if buy_fill_idx != -1 and sell_fill_idx != -1:
+                break
+
+        buy_fill_lag_val = buy_fill_idx - (row_idx + 1) if buy_fill_idx >= 0 else -1
+        sell_fill_lag_val = sell_fill_idx - (row_idx + 1) if sell_fill_idx >= 0 else -1
+        df.at[i, 'buy_fill_lag'] = buy_fill_lag_val
+        df.at[i, 'sell_fill_lag'] = sell_fill_lag_val
+
+        if buy_fill_idx >= 0:
+            buy_fills += 1
+        if sell_fill_idx >= 0:
+            sell_fills += 1
+        if buy_fill_idx == -1 and sell_fill_idx == -1:
+            both_nofill += 1
+
+        # ========= BUY side =========
+        if buy_fill_idx >= 0:
+            buy_scan_end = min(buy_fill_idx + 1 + barrier_window, len(times))
+            buy_bars = []
+            for k in range(buy_fill_idx + 1, buy_scan_end):
+                o, h, l, c = ohlc[times[k]]
+                buy_bars.append({'open': o, 'high': h, 'low': l, 'close': c})
+            buy_bars_df = pd.DataFrame(buy_bars, columns=['open', 'high', 'low', 'close'])
+            fill_o_buy, fill_h_buy, fill_l_buy, fill_c_buy = ohlc[times[buy_fill_idx]]
+
+            for sl in TB_SL_LEVELS:
+                for tp in TB_TP_LEVELS:
+                    buy_tp_price = entry_exec_price + tp * atr
+                    buy_sl_price = entry_exec_price - sl * atr
+
+                    buy_sl_hit_fill_bar = fill_l_buy <= buy_sl_price
+                    buy_tp_hit_fill_bar = fill_h_buy >= buy_tp_price
+
+                    buy_amb_flag = 0
+                    if buy_sl_hit_fill_bar and buy_tp_hit_fill_bar:
+                        buy_amb_flag = 3
+                    elif buy_sl_hit_fill_bar:
+                        buy_amb_flag = 1
+                    elif buy_tp_hit_fill_bar:
+                        buy_amb_flag = 2
+
+                    buy_outcome = 0.5
+                    for bi, bar in buy_bars_df.iterrows():
+                        if bar['high'] >= buy_tp_price and bar['low'] <= buy_sl_price:
+                            if buy_amb_flag == 0:
+                                buy_amb_flag = 4
+                            if mode == "conservative":
+                                buy_outcome = 0.0
+                            elif mode == "ambiguous":
+                                buy_outcome = LIMIT_AMBIGUOUS_SENTINEL
+                            break
+                        elif bar['high'] >= buy_tp_price:
+                            buy_outcome = 1.0
+                            break
+                        elif bar['low'] <= buy_sl_price:
+                            buy_outcome = 0.0
+                            break
+
+                    if mode == "conservative" and buy_sl_hit_fill_bar:
+                        buy_outcome = 0.0
+                    elif mode == "ambiguous" and (buy_sl_hit_fill_bar or buy_tp_hit_fill_bar):
+                        buy_outcome = LIMIT_AMBIGUOUS_SENTINEL
+
+                    buy_pnl = 0.0
+                    if buy_outcome == 1.0:
+                        buy_pnl = float(tp)
+                    elif buy_outcome == 0.0:
+                        buy_pnl = -float(sl)
+                    elif buy_outcome == 0.5:
+                        last_close = ohlc[times[buy_scan_end - 1]][3] if buy_scan_end > buy_fill_idx + 1 else fill_c_buy
+                        buy_pnl = (last_close - entry_exec_price) / atr
+
+                    buy_col = f'buy_sl{sl}_tp{tp}'
+                    df.at[i, buy_col] = buy_outcome
+                    buy_pnl_col = f'{buy_col}_pnl_r'
+                    df.at[i, buy_pnl_col] = buy_pnl
+                    amb_buy_col = f'ambiguous_flag_{buy_col}'
+                    df.at[i, amb_buy_col] = buy_amb_flag
+        else:
+            for sl in TB_SL_LEVELS:
+                for tp in TB_TP_LEVELS:
+                    df.at[i, f'buy_sl{sl}_tp{tp}'] = LIMIT_NO_FILL_SENTINEL
+
+        # ========= SELL side =========
+        if sell_fill_idx >= 0:
+            sell_scan_end = min(sell_fill_idx + 1 + barrier_window, len(times))
+            sell_bars = []
+            for k in range(sell_fill_idx + 1, sell_scan_end):
+                o, h, l, c = ohlc[times[k]]
+                sell_bars.append({'open': o, 'high': h, 'low': l, 'close': c})
+            sell_bars_df = pd.DataFrame(sell_bars, columns=['open', 'high', 'low', 'close'])
+            fill_o_sell, fill_h_sell, fill_l_sell, fill_c_sell = ohlc[times[sell_fill_idx]]
+
+            for sl in TB_SL_LEVELS:
+                for tp in TB_TP_LEVELS:
+                    sell_tp_price = entry_exec_price - tp * atr
+                    sell_sl_price = entry_exec_price + sl * atr
+
+                    sell_sl_hit_fill_bar = (fill_h_sell + spread) >= sell_sl_price
+                    sell_tp_hit_fill_bar = (fill_l_sell + spread) <= sell_tp_price
+
+                    sell_amb_flag = 0
+                    if sell_sl_hit_fill_bar and sell_tp_hit_fill_bar:
+                        sell_amb_flag = 3
+                    elif sell_sl_hit_fill_bar:
+                        sell_amb_flag = 1
+                    elif sell_tp_hit_fill_bar:
+                        sell_amb_flag = 2
+
+                    sell_outcome = 0.5
+                    for bi, bar in sell_bars_df.iterrows():
+                        bar_high_ask = bar['high'] + spread
+                        bar_low_ask = bar['low'] + spread
+                        if bar_high_ask >= sell_sl_price and bar_low_ask <= sell_tp_price:
+                            if sell_amb_flag == 0:
+                                sell_amb_flag = 4
+                            if mode == "conservative":
+                                sell_outcome = 0.0
+                            elif mode == "ambiguous":
+                                sell_outcome = LIMIT_AMBIGUOUS_SENTINEL
+                            break
+                        elif bar_low_ask <= sell_tp_price:
+                            sell_outcome = 1.0
+                            break
+                        elif bar_high_ask >= sell_sl_price:
+                            sell_outcome = 0.0
+                            break
+
+                    if mode == "conservative" and sell_sl_hit_fill_bar:
+                        sell_outcome = 0.0
+                    elif mode == "ambiguous" and (sell_sl_hit_fill_bar or sell_tp_hit_fill_bar):
+                        sell_outcome = LIMIT_AMBIGUOUS_SENTINEL
+
+                    sell_pnl = 0.0
+                    if sell_outcome == 1.0:
+                        sell_pnl = float(tp)
+                    elif sell_outcome == 0.0:
+                        sell_pnl = -float(sl)
+                    elif sell_outcome == 0.5:
+                        last_close = ohlc[times[sell_scan_end - 1]][3] if sell_scan_end > sell_fill_idx + 1 else fill_c_sell
+                        sell_pnl = (entry_exec_price - (last_close + spread)) / atr
+
+                    sell_col = f'sell_sl{sl}_tp{tp}'
+                    df.at[i, sell_col] = sell_outcome
+                    sell_pnl_col = f'{sell_col}_pnl_r'
+                    df.at[i, sell_pnl_col] = sell_pnl
+                    amb_sell_col = f'ambiguous_flag_{sell_col}'
+                    df.at[i, amb_sell_col] = sell_amb_flag
+        else:
+            for sl in TB_SL_LEVELS:
+                for tp in TB_TP_LEVELS:
+                    df.at[i, f'sell_sl{sl}_tp{tp}'] = LIMIT_NO_FILL_SENTINEL
+
+        found += 1
+
+    if debug:
+        total = len(df)
+        print(f"\n[LIMIT_ORDER_BARRIERS] Обработано: {found}, пропущено: {skipped}")
+        print(f"  BUY fill={buy_fills} ({buy_fills/max(found,1)*100:.1f}%)  "
+              f"SELL fill={sell_fills} ({sell_fills/max(found,1)*100:.1f}%)  "
+              f"both NO_FILL={both_nofill}")
+        for name in TB_TARGET_NAMES[:2]:
+            vals = df[name].dropna()
+            nf = (vals == LIMIT_NO_FILL_SENTINEL).sum()
+            sl_c = (vals == 0.0).sum()
+            tp_c = (vals == 1.0).sum()
+            to_c = (vals == 0.5).sum()
+            print(f"  {name}: TP={tp_c} SL={sl_c} TO={to_c} NO_FILL={nf}")
+
+    return df
+
+
 if __name__ == "__main__":
     # Пример использования модуля при прямом запуске
     # label_all('Nero.csv', 'Nero_full.csv', debug=True)
