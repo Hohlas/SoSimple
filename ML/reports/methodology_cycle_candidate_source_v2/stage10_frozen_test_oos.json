@@ -2,8 +2,8 @@
   "cycle_id": "methodology_cycle_candidate_source_v2",
   "stage": "10-frozen-test-oos",
   "scope": "one-shot frozen test; no tuning",
-  "stage_verdict": "PASS",
-  "model_verdict": "candidate",
+  "stage_verdict": "INVALID",
+  "model_verdict": "invalid_frozen_protocol",
   "rule": {
     "path": "ML/reports/methodology_cycle_candidate_source_v2/stage09_frozen_rule.json",
     "threshold": 0.5359389781951904,
@@ -316,8 +316,9 @@
   "limitations": [
     "Gross TP/SL metrics only; costs and slippage are deferred to Stage 12.",
     "BUY/SELL side slices use the existing signal label diagnostically; most selected rows may have signal=0, so side slices do not define a live execution side.",
-    "Test trades are sparse and year-concentrated; this must be stress-tested in Stage 11 before any production claim.",
-    "A candidate verdict is not production approval; robustness, costs, export, MT4 parity and forward-test remain required."
+    "If this artifact is INVALID, do not proceed to Stage 11 from these metrics.",
+    "A valid candidate verdict would still not be production approval; robustness, costs, export, MT4 parity and forward-test would remain required.",
+    "If any frozen protocol check fails, metrics are diagnostic only and must not be used as Stage 10 evidence."
   ],
   "outputs": {
     "predictions": "ML/reports/methodology_cycle_candidate_source_v2/stage10_test_predictions.csv",

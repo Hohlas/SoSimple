@@ -22,6 +22,10 @@
    - requote/open failure;
    - latency;
    - next-bar entry;
+   - row materialization delay;
+   - watcher polling interval;
+   - preprocessing/inference/export delay;
+   - order-send delay;
    - position limits.
 
    Типовые источники и порядок величин:
@@ -36,17 +40,19 @@
 
    Проверить устойчивость Net PF к удвоению каждой издержки по отдельности.
 
-2. Считать gross и net results отдельно.
-3. Запустить offline backtest по тому же trading protocol.
-4. Запустить sequential simulation для single-position или max-positions ограничения.
-5. Проверить повышенные costs.
-6. Разделить close reasons: SL, TP, timeout, reversal, manual/forced close.
-7. Для MT4-кандидата выполнить tester run.
+2. Проверить, что entry price исполним после feature-ready time и runtime delays.
+3. Считать gross и net results отдельно.
+4. Запустить offline backtest по тому же trading protocol.
+5. Запустить sequential simulation для single-position или max-positions ограничения.
+6. Проверить повышенные costs.
+7. Разделить close reasons: SL, TP, timeout, reversal, manual/forced close.
+8. Для MT4-кандидата выполнить tester run.
 
 ### Обязательные проверки
 
 - Cost assumptions указаны до final verdict.
-- Entry timing совпадает с target и export.
+- Entry timing совпадает с target, export и фактической live-доступностью feature snapshot.
+- Next-bar open используется только если runtime может поставить ордер к этому open; иначе применяется first executable tick/price или tester execution.
 - Spread/commission/slippage не оставлены "на потом".
 - Timeout PnL и SL/TP PnL анализируются отдельно.
 - Пропущенные входы не считаются нулевым риском без обоснования.
@@ -62,6 +68,8 @@
 
 - Игнорировать комиссии и spread при PF около 1.
 - Считать OHLC close эквивалентом tick execution.
+- Использовать `Close[row]` entry для системы, где сигнал появляется только после закрытия `row`.
+- Считать `Open[row+1]` автоматически исполнимым без проверки задержек записи строки, watcher-а, inference и отправки ордера.
 - Не учитывать requote и missed opens.
 - Делать вывод о модели по M5 diagnostic, если production H1.
 
@@ -91,4 +99,3 @@
 - Если requote/open failures частые: сначала чинить execution reliability, не модель.
 
 ---
-

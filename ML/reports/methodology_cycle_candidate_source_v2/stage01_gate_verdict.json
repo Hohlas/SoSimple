@@ -1,7 +1,7 @@
 {
   "cycle_id": "methodology_cycle_candidate_source_v2",
   "created_at": "2026-05-24",
-  "updated_at": "2026-05-25",
+  "updated_at": "2026-05-27",
   "stage00": {
     "verdict": "PASS",
     "reason": "Hypothesis, decision_time, decision unit, split protocol, gates, feature contract requirement, and expected artifacts are fixed before experiments."
@@ -49,7 +49,7 @@
   },
   "stage06": {
     "verdict": "PASS",
-    "reason": "Sequential split manifest added: train 2004-2019, val 2019-2022, test 2022-2026. No shuffle, no row overlap, 0 sorting errors. No purged embargo was applied; this is recorded as a restriction and Stage 11 must handle regime/year robustness.",
+    "reason": "Sequential split manifest added: train 2004-2019, val 2019-2022, test 2022-2026. No shuffle, no row overlap, 0 sorting errors. No purged embargo was applied; this is recorded as a restriction. Any future candidate that reaches Stage 11 must handle regime/year robustness.",
     "artifacts": [
       "stage06_temporal_split_manifest.json"
     ]
@@ -72,8 +72,8 @@
     ]
   },
   "stage09": {
-    "verdict": "PASS",
-    "reason": "Validation freeze: Transformer 3-class winner. Deterministic training (torch.use_deterministic_algorithms). Best epoch state_dict saved — round-trip diff=0.0. Initial high-PF threshold PF=2.57/35 trades rejected as canonical due to 77% 2019 concentration. Stability refreeze selected validation-calibrated threshold=0.53594 from top_k=1.5%: PF=1.97, 142 trades, 40.6 trades/yr, 0 neg years, 4 active years, max year share 47.9%, bootstrap CI [1.36, 3.00]. Model status: research_only pending Stage 10 frozen test.",
+    "verdict": "FAIL",
+    "reason": "After switching evaluation to R-multiple PnL and executable entry=Open[row+1], validation freeze found no stable canonical rule. stage09_stability_refreeze.json has eligible_count=0 and canonical_rule=null. Best broad rule was PF≈1.05 and the only PF≥1.5 rule had 5 trades, 2 negative years, and failed stability/bootstrap gates. Diagnostic Close[row] variants are not live-executable for the current fractal0/watcher path.",
     "artifacts": [
       "stage09_frozen_rule.json",
       "stage09_stability_refreeze.json",
@@ -84,8 +84,8 @@
     ]
   },
   "stage10": {
-    "verdict": "PASS",
-    "reason": "Frozen test/OOS was run once with the unchanged Stage 09 rule: threshold=0.5359389781951904, checkpoint and normalizer hashes matched the frozen rule, no training/refit/threshold search. Test PF=3.00, 37 trades, 10.6 trades/year, 0 negative years, RF_160 validation baseline uplift +1.4239 PF. Model verdict: candidate, not production. Limitations: sparse trades, 72.97% of test trades in 2023, 2022 idle, gross metrics only, side slices diagnostic only.",
+    "verdict": "INVALID",
+    "reason": "Stage 10 has no valid frozen candidate after Stage 09 FAIL. The current stage10_frozen_test_oos.json is diagnostic only: it detects checkpoint_hash_matches_rule=false and reports model_verdict=invalid_frozen_protocol. Test metrics must not be used as evidence.",
     "artifacts": [
       "stage10_frozen_test_oos.json",
       "stage10_test_predictions.csv",
@@ -93,6 +93,7 @@
       "ML/stage10_frozen_test_oos.py"
     ]
   },
-  "next_allowed_stage": "11-robustness",
+  "next_allowed_stage": null,
+  "stop_condition": "No transition beyond Stage 09. Start a new validation hypothesis or revise the model/entry protocol before any frozen test.",
   "requires_user_pass_to_continue": true
 }

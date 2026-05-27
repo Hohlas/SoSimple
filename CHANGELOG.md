@@ -2,6 +2,17 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-05-27] — Methodology Cycle: Entry Timing Correction
+
+### Изменено
+- Методика усилена правилом исполнимой entry price: label/backtest не может входить раньше фактической доступности признаков и runtime-задержек.
+- Для `fractal0` зафиксировано: он полностью готов только на `Close` подтверждающего третьего бара; `Close[row]` entry в текущем live path является `DIAGNOSTIC_ONLY`.
+- Stage 09 текущего candidate-source цикла зафиксирован как `FAIL`, Stage 10 — как `INVALID`.
+- `ML/stage10_frozen_test_oos.py` теперь сам выставляет `INVALID`, если frozen protocol checks не проходят.
+
+### Вывод
+Результаты с `Close[row]` больше нельзя интерпретировать как live/OOS evidence для MT watcher-контура. Следующий валидный кандидат должен доказать first executable entry после feature readiness.
+
 ## [2026-05-25] — Methodology Cycle: Stages 00–02 — Pipeline Foundation
 
 ### Добавлено

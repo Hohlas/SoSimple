@@ -1,7 +1,7 @@
 # Methodology Cycle: Stages 00–10 — Candidate Source v2
 
 > **Date**: 2026-05-25
-> **Status**: Stages 00–10 PASS. Transformer frozen-test result is a candidate, not production approval.
+> **Status**: Stages 00–08 PASS, Stage 09 FAIL, Stage 10 INVALID. No frozen validation candidate exists under the current live-executable R-multiple protocol.
 > **Goal**: Build a live-safe candidate-source pipeline, freeze a validation-selected candidate, and run one frozen test without tuning.
 > **Related commit**: pending
 
@@ -11,7 +11,7 @@ Previous research (`direct-direction-rebuild`, `transformer-direction`) conclude
 
 This cycle tests a new hypothesis: a live-safe candidate-source model built from current-row Nero/PIC state can replace the offline `signal != 0` gate.
 
-Stages 00–10 establish the research contract, raw data inventory, feature contract, MQL producer extension, reproducible data pipeline with PLL normalization, data-quality checks, temporal split protocol, baselines, model sweep, validation freeze, and one-shot frozen test.
+Stages 00–08 established the research contract, raw data inventory, feature contract, MQL producer extension, reproducible data pipeline with PLL normalization, data-quality checks, temporal split protocol, baselines, and model sweep. Stage 09 failed after switching to R-multiple PnL and a live-executable entry convention. Stage 10 is invalid because there is no valid frozen candidate after Stage 09.
 
 ## What Was Done
 
@@ -47,13 +47,14 @@ Stages 00–10 establish the research contract, raw data inventory, feature cont
   - Fit on train only, break clipped at 5, direction/strong/reverse/time_features left as-is
   - Checkpoint saved: `ML/checkpoints/pll_normalizer_v1.pkl`
 
-### Stage 05–09 — Validation Candidate Path
+### Stage 05–10 — Validation Candidate Path
 - Stage 05 EDA was restricted to train+validation; test was not inspected.
 - Stage 06 added an explicit temporal split manifest and validation/test use policy.
 - Stage 07 baselines now include confusion matrices, classification metrics, per-year slices, and diagnostic BUY/SELL slices.
 - Stage 08 was rerun after fixing binary timeout handling; timeout rows are excluded from TP-vs-SL threshold/PF evaluation.
-- Stage 09 froze a deterministic Transformer checkpoint and replaced the high-PF concentrated rule with a validation-calibrated stability rule.
-- Stage 10 applied the frozen Stage 09 rule to test once, without retraining, refitting, threshold search, top-k search, or rule changes.
+- Stage 09 froze a deterministic Transformer checkpoint, but the current R-multiple PnL + `Open[row+1]` entry protocol produced 0 eligible stable rules.
+- Stage 10 was marked invalid: it has no valid frozen Stage 09 candidate and the stale frozen rule checkpoint hash does not match the current checkpoint.
+- Diagnostic comparison showed that `Close[row]` + R-multiple PnL can still produce attractive metrics, but that entry is not live-executable for the current MT/fractal0/watcher path.
 
 ## Changed Files
 
@@ -131,14 +132,20 @@ assert 'nearest_00_log_price_rel' in r.columns
 # Transformer PF=11.60/63 trades; BiLSTM PF=1.7383/293 trades
 # stage08_validation_predictions.csv saved, 9451 validation rows + header
 
-# Stage 09 stability refreeze
+# Stage 09 stability refreeze under old count-based/Close-row protocol
 ./.venv/bin/python ML/stage09_stability_refreeze.py
 # selected validation-calibrated threshold=0.5359389781951904
 # PF=1.9722, 142 trades, 0 negative years, 4 active years
 
-# Stage 10 frozen test / OOS
+# Stage 10 frozen test / OOS under old protocol
 ./.venv/bin/python ML/stage10_frozen_test_oos.py
 # PF=3.0, 37 trades, 10.6 trades/year, 0 negative years
+
+# Current R-multiple + executable-entry protocol
+./.venv/bin/python ML/stage09_stability_refreeze.py
+# eligible_count=0, canonical_rule=null
+./.venv/bin/python ML/stage10_frozen_test_oos.py
+# Stage 10 INVALID/invalid_frozen_protocol; metrics diagnostic only
 
 # Artifact validation
 ./.venv/bin/python -m py_compile ML/baseline_candidate_source.py ML/model_sweep_candidate_source.py ML/stage09_stability_refreeze.py ML/stage10_frozen_test_oos.py ML/validation_freeze.py
@@ -178,7 +185,7 @@ Train+val only, test NOT viewed. ATR regime shift: KS=0.56 (train=3.0, val=4.85)
 
 ### Stage 06 — Temporal Split
 
-Sequential split manifest added. Train/validation/test boundaries are explicit, shuffle is disabled, row overlap is false, and sorting errors are 0. No purged embargo was applied; this is recorded as a restriction rather than hidden. Stage 11 must perform per-year/regime robustness because Stage 05 found a train-validation volatility shift.
+Sequential split manifest added. Train/validation/test boundaries are explicit, shuffle is disabled, row overlap is false, and sorting errors are 0. No purged embargo was applied; this is recorded as a restriction rather than hidden. Any future candidate that reaches Stage 11 must perform per-year/regime robustness because Stage 05 found a train-validation volatility shift.
 
 ### Stage 07 — Baselines
 
@@ -230,57 +237,54 @@ Baseline to beat: RF_160 validation PF plus 0 negative years. RF_160 itself does
 
 ### Stage 09 — Validation Freeze
 
-Transformer 3-class заморожен детерминированно (`torch.use_deterministic_algorithms(True)`), checkpoint и PLL normalizer сохранены с SHA-16 hash. Первичный high-PF порог `0.60` дал PF=2.57 на 35 сделках, но был отвергнут как canonical rule из-за концентрации: 27/35 сделок (77%) в 2019, 0 сделок в 2022.
+Transformer 3-class заморожен детерминированно (`torch.use_deterministic_algorithms(True)`), checkpoint и PLL normalizer сохранены с SHA-16 hash. После перехода на R-multiple PnL и entry=`Open[row+1]` stability refreeze не нашёл ни одного правила, проходящего gates.
 
-Validation-only stability refreeze выбрал порог `0.5359389781951904`, откалиброванный из top 1.5% validation scores:
+| Result | Value |
+|--------|------:|
+| Eligible stable rules | **0** |
+| Canonical rule | `null` |
+| Best broad threshold | PF≈1.05, 5448 trades |
+| Best PF threshold | PF=1.50, 5 trades, 2 negative years |
 
-| Rule | PF | Trades | Trades/year | WR | Neg years | Active years | Max year share | Bootstrap CI |
-|------|----|--------|-------------|----|-----------|--------------|----------------|--------------|
-| threshold=0.53594 | **1.97** | **142** | **40.6** | 66.4% | 0 | 4 | 47.9% | [1.36, 3.00] |
+Verdict: **Stage 09 FAIL**. Test was not validly opened by a frozen candidate.
 
-Per-year: 2019 PF=1.88 (68 trades), 2020 PF=3.00 (18), 2021 PF=2.10 (38), 2022 PF=1.20 (18). Test was not viewed.
+### Entry Timing Finding
+
+Диагностический вариант `Close[row]` + R-multiple PnL показывал приемлемые validation/test метрики, а `Open[row+1]` + R-multiple PnL разрушил устойчивость. Это не доказывает, что нужно вернуться к `Close[row]`.
+
+В текущем MT-контуре `fractal0` полностью готов только на `Close` своего третьего бара. После этого MQL записывает строку 100 фракталов в `Nero.csv`, watcher читает файл раз в несколько секунд, выполняет preprocessing/inference и только затем может появиться торговое решение. Поэтому online не может открыть сделку по `Close[row]`. Даже `Open[row+1]` может быть оптимистичным, если задержка записи/чтения/обработки не позволяет отправить ордер к этому open.
+
+Вывод для методики: `Close[row]` results are `DIAGNOSTIC_ONLY` for this pipeline. Production-quality labels/backtests must use first executable price after feature availability and runtime latency, or MT tester execution.
 
 ### Stage 10 — Frozen Test / OOS
 
-The unchanged Stage 09 rule was applied once to `DATA/Nero_test_labeled.csv`. The script checked checkpoint and normalizer hashes against `stage09_frozen_rule.json` and did not train, refit, search threshold/top-k, or change execution mapping.
+Stage 10 is **INVALID**. There is no canonical Stage 09 frozen rule under the current protocol. The current `stage10_frozen_test_oos.json` is diagnostic only and records `checkpoint_hash_matches_rule=false`, `stage_verdict=INVALID`, `model_verdict=invalid_frozen_protocol`.
 
-| Metric | Value |
-|--------|------:|
-| PF | **3.00** |
-| Trades | **37** |
-| Trades/year | **10.6** |
-| WR | 75.0% |
-| TP / SL | 21 / 7 |
-| Negative years | 0 |
-| Max drawdown | 3.0R |
-| Ending PnL | 14.0R |
-| Baseline uplift vs RF_160 validation PF | +1.4239 |
-
-Per-year: 2022 0 trades, 2023 PF=2.71 (27 trades), 2024 PF=99.0 (3), 2025 PF=99.0 (1), 2026 PF=99.0 (6). The aggregate gates pass, but the result is sparse and concentrated: 27/37 trades (72.97%) are in 2023. Most selected rows have `signal=0` (30/37), so BUY/SELL slices are diagnostic only and do not define a live execution side.
+Any Stage 10 metrics produced after Stage 09 FAIL must not be interpreted as OOS evidence.
 
 ## Conclusions
 
-1. Stages 00–10: все PASS. Pipeline от сырых данных до frozen test работает.
-2. 3D sequence models радикально превосходят плоские модели на exploratory validation sweep, but Stage 09 is the only frozen validation rule.
+1. Stages 00–08: PASS; Stage 09: FAIL; Stage 10: INVALID.
+2. 3D sequence models выглядели лучше плоских моделей на exploratory validation sweep, but the current validation freeze did not produce a stable live-executable rule.
 3. Trail-таргеты не работают на flat-признаках. Требуют либо нейросетей, либо других подходов к разметке.
 4. TB `buy_sl3_tp3` — единственный viable target для текущего candidate-source цикла.
-5. Frozen test purity preserved until Stage 10; Stage 10 then opened test once with the frozen rule.
-6. Stage 10 aggregate result is candidate-level, but concentration risk is high and must be handled in Stage 11.
+5. `Close[row]` entry is diagnostic-only for the current `fractal0`/watcher live path.
+6. Next work must revise the hypothesis/model/entry protocol before any new frozen test.
 
 ## Limitations / Open Questions
 
-- Stage 10 candidate is not production evidence: production claims remain prohibited until robustness, costs, MT4 parity and forward-test pass.
-- Stage 10 trades are sparse and concentrated in 2023; robustness must explicitly stress yearly/regime stability.
-- Stage 09 выбран по одному seed; для production-grade вывода нужна multi-seed проверка или формальное решение оставить deterministic single-seed research candidate.
+- No Stage 10 candidate exists under the current protocol.
+- Entry convention remains the central unresolved live-safety issue: first executable price after feature availability must be proven, not assumed.
+- Stage 09 был проверен по одному deterministic seed; multi-seed robustness remains open for future candidates.
 - Trail-таргеты не тестировались с нейросетями — потенциально перспективное направление.
 - Stage 06 split has no purged embargo; this is accepted for the current candidate-source workflow but must not be interpreted as purged-CV evidence.
-- Stage 08 exploratory Transformer PF is inflated-looking and based on a single seed/subsample; Stage 09 stability rule is the canonical candidate, not Stage 08 max-PF row.
+- Stage 08 exploratory Transformer PF is inflated-looking and based on a single seed/subsample; Stage 09 is the required canonical freeze gate and currently fails.
 - `provider` и `timezone` — metadata gaps.
 - PLL параметры (percentile=0.95, band widths 4/12) — начальные, могут потребовать ablation.
 
 ## Next Step
 
-Stage 11 — Robustness: проверить yearly/regime stability, concentration, seed sensitivity and provider/period drift without changing checkpoint, normalizer, threshold, target or execution mapping.
+No Stage 11 transition. Next step: start a revised validation hypothesis or model/entry-protocol redesign, then repeat Stage 09 before any frozen test.
 
 ## Related Materials
 

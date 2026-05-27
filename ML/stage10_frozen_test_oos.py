@@ -219,7 +219,17 @@ def main() -> None:
         "negative_years_eq_0": negative_years <= MAX_NEGATIVE_YEARS,
         "baseline_uplift_over_rf160_validation_pf": aggregate["PF"] > BASELINE_RF160_VALIDATION_PF,
     }
-    verdict = "candidate" if all(gates.values()) else "reject"
+    frozen_protocol_checks = {
+        "test_read_by_stage10_only": True,
+        "threshold_unchanged_from_rule": threshold == float(rule["selection_rule"]["threshold"]),
+        "checkpoint_hash_matches_rule": file_sha256(rule["checkpoint"]) == rule["checkpoint_sha256"],
+        "normalizer_hash_matches_rule": file_sha256(rule["normalizer"]) == rule["normalizer_sha256"],
+        "no_training_or_refit": True,
+        "no_threshold_or_topk_search": True,
+    }
+    protocol_valid = all(frozen_protocol_checks.values())
+    stage_verdict = "PASS" if protocol_valid else "INVALID"
+    verdict = "candidate" if protocol_valid and all(gates.values()) else "invalid_frozen_protocol" if not protocol_valid else "reject"
 
     predictions.to_csv(PREDICTIONS_PATH, index=False)
     trades.to_csv(TRADES_PATH, index=False)
@@ -228,7 +238,7 @@ def main() -> None:
         "cycle_id": "methodology_cycle_candidate_source_v2",
         "stage": "10-frozen-test-oos",
         "scope": "one-shot frozen test; no tuning",
-        "stage_verdict": "PASS",
+        "stage_verdict": stage_verdict,
         "model_verdict": verdict,
         "rule": {
             "path": str(RULE_PATH),
@@ -242,14 +252,7 @@ def main() -> None:
             "target": rule["target"],
             "seq_len": rule["seq_len"],
         },
-        "frozen_protocol_checks": {
-            "test_read_by_stage10_only": True,
-            "threshold_unchanged_from_rule": threshold == float(rule["selection_rule"]["threshold"]),
-            "checkpoint_hash_matches_rule": file_sha256(rule["checkpoint"]) == rule["checkpoint_sha256"],
-            "normalizer_hash_matches_rule": file_sha256(rule["normalizer"]) == rule["normalizer_sha256"],
-            "no_training_or_refit": True,
-            "no_threshold_or_topk_search": True,
-        },
+        "frozen_protocol_checks": frozen_protocol_checks,
         "test_window": {
             "rows": len(test_raw),
             "start": str(dt.min()),
@@ -276,8 +279,9 @@ def main() -> None:
         "limitations": [
             "Gross TP/SL metrics only; costs and slippage are deferred to Stage 12.",
             "BUY/SELL side slices use the existing signal label diagnostically; most selected rows may have signal=0, so side slices do not define a live execution side.",
-            "Test trades are sparse and year-concentrated; this must be stress-tested in Stage 11 before any production claim.",
-            "A candidate verdict is not production approval; robustness, costs, export, MT4 parity and forward-test remain required.",
+            "If this artifact is INVALID, do not proceed to Stage 11 from these metrics.",
+            "A valid candidate verdict would still not be production approval; robustness, costs, export, MT4 parity and forward-test would remain required.",
+            "If any frozen protocol check fails, metrics are diagnostic only and must not be used as Stage 10 evidence.",
         ],
         "outputs": {
             "predictions": str(PREDICTIONS_PATH),
@@ -293,7 +297,7 @@ def main() -> None:
     print(f"Predictions: {PREDICTIONS_PATH}")
     print(f"Trades: {TRADES_PATH}")
     print(
-        f"Stage 10 {verdict}: PF={aggregate['PF']} trades={aggregate['trades']} "
+        f"Stage 10 {stage_verdict}/{verdict}: PF={aggregate['PF']} trades={aggregate['trades']} "
         f"trades/year={trades_per_year:.2f} negative_years={negative_years}"
     )
 

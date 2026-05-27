@@ -437,3 +437,4 @@
 - Updated `wiki/index.md` and `wiki/research/execution-tracks-overview.md` coverage from 39/40 to 41 execution-track reports.
 2026-05-21 23:00 — Ingest: added Direct Direction Rebuild (§22) to execution-tracks-direct-direction-audit.md; updated index (3 reports). Ran wiki.py generate.
 [2026-05-23] Ingest: updated execution-tracks-take-skip-v2 (+v1 matrix, +v2 handoff, 04-17 reports), execution-tracks-direct-direction-audit (+transformer encoder direction, 05-21 report). Updated wiki/index.md, execution-tracks-overview.md.
+[2026-05-27] Ingest: updated methodology-cycle-candidate-source-v2 with Stage 09 FAIL / Stage 10 INVALID under R-multiple executable-entry protocol and recorded fractal0 entry-timing constraint. Updated wiki/index.md.

@@ -4,6 +4,8 @@ Date: 2026-05-25
 
 This directory contains Stage 00-10 artifacts for the ML cycle run under `docs/methodology/README.md`.
 
+Current canonical status: Stages 00-08 PASS, Stage 09 FAIL, Stage 10 INVALID. No Stage 11 transition is allowed from this candidate.
+
 ## Files
 
 - `stage00_research_contract.json` — hypothesis, decision time, decision unit, split protocol, gates, expected artifacts
@@ -22,11 +24,11 @@ This directory contains Stage 00-10 artifacts for the ML cycle run under `docs/m
 - `stage07_baselines.json` — Baselines: RF PF=1.58 (all 12 TB + trail tested)
 - `stage08_model_sweep.json` — Model sweep: Transformer PF=11.60, BiLSTM PF=1.74 (binary TP-vs-SL, timeout excluded)
 - `stage08_validation_predictions.csv` — Validation predictions from Stage 08 exploratory sweep
-- `stage09_frozen_rule.json` — Frozen winner: Transformer 3-class, stability-refrozen threshold, PF=1.97, 142 trades
-- `stage09_stability_refreeze.json` — Validation-only threshold/top-k stability scan; test not viewed
-- `stage10_frozen_test_oos.json` — Frozen test/OOS summary: PF=3.00, 37 trades, 0 negative years, candidate with concentration risk
-- `stage10_test_predictions.csv` — Test predictions from the frozen Stage 09 rule
-- `stage10_test_trades.csv` — Selected test trades from the frozen Stage 09 rule
+- `stage09_frozen_rule.json` — superseded stale rule from the earlier count-based/Close-row protocol; not canonical after R-PnL + executable-entry relabeling
+- `stage09_stability_refreeze.json` — Validation-only threshold/top-k stability scan; current canonical result is `eligible_count=0`, `canonical_rule=null`
+- `stage10_frozen_test_oos.json` — Diagnostic-only invalid frozen-test artifact; no valid Stage 09 candidate exists and checkpoint hash does not match stale rule
+- `stage10_test_predictions.csv` — Diagnostic predictions from the invalid Stage 10 attempt
+- `stage10_test_trades.csv` — Diagnostic selected rows from the invalid Stage 10 attempt
 
 ## Current Verdicts
 
@@ -41,7 +43,7 @@ This directory contains Stage 00-10 artifacts for the ML cycle run under `docs/m
 | 06 — Temporal Split | PASS | Sequential manifest added; no overlap, no shuffle, 0 sorting errors |
 | 07 — Baselines | PASS | RF baseline plus confusion/classification/per-year diagnostics; RF has 1 neg year |
 | 08 — Model Sweep | PASS | Exploratory validation-only sweep with timeout-excluded binary formulation |
-| **09 — Validation Freeze** | **PASS** | **Transformer stability rule PF=1.97, 142 trades, 0 neg yrs, 4 active years** |
-| **10 — Frozen Test / OOS** | **PASS** | **Frozen rule PF=3.00, 37 trades, 0 neg yrs; candidate, sparse/concentrated trades** |
+| **09 — Validation Freeze** | **FAIL** | **R-multiple PnL + entry=Open[row+1] produced 0 eligible stable rules; canonical_rule=null** |
+| **10 — Frozen Test / OOS** | **INVALID** | **No valid frozen candidate after Stage 09 FAIL; current test artifact is diagnostic only and has checkpoint hash mismatch** |
 
-Next allowed stage: `11-robustness`
+Next allowed stage: none. Start a new validation hypothesis or revise the model/entry protocol before any frozen test.
