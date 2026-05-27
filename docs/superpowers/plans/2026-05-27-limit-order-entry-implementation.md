@@ -18,10 +18,10 @@
 |------|--------|----------------|
 | `processing/label_signals.py` | MODIFY | +`label_limit_order_barriers()` — новый лейблинг |
 | `processing/label_main.py` | MODIFY | +флаг `--limit-order` для вызова новой функции |
-| `processing/label_audit.py` | CREATE | Аудит: fill_lag, ambiguity, сравнение со старыми лейблами |
-| `tests/processing/test_limit_order_barriers.py` | CREATE | Тесты на fill, NO_FILL, same-bar ambiguity, PnL |
+| `processing/label_audit.py` | CREATE | Аудит: buy_fill_lag / sell_fill_lag, ambiguity, сравнение со старыми лейблами |
+| `tests/processing/test_limit_order_barriers.py` | CREATE | Тесты на fill, NO_FILL, same-bar ambiguity, PnL, SELL spread |
 | `ML/baseline/benchmark_limit_order_entry.py` | CREATE | RF/HGB baseline: train на fill-only, threshold sweep, gate |
-| `DATA/Nero_{train,val,test}_limit_labeled.csv` | OUTPUT | Новые лейблы (output labeling pipeline) |
+| `DATA/limit_order/Nero_{train,validation,test}_labeled.csv` | OUTPUT | Новые лейблы (output labeling pipeline) |
 | `ML/baseline/reports/limit_order_baseline_*.md` | OUTPUT | Отчёт baseline (output скрипта) |
 
 ---
@@ -175,9 +175,22 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                     buy_sl_hit_fill_bar = fill_l_buy <= buy_sl_price
                     buy_tp_hit_fill_bar = fill_h_buy >= buy_tp_price
 
+                    # Set ambiguous flag BEFORE mode override (audit must see ambiguity)
+                    buy_amb_flag = 0
+                    if buy_sl_hit_fill_bar and buy_tp_hit_fill_bar:
+                        buy_amb_flag = 3  # fill+TP+SL
+                    elif buy_sl_hit_fill_bar:
+                        buy_amb_flag = 1  # fill+SL
+                    elif buy_tp_hit_fill_bar:
+                        buy_amb_flag = 2  # fill+TP
+
                     buy_outcome = 0.5
+                    buy_sl_tp_same_barrier = False
                     for bi, bar in buy_bars_df.iterrows():
                         if bar['high'] >= buy_tp_price and bar['low'] <= buy_sl_price:
+                            buy_sl_tp_same_barrier = True
+                            if buy_amb_flag == 0:
+                                buy_amb_flag = 4  # TP+SL post-fill
                             if mode == "conservative":
                                 buy_outcome = 0.0
                             elif mode == "ambiguous":
@@ -210,11 +223,9 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                     buy_pnl_col = f'{buy_col}_pnl_r'
                     df.at[i, buy_pnl_col] = buy_pnl
 
-                    # ambiguous flag for buy
+                    # ambiguous flag for buy — always set, независимо от mode
                     amb_buy_col = f'ambiguous_flag_{buy_col}'
-                    if buy_outcome == LIMIT_AMBIGUOUS_SENTINEL:
-                        df.at[i, amb_buy_col] = (1 if buy_sl_hit_fill_bar
-                                                 else 2 if buy_tp_hit_fill_bar else 4)
+                    df.at[i, amb_buy_col] = buy_amb_flag
         else:
             # BUY NO_FILL: все buy-таргеты = NO_FILL
             for sl in TB_SL_LEVELS:
@@ -236,14 +247,28 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                     sell_tp_price = entry_exec_price - tp * atr
                     sell_sl_price = entry_exec_price + sl * atr
 
-                    sell_sl_hit_fill_bar = fill_h_sell >= sell_sl_price
-                    sell_tp_hit_fill_bar = fill_l_sell <= sell_tp_price
+                    # SELL same-bar: закрытие по Ask ≈ Bid + spread
+                    sell_sl_hit_fill_bar = (fill_h_sell + spread) >= sell_sl_price
+                    sell_tp_hit_fill_bar = (fill_l_sell + spread) <= sell_tp_price
+
+                    # Set ambiguous flag BEFORE mode override (audit must see ambiguity)
+                    sell_amb_flag = 0
+                    if sell_sl_hit_fill_bar and sell_tp_hit_fill_bar:
+                        sell_amb_flag = 3  # fill+TP+SL
+                    elif sell_sl_hit_fill_bar:
+                        sell_amb_flag = 1  # fill+SL
+                    elif sell_tp_hit_fill_bar:
+                        sell_amb_flag = 2  # fill+TP
 
                     sell_outcome = 0.5
+                    sell_sl_tp_same_barrier = False
                     for bi, bar in sell_bars_df.iterrows():
                         bar_high_ask = bar['high'] + spread
                         bar_low_ask = bar['low'] + spread
                         if bar_high_ask >= sell_sl_price and bar_low_ask <= sell_tp_price:
+                            sell_sl_tp_same_barrier = True
+                            if sell_amb_flag == 0:
+                                sell_amb_flag = 4  # TP+SL post-fill
                             if mode == "conservative":
                                 sell_outcome = 0.0
                             elif mode == "ambiguous":
@@ -277,9 +302,7 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                     df.at[i, sell_pnl_col] = sell_pnl
 
                     amb_sell_col = f'ambiguous_flag_{sell_col}'
-                    if sell_outcome == LIMIT_AMBIGUOUS_SENTINEL:
-                        df.at[i, amb_sell_col] = (1 if sell_sl_hit_fill_bar
-                                                  else 2 if sell_tp_hit_fill_bar else 4)
+                    df.at[i, amb_sell_col] = sell_amb_flag  # always set, независимо от mode
         else:
             # SELL NO_FILL: все sell-таргеты = NO_FILL
             for sl in TB_SL_LEVELS:
@@ -815,9 +838,10 @@ grep "Nero.*labeled" .gitignore || echo "DATA/Nero_*_labeled.csv" >> .gitignore
 
 Использование:
   .venv/bin/python processing/purge_split.py \
-    --train DATA/Nero_train_labeled.csv \
-    --val DATA/Nero_validation_labeled.csv \
-    --test DATA/Nero_test_labeled.csv \
+    --train DATA/limit_order/Nero_train_labeled.csv \
+    --val DATA/limit_order/Nero_validation_labeled.csv \
+    --test DATA/limit_order/Nero_test_labeled.csv \
+    --output-dir DATA/limit_order/ \
     --purge-hours 30
 """
 
@@ -913,10 +937,11 @@ git commit -m "feat: add 30-bar purge/embargo for limit-order split boundaries"
 ```python
 #!/usr/bin/env python3
 """
-Аудит limit-order лейблов: сравнение со старыми, статистика fill_lag, ambiguity.
+Аудит limit-order лейблов: сравнение со старыми, buy/sell fill_lag статистика, ambiguity.
 Использование:
-  .venv/bin/python processing/label_audit.py --new DATA/Nero_train_labeled.csv \
-      --old DATA/Nero_train_labeled_old.csv --primary-target buy_sl3_tp3
+  .venv/bin/python processing/label_audit.py \
+    --new DATA/limit_order/Nero_train_labeled.csv \
+    --old DATA/Nero_train_labeled.csv --primary-target buy_sl3_tp3
 """
 
 import argparse
@@ -1032,11 +1057,11 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: Запустить аудит на train**
+- [ ] **Step 2: Запустить аудит на train (DATA/limit_order/)**
 
 ```bash
 .venv/bin/python processing/label_audit.py \
-  --new DATA/Nero_train_labeled.csv \
+  --new DATA/limit_order/Nero_train_labeled.csv \
   --primary-target buy_sl3_tp3
 ```
 
@@ -1071,8 +1096,8 @@ Target: buy_sl3_tp3 (первичный). Дополнительно: buy_sl2_tp
 
 Использование:
   .venv/bin/python -m ML.baseline.benchmark_limit_order_entry \
-    --train DATA/Nero_train_limit_labeled.csv \
-    --val DATA/Nero_validation_limit_labeled.csv \
+    --train DATA/limit_order/Nero_train_labeled.csv \
+    --val DATA/limit_order/Nero_validation_labeled.csv \
     --target buy_sl3_tp3
 """
 
@@ -1189,8 +1214,8 @@ def evaluate_threshold(scores, pnl_values, fill_mask, time_col,
     if time_col is not None:
         filled_times = time_col[selected_fill]
         if len(filled_times) > 0:
-            years_series = filled_times.dt.year
-            yearly_pnl = pd.Series(pnl_values[selected_fill]).groupby(years_series).sum()
+            filled_pnl_series = pd.Series(pnl_values[selected_fill], index=filled_times.index)
+            yearly_pnl = filled_pnl_series.groupby(filled_times.dt.year).sum()
             negative_years_val = int((yearly_pnl < 0).sum())
         else:
             negative_years_val = 0
@@ -1210,16 +1235,6 @@ def evaluate_threshold(scores, pnl_values, fill_mask, time_col,
         'trades_per_year': tpy,
         'negative_years': negative_years_val,
     }
-
-
-def compute_pf(pnl_values):
-    """Profit Factor: gross_profit / gross_loss (R-multiples)."""
-    pnl = np.asarray(pnl_values, dtype=np.float64)
-    gross_profit = float(pnl[pnl > 0].sum())
-    gross_loss = float(-pnl[pnl < 0].sum())
-    if gross_loss == 0:
-        return float('inf') if gross_profit > 0 else 0.0
-    return gross_profit / gross_loss
 
 
 def threshold_sweep(scores, pnl_values, fill_mask, time_col, n_thresholds=50):
@@ -1371,7 +1386,7 @@ git commit -m "feat: add RF/HGB baseline for limit-order entry convention"
 
 ```bash
 .venv/bin/python processing/label_audit.py \
-  --new DATA/Nero_train_labeled.csv \
+  --new DATA/limit_order/Nero_train_labeled.csv \
   --primary-target buy_sl3_tp3
 
 .venv/bin/python -m ML.baseline.benchmark_limit_order_entry --target buy_sl3_tp3
