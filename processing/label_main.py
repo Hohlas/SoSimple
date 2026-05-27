@@ -290,7 +290,7 @@ def main():
 
     # 3d. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
     if args.limit_order:
-        from processing.label_signals import label_limit_order_barriers
+        from label_signals import label_limit_order_barriers
         print(f"\nРазметка Limit-Order Triple Barrier (OHLC={args.ohlc}, spread={args.spread})...")
         labeled_df = label_limit_order_barriers(
             labeled_df, args.ohlc,
