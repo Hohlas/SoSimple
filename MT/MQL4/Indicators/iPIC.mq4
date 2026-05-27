@@ -14,7 +14,7 @@
 extern char PicPer=1;   // PicPer=1..3 период фракталов (самый ухкий)
 extern char FltLen=10;  // FltLen=5..15/5 минимальная длина флэта; и бары от пробиваемого пика до его ложняка в SIG_MIRROR_LEVELS()
 extern char PicCnt=1;   // PicCnt=0..7 кол-во совпадений с пиками для Первого, флэтa и ложняка
-extern char PicPwr=5;   // PicPwr=3..12 FrontVal>АТР*Power, 
+extern char PicPwr=3;   // PicPwr=3..12 FrontVal>АТР*Power, 
 extern char PicImp=1;   // PicImp=0..7 уровень с макс импульсом 
 extern char Rev=0;      // Rev=0..2 1-Пробивший хоть один пик, 2-Back>Front
 extern char Days=0;     // Days=-6..6 поиск на периоде Days ближайших (<0 дальних) первых уровней   
