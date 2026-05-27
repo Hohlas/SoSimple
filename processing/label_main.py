@@ -241,6 +241,15 @@ def main():
         default="DATA/XAUUSD_H1_OHLC.csv",
         help="Путь к H1 OHLC CSV для path-ordered Triple Barrier (по умолчанию DATA/XAUUSD_H1_OHLC.csv)",
     )
+    parser.add_argument(
+        "--limit-order",
+        action="store_true",
+        help="Use limit-order entry labeling instead of immediate entry Triple Barrier",
+    )
+    parser.add_argument(
+        "--spread", type=float, default=0.0,
+        help="Spread in price units for limit-order labeling (default 0.0)",
+    )
 
     args = parser.parse_args()
 
@@ -249,7 +258,8 @@ def main():
     input_path = Path(args.input)
     input_resolved = (project_root / input_path) if not input_path.is_absolute() else input_path
     output_base = project_root / "DATA" / input_path.stem
-
+    if args.limit_order:
+        output_base = project_root / "DATA" / "limit_order" / "Nero"
     stats_path = str(output_base) + "_normalization_stats.csv"
 
     print(f"Чтение данных из: {input_resolved}")
@@ -279,8 +289,17 @@ def main():
     labeled_df = label_trade_targets(labeled_df, ohlc_path=args.ohlc)
 
     # 3d. Triple Barrier labels (path-ordered, bar-by-bar OHLC scan, before normalization)
-    print(f"\nРазметка Triple Barrier таргетов (path-ordered, OHLC={args.ohlc})...")
-    labeled_df = label_first_barrier_hit(labeled_df, args.ohlc, scan_bars=24, debug=args.debug)
+    if args.limit_order:
+        from processing.label_signals import label_limit_order_barriers
+        print(f"\nРазметка Limit-Order Triple Barrier (OHLC={args.ohlc}, spread={args.spread})...")
+        labeled_df = label_limit_order_barriers(
+            labeled_df, args.ohlc,
+            fill_window=6, barrier_window=24,
+            spread=args.spread, mode="conservative", debug=args.debug,
+        )
+    else:
+        print(f"\nРазметка Triple Barrier таргетов (path-ordered, OHLC={args.ohlc})...")
+        labeled_df = label_first_barrier_hit(labeled_df, args.ohlc, scan_bars=24, debug=args.debug)
 
     # 3d. Entry-path v1 labels (real entry on next bar, before normalization)
     print(f"\nРазметка entry_path_v1 таргетов (OHLC={args.ohlc})...")
