@@ -231,6 +231,40 @@ ML/reports/take_skip_live_safe_geometry_path/
 *.hst
 *.frx
 
+# файлы MT4 (стандартные библиотеки обновления платформы)
+MT/MQL4/Include/Arrays/
+MT/MQL4/Include/Canvas/
+MT/MQL4/Include/ChartObjects/
+MT/MQL4/Include/Charts/
+MT/MQL4/Include/Controls/
+MT/MQL4/Include/Files/
+MT/MQL4/Include/Indicators/
+MT/MQL4/Include/Strings/
+MT/MQL4/Include/Tools/
+MT/MQL4/Include/MovingAverages.mqh
+MT/MQL4/Include/Object.mqh
+MT/MQL4/Indicators/Accelerator.mq4
+MT/MQL4/Indicators/Accumulation.mq4
+MT/MQL4/Indicators/Alligator.mq4
+MT/MQL4/Indicators/Awesome.mq4
+MT/MQL4/Indicators/Bands.mq4
+MT/MQL4/Indicators/Bears.mq4
+MT/MQL4/Indicators/Bulls.mq4
+MT/MQL4/Indicators/CCI.mq4
+MT/MQL4/Indicators/Custom Moving Averages.mq4
+MT/MQL4/Indicators/Examples/
+MT/MQL4/Indicators/Heiken Ashi.mq4
+MT/MQL4/Indicators/Ichimoku.mq4
+MT/MQL4/Indicators/MACD.mq4
+MT/MQL4/Indicators/Momentum.mq4
+MT/MQL4/Indicators/OsMA.mq4
+MT/MQL4/Indicators/Parabolic.mq4
+MT/MQL4/Indicators/RSI.mq4
+MT/MQL4/Indicators/Stochastic.mq4
+MT/MQL4/Indicators/ZigZag.mq4
+MT/MQL4/Indicators/iExposure.mq4
+MT/MQL4/Scripts/Examples/DLL/code-analyser.html
+
 # файлы  MT5
 MT/MQL5/Experts/Advisors/*
 MT/MQL5/Experts/Examples/*
