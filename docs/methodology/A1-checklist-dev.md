@@ -4,24 +4,28 @@
 
 - [ ] Гипотеза описана до экспериментов.
 - [ ] `decision_time` зафиксирован.
+- [ ] Execution convention зафиксирован: тип входа, `entry_price`, measured/canonical spread, fill/no-fill, fill lag, PnL convention.
 - [ ] Raw data inventory создан.
 - [ ] Data Producer Audit выполнен: producer-код изучен, момент доступности полей доказан.
 - [ ] Feature contract заполнен для всех input fields.
 - [ ] Leakage preflight: `PASS`.
 - [ ] Candidate-source live-safe: механизм отбора строк-кандидатов работает без оффлайн-разметки.
 - [ ] Target contract описан и проверен.
+- [ ] Если labels зависят от исполнения, target contract включает no-fill, fill_lag, ambiguous same-bar policy и `pnl_r`/другую PnL-единицу.
 - [ ] Для multi-target регрессии проверены корреляция, монотонность и метрики по каждому горизонту.
 - [ ] Preprocessing воспроизводим.
 - [ ] Нормализация не использует будущие поля.
 - [ ] Split строго временной. Для событийного ряда учтена специфика неравномерного сэмплирования.
 - [ ] Validation/test/forward границы указаны.
 - [ ] Baseline-модели запущены.
+- [ ] Baseline использует тот же execution convention, что и кандидат.
 - [ ] Метрики и gates заданы до validation sweep.
 - [ ] Hyperparameter/model selection не использует test.
 - [ ] Один frozen candidate выбран на validation.
 - [ ] Rule/checkpoint/exporter заморожены до test.
 - [ ] Test открыт один раз для frozen candidate.
 - [ ] Backtest учитывает spread, commission, swap, slippage и position limits. Проверена устойчивость к удвоению издержек.
+- [ ] Zero-spread результат, если запускался, помечен `DIAGNOSTIC_ONLY` и не участвует в trading gates.
 - [ ] Симулятор сделок проверен на синтетических тестах с известным исходом.
 - [ ] Проверены yearly/monthly slices.
 - [ ] Проверены BUY/SELL отдельно.
@@ -33,4 +37,3 @@
 - [ ] Monitoring/retraining policy описана для production candidate.
 - [ ] Для принятого кандидата создан model card.
 - [ ] Итоговый отчёт содержит commands, artifacts, limitations, next step.
-

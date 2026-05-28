@@ -26,15 +26,19 @@
 3. Для sequence task сравнить flattened, engineered и sequence representations.
 4. Считать classification metrics и trading metrics отдельно.
 5. Проверить BUY/SELL отдельно.
-6. Сохранить baseline report и confusion matrix.
-7. Зафиксировать baseline, который должен быть побит новым кандидатом.
+6. Для execution-aware задач считать trading metrics по той же `entry_price`, spread, fill policy и PnL convention, что указаны в target contract.
+7. Сохранить baseline report и confusion matrix.
+8. Зафиксировать baseline, который должен быть побит новым кандидатом.
 
 ### Обязательные проверки
 
 - Baseline использует тот же split и тот же live-safe feature contract.
+- Baseline использует тот же execution convention, что и будущий winner.
 - Baseline не подбирается на test.
 - При дисбалансе смотреть precision/recall/F1/MCC, а не только accuracy.
 - Trading baseline включает издержки или помечен gross diagnostic.
+- Если canonical spread уже влияет на labels/fill, baseline без него имеет статус `DIAGNOSTIC_ONLY`.
+- Zero-spread baseline не является baseline для final verdict, если production execution имеет ненулевой spread.
 
 ### Критерии успешного завершения
 
@@ -56,4 +60,3 @@
 - Если простая модель даёт близкий результат: усложнение должно иметь практический смысл, а не только лучшую offline metric.
 
 ---
-

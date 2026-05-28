@@ -26,9 +26,16 @@
    - как трактуется timeout;
    - как считать reversal;
    - какие цены используются: open, close, high/low, bid/ask.
-6. Проверить distribution targets по train/validation/test.
-7. Проверить distribution по сторонам BUY/SELL.
-8. Добавить invariant tests или воспроизводимый audit label convention.
+6. Если label зависит от исполнения, включить execution-aware поля в target contract:
+   - `entry_price` convention;
+   - measured/canonical spread convention для BUY и SELL;
+   - fill/no-fill outcome;
+   - `fill_lag`;
+   - ambiguous same-bar policy;
+   - `pnl_r` или другую заранее выбранную PnL-единицу для evaluation.
+7. Проверить distribution targets по train/validation/test.
+8. Проверить distribution по сторонам BUY/SELL.
+9. Добавить invariant tests или воспроизводимый audit label convention.
 
 ### Обязательные проверки
 
@@ -38,6 +45,9 @@
 - Timeout не смешивается с SL, если это разные исходы.
 - BUY и SELL считаются симметрично или асимметрия явно описана.
 - Target не зависит от test-selected threshold.
+- Если live не может исполнить вход по `Close[row]`, такая label convention разрешена только как `DIAGNOSTIC_ONLY`.
+- Если canonical spread не равен нулю, labels со `spread=0` разрешены только как `DIAGNOSTIC_ONLY`.
+- PF для execution-aware labels считается по PnL (`pnl_r`, пункты или деньги), а не по `count(TP) / count(SL)`, если timeout/fill/no-fill могут иметь ненулевой результат.
 
 ### Критерии успешного завершения
 
@@ -46,6 +56,7 @@
 - Есть sanity check распределения классов и сторон.
 - Есть тесты или audit для edge cases.
 - Известно, какие target-колонки являются production labels, а какие diagnostic.
+- Если используется limit/stop entry, известны no-fill rate, fill-lag distribution и ambiguous-rate.
 
 ### Типовые ошибки
 
@@ -54,6 +65,9 @@
 - Смешивание timeout, SL и neutral без явного смысла.
 - Использование future target как feature из-за удобного расположения в CSV.
 - Использование `target_*`/`label_*` wildcard как input из-за нестрогого парсинга колонок.
+- Поздно добавлять spread/entry/fill convention только на backtest-этапе, если они меняют labels или candidate selection.
+- Считать `Close[row]` реалистичной ценой входа без доказательства, что live-контур может открыть сделку по этой цене.
+- Использовать zero-spread labels как production target или validation gate.
 
 ### Ветвления
 
@@ -73,4 +87,3 @@
 5. Итоговый торговый сигнал использует один конкретный горизонт. Но остальные таргеты — diagnostic: если модель хороша на горизонте 12, но плоха на 48, это ограничение области применения.
 
 ---
-

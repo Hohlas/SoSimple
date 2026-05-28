@@ -36,6 +36,14 @@
 
    Проверить устойчивость Net PF к удвоению каждой издержки по отдельности.
 
+   Для spread grid использовать порядок:
+   - `1x canonical`: основной gate;
+   - `2x stress`: обязательный стресс;
+   - `4x` или выше: поиск break-point, если кандидат переживает `2x`;
+   - `0x`: только optional diagnostic для отладки геометрии labeler-а и gross-edge sanity check.
+
+   Если spread, `entry_price`, fill/no-fill policy или PnL convention влияют на labels, candidate selection или frozen rule, они относятся не только к backtest costs, а к target/execution contract. В таком случае они должны быть зафиксированы до Stage 04/07 и не могут впервые вводиться на Stage 12.
+
 2. Считать gross и net results отдельно.
 3. Запустить offline backtest по тому же trading protocol.
 4. Запустить sequential simulation для single-position или max-positions ограничения.
@@ -48,6 +56,8 @@
 - Cost assumptions указаны до final verdict.
 - Entry timing совпадает с target и export.
 - Spread/commission/slippage не оставлены "на потом".
+- Canonical spread является основным gate; zero-spread не участвует в `PASS/FAIL`.
+- Выполнен stress grid по spread или явно обосновано, почему он неприменим.
 - Timeout PnL и SL/TP PnL анализируются отдельно.
 - Пропущенные входы не считаются нулевым риском без обоснования.
 
@@ -57,6 +67,7 @@
 - Известно, какие издержки убивают стратегию.
 - Есть список расхождений offline vs tester.
 - Gross-only результат не выдан за production.
+- Zero-spread результат, если он был запущен, явно помечен `DIAGNOSTIC_ONLY`.
 
 ### Типовые ошибки
 
@@ -64,6 +75,8 @@
 - Считать OHLC close эквивалентом tick execution.
 - Не учитывать requote и missed opens.
 - Делать вывод о модели по M5 diagnostic, если production H1.
+- Делать zero-spread результат каноническим или равноправным trading experiment.
+- Менять spread/entry/fill convention после validation и считать это тем же frozen candidate.
 
 ### Проверка симулятора сделок
 
@@ -91,4 +104,3 @@
 - Если requote/open failures частые: сначала чинить execution reliability, не модель.
 
 ---
-

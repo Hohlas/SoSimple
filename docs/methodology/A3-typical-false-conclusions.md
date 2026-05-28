@@ -17,8 +17,10 @@
 - Duplicate timestamps интерпретировались как ошибка данных, хотя это разные события одного бара.
 - Online/tester PnL-разница смешивала ML signal risk и execution risk.
 - Spread, slippage, requote и missed opens не были включены в ранний вывод.
+- Spread, `entry_price` или fill policy меняли labels/frozen rule, но рассматривались как поздняя backtest-поправка.
+- Zero-spread PF или `Close[row]` entry выдавались за production-качество без доказательства live-исполнимости.
+- Zero-spread grid row интерпретировался как равноправный trading candidate, хотя он пригоден только для диагностики.
 - Aggregate PF скрывал слабую сторону SELL или отрицательный год.
 - BUY-only или SELL-filter объявлялись улучшением после test, хотя это новая гипотеза и требует нового validation cycle.
 - Рост PF объяснялся "лучшим сигналом", хотя фактически мог идти от лучшей цены входа на провальных сигналах.
 - Sequential PF (SeqPF) использовался как метрика качества модели. Shuffle-тест показал разброс 0.68–4728 при одном и том же PF=1.10 — SeqPF определяется порядком сделок, а не качеством модели. Исключён из gate-критериев.
-

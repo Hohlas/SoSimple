@@ -18,9 +18,16 @@
 2. Зафиксировать тип задачи: direction, regression, take/skip, barrier outcome, execution policy, signal filter.
 3. Зафиксировать единицу решения: строка датасета, бар, фрактал, уровень, сигнал или сделка.
 4. Зафиксировать `decision_time`: open/close бара, таймфрейм, инструмент, момент входа.
-5. Заранее задать gate-критерии: PF, число сделок, минимальное число сделок в год, просадка, отрицательные годы, BUY/SELL устойчивость, baseline uplift.
-6. Заранее определить, что будет считаться провалом.
-7. Создать короткую запись о гипотезе, split-протоколе, метриках и expected artifacts.
+5. Зафиксировать execution convention до обучения:
+   - тип входа: market, limit, stop или другой;
+   - цена входа: close/current, next open, limit price, Bid/Ask;
+   - fill/no-fill rule и допустимый fill lag;
+   - canonical spread и stress grid без zero-spread как trading gate;
+   - правила для commission, slippage, latency, missed opens;
+   - единица PnL: пункты, ATR/R-multiples или деньги.
+6. Заранее задать gate-критерии: PF, число сделок, минимальное число сделок в год, просадка, отрицательные годы, BUY/SELL устойчивость, baseline uplift.
+7. Заранее определить, что будет считаться провалом.
+8. Создать короткую запись о гипотезе, split-протоколе, метриках и expected artifacts.
 
 ### Обязательные проверки
 
@@ -28,6 +35,9 @@
 - Test не используется как validation.
 - Для каждого будущего результата заранее известен allowed verdict.
 - Любой результат с неясным feature contract помечается `DIAGNOSTIC_ONLY`.
+- Любой результат с неясным или нереалистичным execution convention помечается `DIAGNOSTIC_ONLY`.
+- Zero-spread запуск допустим только как `DIAGNOSTIC_ONLY` для отладки механики и не может закрывать trading gates.
+- Если изменение `entry_price`, spread, fill policy или PnL convention меняет labels, candidate selection или frozen rule, это новый ML-цикл, а не пересчёт метрик.
 
 ### Критерии успешного завершения
 
@@ -46,8 +56,8 @@
 ### Ветвления
 
 - Если `decision_time` неизвестен: остановить ML-часть и описать торговый контур.
+- Если execution convention неизвестен: остановить ML-часть или проводить только diagnostic run без verdict.
 - Если критерии успеха не заданы: проводить только exploratory analysis без verdict.
 - Если задача меняется после test: открыть новый экспериментальный цикл с новым frozen test.
 
 ---
-
