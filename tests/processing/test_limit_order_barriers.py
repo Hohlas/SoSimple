@@ -332,8 +332,8 @@ class TestPnL:
             ohlc_path = os.path.join(tmp, 'test_ohlc.csv')
             _make_ohlc_csv(ohlc_path, [
                 ('2020.01.01 00:00', 1500.0, 1502.0, 1499.0, 1500.0),
-                ('2020.01.01 01:00', 1500.0, 1502.0, 1499.0, 1501.0),  # fill
-                ('2020.01.01 02:00', 1501.0, 1505.0, 1500.0, 1504.0),  # no TP → timeout
+                ('2020.01.01 01:00', 1500.0, 1502.0, 1499.0, 1501.0),
+                ('2020.01.01 02:00', 1501.0, 1505.0, 1500.0, 1504.0),
             ])
             df = _make_nero_df(
                 times=['2020.01.01 00:00'],
@@ -341,7 +341,24 @@ class TestPnL:
                 fractal0_vals=[_fractal_str(1501.0, 0)],
             )
             result = LABEL_FN(df, ohlc_path, barrier_window=1)
-            # fill at 01:00, barrier scan from 02:00, 1 bar.
-            # TP=1506, SL=1494. High=1505<1506, Low=1500>1494 → timeout
-            # last_close=1504. pnl = (1504-1500)/2 = 2.0
             assert abs(result.at[0, 'buy_sl3_tp3_pnl_r'] - 2.0) < 0.01
+
+    def test_skipped_row_gets_nofill_sentinel(self):
+        """Skipped rows (bad fractal0, no time in OHLC) must have NO_FILL_SENTINEL."""
+        with tempfile.TemporaryDirectory() as tmp:
+            ohlc_path = os.path.join(tmp, 'test_ohlc.csv')
+            _make_ohlc_csv(ohlc_path, [
+                ('2020.01.01 00:00', 1500.0, 1502.0, 1499.0, 1500.0),
+                ('2020.01.01 01:00', 1500.0, 1502.0, 1499.0, 1501.0),
+            ])
+            # row with empty fractal0 — must be skipped, all TB targets = NO_FILL
+            df = _make_nero_df(
+                times=['2020.01.01 00:00'],
+                atr_vals=[2.0],
+                fractal0_vals=[''],
+            )
+            result = LABEL_FN(df, ohlc_path)
+            assert result.at[0, 'buy_fill_lag'] == -1
+            assert result.at[0, 'sell_fill_lag'] == -1
+            assert result.at[0, 'buy_sl3_tp3'] == LIMIT_NO_FILL_SENTINEL
+            assert result.at[0, 'sell_sl3_tp3'] == LIMIT_NO_FILL_SENTINEL

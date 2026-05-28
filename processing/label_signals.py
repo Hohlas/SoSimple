@@ -1169,22 +1169,38 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
         fractal0 = parse_fractal(row.get('fractal0'))
         if fractal0 is None:
             skipped += 1
+            df.at[i, 'buy_fill_lag'] = -1
+            df.at[i, 'sell_fill_lag'] = -1
+            for name in TB_TARGET_NAMES:
+                df.at[i, name] = LIMIT_NO_FILL_SENTINEL
             continue
 
         row_time = row.get('time')
         if pd.isna(row_time) or row_time == '':
             skipped += 1
+            df.at[i, 'buy_fill_lag'] = -1
+            df.at[i, 'sell_fill_lag'] = -1
+            for name in TB_TARGET_NAMES:
+                df.at[i, name] = LIMIT_NO_FILL_SENTINEL
             continue
 
         try:
             row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
         except ValueError:
             skipped += 1
+            df.at[i, 'buy_fill_lag'] = -1
+            df.at[i, 'sell_fill_lag'] = -1
+            for name in TB_TARGET_NAMES:
+                df.at[i, name] = LIMIT_NO_FILL_SENTINEL
             continue
 
         row_idx = time_idx.get(row_dt)
         if row_idx is None:
             skipped += 1
+            df.at[i, 'buy_fill_lag'] = -1
+            df.at[i, 'sell_fill_lag'] = -1
+            for name in TB_TARGET_NAMES:
+                df.at[i, name] = LIMIT_NO_FILL_SENTINEL
             continue
 
         entry_exec_price = ohlc[row_dt][3]  # Bid close
