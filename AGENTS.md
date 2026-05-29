@@ -46,7 +46,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - Всегда создавай новую feature-ветку для каждой задачи.
 - Не используй worktree.
 - Используй окружение: ~/git/SoSimple/.venv/bin/activate
-- `git push` не делать без явной просьбы пользователя.
+- `git commit`,`git push` не делать без явной просьбы пользователя.
 - Для bugfix не делать рефакторинг "заодно".
 - При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
 - После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)).
@@ -65,7 +65,6 @@ ML-бот для прогнозирования разворотов Forex (H1).
 | `MODULE_INDEX.md` | Реестр всех модулей со статусами, назначением и точками входа | [`MODULE_INDEX.md`](MODULE_INDEX.md) |
 | `docs/DATA_FLOW.md` | Схема потока данных MT4→ML→MT4 и навигация по этапам pipeline | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) |
 | `docs/README.md` | Карта артефактов внутри `docs/` и правила их обновления | [`docs/README.md`](docs/README.md) |
-| `.claude/memory/` | Стабильные правила, предпочтения, долгоживущие инварианты | [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md) |
 
 **В начале каждой сессии** (wiki Query-workflow, см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)):
 1. Прочитай `wiki/index.md` — понять существующий синтез.
