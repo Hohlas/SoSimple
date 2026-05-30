@@ -288,6 +288,9 @@ MT/tester/logs/*
 *.swp
 *~
 
+# Файлы INI (lastparameters — меняется при каждом тесте)
+*.ini
+
 # CSV, XLSX files
 *.csv
 *.xlsx

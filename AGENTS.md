@@ -77,7 +77,6 @@ ML-бот для прогнозирования разворотов Forex (H1).
 2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
 3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
 4. Синтезированные знания: `wiki/`.
-5. Вспомогательная память: `.claude/memory/`.
 
 ## Структура проекта
 

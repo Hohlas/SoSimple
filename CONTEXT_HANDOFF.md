@@ -1,47 +1,61 @@
 # Context Handoff
 
-Дата: 2026-05-21.
+Дата: 2026-05-29.
 
 ## Текущий этап
 
-Завершён Transformer Encoder Direction experiment — проверка трёх семейств таргетов (TB, Reg, Trail) на frozen encoder признаках.
+Завершён Limit-Order Entry Convention experiment — проверка исполнимости Close-entry через pending BUY/SELL LIMIT на уровне Close[row].
 
 ### Результаты
 
-| Семейство | Лучший val PF | Сделок | Gate A (>=1.5) |
-|-----------|-------------|--------|-----------------|
-| TB (16 комбо) | 1.35 BUY | 73 | провален |
-| Reg (2 комбо) | 1.21 SELL | 41 | провален |
-| Trail (6 комбо) | 2.41 BUY | 58 | пройден (0.6% util) |
-
-**Вердикт**: Fractal features Transformer-энкодера не несут direction-сигнала. Trail даёт иллюзию на 58 сделках, но не масштабируется. Fine-tune Transformer хуже frozen RF на всех комбинациях.
+| Фаза | Статус | Результат |
+|------|--------|-----------|
+| Spec + Plan | ✅ | Дизайн limit-order entry утверждён |
+| Labeling + Pipeline + Purge | ✅ | `DATA/limit_order/` готов |
+| Baseline spread grid (Phase 1+2) | ✅ | BUY PF=1.53 PASS, SELL FAIL |
+| Transformer BUY (Phase 3) | ✅ | AUC=0.5 FAIL — нет сигнала |
 
 ### Ключевые находки
 
-1. 32-dim CLS token признаки (front/back/impulse/цена) не коррелируют с будущим направлением
-2. Очистка таргетов от contamination (OHLC-derived) снизила PF до ~1.0 — честный результат
-3. SeqPF — невалидная метрика: shuffle-тест показал разброс 0.68–4728 при PF=1.10
-4. Trail — единственное семейство с PF > 1.5, но на 0.6% utilisation
-5. Frozen RF > Transformer fine-tune: энкодер не дообучается на малом датасете
+1. **Limit-order entry convention работает**: Close-entry стал исполнимым через pending лимитные ордера. BUY PF=1.53 (RF) на каноническом спреде 0.20, gate пройден.
+2. **Spread sensitivity**: PF монотонно деградирует: 1.56→1.53→1.23→1.02 при спредах 0→0.20→0.40→0.80. Робастность ограничена.
+3. **SELL не работает**: XAUUSD bull market асимметрия — все SELL комбинации FAIL по negative_years.
+4. **Fill — мгновенный**: 97.4% BUY лимитников заполняются на первом же баре (lag=0). Fill rate ~96% при каноническом спреде.
+5. **Transformer бесполезен**: на fractal features AUC=0.5 (чистая случайность). Повторяет вывод Transformer Direction (2026-05-21): fractal features не несут predictивного сигнала для нейросети.
+6. **RF работает лучше Transformer**: за счёт деревьев на инженерных признаках, а не сырых фракталах.
 
 ### Git
 
-Ветка: `DeepSeek-direct-direction-results`.
+Ветка: `feature/limit-order-entry-convention`.
 
 ### Созданные/изменённые файлы
 
-- `ML/prepare_raw_features.py` — raw up/dn из OHLC (+1000 колонок)
-- `ML/transformer_direction_train.py` — DataLoader, frozen RF grid, fine-tune loop
-- `DATA/raw_features_for_direction.pkl` — 1544 MB, 3223 колонки
-- `ML/reports/transformer_direction/` — все артефакты (prepared_features, targets_*.npz, validation_grid_frozen.json, feature_statistics.json)
-- `docs/reports/2026-05-21-transformer-direction.md` — финальный отчёт
+- `docs/superpowers/specs/2026-05-27-limit-order-entry-design.md` — design spec (261 строк)
+- `docs/superpowers/plans/2026-05-27-limit-order-entry-implementation.md` — imp plan
+- `docs/reports/2026-05-29-limit-order-entry.md` — финальный отчёт
+- `processing/label_signals.py` — `label_limit_order_barriers()` 
+- `tests/processing/test_limit_order_barriers.py` — 15 тестов
+- `processing/label_main.py` — `--limit-order --spread` флаги
+- `processing/purge_split.py` — 30-bar time-based purge
+- `processing/label_audit.py` — fill/ambiguity audit
+- `ML/baseline/benchmark_limit_order_entry.py` — RF/HGB baseline
+- `ML/baseline/reports/limit_order_spread_grid.md` — Phase 1+2 отчёт
+- `ML/limit_order_train.py` — Phase 3 Transformer обучение
+- `ML/reports/limit_order_transformer.json` — Phase 3 результаты
+- `DATA/limit_order/` — лейблы limit-order
+- `.opencode/agents/reviewer.md` — QA review agent
+- `CHANGELOG.md` — запись от 2026-05-29
 
 ## Открытые вопросы
 
-1. **Direction prediction из fractal features — тупик.** Нужны признаки другого типа (макро, альтернативные данные)
-2. **Entry_path_v1_live_safe** остаётся лучшим production-кандидатом (не-direction подход, Test PF ~1.4)
-3. **Куда дальше?** Принять ограничения fractal features и либо: (а) искать direction signal в других данных, (б) фокусироваться на execution/risk management, (в) улучшать существующий entry_path подход
+1. **Entry convention**: Limit-order (PF=1.53) — валидный кандидат для production. Нужен MT4 execution (pending orders в роботе) — отложен.
+2. **Feature engineering**: Fractal features исчерпаны для нейросетей. Нужны engineered признаки (как у RF baseline) или новые источники данных.
+3. **Transformer vs RF gap**: почему RF работает с engineered features а Transformer с сырыми фракталами — нет. Возможно, проблема в архитектуре (classification head вместо regression PnL) или недостатке данных (5k BUY fill строк).
 
 ## Следующий шаг
 
-Обсудить стратегию: признать тупик direct direction и выбрать новое направление исследований.
+Обсудить стратегию:
+- (a) MT4 execution лимитников — сделать limit-order готовым к live
+- (b) Искать новые источники predictивного сигнала (не fractal features)
+- (c) Улучшать RF baseline на engineered признаках (уже PF=1.53)
+- (d) Закрыть ветку и переключиться на другие направления

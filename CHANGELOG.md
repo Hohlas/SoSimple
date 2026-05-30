@@ -2,6 +2,32 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-05-29] - Limit-Order Entry Convention: Phase 1–3
+
+### Добавлено
+- `label_limit_order_barriers()` в `processing/label_signals.py` — 6-bar fill window, 24-bar barrier, spread-adjusted exit, per-side fill_lag, PnL columns (`_pnl_r`), ambiguous flags
+- `tests/processing/test_limit_order_barriers.py` — 15 тестов: BUY/SELL fill, NO_FILL, spread, ambiguity, PnL, skipped rows
+- `--limit-order --spread` флаги в `label_main.py`, вывод в `DATA/limit_order/`
+- `processing/purge_split.py` — 30-bar time-based purge на train→val, val→test, test tail границах
+- `processing/label_audit.py` — аудит fill_lag, ambiguity per target, PnL comparison
+- `ML/baseline/benchmark_limit_order_entry.py` — RF/HGB baseline на limit-order labels, PF из `_pnl_r`, negative_years через groupby
+- `ML/limit_order_train.py` — Transformer Phase 3 на BUY TB таргетах
+- `.opencode/agents/reviewer.md` — QA review agent для docs/code/experiments
+
+### Результаты
+- **Phase 1+2 PASS** для канонического BUY лимитника (spread=0.20): RF PF=1.53, fill 96.4%, 55 сделок/год, 0 отрицательных лет
+- **SELL FAIL**: HGB PF=1.36 (neg_years=1), RF PF=0.91 (neg_years=3) — XAUUSD bull market асимметрия
+- **Spread sensitivity**: PF монотонно падает: 1.56→1.53→1.23→1.02 (0→0.20→0.40→0.80)
+- **Fill statistics** (spread=0): 98.5% BUY fill, 97.4% instant (lag=0), 1.4% ambiguous
+- **Phase 3 Transformer FAIL**: Mean AUC=0.575, главный target buy_sl2_tp3 AUC=0.498 — fractal features без predictивного сигнала
+- **Вердикт**: Close-entry сделан исполнимым через лимитные ордера. Transformer на fractal features не работает (консистентно с transformer-direction 2026-05-21).
+
+### Исправлено
+- Skipped rows (bad fractal0, missing time): TB targets теперь получают NO_FILL_SENTINEL вместо stale default 0.5
+- Mismatch bug: fill_lag=-1 в skipped rows, TB targets оставались на 0.5 вместо -999
+
+<!-- подробности: docs/reports/2026-05-29-limit-order-entry.md -->
+
 ## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
 
 ### Добавлено
