@@ -1,0 +1,99 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-24",
+  "updated_at": "2026-05-27",
+  "stage00": {
+    "verdict": "PASS",
+    "reason": "Hypothesis, decision_time, decision unit, split protocol, gates, feature contract requirement, and expected artifacts are fixed before experiments."
+  },
+  "stage01": {
+    "verdict": "PASS",
+    "reason": "Raw Nero/PIC field statuses are classified; no unknown field is allowed as model input; old offline signal candidate-source is explicitly rejected; new candidate universe is all-row current snapshot state.",
+    "restrictions": [
+      "Do not use provider-transfer conclusions until provider metadata is documented.",
+      "Do not use timezone-sensitive conclusions until MT4 server timezone is documented.",
+      "Do not use offline signal != 0 gate as production candidate-source.",
+      "Do not use current small raw Nero.csv as forward profitability proof."
+    ]
+  },
+  "stage02": {
+    "verdict": "PASS",
+    "reason": "Pipeline runs reproducibly: sort (0 errors) → label → split (70/15/15). PLL normalization implemented in ML layer (8 groups, fit train only). No future-derived fields in model inputs. New features (log_price_rel, atr_band, count_in_band, delta_shift) added. Shift field added to MQL producer.",
+    "artifacts": [
+      "stage02_data_pipeline.json",
+      "ML/pll_normalizer.py",
+      "ML/checkpoints/pll_normalizer_v1.pkl",
+      "DATA/Nero_{train,validation,test}_labeled.csv"
+    ]
+  },
+  "stage03": {
+    "verdict": "PASS",
+    "reason": "14/14 preflight checks PASS. 5 production-gate checks (5,12,16,17,18) require model/online path — deferred to stages 08-14. No future-derived fields in X tensor. Pools isolated. ATR contract documented. fractal*.up/dn vs target up/dn naming convention enacted.",
+    "artifacts": [
+      "stage03_leakage_gate.json"
+    ]
+  },
+  "stage04": {
+    "verdict": "PASS",
+    "reason": "56 target columns audited. TB convention explicit (0=SL, 0.5=timeout, 1=TP). No timeout/SL mixing. BUY/SELL nearly symmetric. Up/dn monotonicity verified (0 violations). All targets future-derived, excluded from X tensor. Extreme imbalance noted (sl2_tp9: 2.3% TP) but does not block pipeline.",
+    "artifacts": [
+      "stage04_labeling_audit.json"
+    ]
+  },
+  "stage05": {
+    "verdict": "PASS",
+    "reason": "No NaN/Inf on allowed train/validation scope. Constant features identified and excluded. Class balance stable on train/validation. Monotonic invariants verified. Critical finding: ATR regime shift train=3.0 → val=4.85 (KS=0.561). Test split not inspected at Stage 05; frozen test purity preserved.",
+    "artifacts": [
+      "stage05_eda_audit.json"
+    ]
+  },
+  "stage06": {
+    "verdict": "PASS",
+    "reason": "Sequential split manifest added: train 2004-2019, val 2019-2022, test 2022-2026. No shuffle, no row overlap, 0 sorting errors. No purged embargo was applied; this is recorded as a restriction. Any future candidate that reaches Stage 11 must handle regime/year robustness.",
+    "artifacts": [
+      "stage06_temporal_split_manifest.json"
+    ]
+  },
+  "stage07": {
+    "verdict": "PASS",
+    "reason": "Dummy baselines + ML baselines on buy_sl3_tp3. Baseline report now includes classification metrics, confusion matrices, per-year slices, and diagnostic BUY/SELL slices. Best simple baseline is RF_160, but it is not production-ready because it has 1 negative validation year. Baseline to beat: RF_160 validation PF plus 0 negative years. Test NOT viewed.",
+    "artifacts": [
+      "stage07_baselines.json",
+      "ML/baseline_candidate_source.py"
+    ]
+  },
+  "stage08": {
+    "verdict": "PASS",
+    "reason": "Model sweep: RF, XGB, MLP (flat) + BiLSTM, Transformer (3D+PLL). Timeout rows are excluded from binary TP-vs-SL training/evaluation. Current validation sweep: Transformer PF=11.60/63 trades, BiLSTM PF=1.74/293 trades, RF=1.33. Artifact records methodology metadata, seed/device policy, feature/normalizer contract, validation predictions, and limitations. Stage 08 remains exploratory validation-only; deterministic checkpoint freeze happens in Stage 09.",
+    "artifacts": [
+      "stage08_model_sweep.json",
+      "stage08_validation_predictions.csv",
+      "ML/model_sweep_candidate_source.py"
+    ]
+  },
+  "stage09": {
+    "verdict": "FAIL",
+    "reason": "After switching evaluation to R-multiple PnL and executable entry=Open[row+1], validation freeze found no stable canonical rule. stage09_stability_refreeze.json has eligible_count=0 and canonical_rule=null. Best broad rule was PF≈1.05 and the only PF≥1.5 rule had 5 trades, 2 negative years, and failed stability/bootstrap gates. Diagnostic Close[row] variants are not live-executable for the current fractal0/watcher path.",
+    "artifacts": [
+      "stage09_frozen_rule.json",
+      "stage09_stability_refreeze.json",
+      "ML/validation_freeze.py",
+      "ML/stage09_stability_refreeze.py",
+      "ML/checkpoints/transformer_winner.pt",
+      "ML/checkpoints/pll_normalizer_v1.pkl"
+    ]
+  },
+  "stage10": {
+    "verdict": "INVALID",
+    "reason": "Stage 10 has no valid frozen candidate after Stage 09 FAIL. The current stage10_frozen_test_oos.json is diagnostic only: it detects checkpoint_hash_matches_rule=false and reports model_verdict=invalid_frozen_protocol. Test metrics must not be used as evidence.",
+    "artifacts": [
+      "stage10_frozen_test_oos.json",
+      "stage10_test_predictions.csv",
+      "stage10_test_trades.csv",
+      "ML/stage10_frozen_test_oos.py"
+    ]
+  },
+  "next_allowed_stage": null,
+  "stop_condition": "No transition beyond Stage 09. Start a new validation hypothesis or revise the model/entry protocol before any frozen test.",
+  "requires_user_pass_to_continue": true
+}

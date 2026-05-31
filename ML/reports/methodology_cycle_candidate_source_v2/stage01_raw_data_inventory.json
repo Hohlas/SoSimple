@@ -1,0 +1,119 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-24",
+  "methodology_stage": "01-raw-data-inventory",
+  "stage_verdict": "PASS",
+  "raw_source": {
+    "path": "MT/MQL4/Files/Nero.csv",
+    "producer": "MT/MQL4/Experts/$o$imple.mq4 includes MT/MQL4/Include/lib_PIC.mqh; EXPERT::NERO_CSV_CREATE writes Nero.csv",
+    "instrument": "not encoded in file name; project docs identify active contour as XAUUSD",
+    "timeframe": "current file cadence is mixed 5/10/15/20 minute diagnostic-like rows; historical labeled H1 splits remain the ML-quality source",
+    "provider": "not encoded in current raw CSV; provider drift must be handled separately",
+    "timezone": "MT4 server time; not explicitly encoded in CSV",
+    "period_current_raw": "2026-05-22 00:05 to 2026-05-22 22:50",
+    "rows_current_raw": 121,
+    "columns_current_raw": 104,
+    "file_bytes": 1198613,
+    "encoding_observed": "ASCII text with CRLF",
+    "separator": ";"
+  },
+  "csv_contract": {
+    "raw_header": "time;signal;predict;ATR;fractal0..fractal99",
+    "fractal_columns": 100,
+    "fractal_field_count": 22,
+    "fractal_format": "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr",
+    "head_check_rows": 10,
+    "head_fractal_cells_checked": 1000,
+    "bad_fractal_field_counts_in_head": 0,
+    "monotonic_updn_violations_in_head": 0
+  },
+  "time_checks": {
+    "duplicate_times_current_raw": 6,
+    "top_time_deltas_current_raw": [
+      "00:10:00",
+      "00:05:00",
+      "00:15:00",
+      "00:20:00",
+      "00:00:00"
+    ],
+    "decision": "duplicate times are not removed at inventory stage; they can represent multiple events per bar and require downstream handling by explicit signal-time rules"
+  },
+  "producer_audit": {
+    "entry_file": "MT/MQL4/Experts/$o$imple.mq4",
+    "include_evidence": "#include <lib_PIC.mqh>",
+    "producer_file": "MT/MQL4/Include/lib_PIC.mqh",
+    "header_writer": "EXPERT::NERO_CSV_CREATE() writes time;signal;predict;ATR;fractal0..fractal99",
+    "row_writer": "EXPERT::NERO_CSV_CREATE(int cur_bar) writes BTIME(cur_bar);0;0;Atr.Slow plus serialized F[] fractals",
+    "new_level_behavior": "NEW_LEVEL initializes Up/Dn horizons to 0 and writes the row after creating a new level",
+    "updn_behavior": "LEVELS_FIND_AROUND incrementally updates F[f].Up/Dn for distances <= 3/6/12/24/48 from current bar state",
+    "known_quirks": [
+      "Raw top-level signal and predict are written as 0 by current MQL producer; Python labeling later overwrites them for supervised training.",
+      "F[] fields are evolving state; current row values are live-safe only as current snapshot values, not as stable immutable attributes.",
+      "Current raw file is small diagnostic data and must not be used as ML-quality forward proof.",
+      "Provider and timezone are not encoded in raw CSV."
+    ]
+  },
+  "field_status_summary": {
+    "live_safe": [
+      "time",
+      "ATR",
+      "fractal*.T",
+      "fractal*.P",
+      "fractal*.Dir",
+      "fractal*.FrntVal",
+      "fractal*.BackVal",
+      "fractal*.Strong",
+      "fractal*.Brk",
+      "fractal*.Rev",
+      "fractal*.PwrSum",
+      "fractal*.Cnt",
+      "fractal*.Imp",
+      "fractal*.Up12",
+      "fractal*.Dn12",
+      "fractal*.Up24",
+      "fractal*.Dn24",
+      "fractal*.Up48",
+      "fractal*.Dn48",
+      "fractal*.Up3",
+      "fractal*.Dn3",
+      "fractal*.Up6",
+      "fractal*.Dn6",
+      "fractal*.FractalAtr",
+      "session_hour",
+      "weekday",
+      "range_atr_6",
+      "body_atr_3",
+      "vol_regime_24"
+    ],
+    "target_only_or_future_derived": [
+      "Python-labeled signal",
+      "Python-labeled predict",
+      "top-level up_3..dn_48 labels",
+      "trade_fav_*",
+      "trade_adv_*",
+      "trade_outcome_*",
+      "trade_pnl_*",
+      "archetype_target",
+      "buy_sl*_tp*",
+      "sell_sl*_tp*",
+      "ret_*",
+      "fav_*",
+      "adv_*",
+      "path_6_class",
+      "ret_dir_atr_lag1",
+      "trail_*"
+    ],
+    "unknown": [
+      "provider",
+      "timezone"
+    ],
+    "unknown_allowed_in_model_inputs": false
+  },
+  "candidate_source_status": {
+    "old_offline_signal_gate": "FAIL",
+    "reason": "offline label_all().signal != 0 is built by forward-scan and raw live Nero.csv writes signal=0",
+    "new_cycle_candidate_source": "PASS for all-row current snapshot candidate universe, provided model inputs are restricted to live_safe fields",
+    "notes": "Any surrogate signal model must itself pass feature contract and validation gates before production use."
+  },
+  "stage_decision": "PASS for raw inventory and feature-source gating of the new all-row live-safe candidate-source cycle; old offline signal gate is explicitly rejected."
+}

@@ -1,0 +1,79 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "methodology_stage": "02-data-pipeline",
+  "stage_verdict": "PASS",
+  "pipeline": {
+    "entry_point": "processing/label_main.py",
+    "command": "python processing/label_main.py --input MT/MQL4/Files/Nero.csv --no-normalize",
+    "steps": [
+      "fractal_preprocessing.sort_fractals_in_dataframe — sort 100 fractals by time within each row",
+      "label_signals.label_all — signal + predict labels",
+      "label_signals.label_updn — up_3..dn_48 targets",
+      "label_signals.label_trade_targets — outcome-aligned trade targets",
+      "label_signals.label_first_barrier_hit — Triple Barrier labels (12 combos)",
+      "label_signals.label_entry_path_targets — entry_path_v1 targets",
+      "label_signals.label_trailing_stop_targets — trail_* targets",
+      "label_main.split_train_val_test — sequential 70/15/15 split",
+      "label_main.save_datasets — CSV export"
+    ],
+    "normalization": "skipped in pipeline (--no-normalize). PLL normalization deferred to ML layer (ML/pll_normalizer.py)."
+  },
+  "sorting": {
+    "script": "processing/fractal_preprocessing.py",
+    "key": "fractal time (field 0 of 23-field fractal format)",
+    "order": "descending (newest first)",
+    "quality": "59016/59016 rows correct, 0 errors"
+  },
+  "labeling": {
+    "signals_marked": 3192,
+    "predict_marked": 63006,
+    "updn_targets": "up_3..dn_48 (10 targets)",
+    "tb_combos": "12 (buy/sell × sl2/sl3 × tp3/tp6/tp9)",
+    "trail_targets": "9 (12/24/48 × x2/x4/x8)",
+    "row_level_targets": "ret_*_dir_atr, fav_*_atr, adv_*_atr, path_6_class, session_hour, weekday, vol_regime_24"
+  },
+  "normalization_groups": {
+    "method": "Piecewise Linear-Log (PLL), percentile=0.95, fit on train only",
+    "implementation": "ML/pll_normalizer.py::PLLFeatureNormalizer",
+    "checkpoint": "ML/checkpoints/pll_normalizer_v1.pkl",
+    "groups": {
+      "price": {"indices": [0], "reason": "absolute price in USD, separate scale"},
+      "front_back": {"indices": [2, 3], "reason": "amplitude distances around fractal, shared scale"},
+      "impulse": {"indices": [9], "reason": "different physics and scale (~10x smaller than front/back)"},
+      "power": {"indices": [7], "reason": "continuous level power measure"},
+      "count": {"indices": [8], "reason": "discrete match counter 1-50"},
+      "updn_h12": {"indices": [10, 11], "reason": "MFE/MAE state, up/dn close within horizon"},
+      "updn_h24": {"indices": [12, 13]},
+      "updn_h48": {"indices": [14, 15]}
+    },
+    "no_normalization": {
+      "indices": [1, 4, 5, 6, 16, 17, 18, 19],
+      "reason": "direction=±1, strong=binary, break=clipped-to-5, reverse=binary, ATR_ratio=log, hour_sin/cos=cyclic, time_pos=0..1"
+    },
+    "pre_clip": {"break_idx": 5, "clip_max": 5}
+  },
+  "split": {
+    "method": "sequential (time-ordered)",
+    "ratios": "70/15/15",
+    "train": {"rows": 44104, "period": "2004-07-06 20:00 – 2019-05-24 03:00", "size_bytes": 460132212},
+    "validation": {"rows": 9451, "period": "2019-05-24 06:00 – 2022-10-28 16:00", "size_bytes": 100983524},
+    "test": {"rows": 9451, "period": "2022-10-28 16:00 – 2026-05-25 18:00", "size_bytes": 102475728},
+    "hashes_sha256_16": {
+      "train": "5af9050b16567bc0",
+      "validation": "c66207045d6ae965",
+      "test": "d4cfc37f9656623e"
+    }
+  },
+  "raw_source": {
+    "file": "MT/MQL4/Files/Nero.csv",
+    "rows": 63006,
+    "period": "2004-07-06 20:00 – 2026-05-25 18:00",
+    "fractal_format": "23 fields (T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift)",
+    "columns": 104
+  },
+  "excluded_inputs": ["body_atr_3", "range_atr_6"],
+  "excluded_reason": "constant zero in all splits (zero_rate=100%)",
+  "allowed_features": "see feature_contract.csv and pll_normalizer.py PLL_GROUPS_3D",
+  "next_allowed_stage": "03-feature-contract-leakage"
+}

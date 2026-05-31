@@ -57,6 +57,7 @@
 - Считать структурную стабильность между seeds доказанной без формального tolerance.
 - Подменять frozen execution convention после validation и считать это тем же кандидатом.
 - Сравнивать canonical-spread winner с zero-spread candidate как с равноправными торговыми вариантами.
+- Считать рост PF доказательством улучшения модели без проверки, что изменился рейтинг сделок, а не цена входа: если PF вырос после смены entry_price/spread/fill, а рейтинг сделок не изменился — это entry-price effect, не signal improvement.
 
 ### Ветвления
 

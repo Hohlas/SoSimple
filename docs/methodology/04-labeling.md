@@ -76,6 +76,25 @@
 - Если класс слишком редкий: перейти к take/skip, ranking, binary one-vs-rest или изменить задачу.
 - Если одна сторона имеет другой режим: рассмотреть отдельные BUY/SELL модели, но как новый кандидат.
 
+### Entry/Exit convention examples
+
+#### Общее правило
+
+Execution convention has two layers: general contract and project-specific availability proof. General contract fixes entry type, entry price, spread, fill/no-fill, latency and PnL convention. Project-specific proof explains when the signal-producing object becomes available in live.
+
+#### Проектный пример: `fractal0`-контур
+
+Для текущего MT-контура `fractal0` становится полностью известен только на `Close` своего подтверждающего третьего бара. После этого MQL записывает строку 100 фракталов в `Nero.csv`, watcher считывает файл, выполняет preprocessing/inference и передаёт сигнал дальше. Общие задержки:
+
+| Источник задержки | Что определяет | Типовой порядок |
+|---|---|---|
+| Row materialization | Время записи строки в CSV | Секунды |
+| Watcher polling interval | Как часто watcher проверяет файл | Секунды |
+| Preprocessing/inference | Время обработки и предсказания | Сотни мс |
+| Order-send delay | Время отправки ордера в MT4 | Сотни мс |
+
+Следствие: `Close[row]`-entry для fractal0-контура является только `DIAGNOSTIC_ONLY`. `Open[row+1]` допустим только если доказано, что суммарная задержка позволяет отправить ордер до этого open. Иначе нужен first executable tick/price или MT tester execution.
+
 ### Для multi-target регрессии с монотонной структурой
 
 Когда модель предсказывает несколько целевых переменных с известной иерархией (например up_3, up_6, up_12, up_24, up_48 — более длинный горизонт не может иметь меньшее движение):

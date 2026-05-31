@@ -1,0 +1,54 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-25",
+  "methodology_stage": "03-feature-contract-leakage",
+  "stage_verdict": "PASS",
+  "verdict_rationale": "All 14 preflight checks applicable at this stage received PASS. 4 production-gate checks are not applicable before a model exists — they will be assessed at stages 08 (model dev), 13 (export/MT4 parity), and 14 (forward-test/online). This is consistent with methodology: checks 5/12/16/17/18 inherently require a trained model or online path.",
+  "preflight_checks": {
+    "passed": 14,
+    "failed": 0,
+    "details": {
+      "1_decision_time": {"verdict": "PASS", "ref": "stage00_research_contract.json"},
+      "2_sequential_split": {"verdict": "PASS", "detail": "train 2004-2019, val 2019-2022, test 2022-2026, no overlap"},
+      "3_target_not_in_input": {"verdict": "PASS", "detail": "X tensor (20 features) contains only fractal-level + time features. Forbidden fields absent."},
+      "4_live_safe_separation": {"verdict": "PASS", "ref": "feature_contract.csv"},
+      "6_fractal_order": {"verdict": "PASS", "detail": "0 sorting errors in 63006 rows"},
+      "7_normalization_consistency": {"verdict": "PASS", "detail": "PLL, percentile=0.95, checkpoint saved, 8 groups"},
+      "8_pool_isolation": {"verdict": "PASS", "detail": "PLL groups use input indices only. Targets not in any pool."},
+      "9_scale_audit": {"verdict": "PASS", "ref": "stage02_scale_audit_inputs.csv, targets.csv"},
+      "10_input_target_separation": {"verdict": "PASS", "detail": "Input PLL normalizer operates on selected indices only; targets not scaled."},
+      "11_dominance": {"verdict": "PASS", "detail": "2 flagged pools resolved by splitting groups / no normalization."},
+      "13_scaler_fit_train_only": {"verdict": "PASS", "detail": "PLLFeatureNormalizer.fit() on X_train (44104 samples)."},
+      "14_atr_contract": {"verdict": "PASS", "detail": "ATR_ratio = log(fractal_atr / ATR_slow). No further normalization."},
+      "15_constant_features": {"verdict": "PASS", "detail": "body_atr_3 and range_atr_6 excluded (zero_rate=100%)."}
+    }
+  },
+  "production_gate_checks_pending_model": {
+    "note": "These checks are part of the full 18-point leakage checklist but require a trained model, online path, or MT4 integration to assess. They will be re-evaluated at the relevant later stages (08, 13, 14).",
+    "5_online_contract_match": {"assess_at": "stage-08 (model development) or stage-13 (export)", "reason": "online inference path not built yet"},
+    "12_online_labeling": {"assess_at": "stage-14 (forward-test/online)", "reason": "online runner not implemented"},
+    "16_export_rule_freeze": {"assess_at": "stage-09 (validation freeze) or stage-13 (export)", "reason": "model and rule not yet selected"},
+    "17_mt4_parity": {"assess_at": "stage-13 (export-mt4-parity)", "reason": "no model/MT4 execution yet"},
+    "18_online_runner_blocks": {"assess_at": "stage-14 (forward-test-online)", "reason": "online runner not implemented"}
+  },
+  "x_tensor_features": [
+    "price", "direction", "front", "back", "strong", "break", "reverse",
+    "power", "count", "impulse",
+    "fractal*.up_12", "fractal*.dn_12", "fractal*.up_24", "fractal*.dn_24",
+    "fractal*.up_48", "fractal*.dn_48",
+    "ATR_ratio", "hour_sin", "hour_cos", "time_pos"
+  ],
+  "naming_convention": {
+    "rule": "fractal-level fields use fractal*. prefix; top-level targets use bare target name",
+    "input_updn": "fractal*.up_12, fractal*.dn_12, ... — live-safe accumulated state from MQL producer",
+    "target_updn": "target up_12, dn_12, ... — future MFE/MAE from Python labeling, used as regression targets only"
+  },
+  "forbidden_in_x": [
+    "predict", "ret_*", "ret_dir_atr_lag1", "fav_*", "adv_*",
+    "trade_*", "trail_*", "buy_sl*", "sell_sl*", "path_6_class",
+    "archetype_target", "signal", "up_3", "dn_3", "up_6", "dn_6"
+  ],
+  "atr_contract": "ATR_ratio = log(fractal_atr / ATR_slow). Fractal_atr from CSV field 21. ATR_slow from row-level ATR column. No further scaling.",
+  "candidate_source": "all-row current snapshot (not filtered by offline signal). Verified in candidate_source_live_safe_audit.md.",
+  "next_allowed_stage": "04-labeling"
+}

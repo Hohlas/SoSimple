@@ -20,7 +20,7 @@
    - swap;
    - slippage;
    - requote/open failure;
-   - latency;
+   - latency (включая: row materialization delay, watcher polling interval, preprocessing/inference/export delay, order-send delay);
    - next-bar entry;
    - position limits.
 
@@ -33,6 +33,10 @@
    | Slippage | Базовая из MT4/брокерских логов; стресс-тест: кратно базовой (2x, 4x, 8x) | Базовая — из логов; стресс — кратно измеренной |
    | Swap | Для H1 обычно пренебрежим, проверить при hold >= 24 бара | Зависит от брокера |
    | Missed opens | Из MT4 tester log: OPEN_FAILED / total_signals | Допустимо < 5% |
+   | Row materialization | Время записи строки в CSV (для watcher-контуров) | Секунды |
+   | Watcher polling | Интервал проверки файла watcher-ом | Секунды |
+   | Inference + export | Время preprocessing, model inference, CSV write | Сотни мс |
+   | Order-send | Время отправки ордера в MT4 | Сотни мс |
 
    Проверить устойчивость Net PF к удвоению каждой издержки по отдельности.
 
@@ -54,7 +58,8 @@
 ### Обязательные проверки
 
 - Cost assumptions указаны до final verdict.
-- Entry timing совпадает с target и export.
+- Entry timing совпадает с target и export, и entry price исполним после feature availability и runtime delays.
+- Next-bar open используется только если runtime может поставить ордер к этому open; иначе применяется first executable tick/price или tester execution.
 - Spread/commission/slippage не оставлены "на потом".
 - Canonical spread является основным gate; zero-spread не участвует в `PASS/FAIL`.
 - Выполнен stress grid по spread или явно обосновано, почему он неприменим.
@@ -73,6 +78,8 @@
 
 - Игнорировать комиссии и spread при PF около 1.
 - Считать OHLC close эквивалентом tick execution.
+- Использовать `Close[row]` entry для системы, где сигнал появляется только после закрытия `row`.
+- Считать `Open[row+1]` автоматически исполнимым без проверки задержек записи строки, watcher-а, inference и отправки ордера.
 - Не учитывать requote и missed opens.
 - Делать вывод о модели по M5 diagnostic, если production H1.
 - Делать zero-spread результат каноническим или равноправным trading experiment.

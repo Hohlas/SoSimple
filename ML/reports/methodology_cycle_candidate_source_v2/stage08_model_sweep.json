@@ -1,0 +1,83 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "08-model-development",
+  "methodology_stage": "08-model-development",
+  "stage_verdict": "PASS",
+  "created_at": "2026-05-25",
+  "updated_at": "2026-05-26",
+  "target": "buy_sl3_tp3",
+  "formulation": "binary TP-vs-SL model sweep; timeout rows excluded from training/evaluation masks",
+  "reproducibility": {
+    "seed": 42,
+    "python": "3.10.12",
+    "torch": "2.11.0+cu130",
+    "device_policy": "cuda if available for Stage 08 exploratory sweep; Stage 09 freeze is CPU deterministic",
+    "deterministic_stage": "Stage 08 is model-family exploration; deterministic freeze is enforced in Stage 09"
+  },
+  "feature_contract": {
+    "flat_builder": "ML/fractal_level_feature_builder.py",
+    "sequence_builder": "ML.data_loader.parse_fractals_to_3d",
+    "normalizer": "PLLFeatureNormalizer fit on train only for 3D models; StandardScaler fit on train only for flat models",
+    "test_viewed": false
+  },
+  "validation_predictions": "ML/reports/methodology_cycle_candidate_source_v2/stage08_validation_predictions.csv",
+  "limitations": [
+    "Stage 08 is exploratory and validation-only; no checkpoint is promoted here.",
+    "Neural results are single-seed exploratory results. Stage 09 performs deterministic freeze and stability checks.",
+    "Trading metrics are gross diagnostic; costs and drawdown are handled in later methodology stages."
+  ],
+  "results": [
+    {
+      "PF": 1.3333,
+      "trades": 42,
+      "wr": 0.5714,
+      "tp": 24,
+      "sl": 18,
+      "threshold": 0.6,
+      "model": "RF_160",
+      "binary_timeout_excluded": true
+    },
+    {
+      "PF": 1.0768,
+      "trades": 1487,
+      "wr": 0.5185,
+      "tp": 771,
+      "sl": 716,
+      "threshold": 0.55,
+      "model": "XGB",
+      "binary_timeout_excluded": true
+    },
+    {
+      "PF": 1.0551,
+      "trades": 3652,
+      "wr": 0.5134,
+      "tp": 1875,
+      "sl": 1777,
+      "threshold": 0.4,
+      "model": "MLP_flat",
+      "binary_timeout_excluded": true
+    },
+    {
+      "PF": 11.6,
+      "trades": 63,
+      "wr": 0.9206,
+      "tp": 58,
+      "sl": 5,
+      "threshold": 0.55,
+      "model": "Transformer",
+      "best_epoch": 0,
+      "binary_timeout_excluded": true
+    },
+    {
+      "PF": 1.7383,
+      "trades": 293,
+      "wr": 0.6348,
+      "tp": 186,
+      "sl": 107,
+      "threshold": 0.5,
+      "model": "BiLSTM",
+      "best_epoch": 7,
+      "binary_timeout_excluded": true
+    }
+  ]
+}

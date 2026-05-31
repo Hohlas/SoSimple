@@ -7,6 +7,9 @@
 - [ ] Нет future-derived input.
 - [ ] Candidate-source live-safe.
 - [ ] Training и online feature contract совпадают.
+- [ ] Scale audit выполнен отдельно для input-признаков и target/label колонок.
+- [ ] Normalization pools не смешивают inputs с target/future-derived.
+- [ ] Внутри normalization pool нет dominance крупномасштабного поля над остальными.
 - [ ] Нормализация не использует future-derived поля в live-пулах.
 - [ ] Global scaler fit только на train.
 - [ ] Target order одинаков в train/evaluate/export.
