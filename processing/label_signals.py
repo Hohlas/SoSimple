@@ -47,32 +47,33 @@ def parse_fractal(fractal_str):
     Формат строки:
     - legacy 18 полей:
       `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
-    - current 22 поля:
-      `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr`
+    - current 23 поля:
+       `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr:shift`
 
-    Индексы в строке:
-        [0]  time (int): Время формирования
-        [1]  price (float): Цена фрактала
-        [2]  direction (int): Направление (1 - верх, -1 - низ)
-        [3]  front (float): Расстояние до фронтального бара
-        [4]  back (float): Расстояние до заднего бара
-        [5]  strong (int): Флаг сильного фрактала (1 - да, 0 - нет)
-        [6]  break (int): Флаг пробития (1 - да, 0 - нет)
-        [7]  reverse (float): Значение разворота
-        [8]  power (float): Сила импульса
-        [9]  count (int): Счетчик подтверждений
-        [10] impulse (float): Значение импульса
-        [11] up_12 (float): max(High - P) за 12 баров H1
-        [12] dn_12 (float): max(P - Low) за 12 баров H1
-        [13] up_24 (float): max(High - P) за 24 бара H1
-        [14] dn_24 (float): max(P - Low) за 24 бара H1
-        [15] up_48 (float): max(High - P) за 48 баров H1
-        [16] dn_48 (float): max(P - Low) за 48 баров H1
-        [17] up_3 (float): max(High - P) за 3 бара H1
-        [18] dn_3 (float): max(P - Low) за 3 бара H1
-        [19] up_6 (float): max(High - P) за 6 баров H1
-        [20] dn_6 (float): max(P - Low) за 6 баров H1
-        [21] fractal_atr (float): Atr.Fast в момент формирования фрактала
+     Индексы в строке:
+         [0]  time (int): Время формирования
+         [1]  price (float): Цена фрактала
+         [2]  direction (int): Направление (1 - верх, -1 - низ)
+         [3]  front (float): Расстояние до фронтального бара
+         [4]  back (float): Расстояние до заднего бара
+         [5]  strong (int): Флаг сильного фрактала (1 - да, 0 - нет)
+         [6]  break (int): Флаг пробития (1 - да, 0 - нет)
+         [7]  reverse (float): Значение разворота
+         [8]  power (float): Сила импульса
+         [9]  count (int): Счетчик подтверждений
+         [10] impulse (float): Значение импульса
+         [11] up_12 (float): max(High - P) за 12 баров H1
+         [12] dn_12 (float): max(P - Low) за 12 баров H1
+         [13] up_24 (float): max(High - P) за 24 бара H1
+         [14] dn_24 (float): max(P - Low) за 24 бара H1
+         [15] up_48 (float): max(High - P) за 48 баров H1
+         [16] dn_48 (float): max(P - Low) за 48 баров H1
+         [17] up_3 (float): max(High - P) за 3 бара H1
+         [18] dn_3 (float): max(P - Low) за 3 бара H1
+         [19] up_6 (float): max(High - P) за 6 баров H1
+         [20] dn_6 (float): max(P - Low) за 6 баров H1
+         [21] fractal_atr (float): Atr.Fast в момент формирования фрактала
+         [22] shift (int): Количество баров от текущего до времени формирования фрактала
 
     Args:
         fractal_str (str): Строка с данными фрактала из CSV.
@@ -112,6 +113,7 @@ def parse_fractal(fractal_str):
             'up_6':        float(parts[19]) if len(parts) > 21 else 0.0,
             'dn_6':        float(parts[20]) if len(parts) > 21 else 0.0,
             'fractal_atr': float(parts[21]) if len(parts) > 21 else (float(parts[17]) if len(parts) > 17 else 0.0),
+            'shift':       int(parts[22])   if len(parts) > 22 else 0,
         }
     except (ValueError, IndexError):
         return None
