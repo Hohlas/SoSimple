@@ -31,7 +31,11 @@ from label_signals import (
 
 
 def parse_fractal_to_features(df, max_levels=100):
-    """Извлечь плоские признаки из fractal0..fractal99."""
+    """Извлечь плоские признаки из fractal0..fractal99.
+
+    Индексы полей (docs/dataset_description.md:36-39):
+        0=T, 1=P, 2=Dir, 3=Frnt, 4=Back, ...
+    """
     feature_list = []
     feature_names = []
 
@@ -42,26 +46,36 @@ def parse_fractal_to_features(df, max_levels=100):
 
         prices = []
         dirs = []
+        fronts = []
 
         for val in df[col]:
             try:
                 parts = str(val).split(':')
                 if len(parts) >= 4:
-                    prices.append(float(parts[2]))
-                    dirs.append(float(parts[3]))
+                    prices.append(float(parts[1]))      # P — цена
+                    dirs.append(float(parts[2]))        # Dir — направление
+                    if level == 0:
+                        fronts.append(float(parts[3]))  # Frnt — фронт (только f0)
                 else:
                     prices.append(np.nan)
                     dirs.append(np.nan)
+                    if level == 0:
+                        fronts.append(np.nan)
             except (ValueError, IndexError):
                 prices.append(np.nan)
                 dirs.append(np.nan)
+                if level == 0:
+                    fronts.append(np.nan)
 
         feature_list.append(np.array(prices, dtype=np.float64))
         feature_names.append(f'f{level}_price')
 
-        if level == 0:
-            feature_list.append(np.array(dirs, dtype=np.float64))
-            feature_names.append('f0_dir')
+        feature_list.append(np.array(dirs, dtype=np.float64))
+        feature_names.append(f'f{level}_dir')
+
+        if level == 0 and fronts:
+            feature_list.append(np.array(fronts, dtype=np.float64))
+            feature_names.append('f0_front')
 
     if 'ATR' in df.columns:
         feature_list.append(df['ATR'].values.astype(np.float64))
