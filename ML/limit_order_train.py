@@ -6,9 +6,9 @@
 """
 Trains Transformer model on limit-order BUY triple-barrier labels.
 
-Pre-filters DATA/limit_order/ CSVs to BUY signal + filled entries,
-saves to DATA/limit_order_buy_fill_*.csv, and trains standard triple_barrier
-pipeline via monkey-patched data_loader.
+Pre-filters DATA/limit_order/ CSVs to filled BUY limit entries (all rows,
+no signal filter), saves to DATA/limit_order_buy_fill_*.csv, and trains
+standard triple_barrier pipeline via monkey-patched data_loader.
 
 Usage:
   python -m ML.limit_order_train [--epochs 50] [--batch_size 256] [--lr 1e-3]
@@ -42,17 +42,16 @@ TMP_VAL_FILE = DATA_DIR / 'limit_order_buy_fill_val.csv'
 
 
 def prefilter_csv(src: Path, dst: Path) -> pd.DataFrame:
-    """Load limit_order CSV, filter to BUY + filled, save filtered copy."""
+    """Load limit_order CSV, filter to filled BUY limit orders (all rows, not only signal!=0)."""
     df = pd.read_csv(src, sep=CSV_SEP, low_memory=False)
-    signal = pd.to_numeric(df['signal'], errors='coerce').fillna(0).astype(int)
-    buy = df[signal == 1].copy()
-    fill_mask = pd.to_numeric(buy['buy_fill_lag'], errors='coerce').fillna(-1).astype(int) != -1
-    result = buy[fill_mask].copy()
+    fill_mask = pd.to_numeric(df['buy_fill_lag'], errors='coerce').fillna(-1).astype(int) != -1
+    result = df[fill_mask].copy()
     for col in BUY_TB_TARGETS:
         vals = pd.to_numeric(result[col], errors='coerce').fillna(0.0)
         vals = np.where(vals == 0.5, 0.0, vals)  # TIMEOUT -> LOSS
         result[col] = vals
     result.to_csv(dst, sep=CSV_SEP, index=False)
+    print(f"  prefilter_csv: {len(result)} rows (fill-only, no signal filter)")
     return result
 
 
