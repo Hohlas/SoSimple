@@ -468,6 +468,7 @@ def label_trade_targets(df: pd.DataFrame, ohlc_path=None) -> pd.DataFrame:
         ohlc = ohlc.dropna(subset=['time']).sort_values('time').reset_index(drop=True)
 
         time_to_idx = {t: i for i, t in enumerate(ohlc['time'])}
+        opens = pd.to_numeric(ohlc['open'], errors='coerce').ffill().bfill().values
         highs = pd.to_numeric(ohlc['high'], errors='coerce').ffill().bfill().values
         lows = pd.to_numeric(ohlc['low'], errors='coerce').ffill().bfill().values
         closes = pd.to_numeric(ohlc['close'], errors='coerce').ffill().bfill().values
@@ -481,7 +482,7 @@ def label_trade_targets(df: pd.DataFrame, ohlc_path=None) -> pd.DataFrame:
             if ohlc_idx is None or ohlc_idx + 12 >= len(ohlc):
                 continue
 
-            entry_close = closes[ohlc_idx]
+            entry_open = opens[ohlc_idx + 1]  # earliest possible entry: Open of next bar
             exit_close = closes[ohlc_idx + 12]
             window_high = highs[ohlc_idx + 1: ohlc_idx + 13].max()
             window_low = lows[ohlc_idx + 1: ohlc_idx + 13].min()
@@ -489,13 +490,13 @@ def label_trade_targets(df: pd.DataFrame, ohlc_path=None) -> pd.DataFrame:
             entry_atr = float(entry_atr) if entry_atr > 0 else 1.0
 
             if sig == 1:
-                fav = max(window_high - entry_close, 0.0)
-                adv = max(entry_close - window_low, 0.0)
-                net = exit_close - entry_close
+                fav = max(window_high - entry_open, 0.0)
+                adv = max(entry_open - window_low, 0.0)
+                net = exit_close - entry_open
             else:
-                fav = max(entry_close - window_low, 0.0)
-                adv = max(window_high - entry_close, 0.0)
-                net = entry_close - exit_close
+                fav = max(entry_open - window_low, 0.0)
+                adv = max(window_high - entry_open, 0.0)
+                net = entry_open - exit_close
 
             trade_fav_h12[i] = fav
             trade_adv_h12[i] = adv
