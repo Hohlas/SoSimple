@@ -15,13 +15,14 @@
 ### Пошаговые действия
 
 1. Перед test проверить, что rule/checkpoint/exporter не менялись после validation.
-2. Запустить test один раз для frozen candidate.
-3. Считать модельные и торговые метрики.
-4. Считать time slices: год, квартал или regime buckets.
-5. Считать BUY/SELL отдельно.
-6. Сравнить с baseline.
-7. Если есть заранее заданный walk-forward: выполнить rolling/expanding evaluation без ретюнинга на test.
-8. Сохранить predictions, trades, summary и limitations.
+2. Проверить, что test запускается с тем же execution contract, который был заморожен на validation.
+3. Запустить test один раз для frozen candidate.
+4. Считать модельные и торговые метрики.
+5. Считать time slices: год, квартал или regime buckets.
+6. Считать BUY/SELL отдельно.
+7. Сравнить с baseline.
+8. Если есть заранее заданный walk-forward: выполнить rolling/expanding evaluation без ретюнинга на test.
+9. Сохранить predictions, trades, summary и limitations.
 
 ### Обязательные проверки
 
@@ -31,6 +32,8 @@
 - SeqPF не используется как gate-критерий на test (допустим diagnostic-only).
 - Walk-forward не подменяется повторным test.
 - Кандидат проходит заранее заданные gates.
+- Test verdict получает `INVALID`, если после freeze изменились `entry_price`, spread, fill policy, PnL convention или checkpoint/rule hash.
+- Test на `spread=0` может иметь только `DIAGNOSTIC_ONLY`, если production execution имеет ненулевой spread.
 
 ### Критерии успешного завершения
 
@@ -45,6 +48,8 @@
 - Игнорировать два отрицательных года, если aggregate PF положительный.
 - После слабого SELL результата объявлять BUY-only без нового validation cycle.
 - Перезапускать test после каждой правки.
+- Считать test валидным после смены execution convention без нового validation freeze.
+- Выдавать zero-spread test PF за evidence production-качества.
 
 ### Ветвления
 
@@ -53,4 +58,3 @@
 - Если test pass, но нет forward: статус не выше `candidate`.
 
 ---
-

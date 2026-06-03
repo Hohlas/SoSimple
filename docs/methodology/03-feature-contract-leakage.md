@@ -98,6 +98,7 @@ Reason: unresolved leakage/preprocessing contract risk.
 | 16 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
 | 17 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Сверка rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без parity |
 | 18 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
+ | 19 | Entry price исполним после доступности признаков | Backtest должен входить не раньше, чем live реально может отправить ордер | В отчёте указаны: тип входа, цена входа, fill convention, latency sources и first executable price | Label/evaluation использует цену, которая недоступна в live на момент принятия решения |
 
 ### Быстрая ручная проверка признаков
 
@@ -126,6 +127,14 @@ Reason: unresolved leakage/preprocessing contract risk.
 #### `Up/Dn` из MT `Nero.csv`
 
 `Up/Dn` внутри `fractal*` допустимы как live-safe историческое состояние только если доказано, что они накоплены producer-ом к моменту строки и не пересчитаны Python-постобработкой по будущим барам. Если похожие поля построены как supervised targets или future OHLC outcome, они относятся к target/future-derived группе и не допускаются во вход.
+
+#### `fractal0` и исполнимость входа (проектный пример)
+
+Для текущего MT-контура `fractal0` становится полностью известен только на `Close` его подтверждающего третьего бара. Только после этого MQL записывает строку 100 фракталов в `Nero.csv`, затем watcher через свой polling interval считывает строку, выполняет preprocessing/inference и передаёт сигнал дальше.
+
+Следствие: если decision unit основан на свежем `fractal0`, вход по `Close[row]` методологически не исполним в live. Такой вариант разрешён только как `DIAGNOSTIC_ONLY` для оценки формы сигнала. `Open[row+1]` также разрешён как live-executable convention только если доказано, что строка, watcher, inference и order-send успевают до этого open; иначе нужно использовать более поздний first executable tick/price или MT tester execution.
+
+Это частный случай общего правила: entry price must be executable after feature availability and runtime delays.
 
 ### Нормализация
 
@@ -220,6 +229,8 @@ Leakage Preflight (пункты 1–15 выше) проверяет, что мо
 - Использовать `target_*`, `label_*`, `outcome_*` wildcard как input.
 - Использовать один и тот же `test` для подбора порогов и для финального доказательства.
 - Сравнивать online и backtest, если online preprocessing отличается от training/test preprocessing.
+- Использовать цену входа раньше момента, когда feature snapshot реально доступен live.
+- Интерпретировать `Close[row]`-entry как production evidence для контура, где строка появляется только после закрытия бара.
 - Считать высокий `PF` доказательством качества, если не пройдены проверки этого раздела.
 - Называть diagnostic watcher production-ready, если он проверяет только файловую цепочку.
 

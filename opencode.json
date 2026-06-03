@@ -5,6 +5,15 @@
       "type": "local",
       "command": ["npx", "-y", "agent-hub-mcp@latest"],
       "enabled": true
+    },
+    "knowledge-rag": {
+      "type": "local",
+      "command": ["/home/hohla/knowledge-rag/venv/bin/knowledge-rag"],
+      "enabled": true,
+      "env": {
+        "KNOWLEDGE_RAG_DIR": "/home/hohla/knowledge-rag",
+        "ORT_LOGGING_LEVEL": "3"
+      }
     }
   }
 }

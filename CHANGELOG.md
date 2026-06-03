@@ -2,6 +2,66 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-05-29] - Limit-Order Entry Convention: Phase 1–3
+
+### Добавлено
+- `label_limit_order_barriers()` в `processing/label_signals.py` — 6-bar fill window, 24-bar barrier, spread-adjusted exit, per-side fill_lag, PnL columns (`_pnl_r`), ambiguous flags
+- `tests/processing/test_limit_order_barriers.py` — 15 тестов: BUY/SELL fill, NO_FILL, spread, ambiguity, PnL, skipped rows
+- `--limit-order --spread` флаги в `label_main.py`, вывод в `DATA/limit_order/`
+- `processing/purge_split.py` — 30-bar time-based purge на train→val, val→test, test tail границах
+- `processing/label_audit.py` — аудит fill_lag, ambiguity per target, PnL comparison
+- `ML/baseline/benchmark_limit_order_entry.py` — RF/HGB baseline на limit-order labels, PF из `_pnl_r`, negative_years через groupby
+- `ML/limit_order_train.py` — Transformer Phase 3 на BUY TB таргетах
+- `.opencode/agents/reviewer.md` — QA review agent для docs/code/experiments
+
+### Результаты
+- **Phase 1+2 PASS** для канонического BUY лимитника (spread=0.20): RF PF=1.53, fill 96.4%, 55 сделок/год, 0 отрицательных лет
+- **SELL FAIL**: HGB PF=1.36 (neg_years=1), RF PF=0.91 (neg_years=3) — XAUUSD bull market асимметрия
+- **Spread sensitivity**: PF монотонно падает: 1.56→1.53→1.23→1.02 (0→0.20→0.40→0.80)
+- **Fill statistics** (spread=0): 98.5% BUY fill, 97.4% instant (lag=0), 1.4% ambiguous
+- **Phase 3 Transformer FAIL**: Mean AUC=0.575, главный target buy_sl2_tp3 AUC=0.498 — fractal features без predictивного сигнала
+- **Вердикт**: Close-entry сделан исполнимым через лимитные ордера. Transformer на fractal features не работает (консистентно с transformer-direction 2026-05-21).
+
+### Исправлено
+- Skipped rows (bad fractal0, missing time): TB targets теперь получают NO_FILL_SENTINEL вместо stale default 0.5
+- Mismatch bug: fill_lag=-1 в skipped rows, TB targets оставались на 0.5 вместо -999
+
+<!-- подробности: docs/reports/2026-05-29-limit-order-entry.md -->
+
+## [2026-05-27] — Methodology Cycle: Entry Timing Correction
+
+### Изменено
+- Методика усилена правилом исполнимой entry price: label/backtest не может входить раньше фактической доступности признаков и runtime-задержек.
+- Для `fractal0` зафиксировано: он полностью готов только на `Close` подтверждающего третьего бара; `Close[row]` entry в текущем live path является `DIAGNOSTIC_ONLY`.
+- Stage 09 текущего candidate-source цикла зафиксирован как `FAIL`, Stage 10 — как `INVALID`.
+- `ML/stage10_frozen_test_oos.py` теперь сам выставляет `INVALID`, если frozen protocol checks не проходят.
+
+### Вывод
+Результаты с `Close[row]` больше нельзя интерпретировать как live/OOS evidence для MT watcher-контура. Следующий валидный кандидат должен доказать first executable entry после feature readiness.
+
+<!-- подробности: docs/reports/2026-05-25-methodology-cycle-stages-00-04.md -->
+
+## [2026-05-25] — Methodology Cycle: Stages 00–02 — Pipeline Foundation
+
+### Добавлено
+- Полный контракт methodology-цикла: гипотеза live-safe candidate-source, gate-критерии, split-протокол
+- 23-е поле `Shift` в fractal CSV формате (`SHIFT(F[f].T)` — bar index без искажений выходных)
+- 4 новых семейства признаков в `fractal_level_feature_builder.py`: `log_price_rel`, `atr_band_4/12`, `count_in_band_4/12`, `delta_shift_N`
+- `ML/pll_normalizer.py` — Piecewise Linear-Log нормализатор с per-group scalers (8 групп, fit train only)
+- `ML/checkpoints/pll_normalizer_v1.pkl` — fit на 44104 train samples
+- Artifacts: `stage00_research_contract.json`, `stage01_raw_data_inventory.json`, `stage01_gate_verdict.json`, `stage02_data_pipeline.json`, `feature_contract.csv`, `candidate_source_live_safe_audit.md`, `stage02_scale_audit_*.csv`
+
+### Результаты
+- Pipeline: 63006 rows (2004–2026) → sort (0 errors) → label (3192 signals, 63006 predicts) → split 44104/9451/9451
+- Все raw поля классифицированы (live_safe / target_only / future_derived / unknown)
+- Старый `signal != 0` gate явно отвергнут как future-derived
+- PLL группы: price, front_back, impulse, power, count, updn_h12/h24/h48. Break clip 5.
+
+### Вывод
+Фундамент live-safe candidate-source цикла заложен. Данные готовы к baseline-экспериментам.
+
+<!-- подробности: docs/reports/2026-05-25-methodology-cycle-stages-00-04.md -->
+
 ## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
 
 ### Добавлено

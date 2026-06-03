@@ -26,9 +26,16 @@
    - как трактуется timeout;
    - как считать reversal;
    - какие цены используются: open, close, high/low, bid/ask.
-6. Проверить distribution targets по train/validation/test.
-7. Проверить distribution по сторонам BUY/SELL.
-8. Добавить invariant tests или воспроизводимый audit label convention.
+6. Если label зависит от исполнения, включить execution-aware поля в target contract:
+   - `entry_price` convention;
+   - measured/canonical spread convention для BUY и SELL;
+   - fill/no-fill outcome;
+   - `fill_lag`;
+   - ambiguous same-bar policy;
+   - `pnl_r` или другую заранее выбранную PnL-единицу для evaluation.
+7. Проверить distribution targets по train/validation/test.
+8. Проверить distribution по сторонам BUY/SELL.
+9. Добавить invariant tests или воспроизводимый audit label convention.
 
 ### Обязательные проверки
 
@@ -38,6 +45,9 @@
 - Timeout не смешивается с SL, если это разные исходы.
 - BUY и SELL считаются симметрично или асимметрия явно описана.
 - Target не зависит от test-selected threshold.
+- Если live не может исполнить вход по `Close[row]`, такая label convention разрешена только как `DIAGNOSTIC_ONLY`.
+- Если canonical spread не равен нулю, labels со `spread=0` разрешены только как `DIAGNOSTIC_ONLY`.
+- PF для execution-aware labels считается по PnL (`pnl_r`, пункты или деньги), а не по `count(TP) / count(SL)`, если timeout/fill/no-fill могут иметь ненулевой результат.
 
 ### Критерии успешного завершения
 
@@ -46,6 +56,7 @@
 - Есть sanity check распределения классов и сторон.
 - Есть тесты или audit для edge cases.
 - Известно, какие target-колонки являются production labels, а какие diagnostic.
+- Если используется limit/stop entry, известны no-fill rate, fill-lag distribution и ambiguous-rate.
 
 ### Типовые ошибки
 
@@ -54,6 +65,9 @@
 - Смешивание timeout, SL и neutral без явного смысла.
 - Использование future target как feature из-за удобного расположения в CSV.
 - Использование `target_*`/`label_*` wildcard как input из-за нестрогого парсинга колонок.
+- Поздно добавлять spread/entry/fill convention только на backtest-этапе, если они меняют labels или candidate selection.
+- Считать `Close[row]` реалистичной ценой входа без доказательства, что live-контур может открыть сделку по этой цене.
+- Использовать zero-spread labels как production target или validation gate.
 
 ### Ветвления
 
@@ -61,6 +75,25 @@
 - Если target columns названы как обычные features: переименовать новые колонки или добавить явный denylist для legacy-полей до обучения.
 - Если класс слишком редкий: перейти к take/skip, ranking, binary one-vs-rest или изменить задачу.
 - Если одна сторона имеет другой режим: рассмотреть отдельные BUY/SELL модели, но как новый кандидат.
+
+### Entry/Exit convention examples
+
+#### Общее правило
+
+Execution convention has two layers: general contract and project-specific availability proof. General contract fixes entry type, entry price, spread, fill/no-fill, latency and PnL convention. Project-specific proof explains when the signal-producing object becomes available in live.
+
+#### Проектный пример: `fractal0`-контур
+
+Для текущего MT-контура `fractal0` становится полностью известен только на `Close` своего подтверждающего третьего бара. После этого MQL записывает строку 100 фракталов в `Nero.csv`, watcher считывает файл, выполняет preprocessing/inference и передаёт сигнал дальше. Общие задержки:
+
+| Источник задержки | Что определяет | Типовой порядок |
+|---|---|---|
+| Row materialization | Время записи строки в CSV | Секунды |
+| Watcher polling interval | Как часто watcher проверяет файл | Секунды |
+| Preprocessing/inference | Время обработки и предсказания | Сотни мс |
+| Order-send delay | Время отправки ордера в MT4 | Сотни мс |
+
+Следствие: `Close[row]`-entry для fractal0-контура является только `DIAGNOSTIC_ONLY`. `Open[row+1]` допустим только если доказано, что суммарная задержка позволяет отправить ордер до этого open. Иначе нужен first executable tick/price или MT tester execution.
 
 ### Для multi-target регрессии с монотонной структурой
 
@@ -73,4 +106,3 @@
 5. Итоговый торговый сигнал использует один конкретный горизонт. Но остальные таргеты — diagnostic: если модель хороша на горизонте 12, но плоха на 48, это ограничение области применения.
 
 ---
-

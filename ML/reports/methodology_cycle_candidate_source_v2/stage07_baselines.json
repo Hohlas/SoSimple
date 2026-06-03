@@ -1,0 +1,691 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "stage": "07-baseline-first",
+  "created_at": "2026-05-25",
+  "updated_at": "2026-05-26",
+  "methodology_stage": "07-baseline-first",
+  "stage_verdict": "PASS",
+  "target": "buy_sl3_tp3",
+  "feature_config": {
+    "input_family": "nearest_k",
+    "k": 16,
+    "n_features": 455
+  },
+  "split": {
+    "train_rows": 44104,
+    "val_rows": 9451
+  },
+  "methodology_compliance": {
+    "split": "train/validation only; test not read",
+    "trading_metrics": "gross diagnostic; costs deferred to Stage 12",
+    "classification_metrics_included": true,
+    "confusion_matrix_included": true,
+    "buy_sell_slices": "diagnostic only because signal label is future-derived and not a live candidate-source input"
+  },
+  "results": [
+    {
+      "PF": 1.0829,
+      "trades": 9451,
+      "win_rate": 0.524,
+      "tp": 4951,
+      "sl": 4497,
+      "timeout": 3,
+      "gross_profit_r": 11351.2618,
+      "gross_loss_r": 10481.8893,
+      "threshold": 0.35,
+      "model": "dummy_most_frequent",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            0,
+            0,
+            3027
+          ],
+          [
+            0,
+            0,
+            3296
+          ],
+          [
+            0,
+            0,
+            3128
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 3027.0
+          },
+          "timeout": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 3296.0
+          },
+          "TP": {
+            "precision": 0.33097026769654003,
+            "recall": 1.0,
+            "f1-score": 0.49733683122664757,
+            "support": 3128.0
+          },
+          "accuracy": 0.33097026769654003,
+          "macro avg": {
+            "precision": 0.11032342256551335,
+            "recall": 0.3333333333333333,
+            "f1-score": 0.16577894374221586,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.10954131809911938,
+            "recall": 0.33097026769654003,
+            "f1-score": 0.1646037041664325,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.0
+      },
+      "per_year": {
+        "2019": {
+          "PF": 1.202,
+          "trades": 1539,
+          "win_rate": 0.5449,
+          "tp": 838,
+          "sl": 700,
+          "timeout": 1,
+          "gross_profit_r": 1902.3437,
+          "gross_loss_r": 1582.6076
+        },
+        "2020": {
+          "PF": 1.2938,
+          "trades": 2774,
+          "win_rate": 0.5642,
+          "tp": 1565,
+          "sl": 1209,
+          "timeout": 0,
+          "gross_profit_r": 3503.8597,
+          "gross_loss_r": 2708.152
+        },
+        "2021": {
+          "PF": 0.961,
+          "trades": 2686,
+          "win_rate": 0.5026,
+          "tp": 1349,
+          "sl": 1335,
+          "timeout": 2,
+          "gross_profit_r": 3063.0201,
+          "gross_loss_r": 3187.1666
+        },
+        "2022": {
+          "PF": 0.9594,
+          "trades": 2452,
+          "win_rate": 0.489,
+          "tp": 1199,
+          "sl": 1253,
+          "timeout": 0,
+          "gross_profit_r": 2882.0382,
+          "gross_loss_r": 3003.963
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.2238,
+          "trades": 244,
+          "win_rate": 0.1926,
+          "tp": 47,
+          "sl": 197,
+          "timeout": 0,
+          "gross_profit_r": 115.1752,
+          "gross_loss_r": 514.6629
+        },
+        "SELL": {
+          "PF": 11.679,
+          "trades": 236,
+          "win_rate": 0.8602,
+          "tp": 203,
+          "sl": 33,
+          "timeout": 0,
+          "gross_profit_r": 526.1359,
+          "gross_loss_r": 45.0498
+        }
+      }
+    },
+    {
+      "PF": 1.0481,
+      "trades": 3406,
+      "win_rate": 0.5145,
+      "tp": 1752,
+      "sl": 1653,
+      "timeout": 1,
+      "gross_profit_r": 4048.1243,
+      "gross_loss_r": 3862.504,
+      "threshold": 0.35,
+      "model": "dummy_stratified",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1055,
+            853,
+            1119
+          ],
+          [
+            1163,
+            969,
+            1164
+          ],
+          [
+            1051,
+            954,
+            1123
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.3227286631997553,
+            "recall": 0.34852989758837133,
+            "f1-score": 0.335133418043202,
+            "support": 3027.0
+          },
+          "timeout": {
+            "precision": 0.34906340057636887,
+            "recall": 0.29399271844660196,
+            "f1-score": 0.3191699604743083,
+            "support": 3296.0
+          },
+          "TP": {
+            "precision": 0.32971227246036405,
+            "recall": 0.3590153452685422,
+            "f1-score": 0.3437404346495256,
+            "support": 3128.0
+          },
+          "accuracy": 0.33298063696963287,
+          "macro avg": {
+            "precision": 0.33383477874549605,
+            "recall": 0.3338459871011718,
+            "f1-score": 0.33268127105567863,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.3342241688775145,
+            "recall": 0.33298063696963287,
+            "f1-score": 0.33241489003531993,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.0007298977727263354
+      },
+      "per_year": {
+        "2019": {
+          "PF": 1.3343,
+          "trades": 550,
+          "win_rate": 0.56,
+          "tp": 308,
+          "sl": 242,
+          "timeout": 0,
+          "gross_profit_r": 736.9968,
+          "gross_loss_r": 552.3581
+        },
+        "2020": {
+          "PF": 1.2383,
+          "trades": 1007,
+          "win_rate": 0.5472,
+          "tp": 551,
+          "sl": 456,
+          "timeout": 0,
+          "gross_profit_r": 1236.46,
+          "gross_loss_r": 998.5118
+        },
+        "2021": {
+          "PF": 0.8324,
+          "trades": 969,
+          "win_rate": 0.4773,
+          "tp": 462,
+          "sl": 506,
+          "timeout": 1,
+          "gross_profit_r": 1023.7893,
+          "gross_loss_r": 1229.8707
+        },
+        "2022": {
+          "PF": 0.9714,
+          "trades": 880,
+          "win_rate": 0.4898,
+          "tp": 431,
+          "sl": 449,
+          "timeout": 0,
+          "gross_profit_r": 1050.8783,
+          "gross_loss_r": 1081.7633
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.2534,
+          "trades": 71,
+          "win_rate": 0.2113,
+          "tp": 15,
+          "sl": 56,
+          "timeout": 0,
+          "gross_profit_r": 39.5178,
+          "gross_loss_r": 155.9648
+        },
+        "SELL": {
+          "PF": 9.0781,
+          "trades": 94,
+          "win_rate": 0.8085,
+          "tp": 76,
+          "sl": 18,
+          "timeout": 0,
+          "gross_profit_r": 202.7074,
+          "gross_loss_r": 22.3294
+        }
+      }
+    },
+    {
+      "PF": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "tp": 0,
+      "sl": 0,
+      "timeout": 0,
+      "threshold": 0.35,
+      "model": "dummy_uniform",
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            999,
+            1037,
+            991
+          ],
+          [
+            1100,
+            1084,
+            1112
+          ],
+          [
+            1068,
+            1048,
+            1012
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.315440479949479,
+            "recall": 0.33002973240832506,
+            "f1-score": 0.3225702292541169,
+            "support": 3027.0
+          },
+          "timeout": {
+            "precision": 0.34206374250552224,
+            "recall": 0.3288834951456311,
+            "f1-score": 0.3353441608662026,
+            "support": 3296.0
+          },
+          "TP": {
+            "precision": 0.32487961476725524,
+            "recall": 0.3235294117647059,
+            "f1-score": 0.324203107480378,
+            "support": 3128.0
+          },
+          "accuracy": 0.3274785736959052,
+          "macro avg": {
+            "precision": 0.32746127907408545,
+            "recall": 0.32748087977288737,
+            "f1-score": 0.3273724992002325,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.3278493136278964,
+            "recall": 0.3274785736959052,
+            "f1-score": 0.32756552305214665,
+            "support": 9451.0
+          }
+        },
+        "mcc": -0.008809405148146713
+      },
+      "per_year": {
+        "2019": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2020": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2021": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "2022": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        },
+        "SELL": {
+          "PF": 0.0,
+          "trades": 0,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 0,
+          "timeout": 0
+        }
+      }
+    },
+    {
+      "PF": 1.6131,
+      "trades": 262,
+      "win_rate": 0.6183,
+      "tp": 162,
+      "sl": 100,
+      "timeout": 0,
+      "gross_profit_r": 429.3644,
+      "gross_loss_r": 266.1804,
+      "threshold": 0.4,
+      "model": "RF_160",
+      "negative_years": 1,
+      "per_year": {
+        "2019": {
+          "PF": 1.9066,
+          "trades": 69,
+          "win_rate": 0.6522,
+          "tp": 45,
+          "sl": 24,
+          "timeout": 0,
+          "gross_profit_r": 124.3897,
+          "gross_loss_r": 65.2407
+        },
+        "2020": {
+          "PF": 2.4693,
+          "trades": 100,
+          "win_rate": 0.73,
+          "tp": 73,
+          "sl": 27,
+          "timeout": 0,
+          "gross_profit_r": 188.3483,
+          "gross_loss_r": 76.2749
+        },
+        "2021": {
+          "PF": 1.9277,
+          "trades": 38,
+          "win_rate": 0.6579,
+          "tp": 25,
+          "sl": 13,
+          "timeout": 0,
+          "gross_profit_r": 64.0311,
+          "gross_loss_r": 33.2157
+        },
+        "2022": {
+          "PF": 0.5751,
+          "trades": 55,
+          "win_rate": 0.3455,
+          "tp": 19,
+          "sl": 36,
+          "timeout": 0,
+          "gross_profit_r": 52.5953,
+          "gross_loss_r": 91.4491
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.2199,
+          "trades": 15,
+          "win_rate": 0.2,
+          "tp": 3,
+          "sl": 12,
+          "timeout": 0,
+          "gross_profit_r": 7.4604,
+          "gross_loss_r": 33.9213
+        },
+        "SELL": {
+          "PF": 16.1798,
+          "trades": 4,
+          "win_rate": 0.75,
+          "tp": 3,
+          "sl": 1,
+          "timeout": 0,
+          "gross_profit_r": 9.0,
+          "gross_loss_r": 0.5562
+        }
+      },
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1115,
+            1485,
+            427
+          ],
+          [
+            1150,
+            1815,
+            331
+          ],
+          [
+            1229,
+            1311,
+            588
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.31911848883800803,
+            "recall": 0.36835150313842085,
+            "f1-score": 0.3419720901702193,
+            "support": 3027.0
+          },
+          "timeout": {
+            "precision": 0.3936239427456083,
+            "recall": 0.5506674757281553,
+            "f1-score": 0.4590868850385734,
+            "support": 3296.0
+          },
+          "TP": {
+            "precision": 0.43684992570579495,
+            "recall": 0.18797953964194372,
+            "f1-score": 0.2628520339740724,
+            "support": 3128.0
+          },
+          "accuracy": 0.3722357422494974,
+          "macro avg": {
+            "precision": 0.3831974524298038,
+            "recall": 0.3689995061695066,
+            "f1-score": 0.3546370030609551,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.38406758529360935,
+            "recall": 0.3722357422494974,
+            "f1-score": 0.35662903949881397,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.05755881310381087
+      }
+    },
+    {
+      "PF": 1.1583,
+      "trades": 92,
+      "win_rate": 0.5543,
+      "tp": 51,
+      "sl": 41,
+      "timeout": 0,
+      "gross_profit_r": 118.2031,
+      "gross_loss_r": 102.0524,
+      "threshold": 0.65,
+      "model": "HGB",
+      "negative_years": 1,
+      "per_year": {
+        "2019": {
+          "PF": 0.0,
+          "trades": 6,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 6,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 16.06
+        },
+        "2020": {
+          "PF": 2.4752,
+          "trades": 14,
+          "win_rate": 0.7143,
+          "tp": 10,
+          "sl": 4,
+          "timeout": 0,
+          "gross_profit_r": 22.3132,
+          "gross_loss_r": 9.0146
+        },
+        "2021": {
+          "PF": 1.2704,
+          "trades": 49,
+          "win_rate": 0.5714,
+          "tp": 28,
+          "sl": 21,
+          "timeout": 0,
+          "gross_profit_r": 66.0758,
+          "gross_loss_r": 52.0111
+        },
+        "2022": {
+          "PF": 1.1942,
+          "trades": 23,
+          "win_rate": 0.5652,
+          "tp": 13,
+          "sl": 10,
+          "timeout": 0,
+          "gross_profit_r": 29.8141,
+          "gross_loss_r": 24.9667
+        }
+      },
+      "per_side_diagnostic": {
+        "BUY": {
+          "PF": 0.0,
+          "trades": 4,
+          "win_rate": 0.0,
+          "tp": 0,
+          "sl": 4,
+          "timeout": 0,
+          "gross_profit_r": 0.0,
+          "gross_loss_r": 12.0
+        },
+        "SELL": {
+          "PF": 2.2879,
+          "trades": 8,
+          "win_rate": 0.625,
+          "tp": 5,
+          "sl": 3,
+          "timeout": 0,
+          "gross_profit_r": 15.0,
+          "gross_loss_r": 6.5562
+        }
+      },
+      "classification": {
+        "confusion_matrix_labels": [
+          "SL",
+          "timeout",
+          "TP"
+        ],
+        "confusion_matrix": [
+          [
+            1204,
+            876,
+            947
+          ],
+          [
+            1277,
+            1055,
+            964
+          ],
+          [
+            1310,
+            813,
+            1005
+          ]
+        ],
+        "classification_report": {
+          "SL": {
+            "precision": 0.317594302294909,
+            "recall": 0.3977535513709944,
+            "f1-score": 0.3531827515400411,
+            "support": 3027.0
+          },
+          "timeout": {
+            "precision": 0.3844752186588921,
+            "recall": 0.32008495145631066,
+            "f1-score": 0.34933774834437087,
+            "support": 3296.0
+          },
+          "TP": {
+            "precision": 0.3446502057613169,
+            "recall": 0.3212915601023018,
+            "f1-score": 0.3325612177365983,
+            "support": 3128.0
+          },
+          "accuracy": 0.34536027933552005,
+          "macro avg": {
+            "precision": 0.34890657557170596,
+            "recall": 0.34637668764320234,
+            "f1-score": 0.34502723920700334,
+            "support": 9451.0
+          },
+          "weighted avg": {
+            "precision": 0.3498734649632628,
+            "recall": 0.34536027933552005,
+            "f1-score": 0.34501670686010266,
+            "support": 9451.0
+          }
+        },
+        "mcc": 0.0203879521939931
+      }
+    }
+  ],
+  "baseline_to_beat": {
+    "model": "RF_160",
+    "validation_pf": 1.6131,
+    "requirement_for_models": "beat RF_160 validation PF and satisfy 0 negative years",
+    "note": "Best simple baseline may be gross-profitable but is not production-ready until it satisfies robustness/cost gates."
+  }
+}

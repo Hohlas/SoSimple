@@ -62,6 +62,7 @@ FRACTAL_FIELD_INDEX = {
     'up_6': 19,
     'dn_6': 20,
     'fractal_atr': 21,
+    'shift': 22,
 }
 
 GROUP_FIELDS = {

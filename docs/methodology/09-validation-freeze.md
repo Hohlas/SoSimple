@@ -26,7 +26,8 @@
 3. Применить production gates до выбора winner.
 4. Зафиксировать один winner.
 5. Сохранить rule JSON, threshold, checkpoint path, feature contract, export command.
-6. Запретить изменение rule после просмотра test.
+6. Сохранить execution contract: `entry_price`, spread, fill policy, PnL convention, no-fill handling.
+7. Запретить изменение rule после просмотра test.
 
 ### Обязательные проверки
 
@@ -36,6 +37,9 @@
 - Test не участвует в выборе threshold/top-k/exit/filter.
 - SeqPF не используется как gate-критерий выбора winner (допустим только diagnostic-only).
 - Если используется ensemble/stacking, нужен out-of-fold protocol или отдельный holdout.
+- Frozen rule невалиден после изменения `entry_price`, canonical spread, fill policy или PnL convention.
+- Validation PF для execution-aware кандидата считается по PnL, а не по счёту TP/SL.
+- Zero-spread validation sweep не может выбрать frozen winner для production, если canonical spread не равен нулю.
 
 ### Критерии успешного завершения
 
@@ -51,6 +55,9 @@
 - Менять threshold после test.
 - Выбирать rule-family по test, а параметры по validation.
 - Считать структурную стабильность между seeds доказанной без формального tolerance.
+- Подменять frozen execution convention после validation и считать это тем же кандидатом.
+- Сравнивать canonical-spread winner с zero-spread candidate как с равноправными торговыми вариантами.
+- Считать рост PF доказательством улучшения модели без проверки, что изменился рейтинг сделок, а не цена входа: если PF вырос после смены entry_price/spread/fill, а рейтинг сделок не изменился — это entry-price effect, не signal improvement.
 
 ### Ветвления
 
@@ -59,4 +66,3 @@
 - Если winner нестабилен между seeds: понизить статус или использовать более простое frozen rule.
 
 ---
-

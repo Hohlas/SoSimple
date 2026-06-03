@@ -90,9 +90,12 @@ TEST_FILE = DATA_DIR / 'Nero_test_labeled.csv'
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
-N_RAW_FEATURES = 22   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
-FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 22-полевом CSV (ранее было 17)
-N_FRACTAL_FEATURES = 20  # 17 исходных (fields 1-17) + 3 time-фичи (hour_sin, hour_cos, time_pos)
+N_RAW_FEATURES = 23   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
+FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 23-полевом CSV (ранее было 17)
+FRACTAL_ATR_RAW_IDX_LEGACY = 17  # fractal_atr в старых 18-полевых CSV
+N_FRACTAL_FEATURES = 22  # 17 исходных (fields 1-16 + ATR_ratio) + 3 time-фичи + log_shift + log_delta_shift
+SHIFT_IDX = 22  # shift в 23-полевом CSV
+MIN_RAW_FEATURES = 22  # минимальное число полей для парсинга (старые CSV, 22 поля)
 TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
 TAKE_SKIP_V2_INPUT_FEATURES = (
     N_FRACTAL_FEATURES
@@ -108,6 +111,8 @@ ATR_RATIO_IDX = 16      # fractal_atr → ATR_ratio (in-place)
 TIME_FEAT_HOUR_SIN = 17  # sin(2π · hour / 24)
 TIME_FEAT_HOUR_COS = 18  # cos(2π · hour / 24)
 TIME_FEAT_TIME_POS = 19   # позиция на временной оси строки [0..1]
+TIME_FEAT_LOG_SHIFT = 20        # log1p(shift) — возраст фрактала в барах
+TIME_FEAT_LOG_DELTA_SHIFT = 21  # log1p(delta_shift) — временной зазор до соседа
 
 # Маппинг меток: signal {-1, 0, 1} → индексы {0, 1, 2}
 LABEL_MAP = {-1: 0, 0: 1, 1: 2}
@@ -395,13 +400,14 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 20 features: CSV fields 1-16 plus field 21 (fractal_atr) + 3 time-фичи.
+    # 22 features: CSV fields 1-16 plus ATR_ratio + 3 time-фичи + log_shift + log_delta_shift.
     n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)
     raw_valid = np.ones((n_samples, N_FRACTALS), dtype=bool)
-    # Хранилище fractal_time для вычисления time-фич
+    # Хранилище fractal_time и shift для вычисления time-фич
     fractal_times = np.zeros((n_samples, N_FRACTALS), dtype=np.float64)
+    shifts = np.zeros((n_samples, N_FRACTALS), dtype=np.float64)
 
     for j, col in enumerate(fractal_cols):
         if j % 20 == 0:
@@ -410,13 +416,17 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
         series = df[col].astype(str)
         split = series.str.split(FRACTAL_SEP, expand=True)
 
-        if split.shape[1] >= N_RAW_FEATURES:
-            # Парсим поля: time → fractal_times, fields 1-16 → X[0-15], field 21 (fractal_atr) → X[16]
+        if split.shape[1] >= MIN_RAW_FEATURES:
             for k in range(N_RAW_FEATURES):
                 if k == FRACTAL_TIME_IDX:
                     vals = pd.to_numeric(split[k], errors='coerce')
                     fractal_times[:, j] = vals.fillna(0).values
                     continue
+                if k == SHIFT_IDX:
+                    if k < split.shape[1]:
+                        vals = pd.to_numeric(split[k], errors='coerce')
+                        shifts[:, j] = vals.fillna(0).values
+                    continue  # shift отсутствует в старых 22-полевых CSV → остаётся 0
                 if k >= 17 and k < FRACTAL_ATR_RAW_IDX:
                     continue  # поля up_3/dn_3/up_6/dn_6 (17-20) пропускаем в X
                 # k=1..16 → feat_idx=0..15; k=21 (fractal_atr) → feat_idx=16
@@ -456,6 +466,18 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     span = np.where(span > 0, span, 1.0)  # avoid division by zero
     time_pos = (fractal_times - t_oldest) / span
     X[:, :, TIME_FEAT_TIME_POS] = np.where(raw_valid & (fractal_times > 0), time_pos, 0.0)
+
+    # === Shift features (из 23-го поля фрактала: возраст фрактала в барах = SHIFT(T) - cur_bar) ===
+    # log_shift — log1p(shift): возраст фрактала в барах, лог-масштабированный
+    X[:, :, TIME_FEAT_LOG_SHIFT] = np.where(raw_valid, np.log1p(shifts), 0.0)
+
+    # delta_shift — |shift[i] - shift[i+1]|: временной зазор между соседними фракталами
+    # shift[i+1] > shift[i] (старший фрактал старше), поэтому берём модуль разности
+    # Для fractal99 delta_shift = 0 (нет fractal100 для сравнения)
+    delta_shift = np.zeros_like(shifts)
+    for i in range(N_FRACTALS - 1):
+        delta_shift[:, i] = np.abs(shifts[:, i] - shifts[:, i + 1])
+    X[:, :, TIME_FEAT_LOG_DELTA_SHIFT] = np.where(raw_valid, np.log1p(delta_shift), 0.0)
 
     # Финальная маска: True для валидных (non-padding) позиций
     mask = raw_valid

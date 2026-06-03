@@ -1,0 +1,81 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-24",
+  "methodology_stage": "00-research-management",
+  "stage_verdict": "PASS",
+  "hypothesis": "A live-safe candidate-source model built only from current-row Nero/PIC state can replace the offline signal != 0 gate and improve over prior all-rows/direct-bar baselines without using future-derived inputs.",
+  "task_type": "candidate-source + direction/ranking filter",
+  "decision_unit": "row/bar",
+  "decision_time": {
+    "instrument": "XAUUSD",
+    "timeframe": "H1 for historical labeled splits; current raw snapshot may be shorter diagnostic data and is not quality evidence",
+    "moment": "after the row/bar snapshot is written by MT4, before any future rows are known",
+    "entry_assumption": "trade entry is evaluated from the next executable bar/event after the signal export"
+  },
+  "prohibited_shortcuts": [
+    "Do not use offline label_all().signal != 0 as a production candidate-source gate.",
+    "Do not use predict, ret_*, fav_*, adv_*, ret_dir_atr_lag1 as model inputs.",
+    "Do not tune thresholds on frozen test.",
+    "Do not continue direct-direction sweeps over the same fractal features without a new live-safe information source."
+  ],
+  "train_validation_test_forward_protocol": {
+    "train": {
+      "path": "DATA/Nero_train_labeled.csv",
+      "rows": 43934,
+      "period": "2004-07-07 20:00 to 2019-05-24 03:00"
+    },
+    "validation": {
+      "path": "DATA/Nero_validation_labeled.csv",
+      "rows": 9415,
+      "period": "2019-05-24 06:00 to 2022-10-28 16:00",
+      "allowed_use": "winner and threshold selection only"
+    },
+    "test": {
+      "path": "DATA/Nero_test_labeled.csv",
+      "rows": 9415,
+      "period": "2022-10-28 16:00 to 2026-04-22 12:00",
+      "allowed_use": "one frozen evaluation after validation freeze"
+    },
+    "forward": {
+      "required_for": "confirmed verdict",
+      "current_status": "not available for ML quality proof in this stage",
+      "minimum_rule": "must be newer than frozen test and run with unchanged frozen rule"
+    }
+  },
+  "gates": {
+    "validation_min_pf": 1.5,
+    "validation_min_trades_per_year": 6.0,
+    "validation_max_negative_years": 0,
+    "validation_buy_sell_slice": "both BUY and SELL slices must have PF >= 1.0 unless the hypothesis is explicitly one-sided before validation",
+    "baseline_uplift": "must beat direct_bar_model frozen baseline PF 1.1141 and all_rows_ranking frozen baseline PF 0.9134 on the same protocol; validation comparison first",
+    "test_min_pf": 1.5,
+    "test_min_trades_per_year": 6.0,
+    "test_max_negative_years": 0,
+    "drawdown_gate": "must be reported before candidate verdict; UNKNOWN is FAIL",
+    "robustness_gate": "year and side slices must be reported; UNKNOWN is FAIL",
+    "live_safe_gate": "all model inputs and candidate-source inputs must be live_safe; UNKNOWN is FAIL"
+  },
+  "allowed_verdicts": [
+    "reject",
+    "diagnostic_only",
+    "research_only",
+    "candidate"
+  ],
+  "expected_artifacts": [
+    "stage00_research_contract.json",
+    "stage01_raw_data_inventory.json",
+    "feature_contract.csv",
+    "candidate_source_live_safe_audit.md",
+    "stage01_gate_verdict.json"
+  ],
+  "primary_sources": [
+    "docs/methodology/00-research-management.md",
+    "docs/methodology/01-raw-data-inventory.md",
+    "docs/methodology/A4-verdicts-stop-conditions.md",
+    "docs/DATA_FLOW.md",
+    "docs/dataset_description.md",
+    "docs/reports/2026-05-05-live-safe-ml-audit.md",
+    "docs/reports/2026-05-21-transformer-direction.md",
+    "wiki/research/execution-tracks-reconciliation-plus-audit.md"
+  ]
+}

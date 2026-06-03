@@ -1,0 +1,64 @@
+{
+  "cycle_id": "methodology_cycle_candidate_source_v2",
+  "created_at": "2026-05-26",
+  "methodology_stage": "06-temporal-split",
+  "stage_verdict": "PASS",
+  "data_scope": "split metadata only; test rows inventoried but not used for model/threshold selection",
+  "split_method": {
+    "type": "sequential time-ordered split",
+    "ratios": "70/15/15",
+    "shuffle": false,
+    "source_manifest": "stage02_data_pipeline.json"
+  },
+  "splits": {
+    "train": {
+      "path": "DATA/Nero_train_labeled.csv",
+      "rows": 44104,
+      "period": "2004-07-06 20:00 - 2019-05-24 03:00",
+      "allowed_use": "fit preprocessing, feature normalization, and model parameters"
+    },
+    "validation": {
+      "path": "DATA/Nero_validation_labeled.csv",
+      "rows": 9451,
+      "period": "2019-05-24 06:00 - 2022-10-28 16:00",
+      "allowed_use": "model family comparison, threshold/rule selection, validation freeze"
+    },
+    "test": {
+      "path": "DATA/Nero_test_labeled.csv",
+      "rows": 9451,
+      "period": "2022-10-28 16:00 - 2026-05-25 18:00",
+      "allowed_use": "one frozen evaluation only after Stage 09 PASS"
+    }
+  },
+  "boundary_checks": {
+    "train_validation_gap_hours": 3,
+    "validation_test_boundary": "validation ends and test starts at 2022-10-28 16:00 per Stage 02 manifest",
+    "row_overlap": false,
+    "sorting_errors": 0,
+    "embargo_policy": "No row embargo was applied in the Stage 02 split. This is accepted for this candidate-source cycle because model features are current-row live-safe snapshots and labels are never used as inputs. Boundary rows with labels computed from future OHLC are allowed only as supervised targets; any Stage 10/11 interpretation must remain split-level OOS and cannot claim purged-CV evidence.",
+    "restriction": "Do not use this split manifest as proof of walk-forward robustness. Stage 11 must perform per-year/regime robustness; future purged/embargoed split can be added as a stricter follow-up."
+  },
+  "validation_selection_policy": {
+    "allowed": [
+      "feature family comparison",
+      "model family comparison",
+      "threshold and top-k calibration",
+      "stability refreeze before first test view"
+    ],
+    "forbidden": [
+      "any threshold or model-family change after Stage 10 test is viewed",
+      "using test distribution to choose top-k coverage",
+      "combining test and forward as a larger validation window"
+    ]
+  },
+  "walk_forward_policy": {
+    "required_later": true,
+    "reason": "Stage 05 found train-validation volatility shift; Stage 09 still research_only until frozen test and robustness.",
+    "planned_stage": "11-robustness"
+  },
+  "artifacts": [
+    "stage02_data_pipeline.json",
+    "stage06_temporal_split_manifest.json"
+  ],
+  "next_allowed_stage": "07-baseline-first"
+}
