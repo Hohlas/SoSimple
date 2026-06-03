@@ -155,11 +155,13 @@ python -m ML.train --model transformer --task classification \
 ## Data Pipeline
 
 ### 1. Парсинг (`data_loader.py`)
-CSV → 3D тензор `(n_samples, 100, 20)`:
-- 17 фрактальных features из CSV (fields 1-17): price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48, ATR_ratio
+CSV → 3D тензор `(n_samples, 100, 26)`:
+- 20 фрактальных features из CSV (fields 1-20): price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48, up_3, dn_3, up_6, dn_6
+- 1 вычисляемый ATR-ratio (из field 21 fractal_atr): `log(fractal_atr / ATR)`
 - `fractal_time` (field 0) — исключён как сырое, но используется для вычисления time-фич
-- `fractal_atr` (field 17) → `log(ATR_ratio)` = log(fractal_atr / ATR_raw)
+- `shift` (field 22) — исключён как сырое, используется для log_shift и delta_shift
 - 3 вычисляемые time-фичи: `hour_sin`, `hour_cos` (sin/cos часа суток), `time_pos` (позиция на оси строки [0..1])
+- 2 вычисляемые shift-фичи: `log_shift` (log1p возраста фрактала), `log_delta_shift` (log1p зазора до соседа)
 - Padding mask для NaN-позиций
 
 ### 2. Нормализация (`data_loader.py`)
@@ -173,10 +175,10 @@ CSV → 3D тензор `(n_samples, 100, 20)`:
 
 | Модель | Вход | Ключевая идея | Параметры |
 |--------|------|---------------|-----------|
-| **Bi-LSTM** | (batch, 100, 20) | Временные зависимости в обоих направлениях, concat pooling | ~150K |
-| **1D-CNN** | (batch, 100, 20)→транспоз | Локальные паттерны между соседними фракталами, GAP | ~44K |
-| **Transformer** | (batch, 100, 20) | Self-attention + CLS token + padding mask | ~72K |
-| **Hybrid CNN+LSTM** | (batch, 100, 20)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | ~86K |
+| **Bi-LSTM** | (batch, 100, 26) | Временные зависимости в обоих направлениях, concat pooling | ~150K |
+| **1D-CNN** | (batch, 100, 26)→транспоз | Локальные паттерны между соседними фракталами, GAP | ~44K |
+| **Transformer** | (batch, 100, 26) | Self-attention + CLS token + padding mask | ~72K |
+| **Hybrid CNN+LSTM** | (batch, 100, 26)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | ~86K |
 
 Все модели возвращают тензор `(batch, num_classes)`.
 - Для классификации: `num_classes=3`.

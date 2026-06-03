@@ -89,6 +89,23 @@ T : P : Dir : Frnt : Back : Strong : Brk : Rev : Pwr : Cnt : Imp : Up12 : Dn12 :
 
 Эволюционирующие признаки не создают train/inference mismatch: fractal0 имеет те же начальные значения, что и новый фрактал в реальной торговле.
 
+### Парсинг в 3D тензор (`ML/data_loader.py:parse_fractals_to_3d()`)
+
+CSV → `(n_samples, 100, 26)`:
+
+| Позиция в тензоре | Источник (idx фрактала) | Примечание |
+|---|---|---|
+| 0..15 | 1..16 | price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48 |
+| 16..19 | 17..20 | up_3, dn_3, up_6, dn_6 |
+| 20 | 21 | `log(fractal_atr / ATR)` — ATR-ratio |
+| 21 | — | `sin(2π · hour / 24)` |
+| 22 | — | `cos(2π · hour / 24)` |
+| 23 | — | `time_pos` — позиция на временной оси строки [0..1] |
+| 24 | 22 | `log1p(shift)` — возраст фрактала в барах |
+| 25 | 22 | `log1p(|shift[i] − shift[i+1]|)` — зазор до соседа |
+
+`fractal_time` (idx 0) и `shift` (idx 22) в тензор сырыми не попадают — используются только для вычисления производных фич.
+
 
 ## 2. Данные после разметки (Python → Nero_*_labeled.csv)
 

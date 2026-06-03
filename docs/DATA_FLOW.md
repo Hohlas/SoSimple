@@ -300,17 +300,18 @@ DATA/Nero_normalization_stats.csv
 #### 6.1. Загрузка и парсинг данных
 **Модуль**: `ML/data_loader.py` → `create_data_loaders(seq_len=20)`
 
-Парсинг 22-полевых фракталов → 3D тензор `(n_samples, 100, 20)`:
+Парсинг 23-полевых фракталов → 3D тензор `(n_samples, 100, 26)`:
 
 | Поле в CSV | idx | → X feature | Примечание |
 |-----------|-----|-------------|------------|
 | fractal_time | 0 | — | только для time-фич |
 | price–dn_48 | 1–16 | X[0–15] | 16 базовых фичей |
-| up_3, dn_3, up_6, dn_6 | 17–20 | **пропуск** | это таргеты, не фичи |
-| fractal_atr | 21 | X[16] = log(atr/ATR_raw) | ATR_ratio |
-| — | — | X[17–19] | hour_sin, hour_cos, time_pos |
+| up_3, dn_3, up_6, dn_6 | 17–20 | X[16–19] | короткие Up/Dn горизонты |
+| fractal_atr | 21 | X[20] = log(fractal_atr/ATR_raw) | ATR_ratio |
+| — | — | X[21–23] | hour_sin, hour_cos, time_pos |
+| shift | 22 | X[24–25] | log_shift, log_delta_shift |
 
-Итого: **20 фичей** на фрактал. `N_RAW_FEATURES=22`, `FRACTAL_ATR_RAW_IDX=21`.
+Итого: **26 фичей** на фрактал. `N_RAW_FEATURES=23`, `FRACTAL_ATR_RAW_IDX=21`.
 
 **seq_len**: хранится 100 фракталов (fractal0 = свежий, fractal99 = старый), для обучения берётся `X[:, :seq_len, :]`. Оптимальный `seq_len=20` определён через ablation study (100 → 50 → **20** → 10).
 

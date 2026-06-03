@@ -203,7 +203,7 @@ def run_flat_models(X_train, y_train_enc, y_mask_train,
 # ─── 3D (PyTorch) models ─────────────────────────────────────────────────────
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, n_features=20, d_model=64, n_heads=4, n_layers=2, dropout=0.1):
+    def __init__(self, n_features=26, d_model=64, n_heads=4, n_layers=2, dropout=0.1):
         super().__init__()
         self.input_proj = nn.Linear(n_features, d_model)
         self.pos_embed = nn.Parameter(torch.randn(1, 100, d_model) * 0.02)
@@ -219,7 +219,7 @@ class TransformerEncoder(nn.Module):
         )
 
     def forward(self, x, mask=None):
-        # x: (B, 100, 20), mask: (B, 100) True=valid
+        # x: (B, 100, 26), mask: (B, 100) True=valid
         B = x.shape[0]
         x = self.input_proj(x)
         x = x + self.pos_embed[:, :100, :]
@@ -236,7 +236,7 @@ class TransformerEncoder(nn.Module):
 
 
 class BiLSTMModel(nn.Module):
-    def __init__(self, n_features=20, hidden=64, n_layers=2, dropout=0.1):
+    def __init__(self, n_features=26, hidden=64, n_layers=2, dropout=0.1):
         super().__init__()
         self.lstm = nn.LSTM(n_features, hidden, n_layers, batch_first=True,
                             bidirectional=True, dropout=dropout)

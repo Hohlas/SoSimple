@@ -19,9 +19,9 @@
 #   from ML.data_loader import create_data_loaders
 # Примечания:
 #   - fractal_time (индекс 0) исключается из features, но используется для вычисления time-фич
-#   - N_RAW_FEATURES=22: полный формат фрактала из Nero.csv
-#   - N_FRACTAL_FEATURES=20: 17 входных полей + 3 time-фичи (hour_sin, hour_cos, time_pos); форма X: (n, 100, 20)
-#   - UPDN_TARGETS: ['up_12','dn_12','up_24','dn_24','up_48','dn_48']
+#   - N_RAW_FEATURES=23: полный формат фрактала из Nero.csv
+#   - N_FRACTAL_FEATURES=26: 20 входных полей (fields 1-20) + ATR_ratio + 3 time-фичи + 2 shift-фичи; форма X: (n, 100, 26)
+#   - UPDN_TARGETS: ['up_3','dn_3','up_6','dn_6','up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
 #   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
 #   - Для entry_path_v1 кэш инженерных признаков разделяется по feature profile
@@ -30,7 +30,7 @@
 """
 Dataset и DataLoader для фрактальных последовательностей.
 
-Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 20),
+Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 26),
 исключает fractal_time как сырое поле, вычисляет time-фичи (hour_sin, hour_cos, time_pos),
 добавляет ATR_ratio, нормализует features.
 Создаёт padding mask для Transformer (NaN позиции).
@@ -93,7 +93,7 @@ N_FRACTALS = 100
 N_RAW_FEATURES = 23   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
 FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 23-полевом CSV (ранее было 17)
 FRACTAL_ATR_RAW_IDX_LEGACY = 17  # fractal_atr в старых 18-полевых CSV
-N_FRACTAL_FEATURES = 22  # 17 исходных (fields 1-16 + ATR_ratio) + 3 time-фичи + log_shift + log_delta_shift
+N_FRACTAL_FEATURES = 26  # 20 исходных (fields 1-20) + ATR_ratio + 3 time-фичи + log_shift + log_delta_shift
 SHIFT_IDX = 22  # shift в 23-полевом CSV
 MIN_RAW_FEATURES = 22  # минимальное число полей для парсинга (старые CSV, 22 поля)
 TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
@@ -107,12 +107,12 @@ TAKE_SKIP_V2_INPUT_FEATURES = (
 FRACTAL_TIME_IDX = 0
 
 # Индексы вычисляемых features в X
-ATR_RATIO_IDX = 16      # fractal_atr → ATR_ratio (in-place)
-TIME_FEAT_HOUR_SIN = 17  # sin(2π · hour / 24)
-TIME_FEAT_HOUR_COS = 18  # cos(2π · hour / 24)
-TIME_FEAT_TIME_POS = 19   # позиция на временной оси строки [0..1]
-TIME_FEAT_LOG_SHIFT = 20        # log1p(shift) — возраст фрактала в барах
-TIME_FEAT_LOG_DELTA_SHIFT = 21  # log1p(delta_shift) — временной зазор до соседа
+ATR_RATIO_IDX = 20       # fractal_atr → ATR_ratio (in-place)
+TIME_FEAT_HOUR_SIN = 21   # sin(2π · hour / 24)
+TIME_FEAT_HOUR_COS = 22   # cos(2π · hour / 24)
+TIME_FEAT_TIME_POS = 23   # позиция на временной оси строки [0..1]
+TIME_FEAT_LOG_SHIFT = 24  # log1p(shift) — возраст фрактала в барах
+TIME_FEAT_LOG_DELTA_SHIFT = 25  # log1p(delta_shift) — временной зазор до соседа
 
 # Маппинг меток: signal {-1, 0, 1} → индексы {0, 1, 2}
 LABEL_MAP = {-1: 0, 0: 1, 1: 2}
@@ -290,6 +290,8 @@ FRACTAL_FIELD_SCHEMA = [
     (6,  'break',       'int',   lambda v: v in (0, 1),    'break ∈ {0, 1}'),
     (11, 'up_12',       'float', lambda v: v >= 0,         'up_12 >= 0'),
     (16, 'dn_48',       'float', lambda v: v >= 0,         'dn_48 >= 0'),
+    (17, 'up_3',        'float', lambda v: v >= 0,         'up_3 >= 0'),
+    (19, 'up_6',        'float', lambda v: v >= 0,         'up_6 >= 0'),
     (21, 'fractal_atr', 'float', lambda v: v > 0,          'fractal_atr > 0'),
 ]
 
@@ -383,24 +385,25 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Парсит колонки fractal0..fractal99 из DataFrame.
     Исключает fractal_time (индекс 0) из features.
-    Парсит 22 поля на фрактал; поле 21 (fractal_atr) заменяется ATR_ratio in-place.
+    Парсит 23 поля на фрактал; поле 21 (fractal_atr) заменяется ATR_ratio in-place.
 
     Аргументы:
         df: DataFrame с колонками fractal0..fractal99, ATR, signal
 
     Возвращает:
         Кортеж (X, mask):
-        - X: np.ndarray shape (n_samples, 100, 20) — 20 features per fractal.
+        - X: np.ndarray shape (n_samples, 100, 26) — 26 features per fractal.
              Feature order: price, direction, front, back, strong, break,
              reverse, power, count, impulse, up_12, dn_12, up_24, dn_24,
-             up_48, dn_48, ATR_ratio, hour_sin, hour_cos, time_pos
+             up_48, dn_48, up_3, dn_3, up_6, dn_6,
+             ATR_ratio, hour_sin, hour_cos, time_pos, log_shift, log_delta_shift
         - mask: np.ndarray shape (n_samples, 100) — True для валидных позиций,
                 False для padding (все features == 0)
     """
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 22 features: CSV fields 1-16 plus ATR_ratio + 3 time-фичи + log_shift + log_delta_shift.
+    # 26 features: CSV fields 1-20 plus ATR_ratio + 3 time-фичи + log_shift + log_delta_shift.
     n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)
@@ -427,10 +430,8 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
                         vals = pd.to_numeric(split[k], errors='coerce')
                         shifts[:, j] = vals.fillna(0).values
                     continue  # shift отсутствует в старых 22-полевых CSV → остаётся 0
-                if k >= 17 and k < FRACTAL_ATR_RAW_IDX:
-                    continue  # поля up_3/dn_3/up_6/dn_6 (17-20) пропускаем в X
-                # k=1..16 → feat_idx=0..15; k=21 (fractal_atr) → feat_idx=16
-                feat_idx = k - 1 if k <= 16 else ATR_RATIO_IDX
+                # k=1..20 → feat_idx=0..19; k=21 (fractal_atr) → feat_idx=ATR_RATIO_IDX
+                feat_idx = k - 1 if k < FRACTAL_ATR_RAW_IDX else ATR_RATIO_IDX
                 vals = pd.to_numeric(split[k], errors='coerce')
                 X[:, j, feat_idx] = vals.fillna(0).values
 
@@ -444,7 +445,7 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
             raw_valid[:, j] = False
 
     # ATR_ratio = log(fractal_atr / Atr.Slow) — log-transform сжимает выбросы
-    # fractal_atr уже в X[:,:,16] (ATR_RATIO_IDX), ATR — сырое (без RobustScaler)
+    # fractal_atr уже в X[:,:,20] (ATR_RATIO_IDX), ATR — сырое (без RobustScaler)
     atr_slow = pd.to_numeric(df['ATR'], errors='coerce').fillna(1.0).values.astype(np.float32)
     denom = np.where(atr_slow > 0, atr_slow, 1.0)
     ratio = X[:, :, ATR_RATIO_IDX] / denom[:, np.newaxis]
@@ -541,14 +542,14 @@ class FractalSequenceDataset(Dataset):
     PyTorch Dataset для фрактальных последовательностей.
 
     Каждый сэмпл содержит:
-    - X: tensor shape (seq_len=100, features=20)
-    - y: tensor scalar (classification/single regression) или (6,) для multi-target
+    - X: tensor shape (seq_len=100, features=26)
+    - y: tensor scalar (classification/single regression) или (10,) для multi-target
     - mask: tensor shape (seq_len=100) — True для валидных позиций
 
     Аргументы:
-        X: np.ndarray shape (n_samples, 100, 20) — нормализованные features
+        X: np.ndarray shape (n_samples, 100, 26) — нормализованные features
         y: np.ndarray shape (n_samples,) — метки {-1, 0, 1} (classification)
-               или float predict (regression) или shape (n_samples, 6) для multi-target
+               или float predict (regression) или shape (n_samples, 10) для multi-target
         mask: np.ndarray shape (n_samples, 100) — padding mask
         regression: bool — если True, y трактуется как float (не маппируется)
     """
@@ -825,7 +826,7 @@ def create_data_loaders(
             y_reg, y_cls = split_entry_path_targets(df)
             signal = df['signal'].values.astype(np.int64)
         elif multi_target:
-            y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 6)
+            y = df[UPDN_TARGETS].values.astype(np.float32)  # shape (n, 10)
         elif trailing_stop:
             y = split_trailing_stop_targets(df)
         elif trailing_stop_quantile:
