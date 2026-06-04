@@ -2,6 +2,20 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-03] - Direction-only signal confirmed
+
+### Эксперимент
+- 100 бинарных направлений фракталов (±1) → RF → `edge_h = up_h − dn_h`. Test (2022-2026, XAUUSD): edge_6 PF=6.43 (R²=0.33, win=81%), edge_12 PF=3.92 (R²=0.21, win=73%). f0.dir baseline PF=0.16 — направления несут реальный сигнал. PnL = MFE−MAE (идеализировано, не торговый PnL). Отчёт: `docs/reports/2026-06-03-direction-only-signal.md`, скрипт: `ML/baseline/direction_only_signal.py`.
+
+### Исправлено
+- `parse_fractals_to_3d()`: up_3/dn_3/up_6/dn_6 (поля 17-20) включены в тензор, N_FRACTAL_FEATURES=26
+- `normalize.py`: per-pair нормализация up/dn (5 пар со своим p85/p99), параметры из фракталов без таргетов
+- `label_trade_targets()`, `label_trailing_stop_targets()`: исправлена цена входа — была Close текущего бара (look-ahead), стала Open следующего (реальный earliest entry)
+- `label_entry_path_targets()`, `label_trailing_stop_targets()`: флаг `use_fractal_dir` для всестрочной разметки
+- Удалены мёртвые признаки: range_atr_6, body_atr_3, ret_dir_atr_lag1, vol_regime_24
+- delta_shift[99] через маску валидности вместо хардкода
+- DATA_VERSION = 'fractal_v23' с проверкой в validate_fractal_format
+
 ## [2026-05-29] - Limit-Order Entry Convention: Phase 1–3
 
 ### Добавлено
