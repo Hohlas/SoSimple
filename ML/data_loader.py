@@ -20,7 +20,7 @@
 # Примечания:
 #   - fractal_time (индекс 0) исключается из features, но используется для вычисления time-фич
 #   - N_RAW_FEATURES=23: полный формат фрактала (fractal_v24_raw_price, без обратной совместимости)
-#   - N_FRACTAL_FEATURES=26: 20 входных полей (fields 1-20) + ATR_ratio + 3 time-фичи + 2 shift-фичи; форма X: (n, 100, 26)
+#   - N_FRACTAL_FEATURES=29: 20 входных полей (fields 1-20) + ATR_ratio + 3 time-фичи + 2 shift-фичи + 3 ATR-distance; форма X: (n, 100, 29)
 #   - UPDN_TARGETS: ['up_3','dn_3','up_6','dn_6','up_12','dn_12','up_24','dn_24','up_48','dn_48']
 #   - StandardScaler fit на train, transform на val
 #   - При первой загрузке данные кэшируются в .npy файлы для быстрого старта
@@ -30,7 +30,7 @@
 """
 Dataset и DataLoader для фрактальных последовательностей.
 
-Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 26),
+Парсит CSV с фракталами в 3D тензоры (n_samples, 100, 29),
 исключает fractal_time как сырое поле, вычисляет time-фичи (hour_sin, hour_cos, time_pos),
 добавляет ATR_ratio, нормализует features.
 Создаёт padding mask для Transformer (NaN позиции).
@@ -93,20 +93,191 @@ FRACTAL_SEP = ':'
 N_FRACTALS = 100
 N_RAW_FEATURES = 23   # T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
 FRACTAL_ATR_RAW_IDX = 21  # fractal_atr в 23-полевом CSV
-N_FRACTAL_FEATURES = 26  # 20 исходных (fields 1-20) + ATR_ratio + 3 time-фичи + log_shift + log_delta_shift
+N_FRACTAL_FEATURES = 29  # 20 исходных + ATR_ratio + 3 time-фичи + log_shift + log_delta_shift + 3 ATR-distance
+TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
+TAKE_SKIP_V2_INPUT_FEATURES = (
+    N_FRACTAL_FEATURES
+    + (N_FRACTAL_FEATURES * TAKE_SKIP_V2_SUMMARY_MULTIPLIER)
+    + len(TAKE_SKIP_V2_ROW_FEATURE_COLUMNS)
+)
 SHIFT_IDX = 22  # shift в 23-полевом CSV
 DATA_VERSION = 'fractal_v24_raw_price'  # текущая версия формата фрактала
 
 # Индекс fractal_time в сырых данных (исключается как сырое, но используется для time-фич)
 FRACTAL_TIME_IDX = 0
 
-# Индексы вычисляемых features в X (N_FRACTAL_FEATURES=26)
+# Индексы вычисляемых features в X (N_FRACTAL_FEATURES=29)
 ATR_RATIO_IDX = 20       # fractal_atr → ATR_ratio (in-place)
 TIME_FEAT_HOUR_SIN = 21   # sin(2π · hour / 24)
 TIME_FEAT_HOUR_COS = 22   # cos(2π · hour / 24)
 TIME_FEAT_TIME_POS = 23   # позиция на временной оси строки [0..1]
 TIME_FEAT_LOG_SHIFT = 24  # log1p(shift) — возраст фрактала в барах
 TIME_FEAT_LOG_DELTA_SHIFT = 25  # log1p(delta_shift) — временной зазор до соседа
+DIST_ATR_IDX = 26      # signed_distance_atr = (price_i − price_0) / ATR
+ABS_DIST_ATR_IDX = 27  # abs(signed_distance_atr)
+DIR_DIST_ATR_IDX = 28  # signed_distance_atr × direction_i
+
+# Маппинг меток: signal {-1, 0, 1} → индексы {0, 1, 2}
+LABEL_MAP = {-1: 0, 0: 1, 1: 2}
+INV_LABEL_MAP = {v: k for k, v in LABEL_MAP.items()}
+
+# Имя колонки для регрессионного таргета
+REGRESSION_TARGET = 'predict'  # backward compat default
+UPDN_REGRESSION_TARGET = 'updn'  # multi-task: 10 Up/Dn таргетов
+TRADE_OUTCOME_TARGET = 'trade_outcome_cls'
+TRADE_PNL_TARGET = 'trade_pnl_reg'
+ARCHETYPE_TARGET = 'signal_archetype_cls'
+
+# Доступные up/dn таргеты
+UPDN_TARGETS = ['up_3', 'dn_3', 'up_6', 'dn_6', 'up_12', 'dn_12', 'up_24', 'dn_24', 'up_48', 'dn_48']
+
+TRADE_OUTCOME_COLUMN = 'trade_outcome_h12'
+TRADE_PNL_COLUMN = 'trade_pnl_h12_atr'
+ARCHETYPE_COLUMN = 'archetype_target'
+
+TASK_TARGET_COLUMNS = {
+    TRADE_OUTCOME_TARGET: TRADE_OUTCOME_COLUMN,
+    TRADE_PNL_TARGET: TRADE_PNL_COLUMN,
+    ARCHETYPE_TARGET: ARCHETYPE_COLUMN,
+    TRAILING_STOP_TARGET: TRAILING_STOP_TARGET,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET: TRAILING_STOP_TARGET_QUANTILE_TARGET,
+    TAKE_SKIP_TRAILING_STOP_TARGET: TAKE_SKIP_TRAILING_STOP_TARGET,
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET: TAKE_SKIP_TRAILING_STOP_V2_TARGET,
+}
+
+BINARY_CLASSIFICATION_TARGETS = {
+    TRADE_OUTCOME_TARGET,
+    ARCHETYPE_TARGET,
+}
+
+BINARY_CLASSIFICATION_COLUMNS = {
+    TRADE_OUTCOME_COLUMN,
+    ARCHETYPE_COLUMN,
+}
+
+SIGNAL_ONLY_TARGET_COLUMNS = {
+    TRADE_OUTCOME_COLUMN,
+    TRADE_PNL_COLUMN,
+    ARCHETYPE_COLUMN,
+}
+
+SINGLE_REGRESSION_COLUMNS = {
+    REGRESSION_TARGET,
+    TRADE_PNL_COLUMN,
+    TRAILING_STOP_TARGET_QUANTILE_TARGET,
+}
+
+TASK_CHECKPOINT_SUFFIXES = {
+    TRADE_OUTCOME_TARGET: '_trade_outcome_cls',
+    TRADE_PNL_TARGET: '_trade_pnl_reg',
+    ARCHETYPE_TARGET: '_signal_archetype_cls',
+    TRAILING_STOP_TARGET: '_trailing_stop_target_v1',
+    TRAILING_STOP_TARGET_QUANTILE_TARGET: '_trailing_stop_target_quantile_v1',
+    TAKE_SKIP_TRAILING_STOP_TARGET: '_take_skip_trailing_stop_v1',
+    TAKE_SKIP_TRAILING_STOP_V2_TARGET: '_take_skip_trailing_stop_v2',
+}
+
+BINARY_LABEL_MAP = {0: 0, 1: 1}
+
+
+def validate_seq_len_for_target(target: str, seq_len: int) -> int:
+    if not 1 <= int(seq_len) <= N_FRACTALS:
+        raise ValueError(f'seq_len must be in [1, {N_FRACTALS}], got {seq_len}')
+    if target == ENTRY_PATH_TARGET and seq_len not in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS:
+        allowed = ', '.join(str(value) for value in ENTRY_PATH_ALLOWED_SEQUENCE_LENGTHS)
+        raise ValueError(f'{target} supports only seq_len values: {allowed}')
+    return int(seq_len)
+
+
+def task_target_column(task: str) -> str:
+    if task in TASK_TARGET_COLUMNS:
+        return TASK_TARGET_COLUMNS[task]
+    if task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        return ENTRY_PATH_TARGET
+    if task == TB_TARGET:
+        return TB_TARGET
+    if task == ENTRY_PATH_TARGET:
+        return ENTRY_PATH_TARGET
+    if task == UPDN_REGRESSION_TARGET:
+        return UPDN_REGRESSION_TARGET
+    if task == TRAILING_STOP_TARGET_QUANTILE_TARGET:
+        return TRAILING_STOP_TARGET_QUANTILE_TARGET
+    if task == TRAILING_STOP_TARGET:
+        return TRAILING_STOP_TARGET
+    if task == TAKE_SKIP_TRAILING_STOP_TARGET:
+        return TAKE_SKIP_TRAILING_STOP_TARGET
+    if task == TAKE_SKIP_TRAILING_STOP_V2_TARGET:
+        return TAKE_SKIP_TRAILING_STOP_V2_TARGET
+    if task == REGRESSION_TARGET:
+        return REGRESSION_TARGET
+    return 'signal'
+
+
+def task_checkpoint_suffix(task: str) -> str:
+    if task == TB_TARGET:
+        return '_tb'
+    if task == ENTRY_PATH_V1_QUANTILE_TARGET:
+        return '_entry_path_v1_quantile'
+    if task == ENTRY_PATH_TARGET:
+        return f'_{ENTRY_PATH_TARGET}'
+    if task == UPDN_REGRESSION_TARGET:
+        return '_updn'
+    if task == REGRESSION_TARGET:
+        return '_regression'
+    return TASK_CHECKPOINT_SUFFIXES.get(task, '')
+
+
+def build_take_skip_v2_engineered_features(df: pd.DataFrame, X: np.ndarray) -> np.ndarray:
+    summary = build_multi_scale_fractal_features(X)
+    row_features = (
+        df.reindex(columns=TAKE_SKIP_V2_ROW_FEATURE_COLUMNS)
+        .apply(pd.to_numeric, errors='coerce')
+        .fillna(0.0)
+        .values.astype(np.float32)
+    )
+    return np.concatenate([summary, row_features], axis=1).astype(np.float32, copy=False)
+
+
+def append_take_skip_v2_engineered_channels(X: np.ndarray, engineered: np.ndarray) -> np.ndarray:
+    if len(X) != len(engineered):
+        raise ValueError('X and engineered must have the same row count')
+    repeated = np.repeat(np.asarray(engineered, dtype=np.float32)[:, None, :], X.shape[1], axis=1)
+    return np.concatenate([X.astype(np.float32, copy=False), repeated], axis=2).astype(np.float32, copy=False)
+
+
+def cache_profile_suffix(target: str) -> str:
+    return '_signal_rows' if target_uses_signal_rows(target) else ''
+
+
+def entry_path_feature_cache_suffix(feature_profile: str) -> str:
+    validate_entry_path_feature_profile(feature_profile)
+    if feature_profile == ENTRY_PATH_DEFAULT_FEATURE_PROFILE:
+        return ''
+    return f'_features_{feature_profile}'
+
+
+def target_uses_signal_rows(target: str) -> bool:
+    target_name = TASK_TARGET_COLUMNS.get(target, target)
+    return target_name in SIGNAL_ONLY_TARGET_COLUMNS
+
+
+def filter_signal_rows(frame: pd.DataFrame, target: str) -> pd.DataFrame:
+    if not target_uses_signal_rows(target):
+        return frame
+    signal = pd.to_numeric(frame['signal'], errors='coerce').fillna(0).astype(int)
+    return frame.loc[signal != 0].reset_index(drop=True)
+
+# Triple Barrier targets (12 binary: 6 BUY + 6 SELL)
+TB_TARGET = 'triple_barrier'
+TB_SL_LEVELS = [2, 3]
+TB_TP_LEVELS = [3, 6, 9]
+TB_TARGET_NAMES = []
+for _sl in TB_SL_LEVELS:
+    for _tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'buy_sl{_sl}_tp{_tp}')
+for _sl in TB_SL_LEVELS:
+    for _tp in TB_TP_LEVELS:
+        TB_TARGET_NAMES.append(f'sell_sl{_sl}_tp{_tp}')
 
 SCHEMA_DIR = Path(__file__).resolve().parent.parent / 'docs' / 'schemas'
 
@@ -206,8 +377,8 @@ def validate_data_contract(
         if len(field_errors_by_idx) > 5:
             errors.append(f'... и ещё {len(field_errors_by_idx) - 5} нарушений')
 
-    # 3. Price scale check: для normalized — цена должна быть в (0, 1]
-    if price_scale == 'normalized' and 'fractal0' in df.columns:
+    # 3. Price scale check
+    if 'fractal0' in df.columns:
         price_vals = []
         for raw in df['fractal0'].dropna().head(sample_size):
             parts = str(raw).split(fractal_cfg['separator'])
@@ -217,12 +388,24 @@ def validate_data_contract(
                 pass
         if price_vals:
             p_min, p_max = min(price_vals), max(price_vals)
-            if p_max > 1.0 or p_min < 0.0:
-                errors.append(
-                    f'Цена выходит за нормализованный диапазон [0, 1]: '
-                    f'min={p_min:.4f}, max={p_max:.4f}. '
-                    f'Возможно, данные уже в raw-формате, а схема ожидает normalized.'
-                )
+            if price_scale == 'normalized':
+                if p_max > 1.0 or p_min < 0.0:
+                    errors.append(
+                        f'Схема ожидает normalized-цену [0, 1], но: '
+                        f'min={p_min:.4f}, max={p_max:.4f}. '
+                        f'Возможно, данные raw, а схема — normalized.'
+                    )
+            elif price_scale == 'raw':
+                if p_max <= 1.0 and p_min >= 0.0:
+                    errors.append(
+                        f'Схема ожидает raw-цену, но все значения в [0, 1]: '
+                        f'min={p_min:.4f}, max={p_max:.4f}. '
+                        f'Возможно, данные нормализованы, а не сырые.'
+                    )
+                    errors.append(
+                        f'Проверь normalize_rowwise(): price не должен нормализоваться. '
+                        f'Или переключи схему на normalized.'
+                    )
 
     if errors:
         raise ValueError(
@@ -358,6 +541,12 @@ def validate_parsed_features(X: np.ndarray, mask: np.ndarray, source: str = '') 
         "ATR мёртв (std < 0.01)":                  valid[:, ATR_RATIO_IDX].std() < 0.01,
         "price мёртв (std < 0.01)":                valid[:, 0].std() < 0.01,
         "back мёртв (все нули)":                   float((valid[:, 3] == 0).all()),
+        "abs_dist_atr не >= 0":                    not (valid[:, ABS_DIST_ATR_IDX] >= -1e-6).all(),
+        "dir_dist_atr != dist_atr * direction":    not np.allclose(
+            valid[:, DIR_DIST_ATR_IDX],
+            valid[:, DIST_ATR_IDX] * valid[:, 1],
+            atol=1e-5
+        ),
     }
     failed = [msg for msg, cond in checks.items() if cond]
     if failed:
@@ -372,7 +561,8 @@ def validate_parsed_features(X: np.ndarray, mask: np.ndarray, source: str = '') 
         f"  ✅ validate_parsed_features: OK ({source}) | "
         f"valid={mask.mean():.1%} | "
         f"ATR std={valid[:, ATR_RATIO_IDX].std():.3f} | "
-        f"price std={valid[:, 0].std():.3f}"
+        f"price std={valid[:, 0].std():.3f} | "
+        f"dist_atr=[{valid[:, DIST_ATR_IDX].min():.1f}, {valid[:, DIST_ATR_IDX].max():.1f}]"
     )
 
 
@@ -391,18 +581,19 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     Возвращает:
         Кортеж (X, mask):
-        - X: np.ndarray shape (n_samples, 100, 26) — 26 features per fractal.
+        - X: np.ndarray shape (n_samples, 100, 29) — 29 features per fractal.
              Feature order: price, direction, front, back, strong, break,
              reverse, power, count, impulse, up_12, dn_12, up_24, dn_24,
              up_48, dn_48, up_3, dn_3, up_6, dn_6,
-             ATR_ratio, hour_sin, hour_cos, time_pos, log_shift, log_delta_shift
+             ATR_ratio, hour_sin, hour_cos, time_pos, log_shift, log_delta_shift,
+             dist_atr, abs_dist_atr, dir_dist_atr
         - mask: np.ndarray shape (n_samples, 100) — True для валидных позиций,
                 False для padding (все features == 0)
     """
     fractal_cols = [f'fractal{i}' for i in range(N_FRACTALS)]
     n_samples = len(df)
 
-    # 26 features: CSV fields 1-20 plus ATR_ratio + 3 time-фичи + log_shift + log_delta_shift.
+    # 29 features: CSV fields 1-20 plus ATR_ratio + 3 time-фичи + log_shift + log_delta_shift + 3 ATR-distance.
     n_features = N_FRACTAL_FEATURES
     X = np.zeros((n_samples, N_FRACTALS, n_features), dtype=np.float32)
     # Маска валидности: True если фрактал присутствует (не все NaN)
@@ -451,6 +642,17 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     ratio = X[:, :, ATR_RATIO_IDX] / denom[:, np.newaxis]
     ratio = np.clip(ratio, 1e-6, None)  # защита от log(0)
     X[:, :, ATR_RATIO_IDX] = np.log(ratio)
+
+    # === ATR-relative distance features (raw price, row-level Atr.Slow) ===
+    # signed_distance_atr = (price_i − price_0) / ATR — signed distance in ATR units
+    # abs_distance_atr = |signed_distance_atr|
+    # directed_distance_atr = signed_distance_atr × direction_i
+    f0_price = X[:, 0, 0].copy()  # (n_samples,)
+    dist_raw = X[:, :, 0] - f0_price[:, np.newaxis]
+    dist_atr = dist_raw / denom[:, np.newaxis]
+    X[:, :, DIST_ATR_IDX]     = np.where(raw_valid, dist_atr, 0.0)
+    X[:, :, ABS_DIST_ATR_IDX] = np.where(raw_valid, np.abs(dist_atr), 0.0)
+    X[:, :, DIR_DIST_ATR_IDX] = np.where(raw_valid, dist_atr * X[:, :, 1], 0.0)
 
     # === Time features (вычисляются из fractal_time) ===
     # hour_sin, hour_cos — циклическое кодирование часа суток
@@ -544,12 +746,12 @@ class FractalSequenceDataset(Dataset):
     PyTorch Dataset для фрактальных последовательностей.
 
     Каждый сэмпл содержит:
-    - X: tensor shape (seq_len=100, features=26)
+    - X: tensor shape (seq_len=100, features=29)
     - y: tensor scalar (classification/single regression) или (10,) для multi-target
     - mask: tensor shape (seq_len=100) — True для валидных позиций
 
     Аргументы:
-        X: np.ndarray shape (n_samples, 100, 26) — нормализованные features
+        X: np.ndarray shape (n_samples, 100, 29) — нормализованные features
         y: np.ndarray shape (n_samples,) — метки {-1, 0, 1} (classification)
                или float predict (regression) или shape (n_samples, 10) для multi-target
         mask: np.ndarray shape (n_samples, 100) — padding mask

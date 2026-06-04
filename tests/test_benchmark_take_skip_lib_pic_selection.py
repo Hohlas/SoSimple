@@ -33,6 +33,7 @@ def _fractal(seed: int, *, direction: int = 1, edge: float = 1.0) -> str:
         fav,
         adv,
         1.5 + seed,
+        0,
     ]
     return ':'.join(str(value) for value in fields)
 

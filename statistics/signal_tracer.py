@@ -83,9 +83,9 @@ def denormalize_updn_row(y_norm_6, brk, cap):
 
 
 UPDN_PARAMS_PATHS = [
-    ('DATA/Nero_train_updn_params.npy',      'DATA/Nero_train_labeled.csv'),
-    ('DATA/Nero_validation_updn_params.npy', 'DATA/Nero_validation_labeled.csv'),
-    ('DATA/Nero_test_updn_params.npy',       'DATA/Nero_test_labeled.csv'),
+    ('DATA/Nero_XAUUSD_train_updn_params.npy',      'DATA/Nero_XAUUSD_train_labeled.csv'),
+    ('DATA/Nero_XAUUSD_validation_updn_params.npy', 'DATA/Nero_XAUUSD_validation_labeled.csv'),
+    ('DATA/Nero_XAUUSD_test_updn_params.npy',       'DATA/Nero_XAUUSD_test_labeled.csv'),
 ]
 
 

@@ -125,7 +125,7 @@ def test_initial_system_verdicts_match_expected_risk_model():
         "quality": "FAIL",
         "frequency": "FAIL",
         "original_plus_path": "FAIL",
-        "entry_path_v1": "FAIL",
+        "entry_path_v1": "PASS",
         "entry_path_v1_quantile": "FAIL",
     }
 

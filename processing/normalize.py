@@ -314,7 +314,7 @@ def normalize_rowwise(
         - impulse, count, reverse, power, break: раздельная piecewise linear-log
         - up_X/dn_X: per-pair piecewise linear-log — каждая пара со своим p85/p99,
           параметры считаются только по фракталам (без таргетов строки)
-        - price: min-max [0, 1]
+        - price: без нормализации (raw, сохраняется для ATR-расстояний)
         - direction, strong: без изменений
         - fractal_time: без изменений
 
@@ -456,12 +456,8 @@ def normalize_rowwise(
                     vals, lo, brk, cap, linear_max, tail_strength, eps
                 )
         
-        # === 3. Min-max нормализация price ===
-        price_vals = fractals[i, :, idx_price]
-        price_valid = price_vals[np.isfinite(price_vals)]
-
-        if len(price_valid) > 0:
-            fractals[i, :, idx_price] = minmax_normalize(price_vals, eps)
+        # === 3. Price: без нормализации (сохраняем raw для ATR-признаков) ===
+        # Нормализация price выполняется позже в ML/data_loader.py или feature builder.
 
         # === 4. Per-pair piecewise нормализация Up/Dn (фракталы → таргеты) ===
         # Для каждой пары up_X/dn_X: p85/p99 считаются только по фракталам

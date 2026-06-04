@@ -301,7 +301,7 @@ DATA/Nero_normalization_stats.csv
 #### 6.1. Загрузка и парсинг данных
 **Модуль**: `ML/data_loader.py` → `create_data_loaders(seq_len=20)`
 
-Парсинг 23-полевых фракталов → 3D тензор `(n_samples, 100, 26)`:
+Парсинг 23-полевых фракталов → 3D тензор `(n_samples, 100, 29)`:
 
 | Поле в CSV | idx | → X feature | Примечание |
 |-----------|-----|-------------|------------|
@@ -311,8 +311,11 @@ DATA/Nero_normalization_stats.csv
 | fractal_atr | 21 | X[20] = log(fractal_atr/ATR_raw) | ATR_ratio |
 | — | — | X[21–23] | hour_sin, hour_cos, time_pos |
 | shift | 22 | X[24–25] | log_shift, log_delta_shift |
+| — | raw price | X[26] | signed_distance_atr = (price_i − price_0) / ATR |
+| — | raw price | X[27] | abs_distance_atr = |signed|
+| — | raw price | X[28] | directed_distance_atr = signed × direction_i |
 
-Итого: **26 фичей** на фрактал. `N_RAW_FEATURES=23`, `FRACTAL_ATR_RAW_IDX=21`.
+Итого: **29 фичей** на фрактал. `N_RAW_FEATURES=23`, `FRACTAL_ATR_RAW_IDX=21`.
 
 **seq_len**: хранится 100 фракталов (fractal0 = свежий, fractal99 = старый), для обучения берётся `X[:, :seq_len, :]`. Оптимальный `seq_len=20` определён через ablation study (100 → 50 → **20** → 10).
 
@@ -568,5 +571,5 @@ python statistics/signal_tracer.py --from-log MT/tester/logs/20260324.log --loss
 
 ---
 
-**Последнее обновление**: 2026-04-01
+**Последнее обновление**: 2026-06-04
 **Авторы**: Antigravity + AI agents

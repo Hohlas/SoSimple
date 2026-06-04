@@ -46,8 +46,8 @@ def _make_nero_df(times, atr_vals, fractal0_vals):
 
 
 def _fractal_str(price, direction):
-    """Создать minimal valid fractal string (22 поля, field[0]=int timestamp)."""
-    return f'123:{price}:{direction}:1.0:2.0:0:0:0.0:0.0:0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0'
+    """Создать minimal valid fractal string (23 поля, field[0]=int timestamp)."""
+    return f'123:{price}:{direction}:1.0:2.0:0:0:0.0:0.0:0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0'
 
 
 class TestBuyLimit:

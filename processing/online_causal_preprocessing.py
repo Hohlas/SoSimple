@@ -25,7 +25,7 @@ from processing.normalize import normalize_rowwise
 
 
 NORMALIZED_VALUE_FIELDS = (
-    "price",
+    # price исключён — остаётся raw для ATR-признаков
     "front",
     "back",
     "break",

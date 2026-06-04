@@ -146,6 +146,7 @@ def test_create_data_loaders_take_skip_v2_uses_full_sequence_and_wide_targets(mo
     monkeypatch.setattr(data_loader, 'VAL_FILE', tmp_path / 'Nero_validation_labeled.csv')
     monkeypatch.setattr(data_loader, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
     monkeypatch.setattr(data_loader.pd, 'read_csv', lambda *args, **kwargs: df)
+    monkeypatch.setattr(data_loader, 'validate_data_contract', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_csv_columns', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_fractal_format', lambda *args, **kwargs: None)
     monkeypatch.setattr(
@@ -183,6 +184,7 @@ def test_create_test_loader_take_skip_v2_branch(monkeypatch, tmp_path):
     monkeypatch.setattr(data_loader, 'DATA_DIR', tmp_path)
     monkeypatch.setattr(data_loader, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
     monkeypatch.setattr(data_loader.pd, 'read_csv', lambda *args, **kwargs: df)
+    monkeypatch.setattr(data_loader, 'validate_data_contract', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_csv_columns', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_fractal_format', lambda *args, **kwargs: None)
     monkeypatch.setattr(

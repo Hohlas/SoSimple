@@ -2,10 +2,10 @@
 # Файл: tests/test_label_updn.py
 # Назначение: Unit-тесты для parse_fractal и label_updn из processing/label_signals.py
 # Язык: Python 3.11+
-# Обновлён: 2026-04-05
+# Обновлён: 2026-06-04
 # Зависимости:
 #   Входные данные:
-#     - синтетические строки фракталов (11 и 18 полей), pandas DataFrame
+#     - синтетические строки фракталов (23 поля), pandas DataFrame
 #   Выходные данные:
 #     - pytest assertions
 # Внешние зависимости:
@@ -13,7 +13,7 @@
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_label_updn.py -q
 # Примечания:
-#   - проверяет backward-compat для 11-польных фракталов и полный контракт 18-польных
+#   - строгий 23-полевой формат (fractal_v24_raw_price)
 #   - label_updn: трекинг fractal0 по времени, last-seen логика
 # =============================================================================
 
@@ -23,23 +23,17 @@ import pandas as pd
 sys.path.insert(0, 'processing')
 from label_signals import parse_fractal
 
+# 23-полевой фрактал: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:Atr:Shift
+FRACTAL_23 = ("1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018"
+              ":0.0015:0.0010:0.0028:0.0019:0.0040:0.0031"
+              ":0:0:0:0:0.00092:0")
 
-FRACTAL_11 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018"
-FRACTAL_18 = "1705312800:1.28450:1:0.0034:0.0021:1:0:0.0:0.0025:3:0.0018:0.0015:0.0010:0.0028:0.0019:0.0040:0.0031:0.00092"
 
-
-def test_parse_fractal_11_fields_backward_compat():
-    result = parse_fractal(FRACTAL_11)
+def test_parse_fractal_23_fields():
+    result = parse_fractal(FRACTAL_23)
     assert result is not None
-    assert result['up_12'] == 0.0
-    assert result['dn_12'] == 0.0
-    assert result['up_48'] == 0.0
-    assert result['fractal_atr'] == 0.0
-
-
-def test_parse_fractal_18_fields():
-    result = parse_fractal(FRACTAL_18)
-    assert result is not None
+    assert result['direction'] == 1
+    assert result['price'] == pytest.approx(1.28450, abs=1e-5)
     assert result['up_12'] == pytest.approx(0.0015, abs=1e-6)
     assert result['dn_12'] == pytest.approx(0.0010, abs=1e-6)
     assert result['up_24'] == pytest.approx(0.0028, abs=1e-6)
@@ -47,6 +41,7 @@ def test_parse_fractal_18_fields():
     assert result['up_48'] == pytest.approx(0.0040, abs=1e-6)
     assert result['dn_48'] == pytest.approx(0.0031, abs=1e-6)
     assert result['fractal_atr'] == pytest.approx(0.00092, abs=1e-6)
+    assert result['shift'] == 0
 
 
 def test_parse_fractal_none_input():
@@ -54,14 +49,20 @@ def test_parse_fractal_none_input():
     assert parse_fractal('') is None
 
 
-# ── label_updn tests (imported after Task 6 implementation) ──────────────────
+def test_parse_fractal_wrong_fields():
+    """22 поля — reject."""
+    assert parse_fractal("1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1") is None
+
+
+# ── label_updn tests ─────────────────────────────────────────────────────────
 from label_signals import label_updn
 
 
 def _make_fractal(t, price, up12, dn12, up24, dn24, up48, dn48, strong=0, brk=0, atr=0.001):
-    """Helper: build a fractal string with 18 fields."""
+    """Helper: build a 23-field fractal string."""
     return (f"{t}:{price:.5f}:1:0.001:0.001:{strong}:{brk}:0.0:0.001:1:0.001"
-            f":{up12:.5f}:{dn12:.5f}:{up24:.5f}:{dn24:.5f}:{up48:.5f}:{dn48:.5f}:{atr:.5f}")
+            f":{up12:.5f}:{dn12:.5f}:{up24:.5f}:{dn24:.5f}:{up48:.5f}:{dn48:.5f}"
+            f":0:0:0:0:{atr:.5f}:0")
 
 
 def test_label_updn_basic():

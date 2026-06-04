@@ -91,7 +91,7 @@ T : P : Dir : Frnt : Back : Strong : Brk : Rev : Pwr : Cnt : Imp : Up12 : Dn12 :
 
 ### Парсинг в 3D тензор (`ML/data_loader.py:parse_fractals_to_3d()`)
 
-CSV → `(n_samples, 100, 26)`:
+CSV → `(n_samples, 100, 29)`:
 
 | Позиция в тензоре | Источник (idx фрактала) | Примечание |
 |---|---|---|
@@ -103,6 +103,9 @@ CSV → `(n_samples, 100, 26)`:
 | 23 | — | `time_pos` — позиция на временной оси строки [0..1] |
 | 24 | 22 | `log1p(shift)` — возраст фрактала в барах |
 | 25 | 22 | `log1p(|shift[i] − shift[i+1]|)` — зазор до соседа |
+| 26 | raw price | `(price_i − price_0) / ATR` — signed расстояние в ATR |
+| 27 | raw price | `|signed_distance_atr|` — абсолютное ATR-расстояние |
+| 28 | raw price | `signed_distance_atr × direction_i` — направленное ATR-расстояние |
 
 `fractal_time` (idx 0) и `shift` (idx 22) в тензор сырыми не попадают — используются только для вычисления производных фич.
 

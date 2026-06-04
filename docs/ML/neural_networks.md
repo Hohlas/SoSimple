@@ -1,6 +1,6 @@
 # Neural Networks Pipeline
 
-> **Обновлено**: 2026-04-09 — `regression_updn` описан в текущем виде: 10 Up/Dn таргетов на горизонтах 3, 6, 12, 24, 48.
+> **Обновлено**: 2026-06-04 — добавлены ATR-distance признаки (N_FRACTAL_FEATURES=29).
 
 ## Назначение
 Обучение и сравнение 4 архитектур нейронных сетей для решения трёх задач:
@@ -155,7 +155,7 @@ python -m ML.train --model transformer --task classification \
 ## Data Pipeline
 
 ### 1. Парсинг (`data_loader.py`)
-CSV → 3D тензор `(n_samples, 100, 26)`:
+CSV → 3D тензор `(n_samples, 100, 29)`:
 - 20 фрактальных features из CSV (fields 1-20): price, direction, front, back, strong, break, reverse, power, count, impulse, up_12, dn_12, up_24, dn_24, up_48, dn_48, up_3, dn_3, up_6, dn_6
 - 1 вычисляемый ATR-ratio (из field 21 fractal_atr): `log(fractal_atr / ATR)`
 - `fractal_time` (field 0) — исключён как сырое, но используется для вычисления time-фич
@@ -175,10 +175,10 @@ CSV → 3D тензор `(n_samples, 100, 26)`:
 
 | Модель | Вход | Ключевая идея | Параметры |
 |--------|------|---------------|-----------|
-| **Bi-LSTM** | (batch, 100, 26) | Временные зависимости в обоих направлениях, concat pooling | ~150K |
-| **1D-CNN** | (batch, 100, 26)→транспоз | Локальные паттерны между соседними фракталами, GAP | ~44K |
-| **Transformer** | (batch, 100, 26) | Self-attention + CLS token + padding mask | ~72K |
-| **Hybrid CNN+LSTM** | (batch, 100, 26)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | ~86K |
+| **Bi-LSTM** | (batch, 100, 29) | Временные зависимости в обоих направлениях, concat pooling | ~150K |
+| **1D-CNN** | (batch, 100, 29)→транспоз | Локальные паттерны между соседними фракталами, GAP | ~44K |
+| **Transformer** | (batch, 100, 29) | Self-attention + CLS token + padding mask | ~72K |
+| **Hybrid CNN+LSTM** | (batch, 100, 29)→транспоз | CNN (локальные) → Bi-LSTM (глобальные) | ~86K |
 
 Все модели возвращают тензор `(batch, num_classes)`.
 - Для классификации: `num_classes=3`.

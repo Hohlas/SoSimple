@@ -25,8 +25,8 @@ def make_source_frame(row_time: str, fractal0: str, fractal1: str) -> pd.DataFra
 def make_source_frame_with_fractal0_and_fractal1_updn() -> pd.DataFrame:
     return make_source_frame(
         row_time="2024.01.01 10:00",
-        fractal0="2024.01.01 10:00:100:-1:0:0:0:0:0:0:0:0:9:9:9:9:9:9:9:9:9:9:1",
-        fractal1="2024.01.01 09:00:101:1:0:0:0:0:0:0:0:0:1:1:2:1:1:1:1:1:1:1:1",
+        fractal0="2024.01.01 10:00:100:-1:0:0:0:0:0:0:0:0:9:9:9:9:9:9:9:9:9:9:1:0",
+        fractal1="2024.01.01 09:00:101:1:0:0:0:0:0:0:0:0:1:1:2:1:1:1:1:1:1:1:1:0",
     )
 
 
@@ -34,20 +34,20 @@ def make_frame_with_fractal1_far_and_fractal9_near() -> pd.DataFrame:
     row = {
         "time": "2024.01.01 10:00",
         "ATR": 2.0,
-        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:9:9:9:9:9:9:9:9:9:9:1",
+        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:9:9:9:9:9:9:9:9:9:9:1:0",
     }
     for idx in range(1, 10):
         price = 130.0 if idx == 1 else 120.0
         if idx == 9:
             price = 101.0
-        row[f"fractal{idx}"] = f"1704100{idx:03d}:{price}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1"
+        row[f"fractal{idx}"] = f"1704100{idx:03d}:{price}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1:0"
     return pd.DataFrame([row])
 
 
 def test_parse_fractal_reads_price_direction_time_and_updn():
     parsed = parse_fractal(
         "123:2010.5:-1:0.1:0.2:1:0:0.3:0.4:2:0.5:"
-        "1.0:0.2:1.5:0.3:2.0:0.4:0.6:0.1:0.8:0.2:1.1"
+        "1.0:0.2:1.5:0.3:2.0:0.4:0.6:0.1:0.8:0.2:1.1:0"
     )
 
     assert parsed["time"] == 123
@@ -67,8 +67,8 @@ def test_parse_row_time_and_fractal_time_use_same_unit():
 def test_audit_rejects_future_fractal_time():
     frame = make_source_frame(
         row_time="2024.01.01 10:00",
-        fractal0="100:2000:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1",
-        fractal1="9999999999:2001:1:0:0:0:0:0:0:0:0:1:1:1:1:1:1:1:1:1:1:1",
+        fractal0="100:2000:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1:0",
+        fractal1="9999999999:2001:1:0:0:0:0:0:0:0:0:1:1:1:1:1:1:1:1:1:1:1:0",
     )
 
     result = audit_fractal_rows(frame)
@@ -123,11 +123,11 @@ def _make_multi_fractal_frame(n_fractals: int = 20) -> pd.DataFrame:
     row = {
         "time": "2024.01.01 10:00",
         "ATR": 1.0,
-        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1",
+        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1:0",
     }
     for idx in range(1, n_fractals):
         row[f"fractal{idx}"] = (
-            f"1704103200:{100 + idx}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1"
+            f"1704103200:{100 + idx}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1:0"
         )
     return pd.DataFrame([row])
 
@@ -179,11 +179,11 @@ def test_zone_features_count_matches_fractal_distribution():
     row = {
         "time": "2024.01.01 10:00",
         "ATR": 1.0,
-        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1",
+        "fractal0": "1704103200:100:-1:0:0:0:0:0:0:0:0:1:2:3:4:5:6:7:8:9:10:1:0",
     }
     for idx in range(1, 5):
         price = 100 + idx * 0.1
-        row[f"fractal{idx}"] = f"1704100{idx:03d}:{price}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1"
+        row[f"fractal{idx}"] = f"1704100{idx:03d}:{price}:1:0:0:1:0:0:0.5:{idx}:0.1:1:2:3:4:5:6:7:8:9:10:1:0"
     frame = pd.DataFrame([row])
     features = build_fractal_level_features(frame, input_family="zones")
     assert "zone_0_above_0.00_0.25_count" in features.columns

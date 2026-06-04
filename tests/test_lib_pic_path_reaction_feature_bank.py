@@ -31,6 +31,7 @@ def _fractal(direction: int, up: dict[int, float], dn: dict[int, float]) -> str:
         str(up[6]),
         str(dn[6]),
         '1.5',
+        '0',
     ]
     return ':'.join(fields)
 

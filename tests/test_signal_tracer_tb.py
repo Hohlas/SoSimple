@@ -6,10 +6,13 @@
 #   ./.venv/bin/python -m pytest tests/test_signal_tracer_tb.py -q
 # =============================================================================
 
-import sys
+import os
+import importlib.machinery
 
-sys.path.insert(0, 'statistics')
-import signal_tracer as st
+_proj_root = os.path.join(os.path.dirname(__file__), '..')
+st = importlib.machinery.SourceFileLoader(
+    'signal_tracer', os.path.join(_proj_root, 'statistics', 'signal_tracer.py')
+).load_module()
 
 
 def test_parse_tb_log_line_extracts_sl_tp_prob():

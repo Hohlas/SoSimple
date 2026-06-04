@@ -9,7 +9,7 @@ import pandas as pd
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-TEST_FILE = PROJECT_ROOT / 'DATA' / 'Nero_test_labeled.csv'
+TEST_FILE = PROJECT_ROOT / 'DATA' / 'Nero_XAUUSD_test_labeled.csv'
 
 def test_api():
     print(f"📖 Чтение тестового датасета: {TEST_FILE.name}")
