@@ -9,7 +9,7 @@
 #
 # Зависимости:
 #   Входные данные:
-#     - CSV файлы с колонками фракталов (22 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr)
+#     - CSV файлы с колонками фракталов (23 поля: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift)
 #   Выходные данные:
 #     - pd.DataFrame с колонками 'signal', 'predict', 'up_3'..'dn_48',
 #       'ret_*_dir_atr', 'fav_*_atr', 'adv_*_atr', 'path_6_class'
@@ -23,7 +23,7 @@
 #   labeled_df = label_entry_path_targets(labeled_df, 'DATA/XAUUSD_H1_OHLC.csv')
 #
 # Примечания:
-#   - Обратная совместимость: parse_fractal() принимает строки с 7..23 полями
+#   - parse_fractal() — только 23-полевой формат (текущий DATA_VERSION)
 #   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
@@ -44,10 +44,7 @@ def parse_fractal(fractal_str):
     """
     Парсит строку фрактала и возвращает словарь с параметрами.
 
-    Формат строки:
-    - legacy 18 полей:
-      `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
-    - current 23 поля:
+    Формат строки (23 поля):
        `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr:shift`
 
      Индексы в строке:
@@ -86,7 +83,7 @@ def parse_fractal(fractal_str):
         return None
     
     parts = str(fractal_str).split(':')
-    if len(parts) < 7:  # Минимум нужны индексы 0-6 для базовой логики
+    if len(parts) != 23:  # Только 23-полевой формат
         return None
     
     try:
@@ -102,18 +99,18 @@ def parse_fractal(fractal_str):
             'power': float(parts[8]) if len(parts) > 8 else 0.0,
             'count': int(parts[9]) if len(parts) > 9 else 0,
             'impulse':     float(parts[10]) if len(parts) > 10 else 0.0,
-            'up_12':       float(parts[11]) if len(parts) > 11 else 0.0,
-            'dn_12':       float(parts[12]) if len(parts) > 12 else 0.0,
-            'up_24':       float(parts[13]) if len(parts) > 13 else 0.0,
-            'dn_24':       float(parts[14]) if len(parts) > 14 else 0.0,
-            'up_48':       float(parts[15]) if len(parts) > 15 else 0.0,
-            'dn_48':       float(parts[16]) if len(parts) > 16 else 0.0,
-            'up_3':        float(parts[17]) if len(parts) > 21 else 0.0,
-            'dn_3':        float(parts[18]) if len(parts) > 21 else 0.0,
-            'up_6':        float(parts[19]) if len(parts) > 21 else 0.0,
-            'dn_6':        float(parts[20]) if len(parts) > 21 else 0.0,
-            'fractal_atr': float(parts[21]) if len(parts) > 21 else (float(parts[17]) if len(parts) > 17 else 0.0),
-            'shift':       int(parts[22])   if len(parts) > 22 else 0,
+            'up_12':       float(parts[11]),
+            'dn_12':       float(parts[12]),
+            'up_24':       float(parts[13]),
+            'dn_24':       float(parts[14]),
+            'up_48':       float(parts[15]),
+            'dn_48':       float(parts[16]),
+            'up_3':        float(parts[17]),
+            'dn_3':        float(parts[18]),
+            'up_6':        float(parts[19]),
+            'dn_6':        float(parts[20]),
+            'fractal_atr': float(parts[21]),
+            'shift':       int(parts[22]),
         }
     except (ValueError, IndexError):
         return None

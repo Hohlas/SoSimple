@@ -19,6 +19,7 @@ from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from scipy.stats import pearsonr
+from ML.data_loader import validate_data_contract
 
 DATA = Path('DATA')
 
@@ -133,6 +134,9 @@ def main():
     train = pd.read_csv(DATA / 'Nero_XAUUSD_train_labeled.csv', sep=';')
     val = pd.read_csv(DATA / 'Nero_XAUUSD_validation_labeled.csv', sep=';')
     test = pd.read_csv(DATA / 'Nero_XAUUSD_test_labeled.csv', sep=';')
+
+    for name, df in [('train', train), ('val', val), ('test', test)]:
+        validate_data_contract(df, source=f'Nero_XAUUSD_{name}_labeled.csv')
 
     meta = {}
     for name, df in [('train', train), ('val', val), ('test', test)]:

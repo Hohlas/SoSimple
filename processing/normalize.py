@@ -30,7 +30,7 @@
 #   - ATR нормализация глобальная — требует fit на train, transform на val/test
 #   - Признаки direction и strong не нормализуются (уже в {-1,0,1})
 #   - fractal_time исключается из нормализации (служебное поле)
-#   - Legacy 18-польные фракталы поддерживаются: fractal_atr переносится в поле 21.
+#   - Только 23-полевой формат (текущий DATA_VERSION).
 #   - Up/Dn нормализация per-pair: каждая пара up_X/dn_X со своим p85/p99.
 #     Параметры считаются только по фракталам (не по таргетам строки).
 # =============================================================================
@@ -116,35 +116,23 @@ DEFAULT_PIECEWISE_PARAMS = {
 
 def parse_fractal(fractal_str: str) -> Optional[List[float]]:
     """
-    Парсит строку фрактала в список значений.
+    Парсит строку фрактала в список значений. Требуется 23 поля.
 
     Args:
-        fractal_str: Строка формата "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:FractalAtr"
+        fractal_str: Строка формата "T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift"
 
     Returns:
-        Список из 18 float значений или None, если строка некорректна.
+        Список из 23 float значений или None, если строка некорректна.
     """
     if pd.isna(fractal_str) or fractal_str == '':
         return None
 
     parts = str(fractal_str).split(':')
-    if len(parts) < 18:
+    if len(parts) != 23:
         return None
 
     try:
-        if len(parts) >= 23:
-            values = [float(p) for p in parts[:23]]  # 23-полевой формат (с shift)
-        elif len(parts) >= 22:
-            values = [float(p) for p in parts[:22]]  # старый 22-полевой (без shift)
-        else:
-            values = [float(p) for p in parts[:18]]  # legacy 18-полевой
-        if len(values) == 18:
-            legacy_fractal_atr = values[17]
-            # Перенос: [0..16] + up_3=NaN,dn_3=NaN,up_6=NaN,dn_6=NaN + fractal_atr + shift=NaN
-            values = values[:17] + [np.nan, np.nan, np.nan, np.nan, legacy_fractal_atr, np.nan]
-        elif len(values) == 22:
-            # Старый формат без shift: дополняем shift=NaN
-            values = values[:22] + [np.nan]
+        values = [float(p) for p in parts[:23]]
         return values
     except (ValueError, IndexError):
         return None

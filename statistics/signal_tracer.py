@@ -9,7 +9,7 @@
 #     - MT/MQL4/Files/ml_signals.csv       (legacy ML предсказания: pred_up, pred_dn, ratio)
 #     - MT/MQL4/Files/ml_signals_tb.csv    (TB сигналы: sl_atr, tp_atr, prob, ev)
 #     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; up/dn и TB labels)
-#     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,2))
+#     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,5,2))
 #     - MT/tester/$o$imple.ini             (legacy параметры: ML_MinRatio, ML_ScaleK и др.)
 #     - MT/tester/logs/YYYYMMDD.log        (--from-log: ML BUY/SELL ... или TB BUY/SELL ... из MT4)
 #   Выходные данные:
@@ -92,8 +92,7 @@ UPDN_PARAMS_PATHS = [
 def load_updn_params(nero_paths=None):
     """Загружает per-row updn_params (brk, cap) и строит маппинг time->params.
 
-    Поддерживает старый формат (N, 2) и новый per-pair (N, 5, 2).
-    Для up_12/dn_12 используется пара с индексом 2.
+    Формат: (N, 5, 2) — per-pair brk/cap. Для up_12/dn_12 используется пара с индексом 2.
 
     Returns:
         dict {time_str: (brk, cap)} или {} если файлы не найдены.
@@ -104,16 +103,10 @@ def load_updn_params(nero_paths=None):
         if not os.path.exists(params_path) or not os.path.exists(csv_path):
             continue
         params_arr = np.load(params_path)
-        if params_arr.ndim == 2:
-            # Старый формат (N, 2) — один brk/cap на все пары
-            pair_brk, pair_cap = 0, 1
-        elif params_arr.ndim == 3 and params_arr.shape[1:] == (5, 2):
-            # Новый формат (N, 5, 2) — per-pair, берём up_12/dn_12 (индекс 2)
-            pair_brk, pair_cap = (slice(None), 2, 0), (slice(None), 2, 1)
-        else:
+        if params_arr.ndim != 3 or params_arr.shape[1:] != (5, 2):
             raise ValueError(
                 f"updn_params неожиданной формы {params_arr.shape}, "
-                f"ожидается (N, 2) или (N, 5, 2). Перегенерируйте данные."
+                f"ожидается (N, 5, 2). Перегенерируйте данные."
             )
         with open(csv_path, 'r', encoding='utf-8') as f:
             f.readline()  # header
@@ -121,12 +114,8 @@ def load_updn_params(nero_paths=None):
                 if i >= len(params_arr):
                     break
                 t = line[:16]  # 'YYYY.MM.DD HH:MM'
-                if isinstance(pair_brk, tuple):
-                    brk = params_arr[i, 2, 0]
-                    cap = params_arr[i, 2, 1]
-                else:
-                    brk = params_arr[i, 0]
-                    cap = params_arr[i, 1]
+                brk = params_arr[i, 2, 0]
+                cap = params_arr[i, 2, 1]
                 time_to_params[t] = (brk, cap)
     return time_to_params
 
@@ -223,12 +212,11 @@ FRACTAL_FIELDS = [
 ]
 
 def parse_fractal0(fractal_str):
-    """Парсинг строки fractal0 (legacy 18 полей или current 23 поля) в dict."""
+    """Парсинг строки fractal0 (23 поля)."""
     parts = fractal_str.split(':')
-    if len(parts) < 18:
+    if len(parts) != 23:
         return None
     try:
-        fractal_atr_idx = 21 if len(parts) >= 22 else 17
         return {
             'fractal_time': int(parts[0]),
             'price': float(parts[1]),
@@ -247,7 +235,7 @@ def parse_fractal0(fractal_str):
             'dn_24': float(parts[14]),
             'up_48': float(parts[15]),
             'dn_48': float(parts[16]),
-            'fractal_atr': float(parts[fractal_atr_idx])
+            'fractal_atr': float(parts[21])
         }
     except (ValueError, IndexError):
         return None
