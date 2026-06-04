@@ -92,21 +92,42 @@ UPDN_PARAMS_PATHS = [
 def load_updn_params(nero_paths=None):
     """Загружает per-row updn_params (brk, cap) и строит маппинг time->params.
 
+    Поддерживает старый формат (N, 2) и новый per-pair (N, 5, 2).
+    Для up_12/dn_12 используется пара с индексом 2.
+
     Returns:
         dict {time_str: (brk, cap)} или {} если файлы не найдены.
     """
+    paths = nero_paths or UPDN_PARAMS_PATHS
     time_to_params = {}
-    for params_path, csv_path in UPDN_PARAMS_PATHS:
+    for params_path, csv_path in paths:
         if not os.path.exists(params_path) or not os.path.exists(csv_path):
             continue
-        params_arr = np.load(params_path)  # shape (N, 2)
+        params_arr = np.load(params_path)
+        if params_arr.ndim == 2:
+            # Старый формат (N, 2) — один brk/cap на все пары
+            pair_brk, pair_cap = 0, 1
+        elif params_arr.ndim == 3 and params_arr.shape[1:] == (5, 2):
+            # Новый формат (N, 5, 2) — per-pair, берём up_12/dn_12 (индекс 2)
+            pair_brk, pair_cap = (slice(None), 2, 0), (slice(None), 2, 1)
+        else:
+            raise ValueError(
+                f"updn_params неожиданной формы {params_arr.shape}, "
+                f"ожидается (N, 2) или (N, 5, 2). Перегенерируйте данные."
+            )
         with open(csv_path, 'r', encoding='utf-8') as f:
             f.readline()  # header
             for i, line in enumerate(f):
                 if i >= len(params_arr):
                     break
                 t = line[:16]  # 'YYYY.MM.DD HH:MM'
-                time_to_params[t] = (params_arr[i, 0], params_arr[i, 1])
+                if isinstance(pair_brk, tuple):
+                    brk = params_arr[i, 2, 0]
+                    cap = params_arr[i, 2, 1]
+                else:
+                    brk = params_arr[i, 0]
+                    cap = params_arr[i, 1]
+                time_to_params[t] = (brk, cap)
     return time_to_params
 
 
@@ -202,7 +223,7 @@ FRACTAL_FIELDS = [
 ]
 
 def parse_fractal0(fractal_str):
-    """Парсинг строки fractal0 (legacy 18 полей или current 22 поля) в dict."""
+    """Парсинг строки fractal0 (legacy 18 полей или current 23 поля) в dict."""
     parts = fractal_str.split(':')
     if len(parts) < 18:
         return None

@@ -23,7 +23,7 @@
 #   labeled_df = label_entry_path_targets(labeled_df, 'DATA/XAUUSD_H1_OHLC.csv')
 #
 # Примечания:
-#   - Обратная совместимость: parse_fractal() принимает строки с 7..22 полями
+#   - Обратная совместимость: parse_fractal() принимает строки с 7..23 полями
 #   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
@@ -763,7 +763,15 @@ def label_trailing_stop_targets(
     hold_bars: int = TRAILING_STOP_HOLD_BARS,
     atr_col: str = 'ATR',
     x_values: tuple[int, ...] = TRAILING_STOP_X_VALUES,
+    use_fractal_dir: bool = False,
 ) -> pd.DataFrame:
+    """
+    Размечает trailing-stop PnL таргеты по направлению сигнала или fractal0.dir.
+
+    Args:
+        use_fractal_dir: Если True, направление берётся из `dir` fractal0
+            (поле 2) вместо колонки `signal`. Позволяет размечать все строки.
+    """
     from datetime import datetime, timezone
 
     out = df.copy()
@@ -776,8 +784,16 @@ def label_trailing_stop_targets(
         ohlc, times, time_idx = load_ohlc_index(ohlc_path)
 
     for row_label in out.index:
-        signal = _safe_signal_scalar(out.at[row_label, 'signal'])
-        if signal == 0:
+        if use_fractal_dir:
+            fractal0_raw = str(out.at[row_label, 'fractal0'])
+            parts = fractal0_raw.split(':')
+            try:
+                direction = int(parts[2]) if len(parts) > 2 else 0
+            except (ValueError, IndexError):
+                direction = 0
+        else:
+            direction = _safe_signal_scalar(out.at[row_label, 'signal'])
+        if direction == 0:
             continue
         atr = _safe_numeric_scalar(out.at[row_label, atr_col], default=0.0)
         bars = []
@@ -839,7 +855,7 @@ def label_trailing_stop_targets(
             for x_value in x_values:
                 out.at[row_label, f'trail_{horizon}_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
                     bars=horizon_bars,
-                    direction=signal,
+                    direction=direction,
                     entry_price=entry_price,
                     atr=atr,
                     trail_atr=float(x_value),
@@ -864,7 +880,16 @@ def label_entry_path_targets(
     ret_horizons=(6, 12, 24),
     path_horizons=(3, 6, 12, 24),
     debug=False,
+    use_fractal_dir: bool = False,
 ):
+    """
+    Размечает ret/fav/adv таргеты по направлению сигнала или fractal0.dir.
+
+    Args:
+        use_fractal_dir: Если True, направление берётся из `dir` fractal0
+            (поле 2) вместо колонки `signal`. Позволяет размечать все строки
+            без привязки к `signal`.
+    """
     from datetime import datetime, timezone
 
     ohlc, times, time_idx = load_ohlc_index(ohlc_path)
@@ -879,9 +904,18 @@ def label_entry_path_targets(
 
     found = skipped = 0
     for row_idx, row in out.iterrows():
-        signal_raw = row.get('signal', 0)
-        signal = 0 if pd.isna(signal_raw) else int(signal_raw)
-        if signal not in (-1, 1):
+        if use_fractal_dir:
+            # Направление из fractal0.dir (поле 2), доступно для всех строк
+            fractal0_raw = str(row.get('fractal0', ''))
+            parts = fractal0_raw.split(':')
+            try:
+                direction = int(parts[2]) if len(parts) > 2 else 0
+            except (ValueError, IndexError):
+                direction = 0
+        else:
+            signal_raw = row.get('signal', 0)
+            direction = 0 if pd.isna(signal_raw) else int(signal_raw)
+        if direction not in (-1, 1):
             continue
 
         row_time = row.get('time')
@@ -934,7 +968,7 @@ def label_entry_path_targets(
                 ],
                 columns=['open', 'high', 'low', 'close'],
             )
-            stats = compute_entry_path_slice(bars, signal, entry_price, atr, h)
+            stats = compute_entry_path_slice(bars, direction, entry_price, atr, h)
             if h in ret_horizons:
                 out.at[row_idx, f'ret_{h}_dir_atr'] = stats['ret_dir_atr']
             if h in path_horizons:
@@ -957,7 +991,7 @@ def label_entry_path_targets(
             )
             out.at[row_idx, 'path_6_class'] = first_touch_path_class(
                 bars=bars6,
-                direction=signal,
+                direction=direction,
                 entry_price=entry_price,
                 atr=atr,
                 threshold_atr=1.0,

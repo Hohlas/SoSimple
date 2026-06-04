@@ -126,9 +126,8 @@ def test_normalize_rowwise_returns_updn_params():
 
     assert isinstance(result, tuple) and len(result) == 2
     df_out, updn_params = result
-    assert updn_params.shape == (1, 2)
-    brk, cap = updn_params[0]
-    assert brk > 0, f"brk должен быть > 0, got {brk}"
+    assert updn_params.shape == (1, 5, 2)  # 5 пар × (brk, cap)
+    brk, cap = updn_params[0, 2]  # up_12/dn_12 = пара 2
     assert cap >= brk, f"cap должен быть >= brk, got cap={cap}, brk={brk}"
 
 

@@ -84,14 +84,15 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
   - Columns: `time`, `signal`, `predict`, `ATR`, `fractal0`…`fractal99`
   - Separator: `;`
   - Encoding: текущий `MT/MQL4/Files/Nero.csv` в проекте определяется как ASCII text с CRLF. Старые выгрузки могут отличаться, поэтому при чтении CSV нужно проверять кодировку по фактическому файлу, а не считать UTF-16LE обязательным.
-  - **Fractal format (22 поля)**:
+  - **Fractal format (23 поля)**:
     ```
-    T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr
-    idx: 0  1   2    3     4    5    6   7   8   9   10   11   12   13   14   15   16  17  18  19  20  21
+    T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift
+    idx: 0  1   2    3     4    5    6   7   8   9   10   11   12   13   14   15   16  17  18  19  20  21         22
     ```
     - Поля 0–16: базовые характеристики фрактала
     - Поля 11–20: `Up/Dn` за 12/24/48/3/6 баров
     - Поле 21: fractal_atr (ATR на момент фрактала)
+    - Поле 22: shift (возраст фрактала в барах относительно текущей строки)
 
 #### Природа `Up/Dn` и отсутствие заглядывания вперёд
 
@@ -216,7 +217,7 @@ label = 1 if tp_hit and not sl_hit else 0  # оба → 0 (консервати�
 
 #### 3.1. Парсинг фракталов
 ```python
-fractals = parse_fractals_to_array(df)  # shape: (n_rows, 100, 22)
+fractals = parse_fractals_to_array(df)  # shape: (n_rows, 100, 23)
 ```
 
 #### 3.2. Нормализация по группам
@@ -229,10 +230,10 @@ fractals = parse_fractals_to_array(df)  # shape: (n_rows, 100, 22)
 **Группа B**: Piecewise Linear-Log (раздельная)
 - **Признаки**: `impulse`, `count`, `reverse`, `power`, `break`
 
-**Группа C**: Piecewise Linear-Log (совместная — Up/Dn)
-- **UPDN_FIELDS** (пул для расчёта p85/p99): `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48` — только длинные горизонты
-- **UPDN_TARGET_COLUMNS** (нормализуются теми же параметрами, но не входят в пул): `up_3`, `dn_3`, `up_6`, `dn_6`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`
-- **Логика**: (100 фракталов × 6 полей UPDN_FIELDS + 6 таргетов строки) → общие p85/p99; короткие горизонты нормализуются этими же параметрами, не сдвигая их вниз
+**Группа C**: Piecewise Linear-Log (per-pair Up/Dn)
+- 5 независимых пар: `up_3/dn_3`, `up_6/dn_6`, `up_12/dn_12`, `up_24/dn_24`, `up_48/dn_48`
+- Для каждой пары: p85/p99 вычисляются только по 100 фракталам (200 значений), без таргетов строки
+- Таргеты строки той же пары нормализуются теми же параметрами
 
 **Группа D**: Min-Max
 - **Признак**: `price` → нормализация в [0, 1]
@@ -246,7 +247,7 @@ df = array_to_fractal_strings(fractals, df, fractal_columns)
 ```
 
 ### Выход
-- **DataFrame** (в памяти): нормализованные фракталы (22 поля) + predict
+- **DataFrame** (в памяти): нормализованные фракталы (23 поля) + predict
 - **Артефакт**: `DATA/Nero_normalization_stats.csv`
 
 ### Ключевые требования
@@ -285,7 +286,7 @@ DATA/Nero_normalization_stats.csv
 
 ### Формат CSV
 - **Separator**: `;`
-- **Columns**: `time`, `signal`, `predict`, `up_3`, `dn_3`, `up_6`, `dn_6`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`, `ATR` (сырой), `fractal0`…`fractal99` (нормализованные строки, 22 поля каждая)
+- **Columns**: `time`, `signal`, `predict`, `up_3`, `dn_3`, `up_6`, `dn_6`, `up_12`, `dn_12`, `up_24`, `dn_24`, `up_48`, `dn_48`, `ATR` (сырой), `fractal0`…`fractal99` (23 поля каждая)
 
 ---
 
@@ -319,7 +320,7 @@ DATA/Nero_normalization_stats.csv
 
 Три уровня валидации при загрузке:
 - `validate_csv_columns` — заголовок CSV совпадает с ожидаемым
-- `validate_fractal_format` — 22 поля, корректные типы и диапазоны
+- `validate_fractal_format` — 23 поля, корректные типы и диапазоны
 - `validate_parsed_features` — valid=100%, ATR std > 0
 
 #### 6.2. Обучение
@@ -538,7 +539,7 @@ python -m API.generate_signals --task triple_barrier --theta 0.6
 2. **Построчная нормализация**: Каждая строка нормализуется независимо
 3. **Split последовательный**: Не случайный shuffle (сохраняем временной порядок)
 4. **Маркировка до split**: Маркируем весь датасет, затем делим
-5. **UPDN_FIELDS ≠ UPDN_TARGET_COLUMNS**: Короткие горизонты не включаются в пул p85 — только нормализуются теми же параметрами
+5. **Up/Dn per-pair нормализация**: Каждая пара up_X/dn_X нормализуется независимо со своим p85/p99 из фракталов. Таргеты строки не входят в расчёт параметров.
 6. **fractal_time** не подаётся как сырое абсолютное значение — только для вычисления hour_sin/hour_cos/time_pos
 7. **seq_len берётся из чекпоинта** при инференсе — модель и данные всегда консистентны
 
