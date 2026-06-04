@@ -96,6 +96,7 @@ FRACTAL_ATR_RAW_IDX_LEGACY = 17  # fractal_atr в старых 18-полевых
 N_FRACTAL_FEATURES = 26  # 20 исходных (fields 1-20) + ATR_ratio + 3 time-фичи + log_shift + log_delta_shift
 SHIFT_IDX = 22  # shift в 23-полевом CSV
 MIN_RAW_FEATURES = 22  # минимальное число полей для парсинга (старые CSV, 22 поля)
+DATA_VERSION = 'fractal_v23'  # текущая версия формата фрактала
 TAKE_SKIP_V2_SUMMARY_MULTIPLIER = 25
 TAKE_SKIP_V2_INPUT_FEATURES = (
     N_FRACTAL_FEATURES
@@ -310,7 +311,8 @@ def validate_fractal_format(df: pd.DataFrame, source: str = '', sample_size: int
         # 1. Количество полей
         if len(parts) != N_RAW_FEATURES:
             errors.append(
-                f"Ожидается {N_RAW_FEATURES} полей, найдено {len(parts)}: '{raw[:60]}...'"
+                f"Ожидается {N_RAW_FEATURES} полей (версия {DATA_VERSION}), "
+                f"найдено {len(parts)}: '{raw[:60]}...'"
             )
             break  # достаточно одного примера
 
@@ -474,10 +476,12 @@ def parse_fractals_to_3d(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
 
     # delta_shift — |shift[i] - shift[i+1]|: временной зазор между соседними фракталами
     # shift[i+1] > shift[i] (старший фрактал старше), поэтому берём модуль разности
-    # Для fractal99 delta_shift = 0 (нет fractal100 для сравнения)
+    # delta_shift вычисляется только если ОБА соседних фрактала валидны;
+    # для fractal99 delta_shift = 0 (нет fractal100)
     delta_shift = np.zeros_like(shifts)
     for i in range(N_FRACTALS - 1):
-        delta_shift[:, i] = np.abs(shifts[:, i] - shifts[:, i + 1])
+        both_valid = raw_valid[:, i] & raw_valid[:, i + 1]
+        delta_shift[:, i] = np.where(both_valid, np.abs(shifts[:, i] - shifts[:, i + 1]), 0.0)
     X[:, :, TIME_FEAT_LOG_DELTA_SHIFT] = np.where(raw_valid, np.log1p(delta_shift), 0.0)
 
     # Финальная маска: True для валидных (non-padding) позиций
