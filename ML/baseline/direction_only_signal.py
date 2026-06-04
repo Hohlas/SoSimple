@@ -41,6 +41,18 @@ def profit_factor(pnl):
     return gp / gl if gl > 0 else (float('inf') if gp > 0 else 0.0)
 
 
+def json_safe(obj):
+    """Рекурсивно заменить inf/nan на null в dict/list для строгого JSON."""
+    if isinstance(obj, dict):
+        return {k: json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [json_safe(v) for v in obj]
+    if isinstance(obj, float):
+        if np.isinf(obj) or np.isnan(obj):
+            return None
+    return obj
+
+
 def evaluate(train_df, val_df, test_df, horizon, instrument):
     """Обучить RF на edge_h = up_h - dn_h, оценить на val/test."""
     up_tr = pd.to_numeric(train_df[f'up_{horizon}'], errors='coerce').fillna(0).values
@@ -163,7 +175,7 @@ def main():
     if args.json_out:
         output = {'meta': meta, 'instrument': 'XAUUSD', 'results': all_results}
         with open(args.json_out, 'w') as f:
-            json.dump(output, f, indent=2)
+            json.dump(json_safe(output), f, indent=2, allow_nan=False)
         print(f'Saved: {args.json_out}')
 
 
