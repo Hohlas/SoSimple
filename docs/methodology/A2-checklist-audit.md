@@ -2,6 +2,7 @@
 
 Использовать перед повышением статуса кандидата.
 
+- [ ] **Smoke-check данных пройден.** Вывод `statistics/data_contract_smoke_check.py` приложен: тензор форма, NaN/inf, домены признаков, ATR-инварианты, TB-метки. См. `docs/methodology/05-eda-data-quality.md`.
 - [ ] Можно указать, какие данные модель видит в момент сделки.
 - [ ] Нет `UNKNOWN` признаков.
 - [ ] Нет future-derived input.
