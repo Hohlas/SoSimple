@@ -170,7 +170,7 @@ def test_label_entry_path_targets_use_fractal_dir(tmp_path):
         encoding="utf-8",
     )
 
-    # fractal0 с dir=1 (BUY), signal=0 (не дал бы разметку)
+    # fractal0.dir=1 (пик → SELL), signal=0 (не дал бы разметку)
     fractal_str = "1700000000:100.0:1:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
     frame = pd.DataFrame({
         "time": ["2024.01.01 00:00"],
@@ -183,11 +183,11 @@ def test_label_entry_path_targets_use_fractal_dir(tmp_path):
     result_default = ls.label_entry_path_targets(frame, str(ohlc_path))
     assert result_default.loc[0, "ret_6_dir_atr"] == 0.0
 
-    # С флагом — dir=1 из fractal0 → BUY, разметка выполнена
+    # С флагом — dir=1 (пик) → SELL (-1), разметка выполнена
     result_dir = ls.label_entry_path_targets(frame, str(ohlc_path), use_fractal_dir=True)
     assert result_dir.loc[0, "ret_6_dir_atr"] != 0.0  # не ноль — разметка сработала
-    # BUY: entry=Open[1]=102, Close[6]=119, ret=(119-102)/1.0=17
-    assert abs(result_dir.loc[0, "ret_6_dir_atr"] - 17.0) < 1.0
+    # SELL: entry=Open[1]=102, Close[6]=119, ret=(102-119)/1.0=-17
+    assert abs(result_dir.loc[0, "ret_6_dir_atr"] - (-17.0)) < 1.0
 
 
 def test_label_trailing_stop_targets_use_fractal_dir(tmp_path):
@@ -212,6 +212,9 @@ def test_label_trailing_stop_targets_use_fractal_dir(tmp_path):
     result_default = ls.label_trailing_stop_targets(frame, str(ohlc_path))
     assert result_default.loc[0, "trail_12_pnl_atr_x2"] == 0.0
 
-    # С флагом — dir=1 из fractal0 → BUY, разметка сработала
+    # С флагом — dir=1 (пик) → SELL (-1), разметка сработала
     result_dir = ls.label_trailing_stop_targets(frame, str(ohlc_path), use_fractal_dir=True)
-    assert result_dir.loc[0, "trail_12_pnl_atr_x2"] != 0.0
+    pnl = result_dir.loc[0, "trail_12_pnl_atr_x2"]
+    assert pnl != 0.0
+    # SELL (direction=-1): entry=102, best_low=101, stop=101+2=103, high=115≥103 → exit 103
+    assert pnl == -1.0
