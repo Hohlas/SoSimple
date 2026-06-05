@@ -4,11 +4,7 @@
 
 ## Приоритетная очередь
 
-1. **Preflight gate** (п. 20 + 88) — проверить normalize.py на смешивание input/target, правило UNKNOWN-статуса
-2. **Фаза 3: направления + flat up/dn** (п. 80) — проверить edge_6 + TB
-3. **После 80 — гиперпараметры** (п. 72–74) — GridSearch RF, OOB-сходимость
-4. **Разметка** (п. 67–68, 26–27, 54)
-5. **Инфраструктура** (п. 11, 86)
+1. **Инфраструктура** (п. 11) — Python 3.10 → 3.11+ (`datetime.UTC`, `enum.StrEnum`)
 
 ## Парсинг и тензор
 
@@ -31,8 +27,8 @@
 
 - [x] Nero.csv перегенерирован: 23 поля, shift = `SHIFT(F[f].T) - cur_bar`.
 - [x] `delta_shift[99] = 0` — временное решение заменено на маску валидности: `both_valid = raw_valid[:, i] & raw_valid[:, i+1]`. Для невалидных позиций delta_shift=0.
-- [ ] `strong` — частота повышена перенастройкой параметров индикатора. После перегенерации данных — переоценить распределение strong и его вклад в engineered-признаках.
-- [ ] После изменения параметров MT-индикатора отдельно переоценить `signal`: частоту, распределение по годам, WIN/LOSS, вклад как источника кандидатов. Не отказываться от `signal` полностью: проверить и старую постановку с более частыми сигналами, и альтернативные постановки по направлению fractal0.
+- [x] `strong` — частота повышена перенастройкой параметров индикатора. После перегенерации данных — переоценить распределение strong и его вклад в engineered-признаках. — Перегенерация 2026-06-04, Nero.csv 63 085 строк. strong=1 ~63% всех фракталов, fractal0: 36-89% по годам. В engineered-признаках strong оценивается в абляции (группа strength).
+- [x] После изменения параметров MT-индикатора отдельно переоценить `signal`: частоту, распределение по годам, WIN/LOSS, вклад как источника кандидатов. Не отказываться от `signal` полностью: проверить и старую постановку с более частыми сигналами, и альтернативные постановки по направлению fractal0. — Перегенерация 2026-06-04. Найден и исправлен баг направления (2026-06-05): `signal = −fractal0.dir` (пик→SELL, впадина→BUY). После исправления: signal ≠ 0 = 24%, BUY/SELL сбалансированы. Signal-only PF (ret_6) = 4.48, Win = 73.5%, все годы прибыльны (PF 3.0-6.3). Signal — сильный самостоятельный кандидат-источник.
 
 ## Версии схемы данных
 
@@ -59,7 +55,7 @@
 
 ## Entry convention — исследования
 
-- [ ] Текущий вход: pending BUY/SELL LIMIT на уровне `Close[row]`. Исследовать вариант с более выгодной ценой: для BUY LIMIT — `Close[row] - ATR × 0.5`, для SELL LIMIT — `Close[row] + ATR × 0.5`. Ожидание: цена входа лучше, но fill_rate, скорее всего, снизится. Проверять нужно совместно PF, fill_rate, trades/year, negative_years и no-fill rate.
+- [x] Текущий вход: pending BUY/SELL LIMIT на уровне `Close[row]`. Исследовать вариант с более выгодной ценой: для BUY LIMIT — `Close[row] - ATR × 0.5`, для SELL LIMIT — `Close[row] + ATR × 0.5`. Ожидание: цена входа лучше, но fill_rate, скорее всего, снизится. Проверять нужно совместно PF, fill_rate, trades/year, negative_years и no-fill rate. — **Инструмент добавлен** (параметр `entry_offset_atr` в `label_limit_order_barriers()`, default 0.0, TP/SL/PnL от фактической цены входа). **Эксперимент с offset=0.5 — отдельно** (запуск разметки с `--limit-order`, прогон PF/fill_rate/negative_years).
 
 ## Нормализация цен в MT4
 
@@ -72,8 +68,8 @@
 - [x] Удалить мёртвые контекстные признаки: `range_atr_6`, `body_atr_3` — всегда 0.0; `ret_dir_atr_lag1` — утечка будущего; `vol_regime_24` — SMA(24) от SMA(225, High−Low), дубликат `ATR`. Удалены из `add_entry_path_frequency_features()` и `docs/dataset_description.md`.
 - [x] Добавить альтернативный режим разметки `label_entry_path_targets()` и `label_trailing_stop_targets()` по направлению `dir` fractal0, не заменяя полностью текущий режим `signal != 0`. Добавлен флаг `use_fractal_dir=False` в обе функции. При `True` направление берётся из `parts[2]` fractal0, доступно для всех строк.
 - [x] Разобрать 15 оставшихся падений полного `pytest` после закрытия Фазы 2: 12 тестов `tests/processing/test_limit_order_barriers.py`, `tests/test_entry_path_v1_quantile_training.py::test_create_test_loader_reuses_entry_path_cache_for_quantile_task`, `tests/test_trade_target_labels.py::test_label_trade_targets_uses_ohlc_path_when_provided`, `tests/test_trailing_stop_target_labels.py::test_label_trailing_stop_targets_uses_ohlc_lookup_when_close_columns_absent`. — Исправлено: (1) `_fractal_str` в limit_order — не хватало поля shift (23-е поле), (2) quantile_training — X_test.npy 20→29 признаков, (3) trade_target — entry=Open(t+1) изменило значения, (4) trailing_stop — PnL +1.0 вместо -1.0 (entry=Open t+1).
-- [ ] В режиме по fractal0.dir считать результат сделки для всех допустимых строк, а не только для прибыльных случаев. Потом создавать метку “прибыльно/не прибыльно” или числовой PnL. Удалять неприбыльные строки из обучения запрещено: модель должна видеть плохие примеры, чтобы учиться их отсеивать.
-- [ ] Для новых меток не проверять обязательное совпадение `fractal0.dir` с `signal`: это другая постановка задачи. Но явно описать в `docs/dataset_description.md`, что эти метки построены по направлению fractal0, а не по `signal`.
+- [x] В режиме по fractal0.dir считать результат сделки для всех допустимых строк, а не только для прибыльных случаев. Потом создавать метку “прибыльно/не прибыльно” или числовой PnL. Удалять неприбыльные строки из обучения запрещено: модель должна видеть плохие примеры, чтобы учиться их отсеивать. — `label_entry_path_targets(use_fractal_dir=True)` размечает все строки (direction ≠ 0). Числовой PnL: `ret_{h}_dir_atr`. Отдельной бинарной колонки нет — бинарное правило `ret_{h}_dir_atr > 0` применяется downstream (в метриках, порогах, loss-функциях). Никакой код не удаляет неприбыльные строки из обучения. `label_trailing_stop_targets(use_fractal_dir=True)` — аналогично.
+- [x] Для новых меток не проверять обязательное совпадение `fractal0.dir` с `signal`: это другая постановка задачи. Но явно описать в `docs/dataset_description.md`, что эти метки построены по направлению fractal0, а не по `signal`. — Обновлено: разделы Ret/Fav/Adv и Trailing Stop теперь описывают оба режима (signal vs fractal0.dir), параметр `use_fractal_dir`.
 
 ## Модель — гиперпараметры
 

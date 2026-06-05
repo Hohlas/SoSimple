@@ -176,7 +176,7 @@ def run_validation_matrix(
 
         baseline_frame = pd.DataFrame({
             "time": pd.to_datetime(validation_target_source["time"], format="%Y.%m.%d %H:%M", errors="coerce"),
-            "candidate_signal": np.where(candidate_mask.reset_index(drop=True), np.where(fractal0_direction == -1, -1, np.where(fractal0_direction == 1, 1, 0)), 0),
+            "candidate_signal": np.where(candidate_mask.reset_index(drop=True), np.where(fractal0_direction == -1, 1, np.where(fractal0_direction == 1, -1, 0)), 0),
             "true_ret_24_dir_atr": 0.0,
             "selected": candidate_mask.reset_index(drop=True),
         })
