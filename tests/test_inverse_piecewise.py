@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_inverse_piecewise.py
 # Назначение: Round-trip тесты piecewise_linear_log_transform → inverse для normalize.py / signal_tracer.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-05
 # Зависимости:
 #   Входные данные:

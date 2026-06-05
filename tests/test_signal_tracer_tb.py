@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_signal_tracer_tb.py
 # Назначение: Unit-тесты TB-specific parsing в statistics/signal_tracer.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_signal_tracer_tb.py -q
 # =============================================================================

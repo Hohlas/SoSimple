@@ -2,7 +2,7 @@
 # Файл: statistics/signal_tracer.py
 # Назначение: Trade-level reconciliation — диагностика расхождения
 #             между Python и MT4 для legacy regression_updn и Triple Barrier треков
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:

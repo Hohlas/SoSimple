@@ -2,7 +2,7 @@
 # Файл: tests/test_signal_research.py
 # Назначение: Unit и smoke-тесты для API/signal_research.py — статистический контракт
 #   research-инструмента: ATR14, excursions, barrier outcomes, фильтрация, отчёты.
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-05
 # Зависимости:
 #   Входные данные:

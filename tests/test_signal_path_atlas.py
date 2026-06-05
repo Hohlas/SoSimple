@@ -5,7 +5,7 @@
 #   conditioning features, slice construction, archetype labeling, holdout
 #   replication logic, CSV export и базовый CLI flow, чтобы изменения в
 #   исследовательском инструменте не ломали его статистический контракт.
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Создан: 2026-04-03
 # Зависимости:
 #   Входные данные:

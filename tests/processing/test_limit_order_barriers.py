@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/processing/test_limit_order_barriers.py
 # Назначение: Тесты для LABEL_FN()
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-05-27
 # Зависимости: pytest, numpy, pandas
 #   Входные данные: синтетические OHLC / Nero DataFrames

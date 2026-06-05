@@ -4,7 +4,7 @@
 
 ## Приоритетная очередь
 
-1. **Инфраструктура** (п. 11) — Python 3.10 → 3.11+ (`datetime.UTC`, `enum.StrEnum`)
+1. **Смена дефолта `include_predict_in_front_back_pool` на `False`** — сейчас `True`, методика требует `False`
 
 ## Парсинг и тензор
 
@@ -12,7 +12,7 @@
 - [x] После включения 17–20 в тензор: `N_FRACTAL_FEATURES` пересчитать, явно обновить порядок признаков и все индексы (`ATR_RATIO_IDX`, `TIME_FEAT_*`, `SHIFT_IDX`). Старые сохранённые модели считать несовместимыми с новым тензором.
 - [x] После изменения порядка/числа признаков обновить docstring `parse_fractals_to_3d()` и `docs/dataset_description.md`, чтобы описание соответствовало коду.
 - [x] Обновить `input_features=20` в тестах `tests/test_entry_path_*.py`, `tests/test_trailing_stop_*.py`, `tests/test_take_skip_*.py`. Не блокирует работу (модели всегда получают реальное значение через `N_FRACTAL_FEATURES`), но для чистоты сигнатур. — Критический случай (`test_create_test_loader_reuses_entry_path_cache_for_quantile_task` записывал X с 20 feature-ми → инвалидация кэша) исправлен (20→29). Остальные `input_features=20` в конструкторах моделей — косметические, не влияют на работу.
-- [ ] Зафиксировать версию Python для проекта. Сейчас `.venv` использует Python 3.10, а часть кода и заголовков файлов ожидает Python 3.11+. Временные совместимые правки добавлены для `datetime.UTC` и `enum.StrEnum`; долгосрочно нужно либо пересоздать окружение на Python 3.11/3.12, либо официально поддерживать Python 3.10 и избегать API, появившихся только в 3.11.
+- [x] Зафиксировать версию Python для проекта. Сейчас `.venv` использует Python 3.10, а часть кода и заголовков файлов ожидает Python 3.11+. Временные совместимые правки добавлены для `datetime.UTC` и `enum.StrEnum`; долгосрочно нужно либо пересоздать окружение на Python 3.11/3.12, либо официально поддерживать Python 3.10 и избегать API, появившихся только в 3.11. — **Официально Python 3.10+** (`.venv` на 3.10.12, 613 тестов зелёные). `StrEnum`-shim в `ML/live_safe_audit.py`. `datetime.UTC` не используется (везде `timezone.utc`). Заголовки обновлены с 3.11+ на 3.10+.
 
 ## Нормализация
 
@@ -85,7 +85,8 @@
 
 ## Preflight gate — качество вывода (до любого эксперимента)
 
-- [x] `docs/methodology/02-data-pipeline.md` и `docs/methodology/03-feature-contract-leakage.md` уже запрещают общий пул `input + target/label`; после правки кода проверить, что `normalize.py` фактически соблюдает это требование. **Аудит выполнен:** `include_predict_in_front_back_pool=True` по умолчанию — `|predict|` (вычислен по будущему) и `front/back` в общем пуле. Найден FAIL: несоответствие методике. Флаг `--exclude-predict-from-front-back-pool` исправляет, но не дефолт. **Смена дефолта на `False` остаётся открытой.**
+- [x] `docs/methodology/02-data-pipeline.md` и `docs/methodology/03-feature-contract-leakage.md` уже запрещают общий пул `input + target/label`; после правки кода проверить, что `normalize.py` фактически соблюдает это требование. **Аудит выполнен:** `include_predict_in_front_back_pool=True` по умолчанию — `|predict|` (вычислен по будущему) и `front/back` в общем пуле. Найден FAIL: несоответствие методике.
+- [ ] **Смена дефолта `include_predict_in_front_back_pool` на `False`.** Флаг `--exclude-predict-from-front-back-pool` существует, но дефолт всё ещё `True`. Требует переразметки данных с флагом.
 - [x] Если хотя бы один ключевой признак имеет статус UNKNOWN по реальным данным, запрещено делать вывод о качестве модели. Формализовано в `docs/methodology/03-feature-contract-leakage.md:25`: UNKNOWN → только DIAGNOSTIC_ONLY. В `docs/methodology/A2-checklist-audit.md:7`: нет UNKNOWN признаков.
 - [x] Обязательный входной контроль: `statistics/data_contract_smoke_check.py`.
 

@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_entry_path_feature_bank.py
 # Назначение: Контрактные тесты для entry_path feature bank.
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_entry_path_feature_bank.py -q
 # =============================================================================
