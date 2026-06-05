@@ -8,6 +8,7 @@
 - 100 бинарных направлений фракталов (±1) → RF → `edge_h = up_h − dn_h`. Test (2022-2026, XAUUSD): edge_6 PF=6.43 (R²=0.33, win=81%), edge_12 PF=3.92 (R²=0.21, win=73%). f0.dir baseline PF=0.16 — направления несут реальный сигнал. PnL = MFE−MAE (идеализировано, не торговый PnL).
 - Проверка тех же 100 направлений → RF-классификатор на 12 TB-таргетах (buy/sell × SL2/SL3 × TP3/TP6/TP9) с порядком касаний. Test: лучший buy_sl2_tp3 PF=1.11 (3/5 лет убыточны), остальные таргеты ниже 1.0. f0.dir baseline: buy_sl2_tp3 PF=1.14, buy_sl3_tp3 PF=1.28 — слабый BUY-сдвиг в данных, RF не усиливает. Сильный edge_h-сигнал не переносится на порядок касаний (разные вопросы: «куда пойдёт цена» vs «что случится первым»).
 - Отчёт: `docs/reports/2026-06-03-direction-only-signal.md`, скрипты: `ML/baseline/direction_only_signal.py`, `ML/baseline/tb_direction_signal.py`, JSON: `ML/reports/direction_only_signal.json`, `ML/reports/tb_direction_signal.json`.
+- **Fractal channel ablation**: 10 вариантов групп признаков на 29-канальном тензоре → RF на edge_6 (диагностическая цель) и buy_sl3_tp3 (торговая цель). Пороги только train, frozen test 2022–2026. edge_6 test: all PF=11.30 (все 5 лет прибыльны), only_base PF=8.75 (77% сигнала в 10 каналах), no_horizon6 PF=11.26 (горизонт цели не нужен модели). ATR-distance не добавляют к edge_h (Δ +0.06). TB: при честном train-пороге большинство вариантов → 0 сделок; only_dir PF=1.34 (225 сделок) без годовой устойчивости. Отчёт: `docs/reports/2026-06-04-fractal-ablation.md`, скрипт: `ML/baseline/fractal_ablation.py`, JSON: `ML/reports/fractal_ablation.json`, `ML/reports/fractal_ablation_test.json`.
 
 ### Исправлено
 - `parse_fractals_to_3d()`: up_3/dn_3/up_6/dn_6 (поля 17-20) включены в тензор, N_FRACTAL_FEATURES=26
@@ -18,6 +19,7 @@
 - delta_shift[99] через маску валидности вместо хардкода
 - DATA_VERSION = 'fractal_v23' с проверкой в validate_fractal_format
 - `direction_only_signal.py`, `tb_direction_signal.py`: `json_safe()` — inf/nan → null для строгого JSON
+- `statistics/data_contract_smoke_check.py` — обязательный входной контроль перед ML-экспериментами (тензор, цена не бинарна, direction ∈ {-1,1}, ATR-признаки не в [0,1], доли классов TB-таргетов)
 
 ## [2026-05-29] - Limit-Order Entry Convention: Phase 1–3
 
