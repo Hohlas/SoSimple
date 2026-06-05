@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SoSimple Fractal Data Contract",
+  "description": "Контракт данных между MT4 (lib_PIC.mqh, NERO_CSV_CREATE) и Python (ML/data_loader.py)",
+  "version": "fractal_v23",
+  "price_scale": "normalized",
+  "comment": "Цены нормализованы в MT4 через MinMax/Piecewise-нормализацию в диапазоне [0, 1]. 23 поля включая shift.",
+
+  "csv": {
+    "separator": ";",
+    "encoding": "UTF-8",
+    "required_columns": ["time", "signal", "predict", "ATR"],
+    "required_fractal_columns": {
+      "prefix": "fractal",
+      "count": 100,
+      "pattern": "fractal{0..99}"
+    },
+    "allowed_extra_columns": true,
+    "comment": "label_main.py и другие скрипты добавляют колонки с таргетами — это разрешено"
+  },
+
+  "fractal": {
+    "separator": ":",
+    "num_fields": 23,
+    "comment": "Порядок полей внутри каждой колонки fractalN. 23 поля: T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift",
+    "fields": [
+      {"index": 0,  "name": "time",        "type": "int",   "domain": "> 0",          "description": "Unix-метка времени бара"},
+      {"index": 1,  "name": "price",       "type": "float", "domain": "(0, 1]",        "description": "Цена уровня (normalized)"},
+      {"index": 2,  "name": "direction",   "type": "int",   "domain": "{-1, 1}",      "description": "Направление пробоя уровня"},
+      {"index": 3,  "name": "front_val",   "type": "float", "domain": "[0, 1]",        "description": "Сила фронтальной границы"},
+      {"index": 4,  "name": "back_val",    "type": "float", "domain": "[0, 1]",        "description": "Сила тыловой границы"},
+      {"index": 5,  "name": "strong",      "type": "int",   "domain": "{0, 1}",       "description": "Флаг сильного уровня"},
+      {"index": 6,  "name": "break_k",     "type": "int",   "domain": "{0, 1}",       "description": "Флаг пробойного уровня"},
+      {"index": 7,  "name": "reverse",     "type": "float", "domain": "[0, 1]",        "description": "Сила разворота"},
+      {"index": 8,  "name": "pwr_sum",     "type": "float", "domain": "[0, 1]",        "description": "Сумма сил фракталов на уровне"},
+      {"index": 9,  "name": "cnt",         "type": "float", "domain": "[0, 1]",        "description": "Количество касаний уровня"},
+      {"index": 10, "name": "imp",         "type": "float", "domain": "[0, 1]",        "description": "Импульс/сила пробоя"},
+      {"index": 11, "name": "up_12",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 12 баров"},
+      {"index": 12, "name": "dn_12",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 12 баров"},
+      {"index": 13, "name": "up_24",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 24 бара"},
+      {"index": 14, "name": "dn_24",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 24 бара"},
+      {"index": 15, "name": "up_48",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 48 баров"},
+      {"index": 16, "name": "dn_48",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 48 баров"},
+      {"index": 17, "name": "up_3",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 3 бара"},
+      {"index": 18, "name": "dn_3",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 3 бара"},
+      {"index": 19, "name": "up_6",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 6 баров"},
+      {"index": 20, "name": "dn_6",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 6 баров"},
+      {"index": 21, "name": "fractal_atr",  "type": "float", "domain": "> 0",           "description": "ATR на момент формирования фрактала"},
+      {"index": 22, "name": "shift",       "type": "int",   "domain": ">= 0",          "description": "Возраст фрактала в барах от decision_time"}
+    ]
+  }
+}

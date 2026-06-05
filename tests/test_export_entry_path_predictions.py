@@ -29,7 +29,7 @@ def _write_input_csv(path: Path) -> None:
         "path_6_class": 0,
     }
     for idx in range(100):
-        row[f"fractal{idx}"] = "1:1:-1:1:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1"
+        row[f"fractal{idx}"] = "1:1:-1:1:1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1:0"
     pd.DataFrame([row, {**row, "time": "2025.01.01 01:00", "signal": -1}]).to_csv(path, sep=";", index=False)
 
 

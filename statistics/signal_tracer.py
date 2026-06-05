@@ -2,14 +2,14 @@
 # Файл: statistics/signal_tracer.py
 # Назначение: Trade-level reconciliation — диагностика расхождения
 #             между Python и MT4 для legacy regression_updn и Triple Barrier треков
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
 #     - MT/MQL4/Files/ml_signals.csv       (legacy ML предсказания: pred_up, pred_dn, ratio)
 #     - MT/MQL4/Files/ml_signals_tb.csv    (TB сигналы: sl_atr, tp_atr, prob, ev)
 #     - DATA/Nero_*_labeled.csv            (fractal[i][0]: price, fractal_atr; up/dn и TB labels)
-#     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,2))
+#     - DATA/Nero_*_updn_params.npy        (per-row brk/cap для денормализации updn, shape (N,5,2))
 #     - MT/tester/$o$imple.ini             (legacy параметры: ML_MinRatio, ML_ScaleK и др.)
 #     - MT/tester/logs/YYYYMMDD.log        (--from-log: ML BUY/SELL ... или TB BUY/SELL ... из MT4)
 #   Выходные данные:
@@ -61,7 +61,6 @@ def inverse_piecewise_linear_log(y, brk, cap, linear_max=0.85, tail_strength=9.0
         return 0.0
     if y <= linear_max:
         return y / linear_max * brk
-    # tail part: y = linear_max + (1 - linear_max) * log1p(tail_strength * t) / log1p(tail_strength)
     log_denom = math.log1p(tail_strength)
     t_log = (y - linear_max) / (1.0 - linear_max)
     t = (math.expm1(t_log * log_denom)) / tail_strength
@@ -83,30 +82,40 @@ def denormalize_updn_row(y_norm_6, brk, cap):
 
 
 UPDN_PARAMS_PATHS = [
-    ('DATA/Nero_train_updn_params.npy',      'DATA/Nero_train_labeled.csv'),
-    ('DATA/Nero_validation_updn_params.npy', 'DATA/Nero_validation_labeled.csv'),
-    ('DATA/Nero_test_updn_params.npy',       'DATA/Nero_test_labeled.csv'),
+    ('DATA/Nero_XAUUSD_train_updn_params.npy',      'DATA/Nero_XAUUSD_train_labeled.csv'),
+    ('DATA/Nero_XAUUSD_validation_updn_params.npy', 'DATA/Nero_XAUUSD_validation_labeled.csv'),
+    ('DATA/Nero_XAUUSD_test_updn_params.npy',       'DATA/Nero_XAUUSD_test_labeled.csv'),
 ]
 
 
 def load_updn_params(nero_paths=None):
     """Загружает per-row updn_params (brk, cap) и строит маппинг time->params.
 
+    Формат: (N, 5, 2) — per-pair brk/cap. Для up_12/dn_12 используется пара с индексом 2.
+
     Returns:
         dict {time_str: (brk, cap)} или {} если файлы не найдены.
     """
+    paths = nero_paths or UPDN_PARAMS_PATHS
     time_to_params = {}
-    for params_path, csv_path in UPDN_PARAMS_PATHS:
+    for params_path, csv_path in paths:
         if not os.path.exists(params_path) or not os.path.exists(csv_path):
             continue
-        params_arr = np.load(params_path)  # shape (N, 2)
+        params_arr = np.load(params_path)
+        if params_arr.ndim != 3 or params_arr.shape[1:] != (5, 2):
+            raise ValueError(
+                f"updn_params неожиданной формы {params_arr.shape}, "
+                f"ожидается (N, 5, 2). Перегенерируйте данные."
+            )
         with open(csv_path, 'r', encoding='utf-8') as f:
             f.readline()  # header
             for i, line in enumerate(f):
                 if i >= len(params_arr):
                     break
                 t = line[:16]  # 'YYYY.MM.DD HH:MM'
-                time_to_params[t] = (params_arr[i, 0], params_arr[i, 1])
+                brk = params_arr[i, 2, 0]
+                cap = params_arr[i, 2, 1]
+                time_to_params[t] = (brk, cap)
     return time_to_params
 
 
@@ -202,12 +211,11 @@ FRACTAL_FIELDS = [
 ]
 
 def parse_fractal0(fractal_str):
-    """Парсинг строки fractal0 (legacy 18 полей или current 22 поля) в dict."""
+    """Парсинг строки fractal0 (23 поля)."""
     parts = fractal_str.split(':')
-    if len(parts) < 18:
+    if len(parts) != 23:
         return None
     try:
-        fractal_atr_idx = 21 if len(parts) >= 22 else 17
         return {
             'fractal_time': int(parts[0]),
             'price': float(parts[1]),
@@ -226,7 +234,7 @@ def parse_fractal0(fractal_str):
             'dn_24': float(parts[14]),
             'up_48': float(parts[15]),
             'dn_48': float(parts[16]),
-            'fractal_atr': float(parts[fractal_atr_idx])
+            'fractal_atr': float(parts[21])
         }
     except (ValueError, IndexError):
         return None

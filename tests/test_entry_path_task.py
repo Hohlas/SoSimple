@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_entry_path_task.py
 # Назначение: Контрактные тесты для entry_path_v1 target contract и export helpers.
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Создан: 2026-04-08
 # Зависимости:
 #   - pytest>=8.0, numpy>=1.24, pandas>=2.0
@@ -62,6 +62,7 @@ def _fractal(seed: int) -> str:
         0.9 + seed,
         1.0 + seed,
         1.5 + seed,
+        0,          # shift (index 22)
     ]
     return ':'.join(str(value) for value in fields)
 
@@ -88,10 +89,6 @@ def test_entry_path_task_exposes_frequency_feature_columns():
     expected = {
         'session_hour',
         'weekday',
-        'range_atr_6',
-        'body_atr_3',
-        'ret_dir_atr_lag1',
-        'vol_regime_24',
     }
     assert expected.issubset(set(ENTRY_PATH_V1_FEATURE_COLUMNS))
 
@@ -140,10 +137,6 @@ def test_split_entry_path_features_is_numeric_and_zero_fills_missing_columns():
         {
             'session_hour': '7',
             'weekday': '2',
-            'range_atr_6': '1.5',
-            'body_atr_3': None,
-            'ret_dir_atr_lag1': 'nan',
-            'vol_regime_24': '3',
         }
     ])
 
@@ -153,11 +146,7 @@ def test_split_entry_path_features_is_numeric_and_zero_fills_missing_columns():
     assert features.dtype == np.float32
     assert features[0, 0] == 7.0
     assert features[0, 1] == 2.0
-    assert features[0, 2] == 1.5
-    assert features[0, 3] == 0.0
-    assert features[0, 4] == 0.0
-    assert features[0, 5] == 3.0
-    assert np.all(features[0, 6:] == 0.0)
+    assert np.all(features[0, 2:] == 0.0)
 
 
 def test_split_entry_path_features_live_safe_profile_excludes_future_lag():

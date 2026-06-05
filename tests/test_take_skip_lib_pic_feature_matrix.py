@@ -6,6 +6,7 @@ import pandas as pd
 import torch
 
 from ML.take_skip_trailing_stop_v2_task import TAKE_SKIP_TRUE_PNL_V2_COLUMNS
+from ML.data_loader import N_FRACTAL_FEATURES
 
 
 def _fractal(seed: int, *, edge: float = 1.0) -> str:
@@ -34,6 +35,7 @@ def _fractal(seed: int, *, edge: float = 1.0) -> str:
         fav,
         adv,
         1.5 + seed,
+        0,
     ]
     return ':'.join(str(value) for value in fields)
 
@@ -85,7 +87,7 @@ def test_build_feature_dataset_uses_profile_and_targets():
         target_columns=('take_12_x2', 'take_24_x4', 'take_48_x8'),
     )
 
-    assert arrays.X.shape == (4, 20, 20)
+    assert arrays.X.shape == (4, 20, N_FRACTAL_FEATURES)
     assert arrays.mask.shape == (4, 20)
     assert arrays.engineered.shape[0] == 4
     assert arrays.engineered.shape[1] > 100

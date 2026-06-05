@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_triple_barrier_calibration.py
 # Назначение: Unit-тесты EV/calibration helper для Triple Barrier thresholding
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_triple_barrier_calibration.py -q
 # =============================================================================

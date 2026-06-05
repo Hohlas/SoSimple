@@ -41,6 +41,7 @@ def _fractal(ts: int, direction: int = 1) -> str:
         0,
         0,
         2.5,
+        0,
     ]
     return ":".join(str(value) for value in values)
 

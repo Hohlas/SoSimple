@@ -1,15 +1,18 @@
 # =============================================================================
 # Файл: tests/test_signal_tracer_tb.py
 # Назначение: Unit-тесты TB-specific parsing в statistics/signal_tracer.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_signal_tracer_tb.py -q
 # =============================================================================
 
-import sys
+import os
+import importlib.machinery
 
-sys.path.insert(0, 'statistics')
-import signal_tracer as st
+_proj_root = os.path.join(os.path.dirname(__file__), '..')
+st = importlib.machinery.SourceFileLoader(
+    'signal_tracer', os.path.join(_proj_root, 'statistics', 'signal_tracer.py')
+).load_module()
 
 
 def test_parse_tb_log_line_extracts_sl_tp_prob():
@@ -22,10 +25,10 @@ def test_parse_tb_log_line_extracts_sl_tp_prob():
     assert out['tp_atr'] == 6.0
 
 
-def test_parse_fractal0_reads_atr_from_22_field_format():
+def test_parse_fractal0_reads_atr_from_23_field_format():
     fractal = (
         "1664470800:0.06476853043:-1:0.07949640602:0.1059952006:0:0:"
-        "0.8500000238:0:0:0.8392652273:0:0:0:0:0:0:0:0:0:0:5.5"
+        "0.8500000238:0:0:0.8392652273:0:0:0:0:0:0:0:0:0:0:5.5:3"
     )
 
     out = st.parse_fractal0(fractal)

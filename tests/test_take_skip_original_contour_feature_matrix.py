@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ML.data_loader import N_FRACTAL_FEATURES
+
 
 def _fractal(seed: int, *, edge: float = 1.0) -> str:
     fav = max(edge, 0.0)
@@ -33,6 +35,7 @@ def _fractal(seed: int, *, edge: float = 1.0) -> str:
         fav,
         adv,
         1.5 + seed,
+        0,
     ]
     return ':'.join(str(value) for value in fields)
 
@@ -91,13 +94,13 @@ def test_original_contour_builder_repeats_engineered_channels():
 
     assert arrays.X.shape[0] == 4
     assert arrays.X.shape[1] == 20
-    assert arrays.X.shape[2] == 20 + baseline_features.shape[1]
+    assert arrays.X.shape[2] == N_FRACTAL_FEATURES + baseline_features.shape[1]
     assert arrays.mask.shape == (4, 20)
     assert arrays.y.shape == (4, 4)
     assert arrays.target_columns == ('take_12_x2', 'take_12_x4', 'take_24_x2', 'take_24_x4')
     assert baseline_features.shape[1] > len(ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS)
 
-    repeated = arrays.X[:, :, 20:]
+    repeated = arrays.X[:, :, N_FRACTAL_FEATURES:]
     assert np.allclose(repeated[:, 0, :], repeated[:, -1, :])
     assert np.allclose(repeated[:, 0, :], baseline_features)
     assert np.isfinite(arrays.X).all()
@@ -157,8 +160,8 @@ def test_live_safe_baseline_excludes_future_derived_row_features():
     assert not forbidden.intersection(LIVE_SAFE_BASELINE_ROW_FEATURE_COLUMNS)
     assert forbidden.issubset(set(ORIGINAL_BASELINE_ROW_FEATURE_COLUMNS))
     assert live_safe_features.shape[1] < original_features.shape[1]
-    assert arrays.X.shape[2] == 20 + live_safe_features.shape[1]
-    assert np.allclose(arrays.X[:, 0, 20:], live_safe_features)
+    assert arrays.X.shape[2] == N_FRACTAL_FEATURES + live_safe_features.shape[1]
+    assert np.allclose(arrays.X[:, 0, N_FRACTAL_FEATURES:], live_safe_features)
 
 
 def test_live_safe_geometry_expands_live_safe_baseline_without_path_fields():
@@ -201,8 +204,8 @@ def test_live_safe_path_uses_windows_limited_by_seq_len():
     seq50 = build_original_contour_arrays(frame, feature_mode='live_safe_path', seq_len=50)
 
     assert seq50.engineered.shape[1] > seq20.engineered.shape[1]
-    assert seq20.X.shape[2] == 20 + seq20.engineered.shape[1]
-    assert seq50.X.shape[2] == 20 + seq50.engineered.shape[1]
+    assert seq20.X.shape[2] == N_FRACTAL_FEATURES + seq20.engineered.shape[1]
+    assert seq50.X.shape[2] == N_FRACTAL_FEATURES + seq50.engineered.shape[1]
 
 
 def test_original_contour_runner_writes_summary_and_benchmark(tmp_path: Path):

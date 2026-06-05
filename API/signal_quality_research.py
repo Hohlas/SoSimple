@@ -3,7 +3,7 @@
 # Назначение: Signal Quality Filter Research (Variant 4):
 #              исследование multi-horizon prediction features как фильтров
 #              качества ML-сигналов
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Создан: 2026-04-03
 # Зависимости:
 #   Входные данные:

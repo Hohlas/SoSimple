@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_generate_signals_research.py
 # Назначение: Unit-тесты Triple Barrier signal selection в API/generate_signals.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_generate_signals_research.py -q
 # =============================================================================

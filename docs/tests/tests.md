@@ -22,9 +22,9 @@
 
 | Тест | Проверяет |
 |------|-----------|
-| `test_parse_fractal_11_fields_backward_compat` | 11-польный фрактал → up_12/dn_12/up_48/fractal_atr = 0.0 |
-| `test_parse_fractal_18_fields` | 18-польный фрактал → корректный парсинг всех up/dn полей |
+| `test_parse_fractal_23_fields` | 23-польный фрактал → корректный парсинг всех полей, включая shift |
 | `test_parse_fractal_none_input` | None и пустая строка → None |
+| `test_parse_fractal_wrong_fields` | 22 поля → None (строгий формат) |
 | `test_label_updn_basic` | last-seen логика: значения fractal0 = последние найденные |
 | `test_label_updn_fractal0_missing` | строка без fractal0 → нули |
 

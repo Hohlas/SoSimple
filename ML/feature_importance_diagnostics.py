@@ -98,7 +98,7 @@ def _fractal_columns(seq_len: int) -> list[str]:
 
 def _required_columns(seq_len: int, target: str) -> list[str]:
     columns = ['time', 'ATR', target]
-    for optional in ('session_hour', 'weekday', 'range_atr_6', 'body_atr_3', 'ret_dir_atr_lag1', 'vol_regime_24'):
+    for optional in ('session_hour', 'weekday'):
         columns.append(optional)
     columns.extend(_fractal_columns(seq_len))
     return columns
@@ -187,7 +187,7 @@ def build_grouped_features(frame: pd.DataFrame, seq_len: int = 100) -> tuple[pd.
         weekday = pd.to_numeric(frame['weekday'], errors='coerce').fillna(0.0).to_numpy(dtype=np.float32)
         row_features['row_weekday_sin'] = np.sin(2 * np.pi * weekday / 7.0)
         row_features['row_weekday_cos'] = np.cos(2 * np.pi * weekday / 7.0)
-    for column in ('range_atr_6', 'body_atr_3', 'ret_dir_atr_lag1', 'vol_regime_24'):
+    for column in ():
         if column in frame.columns:
             row_features[f'row_{column}'] = pd.to_numeric(frame[column], errors='coerce').fillna(0.0).to_numpy(dtype=np.float32)
 

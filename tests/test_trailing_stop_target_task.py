@@ -79,6 +79,7 @@ def test_create_test_loader_trailing_stop_branch(monkeypatch, tmp_path):
     monkeypatch.setattr(data_loader, 'DATA_DIR', tmp_path)
     monkeypatch.setattr(data_loader, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
     monkeypatch.setattr(data_loader.pd, 'read_csv', lambda *args, **kwargs: df)
+    monkeypatch.setattr(data_loader, 'validate_data_contract', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_csv_columns', lambda *args, **kwargs: None)
     monkeypatch.setattr(data_loader, 'validate_fractal_format', lambda *args, **kwargs: None)
     monkeypatch.setattr(

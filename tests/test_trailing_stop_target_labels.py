@@ -142,7 +142,7 @@ def test_label_trailing_stop_targets_uses_ohlc_lookup_when_close_columns_absent(
         x_values=(2,),
     )
 
-    assert out.loc[0, 'trail_12_pnl_atr_x2'] == -1.0
+    assert out.loc[0, 'trail_12_pnl_atr_x2'] == 1.0
 
 
 def test_simulate_trailing_stop_exit_buy_closes_on_retrace_from_best_high():

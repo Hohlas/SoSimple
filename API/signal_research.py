@@ -2,7 +2,7 @@
 # Файл: API/signal_research.py
 # Назначение: Variant 2 / Variant 3 prep / Variant 3 execution research
 #              качества ML-сигналов по реальным OHLC
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Создан: 2026-04-01
 # Зависимости:
 #   Входные данные:

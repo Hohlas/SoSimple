@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_triple_barrier_first_touch.py
 # Назначение: Unit-тесты first-touch helper для Triple Barrier разметки
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_triple_barrier_first_touch.py -q
 # =============================================================================
@@ -43,7 +43,7 @@ def test_label_first_barrier_hit_uses_row_time_not_fractal_time(tmp_path):
     fractal_time = int(datetime(2023, 1, 1, 0, 0, tzinfo=timezone.utc).timestamp())
     fractal0 = (
         f"{fractal_time}:100.0:1:0:0:0:0:0:0:0:0:"
-        "0:0:0:0:0:0:0:0:0:0:1.0"
+        "0:0:0:0:0:0:0:0:0:0:1.0:0"
     )
     df = pd.DataFrame([{
         'time': '2023.01.01 01:00',

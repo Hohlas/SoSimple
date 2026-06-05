@@ -1,6 +1,6 @@
 import argparse
 import json
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +20,8 @@ from ML.data_loader import (
 )
 from ML.models import get_model
 from ML.utils import get_device, set_seed
+
+UTC = timezone.utc
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

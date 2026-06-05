@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_entry_path_labels.py
 # Назначение: Unit-тесты для entry_path_v1 helpers из processing/label_signals.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-08
 # Зависимости:
 #   Входные данные:
@@ -125,15 +125,11 @@ def test_label_entry_path_targets_adds_frequency_features():
 
     result = ls.add_entry_path_frequency_features(frame.copy())
 
-    expected = {
-        'session_hour',
-        'weekday',
-        'range_atr_6',
-        'body_atr_3',
-        'ret_dir_atr_lag1',
-        'vol_regime_24',
-    }
+    expected = {'session_hour', 'weekday'}
     assert expected.issubset(result.columns)
+    # Удалённые признаки не должны появляться
+    for dead in ('range_atr_6', 'body_atr_3', 'ret_dir_atr_lag1', 'vol_regime_24'):
+        assert dead not in result.columns
 
 
 def test_label_entry_path_targets_treats_nan_signal_as_inactive(tmp_path):
@@ -156,3 +152,69 @@ def test_label_entry_path_targets_treats_nan_signal_as_inactive(tmp_path):
 
     assert result.loc[0, "ret_6_dir_atr"] == 0.0
     assert result.loc[0, "path_6_class"] == 0
+
+
+def test_label_entry_path_targets_use_fractal_dir(tmp_path):
+    """use_fractal_dir=True использует dir из fractal0 вместо signal."""
+    ohlc_path = tmp_path / "test_ohlc.csv"
+    ohlc_path.write_text(
+        "time;open;high;low;close;volume\n"
+        "2024.01.01 00:00;100;105;99;102;1\n"
+        "2024.01.01 01:00;102;108;101;107;1\n"
+        "2024.01.01 02:00;107;110;106;109;1\n"
+        "2024.01.01 03:00;109;112;108;111;1\n"
+        "2024.01.01 04:00;111;115;110;114;1\n"
+        "2024.01.01 05:00;114;118;113;117;1\n"
+        "2024.01.01 06:00;117;120;116;119;1\n"
+        "2024.01.01 07:00;119;122;118;121;1\n",
+        encoding="utf-8",
+    )
+
+    # fractal0.dir=1 (пик → SELL), signal=0 (не дал бы разметку)
+    fractal_str = "1700000000:100.0:1:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
+    frame = pd.DataFrame({
+        "time": ["2024.01.01 00:00"],
+        "signal": [0],
+        "ATR": [1.0],
+        "fractal0": [fractal_str],
+    })
+
+    # Без флага — signal=0 → разметка пропущена
+    result_default = ls.label_entry_path_targets(frame, str(ohlc_path))
+    assert result_default.loc[0, "ret_6_dir_atr"] == 0.0
+
+    # С флагом — dir=1 (пик) → SELL (-1), разметка выполнена
+    result_dir = ls.label_entry_path_targets(frame, str(ohlc_path), use_fractal_dir=True)
+    assert result_dir.loc[0, "ret_6_dir_atr"] != 0.0  # не ноль — разметка сработала
+    # SELL: entry=Open[1]=102, Close[6]=119, ret=(102-119)/1.0=-17
+    assert abs(result_dir.loc[0, "ret_6_dir_atr"] - (-17.0)) < 1.0
+
+
+def test_label_trailing_stop_targets_use_fractal_dir(tmp_path):
+    """use_fractal_dir=True использует dir из fractal0 вместо signal."""
+    ohlc_path = tmp_path / "test_ohlc.csv"
+    ohlc_path.write_text(
+        "time;open;high;low;close;volume\n"
+        "2024.01.01 00:00;100;105;99;102;1\n"
+        "2024.01.01 01:00;102;115;101;114;1\n",
+        encoding="utf-8",
+    )
+
+    fractal_str = "1700000000:100.0:1:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
+    frame = pd.DataFrame({
+        "time": ["2024.01.01 00:00"],
+        "signal": [0],
+        "ATR": [1.0],
+        "fractal0": [fractal_str],
+    })
+
+    # Без флага — signal=0 → разметка пропущена
+    result_default = ls.label_trailing_stop_targets(frame, str(ohlc_path))
+    assert result_default.loc[0, "trail_12_pnl_atr_x2"] == 0.0
+
+    # С флагом — dir=1 (пик) → SELL (-1), разметка сработала
+    result_dir = ls.label_trailing_stop_targets(frame, str(ohlc_path), use_fractal_dir=True)
+    pnl = result_dir.loc[0, "trail_12_pnl_atr_x2"]
+    assert pnl != 0.0
+    # SELL (direction=-1): entry=102, best_low=101, stop=101+2=103, high=115≥103 → exit 103
+    assert pnl == -1.0

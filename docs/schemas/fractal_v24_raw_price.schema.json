@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SoSimple Fractal Data Contract",
+  "description": "Контракт данных между MT4 (lib_PIC.mqh, NERO_CSV_CREATE) и Python (ML/data_loader.py) — raw price",
+  "version": "fractal_v24_raw_price",
+  "price_scale": "raw",
+  "comment": "Сырые цены. MT4 экспортирует цены без нормализации (USE_NORMALIZED_OUTPUT=false). Цены в валюте инструмента (XAUUSD — доллары за унцию, EURUSD — доллары за евро, и т.д.). 23 поля.",
+
+  "csv": {
+    "separator": ";",
+    "encoding": "UTF-8",
+    "required_columns": ["time", "signal", "predict", "ATR"],
+    "required_fractal_columns": {
+      "prefix": "fractal",
+      "count": 100,
+      "pattern": "fractal{0..99}"
+    },
+    "allowed_extra_columns": true,
+    "comment": "label_main.py и другие скрипты добавляют колонки с таргетами — это разрешено"
+  },
+
+  "fractal": {
+    "separator": ":",
+    "num_fields": 23,
+    "comment": "Порядок полей внутри каждой колонки fractalN. 23 поля: T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift. Цена сырая (не нормализована).",
+    "fields": [
+      {"index": 0,  "name": "time",        "type": "int",   "domain": "> 0",          "description": "Unix-метка времени бара"},
+      {"index": 1,  "name": "price",       "type": "float", "domain": "> 0",           "description": "Цена уровня (raw, в валюте инструмента)"},
+      {"index": 2,  "name": "direction",   "type": "int",   "domain": "{-1, 1}",      "description": "Направление пробоя уровня"},
+      {"index": 3,  "name": "front_val",   "type": "float", "domain": ">= 0",          "description": "Сила фронтальной границы (raw)"},
+      {"index": 4,  "name": "back_val",    "type": "float", "domain": ">= 0",          "description": "Сила тыловой границы (raw)"},
+      {"index": 5,  "name": "strong",      "type": "int",   "domain": "{0, 1}",       "description": "Флаг сильного уровня"},
+      {"index": 6,  "name": "break_k",     "type": "int",   "domain": "{0, 1}",       "description": "Флаг пробойного уровня"},
+      {"index": 7,  "name": "reverse",     "type": "float", "domain": ">= 0",          "description": "Сила разворота (raw)"},
+      {"index": 8,  "name": "pwr_sum",     "type": "float", "domain": ">= 0",          "description": "Сумма сил фракталов на уровне (raw)"},
+      {"index": 9,  "name": "cnt",         "type": "float", "domain": ">= 0",          "description": "Количество касаний уровня (raw)"},
+      {"index": 10, "name": "imp",         "type": "float", "domain": ">= 0",          "description": "Импульс/сила пробоя (raw)"},
+      {"index": 11, "name": "up_12",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 12 баров (raw)"},
+      {"index": 12, "name": "dn_12",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 12 баров (raw)"},
+      {"index": 13, "name": "up_24",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 24 бара (raw)"},
+      {"index": 14, "name": "dn_24",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 24 бара (raw)"},
+      {"index": 15, "name": "up_48",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 48 баров (raw)"},
+      {"index": 16, "name": "dn_48",       "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 48 баров (raw)"},
+      {"index": 17, "name": "up_3",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 3 бара (raw)"},
+      {"index": 18, "name": "dn_3",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 3 бара (raw)"},
+      {"index": 19, "name": "up_6",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вверх за 6 баров (raw)"},
+      {"index": 20, "name": "dn_6",        "type": "float", "domain": ">= 0",          "description": "Максимальное движение вниз за 6 баров (raw)"},
+      {"index": 21, "name": "fractal_atr",  "type": "float", "domain": "> 0",           "description": "ATR на момент формирования фрактала"},
+      {"index": 22, "name": "shift",       "type": "int",   "domain": ">= 0",          "description": "Возраст фрактала в барах от decision_time"}
+    ]
+  }
+}

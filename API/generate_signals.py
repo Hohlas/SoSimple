@@ -2,7 +2,7 @@
 # Файл: API/generate_signals.py
 # Назначение: Генерация CSV с предрассчитанными ML-сигналами для MT4 Strategy Tester
 #            и research-only export для entry_path_v1
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Создан: 2026-03-20
 # Зависимости:
 #   Входные данные:

@@ -81,8 +81,8 @@ def test_label_trade_targets_uses_ohlc_path_when_provided(tmp_path):
 
     out = ls.label_trade_targets(frame.copy(), ohlc_path=ohlc_path)
 
-    assert out.loc[0, 'trade_fav_h12'] == 25.0
-    assert out.loc[0, 'trade_adv_h12'] == 2.0
-    assert out.loc[0, 'trade_pnl_h12_atr'] == 2.0
+    assert out.loc[0, 'trade_fav_h12'] == 24.0
+    assert out.loc[0, 'trade_adv_h12'] == 3.0
+    assert out.loc[0, 'trade_pnl_h12_atr'] == 1.9
     assert out.loc[0, 'trade_outcome_h12'] == 1
     assert out.loc[0, 'archetype_target'] == 1

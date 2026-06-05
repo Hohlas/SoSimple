@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_entry_path_training.py
 # Назначение: Unit-тесты CLI plumbing для entry_path_v1 обучения
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_entry_path_training.py -q
 # =============================================================================

@@ -20,7 +20,7 @@
 
 | Файл | Назначение | Статус |
 |------|-----------|--------|
-| [data_loader.py](data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 20) | ✅ |
+| [data_loader.py](data_loader.py) | Dataset/DataLoader: CSV → 3D тензор (N, 100, 29) | ✅ |
 | [losses.py](losses.py) | FocalLoss, HuberLoss, AsymmetricLoss | ✅ |
 | [utils.py](utils.py) | seed, метрики (Pearson r, MAE, R²), device | ✅ |
 | [experiment_logger.py](experiment_logger.py) | CSV-логгер экспериментов | 🏁 |

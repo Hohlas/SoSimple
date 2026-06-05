@@ -3,7 +3,7 @@
 # Назначение: Unit и smoke-тесты для API/signal_quality_research.py (Variant 4).
 #   Проверяет контракт filter features, variance check, univariate response maps,
 #   shallow tree discovery, score/holdout validation и вспомогательных утилит.
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-05
 # Зависимости:
 #   Входные данные:

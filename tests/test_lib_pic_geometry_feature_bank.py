@@ -31,6 +31,7 @@ def _fractal(front: float, back: float, reverse: float = 0.0, atr: float = 1.0) 
         '0',
         '0',
         str(atr),
+        '0',
     ]
     return ':'.join(fields)
 

@@ -43,6 +43,7 @@ FRACTAL_FIELDS = {
     "up_6": 19,
     "dn_6": 20,
     "fractal_atr": 21,
+    "shift": 22,
 }
 
 _INT_FIELDS = {"direction", "strong", "break", "count"}
@@ -50,18 +51,18 @@ _UPDN_FIELDS = ("up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_2
 
 
 def parse_fractal(fractal_str: object) -> dict[str, Any] | None:
-    """Парсит строку фрактала в словарь с 22 полями."""
+    """Парсит строку фрактала в словарь (23 поля)."""
     if pd.isna(fractal_str) or fractal_str == "":
         return None
 
     parts = str(fractal_str).split(":")
-    if len(parts) < 7:
+    if len(parts) != 23:
         return None
 
     parsed: dict[str, Any] = {}
     try:
         for name, pos in FRACTAL_FIELDS.items():
-            if pos >= len(parts) or parts[pos] == "":
+            if parts[pos] == "":
                 parsed[name] = 0 if name in _INT_FIELDS else 0.0
                 continue
             if name == "time":
@@ -75,11 +76,6 @@ def parse_fractal(fractal_str: object) -> dict[str, Any] | None:
                 parsed[name] = float(parts[pos])
     except (TypeError, ValueError):
         return None
-
-    if len(parts) < 22:
-        parsed["fractal_atr"] = float(parts[17]) if len(parts) > 17 else 0.0
-        for name in ("up_3", "dn_3", "up_6", "dn_6"):
-            parsed[name] = 0.0
 
     return parsed
 

@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/processing/test_limit_order_barriers.py
 # Назначение: Тесты для LABEL_FN()
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-05-27
 # Зависимости: pytest, numpy, pandas
 #   Входные данные: синтетические OHLC / Nero DataFrames
@@ -46,8 +46,8 @@ def _make_nero_df(times, atr_vals, fractal0_vals):
 
 
 def _fractal_str(price, direction):
-    """Создать minimal valid fractal string (22 поля, field[0]=int timestamp)."""
-    return f'123:{price}:{direction}:1.0:2.0:0:0:0.0:0.0:0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0'
+    """Создать minimal valid fractal string (23 поля, field[0]=int timestamp)."""
+    return f'123:{price}:{direction}:1.0:2.0:0:0:0.0:0.0:0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0:0'
 
 
 class TestBuyLimit:

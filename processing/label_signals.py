@@ -9,7 +9,7 @@
 #
 # Зависимости:
 #   Входные данные:
-#     - CSV файлы с колонками фракталов (22 полей: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr)
+#     - CSV файлы с колонками фракталов (23 поля: T:P:Dir:Frnt:Back:Strong:Brk:Rev:Pwr:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift)
 #   Выходные данные:
 #     - pd.DataFrame с колонками 'signal', 'predict', 'up_3'..'dn_48',
 #       'ret_*_dir_atr', 'fav_*_atr', 'adv_*_atr', 'path_6_class'
@@ -23,7 +23,7 @@
 #   labeled_df = label_entry_path_targets(labeled_df, 'DATA/XAUUSD_H1_OHLC.csv')
 #
 # Примечания:
-#   - Обратная совместимость: parse_fractal() принимает строки с 7..22 полями
+#   - parse_fractal() — только 23-полевой формат (текущий DATA_VERSION)
 #   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
@@ -44,10 +44,7 @@ def parse_fractal(fractal_str):
     """
     Парсит строку фрактала и возвращает словарь с параметрами.
 
-    Формат строки:
-    - legacy 18 полей:
-      `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:fractal_atr`
-    - current 23 поля:
+    Формат строки (23 поля):
        `fractal_time:price:direction:front:back:strong:break:reverse:power:count:impulse:up_12:dn_12:up_24:dn_24:up_48:dn_48:up_3:dn_3:up_6:dn_6:fractal_atr:shift`
 
      Индексы в строке:
@@ -86,7 +83,7 @@ def parse_fractal(fractal_str):
         return None
     
     parts = str(fractal_str).split(':')
-    if len(parts) < 7:  # Минимум нужны индексы 0-6 для базовой логики
+    if len(parts) != 23:  # Только 23-полевой формат
         return None
     
     try:
@@ -102,18 +99,18 @@ def parse_fractal(fractal_str):
             'power': float(parts[8]) if len(parts) > 8 else 0.0,
             'count': int(parts[9]) if len(parts) > 9 else 0,
             'impulse':     float(parts[10]) if len(parts) > 10 else 0.0,
-            'up_12':       float(parts[11]) if len(parts) > 11 else 0.0,
-            'dn_12':       float(parts[12]) if len(parts) > 12 else 0.0,
-            'up_24':       float(parts[13]) if len(parts) > 13 else 0.0,
-            'dn_24':       float(parts[14]) if len(parts) > 14 else 0.0,
-            'up_48':       float(parts[15]) if len(parts) > 15 else 0.0,
-            'dn_48':       float(parts[16]) if len(parts) > 16 else 0.0,
-            'up_3':        float(parts[17]) if len(parts) > 21 else 0.0,
-            'dn_3':        float(parts[18]) if len(parts) > 21 else 0.0,
-            'up_6':        float(parts[19]) if len(parts) > 21 else 0.0,
-            'dn_6':        float(parts[20]) if len(parts) > 21 else 0.0,
-            'fractal_atr': float(parts[21]) if len(parts) > 21 else (float(parts[17]) if len(parts) > 17 else 0.0),
-            'shift':       int(parts[22])   if len(parts) > 22 else 0,
+            'up_12':       float(parts[11]),
+            'dn_12':       float(parts[12]),
+            'up_24':       float(parts[13]),
+            'dn_24':       float(parts[14]),
+            'up_48':       float(parts[15]),
+            'dn_48':       float(parts[16]),
+            'up_3':        float(parts[17]),
+            'dn_3':        float(parts[18]),
+            'up_6':        float(parts[19]),
+            'dn_6':        float(parts[20]),
+            'fractal_atr': float(parts[21]),
+            'shift':       int(parts[22]),
         }
     except (ValueError, IndexError):
         return None
@@ -154,6 +151,8 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
     1. Находит все фракталы с пометкой 'strong' во всем файле.
     2. Для каждой строки:
        - Если fractal0 является 'strong', ставит метку в 'signal'.
+         Конвенция: fractal0.dir=1 (пик) → signal=-1 (SELL), dir=-1 (впадина) → signal=1 (BUY).
+         Торговое направление противоположно направлению фрактала: на пике продаём, на дне покупаем.
        - Рассчитывает 'predict' как максимальный откат (back) цены до момента
          пробития (break) этого фрактала в будущем.
 
@@ -265,11 +264,12 @@ def label_all(input_path, output_path, debug=False, label_signal=True, label_pre
         target_time, target_direction, f0_back = f0
 
         # --- Маркировка signal ---
+        # Инвертируем направление: fractal0.dir=1 (пик) → SELL (-1), dir=-1 (впадина) → BUY (1)
         if label_signal and target_time in strong_levels:
-            signal_arr[i] = target_direction
+            signal_arr[i] = -target_direction
             signals_marked += 1
             if debug:
-                print(f"  [Строка {i}] ✓ signal={target_direction}")
+                print(f"  [Строка {i}] ✓ fractal0.dir={target_direction} → signal={-target_direction}")
 
         # --- Маркировка predict ---
         if label_predict and target_time in timeline_rows:
@@ -763,7 +763,15 @@ def label_trailing_stop_targets(
     hold_bars: int = TRAILING_STOP_HOLD_BARS,
     atr_col: str = 'ATR',
     x_values: tuple[int, ...] = TRAILING_STOP_X_VALUES,
+    use_fractal_dir: bool = False,
 ) -> pd.DataFrame:
+    """
+    Размечает trailing-stop PnL таргеты по направлению сигнала или fractal0.dir.
+
+    Args:
+        use_fractal_dir: Если True, направление берётся из `dir` fractal0
+            (поле 2) вместо колонки `signal`. Позволяет размечать все строки.
+    """
     from datetime import datetime, timezone
 
     out = df.copy()
@@ -776,8 +784,17 @@ def label_trailing_stop_targets(
         ohlc, times, time_idx = load_ohlc_index(ohlc_path)
 
     for row_label in out.index:
-        signal = _safe_signal_scalar(out.at[row_label, 'signal'])
-        if signal == 0:
+        if use_fractal_dir:
+            # Конвенция: dir=1 (пик) → SELL (-1), dir=-1 (впадина) → BUY (1)
+            fractal0_raw = str(out.at[row_label, 'fractal0'])
+            parts = fractal0_raw.split(':')
+            try:
+                direction = -(int(parts[2])) if len(parts) > 2 else 0
+            except (ValueError, IndexError):
+                direction = 0
+        else:
+            direction = _safe_signal_scalar(out.at[row_label, 'signal'])
+        if direction == 0:
             continue
         atr = _safe_numeric_scalar(out.at[row_label, atr_col], default=0.0)
         bars = []
@@ -839,7 +856,7 @@ def label_trailing_stop_targets(
             for x_value in x_values:
                 out.at[row_label, f'trail_{horizon}_pnl_atr_x{x_value}'] = simulate_trailing_stop_exit(
                     bars=horizon_bars,
-                    direction=signal,
+                    direction=direction,
                     entry_price=entry_price,
                     atr=atr,
                     trail_atr=float(x_value),
@@ -864,7 +881,16 @@ def label_entry_path_targets(
     ret_horizons=(6, 12, 24),
     path_horizons=(3, 6, 12, 24),
     debug=False,
+    use_fractal_dir: bool = False,
 ):
+    """
+    Размечает ret/fav/adv таргеты по направлению сигнала или fractal0.dir.
+
+    Args:
+        use_fractal_dir: Если True, направление берётся из `dir` fractal0
+            (поле 2) вместо колонки `signal`. Позволяет размечать все строки
+            без привязки к `signal`.
+    """
     from datetime import datetime, timezone
 
     ohlc, times, time_idx = load_ohlc_index(ohlc_path)
@@ -879,9 +905,18 @@ def label_entry_path_targets(
 
     found = skipped = 0
     for row_idx, row in out.iterrows():
-        signal_raw = row.get('signal', 0)
-        signal = 0 if pd.isna(signal_raw) else int(signal_raw)
-        if signal not in (-1, 1):
+        if use_fractal_dir:
+            # Направление из fractal0.dir (поле 2). Конвенция: dir=1 (пик) → SELL (-1), dir=-1 (впадина) → BUY (1)
+            fractal0_raw = str(row.get('fractal0', ''))
+            parts = fractal0_raw.split(':')
+            try:
+                direction = -(int(parts[2])) if len(parts) > 2 else 0
+            except (ValueError, IndexError):
+                direction = 0
+        else:
+            signal_raw = row.get('signal', 0)
+            direction = 0 if pd.isna(signal_raw) else int(signal_raw)
+        if direction not in (-1, 1):
             continue
 
         row_time = row.get('time')
@@ -934,7 +969,7 @@ def label_entry_path_targets(
                 ],
                 columns=['open', 'high', 'low', 'close'],
             )
-            stats = compute_entry_path_slice(bars, signal, entry_price, atr, h)
+            stats = compute_entry_path_slice(bars, direction, entry_price, atr, h)
             if h in ret_horizons:
                 out.at[row_idx, f'ret_{h}_dir_atr'] = stats['ret_dir_atr']
             if h in path_horizons:
@@ -957,7 +992,7 @@ def label_entry_path_targets(
             )
             out.at[row_idx, 'path_6_class'] = first_touch_path_class(
                 bars=bars6,
-                direction=signal,
+                direction=direction,
                 entry_price=entry_price,
                 atr=atr,
                 threshold_atr=1.0,
@@ -1109,7 +1144,8 @@ LIMIT_AMBIGUOUS_SENTINEL = -888.0
 
 
 def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
-                                spread=0.0, mode="conservative", debug=False):
+                                spread=0.0, mode="conservative", debug=False,
+                                entry_offset_atr=0.0):
     """
     Limit-order Triple Barrier labels: pending BUY/SELL LIMIT на Close[row_time].
 
@@ -1126,6 +1162,10 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
         spread:        Спред в ценовых единицах (default 0.0).
         mode:          "conservative" | "optimistic" | "ambiguous".
         debug:         Печатать статистику.
+        entry_offset_atr: Смещение цены входа в ATR-единицах (default 0.0).
+            Для BUY LIMIT: уровень = Close[row] − offset × ATR − spread (более низкая цена).
+            Для SELL LIMIT: уровень = Close[row] + offset × ATR (более высокая цена).
+            Положительный offset делает вход выгоднее, но снижает fill_rate.
 
     Returns:
         DataFrame с колонками TB_TARGET_NAMES, buy_fill_lag, sell_fill_lag,
@@ -1201,8 +1241,12 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
             skipped += 1
             continue
 
-        buy_fill_bid_level = entry_exec_price - spread
-        sell_fill_bid_level = entry_exec_price
+        buy_fill_bid_level = entry_exec_price - entry_offset_atr * atr - spread
+        sell_fill_bid_level = entry_exec_price + entry_offset_atr * atr
+
+        # Фактическая цена входа при исполнении лимитного ордера
+        buy_entry_price = buy_fill_bid_level
+        sell_entry_price = sell_fill_bid_level
 
         # Раздельный fill-скан для BUY и SELL
         buy_fill_idx = -1
@@ -1240,8 +1284,8 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
 
             for sl in TB_SL_LEVELS:
                 for tp in TB_TP_LEVELS:
-                    buy_tp_price = entry_exec_price + tp * atr
-                    buy_sl_price = entry_exec_price - sl * atr
+                    buy_tp_price = buy_entry_price + tp * atr
+                    buy_sl_price = buy_entry_price - sl * atr
 
                     buy_sl_hit_fill_bar = fill_l_buy <= buy_sl_price
                     buy_tp_hit_fill_bar = fill_h_buy >= buy_tp_price
@@ -1283,7 +1327,7 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                         buy_pnl = -float(sl)
                     elif buy_outcome == 0.5:
                         last_close = ohlc[times[buy_scan_end - 1]][3] if buy_scan_end > buy_fill_idx + 1 else fill_c_buy
-                        buy_pnl = (last_close - entry_exec_price) / atr
+                        buy_pnl = (last_close - buy_entry_price) / atr
 
                     buy_col = f'buy_sl{sl}_tp{tp}'
                     df.at[i, buy_col] = buy_outcome
@@ -1308,8 +1352,8 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
 
             for sl in TB_SL_LEVELS:
                 for tp in TB_TP_LEVELS:
-                    sell_tp_price = entry_exec_price - tp * atr
-                    sell_sl_price = entry_exec_price + sl * atr
+                    sell_tp_price = sell_entry_price - tp * atr
+                    sell_sl_price = sell_entry_price + sl * atr
 
                     sell_sl_hit_fill_bar = (fill_h_sell + spread) >= sell_sl_price
                     sell_tp_hit_fill_bar = (fill_l_sell + spread) <= sell_tp_price
@@ -1353,7 +1397,7 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
                         sell_pnl = -float(sl)
                     elif sell_outcome == 0.5:
                         last_close = ohlc[times[sell_scan_end - 1]][3] if sell_scan_end > sell_fill_idx + 1 else fill_c_sell
-                        sell_pnl = (entry_exec_price - (last_close + spread)) / atr
+                        sell_pnl = (sell_entry_price - (last_close + spread)) / atr
 
                     sell_col = f'sell_sl{sl}_tp{tp}'
                     df.at[i, sell_col] = sell_outcome

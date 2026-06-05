@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_inverse_piecewise.py
 # Назначение: Round-trip тесты piecewise_linear_log_transform → inverse для normalize.py / signal_tracer.py
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Обновлён: 2026-04-05
 # Зависимости:
 #   Входные данные:
@@ -109,9 +109,9 @@ def test_normalize_rowwise_returns_updn_params():
     import pandas as pd
 
     # Создаём строку с одним фракталом, у которого up_12=10.0
-    fractal_str = "1700000000:1000.0:1:5.0:3.0:0:0:0:1.0:1:0.5:10.0:8.0:15.0:12.0:20.0:16.0:2.5"
+    fractal_str = "1700000000:1000.0:1:5.0:3.0:0:0:0:1.0:1:0.5:10.0:8.0:15.0:12.0:20.0:16.0:2.5:0"
     # Остальные 99 фракталов — с нулевыми updn
-    empty_frac = "1699999000:999.0:1:2.0:1.0:0:0:0:0.5:0:0.3:0.0:0.0:0.0:0.0:0.0:0.0:2.0"
+    empty_frac = "1699999000:999.0:1:2.0:1.0:0:0:0:0.5:0:0.3:0.0:0.0:0.0:0.0:0.0:0.0:2.0:0"
 
     cols = {'time': ['2025.01.01 00:00'], 'signal': [0], 'predict': [0.0], 'ATR': [2.5],
             'up_12': [10.0], 'dn_12': [8.0], 'up_24': [15.0], 'dn_24': [12.0],
@@ -126,9 +126,8 @@ def test_normalize_rowwise_returns_updn_params():
 
     assert isinstance(result, tuple) and len(result) == 2
     df_out, updn_params = result
-    assert updn_params.shape == (1, 2)
-    brk, cap = updn_params[0]
-    assert brk > 0, f"brk должен быть > 0, got {brk}"
+    assert updn_params.shape == (1, 5, 2)  # 5 пар × (brk, cap)
+    brk, cap = updn_params[0, 2]  # up_12/dn_12 = пара 2
     assert cap >= brk, f"cap должен быть >= brk, got cap={cap}, brk={brk}"
 
 
@@ -140,7 +139,7 @@ def test_normalize_rowwise_can_exclude_predict_from_front_back_pool():
         return (
             "1700000000:1000.0:1:"
             f"{front}:{back}:0:0:0:1.0:1:0.5:"
-            "10.0:8.0:15.0:12.0:20.0:16.0:0.0:0.0:0.0:0.0:2.5"
+            "10.0:8.0:15.0:12.0:20.0:16.0:0.0:0.0:0.0:0.0:2.5:0"
         )
 
     base = {
@@ -172,3 +171,64 @@ def test_normalize_rowwise_can_exclude_predict_from_front_back_pool():
         assert high is not None
         assert low[3] == high[3]
         assert low[4] == high[4]
+
+
+def test_denormalize_updn_legacy_shape():
+    """denormalize_updn_legacy возвращает 6 значений (обратная совместимость)."""
+    from processing.denormalize_updn import denormalize_updn_legacy
+    result = denormalize_updn_legacy([0.1, 0.5, 0.9, 0.1, 0.5, 0.9], 3.0, 30.0)
+    assert len(result) == 6
+    assert np.all(np.isfinite(result))
+    assert np.all(result >= 0)
+    # linear zone: 0.1 / 0.85 * 3.0 = 0.3529...
+    assert abs(result[0] - 0.1 / 0.85 * 3.0) < 0.001
+
+
+def test_denormalize_updn_pairs_shape():
+    """denormalize_updn_pairs возвращает 10 значений для 5 пар."""
+    from processing.denormalize_updn import denormalize_updn_pairs
+    y_10 = np.random.random(10)
+    params = np.array([[1.0, 10.0], [2.0, 20.0], [3.0, 30.0], [4.0, 40.0], [5.0, 50.0]])
+    result = denormalize_updn_pairs(y_10, params)
+    assert result.shape == (10,)
+    assert np.all(np.isfinite(result))
+    assert np.all(result >= 0)
+
+
+def test_denormalize_updn_pairs_per_pair():
+    """Каждая пара денормализуется своими brk/cap."""
+    from processing.denormalize_updn import denormalize_updn_pairs
+    # Все y = 0.85 (верх линейной части), brk разный → разный результат
+    y_10 = np.full(10, 0.85)
+    params = np.array([[1.0, 10.0], [3.0, 30.0], [5.0, 50.0], [7.0, 70.0], [9.0, 90.0]])
+    result = denormalize_updn_pairs(y_10, params)
+    # y = linear_max → x = brk
+    assert abs(result[0] - 1.0) < 0.001
+    assert abs(result[2] - 3.0) < 0.001
+    assert abs(result[4] - 5.0) < 0.001
+    assert abs(result[6] - 7.0) < 0.001
+    assert abs(result[8] - 9.0) < 0.001
+
+
+def test_load_updn_params_shape():
+    """load_updn_params возвращает (N, 5, 2)."""
+    from processing.denormalize_updn import load_updn_params, UPDN_PAIR_NAMES
+    arr = load_updn_params('DATA/Nero_XAUUSD_test_updn_params.npy')
+    assert arr.ndim == 3
+    assert arr.shape[1] == len(UPDN_PAIR_NAMES)
+    assert arr.shape[2] == 2
+    # brk <= cap для всех пар
+    assert np.all(arr[:, :, 0] <= arr[:, :, 1])
+
+
+def test_load_updn_params_by_time_format():
+    """load_updn_params_by_time возвращает dict {time: (5,2)}."""
+    from processing.denormalize_updn import load_updn_params_by_time
+    tmap = load_updn_params_by_time(
+        'DATA/Nero_XAUUSD_test_updn_params.npy',
+        'DATA/Nero_XAUUSD_test_labeled.csv',
+    )
+    assert len(tmap) > 0
+    first_key = next(iter(tmap))
+    assert len(first_key) >= 16  # 'YYYY.MM.DD HH:MM'
+    assert tmap[first_key].shape == (5, 2)

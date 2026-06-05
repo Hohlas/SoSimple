@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: tests/test_triple_barrier_training.py
 # Назначение: Unit-тесты transfer-learning kwargs для TB обучения
-# Язык: Python 3.11+
+# Язык: Python 3.10+
 # Использование:
 #   ./.venv/bin/python -m pytest tests/test_triple_barrier_training.py -q
 # =============================================================================
