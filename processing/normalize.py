@@ -301,7 +301,7 @@ def normalize_rowwise(
     piecewise_params: Optional[dict] = None,
     return_updn_params: bool = False,
     verbose: bool = True,
-    include_predict_in_front_back_pool: bool = True,
+    include_predict_in_front_back_pool: bool = False,
 ) -> pd.DataFrame:
     """
     Выполняет построчную нормализацию всех признаков (кроме ATR).
@@ -327,9 +327,9 @@ def normalize_rowwise(
             (shape (n_rows, 5, 2)).
         verbose: Печатать progress в stdout. В runtime watcher используется False.
         include_predict_in_front_back_pool: Добавлять |predict| в общий пул
-            front/back. Старое поведение=True; live-safe контур должен
-            передавать False, чтобы future-derived predict не влиял на
-            нормализацию live-признаков.
+            front/back. По умолчанию False (live-safe: future-derived predict
+            не влияет на нормализацию). True — legacy-режим для воспроизведения
+            старых экспериментов.
 
     Returns:
         DataFrame с нормализованными признаками.
@@ -410,9 +410,10 @@ def normalize_rowwise(
         predict_sign = np.sign(predict_val) if np.isfinite(predict_val) else 1.0
         predict_abs = np.abs(predict_val)
         
-        # Legacy-контур нормализует |predict| вместе с front/back.
-        # Live-safe контур исключает predict из пула, потому что training
-        # predict строится из будущего, а online predict=0.
+        # По умолчанию predict исключён из пула (live-safe): training predict
+        # строится из будущего, online predict=0 — единая шкала для обоих контуров.
+        # Legacy-режим (include_predict_in_front_back_pool=True) добавляет |predict|
+        # в пул для воспроизведения старых экспериментов.
         if include_predict_in_front_back_pool:
             pooled = np.concatenate([[predict_abs], front_vals, back_vals])
         else:

@@ -232,9 +232,9 @@ def main():
         help="Пропустить этап нормализации",
     )
     parser.add_argument(
-        "--exclude-predict-from-front-back-pool",
+        "--include-predict-in-front-back-pool",
         action="store_true",
-        help="Live-safe нормализация: не добавлять |predict| в пул front/back",
+        help="Legacy-режим: добавлять |predict| в пул front/back (для воспроизведения старых экспериментов)",
     )
     parser.add_argument(
         "--ohlc",
@@ -317,7 +317,7 @@ def main():
             stats_path=stats_path,
             debug=args.debug,
             return_updn_params=True,
-            include_predict_in_front_back_pool=not args.exclude_predict_from_front_back_pool,
+            include_predict_in_front_back_pool=args.include_predict_in_front_back_pool,
         )
 
     # 5. Разделяем на train/validation/test (70/15/15)

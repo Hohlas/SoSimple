@@ -4,7 +4,7 @@
 
 ## Приоритетная очередь
 
-1. **Смена дефолта `include_predict_in_front_back_pool` на `False`** — сейчас `True`, методика требует `False`
+(все пункты закрыты)
 
 ## Парсинг и тензор
 
@@ -45,7 +45,7 @@
 
 - [x] `build_grouped_features` включает `ret_dir_atr_lag1` (unsafe, `live_safe_audit.py:84`). Убран из `ENTRY_PATH_V1_BASE_FEATURE_COLUMNS`, `_required_columns`, и цикла row features в `build_grouped_features`. Колонка удалена из `add_entry_path_frequency_features()` ранее (П. контекстные признаки).
 - [x] Абляция показала: из 9 engineered-групп только `path_long` (агрегаты up_12..dn_48, 120 признаков) и `path_short` (up_3..dn_6) показали сигнал. Результат может быть артефактом pooled-нормализации (п. Нормализация). После раздельной нормализации — перезапустить абляцию. Остальные группы (geometry, strength, break_impulse, price_position, direction, atr) пока не удалять.
-- [ ] При будущих экспериментах: `reverse`, `power` не являются производными от front/back — это самостоятельные измерения MT4 (сила пробитого уровня и сумма сил фракталов на общем ценовом уровне соответственно). Не исключать их по правилу производных признаков.
+- [x] При будущих экспериментах: `reverse`, `power` не являются производными от front/back — это самостоятельные измерения MT4 (сила пробитого уровня и сумма сил фракталов на общем ценовом уровне соответственно). Не исключать их по правилу производных признаков. — Зафиксировано как методологическое правило. В коде не исключаются (используются в `fractal_level_feature_builder.py`, `baseline_experiments.py`, `lib_pic_geometry_feature_bank.py`).
 
 ## Проверка path_long — superseded новой абляцией 3D-тензора
 
@@ -86,7 +86,7 @@
 ## Preflight gate — качество вывода (до любого эксперимента)
 
 - [x] `docs/methodology/02-data-pipeline.md` и `docs/methodology/03-feature-contract-leakage.md` уже запрещают общий пул `input + target/label`; после правки кода проверить, что `normalize.py` фактически соблюдает это требование. **Аудит выполнен:** `include_predict_in_front_back_pool=True` по умолчанию — `|predict|` (вычислен по будущему) и `front/back` в общем пуле. Найден FAIL: несоответствие методике.
-- [ ] **Смена дефолта `include_predict_in_front_back_pool` на `False`.** Флаг `--exclude-predict-from-front-back-pool` существует, но дефолт всё ещё `True`. Требует переразметки данных с флагом.
+- [x] **Смена дефолта `include_predict_in_front_back_pool` на `False`.** Флаг `--exclude-predict-from-front-back-pool` заменён на `--include-predict-in-front-back-pool` (legacy). Данные переразмечены с дефолтом `False`. Smoke check, pytest (613/0), signal-only PF без изменений (4.48/5.12/5.03).
 - [x] Если хотя бы один ключевой признак имеет статус UNKNOWN по реальным данным, запрещено делать вывод о качестве модели. Формализовано в `docs/methodology/03-feature-contract-leakage.md:25`: UNKNOWN → только DIAGNOSTIC_ONLY. В `docs/methodology/A2-checklist-audit.md:7`: нет UNKNOWN признаков.
 - [x] Обязательный входной контроль: `statistics/data_contract_smoke_check.py`.
 

@@ -17,7 +17,7 @@
 | **Без изменений** | `direction`, `strong`, `fractal_atr` | {-1, 0, 1} / raw | Категориальные и служебные признаки. |
 
 ## Ключевые функции
-- `normalize_rowwise(df, return_updn_params=False, verbose=True, include_predict_in_front_back_pool=True)`: Построчная нормализация (fractals, predict, Up/Dn таргеты). Старый режим по умолчанию считает общий пул `|predict| + front + back`. Для live-safe контуров нужно передавать `include_predict_in_front_back_pool=False`, чтобы future-derived `predict` не влиял на нормализацию `front/back`. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 5, 2)` с per-row per-pair `[brk, cap]` (пары: up_3/dn_3, up_6/dn_6, up_12/dn_12, up_24/dn_24, up_48/dn_48).
+- `normalize_rowwise(df, return_updn_params=False, verbose=True, include_predict_in_front_back_pool=False)`: Построчная нормализация (fractals, predict, Up/Dn таргеты). По умолчанию `False` (live-safe: predict не влияет на front/back). Legacy-режим `True` добавляет `|predict|` в общий пул — для воспроизведения старых экспериментов. При `return_updn_params=True` возвращает `(df, updn_params)`, где `updn_params` — массив shape `(N, 5, 2)` с per-row per-pair `[brk, cap]` (пары: up_3/dn_3, up_6/dn_6, up_12/dn_12, up_24/dn_24, up_48/dn_48).
 - `piecewise_linear_log_transform()`: Реализация алгоритма PLL.
 - `normalize_atr_train()` / `normalize_atr_inference()`: Устаревшие, не используются (ATR не нормализуется, используется как знаменатель для ATR_ratio в data_loader.py).
 

@@ -33,8 +33,8 @@ python label_main.py --debug
 # Без нормализации
 python label_main.py --no-normalize
 
-# Live-safe нормализация: predict не влияет на front/back
-python label_main.py --input MT/MQL4/Files/Nero.csv --exclude-predict-from-front-back-pool
+# Legacy-режим: predict в пуле front/back (воспроизведение старых экспериментов)
+python label_main.py --input MT/MQL4/Files/Nero.csv --include-predict-in-front-back-pool
 ```
 
 ## Ключевые функции
