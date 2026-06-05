@@ -10,22 +10,32 @@
       "yearly": {
         "2019": {
           "pf": 9.998,
-          "n_trades": 913
+          "n_trades": 913,
+          "win": 0.87,
+          "mean_r": 305.322
         },
         "2020": {
           "pf": 13.016,
-          "n_trades": 1769
+          "n_trades": 1769,
+          "win": 0.885,
+          "mean_r": 613.844
         },
         "2021": {
           "pf": 13.609,
-          "n_trades": 1348
+          "n_trades": 1348,
+          "win": 0.889,
+          "mean_r": 457.474
         },
         "2022": {
           "pf": 12.295,
-          "n_trades": 1530
+          "n_trades": 1530,
+          "win": 0.884,
+          "mean_r": 534.088
         }
       },
-      "n_features": 29
+      "n_features": 29,
+      "long_thr": 0.18847071207738134,
+      "short_thr": -0.17527437713984914
     },
     "no_path": {
       "pf": 11.679854471499011,
@@ -37,22 +47,32 @@
       "yearly": {
         "2019": {
           "pf": 9.438,
-          "n_trades": 918
+          "n_trades": 918,
+          "win": 0.861,
+          "mean_r": 301.825
         },
         "2020": {
           "pf": 12.676,
-          "n_trades": 1765
+          "n_trades": 1765,
+          "win": 0.882,
+          "mean_r": 609.448
         },
         "2021": {
           "pf": 12.152,
-          "n_trades": 1368
+          "n_trades": 1368,
+          "win": 0.88,
+          "mean_r": 454.981
         },
         "2022": {
           "pf": 11.861,
-          "n_trades": 1539
+          "n_trades": 1539,
+          "win": 0.88,
+          "mean_r": 531.615
         }
       },
-      "n_features": 19
+      "n_features": 19,
+      "long_thr": 0.18704812984221392,
+      "short_thr": -0.17546030879774382
     },
     "no_atr_dist": {
       "pf": 12.057944204008246,
@@ -64,22 +84,32 @@
       "yearly": {
         "2019": {
           "pf": 9.268,
-          "n_trades": 907
+          "n_trades": 907,
+          "win": 0.86,
+          "mean_r": 297.713
         },
         "2020": {
           "pf": 13.757,
-          "n_trades": 1769
+          "n_trades": 1769,
+          "win": 0.886,
+          "mean_r": 619.907
         },
         "2021": {
           "pf": 12.593,
-          "n_trades": 1354
+          "n_trades": 1354,
+          "win": 0.883,
+          "mean_r": 452.824
         },
         "2022": {
           "pf": 11.995,
-          "n_trades": 1516
+          "n_trades": 1516,
+          "win": 0.883,
+          "mean_r": 530.871
         }
       },
-      "n_features": 26
+      "n_features": 26,
+      "long_thr": 0.18905459791750953,
+      "short_thr": -0.1758315744295674
     },
     "no_time": {
       "pf": 10.80260156821708,
@@ -91,22 +121,32 @@
       "yearly": {
         "2019": {
           "pf": 8.671,
-          "n_trades": 999
+          "n_trades": 999,
+          "win": 0.855,
+          "mean_r": 317.931
         },
         "2020": {
           "pf": 12.209,
-          "n_trades": 1840
+          "n_trades": 1840,
+          "win": 0.879,
+          "mean_r": 626.598
         },
         "2021": {
           "pf": 10.58,
-          "n_trades": 1424
+          "n_trades": 1424,
+          "win": 0.871,
+          "mean_r": 460.716
         },
         "2022": {
           "pf": 11.195,
-          "n_trades": 1529
+          "n_trades": 1529,
+          "win": 0.878,
+          "mean_r": 529.8
         }
       },
-      "n_features": 24
+      "n_features": 24,
+      "long_thr": 0.18310531952164102,
+      "short_thr": -0.16895117364139348
     },
     "no_base": {
       "pf": 7.849677325391657,
@@ -118,22 +158,69 @@
       "yearly": {
         "2019": {
           "pf": 6.19,
-          "n_trades": 918
+          "n_trades": 918,
+          "win": 0.812,
+          "mean_r": 263.348
         },
         "2020": {
           "pf": 8.508,
-          "n_trades": 1649
+          "n_trades": 1649,
+          "win": 0.842,
+          "mean_r": 520.386
         },
         "2021": {
           "pf": 8.15,
-          "n_trades": 1390
+          "n_trades": 1390,
+          "win": 0.842,
+          "mean_r": 403.809
         },
         "2022": {
           "pf": 8.184,
-          "n_trades": 1526
+          "n_trades": 1526,
+          "win": 0.834,
+          "mean_r": 465.107
         }
       },
-      "n_features": 19
+      "n_features": 19,
+      "long_thr": 0.20854344325653643,
+      "short_thr": -0.1944443617519386
+    },
+    "no_horizon6": {
+      "pf": 11.982483384061856,
+      "trades": 5571,
+      "win": 0.8811792198454071,
+      "buy": 2682,
+      "sell": 2889,
+      "neg_years": 0,
+      "yearly": {
+        "2019": {
+          "pf": 9.531,
+          "n_trades": 922,
+          "win": 0.864,
+          "mean_r": 304.1
+        },
+        "2020": {
+          "pf": 13.424,
+          "n_trades": 1772,
+          "win": 0.887,
+          "mean_r": 618.339
+        },
+        "2021": {
+          "pf": 13.018,
+          "n_trades": 1342,
+          "win": 0.886,
+          "mean_r": 453.685
+        },
+        "2022": {
+          "pf": 11.515,
+          "n_trades": 1527,
+          "win": 0.881,
+          "mean_r": 526.609
+        }
+      },
+      "n_features": 27,
+      "long_thr": 0.18797811556225522,
+      "short_thr": -0.17537266999746307
     },
     "only_dir": {
       "pf": 7.127175640245555,
@@ -145,22 +232,143 @@
       "yearly": {
         "2019": {
           "pf": 6.181,
-          "n_trades": 1094
+          "n_trades": 1094,
+          "win": 0.809,
+          "mean_r": 277.219
         },
         "2020": {
           "pf": 7.921,
-          "n_trades": 1921
+          "n_trades": 1921,
+          "win": 0.836,
+          "mean_r": 532.843
         },
         "2021": {
           "pf": 6.897,
-          "n_trades": 1475
+          "n_trades": 1475,
+          "win": 0.806,
+          "mean_r": 356.436
         },
         "2022": {
           "pf": 7.181,
-          "n_trades": 1447
+          "n_trades": 1447,
+          "win": 0.818,
+          "mean_r": 389.19
         }
       },
-      "n_features": 1
+      "n_features": 1,
+      "long_thr": 0.23877694619004444,
+      "short_thr": -0.21706594261510237
+    },
+    "only_base": {
+      "pf": 8.814301471168687,
+      "trades": 5962,
+      "win": 0.856591099916037,
+      "buy": 2671,
+      "sell": 3291,
+      "neg_years": 0,
+      "yearly": {
+        "2019": {
+          "pf": 6.801,
+          "n_trades": 1034,
+          "win": 0.828,
+          "mean_r": 309.404
+        },
+        "2020": {
+          "pf": 10.043,
+          "n_trades": 1849,
+          "win": 0.866,
+          "mean_r": 612.145
+        },
+        "2021": {
+          "pf": 9.824,
+          "n_trades": 1491,
+          "win": 0.865,
+          "mean_r": 473.049
+        },
+        "2022": {
+          "pf": 8.388,
+          "n_trades": 1581,
+          "win": 0.856,
+          "mean_r": 518.726
+        }
+      },
+      "n_features": 10,
+      "long_thr": 0.17528226970534475,
+      "short_thr": -0.16811870122259334
+    },
+    "only_time": {
+      "pf": 0.9839774846868585,
+      "trades": 6376,
+      "win": 0.4922931739540736,
+      "buy": 2460,
+      "sell": 3916,
+      "neg_years": 3,
+      "yearly": {
+        "2019": {
+          "pf": 1.059,
+          "n_trades": 1220,
+          "win": 0.511,
+          "mean_r": 12.766
+        },
+        "2020": {
+          "pf": 0.921,
+          "n_trades": 1690,
+          "win": 0.473,
+          "mean_r": -25.774
+        },
+        "2021": {
+          "pf": 0.985,
+          "n_trades": 1952,
+          "win": 0.497,
+          "mean_r": -4.598
+        },
+        "2022": {
+          "pf": 0.998,
+          "n_trades": 1496,
+          "win": 0.493,
+          "mean_r": -0.44
+        }
+      },
+      "n_features": 5,
+      "long_thr": 0.012292683066357495,
+      "short_thr": -0.004645517930184999
+    },
+    "only_path": {
+      "pf": 4.159930319979031,
+      "trades": 5343,
+      "win": 0.7723607725482843,
+      "buy": 2728,
+      "sell": 2615,
+      "neg_years": 0,
+      "yearly": {
+        "2019": {
+          "pf": 4.009,
+          "n_trades": 859,
+          "win": 0.756,
+          "mean_r": 196.41
+        },
+        "2020": {
+          "pf": 4.502,
+          "n_trades": 1683,
+          "win": 0.79,
+          "mean_r": 417.133
+        },
+        "2021": {
+          "pf": 3.798,
+          "n_trades": 1343,
+          "win": 0.758,
+          "mean_r": 265.832
+        },
+        "2022": {
+          "pf": 4.193,
+          "n_trades": 1448,
+          "win": 0.775,
+          "mean_r": 335.685
+        }
+      },
+      "n_features": 10,
+      "long_thr": 0.134109734501512,
+      "short_thr": -0.13781184464805926
     }
   },
   "buy_sl3_tp3": {
@@ -172,147 +380,327 @@
       "yearly": {
         "2019": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2020": {
           "pf": Infinity,
-          "n_trades": 1
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
         },
         "2021": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2022": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         }
       },
       "n_features": 29
     },
     "no_path": {
-      "pf": 1.0,
-      "trades": 6,
-      "win": 0.5,
-      "neg_years": 3,
+      "pf": 1.4285714285714286,
+      "trades": 17,
+      "win": 0.5882352941176471,
+      "neg_years": 1,
       "yearly": {
         "2019": {
           "pf": Infinity,
-          "n_trades": 1
+          "n_trades": 2,
+          "win": 1.0,
+          "mean_r": 6.0
         },
         "2020": {
-          "pf": 0.667,
-          "n_trades": 5
+          "pf": 1.167,
+          "n_trades": 13,
+          "win": 0.538,
+          "mean_r": 3.0
         },
         "2021": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2022": {
-          "pf": 0,
-          "n_trades": 0
+          "pf": 1.0,
+          "n_trades": 2,
+          "win": 0.5,
+          "mean_r": 0.0
         }
       },
       "n_features": 19
     },
     "no_atr_dist": {
-      "pf": Infinity,
-      "trades": 1,
-      "win": 1.0,
+      "pf": 2.0,
+      "trades": 3,
+      "win": 0.6666666666666666,
       "neg_years": 3,
       "yearly": {
         "2019": {
           "pf": Infinity,
-          "n_trades": 1
+          "n_trades": 2,
+          "win": 1.0,
+          "mean_r": 6.0
         },
         "2020": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2021": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2022": {
-          "pf": 0,
-          "n_trades": 0
+          "pf": 0.0,
+          "n_trades": 1,
+          "win": 0.0,
+          "mean_r": -3.0
         }
       },
       "n_features": 26
     },
     "no_time": {
-      "pf": 0.0,
-      "trades": 1,
-      "win": 0.0,
-      "neg_years": 4,
+      "pf": 0.75,
+      "trades": 7,
+      "win": 0.42857142857142855,
+      "neg_years": 3,
       "yearly": {
         "2019": {
-          "pf": 0,
-          "n_trades": 0
+          "pf": Infinity,
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
         },
         "2020": {
           "pf": 0,
-          "n_trades": 0
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
         },
         "2021": {
-          "pf": 0,
-          "n_trades": 0
+          "pf": 0.667,
+          "n_trades": 5,
+          "win": 0.4,
+          "mean_r": -3.0
         },
         "2022": {
           "pf": 0.0,
-          "n_trades": 1
+          "n_trades": 1,
+          "win": 0.0,
+          "mean_r": -3.0
         }
       },
       "n_features": 24
     },
     "no_base": {
-      "pf": 0.8571428571428571,
-      "trades": 13,
-      "win": 0.46153846153846156,
-      "neg_years": 2,
+      "pf": 1.1025641025641026,
+      "trades": 82,
+      "win": 0.524390243902439,
+      "neg_years": 1,
       "yearly": {
         "2019": {
-          "pf": Infinity,
-          "n_trades": 2
+          "pf": 3.0,
+          "n_trades": 8,
+          "win": 0.75,
+          "mean_r": 12.0
         },
         "2020": {
-          "pf": 1.5,
-          "n_trades": 5
+          "pf": 1.0,
+          "n_trades": 20,
+          "win": 0.5,
+          "mean_r": 0.0
         },
         "2021": {
-          "pf": 0,
-          "n_trades": 0
+          "pf": 0.909,
+          "n_trades": 21,
+          "win": 0.476,
+          "mean_r": -3.0
         },
         "2022": {
-          "pf": 0.2,
-          "n_trades": 6
+          "pf": 1.062,
+          "n_trades": 33,
+          "win": 0.515,
+          "mean_r": 3.0
         }
       },
       "n_features": 19
     },
-    "only_dir": {
-      "pf": 2.3333333333333335,
-      "trades": 20,
-      "win": 0.7,
-      "neg_years": 1,
+    "no_horizon6": {
+      "pf": 4.0,
+      "trades": 5,
+      "win": 0.8,
+      "neg_years": 2,
       "yearly": {
         "2019": {
-          "pf": 0.8,
-          "n_trades": 9
+          "pf": Infinity,
+          "n_trades": 3,
+          "win": 1.0,
+          "mean_r": 9.0
         },
         "2020": {
-          "pf": Infinity,
-          "n_trades": 4
+          "pf": 0.0,
+          "n_trades": 1,
+          "win": 0.0,
+          "mean_r": -3.0
         },
         "2021": {
           "pf": Infinity,
-          "n_trades": 3
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
         },
         "2022": {
-          "pf": 3.0,
-          "n_trades": 4
+          "pf": 0,
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
+        }
+      },
+      "n_features": 27
+    },
+    "only_dir": {
+      "pf": 1.4848484848484849,
+      "trades": 164,
+      "win": 0.5975609756097561,
+      "neg_years": 0,
+      "yearly": {
+        "2019": {
+          "pf": 1.233,
+          "n_trades": 67,
+          "win": 0.552,
+          "mean_r": 21.0
+        },
+        "2020": {
+          "pf": 1.267,
+          "n_trades": 34,
+          "win": 0.559,
+          "mean_r": 12.0
+        },
+        "2021": {
+          "pf": 2.636,
+          "n_trades": 40,
+          "win": 0.725,
+          "mean_r": 54.0
+        },
+        "2022": {
+          "pf": 1.3,
+          "n_trades": 23,
+          "win": 0.565,
+          "mean_r": 9.0
         }
       },
       "n_features": 1
+    },
+    "only_base": {
+      "pf": Infinity,
+      "trades": 3,
+      "win": 1.0,
+      "neg_years": 1,
+      "yearly": {
+        "2019": {
+          "pf": Infinity,
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
+        },
+        "2020": {
+          "pf": Infinity,
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
+        },
+        "2021": {
+          "pf": 0,
+          "n_trades": 0,
+          "win": 0,
+          "mean_r": 0.0
+        },
+        "2022": {
+          "pf": Infinity,
+          "n_trades": 1,
+          "win": 1.0,
+          "mean_r": 3.0
+        }
+      },
+      "n_features": 10
+    },
+    "only_time": {
+      "pf": 0.9137931034482759,
+      "trades": 111,
+      "win": 0.4774774774774775,
+      "neg_years": 2,
+      "yearly": {
+        "2019": {
+          "pf": 1.25,
+          "n_trades": 18,
+          "win": 0.556,
+          "mean_r": 6.0
+        },
+        "2020": {
+          "pf": 0.759,
+          "n_trades": 51,
+          "win": 0.431,
+          "mean_r": -21.0
+        },
+        "2021": {
+          "pf": 1.5,
+          "n_trades": 35,
+          "win": 0.6,
+          "mean_r": 21.0
+        },
+        "2022": {
+          "pf": 0.0,
+          "n_trades": 7,
+          "win": 0.0,
+          "mean_r": -21.0
+        }
+      },
+      "n_features": 5
+    },
+    "only_path": {
+      "pf": 1.238709677419355,
+      "trades": 347,
+      "win": 0.553314121037464,
+      "neg_years": 1,
+      "yearly": {
+        "2019": {
+          "pf": 2.222,
+          "n_trades": 29,
+          "win": 0.69,
+          "mean_r": 33.0
+        },
+        "2020": {
+          "pf": 1.449,
+          "n_trades": 169,
+          "win": 0.592,
+          "mean_r": 93.0
+        },
+        "2021": {
+          "pf": 0.867,
+          "n_trades": 112,
+          "win": 0.464,
+          "mean_r": -24.0
+        },
+        "2022": {
+          "pf": 1.176,
+          "n_trades": 37,
+          "win": 0.541,
+          "mean_r": 9.0
+        }
+      },
+      "n_features": 10
     }
   }
 }
