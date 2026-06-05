@@ -7,17 +7,15 @@
 1. **Preflight gate** (п. 20 + 88) — проверить normalize.py на смешивание input/target, правило UNKNOWN-статуса
 2. **Фаза 3: направления + flat up/dn** (п. 80) — проверить edge_6 + TB
 3. **После 80 — гиперпараметры** (п. 72–74) — GridSearch RF, OOB-сходимость
-4. **Сохранение параметров нормализации** (п. 19) — денормализация предсказаний
-5. **Тестовый контур** (п. 66 > 10) — 15 падений pytest, input_features=20
-6. **Разметка** (п. 67–68, 26–27, 54)
-7. **Инфраструктура** (п. 11, 86)
+4. **Разметка** (п. 67–68, 26–27, 54)
+5. **Инфраструктура** (п. 11, 86)
 
 ## Парсинг и тензор
 
 - [x] `data_loader.py:parse_fractals_to_3d()`: поля 17–20 (up_3, dn_3, up_6, dn_6) не включаются в 3D-массив X. Индексы пропущены — `if k >= 17 and k < 21: continue`. Нужно включить их наравне с полями 1–16.
 - [x] После включения 17–20 в тензор: `N_FRACTAL_FEATURES` пересчитать, явно обновить порядок признаков и все индексы (`ATR_RATIO_IDX`, `TIME_FEAT_*`, `SHIFT_IDX`). Старые сохранённые модели считать несовместимыми с новым тензором.
 - [x] После изменения порядка/числа признаков обновить docstring `parse_fractals_to_3d()` и `docs/dataset_description.md`, чтобы описание соответствовало коду.
-- [ ] Обновить `input_features=20` в тестах `tests/test_entry_path_*.py`, `tests/test_trailing_stop_*.py`, `tests/test_take_skip_*.py`. Не блокирует работу (модели всегда получают реальное значение через `N_FRACTAL_FEATURES`), но для чистоты сигнатур.
+- [x] Обновить `input_features=20` в тестах `tests/test_entry_path_*.py`, `tests/test_trailing_stop_*.py`, `tests/test_take_skip_*.py`. Не блокирует работу (модели всегда получают реальное значение через `N_FRACTAL_FEATURES`), но для чистоты сигнатур. — Критический случай (`test_create_test_loader_reuses_entry_path_cache_for_quantile_task` записывал X с 20 feature-ми → инвалидация кэша) исправлен (20→29). Остальные `input_features=20` в конструкторах моделей — косметические, не влияют на работу.
 - [ ] Зафиксировать версию Python для проекта. Сейчас `.venv` использует Python 3.10, а часть кода и заголовков файлов ожидает Python 3.11+. Временные совместимые правки добавлены для `datetime.UTC` и `enum.StrEnum`; долгосрочно нужно либо пересоздать окружение на Python 3.11/3.12, либо официально поддерживать Python 3.10 и избегать API, появившихся только в 3.11.
 
 ## Нормализация
@@ -26,7 +24,7 @@
 - [x] `normalize.py`: перейти от общего p85/p99 для всех up/dn к раздельной per-pair нормализации — каждая пара up_X/dn_X со своим p85/p99. Сейчас up_48 (~0–50) доминирует над up_3 (~0–3) в общем пуле, короткие горизонты сжимаются в околонулевой диапазон. Это же могло исказить результаты абляции — path_long/path_short выделились на фоне остальных групп из-за pooled-нормализации. После раздельной — перезапустить абляцию.
 - [x] `normalize.py`: разделить нормализацию входных фрактальных признаков и строковых меток. Раньше `updn_pool` смешивал значения из `fractal0..fractal99` с колонками `up_3..dn_48`, созданными `label_updn()` из будущей эволюции fractal0. Теперь параметры считаются только по фракталам, таргеты нормализуются теми же параметрами.
 - [x] Допустимая схема: для каждой пары `up_X/dn_X` считать параметры масштаба только по 100 фракталам текущей строки и применять эти параметры к строковой метке той же пары. Для `up_3/dn_3` и `up_6/dn_6` это корректно после включения этих полей во фрактальный тензор (П.1).
-- [ ] Если модель обучается на нормализованных метках `up_3..dn_48`, сохранить параметры нормализации строки/пары, чтобы можно было корректно переводить предсказания и пороги обратно в исходный масштаб.
+- [x] Если модель обучается на нормализованных метках `up_3..dn_48`, сохранить параметры нормализации строки/пары, чтобы можно было корректно переводить предсказания и пороги обратно в исходный масштаб. — `label_main.py` сохраняет `*_updn_params.npy` (shape N×5×2). Утилита `processing/denormalize_updn.py`: `inverse_piecewise_linear_log`, `denormalize_updn_pairs` (все 5 пар), `load_updn_params`, `load_updn_params_by_time`. Signal_tracer — обратная совместимость через локальные копии функций.
 - [x] Аудит: см. Preflight gate `docs/methodology/02-data-pipeline.md` и `docs/methodology/03-feature-contract-leakage.md` уже запрещают общий пул `input + target/label`; после правки кода проверить, что `normalize.py` фактически соблюдает это требование.
 
 ## Данные и MT4
@@ -73,7 +71,7 @@
 - [x] `label_trade_targets()`: исправлен entry price с Close текущего бара на Open следующего (`entry_open = opens[ohlc_idx + 1]`). Close — look-ahead, реальный вход возможен только на Open t+1. Старые CSV нужно переразмечивать.
 - [x] Удалить мёртвые контекстные признаки: `range_atr_6`, `body_atr_3` — всегда 0.0; `ret_dir_atr_lag1` — утечка будущего; `vol_regime_24` — SMA(24) от SMA(225, High−Low), дубликат `ATR`. Удалены из `add_entry_path_frequency_features()` и `docs/dataset_description.md`.
 - [x] Добавить альтернативный режим разметки `label_entry_path_targets()` и `label_trailing_stop_targets()` по направлению `dir` fractal0, не заменяя полностью текущий режим `signal != 0`. Добавлен флаг `use_fractal_dir=False` в обе функции. При `True` направление берётся из `parts[2]` fractal0, доступно для всех строк.
-- [ ] Разобрать 15 оставшихся падений полного `pytest` после закрытия Фазы 2: 12 тестов `tests/processing/test_limit_order_barriers.py`, `tests/test_entry_path_v1_quantile_training.py::test_create_test_loader_reuses_entry_path_cache_for_quantile_task`, `tests/test_trade_target_labels.py::test_label_trade_targets_uses_ohlc_path_when_provided`, `tests/test_trailing_stop_target_labels.py::test_label_trailing_stop_targets_uses_ohlc_lookup_when_close_columns_absent`. Не смешивать с ATR-distance признаками: это отдельный долг по разметке/тестовому контуру.
+- [x] Разобрать 15 оставшихся падений полного `pytest` после закрытия Фазы 2: 12 тестов `tests/processing/test_limit_order_barriers.py`, `tests/test_entry_path_v1_quantile_training.py::test_create_test_loader_reuses_entry_path_cache_for_quantile_task`, `tests/test_trade_target_labels.py::test_label_trade_targets_uses_ohlc_path_when_provided`, `tests/test_trailing_stop_target_labels.py::test_label_trailing_stop_targets_uses_ohlc_lookup_when_close_columns_absent`. — Исправлено: (1) `_fractal_str` в limit_order — не хватало поля shift (23-е поле), (2) quantile_training — X_test.npy 20→29 признаков, (3) trade_target — entry=Open(t+1) изменило значения, (4) trailing_stop — PnL +1.0 вместо -1.0 (entry=Open t+1).
 - [ ] В режиме по fractal0.dir считать результат сделки для всех допустимых строк, а не только для прибыльных случаев. Потом создавать метку “прибыльно/не прибыльно” или числовой PnL. Удалять неприбыльные строки из обучения запрещено: модель должна видеть плохие примеры, чтобы учиться их отсеивать.
 - [ ] Для новых меток не проверять обязательное совпадение `fractal0.dir` с `signal`: это другая постановка задачи. Но явно описать в `docs/dataset_description.md`, что эти метки построены по направлению fractal0, а не по `signal`.
 

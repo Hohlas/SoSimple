@@ -164,8 +164,10 @@ def test_create_test_loader_reuses_entry_path_cache_for_quantile_task(monkeypatc
     monkeypatch.setattr(dl, 'DATA_DIR', tmp_path)
     monkeypatch.setattr(dl, 'TEST_FILE', tmp_path / 'Nero_test_labeled.csv')
 
+    # Minimal CSV (parse_fractals_to_3d не вызывается, данные из кэша)
     tmp_path.joinpath('Nero_test_labeled.csv').write_text('time;signal;predict;ATR\n1;1;0;1\n', encoding='utf-8')
-    np.save(tmp_path / 'X_test.npy', np.arange(3 * 4 * 20, dtype=np.float32).reshape(3, 4, 20))
+    # N_FRACTAL_FEATURES=29 — кэш валидируется по X.shape[2]
+    np.save(tmp_path / 'X_test.npy', np.arange(3 * 4 * 29, dtype=np.float32).reshape(3, 4, 29))
     np.save(tmp_path / 'mask_test.npy', np.ones((3, 4), dtype=bool))
     np.save(tmp_path / 'y_test_entry_path_v1_reg.npy', np.arange(27, dtype=np.float32).reshape(3, 9))
     np.save(tmp_path / 'y_test_entry_path_v1_cls.npy', np.array([0, 1, 2], dtype=np.int64))
@@ -181,7 +183,7 @@ def test_create_test_loader_reuses_entry_path_cache_for_quantile_task(monkeypatc
 
     batch = next(iter(loader))
     assert len(batch) == 5
-    assert batch[0].shape == (3, 2, 20)
+    assert batch[0].shape == (3, 2, 29)
     assert batch[1].shape == (3, 9)
     assert batch[2].tolist() == [0, 1, 2]
     assert batch[4].tolist() == [0, 1, -1]

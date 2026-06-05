@@ -61,7 +61,6 @@ def inverse_piecewise_linear_log(y, brk, cap, linear_max=0.85, tail_strength=9.0
         return 0.0
     if y <= linear_max:
         return y / linear_max * brk
-    # tail part: y = linear_max + (1 - linear_max) * log1p(tail_strength * t) / log1p(tail_strength)
     log_denom = math.log1p(tail_strength)
     t_log = (y - linear_max) / (1.0 - linear_max)
     t = (math.expm1(t_log * log_denom)) / tail_strength
