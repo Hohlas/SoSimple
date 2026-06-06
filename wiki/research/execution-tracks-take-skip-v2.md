@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-05-23
-sources: 10
+last_updated: 2026-06-06
+sources: 17
 status: active
 ---
 
@@ -39,6 +39,14 @@ Validation winner: `take_48_x4 + top_k_probability 0.05`, PF=6.39, 24 сделк
 **Статус**: контур готов к полному server matrix run. Это не итоговый verdict.
 
 Источник: [2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](../../docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
+
+### Trailing-stop target first wave (04-16): исходная постановка не прошла
+
+Перед `take/skip` v2 была проверена прямая trailing-stop target постановка и quantile-вариант для `trail_48_pnl_atr_x3`.
+
+Вывод: первая волна не дала production-кандидата. Результат стал основанием сменить постановку на бинарное решение `take/skip`, а не продолжать донастройку того же target-контракта.
+
+Источники: [2026-04-16-trailing-stop-target-first-wave.md](../../docs/reports/2026-04-16-trailing-stop-target-first-wave.md), [2026-04-16-trailing-stop-target-quantile-first-wave.md](../../docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md)
 
 ## 5. Take/Skip v2 Frequency Follow-Up (04-18)
 
@@ -266,6 +274,8 @@ Python `frequency_trail_scan`:
 
 Источник: [2026-04-20-take-skip-lib-pic-selection.md](../../docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
 
+Дополнительная диагностика признаков перед feature-training: [2026-04-19-current-feature-importance-diagnostics.md](../../docs/reports/2026-04-19-current-feature-importance-diagnostics.md), [2026-04-19-feature-bank-comparison-diagnostics.md](../../docs/reports/2026-04-19-feature-bank-comparison-diagnostics.md), [2026-04-19-feature-bank-clean-comparison.md](../../docs/reports/2026-04-19-feature-bank-clean-comparison.md), [2026-04-19-lib-pic-feature-source-audit.md](../../docs/reports/2026-04-19-lib-pic-feature-source-audit.md), [2026-04-19-lib-pic-geometry-feature-bank.md](../../docs/reports/2026-04-19-lib-pic-geometry-feature-bank.md), [2026-04-19-lib-pic-path-reaction-feature-bank.md](../../docs/reports/2026-04-19-lib-pic-path-reaction-feature-bank.md)
+
 ### lib_PIC Feature Training (04-20): добавление признаков внутрь модели не прошло gate
 
 Следующий этап проверил более сильную гипотезу: если внешний `lib_PIC`-фильтр даёт устойчивостный сигнал, сможет ли модель использовать эти признаки напрямую во время обучения.
@@ -373,4 +383,3 @@ Interpretation: duplicate timestamps are expected in DATA because one H1 bar can
 Практическое следствие: `original_plus_path_seq50` становится третьей MT4-подтверждённой системой рядом с текущими `quality` и `frequency`. `original_baseline_seq50/100` остаётся quality anchor.
 
 Источники: [2026-04-20-take-skip-original-contour-feature-ablation.md](../../docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md), [2026-04-22-signal-export-parity.md](../../docs/reports/2026-04-22-signal-export-parity.md)
-

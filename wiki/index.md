@@ -30,6 +30,8 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-reproducibility-plus-parity.md](research/execution-tracks-reproducibility-plus-parity.md) | §14-17: CPU/GPU Reproducibility + Live-Safe Reproducibility + MT4 Parity | 4 reports (05-07) |
 | &nbsp;&nbsp;↳ [execution-tracks-reconciliation-plus-audit.md](research/execution-tracks-reconciliation-plus-audit.md) | §18-20: Online/Tester Reconciliation + Candidate-Source Audit + Direct Direction Improvement | 3 reports (05-12 — 05-15) |
 | &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §21: Direct Direction Audit + Rebuild + Transformer Encoder | 4 reports (05-15 — 05-21) |
+| &nbsp;&nbsp;↳ [methodology-cycle-candidate-source-v2.md](research/methodology-cycle-candidate-source-v2.md) | Candidate-source v2 methodology cycle: live-safe protocol, Stage 09/10 invalidation | 1 report (05-25) |
+| &nbsp;&nbsp;↳ [limit-order-feature-foundation.md](research/limit-order-feature-foundation.md) | Limit-order entry, feature ablation, direction-only signal, fractal channel ablation, RF GridSearch | 5 reports (05-29 — 06-05) |
 
 ## Concepts
 

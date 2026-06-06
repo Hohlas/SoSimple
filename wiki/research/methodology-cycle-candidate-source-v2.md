@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-05-27
+last_updated: 2026-06-06
 sources: 1
 status: active
 ---
@@ -47,4 +47,4 @@ The current Transformer rule did not survive the live-executable R-multiple vali
 
 ## Источники
 
-- `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md` — methodology cycle Stages 00-10, Stage 09 stability refreeze, and Stage 10 frozen test.
+- [docs/reports/2026-05-25-methodology-cycle-stages-00-04.md](../../docs/reports/2026-05-25-methodology-cycle-stages-00-04.md) — methodology cycle Stages 00-10, Stage 09 stability refreeze, and Stage 10 frozen test.

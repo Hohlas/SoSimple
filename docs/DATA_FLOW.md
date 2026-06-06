@@ -55,21 +55,21 @@ MT/MQL4/Files/Nero.csv (raw CSV, `;`, текущий файл в репозит�
 
 ## 📋 Навигация по этапам
 
-[`docs/methodology/README.md`](../methodology/README.md) — навигатор по методике разработки ML ТС. Каждый этап пайплайна связан с соответствующим этапом методики в колонке «Методика».
+[`docs/methodology/README.md`](methodology/README.md) — навигатор по методике разработки ML ТС. Каждый этап пайплайна связан с соответствующим этапом методики в колонке «Методика».
 
 | # | Этап | Код | Docs | Методика | Статус |
 |---|------|-----|------|----------|--------|
-| 1 | Сортировка фракталов | `processing/` | `docs/processing/` | [02-pipeline](../methodology/02-data-pipeline.md) | 🏁 |
-| 2 | Маркировка signal/predict/UpDn | `processing/` | `docs/processing/` | [04-labeling](../methodology/04-labeling.md) | 🏁 |
-| 3 | Построчная нормализация | `processing/` | `docs/processing/` | [02-pipeline](../methodology/02-data-pipeline.md) | 🏁 |
-| 4 | Split train/val/test | `processing/` | — | [06-temporal-split](../methodology/06-temporal-split.md) | 🏁 |
+| 1 | Сортировка фракталов | `processing/` | `docs/processing/` | [02-pipeline](methodology/02-data-pipeline.md) | 🏁 |
+| 2 | Маркировка signal/predict/UpDn | `processing/` | `docs/processing/` | [04-labeling](methodology/04-labeling.md) | 🏁 |
+| 3 | Построчная нормализация | `processing/` | `docs/processing/` | [02-pipeline](methodology/02-data-pipeline.md) | 🏁 |
+| 4 | Split train/val/test | `processing/` | — | [06-temporal-split](methodology/06-temporal-split.md) | 🏁 |
 | 5 | Сохранение финальных CSV | `processing/` | — | — | 🏁 |
-| 6 | ML Training (regression_updn) | `ML/` | `docs/ML/` | [08-model-development](../methodology/08-model-development.md) | ✅ |
-| 7 | OOS Evaluation & Threshold | `ML/` | `docs/ML/` | [10-frozen-test-oos](../methodology/10-frozen-test-oos.md), [09-validation-freeze](../methodology/09-validation-freeze.md) | ✅ |
-| 8 | Статистическое исследование сигналов | `API/` | — | [05-eda-data-quality](../methodology/05-eda-data-quality.md) | ✅ |
-| 9 | Генерация ML-сигналов для MT4 | `API/` | `docs/MT/` | [13-export-mt4-parity](../methodology/13-export-mt4-parity.md) | ✅ |
-| 9b| Triple Barrier (параллельный трек) | `ML/` | `docs/ML/` | [04-labeling](../methodology/04-labeling.md) | 🚧 |
-| 10 | Trade-Level Reconciliation | `statistics/`, `ML/telemetry_daily_reconciliation.py` | `docs/statistics/`, `docs/ML/telemetry_daily_reconciliation.py.md` | [13-export-mt4-parity](../methodology/13-export-mt4-parity.md) | ✅ |
+| 6 | ML Training (regression_updn) | `ML/` | `docs/ML/` | [08-model-development](methodology/08-model-development.md) | ✅ |
+| 7 | OOS Evaluation & Threshold | `ML/` | `docs/ML/` | [10-frozen-test-oos](methodology/10-frozen-test-oos.md), [09-validation-freeze](methodology/09-validation-freeze.md) | ✅ |
+| 8 | Статистическое исследование сигналов | `API/` | — | [05-eda-data-quality](methodology/05-eda-data-quality.md) | ✅ |
+| 9 | Генерация ML-сигналов для MT4 | `API/` | `docs/MT/` | [13-export-mt4-parity](methodology/13-export-mt4-parity.md) | ✅ |
+| 9b| Triple Barrier (параллельный трек) | `ML/` | `docs/ML/` | [04-labeling](methodology/04-labeling.md) | 🚧 |
+| 10 | Trade-Level Reconciliation | `statistics/`, `ML/telemetry_daily_reconciliation.py` | `docs/statistics/`, `docs/ML/telemetry_daily_reconciliation.py.md` | [13-export-mt4-parity](methodology/13-export-mt4-parity.md) | ✅ |
 
 > Легенда: ✅ Активный | 🚧 В разработке | 🏁 Завершён | 📦 Архив | ⚠️ Требует внимания
 

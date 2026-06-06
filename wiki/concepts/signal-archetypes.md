@@ -43,7 +43,7 @@ ML-сигнал SoSimple (regression_updn, Transformer, H1 XAUUSD) порожд�
 ## Где использовано
 
 - [Signal Quality Research](../research/signal-quality-research.md) — полная хронология обнаружения
-- [Execution Tracks](../research/execution-tracks.md) — entry_path_v1 как попытка предсказать архетип ML-моделью
+- [Execution Tracks](../research/execution-tracks-overview.md) — entry_path_v1 как попытка предсказать архетип ML-моделью
 - Фильтр `fav_3_vs_12` — см. [2026-04-04-archetype-filter-bridge.md](../../docs/reports/2026-04-04-archetype-filter-bridge.md)
 
 ## Источники

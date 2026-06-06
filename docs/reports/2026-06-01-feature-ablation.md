@@ -1,17 +1,46 @@
 # Feature Ablation Study — limit-order entry convention
 
-**Date:** 2026-06-01
-**Branch:** `feature/limit-order-entry-convention`
-**Data:** `DATA/spread_0.20/` (canonical spread=0.20)
-**Target:** `buy_sl3_tp3`
-**Model:** RandomForestRegressor (n_estimators=100, max_depth=10, random_state=42)
-**Gate:** PF ≥ 1.3, fill_rate ≥ 20%, trades/year ≥ 6, negative_years == 0
+> **Date**: 2026-06-01
+> **Status**: Completed
+> **Goal**: Проверить вклад engineered-признаков после исправления parsing bug в limit-order baseline.
+> **Related plan/spec**: `docs/superpowers/plans/2026-05-30-limit-order-hypothesis-testing.md`
+> **Related commit**: pending
 
 ## Context
 
 После исправления бага парсинга признаков (T1: `parse_fractal_to_features` использовал Dir вместо Price), baseline flat features изменился с 102 мусорных признаков на 202 корректных (100 dir + 100 price + f0_front + ATR).
 
 Проверка вклада engineered признаков `build_grouped_features()` (~428 features, excl. `ret_dir_atr_lag1`) через поочерёдное отключение групп.
+
+## What Was Done
+
+Проведена абляция групп признаков для limit-order BUY target `buy_sl3_tp3` на `DATA/spread_0.20/` (canonical spread `0.20`).
+
+Модель: `RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42)`.
+
+Gate: PF >= 1.3, fill_rate >= 20%, trades/year >= 6, negative_years == 0.
+
+Сравнивались:
+
+- corrected flat baseline;
+- flat + все engineered признаки;
+- отдельные группы engineered признаков;
+- `path_long` с `fractal0` и без `fractal0`.
+
+## Changed Files
+
+- Новый/обновлённый скрипт: `ML/baseline/feature_ablation.py`
+- Новый отчёт: `docs/reports/2026-06-01-feature-ablation.md`
+
+## Verification
+
+Проверка выполнена повторяемым запуском:
+
+```bash
+.venv/bin/python -m ML.baseline.feature_ablation
+```
+
+Входные данные: `DATA/spread_0.20/`, target `buy_sl3_tp3`, canonical spread `0.20`.
 
 ## Results
 
@@ -61,7 +90,7 @@
 | 2021 | 0.96 | 2459 |
 | 2022 | 0.96 | 2184 |
 
-## Findings
+## Conclusions
 
 1. **Flat baseline gate fail.** После T1-фикса (правильные price/dir признаки) плоские признаки не проходят gate (PF=1.069, 2 negative years). Старый PF=1.53 был артефактом — модель получала только Dir {-1,1} под видом цены.
 
@@ -77,10 +106,22 @@
 
 7. **2021 аномалия (nf0).** PF=949 на 17 сделках — чистый статистический флук. Требуется forward-window проверка.
 
-## Conclusion
-
 Engineered признаки `build_grouped_features` как целое бесполезны (шум). Но **path_long** (агрегаты up/dn за горизонты 12/24/48) — единственная группа, несущая сигнал сверх плоских fractal-признаков. Рекомендация: оставить flat + path_long, удалить остальные engineered-группы.
 
-## Script
+## Limitations / Open Questions
 
-`ML/baseline/feature_ablation.py` — запуск: `.venv/bin/python -m ML.baseline.feature_ablation`
+1. Split на этом этапе был методологически проблемным: train хронологически новее validation, поэтому 2019 без сделок нельзя считать полноценным отрицательным годовым срезом.
+2. `C_path_long_nf0` имеет PF=949 на 17 сделках в 2021 — это статистическая аномалия, а не доказательство устойчивого правила.
+3. Проверен только BUY `buy_sl3_tp3` на canonical spread `0.20`.
+4. Результат относится к RF baseline, не к Transformer и не к MT4 pending-order execution.
+
+## Next Step
+
+Переделать split хронологически (старые данные -> train, средние -> validation, новые -> test), затем повторить `flat + path_long` и вариант без `fractal0`.
+
+## Related Materials
+
+- `ML/baseline/feature_ablation.py` — скрипт абляции
+- `ML/baseline/benchmark_limit_order_entry.py` — исходный limit-order baseline
+- `docs/reports/2026-05-29-limit-order-entry.md` — stage report limit-order entry
+- `docs/superpowers/plans/2026-05-30-limit-order-hypothesis-testing.md` — план проверки гипотез
