@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-05-14
-sources: 14
+last_updated: 2026-06-06
+sources: 18
 status: active
 ---
 
@@ -137,6 +137,8 @@ MT4 parity-check (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03
 После этого composition стал измерим по-настоящему:
 - `quantile_only` test: `48 trades`, `PF=8.18`
 - `composition` test: `47 trades`, `PF=7.86`
+
+Источник: [2026-04-13-quantile-fav-composition.md](../../docs/reports/2026-04-13-quantile-fav-composition.md)
 
 ### Fav_3_vs_12 Standalone (04-13): rejected as standalone system
 
@@ -292,6 +294,14 @@ Breadth by system:
 
 Источник: [2026-04-13-pf-uplift-discovery.md](../../docs/reports/2026-04-13-pf-uplift-discovery.md)
 
+### Entry Path Frequency / Track A max-out (04-15)
+
+Два follow-up отчёта закрыли вопрос, можно ли просто поднять частоту сделок или добрать качество в старом Track A без смены постановки.
+
+Вывод: частотные варианты и дальнейший max-out не дали нового устойчивого кандидата, который был бы сильнее уже подтверждённого `entry_path_v1_quantile`. Практический фокус сместился от донастройки старого entry_path-слоя к новым execution-трекам.
+
+Источники: [2026-04-15-entry-path-v1-frequency.md](../../docs/reports/2026-04-15-entry-path-v1-frequency.md), [2026-04-15-track-a-max-out.md](../../docs/reports/2026-04-15-track-a-max-out.md)
+
 ### Quantile MT4 Parity (04-11)
 
 После multi-seed verdict `go_mt4` был проведён отдельный MT4 parity-check именно для quantile winner `lb_gt_m`.
@@ -334,4 +344,4 @@ Trade-level reconciliation был сохранён отдельно:
 
 **Вывод**: `entry_path_v1_quantile` теперь подтверждён не только как robust Python-upgrade, но и как реальный MT4 execution mode. Следующий вопрос уже продуктовый: переводить ли quantile-layer в основной execution contour.
 
-Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), [2026-04-11-entry-path-v1-quantile-robustness.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-robustness.md), [2026-04-11-entry-path-v1-quantile-mt4-parity.md](../../docs/reports/2026-04-11-entry-path-v1-quantile-mt4-parity.md)
+Источники: [2026-04-08-entry-path-v1-baseline.md](../../docs/reports/2026-04-08-entry-path-v1-baseline.md), [2026-04-09-entry-path-v1-loss-weighting.md](../../docs/reports/2026-04-09-entry-path-v1-loss-weighting.md), [2026-04-09-entry-path-trade-filter.md](../../docs/reports/2026-04-09-entry-path-trade-filter.md), [2026-04-09-mt4-parity-check-winner.md](../../docs/reports/2026-04-09-mt4-parity-check-winner.md), [2026-04-10-entry-path-v1-quantile.md](../../docs/reports/2026-04-10-entry-path-v1-quantile.md), `2026-04-11-entry-path-v1-quantile-robustness.md`, `2026-04-11-entry-path-v1-quantile-mt4-parity.md`, [2026-04-13-label-convention-audit.md](../../docs/reports/2026-04-13-label-convention-audit.md)

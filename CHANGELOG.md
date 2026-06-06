@@ -868,7 +868,7 @@ TB-слой **не** подключается к MT4 как production или pa
   - `Score filtered=0`
 
 ### Вывод
-`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Синтез: [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md)
+`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Синтез: [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md)
 
 ## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
 
@@ -895,7 +895,7 @@ TB-слой **не** подключается к MT4 как production или pa
 - `seed_123` подтвердил, что линия держится и без `PF=inf`: frozen test `26 trades`, `PF=25.17`
 
 ### Вывод
-`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Синтез: [wiki/research/execution-tracks.md](wiki/research/execution-tracks.md)
+`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Синтез: [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md)
 ## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
 
 ### Добавлено
@@ -1378,7 +1378,7 @@ Directional asymmetric loss не работает. Снижение r с 0.56 д
 - **Рекомендация**: ограничить ML_MaxRR ≤ 2.0 или ввести ML_MaxRatio ≤ 4.5
 
 ### Вывод
-- Полный отчёт: [docs/archive/signal_tracer/trade_analysis_20260324.md](docs/archive/signal_tracer/trade_analysis_20260324.md)
+- Полный отчёт: `docs/archive/signal_tracer/trade_analysis_20260324.md` (архивный файл отсутствует в текущем дереве)
 
 
 ## [2026-03-25] — ME-13 Diagnostics: per-row updn_params + точная денормализация ground truth
@@ -1745,7 +1745,7 @@ MAE: 0.1083
 ### Добавлено
 - Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
 
-## [2026-03-10] — Ключевые находки аудита проекта ([opus-project_audit_and_plan.md](docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md))
+## [2026-03-10] — Ключевые находки аудита проекта (`docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md`, архивный файл отсутствует в текущем дереве)
 - **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`ML/data_loader.py`](ML/data_loader.py) (строка 270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`ML/utils.py`](ML/utils.py) (строка 145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок.
 - **`direction` как feature**: `fractal[0].direction` ∈ {-1, 1} напрямую коррелирует со знаком `predict` (по определению: `predict = -back * direction`). Для задачи классификации `signal` это может быть мягкая форма leakage — direction определяет **направление** сигнала, хотя не его **наличие**. Для регрессии `|predict|` проблемы нет, т.к. знак удалён.
 - Классификация уперлась в потолок данных — 5 архитектур (RF + 4 NN) дают F1_minority 0.35-0.39, разброс в пределах стат. ошибки. ~1000 сигнальных примеров недостаточно для deep learning.
