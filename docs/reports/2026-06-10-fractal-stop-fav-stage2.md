@@ -7,7 +7,7 @@
 > **Related spec**: `docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md`
 > **Related plan**: `docs/superpowers/plans/2026-06-10-fractal-stop-fav-plan.md`
 > **Related Stage 1 report**: [`2026-06-10-fractal-stop-breach-stage1.md`](2026-06-10-fractal-stop-breach-stage1.md)
-> **Related commit**: 206eee3
+> **Related commit**: 9446c20
 
 ## Context
 
