@@ -127,6 +127,30 @@ def main():
             check(f'{col}: known={frac_known:.1%}, TP={(vals==1.0).mean():.1%}, SL={(vals==0.0).mean():.1%}, timeout={(vals==0.5).mean():.1%}',
                   frac_known > 0.05)  # хотя бы 5% известных исходов
 
+        # 10. Breach target check (fractal stop Stage 1)
+        from processing.label_signals import BR_BREACH_COLUMNS, BR_BREACH_OFFSETS_PRIMARY, BR_BREACH_HORIZONS
+        for col in BR_BREACH_COLUMNS:
+            check(f'{name}: колонка {col} существует', col in df.columns)
+        for col in BR_BREACH_COLUMNS:
+            if col in df.columns:
+                vals = df[col].dropna()
+                if len(vals) > 0:
+                    check(f'{name}: {col} ∈ {{0,1}}',
+                          set(vals.unique()).issubset({0.0, 1.0}))
+                    rate = vals.mean()
+                    check(f'{name}: {col} breach_rate={rate:.1%} ∈ (0%, 100%)',
+                          0.0 < rate < 1.0)
+        for h in BR_BREACH_HORIZONS:
+            for off in BR_BREACH_OFFSETS_PRIMARY:
+                off_str = f'{int(off * 10):02d}'
+                buy_col = f'buy_stop_broken_H{h}_off{off_str}_flag'
+                sell_col = f'sell_stop_broken_H{h}_off{off_str}_flag'
+                if buy_col in df.columns and sell_col in df.columns:
+                    buy_rate = df[buy_col].dropna().mean()
+                    sell_rate = df[sell_col].dropna().mean()
+                    print(f'  {name} {buy_col}: breach={buy_rate:.1%}, '
+                          f'{sell_col}: breach={sell_rate:.1%}')
+
     print(f'\n{"="*60}')
     print('ALL CHECKS PASSED')
 

@@ -16,8 +16,8 @@
 
 1. Описать label convention: значения, классы, timeout, neutral/skip, reversal.
 2. Назвать target/label колонки так, чтобы их нельзя было спутать с input-признаками:
-   - обязательный префикс для новых колонок: `target_`, `label_` или `outcome_`;
-   - legacy-колонки без префикса допустимы только при явном allowlist/denylist contract;
+   - обязательный префикс для новых колонок: `target_`, `label_` или `outcome_` — либо суффикс `_flag`, `_label`, `_target`, если роль колонки явно зафиксирована в target contract и колонка внесена в denylist/не попадает в input allowlist;
+   - без префикса или суффикса колонки допустимы только при явном allowlist/denylist contract;
    - feature builders должны выбирать input по allowlist, а не по схеме "всё, кроме нескольких известных targets".
 3. Зафиксировать момент входа и выхода для расчёта результата.
 4. Для fixed horizon указать горизонт и единицы: price, ATR, пункты, деньги.
@@ -41,9 +41,10 @@
 
 - Target строится из будущего только как label.
 - Все target columns исключены из input.
-- Новые target/label columns имеют говорящий префикс; legacy-имена без префикса внесены в denylist.
+- Новые target/label columns имеют говорящий префикс (`target_`/`label_`/`outcome_`) или суффикс (`_flag`/`_label`/`_target`) с явной ролью в target contract и denylist/input allowlist; legacy-имена без префикса/суффикса внесены в denylist.
 - Timeout не смешивается с SL, если это разные исходы.
 - BUY и SELL считаются симметрично или асимметрия явно описана.
+- Если направление определяется по `fractal0.dir` (live-safe), каждая строка получает target/label только для своей стороны; противоположная сторона = NaN. Модель учится только на релевантных ей примерах — это не ошибка, а намеренное сужение обучающей выборки.
 - Target не зависит от test-selected threshold.
 - Если live не может исполнить вход по `Close[row]`, такая label convention разрешена только как `DIAGNOSTIC_ONLY`.
 - Если canonical spread не равен нулю, labels со `spread=0` разрешены только как `DIAGNOSTIC_ONLY`.
@@ -64,6 +65,7 @@
 - Подбор target по лучшему test PF.
 - Смешивание timeout, SL и neutral без явного смысла.
 - Использование future target как feature из-за удобного расположения в CSV.
+- Использование `signal` как источника кандидатов для рабочего контура. `signal` построен по будущему состоянию уровня `fractal0` — это фильтр по будущим данным. Для фрактальных BUY/SELL-постановок направление должно браться из `fractal0.dir`.
 - Использование `target_*`/`label_*` wildcard как input из-за нестрогого парсинга колонок.
 - Поздно добавлять spread/entry/fill convention только на backtest-этапе, если они меняют labels или candidate selection.
 - Считать `Close[row]` реалистичной ценой входа без доказательства, что live-контур может открыть сделку по этой цене.

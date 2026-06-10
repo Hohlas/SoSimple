@@ -61,6 +61,7 @@ from label_signals import (
     add_entry_path_frequency_features,
     label_entry_path_targets,
     label_trailing_stop_targets,
+    label_fractal_stop_breach, BR_BREACH_COLUMNS,
 )
 from normalize import normalize_rowwise
 try:
@@ -250,6 +251,11 @@ def main():
         "--spread", type=float, default=0.0,
         help="Spread in price units for limit-order labeling (default 0.0)",
     )
+    parser.add_argument(
+        "--fractal-stop-breach",
+        action="store_true",
+        help="Разметить breach target для fractal stop (Stage 1)",
+    )
 
     args = parser.parse_args()
 
@@ -308,6 +314,11 @@ def main():
 
     print(f"\nРазметка trailing-stop таргетов...")
     labeled_df = label_trailing_stop_targets(labeled_df, ohlc_path=args.ohlc)
+
+    # 3f. Fractal Stop Breach labels (Stage 1: только пробой уровня, до нормализации)
+    if args.fractal_stop_breach:
+        print(f"\nРазметка Fractal Stop Breach (OHLC={args.ohlc})...")
+        labeled_df = label_fractal_stop_breach(labeled_df, ohlc_path=args.ohlc, debug=args.debug)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None

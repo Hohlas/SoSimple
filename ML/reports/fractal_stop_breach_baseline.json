@@ -1,0 +1,530 @@
+{
+  "config": {
+    "purge_bars": 12,
+    "n_estimators": 200,
+    "max_depth": 12,
+    "min_samples_leaf": 50,
+    "feature_keys": [
+      "price",
+      "direction",
+      "front",
+      "back",
+      "strong",
+      "break",
+      "reverse",
+      "power",
+      "count",
+      "impulse"
+    ],
+    "n_features": 1001,
+    "targets": [
+      "buy_stop_broken_H6_off02_flag",
+      "sell_stop_broken_H6_off02_flag",
+      "buy_stop_broken_H6_off05_flag",
+      "sell_stop_broken_H6_off05_flag",
+      "buy_stop_broken_H12_off02_flag",
+      "sell_stop_broken_H12_off02_flag",
+      "buy_stop_broken_H12_off05_flag",
+      "sell_stop_broken_H12_off05_flag"
+    ]
+  },
+  "test_not_run": true,
+  "results": {
+    "buy_stop_broken_H6_off02_flag": {
+      "train_n": 20737,
+      "train_breach_rate": 0.4744,
+      "val_n": 4488,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.4668,
+          "breach_rate": 0.4668,
+          "low_risk_breach_rate": 0.4668,
+          "lift": 1.0,
+          "n": 4488
+        },
+        "stratified": {
+          "auc": 0.4808,
+          "pr_auc": 0.4577,
+          "breach_rate": 0.4668,
+          "low_risk_breach_rate": 0.485,
+          "lift": 0.96,
+          "n": 4488
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.4668,
+          "breach_rate": 0.4668,
+          "low_risk_breach_rate": 0.4668,
+          "lift": 1.0,
+          "n": 4488
+        }
+      },
+      "rf_val": {
+        "auc": 0.6363,
+        "pr_auc": 0.5806,
+        "breach_rate": 0.4668,
+        "low_risk_breach_rate": 0.2906,
+        "lift": 1.61,
+        "n": 4488,
+        "yearly": {
+          "2019": {
+            "auc": 0.6128,
+            "n": 692,
+            "breach_rate": 0.4566
+          },
+          "2020": {
+            "auc": 0.615,
+            "n": 1313,
+            "breach_rate": 0.4326
+          },
+          "2021": {
+            "auc": 0.6551,
+            "n": 1290,
+            "breach_rate": 0.4806
+          },
+          "2022": {
+            "auc": 0.6461,
+            "n": 1193,
+            "breach_rate": 0.4954
+          }
+        }
+      }
+    },
+    "sell_stop_broken_H6_off02_flag": {
+      "train_n": 23410,
+      "train_breach_rate": 0.4984,
+      "val_n": 4962,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.4952,
+          "breach_rate": 0.4952,
+          "low_risk_breach_rate": 0.4952,
+          "lift": 1.0,
+          "n": 4962
+        },
+        "stratified": {
+          "auc": 0.5056,
+          "pr_auc": 0.498,
+          "breach_rate": 0.4952,
+          "low_risk_breach_rate": 0.4896,
+          "lift": 1.01,
+          "n": 4962
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.4952,
+          "breach_rate": 0.4952,
+          "low_risk_breach_rate": 0.4952,
+          "lift": 1.0,
+          "n": 4962
+        }
+      },
+      "rf_val": {
+        "auc": 0.6514,
+        "pr_auc": 0.6154,
+        "breach_rate": 0.4952,
+        "low_risk_breach_rate": 0.287,
+        "lift": 1.73,
+        "n": 4962,
+        "yearly": {
+          "2019": {
+            "auc": 0.6657,
+            "n": 792,
+            "breach_rate": 0.5025
+          },
+          "2020": {
+            "auc": 0.6455,
+            "n": 1461,
+            "breach_rate": 0.5079
+          },
+          "2021": {
+            "auc": 0.6687,
+            "n": 1396,
+            "breach_rate": 0.4957
+          },
+          "2022": {
+            "auc": 0.6332,
+            "n": 1313,
+            "breach_rate": 0.476
+          }
+        }
+      }
+    },
+    "buy_stop_broken_H6_off05_flag": {
+      "train_n": 20737,
+      "train_breach_rate": 0.3741,
+      "val_n": 4488,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.3581,
+          "breach_rate": 0.3581,
+          "low_risk_breach_rate": 0.3581,
+          "lift": 1.0,
+          "n": 4488
+        },
+        "stratified": {
+          "auc": 0.4849,
+          "pr_auc": 0.3515,
+          "breach_rate": 0.3581,
+          "low_risk_breach_rate": 0.3691,
+          "lift": 0.97,
+          "n": 4488
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.3581,
+          "breach_rate": 0.3581,
+          "low_risk_breach_rate": 0.3581,
+          "lift": 1.0,
+          "n": 4488
+        }
+      },
+      "rf_val": {
+        "auc": 0.62,
+        "pr_auc": 0.4564,
+        "breach_rate": 0.3581,
+        "low_risk_breach_rate": 0.2216,
+        "lift": 1.62,
+        "n": 4488,
+        "yearly": {
+          "2019": {
+            "auc": 0.6083,
+            "n": 692,
+            "breach_rate": 0.3497
+          },
+          "2020": {
+            "auc": 0.5905,
+            "n": 1313,
+            "breach_rate": 0.3199
+          },
+          "2021": {
+            "auc": 0.6223,
+            "n": 1290,
+            "breach_rate": 0.3752
+          },
+          "2022": {
+            "auc": 0.6459,
+            "n": 1193,
+            "breach_rate": 0.3864
+          }
+        }
+      }
+    },
+    "sell_stop_broken_H6_off05_flag": {
+      "train_n": 23410,
+      "train_breach_rate": 0.3885,
+      "val_n": 4962,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.3821,
+          "breach_rate": 0.3821,
+          "low_risk_breach_rate": 0.3821,
+          "lift": 1.0,
+          "n": 4962
+        },
+        "stratified": {
+          "auc": 0.5059,
+          "pr_auc": 0.3849,
+          "breach_rate": 0.3821,
+          "low_risk_breach_rate": 0.3776,
+          "lift": 1.01,
+          "n": 4962
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.3821,
+          "breach_rate": 0.3821,
+          "low_risk_breach_rate": 0.3821,
+          "lift": 1.0,
+          "n": 4962
+        }
+      },
+      "rf_val": {
+        "auc": 0.6224,
+        "pr_auc": 0.4764,
+        "breach_rate": 0.3821,
+        "low_risk_breach_rate": 0.2236,
+        "lift": 1.71,
+        "n": 4962,
+        "yearly": {
+          "2019": {
+            "auc": 0.6351,
+            "n": 792,
+            "breach_rate": 0.3889
+          },
+          "2020": {
+            "auc": 0.6325,
+            "n": 1461,
+            "breach_rate": 0.3881
+          },
+          "2021": {
+            "auc": 0.6178,
+            "n": 1396,
+            "breach_rate": 0.3868
+          },
+          "2022": {
+            "auc": 0.6079,
+            "n": 1313,
+            "breach_rate": 0.3663
+          }
+        }
+      }
+    },
+    "buy_stop_broken_H12_off02_flag": {
+      "train_n": 20737,
+      "train_breach_rate": 0.6094,
+      "val_n": 4488,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.5967,
+          "breach_rate": 0.5967,
+          "low_risk_breach_rate": 0.5967,
+          "lift": 1.0,
+          "n": 4488
+        },
+        "stratified": {
+          "auc": 0.5158,
+          "pr_auc": 0.6045,
+          "breach_rate": 0.5967,
+          "low_risk_breach_rate": 0.5771,
+          "lift": 1.03,
+          "n": 4488
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.5967,
+          "breach_rate": 0.5967,
+          "low_risk_breach_rate": 0.5967,
+          "lift": 1.0,
+          "n": 4488
+        }
+      },
+      "rf_val": {
+        "auc": 0.6561,
+        "pr_auc": 0.7119,
+        "breach_rate": 0.5967,
+        "low_risk_breach_rate": 0.3853,
+        "lift": 1.55,
+        "n": 4488,
+        "yearly": {
+          "2019": {
+            "auc": 0.6528,
+            "n": 692,
+            "breach_rate": 0.5838
+          },
+          "2020": {
+            "auc": 0.6246,
+            "n": 1313,
+            "breach_rate": 0.5689
+          },
+          "2021": {
+            "auc": 0.682,
+            "n": 1290,
+            "breach_rate": 0.6031
+          },
+          "2022": {
+            "auc": 0.6634,
+            "n": 1193,
+            "breach_rate": 0.6278
+          }
+        }
+      }
+    },
+    "sell_stop_broken_H12_off02_flag": {
+      "train_n": 23410,
+      "train_breach_rate": 0.6329,
+      "val_n": 4962,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.6326,
+          "breach_rate": 0.6326,
+          "low_risk_breach_rate": 0.6326,
+          "lift": 1.0,
+          "n": 4962
+        },
+        "stratified": {
+          "auc": 0.4962,
+          "pr_auc": 0.6309,
+          "breach_rate": 0.6326,
+          "low_risk_breach_rate": 0.6374,
+          "lift": 0.99,
+          "n": 4962
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.6326,
+          "breach_rate": 0.6326,
+          "low_risk_breach_rate": 0.6326,
+          "lift": 1.0,
+          "n": 4962
+        }
+      },
+      "rf_val": {
+        "auc": 0.6812,
+        "pr_auc": 0.757,
+        "breach_rate": 0.6326,
+        "low_risk_breach_rate": 0.3807,
+        "lift": 1.66,
+        "n": 4962,
+        "yearly": {
+          "2019": {
+            "auc": 0.6906,
+            "n": 792,
+            "breach_rate": 0.6427
+          },
+          "2020": {
+            "auc": 0.662,
+            "n": 1461,
+            "breach_rate": 0.6454
+          },
+          "2021": {
+            "auc": 0.685,
+            "n": 1396,
+            "breach_rate": 0.6332
+          },
+          "2022": {
+            "auc": 0.6926,
+            "n": 1313,
+            "breach_rate": 0.6116
+          }
+        }
+      }
+    },
+    "buy_stop_broken_H12_off05_flag": {
+      "train_n": 20737,
+      "train_breach_rate": 0.5273,
+      "val_n": 4488,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.5036,
+          "breach_rate": 0.5036,
+          "low_risk_breach_rate": 0.5036,
+          "lift": 1.0,
+          "n": 4488
+        },
+        "stratified": {
+          "auc": 0.5145,
+          "pr_auc": 0.511,
+          "breach_rate": 0.5036,
+          "low_risk_breach_rate": 0.4882,
+          "lift": 1.03,
+          "n": 4488
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.5036,
+          "breach_rate": 0.5036,
+          "low_risk_breach_rate": 0.5036,
+          "lift": 1.0,
+          "n": 4488
+        }
+      },
+      "rf_val": {
+        "auc": 0.6346,
+        "pr_auc": 0.6096,
+        "breach_rate": 0.5036,
+        "low_risk_breach_rate": 0.3318,
+        "lift": 1.52,
+        "n": 4488,
+        "yearly": {
+          "2019": {
+            "auc": 0.6294,
+            "n": 692,
+            "breach_rate": 0.487
+          },
+          "2020": {
+            "auc": 0.5969,
+            "n": 1313,
+            "breach_rate": 0.4676
+          },
+          "2021": {
+            "auc": 0.6514,
+            "n": 1290,
+            "breach_rate": 0.5217
+          },
+          "2022": {
+            "auc": 0.6504,
+            "n": 1193,
+            "breach_rate": 0.5331
+          }
+        }
+      }
+    },
+    "sell_stop_broken_H12_off05_flag": {
+      "train_n": 23410,
+      "train_breach_rate": 0.5458,
+      "val_n": 4962,
+      "test_not_run": true,
+      "dummy": {
+        "most_frequent": {
+          "auc": 0.5,
+          "pr_auc": 0.5429,
+          "breach_rate": 0.5429,
+          "low_risk_breach_rate": 0.5429,
+          "lift": 1.0,
+          "n": 4962
+        },
+        "stratified": {
+          "auc": 0.4993,
+          "pr_auc": 0.5426,
+          "breach_rate": 0.5429,
+          "low_risk_breach_rate": 0.5437,
+          "lift": 1.0,
+          "n": 4962
+        },
+        "uniform": {
+          "auc": 0.5,
+          "pr_auc": 0.5429,
+          "breach_rate": 0.5429,
+          "low_risk_breach_rate": 0.5429,
+          "lift": 1.0,
+          "n": 4962
+        }
+      },
+      "rf_val": {
+        "auc": 0.6612,
+        "pr_auc": 0.6669,
+        "breach_rate": 0.5429,
+        "low_risk_breach_rate": 0.3061,
+        "lift": 1.77,
+        "n": 4962,
+        "yearly": {
+          "2019": {
+            "auc": 0.6798,
+            "n": 792,
+            "breach_rate": 0.5543
+          },
+          "2020": {
+            "auc": 0.6702,
+            "n": 1461,
+            "breach_rate": 0.5524
+          },
+          "2021": {
+            "auc": 0.6412,
+            "n": 1396,
+            "breach_rate": 0.5466
+          },
+          "2022": {
+            "auc": 0.6589,
+            "n": 1313,
+            "breach_rate": 0.5217
+          }
+        }
+      }
+    }
+  }
+}

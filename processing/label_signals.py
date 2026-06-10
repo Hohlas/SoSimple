@@ -547,6 +547,19 @@ for sl in TB_SL_LEVELS:
     for tp in TB_TP_LEVELS:
         TB_TARGET_NAMES.append(f'sell_sl{sl}_tp{tp}')
 
+# Fractal Stop Breach — константы (Stage 1: только пробой уровня)
+BR_BREACH_HORIZONS = (6, 12)
+BR_BREACH_OFFSETS = (0.0, 0.2, 0.5)        # 0.0 = diagnostic only
+BR_BREACH_OFFSETS_PRIMARY = (0.2, 0.5)       # для отчётов (без diagnostic 0.0)
+
+BR_BREACH_COLUMNS = []
+for h in BR_BREACH_HORIZONS:
+    for off in BR_BREACH_OFFSETS:
+        off_str = f'{int(off * 10):02d}'     # 0.0→00, 0.2→02, 0.5→05
+        BR_BREACH_COLUMNS.append(f'buy_stop_broken_H{h}_off{off_str}_flag')
+        BR_BREACH_COLUMNS.append(f'sell_stop_broken_H{h}_off{off_str}_flag')
+# Итого 12 колонок: buy_stop_broken_H6_off00_flag, ... sell_stop_broken_H12_off05_flag
+
 
 def label_triple_barrier(df, debug=False):
     """
@@ -1425,6 +1438,102 @@ def label_limit_order_barriers(df, ohlc_path, fill_window=6, barrier_window=24,
             tp_c = (vals == 1.0).sum()
             to_c = (vals == 0.5).sum()
             print(f"  {name}: TP={tp_c} SL={sl_c} TO={to_c} NO_FILL={nf}")
+
+    return df
+
+
+def label_fractal_stop_breach(df, ohlc_path, debug=False):
+    """
+    Разметка пробоя уровня fractal0 за H баров (Stage 1).
+
+    Для каждой строки с валидным fractal0['direction'] вычисляется:
+      - stop_price = fractal0['price'] ± stop_offset_val * ATR
+      - breach_flag = any(Low/High[row+1 : row+H] touches stop_price)
+
+    Если для заданного H недостаточно будущих баров — значение NaN.
+    Противоположная сторона (напр. BUY для SELL-строки) — NaN.
+
+    Колонки: buy_stop_broken_H{h}_off{off}_flag / sell_stop_broken_H{h}_off{off}_flag
+    Значения: 0.0 (нет пробоя), 1.0 (пробой), NaN (неприменимо/недостаточно данных).
+
+    Возвращает df с новыми колонками.
+    """
+    from datetime import datetime, timezone
+
+    # Инициализация всех breach-колонок NaN (на случай если все строки пропущены)
+    for col in BR_BREACH_COLUMNS:
+        df[col] = np.nan
+
+    ohlc, times, time_idx = load_ohlc_index(ohlc_path)
+
+    for i, row in df.iterrows():
+        fractal0 = parse_fractal(row.get('fractal0'))
+        if fractal0 is None:
+            continue
+
+        fractal_dir = fractal0['direction']
+        if fractal_dir == 0:
+            continue
+
+        fractal_price = fractal0['price']
+
+        row_time = row.get('time')
+        if pd.isna(row_time) or row_time == '':
+            continue
+        try:
+            row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        idx0 = time_idx.get(row_dt)
+        if idx0 is None:
+            continue
+
+        try:
+            atr = float(row['ATR'])
+        except (ValueError, KeyError):
+            continue
+        if atr <= 0:
+            continue
+
+        for h in BR_BREACH_HORIZONS:
+            if idx0 + h >= len(times):
+                continue  # недостаточно будущих баров
+
+            for off in BR_BREACH_OFFSETS:
+                off_str = f'{int(off * 10):02d}'
+                stop_offset_price = off * atr
+
+                if fractal_dir == -1:  # BUY: стоп ниже впадины
+                    stop_price = fractal_price - stop_offset_price
+                    col = f'buy_stop_broken_H{h}_off{off_str}_flag'
+                    breach = any(
+                        ohlc[times[k]][2] <= stop_price  # low
+                        for k in range(idx0 + 1, idx0 + 1 + h)
+                    )
+                    df.at[i, col] = 1.0 if breach else 0.0
+
+                elif fractal_dir == 1:  # SELL: стоп выше пика
+                    stop_price = fractal_price + stop_offset_price
+                    col = f'sell_stop_broken_H{h}_off{off_str}_flag'
+                    breach = any(
+                        ohlc[times[k]][1] >= stop_price  # high
+                        for k in range(idx0 + 1, idx0 + 1 + h)
+                    )
+                    df.at[i, col] = 1.0 if breach else 0.0
+
+    if debug:
+        print(f"\n[FRACTAL_STOP_BREACH]")
+        for col in BR_BREACH_COLUMNS:
+            if col not in df.columns:
+                print(f"  {col}: column not created (all rows skipped)")
+                continue
+            vals = df[col]
+            n_total = len(vals)
+            n_valid = vals.notna().sum()
+            n_breach = (vals == 1.0).sum()
+            n_no_breach = (vals == 0.0).sum()
+            rate = n_breach / n_valid if n_valid > 0 else 0.0
+            print(f"  {col}: valid={n_valid}/{n_total}, breach={n_breach} ({rate:.1%})")
 
     return df
 
