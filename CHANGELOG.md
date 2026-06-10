@@ -2,6 +2,24 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-10] — Fractal Stop Fav Stage 2: торговый слой (отрицательный результат)
+
+### Добавлено
+- `label_fractal_stop_fav_targets()` — fav regression labels (4 H-specific, 2 направления)
+- `evaluate_fractal_stop_trade()` — first-touch SL/TP/TIMEOUT evaluator (pnl в ATR)
+- `--fractal-stop-fav` в `label_main.py`
+- `tests/processing/test_fractal_stop_fav.py` — 9 тестов (4 fav + 5 trade evaluation)
+- `ML/baseline/benchmark_fractal_stop_fav.py` — RF breach+reg + grid search + frozen test
+
+### Результаты
+- Grid search на val (8 комбинаций H x off x side, 81 порог): лучшая комбинация sell_H12_off05 PF=0.975. Ни одна не достигла PF > 1.0
+- Frozen test (test 2022–2026, frozen rule sell_H12_off05): PF=0.837 canonical, 3/5 лет убыточны
+- Test breach AUC 0.65 — классификатор работает, но сигнал не транслируется в прибыль
+
+### Вывод
+❌ FAIL — торговая постановка breach+fav не работает на текущих признаках. RF не может надёжно предсказать fav-амплитуду. Нужны новые признаки или другая механика.
+<!-- docs/reports/2026-06-10-fractal-stop-fav-stage2.md -->
+
 ## [2026-06-10] — Fractal Stop Breach Stage 1: сигнал о пробое уровня подтверждён
 
 ### Добавлено

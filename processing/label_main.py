@@ -62,6 +62,7 @@ from label_signals import (
     label_entry_path_targets,
     label_trailing_stop_targets,
     label_fractal_stop_breach, BR_BREACH_COLUMNS,
+    label_fractal_stop_fav_targets,
 )
 from normalize import normalize_rowwise
 try:
@@ -256,6 +257,11 @@ def main():
         action="store_true",
         help="Разметить breach target для fractal stop (Stage 1)",
     )
+    parser.add_argument(
+        "--fractal-stop-fav",
+        action="store_true",
+        help="Разметить fav target для fractal stop (Stage 2)",
+    )
 
     args = parser.parse_args()
 
@@ -319,6 +325,11 @@ def main():
     if args.fractal_stop_breach:
         print(f"\nРазметка Fractal Stop Breach (OHLC={args.ohlc})...")
         labeled_df = label_fractal_stop_breach(labeled_df, ohlc_path=args.ohlc, debug=args.debug)
+
+    # 3g. Fractal Stop Fav labels (Stage 2: благоприятный ход, до нормализации)
+    if args.fractal_stop_fav:
+        print(f"\nРазметка Fractal Stop Fav targets (OHLC={args.ohlc})...")
+        labeled_df = label_fractal_stop_fav_targets(labeled_df, ohlc_path=args.ohlc, debug=args.debug)
 
     # 4. Построчная нормализация (до split — каждая строка независима)
     updn_params = None

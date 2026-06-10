@@ -1,0 +1,16 @@
+{
+  "h": 12,
+  "stop_offset_val": 0.5,
+  "side": "sell",
+  "p": 0.5,
+  "min_fav_val": 0.3,
+  "min_rr": 1.5,
+  "tp_fraction": 0.7,
+  "cap": 5.0,
+  "n_estimators": 200,
+  "max_depth": 12,
+  "min_samples_leaf": 50,
+  "selected_on": "val_canonical_spread_0.2",
+  "val_pf": 0.975,
+  "val_trades_per_year": 141.2
+}

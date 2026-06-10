@@ -151,6 +151,20 @@ def main():
                     print(f'  {name} {buy_col}: breach={buy_rate:.1%}, '
                           f'{sell_col}: breach={sell_rate:.1%}')
 
+        # 11. Fav target check (fractal stop Stage 2) — H-specific
+        FAV_COLUMNS = [
+            'target_buy_H6_val', 'target_buy_H12_val',
+            'target_sell_H6_val', 'target_sell_H12_val',
+        ]
+        for col in FAV_COLUMNS:
+            check(f'{name}: колонка {col} существует', col in df.columns)
+            if col in df.columns:
+                vals = df[col].dropna()
+                if len(vals) > 0:
+                    check(f'{name}: {col} >= 0', (vals >= 0).all())
+                    check(f'{name}: {col} mean ∈ (0, 5) ATR',
+                          0 < vals.mean() < 5.0)
+
     print(f'\n{"="*60}')
     print('ALL CHECKS PASSED')
 

@@ -1538,6 +1538,146 @@ def label_fractal_stop_breach(df, ohlc_path, debug=False):
     return df
 
 
+def label_fractal_stop_fav_targets(df, ohlc_path, debug=False):
+    """
+    Разметка благоприятного хода (fav) для торгового слоя Stage 2.
+
+    Для каждой строки с валидным fractal0.dir вычисляется:
+      target_<side>_H<h>_val = max(|благоприятный_ход|) / ATR  за h баров от Open[row+1]
+
+    Колонки: target_buy_H6_val, target_buy_H12_val, target_sell_H6_val, target_sell_H12_val.
+    NaN для неприменимых строк (противоположная сторона, нет данных).
+
+    Возвращает df с новыми колонками.
+    """
+    from datetime import datetime, timezone
+
+    ohlc, times, time_idx = load_ohlc_index(ohlc_path)
+
+    FAV_COLUMNS = [
+        'target_buy_H6_val', 'target_buy_H12_val',
+        'target_sell_H6_val', 'target_sell_H12_val',
+    ]
+    for col in FAV_COLUMNS:
+        if col not in df.columns:
+            df[col] = np.nan
+
+    for i, row in df.iterrows():
+        fractal0 = parse_fractal(row.get('fractal0'))
+        if fractal0 is None:
+            continue
+
+        fractal_dir = fractal0['direction']
+        if fractal_dir == 0:
+            continue
+
+        row_time = row.get('time')
+        if pd.isna(row_time) or row_time == '':
+            continue
+        try:
+            row_dt = datetime.strptime(str(row_time), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+        idx0 = time_idx.get(row_dt)
+        if idx0 is None:
+            continue
+
+        try:
+            atr = float(row['ATR'])
+        except (ValueError, KeyError):
+            continue
+        if atr <= 0:
+            continue
+
+        if idx0 + 1 >= len(times):
+            continue
+        entry_dt = times[idx0 + 1]
+        entry_price = ohlc[entry_dt][0]
+
+        for h in (6, 12):
+            if idx0 + h >= len(times):
+                continue
+
+            highs = []
+            lows = []
+            for k in range(idx0 + 1, idx0 + 1 + h):
+                _, high, low, _ = ohlc[times[k]]
+                highs.append(high)
+                lows.append(low)
+
+            if fractal_dir == -1:
+                fav = (max(highs) - entry_price) / atr
+                df.at[i, f'target_buy_H{h}_val'] = max(0.0, fav)
+            elif fractal_dir == 1:
+                fav = (entry_price - min(lows)) / atr
+                df.at[i, f'target_sell_H{h}_val'] = max(0.0, fav)
+
+    if debug:
+        for col in FAV_COLUMNS:
+            vals = df[col].dropna()
+            if len(vals) > 0:
+                print(f'  {col}: n={len(vals)}, mean={vals.mean():.3f}, '
+                      f'median={vals.median():.3f}, max={vals.max():.3f}')
+
+    return df
+
+
+def evaluate_fractal_stop_trade(bars_h, direction, entry_price, sl_price, tp_price, atr):
+    """
+    First-touch оценка сделки по OHLC барам за окно H.
+
+    Правило одного бара (по спецификации):
+      если в одном H1-баре задеты и TP, и SL — SL первым, ambiguous_flag = 1.
+
+    ВСЕ PnL возвращаются в ATR-единицах.
+
+    Args:
+        bars_h: list of (open, high, low, close) tuples за окно [row+1 : row+H]
+        direction: -1 (BUY) или 1 (SELL)
+        entry_price: float (цена входа, уже со spread)
+        sl_price: float
+        tp_price: float (уже со spread)
+        atr: float (для нормировки PnL)
+
+    Returns:
+        dict: {
+            'exit': 'TP' | 'SL' | 'TIMEOUT',
+            'pnl_val': float  (PnL в ATR),
+            'ambiguous': 0 | 1,
+        }
+    """
+    for o, h, l, c in bars_h:
+        if direction == -1:  # BUY
+            hit_sl = l <= sl_price
+            hit_tp = h >= tp_price
+        else:  # SELL
+            hit_sl = h >= sl_price
+            hit_tp = l <= tp_price
+
+        if hit_sl and hit_tp:
+            if direction == -1:
+                return {'exit': 'SL', 'pnl_val': -(entry_price - sl_price) / atr, 'ambiguous': 1}
+            else:
+                return {'exit': 'SL', 'pnl_val': -(sl_price - entry_price) / atr, 'ambiguous': 1}
+        if hit_tp:
+            if direction == -1:
+                return {'exit': 'TP', 'pnl_val': (tp_price - entry_price) / atr, 'ambiguous': 0}
+            else:
+                return {'exit': 'TP', 'pnl_val': (entry_price - tp_price) / atr, 'ambiguous': 0}
+        if hit_sl:
+            if direction == -1:
+                return {'exit': 'SL', 'pnl_val': -(entry_price - sl_price) / atr, 'ambiguous': 0}
+            else:
+                return {'exit': 'SL', 'pnl_val': -(sl_price - entry_price) / atr, 'ambiguous': 0}
+
+    close_h = bars_h[-1][3]
+    if direction == -1:
+        timeout_pnl = (close_h - entry_price) / atr
+    else:
+        timeout_pnl = (entry_price - close_h) / atr
+    return {'exit': 'TIMEOUT', 'pnl_val': timeout_pnl, 'ambiguous': 0}
+
+
 if __name__ == "__main__":
     # Пример использования модуля при прямом запуске
     # label_all('Nero.csv', 'Nero_full.csv', debug=True)

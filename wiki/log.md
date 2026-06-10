@@ -436,3 +436,6 @@
 - Updated `wiki/index.md` and `wiki/research/execution-tracks-overview.md` coverage from 39/40 to 41 execution-track reports.
 2026-05-21 23:00 — Ingest: added Direct Direction Rebuild (§22) to execution-tracks-direct-direction-audit.md; updated index (3 reports). Ran wiki.py generate.
 [2026-05-23] Ingest: updated execution-tracks-take-skip-v2 (+v1 matrix, +v2 handoff, 04-17 reports), execution-tracks-direct-direction-audit (+transformer encoder direction, 05-21 report). Updated wiki/index.md, execution-tracks-overview.md.
+### 2026-06-10: Stage 2 Ingest
+- Updated wiki/research/fractal-stop-research.md: добавлены результаты Stage 2 (FAIL), статус changed from active to completed
+- Updated wiki/index.md: sources count 1->2, status completed
