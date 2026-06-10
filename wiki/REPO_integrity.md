@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-06 13:09 UTC · git `94acb0d`
+> Auto-generated 2026-06-10 07:20 UTC · git `6b633fc`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1404 files  ·  **Commit**: `94acb0d`  ·  **Generated**: 2026-06-06 13:09 UTC
+**Tracked**: 1405 files  ·  **Commit**: `6b633fc`  ·  **Generated**: 2026-06-10 07:20 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-06-06 | 14KB | `b3804161` |
+| [AGENTS.md](AGENTS.md) |  | 2026-06-07 | 14KB | `8d7db785` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-06 | 159KB | `5dbfed89` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-03 | 6KB | `16483aaf` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-06 | 42KB | `786f8cbb` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-10 | 42KB | `68202968` |
 | [README.md](README.md) |  | 2026-05-30 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -74,9 +74,10 @@
 | [docs/audit/2026-05-18-kimi-phase-ii-plan.md](docs/audit/2026-05-18-kimi-phase-ii-plan.md) |  | 2026-05-30 | 17KB | `74b6b95a` |
 | [docs/audit/2026-05-18-redo-prompt.md](docs/audit/2026-05-18-redo-prompt.md) |  | 2026-05-30 | 19KB | `6ca4032a` |
 | [docs/audit/2026-05-24-methodology-review-notes.md](docs/audit/2026-05-24-methodology-review-notes.md) | Замечания по `docs/methodology/` и trigger-у `ml-methodology` | 2026-05-30 | 8KB | `6c948cab` |
-| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-05 | 1KB | `0ab7e42c` |
+| [docs/audit/2026-06-09-fractal-stop-fav-target-spec-audit.md](docs/audit/2026-06-09-fractal-stop-fav-target-spec-audit.md) | Вердикт по спецификации Fractal Stop + Fav Target | 2026-06-10 | 16KB | `ac300a57` |
+| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-09 | 1KB | `f975017a` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-30 | 34KB | `bdb0edad` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-05 | 21KB | `7dde7cc0` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-10 | 14KB | `10a64f0b` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-05 | 14KB | `11dc384e` |
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-03 | 4KB | `3b1e8db8` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-30 | 5KB | `6bf55f21` |
@@ -172,7 +173,6 @@
 | [docs/superpowers/plans/2026-05-27-limit-order-entry-implementation.md](docs/superpowers/plans/2026-05-27-limit-order-entry-implementation.md) |  | 2026-06-03 | 54KB | `5177783b` |
 | [docs/superpowers/plans/2026-05-30-limit-order-hypothesis-testing.md](docs/superpowers/plans/2026-05-30-limit-order-hypothesis-testing.md) |  | 2026-06-03 | 10KB | `0759cd9a` |
 | [docs/superpowers/plans/2026-06-01-feature-foundation-rebuild.md](docs/superpowers/plans/2026-06-01-feature-foundation-rebuild.md) |  | 2026-06-03 | 23KB | `182d5eea` |
-| [docs/superpowers/plans/2026-06-05-fav-adv-target.md](docs/superpowers/plans/2026-06-05-fav-adv-target.md) |  | 2026-06-05 | 13KB | `bd03cd18` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-05-30 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-05-30 | 10KB | `b848ff4f` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-05-30 | 12KB | `82b0860f` |
@@ -205,6 +205,7 @@
 | [docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов | 2026-06-02 | 43KB | `d9f3365c` |
 | [docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md](docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) | Спецификация direct `SELL/SKIP/BUY` модели по всей строке фракталов | 2026-05-30 | 12KB | `3bba26aa` |
 | [docs/superpowers/specs/2026-05-27-limit-order-entry-design.md](docs/superpowers/specs/2026-05-27-limit-order-entry-design.md) |  | 2026-06-03 | 18KB | `1c33e671` |
+| [docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md](docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md) | Спецификация Fractal Stop + Fav Target: этап только на пробой уровня и торговый слой | 2026-06-10 | 17KB | `44df96a5` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-06-05 | 4KB | `6e80560a` |
 
 ## Reports
@@ -1473,5 +1474,5 @@
 | [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-03 | 3KB | `362f90fe` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [opencode.json](opencode.json) |  | 2026-06-03 | 454B | `7e4fb252` |
+| [opencode.json](opencode.json) |  | 2026-06-07 | 327B | `62dd80d0` |
 
