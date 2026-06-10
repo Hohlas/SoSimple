@@ -3,6 +3,11 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-06-10] update | Fractal Stop Stage 2 oracle synced into wiki
+- Updated `wiki/research/fractal-stop-research.md` after oracle diagnostics were added to `docs/reports/2026-06-10-fractal-stop-fav-stage2.md`.
+- Recorded that RF Stage 2 remains FAIL, but oracle shows a high diagnostic ceiling for the mechanics.
+- Reframed the next step from "stop research" to Stage 3: improve breach classifier and features.
+
 ## [2026-06-10] ingest | Fractal Stop Breach Stage 1 synced into wiki
 - Added coverage for `docs/reports/2026-06-10-fractal-stop-breach-stage1.md`.
 - Created `wiki/research/fractal-stop-research.md`.

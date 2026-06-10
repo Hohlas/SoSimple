@@ -1,10 +1,10 @@
 # =============================================================================
 # Файл: ML/baseline/oracle_fractal_stop_fav.py
-# Назначение: Oracle-диагностика — верхняя граница PF при идеальном знании breach/fav_val.
+# Назначение: Oracle-диагностика — проверка потолка PF при идеальном знании breach/fav_val.
 # Язык: Python 3.10+
 # Обновлён: 2026-06-10
 # Использование:
-#   python ML/baseline/oracle_fractal_stop_fav.py
+#   python -m ML.baseline.oracle_fractal_stop_fav
 # =============================================================================
 """Oracle diagnostic: подстановка истинных breach/fav_val вместо RF-предсказаний.
 
@@ -13,17 +13,20 @@
   - perfect_fav: истинный fav_val, breach по RF (не треб. RF fav)
   - perfect_both: истинный breach + истинный fav_val (не треб. RF вообще)
 
-Фиксированные пороги (не grid search — oracle сигнал чистый):
+Фиксированные пороги: oracle-сигнал чистый, grid search не нужен.
   p=0.5, min_fav=0.0, min_rr=1.0, tp_frac=0.7
 """
-import os, sys, json
+import json
+import math
+import os
+import sys
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'processing'))
 from label_signals import load_ohlc_index
-from benchmark_fractal_stop_fav import (
+from ML.baseline.benchmark_fractal_stop_fav import (
     extract_flat_base_features, load_split, lookup_entry_prices,
     simulate_trades, compute_trade_metrics,
     BREACH_TARGETS, FAV_TARGETS, CAP,
@@ -35,6 +38,18 @@ TRAIN = 'DATA/Nero_XAUUSD_train_labeled.csv'
 VAL = 'DATA/Nero_XAUUSD_validation_labeled.csv'
 OHLC = 'DATA/XAUUSD_H1_OHLC.csv'
 PARAMS = {'p': 0.5, 'min_fav': 0.0, 'min_rr': 1.0, 'tp_frac': 0.7}
+
+
+def json_safe(obj):
+    """Рекурсивно заменить inf/nan на null для строгого JSON."""
+    if isinstance(obj, dict):
+        return {key: json_safe(value) for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [json_safe(value) for value in obj]
+    if isinstance(obj, float):
+        if math.isinf(obj) or math.isnan(obj):
+            return None
+    return obj
 
 
 def eval_oracle(h, off, side, breach_proba_val, fav_pred_val, val_df, entry_prices_val,
@@ -162,7 +177,7 @@ def main():
 
     os.makedirs('ML/reports', exist_ok=True)
     with open('ML/reports/oracle_fractal_stop_fav.json', 'w') as f:
-        json.dump(all_results, f, indent=2, default=str)
+        json.dump(json_safe(all_results), f, indent=2, default=str, allow_nan=False)
     print(f'\nSaved: ML/reports/oracle_fractal_stop_fav.json')
 
 
