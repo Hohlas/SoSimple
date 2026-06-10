@@ -2,6 +2,24 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-10] — Fractal Stop Breach Stage 1: сигнал о пробое уровня подтверждён
+
+### Добавлено
+- `label_fractal_stop_breach()` — разметка breach таргетов (H∈{6,12}, off∈{0.0,0.2,0.5}, 12 колонок)
+- `--fractal-stop-breach` флаг в `label_main.py`
+- `tests/processing/test_fractal_stop_breach_labels.py` — 10 тестов
+- `ML/baseline/benchmark_fractal_stop_breach.py` — Dummy + RF baseline (1001 признак) + frozen test
+- `statistics/data_contract_smoke_check.py` — breach-проверки
+
+### Результаты
+- RF baseline (val, 8 primary таргетов): AUC 0.62–0.68, lift 1.52–1.77, без годовых провалов
+- Frozen test (H=6, off=0.2): buy AUC=0.640, sell AUC=0.649 — сигнал подтверждён на невиданных данных
+- Все критерии перехода к Этапу 2 выполнены
+
+### Вывод
+Фрактальные признаки несут сигнал о будущем пробое уровня. Можно переходить к торговому слою (Этап 2).
+<!-- docs/reports/2026-06-10-fractal-stop-breach-stage1.md -->
+
 ## [2026-06-04] - Direction-only signal confirmed + TB extension
 
 ### Эксперименты

@@ -3,6 +3,12 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-06-10] ingest | Fractal Stop Breach Stage 1 synced into wiki
+- Added coverage for `docs/reports/2026-06-10-fractal-stop-breach-stage1.md`.
+- Created `wiki/research/fractal-stop-research.md`.
+- Recorded Stage 1 verdict: breach signal confirmed on validation and frozen test, but no trading PASS yet.
+- Recorded Stage 2 caveat: trading layer must prove PnL/PF with costs and cannot use zero-spread as PASS.
+
 ## [2026-05-21] ingest | Direct direction improvement synced into wiki
 - Added coverage for `docs/reports/2026-05-15-direct-direction-improvement.md`.
 - Updated `wiki/research/execution-tracks-reconciliation-plus-audit.md` with §20 Direct Direction Improvement.

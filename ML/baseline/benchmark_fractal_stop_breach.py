@@ -10,6 +10,7 @@
 # Использование:
 #   source ~/git/SoSimple/.venv/bin/activate
 #   python -m ML.baseline.benchmark_fractal_stop_breach
+#   python -m ML.baseline.benchmark_fractal_stop_breach --test DATA/Nero_XAUUSD_test_labeled.csv
 # =============================================================================
 
 import argparse
@@ -134,21 +135,8 @@ def compute_metrics(y_true, y_pred_proba, years=None):
     return metrics
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Baseline: fractal stop breach (Stage 1)')
-    parser.add_argument('--train', default='DATA/Nero_XAUUSD_train_labeled.csv')
-    parser.add_argument('--val', default='DATA/Nero_XAUUSD_validation_labeled.csv')
-    parser.add_argument('--target', default=None,
-                        help='Конкретная колонка (default: все primary-колонки)')
-    parser.add_argument('--purge-bars', type=int, default=12)
-    parser.add_argument('--output-json', default='ML/reports/fractal_stop_breach_baseline.json')
-    parser.add_argument('--n-estimators', type=int, default=200)
-    parser.add_argument('--max-depth', type=int, default=12)
-    parser.add_argument('--min-samples-leaf', type=int, default=50)
-    parser.add_argument('--include-diagnostic-offsets', action='store_true',
-                        help='Включить off00 (diagnostic only) в отчёт')
-    args = parser.parse_args()
-
+def _run_validation_baseline(args):
+    """Stage 1 baseline: train на train, eval на val. Test заморожен."""
     train_df = load_split(args.train, args.purge_bars)
     val_df = load_split(args.val, args.purge_bars)
 
@@ -244,6 +232,138 @@ def main():
     with open(args.output_json, 'w') as f:
         json.dump(report, f, indent=2, default=str)
     print(f'\nSaved: {args.output_json}')
+
+
+def _run_frozen_test(args):
+    """Frozen test: train на train+val, eval на test. Только H=6, off=0.2, BUY+SELL."""
+    FROZEN_RULE = {
+        'h': 6,
+        'off': 0.2,
+        'purge_bars': 6,
+        'targets': ['buy_stop_broken_H6_off02_flag', 'sell_stop_broken_H6_off02_flag'],
+    }
+
+    print('=== FROZEN TEST ===')
+    print(f'  Rule: H={FROZEN_RULE["h"]}, off={FROZEN_RULE["off"]}, BUY+SELL')
+    print(f'  Purge: {FROZEN_RULE["purge_bars"]} bars')
+    print()
+
+    train_df = load_split(args.train, FROZEN_RULE['purge_bars'])
+    val_df = load_split(args.val, FROZEN_RULE['purge_bars'])
+    test_df = load_split(args.test, purge_bars=0)
+
+    train_val_df = pd.concat([train_df, val_df], ignore_index=True)
+    print(f'  Train+val: {len(train_val_df)} rows, {train_val_df["_year"].min():.0f}–{train_val_df["_year"].max():.0f}')
+    print(f'  Test:      {len(test_df)} rows, {test_df["_year"].min():.0f}–{test_df["_year"].max():.0f}')
+    print()
+
+    X_train_val, feature_names = extract_flat_base_features(train_val_df)
+    X_test, _ = extract_flat_base_features(test_df)
+
+    results = {}
+
+    for target_col in FROZEN_RULE['targets']:
+        y_train_val = train_val_df[target_col].values
+        y_test = test_df[target_col].values
+
+        train_mask = ~np.isnan(y_train_val)
+        test_mask = ~np.isnan(y_test)
+
+        n_train = train_mask.sum()
+        n_test = test_mask.sum()
+
+        train_breach_rate = float(y_train_val[train_mask].mean())
+        print(f'--- {target_col} ---')
+        print(f'  Train+val: n={n_train}, breach_rate={train_breach_rate:.3f}')
+        print(f'  Test:      n={n_test}')
+
+        X_tr = X_train_val[train_mask]
+        y_tr = y_train_val[train_mask]
+        X_te = X_test[test_mask]
+        y_te = y_test[test_mask]
+
+        dummy_results = {}
+        for strategy in ['most_frequent', 'stratified', 'uniform']:
+            dummy = DummyClassifier(strategy=strategy, random_state=42)
+            dummy.fit(X_tr, y_tr)
+            pred_dummy = dummy.predict_proba(X_te)[:, 1]
+            dummy_results[strategy] = compute_metrics(
+                y_te, pred_dummy, test_df['_year'].values[test_mask]
+            )
+            print(f'  Dummy/{strategy}: AUC={dummy_results[strategy].get("auc", "N/A")}')
+
+        rf = RandomForestClassifier(
+            n_estimators=args.n_estimators,
+            max_depth=args.max_depth,
+            min_samples_leaf=args.min_samples_leaf,
+            random_state=42,
+            n_jobs=-1,
+        )
+        rf.fit(X_tr, y_tr)
+
+        pred_test = rf.predict_proba(X_te)[:, 1]
+        test_metrics = compute_metrics(
+            y_te, pred_test, test_df['_year'].values[test_mask]
+        )
+
+        results[target_col] = {
+            'train_n': int(n_train),
+            'train_breach_rate': round(train_breach_rate, 4),
+            'test_n': int(n_test),
+            'dummy': dummy_results,
+            'rf_test': test_metrics,
+        }
+
+        if test_metrics:
+            print(f'  RF test: AUC={test_metrics.get("auc", "N/A"):.3f} '
+                  f'PR-AUC={test_metrics.get("pr_auc", "N/A"):.3f} '
+                  f'lift={test_metrics.get("lift", "N/A")}')
+            if test_metrics.get('yearly'):
+                for yr, ym in sorted(test_metrics['yearly'].items()):
+                    print(f'    {yr}: AUC={ym["auc"]}, n={ym["n"]}, '
+                          f'breach={ym["breach_rate"]:.3f}')
+        print()
+
+    out_path = args.output_json.replace('_baseline.json', '_frozen_test.json')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    report = {
+        'stage': 'frozen_test',
+        'frozen_rule': FROZEN_RULE,
+        'config': {
+            'n_estimators': args.n_estimators,
+            'max_depth': args.max_depth,
+            'min_samples_leaf': args.min_samples_leaf,
+            'feature_keys': BASE_CHANNEL_KEYS,
+            'n_features': X_train_val.shape[1],
+        },
+        'results': results,
+    }
+    with open(out_path, 'w') as f:
+        json.dump(report, f, indent=2, default=str)
+    print(f'Saved: {out_path}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Baseline: fractal stop breach (Stage 1)')
+    parser.add_argument('--train', default='DATA/Nero_XAUUSD_train_labeled.csv')
+    parser.add_argument('--val', default='DATA/Nero_XAUUSD_validation_labeled.csv')
+    parser.add_argument('--target', default=None,
+                        help='Конкретная колонка (default: все primary-колонки)')
+    parser.add_argument('--purge-bars', type=int, default=12)
+    parser.add_argument('--output-json', default='ML/reports/fractal_stop_breach_baseline.json')
+    parser.add_argument('--n-estimators', type=int, default=200)
+    parser.add_argument('--max-depth', type=int, default=12)
+    parser.add_argument('--min-samples-leaf', type=int, default=50)
+    parser.add_argument('--include-diagnostic-offsets', action='store_true',
+                        help='Включить off00 (diagnostic only) в отчёт')
+    parser.add_argument('--test', default=None,
+                        help='Путь к test CSV (frozen test: train на train+val, eval на test)')
+    args = parser.parse_args()
+
+    if args.test:
+        _run_frozen_test(args)
+    else:
+        _run_validation_baseline(args)
 
 
 if __name__ == '__main__':
