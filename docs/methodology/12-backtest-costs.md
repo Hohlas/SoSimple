@@ -11,6 +11,7 @@
 - trading protocol;
 - cost assumptions;
 - position constraints.
+- oracle-preflight report, если trading protocol был выбран через будущие labels.
 
 ### Пошаговые действия
 
@@ -73,6 +74,7 @@
 - Есть список расхождений offline vs tester.
 - Gross-only результат не выдан за production.
 - Zero-spread результат, если он был запущен, явно помечен `DIAGNOSTIC_ONLY`.
+- Oracle-результат, если он использовался на раннем этапе, не смешан с реальным backtest результата модели.
 
 ### Типовые ошибки
 

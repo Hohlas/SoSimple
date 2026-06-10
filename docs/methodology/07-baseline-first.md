@@ -10,6 +10,7 @@
 - target contract;
 - feature contract;
 - выбранные метрики.
+- oracle-preflight report, если задача включает торговую механику входа/выхода.
 
 ### Пошаговые действия
 
@@ -18,6 +19,7 @@
    - random class с class prior;
    - always skip;
    - простое direction rule, если применимо.
+   - Для торговых постановок с явным entry/exit сначала убедиться, что [06b-oracle-preflight.md](06b-oracle-preflight.md) не дал `FAIL`.
 2. Запустить простые ML baselines:
    - logistic/linear model;
    - tree model;
@@ -33,6 +35,7 @@
 ### Обязательные проверки
 
 - Baseline использует тот же split и тот же live-safe feature contract.
+- Если oracle-preflight применим, его результат не используется как модельный baseline и не попадает в признаки.
 - Baseline использует тот же execution convention, что и будущий winner.
 - Baseline не подбирается на test.
 - При дисбалансе смотреть precision/recall/F1/MCC, а не только accuracy.

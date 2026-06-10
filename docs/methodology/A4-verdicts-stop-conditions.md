@@ -18,9 +18,12 @@
 - candidate-source не live-safe;
 - test уже был использован для выбора;
 - validation gate не пройден;
+- oracle-preflight для торговой механики не прошёл канонические издержки;
 - единственный плюс кандидата держится на одной стороне, одном году или очень малом N;
 - cost-aware result отрицателен;
 - MT4 parity показывает critical mismatch;
 - forward data отсутствуют, но требуется forward verdict.
+
+Oracle-preflight может остановить неудачную механику до обучения модели, но не может повысить verdict кандидата: это future-derived diagnostic, а не evidence качества модели.
 
 Правильный следующий шаг в этих случаях: написать reject/diagnostic report и сформулировать новую ограниченную гипотезу.
