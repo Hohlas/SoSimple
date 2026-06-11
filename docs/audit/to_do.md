@@ -1,67 +1,57 @@
-перед реализацией я бы правил план. Сейчас в нём есть несколько блокирующих несостыковок.      
-                                                                                                 
-  Что исправить обязательно                                                                      
-                                                                                                 
-  1. Имена колонок не соответствуют утверждённой спецификации.                                   
-     В плане используются target_breach_buy_H6_off02 и т.п. docs/superpowers/plans/2026-06-10-   
-     fractal-stop-breach-plan.md:48, а в спецификации утверждён стиль buy_stop_broken_H_flag /   
-     sell_stop_broken_H_flag и суффикс _flag docs/superpowers/specs/2026-06-08-fractal-stop-fav- 
-     target-design.md:78.                                                                        
-     Предлагаю: buy_stop_broken_H6_off02_flag, sell_stop_broken_H12_off05_flag. И обязательно    
-     явный denylist, потому что wildcard target_* их не поймает.                                 
-                                                                                                 
-  2. В плане неверное обращение к parse_fractal().                                               
-     План пишет fractal0[2] и fractal0[1] docs/superpowers/plans/2026-06-10-fractal-stop-breach- 
-     plan.md:77, но текущая функция возвращает словарь processing/label_signals.py:43. Нужно:    
-                                                                                                 
-  fractal_dir = fractal0['direction']                                                            
-  fractal_price = fractal0['price']                                                              
-                                                                                                 
-  3. Путь данных смешан.                                                                         
-     План заявляет DATA/Nero_{train,validation,test}_labeled.csv docs/superpowers/plans/2026-06- 
-     10-fractal-stop-breach-plan.md:13, но smoke-check по умолчанию использует DATA/             
-     Nero_XAUUSD_*_labeled.csv statistics/data_contract_smoke_check.py:30. Нужно выбрать один    
-     канон. Я бы использовал DATA/Nero_XAUUSD_*_labeled.csv, чтобы совпасть с текущим smoke-check
-     и XAUUSD OHLC.
+# To Do
 
-  4. Не надо писать git commit в задачах.
-     В AGENTS.md commit запрещён без явной просьбы пользователя. В плане есть несколько commit-
-     шагов docs/superpowers/plans/2026-06-10-fractal-stop-breach-plan.md:95, docs/superpowers/
-     plans/2026-06-10-fractal-stop-breach-plan.md:694. Нужно заменить на “проверить diff/status;
-     commit не делать без явной команды”.
+## Stage 3: Fractal Stop — улучшение breach-классификатора
 
-  5. Test нельзя использовать в обычном baseline-цикле до freeze.
-     Спецификация говорит: test использовать один раз после freeze docs/superpowers/specs/2026-
-     06-08-fractal-stop-fav-target-design.md:156. План сразу считает pred_test и печатает test-
-     метрики docs/superpowers/plans/2026-06-10-fractal-stop-breach-plan.md:623. Для Stage 1
-     лучше: train + validation для выбора вывода, test только если заранее заморожены target/
-     offset/H/model params и критерии.
+Статус: идея к планированию, реализацию не начинать без отдельного согласованного плана.
 
-Что добавить
+Контекст:
+- Stage 2 RF breach+fav trade получил FAIL: PF < 1.0 на validation и frozen test.
+- Oracle-диагностика (проверка потолка) показала высокий диагностический потолок механики, но не является торговым доказательством.
+- Следующая гипотеза: текущий провал связан с качеством извлечения breach-сигнала, а не с полным отсутствием потенциала у механики.
 
-  - Явный feature contract: какие 10 каналов разрешены, почему break live-safe именно в состоянии
-    строки, какие поля запрещены. Методология требует allowlist/denylist docs/methodology/03-
-    feature-contract-leakage.md:57.
+Предлагаемый порядок:
 
-  - Dummy baseline: majority class / class prior / простое правило. Сейчас есть только RF, а
-    методология baseline-first требует dummy и простой ML baseline docs/methodology/07-baseline-
-    first.md:16.
+1. Зафиксировать feature contract для новых признаков.
+   - Проверить live-safe статус каждого поля.
+   - Разрешить только признаки, доступные на момент строки.
+   - Не использовать top-level target/future-derived колонки как input.
 
-  - Проверку случая “не хватает будущих баров” в самой функции: если для H нет ровно H баров,
-    ставить NaN, а не считать по укороченному окну. Тест уже это ожидает docs/superpowers/
-    plans/2026-06-10-fractal-stop-breach-plan.md:362, но логика функции в Task 1 этого явно не
-    фиксирует.
+2. Начать с XGBoost/LightGBM + расширенные табличные признаки.
+   - Сравнить с текущим RF на одинаковом split.
+   - Не считать uplift гарантированным; проверить фактически.
+   - Основные метрики: AUC, PR-AUC, lift в low-risk зоне, годовые срезы, BUY/SELL отдельно.
 
-  - Split manifest: даты/размеры train/validation/test и правило purge. Методология требует явные
-    границы и embargo/purge при пересечении окна docs/methodology/06-temporal-split.md:16.
+3. Добавлять признаки группами, через ablation.
+   - Baseline: текущие 1001 признаков.
+   - + path: `Up/Dn` внутри `fractal0..fractal99`.
+   - + `shift`.
+   - + `fractal_atr / current_ATR`.
+   - + time: `sin(hour)`, `cos(hour)`, `sin(day_of_week)`, `cos(day_of_week)`.
+   - + geometry aggregates: расстояния между фракталами, плотность уровней в ATR-зонах, счётчики направлений.
+   - + all.
 
-  С чем согласен
+4. Осторожно со spread.
+   - Если spread реально есть в `Nero.csv` и доступен на момент строки — можно рассматривать как input.
+   - Если spread задан как средний, тестерный или будущий параметр — это часть cost model, не input feature.
 
-  - Проверять сначала только факт пробоя, без входов, TP, PnL и PF.
-  - Размечать только сторону, соответствующую fractal0.dir, а противоположную оставлять NaN.
-  - Считать BUY/SELL отдельно в отчётах.
-  - Включить 0.2 и 0.5 как основные stop_offset_val, а 0.0 оставить диагностикой.
-  - Делать тесты на BUY, SELL, разные offset, разные H и плохие данные.
+5. Не смешивать модель и признаки в одном выводе.
+   - Сначала RF vs XGBoost/LightGBM на одинаковых признаках.
+   - Затем ablation признаков на выбранной табличной модели.
+   - Иначе невозможно понять источник улучшения.
 
-  Главная правка: привести план к утверждённой терминологии и убрать преждевременное
-  использование test. После этого план можно согласовывать как основу реализации.
+6. Transformer encoder рассматривать после табличного этапа.
+   - Вход: фрактальная последовательность `100 x channels`.
+   - Риск выше: дольше обучение, сложнее диагностика, выше риск переобучения.
+   - Запускать как Stage 4 или отдельный план, если табличный этап подтвердит наличие улучшенного breach-сигнала.
+
+7. Gate для перехода обратно к торговому слою.
+   - Не полагаться только на AUC.
+   - Требовать улучшение AUC/PR-AUC/lift относительно RF baseline.
+   - Проверить, что улучшение сохраняется по годам и сторонам.
+   - Только после этого подключать fav/trade слой и смотреть PF на validation с canonical spread.
+
+Открытые вопросы для обсуждения:
+- Как нормализовать новые группы признаков без смешивания input и target.
+- Сколько первых фракталов использовать для path/shift/fractal_atr: 20, 50 или 100.
+- Делать ли отдельные модели для BUY/SELL/H/off или multi-target модель.
+- Какой минимальный uplift breach-сигнала считать достаточным для повторного Stage 2.

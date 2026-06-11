@@ -2,7 +2,7 @@
 # Файл: tests/test_entry_path_labels.py
 # Назначение: Unit-тесты для entry_path_v1 helpers из processing/label_signals.py
 # Язык: Python 3.10+
-# Обновлён: 2026-04-08
+# Обновлён: 2026-06-11
 # Зависимости:
 #   Входные данные:
 #     - синтетические OHLC-окна, pandas DataFrame
@@ -170,8 +170,8 @@ def test_label_entry_path_targets_use_fractal_dir(tmp_path):
         encoding="utf-8",
     )
 
-    # fractal0.dir=1 (пик → SELL), signal=0 (не дал бы разметку)
-    fractal_str = "1700000000:100.0:1:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
+    # fractal0.dir=1.0 (пик → SELL), signal=0 (не дал бы разметку)
+    fractal_str = "1700000000:100.0:1.0:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
     frame = pd.DataFrame({
         "time": ["2024.01.01 00:00"],
         "signal": [0],
@@ -200,7 +200,7 @@ def test_label_trailing_stop_targets_use_fractal_dir(tmp_path):
         encoding="utf-8",
     )
 
-    fractal_str = "1700000000:100.0:1:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
+    fractal_str = "1700000000:100.0:1.0:1.0:0.5:0:0:0:1.0:1:0.5:2.0:1.0:3.0:1.5:4.0:2.0:0.5:0.3:1.0:0.5:0.8:5"
     frame = pd.DataFrame({
         "time": ["2024.01.01 00:00"],
         "signal": [0],

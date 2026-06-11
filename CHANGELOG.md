@@ -2,6 +2,23 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-10] — Stage 3: feature profile comparison (base_raw vs base_plus_path vs relative_geometry)
+
+### Добавлено
+- `ML/baseline/benchmark_fractal_stop_stage3.py` — 3 feature profiles, RF breach classifier, metric uplift
+- `ML/reports/stage3_profiles.json` — полные результаты сравнения
+
+### Результаты
+- `base_plus_path` (+700 фич: folded mov_h + shift + atr_ratio): FAIL — AUC drops 64–166 bp on all 8 targets
+- `relative_geometry` (+10 фич: price→ATR-relative, density, time): PASS — AUC uplift +57…+258 bp, mean +119 bp
+- Density (fractal count in ±1/2/3 ATR) + time (hour/dow sin/cos) — ключевые драйверы uplift
+- Все профили: 0/32 year-slices AUC<0.55 — без провалов
+
+### Вывод
+Folded mov_h не несут breach-сигнала для RF. Price-in-ATR + density + time дают статистически значимый uplift. Gap до AUC≥0.75 остаётся ~7–8 bp. Next: XGBoost на relative_geometry.
+
+<!-- docs/reports/2026-06-10-feature-profiles-stage3.md -->
+
 ## [2026-06-10] — Fractal Stop Fav Stage 2: торговый слой (отрицательный результат)
 
 ### Добавлено

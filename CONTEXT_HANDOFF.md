@@ -1,48 +1,35 @@
 # Context Handoff
 
-Дата: 2026-06-10.
+Дата: 2026-06-11.
 
 ## Текущий этап
 
-Stage 2 «Fractal Stop + Fav Trade» завершён. Результат: ❌ FAIL — торговая постановка не работает на текущих признаках.
+Stage 3 «Feature Profile Comparison» завершён. `relative_geometry` (+10 фич) даёт +57…+258 bp AUC uplift над `base_raw` и является текущим победителем среди feature profile на validation. `base_plus_path` (folded mov_h + shift + atr_ratio) — провал (−64…−166 bp).
 
-### Результаты Stage 2
+### Результаты Stage 3
 
-| Фаза | Статус | Результат |
-|------|--------|-----------|
-| Fav labeling | ✅ | 4 H-specific колонки размечены |
-| Trade evaluator | ✅ | `evaluate_fractal_stop_trade()` per spec |
-| Tests (9) | ✅ | Все PASS |
-| Smoke check | ✅ | ALL CHECKS PASSED |
-| RF baseline (val) | ✅ | 8 combos, grid search 81 порог |
-| Frozen test | ✅ | sell_H12_off05 PF=0.837 |
-| Критерии перехода | ❌ FAIL | PF < 1.0 на val и test |
+| Профиль | N фич | ΔAUC mean (bp) | Вердикт |
+|---------|-------|----------------|---------|
+| base_raw | 1001 | — | baseline |
+| base_plus_path | 1701 | −119 | ❌ FAIL — folded mov_h + shift + atr_ratio hurt |
+| relative_geometry | 1011 | **+119** | ✅ PASS как целый профиль — price/ATR + density + time |
 
 ### Ключевые находки
 
-1. Breach-классификатор работает (AUC 0.65), fav-регрессор слаб (MSE ~3–5)
-2. Ни одна комбинация порогов не дала PF > 1.0 на каноническом спреде 0.20
-3. Лучшая val: sell_H12_off05 PF=0.975. Frozen test: PF=0.837, 3/5 лет убыточны
-4. **Oracle-диагностика (проверка потолка)**: perfect_breach PF=8–28, perfect_fav PF=7–24, perfect_both PF=∞ (0 убыточных лет на val) — у механики высокий диагностический потолок, но это не торговое доказательство
-5. Gap RF→oracle: фактор 10–30× — breach-классификатор (AUC 0.65) недостаточно точен
-6. 8 блокеров плана исправлены до реализации
+1. Комбинированный профиль folded `mov_h` + shift + atr_ratio ухудшает RF breach AUC; отдельно компоненты ещё не изолированы
+2. Price→(price−f0_price)/ATR улучшает breach AUC: делает уровни сопоставимыми при разных абсолютных ценах
+3. Density (фракталы в ±1/2/3 ATR) перспективен, но вклад не изолирован от price/time; текущая реализация считает `fractal0`
+4. Time-фичи (sin/cos часа + дня недели) перспективны, но вклад не изолирован
+5. Все профили: 0/32 year-slices AUC<0.55 — годовая устойчивость не пострадала
+6. Gap до AUC≥0.75 остаётся большим: около 7.2 процентного пункта по лучшему target и 9.2 по среднему AUC
+7. Ранняя оценка пустых фрактальных ячеек была артефактом `parse_fractal()` на нормализованных float-полях; Stage 3 pandas-экстрактор этой ошибкой не затронут
 
-### Созданные/изменённые файлы
+### Файлы Stage 3
 
-- `processing/label_signals.py` — +2 функции
-- `processing/label_main.py` — `--fractal-stop-fav`
-- `tests/processing/test_fractal_stop_fav.py` — 9 тестов (NEW)
-- `ML/baseline/benchmark_fractal_stop_fav.py` — RF baseline + grid search + frozen test (NEW)
-- `ML/baseline/oracle_fractal_stop_fav.py` — oracle-диагностика (NEW)
-- `ML/reports/fractal_stop_fav.json` — val результаты (NEW)
-- `ML/reports/fractal_stop_fav_frozen_rule.json` — замороженное правило (NEW)
-- `ML/reports/fractal_stop_fav_frozen_test.json` — frozen test (NEW)
-- `ML/reports/oracle_fractal_stop_fav.json` — oracle-результаты (NEW)
-- `statistics/data_contract_smoke_check.py` — +fav checks
-- `docs/reports/2026-06-10-fractal-stop-fav-stage2.md` — финальный отчёт Stage 2 (NEW)
-- `docs/superpowers/plans/2026-06-10-fractal-stop-fav-plan.md` — план (8 исправлений)
-- `CHANGELOG.md` — запись Stage 2
-- `DATA/Nero_XAUUSD_*_labeled.csv` — +4 fav колонок
+- `ML/baseline/benchmark_fractal_stop_stage3.py` — 3 профиля, RF breach, uplift calc (NEW)
+- `ML/reports/stage3_profiles.json` — полные результаты (NEW)
+- `docs/reports/2026-06-10-feature-profiles-stage3.md` — отчёт (NEW)
+- `CHANGELOG.md` — запись Stage 3
 
 ### Git
 
@@ -54,12 +41,8 @@ Stage 2 «Fractal Stop + Fav Trade» завершён. Результат: ❌ F
 
 ## Следующий шаг
 
-Oracle-диагностика подтвердила: текущий FAIL связан с моделью RF, а не с полным отсутствием потенциала механики. Рекомендация — Stage 3: улучшение breach-классификатора и признаков.
+Stage 3.1: очистить и разложить `relative_geometry` на компоненты до XGBoost.
 
-Приоритетные направления:
-1. **XGBoost/LightGBM** вместо RF — сильнее на табличных данных, встроенный feature importance
-2. **Новые признаки**: спред, ATR-волатильность, время сессии, day-of-week, корреляции фракталов
-3. **Ablation**: определить, какие каналы фракталов несут breach-сигнал
-4. **AUC целевой**: ≥0.75 (gap до oracle должен обеспечить PF > 1.0)
+Минимальная матрица: `base_raw`, `relative_price_only`, `relative_price_plus_density_excl_f0`, `relative_price_plus_time`, `relative_geometry_clean`.
 
-Решение за аналитиком.
+Если `relative_geometry_clean` сохраняет большую часть uplift Stage 3, следующий шаг — XGBoost/LightGBM на очищенном профиле с небольшим grid search только на validation. Test не открывать.

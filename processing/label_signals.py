@@ -88,29 +88,29 @@ def parse_fractal(fractal_str):
     
     try:
         return {
-            'time': int(parts[0]),
-            'price': float(parts[1]),
-            'direction': int(parts[2]),
-            'front': float(parts[3]),
-            'back': float(parts[4]),
-            'strong': int(parts[5]),
-            'break': int(parts[6]),
-            'reverse': float(parts[7]) if len(parts) > 7 else 0.0,
-            'power': float(parts[8]) if len(parts) > 8 else 0.0,
-            'count': int(parts[9]) if len(parts) > 9 else 0,
-            'impulse':     float(parts[10]) if len(parts) > 10 else 0.0,
-            'up_12':       float(parts[11]),
-            'dn_12':       float(parts[12]),
-            'up_24':       float(parts[13]),
-            'dn_24':       float(parts[14]),
-            'up_48':       float(parts[15]),
-            'dn_48':       float(parts[16]),
-            'up_3':        float(parts[17]),
-            'dn_3':        float(parts[18]),
-            'up_6':        float(parts[19]),
-            'dn_6':        float(parts[20]),
-            'fractal_atr': float(parts[21]),
-            'shift':       int(parts[22]),
+            'time':         int(float(parts[0])),
+            'price':        float(parts[1]),
+            'direction':    int(float(parts[2])),
+            'front':        float(parts[3]),
+            'back':         float(parts[4]),
+            'strong':       int(float(parts[5])),
+            'break':        int(float(parts[6])),
+            'reverse':      float(parts[7]) if len(parts) > 7 else 0.0,
+            'power':        float(parts[8]) if len(parts) > 8 else 0.0,
+            'count':        int(float(parts[9])) if len(parts) > 9 else 0,
+            'impulse':      float(parts[10]) if len(parts) > 10 else 0.0,
+            'up_12':        float(parts[11]),
+            'dn_12':        float(parts[12]),
+            'up_24':        float(parts[13]),
+            'dn_24':        float(parts[14]),
+            'up_48':        float(parts[15]),
+            'dn_48':        float(parts[16]),
+            'up_3':         float(parts[17]),
+            'dn_3':         float(parts[18]),
+            'up_6':         float(parts[19]),
+            'dn_6':         float(parts[20]),
+            'fractal_atr':  float(parts[21]),
+            'shift':        int(float(parts[22])),
         }
     except (ValueError, IndexError):
         return None
@@ -802,7 +802,7 @@ def label_trailing_stop_targets(
             fractal0_raw = str(out.at[row_label, 'fractal0'])
             parts = fractal0_raw.split(':')
             try:
-                direction = -(int(parts[2])) if len(parts) > 2 else 0
+                direction = -(int(float(parts[2]))) if len(parts) > 2 else 0
             except (ValueError, IndexError):
                 direction = 0
         else:
@@ -923,7 +923,7 @@ def label_entry_path_targets(
             fractal0_raw = str(row.get('fractal0', ''))
             parts = fractal0_raw.split(':')
             try:
-                direction = -(int(parts[2])) if len(parts) > 2 else 0
+                direction = -(int(float(parts[2]))) if len(parts) > 2 else 0
             except (ValueError, IndexError):
                 direction = 0
         else:

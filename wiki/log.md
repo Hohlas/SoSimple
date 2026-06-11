@@ -444,3 +444,13 @@
 ### 2026-06-10: Stage 2 Ingest
 - Updated wiki/research/fractal-stop-research.md: добавлены результаты Stage 2 (FAIL), статус changed from active to completed
 - Updated wiki/index.md: sources count 1->2, status completed
+### 2026-06-10: Save concept — folded-mov-channels
+- Created wiki/concepts/folded-mov-channels.md: свёртка 10 up/dn → 5 mov_h, границы применимости (не для breach)
+- Updated wiki/index.md: added to Concepts table
+- Sources: EDA нормализации (2026-06-10), Stage 3 feature profiles
+### 2026-06-11: Ingest Stage 3 feature profiles
+- Updated `docs/reports/2026-06-10-feature-profiles-stage3.md`: clarified that `relative_geometry` is a profile-level winner, density/time are not isolated, `parse_fractal()` empty-fractal artifact does not affect Stage 3, and Stage 3.1 must precede XGBoost.
+- Updated `CONTEXT_HANDOFF.md`: next step changed from immediate XGBoost to Stage 3.1 ablation.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: coverage Stage 1-3, 3 reports.
+### 2026-06-11: Update concept — folded-mov-channels
+- Updated `wiki/concepts/folded-mov-channels.md`: documented the decision to keep `Nero.csv` in the 23-field format, compute `mov_h` in Python only when needed, avoid `lib_PIC.mqh` re-export/relabel work, and keep current priority on `relative_geometry`.

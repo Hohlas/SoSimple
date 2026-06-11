@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-06-10
-sources: 2
+last_updated: 2026-06-11
+sources: 3
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня (AUC 0.65), RF-торговый слой не даёт PF > 1.0, но oracle (проверка потолка) показывает высокий диагностический потолок механики.
+> Фрактальные признаки предсказывают пробой уровня (AUC около 0.65), RF-торговый слой не даёт PF > 1.0, oracle (проверка потолка) показывает высокий диагностический потолок механики, а Stage 3 нашёл лучший validation-профиль признаков: `relative_geometry`.
 
 ## Хронология
 
@@ -25,6 +25,15 @@ Stage 1 проверял только один вопрос: можно ли п�
 Stage 2 добавил fav-регрессию (предсказание амплитуды благоприятного хода), торговый симулятор (first-touch SL/TP/TIMEOUT), grid search порогов входа и oracle-диагностику. Проверял гипотезу: breach_signal + pred_fav → PF > 1.0.
 
 Добавлены 4 H-specific fav-таргета (H6/H12, BUY/SELL), 9 тестов, RF baseline с grid search 81 комбинации порогов на val, frozen test на test 2022–2026 и oracle-скрипт для проверки потолка механики.
+
+### Stage 3: feature profile comparison (2026-06-10) — ✅ PASS profile-level
+
+Stage 3 сравнил три профиля признаков на RF breach-классификаторе без торгового слоя:
+- `base_raw`: 10 каналов × 100 фракталов + ATR;
+- `base_plus_path`: `base_raw` + folded `mov_h` + `shift` + `log(fractal_atr/ATR)`;
+- `relative_geometry`: замена raw price на `(price-f0_price)/ATR` + density + time.
+
+Цель Stage 3 — улучшить breach AUC/lift до возврата к торговому слою. Test не открывался, сравнение выполнено на validation.
 
 ## Ключевые результаты
 
@@ -81,6 +90,23 @@ Oracle-диагностика на validation:
 | perfect_fav | 7-24 | Идеальное знание fav тоже сильное, но один H12 SELL-срез ниже 30 сделок/год |
 | perfect_both | ∞ | При идеальном знании обоих labels на val нет убыточных сделок |
 
+### Stage 3
+
+Сравнение feature profiles на validation:
+
+| Профиль | N фич | AUC mean | ΔAUC mean | Вердикт |
+|---|---:|---:|---:|---|
+| `base_raw` | 1001 | 0.6454 | — | baseline |
+| `base_plus_path` | 1701 | 0.6335 | −119 bp | FAIL для RF breach |
+| `relative_geometry` | 1011 | 0.6580 | +119 bp | PASS как целый профиль |
+
+Ключевые уточнения:
+- `relative_geometry` улучшил 7 из 8 таргетов; годовых провалов нет (`0/32` year-slices с AUC < 0.55).
+- `base_plus_path` ухудшил все 8 таргетов, но профиль проверял folded `mov_h`, `shift` и `atr_ratio` вместе; это не доказывает, что каждый компонент вреден отдельно.
+- Вклад `density` и `time` не изолирован: они проверялись вместе с заменой raw price на ATR-relative price.
+- Текущая density-реализация считает сам `fractal0`; нужен вариант `density_excl_f0`.
+- Ранняя оценка “пустых фракталов” была артефактом `parse_fractal()` на нормализованных float-полях. Stage 3 pandas-экстрактор читает все 100 фракталов корректно.
+
 ## Выводы
 
 1. Breach-классификатор работает стабильно (AUC 0.65 на OOS), но текущая RF-связка breach+fav не транслируется в положительное матожидание.
@@ -88,12 +114,14 @@ Oracle-диагностика на validation:
 3. На diagnostic spread (0.0) PF достигает 1.06, но сразу падает до 0.84–0.98 при спреде 0.20. Маржинальность текущей RF-модели не переживает издержки.
 4. 3/5 лет OOS убыточны при достаточном количестве сделок.
 5. Oracle-диагностика не является торговым доказательством, но показывает высокий потолок механики: проблема текущего Stage 2 — извлечение сигнала моделью.
+6. Stage 3 показал, что перевод raw price в ATR-relative geometry улучшает breach-классификацию, но текущий результат ещё не готов к XGBoost без Stage 3.1 абляции.
 
-**RF Stage 2 отклонён, но fractal-stop research не закрыт окончательно.** Следующая разумная гипотеза — Stage 3: улучшение breach-классификатора и признаков, с сохранением oracle как диагностического потолка, а не как evidence торговой стратегии.
+**RF Stage 2 отклонён, но fractal-stop research не закрыт окончательно.** Следующая разумная гипотеза — Stage 3.1: очистить `relative_geometry`, исключить `fractal0` из density, разложить вклад price/density/time и только затем переходить к XGBoost/LightGBM.
 
 ## Открытые вопросы
 
-- Может ли более сложная модель (Transformer, XGBoost) улучшить breach-классификатор и fav-прогноз.
+- Сохранится ли uplift после очистки `relative_geometry`: `relative_price_only`, `density_excl_f0`, `time`, `relative_geometry_clean`.
+- Может ли более сложная модель (Transformer, XGBoost/LightGBM) улучшить breach-классификатор и fav-прогноз.
 - Даст ли trailing stop или partial TP положительное матожидание при том же breach-сигнале.
 - Помогут ли новые признаки (спред, волатильность, корреляции) улучшить fav-регрессию.
 - Работает ли концепт на других активах или таймфреймах.
@@ -102,3 +130,4 @@ Oracle-диагностика на validation:
 
 - [2026-06-10-fractal-stop-breach-stage1.md](../../docs/reports/2026-06-10-fractal-stop-breach-stage1.md) — Stage 1 report (AUC, lift, frozen test)
 - [2026-06-10-fractal-stop-fav-stage2.md](../../docs/reports/2026-06-10-fractal-stop-fav-stage2.md) — Stage 2 report (PF, grid search, frozen test, FAIL verdict)
+- [2026-06-10-feature-profiles-stage3.md](../../docs/reports/2026-06-10-feature-profiles-stage3.md) — Stage 3 report (feature profiles, relative geometry uplift, Stage 3.1 next step)
