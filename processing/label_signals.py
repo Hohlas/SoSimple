@@ -5,7 +5,7 @@
 # Язык: Python 3.10+
 # Автор: Antigravity
 # Создан: Неизвестно
-# Обновлён: 2026-04-08
+# Обновлён: 2026-06-11
 #
 # Зависимости:
 #   Входные данные:
@@ -24,6 +24,8 @@
 #
 # Примечания:
 #   - parse_fractal() — только 23-полевой формат (текущий DATA_VERSION)
+#   - integer-like поля принимают только целые значения: `1`, `1.0`; дробные
+#     нормализованные значения отвергаются
 #   - label_updn(): forward-scan до вытеснения фрактала, берёт последние накопленные Up/Dn
 # =============================================================================
 
@@ -38,6 +40,14 @@
 
 import numpy as np
 import pandas as pd
+
+
+def parse_int_like(value):
+    """Парсит только целочисленные значения, включая строковую запись `1.0`."""
+    numeric = float(value)
+    if not numeric.is_integer():
+        raise ValueError(f"not integer-like: {value}")
+    return int(numeric)
 
 
 def parse_fractal(fractal_str):
@@ -88,16 +98,16 @@ def parse_fractal(fractal_str):
     
     try:
         return {
-            'time':         int(float(parts[0])),
+            'time':         parse_int_like(parts[0]),
             'price':        float(parts[1]),
-            'direction':    int(float(parts[2])),
+            'direction':    parse_int_like(parts[2]),
             'front':        float(parts[3]),
             'back':         float(parts[4]),
-            'strong':       int(float(parts[5])),
-            'break':        int(float(parts[6])),
+            'strong':       parse_int_like(parts[5]),
+            'break':        parse_int_like(parts[6]),
             'reverse':      float(parts[7]) if len(parts) > 7 else 0.0,
             'power':        float(parts[8]) if len(parts) > 8 else 0.0,
-            'count':        int(float(parts[9])) if len(parts) > 9 else 0,
+            'count':        parse_int_like(parts[9]) if len(parts) > 9 else 0,
             'impulse':      float(parts[10]) if len(parts) > 10 else 0.0,
             'up_12':        float(parts[11]),
             'dn_12':        float(parts[12]),
@@ -110,7 +120,7 @@ def parse_fractal(fractal_str):
             'up_6':         float(parts[19]),
             'dn_6':         float(parts[20]),
             'fractal_atr':  float(parts[21]),
-            'shift':        int(float(parts[22])),
+            'shift':        parse_int_like(parts[22]),
         }
     except (ValueError, IndexError):
         return None
@@ -802,7 +812,7 @@ def label_trailing_stop_targets(
             fractal0_raw = str(out.at[row_label, 'fractal0'])
             parts = fractal0_raw.split(':')
             try:
-                direction = -(int(float(parts[2]))) if len(parts) > 2 else 0
+                direction = -parse_int_like(parts[2]) if len(parts) > 2 else 0
             except (ValueError, IndexError):
                 direction = 0
         else:
@@ -923,7 +933,7 @@ def label_entry_path_targets(
             fractal0_raw = str(row.get('fractal0', ''))
             parts = fractal0_raw.split(':')
             try:
-                direction = -(int(float(parts[2]))) if len(parts) > 2 else 0
+                direction = -parse_int_like(parts[2]) if len(parts) > 2 else 0
             except (ValueError, IndexError):
                 direction = 0
         else:

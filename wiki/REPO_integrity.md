@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-11 07:09 UTC · git `95f829a`
+> Auto-generated 2026-06-11 08:42 UTC · git `ccccf7a`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1425 files  ·  **Commit**: `95f829a`  ·  **Generated**: 2026-06-11 07:09 UTC
+**Tracked**: 1426 files  ·  **Commit**: `ccccf7a`  ·  **Generated**: 2026-06-11 08:42 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-06-07 | 14KB | `8d7db785` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-11 | 163KB | `75a2f2c2` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-11 | 164KB | `da9330db` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-11 | 3KB | `f5dc5717` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-10 | 44KB | `6ea2a1a5` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-11 | 3KB | `58113487` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-11 | 44KB | `d2a45bb7` |
 | [README.md](README.md) |  | 2026-05-30 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -81,8 +81,8 @@
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-05 | 14KB | `11dc384e` |
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-03 | 4KB | `3b1e8db8` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-30 | 5KB | `6bf55f21` |
-| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-05-30 | 5KB | `0f86e056` |
-| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-10 | 28KB | `5f343dee` |
+| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-06-11 | 7KB | `db9dba4c` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-11 | 29KB | `4140441c` |
 | [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-03 | 6KB | `657d35b9` |
 | [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-06-10 | 10KB | `a158f78f` |
 | [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-05 | 6KB | `8edd1fa8` |
@@ -105,7 +105,7 @@
 | [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-10 | 7KB | `1f452506` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-05-30 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-06 | 4KB | `22a08f92` |
-| [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-11 | 2KB | `a03972ab` |
+| [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-11 | 2KB | `8f996d16` |
 | [docs/processing/normalize.py.md](docs/processing/normalize.py.md) | Методы нормализации признаков | 2026-06-05 | 5KB | `5e8f661c` |
 | [docs/processing/online_causal_preprocessing.py.md](docs/processing/online_causal_preprocessing.py.md) | Документация online-safe preprocessing | 2026-05-30 | 2KB | `a59d1bf7` |
 | [docs/schemas/fractal_v23.schema.json](docs/schemas/fractal_v23.schema.json) |  | 2026-06-05 | 4KB | `deb79fbb` |
@@ -209,7 +209,7 @@
 | [docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md](docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) | Спецификация direct `SELL/SKIP/BUY` модели по всей строке фракталов | 2026-05-30 | 12KB | `3bba26aa` |
 | [docs/superpowers/specs/2026-05-27-limit-order-entry-design.md](docs/superpowers/specs/2026-05-27-limit-order-entry-design.md) |  | 2026-06-03 | 18KB | `1c33e671` |
 | [docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md](docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md) | Спецификация Fractal Stop + Fav Target: этап только на пробой уровня и торговый слой | 2026-06-10 | 17KB | `44df96a5` |
-| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-06-05 | 4KB | `6e80560a` |
+| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-06-11 | 5KB | `788df301` |
 
 ## Reports
 
@@ -295,7 +295,7 @@
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-05 | 4KB | `dd55ee84` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-05 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach: Dummy/RF baseline и one-shot frozen test для пробоя уровня `fractal0` | ✅ | 2026-06-10 | 13KB | `186f1abf` |
-| [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav: RF breach+fav, grid search торговых порогов и frozen test | ✅ | 2026-06-10 | 26KB | `3b038ffe` |
+| [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav: RF breach+fav, grid search торговых порогов и frozen test | ✅ | 2026-06-11 | 26KB | `5b982cce` |
 | [ML/baseline/benchmark_fractal_stop_stage3.py](ML/baseline/benchmark_fractal_stop_stage3.py) |  |  | 2026-06-10 | 14KB | `83382da4` |
 | [ML/baseline/benchmark_limit_order_entry.py](ML/baseline/benchmark_limit_order_entry.py) |  |  | 2026-06-05 | 9KB | `32700fef` |
 | [ML/baseline/direction_only_signal.py](ML/baseline/direction_only_signal.py) |  |  | 2026-06-05 | 6KB | `8d683a5b` |
@@ -913,7 +913,7 @@
 | [processing/fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | ✅ | 2026-06-05 | 3KB | `37670f70` |
 | [processing/label_audit.py](processing/label_audit.py) |  |  | 2026-06-05 | 4KB | `29974629` |
 | [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-06-10 | 16KB | `7bdc8a4d` |
-| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-06-11 | 66KB | `53f69feb` |
+| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-06-11 | 66KB | `3964b911` |
 | [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-06-05 | 28KB | `109b2cc6` |
 | [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing: сортировка + проверка фракталов + тихая rowwise-нормализация без future labels | ✅ | 2026-06-05 | 4KB | `c194aa91` |
 | [processing/purge_split.py](processing/purge_split.py) |  |  | 2026-06-05 | 2KB | `9b5e1faf` |
@@ -956,7 +956,7 @@
 
 | Path | Description | Status | Modified | Size | Hash |
 |------|-------------|--------|----------|------|------|
-| [tests/README.md](tests/README.md) |  |  | 2026-05-30 | 2KB | `4d2c2f12` |
+| [tests/README.md](tests/README.md) |  |  | 2026-06-11 | 2KB | `81083268` |
 | [tests/processing/test_fractal_stop_breach_labels.py](tests/processing/test_fractal_stop_breach_labels.py) | `processing/label_signals.py` — Stage 1 breach-разметка `fractal0` | ✅ | 2026-06-10 | 9KB | `1e052966` |
 | [tests/processing/test_fractal_stop_fav.py](tests/processing/test_fractal_stop_fav.py) | `processing/label_signals.py` — Stage 2 fav-разметка и симулятор Fractal Stop Fav | ✅ | 2026-06-10 | 6KB | `a8e96dc0` |
 | [tests/processing/test_limit_order_barriers.py](tests/processing/test_limit_order_barriers.py) |  |  | 2026-06-05 | 15KB | `da00aed8` |
@@ -1014,11 +1014,12 @@
 | [tests/test_fractal_level_feature_builder.py](tests/test_fractal_level_feature_builder.py) |  |  | 2026-06-05 | 8KB | `dae37ed1` |
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-06-05 | 831B | `6bed18cd` |
 | [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-06-05 | 9KB | `3cc10cfe` |
-| [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-06-05 | 4KB | `691c8d7a` |
+| [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-06-11 | 4KB | `c81b0847` |
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-06-05 | 3KB | `025247c8` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-06-05 | 2KB | `5d44f49d` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-06-05 | 3KB | `14cd19b8` |
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-06-05 | 5KB | `3d37ad7d` |
+| [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-11 | 3KB | `281dac57` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-06-05 | 8KB | `f2a68e78` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-05 | 1KB | `de0eeac6` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-06-05 | 1KB | `7d04f504` |

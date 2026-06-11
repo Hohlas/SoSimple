@@ -2,6 +2,12 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-11] — Fractal parser contract hardening
+
+### Исправлено
+- `processing/label_signals.py`: `parse_fractal()` теперь принимает только integer-like значения в полях `time`, `direction`, `strong`, `break`, `count`, `shift` (`1`, `1.0`) и отвергает дробные нормализованные значения (`0.1700000018`).
+- Добавлен regression-тест, который предотвращает тихое применение разметочного parser-а к нормализованным `fractal*` полям.
+
 ## [2026-06-10] — Stage 3: feature profile comparison (base_raw vs base_plus_path vs relative_geometry)
 
 ### Добавлено

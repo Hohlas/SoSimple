@@ -145,6 +145,17 @@ Reason: unresolved leakage/preprocessing contract risk.
 
 Это частный случай общего правила: entry price must be executable after feature availability and runtime delays.
 
+#### Парсинг `fractal*` после нормализации
+
+В проекте есть два разных режима чтения фрактальных строк:
+
+- semantic parsing для разметки на raw `Nero.csv`;
+- ML feature extraction для нормализованных `_labeled.csv` и split-файлов.
+
+`processing.label_signals.parse_fractal()` относится к первому режиму. Его нельзя использовать как общий извлекатель признаков в `ML/`: после `normalize_rowwise()` поля `strong`, `break`, `count` могут стать float-значениями (`0.1700000018`, `0.85`, ...). Parser должен принимать только integer-like записи (`1`, `1.0`) и отвергать дробные значения, чтобы ошибка режима проявлялась сразу.
+
+Для ML-признаков нормализованные `fractal*` поля нужно читать как числовые признаки через отдельный feature extractor (`pd.to_numeric`, `float(...)`, `ML.data_loader.parse_fractals_to_3d` или специализированный builder). Исключение допустимо только для явно обоснованного чтения поля, которое остаётся категориальным по контракту, например `direction`, и должно быть описано рядом с кодом.
+
 ### Нормализация
 
 `normalize_rowwise()` сама по себе не является leakage, если её параметры считаются только внутри текущей строки по уже известным фракталам. Проверять нужно две разные вещи:

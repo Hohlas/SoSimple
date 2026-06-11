@@ -2,7 +2,7 @@
 # Файл: tests/test_label_updn.py
 # Назначение: Unit-тесты для parse_fractal и label_updn из processing/label_signals.py
 # Язык: Python 3.10+
-# Обновлён: 2026-06-04
+# Обновлён: 2026-06-11
 # Зависимости:
 #   Входные данные:
 #     - синтетические строки фракталов (23 поля), pandas DataFrame
@@ -42,6 +42,26 @@ def test_parse_fractal_23_fields():
     assert result['dn_48'] == pytest.approx(0.0031, abs=1e-6)
     assert result['fractal_atr'] == pytest.approx(0.00092, abs=1e-6)
     assert result['shift'] == 0
+
+
+def test_parse_fractal_accepts_integer_like_float_fields():
+    raw = FRACTAL_23.replace(":1:0.0034:", ":1.0:0.0034:")
+    raw = raw.replace(":1:0:0.0:", ":1.0:0.0:0.0:")
+    raw = raw.replace(":3:0.0018:", ":3.0:0.0018:")
+
+    result = parse_fractal(raw)
+
+    assert result is not None
+    assert result['direction'] == 1
+    assert result['strong'] == 1
+    assert result['break'] == 0
+    assert result['count'] == 3
+
+
+def test_parse_fractal_rejects_normalized_float_integer_fields():
+    raw = FRACTAL_23.replace(":1:0:0.0:", ":1:0.1700000018:0.0:")
+
+    assert parse_fractal(raw) is None
 
 
 def test_parse_fractal_none_input():

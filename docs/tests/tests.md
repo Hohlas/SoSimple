@@ -23,6 +23,8 @@
 | Тест | Проверяет |
 |------|-----------|
 | `test_parse_fractal_23_fields` | 23-польный фрактал → корректный парсинг всех полей, включая shift |
+| `test_parse_fractal_accepts_integer_like_float_fields` | целые поля в записи `1.0` принимаются как integer-like |
+| `test_parse_fractal_rejects_normalized_float_integer_fields` | дробные нормализованные значения в integer-like полях отвергаются |
 | `test_parse_fractal_none_input` | None и пустая строка → None |
 | `test_parse_fractal_wrong_fields` | 22 поля → None (строгий формат) |
 | `test_label_updn_basic` | last-seen логика: значения fractal0 = последние найденные |
@@ -88,6 +90,17 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Univariate response map | PF, N, net_ATR, uplift по бинам |
 | Shallow tree | splits, importances, leaf stats |
 | Score / holdout | rank normalization, PF_holdout, confirmed |
+
+---
+
+### [test_ml_fractal_parser_contract.py](../../tests/test_ml_fractal_parser_contract.py)
+
+**Тестирует**: контракт чтения `fractal*` полей в `ML/`.
+
+| Тест | Проверяет |
+|------|-----------|
+| `test_ml_code_does_not_import_label_signals_parse_fractal` | `ML/` не использует `processing.label_signals.parse_fractal()` как feature extractor |
+| `test_ml_code_does_not_hard_cast_normalized_categorical_fractal_fields` | нормализованные `strong`, `break`, `count` не приводятся обратно к `int` |
 
 ## Зависимости
 

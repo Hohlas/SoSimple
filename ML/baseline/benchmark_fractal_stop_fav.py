@@ -2,7 +2,7 @@
 # Файл: ML/baseline/benchmark_fractal_stop_fav.py
 # Назначение: RF breach + fav -> торговый слой -> PnL (Stage 2)
 # Язык: Python 3.10+
-# Обновлён: 2026-06-10
+# Обновлён: 2026-06-11
 # Зависимости: numpy, pandas, scikit-learn
 #   Входные данные: DATA/Nero_XAUUSD_train_labeled.csv, ...validation_labeled.csv
 #   Выходные данные: ML/reports/fractal_stop_fav.json,
@@ -28,7 +28,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'processi
 from label_signals import (  # noqa: E402
     load_ohlc_index,
     evaluate_fractal_stop_trade,
-    parse_fractal,
 )
 
 # Feature contract: 10 live-safe каналов x 100 фракталов + ATR
@@ -116,6 +115,22 @@ def lookup_entry_prices(df, ohlc_path):
     return np.array(entries, dtype=np.float64)
 
 
+def parse_trade_fractal0(raw):
+    """Прочитать только price/direction из fractal0 для торговой симуляции."""
+    if pd.isna(raw):
+        return None
+    parts = str(raw).split(':')
+    if len(parts) != 23:
+        return None
+    try:
+        return {
+            'price': float(parts[1]),
+            'direction': int(float(parts[2])),
+        }
+    except (TypeError, ValueError):
+        return None
+
+
 def simulate_trades(df, entry_prices, breach_proba, fav_pred, ohlc, times, time_idx,
                     side, h, stop_offset, atr_col='ATR',
                     p=0.5, min_fav_val=0.5, min_rr=1.5, tp_fraction=0.5, cap=5.0,
@@ -130,7 +145,7 @@ def simulate_trades(df, entry_prices, breach_proba, fav_pred, ohlc, times, time_
     trades = []
 
     for i, row in df.iterrows():
-        fractal0 = parse_fractal(row.get('fractal0'))
+        fractal0 = parse_trade_fractal0(row.get('fractal0'))
         if fractal0 is None:
             continue
         if fractal0['direction'] != expected_fractal_dir:

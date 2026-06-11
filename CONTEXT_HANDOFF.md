@@ -23,6 +23,7 @@ Stage 3 «Feature Profile Comparison» завершён. `relative_geometry` (+1
 5. Все профили: 0/32 year-slices AUC<0.55 — годовая устойчивость не пострадала
 6. Gap до AUC≥0.75 остаётся большим: около 7.2 процентного пункта по лучшему target и 9.2 по среднему AUC
 7. Ранняя оценка пустых фрактальных ячеек была артефактом `parse_fractal()` на нормализованных float-полях; Stage 3 pandas-экстрактор этой ошибкой не затронут
+8. `processing.label_signals.parse_fractal()` теперь строгий semantic parser: integer-like поля принимают `1`/`1.0`, но отвергают дробные нормализованные значения; ML-код должен читать нормализованные `fractal*` поля отдельным float feature extractor
 
 ### Файлы Stage 3
 
