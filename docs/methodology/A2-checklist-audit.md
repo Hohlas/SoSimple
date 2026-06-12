@@ -29,9 +29,9 @@
 - [ ] Reproducibility metadata сохранена.
 - [ ] Для production/confirmed кандидата есть model card.
 - [ ] Старые противоречащие выводы обновлены или помечены.
-- [ ] Validation не использован одновременно для early stopping, grid search и финальной оценки (val-stop / val-eval разделены).
-- [ ] Множественное тестирование скорректировано (Bonferroni или permutation test с перебором всех конфигураций на каждой перестановке).
-- [ ] SL-триггер проверен с направленной spread-коррекцией (bid для BUY, ask для SELL).
+- [ ] Search budget посчитан: модели × профили × таргеты × стороны × горизонты × параметры.
+- [ ] Validation не использован одновременно для early stopping, grid search и финальной оценки (`val-stop` / `val-select` / `val-eval` разделены или статус не выше `RESEARCH_ONLY`).
+- [ ] Множественное тестирование скорректировано (holdout `val-eval`, Bonferroni/FDR/Holm или permutation test с повторением полного selection protocol).
+- [ ] SL-триггер проверен с направленной spread-коррекцией согласно OHLC price convention (bid/ask/mid/executable price).
 - [ ] Bootstrap учитывает временную корреляцию сделок (block bootstrap или stationary bootstrap).
 - [ ] При использовании календарных признаков — проверена их доля в важности модели и устойчивость PF к сдвигу часового пояса.
-

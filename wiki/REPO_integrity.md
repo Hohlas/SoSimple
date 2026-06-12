@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-12 07:13 UTC · git `3491d5c`
+> Auto-generated 2026-06-12 15:26 UTC · git `a5d4d2c`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1436 files  ·  **Commit**: `3491d5c`  ·  **Generated**: 2026-06-12 07:13 UTC
+**Tracked**: 1438 files  ·  **Commit**: `a5d4d2c`  ·  **Generated**: 2026-06-12 15:26 UTC
 
 ## Root Docs
 
@@ -75,6 +75,8 @@
 | [docs/audit/2026-05-18-redo-prompt.md](docs/audit/2026-05-18-redo-prompt.md) |  | 2026-05-30 | 19KB | `6ca4032a` |
 | [docs/audit/2026-05-24-methodology-review-notes.md](docs/audit/2026-05-24-methodology-review-notes.md) | Замечания по `docs/methodology/` и trigger-у `ml-methodology` | 2026-05-30 | 8KB | `6c948cab` |
 | [docs/audit/2026-06-09-fractal-stop-fav-target-spec-audit.md](docs/audit/2026-06-09-fractal-stop-fav-target-spec-audit.md) | Вердикт по спецификации Fractal Stop + Fav Target | 2026-06-10 | 16KB | `ac300a57` |
+| [docs/audit/2026-06-11-stage4-GLM-audit.md](docs/audit/2026-06-11-stage4-GLM-audit.md) |  | 2026-06-12 | 24KB | `9823cfa7` |
+| [docs/audit/2026-06-11-stage4-Qwen-audit.md](docs/audit/2026-06-11-stage4-Qwen-audit.md) |  | 2026-06-12 | 16KB | `9c8be030` |
 | [docs/audit/2026-06-11-stage4-trade-xgboost-audit.md](docs/audit/2026-06-11-stage4-trade-xgboost-audit.md) |  | 2026-06-11 | 11KB | `14db190e` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-09 | 1KB | `f975017a` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-30 | 34KB | `bdb0edad` |
@@ -83,27 +85,27 @@
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-03 | 4KB | `3b1e8db8` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-30 | 5KB | `6bf55f21` |
 | [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-06-11 | 7KB | `db9dba4c` |
-| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-11 | 29KB | `4140441c` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-12 | 31KB | `ab30e935` |
 | [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-03 | 6KB | `657d35b9` |
 | [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-06-10 | 10KB | `a158f78f` |
 | [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-05 | 6KB | `8edd1fa8` |
-| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-05-30 | 4KB | `fd036064` |
+| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-06-12 | 5KB | `4ce7ab0b` |
 | [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-06-10 | 9KB | `4152c2c8` |
 | [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-06-10 | 3KB | `73dd4469` |
-| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-06-05 | 7KB | `b9f0a29f` |
-| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-06-03 | 3KB | `23603432` |
+| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-06-12 | 8KB | `24f74fa3` |
+| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-06-12 | 7KB | `bea678b9` |
 | [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-06-03 | 3KB | `da6c66c6` |
-| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-05-30 | 2KB | `6260afba` |
-| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-06-10 | 7KB | `47a03a24` |
+| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-06-12 | 4KB | `f03d49e2` |
+| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-06-12 | 9KB | `3c1b8457` |
 | [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-05-30 | 2KB | `c1028a82` |
 | [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-05-30 | 2KB | `c11c0bbb` |
 | [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-05-30 | 3KB | `c9457c9b` |
-| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-05-30 | 3KB | `3d06dc34` |
+| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-06-12 | 4KB | `38d60261` |
 | [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-06-03 | 3KB | `c8f22299` |
-| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-06-05 | 2KB | `06ece850` |
-| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-03 | 3KB | `a1bbb839` |
+| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-06-12 | 3KB | `69e83f70` |
+| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-12 | 4KB | `51bb6261` |
 | [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-10 | 2KB | `fd50caa7` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-10 | 7KB | `1f452506` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-12 | 7KB | `c797a9a8` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-05-30 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-06 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-11 | 2KB | `8f996d16` |

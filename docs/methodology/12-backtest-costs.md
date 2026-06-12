@@ -49,6 +49,13 @@
 
    Если spread, `entry_price`, fill/no-fill policy или PnL convention влияют на labels, candidate selection или frozen rule, они относятся не только к backtest costs, а к target/execution contract. В таком случае они должны быть зафиксированы до Stage 04/07 и не могут впервые вводиться на Stage 12.
 
+   Для OHLC-based симулятора обязательно указать price convention:
+   - OHLC является bid, ask, mid или broker/tester executable price;
+   - spread задан как full bid-ask spread или как уже готовый неблагоприятный price shift;
+   - какие цены используются для entry, TP и SL-trigger.
+
+   Если price convention неизвестен, результат не выше `DIAGNOSTIC_ONLY` для execution-выводов.
+
 2. Считать gross и net results отдельно.
 3. Запустить offline backtest по тому же trading protocol.
 4. Запустить sequential simulation для single-position или max-positions ограничения.
@@ -96,18 +103,18 @@
 - До использования симулятора для verdict написать тесты на синтетических сделках с известным исходом:
   - TP-only → PnL положительный, close_reason=TP;
   - SL-only → PnL отрицательный, close_reason=SL;
-  - SL-only с направленной spread-коррекцией (bid для BUY, ask для SELL);
+  - SL-only с направленной spread-коррекцией согласно выбранной OHLC price convention;
   - Timeout → корректный timeout PnL;
   - TP+SL в одном окне → поведение соответствует конвенции.
 - Не использовать simulator PF > 10 без ручной проверки первых 10 сделок.
 - При изменении label convention перепроверить симулятор.
-- SL-триггер должен проверяться с направленной spread-коррекцией: для BUY `stop_price + spread/2` (bid ниже mid), для SELL `stop_price − spread/2` (ask выше mid). Проверка SL-триггера по mid-цене систематически завышает PF — симуляция пропускает часть реальных SL-срабатываний.
+- SL-триггер должен проверяться по исполнимой стороне рынка, а не по абстрактной mid-цене. Если OHLC — mid и `spread` — full bid-ask spread, типовая коррекция: для BUY `stop_price + spread/2`, для SELL `stop_price - spread/2`. Если OHLC уже bid/ask или `spread` задан как полный неблагоприятный shift, формула должна быть другой и фиксируется в execution contract. Проверка SL-триггера по неподходящей цене систематически завышает или занижает PF.
 
 #### Типовые ошибки
 - Приведение типов (int/float), маскирующее разные исходы под один.
 - Ветка else, съедающая SL и timeout без разбора.
 - Timeout считается loss без явного решения.
-- Проверять SL-триггер по mid вместо bid/ask — завышает PF, маскирует реальные SL-срабатывания.
+- Проверять SL-триггер по цене, не соответствующей bid/ask/executable convention, — искажает PF и может маскировать реальные SL-срабатывания.
 
 ### Ветвления
 

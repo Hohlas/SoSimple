@@ -18,13 +18,13 @@
 1. Написать отчёт с секциями:
     - Context;
     - What Was Done;
-    - Multiple Testing Context: общее число протестированных конфигураций (таргеты × параметры), применённая коррекция (или обоснование её отсутствия);
+    - Multiple Testing Context: search budget (модели × профили × таргеты × параметры), применённая коррекция (или пометка `DIAGNOSTIC_ONLY`/`RESEARCH_ONLY`);
     - Changed Files;
     - Verification;
     - Results;
     - Conclusions;
     - Limitations / Open Questions;
-    - Validation Split Disclosure: как validation был разделён на model-selection и evaluation части (или обоснование, почему разделение не требовалось);
+    - Validation Split Disclosure: как данные были разделены на `val-stop`, `val-select`, `val-eval` (или почему результат не претендует на frozen-candidate);
     - Next Step;
     - Related Materials.
 2. Указать команды, версии, paths, hashes, rules, checkpoints.
@@ -53,7 +53,7 @@
 - Отчёт отделяет факты от гипотез.
 - Есть список limitations.
 - Все источники результата доступны.
-- Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) программно извлечены из JSON артефакта и сверены. Расхождение — блокирующая ошибка.
+- Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) сверены со structured artifact (JSON/CSV/parquet). Если structured artifact отсутствует, отчёт обязан содержать команду воспроизведения и hash входов. Расхождение отчёт↔artifact — блокирующая ошибка.
 - Для принятого кандидата есть model card.
 - Старые противоречащие выводы помечены.
 - Документировано, что запрещено делать дальше.
@@ -71,7 +71,7 @@
 - Не фиксировать, почему candidate rejected.
 - Удалять неудачные эксперименты из истории.
 - Не обновлять вывод после найденной ошибки симулятора.
-- Копировать числа в отчёт вручную вместо извлечения из JSON артефакта — источник расхождений отчёт↔результат.
+- Копировать числа в отчёт вручную без сверки со structured artifact — источник расхождений отчёт↔результат.
 
 ### Ветвления
 
@@ -80,4 +80,3 @@
 - Если bug меняет verdict: закрыть старый candidate и запустить новый cycle.
 
 ---
-
