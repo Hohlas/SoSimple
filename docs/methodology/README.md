@@ -48,18 +48,18 @@
 | Проверка на утечки: feature contract, future-derived, online mismatch, candidate-source | [03-feature-contract-leakage.md](03-feature-contract-leakage.md) |
 | Разметка целей: label convention, SL/TP/timeout, multi-target | [04-labeling.md](04-labeling.md) |
 | EDA, качество данных, дисбаланс классов, константные признаки | [05-eda-data-quality.md](05-eda-data-quality.md) |
-| Train/val/test split, событийный ряд, regime shift, walk-forward | [06-temporal-split.md](06-temporal-split.md) |
+| Train/val/test split, событийный ряд, regime shift, walk-forward, разделение validation (val-stop/val-eval) | [06-temporal-split.md](06-temporal-split.md) |
 | Предварительно проверяешь oracle-потолок торговой механики при идеальном знании будущих labels и выбираешь перспективную side/H/off-зону | [06b-oracle-preflight.md](06b-oracle-preflight.md) |
 | Baseline-модели: dummy, простые ML, сравнение | [07-baseline-first.md](07-baseline-first.md) |
 | Обучение: архитектура, seed, кеш, ablation, CPU/GPU | [08-model-development.md](08-model-development.md) |
-| Выбор winner на validation, заморозка перед test | [09-validation-freeze.md](09-validation-freeze.md) |
+| Выбор winner на validation (с разделением val-stop/val-eval), заморозка перед test, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
 | Frozen test, OOS, walk-forward | [10-frozen-test-oos.md](10-frozen-test-oos.md) |
-| Устойчивость: по годам, сторонам, seeds, provider drift, transfer | [11-robustness.md](11-robustness.md) |
-| Бэктест: издержки, симулятор, gross/net | [12-backtest-costs.md](12-backtest-costs.md) |
+| Устойчивость: по годам, сторонам, seeds, block bootstrap, permutation test, календарные признаки | [11-robustness.md](11-robustness.md) |
+| Бэктест: издержки, симулятор (включая SL-триггер с направленной spread-коррекцией), gross/net | [12-backtest-costs.md](12-backtest-costs.md) |
 | Экспорт, MT4 parity, reconciliation | [13-export-mt4-parity.md](13-export-mt4-parity.md) |
 | Forward-test, online diagnostic, новый период | [14-forward-test-online.md](14-forward-test-online.md) |
 | Мониторинг, retraining policy, drift, rollback | [15-monitoring-retraining.md](15-monitoring-retraining.md) |
-| Отчёт, model card, воспроизводимость, работа с багами | [16-reporting-audit.md](16-reporting-audit.md) |
+| Отчёт (с disclosure N конфигураций и auto-verification отчёт↔JSON), model card, воспроизводимость, работа с багами | [16-reporting-audit.md](16-reporting-audit.md) |
 
 ## Приложения
 

@@ -16,15 +16,17 @@
 ### Пошаговые действия
 
 1. Написать отчёт с секциями:
-   - Context;
-   - What Was Done;
-   - Changed Files;
-   - Verification;
-   - Results;
-   - Conclusions;
-   - Limitations / Open Questions;
-   - Next Step;
-   - Related Materials.
+    - Context;
+    - What Was Done;
+    - Multiple Testing Context: общее число протестированных конфигураций (таргеты × параметры), применённая коррекция (или обоснование её отсутствия);
+    - Changed Files;
+    - Verification;
+    - Results;
+    - Conclusions;
+    - Limitations / Open Questions;
+    - Validation Split Disclosure: как validation был разделён на model-selection и evaluation части (или обоснование, почему разделение не требовалось);
+    - Next Step;
+    - Related Materials.
 2. Указать команды, версии, paths, hashes, rules, checkpoints.
 3. Явно перечислить invalidated assumptions.
 4. Для принятого кандидата создать model card:
@@ -51,6 +53,7 @@
 - Отчёт отделяет факты от гипотез.
 - Есть список limitations.
 - Все источники результата доступны.
+- Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) программно извлечены из JSON артефакта и сверены. Расхождение — блокирующая ошибка.
 - Для принятого кандидата есть model card.
 - Старые противоречащие выводы помечены.
 - Документировано, что запрещено делать дальше.
@@ -68,6 +71,7 @@
 - Не фиксировать, почему candidate rejected.
 - Удалять неудачные эксперименты из истории.
 - Не обновлять вывод после найденной ошибки симулятора.
+- Копировать числа в отчёт вручную вместо извлечения из JSON артефакта — источник расхождений отчёт↔результат.
 
 ### Ветвления
 
