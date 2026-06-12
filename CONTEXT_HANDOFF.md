@@ -1,10 +1,10 @@
 # Context Handoff
 
-Дата: 2026-06-11.
+Дата: 2026-06-12.
 
 ## Текущий этап
 
-Stage 4 «XGBoost Trading Layer» и Stage 4.1 controls завершены. XGBoost breach-классификатор (AUC 0.68) не конвертируется в статистически значимый PF; быстрые контрольные улучшения также не сработали.
+Stage 4 «XGBoost Trading Layer», Stage 4.1 controls и Stage 4.2 diagnostic завершены. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка в текущей торговой постановке. Breach-модель добавляет реальный сигнал для фиксированного правила (0/500 перестановок, p ≈ 0.002, +0.20 PF над случайным), но его силы недостаточно для устойчивой прибыльности (PF после коррекции = 1.015, gate > 1.15 не пройден, исторический selection bias winner не исправлен).
 
 ### Полный путь Stage 3.x → Stage 4
 
@@ -13,67 +13,75 @@ Stage 4 «XGBoost Trading Layer» и Stage 4.1 controls завершены. XGBo
 | Stage 3 | RF | `relative_geometry` | 0.6580 | +119 bp | — | Profile comparison only |
 | Stage 3.1 | RF | `relative_geometry_clean` | 0.6581 | +127 bp | — | Uplift = time, not density |
 | Stage 3.2 | XGBoost | `base_raw_plus_time` | 0.6799 | +345 bp | — | Best table-model classifier |
-| Stage 4 | XGBoost breach + RF fav | `base_raw_plus_time` | 0.6741 | — | **1.106** (BS_p05=0.923) | ❌ FAIL |
+| Stage 4 | XGBoost breach + RF fav | `base_raw_plus_time` | 0.6741 | — | **1.106** (BS_p05=0.923) | ❌ FAIL — PF завышен старым протоколом |
 | Stage 4.1 | XGBoost-fav / combined breach | `base_raw_plus_time` | — | — | **1.065** combined (BS_p05=0.883, perm_p=0.050) | ❌ FAIL |
+| Stage 4.2 | Corrected methodology | `base_raw_plus_time` | 0.6674 | — | **1.015** (BS_p05=0.837, 0/500 perm) | ⚠️ DIAGNOSTIC: signal is real but too weak |
 
-### Результаты Stage 4
+### Результаты Stage 4.2 (DIAGNOSTIC)
 
-| Метрика | base_raw_plus_time | relative_geometry_clean |
-|---------|-------------------|-------------------------|
-| Winner target | sell_H6_off05 | sell_H6_off05 |
-| Winner PF | 1.106 | 1.142 |
-| Winner BS_p05 | 0.923 | 0.906 |
-| Winner trades/year | 86.0 | 54.5 |
-| Таргетов PF ≥ 1.0 | 1/8 | 2/8 |
-| Buy mean PF | 0.87 | 0.89 |
-| Sell mean PF | 0.99 | 1.01 |
-| Gate PF > 1.15 | 0/8 | 0/8 |
+| Метрика | Stage 4 (inflated) | Stage 4.2 (corrected) | Δ |
+|---------|:------------------:|:---------------------:|:--:|
+| PF | 1.106 | **1.015** | **−0.091** |
+| BS_p05 | 0.923 | **0.837** | −0.086 |
+| Breach AUC | 0.6741 | 0.6674 | −0.0067 |
+| Perm p-value | — | **0/500 (p ≈ 0.002)** | — |
+| Perm median PF | — | 0.817 | — |
+| Neg years | 3/4 | 1/4 | −2 |
 
-### Результаты Stage 4.1
+Stage 4.2 показал снижение PF 1.106 → 1.015. Это совокупный эффект исправленного диагностического протокола, а не изолированная оценка вклада каждой ошибки.
+Stage 4.2 одновременно меняет train-период, слой early stopping, spread-модель, отказ от нового grid search и число сделок (344 → 503). Разложить вклад отдельных факторов без абляции нельзя.
 
-| Проверка | Лучший/ключевой результат | Вердикт |
-|----------|---------------------------|---------|
-| XGBoost-fav вместо RF-fav | sell_H6_off05 PF 1.106 → 0.904; все 4 SELL-таргета хуже Stage 4 | ❌ FAIL |
-| Combined breach H6 AND H12 | sell_comb_off05 PF=1.065, BS_p05=0.883, perm_p=0.050 | ❌ FAIL |
-| Permutation test | perm median PF=0.837, perm p95=1.061, observed PF=1.065 | Слабое отделение от случайной перестановки |
+**Ключевой результат:** breach-модель добавляет реальный сигнал для фиксированного правила — 0/500 перестановок breach-вероятностей достигли PF ≥ 1.015 (консервативная оценка p ≈ 1/501 ≈ 0.002), ΔPF ~ +0.20 над случайным (1.015 vs 0.817). Однако winner был выбран ранее на Stage 4 по validation 2019–2022, и permutation test не исправляет этот исторический selection bias. Проблема НЕ в отсутствии сигнала, а в его недостаточной силе для покрытия спреда и шума fav-предсказаний.
 
-### Ключевые находки Stage 4
+### Исправления методики Stage 4.2
 
-1. Улучшение breach-классификатора с RF (AUC 0.645) до XGBoost (AUC 0.680) дало лишь маргинальный прирост PF (Stage 2: 0.975 → Stage 4: 1.106). 7/8 таргетов остались убыточными.
-2. AUC не предсказывает PF: sell_H12_off02 имеет лучший AUC (0.696) но PF=0.976; sell_H6_off05 имеет AUC=0.674 но PF=1.106.
-3. Buy-сторона структурно невыгодна: все 4 buy-таргета PF < 0.94. Причина: XAUUSD в аптренде, buy-фракталы (поддержки) реже дают прибыльный пробой.
-4. `base_raw_plus_time` и `relative_geometry_clean` практически идентичны для торговли. Простой профиль предпочтительнее.
-5. Статистическая значимость отсутствует: все BS_p05 < 1.0. Winner не отличается от PF=1.0 с доверительной вероятностью.
-6. Stage 4.1 подтвердил, что проблема не решается локально: XGBoost-fav ухудшил PF, combined breach не превзошёл Stage 4 winner и не прошёл permutation test с запасом.
-7. Проблема глубже классификатора: табличные модели выжали почти всё из плоского фрактального представления. Нужно sequence-представление (Transformer) или пересмотр торговой логики.
+1. Трёхслойный split: train (2004–2016) → val_stop (2017–2018, early stopping) → val_eval (2019–2022, оценка)
+2. Early stopping на val_stop, не на val_eval
+3. Один target, одна унаследованная конфигурация, без нового grid search; исторический selection bias остаётся
+4. Spread-коррекция под OHLC=Bid: SELL bars shifted +spread (exit at Ask), BUY entry+spread (entry at Ask)
+5. Block bootstrap (block_size=15)
+6. Permutation test для одного target
 
-### Файлы Stage 4
+### Ключевые находки (все этапы)
 
-- `docs/reports/2026-06-11-stage4-trade-xgboost.md` — канонический отчёт Stage 4 (NEW)
-- `ML/baseline/benchmark_fractal_stop_stage4.py` — скрипт Stage 4 (NEW)
-- `ML/reports/stage4_trade.json` — base_raw_plus_time результаты (NEW)
-- `ML/reports/stage4_trade_geom.json` — relative_geometry_clean результаты (NEW)
-- `ML/baseline/benchmark_fractal_stop_stage4_1.py` — скрипт Stage 4.1 controls (NEW)
-- `ML/reports/stage4_1.json` — Stage 4.1 результаты (NEW)
+1. Улучшение breach с RF 0.645 до XGBoost 0.680 (+345 bp) дало лишь +0.04 PF над Stage 2 (0.975 → 1.015 corrected).
+2. AUC не предсказывает PF: sell_H12_off02 AUC=0.696 → PF=0.976; sell_H6_off05 AUC=0.667 → PF=1.015.
+3. Buy-сторона структурно невыгодна: все 4 buy-таргета PF < 0.94.
+4. `base_raw_plus_time` и `relative_geometry_clean` идентичны — простой профиль предпочтительнее.
+5. XGBoost-fav хуже RF-fav на всех 4 SELL-таргетах (Stage 4.1).
+6. Combined breach H6+H12 не превосходит индивидуальный winner (PF=1.065, perm_p=0.050).
+7. Stage 4.2 дал ΔPF = −0.091 относительно Stage 4. Это совокупный эффект исправленного диагностического протокола (одновременно изменены train-период, early stopping, spread-модель, grid search, число сделок), а не точная декомпозиция завышения.
+8. Breach-модель даёт реальный, но слабый сигнал для фиксированного правила (0/500 перестановок, p ≈ 0.002, +0.20 PF над случайным). Permutation test не исправляет исторический selection bias winner.
 
-### Все файлы Stage 3.x (существующие)
+### Файлы
 
-- `docs/reports/2026-06-10-feature-profiles-stage3.md` — канонический отчёт Stage 3.x
-- `ML/baseline/benchmark_fractal_stop_stage3.py` — Stage 3 RF profile comparison
-- `ML/baseline/benchmark_fractal_stop_stage3_1.py` — Stage 3.1 RF ablation
-- `ML/baseline/benchmark_fractal_stop_stage3_2.py` — Stage 3.2 XGBoost comparison
-- `ML/reports/stage3_profiles.json`, `stage3_1_profiles.json`, `stage3_2_xgboost.json`
+Скрипты:
+- `ML/baseline/benchmark_fractal_stop_stage4.py` — Stage 4
+- `ML/baseline/benchmark_fractal_stop_stage4_1.py` — Stage 4.1
+- `ML/baseline/benchmark_fractal_stop_stage4_2.py` — Stage 4.2 diagnostic (NEW)
+
+Результаты:
+- `ML/reports/stage4_trade.json`, `stage4_trade_geom.json`
+- `ML/reports/stage4_1.json`
+- `ML/reports/stage4_2_diagnostic.json` (NEW)
+
+Отчёты и аудиты:
+- `docs/reports/2026-06-11-stage4-trade-xgboost.md` — канонический отчёт (обновлён Stage 4.2)
+- `docs/audit/2026-06-11-stage4-trade-xgboost-audit.md` — первоначальный аудит
+- `docs/audit/2026-06-11-stage4-GLM-audit.md` — глубокий аудит GLM
+- `docs/audit/2026-06-11-stage4-Qwen-audit.md` — аудит Qwen
 
 ### Git
 
 Ветка: `feature/fractal-stop-fav-spec`.
 
-### Не staged / untracked
-
-В рабочем дереве есть untracked артефакты Stage 3.1/3.2/4. Не удалять и не откатывать без явной просьбы.
-
 ## Следующий шаг
 
-После Stage 4/4.1 FAIL: не открывать test для текущего кандидата. Быстрые контрольные эксперименты уже проверены и не прошли gate.
+После Stage 4/4.1 FAIL + Stage 4.2 DIAGNOSTIC: не открывать test для текущего кандидата.
 
-Приоритет: Transformer encoder на фрактальной sequence либо пересмотр торговой постановки/таргета. Причина: Stage 3.2/4/4.1 показали, что плоское табличное представление фракталов достигло потолка для RF и XGBoost в текущей схеме `breach -> fav -> trade`.
+**Приоритет: Transformer encoder на фрактальной sequence (Stage 5.0 — модельный слой).**
+
+- Stage 5.0: breach-only классификация, чистая методика, годовые AUC/lift, seed-устойчивость, calibration, проверка time-фичей. Gate: +100 bp mean AUC над XGBoost.
+- Stage 5.1: торговый слой — только если Stage 5.0 пройден; здесь нужны block bootstrap и permutation test по сделкам.
+
+**Альтернатива:** пересмотр торговой постановки (direct PnL prediction, trailing stop, multi-timeframe).

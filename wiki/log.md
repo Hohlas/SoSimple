@@ -469,3 +469,6 @@
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.
+### 2026-06-12: Ingest Stage 4.2 diagnostic recalc
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 4.2 corrected diagnostic recalc, PF 1.015, BS_p05 0.837, 0/500 permutation result for fixed inherited rule, and retained `DIAGNOSTIC_ONLY`/FAIL trading verdict.
+- Updated `wiki/index.md`: coverage wording changed to Stage 1-4.2.

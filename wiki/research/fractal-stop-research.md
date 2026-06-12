@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-06-12
-sources: 4
+sources: 5
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost на текущем табличном представлении не дают статистически значимый торговый PF.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost на текущем табличном представлении не дают устойчиво прибыльный торговый PF.
 
 ## Хронология
 
@@ -56,6 +56,12 @@ Stage 4.1 проверил два быстрых контрольных улуч
 Также добавлен permutation test: перестановка breach-вероятностей и повторная симуляция, чтобы проверить, насколько наблюдаемый PF отделяется от случайного выбора.
 
 Оба направления не прошли validation gate. Test не открывался.
+
+### Stage 4.2: corrected diagnostic recalc (2026-06-12) — ⚠️ DIAGNOSTIC
+
+Stage 4.2 пересчитал унаследованный winner `sell_H6_off05` с теми же параметрами (`p=0.4`, `min_fav=0.3`, `min_rr=1.0`, `tp_fraction=0.4`), но с исправленным диагностическим протоколом: train 2004-2016, `val_stop` 2017-2018 для early stopping, `val_eval` 2019-2022 для оценки, spread-коррекция под OHLC=Bid, block bootstrap и permutation test.
+
+Статус Stage 4.2 — `DIAGNOSTIC_ONLY`: winner был выбран ранее на Stage 4 по validation 2019-2022, поэтому historical selection bias не устранён. Test не открывался.
 
 ## Ключевые результаты
 
@@ -200,6 +206,30 @@ Combined breach H6 AND H12:
 
 `sell_comb_off05` лучше случайной медианы перестановок примерно на +0.23 PF, но не проходит gate: PF ниже Stage 4 winner, bootstrap p05 ниже 1.0, а `perm_p=0.050` слишком слаб для результата после перебора правил.
 
+### Stage 4.2
+
+Исправленный диагностический пересчёт унаследованного winner:
+
+| Метрика | Stage 4 | Stage 4.2 | Комментарий |
+|---|---:|---:|---|
+| PF | 1.106 | 1.015 | снижение — совокупный эффект исправленного протокола |
+| BS_p05 | 0.923 | 0.837 | доверительная нижняя граница остаётся ниже 1.0 |
+| Breach AUC | 0.6741 | 0.6674 | разница −0.0067 после исправленного протокола |
+| Trades | 344 | 503 | изменились spread-модель и фильтрация сделок |
+| Negative years | 3/4 | 1/4 | годовой профиль ровнее, но не уверенно прибыльный |
+| Permutation | — | 0/500 | p ≈ 0.002 только для фиксированного правила |
+
+Годовой профиль Stage 4.2:
+
+| Год | Сделок | PF |
+|---|---:|---:|
+| 2019 | 107 | 0.774 |
+| 2020 | 172 | 1.071 |
+| 2021 | 99 | 1.267 |
+| 2022 | 125 | 1.011 |
+
+Stage 4.2 показывает, что breach-модель добавляет реальный сигнал для фиксированного правила: ни одна из 500 перестановок breach-вероятностей не достигла PF ≥ 1.015, медианный случайный PF = 0.817. Но это не является доказательством торговой пригодности: PF не проходит gate > 1.15, BS_p05 ниже 1.0, а historical selection bias winner остаётся.
+
 ## Выводы
 
 1. Breach-классификатор работает стабильно (AUC 0.65 на OOS), но текущая RF-связка breach+fav не транслируется в положительное матожидание.
@@ -212,12 +242,14 @@ Combined breach H6 AND H12:
 8. AUC breach-классификатора плохо ранжирует торговые таргеты по PF; торговый слой нужно оценивать только через execution-aware simulation.
 9. `relative_geometry_clean` немного лучше по AUC/PF, но преимущество мало и не проходит gate; простой `base_raw_plus_time` остаётся предпочтительным, если линия будет продолжена.
 10. Stage 4.1 закрыл быстрые контрольные гипотезы: XGBoost-fav ухудшил PF, combined breach не превзошёл Stage 4 winner и не прошёл permutation test с запасом.
+11. Stage 4.2 уточнил интерпретацию Stage 4: после исправленного диагностического протокола PF унаследованного winner снижается до 1.015. Это совокупный эффект изменений протокола, не изолированная декомпозиция ошибки.
+12. Breach-сигнал реален для фиксированного правила (0/500 перестановок, p ≈ 0.002), но слаб: он не даёт gate PF > 1.15 и не устраняет selection bias.
 
-**RF Stage 2, XGBoost Stage 4 и Stage 4.1 controls отклонены.** Fractal-stop research не закрыт окончательно, но плоское табличное представление фракталов достигло практического потолка для текущей торговой постановки. Следующий разумный путь — Transformer encoder на sequence-представлении или пересмотр торговой логики.
+**RF Stage 2, XGBoost Stage 4, Stage 4.1 controls и Stage 4.2 diagnostic отклонены как торговые кандидаты.** Fractal-stop research не закрыт окончательно, но плоское табличное представление фракталов достигло практического потолка для текущей торговой постановки. Следующий разумный путь — Transformer encoder на sequence-представлении или пересмотр торговой логики.
 
 ## Открытые вопросы
 
-- Может ли Transformer улучшить breach-классификатор и торговый PF за счёт sequence-представления фракталов.
+- Может ли Transformer улучшить breach-классификатор и торговый PF за счёт sequence-представления фракталов. Stage 5.0 должен сначала проверить breach-only модельный слой без торговли: годовые AUC/lift, seed-устойчивость, calibration и проверку time-фичей.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
 - Даст ли trailing stop или partial TP положительное матожидание при том же breach-сигнале.
@@ -229,4 +261,4 @@ Combined breach H6 AND H12:
 - [2026-06-10-fractal-stop-breach-stage1.md](../../docs/reports/2026-06-10-fractal-stop-breach-stage1.md) — Stage 1 report (AUC, lift, frozen test)
 - [2026-06-10-fractal-stop-fav-stage2.md](../../docs/reports/2026-06-10-fractal-stop-fav-stage2.md) — Stage 2 report (PF, grid search, frozen test, FAIL verdict)
 - [2026-06-10-feature-profiles-stage3.md](../../docs/reports/2026-06-10-feature-profiles-stage3.md) — Stage 3.x report (feature profiles, Stage 3.1 ablation, Stage 3.2 XGBoost)
-- [2026-06-11-stage4-trade-xgboost.md](../../docs/reports/2026-06-11-stage4-trade-xgboost.md) — Stage 4 report (XGBoost breach + RF fav trading layer, FAIL verdict)
+- [2026-06-11-stage4-trade-xgboost.md](../../docs/reports/2026-06-11-stage4-trade-xgboost.md) — Stage 4/4.1/4.2 report (XGBoost breach + RF fav trading layer, controls, diagnostic corrected recalc, FAIL verdict)

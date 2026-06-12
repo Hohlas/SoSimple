@@ -1,0 +1,85 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "note": "Winner selected on Stage 4 validation 2019-2022. Not a clean out-of-sample benchmark.",
+  "config": {
+    "split": {
+      "train_years": "<=2016",
+      "val_stop_years": [
+        2017,
+        2018
+      ],
+      "val_eval_years": ">=2019"
+    },
+    "target": "sell_H6_off05",
+    "h": 6,
+    "off": 0.5,
+    "side": "sell",
+    "fixed_params": {
+      "p": 0.4,
+      "min_fav_val": 0.3,
+      "min_rr": 1.0,
+      "tp_fraction": 0.4,
+      "cap": 5.0
+    },
+    "spread": 0.2,
+    "spread_model": "OHLC=Bid. BUY: entry+spread(Ask), exit Bid. SELL: entry Bid, bars shifted +spread (exit Ask).",
+    "purge_bars": 12,
+    "block_bootstrap_size": 15,
+    "n_bootstrap": 500,
+    "n_permutation": 500
+  },
+  "breach_auc": 0.6674,
+  "n_iters": 47,
+  "trade_metrics": {
+    "pf": 1.015,
+    "n_trades": 503,
+    "trades_per_year": 125.8,
+    "n_years": 4,
+    "negative_years": 1,
+    "timeout_pct": 15.3,
+    "ambiguous_pct": 2.0,
+    "yearly": {
+      "2019": {
+        "pf": 0.774,
+        "n": 107
+      },
+      "2020": {
+        "pf": 1.071,
+        "n": 172
+      },
+      "2021": {
+        "pf": 1.267,
+        "n": 99
+      },
+      "2022": {
+        "pf": 1.011,
+        "n": 125
+      }
+    }
+  },
+  "block_bootstrap": {
+    "pf_median": 0.996,
+    "pf_p05": 0.837,
+    "pf_p95": 1.158,
+    "pf_inf_pct": 0.0,
+    "n_trades": 503,
+    "block_size": 15,
+    "n_blocks": 33
+  },
+  "permutation_test": {
+    "p_value": 0.0,
+    "obs_pf": 1.015,
+    "n_perm": 500,
+    "perm_pf_median": 0.817,
+    "perm_pf_p95": 0.899,
+    "perm_pf_max": 0.959,
+    "count_ge": 0
+  },
+  "stage4_comparison": {
+    "stage4_pf": 1.106,
+    "stage4_2_pf": 1.015,
+    "delta_pf": -0.091,
+    "stage4_bs_p05": 0.923,
+    "stage4_2_bs_p05": 0.837
+  }
+}
