@@ -2,12 +2,14 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
-## [2026-06-11] — Stage 4: XGBoost Trading Layer (отрицательный результат)
+## [2026-06-11] — Stage 4: XGBoost Trading Layer + Stage 4.1 controls (отрицательный результат)
 
 ### Добавлено
 - `ML/baseline/benchmark_fractal_stop_stage4.py` — XGBoost breach + RF fav + trade simulation + grid search + bootstrap PF
 - `ML/reports/stage4_trade.json` — base_raw_plus_time результаты
 - `ML/reports/stage4_trade_geom.json` — relative_geometry_clean результаты
+- `ML/baseline/benchmark_fractal_stop_stage4_1.py` — XGBoost-fav, combined breach H6/H12 и permutation test
+- `ML/reports/stage4_1.json` — Stage 4.1 результаты
 
 ### Результаты
 - Primary (`base_raw_plus_time`): winner sell_H6_off05, PF=1.106, BS_p05=0.923, 1/8 таргетов PF≥1.0
@@ -15,9 +17,11 @@
 - Buy-таргеты все убыточны (PF 0.79–0.94). Sell-таргеты marginal (PF 0.91–1.14)
 - Оба профиля эквивалентны (разница winner PF 0.036 — шум). Gate PF>1.15 не пройден ни одним таргетом.
 - AUC не предсказывает PF: лучший AUC sell_H12_off02 (0.696) дал PF=0.976; winner sell_H6_off05 (AUC 0.674) дал PF=1.106
+- Stage 4.1 XGBoost-fav ухудшил PF на всех 4 SELL-таргетах: sell_H6_off05 1.106 → 0.904, sell_H6_off02 0.984 → 0.899, sell_H12_off02 0.976 → 0.915, sell_H12_off05 0.912 → 0.901
+- Stage 4.1 combined breach H6 AND H12: лучший sell_comb_off05 PF=1.065, BS_p05=0.883, perm_p=0.050 — ниже Stage 4 winner и статистически слабо
 
 ### Вывод
-❌ FAIL — рост AUC breach-классификатора с RF 0.645 до XGBoost 0.680 (+345 bp) не конвертируется в PF>1.0. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка для текущей торговой постановки. Next: Transformer encoder на фрактальной sequence, либо пересмотр торговой логики (комбинированный buy+sell, улучшение fav-регрессора).
+❌ FAIL — рост AUC breach-классификатора с RF 0.645 до XGBoost 0.680 (+345 bp) не конвертируется в статистически значимый PF. Stage 4.1 не подтвердил быстрые улучшения: XGBoost-fav хуже RF-fav, combined breach не проходит gate. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка для текущей торговой постановки. Next: Transformer encoder на фрактальной sequence либо пересмотр торговой логики/таргета.
 
 <!-- docs/reports/2026-06-11-stage4-trade-xgboost.md -->
 

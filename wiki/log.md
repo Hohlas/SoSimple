@@ -465,3 +465,7 @@
 - Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: coverage Stage 1-3, 3 reports.
 ### 2026-06-11: Update concept — folded-mov-channels
 - Updated `wiki/concepts/folded-mov-channels.md`: documented the decision to keep `Nero.csv` in the 23-field format, compute `mov_h` in Python only when needed, avoid `lib_PIC.mqh` re-export/relabel work, and keep current priority on `relative_geometry`.
+### 2026-06-12: Update Stage 4 report with Stage 4.1 controls
+- Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
+- Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.

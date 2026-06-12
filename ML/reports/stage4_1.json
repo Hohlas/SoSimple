@@ -1,0 +1,305 @@
+{
+  "config": {
+    "profile": "base_raw_plus_time",
+    "spread": 0.2,
+    "purge_bars": 12,
+    "grid": {
+      "p": [
+        0.3,
+        0.4,
+        0.5
+      ],
+      "min_fav": [
+        0.3,
+        0.5
+      ],
+      "min_rr": [
+        1.0,
+        1.5
+      ],
+      "tp_fraction": [
+        0.4,
+        0.6
+      ]
+    },
+    "n_permutation": 500,
+    "fav_model": "XGBoostRegressor"
+  },
+  "individual": {
+    "sell_H6_off02": {
+      "breach_auc": 0.6872,
+      "best_grid": {
+        "p": 0.4,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.899,
+        "n_trades": 730,
+        "trades_per_year": 182.5,
+        "n_years": 4,
+        "negative_years": 3,
+        "timeout_pct": 21.5,
+        "ambiguous_pct": 2.1,
+        "yearly": {
+          "2019": {
+            "pf": 0.842,
+            "n": 114
+          },
+          "2020": {
+            "pf": 0.85,
+            "n": 271
+          },
+          "2021": {
+            "pf": 1.307,
+            "n": 141
+          },
+          "2022": {
+            "pf": 0.778,
+            "n": 204
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.903,
+        "pf_p05": 0.8,
+        "pf_p95": 1.027,
+        "n_trades": 730
+      }
+    },
+    "sell_H6_off05": {
+      "breach_auc": 0.6741,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.4
+      },
+      "trade_metrics": {
+        "pf": 0.904,
+        "n_trades": 296,
+        "trades_per_year": 74.0,
+        "n_years": 4,
+        "negative_years": 3,
+        "timeout_pct": 7.1,
+        "ambiguous_pct": 4.4,
+        "yearly": {
+          "2019": {
+            "pf": 0.746,
+            "n": 46
+          },
+          "2020": {
+            "pf": 1.246,
+            "n": 86
+          },
+          "2021": {
+            "pf": 0.841,
+            "n": 100
+          },
+          "2022": {
+            "pf": 0.761,
+            "n": 64
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.906,
+        "pf_p05": 0.746,
+        "pf_p95": 1.11,
+        "n_trades": 296
+      }
+    },
+    "sell_H12_off02": {
+      "breach_auc": 0.6956,
+      "best_grid": {
+        "p": 0.3,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.915,
+        "n_trades": 149,
+        "trades_per_year": 37.2,
+        "n_years": 4,
+        "negative_years": 2,
+        "timeout_pct": 16.1,
+        "ambiguous_pct": 0.7,
+        "yearly": {
+          "2019": {
+            "pf": 0.526,
+            "n": 26
+          },
+          "2020": {
+            "pf": 1.035,
+            "n": 60
+          },
+          "2021": {
+            "pf": 2.285,
+            "n": 18
+          },
+          "2022": {
+            "pf": 0.742,
+            "n": 45
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.911,
+        "pf_p05": 0.667,
+        "pf_p95": 1.249,
+        "n_trades": 149
+      }
+    },
+    "sell_H12_off05": {
+      "breach_auc": 0.6789,
+      "best_grid": {
+        "p": 0.4,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.4
+      },
+      "trade_metrics": {
+        "pf": 0.901,
+        "n_trades": 481,
+        "trades_per_year": 120.2,
+        "n_years": 4,
+        "negative_years": 4,
+        "timeout_pct": 11.9,
+        "ambiguous_pct": 0.8,
+        "yearly": {
+          "2019": {
+            "pf": 0.969,
+            "n": 73
+          },
+          "2020": {
+            "pf": 0.954,
+            "n": 186
+          },
+          "2021": {
+            "pf": 0.99,
+            "n": 87
+          },
+          "2022": {
+            "pf": 0.762,
+            "n": 135
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.897,
+        "pf_p05": 0.767,
+        "pf_p95": 1.066,
+        "n_trades": 481
+      }
+    }
+  },
+  "combined": {
+    "sell_comb_off02": {
+      "breach_auc_H6": 0.6872,
+      "breach_auc_H12": 0.6956,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.875,
+        "n_trades": 1654,
+        "trades_per_year": 413.5,
+        "n_years": 4,
+        "negative_years": 4,
+        "timeout_pct": 9.8,
+        "ambiguous_pct": 1.0,
+        "yearly": {
+          "2019": {
+            "pf": 0.818,
+            "n": 257
+          },
+          "2020": {
+            "pf": 0.844,
+            "n": 526
+          },
+          "2021": {
+            "pf": 0.883,
+            "n": 374
+          },
+          "2022": {
+            "pf": 0.931,
+            "n": 497
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.877,
+        "pf_p05": 0.807,
+        "pf_p95": 0.945,
+        "n_trades": 1654
+      },
+      "permutation_test": {
+        "p_value": 0.16,
+        "obs_pf": 0.875,
+        "n_perm": 500,
+        "perm_pf_median": 0.833,
+        "perm_pf_p95": 0.903,
+        "perm_pf_max": 0.972,
+        "count_ge": 80
+      }
+    },
+    "sell_comb_off05": {
+      "breach_auc_H6": 0.6741,
+      "breach_auc_H12": 0.6789,
+      "best_grid": {
+        "p": 0.4,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.4
+      },
+      "trade_metrics": {
+        "pf": 1.065,
+        "n_trades": 354,
+        "trades_per_year": 88.5,
+        "n_years": 4,
+        "negative_years": 1,
+        "timeout_pct": 13.0,
+        "ambiguous_pct": 0.6,
+        "yearly": {
+          "2019": {
+            "pf": 1.238,
+            "n": 60
+          },
+          "2020": {
+            "pf": 1.121,
+            "n": 144
+          },
+          "2021": {
+            "pf": 1.081,
+            "n": 58
+          },
+          "2022": {
+            "pf": 0.893,
+            "n": 92
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 1.059,
+        "pf_p05": 0.883,
+        "pf_p95": 1.288,
+        "n_trades": 354
+      },
+      "permutation_test": {
+        "p_value": 0.05,
+        "obs_pf": 1.065,
+        "n_perm": 500,
+        "perm_pf_median": 0.837,
+        "perm_pf_p95": 1.061,
+        "perm_pf_max": 1.284,
+        "count_ge": 25
+      }
+    }
+  },
+  "note": "Stage 4.1: XGBoost-fav + combined breach H6/H12 + permutation test"
+}
