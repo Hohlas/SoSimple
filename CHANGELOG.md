@@ -2,26 +2,51 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-11] — Stage 4: XGBoost Trading Layer (отрицательный результат)
+
+### Добавлено
+- `ML/baseline/benchmark_fractal_stop_stage4.py` — XGBoost breach + RF fav + trade simulation + grid search + bootstrap PF
+- `ML/reports/stage4_trade.json` — base_raw_plus_time результаты
+- `ML/reports/stage4_trade_geom.json` — relative_geometry_clean результаты
+
+### Результаты
+- Primary (`base_raw_plus_time`): winner sell_H6_off05, PF=1.106, BS_p05=0.923, 1/8 таргетов PF≥1.0
+- Control (`relative_geometry_clean`): winner sell_H6_off05, PF=1.142, BS_p05=0.906, 2/8 таргетов PF≥1.0
+- Buy-таргеты все убыточны (PF 0.79–0.94). Sell-таргеты marginal (PF 0.91–1.14)
+- Оба профиля эквивалентны (разница winner PF 0.036 — шум). Gate PF>1.15 не пройден ни одним таргетом.
+- AUC не предсказывает PF: лучший AUC sell_H12_off02 (0.696) дал PF=0.976; winner sell_H6_off05 (AUC 0.674) дал PF=1.106
+
+### Вывод
+❌ FAIL — рост AUC breach-классификатора с RF 0.645 до XGBoost 0.680 (+345 bp) не конвертируется в PF>1.0. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка для текущей торговой постановки. Next: Transformer encoder на фрактальной sequence, либо пересмотр торговой логики (комбинированный buy+sell, улучшение fav-регрессора).
+
+<!-- docs/reports/2026-06-11-stage4-trade-xgboost.md -->
+
 ## [2026-06-11] — Fractal parser contract hardening
 
 ### Исправлено
 - `processing/label_signals.py`: `parse_fractal()` теперь принимает только integer-like значения в полях `time`, `direction`, `strong`, `break`, `count`, `shift` (`1`, `1.0`) и отвергает дробные нормализованные значения (`0.1700000018`).
 - Добавлен regression-тест, который предотвращает тихое применение разметочного parser-а к нормализованным `fractal*` полям.
 
-## [2026-06-10] — Stage 3: feature profile comparison (base_raw vs base_plus_path vs relative_geometry)
+## [2026-06-10] — Stage 3.x: feature profiles + XGBoost breach classifier
 
 ### Добавлено
 - `ML/baseline/benchmark_fractal_stop_stage3.py` — 3 feature profiles, RF breach classifier, metric uplift
+- `ML/baseline/benchmark_fractal_stop_stage3_1.py` — RF ablation of `relative_geometry`
+- `ML/baseline/benchmark_fractal_stop_stage3_2.py` — XGBoost comparison
 - `ML/reports/stage3_profiles.json` — полные результаты сравнения
+- `ML/reports/stage3_1_profiles.json` — Stage 3.1 ablation results
+- `ML/reports/stage3_2_xgboost.json` — Stage 3.2 XGBoost results
 
 ### Результаты
-- `base_plus_path` (+700 фич: folded mov_h + shift + atr_ratio): FAIL — AUC drops 64–166 bp on all 8 targets
-- `relative_geometry` (+10 фич: price→ATR-relative, density, time): PASS — AUC uplift +57…+258 bp, mean +119 bp
-- Density (fractal count in ±1/2/3 ATR) + time (hour/dow sin/cos) — ключевые драйверы uplift
-- Все профили: 0/32 year-slices AUC<0.55 — без провалов
+- Stage 3 RF: `base_plus_path` (+700 фич: folded mov_h + shift + atr_ratio) FAIL — AUC drops 64–166 bp on all 8 targets
+- Stage 3 RF: `relative_geometry` (+10 фич: price→ATR-relative, density, time) PASS as whole profile — mean +119 bp
+- Stage 3.1 RF ablation: uplift даёт time, не density; `relative_price_only` −40 bp, `relative_price_plus_time` +121 bp, `relative_geometry_clean` +127 bp
+- Stage 3.2 XGBoost: `base_raw` +140 bp over RF base_raw; `base_raw_plus_time` AUC mean 0.6799 (+345 bp); `relative_geometry_clean` AUC mean 0.6808 (+354 bp)
+- `time_only` AUC mean 0.6300 — время полезно, но не заменяет фракталы
+- Все Stage 3.x профили: без year-slices AUC<0.55
 
 ### Вывод
-Folded mov_h не несут breach-сигнала для RF. Price-in-ATR + density + time дают статистически значимый uplift. Gap до AUC≥0.75 остаётся ~7–8 bp. Next: XGBoost на relative_geometry.
+Folded mov_h не несут breach-сигнала для RF в комбинированном профиле. Практический uplift Stage 3.1 даёт time, а не density. Лучший простой кандидат для Stage 4 — XGBoost `base_raw_plus_time`; `relative_geometry_clean` выше всего на 9 bp, но сложнее. Mean AUC 0.70 формально не достигнут: gap около 192–201 bp. Next: Stage 4 validation-only trading simulation.
 
 <!-- docs/reports/2026-06-10-feature-profiles-stage3.md -->
 

@@ -32,7 +32,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §21: Direct Direction Audit + Rebuild + Transformer Encoder | 4 reports (05-15 — 05-21) |
 | &nbsp;&nbsp;↳ [methodology-cycle-candidate-source-v2.md](research/methodology-cycle-candidate-source-v2.md) | Candidate-source v2 methodology cycle: live-safe protocol, Stage 09/10 invalidation | 1 report (05-25) |
 | &nbsp;&nbsp;↳ [limit-order-feature-foundation.md](research/limit-order-feature-foundation.md) | Limit-order entry, feature ablation, direction-only signal, fractal channel ablation, RF GridSearch | 5 reports (05-29 — 06-05) |
-| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-3: breach подтверждён, RF-торговый слой не дал PF>1.0, oracle показал диагностический потолок, `relative_geometry` улучшил breach AUC на validation | 3 reports (06-10) |
+| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-4: breach подтверждён, oracle показал диагностический потолок, но RF и XGBoost торговые слои не дали статистически значимый PF>1.0 | 4 reports (06-10 — 06-11) |
 
 ## Concepts
 

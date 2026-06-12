@@ -1,0 +1,551 @@
+{
+  "config": {
+    "profile": "relative_geometry_clean",
+    "spread": 0.2,
+    "purge_bars": 12,
+    "grid": {
+      "p": [
+        0.3,
+        0.4,
+        0.5
+      ],
+      "min_fav": [
+        0.3,
+        0.5
+      ],
+      "min_rr": [
+        1.0,
+        1.5
+      ],
+      "tp_fraction": [
+        0.4,
+        0.6
+      ]
+    },
+    "n_bootstrap": 500
+  },
+  "results": {
+    "buy_H6_off02": {
+      "breach_auc": 0.6824,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.877,
+        "n_trades": 370,
+        "trades_per_year": 92.5,
+        "n_years": 4,
+        "negative_years": 4,
+        "timeout_pct": 10.3,
+        "ambiguous_pct": 3.5,
+        "pf_buy": 0.877,
+        "pf_sell": 0.0,
+        "yearly": {
+          "2019": {
+            "pf": 0.849,
+            "n": 64
+          },
+          "2020": {
+            "pf": 0.964,
+            "n": 126
+          },
+          "2021": {
+            "pf": 0.713,
+            "n": 80
+          },
+          "2022": {
+            "pf": 0.931,
+            "n": 100
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.871,
+        "pf_p05": 0.729,
+        "pf_p95": 1.048,
+        "pf_inf_pct": 0.0,
+        "n_trades": 370
+      }
+    },
+    "sell_H6_off02": {
+      "breach_auc": 0.6911,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.998,
+        "n_trades": 493,
+        "trades_per_year": 123.2,
+        "n_years": 4,
+        "negative_years": 2,
+        "timeout_pct": 14.4,
+        "ambiguous_pct": 2.8,
+        "pf_buy": 0.0,
+        "pf_sell": 0.998,
+        "yearly": {
+          "2019": {
+            "pf": 0.739,
+            "n": 91
+          },
+          "2020": {
+            "pf": 0.925,
+            "n": 172
+          },
+          "2021": {
+            "pf": 1.327,
+            "n": 107
+          },
+          "2022": {
+            "pf": 1.062,
+            "n": 123
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.999,
+        "pf_p05": 0.844,
+        "pf_p95": 1.176,
+        "pf_inf_pct": 0.0,
+        "n_trades": 493
+      }
+    },
+    "buy_H6_off05": {
+      "breach_auc": 0.6696,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.825,
+        "n_trades": 754,
+        "trades_per_year": 188.5,
+        "n_years": 4,
+        "negative_years": 3,
+        "timeout_pct": 17.9,
+        "ambiguous_pct": 1.7,
+        "pf_buy": 0.825,
+        "pf_sell": 0.0,
+        "yearly": {
+          "2019": {
+            "pf": 0.681,
+            "n": 120
+          },
+          "2020": {
+            "pf": 1.071,
+            "n": 210
+          },
+          "2021": {
+            "pf": 0.687,
+            "n": 194
+          },
+          "2022": {
+            "pf": 0.838,
+            "n": 230
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.823,
+        "pf_p05": 0.726,
+        "pf_p95": 0.929,
+        "pf_inf_pct": 0.0,
+        "n_trades": 754
+      }
+    },
+    "sell_H6_off05": {
+      "breach_auc": 0.6758,
+      "best_grid": {
+        "p": 0.4,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.4
+      },
+      "trade_metrics": {
+        "pf": 1.142,
+        "n_trades": 218,
+        "trades_per_year": 54.5,
+        "n_years": 4,
+        "negative_years": 1,
+        "timeout_pct": 17.0,
+        "ambiguous_pct": 2.3,
+        "pf_buy": 0.0,
+        "pf_sell": 1.142,
+        "yearly": {
+          "2019": {
+            "pf": 0.566,
+            "n": 47
+          },
+          "2020": {
+            "pf": 1.267,
+            "n": 97
+          },
+          "2021": {
+            "pf": 2.015,
+            "n": 26
+          },
+          "2022": {
+            "pf": 1.469,
+            "n": 48
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 1.162,
+        "pf_p05": 0.906,
+        "pf_p95": 1.49,
+        "pf_inf_pct": 0.0,
+        "n_trades": 218
+      }
+    },
+    "buy_H12_off02": {
+      "breach_auc": 0.689,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.828,
+        "n_trades": 1186,
+        "trades_per_year": 296.5,
+        "n_years": 4,
+        "negative_years": 4,
+        "timeout_pct": 9.2,
+        "ambiguous_pct": 1.3,
+        "pf_buy": 0.828,
+        "pf_sell": 0.0,
+        "yearly": {
+          "2019": {
+            "pf": 0.745,
+            "n": 209
+          },
+          "2020": {
+            "pf": 0.851,
+            "n": 404
+          },
+          "2021": {
+            "pf": 0.79,
+            "n": 269
+          },
+          "2022": {
+            "pf": 0.894,
+            "n": 304
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.827,
+        "pf_p05": 0.747,
+        "pf_p95": 0.91,
+        "pf_inf_pct": 0.0,
+        "n_trades": 1186
+      }
+    },
+    "sell_H12_off02": {
+      "breach_auc": 0.6925,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.971,
+        "n_trades": 761,
+        "trades_per_year": 190.2,
+        "n_years": 4,
+        "negative_years": 2,
+        "timeout_pct": 9.7,
+        "ambiguous_pct": 1.1,
+        "pf_buy": 0.0,
+        "pf_sell": 0.971,
+        "yearly": {
+          "2019": {
+            "pf": 0.706,
+            "n": 123
+          },
+          "2020": {
+            "pf": 0.854,
+            "n": 263
+          },
+          "2021": {
+            "pf": 1.335,
+            "n": 125
+          },
+          "2022": {
+            "pf": 1.066,
+            "n": 250
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.973,
+        "pf_p05": 0.861,
+        "pf_p95": 1.115,
+        "pf_inf_pct": 0.0,
+        "n_trades": 761
+      }
+    },
+    "buy_H12_off05": {
+      "breach_auc": 0.6662,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 1.015,
+        "n_trades": 340,
+        "trades_per_year": 85.0,
+        "n_years": 4,
+        "negative_years": 1,
+        "timeout_pct": 8.5,
+        "ambiguous_pct": 1.5,
+        "pf_buy": 1.015,
+        "pf_sell": 0.0,
+        "yearly": {
+          "2019": {
+            "pf": 0.899,
+            "n": 53
+          },
+          "2020": {
+            "pf": 1.028,
+            "n": 109
+          },
+          "2021": {
+            "pf": 1.017,
+            "n": 91
+          },
+          "2022": {
+            "pf": 1.08,
+            "n": 87
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 1.021,
+        "pf_p05": 0.844,
+        "pf_p95": 1.205,
+        "pf_inf_pct": 0.0,
+        "n_trades": 340
+      }
+    },
+    "sell_H12_off05": {
+      "breach_auc": 0.6797,
+      "best_grid": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      },
+      "trade_metrics": {
+        "pf": 0.914,
+        "n_trades": 1205,
+        "trades_per_year": 301.2,
+        "n_years": 4,
+        "negative_years": 4,
+        "timeout_pct": 18.1,
+        "ambiguous_pct": 1.2,
+        "pf_buy": 0.0,
+        "pf_sell": 0.914,
+        "yearly": {
+          "2019": {
+            "pf": 0.881,
+            "n": 205
+          },
+          "2020": {
+            "pf": 0.962,
+            "n": 403
+          },
+          "2021": {
+            "pf": 0.855,
+            "n": 252
+          },
+          "2022": {
+            "pf": 0.925,
+            "n": 345
+          }
+        }
+      },
+      "bootstrap": {
+        "pf_median": 0.921,
+        "pf_p05": 0.826,
+        "pf_p95": 1.021,
+        "pf_inf_pct": 0.0,
+        "n_trades": 1205
+      }
+    }
+  },
+  "summary": [
+    {
+      "target": "buy_H6_off02",
+      "h": 6,
+      "off": 0.2,
+      "side": "buy",
+      "breach_auc": 0.6824,
+      "pf": 0.877,
+      "trades_per_year": 92.5,
+      "negative_years": 4,
+      "pf_buy": 0.877,
+      "pf_sell": 0.0,
+      "bootstrap_pf_median": 0.871,
+      "bootstrap_pf_p05": 0.729,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "sell_H6_off02",
+      "h": 6,
+      "off": 0.2,
+      "side": "sell",
+      "breach_auc": 0.6911,
+      "pf": 0.998,
+      "trades_per_year": 123.2,
+      "negative_years": 2,
+      "pf_buy": 0.0,
+      "pf_sell": 0.998,
+      "bootstrap_pf_median": 0.999,
+      "bootstrap_pf_p05": 0.844,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "buy_H6_off05",
+      "h": 6,
+      "off": 0.5,
+      "side": "buy",
+      "breach_auc": 0.6696,
+      "pf": 0.825,
+      "trades_per_year": 188.5,
+      "negative_years": 3,
+      "pf_buy": 0.825,
+      "pf_sell": 0.0,
+      "bootstrap_pf_median": 0.823,
+      "bootstrap_pf_p05": 0.726,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "sell_H6_off05",
+      "h": 6,
+      "off": 0.5,
+      "side": "sell",
+      "breach_auc": 0.6758,
+      "pf": 1.142,
+      "trades_per_year": 54.5,
+      "negative_years": 1,
+      "pf_buy": 0.0,
+      "pf_sell": 1.142,
+      "bootstrap_pf_median": 1.162,
+      "bootstrap_pf_p05": 0.906,
+      "params": {
+        "p": 0.4,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.4
+      }
+    },
+    {
+      "target": "buy_H12_off02",
+      "h": 12,
+      "off": 0.2,
+      "side": "buy",
+      "breach_auc": 0.689,
+      "pf": 0.828,
+      "trades_per_year": 296.5,
+      "negative_years": 4,
+      "pf_buy": 0.828,
+      "pf_sell": 0.0,
+      "bootstrap_pf_median": 0.827,
+      "bootstrap_pf_p05": 0.747,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "sell_H12_off02",
+      "h": 12,
+      "off": 0.2,
+      "side": "sell",
+      "breach_auc": 0.6925,
+      "pf": 0.971,
+      "trades_per_year": 190.2,
+      "negative_years": 2,
+      "pf_buy": 0.0,
+      "pf_sell": 0.971,
+      "bootstrap_pf_median": 0.973,
+      "bootstrap_pf_p05": 0.861,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "buy_H12_off05",
+      "h": 12,
+      "off": 0.5,
+      "side": "buy",
+      "breach_auc": 0.6662,
+      "pf": 1.015,
+      "trades_per_year": 85.0,
+      "negative_years": 1,
+      "pf_buy": 1.015,
+      "pf_sell": 0.0,
+      "bootstrap_pf_median": 1.021,
+      "bootstrap_pf_p05": 0.844,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.5,
+        "tp_fraction": 0.6
+      }
+    },
+    {
+      "target": "sell_H12_off05",
+      "h": 12,
+      "off": 0.5,
+      "side": "sell",
+      "breach_auc": 0.6797,
+      "pf": 0.914,
+      "trades_per_year": 301.2,
+      "negative_years": 4,
+      "pf_buy": 0.0,
+      "pf_sell": 0.914,
+      "bootstrap_pf_median": 0.921,
+      "bootstrap_pf_p05": 0.826,
+      "params": {
+        "p": 0.5,
+        "min_fav_val": 0.3,
+        "min_rr": 1.0,
+        "tp_fraction": 0.6
+      }
+    }
+  ]
+}

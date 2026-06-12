@@ -3,6 +3,17 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-06-11] update | Fractal Stop Stage 4 synced into wiki
+- Updated `wiki/research/fractal-stop-research.md` after reading `docs/reports/2026-06-11-stage4-trade-xgboost.md`.
+- Recorded Stage 4 verdict: XGBoost breach + RF fav does not pass validation trading gates; winner `sell_H6_off05` PF=1.106 with BS_p05=0.923 is not statistically significant.
+- Updated `wiki/index.md` coverage from Stage 1-3.x to Stage 1-4.
+
+## [2026-06-11] update | Fractal Stop Stage 3.x synced into wiki
+- Updated `wiki/research/fractal-stop-research.md` after `docs/reports/2026-06-10-feature-profiles-stage3.md` was extended with Stage 3.1 ablation and Stage 3.2 XGBoost results.
+- Recorded that Stage 3.1 isolated time features as the main RF uplift source.
+- Recorded that XGBoost `base_raw_plus_time` is the preferred simple candidate for Stage 4 validation-only trading simulation.
+- Updated `wiki/index.md` summary for the Fractal Stop research line.
+
 ## [2026-06-10] update | Fractal Stop Stage 2 oracle synced into wiki
 - Updated `wiki/research/fractal-stop-research.md` after oracle diagnostics were added to `docs/reports/2026-06-10-fractal-stop-fav-stage2.md`.
 - Recorded that RF Stage 2 remains FAIL, but oracle shows a high diagnostic ceiling for the mechanics.

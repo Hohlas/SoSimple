@@ -1,17 +1,19 @@
-# Fractal Stop Stage 3 — Feature Profile Comparison
+# Fractal Stop Stage 3.x — Feature Profiles and XGBoost Breach Classifier
 
 > **Date**: 2026-06-10
 > **Status**: Completed
-> **Verdict**: `relative_geometry` +57…+258 bp AUC uplift over base_raw и является текущим победителем среди feature profile на validation. `base_plus_path` −64…−166 bp (hurt). Перед XGBoost нужен Stage 3.1: разложить `relative_geometry` на компоненты и понять, что именно даёт uplift.
-> **Goal**: Проверить 3 feature profile на uplift в breach AUC/lift. Разделить эффект признаков на уровне RF-классификатора до торгового слоя.
+> **Verdict**: Stage 3.2 дал новый лучший breach-классификатор: XGBoost `base_raw_plus_time` AUC mean 0.6799, lift mean 2.00, +345 bp к RF `base_raw`. `relative_geometry_clean` почти равен ему (0.6808), но сложнее; основной практический кандидат для Stage 4 — XGBoost `base_raw_plus_time`.
+> **Goal**: Проверить feature profile на uplift в breach AUC/lift, разложить вклад `relative_geometry`, затем проверить XGBoost как более сильную табличную модель до возврата к торговому слою.
 > **Related**: Stage 1 (`docs/reports/2026-06-10-fractal-stop-breach-stage1.md`), Stage 2 (`docs/reports/2026-06-10-fractal-stop-fav-stage2.md`), EDA normalisation stats (10 Jun)
 > **Related commit**: pending
 
 ## Context
 
-Stage 2 oracle-диагностика показала: проблема в текущей RF-модели (AUC около 0.65), не в полном отсутствии диагностического потолка у механики (oracle PF=∞). Stage 3 — первый шаг к улучшению классификатора: сравнение 3 профилей признаков на breach-таргетах без торгового слоя. Метрика: AUC, lift, годовая устойчивость.
+Stage 2 oracle-диагностика показала: проблема в текущей RF-модели (AUC около 0.65), не в полном отсутствии диагностического потолка у механики (oracle PF=∞). Stage 3.x — линия улучшения breach-классификатора без торгового слоя: сначала feature profiles на RF, затем абляция компонентов, затем XGBoost. Метрики: AUC, lift, годовая устойчивость. Test не открывался.
 
 ## What Was Done
+
+### Stage 3 — RF feature profile comparison
 
 Три feature profile, все извлекаются из CSV (без OHLC, без выявленной future leakage):
 
@@ -30,6 +32,53 @@ Stage 2 oracle-диагностика показала: проблема в те
 
 **Скрипт**: `ML/baseline/benchmark_fractal_stop_stage3.py`
 **JSON**: `ML/reports/stage3_profiles.json`
+
+### Stage 3.1 — RF ablation of relative geometry
+
+Проверено, какой компонент даёт uplift в `relative_geometry`:
+
+| Профиль | N фич | Цель |
+|---------|-------|------|
+| `base_raw` | 1001 | Контрольный baseline |
+| `relative_price_only` | 1001 | Только замена `price` на `(price-f0_price)/ATR` |
+| `relative_price_plus_density_excl_f0` | 1007 | Relative price + density без счёта `fractal0` |
+| `relative_price_plus_time` | 1005 | Relative price + 4 time-фичи |
+| `relative_geometry_clean` | 1011 | Relative price + `density_excl_f0` + time |
+
+**Скрипт**: `ML/baseline/benchmark_fractal_stop_stage3_1.py`
+**JSON**: `ML/reports/stage3_1_profiles.json`
+
+### Stage 3.2 — XGBoost comparison
+
+Проверено, даёт ли более сильная табличная модель прирост над RF:
+
+| Профиль | N фич | Цель |
+|---------|-------|------|
+| `time_only` | 4 | Проверка, достаточно ли только час/день недели |
+| `base_raw` | 1001 | XGBoost на базовых фрактальных признаках |
+| `base_raw_plus_time` | 1005 | Базовые фракталы + time-фичи |
+| `relative_geometry_clean` | 1011 | Clean geometry из Stage 3.1 |
+
+**Модель**: XGBoost, `n_estimators=200`, `max_depth=6`, `learning_rate=0.05`, `subsample=0.8`, `colsample_bytree=0.8`, `scale_pos_weight`, early stopping по validation AUC.
+
+**Скрипт**: `ML/baseline/benchmark_fractal_stop_stage3_2.py`
+**JSON**: `ML/reports/stage3_2_xgboost.json`
+
+## Changed Files
+
+- `ML/baseline/benchmark_fractal_stop_stage3.py` — Stage 3 RF profile comparison.
+- `ML/baseline/benchmark_fractal_stop_stage3_1.py` — Stage 3.1 RF ablation.
+- `ML/baseline/benchmark_fractal_stop_stage3_2.py` — Stage 3.2 XGBoost comparison.
+- `ML/reports/stage3_profiles.json` — Stage 3 full metrics.
+- `ML/reports/stage3_1_profiles.json` — Stage 3.1 full metrics.
+- `ML/reports/stage3_2_xgboost.json` — Stage 3.2 full metrics.
+
+## Verification
+
+- Все сравнения выполнены только на train/validation; test не использовался.
+- Для всех Stage 3.x профилей проверены 8 breach targets: H6/H12 × off02/off05 × buy/sell.
+- Для Stage 3 и 3.2 проверена годовая устойчивость: 0 срезов с AUC<0.55.
+- Stage 3.2 использует early stopping только по validation; это допустимо для model development, но winner для торгового слоя всё равно должен выбираться отдельно по validation PF.
 
 ## Results
 
@@ -101,6 +150,36 @@ Stage 2 oracle-диагностика показала: проблема в те
 | base_plus_path | 0/32 |
 | relative_geometry | 0/32 |
 
+### Stage 3.1 — что реально дало uplift
+
+| Профиль | N фич | AUC mean | ΔAUC vs RF base_raw (bp) | Δlift | Δlow-risk breach rate (bp) |
+|---------|-------|----------|---------------------------|-------|-----------------------------|
+| `base_raw` | 1001 | 0.6454 | — | — | — |
+| `relative_price_only` | 1001 | 0.6414 | −40 | −0.03 | +52 |
+| `relative_price_plus_density_excl_f0` | 1007 | 0.6422 | −32 | −0.06 | +106 |
+| `relative_price_plus_time` | 1005 | 0.6575 | +121 | +0.11 | −197 |
+| `relative_geometry_clean` | 1011 | 0.6581 | +127 | +0.11 | −186 |
+
+Ключевой вывод Stage 3.1: uplift в `relative_geometry` был почти целиком от time-фичей. `price/ATR` сам по себе ухудшил RF AUC, `density_excl_f0` не дал самостоятельной пользы. Поэтому старое название `relative_geometry` оказалось слишком сильной интерпретацией: рабочий компонент — сессионное время, а не плотность фрактальной геометрии.
+
+### Stage 3.2 — XGBoost
+
+| Профиль | N фич | AUC mean | ΔAUC vs XGB base_raw (bp) | ΔAUC vs RF base_raw (bp) | lift mean | Yearly fails |
+|---------|-------|----------|----------------------------|---------------------------|-----------|--------------|
+| `time_only` | 4 | 0.6300 | −294 | −154 | 1.60 | 0 |
+| `base_raw` | 1001 | 0.6594 | — | +140 | 1.82 | 0 |
+| `base_raw_plus_time` | 1005 | 0.6799 | +205 | +345 | 2.00 | 0 |
+| `relative_geometry_clean` | 1011 | 0.6808 | +214 | +354 | 1.99 | 0 |
+
+Ответы Stage 3.2:
+
+1. **Фракталы несут сигнал поверх времени.** `base_raw` 0.6594 против `time_only` 0.6300: +294 bp.
+2. **XGBoost лучше RF на тех же base_raw признаках.** +140 bp к RF `base_raw`.
+3. **Лучшее рабочее сочетание — фракталы + time.** `base_raw_plus_time` даёт +345 bp к RF `base_raw`.
+4. **`relative_geometry_clean` не даёт практически значимого преимущества.** 0.6808 против 0.6799 у `base_raw_plus_time`: разница 9 bp, это шум для выбора более сложного профиля.
+
+Лучший отдельный target: `sell_H12_off02`, XGBoost `base_raw_plus_time`, AUC 0.6956. Средний AUC всё ещё ниже gate 0.70: разрыв 0.0201 AUC, то есть около 201 bp, а не 20 bp.
+
 ## Методологические примечания
 
 ### Артефакт parse_fractal() не затрагивает Stage 3
@@ -112,29 +191,34 @@ Stage 2 oracle-диагностика показала: проблема в те
 Stage 3 benchmark этой ошибкой не затронут: `ML/baseline/benchmark_fractal_stop_stage3.py` извлекает поля через `pd.to_numeric(..., errors='coerce').fillna(0.0)`, поэтому корректно читает нормализованные float-значения.
 
 Практическое следствие:
-- `parse_fractal()` годится для сырых данных до нормализации или должен быть исправлен под float-поля;
-- для нормализованных `_labeled.csv` безопаснее использовать pandas-экстрактор Stage 3 либо чинить parser;
+- разметочный `parse_fractal()` нельзя использовать как универсальный float feature extractor для нормализованных `fractal*` полей;
+- для нормализованных `_labeled.csv` безопаснее использовать pandas-экстрактор Stage 3.x или отдельный ML feature extractor;
 - вывод про `base_plus_path` и `relative_geometry` не объясняется пустыми CSV-ячейками.
 
-### Оставшиеся ограничения признаков
+### Оставшиеся ограничения Stage 3.x
 
-1. В `relative_geometry` одновременно изменены три группы: `price` заменён на ATR-relative price, добавлены `density`, добавлены `time`. Поэтому текущий отчёт доказывает пользу всего профиля, но не доказывает отдельно пользу `density` или `time`.
-2. Текущая реализация `density` считает сам `fractal0` в плотности уровней вокруг `f0_price`. Это не future leakage, но делает density частично тривиальным признаком. Нужно проверить вариант `density_excl_f0`, где счёт начинается с `fractal1`.
+1. Stage 3.1 изолировал вклад `price`, `density_excl_f0` и `time` только для RF. Для XGBoost проверены `base_raw_plus_time` и `relative_geometry_clean`, но не отдельная XGBoost-абляция `relative_price_only` и `density_excl_f0`.
+2. `relative_geometry_clean` на XGBoost выше `base_raw_plus_time` всего на 9 bp. Это не доказывает, что price/density бесполезны для любой модели, но не даёт практического основания усложнять Stage 4.
 3. `base_plus_path` проверял folded `mov_h`, `shift` и `atr_ratio` вместе. Отрицательный результат профиля не равен строгому запрету на каждый из этих признаков отдельно.
+4. Stage 3.x измеряет AUC/lift breach-классификатора. Торговый PF, просадка, концентрация прибыли и устойчивость по сделкам должны проверяться отдельно в Stage 4.
 
 ## Conclusions
 
 1. **base_plus_path — FAIL для RF breach.** Комбинированный профиль folded `mov_h` (mov_3…mov_48), `shift`, `log(fractal_atr/ATR)` ухудшает AUC на 64–166 bp консистентно по всем 8 таргетам. Рабочая гипотеза: фиксированные h-окна движения от фрактала плохо согласованы с моментом принятия решения и дают шум для RF, особенно когда смешаны со `shift` и `atr_ratio` по всем 100 уровням.
 
-2. **relative_geometry — PASS как целый профиль.** Замена price→(price−f0_price)/ATR + density(6) + time(4) даёт средний uplift +119 bp AUC. Самый сильный прирост на off05-таргетах (+225–258 bp), где breach rate ниже (~38–53%) и классификация сложнее. Price-in-ATR делает фрактальные уровни сопоставимыми вне зависимости от абсолютной цены золота ($1000 vs $2000).
+2. **Первичный `relative_geometry` был полезен как профиль, но интерпретация изменилась.** Stage 3 показал +119 bp, но Stage 3.1 разложил uplift: `relative_price_only` −40 bp, `density_excl_f0` не спасает профиль, а `relative_price_plus_time` даёт +121 bp. Следовательно, практический вклад был от time-фичей.
 
-3. **Density перспективен, но не изолирован.** Счётчики фракталов в ±1/2/3 ATR вокруг f0_price могут добавлять структурную информацию о «плотности облака» уровней. Но текущий эксперимент не отделяет вклад density от замены price и time-фич. Нужна абляция `relative_price_only` vs `relative_price+density_excl_f0`.
+3. **Time-фичи полезны, но не заменяют фракталы.** `time_only` AUC mean 0.6300, тогда как XGBoost `base_raw` даёт 0.6594. Значит модель не свелась к календарному фильтру; фрактальная структура несёт отдельный сигнал.
 
-4. **Time-фичи перспективны, но не изолированы.** sin/cos часа и дня недели могут отражать сессионную структуру пробоев. Но текущий профиль не доказывает их отдельный вклад. Нужна абляция `relative_price_only` vs `relative_price+time`.
+4. **XGBoost существенно улучшает breach-классификатор.** На `base_raw` XGBoost даёт +140 bp к RF, а `base_raw_plus_time` даёт +345 bp к RF `base_raw`. Это лучший на данный момент табличный breach-классификатор.
 
-5. **Gap до целевого AUC≥0.75 остаётся большим.** relative_geometry поднимает AUC до 0.643–0.678. До 0.75 остаётся около 7.2 процентного пункта по лучшему target и около 9.2 процентного пункта по среднему AUC. Это 720–920 bp, не 7–8 bp. Рост AUC сам по себе не гарантирует PF>1.0 в торговом слое: Stage 2 уже показал, что breach-сигнал должен быть проверен через execution-aware simulation.
+5. **`base_raw_plus_time` предпочтительнее `relative_geometry_clean` для Stage 4.** `relative_geometry_clean` имеет чуть больший mean AUC (0.6808 vs 0.6799), но преимущество 9 bp не оправдывает более сложный feature contract. Основной кандидат: XGBoost `base_raw_plus_time`; `relative_geometry_clean` можно оставить как контроль.
 
-## Итоговые цифры
+6. **AUC gate 0.70 не достигнут по mean.** Лучший mean AUC 0.6808, разрыв до 0.70 около 192 bp. Лучший отдельный target 0.6956 близок к 0.70, но это не заменяет средний gate и не доказывает PF>1.0.
+
+7. **Следующий вопрос — торговая конвертация, не ещё одна feature ablation.** Stage 3.x уже показал заметный прирост ранжирования. Теперь нужно проверить, превращается ли он в validation PF при canonical spread и том же execution-aware симуляторе, что использовался в Stage 2.
+
+## Итоговые цифры Stage 3 RF
 
 | Метрика | base_raw | base_plus_path | relative_geometry |
 |---------|----------|----------------|-------------------|
@@ -146,26 +230,36 @@ Stage 3 benchmark этой ошибкой не затронут: `ML/baseline/be
 | Δlift mean | — | −0.10 | **+0.08** |
 | Yearly fails | 0/32 | 0/32 | 0/32 |
 
+## Итоговые цифры Stage 3.1/3.2
+
+| Этап | Лучший практический профиль | Модель | AUC mean | ΔAUC vs RF base_raw | Вывод |
+|------|-----------------------------|--------|----------|----------------------|-------|
+| Stage 3.1 | `relative_price_plus_time` / `relative_geometry_clean` | RF | 0.6575 / 0.6581 | +121 / +127 bp | Uplift даёт time, не density |
+| Stage 3.2 | `base_raw_plus_time` | XGBoost | 0.6799 | +345 bp | Лучший простой кандидат для Stage 4 |
+| Stage 3.2 control | `relative_geometry_clean` | XGBoost | 0.6808 | +354 bp | На 9 bp выше, но сложнее |
+
 ## Next Step
 
-Перед XGBoost нужен короткий Stage 3.1: очистить и разложить `relative_geometry` на компоненты.
+Stage 4 validation-only: проверить, транслируется ли XGBoost `base_raw_plus_time` в положительный торговый PF.
 
-Минимальная матрица:
+Рекомендуемый протокол:
 
-| Профиль | Цель |
-|---------|------|
-| `base_raw` | Контрольный baseline |
-| `relative_price_only` | Проверить, даёт ли uplift сама замена raw price на `(price-f0_price)/ATR` |
-| `relative_price_plus_density_excl_f0` | Проверить вклад density без тривиального счёта `fractal0` |
-| `relative_price_plus_time` | Проверить вклад временных признаков |
-| `relative_geometry_clean` | Итоговый профиль: relative price + `density_excl_f0` + time |
-
-Если `relative_geometry_clean` сохраняет большую часть uplift Stage 3, следующий шаг — XGBoost/LightGBM на этом очищенном профиле с небольшим grid search только на validation. Test не открывать. При AUC около 0.70+ и сохранении годовой устойчивости — вернуться к торговому слою с новым breach-классификатором.
+1. Основной профиль: XGBoost `base_raw_plus_time`; `relative_geometry_clean` — только контроль.
+2. Прогнать все 8 side/H/off, не только лучший по AUC.
+3. Grid торговых правил держать небольшим и заранее фиксированным.
+4. Winner выбирать только по validation PF при canonical spread 0.20.
+5. Gate: PF > 1.15 на validation, достаточно сделок в год, не больше 1 отрицательного года, bootstrap/uncertainty check.
+6. Test не открывать до freeze одного validation winner. Test 2022–2026 уже использовался в Stage 1/2, поэтому для production-вывода всё равно нужен отдельный forward-период.
+7. Если Stage 4 не даст PF>1.0 на validation — переходить к Transformer encoder или пересмотру постановки.
 
 ## Related Materials
 
 - `ML/baseline/benchmark_fractal_stop_stage3.py` — скрипт сравнения профилей
+- `ML/baseline/benchmark_fractal_stop_stage3_1.py` — Stage 3.1 RF ablation
+- `ML/baseline/benchmark_fractal_stop_stage3_2.py` — Stage 3.2 XGBoost comparison
 - `ML/reports/stage3_profiles.json` — полные результаты (AUC, lift, yearly)
+- `ML/reports/stage3_1_profiles.json` — Stage 3.1 полные результаты
+- `ML/reports/stage3_2_xgboost.json` — Stage 3.2 полные результаты
 - `docs/reports/2026-06-10-fractal-stop-breach-stage1.md` — Stage 1 breach baseline
 - `docs/reports/2026-06-10-fractal-stop-fav-stage2.md` — Stage 2 trading layer + oracle
 - `docs/reports/2026-04-19-current-feature-importance-diagnostics.md` — feature importance (geometry dominates)

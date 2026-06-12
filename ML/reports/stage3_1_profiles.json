@@ -1,0 +1,1606 @@
+{
+  "config": {
+    "n_estimators": 200,
+    "max_depth": 12,
+    "min_samples_leaf": 50,
+    "purge_bars": 12,
+    "profiles": {
+      "base_raw": {
+        "n_features": 1001
+      },
+      "relative_price_only": {
+        "n_features": 1001
+      },
+      "relative_price_plus_density_excl_f0": {
+        "n_features": 1007
+      },
+      "relative_price_plus_time": {
+        "n_features": 1005
+      },
+      "relative_geometry_clean": {
+        "n_features": 1011
+      }
+    }
+  },
+  "results": {
+    "base_raw": {
+      "n_features": 1001,
+      "targets": {
+        "buy_H6_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6363,
+            "pr_auc": 0.5806,
+            "breach_rate": 0.4668,
+            "low_risk_breach_rate": 0.2906,
+            "lift": 1.61,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6128,
+                "n": 692,
+                "breach_rate": 0.4566
+              },
+              "2020": {
+                "auc": 0.615,
+                "n": 1313,
+                "breach_rate": 0.4326
+              },
+              "2021": {
+                "auc": 0.6551,
+                "n": 1290,
+                "breach_rate": 0.4806
+              },
+              "2022": {
+                "auc": 0.6461,
+                "n": 1193,
+                "breach_rate": 0.4954
+              }
+            }
+          }
+        },
+        "sell_H6_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6514,
+            "pr_auc": 0.6154,
+            "breach_rate": 0.4952,
+            "low_risk_breach_rate": 0.287,
+            "lift": 1.73,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6657,
+                "n": 792,
+                "breach_rate": 0.5025
+              },
+              "2020": {
+                "auc": 0.6455,
+                "n": 1461,
+                "breach_rate": 0.5079
+              },
+              "2021": {
+                "auc": 0.6687,
+                "n": 1396,
+                "breach_rate": 0.4957
+              },
+              "2022": {
+                "auc": 0.6332,
+                "n": 1313,
+                "breach_rate": 0.476
+              }
+            }
+          }
+        },
+        "buy_H6_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.62,
+            "pr_auc": 0.4564,
+            "breach_rate": 0.3581,
+            "low_risk_breach_rate": 0.2216,
+            "lift": 1.62,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6083,
+                "n": 692,
+                "breach_rate": 0.3497
+              },
+              "2020": {
+                "auc": 0.5905,
+                "n": 1313,
+                "breach_rate": 0.3199
+              },
+              "2021": {
+                "auc": 0.6223,
+                "n": 1290,
+                "breach_rate": 0.3752
+              },
+              "2022": {
+                "auc": 0.6459,
+                "n": 1193,
+                "breach_rate": 0.3864
+              }
+            }
+          }
+        },
+        "sell_H6_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6224,
+            "pr_auc": 0.4764,
+            "breach_rate": 0.3821,
+            "low_risk_breach_rate": 0.2236,
+            "lift": 1.71,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6351,
+                "n": 792,
+                "breach_rate": 0.3889
+              },
+              "2020": {
+                "auc": 0.6325,
+                "n": 1461,
+                "breach_rate": 0.3881
+              },
+              "2021": {
+                "auc": 0.6178,
+                "n": 1396,
+                "breach_rate": 0.3868
+              },
+              "2022": {
+                "auc": 0.6079,
+                "n": 1313,
+                "breach_rate": 0.3663
+              }
+            }
+          }
+        },
+        "buy_H12_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6561,
+            "pr_auc": 0.7119,
+            "breach_rate": 0.5967,
+            "low_risk_breach_rate": 0.3853,
+            "lift": 1.55,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6528,
+                "n": 692,
+                "breach_rate": 0.5838
+              },
+              "2020": {
+                "auc": 0.6246,
+                "n": 1313,
+                "breach_rate": 0.5689
+              },
+              "2021": {
+                "auc": 0.682,
+                "n": 1290,
+                "breach_rate": 0.6031
+              },
+              "2022": {
+                "auc": 0.6634,
+                "n": 1193,
+                "breach_rate": 0.6278
+              }
+            }
+          }
+        },
+        "sell_H12_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6812,
+            "pr_auc": 0.757,
+            "breach_rate": 0.6326,
+            "low_risk_breach_rate": 0.3807,
+            "lift": 1.66,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6906,
+                "n": 792,
+                "breach_rate": 0.6427
+              },
+              "2020": {
+                "auc": 0.662,
+                "n": 1461,
+                "breach_rate": 0.6454
+              },
+              "2021": {
+                "auc": 0.685,
+                "n": 1396,
+                "breach_rate": 0.6332
+              },
+              "2022": {
+                "auc": 0.6926,
+                "n": 1313,
+                "breach_rate": 0.6116
+              }
+            }
+          }
+        },
+        "buy_H12_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6346,
+            "pr_auc": 0.6096,
+            "breach_rate": 0.5036,
+            "low_risk_breach_rate": 0.3318,
+            "lift": 1.52,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6294,
+                "n": 692,
+                "breach_rate": 0.487
+              },
+              "2020": {
+                "auc": 0.5969,
+                "n": 1313,
+                "breach_rate": 0.4676
+              },
+              "2021": {
+                "auc": 0.6514,
+                "n": 1290,
+                "breach_rate": 0.5217
+              },
+              "2022": {
+                "auc": 0.6504,
+                "n": 1193,
+                "breach_rate": 0.5331
+              }
+            }
+          }
+        },
+        "sell_H12_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6612,
+            "pr_auc": 0.6669,
+            "breach_rate": 0.5429,
+            "low_risk_breach_rate": 0.3061,
+            "lift": 1.77,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6798,
+                "n": 792,
+                "breach_rate": 0.5543
+              },
+              "2020": {
+                "auc": 0.6702,
+                "n": 1461,
+                "breach_rate": 0.5524
+              },
+              "2021": {
+                "auc": 0.6412,
+                "n": 1396,
+                "breach_rate": 0.5466
+              },
+              "2022": {
+                "auc": 0.6589,
+                "n": 1313,
+                "breach_rate": 0.5217
+              }
+            }
+          }
+        }
+      }
+    },
+    "relative_price_only": {
+      "n_features": 1001,
+      "targets": {
+        "buy_H6_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6331,
+            "pr_auc": 0.58,
+            "breach_rate": 0.4668,
+            "low_risk_breach_rate": 0.2918,
+            "lift": 1.6,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.615,
+                "n": 692,
+                "breach_rate": 0.4566
+              },
+              "2020": {
+                "auc": 0.6062,
+                "n": 1313,
+                "breach_rate": 0.4326
+              },
+              "2021": {
+                "auc": 0.6606,
+                "n": 1290,
+                "breach_rate": 0.4806
+              },
+              "2022": {
+                "auc": 0.639,
+                "n": 1193,
+                "breach_rate": 0.4954
+              }
+            }
+          }
+        },
+        "sell_H6_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.642,
+            "pr_auc": 0.6078,
+            "breach_rate": 0.4952,
+            "low_risk_breach_rate": 0.3102,
+            "lift": 1.6,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6654,
+                "n": 792,
+                "breach_rate": 0.5025
+              },
+              "2020": {
+                "auc": 0.6418,
+                "n": 1461,
+                "breach_rate": 0.5079
+              },
+              "2021": {
+                "auc": 0.6431,
+                "n": 1396,
+                "breach_rate": 0.4957
+              },
+              "2022": {
+                "auc": 0.6292,
+                "n": 1313,
+                "breach_rate": 0.476
+              }
+            }
+          }
+        },
+        "buy_H6_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6122,
+            "pr_auc": 0.4436,
+            "breach_rate": 0.3581,
+            "low_risk_breach_rate": 0.2339,
+            "lift": 1.53,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.5922,
+                "n": 692,
+                "breach_rate": 0.3497
+              },
+              "2020": {
+                "auc": 0.5913,
+                "n": 1313,
+                "breach_rate": 0.3199
+              },
+              "2021": {
+                "auc": 0.6156,
+                "n": 1290,
+                "breach_rate": 0.3752
+              },
+              "2022": {
+                "auc": 0.6373,
+                "n": 1193,
+                "breach_rate": 0.3864
+              }
+            }
+          }
+        },
+        "sell_H6_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6316,
+            "pr_auc": 0.4888,
+            "breach_rate": 0.3821,
+            "low_risk_breach_rate": 0.2145,
+            "lift": 1.78,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6381,
+                "n": 792,
+                "breach_rate": 0.3889
+              },
+              "2020": {
+                "auc": 0.6489,
+                "n": 1461,
+                "breach_rate": 0.3881
+              },
+              "2021": {
+                "auc": 0.6206,
+                "n": 1396,
+                "breach_rate": 0.3868
+              },
+              "2022": {
+                "auc": 0.6203,
+                "n": 1313,
+                "breach_rate": 0.3663
+              }
+            }
+          }
+        },
+        "buy_H12_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.657,
+            "pr_auc": 0.7127,
+            "breach_rate": 0.5967,
+            "low_risk_breach_rate": 0.3842,
+            "lift": 1.55,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6595,
+                "n": 692,
+                "breach_rate": 0.5838
+              },
+              "2020": {
+                "auc": 0.6272,
+                "n": 1313,
+                "breach_rate": 0.5689
+              },
+              "2021": {
+                "auc": 0.6795,
+                "n": 1290,
+                "breach_rate": 0.6031
+              },
+              "2022": {
+                "auc": 0.6627,
+                "n": 1193,
+                "breach_rate": 0.6278
+              }
+            }
+          }
+        },
+        "sell_H12_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6706,
+            "pr_auc": 0.7516,
+            "breach_rate": 0.6326,
+            "low_risk_breach_rate": 0.3958,
+            "lift": 1.6,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6921,
+                "n": 792,
+                "breach_rate": 0.6427
+              },
+              "2020": {
+                "auc": 0.6571,
+                "n": 1461,
+                "breach_rate": 0.6454
+              },
+              "2021": {
+                "auc": 0.6684,
+                "n": 1396,
+                "breach_rate": 0.6332
+              },
+              "2022": {
+                "auc": 0.675,
+                "n": 1313,
+                "breach_rate": 0.6116
+              }
+            }
+          }
+        },
+        "buy_H12_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6313,
+            "pr_auc": 0.6092,
+            "breach_rate": 0.5036,
+            "low_risk_breach_rate": 0.3218,
+            "lift": 1.56,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6308,
+                "n": 692,
+                "breach_rate": 0.487
+              },
+              "2020": {
+                "auc": 0.5897,
+                "n": 1313,
+                "breach_rate": 0.4676
+              },
+              "2021": {
+                "auc": 0.6536,
+                "n": 1290,
+                "breach_rate": 0.5217
+              },
+              "2022": {
+                "auc": 0.6486,
+                "n": 1193,
+                "breach_rate": 0.5331
+              }
+            }
+          }
+        },
+        "sell_H12_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6536,
+            "pr_auc": 0.6619,
+            "breach_rate": 0.5429,
+            "low_risk_breach_rate": 0.3162,
+            "lift": 1.72,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6658,
+                "n": 792,
+                "breach_rate": 0.5543
+              },
+              "2020": {
+                "auc": 0.6708,
+                "n": 1461,
+                "breach_rate": 0.5524
+              },
+              "2021": {
+                "auc": 0.6321,
+                "n": 1396,
+                "breach_rate": 0.5466
+              },
+              "2022": {
+                "auc": 0.6493,
+                "n": 1313,
+                "breach_rate": 0.5217
+              }
+            }
+          }
+        }
+      }
+    },
+    "relative_price_plus_density_excl_f0": {
+      "n_features": 1007,
+      "targets": {
+        "buy_H6_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.635,
+            "pr_auc": 0.5825,
+            "breach_rate": 0.4668,
+            "low_risk_breach_rate": 0.2929,
+            "lift": 1.59,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6134,
+                "n": 692,
+                "breach_rate": 0.4566
+              },
+              "2020": {
+                "auc": 0.6133,
+                "n": 1313,
+                "breach_rate": 0.4326
+              },
+              "2021": {
+                "auc": 0.6534,
+                "n": 1290,
+                "breach_rate": 0.4806
+              },
+              "2022": {
+                "auc": 0.6468,
+                "n": 1193,
+                "breach_rate": 0.4954
+              }
+            }
+          }
+        },
+        "sell_H6_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6404,
+            "pr_auc": 0.608,
+            "breach_rate": 0.4952,
+            "low_risk_breach_rate": 0.3253,
+            "lift": 1.52,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6555,
+                "n": 792,
+                "breach_rate": 0.5025
+              },
+              "2020": {
+                "auc": 0.6446,
+                "n": 1461,
+                "breach_rate": 0.5079
+              },
+              "2021": {
+                "auc": 0.6451,
+                "n": 1396,
+                "breach_rate": 0.4957
+              },
+              "2022": {
+                "auc": 0.6233,
+                "n": 1313,
+                "breach_rate": 0.476
+              }
+            }
+          }
+        },
+        "buy_H6_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6136,
+            "pr_auc": 0.4439,
+            "breach_rate": 0.3581,
+            "low_risk_breach_rate": 0.2361,
+            "lift": 1.52,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.5878,
+                "n": 692,
+                "breach_rate": 0.3497
+              },
+              "2020": {
+                "auc": 0.5842,
+                "n": 1313,
+                "breach_rate": 0.3199
+              },
+              "2021": {
+                "auc": 0.6303,
+                "n": 1290,
+                "breach_rate": 0.3752
+              },
+              "2022": {
+                "auc": 0.6373,
+                "n": 1193,
+                "breach_rate": 0.3864
+              }
+            }
+          }
+        },
+        "sell_H6_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6284,
+            "pr_auc": 0.4797,
+            "breach_rate": 0.3821,
+            "low_risk_breach_rate": 0.2326,
+            "lift": 1.64,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6289,
+                "n": 792,
+                "breach_rate": 0.3889
+              },
+              "2020": {
+                "auc": 0.6503,
+                "n": 1461,
+                "breach_rate": 0.3881
+              },
+              "2021": {
+                "auc": 0.6209,
+                "n": 1396,
+                "breach_rate": 0.3868
+              },
+              "2022": {
+                "auc": 0.6133,
+                "n": 1313,
+                "breach_rate": 0.3663
+              }
+            }
+          }
+        },
+        "buy_H12_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6553,
+            "pr_auc": 0.7102,
+            "breach_rate": 0.5967,
+            "low_risk_breach_rate": 0.3853,
+            "lift": 1.55,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6547,
+                "n": 692,
+                "breach_rate": 0.5838
+              },
+              "2020": {
+                "auc": 0.6237,
+                "n": 1313,
+                "breach_rate": 0.5689
+              },
+              "2021": {
+                "auc": 0.6787,
+                "n": 1290,
+                "breach_rate": 0.6031
+              },
+              "2022": {
+                "auc": 0.6633,
+                "n": 1193,
+                "breach_rate": 0.6278
+              }
+            }
+          }
+        },
+        "sell_H12_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.677,
+            "pr_auc": 0.7609,
+            "breach_rate": 0.6326,
+            "low_risk_breach_rate": 0.3927,
+            "lift": 1.61,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.7018,
+                "n": 792,
+                "breach_rate": 0.6427
+              },
+              "2020": {
+                "auc": 0.6634,
+                "n": 1461,
+                "breach_rate": 0.6454
+              },
+              "2021": {
+                "auc": 0.6764,
+                "n": 1396,
+                "breach_rate": 0.6332
+              },
+              "2022": {
+                "auc": 0.6789,
+                "n": 1313,
+                "breach_rate": 0.6116
+              }
+            }
+          }
+        },
+        "buy_H12_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6295,
+            "pr_auc": 0.604,
+            "breach_rate": 0.5036,
+            "low_risk_breach_rate": 0.3363,
+            "lift": 1.5,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6254,
+                "n": 692,
+                "breach_rate": 0.487
+              },
+              "2020": {
+                "auc": 0.593,
+                "n": 1313,
+                "breach_rate": 0.4676
+              },
+              "2021": {
+                "auc": 0.645,
+                "n": 1290,
+                "breach_rate": 0.5217
+              },
+              "2022": {
+                "auc": 0.6523,
+                "n": 1193,
+                "breach_rate": 0.5331
+              }
+            }
+          }
+        },
+        "sell_H12_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6586,
+            "pr_auc": 0.6628,
+            "breach_rate": 0.5429,
+            "low_risk_breach_rate": 0.3102,
+            "lift": 1.75,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6703,
+                "n": 792,
+                "breach_rate": 0.5543
+              },
+              "2020": {
+                "auc": 0.6758,
+                "n": 1461,
+                "breach_rate": 0.5524
+              },
+              "2021": {
+                "auc": 0.6415,
+                "n": 1396,
+                "breach_rate": 0.5466
+              },
+              "2022": {
+                "auc": 0.6517,
+                "n": 1313,
+                "breach_rate": 0.5217
+              }
+            }
+          }
+        }
+      }
+    },
+    "relative_price_plus_time": {
+      "n_features": 1005,
+      "targets": {
+        "buy_H6_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6521,
+            "pr_auc": 0.5992,
+            "breach_rate": 0.4668,
+            "low_risk_breach_rate": 0.2606,
+            "lift": 1.79,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6423,
+                "n": 692,
+                "breach_rate": 0.4566
+              },
+              "2020": {
+                "auc": 0.6226,
+                "n": 1313,
+                "breach_rate": 0.4326
+              },
+              "2021": {
+                "auc": 0.6757,
+                "n": 1290,
+                "breach_rate": 0.4806
+              },
+              "2022": {
+                "auc": 0.6609,
+                "n": 1193,
+                "breach_rate": 0.4954
+              }
+            }
+          }
+        },
+        "sell_H6_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.656,
+            "pr_auc": 0.6186,
+            "breach_rate": 0.4952,
+            "low_risk_breach_rate": 0.279,
+            "lift": 1.78,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.669,
+                "n": 792,
+                "breach_rate": 0.5025
+              },
+              "2020": {
+                "auc": 0.6571,
+                "n": 1461,
+                "breach_rate": 0.5079
+              },
+              "2021": {
+                "auc": 0.661,
+                "n": 1396,
+                "breach_rate": 0.4957
+              },
+              "2022": {
+                "auc": 0.6425,
+                "n": 1313,
+                "breach_rate": 0.476
+              }
+            }
+          }
+        },
+        "buy_H6_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6424,
+            "pr_auc": 0.4796,
+            "breach_rate": 0.3581,
+            "low_risk_breach_rate": 0.2071,
+            "lift": 1.73,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.622,
+                "n": 692,
+                "breach_rate": 0.3497
+              },
+              "2020": {
+                "auc": 0.6182,
+                "n": 1313,
+                "breach_rate": 0.3199
+              },
+              "2021": {
+                "auc": 0.655,
+                "n": 1290,
+                "breach_rate": 0.3752
+              },
+              "2022": {
+                "auc": 0.661,
+                "n": 1193,
+                "breach_rate": 0.3864
+              }
+            }
+          }
+        },
+        "sell_H6_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.651,
+            "pr_auc": 0.5116,
+            "breach_rate": 0.3821,
+            "low_risk_breach_rate": 0.2095,
+            "lift": 1.82,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6406,
+                "n": 792,
+                "breach_rate": 0.3889
+              },
+              "2020": {
+                "auc": 0.6728,
+                "n": 1461,
+                "breach_rate": 0.3881
+              },
+              "2021": {
+                "auc": 0.6517,
+                "n": 1396,
+                "breach_rate": 0.3868
+              },
+              "2022": {
+                "auc": 0.6327,
+                "n": 1313,
+                "breach_rate": 0.3663
+              }
+            }
+          }
+        },
+        "buy_H12_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6655,
+            "pr_auc": 0.7239,
+            "breach_rate": 0.5967,
+            "low_risk_breach_rate": 0.363,
+            "lift": 1.64,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.678,
+                "n": 692,
+                "breach_rate": 0.5838
+              },
+              "2020": {
+                "auc": 0.6302,
+                "n": 1313,
+                "breach_rate": 0.5689
+              },
+              "2021": {
+                "auc": 0.6842,
+                "n": 1290,
+                "breach_rate": 0.6031
+              },
+              "2022": {
+                "auc": 0.6763,
+                "n": 1193,
+                "breach_rate": 0.6278
+              }
+            }
+          }
+        },
+        "sell_H12_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6812,
+            "pr_auc": 0.7609,
+            "breach_rate": 0.6326,
+            "low_risk_breach_rate": 0.3615,
+            "lift": 1.75,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6971,
+                "n": 792,
+                "breach_rate": 0.6427
+              },
+              "2020": {
+                "auc": 0.6693,
+                "n": 1461,
+                "breach_rate": 0.6454
+              },
+              "2021": {
+                "auc": 0.6818,
+                "n": 1396,
+                "breach_rate": 0.6332
+              },
+              "2022": {
+                "auc": 0.6861,
+                "n": 1313,
+                "breach_rate": 0.6116
+              }
+            }
+          }
+        },
+        "buy_H12_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6453,
+            "pr_auc": 0.6135,
+            "breach_rate": 0.5036,
+            "low_risk_breach_rate": 0.2873,
+            "lift": 1.75,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6467,
+                "n": 692,
+                "breach_rate": 0.487
+              },
+              "2020": {
+                "auc": 0.6119,
+                "n": 1313,
+                "breach_rate": 0.4676
+              },
+              "2021": {
+                "auc": 0.6596,
+                "n": 1290,
+                "breach_rate": 0.5217
+              },
+              "2022": {
+                "auc": 0.6625,
+                "n": 1193,
+                "breach_rate": 0.5331
+              }
+            }
+          }
+        },
+        "sell_H12_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6667,
+            "pr_auc": 0.6659,
+            "breach_rate": 0.5429,
+            "low_risk_breach_rate": 0.3011,
+            "lift": 1.8,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.674,
+                "n": 792,
+                "breach_rate": 0.5543
+              },
+              "2020": {
+                "auc": 0.6859,
+                "n": 1461,
+                "breach_rate": 0.5524
+              },
+              "2021": {
+                "auc": 0.6455,
+                "n": 1396,
+                "breach_rate": 0.5466
+              },
+              "2022": {
+                "auc": 0.6652,
+                "n": 1313,
+                "breach_rate": 0.5217
+              }
+            }
+          }
+        }
+      }
+    },
+    "relative_geometry_clean": {
+      "n_features": 1011,
+      "targets": {
+        "buy_H6_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6555,
+            "pr_auc": 0.6063,
+            "breach_rate": 0.4668,
+            "low_risk_breach_rate": 0.2528,
+            "lift": 1.85,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6397,
+                "n": 692,
+                "breach_rate": 0.4566
+              },
+              "2020": {
+                "auc": 0.6346,
+                "n": 1313,
+                "breach_rate": 0.4326
+              },
+              "2021": {
+                "auc": 0.6776,
+                "n": 1290,
+                "breach_rate": 0.4806
+              },
+              "2022": {
+                "auc": 0.6617,
+                "n": 1193,
+                "breach_rate": 0.4954
+              }
+            }
+          }
+        },
+        "sell_H6_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6572,
+            "pr_auc": 0.6244,
+            "breach_rate": 0.4952,
+            "low_risk_breach_rate": 0.29,
+            "lift": 1.71,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6585,
+                "n": 792,
+                "breach_rate": 0.5025
+              },
+              "2020": {
+                "auc": 0.6627,
+                "n": 1461,
+                "breach_rate": 0.5079
+              },
+              "2021": {
+                "auc": 0.6625,
+                "n": 1396,
+                "breach_rate": 0.4957
+              },
+              "2022": {
+                "auc": 0.6463,
+                "n": 1313,
+                "breach_rate": 0.476
+              }
+            }
+          }
+        },
+        "buy_H6_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6431,
+            "pr_auc": 0.481,
+            "breach_rate": 0.3581,
+            "low_risk_breach_rate": 0.1982,
+            "lift": 1.81,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.627,
+                "n": 692,
+                "breach_rate": 0.3497
+              },
+              "2020": {
+                "auc": 0.613,
+                "n": 1313,
+                "breach_rate": 0.3199
+              },
+              "2021": {
+                "auc": 0.6592,
+                "n": 1290,
+                "breach_rate": 0.3752
+              },
+              "2022": {
+                "auc": 0.6636,
+                "n": 1193,
+                "breach_rate": 0.3864
+              }
+            }
+          }
+        },
+        "sell_H6_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6492,
+            "pr_auc": 0.513,
+            "breach_rate": 0.3821,
+            "low_risk_breach_rate": 0.2085,
+            "lift": 1.83,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6364,
+                "n": 792,
+                "breach_rate": 0.3889
+              },
+              "2020": {
+                "auc": 0.6693,
+                "n": 1461,
+                "breach_rate": 0.3881
+              },
+              "2021": {
+                "auc": 0.6534,
+                "n": 1396,
+                "breach_rate": 0.3868
+              },
+              "2022": {
+                "auc": 0.6308,
+                "n": 1313,
+                "breach_rate": 0.3663
+              }
+            }
+          }
+        },
+        "buy_H12_off02": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.671,
+            "pr_auc": 0.7263,
+            "breach_rate": 0.5967,
+            "low_risk_breach_rate": 0.3608,
+            "lift": 1.65,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6758,
+                "n": 692,
+                "breach_rate": 0.5838
+              },
+              "2020": {
+                "auc": 0.6362,
+                "n": 1313,
+                "breach_rate": 0.5689
+              },
+              "2021": {
+                "auc": 0.6907,
+                "n": 1290,
+                "breach_rate": 0.6031
+              },
+              "2022": {
+                "auc": 0.6853,
+                "n": 1193,
+                "breach_rate": 0.6278
+              }
+            }
+          }
+        },
+        "sell_H12_off02": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6831,
+            "pr_auc": 0.7605,
+            "breach_rate": 0.6326,
+            "low_risk_breach_rate": 0.3726,
+            "lift": 1.7,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6952,
+                "n": 792,
+                "breach_rate": 0.6427
+              },
+              "2020": {
+                "auc": 0.6726,
+                "n": 1461,
+                "breach_rate": 0.6454
+              },
+              "2021": {
+                "auc": 0.6851,
+                "n": 1396,
+                "breach_rate": 0.6332
+              },
+              "2022": {
+                "auc": 0.6865,
+                "n": 1313,
+                "breach_rate": 0.6116
+              }
+            }
+          }
+        },
+        "buy_H12_off05": {
+          "train_n": 20737,
+          "val_n": 4488,
+          "rf_val": {
+            "auc": 0.6399,
+            "pr_auc": 0.6166,
+            "breach_rate": 0.5036,
+            "low_risk_breach_rate": 0.2996,
+            "lift": 1.68,
+            "n": 4488,
+            "yearly": {
+              "2019": {
+                "auc": 0.6456,
+                "n": 692,
+                "breach_rate": 0.487
+              },
+              "2020": {
+                "auc": 0.6047,
+                "n": 1313,
+                "breach_rate": 0.4676
+              },
+              "2021": {
+                "auc": 0.6605,
+                "n": 1290,
+                "breach_rate": 0.5217
+              },
+              "2022": {
+                "auc": 0.6508,
+                "n": 1193,
+                "breach_rate": 0.5331
+              }
+            }
+          }
+        },
+        "sell_H12_off05": {
+          "train_n": 23410,
+          "val_n": 4962,
+          "rf_val": {
+            "auc": 0.6658,
+            "pr_auc": 0.6711,
+            "breach_rate": 0.5429,
+            "low_risk_breach_rate": 0.2951,
+            "lift": 1.84,
+            "n": 4962,
+            "yearly": {
+              "2019": {
+                "auc": 0.6812,
+                "n": 792,
+                "breach_rate": 0.5543
+              },
+              "2020": {
+                "auc": 0.6884,
+                "n": 1461,
+                "breach_rate": 0.5524
+              },
+              "2021": {
+                "auc": 0.6381,
+                "n": 1396,
+                "breach_rate": 0.5466
+              },
+              "2022": {
+                "auc": 0.6601,
+                "n": 1313,
+                "breach_rate": 0.5217
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "deltas": {
+    "buy_H12_off02": {
+      "base_auc": 0.6561,
+      "base_lift": 1.55,
+      "relative_price_only": {
+        "delta_auc_bp": 9,
+        "delta_lift": 0.0,
+        "delta_low_risk_breach_rate_bp": -11
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -8,
+        "delta_lift": 0.0,
+        "delta_low_risk_breach_rate_bp": 0
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 94,
+        "delta_lift": 0.09,
+        "delta_low_risk_breach_rate_bp": -223
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 149,
+        "delta_lift": 0.1,
+        "delta_low_risk_breach_rate_bp": -245
+      }
+    },
+    "buy_H12_off05": {
+      "base_auc": 0.6346,
+      "base_lift": 1.52,
+      "relative_price_only": {
+        "delta_auc_bp": -33,
+        "delta_lift": 0.04,
+        "delta_low_risk_breach_rate_bp": -100
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -51,
+        "delta_lift": -0.02,
+        "delta_low_risk_breach_rate_bp": 45
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 107,
+        "delta_lift": 0.23,
+        "delta_low_risk_breach_rate_bp": -445
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 53,
+        "delta_lift": 0.16,
+        "delta_low_risk_breach_rate_bp": -322
+      }
+    },
+    "buy_H6_off02": {
+      "base_auc": 0.6363,
+      "base_lift": 1.61,
+      "relative_price_only": {
+        "delta_auc_bp": -32,
+        "delta_lift": -0.01,
+        "delta_low_risk_breach_rate_bp": 12
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -13,
+        "delta_lift": -0.02,
+        "delta_low_risk_breach_rate_bp": 23
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 158,
+        "delta_lift": 0.18,
+        "delta_low_risk_breach_rate_bp": -300
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 192,
+        "delta_lift": 0.24,
+        "delta_low_risk_breach_rate_bp": -378
+      }
+    },
+    "buy_H6_off05": {
+      "base_auc": 0.62,
+      "base_lift": 1.62,
+      "relative_price_only": {
+        "delta_auc_bp": -78,
+        "delta_lift": -0.09,
+        "delta_low_risk_breach_rate_bp": 123
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -64,
+        "delta_lift": -0.1,
+        "delta_low_risk_breach_rate_bp": 145
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 224,
+        "delta_lift": 0.11,
+        "delta_low_risk_breach_rate_bp": -145
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 231,
+        "delta_lift": 0.19,
+        "delta_low_risk_breach_rate_bp": -234
+      }
+    },
+    "sell_H12_off02": {
+      "base_auc": 0.6812,
+      "base_lift": 1.66,
+      "relative_price_only": {
+        "delta_auc_bp": -106,
+        "delta_lift": -0.06,
+        "delta_low_risk_breach_rate_bp": 151
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -42,
+        "delta_lift": -0.05,
+        "delta_low_risk_breach_rate_bp": 120
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 0,
+        "delta_lift": 0.09,
+        "delta_low_risk_breach_rate_bp": -192
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 19,
+        "delta_lift": 0.04,
+        "delta_low_risk_breach_rate_bp": -81
+      }
+    },
+    "sell_H12_off05": {
+      "base_auc": 0.6612,
+      "base_lift": 1.77,
+      "relative_price_only": {
+        "delta_auc_bp": -76,
+        "delta_lift": -0.05,
+        "delta_low_risk_breach_rate_bp": 101
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -26,
+        "delta_lift": -0.02,
+        "delta_low_risk_breach_rate_bp": 41
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 55,
+        "delta_lift": 0.03,
+        "delta_low_risk_breach_rate_bp": -50
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 46,
+        "delta_lift": 0.07,
+        "delta_low_risk_breach_rate_bp": -110
+      }
+    },
+    "sell_H6_off02": {
+      "base_auc": 0.6514,
+      "base_lift": 1.73,
+      "relative_price_only": {
+        "delta_auc_bp": -94,
+        "delta_lift": -0.13,
+        "delta_low_risk_breach_rate_bp": 232
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": -110,
+        "delta_lift": -0.21,
+        "delta_low_risk_breach_rate_bp": 383
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 46,
+        "delta_lift": 0.05,
+        "delta_low_risk_breach_rate_bp": -80
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 58,
+        "delta_lift": -0.02,
+        "delta_low_risk_breach_rate_bp": 30
+      }
+    },
+    "sell_H6_off05": {
+      "base_auc": 0.6224,
+      "base_lift": 1.71,
+      "relative_price_only": {
+        "delta_auc_bp": 92,
+        "delta_lift": 0.07,
+        "delta_low_risk_breach_rate_bp": -91
+      },
+      "relative_price_plus_density_excl_f0": {
+        "delta_auc_bp": 60,
+        "delta_lift": -0.07,
+        "delta_low_risk_breach_rate_bp": 90
+      },
+      "relative_price_plus_time": {
+        "delta_auc_bp": 286,
+        "delta_lift": 0.11,
+        "delta_low_risk_breach_rate_bp": -141
+      },
+      "relative_geometry_clean": {
+        "delta_auc_bp": 268,
+        "delta_lift": 0.12,
+        "delta_low_risk_breach_rate_bp": -151
+      }
+    }
+  }
+}
