@@ -152,7 +152,6 @@ def compute_entry_prices(df, ohlc, times, time_idx):
 
 
 def parse_trade_fractal0(raw):
-    """Возвращает (dict | None, int) — fractal0_info, strong_flag."""
     try:
         if pd.isna(raw):
             return None, 0
@@ -161,10 +160,9 @@ def parse_trade_fractal0(raw):
             return None, 0
         price = float(parts[1]) if parts[1] else None
         direction = int(float(parts[2])) if parts[2] else None
-        strong = int(float(parts[5])) if parts[5] else 0
         if price is None or direction is None or direction == 0:
             return None, 0
-        return {'price': price, 'direction': direction}, strong
+        return {'price': price, 'direction': direction}, 0
     except (ValueError, TypeError):
         return None, 0
 

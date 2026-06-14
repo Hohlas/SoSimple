@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-14 13:55 UTC · git `8007fd8`
+> Auto-generated 2026-06-14 16:07 UTC · git `769f872`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1443 files  ·  **Commit**: `8007fd8`  ·  **Generated**: 2026-06-14 13:55 UTC
+**Tracked**: 1452 files  ·  **Commit**: `769f872`  ·  **Generated**: 2026-06-14 16:07 UTC
 
 ## Root Docs
 
@@ -78,7 +78,11 @@
 | [docs/audit/2026-06-11-stage4-GLM-audit.md](docs/audit/2026-06-11-stage4-GLM-audit.md) |  | 2026-06-12 | 24KB | `9823cfa7` |
 | [docs/audit/2026-06-11-stage4-Qwen-audit.md](docs/audit/2026-06-11-stage4-Qwen-audit.md) |  | 2026-06-12 | 16KB | `9c8be030` |
 | [docs/audit/2026-06-11-stage4-trade-xgboost-audit.md](docs/audit/2026-06-11-stage4-trade-xgboost-audit.md) |  | 2026-06-11 | 11KB | `14db190e` |
-| [docs/audit/2026-06-14-stage4-brainstorm_codex.md](docs/audit/2026-06-14-stage4-brainstorm_codex.md) |  | 2026-06-14 | 6KB | `16889846` |
+| [docs/audit/2026-06-14-stage4-brainstorm_GLM.md](docs/audit/2026-06-14-stage4-brainstorm_GLM.md) |  | 2026-06-14 | 4KB | `64bfdac4` |
+| [docs/audit/2026-06-14-stage4-brainstorm_Qwen.md](docs/audit/2026-06-14-stage4-brainstorm_Qwen.md) |  | 2026-06-14 | 9KB | `98bed871` |
+| [docs/audit/2026-06-14-stage4-brainstorm_codex.md](docs/audit/2026-06-14-stage4-brainstorm_codex.md) |  | 2026-06-14 | 14KB | `b8d6e325` |
+| [docs/audit/2026-06-14-stage4-brainstorm_deep.md](docs/audit/2026-06-14-stage4-brainstorm_deep.md) |  | 2026-06-14 | 10KB | `39f96ba0` |
+| [docs/audit/2026-06-14-stage4-brainstorm_mimo.md](docs/audit/2026-06-14-stage4-brainstorm_mimo.md) |  | 2026-06-14 | 7KB | `875a2cfd` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-09 | 1KB | `f975017a` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-30 | 34KB | `bdb0edad` |
 | [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-13 | 515B | `7e4a3f74` |
@@ -313,11 +317,13 @@
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-05 | 3KB | `70523b5b` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-05 | 16KB | `704db67c` |
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-05 | 9KB | `1e6b236f` |
+| [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-14 | 33KB | `2d347698` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle-диагностика Fractal Stop Fav: проверка потолка PF при идеальном знании breach/fav labels | ✅ | 2026-06-10 | 8KB | `02e614cf` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-05-30 | 4KB | `66cbf52f` |
 | [ML/baseline/reports/limit_order_spread_grid.md](ML/baseline/reports/limit_order_spread_grid.md) |  |  | 2026-06-03 | 3KB | `f8f3c27b` |
 | [ML/baseline/rf_gridsearch.py](ML/baseline/rf_gridsearch.py) |  |  | 2026-06-05 | 6KB | `31bd8826` |
 | [ML/baseline/tb_direction_signal.py](ML/baseline/tb_direction_signal.py) |  |  | 2026-06-05 | 8KB | `d211235a` |
+| [ML/baseline/trail_stop_stage4.py](ML/baseline/trail_stop_stage4.py) |  |  | 2026-06-14 | 21KB | `684b667a` |
 | [ML/baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | ✅ | 2026-06-05 | 10KB | `d2608702` |
 | [ML/benchmark_buy_only_direction.py](ML/benchmark_buy_only_direction.py) | BUY-only RF с исправленными признаками (Phase A/B/D rebuild) | ✅ | 2026-06-05 | 37KB | `59b3a74c` |
 | [ML/benchmark_cross_instrument_robustness.py](ML/benchmark_cross_instrument_robustness.py) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | ✅ | 2026-06-05 | 13KB | `d59921e5` |
@@ -704,6 +710,7 @@
 | [ML/reports/stage4_1.json](ML/reports/stage4_1.json) |  |  | 2026-06-12 | 6KB | `81f4f4f1` |
 | [ML/reports/stage4_2_diagnostic.json](ML/reports/stage4_2_diagnostic.json) |  |  | 2026-06-12 | 1KB | `ed511aae` |
 | [ML/reports/stage4_gap_diagnostics.json](ML/reports/stage4_gap_diagnostics.json) |  |  | 2026-06-14 | 3KB | `930b5cab` |
+| [ML/reports/stage4_improvements.json](ML/reports/stage4_improvements.json) |  |  | 2026-06-14 | 4KB | `1ac61b5e` |
 | [ML/reports/stage4_trade.json](ML/reports/stage4_trade.json) |  |  | 2026-06-11 | 11KB | `090781cd` |
 | [ML/reports/stage4_trade_geom.json](ML/reports/stage4_trade_geom.json) |  |  | 2026-06-11 | 11KB | `b48673bf` |
 | [ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json](ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json) |  |  | 2026-05-30 | 2KB | `a2d1b9ae` |
@@ -868,6 +875,7 @@
 | [ML/reports/track_a_max_out_matrix_deep/transformer_seq50/benchmark_v2/selected_candidate.json](ML/reports/track_a_max_out_matrix_deep/transformer_seq50/benchmark_v2/selected_candidate.json) |  |  | 2026-05-30 | 487B | `0a640325` |
 | [ML/reports/track_a_max_out_matrix_deep/transformer_seq50/evaluate_test_entry_path_v1.md](ML/reports/track_a_max_out_matrix_deep/transformer_seq50/evaluate_test_entry_path_v1.md) |  |  | 2026-05-30 | 1KB | `a6f68803` |
 | [ML/reports/track_a_max_out_matrix_deep/transformer_seq50/summary.json](ML/reports/track_a_max_out_matrix_deep/transformer_seq50/summary.json) |  |  | 2026-05-30 | 11KB | `c4f044c8` |
+| [ML/reports/trail_stop_stage4.json](ML/reports/trail_stop_stage4.json) |  |  | 2026-06-14 | 4KB | `ada42d2e` |
 | [ML/reports/trailing_stop_target_matrix/manifest.json](ML/reports/trailing_stop_target_matrix/manifest.json) |  |  | 2026-05-30 | 13KB | `eca77374` |
 | [ML/reports/trailing_stop_target_matrix/transformer_seq100/benchmark_trail_48_pnl_atr_x2/final_verdict.json](ML/reports/trailing_stop_target_matrix/transformer_seq100/benchmark_trail_48_pnl_atr_x2/final_verdict.json) |  |  | 2026-05-30 | 119B | `8dfded7c` |
 | [ML/reports/trailing_stop_target_matrix/transformer_seq100/benchmark_trail_48_pnl_atr_x3/final_verdict.json](ML/reports/trailing_stop_target_matrix/transformer_seq100/benchmark_trail_48_pnl_atr_x3/final_verdict.json) |  |  | 2026-05-30 | 119B | `2a316a25` |
@@ -1509,6 +1517,7 @@
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
+| [.mimocode/plans/1781449924517-mighty-star.md](.mimocode/plans/1781449924517-mighty-star.md) |  | 2026-06-14 | 7KB | `a2896455` |
 | [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-03 | 3KB | `362f90fe` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
