@@ -1,0 +1,215 @@
+{
+  "config": {
+    "target": "sell_H6_off05",
+    "baseline_params": {
+      "p": 0.4,
+      "min_fav": 0.3,
+      "min_rr": 1.0,
+      "tp_fraction": 0.4
+    },
+    "spread": 0.2
+  },
+  "baseline_pf": 1.015,
+  "results": {
+    "baseline": {
+      "pf": 1.015,
+      "n_trades": 503
+    },
+    "tp_fraction_scan": {
+      "tf=0.4": {
+        "pf": 1.015,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "tf=0.6": {
+        "pf": 0.984,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "tf=0.8": {
+        "pf": 0.957,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "tf=1.0": {
+        "pf": 0.945,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "tf=1.5": {
+        "pf": 0.962,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "tf=2.0": {
+        "pf": 0.958,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      }
+    },
+    "stop_offset_x_tp_fraction": {
+      "off=0.2_tf=0.4": {
+        "pf": 0.945,
+        "n_trades": 834,
+        "trades_per_year": 208.5
+      },
+      "off=0.2_tf=0.6": {
+        "pf": 0.898,
+        "n_trades": 834,
+        "trades_per_year": 208.5
+      },
+      "off=0.2_tf=0.8": {
+        "pf": 0.881,
+        "n_trades": 834,
+        "trades_per_year": 208.5
+      },
+      "off=0.2_tf=1.0": {
+        "pf": 0.852,
+        "n_trades": 834,
+        "trades_per_year": 208.5
+      },
+      "off=0.3_tf=0.4": {
+        "pf": 0.899,
+        "n_trades": 717,
+        "trades_per_year": 179.2
+      },
+      "off=0.3_tf=0.6": {
+        "pf": 0.869,
+        "n_trades": 717,
+        "trades_per_year": 179.2
+      },
+      "off=0.3_tf=0.8": {
+        "pf": 0.871,
+        "n_trades": 717,
+        "trades_per_year": 179.2
+      },
+      "off=0.3_tf=1.0": {
+        "pf": 0.846,
+        "n_trades": 717,
+        "trades_per_year": 179.2
+      },
+      "off=0.4_tf=0.4": {
+        "pf": 0.967,
+        "n_trades": 604,
+        "trades_per_year": 151.0
+      },
+      "off=0.4_tf=0.6": {
+        "pf": 0.954,
+        "n_trades": 604,
+        "trades_per_year": 151.0
+      },
+      "off=0.4_tf=0.8": {
+        "pf": 0.938,
+        "n_trades": 604,
+        "trades_per_year": 151.0
+      },
+      "off=0.4_tf=1.0": {
+        "pf": 0.93,
+        "n_trades": 604,
+        "trades_per_year": 151.0
+      },
+      "off=0.5_tf=0.4": {
+        "pf": 1.015,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "off=0.5_tf=0.6": {
+        "pf": 0.984,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "off=0.5_tf=0.8": {
+        "pf": 0.957,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "off=0.5_tf=1.0": {
+        "pf": 0.945,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      }
+    },
+    "strong_fractal_filter": {
+      "pf": Infinity,
+      "n_trades": 1,
+      "trades_per_year": 1.0
+    },
+    "atr_filter": {
+      "pf": 0.927,
+      "n_trades": 441,
+      "trades_per_year": 110.2
+    },
+    "strong_plus_atr_filter": {
+      "pf": Infinity,
+      "n_trades": 1,
+      "trades_per_year": 1.0
+    },
+    "min_rr_scan": {
+      "rr=0.5": {
+        "pf": 0.879,
+        "n_trades": 1497,
+        "trades_per_year": 374.2
+      },
+      "rr=0.75": {
+        "pf": 0.917,
+        "n_trades": 1013,
+        "trades_per_year": 253.2
+      },
+      "rr=1.0": {
+        "pf": 1.015,
+        "n_trades": 503,
+        "trades_per_year": 125.8
+      },
+      "rr=1.5": {
+        "pf": 0.668,
+        "n_trades": 100,
+        "trades_per_year": 25.0
+      },
+      "rr=2.0": {
+        "pf": 0.674,
+        "n_trades": 26,
+        "trades_per_year": 6.5
+      }
+    },
+    "combined_h6h12": {
+      "pf": 0.916,
+      "n_trades": 253,
+      "trades_per_year": 63.2
+    },
+    "dynamic_tp": {
+      "pf": 3.462,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "exit_distribution": {
+        "TP_dynamic": 153,
+        "TP": 285,
+        "SL": 63,
+        "TIMEOUT": 2
+      }
+    },
+    "dynamic_tp_strong_atr": {
+      "pf": Infinity,
+      "n_trades": 1,
+      "trades_per_year": 1.0,
+      "exit_distribution": {
+        "TP": 1
+      }
+    },
+    "fav_xgb_quantile_03": {
+      "pf": 0.152,
+      "n_trades": 4,
+      "trades_per_year": 2.0
+    },
+    "fav_quantile_plus_dynamic_tp": {
+      "pf": 0.152,
+      "n_trades": 4,
+      "trades_per_year": 2.0
+    },
+    "best_combo": {
+      "pf": 0.0,
+      "n_trades": 0,
+      "trades_per_year": 0,
+      "exit_distribution": {}
+    }
+  }
+}

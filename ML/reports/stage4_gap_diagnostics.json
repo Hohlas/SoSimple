@@ -1,0 +1,177 @@
+{
+  "config": {
+    "target": "sell_H6_off05",
+    "params": {
+      "p": 0.4,
+      "min_fav": 0.3,
+      "min_rr": 1.0,
+      "tp_fraction": 0.4
+    },
+    "spread": 0.2,
+    "split": {
+      "train": "<=2016",
+      "val_stop": [
+        2017,
+        2018
+      ],
+      "val_eval": ">=2019"
+    }
+  },
+  "breach_auc_val_eval": 0.6674,
+  "results": {
+    "baseline": {
+      "pf": 1.015,
+      "n_trades": 503,
+      "trades_per_year": 125.8
+    },
+    "perfect_breach": {
+      "pf": 6.613,
+      "n_trades": 1737,
+      "trades_per_year": 434.2
+    },
+    "perfect_fav": {
+      "pf": 14.72,
+      "n_trades": 367,
+      "trades_per_year": 91.8
+    },
+    "perfect_both": {
+      "pf": 104.879,
+      "n_trades": 1560,
+      "trades_per_year": 390.0
+    },
+    "gap_decomposition": {
+      "baseline_pf": 1.015,
+      "perfect_breach_pf": 6.613,
+      "perfect_fav_pf": 14.72,
+      "perfect_both_pf": 104.879,
+      "gap_to_oracle": 103.864,
+      "breach_gap": 5.598,
+      "fav_gap": 13.705,
+      "breach_share_pct": 5.4,
+      "fav_share_pct": 13.2
+    },
+    "breach_calibration": [
+      {
+        "decile": 1,
+        "lo": 0.1166,
+        "hi": 0.3007,
+        "n_bucket": 564,
+        "actual_breach_rate": 0.1259,
+        "n_trades_at_p04": 564,
+        "pf_at_p04": 1.13
+      },
+      {
+        "decile": 2,
+        "lo": 0.3007,
+        "hi": 0.3549,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.2202,
+        "n_trades_at_p04": 563,
+        "pf_at_p04": 1.302
+      },
+      {
+        "decile": 3,
+        "lo": 0.3549,
+        "hi": 0.398,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.2895,
+        "n_trades_at_p04": 563,
+        "pf_at_p04": 0.849
+      },
+      {
+        "decile": 4,
+        "lo": 0.398,
+        "hi": 0.4352,
+        "n_bucket": 564,
+        "actual_breach_rate": 0.3369,
+        "n_trades_at_p04": 34,
+        "pf_at_p04": 1.115
+      },
+      {
+        "decile": 5,
+        "lo": 0.4352,
+        "hi": 0.4718,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.3783,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      },
+      {
+        "decile": 6,
+        "lo": 0.4718,
+        "hi": 0.5027,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.4121,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      },
+      {
+        "decile": 7,
+        "lo": 0.5027,
+        "hi": 0.5313,
+        "n_bucket": 564,
+        "actual_breach_rate": 0.4592,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      },
+      {
+        "decile": 8,
+        "lo": 0.5313,
+        "hi": 0.5617,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.4778,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      },
+      {
+        "decile": 9,
+        "lo": 0.5617,
+        "hi": 0.5991,
+        "n_bucket": 563,
+        "actual_breach_rate": 0.5488,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      },
+      {
+        "decile": 10,
+        "lo": 0.5991,
+        "hi": 0.7175,
+        "n_bucket": 564,
+        "actual_breach_rate": 0.5975,
+        "n_trades_at_p04": 0,
+        "pf_at_p04": null
+      }
+    ],
+    "fav_global": {
+      "correlation": 0.179,
+      "rmse_atr": 1.19,
+      "mean_pred": 1.5,
+      "mean_true": 1.13
+    },
+    "trade_exit": {
+      "pf": 1.015,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "tp_pct": 56.7,
+      "sl_pct": 28.0,
+      "timeout_pct": 15.3,
+      "ambiguous_pct": 2.0,
+      "fav_mae_TP": 0.73,
+      "fav_bias_TP": -0.09,
+      "fav_mae_SL": 1.06,
+      "fav_bias_SL": 0.87,
+      "fav_mae_TIMEOUT": 1.12,
+      "fav_bias_TIMEOUT": 1.12
+    },
+    "pnl_distribution": {
+      "mean_pnl_r": -0.019,
+      "median_pnl_r": 0.413,
+      "p05_pnl_r": -1.0,
+      "p95_pnl_r": 0.66,
+      "win_rate_pct": 60.8,
+      "avg_win_r": 0.486,
+      "avg_loss_r": 0.803
+    }
+  }
+}

@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-12 19:56 UTC · git `6dc5e5b`
+> Auto-generated 2026-06-14 13:55 UTC · git `8007fd8`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,13 +9,13 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1440 files  ·  **Commit**: `6dc5e5b`  ·  **Generated**: 2026-06-12 19:56 UTC
+**Tracked**: 1443 files  ·  **Commit**: `8007fd8`  ·  **Generated**: 2026-06-14 13:55 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-06-07 | 14KB | `8d7db785` |
+| [AGENTS.md](AGENTS.md) |  | 2026-06-13 | 14KB | `a6171a32` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-12 | 170KB | `1b21108d` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-12 | 7KB | `b7cf13e6` |
@@ -78,9 +78,10 @@
 | [docs/audit/2026-06-11-stage4-GLM-audit.md](docs/audit/2026-06-11-stage4-GLM-audit.md) |  | 2026-06-12 | 24KB | `9823cfa7` |
 | [docs/audit/2026-06-11-stage4-Qwen-audit.md](docs/audit/2026-06-11-stage4-Qwen-audit.md) |  | 2026-06-12 | 16KB | `9c8be030` |
 | [docs/audit/2026-06-11-stage4-trade-xgboost-audit.md](docs/audit/2026-06-11-stage4-trade-xgboost-audit.md) |  | 2026-06-11 | 11KB | `14db190e` |
+| [docs/audit/2026-06-14-stage4-brainstorm_codex.md](docs/audit/2026-06-14-stage4-brainstorm_codex.md) |  | 2026-06-14 | 6KB | `16889846` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-09 | 1KB | `f975017a` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-30 | 34KB | `bdb0edad` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-10 | 4KB | `7e24075b` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-13 | 515B | `7e4a3f74` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-05 | 14KB | `11dc384e` |
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-03 | 4KB | `3b1e8db8` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-30 | 5KB | `6bf55f21` |
@@ -307,6 +308,7 @@
 | [ML/baseline/benchmark_fractal_stop_stage4_1.py](ML/baseline/benchmark_fractal_stop_stage4_1.py) | Stage 4.1 Fractal Stop controls: XGBoost-fav, combined breach H6/H12 и permutation test | ✅ | 2026-06-12 | 34KB | `455369c6` |
 | [ML/baseline/benchmark_fractal_stop_stage4_2.py](ML/baseline/benchmark_fractal_stop_stage4_2.py) | Stage 4.2 Fractal Stop diagnostic: исправленная методика (трёхслойный split, spread Bid, block bootstrap, perm test) для winner Stage 4 | ✅ | 2026-06-12 | 27KB | `1151a158` |
 | [ML/baseline/benchmark_limit_order_entry.py](ML/baseline/benchmark_limit_order_entry.py) |  |  | 2026-06-05 | 9KB | `32700fef` |
+| [ML/baseline/diagnose_stage4_gap.py](ML/baseline/diagnose_stage4_gap.py) |  |  | 2026-06-14 | 27KB | `ed1a52e9` |
 | [ML/baseline/direction_only_signal.py](ML/baseline/direction_only_signal.py) |  |  | 2026-06-05 | 6KB | `8d683a5b` |
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-05 | 3KB | `70523b5b` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-05 | 16KB | `704db67c` |
@@ -701,6 +703,7 @@
 | [ML/reports/stage3_profiles.json](ML/reports/stage3_profiles.json) |  |  | 2026-06-10 | 23KB | `397bda74` |
 | [ML/reports/stage4_1.json](ML/reports/stage4_1.json) |  |  | 2026-06-12 | 6KB | `81f4f4f1` |
 | [ML/reports/stage4_2_diagnostic.json](ML/reports/stage4_2_diagnostic.json) |  |  | 2026-06-12 | 1KB | `ed511aae` |
+| [ML/reports/stage4_gap_diagnostics.json](ML/reports/stage4_gap_diagnostics.json) |  |  | 2026-06-14 | 3KB | `930b5cab` |
 | [ML/reports/stage4_trade.json](ML/reports/stage4_trade.json) |  |  | 2026-06-11 | 11KB | `090781cd` |
 | [ML/reports/stage4_trade_geom.json](ML/reports/stage4_trade_geom.json) |  |  | 2026-06-11 | 11KB | `b48673bf` |
 | [ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json](ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json) |  |  | 2026-05-30 | 2KB | `a2d1b9ae` |
