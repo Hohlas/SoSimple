@@ -2,6 +2,28 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-14] — Stage 4: Глубокая диагностика провала и трейлинг-стоп
+
+### Добавлено
+- `ML/baseline/diagnose_stage4_gap.py` — Partial Oracle декомпозиция + breach-калибровка + fav-ошибки
+- `ML/baseline/improve_stage4.py` — 8 улучшающих экспериментов (параметры, фильтры, dynamic TP, quantile fav)
+- `ML/baseline/trail_stop_stage4.py` — 14 стратегий трейлинг-стопа
+- `ML/reports/stage4_gap_diagnostics.json`, `stage4_improvements.json`, `trail_stop_stage4.json`
+- `docs/reports/2026-06-14-stage4-deep-diagnostics.md` — лаконичный отчёт
+- `docs/audit/2026-06-14-stage4-brainstorm_deep.md` — полный аудит
+
+### Результаты
+- **Partial Oracle:** fav — большее узкое место, чем breach (PF 14.72 vs 6.61), но синергия колоссальна (perfect_both PF=104.88)
+- **Параметры и фильтры:** все уже оптимальны. tp_fraction/stop_offset/min_rr — уникальный локальный оптимум. Strong fractal (~0 сделок), ATR regime (вредит), combined breach (вредит), quantile fav (слишком консервативен)
+- **Трейлинг-стоп atr_02 (0.2 ATR отступ): PF 1.015 → 1.655 (+64%).** avg_loss вдвое меньше (0.872 → 0.365 ATR), TIMEOUT исчезают (15% → 0%), R:R становится симметричным
+- Step-стратегии (ступенчатый трейлинг) — нулевой эффект на H1
+- Breakeven (be_03, 30% TP): скромный прирост PF=1.116 (+10%)
+
+### Вывод
+Модель находит хорошие точки входа, но фиксированный TP/SL не даёт зафиксировать прибыль до разворота. Трейлинг-стоп atr_02 решает проблему механики выхода (PF=1.655) без переобучения моделей. Gap до oracle (104.88) остаётся — нужен Transformer (Stage 5.0) для улучшения breach+fav. Stage 5.1 должен тестировать Transformer с трейлинг-стопом.
+
+<!-- docs/reports/2026-06-14-stage4-deep-diagnostics.md --><!-- docs/audit/2026-06-14-stage4-brainstorm_deep.md -->
+
 ## [2026-06-12] — Stage 4.2: Diagnostic recalc с исправленной методикой
 
 ### Добавлено

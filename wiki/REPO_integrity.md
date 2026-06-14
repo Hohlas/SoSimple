@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-14 16:07 UTC · git `769f872`
+> Auto-generated 2026-06-14 18:09 UTC · git `98c11ec`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,14 +9,14 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1452 files  ·  **Commit**: `769f872`  ·  **Generated**: 2026-06-14 16:07 UTC
+**Tracked**: 1454 files  ·  **Commit**: `98c11ec`  ·  **Generated**: 2026-06-14 18:09 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-06-13 | 14KB | `a6171a32` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-12 | 170KB | `1b21108d` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-14 | 172KB | `1f48d2eb` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-12 | 7KB | `b7cf13e6` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-12 | 45KB | `6638eff2` |
@@ -81,9 +81,10 @@
 | [docs/audit/2026-06-14-stage4-brainstorm_GLM.md](docs/audit/2026-06-14-stage4-brainstorm_GLM.md) |  | 2026-06-14 | 4KB | `64bfdac4` |
 | [docs/audit/2026-06-14-stage4-brainstorm_Qwen.md](docs/audit/2026-06-14-stage4-brainstorm_Qwen.md) |  | 2026-06-14 | 9KB | `98bed871` |
 | [docs/audit/2026-06-14-stage4-brainstorm_codex.md](docs/audit/2026-06-14-stage4-brainstorm_codex.md) |  | 2026-06-14 | 14KB | `b8d6e325` |
-| [docs/audit/2026-06-14-stage4-brainstorm_deep.md](docs/audit/2026-06-14-stage4-brainstorm_deep.md) |  | 2026-06-14 | 10KB | `39f96ba0` |
+| [docs/audit/2026-06-14-stage4-brainstorm_deep.md](docs/audit/2026-06-14-stage4-brainstorm_deep.md) |  | 2026-06-14 | 16KB | `0d8e78b2` |
 | [docs/audit/2026-06-14-stage4-brainstorm_mimo.md](docs/audit/2026-06-14-stage4-brainstorm_mimo.md) |  | 2026-06-14 | 7KB | `875a2cfd` |
-| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-09 | 1KB | `f975017a` |
+| [docs/audit/2026-06-14-stage4-brainstorm_result.md](docs/audit/2026-06-14-stage4-brainstorm_result.md) |  | 2026-06-14 | 20KB | `fd09b561` |
+| [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-14 | 1KB | `34698cdb` |
 | [docs/audit/old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры | 2026-05-30 | 34KB | `bdb0edad` |
 | [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-13 | 515B | `7e4a3f74` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-05 | 14KB | `11dc384e` |
@@ -294,6 +295,7 @@
 | [docs/reports/2026-06-10-fractal-stop-breach-stage1.md](docs/reports/2026-06-10-fractal-stop-breach-stage1.md) | Итоговый отчёт Stage 1: breach-разметка, baseline, frozen test и переход к Stage 2 | 2026-06-10 | 8KB | `253de991` |
 | [docs/reports/2026-06-10-fractal-stop-fav-stage2.md](docs/reports/2026-06-10-fractal-stop-fav-stage2.md) | Итоговый отчёт Stage 2: fav-разметка, торговый слой, RF FAIL и oracle-диагностика | 2026-06-10 | 19KB | `59f83b51` |
 | [docs/reports/2026-06-11-stage4-trade-xgboost.md](docs/reports/2026-06-11-stage4-trade-xgboost.md) |  | 2026-06-12 | 33KB | `349720ce` |
+| [docs/reports/2026-06-14-stage4-deep-diagnostics.md](docs/reports/2026-06-14-stage4-deep-diagnostics.md) |  | 2026-06-14 | 6KB | `990ef37a` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-05-30 | 2KB | `e07ce60f` |
 
 ## ML
@@ -317,7 +319,7 @@
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-05 | 3KB | `70523b5b` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-05 | 16KB | `704db67c` |
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-05 | 9KB | `1e6b236f` |
-| [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-14 | 33KB | `2d347698` |
+| [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-14 | 33KB | `e5c6ddc8` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle-диагностика Fractal Stop Fav: проверка потолка PF при идеальном знании breach/fav labels | ✅ | 2026-06-10 | 8KB | `02e614cf` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-05-30 | 4KB | `66cbf52f` |
 | [ML/baseline/reports/limit_order_spread_grid.md](ML/baseline/reports/limit_order_spread_grid.md) |  |  | 2026-06-03 | 3KB | `f8f3c27b` |
