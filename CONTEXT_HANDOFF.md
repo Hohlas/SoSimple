@@ -1,6 +1,6 @@
 # Context Handoff
 
-Дата: 2026-06-12.
+Дата: 2026-06-15 (Stage 4.x remaining hypotheses завершён).
 
 ## Текущий этап
 
@@ -77,11 +77,19 @@ Stage 4.2 одновременно меняет train-период, слой ear
 
 ## Следующий шаг
 
-После Stage 4/4.1 FAIL + Stage 4.2 DIAGNOSTIC: не открывать test для текущего кандидата.
+После Stage 4.6 FAIL: завершён master-план оставшихся гипотез Stage 4.x.
 
-**Приоритет: Transformer encoder на фрактальной sequence (Stage 5.0 — модельный слой).**
+**Выполненные гипотезы:**
+- Stage 5.0-prep: feature ablation (календарный риск подтверждён, time_only AUC=0.6286 > no_time 0.6113) + AUC→PF sensitivity (gate при AUC=0.8442, gap +1768 bp)
+- Stage 4.5 exit mechanics: trail_atr_0_2 PF=1.831, BS_p05=1.462 — лучший diagnostic-сигнал Fractal Stop
+- Stage 4.6 clean candidate-cycle (extended to 2026): trail_atr_0_2 прошёл val_select 2019-2022 (PF=2.041, conc=0.434), но провалил val_eval 2023-2026 (PF=0.897) — breach-модель ≤2016 не обобщается на +7 лет; exit-политика доминирует над breach-сигналом в протоколе выбора
 
-- Stage 5.0: breach-only классификация, чистая методика, годовые AUC/lift, seed-устойчивость, calibration, проверка time-фичей. Gate: +100 bp mean AUC над XGBoost.
-- Stage 5.1: торговый слой — только если Stage 5.0 пройден; здесь нужны block bootstrap и permutation test по сделкам.
+**Приоритет: Stage 5.0 Transformer.**
 
-**Альтернатива:** пересмотр торговой постановки (direct PnL prediction, trailing stop, multi-timeframe).
+На входе:
+- Календарный baseline обязателен (time features несут 56% breach-сигнала)
+- Требуемый AUC-прирост для PF-gate = 1768 bp (значительный масштаб)
+- Trail_atr_0_2 даёт улучшающий сигнал как execution-политика, но требует более длинного сплита для clean-валидации
+- Stage 4.4 fixed TP R=0.7 + fav-фильтр — текущий baseline для торгового слоя
+
+**Альтернатива:** пересмотр торговой постановки или закрытие Fractal Stop ветки.

@@ -32,7 +32,8 @@
    - yearly/monthly slices;
    - BUY/SELL slices;
    - drawdown;
-   - concentration of profit.
+   - profit concentration diagnostics: `effective_profit_years`,
+     best-year share, PF without best year.
 3. Применить production gates до выбора winner.
 4. Зафиксировать один winner и оценить его на `val-eval` без изменения правила.
 5. Сохранить rule JSON, threshold, checkpoint path, feature contract, export command.
@@ -52,6 +53,37 @@
 - Frozen rule невалиден после изменения `entry_price`, canonical spread, fill policy или PnL convention.
 - Validation PF для execution-aware кандидата считается по PnL, а не по счёту TP/SL.
 - Zero-spread validation sweep не может выбрать frozen winner для production, если canonical spread не равен нулю.
+- Profit concentration не должен быть единственным жёстким gate на коротком validation. Вместо правила вида `best_year_share <= X` использовать пакет проверок:
+  `effective_profit_years`, число прибыльных лет, минимальный годовой PF, PF без лучшего года, `BS_p05` и stress по spread/costs.
+
+### Profit concentration diagnostics
+
+Для проверки, не держится ли PF на одном удачном году, считать долю валовой прибыли каждого года:
+
+```text
+share_y = gross_profit_y / sum(gross_profit_all_years)
+```
+
+Затем считать эффективное число прибыльных лет:
+
+```text
+effective_profit_years = 1 / sum(share_y^2)
+```
+
+Интерпретация:
+
+- если вся прибыль пришла из одного года: `effective_profit_years = 1.0`;
+- если прибыль распределена как `75/25` на двух годах: примерно `1.6`;
+- если прибыль равномерно распределена по двум годам: `2.0`;
+- если прибыль равномерно распределена по четырём годам: `4.0`.
+
+Базовый gate для validation-кандидата:
+
+```text
+effective_profit_years >= max(1.5, 0.6 * n_years)
+```
+
+Этот gate не требует равномерной прибыли по годам, но отсекает случаи, где почти весь результат сделал один рыночный режим. Для короткого окна `n_years <= 3` провал только этой проверки понижает статус до `research_only` или `warning`, но не обязан автоматически отклонять кандидата, если остальные проверки сильные. Автоматический reject обоснован, когда вместе с концентрацией есть дополнительные проблемы: `BS_p05 < 1.0`, PF без лучшего года < 1.0, большинство лет убыточны или spread/cost stress ломает PF.
 
 ### Критерии успешного завершения
 

@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-15] — Stage 4.x Remaining Hypotheses Master Plan (Stage 5.0-prep / 4.5 / 4.6)
+
+### Добавлено
+- `ML/baseline/diagnose_stage5_prep.py` — feature ablation + AUC→PF sensitivity
+- `ML/baseline/diagnose_stage4_5_exit_mechanics.py` — trailing/breakeven/partial exit mechanics
+- `ML/baseline/benchmark_stage4_6_clean_cycle.py` — clean val_select/val_eval candidate-cycle (ext to 2026)
+- 3 канонических отчёта, 3 документации модулей, 26 smoke-тестов
+
+### Результаты
+- Stage 5.0-prep: календарный риск подтверждён (time_only AUC=0.6286 > no_time 0.6113), oracle-mix: PF-gate при AUC≥0.8442 (gap +1768 bp)
+- Stage 4.5: trail_atr_0_2 PF=1.831 (BS_p05=1.462) — лучший diagnostic-результат Fractal Stop; breakeven PF=0.717
+- Stage 4.6: trail_atr_0_2 прошёл val_select 2019-2022 (PF=2.041, conc=0.434) но провалил val_eval 2023-2026 (PF=0.897) — breach-модель ≤2016 не обобщается на +7 лет
+- Permutation test: exit-политика доминирует над breach-сигналом в протоколе выбора
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. Все гипотезы `docs/audit/to_do.md` выполнены. Stage 4.x закрыт. Следующий шаг — Stage 5.0 Transformer с календарным baseline. Fixed TP R=0.7 — baseline торгового слоя. Trail_atr_0_2 — отдельная диагностическая ветка.
+
+<!-- docs/reports/2026-06-15-stage4_4-micro-check.md -->
+
 ## [2026-06-14] — Stage 4: Глубокая диагностика провала и трейлинг-стоп
 
 ### Добавлено

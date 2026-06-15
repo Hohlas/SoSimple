@@ -1,0 +1,198 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "source": "docs/audit/to_do.md \u2192 Stage 5.0-prep diagnostics",
+  "config": {
+    "target": "sell_H6_off05",
+    "split": {
+      "train": "<=2016",
+      "val_stop": [
+        2017,
+        2018
+      ],
+      "val_eval": ">=2019"
+    },
+    "spread": 0.2,
+    "seed": 42
+  },
+  "baseline_reproduction": {
+    "breach_auc": 0.6674,
+    "breach_pr_auc": 0.5272,
+    "expected_auc": 0.6674,
+    "auc_ok": true
+  },
+  "feature_ablation": [
+    {
+      "profile": "all_base_raw_plus_time",
+      "n_features": 1005,
+      "breach_auc": 0.6674,
+      "breach_pr_auc": 0.5272,
+      "delta_auc_vs_full": 0.0,
+      "top5_features": [
+        {
+          "name": "hour_sin",
+          "importance": 0.0066
+        },
+        {
+          "name": "f0_back",
+          "importance": 0.0066
+        },
+        {
+          "name": "hour_cos",
+          "importance": 0.0062
+        },
+        {
+          "name": "f0_impulse",
+          "importance": 0.0038
+        },
+        {
+          "name": "f52_price",
+          "importance": 0.0037
+        }
+      ]
+    },
+    {
+      "profile": "no_time",
+      "n_features": 1001,
+      "breach_auc": 0.6113,
+      "breach_pr_auc": 0.4721,
+      "delta_auc_vs_full": -0.0561,
+      "top5_features": []
+    },
+    {
+      "profile": "time_only",
+      "n_features": 4,
+      "breach_auc": 0.6286,
+      "breach_pr_auc": 0.4918,
+      "delta_auc_vs_full": -0.0389,
+      "top5_features": []
+    },
+    {
+      "profile": "fractal_core_only",
+      "n_features": 1000,
+      "breach_auc": 0.6143,
+      "breach_pr_auc": 0.4643,
+      "delta_auc_vs_full": -0.0532,
+      "top5_features": []
+    },
+    {
+      "profile": "no_price",
+      "n_features": 905,
+      "breach_auc": 0.6706,
+      "breach_pr_auc": 0.5294,
+      "delta_auc_vs_full": 0.0032,
+      "top5_features": []
+    },
+    {
+      "profile": "no_atr",
+      "n_features": 1004,
+      "breach_auc": 0.6682,
+      "breach_pr_auc": 0.5251,
+      "delta_auc_vs_full": 0.0008,
+      "top5_features": []
+    }
+  ],
+  "auc_pf_sensitivity": [
+    {
+      "alpha": 0.0,
+      "breach_auc": 0.6674,
+      "fav_tp_pf": 1.015,
+      "fav_tp_n": 503,
+      "fav_tp_bs_p05": 0.837,
+      "fav_tp_neg_years": 1,
+      "fixed_r07_pf": 1.038,
+      "fixed_r07_n": 503,
+      "fixed_r07_bs_p05": 0.886,
+      "fixed_r07_neg_years": 2
+    },
+    {
+      "alpha": 0.1,
+      "breach_auc": 0.8442,
+      "fav_tp_pf": 2.358,
+      "fav_tp_n": 558,
+      "fav_tp_bs_p05": 1.933,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 2.319,
+      "fixed_r07_n": 558,
+      "fixed_r07_bs_p05": 1.953,
+      "fixed_r07_neg_years": 0
+    },
+    {
+      "alpha": 0.2,
+      "breach_auc": 0.957,
+      "fav_tp_pf": 4.342,
+      "fav_tp_n": 722,
+      "fav_tp_bs_p05": 3.728,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 3.875,
+      "fixed_r07_n": 722,
+      "fixed_r07_bs_p05": 3.359,
+      "fixed_r07_neg_years": 0
+    },
+    {
+      "alpha": 0.3,
+      "breach_auc": 0.9965,
+      "fav_tp_pf": 5.474,
+      "fav_tp_n": 1079,
+      "fav_tp_bs_p05": 4.741,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 4.977,
+      "fixed_r07_n": 1079,
+      "fixed_r07_bs_p05": 4.33,
+      "fixed_r07_neg_years": 0
+    },
+    {
+      "alpha": 0.5,
+      "breach_auc": 1.0,
+      "fav_tp_pf": 6.504,
+      "fav_tp_n": 1703,
+      "fav_tp_bs_p05": 5.656,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 5.968,
+      "fixed_r07_n": 1703,
+      "fixed_r07_bs_p05": 5.249,
+      "fixed_r07_neg_years": 0
+    },
+    {
+      "alpha": 0.7,
+      "breach_auc": 1.0,
+      "fav_tp_pf": 6.613,
+      "fav_tp_n": 1737,
+      "fav_tp_bs_p05": 5.732,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 6.019,
+      "fixed_r07_n": 1737,
+      "fixed_r07_bs_p05": 5.289,
+      "fixed_r07_neg_years": 0
+    },
+    {
+      "alpha": 1.0,
+      "breach_auc": 1.0,
+      "fav_tp_pf": 6.729,
+      "fav_tp_n": 1386,
+      "fav_tp_bs_p05": 5.82,
+      "fav_tp_neg_years": 0,
+      "fixed_r07_pf": 6.11,
+      "fixed_r07_n": 1386,
+      "fixed_r07_bs_p05": 5.239,
+      "fixed_r07_neg_years": 0
+    }
+  ],
+  "sensitivity_summary": {
+    "gate_pf": 1.15,
+    "gate_bs_p05": 1.0,
+    "first_alpha_fav_tp": 0.1,
+    "first_alpha_fav_tp_auc": 0.8442,
+    "first_alpha_fixed_r07": 0.1,
+    "first_alpha_fixed_r07_auc": 0.8442,
+    "baseline_auc": 0.6674
+  },
+  "interpretation_guards": [
+    "DIAGNOSTIC_ONLY: no test opened, no winner selected",
+    "Oracle-mix scores use future information (true breach labels)",
+    "Oracle-mix is theoretical diagnostic, not achievable model quality",
+    "Feature ablation uses same split as Stage 4.4 \u2014 no new winner search",
+    "Sensitivity results are upper-bound estimates, not predictions",
+    "Calendar risk is identified but not corrected",
+    "Ablation does NOT prove any profile can pass PF gate"
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "source": "Stage 4.5 trail_atr_0_2 \u2192 extended clean cycle (incl 2023-2026)",
+  "config": {
+    "target": "sell_H6_off05",
+    "split": {
+      "train": "<=2016",
+      "val_stop": [
+        2017,
+        2018
+      ],
+      "val_select": [
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "val_eval": [
+        2023,
+        2024,
+        2025,
+        2026
+      ]
+    },
+    "spread": 0.2,
+    "seed": 42,
+    "search_budget": {
+      "n_candidates": 3
+    },
+    "val_eval_source": "MT/MQL4/Files/Nero.csv (unlabeled, features only)"
+  },
+  "val_select_results": [
+    {
+      "name": "fixed_r_0_7",
+      "pf": 1.086,
+      "bs_p05": 0.919,
+      "bs_median": 1.081,
+      "n_trades": 532,
+      "neg_years": 2,
+      "gross_profit_concentration": 0.409,
+      "monthly_concentration": 0.0,
+      "yearly_pf": {
+        "2019": 0.876,
+        "2020": 1.343,
+        "2021": 1.187,
+        "2022": 0.886
+      },
+      "yearly_n": {
+        "2019": 110,
+        "2020": 195,
+        "2021": 105,
+        "2022": 122
+      },
+      "exits": {
+        "TIMEOUT": 135,
+        "TP": 243,
+        "SL": 154
+      },
+      "spread_stress_pf": 0.937
+    },
+    {
+      "name": "trail_atr_0_2",
+      "pf": 2.041,
+      "bs_p05": 1.618,
+      "bs_median": 2.037,
+      "n_trades": 532,
+      "neg_years": 0,
+      "gross_profit_concentration": 0.434,
+      "monthly_concentration": 0.0,
+      "yearly_pf": {
+        "2019": 1.045,
+        "2020": 2.833,
+        "2021": 2.913,
+        "2022": 1.735
+      },
+      "yearly_n": {
+        "2019": 110,
+        "2020": 195,
+        "2021": 105,
+        "2022": 122
+      },
+      "exits": {
+        "TRAIL": 386,
+        "TP": 96,
+        "SL": 50
+      },
+      "spread_stress_pf": 1.627
+    },
+    {
+      "name": "trail_atr_0_3",
+      "pf": 1.391,
+      "bs_p05": 1.123,
+      "bs_median": 1.386,
+      "n_trades": 532,
+      "neg_years": 1,
+      "gross_profit_concentration": 0.446,
+      "monthly_concentration": 0.0,
+      "yearly_pf": {
+        "2019": 0.686,
+        "2020": 1.96,
+        "2021": 1.626,
+        "2022": 1.266
+      },
+      "yearly_n": {
+        "2019": 110,
+        "2020": 195,
+        "2021": 105,
+        "2022": 122
+      },
+      "exits": {
+        "TRAIL": 380,
+        "TP": 97,
+        "SL": 55
+      },
+      "spread_stress_pf": 1.118
+    }
+  ],
+  "selected_rule": "trail_atr_0_2",
+  "val_eval_result": {
+    "name": "trail_atr_0_2",
+    "pf": 0.897,
+    "bs_p05": 0.679,
+    "bs_median": 0.87,
+    "n_trades": 357,
+    "neg_years": 3,
+    "gross_profit_concentration": 0.443,
+    "monthly_concentration": 0.0,
+    "yearly_pf": {
+      "2023": 0.919,
+      "2024": 0.937,
+      "2025": 0.643,
+      "2026": 1.4
+    },
+    "yearly_n": {
+      "2023": 163,
+      "2024": 157,
+      "2025": 31,
+      "2026": 6
+    },
+    "exits": {
+      "TRAIL": 129,
+      "TP": 114,
+      "SL": 114
+    },
+    "spread_stress_pf": 0.0
+  },
+  "permutation_selection": {
+    "n_iter": 100,
+    "perm_median_pf": 0.897,
+    "perm_p05_pf": 0.897,
+    "perm_p95_pf": 0.897,
+    "n_ge_observed": 100,
+    "p_value": 1.0,
+    "selected_in_perm": {
+      "trail_atr_0_2": 100
+    }
+  },
+  "interpretation_guards": [
+    "DIAGNOSTIC_ONLY: no test opened, no frozen test candidate",
+    "val_eval 2023-2026 from Nero.csv \u2014 NO target labels, features+OHLC only",
+    "Model stack unchanged from Stage 4.4 \u2014 exit mechanics only",
+    "If val_eval fails: reject candidate family, do not expand grid",
+    "If val_eval passes: RESEARCH_CANDIDATE, not frozen test candidate"
+  ]
+}

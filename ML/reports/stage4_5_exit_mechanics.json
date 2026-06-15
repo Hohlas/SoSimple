@@ -1,0 +1,226 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "source": "docs/audit/to_do.md \u2192 trailing / partial exit mechanics",
+  "config": {
+    "target": "sell_H6_off05",
+    "spread": 0.2,
+    "seed": 42,
+    "search_budget": {
+      "n_policies": 5,
+      "policies": [
+        "fixed_r_0_7",
+        "breakeven_0_3",
+        "trail_atr_0_2",
+        "trail_atr_0_3",
+        "partial_50_at_0_5R_then_trail_0_2"
+      ]
+    }
+  },
+  "baseline_reproduction": {
+    "pf": 1.038,
+    "n_trades": 503,
+    "bs_p05": 0.886,
+    "expected_pf": 1.038,
+    "expected_n": 503,
+    "pf_ok": true,
+    "n_ok": true
+  },
+  "exit_policies": [
+    {
+      "name": "fixed_r_0_7",
+      "policy": "fixed",
+      "pf": 1.038,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "yearly_pf": {
+        "2019": 0.918,
+        "2020": 1.104,
+        "2021": 1.479,
+        "2022": 0.839
+      },
+      "yearly_n": {
+        "2019": 107,
+        "2020": 172,
+        "2021": 99,
+        "2022": 125
+      },
+      "bs_median": 1.035,
+      "bs_p05": 0.886,
+      "bs_p95": 1.194,
+      "neg_years": 2,
+      "gross_profit": 198.787,
+      "gross_loss": 191.56,
+      "win_rate": 55.5,
+      "exits": {
+        "TIMEOUT": 128,
+        "SL": 150,
+        "TP": 225
+      },
+      "spread_stress": {
+        "pf": 0.928,
+        "bs_p05": 0.797
+      }
+    },
+    {
+      "name": "breakeven_0_3",
+      "policy": "breakeven",
+      "pf": 0.717,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "yearly_pf": {
+        "2019": 0.371,
+        "2020": 0.921,
+        "2021": 0.972,
+        "2022": 0.639
+      },
+      "yearly_n": {
+        "2019": 107,
+        "2020": 172,
+        "2021": 99,
+        "2022": 125
+      },
+      "bs_median": 0.723,
+      "bs_p05": 0.569,
+      "bs_p95": 0.898,
+      "neg_years": 4,
+      "gross_profit": 86.45,
+      "gross_loss": 120.641,
+      "win_rate": 20.9,
+      "exits": {
+        "TIMEOUT": 24,
+        "SL": 376,
+        "TP": 103
+      },
+      "spread_stress": {
+        "pf": 0.611,
+        "bs_p05": 0.491
+      }
+    },
+    {
+      "name": "trail_atr_0_2",
+      "policy": "trailing",
+      "pf": 1.831,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "yearly_pf": {
+        "2019": 0.957,
+        "2020": 2.421,
+        "2021": 2.828,
+        "2022": 1.565
+      },
+      "yearly_n": {
+        "2019": 107,
+        "2020": 172,
+        "2021": 99,
+        "2022": 125
+      },
+      "bs_median": 1.834,
+      "bs_p05": 1.462,
+      "bs_p95": 2.23,
+      "neg_years": 1,
+      "gross_profit": 129.395,
+      "gross_loss": 70.687,
+      "win_rate": 60.4,
+      "exits": {
+        "TRAIL": 356,
+        "SL": 56,
+        "TP": 91
+      },
+      "spread_stress": {
+        "pf": 1.501,
+        "bs_p05": 1.199
+      }
+    },
+    {
+      "name": "trail_atr_0_3",
+      "policy": "trailing",
+      "pf": 1.296,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "yearly_pf": {
+        "2019": 0.616,
+        "2020": 1.737,
+        "2021": 1.733,
+        "2022": 1.208
+      },
+      "yearly_n": {
+        "2019": 107,
+        "2020": 172,
+        "2021": 99,
+        "2022": 125
+      },
+      "bs_median": 1.302,
+      "bs_p05": 1.048,
+      "bs_p95": 1.574,
+      "neg_years": 1,
+      "gross_profit": 112.977,
+      "gross_loss": 87.147,
+      "win_rate": 49.5,
+      "exits": {
+        "TRAIL": 351,
+        "SL": 60,
+        "TP": 92
+      },
+      "spread_stress": {
+        "pf": 1.061,
+        "bs_p05": 0.865
+      }
+    },
+    {
+      "name": "partial_50_at_0_5R_then_trail_0_2",
+      "policy": "partial",
+      "pf": 1.051,
+      "n_trades": 503,
+      "trades_per_year": 125.8,
+      "n_years": 4,
+      "yearly_pf": {
+        "2019": 0.713,
+        "2020": 1.157,
+        "2021": 1.329,
+        "2022": 1.079
+      },
+      "yearly_n": {
+        "2019": 107,
+        "2020": 172,
+        "2021": 99,
+        "2022": 125
+      },
+      "bs_median": 1.051,
+      "bs_p05": 0.883,
+      "bs_p95": 1.23,
+      "neg_years": 1,
+      "gross_profit": 162.715,
+      "gross_loss": 154.857,
+      "win_rate": 65.2,
+      "exits": {
+        "TIMEOUT": 62,
+        "SL": 286,
+        "TP": 155
+      },
+      "spread_stress": {
+        "pf": 0.909,
+        "bs_p05": 0.755
+      }
+    }
+  ],
+  "permutation_test": {
+    "n_iter": 500,
+    "perm_median_pf": 0.823,
+    "perm_p05_pf": 0.755,
+    "perm_p95_pf": 0.912,
+    "n_ge_observed": 0,
+    "p_value": 0.001996007984031936
+  },
+  "interpretation_guards": [
+    "DIAGNOSTIC_ONLY: no test opened, no winner selected",
+    "Exit policy alone \u2014 breach/fav models unchanged from Stage 4.4",
+    "No policy deserves a clean candidate-cycle without BS_p05 > 1.0 and PF improvement",
+    "Old trailing PF=1.655 is not reused as evidence",
+    "Cost stress at spread=0.40 applied \u2014 reject if fails",
+    "Any attractive policy requires separate val_select/val_eval"
+  ]
+}

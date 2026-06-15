@@ -69,6 +69,52 @@ Stage 4.3 не выбирал нового winner и не открывал test.
 
 Цель Stage 4.3 — понять, где теряется PF между oracle-потолком и фактическим Stage 4.2 PF, а не доказать прибыльность новой торговой зоны. Найденные прибыльные зоны имеют только статус `hypothesis_only`.
 
+### Stage 4.4: diagnostic micro-check перед Transformer (2026-06-15) — ⚠️ DIAGNOSTIC
+
+Stage 4.4 не выбирал нового winner и не открывал test. Проверил три гипотезы на фиксированных Stage 4.2 моделях:
+
+1. **Relax breach p=0.5**: PF=0.862 (vs baseline 1.015), +938 сделок (57% oracle-безопасны, 43% oracle-плохие). Ослабление фильтра ухудшает PF.
+2. **Fixed TP (R ∈ {0.5, 0.7, 1.0})**: лучший PF=1.038 (R=0.7), BS_p05=0.886. Fixed TP не хуже fav-based TP; fav-based TP не даёт преимущества как прямая цена TP.
+3. **Breach-only entry + Fixed TP**: все PF < 0.91, permutation p ≈ 0.09. Breach без fav-фильтра убыточен; fav-фильтр добавляет +0.05 до +0.14 PF.
+
+Выводы для Stage 5.0 Transformer: fav не нужно учить как цену TP (fixed TP достаточно), но fav необходим как фильтр входа. Основной фокус Transformer — улучшение breach-классификации.
+
+### Stage 5.0-prep: feature ablation + AUC→PF sensitivity (2026-06-15) — ⚠️ DIAGNOSTIC
+
+Проверялись две гипотезы перед Transformer Stage 5.0 на том же split/target/signals, что Stage 4.4.
+
+**Feature ablation (6 профилей):**
+- `time_only` (4 признака, AUC=0.6286) превосходит `no_time` (1001 признак, AUC=0.6113) — время кодирует больше breach-сигнала, чем все 1000 фрактальных признаков
+- `fractal_core_only` (1000 признаков, AUC=0.6143) уступает `time_only` — календарный риск подтверждён
+- `no_price` (удаление ценовых каналов) улучшает AUC на 32 bp — ценовые признаки могут шуметь в breach-классификации
+- Полная модель: 0.6674, где time добавляет 561 bp, fractal добавляет 388 bp поверх time
+
+**AUC→PF sensitivity (oracle mix):**
+- Первый проход PF-gate > 1.15 при alpha=0.1, AUC=0.8442
+- Требуемый прирост AUC от текущих 0.6674 до 0.8442: +1768 bp — масштаб разрыва велик
+- Зона alpha ∈ [0.0, 0.1] — самый крутой участок кривой PF = f(AUC)
+
+**Выводы для Stage 5.0:** Transformer оправдан (фрактальная структура добавляет 388 bp), но календарный baseline обязателен. Ценовые признаки можно исключить из breach-головы.
+
+### Stage 4.5: trailing / breakeven / partial exit mechanics (2026-06-15) — ⚠️ DIAGNOSTIC
+
+Фиксированные Stage 4.4 breach/fav модели + 5 pre-defined exit-политик. Синтетические тесты симулятора пройдены.
+
+- `breakeven_0_3`: PF=0.717 — убивает PF, преждевременные выходы
+- `trail_atr_0_2`: PF=1.831, BS_p05=1.462, neg_years=1 — лучший результат всех Fractal Stop этапов; 71% выходов по трейлингу
+- `trail_atr_0_3`: PF=1.296, BS_p05=1.048 — всё ещё лучше baseline, менее агрессивный
+- `partial_50_at_0_5R_then_trail`: PF=1.051 — минимальное улучшение над baseline
+
+`trail_atr_0_2` проходит spread stress (PF=1.501 при spread=0.40). Первый diagnostic-результат, заслуживающий чистого Stage 4.6 candidate-cycle.
+
+### Stage 4.6: clean candidate-cycle (2026-06-15, ext to 2026) — ⚠️ FAIL
+
+Extended clean cycle: val_select 2019-2022 (4 года), val_eval 2023-2026 (из Nero.csv, без target-меток):
+- `trail_atr_0_2`: val_select PF=2.041, BS_p05=1.618, concentration=0.434 — прошёл gate
+- `trail_atr_0_2`: val_eval PF=0.897, BS_p05=0.679 — провал на новых данных
+- Breach-модель ≤2016 не обобщается на +7 лет (2023-2026)
+- Permutation test: exit-политика доминирует над breach-сигналом — выбор трейлинга не зависит от качества breach-ранжирования
+
 ## Ключевые результаты
 
 ### Stage 1

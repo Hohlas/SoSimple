@@ -3,6 +3,35 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-06-15] ingest | Stage 4.6 clean candidate-cycle synced into wiki (ext to 2026)
+- Added coverage for `docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md`.
+- Updated `wiki/research/fractal-stop-research.md` with Stage 4.6 extended results.
+- trail_atr_0_2: val_select 2019-2022 PF=2.041, BS_p05=1.618, conc=0.434 — PASS.
+- Val_eval 2023-2026 (Nero.csv): PF=0.897 — FAIL. Breach model ≤2016 doesn't generalize.
+- Permutation test: exit-policy dominates breach signal in selection protocol.
+- Updated `wiki/index.md` coverage.
+
+## [2026-06-15] ingest | Stage 4.5 exit mechanics synced into wiki
+- Added coverage for `docs/reports/2026-06-15-stage4_5-exit-mechanics.md`.
+- Updated `wiki/research/fractal-stop-research.md` with Stage 4.5 section.
+- trail_atr_0_2: PF=1.831, BS_p05=1.462 — first diagnostic result warranting clean candidate-cycle.
+- Breakeven kills PF (0.717); partial exit marginal improvement (1.051).
+- Spread 0.40: trail_atr_0_2 PF=1.501 — passes cost stress.
+- Updated `wiki/index.md` coverage.
+
+## [2026-06-15] ingest | Stage 5.0-prep diagnostics synced into wiki
+- Added coverage for `docs/reports/2026-06-15-stage5-prep-diagnostics.md`.
+- Updated `wiki/research/fractal-stop-research.md` with Stage 5.0-prep section.
+- Feature ablation: time_only AUC=0.6286 beats no_time AUC=0.6113 — calendar risk significant.
+- AUC→PF sensitivity: gate PF>1.15 at alpha=0.1 (AUC=0.8442), required uplift +1768 bp from baseline 0.6674.
+- Updated `wiki/index.md` coverage for fractal-stop research.
+
+## [2026-06-15] ingest | Stage 4.4 diagnostic micro-check synced into wiki
+- Added coverage for `docs/reports/2026-06-15-stage4_4-micro-check.md`.
+- Updated `wiki/research/fractal-stop-research.md` with Stage 4.4 section.
+- Recorded key findings: fixed TP (R=0.7) not worse than fav-based TP, breach-only unprofitable, fav needed as filter not TP price.
+- Updated `wiki/index.md` coverage for fractal-stop research.
+
 ## [2026-06-11] update | Fractal Stop Stage 4 synced into wiki
 - Updated `wiki/research/fractal-stop-research.md` after reading `docs/reports/2026-06-11-stage4-trade-xgboost.md`.
 - Recorded Stage 4 verdict: XGBoost breach + RF fav does not pass validation trading gates; winner `sell_H6_off05` PF=1.106 with BS_p05=0.923 is not statistically significant.
