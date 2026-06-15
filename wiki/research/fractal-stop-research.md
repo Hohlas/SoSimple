@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-06-12
-sources: 5
+last_updated: 2026-06-15
+sources: 6
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost на текущем табличном представлении не дают устойчиво прибыльный торговый PF.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost на текущем табличном представлении не дают устойчиво прибыльный торговый PF; Stage 4.3 уточнил, что провал связан с совместной слабостью breach-ранжирования и fav/TP слоя.
 
 ## Хронология
 
@@ -62,6 +62,12 @@ Stage 4.1 проверил два быстрых контрольных улуч
 Stage 4.2 пересчитал унаследованный winner `sell_H6_off05` с теми же параметрами (`p=0.4`, `min_fav=0.3`, `min_rr=1.0`, `tp_fraction=0.4`), но с исправленным диагностическим протоколом: train 2004-2016, `val_stop` 2017-2018 для early stopping, `val_eval` 2019-2022 для оценки, spread-коррекция под OHLC=Bid, block bootstrap и permutation test.
 
 Статус Stage 4.2 — `DIAGNOSTIC_ONLY`: winner был выбран ранее на Stage 4 по validation 2019-2022, поэтому historical selection bias не устранён. Test не открывался.
+
+### Stage 4.3: post-mortem diagnostics (2026-06-15) — ⚠️ DIAGNOSTIC
+
+Stage 4.3 не выбирал нового winner и не открывал test. Он воспроизвёл Stage 4.2 baseline (`sell_H6_off05`, `p=0.4`, `min_fav=0.3`, `min_rr=1.0`, `tp_fraction=0.4`) и разложил сделки по loss attribution, breach buckets, fav buckets, cumulative 2D map, фактическому RR, TP-policy variants и oracle-deviation regimes.
+
+Цель Stage 4.3 — понять, где теряется PF между oracle-потолком и фактическим Stage 4.2 PF, а не доказать прибыльность новой торговой зоны. Найденные прибыльные зоны имеют только статус `hypothesis_only`.
 
 ## Ключевые результаты
 
@@ -230,6 +236,42 @@ Combined breach H6 AND H12:
 
 Stage 4.2 показывает, что breach-модель добавляет реальный сигнал для фиксированного правила: ни одна из 500 перестановок breach-вероятностей не достигла PF ≥ 1.015, медианный случайный PF = 0.817. Но это не является доказательством торговой пригодности: PF не проходит gate > 1.15, BS_p05 ниже 1.0, а historical selection bias winner остаётся.
 
+### Stage 4.3
+
+Stage 4.3 воспроизвёл Stage 4.2 baseline с теми же числами: PF `1.015`, `503` сделки, BS_p05 `0.837`, AUC `0.6674`, 4 года validation. Основные результаты:
+
+| Блок | Результат | Интерпретация |
+|---|---:|---|
+| Loss attribution | SL = 87.4% gross loss | Основные потери приходят от пробоя стопа, а не от TIMEOUT |
+| Breach buckets | `[0.20,0.30)` PF 1.109, breach-rate 0.355; `[0.30,0.40)` PF 0.999, breach-rate 0.330 | Рейтинг `predict_break` на уже отобранных сделках немонотонен |
+| Fav quantiles | Spearman `pred_fav` vs `true_fav` = 0.218 | Fav-регрессия слабо ранжирует будущий благоприятный ход |
+| `pred_fav/stop_val` | `[1.0,1.3)` PF 1.286, BS_p05 1.036; более высокие ratio ухудшают PF | Ratio работает не как положительный фильтр; низкий фактический RR чаще достигает TP |
+| Actual RR | median 0.495R, win rate 60.8%, required win rate 62.3% | Торговая система находится около нуля, но запас слабый |
+| TP policy | fixed R 0.5/0.7 чуть выше current, но BS_p05 ниже 1.0 | Fixed TP не решает проблему как готовое правило |
+| 2D map | нет устойчивых hypothesis_candidate ячеек | Нет готовой зоны для прямого переноса в торговое правило |
+
+Oracle-deviation regimes:
+
+| Regime | PF | Сделок | BS_p05 |
+|---|---:|---:|---:|
+| model breach + model fav | 1.015 | 503 | 0.837 |
+| oracle breach + model fav | 6.613 | 1737 | 5.732 |
+| model breach + oracle fav | 14.720 | 367 | 10.328 |
+| oracle breach + oracle fav | 104.879 | 1560 | 73.872 |
+
+Эти режимы подтверждают высокий диагностический потолок, но не являются торговым доказательством: oracle labels используют будущую информацию. Сравнивать PF режимов как точную аддитивную декомпозицию нельзя, потому что режимы открывают разные наборы сделок. Практический вывод: fav/TP слой является главным подозреваемым по oracle-потолку, но breach-фильтр тоже ограничивает результат.
+
+Oracle Deviation Attribution после доработки считает PnL/yearly/bootstrap по категориям. Breach-категории взаимно исключающие; fav-категории считаются только на строках, где вход разрешён model breach или oracle breach, и могут пересекаться.
+
+| Категория | N | Forced PnL | Вывод |
+|---|---:|---:|---|
+| breach: model enters, oracle blocks | 372 | -383.8 | Модель допускает часть явно плохих входов |
+| breach: model misses, oracle allows | 2115 | +804.8 | Модельный breach-фильтр слишком грубо блокирует oracle-безопасные строки |
+| fav: false accept | 408 | -410.4 | Модель fav разрешает фильтр там, где oracle-fav его не разрешил бы |
+| fav: overpredict | 1932 | -223.5 | TP ставится слишком далеко |
+| fav: underpredict | 1336 | +699.6 | Не основной источник убытка, но оставляет большой oracle-потенциал |
+| fav: near oracle | 571 | +271.0 | Когда fav близок к oracle, сделки прибыльны |
+
 ## Выводы
 
 1. Breach-классификатор работает стабильно (AUC 0.65 на OOS), но текущая RF-связка breach+fav не транслируется в положительное матожидание.
@@ -244,6 +286,8 @@ Stage 4.2 показывает, что breach-модель добавляет р
 10. Stage 4.1 закрыл быстрые контрольные гипотезы: XGBoost-fav ухудшил PF, combined breach не превзошёл Stage 4 winner и не прошёл permutation test с запасом.
 11. Stage 4.2 уточнил интерпретацию Stage 4: после исправленного диагностического протокола PF унаследованного winner снижается до 1.015. Это совокупный эффект изменений протокола, не изолированная декомпозиция ошибки.
 12. Breach-сигнал реален для фиксированного правила (0/500 перестановок, p ≈ 0.002), но слаб: он не даёт gate PF > 1.15 и не устраняет selection bias.
+13. Stage 4.3 показал, что fav/TP слой и breach-ранжирование ломают систему вместе. Прямые отрицательные категории сопоставимы: breach false-safe около -383.8 ATR, fav false-accept около -410.4 ATR. При этом `pred_fav` слабо коррелирует с истинным fav, а высокий `pred_fav/stop_val` ухудшает PF.
+14. Низкий фактический RR (median около 0.5R) объясняет, почему стратегия требует высокий win rate и остаётся около PF=1.0 даже при реальном breach-сигнале.
 
 **RF Stage 2, XGBoost Stage 4, Stage 4.1 controls и Stage 4.2 diagnostic отклонены как торговые кандидаты.** Fractal-stop research не закрыт окончательно, но плоское табличное представление фракталов достигло практического потолка для текущей торговой постановки. Следующий разумный путь — Transformer encoder на sequence-представлении или пересмотр торговой логики.
 
@@ -262,3 +306,4 @@ Stage 4.2 показывает, что breach-модель добавляет р
 - [2026-06-10-fractal-stop-fav-stage2.md](../../docs/reports/2026-06-10-fractal-stop-fav-stage2.md) — Stage 2 report (PF, grid search, frozen test, FAIL verdict)
 - [2026-06-10-feature-profiles-stage3.md](../../docs/reports/2026-06-10-feature-profiles-stage3.md) — Stage 3.x report (feature profiles, Stage 3.1 ablation, Stage 3.2 XGBoost)
 - [2026-06-11-stage4-trade-xgboost.md](../../docs/reports/2026-06-11-stage4-trade-xgboost.md) — Stage 4/4.1/4.2 report (XGBoost breach + RF fav trading layer, controls, diagnostic corrected recalc, FAIL verdict)
+- [2026-06-15-stage4_3-diagnostics.md](../../docs/reports/2026-06-15-stage4_3-diagnostics.md) — Stage 4.3 diagnostic report (post-mortem loss attribution, fav/breach diagnostics, oracle-deviation regimes)

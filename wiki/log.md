@@ -472,3 +472,9 @@
 ### 2026-06-12: Ingest Stage 4.2 diagnostic recalc
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.2 corrected diagnostic recalc, PF 1.015, BS_p05 0.837, 0/500 permutation result for fixed inherited rule, and retained `DIAGNOSTIC_ONLY`/FAIL trading verdict.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.2.
+### 2026-06-15: Ingest Stage 4.3 diagnostics
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 4.3 post-mortem diagnostics, baseline reproduction, loss attribution, fav/breach bucket results, oracle-deviation regimes, and caveat that oracle-attribution categories are not fully implemented against the plan.
+- Updated `wiki/index.md`: coverage wording changed to Stage 1-4.3.
+### 2026-06-15: Update Stage 4.3 oracle attribution
+- Updated `wiki/research/fractal-stop-research.md`: removed the incomplete-attribution caveat after `diagnose_stage4_3.py` was extended with category PnL/yearly/bootstrap; recorded breach false-safe, missed oracle-safe, fav false-accept, overpredict and underpredict category results.
+- Updated `wiki/index.md`: Stage 4.3 wording now reflects joint breach-ranking and fav/TP weakness.
