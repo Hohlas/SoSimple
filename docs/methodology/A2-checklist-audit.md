@@ -35,3 +35,4 @@
 - [ ] SL-триггер проверен с направленной spread-коррекцией согласно OHLC price convention (bid/ask/mid/executable price).
 - [ ] Bootstrap учитывает временную корреляцию сделок (block bootstrap или stationary bootstrap).
 - [ ] При использовании календарных признаков — проверена их доля в важности модели и устойчивость PF к сдвигу часового пояса.
+- [ ] Если кандидат получил `FAIL`/`reject` при сильном oracle-потолке или заметном ranking-сигнале — выполнен [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md) или явно указано, почему разбор не нужен.

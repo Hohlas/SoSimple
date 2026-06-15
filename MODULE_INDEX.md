@@ -221,6 +221,7 @@
 | [2026-05-24-methodology-review-notes.md](docs/audit/2026-05-24-methodology-review-notes.md) | Замечания по `docs/methodology/` и trigger-у `ml-methodology` |
 | [methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) |
 | [methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки |
+| [methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла |
 | [old_plan_example.md](docs/audit/old_plan_example.md) | Старый пример ML-плана для сравнения полноты структуры |
 | [2026-06-08-fractal-stop-fav-target-design.md](docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md) | Спецификация Fractal Stop + Fav Target: этап только на пробой уровня и торговый слой |
 | [2026-06-10-fractal-stop-breach-plan.md](docs/superpowers/plans/2026-06-10-fractal-stop-breach-plan.md) | План Stage 1 Fractal Stop Breach: разметка пробоя уровня, baseline и frozen test |
