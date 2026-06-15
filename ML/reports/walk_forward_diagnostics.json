@@ -1,0 +1,587 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "source": "Stage 4.6 val_eval failure (PF=0.897) -> do expanding data rescue?",
+  "config": {
+    "target": "sell_H6_off05",
+    "exit_policy": "trail_atr_0_2",
+    "exit_cfg": {
+      "policy": "trailing",
+      "r_value": 0.7,
+      "trail_atr": 0.2
+    },
+    "spread": 0.2,
+    "seed": 42,
+    "windows": [
+      {
+        "name": "w1",
+        "train_to": 2016,
+        "test_from": 2017,
+        "test_to": 2018
+      },
+      {
+        "name": "w2",
+        "train_to": 2018,
+        "test_from": 2019,
+        "test_to": 2020
+      },
+      {
+        "name": "w3",
+        "train_to": 2020,
+        "test_from": 2021,
+        "test_to": 2022
+      },
+      {
+        "name": "w4",
+        "train_to": 2022,
+        "test_from": 2023,
+        "test_to": 2026
+      }
+    ],
+    "duration_s": 1703.2
+  },
+  "results": {
+    "expanding": [
+      {
+        "pf": 0.934,
+        "bs_p05": 0.823,
+        "bs_median": 0.931,
+        "n_trades": 1364,
+        "n_years": 4,
+        "trades_per_year": 341.0,
+        "win_rate": 50.7,
+        "gross_profit": 232.648,
+        "gross_loss": 249.12,
+        "exits": {
+          "TRAIL": 572,
+          "SL": 407,
+          "TP": 385
+        },
+        "yearly_pf": {
+          "2023": 0.998,
+          "2024": 0.86,
+          "2025": 0.902,
+          "2026": 1.468
+        },
+        "yearly_n": {
+          "2023": 356,
+          "2024": 594,
+          "2025": 321,
+          "2026": 93
+        },
+        "name": "exp_train<=2016",
+        "train_years": "<=2016",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 1,
+        "n_train_rows": 37311
+      },
+      {
+        "pf": 0.923,
+        "bs_p05": 0.815,
+        "bs_median": 0.916,
+        "n_trades": 1787,
+        "n_years": 4,
+        "trades_per_year": 446.8,
+        "win_rate": 49.6,
+        "gross_profit": 286.091,
+        "gross_loss": 309.981,
+        "exits": {
+          "TRAIL": 773,
+          "SL": 510,
+          "TP": 504
+        },
+        "yearly_pf": {
+          "2023": 1.038,
+          "2024": 0.829,
+          "2025": 1.006,
+          "2026": 1.075
+        },
+        "yearly_n": {
+          "2023": 279,
+          "2024": 891,
+          "2025": 490,
+          "2026": 127
+        },
+        "name": "exp_train<=2018",
+        "train_years": "<=2018",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 2,
+        "n_train_rows": 42863
+      },
+      {
+        "pf": 0.942,
+        "bs_p05": 0.804,
+        "bs_median": 0.95,
+        "n_trades": 1049,
+        "n_years": 4,
+        "trades_per_year": 262.2,
+        "win_rate": 50.1,
+        "gross_profit": 163.57,
+        "gross_loss": 173.566,
+        "exits": {
+          "TRAIL": 493,
+          "SL": 277,
+          "TP": 279
+        },
+        "yearly_pf": {
+          "2023": 0.762,
+          "2024": 0.96,
+          "2025": 0.992,
+          "2026": 1.428
+        },
+        "yearly_n": {
+          "2023": 295,
+          "2024": 375,
+          "2025": 261,
+          "2026": 118
+        },
+        "name": "exp_train<=2020",
+        "train_years": "<=2020",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 3,
+        "n_train_rows": 48417
+      },
+      {
+        "pf": 0.897,
+        "bs_p05": 0.797,
+        "bs_median": 0.895,
+        "n_trades": 1973,
+        "n_years": 4,
+        "trades_per_year": 493.2,
+        "win_rate": 49.8,
+        "gross_profit": 309.632,
+        "gross_loss": 345.249,
+        "exits": {
+          "TRAIL": 869,
+          "SL": 567,
+          "TP": 537
+        },
+        "yearly_pf": {
+          "2023": 0.865,
+          "2024": 0.882,
+          "2025": 0.918,
+          "2026": 1.33
+        },
+        "yearly_n": {
+          "2023": 574,
+          "2024": 897,
+          "2025": 429,
+          "2026": 73
+        },
+        "name": "exp_train<=2022",
+        "train_years": "<=2022",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 4,
+        "n_train_rows": 53622
+      }
+    ],
+    "anchored_wfo": [
+      {
+        "pf": 1.07,
+        "bs_p05": 0.863,
+        "bs_median": 1.057,
+        "n_trades": 417,
+        "n_years": 2,
+        "trades_per_year": 208.5,
+        "win_rate": 52.8,
+        "gross_profit": 82.109,
+        "gross_loss": 76.75,
+        "exits": {
+          "TRAIL": 290,
+          "TP": 65,
+          "SL": 62
+        },
+        "yearly_pf": {
+          "2017": 1.008,
+          "2018": 1.15
+        },
+        "yearly_n": {
+          "2017": 226,
+          "2018": 191
+        },
+        "name": "wfo_train<=2016_test2017-2018",
+        "train_years": "<=2016",
+        "test_years": "2017-2018",
+        "test_source": "labeled",
+        "window": 1,
+        "n_train_rows": 37311
+      },
+      {
+        "pf": 1.913,
+        "bs_p05": 1.554,
+        "bs_median": 1.934,
+        "n_trades": 476,
+        "n_years": 2,
+        "trades_per_year": 238.0,
+        "win_rate": 60.5,
+        "gross_profit": 112.306,
+        "gross_loss": 58.707,
+        "exits": {
+          "TRAIL": 351,
+          "SL": 47,
+          "TP": 78
+        },
+        "yearly_pf": {
+          "2019": 1.196,
+          "2020": 2.554
+        },
+        "yearly_n": {
+          "2019": 182,
+          "2020": 294
+        },
+        "name": "wfo_train<=2018_test2019-2020",
+        "train_years": "<=2018",
+        "test_years": "2019-2020",
+        "test_source": "labeled",
+        "window": 2,
+        "n_train_rows": 42863
+      },
+      {
+        "pf": 1.422,
+        "bs_p05": 1.083,
+        "bs_median": 1.422,
+        "n_trades": 400,
+        "n_years": 2,
+        "trades_per_year": 200.0,
+        "win_rate": 54.8,
+        "gross_profit": 76.994,
+        "gross_loss": 54.128,
+        "exits": {
+          "TRAIL": 301,
+          "TP": 56,
+          "SL": 43
+        },
+        "yearly_pf": {
+          "2021": 1.213,
+          "2022": 1.648
+        },
+        "yearly_n": {
+          "2021": 214,
+          "2022": 186
+        },
+        "name": "wfo_train<=2020_test2021-2022",
+        "train_years": "<=2020",
+        "test_years": "2021-2022",
+        "test_source": "labeled",
+        "window": 3,
+        "n_train_rows": 48417
+      },
+      {
+        "pf": 0.897,
+        "bs_p05": 0.797,
+        "bs_median": 0.895,
+        "n_trades": 1973,
+        "n_years": 4,
+        "trades_per_year": 493.2,
+        "win_rate": 49.8,
+        "gross_profit": 309.632,
+        "gross_loss": 345.249,
+        "exits": {
+          "TRAIL": 869,
+          "SL": 567,
+          "TP": 537
+        },
+        "yearly_pf": {
+          "2023": 0.865,
+          "2024": 0.882,
+          "2025": 0.918,
+          "2026": 1.33
+        },
+        "yearly_n": {
+          "2023": 574,
+          "2024": 897,
+          "2025": 429,
+          "2026": 73
+        },
+        "name": "wfo_train<=2022_test2023-2026",
+        "train_years": "<=2022",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 4,
+        "n_train_rows": 53622
+      }
+    ],
+    "rolling_10yr": [
+      {
+        "pf": 0.939,
+        "bs_p05": 0.764,
+        "bs_median": 0.957,
+        "n_trades": 340,
+        "n_years": 2,
+        "trades_per_year": 170.0,
+        "win_rate": 50.0,
+        "gross_profit": 62.532,
+        "gross_loss": 66.594,
+        "exits": {
+          "TP": 50,
+          "SL": 54,
+          "TRAIL": 236
+        },
+        "yearly_pf": {
+          "2017": 0.765,
+          "2018": 1.149
+        },
+        "yearly_n": {
+          "2017": 169,
+          "2018": 171
+        },
+        "name": "rolling2007-2016_test2017-2018",
+        "train_years": "2007-2016",
+        "test_years": "2017-2018",
+        "test_source": "labeled",
+        "window": 1,
+        "n_train_rows": 28464
+      },
+      {
+        "pf": 1.615,
+        "bs_p05": 1.272,
+        "bs_median": 1.624,
+        "n_trades": 516,
+        "n_years": 2,
+        "trades_per_year": 258.0,
+        "win_rate": 57.6,
+        "gross_profit": 116.823,
+        "gross_loss": 72.345,
+        "exits": {
+          "SL": 57,
+          "TP": 87,
+          "TRAIL": 372
+        },
+        "yearly_pf": {
+          "2019": 1.116,
+          "2020": 1.971
+        },
+        "yearly_n": {
+          "2019": 189,
+          "2020": 327
+        },
+        "name": "rolling2009-2018_test2019-2020",
+        "train_years": "2009-2018",
+        "test_years": "2019-2020",
+        "test_source": "labeled",
+        "window": 2,
+        "n_train_rows": 27890
+      },
+      {
+        "pf": 1.54,
+        "bs_p05": 1.274,
+        "bs_median": 1.509,
+        "n_trades": 581,
+        "n_years": 2,
+        "trades_per_year": 290.5,
+        "win_rate": 56.5,
+        "gross_profit": 113.032,
+        "gross_loss": 73.401,
+        "exits": {
+          "TP": 77,
+          "TRAIL": 444,
+          "SL": 60
+        },
+        "yearly_pf": {
+          "2021": 1.461,
+          "2022": 1.618
+        },
+        "yearly_n": {
+          "2021": 308,
+          "2022": 273
+        },
+        "name": "rolling2011-2020_test2021-2022",
+        "train_years": "2011-2020",
+        "test_years": "2021-2022",
+        "test_source": "labeled",
+        "window": 3,
+        "n_train_rows": 27864
+      },
+      {
+        "pf": 0.942,
+        "bs_p05": 0.834,
+        "bs_median": 0.942,
+        "n_trades": 1746,
+        "n_years": 4,
+        "trades_per_year": 436.5,
+        "win_rate": 50.6,
+        "gross_profit": 291.709,
+        "gross_loss": 309.629,
+        "exits": {
+          "TRAIL": 711,
+          "SL": 511,
+          "TP": 524
+        },
+        "yearly_pf": {
+          "2023": 0.754,
+          "2024": 0.988,
+          "2025": 1.0,
+          "2026": 0.953
+        },
+        "yearly_n": {
+          "2023": 277,
+          "2024": 751,
+          "2025": 458,
+          "2026": 260
+        },
+        "name": "rolling2013-2022_test2023-2026",
+        "train_years": "2013-2022",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 4,
+        "n_train_rows": 27608
+      }
+    ],
+    "warmstart": [
+      {
+        "pf": 0.934,
+        "bs_p05": 0.823,
+        "bs_median": 0.931,
+        "n_trades": 1364,
+        "n_years": 4,
+        "trades_per_year": 341.0,
+        "win_rate": 50.7,
+        "gross_profit": 232.648,
+        "gross_loss": 249.12,
+        "exits": {
+          "TRAIL": 572,
+          "SL": 407,
+          "TP": 385
+        },
+        "yearly_pf": {
+          "2023": 0.998,
+          "2024": 0.86,
+          "2025": 0.902,
+          "2026": 1.468
+        },
+        "yearly_n": {
+          "2023": 356,
+          "2024": 594,
+          "2025": 321,
+          "2026": 93
+        },
+        "name": "warm_train<=2016",
+        "kind": "fresh",
+        "train_years": "<=2016",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 1,
+        "n_train_rows": 37311,
+        "trees": 200
+      },
+      {
+        "pf": 0.939,
+        "bs_p05": 0.824,
+        "bs_median": 0.938,
+        "n_trades": 1168,
+        "n_years": 4,
+        "trades_per_year": 292.0,
+        "win_rate": 50.4,
+        "gross_profit": 201.966,
+        "gross_loss": 215.11,
+        "exits": {
+          "TRAIL": 474,
+          "SL": 352,
+          "TP": 342
+        },
+        "yearly_pf": {
+          "2023": 1.041,
+          "2024": 0.838,
+          "2025": 0.939,
+          "2026": 1.616
+        },
+        "yearly_n": {
+          "2023": 283,
+          "2024": 513,
+          "2025": 309,
+          "2026": 63
+        },
+        "name": "warm_train<=2018",
+        "kind": "warmstart",
+        "train_years": "<=2018",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 2,
+        "n_train_rows": 42863,
+        "trees": 250
+      },
+      {
+        "pf": 0.902,
+        "bs_p05": 0.807,
+        "bs_median": 0.899,
+        "n_trades": 1649,
+        "n_years": 4,
+        "trades_per_year": 412.2,
+        "win_rate": 50.7,
+        "gross_profit": 271.904,
+        "gross_loss": 301.367,
+        "exits": {
+          "TRAIL": 672,
+          "SL": 498,
+          "TP": 479
+        },
+        "yearly_pf": {
+          "2023": 1.043,
+          "2024": 0.826,
+          "2025": 0.873,
+          "2026": 1.051
+        },
+        "yearly_n": {
+          "2023": 400,
+          "2024": 767,
+          "2025": 362,
+          "2026": 120
+        },
+        "name": "warm_train<=2020",
+        "kind": "warmstart",
+        "train_years": "<=2020",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 3,
+        "n_train_rows": 48417,
+        "trees": 300
+      },
+      {
+        "pf": 0.882,
+        "bs_p05": 0.779,
+        "bs_median": 0.882,
+        "n_trades": 1337,
+        "n_years": 4,
+        "trades_per_year": 334.2,
+        "win_rate": 50.6,
+        "gross_profit": 216.742,
+        "gross_loss": 245.773,
+        "exits": {
+          "TRAIL": 540,
+          "SL": 409,
+          "TP": 388
+        },
+        "yearly_pf": {
+          "2023": 0.906,
+          "2024": 0.843,
+          "2025": 0.859,
+          "2026": 1.155
+        },
+        "yearly_n": {
+          "2023": 297,
+          "2024": 659,
+          "2025": 270,
+          "2026": 111
+        },
+        "name": "warm_train<=2022",
+        "kind": "warmstart",
+        "train_years": "<=2022",
+        "test_years": "2023-2026",
+        "test_source": "nero",
+        "window": 4,
+        "n_train_rows": 53622,
+        "trees": 350
+      }
+    ]
+  },
+  "interpretation_guards": [
+    "DIAGNOSTIC_ONLY: no test opened, no winner selected",
+    "Expanding/warm-start: all tested on 2023-2026 (Nero.csv, unlabeled)",
+    "Anchored/rolling: each step tested on its own period (not cross-comparable)",
+    "Warm-start adds 50 trees/step with self-validation (random 20% split)",
+    "Walk-forward explores whether longer history rescues val_eval profit"
+  ]
+}

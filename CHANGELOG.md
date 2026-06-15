@@ -2,6 +2,24 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-15] — Stage 5.1: Walk-Forward Optimization Diagnostics
+
+### Добавлено
+- `ML/baseline/diagnose_walk_forward.py` — 4 варианта walk-forward: Expanding Window, Anchored WFO, Rolling 10yr, XGBoost Warm-start
+- `docs/reports/2026-06-15-walk-forward-diagnostics.md` — канонический отчёт
+- `ML/reports/walk_forward_diagnostics.json` — структурированные результаты
+
+### Результаты
+- **Дообучение не спасает.** Расширение обучения с ≤2016 до ≤2022 не меняет PF на 2023-2026 (диапазон 0.88-0.94, ни разу >1.0)
+- Anchored WFO: 2017-2022 прибыльно (PF 1.07-1.91), но 2023-2026 — провал (PF=0.897). Перелом на границе 2023.
+- Warm-start не даёт преимущества над свежим обучением (PF 0.934 → 0.882)
+- Подтверждён календарный риск Stage 5.0-prep: breach-сигнал не переносит календарные закономерности на +7 лет
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. Проблема не в объёме данных — даже 53k строк истории не помогают. Требуется иной подход (Transformer с календарным baseline, Stage 5.0).
+
+<!-- docs/reports/2026-06-15-walk-forward-diagnostics.md -->
+
 ## [2026-06-15] — Stage 4.x Remaining Hypotheses Master Plan (Stage 5.0-prep / 4.5 / 4.6)
 
 ### Добавлено
