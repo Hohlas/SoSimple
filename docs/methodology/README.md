@@ -70,3 +70,4 @@
 | Известные ошибки проекта (реестр) | [A3-typical-false-conclusions.md](A3-typical-false-conclusions.md) |
 | Verdict-статусы и stop conditions | [A4-verdicts-stop-conditions.md](A4-verdicts-stop-conditions.md) |
 | Post-mortem диагностика неудачного этапа: разбор причин `FAIL`/`reject`, формулирование гипотез для следующего цикла | [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md) |
+| Каталог вариантов представления фракталов для планирования feature-profile матриц | [A6-fractal-feature-profile-catalog.md](A6-fractal-feature-profile-catalog.md) |

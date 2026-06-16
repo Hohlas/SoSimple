@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-16 07:15 UTC · git `dfcb634`
+> Auto-generated 2026-06-16 07:58 UTC · git `7e84689`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1490 files  ·  **Commit**: `dfcb634`  ·  **Generated**: 2026-06-16 07:15 UTC
+**Tracked**: 1492 files  ·  **Commit**: `7e84689`  ·  **Generated**: 2026-06-16 07:58 UTC
 
 ## Root Docs
 
@@ -19,7 +19,7 @@
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-16 | 176KB | `a75c9ed5` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-15 | 7KB | `f861cc77` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-15 | 47KB | `c86b9924` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-16 | 48KB | `ffd5d2a2` |
 | [README.md](README.md) |  | 2026-05-30 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -98,7 +98,7 @@
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-05-30 | 5KB | `6bf55f21` |
 | [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-06-15 | 7KB | `db9dba4c` |
 | [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-15 | 31KB | `ab30e935` |
-| [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-03 | 6KB | `657d35b9` |
+| [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-16 | 6KB | `13a28e56` |
 | [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-06-15 | 10KB | `a158f78f` |
 | [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-05 | 6KB | `8edd1fa8` |
 | [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-06-15 | 5KB | `4ce7ab0b` |
@@ -118,7 +118,8 @@
 | [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-15 | 4KB | `51bb6261` |
 | [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-15 | 2KB | `2118844b` |
 | [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-06-16 | 23KB | `4a71dcba` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-15 | 7KB | `246a468b` |
+| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-06-16 | 12KB | `fb1cc79e` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-16 | 8KB | `a322625f` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-05-30 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-06 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-15 | 2KB | `8f996d16` |
@@ -198,6 +199,7 @@
 | [docs/superpowers/plans/2026-06-15-stage4_6-clean-candidate-cycle.md](docs/superpowers/plans/2026-06-15-stage4_6-clean-candidate-cycle.md) |  | 2026-06-15 | 6KB | `12342f1d` |
 | [docs/superpowers/plans/2026-06-15-stage4_remaining-hypotheses-master.md](docs/superpowers/plans/2026-06-15-stage4_remaining-hypotheses-master.md) |  | 2026-06-15 | 9KB | `cc159e05` |
 | [docs/superpowers/plans/2026-06-15-stage5_prep-diagnostics.md](docs/superpowers/plans/2026-06-15-stage5_prep-diagnostics.md) |  | 2026-06-15 | 7KB | `136f54dc` |
+| [docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md](docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md) | План Stage 5.0 Transformer Breach: модельный holdout 2023-2026, feature profiles, XGBoost/time baselines и optional walk-forward | 2026-06-16 | 16KB | `77578168` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-05-30 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-05-30 | 10KB | `b848ff4f` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-05-30 | 12KB | `82b0860f` |
