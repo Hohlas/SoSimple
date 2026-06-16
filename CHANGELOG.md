@@ -2,7 +2,7 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
-## [2026-06-15] — Stage 5.1: Walk-Forward Optimization Diagnostics
+## [2026-06-15] — Stage 4.7: Walk-Forward Optimization Diagnostics
 
 ### Добавлено
 - `ML/baseline/diagnose_walk_forward.py` — 4 варианта walk-forward: Expanding Window, Anchored WFO, Rolling 10yr, XGBoost Warm-start
@@ -10,13 +10,13 @@
 - `ML/reports/walk_forward_diagnostics.json` — структурированные результаты
 
 ### Результаты
-- **Дообучение не спасает.** Расширение обучения с ≤2016 до ≤2022 не меняет PF на 2023-2026 (диапазон 0.88-0.94, ни разу >1.0)
-- Anchored WFO: 2017-2022 прибыльно (PF 1.07-1.91), но 2023-2026 — провал (PF=0.897). Перелом на границе 2023.
-- Warm-start не даёт преимущества над свежим обучением (PF 0.934 → 0.882)
-- Подтверждён календарный риск Stage 5.0-prep: breach-сигнал не переносит календарные закономерности на +7 лет
+- **Expanding Window (Stage 4.6 protocol — temporal early stopping):** ≤2016 → 2023-2026 PF=0.897, BS_p05=0.679, 357 trades — точное совпадение со Stage 4.6. Расширение обучения до ≤2022: PF=0.84, BS_p05=0.739.
+- Self-val (Anchored/Rolling/Warm-start) завышает количество сделок (1364-1973 vs 357), но паттерн «2023-2026 провал» устойчив во всех 4 вариантах.
+- Warm-start не даёт преимущества над свежим обучением.
+- Результат совместим с календарным риском и regime drift, но не доказан причинно-следственно.
 
 ### Вывод
-⚠️ DIAGNOSTIC_ONLY. Проблема не в объёме данных — даже 53k строк истории не помогают. Требуется иной подход (Transformer с календарным baseline, Stage 5.0).
+⚠️ DIAGNOSTIC_ONLY. Проблема не в объёме данных — расширение обучения не спасает. Требуется иной подход (Stage 5.0 Transformer с календарным baseline). Официальный frozen test не открыт; 2023-2026 = диагностический holdout.
 
 <!-- docs/reports/2026-06-15-walk-forward-diagnostics.md -->
 

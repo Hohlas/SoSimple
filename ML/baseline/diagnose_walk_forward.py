@@ -1,6 +1,6 @@
 # =============================================================================
 # File: ML/baseline/diagnose_walk_forward.py
-# Purpose: Stage 5.1 DIAGNOSTIC_ONLY — walk-forward optimization diagnostics.
+# Purpose: Stage 4.7 DIAGNOSTIC_ONLY — walk-forward optimization diagnostics.
 #           Tests whether extending training data rescues val_eval profitability
 #           after Stage 4.6 val_eval failure (PF=0.897, trail_atr_0_2 on 2023-2026).
 # Variants:
@@ -11,7 +11,7 @@
 # Input:  DATA/Nero_XAUUSD_*_labeled.csv, MT/MQL4/Files/Nero.csv,
 #         DATA/XAUUSD_H1_OHLC.csv
 # Output: ML/reports/walk_forward_diagnostics.json
-# Status: DIAGNOSTIC_ONLY — no test, no winner, walk-forward exploration only
+# Status: DIAGNOSTIC_ONLY — official frozen test not opened; 2023-2026 is diagnostic val_eval/holdout
 # Language: Python 3.10+
 # Created: 2026-06-15
 # =============================================================================
@@ -30,6 +30,7 @@ from ML.baseline.diagnose_stage4_3 import (
     profile_base_raw,
     profile_base_raw_plus_time,
     compute_entry_prices,
+    train_xgb_breach as train_xgb_breach_temporal,
     train_rf_fav,
     compute_trade_metrics,
     block_bootstrap_pf,
@@ -110,6 +111,34 @@ def slice_by_year(df, year_from, year_to):
 def slice_by_year_reset(df, year_from, year_to):
     """Return df subset with reset index."""
     return df.loc[year_mask(df, year_from, year_to)].reset_index(drop=True)
+
+
+# ===========================================================================
+# Temporal val_stop for early stopping (matches Stage 4.6 protocol)
+# ===========================================================================
+
+def get_val_stop_data(labeled_full, train_to):
+    """Return (X_val, y_val, target_col, fav_col) for temporal early stopping.
+
+    Uses the next 2-year window after train_to as val_stop.
+    For train_to=2022, no future labeled data exists -> returns None (use self-val).
+    """
+    if train_to >= 2022:
+        return None  # no future labeled data
+    val_from = train_to + 1
+    val_to = min(train_to + 2, 2022)
+    return val_from, val_to
+
+
+def train_breach_fav_temporal(X_b, y_b, X_f, y_f,
+                               X_b_val, y_b_val,
+                               seed):
+    """Train breach with temporal early stopping + fresh RF fav."""
+    breach = train_xgb_breach_temporal(X_b, y_b, X_b_val, y_b_val,
+                                        random_state=seed)
+    mask_f = ~np.isnan(y_f)
+    fav = train_rf_fav(X_f[mask_f], y_f[mask_f], random_state=seed)
+    return breach, fav
 
 
 # ===========================================================================
@@ -267,20 +296,57 @@ def get_test_data(nero_full, labeled_full,
 
 def run_expanding(windows, labeled_full, nero_full,
                   entry_nero,
-                  models_cache,
+                  feat_labeled_b, feat_labeled_f,
                   ohlc, times, time_idx,
-                  target_col, fav_col, spread):
+                  target_col, fav_col, spread, seed):
     print(f'\n{"=" * 70}')
-    print('VARIANT 1: Expanding Window (all tested on 2023-2026 Nero.csv)')
+    print('VARIANT 1: Expanding Window (temporal early stopping, test 2023-2026)')
     print(f'{"=" * 70}')
 
     test_df, test_entry, _ = get_test_data(
         nero_full, None, entry_nero, None, 2023, 2026)
 
+    # Train models with temporal early stopping (same protocol as Stage 4.6)
+    models = {}
+    for wi, w in enumerate(windows):
+        train_to = w['train_to']
+        train_sub = slice_by_year(labeled_full, None, train_to)
+        idx = train_sub.index.values.astype(int)
+        X_b = feat_labeled_b[idx]
+        X_f = feat_labeled_f[idx]
+        y_b = train_sub[target_col].values
+        y_f = train_sub[fav_col].values
+
+        mask_b = ~np.isnan(y_b)
+        mask_f = ~np.isnan(y_f)
+
+        val_info = get_val_stop_data(labeled_full, train_to)
+        if val_info is not None:
+            val_from, val_to = val_info
+            val_sub = slice_by_year_reset(labeled_full, val_from, val_to)
+            X_b_val, _ = profile_base_raw_plus_time(val_sub)
+            y_b_val = val_sub[target_col].values
+            val_mask = ~np.isnan(y_b_val)
+            if val_mask.sum() == 0:
+                val_info = None
+
+        if val_info is not None:
+            breach, fav = train_breach_fav_temporal(
+                X_b[mask_b], y_b[mask_b],
+                X_f[mask_f], y_f[mask_f],
+                X_b_val[val_mask], y_b_val[val_mask],
+                seed=seed + wi)
+        else:
+            breach, fav = train_breach_fav(
+                X_b, y_b, X_f, y_f, seed=seed + wi)
+
+        models[train_to] = (breach, fav)
+        print(f'  Train ≤{train_to}: {"temporal val_" + str(val_from) + "-" + str(val_to) if val_info else "self-val"}')
+
     results = []
     for wi, w in enumerate(windows):
         train_to = w['train_to']
-        breach_model, fav_model = models_cache.get(train_to, (None, None))
+        breach_model, fav_model = models.get(train_to, (None, None))
         if breach_model is None:
             results.append({'name': f'exp_train<={train_to}',
                             'error': 'no_model', 'window': wi + 1})
@@ -297,8 +363,12 @@ def run_expanding(windows, labeled_full, nero_full,
         sim['test_source'] = 'nero'
         sim['window'] = wi + 1
         sim['n_train_rows'] = n_train
+        if val_info := get_val_stop_data(labeled_full, train_to):
+            sim['val_stop'] = f'{val_info[0]}-{val_info[1]}'
+        else:
+            sim['val_stop'] = 'self-val'
 
-        print(f'  [{sim["name"]}] n_train={n_train}  '
+        print(f'  [{sim["name"]}] val={sim["val_stop"]} n_train={n_train}  '
               f'PF={sim["pf"]}  BS_p05={sim["bs_p05"]}  '
               f'n_trades={sim["n_trades"]}  wr={sim["win_rate"]}%')
         results.append(sim)
@@ -460,7 +530,7 @@ def run_warmstart(windows, labeled_full, nero_full,
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Stage 5.1 DIAGNOSTIC_ONLY walk-forward diagnostics')
+        description='Stage 4.7 DIAGNOSTIC_ONLY walk-forward diagnostics')
     parser.add_argument('--train', default='DATA/Nero_XAUUSD_train_labeled.csv')
     parser.add_argument('--val', default='DATA/Nero_XAUUSD_validation_labeled.csv')
     parser.add_argument('--nero', default='MT/MQL4/Files/Nero.csv')
@@ -475,7 +545,7 @@ def main():
     fav_col = FAV_TARGETS[h][side]
 
     print('=' * 70)
-    print('Stage 5.1: DIAGNOSTIC_ONLY — Walk-Forward Optimization Diagnostics')
+    print('Stage 4.7: DIAGNOSTIC_ONLY — Walk-Forward Optimization Diagnostics')
     print('=' * 70)
     print(f'  Target: {WINNER_TARGET}  (h={h}, off={off}, side={side})')
     print(f'  Exit: trail_atr_0_2  (R=0.7, trail_atr=0.2)')
@@ -506,11 +576,14 @@ def main():
     entry_nero = precompute_entry_map(nero_full, ohlc, times, time_idx)
     print(f'  Done. ({datetime.now() - t0})', flush=True)
 
-    print('\nTraining base models...', flush=True)
-    models_cache = {}
+    print('\nTraining models...', flush=True)
+
+    # Expanding Window: temporal early stopping (Stage 4.6 protocol)
+    # Anchored WFO: self-val (random split — because val_stop = test period in WFO)
+    models_selfval = {}
     for w in WINDOWS:
         train_to = w['train_to']
-        print(f'  Train ≤{train_to}...', flush=True)
+        print(f'  Train ≤{train_to} (self-val)...', flush=True)
         train_sub = slice_by_year(labeled_full, None, train_to)
         idx = train_sub.index.values.astype(int)
         X_b = feat_labeled_b[idx]
@@ -519,21 +592,21 @@ def main():
         y_f = train_sub[fav_col].values
 
         breach, fav = train_breach_fav(X_b, y_b, X_f, y_f, seed=args.seed)
-        models_cache[train_to] = (breach, fav)
-    print(f'  All base models trained. ({datetime.now() - t0})', flush=True)
+        models_selfval[train_to] = (breach, fav)
+    print(f'  All self-val models trained. ({datetime.now() - t0})', flush=True)
 
     results = {}
     results['expanding'] = run_expanding(
         WINDOWS, labeled_full, nero_full,
         entry_nero,
-        models_cache,
+        feat_labeled_b, feat_labeled_f,
         ohlc, times, time_idx,
-        target_col, fav_col, args.spread)
+        target_col, fav_col, args.spread, args.seed)
 
     results['anchored_wfo'] = run_anchored(
         WINDOWS, labeled_full, nero_full,
         entry_labeled, entry_nero,
-        models_cache,
+        models_selfval,
         ohlc, times, time_idx,
         target_col, fav_col, args.spread)
 
@@ -551,7 +624,7 @@ def main():
 
     output = {
         'status': 'DIAGNOSTIC_ONLY',
-        'source': 'Stage 4.6 val_eval failure (PF=0.897) -> do expanding data rescue?',
+        'source': 'Stage 4.6 val_eval failure (PF=0.897) -> can expanding training data rescue?',
         'config': {
             'target': WINNER_TARGET,
             'exit_policy': 'trail_atr_0_2',
@@ -563,11 +636,11 @@ def main():
         },
         'results': results,
         'interpretation_guards': [
-            'DIAGNOSTIC_ONLY: no test opened, no winner selected',
-            'Expanding/warm-start: all tested on 2023-2026 (Nero.csv, unlabeled)',
-            'Anchored/rolling: each step tested on its own period (not cross-comparable)',
-            'Warm-start adds 50 trees/step with self-validation (random 20% split)',
-            'Walk-forward explores whether longer history rescues val_eval profit',
+            'DIAGNOSTIC_ONLY: official frozen test not opened; 2023-2026 = diagnostic val_eval/holdout',
+            'Expanding Window uses temporal early stopping (Stage 4.6 protocol) for apples-to-apples',
+            'Anchored/rolling/warmstart use self-val (random split) — val_stop = test period in WFO',
+            'Result compatible with calendar risk & regime drift; not proven cause-effect',
+            'Walk-forward: extending training history does not rescue 2023-2026 profitability',
         ],
     }
 

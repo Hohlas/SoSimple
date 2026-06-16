@@ -1,6 +1,6 @@
 {
   "status": "DIAGNOSTIC_ONLY",
-  "source": "Stage 4.6 val_eval failure (PF=0.897) -> do expanding data rescue?",
+  "source": "Stage 4.6 val_eval failure (PF=0.897) -> can expanding training data rescue?",
   "config": {
     "target": "sell_H6_off05",
     "exit_policy": "trail_atr_0_2",
@@ -37,145 +37,147 @@
         "test_to": 2026
       }
     ],
-    "duration_s": 1703.2
+    "duration_s": 1170.4
   },
   "results": {
     "expanding": [
       {
-        "pf": 0.934,
-        "bs_p05": 0.823,
-        "bs_median": 0.931,
-        "n_trades": 1364,
+        "pf": 0.897,
+        "bs_p05": 0.679,
+        "bs_median": 0.87,
+        "n_trades": 357,
         "n_years": 4,
-        "trades_per_year": 341.0,
-        "win_rate": 50.7,
-        "gross_profit": 232.648,
-        "gross_loss": 249.12,
+        "trades_per_year": 89.2,
+        "win_rate": 47.6,
+        "gross_profit": 61.672,
+        "gross_loss": 68.718,
         "exits": {
-          "TRAIL": 572,
-          "SL": 407,
-          "TP": 385
+          "TRAIL": 129,
+          "TP": 114,
+          "SL": 114
         },
         "yearly_pf": {
-          "2023": 0.998,
-          "2024": 0.86,
-          "2025": 0.902,
-          "2026": 1.468
+          "2023": 0.919,
+          "2024": 0.937,
+          "2025": 0.643,
+          "2026": 1.4
         },
         "yearly_n": {
-          "2023": 356,
-          "2024": 594,
-          "2025": 321,
-          "2026": 93
+          "2023": 163,
+          "2024": 157,
+          "2025": 31,
+          "2026": 6
         },
         "name": "exp_train<=2016",
         "train_years": "<=2016",
         "test_years": "2023-2026",
         "test_source": "nero",
         "window": 1,
-        "n_train_rows": 37311
+        "n_train_rows": 37311,
+        "val_stop": "2017-2018"
       },
       {
-        "pf": 0.923,
-        "bs_p05": 0.815,
-        "bs_median": 0.916,
-        "n_trades": 1787,
-        "n_years": 4,
-        "trades_per_year": 446.8,
-        "win_rate": 49.6,
-        "gross_profit": 286.091,
-        "gross_loss": 309.981,
+        "pf": 0.729,
+        "bs_p05": null,
+        "bs_median": null,
+        "n_trades": 13,
+        "n_years": 3,
+        "trades_per_year": 4.3,
+        "win_rate": 53.8,
+        "gross_profit": 2.186,
+        "gross_loss": 3.0,
         "exits": {
-          "TRAIL": 773,
-          "SL": 510,
-          "TP": 504
+          "SL": 6,
+          "TP": 6,
+          "TRAIL": 1
         },
         "yearly_pf": {
-          "2023": 1.038,
-          "2024": 0.829,
-          "2025": 1.006,
-          "2026": 1.075
+          "2024": 0.99,
+          "2025": 0.7,
+          "2026": 0.0
         },
         "yearly_n": {
-          "2023": 279,
-          "2024": 891,
-          "2025": 490,
-          "2026": 127
+          "2024": 8,
+          "2025": 4,
+          "2026": 1
         },
         "name": "exp_train<=2018",
         "train_years": "<=2018",
         "test_years": "2023-2026",
         "test_source": "nero",
         "window": 2,
-        "n_train_rows": 42863
+        "n_train_rows": 42863,
+        "val_stop": "2019-2020"
       },
       {
-        "pf": 0.942,
-        "bs_p05": 0.804,
-        "bs_median": 0.95,
-        "n_trades": 1049,
+        "pf": 0.917,
+        "bs_p05": 0.766,
+        "bs_median": 0.914,
+        "n_trades": 803,
         "n_years": 4,
-        "trades_per_year": 262.2,
-        "win_rate": 50.1,
-        "gross_profit": 163.57,
-        "gross_loss": 173.566,
+        "trades_per_year": 200.8,
+        "win_rate": 48.8,
+        "gross_profit": 118.237,
+        "gross_loss": 128.895,
         "exits": {
-          "TRAIL": 493,
-          "SL": 277,
-          "TP": 279
+          "TRAIL": 370,
+          "SL": 214,
+          "TP": 219
         },
         "yearly_pf": {
-          "2023": 0.762,
-          "2024": 0.96,
-          "2025": 0.992,
-          "2026": 1.428
+          "2023": 0.586,
+          "2024": 1.064,
+          "2025": 1.091,
+          "2026": 0.937
         },
         "yearly_n": {
-          "2023": 295,
-          "2024": 375,
-          "2025": 261,
-          "2026": 118
+          "2023": 158,
+          "2024": 191,
+          "2025": 241,
+          "2026": 213
         },
         "name": "exp_train<=2020",
         "train_years": "<=2020",
         "test_years": "2023-2026",
         "test_source": "nero",
         "window": 3,
-        "n_train_rows": 48417
+        "n_train_rows": 48417,
+        "val_stop": "2021-2022"
       },
       {
-        "pf": 0.897,
-        "bs_p05": 0.797,
-        "bs_median": 0.895,
-        "n_trades": 1973,
+        "pf": 0.84,
+        "bs_p05": 0.739,
+        "bs_median": 0.838,
+        "n_trades": 1072,
         "n_years": 4,
-        "trades_per_year": 493.2,
-        "win_rate": 49.8,
-        "gross_profit": 309.632,
-        "gross_loss": 345.249,
+        "trades_per_year": 268.0,
+        "win_rate": 50.1,
+        "gross_profit": 180.241,
+        "gross_loss": 214.567,
         "exits": {
-          "TRAIL": 869,
-          "SL": 567,
-          "TP": 537
+          "TP": 326,
+          "TRAIL": 391,
+          "SL": 355
         },
         "yearly_pf": {
-          "2023": 0.865,
-          "2024": 0.882,
-          "2025": 0.918,
-          "2026": 1.33
+          "2023": 1.051,
+          "2024": 0.769,
+          "2025": 0.799,
+          "2026": 1.013
         },
         "yearly_n": {
-          "2023": 574,
-          "2024": 897,
-          "2025": 429,
-          "2026": 73
+          "2023": 222,
+          "2024": 607,
+          "2025": 171,
+          "2026": 72
         },
         "name": "exp_train<=2022",
         "train_years": "<=2022",
         "test_years": "2023-2026",
         "test_source": "nero",
         "window": 4,
-        "n_train_rows": 53622
+        "n_train_rows": 53622,
+        "val_stop": "self-val"
       }
     ],
     "anchored_wfo": [
@@ -578,10 +580,10 @@
     ]
   },
   "interpretation_guards": [
-    "DIAGNOSTIC_ONLY: no test opened, no winner selected",
-    "Expanding/warm-start: all tested on 2023-2026 (Nero.csv, unlabeled)",
-    "Anchored/rolling: each step tested on its own period (not cross-comparable)",
-    "Warm-start adds 50 trees/step with self-validation (random 20% split)",
-    "Walk-forward explores whether longer history rescues val_eval profit"
+    "DIAGNOSTIC_ONLY: official frozen test not opened; 2023-2026 = diagnostic val_eval/holdout",
+    "Expanding Window uses temporal early stopping (Stage 4.6 protocol) for apples-to-apples",
+    "Anchored/rolling/warmstart use self-val (random split) \u2014 val_stop = test period in WFO",
+    "Result compatible with calendar risk & regime drift; not proven cause-effect",
+    "Walk-forward: extending training history does not rescue 2023-2026 profitability"
   ]
 }
