@@ -30,9 +30,6 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - Balanced hybrid — both engines equally weighted: `search_knowledge("SQL injection techniques", hybrid_alpha=0.5)`
 - Pure semantic — embedding similarity only: `search_knowledge("lateral movement strategies", hybrid_alpha=1.0)`
 
-После значимых изменений кода/доков, влияющих на поиск: `reindex_documents(force=True)`.
-
-
 
 ## Обязательные правила
 - Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md

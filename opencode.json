@@ -2,13 +2,9 @@
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "knowledge-rag": {
-      "type": "local",
-      "command": ["/home/hohla/knowledge-rag/venv/bin/knowledge-rag"],
-      "enabled": true,
-      "env": {
-        "KNOWLEDGE_RAG_DIR": "/home/hohla/knowledge-rag",
-        "ORT_LOGGING_LEVEL": "3"
-      }
+      "type": "remote",
+      "url": "http://127.0.0.1:8179/mcp",
+      "enabled": true
     }
   }
 }
