@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-16 07:58 UTC · git `7e84689`
+> Auto-generated 2026-06-16 18:36 UTC · git `79044c4`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,13 +9,13 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1492 files  ·  **Commit**: `7e84689`  ·  **Generated**: 2026-06-16 07:58 UTC
+**Tracked**: 1492 files  ·  **Commit**: `79044c4`  ·  **Generated**: 2026-06-16 18:36 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-06-15 | 14KB | `a6171a32` |
+| [AGENTS.md](AGENTS.md) |  | 2026-06-16 | 15KB | `b7863d79` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-16 | 176KB | `a75c9ed5` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-05-30 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-15 | 7KB | `f861cc77` |
@@ -118,7 +118,7 @@
 | [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-15 | 4KB | `51bb6261` |
 | [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-15 | 2KB | `2118844b` |
 | [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-06-16 | 23KB | `4a71dcba` |
-| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-06-16 | 12KB | `fb1cc79e` |
+| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-06-16 | 12KB | `0d8bc2ed` |
 | [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-16 | 8KB | `a322625f` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-05-30 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-06 | 4KB | `22a08f92` |
@@ -1561,5 +1561,5 @@
 | [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-03 | 3KB | `362f90fe` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [opencode.json](opencode.json) |  | 2026-06-07 | 327B | `62dd80d0` |
+| [opencode.json](opencode.json) |  | 2026-06-16 | 184B | `45617caa` |
 

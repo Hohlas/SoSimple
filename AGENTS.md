@@ -23,13 +23,29 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - НЕ ИСПОЛЬЗУЙ: жаргон, англицизмы и узкие термины. Английские слова допустимы только для имён файлов, функций, колонок, команд, библиотек и устойчивых обозначений проекта: CSV, MT4, ATR, PF, PnL.
 - Если технический термин неизбежен, кратко объясняй его при первом использовании.
 
-## using search_knowledge (RAG system)
-`knowledge-rag` — retrieval layer для быстрого поиска по проекту. Он помогает найти кандидаты, но не заменяет canonical files и wiki-синтез: после RAG-результата открывай найденный файл и проверяй контекст.
+## Использование `search_knowledge` (`knowledge-rag`)
+`knowledge-rag` — это слой поиска по проекту: `docs/`, `wiki/`, коду и отчётам. Он нужен, чтобы быстро найти кандидаты на чтение, но не является источником истины.
 
-- Pure keyword search — exact names / paths / metrics: `search_knowledge("gtfobins suid", hybrid_alpha=0.0)`
-- Balanced hybrid — both engines equally weighted: `search_knowledge("SQL injection techniques", hybrid_alpha=0.5)`
-- Pure semantic — embedding similarity only: `search_knowledge("lateral movement strategies", hybrid_alpha=1.0)`
+Правило:
+- сначала найди кандидаты через `search_knowledge`;
+- затем открой найденные файлы;
+- выводы делай только после проверки первоисточников.
 
+Подбор режима поиска:
+- `hybrid_alpha=0.0` — точные имена, пути, метрики, функции, файлы
+- `hybrid_alpha=0.3` — технические запросы с устойчивыми терминами проекта
+- `hybrid_alpha=0.5` — смешанные запросы по коду и документации
+- `hybrid_alpha=1.0` — смысловой поиск по идеям, гипотезам и выводам
+
+Примеры для SoSimple:
+- exact path / symbol:
+  `search_knowledge("signal_tracer.py ML_TRADE lib_pic", hybrid_alpha=0.0)`
+- reports / stage results:
+  `search_knowledge("stage 4 breach fav profit factor", hybrid_alpha=0.3)`
+- plans / specs:
+  `search_knowledge("triple barrier plan spec", hybrid_alpha=0.3)`
+- wiki synthesis:
+  `search_knowledge("signal archetype research synthesis", hybrid_alpha=0.5)`
 
 ## Обязательные правила
 - Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md
@@ -55,7 +71,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 |------|-----------|-------------|
 | `wiki/index.md` | Каталог синтезированных wiki-страниц: research + concepts. Не дублирует MODULE_INDEX, DATA_FLOW, CONTEXT_HANDOFF | [`wiki/index.md`](wiki/index.md) |
 | `wiki/REPO_integrity.md` | Карта всех файлов репо с хешами — для обнаружения изменений. Не для навигации по коду | `python wiki/wiki.py generate` |
-| `knowledge-rag` | Поиск кандидатов по docs/wiki/code; не source of truth | MCP server `knowledge-rag`, tool `search_knowledge` |
+| `knowledge-rag` | Быстрый поиск кандидатов по `docs/`, `wiki/`, коду и отчётам; не источник истины | MCP server `knowledge-rag`, tool `search_knowledge` |
 | `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
 | `docs/reports/` | Канонические отчёты завершённых этапов с результатами и выводами | [`docs/reports/`](docs/reports/) |
 | `CHANGELOG.md` | История значимых изменений: фичи, багфиксы, результаты экспериментов | [`CHANGELOG.md`](CHANGELOG.md) — первые 300 строк |
@@ -66,7 +82,7 @@ ML-бот для прогнозирования разворотов Forex (H1).
 **В начале каждой сессии** (wiki Query-workflow, см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)):
 1. Прочитай `wiki/index.md` — понять существующий синтез.
 2. Прочитай `CONTEXT_HANDOFF.md` — текущее состояние и следующий шаг.
-3. Через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, код → открыть первоисточники.
+3. Через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, `docs/superpowers/`, код; для обзорных задач использовать несколько узких запросов, а не один общий → открыть первоисточники.
 4. Если новые отчёты из `docs/reports/` не покрыты в `wiki/index.md` → выполнить wiki **Ingest**.
 
 ## Приоритет источников
