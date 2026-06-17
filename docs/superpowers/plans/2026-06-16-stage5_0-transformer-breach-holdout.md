@@ -23,6 +23,7 @@
 - `docs/methodology/09-validation-freeze.md` — selection/freeze.
 - `docs/methodology/11-robustness.md` — calendar risk, walk-forward interpretation.
 - `docs/methodology/16-reporting-audit.md` — отчётность и сверка JSON.
+- `docs/methodology/A6-fractal-feature-profile-catalog.md` — каталог вариантов представления фракталов и рекомендуемая стартовая матрица для Transformer.
 
 ## Hard Boundaries
 
@@ -96,6 +97,8 @@ Primary holdout protocol:
 | val_stop | 2021-2022 | labeled CSVs | early stopping / epoch selection |
 | holdout_eval | 2023-2026 | `MT/MQL4/Files/Nero.csv` + generated breach labels or equivalent OHLC-derived labels | final Stage 5.0 model diagnostic |
 
+**Why train <=2020** (not <=2016 as in Stage 4.2): Transformer needs more data than XGBoost to learn sequence patterns. 2019–2020 were previously XGBoost validation (not frozen test), so repurposing them for Transformer training does not leak test information. The cost is a shorter val_stop (2 years vs 4), which is acceptable because early stopping requires a clean signal, not a large sample.
+
 Important:
 
 - If 2023-2026 breach labels are not already present, generate them deterministically from OHLC using the same Stage 1 `breach` label contract.
@@ -158,37 +161,117 @@ Near-pass does not allow trading. It only allows optional walk-forward diagnosti
 
 ## Feature Profiles
 
-All feature profiles must be fixed before training.
+All feature profiles must be fixed before training. Profile design follows `docs/methodology/A6-fractal-feature-profile-catalog.md`.
 
 ### Shared Input Rules
 
-- Sequence order: `fractal0` is newest token, `fractal99` oldest token.
-- `seq_len`: run fixed profiles with `20` and `100` only if compute budget allows. Primary is `seq_len=100`; `seq_len=20` is a compact diagnostic.
+- Sequence order depends on profile: `fractal0` is newest token for `all100`/`newest` profiles; order by price distance for `nearest`/`corridor` profiles.
+- `seq_len`: primary is `100` for `all100` profiles; `newest20` uses `20`; `nearest40`/`corridor` profiles pad or truncate to fixed length.
 - Missing or malformed tokens must be represented by a mask, not silently converted into meaningful zeros.
+- For `corridor_*` and `nearest_*` profiles: if fewer tokens than `seq_len`, pad with zeros + validity mask; if more, truncate by fixed rule (closest by price).
 - Row-level features (`ATR`, hour, day-of-week) must be separate from fractal-token features so time-only and no-time controls are clean.
 - Fit any scaler/normalizer on train only; apply to val_stop and holdout.
 
 ### Profile Matrix
 
-| Profile | Tokens | Token Features | Row Features | Purpose |
-|---|---:|---|---|---|
-| `T_base10_time` | 100 | price, direction, front, back, strong, break, reverse, power, count, impulse | ATR + hour/dow sin/cos | Main Transformer profile comparable to Stage 4 XGBoost |
-| `T_base10_no_time` | 100 | same 10 token features | ATR only | Tests whether Transformer extracts fractal signal without calendar |
-| `T_no_price_time` | 100 | direction, front, back, strong, break, reverse, power, count, impulse | ATR + hour/dow sin/cos | Tests Stage 5-prep finding that raw price may add noise |
-| `T_geometry_only` | 100 | direction, front, back, strong, break, power, impulse, relative price to fractal0 in ATR if available | ATR only | Tests structural fractal geometry without calendar dominance |
-| `T_path_compact` | 100 | base10 + folded `mov_3/6/12/24/48` + shift + fractal_atr/current_ATR | ATR + hour/dow sin/cos | Optional high-dimensional profile; run only after fixed budget approval |
-| `T_time_token_only` | 100 | direction only or zero token payload | ATR + hour/dow sin/cos | Negative control: ensures Transformer is not just a time wrapper |
+| # | Profile | Selection | Order | Token Features | Row Features | Purpose |
+|---|---|---|---|---|---|---|
+| 1 | `all100_base10_time` | All 100 fractals | By freshness (newest first) | price, direction, front, back, strong, break, reverse, power, count, impulse | ATR + hour/dow sin/cos | Baseline comparable to Stage 4 XGBoost |
+| 2 | `all100_base10_no_time` | All 100 fractals | By freshness | same 10 token features | ATR only | Calendar control: tests fractal signal without time |
+| 3 | `newest20_base10_time` | 20 newest fractals | By freshness | same 10 token features | ATR + hour/dow sin/cos | Tests whether only recent fractals suffice |
+| 4 | `nearest40_base10_time` | 40 fractals closest to fractal0.price | By price distance (ascending) | same 10 token features | ATR + hour/dow sin/cos | Tests price proximity vs freshness |
+| 5 | `corridor_10atr_base10_time` | Fractals within ±10 ATR of fractal0.price | By price distance (ascending) | same 10 token features | ATR + hour/dow sin/cos | Tests wide market context around level |
+| 6 | `corridor_ablation` | 3 sub-profiles: ±5, ±10, ±15 ATR | By price distance | same 10 token features | ATR + hour/dow sin/cos | Tests corridor width (5/10/15 ATR) |
+
+Optional (only if compute budget allows and declared before run):
+
+| # | Profile | Selection | Order | Token Features | Row Features | Purpose |
+|---|---|---|---|---|---|---|
+| 7 | `all100_full29_time` | All 100 fractals | By freshness | Full 29-feature contract from data_loader.py | ATR + hour/dow sin/cos | Tests whether extended features help Transformer |
+| 8 | `all100_base10_no_price_time` | All 100 fractals | By freshness | direction, front, back, strong, break, reverse, power, count, impulse (9 features, no price) | ATR + hour/dow sin/cos | Stage 5-prep finding: removing price improved XGBoost AUC +32 bp |
+
+### Fixed SeqLen Per Profile
+
+| Profile | seq_len | Rationale |
+|---|---|---|
+| `all100_*` | 100 | Full fractal list |
+| `newest20_*` | 20 | First 20 fractals |
+| `nearest40_*` | 40 | Fixed k=40 |
+| `corridor_5atr` | 30 | Conservative; refine after corridor validation stats |
+| `corridor_10atr` | 40 | Based on A6 recommended corridor width; refine after validation |
+| `corridor_15atr` | 50 | Wide corridor; refine after validation |
+
+All corridor seq_len values may be adjusted after mandatory corridor validation (see Corridor Validation section). Rule: set seq_len = min(N, P80 of observed fractal count) where N is the pre-declared value above. If P80 < seq_len, reduce seq_len to P80 to avoid excessive padding. If P80 > seq_len, keep seq_len and truncate by closest-to-fractal0.
 
 Do not add profiles after seeing holdout results.
+
+### Corridor Validation (mandatory for corridor profiles)
+
+Before training any `corridor_*` profile, compute and report:
+
+```python
+corridor_stats = {
+    "profile": str,
+    "n_rows_total": int,
+    "n_fractals_p5": float,
+    "n_fractals_p25": float,
+    "n_fractals_median": float,
+    "n_fractals_p75": float,
+    "n_fractals_p95": float,
+    "pct_empty": float,      # 0 fractals after selection
+    "pct_single": float,     # 1 fractal
+    "pct_two": float,        # 2 fractals
+    "pct_three_plus": float, # 3+ fractals
+}
+```
+
+Status rules:
+
+- If `pct_empty > 5%` or `median < 3`: profile gets `LOW_COVERAGE` status; result is diagnostic only.
+- If `pct_empty > 20%` or `median < 2`: profile is `REJECTED` before training.
+- Report corridor stats separately for train, val_stop, holdout.
+
+### Phased Execution
+
+Do not launch all profiles at once. Follow phases:
+
+**Phase 1 — Baseline check:**
+1. `all100_base10_time` + `all100_base10_no_time`
+2. Compare with XGBoost baselines
+3. Stop condition: halt only if Transformer AUC on val_stop trails XGBoost by >0.03 (clear underperformance). If gap is within ±0.02 (near-parity), continue — val_stop is only 2 years and may not be representative.
+
+**Phase 2 — Selection variations:**
+4. `newest20_base10_time`
+5. `nearest40_base10_time`
+6. `corridor_10atr_base10_time` (with corridor validation)
+
+**Phase 3 — Corridor ablation (only if corridor_10atr looks promising):**
+7. `corridor_ablation` (5/10/15 ATR)
+
+**Phase 4 — Optional extended features (only if Phase 1-2 show clear benefit):**
+8. `all100_full29_time`
+9. `all100_base10_no_price_time` — tests Stage 5-prep finding (removing price improved AUC +32 bp for XGBoost)
+
+**Expected training budget:**
+- Phase 1-2: 5 profiles × 3 seeds = 15 Transformer runs
+- Phase 3: 2 additional sub-profiles × 3 seeds = 6 runs
+- Phase 4: 2 optional profiles × 3 seeds = 6 runs
+- XGBoost baselines: 3 refits (time_only, base_raw_plus_time, no_time)
+- Total worst-case: ~27 Transformer runs + 3 XGBoost refits
+- With single seed (GPU unavailable): ~9 Transformer runs
 
 ### Feature Interpretation Requirements
 
 Report separately:
 
-- whether time features dominate;
-- whether removing price helps;
-- whether path/shift/ATR-ratio helps or adds noise;
+- whether time features dominate (compare profile 1 vs 2);
+- whether selection strategy matters (compare profiles 1 vs 3 vs 4 vs 5);
+- whether corridor width matters (compare sub-profiles in profile 6);
+- whether extended features help (compare profile 1 vs 7 if run);
+- whether removing price helps Transformer (compare profile 1 vs 8 if run — Stage 5-prep hypothesis);
 - whether Transformer beats `time_only` by enough margin to justify sequence modeling.
+
+Note: `zones_plus_nearest` (A6 recommendation) is omitted because zones are aggregated table features, not sequence input — they don't test Transformer's sequence-modeling capability. May be added in Stage 5.1 if Transformer shows promise.
 
 ---
 
@@ -206,6 +289,8 @@ pooling: masked mean + newest-token embedding concat
 row_feature_mlp: small MLP for ATR/time row features
 head: binary classifier, BCEWithLogitsLoss
 ```
+
+For `nearest_*` and `corridor_*` profiles: positional encoding is learned position (0..seq_len-1), not fractal index. This allows the model to learn relative position within the selected subset.
 
 Fixed training budget:
 
@@ -231,23 +316,31 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
 - Create/modify: `ML/baseline/benchmark_stage5_transformer_breach.py`
 
 - [ ] **Step 1: Write tests for feature profile definitions**
-  - Assert all fixed profile names are present.
-  - Assert each profile declares token fields, row fields, `uses_time`, `uses_price`.
+  - Assert all 6 required profile names are present.
+  - Assert each profile declares: `selection`, `order`, `token_fields`, `row_fields`, `uses_time`, `seq_len`.
   - Assert no profile is created dynamically from results.
 
 - [ ] **Step 2: Write tests for tensor shapes**
-  - Small DataFrame with `fractal0..fractal2`, `ATR`, `time`.
-  - Feature builder returns:
+  - Small DataFrame with `fractal0..fractal5`, `ATR`, `time`.
+  - For each profile type, feature builder returns:
     - `tokens`: `(n, seq_len, dim)`;
     - `row_features`: `(n, row_dim)`;
     - `mask`: `(n, seq_len)`.
+  - For `corridor_*` profiles: test with 0, 1, 5, 10 fractals in corridor.
 
-- [ ] **Step 3: Write tests for no-time/no-price contracts**
-  - `T_base10_no_time` must not include hour/dow fields.
-  - `T_no_price_time` must not include token `price`.
-  - `T_time_token_only` must not include rich fractal payload.
+- [ ] **Step 3: Write tests for profile contracts**
+  - `all100_base10_no_time` must not include hour/dow fields.
+  - `nearest40_base10_time` must order tokens by price distance.
+  - `corridor_10atr_base10_time` must exclude fractals outside ±10 ATR.
+  - `newest20_base10_time` must use only first 20 fractals.
 
-- [ ] **Step 4: Write tests for split guard**
+- [ ] **Step 4: Write tests for corridor validation**
+  - Empty corridor (0 fractals) produces valid mask.
+  - Single-fractal corridor does not produce NaN.
+  - `LOW_COVERAGE` threshold triggers correctly.
+  - `REJECTED` threshold triggers correctly.
+
+- [ ] **Step 5: Write tests for split guard**
   - Holdout rows must never be used in train or val_stop.
   - Any scaler fit metadata must report train-only fit period.
 
@@ -285,15 +378,23 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
 - [ ] **Step 1: Implement model class**
   - Inputs: `tokens`, `row_features`, `mask`.
   - Outputs: logits shape `(batch,)`.
+  - Support variable `seq_len` (100 for all100, 20 for newest20, 40 for nearest40/corridor).
 
 - [ ] **Step 2: Implement masked pooling**
-  - Masked mean over valid tokens.
+  - Masked mean over valid tokens (mask=1).
   - Concat with newest valid token representation.
+  - Handle edge case: all tokens masked (use zero vector + row features only).
 
-- [ ] **Step 3: Add unit tests**
+- [ ] **Step 3: Implement corridor/nearest token selection**
+  - `select_by_corridor(fractals, fractal0_price, atr, corridor_atr)`: returns indices within ±corridor_atr.
+  - `select_by_nearest(fractals, fractal0_price, k)`: returns k closest by price.
+  - Order selected tokens by distance (ascending) for corridor/nearest profiles.
+
+- [ ] **Step 4: Add unit tests**
   - Forward pass works with partial mask.
   - Fully invalid token row does not produce NaN.
-  - Output shape stable.
+  - Output shape stable for all profile types.
+  - Corridor selection correctly excludes tokens outside ATR range.
 
 ---
 
@@ -307,29 +408,41 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
   - Early stopping on 2021-2022 only.
   - No holdout feedback.
 
-- [ ] **Step 2: Run fixed profiles**
-  - Required:
-    - `T_base10_time`;
-    - `T_base10_no_time`;
-    - `T_no_price_time`;
-    - `T_geometry_only`;
-    - `T_time_token_only`.
-  - Optional only if compute budget allows and declared before run:
-    - `T_path_compact`.
+- [ ] **Step 2: Run Phase 1 (baseline check)**
+  - `all100_base10_time`
+  - `all100_base10_no_time`
+  - Compare with XGBoost baselines on val_stop.
+  - **Stop condition:** halt only if Transformer AUC on val_stop trails XGBoost by >0.03. If gap is within ±0.02, continue — val_stop is only 2 years and may not be representative.
 
-- [ ] **Step 3: Run seeds**
+- [ ] **Step 3: Run Phase 2 (selection variations)**
+  - `newest20_base10_time`
+  - `nearest40_base10_time`
+  - `corridor_10atr_base10_time` (with mandatory corridor validation)
+
+- [ ] **Step 4: Run Phase 3 (corridor ablation, conditional)**
+  - Only if `corridor_10atr` shows promise in Phase 2.
+  - Run `corridor_5atr`, `corridor_15atr` as sub-profiles.
+
+- [ ] **Step 5: Run Phase 4 (optional, conditional)**
+  - Only if Phase 1-2 show clear Transformer benefit.
+  - `all100_full29_time`
+  - `all100_base10_no_price_time`
+
+- [ ] **Step 6: Run seeds**
   - Primary: seeds `[42, 77, 123]`.
   - If compute limited, run seed `42` first, mark result `single_seed_diagnostic`, and do not promote to pass.
 
-- [ ] **Step 4: Evaluate on holdout 2023-2026**
+- [ ] **Step 7: Evaluate on holdout 2023-2026**
   - AUC, PR-AUC, lift bottom 10/20/30.
   - yearly AUC / PR-AUC / lift.
   - calibration buckets.
   - prediction distribution summary.
+  - For corridor profiles: corridor stats on holdout.
 
-- [ ] **Step 5: Aggregate**
+- [ ] **Step 8: Aggregate**
   - Mean and min across seeds.
   - Compare each Transformer profile with all baselines.
+  - Rank profiles by holdout AUC and lift.
 
 ---
 
@@ -373,7 +486,7 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
     - `status`;
     - `config`;
     - `split`;
-    - `feature_profiles`;
+    - `feature_profiles` (with corridor_stats for corridor profiles);
     - `baselines`;
     - `transformer_results`;
     - `holdout_gate`;
@@ -383,9 +496,10 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
 - [ ] **Step 2: Report sections**
   - Context.
   - Why holdout first and walk-forward optional.
-  - Feature profiles and fixed search budget.
+  - Feature profiles and phased execution rationale (per A6).
+  - Corridor validation results.
   - Baselines.
-  - Transformer results.
+  - Transformer results by phase.
   - Gate verdict.
   - Non-conclusions.
   - Next step.
@@ -455,7 +569,9 @@ Next:
 
 ## Acceptance Criteria
 
-- Feature profiles are fixed before running.
+- Feature profiles are fixed before running and follow A6 recommendations.
+- Corridor profiles have mandatory validation stats.
+- Phased execution is respected (stop early if Phase 1 fails).
 - Baselines include `time_only`, `xgb_base_raw_plus_time`, and `xgb_no_time`.
 - Main verdict is based on 2023-2026 holdout, not on best historical window.
 - Walk-forward is optional and only diagnostic.
