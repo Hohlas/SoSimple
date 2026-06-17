@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking. Do not commit unless the user explicitly asks.
 
-**Goal:** Проверить, даёт ли Transformer на последовательности фракталов устойчивое улучшение `breach`-ранжирования на holdout 2023-2026 по сравнению с XGBoost и календарными baseline.
+**Goal:** Проверить, даёт ли Transformer на последовательности фракталов устойчивое улучшение `breach`-ранжирования на диагностическом holdout 2023-2026 по сравнению с XGBoost и календарными baseline.
 
-**Architecture:** Stage 5.0 — только модельный слой, без торгового grid search и без выбора production winner. Основной gate — один честный holdout 2023-2026. Walk-forward выполняется только как optional diagnostics, если Transformer выглядит перспективно или результат неоднозначен.
+**Architecture:** Stage 5.0 — только модельный слой, без торгового grid search и без выбора production winner. Основной gate — диагностический holdout 2023-2026: этот период уже использовался в Stage 4.6/walk-forward, поэтому это не чистый будущий test. Walk-forward выполняется только как optional diagnostics, если Transformer выглядит перспективно или результат неоднозначен.
 
 **Tech Stack:** Python 3.10+, pandas, numpy, scikit-learn, XGBoost, PyTorch. Использовать `~/git/SoSimple/.venv/bin/python`.
 
@@ -33,10 +33,12 @@
 - Не расширять feature profiles после просмотра holdout.
 - Не использовать 2023-2026 для ручной подгонки архитектуры. Все профили и gates фиксируются до запуска.
 - Результат Stage 5.0 получает максимум `MODEL_PASS_DIAGNOSTIC`; торговый candidate требует отдельного Stage 5.1.
+- **Primary feature profile** — `all100_base10_time`. Все остальные профили — диагностические абляции. Gate применяется ТОЛЬКО к primary. Ранжирование остальных профилей по holdout имеет статус `DIAGNOSTIC_ONLY` и не может выбирать winner.
+- **val_stop** используется для early stopping и Phase 1 stop/continue, но НЕ выбирает финальный winner. Verdict — только по заранее выбранному primary profile на holdout.
 
 ## Key Decision
 
-Stage 5.0 использует **обычный holdout 2023-2026 как главный gate**, а не полный walk-forward.
+Stage 5.0 использует **диагностический holdout 2023-2026 как главный gate**, а не полный walk-forward.
 
 Walk-forward — optional Task:
 
@@ -77,15 +79,7 @@ Reason:
 - same target where trailing diagnostics were evaluated;
 - avoids opening a new target search.
 
-Optional secondary target metrics may be computed for the same model family only if already fixed before run:
-
-```text
-sell_H6_off02
-sell_H12_off02
-sell_H12_off05
-```
-
-But secondary targets are diagnostic only and cannot override the primary verdict.
+Secondary targets are out of scope for Stage 5.0. A binary Transformer with one output is trained only for `sell_H6_off05`. Other SELL targets (`sell_H6_off02`, `sell_H12_off02`, `sell_H12_off05`) require separate diagnostic trainings or a multi-head model and must be planned in a later stage.
 
 ### Split
 
@@ -102,8 +96,26 @@ Primary holdout protocol:
 Important:
 
 - If 2023-2026 breach labels are not already present, generate them deterministically from OHLC using the same Stage 1 `breach` label contract.
+- **Label parity check:** after generating 2023-2026 breach labels, manually verify 10-20 random rows against OHLC to confirm label contract matches Stage 1. Report verification in JSON.
 - Do not use 2023-2026 to tune architecture, feature profile, threshold, or training hyperparameters.
-- Report must state that 2023-2026 is a diagnostic holdout already used in Stage 4.6/walk-forward; it is not a clean future test for later manual tuning.
+- **Legacy holdout disclosure:** report must state that 2023-2026 is a diagnostic holdout already used in Stage 4.6/walk-forward; it is not a clean future test for later manual tuning. This disclosure is mandatory in the canonical report.
+
+### Search Budget
+
+Fixed before run. No additions after seeing results.
+
+| Dimension | Count | Notes |
+|---|---|---|
+| Primary profile | 1 | `all100_base10_time` — gate applies here only |
+| Diagnostic profiles (Phase 1-2) | 4 | `all100_base10_no_time`, `newest20`, `nearest40`, `corridor_10atr` |
+| Corridor ablation (Phase 3) | 2 | `corridor_5atr`, `corridor_15atr` — conditional on Phase 2 |
+| Optional profiles (Phase 4) | 2 | `all100_full29_time`, `all100_base10_no_price_time` — conditional |
+| Seeds | 3 | `[42, 77, 123]`; reduced to `[42]` if GPU unavailable |
+| Primary target | 1 | `sell_H6_off05` |
+
+**Total worst-case:** 9 profiles × 3 seeds × 1 primary target = 27 Transformer runs + 3 XGBoost refits.
+**Single-seed budget:** 9 × 1 = 9 Transformer runs.
+Secondary targets are not computed in Stage 5.0.
 
 ### Baselines
 
@@ -111,8 +123,12 @@ Every Transformer profile is compared against:
 
 1. `dummy_prior`: constant probability / class prior.
 2. `time_only_xgb`: 4 row-level time features.
-3. `xgb_base_raw_plus_time`: current best tabular baseline.
+3. `xgb_base_raw_plus_time`: current best tabular baseline (same split as Transformer).
 4. `xgb_no_time`: tabular baseline without row-level time features.
+
+**Baseline split awareness:** Stage 5.0 uses `train <=2020`, while Stage 4.2/4.6 used `train <=2016`. Therefore `xgb_base_raw_plus_time` will differ from legacy Stage 4 results. Report both:
+- `legacy_xgb_reference`: Stage 4.2 result (train <=2016, val 2019-2022) — for historical context only, not for gate comparison.
+- `same_split_xgb_baseline`: XGBoost refitted on `train <=2020, val_stop 2021-2022` — the fair comparison for Transformer gate.
 
 ### Main Metrics
 
@@ -135,8 +151,8 @@ No PF gate in Stage 5.0.
 Transformer passes Stage 5.0 only if the primary profile satisfies all:
 
 ```text
-holdout AUC >= max(xgb_base_raw_plus_time_auc + 0.02, time_only_auc + 0.04)
-holdout lift_bottom30 >= xgb_base_raw_plus_time_lift_bottom30 + 0.10
+holdout AUC >= max(same_split_xgb_base_raw_plus_time_auc + 0.02, same_split_time_only_auc + 0.04)
+holdout lift_bottom30 >= same_split_xgb_base_raw_plus_time_lift_bottom30 + 0.10
 yearly AUC >= 0.55 in at least 3 of 4 holdout years with enough samples
 calibration not inverted in working low-risk zone
 ```
@@ -201,7 +217,7 @@ Optional (only if compute budget allows and declared before run):
 | `corridor_10atr` | 40 | Based on A6 recommended corridor width; refine after validation |
 | `corridor_15atr` | 50 | Wide corridor; refine after validation |
 
-All corridor seq_len values may be adjusted after mandatory corridor validation (see Corridor Validation section). Rule: set seq_len = min(N, P80 of observed fractal count) where N is the pre-declared value above. If P80 < seq_len, reduce seq_len to P80 to avoid excessive padding. If P80 > seq_len, keep seq_len and truncate by closest-to-fractal0.
+All corridor seq_len values may be adjusted after mandatory corridor validation (see Corridor Validation section), but only from train/val_stop statistics. Holdout corridor statistics are report-only and must not change seq_len, padding, truncation, or any training decision. Rule: set seq_len = min(N, P80 of observed fractal count on train+val_stop) where N is the pre-declared value above. If P80 < seq_len, reduce seq_len to P80 to avoid excessive padding. If P80 > seq_len, keep seq_len and truncate by closest-to-fractal0.
 
 Do not add profiles after seeing holdout results.
 
@@ -230,6 +246,7 @@ Status rules:
 - If `pct_empty > 5%` or `median < 3`: profile gets `LOW_COVERAGE` status; result is diagnostic only.
 - If `pct_empty > 20%` or `median < 2`: profile is `REJECTED` before training.
 - Report corridor stats separately for train, val_stop, holdout.
+- Use only train/val_stop corridor stats for seq_len adjustment. Holdout stats are diagnostic disclosure only.
 
 ### Phased Execution
 
@@ -245,12 +262,14 @@ Do not launch all profiles at once. Follow phases:
 5. `nearest40_base10_time`
 6. `corridor_10atr_base10_time` (with corridor validation)
 
-**Phase 3 — Corridor ablation (only if corridor_10atr looks promising):**
+**Phase 3 — Corridor ablation (only if corridor_10atr looks promising on val_stop):**
 7. `corridor_ablation` (5/10/15 ATR)
 
-**Phase 4 — Optional extended features (only if Phase 1-2 show clear benefit):**
+**Phase 4 — Optional extended features (only if Phase 1-2 show clear benefit on val_stop):**
 8. `all100_full29_time`
 9. `all100_base10_no_price_time` — tests Stage 5-prep finding (removing price improved AUC +32 bp for XGBoost)
+
+Conditional phase decisions use only `val_stop` metrics and pre-declared thresholds. Do not inspect holdout before deciding whether to run Phase 3 or Phase 4.
 
 **Expected training budget:**
 - Phase 1-2: 5 profiles × 3 seeds = 15 Transformer runs
@@ -265,6 +284,7 @@ Do not launch all profiles at once. Follow phases:
 Report separately:
 
 - whether time features dominate (compare profile 1 vs 2);
+- **whether Transformer beats `time_only` in the low-risk working zone** (bottom 10/20/30% of `predict_break`), not just overall AUC — if Transformer wins overall but loses in the working zone, sequence modeling does not add trading value;
 - whether selection strategy matters (compare profiles 1 vs 3 vs 4 vs 5);
 - whether corridor width matters (compare sub-profiles in profile 6);
 - whether extended features help (compare profile 1 vs 7 if run);
@@ -284,7 +304,7 @@ Primary architecture:
 ```text
 token_projection: Linear(input_dim -> d_model)
 positional_encoding: learned position embedding for fractal level 0..99
-encoder: 2 layers, d_model=64, nhead=4, dropout=0.15
+encoder: 2 layers, d_model=64, nhead=4, dim_feedforward=128, dropout=0.15
 pooling: masked mean + newest-token embedding concat
 row_feature_mlp: small MLP for ATR/time row features
 head: binary classifier, BCEWithLogitsLoss
@@ -305,7 +325,22 @@ weight_decay: 1e-4
 class_weight: pos_weight from train only
 ```
 
-If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in the report.
+### CPU Execution Note
+
+При отсутствии GPU единственное разрешённое методическое упрощение — сокращение числа seed до `[42]`.
+
+Запрещено без явного согласования с пользователем:
+
+- снижать `d_model=64`, `nhead=4`, `dim_feedforward=128`;
+- снижать `max_epochs=60`;
+- отключать early stopping или менять `early_stopping_patience=8`;
+- субдискретизировать train;
+- добавлять флаг `--cpu-reduced` или аналогичный режим, не предусмотренный планом.
+
+`batch_size=256` является целевым значением. Если память не позволяет, можно снизить batch size до максимально возможного, но это должно быть записано в JSON/report. Снижение batch size не считается упрощением модели.
+
+Полноразмерный прогон на CPU может занимать несколько часов на профиль. Если фактическое время существенно превышает ожидание, агент не меняет модель самовольно: он завершает текущий профиль или останавливается на ближайшем безопасном checkpoint и сообщает фактическое время.
+
 
 ---
 
@@ -356,16 +391,22 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
   - Nero.csv for 2023-2026;
   - OHLC for deterministic breach labels if needed.
 
-- [ ] **Step 2: Reproduce XGBoost baselines**
-  - `time_only_xgb`.
-  - `xgb_base_raw_plus_time`.
-  - `xgb_no_time`.
+- [ ] **Step 2: Reproduce XGBoost baselines (same split as Transformer)**
+  - `time_only_xgb` on train <=2020, val_stop 2021-2022.
+  - `xgb_base_raw_plus_time` on train <=2020, val_stop 2021-2022.
+  - `xgb_no_time` on train <=2020, val_stop 2021-2022.
 
-- [ ] **Step 3: Save baseline metrics**
+- [ ] **Step 3: Load legacy reference**
+  - Load Stage 4.2 `xgb_base_raw_plus_time` result (train <=2016, val 2019-2022) as `legacy_xgb_reference`.
+  - This is for historical context only, not for gate comparison.
+
+- [ ] **Step 4: Save baseline metrics**
   - AUC, PR-AUC, lift bottom 10/20/30, yearly AUC, calibration buckets.
+  - Report both `same_split_xgb_baseline` and `legacy_xgb_reference` in JSON.
 
-- [ ] **Step 4: Stop on mismatch**
-  - If `xgb_base_raw_plus_time` differs materially from the latest diagnostic baseline, stop and explain whether split/protocol changed.
+- [ ] **Step 5: Explain expected mismatch**
+  - `same_split_xgb_baseline` AUC will differ from `legacy_xgb_reference` because train period changed (<=2020 vs <=2016).
+  - This is expected and does not indicate a protocol error. Document the delta.
 
 ---
 
@@ -412,7 +453,6 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
   - `all100_base10_time`
   - `all100_base10_no_time`
   - Compare with XGBoost baselines on val_stop.
-  - **Stop condition:** halt only if Transformer AUC on val_stop trails XGBoost by >0.03. If gap is within ±0.02, continue — val_stop is only 2 years and may not be representative.
 
 - [ ] **Step 3: Run Phase 2 (selection variations)**
   - `newest20_base10_time`
@@ -420,11 +460,11 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
   - `corridor_10atr_base10_time` (with mandatory corridor validation)
 
 - [ ] **Step 4: Run Phase 3 (corridor ablation, conditional)**
-  - Only if `corridor_10atr` shows promise in Phase 2.
+  - Only if `corridor_10atr` shows promise in Phase 2 on val_stop.
   - Run `corridor_5atr`, `corridor_15atr` as sub-profiles.
 
 - [ ] **Step 5: Run Phase 4 (optional, conditional)**
-  - Only if Phase 1-2 show clear Transformer benefit.
+  - Only if Phase 1-2 show clear Transformer benefit on val_stop.
   - `all100_full29_time`
   - `all100_base10_no_price_time`
 
@@ -442,7 +482,7 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
 - [ ] **Step 8: Aggregate**
   - Mean and min across seeds.
   - Compare each Transformer profile with all baselines.
-  - Rank profiles by holdout AUC and lift.
+  - **Holdout ranking is DIAGNOSTIC_ONLY:** rank all profiles by holdout AUC and lift for interpretation, but this ranking cannot select a winner. Only the pre-declared primary profile (`all100_base10_time`) determines the gate verdict. Other profiles inform ablation insights (which selection strategy, which features), not trading decisions.
 
 ---
 
@@ -463,12 +503,17 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
   - Use the best pre-declared profile from Task 4.
   - Do not add new profiles.
 
-- [ ] **Step 3: Interpret correctly**
+- [ ] **Step 3: Self-val windows are DIAGNOSTIC_ONLY**
+  - Windows `train <=2016 -> eval 2017-2018` and `train <=2018 -> eval 2019-2020` use self-validation (no separate val_stop for early stopping). Absolute AUC/lift from these windows cannot be compared with the temporal protocol (train <=2020, val_stop 2021-2022).
+  - Report these windows for trend observation only: does Transformer improve over XGBoost in each window?
+  - Window `train <=2022 -> eval 2023-2026` also lacks a future val_stop; mark as `DIAGNOSTIC_ONLY`.
+
+- [ ] **Step 4: Interpret correctly**
   - Do not pick winner from best window.
   - Report how many windows beat XGBoost/time-only.
   - Report whether late window still improves.
 
-- [ ] **Step 4: Stop condition**
+- [ ] **Step 5: Stop condition**
   - If Transformer only improves 2019-2022 but not 2023-2026, reject trading progression.
 
 ---
@@ -486,21 +531,29 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
     - `status`;
     - `config`;
     - `split`;
+    - `primary_profile` (name and gate result);
     - `feature_profiles` (with corridor_stats for corridor profiles);
-    - `baselines`;
+    - `baselines` (both `same_split_xgb_baseline` and `legacy_xgb_reference`);
+    - `label_parity_check` (manual verification of 2023-2026 breach labels);
     - `transformer_results`;
-    - `holdout_gate`;
+    - `holdout_gate` (applied to primary profile only);
+    - `diagnostic_profile_ranking` (holdout ranking, status DIAGNOSTIC_ONLY);
     - `optional_walk_forward` if run;
-    - `interpretation_guards`.
+    - `interpretation_guards`;
+    - `legacy_holdout_disclosure` (mandatory text about 2023-2026 reuse).
 
 - [ ] **Step 2: Report sections**
   - Context.
   - Why holdout first and walk-forward optional.
+  - **Legacy holdout disclosure** (mandatory): 2023-2026 was used as diagnostic holdout in Stage 4.6/walk-forward; it is not a clean future test.
+  - Label parity verification results.
   - Feature profiles and phased execution rationale (per A6).
   - Corridor validation results.
-  - Baselines.
+  - Baselines (same-split vs legacy reference).
   - Transformer results by phase.
-  - Gate verdict.
+  - Gate verdict (primary profile only).
+  - Diagnostic profile ranking (DIAGNOSTIC_ONLY).
+  - Time dominance check: does Transformer beat time_only in the low-risk working zone?
   - Non-conclusions.
   - Next step.
 
@@ -541,7 +594,7 @@ If GPU is unavailable, reduce seeds to `[42]` and state compute limitation in th
 
 ### PASS
 
-All primary gates pass on 2023-2026 holdout, and yearly slices are not concentrated in one year.
+All primary gates pass on 2023-2026 holdout **for the pre-declared primary profile (`all100_base10_time`)**, and yearly slices are not concentrated in one year.
 
 Next:
 
@@ -551,7 +604,7 @@ Next:
 
 ### NEAR_PASS
 
-Transformer improves over XGBoost but fails one non-critical gate.
+Primary profile improves over XGBoost but fails one non-critical gate.
 
 Next:
 
@@ -560,7 +613,7 @@ Next:
 
 ### FAIL
 
-Transformer does not beat XGBoost/time-only on 2023-2026, or improvement is only calendar/time-like.
+Primary profile does not beat XGBoost/time-only on 2023-2026, or improvement is only calendar/time-like.
 
 Next:
 
@@ -569,11 +622,16 @@ Next:
 
 ## Acceptance Criteria
 
-- Feature profiles are fixed before running and follow A6 recommendations.
+- Primary feature profile (`all100_base10_time`) is declared before running.
+- Gate applies only to primary profile; other profiles are diagnostic ablations.
+- Holdout ranking of all profiles has status DIAGNOSTIC_ONLY.
 - Corridor profiles have mandatory validation stats.
 - Phased execution is respected (stop early if Phase 1 fails).
-- Baselines include `time_only`, `xgb_base_raw_plus_time`, and `xgb_no_time`.
-- Main verdict is based on 2023-2026 holdout, not on best historical window.
+- Baselines include `same_split_xgb_baseline` and `legacy_xgb_reference`.
+- Label parity check is performed for 2023-2026 breach labels.
+- Main verdict is based on 2023-2026 holdout for primary profile only.
+- Walk-forward self-val windows are marked DIAGNOSTIC_ONLY.
+- Legacy holdout disclosure is in the report.
 - Walk-forward is optional and only diagnostic.
 - No trading rule is selected.
 - All artifacts are indexed and verified.
