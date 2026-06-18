@@ -18,6 +18,8 @@
 - [ ] Padding/mask не участвовали в fit scaler; padding после normalization остался 0.
 - [ ] Для нейросети нет доминирующего признака по масштабу после финальной подготовки входов.
 - [ ] Для новых ML-раннеров есть scale-тесты: ожидаемый масштаб train после normalize, fit только на train, val/test/holdout не влияют на scaler, padding остаётся 0.
+- [ ] Если `normalized_feature_distribution_audit` дал `ERROR`/`WARNING`, по каждому флагу есть решение: block/fix/rerun/accept-as-warning.
+- [ ] `RobustScaler`, clipping, `log1p` или signed-log выбраны до просмотра holdout/test-метрик; выбор не подогнан под test.
 - [ ] Target order одинаков в train/evaluate/export.
 - [ ] Rule/checkpoint/threshold заморожены до test.
 - [ ] Test не использовался для выбора.

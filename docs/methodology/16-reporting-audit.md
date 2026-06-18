@@ -34,6 +34,9 @@
    - где fit-ился scaler и какие данные не участвовали в fit;
    - какие признаки, padding и mask исключены из fit;
    - `normalized_feature_distribution_audit` для train/validation/test или holdout;
+   - список флагов аудита распределений и решение по каждому флагу: block, fix, rerun или accept-as-warning;
+   - какие дополнительные преобразования применены (`RobustScaler`, clipping, `log1p`, signed-log), почему они выбраны и на каком split принято решение;
+   - подтверждение, что holdout/test не использовался для выбора normalization/scaler/clipping/log-преобразований;
    - итоговый вывод `scale_contract`: `PASS`/`FAIL`/`DIAGNOSTIC_ONLY`.
 5. Для принятого кандидата создать model card:
    - назначение модели;
@@ -62,6 +65,7 @@
 - Все источники результата доступны.
 - Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) сверены со structured artifact (JSON/CSV/parquet). Если structured artifact отсутствует, отчёт обязан содержать команду воспроизведения и hash входов. Расхождение отчёт↔artifact — блокирующая ошибка.
 - Для моделей со scaler/normalization отчёт содержит `normalization_config`, `normalized_feature_distribution_audit` и явный `scale_contract` verdict.
+- Если `normalized_feature_distribution_audit` содержит `ERROR`/`WARNING`, отчёт содержит реакцию на каждый флаг и не выдаёт неразрешённый preprocessing-риск за слабость модели.
 - Для принятого кандидата есть model card.
 - Старые противоречащие выводы помечены.
 - Документировано, что запрещено делать дальше.
