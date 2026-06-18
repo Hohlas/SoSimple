@@ -2,6 +2,30 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-17] — Stage 5.0: Transformer Breach Holdout — FAIL
+
+### Добавлено
+- `ML/baseline/benchmark_stage5_transformer_breach.py` — раннер Stage 5.0 (5 профилей A6, XGBoost baselines, phased execution)
+- `ML/models/fractal_breach_transformer.py` — Transformer-энкодер для breach-классификации (d_model=64, masked mean + newest-token pooling)
+- `tests/test_stage5_transformer_breach.py` — 39 тестов (профили, tensor shapes, corridor validation, модель, split guard)
+- `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт
+- `docs/ML/benchmark_stage5_transformer_breach.py.md` — документация раннера
+- `docs/ML/fractal_breach_transformer.py.md` — документация модели
+- `ML/reports/stage5_transformer_breach.json` — структурированные результаты
+
+### Результаты
+- **Полноразмерный Transformer (d_model=64, nhead=4, dim_feedforward=128, 40 эпох, train ≤2020) на CPU, single seed [42]**
+- Primary profile `all100_base10_time` holdout AUC=0.6018 vs XGBoost=0.6524 (gap −0.051)
+- Все 5 Transformer профилей проигрывают XGBoost на holdout 2023-2026
+- `no_time` профиль AUC=0.4987 — без времени Transformer бесполезен (ниже случайного)
+- `time_only` XGBoost AUC=0.6059 — почти догоняет Transformer с фракталами
+- Yearly degradation: AUC 0.646→0.513 от 2023 к 2026 (совпадает со Stage 4.6)
+- **Lift_30:** Transformer 0.766 vs XGBoost 0.620 (lift_30 = доля пробоев в нижних 30% / baseline; меньше = лучше) — Transformer ХУЖЕ XGBoost в безопасной зоне
+- Вердикт: FAIL по всем gate. Transformer не бьёт XGBoost ни по AUC, ни в low-risk зоне
+
+### Вывод
+**5 последовательных этапов Fractal Stop провалились** (Stage 2→3→4→4.6→5.0). Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-архитектуре. Методический risk: признаки Transformer не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации. Не строить Stage 5.1 trading layer. Решение: пересмотр постановки или закрытие Fractal Stop ветки.
+
 ## [2026-06-15] — Stage 4.7: Walk-Forward Optimization Diagnostics
 
 ### Добавлено

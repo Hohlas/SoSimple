@@ -1,7 +1,7 @@
 ---
-last_updated: 2026-06-15
-sources: 6
-status: active
+last_updated: 2026-06-17
+sources: 7
+status: completed
 ---
 
 # Fractal Stop Research
@@ -114,6 +114,18 @@ Extended clean cycle: val_select 2019-2022 (4 года), val_eval 2023-2026 (и�
 - `trail_atr_0_2`: val_eval PF=0.897, BS_p05=0.679 — провал на новых данных
 - Breach-модель ≤2016 не обобщается на +7 лет (2023-2026)
 - Permutation test: exit-политика доминирует над breach-сигналом — выбор трейлинга не зависит от качества breach-ранжирования
+
+### Stage 5.0: Transformer breach holdout (2026-06-17) — ❌ FAIL
+
+Полноразмерный Transformer (d_model=64, nhead=4, 40 эпох, train ≤2020) на 5 фрактальных профилях (A6-каталог) против XGBoost baseline на том же сплите. Diagnostic holdout 2023-2026. Только модельный слой, без торгового grid search.
+
+- Transformer primary profile holdout AUC=0.6018 vs XGBoost=0.6524 (gap −0.051)
+- Все Transformer профили проигрывают XGBoost на holdout
+- `no_time` профиль AUC=0.4987 (ниже случайного) — без времени Transformer бесполезен
+- `time_only` XGBoost AUC=0.6059 — почти догоняет Transformer с фракталами
+- Yearly degradation: 0.646→0.513 от 2023 к 2026
+- Transformer показывает ХУДШИЙ lift в low-risk зоне (0.766 vs XGBoost 0.620 — lift=доля пробоев в нижних 30%; меньше=лучше)
+- Вердикт: FAIL. Transformer не бьёт XGBoost в текущей реализации. Методический risk: признаки не масштабированы под нейросеть
 
 ## Ключевые результаты
 
@@ -318,6 +330,39 @@ Oracle Deviation Attribution после доработки считает PnL/ye
 | fav: underpredict | 1336 | +699.6 | Не основной источник убытка, но оставляет большой oracle-потенциал |
 | fav: near oracle | 571 | +271.0 | Когда fav близок к oracle, сделки прибыльны |
 
+### Stage 4.5 + 4.6
+
+Stage 4.5 trailing exit mechanics:
+- `trail_atr_0_2`: PF=1.831, BS_p05=1.462 — лучший diagnostic-сигнал Fractal Stop
+- 71% выходов по трейлингу, neg_years=1
+- Проходит spread stress (PF=1.501 при spread=0.40)
+
+Stage 4.6 clean candidate-cycle:
+- val_select 2019-2022: trail_atr_0_2 PF=2.041, concentration=0.434
+- val_eval 2023-2026: trail_atr_0_2 PF=0.897 — провал на новых данных
+- Permutation test: exit-политика доминирует над breach-сигналом
+
+### Stage 5.0
+
+Transformer против XGBoost на holdout 2023-2026 (5 профилей, single seed CPU):
+
+| Профиль | Val AUC | Holdout AUC | Δ vs XGBoost |
+|---|---:|---:|---:|
+| all100_base10_time (primary) | 0.6432 | 0.6018 | −0.0506 |
+| nearest40_base10_time | 0.6432 | 0.6034 | −0.0490 |
+| corridor_10atr_base10_time | 0.6426 | 0.6025 | −0.0499 |
+| newest20_base10_time | 0.6420 | 0.5953 | −0.0571 |
+| all100_base10_no_time | 0.5291 | 0.4987 | −0.1537 |
+
+XGBoost baselines:
+- base_raw_plus_time: Holdout AUC 0.6524, lift_30 0.620
+- no_time (XGBoost без времени): Holdout AUC 0.6456
+- time_only: Holdout AUC 0.6059
+
+Gate verdict (primary profile): FAIL. Все три gate не пройдены (AUC, lift_30, yearly). Transformer проигрывает XGBoost и по AUC (−0.051), и в безопасной зоне (lift_30 0.766 vs 0.620 — меньше = лучше).
+
+Годовой разрез (primary): 2023 AUC=0.646, 2024 AUC=0.626, 2025 AUC=0.570, 2026 AUC=0.514.
+
 ## Выводы
 
 1. Breach-классификатор работает стабильно (AUC 0.65 на OOS), но текущая RF-связка breach+fav не транслируется в положительное матожидание.
@@ -334,17 +379,21 @@ Oracle Deviation Attribution после доработки считает PnL/ye
 12. Breach-сигнал реален для фиксированного правила (0/500 перестановок, p ≈ 0.002), но слаб: он не даёт gate PF > 1.15 и не устраняет selection bias.
 13. Stage 4.3 показал, что fav/TP слой и breach-ранжирование ломают систему вместе. Прямые отрицательные категории сопоставимы: breach false-safe около -383.8 ATR, fav false-accept около -410.4 ATR. При этом `pred_fav` слабо коррелирует с истинным fav, а высокий `pred_fav/stop_val` ухудшает PF.
 14. Низкий фактический RR (median около 0.5R) объясняет, почему стратегия требует высокий win rate и остаётся около PF=1.0 даже при реальном breach-сигнале.
+15. Stage 4.5 показал, что trail_atr_0_2 как exit-политика даёт PF=1.831 на diagnostic — лучший результат Fractal Stop. Но Stage 4.6 чистый candidate-cycle показал, что этот результат не обобщается на 2023-2026.
+16. Stage 5.0 полноразмерный Transformer (d_model=64, 40 эпох) не бьёт XGBoost на holdout 2023-2026: AUC 0.6018 vs 0.6524, lift_30 0.766 vs 0.620 (меньше = лучше). **Методический risk:** признаки не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации.
+17. **5 последовательных этапов Fractal Stop провалились.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в текущей sequence-реализации.
 
-**RF Stage 2, XGBoost Stage 4, Stage 4.1 controls и Stage 4.2 diagnostic отклонены как торговые кандидаты.** Fractal-stop research не закрыт окончательно, но плоское табличное представление фракталов достигло практического потолка для текущей торговой постановки. Следующий разумный путь — Transformer encoder на sequence-представлении или пересмотр торговой логики.
+**Все этапы (Stage 2→5.0) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал улучшения.
 
 ## Открытые вопросы
 
-- Может ли Transformer улучшить breach-классификатор и торговый PF за счёт sequence-представления фракталов. Stage 5.0 должен сначала проверить breach-only модельный слой без торговли: годовые AUC/lift, seed-устойчивость, calibration и проверку time-фичей.
+- ~~Может ли Transformer улучшить breach-классификатор~~ — Stage 5.0 проверил: НЕТ. Полноразмерный Transformer не бьёт XGBoost.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
-- Даст ли trailing stop или partial TP положительное матожидание при том же breach-сигнале.
+- ~~Даст ли trailing stop положительное матожидание при том же breach-сигнале~~ — Stage 4.5/4.6 проверили: trail_atr_0_2 показывает высокий diagnostic PF, но не обобщается на 2023-2026.
 - Помогут ли новые признаки (спред, волатильность, корреляции) улучшить fav-регрессию.
 - Работает ли концепт на других активах или таймфреймах.
+- Стоит ли закрыть Fractal Stop ветку и вернуться к основному направлению (regression_updn, triple barrier).
 
 ## Источники
 
@@ -353,3 +402,6 @@ Oracle Deviation Attribution после доработки считает PnL/ye
 - [2026-06-10-feature-profiles-stage3.md](../../docs/reports/2026-06-10-feature-profiles-stage3.md) — Stage 3.x report (feature profiles, Stage 3.1 ablation, Stage 3.2 XGBoost)
 - [2026-06-11-stage4-trade-xgboost.md](../../docs/reports/2026-06-11-stage4-trade-xgboost.md) — Stage 4/4.1/4.2 report (XGBoost breach + RF fav trading layer, controls, diagnostic corrected recalc, FAIL verdict)
 - [2026-06-15-stage4_3-diagnostics.md](../../docs/reports/2026-06-15-stage4_3-diagnostics.md) — Stage 4.3 diagnostic report (post-mortem loss attribution, fav/breach diagnostics, oracle-deviation regimes)
+- [2026-06-15-stage4_5-exit-mechanics.md](../../docs/reports/2026-06-15-stage4_5-exit-mechanics.md) — Stage 4.5 exit mechanics (trailing/breakeven/partial)
+- [2026-06-15-stage4_6-clean-candidate-cycle.md](../../docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md) — Stage 4.6 clean candidate-cycle (val_select 2019-2022, val_eval 2023-2026)
+- [2026-06-17-stage5-transformer-breach.md](../../docs/reports/2026-06-17-stage5-transformer-breach.md) — Stage 5.0 Transformer holdout (5 профилей, FAIL verdict)

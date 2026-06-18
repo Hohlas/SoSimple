@@ -1,0 +1,1764 @@
+# =============================================================================
+# File: ML/baseline/benchmark_stage5_transformer_breach.py
+# Purpose: Stage 5.0 Transformer Breach Holdout — main runner
+# Input: DATA/Nero_XAUUSD_*_labeled.csv
+# Output: ML/reports/stage5_transformer_breach.json
+# Language: Python 3.10+
+# Created: 2026-06-17
+# =============================================================================
+
+import argparse, json, os, sys, time
+from collections import defaultdict
+from copy import deepcopy
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
+from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader, TensorDataset
+import xgboost as xgb
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+from ML.models.fractal_breach_transformer import FractalBreachTransformer, TokenSelector
+
+# ===========================================================================
+# Constants
+# ===========================================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / 'DATA'
+REPORTS_DIR = PROJECT_ROOT / 'ML' / 'reports'
+
+TRAIN_FILE = DATA_DIR / 'Nero_XAUUSD_train_labeled.csv'
+VAL_FILE = DATA_DIR / 'Nero_XAUUSD_validation_labeled.csv'
+TEST_FILE = DATA_DIR / 'Nero_XAUUSD_test_labeled.csv'
+OHLC_FILE = DATA_DIR / 'XAUUSD_H1_OHLC.csv'
+
+CSV_SEP = ';'
+FRACTAL_SEP = ':'
+N_FRACTALS = 100
+
+TARGET_COLUMN = 'sell_stop_broken_H6_off05_flag'
+
+# Split years
+TRAIN_MAX_YEAR = 2020
+VAL_STOP_YEARS = {2021, 2022}
+HOLDOUT_MIN_YEAR = 2023
+
+# Base10 feature indices in fractal string (0-indexed)
+# Format: time:price:dir:front:back:strong:break:reverse:power:count:impulse:...
+BASE10_INDICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+BASE10_NAMES = ['price', 'direction', 'front', 'back', 'strong', 'break',
+                'reverse', 'power', 'count', 'impulse']
+
+# Full29 feature indices (matching data_loader.py)
+# CSV fields 1-20 are fractal features, plus computed features
+# For the benchmark we use fields 1-20 as token features
+FULL29_INDICES = list(range(1, 21))
+
+# Training budget
+SEEDS = [42, 77, 123]
+MAX_EPOCHS = 60
+EARLY_STOPPING_PATIENCE = 8
+BATCH_SIZE = 256
+LEARNING_RATE = 1e-3
+WEIGHT_DECAY = 1e-4
+
+# Model architecture
+D_MODEL = 64
+NHEAD = 4
+DIM_FEEDFORWARD = 128
+DROPOUT = 0.15
+NUM_LAYERS = 2
+
+# Gate thresholds
+PHASE1_STOP_GAP = 0.03  # halt if Transformer val AUC trails XGBoost by >0.03
+HOLDOUT_AUC_DELTA = 0.02  # must beat XGBoost by at least 0.02
+HOLDOUT_TIME_AUC_DELTA = 0.04  # must beat time_only by at least 0.04
+HOLDOUT_LIFT_DELTA = 0.10  # lift_bottom30 must improve by at least 0.10
+YEARLY_AUC_MIN = 0.55
+MIN_VALID_YEARS = 3
+
+# Corridor thresholds
+CORRIDOR_LOW_COVERAGE_PCT_EMPTY = 0.05
+CORRIDOR_LOW_COVERAGE_MEDIAN = 3
+CORRIDOR_REJECTED_PCT_EMPTY = 0.20
+CORRIDOR_REJECTED_MEDIAN = 2
+
+# JSON report path
+JSON_REPORT_PATH = REPORTS_DIR / 'stage5_transformer_breach.json'
+
+# ===========================================================================
+# Profile definitions
+# ===========================================================================
+
+PROFILE_DEFS = [
+    {
+        "name": "all100_base10_time",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+    },
+    {
+        "name": "all100_base10_no_time",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+    },
+    {
+        "name": "newest20_base10_time",
+        "selection": "newest",
+        "order": "freshness",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 20,
+        "token_dim": 10,
+        "row_dim": 5,
+        "n": 20,
+    },
+    {
+        "name": "nearest40_base10_time",
+        "selection": "nearest",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "k": 40,
+    },
+    {
+        "name": "corridor_10atr_base10_time",
+        "selection": "corridor",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "corridor_atr": 10.0,
+    },
+    # Phase 3 — conditional
+    {
+        "name": "corridor_5atr_base10_time",
+        "selection": "corridor",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 30,
+        "token_dim": 10,
+        "row_dim": 5,
+        "corridor_atr": 5.0,
+    },
+    {
+        "name": "corridor_15atr_base10_time",
+        "selection": "corridor",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 50,
+        "token_dim": 10,
+        "row_dim": 5,
+        "corridor_atr": 15.0,
+    },
+    # Phase 4 — optional
+    {
+        "name": "all100_full29_time",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": None,  # uses Full29 extraction
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 20,
+        "row_dim": 5,
+        "full29": True,
+    },
+    {
+        "name": "all100_base10_no_price_time",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": ["direction", "front", "back", "strong", "break",
+                         "reverse", "power", "count", "impulse"],
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 9,
+        "row_dim": 5,
+    },
+    # Diagnostic: relative_price = (fractal_price - fractal0_price) / ATR
+    {
+        "name": "all100_base10_relative_price_time",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+        "relative_price": True,
+    },
+    {
+        "name": "nearest40_base10_relative_price_time",
+        "selection": "nearest",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "k": 40,
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_10atr_base10_relative_price_time",
+        "selection": "corridor",
+        "order": "price_distance",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"],
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "corridor_atr": 10.0,
+        "relative_price": True,
+    },
+]
+
+
+def define_profiles():
+    return PROFILE_DEFS
+
+
+def find_profile(name: str):
+    for p in PROFILE_DEFS:
+        if p["name"] == name:
+            return p
+    return None
+
+
+def get_profile_seq_len(profile: dict, train_df: pd.DataFrame = None,
+                        val_stop_df: pd.DataFrame = None) -> int:
+    """Return seq_len, optionally adjusted from corridor validation (Phase 3)."""
+    if profile.get("selection") == "corridor" and train_df is not None:
+        combined = pd.concat([train_df, val_stop_df], ignore_index=True)
+        stats = compute_corridor_stats(combined, profile)
+        n_median = stats["n_fractals_median"]
+        declared_seq = profile["seq_len"]
+        p80 = stats.get("n_fractals_p80", declared_seq)
+        if p80 < declared_seq:
+            return max(int(p80), 3)
+        return declared_seq
+    return profile["seq_len"]
+
+
+# ===========================================================================
+# Feature extraction
+# ===========================================================================
+
+def extract_base10_fields(fractal_str: str) -> np.ndarray:
+    """Extract base10 features from a single fractal string."""
+    parts = fractal_str.split(FRACTAL_SEP)
+    result = np.zeros(10, dtype=np.float32)
+    if len(parts) < 23:
+        return result
+    for j, idx in enumerate(BASE10_INDICES):
+        try:
+            result[j] = float(parts[idx])
+        except (ValueError, IndexError):
+            result[j] = 0.0
+    if np.isnan(result).any():
+        result = np.nan_to_num(result, nan=0.0)
+    return result
+
+
+def extract_full29_fields(fractal_str: str) -> np.ndarray:
+    """Extract Full29 (first 20 fields) from a single fractal string."""
+    parts = fractal_str.split(FRACTAL_SEP)
+    result = np.zeros(20, dtype=np.float32)
+    if len(parts) < 21:
+        return result
+    for j, idx in enumerate(FULL29_INDICES):
+        try:
+            result[j] = float(parts[idx])
+        except (ValueError, IndexError):
+            result[j] = 0.0
+    if np.isnan(result).any():
+        result = np.nan_to_num(result, nan=0.0)
+    return result
+
+
+def build_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+    """Build row-level features: ATR + optional time features."""
+    row_fields = profile["row_fields"]
+    n_rows = len(df)
+    result = np.zeros((n_rows, len(row_fields)), dtype=np.float32)
+
+    col_map = {}
+    for j, field in enumerate(row_fields):
+        if field == "ATR":
+            col_map[j] = "ATR"
+        elif field == "hour_sin":
+            col_map[j] = "hour_sin"
+        elif field == "hour_cos":
+            col_map[j] = "hour_cos"
+        elif field == "dow_sin":
+            col_map[j] = "dow_sin"
+        elif field == "dow_cos":
+            col_map[j] = "dow_cos"
+
+    for j, csv_col in col_map.items():
+        if csv_col == "ATR":
+            vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(0.0).values
+            result[:, j] = vals.astype(np.float32)
+        elif csv_col.startswith("hour_") or csv_col.startswith("dow_"):
+            times = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M", errors="coerce")
+            if csv_col == "hour_sin":
+                result[:, j] = np.sin(2 * np.pi * times.dt.hour.fillna(0).values / 24).astype(np.float32)
+            elif csv_col == "hour_cos":
+                result[:, j] = np.cos(2 * np.pi * times.dt.hour.fillna(0).values / 24).astype(np.float32)
+            elif csv_col == "dow_sin":
+                result[:, j] = np.sin(2 * np.pi * times.dt.dayofweek.fillna(0).values / 7).astype(np.float32)
+            elif csv_col == "dow_cos":
+                result[:, j] = np.cos(2 * np.pi * times.dt.dayofweek.fillna(0).values / 7).astype(np.float32)
+
+    if np.isnan(result).any():
+        result = np.nan_to_num(result, nan=0.0)
+    return result
+
+
+def build_profile_features(df: pd.DataFrame, profile: dict):
+    """Build token tensor, row_features, and mask for a profile.
+
+    Returns:
+        tokens: (n_samples, seq_len, token_dim)
+        row_features: (n_samples, row_dim)
+        mask: (n_samples, seq_len)
+    """
+    n_samples = len(df)
+    seq_len = profile["seq_len"]
+    token_dim = profile["token_dim"]
+    selection = profile["selection"]
+    is_full29 = profile.get("full29", False)
+
+    tokens = np.zeros((n_samples, seq_len, token_dim), dtype=np.float32)
+    mask = np.zeros((n_samples, seq_len), dtype=bool)
+
+    # Pre-parse all fractal columns
+    for sample_idx in range(n_samples):
+        # Parse all available fractal prices and features
+        prices = np.zeros(N_FRACTALS, dtype=np.float32)
+        raw_features = np.zeros((N_FRACTALS, token_dim), dtype=np.float32)
+        valid_fractals = np.zeros(N_FRACTALS, dtype=bool)
+        valid_count = 0
+
+        for f_idx in range(N_FRACTALS):
+            col = f"fractal{f_idx}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[sample_idx])
+            if fstr and fstr != "nan":
+                if is_full29:
+                    raw_features[f_idx] = extract_full29_fields(fstr)
+                else:
+                    raw_features[f_idx] = extract_base10_fields(fstr)
+                # Extract price for selection
+                parts = fstr.split(FRACTAL_SEP)
+                try:
+                    prices[f_idx] = float(parts[1])
+                except (ValueError, IndexError):
+                    prices[f_idx] = 0.0
+                # Check if this fractal is valid (not all zeros)
+                if np.any(raw_features[f_idx] != 0):
+                    valid_fractals[f_idx] = True
+                    valid_count += 1
+
+        if valid_count == 0:
+            mask[sample_idx, :] = False
+            continue
+
+        valid_prices = prices[valid_fractals]
+        valid_features = raw_features[valid_fractals]
+        valid_indices = np.where(valid_fractals)[0]
+
+        if selection == "all100":
+            selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+        elif selection == "newest":
+            n_val = profile.get("n", seq_len)
+            selected_idx, m = TokenSelector.newest_n(n_val, valid_count, seq_len)
+        elif selection == "nearest":
+            k_val = profile.get("k", seq_len)
+            # Prices for valid fractals
+            selected_idx, m, _ = TokenSelector.by_nearest(valid_prices, prices[0], k_val, seq_len)
+        elif selection == "corridor":
+            corridor_atr_val = profile.get("corridor_atr", 10.0)
+            atr_val = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
+            atr_val = atr_val if atr_val > 0 else 1.0
+            selected_idx, m, _ = TokenSelector.by_corridor(
+                valid_prices, prices[0], atr_val, corridor_atr_val, seq_len)
+        else:
+            selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+
+        # Map selected_idx (into valid_fractals) back to valid_indices and then into feature array
+        for t in range(min(len(selected_idx), seq_len)):
+            if m[t]:
+                mapped_idx = selected_idx[t]
+                if mapped_idx < len(valid_features):
+                    tokens[sample_idx, t] = valid_features[mapped_idx]
+                    mask[sample_idx, t] = True
+
+    row_features = build_row_features(df, profile)
+
+    # Post-process: relative_price = (price - f0_price) / ATR
+    if profile.get("relative_price", False):
+        f0_prices = np.zeros(n_samples, dtype=np.float32)
+        atr_vals = np.zeros(n_samples, dtype=np.float32)
+        for sample_idx in range(n_samples):
+            fstr = str(df["fractal0"].iloc[sample_idx])
+            try:
+                f0_prices[sample_idx] = float(fstr.split(FRACTAL_SEP)[1])
+            except (ValueError, IndexError):
+                f0_prices[sample_idx] = 0.0
+            atr_raw = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
+            atr_vals[sample_idx] = max(float(atr_raw) if not pd.isna(atr_raw) else 1.0, 0.001)
+        price_col = tokens[:, :, 0]
+        tokens[:, :, 0] = (price_col - f0_prices[:, None]) / atr_vals[:, None]
+        tokens[~mask] = 0.0
+
+    if np.isnan(tokens).any():
+        tokens = np.nan_to_num(tokens, nan=0.0)
+    if np.isnan(row_features).any():
+        row_features = np.nan_to_num(row_features, nan=0.0)
+
+    return tokens.astype(np.float32), row_features.astype(np.float32), mask
+
+
+# ===========================================================================
+# Normalization (fit on train valid positions only; apply to all splits)
+# ===========================================================================
+
+def normalize_profile_features(tokens_train, row_feat_train, mask_train,
+                                tokens_val, row_feat_val, mask_val,
+                                tokens_hold, row_feat_hold, mask_hold):
+    """Fit StandardScaler on train valid positions only. Transform all splits.
+
+    Token scaler: fit only on valid token positions (mask=True). Padding stays 0.
+    Row scaler: fit on all train rows.
+    """
+    n_samples, seq_len, token_dim = tokens_train.shape
+
+    valid_train_tokens = tokens_train[mask_train]
+    token_scaler = StandardScaler()
+    if len(valid_train_tokens) > 0:
+        token_scaler.fit(valid_train_tokens)
+    else:
+        token_scaler.mean_ = np.zeros(token_dim)
+        token_scaler.scale_ = np.ones(token_dim)
+
+    def _transform_tokens(tok, m):
+        out = tok.copy()
+        for d in range(token_dim):
+            std = float(token_scaler.scale_[d])
+            if std > 1e-8:
+                out[:, :, d] = (out[:, :, d] - float(token_scaler.mean_[d])) / std
+            else:
+                out[:, :, d] = out[:, :, d] - float(token_scaler.mean_[d])
+        out[~m] = 0.0
+        return out
+
+    tokens_train_n = _transform_tokens(tokens_train, mask_train)
+    tokens_val_n = _transform_tokens(tokens_val, mask_val)
+    tokens_hold_n = _transform_tokens(tokens_hold, mask_hold)
+
+    row_scaler = StandardScaler()
+    row_scaler.fit(row_feat_train)
+    row_feat_train_n = row_scaler.transform(row_feat_train).astype(np.float32)
+    row_feat_val_n = row_scaler.transform(row_feat_val).astype(np.float32)
+    row_feat_hold_n = row_scaler.transform(row_feat_hold).astype(np.float32)
+
+    scaler_stats = {
+        "token_scaler": {
+            "mean": [float(x) for x in token_scaler.mean_],
+            "std": [float(x) for x in token_scaler.scale_],
+            "n_valid_train_positions": int(mask_train.sum()),
+        },
+        "row_scaler": {
+            "mean": [float(x) for x in row_scaler.mean_],
+            "std": [float(x) for x in row_scaler.scale_],
+        },
+    }
+
+    return (tokens_train_n, row_feat_train_n,
+            tokens_val_n, row_feat_val_n,
+            tokens_hold_n, row_feat_hold_n), scaler_stats
+
+
+# ===========================================================================
+# Normalized feature distribution audit
+# ===========================================================================
+
+def _per_feature_stats(values: np.ndarray, mask: np.ndarray = None) -> list[dict]:
+    """Compute per-feature percentiles, tail fractions, NaN/Inf.
+
+    Supports 2D (N, F) and 3D (N, S, F) arrays. Iterates the last axis as features.
+    If mask is provided (same shape as values, bool), only masked=True positions are used.
+    Returns a list of dicts, one per feature column (last axis).
+    """
+    if values.ndim == 3:
+        n_feat = values.shape[2]
+    else:
+        n_feat = values.shape[1]
+    result = []
+    for f in range(n_feat):
+        if values.ndim == 3:
+            col = values[:, :, f]
+        else:
+            col = values[:, f]
+        if mask is not None:
+            col = col[mask]
+        n = len(col)
+        if n == 0:
+            result.append({"n": 0})
+            continue
+        col = col.astype(np.float64)
+        n_nan = int(np.isnan(col).sum())
+        n_inf = int(np.isinf(col).sum())
+        clean = col[~(np.isnan(col) | np.isinf(col))]
+        n_clean = len(clean)
+        tail3 = (np.abs(clean) > 3).sum() / n_clean if n_clean > 0 else 0.0
+        tail5 = (np.abs(clean) > 5).sum() / n_clean if n_clean > 0 else 0.0
+        tail10 = (np.abs(clean) > 10).sum() / n_clean if n_clean > 0 else 0.0
+        tail20 = (np.abs(clean) > 20).sum() / n_clean if n_clean > 0 else 0.0
+        pvals = np.percentile(clean, [0, 1, 5, 50, 95, 99, 100]) if n_clean > 0 else [np.nan] * 7
+        result.append({
+            "n": int(n),
+            "n_nan": n_nan,
+            "n_inf": n_inf,
+            "mean": round(float(np.mean(clean)), 4) if n_clean > 0 else None,
+            "std": round(float(np.std(clean)), 4) if n_clean > 0 else None,
+            "p0": round(float(pvals[0]), 4) if n_clean > 0 else None,
+            "p1": round(float(pvals[1]), 4) if n_clean > 0 else None,
+            "p5": round(float(pvals[2]), 4) if n_clean > 0 else None,
+            "p50": round(float(pvals[3]), 4) if n_clean > 0 else None,
+            "p95": round(float(pvals[4]), 4) if n_clean > 0 else None,
+            "p99": round(float(pvals[5]), 4) if n_clean > 0 else None,
+            "p100": round(float(pvals[6]), 4) if n_clean > 0 else None,
+            "frac_abs_gt3": round(float(tail3), 6),
+            "frac_abs_gt5": round(float(tail5), 6),
+            "frac_abs_gt10": round(float(tail10), 6),
+            "frac_abs_gt20": round(float(tail20), 6),
+            "has_nan": bool(n_nan > 0),
+            "has_inf": bool(n_inf > 0),
+        })
+    return result
+
+
+def audit_normalized_distribution(
+    tokens_train, mask_train,
+    tokens_val, mask_val,
+    tokens_hold, mask_hold,
+    rf_train, rf_val, rf_hold,
+    token_fields: list[str] | None = None,
+    row_fields: list[str] | None = None,
+) -> dict:
+    """Audit normalized feature distributions across splits.
+
+    Checks:
+      - Per-feature percentiles and tail fractions
+      - abs(x) > 10 frequently → warning
+      - abs(x) > 20 any → warning
+      - holdout p95 vs train p95 → regime shift warning
+      - padding != 0 → error
+      - NaN/Inf in any split → error
+
+    Returns a dict suitable for JSON serialization.
+    """
+    splits = {
+        "train": (tokens_train, mask_train, rf_train),
+        "val_stop": (tokens_val, mask_val, rf_val),
+        "holdout": (tokens_hold, mask_hold, rf_hold),
+    }
+
+    token_fields = token_fields or [f"t{i}" for i in range(tokens_train.shape[2])]
+    row_fields = row_fields or [f"r{i}" for i in range(rf_train.shape[1])]
+
+    by_split = {}
+    flags = []
+
+    for split_name, (tok, tk_mask, rf) in splits.items():
+        # Token features: per-feature stats on valid (masked) positions
+        tok_stats = _per_feature_stats(tok, tk_mask)
+        # Row features: per-feature stats (all rows)
+        rf_stats = _per_feature_stats(rf)
+
+        by_split[split_name] = {
+            "token_features": {token_fields[i]: tok_stats[i] for i in range(len(tok_stats))},
+            "row_features": {row_fields[i]: rf_stats[i] for i in range(len(rf_stats))},
+        }
+
+        # NaN/Inf check
+        for feat_name, s in by_split[split_name]["token_features"].items():
+            if s.get("has_nan"):
+                flags.append(f"NaN in {split_name}.{feat_name} (token)")
+            if s.get("has_inf"):
+                flags.append(f"Inf in {split_name}.{feat_name} (token)")
+        for feat_name, s in by_split[split_name]["row_features"].items():
+            if s.get("has_nan"):
+                flags.append(f"NaN in {split_name}.{feat_name} (row)")
+            if s.get("has_inf"):
+                flags.append(f"Inf in {split_name}.{feat_name} (row)")
+
+    # Padding check: masked=False positions must be exactly zero
+    ALLOWED_PADDING_DEVIATION = 1e-6
+    for split_name, (tok, tk_mask, _) in splits.items():
+        padding = tok[~tk_mask]
+        if len(padding) > 0:
+            padding_abs_max = float(np.max(np.abs(padding)))
+            if padding_abs_max > ALLOWED_PADDING_DEVIATION:
+                flags.append(f"PADDING_NOT_ZERO in {split_name}: max_abs={padding_abs_max:.2e}")
+
+    # Tail warnings: fraction of abs(x) > 10 across valid positions
+    for split_name, (tok, tk_mask, rf) in splits.items():
+        for feat_name, s in by_split[split_name]["token_features"].items():
+            f10 = s.get("frac_abs_gt10", 0) or 0
+            if f10 > 0.01:
+                flags.append(f"TAIL_GT10 in {split_name}.{feat_name} (token): frac={f10:.4f}")
+            f20 = s.get("frac_abs_gt20", 0) or 0
+            if f20 > 0:
+                flags.append(f"TAIL_GT20 in {split_name}.{feat_name} (token): frac={f20:.6f}")
+        for feat_name, s in by_split[split_name]["row_features"].items():
+            f10 = s.get("frac_abs_gt10", 0) or 0
+            if f10 > 0.01:
+                flags.append(f"TAIL_GT10 in {split_name}.{feat_name} (row): frac={f10:.4f}")
+            f20 = s.get("frac_abs_gt20", 0) or 0
+            if f20 > 0:
+                flags.append(f"TAIL_GT20 in {split_name}.{feat_name} (row): frac={f20:.6f}")
+
+    # Regime shift: holdout p95 vs train p95 delta
+    if "train" in by_split and "holdout" in by_split:
+        for feat_name in by_split["train"]["token_features"]:
+            t_p95 = by_split["train"]["token_features"].get(feat_name, {}).get("p95")
+            h_p95 = by_split["holdout"]["token_features"].get(feat_name, {}).get("p95")
+            if t_p95 is not None and h_p95 is not None and abs(t_p95) < 100:
+                delta = abs(h_p95 - t_p95)
+                if delta > 3.0:
+                    flags.append(f"REGIME_SHIFT in {feat_name} (token): train_p95={t_p95:.2f} holdout_p95={h_p95:.2f} delta={delta:.2f}")
+        for feat_name in by_split["train"]["row_features"]:
+            t_p95 = by_split["train"]["row_features"].get(feat_name, {}).get("p95")
+            h_p95 = by_split["holdout"]["row_features"].get(feat_name, {}).get("p95")
+            if t_p95 is not None and h_p95 is not None and abs(t_p95) < 100:
+                delta = abs(h_p95 - t_p95)
+                if delta > 3.0:
+                    flags.append(f"REGIME_SHIFT in {feat_name} (row): train_p95={t_p95:.2f} holdout_p95={h_p95:.2f} delta={delta:.2f}")
+
+    status = "OK"
+    if any("PADDING_NOT_ZERO" in f or "NaN" in f or "Inf" in f for f in flags):
+        status = "ERROR"
+    elif any("TAIL_GT20" in f for f in flags):
+        status = "WARNING"
+    elif any("TAIL_GT10" in f for f in flags):
+        status = "WARNING"
+    elif any("REGIME_SHIFT" in f for f in flags):
+        status = "WARNING"
+
+    return {
+        "status": status,
+        "flags": sorted(set(flags)),
+        "by_split": by_split,
+        "padding_check": {
+            "allowed_deviation": ALLOWED_PADDING_DEVIATION,
+            "comment": "Padding (mask=False) must be exactly 0.0",
+        },
+        "thresholds": {
+            "abs_gt10_warn_if_fraction": 0.01,
+            "abs_gt20_warn_if_any": True,
+            "regime_shift_p95_delta": 3.0,
+            "comment": "Pre-training guard: if tails are long, consider RobustScaler or clipping [-8,8] before any holdout viewing.",
+        },
+    }
+
+
+# ===========================================================================
+# OHLC label verification
+# ===========================================================================
+
+def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str = None,
+                                       n_sample: int = 50, random_seed: int = 123) -> dict:
+    """Verify sell_stop_broken_H6_off05_flag against OHLC for random holdout rows.
+
+    Fixed seed for reproducibility. Checks:
+      - Core: does stored label match OHLC-computed breach over next 6 bars?
+      - Boundary: max High in window within 0.1*ATR of stop — near-miss check.
+    """
+    if ohlc_path is None:
+        ohlc_path = str(OHLC_FILE)
+
+    from datetime import datetime, timezone
+
+    ohlc_df = pd.read_csv(ohlc_path, sep=CSV_SEP)
+    ohlc_df["_dt"] = pd.to_datetime(ohlc_df["time"], format="%Y.%m.%d %H:%M",
+                                     errors="coerce", utc=True)
+    ohlc_df = ohlc_df.dropna(subset=["_dt"]).sort_values("_dt").reset_index(drop=True)
+    time_to_idx = {dt: i for i, dt in enumerate(ohlc_df["_dt"])}
+    n_ohlc = len(ohlc_df)
+
+    # Only rows with SELL signal (direction=1 → sell stop)
+    sell_rows = holdout_df[holdout_df["signal"] == -1]
+    if len(sell_rows) == 0:
+        buy_rows = holdout_df[holdout_df["signal"].astype(int) == 1]
+        if len(buy_rows) > 0:
+            sell_rows = buy_rows  # fallback: verify BUY stops too
+        else:
+            sell_rows = holdout_df  # last resort: verify all
+    n_sample = min(n_sample, len(sell_rows))
+    rng = np.random.RandomState(random_seed)
+    sample_indices = rng.choice(len(sell_rows), size=n_sample, replace=False)
+    sample = sell_rows.iloc[sample_indices]
+
+    mismatches = []
+    near_misses = []
+    matches = 0
+    skipped = 0
+    mismatch_examples = []
+    near_miss_examples = []
+    fractal_dir_counts = {1: 0, -1: 0, 0: 0}
+
+    for orig_idx, row in sample.iterrows():
+        try:
+            row_dt = datetime.strptime(str(row["time"]), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+        except (ValueError, KeyError):
+            skipped += 1
+            continue
+
+        idx0 = time_to_idx.get(row_dt)
+        if idx0 is None or idx0 + 6 >= n_ohlc:
+            skipped += 1
+            continue
+
+        try:
+            f0 = str(row["fractal0"])
+            parts = f0.split(FRACTAL_SEP)
+            fractal_price = float(parts[1])
+            fractal_dir = int(parts[2])
+        except (ValueError, IndexError, KeyError):
+            skipped += 1
+            continue
+
+        atr = float(row.get("ATR", 0))
+        if atr <= 0 or fractal_dir == 0:
+            skipped += 1
+            continue
+
+        fractal_dir_counts[fractal_dir] = fractal_dir_counts.get(fractal_dir, 0) + 1
+
+        stop_offset = 0.5 * atr
+        if fractal_dir == 1:  # SELL: стоп выше пика
+            stop_price = fractal_price + stop_offset
+            highs = [ohlc_df.iloc[k]["high"] for k in range(idx0 + 1, min(idx0 + 7, n_ohlc))]
+            breached = any(h >= stop_price for h in highs)
+            max_high = max(highs)
+            near_boundary = abs(max_high - stop_price) < 0.1 * atr and not breached
+        elif fractal_dir == -1:  # BUY: стоп ниже впадины
+            stop_price = fractal_price - stop_offset
+            lows = [ohlc_df.iloc[k]["low"] for k in range(idx0 + 1, min(idx0 + 7, n_ohlc))]
+            breached = any(l <= stop_price for l in lows)
+            min_low = min(lows)
+            near_boundary = abs(min_low - stop_price) < 0.1 * atr and not breached
+        else:
+            skipped += 1
+            continue
+
+        stored = row.get(TARGET_COLUMN)
+        stored_val = int(stored) if not pd.isna(stored) else None
+        computed_val = 1 if breached else 0
+
+        info = {
+            "df_row": int(orig_idx) if not isinstance(orig_idx, np.integer) else int(orig_idx),
+            "time": str(row.get("time", "")),
+            "fractal_price": round(fractal_price, 2),
+            "atr": round(atr, 4),
+            "stop_offset": round(stop_offset, 2),
+            "stop_price": round(stop_price, 2),
+            "stored_label": stored_val,
+            "computed_label": computed_val,
+            "n_future_bars": min(6, n_ohlc - idx0 - 1),
+        }
+
+        if stored_val == computed_val:
+            matches += 1
+            if near_boundary:
+                near_misses.append(info)
+                if len(near_miss_examples) < 5:
+                    near_miss_examples.append(info)
+        else:
+            mismatches.append(info)
+            if len(mismatch_examples) < 10:
+                mismatch_examples.append(info)
+
+    return {
+        "random_seed": random_seed,
+        "n_sampled": n_sample,
+        "n_checked": matches + len(mismatches),
+        "n_skipped": skipped,
+        "n_matches": matches,
+        "n_mismatches": len(mismatches),
+        "n_near_boundary": len(near_misses),
+        "mismatch_examples": mismatch_examples,
+        "near_miss_examples": near_miss_examples,
+        "fractal_dir_counts": fractal_dir_counts,
+        "fractal_dir_ok": fractal_dir_counts.get(1, 0) > 0 and fractal_dir_counts.get(0, 0) == 0,
+        "status": "PASS" if len(mismatches) == 0 and matches >= 10 else (
+            "MISMATCH" if len(mismatches) > 0 else "LOW_VALID_COUNT"
+        ),
+        "verdict": (
+            "Labels confirmed — 0 mismatches, sufficient for Stage 5.0"
+            if len(mismatches) == 0 and matches >= 10
+            else f"{len(mismatches)} mismatches found — investigation required before training"
+        ),
+    }
+
+
+def compute_corridor_stats(df: pd.DataFrame, profile: dict) -> dict:
+    """Compute corridor population statistics."""
+    corridor_atr = profile.get("corridor_atr", 10.0)
+    n_rows = len(df)
+    counts = []
+
+    for i in range(min(n_rows, 5000)):
+        atr_val = pd.to_numeric(df["ATR"].iloc[i], errors="coerce")
+        atr_val = float(atr_val) if float(atr_val) > 0 else 1.0
+        threshold = corridor_atr * atr_val
+        try:
+            f0_str = str(df["fractal0"].iloc[i])
+            f0_price = float(f0_str.split(FRACTAL_SEP)[1])
+        except (ValueError, IndexError):
+            f0_price = 0.0
+
+        cnt = 0
+        for j in range(N_FRACTALS):
+            col = f"fractal{j}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[i])
+            if not fstr or fstr == "nan":
+                continue
+            try:
+                price = float(fstr.split(FRACTAL_SEP)[1])
+            except (ValueError, IndexError):
+                continue
+            if abs(price - f0_price) <= threshold:
+                cnt += 1
+        counts.append(cnt)
+
+    counts = np.array(counts, dtype=np.float64)
+    pcts = np.percentile(counts, [5, 25, 50, 75, 80, 95]) if len(counts) > 0 else [0] * 6
+
+    return {
+        "profile": profile["name"],
+        "n_rows_sampled": int(min(n_rows, 5000)),
+        "n_fractals_p5": float(pcts[0]),
+        "n_fractals_p25": float(pcts[1]),
+        "n_fractals_median": float(pcts[2]),
+        "n_fractals_p75": float(pcts[3]),
+        "n_fractals_p80": float(pcts[4]),
+        "n_fractals_p95": float(pcts[5]),
+        "pct_empty": float(np.mean(np.array(counts) == 0)) if len(counts) > 0 else 1.0,
+        "pct_single": float(np.mean(np.array(counts) == 1)) if len(counts) > 0 else 0.0,
+        "pct_two": float(np.mean(np.array(counts) == 2)) if len(counts) > 0 else 0.0,
+        "pct_three_plus": float(np.mean(np.array(counts) >= 3)) if len(counts) > 0 else 0.0,
+    }
+
+
+def corridor_status(stats: dict) -> str:
+    if stats["pct_empty"] > CORRIDOR_REJECTED_PCT_EMPTY or stats["n_fractals_median"] < CORRIDOR_REJECTED_MEDIAN:
+        return "REJECTED"
+    if stats["pct_empty"] > CORRIDOR_LOW_COVERAGE_PCT_EMPTY or stats["n_fractals_median"] < CORRIDOR_LOW_COVERAGE_MEDIAN:
+        return "LOW_COVERAGE"
+    return "OK"
+
+
+# ===========================================================================
+# Data loading
+# ===========================================================================
+
+def load_splits():
+    """Load XAUUSD labeled CSVs and split by year."""
+    train_raw = pd.read_csv(TRAIN_FILE, sep=CSV_SEP)
+    val_raw = pd.read_csv(VAL_FILE, sep=CSV_SEP)
+    test_raw = pd.read_csv(TEST_FILE, sep=CSV_SEP)
+
+    for df in [train_raw, val_raw, test_raw]:
+        df["_year"] = pd.to_datetime(
+            df["time"], format="%Y.%m.%d %H:%M", errors="coerce").dt.year
+
+    train_rows = []
+    val_stop_rows = []
+    holdout_rows = []
+
+    for _, row in train_raw.iterrows():
+        y = row["_year"]
+        if pd.isna(y):
+            continue
+        y = int(y)
+        if y <= TRAIN_MAX_YEAR:
+            train_rows.append(row)
+        elif y in VAL_STOP_YEARS:
+            val_stop_rows.append(row)
+
+    for _, row in val_raw.iterrows():
+        y = row["_year"]
+        if pd.isna(y):
+            continue
+        y = int(y)
+        if y <= TRAIN_MAX_YEAR:
+            train_rows.append(row)
+        elif y in VAL_STOP_YEARS:
+            val_stop_rows.append(row)
+
+    for _, row in test_raw.iterrows():
+        y = row["_year"]
+        if pd.isna(y):
+            continue
+        y = int(y)
+        if y >= HOLDOUT_MIN_YEAR:
+            holdout_rows.append(row)
+        elif y in VAL_STOP_YEARS:
+            val_stop_rows.append(row)
+
+    train_df = pd.DataFrame(train_rows).reset_index(drop=True)
+    val_stop_df = pd.DataFrame(val_stop_rows).reset_index(drop=True)
+    holdout_df = pd.DataFrame(holdout_rows).reset_index(drop=True)
+
+    for name, df in [("train", train_df), ("val_stop", val_stop_df), ("holdout", holdout_df)]:
+        mask = df[TARGET_COLUMN].notna()
+        before = len(df)
+        df = df.loc[mask].reset_index(drop=True)
+        if name == "train":
+            train_df = df
+        elif name == "val_stop":
+            val_stop_df = df
+        else:
+            holdout_df = df
+        print(f"  {name}: {before} → {len(df)} rows (non-null target)")
+
+    print(f"  Train years: {sorted(train_df['_year'].unique())}")
+    print(f"  Val_stop years: {sorted(val_stop_df['_year'].unique())}")
+    print(f"  Holdout years: {sorted(holdout_df['_year'].unique())}")
+
+    return train_df, val_stop_df, holdout_df
+
+
+# ===========================================================================
+# Flat features for XGBoost baselines
+# ===========================================================================
+
+def build_flat_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+    """Build flat feature table for XGBoost from profile tokens+row_features."""
+    tokens, row_feat, mask = build_profile_features(df, profile)
+    n_samples = len(df)
+    flat = tokens.reshape(n_samples, -1)
+    result = np.concatenate([flat, row_feat], axis=1)
+    return result.astype(np.float32)
+
+
+def build_xgb_features(df: pd.DataFrame, feature_type: str) -> np.ndarray:
+    """Build XGBoost features: base_raw_plus_time, no_time, or time_only."""
+    base_profile = find_profile("all100_base10_time")
+    no_time_profile = find_profile("all100_base10_no_time")
+
+    if feature_type == "base_raw_plus_time":
+        return build_flat_features(df, base_profile)
+    elif feature_type == "no_time":
+        return build_flat_features(df, no_time_profile)
+    elif feature_type == "time_only":
+        # Only row-level time features (no fractal tokens)
+        row_feat = build_row_features(df, base_profile)
+        return row_feat.astype(np.float32)
+    else:
+        raise ValueError(f"Unknown feature_type: {feature_type}")
+
+
+# ===========================================================================
+# Label sanity check (not full OHLC verification — see plan for manual step)
+# ===========================================================================
+
+def label_sanity_check(holdout_df: pd.DataFrame) -> dict:
+    """Sanity-check breach labels: random sample with basic stats."""
+    n_sample = min(20, len(holdout_df))
+    sample = holdout_df.sample(n=n_sample, random_state=42)
+    verifications = []
+    for idx, row in sample.iterrows():
+        label = row[TARGET_COLUMN]
+        signal_val = row["signal"]
+        atr_val = row["ATR"]
+        try:
+            f0 = str(row["fractal0"])
+            price = float(f0.split(FRACTAL_SEP)[1]) if f0 != "nan" else 0.0
+        except (ValueError, IndexError):
+            price = 0.0
+        verifications.append({
+            "row": int(idx),
+            "time": str(row.get("time", "")),
+            "signal": int(signal_val),
+            "price": float(price),
+            "atr": float(atr_val),
+            "label": int(label) if not pd.isna(label) else None,
+        })
+
+    pos_count = int(holdout_df[TARGET_COLUMN].sum())
+    total = len(holdout_df)
+
+    return {
+        "total_rows": total,
+        "positive_labels": pos_count,
+        "positive_rate": float(pos_count / total) if total > 0 else 0.0,
+        "sample_verifications": verifications,
+        "note": "Random sample sanity-check only. Full OHLC label-parity verification is a manual step per plan.",
+        "status": "SANITY_ONLY" if 0.30 < float(pos_count / max(total, 1)) < 0.50 else "CHECK",
+    }
+
+
+# ===========================================================================
+# XGBoost baseline
+# ===========================================================================
+
+def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42):
+    """Train XGBoost classifier with early stopping."""
+    pos_weight = float((len(y_train) - y_train.sum()) / max(y_train.sum(), 1))
+
+    dtrain = xgb.DMatrix(X_train, label=y_train.values)
+    dval = xgb.DMatrix(X_val, label=y_val.values)
+
+    params = {
+        "objective": "binary:logistic",
+        "eval_metric": "auc",
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "scale_pos_weight": pos_weight,
+        "seed": seed,
+        "n_jobs": 1,
+        "verbosity": 0,
+    }
+
+    evals = [(dtrain, "train"), (dval, "val")]
+    model = xgb.train(
+        params, dtrain, num_boost_round=500,
+        evals=evals, early_stopping_rounds=20,
+        verbose_eval=False,
+    )
+
+    preds = model.predict(dval)
+    val_auc = roc_auc_score(y_val, preds)
+
+    return model, val_auc
+
+
+# ===========================================================================
+# Metrics
+# ===========================================================================
+
+def _safe(val):
+    if isinstance(val, (np.floating,)):
+        return float(val)
+    if isinstance(val, (np.integer,)):
+        return int(val)
+    if isinstance(val, float) and not np.isfinite(val):
+        return None
+    return val
+
+
+def compute_metrics(y_true, y_pred_proba):
+    n = len(y_true)
+    if n == 0 or y_true.nunique() < 2:
+        return {"auc": None, "pr_auc": None, "n": n, "lift_10": None, "lift_20": None, "lift_30": None}
+
+    yt = y_true.values.astype(int)
+    yp = y_pred_proba
+
+    try:
+        auc = float(roc_auc_score(yt, yp))
+    except ValueError:
+        auc = None
+    try:
+        pr_auc = float(average_precision_score(yt, yp))
+    except ValueError:
+        pr_auc = None
+
+    sorted_idx = np.argsort(yp)  # ascending
+    baseline_rate = float(np.mean(yt))
+
+    lifts = {}
+    for pct in [10, 20, 30]:
+        k = max(1, int(n * pct / 100))
+        bottom_rate = float(np.mean(yt[sorted_idx[:k]]))
+        lifts[f"lift_{pct}"] = float(bottom_rate / max(baseline_rate, 0.001))
+
+    return {"auc": auc, "pr_auc": pr_auc, "n": n, **lifts}
+
+
+def compute_yearly_metrics(df, y_pred_proba):
+    years = sorted(df["_year"].unique())
+    yearly = {}
+    for yr in years:
+        mask = df["_year"] == yr
+        y_true = df.loc[mask, TARGET_COLUMN]
+        y_pred = y_pred_proba[mask.values]
+        m = compute_metrics(y_true, pd.Series(y_pred))
+        yearly[str(yr)] = {k: _safe(v) for k, v in m.items()}
+    return yearly
+
+
+# ===========================================================================
+# Transformer training
+# ===========================================================================
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
+
+def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_val, y_val,
+                      profile, seed, device):
+    """Train Transformer with early stopping on val_stop."""
+    set_seed(seed)
+
+    token_dim = tokens.shape[-1]
+    row_dim = row_feat.shape[-1]
+    seq_len = tokens.shape[1]
+
+    model = FractalBreachTransformer(
+        token_dim=token_dim,
+        row_dim=row_dim,
+        d_model=D_MODEL,
+        nhead=NHEAD,
+        num_layers=NUM_LAYERS,
+        dim_feedforward=DIM_FEEDFORWARD,
+        dropout=DROPOUT,
+        max_seq_len=128,
+    ).to(device)
+
+    ds_train = TensorDataset(
+        torch.from_numpy(tokens).float(),
+        torch.from_numpy(row_feat).float(),
+        torch.from_numpy(mask).bool(),
+        torch.from_numpy(y.values.astype(np.float32)).float().unsqueeze(1),
+    )
+    ds_val = TensorDataset(
+        torch.from_numpy(tokens_val).float(),
+        torch.from_numpy(row_feat_val).float(),
+        torch.from_numpy(mask_val).bool(),
+        torch.from_numpy(y_val.values.astype(np.float32)).float().unsqueeze(1),
+    )
+
+    dl_train = DataLoader(ds_train, batch_size=min(BATCH_SIZE, len(ds_train)),
+                          shuffle=True, drop_last=False)
+    dl_val = DataLoader(ds_val, batch_size=min(BATCH_SIZE, len(ds_val)),
+                        shuffle=False, drop_last=False)
+
+    pos_count = float(y.sum())
+    neg_count = float(len(y) - pos_count)
+    pos_weight = torch.tensor([neg_count / max(pos_count, 1)], device=device)
+
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE,
+                                  weight_decay=WEIGHT_DECAY)
+
+    best_val_auc = 0.0
+    best_state = None
+    patience_left = EARLY_STOPPING_PATIENCE
+    train_losses = []
+    val_aucs = []
+
+    for epoch in range(MAX_EPOCHS):
+        model.train()
+        total_loss = 0.0
+        for t, r, m, yb in dl_train:
+            t, r, m, yb = t.to(device), r.to(device), m.to(device), yb.to(device)
+            optimizer.zero_grad()
+            logits = model(t, r, m)
+            loss = criterion(logits, yb)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+        avg_loss = total_loss / max(len(dl_train), 1)
+        train_losses.append(avg_loss)
+
+        model.eval()
+        all_probs = []
+        all_ys = []
+        with torch.no_grad():
+            for t, r, m, yb in dl_val:
+                t, r, m, yb = t.to(device), r.to(device), m.to(device), yb.to(device)
+                logits = model(t, r, m)
+                probs = torch.sigmoid(logits).cpu().numpy().ravel()
+                all_probs.append(probs)
+                all_ys.append(yb.cpu().numpy().ravel())
+
+        val_probs = np.concatenate(all_probs)
+        val_ys = np.concatenate(all_ys)
+        if np.unique(val_ys).size < 2:
+            val_auc = 0.5
+        else:
+            val_auc = float(roc_auc_score(val_ys, val_probs))
+        val_aucs.append(val_auc)
+
+        if val_auc > best_val_auc:
+            best_val_auc = val_auc
+            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            patience_left = EARLY_STOPPING_PATIENCE
+        else:
+            patience_left -= 1
+
+        if patience_left <= 0:
+            break
+
+    model.load_state_dict(best_state)
+
+    return model, {
+        "best_val_auc": best_val_auc,
+        "num_epochs": epoch + 1 - patience_left,
+        "train_losses": [float(x) for x in train_losses],
+        "val_aucs": [float(x) for x in val_aucs],
+    }
+
+
+def evaluate_transformer(model, tokens, row_feat, mask, y, device):
+    """Evaluate Transformer on a dataset."""
+    model.eval()
+    ds = TensorDataset(
+        torch.from_numpy(tokens).float(),
+        torch.from_numpy(row_feat).float(),
+        torch.from_numpy(mask).bool(),
+        torch.from_numpy(y.values.astype(np.float32)).float().unsqueeze(1),
+    )
+    dl = DataLoader(ds, batch_size=min(BATCH_SIZE, len(ds)), shuffle=False)
+    all_probs = []
+    with torch.no_grad():
+        for t, r, m, _ in dl:
+            t, r, m = t.to(device), r.to(device), m.to(device)
+            logits = model(t, r, m)
+            probs = torch.sigmoid(logits).cpu().numpy().ravel()
+            all_probs.append(probs)
+    return np.concatenate(all_probs)
+
+
+# ===========================================================================
+# Main orchestrator
+# ===========================================================================
+
+def compute_xgb_baselines(train_df, val_stop_df, holdout_df):
+    """Compute all XGBoost baselines on same split."""
+    y_train = train_df[TARGET_COLUMN]
+    y_val = val_stop_df[TARGET_COLUMN]
+    y_holdout = holdout_df[TARGET_COLUMN]
+
+    results = {}
+    for ft in ["base_raw_plus_time", "no_time", "time_only"]:
+        print(f"\n  Training XGBoost {ft}...")
+        X_train = build_xgb_features(train_df, ft)
+        X_val = build_xgb_features(val_stop_df, ft)
+        X_holdout = build_xgb_features(holdout_df, ft)
+
+        model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42)
+
+        dhold = xgb.DMatrix(X_holdout)
+        holdout_probs = model.predict(dhold)
+
+        val_metrics = compute_metrics(y_val, pd.Series(model.predict(xgb.DMatrix(X_val))))
+        holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
+        yearly = compute_yearly_metrics(holdout_df, holdout_probs)
+
+        results[ft] = {
+            "val_auc": float(val_auc),
+            "val": {k: _safe(v) for k, v in val_metrics.items()},
+            "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
+            "yearly": {k: {kk: _safe(vv) for kk, vv in v.items()} for k, v in yearly.items()},
+        }
+        print(f"    Val AUC: {val_auc:.4f}, Holdout AUC: {holdout_metrics.get('auc', 'N/A')}")
+
+    return results
+
+
+def run_phase1(train_df, val_stop_df, holdout_df, seed, device, report):
+    """Phase 1: all100_base10_time + all100_base10_no_time."""
+    print(f"\n{'='*60}")
+    print(f"Phase 1 — Baseline check (seed={seed})")
+    print(f"{'='*60}")
+
+    profiles = ["all100_base10_time", "all100_base10_no_time"]
+    y_train = train_df[TARGET_COLUMN]
+    y_val = val_stop_df[TARGET_COLUMN]
+    y_holdout = holdout_df[TARGET_COLUMN]
+
+    for pname in profiles:
+        _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                                pname, y_train, y_val, y_holdout)
+
+    return report
+
+
+def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                            pname, y_train, y_val, y_holdout, diagnostic_only=False):
+    """Shared train/eval loop for one profile. Returns elapsed_s or None if skipped."""
+    profile = find_profile(pname)
+    # Corridor validation
+    if profile.get("selection") == "corridor":
+        print(f"\n  --- Corridor validation: {pname} ---")
+        stats_train = compute_corridor_stats(train_df, profile)
+        stats_val = compute_corridor_stats(val_stop_df, profile)
+        stats_holdout = compute_corridor_stats(holdout_df, profile)
+        status = corridor_status(stats_train)
+
+        report.setdefault("corridor_stats", {})[pname] = {
+            "train": {k: _safe(v) for k, v in stats_train.items()},
+            "val_stop": {k: _safe(v) for k, v in stats_val.items()},
+            "holdout": {k: _safe(v) for k, v in stats_holdout.items()},
+            "status": status,
+        }
+        print(f"    Status: {status}, median fractals: {stats_train['n_fractals_median']}")
+
+        if status == "REJECTED":
+            print(f"    SKIPPED: profile rejected by corridor validation")
+            return None
+
+        # Adjust seq_len if needed
+        p80 = stats_train.get("n_fractals_p80", profile["seq_len"])
+        combined_stats = compute_corridor_stats(
+            pd.concat([train_df, val_stop_df]), profile)
+        combined_p80 = combined_stats.get("n_fractals_p80", profile["seq_len"])
+        if combined_p80 < profile["seq_len"]:
+            new_seq = max(int(combined_p80), 3)
+            print(f"    Adjusting seq_len: {profile['seq_len']} → {new_seq} (P80={combined_p80:.1f})")
+            profile = deepcopy(profile)
+            profile["seq_len"] = new_seq
+
+    tag = " [DIAGNOSTIC_ONLY]" if diagnostic_only else ""
+    print(f"\n  Building profile: {pname}{tag}")
+    t0 = time.time()
+
+    tokens_train, rf_train, mask_train = build_profile_features(train_df, profile)
+    tokens_val, rf_val, mask_val = build_profile_features(val_stop_df, profile)
+    tokens_hold, rf_hold, mask_hold = build_profile_features(holdout_df, profile)
+
+    print(f"    Train: {tokens_train.shape}, Val: {tokens_val.shape}, Holdout: {tokens_hold.shape}")
+
+    # Normalize: fit StandardScaler on train valid positions only
+    (tokens_train, rf_train, tokens_val, rf_val, tokens_hold, rf_hold), scaler_stats = \
+        normalize_profile_features(
+            tokens_train, rf_train, mask_train,
+            tokens_val, rf_val, mask_val,
+            tokens_hold, rf_hold, mask_hold,
+        )
+
+    # Normalized distribution audit (before training — mandatory)
+    dist_audit = audit_normalized_distribution(
+        tokens_train, mask_train,
+        tokens_val, mask_val,
+        tokens_hold, mask_hold,
+        rf_train, rf_val, rf_hold,
+        token_fields=profile.get("token_fields", None),
+        row_fields=profile.get("row_fields", None),
+    )
+    print(f"    Dist audit: {dist_audit['status']} ({len(dist_audit['flags'])} flags)")
+    if dist_audit["flags"]:
+        for flag in dist_audit["flags"][:5]:
+            print(f"      ⚠️  {flag}")
+        if len(dist_audit["flags"]) > 5:
+            print(f"      ... and {len(dist_audit['flags']) - 5} more flags")
+
+    model, history = train_transformer(
+        tokens_train, rf_train, mask_train, y_train,
+        tokens_val, rf_val, mask_val, y_val,
+        profile, seed, device,
+    )
+
+    val_probs = evaluate_transformer(model, tokens_val, rf_val, mask_val, y_val, device)
+    holdout_probs = evaluate_transformer(model, tokens_hold, rf_hold, mask_hold, y_holdout, device)
+
+    val_metrics = compute_metrics(y_val, pd.Series(val_probs))
+    holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
+    yearly = compute_yearly_metrics(holdout_df, holdout_probs)
+
+    elapsed = time.time() - t0
+    result = {
+        "profile": pname,
+        "seed": seed,
+        "history": {k: _safe(v) for k, v in history.items()},
+        "val": {k: _safe(v) for k, v in val_metrics.items()},
+        "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
+        "yearly": {k: {kk: _safe(vv) for kk, vv in v.items()} for k, v in yearly.items()},
+        "elapsed_s": float(elapsed),
+        "scaler_stats": scaler_stats,
+        "normalized_distribution_audit": dist_audit,
+        "diagnostic_only": diagnostic_only or None,
+    }
+    report["transformer_results"].setdefault(pname, []).append(result)
+
+    print(f"    Val AUC: {val_metrics.get('auc'):.4f}, Holdout AUC: {holdout_metrics.get('auc')}")
+    print(f"    Epochs: {history.get('num_epochs')}, Time: {elapsed:.0f}s")
+    return elapsed
+
+
+def run_phase2(train_df, val_stop_df, holdout_df, seed, device, report):
+    """Phase 2: newest20, nearest40, corridor_10atr + relative_price diagnostic."""
+    print(f"\n{'='*60}")
+    print(f"Phase 2 — Selection variations (seed={seed})")
+    print(f"{'='*60}")
+
+    profiles = ["newest20_base10_time", "nearest40_base10_time", "corridor_10atr_base10_time"]
+    diag_profiles = [
+        "all100_base10_relative_price_time",
+        "nearest40_base10_relative_price_time",
+        "corridor_10atr_base10_relative_price_time",
+    ]
+    y_train = train_df[TARGET_COLUMN]
+    y_val = val_stop_df[TARGET_COLUMN]
+    y_holdout = holdout_df[TARGET_COLUMN]
+
+    for pname in profiles:
+        _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                                pname, y_train, y_val, y_holdout)
+
+    # Diagnostic: relative_price ablation
+    if diag_profiles:
+        print(f"\n{'='*60}")
+        print(f"Phase 2 diagnostic — relative_price ablation (seed={seed})")
+        print(f"{'='*60}")
+        for pname in diag_profiles:
+            _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                                    pname, y_train, y_val, y_holdout, diagnostic_only=True)
+
+    return report
+
+
+def run_phase3(train_df, val_stop_df, holdout_df, seed, device, report):
+    """Phase 3: corridor ablation (5/10/15 ATR)."""
+    print(f"\n{'='*60}")
+    print(f"Phase 3 — Corridor ablation (seed={seed})")
+    print(f"{'='*60}")
+
+    profiles = ["corridor_5atr_base10_time", "corridor_15atr_base10_time"]
+    y_train = train_df[TARGET_COLUMN]
+    y_val = val_stop_df[TARGET_COLUMN]
+    y_holdout = holdout_df[TARGET_COLUMN]
+
+    for pname in profiles:
+        _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                                pname, y_train, y_val, y_holdout)
+
+    return report
+
+
+def run_phase4(train_df, val_stop_df, holdout_df, seed, device, report):
+    """Phase 4: optional extended features."""
+    print(f"\n{'='*60}")
+    print(f"Phase 4 — Extended features (seed={seed})")
+    print(f"{'='*60}")
+
+    profiles = ["all100_full29_time", "all100_base10_no_price_time"]
+    y_train = train_df[TARGET_COLUMN]
+    y_val = val_stop_df[TARGET_COLUMN]
+    y_holdout = holdout_df[TARGET_COLUMN]
+
+    for pname in profiles:
+        _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
+                                pname, y_train, y_val, y_holdout)
+
+    return report
+
+
+def apply_holdout_gate(report):
+    """Apply holdout gate to primary profile only. lift_X = breach_rate in bottom X% / baseline_rate: lower = better."""
+    transformer_results = report.get("transformer_results", {})
+    primary_name = "all100_base10_time"
+    primary_results = transformer_results.get(primary_name, [])
+
+    if not primary_results:
+        report["holdout_gate"] = {"verdict": "NO_PRIMARY_RESULTS"}
+        return report
+
+    xgb_results = report.get("baselines", {}).get("base_raw_plus_time", {})
+    time_results = report.get("baselines", {}).get("time_only", {})
+
+    xgb_holdout_auc = xgb_results.get("holdout", {}).get("auc", 0.0) or 0.0
+    xgb_holdout_lift30 = xgb_results.get("holdout", {}).get("lift_30", 1.0) or 1.0
+    time_holdout_auc = time_results.get("holdout", {}).get("auc", 0.0) or 0.0
+
+    checks = []
+    for r in primary_results:
+        h_auc = r.get("holdout", {}).get("auc")
+        h_lift30 = r.get("holdout", {}).get("lift_30")
+        yearly = r.get("yearly", {})
+
+        if h_auc is None:
+            checks.append({"seed": r["seed"], "verdict": "NO_VALID_AUC"})
+            continue
+
+        gate1 = h_auc >= max(xgb_holdout_auc + HOLDOUT_AUC_DELTA, time_holdout_auc + HOLDOUT_TIME_AUC_DELTA)
+        # lift_30 = breach_rate in bottom 30% / baseline_rate. Lower = better (fewer breaches in safe zone).
+        gate2 = (h_lift30 or 1.0) <= max((xgb_holdout_lift30 or 1.0) - HOLDOUT_LIFT_DELTA, 0.0)
+
+        years_ok = sum(1 for yv in yearly.values()
+                       if (yv.get("auc") or 0.0) >= YEARLY_AUC_MIN and (yv.get("n") or 0) >= 50)
+        gate3 = years_ok >= MIN_VALID_YEARS
+
+        verdict = "PASS" if (gate1 and gate2 and gate3) else "FAIL"
+
+        checks.append({
+            "seed": r["seed"],
+            "holdout_auc": _safe(h_auc),
+            "xgb_holdout_auc": _safe(xgb_holdout_auc),
+            "gate1_auc_vs_xgb": _safe(h_auc - xgb_holdout_auc),
+            "gate2_lift30_transformer": _safe(h_lift30),
+            "gate2_lift30_xgb": _safe(xgb_holdout_lift30),
+            "gate3_years_ok": years_ok,
+            "verdict": verdict,
+            "details": {
+                "gate1_auc_threshold_met": gate1,
+                "gate2_lift_threshold_met": gate2,
+                "gate3_yearly_threshold_met": gate3,
+            },
+        })
+
+    report["holdout_gate"] = checks
+
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
+    parser.add_argument("--single-seed", action="store_true",
+                        help="Use single seed [42] instead of [42, 77, 123]")
+    parser.add_argument("--phase", type=str, default=None,
+                        help="Run specific phase only (1, 2, 3, 4)")
+    parser.add_argument("--skip-phase1", action="store_true",
+                        help="Skip Phase 1 (for restart after Phase 1 completion)")
+    parser.add_argument("--output", type=str, default=str(JSON_REPORT_PATH),
+                        help="Output JSON path")
+    args = parser.parse_args()
+
+    seeds = [42] if args.single_seed else SEEDS
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+    print(f"Seeds: {seeds}")
+
+    # Load data
+    print("\n" + "=" * 60)
+    print("Loading data...")
+    print("=" * 60)
+    train_df, val_stop_df, holdout_df = load_splits()
+
+    # OHLC label verification (mandatory before training)
+    print("\n" + "=" * 60)
+    print("OHLC label verification...")
+    print("=" * 60)
+    ohlc_verification = verify_breach_labels_against_ohlc(holdout_df)
+    print(f"  Matches: {ohlc_verification['n_matches']}/{ohlc_verification['n_checked']}, "
+          f"mismatches: {ohlc_verification['n_mismatches']}, status: {ohlc_verification['status']}")
+
+    # Label sanity check
+    sanity = label_sanity_check(holdout_df)
+    print(f"\n  Label sanity check: {sanity['status']}, pos_rate={sanity['positive_rate']:.4f}")
+
+    # XGBoost baselines
+    print("\n" + "=" * 60)
+    print("Computing XGBoost baselines...")
+    print("=" * 60)
+    xgb_results = compute_xgb_baselines(train_df, val_stop_df, holdout_df)
+
+    # Init report
+    report = {
+        "status": "DIAGNOSTIC_RERUN_NORMALIZED",
+        "previous_run_status": "DIAGNOSTIC_FAIL_WITH_PREPROCESSING_BUG",
+        "diagnostic_preprocessing_bug": {
+            "description": (
+                "Первоначальный прогон Stage 5.0 использовал сырые признаки без StandardScaler. "
+                "Цена золота (сотни/тысячи) доминировала над остальными признаками (0..1) в attention-механизме Transformer. "
+                "Исправлено: раздельный StandardScaler для token-признаков (fit на валидных позициях train) и row-признаков. "
+                "Padding остаётся нулём. Добавлены relative_price диагностические профили."
+            ),
+            "fix_applied": True,
+            "original_run": "2026-06-17 (no normalization)",
+            "rerun": "2026-06-17 (with normalization)",
+        },
+        "normalization_config": {
+            "method": "StandardScaler",
+            "token_scaler_fit_on": "train valid positions only (mask=True)",
+            "row_scaler_fit_on": "all train rows",
+            "padding": "kept as zero, not transformed",
+            "apply_to": "train, val_stop, holdout",
+            "relative_price_profiles": "diagnostic ablation: price_i → (price_i - f0_price) / ATR, executed in Phase 2 as DIAGNOSTIC_ONLY",
+            "phase2_diag_profiles": [
+                "all100_base10_relative_price_time",
+                "nearest40_base10_relative_price_time",
+                "corridor_10atr_base10_relative_price_time",
+            ],
+        },
+        "config": {
+            "primary_profile": "all100_base10_time",
+            "target": TARGET_COLUMN,
+            "seeds": seeds,
+            "d_model": D_MODEL,
+            "nhead": NHEAD,
+            "dim_feedforward": DIM_FEEDFORWARD,
+            "max_epochs": MAX_EPOCHS,
+            "early_stopping_patience": EARLY_STOPPING_PATIENCE,
+            "batch_size": BATCH_SIZE,
+            "learning_rate": LEARNING_RATE,
+            "weight_decay": WEIGHT_DECAY,
+            "device": str(device),
+            "split": {
+                "train_max_year": TRAIN_MAX_YEAR,
+                "val_stop_years": sorted(VAL_STOP_YEARS),
+                "holdout_min_year": HOLDOUT_MIN_YEAR,
+            },
+        },
+        "primary_profile": {
+            "name": "all100_base10_time",
+            "gate_applies_here": True,
+            "target": TARGET_COLUMN,
+        },
+        "split": {
+            "train": {"n_rows": len(train_df), "years": sorted(map(int, train_df["_year"].unique()))},
+            "val_stop": {"n_rows": len(val_stop_df), "years": sorted(map(int, val_stop_df["_year"].unique()))},
+            "holdout": {"n_rows": len(holdout_df), "years": sorted(map(int, holdout_df["_year"].unique()))},
+        },
+        "label_sanity_check": sanity,
+        "ohlc_label_verification": ohlc_verification,
+        "legacy_holdout_disclosure": (
+            "2023-2026 was used as diagnostic holdout in Stage 4.6/walk-forward. "
+            "It is not a clean future test for manual tuning."
+        ),
+        "legacy_xgb_reference": {
+            "note": "Stage 4.2 result (train <=2016, val 2019-2022). Not for gate comparison — split differs.",
+            "stage": "Stage 4.2",
+            "train_max_year": 2016,
+            "auc": 0.6674,
+            "pf": 1.015,
+        },
+        "baselines": xgb_results,
+        "transformer_results": {},
+        "corridor_stats": {},
+        "diagnostic_profile_ranking": {"status": "DIAGNOSTIC_ONLY"},
+        "interpretation_guards": {
+            "holdout_is_diagnostic_not_clean_test": True,
+            "primary_profile_only_for_gate": True,
+            "other_profiles_ranking_is_diagnostic_only": True,
+            "no_trading_winner_declared": True,
+            "walk_forward_not_run_transformer_fail": True,
+        },
+    }
+
+    # Phase 1
+    if not args.skip_phase1 and (args.phase is None or args.phase == "1"):
+        seed = seeds[0]
+        run_phase1(train_df, val_stop_df, holdout_df, seed, device, report)
+
+        # Phase 1 stop condition
+        primary_results = report["transformer_results"].get("all100_base10_time", [])
+        if primary_results:
+            t_auc = primary_results[0].get("val", {}).get("auc")
+            xgb_auc = xgb_results.get("base_raw_plus_time", {}).get("val_auc", 0.0)
+            if t_auc is not None and xgb_auc is not None:
+                gap = float(t_auc) - float(xgb_auc)
+                report["phase1_stop_check"] = {
+                    "transformer_val_auc": float(t_auc),
+                    "xgb_val_auc": float(xgb_auc),
+                    "gap": gap,
+                    "threshold": PHASE1_STOP_GAP,
+                }
+                if gap < -PHASE1_STOP_GAP:
+                    print(f"\n  PHASE 1 HALTED: Transformer val AUC {t_auc:.4f} trails XGBoost {xgb_auc:.4f} by {gap:.4f} (threshold {PHASE1_STOP_GAP})")
+                    report["status"] = "halted_phase1"
+                    report["halt_reason"] = f"Transformer val AUC trails XGBoost by {gap:.4f} > {PHASE1_STOP_GAP}"
+                else:
+                    report["status"] = "phase1_complete"
+            else:
+                report["status"] = "phase1_complete"
+        else:
+            report["status"] = "phase1_complete"
+    else:
+        report["status"] = "phase1_skipped"
+
+    # Phase 2 (conditional: only if Phase 1 not halted)
+    if args.phase is None or args.phase == "2":
+        if report.get("status") in ("phase1_complete", "phase1_skipped", "halted_phase1"):
+            if report.get("status") != "halted_phase1":
+                seed = seeds[0]
+                run_phase2(train_df, val_stop_df, holdout_df, seed, device, report)
+                report["status"] = "phase2_complete"
+
+    # Phase 3 (conditional: only if corridor_10atr promising)
+    if args.phase is None or args.phase == "3":
+        if report.get("status") in ("phase2_complete",):
+            corridor_results = report["transformer_results"].get("corridor_10atr_base10_time", [])
+            if corridor_results and corridor_results[0].get("val", {}).get("auc", 0) > 0.65:
+                seed = seeds[0]
+                run_phase3(train_df, val_stop_df, holdout_df, seed, device, report)
+            report["status"] = "phase3_complete"
+
+    # Phase 4 (conditional: only if clear benefit)
+    if args.phase is None or args.phase == "4":
+        if report.get("status") in ("phase2_complete", "phase3_complete"):
+            primary_results = report["transformer_results"].get("all100_base10_time", [])
+            if primary_results:
+                t_auc = primary_results[0].get("val", {}).get("auc")
+                xgb_auc = xgb_results.get("base_raw_plus_time", {}).get("val_auc", 0.0)
+                if t_auc is not None and xgb_auc is not None and float(t_auc) > float(xgb_auc):
+                    seed = seeds[0]
+                    run_phase4(train_df, val_stop_df, holdout_df, seed, device, report)
+            report["status"] = "completed"
+
+    # Gate verdict
+    apply_holdout_gate(report)
+
+    # Final status: set from gate verdict
+    gate_v = report.get("holdout_gate", [])
+    if gate_v and isinstance(gate_v, list) and len(gate_v) > 0:
+        verdict = gate_v[0].get("verdict", "UNKNOWN")
+        report["execution_completed"] = True
+        report["verdict"] = f"MODEL_{verdict}"
+        if verdict == "PASS":
+            report["status"] = "DIAGNOSTIC_RERUN_PASS"
+        else:
+            report["status"] = "DIAGNOSTIC_RERUN_FAIL"
+    else:
+        report["execution_completed"] = True
+        report["verdict"] = "MODEL_NO_RESULTS"
+
+    # Save JSON
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+
+    print(f"\n{'='*60}")
+    print(f"Report saved: {output_path}")
+    print(f"Holdout gate: {json.dumps(report.get('holdout_gate', 'N/A'), indent=2)}")
+    print(f"{'='*60}")
+
+
+if __name__ == "__main__":
+    main()

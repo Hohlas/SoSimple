@@ -74,6 +74,8 @@
 | [diagnose_stage4_3.py](ML/baseline/diagnose_stage4_3.py) | Stage 4.3 DIAGNOSTIC_ONLY: декомпозиция потерь PF oracle→baseline, breach/fav buckets, 2D map, TP policy comparison | `DATA/Nero_XAUUSD_*_labeled.csv` + OHLC → `ML/reports/stage4_3_diagnostics.json` | [docs](docs/ML/diagnose_stage4_3.py.md) | ✅ |
 | [diagnose_stage4_4.py](ML/baseline/diagnose_stage4_4.py) | Stage 4.4 DIAGNOSTIC_ONLY: micro-check перед Transformer — relax breach, fixed TP, breach-only entry | `DATA/Nero_XAUUSD_*_labeled.csv` + OHLC → `ML/reports/stage4_4_micro_check.json` | [docs](docs/ML/diagnose_stage4_4.py.md) | ✅ |
 | [diagnose_stage5_prep.py](ML/baseline/diagnose_stage5_prep.py) | Stage 5.0-prep DIAGNOSTIC_ONLY: feature ablation + AUC→PF sensitivity перед Transformer | `DATA/Nero_XAUUSD_*_labeled.csv` + OHLC → `ML/reports/stage5_prep_diagnostics.json` | [docs](docs/ML/diagnose_stage5_prep.py.md) | ✅ |
+| [benchmark_stage5_transformer_breach.py](ML/baseline/benchmark_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach Holdout: 5 feature profiles (A6), XGBoost baselines, phased execution, diagnostic holdout 2023-2026 | `DATA/Nero_XAUUSD_*_labeled.csv` → `ML/reports/stage5_transformer_breach.json` | [docs](docs/ML/benchmark_stage5_transformer_breach.py.md) | 🏁 |
+| [fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5.0 Transformer encoder для breach classification: masked mean + newest-token pooling, TokenSelector | — | [docs](docs/ML/fractal_breach_transformer.py.md) | 🏁 |
 | [diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 DIAGNOSTIC_ONLY: trailing/breakeven/partial exit mechanics для Fractal Stop | `DATA/Nero_XAUUSD_*_labeled.csv` + OHLC → `ML/reports/stage4_5_exit_mechanics.json` | [docs](docs/ML/diagnose_stage4_5_exit_mechanics.py.md) | ✅ |
 | [benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean val_select/val_eval candidate-cycle для exit-политик Stage 4.5 | `DATA/Nero_XAUUSD_*_labeled.csv` + OHLC → `ML/reports/stage4_6_clean_cycle.json` | [docs](docs/ML/benchmark_stage4_6_clean_cycle.py.md) | ✅ |
 | [baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | train/validation labeled CSV → `stage07_baselines.json` | [docs](docs/ML/baseline_candidate_source.py.md) | ✅ |
@@ -212,6 +214,7 @@
 | [test_triple_barrier_training.py](tests/test_triple_barrier_training.py) | transfer-learning kwargs для TB обучения | — | ✅ |
 | [test_fractal_stop_breach_labels.py](tests/processing/test_fractal_stop_breach_labels.py) | `processing/label_signals.py` — Stage 1 breach-разметка `fractal0` | — | ✅ |
 | [test_fractal_stop_fav.py](tests/processing/test_fractal_stop_fav.py) | `processing/label_signals.py` — Stage 2 fav-разметка и симулятор Fractal Stop Fav | — | ✅ |
+| [test_stage5_transformer_breach.py](tests/test_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach: профили признаков, tensor shapes, corridor validation, модель, split guard | — | ✅ |
 
 ## Docs
 

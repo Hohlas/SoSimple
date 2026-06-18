@@ -3,6 +3,17 @@
 > Format: `## [YYYY-MM-DD] operation | description`
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
+## [2026-06-17] ingest | Stage 5.0 Transformer Breach Holdout synced into wiki
+- Added coverage for `docs/reports/2026-06-17-stage5-transformer-breach.md`.
+- Updated `wiki/research/fractal-stop-research.md` with Stage 5.0 full results.
+- Transformer (d_model=64, 40 эпох) holdout AUC 0.6018 vs XGBoost 0.6524 — FAIL.
+- All 5 feature profiles trail XGBoost. Transformer also worse in low-risk zone (lift_30 0.766 vs 0.620).
+- no_time profile AUC=0.4987 — below random without time features.
+- Methodological risk: features not scaled for neural net (price in hundreds/thousands, others ~0..1). Conclusion refers to current implementation and normalization.
+- Added conclusions 15-17: 5 stages failed, models reached ceiling. Formulation softened per methodological risk.
+- Updated open questions: Transformer question answered, trailing question answered.
+- Updated `wiki/index.md` coverage (11 reports, stages 1-5.0).
+
 ## [2026-06-15] ingest | Stage 4.6 clean candidate-cycle synced into wiki (ext to 2026)
 - Added coverage for `docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md`.
 - Updated `wiki/research/fractal-stop-research.md` with Stage 4.6 extended results.
