@@ -29,7 +29,13 @@
     - Related Materials.
 2. Указать команды, версии, paths, hashes, rules, checkpoints.
 3. Явно перечислить invalidated assumptions.
-4. Для принятого кандидата создать model card:
+4. Если модель использует normalization/scaler, отчёт и structured artifact должны содержать:
+   - `normalization_config`;
+   - где fit-ился scaler и какие данные не участвовали в fit;
+   - какие признаки, padding и mask исключены из fit;
+   - `normalized_feature_distribution_audit` для train/validation/test или holdout;
+   - итоговый вывод `scale_contract`: `PASS`/`FAIL`/`DIAGNOSTIC_ONLY`.
+5. Для принятого кандидата создать model card:
    - назначение модели;
    - instrument/timeframe;
    - `decision_time`;
@@ -42,12 +48,12 @@
    - known risks;
    - monitoring/retraining policy;
    - stop conditions.
-5. Если найден баг прошлого вывода:
+6. Если найден баг прошлого вывода:
    - доказать минимальным reproducer;
    - оценить material impact;
    - пометить старые выводы как invalid, superseded или unchanged.
-6. Обновить changelog/handoff/wiki только если этап действительно закрыт или выводы изменили проектное знание.
-7. Для `FAIL`/`reject` результата указать, выполнен ли [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md). Если нет — зафиксировать причину: нет oracle-потолка, провал уже объяснён методической ошибкой, мало данных или ветка закрыта без дальнейшего исследования.
+7. Обновить changelog/handoff/wiki только если этап действительно закрыт или выводы изменили проектное знание.
+8. Для `FAIL`/`reject` результата указать, выполнен ли [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md). Если нет — зафиксировать причину: нет oracle-потолка, провал уже объяснён методической ошибкой, мало данных или ветка закрыта без дальнейшего исследования.
 
 ### Обязательные проверки
 
@@ -55,6 +61,7 @@
 - Есть список limitations.
 - Все источники результата доступны.
 - Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) сверены со structured artifact (JSON/CSV/parquet). Если structured artifact отсутствует, отчёт обязан содержать команду воспроизведения и hash входов. Расхождение отчёт↔artifact — блокирующая ошибка.
+- Для моделей со scaler/normalization отчёт содержит `normalization_config`, `normalized_feature_distribution_audit` и явный `scale_contract` verdict.
 - Для принятого кандидата есть model card.
 - Старые противоречащие выводы помечены.
 - Документировано, что запрещено делать дальше.
@@ -75,6 +82,7 @@
 - Удалять неудачные эксперименты из истории.
 - Не обновлять вывод после найденной ошибки симулятора.
 - Копировать числа в отчёт вручную без сверки со structured artifact — источник расхождений отчёт↔результат.
+- Не раскрывать параметры normalization/scaler в отчёте и JSON: следующий агент не сможет отличить ошибку preprocessing от слабости модели.
 
 ### Ветвления
 

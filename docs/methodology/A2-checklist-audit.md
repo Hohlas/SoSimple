@@ -13,6 +13,11 @@
 - [ ] Внутри normalization pool нет dominance крупномасштабного поля над остальными.
 - [ ] Нормализация не использует future-derived поля в live-пулах.
 - [ ] Global scaler fit только на train.
+- [ ] В JSON/report есть `normalization_config`: метод, fit-период, группы признаков, исключённые поля и путь применения к validation/test/holdout.
+- [ ] Проверены диапазоны финальных tensor/матриц, реально поданных в модель, а не только исходного CSV.
+- [ ] Padding/mask не участвовали в fit scaler; padding после normalization остался 0.
+- [ ] Для нейросети нет доминирующего признака по масштабу после финальной подготовки входов.
+- [ ] Для новых ML-раннеров есть scale-тесты: ожидаемый масштаб train после normalize, fit только на train, val/test/holdout не влияют на scaler, padding остаётся 0.
 - [ ] Target order одинаков в train/evaluate/export.
 - [ ] Rule/checkpoint/threshold заморожены до test.
 - [ ] Test не использовался для выбора.
