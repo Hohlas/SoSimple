@@ -394,6 +394,76 @@ PROFILE_DEFS = [
         "relative_price": True,
     },
     {
+        "name": "corridor_5atr_relative_price_no_time_full",
+        "selection": "corridor",
+        "selector": "levels within +/-5 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": [],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 0,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 5.0,
+        "relative_price": True,
+        "diagnostic_only": True,
+    },
+    {
+        "name": "corridor_10atr_relative_price_no_time_full",
+        "selection": "corridor",
+        "selector": "levels within +/-10 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": [],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 0,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 10.0,
+        "relative_price": True,
+        "diagnostic_only": True,
+    },
+    {
+        "name": "corridor_5atr_relative_price_atr_full",
+        "selection": "corridor",
+        "selector": "levels within +/-5 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 5.0,
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_10atr_relative_price_atr_full",
+        "selection": "corridor",
+        "selector": "levels within +/-10 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 10.0,
+        "relative_price": True,
+    },
+    {
         "name": "corridor_15atr_relative_price_no_time",
         "selection": "corridor",
         "selector": "levels within +/-15 ATR from fractal0.price",
@@ -488,6 +558,7 @@ def get_profile_contract(profile: dict) -> dict:
         "seq_len": int(profile.get("seq_len", 0)),
         "padding_value": float(profile.get("padding_value", 0.0)),
         "mask_semantics": profile.get("mask_semantics", "1=real token, 0=padding"),
+        "diagnostic_only": bool(profile.get("diagnostic_only", False)),
     }
 
 
@@ -608,6 +679,7 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
         tokens: (n_samples, seq_len, token_dim)
         row_features: (n_samples, row_dim)
         mask: (n_samples, seq_len)
+        selection_meta: raw coverage before seq_len cap
     """
     n_samples = len(df)
     seq_len = profile["seq_len"]
@@ -623,7 +695,16 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
         row_features = build_row_features(df, profile)
         if np.isnan(row_features).any():
             row_features = np.nan_to_num(row_features, nan=0.0)
-        return tokens.astype(np.float32), row_features.astype(np.float32), mask
+        selection_meta = {
+            "candidate_count_before_cap": np.zeros(n_samples, dtype=np.int32),
+            "selected_count_after_cap": np.zeros(n_samples, dtype=np.int32),
+            "is_truncated": np.zeros(n_samples, dtype=bool),
+        }
+        return tokens.astype(np.float32), row_features.astype(np.float32), mask, selection_meta
+
+    candidate_count_before_cap = np.zeros(n_samples, dtype=np.int32)
+    selected_count_after_cap = np.zeros(n_samples, dtype=np.int32)
+    is_truncated = np.zeros(n_samples, dtype=bool)
 
     # Pre-parse all fractal columns
     for sample_idx in range(n_samples):
@@ -664,26 +745,36 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
         valid_features = raw_features[valid_fractals]
         valid_indices = np.where(valid_fractals)[0]
 
+        raw_candidate_count = valid_count
         if selection == "all100":
             selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
         elif selection == "newest":
-            n_val = profile.get("n", seq_len)
+            n_val = int(profile.get("n", seq_len))
             selected_idx, m = TokenSelector.newest_n(n_val, valid_count, seq_len)
+            raw_candidate_count = min(valid_count, n_val)
         elif selection == "nearest":
-            k_val = profile.get("k", seq_len)
+            k_val = int(profile.get("k", seq_len))
             selected_idx, m, _ = TokenSelector.by_nearest(
                 valid_prices, prices[0], k_val, seq_len,
                 exclude_anchor=profile.get("exclude_anchor_from_k", False),
                 anchor_valid_position=0,
             )
+            excluded_anchor = 1 if profile.get("exclude_anchor_from_k", False) and valid_count > 0 else 0
+            raw_candidate_count = min(max(valid_count - excluded_anchor, 0), k_val)
         elif selection == "corridor":
             corridor_atr_val = profile.get("corridor_atr", 10.0)
             atr_val = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
             atr_val = atr_val if atr_val > 0 else 1.0
+            corridor_threshold = corridor_atr_val * atr_val
+            raw_candidate_count = int(np.sum(np.abs(valid_prices - prices[0]) <= corridor_threshold))
             selected_idx, m, _ = TokenSelector.by_corridor(
                 valid_prices, prices[0], atr_val, corridor_atr_val, seq_len)
         else:
             selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+
+        candidate_count_before_cap[sample_idx] = max(int(raw_candidate_count), 0)
+        selected_count_after_cap[sample_idx] = int(m.sum())
+        is_truncated[sample_idx] = candidate_count_before_cap[sample_idx] > seq_len
 
         # Map selected_idx (into valid_fractals) back to valid_indices and then into feature array
         for t in range(min(len(selected_idx), seq_len)):
@@ -723,7 +814,12 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
     if np.isnan(row_features).any():
         row_features = np.nan_to_num(row_features, nan=0.0)
 
-    return tokens.astype(np.float32), row_features.astype(np.float32), mask
+    selection_meta = {
+        "candidate_count_before_cap": candidate_count_before_cap,
+        "selected_count_after_cap": selected_count_after_cap,
+        "is_truncated": is_truncated,
+    }
+    return tokens.astype(np.float32), row_features.astype(np.float32), mask, selection_meta
 
 
 def parse_split_fractals(df: pd.DataFrame) -> dict:
@@ -758,11 +854,24 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
     mask = np.zeros((n_samples, seq_len), dtype=bool)
 
     if selection == "row_only" or seq_len == 0 or token_dim == 0:
-        return np.zeros((n_samples, 0, 0), dtype=np.float32), build_row_features(df, profile), np.zeros((n_samples, 0), dtype=bool)
+        selection_meta = {
+            "candidate_count_before_cap": np.zeros(n_samples, dtype=np.int32),
+            "selected_count_after_cap": np.zeros(n_samples, dtype=np.int32),
+            "is_truncated": np.zeros(n_samples, dtype=bool),
+        }
+        return (
+            np.zeros((n_samples, 0, 0), dtype=np.float32),
+            build_row_features(df, profile),
+            np.zeros((n_samples, 0), dtype=bool),
+            selection_meta,
+        )
 
     prices_all = parsed["prices"]
     valid_all = parsed["valid"]
     base10_all = parsed["base10"]
+    candidate_count_before_cap = np.zeros(n_samples, dtype=np.int32)
+    selected_count_after_cap = np.zeros(n_samples, dtype=np.int32)
+    is_truncated = np.zeros(n_samples, dtype=bool)
 
     for sample_idx in range(n_samples):
         valid_mask = valid_all[sample_idx]
@@ -773,24 +882,36 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
         valid_base10 = base10_all[sample_idx, valid_mask]
         valid_features = project_token_fields(valid_base10, profile)
 
+        raw_candidate_count = valid_count
         if selection == "all100":
             selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
         elif selection == "newest":
-            selected_idx, m = TokenSelector.newest_n(profile.get("n", seq_len), valid_count, seq_len)
+            n_val = int(profile.get("n", seq_len))
+            selected_idx, m = TokenSelector.newest_n(n_val, valid_count, seq_len)
+            raw_candidate_count = min(valid_count, n_val)
         elif selection == "nearest":
+            k_val = int(profile.get("k", seq_len))
             selected_idx, m, _ = TokenSelector.by_nearest(
-                valid_prices, prices_all[sample_idx, 0], profile.get("k", seq_len), seq_len,
+                valid_prices, prices_all[sample_idx, 0], k_val, seq_len,
                 exclude_anchor=profile.get("exclude_anchor_from_k", False),
                 anchor_valid_position=0,
             )
+            excluded_anchor = 1 if profile.get("exclude_anchor_from_k", False) and valid_count > 0 else 0
+            raw_candidate_count = min(max(valid_count - excluded_anchor, 0), k_val)
         elif selection == "corridor":
             atr_val = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
             atr_val = atr_val if atr_val > 0 else 1.0
+            corridor_threshold = profile.get("corridor_atr", 10.0) * atr_val
+            raw_candidate_count = int(np.sum(np.abs(valid_prices - prices_all[sample_idx, 0]) <= corridor_threshold))
             selected_idx, m, _ = TokenSelector.by_corridor(
                 valid_prices, prices_all[sample_idx, 0], atr_val, profile.get("corridor_atr", 10.0), seq_len
             )
         else:
             selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+
+        candidate_count_before_cap[sample_idx] = max(int(raw_candidate_count), 0)
+        selected_count_after_cap[sample_idx] = int(m.sum())
+        is_truncated[sample_idx] = candidate_count_before_cap[sample_idx] > seq_len
 
         for t in range(min(len(selected_idx), seq_len)):
             if m[t] and selected_idx[t] < len(valid_features):
@@ -815,7 +936,12 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
         tokens = np.nan_to_num(tokens, nan=0.0)
     if np.isnan(row_features).any():
         row_features = np.nan_to_num(row_features, nan=0.0)
-    return tokens.astype(np.float32), row_features.astype(np.float32), mask
+    selection_meta = {
+        "candidate_count_before_cap": candidate_count_before_cap,
+        "selected_count_after_cap": selected_count_after_cap,
+        "is_truncated": is_truncated,
+    }
+    return tokens.astype(np.float32), row_features.astype(np.float32), mask, selection_meta
 
 
 # ===========================================================================
@@ -1078,14 +1204,23 @@ def audit_normalized_distribution(
     }
 
 
-def compute_profile_coverage(tokens: np.ndarray, mask: np.ndarray, profile: dict) -> dict:
+def compute_profile_coverage(tokens: np.ndarray, mask: np.ndarray, profile: dict,
+                             selection_meta: dict | None = None) -> dict:
     counts = mask.sum(axis=1).astype(np.int32) if mask.size > 0 else np.zeros(tokens.shape[0], dtype=np.int32)
     if len(counts) == 0:
         counts = np.array([0], dtype=np.int32)
     pvals = np.percentile(counts, [5, 25, 50, 75, 95]) if len(counts) > 0 else [0] * 5
-    truncation = 0.0
-    if profile.get("selection") == "corridor" and tokens.shape[1] > 0:
-        truncation = float(np.mean(counts >= profile["seq_len"]))
+    raw_counts = None
+    truncation_flags = None
+    if selection_meta is not None:
+        raw_counts = np.asarray(selection_meta.get("candidate_count_before_cap", []), dtype=np.int32)
+        truncation_flags = np.asarray(selection_meta.get("is_truncated", []), dtype=bool)
+    if raw_counts is None or raw_counts.size == 0:
+        raw_counts = counts
+    if truncation_flags is None or truncation_flags.size == 0:
+        truncation_flags = raw_counts > int(profile.get("seq_len", 0))
+    raw_pvals = np.percentile(raw_counts, [5, 25, 50, 75, 95]) if len(raw_counts) > 0 else [0] * 5
+    truncation = float(np.mean(truncation_flags)) if len(truncation_flags) > 0 else 0.0
     price_bounds = {}
     token_fields = profile.get("token_fields", [])
     if "price_coord_atr" in token_fields and mask.sum() > 0:
@@ -1102,11 +1237,25 @@ def compute_profile_coverage(tokens: np.ndarray, mask: np.ndarray, profile: dict
         "valid_tokens_p50": float(pvals[2]),
         "valid_tokens_p75": float(pvals[3]),
         "valid_tokens_p95": float(pvals[4]),
+        "candidate_count_before_cap_p5": float(raw_pvals[0]),
+        "candidate_count_before_cap_p25": float(raw_pvals[1]),
+        "candidate_count_before_cap_p50": float(raw_pvals[2]),
+        "candidate_count_before_cap_p75": float(raw_pvals[3]),
+        "candidate_count_before_cap_p95": float(raw_pvals[4]),
+        "selected_count_after_cap_p5": float(pvals[0]),
+        "selected_count_after_cap_p25": float(pvals[1]),
+        "selected_count_after_cap_p50": float(pvals[2]),
+        "selected_count_after_cap_p75": float(pvals[3]),
+        "selected_count_after_cap_p95": float(pvals[4]),
         "pct_empty": float(np.mean(counts == 0)),
         "pct_single": float(np.mean(counts == 1)),
         "pct_two": float(np.mean(counts == 2)),
         "pct_three_plus": float(np.mean(counts >= 3)),
-        "pct_truncation": truncation,
+        "pct_truncation_true": truncation,
+        "pct_candidate_count_ge_40": float(np.mean(raw_counts >= 40)),
+        "pct_candidate_count_ge_90": float(np.mean(raw_counts >= 90)),
+        "pct_candidate_count_eq_100": float(np.mean(raw_counts == 100)),
+        "pct_selected_count_ge_90": float(np.mean(counts >= 90)),
         **price_bounds,
     }
 
@@ -1464,7 +1613,7 @@ def load_splits():
 
 def build_flat_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
     """Build flat feature table for XGBoost from profile tokens+row_features."""
-    tokens, row_feat, mask = build_profile_features(df, profile)
+    tokens, row_feat, mask, _selection_meta = build_profile_features(df, profile)
     n_samples = len(df)
     flat = tokens.reshape(n_samples, -1)
     result = np.concatenate([flat, row_feat], axis=1)
@@ -1848,9 +1997,9 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
     print(f"\n  Building profile: {pname}{tag}")
     t0 = time.time()
 
-    tokens_train, rf_train, mask_train = build_profile_features(train_df, profile)
-    tokens_val, rf_val, mask_val = build_profile_features(val_stop_df, profile)
-    tokens_hold, rf_hold, mask_hold = build_profile_features(holdout_df, profile)
+    tokens_train, rf_train, mask_train, _meta_train = build_profile_features(train_df, profile)
+    tokens_val, rf_val, mask_val, _meta_val = build_profile_features(val_stop_df, profile)
+    tokens_hold, rf_hold, mask_hold, _meta_hold = build_profile_features(holdout_df, profile)
 
     print(f"    Train: {tokens_train.shape}, Val: {tokens_val.shape}, Holdout: {tokens_hold.shape}")
 
@@ -2047,6 +2196,10 @@ PREFLIGHT_PROFILE_NAMES = [
     "all100_relative_price_time",
     "corridor_5atr_relative_price_no_time",
     "corridor_10atr_relative_price_no_time",
+    "corridor_5atr_relative_price_no_time_full",
+    "corridor_10atr_relative_price_no_time_full",
+    "corridor_5atr_relative_price_atr_full",
+    "corridor_10atr_relative_price_atr_full",
     "corridor_15atr_relative_price_no_time",
     "corridor_10atr_relative_price_time",
     "nearest40_relative_price_no_time",
@@ -2065,9 +2218,9 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
     for profile_name in PREFLIGHT_PROFILE_NAMES:
         profile = deepcopy(find_profile(profile_name))
         contract = get_profile_contract(profile)
-        tokens_train, rf_train, mask_train = build_profile_features_from_parsed(train_df, parsed_train, profile)
-        tokens_val, rf_val, mask_val = build_profile_features_from_parsed(val_stop_df, parsed_val, profile)
-        tokens_hold, rf_hold, mask_hold = build_profile_features_from_parsed(holdout_df, parsed_holdout, profile)
+        tokens_train, rf_train, mask_train, meta_train = build_profile_features_from_parsed(train_df, parsed_train, profile)
+        tokens_val, rf_val, mask_val, meta_val = build_profile_features_from_parsed(val_stop_df, parsed_val, profile)
+        tokens_hold, rf_hold, mask_hold, meta_hold = build_profile_features_from_parsed(holdout_df, parsed_holdout, profile)
 
         normalized, scaler_stats = normalize_profile_features(
             tokens_train, rf_train, mask_train,
@@ -2085,9 +2238,9 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
             row_fields=profile.get("row_fields"),
         )
         coverage_by_split = {
-            "train": compute_profile_coverage(tokens_train_n, mask_train, profile),
-            "val_stop": compute_profile_coverage(tokens_val_n, mask_val, profile),
-            "holdout": compute_profile_coverage(tokens_hold_n, mask_hold, profile),
+            "train": compute_profile_coverage(tokens_train_n, mask_train, profile, meta_train),
+            "val_stop": compute_profile_coverage(tokens_val_n, mask_val, profile, meta_val),
+            "holdout": compute_profile_coverage(tokens_hold_n, mask_hold, profile, meta_hold),
         }
 
         for split_name in ["train", "val_stop", "holdout"]:
@@ -2112,6 +2265,7 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
             "decision": decision,
             "decision_basis_split": "train_val_stop_only",
             "token_order": contract["token_order"],
+            "diagnostic_only": contract["diagnostic_only"],
             "scaler_type": "StandardScaler",
             "transform_type": "raw_or_price_coord_atr",
             "train_valid_tokens_p50": coverage_by_split["train"]["valid_tokens_p50"],
@@ -2120,7 +2274,11 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
             "train_pct_empty": coverage_by_split["train"]["pct_empty"],
             "val_pct_empty": coverage_by_split["val_stop"]["pct_empty"],
             "holdout_pct_empty": coverage_by_split["holdout"]["pct_empty"],
-            "train_pct_truncation": coverage_by_split["train"]["pct_truncation"],
+            "train_candidate_count_before_cap_p50": coverage_by_split["train"]["candidate_count_before_cap_p50"],
+            "train_selected_count_after_cap_p50": coverage_by_split["train"]["selected_count_after_cap_p50"],
+            "train_pct_truncation_true": coverage_by_split["train"]["pct_truncation_true"],
+            "train_pct_candidate_count_ge_90": coverage_by_split["train"]["pct_candidate_count_ge_90"],
+            "train_pct_selected_count_ge_90": coverage_by_split["train"]["pct_selected_count_ge_90"],
             "max_train_abs_gt10": max(
                 [r.get("frac_abs_gt10", 0) or 0 for r in stats_rows if r["profile"] == profile_name and r["split"] == "train" and r["feature_group"] in {"token", "row"}] or [0]
             ),

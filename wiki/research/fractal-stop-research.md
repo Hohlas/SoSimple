@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-06-17
-sources: 7
+last_updated: 2026-06-18
+sources: 8
 status: completed
 ---
 
@@ -126,6 +126,44 @@ Extended clean cycle: val_select 2019-2022 (4 года), val_eval 2023-2026 (и�
 - Yearly degradation: 0.646→0.513 от 2023 к 2026
 - Transformer показывает ХУДШИЙ lift в low-risk зоне (0.766 vs XGBoost 0.620 — lift=доля пробоев в нижних 30%; меньше=лучше)
 - Вердикт: FAIL. Transformer не бьёт XGBoost в текущей реализации. Методический risk: признаки не масштабированы под нейросеть
+
+### Stage 5.0a: feature preflight (2026-06-18) — ⚠️ DIAGNOSTIC
+
+Stage 5.0a не обучал модель. Он проверял final tensors до нового прогона Transformer: contracts профилей, clean-controls, relative-price координату, padding/mask, fit scaler только на train и распределения после нормализации.
+
+- Добавлен режим `--feature-preflight-only`
+- `time_only_clean` отделён от `time_plus_atr`
+- `nearest40_*`: `fractal0` теперь anchor и не входит в 40 соседей
+- Технических ошибок нет: `NaN`, `Inf`, `PADDING_NOT_ZERO`, contract-break не найдены
+- `all100_absolute_price_time` получил holdout shift по абсолютной цене — оставлен только как диагностический контроль
+- Лучшие кандидаты на rerun: `all100_relative_price_*` и `nearest40_relative_price_*`
+- Главная проблема corridor-профилей не пустота, а сильная truncation при `seq_len=40`:
+  - `corridor_5atr`: ~52%
+  - `corridor_10atr`: ~88%
+  - `corridor_15atr`: ~97%
+- Вывод: следующий rerun нужно строить вокруг clean-controls, no-price, relative-price и nearest40; широкие corridor-профили в текущем виде методически нечисты
+
+### Stage 5.0a addendum: corridor full preflight (2026-06-18) — ⚠️ DIAGNOSTIC
+
+Допроверка corridor отделила честный raw coverage до cap от уже выбранных токенов после `seq_len`. Builder теперь возвращает `candidate_count_before_cap`, `selected_count_after_cap`, `is_truncated`.
+
+- `corridor_5atr_relative_price_atr_full` vs старый `corridor_5atr_relative_price_no_time`:
+  - median raw candidates остаётся `40`
+  - true truncation падает `0.491 -> 0.000`
+  - снятие cap убирает искажение, но не меняет медиану профиля
+- `corridor_10atr_relative_price_atr_full` vs старый `corridor_10atr_relative_price_no_time`:
+  - median selected растёт `40 -> 62`
+  - true truncation падает `0.871 -> 0.000`
+  - старый capped-вариант реально терял заметную часть corridor
+- Чистые профили без ATR-входа:
+  - `corridor_5atr_relative_price_no_time_full`
+  - `corridor_10atr_relative_price_no_time_full`
+  - оба `DIAGNOSTIC_ONLY`, потому что имеют `row_dim=0`
+- Full corridor не превратился в `all100`:
+  - для `corridor_10atr_relative_price_no_time_full` доля строк с `candidate_count_before_cap >= 90` всего `~1.05%`
+- Новый практический вывод:
+  - обсуждать для rerun имеет смысл `corridor_5atr_relative_price_atr_full` и `corridor_10atr_relative_price_atr_full`
+  - старые capped corridor-профили больше не нужны как основные кандидаты
 
 ## Ключевые результаты
 
@@ -381,13 +419,15 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 14. Низкий фактический RR (median около 0.5R) объясняет, почему стратегия требует высокий win rate и остаётся около PF=1.0 даже при реальном breach-сигнале.
 15. Stage 4.5 показал, что trail_atr_0_2 как exit-политика даёт PF=1.831 на diagnostic — лучший результат Fractal Stop. Но Stage 4.6 чистый candidate-cycle показал, что этот результат не обобщается на 2023-2026.
 16. Stage 5.0 полноразмерный Transformer (d_model=64, 40 эпох) не бьёт XGBoost на holdout 2023-2026: AUC 0.6018 vs 0.6524, lift_30 0.766 vs 0.620 (меньше = лучше). **Методический risk:** признаки не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации.
-17. **5 последовательных этапов Fractal Stop провалились.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в текущей sequence-реализации.
+17. Stage 5.0a показал, что повторный прогон Transformer ещё имеет смысл, но только на суженной матрице профилей: clean-controls, `all100_no_price_time`, `all100_relative_price_*`, `nearest40_relative_price_*`. Абсолютную цену как основной вход и широкие corridor-профили использовать нельзя.
+18. **5 последовательных этапов Fractal Stop провалились как торговые кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в текущей sequence-реализации.
 
 **Все этапы (Stage 2→5.0) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал улучшения.
 
 ## Открытые вопросы
 
-- ~~Может ли Transformer улучшить breach-классификатор~~ — Stage 5.0 проверил: НЕТ. Полноразмерный Transformer не бьёт XGBoost.
+- Может ли Transformer улучшить breach-классификатор после Stage 5.0a rerun на `relative_price`/`nearest40` профилях, без абсолютной цены и с clean-controls.
+- Что делать с corridor-профилями: увеличивать `seq_len`, сужать коридор или оставить corridor только как диагностику.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
 - ~~Даст ли trailing stop положительное матожидание при том же breach-сигнале~~ — Stage 4.5/4.6 проверили: trail_atr_0_2 показывает высокий diagnostic PF, но не обобщается на 2023-2026.
@@ -405,3 +445,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-06-15-stage4_5-exit-mechanics.md](../../docs/reports/2026-06-15-stage4_5-exit-mechanics.md) — Stage 4.5 exit mechanics (trailing/breakeven/partial)
 - [2026-06-15-stage4_6-clean-candidate-cycle.md](../../docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md) — Stage 4.6 clean candidate-cycle (val_select 2019-2022, val_eval 2023-2026)
 - [2026-06-17-stage5-transformer-breach.md](../../docs/reports/2026-06-17-stage5-transformer-breach.md) — Stage 5.0 Transformer holdout (5 профилей, FAIL verdict)
+- [2026-06-18-stage5_0a-feature-preflight.md](../../docs/reports/2026-06-18-stage5_0a-feature-preflight.md) — Stage 5.0a preflight (contracts, normalization audit, relative-price vs absolute-price, corridor truncation)

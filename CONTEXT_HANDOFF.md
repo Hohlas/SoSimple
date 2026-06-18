@@ -4,50 +4,39 @@
 
 ## Текущий этап
 
-Fractal Stop находится после Stage 5.0a и перед согласованием нового Stage 5.0 rerun.
+Fractal Stop находится после Stage 5.0a feature preflight и после corridor full addendum. Обучение Transformer по этому addendum не запускалось.
 
-Stage 5.0a Feature Preflight выполнен. Статус результата: **DIAGNOSTIC_ONLY**. Цель этапа была не обучать модель, а проверить final tensors, contracts профилей, нормализацию, clean-controls и coverage до повторного запуска Transformer.
+Статус: **DIAGNOSTIC_ONLY**.
 
 ## Что сделано
 
-1. В `ML/baseline/benchmark_stage5_transformer_breach.py` добавлен режим:
-   - `--feature-preflight-only`
-2. Зафиксирована матрица Stage 5.0a из 13 профилей:
-   - `time_only_clean`
-   - `atr_only`
-   - `time_plus_atr`
-   - `all100_absolute_price_time`
-   - `all100_no_price_time`
-   - `all100_relative_price_no_time`
-   - `all100_relative_price_time`
-   - `corridor_5atr_relative_price_no_time`
-   - `corridor_10atr_relative_price_no_time`
-   - `corridor_15atr_relative_price_no_time`
-   - `corridor_10atr_relative_price_time`
-   - `nearest40_relative_price_no_time`
-   - `nearest40_relative_price_time`
-3. Добавлены profile contracts:
-   - `selector`
-   - `token_fields`
-   - `row_fields`
-   - `token_order`
-   - `seq_len`
-   - `padding_value`
-   - `mask_semantics`
-4. Исправлен контракт `nearest40_*`: `fractal0` теперь anchor и не входит в 40 соседей.
-5. Добавлены тесты Stage 5.0 runner; свежий статус:
-   - `64 passed`
+1. В `ML/baseline/benchmark_stage5_transformer_breach.py` режим `--feature-preflight-only` расширен:
+   - считает raw corridor coverage до cap;
+   - сохраняет честную truncation-метрику;
+   - строит 4 новых full-corridor профиля.
+2. Builder теперь возвращает `selection_meta`:
+   - `candidate_count_before_cap`
+   - `selected_count_after_cap`
+   - `is_truncated`
+3. Добавлены новые профили:
+   - `corridor_5atr_relative_price_no_time_full`
+   - `corridor_10atr_relative_price_no_time_full`
+   - `corridor_5atr_relative_price_atr_full`
+   - `corridor_10atr_relative_price_atr_full`
+4. `*_no_time_full` заданы с `row_dim=0` и помечены как `DIAGNOSTIC_ONLY`.
+5. Обновлены тесты runner-а; текущий статус:
+   - `72 passed`
 
-## Где лежат результаты Stage 5.0a
+## Где лежат результаты
 
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
 - `ML/reports/stage5_0a_feature_preflight.json`
 - `ML/reports/stage5_0a_feature_stats_normalized.csv`
 - `ML/reports/stage5_0a_profile_summary.csv`
 
-## Главные выводы Stage 5.0a
+## Главные выводы
 
-### 1. Технических блокеров нет
+### 1. Технически preflight чистый
 
 Не обнаружено:
 
@@ -55,102 +44,97 @@ Stage 5.0a Feature Preflight выполнен. Статус результата
 - `Inf`
 - `PADDING_NOT_ZERO`
 - нарушений profile contract
-- ошибок формулы `price_coord_atr`
 
-Значит, Stage 5.0 runner теперь строит корректные входы для повторного обучения.
+### 2. ATR остаётся главным источником holdout warning
 
-### 2. Clean-controls теперь действительно чистые
-
-- `time_only_clean` содержит только `hour_sin`, `hour_cos`, `dow_sin`, `dow_cos`
-- `time_plus_atr` отделён от него явно
-
-Старый риск, где `time_only` фактически содержал ATR, снят.
+Это относится ко всем профилям, где `ATR` идёт в `row_fields`. Это disclosure-факт, а не автоматический запрет на rerun.
 
 ### 3. Абсолютная цена остаётся только диагностическим контролем
 
-`all100_absolute_price_time` получил disclosure-warning по holdout regime shift абсолютной цены. Это подтверждает исходную гипотезу: на длинном периоде 2004-2026 абсолютная цена кодирует эпоху и не должна быть основным представлением геометрии.
+`all100_absolute_price_time` по-прежнему показывает holdout shift по абсолютной цене.
 
-### 4. Лучшие кандидаты на rerun — relative-price и nearest40
+### 4. Старые corridor-профили с `seq_len=40` больше не стоит использовать как основные
 
-Наиболее чистые профили по contract и preflight:
+Честная truncation после исправления метрики:
+
+- `corridor_5atr_relative_price_no_time`: `0.491`
+- `corridor_10atr_relative_price_no_time`: `0.871`
+
+Причина: раньше эти профили слишком часто упирались в cap.
+
+### 5. Full corridor дал два разных вывода
+
+- `corridor_5atr_relative_price_atr_full`:
+  - median raw candidates = `40`
+  - median selected = `40`
+  - truncation = `0.000`
+  - снятие cap мало меняет медиану, но убирает искажение на части строк
+
+- `corridor_10atr_relative_price_atr_full`:
+  - median raw candidates = `62`
+  - median selected = `62`
+  - truncation = `0.000`
+  - старый capped-вариант реально терял информацию
+
+### 6. Full corridor не превратился в фактический all100
+
+Формальный контроль “почти all100”:
+
+- `corridor_10atr_relative_price_no_time_full`:
+  - `% candidate_count_before_cap >= 90` = `0.0105`
+  - `% selected_count_after_cap >= 90` = `0.0105`
+
+Значит `corridor_10atr_full` остаётся отдельным представлением, а не замаскированным `all100`.
+
+### 7. Профили с `row_dim=0` пока нельзя автоматически тащить в обучение
+
+`corridor_*_no_time_full` пригодны для диагностики, но не для немедленного training rerun. Для обучения нужен отдельный осознанный support `row_dim=0` в модельном слое Stage 5.
+
+## Что делать дальше
+
+Обсуждать Stage 5.0 rerun уже с новой corridor-матрицей.
+
+### Можно обсуждать для training rerun
 
 - `all100_no_price_time`
 - `all100_relative_price_no_time`
 - `all100_relative_price_time`
 - `nearest40_relative_price_no_time`
 - `nearest40_relative_price_time`
+- `corridor_5atr_relative_price_atr_full`
+- `corridor_10atr_relative_price_atr_full`
 
-У них:
+### Оставить только как diagnostic-only
 
-- корректный contract
-- малые хвосты на train
-- нет truncation-проблемы у `nearest40`
-
-### 5. Corridor-профили не пустые, но слишком часто обрезаются
-
-Главная проблема corridor сейчас — не бедность данных, а высокая truncation:
-
-- `corridor_5atr_relative_price_no_time`: train truncation `0.519`
-- `corridor_10atr_relative_price_no_time`: train truncation `0.880`
-- `corridor_15atr_relative_price_no_time`: train truncation `0.967`
-
-Это означает, что `corridor_10atr` и `corridor_15atr` в текущем виде не представляют весь коридор, а почти всегда режутся по `seq_len=40`.
-
-## Что НЕ делать дальше
-
-- Не запускать старый Stage 5.0 rerun вслепую по всем профилям.
-- Не использовать `all100_absolute_price_time` как обучающий кандидат.
-- Не включать `corridor_10atr_relative_price_*` и `corridor_15atr_relative_price_no_time` в rerun до отдельного решения по truncation.
-- Не использовать holdout 2023-2026 для ручной подгонки профилей или scaler.
-
-## Следующий шаг
-
-Остановиться на human review и согласовать матрицу Stage 5.0 rerun.
-
-Рекомендуемая матрица для повторного обучения:
-
-1. `time_only_clean`
-2. `atr_only`
-3. `time_plus_atr`
-4. `all100_no_price_time`
-5. `all100_relative_price_no_time`
-6. `all100_relative_price_time`
-7. `nearest40_relative_price_no_time`
-8. `nearest40_relative_price_time`
-
-Допустимо оставить только как дополнительный diagnostic-кандидат:
-
-9. `corridor_5atr_relative_price_no_time`
-
-Не рекомендованы к rerun в текущем виде:
-
+- `time_only_clean`
+- `atr_only`
+- `time_plus_atr`
 - `all100_absolute_price_time`
-- `corridor_10atr_relative_price_no_time`
-- `corridor_10atr_relative_price_time`
+- `corridor_5atr_relative_price_no_time_full`
+- `corridor_10atr_relative_price_no_time_full`
 - `corridor_15atr_relative_price_no_time`
+- `corridor_10atr_relative_price_time`
+
+### Не использовать как основной rerun-кандидат
+
+- `corridor_5atr_relative_price_no_time`
+- `corridor_10atr_relative_price_no_time`
 
 ## Файлы
 
 Код:
 
 - `ML/baseline/benchmark_stage5_transformer_breach.py`
-- `ML/models/fractal_breach_transformer.py`
 - `tests/test_stage5_transformer_breach.py`
 
 Документы:
 
-- `docs/reports/2026-06-17-stage5-transformer-breach.md`
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
-- `docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md`
+- `docs/ML/benchmark_stage5_transformer_breach.py.md`
+- `docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md`
 
 Артефакты:
 
 - `ML/reports/stage5_0a_feature_preflight.json`
 - `ML/reports/stage5_0a_feature_stats_normalized.csv`
 - `ML/reports/stage5_0a_profile_summary.csv`
-
-## Git
-
-Ветка: `feature/fractal-stop-fav-spec`.
-
-На момент обновления handoff есть незакоммиченные изменения кода и документации, связанные со Stage 5.0a.

@@ -1,6 +1,6 @@
 # benchmark_stage5_transformer_breach.py
 
-**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и diagnostic runner Stage 5.0a Feature Preflight. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их и сохранять аудит распределений по профилям признаков.
+**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и diagnostic runner Stage 5.0a Feature Preflight. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их, считать raw corridor coverage до cap и сохранять аудит распределений по профилям признаков.
 
 **Статус:** Завершён (Stage 5.0 FAIL)
 
@@ -19,7 +19,12 @@
 
 **Профили признаков:**
 - Stage 5.0 training: legacy-профили `all100_base10_time`, `all100_base10_no_time`, `newest20_base10_time`, `nearest40_base10_time`, `corridor_10atr_base10_time`
-- Stage 5.0a preflight: clean-controls `time_only_clean`, `atr_only`, `time_plus_atr`, а также матрица `all100_*`, `nearest40_*`, `corridor_*` с `relative_price`
+- Stage 5.0a preflight: clean-controls `time_only_clean`, `atr_only`, `time_plus_atr`, а также матрица `all100_*`, `nearest40_*`, `corridor_*` с `relative_price`, включая `corridor_*_full`
+
+**Особенности preflight:**
+- builder возвращает `selection_meta` с `candidate_count_before_cap`, `selected_count_after_cap`, `is_truncated`
+- truncation для corridor считается только по правилу `candidate_count_before_cap > seq_len`
+- `corridor_*_no_time_full` имеют `row_dim=0` и допустимы только как `DIAGNOSTIC_ONLY`
 
 **Baseline:** XGBoost на тех же признаках (base_raw_plus_time, no_time, time_only) с тем же сплитом.
 

@@ -21,6 +21,7 @@ from ML.baseline.benchmark_stage5_transformer_breach import (
     extract_full29_fields,
     build_row_features,
     build_profile_features,
+    compute_profile_coverage,
     compute_corridor_stats,
     get_profile_contract,
     get_profile_seq_len,
@@ -88,6 +89,38 @@ def _make_synthetic_df(n_rows: int = 10, n_fractals: int = 10) -> pd.DataFrame:
             ]
             rows[f'fractal{i}'].append(_make_fractal_str(fields))
 
+    return pd.DataFrame(rows)
+
+
+def _make_ordered_corridor_df(n_rows: int = 2, n_fractals: int = 100, step: float = 0.1,
+                              atr: float = 1.0) -> pd.DataFrame:
+    """Create rows where fractal prices grow from fractal0 with fixed step."""
+    rows = {'time': [], 'signal': [], 'ATR': [], TARGET_COLUMN: []}
+    for i in range(n_fractals):
+        rows[f'fractal{i}'] = []
+
+    for r in range(n_rows):
+        rows['time'].append(f'2020.{r+1:02d}.01 12:00')
+        rows['signal'].append(-1)
+        rows['ATR'].append(atr)
+        rows[TARGET_COLUMN].append(r % 2)
+        for i in range(n_fractals):
+            price = 390.0 + i * step
+            rows[f'fractal{i}'].append(_make_fractal_str([
+                (0, 10_000_000),
+                (1, price),
+                (2, -1),
+                (3, 0.5),
+                (4, 0.25),
+                (5, 1),
+                (6, 0),
+                (7, 0),
+                (8, 1),
+                (9, 1),
+                (10, 0.5),
+                (21, atr),
+                (22, i + 1),
+            ]))
     return pd.DataFrame(rows)
 
 
@@ -159,7 +192,7 @@ class TestTensorShapes:
     def test_all100_shapes(self):
         df = _make_synthetic_df(10, 100)
         profile = find_profile('all100_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape == (10, 100, 10)
         assert row_features.shape == (10, 5)
         assert mask.shape == (10, 100)
@@ -167,7 +200,7 @@ class TestTensorShapes:
     def test_newest20_shapes(self):
         df = _make_synthetic_df(10, 50)
         profile = find_profile('newest20_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape == (10, 20, 10)
         assert row_features.shape == (10, 5)
         assert mask.shape == (10, 20)
@@ -175,7 +208,7 @@ class TestTensorShapes:
     def test_nearest40_shapes(self):
         df = _make_synthetic_df(10, 100)
         profile = find_profile('nearest40_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape == (10, 40, 10)
         assert row_features.shape == (10, 5)
         assert mask.shape == (10, 40)
@@ -183,7 +216,7 @@ class TestTensorShapes:
     def test_corridor_shapes(self):
         df = _make_synthetic_df(10, 100)
         profile = find_profile('corridor_10atr_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape == (10, 40, 10)
         assert row_features.shape == (10, 5)
         assert mask.shape == (10, 40)
@@ -265,14 +298,14 @@ class TestCorridorValidation:
     def test_empty_corridor_mask_valid(self):
         df = self._corridor_df(atr=0.001)
         profile = find_profile('corridor_10atr_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape[0] == 10
         assert not np.isnan(tokens).any()
 
     def test_single_fractal_corridor_no_nan(self):
         df = self._corridor_df(atr=0.01)
         profile = find_profile('corridor_10atr_base10_time')
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         assert not np.isnan(tokens).any()
 
     def test_low_coverage_detected(self):
@@ -486,7 +519,7 @@ class TestNormalization:
         from ML.baseline.benchmark_stage5_transformer_breach import build_profile_features, find_profile
         df = _make_synthetic_df(5, 100)
         profile = find_profile('all100_base10_relative_price_time')
-        tokens, rf, mask = build_profile_features(df, profile)
+        tokens, rf, mask, _selection_meta = build_profile_features(df, profile)
         assert tokens.shape == (5, 100, 10)
         assert rf.shape == (5, 5)
 
@@ -532,7 +565,7 @@ class TestNormalization:
             df.at[i, 'fractal1'] = ':'.join(str(v) for v in fields)
 
         profile = find_profile('all100_base10_relative_price_time')
-        tokens, rf, mask = build_profile_features(df, profile)
+        tokens, rf, mask, _selection_meta = build_profile_features(df, profile)
 
         # The price column (index 0 of base10) should be (price_i - f0_price) / ATR
         # all100 preserves natural order: fractal0=pos0, fractal1=pos1
@@ -567,7 +600,7 @@ class TestPhase3Smoke:
         df[TARGET_COLUMN] = df[TARGET_COLUMN].astype(np.float32)  # ensure non-null
         profile = find_profile('corridor_15atr_base10_time')
 
-        tokens, rf, mask = build_profile_features(df, profile)
+        tokens, rf, mask, _selection_meta = build_profile_features(df, profile)
         # Simulate the normalize call that Phase 3 would make via _train_and_eval_profile
         (tn, rfn, tv, rfv, th, rfh), stats = normalize_profile_features(
             tokens, rf, mask,
@@ -617,13 +650,13 @@ class TestRowFeatures:
     def test_time_row_features(self):
         df = _make_synthetic_df(5, 10)
         profile = find_profile('all100_base10_time')
-        _, row_feat, _ = build_profile_features(df, profile)
+        _, row_feat, _, _selection_meta = build_profile_features(df, profile)
         assert row_feat.shape == (5, 5)
 
     def test_no_time_row_features(self):
         df = _make_synthetic_df(5, 10)
         profile = find_profile('all100_base10_no_time')
-        _, row_feat, _ = build_profile_features(df, profile)
+        _, row_feat, _, _selection_meta = build_profile_features(df, profile)
         assert row_feat.shape == (5, 1)
 
 
@@ -787,8 +820,33 @@ class TestStage50aPreflightContracts:
             assert set(contract.keys()) == {
                 "name", "selection", "selector", "token_fields",
                 "row_fields", "token_order", "seq_len",
-                "padding_value", "mask_semantics",
+                "padding_value", "mask_semantics", "diagnostic_only",
             }
+
+    def test_full_corridor_no_time_profiles_exclude_atr_and_calendar(self):
+        for profile_name in [
+            "corridor_5atr_relative_price_no_time_full",
+            "corridor_10atr_relative_price_no_time_full",
+        ]:
+            profile = find_profile(profile_name)
+            assert profile["row_fields"] == []
+            assert profile["seq_len"] == 100
+            assert "price_coord_atr" in profile["token_fields"]
+
+    def test_full_corridor_atr_profiles_keep_atr_row_field(self):
+        for profile_name in [
+            "corridor_5atr_relative_price_atr_full",
+            "corridor_10atr_relative_price_atr_full",
+        ]:
+            profile = find_profile(profile_name)
+            assert profile["row_fields"] == ["ATR"]
+            assert profile["seq_len"] == 100
+            assert "price_coord_atr" in profile["token_fields"]
+
+    def test_full_corridor_contract_marks_diagnostic_only_only_for_row_dim_zero_profiles(self):
+        assert get_profile_contract(find_profile("corridor_5atr_relative_price_no_time_full"))["diagnostic_only"] is True
+        assert get_profile_contract(find_profile("corridor_10atr_relative_price_no_time_full"))["diagnostic_only"] is True
+        assert get_profile_contract(find_profile("corridor_5atr_relative_price_atr_full"))["diagnostic_only"] is False
 
     def test_all100_profiles_order_by_freshness(self):
         for profile_name in [
@@ -804,7 +862,7 @@ class TestStage50aPreflightContracts:
     def test_corridor_profiles_anchor_first_then_distance(self):
         df = _make_synthetic_df(2, 100)
         profile = find_profile("corridor_10atr_relative_price_no_time")
-        tokens, _, mask = build_profile_features(df, profile)
+        tokens, _, mask, _selection_meta = build_profile_features(df, profile)
         valid = tokens[0, mask[0]]
         assert len(valid) >= 1
         assert valid[0, 0] == pytest.approx(0.0, abs=1e-6)
@@ -833,7 +891,7 @@ class TestStage50aPreflightContracts:
                 (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
             ])
         profile = find_profile("all100_relative_price_time")
-        tokens, _, mask = build_profile_features(df, profile)
+        tokens, _, mask, _selection_meta = build_profile_features(df, profile)
         valid_prices = tokens[0, mask[0], 0]
         assert valid_prices[0] == pytest.approx(0.0, abs=1e-6)
         assert valid_prices[1] == pytest.approx(5.0, abs=1e-6)
@@ -846,7 +904,7 @@ class TestStage50aPreflightContracts:
             ("corridor_15atr_relative_price_no_time", 15.0),
         ]:
             profile = find_profile(profile_name)
-            tokens, _, mask = build_profile_features(df, profile)
+            tokens, _, mask, _selection_meta = build_profile_features(df, profile)
             valid = np.abs(tokens[:, :, 0][mask])
             if len(valid) > 0:
                 assert np.max(valid) <= limit + 1e-6
@@ -859,7 +917,7 @@ class TestStage50aPreflightContracts:
             ("time_plus_atr", 5),
         ]:
             profile = find_profile(profile_name)
-            tokens, row_features, mask = build_profile_features(df, profile)
+            tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
             assert tokens.shape == (5, 0, 0)
             assert mask.shape == (5, 0)
             assert row_features.shape == (5, row_dim)
@@ -867,10 +925,77 @@ class TestStage50aPreflightContracts:
     def test_normalization_keeps_padding_zero_for_preflight_profiles(self):
         df = _make_synthetic_df(6, 100)
         profile = find_profile("nearest40_relative_price_time")
-        tokens, row_features, mask = build_profile_features(df, profile)
+        tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
         (t_train, _, _, _, _, _), _stats = normalize_profile_features(
             tokens, row_features, mask,
             tokens, row_features, mask,
             tokens, row_features, mask,
         )
         assert np.allclose(t_train[~mask], 0.0)
+
+    def test_full_corridor_no_time_profiles_have_zero_row_dim(self):
+        df = _make_synthetic_df(3, 100)
+        for profile_name in [
+            "corridor_5atr_relative_price_no_time_full",
+            "corridor_10atr_relative_price_no_time_full",
+        ]:
+            profile = find_profile(profile_name)
+            tokens, row_features, mask, _selection_meta = build_profile_features(df, profile)
+            assert tokens.shape == (3, 100, 10)
+            assert row_features.shape == (3, 0)
+            assert mask.shape == (3, 100)
+
+    def test_full_corridor_can_select_more_than_40_fractals(self):
+        df = _make_ordered_corridor_df(n_rows=2, n_fractals=100, step=0.1, atr=1.0)
+        profile = find_profile("corridor_10atr_relative_price_no_time_full")
+        tokens, _, mask, selection_meta = build_profile_features(df, profile)
+        assert tokens.shape == (2, 100, 10)
+        assert int(selection_meta["candidate_count_before_cap"][0]) == 100
+        assert int(selection_meta["selected_count_after_cap"][0]) == 100
+        assert int(mask[0].sum()) == 100
+
+
+class TestCorridorCoverageMeta:
+    def test_candidate_count_equal_seq_len_is_not_truncated(self):
+        profile = find_profile("corridor_10atr_relative_price_no_time_full")
+        counts = np.array([100, 100], dtype=np.int32)
+        selected = np.array([100, 100], dtype=np.int32)
+        meta = {
+            "candidate_count_before_cap": counts,
+            "selected_count_after_cap": selected,
+            "is_truncated": counts > profile["seq_len"],
+        }
+        coverage = compute_profile_coverage(
+            np.zeros((2, 100, 10), dtype=np.float32),
+            np.ones((2, 100), dtype=bool),
+            profile,
+            meta,
+        )
+        assert coverage["pct_truncation_true"] == 0.0
+
+    def test_candidate_count_above_seq_len_is_truncated(self):
+        profile = find_profile("corridor_10atr_relative_price_no_time")
+        counts = np.array([41, 60], dtype=np.int32)
+        selected = np.array([40, 40], dtype=np.int32)
+        meta = {
+            "candidate_count_before_cap": counts,
+            "selected_count_after_cap": selected,
+            "is_truncated": counts > profile["seq_len"],
+        }
+        coverage = compute_profile_coverage(
+            np.zeros((2, 40, 10), dtype=np.float32),
+            np.ones((2, 40), dtype=bool),
+            profile,
+            meta,
+        )
+        assert coverage["pct_truncation_true"] == 1.0
+
+    def test_seq_len_100_truncation_is_not_based_on_selected_equals_seq_len(self):
+        df = _make_ordered_corridor_df(n_rows=2, n_fractals=100, step=0.1, atr=1.0)
+        profile = find_profile("corridor_5atr_relative_price_no_time_full")
+        tokens, _, mask, selection_meta = build_profile_features(df, profile)
+        coverage = compute_profile_coverage(tokens, mask, profile, selection_meta)
+        assert int(selection_meta["candidate_count_before_cap"][0]) == 51
+        assert int(selection_meta["selected_count_after_cap"][0]) == 51
+        assert coverage["pct_truncation_true"] == 0.0
+        assert coverage["candidate_count_before_cap_p50"] == pytest.approx(51.0)

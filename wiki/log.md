@@ -518,3 +518,11 @@
 ### 2026-06-15: Update Stage 4.3 oracle attribution
 - Updated `wiki/research/fractal-stop-research.md`: removed the incomplete-attribution caveat after `diagnose_stage4_3.py` was extended with category PnL/yearly/bootstrap; recorded breach false-safe, missed oracle-safe, fav false-accept, overpredict and underpredict category results.
 - Updated `wiki/index.md`: Stage 4.3 wording now reflects joint breach-ranking and fav/TP weakness.
+### 2026-06-18: Ingest Stage 5.0a feature preflight
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.0a preflight, clean-controls, `nearest40` anchor contract, relative-price rerun candidates, absolute-price disclosure, and corridor truncation results.
+- Updated `wiki/index.md`: coverage wording changed to Stage 1-5.0a.
+- Ran `wiki/wiki.py generate`.
+### 2026-06-18: Update Stage 5.0a corridor full addendum
+- Updated `wiki/research/fractal-stop-research.md`: added honest raw corridor coverage, `corridor_*_full`, distinction between ATR-in-coordinate and ATR-as-row-input, and rerun guidance through `corridor_*_atr_full`.
+- Updated `wiki/index.md`: wording now reflects corridor full addendum and rejection of old capped corridor as main rerun candidate.
+- Ran `wiki/wiki.py generate`.
