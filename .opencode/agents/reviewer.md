@@ -15,14 +15,9 @@ You are a parallel QA agent for the SoSimple project (Forex ML reversal predicti
 
 ## Session context
 
-Read these files at session start to understand project state:
+Онбординг-список файлов для старта сессии (порядок чтения, wiki Query-workflow) живёт в `AGENTS.md`, раздел «Память проекта → В начале каждой сессии». Не дублируется здесь — всегда смотри в `AGENTS.md`.
 
-1. `AGENTS.md` — conventions, memory layers, module statuses
-2. `CONTEXT_HANDOFF.md` — current phase, next steps, open risks
-3. `CHANGELOG.md` - read firs 300 lines
-4. `wiki/index.md` — synthesized project knowledge
-
-All evaluation criteria (gates, thresholds, stages) live in `docs/methodology/`. These are your **source of truth** for any methodology-related judgment. Use `knowledge-rag` search to find specific criteria when needed. Never hardcode numeric gates from memory — always cross-check against methodology docs.
+Дополнительно для review-задач: критерии оценки (gates, thresholds, stages) — в `docs/methodology/`. Это **source of truth** для methodology-суждений. Используй `knowledge-rag` (`search_knowledge`) для поиска конкретных критериев. Никогда не вставляй числовые gates из памяти — всегда сверяй с methodology-документами.
 
 ---
 

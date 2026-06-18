@@ -1,8 +1,8 @@
-# AI Agent Guide (Codex First)
-> Главный индекс SoSimple для Codex.
+# AI Agent Guide
+> Главный индекс SoSimple для AI-агентов.
 
 ## Цель проекта
-ML-бот для прогнозирования разворотов Forex (H1). Детали: [PRD.md](docs/PRD.md).
+ML-бот для прогнозирования движения цены Forex. Personal research, не production — это допускает диагностические режимы, ручную верификацию и отсутствие SLA, но не снижает требований к честности экспериментов.
 
 ## Качество решений
 - Подбирай решения прагматично, исходя из лучших практик. Приоритет: корректность, воспроизводимость и долгосрочная поддерживаемость, а не минимальная сложность реализации.
@@ -23,142 +23,116 @@ ML-бот для прогнозирования разворотов Forex (H1).
 - НЕ ИСПОЛЬЗУЙ: жаргон, англицизмы и узкие термины. Английские слова допустимы только для имён файлов, функций, колонок, команд, библиотек и устойчивых обозначений проекта: CSV, MT4, ATR, PF, PnL.
 - Если технический термин неизбежен, кратко объясняй его при первом использовании.
 
-## Использование `search_knowledge` (`knowledge-rag`)
-`knowledge-rag` — это слой поиска по проекту: `docs/`, `wiki/`, коду и отчётам. Он нужен, чтобы быстро найти кандидаты на чтение, но не является источником истины.
+## Система поиска
 
-Правило:
-- сначала найди кандидаты через `search_knowledge`;
-- затем открой найденные файлы;
-- выводы делай только после проверки первоисточников.
+Инструменты навигации по проекту. Выбирай по типу задачи:
 
-Подбор режима поиска:
-- `hybrid_alpha=0.0` — точные имена, пути, метрики, функции, файлы
-- `hybrid_alpha=0.3` — технические запросы с устойчивыми терминами проекта
-- `hybrid_alpha=0.5` — смешанные запросы по коду и документации
-- `hybrid_alpha=1.0` — смысловой поиск по идеям, гипотезам и выводам
+| Задача | Инструмент |
+|--------|-----------|
+| Найти файл по имени/пути/шаблону (`*.py`, `docs/**/*.md`) | `Glob` |
+| Найти символ/строку в содержимом кода | `Grep` |
+| Содержательный поиск по `docs/`, `wiki/`, отчётам, коду | `knowledge-rag` → `search_knowledge` |
+| Прочитать конкретный известный файл целиком или фрагментом | `Read` |
 
-Примеры для SoSimple:
-- exact path / symbol:
-  `search_knowledge("signal_tracer.py ML_TRADE lib_pic", hybrid_alpha=0.0)`
-- reports / stage results:
-  `search_knowledge("stage 4 breach fav profit factor", hybrid_alpha=0.3)`
-- plans / specs:
-  `search_knowledge("triple barrier plan spec", hybrid_alpha=0.3)`
-- wiki synthesis:
-  `search_knowledge("signal archetype research synthesis", hybrid_alpha=0.5)`
+`knowledge-rag` — это поисковик, **не источник истины**. Правило:
+- сначала найди кандидатов через `search_knowledge`;
+- затем открой найденные файлы через `Read`;
+- выводы делай только после проверки первоисточника.
 
-## Обязательные правила
-- Для чтения CSV файлов используй скилл .codex/skills/csv-processing/SKILL.md
-- При добавлении нового файла добавить его в индекс: использовать Mode 4 скилла [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md)
-- Рутинная синхронизация после каждого изменения кода [`.codex/skills/update-docs-on-code-change/SKILL.md`](.codex/skills/update-docs-on-code-change/SKILL.md).
-- Не загружать в контекст файлы больше 1MB целиком.
-- Файлы `*.mqh`, `*.mq4` из `MT/` открывать только если есть явная `#include`-связь с текущим файлом.
-- Перед обращением к содержимому каталог сначала читать локальный `README.md` этого каталога.
-- Предпочитать точечное чтение: `rg`, `head`, `sed`, а не полный вывод больших файлов.
-- Не трогать `docs/archive/` и архивные модули без явной просьбы.
-- `MODULE_INDEX.md` читать точечно через `rg`/`sed`; целиком открывать только при пересборке индекса или аудите всей структуры.
-- Не используй worktree.
-- Используй окружение: ~/git/SoSimple/.venv/bin/activate
-- `git commit`,`git push` не делать без явной просьбы пользователя.
-- Для bugfix не делать рефакторинг "заодно".
-- При закрытии этапа финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` использовать [`.codex/skills/stage-reporting/SKILL.md`](.codex/skills/stage-reporting/SKILL.md).
-- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` (см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)).
+Подбор режима `search_knowledge` (`hybrid_alpha`):
 
+| `hybrid_alpha` | Тип запроса | Пример |
+|----------------|-------------|--------|
+| `0.0` | Точные имена, метрики, функции, файлы | `search_knowledge("signal_tracer")` |
+| `0.3` | Технические запросы с устойчивыми терминами проекта | `search_knowledge("stage 4 breach fav profit factor")` |
+| `0.5` | Смешанные запросы по коду и документации | `search_knowledge("signal archetype research synthesis")` |
+| `1.0` | Смысловой поиск по идеям, гипотезам и выводам | `search_knowledge("bimodal signal failure flat drift")` |
 
-## Память проекта
+Если в keyword-режиме (низкий `hybrid_alpha`) приходят пустые результаты, попробуй другой термин, или повысь `hybrid_alpha`. В semantic-режиме (высокий `hybrid_alpha`) фразы из нескольких слов работают нормально: embedding ловит смысл всей фразы, а не требует совпадения каждого слова.
 
-| Слой | Назначение | Точка входа |
-|------|-----------|-------------|
-| `wiki/index.md` | Каталог синтезированных wiki-страниц: research + concepts. Не дублирует MODULE_INDEX, DATA_FLOW, CONTEXT_HANDOFF | [`wiki/index.md`](wiki/index.md) |
-| `wiki/REPO_integrity.md` | Карта всех файлов репо с хешами — для обнаружения изменений. Не для навигации по коду | `python wiki/wiki.py generate` |
-| `knowledge-rag` | Быстрый поиск кандидатов по `docs/`, `wiki/`, коду и отчётам; не источник истины | MCP server `knowledge-rag`, tool `search_knowledge` |
-| `CONTEXT_HANDOFF.md` | Текущее состояние: где мы, что дальше, открытые риски | [`CONTEXT_HANDOFF.md`](CONTEXT_HANDOFF.md) |
-| `docs/reports/` | Канонические отчёты завершённых этапов с результатами и выводами | [`docs/reports/`](docs/reports/) |
-| `CHANGELOG.md` | История значимых изменений: фичи, багфиксы, результаты экспериментов | [`CHANGELOG.md`](CHANGELOG.md) — первые 300 строк |
-| `MODULE_INDEX.md` | Реестр всех модулей со статусами, назначением и точками входа | [`MODULE_INDEX.md`](MODULE_INDEX.md) |
-| `docs/DATA_FLOW.md` | Схема потока данных MT4→ML→MT4 и навигация по этапам pipeline | [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) |
-| `docs/README.md` | Карта артефактов внутри `docs/` и правила их обновления | [`docs/README.md`](docs/README.md) |
+## В начале каждой сессии
 
-**В начале каждой сессии** (wiki Query-workflow, см. [`.codex/skills/wiki/SKILL.md`](.codex/skills/wiki/SKILL.md)):
+wiki Query-workflow (см. скилл `wiki`):
 1. Прочитай `wiki/index.md` — понять существующий синтез.
 2. Прочитай `CONTEXT_HANDOFF.md` — текущее состояние и следующий шаг.
 3. Через `search_knowledge` найти релевантные `wiki/`, `docs/`, `docs/reports/`, `docs/superpowers/`, код; для обзорных задач использовать несколько узких запросов, а не один общий → открыть первоисточники.
-4. Если новые отчёты из `docs/reports/` не покрыты в `wiki/index.md` → выполнить wiki **Ingest**.
 
-## Приоритет источников
-1. Явный запрос пользователя в текущем диалоге.
-2. Актуальные документы проекта: `AGENTS.md`, `README.md`, `docs/` (кроме `docs/archive/`).
-3. Рабочие планы и исследовательские материалы: `docs/superpowers/roadmap.md`, `docs/superpowers/plans/`, `docs/superpowers/specs/`.
-4. Синтезированные знания: `wiki/`.
+## Обязательные правила
+
+### Навигация и чтение
+- Перед обращением к содержимому каталога сначала читать локальный `README.md` этого каталога.
+- Не загружать в контекст файлы больше 1MB целиком.
+- Предпочитать точечное чтение (`Grep`, `Read` с `offset`/`limit`), а не полный вывод больших файлов.
+- `MODULE_INDEX.md` читать точечно; целиком открывать только при пересборке индекса или аудите всей структуры.
+- Не трогать `docs/archive/` и архивные модули без явной просьбы.
+
+### Работа с кодом
+- Использовать окружение `~/git/SoSimple/.venv` (активация: `source ~/git/SoSimple/.venv/bin/activate` или вызов `./.venv/bin/python`).
+- Линтера и тайп-чекера в проекте нет; не пытаться их запускать. Проверка кода — через тесты.
+- После изменений в `processing/`, `API/`, `ML/`, `statistics/` запускать тесты: `./.venv/bin/python -m pytest tests/ -q`.
+- Для bugfix не делать рефакторинг «заодно».
+- При добавлении нового файла добавить его в индекс: Mode 4 скилла `update-docs-on-code-change`.
+- Рутинная синхронизация `docs/` / `MODULE_INDEX.md` после каждого изменения кода — скилл `update-docs-on-code-change`.
+
+### Работа с данными
+- Для чтения CSV файлов использовать скилл `csv-processing`.
+
+### Закрытие этапа
+- Финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` — скилл `stage-reporting`.
+- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` — скилл `wiki`.
+
+### Git и окружение
+- `git commit`, `git push` не делать без явной просьбы пользователя.
+- Не использовать worktree.
 
 ## Структура проекта
 
-Легенда статусов:
-`✅` активный, `🚧` в разработке, `🏁` завершен, `📦` архив, `⚠️` требует внимания.
+Топологический обзор. Опасные зоны помечены прямо в дереве.
 
 ```
 .
-├── .claude/memory/      # Долговечная память проекта
-├── .codex/skills/       # Локальные workflow/skills для Codex
+
+├── .opencode/skills/    # Локальные workflow/skills
 ├── wiki/                # LLM Wiki: синтез знаний проекта
 │   ├── REPO_integrity.md #   авто-генерированная integrity map репо
 │   ├── index.md         #   LLM-каталог wiki-страниц
 │   ├── log.md           #   хронология операций
 │   ├── wiki.py          #   generate / verify
-│   ├── concepts/        #   синтез: сигналы, фильтры, политики 
-│   └── research/        #   синтез отчётов из docs/reports/ 
-├── API/                 # ✅ Генерация ML-сигналов для MT4
-├── MT/MQL4/             # ✅ MetaTrader4 — формирование датасета, торговый робот
-│   ├── Experts/         #    MQL4 советники
-│   ├── Files/           #    Данные (Nero.csv, ml_signals.csv)
-│   └── Include/         #    MQL4 библиотеки (.mqh)
-├── processing/          # 🏁 Препроцессинг: sort → label → normalize → split
-├── statistics/          # ✅/🏁 Статистика, EDA, signal_tracer
-├── ML/                  # ✅ Machine Learning — 18 скриптов по слоям
-│   ├── models/          # ✅ Transformer (лучший), BiLSTM, CNN1D, Hybrid
-│   ├── baseline/        # 🏁 Baseline-модели (5 алгоритмов)
-│   ├── conformal/       # 🏁 Conformal Prediction
-│   ├── checkpoints/     #    Веса моделей (.pt)
-│   ├── reports/         #    Отчёты экспериментов (.md, .json)
-│   └── plots/           #    Графики обучения
-├── tests/               # ✅ Unit/smoke-тесты: processing, API, statistics
-├── DATA/                #    Обработанные данные
+│   ├── concepts/        #   синтез: сигналы, фильтры, политики
+│   └── research/        #   синтез отчётов из docs/reports/
+├── API/                 # Генерация ML-сигналов для MT4, REST API
+├── MT/MQL4/             # MetaTrader4 — формирование датасета, торговый робот
+│   ├── Experts/         #   MQL4 советники
+│   ├── Files/           #   Данные (Nero.csv, ml_signals.csv)
+│   └── Include/         #   MQL4 библиотеки (.mqh) — открывать только по #include-связи
+├── processing/          # Препроцессинг: sort → label → normalize → split
+├── statistics/          # Статистика, EDA, signal_tracer
+├── ML/                  # Machine Learning: модели, обучение, baselines, conformal
+│   ├── models/          #   Архитектуры (Transformer, BiLSTM, CNN1D, Hybrid, entry_path, take_skip)
+│   ├── baseline/        #   Baseline-модели и diagnostic-этапы Fractal Stop
+│   ├── conformal/       #   Conformal Prediction
+│   ├── checkpoints/     #   Веса моделей (.pt)
+│   ├── reports/         #   Отчёты экспериментов (.md, .json)
+│   └── plots/           #   Графики обучения
+├── tests/               # Unit/smoke-тесты
+├── DATA/                # Обработанные данные (генерируемые)
 ├── docs/                # Документация (каталоги = каталоги кода)
 │   ├── DATA_FLOW.md     #    Поток данных + навигация по этапам
 │   ├── README.md        #    Карта артефактов docs/ + правила обновления
 │   ├── PRD.md           #    Product Requirements
 │   ├── reports/         #    Канонические отчёты этапов
-│   ├── statistics/      #    Docs для statistics/
-│   ├── processing/      #    Docs для processing/
-│   ├── API/             #    Docs для API/
-│   ├── ML/              #    Docs для ML/
-│   ├── MT/              #    Работа с тестером MT4 и mqh библиотеками
-│   ├── audit/           #    Аудиты и ревью (НЕ СМОТРИ без явной просьбы)
 │   ├── methodology/     #    Методология экспериментов
 │   ├── schemas/         #    Схемы данных и контракты
-│   ├── tests/           #    Docs для tests/
 │   ├── superpowers/     #    Канонический контур roadmap / plans / specs
-│   └── archive/         # 📦 НЕ СМОТРИ без явной просьбы
+│   ├── audit/           #    Аудиты и ревью — НЕ СМОТРИ без явной просьбы
+│   ├── archive/         #    НЕ СМОТРИ без явной просьбы
+│   └── (API, ML, MT, processing, statistics, tests — docs для одноимённых каталогов кода)
 ├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
 ├── MODULE_INDEX.md      # Реестр всех модулей со статусами
-├── CHANGELOG.md         # Краткая история значимых изменений
+├── CHANGELOG.md         # Краткая история значимых изменений (первые 300 строк)
 ├── CONTEXT_HANDOFF.md   # Короткий baton pass: где мы, что дальше, что читать
 └── README.md            # Точка входа
-
 ```
-
-## Статус разработки
-| Компонент | Статус | Примечание |
-|-----------|--------|------------|
-| Сбор данных (MT4) | 🏁 | `lib_PIC.mqh`, `NERO_CSV_CREATE()` |
-| Препроцессинг | 🏁 | `label_main.py`, `normalize.py` |
-| Статистика/EDA | 🏁 | `statistics.py`, `EDA.ipynb` |
-| ML модели | ✅ | Transformer (лучший), regression_updn |
-| Triple Barrier | 🚧 | 12 бинарных таргетов, `iSignal=5` |
-| Генерация сигналов | ✅ | [API/generate_signals.py](API/generate_signals.py) |
-| Интеграция с MT4 | ✅ | `ML_TRADE()` + `ML_TRADE_TB()` |
-| Reconciliation | ✅ | `signal_tracer.py` |
-
 
 ## Мониторинг ошибок
 
@@ -171,9 +145,9 @@ ML-бот для прогнозирования разворотов Forex (H1).
 
 Правила мониторинга:
 - Не искать ошибки специально
-- Не останавливать выполнение задачи 
+- Не останавливать выполнение задачи
 
 ---
 
-Последнее обновление: 2026-04-27
+Последнее обновление: 2026-06-18
 Авторы: human + AI agents
