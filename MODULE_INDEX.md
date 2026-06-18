@@ -236,6 +236,7 @@
 | [2026-06-10-fractal-stop-breach-plan.md](docs/superpowers/plans/2026-06-10-fractal-stop-breach-plan.md) | План Stage 1 Fractal Stop Breach: разметка пробоя уровня, baseline и frozen test |
 | [2026-06-10-fractal-stop-fav-plan.md](docs/superpowers/plans/2026-06-10-fractal-stop-fav-plan.md) | План Stage 2 Fractal Stop + Fav Target: торговый слой поверх breach-сигнала |
 | [2026-06-16-stage5_0-transformer-breach-holdout.md](docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md) | План Stage 5.0 Transformer Breach: модельный holdout 2023-2026, feature profiles, XGBoost/time baselines и optional walk-forward |
+| [2026-06-18-stage5_0a-feature-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md) | План Stage 5.0a Feature Preflight: A7-аудит профилей признаков до повторного обучения Transformer |
 | [2026-06-10-fractal-stop-breach-stage1.md](docs/reports/2026-06-10-fractal-stop-breach-stage1.md) | Итоговый отчёт Stage 1: breach-разметка, baseline, frozen test и переход к Stage 2 |
 | [2026-06-10-fractal-stop-fav-stage2.md](docs/reports/2026-06-10-fractal-stop-fav-stage2.md) | Итоговый отчёт Stage 2: fav-разметка, торговый слой, RF FAIL и oracle-диагностика |
 | [2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов |
