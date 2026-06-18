@@ -15,6 +15,7 @@
 - [ ] Global scaler fit только на train.
 - [ ] В JSON/report есть `normalization_config`: метод, fit-период, группы признаков, исключённые поля и путь применения к validation/test/holdout.
 - [ ] Проверены диапазоны финальных tensor/матриц, реально поданных в модель, а не только исходного CSV.
+- [ ] Для всех новых feature profiles выполнен [A7 Feature Distribution Audit](A7-feature-distribution-audit.md); artifact приложен к отчёту.
 - [ ] Padding/mask не участвовали в fit scaler; padding после normalization остался 0.
 - [ ] Для нейросети нет доминирующего признака по масштабу после финальной подготовки входов.
 - [ ] Для новых ML-раннеров есть scale-тесты: ожидаемый масштаб train после normalize, fit только на train, val/test/holdout не влияют на scaler, padding остаётся 0.

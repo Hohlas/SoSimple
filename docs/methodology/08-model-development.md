@@ -30,7 +30,7 @@
    - Удалить ВСЕ закешированные тензоры и промежуточные файлы (.pt, .npy, .pkl, .h5).
    - Добавить в metadata кеша хеш feature contract-а (имена, порядок, count признаков). При несовпадении — ошибка, а не silent fallback.
    - Периодическая проверка: пересобрать кеш с нуля и сравнить validation-метрики с cached-версией. Расхождение = stale cache.
-6. Выполнить Final Tensor Scale Audit: проверить масштаб финальных tensor/матриц, которые реально подаются в `fit/train`, а не только исходный CSV или промежуточный DataFrame.
+6. Выполнить Final Tensor Scale Audit: проверить масштаб финальных tensor/матриц, которые реально подаются в `fit/train`, а не только исходный CSV или промежуточный DataFrame. Для каждого нового feature profile выполнить [A7 Feature Distribution Audit](A7-feature-distribution-audit.md) до обучения.
 7. Обучать и логировать каждую конфигурацию.
 8. Сохранять checkpoint, config, metrics, predictions и run metadata.
 9. Для нейросетей проверить несколько seed или объяснить, почему это невозможно.
@@ -64,6 +64,7 @@
 - Если модель использует scaler/normalization: доказать, что scaler fit-ится только на train, validation/test/holdout не участвуют в fit, а параметры scaler сохранены в metadata/JSON.
 - Для token/sequence моделей: padding и mask не участвуют в fit scaler; padding после normalization остаётся нулём.
 - Для нейросетей: выполнен scale audit финальных входов. После normalization train-признаки должны иметь ожидаемый масштаб, не должно быть NaN/inf и не должно быть признака, который доминирует над остальными только из-за масштаба.
+- Для новых feature profiles есть [A7 Feature Distribution Audit](A7-feature-distribution-audit.md): распределения train/validation, shift на test/holdout, mask/padding/corridor coverage и решение по каждому `ERROR`/`WARNING`.
 - Для новых ML-раннеров тесты проверяют не только shape contract, но и scale contract:
   - после normalize train-признаки имеют ожидаемый масштаб;
   - padding остаётся 0;
