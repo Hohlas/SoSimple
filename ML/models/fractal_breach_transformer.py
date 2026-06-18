@@ -30,11 +30,22 @@ class TokenSelector:
         return selected, mask, prices[selected[:n_use]].tolist()
 
     @staticmethod
-    def by_nearest(prices: np.ndarray, f0_price: float, k: int, seq_len: int):
-        """Select k fractals closest to f0_price, order by distance ascending."""
+    def by_nearest(prices: np.ndarray, f0_price: float, k: int, seq_len: int,
+                   exclude_anchor: bool = False, anchor_valid_position: int = 0):
+        """Select k fractals closest to f0_price, order by distance ascending.
+
+        Tie-breaker on equal distance: fresher fractal first (smaller index).
+        """
         dist = np.abs(prices - f0_price)
-        sorted_idx = np.argsort(dist)
-        n_use = min(k, len(prices))
+        candidate_idx = np.arange(len(prices), dtype=int)
+        if exclude_anchor and 0 <= anchor_valid_position < len(candidate_idx):
+            candidate_idx = candidate_idx[candidate_idx != anchor_valid_position]
+        if len(candidate_idx) == 0:
+            selected = np.zeros(seq_len, dtype=int)
+            mask = np.zeros(seq_len, dtype=bool)
+            return selected, mask, []
+        sorted_idx = candidate_idx[np.lexsort((candidate_idx, dist[candidate_idx]))]
+        n_use = min(k, len(sorted_idx), seq_len)
         selected = np.zeros(seq_len, dtype=int)
         mask = np.zeros(seq_len, dtype=bool)
         selected[:n_use] = sorted_idx[:n_use]

@@ -1,10 +1,14 @@
 # =============================================================================
 # File: ML/baseline/benchmark_stage5_transformer_breach.py
-# Purpose: Stage 5.0 Transformer Breach Holdout — main runner
+# Purpose: Stage 5.0 Transformer runner + Stage 5.0a feature preflight
 # Input: DATA/Nero_XAUUSD_*_labeled.csv
-# Output: ML/reports/stage5_transformer_breach.json
+# Output: ML/reports/stage5_transformer_breach.json,
+#         ML/reports/stage5_0a_feature_preflight.json,
+#         ML/reports/stage5_0a_feature_stats_normalized.csv,
+#         ML/reports/stage5_0a_profile_summary.csv
 # Language: Python 3.10+
 # Created: 2026-06-17
+# Updated: 2026-06-18
 # =============================================================================
 
 import argparse, json, os, sys, time
@@ -53,6 +57,10 @@ HOLDOUT_MIN_YEAR = 2023
 BASE10_INDICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 BASE10_NAMES = ['price', 'direction', 'front', 'back', 'strong', 'break',
                 'reverse', 'power', 'count', 'impulse']
+NO_PRICE_TOKEN_FIELDS = ['direction', 'front', 'back', 'strong', 'break',
+                         'reverse', 'power', 'count', 'impulse']
+TIME_ONLY_ROW_FIELDS = ['hour_sin', 'hour_cos', 'dow_sin', 'dow_cos']
+TIME_PLUS_ATR_ROW_FIELDS = ['ATR', 'hour_sin', 'hour_cos', 'dow_sin', 'dow_cos']
 
 # Full29 feature indices (matching data_loader.py)
 # CSV fields 1-20 are fractal features, plus computed features
@@ -243,6 +251,218 @@ PROFILE_DEFS = [
         "corridor_atr": 10.0,
         "relative_price": True,
     },
+    # Stage 5.0a preflight profiles
+    {
+        "name": "time_only_clean",
+        "selection": "row_only",
+        "selector": "no token selector",
+        "order": "none",
+        "token_order": "none",
+        "token_fields": [],
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 0,
+        "token_dim": 0,
+        "row_dim": 4,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+    },
+    {
+        "name": "atr_only",
+        "selection": "row_only",
+        "selector": "no token selector",
+        "order": "none",
+        "token_order": "none",
+        "token_fields": [],
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 0,
+        "token_dim": 0,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+    },
+    {
+        "name": "time_plus_atr",
+        "selection": "row_only",
+        "selector": "no token selector",
+        "order": "none",
+        "token_order": "none",
+        "token_fields": [],
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 0,
+        "token_dim": 0,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+    },
+    {
+        "name": "all100_absolute_price_time",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": BASE10_NAMES.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+    },
+    {
+        "name": "all100_no_price_time",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 9,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+    },
+    {
+        "name": "all100_relative_price_no_time",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "relative_price": True,
+    },
+    {
+        "name": "all100_relative_price_time",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_5atr_relative_price_no_time",
+        "selection": "corridor",
+        "selector": "levels within +/-5 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 5.0,
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_10atr_relative_price_no_time",
+        "selection": "corridor",
+        "selector": "levels within +/-10 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 10.0,
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_15atr_relative_price_no_time",
+        "selection": "corridor",
+        "selector": "levels within +/-15 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 15.0,
+        "relative_price": True,
+    },
+    {
+        "name": "corridor_10atr_relative_price_time",
+        "selection": "corridor",
+        "selector": "levels within +/-10 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 10.0,
+        "relative_price": True,
+    },
+    {
+        "name": "nearest40_relative_price_no_time",
+        "selection": "nearest",
+        "selector": "40 closest levels to fractal0.price, excluding anchor from K",
+        "order": "price_distance_excluding_anchor",
+        "token_order": "ascending absolute distance to anchor; tie-breaker by freshness",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "k": 40,
+        "relative_price": True,
+        "exclude_anchor_from_k": True,
+    },
+    {
+        "name": "nearest40_relative_price_time",
+        "selection": "nearest",
+        "selector": "40 closest levels to fractal0.price, excluding anchor from K",
+        "order": "price_distance_excluding_anchor",
+        "token_order": "ascending absolute distance to anchor; tie-breaker by freshness",
+        "token_fields": ['price_coord_atr'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 40,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "k": 40,
+        "relative_price": True,
+        "exclude_anchor_from_k": True,
+    },
 ]
 
 
@@ -255,6 +475,20 @@ def find_profile(name: str):
         if p["name"] == name:
             return p
     return None
+
+
+def get_profile_contract(profile: dict) -> dict:
+    return {
+        "name": profile["name"],
+        "selection": profile["selection"],
+        "selector": profile.get("selector", profile["selection"]),
+        "token_fields": list(profile.get("token_fields", [])),
+        "row_fields": list(profile.get("row_fields", [])),
+        "token_order": profile.get("token_order", profile.get("order", "unknown")),
+        "seq_len": int(profile.get("seq_len", 0)),
+        "padding_value": float(profile.get("padding_value", 0.0)),
+        "mask_semantics": profile.get("mask_semantics", "1=real token, 0=padding"),
+    }
 
 
 def get_profile_seq_len(profile: dict, train_df: pd.DataFrame = None,
@@ -306,6 +540,26 @@ def extract_full29_fields(fractal_str: str) -> np.ndarray:
     if np.isnan(result).any():
         result = np.nan_to_num(result, nan=0.0)
     return result
+
+
+def _base10_name_to_index() -> dict:
+    return {name: idx for idx, name in enumerate(BASE10_NAMES)}
+
+
+BASE10_NAME_TO_INDEX = _base10_name_to_index()
+
+
+def project_token_fields(base_features: np.ndarray, profile: dict) -> np.ndarray:
+    token_fields = profile.get("token_fields", [])
+    if not token_fields:
+        return np.zeros((base_features.shape[0], 0), dtype=np.float32)
+
+    projected = np.zeros((base_features.shape[0], len(token_fields)), dtype=np.float32)
+    for out_idx, field_name in enumerate(token_fields):
+        source_name = "price" if field_name == "price_coord_atr" else field_name
+        source_idx = BASE10_NAME_TO_INDEX[source_name]
+        projected[:, out_idx] = base_features[:, source_idx]
+    return projected
 
 
 def build_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
@@ -360,14 +614,22 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
     token_dim = profile["token_dim"]
     selection = profile["selection"]
     is_full29 = profile.get("full29", False)
+    token_fields = profile.get("token_fields", [])
 
     tokens = np.zeros((n_samples, seq_len, token_dim), dtype=np.float32)
     mask = np.zeros((n_samples, seq_len), dtype=bool)
+
+    if selection == "row_only" or seq_len == 0 or token_dim == 0:
+        row_features = build_row_features(df, profile)
+        if np.isnan(row_features).any():
+            row_features = np.nan_to_num(row_features, nan=0.0)
+        return tokens.astype(np.float32), row_features.astype(np.float32), mask
 
     # Pre-parse all fractal columns
     for sample_idx in range(n_samples):
         # Parse all available fractal prices and features
         prices = np.zeros(N_FRACTALS, dtype=np.float32)
+        raw_base10 = np.zeros((N_FRACTALS, len(BASE10_NAMES)), dtype=np.float32)
         raw_features = np.zeros((N_FRACTALS, token_dim), dtype=np.float32)
         valid_fractals = np.zeros(N_FRACTALS, dtype=bool)
         valid_count = 0
@@ -381,7 +643,8 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
                 if is_full29:
                     raw_features[f_idx] = extract_full29_fields(fstr)
                 else:
-                    raw_features[f_idx] = extract_base10_fields(fstr)
+                    raw_base10[f_idx] = extract_base10_fields(fstr)
+                    raw_features[f_idx] = project_token_fields(raw_base10[[f_idx]], profile)[0]
                 # Extract price for selection
                 parts = fstr.split(FRACTAL_SEP)
                 try:
@@ -408,8 +671,11 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
             selected_idx, m = TokenSelector.newest_n(n_val, valid_count, seq_len)
         elif selection == "nearest":
             k_val = profile.get("k", seq_len)
-            # Prices for valid fractals
-            selected_idx, m, _ = TokenSelector.by_nearest(valid_prices, prices[0], k_val, seq_len)
+            selected_idx, m, _ = TokenSelector.by_nearest(
+                valid_prices, prices[0], k_val, seq_len,
+                exclude_anchor=profile.get("exclude_anchor_from_k", False),
+                anchor_valid_position=0,
+            )
         elif selection == "corridor":
             corridor_atr_val = profile.get("corridor_atr", 10.0)
             atr_val = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
@@ -441,8 +707,15 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
                 f0_prices[sample_idx] = 0.0
             atr_raw = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
             atr_vals[sample_idx] = max(float(atr_raw) if not pd.isna(atr_raw) else 1.0, 0.001)
-        price_col = tokens[:, :, 0]
-        tokens[:, :, 0] = (price_col - f0_prices[:, None]) / atr_vals[:, None]
+        if "price_coord_atr" in token_fields:
+            price_idx = token_fields.index("price_coord_atr")
+        elif "price" in token_fields:
+            price_idx = token_fields.index("price")
+        else:
+            price_idx = None
+        if price_idx is not None:
+            price_col = tokens[:, :, price_idx]
+            tokens[:, :, price_idx] = (price_col - f0_prices[:, None]) / atr_vals[:, None]
         tokens[~mask] = 0.0
 
     if np.isnan(tokens).any():
@@ -450,6 +723,98 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
     if np.isnan(row_features).any():
         row_features = np.nan_to_num(row_features, nan=0.0)
 
+    return tokens.astype(np.float32), row_features.astype(np.float32), mask
+
+
+def parse_split_fractals(df: pd.DataFrame) -> dict:
+    n_samples = len(df)
+    prices = np.zeros((n_samples, N_FRACTALS), dtype=np.float32)
+    base10 = np.zeros((n_samples, N_FRACTALS, len(BASE10_NAMES)), dtype=np.float32)
+    valid = np.zeros((n_samples, N_FRACTALS), dtype=bool)
+
+    available_cols = [f"fractal{i}" for i in range(N_FRACTALS) if f"fractal{i}" in df.columns]
+    for sample_idx in range(n_samples):
+        for f_idx, col in enumerate(available_cols):
+            fstr = str(df[col].iloc[sample_idx])
+            if not fstr or fstr == "nan":
+                continue
+            base10[sample_idx, f_idx] = extract_base10_fields(fstr)
+            try:
+                prices[sample_idx, f_idx] = float(fstr.split(FRACTAL_SEP)[1])
+            except (ValueError, IndexError):
+                prices[sample_idx, f_idx] = 0.0
+            if np.any(base10[sample_idx, f_idx] != 0):
+                valid[sample_idx, f_idx] = True
+    return {"prices": prices, "base10": base10, "valid": valid}
+
+
+def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: dict):
+    n_samples = len(df)
+    seq_len = profile["seq_len"]
+    token_dim = profile["token_dim"]
+    selection = profile["selection"]
+    token_fields = profile.get("token_fields", [])
+    tokens = np.zeros((n_samples, seq_len, token_dim), dtype=np.float32)
+    mask = np.zeros((n_samples, seq_len), dtype=bool)
+
+    if selection == "row_only" or seq_len == 0 or token_dim == 0:
+        return np.zeros((n_samples, 0, 0), dtype=np.float32), build_row_features(df, profile), np.zeros((n_samples, 0), dtype=bool)
+
+    prices_all = parsed["prices"]
+    valid_all = parsed["valid"]
+    base10_all = parsed["base10"]
+
+    for sample_idx in range(n_samples):
+        valid_mask = valid_all[sample_idx]
+        valid_count = int(valid_mask.sum())
+        if valid_count == 0:
+            continue
+        valid_prices = prices_all[sample_idx, valid_mask]
+        valid_base10 = base10_all[sample_idx, valid_mask]
+        valid_features = project_token_fields(valid_base10, profile)
+
+        if selection == "all100":
+            selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+        elif selection == "newest":
+            selected_idx, m = TokenSelector.newest_n(profile.get("n", seq_len), valid_count, seq_len)
+        elif selection == "nearest":
+            selected_idx, m, _ = TokenSelector.by_nearest(
+                valid_prices, prices_all[sample_idx, 0], profile.get("k", seq_len), seq_len,
+                exclude_anchor=profile.get("exclude_anchor_from_k", False),
+                anchor_valid_position=0,
+            )
+        elif selection == "corridor":
+            atr_val = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
+            atr_val = atr_val if atr_val > 0 else 1.0
+            selected_idx, m, _ = TokenSelector.by_corridor(
+                valid_prices, prices_all[sample_idx, 0], atr_val, profile.get("corridor_atr", 10.0), seq_len
+            )
+        else:
+            selected_idx, m = TokenSelector.all_fractals(valid_count, seq_len)
+
+        for t in range(min(len(selected_idx), seq_len)):
+            if m[t] and selected_idx[t] < len(valid_features):
+                tokens[sample_idx, t] = valid_features[selected_idx[t]]
+                mask[sample_idx, t] = True
+
+    row_features = build_row_features(df, profile)
+    if profile.get("relative_price", False):
+        f0_prices = prices_all[:, 0].copy()
+        atr_vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(1.0).clip(lower=0.001).values.astype(np.float32)
+        if "price_coord_atr" in token_fields:
+            price_idx = token_fields.index("price_coord_atr")
+        elif "price" in token_fields:
+            price_idx = token_fields.index("price")
+        else:
+            price_idx = None
+        if price_idx is not None:
+            tokens[:, :, price_idx] = (tokens[:, :, price_idx] - f0_prices[:, None]) / atr_vals[:, None]
+            tokens[~mask] = 0.0
+
+    if np.isnan(tokens).any():
+        tokens = np.nan_to_num(tokens, nan=0.0)
+    if np.isnan(row_features).any():
+        row_features = np.nan_to_num(row_features, nan=0.0)
     return tokens.astype(np.float32), row_features.astype(np.float32), mask
 
 
@@ -467,9 +832,12 @@ def normalize_profile_features(tokens_train, row_feat_train, mask_train,
     """
     n_samples, seq_len, token_dim = tokens_train.shape
 
-    valid_train_tokens = tokens_train[mask_train]
+    valid_train_tokens = tokens_train[mask_train] if token_dim > 0 else np.zeros((0, 0), dtype=np.float32)
     token_scaler = StandardScaler()
-    if len(valid_train_tokens) > 0:
+    if token_dim == 0:
+        token_scaler.mean_ = np.zeros(0)
+        token_scaler.scale_ = np.ones(0)
+    elif len(valid_train_tokens) > 0:
         token_scaler.fit(valid_train_tokens)
     else:
         token_scaler.mean_ = np.zeros(token_dim)
@@ -491,10 +859,17 @@ def normalize_profile_features(tokens_train, row_feat_train, mask_train,
     tokens_hold_n = _transform_tokens(tokens_hold, mask_hold)
 
     row_scaler = StandardScaler()
-    row_scaler.fit(row_feat_train)
-    row_feat_train_n = row_scaler.transform(row_feat_train).astype(np.float32)
-    row_feat_val_n = row_scaler.transform(row_feat_val).astype(np.float32)
-    row_feat_hold_n = row_scaler.transform(row_feat_hold).astype(np.float32)
+    if row_feat_train.shape[1] == 0:
+        row_scaler.mean_ = np.zeros(0)
+        row_scaler.scale_ = np.ones(0)
+        row_feat_train_n = row_feat_train.astype(np.float32)
+        row_feat_val_n = row_feat_val.astype(np.float32)
+        row_feat_hold_n = row_feat_hold.astype(np.float32)
+    else:
+        row_scaler.fit(row_feat_train)
+        row_feat_train_n = row_scaler.transform(row_feat_train).astype(np.float32)
+        row_feat_val_n = row_scaler.transform(row_feat_val).astype(np.float32)
+        row_feat_hold_n = row_scaler.transform(row_feat_hold).astype(np.float32)
 
     scaler_stats = {
         "token_scaler": {
@@ -549,20 +924,25 @@ def _per_feature_stats(values: np.ndarray, mask: np.ndarray = None) -> list[dict
         tail5 = (np.abs(clean) > 5).sum() / n_clean if n_clean > 0 else 0.0
         tail10 = (np.abs(clean) > 10).sum() / n_clean if n_clean > 0 else 0.0
         tail20 = (np.abs(clean) > 20).sum() / n_clean if n_clean > 0 else 0.0
-        pvals = np.percentile(clean, [0, 1, 5, 50, 95, 99, 100]) if n_clean > 0 else [np.nan] * 7
+        zero_pct = float(np.mean(clean == 0.0)) if n_clean > 0 else 0.0
+        pvals = np.percentile(clean, [0, 1, 5, 25, 50, 75, 95, 99, 100]) if n_clean > 0 else [np.nan] * 9
         result.append({
             "n": int(n),
             "n_nan": n_nan,
             "n_inf": n_inf,
+            "missing_pct": round(float((n - n_clean) / max(n, 1)), 6),
+            "zero_pct": round(zero_pct, 6),
             "mean": round(float(np.mean(clean)), 4) if n_clean > 0 else None,
             "std": round(float(np.std(clean)), 4) if n_clean > 0 else None,
             "p0": round(float(pvals[0]), 4) if n_clean > 0 else None,
             "p1": round(float(pvals[1]), 4) if n_clean > 0 else None,
             "p5": round(float(pvals[2]), 4) if n_clean > 0 else None,
-            "p50": round(float(pvals[3]), 4) if n_clean > 0 else None,
-            "p95": round(float(pvals[4]), 4) if n_clean > 0 else None,
-            "p99": round(float(pvals[5]), 4) if n_clean > 0 else None,
-            "p100": round(float(pvals[6]), 4) if n_clean > 0 else None,
+            "p25": round(float(pvals[3]), 4) if n_clean > 0 else None,
+            "p50": round(float(pvals[4]), 4) if n_clean > 0 else None,
+            "p75": round(float(pvals[5]), 4) if n_clean > 0 else None,
+            "p95": round(float(pvals[6]), 4) if n_clean > 0 else None,
+            "p99": round(float(pvals[7]), 4) if n_clean > 0 else None,
+            "p100": round(float(pvals[8]), 4) if n_clean > 0 else None,
             "frac_abs_gt3": round(float(tail3), 6),
             "frac_abs_gt5": round(float(tail5), 6),
             "frac_abs_gt10": round(float(tail10), 6),
@@ -696,6 +1076,116 @@ def audit_normalized_distribution(
             "comment": "Pre-training guard: if tails are long, consider RobustScaler or clipping [-8,8] before any holdout viewing.",
         },
     }
+
+
+def compute_profile_coverage(tokens: np.ndarray, mask: np.ndarray, profile: dict) -> dict:
+    counts = mask.sum(axis=1).astype(np.int32) if mask.size > 0 else np.zeros(tokens.shape[0], dtype=np.int32)
+    if len(counts) == 0:
+        counts = np.array([0], dtype=np.int32)
+    pvals = np.percentile(counts, [5, 25, 50, 75, 95]) if len(counts) > 0 else [0] * 5
+    truncation = 0.0
+    if profile.get("selection") == "corridor" and tokens.shape[1] > 0:
+        truncation = float(np.mean(counts >= profile["seq_len"]))
+    price_bounds = {}
+    token_fields = profile.get("token_fields", [])
+    if "price_coord_atr" in token_fields and mask.sum() > 0:
+        price_idx = token_fields.index("price_coord_atr")
+        valid_prices = tokens[:, :, price_idx][mask]
+        if len(valid_prices) > 0:
+            price_bounds = {
+                "min_price_coord_atr": float(np.min(valid_prices)),
+                "max_price_coord_atr": float(np.max(valid_prices)),
+            }
+    return {
+        "valid_tokens_p5": float(pvals[0]),
+        "valid_tokens_p25": float(pvals[1]),
+        "valid_tokens_p50": float(pvals[2]),
+        "valid_tokens_p75": float(pvals[3]),
+        "valid_tokens_p95": float(pvals[4]),
+        "pct_empty": float(np.mean(counts == 0)),
+        "pct_single": float(np.mean(counts == 1)),
+        "pct_two": float(np.mean(counts == 2)),
+        "pct_three_plus": float(np.mean(counts >= 3)),
+        "pct_truncation": truncation,
+        **price_bounds,
+    }
+
+
+def flatten_audit_to_rows(profile_name: str, profile: dict, split_name: str, audit_split: dict, coverage: dict) -> list[dict]:
+    rows = []
+    for feature_group_key, feature_group_name in [("token_features", "token"), ("row_features", "row")]:
+        for feature_name, stats in audit_split.get(feature_group_key, {}).items():
+            if stats.get("n", 0) == 0:
+                continue
+            flags = []
+            if stats.get("frac_abs_gt10", 0) > 0.01:
+                flags.append("TAIL_GT10")
+            if stats.get("frac_abs_gt20", 0) > 0.0:
+                flags.append("TAIL_GT20")
+            if stats.get("has_nan"):
+                flags.append("NAN")
+            if stats.get("has_inf"):
+                flags.append("INF")
+            rows.append({
+                "profile": profile_name,
+                "split": split_name,
+                "feature_group": feature_group_name,
+                "feature_name": feature_name,
+                "token_position": "",
+                "n_valid": stats.get("n"),
+                "missing_pct": stats.get("missing_pct"),
+                "zero_pct": stats.get("zero_pct"),
+                "mean": stats.get("mean"),
+                "std": stats.get("std"),
+                "min": stats.get("p0"),
+                "p1": stats.get("p1"),
+                "p5": stats.get("p5"),
+                "p25": stats.get("p25"),
+                "p50": stats.get("p50"),
+                "p75": stats.get("p75"),
+                "p95": stats.get("p95"),
+                "p99": stats.get("p99"),
+                "max": stats.get("p100"),
+                "frac_abs_gt3": stats.get("frac_abs_gt3"),
+                "frac_abs_gt5": stats.get("frac_abs_gt5"),
+                "frac_abs_gt10": stats.get("frac_abs_gt10"),
+                "frac_abs_gt20": stats.get("frac_abs_gt20"),
+                "nan_count": stats.get("n_nan"),
+                "inf_count": stats.get("n_inf"),
+                "status": "ERROR" if ("NAN" in flags or "INF" in flags) else ("WARNING" if flags else "OK"),
+                "flags": ";".join(flags),
+            })
+    for key, value in coverage.items():
+        rows.append({
+            "profile": profile_name,
+            "split": split_name,
+            "feature_group": "coverage",
+            "feature_name": key,
+            "token_position": "",
+            "n_valid": None,
+            "missing_pct": None,
+            "zero_pct": None,
+            "mean": value,
+            "std": None,
+            "min": None,
+            "p1": None,
+            "p5": None,
+            "p25": None,
+            "p50": None,
+            "p75": None,
+            "p95": None,
+            "p99": None,
+            "max": None,
+            "frac_abs_gt3": None,
+            "frac_abs_gt5": None,
+            "frac_abs_gt10": None,
+            "frac_abs_gt20": None,
+            "nan_count": None,
+            "inf_count": None,
+            "status": "OK",
+            "flags": "",
+        })
+    return rows
 
 
 # ===========================================================================
@@ -1547,8 +2037,151 @@ def apply_holdout_gate(report):
     return report
 
 
+PREFLIGHT_PROFILE_NAMES = [
+    "time_only_clean",
+    "atr_only",
+    "time_plus_atr",
+    "all100_absolute_price_time",
+    "all100_no_price_time",
+    "all100_relative_price_no_time",
+    "all100_relative_price_time",
+    "corridor_5atr_relative_price_no_time",
+    "corridor_10atr_relative_price_no_time",
+    "corridor_15atr_relative_price_no_time",
+    "corridor_10atr_relative_price_time",
+    "nearest40_relative_price_no_time",
+    "nearest40_relative_price_time",
+]
+
+
+def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
+    stats_rows = []
+    summary_rows = []
+    profile_reports = {}
+    parsed_train = parse_split_fractals(train_df)
+    parsed_val = parse_split_fractals(val_stop_df)
+    parsed_holdout = parse_split_fractals(holdout_df)
+
+    for profile_name in PREFLIGHT_PROFILE_NAMES:
+        profile = deepcopy(find_profile(profile_name))
+        contract = get_profile_contract(profile)
+        tokens_train, rf_train, mask_train = build_profile_features_from_parsed(train_df, parsed_train, profile)
+        tokens_val, rf_val, mask_val = build_profile_features_from_parsed(val_stop_df, parsed_val, profile)
+        tokens_hold, rf_hold, mask_hold = build_profile_features_from_parsed(holdout_df, parsed_holdout, profile)
+
+        normalized, scaler_stats = normalize_profile_features(
+            tokens_train, rf_train, mask_train,
+            tokens_val, rf_val, mask_val,
+            tokens_hold, rf_hold, mask_hold,
+        )
+        tokens_train_n, rf_train_n, tokens_val_n, rf_val_n, tokens_hold_n, rf_hold_n = normalized
+
+        dist_audit = audit_normalized_distribution(
+            tokens_train_n, mask_train,
+            tokens_val_n, mask_val,
+            tokens_hold_n, mask_hold,
+            rf_train_n, rf_val_n, rf_hold_n,
+            token_fields=profile.get("token_fields"),
+            row_fields=profile.get("row_fields"),
+        )
+        coverage_by_split = {
+            "train": compute_profile_coverage(tokens_train_n, mask_train, profile),
+            "val_stop": compute_profile_coverage(tokens_val_n, mask_val, profile),
+            "holdout": compute_profile_coverage(tokens_hold_n, mask_hold, profile),
+        }
+
+        for split_name in ["train", "val_stop", "holdout"]:
+            stats_rows.extend(flatten_audit_to_rows(
+                profile_name,
+                profile,
+                split_name,
+                dist_audit["by_split"][split_name],
+                coverage_by_split[split_name],
+            ))
+
+        flags_text = ";".join(dist_audit["flags"])
+        decision = "ALLOW"
+        if dist_audit["status"] == "ERROR":
+            decision = "BLOCK"
+        elif dist_audit["status"] == "WARNING":
+            decision = "REVIEW"
+
+        summary_rows.append({
+            "profile": profile_name,
+            "status": dist_audit["status"],
+            "decision": decision,
+            "decision_basis_split": "train_val_stop_only",
+            "token_order": contract["token_order"],
+            "scaler_type": "StandardScaler",
+            "transform_type": "raw_or_price_coord_atr",
+            "train_valid_tokens_p50": coverage_by_split["train"]["valid_tokens_p50"],
+            "val_valid_tokens_p50": coverage_by_split["val_stop"]["valid_tokens_p50"],
+            "holdout_valid_tokens_p50": coverage_by_split["holdout"]["valid_tokens_p50"],
+            "train_pct_empty": coverage_by_split["train"]["pct_empty"],
+            "val_pct_empty": coverage_by_split["val_stop"]["pct_empty"],
+            "holdout_pct_empty": coverage_by_split["holdout"]["pct_empty"],
+            "train_pct_truncation": coverage_by_split["train"]["pct_truncation"],
+            "max_train_abs_gt10": max(
+                [r.get("frac_abs_gt10", 0) or 0 for r in stats_rows if r["profile"] == profile_name and r["split"] == "train" and r["feature_group"] in {"token", "row"}] or [0]
+            ),
+            "max_holdout_abs_gt10": max(
+                [r.get("frac_abs_gt10", 0) or 0 for r in stats_rows if r["profile"] == profile_name and r["split"] == "holdout" and r["feature_group"] in {"token", "row"}] or [0]
+            ),
+            "flags": flags_text,
+        })
+
+        profile_reports[profile_name] = {
+            "profile_contract": contract,
+            "normalization_config": {
+                "method": "StandardScaler",
+                "token_scaler_fit_on": "train valid positions only (mask=True)",
+                "row_scaler_fit_on": "all train rows",
+                "padding": "kept as zero, not transformed",
+                "decision_policy": "holdout for disclosure only",
+            },
+            "scaler_stats": scaler_stats,
+            "normalized_distribution_audit": dist_audit,
+            "coverage": coverage_by_split,
+        }
+
+    stats_df = pd.DataFrame(stats_rows)
+    summary_df = pd.DataFrame(summary_rows)
+    stats_path = REPORTS_DIR / "stage5_0a_feature_stats_normalized.csv"
+    summary_path = REPORTS_DIR / "stage5_0a_profile_summary.csv"
+    json_path = REPORTS_DIR / "stage5_0a_feature_preflight.json"
+    stats_df.to_csv(stats_path, index=False)
+    summary_df.to_csv(summary_path, index=False)
+
+    report = {
+        "status": "DIAGNOSTIC_ONLY",
+        "stage": "5.0a_feature_preflight",
+        "split": {
+            "train": {"n_rows": len(train_df), "years": sorted(map(int, train_df["_year"].unique()))},
+            "val_stop": {"n_rows": len(val_stop_df), "years": sorted(map(int, val_stop_df["_year"].unique()))},
+            "holdout": {"n_rows": len(holdout_df), "years": sorted(map(int, holdout_df["_year"].unique()))},
+        },
+        "profiles": PREFLIGHT_PROFILE_NAMES,
+        "profile_reports": profile_reports,
+        "artifacts": {
+            "json": str(json_path),
+            "stats_csv": str(stats_path),
+            "summary_csv": str(summary_path),
+        },
+        "decision_policy": {
+            "selection_basis": "train and val_stop only",
+            "holdout_usage": "distribution shift disclosure only",
+            "training_allowed": False,
+        },
+    }
+    with open(json_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
+    parser.add_argument("--feature-preflight-only", action="store_true",
+                        help="Run Stage 5.0a feature preflight only; no model training")
     parser.add_argument("--single-seed", action="store_true",
                         help="Use single seed [42] instead of [42, 77, 123]")
     parser.add_argument("--phase", type=str, default=None,
@@ -1569,6 +2202,14 @@ def main():
     print("Loading data...")
     print("=" * 60)
     train_df, val_stop_df, holdout_df = load_splits()
+
+    if args.feature_preflight_only:
+        report = run_feature_preflight(train_df, val_stop_df, holdout_df)
+        print(f"\n{'='*60}")
+        print("Stage 5.0a feature preflight completed")
+        print(json.dumps(report["artifacts"], indent=2))
+        print(f"{'='*60}")
+        return
 
     # OHLC label verification (mandatory before training)
     print("\n" + "=" * 60)

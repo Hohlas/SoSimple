@@ -1,6 +1,6 @@
 # benchmark_stage5_transformer_breach.py
 
-**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout. Обучает и оценивает Transformer-модели breach-классификации на фрактальных последовательностях XAUUSD H1 в сравнении с XGBoost baseline.
+**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и diagnostic runner Stage 5.0a Feature Preflight. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их и сохранять аудит распределений по профилям признаков.
 
 **Статус:** Завершён (Stage 5.0 FAIL)
 
@@ -10,12 +10,16 @@
 - `DATA/Nero_XAUUSD_test_labeled.csv` — holdout 2023-2026
 
 **Выход:**
-- `ML/reports/stage5_transformer_breach.json` — структурированный результат
+- `ML/reports/stage5_transformer_breach.json` — структурированный результат Stage 5.0
+- `ML/reports/stage5_0a_feature_preflight.json` — structured artifact Stage 5.0a
+- `ML/reports/stage5_0a_feature_stats_normalized.csv` — статистики финальных нормализованных признаков
+- `ML/reports/stage5_0a_profile_summary.csv` — сводка по профилям Stage 5.0a
 
 **Сплит:** train ≤2020, val_stop 2021-2022, holdout ≥2023
 
-**Профили признаков (A6-нотация):**
-5 обязательных профилей: all100_base10_time (primary), all100_base10_no_time, newest20_base10_time, nearest40_base10_time, corridor_10atr_base10_time. Gate применяется только к primary.
+**Профили признаков:**
+- Stage 5.0 training: legacy-профили `all100_base10_time`, `all100_base10_no_time`, `newest20_base10_time`, `nearest40_base10_time`, `corridor_10atr_base10_time`
+- Stage 5.0a preflight: clean-controls `time_only_clean`, `atr_only`, `time_plus_atr`, а также матрица `all100_*`, `nearest40_*`, `corridor_*` с `relative_price`
 
 **Baseline:** XGBoost на тех же признаках (base_raw_plus_time, no_time, time_only) с тем же сплитом.
 
@@ -29,10 +33,13 @@
 python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed
 python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed --phase 1
 python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed --skip-phase1
+python -m ML.baseline.benchmark_stage5_transformer_breach --feature-preflight-only
 ```
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
 - `tests/test_stage5_transformer_breach.py` — тесты
 - `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт
+- `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a
 - `docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md` — план
+- `docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md` — план preflight

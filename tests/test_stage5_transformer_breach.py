@@ -22,9 +22,13 @@ from ML.baseline.benchmark_stage5_transformer_breach import (
     build_row_features,
     build_profile_features,
     compute_corridor_stats,
+    get_profile_contract,
     get_profile_seq_len,
+    normalize_profile_features,
     BASE10_INDICES,
     FULL29_INDICES,
+    NO_PRICE_TOKEN_FIELDS,
+    PREFLIGHT_PROFILE_NAMES,
     TARGET_COLUMN,
     TRAIN_MAX_YEAR,
     VAL_STOP_YEARS,
@@ -759,3 +763,114 @@ class TestDistributionAudit:
         # With standard normal, should be OK (no extreme tails, no NaN, padding zero)
         assert result['status'] == 'OK', \
             f"Expected OK, got {result['status']} with flags: {result['flags']}"
+
+
+class TestStage50aPreflightContracts:
+    def test_preflight_profiles_exist(self):
+        names = {p["name"] for p in define_profiles()}
+        assert set(PREFLIGHT_PROFILE_NAMES).issubset(names)
+
+    def test_time_only_clean_contains_only_calendar(self):
+        profile = find_profile("time_only_clean")
+        assert profile["token_fields"] == []
+        assert profile["row_fields"] == ["hour_sin", "hour_cos", "dow_sin", "dow_cos"]
+        assert "ATR" not in profile["row_fields"]
+
+    def test_time_plus_atr_contains_calendar_and_atr(self):
+        profile = find_profile("time_plus_atr")
+        assert profile["token_fields"] == []
+        assert profile["row_fields"] == ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"]
+
+    def test_profile_contract_fields_present(self):
+        for profile_name in PREFLIGHT_PROFILE_NAMES:
+            contract = get_profile_contract(find_profile(profile_name))
+            assert set(contract.keys()) == {
+                "name", "selection", "selector", "token_fields",
+                "row_fields", "token_order", "seq_len",
+                "padding_value", "mask_semantics",
+            }
+
+    def test_all100_profiles_order_by_freshness(self):
+        for profile_name in [
+            "all100_absolute_price_time",
+            "all100_no_price_time",
+            "all100_relative_price_no_time",
+            "all100_relative_price_time",
+        ]:
+            profile = find_profile(profile_name)
+            assert profile["selection"] == "all100"
+            assert profile["order"] == "freshness"
+
+    def test_corridor_profiles_anchor_first_then_distance(self):
+        df = _make_synthetic_df(2, 100)
+        profile = find_profile("corridor_10atr_relative_price_no_time")
+        tokens, _, mask = build_profile_features(df, profile)
+        valid = tokens[0, mask[0]]
+        assert len(valid) >= 1
+        assert valid[0, 0] == pytest.approx(0.0, abs=1e-6)
+        distances = np.abs(valid[:, 0])
+        assert list(distances) == sorted(distances.tolist())
+
+    def test_nearest40_excludes_anchor_and_tie_breaks_by_freshness(self):
+        prices = np.array([100.0, 101.0, 99.0, 101.0, 99.0], dtype=np.float32)
+        idx, mask, _ = TokenSelector.by_nearest(
+            prices, 100.0, k=4, seq_len=4, exclude_anchor=True, anchor_valid_position=0
+        )
+        selected = idx[mask]
+        assert 0 not in selected
+        assert list(selected[:4]) == [1, 2, 3, 4]
+
+    def test_relative_price_formula_matches_contract(self):
+        df = _make_synthetic_df(3, 5)
+        for i in range(len(df)):
+            df.at[i, "ATR"] = 2.0
+            df.at[i, "fractal0"] = _make_fractal_str([
+                (0, 10_000_000), (1, 400.0), (2, -1), (3, 0.5), (4, 0.5),
+                (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+            ])
+            df.at[i, "fractal1"] = _make_fractal_str([
+                (0, 10_000_000), (1, 410.0), (2, -1), (3, 0.5), (4, 0.5),
+                (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+            ])
+        profile = find_profile("all100_relative_price_time")
+        tokens, _, mask = build_profile_features(df, profile)
+        valid_prices = tokens[0, mask[0], 0]
+        assert valid_prices[0] == pytest.approx(0.0, abs=1e-6)
+        assert valid_prices[1] == pytest.approx(5.0, abs=1e-6)
+
+    def test_corridor_profiles_respect_declared_boundaries(self):
+        df = _make_synthetic_df(4, 100)
+        for profile_name, limit in [
+            ("corridor_5atr_relative_price_no_time", 5.0),
+            ("corridor_10atr_relative_price_no_time", 10.0),
+            ("corridor_15atr_relative_price_no_time", 15.0),
+        ]:
+            profile = find_profile(profile_name)
+            tokens, _, mask = build_profile_features(df, profile)
+            valid = np.abs(tokens[:, :, 0][mask])
+            if len(valid) > 0:
+                assert np.max(valid) <= limit + 1e-6
+
+    def test_row_only_profiles_have_empty_tokens(self):
+        df = _make_synthetic_df(5, 10)
+        for profile_name, row_dim in [
+            ("time_only_clean", 4),
+            ("atr_only", 1),
+            ("time_plus_atr", 5),
+        ]:
+            profile = find_profile(profile_name)
+            tokens, row_features, mask = build_profile_features(df, profile)
+            assert tokens.shape == (5, 0, 0)
+            assert mask.shape == (5, 0)
+            assert row_features.shape == (5, row_dim)
+
+    def test_normalization_keeps_padding_zero_for_preflight_profiles(self):
+        df = _make_synthetic_df(6, 100)
+        profile = find_profile("nearest40_relative_price_time")
+        tokens, row_features, mask = build_profile_features(df, profile)
+        (t_train, _, _, _, _, _), _stats = normalize_profile_features(
+            tokens, row_features, mask,
+            tokens, row_features, mask,
+            tokens, row_features, mask,
+        )
+        assert np.allclose(t_train[~mask], 0.0)
