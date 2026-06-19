@@ -69,11 +69,11 @@ ML-бот для прогнозирования движения цены Forex.
 - Для чтения CSV файлов использовать скилл `csv-processing`.
 
 ### Закрытие этапа
-- Финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` — скилл `stage-reporting`.
-- После закрытия этапа выполнить wiki **Ingest**: синтезировать новые отчёты из `docs/reports/` в страницы `wiki/research/` — скилл `wiki`.
+- Финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` + wiki Ingest — скилл `stage-reporting`.
 
 ### Git и окружение
-- `git commit`, `git push` не делать без явной просьбы пользователя.
+- `git commit` выполняется скиллом `stage-reporting` при закрытии этапа.
+- `git push` не делать без явной просьбы пользователя.
 - Не использовать worktree.
 
 ## Структура проекта
