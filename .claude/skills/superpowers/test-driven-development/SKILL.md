@@ -45,4 +45,4 @@ pytest tests/ -x --tb=short                                  # остальны�
 
 Оригинальный скилл требовал: «никакого кода без падающего теста». Это правило **не применяется** к `ML/`-экспериментам, где результат измеряется PF на validation/test, а не unit-тестом.
 
-Для processing/API/statistics — дисциплина тестов обязательна как часть контракта `docs/ML/ml_leakage_preflight_checklist.md` и общей практики проекта (каталог `tests/`).
+Для processing/API/statistics — дисциплина тестов обязательна как часть контракта `docs/methodology/03-feature-contract-leakage.md` и общей практики проекта (каталог `tests/`).
