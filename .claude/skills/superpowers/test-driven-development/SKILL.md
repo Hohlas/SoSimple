@@ -1,23 +1,20 @@
 ---
 name: test-driven-development
-description: Use when fixing bugs or writing code in processing/, API/, statistics/ — write a failing test before fixing
+description: Use when fixing bugs or writing code in processing/, API/, statistics/, ML-infrastructure — write a failing test before fixing
 ---
 
 # Test-Driven Development (адаптировано для ML-исследования)
 
 ## Когда применять
 
-**Обязательно:**
+**Обязательно (детерминированная логика с контрактом):**
+- ML-инфраструктура: `data_loader`, feature builder, metric, benchmark runner, profile validation
 - Багфиксы в любом модуле (`processing/`, `API/`, `statistics/`, `ML/`-инфраструктура)
 - Новая детерминированная логика (сортировка, нормализация, экспорт, парсинг)
 - Изменение контракта данных (формат CSV, поля фракталов)
 
-**По желанию (если сэкономит время):**
-- ML-эксперименты (новый benchmark, feature builder)
-- Инфраструктурный код в `ML/` (data_loader, train_model)
-
-**Не применять:**
-- Подбор гиперпараметров, перебор архитектур
+**Не применять (результат измеряется PF/AUC, не unit-тестом):**
+- Сам ML-эксперимент: подбор гиперпараметров, перебор архитектур, обучение модели
 - Throwaway-прототипы, однократные исследовательские прогоны
 
 ## RED — тест, воспроизводящий проблему

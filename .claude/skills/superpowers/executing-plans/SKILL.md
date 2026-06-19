@@ -32,9 +32,9 @@ For each task:
 ### Step 3: Complete Development
 
 After all tasks complete and verified:
-- Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
-- Follow that skill to verify tests, present options, execute choice
+- Прогон `./.venv/bin/python -m pytest tests/ -q`
+- Сообщи пользователю статус (passed/failed, количество тестов)
+- Коммит/PR только по явной просьбе пользователя (AGENTS.md)
 
 ## When to Stop and Ask for Help
 
@@ -65,6 +65,6 @@ After all tasks complete and verified:
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **git branch** — текущая feature-ветка (worktree запрещён AGENTS.md)
 - **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+- **Завершение** — pytest + отчёт пользователю; коммит по явной просьбе (AGENTS.md)

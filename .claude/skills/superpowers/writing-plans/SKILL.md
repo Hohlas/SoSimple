@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** Работай на текущей feature-ветке (worktree запрещён AGENTS.md). Brainstorming skill создаёт spec, не ветку.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -103,6 +103,16 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+## No Placeholders
+
+Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
+- "TBD", "TODO", "implement later", "fill in details"
+- "Add appropriate error handling" / "add validation" / "handle edge cases"
+- "Write tests for the above" (without actual test code)
+- "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
+- Steps that describe what to do without showing how (code blocks required for code steps)
+- References to types, functions, or methods not defined in any task
+
 ## Remember
 - Exact file paths always
 - Complete code in plan (not "add validation")
@@ -114,7 +124,7 @@ git commit -m "feat: add specific feature"
 
 After writing the complete plan:
 
-1. Dispatch a single plan-document-reviewer subagent (see plan-document-reviewer-prompt.md) with precisely crafted review context — never your session history. This keeps the reviewer focused on the plan, not your thought process.
+1. Dispatch a single plan-document-reviewer subagent (subagent_type=reviewer, see plan-document-reviewer-prompt.md) with precisely crafted review context — never your session history. This keeps the reviewer focused on the plan, not your thought process.
    - Provide: path to the plan document, path to spec document
 2. If ❌ Issues Found: fix the issues, re-dispatch reviewer for the whole plan
 3. If ✅ Approved: proceed to execution handoff
