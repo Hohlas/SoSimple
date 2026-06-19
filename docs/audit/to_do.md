@@ -333,3 +333,21 @@ Pipeline, генерирующий ML-сигналы, пригодные для 
 
 ---
 
+Ознакомься с проектом, прочитав следующие документы:
+docs/README.md
+CONTEXT_HANDOFF.md
+CHANGELOG.md (первые 200 строк).
+docs/DATA_FLOW.md
+Используй wiki и knowledge-rag для поиска недостающей информации
+
+скиллы проекта записаны в каталог .claude/skills и доступны разным агентам по симликам
+ln -sfn ~/git/SoSimple/.claude/skills ~/git/SoSimple/.opencode/skills
+ln -sfn ~/git/SoSimple/.claude/skills ~/git/SoSimple/.codex/skills
+
+подробно изучи скилл .claude/skills/my/stage-reporting/SKILL.md
+и ответь на вопросы:
+- Насколько он соответствует текущему проекту, правильно ли составлен триггер запуска
+- наличие в нем противоречий и неоднозначностей
+- можно ли записать его лаконичнее
+- что можно дополнить/исправить
+Для анализа в качестве методики используй скилл  writing-skills
