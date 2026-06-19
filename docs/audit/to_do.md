@@ -344,12 +344,13 @@ docs/DATA_FLOW.md
 ln -sfn ~/git/SoSimple/.claude/skills ~/git/SoSimple/.opencode/skills
 ln -sfn ~/git/SoSimple/.claude/skills ~/git/SoSimple/.codex/skills
 
-подробно изучи скилл .claude/skills/my/stage-reporting/SKILL.md
+подробно изучи скилл .claude/skills/my/update-docs-on-code-change/SKILL.md
 и ответь на вопросы:
 - Насколько он соответствует текущему проекту, правильно ли составлен триггер запуска
 - наличие в нем противоречий и неоднозначностей
 - можно ли записать его лаконичнее
 - что можно дополнить/исправить
+- проверь корректность его взаимодействия со скилом .claude/skills/my/stage-reporting/SKILL.md (он запускается из этого скила)
 Для анализа в качестве методики используй скилл  writing-skills
 
 ---

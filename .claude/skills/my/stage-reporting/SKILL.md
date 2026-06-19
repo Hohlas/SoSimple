@@ -28,8 +28,9 @@ Workflow для фиксации завершённого этапа без по
 2. Создай или обнови `docs/reports/YYYY-MM-DD-topic.md` по шаблону `docs/reports/README.md`. Для ML/исследовательских результатов дополнительно примени требования `docs/methodology/16-reporting-audit.md`: секции `Multiple Testing Context` и `Validation Split Disclosure`.
 3. Обнови `CHANGELOG.md`: добавь краткую запись — главные изменения, результаты, вывод, ссылка на report.
 4. Перепиши `CONTEXT_HANDOFF.md` до актуального состояния — не дополняй старое, а сжимай до текущего контекста.
-5. Выполни wiki Ingest — скилл `my:wiki`. Ingest обновит `wiki/research/`, `wiki/concepts/`, `wiki/index.md`, `wiki/log.md`, `wiki/REPO_integrity.md`.
-6. Проверь `git status`. Отдели файлы этого этапа от посторонних изменений. Закоммить только файлы этапа (включая wiki-изменения из шага 5). `git push` не делать.
+5. Синхронизируй документацию модулей — скилл `my:update-docs-on-code-change` (режим `sync docs`), если этап изменял кодовые модули (новые файлы, изменённые CLI/входы/выходы/назначение): обнови headers, `docs/<category>/<module>.md`, `MODULE_INDEX.md`, `docs/DATA_FLOW.md`.
+6. Выполни wiki Ingest — скилл `my:wiki`. Ingest обновит `wiki/research/`, `wiki/concepts/`, `wiki/index.md`, `wiki/log.md`, `wiki/REPO_integrity.md`.
+7. Проверь `git status`. Отдели файлы этого этапа от посторонних изменений. Закоммить только файлы этапа (включая wiki-изменения из шага 6). `git push` не делать.
 
 ## Правила
 
