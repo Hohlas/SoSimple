@@ -64,20 +64,29 @@ production-модуль не должен знать про тестовую и�
 
 **Нарушение (реальный паттерн из `tests/test_take_skip_trailing_stop_v2_task.py:149-151`):**
 ```python
-# ❌ ПЛОХО: валидаторы замоканы как no-op, но тест зависит от того, что они проверили
+# Валидаторы замоканы как no-op — слишком широкий мок
 monkeypatch.setattr(data_loader, "validate_data_contract", lambda *a, **k: None)
 monkeypatch.setattr(data_loader, "validate_csv_columns",   lambda *a, **k: None)
 monkeypatch.setattr(data_loader, "validate_fractal_format", lambda *a, **k: None)
 df = data_loader.load_split("train")
-assert "signal" in df.columns  # прошёл бы даже без колонки signal
+# asserts на shapes — вычисляются незамоканными split/engineered-функциями
+assert X_train.shape == (2, 20, X_train.shape[2])
 ```
 
-**Почему плохо:** мок валидаторов убирает именно ту проверку, от которой
-зависит корректность `df`. Тест проходит для пустого/битого датасета.
+**Нюанс:** мок здесь load-bearing — тестовый df не содержит fractal-колонок,
+и без мока валидаторы упали бы. Мок осознанно изолирует fractal-подсистему
+для проверки take_skip_v2 plumbing. Это не лень.
 
-**Исправление:** мокать ниже — медленную I/O (`pd.read_csv` через файл в
-`tmp_path`), а валидаторы оставить реальными. Если валидатор медленный —
-разбить его, а не выключать целиком.
+**Почему всё равно плохо:** `lambda *a, **k: None` отключает **все** проверки
+валидатора, включая будущие. Если в `validate_data_contract` добавят проверку
+take_skip_v2 target-колонок — этот тест молча обойдёт её. Усугубляется тем,
+что валидаторы не имеют dedicated unit-тестов во всём `tests/` — некому
+поймать регрессию.
+
+**Исправление:** либо сузить мок (замокать только fractal-проверки, оставить
+target-колонки реальными), либо написать dedicated тесты на валидаторы —
+тогда широкий мок здесь безопасен, потому что регрессию поймают в другом
+месте.
 
 ## Анти-паттерн 4: неполный мок
 
@@ -114,7 +123,7 @@ test  = data_loader.load_split("test")        # то же
 |---|---|
 | Assert на мок | Assert на свойства, вычисляемые реальным кодом |
 | Test-only метод в production | Вынести в `tests/conftest.py` или `tests/utils.py` |
-| Мок без понимания side effects | Мокать ниже (I/O), валидаторы оставить реальными |
+| Слишком широкий мок валидаторов | Сузить мок или написать dedicated тесты на валидаторы |
 | Неполный мок (один df на все вызовы) | Реальные файлы в `tmp_path` или мок по пути |
 | Тесты как follow-up | TDD: RED сначала, потом GREEN |
 
@@ -122,7 +131,7 @@ test  = data_loader.load_split("test")        # то же
 
 - Assert проверяет `is fake_df` / `mock.called` вместо свойств данных
 - Метод в `ML/` начинается с `_test_` или `_reset_`
-- `monkeypatch.setattr(..., lambda *a, **k: None)` для валидаторов
+- `monkeypatch.setattr(..., lambda *a, **k: None)` для валидаторов без dedicated тестов на них
 - Одна lambda обслуживает несколько вызовов с разными аргументами
 - «Сначала напишу код, потом тесты»
 
