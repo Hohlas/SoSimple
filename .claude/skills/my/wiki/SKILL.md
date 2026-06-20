@@ -1,10 +1,11 @@
 ---
 name: wiki
-description: Use when working with the project wiki layer — new reports in docs/reports/ are not yet covered in wiki/index.md, a new concept needs to be saved, session needs wiki context, pages may be stale, or REPO_integrity.md needs to be regenerated
+description: Use when working with the project wiki layer — new reports in docs/reports/ are not yet covered in wiki/index.md, a new concept needs to be saved, session needs wiki context, or pages may be stale
 ---
 
 # Wiki Operations
 
+## Overview
 Workflow для работы с LLM Wiki — слоем синтезированных знаний проекта.
 
 ## Когда использовать
@@ -13,7 +14,6 @@ Workflow для работы с LLM Wiki — слоем синтезирован
 - **Save**: при обнаружении нового концепта или инсайта, который не укладывается ни в один существующий файл проекта.
 - **Query**: в начале сессии или при исследовании темы — прочитать релевантные wiki-страницы для контекста.
 - **Lint**: периодически или перед крупным этапом — проверить актуальность wiki-страниц.
-- **Generate**: после любых изменений в файлах репо — обновить `wiki/REPO_integrity.md`.
 
 ## Принципы
 
@@ -34,9 +34,10 @@ wiki/
 ├── index.md          # Каталог wiki-страниц (LLM-maintained)
 ├── REPO_integrity.md # Integrity map всего репо (auto-generated)
 ├── log.md            # Append-only хронология операций
-├── wiki.py           # Инструмент: generate / verify
+├── wiki.py           # Инструмент: generate / verify / status / search
 ├── research/         # Синтез отчётов из docs/reports/
-└── concepts/         # Синтезированные концепты проекта
+├── concepts/         # Синтезированные концепты проекта
+└── .archive/         # Устаревшие wiki-страницы (не удалять, не править)
 ```
 
 ## Операции
@@ -72,16 +73,17 @@ wiki/
 Использование wiki как контекста.
 
 1. Сначала прочитай `wiki/index.md`, чтобы понять существующий синтез.
-2. Уточни поиск через MCP server `knowledge-rag`, tool `search_knowledge`.
-3. Открой релевантные `wiki/research/`, `wiki/concepts/` и найденные первоисточники (`docs/reports/`, `docs/`, код).
-4. Если найден новый устойчивый синтез → предложи или выполни **Save**; если новый отчёт не покрыт в `wiki/index.md` → выполни **Ingest**.
+2. Быстрый grep: `python wiki/wiki.py search "<термин>"` — найди точные совпадения в wiki/.
+3. Уточни через MCP server `knowledge-rag`, tool `search_knowledge` — смысловой поиск по проекту.
+4. Открой релевантные `wiki/research/`, `wiki/concepts/` и найденные первоисточники (`docs/reports/`, `docs/`, код).
+5. Если найден новый устойчивый синтез → предложи или выполни **Save**; если новый отчёт не покрыт в `wiki/index.md` → выполни **Ingest**.
 
 ### Lint
 
 Проверка актуальности wiki-страниц.
 
-1. Запусти `python wiki/wiki.py verify` — проверь целостность файлов.
-2. Для каждой wiki-страницы проверь:
+1. Запусти `python wiki/wiki.py status` — покажет непокрытые отчёты, изменившиеся файлы, битые ссылки.
+2. Для wiki-страниц с проблемами проверь:
    - Упомянутые файлы/пути всё ещё существуют.
    - Цифры и выводы соответствуют текущим отчётам.
    - Нет ли новых отчётов, которые дополняют или опровергают синтез.
@@ -95,7 +97,7 @@ wiki/
 python wiki/wiki.py generate
 ```
 
-Запускать после любых изменений в файлах репо. Обновляет `wiki/REPO_integrity.md` с актуальными хешами.
+Обновляет `wiki/REPO_integrity.md` с актуальными хешами. Включён в Ingest (шаг 8). Запускай отдельно, если wiki-страницы правились без полного Ingest.
 
 ## Формат wiki-страниц
 

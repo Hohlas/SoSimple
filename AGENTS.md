@@ -88,7 +88,7 @@ ML-бот для прогнозирования движения цены Forex.
 │   ├── REPO_integrity.md #   авто-генерированная integrity map репо
 │   ├── index.md         #   LLM-каталог wiki-страниц
 │   ├── log.md           #   хронология операций
-│   ├── wiki.py          #   generate / verify
+│   ├── wiki.py          #   generate / verify / status / search
 │   ├── concepts/        #   синтез: сигналы, фильтры, политики
 │   └── research/        #   синтез отчётов из docs/reports/
 ├── API/                 # Генерация ML-сигналов для MT4, REST API
