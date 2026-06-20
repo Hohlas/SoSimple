@@ -62,7 +62,7 @@ ML-бот для прогнозирования движения цены Forex.
 - Использовать окружение `~/git/SoSimple/.venv` через вызов `./.venv/bin/python`.
 - После изменений в Python-коде запускать тесты: `./.venv/bin/python -m pytest tests/ -q`.
 - Для bugfix не делать рефакторинг «заодно».
-- Документация модулей (header, Docstrings, docs/, MODULE_INDEX.md) — скилл `update-docs-on-code-change` по запросу.
+- Документация модулей (header, Docstrings, docs/, MODULE_INDEX.md) — скилл `update-docs` по запросу.
 - Для задач ML-пайплайна (новый эксперимент, аудит признаков/таргетов/split, leakage-проверка) — читать `docs/methodology/README.md` и придерживаться соответствующего этапа как инструкции.
 
 ### Работа с данными
