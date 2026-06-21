@@ -25,6 +25,7 @@
 **Профили признаков:**
 - Stage 5.0 training: legacy-профили `all100_base10_time`, `all100_base10_no_time`, `newest20_base10_time`, `nearest40_base10_time`, `corridor_10atr_base10_time`
 - Stage 5.0a preflight: clean-controls `time_only_clean`, `atr_only`, `time_plus_atr`, а также матрица `all100_*`, `nearest40_*`, `corridor_*` с `relative_price`, включая `corridor_*_full`
+- Дополнительные диагностические профили transform-сравнения: `all100_absolute_price_atr_scaled_time_raw`, `all100_absolute_price_atr_scaled_time_asinh`, `corridor_5atr_price_unit_atr_full`, `corridor_10atr_price_unit_atr_full`
 
 **Особенности preflight:**
 - builder возвращает `selection_meta` с `candidate_count_before_cap`, `selected_count_after_cap`, `is_truncated`
@@ -42,7 +43,10 @@
 - `current`: текущий вариант `log1p(ATR)` + `sign(x)·log1p(abs(x))` для `price_coord_atr`
 - `asinh`: `asinh(x)` для `ATR` и `price_coord_atr`; около нуля почти линейный, хвосты сжимаются похоже на логарифм
 - `piecewise_tail`: пороги `p05/p95` fit только на train; середина остаётся линейной, хвосты ниже `p05` и выше `p95` сжимаются логарифмически
-- сравнение выполняется только для 7 rerun-кандидатов и не запускает обучение
+- сравнение выполняется для 7 rerun-кандидатов и 4 дополнительных диагностических профилей `price/ATR`; обучение не запускается
+- `all100_absolute_price_atr_scaled_time_raw`: token `price_atr_scaled = price/ATR`, без дополнительного сжатия token-признака
+- `all100_absolute_price_atr_scaled_time_asinh`: token `price_atr_scaled = asinh(price/ATR)`
+- `corridor_5atr_price_unit_atr_full` / `corridor_10atr_price_unit_atr_full`: token `price_coord_unit = (price-fractal0)/(ATR*corridor_atr)`
 
 **Per-position token stats (A7):**
 - `compute_per_position_token_stats` — per-feature stats для каждой позиции 0..seq_len−1, только valid (mask=True) samples
@@ -67,7 +71,7 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --transform-comparison
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
-- `tests/test_stage5_transformer_breach.py` — тесты (77 тестов, включая log1p/signed-log/per-position)
+- `tests/test_stage5_transformer_breach.py` — тесты (83 теста, включая log1p/signed-log/per-position и `price/ATR` профили)
 - `docs/methodology/A7-feature-distribution-audit.md` — методика feature distribution audit
 - `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт Stage 5.0
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a preflight

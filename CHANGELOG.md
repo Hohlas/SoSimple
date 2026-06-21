@@ -9,11 +9,13 @@
 - `ML/reports/stage5_0a_feature_stats_per_position.csv` — per-position статистики признаков
 - `ML/reports/stage5_0a_transform_comparison.json` — structured artifact сравнения `current` / `asinh` / `piecewise_tail`
 - `ML/reports/stage5_0a_transform_comparison_summary.csv`, `*_stats.csv`, `*_per_position.csv` — CSV-артефакты сравнения способов сжатия хвостов
+- Дополнительные диагностические профили `price/ATR`: `all100_absolute_price_atr_scaled_time_raw`, `all100_absolute_price_atr_scaled_time_asinh`, `corridor_5atr_price_unit_atr_full`, `corridor_10atr_price_unit_atr_full`
 
 ### Результаты
 - Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`; остался только `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14.
 - Per-position audit выявил скрытую проблему старого `price_coord_atr`: `all100_relative_price_*` имел `TAIL_GT10` на позиции 99 (самый старый фрактал); signed-log убрал этот хвост.
-- Дополнительное сравнение без обучения: `current` = 7 WARNING / 0 OK, `asinh` = 0 WARNING / 7 OK, `piecewise_tail` = 0 WARNING / 7 OK.
+- Дополнительное сравнение без обучения после расширения до 11 профилей: `current` = 11 WARNING / 0 OK, `asinh` = 0 WARNING / 11 OK, `piecewise_tail` = 0 WARNING / 11 OK.
+- `all100_absolute_price_atr_scaled_time_raw` не имеет хвоста `abs>10` после нормализации даже без `asinh`; `asinh(price/ATR)` дополнительно снижает train max с 6.67 до 3.39.
 - Кусочное сжатие использует пороги `p05/p95`, рассчитанные только на train; val_stop/holdout используются только для disclosure.
 
 ### Вывод

@@ -733,6 +733,16 @@ class TestTransformComparison:
         assert piecewise["transform_config"]["fit_params"]["ATR"]["fit_split"] == "train"
         assert piecewise["transform_config"]["fit_params"]["price_coord_atr"]["fit_split"] == "train"
 
+    def test_transform_comparison_includes_atr_scaled_price_profiles(self):
+        import ML.baseline.benchmark_stage5_transformer_breach as runner
+        expected = {
+            "corridor_5atr_price_unit_atr_full",
+            "corridor_10atr_price_unit_atr_full",
+            "all100_absolute_price_atr_scaled_time_raw",
+            "all100_absolute_price_atr_scaled_time_asinh",
+        }
+        assert expected.issubset(set(runner.RERUN_CANDIDATE_PROFILE_NAMES))
+
 
 # ───────────────────────────────────────────────────────────────────────────
 # Normalized distribution audit tests
@@ -1026,6 +1036,45 @@ class TestStage50aPreflightContracts:
         # signed_log1p((400-400)/2)=0 (anchor), signed_log1p((410-400)/2)=signed_log1p(5)=1.7918
         assert valid_prices[0] == pytest.approx(0.0, abs=1e-6)
         assert valid_prices[1] == pytest.approx(1.7917595, abs=1e-4)
+
+    def test_corridor_price_unit_atr_formula_matches_contract(self):
+        df = _make_synthetic_df(1, 5)
+        df.at[0, "ATR"] = 2.0
+        df.at[0, "fractal0"] = _make_fractal_str([
+            (0, 10_000_000), (1, 400.0), (2, -1), (3, 0.5), (4, 0.5),
+            (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+        ])
+        df.at[0, "fractal1"] = _make_fractal_str([
+            (0, 10_000_000), (1, 410.0), (2, -1), (3, 0.5), (4, 0.5),
+            (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+        ])
+        for idx in range(2, 5):
+            df.at[0, f"fractal{idx}"] = _make_fractal_str([
+                (0, 10_000_000), (1, 1000.0 + idx), (2, -1), (3, 0.5), (4, 0.5),
+                (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+            ])
+        profile = find_profile("corridor_5atr_price_unit_atr_full")
+        tokens, _, mask, _selection_meta = build_profile_features(df, profile)
+        valid_prices = tokens[0, mask[0], 0]
+        assert valid_prices[0] == pytest.approx(0.0, abs=1e-6)
+        assert valid_prices[1] == pytest.approx(1.0, abs=1e-6)
+
+    def test_absolute_price_atr_scaled_profiles_match_contract(self):
+        import math
+        df = _make_synthetic_df(1, 5)
+        df.at[0, "ATR"] = 2.0
+        df.at[0, "fractal0"] = _make_fractal_str([
+            (0, 10_000_000), (1, 400.0), (2, -1), (3, 0.5), (4, 0.5),
+            (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+        ])
+        raw_profile = find_profile("all100_absolute_price_atr_scaled_time_raw")
+        asinh_profile = find_profile("all100_absolute_price_atr_scaled_time_asinh")
+
+        raw_tokens, _, raw_mask, _ = build_profile_features(df, raw_profile)
+        asinh_tokens, _, asinh_mask, _ = build_profile_features(df, asinh_profile)
+
+        assert raw_tokens[0, raw_mask[0], 0][0] == pytest.approx(200.0, abs=1e-6)
+        assert asinh_tokens[0, asinh_mask[0], 0][0] == pytest.approx(math.asinh(200.0), abs=1e-6)
 
     def test_price_coord_atr_signed_log_edge_cases(self):
         """A7 signed-log transform for price_coord_atr: sign(x)*log1p(abs(x)).

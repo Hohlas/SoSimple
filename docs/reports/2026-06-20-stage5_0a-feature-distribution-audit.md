@@ -189,15 +189,19 @@ Corridor empty positions — норм (узкий коридор), mask обра
 - `asinh`: `asinh(x)` для `ATR` и `price_coord_atr`;
 - `piecewise_tail`: кусочное сжатие хвостов; пороги `p05/p95` рассчитываются только на train, середина остаётся линейной, значения ниже `p05` и выше `p95` сжимаются логарифмически.
 
-Проверка выполнена только для 7 профилей-кандидатов Stage 5.0 rerun:
+Проверка сначала была выполнена для 7 профилей-кандидатов Stage 5.0 rerun, затем 2026-06-21 расширена ещё 4 диагностическими профилями по гипотезе `price/ATR`:
 
 - `all100_no_price_time`
 - `all100_relative_price_no_time`
 - `all100_relative_price_time`
+- `all100_absolute_price_atr_scaled_time_raw`
+- `all100_absolute_price_atr_scaled_time_asinh`
 - `nearest40_relative_price_no_time`
 - `nearest40_relative_price_time`
 - `corridor_5atr_relative_price_atr_full`
 - `corridor_10atr_relative_price_atr_full`
+- `corridor_5atr_price_unit_atr_full`
+- `corridor_10atr_price_unit_atr_full`
 
 Команда:
 
@@ -209,19 +213,41 @@ Corridor empty positions — норм (узкий коридор), mask обра
 
 | Вариант | OK | WARNING | Главный вывод |
 |---|---:|---:|---|
-| `current` | 0 | 7 | Во всех 7 профилях остаётся `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14 |
-| `asinh` | 7 | 0 | Предупреждения исчезли во всех 7 профилях |
-| `piecewise_tail` | 7 | 0 | Предупреждения исчезли во всех 7 профилях |
+| `current` | 0 | 11 | Во всех 11 профилях остаётся `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14 |
+| `asinh` | 11 | 0 | Предупреждения исчезли во всех 11 профилях |
+| `piecewise_tail` | 11 | 0 | Предупреждения исчезли во всех 11 профилях |
 
 Per-position проверка также чистая:
 
 | Вариант | OK rows | EMPTY rows | WARNING rows |
 |---|---:|---:|---:|
-| `current` | 16080 | 1020 | 0 |
-| `asinh` | 16080 | 1020 | 0 |
-| `piecewise_tail` | 16080 | 1020 | 0 |
+| `current` | 27060 | 2040 | 0 |
+| `asinh` | 27060 | 2040 | 0 |
+| `piecewise_tail` | 27060 | 2040 | 0 |
 
 `EMPTY` строки — ожидаемые полностью пустые позиции в corridor-профилях; это не ошибка, а следствие ограниченного числа фракталов внутри коридора.
+
+### Дополнительная проверка price/ATR
+
+Добавлены 4 профиля без обучения:
+
+| Профиль | Что проверяет |
+|---|---|
+| `all100_absolute_price_atr_scaled_time_raw` | абсолютная цена каждого фрактала делится на сырой `ATR`; без дополнительного `asinh` для token-признака |
+| `all100_absolute_price_atr_scaled_time_asinh` | то же `price/ATR`, затем `asinh(price/ATR)` |
+| `corridor_5atr_price_unit_atr_full` | координата цены внутри коридора: `(price-fractal0)/(ATR*5)` |
+| `corridor_10atr_price_unit_atr_full` | координата цены внутри коридора: `(price-fractal0)/(ATR*10)` |
+
+Результат по нормализованному token-признаку:
+
+| Профиль | train p95 | train p99 | train max | holdout p95 | holdout p99 | holdout max | `abs>10` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `all100_absolute_price_atr_scaled_time_raw` | 1.70 | 2.45 | 6.67 | 1.40 | 2.40 | 3.03 | 0 |
+| `all100_absolute_price_atr_scaled_time_asinh` | 1.40 | 1.81 | 3.39 | 1.22 | 1.79 | 2.09 | 0 |
+| `corridor_5atr_price_unit_atr_full` | 1.76 | 2.02 | 2.08 | 1.73 | 2.00 | 2.08 | 0 |
+| `corridor_10atr_price_unit_atr_full` | 1.80 | 2.15 | 2.25 | 1.72 | 2.13 | 2.25 | 0 |
+
+Вывод: у `all100_absolute_price_atr_scaled_time_raw` после train-only StandardScaler хвоста `abs>10` нет даже без `asinh`. Но `asinh(price/ATR)` заметно уменьшает максимум train с 6.67 до 3.39 и p99 с 2.45 до 1.81. Это делает профиль спокойнее для нейросети, хотя по текущей проверке оба варианта методически допустимы.
 
 ### Интерпретация
 
@@ -248,9 +274,9 @@ Per-position проверка также чистая:
 
 Результат:
 
-- `80 passed` для `tests/test_stage5_transformer_breach.py`
+- `83 passed` для `tests/test_stage5_transformer_breach.py`
 - transform comparison завершён успешно, без обучения
-- `765 passed, 29 warnings` для полного набора `tests/`
+- `768 passed, 29 warnings` для полного набора `tests/`
 
 ## Методические замечания
 

@@ -362,6 +362,42 @@ PROFILE_DEFS = [
         "relative_price": True,
     },
     {
+        "name": "all100_absolute_price_atr_scaled_time_raw",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": ['price_atr_scaled'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "absolute_price_atr_scaled": True,
+        "price_atr_scaled_transform": "raw",
+        "diagnostic_only": True,
+    },
+    {
+        "name": "all100_absolute_price_atr_scaled_time_asinh",
+        "selection": "all100",
+        "selector": "fractal0..fractal99",
+        "order": "freshness",
+        "token_order": "freshness: fractal0, fractal1, ...",
+        "token_fields": ['price_atr_scaled'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_PLUS_ATR_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 5,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "absolute_price_atr_scaled": True,
+        "price_atr_scaled_transform": "asinh",
+        "diagnostic_only": True,
+    },
+    {
         "name": "corridor_5atr_relative_price_no_time",
         "selection": "corridor",
         "selector": "levels within +/-5 ATR from fractal0.price",
@@ -464,6 +500,42 @@ PROFILE_DEFS = [
         "mask_semantics": "1=real token, 0=padding",
         "corridor_atr": 10.0,
         "relative_price": True,
+    },
+    {
+        "name": "corridor_5atr_price_unit_atr_full",
+        "selection": "corridor",
+        "selector": "levels within +/-5 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_unit'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 5.0,
+        "corridor_price_unit": True,
+        "diagnostic_only": True,
+    },
+    {
+        "name": "corridor_10atr_price_unit_atr_full",
+        "selection": "corridor",
+        "selector": "levels within +/-10 ATR from fractal0.price",
+        "order": "price_distance_with_anchor_first",
+        "token_order": "anchor first, then ascending absolute distance to anchor",
+        "token_fields": ['price_coord_unit'] + NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": ["ATR"],
+        "uses_time": False,
+        "seq_len": 100,
+        "token_dim": 10,
+        "row_dim": 1,
+        "padding_value": 0.0,
+        "mask_semantics": "1=real token, 0=padding",
+        "corridor_atr": 10.0,
+        "corridor_price_unit": True,
+        "diagnostic_only": True,
     },
     {
         "name": "corridor_15atr_relative_price_no_time",
@@ -629,7 +701,11 @@ def project_token_fields(base_features: np.ndarray, profile: dict) -> np.ndarray
 
     projected = np.zeros((base_features.shape[0], len(token_fields)), dtype=np.float32)
     for out_idx, field_name in enumerate(token_fields):
-        source_name = "price" if field_name == "price_coord_atr" else field_name
+        source_name = "price" if field_name in {
+            "price_coord_atr",
+            "price_coord_unit",
+            "price_atr_scaled",
+        } else field_name
         source_idx = BASE10_NAME_TO_INDEX[source_name]
         projected[:, out_idx] = base_features[:, source_idx]
     return projected
@@ -718,6 +794,41 @@ def _transform_price_coord_values(values: np.ndarray, transform_variant: str = "
             params = _fit_piecewise_tail_params(vals)
         return _apply_piecewise_tail_transform(vals, params)
     raise ValueError(f"Unknown price_coord_atr transform method: {method}")
+
+
+def _post_process_price_fields(tokens: np.ndarray, mask: np.ndarray, token_fields: list,
+                               f0_prices: np.ndarray, atr_vals: np.ndarray, profile: dict,
+                               transform_variant: str = "current",
+                               transform_params: dict | None = None) -> None:
+    """Replace raw price placeholder fields with ATR-scaled diagnostic values."""
+    safe_atr = np.maximum(np.asarray(atr_vals, dtype=np.float32), 0.001)
+    if "price_coord_atr" in token_fields or (profile.get("relative_price", False) and "price" in token_fields):
+        price_idx = token_fields.index("price_coord_atr") if "price_coord_atr" in token_fields else token_fields.index("price")
+        price_col = tokens[:, :, price_idx]
+        raw_coord = (price_col - f0_prices[:, None]) / safe_atr[:, None]
+        tokens[:, :, price_idx] = _transform_price_coord_values(
+            raw_coord, transform_variant, transform_params)
+
+    if "price_coord_unit" in token_fields:
+        price_idx = token_fields.index("price_coord_unit")
+        price_col = tokens[:, :, price_idx]
+        corridor_atr = max(float(profile.get("corridor_atr", 1.0)), 0.001)
+        raw_coord = (price_col - f0_prices[:, None]) / safe_atr[:, None]
+        tokens[:, :, price_idx] = (raw_coord / corridor_atr).astype(np.float32)
+
+    if "price_atr_scaled" in token_fields:
+        price_idx = token_fields.index("price_atr_scaled")
+        price_col = tokens[:, :, price_idx]
+        scaled = price_col / safe_atr[:, None]
+        method = profile.get("price_atr_scaled_transform", "raw")
+        if method == "raw":
+            tokens[:, :, price_idx] = scaled.astype(np.float32)
+        elif method == "asinh":
+            tokens[:, :, price_idx] = _asinh_transform(scaled).astype(np.float32)
+        else:
+            raise ValueError(f"Unknown price_atr_scaled transform method: {method}")
+
+    tokens[~mask] = 0.0
 
 
 def fit_transform_params_for_profile(train_df: pd.DataFrame, parsed_train: dict,
@@ -903,8 +1014,9 @@ def build_profile_features(df: pd.DataFrame, profile: dict, transform_variant: s
 
     row_features = build_row_features(df, profile, transform_variant, transform_params)
 
-    # Post-process: relative_price = (price - f0_price) / ATR
-    if profile.get("relative_price", False):
+    if profile.get("relative_price", False) or any(
+        field in token_fields for field in ["price_coord_unit", "price_atr_scaled"]
+    ):
         f0_prices = np.zeros(n_samples, dtype=np.float32)
         atr_vals = np.zeros(n_samples, dtype=np.float32)
         for sample_idx in range(n_samples):
@@ -915,20 +1027,9 @@ def build_profile_features(df: pd.DataFrame, profile: dict, transform_variant: s
                 f0_prices[sample_idx] = 0.0
             atr_raw = pd.to_numeric(df["ATR"].iloc[sample_idx], errors="coerce")
             atr_vals[sample_idx] = max(float(atr_raw) if not pd.isna(atr_raw) else 1.0, 0.001)
-        if "price_coord_atr" in token_fields:
-            price_idx = token_fields.index("price_coord_atr")
-        elif "price" in token_fields:
-            price_idx = token_fields.index("price")
-        else:
-            price_idx = None
-        if price_idx is not None:
-            price_col = tokens[:, :, price_idx]
-            # A7: signed price coordinate uses signed-log transform to compress
-            # the long tail of far-away fractals (all100 pos99 train p95 ~10.86 raw).
-            raw_coord = (price_col - f0_prices[:, None]) / atr_vals[:, None]
-            tokens[:, :, price_idx] = _transform_price_coord_values(
-                raw_coord, transform_variant, transform_params)
-        tokens[~mask] = 0.0
+        _post_process_price_fields(
+            tokens, mask, token_fields, f0_prices, atr_vals, profile,
+            transform_variant, transform_params)
 
     if np.isnan(tokens).any():
         tokens = np.nan_to_num(tokens, nan=0.0)
@@ -1042,22 +1143,14 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
                 mask[sample_idx, t] = True
 
     row_features = build_row_features(df, profile, transform_variant, transform_params)
-    if profile.get("relative_price", False):
+    if profile.get("relative_price", False) or any(
+        field in token_fields for field in ["price_coord_unit", "price_atr_scaled"]
+    ):
         f0_prices = prices_all[:, 0].copy()
         atr_vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(1.0).clip(lower=0.001).values.astype(np.float32)
-        if "price_coord_atr" in token_fields:
-            price_idx = token_fields.index("price_coord_atr")
-        elif "price" in token_fields:
-            price_idx = token_fields.index("price")
-        else:
-            price_idx = None
-        if price_idx is not None:
-            # A7: signed price coordinate uses signed-log transform to compress
-            # the long tail of far-away fractals (all100 pos99 train p95 ~10.86 raw).
-            raw_coord = (tokens[:, :, price_idx] - f0_prices[:, None]) / atr_vals[:, None]
-            tokens[:, :, price_idx] = _transform_price_coord_values(
-                raw_coord, transform_variant, transform_params)
-            tokens[~mask] = 0.0
+        _post_process_price_fields(
+            tokens, mask, token_fields, f0_prices, atr_vals, profile,
+            transform_variant, transform_params)
 
     if np.isnan(tokens).any():
         tokens = np.nan_to_num(tokens, nan=0.0)
@@ -2418,10 +2511,14 @@ RERUN_CANDIDATE_PROFILE_NAMES = [
     "all100_no_price_time",
     "all100_relative_price_no_time",
     "all100_relative_price_time",
+    "all100_absolute_price_atr_scaled_time_raw",
+    "all100_absolute_price_atr_scaled_time_asinh",
     "nearest40_relative_price_no_time",
     "nearest40_relative_price_time",
     "corridor_5atr_relative_price_atr_full",
     "corridor_10atr_relative_price_atr_full",
+    "corridor_5atr_price_unit_atr_full",
+    "corridor_10atr_price_unit_atr_full",
 ]
 
 TRANSFORM_VARIANTS = {
