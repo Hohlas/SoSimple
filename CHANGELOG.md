@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison
+
+### Добавлено
+- `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт проверки распределения признаков перед rerun Stage 5.0
+- `ML/reports/stage5_0a_feature_stats_per_position.csv` — per-position статистики признаков
+- `ML/reports/stage5_0a_transform_comparison.json` — structured artifact сравнения `current` / `asinh` / `piecewise_tail`
+- `ML/reports/stage5_0a_transform_comparison_summary.csv`, `*_stats.csv`, `*_per_position.csv` — CSV-артефакты сравнения способов сжатия хвостов
+
+### Результаты
+- Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`; остался только `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14.
+- Per-position audit выявил скрытую проблему старого `price_coord_atr`: `all100_relative_price_*` имел `TAIL_GT10` на позиции 99 (самый старый фрактал); signed-log убрал этот хвост.
+- Дополнительное сравнение без обучения: `current` = 7 WARNING / 0 OK, `asinh` = 0 WARNING / 7 OK, `piecewise_tail` = 0 WARNING / 7 OK.
+- Кусочное сжатие использует пороги `p05/p95`, рассчитанные только на train; val_stop/holdout используются только для disclosure.
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. `asinh` и `piecewise_tail` лучше текущего варианта по проверке распределения признаков, но это не доказательство качества модели: обучение не запускалось. Следующий Transformer rerun можно планировать с заранее зафиксированным transform-кандидатом или как явно диагностическое сравнение, чтобы не создать новый скрытый перебор конфигураций.
+
+<!-- docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md -->
+
 ## [2026-06-17] — Stage 5.0: Transformer Breach Holdout — FAIL
 
 ### Добавлено

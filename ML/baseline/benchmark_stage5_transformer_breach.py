@@ -5,7 +5,9 @@
 # Output: ML/reports/stage5_transformer_breach.json,
 #         ML/reports/stage5_0a_feature_preflight.json,
 #         ML/reports/stage5_0a_feature_stats_normalized.csv,
-#         ML/reports/stage5_0a_profile_summary.csv
+#         ML/reports/stage5_0a_feature_stats_per_position.csv,
+#         ML/reports/stage5_0a_profile_summary.csv,
+#         ML/reports/stage5_0a_transform_comparison.json
 # Language: Python 3.10+
 # Created: 2026-06-17
 # Updated: 2026-06-18
@@ -633,12 +635,122 @@ def project_token_fields(base_features: np.ndarray, profile: dict) -> np.ndarray
     return projected
 
 
-def build_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+def _signed_log1p(x: np.ndarray) -> np.ndarray:
+    """A7: signed-log transform for signed values with long tails
+    (signed distance, signed return, signed price coordinate).
+    sign(x) * log1p(abs(x)); x=0 -> 0; compresses |x|>1 tails monotonically.
+    """
+    return np.sign(x) * np.log1p(np.abs(x))
+
+
+def _asinh_transform(x: np.ndarray) -> np.ndarray:
+    """Soft tail compression: near zero it is almost linear, tails are log-like."""
+    return np.arcsinh(x)
+
+
+def _fit_piecewise_tail_params(values: np.ndarray, lower_q: float = 5, upper_q: float = 95) -> dict:
+    """Fit piecewise tail-compression thresholds on train values only."""
+    arr = np.asarray(values, dtype=np.float64).reshape(-1)
+    clean = arr[np.isfinite(arr)]
+    if len(clean) == 0:
+        lower = upper = 0.0
+    else:
+        lower, upper = np.percentile(clean, [lower_q, upper_q])
+        if upper < lower:
+            lower, upper = upper, lower
+    return {
+        "lower": float(lower),
+        "upper": float(upper),
+        "lower_q": float(lower_q),
+        "upper_q": float(upper_q),
+        "fit_split": "train",
+    }
+
+
+def _apply_piecewise_tail_transform(x: np.ndarray, params: dict) -> np.ndarray:
+    """Keep the middle interval linear; compress values below/above thresholds."""
+    arr = np.asarray(x, dtype=np.float32)
+    lower = float(params.get("lower", 0.0))
+    upper = float(params.get("upper", lower))
+    if upper <= lower:
+        return arr.copy()
+    out = arr.copy()
+    lower_mask = out < lower
+    upper_mask = out > upper
+    out[lower_mask] = lower - np.log1p(lower - out[lower_mask])
+    out[upper_mask] = upper + np.log1p(out[upper_mask] - upper)
+    return out.astype(np.float32)
+
+
+def _transform_atr_values(values: np.ndarray, transform_variant: str = "current",
+                          transform_params: dict | None = None) -> np.ndarray:
+    if transform_variant == "identity":
+        return np.asarray(values, dtype=np.float32)
+    variant = TRANSFORM_VARIANTS.get(transform_variant, TRANSFORM_VARIANTS["current"])
+    method = variant.get("row_atr", "log1p")
+    vals = np.asarray(values, dtype=np.float32)
+    if method == "log1p":
+        return np.log1p(np.clip(vals, 0.0, None)).astype(np.float32)
+    if method == "asinh":
+        return _asinh_transform(np.clip(vals, 0.0, None)).astype(np.float32)
+    if method == "piecewise_tail":
+        params = (transform_params or {}).get("ATR")
+        if params is None:
+            params = _fit_piecewise_tail_params(np.clip(vals, 0.0, None))
+        return _apply_piecewise_tail_transform(np.clip(vals, 0.0, None), params)
+    raise ValueError(f"Unknown ATR transform method: {method}")
+
+
+def _transform_price_coord_values(values: np.ndarray, transform_variant: str = "current",
+                                  transform_params: dict | None = None) -> np.ndarray:
+    if transform_variant == "identity":
+        return np.asarray(values, dtype=np.float32)
+    variant = TRANSFORM_VARIANTS.get(transform_variant, TRANSFORM_VARIANTS["current"])
+    method = variant.get("price_coord_atr", "signed_log1p")
+    vals = np.asarray(values, dtype=np.float32)
+    if method == "signed_log1p":
+        return _signed_log1p(vals).astype(np.float32)
+    if method == "asinh":
+        return _asinh_transform(vals).astype(np.float32)
+    if method == "piecewise_tail":
+        params = (transform_params or {}).get("price_coord_atr")
+        if params is None:
+            params = _fit_piecewise_tail_params(vals)
+        return _apply_piecewise_tail_transform(vals, params)
+    raise ValueError(f"Unknown price_coord_atr transform method: {method}")
+
+
+def fit_transform_params_for_profile(train_df: pd.DataFrame, parsed_train: dict,
+                                     profile: dict, transform_variant: str) -> dict:
+    """Fit train-only parameters for transforms that need quantile thresholds."""
+    variant = TRANSFORM_VARIANTS.get(transform_variant, TRANSFORM_VARIANTS["current"])
+    if not variant.get("fit_params", False):
+        return {}
+
+    lower_q = float(variant.get("lower_q", 5))
+    upper_q = float(variant.get("upper_q", 95))
+    params = {}
+
+    if "ATR" in profile.get("row_fields", []):
+        atr_vals = pd.to_numeric(train_df["ATR"], errors="coerce").fillna(0.0).clip(lower=0.0).values
+        params["ATR"] = _fit_piecewise_tail_params(atr_vals, lower_q, upper_q)
+
+    if profile.get("relative_price", False) and "price_coord_atr" in profile.get("token_fields", []):
+        raw_tokens, _, raw_mask, _ = build_profile_features_from_parsed(
+            train_df, parsed_train, profile, transform_variant="identity")
+        price_idx = profile["token_fields"].index("price_coord_atr")
+        raw_coords = raw_tokens[:, :, price_idx][raw_mask]
+        params["price_coord_atr"] = _fit_piecewise_tail_params(raw_coords, lower_q, upper_q)
+
+    return params
+
+
+def build_row_features(df: pd.DataFrame, profile: dict, transform_variant: str = "current",
+                       transform_params: dict | None = None) -> np.ndarray:
     """Build row-level features: ATR + optional time features."""
     row_fields = profile["row_fields"]
     n_rows = len(df)
     result = np.zeros((n_rows, len(row_fields)), dtype=np.float32)
-
     col_map = {}
     for j, field in enumerate(row_fields):
         if field == "ATR":
@@ -654,8 +766,12 @@ def build_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
 
     for j, csv_col in col_map.items():
         if csv_col == "ATR":
-            vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(0.0).values
-            result[:, j] = vals.astype(np.float32)
+            # A7 feature-distribution-audit: ATR is non-negative with a long right
+            # tail and holdout regime shift; log1p before StandardScaler compresses
+            # the tail (ATR=0 -> 0, ATR>0 monotonic). price_coord_atr keeps raw ATR
+            # as denominator (handled in build_profile_features_from_parsed).
+            vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(0.0).clip(lower=0.0).values
+            result[:, j] = _transform_atr_values(vals, transform_variant, transform_params)
         elif csv_col.startswith("hour_") or csv_col.startswith("dow_"):
             times = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M", errors="coerce")
             if csv_col == "hour_sin":
@@ -672,7 +788,8 @@ def build_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
     return result
 
 
-def build_profile_features(df: pd.DataFrame, profile: dict):
+def build_profile_features(df: pd.DataFrame, profile: dict, transform_variant: str = "current",
+                           transform_params: dict | None = None):
     """Build token tensor, row_features, and mask for a profile.
 
     Returns:
@@ -692,7 +809,7 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
     mask = np.zeros((n_samples, seq_len), dtype=bool)
 
     if selection == "row_only" or seq_len == 0 or token_dim == 0:
-        row_features = build_row_features(df, profile)
+        row_features = build_row_features(df, profile, transform_variant, transform_params)
         if np.isnan(row_features).any():
             row_features = np.nan_to_num(row_features, nan=0.0)
         selection_meta = {
@@ -784,7 +901,7 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
                     tokens[sample_idx, t] = valid_features[mapped_idx]
                     mask[sample_idx, t] = True
 
-    row_features = build_row_features(df, profile)
+    row_features = build_row_features(df, profile, transform_variant, transform_params)
 
     # Post-process: relative_price = (price - f0_price) / ATR
     if profile.get("relative_price", False):
@@ -806,7 +923,11 @@ def build_profile_features(df: pd.DataFrame, profile: dict):
             price_idx = None
         if price_idx is not None:
             price_col = tokens[:, :, price_idx]
-            tokens[:, :, price_idx] = (price_col - f0_prices[:, None]) / atr_vals[:, None]
+            # A7: signed price coordinate uses signed-log transform to compress
+            # the long tail of far-away fractals (all100 pos99 train p95 ~10.86 raw).
+            raw_coord = (price_col - f0_prices[:, None]) / atr_vals[:, None]
+            tokens[:, :, price_idx] = _transform_price_coord_values(
+                raw_coord, transform_variant, transform_params)
         tokens[~mask] = 0.0
 
     if np.isnan(tokens).any():
@@ -844,7 +965,9 @@ def parse_split_fractals(df: pd.DataFrame) -> dict:
     return {"prices": prices, "base10": base10, "valid": valid}
 
 
-def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: dict):
+def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: dict,
+                                       transform_variant: str = "current",
+                                       transform_params: dict | None = None):
     n_samples = len(df)
     seq_len = profile["seq_len"]
     token_dim = profile["token_dim"]
@@ -861,7 +984,7 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
         }
         return (
             np.zeros((n_samples, 0, 0), dtype=np.float32),
-            build_row_features(df, profile),
+            build_row_features(df, profile, transform_variant, transform_params),
             np.zeros((n_samples, 0), dtype=bool),
             selection_meta,
         )
@@ -918,7 +1041,7 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
                 tokens[sample_idx, t] = valid_features[selected_idx[t]]
                 mask[sample_idx, t] = True
 
-    row_features = build_row_features(df, profile)
+    row_features = build_row_features(df, profile, transform_variant, transform_params)
     if profile.get("relative_price", False):
         f0_prices = prices_all[:, 0].copy()
         atr_vals = pd.to_numeric(df["ATR"], errors="coerce").fillna(1.0).clip(lower=0.001).values.astype(np.float32)
@@ -929,7 +1052,11 @@ def build_profile_features_from_parsed(df: pd.DataFrame, parsed: dict, profile: 
         else:
             price_idx = None
         if price_idx is not None:
-            tokens[:, :, price_idx] = (tokens[:, :, price_idx] - f0_prices[:, None]) / atr_vals[:, None]
+            # A7: signed price coordinate uses signed-log transform to compress
+            # the long tail of far-away fractals (all100 pos99 train p95 ~10.86 raw).
+            raw_coord = (tokens[:, :, price_idx] - f0_prices[:, None]) / atr_vals[:, None]
+            tokens[:, :, price_idx] = _transform_price_coord_values(
+                raw_coord, transform_variant, transform_params)
             tokens[~mask] = 0.0
 
     if np.isnan(tokens).any():
@@ -1077,6 +1204,76 @@ def _per_feature_stats(values: np.ndarray, mask: np.ndarray = None) -> list[dict
             "has_inf": bool(n_inf > 0),
         })
     return result
+
+
+def compute_per_position_token_stats(tokens: np.ndarray, mask: np.ndarray,
+                                     token_fields: list[str]) -> list[dict]:
+    """A7 Feature Distribution Audit: per-position token statistics.
+
+    For sequence profiles where token order has meaning (corridor/nearest/all100),
+    aggregate-over-positions stats can hide position-specific tails, padding drift
+    or a single extreme position. This computes per-feature stats for each token
+    position 0..seq_len-1, using only valid (mask=True) samples at that position.
+
+    Unlike flatten_audit_to_rows, fully-padded positions (n_valid=0) are KEPT,
+    because position coverage is itself an A7 diagnostic (padding% per position).
+
+    Returns rows in the same column schema as flatten_audit_to_rows token rows,
+    without profile/split keys (added by the caller).
+    """
+    rows = []
+    if tokens.ndim != 3 or tokens.shape[1] == 0 or tokens.shape[2] == 0:
+        return rows
+    n_samples, seq_len, token_dim = tokens.shape
+    if len(token_fields) != token_dim:
+        token_fields = [f"t{i}" for i in range(token_dim)]
+    for t in range(seq_len):
+        pos_mask = mask[:, t] if mask is not None else np.ones(n_samples, dtype=bool)
+        pos_tokens = tokens[:, t, :][pos_mask]
+        stats = _per_feature_stats(pos_tokens)
+        for f_idx, fname in enumerate(token_fields):
+            s = stats[f_idx]
+            flags = []
+            if s.get("n", 0) > 0:
+                if s.get("frac_abs_gt10", 0) > 0.01:
+                    flags.append("TAIL_GT10")
+                if s.get("frac_abs_gt20", 0) > 0.0:
+                    flags.append("TAIL_GT20")
+                if s.get("has_nan"):
+                    flags.append("NAN")
+                if s.get("has_inf"):
+                    flags.append("INF")
+            status = ("ERROR" if ("NAN" in flags or "INF" in flags)
+                      else "WARNING" if flags
+                      else "OK" if s.get("n", 0) > 0 else "EMPTY")
+            rows.append({
+                "feature_group": "token",
+                "feature_name": fname,
+                "token_position": t,
+                "n_valid": s.get("n"),
+                "missing_pct": s.get("missing_pct"),
+                "zero_pct": s.get("zero_pct"),
+                "mean": s.get("mean"),
+                "std": s.get("std"),
+                "min": s.get("p0"),
+                "p1": s.get("p1"),
+                "p5": s.get("p5"),
+                "p25": s.get("p25"),
+                "p50": s.get("p50"),
+                "p75": s.get("p75"),
+                "p95": s.get("p95"),
+                "p99": s.get("p99"),
+                "max": s.get("p100"),
+                "frac_abs_gt3": s.get("frac_abs_gt3"),
+                "frac_abs_gt5": s.get("frac_abs_gt5"),
+                "frac_abs_gt10": s.get("frac_abs_gt10"),
+                "frac_abs_gt20": s.get("frac_abs_gt20"),
+                "nan_count": s.get("n_nan"),
+                "inf_count": s.get("n_inf"),
+                "status": status,
+                "flags": ";".join(flags),
+            })
+    return rows
 
 
 def audit_normalized_distribution(
@@ -1227,9 +1424,20 @@ def compute_profile_coverage(tokens: np.ndarray, mask: np.ndarray, profile: dict
         price_idx = token_fields.index("price_coord_atr")
         valid_prices = tokens[:, :, price_idx][mask]
         if len(valid_prices) > 0:
+            # A7 corridor bounds check requires RAW price_coord_atr = (price-f0)/ATR.
+            # relative_price profiles apply signed-log transform to tokens, so recover
+            # raw bounds via the exact inverse for extrema: raw = sign(x)*expm1(abs(x)).
+            if profile.get("relative_price", False):
+                vp_min = float(np.min(valid_prices))
+                vp_max = float(np.max(valid_prices))
+                raw_min = float(np.sign(vp_min) * np.expm1(abs(vp_min)))
+                raw_max = float(np.sign(vp_max) * np.expm1(abs(vp_max)))
+            else:
+                raw_min = float(np.min(valid_prices))
+                raw_max = float(np.max(valid_prices))
             price_bounds = {
-                "min_price_coord_atr": float(np.min(valid_prices)),
-                "max_price_coord_atr": float(np.max(valid_prices)),
+                "min_price_coord_atr": raw_min,
+                "max_price_coord_atr": raw_max,
             }
     return {
         "valid_tokens_p5": float(pvals[0]),
@@ -2206,10 +2414,41 @@ PREFLIGHT_PROFILE_NAMES = [
     "nearest40_relative_price_time",
 ]
 
+RERUN_CANDIDATE_PROFILE_NAMES = [
+    "all100_no_price_time",
+    "all100_relative_price_no_time",
+    "all100_relative_price_time",
+    "nearest40_relative_price_no_time",
+    "nearest40_relative_price_time",
+    "corridor_5atr_relative_price_atr_full",
+    "corridor_10atr_relative_price_atr_full",
+]
+
+TRANSFORM_VARIANTS = {
+    "current": {
+        "row_atr": "log1p",
+        "price_coord_atr": "signed_log1p",
+        "fit_params": False,
+    },
+    "asinh": {
+        "row_atr": "asinh",
+        "price_coord_atr": "asinh",
+        "fit_params": False,
+    },
+    "piecewise_tail": {
+        "row_atr": "piecewise_tail",
+        "price_coord_atr": "piecewise_tail",
+        "fit_params": True,
+        "lower_q": 5,
+        "upper_q": 95,
+    },
+}
+
 
 def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
     stats_rows = []
     summary_rows = []
+    per_position_rows = []
     profile_reports = {}
     parsed_train = parse_split_fractals(train_df)
     parsed_val = parse_split_fractals(val_stop_df)
@@ -2252,6 +2491,21 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
                 coverage_by_split[split_name],
             ))
 
+        # A7 per-position token stats for sequence profiles (token order has meaning:
+        # corridor/nearest/all100). row_only profiles (token_dim=0) return [].
+        if profile.get("token_dim", 0) > 0:
+            for split_name, tok_n, msk in [
+                ("train", tokens_train_n, mask_train),
+                ("val_stop", tokens_val_n, mask_val),
+                ("holdout", tokens_hold_n, mask_hold),
+            ]:
+                pp_rows = compute_per_position_token_stats(
+                    tok_n, msk, profile.get("token_fields") or [])
+                for r in pp_rows:
+                    r["profile"] = profile_name
+                    r["split"] = split_name
+                per_position_rows.extend(pp_rows)
+
         flags_text = ";".join(dist_audit["flags"])
         decision = "ALLOW"
         if dist_audit["status"] == "ERROR":
@@ -2267,7 +2521,7 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
             "token_order": contract["token_order"],
             "diagnostic_only": contract["diagnostic_only"],
             "scaler_type": "StandardScaler",
-            "transform_type": "raw_or_price_coord_atr",
+            "transform_type": "log1p_atr_or_price_coord_atr",
             "train_valid_tokens_p50": coverage_by_split["train"]["valid_tokens_p50"],
             "val_valid_tokens_p50": coverage_by_split["val_stop"]["valid_tokens_p50"],
             "holdout_valid_tokens_p50": coverage_by_split["holdout"]["valid_tokens_p50"],
@@ -2310,6 +2564,20 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
     stats_df.to_csv(stats_path, index=False)
     summary_df.to_csv(summary_path, index=False)
 
+    # A7 per-position token stats artifact (sequence profiles only)
+    per_position_path = REPORTS_DIR / "stage5_0a_feature_stats_per_position.csv"
+    if per_position_rows:
+        pp_df = pd.DataFrame(per_position_rows)
+        col_order = ["profile", "split", "feature_group", "feature_name", "token_position",
+                     "n_valid", "missing_pct", "zero_pct", "mean", "std", "min",
+                     "p1", "p5", "p25", "p50", "p75", "p95", "p99", "max",
+                     "frac_abs_gt3", "frac_abs_gt5", "frac_abs_gt10", "frac_abs_gt20",
+                     "nan_count", "inf_count", "status", "flags"]
+        pp_df = pp_df.reindex(columns=col_order)
+        pp_df.to_csv(per_position_path, index=False)
+    else:
+        per_position_path = None
+
     report = {
         "status": "DIAGNOSTIC_ONLY",
         "stage": "5.0a_feature_preflight",
@@ -2324,6 +2592,194 @@ def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
             "json": str(json_path),
             "stats_csv": str(stats_path),
             "summary_csv": str(summary_path),
+            "per_position_csv": str(per_position_path) if per_position_path else None,
+        },
+        "decision_policy": {
+            "selection_basis": "train and val_stop only",
+            "holdout_usage": "distribution shift disclosure only",
+            "training_allowed": False,
+        },
+    }
+    with open(json_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+    return report
+
+
+def run_transform_comparison(train_df, val_stop_df, holdout_df) -> dict:
+    """Compare current/asinh/piecewise-tail transforms without model training."""
+    stats_rows = []
+    summary_rows = []
+    per_position_rows = []
+    profile_reports = {}
+    parsed_train = parse_split_fractals(train_df)
+    parsed_val = parse_split_fractals(val_stop_df)
+    parsed_holdout = parse_split_fractals(holdout_df)
+
+    for transform_variant, variant_cfg in TRANSFORM_VARIANTS.items():
+        variant_reports = {}
+        transform_type = (
+            f"{variant_cfg['row_atr']}_atr__"
+            f"{variant_cfg['price_coord_atr']}_price_coord_atr"
+        )
+        for profile_name in RERUN_CANDIDATE_PROFILE_NAMES:
+            profile = deepcopy(find_profile(profile_name))
+            contract = get_profile_contract(profile)
+            transform_params = fit_transform_params_for_profile(
+                train_df, parsed_train, profile, transform_variant)
+
+            tokens_train, rf_train, mask_train, meta_train = build_profile_features_from_parsed(
+                train_df, parsed_train, profile, transform_variant, transform_params)
+            tokens_val, rf_val, mask_val, meta_val = build_profile_features_from_parsed(
+                val_stop_df, parsed_val, profile, transform_variant, transform_params)
+            tokens_hold, rf_hold, mask_hold, meta_hold = build_profile_features_from_parsed(
+                holdout_df, parsed_holdout, profile, transform_variant, transform_params)
+
+            normalized, scaler_stats = normalize_profile_features(
+                tokens_train, rf_train, mask_train,
+                tokens_val, rf_val, mask_val,
+                tokens_hold, rf_hold, mask_hold,
+            )
+            tokens_train_n, rf_train_n, tokens_val_n, rf_val_n, tokens_hold_n, rf_hold_n = normalized
+
+            dist_audit = audit_normalized_distribution(
+                tokens_train_n, mask_train,
+                tokens_val_n, mask_val,
+                tokens_hold_n, mask_hold,
+                rf_train_n, rf_val_n, rf_hold_n,
+                token_fields=profile.get("token_fields"),
+                row_fields=profile.get("row_fields"),
+            )
+            coverage_by_split = {
+                "train": compute_profile_coverage(tokens_train_n, mask_train, profile, meta_train),
+                "val_stop": compute_profile_coverage(tokens_val_n, mask_val, profile, meta_val),
+                "holdout": compute_profile_coverage(tokens_hold_n, mask_hold, profile, meta_hold),
+            }
+
+            profile_stats_rows = []
+            for split_name in ["train", "val_stop", "holdout"]:
+                rows = flatten_audit_to_rows(
+                    profile_name,
+                    profile,
+                    split_name,
+                    dist_audit["by_split"][split_name],
+                    coverage_by_split[split_name],
+                )
+                for r in rows:
+                    r["transform_variant"] = transform_variant
+                    r["transform_type"] = transform_type
+                profile_stats_rows.extend(rows)
+                stats_rows.extend(rows)
+
+            if profile.get("token_dim", 0) > 0:
+                for split_name, tok_n, msk in [
+                    ("train", tokens_train_n, mask_train),
+                    ("val_stop", tokens_val_n, mask_val),
+                    ("holdout", tokens_hold_n, mask_hold),
+                ]:
+                    pp_rows = compute_per_position_token_stats(
+                        tok_n, msk, profile.get("token_fields") or [])
+                    for r in pp_rows:
+                        r["transform_variant"] = transform_variant
+                        r["transform_type"] = transform_type
+                        r["profile"] = profile_name
+                        r["split"] = split_name
+                    per_position_rows.extend(pp_rows)
+
+            flags_text = ";".join(dist_audit["flags"])
+            decision = "ALLOW"
+            if dist_audit["status"] == "ERROR":
+                decision = "BLOCK"
+            elif dist_audit["status"] == "WARNING":
+                decision = "REVIEW"
+
+            summary_rows.append({
+                "transform_variant": transform_variant,
+                "transform_type": transform_type,
+                "profile": profile_name,
+                "status": dist_audit["status"],
+                "decision": decision,
+                "decision_basis_split": "train_val_stop_only",
+                "token_order": contract["token_order"],
+                "diagnostic_only": contract["diagnostic_only"],
+                "scaler_type": "StandardScaler",
+                "train_valid_tokens_p50": coverage_by_split["train"]["valid_tokens_p50"],
+                "val_valid_tokens_p50": coverage_by_split["val_stop"]["valid_tokens_p50"],
+                "holdout_valid_tokens_p50": coverage_by_split["holdout"]["valid_tokens_p50"],
+                "train_pct_truncation_true": coverage_by_split["train"]["pct_truncation_true"],
+                "max_train_abs_gt10": max(
+                    [r.get("frac_abs_gt10", 0) or 0 for r in profile_stats_rows
+                     if r["split"] == "train" and r["feature_group"] in {"token", "row"}] or [0]
+                ),
+                "max_holdout_abs_gt10": max(
+                    [r.get("frac_abs_gt10", 0) or 0 for r in profile_stats_rows
+                     if r["split"] == "holdout" and r["feature_group"] in {"token", "row"}] or [0]
+                ),
+                "flags": flags_text,
+            })
+
+            variant_reports[profile_name] = {
+                "profile_contract": contract,
+                "transform_config": {
+                    "variant": transform_variant,
+                    "row_atr": variant_cfg["row_atr"],
+                    "price_coord_atr": variant_cfg["price_coord_atr"],
+                    "fit_params": transform_params,
+                    "fit_params_policy": "train only; val_stop/holdout are disclosure only",
+                },
+                "normalization_config": {
+                    "method": "StandardScaler",
+                    "token_scaler_fit_on": "train valid positions only (mask=True)",
+                    "row_scaler_fit_on": "all train rows",
+                    "padding": "kept as zero, not transformed",
+                    "decision_policy": "holdout for disclosure only",
+                },
+                "scaler_stats": scaler_stats,
+                "normalized_distribution_audit": dist_audit,
+                "coverage": coverage_by_split,
+            }
+        profile_reports[transform_variant] = variant_reports
+
+    stats_df = pd.DataFrame(stats_rows)
+    summary_df = pd.DataFrame(summary_rows)
+
+    stats_path = REPORTS_DIR / "stage5_0a_transform_comparison_stats.csv"
+    summary_path = REPORTS_DIR / "stage5_0a_transform_comparison_summary.csv"
+    per_position_path = REPORTS_DIR / "stage5_0a_transform_comparison_per_position.csv"
+    json_path = REPORTS_DIR / "stage5_0a_transform_comparison.json"
+
+    preferred_cols = ["transform_variant", "transform_type", "profile", "split",
+                      "feature_group", "feature_name", "token_position"]
+    stats_cols = preferred_cols + [c for c in stats_df.columns if c not in preferred_cols]
+    stats_df = stats_df.reindex(columns=stats_cols)
+    stats_df.to_csv(stats_path, index=False)
+    summary_df.to_csv(summary_path, index=False)
+
+    if per_position_rows:
+        pp_df = pd.DataFrame(per_position_rows)
+        pp_cols = preferred_cols + [c for c in pp_df.columns if c not in preferred_cols]
+        pp_df = pp_df.reindex(columns=pp_cols)
+        pp_df.to_csv(per_position_path, index=False)
+    else:
+        per_position_path = None
+
+    report = {
+        "status": "DIAGNOSTIC_ONLY",
+        "stage": "5.0a_transform_comparison",
+        "russian_name": "проверка распределения признаков",
+        "training_allowed": False,
+        "split": {
+            "train": {"n_rows": len(train_df), "years": sorted(map(int, train_df["_year"].unique()))},
+            "val_stop": {"n_rows": len(val_stop_df), "years": sorted(map(int, val_stop_df["_year"].unique()))},
+            "holdout": {"n_rows": len(holdout_df), "years": sorted(map(int, holdout_df["_year"].unique()))},
+        },
+        "profiles": RERUN_CANDIDATE_PROFILE_NAMES,
+        "transform_variants": TRANSFORM_VARIANTS,
+        "profile_reports": profile_reports,
+        "artifacts": {
+            "json": str(json_path),
+            "stats_csv": str(stats_path),
+            "summary_csv": str(summary_path),
+            "per_position_csv": str(per_position_path) if per_position_path else None,
         },
         "decision_policy": {
             "selection_basis": "train and val_stop only",
@@ -2340,6 +2796,8 @@ def main():
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
     parser.add_argument("--feature-preflight-only", action="store_true",
                         help="Run Stage 5.0a feature preflight only; no model training")
+    parser.add_argument("--transform-comparison-only", action="store_true",
+                        help="Run Stage 5.0a transform comparison only; no model training")
     parser.add_argument("--single-seed", action="store_true",
                         help="Use single seed [42] instead of [42, 77, 123]")
     parser.add_argument("--phase", type=str, default=None,
@@ -2365,6 +2823,14 @@ def main():
         report = run_feature_preflight(train_df, val_stop_df, holdout_df)
         print(f"\n{'='*60}")
         print("Stage 5.0a feature preflight completed")
+        print(json.dumps(report["artifacts"], indent=2))
+        print(f"{'='*60}")
+        return
+
+    if args.transform_comparison_only:
+        report = run_transform_comparison(train_df, val_stop_df, holdout_df)
+        print(f"\n{'='*60}")
+        print("Stage 5.0a transform comparison completed")
         print(json.dumps(report["artifacts"], indent=2))
         print(f"{'='*60}")
         return

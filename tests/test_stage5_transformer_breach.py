@@ -524,7 +524,13 @@ class TestNormalization:
         assert rf.shape == (5, 5)
 
     def test_relative_price_formula_verified(self):
-        """Verify that relative_price token column = (price_i - f0_price) / ATR."""
+        """Verify relative_price token column = signed_log1p((price_i - f0_price) / ATR).
+
+        A7: signed price coordinate must use signed-log transform
+        (sign(x)*log1p(abs(x))), not raw value, to compress the long right tail
+        of far-away fractals (all100 pos99 train p95=10.86 -> ~2.4 after signed-log).
+        Anchor (fractal0): signed_log1p(0)=0.
+        """
         from ML.baseline.benchmark_stage5_transformer_breach import build_profile_features, find_profile
         df = _make_synthetic_df(3, 5)
         # Force known values for deterministic check
@@ -567,16 +573,16 @@ class TestNormalization:
         profile = find_profile('all100_base10_relative_price_time')
         tokens, rf, mask, _selection_meta = build_profile_features(df, profile)
 
-        # The price column (index 0 of base10) should be (price_i - f0_price) / ATR
+        # price column (index 0 of base10) = signed_log1p((price_i - f0_price) / ATR)
         # all100 preserves natural order: fractal0=pos0, fractal1=pos1
-        # For fractal0: (400 - 400) / 2 = 0
-        # For fractal1: (410 - 400) / 2 = 5
+        # For fractal0: signed_log1p((400 - 400) / 2) = signed_log1p(0) = 0
+        # For fractal1: signed_log1p((410 - 400) / 2) = signed_log1p(5) = 1.7917595
         price_col = tokens[0, :, 0]  # first sample, all positions, price column
         valid_mask = mask[0]
         assert valid_mask.sum() >= 2, "Need at least 2 valid fractals"
         valid_prices = price_col[valid_mask]
         assert abs(valid_prices[0] - 0.0) < 0.01, f"fractal0 relative_price expected 0.0, got {valid_prices[0]}"
-        assert abs(valid_prices[1] - 5.0) < 0.01, f"fractal1 relative_price expected 5.0, got {valid_prices[1]}"
+        assert abs(valid_prices[1] - 1.7917595) < 0.01, f"fractal1 signed_log1p(5.0) expected 1.7918, got {valid_prices[1]}"
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -658,6 +664,74 @@ class TestRowFeatures:
         profile = find_profile('all100_base10_no_time')
         _, row_feat, _, _selection_meta = build_profile_features(df, profile)
         assert row_feat.shape == (5, 1)
+
+    def test_atr_log1p_transformed_in_row_features(self):
+        """ATR as row feature must be log1p-transformed before scaler.
+
+        A7 methodology: ATR is non-negative with a long right tail and shows
+        holdout regime shift (train p95=1.83 -> holdout p95=12.06 after
+        StandardScaler fit on train). log1p compresses the tail before scaling.
+        build_row_features must return log1p(raw_ATR), not raw ATR.
+        ATR=0 -> log1p(0)=0; ATR=e-1 -> log1p(e-1)=1.0; ATR<0 clipped to 0.
+        """
+        df = pd.DataFrame({
+            "time": ["2020.01.01 00:00", "2020.01.02 00:00", "2020.01.03 00:00"],
+            "ATR": [0.0, np.e - 1.0, -1.0],
+        })
+        profile = find_profile("all100_relative_price_no_time")  # row_fields = ["ATR"]
+        row = build_row_features(df, profile)
+        assert row.shape == (2, 1) or row.shape == (3, 1)
+        assert row[0, 0] == pytest.approx(0.0, abs=1e-6)   # log1p(0) = 0
+        assert row[1, 0] == pytest.approx(1.0, abs=1e-6)   # log1p(e-1) = 1.0, NOT e-1=1.718
+        assert row[2, 0] == pytest.approx(0.0, abs=1e-6)   # clip(-1) -> 0 -> log1p(0) = 0
+
+
+class TestTransformComparison:
+    def test_asinh_transform_preserves_sign_and_compresses_tail(self):
+        from ML.baseline.benchmark_stage5_transformer_breach import _asinh_transform
+        values = np.array([-100.0, -1.0, 0.0, 1.0, 100.0], dtype=np.float32)
+        out = _asinh_transform(values)
+        assert out[2] == pytest.approx(0.0, abs=1e-6)
+        assert out[0] < 0
+        assert out[-1] > 0
+        assert abs(out[-1]) < abs(values[-1])
+        assert out[-1] == pytest.approx(-out[0], abs=1e-6)
+
+    def test_piecewise_tail_keeps_middle_and_compresses_both_tails(self):
+        from ML.baseline.benchmark_stage5_transformer_breach import (
+            _apply_piecewise_tail_transform,
+            _fit_piecewise_tail_params,
+        )
+        train = np.arange(-100, 101, dtype=np.float32)
+        params = _fit_piecewise_tail_params(train, lower_q=5, upper_q=95)
+        values = np.array([-100.0, -50.0, 0.0, 50.0, 100.0], dtype=np.float32)
+        out = _apply_piecewise_tail_transform(values, params)
+        assert out[2] == pytest.approx(0.0, abs=1e-6)
+        assert out[1] == pytest.approx(-50.0, abs=1e-6)
+        assert out[3] == pytest.approx(50.0, abs=1e-6)
+        assert out[0] > values[0]
+        assert out[4] < values[4]
+        assert params["fit_split"] == "train"
+
+    def test_transform_comparison_uses_all_three_variants(self, tmp_path, monkeypatch):
+        import ML.baseline.benchmark_stage5_transformer_breach as runner
+        df = _make_synthetic_df(4, 100)
+        df["_year"] = [2020, 2020, 2020, 2020]
+        val = _make_synthetic_df(3, 100)
+        val["_year"] = [2021, 2022, 2022]
+        hold = _make_synthetic_df(3, 100)
+        hold["_year"] = [2023, 2024, 2025]
+        monkeypatch.setattr(runner, "REPORTS_DIR", tmp_path)
+
+        report = runner.run_transform_comparison(df, val, hold)
+
+        assert report["training_allowed"] is False
+        assert set(report["transform_variants"]) == {"current", "asinh", "piecewise_tail"}
+        assert set(report["profile_reports"]) == {"current", "asinh", "piecewise_tail"}
+        assert (tmp_path / "stage5_0a_transform_comparison_summary.csv").exists()
+        piecewise = report["profile_reports"]["piecewise_tail"]["all100_relative_price_time"]
+        assert piecewise["transform_config"]["fit_params"]["ATR"]["fit_split"] == "train"
+        assert piecewise["transform_config"]["fit_params"]["price_coord_atr"]["fit_split"] == "train"
 
 
 # ───────────────────────────────────────────────────────────────────────────
@@ -798,6 +872,62 @@ class TestDistributionAudit:
             f"Expected OK, got {result['status']} with flags: {result['flags']}"
 
 
+class TestPerPositionTokenStats:
+    """A7 Feature Distribution Audit: for sequence profiles where token order has
+    meaning (corridor/nearest/all100), per-position token stats must be computed.
+    Aggregated-over-positions stats can hide position-specific tails or padding drift.
+    """
+
+    def test_per_position_stats_returned_with_position(self):
+        from ML.baseline.benchmark_stage5_transformer_breach import compute_per_position_token_stats
+        # 3 samples, seq_len=4, token_dim=2; padding varies per position
+        tokens = np.array([
+            [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0]],
+            [[1.1, 2.1], [3.1, 4.1], [0.0, 0.0], [0.0, 0.0]],
+            [[1.2, 2.2], [3.2, 4.2], [5.2, 6.2], [0.0, 0.0]],
+        ], dtype=np.float32)
+        mask = np.array([
+            [True, True, True, True],
+            [True, True, False, False],
+            [True, True, True, False],
+        ], dtype=bool)
+        rows = compute_per_position_token_stats(tokens, mask, ["feat_a", "feat_b"])
+        # 4 positions x 2 features = 8 rows
+        assert len(rows) == 8
+        positions = sorted({r["token_position"] for r in rows})
+        assert positions == [0, 1, 2, 3]
+        # position 2 has 2 valid samples (rows 0 and 2); row 1 is padding
+        pos2_a = [r for r in rows if r["token_position"] == 2 and r["feature_name"] == "feat_a"][0]
+        assert pos2_a["n_valid"] == 2
+        # position 3 has only 1 valid sample (row 0); rows 1 and 2 are padding
+        pos3_b = [r for r in rows if r["token_position"] == 3 and r["feature_name"] == "feat_b"][0]
+        assert pos3_b["n_valid"] == 1
+        # every row carries feature_group=token and a non-empty token_position
+        for r in rows:
+            assert r["feature_group"] == "token"
+            assert r["token_position"] != ""
+
+    def test_per_position_empty_position_has_zero_n(self):
+        from ML.baseline.benchmark_stage5_transformer_breach import compute_per_position_token_stats
+        # position 2 is fully padded for all samples
+        tokens = np.zeros((2, 3, 1), dtype=np.float32)
+        tokens[:, 0, 0] = 1.0
+        tokens[:, 1, 0] = 2.0
+        mask = np.array([[True, True, False], [True, True, False]], dtype=bool)
+        rows = compute_per_position_token_stats(tokens, mask, ["f0"])
+        pos2 = [r for r in rows if r["token_position"] == 2][0]
+        assert pos2["n_valid"] == 0
+
+    def test_per_position_skips_row_only_profiles(self):
+        """row_only profiles (time_only_clean, atr_only) have no tokens;
+        per-position stats must return empty list, not raise."""
+        from ML.baseline.benchmark_stage5_transformer_breach import compute_per_position_token_stats
+        tokens = np.zeros((2, 0, 0), dtype=np.float32)
+        mask = np.zeros((2, 0), dtype=bool)
+        rows = compute_per_position_token_stats(tokens, mask, [])
+        assert rows == []
+
+
 class TestStage50aPreflightContracts:
     def test_preflight_profiles_exist(self):
         names = {p["name"] for p in define_profiles()}
@@ -893,8 +1023,40 @@ class TestStage50aPreflightContracts:
         profile = find_profile("all100_relative_price_time")
         tokens, _, mask, _selection_meta = build_profile_features(df, profile)
         valid_prices = tokens[0, mask[0], 0]
+        # signed_log1p((400-400)/2)=0 (anchor), signed_log1p((410-400)/2)=signed_log1p(5)=1.7918
         assert valid_prices[0] == pytest.approx(0.0, abs=1e-6)
-        assert valid_prices[1] == pytest.approx(5.0, abs=1e-6)
+        assert valid_prices[1] == pytest.approx(1.7917595, abs=1e-4)
+
+    def test_price_coord_atr_signed_log_edge_cases(self):
+        """A7 signed-log transform for price_coord_atr: sign(x)*log1p(abs(x)).
+        Edge cases: 0 -> 0; large positive -> log1p(x); symmetric for +/-.
+        """
+        import math
+        df = _make_synthetic_df(2, 5)
+        # row0: f0=400, f1=400 (price_coord=0), ATR=2.0
+        # row1: f0=400, f1=600 (price_coord=(600-400)/2=100 -> signed_log1p(100)=4.6151)
+        for i in range(len(df)):
+            df.at[i, "ATR"] = 2.0
+            df.at[i, "fractal0"] = _make_fractal_str([
+                (0, 10_000_000), (1, 400.0), (2, -1), (3, 0.5), (4, 0.5),
+                (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+            ])
+        df.at[0, "fractal1"] = _make_fractal_str([
+            (0, 10_000_000), (1, 400.0), (2, -1), (3, 0.5), (4, 0.5),
+            (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+        ])
+        df.at[1, "fractal1"] = _make_fractal_str([
+            (0, 10_000_000), (1, 600.0), (2, -1), (3, 0.5), (4, 0.5),
+            (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0.5),
+        ])
+        profile = find_profile("all100_relative_price_time")
+        tokens, _, mask, _ = build_profile_features(df, profile)
+        # row0 pos1: signed_log1p((400-400)/2) = signed_log1p(0) = 0
+        r0_valid = tokens[0, mask[0], 0]
+        assert r0_valid[1] == pytest.approx(0.0, abs=1e-6)
+        # row1 pos1: signed_log1p((600-400)/2) = signed_log1p(100) = 4.6151205
+        r1_valid = tokens[1, mask[1], 0]
+        assert r1_valid[1] == pytest.approx(math.log1p(100.0), abs=1e-4)
 
     def test_corridor_profiles_respect_declared_boundaries(self):
         df = _make_synthetic_df(4, 100)
@@ -905,9 +1067,13 @@ class TestStage50aPreflightContracts:
         ]:
             profile = find_profile(profile_name)
             tokens, _, mask, _selection_meta = build_profile_features(df, profile)
-            valid = np.abs(tokens[:, :, 0][mask])
-            if len(valid) > 0:
-                assert np.max(valid) <= limit + 1e-6
+            # price_coord_atr is signed-log transformed in tokens; recover RAW
+            # bounds via inverse raw = sign(x)*expm1(abs(x)) for A7 corridor check.
+            signed_log_vals = tokens[:, :, 0][mask]
+            if len(signed_log_vals) > 0:
+                raw_vals = np.sign(signed_log_vals) * np.expm1(np.abs(signed_log_vals))
+                assert np.max(np.abs(raw_vals)) <= limit + 1e-6, \
+                    f"{profile_name}: raw |price_coord_atr|={np.max(np.abs(raw_vals))} > {limit}"
 
     def test_row_only_profiles_have_empty_tokens(self):
         df = _make_synthetic_df(5, 10)
