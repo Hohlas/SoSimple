@@ -19,6 +19,7 @@
 - `ML/reports/stage5_0a_transform_comparison_summary.csv` — краткая сводка сравнения transform-ов
 - `ML/reports/stage5_0a_transform_comparison_stats.csv` — агрегированные статистики transform-сравнения
 - `ML/reports/stage5_0a_transform_comparison_per_position.csv` — per-position статистики transform-сравнения
+- `ML/reports/stage5_0b_asinh_rerun.json` — structured artifact Stage 5.0b diagnostic training rerun
 
 **Сплит:** train ≤2020, val_stop 2021-2022, holdout ≥2023
 
@@ -67,11 +68,14 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed --phase 
 python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed --skip-phase1
 python -m ML.baseline.benchmark_stage5_transformer_breach --feature-preflight-only
 python -m ML.baseline.benchmark_stage5_transformer_breach --transform-comparison-only
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0b-asinh-rerun --single-seed
 ```
+
+- `--stage5-0b-asinh-rerun` — Stage 5.0b diagnostic training run: `asinh`, frozen profile sets, mandatory label checks, XGBoost/time-only baselines, no trading winner.
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
-- `tests/test_stage5_transformer_breach.py` — тесты (83 теста, включая log1p/signed-log/per-position и `price/ATR` профили)
+- `tests/test_stage5_transformer_breach.py` — тесты (90 тестов, включая log1p/signed-log/per-position, `price/ATR` профили и Stage 5.0b regression checks)
 - `docs/methodology/A7-feature-distribution-audit.md` — методика feature distribution audit
 - `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт Stage 5.0
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a preflight

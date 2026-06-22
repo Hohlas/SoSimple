@@ -2,6 +2,18 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-21] — Stage 5.0b: Asinh Transformer rerun
+
+### Добавлено
+- `--stage5-0b-asinh-rerun`
+- `ML/reports/stage5_0b_asinh_rerun.json`
+- `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
+
+### Методика
+- Статус `DIAGNOSTIC_ONLY`; holdout не используется для выбора.
+- Confirmatory candidates отделены от diagnostic controls.
+- Dynamic corridor `seq_len` отключён.
+
 ## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison
 
 ### Добавлено

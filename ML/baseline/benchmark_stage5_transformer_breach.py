@@ -49,6 +49,32 @@ N_FRACTALS = 100
 
 TARGET_COLUMN = 'sell_stop_broken_H6_off05_flag'
 
+
+def find_buy_stop_target_columns(df: pd.DataFrame) -> list[str]:
+    return sorted([
+        col for col in df.columns
+        if col.startswith("buy_stop_broken_") and col.endswith("_flag")
+    ])
+
+
+def summarize_target_contract(df_by_split: dict[str, pd.DataFrame], target_col: str) -> dict:
+    splits = {}
+    for split_name, df in df_by_split.items():
+        if target_col not in df.columns:
+            splits[split_name] = {"exists": False}
+            continue
+        series = pd.to_numeric(df[target_col], errors="coerce")
+        non_null = series.dropna()
+        splits[split_name] = {
+            "exists": True,
+            "n_rows": int(len(series)),
+            "n_non_null": int(len(non_null)),
+            "null_rate": float(series.isna().mean()) if len(series) else None,
+            "positive_rate": float((non_null == 1).mean()) if len(non_null) else None,
+            "unique_values": sorted([_safe(v) for v in non_null.unique().tolist()]),
+        }
+    return {"target": target_col, "splits": splits}
+
 # Split years
 TRAIN_MAX_YEAR = 2020
 VAL_STOP_YEARS = {2021, 2022}
@@ -100,6 +126,7 @@ CORRIDOR_REJECTED_MEDIAN = 2
 
 # JSON report path
 JSON_REPORT_PATH = REPORTS_DIR / 'stage5_transformer_breach.json'
+STAGE5_0B_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0b_asinh_rerun.json"
 
 # ===========================================================================
 # Profile definitions
@@ -1642,12 +1669,25 @@ def flatten_audit_to_rows(profile_name: str, profile: dict, split_name: str, aud
 # OHLC label verification
 # ===========================================================================
 
+def _parse_breach_target(target_col: str) -> dict:
+    parts = target_col.split("_")
+    if len(parts) < 5 or parts[1:3] != ["stop", "broken"] or not target_col.endswith("_flag"):
+        raise ValueError(f"Unsupported breach target: {target_col}")
+    side = parts[0]
+    horizon = int(parts[3][1:])
+    offset = int(parts[4][3:]) / 10.0
+    if side not in {"buy", "sell"}:
+        raise ValueError(f"Unsupported breach side: {side}")
+    return {"side": side, "horizon": horizon, "offset": offset}
+
+
 def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str = None,
-                                       n_sample: int = 50, random_seed: int = 123) -> dict:
-    """Verify sell_stop_broken_H6_off05_flag against OHLC for random holdout rows.
+                                       n_sample: int = 50, random_seed: int = 123,
+                                       target_col: str = TARGET_COLUMN) -> dict:
+    """Verify a stop-breach target against OHLC for random holdout rows.
 
     Fixed seed for reproducibility. Checks:
-      - Core: does stored label match OHLC-computed breach over next 6 bars?
+      - Core: does stored label match OHLC-computed breach over next H bars?
       - Boundary: max High in window within 0.1*ATR of stop — near-miss check.
     """
     if ohlc_path is None:
@@ -1661,19 +1701,20 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
     ohlc_df = ohlc_df.dropna(subset=["_dt"]).sort_values("_dt").reset_index(drop=True)
     time_to_idx = {dt: i for i, dt in enumerate(ohlc_df["_dt"])}
     n_ohlc = len(ohlc_df)
+    spec = _parse_breach_target(target_col)
+    expected_fractal_dir = -1 if spec["side"] == "buy" else 1
+    expected_signal = 1 if spec["side"] == "buy" else -1
+    horizon = spec["horizon"]
+    offset = spec["offset"]
 
-    # Only rows with SELL signal (direction=1 → sell stop)
-    sell_rows = holdout_df[holdout_df["signal"] == -1]
-    if len(sell_rows) == 0:
-        buy_rows = holdout_df[holdout_df["signal"].astype(int) == 1]
-        if len(buy_rows) > 0:
-            sell_rows = buy_rows  # fallback: verify BUY stops too
-        else:
-            sell_rows = holdout_df  # last resort: verify all
-    n_sample = min(n_sample, len(sell_rows))
+    target_rows = holdout_df[pd.to_numeric(holdout_df[target_col], errors="coerce").notna()]
+    signal_rows = target_rows[target_rows["signal"].astype(int) == expected_signal]
+    if len(signal_rows) > 0:
+        target_rows = signal_rows
+    n_sample = min(n_sample, len(target_rows))
     rng = np.random.RandomState(random_seed)
-    sample_indices = rng.choice(len(sell_rows), size=n_sample, replace=False)
-    sample = sell_rows.iloc[sample_indices]
+    sample_indices = rng.choice(len(target_rows), size=n_sample, replace=False)
+    sample = target_rows.iloc[sample_indices]
 
     mismatches = []
     near_misses = []
@@ -1691,7 +1732,7 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
             continue
 
         idx0 = time_to_idx.get(row_dt)
-        if idx0 is None or idx0 + 6 >= n_ohlc:
+        if idx0 is None or idx0 + horizon >= n_ohlc:
             skipped += 1
             continue
 
@@ -1711,16 +1752,16 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
 
         fractal_dir_counts[fractal_dir] = fractal_dir_counts.get(fractal_dir, 0) + 1
 
-        stop_offset = 0.5 * atr
+        stop_offset = offset * atr
         if fractal_dir == 1:  # SELL: стоп выше пика
             stop_price = fractal_price + stop_offset
-            highs = [ohlc_df.iloc[k]["high"] for k in range(idx0 + 1, min(idx0 + 7, n_ohlc))]
+            highs = [ohlc_df.iloc[k]["high"] for k in range(idx0 + 1, min(idx0 + 1 + horizon, n_ohlc))]
             breached = any(h >= stop_price for h in highs)
             max_high = max(highs)
             near_boundary = abs(max_high - stop_price) < 0.1 * atr and not breached
         elif fractal_dir == -1:  # BUY: стоп ниже впадины
             stop_price = fractal_price - stop_offset
-            lows = [ohlc_df.iloc[k]["low"] for k in range(idx0 + 1, min(idx0 + 7, n_ohlc))]
+            lows = [ohlc_df.iloc[k]["low"] for k in range(idx0 + 1, min(idx0 + 1 + horizon, n_ohlc))]
             breached = any(l <= stop_price for l in lows)
             min_low = min(lows)
             near_boundary = abs(min_low - stop_price) < 0.1 * atr and not breached
@@ -1728,7 +1769,7 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
             skipped += 1
             continue
 
-        stored = row.get(TARGET_COLUMN)
+        stored = row.get(target_col)
         stored_val = int(stored) if not pd.isna(stored) else None
         computed_val = 1 if breached else 0
 
@@ -1741,7 +1782,7 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
             "stop_price": round(stop_price, 2),
             "stored_label": stored_val,
             "computed_label": computed_val,
-            "n_future_bars": min(6, n_ohlc - idx0 - 1),
+            "n_future_bars": min(horizon, n_ohlc - idx0 - 1),
         }
 
         if stored_val == computed_val:
@@ -1757,6 +1798,7 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
 
     return {
         "random_seed": random_seed,
+        "target": target_col,
         "n_sampled": n_sample,
         "n_checked": matches + len(mismatches),
         "n_skipped": skipped,
@@ -1766,7 +1808,7 @@ def verify_breach_labels_against_ohlc(holdout_df: pd.DataFrame, ohlc_path: str =
         "mismatch_examples": mismatch_examples,
         "near_miss_examples": near_miss_examples,
         "fractal_dir_counts": fractal_dir_counts,
-        "fractal_dir_ok": fractal_dir_counts.get(1, 0) > 0 and fractal_dir_counts.get(0, 0) == 0,
+        "fractal_dir_ok": fractal_dir_counts.get(expected_fractal_dir, 0) > 0 and fractal_dir_counts.get(0, 0) == 0,
         "status": "PASS" if len(mismatches) == 0 and matches >= 10 else (
             "MISMATCH" if len(mismatches) > 0 else "LOW_VALID_COUNT"
         ),
@@ -1841,7 +1883,7 @@ def corridor_status(stats: dict) -> str:
 # Data loading
 # ===========================================================================
 
-def load_splits():
+def load_splits(target_col: str = TARGET_COLUMN):
     """Load XAUUSD labeled CSVs and split by year."""
     train_raw = pd.read_csv(TRAIN_FILE, sep=CSV_SEP)
     val_raw = pd.read_csv(VAL_FILE, sep=CSV_SEP)
@@ -1890,7 +1932,7 @@ def load_splits():
     holdout_df = pd.DataFrame(holdout_rows).reset_index(drop=True)
 
     for name, df in [("train", train_df), ("val_stop", val_stop_df), ("holdout", holdout_df)]:
-        mask = df[TARGET_COLUMN].notna()
+        mask = df[target_col].notna()
         before = len(df)
         df = df.loc[mask].reset_index(drop=True)
         if name == "train":
@@ -1899,7 +1941,7 @@ def load_splits():
             val_stop_df = df
         else:
             holdout_df = df
-        print(f"  {name}: {before} → {len(df)} rows (non-null target)")
+        print(f"  {name}: {before} → {len(df)} rows (non-null {target_col})")
 
     print(f"  Train years: {sorted(train_df['_year'].unique())}")
     print(f"  Val_stop years: {sorted(val_stop_df['_year'].unique())}")
@@ -1942,13 +1984,13 @@ def build_xgb_features(df: pd.DataFrame, feature_type: str) -> np.ndarray:
 # Label sanity check (not full OHLC verification — see plan for manual step)
 # ===========================================================================
 
-def label_sanity_check(holdout_df: pd.DataFrame) -> dict:
+def label_sanity_check(holdout_df: pd.DataFrame, target_col: str = TARGET_COLUMN) -> dict:
     """Sanity-check breach labels: random sample with basic stats."""
     n_sample = min(20, len(holdout_df))
     sample = holdout_df.sample(n=n_sample, random_state=42)
     verifications = []
     for idx, row in sample.iterrows():
-        label = row[TARGET_COLUMN]
+        label = row[target_col]
         signal_val = row["signal"]
         atr_val = row["ATR"]
         try:
@@ -1965,10 +2007,11 @@ def label_sanity_check(holdout_df: pd.DataFrame) -> dict:
             "label": int(label) if not pd.isna(label) else None,
         })
 
-    pos_count = int(holdout_df[TARGET_COLUMN].sum())
+    pos_count = int(holdout_df[target_col].sum())
     total = len(holdout_df)
 
     return {
+        "target": target_col,
         "total_rows": total,
         "positive_labels": pos_count,
         "positive_rate": float(pos_count / total) if total > 0 else 0.0,
@@ -2058,12 +2101,12 @@ def compute_metrics(y_true, y_pred_proba):
     return {"auc": auc, "pr_auc": pr_auc, "n": n, **lifts}
 
 
-def compute_yearly_metrics(df, y_pred_proba):
+def compute_yearly_metrics(df, y_pred_proba, target_col: str = TARGET_COLUMN):
     years = sorted(df["_year"].unique())
     yearly = {}
     for yr in years:
         mask = df["_year"] == yr
-        y_true = df.loc[mask, TARGET_COLUMN]
+        y_true = df.loc[mask, target_col]
         y_pred = y_pred_proba[mask.values]
         m = compute_metrics(y_true, pd.Series(y_pred))
         yearly[str(yr)] = {k: _safe(v) for k, v in m.items()}
@@ -2208,11 +2251,11 @@ def evaluate_transformer(model, tokens, row_feat, mask, y, device):
 # Main orchestrator
 # ===========================================================================
 
-def compute_xgb_baselines(train_df, val_stop_df, holdout_df):
+def compute_xgb_baselines(train_df, val_stop_df, holdout_df, target_col: str = TARGET_COLUMN):
     """Compute all XGBoost baselines on same split."""
-    y_train = train_df[TARGET_COLUMN]
-    y_val = val_stop_df[TARGET_COLUMN]
-    y_holdout = holdout_df[TARGET_COLUMN]
+    y_train = train_df[target_col]
+    y_val = val_stop_df[target_col]
+    y_holdout = holdout_df[target_col]
 
     results = {}
     for ft in ["base_raw_plus_time", "no_time", "time_only"]:
@@ -2228,7 +2271,7 @@ def compute_xgb_baselines(train_df, val_stop_df, holdout_df):
 
         val_metrics = compute_metrics(y_val, pd.Series(model.predict(xgb.DMatrix(X_val))))
         holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
-        yearly = compute_yearly_metrics(holdout_df, holdout_probs)
+        yearly = compute_yearly_metrics(holdout_df, holdout_probs, target_col=target_col)
 
         results[ft] = {
             "val_auc": float(val_auc),
@@ -2260,7 +2303,12 @@ def run_phase1(train_df, val_stop_df, holdout_df, seed, device, report):
 
 
 def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, report,
-                            pname, y_train, y_val, y_holdout, diagnostic_only=False):
+                            pname, y_train, y_val, y_holdout, diagnostic_only=False,
+                            transform_variant: str = "current",
+                            parsed_splits: dict | None = None,
+                            allow_dynamic_seq_len: bool = True,
+                            profile_role: str = "legacy",
+                            target_col: str = TARGET_COLUMN):
     """Shared train/eval loop for one profile. Returns elapsed_s or None if skipped."""
     profile = find_profile(pname)
     # Corridor validation
@@ -2283,24 +2331,43 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
             print(f"    SKIPPED: profile rejected by corridor validation")
             return None
 
-        # Adjust seq_len if needed
-        p80 = stats_train.get("n_fractals_p80", profile["seq_len"])
-        combined_stats = compute_corridor_stats(
-            pd.concat([train_df, val_stop_df]), profile)
-        combined_p80 = combined_stats.get("n_fractals_p80", profile["seq_len"])
-        if combined_p80 < profile["seq_len"]:
-            new_seq = max(int(combined_p80), 3)
-            print(f"    Adjusting seq_len: {profile['seq_len']} → {new_seq} (P80={combined_p80:.1f})")
-            profile = deepcopy(profile)
-            profile["seq_len"] = new_seq
+        if allow_dynamic_seq_len:
+            combined_stats = compute_corridor_stats(
+                pd.concat([train_df, val_stop_df]), profile)
+            combined_p80 = combined_stats.get("n_fractals_p80", profile["seq_len"])
+            if combined_p80 < profile["seq_len"]:
+                new_seq = max(int(combined_p80), 3)
+                print(f"    Adjusting seq_len: {profile['seq_len']} → {new_seq} (P80={combined_p80:.1f})")
+                profile = deepcopy(profile)
+                profile["seq_len"] = new_seq
 
     tag = " [DIAGNOSTIC_ONLY]" if diagnostic_only else ""
     print(f"\n  Building profile: {pname}{tag}")
     t0 = time.time()
 
-    tokens_train, rf_train, mask_train, _meta_train = build_profile_features(train_df, profile)
-    tokens_val, rf_val, mask_val, _meta_val = build_profile_features(val_stop_df, profile)
-    tokens_hold, rf_hold, mask_hold, _meta_hold = build_profile_features(holdout_df, profile)
+    if profile.get("full29", False):
+        transform_params = {}
+        tokens_train, rf_train, mask_train, _meta_train = build_profile_features(
+            train_df, profile, transform_variant, transform_params)
+        tokens_val, rf_val, mask_val, _meta_val = build_profile_features(
+            val_stop_df, profile, transform_variant, transform_params)
+        tokens_hold, rf_hold, mask_hold, _meta_hold = build_profile_features(
+            holdout_df, profile, transform_variant, transform_params)
+    else:
+        parsed_splits = parsed_splits or {
+            "train": parse_split_fractals(train_df),
+            "val_stop": parse_split_fractals(val_stop_df),
+            "holdout": parse_split_fractals(holdout_df),
+        }
+        transform_params = fit_transform_params_for_profile(
+            train_df, parsed_splits["train"], profile, transform_variant)
+
+        tokens_train, rf_train, mask_train, _meta_train = build_profile_features_from_parsed(
+            train_df, parsed_splits["train"], profile, transform_variant, transform_params)
+        tokens_val, rf_val, mask_val, _meta_val = build_profile_features_from_parsed(
+            val_stop_df, parsed_splits["val_stop"], profile, transform_variant, transform_params)
+        tokens_hold, rf_hold, mask_hold, _meta_hold = build_profile_features_from_parsed(
+            holdout_df, parsed_splits["holdout"], profile, transform_variant, transform_params)
 
     print(f"    Train: {tokens_train.shape}, Val: {tokens_val.shape}, Holdout: {tokens_hold.shape}")
 
@@ -2339,12 +2406,20 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
 
     val_metrics = compute_metrics(y_val, pd.Series(val_probs))
     holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
-    yearly = compute_yearly_metrics(holdout_df, holdout_probs)
+    yearly = compute_yearly_metrics(holdout_df, holdout_probs, target_col=target_col)
 
     elapsed = time.time() - t0
     result = {
         "profile": pname,
         "seed": seed,
+        "transform_variant": transform_variant,
+        "transform_config": {
+            "variant": transform_variant,
+            "fit_params": transform_params,
+            "fit_params_policy": "train only; val_stop/holdout are disclosure only",
+        },
+        "profile_role": profile_role,
+        "training_run": True,
         "history": {k: _safe(v) for k, v in history.items()},
         "val": {k: _safe(v) for k, v in val_metrics.items()},
         "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
@@ -2520,6 +2595,26 @@ RERUN_CANDIDATE_PROFILE_NAMES = [
     "corridor_5atr_price_unit_atr_full",
     "corridor_10atr_price_unit_atr_full",
 ]
+
+STAGE5_0B_CONFIRMATORY_PROFILE_NAMES = [
+    "all100_relative_price_time",
+    "nearest40_relative_price_time",
+    "corridor_5atr_relative_price_atr_full",
+    "corridor_10atr_relative_price_atr_full",
+]
+
+STAGE5_0B_DIAGNOSTIC_PROFILE_NAMES = [
+    "all100_relative_price_no_time",
+    "nearest40_relative_price_no_time",
+    "all100_absolute_price_atr_scaled_time_asinh",
+    "corridor_5atr_price_unit_atr_full",
+    "corridor_10atr_price_unit_atr_full",
+]
+
+STAGE5_0B_ASINH_PROFILE_NAMES = (
+    STAGE5_0B_CONFIRMATORY_PROFILE_NAMES
+    + STAGE5_0B_DIAGNOSTIC_PROFILE_NAMES
+)
 
 TRANSFORM_VARIANTS = {
     "current": {
@@ -2889,12 +2984,129 @@ def run_transform_comparison(train_df, val_stop_df, holdout_df) -> dict:
     return report
 
 
+def stage5_0b_multiseed_decision(result: dict, xgb_results: dict, profile_role: str,
+                                  use_gates: bool = True) -> dict:
+    if profile_role != "confirmatory":
+        return {"eligible": False, "reason": "diagnostic_control"}
+    if not use_gates:
+        return {"eligible": False, "reason": "selection_gates_disabled"}
+    val = result.get("val", {})
+    audit = result.get("normalized_distribution_audit", {})
+    base = xgb_results.get("base_raw_plus_time", {}).get("val", {})
+    time_only = xgb_results.get("time_only", {}).get("val", {})
+    auc_gate = max((base.get("auc") or 0) + 0.01, (time_only.get("auc") or 0) + 0.03)
+    lift_gate = min(base.get("lift_30") or float("inf"), time_only.get("lift_30") or float("inf"))
+    eligible = (
+        audit.get("status") != "ERROR"
+        and (val.get("auc") or 0) >= auc_gate
+        and (val.get("lift_30") or float("inf")) <= lift_gate
+    )
+    return {
+        "eligible": bool(eligible),
+        "auc_gate": float(auc_gate),
+        "lift_30_gate": float(lift_gate),
+        "reason": "passes_val_policy" if eligible else "fails_val_policy",
+    }
+
+
+def run_stage5_0b_asinh_rerun(train_df, val_stop_df, holdout_df, seed, device,
+                              ohlc_verification: dict, label_sanity: dict,
+                              xgb_results: dict,
+                              output_path: Path | str = STAGE5_0B_JSON_REPORT_PATH,
+                              target_col: str = TARGET_COLUMN,
+                              all_profiles_confirmatory: bool = False,
+                              use_multiseed_gates: bool = True) -> dict:
+    y_train = train_df[target_col]
+    y_val = val_stop_df[target_col]
+    y_holdout = holdout_df[target_col]
+    parsed_splits = {
+        "train": parse_split_fractals(train_df),
+        "val_stop": parse_split_fractals(val_stop_df),
+        "holdout": parse_split_fractals(holdout_df),
+    }
+    split_frames = {"train": train_df, "val_stop": val_stop_df, "holdout": holdout_df}
+    confirmatory_profiles = (
+        list(STAGE5_0B_ASINH_PROFILE_NAMES)
+        if all_profiles_confirmatory
+        else STAGE5_0B_CONFIRMATORY_PROFILE_NAMES
+    )
+    diagnostic_profiles = [] if all_profiles_confirmatory else STAGE5_0B_DIAGNOSTIC_PROFILE_NAMES
+    report = {
+        "status": "DIAGNOSTIC_ONLY",
+        "stage": "5.0b_asinh_rerun",
+        "target": target_col,
+        "transform_variant": "asinh",
+        "no_trading_winner_declared": True,
+        "confirmatory_profiles": confirmatory_profiles,
+        "diagnostic_control_profiles": diagnostic_profiles,
+        "ohlc_verification": ohlc_verification,
+        "label_sanity": label_sanity,
+        "xgb_baselines": xgb_results,
+        "target_contracts": {
+            "trained": summarize_target_contract(split_frames, target_col),
+            "sell": summarize_target_contract(split_frames, TARGET_COLUMN),
+            "buy_candidates": {
+                col: summarize_target_contract(split_frames, col)
+                for col in find_buy_stop_target_columns(train_df)
+            },
+        },
+        "decision_policy": {
+            "profile_set": "frozen before training",
+            "selection_basis": "val_stop only",
+            "holdout_usage": "disclosure only",
+            "multi_seed_rules": (
+                {
+                    "val_auc": ">= max(xgb_base_raw_plus_time + 0.01, xgb_time_only + 0.03)",
+                    "val_lift_30": "<= min(xgb_base_raw_plus_time, xgb_time_only)",
+                    "audit": "normalized_distribution_audit.status != ERROR",
+                    "profile_role": "confirmatory only",
+                }
+                if use_multiseed_gates
+                else {"status": "disabled; report ranks profiles but does not open multi-seed automatically"}
+            ),
+        },
+        "transformer_results": {},
+        "multi_seed_candidates": [],
+    }
+
+    for profile_name in STAGE5_0B_ASINH_PROFILE_NAMES:
+        role = "confirmatory" if profile_name in confirmatory_profiles else "diagnostic_control"
+        _train_and_eval_profile(
+            train_df, val_stop_df, holdout_df, seed, device, report,
+            profile_name, y_train, y_val, y_holdout,
+            diagnostic_only=(role == "diagnostic_control"),
+            transform_variant="asinh",
+            parsed_splits=parsed_splits,
+            allow_dynamic_seq_len=False,
+            profile_role=role,
+            target_col=target_col,
+        )
+        result = report["transformer_results"][profile_name][-1]
+        decision = stage5_0b_multiseed_decision(result, xgb_results, role, use_gates=use_multiseed_gates)
+        result["multi_seed_decision"] = decision
+        if decision["eligible"]:
+            report["multi_seed_candidates"].append(profile_name)
+
+    output_path = Path(output_path)
+    with open(output_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
     parser.add_argument("--feature-preflight-only", action="store_true",
                         help="Run Stage 5.0a feature preflight only; no model training")
     parser.add_argument("--transform-comparison-only", action="store_true",
                         help="Run Stage 5.0a transform comparison only; no model training")
+    parser.add_argument("--stage5-0b-asinh-rerun", action="store_true",
+                        help="Run Stage 5.0b frozen asinh Transformer rerun")
+    parser.add_argument("--target", type=str, default=TARGET_COLUMN,
+                        help="Target column for Stage 5 training")
+    parser.add_argument("--all-profiles-confirmatory", action="store_true",
+                        help="Treat all Stage 5.0b profiles as primary candidates")
+    parser.add_argument("--no-multiseed-gates", action="store_true",
+                        help="Disable automatic multi-seed threshold rules")
     parser.add_argument("--single-seed", action="store_true",
                         help="Use single seed [42] instead of [42, 77, 123]")
     parser.add_argument("--phase", type=str, default=None,
@@ -2914,7 +3126,7 @@ def main():
     print("\n" + "=" * 60)
     print("Loading data...")
     print("=" * 60)
-    train_df, val_stop_df, holdout_df = load_splits()
+    train_df, val_stop_df, holdout_df = load_splits(target_col=args.target)
 
     if args.feature_preflight_only:
         report = run_feature_preflight(train_df, val_stop_df, holdout_df)
@@ -2936,19 +3148,39 @@ def main():
     print("\n" + "=" * 60)
     print("OHLC label verification...")
     print("=" * 60)
-    ohlc_verification = verify_breach_labels_against_ohlc(holdout_df)
+    ohlc_verification = verify_breach_labels_against_ohlc(holdout_df, target_col=args.target)
     print(f"  Matches: {ohlc_verification['n_matches']}/{ohlc_verification['n_checked']}, "
           f"mismatches: {ohlc_verification['n_mismatches']}, status: {ohlc_verification['status']}")
 
     # Label sanity check
-    sanity = label_sanity_check(holdout_df)
+    sanity = label_sanity_check(holdout_df, target_col=args.target)
     print(f"\n  Label sanity check: {sanity['status']}, pos_rate={sanity['positive_rate']:.4f}")
 
     # XGBoost baselines
     print("\n" + "=" * 60)
     print("Computing XGBoost baselines...")
     print("=" * 60)
-    xgb_results = compute_xgb_baselines(train_df, val_stop_df, holdout_df)
+    xgb_results = compute_xgb_baselines(train_df, val_stop_df, holdout_df, target_col=args.target)
+
+    if args.stage5_0b_asinh_rerun:
+        output_path = STAGE5_0B_JSON_REPORT_PATH
+        if args.target != TARGET_COLUMN:
+            output_path = REPORTS_DIR / f"stage5_0b_asinh_rerun_{args.target}.json"
+        report = run_stage5_0b_asinh_rerun(
+            train_df, val_stop_df, holdout_df, seeds[0], device,
+            ohlc_verification=ohlc_verification,
+            label_sanity=sanity,
+            xgb_results=xgb_results,
+            output_path=output_path,
+            target_col=args.target,
+            all_profiles_confirmatory=args.all_profiles_confirmatory,
+            use_multiseed_gates=not args.no_multiseed_gates,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.0b asinh rerun completed")
+        print(json.dumps({"json": str(output_path)}, indent=2))
+        print("=" * 60)
+        return
 
     # Init report
     report = {

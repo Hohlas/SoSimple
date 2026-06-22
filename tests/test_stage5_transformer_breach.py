@@ -1214,3 +1214,510 @@ class TestCorridorCoverageMeta:
         assert int(selection_meta["selected_count_after_cap"][0]) == 51
         assert coverage["pct_truncation_true"] == 0.0
         assert coverage["candidate_count_before_cap_p50"] == pytest.approx(51.0)
+
+
+def test_stage5_0b_profile_sets_are_frozen_and_separated():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_0B_CONFIRMATORY_PROFILE_NAMES == [
+        "all100_relative_price_time",
+        "nearest40_relative_price_time",
+        "corridor_5atr_relative_price_atr_full",
+        "corridor_10atr_relative_price_atr_full",
+    ]
+    assert runner.STAGE5_0B_DIAGNOSTIC_PROFILE_NAMES == [
+        "all100_relative_price_no_time",
+        "nearest40_relative_price_no_time",
+        "all100_absolute_price_atr_scaled_time_asinh",
+        "corridor_5atr_price_unit_atr_full",
+        "corridor_10atr_price_unit_atr_full",
+    ]
+    assert runner.STAGE5_0B_ASINH_PROFILE_NAMES == (
+        runner.STAGE5_0B_CONFIRMATORY_PROFILE_NAMES
+        + runner.STAGE5_0B_DIAGNOSTIC_PROFILE_NAMES
+    )
+    for profile_name in runner.STAGE5_0B_ASINH_PROFILE_NAMES:
+        assert runner.find_profile(profile_name) is not None
+
+
+def test_train_eval_profile_passes_asinh_to_feature_builder(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    calls = []
+    df = _make_synthetic_df(3, 100)
+    df["_year"] = [2020, 2020, 2020]
+    y = df[runner.TARGET_COLUMN]
+    report = {"transformer_results": {}}
+
+    def fake_build(df_arg, parsed_arg, profile_arg, transform_variant="current", transform_params=None):
+        calls.append(transform_variant)
+        n = len(df_arg)
+        return (
+            np.zeros((n, 2, 1), dtype=np.float32),
+            np.zeros((n, 1), dtype=np.float32),
+            np.ones((n, 2), dtype=bool),
+            {
+                "candidate_count_before_cap": np.zeros(n, dtype=np.int32),
+                "selected_count_after_cap": np.zeros(n, dtype=np.int32),
+                "is_truncated": np.zeros(n, dtype=bool),
+            },
+        )
+
+    class DummyModel:
+        def eval(self):
+            pass
+
+    monkeypatch.setattr(runner, "build_profile_features_from_parsed", fake_build)
+    monkeypatch.setattr(
+        runner,
+        "normalize_profile_features",
+        lambda *args: ((args[0], args[1], args[3], args[4], args[6], args[7]), {}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "audit_normalized_distribution",
+        lambda *args, **kwargs: {"status": "OK", "flags": [], "by_split": {}},
+    )
+    monkeypatch.setattr(
+        runner,
+        "train_transformer",
+        lambda *args, **kwargs: (DummyModel(), {"best_val_auc": 0.5, "num_epochs": 1}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "evaluate_transformer",
+        lambda *args, **kwargs: np.array([0.1, 0.2, 0.3], dtype=np.float32),
+    )
+    monkeypatch.setattr(
+        runner,
+        "compute_metrics",
+        lambda y_true, pred: {
+            "auc": 0.5,
+            "pr_auc": 0.5,
+            "n": len(y_true),
+            "lift_10": 1.0,
+            "lift_20": 1.0,
+            "lift_30": 1.0,
+        },
+    )
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=runner.TARGET_COLUMN: {})
+
+    parsed = {
+        "train": runner.parse_split_fractals(df),
+        "val_stop": runner.parse_split_fractals(df),
+        "holdout": runner.parse_split_fractals(df),
+    }
+    runner._train_and_eval_profile(
+        df,
+        df,
+        df,
+        42,
+        "cpu",
+        report,
+        "all100_relative_price_time",
+        y,
+        y,
+        y,
+        transform_variant="asinh",
+        parsed_splits=parsed,
+        allow_dynamic_seq_len=False,
+    )
+
+    assert calls == ["asinh", "asinh", "asinh"]
+    result = report["transformer_results"]["all100_relative_price_time"][0]
+    assert result["transform_variant"] == "asinh"
+    assert result["training_run"] is True
+
+
+def test_stage5_0b_can_disable_dynamic_corridor_seq_len(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    observed_seq_lens = []
+    df = _make_synthetic_df(3, 100)
+    df["_year"] = [2020, 2020, 2020]
+    y = df[runner.TARGET_COLUMN]
+    report = {"transformer_results": {}}
+
+    monkeypatch.setattr(
+        runner,
+        "compute_corridor_stats",
+        lambda df_arg, profile: {"n_fractals_median": 10, "n_fractals_p80": 10},
+    )
+    monkeypatch.setattr(runner, "corridor_status", lambda stats: "OK")
+
+    def fake_build(df_arg, parsed_arg, profile_arg, transform_variant="current", transform_params=None):
+        observed_seq_lens.append(profile_arg["seq_len"])
+        n = len(df_arg)
+        return (
+            np.zeros((n, profile_arg["seq_len"], 1), dtype=np.float32),
+            np.zeros((n, 1), dtype=np.float32),
+            np.ones((n, profile_arg["seq_len"]), dtype=bool),
+            {
+                "candidate_count_before_cap": np.zeros(n, dtype=np.int32),
+                "selected_count_after_cap": np.zeros(n, dtype=np.int32),
+                "is_truncated": np.zeros(n, dtype=bool),
+            },
+        )
+
+    class DummyModel:
+        def eval(self):
+            pass
+
+    monkeypatch.setattr(runner, "build_profile_features_from_parsed", fake_build)
+    monkeypatch.setattr(
+        runner,
+        "normalize_profile_features",
+        lambda *args: ((args[0], args[1], args[3], args[4], args[6], args[7]), {}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "audit_normalized_distribution",
+        lambda *args, **kwargs: {"status": "OK", "flags": [], "by_split": {}},
+    )
+    monkeypatch.setattr(
+        runner,
+        "train_transformer",
+        lambda *args, **kwargs: (DummyModel(), {"best_val_auc": 0.5, "num_epochs": 1}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "evaluate_transformer",
+        lambda *args, **kwargs: np.array([0.1, 0.2, 0.3], dtype=np.float32),
+    )
+    monkeypatch.setattr(
+        runner,
+        "compute_metrics",
+        lambda y_true, pred: {
+            "auc": 0.5,
+            "pr_auc": 0.5,
+            "n": len(y_true),
+            "lift_10": 1.0,
+            "lift_20": 1.0,
+            "lift_30": 1.0,
+        },
+    )
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=runner.TARGET_COLUMN: {})
+
+    parsed = {
+        "train": runner.parse_split_fractals(df),
+        "val_stop": runner.parse_split_fractals(df),
+        "holdout": runner.parse_split_fractals(df),
+    }
+    runner._train_and_eval_profile(
+        df,
+        df,
+        df,
+        42,
+        "cpu",
+        report,
+        "corridor_5atr_relative_price_atr_full",
+        y,
+        y,
+        y,
+        transform_variant="asinh",
+        parsed_splits=parsed,
+        allow_dynamic_seq_len=False,
+    )
+
+    assert observed_seq_lens == [100, 100, 100]
+
+
+def test_find_buy_stop_target_columns_returns_sorted_candidates():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = pd.DataFrame(
+        {
+            "buy_stop_broken_H6_off05_flag": [0, 1],
+            "sell_stop_broken_H6_off05_flag": [1, 0],
+            "buy_stop_broken_H12_off05_flag": [0, 0],
+        }
+    )
+    assert runner.find_buy_stop_target_columns(df) == [
+        "buy_stop_broken_H12_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+
+
+def test_summarize_target_contract_reports_balance_and_nulls_for_sell_and_buy():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    train = pd.DataFrame({"sell_stop_broken_H6_off05_flag": [0, 1, 1, None]})
+    val = pd.DataFrame({"sell_stop_broken_H6_off05_flag": [0, 0, 1]})
+    result = runner.summarize_target_contract(
+        {"train": train, "val_stop": val},
+        "sell_stop_broken_H6_off05_flag",
+    )
+    assert result["target"] == "sell_stop_broken_H6_off05_flag"
+    assert result["splits"]["train"]["exists"] is True
+    assert result["splits"]["train"]["n_rows"] == 4
+    assert result["splits"]["train"]["n_non_null"] == 3
+    assert result["splits"]["train"]["positive_rate"] == pytest.approx(2 / 3)
+
+
+def test_load_splits_filters_by_requested_target(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    def make_frame(years, buy_vals, sell_vals):
+        rows = []
+        for i, (year, buy_val, sell_val) in enumerate(zip(years, buy_vals, sell_vals)):
+            rows.append(
+                {
+                    "time": f"{year}.01.{i + 1:02d} 12:00",
+                    "signal": 1 if pd.notna(buy_val) else -1,
+                    "ATR": 1.0,
+                    "fractal0": _make_fractal_str([(1, 100.0), (2, -1 if pd.notna(buy_val) else 1)]),
+                    "buy_stop_broken_H6_off05_flag": buy_val,
+                    "sell_stop_broken_H6_off05_flag": sell_val,
+                }
+            )
+        return pd.DataFrame(rows)
+
+    frames = [
+        make_frame([2020, 2020], [1.0, np.nan], [np.nan, 0.0]),
+        make_frame([2021, 2021], [0.0, np.nan], [np.nan, 1.0]),
+        make_frame([2023, 2023], [1.0, np.nan], [np.nan, 0.0]),
+    ]
+    calls = iter(frames)
+    monkeypatch.setattr(runner.pd, "read_csv", lambda *args, **kwargs: next(calls).copy())
+
+    train, val_stop, holdout = runner.load_splits(target_col="buy_stop_broken_H6_off05_flag")
+
+    assert train["buy_stop_broken_H6_off05_flag"].notna().all()
+    assert val_stop["buy_stop_broken_H6_off05_flag"].notna().all()
+    assert holdout["buy_stop_broken_H6_off05_flag"].notna().all()
+    assert train["sell_stop_broken_H6_off05_flag"].isna().all()
+    assert val_stop["sell_stop_broken_H6_off05_flag"].isna().all()
+    assert holdout["sell_stop_broken_H6_off05_flag"].isna().all()
+
+
+def test_stage5_0b_runner_records_checks_baselines_and_profile_roles(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    calls = []
+    df = _make_synthetic_df(3, 100)
+    df["_year"] = [2020, 2020, 2020]
+    ohlc = {"status": "PASS"}
+    sanity = {"status": "PASS", "positive_rate": 0.5}
+    xgb = {
+        "base_raw_plus_time": {"val": {"auc": 0.5, "lift_30": 1.0}},
+        "time_only": {"val": {"auc": 0.5, "lift_30": 1.0}},
+    }
+
+    def fake_train(
+        train_df,
+        val_df,
+        hold_df,
+        seed,
+        device,
+        report,
+        pname,
+        y_train,
+        y_val,
+        y_holdout,
+        diagnostic_only=False,
+        transform_variant="current",
+        parsed_splits=None,
+        allow_dynamic_seq_len=True,
+        profile_role="legacy",
+        target_col=runner.TARGET_COLUMN,
+    ):
+        calls.append((pname, transform_variant, allow_dynamic_seq_len, profile_role))
+        report["transformer_results"].setdefault(pname, []).append(
+            {
+                "profile": pname,
+                "seed": seed,
+                "transform_variant": transform_variant,
+                "profile_role": profile_role,
+                "training_run": True,
+                "normalized_distribution_audit": {"status": "OK"},
+                "val": {"auc": 0.51, "lift_30": 0.9},
+                "holdout": {"auc": 0.51, "lift_30": 0.9},
+                "yearly": {},
+            }
+        )
+        return 1.0
+
+    monkeypatch.setattr(runner, "_train_and_eval_profile", fake_train)
+    report = runner.run_stage5_0b_asinh_rerun(
+        df,
+        df,
+        df,
+        seed=42,
+        device="cpu",
+        ohlc_verification=ohlc,
+        label_sanity=sanity,
+        xgb_results=xgb,
+        output_path=tmp_path / "stage5_0b_asinh_rerun.json",
+    )
+
+    assert report["status"] == "DIAGNOSTIC_ONLY"
+    assert report["no_trading_winner_declared"] is True
+    assert report["ohlc_verification"] == ohlc
+    assert report["label_sanity"] == sanity
+    assert report["xgb_baselines"] == xgb
+    assert report["decision_policy"]["holdout_usage"] == "disclosure only"
+    assert {c[1] for c in calls} == {"asinh"}
+    assert {c[2] for c in calls} == {False}
+    assert calls[0][3] == "confirmatory"
+    assert calls[-1][3] == "diagnostic_control"
+    assert (tmp_path / "stage5_0b_asinh_rerun.json").exists()
+
+
+def test_stage5_0b_runner_can_promote_all_profiles_and_disable_gates(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(3, 100)
+    df["_year"] = [2020, 2020, 2020]
+    df["buy_stop_broken_H6_off05_flag"] = [0, 1, 0]
+    roles = []
+    xgb = {
+        "base_raw_plus_time": {"val": {"auc": 0.9, "lift_30": 0.5}},
+        "time_only": {"val": {"auc": 0.9, "lift_30": 0.5}},
+    }
+
+    def fake_train(
+        train_df,
+        val_df,
+        hold_df,
+        seed,
+        device,
+        report,
+        pname,
+        y_train,
+        y_val,
+        y_holdout,
+        diagnostic_only=False,
+        transform_variant="current",
+        parsed_splits=None,
+        allow_dynamic_seq_len=True,
+        profile_role="legacy",
+        target_col=runner.TARGET_COLUMN,
+    ):
+        roles.append(profile_role)
+        assert target_col == "buy_stop_broken_H6_off05_flag"
+        report["transformer_results"].setdefault(pname, []).append(
+            {
+                "profile": pname,
+                "seed": seed,
+                "transform_variant": transform_variant,
+                "profile_role": profile_role,
+                "training_run": True,
+                "normalized_distribution_audit": {"status": "OK"},
+                "val": {"auc": 0.1, "lift_30": 2.0},
+                "holdout": {"auc": 0.1, "lift_30": 2.0},
+                "yearly": {},
+            }
+        )
+
+    monkeypatch.setattr(runner, "_train_and_eval_profile", fake_train)
+    report = runner.run_stage5_0b_asinh_rerun(
+        df,
+        df,
+        df,
+        seed=42,
+        device="cpu",
+        ohlc_verification={"status": "PASS"},
+        label_sanity={"status": "PASS"},
+        xgb_results=xgb,
+        output_path=tmp_path / "buy.json",
+        target_col="buy_stop_broken_H6_off05_flag",
+        all_profiles_confirmatory=True,
+        use_multiseed_gates=False,
+    )
+
+    assert set(roles) == {"confirmatory"}
+    assert report["diagnostic_control_profiles"] == []
+    assert report["target"] == "buy_stop_broken_H6_off05_flag"
+    assert report["target_contracts"]["trained"]["target"] == "buy_stop_broken_H6_off05_flag"
+    assert report["decision_policy"]["multi_seed_rules"]["status"].startswith("disabled")
+    first = report["transformer_results"][runner.STAGE5_0B_ASINH_PROFILE_NAMES[0]][0]
+    assert first["multi_seed_decision"]["reason"] == "selection_gates_disabled"
+
+
+def test_train_eval_profile_preserves_legacy_full29_builder(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(3, 100)
+    df["_year"] = [2020, 2020, 2020]
+    y = df[runner.TARGET_COLUMN]
+    report = {"transformer_results": {}}
+    direct_calls = []
+
+    def fail_parsed(*args, **kwargs):
+        raise AssertionError("full29 legacy profile must not use parsed base10 builder")
+
+    def fake_direct(df_arg, profile_arg, transform_variant="current", transform_params=None):
+        direct_calls.append((profile_arg["name"], transform_variant))
+        n = len(df_arg)
+        seq_len = profile_arg["seq_len"]
+        token_dim = profile_arg["token_dim"]
+        row_dim = profile_arg["row_dim"]
+        return (
+            np.zeros((n, seq_len, token_dim), dtype=np.float32),
+            np.zeros((n, row_dim), dtype=np.float32),
+            np.ones((n, seq_len), dtype=bool),
+            {
+                "candidate_count_before_cap": np.full(n, seq_len, dtype=np.int32),
+                "selected_count_after_cap": np.full(n, seq_len, dtype=np.int32),
+                "is_truncated": np.zeros(n, dtype=bool),
+            },
+        )
+
+    class DummyModel:
+        def eval(self):
+            pass
+
+    monkeypatch.setattr(runner, "build_profile_features_from_parsed", fail_parsed)
+    monkeypatch.setattr(runner, "build_profile_features", fake_direct)
+    monkeypatch.setattr(
+        runner,
+        "normalize_profile_features",
+        lambda *args: ((args[0], args[1], args[3], args[4], args[6], args[7]), {}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "audit_normalized_distribution",
+        lambda *args, **kwargs: {"status": "OK", "flags": [], "by_split": {}},
+    )
+    monkeypatch.setattr(
+        runner,
+        "train_transformer",
+        lambda *args, **kwargs: (DummyModel(), {"best_val_auc": 0.5, "num_epochs": 1}),
+    )
+    monkeypatch.setattr(
+        runner,
+        "evaluate_transformer",
+        lambda *args, **kwargs: np.array([0.1, 0.2, 0.3], dtype=np.float32),
+    )
+    monkeypatch.setattr(
+        runner,
+        "compute_metrics",
+        lambda y_true, pred: {
+            "auc": 0.5,
+            "pr_auc": 0.5,
+            "n": len(y_true),
+            "lift_10": 1.0,
+            "lift_20": 1.0,
+            "lift_30": 1.0,
+        },
+    )
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=runner.TARGET_COLUMN: {})
+
+    runner._train_and_eval_profile(
+        df,
+        df,
+        df,
+        42,
+        "cpu",
+        report,
+        "all100_full29_time",
+        y,
+        y,
+        y,
+    )
+
+    assert direct_calls == [
+        ("all100_full29_time", "current"),
+        ("all100_full29_time", "current"),
+        ("all100_full29_time", "current"),
+    ]
