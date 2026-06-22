@@ -101,6 +101,8 @@ Multi-seed candidate only if confirmatory profile passes predefined `val_stop` r
 | `corridor_5atr_price_unit_atr_full` | diagnostic_control | OK | 0 |
 | `corridor_10atr_price_unit_atr_full` | diagnostic_control | OK | 0 |
 
+`asinh` выбран как единое преобразование для признаков с длинными хвостами (ATR, `price_coord_atr`, absolute price). Для больших по модулю значений `asinh(x)` ведёт себя как `sign(x)·ln(2|x|)` — сжимает хвост так же, как `signed-log`; для значений около нуля — линейно, без искажения масштаба. Альтернатива из аудита 06-20 (`log1p` для ATR и `signed-log` для `price_coord_atr`) требует двух разных функций под тип признака; `asinh` покрывает оба случая одной функцией. Эмпирически: `0` критических флагов на всех 9 sell-профилях выше подтверждает, что `asinh` закрывает обе проблемы 06-20 (ATR regime shift и `price_coord_atr` pos99 хвост).
+
 ### Corridor Stats
 
 Коридорные профили не меняли `seq_len` на лету в Stage 5.0b; ниже показано, сколько фракталов фактически попадало в коридор. Статус всех corridor-профилей: `OK`.

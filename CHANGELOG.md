@@ -13,6 +13,18 @@
 - Статус `DIAGNOSTIC_ONLY`; holdout не используется для выбора.
 - Confirmatory candidates отделены от diagnostic controls.
 - Dynamic corridor `seq_len` отключён.
+- Дополнительно выполнен диагностический buy-прогон `buy_stop_broken_H6_off05_flag` после исправления загрузки: фильтрация строк теперь идёт по выбранной целевой колонке, а не всегда по `sell_stop_broken_H6_off05_flag`.
+
+### Результаты
+- Sell: лучший Transformer `all100_relative_price_time` не прошёл AUC-порог (`0.6719` против `0.6731`); разрыв `0.0012` мал и в single-seed режиме не считается устойчивым сигналом. `lift_30` на `val_stop` лучше XGBoost (`0.5044` против `0.5539`), но оба условия отбора одновременно не выполнены.
+- Buy: цель оказалась непустой после исправления загрузки (`22745` train rows, positive_rate `0.3701`, OHLC verification `PASS 50/50`). Лучший Transformer `all100_relative_price_time` уступил XGBoost по AUC (`0.6762` против `0.6894`).
+- Проверка распределения признаков после `asinh` дала `OK` и `0` критических флагов для всех sell/buy профилей.
+- `all100_absolute_price_atr_scaled_time_asinh` повторно оказался рядом с лидером на двух целевых: sell `0.6673` против лидера `0.6719`, buy `0.6752` против лидера `0.6762`.
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. Stage 5.0b не открывает multi-seed продолжение и не объявляет trading winner. Следующая обоснованная гипотеза — отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с честным сравнением против XGBoost на тех же строках.
+
+<!-- docs/reports/2026-06-21-stage5_0b-asinh-rerun.md -->
 
 ## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison
 

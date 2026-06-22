@@ -526,3 +526,11 @@
 - Updated `wiki/research/fractal-stop-research.md`: added honest raw corridor coverage, `corridor_*_full`, distinction between ATR-in-coordinate and ATR-as-row-input, and rerun guidance through `corridor_*_atr_full`.
 - Updated `wiki/index.md`: wording now reflects corridor full addendum and rejection of old capped corridor as main rerun candidate.
 - Ran `wiki/wiki.py generate`.
+### 2026-06-22: Ingest Stage 5.0a A7 audit and Stage 5.0b asinh rerun
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.0a A7 distribution audit, `asinh` vs `piecewise_tail`, `price/ATR` diagnostics, Stage 5.0b sell/buy results, buy loader fix, and `all100_absolute_price_atr_scaled_time_asinh` as next narrow candidate.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends to Stage 5.0b and records that Transformer did not beat XGBoost on sell or buy.
+- Sources: `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md`, `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`.
+### 2026-06-22: Ingest older uncovered Fractal Stop reports
+- Updated `wiki/research/fractal-stop-research.md`: added exact coverage for `2026-06-14-stage4-deep-diagnostics.md`, `2026-06-15-stage4_4-micro-check.md`, `2026-06-15-stage5-prep-diagnostics.md`, and `2026-06-15-walk-forward-diagnostics.md`.
+- Added missing synthesis for Stage 4 deep diagnostics and Stage 4.7 walk-forward diagnostics; Stage 4.4 and Stage 5.0-prep were already summarized but lacked exact source coverage.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 18 report updates.
