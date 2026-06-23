@@ -2,6 +2,13 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-23] ingest | Stage 5.0d diagnostic screening
+- Обновлён research/fractal-stop-research.md: добавлен Stage 5.0d (XGBoost + Logistic скрининг, h6_off05_target_exhausted)
+- Обновлены выводы (пункт 26), открытые вопросы (5.0d закрыт)
+- wiki/index.md: обновлён охват fractal-stop-research до 5.0d (20 reports)
+- Новый отчёт: docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
 ## [2026-06-23] ingest | Stage 5.0c cross-target replication rerun
 - Обновлён research/fractal-stop-research.md: добавлен Stage 5.0c (FAIL, multi-seed, Transformer переобучение)
 - Обновлены выводы (пункты 22-25) и открытые вопросы (5.0c закрыт, 5.0d как следующий шаг)

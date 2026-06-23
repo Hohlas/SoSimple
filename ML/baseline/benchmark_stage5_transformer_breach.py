@@ -1,16 +1,18 @@
 # =============================================================================
 # File: ML/baseline/benchmark_stage5_transformer_breach.py
-# Purpose: Stage 5.0 Transformer runner + Stage 5.0a feature preflight
+# Purpose: Stage 5.0 Transformer runner + Stage 5.0a feature preflight +
+#          Stage 5.0d diagnostic screening (XGBoost + Logistic, no Transformer)
 # Input: DATA/Nero_XAUUSD_*_labeled.csv
 # Output: ML/reports/stage5_transformer_breach.json,
 #         ML/reports/stage5_0a_feature_preflight.json,
 #         ML/reports/stage5_0a_feature_stats_normalized.csv,
 #         ML/reports/stage5_0a_feature_stats_per_position.csv,
 #         ML/reports/stage5_0a_profile_summary.csv,
-#         ML/reports/stage5_0a_transform_comparison.json
+#         ML/reports/stage5_0a_transform_comparison.json,
+#         ML/reports/stage5_0d_diagnostic_screening.json
 # Language: Python 3.10+
 # Created: 2026-06-17
-# Updated: 2026-06-18
+# Updated: 2026-06-23
 # =============================================================================
 
 import argparse, json, os, sys, time
@@ -2359,6 +2361,174 @@ def compute_xgb_same_profile_baseline(train_df, val_stop_df, holdout_df,
     }
 
 
+def compute_logistic_same_profile_baseline(train_df, val_stop_df, holdout_df,
+                                           profile_name: str,
+                                           transform_variant: str = "current",
+                                           target_col: str = TARGET_COLUMN,
+                                           seed: int = 42) -> dict:
+    """Train Logistic Regression on the same profile features as XGBoost.
+
+    Linear baseline: if Logistic ≈ XGBoost, the signal is linear and
+    Transformer is overkill. If XGBoost >> Logistic, the signal is in
+    feature interactions.
+    """
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.preprocessing import StandardScaler
+
+    print(f"\n  Training Logistic same-profile: {profile_name} ({transform_variant})...")
+
+    profile = find_profile(profile_name)
+    parsed_train = parse_split_fractals(train_df)
+    transform_params = fit_transform_params_for_profile(
+        train_df, parsed_train, profile, transform_variant)
+
+    X_train = build_xgb_features_for_profile(
+        train_df, profile_name, transform_variant, transform_params=transform_params)
+    X_val = build_xgb_features_for_profile(
+        val_stop_df, profile_name, transform_variant, transform_params=transform_params)
+    X_holdout = build_xgb_features_for_profile(
+        holdout_df, profile_name, transform_variant, transform_params=transform_params)
+
+    y_train = train_df[target_col]
+    y_val = val_stop_df[target_col]
+    y_holdout = holdout_df[target_col]
+
+    scaler = StandardScaler()
+    X_train_s = scaler.fit_transform(X_train)
+    X_val_s = scaler.transform(X_val)
+    X_holdout_s = scaler.transform(X_holdout)
+
+    model = LogisticRegression(
+        C=1.0, max_iter=1000, random_state=seed, solver="lbfgs",
+        class_weight="balanced")
+    model.fit(X_train_s, y_train)
+
+    val_probs = model.predict_proba(X_val_s)[:, 1]
+    holdout_probs = model.predict_proba(X_holdout_s)[:, 1]
+
+    val_metrics = compute_metrics(y_val, pd.Series(val_probs))
+    holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
+    yearly = compute_yearly_metrics(holdout_df, holdout_probs, target_col=target_col)
+
+    print(f"    Val AUC: {val_metrics.get('auc', 'N/A'):.4f}")
+
+    return {
+        "profile": profile_name,
+        "model_type": "logistic_regression",
+        "transform_variant": transform_variant,
+        "transform_params_fit_on": "train",
+        "seed": seed,
+        "val": {k: _safe(v) for k, v in val_metrics.items()},
+        "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
+        "yearly": {k: {kk: _safe(vv) for kk, vv in v.items()} for k, v in yearly.items()},
+    }
+
+
+def _build_feature_group_masks(profile: dict) -> dict:
+    """Build column masks for feature group ablation.
+
+    Masks are built from profile["token_fields"] and profile["row_fields"]
+    by name, not by positional assumption. Flattened layout:
+    [token_flat (seq_len * token_dim), row_flat (row_dim)].
+
+    Groups: price (first price-like token field), structure (remaining token
+    fields), ATR (row field named "ATR"), time (row fields hour_sin/cos/dow_sin/cos).
+    """
+    seq_len = profile["seq_len"]
+    token_dim = profile["token_dim"]
+    row_fields = profile.get("row_fields", [])
+    token_fields = profile.get("token_fields", [])
+    total = seq_len * token_dim + len(row_fields)
+
+    token_total = seq_len * token_dim
+    masks = {"all": np.ones(total, dtype=bool)}
+
+    price_token_names = {"price_coord_atr", "price_atr_scaled", "price_coord_unit", "price"}
+    price_token_indices = [i for i, f in enumerate(token_fields) if f in price_token_names]
+    structure_token_indices = [i for i in range(token_dim) if i not in price_token_indices]
+
+    masks["price"] = np.zeros(total, dtype=bool)
+    for ti in price_token_indices:
+        masks["price"][ti::token_dim] = True
+    masks["structure"] = np.zeros(total, dtype=bool)
+    for ti in structure_token_indices:
+        masks["structure"][ti::token_dim] = True
+
+    masks["atr"] = np.zeros(total, dtype=bool)
+    masks["time"] = np.zeros(total, dtype=bool)
+    for ri, rf in enumerate(row_fields):
+        if rf == "ATR":
+            masks["atr"][token_total + ri] = True
+        elif rf in ("hour_sin", "hour_cos", "dow_sin", "dow_cos"):
+            masks["time"][token_total + ri] = True
+
+    return masks
+
+
+def compute_feature_group_ablation(train_df, val_stop_df, holdout_df,
+                                   profile_name: str,
+                                   transform_variant: str = "asinh",
+                                   target_col: str = TARGET_COLUMN,
+                                   seed: int = 42) -> dict:
+    """Ablate feature groups and measure AUC drop.
+
+    Groups: price (token), structure (token), ATR (row), time (row).
+    For each group, remove its columns from flattened features and retrain XGBoost.
+    Holdout metrics use real model predictions, not zeros.
+    """
+    import xgboost as xgb
+
+    print(f"\n  Feature group ablation: {profile_name}...")
+
+    profile = find_profile(profile_name)
+    parsed_train = parse_split_fractals(train_df)
+    transform_params = fit_transform_params_for_profile(
+        train_df, parsed_train, profile, transform_variant)
+
+    X_train = build_xgb_features_for_profile(
+        train_df, profile_name, transform_variant, transform_params=transform_params)
+    X_val = build_xgb_features_for_profile(
+        val_stop_df, profile_name, transform_variant, transform_params=transform_params)
+    X_holdout = build_xgb_features_for_profile(
+        holdout_df, profile_name, transform_variant, transform_params=transform_params)
+
+    y_train = train_df[target_col]
+    y_val = val_stop_df[target_col]
+    y_holdout = holdout_df[target_col]
+
+    masks = _build_feature_group_masks(profile)
+    groups = {
+        "full": masks["all"],
+        "no_price": ~masks["price"],
+        "no_structure": ~masks["structure"],
+        "no_atr": ~masks["atr"],
+        "no_time": ~masks["time"],
+    }
+
+    results = {}
+    for group_name, mask in groups.items():
+        X_tr = X_train[:, mask]
+        X_va = X_val[:, mask]
+        X_ho = X_holdout[:, mask]
+
+        model, val_auc = train_xgb_baseline(X_tr, y_train, X_va, y_val, seed=seed)
+
+        val_probs = model.predict(xgb.DMatrix(X_va))
+        holdout_probs = model.predict(xgb.DMatrix(X_ho))
+
+        val_metrics = compute_metrics(y_val, pd.Series(val_probs))
+        holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
+
+        results[group_name] = {
+            "n_features": int(mask.sum()),
+            "val": {k: _safe(v) for k, v in val_metrics.items()},
+            "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
+        }
+        print(f"    {group_name}: val AUC = {val_metrics.get('auc', 'N/A'):.4f} ({int(mask.sum())} features)")
+
+    return results
+
+
 def run_phase1(train_df, val_stop_df, holdout_df, seed, device, report):
     """Phase 1: all100_base10_time + all100_base10_no_time."""
     print(f"\n{'='*60}")
@@ -2738,6 +2908,15 @@ STAGE5_0C_HOLDOUT_CHECK = {
     "enters_overall_pass": False,
 }
 STAGE5_0C_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0c_cross_target_rerun.json"
+
+STAGE5_0D_PROFILE_NAMES = STAGE5_0B_ASINH_PROFILE_NAMES
+STAGE5_0D_SEEDS = [42, 77, 123]
+STAGE5_0D_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_0D_SCREENER_THRESHOLD = 0.02
+STAGE5_0D_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0d_diagnostic_screening.json"
 
 
 def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
@@ -3410,6 +3589,197 @@ def run_stage5_0c_cross_target_rerun(sell_splits: tuple, buy_splits: tuple,
     return report
 
 
+def run_stage5_0d_diagnostic_screening(sell_splits: tuple, buy_splits: tuple,
+                                        seeds: list, device, output_path=None) -> dict:
+    """Stage 5.0d: диагностический скрининг профилей (XGBoost + Logistic).
+
+    Уровень: поисковый. Transformer не обучается.
+    Если ни один профиль не превосходит base_raw_plus_time на +0.02 AUC —
+    ветка Fractal Stop исследовательски исчерпана.
+    """
+    profile_names = STAGE5_0D_PROFILE_NAMES
+    report = {
+        "stage": "5.0d_diagnostic_screening",
+        "level": "exploratory",
+        "holdout_used_for_decision": False,
+        "seeds": list(seeds),
+        "profile_names": list(profile_names),
+        "screener_threshold": STAGE5_0D_SCREENER_THRESHOLD,
+        "decision_policy": {
+            "selection_basis": "val_stop only",
+            "holdout_usage": "disclosure only",
+            "transformer_trained": False,
+            "models": ["xgboost", "logistic_regression"],
+        },
+        "targets": {},
+    }
+
+    split_sets = {
+        "sell": (sell_splits, STAGE5_0D_TARGETS[0]),
+        "buy": (buy_splits, STAGE5_0D_TARGETS[1]),
+    }
+
+    for tname, (splits, target_col) in split_sets.items():
+        train_df, val_df, hold_df = splits
+        print(f"\n{'='*60}")
+        print(f"Stage 5.0d — цель: {tname} ({target_col})")
+        print(f"{'='*60}")
+
+        xgb_baselines = compute_xgb_baselines(train_df, val_df, hold_df, target_col=target_col)
+        base_auc = xgb_baselines["base_raw_plus_time"]["val"]["auc"]
+        base_lift = xgb_baselines["base_raw_plus_time"]["val"].get("lift_30")
+
+        profile_results = {}
+        best_profile = None
+        best_auc = -1.0
+
+        for pname in profile_names:
+            tv = "asinh"
+
+            xgb_seed_results = []
+            for seed in seeds:
+                xgb_res = compute_xgb_same_profile_baseline(
+                    train_df, val_df, hold_df, pname,
+                    transform_variant=tv, target_col=target_col, seed=seed)
+                xgb_seed_results.append(xgb_res)
+
+            import statistics
+            xgb_val_aucs = [r["val"]["auc"] for r in xgb_seed_results]
+            xgb_val_lifts = [r["val"].get("lift_30") for r in xgb_seed_results]
+            xgb_holdout_aucs = [r["holdout"].get("auc") for r in xgb_seed_results]
+            xgb_median_auc = statistics.median(xgb_val_aucs)
+            xgb_median_lift = statistics.median(xgb_val_lifts)
+            xgb_spread = max(xgb_val_aucs) - min(xgb_val_aucs) if len(xgb_val_aucs) > 1 else 0.0
+
+            logistic_res = compute_logistic_same_profile_baseline(
+                train_df, val_df, hold_df, pname,
+                transform_variant=tv, target_col=target_col, seed=seeds[0])
+
+            profile_results[pname] = {
+                "transform_variant": tv,
+                "xgb_median_val_auc": xgb_median_auc,
+                "xgb_seed_val_aucs": xgb_val_aucs,
+                "xgb_seed_val_lifts_30": xgb_val_lifts,
+                "xgb_median_val_lift_30": xgb_median_lift,
+                "xgb_seed_spread": xgb_spread,
+                "xgb_holdout_aucs": xgb_holdout_aucs,
+                "logistic_val_auc": logistic_res["val"]["auc"],
+                "logistic_val_lift_30": logistic_res["val"].get("lift_30"),
+                "xgb_vs_base_delta": xgb_median_auc - base_auc,
+                "xgb_vs_logistic_delta": xgb_median_auc - logistic_res["val"]["auc"],
+                "xgb_lift_vs_base": xgb_median_lift - base_lift if base_lift is not None else None,
+            }
+
+            if xgb_median_auc > best_auc:
+                best_auc = xgb_median_auc
+                best_profile = pname
+
+        ablation = compute_feature_group_ablation(
+            train_df, val_df, hold_df, best_profile,
+            transform_variant="asinh",
+            target_col=target_col, seed=seeds[0])
+
+        report["targets"][tname] = {
+            "target_col": target_col,
+            "base_raw_plus_time_auc": base_auc,
+            "base_raw_plus_time_lift_30": base_lift,
+            "xgb_baselines": xgb_baselines,
+            "profiles": profile_results,
+            "best_profile": best_profile,
+            "best_profile_val_auc": best_auc,
+            "ablation": {"profile": best_profile, "groups": ablation},
+        }
+
+    sell_profiles = report["targets"]["sell"]["profiles"]
+    buy_profiles = report["targets"]["buy"]["profiles"]
+    sell_base_auc = report["targets"]["sell"]["base_raw_plus_time_auc"]
+    buy_base_auc = report["targets"]["buy"]["base_raw_plus_time_auc"]
+    sell_base_lift = report["targets"]["sell"]["base_raw_plus_time_lift_30"]
+    buy_base_lift = report["targets"]["buy"]["base_raw_plus_time_lift_30"]
+    threshold = STAGE5_0D_SCREENER_THRESHOLD
+
+    def _find_best(profiles, base_auc, base_lift):
+        best_pname = None
+        best_delta = -1.0
+        for pname, p in profiles.items():
+            if p["xgb_vs_base_delta"] > best_delta:
+                best_delta = p["xgb_vs_base_delta"]
+                best_pname = pname
+        best_lift = profiles[best_pname]["xgb_median_val_lift_30"] if best_pname else None
+        return best_pname, best_delta, best_lift
+
+    sell_best_pname, sell_best_delta, sell_best_lift = _find_best(sell_profiles, sell_base_auc, sell_base_lift)
+    buy_best_pname, buy_best_delta, buy_best_lift = _find_best(buy_profiles, buy_base_auc, buy_base_lift)
+
+    if sell_best_delta >= buy_best_delta:
+        overall_best_delta = sell_best_delta
+        overall_best_target = "sell"
+        overall_best_pname = sell_best_pname
+        overall_best_lift = sell_best_lift
+        overall_base_lift = sell_base_lift
+    else:
+        overall_best_delta = buy_best_delta
+        overall_best_target = "buy"
+        overall_best_pname = buy_best_pname
+        overall_best_lift = buy_best_lift
+        overall_base_lift = buy_base_lift
+
+    auc_pass = overall_best_delta >= threshold
+    lift_pass = (overall_best_lift is not None and overall_base_lift is not None
+                 and overall_best_lift <= overall_base_lift)
+
+    if auc_pass and lift_pass:
+        screener_result = {
+            "verdict": "profile_with_potential",
+            "criteria": {
+                "auc_threshold": threshold,
+                "auc_delta": overall_best_delta,
+                "auc_pass": True,
+                "lift_pass": lift_pass,
+                "lift_30": overall_best_lift,
+                "base_lift_30": overall_base_lift,
+            },
+            "overall_best": {
+                "target": overall_best_target,
+                "profile": overall_best_pname,
+                "delta": overall_best_delta,
+                "lift_30": overall_best_lift,
+            },
+            "sell_best": {"profile": sell_best_pname, "delta": sell_best_delta, "lift_30": sell_best_lift},
+            "buy_best": {"profile": buy_best_pname, "delta": buy_best_delta, "lift_30": buy_best_lift},
+            "next_step": "Гипотеза для Stage 5.0e (Transformer multi-seed на лучшем профиле). Результат 5.0d не открывает Transformer-обучение автоматически — только формирует гипотезу для нового проверочного цикла с заранее зафиксированными порогами.",
+        }
+    else:
+        screener_result = {
+            "verdict": "h6_off05_target_exhausted",
+            "criteria": {
+                "auc_threshold": threshold,
+                "auc_delta": overall_best_delta,
+                "auc_pass": auc_pass,
+                "lift_pass": lift_pass,
+                "lift_30": overall_best_lift,
+                "base_lift_30": overall_base_lift,
+            },
+            "overall_best": {
+                "target": overall_best_target,
+                "profile": overall_best_pname,
+                "delta": overall_best_delta,
+                "lift_30": overall_best_lift,
+            },
+            "sell_best": {"profile": sell_best_pname, "delta": sell_best_delta, "lift_30": sell_best_lift},
+            "buy_best": {"profile": buy_best_pname, "delta": buy_best_delta, "lift_30": buy_best_lift},
+            "next_step": "Постановка H6_off05 stop broken на текущих 9 профилях исчерпана. Fractal Stop как семейство целей не закрыт — остаются другие постановки (сторона, время до пробоя, выход). Результат 5.0d не открывает Transformer-обучение автоматически.",
+        }
+
+    report["screener_result"] = screener_result
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=2, default=str)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -3421,6 +3791,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Run Stage 5.0b frozen asinh Transformer rerun")
     parser.add_argument("--stage5-0c-cross-target-rerun", action="store_true",
                         help="Stage 5.0c: повторная проверка гипотезы на двух целях")
+    parser.add_argument("--stage5-0d-diagnostic-screening", action="store_true",
+                        help="Stage 5.0d: диагностический скрининг профилей (XGBoost + Logistic, без Transformer)")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -3522,6 +3894,24 @@ def main():
         print("\n" + "=" * 60)
         print("Stage 5.0c: повторная проверка на двух целях завершена")
         print(json.dumps({"json": str(STAGE5_0C_JSON_REPORT_PATH)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_0d_diagnostic_screening:
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.0d...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_0d_diagnostic_screening(
+            sell_splits=(train_df, val_stop_df, holdout_df),
+            buy_splits=(buy_train, buy_val, buy_hold),
+            seeds=STAGE5_0D_SEEDS,
+            device=device,
+            output_path=STAGE5_0D_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.0d: диагностический скрининг завершён")
+        print(json.dumps({"json": str(STAGE5_0D_JSON_REPORT_PATH)}, indent=2))
         print("=" * 60)
         return
 

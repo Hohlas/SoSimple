@@ -2,6 +2,30 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-23] — Stage 5.0d: диагностический скрининг профилей
+
+### Добавлено
+- `--stage5-0d-diagnostic-screening`
+- `ML/reports/stage5_0d_diagnostic_screening.json`
+- `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
+- `compute_logistic_same_profile_baseline`, `compute_feature_group_ablation`
+
+### Методика
+- Уровень: поисковый (exploratory).
+- Transformer не обучается. Только XGBoost (3 seeds) + Logistic Regression (1 seed).
+- Абляция групп признаков: price / structure / ATR / time.
+- Критерий: профиль с запасом >0.02 над base_raw_plus_time → гипотеза для 5.0e.
+- Если ни один профиль не проходит — текущая постановка `H6_off05 stop broken` на 9 профилях исследовательски исчерпана; Fractal Stop как семейство целей не закрыт.
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**, решение этапа: `h6_off05_target_exhausted` — ни один профиль не прошёл порог +0.02.
+- Лучший: sell `all100_relative_price_time` (delta +0.0111), lift_pass OK (0.5415 ≤ 0.5539), но AUC_pass FAIL.
+- Buy: ни один профиль не превосходит base (все дельты ≤ 0).
+- Абляция: structure-признаки критичны (AUC падает на 0.14–0.19 при их удалении), price/ATR почти не влияют.
+- XGBoost >> Logistic (gap 0.04–0.05) — сигнал во взаимодействиях, не линейный.
+
+<!-- docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md -->
+
 ## [2026-06-22] — Stage 5.0c: повторная проверка на двух целях
 
 ### Добавлено
@@ -24,7 +48,7 @@
 - G3 (cross_target): FAIL — ни одна цель не прошла G1+G2.
 - G5 (seed_spread): PASS — sell spread 0.0054, buy spread 0.0104 (оба < 0.03).
 - Holdout check: OK — sell drop 0.024, buy drop 0.028 (оба < 0.05).
-- Transformer на тех же признаках не превосходит XGBoost — это не проблема модели, а отсутствие сигнала в профиле `all100_absolute_price_atr_scaled_time_asinh` после asinh-трансформации.
+- Transformer на тех же признаках не превосходит XGBoost: в профиле есть умеренный сигнал, но текущая Transformer-реализация извлекает его хуже табличной модели.
 
 <!-- docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md -->
 

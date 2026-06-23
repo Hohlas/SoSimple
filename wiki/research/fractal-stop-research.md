@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-06-23
-sources: 16
+sources: 17
 status: completed
 ---
 
@@ -514,13 +514,14 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 23. **Transformer переобучается на 25k строках:** val AUC падает после epoch 9 (0.6673 → 0.6445 на seed 42 sell). Причины неудачи не различены: слабый сигнал в признаках, переобучение модели, или обе.
 24. **XGBoost same-profile добавляет ~0.009 AUC на sell** (0.6723 vs base 0.6631), но не на buy (0.6873 vs base 0.6894). Профиль помогает только на sell — и то в пределах шума.
 25. **6 последовательных этапов Fractal Stop провалились как торговые или модельные кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-реализации.
+26. **Stage 5.0d: скрининг всех 9 профилей.** XGBoost (3 seeds) + Logistic Regression на всех профилях 5.0b × sell + buy. **Ни один профиль не достиг порога +0.02 AUC.** Лучший: sell `all100_relative_price_time` (delta +0.0111, lift_pass OK). Buy: все дельты ≤ 0. Абляция: structure-признаки критичны (AUC −0.14/−0.19 при удалении), price/ATR почти не влияют. XGBoost >> Logistic (gap 0.04–0.05) — сигнал нелинейный, но слабый. Постановка H6_off05 stop broken исчерпана.
 
-**Все этапы (Stage 2→5.0b) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer пока не дал устойчивого улучшения.
+**Все этапы (Stage 2→5.0d) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал устойчивого улучшения.
 
 ## Открытые вопросы
 
 - ~~Проверить `all100_absolute_price_atr_scaled_time_asinh` как заранее выбранный основной профиль в отдельном Stage 5.0c-прогоне по sell и buy~~ — Stage 5.0c завершён: FAIL.
-- Какие фрактальные профили и группы признаков вообще несут сигнал сверх raw features — Stage 5.0d (XGBoost + Logistic скрининг).
+- ~~Какие фрактальные профили и группы признаков вообще несут сигнал сверх raw features — Stage 5.0d~~ — Stage 5.0d завершён: h6_off05_target_exhausted. Structure-признаки критичны, price/ATR не влияют.
 - Причина переобучения Transformer на 25k строках: нехватка данных, архитектура, или слабый сигнал.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
@@ -546,3 +547,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-06-20-stage5_0a-feature-distribution-audit.md](../../docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md) — Stage 5.0a A7-аудит распределения признаков, `asinh`/`piecewise_tail`, `price/ATR`
 - [2026-06-21-stage5_0b-asinh-rerun.md](../../docs/reports/2026-06-21-stage5_0b-asinh-rerun.md) — Stage 5.0b asinh Transformer rerun, sell/buy, XGBoost comparison, buy loader fix
 - [2026-06-22-stage5_0c-cross-target-rerun.md](../../docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md) — Stage 5.0c multi-seed replication test, FAIL verdict, Transformer переобучение
+- [2026-06-23-stage5_0d-diagnostic-screening.md](../../docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md) — Stage 5.0d XGBoost + Logistic скрининг 9 профилей, абляция групп, вердикт: h6_off05_target_exhausted

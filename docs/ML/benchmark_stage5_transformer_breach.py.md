@@ -75,9 +75,13 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0c-cross-targ
 - `--stage5-0b-asinh-rerun` — Stage 5.0b diagnostic training run: `asinh`, frozen profile sets, mandatory label checks, XGBoost/time-only baselines, no trading winner.
 - `--stage5-0c-cross-target-rerun` — Stage 5.0c: повторная проверка гипотезы об одном профиле `all100_absolute_price_atr_scaled_time_asinh` на sell + buy, 5 seeds, XGBoost на тех же признаках, заранее зафиксированные пороги, no trading winner.
 - `ML/reports/stage5_0c_cross_target_rerun.json` — структурированный артефакт Stage 5.0c.
+- `--stage5-0d-diagnostic-screening` — Stage 5.0d: диагностический скрининг 9 профилей (XGBoost + Logistic, без Transformer), абляция групп признаков.
+- `ML/reports/stage5_0d_diagnostic_screening.json` — структурированный артефакт Stage 5.0d.
 - `build_flat_features` — расширен параметром `transform_variant` для XGBoost на том же профиле.
 - `build_xgb_features_for_profile` — новый helper для признаков XGBoost на произвольном профиле.
 - `compute_xgb_same_profile_baseline` — baseline XGBoost на тех же признаках, что и Transformer; transform params подбираются на train.
+- `compute_logistic_same_profile_baseline` — Logistic Regression на тех же признаках (linear baseline).
+- `compute_feature_group_ablation` — абляция групп признаков (price / structure / ATR / time).
 - `stage5_0c_replication_decision` — функция решения по заранее зафиксированным порогам (4 решающих gate + holdout_check как предупреждение).
 
 **Связанные файлы:**

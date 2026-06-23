@@ -1,8 +1,10 @@
 # =============================================================================
 # File: tests/test_stage5_transformer_breach.py
 # Purpose: Smoke tests for Stage 5.0 Transformer Breach Holdout
+#          (includes Stage 5.0d — logistic baseline + feature ablation tests)
 # Language: Python 3.10+
 # Created: 2026-06-17
+# Updated: 2026-06-23
 # =============================================================================
 
 import os, sys
@@ -2022,3 +2024,176 @@ def test_stage5_0c_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-0c-cross-target-rerun"])
     assert args.stage5_0c_cross_target_rerun is True
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 5.0d tests
+# ───────────────────────────────────────────────────────────────────────────
+
+def test_stage5_0d_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_0D_PROFILE_NAMES == runner.STAGE5_0B_ASINH_PROFILE_NAMES
+    assert runner.STAGE5_0D_SEEDS == [42, 77, 123]
+    assert runner.STAGE5_0D_TARGETS == [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+    assert runner.STAGE5_0D_SCREENER_THRESHOLD == 0.02
+    for pname in runner.STAGE5_0D_PROFILE_NAMES:
+        assert runner.find_profile(pname) is not None
+
+
+def test_compute_logistic_same_profile_baseline_returns_metrics(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(10, 100)
+    df["_year"] = [2020] * 5 + [2023] * 5
+
+    monkeypatch.setattr(runner, "build_xgb_features_for_profile",
+                        lambda d, pname, tv, transform_params=None: np.random.rand(len(d), 10).astype(np.float32))
+    monkeypatch.setattr(runner, "fit_transform_params_for_profile",
+                        lambda df, parsed, profile, variant: {})
+    monkeypatch.setattr(runner, "parse_split_fractals", lambda df: {})
+    monkeypatch.setattr(runner, "find_profile",
+                        lambda name: {"seq_len": 1, "token_dim": 5, "row_dim": 5})
+    monkeypatch.setattr(runner, "compute_metrics",
+                        lambda yt, yp: {"auc": 0.58, "pr_auc": 0.5, "n": len(yt),
+                                        "lift_10": 1.0, "lift_20": 1.0, "lift_30": 0.9})
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=None: {})
+
+    result = runner.compute_logistic_same_profile_baseline(
+        df.iloc[:5], df.iloc[:5], df.iloc[5:],
+        "all100_relative_price_time",
+        transform_variant="current", target_col=runner.TARGET_COLUMN, seed=42)
+    assert "val" in result and "holdout" in result
+    assert result["model_type"] == "logistic_regression"
+    assert result["val"]["auc"] == 0.58
+    assert result["transform_params_fit_on"] == "train"
+
+
+def test_compute_feature_group_ablation_returns_all_groups(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+    import sys
+
+    df = _make_synthetic_df(10, 100)
+    df["_year"] = [2020] * 5 + [2023] * 5
+
+    class _FakeModel:
+        def predict(self, dm):
+            return np.array([0.5] * len(dm))
+
+    class _FakeDMatrix:
+        def __init__(self, data):
+            self._data = data
+        def __len__(self):
+            return len(self._data)
+
+    if "xgboost" in sys.modules:
+        monkeypatch.setattr(sys.modules["xgboost"], "DMatrix", _FakeDMatrix)
+
+    monkeypatch.setattr(runner, "build_xgb_features_for_profile",
+                        lambda d, pname, tv, transform_params=None: np.random.rand(len(d), 15).astype(np.float32))
+    monkeypatch.setattr(runner, "fit_transform_params_for_profile",
+                        lambda df, parsed, profile, variant: {})
+    monkeypatch.setattr(runner, "parse_split_fractals", lambda df: {})
+    monkeypatch.setattr(runner, "find_profile",
+                        lambda name: {"seq_len": 1, "token_dim": 10, "row_dim": 5,
+                                      "token_fields": ["price_coord_atr", "direction", "front", "back", "strong",
+                                                       "break", "reverse", "power", "count", "impulse"],
+                                      "row_fields": ["ATR", "hour_sin", "hour_cos", "dow_sin", "dow_cos"]})
+    monkeypatch.setattr(runner, "train_xgb_baseline",
+                        lambda Xtr, ytr, Xv, yv, seed=42: (_FakeModel(), 0.65))
+    monkeypatch.setattr(runner, "compute_metrics",
+                        lambda yt, yp: {"auc": 0.65, "pr_auc": 0.5, "n": len(yt),
+                                        "lift_10": 1.0, "lift_20": 1.0, "lift_30": 0.8})
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=None: {})
+
+    result = runner.compute_feature_group_ablation(
+        df.iloc[:5], df.iloc[:5], df.iloc[5:],
+        "all100_relative_price_time",
+        transform_variant="current", target_col=runner.TARGET_COLUMN, seed=42)
+    assert "full" in result
+    assert "no_price" in result
+    assert "no_structure" in result
+    assert "no_atr" in result
+    assert "no_time" in result
+    for group in ["full", "no_price", "no_structure", "no_atr", "no_time"]:
+        assert "val" in result[group]
+        assert "auc" in result[group]["val"]
+
+
+def test_stage5_0d_runner_screens_all_profiles_and_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df_sell = _make_synthetic_df(5, 100)
+    df_sell["_year"] = [2020] * 5
+    df_buy = df_sell.copy()
+    df_buy["buy_stop_broken_H6_off05_flag"] = [0, 1, 0, 1, 0]
+
+    monkeypatch.setattr(runner, "compute_xgb_same_profile_baseline",
+                        lambda train_df, val_stop_df, holdout_df, profile_name,
+                               transform_variant="asinh", target_col=runner.TARGET_COLUMN, seed=42: {
+                            "profile": profile_name, "val": {"auc": 0.66, "lift_30": 0.6},
+                            "holdout": {"auc": 0.64, "lift_30": 0.65}, "yearly": {}})
+    monkeypatch.setattr(runner, "compute_logistic_same_profile_baseline",
+                        lambda train_df, val_stop_df, holdout_df, profile_name,
+                               transform_variant="current", target_col=runner.TARGET_COLUMN, seed=42: {
+                            "profile": profile_name, "model_type": "logistic_regression",
+                            "val": {"auc": 0.62, "lift_30": 0.7},
+                            "holdout": {"auc": 0.61, "lift_30": 0.72}, "yearly": {}})
+    monkeypatch.setattr(runner, "compute_feature_group_ablation",
+                        lambda train_df, val_stop_df, holdout_df, profile_name,
+                               transform_variant="asinh", target_col=runner.TARGET_COLUMN, seed=42: {
+                            "full": {"n_features": 15, "val": {"auc": 0.66},
+                                     "holdout": {"auc": 0.64}},
+                            "no_price": {"n_features": 14, "val": {"auc": 0.64},
+                                         "holdout": {"auc": 0.63}},
+                            "no_structure": {"n_features": 6, "val": {"auc": 0.65},
+                                             "holdout": {"auc": 0.63}},
+                            "no_atr": {"n_features": 14, "val": {"auc": 0.66},
+                                       "holdout": {"auc": 0.64}},
+                            "no_time": {"n_features": 11, "val": {"auc": 0.63},
+                                        "holdout": {"auc": 0.62}}})
+    monkeypatch.setattr(runner, "compute_xgb_baselines",
+                        lambda tr, va, ho, target_col=runner.TARGET_COLUMN: {
+                            "base_raw_plus_time": {"val": {"auc": 0.65, "lift_30": 0.7}}})
+    monkeypatch.setattr(runner, "STAGE5_0D_PROFILE_NAMES", ["p1", "p2"])
+    monkeypatch.setattr(runner, "STAGE5_0D_TARGETS", [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ])
+    monkeypatch.setattr(runner, "STAGE5_0D_SCREENER_THRESHOLD", 0.02)
+
+    report = runner.run_stage5_0d_diagnostic_screening(
+        sell_splits=(df_sell, df_sell, df_sell),
+        buy_splits=(df_buy, df_buy, df_buy),
+        seeds=[42, 77, 123],
+        device="cpu",
+        output_path=tmp_path / "stage5_0d.json",
+    )
+
+    assert report["stage"] == "5.0d_diagnostic_screening"
+    assert report["level"] == "exploratory"
+    assert report["holdout_used_for_decision"] is False
+    assert len(report["targets"]["sell"]["profiles"]) == 2
+    assert "base_raw_plus_time_auc" in report["targets"]["sell"]
+    assert "base_raw_plus_time_lift_30" in report["targets"]["sell"]
+    assert "ablation" in report["targets"]["sell"]
+    assert "screener_result" in report
+    sr = report["screener_result"]
+    assert sr["verdict"] in ("profile_with_potential", "h6_off05_target_exhausted")
+    assert "sell_best" in sr and "buy_best" in sr
+    assert "overall_best" in sr
+    assert "criteria" in sr
+    assert "auc_pass" in sr["criteria"]
+    assert "lift_pass" in sr["criteria"]
+    assert (tmp_path / "stage5_0d.json").exists()
+
+
+def test_stage5_0d_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-0d-diagnostic-screening"])
+    assert args.stage5_0d_diagnostic_screening is True
