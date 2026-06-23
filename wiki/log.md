@@ -1,6 +1,12 @@
 # Wiki Log — SoSimple
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
+
+## [2026-06-23] ingest | Stage 5.0c cross-target replication rerun
+- Обновлён research/fractal-stop-research.md: добавлен Stage 5.0c (FAIL, multi-seed, Transformer переобучение)
+- Обновлены выводы (пункты 22-25) и открытые вопросы (5.0c закрыт, 5.0d как следующий шаг)
+- wiki/index.md: обновлён охват fractal-stop-research до 5.0c (19 reports)
+- Новый отчёт: docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
 ## [2026-06-17] ingest | Stage 5.0 Transformer Breach Holdout synced into wiki

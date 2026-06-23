@@ -11,6 +11,38 @@
 
 Stage 5.0b выявил, что `all100_absolute_price_atr_scaled_time_asinh` стабильно оказался рядом с лидером на двух целевых (sell val_auc 0.6673 vs лидер 0.6719; buy val_auc 0.6752 vs лидер 0.6762). Stage 5.0c — заранее зафиксированная повторная проверка: один профиль, две цели, 5 seeds, XGBoost на тех же признаках, заранее зафиксированные числовые пороги.
 
+## What Was Done
+
+- Заморожены константы Stage 5.0c: один профиль `all100_absolute_price_atr_scaled_time_asinh`, две цели, 5 seeds, 4 решающих порога + `holdout_check` как предупреждение.
+- Обучен Transformer (5 seeds × 2 цели = 10 прогонов) и XGBoost same-profile (1 seed × 2 цели) на честно одинаковых признаках (flattened).
+- XGBoost same-profile обучен на тех же flattened признаках; transform params подбирались на train, не на val/holdout.
+- Баг загрузчика исправлен в 5.0b; здесь buy target загружается корректно (22745 train rows).
+- Проверки: OHLC verification, label sanity, XGBoost baselines (3 варианта).
+- Holdout не входил в решение (`holdout_used_for_decision: false`).
+- Trading winner не объявлялся.
+
+## Multiple Testing Context
+
+Search budget: 1 профиль × 2 цели × 1 модель (Transformer) × 5 seeds = 10 Transformer прогонов + 2 XGBoost same-profile + 2 × 3 XGBoost baselines = 18 training total.
+
+Коррекция: этап проверочный, с заранее зафиксированными числовыми порогами (G1–G5). Дополнительной коррекции на множественный перебор не требуется — профиль один, без расширения сетки.
+
+## Changed Files
+
+- `ML/baseline/benchmark_stage5_transformer_breach.py` — Stage 5.0c constants, `build_flat_features` extended, `build_xgb_features_for_profile`, `compute_xgb_same_profile_baseline`, `stage5_0c_replication_decision`, `run_stage5_0c_cross_target_rerun`, `build_arg_parser()`, CLI `--stage5-0c-cross-target-rerun`.
+- `tests/test_stage5_transformer_breach.py` — tests for all new functions (786 passed).
+- `ML/reports/stage5_0c_cross_target_rerun.json` — structured artifact.
+- `docs/ML/benchmark_stage5_transformer_breach.py.md` — module documentation updated.
+- `CHANGELOG.md` — entry added.
+- `docs/methodology/` — 8 files updated (поисковый/проверочный уровень).
+
+## Verification
+
+- Tests: `./.venv/bin/python -m pytest tests/ -q` — 786 passed, 0 failed.
+- JSON artifact: `ML/reports/stage5_0c_cross_target_rerun.json` — записан, числа согласованы с отчётом.
+- Seed 42 результаты идентичны 5.0b: sell 0.6673, buy 0.6752 — воспроизводимость single-seed подтверждена.
+- G1–G5 gate логика проверена вручную по всем 5 seeds × 2 целям.
+
 ## Setup
 
 - Profile: `all100_absolute_price_atr_scaled_time_asinh` (frozen, single)
@@ -117,7 +149,7 @@ Summary: median val AUC = 0.6752, median val lift_30 = 0.5423, median holdout AU
 
 Гипотеза 5.0b о профиле `all100_absolute_price_atr_scaled_time_asinh` **не воспроизвелась** при multi-seed повторной проверке с честным сравнением против XGBoost на тех же признаках.
 
-Ключевой факт: Transformer на тех же признаках **систематически уступает XGBoost** по AUC и lift_30 на обеих целях. Это не проблема модели Transformer — XGBoost просто показывает, что сигнал в этих признаках слабый, и более сложная модель не извлекает из них дополнительной информации.
+Ключевой факт: Transformer на тех же признаках **систематически уступает XGBoost** по AUC и lift_30 на обеих целях. XGBoost показывает, что в профиле есть умеренный сигнал, но текущая Transformer-реализация извлекает его хуже, чем табличная модель.
 
 Хорошая новость: seed spread узкий (sell 0.0054, buy 0.0104) — результаты стабильны, но стабильность слабого сигнала не создаёт полезный сигнал.
 
@@ -128,12 +160,19 @@ Summary: median val AUC = 0.6752, median val lift_30 = 0.5423, median holdout AU
 - 5 seeds дают ограниченный CI; для торгового решения нужен block bootstrap CI.
 - Buy и sell считаются на разных строках; AUC/lift не сравнимы между целями напрямую.
 - XGBoost на этих же признаках показывает скромные результаты (val AUC 0.672-0.687) — сам профиль имеет ограниченную предсказательную силу.
+- Transformer показывает переобучение: seed 42 sell, валидационная AUC растёт до 0.6673 на epoch 9, затем падает до 0.6445 на epoch 17 при продолжающемся падении train loss. На 25k строках Transformer систематически переобучается. Текущий эксперимент не различает причины: слабый сигнал, переобучение, или обе.
+
+## Validation Split Disclosure
+
+- val_stop: 2021-2022, использовался для всех метрик решения (AUC, lift_30, seed spread). Scaler, transform params и early stopping — только на train.
+- holdout: 2023-2026, только раскрытие (`holdout_used_for_decision: false`), в overall_pass не входит.
+- Split: train ≤2020 (sell 25672 строк, buy 22745), val_stop 2021-2022, holdout ≥2023.
 
 ## Next Step
 
-Постмортем: Transformer стабильно хуже XGBoost на одних и тех же признаках на обеих целях. Возможные гипотезы:
-- Искать профиль, где Transformer превосходит XGBoost (другие трансформации, другие селекции фракталов).
-- Рассмотреть `corridor_*` или `relative_price` профили с asinh для возможного sell-only сигнала.
+Stage 5.0d — диагностический скрининг профилей (XGBoost + Logistic, без Transformer). План: `docs/superpowers/plans/2026-06-23-stage5_0d-diagnostic-screening.md`.
+
+Цель: понять, какие фрактальные профили и группы признаков несут сигнал сверх raw features. Если ни один профиль не показывает улучшения — постановка H6_off05 stop broken на текущих профилях исчерпана.
 
 ## Related Materials
 

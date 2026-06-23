@@ -1,140 +1,105 @@
 # Context Handoff
 
-Дата: 2026-06-18
+Дата: 2026-06-23
 
 ## Текущий этап
 
-Fractal Stop находится после Stage 5.0a feature preflight и после corridor full addendum. Обучение Transformer по этому addendum не запускалось.
+Fractal Stop после Stage 5.0c (cross-target replication rerun, overall_pass: FAIL). Готов к Stage 5.0d (диагностический скрининг, без Transformer).
 
-Статус: **DIAGNOSTIC_ONLY**.
+Статус проекта: **DIAGNOSTIC_ONLY**. Ни один этап не дал кандидата.
 
 ## Что сделано
 
-1. В `ML/baseline/benchmark_stage5_transformer_breach.py` режим `--feature-preflight-only` расширен:
-   - считает raw corridor coverage до cap;
-   - сохраняет честную truncation-метрику;
-   - строит 4 новых full-corridor профиля.
-2. Builder теперь возвращает `selection_meta`:
-   - `candidate_count_before_cap`
-   - `selected_count_after_cap`
-   - `is_truncated`
-3. Добавлены новые профили:
-   - `corridor_5atr_relative_price_no_time_full`
-   - `corridor_10atr_relative_price_no_time_full`
-   - `corridor_5atr_relative_price_atr_full`
-   - `corridor_10atr_relative_price_atr_full`
-4. `*_no_time_full` заданы с `row_dim=0` и помечены как `DIAGNOSTIC_ONLY`.
-5. Обновлены тесты runner-а; текущий статус:
-   - `72 passed`
+### Stage 5.0a (2026-06-20) — feature distribution audit
+- log1p(ATR) + signed-log(price_coord_atr) реализованы, per-position stats
+- Все 7 профилей: 0 ERROR, 0 TAIL_GT10, остаточный REGIME_SHIFT delta=3.14 (WARNING)
+- 762 tests passed
+- Отчёт: `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md`
 
-## Где лежат результаты
+### Stage 5.0b (2026-06-21) — asinh rerun
+- `asinh` выбран как единый transform (замена log1p + signed-log)
+- CLI `--stage5-0b-asinh-rerun`
+- Sell: лучший Transformer val_auc=0.6719 vs gate 0.6731 (gap=0.0012, single-seed)
+- Buy: viable (22745 строк); лучший Transformer val_auc=0.6762 vs XGBoost 0.6894
+- Баг загрузчика исправлен: `load_splits` фильтрует по `target_col.notna()`
+- 777 tests passed
+- Отчёт: `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
 
-- `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
-- `ML/reports/stage5_0a_feature_preflight.json`
-- `ML/reports/stage5_0a_feature_stats_normalized.csv`
-- `ML/reports/stage5_0a_profile_summary.csv`
+### Stage 5.0c (2026-06-22) — cross-target replication rerun
+- Один профиль `all100_absolute_price_atr_scaled_time_asinh`, sell+buy, 5 seeds
+- XGBoost на тех же flattened признаках (честное сравнение)
+- 4 решающих порога + `holdout_check` как предупреждение
+- **overall_pass: FAIL** — Transformer уступил XGBoost по AUC и lift_30 на обеих целях
+- Seed spread узкий (sell 0.0054, buy 0.0104) — стабильно, но слабо
+- Transformer переобучается: val AUC падает после epoch 9
+- 786 tests passed
+- Отчёт: `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
+
+### Методология (2026-06-22)
+- 8 файлов обновлены: введены «поисковый» / «проверочный» уровень исследования
+- Transfer ≠ overfitting check, replication test framing, verdict-уровни, типовые ошибки
 
 ## Главные выводы
 
-### 1. Технически preflight чистый
+1. **Transformer не превосходит XGBoost ни на одном проверенном профиле.** На 5.0b (9 профилей, single-seed) и 5.0c (1 профиль, multi-seed) — ни разу.
+2. **Transformer переобучается на 25k строках** (seed 42 sell: val AUC падает с 0.6673 на epoch 9 до 0.6445 на epoch 17).
+3. **Причины не ясны:** слабый сигнал в признаках, переобучение, или обе.
+4. **Buy target жизнеспособен** (22745 train строк, pos_rate 0.37), но Transformer на нём тоже уступает XGBoost.
 
-Не обнаружено:
+## Где мы сейчас
 
-- `NaN`
-- `Inf`
-- `PADDING_NOT_ZERO`
-- нарушений profile contract
+Stage 5.0c закрыт. Готов план Stage 5.0d.
 
-### 2. ATR остаётся главным источником holdout warning
+### Stage 5.0d — диагностический скрининг (поисковый уровень)
+- План: `docs/superpowers/plans/2026-06-23-stage5_0d-diagnostic-screening.md`
+- XGBoost + Logistic Regression на всех 9 профилях, без Transformer
+- Абляция групп признаков (price / structure / ATR / time)
+- Критерий: AUC +0.02 AND lift_30 ≤ base → гипотеза для 5.0e
+- Если ни один профиль не проходит → постановка H6_off05 исчерпана (Fractal Stop как семейство не закрыт)
 
-Это относится ко всем профилям, где `ATR` идёт в `row_fields`. Это disclosure-факт, а не автоматический запрет на rerun.
-
-### 3. Абсолютная цена остаётся только диагностическим контролем
-
-`all100_absolute_price_time` по-прежнему показывает holdout shift по абсолютной цене.
-
-### 4. Старые corridor-профили с `seq_len=40` больше не стоит использовать как основные
-
-Честная truncation после исправления метрики:
-
-- `corridor_5atr_relative_price_no_time`: `0.491`
-- `corridor_10atr_relative_price_no_time`: `0.871`
-
-Причина: раньше эти профили слишком часто упирались в cap.
-
-### 5. Full corridor дал два разных вывода
-
-- `corridor_5atr_relative_price_atr_full`:
-  - median raw candidates = `40`
-  - median selected = `40`
-  - truncation = `0.000`
-  - снятие cap мало меняет медиану, но убирает искажение на части строк
-
-- `corridor_10atr_relative_price_atr_full`:
-  - median raw candidates = `62`
-  - median selected = `62`
-  - truncation = `0.000`
-  - старый capped-вариант реально терял информацию
-
-### 6. Full corridor не превратился в фактический all100
-
-Формальный контроль “почти all100”:
-
-- `corridor_10atr_relative_price_no_time_full`:
-  - `% candidate_count_before_cap >= 90` = `0.0105`
-  - `% selected_count_after_cap >= 90` = `0.0105`
-
-Значит `corridor_10atr_full` остаётся отдельным представлением, а не замаскированным `all100`.
-
-### 7. Профили с `row_dim=0` пока нельзя автоматически тащить в обучение
-
-`corridor_*_no_time_full` пригодны для диагностики, но не для немедленного training rerun. Для обучения нужен отдельный осознанный support `row_dim=0` в модельном слое Stage 5.
-
-## Что делать дальше
-
-Обсуждать Stage 5.0 rerun уже с новой corridor-матрицей.
-
-### Можно обсуждать для training rerun
-
-- `all100_no_price_time`
-- `all100_relative_price_no_time`
-- `all100_relative_price_time`
-- `nearest40_relative_price_no_time`
-- `nearest40_relative_price_time`
-- `corridor_5atr_relative_price_atr_full`
-- `corridor_10atr_relative_price_atr_full`
-
-### Оставить только как diagnostic-only
-
-- `time_only_clean`
-- `atr_only`
-- `time_plus_atr`
-- `all100_absolute_price_time`
-- `corridor_5atr_relative_price_no_time_full`
-- `corridor_10atr_relative_price_no_time_full`
-- `corridor_15atr_relative_price_no_time`
-- `corridor_10atr_relative_price_time`
-
-### Не использовать как основной rerun-кандидат
-
-- `corridor_5atr_relative_price_no_time`
-- `corridor_10atr_relative_price_no_time`
-
-## Файлы
+## Ключевые файлы
 
 Код:
+- `ML/baseline/benchmark_stage5_transformer_breach.py` (~3700 строк)
+- `tests/test_stage5_transformer_breach.py` (786 tests)
 
-- `ML/baseline/benchmark_stage5_transformer_breach.py`
-- `tests/test_stage5_transformer_breach.py`
+Методология:
+- `docs/methodology/00-research-management.md` — уровни исследования
+- `docs/methodology/07-baseline-first.md` — baseline-gate по уровням
+- `docs/methodology/09-validation-freeze.md` — replication test framing
+- `docs/methodology/11-robustness.md` — transfer ≠ overfitting
+- `docs/methodology/A3-typical-false-conclusions.md` — типовые ошибки
+- `docs/methodology/A4-verdicts-stop-conditions.md` — verdict ↔ уровни
+- `docs/methodology/16-reporting-audit.md` — шаблон отчёта
 
-Документы:
+Отчёты:
+- `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md`
+- `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
+- `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
 
-- `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
-- `docs/ML/benchmark_stage5_transformer_breach.py.md`
-- `docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md`
+Планы:
+- `docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md`
+- `docs/superpowers/plans/2026-06-23-stage5_0d-diagnostic-screening.md`
 
 Артефакты:
+- `ML/reports/stage5_0b_asinh_rerun.json`
+- `ML/reports/stage5_0b_asinh_rerun_buy_stop_broken_H6_off05_flag.json`
+- `ML/reports/stage5_0c_cross_target_rerun.json`
 
-- `ML/reports/stage5_0a_feature_preflight.json`
-- `ML/reports/stage5_0a_feature_stats_normalized.csv`
-- `ML/reports/stage5_0a_profile_summary.csv`
+## Ключевые технические решения
+
+- **asinh** — единый transform для ATR и price_coord_atr (замена log1p + signed-log)
+- **build_flat_features** — принимает `transform_variant` + `transform_params`
+- **build_xgb_features_for_profile** — XGBoost на произвольном профиле, опциональные `transform_params`
+- **compute_xgb_same_profile_baseline** — fit transform params на train, передача в val/holdout
+- **build_arg_parser()** — вынесен из main(), тестируем
+- **Loader fix**: `load_splits` фильтрует по `target_col.notna()` (не всегда sell)
+- **Holdout не используется для решения**: `holdout_used_for_decision: false`
+- **Промежуточные git commit** — не делаются; закрытие через stage-reporting
+
+## Ограничения / открытые вопросы
+
+- Transformer переобучается на 25k строках — причина не выяснена
+- Все профили 5.0b были single-seed; multi-seed — только один профиль
+- XGBoost same-profile не проверялся на остальных 8 профилях (это задача 5.0d)
+- Buy и sell считаются на разных строках; их метрики нельзя напрямую сравнивать

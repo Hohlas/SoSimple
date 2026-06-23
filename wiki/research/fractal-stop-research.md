@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-06-22
-sources: 15
+last_updated: 2026-06-23
+sources: 16
 status: completed
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства; Stage 5.0b выделил `all100_absolute_price_atr_scaled_time_asinh` как главный кандидат для следующего заранее зафиксированного диагностического прогона.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства; Stage 5.0c завершил multi-seed повторную проверку главного кандидата — вердикт FAIL, Transformer стабильно уступает XGBoost на одних и тех же признаках. Следующий шаг — Stage 5.0d: диагностический скрининг (XGBoost + Logistic, без Transformer).
 
 ## Хронология
 
@@ -224,6 +224,32 @@ Buy target `buy_stop_broken_H6_off05_flag`:
 - `all100_absolute_price_atr_scaled_time_asinh` снова рядом с лидером: buy val AUC=0.6752 против лидера 0.6762.
 
 Общий вывод Stage 5.0b: Transformer не превзошёл XGBoost по AUC ни на sell, ни на buy. В нижней зоне риска (`lift_30`, меньше лучше) Transformer иногда лучше на `val_stop`, но перенос в holdout слабее: sell `0.5044 -> 0.6468`, buy `0.5112 -> 0.6217`. Следующий разумный шаг — не расширять сетку профилей, а оформить отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с теми же строками для XGBoost и Transformer.
+
+### Stage 5.0c: cross-target replication rerun (2026-06-22) — ❌ FAIL
+
+Stage 5.0c — проверочный этап, повторная проверка гипотезы 5.0b. Один профиль `all100_absolute_price_atr_scaled_time_asinh`, две цели sell+buy, 5 seeds, XGBoost на тех же flattened признаках, 4 решающих заранее зафиксированных порога + `holdout_check` как предупреждение. Holdout не входил в решение.
+
+Sell (`sell_stop_broken_H6_off05_flag`):
+- Transformer median val AUC: 0.6643 (seeds: 0.6619–0.6673)
+- XGBoost same-profile val AUC: 0.6723
+- G1 AUC: FAIL — 0 из 5 seeds выше порога (xgb−0.005)
+- G2 lift_30: FAIL — transformer 0.5570 vs xgb 0.5229 (меньше=лучше)
+- G5 seed spread: PASS — 0.0054 (<0.03)
+- Holdout check: OK — drop 0.024 (<0.05)
+
+Buy (`buy_stop_broken_H6_off05_flag`):
+- Transformer median val AUC: 0.6752 (seeds: 0.6704–0.6808)
+- XGBoost same-profile val AUC: 0.6873
+- G1 AUC: FAIL — 0 seeds выше порога
+- G2 lift_30: FAIL — transformer 0.5423 vs xgb 0.5147
+- G5 seed spread: PASS — 0.0104 (<0.03)
+- Holdout check: OK — drop 0.028 (<0.05)
+
+**overall_pass: FAIL.** Transformer систематически уступает XGBoost на одних и тех же признаках. Seed 42 результаты идентичны 5.0b (sell 0.6673, buy 0.6752) — воспроизводимость single-seed подтверждена. Seed spread узкий — результат стабилен, но стабильно слаб.
+
+Transformer показывает классическое переобучение: seed 42 sell, val AUC достигает 0.6673 на epoch 9, затем падает до 0.6445 на epoch 17 при продолжающемся падении train loss. На 25k строках Transformer систематически переобучается.
+
+Вывод: гипотеза 5.0b не воспроизвелась. Причины неудачи могут быть в признаках (слабый сигнал), в модели (переобучение), или в обоих. Текущий эксперимент не различает эти причины. Следующий шаг — диагностический скрининг (Stage 5.0d): XGBoost + Logistic на всех 9 профилях, без Transformer, с абляцией групп признаков.
 
 ## Ключевые результаты
 
@@ -484,18 +510,20 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 19. Stage 5.0a A7-аудит изменил вывод по абсолютной цене: raw absolute price кодировал эпоху, но `price/ATR` и `asinh(price/ATR)` методически чисты и не имеют длинных хвостов после нормализации.
 20. Stage 5.0b показал, что Transformer с `asinh` не превзошёл XGBoost по AUC ни на sell, ни на buy. Buy-цель оказалась жизнеспособной после исправления загрузки, но buy-прогон был диагностическим.
 21. `all100_absolute_price_atr_scaled_time_asinh` повторно оказался рядом с лидером на sell и buy; это главный кандидат для следующего заранее зафиксированного диагностического прогона, но не winner Stage 5.0b.
-22. **5 последовательных этапов Fractal Stop провалились как торговые кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в текущей sequence-реализации.
+22. **Stage 5.0c: гипотеза 5.0b не воспроизвелась.** Transformer на одних и тех же признаках систематически уступает XGBoost по AUC и lift_30 на обеих целях. 0 из 5 seeds выше порога. Seed spread узкий (0.005–0.010) — результат стабилен, но стабильно слаб.
+23. **Transformer переобучается на 25k строках:** val AUC падает после epoch 9 (0.6673 → 0.6445 на seed 42 sell). Причины неудачи не различены: слабый сигнал в признаках, переобучение модели, или обе.
+24. **XGBoost same-profile добавляет ~0.009 AUC на sell** (0.6723 vs base 0.6631), но не на buy (0.6873 vs base 0.6894). Профиль помогает только на sell — и то в пределах шума.
+25. **6 последовательных этапов Fractal Stop провалились как торговые или модельные кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-реализации.
 
 **Все этапы (Stage 2→5.0b) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer пока не дал устойчивого улучшения.
 
 ## Открытые вопросы
 
-- Проверить `all100_absolute_price_atr_scaled_time_asinh` как заранее выбранный основной профиль в отдельном Stage 5.0c-прогоне по sell и buy.
-- Сравнить Transformer и XGBoost на одном и том же `all100_absolute_price_atr_scaled_time_asinh` представлении и на одних строках.
-- Проверить multi-seed устойчивость только после узкого single-seed прогона без расширения сетки профилей.
+- ~~Проверить `all100_absolute_price_atr_scaled_time_asinh` как заранее выбранный основной профиль в отдельном Stage 5.0c-прогоне по sell и buy~~ — Stage 5.0c завершён: FAIL.
+- Какие фрактальные профили и группы признаков вообще несут сигнал сверх raw features — Stage 5.0d (XGBoost + Logistic скрининг).
+- Причина переобучения Transformer на 25k строках: нехватка данных, архитектура, или слабый сигнал.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
-- ~~Даст ли trailing stop положительное матожидание при том же breach-сигнале~~ — Stage 4.5/4.6 проверили: trail_atr_0_2 показывает высокий diagnostic PF, но не обобщается на 2023-2026.
 - Помогут ли новые признаки (спред, волатильность, корреляции) улучшить fav-регрессию.
 - Работает ли концепт на других активах или таймфреймах.
 - Стоит ли закрыть Fractal Stop ветку и вернуться к основному направлению (regression_updn, triple barrier).
@@ -517,3 +545,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-06-18-stage5_0a-feature-preflight.md](../../docs/reports/2026-06-18-stage5_0a-feature-preflight.md) — Stage 5.0a preflight (contracts, normalization audit, relative-price vs absolute-price, corridor truncation)
 - [2026-06-20-stage5_0a-feature-distribution-audit.md](../../docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md) — Stage 5.0a A7-аудит распределения признаков, `asinh`/`piecewise_tail`, `price/ATR`
 - [2026-06-21-stage5_0b-asinh-rerun.md](../../docs/reports/2026-06-21-stage5_0b-asinh-rerun.md) — Stage 5.0b asinh Transformer rerun, sell/buy, XGBoost comparison, buy loader fix
+- [2026-06-22-stage5_0c-cross-target-rerun.md](../../docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md) — Stage 5.0c multi-seed replication test, FAIL verdict, Transformer переобучение
