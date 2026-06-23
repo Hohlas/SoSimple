@@ -2,6 +2,32 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-22] — Stage 5.0c: повторная проверка на двух целях
+
+### Добавлено
+- `--stage5-0c-cross-target-rerun`
+- `ML/reports/stage5_0c_cross_target_rerun.json`
+- `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
+- `build_xgb_features_for_profile`, `compute_xgb_same_profile_baseline` — честное сравнение Transformer vs XGBoost на тех же признаках
+
+### Методика
+- Статус `DIAGNOSTIC_ONLY`; holdout не используется для решения (`holdout_used_for_decision: false`).
+- Framing: повторная проверка гипотезы 5.0b, не независимое открытие.
+- Заранее зафиксированные числовые пороги для 4 решающих gate (AUC, lift_30, проверка на двух целях, seed spread) + `holdout_check` как предупреждение.
+- 5 seeds безусловно (без single-seed gate).
+- XGBoost на том же профиле изолирует «признаки vs модель»; transform params подбираются на train, не на val/holdout.
+
+### Результаты
+- **overall_pass: FAIL** — гипотеза не воспроизвелась.
+- G1 (AUC): FAIL — Transformer уступил XGBoost same-profile на обеих целях. Sell: median val AUC 0.6643 vs XGBoost 0.6723 (0 seeds выше порога). Buy: median val AUC 0.6752 vs XGBoost 0.6873 (0 seeds выше порога).
+- G2 (lift_30): FAIL — Transformer lift_30 выше XGBoost на обеих целях (меньше = лучше не выполнено). Sell: 0.5570 vs 0.5229. Buy: 0.5423 vs 0.5147.
+- G3 (cross_target): FAIL — ни одна цель не прошла G1+G2.
+- G5 (seed_spread): PASS — sell spread 0.0054, buy spread 0.0104 (оба < 0.03).
+- Holdout check: OK — sell drop 0.024, buy drop 0.028 (оба < 0.05).
+- Transformer на тех же признаках не превосходит XGBoost — это не проблема модели, а отсутствие сигнала в профиле `all100_absolute_price_atr_scaled_time_asinh` после asinh-трансформации.
+
+<!-- docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md -->
+
 ## [2026-06-21] — Stage 5.0b: Asinh Transformer rerun
 
 ### Добавлено

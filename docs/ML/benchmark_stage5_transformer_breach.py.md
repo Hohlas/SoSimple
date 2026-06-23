@@ -69,16 +69,24 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --single-seed --skip-p
 python -m ML.baseline.benchmark_stage5_transformer_breach --feature-preflight-only
 python -m ML.baseline.benchmark_stage5_transformer_breach --transform-comparison-only
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0b-asinh-rerun --single-seed
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0c-cross-target-rerun
 ```
 
 - `--stage5-0b-asinh-rerun` — Stage 5.0b diagnostic training run: `asinh`, frozen profile sets, mandatory label checks, XGBoost/time-only baselines, no trading winner.
+- `--stage5-0c-cross-target-rerun` — Stage 5.0c: повторная проверка гипотезы об одном профиле `all100_absolute_price_atr_scaled_time_asinh` на sell + buy, 5 seeds, XGBoost на тех же признаках, заранее зафиксированные пороги, no trading winner.
+- `ML/reports/stage5_0c_cross_target_rerun.json` — структурированный артефакт Stage 5.0c.
+- `build_flat_features` — расширен параметром `transform_variant` для XGBoost на том же профиле.
+- `build_xgb_features_for_profile` — новый helper для признаков XGBoost на произвольном профиле.
+- `compute_xgb_same_profile_baseline` — baseline XGBoost на тех же признаках, что и Transformer; transform params подбираются на train.
+- `stage5_0c_replication_decision` — функция решения по заранее зафиксированным порогам (4 решающих gate + holdout_check как предупреждение).
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
-- `tests/test_stage5_transformer_breach.py` — тесты (90 тестов, включая log1p/signed-log/per-position, `price/ATR` профили и Stage 5.0b regression checks)
+- `tests/test_stage5_transformer_breach.py` — тесты (100 тестов, включая log1p/signed-log/per-position, `price/ATR` профили, Stage 5.0b regression checks и Stage 5.0c tests)
 - `docs/methodology/A7-feature-distribution-audit.md` — методика feature distribution audit
 - `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт Stage 5.0
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a preflight
 - `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт feature distribution audit
 - `docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md` — план
 - `docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md` — план preflight
+- `docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md` — план Stage 5.0c

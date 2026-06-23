@@ -1954,9 +1954,12 @@ def load_splits(target_col: str = TARGET_COLUMN):
 # Flat features for XGBoost baselines
 # ===========================================================================
 
-def build_flat_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+def build_flat_features(df: pd.DataFrame, profile: dict,
+                        transform_variant: str = "current",
+                        transform_params: dict | None = None) -> np.ndarray:
     """Build flat feature table for XGBoost from profile tokens+row_features."""
-    tokens, row_feat, mask, _selection_meta = build_profile_features(df, profile)
+    tokens, row_feat, mask, _selection_meta = build_profile_features(
+        df, profile, transform_variant=transform_variant, transform_params=transform_params)
     n_samples = len(df)
     flat = tokens.reshape(n_samples, -1)
     result = np.concatenate([flat, row_feat], axis=1)
@@ -1978,6 +1981,24 @@ def build_xgb_features(df: pd.DataFrame, feature_type: str) -> np.ndarray:
         return row_feat.astype(np.float32)
     else:
         raise ValueError(f"Unknown feature_type: {feature_type}")
+
+
+def build_xgb_features_for_profile(df: pd.DataFrame, profile_name: str,
+                                   transform_variant: str = "current",
+                                   transform_params: dict | None = None) -> np.ndarray:
+    """Build flat XGBoost features for a named profile with a given transform variant.
+
+    If transform_params is None, fits params on the provided df (caller must pass
+    train_df for train-only fit). If transform_params is provided, uses them directly
+    without re-fitting — this avoids leakage when params were fit on train only.
+    """
+    profile = find_profile(profile_name)
+    if transform_params is None:
+        parsed = parse_split_fractals(df)
+        transform_params = fit_transform_params_for_profile(
+            df, parsed, profile, transform_variant)
+    return build_flat_features(
+        df, profile, transform_variant=transform_variant, transform_params=transform_params)
 
 
 # ===========================================================================
@@ -2282,6 +2303,60 @@ def compute_xgb_baselines(train_df, val_stop_df, holdout_df, target_col: str = T
         print(f"    Val AUC: {val_auc:.4f}, Holdout AUC: {holdout_metrics.get('auc', 'N/A')}")
 
     return results
+
+
+def compute_xgb_same_profile_baseline(train_df, val_stop_df, holdout_df,
+                                      profile_name: str,
+                                      transform_variant: str = "asinh",
+                                      target_col: str = TARGET_COLUMN,
+                                      seed: int = 42) -> dict:
+    """Train XGBoost on the same profile features as the Transformer.
+
+    This isolates 'features vs model': if XGBoost on the same flattened
+    profile beats the Transformer, the issue is the model, not the features.
+
+    Transform params are fit on train only and reused for val and holdout
+    to avoid leakage from val/holdout into transform fitting.
+    """
+    print(f"\n  Training XGBoost same-profile: {profile_name} ({transform_variant})...")
+
+    profile = find_profile(profile_name)
+    parsed_train = parse_split_fractals(train_df)
+    transform_params = fit_transform_params_for_profile(
+        train_df, parsed_train, profile, transform_variant)
+
+    X_train = build_xgb_features_for_profile(
+        train_df, profile_name, transform_variant, transform_params=transform_params)
+    X_val = build_xgb_features_for_profile(
+        val_stop_df, profile_name, transform_variant, transform_params=transform_params)
+    X_holdout = build_xgb_features_for_profile(
+        holdout_df, profile_name, transform_variant, transform_params=transform_params)
+
+    y_train = train_df[target_col]
+    y_val = val_stop_df[target_col]
+    y_holdout = holdout_df[target_col]
+
+    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+
+    import xgboost as xgb
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    holdout_probs = model.predict(xgb.DMatrix(X_holdout))
+
+    val_metrics = compute_metrics(y_val, pd.Series(val_probs))
+    holdout_metrics = compute_metrics(y_holdout, pd.Series(holdout_probs))
+    yearly = compute_yearly_metrics(holdout_df, holdout_probs, target_col=target_col)
+
+    print(f"    Val AUC: {val_auc:.4f}, Holdout AUC: {holdout_metrics.get('auc', 'N/A')}")
+
+    return {
+        "profile": profile_name,
+        "transform_variant": transform_variant,
+        "transform_params_fit_on": "train",
+        "seed": seed,
+        "val": {k: _safe(v) for k, v in val_metrics.items()},
+        "holdout": {k: _safe(v) for k, v in holdout_metrics.items()},
+        "yearly": {k: {kk: _safe(vv) for kk, vv in v.items()} for k, v in yearly.items()},
+    }
 
 
 def run_phase1(train_df, val_stop_df, holdout_df, seed, device, report):
@@ -2635,6 +2710,34 @@ TRANSFORM_VARIANTS = {
         "upper_q": 95,
     },
 }
+
+STAGE5_0C_PROFILE_NAME = "all100_absolute_price_atr_scaled_time_asinh"
+STAGE5_0C_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_0C_SEEDS = [42, 77, 123, 202, 777]
+STAGE5_0C_GATES = {
+    "g1_auc": {
+        "median_above_xgb": True,
+        "min_seeds_above_xgb_minus_tol": 4,
+        "tolerance": 0.005,
+    },
+    "g2_lift30": {
+        "median_below_xgb": True,
+    },
+    "g3_cross_target": {
+        "both_targets_required": True,
+    },
+    "g5_seed_spread": {
+        "max_range": 0.03,
+    },
+}
+STAGE5_0C_HOLDOUT_CHECK = {
+    "max_drop": 0.05,
+    "enters_overall_pass": False,
+}
+STAGE5_0C_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0c_cross_target_rerun.json"
 
 
 def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
@@ -3009,6 +3112,116 @@ def stage5_0b_multiseed_decision(result: dict, xgb_results: dict, profile_role: 
     }
 
 
+def _median(values: list) -> float:
+    import statistics
+    return float(statistics.median(values))
+
+
+def stage5_0c_replication_decision(target_results: dict) -> dict:
+    """Apply заранее зафиксированные пороги Stage 5.0c.
+
+    All thresholds are frozen in STAGE5_0C_GATES before any run.
+    Holdout check is separate (STAGE5_0C_HOLDOUT_CHECK) and does not
+    enter overall_pass. Returns per-gate, per-target breakdown,
+    per-target verdicts (sell_pass, buy_pass), and overall_pass.
+    """
+    gates = STAGE5_0C_GATES
+    tol = gates["g1_auc"]["tolerance"]
+    min_seeds = gates["g1_auc"]["min_seeds_above_xgb_minus_tol"]
+    max_range = gates["g5_seed_spread"]["max_range"]
+    max_drop = STAGE5_0C_HOLDOUT_CHECK["max_drop"]
+
+    g1 = {"per_target": {}, "pass": True}
+    g2 = {"per_target": {}, "pass": True}
+    g5 = {"per_target": {}, "pass": True}
+    holdout_check = {"per_target": {}, "status": "OK"}
+
+    per_target_pass = {}
+
+    for tname, tdata in target_results.items():
+        seed_val_aucs = [s["val"]["auc"] for s in tdata["seed_metrics"]]
+        seed_val_lifts = [s["val"]["lift_30"] for s in tdata["seed_metrics"]]
+        seed_hold_aucs = [s["holdout"]["auc"] for s in tdata["seed_metrics"]]
+        xgb_auc = tdata["xgb_same_profile"]["val"]["auc"]
+        xgb_lift = tdata["xgb_same_profile"]["val"]["lift_30"]
+
+        med_val_auc = _median(seed_val_aucs)
+        med_val_lift = _median(seed_val_lifts)
+        med_hold_auc = _median(seed_hold_aucs)
+        seeds_above = sum(1 for a in seed_val_aucs if a > xgb_auc - tol)
+        spread = max(seed_val_aucs) - min(seed_val_aucs)
+
+        g1_pass = med_val_auc > xgb_auc and seeds_above >= min_seeds
+        g2_pass = med_val_lift < xgb_lift
+        g5_pass = spread < max_range
+        holdout_ok = med_hold_auc >= med_val_auc - max_drop
+
+        g1["per_target"][tname] = {
+            "pass": g1_pass,
+            "median_val_auc": med_val_auc,
+            "xgb_val_auc": xgb_auc,
+            "seeds_above_tol": seeds_above,
+        }
+        g2["per_target"][tname] = {
+            "pass": g2_pass,
+            "median_val_lift_30": med_val_lift,
+            "xgb_val_lift_30": xgb_lift,
+        }
+        g5["per_target"][tname] = {
+            "pass": g5_pass,
+            "range": spread,
+        }
+        holdout_check["per_target"][tname] = {
+            "status": "OK" if holdout_ok else "WARNING",
+            "median_holdout_auc": med_hold_auc,
+            "median_val_auc": med_val_auc,
+            "drop": med_val_auc - med_hold_auc,
+            "max_drop": max_drop,
+        }
+        if not holdout_ok:
+            holdout_check["status"] = "WARNING"
+
+        g1["pass"] = g1["pass"] and g1_pass
+        g2["pass"] = g2["pass"] and g2_pass
+        g5["pass"] = g5["pass"] and g5_pass
+
+        per_target_pass[tname] = g1_pass and g2_pass and g5_pass
+
+    both_required = gates["g3_cross_target"]["both_targets_required"]
+    if both_required:
+        cross_target_pass = all(per_target_pass.values())
+    else:
+        cross_target_pass = any(per_target_pass.values())
+
+    g3_pass = cross_target_pass
+    overall = g1["pass"] and g2["pass"] and g3_pass and g5["pass"]
+
+    g1_out = dict(g1)
+    g1_out.update(g1["per_target"])
+    g2_out = dict(g2)
+    g2_out.update(g2["per_target"])
+    g5_out = dict(g5)
+    g5_out.update(g5["per_target"])
+
+    sell_pass = per_target_pass.get("sell", False)
+    buy_pass = per_target_pass.get("buy", False)
+
+    return {
+        "overall_pass": bool(overall),
+        "overall_pass_components": ["g1_auc", "g2_lift30", "g3_cross_target", "g5_seed_spread"],
+        "sell_pass": bool(sell_pass),
+        "buy_pass": bool(buy_pass),
+        "cross_target_pass": bool(cross_target_pass),
+        "g1_auc": g1_out,
+        "g2_lift30": g2_out,
+        "g3_cross_target": {"pass": bool(g3_pass), "both_targets_required": True},
+        "g5_seed_spread": g5_out,
+        "holdout_check": holdout_check,
+        "gates_config": gates,
+        "holdout_check_config": STAGE5_0C_HOLDOUT_CHECK,
+    }
+
+
 def run_stage5_0b_asinh_rerun(train_df, val_stop_df, holdout_df, seed, device,
                               ohlc_verification: dict, label_sanity: dict,
                               xgb_results: dict,
@@ -3093,7 +3306,112 @@ def run_stage5_0b_asinh_rerun(train_df, val_stop_df, holdout_df, seed, device,
     return report
 
 
-def main():
+def run_stage5_0c_cross_target_rerun(sell_splits: tuple, buy_splits: tuple,
+                                     seeds: list, device, output_path=None) -> dict:
+    """Stage 5.0c: повторная проверка гипотезы 5.0b на sell + buy.
+
+    Framing: повторная проверка гипотезы 5.0b, не независимое открытие.
+    Заранее зафиксированные пороги в STAGE5_0C_GATES; holdout — только
+    раскрытие результата, не входит в overall_pass.
+    """
+    profile_name = STAGE5_0C_PROFILE_NAME
+    report = {
+        "status": "DIAGNOSTIC_ONLY",
+        "stage": "5.0c_cross_target_rerun",
+        "profile": profile_name,
+        "transform_variant": "asinh",
+        "seeds": list(seeds),
+        "framing": "replication_test_of_5_0b_hypothesis",
+        "no_trading_winner_declared": True,
+        "holdout_used_for_decision": False,
+        "pre_registered_gates": STAGE5_0C_GATES,
+        "holdout_check_config": STAGE5_0C_HOLDOUT_CHECK,
+        "decision_policy": {
+            "selection_basis": "val_stop only",
+            "holdout_usage": "только раскрытие результата, не входит в overall_pass",
+            "profile_set": "single frozen profile, no grid search",
+            "multi_seed_policy": "unconditional 5-seed, no single-seed gate",
+        },
+        "targets": {},
+    }
+
+    split_sets = {
+        "sell": (sell_splits, STAGE5_0C_TARGETS[0]),
+        "buy": (buy_splits, STAGE5_0C_TARGETS[1]),
+    }
+
+    for tname, (splits, target_col) in split_sets.items():
+        train_df, val_df, hold_df = splits
+        print(f"\n{'='*60}")
+        print(f"Stage 5.0c — цель: {tname} ({target_col})")
+        print(f"{'='*60}")
+
+        ohlc = verify_breach_labels_against_ohlc(hold_df, target_col=target_col)
+        sanity = label_sanity_check(hold_df, target_col=target_col)
+        xgb_baselines = compute_xgb_baselines(train_df, val_df, hold_df, target_col=target_col)
+        xgb_same = compute_xgb_same_profile_baseline(
+            train_df, val_df, hold_df, profile_name,
+            transform_variant="asinh", target_col=target_col, seed=seeds[0])
+
+        parsed_splits = {
+            "train": parse_split_fractals(train_df),
+            "val_stop": parse_split_fractals(val_df),
+            "holdout": parse_split_fractals(hold_df),
+        }
+        y_train = train_df[target_col]
+        y_val = val_df[target_col]
+        y_holdout = hold_df[target_col]
+
+        seed_metrics = []
+        transformer_report = {"transformer_results": {}}
+        for seed in seeds:
+            print(f"\n  --- seed={seed} ---")
+            _train_and_eval_profile(
+                train_df, val_df, hold_df, seed, device, transformer_report,
+                profile_name, y_train, y_val, y_holdout,
+                diagnostic_only=False,
+                transform_variant="asinh",
+                parsed_splits=parsed_splits,
+                allow_dynamic_seq_len=False,
+                profile_role="confirmatory",
+                target_col=target_col,
+            )
+            result = transformer_report["transformer_results"][profile_name][-1]
+            seed_metrics.append({
+                "seed": seed,
+                "val": result.get("val", {}),
+                "holdout": result.get("holdout", {}),
+                "normalized_distribution_audit": result.get("normalized_distribution_audit", {}),
+            })
+
+        report["targets"][tname] = {
+            "target_col": target_col,
+            "ohlc_verification": ohlc,
+            "label_sanity": sanity,
+            "xgb_baselines": xgb_baselines,
+            "xgb_same_profile": xgb_same,
+            "transformer_results": transformer_report["transformer_results"],
+            "seed_metrics": seed_metrics,
+        }
+
+    target_for_decision = {
+        tname: {
+            "xgb_same_profile": tdata["xgb_same_profile"],
+            "seed_metrics": tdata["seed_metrics"],
+        }
+        for tname, tdata in report["targets"].items()
+    }
+    report["replication_decision"] = stage5_0c_replication_decision(target_for_decision)
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        with open(output_path, "w") as f:
+            json.dump(report, f, indent=2, default=str)
+    return report
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
     parser.add_argument("--feature-preflight-only", action="store_true",
                         help="Run Stage 5.0a feature preflight only; no model training")
@@ -3101,6 +3419,8 @@ def main():
                         help="Run Stage 5.0a transform comparison only; no model training")
     parser.add_argument("--stage5-0b-asinh-rerun", action="store_true",
                         help="Run Stage 5.0b frozen asinh Transformer rerun")
+    parser.add_argument("--stage5-0c-cross-target-rerun", action="store_true",
+                        help="Stage 5.0c: повторная проверка гипотезы на двух целях")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -3115,6 +3435,11 @@ def main():
                         help="Skip Phase 1 (for restart after Phase 1 completion)")
     parser.add_argument("--output", type=str, default=str(JSON_REPORT_PATH),
                         help="Output JSON path")
+    return parser
+
+
+def main():
+    parser = build_arg_parser()
     args = parser.parse_args()
 
     seeds = [42] if args.single_seed else SEEDS
@@ -3179,6 +3504,24 @@ def main():
         print("\n" + "=" * 60)
         print("Stage 5.0b asinh rerun completed")
         print(json.dumps({"json": str(output_path)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_0c_cross_target_rerun:
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.0c...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_0c_cross_target_rerun(
+            sell_splits=(train_df, val_stop_df, holdout_df),
+            buy_splits=(buy_train, buy_val, buy_hold),
+            seeds=STAGE5_0C_SEEDS,
+            device=device,
+            output_path=STAGE5_0C_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.0c: повторная проверка на двух целях завершена")
+        print(json.dumps({"json": str(STAGE5_0C_JSON_REPORT_PATH)}, indent=2))
         print("=" * 60)
         return
 

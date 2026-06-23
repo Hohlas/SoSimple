@@ -1721,3 +1721,304 @@ def test_train_eval_profile_preserves_legacy_full29_builder(monkeypatch):
         ("all100_full29_time", "current"),
         ("all100_full29_time", "current"),
     ]
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 5.0c tests
+# ───────────────────────────────────────────────────────────────────────────
+
+def test_build_flat_features_passes_transform_variant_to_builder(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    captured = {}
+
+    def fake_build(df_arg, profile_arg, transform_variant="current", transform_params=None):
+        captured["transform_variant"] = transform_variant
+        captured["transform_params"] = transform_params
+        n = len(df_arg)
+        return (
+            np.zeros((n, 5, 2), dtype=np.float32),
+            np.zeros((n, 1), dtype=np.float32),
+            np.ones((n, 5), dtype=bool),
+            {},
+        )
+
+    monkeypatch.setattr(runner, "build_profile_features", fake_build)
+    df = _make_synthetic_df(3, 10)
+    profile = runner.find_profile("all100_absolute_price_atr_scaled_time_asinh")
+    runner.build_flat_features(df, profile, transform_variant="asinh", transform_params={"foo": 1})
+    assert captured["transform_variant"] == "asinh"
+    assert captured["transform_params"] == {"foo": 1}
+
+
+def test_build_xgb_features_for_profile_returns_expected_shape():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(4, 100)
+    X = runner.build_xgb_features_for_profile(
+        df, "all100_absolute_price_atr_scaled_time_asinh", transform_variant="asinh")
+    profile = runner.find_profile("all100_absolute_price_atr_scaled_time_asinh")
+    expected_dim = profile["seq_len"] * profile["token_dim"] + profile["row_dim"]
+    assert X.shape == (4, expected_dim)
+    assert X.dtype == np.float32
+    assert np.isfinite(X).all()
+
+
+def test_compute_xgb_same_profile_baseline_returns_val_and_holdout_metrics(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+    import sys
+
+    df = _make_synthetic_df(10, 100)
+    df["_year"] = [2020] * 5 + [2023] * 5
+
+    class _FakeModel:
+        def predict(self, dm):
+            return np.array([0.5] * len(dm))
+
+    class _FakeDMatrix:
+        def __init__(self, data):
+            self._data = data
+        def __len__(self):
+            return len(self._data)
+
+    if "xgboost" in sys.modules:
+        monkeypatch.setattr(sys.modules["xgboost"], "DMatrix", _FakeDMatrix)
+
+    monkeypatch.setattr(runner, "build_xgb_features_for_profile",
+                        lambda d, pname, tv, transform_params=None: np.random.rand(len(d), 10).astype(np.float32))
+    monkeypatch.setattr(runner, "fit_transform_params_for_profile",
+                        lambda df, parsed, profile, variant: {})
+    monkeypatch.setattr(runner, "parse_split_fractals", lambda df: {})
+    monkeypatch.setattr(runner, "find_profile",
+                        lambda name: {"seq_len": 1, "token_dim": 5, "row_dim": 5})
+    monkeypatch.setattr(runner, "train_xgb_baseline",
+                        lambda Xtr, ytr, Xv, yv, seed=42: (_FakeModel(), 0.6))
+    monkeypatch.setattr(runner, "compute_metrics",
+                        lambda yt, yp: {"auc": 0.6, "pr_auc": 0.5, "n": len(yt),
+                                        "lift_10": 1.0, "lift_20": 1.0, "lift_30": 0.8})
+    monkeypatch.setattr(runner, "compute_yearly_metrics", lambda df_arg, pred, target_col=None: {})
+
+    result = runner.compute_xgb_same_profile_baseline(
+        df.iloc[:5], df.iloc[:5], df.iloc[5:],
+        "all100_absolute_price_atr_scaled_time_asinh",
+        transform_variant="asinh", target_col=runner.TARGET_COLUMN, seed=42)
+    assert "val" in result and "holdout" in result
+    assert result["val"]["auc"] == 0.6
+    assert result["holdout"]["auc"] == 0.6
+    assert result["profile"] == "all100_absolute_price_atr_scaled_time_asinh"
+    assert result["transform_variant"] == "asinh"
+    assert result["transform_params_fit_on"] == "train"
+
+
+def test_stage5_0c_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_0C_PROFILE_NAME == "all100_absolute_price_atr_scaled_time_asinh"
+    assert runner.STAGE5_0C_TARGETS == [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+    assert runner.STAGE5_0C_SEEDS == [42, 77, 123, 202, 777]
+    gates = runner.STAGE5_0C_GATES
+    assert gates["g1_auc"]["median_above_xgb"] is True
+    assert gates["g1_auc"]["min_seeds_above_xgb_minus_tol"] == 4
+    assert gates["g1_auc"]["tolerance"] == 0.005
+    assert gates["g2_lift30"]["median_below_xgb"] is True
+    assert gates["g3_cross_target"]["both_targets_required"] is True
+    assert gates["g5_seed_spread"]["max_range"] == 0.03
+    assert "g4_holdout_degradation" not in gates
+    holdout_check = runner.STAGE5_0C_HOLDOUT_CHECK
+    assert holdout_check["max_drop"] == 0.05
+    assert holdout_check["enters_overall_pass"] is False
+    assert runner.find_profile(runner.STAGE5_0C_PROFILE_NAME) is not None
+
+
+def test_stage5_0c_replication_decision_all_gates_pass():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    def make_target(xgb_auc, xgb_lift, seed_aucs, seed_lifts, holdout_aucs):
+        return {
+            "xgb_same_profile": {"val": {"auc": xgb_auc, "lift_30": xgb_lift}},
+            "seed_metrics": [
+                {"val": {"auc": a, "lift_30": l}, "holdout": {"auc": h}}
+                for a, l, h in zip(seed_aucs, seed_lifts, holdout_aucs)
+            ],
+        }
+
+    target_results = {
+        "sell": make_target(
+            xgb_auc=0.65, xgb_lift=0.60,
+            seed_aucs=[0.66, 0.67, 0.67, 0.66, 0.67],
+            seed_lifts=[0.55, 0.56, 0.54, 0.57, 0.56],
+            holdout_aucs=[0.64, 0.65, 0.66, 0.63, 0.65]),
+        "buy": make_target(
+            xgb_auc=0.67, xgb_lift=0.58,
+            seed_aucs=[0.68, 0.69, 0.69, 0.68, 0.69],
+            seed_lifts=[0.53, 0.54, 0.52, 0.55, 0.54],
+            holdout_aucs=[0.66, 0.67, 0.68, 0.65, 0.67]),
+    }
+    decision = runner.stage5_0c_replication_decision(target_results)
+    assert decision["overall_pass"] is True
+    assert decision["g1_auc"]["pass"] is True
+    assert decision["g2_lift30"]["pass"] is True
+    assert decision["g3_cross_target"]["pass"] is True
+    assert decision["g5_seed_spread"]["pass"] is True
+    assert decision["holdout_check"]["status"] == "OK"
+    assert "holdout_check" not in decision["overall_pass_components"]
+    assert decision["sell_pass"] is True
+    assert decision["buy_pass"] is True
+    assert decision["cross_target_pass"] is True
+
+
+def test_stage5_0c_replication_decision_cross_target_fail_when_one_target_fails():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    def make_target(xgb_auc, xgb_lift, seed_aucs, seed_lifts, holdout_aucs):
+        return {
+            "xgb_same_profile": {"val": {"auc": xgb_auc, "lift_30": xgb_lift}},
+            "seed_metrics": [
+                {"val": {"auc": a, "lift_30": l}, "holdout": {"auc": h}}
+                for a, l, h in zip(seed_aucs, seed_lifts, holdout_aucs)
+            ],
+        }
+
+    target_results = {
+        "sell": make_target(
+            xgb_auc=0.65, xgb_lift=0.60,
+            seed_aucs=[0.66, 0.67, 0.67, 0.66, 0.67],
+            seed_lifts=[0.55, 0.56, 0.54, 0.57, 0.56],
+            holdout_aucs=[0.64, 0.65, 0.66, 0.63, 0.65]),
+        "buy": make_target(
+            xgb_auc=0.75, xgb_lift=0.50,
+            seed_aucs=[0.68, 0.69, 0.70, 0.67, 0.68],
+            seed_lifts=[0.53, 0.54, 0.52, 0.55, 0.54],
+            holdout_aucs=[0.66, 0.67, 0.68, 0.65, 0.67]),
+    }
+    decision = runner.stage5_0c_replication_decision(target_results)
+    assert decision["overall_pass"] is False
+    assert decision["g1_auc"]["sell"]["pass"] is True
+    assert decision["g1_auc"]["buy"]["pass"] is False
+    assert decision["g3_cross_target"]["pass"] is False
+    assert decision["sell_pass"] is True
+    assert decision["buy_pass"] is False
+    assert decision["cross_target_pass"] is False
+
+
+def test_stage5_0c_replication_decision_seed_spread_fail():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    def make_target(xgb_auc, xgb_lift, seed_aucs, seed_lifts, holdout_aucs):
+        return {
+            "xgb_same_profile": {"val": {"auc": xgb_auc, "lift_30": xgb_lift}},
+            "seed_metrics": [
+                {"val": {"auc": a, "lift_30": l}, "holdout": {"auc": h}}
+                for a, l, h in zip(seed_aucs, seed_lifts, holdout_aucs)
+            ],
+        }
+
+    target_results = {
+        "sell": make_target(
+            xgb_auc=0.60, xgb_lift=0.70,
+            seed_aucs=[0.62, 0.68, 0.55, 0.66, 0.67],
+            seed_lifts=[0.55, 0.56, 0.54, 0.57, 0.56],
+            holdout_aucs=[0.60, 0.60, 0.60, 0.60, 0.60]),
+        "buy": make_target(
+            xgb_auc=0.60, xgb_lift=0.70,
+            seed_aucs=[0.62, 0.63, 0.64, 0.61, 0.62],
+            seed_lifts=[0.55, 0.56, 0.54, 0.57, 0.56],
+            holdout_aucs=[0.60, 0.60, 0.60, 0.60, 0.60]),
+    }
+    decision = runner.stage5_0c_replication_decision(target_results)
+    assert decision["overall_pass"] is False
+    assert decision["g5_seed_spread"]["sell"]["range"] >= 0.03
+    assert decision["g5_seed_spread"]["pass"] is False
+
+
+def test_stage5_0c_runner_trains_both_targets_and_applies_replication_decision(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    transformer_calls = []
+    xgb_calls = []
+
+    df_sell = _make_synthetic_df(5, 100)
+    df_sell["_year"] = [2020] * 5
+    df_buy = df_sell.copy()
+    df_buy["buy_stop_broken_H6_off05_flag"] = [0, 1, 0, 1, 0]
+
+    def fake_train(train_df, val_df, hold_df, seed, device, report,
+                   pname, y_train, y_val, y_holdout,
+                   diagnostic_only=False, transform_variant="current",
+                   parsed_splits=None, allow_dynamic_seq_len=True,
+                   profile_role="legacy", target_col=runner.TARGET_COLUMN):
+        transformer_calls.append((target_col, transform_variant, seed, profile_role))
+        report["transformer_results"].setdefault(pname, []).append({
+            "profile": pname,
+            "seed": seed,
+            "transform_variant": transform_variant,
+            "profile_role": profile_role,
+            "training_run": True,
+            "normalized_distribution_audit": {"status": "OK", "flags": []},
+            "val": {"auc": 0.70, "lift_30": 0.50, "pr_auc": 0.6, "n": 5,
+                    "lift_10": 1.0, "lift_20": 1.0},
+            "holdout": {"auc": 0.68, "lift_30": 0.55, "pr_auc": 0.6, "n": 5,
+                        "lift_10": 1.0, "lift_20": 1.0},
+            "yearly": {},
+        })
+        return 1.0
+
+    def fake_xgb_same(train_df, val_df, hold_df, profile_name,
+                      transform_variant="asinh", target_col=runner.TARGET_COLUMN, seed=42):
+        xgb_calls.append((target_col, profile_name, transform_variant))
+        return {
+            "profile": profile_name,
+            "transform_variant": transform_variant,
+            "seed": seed,
+            "val": {"auc": 0.65, "lift_30": 0.60, "pr_auc": 0.6, "n": 5,
+                    "lift_10": 1.0, "lift_20": 1.0},
+            "holdout": {"auc": 0.63, "lift_30": 0.65, "pr_auc": 0.6, "n": 5,
+                        "lift_10": 1.0, "lift_20": 1.0},
+            "yearly": {},
+        }
+
+    monkeypatch.setattr(runner, "_train_and_eval_profile", fake_train)
+    monkeypatch.setattr(runner, "compute_xgb_same_profile_baseline", fake_xgb_same)
+    monkeypatch.setattr(runner, "compute_xgb_baselines",
+                        lambda tr, va, ho, target_col=runner.TARGET_COLUMN: {
+                            "base_raw_plus_time": {"val": {"auc": 0.6, "lift_30": 0.7}},
+                            "no_time": {"val": {"auc": 0.55, "lift_30": 0.8}},
+                            "time_only": {"val": {"auc": 0.58, "lift_30": 0.75}},
+                        })
+    monkeypatch.setattr(runner, "verify_breach_labels_against_ohlc",
+                        lambda df, target_col: {"status": "PASS", "n_matches": 50, "n_checked": 50, "n_mismatches": 0})
+    monkeypatch.setattr(runner, "label_sanity_check",
+                        lambda df, target_col=runner.TARGET_COLUMN: {"status": "SANITY_ONLY", "positive_rate": 0.4})
+
+    report = runner.run_stage5_0c_cross_target_rerun(
+        sell_splits=(df_sell, df_sell, df_sell),
+        buy_splits=(df_buy, df_buy, df_buy),
+        seeds=[42, 77],
+        device="cpu",
+        output_path=tmp_path / "stage5_0c.json",
+    )
+
+    assert report["status"] == "DIAGNOSTIC_ONLY"
+    assert report["stage"] == "5.0c_cross_target_rerun"
+    assert report["profile"] == runner.STAGE5_0C_PROFILE_NAME
+    assert report["framing"] == "replication_test_of_5_0b_hypothesis"
+    assert report["no_trading_winner_declared"] is True
+    assert report["holdout_used_for_decision"] is False
+    assert "sell" in report["targets"] and "buy" in report["targets"]
+    assert len(report["targets"]["sell"]["transformer_results"][runner.STAGE5_0C_PROFILE_NAME]) == 2
+    assert {c[0] for c in transformer_calls} == {"sell_stop_broken_H6_off05_flag", "buy_stop_broken_H6_off05_flag"}
+    assert {c[1] for c in transformer_calls} == {"asinh"}
+    assert "replication_decision" in report
+    assert "overall_pass" in report["replication_decision"]
+    assert (tmp_path / "stage5_0c.json").exists()
+
+
+def test_stage5_0c_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-0c-cross-target-rerun"])
+    assert args.stage5_0c_cross_target_rerun is True
