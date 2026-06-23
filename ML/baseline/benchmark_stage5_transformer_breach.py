@@ -129,6 +129,22 @@ CORRIDOR_REJECTED_MEDIAN = 2
 # JSON report path
 JSON_REPORT_PATH = REPORTS_DIR / 'stage5_transformer_breach.json'
 STAGE5_0B_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0b_asinh_rerun.json"
+STAGE5_0F_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_0F_PROFILE_KEYS = [
+    "base_raw_plus_time",
+    "structure_only",
+    "time_only",
+    "all100_relative_price_time",
+]
+STAGE5_0F_SEEDS = [42, 77, 123]
+STAGE5_0F_DECISION_YEARS = [2023, 2024, 2025]
+STAGE5_0F_LOW_N_YEAR = 2026
+STAGE5_0F_ROLLING_WINDOW_YEARS = 8
+STAGE5_0F_BOOTSTRAP_N = 1000
+STAGE5_0F_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0f_signal_stationarity.json"
 
 # ===========================================================================
 # Profile definitions
@@ -2003,6 +2019,66 @@ def build_xgb_features_for_profile(df: pd.DataFrame, profile_name: str,
         df, profile, transform_variant=transform_variant, transform_params=transform_params)
 
 
+def _stage5_0f_structure_profile() -> dict:
+    """Profile with structural fractal fields + clock fields, without price and ATR."""
+    return {
+        "name": "stage5_0f_structure_only",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": NO_PRICE_TOKEN_FIELDS.copy(),
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": len(NO_PRICE_TOKEN_FIELDS),
+        "row_dim": len(TIME_ONLY_ROW_FIELDS),
+    }
+
+
+def _stage5_0f_profile_for_key(profile_key: str) -> dict:
+    if profile_key == "base_raw_plus_time":
+        return find_profile("all100_base10_time")
+    if profile_key == "structure_only":
+        return _stage5_0f_structure_profile()
+    if profile_key == "all100_relative_price_time":
+        return find_profile("all100_relative_price_time")
+    if profile_key == "time_only":
+        return find_profile("time_only_clean")
+    raise ValueError(f"Unknown Stage 5.0f profile_key: {profile_key}")
+
+
+def fit_stage5_0f_transform_params(df: pd.DataFrame, profile_key: str,
+                                   transform_variant: str = "asinh",
+                                   parsed_cache: dict | None = None,
+                                   cache_key: tuple | None = None) -> dict | None:
+    """Fit Stage 5.0f transform params on train-core only."""
+    if profile_key == "time_only":
+        return None
+    profile = _stage5_0f_profile_for_key(profile_key)
+    if parsed_cache is not None and cache_key is not None:
+        if cache_key not in parsed_cache:
+            parsed_cache[cache_key] = parse_split_fractals(df)
+        parsed = parsed_cache[cache_key]
+    else:
+        parsed = parse_split_fractals(df)
+    return fit_transform_params_for_profile(df, parsed, profile, transform_variant)
+
+
+def build_stage5_0f_features(df: pd.DataFrame, profile_key: str,
+                             transform_variant: str = "asinh",
+                             transform_params: dict | None = None) -> np.ndarray:
+    """Build XGBoost feature matrix for a Stage 5.0f profile."""
+    if profile_key == "time_only":
+        profile = _stage5_0f_profile_for_key("time_only")
+        return build_row_features(df, profile).astype(np.float32)
+
+    profile = _stage5_0f_profile_for_key(profile_key)
+    if transform_params is None:
+        transform_params = fit_stage5_0f_transform_params(
+            df, profile_key, transform_variant=transform_variant)
+    return build_flat_features(
+        df, profile, transform_variant=transform_variant, transform_params=transform_params)
+
+
 # ===========================================================================
 # Label sanity check (not full OHLC verification — see plan for manual step)
 # ===========================================================================
@@ -2095,6 +2171,15 @@ def _safe(val):
     return val
 
 
+def _write_json_atomic(path: Path, payload: dict) -> None:
+    """Write JSON atomically to avoid partial reads during long-running updates."""
+    path = Path(path)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    with open(tmp_path, "w") as f:
+        json.dump(payload, f, indent=2, default=str)
+    os.replace(tmp_path, path)
+
+
 def compute_metrics(y_true, y_pred_proba):
     n = len(y_true)
     if n == 0 or y_true.nunique() < 2:
@@ -2134,6 +2219,42 @@ def compute_yearly_metrics(df, y_pred_proba, target_col: str = TARGET_COLUMN):
         m = compute_metrics(y_true, pd.Series(y_pred))
         yearly[str(yr)] = {k: _safe(v) for k, v in m.items()}
     return yearly
+
+
+def bootstrap_stage5_0f_metric_ci(y_true: pd.Series, y_pred: np.ndarray,
+                                  metric_name: str, n_boot: int = STAGE5_0F_BOOTSTRAP_N,
+                                  seed: int = 42) -> dict:
+    """Bootstrap 95% CI for AUC or lift_30 by resampling test rows."""
+    yt = pd.Series(y_true).reset_index(drop=True)
+    yp = np.asarray(y_pred, dtype=float)
+    n = len(yt)
+    if n == 0 or yt.nunique() < 2:
+        return {"metric": metric_name, "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        sample_y = yt.iloc[idx].reset_index(drop=True)
+        if sample_y.nunique() < 2:
+            continue
+        sample_p = yp[idx]
+        metrics = compute_metrics(sample_y, pd.Series(sample_p))
+        value = metrics.get(metric_name)
+        if value is not None and np.isfinite(value):
+            vals.append(float(value))
+
+    if not vals:
+        return {"metric": metric_name, "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    arr = np.asarray(vals, dtype=float)
+    return {
+        "metric": metric_name,
+        "n_boot": int(n_boot),
+        "low": float(np.percentile(arr, 2.5)),
+        "median": float(np.percentile(arr, 50.0)),
+        "high": float(np.percentile(arr, 97.5)),
+    }
 
 
 # ===========================================================================
@@ -4001,6 +4122,454 @@ def run_stage5_0e_small_transformer_check(sell_splits, seed, device,
     return report
 
 
+def _stage5_0f_year_list(df: pd.DataFrame) -> list[int]:
+    if "_year" in df.columns:
+        return sorted(int(y) for y in df["_year"].dropna().unique().tolist())
+    years = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M", errors="coerce").dt.year
+    return sorted(int(y) for y in years.dropna().unique().tolist())
+
+
+def _stage5_0f_with_year(df: pd.DataFrame) -> pd.DataFrame:
+    if "_year" in df.columns:
+        return df.copy()
+    out = df.copy()
+    out["_year"] = pd.to_datetime(out["time"], format="%Y.%m.%d %H:%M", errors="coerce").dt.year
+    return out
+
+
+def _stage5_0f_split_manifest_part(df: pd.DataFrame, target_col: str) -> dict:
+    years = _stage5_0f_year_list(df)
+    non_null = df[target_col].dropna() if target_col in df.columns else pd.Series(dtype=float)
+    return {
+        "years": years,
+        "n_rows": int(len(df)),
+        "positive_rate": float((non_null == 1).mean()) if len(non_null) else None,
+    }
+
+
+def stage5_0f_split_manifest(train_core: pd.DataFrame, val_stop: pd.DataFrame,
+                             test: pd.DataFrame, strategy: str, test_year: int,
+                             target_col: str) -> dict:
+    return {
+        "strategy": strategy,
+        "test_year": int(test_year),
+        "target": target_col,
+        "train_core": _stage5_0f_split_manifest_part(train_core, target_col),
+        "val_stop": _stage5_0f_split_manifest_part(val_stop, target_col),
+        "test": _stage5_0f_split_manifest_part(test, target_col),
+    }
+
+
+def build_stage5_0f_window(df: pd.DataFrame, strategy: str, test_year: int,
+                           target_col: str = STAGE5_0F_TARGETS[0],
+                           rolling_window_years: int = STAGE5_0F_ROLLING_WINDOW_YEARS) -> dict:
+    """Build train-core / val-stop / test split for one Stage 5.0f window."""
+    data = _stage5_0f_with_year(df)
+    test_year = int(test_year)
+
+    if strategy == "rolling":
+        val_year = test_year - 1
+        train_start = test_year - rolling_window_years
+        train_end = test_year - 2
+        train_core = data[(data["_year"] >= train_start) & (data["_year"] <= train_end)].copy()
+        val_stop = data[data["_year"] == val_year].copy()
+    elif strategy == "anchored":
+        val_year = test_year - 1
+        train_core = data[data["_year"] <= test_year - 2].copy()
+        val_stop = data[data["_year"] == val_year].copy()
+    elif strategy == "fixed":
+        train_core = data[data["_year"] <= 2019].copy()
+        val_stop = data[data["_year"] == 2020].copy()
+    else:
+        raise ValueError(f"Unknown Stage 5.0f strategy: {strategy}")
+
+    test = data[data["_year"] == test_year].copy()
+    manifest = stage5_0f_split_manifest(
+        train_core, val_stop, test, strategy=strategy, test_year=test_year, target_col=target_col)
+    return {
+        "train_core": train_core,
+        "val_stop": val_stop,
+        "test": test,
+        "manifest": manifest,
+    }
+
+
+def build_stage5_0f_windows(df: pd.DataFrame, target_col: str) -> list[dict]:
+    windows = []
+    for test_year in [2021, 2022, 2023, 2024, 2025, 2026]:
+        windows.append(build_stage5_0f_window(
+            df, "rolling", test_year, target_col=target_col))
+        windows.append(build_stage5_0f_window(
+            df, "fixed", test_year, target_col=target_col))
+    for test_year in [2019, 2020, 2021, 2022, 2023, 2024, 2025]:
+        windows.append(build_stage5_0f_window(
+            df, "anchored", test_year, target_col=target_col))
+    return windows
+
+
+def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: str,
+                                   seed: int, transform_variant: str = "asinh",
+                                   parsed_cache: dict | None = None) -> dict:
+    """Train one XGBoost model for one Stage 5.0f window/profile/target/seed."""
+    train_core = window["train_core"]
+    val_stop = window["val_stop"]
+    test = window["test"]
+
+    cache_key = (
+        target_col,
+        window["manifest"]["strategy"],
+        int(window["manifest"]["test_year"]),
+        "train_core",
+    )
+    transform_params = fit_stage5_0f_transform_params(
+        train_core, profile_key, transform_variant=transform_variant,
+        parsed_cache=parsed_cache, cache_key=cache_key)
+    X_train = build_stage5_0f_features(
+        train_core, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_val = build_stage5_0f_features(
+        val_stop, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_test = build_stage5_0f_features(
+        test, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+
+    y_train = train_core[target_col]
+    y_val = val_stop[target_col]
+    y_test = test[target_col]
+
+    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+    train_probs = model.predict(xgb.DMatrix(X_train))
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    test_probs = model.predict(xgb.DMatrix(X_test))
+
+    train_metrics = compute_metrics(y_train, pd.Series(train_probs))
+    val_metrics = compute_metrics(y_val, pd.Series(val_probs))
+    test_metrics = compute_metrics(y_test, pd.Series(test_probs))
+
+    return {
+        "strategy": window["manifest"]["strategy"],
+        "test_year": int(window["manifest"]["test_year"]),
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "transform_variant": transform_variant,
+        "train_core": {k: _safe(v) for k, v in train_metrics.items()},
+        "val_stop": {k: _safe(v) for k, v in val_metrics.items()},
+        "test": {
+            **{k: _safe(v) for k, v in test_metrics.items()},
+            "auc_ci": bootstrap_stage5_0f_metric_ci(
+                y_test, test_probs, "auc", n_boot=STAGE5_0F_BOOTSTRAP_N, seed=seed),
+            "lift_30_ci": bootstrap_stage5_0f_metric_ci(
+                y_test, test_probs, "lift_30", n_boot=STAGE5_0F_BOOTSTRAP_N, seed=seed),
+        },
+        "split_manifest": window["manifest"],
+        "val_auc_from_training": _safe(val_auc),
+    }
+
+
+def _median_or_none(values: list) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    if not clean:
+        return None
+    return float(np.median(clean))
+
+
+def summarize_stage5_0f_seed_runs(runs: list[dict]) -> dict:
+    """Summarize seed-level Stage 5.0f runs by median."""
+    auc_lows = [r["test"].get("auc_ci", {}).get("low") for r in runs]
+    auc_highs = [r["test"].get("auc_ci", {}).get("high") for r in runs]
+    lift_lows = [r["test"].get("lift_30_ci", {}).get("low") for r in runs]
+    lift_highs = [r["test"].get("lift_30_ci", {}).get("high") for r in runs]
+    return {
+        "n_seed_runs": int(len(runs)),
+        "train_core": {
+            "auc_median": _median_or_none([r["train_core"].get("auc") for r in runs]),
+        },
+        "val_stop": {
+            "auc_median": _median_or_none([r["val_stop"].get("auc") for r in runs]),
+            "lift_30_median": _median_or_none([r["val_stop"].get("lift_30") for r in runs]),
+        },
+        "test": {
+            "n": runs[0]["test"].get("n") if runs else 0,
+            "auc_median": _median_or_none([r["test"].get("auc") for r in runs]),
+            "lift_30_median": _median_or_none([r["test"].get("lift_30") for r in runs]),
+            "auc_ci_low": _median_or_none(auc_lows),
+            "auc_ci_high": _median_or_none(auc_highs),
+            "lift_30_ci_low": _median_or_none(lift_lows),
+            "lift_30_ci_high": _median_or_none(lift_highs),
+        },
+        "split_manifest": runs[0].get("split_manifest") if runs else None,
+    }
+
+
+def _stage5_0f_get_summary(report: dict, target: str, profile: str,
+                           strategy: str, year: int) -> dict | None:
+    return (
+        report.get("summary", {})
+        .get(target, {})
+        .get(profile, {})
+        .get(strategy, {})
+        .get(str(year))
+    )
+
+
+def _stage5_0f_auc(summary: dict | None) -> float | None:
+    if not summary:
+        return None
+    return summary.get("test", {}).get("auc_median")
+
+
+def _stage5_0f_ci_low(summary: dict | None) -> float | None:
+    if not summary:
+        return None
+    return summary.get("test", {}).get("auc_ci_low")
+
+
+def _stage5_0f_ci_high(summary: dict | None) -> float | None:
+    if not summary:
+        return None
+    return summary.get("test", {}).get("auc_ci_high")
+
+
+def _stage5_0f_rolling_fixed_deltas(report: dict, target: str, profile: str) -> list[float]:
+    deltas = []
+    for year in STAGE5_0F_DECISION_YEARS:
+        fixed = _stage5_0f_auc(_stage5_0f_get_summary(report, target, profile, "fixed", year))
+        rolling = _stage5_0f_auc(_stage5_0f_get_summary(report, target, profile, "rolling", year))
+        if fixed is not None and rolling is not None:
+            deltas.append(float(rolling - fixed))
+    return deltas
+
+
+def _stage5_0f_anchored_spearman(report: dict, target: str, profile: str) -> dict:
+    from scipy.stats import spearmanr
+
+    years = []
+    aucs = []
+    for year in STAGE5_0F_DECISION_YEARS:
+        summary = _stage5_0f_get_summary(report, target, profile, "anchored", year)
+        auc = _stage5_0f_auc(summary)
+        if auc is not None:
+            years.append(year)
+            aucs.append(float(auc))
+    if len(years) < 3:
+        return {"rho": None, "pvalue": None, "pass": False}
+    res = spearmanr(years, aucs)
+    rho = float(res.statistic) if np.isfinite(res.statistic) else None
+    pvalue = float(res.pvalue) if np.isfinite(res.pvalue) else None
+    return {
+        "rho": rho,
+        "pvalue": pvalue,
+        "pass": bool(rho is not None and pvalue is not None and rho > 0 and pvalue < 0.1),
+    }
+
+
+def _stage5_0f_time_only_not_worse(report: dict, target: str) -> bool:
+    time_deltas = _stage5_0f_rolling_fixed_deltas(report, target, "time_only")
+    fractal_profiles = ["base_raw_plus_time", "structure_only", "all100_relative_price_time"]
+    fractal_deltas = []
+    for profile in fractal_profiles:
+        fractal_deltas.extend(_stage5_0f_rolling_fixed_deltas(report, target, profile))
+    if not time_deltas or not fractal_deltas:
+        return False
+    return float(np.median(time_deltas)) <= float(np.median(fractal_deltas))
+
+
+def _stage5_0f_all_profiles_low_auc(report: dict, target: str) -> bool:
+    for profile in STAGE5_0F_PROFILE_KEYS:
+        for strategy in ["fixed", "rolling"]:
+            for year in STAGE5_0F_DECISION_YEARS:
+                auc = _stage5_0f_auc(_stage5_0f_get_summary(report, target, profile, strategy, year))
+                if auc is None or not (0.55 <= auc <= 0.68):
+                    return False
+    return True
+
+
+def _stage5_0f_structure_close_to_base(report: dict, target: str, tolerance: float = 0.02) -> bool:
+    diffs = []
+    for strategy in ["fixed", "rolling"]:
+        for year in STAGE5_0F_DECISION_YEARS:
+            base = _stage5_0f_auc(_stage5_0f_get_summary(report, target, "base_raw_plus_time", strategy, year))
+            structure = _stage5_0f_auc(_stage5_0f_get_summary(report, target, "structure_only", strategy, year))
+            if base is not None and structure is not None:
+                diffs.append(abs(float(structure - base)))
+    return bool(diffs and max(diffs) <= tolerance)
+
+
+def _stage5_0f_structure_base_deltas(report: dict, target: str) -> dict:
+    deltas = {}
+    for strategy in ["fixed", "rolling"]:
+        deltas[strategy] = {}
+        for year in STAGE5_0F_DECISION_YEARS:
+            base = _stage5_0f_auc(_stage5_0f_get_summary(report, target, "base_raw_plus_time", strategy, year))
+            structure = _stage5_0f_auc(_stage5_0f_get_summary(report, target, "structure_only", strategy, year))
+            deltas[strategy][str(year)] = (
+                float(structure - base) if base is not None and structure is not None else None
+            )
+    return deltas
+
+
+def _stage5_0f_target_verdict(report: dict, target: str) -> dict:
+    decisive_improvements = 0
+    comparable_years = 0
+    all_overlap = True
+
+    for year in STAGE5_0F_DECISION_YEARS:
+        fixed = _stage5_0f_get_summary(report, target, "base_raw_plus_time", "fixed", year)
+        rolling = _stage5_0f_get_summary(report, target, "base_raw_plus_time", "rolling", year)
+        if not fixed or not rolling:
+            continue
+        f_high = _stage5_0f_ci_high(fixed)
+        r_low = _stage5_0f_ci_low(rolling)
+        f_auc = _stage5_0f_auc(fixed)
+        r_auc = _stage5_0f_auc(rolling)
+        if f_auc is not None and r_auc is not None:
+            comparable_years += 1
+        if f_high is not None and r_low is not None and r_low > f_high:
+            decisive_improvements += 1
+            all_overlap = False
+
+    anchored = _stage5_0f_anchored_spearman(report, target, "base_raw_plus_time")
+    time_only_not_worse = _stage5_0f_time_only_not_worse(report, target)
+    all_profiles_low_auc = _stage5_0f_all_profiles_low_auc(report, target)
+    structure_close_to_base = _stage5_0f_structure_close_to_base(report, target)
+
+    if decisive_improvements >= 1 and anchored["pass"] and time_only_not_worse:
+        verdict = "temporal_decay"
+    elif (
+        comparable_years == len(STAGE5_0F_DECISION_YEARS)
+        and all_overlap
+        and all_profiles_low_auc
+        and structure_close_to_base
+    ):
+        verdict = "weak_signal"
+    else:
+        verdict = "inconclusive"
+
+    return {
+        "verdict": verdict,
+        "comparable_years": int(comparable_years),
+        "rolling_ci_above_fixed_years": int(decisive_improvements),
+        "anchored_spearman": anchored,
+        "time_only_not_worse_than_fractals": bool(time_only_not_worse),
+        "all_profiles_low_auc": bool(all_profiles_low_auc),
+        "structure_close_to_base": bool(structure_close_to_base),
+        "structure_minus_base_auc": _stage5_0f_structure_base_deltas(report, target),
+        "decision_years": list(STAGE5_0F_DECISION_YEARS),
+        "low_n_disclosure_year": STAGE5_0F_LOW_N_YEAR,
+    }
+
+
+def stage5_0f_stationarity_decision(report: dict) -> dict:
+    target_verdicts = {
+        target: _stage5_0f_target_verdict(report, target)
+        for target in STAGE5_0F_TARGETS
+    }
+    unique = {v["verdict"] for v in target_verdicts.values()}
+    if len(unique) == 1:
+        overall = next(iter(unique))
+    else:
+        overall = "inconclusive"
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "overall_verdict": overall,
+        "target_verdicts": target_verdicts,
+        "holdout_burned": "2023-2025 used for diagnostic management decision; future confirmatory work needs 2026+ or explicit disclosure.",
+    }
+
+
+def run_stage5_0f_signal_stationarity(target_splits: dict,
+                                      output_path=STAGE5_0F_JSON_REPORT_PATH) -> dict:
+    """Run Stage 5.0f XGBoost signal stationarity diagnostics."""
+    started_at = time.time()
+    total_runs = (
+        len(STAGE5_0F_TARGETS)
+        * len(STAGE5_0F_PROFILE_KEYS)
+        * (6 + 6 + 7)
+        * len(STAGE5_0F_SEEDS)
+    )
+    report = {
+        "stage": "5.0f_signal_stationarity",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "holdout_used_for_diagnostic_decision": True,
+        "holdout_burned_after_stage": "2023-2025",
+        "targets": list(STAGE5_0F_TARGETS),
+        "profiles": list(STAGE5_0F_PROFILE_KEYS),
+        "seeds": list(STAGE5_0F_SEEDS),
+        "strategies": ["rolling", "fixed", "anchored"],
+        "raw_runs": [],
+        "summary": {},
+        "low_n_disclosure": {"year": STAGE5_0F_LOW_N_YEAR},
+        "progress": {
+            "started_at_unix": started_at,
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+    parsed_cache = {}
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(output_path, report)
+
+    for target_col in STAGE5_0F_TARGETS:
+        train_df, val_df, hold_df = target_splits[target_col]
+        combined = pd.concat([train_df, val_df, hold_df], ignore_index=True)
+        combined = _stage5_0f_with_year(combined)
+        report["summary"].setdefault(target_col, {})
+
+        windows = build_stage5_0f_windows(combined, target_col)
+        grouped_runs = {}
+        for profile_key in STAGE5_0F_PROFILE_KEYS:
+            report["summary"][target_col].setdefault(profile_key, {})
+            for window in windows:
+                strategy = window["manifest"]["strategy"]
+                test_year = int(window["manifest"]["test_year"])
+                seed_runs = []
+                for seed in STAGE5_0F_SEEDS:
+                    run = evaluate_stage5_0f_window_seed(
+                        window, profile_key=profile_key, target_col=target_col,
+                        seed=seed, parsed_cache=parsed_cache)
+                    seed_runs.append(run)
+                    report["raw_runs"].append(run)
+                    report["progress"]["done_runs"] += 1
+                    report["progress"]["last_completed"] = {
+                        "target": target_col,
+                        "profile": profile_key,
+                        "strategy": strategy,
+                        "test_year": test_year,
+                        "seed": int(seed),
+                        "val_auc": _safe(run["val_stop"].get("auc")),
+                        "test_auc": _safe(run["test"].get("auc")),
+                        "test_lift_30": _safe(run["test"].get("lift_30")),
+                        "elapsed_sec": round(time.time() - started_at, 1),
+                    }
+                    done_runs = report["progress"]["done_runs"]
+                    total = report["progress"]["total_runs"]
+                    last = report["progress"]["last_completed"]
+                    print(
+                        f"[{done_runs}/{total}] "
+                        f"{target_col} | {profile_key} | {strategy} | {test_year} | "
+                        f"seed={seed} | val_auc={last['val_auc']} | "
+                        f"test_auc={last['test_auc']} | lift_30={last['test_lift_30']}"
+                    )
+                    _write_json_atomic(output_path, report)
+                grouped_runs[(profile_key, strategy, test_year)] = seed_runs
+
+        for (profile_key, strategy, test_year), seed_runs in grouped_runs.items():
+            report["summary"][target_col].setdefault(profile_key, {}).setdefault(strategy, {})
+            report["summary"][target_col][profile_key][strategy][str(test_year)] = (
+                summarize_stage5_0f_seed_runs(seed_runs)
+            )
+            _write_json_atomic(output_path, report)
+
+    report["status"] = "DIAGNOSTIC_ONLY"
+    report["decision"] = stage5_0f_stationarity_decision(report)
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 1)
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -4016,6 +4585,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.0d: диагностический скрининг профилей (XGBoost + Logistic, без Transformer)")
     parser.add_argument("--stage5-0e-small-transformer-check", action="store_true",
                         help="Stage 5.0e: проверка меньшего Transformer против переобучения")
+    parser.add_argument("--stage5-0f-signal-stationarity", action="store_true",
+                        help="Stage 5.0f: диагностика стационарности H6_off05 breach-сигнала")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -4149,6 +4720,25 @@ def main():
         print("Stage 5.0e: посмертная проверка переобучения завершена")
         print(json.dumps(report["decision"], indent=2))
         print(json.dumps({"json": str(STAGE5_0E_JSON_REPORT_PATH)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_0f_signal_stationarity:
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.0f...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_0f_signal_stationarity(
+            target_splits={
+                "sell_stop_broken_H6_off05_flag": (train_df, val_stop_df, holdout_df),
+                "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_0F_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.0f: диагностика стационарности завершена")
+        print(json.dumps(report["decision"], indent=2))
+        print(json.dumps({"json": str(STAGE5_0F_JSON_REPORT_PATH)}, indent=2))
         print("=" * 60)
         return
 

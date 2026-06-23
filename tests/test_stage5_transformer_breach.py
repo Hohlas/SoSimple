@@ -2327,3 +2327,327 @@ def test_stage5_0e_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-0e-small-transformer-check"])
     assert args.stage5_0e_small_transformer_check is True
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 5.0f tests
+# ───────────────────────────────────────────────────────────────────────────
+
+def test_stage5_0f_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_0F_TARGETS == [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+    assert runner.STAGE5_0F_PROFILE_KEYS == [
+        "base_raw_plus_time",
+        "structure_only",
+        "time_only",
+        "all100_relative_price_time",
+    ]
+    assert runner.STAGE5_0F_SEEDS == [42, 77, 123]
+    assert runner.STAGE5_0F_DECISION_YEARS == [2023, 2024, 2025]
+    assert runner.STAGE5_0F_LOW_N_YEAR == 2026
+    assert str(runner.STAGE5_0F_JSON_REPORT_PATH).endswith(
+        "stage5_0f_signal_stationarity.json"
+    )
+
+
+def test_stage5_0f_time_only_has_no_calendar_index_fields():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.TIME_ONLY_ROW_FIELDS == ["hour_sin", "hour_cos", "dow_sin", "dow_cos"]
+    forbidden = {"time_pos", "year", "month", "date_index", "calendar_index"}
+    assert forbidden.isdisjoint(set(runner.TIME_ONLY_ROW_FIELDS))
+
+
+def test_build_stage5_0f_features_shapes_and_profiles():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(6, 100)
+
+    base_params = runner.fit_stage5_0f_transform_params(
+        df, "base_raw_plus_time", transform_variant="asinh"
+    )
+    X_base = runner.build_stage5_0f_features(
+        df, "base_raw_plus_time", transform_variant="asinh", transform_params=base_params
+    )
+    assert X_base.shape == (6, 1005)
+
+    structure_params = runner.fit_stage5_0f_transform_params(
+        df, "structure_only", transform_variant="asinh"
+    )
+    X_structure = runner.build_stage5_0f_features(
+        df, "structure_only", transform_variant="asinh", transform_params=structure_params
+    )
+    assert X_structure.shape == (6, 904)
+
+    X_time = runner.build_stage5_0f_features(
+        df, "time_only", transform_variant="asinh", transform_params=None
+    )
+    assert X_time.shape == (6, 4)
+
+    rel_params = runner.fit_stage5_0f_transform_params(
+        df, "all100_relative_price_time", transform_variant="asinh"
+    )
+    X_rel = runner.build_stage5_0f_features(
+        df, "all100_relative_price_time", transform_variant="asinh", transform_params=rel_params
+    )
+    assert X_rel.shape == (6, 1005)
+
+
+def _make_stage5_0f_year_df() -> pd.DataFrame:
+    """Tiny yearly fixture for split/JSON structure tests, not statistical CI tests."""
+    rows = []
+    for year in range(2010, 2027):
+        for i in range(4):
+            rows.append({
+                "time": f"{year}.01.{i + 1:02d} 12:00",
+                "_year": year,
+                "sell_stop_broken_H6_off05_flag": i % 2,
+                "buy_stop_broken_H6_off05_flag": (i + 1) % 2,
+                "ATR": 1.0,
+                "signal": -1,
+                **{f"fractal{j}": _make_fractal_str([
+                    (0, 10_000_000),
+                    (1, 390.0 + j),
+                    (2, -1),
+                    (3, 0.5),
+                    (4, 0.25),
+                    (5, 1),
+                    (6, 0),
+                    (7, 0),
+                    (8, 1),
+                    (9, 1),
+                    (10, 0.5),
+                    (21, 1.0),
+                    (22, j + 1),
+                ]) for j in range(100)},
+            })
+    return pd.DataFrame(rows)
+
+
+def test_stage5_0f_build_rolling_window_has_internal_val_stop():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    window = runner.build_stage5_0f_window(df, strategy="rolling", test_year=2024)
+
+    assert sorted(window["train_core"]["_year"].unique().tolist()) == list(range(2016, 2023))
+    assert sorted(window["val_stop"]["_year"].unique().tolist()) == [2023]
+    assert sorted(window["test"]["_year"].unique().tolist()) == [2024]
+    assert window["manifest"]["strategy"] == "rolling"
+    assert window["manifest"]["test_year"] == 2024
+
+
+def test_stage5_0f_build_anchored_window_has_internal_val_stop():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    window = runner.build_stage5_0f_window(df, strategy="anchored", test_year=2022)
+
+    assert window["train_core"]["_year"].max() == 2020
+    assert sorted(window["val_stop"]["_year"].unique().tolist()) == [2021]
+    assert sorted(window["test"]["_year"].unique().tolist()) == [2022]
+    assert window["manifest"]["strategy"] == "anchored"
+
+
+def test_stage5_0f_build_fixed_window_uses_2020_val_stop():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    window = runner.build_stage5_0f_window(df, strategy="fixed", test_year=2025)
+
+    assert window["train_core"]["_year"].max() == 2019
+    assert sorted(window["val_stop"]["_year"].unique().tolist()) == [2020]
+    assert sorted(window["test"]["_year"].unique().tolist()) == [2025]
+    assert window["manifest"]["strategy"] == "fixed"
+
+
+def test_bootstrap_stage5_0f_metric_ci_is_deterministic():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y = pd.Series([0, 0, 1, 1, 0, 1, 0, 1])
+    p = np.array([0.1, 0.2, 0.8, 0.9, 0.3, 0.7, 0.4, 0.6])
+
+    ci1 = runner.bootstrap_stage5_0f_metric_ci(y, p, metric_name="auc", n_boot=100, seed=42)
+    ci2 = runner.bootstrap_stage5_0f_metric_ci(y, p, metric_name="auc", n_boot=100, seed=42)
+
+    assert ci1 == ci2
+    assert ci1["metric"] == "auc"
+    assert ci1["n_boot"] == 100
+    assert ci1["low"] <= ci1["median"] <= ci1["high"]
+
+
+def test_bootstrap_stage5_0f_metric_ci_handles_single_class():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y = pd.Series([0, 0, 0, 0])
+    p = np.array([0.1, 0.2, 0.3, 0.4])
+
+    ci = runner.bootstrap_stage5_0f_metric_ci(y, p, metric_name="auc", n_boot=100, seed=42)
+
+    assert ci["low"] is None
+    assert ci["median"] is None
+    assert ci["high"] is None
+
+
+def test_evaluate_stage5_0f_window_seed_returns_manifest_and_metrics(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    window = runner.build_stage5_0f_window(
+        df, "fixed", 2023, target_col="sell_stop_broken_H6_off05_flag")
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+    monkeypatch.setattr(runner, "STAGE5_0F_BOOTSTRAP_N", 50)
+
+    result = runner.evaluate_stage5_0f_window_seed(
+        window,
+        profile_key="time_only",
+        target_col="sell_stop_broken_H6_off05_flag",
+        seed=42,
+    )
+
+    assert result["strategy"] == "fixed"
+    assert result["profile"] == "time_only"
+    assert result["target"] == "sell_stop_broken_H6_off05_flag"
+    assert result["seed"] == 42
+    assert result["test_year"] == 2023
+    assert result["test"]["n"] == 4
+    assert "auc_ci" in result["test"]
+    assert "lift_30_ci" in result["test"]
+    assert "split_manifest" in result
+
+
+def test_summarize_stage5_0f_seed_runs_uses_median():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    runs = [
+        {
+            "test": {
+                "auc": 0.60,
+                "lift_30": 0.80,
+                "n": 100,
+                "auc_ci": {"low": 0.55, "high": 0.64},
+                "lift_30_ci": {"low": 0.70, "high": 0.90},
+            },
+            "train_core": {"auc": 0.70},
+            "val_stop": {"auc": 0.62, "lift_30": 0.82},
+            "split_manifest": {"strategy": "fixed"},
+        },
+        {
+            "test": {
+                "auc": 0.66,
+                "lift_30": 0.70,
+                "n": 100,
+                "auc_ci": {"low": 0.60, "high": 0.69},
+                "lift_30_ci": {"low": 0.62, "high": 0.79},
+            },
+            "train_core": {"auc": 0.74},
+            "val_stop": {"auc": 0.66, "lift_30": 0.72},
+            "split_manifest": {"strategy": "fixed"},
+        },
+        {
+            "test": {
+                "auc": 0.63,
+                "lift_30": 0.75,
+                "n": 100,
+                "auc_ci": {"low": 0.58, "high": 0.67},
+                "lift_30_ci": {"low": 0.69, "high": 0.81},
+            },
+            "train_core": {"auc": 0.72},
+            "val_stop": {"auc": 0.64, "lift_30": 0.76},
+            "split_manifest": {"strategy": "fixed"},
+        },
+    ]
+
+    summary = runner.summarize_stage5_0f_seed_runs(runs)
+
+    assert summary["test"]["auc_median"] == pytest.approx(0.63)
+    assert summary["test"]["lift_30_median"] == pytest.approx(0.75)
+    assert summary["train_core"]["auc_median"] == pytest.approx(0.72)
+    assert summary["n_seed_runs"] == 3
+
+
+def test_stage5_0f_stationarity_decision_returns_known_status():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    report = {
+        "summary": {
+            "sell_stop_broken_H6_off05_flag": {
+                "base_raw_plus_time": {
+                    "fixed": {
+                        "2023": {"test": {"auc_median": 0.60, "auc_ci_high": 0.62}},
+                        "2024": {"test": {"auc_median": 0.61, "auc_ci_high": 0.63}},
+                        "2025": {"test": {"auc_median": 0.60, "auc_ci_high": 0.62}},
+                    },
+                    "rolling": {
+                        "2023": {"test": {"auc_median": 0.70, "auc_ci_low": 0.68}},
+                        "2024": {"test": {"auc_median": 0.71, "auc_ci_low": 0.69}},
+                        "2025": {"test": {"auc_median": 0.72, "auc_ci_low": 0.70}},
+                    },
+                }
+            }
+        }
+    }
+
+    decision = runner.stage5_0f_stationarity_decision(report)
+
+    assert decision["status"] == "DIAGNOSTIC_ONLY"
+    assert decision["overall_verdict"] in {"temporal_decay", "weak_signal", "inconclusive"}
+    assert "target_verdicts" in decision
+
+
+def test_stage5_0f_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_0F_PROFILE_KEYS", ["time_only"])
+    monkeypatch.setattr(runner, "STAGE5_0F_SEEDS", [42])
+    monkeypatch.setattr(runner, "STAGE5_0F_BOOTSTRAP_N", 20)
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+
+    report = runner.run_stage5_0f_signal_stationarity(
+        target_splits={
+            "sell_stop_broken_H6_off05_flag": (df, df, df),
+            "buy_stop_broken_H6_off05_flag": (df, df, df),
+        },
+        output_path=tmp_path / "stage5_0f.json",
+    )
+
+    assert report["stage"] == "5.0f_signal_stationarity"
+    assert report["status"] == "DIAGNOSTIC_ONLY"
+    assert report["holdout_used_for_diagnostic_decision"] is True
+    assert report["decision"]["overall_verdict"] in {"temporal_decay", "weak_signal", "inconclusive"}
+    assert (tmp_path / "stage5_0f.json").exists()
+
+
+def test_stage5_0f_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-0f-signal-stationarity"])
+    assert args.stage5_0f_signal_stationarity is True
