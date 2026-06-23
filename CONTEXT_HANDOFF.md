@@ -4,73 +4,73 @@
 
 ## Текущий этап
 
-Stage 5.0d завершён. Вердикт: **h6_off05_target_exhausted** — постановка H6_off05 stop broken на текущих 9 профилях исчерпана. Fractal Stop как семейство целей не закрыт.
+Stage 5.0e завершён. Вердикт: **DIAGNOSTIC_ONLY**.
 
-Статус проекта: **DIAGNOSTIC_ONLY**. Ни один этап не дал кандидата.
+Состояние ветки `H6_off05 stop broken` не изменилось: она остаётся закрытой после решения Stage 5.0d.  
+Статус проекта: **DIAGNOSTIC_ONLY**.
 
 ## Что сделано
 
-### Stage 5.0d (2026-06-23) — диагностический скрининг профилей
-- Новый CLI `--stage5-0d-diagnostic-screening`
-- XGBoost (3 seeds) + Logistic Regression на всех 9 профилях × 2 цели
-- Абляция групп признаков (price / structure / ATR / time) для лучшего профиля
-- `compute_logistic_same_profile_baseline` — linear baseline (Logistic Regression)
-- `compute_feature_group_ablation` — абляция с XGBoost retrain
-- **Вердикт**: ни один профиль не достиг порога +0.02 AUC над base_raw_plus_time
-- Лучший: sell `all100_relative_price_time` (delta +0.0111); lift_pass OK, но AUC_pass FAIL
-- Buy: все профили уступают базе (дельты ≤ 0)
-- Абляция: structure-признаки критичны (AUC −0.14/−0.19), price/ATR почти не влияют
-- XGBoost >> Logistic (gap 0.04–0.05) — сигнал нелинейный
-- 791 tests passed
-- Отчёт: `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
+### Stage 5.0e (2026-06-23) — посмертная проверка малого Transformer
+- Новый CLI `--stage5-0e-small-transformer-check`
+- Зафиксированы:
+  - 1 цель: `sell_stop_broken_H6_off05_flag`
+  - 1 профиль: `all100_relative_price_time`
+  - 2 конфигурации Transformer: `current` и `small_regularized`
+  - 3 seed: `[42, 77, 123]`
+- В `train_transformer` добавлена поддержка `model_config`
+- История обучения расширена полями `best_epoch`, `last_val_auc`, `overfit_drop_after_best`
+- Структурированный артефакт: `ML/reports/stage5_0e_small_transformer_check.json`
+- Отчёт: `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- 795 tests passed
 
-### Предыдущие этапы (кратко)
-- 5.0a: feature distribution audit, asinh выбран
-- 5.0b: single-seed asinh rerun, 9 профилей, Transformer не превзошёл XGBoost
-- 5.0c: multi-seed replication, 1 профиль, overall_pass: FAIL
+## Главный результат
 
-## Главные выводы
+- `overfit_hypothesis_supported = yes`
+- `transformer_reopens_h6_off05 = no`
 
-1. **Фрактальные признаки на H6_off05 не добавляют полезной информации сверх raw.** Ни на одном профиле XGBoost не превосходит base_raw_plus_time на ≥0.02 AUC.
-2. **Структурные признаки (direction, front, back, ...) — главный носитель сигнала.** Их удаление обрушивает AUC на 0.14–0.19.
-3. **Ценовые и ATR-признаки почти не влияют** на результат XGBoost.
-4. **Corridor-профили систематически хуже all100** — фильтрация теряет сигнал.
-5. **Fractal Stop как семейство не закрыт** — остаются другие цели (сторона, время до пробоя, выход, режим).
+Ключевые числа:
+
+- XGBoost на тех же признаках: `val_auc=0.6742`, `val_lift_30=0.5260`
+- Transformer `current`: median `val_auc=0.6685`, median `lift_30=0.5260`, median `overfit_drop_after_best=0.0170`
+- Transformer `small_regularized`: median `val_auc=0.6657`, median `lift_30=0.5663`, median `overfit_drop_after_best=0.0009`
+
+Вывод:
+
+1. Меньшая модель почти убирает просадку `val_auc` после лучшей эпохи.
+2. Но даже после этого Transformer не догоняет XGBoost на тех же признаках.
+3. Значит, переобучение было только частью проблемы, а не её главным объяснением.
+4. Решение 5.0d не меняется: `H6_off05 stop broken` остаётся закрытым.
 
 ## Где мы сейчас
 
-Stage 5.0d закрыт. Постановка H6_off05 stop broken исчерпана. Следующий шаг — смена target или смена признаков, не смена модели.
+Ветка `H6_off05` закрыта для дальнейшей настройки модели.
+
+Правильное направление дальше:
+- менять цель;
+- или менять признаки;
+- или разбирать, почему табличное представление лучше последовательной модели на тех же данных.
+
+Неправильное направление дальше:
+- продолжать крутить Transformer на том же `H6_off05` и том же профиле.
 
 ## Ключевые файлы
 
 Код:
-- `ML/baseline/benchmark_stage5_transformer_breach.py` (~4070 строк, 791 test)
+- `ML/baseline/benchmark_stage5_transformer_breach.py`
 - `tests/test_stage5_transformer_breach.py`
 
-Методология:
-- `docs/methodology/README.md`
-- `docs/methodology/16-reporting-audit.md`
-
 Отчёты:
+- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
 - `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
 - `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
 
 Артефакты:
+- `ML/reports/stage5_0e_small_transformer_check.json`
 - `ML/reports/stage5_0d_diagnostic_screening.json`
-- `ML/reports/stage5_0c_cross_target_rerun.json`
 
-## Ключевые технические решения
+## Открытые вопросы
 
-- **asinh** — единый transform для ATR и price_coord_atr
-- **compute_xgb_same_profile_baseline** — XGBoost на тех же flattened признаках
-- **compute_logistic_same_profile_baseline** — Logistic Regression linear baseline
-- **compute_feature_group_ablation** — абляция групп с retrain XGBoost
-- **_build_feature_group_masks** — маски по token_fields/row_fields, не позиционные
-- **build_arg_parser()** — CLI с `--stage5-0d-diagnostic-screening`
-
-## Ограничения / открытые вопросы
-
-- 3 seeds — скрининг, не CI. 5-seed проверка не делалась (не было кандидата).
-- Абляция только для лучшего профиля, не для всех.
-- Holdout — только раскрытие, не входит в решение.
-- Причина, почему фракталы не добавляют сигнала, не установлена. Возможные гипотезы: (a) raw-признаки уже содержат всю информацию; (b) фрактальные признаки шумные; (c) модель не извлекает взаимодействия (но XGBoost >> Logistic говорит об обратном).
+- Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
+- Есть ли более перспективная новая цель внутри Fractal Stop family, чем `stop broken`.
+- Какие новые признаки действительно добавляют информацию сверх `base_raw_plus_time`.

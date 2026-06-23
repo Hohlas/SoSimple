@@ -2,6 +2,19 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-23] ingest | Stage 5.0e: малый Transformer после провала
+- Добавлен охват `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.0e, выводы 29-30, новый закрытый вопрос про размер модели
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.0e (21 report updates)
+- Зафиксировано: `small_regularized` уменьшает признаки переобучения, но `H6_off05` остаётся закрытым
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-23] lint | Stage 5.0d: отчёт исправлен, wiki обновлена
+- Отчёт docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md исправлен: неточная формулировка «фрактальные признаки не добавляют информации», добавлена годовая деградация, holdout «молчит», противоречие с 5.0-prep, H1/H2
+- wiki/research/fractal-stop-research.md обновлён: summary (status active), Stage 5.0d timeline section, выводы 26-28, открытые вопросы (H1/H2, противоречие с prep)
+- wiki/index.md: без изменений (охват тот же)
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
 ## [2026-06-23] ingest | Stage 5.0d diagnostic screening
 - Обновлён research/fractal-stop-research.md: добавлен Stage 5.0d (XGBoost + Logistic скрининг, h6_off05_target_exhausted)
 - Обновлены выводы (пункт 26), открытые вопросы (5.0d закрыт)

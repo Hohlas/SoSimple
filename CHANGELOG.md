@@ -2,6 +2,31 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-23] — Stage 5.0e: проверка малого Transformer после провала
+
+### Добавлено
+- `--stage5-0e-small-transformer-check`
+- `ML/reports/stage5_0e_small_transformer_check.json`
+- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- `train_transformer(..., model_config=None)` и расширенная история обучения (`best_epoch`, `overfit_drop_after_best`)
+
+### Методика
+- Уровень: проверка после провала внутри уже закрытой ветки `H6_off05`.
+- 1 профиль × 1 цель × 2 конфигурации × 3 seed = 6 прогонов Transformer.
+- XGBoost на тех же признаках остаётся главным сравнением.
+- Holdout 2023-2026 только раскрывается, но не участвует в решении.
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**.
+- `overfit_hypothesis_supported = yes`: `small_regularized` уменьшил median `overfit_drop_after_best` с `0.0170` до `0.0009` при потере median `val_auc` только `-0.0028`.
+- `transformer_reopens_h6_off05 = no`: XGBoost на тех же признаках остаётся лучше по `val_auc` (`0.6742` против `0.6685`/`0.6657`), и ни один seed Transformer не прошёл сравнение одновременно по `val_auc` и `val_lift_30`.
+- Лучшая Transformer-конфигурация по median `val_auc`: `current` (`0.6685`), а не `small_regularized` (`0.6657`).
+
+### Вывод
+Меньшая модель действительно уменьшает признаки переобучения, но не меняет итогового решения. `H6_off05 stop broken` остаётся закрытым; дальнейшие шаги только через новую цель или новые признаки.
+
+<!-- docs/reports/2026-06-23-stage5_0e-small-transformer-check.md -->
+
 ## [2026-06-23] — Stage 5.0d: диагностический скрининг профилей
 
 ### Добавлено

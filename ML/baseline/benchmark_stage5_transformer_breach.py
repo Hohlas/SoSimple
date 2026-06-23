@@ -2146,9 +2146,19 @@ def set_seed(seed):
 
 
 def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_val, y_val,
-                      profile, seed, device):
+                      profile, seed, device, model_config: dict | None = None):
     """Train Transformer with early stopping on val_stop."""
     set_seed(seed)
+    cfg = model_config or {
+        "d_model": D_MODEL,
+        "nhead": NHEAD,
+        "num_layers": NUM_LAYERS,
+        "dim_feedforward": DIM_FEEDFORWARD,
+        "dropout": DROPOUT,
+        "weight_decay": WEIGHT_DECAY,
+        "learning_rate": LEARNING_RATE,
+        "patience": EARLY_STOPPING_PATIENCE,
+    }
 
     token_dim = tokens.shape[-1]
     row_dim = row_feat.shape[-1]
@@ -2157,11 +2167,11 @@ def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_
     model = FractalBreachTransformer(
         token_dim=token_dim,
         row_dim=row_dim,
-        d_model=D_MODEL,
-        nhead=NHEAD,
-        num_layers=NUM_LAYERS,
-        dim_feedforward=DIM_FEEDFORWARD,
-        dropout=DROPOUT,
+        d_model=cfg["d_model"],
+        nhead=cfg["nhead"],
+        num_layers=cfg["num_layers"],
+        dim_feedforward=cfg["dim_feedforward"],
+        dropout=cfg["dropout"],
         max_seq_len=128,
     ).to(device)
 
@@ -2188,12 +2198,12 @@ def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_
     pos_weight = torch.tensor([neg_count / max(pos_count, 1)], device=device)
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE,
-                                  weight_decay=WEIGHT_DECAY)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg["learning_rate"],
+                                  weight_decay=cfg["weight_decay"])
 
     best_val_auc = 0.0
     best_state = None
-    patience_left = EARLY_STOPPING_PATIENCE
+    patience_left = cfg["patience"]
     train_losses = []
     val_aucs = []
 
@@ -2203,7 +2213,7 @@ def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_
         for t, r, m, yb in dl_train:
             t, r, m, yb = t.to(device), r.to(device), m.to(device), yb.to(device)
             optimizer.zero_grad()
-            logits = model(t, r, m)
+            logits = model(t, r, m).reshape(yb.shape)
             loss = criterion(logits, yb)
             loss.backward()
             optimizer.step()
@@ -2217,7 +2227,7 @@ def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_
         with torch.no_grad():
             for t, r, m, yb in dl_val:
                 t, r, m, yb = t.to(device), r.to(device), m.to(device), yb.to(device)
-                logits = model(t, r, m)
+                logits = model(t, r, m).reshape(yb.shape)
                 probs = torch.sigmoid(logits).cpu().numpy().ravel()
                 all_probs.append(probs)
                 all_ys.append(yb.cpu().numpy().ravel())
@@ -2233,20 +2243,28 @@ def train_transformer(tokens, row_feat, mask, y, tokens_val, row_feat_val, mask_
         if val_auc > best_val_auc:
             best_val_auc = val_auc
             best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
-            patience_left = EARLY_STOPPING_PATIENCE
+            patience_left = cfg["patience"]
         else:
             patience_left -= 1
 
         if patience_left <= 0:
             break
 
-    model.load_state_dict(best_state)
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    best_epoch = int(np.argmax(val_aucs) + 1) if val_aucs else 0
+    last_val_auc = float(val_aucs[-1]) if val_aucs else 0.0
+    best_val_auc = float(max(val_aucs)) if val_aucs else 0.0
 
     return model, {
         "best_val_auc": best_val_auc,
         "num_epochs": epoch + 1 - patience_left,
         "train_losses": [float(x) for x in train_losses],
         "val_aucs": [float(x) for x in val_aucs],
+        "best_epoch": best_epoch,
+        "last_val_auc": last_val_auc,
+        "overfit_drop_after_best": float(best_val_auc - last_val_auc),
+        "model_config": deepcopy(cfg),
     }
 
 
@@ -2264,7 +2282,7 @@ def evaluate_transformer(model, tokens, row_feat, mask, y, device):
     with torch.no_grad():
         for t, r, m, _ in dl:
             t, r, m = t.to(device), r.to(device), m.to(device)
-            logits = model(t, r, m)
+            logits = model(t, r, m).reshape(len(t), -1)
             probs = torch.sigmoid(logits).cpu().numpy().ravel()
             all_probs.append(probs)
     return np.concatenate(all_probs)
@@ -2553,7 +2571,8 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
                             parsed_splits: dict | None = None,
                             allow_dynamic_seq_len: bool = True,
                             profile_role: str = "legacy",
-                            target_col: str = TARGET_COLUMN):
+                            target_col: str = TARGET_COLUMN,
+                            model_config: dict | None = None):
     """Shared train/eval loop for one profile. Returns elapsed_s or None if skipped."""
     profile = find_profile(pname)
     # Corridor validation
@@ -2644,6 +2663,7 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
         tokens_train, rf_train, mask_train, y_train,
         tokens_val, rf_val, mask_val, y_val,
         profile, seed, device,
+        model_config=model_config,
     )
 
     val_probs = evaluate_transformer(model, tokens_val, rf_val, mask_val, y_val, device)
@@ -2663,6 +2683,7 @@ def _train_and_eval_profile(train_df, val_stop_df, holdout_df, seed, device, rep
             "fit_params": transform_params,
             "fit_params_policy": "train only; val_stop/holdout are disclosure only",
         },
+        "model_config": deepcopy(model_config) if model_config is not None else None,
         "profile_role": profile_role,
         "training_run": True,
         "history": {k: _safe(v) for k, v in history.items()},
@@ -2917,6 +2938,36 @@ STAGE5_0D_TARGETS = [
 ]
 STAGE5_0D_SCREENER_THRESHOLD = 0.02
 STAGE5_0D_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0d_diagnostic_screening.json"
+STAGE5_0E_TARGET = "sell_stop_broken_H6_off05_flag"
+STAGE5_0E_PROFILE_NAMES = [
+    "all100_relative_price_time",
+]
+STAGE5_0E_SEEDS = [42, 77, 123]
+STAGE5_0E_MODEL_CONFIGS = [
+    {
+        "name": "current",
+        "d_model": 64,
+        "nhead": 4,
+        "num_layers": 2,
+        "dim_feedforward": 128,
+        "dropout": 0.15,
+        "weight_decay": 1e-4,
+        "learning_rate": 1e-3,
+        "patience": 8,
+    },
+    {
+        "name": "small_regularized",
+        "d_model": 32,
+        "nhead": 2,
+        "num_layers": 1,
+        "dim_feedforward": 64,
+        "dropout": 0.35,
+        "weight_decay": 1e-3,
+        "learning_rate": 7e-4,
+        "patience": 3,
+    },
+]
+STAGE5_0E_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0e_small_transformer_check.json"
 
 
 def run_feature_preflight(train_df, val_stop_df, holdout_df) -> dict:
@@ -3294,6 +3345,97 @@ def stage5_0b_multiseed_decision(result: dict, xgb_results: dict, profile_role: 
 def _median(values: list) -> float:
     import statistics
     return float(statistics.median(values))
+
+
+def _stage5_0e_config_summary(config_runs: list[dict]) -> dict:
+    if not config_runs:
+        return {}
+    val_aucs = [run["val"]["auc"] for run in config_runs]
+    val_lifts = [run["val"]["lift_30"] for run in config_runs]
+    overfit_drops = [
+        run.get("history", {}).get("overfit_drop_after_best")
+        for run in config_runs
+        if run.get("history", {}).get("overfit_drop_after_best") is not None
+    ]
+    return {
+        "n_runs": len(config_runs),
+        "median_val_auc": _median(val_aucs),
+        "median_val_lift_30": _median(val_lifts),
+        "seed_spread_val_auc": (max(val_aucs) - min(val_aucs)) if len(val_aucs) > 1 else 0.0,
+        "median_overfit_drop_after_best": _median(overfit_drops) if overfit_drops else None,
+        "per_seed_pass_vs_xgb": sum(
+            1 for run in config_runs
+            if (run["val"]["auc"] >= run["xgb_same_profile"]["val"]["auc"])
+            and (run["val"]["lift_30"] <= run["xgb_same_profile"]["val"]["lift_30"])
+        ),
+    }
+
+
+def stage5_0e_overfit_decision(report: dict) -> dict:
+    profile_runs = report.get("profiles", {})
+    if not profile_runs:
+        return {
+            "status": "DIAGNOSTIC_ONLY",
+            "overfit_hypothesis_supported": "no",
+            "transformer_reopens_h6_off05": "no",
+            "best_profile": None,
+            "best_config": None,
+            "reason": "no_profile_results",
+            "next_step": "H6_off05 остаётся закрытым; новых действий по этой постановке нет.",
+        }
+
+    profile_name = next(iter(profile_runs))
+    profile_data = profile_runs[profile_name]
+    current_summary = profile_data["configs"].get("current", {}).get("summary", {})
+    small_summary = profile_data["configs"].get("small_regularized", {}).get("summary", {})
+    xgb_val = profile_data.get("xgb_same_profile", {}).get("val", {})
+
+    overfit_supported = (
+        current_summary
+        and small_summary
+        and small_summary.get("median_overfit_drop_after_best") is not None
+        and current_summary.get("median_overfit_drop_after_best") is not None
+        and small_summary["median_overfit_drop_after_best"]
+            <= current_summary["median_overfit_drop_after_best"] - 0.01
+        and small_summary["median_val_auc"] >= current_summary["median_val_auc"] - 0.005
+        and small_summary["seed_spread_val_auc"] <= 0.02
+    )
+
+    reopens = (
+        small_summary
+        and small_summary["median_val_auc"] >= xgb_val.get("auc", 0.0)
+        and small_summary["median_val_lift_30"] <= xgb_val.get("lift_30", float("inf"))
+        and small_summary["per_seed_pass_vs_xgb"] >= 2
+        and small_summary["seed_spread_val_auc"] <= 0.02
+    )
+
+    reason = (
+        "small_regularized уменьшает признаки переобучения без заметной потери val_auc"
+        if overfit_supported
+        else "small_regularized не дал устойчивого уменьшения признаков переобучения"
+    )
+    next_step = (
+        "Отдельно обсудить, достаточно ли результата для исключения из решения Stage 5.0d."
+        if reopens
+        else "H6_off05 остаётся закрытым; дальнейшие шаги только через новую цель или новые признаки."
+    )
+    best_config = None
+    best_val_auc = float("-inf")
+    for cfg_name, cfg_data in profile_data.get("configs", {}).items():
+        summary = cfg_data.get("summary", {})
+        if summary and summary["median_val_auc"] > best_val_auc:
+            best_val_auc = summary["median_val_auc"]
+            best_config = cfg_name
+
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "overfit_hypothesis_supported": "yes" if overfit_supported else "no",
+        "transformer_reopens_h6_off05": "review_required" if reopens else "no",
+        "best_profile": profile_name,
+        "best_config": best_config,
+        "reason": reason,
+        "next_step": next_step,
+    }
 
 
 def stage5_0c_replication_decision(target_results: dict) -> dict:
@@ -3780,6 +3922,85 @@ def run_stage5_0d_diagnostic_screening(sell_splits: tuple, buy_splits: tuple,
     return report
 
 
+def run_stage5_0e_small_transformer_check(sell_splits, seed, device,
+                                          output_path=STAGE5_0E_JSON_REPORT_PATH) -> dict:
+    train_df, val_df, hold_df = sell_splits
+    report = {
+        "status": "DIAGNOSTIC_ONLY",
+        "stage": "5.0e_small_transformer_overfit_check",
+        "level": "post_mortem_diagnostic",
+        "target": STAGE5_0E_TARGET,
+        "holdout_used_for_decision": False,
+        "seeds": list(STAGE5_0E_SEEDS),
+        "profile_names": list(STAGE5_0E_PROFILE_NAMES),
+        "model_configs": deepcopy(STAGE5_0E_MODEL_CONFIGS),
+        "decision_policy": {
+            "selection_basis": "val_stop only",
+            "holdout_usage": "disclosure only",
+            "xgboost_role": "same-profile primary comparator",
+            "reopen_policy": "no automatic reopen; only review_required",
+        },
+        "profiles": {},
+    }
+    y_train = train_df[STAGE5_0E_TARGET]
+    y_val = val_df[STAGE5_0E_TARGET]
+    y_holdout = hold_df[STAGE5_0E_TARGET]
+    parsed_splits = {
+        "train": parse_split_fractals(train_df),
+        "val_stop": parse_split_fractals(val_df),
+        "holdout": parse_split_fractals(hold_df),
+    }
+
+    ohlc = verify_breach_labels_against_ohlc(hold_df, target_col=STAGE5_0E_TARGET)
+    sanity = label_sanity_check(hold_df, target_col=STAGE5_0E_TARGET)
+    report["ohlc_verification"] = ohlc
+    report["label_sanity"] = sanity
+
+    for profile_name in STAGE5_0E_PROFILE_NAMES:
+        xgb_same = compute_xgb_same_profile_baseline(
+            train_df, val_df, hold_df, profile_name,
+            transform_variant="asinh", target_col=STAGE5_0E_TARGET, seed=seed)
+        profile_entry = {
+            "xgb_same_profile": xgb_same,
+            "configs": {},
+        }
+        for model_config in STAGE5_0E_MODEL_CONFIGS:
+            cfg_name = model_config["name"]
+            cfg_report = {"transformer_results": {}}
+            runs = []
+            for run_seed in STAGE5_0E_SEEDS:
+                _train_and_eval_profile(
+                    train_df, val_df, hold_df, run_seed, device, cfg_report,
+                    profile_name, y_train, y_val, y_holdout,
+                    diagnostic_only=True,
+                    transform_variant="asinh",
+                    parsed_splits=parsed_splits,
+                    allow_dynamic_seq_len=False,
+                    profile_role=f"stage5_0e::{cfg_name}",
+                    target_col=STAGE5_0E_TARGET,
+                    model_config=model_config,
+                )
+                run_result = deepcopy(cfg_report["transformer_results"][profile_name][-1])
+                run_result["model_config"] = deepcopy(model_config)
+                run_result["xgb_same_profile"] = {
+                    "val": xgb_same["val"],
+                    "holdout": xgb_same["holdout"],
+                }
+                runs.append(run_result)
+            profile_entry["configs"][cfg_name] = {
+                "model_config": deepcopy(model_config),
+                "runs": runs,
+                "summary": _stage5_0e_config_summary(runs),
+            }
+        report["profiles"][profile_name] = profile_entry
+
+    report["decision"] = stage5_0e_overfit_decision(report)
+    output_path = Path(output_path)
+    with open(output_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -3793,6 +4014,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.0c: повторная проверка гипотезы на двух целях")
     parser.add_argument("--stage5-0d-diagnostic-screening", action="store_true",
                         help="Stage 5.0d: диагностический скрининг профилей (XGBoost + Logistic, без Transformer)")
+    parser.add_argument("--stage5-0e-small-transformer-check", action="store_true",
+                        help="Stage 5.0e: проверка меньшего Transformer против переобучения")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -3912,6 +4135,20 @@ def main():
         print("\n" + "=" * 60)
         print("Stage 5.0d: диагностический скрининг завершён")
         print(json.dumps({"json": str(STAGE5_0D_JSON_REPORT_PATH)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_0e_small_transformer_check:
+        report = run_stage5_0e_small_transformer_check(
+            (train_df, val_stop_df, holdout_df),
+            seed=args.seed if hasattr(args, "seed") else 42,
+            device=device,
+            output_path=STAGE5_0E_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.0e: посмертная проверка переобучения завершена")
+        print(json.dumps(report["decision"], indent=2))
+        print(json.dumps({"json": str(STAGE5_0E_JSON_REPORT_PATH)}, indent=2))
         print("=" * 60)
         return
 

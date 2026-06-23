@@ -2197,3 +2197,133 @@ def test_stage5_0d_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-0d-diagnostic-screening"])
     assert args.stage5_0d_diagnostic_screening is True
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 5.0e tests
+# ───────────────────────────────────────────────────────────────────────────
+
+def test_stage5_0e_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_0E_TARGET == "sell_stop_broken_H6_off05_flag"
+    assert runner.STAGE5_0E_PROFILE_NAMES == [
+        "all100_relative_price_time",
+    ]
+    assert runner.STAGE5_0E_SEEDS == [42, 77, 123]
+    assert [cfg["name"] for cfg in runner.STAGE5_0E_MODEL_CONFIGS] == [
+        "current",
+        "small_regularized",
+    ]
+    assert runner.STAGE5_0E_MODEL_CONFIGS[1]["d_model"] == 32
+    assert runner.STAGE5_0E_MODEL_CONFIGS[1]["dropout"] == 0.35
+    assert str(runner.STAGE5_0E_JSON_REPORT_PATH).endswith(
+        "stage5_0e_small_transformer_check.json"
+    )
+
+
+def test_train_transformer_accepts_model_config(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    captured = {}
+
+    class DummyModel(torch.nn.Module):
+        def __init__(self, **kwargs):
+            super().__init__()
+            captured.update(kwargs)
+            self.linear = torch.nn.Linear(1, 1)
+
+        def forward(self, tokens, row_feat, mask):
+            return self.linear(tokens[:, :1, :1])
+
+    monkeypatch.setattr(runner, "FractalBreachTransformer", DummyModel)
+
+    tokens = np.random.rand(8, 2, 1).astype(np.float32)
+    row = np.random.rand(8, 1).astype(np.float32)
+    mask = np.ones((8, 2), dtype=bool)
+    y = pd.Series([0, 1, 0, 1, 0, 1, 0, 1])
+
+    runner.train_transformer(
+        tokens, row, mask, y,
+        tokens, row, mask, y,
+        profile={"name": "unit"},
+        seed=42,
+        device=torch.device("cpu"),
+        model_config={
+            "d_model": 32,
+            "nhead": 2,
+            "num_layers": 1,
+            "dim_feedforward": 64,
+            "dropout": 0.35,
+            "weight_decay": 1e-3,
+            "learning_rate": 7e-4,
+            "patience": 3,
+        },
+    )
+
+    assert captured["d_model"] == 32
+    assert captured["nhead"] == 2
+    assert captured["num_layers"] == 1
+    assert captured["dim_feedforward"] == 64
+    assert captured["dropout"] == 0.35
+
+
+def test_stage5_0e_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(12, 100)
+    df["_year"] = [2020] * 12
+
+    monkeypatch.setattr(runner, "STAGE5_0E_PROFILE_NAMES", ["all100_relative_price_time"])
+    monkeypatch.setattr(runner, "STAGE5_0E_SEEDS", [42])
+    monkeypatch.setattr(runner, "STAGE5_0E_MODEL_CONFIGS", [
+        {
+            "name": "small_regularized",
+            "d_model": 32,
+            "nhead": 2,
+            "num_layers": 1,
+            "dim_feedforward": 64,
+            "dropout": 0.35,
+            "weight_decay": 1e-3,
+            "learning_rate": 7e-4,
+            "patience": 3,
+        }
+    ])
+    monkeypatch.setattr(runner, "parse_split_fractals", lambda *a, **k: {})
+    monkeypatch.setattr(runner, "verify_breach_labels_against_ohlc", lambda *a, **k: {"status": "PASS"})
+    monkeypatch.setattr(runner, "label_sanity_check", lambda *a, **k: {"status": "PASS"})
+    monkeypatch.setattr(runner, "compute_xgb_same_profile_baseline", lambda *a, **k: {
+        "val": {"auc": 0.67, "lift_30": 0.52},
+        "holdout": {"auc": 0.64, "lift_30": 0.55},
+    })
+    monkeypatch.setattr(runner, "_train_and_eval_profile", lambda *a, **k: a[5]["transformer_results"].setdefault(
+        "all100_relative_price_time", []).append({
+            "profile": "all100_relative_price_time",
+            "target": runner.STAGE5_0E_TARGET,
+            "val": {"auc": 0.668, "lift_30": 0.53},
+            "holdout": {"auc": 0.64, "lift_30": 0.56},
+            "history": {"best_epoch": 4, "overfit_drop_after_best": 0.002},
+        }) or 1.0)
+
+    report = runner.run_stage5_0e_small_transformer_check(
+        (df, df, df),
+        seed=42,
+        device=torch.device("cpu"),
+        output_path=tmp_path / "stage5_0e.json",
+    )
+
+    assert report["stage"] == "5.0e_small_transformer_overfit_check"
+    assert report["holdout_used_for_decision"] is False
+    assert report["target"] == runner.STAGE5_0E_TARGET
+    assert report["decision"]["status"] == "DIAGNOSTIC_ONLY"
+    assert report["decision"]["overfit_hypothesis_supported"] in {"yes", "no"}
+    assert report["decision"]["transformer_reopens_h6_off05"] in {"no", "review_required"}
+    assert (tmp_path / "stage5_0e.json").exists()
+
+
+def test_stage5_0e_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-0e-small-transformer-check"])
+    assert args.stage5_0e_small_transformer_check is True
