@@ -1,58 +1,66 @@
 # Context Handoff
 
-Дата: 2026-06-23
+Дата: 2026-06-24
 
 ## Текущий этап
 
-Stage 5.0e завершён. Вердикт: **DIAGNOSTIC_ONLY**.
+Stage 5.0f завершён. Вердикт: **DIAGNOSTIC_ONLY**.
 
-Состояние ветки `H6_off05 stop broken` не изменилось: она остаётся закрытой после решения Stage 5.0d.  
-Статус проекта: **DIAGNOSTIC_ONLY**.
+Состояние ветки `H6_off05 stop broken` не изменилось: она не переоткрыта.  
+Новый факт проекта: по диагностике устойчивости во времени итог **неопределённый**. Это значит: распад сигнала во времени не доказан, но и его подтверждённая устойчивость тоже не доказана.
 
 ## Что сделано
 
-### Stage 5.0e (2026-06-23) — посмертная проверка малого Transformer
-- Новый CLI `--stage5-0e-small-transformer-check`
+### Stage 5.0f (2026-06-24) — диагностика устойчивости сигнала во времени
+- Новый CLI `--stage5-0f-signal-stationarity`
 - Зафиксированы:
-  - 1 цель: `sell_stop_broken_H6_off05_flag`
-  - 1 профиль: `all100_relative_price_time`
-  - 2 конфигурации Transformer: `current` и `small_regularized`
+  - 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
+  - 4 набора признаков: `base_raw_plus_time`, `structure_only`, `time_only`, `all100_relative_price_time`
+  - 3 схемы годовых окон: `rolling`, `fixed`, `anchored`
   - 3 seed: `[42, 77, 123]`
-- В `train_transformer` добавлена поддержка `model_config`
-- История обучения расширена полями `best_epoch`, `last_val_auc`, `overfit_drop_after_best`
-- Структурированный артефакт: `ML/reports/stage5_0e_small_transformer_check.json`
-- Отчёт: `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
-- 795 tests passed
+- `rolling` зафиксирован как 8-летнее окно разработки:
+  - 7 лет `train_core`
+  - 1 год `val_stop`
+- Выполнено `456` прогонов XGBoost
+- Добавлена поэтапная запись `ML/reports/stage5_0f_signal_stationarity.json` и компактный лог прогресса
+- Структурированный артефакт: `ML/reports/stage5_0f_signal_stationarity.json`
+- Отчёт: `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- Полный набор тестов: `808 passed`
 
 ## Главный результат
 
-- `overfit_hypothesis_supported = yes`
-- `transformer_reopens_h6_off05 = no`
+Итог Stage 5.0f:
+
+1. Не удалось доказать, что сигнал явно распадается во времени.
+2. Не удалось и подтвердить, что сигнал устойчив во времени.
+3. `time_only` не оказался не хуже фрактальных наборов ни по одной цели.
+4. `structure_only` остался близок к `base_raw_plus_time` по обеим целям.
 
 Ключевые числа:
 
-- XGBoost на тех же признаках: `val_auc=0.6742`, `val_lift_30=0.5260`
-- Transformer `current`: median `val_auc=0.6685`, median `lift_30=0.5260`, median `overfit_drop_after_best=0.0170`
-- Transformer `small_regularized`: median `val_auc=0.6657`, median `lift_30=0.5663`, median `overfit_drop_after_best=0.0009`
-
-Вывод:
-
-1. Меньшая модель почти убирает просадку `val_auc` после лучшей эпохи.
-2. Но даже после этого Transformer не догоняет XGBoost на тех же признаках.
-3. Значит, переобучение было только частью проблемы, а не её главным объяснением.
-4. Решение 5.0d не меняется: `H6_off05 stop broken` остаётся закрытым.
+- Всего прогонов: `456`
+- Общее время: `21780.9` сек, то есть примерно `6 часов 3 минуты`
+- Для обеих целей:
+  - `rolling_ci_above_fixed_years = 0`
+  - `time_only_not_worse_than_fractals = False`
+  - `structure_close_to_base = True`
+- `anchored` тренд:
+  - sell: `rho = -0.5`, `p = 0.6667`
+  - buy: `rho = -1.0`, `p = 0.0`
 
 ## Где мы сейчас
 
-Ветка `H6_off05` закрыта для дальнейшей настройки модели.
+Ветка `H6_off05` не реабилитирована и не получила нового подтверждения.
 
 Правильное направление дальше:
-- менять цель;
-- или менять признаки;
-- или разбирать, почему табличное представление лучше последовательной модели на тех же данных.
+- если нужен строгий подтверждающий ответ, брать новый период `2026+`;
+- или менять цель;
+- или делать более узкий разбор структурных признаков без новой волны большого перебора.
 
 Неправильное направление дальше:
-- продолжать крутить Transformer на том же `H6_off05` и том же профиле.
+- объявлять, что проблема уже точно только во времени;
+- объявлять, что ветка уже доказанно устойчива;
+- снова использовать `2023-2025` как будто это независимая подтверждающая проверка.
 
 ## Ключевые файлы
 
@@ -61,16 +69,16 @@ Stage 5.0e завершён. Вердикт: **DIAGNOSTIC_ONLY**.
 - `tests/test_stage5_transformer_breach.py`
 
 Отчёты:
+- `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
 - `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
 - `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
-- `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
 
 Артефакты:
+- `ML/reports/stage5_0f_signal_stationarity.json`
 - `ML/reports/stage5_0e_small_transformer_check.json`
-- `ML/reports/stage5_0d_diagnostic_screening.json`
 
 ## Открытые вопросы
 
-- Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
-- Есть ли более перспективная новая цель внутри Fractal Stop family, чем `stop broken`.
-- Какие новые признаки действительно добавляют информацию сверх `base_raw_plus_time`.
+- Нужен ли отдельный подтверждающий цикл на новом периоде `2026+`, или ветку лучше закрыть окончательно без нового цикла.
+- Какие именно структурные подгруппы признаков несут остаточный сигнал сверх календарной компоненты.
+- Почему buy показывает более выраженное ухудшение по годам, чем sell, но всё равно не даёт честного жёсткого решения по правилам Stage 5.0f.
