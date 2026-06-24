@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-18 13:21 UTC · git `19ae87a`
+> Auto-generated 2026-06-24 04:44 UTC · git `6285895`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1503 files  ·  **Commit**: `19ae87a`  ·  **Generated**: 2026-06-18 13:21 UTC
+**Tracked**: 1519 files  ·  **Commit**: `6285895`  ·  **Generated**: 2026-06-24 04:44 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-06-17 | 15KB | `cae8ed6c` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-18 | 178KB | `fe9f3999` |
+| [AGENTS.md](AGENTS.md) |  | 2026-06-24 | 11KB | `822f5437` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-24 | 192KB | `12acffc6` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-18 | 5KB | `43602b91` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-18 | 49KB | `21dff081` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-24 | 4KB | `13d3f92d` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-24 | 50KB | `30403a00` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -39,7 +39,7 @@
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
-| [docs/ML/benchmark_stage5_transformer_breach.py.md](docs/ML/benchmark_stage5_transformer_breach.py.md) |  | 2026-06-18 | 3KB | `05d7498a` |
+| [docs/ML/benchmark_stage5_transformer_breach.py.md](docs/ML/benchmark_stage5_transformer_breach.py.md) |  | 2026-06-24 | 11KB | `830c9277` |
 | [docs/ML/benchmark_system_correlation.py.md](docs/ML/benchmark_system_correlation.py.md) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | 2026-06-17 | 4KB | `a0880c32` |
 | [docs/ML/benchmark_take_skip_lib_pic_selection.py.md](docs/ML/benchmark_take_skip_lib_pic_selection.py.md) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` | 2026-06-17 | 2KB | `085cc039` |
 | [docs/ML/benchmark_telemetry_frequency_calibration.py.md](docs/ML/benchmark_telemetry_frequency_calibration.py.md) | Калибровка частого diagnostic telemetry режима | 2026-06-17 | 2KB | `ca3c7c56` |
@@ -51,7 +51,7 @@
 | [docs/ML/export_entry_path_predictions.py.md](docs/ML/export_entry_path_predictions.py.md) | Inference entry_path-моделей на arbitrary labeled CSV без переобучения | 2026-06-17 | 4KB | `594cc77b` |
 | [docs/ML/feature_bank_comparison_diagnostics.py.md](docs/ML/feature_bank_comparison_diagnostics.py.md) | Сравнение baseline/geometry/path feature-bank вариантов | 2026-06-17 | 2KB | `5bfce017` |
 | [docs/ML/feature_importance_diagnostics.py.md](docs/ML/feature_importance_diagnostics.py.md) | Диагностика важности групп текущих fractal-признаков | 2026-06-17 | 2KB | `fd76dcaf` |
-| [docs/ML/fractal_breach_transformer.py.md](docs/ML/fractal_breach_transformer.py.md) |  | 2026-06-17 | 1KB | `46f52377` |
+| [docs/ML/fractal_breach_transformer.py.md](docs/ML/fractal_breach_transformer.py.md) |  | 2026-06-20 | 1KB | `46f52377` |
 | [docs/ML/lib_pic_feature_profiles.py.md](docs/ML/lib_pic_feature_profiles.py.md) | Единая сборка профилей признаков `lib_PIC` | 2026-06-17 | 2KB | `3947bb49` |
 | [docs/ML/lib_pic_geometry_feature_bank.py.md](docs/ML/lib_pic_geometry_feature_bank.py.md) | Производные признаки геометрии уровней `lib_PIC` | 2026-06-17 | 3KB | `1da45c79` |
 | [docs/ML/lib_pic_path_reaction_feature_bank.py.md](docs/ML/lib_pic_path_reaction_feature_bank.py.md) | Производные признаки исторической реакции цены `Up/Dn` после уровней | 2026-06-17 | 2KB | `9d18b5e1` |
@@ -73,7 +73,7 @@
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-06-17 | 25KB | `aa7313db` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-06-17 | 45KB | `30e59566` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-06-17 | 4KB | `dba0c943` |
-| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-06-17 | 4KB | `ccce04ba` |
+| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-06-20 | 4KB | `90e3acac` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](docs/audit/2026-05-18-codex-direct-direction-chain-audit.md) |  | 2026-06-17 | 8KB | `4771493f` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-rebuild.md](docs/audit/2026-05-18-codex-direct-direction-chain-rebuild.md) |  | 2026-06-17 | 6KB | `799c481b` |
 | [docs/audit/2026-05-18-consolidated-audit.md](docs/audit/2026-05-18-consolidated-audit.md) |  | 2026-06-17 | 16KB | `68633e6f` |
@@ -94,35 +94,35 @@
 | [docs/audit/2026-06-14-stage4-brainstorm_result_deep.md](docs/audit/2026-06-14-stage4-brainstorm_result_deep.md) |  | 2026-06-17 | 12KB | `faaf44f1` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-17 | 1KB | `67407e17` |
 | [docs/audit/next.md](docs/audit/next.md) | Текущий research-план после Stage 4.3 | 2026-06-17 | 10KB | `64182797` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-18 | 28KB | `5236c575` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-23 | 28KB | `2f4a344a` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-17 | 14KB | `11dc384e` |
-| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-17 | 4KB | `3b1e8db8` |
+| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-22 | 7KB | `2691a751` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-06-17 | 5KB | `6bf55f21` |
 | [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-06-17 | 7KB | `db9dba4c` |
 | [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-17 | 31KB | `ab30e935` |
-| [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-17 | 6KB | `13a28e56` |
+| [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-20 | 6KB | `13a28e56` |
 | [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-06-17 | 10KB | `a158f78f` |
-| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-18 | 7KB | `d6a44e56` |
+| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-20 | 7KB | `d6a44e56` |
 | [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-06-17 | 5KB | `4ce7ab0b` |
 | [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-06-17 | 9KB | `4152c2c8` |
-| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-06-17 | 3KB | `73dd4469` |
-| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-06-18 | 13KB | `59d45cf1` |
-| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-06-17 | 9KB | `e8293a7c` |
+| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-06-22 | 5KB | `500789b2` |
+| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-06-20 | 13KB | `59d45cf1` |
+| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-06-22 | 9KB | `3523d28b` |
 | [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-06-17 | 3KB | `da6c66c6` |
-| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-06-17 | 10KB | `645e013b` |
+| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-06-22 | 11KB | `d8eaf905` |
 | [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-06-17 | 9KB | `3c1b8457` |
 | [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-06-17 | 2KB | `c1028a82` |
 | [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-06-17 | 2KB | `c11c0bbb` |
 | [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-06-17 | 3KB | `c9457c9b` |
-| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-06-18 | 6KB | `b01afadf` |
+| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-06-22 | 7KB | `7781e222` |
 | [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-06-17 | 3KB | `c8f22299` |
-| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-06-18 | 5KB | `082359b4` |
-| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-17 | 4KB | `51bb6261` |
-| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-17 | 2KB | `2118844b` |
-| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-06-18 | 29KB | `b4df17c9` |
-| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-06-18 | 15KB | `c0000ffc` |
-| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-06-18 | 14KB | `5acfa85b` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-18 | 8KB | `210671d2` |
+| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-06-20 | 5KB | `082359b4` |
+| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-22 | 5KB | `df334595` |
+| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-22 | 3KB | `90abc08d` |
+| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-06-20 | 29KB | `b4df17c9` |
+| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-06-21 | 16KB | `b1b4ff9d` |
+| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-06-22 | 16KB | `3c05e3ff` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-06-20 | 8KB | `210671d2` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-06-17 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-17 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-17 | 2KB | `8f996d16` |
@@ -133,6 +133,7 @@
 | [docs/statistics/EDA.ipynb.md](docs/statistics/EDA.ipynb.md) | Отчет по разведочному анализу | 2026-06-17 | 17KB | `914b3a5e` |
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
+| [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-22 | 1KB | `46894f42` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -202,9 +203,15 @@
 | [docs/superpowers/plans/2026-06-15-stage4_6-clean-candidate-cycle.md](docs/superpowers/plans/2026-06-15-stage4_6-clean-candidate-cycle.md) |  | 2026-06-17 | 6KB | `12342f1d` |
 | [docs/superpowers/plans/2026-06-15-stage4_remaining-hypotheses-master.md](docs/superpowers/plans/2026-06-15-stage4_remaining-hypotheses-master.md) |  | 2026-06-17 | 9KB | `cc159e05` |
 | [docs/superpowers/plans/2026-06-15-stage5_prep-diagnostics.md](docs/superpowers/plans/2026-06-15-stage5_prep-diagnostics.md) |  | 2026-06-17 | 7KB | `136f54dc` |
-| [docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md](docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md) | План Stage 5.0 Transformer Breach: модельный holdout 2023-2026, feature profiles, XGBoost/time baselines и optional walk-forward | 2026-06-17 | 30KB | `bae3c711` |
-| [docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md) | План Stage 5.0a Corridor Full Preflight: честный raw coverage до cap, full corridor-профили и разделение ATR как масштаба и как входа модели | 2026-06-18 | 14KB | `ef48d3ce` |
-| [docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md) | План Stage 5.0a Feature Preflight: A7-аудит профилей признаков до повторного обучения Transformer | 2026-06-18 | 16KB | `b6cad904` |
+| [docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md](docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md) | План Stage 5.0 Transformer Breach: модельный holdout 2023-2026, feature profiles, XGBoost/time baselines и optional walk-forward | 2026-06-20 | 30KB | `bae3c711` |
+| [docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md) | План Stage 5.0a Corridor Full Preflight: честный raw coverage до cap, full corridor-профили и разделение ATR как масштаба и как входа модели | 2026-06-20 | 14KB | `ef48d3ce` |
+| [docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md) | План Stage 5.0a Feature Preflight: A7-аудит профилей признаков до повторного обучения Transformer | 2026-06-20 | 16KB | `b6cad904` |
+| [docs/superpowers/plans/2026-06-21-stage5_0a-transform-comparison.md](docs/superpowers/plans/2026-06-21-stage5_0a-transform-comparison.md) |  | 2026-06-21 | 3KB | `93189c70` |
+| [docs/superpowers/plans/2026-06-21-stage5_0b-asinh-rerun.md](docs/superpowers/plans/2026-06-21-stage5_0b-asinh-rerun.md) |  | 2026-06-21 | 31KB | `6962ea4f` |
+| [docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md](docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md) |  | 2026-06-22 | 55KB | `17c2f7c1` |
+| [docs/superpowers/plans/2026-06-23-stage5_0d-diagnostic-screening.md](docs/superpowers/plans/2026-06-23-stage5_0d-diagnostic-screening.md) |  | 2026-06-23 | 46KB | `581c76bc` |
+| [docs/superpowers/plans/2026-06-23-stage5_0e-small-transformer-overfit-check.md](docs/superpowers/plans/2026-06-23-stage5_0e-small-transformer-overfit-check.md) |  | 2026-06-23 | 18KB | `4168bc01` |
+| [docs/superpowers/plans/2026-06-23-stage5_0f-signal-stationarity.md](docs/superpowers/plans/2026-06-23-stage5_0f-signal-stationarity.md) |  | 2026-06-23 | 57KB | `215639fb` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-06-17 | 10KB | `b848ff4f` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
@@ -238,6 +245,7 @@
 | [docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md](docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) | Спецификация direct `SELL/SKIP/BUY` модели по всей строке фракталов | 2026-06-17 | 12KB | `3bba26aa` |
 | [docs/superpowers/specs/2026-05-27-limit-order-entry-design.md](docs/superpowers/specs/2026-05-27-limit-order-entry-design.md) |  | 2026-06-17 | 18KB | `1c33e671` |
 | [docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md](docs/superpowers/specs/2026-06-08-fractal-stop-fav-target-design.md) | Спецификация Fractal Stop + Fav Target: этап только на пробой уровня и торговый слой | 2026-06-17 | 17KB | `44df96a5` |
+| [docs/superpowers/specs/2026-06-23-stage5_0f-signal-stationarity-design.md](docs/superpowers/specs/2026-06-23-stage5_0f-signal-stationarity-design.md) |  | 2026-06-23 | 22KB | `7e3289aa` |
 | [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-06-17 | 5KB | `788df301` |
 
 ## Reports
@@ -321,10 +329,16 @@
 | [docs/reports/2026-06-15-stage4_5-exit-mechanics.md](docs/reports/2026-06-15-stage4_5-exit-mechanics.md) |  | 2026-06-17 | 4KB | `c9e1b2f7` |
 | [docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md](docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md) |  | 2026-06-17 | 4KB | `1c332d7c` |
 | [docs/reports/2026-06-15-stage5-prep-diagnostics.md](docs/reports/2026-06-15-stage5-prep-diagnostics.md) |  | 2026-06-17 | 7KB | `352a8984` |
-| [docs/reports/2026-06-15-walk-forward-diagnostics.md](docs/reports/2026-06-15-walk-forward-diagnostics.md) |  | 2026-06-17 | 8KB | `e7b8a674` |
-| [docs/reports/2026-06-17-stage5-transformer-breach.md](docs/reports/2026-06-17-stage5-transformer-breach.md) |  | 2026-06-18 | 11KB | `4b270c27` |
-| [docs/reports/2026-06-18-stage5_0a-feature-preflight.md](docs/reports/2026-06-18-stage5_0a-feature-preflight.md) |  | 2026-06-18 | 11KB | `1a72413d` |
-| [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-17 | 2KB | `e07ce60f` |
+| [docs/reports/2026-06-15-walk-forward-diagnostics.md](docs/reports/2026-06-15-walk-forward-diagnostics.md) |  | 2026-06-20 | 8KB | `e7b8a674` |
+| [docs/reports/2026-06-17-stage5-transformer-breach.md](docs/reports/2026-06-17-stage5-transformer-breach.md) |  | 2026-06-20 | 11KB | `4b270c27` |
+| [docs/reports/2026-06-18-stage5_0a-feature-preflight.md](docs/reports/2026-06-18-stage5_0a-feature-preflight.md) |  | 2026-06-20 | 11KB | `1a72413d` |
+| [docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md](docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md) |  | 2026-06-21 | 21KB | `af77a753` |
+| [docs/reports/2026-06-21-stage5_0b-asinh-rerun.md](docs/reports/2026-06-21-stage5_0b-asinh-rerun.md) |  | 2026-06-22 | 16KB | `c443edc0` |
+| [docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md](docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md) |  | 2026-06-23 | 11KB | `0f9bb444` |
+| [docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md](docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md) |  | 2026-06-23 | 14KB | `7290f925` |
+| [docs/reports/2026-06-23-stage5_0e-small-transformer-check.md](docs/reports/2026-06-23-stage5_0e-small-transformer-check.md) |  | 2026-06-23 | 9KB | `e11ffaa6` |
+| [docs/reports/2026-06-24-stage5_0f-signal-stationarity.md](docs/reports/2026-06-24-stage5_0f-signal-stationarity.md) |  | 2026-06-24 | 20KB | `26c412bf` |
+| [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-20 | 2KB | `9a64f8af` |
 
 ## ML
 
@@ -343,13 +357,13 @@
 | [ML/baseline/benchmark_fractal_stop_stage4_2.py](ML/baseline/benchmark_fractal_stop_stage4_2.py) | Stage 4.2 Fractal Stop diagnostic: исправленная методика (трёхслойный split, spread Bid, block bootstrap, perm test) для winner Stage 4 | ✅ | 2026-06-17 | 27KB | `1151a158` |
 | [ML/baseline/benchmark_limit_order_entry.py](ML/baseline/benchmark_limit_order_entry.py) |  |  | 2026-06-17 | 9KB | `32700fef` |
 | [ML/baseline/benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean val_select/val_eval candidate-cycle для exit-политик Stage 4.5 | ✅ | 2026-06-17 | 17KB | `d9822538` |
-| [ML/baseline/benchmark_stage5_transformer_breach.py](ML/baseline/benchmark_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach runner + Stage 5.0a feature preflight: профили признаков, нормализация, distribution audit, raw corridor coverage/truncation, phased execution | 🏁 | 2026-06-18 | 101KB | `e1edd363` |
+| [ML/baseline/benchmark_stage5_transformer_breach.py](ML/baseline/benchmark_stage5_transformer_breach.py) | Stage 5.0 runner и диагностические подпотоки 5.0a-5.0f: Transformer, профили признаков, нормализация, audit распределений, скрининг профилей и проверка устойчивости сигнала во времени | 🏁 | 2026-06-23 | 201KB | `d233e9a1` |
 | [ML/baseline/diagnose_stage4_3.py](ML/baseline/diagnose_stage4_3.py) | Stage 4.3 DIAGNOSTIC_ONLY: декомпозиция потерь PF oracle→baseline, breach/fav buckets, 2D map, TP policy comparison | ✅ | 2026-06-17 | 64KB | `84f7957b` |
 | [ML/baseline/diagnose_stage4_4.py](ML/baseline/diagnose_stage4_4.py) | Stage 4.4 DIAGNOSTIC_ONLY: micro-check перед Transformer — relax breach, fixed TP, breach-only entry | ✅ | 2026-06-17 | 29KB | `c1595a48` |
 | [ML/baseline/diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 DIAGNOSTIC_ONLY: trailing/breakeven/partial exit mechanics для Fractal Stop | ✅ | 2026-06-17 | 22KB | `2d551922` |
 | [ML/baseline/diagnose_stage4_gap.py](ML/baseline/diagnose_stage4_gap.py) |  |  | 2026-06-17 | 27KB | `ed1a52e9` |
 | [ML/baseline/diagnose_stage5_prep.py](ML/baseline/diagnose_stage5_prep.py) | Stage 5.0-prep DIAGNOSTIC_ONLY: feature ablation + AUC→PF sensitivity перед Transformer | ✅ | 2026-06-17 | 17KB | `d1c5792c` |
-| [ML/baseline/diagnose_walk_forward.py](ML/baseline/diagnose_walk_forward.py) |  |  | 2026-06-17 | 24KB | `749b0549` |
+| [ML/baseline/diagnose_walk_forward.py](ML/baseline/diagnose_walk_forward.py) |  |  | 2026-06-20 | 24KB | `749b0549` |
 | [ML/baseline/direction_only_signal.py](ML/baseline/direction_only_signal.py) |  |  | 2026-06-17 | 6KB | `8d683a5b` |
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-17 | 3KB | `70523b5b` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-17 | 16KB | `704db67c` |
@@ -431,7 +445,7 @@
 | [ML/models/entry_path_dual_stream_transformer.py](ML/models/entry_path_dual_stream_transformer.py) | Dual-stream entry_path модель: sequence branch + engineered branch | ✅ | 2026-06-17 | 4KB | `597779ed` |
 | [ML/models/entry_path_transformer.py](ML/models/entry_path_transformer.py) | EntryPathTransformer — специализированный Transformer для entry_path_v1 | ✅ | 2026-06-17 | 4KB | `41ffb003` |
 | [ML/models/entry_path_v1_quantile_transformer.py](ML/models/entry_path_v1_quantile_transformer.py) | EntryPathV1QuantileTransformer — entry_path_v1 + q10/q90 heads | ✅ | 2026-06-17 | 4KB | `68bafa95` |
-| [ML/models/fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5.0 Transformer encoder для breach classification: masked mean + newest-token pooling, TokenSelector | 🏁 | 2026-06-18 | 6KB | `090fddf9` |
+| [ML/models/fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5.0 Transformer encoder для breach classification: masked mean + newest-token pooling, TokenSelector | 🏁 | 2026-06-20 | 6KB | `090fddf9` |
 | [ML/models/hybrid_cnn_lstm.py](ML/models/hybrid_cnn_lstm.py) | Hybrid CNN+LSTM | 🏁 | 2026-06-17 | 5KB | `06ff47b8` |
 | [ML/models/take_skip_dual_stream_transformer.py](ML/models/take_skip_dual_stream_transformer.py) | Dual-stream Transformer для `take_skip_v2`: sequence branch + `lib_PIC` feature branch | ✅ | 2026-06-17 | 3KB | `d645930f` |
 | [ML/models/trailing_stop_target_quantile_transformer.py](ML/models/trailing_stop_target_quantile_transformer.py) | TrailingStopTargetQuantileTransformer — q10/q50/q90 heads для `trail_48_pnl_atr_x3` | ✅ | 2026-06-17 | 2KB | `61f57808` |
@@ -755,8 +769,9 @@
 | [ML/reports/stage4_improvements.json](ML/reports/stage4_improvements.json) |  |  | 2026-06-17 | 4KB | `1ac61b5e` |
 | [ML/reports/stage4_trade.json](ML/reports/stage4_trade.json) |  |  | 2026-06-17 | 11KB | `090781cd` |
 | [ML/reports/stage4_trade_geom.json](ML/reports/stage4_trade_geom.json) |  |  | 2026-06-17 | 11KB | `b48673bf` |
+| [ML/reports/stage5_0d_diagnostic_screening.json](ML/reports/stage5_0d_diagnostic_screening.json) |  |  | 2026-06-23 | 36KB | `53265c38` |
 | [ML/reports/stage5_prep_diagnostics.json](ML/reports/stage5_prep_diagnostics.json) |  |  | 2026-06-17 | 4KB | `50fdcdd1` |
-| [ML/reports/stage5_transformer_breach.json](ML/reports/stage5_transformer_breach.json) |  |  | 2026-06-18 | 32KB | `3d15c106` |
+| [ML/reports/stage5_transformer_breach.json](ML/reports/stage5_transformer_breach.json) |  |  | 2026-06-20 | 32KB | `3d15c106` |
 | [ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json](ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json) |  |  | 2026-06-17 | 2KB | `a2d1b9ae` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json) |  |  | 2026-06-17 | 160B | `295db8d3` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json) |  |  | 2026-06-17 | 8KB | `6f06d60e` |
@@ -946,7 +961,7 @@
 | [ML/reports/transformer_direction/target_statistics.json](ML/reports/transformer_direction/target_statistics.json) |  |  | 2026-06-17 | 7KB | `6120e49f` |
 | [ML/reports/transformer_direction/validation_grid_finetune.json](ML/reports/transformer_direction/validation_grid_finetune.json) |  |  | 2026-06-17 | 1KB | `a0bc9c14` |
 | [ML/reports/transformer_direction/validation_grid_frozen.json](ML/reports/transformer_direction/validation_grid_frozen.json) |  |  | 2026-06-17 | 4KB | `2151ede9` |
-| [ML/reports/walk_forward_diagnostics.json](ML/reports/walk_forward_diagnostics.json) |  |  | 2026-06-17 | 13KB | `c49a13f3` |
+| [ML/reports/walk_forward_diagnostics.json](ML/reports/walk_forward_diagnostics.json) |  |  | 2026-06-20 | 13KB | `c49a13f3` |
 | [ML/reproducibility_tests.py](ML/reproducibility_tests.py) | Тесты детерминизма и стабильности seed | 🏁 | 2026-06-17 | 7KB | `9301d516` |
 | [ML/run_entry_path_live_safe_retrain.py](ML/run_entry_path_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_live_safe` с seed-specific checkpoint папками | ✅ | 2026-06-17 | 8KB | `4d781bf1` |
 | [ML/run_entry_path_quantile_live_safe_retrain.py](ML/run_entry_path_quantile_live_safe_retrain.py) | Multi-seed retrain/export/benchmark для `entry_path_v1_quantile` поверх CPU baseline `A @ 7.5%` | ✅ | 2026-06-17 | 13KB | `6ebfd944` |
@@ -1112,7 +1127,7 @@
 | [tests/test_signal_tracer_tb.py](tests/test_signal_tracer_tb.py) | TB-specific parsing в `statistics/signal_tracer.py` | ✅ | 2026-06-17 | 2KB | `b2c52f5f` |
 | [tests/test_stage4_5_exit_mechanics.py](tests/test_stage4_5_exit_mechanics.py) |  |  | 2026-06-17 | 5KB | `6e91f20c` |
 | [tests/test_stage4_6_clean_cycle.py](tests/test_stage4_6_clean_cycle.py) |  |  | 2026-06-17 | 3KB | `5f2c5556` |
-| [tests/test_stage5_transformer_breach.py](tests/test_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach: профили признаков, tensor shapes, corridor validation, модель, split guard | ✅ | 2026-06-18 | 45KB | `2d114d7f` |
+| [tests/test_stage5_transformer_breach.py](tests/test_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach: профили признаков, tensor shapes, corridor validation, модель, split guard | ✅ | 2026-06-23 | 112KB | `a5b2a5fa` |
 | [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-06-17 | 6KB | `df9c696d` |
 | [tests/test_take_skip_original_contour_feature_matrix.py](tests/test_take_skip_original_contour_feature_matrix.py) | `ML/run_take_skip_original_contour_feature_matrix.py` | ✅ | 2026-06-17 | 9KB | `88acdeac` |
 | [tests/test_take_skip_trailing_stop_task.py](tests/test_take_skip_trailing_stop_task.py) |  |  | 2026-06-17 | 7KB | `f917ec48` |
@@ -1257,7 +1272,7 @@
 | [MT/MQL4/Libraries/stderror.mqh](MT/MQL4/Libraries/stderror.mqh) |  |  | 2026-06-17 | 9KB | `47505e6c` |
 | [MT/MQL4/Libraries/stdlib.mq4](MT/MQL4/Libraries/stdlib.mq4) |  |  | 2026-06-17 | 19KB | `cdb0a440` |
 | [MT/MQL4/Libraries/stdlib.mqh](MT/MQL4/Libraries/stdlib.mqh) |  |  | 2026-06-17 | 648B | `5695494a` |
-| [MT/MQL4/README.md](MT/MQL4/README.md) |  |  | 2026-06-17 | 728B | `88e64c48` |
+| [MT/MQL4/README.md](MT/MQL4/README.md) |  |  | 2026-06-20 | 820B | `4fc86c9a` |
 | [MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4](MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4) |  |  | 2026-06-17 | 2KB | `7d447b15` |
 | [MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4) |  |  | 2026-06-17 | 3KB | `d0dbff33` |
 | [MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4) |  |  | 2026-06-17 | 4KB | `c0c67ebe` |
@@ -1529,6 +1544,7 @@
 | [MT/MQL5/Include/lib_PIC.mqh](MT/MQL5/Include/lib_PIC.mqh) |  |  | 2026-06-17 | 56KB | `cc8e0ac9` |
 | [MT/MQL5/Include/stderror.mqh](MT/MQL5/Include/stderror.mqh) |  |  | 2026-06-17 | 9KB | `e8590cbe` |
 | [MT/MQL5/Include/stdlib.mqh](MT/MQL5/Include/stdlib.mqh) |  |  | 2026-06-17 | 712B | `b86b17a9` |
+| [MT/README.md](MT/README.md) |  |  | 2026-06-20 | 4KB | `470c4642` |
 
 ## Wiki
 
@@ -1537,8 +1553,8 @@
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-06-17 | 89KB | `11a5246a` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-06-18 | 4KB | `83095d8d` |
-| [wiki/log.md](wiki/log.md) |  | 2026-06-18 | 34KB | `80d560fb` |
+| [wiki/index.md](wiki/index.md) |  | 2026-06-24 | 4KB | `0f4f7794` |
+| [wiki/log.md](wiki/log.md) |  | 2026-06-24 | 38KB | `c46035ff` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1549,7 +1565,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-06-18 | 36KB | `6bcc1e23` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-06-24 | 62KB | `2089359e` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1569,8 +1585,8 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [.mimocode/plans/1781449924517-mighty-star.md](.mimocode/plans/1781449924517-mighty-star.md) |  | 2026-06-17 | 7KB | `a2896455` |
-| [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-17 | 3KB | `362f90fe` |
+| [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-20 | 4KB | `4ec43f10` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [opencode.json](opencode.json) |  | 2026-06-17 | 184B | `45617caa` |
+| [opencode.json](opencode.json) |  | 2026-06-20 | 184B | `45617caa` |
 

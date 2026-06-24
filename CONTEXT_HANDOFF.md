@@ -1,140 +1,91 @@
 # Context Handoff
 
-Дата: 2026-06-18
+Дата: 2026-06-24
 
 ## Текущий этап
 
-Fractal Stop находится после Stage 5.0a feature preflight и после corridor full addendum. Обучение Transformer по этому addendum не запускалось.
+Stage 5.0f завершён. Вердикт: **DIAGNOSTIC_ONLY, inconclusive**.
 
-Статус: **DIAGNOSTIC_ONLY**.
+Состояние ветки `H6_off05 stop broken` не изменилось: она не переоткрыта.  
+Новый факт проекта: H2 (temporal decay) скорее опровергнута (`fixed` > `rolling`), H1 (слабый сигнал) не подтверждена (некоторые AUC > 0.68). Природа отрицательного результата не установлена.
 
 ## Что сделано
 
-1. В `ML/baseline/benchmark_stage5_transformer_breach.py` режим `--feature-preflight-only` расширен:
-   - считает raw corridor coverage до cap;
-   - сохраняет честную truncation-метрику;
-   - строит 4 новых full-corridor профиля.
-2. Builder теперь возвращает `selection_meta`:
-   - `candidate_count_before_cap`
-   - `selected_count_after_cap`
-   - `is_truncated`
-3. Добавлены новые профили:
-   - `corridor_5atr_relative_price_no_time_full`
-   - `corridor_10atr_relative_price_no_time_full`
-   - `corridor_5atr_relative_price_atr_full`
-   - `corridor_10atr_relative_price_atr_full`
-4. `*_no_time_full` заданы с `row_dim=0` и помечены как `DIAGNOSTIC_ONLY`.
-5. Обновлены тесты runner-а; текущий статус:
-   - `72 passed`
+### Stage 5.0f (2026-06-24) — диагностика устойчивости сигнала во времени
+- Новый CLI `--stage5-0f-signal-stationarity`
+- Зафиксированы:
+  - 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
+  - 4 набора признаков: `base_raw_plus_time`, `structure_only`, `time_only`, `all100_relative_price_time`
+  - 3 схемы годовых окон: `rolling`, `fixed`, `anchored`
+  - 3 seed: `[42, 77, 123]`
+- `rolling` зафиксирован как 8-летнее окно разработки:
+  - 7 лет `train_core`
+  - 1 год `val_stop`
+- Выполнено `456` прогонов XGBoost
+- Добавлена поэтапная запись `ML/reports/stage5_0f_signal_stationarity.json` и компактный лог прогресса
+- Структурированный артефакт: `ML/reports/stage5_0f_signal_stationarity.json`
+- Отчёт: `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- Полный набор тестов: `808 passed`
 
-## Где лежат результаты
+## Главный результат
 
-- `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
-- `ML/reports/stage5_0a_feature_preflight.json`
-- `ML/reports/stage5_0a_feature_stats_normalized.csv`
-- `ML/reports/stage5_0a_profile_summary.csv`
+Итог Stage 5.0f:
 
-## Главные выводы
+1. Не доказан распад сигнала, который лечится более близким по времени обучением (H2 скорее опровергнута: `fixed` > `rolling`).
+2. Не доказана и устойчивость сигнала.
+3. `time_only` деградирует сильнее фрактальных профилей и ниже по абсолютному AUC (`structure_only` − `time_only`: sell +0.036…+0.071, buy +0.017…+0.050).
+4. `structure_only` (фракталы + clock, без price/ATR) в 12 из 18 сравнений ≥ `base_raw_plus_time`.
+5. Spearman на n=3 неинформативен (`p=0.0` для buy — артефакт, истинный p≈0.33); на 7 точках тренд исчезает.
+6. Природа отрицательного результата (H1 vs H2) не установлена.
 
-### 1. Технически preflight чистый
+Ключевые числа:
 
-Не обнаружено:
+- Всего прогонов: `456`
+- Общее время: `21780.9` сек, то есть примерно `6 часов 3 минуты`
+- Для обеих целей:
+  - `rolling_ci_above_fixed_years = 0`
+  - `fixed` последовательно > `rolling` (sell 6/6, buy 4/6 лет)
+  - `time_only_not_worse_than_fractals = False`
+  - `structure_close_to_base = True`
+- `anchored` тренд (3 точки):
+  - sell: `rho = -0.5`, `p = 0.6667`
+  - buy: `rho = -1.0`, `p = 0.0` (артефакт t-аппроксимации)
+- `anchored` тренд (7 точек, sanity check):
+  - sell: `rho = 0.0`, `p = 1.0`
+  - buy: `rho = -0.18`, `p = 0.70`
 
-- `NaN`
-- `Inf`
-- `PADDING_NOT_ZERO`
-- нарушений profile contract
+## Где мы сейчас
 
-### 2. ATR остаётся главным источником holdout warning
+Ветка `H6_off05` не реабилитирована и не получила нового подтверждения. H2 (temporal decay) скорее опровергнута, H1 (слабый сигнал) не подтверждена.
 
-Это относится ко всем профилям, где `ATR` идёт в `row_fields`. Это disclosure-факт, а не автоматический запрет на rerun.
+Правильное направление дальше:
+- если нужен строгий подтверждающий ответ, брать новый независимый период `2026+`;
+- или менять цель;
+- или делать узкий разбор структурных групп признаков как диагностику без статуса кандидата.
 
-### 3. Абсолютная цена остаётся только диагностическим контролем
+Неправильное направление дальше:
+- объявлять, что проблема уже точно только во времени;
+- объявлять, что ветка уже доказанно устойчива;
+- снова использовать `2023-2025` как будто это независимая подтверждающая проверка;
+- запускать новый большой перебор по `H6_off05` без нового независимого периода.
 
-`all100_absolute_price_time` по-прежнему показывает holdout shift по абсолютной цене.
-
-### 4. Старые corridor-профили с `seq_len=40` больше не стоит использовать как основные
-
-Честная truncation после исправления метрики:
-
-- `corridor_5atr_relative_price_no_time`: `0.491`
-- `corridor_10atr_relative_price_no_time`: `0.871`
-
-Причина: раньше эти профили слишком часто упирались в cap.
-
-### 5. Full corridor дал два разных вывода
-
-- `corridor_5atr_relative_price_atr_full`:
-  - median raw candidates = `40`
-  - median selected = `40`
-  - truncation = `0.000`
-  - снятие cap мало меняет медиану, но убирает искажение на части строк
-
-- `corridor_10atr_relative_price_atr_full`:
-  - median raw candidates = `62`
-  - median selected = `62`
-  - truncation = `0.000`
-  - старый capped-вариант реально терял информацию
-
-### 6. Full corridor не превратился в фактический all100
-
-Формальный контроль “почти all100”:
-
-- `corridor_10atr_relative_price_no_time_full`:
-  - `% candidate_count_before_cap >= 90` = `0.0105`
-  - `% selected_count_after_cap >= 90` = `0.0105`
-
-Значит `corridor_10atr_full` остаётся отдельным представлением, а не замаскированным `all100`.
-
-### 7. Профили с `row_dim=0` пока нельзя автоматически тащить в обучение
-
-`corridor_*_no_time_full` пригодны для диагностики, но не для немедленного training rerun. Для обучения нужен отдельный осознанный support `row_dim=0` в модельном слое Stage 5.
-
-## Что делать дальше
-
-Обсуждать Stage 5.0 rerun уже с новой corridor-матрицей.
-
-### Можно обсуждать для training rerun
-
-- `all100_no_price_time`
-- `all100_relative_price_no_time`
-- `all100_relative_price_time`
-- `nearest40_relative_price_no_time`
-- `nearest40_relative_price_time`
-- `corridor_5atr_relative_price_atr_full`
-- `corridor_10atr_relative_price_atr_full`
-
-### Оставить только как diagnostic-only
-
-- `time_only_clean`
-- `atr_only`
-- `time_plus_atr`
-- `all100_absolute_price_time`
-- `corridor_5atr_relative_price_no_time_full`
-- `corridor_10atr_relative_price_no_time_full`
-- `corridor_15atr_relative_price_no_time`
-- `corridor_10atr_relative_price_time`
-
-### Не использовать как основной rerun-кандидат
-
-- `corridor_5atr_relative_price_no_time`
-- `corridor_10atr_relative_price_no_time`
-
-## Файлы
+## Ключевые файлы
 
 Код:
-
 - `ML/baseline/benchmark_stage5_transformer_breach.py`
 - `tests/test_stage5_transformer_breach.py`
 
-Документы:
-
-- `docs/reports/2026-06-18-stage5_0a-feature-preflight.md`
-- `docs/ML/benchmark_stage5_transformer_breach.py.md`
-- `docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md`
+Отчёты:
+- `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
 
 Артефакты:
+- `ML/reports/stage5_0f_signal_stationarity.json`
+- `ML/reports/stage5_0e_small_transformer_check.json`
 
-- `ML/reports/stage5_0a_feature_preflight.json`
-- `ML/reports/stage5_0a_feature_stats_normalized.csv`
-- `ML/reports/stage5_0a_profile_summary.csv`
+## Открытые вопросы
+
+- Нужен ли отдельный подтверждающий цикл на новом периоде `2026+`, или ветку лучше закрыть окончательно без нового цикла.
+- Какие именно структурные подгруппы признаков несут остаточный сигнал сверх календарной компоненты.
+- Почему buy показывает более выраженное ухудшение по годам, чем sell, но всё равно не даёт честного жёсткого решения по правилам Stage 5.0f.

@@ -1,6 +1,39 @@
 # Wiki Log — SoSimple
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
+
+## [2026-06-24] ingest | Stage 5.0f: диагностика устойчивости сигнала во времени
+- Добавлен охват `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.0f переписан с уточнёнными выводами
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.0f (22 report updates)
+- Зафиксировано: H2 (temporal decay) скорее опровергнута (fixed > rolling), H1 не подтверждена (AUC > 0.68 в некоторых конфигурациях), Spearman на n=3 неинформативен (p=0.0 — артефакт), природа отрицательного результата не установлена, без нового периода `2026+` большой перебор не оправдан
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-23] ingest | Stage 5.0e: малый Transformer после провала
+- Добавлен охват `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.0e, выводы 29-30, новый закрытый вопрос про размер модели
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.0e (21 report updates)
+- Зафиксировано: `small_regularized` уменьшает признаки переобучения, но `H6_off05` остаётся закрытым
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-23] lint | Stage 5.0d: отчёт исправлен, wiki обновлена
+- Отчёт docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md исправлен: неточная формулировка «фрактальные признаки не добавляют информации», добавлена годовая деградация, holdout «молчит», противоречие с 5.0-prep, H1/H2
+- wiki/research/fractal-stop-research.md обновлён: summary (status active), Stage 5.0d timeline section, выводы 26-28, открытые вопросы (H1/H2, противоречие с prep)
+- wiki/index.md: без изменений (охват тот же)
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-23] ingest | Stage 5.0d diagnostic screening
+- Обновлён research/fractal-stop-research.md: добавлен Stage 5.0d (XGBoost + Logistic скрининг, h6_off05_target_exhausted)
+- Обновлены выводы (пункт 26), открытые вопросы (5.0d закрыт)
+- wiki/index.md: обновлён охват fractal-stop-research до 5.0d (20 reports)
+- Новый отчёт: docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-23] ingest | Stage 5.0c cross-target replication rerun
+- Обновлён research/fractal-stop-research.md: добавлен Stage 5.0c (FAIL, multi-seed, Transformer переобучение)
+- Обновлены выводы (пункты 22-25) и открытые вопросы (5.0c закрыт, 5.0d как следующий шаг)
+- wiki/index.md: обновлён охват fractal-stop-research до 5.0c (19 reports)
+- Новый отчёт: docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
 ## [2026-06-17] ingest | Stage 5.0 Transformer Breach Holdout synced into wiki
@@ -526,3 +559,11 @@
 - Updated `wiki/research/fractal-stop-research.md`: added honest raw corridor coverage, `corridor_*_full`, distinction between ATR-in-coordinate and ATR-as-row-input, and rerun guidance through `corridor_*_atr_full`.
 - Updated `wiki/index.md`: wording now reflects corridor full addendum and rejection of old capped corridor as main rerun candidate.
 - Ran `wiki/wiki.py generate`.
+### 2026-06-22: Ingest Stage 5.0a A7 audit and Stage 5.0b asinh rerun
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.0a A7 distribution audit, `asinh` vs `piecewise_tail`, `price/ATR` diagnostics, Stage 5.0b sell/buy results, buy loader fix, and `all100_absolute_price_atr_scaled_time_asinh` as next narrow candidate.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends to Stage 5.0b and records that Transformer did not beat XGBoost on sell or buy.
+- Sources: `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md`, `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`.
+### 2026-06-22: Ingest older uncovered Fractal Stop reports
+- Updated `wiki/research/fractal-stop-research.md`: added exact coverage for `2026-06-14-stage4-deep-diagnostics.md`, `2026-06-15-stage4_4-micro-check.md`, `2026-06-15-stage5-prep-diagnostics.md`, and `2026-06-15-walk-forward-diagnostics.md`.
+- Added missing synthesis for Stage 4 deep diagnostics and Stage 4.7 walk-forward diagnostics; Stage 4.4 and Stage 5.0-prep were already summarized but lacked exact source coverage.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 18 report updates.

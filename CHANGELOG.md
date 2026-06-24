@@ -2,6 +2,154 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-24] — Stage 5.0f: диагностика устойчивости сигнала во времени
+
+### Добавлено
+- `--stage5-0f-signal-stationarity`
+- `ML/reports/stage5_0f_signal_stationarity.json`
+- `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- helpers для Stage 5.0f: годовые окна `rolling/fixed/anchored`, bootstrap-интервалы, агрегация по seed, функция решения и поэтапная запись JSON с прогрессом
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 4 набора признаков × 3 схемы годовых окон × 3 seed = `456` прогонов XGBoost
+- `rolling` трактуется как 8-летнее окно разработки: 7 лет `train_core` + 1 год `val_stop`
+- Годы `2023-2025` используются для диагностического управленческого решения; `2026` раскрывается отдельно как год с малым числом наблюдений (sell `n=316`, buy `n=293`)
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY, overall_verdict = inconclusive**
+- Общий итог: **неопределённый** — не удалось ни доказать распад сигнала, который лечится более близким по времени обучением, ни подтвердить его устойчивость
+- Для обеих целей `rolling` не дал ни одного года, где его доверительный интервал был бы строго лучше `fixed` на решающих годах `2023-2025`. Более того, `fixed` последовательно численно превосходил `rolling` (sell 6/6 лет, buy 4/6 лет), что скорее противоречит H2 (temporal decay)
+- `time_only` деградирует сильнее фрактальных профилей при переходе от fixed к rolling; по абсолютному AUC стабильно ниже `structure_only` (sell +0.036…+0.071, buy +0.017…+0.050)
+- `structure_only` (фрактальные поля + clock, без price/ATR) остался близок к `base_raw_plus_time`; в 12 из 18 сравнений ≥ базы
+- Spearman на n=3 статистически неинформативен: `p=0.0` для buy — артефакт t-аппроксимации scipy при `rho=±1.0`, истинный p≈0.33. На 7 точках (2019-2025) тренд исчезает для обеих целей
+- `all100_relative_price_time` стабильно рядом с базой (±0.01-0.02), подтверждает вывод 5.0d
+
+### Вывод
+Stage 5.0f не даёт оснований ни закрыть тему как доказанно неустойчивую, ни реабилитировать её как устойчивую. H2 (temporal decay) скорее опровергнута направлением fixed>rolling, но природа отрицательного результата (H1 vs H2) не установлена. Без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
+
+<!-- docs/reports/2026-06-24-stage5_0f-signal-stationarity.md -->
+
+## [2026-06-23] — Stage 5.0e: проверка малого Transformer после провала
+
+### Добавлено
+- `--stage5-0e-small-transformer-check`
+- `ML/reports/stage5_0e_small_transformer_check.json`
+- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- `train_transformer(..., model_config=None)` и расширенная история обучения (`best_epoch`, `overfit_drop_after_best`)
+
+### Методика
+- Уровень: проверка после провала внутри уже закрытой ветки `H6_off05`.
+- 1 профиль × 1 цель × 2 конфигурации × 3 seed = 6 прогонов Transformer.
+- XGBoost на тех же признаках остаётся главным сравнением.
+- Holdout 2023-2026 только раскрывается, но не участвует в решении.
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**.
+- `overfit_hypothesis_supported = yes`: `small_regularized` уменьшил median `overfit_drop_after_best` с `0.0170` до `0.0009` при потере median `val_auc` только `-0.0028`.
+- `transformer_reopens_h6_off05 = no`: XGBoost на тех же признаках остаётся лучше по `val_auc` (`0.6742` против `0.6685`/`0.6657`), и ни один seed Transformer не прошёл сравнение одновременно по `val_auc` и `val_lift_30`.
+- Лучшая Transformer-конфигурация по median `val_auc`: `current` (`0.6685`), а не `small_regularized` (`0.6657`).
+
+### Вывод
+Меньшая модель действительно уменьшает признаки переобучения, но не меняет итогового решения. `H6_off05 stop broken` остаётся закрытым; дальнейшие шаги только через новую цель или новые признаки.
+
+<!-- docs/reports/2026-06-23-stage5_0e-small-transformer-check.md -->
+
+## [2026-06-23] — Stage 5.0d: диагностический скрининг профилей
+
+### Добавлено
+- `--stage5-0d-diagnostic-screening`
+- `ML/reports/stage5_0d_diagnostic_screening.json`
+- `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
+- `compute_logistic_same_profile_baseline`, `compute_feature_group_ablation`
+
+### Методика
+- Уровень: поисковый (exploratory).
+- Transformer не обучается. Только XGBoost (3 seeds) + Logistic Regression (1 seed).
+- Абляция групп признаков: price / structure / ATR / time.
+- Критерий: профиль с запасом >0.02 над base_raw_plus_time → гипотеза для 5.0e.
+- Если ни один профиль не проходит — текущая постановка `H6_off05 stop broken` на 9 профилях исследовательски исчерпана; Fractal Stop как семейство целей не закрыт.
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**, решение этапа: `h6_off05_target_exhausted` — ни один профиль не прошёл порог +0.02.
+- Лучший: sell `all100_relative_price_time` (delta +0.0111), lift_pass OK (0.5415 ≤ 0.5539), но AUC_pass FAIL.
+- Buy: ни один профиль не превосходит base (все дельты ≤ 0).
+- Абляция: structure-признаки критичны (AUC падает на 0.14–0.19 при их удалении), price/ATR почти не влияют.
+- XGBoost >> Logistic (gap 0.04–0.05) — сигнал во взаимодействиях, не линейный.
+
+<!-- docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md -->
+
+## [2026-06-22] — Stage 5.0c: повторная проверка на двух целях
+
+### Добавлено
+- `--stage5-0c-cross-target-rerun`
+- `ML/reports/stage5_0c_cross_target_rerun.json`
+- `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
+- `build_xgb_features_for_profile`, `compute_xgb_same_profile_baseline` — честное сравнение Transformer vs XGBoost на тех же признаках
+
+### Методика
+- Статус `DIAGNOSTIC_ONLY`; holdout не используется для решения (`holdout_used_for_decision: false`).
+- Framing: повторная проверка гипотезы 5.0b, не независимое открытие.
+- Заранее зафиксированные числовые пороги для 4 решающих gate (AUC, lift_30, проверка на двух целях, seed spread) + `holdout_check` как предупреждение.
+- 5 seeds безусловно (без single-seed gate).
+- XGBoost на том же профиле изолирует «признаки vs модель»; transform params подбираются на train, не на val/holdout.
+
+### Результаты
+- **overall_pass: FAIL** — гипотеза не воспроизвелась.
+- G1 (AUC): FAIL — Transformer уступил XGBoost same-profile на обеих целях. Sell: median val AUC 0.6643 vs XGBoost 0.6723 (0 seeds выше порога). Buy: median val AUC 0.6752 vs XGBoost 0.6873 (0 seeds выше порога).
+- G2 (lift_30): FAIL — Transformer lift_30 выше XGBoost на обеих целях (меньше = лучше не выполнено). Sell: 0.5570 vs 0.5229. Buy: 0.5423 vs 0.5147.
+- G3 (cross_target): FAIL — ни одна цель не прошла G1+G2.
+- G5 (seed_spread): PASS — sell spread 0.0054, buy spread 0.0104 (оба < 0.03).
+- Holdout check: OK — sell drop 0.024, buy drop 0.028 (оба < 0.05).
+- Transformer на тех же признаках не превосходит XGBoost: в профиле есть умеренный сигнал, но текущая Transformer-реализация извлекает его хуже табличной модели.
+
+<!-- docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md -->
+
+## [2026-06-21] — Stage 5.0b: Asinh Transformer rerun
+
+### Добавлено
+- `--stage5-0b-asinh-rerun`
+- `ML/reports/stage5_0b_asinh_rerun.json`
+- `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
+
+### Методика
+- Статус `DIAGNOSTIC_ONLY`; holdout не используется для выбора.
+- Confirmatory candidates отделены от diagnostic controls.
+- Dynamic corridor `seq_len` отключён.
+- Дополнительно выполнен диагностический buy-прогон `buy_stop_broken_H6_off05_flag` после исправления загрузки: фильтрация строк теперь идёт по выбранной целевой колонке, а не всегда по `sell_stop_broken_H6_off05_flag`.
+
+### Результаты
+- Sell: лучший Transformer `all100_relative_price_time` не прошёл AUC-порог (`0.6719` против `0.6731`); разрыв `0.0012` мал и в single-seed режиме не считается устойчивым сигналом. `lift_30` на `val_stop` лучше XGBoost (`0.5044` против `0.5539`), но оба условия отбора одновременно не выполнены.
+- Buy: цель оказалась непустой после исправления загрузки (`22745` train rows, positive_rate `0.3701`, OHLC verification `PASS 50/50`). Лучший Transformer `all100_relative_price_time` уступил XGBoost по AUC (`0.6762` против `0.6894`).
+- Проверка распределения признаков после `asinh` дала `OK` и `0` критических флагов для всех sell/buy профилей.
+- `all100_absolute_price_atr_scaled_time_asinh` повторно оказался рядом с лидером на двух целевых: sell `0.6673` против лидера `0.6719`, buy `0.6752` против лидера `0.6762`.
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. Stage 5.0b не открывает multi-seed продолжение и не объявляет trading winner. Следующая обоснованная гипотеза — отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с честным сравнением против XGBoost на тех же строках.
+
+<!-- docs/reports/2026-06-21-stage5_0b-asinh-rerun.md -->
+
+## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison
+
+### Добавлено
+- `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт проверки распределения признаков перед rerun Stage 5.0
+- `ML/reports/stage5_0a_feature_stats_per_position.csv` — per-position статистики признаков
+- `ML/reports/stage5_0a_transform_comparison.json` — structured artifact сравнения `current` / `asinh` / `piecewise_tail`
+- `ML/reports/stage5_0a_transform_comparison_summary.csv`, `*_stats.csv`, `*_per_position.csv` — CSV-артефакты сравнения способов сжатия хвостов
+- Дополнительные диагностические профили `price/ATR`: `all100_absolute_price_atr_scaled_time_raw`, `all100_absolute_price_atr_scaled_time_asinh`, `corridor_5atr_price_unit_atr_full`, `corridor_10atr_price_unit_atr_full`
+
+### Результаты
+- Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`; остался только `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14.
+- Per-position audit выявил скрытую проблему старого `price_coord_atr`: `all100_relative_price_*` имел `TAIL_GT10` на позиции 99 (самый старый фрактал); signed-log убрал этот хвост.
+- Дополнительное сравнение без обучения после расширения до 11 профилей: `current` = 11 WARNING / 0 OK, `asinh` = 0 WARNING / 11 OK, `piecewise_tail` = 0 WARNING / 11 OK.
+- `all100_absolute_price_atr_scaled_time_raw` не имеет хвоста `abs>10` после нормализации даже без `asinh`; `asinh(price/ATR)` дополнительно снижает train max с 6.67 до 3.39.
+- Кусочное сжатие использует пороги `p05/p95`, рассчитанные только на train; val_stop/holdout используются только для disclosure.
+
+### Вывод
+⚠️ DIAGNOSTIC_ONLY. `asinh` и `piecewise_tail` лучше текущего варианта по проверке распределения признаков, но это не доказательство качества модели: обучение не запускалось. Следующий Transformer rerun можно планировать с заранее зафиксированным transform-кандидатом или как явно диагностическое сравнение, чтобы не создать новый скрытый перебор конфигураций.
+
+<!-- docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md -->
+
 ## [2026-06-17] — Stage 5.0: Transformer Breach Holdout — FAIL
 
 ### Добавлено

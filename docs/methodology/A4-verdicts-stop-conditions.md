@@ -9,6 +9,15 @@
 | `production_candidate` | Прошёл data contract, baseline comparison, frozen test, net-cost backtest, robustness и walk-forward, MT4 parity/reconciliation | Допускается controlled forward/online diagnostic; forward ещё не обязателен |
 | `confirmed` | Forward подтвердил frozen rule на заранее заданных критериях | Поддерживать monitoring, rollback и periodic retrain policy |
 
+### Связь verdict-статусов с уровнями исследования
+
+| Уровень | Verdict-статусы | Разрешено |
+|---|---|---|
+| Поисковый (exploratory) | `reject`, `diagnostic_only`, `research_only` | Генерация гипотез, расслабленные пороги, диагностические прогоны |
+| Проверочный (confirmatory) | `candidate`, `production_candidate`, `confirmed` | Предзарегистрированные пороги, frozen test, замороженный profile/target/transform |
+
+Нельзя задним числом поднять статус поискового результата до кандидата. Переход из поискового уровня в проверочный требует нового плана с заранее зафиксированными условиями (см. [00-research-management.md](00-research-management.md)).
+
 ## Stop conditions
 
 Остановить текущий cycle и не продолжать model sweep, если:

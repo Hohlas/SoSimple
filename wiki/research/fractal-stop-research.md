@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-06-18
-sources: 8
-status: completed
+last_updated: 2026-06-24
+sources: 19
+status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost на текущем табличном представлении не дают устойчиво прибыльный торговый PF; Stage 4.3 уточнил, что провал связан с совместной слабостью breach-ранжирования и fav/TP слоя.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Stage 5.0d закрыл постановку `H6_off05` на текущих профилях. Stage 5.0e показал: меньший Transformer действительно уменьшает признаки переобучения, но не догоняет XGBoost на тех же признаках. Stage 5.0f добавил: H2 (temporal decay) скорее опровергнута — `fixed` последовательно превосходит `rolling`, старые данные не вредят; H1 (слабый сигнал) тоже не подтверждена — некоторые AUC выше 0.68. Природа отрицательного результата не установлена. Без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
 
 ## Хронология
 
@@ -69,6 +69,18 @@ Stage 4.3 не выбирал нового winner и не открывал test.
 
 Цель Stage 4.3 — понять, где теряется PF между oracle-потолком и фактическим Stage 4.2 PF, а не доказать прибыльность новой торговой зоны. Найденные прибыльные зоны имеют только статус `hypothesis_only`.
 
+### Stage 4 deep diagnostics + trailing stop (2026-06-14) — ⚠️ DIAGNOSTIC
+
+Глубокая диагностика Stage 4 на инфраструктуре Stage 4.2 проверила, что слабее: breach-модель, fav-модель или механика выхода.
+
+- Partial Oracle: baseline PF=1.015; perfect_breach PF=6.613; perfect_fav PF=14.720; perfect_both PF=104.879. Fav — большее узкое место, но оба компонента усиливают друг друга.
+- Сканирование параметров показало, что текущие `off=0.5`, `tp_fraction=0.4`, `min_rr=1.0` уже являются локальным оптимумом.
+- Strong fractal, ATR regime, combined H6/H12 breach и quantile fav не улучшили результат.
+- Dynamic TP как идеальный выход дал PF=3.462, то есть основной потолок лежит в механике выхода.
+- Реалистичный `trail_atr_0_2` дал PF=1.655 против baseline 1.015: средний убыток снизился с 0.872 до 0.365 ATR, TIMEOUT исчезли.
+
+Практический вывод Stage 4 deep diagnostics: фиксированный TP/SL не фиксирует благоприятное движение до разворота. Но результат `trail_atr_0_2` ещё диагностический и требует чистого candidate-cycle.
+
 ### Stage 4.4: diagnostic micro-check перед Transformer (2026-06-15) — ⚠️ DIAGNOSTIC
 
 Stage 4.4 не выбирал нового winner и не открывал test. Проверил три гипотезы на фиксированных Stage 4.2 моделях:
@@ -114,6 +126,18 @@ Extended clean cycle: val_select 2019-2022 (4 года), val_eval 2023-2026 (и�
 - `trail_atr_0_2`: val_eval PF=0.897, BS_p05=0.679 — провал на новых данных
 - Breach-модель ≤2016 не обобщается на +7 лет (2023-2026)
 - Permutation test: exit-политика доминирует над breach-сигналом — выбор трейлинга не зависит от качества breach-ранжирования
+
+### Stage 4.7: walk-forward diagnostics (2026-06-15) — ⚠️ DIAGNOSTIC
+
+Stage 4.7 проверил, спасает ли расширение обучения или walk-forward подход провал `trail_atr_0_2` на 2023-2026.
+
+- Expanding Window с темпоральным early stopping воспроизвёл Stage 4.6: train≤2016 → 2023-2026 PF=0.897, BS_p05=0.679, 357 сделок.
+- Добавление поздних данных не спасло: train≤2020 PF=0.917, train≤2022 PF=0.840 на 2023-2026.
+- Anchored и Rolling WFO прибыльны на 2019-2022, но снова проваливаются на 2023-2026: Anchored train≤2022 PF=0.897, Rolling 2013-2022 PF=0.942.
+- Self-val даёт намного больше сделок (1364-1973 против 357), поэтому абсолютные PF не сопоставимы с темпоральным протоколом.
+- XGBoost warm-start не дал преимущества: PF 0.882-0.939 на 2023-2026.
+
+Вывод: проблема Stage 4.6 не в объёме данных. Паттерн совместим с календарным риском и сменой режима после 2022, но причинность не доказана.
 
 ### Stage 5.0: Transformer breach holdout (2026-06-17) — ❌ FAIL
 
@@ -164,6 +188,148 @@ Stage 5.0a не обучал модель. Он проверял final tensors �
 - Новый практический вывод:
   - обсуждать для rerun имеет смысл `corridor_5atr_relative_price_atr_full` и `corridor_10atr_relative_price_atr_full`
   - старые capped corridor-профили больше не нужны как основные кандидаты
+
+### Stage 5.0a A7 distribution audit + transform comparison (2026-06-20/21) — ⚠️ DIAGNOSTIC
+
+Stage 5.0a A7-аудит проверил распределения признаков до обучения: хвосты, сдвиг между годами, padding, corridor bounds и статистику по позициям токенов. Обучение не запускалось.
+
+- Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`.
+- Остался `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14. Это зафиксировано как сдвиг режима, а не подгоняется.
+- Per-position audit нашёл скрытый хвост старого `price_coord_atr` на позиции 99 у `all100_relative_price_*`; signed-log убрал этот хвост.
+- Сравнение способов сжатия на 11 профилях: `current` = 11 WARNING / 0 OK, `asinh` = 0 WARNING / 11 OK, `piecewise_tail` = 0 WARNING / 11 OK.
+- `all100_absolute_price_atr_scaled_time_raw` не имел хвоста `abs>10` даже без `asinh`; `asinh(price/ATR)` дополнительно снизил train max с 6.67 до 3.39.
+- Решение для следующего обучения: использовать `asinh` как основной заранее зафиксированный transform-кандидат; `piecewise_tail` оставить как диагностический контроль.
+
+Практический вывод: абсолютную цену нельзя исключать только потому, что старый `all100_absolute_price_time` кодировал эпоху. Дешёвая проверка `price/ATR` показала, что `all100_absolute_price_atr_scaled_time_asinh` методически чистый и заслуживает отдельной проверки в обучении.
+
+### Stage 5.0b: asinh Transformer rerun (2026-06-21/22) — ⚠️ DIAGNOSTIC
+
+Stage 5.0b выполнил отдельный Transformer-прогон с заранее зафиксированным `asinh`, обязательными проверками перед обучением и сравнением с XGBoost. Holdout 2023-2026 использовался только для раскрытия результата. Торговый winner не объявлялся.
+
+Sell target `sell_stop_broken_H6_off05_flag`:
+
+- Лучший основной Transformer `all100_relative_price_time`: val AUC=0.6719, val lift_30=0.5044, holdout AUC=0.6373, holdout lift_30=0.6468.
+- XGBoost `base_raw_plus_time`: val AUC=0.6631, val lift_30=0.5539.
+- AUC-порог для продолжения был 0.6731; разрыв 0.0012 мал и не считается устойчивым сигналом в single-seed режиме.
+- `all100_absolute_price_atr_scaled_time_asinh` как проверочный профиль был близко к лидеру: sell val AUC=0.6673.
+
+Buy target `buy_stop_broken_H6_off05_flag`:
+
+- Первоначально buy-цели выглядели пустыми из-за бага загрузчика: Stage 5 всегда фильтровал строки по `sell_stop_broken_H6_off05_flag`.
+- После исправления загрузки фильтр идёт по выбранной цели; buy-цель непустая: train rows=22745, positive_rate=0.3701, OHLC verification `PASS 50/50`.
+- Buy-прогон был диагностическим: все 9 профилей рассмотрены как основные только для сравнения, автоматические пороги отключены.
+- Лучший Transformer `all100_relative_price_time`: val AUC=0.6762, holdout AUC=0.6462.
+- Лучший XGBoost `base_raw_plus_time`: val AUC=0.6894, holdout AUC=0.6552.
+- Если применить sell-логику AUC-порога, buy-порог был бы 0.6994; разрыв лучшего Transformer = 0.0232.
+- `all100_absolute_price_atr_scaled_time_asinh` снова рядом с лидером: buy val AUC=0.6752 против лидера 0.6762.
+
+Общий вывод Stage 5.0b: Transformer не превзошёл XGBoost по AUC ни на sell, ни на buy. В нижней зоне риска (`lift_30`, меньше лучше) Transformer иногда лучше на `val_stop`, но перенос в holdout слабее: sell `0.5044 -> 0.6468`, buy `0.5112 -> 0.6217`. Следующий разумный шаг — не расширять сетку профилей, а оформить отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с теми же строками для XGBoost и Transformer.
+
+### Stage 5.0c: cross-target replication rerun (2026-06-22) — ❌ FAIL
+
+Stage 5.0c — проверочный этап, повторная проверка гипотезы 5.0b. Один профиль `all100_absolute_price_atr_scaled_time_asinh`, две цели sell+buy, 5 seeds, XGBoost на тех же flattened признаках, 4 решающих заранее зафиксированных порога + `holdout_check` как предупреждение. Holdout не входил в решение.
+
+Sell (`sell_stop_broken_H6_off05_flag`):
+- Transformer median val AUC: 0.6643 (seeds: 0.6619–0.6673)
+- XGBoost same-profile val AUC: 0.6723
+- G1 AUC: FAIL — 0 из 5 seeds выше порога (xgb−0.005)
+- G2 lift_30: FAIL — transformer 0.5570 vs xgb 0.5229 (меньше=лучше)
+- G5 seed spread: PASS — 0.0054 (<0.03)
+- Holdout check: OK — drop 0.024 (<0.05)
+
+Buy (`buy_stop_broken_H6_off05_flag`):
+- Transformer median val AUC: 0.6752 (seeds: 0.6704–0.6808)
+- XGBoost same-profile val AUC: 0.6873
+- G1 AUC: FAIL — 0 seeds выше порога
+- G2 lift_30: FAIL — transformer 0.5423 vs xgb 0.5147
+- G5 seed spread: PASS — 0.0104 (<0.03)
+- Holdout check: OK — drop 0.028 (<0.05)
+
+**overall_pass: FAIL.** Transformer систематически уступает XGBoost на одних и тех же признаках. Seed 42 результаты идентичны 5.0b (sell 0.6673, buy 0.6752) — воспроизводимость single-seed подтверждена. Seed spread узкий — результат стабилен, но стабильно слаб.
+
+Transformer показывает классическое переобучение: seed 42 sell, val AUC достигает 0.6673 на epoch 9, затем падает до 0.6445 на epoch 17 при продолжающемся падении train loss. На 25k строках Transformer систематически переобучается.
+
+Вывод: гипотеза 5.0b не воспроизвелась. Причины неудачи могут быть в признаках (слабый сигнал), в модели (переобучение), или в обоих. Текущий эксперимент не различает эти причины. Следующий шаг — диагностический скрининг (Stage 5.0d): XGBoost + Logistic на всех 9 профилях, без Transformer, с абляцией групп признаков.
+
+### Stage 5.0d: диагностический скрининг профилей (2026-06-23) — ⚠️ h6_off05_target_exhausted
+
+Stage 5.0d — поисковый скрининг: XGBoost (3 seeds) + Logistic Regression на всех 9 профилях из 5.0b × sell + buy, без Transformer. Абляция групп признаков (price / structure / ATR / time) для лучшего профиля по каждой цели.
+
+**Sell (base val AUC = 0.6631):**
+- Лучший: `all100_relative_price_time` delta +0.0111 (lift_pass OK, AUC_pass FAIL — порог 0.02)
+- Все остальные дельты ≤ +0.0092 или отрицательные
+- `nearest40_relative_price_no_time` AUC 0.5238 — практически случайно
+
+**Buy (base val AUC = 0.6894):**
+- Все 9 дельт ≤ −0.0006 — ни один профиль не превосходит base
+
+**Абляция (лучший профиль по каждой цели):**
+- `no_structure` обрушивает AUC: sell 0.674→0.534 (−0.14), buy 0.687→0.500 (−0.19) — структурные признаки (`direction`…`impulse`) главный носитель сигнала
+- `no_price`, `no_atr` delta < 0.005 — ценовые и ATR-признаки почти не влияют
+- `no_time` delta −0.04…−0.05 — время умеренно значимо
+
+**XGBoost >> Logistic** (gap 0.04–0.05) — сигнал нелинейный, но слабый.
+
+**Вердикт: `h6_off05_target_exhausted`** — ни один профиль не достиг порога +0.02 AUC над base на val 2021-2022.
+
+**Ключевая оговорка:** вердикт основан на сравнении профилей на val 2021-2022. Базовая модель деградирует на holdout по годам (sell 2023=0.676 → 2026=0.556; buy 2023=0.695 → 2025=0.609), что согласуется с Stage 5.0 и Stage 4.7. Природа отрицательного результата не установлена: (H1) сигнал слабый/отсутствует, или (H2) сигнал затухает во времени. Stage 5.0f (диагностика стационарности) нужен для разделения этих гипотез перед сменой target или закрытием Fractal Stop.
+
+### Stage 5.0e: проверка переобучения после провала (2026-06-23) — ⚠️ DIAGNOSTIC_ONLY
+
+Stage 5.0e — узкая посмертная проверка внутри уже закрытой ветки `H6_off05`. Один профиль `all100_relative_price_time`, одна цель `sell_stop_broken_H6_off05_flag`, 2 конфигурации Transformer × 3 seeds. Цель — проверить, объясняет ли слишком большая модель часть провала 5.0c.
+
+**XGBoost на тех же признаках:**
+- XGBoost: val AUC `0.6742`, val lift_30 `0.5260`
+
+**Transformer `current`:**
+- median val AUC `0.6685`
+- median lift_30 `0.5260`
+- median overfit_drop_after_best `0.0170`
+
+**Transformer `small_regularized`:**
+- median val AUC `0.6657`
+- median lift_30 `0.5663`
+- median overfit_drop_after_best `0.0009`
+- seed spread `0.0022`
+
+**Вывод Stage 5.0e:**
+- `overfit_hypothesis_supported = yes`
+- `transformer_reopens_h6_off05 = no`
+
+Меньшая модель почти убирает просадку `val_auc` после лучшей эпохи, но не улучшает итоговое качество относительно XGBoost. Ни один seed Transformer не прошёл сравнение с XGBoost на тех же признаках одновременно по `val_auc` и `val_lift_30`. Значит, переобучение было реальным, но не главным объяснением слабого результата Transformer.
+
+### Stage 5.0f: диагностика устойчивости сигнала во времени (2026-06-24) — ⚠️ DIAGNOSTIC_ONLY
+
+Stage 5.0f не открывал нового кандидата и не переоткрывал `H6_off05`. Он проверял, достаточно ли данных, чтобы честно сказать: сигнал распадается во времени (H2), или картина сложнее.
+
+Протокол:
+
+- 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
+- 4 набора признаков: `base_raw_plus_time`, `structure_only`, `time_only`, `all100_relative_price_time`
+- 3 схемы годовых окон:
+  - `rolling`: 8-летнее окно разработки = 7 лет `train_core` + 1 год `val_stop`
+  - `fixed`: фиксированная база `2004..2019` + `val_stop=2020`
+  - `anchored`: нарастающее окно от 2004 до `test_year-2`
+- 3 seed
+- всего `456` прогонов XGBoost
+- decision years: `2023-2025`; `2026` — low_n disclosure (sell `n=316`, buy `n=293`)
+
+Результаты:
+
+- Для обеих целей `rolling` не дал ни одного решающего года, где его нижняя граница качества была бы выше верхней границы `fixed`. Более того, `fixed` последовательно численно превосходил `rolling` (sell 6/6 лет, buy 4/6 лет), что скорее противоречит H2 (temporal decay), чем поддерживает её.
+- `time_only` деградирует сильнее фрактальных профилей при переходе от fixed к rolling (decision-флаг `False`); по абсолютному AUC стабильно ниже `structure_only` (sell +0.036…+0.071, buy +0.017…+0.050). Гипотеза "всё объясняется только календарём" не подтверждена.
+- `structure_only` (фрактальные поля + clock, без price/ATR) остался близок к `base_raw_plus_time`; в 12 из 18 сравнений ≥ базы. Сигнал не сводится к одному `time_only`, но `structure_only` не является "чистой структурой без времени" — он сохраняет hour/dow.
+- По buy виден монотонный нисходящий рисунок в `anchored` на 2023-2025, но Spearman на n=3 статистически неинформативен (`p=0.0` — артефакт t-аппроксимации scipy при `rho=±1.0`, истинный p≈0.33). На 7 точках (2019-2025) тренд исчезает для обеих целей.
+- `all100_relative_price_time` стабильно рядом с базой (±0.01-0.02), подтверждает вывод 5.0d.
+- Снижение anchored AUC конфаундировано: может объясняться как temporal decay, так и объективной сложностью test-лет. Поскольку `fixed` > `rolling`, второе объяснение более вероятно. Перекрёстная ссылка: Stage 4.7 также нашёл PF<1.0 на 2023-2026.
+
+Итог Stage 5.0f:
+
+- не доказан распад сигнала, который лечится более близким по времени обучением (H2 скорее опровергнута направлением fixed>rolling);
+- не доказана и устойчивость сигнала;
+- вердикт `temporal_decay` был структурно невозможен (требует `rho > 0`, обе цели имеют `rho ≤ 0`);
+- природа отрицательного результата (H1 vs H2) остаётся неустановленной;
+- без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
 
 ## Ключевые результаты
 
@@ -418,22 +584,42 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 13. Stage 4.3 показал, что fav/TP слой и breach-ранжирование ломают систему вместе. Прямые отрицательные категории сопоставимы: breach false-safe около -383.8 ATR, fav false-accept около -410.4 ATR. При этом `pred_fav` слабо коррелирует с истинным fav, а высокий `pred_fav/stop_val` ухудшает PF.
 14. Низкий фактический RR (median около 0.5R) объясняет, почему стратегия требует высокий win rate и остаётся около PF=1.0 даже при реальном breach-сигнале.
 15. Stage 4.5 показал, что trail_atr_0_2 как exit-политика даёт PF=1.831 на diagnostic — лучший результат Fractal Stop. Но Stage 4.6 чистый candidate-cycle показал, что этот результат не обобщается на 2023-2026.
-16. Stage 5.0 полноразмерный Transformer (d_model=64, 40 эпох) не бьёт XGBoost на holdout 2023-2026: AUC 0.6018 vs 0.6524, lift_30 0.766 vs 0.620 (меньше = лучше). **Методический risk:** признаки не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации.
-17. Stage 5.0a показал, что повторный прогон Transformer ещё имеет смысл, но только на суженной матрице профилей: clean-controls, `all100_no_price_time`, `all100_relative_price_*`, `nearest40_relative_price_*`. Абсолютную цену как основной вход и широкие corridor-профили использовать нельзя.
-18. **5 последовательных этапов Fractal Stop провалились как торговые кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в текущей sequence-реализации.
+16. Stage 4.7 показал, что расширение обучения до 2022, rolling/anchored walk-forward и warm-start не спасают 2023-2026. Проблема не в объёме данных.
+17. Stage 5.0 полноразмерный Transformer (d_model=64, 40 эпох) не бьёт XGBoost на holdout 2023-2026: AUC 0.6018 vs 0.6524, lift_30 0.766 vs 0.620 (меньше = лучше). **Методический risk:** признаки не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации.
+18. Stage 5.0a показал, что повторный прогон Transformer ещё имеет смысл, но только после проверки распределений признаков по A7, без динамического выбора профилей по holdout.
+19. Stage 5.0a A7-аудит изменил вывод по абсолютной цене: raw absolute price кодировал эпоху, но `price/ATR` и `asinh(price/ATR)` методически чисты и не имеют длинных хвостов после нормализации.
+20. Stage 5.0b показал, что Transformer с `asinh` не превзошёл XGBoost по AUC ни на sell, ни на buy. Buy-цель оказалась жизнеспособной после исправления загрузки, но buy-прогон был диагностическим.
+21. `all100_absolute_price_atr_scaled_time_asinh` повторно оказался рядом с лидером на sell и buy; это главный кандидат для следующего заранее зафиксированного диагностического прогона, но не winner Stage 5.0b.
+22. **Stage 5.0c: гипотеза 5.0b не воспроизвелась.** Transformer на одних и тех же признаках систематически уступает XGBoost по AUC и lift_30 на обеих целях. 0 из 5 seeds выше порога. Seed spread узкий (0.005–0.010) — результат стабилен, но стабильно слаб.
+23. **Transformer переобучается на 25k строках:** val AUC падает после epoch 9 (0.6673 → 0.6445 на seed 42 sell). Причины неудачи не различены: слабый сигнал в признаках, переобучение модели, или обе.
+24. **XGBoost same-profile добавляет ~0.009 AUC на sell** (0.6723 vs base 0.6631), но не на buy (0.6873 vs base 0.6894). Профиль помогает только на sell — и то в пределах шума.
+25. **6 последовательных этапов Fractal Stop провалились как торговые или модельные кандидаты.** Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-реализации.
+26. **Stage 5.0d: скрининг всех 9 профилей.** XGBoost (3 seeds) + Logistic Regression на всех профилях 5.0b × sell + buy. **Ни один профиль не достиг порога +0.02 AUC** над `base_raw_plus_time` на val 2021-2022. Лучший: sell `all100_relative_price_time` (delta +0.0111, lift_pass OK). Buy: все дельты ≤ 0. Абляция: structure-признаки критичны (AUC −0.14/−0.19 при удалении), price/ATR почти не влияют. XGBoost >> Logistic (gap 0.04–0.05) — сигнал нелинейный, но слабый. Вердикт `h6_off05_target_exhausted` — разные способы кодирования фракталов (relative price, absolute price/ATR, corridor, nearest40) не превосходят стандартное base-кодирование. Базовый профиль сам содержит 9 структурных фрактальных признаков — вывод относится к способам кодирования, не к отсутствию фрактального сигнала.
 
-**Все этапы (Stage 2→5.0) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал улучшения.
+27. **Сигнал базовой модели деградирует на holdout по годам.** `base_raw_plus_time` yearly AUC: sell 2023=0.676 → 2026=0.556; buy 2023=0.695 → 2025=0.609. Согласуется с Stage 5.0 (0.646→0.514) и Stage 4.7 walk-forward (PF<1.0 на 2023-2026 во всех режимах). Вердикт 5.0d основан на val 2021-2022; темпоральная нестационарность не проверялась и не учитывается в вердикте.
+
+28. **Природа отрицательного результата не установлена.** Вердикт `h6_off05_target_exhausted` не различает: (H1) сигнал слабый/отсутствует, или (H2) сигнал затухает во времени и сравнение на одном val-окне локально. Stage 5.0f добавил важное уточнение: H2 скорее опровергнута направлением `fixed` > `rolling` (старые данные не вредят), но H1 тоже не подтверждена (`all_profiles_low_auc = False` — некоторые AUC выше 0.68). Жёсткого вывода не получилось ни в пользу H1, ни в пользу H2.
+
+29. **Stage 5.0e: меньший Transformer уменьшает переобучение, но не меняет решение.** `small_regularized` снизил median `overfit_drop_after_best` с `0.0170` до `0.0009`, но остался хуже XGBoost на тех же признаках по `val_auc` (`0.6657` vs `0.6742`) и по `lift_30` (`0.5663` vs `0.5260`, меньше лучше). Значит, переобучение — часть проблемы, но не её корень.
+
+30. **Ветка `H6_off05` закрыта не только как поисковая, но и как гипотеза про размер модели.** После 5.0e нет оснований продолжать настройку Transformer на той же цели и том же профиле. Следующий осмысленный шаг — новая цель, новые признаки или объяснение, почему табличное представление лучше последовательной модели на тех же данных.
+31. **Stage 5.0f: H2 скорее опровергнута, H1 не подтверждена, итог неопределённый.** `fixed` последовательно численно превосходил `rolling` (sell 6/6, buy 4/6 лет) — старые данные не вредят, что противоречит temporal decay (H2). `time_only` деградирует сильнее фракталов и ниже по AUC (structure − time_only: sell +0.036…+0.071, buy +0.017…+0.050) — календарь не объясняет всё. `structure_only` (фракталы + clock, без price/ATR) в 12/18 ≥ базы. Spearman на n=3 неинформативен (`p=0.0` для buy — артефакт, истинный p≈0.33); на 7 точках тренд исчезает. Вердикт `temporal_decay` был структурно невозможен (требует `rho > 0`). Без нового периода `2026+` большой перебор по `H6_off05` не оправдан.
+
+**Все этапы (Stage 2→5.0f) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал устойчивого улучшения, а диагностика устойчивости сигнала во времени не дала жёсткого решения. Ветка `H6_off05` остаётся в диагностическом неопределённом статусе.
 
 ## Открытые вопросы
 
-- Может ли Transformer улучшить breach-классификатор после Stage 5.0a rerun на `relative_price`/`nearest40` профилях, без абсолютной цены и с clean-controls.
-- Что делать с corridor-профилями: увеличивать `seq_len`, сужать коридор или оставить corridor только как диагностику.
+- ~~Проверить `all100_absolute_price_atr_scaled_time_asinh` как заранее выбранный основной профиль в отдельном Stage 5.0c-прогоне по sell и buy~~ — Stage 5.0c завершён: FAIL.
+- ~~Какие фрактальные профили и группы признаков вообще несут сигнал сверх raw features — Stage 5.0d~~ — Stage 5.0d завершён: h6_off05_target_exhausted. Разные кодирования не превосходят base; structure-признаки критичны, price/ATR не влияют.
+- ~~Был ли провал Transformer в 5.0c просто следствием слишком большой модели?~~ — Stage 5.0e завершён: частично да, переобучение было, но это не меняет итогового проигрыша XGBoost.
+- **Нужен ли отдельный подтверждающий цикл на новом периоде `2026+`?** Stage 5.0f не дал жёсткого ответа, но сжёг `2023-2025` для диагностического решения. H2 скорее опровергнута (fixed > rolling), H1 не подтверждена (AUC не uniformly слабый). Без нового периода большой перебор по `H6_off05` не оправдан; максимум — узкий разбор структурных групп как диагностика без статуса кандидата.
+- **Противоречие с Stage 5.0-prep:** prep показывал `time_only` AUC=0.6286 > `no_time` AUC=0.6113. В 5.0d `no_structure` (price+ATR+time, без 9 структурных) = 0.534 — ниже `time_only` на 0.094. Причина не разобрана: разные transforms (asinh vs current), или price-токены шумят.
+- Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
 - Работает ли выбор стороны/режима лучше, чем изолированные BUY/SELL и combined H6/H12.
-- ~~Даст ли trailing stop положительное матожидание при том же breach-сигнале~~ — Stage 4.5/4.6 проверили: trail_atr_0_2 показывает высокий diagnostic PF, но не обобщается на 2023-2026.
 - Помогут ли новые признаки (спред, волатильность, корреляции) улучшить fav-регрессию.
 - Работает ли концепт на других активах или таймфреймах.
-- Стоит ли закрыть Fractal Stop ветку и вернуться к основному направлению (regression_updn, triple barrier).
+- Стоит ли окончательно закрыть Fractal Stop ветку и вернуться к основному направлению (regression_updn, triple barrier), или всё же проводить ещё один подтверждающий цикл на новом периоде.
 
 ## Источники
 
@@ -442,7 +628,17 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-06-10-feature-profiles-stage3.md](../../docs/reports/2026-06-10-feature-profiles-stage3.md) — Stage 3.x report (feature profiles, Stage 3.1 ablation, Stage 3.2 XGBoost)
 - [2026-06-11-stage4-trade-xgboost.md](../../docs/reports/2026-06-11-stage4-trade-xgboost.md) — Stage 4/4.1/4.2 report (XGBoost breach + RF fav trading layer, controls, diagnostic corrected recalc, FAIL verdict)
 - [2026-06-15-stage4_3-diagnostics.md](../../docs/reports/2026-06-15-stage4_3-diagnostics.md) — Stage 4.3 diagnostic report (post-mortem loss attribution, fav/breach diagnostics, oracle-deviation regimes)
+- [2026-06-14-stage4-deep-diagnostics.md](../../docs/reports/2026-06-14-stage4-deep-diagnostics.md) — Stage 4 deep diagnostics: Partial Oracle, improvement scans, trailing stop
+- [2026-06-15-stage4_4-micro-check.md](../../docs/reports/2026-06-15-stage4_4-micro-check.md) — Stage 4.4 micro-check before Transformer: fixed TP, breach-only, fav-filter isolation
+- [2026-06-15-stage5-prep-diagnostics.md](../../docs/reports/2026-06-15-stage5-prep-diagnostics.md) — Stage 5.0-prep: feature ablation, calendar risk, AUC→PF sensitivity
 - [2026-06-15-stage4_5-exit-mechanics.md](../../docs/reports/2026-06-15-stage4_5-exit-mechanics.md) — Stage 4.5 exit mechanics (trailing/breakeven/partial)
 - [2026-06-15-stage4_6-clean-candidate-cycle.md](../../docs/reports/2026-06-15-stage4_6-clean-candidate-cycle.md) — Stage 4.6 clean candidate-cycle (val_select 2019-2022, val_eval 2023-2026)
+- [2026-06-15-walk-forward-diagnostics.md](../../docs/reports/2026-06-15-walk-forward-diagnostics.md) — Stage 4.7 walk-forward diagnostics: expanding/anchored/rolling/warm-start
 - [2026-06-17-stage5-transformer-breach.md](../../docs/reports/2026-06-17-stage5-transformer-breach.md) — Stage 5.0 Transformer holdout (5 профилей, FAIL verdict)
 - [2026-06-18-stage5_0a-feature-preflight.md](../../docs/reports/2026-06-18-stage5_0a-feature-preflight.md) — Stage 5.0a preflight (contracts, normalization audit, relative-price vs absolute-price, corridor truncation)
+- [2026-06-20-stage5_0a-feature-distribution-audit.md](../../docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md) — Stage 5.0a A7-аудит распределения признаков, `asinh`/`piecewise_tail`, `price/ATR`
+- [2026-06-21-stage5_0b-asinh-rerun.md](../../docs/reports/2026-06-21-stage5_0b-asinh-rerun.md) — Stage 5.0b asinh Transformer rerun, sell/buy, XGBoost comparison, buy loader fix
+- [2026-06-22-stage5_0c-cross-target-rerun.md](../../docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md) — Stage 5.0c multi-seed replication test, FAIL verdict, Transformer переобучение
+- [2026-06-23-stage5_0d-diagnostic-screening.md](../../docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md) — Stage 5.0d XGBoost + Logistic скрининг 9 профилей, абляция групп, вердикт: h6_off05_target_exhausted
+- [2026-06-23-stage5_0e-small-transformer-check.md](../../docs/reports/2026-06-23-stage5_0e-small-transformer-check.md) — Stage 5.0e: малый Transformer уменьшает признаки переобучения, но не открывает ветку заново
+- [2026-06-24-stage5_0f-signal-stationarity.md](../../docs/reports/2026-06-24-stage5_0f-signal-stationarity.md) — Stage 5.0f: диагностика устойчивости сигнала во времени, итог неопределённый
