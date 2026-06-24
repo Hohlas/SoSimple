@@ -327,7 +327,7 @@ def test_build_stage5_1b_features_shapes_and_log_shift():
 
     assert X_clock.shape == (6, 104)
     assert X_structure.shape == (6, 1004)
-    assert X_updn.shape == (6, 1004)
+    assert X_updn.shape == (6, 1104)
     assert X_combined.shape == (6, 2004)
     assert X_combo.shape == (6, 304)
     assert X_drop.shape == (6, 904)
@@ -434,6 +434,7 @@ def build_stage5_1b_features(df: pd.DataFrame, profile_key: str,
     mask = np.zeros((n_samples, seq_len), dtype=bool)
 
     for sample_idx in range(n_samples):
+        raw_features = np.zeros((N_FRACTALS, token_dim), dtype=np.float32)
         valid_count = 0
         for f_idx in range(N_FRACTALS):
             col = f"fractal{f_idx}"
@@ -446,10 +447,12 @@ def build_stage5_1b_features(df: pd.DataFrame, profile_key: str,
             values = np.asarray([fields[name] for name in token_fields], dtype=np.float32)
             if not np.any(values != 0):
                 continue
-            if valid_count < seq_len:
-                tokens[sample_idx, valid_count, :] = values
-                mask[sample_idx, valid_count] = True
+            raw_features[valid_count, :] = values
             valid_count += 1
+        if valid_count:
+            selected_idx, selected_mask = TokenSelector.all_fractals(valid_count, seq_len)
+            tokens[sample_idx, selected_mask, :] = raw_features[selected_idx[selected_mask]]
+            mask[sample_idx, :] = selected_mask
 
     row_features = build_row_features(df, profile, transform_variant="asinh", transform_params={})
     flat_tokens = tokens.reshape(n_samples, seq_len * token_dim)
@@ -788,6 +791,7 @@ def test_evaluate_stage5_1b_profile_seed_returns_metrics_and_predictions(monkeyp
 
     monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
     monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
     monkeypatch.setattr(runner, "STAGE5_1B_BOOTSTRAP_N", 20)
 
     result = runner.evaluate_stage5_1b_profile_seed(
@@ -973,6 +977,23 @@ def test_stage5_1b_field_verdicts_require_both_targets_for_overall_useful():
     sell = "sell_stop_broken_H6_off05_flag"
     buy = "buy_stop_broken_H6_off05_flag"
     target_summary = {
+        "add_back": {
+            "delta_vs_clock_shift": {
+                "val_stop": {"delta_median": 0.03},
+                "diagnostic_holdout": {"delta_median": 0.01},
+            },
+        },
+        "structure_full": {
+            "yearly_val": {
+                "2021": {"auc_median": 0.62},
+                "2022": {"auc_median": 0.63},
+            },
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.63},
+                "2024": {"auc_median": 0.62},
+                "2025": {"auc_median": 0.63},
+            },
+        },
         "drop_back": {
             "delta_vs_structure_full": {
                 "val_stop": {
@@ -983,11 +1004,14 @@ def test_stage5_1b_field_verdicts_require_both_targets_for_overall_useful():
                     "positive_seed_count": 0,
                 },
             },
-        },
-        "add_back": {
-            "delta_vs_clock_shift": {
-                "val_stop": {"delta_median": 0.03},
-                "diagnostic_holdout": {"delta_median": 0.01},
+            "yearly_val": {
+                "2021": {"auc_median": 0.60},
+                "2022": {"auc_median": 0.61},
+            },
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.60},
+                "2024": {"auc_median": 0.61},
+                "2025": {"auc_median": 0.62},
             },
         },
     }
@@ -997,6 +1021,8 @@ def test_stage5_1b_field_verdicts_require_both_targets_for_overall_useful():
 
     assert verdicts["back"]["targets"][sell]["verdict"] == "target_likely_useful"
     assert verdicts["back"]["overall_verdict"] == "overall_likely_useful"
+    assert verdicts["back"]["targets"][sell]["yearly_val_drop_signs_2021_2022"] == [-1, -1]
+    assert verdicts["back"]["targets"][sell]["yearly_drop_signs_2023_2025"] == [-1, -1, -1]
 
     report["summary"][buy]["drop_back"]["delta_vs_structure_full"]["val_stop"]["delta_median"] = 0.0
     report["summary"][buy]["drop_back"]["delta_vs_structure_full"]["val_stop"]["negative_seed_count"] = 1
@@ -1020,7 +1046,29 @@ def test_stage5_1b_group_analysis_reports_direction_horizon_and_group_deltas():
         summary[f"drop_{field}"] = {
             "delta_vs_updn_full": {"val_stop": {"delta_median": -0.005}}
         }
-    report = {"summary": {target: summary}}
+    report = {
+        "summary": {target: summary},
+        "preflight": {
+            target: {
+                "maturity": {
+                    "train_core": {
+                        "3": {"mature_share": 0.99, "non_mature_share": 0.01},
+                        "6": {"mature_share": 0.97, "non_mature_share": 0.03},
+                        "12": {"mature_share": 0.90, "non_mature_share": 0.10},
+                        "24": {"mature_share": 0.80, "non_mature_share": 0.20},
+                        "48": {"mature_share": 0.60, "non_mature_share": 0.40},
+                    },
+                    "val_stop": {
+                        "3": {"mature_share": 0.98, "non_mature_share": 0.02},
+                        "6": {"mature_share": 0.96, "non_mature_share": 0.04},
+                        "12": {"mature_share": 0.88, "non_mature_share": 0.12},
+                        "24": {"mature_share": 0.76, "non_mature_share": 0.24},
+                        "48": {"mature_share": 0.55, "non_mature_share": 0.45},
+                    },
+                }
+            }
+        },
+    }
 
     analysis = runner.stage5_1b_group_analysis(report)
 
@@ -1029,6 +1077,7 @@ def test_stage5_1b_group_analysis_reports_direction_horizon_and_group_deltas():
     assert "horizon" in analysis[target]
     assert "group_deltas" in analysis[target]
     assert analysis[target]["group_deltas"]["delta_updn_group_val"] == pytest.approx(0.02)
+    assert analysis[target]["horizon"]["48"]["maturity"]["val_stop"]["non_mature_share"] == pytest.approx(0.45)
 ```
 
 - [ ] **Step 6: Run tests and verify they fail**
@@ -1052,6 +1101,35 @@ def _stage5_1b_drop_delta_block(target_summary: dict, field: str) -> dict:
     return drop.get(key, {}).get("val_stop", {})
 
 
+def _stage5_1b_drop_baseline_profile(field: str) -> str:
+    return "structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "updn_full"
+
+
+def _stage5_1b_yearly_drop_signs_for_key(target_summary: dict, field: str,
+                                         yearly_key: str, years: list[str]) -> list[int]:
+    drop = target_summary.get(f"drop_{field}", {})
+    baseline = target_summary.get(_stage5_1b_drop_baseline_profile(field), {})
+    signs = []
+    for year in years:
+        drop_auc = drop.get(yearly_key, {}).get(year, {}).get("auc_median")
+        baseline_auc = baseline.get(yearly_key, {}).get(year, {}).get("auc_median")
+        if drop_auc is None or baseline_auc is None:
+            continue
+        delta = float(drop_auc - baseline_auc)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+    return signs
+
+
+def _stage5_1b_yearly_val_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_val", ["2021", "2022"])
+
+
+def _stage5_1b_yearly_holdout_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_diagnostic_holdout", ["2023", "2024", "2025"])
+
+
 def _stage5_1b_field_target_verdict(target_summary: dict, field: str) -> dict:
     drop_val = _stage5_1b_drop_delta_block(target_summary, field)
     add_val = (
@@ -1060,22 +1138,38 @@ def _stage5_1b_field_target_verdict(target_summary: dict, field: str) -> dict:
         .get("val_stop", {})
         .get("delta_median")
     )
+    add_holdout = (
+        target_summary.get(f"add_{field}", {})
+        .get("delta_vs_clock_shift", {})
+        .get("diagnostic_holdout", {})
+        .get("delta_median")
+    )
     drop_delta = drop_val.get("delta_median")
     drop_ci_low = drop_val.get("delta_ci_low")
     drop_ci_high = drop_val.get("delta_ci_high")
     negative_seed_count = int(drop_val.get("negative_seed_count") or 0)
     positive_seed_count = int(drop_val.get("positive_seed_count") or 0)
+    yearly_val_signs = _stage5_1b_yearly_val_drop_signs(target_summary, field)
+    yearly_holdout_signs = _stage5_1b_yearly_holdout_drop_signs(target_summary, field)
+    yearly_negative = sum(1 for s in yearly_holdout_signs if s < 0)
+    yearly_positive = sum(1 for s in yearly_holdout_signs if s > 0)
 
     useful = (
         drop_delta is not None
         and drop_delta < 0
+        and yearly_negative >= 2
+        and negative_seed_count >= 2
         and ((drop_ci_high is not None and drop_ci_high < 0) or negative_seed_count == 3)
-        and add_val is not None
-        and add_val > 0
+        and (
+            (add_val is not None and add_val > 0)
+            or (add_holdout is not None and add_holdout > 0)
+        )
     )
     noise = (
         drop_delta is not None
         and drop_delta > 0
+        and yearly_positive >= 2
+        and positive_seed_count >= 2
         and ((drop_ci_low is not None and drop_ci_low > 0) or positive_seed_count == 3)
         and add_val is not None
         and add_val <= 0
@@ -1093,7 +1187,10 @@ def _stage5_1b_field_target_verdict(target_summary: dict, field: str) -> dict:
         "drop_val_delta_ci_high": drop_ci_high,
         "drop_val_negative_seed_count": negative_seed_count,
         "drop_val_positive_seed_count": positive_seed_count,
+        "yearly_val_drop_signs_2021_2022": yearly_val_signs,
+        "yearly_drop_signs_2023_2025": yearly_holdout_signs,
         "add_val_delta_median": add_val,
+        "add_holdout_delta_median": add_holdout,
     }
 
 
@@ -1136,6 +1233,15 @@ def _stage5_1b_median(values: list[float | None]) -> float | None:
     return float(np.median(clean)) if clean else None
 
 
+def _stage5_1b_horizon_maturity(report: dict, target: str, horizon: str) -> dict:
+    maturity = report.get("preflight", {}).get(target, {}).get("maturity", {})
+    out = {}
+    for split_name in ["train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure"]:
+        if horizon in maturity.get(split_name, {}):
+            out[split_name] = maturity[split_name][horizon]
+    return out
+
+
 def stage5_1b_group_analysis(report: dict) -> dict:
     out = {}
     horizons = {
@@ -1169,6 +1275,7 @@ def stage5_1b_group_analysis(report: dict) -> dict:
                     summary.get(f"drop_{field}", {}).get("delta_vs_updn_full", {}).get("val_stop", {}).get("delta_median")
                     for field in fields
                 ]),
+                "maturity": _stage5_1b_horizon_maturity(report, target, h),
             }
         out[target] = {
             "direction": direction,
@@ -1178,7 +1285,7 @@ def stage5_1b_group_analysis(report: dict) -> dict:
                 "delta_structure_group_val": summary.get("structure_full", {}).get("delta_structure_group", {}).get("val_stop", {}).get("delta_median"),
                 "delta_combined_val": summary.get("structure_plus_updn", {}).get("delta_combined", {}).get("val_stop", {}).get("delta_median"),
             },
-            "maturity_aware_note": "Use preflight maturity shares to interpret horizon 12/24/48 effects; no subgroup retraining is performed in Stage 5.1b.",
+            "maturity_aware_note": "Horizon blocks include preflight mature/non-mature shares; no extra subgroup retraining is performed in Stage 5.1b.",
         }
     return out
 ```
@@ -1251,7 +1358,8 @@ def test_stage5_1b_runner_writes_json_and_stops_after_preflight_failure(monkeypa
         output_path=tmp_path / "stage5_1b.json",
     )
 
-    assert report["stage"] == "5.1b_updn_field_ablation"
+    assert report["stage"] == "5.1b"
+    assert report["experiment"] == "updn_field_ablation"
     assert report["status"] == "PREFLIGHT_FAILED"
     assert called["train"] is False
     assert (tmp_path / "stage5_1b.json").exists()
@@ -1263,6 +1371,7 @@ def test_stage5_1b_runner_writes_diagnostic_json(monkeypatch, tmp_path):
     df = _make_stage5_0f_year_df()
     monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", ["clock_shift", "structure_full", "updn_full"])
     monkeypatch.setattr(runner, "STAGE5_1B_SEEDS", [42])
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
     monkeypatch.setattr(runner, "STAGE5_1B_BOOTSTRAP_N", 20)
 
     class DummyDMatrix:
@@ -1285,7 +1394,8 @@ def test_stage5_1b_runner_writes_diagnostic_json(monkeypatch, tmp_path):
         output_path=tmp_path / "stage5_1b.json",
     )
 
-    assert report["stage"] == "5.1b_updn_field_ablation"
+    assert report["stage"] == "5.1b"
+    assert report["experiment"] == "updn_field_ablation"
     assert report["status"] == "DIAGNOSTIC_ONLY"
     assert report["baseline"] == "clock + shift (log1p)"
     assert report["profiles"] == ["clock_shift", "structure_full", "updn_full"]
@@ -1327,7 +1437,8 @@ def run_stage5_1b_updn_field_ablation(target_splits: dict,
     started_at = time.time()
     total_runs = len(STAGE5_1B_TARGETS) * len(STAGE5_1B_PROFILE_KEYS) * len(STAGE5_1B_SEEDS)
     report = {
-        "stage": "5.1b_updn_field_ablation",
+        "stage": "5.1b",
+        "experiment": "updn_field_ablation",
         "status": "RUNNING",
         "level": "exploratory",
         "verdict_scope": "DIAGNOSTIC_ONLY",
@@ -1605,7 +1716,7 @@ PY
 Expected after successful full run:
 
 ```text
-{'status': 'DIAGNOSTIC_ONLY', 'stage': '5.1b_updn_field_ablation', 'raw_runs': 258, 'profiles': 43, 'fields': 19, 'done_runs': 258}
+{'status': 'DIAGNOSTIC_ONLY', 'stage': '5.1b', 'raw_runs': 258, 'profiles': 43, 'fields': 19, 'done_runs': 258}
 ```
 
 If status is `PREFLIGHT_FAILED`, stop and write a short failure note instead of forcing training.
@@ -1640,8 +1751,8 @@ git commit -m "data: add stage5.1b updn ablation results"
 Read:
 
 ```bash
-sed -n '1,260p' .claude/skills/my/stage-reporting/SKILL.md
-sed -n '1,220p' .claude/skills/my/wiki/SKILL.md
+sed -n '1,260p' .opencode/skills/my/stage-reporting/SKILL.md
+sed -n '1,220p' .opencode/skills/my/wiki/SKILL.md
 ```
 
 Expected: instructions loaded before docs/wiki edits.
@@ -1736,6 +1847,9 @@ git commit -m "docs: report stage5.1b updn ablation"
 - [ ] Add-one fields compare to `clock_shift`.
 - [ ] Full drop-one from `structure_plus_updn` is not implemented.
 - [ ] `field_verdicts` require both targets to agree for `overall_likely_useful` or `overall_likely_noise`.
+- [ ] `field_verdicts` include yearly drop signs for 2021-2022 and 2023-2025.
+- [ ] `target_likely_useful/noise` require yearly holdout sign consistency and at least 2 agreeing seeds.
+- [ ] `group_analysis.horizon` includes mature/non-mature shares from preflight for every Up/Dn horizon.
 - [ ] The full run stops if preflight fails.
 - [ ] No code reads top-level `up_3..dn_48` as features.
 - [ ] Full test command `./.venv/bin/python -m pytest tests/ -q` is run after Python changes.
