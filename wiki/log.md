@@ -4,9 +4,9 @@
 
 ## [2026-06-24] ingest | Stage 5.0f: диагностика устойчивости сигнала во времени
 - Добавлен охват `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
-- Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.0f и уточнён статус ветки `H6_off05`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.0f переписан с уточнёнными выводами
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.0f (22 report updates)
-- Зафиксировано: явный распад сигнала во времени не доказан, но и подтверждённой устойчивости нет
+- Зафиксировано: H2 (temporal decay) скорее опровергнута (fixed > rolling), H1 не подтверждена (AUC > 0.68 в некоторых конфигурациях), Spearman на n=3 неинформативен (p=0.0 — артефакт), природа отрицательного результата не установлена, без нового периода `2026+` большой перебор не оправдан
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
 ## [2026-06-23] ingest | Stage 5.0e: малый Transformer после провала
