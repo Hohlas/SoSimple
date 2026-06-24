@@ -4,7 +4,7 @@
 > **Status**: Draft
 > **Level**: поисковый
 > **Verdict scope**: `DIAGNOSTIC_ONLY`
-> **Goal**: Проверить самостоятельный сигнал 10 полей Up/Dn (максимальный отход цены от уровня за горизонты 3-48 баров) и пересчитать абляцию 9 структурных полей против усиленного baseline (`clock + shift`), чтобы исключить риск, что полезность поля артефакт корреляции с возрастом фрактала.
+> **Goal**: Проверить самостоятельный сигнал 10 полей Up/Dn из `fractalN` (максимальный уже накопленный отход цены от уровня за горизонты 3-48 баров) и пересчитать абляцию 9 структурных полей против усиленного baseline (`clock + shift`), чтобы исключить риск, что полезность поля является артефактом возраста фрактала.
 
 ## Мотивация
 
@@ -22,9 +22,25 @@ Stage 5.1 использовал `clock` (hour/dow) как add-zero baseline. Н
 
 ### Live-safe статус новых полей
 
-**Up/Dn.** `LEVELS_FIND_AROUND()` в `lib_PIC.mqh:378-408` обновляет Up/Dn инкрементально на каждом баре: `hmp = H - F[f].P` (текущий High минус цена фрактала), `pml = F[f].P - L`. Накопление идёт от формирования фрактала к текущему бару — только прошлые данные. CSV пишется в `NERO_CSV_CREATE(bar)`. Методология (`03-feature-contract-leakage.md:136-138`) требует доказать, что Up/Dn накоплены producer-ом, а не пересчитаны Python по будущим барам — **доказано**.
+**Up/Dn.** `LEVELS_FIND_AROUND()` в `lib_PIC.mqh:378-408` обновляет Up/Dn инкрементально на каждом баре: `hmp = H - F[f].P` (текущий High минус цена фрактала), `pml = F[f].P - L`. Накопление идёт от формирования фрактала к текущему бару — только прошлые данные. CSV пишется в `NERO_CSV_CREATE(bar)`. Методология (`03-feature-contract-leakage.md:136-138`) требует доказать, что Up/Dn накоплены producer-ом, а не пересчитаны Python по будущим барам. Для Stage 5.1b это должно быть подтверждено отдельным preflight-аудитом, потому что в labeled CSV также существуют одноимённые top-level колонки `up_3..dn_48`, которые являются будущими target-метками и не могут использоваться как признаки.
 
 **shift.** `shift = SHIFT(F[f].T) - cur_bar` (`lib_PIC.mqh:901`) — расстояние от времени формирования фрактала до текущего бара. Вычисляется в `NERO_CSV_CREATE(cur_bar)` до записи строки. **Только прошлые данные, live-safe.**
+
+## Обязательный preflight перед полным прогоном
+
+Полный прогон на 250+ XGBoost-моделей запускать только после дешёвого preflight-аудита на `train_core` и `val_stop`.
+
+Проверки:
+
+1. **Источник Up/Dn.** Признаки должны извлекаться только из строк `fractal0..fractal99`, индексы 11-20 по `docs/schemas/fractal_v24_raw_price.schema.json`. Запрещено читать top-level колонки `up_3`, `dn_3`, ..., `up_48`, `dn_48`, потому что они создаются `label_updn()` как будущие метки текущей строки.
+2. **Контракт фрактала.** Для каждой строки фрактала проверить длину 23 поля, порядок индексов и отсутствие silent-fallback к нулям сверх ожидаемой доли пустых fractal slots.
+3. **Монотонность горизонтов.** Для каждого непустого фрактала проверить `up_3 <= up_6 <= up_12 <= up_24 <= up_48` и аналогично для `dn_*`. Нарушения >0 должны попадать в JSON и отчёт.
+4. **Maturity по горизонту.** Up/Dn за горизонт `H` полностью наблюдаемы только если `shift >= H`. Если `shift < H`, поле содержит частично накопленный путь и неизбежно кодирует возраст фрактала. Поэтому нужно записать доли mature/non-mature по каждому горизонту и цели.
+5. **Shift distribution.** Записать p50/p90/p95/max `shift` по train/val/holdout/2026 и доли `shift >= 3/6/12/24/48`.
+6. **Корреляция Up/Dn с shift.** Для каждого поля записать Spearman/Pearson с `log1p(shift)` на train. Если группа почти полностью объясняется возрастом, это должно ограничить интерпретацию `add_*`.
+7. **Единицы измерения.** Up/Dn в raw price units. Записать распределения `updn/ATR` как sanity disclosure, но не добавлять ATR как feature в основной Stage 5.1b, чтобы не расширять эксперимент.
+
+Если preflight показывает, что Up/Dn фактически читаются из target-колонок, нарушают контракт или имеют массовые нарушения монотонности, Stage 5.1b останавливается без полного обучения.
 
 ## Проверяемые поля
 
@@ -75,20 +91,23 @@ Stage 5.1 использовал `clock` (hour/dow) как add-zero baseline. Н
 
 **Baselines:**
 
-1. `time_only`: `clock + shift` (token: `[shift]`, row: `[hour_sin, hour_cos, dow_sin, dow_cos]`).
+1. `clock_shift`: `clock + shift` (token: `[shift]`, row: `[hour_sin, hour_cos, dow_sin, dow_cos]`). Если в коде ради совместимости используется старый ключ `time_only`, в отчёте он должен называться `clock_shift`, чтобы не путать с Stage 5.1 clock-only baseline.
 2. `structure_full`: 9 структурных + `clock + shift`.
 3. `updn_full`: 10 Up/Dn + `clock + shift`.
 4. `structure_plus_updn`: 9 структурных + 10 Up/Dn + `clock + shift`.
+5. `back_impulse_combo`: `clock + shift + back + impulse`.
 
 **Drop-one (19 полей):**
 
-5-13. `drop_<field>` для каждого из 9 структурных полей: `structure_full` минус поле.
-14-23. `drop_<field>` для каждого из 10 Up/Dn полей: `updn_full` минус поле.
+6-14. `drop_<field>` для каждого из 9 структурных полей: `structure_full` минус поле.
+15-24. `drop_<field>` для каждого из 10 Up/Dn полей: `updn_full` минус поле.
 
 **Add-one (19 полей):**
 
-24-32. `add_<field>` для каждого из 9 структурных полей: `time_only` + поле.
-33-42. `add_<field>` для каждого из 10 Up/Dn полей: `time_only` + поле.
+25-33. `add_<field>` для каждого из 9 структурных полей: `clock_shift` + поле.
+34-43. `add_<field>` для каждого из 10 Up/Dn полей: `clock_shift` + поле.
+
+`back_impulse_combo` добавлен как заранее заданный мини-follow-up из Stage 5.1: он проверяет, закрывает ли пара `back + impulse` большую часть `structure_full` без нового широкого поиска. Это не winner-кандидат, а диагностическое сравнение.
 
 Drop-one и add-one отвечают на разные вопросы:
 
@@ -122,8 +141,9 @@ Drop-one и add-one отвечают на разные вопросы:
 ### Sanity checks
 
 1. `structure_full` Stage 5.1b должен быть близок к `structure_full` Stage 5.1 (отличие только в добавлении `shift` как token-поля). Если AUC резко изменился — проверять сборку признаков.
-2. `time_only` Stage 5.1b (clock + shift) должен быть ≥ `time_only` Stage 5.1 (clock only). `shift` содержит информацию, if it doesn't help, that's itself a finding.
+2. `clock_shift` Stage 5.1b должен быть ≥ `time_only` Stage 5.1 (clock only). `shift` содержит информацию; если он не помогает, это отдельный диагностический факт.
 3. `updn_full` vs `structure_full`: сравнение двух групп полей «на равных» против общего baseline.
+4. `back_impulse_combo` должен сравниваться с `structure_full`, а не только с `clock_shift`: если gap большой, `back + impulse` не заменяют полный профиль.
 
 ### Модель
 
@@ -136,12 +156,12 @@ Drop-one и add-one отвечают на разные вопросы:
 
 Семена: `[42, 77, 123]`, результат агрегируется median по seed.
 
-Transform variant: `asinh`, как в Stage 5.1. Для всех профилей нет `ATR` и price-like token-полей (кроме `shift`, который лог-масштабирован и не требует piecewise tail), поэтому `transform_params` должны быть пустыми (`{}`). Записать в JSON: `transform_params_fit_on = train_core` и `transform_params = {}`.
+Transform variant: `asinh`, как в Stage 5.1. Для всех профилей нет `ATR` и price-like token-полей; `shift` лог-масштабируется через `log1p`. Up/Dn остаются в raw price units в основном эксперименте. Поэтому `transform_params` должны быть пустыми (`{}`). Записать в JSON: `transform_params_fit_on = train_core` и `transform_params = {}`.
 
 Ожидаемый бюджет:
 
-- 4 baselines + 19 drop-one + 19 add-one = 42 профиля.
-- 42 × 2 цели × 3 seed = 252 XGBoost-модели.
+- 5 baselines/контролей + 19 drop-one + 19 add-one = 43 профиля.
+- 43 × 2 цели × 3 seed = 258 XGBoost-моделей.
 - Оценка: ~4-5 часов (Stage 5.1 = 120 прогонов за 2.5ч).
 
 ## Групповой анализ Up/Dn
@@ -151,6 +171,7 @@ Up/Dn поля естественным образом образуют 5 пар
 1. **По направлению:** усреднить drop/add дельты по всем up_* и по всем dn_*. Есть ли асимметрия? Логично, что для `sell_stop_broken` (пробой sell-stop) `up_*` (движение вверх от уровня) может быть сильнее, а для `buy_stop_broken` — `dn_*`.
 2. **По горизонту:** усреднить drop/add дельты по горизонтам 3, 6, 12, 24, 48. Есть ли паттерн «короткие горизонты сильнее/слабее длинных»?
 3. **Группа vs структура:** сравнить `updn_full` и `structure_full` — какая группа даёт больше премии над baseline.
+4. **Maturity-aware разбор:** для горизонтов 12/24/48 отдельно проверить, не возникает ли основной эффект только на non-mature фракталах (`shift < H`). Если да, это скорее возрастной/цензурный эффект, а не устойчивый сигнал поля.
 
 Это групповой анализ, не индивидуальный verdict. Его цель — сгенерировать гипотезы для Stage 5.2, не подтвердить их.
 
@@ -180,7 +201,7 @@ Stage 5.1b содержит множественный перебор:
 - `low_n_2026_auc` (опционально, disclosure only)
 - delta к `structure_full` для drop-one структурных полей
 - delta к `updn_full` для drop-one Up/Dn полей
-- delta к `time_only` для add-one всех полей
+- delta к `clock_shift` для add-one всех полей
 - seed-level min/median/max для каждой delta
 - bootstrap CI для AUC и delta на объединённом `val_stop` и объединённом 2023-2025
 
@@ -191,16 +212,18 @@ Stage 5.1b содержит множественный перебор:
 ```text
 # Структурные поля
 delta_drop_struct_field = AUC(drop_struct_field) - AUC(structure_full)
-delta_add_struct_field  = AUC(add_struct_field)  - AUC(time_only)
+delta_add_struct_field  = AUC(add_struct_field)  - AUC(clock_shift)
 
 # Up/Dn поля
 delta_drop_updn_field = AUC(drop_updn_field) - AUC(updn_full)
-delta_add_updn_field  = AUC(add_updn_field)  - AUC(time_only)
+delta_add_updn_field  = AUC(add_updn_field)  - AUC(clock_shift)
 
 # Групповые сравнения
-delta_updn_group      = AUC(updn_full)         - AUC(time_only)
-delta_structure_group = AUC(structure_full)    - AUC(time_only)
+delta_updn_group      = AUC(updn_full)         - AUC(clock_shift)
+delta_structure_group = AUC(structure_full)    - AUC(clock_shift)
 delta_combined        = AUC(structure_plus_updn) - AUC(structure_full)
+delta_back_impulse    = AUC(back_impulse_combo) - AUC(clock_shift)
+gap_back_impulse_full = AUC(back_impulse_combo) - AUC(structure_full)
 ```
 
 Интерпретация delta_drop и delta_add — та же, что в Stage 5.1:
@@ -215,9 +238,12 @@ delta_combined        = AUC(structure_plus_updn) - AUC(structure_full)
 
 Те же, что в Stage 5.1, с уточнением для двух групп:
 
-- `likely_useful`: для хотя бы одной цели `delta_drop < 0` на объединённом `val_stop` И (`CI_high < 0` ИЛИ `neg_seeds == 3`); `delta_add > 0` на объединённом `val_stop`. Кросс-таргет: если на одной цели `likely_useful`, а на другой `likely_noise` → `mixed_or_unclear`.
-- `likely_noise`: для хотя бы одной цели `delta_drop > 0` на объединённом `val_stop` И (`CI_low > 0` ИЛИ `pos_seeds == 3`); `delta_add <= 0` на объединённом `val_stop`. Кросс-таргет конфликт → `mixed_or_unclear`.
-- `mixed_or_unclear`: знак дельты меняется по цели, году или seed.
+- `target_likely_useful`: для конкретной цели `delta_drop < 0` на объединённом `val_stop` И (`CI_high < 0` ИЛИ `neg_seeds == 3`); `delta_add > 0` на объединённом `val_stop`.
+- `target_likely_noise`: для конкретной цели `delta_drop > 0` на объединённом `val_stop` И (`CI_low > 0` ИЛИ `pos_seeds == 3`); `delta_add <= 0` на объединённом `val_stop`.
+- `overall_likely_useful`: обе цели получили `target_likely_useful`, без противоположного `target_likely_noise`.
+- `overall_likely_noise`: обе цели получили `target_likely_noise`, без противоположного `target_likely_useful`.
+- `target_specific_signal`: только одна цель получила `target_likely_useful` или `target_likely_noise`, а вторая осталась `mixed_or_unclear`.
+- `mixed_or_unclear`: знак дельты меняется по цели, году или seed; либо есть конфликт useful/noise между целями.
 
 Drop-one для Up/Dn полей считается относительно `updn_full`, а не `structure_full`. Это важно: поле может быть шумным внутри своей группы, но полезным в смешанном профиле. Для проверки второго нужен `structure_plus_updn` baseline, но полный drop-one от `structure_plus_updn` (19 полей × 2 цели × 3 seed = 114 прогонов) удвоит стоимость. Поэтому в Stage 5.1b drop-one от `structure_plus_updn` не делается; если групповой анализ покажет перспективное поле, оно проверяется в отдельном мини-follow-up.
 
@@ -239,15 +265,16 @@ ML/reports/stage5_1b_updn_field_ablation.json
 - `targets`
 - `fields` (19: 9 структурных + 10 Up/Dn)
 - `seeds`
-- `profiles` (42: 4 baselines + 19 drop-one + 19 add-one)
+- `profiles` (43: 5 baselines/контролей + 19 drop-one + 19 add-one)
 - `raw_runs`
 - `summary` (per-profile per-target: val_auc_median, holdout_auc_median, yearly, lift_30, CI)
 - `field_verdicts` (per-field per-target: drop delta, add delta, CI, seed counts, yearly signs, verdict)
 - `group_analysis` (up vs dn, по горизонтам, updn_full vs structure_full)
+- `preflight` (источник Up/Dn, монотонность, maturity по горизонтам, shift distribution, корреляция Up/Dn с shift)
 - `multiple_testing_context`
 - `holdout_disclosure`
 - `transform_config`
-- `sanity_checks` (structure_full vs 5.1, time_only vs 5.1, updn_full vs structure_full)
+- `sanity_checks` (structure_full vs 5.1, clock_shift vs 5.1 time_only, updn_full vs structure_full, back_impulse_combo vs structure_full)
 
 Канонический отчёт:
 
@@ -272,6 +299,8 @@ Stage 5.1b может дать управленческие выводы для 
 3. **Структурные поля меняют verdict при добавлении shift в baseline.** Поле, которое было `likely_useful` в 5.1, стало `mixed_or_unclear` в 5.1b — его сигнал частично объяснялся возрастом фрактала.
 4. **Структурные поля не меняют verdict.** Shift не конфаундит структурные поля; выводы 5.1 устойчивы.
 5. **Групповой паттерн по направлению или горизонту.** Например, `up_*` сильнее на sell, `dn_*` на buy — гипотеза для Stage 5.2.
+6. **`back_impulse_combo` близок к `structure_full`.** Тогда следующий диагностический шаг можно строить вокруг компактного профиля `clock+shift+back+impulse`, но только на новом независимом периоде или как явно диагностический mini-cycle.
+7. **`back_impulse_combo` заметно хуже `structure_full`.** Тогда Stage 5.1 вывод про `back` остаётся полезным для понимания, но не даёт компактной замены структурного профиля.
 
 Запрещённые выводы:
 
@@ -285,7 +314,9 @@ Stage 5.1b может дать управленческие выводы для 
 
 ### 1. Расширение BASE10 → BASE20
 
-`extract_base10_fields` (line 721) извлекает индексы 1-10. Добавить `extract_base20_fields`, извлекающий индексы 1-20 (или расширить `BASE10_INDICES` / `BASE10_NAMES` до 20 полей). Существующие профили, использующие `BASE10_NAMES`, остаются обратно совместимыми — они листают только первые 10 имён.
+`extract_base10_fields` извлекает индексы 1-10. В коде уже есть `extract_full29_fields`, который читает индексы 1-20, но текущий `project_token_fields()` завязан на `BASE10_NAME_TO_INDEX`. Для Stage 5.1b нужен явный общий mapping для полей 1-20 плюс `shift`, чтобы Up/Dn и `shift` не ломали старые профили.
+
+Рекомендуемый вариант: не расширять `BASE10_NAMES` глобально, а добавить отдельный `BASE20_NAME_TO_INDEX` / `STAGE5_1B_NAME_TO_INDEX` и отдельный builder для Stage 5.1b. Так старые Stage 5.0/5.1 профили останутся неизменными.
 
 Новые константы:
 
@@ -303,6 +334,16 @@ BASE20_NAMES = ['price', 'direction', 'front', 'back', 'strong', 'break',
 
 `shift` (CSV index 22) не входит в BASE20. Его нужно извлекать отдельно, как `log1p(shift)`, и добавлять в token-массив. Вариант: добавить `shift` в `BASE20_NAMES` как 21-е поле (index 22), или обрабатывать отдельно в `build_profile_features`.
 
+Для безопасности предпочтителен отдельный extractor:
+
+```python
+def extract_stage5_1b_fields(fractal_str: str) -> dict[str, float]:
+    # fields 1-20 + log1p(field 22 as shift)
+    ...
+```
+
+Он должен возвращать `shift = log1p(max(raw_shift, 0))` и не читать top-level CSV columns.
+
 ### 3. Новые списки полей
 
 ```python
@@ -318,10 +359,11 @@ STAGE5_1B_BASELINE_TOKEN_FIELDS = ['shift']  # token-level baseline
 
 `_stage5_1b_profile_for_key(profile_key)` — аналог `_stage5_1_profile_for_key`, но:
 
-- `time_only`: token_fields = `['shift']`, row_fields = `TIME_ONLY_ROW_FIELDS`
+- `clock_shift`: token_fields = `['shift']`, row_fields = `TIME_ONLY_ROW_FIELDS`
 - `structure_full`: token_fields = `STAGE5_1B_STRUCTURE_FIELDS + ['shift']`
 - `updn_full`: token_fields = `STAGE5_1B_UPDN_FIELDS + ['shift']`
 - `structure_plus_updn`: token_fields = `STAGE5_1B_ALL_FIELDS + ['shift']`
+- `back_impulse_combo`: token_fields = `['shift', 'back', 'impulse']`
 - `drop_<field>`: соответствующий full профиль минус поле, shift остаётся
 - `add_<field>`: `['shift', field]` + row clock
 
@@ -330,18 +372,21 @@ STAGE5_1B_BASELINE_TOKEN_FIELDS = ['shift']  # token-level baseline
 - Расширить тесты для `extract_base20_fields` / расширенного `extract_base10_fields`.
 - Тест: `shift` корректно извлекается и лог-масштабируется.
 - Тест: профили Stage 5.1b содержат `shift` в token_fields.
-- Тест: `time_only` 5.1b ≠ `time_only` 5.1 (дополнительное token-поле).
+- Тест: `clock_shift` 5.1b ≠ `time_only` 5.1 (дополнительное token-поле).
 - Тест: `structure_full` 5.1b = `structure_full` 5.1 + `shift`.
+- Тест: `back_impulse_combo` содержит только `shift`, `back`, `impulse` как token-поля.
+- Тест: Stage 5.1b builder не читает top-level `up_3..dn_48` колонки.
 - Тест: drop/add для Up/Dn полей корректно строятся.
 
 ## Риски
 
 1. **Коррелированные Up/Dn поля.** `up_3` и `up_6` сильно коррелируют (короткий горизонт вложен в длинный). Drop-one может показать около нулевой дельты для `up_3`, потому что `up_6` закрывает его роль. Add-one покажет самостоятельный сигнал.
 2. **Up/Dn как proxy цены.** Up/Dn измеряются в валюте инструмента (доллары за унцию для XAUUSD), не нормализованы к ATR. Это означает, что Up/Dn несут ценовой масштаб, который Stage 5.0f объявил шумным. Нужно следить за тем, не является ли сигнал Up/Dn замаскированной ценой. Sanity check: если `updn_full` ≈ `base_raw_plus_time` из 5.0f — это цена, не структура.
-3. **Shift конфаундер.** Добавление `shift` в baseline может «съесть» сигнал поля, которое коррелировало с возрастом фрактала. Это не баг, а цель эксперимента — но если все поля станут `mixed_or_unclear`, эксперимент не даст управленческого вывода.
-4. **Стоимость.** 252 прогона — в 2 раза больше Stage 5.1. Если время критично, можно сократить: убрать `structure_plus_updn` (4 профиля) и group drop-one для Up/Dn от `structure_plus_updn` (не делается). Минимум: 38 профилей × 2 × 3 = 228 прогонов.
-5. **Сожжённый holdout.** 2023-2025 нельзя использовать для выбора будущего кандидата.
-6. **Старый target.** `H6_off05` исчерпан как кандидат, но остаётся пригодным диагностическим стендом.
+3. **Up/Dn как proxy возраста и maturity.** Для молодых фракталов длинные горизонты не успели накопиться полностью. Если эффект `up_48/dn_48` живёт только при `shift < 48`, это может быть не рыночный сигнал, а цензурирование исторического окна.
+4. **Shift конфаундер.** Добавление `shift` в baseline может «съесть» сигнал поля, которое коррелировало с возрастом фрактала. Это не баг, а цель эксперимента — но если все поля станут `mixed_or_unclear`, эксперимент не даст управленческого вывода.
+5. **Стоимость.** 258 прогонов — больше чем в 2 раза Stage 5.1. Все 43 профиля обязательны: `structure_plus_updn` нужен для `delta_combined`, `back_impulse_combo` — для проверки взаимодействия из 5.1. Сокращений нет.
+6. **Сожжённый holdout.** 2023-2025 нельзя использовать для выбора будущего кандидата.
+7. **Старый target.** `H6_off05` исчерпан как кандидат, но остаётся пригодным диагностическим стендом.
 
 ## Связанные материалы
 
