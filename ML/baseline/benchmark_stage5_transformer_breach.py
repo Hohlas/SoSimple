@@ -1,7 +1,8 @@
 # =============================================================================
 # File: ML/baseline/benchmark_stage5_transformer_breach.py
-# Purpose: Stage 5.0 Transformer runner + Stage 5.0a feature preflight +
-#          Stage 5.0d diagnostic screening (XGBoost + Logistic, no Transformer)
+# Purpose: Stage 5.0 runner + diagnostic sub-stages 5.0a-5.0f:
+#          feature preflight, transform audit, profile screening,
+#          and signal stationarity diagnostics
 # Input: DATA/Nero_XAUUSD_*_labeled.csv
 # Output: ML/reports/stage5_transformer_breach.json,
 #         ML/reports/stage5_0a_feature_preflight.json,
@@ -9,10 +10,11 @@
 #         ML/reports/stage5_0a_feature_stats_per_position.csv,
 #         ML/reports/stage5_0a_profile_summary.csv,
 #         ML/reports/stage5_0a_transform_comparison.json,
-#         ML/reports/stage5_0d_diagnostic_screening.json
+#         ML/reports/stage5_0d_diagnostic_screening.json,
+#         ML/reports/stage5_0f_signal_stationarity.json
 # Language: Python 3.10+
 # Created: 2026-06-17
-# Updated: 2026-06-23
+# Updated: 2026-06-24
 # =============================================================================
 
 import argparse, json, os, sys, time
@@ -4529,6 +4531,7 @@ def run_stage5_0f_signal_stationarity(target_splits: dict,
                     run = evaluate_stage5_0f_window_seed(
                         window, profile_key=profile_key, target_col=target_col,
                         seed=seed, parsed_cache=parsed_cache)
+                    run["elapsed_sec"] = round(time.time() - started_at, 1)
                     seed_runs.append(run)
                     report["raw_runs"].append(run)
                     report["progress"]["done_runs"] += 1
@@ -4541,7 +4544,7 @@ def run_stage5_0f_signal_stationarity(target_splits: dict,
                         "val_auc": _safe(run["val_stop"].get("auc")),
                         "test_auc": _safe(run["test"].get("auc")),
                         "test_lift_30": _safe(run["test"].get("lift_30")),
-                        "elapsed_sec": round(time.time() - started_at, 1),
+                        "elapsed_sec": run["elapsed_sec"],
                     }
                     done_runs = report["progress"]["done_runs"]
                     total = report["progress"]["total_runs"]

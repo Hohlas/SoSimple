@@ -2642,6 +2642,9 @@ def test_stage5_0f_runner_writes_json(monkeypatch, tmp_path):
     assert report["status"] == "DIAGNOSTIC_ONLY"
     assert report["holdout_used_for_diagnostic_decision"] is True
     assert report["decision"]["overall_verdict"] in {"temporal_decay", "weak_signal", "inconclusive"}
+    assert report["raw_runs"]
+    assert isinstance(report["raw_runs"][0]["elapsed_sec"], float)
+    assert report["raw_runs"][0]["elapsed_sec"] >= 0.0
     assert (tmp_path / "stage5_0f.json").exists()
 
 
