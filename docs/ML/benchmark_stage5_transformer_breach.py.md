@@ -1,6 +1,6 @@
 # benchmark_stage5_transformer_breach.py
 
-**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и диагностических подпотоков 5.0a-5.0f. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их, считать raw corridor coverage до cap, агрегированные и per-position статистики распределений по профилям признаков, выполнять диагностический скрининг профилей и проверку устойчивости сигнала во времени.
+**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и диагностических подпотоков 5.0a-5.1. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их, считать raw corridor coverage до cap, агрегированные и per-position статистики распределений по профилям признаков, выполнять диагностический скрининг профилей, проверку устойчивости сигнала во времени и Stage 5.1 абляцию структурных фрактальных полей на XGBoost.
 
 **Статус:** Завершён (Stage 5.0 FAIL); Stage 5.0a проверка распределения признаков — `DIAGNOSTIC_ONLY` (2026-06-20). Сравнение transform-ов 2026-06-21 — `DIAGNOSTIC_ONLY`, без обучения.
 
@@ -21,6 +21,7 @@
 - `ML/reports/stage5_0a_transform_comparison_per_position.csv` — per-position статистики transform-сравнения
 - `ML/reports/stage5_0b_asinh_rerun.json` — structured artifact Stage 5.0b diagnostic training rerun
 - `ML/reports/stage5_0f_signal_stationarity.json` — structured artifact Stage 5.0f: годовые окна `rolling/fixed/anchored`, прогресс прогона, итоговое диагностическое решение
+- `ML/reports/stage5_1_structural_field_ablation.json` — structured artifact Stage 5.1: `time_only` / `structure_full` / `drop_*` / `add_*`, field verdicts и paired bootstrap deltas
 
 **Сплит:** train ≤2020, val_stop 2021-2022, holdout ≥2023
 
@@ -72,6 +73,7 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --transform-comparison
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0b-asinh-rerun --single-seed
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0c-cross-target-rerun
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0f-signal-stationarity
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-1-structural-field-ablation
 ```
 
 - `--stage5-0b-asinh-rerun` — Stage 5.0b diagnostic training run: `asinh`, frozen profile sets, mandatory label checks, XGBoost/time-only baselines, no trading winner.
@@ -80,6 +82,7 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0f-signal-sta
 - `--stage5-0d-diagnostic-screening` — Stage 5.0d: диагностический скрининг 9 профилей (XGBoost + Logistic, без Transformer), абляция групп признаков.
 - `ML/reports/stage5_0d_diagnostic_screening.json` — структурированный артефакт Stage 5.0d.
 - `--stage5-0f-signal-stationarity` — Stage 5.0f: диагностика устойчивости сигнала во времени на двух целях, четырёх наборах признаков и трёх схемах годовых окон.
+- `--stage5-1-structural-field-ablation` — Stage 5.1: диагностическая абляция 9 структурных полей `direction/front/back/strong/break/reverse/power/count/impulse` для `H6_off05 stop broken` на XGBoost.
 - `build_flat_features` — расширен параметром `transform_variant` для XGBoost на том же профиле.
 - `build_xgb_features_for_profile` — новый helper для признаков XGBoost на произвольном профиле.
 - `compute_xgb_same_profile_baseline` — baseline XGBoost на тех же признаках, что и Transformer; transform params подбираются на train.
@@ -94,6 +97,11 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0f-signal-sta
 - `bootstrap_stage5_0f_metric_ci` — доверительные интервалы AUC и `lift_30` на тестовом году.
 - `summarize_stage5_0f_seed_runs` / `stage5_0f_stationarity_decision` — агрегация по seed и итоговое диагностическое решение.
 - `run_stage5_0f_signal_stationarity` — раннер Stage 5.0f: поэтапная запись JSON, лог прогресса `[n/456]`, финальное решение по устойчивости сигнала.
+- `build_stage5_1_split` — фиксированный Stage 5.1 split: `train_core <= 2020`, `val_stop = 2021-2022`, `diagnostic_holdout = 2023-2025`, `low_n_disclosure = 2026`.
+- `build_stage5_1_features` / `fit_stage5_1_transform_params` — Stage 5.1 признаки без `price`/`ATR`; `transform_variant="asinh"` сохраняется только как декларация, `transform_params = {}`.
+- `evaluate_stage5_1_profile_seed` — один XGBoost прогон для profile/target/seed с yearly metrics, bootstrap CI и локальными prediction arrays для paired delta.
+- `bootstrap_stage5_1_delta_ci` / `summarize_stage5_1_target` / `stage5_1_field_verdicts` — paired bootstrap deltas и диагностические verdicts `likely_useful` / `likely_noise` / `mixed_or_unclear`.
+- `run_stage5_1_structural_field_ablation` — раннер Stage 5.1: `2 цели × 20 профилей × 3 seed = 120` XGBoost моделей, progressive JSON, field verdicts, multiple-testing disclosure.
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
@@ -103,6 +111,7 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0f-signal-sta
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a preflight
 - `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт feature distribution audit
 - `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md` — канонический отчёт Stage 5.0f
+- `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md` — канонический отчёт Stage 5.1
 - `docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md` — план
 - `docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md` — план preflight
 - `docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md` — план Stage 5.0c

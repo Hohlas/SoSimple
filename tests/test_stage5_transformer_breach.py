@@ -2654,3 +2654,427 @@ def test_stage5_0f_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-0f-signal-stationarity"])
     assert args.stage5_0f_signal_stationarity is True
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# Stage 5.1 tests
+# ───────────────────────────────────────────────────────────────────────────
+
+def test_stage5_1_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_1_TARGETS == [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+    assert runner.STAGE5_1_FIELDS == [
+        "direction", "front", "back", "strong", "break",
+        "reverse", "power", "count", "impulse",
+    ]
+    assert runner.STAGE5_1_PROFILE_KEYS == [
+        "time_only",
+        "structure_full",
+        "drop_direction",
+        "drop_front",
+        "drop_back",
+        "drop_strong",
+        "drop_break",
+        "drop_reverse",
+        "drop_power",
+        "drop_count",
+        "drop_impulse",
+        "add_direction",
+        "add_front",
+        "add_back",
+        "add_strong",
+        "add_break",
+        "add_reverse",
+        "add_power",
+        "add_count",
+        "add_impulse",
+    ]
+    assert runner.STAGE5_1_SEEDS == [42, 77, 123]
+    assert runner.STAGE5_1_BOOTSTRAP_N == 1000
+    assert str(runner.STAGE5_1_JSON_REPORT_PATH).endswith(
+        "stage5_1_structural_field_ablation.json"
+    )
+
+
+def test_stage5_1_profiles_have_expected_fields():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    time_profile = runner._stage5_1_profile_for_key("time_only")
+    full_profile = runner._stage5_1_profile_for_key("structure_full")
+    drop_front = runner._stage5_1_profile_for_key("drop_front")
+    add_front = runner._stage5_1_profile_for_key("add_front")
+
+    assert time_profile["token_fields"] == []
+    assert time_profile["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+    assert time_profile["seq_len"] == 0
+
+    assert full_profile["token_fields"] == runner.STAGE5_1_FIELDS
+    assert full_profile["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+    assert full_profile["seq_len"] == 100
+
+    assert "front" not in drop_front["token_fields"]
+    assert len(drop_front["token_fields"]) == 8
+    assert drop_front["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+
+    assert add_front["token_fields"] == ["front"]
+    assert add_front["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+    assert add_front["seq_len"] == 100
+
+
+def test_build_stage5_1_features_shapes_and_no_atr_in_time_only():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(6, 100)
+
+    X_time = runner.build_stage5_1_features(df, "time_only")
+    X_full = runner.build_stage5_1_features(df, "structure_full")
+    X_drop = runner.build_stage5_1_features(df, "drop_front")
+    X_add = runner.build_stage5_1_features(df, "add_front")
+
+    assert X_time.shape == (6, 4)
+    assert X_full.shape == (6, 904)
+    assert X_drop.shape == (6, 804)
+    assert X_add.shape == (6, 104)
+    assert runner.fit_stage5_1_transform_params(df, "structure_full") == {}
+
+
+def test_build_stage5_1_split_matches_spec_years():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+
+    assert sorted(split["train_core"]["_year"].unique().tolist()) == list(range(2010, 2021))
+    assert sorted(split["val_stop"]["_year"].unique().tolist()) == [2021, 2022]
+    assert sorted(split["diagnostic_holdout"]["_year"].unique().tolist()) == [2023, 2024, 2025]
+    assert sorted(split["low_n_disclosure"]["_year"].unique().tolist()) == [2026]
+    assert split["manifest"]["target"] == "sell_stop_broken_H6_off05_flag"
+    assert split["manifest"]["train_core"]["years"] == list(range(2010, 2021))
+    assert split["manifest"]["val_stop"]["years"] == [2021, 2022]
+    assert split["manifest"]["diagnostic_holdout"]["years"] == [2023, 2024, 2025]
+    assert split["manifest"]["low_n_disclosure"]["years"] == [2026]
+
+
+def test_evaluate_stage5_1_profile_seed_returns_metrics_and_predictions(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
+
+    result = runner.evaluate_stage5_1_profile_seed(
+        split,
+        profile_key="time_only",
+        target_col="sell_stop_broken_H6_off05_flag",
+        seed=42,
+    )
+
+    assert result["profile"] == "time_only"
+    assert result["target"] == "sell_stop_broken_H6_off05_flag"
+    assert result["seed"] == 42
+    assert result["transform_params"] == {}
+    assert result["val_stop"]["n"] == 8
+    assert result["diagnostic_holdout"]["n"] == 12
+    assert set(result["yearly_val"].keys()) == {"2021", "2022"}
+    assert set(result["yearly_diagnostic_holdout"].keys()) == {"2023", "2024", "2025"}
+    assert "auc_ci" in result["val_stop"]
+    assert "auc_ci" in result["diagnostic_holdout"]
+    assert len(result["predictions"]["val_stop"]) == 8
+    assert len(result["predictions"]["diagnostic_holdout"]) == 12
+    assert "split_manifest" in result
+
+
+def test_bootstrap_stage5_1_delta_ci_is_deterministic():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y = pd.Series([0, 0, 1, 1, 0, 1, 0, 1])
+    a = np.array([0.1, 0.2, 0.8, 0.9, 0.3, 0.7, 0.4, 0.6])
+    b = np.array([0.2, 0.3, 0.7, 0.8, 0.4, 0.6, 0.5, 0.55])
+
+    ci1 = runner.bootstrap_stage5_1_delta_ci(y, a, b, n_boot=100, seed=42)
+    ci2 = runner.bootstrap_stage5_1_delta_ci(y, a, b, n_boot=100, seed=42)
+
+    assert ci1 == ci2
+    assert ci1["metric"] == "auc_delta"
+    assert ci1["low"] <= ci1["median"] <= ci1["high"]
+
+
+def test_summarize_stage5_1_seed_runs_uses_median_and_seed_spread():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    runs = [
+        {
+            "train_core": {"auc": 0.70},
+            "val_stop": {"auc": 0.62, "lift_30": 0.82, "auc_ci": {"low": 0.55, "high": 0.68}},
+            "diagnostic_holdout": {"auc": 0.60, "lift_30": 0.80, "auc_ci": {"low": 0.53, "high": 0.66}},
+            "low_n_disclosure": {"auc": 0.59, "lift_30": 0.78},
+            "yearly_val": {"2021": {"auc": 0.61}, "2022": {"auc": 0.63}},
+            "yearly_diagnostic_holdout": {"2023": {"auc": 0.59}, "2024": {"auc": 0.60}, "2025": {"auc": 0.61}},
+            "split_manifest": {"target": "sell_stop_broken_H6_off05_flag"},
+        },
+        {
+            "train_core": {"auc": 0.74},
+            "val_stop": {"auc": 0.66, "lift_30": 0.72, "auc_ci": {"low": 0.60, "high": 0.70}},
+            "diagnostic_holdout": {"auc": 0.64, "lift_30": 0.70, "auc_ci": {"low": 0.58, "high": 0.69}},
+            "low_n_disclosure": {"auc": 0.62, "lift_30": 0.74},
+            "yearly_val": {"2021": {"auc": 0.65}, "2022": {"auc": 0.67}},
+            "yearly_diagnostic_holdout": {"2023": {"auc": 0.63}, "2024": {"auc": 0.64}, "2025": {"auc": 0.65}},
+            "split_manifest": {"target": "sell_stop_broken_H6_off05_flag"},
+        },
+        {
+            "train_core": {"auc": 0.72},
+            "val_stop": {"auc": 0.64, "lift_30": 0.76, "auc_ci": {"low": 0.57, "high": 0.69}},
+            "diagnostic_holdout": {"auc": 0.62, "lift_30": 0.75, "auc_ci": {"low": 0.55, "high": 0.67}},
+            "low_n_disclosure": {"auc": 0.60, "lift_30": 0.76},
+            "yearly_val": {"2021": {"auc": 0.63}, "2022": {"auc": 0.65}},
+            "yearly_diagnostic_holdout": {"2023": {"auc": 0.61}, "2024": {"auc": 0.62}, "2025": {"auc": 0.63}},
+            "split_manifest": {"target": "sell_stop_broken_H6_off05_flag"},
+        },
+    ]
+
+    summary = runner.summarize_stage5_1_seed_runs(runs)
+
+    assert summary["n_seed_runs"] == 3
+    assert summary["val_stop"]["auc_median"] == pytest.approx(0.64)
+    assert summary["diagnostic_holdout"]["auc_median"] == pytest.approx(0.62)
+    assert summary["val_stop"]["auc_seed_min"] == pytest.approx(0.62)
+    assert summary["val_stop"]["auc_seed_max"] == pytest.approx(0.66)
+    assert summary["yearly_val"]["2021"]["auc_median"] == pytest.approx(0.63)
+    assert summary["yearly_diagnostic_holdout"]["2025"]["auc_median"] == pytest.approx(0.63)
+
+
+def test_stage5_1_field_verdicts_classify_useful_noise_and_unclear():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    target = "sell_stop_broken_H6_off05_flag"
+    report = {
+        "summary": {
+            target: {
+                "drop_front": {
+                    "delta_vs_structure_full": {
+                        "val_stop": {
+                            "delta_median": -0.02,
+                            "delta_ci_low": -0.04,
+                            "delta_ci_high": -0.01,
+                            "negative_seed_count": 3,
+                            "positive_seed_count": 0,
+                        },
+                    },
+                    "yearly_val": {
+                        "2021": {"auc_median": 0.60},
+                        "2022": {"auc_median": 0.61},
+                    },
+                    "yearly_diagnostic_holdout": {
+                        "2023": {"auc_median": 0.60},
+                        "2024": {"auc_median": 0.61},
+                        "2025": {"auc_median": 0.62},
+                    },
+                },
+                "add_front": {
+                    "delta_vs_time_only": {
+                        "val_stop": {"delta_median": 0.03},
+                        "diagnostic_holdout": {"delta_median": 0.01},
+                    }
+                },
+                "drop_back": {
+                    "delta_vs_structure_full": {
+                        "val_stop": {
+                            "delta_median": 0.02,
+                            "delta_ci_low": 0.01,
+                            "delta_ci_high": 0.04,
+                            "negative_seed_count": 0,
+                            "positive_seed_count": 3,
+                        },
+                    },
+                    "yearly_val": {
+                        "2021": {"auc_median": 0.64},
+                        "2022": {"auc_median": 0.65},
+                    },
+                    "yearly_diagnostic_holdout": {
+                        "2023": {"auc_median": 0.62},
+                        "2024": {"auc_median": 0.63},
+                        "2025": {"auc_median": 0.64},
+                    },
+                },
+                "add_back": {
+                    "delta_vs_time_only": {
+                        "val_stop": {"delta_median": 0.0},
+                        "diagnostic_holdout": {"delta_median": -0.01},
+                    }
+                },
+                "structure_full": {
+                    "yearly_val": {
+                        "2021": {"auc_median": 0.62},
+                        "2022": {"auc_median": 0.63},
+                    },
+                    "yearly_diagnostic_holdout": {
+                        "2023": {"auc_median": 0.63},
+                        "2024": {"auc_median": 0.62},
+                        "2025": {"auc_median": 0.63},
+                    }
+                },
+                "drop_direction": {
+                    "delta_vs_structure_full": {
+                        "val_stop": {
+                            "delta_median": 0.0,
+                            "delta_ci_low": -0.01,
+                            "delta_ci_high": 0.01,
+                            "negative_seed_count": 1,
+                            "positive_seed_count": 1,
+                        }
+                    },
+                    "yearly_val": {
+                        "2021": {"auc_median": 0.62},
+                        "2022": {"auc_median": 0.64},
+                    },
+                    "yearly_diagnostic_holdout": {
+                        "2023": {"auc_median": 0.63},
+                        "2024": {"auc_median": 0.61},
+                        "2025": {"auc_median": 0.63},
+                    },
+                },
+                "add_direction": {
+                    "delta_vs_time_only": {
+                        "val_stop": {"delta_median": 0.01},
+                        "diagnostic_holdout": {"delta_median": 0.0},
+                    }
+                },
+            }
+        }
+    }
+
+    verdicts = runner.stage5_1_field_verdicts(report)
+
+    assert verdicts["front"]["overall_verdict"] == "likely_useful"
+    assert verdicts["back"]["overall_verdict"] == "likely_noise"
+    assert verdicts["direction"]["overall_verdict"] == "mixed_or_unclear"
+    assert verdicts["front"]["targets"][target]["drop_val_delta_ci_high"] == pytest.approx(-0.01)
+
+
+def test_stage5_1_field_verdicts_conflicting_targets_are_unclear():
+    import copy
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    sell = "sell_stop_broken_H6_off05_flag"
+    buy = "buy_stop_broken_H6_off05_flag"
+    useful_target_summary = {
+        "drop_front": {
+            "delta_vs_structure_full": {
+                "val_stop": {
+                    "delta_median": -0.02,
+                    "delta_ci_low": -0.04,
+                    "delta_ci_high": -0.01,
+                    "negative_seed_count": 3,
+                    "positive_seed_count": 0,
+                },
+            },
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.60},
+                "2024": {"auc_median": 0.61},
+                "2025": {"auc_median": 0.62},
+            },
+        },
+        "add_front": {
+            "delta_vs_time_only": {
+                "val_stop": {"delta_median": 0.03},
+                "diagnostic_holdout": {"delta_median": 0.01},
+            },
+        },
+        "structure_full": {
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.63},
+                "2024": {"auc_median": 0.62},
+                "2025": {"auc_median": 0.63},
+            },
+        },
+    }
+    noise_target_summary = copy.deepcopy(useful_target_summary)
+    noise_target_summary["drop_front"]["delta_vs_structure_full"]["val_stop"] = {
+        "delta_median": 0.02,
+        "delta_ci_low": 0.01,
+        "delta_ci_high": 0.04,
+        "negative_seed_count": 0,
+        "positive_seed_count": 3,
+    }
+    noise_target_summary["drop_front"]["yearly_diagnostic_holdout"] = {
+        "2023": {"auc_median": 0.64},
+        "2024": {"auc_median": 0.63},
+        "2025": {"auc_median": 0.65},
+    }
+    noise_target_summary["add_front"]["delta_vs_time_only"]["val_stop"] = {"delta_median": 0.0}
+
+    report = {"summary": {sell: useful_target_summary, buy: noise_target_summary}}
+
+    verdicts = runner.stage5_1_field_verdicts(report)
+
+    assert verdicts["front"]["targets"][sell]["verdict"] == "likely_useful"
+    assert verdicts["front"]["targets"][buy]["verdict"] == "likely_noise"
+    assert verdicts["front"]["overall_verdict"] == "mixed_or_unclear"
+
+
+def test_stage5_1_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_1_PROFILE_KEYS", ["time_only", "structure_full"])
+    monkeypatch.setattr(runner, "STAGE5_1_SEEDS", [42])
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+
+    report = runner.run_stage5_1_structural_field_ablation(
+        target_splits={
+            "sell_stop_broken_H6_off05_flag": (df, df, df),
+            "buy_stop_broken_H6_off05_flag": (df, df, df),
+        },
+        output_path=tmp_path / "stage5_1.json",
+    )
+
+    assert report["stage"] == "5.1_structural_field_ablation"
+    assert report["status"] == "DIAGNOSTIC_ONLY"
+    assert report["profiles"] == ["time_only", "structure_full"]
+    assert report["fields"] == runner.STAGE5_1_FIELDS
+    assert report["raw_runs"]
+    assert "predictions" not in report["raw_runs"][0]
+    assert "labels" not in report["raw_runs"][0]
+    assert report["summary"]
+    assert "field_verdicts" in report
+    assert "multiple_testing_context" in report
+    assert "holdout_disclosure" in report
+    assert "transform_config" in report
+    assert report["progress"]["done_runs"] == 4
+    assert (tmp_path / "stage5_1.json").exists()
+
+
+def test_stage5_1_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-1-structural-field-ablation"])
+    assert args.stage5_1_structural_field_ablation is True

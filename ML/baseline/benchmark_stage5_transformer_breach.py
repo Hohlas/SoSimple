@@ -147,6 +147,22 @@ STAGE5_0F_LOW_N_YEAR = 2026
 STAGE5_0F_ROLLING_WINDOW_YEARS = 8
 STAGE5_0F_BOOTSTRAP_N = 1000
 STAGE5_0F_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0f_signal_stationarity.json"
+STAGE5_1_JSON_REPORT_PATH = REPORTS_DIR / "stage5_1_structural_field_ablation.json"
+STAGE5_1_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_1_FIELDS = NO_PRICE_TOKEN_FIELDS.copy()
+STAGE5_1_PROFILE_KEYS = (
+    ["time_only", "structure_full"]
+    + [f"drop_{field}" for field in STAGE5_1_FIELDS]
+    + [f"add_{field}" for field in STAGE5_1_FIELDS]
+)
+STAGE5_1_SEEDS = [42, 77, 123]
+STAGE5_1_VAL_YEARS = [2021, 2022]
+STAGE5_1_HOLDOUT_YEARS = [2023, 2024, 2025]
+STAGE5_1_LOW_N_YEAR = 2026
+STAGE5_1_BOOTSTRAP_N = 1000
 
 # ===========================================================================
 # Profile definitions
@@ -2079,6 +2095,73 @@ def build_stage5_0f_features(df: pd.DataFrame, profile_key: str,
             df, profile_key, transform_variant=transform_variant)
     return build_flat_features(
         df, profile, transform_variant=transform_variant, transform_params=transform_params)
+
+
+def _stage5_1_profile_for_key(profile_key: str) -> dict:
+    """Build Stage 5.1 feature profile for time-only, full, drop-one, or add-one."""
+    if profile_key == "time_only":
+        return {
+            "name": "stage5_1_time_only",
+            "selection": "all100",
+            "order": "freshness",
+            "token_fields": [],
+            "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+            "uses_time": True,
+            "seq_len": 0,
+            "token_dim": 0,
+            "row_dim": len(TIME_ONLY_ROW_FIELDS),
+        }
+
+    if profile_key == "structure_full":
+        token_fields = STAGE5_1_FIELDS.copy()
+    elif profile_key.startswith("drop_"):
+        field = profile_key.removeprefix("drop_")
+        if field not in STAGE5_1_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1 drop field: {field}")
+        token_fields = [name for name in STAGE5_1_FIELDS if name != field]
+    elif profile_key.startswith("add_"):
+        field = profile_key.removeprefix("add_")
+        if field not in STAGE5_1_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1 add field: {field}")
+        token_fields = [field]
+    else:
+        raise ValueError(f"Unknown Stage 5.1 profile_key: {profile_key}")
+
+    return {
+        "name": f"stage5_1_{profile_key}",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": len(token_fields),
+        "row_dim": len(TIME_ONLY_ROW_FIELDS),
+    }
+
+
+def fit_stage5_1_transform_params(df: pd.DataFrame, profile_key: str,
+                                  transform_variant: str = "asinh") -> dict:
+    """Stage 5.1 has no price/ATR fields, so transform params are intentionally empty."""
+    _ = df
+    _ = transform_variant
+    _stage5_1_profile_for_key(profile_key)
+    return {}
+
+
+def build_stage5_1_features(df: pd.DataFrame, profile_key: str,
+                            transform_variant: str = "asinh",
+                            transform_params: dict | None = None) -> np.ndarray:
+    """Build XGBoost feature matrix for Stage 5.1 without leaking price/ATR fields."""
+    profile = _stage5_1_profile_for_key(profile_key)
+    if profile_key == "time_only":
+        return build_row_features(
+            df, profile, transform_variant=transform_variant,
+            transform_params=transform_params).astype(np.float32)
+
+    params = {} if transform_params is None else transform_params
+    return build_flat_features(
+        df, profile, transform_variant=transform_variant, transform_params=params)
 
 
 # ===========================================================================
@@ -4209,6 +4292,31 @@ def build_stage5_0f_windows(df: pd.DataFrame, target_col: str) -> list[dict]:
     return windows
 
 
+def build_stage5_1_split(df: pd.DataFrame, target_col: str) -> dict:
+    """Build fixed Stage 5.1 train/val/diagnostic split."""
+    data = _stage5_0f_with_year(df)
+    train_core = data[data["_year"] <= 2020].copy()
+    val_stop = data[data["_year"].isin(STAGE5_1_VAL_YEARS)].copy()
+    diagnostic_holdout = data[data["_year"].isin(STAGE5_1_HOLDOUT_YEARS)].copy()
+    low_n_disclosure = data[data["_year"] == STAGE5_1_LOW_N_YEAR].copy()
+
+    manifest = {
+        "target": target_col,
+        "train_core": _stage5_0f_split_manifest_part(train_core, target_col),
+        "val_stop": _stage5_0f_split_manifest_part(val_stop, target_col),
+        "diagnostic_holdout": _stage5_0f_split_manifest_part(diagnostic_holdout, target_col),
+        "low_n_disclosure": _stage5_0f_split_manifest_part(low_n_disclosure, target_col),
+        "holdout_disclosure": "2023-2025 are diagnostic disclosure only, already used in Stage 5.0f.",
+    }
+    return {
+        "train_core": train_core,
+        "val_stop": val_stop,
+        "diagnostic_holdout": diagnostic_holdout,
+        "low_n_disclosure": low_n_disclosure,
+        "manifest": manifest,
+    }
+
+
 def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: str,
                                    seed: int, transform_variant: str = "asinh",
                                    parsed_cache: dict | None = None) -> dict:
@@ -4267,11 +4375,166 @@ def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: s
     }
 
 
+def _stage5_1_metrics_with_ci(y_true: pd.Series, probs: np.ndarray, seed: int) -> dict:
+    metrics = compute_metrics(y_true, pd.Series(probs))
+    return {
+        **{k: _safe(v) for k, v in metrics.items()},
+        "auc_ci": bootstrap_stage5_0f_metric_ci(
+            y_true, probs, "auc", n_boot=STAGE5_1_BOOTSTRAP_N, seed=seed),
+        "lift_30_ci": bootstrap_stage5_0f_metric_ci(
+            y_true, probs, "lift_30", n_boot=STAGE5_1_BOOTSTRAP_N, seed=seed),
+    }
+
+
+def evaluate_stage5_1_profile_seed(split: dict, profile_key: str, target_col: str,
+                                   seed: int, transform_variant: str = "asinh") -> dict:
+    """Train one Stage 5.1 XGBoost model for one profile/target/seed."""
+    train_core = split["train_core"]
+    val_stop = split["val_stop"]
+    diagnostic_holdout = split["diagnostic_holdout"]
+    low_n_disclosure = split["low_n_disclosure"]
+    transform_params = fit_stage5_1_transform_params(
+        train_core, profile_key, transform_variant=transform_variant)
+
+    X_train = build_stage5_1_features(
+        train_core, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_val = build_stage5_1_features(
+        val_stop, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_holdout = build_stage5_1_features(
+        diagnostic_holdout, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_low_n = build_stage5_1_features(
+        low_n_disclosure, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+
+    y_train = train_core[target_col]
+    y_val = val_stop[target_col]
+    y_holdout = diagnostic_holdout[target_col]
+    y_low_n = low_n_disclosure[target_col]
+
+    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+    train_probs = model.predict(xgb.DMatrix(X_train))
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    holdout_probs = model.predict(xgb.DMatrix(X_holdout))
+    low_n_probs = model.predict(xgb.DMatrix(X_low_n)) if len(low_n_disclosure) else np.asarray([])
+
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "transform_variant": transform_variant,
+        "transform_params": transform_params,
+        "transform_params_fit_on": "train_core",
+        "train_core": {k: _safe(v) for k, v in compute_metrics(y_train, pd.Series(train_probs)).items()},
+        "val_stop": _stage5_1_metrics_with_ci(y_val, val_probs, seed),
+        "diagnostic_holdout": _stage5_1_metrics_with_ci(y_holdout, holdout_probs, seed),
+        "low_n_disclosure": _stage5_1_metrics_with_ci(y_low_n, low_n_probs, seed),
+        "yearly_val": compute_yearly_metrics(val_stop, val_probs, target_col=target_col),
+        "yearly_diagnostic_holdout": compute_yearly_metrics(
+            diagnostic_holdout, holdout_probs, target_col=target_col),
+        "split_manifest": split["manifest"],
+        "val_auc_from_training": _safe(val_auc),
+        "predictions": {
+            "val_stop": [float(v) for v in val_probs],
+            "diagnostic_holdout": [float(v) for v in holdout_probs],
+            "low_n_disclosure": [float(v) for v in low_n_probs],
+        },
+        "labels": {
+            "val_stop": [int(v) for v in y_val.tolist()],
+            "diagnostic_holdout": [int(v) for v in y_holdout.tolist()],
+            "low_n_disclosure": [int(v) for v in y_low_n.tolist()],
+        },
+    }
+
+
 def _median_or_none(values: list) -> float | None:
     clean = [float(v) for v in values if v is not None and np.isfinite(v)]
     if not clean:
         return None
     return float(np.median(clean))
+
+
+def _min_or_none(values: list) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.min(clean)) if clean else None
+
+
+def _max_or_none(values: list) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.max(clean)) if clean else None
+
+
+def bootstrap_stage5_1_delta_ci(y_true, pred_a, pred_b,
+                                n_boot: int = STAGE5_1_BOOTSTRAP_N,
+                                seed: int = 42) -> dict:
+    """Paired bootstrap CI for AUC(profile_a) - AUC(profile_b)."""
+    yt = pd.Series(y_true).reset_index(drop=True)
+    pa = np.asarray(pred_a, dtype=float)
+    pb = np.asarray(pred_b, dtype=float)
+    n = len(yt)
+    if n == 0 or yt.nunique() < 2:
+        return {"metric": "auc_delta", "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        sample_y = yt.iloc[idx].reset_index(drop=True)
+        if sample_y.nunique() < 2:
+            continue
+        try:
+            auc_a = roc_auc_score(sample_y, pa[idx])
+            auc_b = roc_auc_score(sample_y, pb[idx])
+        except ValueError:
+            continue
+        vals.append(float(auc_a - auc_b))
+
+    if not vals:
+        return {"metric": "auc_delta", "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    arr = np.asarray(vals, dtype=float)
+    return {
+        "metric": "auc_delta",
+        "n_boot": int(n_boot),
+        "low": float(np.percentile(arr, 2.5)),
+        "median": float(np.percentile(arr, 50.0)),
+        "high": float(np.percentile(arr, 97.5)),
+    }
+
+
+def _stage5_1_period_summary(runs: list[dict], period_key: str) -> dict:
+    aucs = [r[period_key].get("auc") for r in runs]
+    lifts = [r[period_key].get("lift_30") for r in runs]
+    auc_lows = [r[period_key].get("auc_ci", {}).get("low") for r in runs]
+    auc_highs = [r[period_key].get("auc_ci", {}).get("high") for r in runs]
+    return {
+        "n": runs[0][period_key].get("n") if runs else 0,
+        "auc_median": _median_or_none(aucs),
+        "auc_seed_min": _min_or_none(aucs),
+        "auc_seed_max": _max_or_none(aucs),
+        "lift_30_median": _median_or_none(lifts),
+        "lift_30_seed_min": _min_or_none(lifts),
+        "lift_30_seed_max": _max_or_none(lifts),
+        "auc_ci_low": _median_or_none(auc_lows),
+        "auc_ci_high": _median_or_none(auc_highs),
+    }
+
+
+def _stage5_1_yearly_summary(runs: list[dict], yearly_key: str) -> dict:
+    years = sorted({
+        year
+        for run in runs
+        for year in run.get(yearly_key, {}).keys()
+    })
+    out = {}
+    for year in years:
+        aucs = [run.get(yearly_key, {}).get(year, {}).get("auc") for run in runs]
+        lifts = [run.get(yearly_key, {}).get(year, {}).get("lift_30") for run in runs]
+        out[year] = {
+            "auc_median": _median_or_none(aucs),
+            "auc_seed_min": _min_or_none(aucs),
+            "auc_seed_max": _max_or_none(aucs),
+            "lift_30_median": _median_or_none(lifts),
+        }
+    return out
 
 
 def summarize_stage5_0f_seed_runs(runs: list[dict]) -> dict:
@@ -4300,6 +4563,109 @@ def summarize_stage5_0f_seed_runs(runs: list[dict]) -> dict:
         },
         "split_manifest": runs[0].get("split_manifest") if runs else None,
     }
+
+
+def summarize_stage5_1_seed_runs(runs: list[dict]) -> dict:
+    """Summarize Stage 5.1 seed-level runs by median and seed spread."""
+    return {
+        "n_seed_runs": int(len(runs)),
+        "train_core": {
+            "auc_median": _median_or_none([r["train_core"].get("auc") for r in runs]),
+        },
+        "val_stop": _stage5_1_period_summary(runs, "val_stop"),
+        "diagnostic_holdout": _stage5_1_period_summary(runs, "diagnostic_holdout"),
+        "low_n_disclosure": _stage5_1_period_summary(runs, "low_n_disclosure"),
+        "yearly_val": _stage5_1_yearly_summary(runs, "yearly_val"),
+        "yearly_diagnostic_holdout": _stage5_1_yearly_summary(runs, "yearly_diagnostic_holdout"),
+        "split_manifest": runs[0].get("split_manifest") if runs else None,
+    }
+
+
+def _stage5_1_seed_auc_by_profile(raw_runs: list[dict], profile: str,
+                                  period_key: str) -> dict[int, float | None]:
+    return {
+        int(run["seed"]): run[period_key].get("auc")
+        for run in raw_runs
+        if run["profile"] == profile
+    }
+
+
+def _stage5_1_run_by_profile_seed(raw_runs: list[dict], profile: str) -> dict[int, dict]:
+    return {
+        int(run["seed"]): run
+        for run in raw_runs
+        if run["profile"] == profile
+    }
+
+
+def _stage5_1_delta_summary(raw_runs: list[dict], profile: str,
+                            baseline_profile: str, period_key: str) -> dict:
+    profile_by_seed = _stage5_1_seed_auc_by_profile(raw_runs, profile, period_key)
+    baseline_by_seed = _stage5_1_seed_auc_by_profile(raw_runs, baseline_profile, period_key)
+    profile_runs = _stage5_1_run_by_profile_seed(raw_runs, profile)
+    baseline_runs = _stage5_1_run_by_profile_seed(raw_runs, baseline_profile)
+    deltas = []
+    ci_lows = []
+    ci_highs = []
+    signs = []
+    for seed, auc in profile_by_seed.items():
+        base_auc = baseline_by_seed.get(seed)
+        if auc is None or base_auc is None:
+            continue
+        delta = float(auc - base_auc)
+        deltas.append(delta)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+        profile_run = profile_runs.get(seed)
+        baseline_run = baseline_runs.get(seed)
+        if profile_run and baseline_run:
+            ci = bootstrap_stage5_1_delta_ci(
+                profile_run["labels"][period_key],
+                profile_run["predictions"][period_key],
+                baseline_run["predictions"][period_key],
+                n_boot=STAGE5_1_BOOTSTRAP_N,
+                seed=seed,
+            )
+            ci_lows.append(ci.get("low"))
+            ci_highs.append(ci.get("high"))
+    return {
+        "baseline_profile": baseline_profile,
+        "period": period_key,
+        "delta_median": _median_or_none(deltas),
+        "delta_seed_min": _min_or_none(deltas),
+        "delta_seed_max": _max_or_none(deltas),
+        "delta_ci_low": _median_or_none(ci_lows),
+        "delta_ci_high": _median_or_none(ci_highs),
+        "delta_ci_method": "median_of_per_seed_paired_bootstrap_bounds",
+        "positive_seed_count": int(sum(1 for s in signs if s > 0)),
+        "negative_seed_count": int(sum(1 for s in signs if s < 0)),
+        "zero_seed_count": int(sum(1 for s in signs if s == 0)),
+    }
+
+
+def summarize_stage5_1_target(raw_runs: list[dict], target_col: str) -> dict:
+    """Summarize one Stage 5.1 target across profiles and add drop/add deltas."""
+    target_runs = [r for r in raw_runs if r["target"] == target_col]
+    summary = {}
+    for profile in STAGE5_1_PROFILE_KEYS:
+        runs = [r for r in target_runs if r["profile"] == profile]
+        summary[profile] = summarize_stage5_1_seed_runs(runs)
+
+    for field in STAGE5_1_FIELDS:
+        drop_profile = f"drop_{field}"
+        add_profile = f"add_{field}"
+        if drop_profile in summary:
+            summary[drop_profile]["delta_vs_structure_full"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, drop_profile, "structure_full", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, drop_profile, "structure_full", "diagnostic_holdout"),
+            }
+        if add_profile in summary:
+            summary[add_profile]["delta_vs_time_only"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, add_profile, "time_only", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, add_profile, "time_only", "diagnostic_holdout"),
+            }
+    return summary
 
 
 def _stage5_0f_get_summary(report: dict, target: str, profile: str,
@@ -4478,6 +4844,126 @@ def stage5_0f_stationarity_decision(report: dict) -> dict:
     }
 
 
+def _stage5_1_yearly_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_diagnostic_holdout", ["2023", "2024", "2025"])
+
+
+def _stage5_1_yearly_val_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_val", ["2021", "2022"])
+
+
+def _stage5_1_yearly_drop_signs_for_key(target_summary: dict, field: str,
+                                        yearly_key: str, years: list[str]) -> list[int]:
+    drop = target_summary.get(f"drop_{field}", {})
+    full = target_summary.get("structure_full", {})
+    signs = []
+    for year in years:
+        drop_auc = drop.get(yearly_key, {}).get(year, {}).get("auc_median")
+        full_auc = full.get(yearly_key, {}).get(year, {}).get("auc_median")
+        if drop_auc is None or full_auc is None:
+            continue
+        delta = float(drop_auc - full_auc)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+    return signs
+
+
+def _stage5_1_field_target_verdict(target_summary: dict, field: str) -> dict:
+    drop = target_summary.get(f"drop_{field}", {})
+    add = target_summary.get(f"add_{field}", {})
+    drop_val = drop.get("delta_vs_structure_full", {}).get("val_stop", {})
+    add_val = add.get("delta_vs_time_only", {}).get("val_stop", {}).get("delta_median")
+    add_holdout = add.get("delta_vs_time_only", {}).get("diagnostic_holdout", {}).get("delta_median")
+    drop_delta = drop_val.get("delta_median")
+    drop_ci_low = drop_val.get("delta_ci_low")
+    drop_ci_high = drop_val.get("delta_ci_high")
+    yearly_signs = _stage5_1_yearly_drop_signs(target_summary, field)
+    yearly_val_signs = _stage5_1_yearly_val_drop_signs(target_summary, field)
+    yearly_negative = sum(1 for s in yearly_signs if s < 0)
+    yearly_positive = sum(1 for s in yearly_signs if s > 0)
+    negative_seed_count = int(drop_val.get("negative_seed_count") or 0)
+    positive_seed_count = int(drop_val.get("positive_seed_count") or 0)
+    useful_ci_or_seed_confirmed = (
+        (drop_ci_high is not None and drop_ci_high < 0)
+        or negative_seed_count == 3
+    )
+    noise_ci_or_seed_confirmed = (
+        (drop_ci_low is not None and drop_ci_low > 0)
+        or positive_seed_count == 3
+    )
+
+    useful = (
+        drop_delta is not None
+        and drop_delta < 0
+        and yearly_negative >= 2
+        and negative_seed_count >= 2
+        and useful_ci_or_seed_confirmed
+        and (
+            (add_val is not None and add_val > 0)
+            or (add_holdout is not None and add_holdout > 0)
+        )
+    )
+    noise = (
+        drop_delta is not None
+        and drop_delta > 0
+        and yearly_positive >= 2
+        and positive_seed_count >= 2
+        and noise_ci_or_seed_confirmed
+        and add_val is not None
+        and add_val <= 0
+    )
+
+    if useful:
+        verdict = "likely_useful"
+    elif noise:
+        verdict = "likely_noise"
+    else:
+        verdict = "mixed_or_unclear"
+
+    return {
+        "verdict": verdict,
+        "drop_val_delta_median": drop_delta,
+        "drop_val_delta_ci_low": drop_ci_low,
+        "drop_val_delta_ci_high": drop_ci_high,
+        "drop_val_negative_seed_count": negative_seed_count,
+        "drop_val_positive_seed_count": positive_seed_count,
+        "yearly_val_drop_signs_2021_2022": yearly_val_signs,
+        "yearly_drop_signs_2023_2025": yearly_signs,
+        "add_val_delta_median": add_val,
+        "add_holdout_delta_median": add_holdout,
+    }
+
+
+def stage5_1_field_verdicts(report: dict) -> dict:
+    """Classify Stage 5.1 fields as diagnostic likely useful/noise/unclear."""
+    verdicts = {}
+    for field in STAGE5_1_FIELDS:
+        per_target = {}
+        target_verdicts = []
+        for target in STAGE5_1_TARGETS:
+            target_summary = report.get("summary", {}).get(target, {})
+            target_result = _stage5_1_field_target_verdict(target_summary, field)
+            per_target[target] = target_result
+            target_verdicts.append(target_result["verdict"])
+
+        if "likely_useful" in target_verdicts and "likely_noise" in target_verdicts:
+            overall = "mixed_or_unclear"
+        elif "likely_useful" in target_verdicts:
+            overall = "likely_useful"
+        elif "likely_noise" in target_verdicts:
+            overall = "likely_noise"
+        else:
+            overall = "mixed_or_unclear"
+
+        verdicts[field] = {
+            "overall_verdict": overall,
+            "targets": per_target,
+            "diagnostic_only": True,
+        }
+    return verdicts
+
+
 def run_stage5_0f_signal_stationarity(target_splits: dict,
                                       output_path=STAGE5_0F_JSON_REPORT_PATH) -> dict:
     """Run Stage 5.0f XGBoost signal stationarity diagnostics."""
@@ -4573,6 +5059,121 @@ def run_stage5_0f_signal_stationarity(target_splits: dict,
     return report
 
 
+def _stage5_1_public_run(run: dict) -> dict:
+    """Return JSON-safe run metadata without arrays used only for local delta CI."""
+    return {
+        key: value
+        for key, value in run.items()
+        if key not in {"predictions", "labels"}
+    }
+
+
+def run_stage5_1_structural_field_ablation(target_splits: dict,
+                                           output_path=STAGE5_1_JSON_REPORT_PATH) -> dict:
+    """Run Stage 5.1 structural fractal field ablation diagnostics."""
+    started_at = time.time()
+    total_runs = len(STAGE5_1_TARGETS) * len(STAGE5_1_PROFILE_KEYS) * len(STAGE5_1_SEEDS)
+    report = {
+        "stage": "5.1_structural_field_ablation",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "verdict_scope": "DIAGNOSTIC_ONLY",
+        "targets": list(STAGE5_1_TARGETS),
+        "fields": list(STAGE5_1_FIELDS),
+        "profiles": list(STAGE5_1_PROFILE_KEYS),
+        "seeds": list(STAGE5_1_SEEDS),
+        "raw_runs": [],
+        "summary": {},
+        "field_verdicts": {},
+        "multiple_testing_context": {
+            "diagnostic_only": True,
+            "correction_applied": None,
+            "note": "No Bonferroni/FDR correction; likely_* labels are preliminary diagnostic categories.",
+        },
+        "holdout_disclosure": {
+            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
+            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f; disclosure only.",
+            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
+        },
+        "transform_config": {
+            "transform_variant": "asinh",
+            "transform_params_fit_on": "train_core",
+            "stage5_1_transform_params": {},
+            "reason": "Stage 5.1 excludes price/ATR fields; only structural tokens and clock row fields remain.",
+        },
+        "sanity_checks": {
+            "time_only_row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+            "excluded_fields": ["price", "price_coord_atr", "price_atr_scaled", "ATR"],
+            "expected_model_count": int(total_runs),
+            "stage5_0d_no_price_reference": {
+                "source": "docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md",
+                "sell_val_auc": 0.6693,
+                "sell_holdout_auc": 0.6592,
+                "comparison_note": "Compare to Stage 5.1 structure_full; not a PASS/FAIL gate.",
+            },
+            "stage5_1_structure_full_actual": {},
+        },
+        "progress": {
+            "started_at_unix": started_at,
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(output_path, report)
+
+    for target_col in STAGE5_1_TARGETS:
+        train_df, val_df, hold_df = target_splits[target_col]
+        combined = pd.concat([train_df, val_df, hold_df], ignore_index=True)
+        split = build_stage5_1_split(combined, target_col)
+        report["summary"].setdefault(target_col, {})
+
+        target_runs = []
+        for profile_key in STAGE5_1_PROFILE_KEYS:
+            for seed in STAGE5_1_SEEDS:
+                run = evaluate_stage5_1_profile_seed(
+                    split, profile_key=profile_key, target_col=target_col, seed=seed)
+                run["elapsed_sec"] = round(time.time() - started_at, 1)
+                target_runs.append(run)
+                report["raw_runs"].append(_stage5_1_public_run(run))
+                report["progress"]["done_runs"] += 1
+                report["progress"]["last_completed"] = {
+                    "target": target_col,
+                    "profile": profile_key,
+                    "seed": int(seed),
+                    "val_auc": _safe(run["val_stop"].get("auc")),
+                    "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
+                    "elapsed_sec": run["elapsed_sec"],
+                }
+                done_runs = report["progress"]["done_runs"]
+                total = report["progress"]["total_runs"]
+                last = report["progress"]["last_completed"]
+                print(
+                    f"[{done_runs}/{total}] {target_col} | {profile_key} | "
+                    f"seed={seed} | val_auc={last['val_auc']} | "
+                    f"holdout_auc={last['holdout_auc']}"
+                )
+                _write_json_atomic(output_path, report)
+
+        report["summary"][target_col] = summarize_stage5_1_target(target_runs, target_col)
+        structure_summary = report["summary"][target_col].get("structure_full", {})
+        report["sanity_checks"]["stage5_1_structure_full_actual"][target_col] = {
+            "val_auc_median": structure_summary.get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": structure_summary.get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        _write_json_atomic(output_path, report)
+
+    report["field_verdicts"] = stage5_1_field_verdicts(report)
+    report["status"] = "DIAGNOSTIC_ONLY"
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 1)
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -4590,6 +5191,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.0e: проверка меньшего Transformer против переобучения")
     parser.add_argument("--stage5-0f-signal-stationarity", action="store_true",
                         help="Stage 5.0f: диагностика стационарности H6_off05 breach-сигнала")
+    parser.add_argument("--stage5-1-structural-field-ablation", action="store_true",
+                        help="Stage 5.1: абляция структурных фрактальных полей H6_off05")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -4742,6 +5345,27 @@ def main():
         print("Stage 5.0f: диагностика стационарности завершена")
         print(json.dumps(report["decision"], indent=2))
         print(json.dumps({"json": str(STAGE5_0F_JSON_REPORT_PATH)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_1_structural_field_ablation:
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.1...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_1_structural_field_ablation(
+            target_splits={
+                "sell_stop_broken_H6_off05_flag": (train_df, val_stop_df, holdout_df),
+                "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_1_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.1: абляция структурных фрактальных полей завершена")
+        print(json.dumps({
+            "json": str(STAGE5_1_JSON_REPORT_PATH),
+            "field_verdicts": report.get("field_verdicts", {}),
+        }, indent=2))
         print("=" * 60)
         return
 
