@@ -574,3 +574,8 @@
 - Updated `wiki/research/fractal-stop-research.md`: added exact coverage for `2026-06-14-stage4-deep-diagnostics.md`, `2026-06-15-stage4_4-micro-check.md`, `2026-06-15-stage5-prep-diagnostics.md`, and `2026-06-15-walk-forward-diagnostics.md`.
 - Added missing synthesis for Stage 4 deep diagnostics and Stage 4.7 walk-forward diagnostics; Stage 4.4 and Stage 5.0-prep were already summarized but lacked exact source coverage.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 18 report updates.
+
+### 2026-06-24: Sync Stage 5.1 report refinements
+- Updated `CHANGELOG.md`: added Stage 5.1 refinements about `back` CI/yearly consistency, partial structural-premium coverage, `impulse`, and low-N 2026 sell risk.
+- Updated `wiki/research/fractal-stop-research.md`: synchronized Stage 5.1 synthesis with the revised report, including `back_val` interpretation, 5/5 yearly drop signs, `time+back` follow-up framing, and `sources: 23`.
+- Updated `wiki/index.md`: clarified that `back` is not a replacement for the full structural profile and that `impulse` remains unconfirmed.

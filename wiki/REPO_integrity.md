@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-24 13:09 UTC · git `17d13c3`
+> Auto-generated 2026-06-24 15:59 UTC · git `47cda29`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,14 +9,14 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1522 files  ·  **Commit**: `17d13c3`  ·  **Generated**: 2026-06-24 13:09 UTC
+**Tracked**: 1522 files  ·  **Commit**: `47cda29`  ·  **Generated**: 2026-06-24 15:59 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-06-24 | 11KB | `822f5437` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-24 | 195KB | `2296bd59` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-24 | 196KB | `45a24d50` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-24 | 4KB | `4936b958` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-24 | 50KB | `17e70d75` |
@@ -340,7 +340,7 @@
 | [docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md](docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md) |  | 2026-06-24 | 14KB | `7290f925` |
 | [docs/reports/2026-06-23-stage5_0e-small-transformer-check.md](docs/reports/2026-06-23-stage5_0e-small-transformer-check.md) |  | 2026-06-24 | 9KB | `e11ffaa6` |
 | [docs/reports/2026-06-24-stage5_0f-signal-stationarity.md](docs/reports/2026-06-24-stage5_0f-signal-stationarity.md) |  | 2026-06-24 | 29KB | `9b99d5bd` |
-| [docs/reports/2026-06-24-stage5_1-structural-field-ablation.md](docs/reports/2026-06-24-stage5_1-structural-field-ablation.md) |  | 2026-06-24 | 13KB | `a2087393` |
+| [docs/reports/2026-06-24-stage5_1-structural-field-ablation.md](docs/reports/2026-06-24-stage5_1-structural-field-ablation.md) |  | 2026-06-24 | 23KB | `3b85f473` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-20 | 2KB | `9a64f8af` |
 
 ## ML
@@ -1556,8 +1556,8 @@
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-06-17 | 89KB | `11a5246a` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-06-24 | 4KB | `0e482206` |
-| [wiki/log.md](wiki/log.md) |  | 2026-06-24 | 39KB | `d6d68f53` |
+| [wiki/index.md](wiki/index.md) |  | 2026-06-24 | 4KB | `587ef8d4` |
+| [wiki/log.md](wiki/log.md) |  | 2026-06-24 | 40KB | `79009580` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1568,7 +1568,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-06-24 | 69KB | `e3181c8d` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-06-24 | 72KB | `d09403b4` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
