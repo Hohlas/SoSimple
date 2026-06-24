@@ -2,6 +2,13 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-24] ingest | Stage 5.1: структурная абляция фрактальных полей
+- Добавлен охват `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.1 и уточнён общий итог по ветке `H6_off05`
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.1 (23 report updates)
+- Зафиксировано: `back` = единственное поле с итогом `likely_useful`; все остальные поля `mixed_or_unclear`; полей `likely_noise` не найдено; Stage 5.1 не переоткрывает `H6_off05`
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
 ## [2026-06-24] ingest | Stage 5.0f: диагностика устойчивости сигнала во времени
 - Добавлен охват `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.0f переписан с уточнёнными выводами

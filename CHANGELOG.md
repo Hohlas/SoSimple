@@ -2,6 +2,35 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-24] — Stage 5.1: структурная абляция фрактальных полей
+
+### Добавлено
+- `--stage5-1-structural-field-ablation`
+- `ML/reports/stage5_1_structural_field_ablation.json`
+- `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
+- helpers Stage 5.1: fixed split `<=2020 / 2021-2022 / 2023-2025 / 2026`, профили `time_only / structure_full / drop_* / add_*`, paired bootstrap delta, field verdicts, progressive JSON output
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 20 профилей × 3 seed = `120` прогонов XGBoost
+- `time_only` = только `hour_sin/hour_cos/dow_sin/dow_cos`
+- Stage 5.1 полностью исключает `price`, `price_coord_atr`, `price_atr_scaled`, `ATR`
+- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
+- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- Единственное поле с согласованным итогом на обеих целях: **`back` = `likely_useful`**
+- Все остальные поля: `mixed_or_unclear`
+- Полей с итоговым `likely_noise` не найдено
+- `structure_full` заметно превосходит `time_only`: sell val AUC `0.6693` vs `0.6351`, buy val AUC `0.6879` vs `0.6418`
+- Для `back`: drop-one ухудшает качество, add-one улучшает его и на sell, и на buy
+
+### Вывод
+Stage 5.1 подтверждает, что структурная часть сигнала не сводится к одному календарю, но не переоткрывает `H6_off05` как кандидата. Самый сильный диагностический след — поле `back`; все остальные поля требуют либо нового периода, либо отдельного узкого follow-up.
+
+<!-- docs/reports/2026-06-24-stage5_1-structural-field-ablation.md -->
+
 ## [2026-06-24] — Stage 5.0f: диагностика устойчивости сигнала во времени
 
 ### Добавлено
