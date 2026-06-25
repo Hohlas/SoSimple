@@ -2,6 +2,13 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-25] ingest | Stage 5.1b: Up/Dn абляция и baseline clock+shift
+- Добавлен охват `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.1b подтвердил, что `back` остаётся устойчивым после добавления `shift`, а Up/Dn дают только слабый самостоятельный сигнал и не улучшают `structure_full`
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.1b (24 report updates)
+- Зафиксировано: Up/Dn не стоит включать в следующий стартовый профиль по умолчанию; допустимый следующий шаг только узкий follow-up вокруг `back`/`impulse`
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
 ## [2026-06-24] ingest | Stage 5.1: структурная абляция фрактальных полей
 - Добавлен охват `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.1 и уточнён общий итог по ветке `H6_off05`

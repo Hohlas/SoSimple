@@ -2,6 +2,38 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-25] — Stage 5.1b: Up/Dn абляция и baseline `clock + shift`
+
+### Добавлено
+- `--stage5-1b-updn-field-ablation`
+- `ML/reports/stage5_1b_updn_field_ablation.json`
+- `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
+- Stage 5.1b профили: `clock_shift`, `structure_full`, `updn_full`, `structure_plus_updn`, `back_impulse_combo`, 19 `drop_*`, 19 `add_*`
+- raw-shadow preflight для Up/Dn: структурная монотонность проверяется на `MT/MQL4/Files/Nero.csv`, а не на уже нормализованных `DATA/*_labeled.csv`
+- fail-fast проверка совпадения строк raw-shadow split и модельного split
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 43 профиля × 3 seed = `258` прогонов XGBoost
+- Baseline усилен с `clock-only` до `clock + shift`, где `shift = log1p(raw_shift)`
+- Проверены 9 структурных полей и 10 Up/Dn полей
+- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
+- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- `updn_full` даёт слабую добавку над `clock_shift`: sell `+0.0048` AUC, buy `+0.0059`
+- `structure_full` даёт существенно большую добавку над `clock_shift`: sell `+0.0460`, buy `+0.0561`
+- `structure_plus_updn` не улучшает `structure_full` на validation: sell `-0.0017`, buy `-0.0021`
+- `back` сохранил `overall_likely_useful`: sell add `+0.0408`, buy add `+0.0575` над `clock_shift`; удаление `back` ухудшает обе цели
+- `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но остаётся диагностическим контролем
+- Единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell (`target_specific_signal`)
+
+### Вывод
+Stage 5.1b не переоткрывает `H6_off05`. Up/Dn поля не стоит включать в следующий стартовый профиль по умолчанию: их самостоятельный сигнал мал, а добавка к структуре отрицательна на validation. Главный устойчивый след остаётся у `back`; допустимый следующий шаг — только узкий follow-up вокруг `back`/`impulse`, без нового широкого поиска по `H6_off05`.
+
+<!-- docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md -->
+
 ## [2026-06-24] — Stage 5.1: структурная абляция фрактальных полей
 
 ### Добавлено
