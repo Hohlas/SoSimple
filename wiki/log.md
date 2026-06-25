@@ -587,3 +587,8 @@
 - Updated `CHANGELOG.md`: added Stage 5.1 refinements about `back` CI/yearly consistency, partial structural-premium coverage, `impulse`, and low-N 2026 sell risk.
 - Updated `wiki/research/fractal-stop-research.md`: synchronized Stage 5.1 synthesis with the revised report, including `back_val` interpretation, 5/5 yearly drop signs, `time+back` follow-up framing, and `sources: 23`.
 - Updated `wiki/index.md`: clarified that `back` is not a replacement for the full structural profile and that `impulse` remains unconfirmed.
+
+### 2026-06-25: Ingest Stage 5.2 time-to-breach regression
+- Added `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.2 target contract, oracle-positive result, full model gate failure, constant-baseline comparison, and censored/ordinal next-step framing.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.2, 25 report updates.

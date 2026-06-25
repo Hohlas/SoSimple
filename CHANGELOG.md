@@ -2,6 +2,38 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа
+
+### Добавлено
+- `--stage5-2-time-to-breach-regression`
+- `BR_TIME_TO_BREACH_COLUMNS` и `*_bars_to_breach_*` targets для Fractal Stop Breach
+- `ML/reports/stage5_2_time_to_breach_regression.json`
+- `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- Stage 5.2 профили: `time_only`, `clock_shift`, `clock_shift_back`, `clock_shift_impulse`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`
+- oracle-preflight через first-touch simulator, censoring gate, regression metrics и model gate
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 7 профилей × 3 seed = `42` XGBoost-регрессии
+- Основные цели: `sell_bars_to_breach_H6_off05`, `buy_bars_to_breach_H6_off05`
+- `bars_to_breach = 7` означает "не пробит за 6 баров", а не фактический пробой на 7-м баре
+- `2023-2025` используются только как diagnostic disclosure; выбор winner-а по holdout запрещён
+- Up/Dn поля не включались в стартовые профили по итогам Stage 5.1b
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- Прогон завершён полностью: `42/42`
+- Censoring gate прошёл: train censoring sell `0.6114`, buy `0.6299`
+- Oracle gate прошёл: sell `oracle_time_pf = 1.6520`, buy `1.7244`
+- Model gate провален на обеих целях: Spearman `0.0000`, AUC `0.5000`
+- Все 7 профилей дали одинаковые медианные метрики; `time_only` выбран только из-за tie-break, а не как содержательный winner
+- Constant baseline по MAE лучше модели: sell `1.4439` vs `4.5561`, buy `1.4329` vs `4.5671`
+
+### Вывод
+Идея времени до пробоя не умерла на oracle-уровне, но текущая XGBoost-регрессия Stage 5.2 не извлекла полезного ранжирования. Ветка `H6_off05` не переоткрыта. Следующий допустимый шаг — post-mortem схлопывания предсказаний и, если продолжать тему, постановка с учётом цензуры вместо обычной регрессии.
+
+<!-- docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md -->
+
 ## [2026-06-25] — Stage 5.1b: Up/Dn абляция и baseline `clock + shift`
 
 ### Добавлено
