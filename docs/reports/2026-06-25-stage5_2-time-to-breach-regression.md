@@ -6,13 +6,11 @@
 > **Цель**: Проверить, можно ли заменить бинарную цель `stop broken / not broken` на регрессию времени до пробоя фрактального стопа.
 > **Related plan/spec**: `docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md`, `docs/superpowers/plans/2026-06-25-stage5_2-time-to-breach-regression.md`
 
-> **Addendum 2026-06-25**: после ревью найден root cause аномалии одинаковых метрик. Stage 5.2 использовал `xgboost` objective `reg:pseudohubererror`; на полном `time_only` split он выдавал почти константный raw-прогноз `-171.076`, который clipping превращал в `1.0`. Поэтому текущий JSON `ML/reports/stage5_2_time_to_breach_regression.json` является устаревшим диагностическим артефактом и не должен использоваться как исследовательский результат. Код исправлен на `reg:squarederror`; нужен полный перезапуск Stage 5.2.
-
 ## Context
 
 Stage 5.1 и Stage 5.1b показали, что в структурных фрактальных полях есть диагностический след, особенно в поле `back`, но ветка `H6_off05 stop broken` не была переоткрыта как кандидат. Stage 5.2 проверял другую постановку: не просто "будет пробой или нет", а "через сколько баров будет пробой".
 
-Основная идея: если модель умеет ранжировать фракталы по времени до пробоя, это может быть полезнее бинарного ответа. Короткое время до пробоя означает плохой уровень для стопа; длинное время или отсутствие пробоя за горизонт означает потенциально более безопасный уровень.
+Первый Stage 5.2 прогон был признан невалидным: `reg:pseudohubererror` схлопывал raw-прогнозы в константу вне диапазона, а clipping превращал их в `1.0`. После bugfix objective заменён на `reg:squarederror`, добавлен `pred_summary`, oracle-gate перестал принимать бесконечный binary-oracle как валидное сравнение. Этот отчёт описывает повторный полный прогон после исправления.
 
 Уровень этапа: поисковый. Результат не может стать торговым кандидатом без нового независимого проверочного цикла.
 
@@ -23,14 +21,16 @@ Stage 5.1 и Stage 5.1b показали, что в структурных фр�
 - `sell_bars_to_breach_H6_off05`
 - `buy_bars_to_breach_H6_off05`
 
-Добавлен Stage 5.2 runner для XGBoost-регрессии:
+Повторный прогон Stage 5.2:
 
+- objective: `reg:squarederror`
 - 7 профилей: `time_only`, `clock_shift`, `clock_shift_back`, `clock_shift_impulse`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`
 - 2 цели: sell и buy
 - 3 seed: `42`, `77`, `123`
 - всего `42` model-run
+- запуск: `--stage5-2-workers 8 --stage5-2-xgb-threads 4`
 
-Также добавлены:
+Также проверены:
 
 - constant baseline: всегда предсказывает censored value `7`
 - oracle-preflight через first-touch simulator
@@ -48,27 +48,46 @@ Search budget: `7 профилей × 2 цели × 3 seed = 42` XGBoost-рег�
 
 ## Changed Files
 
-Код и тесты из коммита `7d77a1f`:
+Код и тесты:
 
-- `processing/label_signals.py` — добавлены `BR_TIME_TO_BREACH_COLUMNS` и расчёт первого бара пробоя.
-- `processing/label_main.py` — добавлен heartbeat для долгой разметки.
-- `ML/baseline/benchmark_stage5_transformer_breach.py` — добавлен Stage 5.2 pipeline, метрики, gate, oracle-preflight, CLI.
+- `processing/label_signals.py` — `BR_TIME_TO_BREACH_COLUMNS` и расчёт первого бара пробоя.
+- `processing/label_main.py` — heartbeat для долгой разметки.
+- `ML/baseline/benchmark_stage5_transformer_breach.py` — Stage 5.2 pipeline, `reg:squarederror`, `pred_summary`, gate, oracle-preflight, CLI.
 - `tests/processing/test_fractal_stop_breach_labels.py` — тесты контракта новой разметки.
-- `tests/test_stage5_transformer_breach.py` — тесты профилей, метрик, gate, runner и CLI.
-- `ML/reports/stage5_2_time_to_breach_regression.json` — structured artifact полного прогона.
+- `tests/test_stage5_transformer_breach.py` — тесты профилей, метрик, objective, oracle-gate, runner и CLI.
+- `ML/reports/stage5_2_time_to_breach_regression.json` — structured artifact повторного полного прогона.
 
 ## Verification
 
-Команды проверки:
+Полный тестовый набор после bugfix:
 
 ```bash
-./.venv/bin/python -m pytest tests/processing/test_fractal_stop_breach_labels.py tests/test_stage5_transformer_breach.py -q
+./.venv/bin/python -m pytest tests/ -q
 ```
 
 Результат:
 
 ```text
-180 passed in 114.99s
+857 passed, 29 warnings in 162.05s
+```
+
+Команда rerun:
+
+```bash
+./.venv/bin/python -u ML/baseline/benchmark_stage5_transformer_breach.py \
+  --stage5-2-time-to-breach-regression \
+  --stage5-2-workers 8 \
+  --stage5-2-xgb-threads 4
+```
+
+Результат:
+
+```text
+Stage 5.2: регрессия времени до пробоя завершена
+done_runs: 42
+total_runs: 42
+elapsed_sec: 2983.555
+status: DIAGNOSTIC_ONLY
 ```
 
 Дополнительная проверка JSON:
@@ -81,19 +100,25 @@ p = Path("ML/reports/stage5_2_time_to_breach_regression.json")
 d = json.loads(p.read_text())
 assert d["status"] == "DIAGNOSTIC_ONLY"
 assert d["progress"]["done_runs"] == d["progress"]["total_runs"] == 42
+assert d["progress"]["workers"] == 8
+assert d["progress"]["xgb_threads"] == 4
 for target in d["targets"]:
     gate = d["gate_results"][target]
     assert gate["censoring_gate"]["pass"] is True
-    assert gate["oracle_gate"]["pass"] is True
+    assert gate["oracle_gate"]["pass"] is False
+    assert gate["oracle_gate"]["reason"] == "invalid_oracle_binary_comparison"
     assert gate["model_gate"]["pass"] is False
-print("json_consistency_ok")
+    best = d["summary"][target]["best_profile"]
+    assert best["val_stop"]["spearman_r"] > 0.30
+    assert best["val_stop"]["auc_true_ge_4"] >= 0.70
+print("stage5_2_rerun_json_consistency_ok")
 PY
 ```
 
 Результат:
 
 ```text
-json_consistency_ok
+stage5_2_rerun_json_consistency_ok
 ```
 
 ## Results
@@ -106,12 +131,23 @@ json_consistency_ok
 
 | Target | Censoring gate | Oracle gate | Model gate | Overall |
 |---|---:|---:|---:|---|
-| `sell_bars_to_breach_H6_off05` | PASS | PASS | FAIL | `MODEL_GATE_FAILED` |
-| `buy_bars_to_breach_H6_off05` | PASS | PASS | FAIL | `MODEL_GATE_FAILED` |
+| `sell_bars_to_breach_H6_off05` | PASS | FAIL | FAIL | `ORACLE_FAILED` |
+| `buy_bars_to_breach_H6_off05` | PASS | FAIL | FAIL | `ORACLE_FAILED` |
+
+Oracle gate падает не потому, что `oracle_time_pf` плохой, а потому что comparison против binary-oracle невалиден: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`.
+
+Model gate почти проходит по ранжированию, но не проходит из-за MAE-improvement над constant baseline:
+
+- `spearman_ge_0_30`: PASS на обеих целях
+- `auc_ge_0_70`: PASS на обеих целях
+- `yearly_not_single_year`: PASS на обеих целях
+- `mae_le_3`: PASS на обеих целях
+- `spearman_delta_*`: PASS на обеих целях
+- `mae_improvement_constant_ge_10pct`: FAIL на обеих целях
 
 ### Censoring
 
-Доля непробитых уровней в train ниже блокирующего порога `0.70`, поэтому censoring сам по себе не объясняет провал:
+Доля непробитых уровней в train ниже блокирующего порога `0.70`:
 
 | Target | train censoring | val censoring | holdout censoring |
 |---|---:|---:|---:|
@@ -120,74 +156,73 @@ json_consistency_ok
 
 ### Oracle Preflight
 
-Oracle формально проходит gate: если знать истинное время до пробоя, торговая логика имеет положительный PF. Но этот gate оказался слабее, чем предполагалось в дизайне.
-
 | Target | oracle_time_pf | oracle_binary_pf | pf_delta_vs_binary | trades | trades/year | yearly PF |
 |---|---:|---:|---:|---:|---:|---|
 | sell | `1.6520` | `inf` | `None` | `2206` | `1103.0` | 2021 `1.6352`, 2022 `1.6682` |
 | buy | `1.7244` | `inf` | `None` | `1997` | `998.5` | 2021 `1.6734`, 2022 `1.7723` |
 
-Критическая оговорка: `oracle_binary_pf = inf`, потому что binary-oracle входит на строках, где `breach_flag == 0`. При таком выборе стоп по определению не пробивается внутри горизонта `H=6`, поэтому SL-исходов нет, а PF становится бесконечным. Из-за этого сравнение `oracle_time_pf` против `oracle_binary_pf` бессмысленно, `pf_delta_vs_binary = None`, а условие gate `(pf_delta is None or pf_delta >= 0.2)` проходит по умолчанию.
+Критическая оговорка: binary-oracle входит на строках, где `breach_flag == 0`. При таком выборе стоп по определению не пробивается внутри горизонта `H=6`, поэтому SL-исходов нет, а PF становится бесконечным. Следовательно, oracle-preflight показывает только высокий диагностический потолок при знании будущего. Он не доказывает, что регрессия времени до пробоя лучше бинарного знания `breach / no breach`.
 
-Следствие: oracle-preflight показывает только то, что знание будущего времени/факта пробоя создаёт высокий диагностический потолок. Он не доказывает, что именно регрессия времени до пробоя лучше бинарного знания `breach / no breach`.
-
-Дополнительная оговорка: частота `998-1103` сделок в год слишком высокая для торгового потолка. Oracle входит примерно на большинстве безопасных строк, где стоп не пробивается быстро. Поэтому PF oracle-time завышен частотой входов и не должен трактоваться как реалистичный торговый результат.
+Дополнительная оговорка: `998-1103` сделок в год — нереалистично высокая частота. Это не торговый потолок, а diagnostic ceiling.
 
 ### Model Results
 
-Все профили дали идентичные итоговые метрики. Это аномалия, а не нормальный исследовательский результат.
+Повторный прогон устранил аномалию одинаковых метрик. Профили различаются, `pred_summary.std` ненулевой, количество уникальных округлённых прогнозов высокое.
 
-| Target | Profile | val Spearman | val MAE | val AUC `true>=4` | holdout Spearman | holdout MAE | holdout AUC |
-|---|---|---:|---:|---:|---:|---:|---:|
-| sell | `time_only` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `clock_shift` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `clock_shift_back` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `clock_shift_impulse` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `clock_shift_back_impulse` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `structure_full` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| sell | `structure_full_without_back` | `0.0000` | `4.5561` | `0.5000` | `0.0000` | `4.4526` | `0.5000` |
-| buy | `time_only` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `clock_shift` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `clock_shift_back` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `clock_shift_impulse` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `clock_shift_back_impulse` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `structure_full` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
-| buy | `structure_full_without_back` | `0.0000` | `4.5671` | `0.5000` | `0.0000` | `4.5911` | `0.5000` |
+| Target | Profile | val Spearman | val MAE | val AUC `true>=4` | pred std | pred uniq | holdout Spearman | holdout MAE | holdout AUC |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| sell | `time_only` | `0.2253` | `1.7444` | `0.6325` | `0.5113` | `115` | `0.1781` | `1.7963` | `0.6251` |
+| sell | `clock_shift` | `0.1986` | `1.7928` | `0.6231` | `0.6105` | `2648` | `0.1866` | `1.7938` | `0.6236` |
+| sell | `clock_shift_back` | `0.3072` | `1.6942` | `0.7005` | `0.6463` | `2662` | `0.2942` | `1.7139` | `0.6784` |
+| sell | `clock_shift_impulse` | `0.2547` | `1.7505` | `0.6666` | `0.6039` | `2651` | `0.2340` | `1.7601` | `0.6434` |
+| sell | `clock_shift_back_impulse` | `0.3041` | `1.7076` | `0.6974` | `0.6281` | `2649` | `0.2919` | `1.7243` | `0.6780` |
+| sell | `structure_full` | `0.3000` | `1.7348` | `0.6928` | `0.6155` | `2646` | `0.2831` | `1.7487` | `0.6732` |
+| sell | `structure_full_without_back` | `0.2706` | `1.7480` | `0.6752` | `0.5839` | `2646` | `0.2426` | `1.7518` | `0.6467` |
+| buy | `time_only` | `0.2450` | `1.7160` | `0.6560` | `0.5641` | `118` | `0.1933` | `1.7550` | `0.6269` |
+| buy | `clock_shift` | `0.2169` | `1.7417` | `0.6377` | `0.6305` | `2418` | `0.1883` | `1.7576` | `0.6193` |
+| buy | `clock_shift_back` | `0.3162` | `1.6681` | `0.6991` | `0.7514` | `2446` | `0.2634` | `1.6896` | `0.6624` |
+| buy | `clock_shift_impulse` | `0.2752` | `1.6879` | `0.6723` | `0.6473` | `2439` | `0.2258` | `1.7266` | `0.6347` |
+| buy | `clock_shift_back_impulse` | `0.3280` | `1.6434` | `0.7071` | `0.7290` | `2450` | `0.2660` | `1.6920` | `0.6613` |
+| buy | `structure_full` | `0.3262` | `1.6632` | `0.7055` | `0.7016` | `2450` | `0.2669` | `1.7104` | `0.6598` |
+| buy | `structure_full_without_back` | `0.2982` | `1.6668` | `0.6884` | `0.6302` | `2433` | `0.2409` | `1.7171` | `0.6435` |
 
-`time_only` выбран только из-за tie-break: все 7 профилей имеют одинаковые медианные метрики. Это не означает, что `time_only` лучший по смыслу.
+Best profiles by validation Spearman:
 
-После сверки отчёта с кодом конкретная гипотеза "time-признаки нулевые, потому что `build_stage5_2_features()` не использует `build_row_features()`" не подтвердилась: текущий код вызывает `build_row_features(df, profile)`, а smoke-check на реальных строках строит разные feature matrices для `time_only`, `clock_shift`, `clock_shift_back` и `structure_full`. Но идентичные метрики от 4-признакового и 904-признакового профиля всё равно являются красным флагом. Итог Stage 5.2 нельзя трактовать как надёжный отрицательный исследовательский вывод до post-mortem модельного контура.
+| Target | Best profile | val Spearman | val AUC | val MAE | holdout Spearman | holdout AUC |
+|---|---|---:|---:|---:|---:|---:|
+| sell | `clock_shift_back` | `0.3072` | `0.7005` | `1.6942` | `0.2942` | `0.6784` |
+| buy | `clock_shift_back_impulse` | `0.3280` | `0.7071` | `1.6434` | `0.2660` | `0.6613` |
 
-Constant baseline оказался намного лучше по MAE:
+Constant baseline остаётся лучше по MAE:
 
 | Target | constant MAE | best model MAE | model MAE improvement |
 |---|---:|---:|---:|
-| sell | `1.4439` | `4.5561` | `-215.6%` |
-| buy | `1.4329` | `4.5671` | `-218.7%` |
+| sell | `1.4439` | `1.6942` | `-17.3%` |
+| buy | `1.4329` | `1.6434` | `-14.7%` |
 
-Практический смысл: модель не просто "слабая"; она хуже простой стратегии "всегда считать, что пробоя не будет за 6 баров".
-
-Почему constant baseline силён: на validation примерно 62% строк имеют `target = 7`, то есть стоп не пробит за 6 баров. Постоянный прогноз `7` получает нулевую ошибку на этих строках. Модельная MAE около `4.56` совместима со схлопыванием предсказаний в почти постоянное низкое значение, которое сильно ошибается на большинстве censored-строк. Но сами массивы предсказаний в JSON не сохранены, поэтому это пока гипотеза, а не доказанный факт.
+Это ключевой компромисс Stage 5.2: модель даёт полезное ранжирование времени до пробоя, но как точечная регрессия проигрывает простой константе `7` по MAE из-за сильной цензуры цели.
 
 ## Conclusions
 
-Основной вывод после сверки с JSON и последующего debug: Stage 5.2 не переоткрывает ветку `H6_off05`, но старый отрицательный модельный результат нельзя считать надёжным доказательством слабости самой идеи. Причина аномалии найдена: `reg:pseudohubererror` схлопывал прогнозы в константу вне допустимого диапазона, а clipping маскировал это как валидные `bars_to_breach`.
+Stage 5.2 после bugfix показывает содержательный сигнал, но не переоткрывает `H6_off05` как кандидата.
 
-Oracle-preflight при этом не является полноценным подтверждением идеи времени до пробоя: binary-oracle имеет бесконечный PF по построению, а `trades/year` слишком велик. Oracle показывает только диагностический потолок при знании будущего, а не реалистичную торгуемую механику.
+Главный положительный результат: `back` снова является главным компактным структурным полем. На sell лучший профиль `clock_shift_back`; на buy лучший `clock_shift_back_impulse`, а `structure_full` почти рядом. Это согласуется со Stage 5.1/5.1b: `back` связан с устойчивостью фрактального уровня.
 
-Корректный вывод: текущий артефакт Stage 5.2 имеет статус `DIAGNOSTIC_ONLY` и superseded-by-bugfix. До полного перезапуска с `reg:squarederror` нельзя делать вывод "регрессия времени до пробоя не работает".
+Главный отрицательный результат: обычная регрессия одного числа `bars_to_breach` плохо согласуется с censored target. Constant baseline `7` выигрывает по MAE, потому что большая доля строк реально не пробивается за `H=6`. Поэтому model gate не проходит, несмотря на Spearman/AUC.
+
+Oracle-preflight не может быть использован как подтверждение time-to-breach advantage: binary-oracle имеет бесконечный PF по построению, а частота сделок oracle-time нереалистично высокая.
+
+Итог: идея времени до пробоя стала перспективной как ранжирование или дискретная/цензурированная постановка, но не как текущая обычная регрессия с MAE-gate.
 
 ## Limitations / Open Questions
 
-- Все model gate checks провалены на обеих целях.
-- Все профили дали одинаковые итоговые метрики; root cause найден: `reg:pseudohubererror` + clipping схлопнули прогнозы.
-- В текущем JSON не сохранены массивы `y_pred`/`y_true`. Поэтому post-mortem распределений невозможен без перезапуска Stage 5.2 или отдельного диагностического job.
-- Конкретная гипотеза про нулевые time-признаки не подтвердилась: `build_stage5_2_features()` использует `build_row_features()`, а smoke-check строит разные feature matrices для профилей.
-- Oracle gate логически слабый: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`, и сравнение time-oracle против binary-oracle не работает.
-- `trades_per_year` oracle (`998-1103`) нереалистично велик для торгового потолка и завышает интерпретацию oracle PF.
+- Verdict остаётся `DIAGNOSTIC_ONLY`; кандидата нет.
+- Oracle comparison невалиден: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`.
+- MAE-gate провален на обеих целях: модель хуже constant baseline `7`.
 - `bars_to_breach = 7` означает "не пробит за 6 баров", а не фактический пробой на 7-м баре. Обычная регрессия плохо учитывает такую цензуру.
 - `2023-2025` не является независимым frozen test, потому что эта ветка уже многократно использовала эти годы для диагностики.
-- Scale contract: Stage 5.2 использует уже нормализованные `DATA/*_labeled.csv`; отдельного scaler внутри Stage 5.2 нет. Фрактальные поля наследуют rowwise normalization из preprocessing. Нового A7 feature distribution audit для Stage 5.2 не проводилось, потому что результат не проходит model gate и не становится кандидатом.
+- Scale contract: Stage 5.2 использует уже нормализованные `DATA/*_labeled.csv`; отдельного scaler внутри Stage 5.2 нет. Фрактальные поля наследуют rowwise normalization из preprocessing.
+- Новый JSON содержит `pred_summary`, но не содержит sampled `y_pred`/`y_true`. Для глубокой калибровки это стоит добавить отдельно.
 - Up/Dn поля намеренно не включались в стартовые профили Stage 5.2 по итогам Stage 5.1b.
 
 ## Validation Split Disclosure
@@ -203,24 +238,22 @@ Split соответствует Stage 5.x fixed protocol:
 
 ## Next Step
 
-Не запускать новый широкий перебор по `H6_off05` в этой же постановке.
+Не объявлять Stage 5.2 кандидатом.
 
 Допустимые следующие шаги:
 
-- Полностью перезапустить Stage 5.2 после bugfix objective `reg:squarederror`.
-- В новом JSON сохранить `pred_summary`; при необходимости добавить сохранение sampled `y_pred`/`y_true`.
-- Сохранять feature/model contract checks: shape, `nonzero`, variance, отличие матриц между профилями, variance предсказаний и сравнение с dummy regressor.
-- Исправить oracle gate: не считать `pf_delta_vs_binary = None` автоматическим pass и явно обрабатывать случай `oracle_binary_pf = inf`.
-- Если продолжать идею времени до пробоя, заменить обычную регрессию на постановку, которая учитывает цензуру: например, предсказывать вероятность `breach_after_k` для нескольких порогов `k`, а не одно число `bars_to_breach`.
-- Проверять только узкий набор профилей вокруг `back`/`impulse`; широкий feature search по старому `H6_off05` не оправдан.
-- Для статуса выше `DIAGNOSTIC_ONLY` нужен новый независимый период, например полноценный `2026+`, не использованный для выбора.
+- Проверить time-to-breach как дискретную задачу: `fast / medium / no breach` вместо обычной регрессии.
+- Проверить несколько бинарных целей `breach_after_k` / `survives_at_least_k`, потому что Spearman/AUC показывают ранжирование, а MAE ломается на цензуре.
+- Делать следующий follow-up только на узких профилях: `clock_shift_back`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`.
+- Добавить sampled `y_pred`/`y_true` в JSON для калибровки и bucket-анализа.
+- Исправить oracle-preflight design: binary-oracle comparison в текущем виде неинформативен.
 
 Запрещено делать дальше:
 
 - Объявлять Stage 5.2 кандидатом.
-- Использовать `time_only` как winner: он выбран только из-за равенства нулевых метрик.
-- Использовать `2023-2025` как подтверждение.
-- Делать торговое правило из oracle-результата: oracle использует недоступное в момент сделки знание.
+- Использовать oracle-time PF как торговое подтверждение.
+- Использовать `2023-2025` как новое независимое подтверждение.
+- Запускать новый широкий перебор по `H6_off05` на тех же годах.
 
 ## Related Materials
 

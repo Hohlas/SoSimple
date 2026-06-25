@@ -601,3 +601,8 @@
 - Updated `ML/baseline/benchmark_stage5_transformer_breach.py`: Stage 5.2 objective changed from `reg:pseudohubererror` to `reg:squarederror`, `pred_summary` added to regression metrics, oracle gate rejects invalid `oracle_binary_pf = inf` comparison.
 - Updated `tests/test_stage5_transformer_breach.py`: added regression tests for objective selection, prediction summaries, and invalid oracle comparison.
 - Updated report/changelog/handoff/wiki: old Stage 5.2 JSON is superseded by bugfix and requires full rerun.
+
+### 2026-06-25: Stage 5.2 rerun after bugfix
+- Reran `--stage5-2-time-to-breach-regression --stage5-2-workers 8 --stage5-2-xgb-threads 4`; completed `42/42`.
+- Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`.
+- Result: time-to-breach ranking exists (`clock_shift_back` sell, `clock_shift_back_impulse` buy), but candidate-gate remains `DIAGNOSTIC_ONLY` due to invalid oracle comparison and MAE worse than constant baseline.

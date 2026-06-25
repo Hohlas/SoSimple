@@ -9,7 +9,7 @@
 - Stage 5.2 objective заменён на `reg:squarederror`
 - В regression metrics добавлен `pred_summary` (`min`, `median`, `max`, `std`, `unique_rounded_4`)
 - Oracle gate больше не принимает `oracle_binary_pf = inf` / `pf_delta_vs_binary = None` как валидное сравнение
-- Старый `ML/reports/stage5_2_time_to_breach_regression.json` помечен как устаревший диагностический артефакт; нужен полный rerun Stage 5.2
+- Полный rerun Stage 5.2 выполнен после bugfix: `42/42`, `workers=8`, `xgb_threads=4`
 
 ### Добавлено
 - `--stage5-2-time-to-breach-regression`
@@ -31,14 +31,15 @@
 - **Вердикт: DIAGNOSTIC_ONLY**
 - Прогон завершён полностью: `42/42`
 - Censoring gate прошёл: train censoring sell `0.6114`, buy `0.6299`
-- Oracle gate формально прошёл: sell `oracle_time_pf = 1.6520`, buy `1.7244`, но `oracle_binary_pf = inf`, поэтому сравнение time-oracle vs binary-oracle невалидно
-- Model gate провален на обеих целях: Spearman `0.0000`, AUC `0.5000`
-- Все 7 профилей дали идентичные медианные метрики; это аномалия и вероятный признак бага/схлопывания предсказаний, а не нормальный исследовательский результат
-- Constant baseline по MAE лучше модели: sell `1.4439` vs `4.5561`, buy `1.4329` vs `4.5671`
-- Массивы предсказаний в JSON не сохранены, поэтому post-mortem требует перезапуска
+- Oracle gate провален честно: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`, сравнение time-oracle vs binary-oracle невалидно
+- Model gate провален только по MAE-improvement над constant baseline; Spearman/AUC/yearly checks проходят
+- Лучший sell: `clock_shift_back`, val Spearman `0.3072`, val AUC `0.7005`, holdout Spearman `0.2942`
+- Лучший buy: `clock_shift_back_impulse`, val Spearman `0.3280`, val AUC `0.7071`, holdout Spearman `0.2660`
+- Constant baseline по MAE лучше модели: sell `1.4439` vs `1.6942`, buy `1.4329` vs `1.6434`
+- Аномалия одинаковых метрик устранена: pred std ненулевой, профили различаются
 
 ### Вывод
-Stage 5.2 не переоткрывает `H6_off05`, а старый JSON нельзя читать как надёжное опровержение идеи времени до пробоя из-за найденного bug root cause. Следующий шаг — полный rerun Stage 5.2 на `reg:squarederror`; только после него можно оценивать target.
+Stage 5.2 не переоткрывает `H6_off05`, но после bugfix показывает содержательное ранжирование времени до пробоя. Главный повторяющийся сигнал снова `back`. Текущая обычная регрессия одного числа `bars_to_breach` не проходит candidate-gate из-за MAE хуже constant baseline и невалидного oracle comparison; следующий шаг — дискретная/цензурированная постановка (`breach_after_k`, ordinal buckets), без широкого перебора.
 
 <!-- docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md -->
 
