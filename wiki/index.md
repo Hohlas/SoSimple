@@ -32,7 +32,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §21: Direct Direction Audit + Rebuild + Transformer Encoder | 4 reports (05-15 — 05-21) |
 | &nbsp;&nbsp;↳ [methodology-cycle-candidate-source-v2.md](research/methodology-cycle-candidate-source-v2.md) | Candidate-source v2 methodology cycle: live-safe protocol, Stage 09/10 invalidation | 1 report (05-25) |
 | &nbsp;&nbsp;↳ [limit-order-feature-foundation.md](research/limit-order-feature-foundation.md) | Limit-order entry, feature ablation, direction-only signal, fractal channel ablation, RF GridSearch | 5 reports (05-29 — 06-05) |
-| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-5.2: breach, fav, exit, walk-forward, Transformer, A7-аудит, `asinh`, XGBoost+Logistic скрининг, проверка переобучения, диагностика устойчивости сигнала, structural/Up-Dn ablation и time-to-breach regression. Stage 5.2: oracle времени до пробоя проходит, но model gate полностью провален (`Spearman=0`, `AUC=0.5`, MAE хуже constant baseline); ветка `H6_off05` остаётся `DIAGNOSTIC_ONLY`. | 25 report updates (06-10 — 06-25) |
+| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-5.2: breach, fav, exit, walk-forward, Transformer, A7-аудит, `asinh`, XGBoost+Logistic скрининг, проверка переобучения, диагностика устойчивости сигнала, structural/Up-Dn ablation и time-to-breach regression. Stage 5.2: artifact требует post-mortem — все профили дали `Spearman=0`/`AUC=0.5`, `oracle_binary_pf = inf`, предсказания не сохранены; ветка `H6_off05` остаётся `DIAGNOSTIC_ONLY`. | 25 report updates (06-10 — 06-25) |
 
 ## Concepts
 

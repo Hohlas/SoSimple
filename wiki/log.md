@@ -592,3 +592,7 @@
 - Added `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 5.2 target contract, oracle-positive result, full model gate failure, constant-baseline comparison, and censored/ordinal next-step framing.
 - Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.2, 25 report updates.
+
+### 2026-06-25: Correct Stage 5.2 interpretation after JSON review
+- Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`: marked identical profile metrics as likely implementation/model-contract anomaly, disclosed `oracle_binary_pf = inf`, unrealistic oracle trade frequency, and missing prediction arrays.
+- Updated `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: Stage 5.2 is now framed as an artifact requiring technical post-mortem, not a reliable negative result about time-to-breach itself.
