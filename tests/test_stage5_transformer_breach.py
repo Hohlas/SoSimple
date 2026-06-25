@@ -3078,3 +3078,572 @@ def test_stage5_1_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-1-structural-field-ablation"])
     assert args.stage5_1_structural_field_ablation is True
+
+
+def test_stage5_1b_constants_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_1B_TARGETS == [
+        "sell_stop_broken_H6_off05_flag",
+        "buy_stop_broken_H6_off05_flag",
+    ]
+    assert runner.STAGE5_1B_STRUCTURE_FIELDS == [
+        "direction", "front", "back", "strong", "break",
+        "reverse", "power", "count", "impulse",
+    ]
+    assert runner.STAGE5_1B_UPDN_FIELDS == [
+        "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12",
+        "up_24", "dn_24", "up_48", "dn_48",
+    ]
+    assert runner.STAGE5_1B_FIELDS == (
+        runner.STAGE5_1B_STRUCTURE_FIELDS + runner.STAGE5_1B_UPDN_FIELDS
+    )
+    assert len(runner.STAGE5_1B_PROFILE_KEYS) == 43
+    assert runner.STAGE5_1B_PROFILE_KEYS[:5] == [
+        "clock_shift",
+        "structure_full",
+        "updn_full",
+        "structure_plus_updn",
+        "back_impulse_combo",
+    ]
+    assert str(runner.STAGE5_1B_JSON_REPORT_PATH).endswith(
+        "stage5_1b_updn_field_ablation.json"
+    )
+
+
+def test_extract_stage5_1b_fields_reads_fractal_indices_and_log_shift():
+    import math
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    fstr = _make_fractal_str([
+        (1, 390.5),
+        (2, -1),
+        (3, 0.3),
+        (4, 0.4),
+        (5, 1),
+        (6, 0),
+        (7, 0.7),
+        (8, 8.0),
+        (9, 9.0),
+        (10, 1.5),
+        (11, 12.0),
+        (12, 13.0),
+        (13, 24.0),
+        (14, 25.0),
+        (15, 48.0),
+        (16, 49.0),
+        (17, 3.0),
+        (18, 4.0),
+        (19, 6.0),
+        (20, 7.0),
+        (22, 48),
+    ])
+
+    fields = runner.extract_stage5_1b_fields(fstr)
+
+    assert fields["price"] == pytest.approx(390.5)
+    assert fields["direction"] == pytest.approx(-1)
+    assert fields["back"] == pytest.approx(0.4)
+    assert fields["impulse"] == pytest.approx(1.5)
+    assert fields["up_3"] == pytest.approx(3.0)
+    assert fields["dn_3"] == pytest.approx(4.0)
+    assert fields["up_6"] == pytest.approx(6.0)
+    assert fields["dn_6"] == pytest.approx(7.0)
+    assert fields["up_12"] == pytest.approx(12.0)
+    assert fields["dn_12"] == pytest.approx(13.0)
+    assert fields["up_24"] == pytest.approx(24.0)
+    assert fields["dn_24"] == pytest.approx(25.0)
+    assert fields["up_48"] == pytest.approx(48.0)
+    assert fields["dn_48"] == pytest.approx(49.0)
+    assert fields["shift"] == pytest.approx(math.log1p(48))
+
+
+def test_extract_stage5_1b_fields_short_or_bad_fractal_returns_zeroes():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    short_fields = runner.extract_stage5_1b_fields("1:2:3")
+    bad_shift = runner.extract_stage5_1b_fields(_make_fractal_str([(22, -10)]))
+
+    assert set(short_fields) >= {"price", "direction", "up_3", "dn_48", "shift"}
+    assert all(v == pytest.approx(0.0) for v in short_fields.values())
+    assert bad_shift["shift"] == pytest.approx(0.0)
+
+
+def test_stage5_1b_profiles_have_expected_fields():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    clock = runner._stage5_1b_profile_for_key("clock_shift")
+    structure = runner._stage5_1b_profile_for_key("structure_full")
+    updn = runner._stage5_1b_profile_for_key("updn_full")
+    combined = runner._stage5_1b_profile_for_key("structure_plus_updn")
+    combo = runner._stage5_1b_profile_for_key("back_impulse_combo")
+    drop_back = runner._stage5_1b_profile_for_key("drop_back")
+    drop_up3 = runner._stage5_1b_profile_for_key("drop_up_3")
+    add_up3 = runner._stage5_1b_profile_for_key("add_up_3")
+
+    assert clock["token_fields"] == ["shift"]
+    assert clock["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+    assert clock["seq_len"] == 100
+
+    assert structure["token_fields"] == runner.STAGE5_1B_STRUCTURE_FIELDS + ["shift"]
+    assert updn["token_fields"] == runner.STAGE5_1B_UPDN_FIELDS + ["shift"]
+    assert combined["token_fields"] == runner.STAGE5_1B_FIELDS + ["shift"]
+    assert combo["token_fields"] == ["shift", "back", "impulse"]
+
+    assert "back" not in drop_back["token_fields"]
+    assert "shift" in drop_back["token_fields"]
+    assert "up_3" not in drop_up3["token_fields"]
+    assert "shift" in drop_up3["token_fields"]
+    assert add_up3["token_fields"] == ["shift", "up_3"]
+
+
+def test_build_stage5_1b_features_shapes_and_log_shift():
+    import math
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(6, 100)
+
+    X_clock = runner.build_stage5_1b_features(df, "clock_shift")
+    X_structure = runner.build_stage5_1b_features(df, "structure_full")
+    X_updn = runner.build_stage5_1b_features(df, "updn_full")
+    X_combined = runner.build_stage5_1b_features(df, "structure_plus_updn")
+    X_combo = runner.build_stage5_1b_features(df, "back_impulse_combo")
+    X_drop = runner.build_stage5_1b_features(df, "drop_back")
+    X_add = runner.build_stage5_1b_features(df, "add_up_3")
+
+    assert X_clock.shape == (6, 104)
+    assert X_structure.shape == (6, 1004)
+    assert X_updn.shape == (6, 1104)
+    assert X_combined.shape == (6, 2004)
+    assert X_combo.shape == (6, 304)
+    assert X_drop.shape == (6, 904)
+    assert X_add.shape == (6, 204)
+    assert X_clock[0, 0] == pytest.approx(math.log1p(1))
+    assert runner.fit_stage5_1b_transform_params(df, "structure_full") == {}
+
+
+def test_stage5_1b_builder_does_not_read_top_level_updn_columns():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_synthetic_df(2, 100)
+    df["up_3"] = 999999.0
+    df["dn_3"] = 999999.0
+
+    X = runner.build_stage5_1b_features(df, "add_up_3")
+
+    assert np.max(X[:, :200]) < 999999.0
+
+
+def test_stage5_1b_preflight_reports_contract_maturity_shift_and_correlations():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+
+    preflight = runner.run_stage5_1b_preflight(split, "sell_stop_broken_H6_off05_flag")
+
+    assert preflight["source_check"]["uses_fractal_columns_only"] is True
+    assert preflight["source_check"]["forbidden_top_level_updn_columns_used"] is False
+    assert preflight["contract"]["expected_num_fields"] == 23
+    assert preflight["contract"]["short_fractal_count"] == 0
+    assert preflight["monotonicity"]["violations_total"] == 0
+    assert set(preflight["maturity"]["train_core"].keys()) == {"3", "6", "12", "24", "48"}
+    assert "p50" in preflight["shift_distribution"]["train_core"]
+    assert "up_3" in preflight["updn_shift_correlation"]["train_core"]
+    assert "up_3_over_atr" in preflight["updn_atr_disclosure"]["train_core"]
+    assert runner.stage5_1b_preflight_passed(preflight) is True
+
+
+def test_stage5_1b_preflight_fails_on_monotonicity_violation():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    bad = _make_fractal_str([
+        (11, 10.0),
+        (13, 5.0),
+        (15, 4.0),
+        (17, 20.0),
+        (19, 15.0),
+        (22, 48),
+    ])
+    df.loc[df.index[0], "fractal0"] = bad
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+
+    preflight = runner.run_stage5_1b_preflight(split, "sell_stop_broken_H6_off05_flag")
+
+    assert preflight["monotonicity"]["violations_total"] > 0
+    assert runner.stage5_1b_preflight_passed(preflight) is False
+
+
+def test_stage5_1b_preflight_can_use_raw_shadow_split_to_avoid_normalized_false_fail():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    raw_df = _make_stage5_0f_year_df()
+    for idx in range(len(raw_df)):
+        raw_df.at[idx, "fractal0"] = _make_fractal_str([
+            (0, 10_000_000 + idx),
+            (1, 390.0),
+            (2, -1),
+            (3, 0.5),
+            (4, 0.25),
+            (5, 1),
+            (6, 0),
+            (7, 0.0),
+            (8, 1.0),
+            (9, 1.0),
+            (10, 0.5),
+            (11, 3.0),
+            (12, 3.0),
+            (13, 6.0),
+            (14, 6.0),
+            (15, 12.0),
+            (16, 12.0),
+            (17, 1.0),
+            (18, 1.0),
+            (19, 2.0),
+            (20, 2.0),
+            (21, 1.0),
+            (22, 12),
+        ])
+
+    labeled_df = raw_df.copy()
+    for idx in range(len(labeled_df)):
+        labeled_df.at[idx, "fractal0"] = _make_fractal_str([
+            (0, 10_000_000 + idx),
+            (1, 390.0),
+            (2, -1),
+            (3, 0.5),
+            (4, 0.25),
+            (5, 1),
+            (6, 0),
+            (7, 0.0),
+            (8, 1.0),
+            (9, 1.0),
+            (10, 0.5),
+            (11, 0.6),
+            (12, 0.6),
+            (13, 0.4),
+            (14, 0.4),
+            (15, 0.2),
+            (16, 0.2),
+            (17, 0.8),
+            (18, 0.8),
+            (19, 0.7),
+            (20, 0.7),
+            (21, 1.0),
+            (22, 12),
+        ])
+
+    split = runner.build_stage5_1_split(labeled_df, "sell_stop_broken_H6_off05_flag")
+    raw_split = runner.build_stage5_1_split(raw_df, "sell_stop_broken_H6_off05_flag")
+
+    labeled_preflight = runner.run_stage5_1b_preflight(split, "sell_stop_broken_H6_off05_flag")
+    raw_preflight = runner.run_stage5_1b_preflight_with_source(
+        split, "sell_stop_broken_H6_off05_flag", raw_split=raw_split
+    )
+
+    assert labeled_preflight["monotonicity"]["violations_total"] > 0
+    assert raw_preflight["monotonicity"]["violations_total"] == 0
+    assert raw_preflight["source_check"]["preflight_source"] == "raw_shadow_split"
+    assert runner.stage5_1b_preflight_passed(raw_preflight) is True
+
+
+def test_stage5_1b_preflight_rejects_raw_shadow_split_length_mismatch():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+    raw_split = {
+        name: value.copy() if hasattr(value, "copy") else value
+        for name, value in split.items()
+    }
+    raw_split["val_stop"] = raw_split["val_stop"].iloc[:-1].copy()
+
+    with pytest.raises(RuntimeError, match="Raw-shadow split alignment mismatch"):
+        runner.run_stage5_1b_preflight_with_source(
+            split, "sell_stop_broken_H6_off05_flag", raw_split=raw_split
+        )
+
+
+def test_evaluate_stage5_1b_profile_seed_returns_metrics_and_predictions(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    split = runner.build_stage5_1_split(df, "sell_stop_broken_H6_off05_flag")
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
+    monkeypatch.setattr(runner, "STAGE5_1B_BOOTSTRAP_N", 20)
+
+    result = runner.evaluate_stage5_1b_profile_seed(
+        split,
+        profile_key="clock_shift",
+        target_col="sell_stop_broken_H6_off05_flag",
+        seed=42,
+    )
+
+    assert result["profile"] == "clock_shift"
+    assert result["target"] == "sell_stop_broken_H6_off05_flag"
+    assert result["seed"] == 42
+    assert result["transform_params"] == {}
+    assert result["transform_params_fit_on"] == "train_core"
+    assert result["val_stop"]["n"] == 8
+    assert set(result["yearly_val"].keys()) == {"2021", "2022"}
+    assert set(result["yearly_diagnostic_holdout"].keys()) == {"2023", "2024", "2025"}
+    assert len(result["predictions"]["val_stop"]) == 8
+    assert len(result["labels"]["diagnostic_holdout"]) == 12
+
+
+def test_summarize_stage5_1b_target_adds_expected_delta_blocks(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    raw_runs = []
+    target = "sell_stop_broken_H6_off05_flag"
+    for profile in ["clock_shift", "structure_full", "updn_full", "drop_back", "drop_up_3", "add_back", "add_up_3"]:
+        for seed, auc in [(42, 0.60), (77, 0.62), (123, 0.64)]:
+            raw_runs.append({
+                "profile": profile,
+                "target": target,
+                "seed": seed,
+                "train_core": {"auc": auc},
+                "val_stop": {"auc": auc, "lift_30": 0.8, "auc_ci": {"low": auc - 0.01, "high": auc + 0.01}},
+                "diagnostic_holdout": {"auc": auc - 0.02, "lift_30": 0.82, "auc_ci": {"low": auc - 0.03, "high": auc}},
+                "low_n_disclosure": {"auc": auc - 0.03, "lift_30": 0.84},
+                "yearly_val": {"2021": {"auc": auc}, "2022": {"auc": auc}},
+                "yearly_diagnostic_holdout": {"2023": {"auc": auc}, "2024": {"auc": auc}, "2025": {"auc": auc}},
+                "split_manifest": {"target": target},
+                "predictions": {
+                    "val_stop": [0.1, 0.2, 0.8, 0.9],
+                    "diagnostic_holdout": [0.1, 0.2, 0.8, 0.9],
+                },
+                "labels": {
+                    "val_stop": [0, 0, 1, 1],
+                    "diagnostic_holdout": [0, 0, 1, 1],
+                },
+            })
+    monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", [
+        "clock_shift", "structure_full", "updn_full", "drop_back", "drop_up_3", "add_back", "add_up_3"
+    ])
+
+    summary = runner.summarize_stage5_1b_target(raw_runs, target)
+
+    assert "delta_vs_structure_full" in summary["drop_back"]
+    assert "delta_vs_updn_full" in summary["drop_up_3"]
+    assert "delta_vs_clock_shift" in summary["add_back"]
+    assert "delta_vs_clock_shift" in summary["add_up_3"]
+
+
+def test_stage5_1b_field_verdicts_require_both_targets_for_overall_useful():
+    import copy
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    sell = "sell_stop_broken_H6_off05_flag"
+    buy = "buy_stop_broken_H6_off05_flag"
+    target_summary = {
+        "add_back": {
+            "delta_vs_clock_shift": {
+                "val_stop": {"delta_median": 0.03},
+                "diagnostic_holdout": {"delta_median": 0.01},
+            },
+        },
+        "structure_full": {
+            "yearly_val": {
+                "2021": {"auc_median": 0.62},
+                "2022": {"auc_median": 0.63},
+            },
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.63},
+                "2024": {"auc_median": 0.62},
+                "2025": {"auc_median": 0.63},
+            },
+        },
+        "drop_back": {
+            "delta_vs_structure_full": {
+                "val_stop": {
+                    "delta_median": -0.02,
+                    "delta_ci_low": -0.04,
+                    "delta_ci_high": -0.01,
+                    "negative_seed_count": 3,
+                    "positive_seed_count": 0,
+                },
+            },
+            "yearly_val": {
+                "2021": {"auc_median": 0.60},
+                "2022": {"auc_median": 0.61},
+            },
+            "yearly_diagnostic_holdout": {
+                "2023": {"auc_median": 0.60},
+                "2024": {"auc_median": 0.61},
+                "2025": {"auc_median": 0.62},
+            },
+        },
+    }
+    report = {"summary": {sell: copy.deepcopy(target_summary), buy: copy.deepcopy(target_summary)}}
+
+    verdicts = runner.stage5_1b_field_verdicts(report)
+
+    assert verdicts["back"]["targets"][sell]["verdict"] == "target_likely_useful"
+    assert verdicts["back"]["overall_verdict"] == "overall_likely_useful"
+    assert verdicts["back"]["targets"][sell]["yearly_val_drop_signs_2021_2022"] == [-1, -1]
+    assert verdicts["back"]["targets"][sell]["yearly_drop_signs_2023_2025"] == [-1, -1, -1]
+
+    report["summary"][buy]["drop_back"]["delta_vs_structure_full"]["val_stop"]["delta_median"] = 0.0
+    report["summary"][buy]["drop_back"]["delta_vs_structure_full"]["val_stop"]["negative_seed_count"] = 1
+    verdicts = runner.stage5_1b_field_verdicts(report)
+    assert verdicts["back"]["overall_verdict"] == "target_specific_signal"
+
+
+def test_stage5_1b_group_analysis_reports_direction_horizon_and_group_deltas():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    target = "sell_stop_broken_H6_off05_flag"
+    summary = {
+        "updn_full": {"delta_updn_group": {"val_stop": {"delta_median": 0.02}}},
+        "structure_full": {"delta_structure_group": {"val_stop": {"delta_median": 0.03}}},
+        "structure_plus_updn": {"delta_combined": {"val_stop": {"delta_median": 0.01}}},
+    }
+    for field in runner.STAGE5_1B_UPDN_FIELDS:
+        summary[f"add_{field}"] = {
+            "delta_vs_clock_shift": {"val_stop": {"delta_median": 0.01}}
+        }
+        summary[f"drop_{field}"] = {
+            "delta_vs_updn_full": {"val_stop": {"delta_median": -0.005}}
+        }
+    report = {
+        "summary": {target: summary},
+        "preflight": {
+            target: {
+                "maturity": {
+                    "train_core": {
+                        "3": {"mature_share": 0.99, "non_mature_share": 0.01},
+                        "6": {"mature_share": 0.97, "non_mature_share": 0.03},
+                        "12": {"mature_share": 0.90, "non_mature_share": 0.10},
+                        "24": {"mature_share": 0.80, "non_mature_share": 0.20},
+                        "48": {"mature_share": 0.60, "non_mature_share": 0.40},
+                    },
+                    "val_stop": {
+                        "3": {"mature_share": 0.98, "non_mature_share": 0.02},
+                        "6": {"mature_share": 0.96, "non_mature_share": 0.04},
+                        "12": {"mature_share": 0.88, "non_mature_share": 0.12},
+                        "24": {"mature_share": 0.76, "non_mature_share": 0.24},
+                        "48": {"mature_share": 0.55, "non_mature_share": 0.45},
+                    },
+                }
+            }
+        },
+    }
+
+    analysis = runner.stage5_1b_group_analysis(report)
+
+    assert target in analysis
+    assert "direction" in analysis[target]
+    assert "horizon" in analysis[target]
+    assert "group_deltas" in analysis[target]
+    assert analysis[target]["group_deltas"]["delta_updn_group_val"] == pytest.approx(0.02)
+    assert analysis[target]["horizon"]["48"]["maturity"]["val_stop"]["non_mature_share"] == pytest.approx(0.45)
+
+
+def test_stage5_1b_runner_writes_json_and_stops_after_preflight_failure(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", ["clock_shift"])
+    monkeypatch.setattr(runner, "STAGE5_1B_SEEDS", [42])
+    monkeypatch.setattr(
+        runner, "load_stage5_1b_raw_shadow_split",
+        lambda target_col: runner.build_stage5_1_split(df, target_col)
+    )
+    monkeypatch.setattr(runner, "run_stage5_1b_preflight_with_source", lambda split, target, raw_split=None: {
+        "target": target,
+        "source_check": {"uses_fractal_columns_only": True, "forbidden_top_level_updn_columns_used": False},
+        "contract": {"short_fractal_count": 0},
+        "monotonicity": {"violations_total": 1},
+        "pass": False,
+    })
+
+    called = {"train": False}
+    def fail_if_called(*args, **kwargs):
+        called["train"] = True
+        raise AssertionError("training must not run when preflight fails")
+    monkeypatch.setattr(runner, "evaluate_stage5_1b_profile_seed", fail_if_called)
+
+    report = runner.run_stage5_1b_updn_field_ablation(
+        target_splits={
+            "sell_stop_broken_H6_off05_flag": (df, df, df),
+            "buy_stop_broken_H6_off05_flag": (df, df, df),
+        },
+        output_path=tmp_path / "stage5_1b.json",
+    )
+
+    assert report["stage"] == "5.1b"
+    assert report["experiment"] == "updn_field_ablation"
+    assert report["status"] == "PREFLIGHT_FAILED"
+    assert called["train"] is False
+    assert (tmp_path / "stage5_1b.json").exists()
+
+
+def test_stage5_1b_runner_writes_diagnostic_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", ["clock_shift", "structure_full", "updn_full"])
+    monkeypatch.setattr(runner, "STAGE5_1B_SEEDS", [42])
+    monkeypatch.setattr(runner, "STAGE5_1_BOOTSTRAP_N", 20)
+    monkeypatch.setattr(runner, "STAGE5_1B_BOOTSTRAP_N", 20)
+    monkeypatch.setattr(
+        runner, "load_stage5_1b_raw_shadow_split",
+        lambda target_col: runner.build_stage5_1_split(
+            pd.concat([df, df, df], ignore_index=True), target_col
+        )
+    )
+
+    class DummyDMatrix:
+        def __init__(self, X, label=None):
+            self.X = X
+            self.label = label
+
+    class DummyModel:
+        def predict(self, dmat):
+            return np.linspace(0.05, 0.95, len(dmat.X))
+
+    monkeypatch.setattr(runner.xgb, "DMatrix", DummyDMatrix)
+    monkeypatch.setattr(runner, "train_xgb_baseline", lambda *a, **k: (DummyModel(), 0.61))
+
+    report = runner.run_stage5_1b_updn_field_ablation(
+        target_splits={
+            "sell_stop_broken_H6_off05_flag": (df, df, df),
+            "buy_stop_broken_H6_off05_flag": (df, df, df),
+        },
+        output_path=tmp_path / "stage5_1b.json",
+    )
+
+    assert report["stage"] == "5.1b"
+    assert report["experiment"] == "updn_field_ablation"
+    assert report["status"] == "DIAGNOSTIC_ONLY"
+    assert report["baseline"] == "clock + shift (log1p)"
+    assert report["profiles"] == ["clock_shift", "structure_full", "updn_full"]
+    assert report["raw_runs"]
+    assert "predictions" not in report["raw_runs"][0]
+    assert "labels" not in report["raw_runs"][0]
+    assert "preflight" in report
+    assert "group_analysis" in report
+    assert "field_verdicts" in report
+    assert report["progress"]["done_runs"] == 6
+
+
+def test_stage5_1b_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-1b-updn-field-ablation"])
+    assert args.stage5_1b_updn_field_ablation is True

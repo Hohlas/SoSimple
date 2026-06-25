@@ -46,12 +46,14 @@ TRAIN_FILE = DATA_DIR / 'Nero_XAUUSD_train_labeled.csv'
 VAL_FILE = DATA_DIR / 'Nero_XAUUSD_validation_labeled.csv'
 TEST_FILE = DATA_DIR / 'Nero_XAUUSD_test_labeled.csv'
 OHLC_FILE = DATA_DIR / 'XAUUSD_H1_OHLC.csv'
+RAW_NERO_FILE = PROJECT_ROOT / 'MT' / 'MQL4' / 'Files' / 'Nero.csv'
 
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
 
 TARGET_COLUMN = 'sell_stop_broken_H6_off05_flag'
+HEARTBEAT_INTERVAL_SEC = 30.0
 
 
 def find_buy_stop_target_columns(df: pd.DataFrame) -> list[str]:
@@ -78,6 +80,24 @@ def summarize_target_contract(df_by_split: dict[str, pd.DataFrame], target_col: 
             "unique_values": sorted([_safe(v) for v in non_null.unique().tolist()]),
         }
     return {"target": target_col, "splits": splits}
+
+
+class HeartbeatLogger:
+    """Rate-limited stdout heartbeat for long-running loops."""
+
+    def __init__(self, label: str, interval_sec: float = HEARTBEAT_INTERVAL_SEC):
+        self.label = label
+        self.interval_sec = float(interval_sec)
+        self.started_at = time.time()
+        self.last_emit_at = self.started_at
+
+    def emit(self, message: str, force: bool = False) -> None:
+        now = time.time()
+        if not force and (now - self.last_emit_at) < self.interval_sec:
+            return
+        elapsed = round(now - self.started_at, 1)
+        print(f"[heartbeat] {self.label} | elapsed={elapsed}s | {message}")
+        self.last_emit_at = now
 
 # Split years
 TRAIN_MAX_YEAR = 2020
@@ -163,6 +183,57 @@ STAGE5_1_VAL_YEARS = [2021, 2022]
 STAGE5_1_HOLDOUT_YEARS = [2023, 2024, 2025]
 STAGE5_1_LOW_N_YEAR = 2026
 STAGE5_1_BOOTSTRAP_N = 1000
+STAGE5_1B_JSON_REPORT_PATH = REPORTS_DIR / "stage5_1b_updn_field_ablation.json"
+STAGE5_1B_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_1B_STRUCTURE_FIELDS = NO_PRICE_TOKEN_FIELDS.copy()
+STAGE5_1B_UPDN_FIELDS = [
+    "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12",
+    "up_24", "dn_24", "up_48", "dn_48",
+]
+STAGE5_1B_FIELDS = STAGE5_1B_STRUCTURE_FIELDS + STAGE5_1B_UPDN_FIELDS
+STAGE5_1B_BASELINE_TOKEN_FIELDS = ["shift"]
+STAGE5_1B_SEEDS = STAGE5_1_SEEDS.copy()
+STAGE5_1B_BOOTSTRAP_N = STAGE5_1_BOOTSTRAP_N
+STAGE5_1B_VAL_YEARS = STAGE5_1_VAL_YEARS
+STAGE5_1B_HOLDOUT_YEARS = STAGE5_1_HOLDOUT_YEARS
+STAGE5_1B_LOW_N_YEAR = STAGE5_1_LOW_N_YEAR
+STAGE5_1B_BASE_PROFILE_KEYS = [
+    "clock_shift",
+    "structure_full",
+    "updn_full",
+    "structure_plus_updn",
+    "back_impulse_combo",
+]
+STAGE5_1B_PROFILE_KEYS = (
+    STAGE5_1B_BASE_PROFILE_KEYS
+    + [f"drop_{field}" for field in STAGE5_1B_FIELDS]
+    + [f"add_{field}" for field in STAGE5_1B_FIELDS]
+)
+STAGE5_1B_FIELD_TO_FRACTAL_INDEX = {
+    "price": 1,
+    "direction": 2,
+    "front": 3,
+    "back": 4,
+    "strong": 5,
+    "break": 6,
+    "reverse": 7,
+    "power": 8,
+    "count": 9,
+    "impulse": 10,
+    "up_12": 11,
+    "dn_12": 12,
+    "up_24": 13,
+    "dn_24": 14,
+    "up_48": 15,
+    "dn_48": 16,
+    "up_3": 17,
+    "dn_3": 18,
+    "up_6": 19,
+    "dn_6": 20,
+}
 
 # ===========================================================================
 # Profile definitions
@@ -747,6 +818,30 @@ def extract_full29_fields(fractal_str: str) -> np.ndarray:
             result[j] = 0.0
     if np.isnan(result).any():
         result = np.nan_to_num(result, nan=0.0)
+    return result
+
+
+def extract_stage5_1b_fields(fractal_str: str) -> dict[str, float]:
+    """Extract named Stage 5.1b fields from one fractal string."""
+    names = list(STAGE5_1B_FIELD_TO_FRACTAL_INDEX.keys()) + ["shift"]
+    result = {name: 0.0 for name in names}
+    parts = fractal_str.split(FRACTAL_SEP)
+    if len(parts) < 23:
+        return result
+
+    for name, idx in STAGE5_1B_FIELD_TO_FRACTAL_INDEX.items():
+        try:
+            value = float(parts[idx])
+        except (ValueError, IndexError):
+            value = 0.0
+        result[name] = float(np.nan_to_num(value, nan=0.0))
+
+    try:
+        raw_shift = float(parts[22])
+    except (ValueError, IndexError):
+        raw_shift = 0.0
+    raw_shift = float(np.nan_to_num(raw_shift, nan=0.0))
+    result["shift"] = float(np.log1p(max(raw_shift, 0.0)))
     return result
 
 
@@ -2162,6 +2257,109 @@ def build_stage5_1_features(df: pd.DataFrame, profile_key: str,
     params = {} if transform_params is None else transform_params
     return build_flat_features(
         df, profile, transform_variant=transform_variant, transform_params=params)
+
+
+def _stage5_1b_profile_for_key(profile_key: str) -> dict:
+    """Build Stage 5.1b profile with clock + token-level shift baseline."""
+    if profile_key == "clock_shift":
+        token_fields = ["shift"]
+    elif profile_key == "structure_full":
+        token_fields = STAGE5_1B_STRUCTURE_FIELDS + ["shift"]
+    elif profile_key == "updn_full":
+        token_fields = STAGE5_1B_UPDN_FIELDS + ["shift"]
+    elif profile_key == "structure_plus_updn":
+        token_fields = STAGE5_1B_FIELDS + ["shift"]
+    elif profile_key == "back_impulse_combo":
+        token_fields = ["shift", "back", "impulse"]
+    elif profile_key.startswith("drop_"):
+        field = profile_key.removeprefix("drop_")
+        if field in STAGE5_1B_STRUCTURE_FIELDS:
+            token_fields = [
+                name for name in STAGE5_1B_STRUCTURE_FIELDS if name != field
+            ] + ["shift"]
+        elif field in STAGE5_1B_UPDN_FIELDS:
+            token_fields = [
+                name for name in STAGE5_1B_UPDN_FIELDS if name != field
+            ] + ["shift"]
+        else:
+            raise ValueError(f"Unknown Stage 5.1b drop field: {field}")
+    elif profile_key.startswith("add_"):
+        field = profile_key.removeprefix("add_")
+        if field not in STAGE5_1B_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1b add field: {field}")
+        token_fields = ["shift", field]
+    else:
+        raise ValueError(f"Unknown Stage 5.1b profile_key: {profile_key}")
+
+    return {
+        "name": f"stage5_1b_{profile_key}",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": len(token_fields),
+        "row_dim": len(TIME_ONLY_ROW_FIELDS),
+        "stage5_1b": True,
+    }
+
+
+def fit_stage5_1b_transform_params(df: pd.DataFrame, profile_key: str,
+                                   transform_variant: str = "asinh") -> dict:
+    """Stage 5.1b has fixed raw Up/Dn and log1p shift; no fitted params."""
+    _ = df
+    _ = transform_variant
+    _stage5_1b_profile_for_key(profile_key)
+    return {}
+
+
+def build_stage5_1b_features(df: pd.DataFrame, profile_key: str,
+                             transform_variant: str = "asinh",
+                             transform_params: dict | None = None) -> np.ndarray:
+    """Build flattened XGBoost features for Stage 5.1b profiles."""
+    _ = transform_variant
+    _ = transform_params
+    profile = _stage5_1b_profile_for_key(profile_key)
+    token_fields = profile["token_fields"]
+    n_samples = len(df)
+    seq_len = profile["seq_len"]
+    token_dim = profile["token_dim"]
+    tokens = np.zeros((n_samples, seq_len, token_dim), dtype=np.float32)
+    mask = np.zeros((n_samples, seq_len), dtype=bool)
+
+    for sample_idx in range(n_samples):
+        raw_features = np.zeros((N_FRACTALS, token_dim), dtype=np.float32)
+        valid_count = 0
+        for f_idx in range(N_FRACTALS):
+            col = f"fractal{f_idx}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[sample_idx])
+            if not fstr or fstr == "nan":
+                continue
+            fields = extract_stage5_1b_fields(fstr)
+            values = np.asarray(
+                [fields[name] for name in token_fields], dtype=np.float32
+            )
+            if not np.any(values != 0):
+                continue
+            raw_features[valid_count, :] = values
+            valid_count += 1
+        if valid_count:
+            selected_idx, selected_mask = TokenSelector.all_fractals(valid_count, seq_len)
+            tokens[sample_idx, selected_mask, :] = raw_features[
+                selected_idx[selected_mask]
+            ]
+            mask[sample_idx, :] = selected_mask
+
+    row_features = build_row_features(
+        df, profile, transform_variant="asinh", transform_params={}
+    )
+    flat_tokens = tokens.reshape(n_samples, seq_len * token_dim)
+    return np.concatenate(
+        [flat_tokens, row_features.astype(np.float32)], axis=1
+    ).astype(np.float32)
 
 
 # ===========================================================================
@@ -4317,6 +4515,317 @@ def build_stage5_1_split(df: pd.DataFrame, target_col: str) -> dict:
     }
 
 
+def _stage5_1b_raw_shift(fractal_str: str) -> float:
+    parts = fractal_str.split(FRACTAL_SEP)
+    if len(parts) < 23:
+        return 0.0
+    try:
+        return float(np.nan_to_num(float(parts[22]), nan=0.0))
+    except (ValueError, IndexError):
+        return 0.0
+
+
+def _stage5_1b_collect_fractals(df: pd.DataFrame, heartbeat: HeartbeatLogger | None = None,
+                                split_name: str = "") -> list[dict]:
+    records = []
+    total_rows = len(df)
+    for row_idx in range(len(df)):
+        if heartbeat is not None:
+            heartbeat.emit(
+                f"split={split_name or 'unknown'} row={row_idx + 1}/{total_rows} records={len(records)}"
+            )
+        atr = (
+            pd.to_numeric(pd.Series([df["ATR"].iloc[row_idx]]), errors="coerce").iloc[0]
+            if "ATR" in df.columns else np.nan
+        )
+        for f_idx in range(N_FRACTALS):
+            col = f"fractal{f_idx}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[row_idx])
+            if not fstr or fstr == "nan":
+                continue
+            parts = fstr.split(FRACTAL_SEP)
+            fields = extract_stage5_1b_fields(fstr)
+            raw_shift = max(_stage5_1b_raw_shift(fstr), 0.0)
+            records.append({
+                "row_idx": int(row_idx),
+                "fractal_idx": int(f_idx),
+                "num_fields": int(len(parts)),
+                "fields": fields,
+                "raw_shift": float(raw_shift),
+                "atr": float(atr) if np.isfinite(atr) and atr > 0 else None,
+            })
+    if heartbeat is not None:
+        heartbeat.emit(
+            f"split={split_name or 'unknown'} completed rows={total_rows} records={len(records)}",
+            force=True,
+        )
+    return records
+
+
+def _stage5_1b_shift_distribution(records: list[dict]) -> dict:
+    shifts = np.asarray([r["raw_shift"] for r in records], dtype=float)
+    if len(shifts) == 0:
+        return {"n": 0, "p50": None, "p90": None, "p95": None, "max": None}
+    out = {
+        "n": int(len(shifts)),
+        "p50": float(np.percentile(shifts, 50)),
+        "p90": float(np.percentile(shifts, 90)),
+        "p95": float(np.percentile(shifts, 95)),
+        "max": float(np.max(shifts)),
+    }
+    for horizon in [3, 6, 12, 24, 48]:
+        out[f"share_shift_ge_{horizon}"] = float(np.mean(shifts >= horizon))
+    return out
+
+
+def _stage5_1b_maturity(records: list[dict]) -> dict:
+    shifts = np.asarray([r["raw_shift"] for r in records], dtype=float)
+    out = {}
+    for horizon in [3, 6, 12, 24, 48]:
+        out[str(horizon)] = {
+            "n": int(len(shifts)),
+            "mature_count": int(np.sum(shifts >= horizon)) if len(shifts) else 0,
+            "mature_share": float(np.mean(shifts >= horizon)) if len(shifts) else None,
+            "non_mature_share": float(np.mean(shifts < horizon)) if len(shifts) else None,
+        }
+    return out
+
+
+def _stage5_1b_monotonicity(records: list[dict]) -> dict:
+    violations = []
+    for record in records:
+        fields = record["fields"]
+        up = [fields["up_3"], fields["up_6"], fields["up_12"], fields["up_24"], fields["up_48"]]
+        dn = [fields["dn_3"], fields["dn_6"], fields["dn_12"], fields["dn_24"], fields["dn_48"]]
+        if any(up[i] > up[i + 1] for i in range(len(up) - 1)):
+            violations.append({
+                "row_idx": record["row_idx"],
+                "fractal_idx": record["fractal_idx"],
+                "side": "up",
+            })
+        if any(dn[i] > dn[i + 1] for i in range(len(dn) - 1)):
+            violations.append({
+                "row_idx": record["row_idx"],
+                "fractal_idx": record["fractal_idx"],
+                "side": "dn",
+            })
+    return {"violations_total": int(len(violations)), "examples": violations[:20]}
+
+
+def _stage5_1b_updn_shift_correlation(records: list[dict]) -> dict:
+    from scipy.stats import pearsonr, spearmanr
+
+    out = {}
+    shifts = np.asarray([np.log1p(r["raw_shift"]) for r in records], dtype=float)
+    for field in STAGE5_1B_UPDN_FIELDS:
+        vals = np.asarray([r["fields"][field] for r in records], dtype=float)
+        if len(vals) < 3 or np.nanstd(vals) == 0 or np.nanstd(shifts) == 0:
+            out[field] = {"pearson": None, "spearman": None, "n": int(len(vals))}
+            continue
+        pear = pearsonr(vals, shifts)
+        spear = spearmanr(vals, shifts)
+        out[field] = {
+            "pearson": float(pear.statistic) if np.isfinite(pear.statistic) else None,
+            "spearman": float(spear.statistic) if np.isfinite(spear.statistic) else None,
+            "n": int(len(vals)),
+        }
+    return out
+
+
+def _stage5_1b_updn_atr_disclosure(records: list[dict]) -> dict:
+    out = {}
+    for field in STAGE5_1B_UPDN_FIELDS:
+        vals = [
+            record["fields"][field] / record["atr"]
+            for record in records
+            if record["atr"] is not None and record["atr"] > 0
+        ]
+        arr = np.asarray(vals, dtype=float)
+        key = f"{field}_over_atr"
+        out[key] = {
+            "n": int(len(arr)),
+            "p50": float(np.percentile(arr, 50)) if len(arr) else None,
+            "p90": float(np.percentile(arr, 90)) if len(arr) else None,
+            "p95": float(np.percentile(arr, 95)) if len(arr) else None,
+            "max": float(np.max(arr)) if len(arr) else None,
+        }
+    return out
+
+
+def run_stage5_1b_preflight(split: dict, target_col: str) -> dict:
+    """Audit Stage 5.1b field contract before full model training."""
+    return run_stage5_1b_preflight_with_source(split, target_col, raw_split=None)
+
+
+def _stage5_1b_validate_raw_shadow_alignment(split: dict, raw_split: dict) -> dict:
+    """Validate that raw-shadow sections mirror the model split row counts."""
+    sections = ["train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure"]
+    lengths = {}
+    mismatches = []
+    for name in sections:
+        split_len = len(split[name])
+        raw_len = len(raw_split[name])
+        lengths[name] = {"split_rows": int(split_len), "raw_shadow_rows": int(raw_len)}
+        if split_len != raw_len:
+            mismatches.append(f"{name}: split={split_len}, raw_shadow={raw_len}")
+    if mismatches:
+        raise RuntimeError(
+            "Raw-shadow split alignment mismatch: " + "; ".join(mismatches)
+        )
+    return lengths
+
+
+def run_stage5_1b_preflight_with_source(split: dict, target_col: str,
+                                        raw_split: dict | None = None) -> dict:
+    """Audit Stage 5.1b field contract before full model training.
+
+    If raw_split is provided, structural checks run on raw producer-exported
+    fractal strings instead of normalized labeled strings.
+    """
+    raw_shadow_alignment = (
+        _stage5_1b_validate_raw_shadow_alignment(split, raw_split)
+        if raw_split is not None else None
+    )
+    sections = {
+        "train_core": raw_split["train_core"] if raw_split is not None else split["train_core"],
+        "val_stop": raw_split["val_stop"] if raw_split is not None else split["val_stop"],
+        "diagnostic_holdout": raw_split["diagnostic_holdout"] if raw_split is not None else split["diagnostic_holdout"],
+        "low_n_disclosure": raw_split["low_n_disclosure"] if raw_split is not None else split["low_n_disclosure"],
+    }
+    heartbeat = HeartbeatLogger(label=f"stage5.1b preflight target={target_col}")
+    print(f"[heartbeat] stage5.1b preflight target={target_col} | started")
+    collected = {}
+    for name, df in sections.items():
+        print(f"[heartbeat] stage5.1b preflight target={target_col} | split={name} rows={len(df)} start")
+        collected[name] = _stage5_1b_collect_fractals(df, heartbeat=heartbeat, split_name=name)
+        print(
+            f"[heartbeat] stage5.1b preflight target={target_col} | "
+            f"split={name} done records={len(collected[name])}"
+        )
+    all_records = [record for records in collected.values() for record in records]
+    short_count = sum(1 for record in all_records if record["num_fields"] < 23)
+    monotonicity = _stage5_1b_monotonicity(all_records)
+    heartbeat.emit(
+        f"aggregating complete total_records={len(all_records)} short={short_count}",
+        force=True,
+    )
+
+    return {
+        "target": target_col,
+        "source_check": {
+            "uses_fractal_columns_only": True,
+            "forbidden_top_level_updn_columns_used": False,
+            "fractal_field_indices": STAGE5_1B_FIELD_TO_FRACTAL_INDEX.copy(),
+            "shift_index": 22,
+            "preflight_source": "raw_shadow_split" if raw_split is not None else "split",
+            "raw_shadow_alignment": raw_shadow_alignment,
+        },
+        "contract": {
+            "expected_num_fields": 23,
+            "observed_fractal_count": int(len(all_records)),
+            "short_fractal_count": int(short_count),
+            "short_fractal_rate": float(short_count / len(all_records)) if all_records else None,
+        },
+        "monotonicity": monotonicity,
+        "maturity": {
+            name: _stage5_1b_maturity(records) for name, records in collected.items()
+        },
+        "shift_distribution": {
+            name: _stage5_1b_shift_distribution(records)
+            for name, records in collected.items()
+        },
+        "updn_shift_correlation": {
+            "train_core": _stage5_1b_updn_shift_correlation(collected["train_core"]),
+        },
+        "updn_atr_disclosure": {
+            name: _stage5_1b_updn_atr_disclosure(records)
+            for name, records in collected.items()
+        },
+        "pass": bool(short_count == 0 and monotonicity["violations_total"] == 0),
+    }
+
+
+def stage5_1b_preflight_passed(preflight: dict) -> bool:
+    return bool(
+        preflight.get("source_check", {}).get("uses_fractal_columns_only") is True
+        and preflight.get("source_check", {}).get("forbidden_top_level_updn_columns_used") is False
+        and preflight.get("contract", {}).get("short_fractal_count") == 0
+        and preflight.get("monotonicity", {}).get("violations_total") == 0
+    )
+
+
+def load_stage5_1b_raw_shadow_split(target_col: str) -> dict:
+    """Build raw-shadow split aligned with current labeled XAUUSD split files.
+
+    The labeled files are created from one chronological raw source and then
+    split 70/15/15 without shuffling. We mirror those partitions over raw
+    `Nero.csv`, then apply the same year routing and non-null target mask as
+    `load_splits()`.
+    """
+    train_labeled = pd.read_csv(TRAIN_FILE, sep=CSV_SEP)
+    val_labeled = pd.read_csv(VAL_FILE, sep=CSV_SEP)
+    test_labeled = pd.read_csv(TEST_FILE, sep=CSV_SEP)
+    raw_all = pd.read_csv(RAW_NERO_FILE, sep=CSV_SEP)
+
+    expected_total = len(train_labeled) + len(val_labeled) + len(test_labeled)
+    if len(raw_all) != expected_total:
+        raise RuntimeError(
+            f"Raw-shadow split mismatch: raw rows={len(raw_all)} expected={expected_total}"
+        )
+
+    raw_train = raw_all.iloc[:len(train_labeled)].reset_index(drop=True)
+    raw_val = raw_all.iloc[len(train_labeled):len(train_labeled) + len(val_labeled)].reset_index(drop=True)
+    raw_test = raw_all.iloc[len(train_labeled) + len(val_labeled):].reset_index(drop=True)
+
+    for labeled_df, raw_df in [
+        (train_labeled, raw_train),
+        (val_labeled, raw_val),
+        (test_labeled, raw_test),
+    ]:
+        years = pd.to_datetime(
+            labeled_df["time"], format="%Y.%m.%d %H:%M", errors="coerce"
+        ).dt.year
+        labeled_df["_year"] = years
+        raw_df["_year"] = years
+
+    train_parts = []
+    val_parts = []
+    holdout_parts = []
+
+    def route(labeled_df: pd.DataFrame, raw_df: pd.DataFrame, allow_train: bool, allow_holdout: bool) -> None:
+        year_series = labeled_df["_year"]
+        target_mask = labeled_df[target_col].notna()
+        if allow_train:
+            train_mask = year_series <= TRAIN_MAX_YEAR
+            train_parts.append(raw_df.loc[train_mask & target_mask].copy())
+        val_mask = year_series.isin(VAL_STOP_YEARS)
+        val_parts.append(raw_df.loc[val_mask & target_mask].copy())
+        if allow_holdout:
+            hold_mask = year_series >= HOLDOUT_MIN_YEAR
+            holdout_parts.append(raw_df.loc[hold_mask & target_mask].copy())
+
+    route(train_labeled, raw_train, allow_train=True, allow_holdout=False)
+    route(val_labeled, raw_val, allow_train=True, allow_holdout=False)
+    route(test_labeled, raw_test, allow_train=False, allow_holdout=True)
+
+    train_core = pd.concat(train_parts, ignore_index=True) if train_parts else pd.DataFrame()
+    val_stop = pd.concat(val_parts, ignore_index=True) if val_parts else pd.DataFrame()
+    diagnostic_holdout = pd.concat(holdout_parts, ignore_index=True) if holdout_parts else pd.DataFrame()
+    low_n_disclosure = diagnostic_holdout[diagnostic_holdout["_year"] == STAGE5_1_LOW_N_YEAR].copy()
+    diagnostic_holdout = diagnostic_holdout[
+        diagnostic_holdout["_year"].isin(STAGE5_1_HOLDOUT_YEARS)
+    ].copy()
+
+    return {
+        "train_core": train_core.reset_index(drop=True),
+        "val_stop": val_stop.reset_index(drop=True),
+        "diagnostic_holdout": diagnostic_holdout.reset_index(drop=True),
+        "low_n_disclosure": low_n_disclosure.reset_index(drop=True),
+    }
+
+
 def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: str,
                                    seed: int, transform_variant: str = "asinh",
                                    parsed_cache: dict | None = None) -> dict:
@@ -4404,6 +4913,65 @@ def evaluate_stage5_1_profile_seed(split: dict, profile_key: str, target_col: st
         diagnostic_holdout, profile_key, transform_variant=transform_variant, transform_params=transform_params)
     X_low_n = build_stage5_1_features(
         low_n_disclosure, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+
+    y_train = train_core[target_col]
+    y_val = val_stop[target_col]
+    y_holdout = diagnostic_holdout[target_col]
+    y_low_n = low_n_disclosure[target_col]
+
+    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+    train_probs = model.predict(xgb.DMatrix(X_train))
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    holdout_probs = model.predict(xgb.DMatrix(X_holdout))
+    low_n_probs = model.predict(xgb.DMatrix(X_low_n)) if len(low_n_disclosure) else np.asarray([])
+
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "transform_variant": transform_variant,
+        "transform_params": transform_params,
+        "transform_params_fit_on": "train_core",
+        "train_core": {k: _safe(v) for k, v in compute_metrics(y_train, pd.Series(train_probs)).items()},
+        "val_stop": _stage5_1_metrics_with_ci(y_val, val_probs, seed),
+        "diagnostic_holdout": _stage5_1_metrics_with_ci(y_holdout, holdout_probs, seed),
+        "low_n_disclosure": _stage5_1_metrics_with_ci(y_low_n, low_n_probs, seed),
+        "yearly_val": compute_yearly_metrics(val_stop, val_probs, target_col=target_col),
+        "yearly_diagnostic_holdout": compute_yearly_metrics(
+            diagnostic_holdout, holdout_probs, target_col=target_col),
+        "split_manifest": split["manifest"],
+        "val_auc_from_training": _safe(val_auc),
+        "predictions": {
+            "val_stop": [float(v) for v in val_probs],
+            "diagnostic_holdout": [float(v) for v in holdout_probs],
+            "low_n_disclosure": [float(v) for v in low_n_probs],
+        },
+        "labels": {
+            "val_stop": [int(v) for v in y_val.tolist()],
+            "diagnostic_holdout": [int(v) for v in y_holdout.tolist()],
+            "low_n_disclosure": [int(v) for v in y_low_n.tolist()],
+        },
+    }
+
+
+def evaluate_stage5_1b_profile_seed(split: dict, profile_key: str, target_col: str,
+                                    seed: int, transform_variant: str = "asinh") -> dict:
+    """Train one Stage 5.1b XGBoost model for one profile/target/seed."""
+    train_core = split["train_core"]
+    val_stop = split["val_stop"]
+    diagnostic_holdout = split["diagnostic_holdout"]
+    low_n_disclosure = split["low_n_disclosure"]
+    transform_params = fit_stage5_1b_transform_params(
+        train_core, profile_key, transform_variant=transform_variant)
+
+    X_train = build_stage5_1b_features(
+        train_core, profile_key, transform_variant, transform_params)
+    X_val = build_stage5_1b_features(
+        val_stop, profile_key, transform_variant, transform_params)
+    X_holdout = build_stage5_1b_features(
+        diagnostic_holdout, profile_key, transform_variant, transform_params)
+    X_low_n = build_stage5_1b_features(
+        low_n_disclosure, profile_key, transform_variant, transform_params)
 
     y_train = train_core[target_col]
     y_val = val_stop[target_col]
@@ -4664,6 +5232,48 @@ def summarize_stage5_1_target(raw_runs: list[dict], target_col: str) -> dict:
                 "val_stop": _stage5_1_delta_summary(target_runs, add_profile, "time_only", "val_stop"),
                 "diagnostic_holdout": _stage5_1_delta_summary(
                     target_runs, add_profile, "time_only", "diagnostic_holdout"),
+            }
+    return summary
+
+
+def summarize_stage5_1b_target(raw_runs: list[dict], target_col: str) -> dict:
+    """Summarize one Stage 5.1b target across profiles and add drop/add deltas."""
+    target_runs = [r for r in raw_runs if r["target"] == target_col]
+    summary = {}
+    for profile in STAGE5_1B_PROFILE_KEYS:
+        runs = [r for r in target_runs if r["profile"] == profile]
+        summary[profile] = summarize_stage5_1_seed_runs(runs)
+
+    for field in STAGE5_1B_FIELDS:
+        drop_profile = f"drop_{field}"
+        add_profile = f"add_{field}"
+        if drop_profile in summary:
+            baseline = "structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "updn_full"
+            delta_key = "delta_vs_structure_full" if baseline == "structure_full" else "delta_vs_updn_full"
+            summary[drop_profile][delta_key] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, drop_profile, baseline, "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, drop_profile, baseline, "diagnostic_holdout"),
+            }
+        if add_profile in summary:
+            summary[add_profile]["delta_vs_clock_shift"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, add_profile, "clock_shift", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, add_profile, "clock_shift", "diagnostic_holdout"),
+            }
+
+    for profile, baseline, key in [
+        ("updn_full", "clock_shift", "delta_updn_group"),
+        ("structure_full", "clock_shift", "delta_structure_group"),
+        ("structure_plus_updn", "structure_full", "delta_combined"),
+        ("back_impulse_combo", "clock_shift", "delta_back_impulse"),
+        ("back_impulse_combo", "structure_full", "gap_back_impulse_full"),
+    ]:
+        if profile in summary:
+            summary[profile][key] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, profile, baseline, "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, profile, baseline, "diagnostic_holdout"),
             }
     return summary
 
@@ -4964,6 +5574,201 @@ def stage5_1_field_verdicts(report: dict) -> dict:
     return verdicts
 
 
+def _stage5_1b_drop_delta_block(target_summary: dict, field: str) -> dict:
+    drop = target_summary.get(f"drop_{field}", {})
+    key = "delta_vs_structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "delta_vs_updn_full"
+    return drop.get(key, {}).get("val_stop", {})
+
+
+def _stage5_1b_drop_baseline_profile(field: str) -> str:
+    return "structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "updn_full"
+
+
+def _stage5_1b_yearly_drop_signs_for_key(target_summary: dict, field: str,
+                                         yearly_key: str, years: list[str]) -> list[int]:
+    drop = target_summary.get(f"drop_{field}", {})
+    baseline = target_summary.get(_stage5_1b_drop_baseline_profile(field), {})
+    signs = []
+    for year in years:
+        drop_auc = drop.get(yearly_key, {}).get(year, {}).get("auc_median")
+        baseline_auc = baseline.get(yearly_key, {}).get(year, {}).get("auc_median")
+        if drop_auc is None or baseline_auc is None:
+            continue
+        delta = float(drop_auc - baseline_auc)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+    return signs
+
+
+def _stage5_1b_yearly_val_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_val", ["2021", "2022"])
+
+
+def _stage5_1b_yearly_holdout_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_diagnostic_holdout", ["2023", "2024", "2025"])
+
+
+def _stage5_1b_field_target_verdict(target_summary: dict, field: str) -> dict:
+    drop_val = _stage5_1b_drop_delta_block(target_summary, field)
+    add_val = (
+        target_summary.get(f"add_{field}", {})
+        .get("delta_vs_clock_shift", {})
+        .get("val_stop", {})
+        .get("delta_median")
+    )
+    add_holdout = (
+        target_summary.get(f"add_{field}", {})
+        .get("delta_vs_clock_shift", {})
+        .get("diagnostic_holdout", {})
+        .get("delta_median")
+    )
+    drop_delta = drop_val.get("delta_median")
+    drop_ci_low = drop_val.get("delta_ci_low")
+    drop_ci_high = drop_val.get("delta_ci_high")
+    negative_seed_count = int(drop_val.get("negative_seed_count") or 0)
+    positive_seed_count = int(drop_val.get("positive_seed_count") or 0)
+    yearly_val_signs = _stage5_1b_yearly_val_drop_signs(target_summary, field)
+    yearly_holdout_signs = _stage5_1b_yearly_holdout_drop_signs(target_summary, field)
+    yearly_negative = sum(1 for sign in yearly_holdout_signs if sign < 0)
+    yearly_positive = sum(1 for sign in yearly_holdout_signs if sign > 0)
+
+    useful = (
+        drop_delta is not None
+        and drop_delta < 0
+        and yearly_negative >= 2
+        and negative_seed_count >= 2
+        and ((drop_ci_high is not None and drop_ci_high < 0) or negative_seed_count == 3)
+        and ((add_val is not None and add_val > 0) or (add_holdout is not None and add_holdout > 0))
+    )
+    noise = (
+        drop_delta is not None
+        and drop_delta > 0
+        and yearly_positive >= 2
+        and positive_seed_count >= 2
+        and ((drop_ci_low is not None and drop_ci_low > 0) or positive_seed_count == 3)
+        and add_val is not None
+        and add_val <= 0
+    )
+    if useful:
+        verdict = "target_likely_useful"
+    elif noise:
+        verdict = "target_likely_noise"
+    else:
+        verdict = "mixed_or_unclear"
+    return {
+        "verdict": verdict,
+        "drop_val_delta_median": drop_delta,
+        "drop_val_delta_ci_low": drop_ci_low,
+        "drop_val_delta_ci_high": drop_ci_high,
+        "drop_val_negative_seed_count": negative_seed_count,
+        "drop_val_positive_seed_count": positive_seed_count,
+        "yearly_val_drop_signs_2021_2022": yearly_val_signs,
+        "yearly_drop_signs_2023_2025": yearly_holdout_signs,
+        "add_val_delta_median": add_val,
+        "add_holdout_delta_median": add_holdout,
+    }
+
+
+def stage5_1b_field_verdicts(report: dict) -> dict:
+    verdicts = {}
+    for field in STAGE5_1B_FIELDS:
+        per_target = {}
+        labels = []
+        for target in STAGE5_1B_TARGETS:
+            target_summary = report.get("summary", {}).get(target, {})
+            target_result = _stage5_1b_field_target_verdict(target_summary, field)
+            per_target[target] = target_result
+            labels.append(target_result["verdict"])
+
+        if labels.count("target_likely_useful") == 2:
+            overall = "overall_likely_useful"
+        elif labels.count("target_likely_noise") == 2:
+            overall = "overall_likely_noise"
+        elif (
+            labels.count("target_likely_useful") == 1
+            and labels.count("mixed_or_unclear") == 1
+        ) or (
+            labels.count("target_likely_noise") == 1
+            and labels.count("mixed_or_unclear") == 1
+        ):
+            overall = "target_specific_signal"
+        else:
+            overall = "mixed_or_unclear"
+
+        verdicts[field] = {
+            "overall_verdict": overall,
+            "targets": per_target,
+            "diagnostic_only": True,
+        }
+    return verdicts
+
+
+def _stage5_1b_median(values: list[float | None]) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.median(clean)) if clean else None
+
+
+def _stage5_1b_horizon_maturity(report: dict, target: str, horizon: str) -> dict:
+    maturity = report.get("preflight", {}).get(target, {}).get("maturity", {})
+    out = {}
+    for split_name in ["train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure"]:
+        if horizon in maturity.get(split_name, {}):
+            out[split_name] = maturity[split_name][horizon]
+    return out
+
+
+def stage5_1b_group_analysis(report: dict) -> dict:
+    out = {}
+    horizons = {
+        "3": ["up_3", "dn_3"],
+        "6": ["up_6", "dn_6"],
+        "12": ["up_12", "dn_12"],
+        "24": ["up_24", "dn_24"],
+        "48": ["up_48", "dn_48"],
+    }
+    for target, summary in report.get("summary", {}).items():
+        direction = {}
+        for side, fields in {
+            "up": ["up_3", "up_6", "up_12", "up_24", "up_48"],
+            "dn": ["dn_3", "dn_6", "dn_12", "dn_24", "dn_48"],
+        }.items():
+            direction[side] = {
+                "add_delta_val_median": _stage5_1b_median([
+                    summary.get(f"add_{field}", {}).get("delta_vs_clock_shift", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "drop_delta_val_median": _stage5_1b_median([
+                    summary.get(f"drop_{field}", {}).get("delta_vs_updn_full", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+            }
+        horizon = {}
+        for horizon_key, fields in horizons.items():
+            horizon[horizon_key] = {
+                "add_delta_val_median": _stage5_1b_median([
+                    summary.get(f"add_{field}", {}).get("delta_vs_clock_shift", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "drop_delta_val_median": _stage5_1b_median([
+                    summary.get(f"drop_{field}", {}).get("delta_vs_updn_full", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "maturity": _stage5_1b_horizon_maturity(report, target, horizon_key),
+            }
+        out[target] = {
+            "direction": direction,
+            "horizon": horizon,
+            "group_deltas": {
+                "delta_updn_group_val": summary.get("updn_full", {}).get("delta_updn_group", {}).get("val_stop", {}).get("delta_median"),
+                "delta_structure_group_val": summary.get("structure_full", {}).get("delta_structure_group", {}).get("val_stop", {}).get("delta_median"),
+                "delta_combined_val": summary.get("structure_plus_updn", {}).get("delta_combined", {}).get("val_stop", {}).get("delta_median"),
+            },
+            "maturity_aware_note": "Horizon blocks include preflight mature/non-mature shares; no extra subgroup retraining is performed in Stage 5.1b.",
+        }
+    return out
+
+
 def run_stage5_0f_signal_stationarity(target_splits: dict,
                                       output_path=STAGE5_0F_JSON_REPORT_PATH) -> dict:
     """Run Stage 5.0f XGBoost signal stationarity diagnostics."""
@@ -5174,6 +5979,151 @@ def run_stage5_1_structural_field_ablation(target_splits: dict,
     return report
 
 
+def run_stage5_1b_updn_field_ablation(target_splits: dict,
+                                      output_path=STAGE5_1B_JSON_REPORT_PATH) -> dict:
+    """Run Stage 5.1b Up/Dn field ablation diagnostics."""
+    started_at = time.time()
+    print("[heartbeat] stage5.1b runner | started")
+    total_runs = len(STAGE5_1B_TARGETS) * len(STAGE5_1B_PROFILE_KEYS) * len(STAGE5_1B_SEEDS)
+    report = {
+        "stage": "5.1b",
+        "experiment": "updn_field_ablation",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "verdict_scope": "DIAGNOSTIC_ONLY",
+        "baseline": "clock + shift (log1p)",
+        "targets": list(STAGE5_1B_TARGETS),
+        "fields": list(STAGE5_1B_FIELDS),
+        "seeds": list(STAGE5_1B_SEEDS),
+        "profiles": list(STAGE5_1B_PROFILE_KEYS),
+        "raw_runs": [],
+        "summary": {},
+        "field_verdicts": {},
+        "group_analysis": {},
+        "preflight": {},
+        "multiple_testing_context": {
+            "diagnostic_only": True,
+            "correction_applied": None,
+            "comparison_count": 76,
+            "note": "19 fields × 2 ablation modes × 2 targets; likely_* labels are preliminary diagnostic categories.",
+        },
+        "holdout_disclosure": {
+            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
+            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f/5.1; disclosure only.",
+            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
+        },
+        "transform_config": {
+            "transform_variant": "asinh",
+            "transform_params_fit_on": "train_core",
+            "transform_params": {},
+            "shift_transform": "log1p(max(raw_shift, 0))",
+            "updn_units": "raw price units",
+        },
+        "sanity_checks": {
+            "time_only_stage5_1_reference": "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
+            "expected_model_count": int(total_runs),
+            "excluded_top_level_updn_columns": [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
+            "stage5_1b_structure_full_actual": {},
+            "clock_shift_actual": {},
+            "updn_full_vs_structure_full": {},
+            "back_impulse_combo_vs_structure_full": {},
+        },
+        "progress": {
+            "started_at_unix": started_at,
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(output_path, report)
+
+    splits_by_target = {}
+    for target_col in STAGE5_1B_TARGETS:
+        print(f"[heartbeat] stage5.1b runner | building split target={target_col}")
+        train_df, val_df, hold_df = target_splits[target_col]
+        combined = pd.concat([train_df, val_df, hold_df], ignore_index=True)
+        split = build_stage5_1_split(combined, target_col)
+        raw_shadow_split = load_stage5_1b_raw_shadow_split(target_col)
+        splits_by_target[target_col] = split
+        preflight = run_stage5_1b_preflight_with_source(
+            split, target_col, raw_split=raw_shadow_split
+        )
+        report["preflight"][target_col] = preflight
+        _write_json_atomic(output_path, report)
+        if not stage5_1b_preflight_passed(preflight):
+            print(f"[heartbeat] stage5.1b runner | preflight failed target={target_col}")
+            report["status"] = "PREFLIGHT_FAILED"
+            report["progress"]["finished_at_unix"] = time.time()
+            report["progress"]["elapsed_sec"] = round(
+                report["progress"]["finished_at_unix"] - started_at, 1
+            )
+            _write_json_atomic(output_path, report)
+            return report
+
+    for target_col in STAGE5_1B_TARGETS:
+        print(f"[heartbeat] stage5.1b runner | training target={target_col} profiles={len(STAGE5_1B_PROFILE_KEYS)} seeds={len(STAGE5_1B_SEEDS)}")
+        split = splits_by_target[target_col]
+        report["summary"].setdefault(target_col, {})
+        target_runs = []
+        for profile_key in STAGE5_1B_PROFILE_KEYS:
+            for seed in STAGE5_1B_SEEDS:
+                run = evaluate_stage5_1b_profile_seed(
+                    split, profile_key=profile_key, target_col=target_col, seed=seed)
+                run["elapsed_sec"] = round(time.time() - started_at, 1)
+                target_runs.append(run)
+                report["raw_runs"].append(_stage5_1_public_run(run))
+                report["progress"]["done_runs"] += 1
+                report["progress"]["last_completed"] = {
+                    "target": target_col,
+                    "profile": profile_key,
+                    "seed": int(seed),
+                    "val_auc": _safe(run["val_stop"].get("auc")),
+                    "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
+                    "elapsed_sec": run["elapsed_sec"],
+                }
+                done_runs = report["progress"]["done_runs"]
+                total = report["progress"]["total_runs"]
+                last = report["progress"]["last_completed"]
+                print(
+                    f"[{done_runs}/{total}] {target_col} | {profile_key} | "
+                    f"seed={seed} | val_auc={last['val_auc']} | "
+                    f"holdout_auc={last['holdout_auc']}"
+                )
+                _write_json_atomic(output_path, report)
+
+        report["summary"][target_col] = summarize_stage5_1b_target(target_runs, target_col)
+        target_summary = report["summary"][target_col]
+        report["sanity_checks"]["stage5_1b_structure_full_actual"][target_col] = {
+            "val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": target_summary.get("structure_full", {}).get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["clock_shift_actual"][target_col] = {
+            "val_auc_median": target_summary.get("clock_shift", {}).get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": target_summary.get("clock_shift", {}).get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["updn_full_vs_structure_full"][target_col] = {
+            "updn_val_auc_median": target_summary.get("updn_full", {}).get("val_stop", {}).get("auc_median"),
+            "structure_val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["back_impulse_combo_vs_structure_full"][target_col] = {
+            "back_impulse_val_auc_median": target_summary.get("back_impulse_combo", {}).get("val_stop", {}).get("auc_median"),
+            "structure_val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+        }
+        _write_json_atomic(output_path, report)
+
+    report["field_verdicts"] = stage5_1b_field_verdicts(report)
+    report["group_analysis"] = stage5_1b_group_analysis(report)
+    report["status"] = "DIAGNOSTIC_ONLY"
+    print("[heartbeat] stage5.1b runner | completed")
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 1)
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -5193,6 +6143,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.0f: диагностика стационарности H6_off05 breach-сигнала")
     parser.add_argument("--stage5-1-structural-field-ablation", action="store_true",
                         help="Stage 5.1: абляция структурных фрактальных полей H6_off05")
+    parser.add_argument("--stage5-1b-updn-field-ablation", action="store_true",
+                        help="Run Stage 5.1b Up/Dn field ablation with clock+shift baseline")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -5239,6 +6191,31 @@ def main():
         print("Stage 5.0a transform comparison completed")
         print(json.dumps(report["artifacts"], indent=2))
         print(f"{'='*60}")
+        return
+
+    if args.stage5_1b_updn_field_ablation:
+        print("\n" + "=" * 60)
+        print("Stage 5.1b fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.1b...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_1b_updn_field_ablation(
+            target_splits={
+                "sell_stop_broken_H6_off05_flag": (train_df, val_stop_df, holdout_df),
+                "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_1B_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.1b: абляция Up/Dn полей завершена")
+        print(json.dumps({
+            "json": str(STAGE5_1B_JSON_REPORT_PATH),
+            "status": report.get("status"),
+            "field_verdicts": report.get("field_verdicts", {}),
+        }, indent=2))
+        print("=" * 60)
         return
 
     # OHLC label verification (mandatory before training)
