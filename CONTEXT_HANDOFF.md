@@ -42,6 +42,8 @@ Preflight:
 - raw-shadow split выровнен с модельным split:
   - sell: `25672 / 2832 / 4211 / 316`
   - buy: `22745 / 2580 / 3832 / 293`
+- Важно: модельные Up/Dn читаются из labeled CSV и уже нормализованы per-pair; raw-shadow preflight проверяет producer-контракт, а не шкалу модельного входа
+- Delta CI для field verdicts не сохранены/не вычислены в итоговом JSON; verdicts опираются на seed counts/yearly signs
 
 ## Главный результат
 
@@ -59,6 +61,7 @@ Preflight:
    - buy: drop `-0.0186`, add `+0.0575`
 5. `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но это только диагностический контроль.
 6. Единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell; общий verdict = `target_specific_signal`.
+7. `clock_shift` хуже Stage 5.1 `time_only` на обеих целях, поэтому add-one дельты нужно читать осторожно: baseline 5.1b оказался слабее, а не сильнее.
 
 ## Где мы сейчас
 
@@ -68,6 +71,7 @@ Preflight:
 - `2023-2025` нельзя трактовать как новый независимый frozen test
 - Stage 5.1b не создаёт winner и не открывает trading rule
 - Up/Dn не стоит включать в следующий стартовый профиль по умолчанию
+- `dn_24` не считать сильным выводом: sell drop delta всего `-0.0030`, CI отсутствует
 
 Правильное направление дальше:
 

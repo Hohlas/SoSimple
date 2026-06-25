@@ -7,6 +7,7 @@
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.1b подтвердил, что `back` остаётся устойчивым после добавления `shift`, а Up/Dn дают только слабый самостоятельный сигнал и не улучшают `structure_full`
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.1b (24 report updates)
 - Зафиксировано: Up/Dn не стоит включать в следующий стартовый профиль по умолчанию; допустимый следующий шаг только узкий follow-up вокруг `back`/`impulse`
+- Post-review correction: модельные Up/Dn нормализованы per-pair в labeled CSV, raw-shadow preflight проверяет producer; delta CI для field verdicts Stage 5.1b отсутствуют
 > Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
 
 ## [2026-06-24] ingest | Stage 5.1: структурная абляция фрактальных полей

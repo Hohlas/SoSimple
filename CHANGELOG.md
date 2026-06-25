@@ -28,6 +28,8 @@
 - `back` сохранил `overall_likely_useful`: sell add `+0.0408`, buy add `+0.0575` над `clock_shift`; удаление `back` ухудшает обе цели
 - `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но остаётся диагностическим контролем
 - Единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell (`target_specific_signal`)
+- Модельные Up/Dn — нормализованные per-pair значения из `DATA/*_labeled.csv`, не raw price units; raw-shadow preflight проверяет producer-контракт
+- Delta CI для field verdicts не вычислены, поэтому verdicts Stage 5.1b слабее Stage 5.1 и опираются на seed counts/yearly signs
 
 ### Вывод
 Stage 5.1b не переоткрывает `H6_off05`. Up/Dn поля не стоит включать в следующий стартовый профиль по умолчанию: их самостоятельный сигнал мал, а добавка к структуре отрицательна на validation. Главный устойчивый след остаётся у `back`; допустимый следующий шаг — только узкий follow-up вокруг `back`/`impulse`, без нового широкого поиска по `H6_off05`.

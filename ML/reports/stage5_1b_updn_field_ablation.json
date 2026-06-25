@@ -61708,7 +61708,7 @@
     "transform_params_fit_on": "train_core",
     "transform_params": {},
     "shift_transform": "log1p(max(raw_shift, 0))",
-    "updn_units": "raw price units",
+    "updn_units": "normalized per-pair piecewise linear-log values in DATA/*_labeled.csv fractal strings; raw_shadow preflight uses raw price units from MT/MQL4/Files/Nero.csv",
     "workers": 6,
     "xgb_threads": 4
   },

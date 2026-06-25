@@ -11,7 +11,7 @@
 
 Stage 5.1 показал, что среди 9 структурных полей устойчивее всего выделяется `back`, но использовал слабый baseline `clock-only`. Stage 5.1b усиливает baseline: теперь модель всегда видит календарь и возраст фрактала (`shift`). Это нужно, чтобы отделить сигнал поля от простого факта, что старые и свежие фракталы ведут себя по-разному.
 
-Второй вопрос Stage 5.1b — поля `up_3/dn_3 ... up_48/dn_48`. Они описывают уже накопленное движение цены от уровня по разным горизонтам. Это live-safe признаки только если они читаются из producer-строки `fractal0..fractal99`, а не из top-level target-колонок `up_* / dn_*`.
+Второй вопрос Stage 5.1b — поля `up_3/dn_3 ... up_48/dn_48`. В raw producer-е они описывают уже накопленное движение цены от уровня по разным горизонтам. В модельном входе Stage 5.1b они читаются из `DATA/*_labeled.csv`, где `processing/normalize.py` уже записал их обратно в `fractal0..fractal99` после per-pair piecewise linear-log нормализации. Поэтому модель видит не raw price units, а нормализованные значения. Эти признаки live-safe только если они читаются из producer-строки `fractal0..fractal99`, а не из top-level target-колонок `up_* / dn_*`.
 
 Этап заранее имеет статус `DIAGNOSTIC_ONLY`: `H6_off05` не переоткрывается как торговый кандидат, `2023-2025` уже использовались в предыдущих диагностических решениях, а коррекция множественного тестирования не применялась.
 
@@ -39,7 +39,9 @@ Stage 5.1 показал, что среди 9 структурных полей 
 - Выполнено `258` прогонов: `43 профиля × 2 цели × 3 seed`.
 - Итоговый JSON: `ML/reports/stage5_1b_updn_field_ablation.json`.
 
-Во время preflight была найдена и исправлена методическая ошибка проверки монотонности Up/Dn: монотонность нельзя проверять на `DATA/*_labeled.csv`, потому что там пары `up_X/dn_X` уже нормализованы отдельно по горизонту. Структурный preflight теперь берёт Up/Dn из raw-shadow источника `MT/MQL4/Files/Nero.csv`, а обучение остаётся на текущих labeled/normalized данных.
+Во время preflight была найдена и исправлена методическая ошибка проверки монотонности Up/Dn: монотонность нельзя проверять на `DATA/*_labeled.csv`, потому что там пары `up_X/dn_X` уже нормализованы отдельно по горизонту и шкалы между горизонтами не сопоставимы. Структурный preflight теперь берёт Up/Dn из raw-shadow источника `MT/MQL4/Files/Nero.csv`, а обучение остаётся на текущих labeled/normalized данных.
+
+Следствие: preflight аудитирует producer-контракт raw Up/Dn, а не точную числовую структуру входа модели. Maturity shares, shift distribution, Up/Dn/ATR disclosure и корреляции Up/Dn с `shift` считаются по raw-shadow данным; они нужны для проверки live-safe источника и цензурирования горизонтов, но не описывают нормализованные значения, которые видит XGBoost.
 
 ## Multiple Testing Context
 
@@ -53,6 +55,8 @@ Search budget:
 - 258 обучений XGBoost
 
 Коррекция множественного тестирования не применялась. Поэтому `target_likely_useful`, `target_specific_signal` и `mixed_or_unclear` — это предварительные диагностические категории, а не доказательство пригодности признака для торговли.
+
+Важное ограничение реализации: в итоговом JSON для Stage 5.1b не сохранены prediction arrays, поэтому paired bootstrap CI для delta не вычислены (`drop_val_delta_ci_low/high = None` для всех 19 полей на обеих целях). Verdict-логика фактически опирается на знак median delta, seed counts и yearly signs, а не на доверительный интервал delta. Это слабее, чем Stage 5.1, где delta CI были доступны.
 
 ## Changed Files
 
@@ -91,7 +95,7 @@ Search budget:
 - `seeds = [42, 77, 123]`
 - `transform_variant = asinh`
 - `shift_transform = log1p(max(raw_shift, 0))`
-- `updn_units = raw price units`
+- `updn_units = normalized per-pair piecewise linear-log values in DATA/*_labeled.csv fractal strings; raw-shadow preflight uses raw price units from MT/MQL4/Files/Nero.csv`
 - `workers = 6`, `xgb_threads = 4`
 
 Preflight:
@@ -102,6 +106,20 @@ Preflight:
 | buy | `raw_shadow_split` | 0 | 22745 | 2580 | 3832 | 293 |
 
 Raw-shadow выравнивание прошло: число строк raw-shadow совпадает с модельным split по всем четырём секциям.
+
+Raw-shadow preflight не означает, что нормализованные Up/Dn в модельном входе сохраняют raw-монотонность. Напротив, на labeled данных raw-монотонность ожидаемо нарушается из-за раздельной нормализации пар горизонтов. Поэтому `monotonicity.violations_total = 0` следует читать как проверку producer-а, а не как утверждение о модельной шкале.
+
+Sanity checks против Stage 5.1:
+
+| Цель | 5.1 `time_only` val | 5.1b `clock_shift` val | delta | 5.1 `structure_full` val | 5.1b `structure_full` val | delta |
+|---|---:|---:|---:|---:|---:|---:|
+| sell | 0.6351 | 0.6259 | -0.0092 | 0.6693 | 0.6720 | +0.0027 |
+| buy | 0.6418 | 0.6333 | -0.0084 | 0.6879 | 0.6898 | +0.0020 |
+
+Вывод из sanity checks:
+
+- `structure_full` 5.1b близок к Stage 5.1: добавление `shift` не меняет структурный профиль существенно и не объясняет сигнал `back`.
+- `clock_shift` оказался хуже Stage 5.1 `time_only` на обеих целях. Это контринтуитивно: 100 token-level значений `log1p(shift)` добавляют шум или сложность, которые baseline XGBoost не использует с пользой. Поэтому add-one дельты Stage 5.1b нужно читать осторожно: они считаются от более слабого baseline, чем Stage 5.1 `time_only`.
 
 ## Results
 
@@ -161,8 +179,10 @@ Raw-shadow выравнивание прошло: число строк raw-shad
 
 Единственный частный useful-ярлык среди Up/Dn:
 
-- `dn_24` получил `target_likely_useful` только на sell.
+- `dn_24` получил `target_likely_useful` только на sell: drop val `-0.0030`, add val `+0.0100`, `negative_seed_count = 3`, CI отсутствует.
 - Общий verdict `dn_24` = `target_specific_signal`, потому что buy не подтвердил сигнал.
+
+Это слабая категория useful: drop-дельта `-0.0030` мала и без CI может лежать в шуме. Поэтому `dn_24` нужно трактовать только как sell-only гипотезу, а не как надёжный Up/Dn-признак.
 
 По направлениям средние validation-дельты малы:
 
@@ -190,6 +210,17 @@ Raw-shadow выравнивание прошло: число строк raw-shad
 
 Maturity-риск не выглядит главным объяснением результата: non-mature доля растёт к H48, но именно H48 не даёт устойчивой сильной добавки. Тем не менее Stage 5.1b не выполнял отдельное переобучение mature-only/non-mature-only, поэтому это только sanity disclosure.
 
+### `impulse`
+
+`impulse` снова остался `mixed_or_unclear`, но причина стала жёстче, чем в Stage 5.1:
+
+| Цель | 5.1 drop val | 5.1 add val | 5.1b drop val | 5.1b add val |
+|---|---:|---:|---:|---:|
+| sell | -0.0036 | +0.0164 | -0.0009 | +0.0263 |
+| buy | -0.0010 | +0.0200 | -0.0004 | +0.0338 |
+
+Добавление `shift` не поглотило add-сигнал `impulse`: add-дельты выросли. Но drop-one роль внутри `structure_full` почти исчезла, а seed-согласованность осталась только 2/3 на обеих целях. Поэтому `impulse` полезен как часть диагностического `back_impulse_combo`, но не получает самостоятельный useful verdict.
+
 ### `lift_30`
 
 `lift_30` трактуется как доля пробоев в нижних 30% риска относительно средней доли; меньше = лучше.
@@ -214,9 +245,11 @@ Maturity-риск не выглядит главным объяснением р
 
 - `2023-2025` уже использовались в Stage 5.0f/5.1, поэтому не являются новым независимым подтверждением.
 - Коррекция множественного тестирования не применялась.
-- Up/Dn измеряются в raw price units; они могут частично кодировать ценовой масштаб, а не только форму движения от уровня.
+- Модельные Up/Dn — нормализованные per-pair значения, а не raw price units. Поэтому риск "Up/Dn как прямой proxy цены" для модельного входа слабее, чем предполагалось в спецификации. Raw Up/Dn/ATR disclosure остаётся только аудитом producer-а.
 - Maturity-aware анализ ограничен долями mature/non-mature; отдельного mature-only обучения не было.
+- Delta CI не вычислены в итоговом JSON; field verdicts слабее, чем в Stage 5.1, и опираются на seed counts/yearly signs.
 - `back_impulse_combo` выглядит перспективно, но не проходил чистый confirmatory-cycle.
+- На buy `back_impulse_combo` превосходит `structure_full` и на validation, и на diagnostic holdout 2023-2025, но 2023-2025 уже сожжены предыдущими этапами и не являются независимым подтверждением.
 - `2026` остаётся low-N disclosure: sell `n=316`, buy `n=293`.
 - Торговая симуляция не запускалась; AUC/lift не доказывают прибыльность.
 
