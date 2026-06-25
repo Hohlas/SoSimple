@@ -596,3 +596,8 @@
 ### 2026-06-25: Correct Stage 5.2 interpretation after JSON review
 - Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`: marked identical profile metrics as likely implementation/model-contract anomaly, disclosed `oracle_binary_pf = inf`, unrealistic oracle trade frequency, and missing prediction arrays.
 - Updated `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: Stage 5.2 is now framed as an artifact requiring technical post-mortem, not a reliable negative result about time-to-breach itself.
+
+### 2026-06-25: Stage 5.2 root cause found
+- Updated `ML/baseline/benchmark_stage5_transformer_breach.py`: Stage 5.2 objective changed from `reg:pseudohubererror` to `reg:squarederror`, `pred_summary` added to regression metrics, oracle gate rejects invalid `oracle_binary_pf = inf` comparison.
+- Updated `tests/test_stage5_transformer_breach.py`: added regression tests for objective selection, prediction summaries, and invalid oracle comparison.
+- Updated report/changelog/handoff/wiki: old Stage 5.2 JSON is superseded by bugfix and requires full rerun.

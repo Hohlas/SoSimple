@@ -4,6 +4,13 @@
 
 ## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа
 
+### Исправлено после ревью
+- Найден root cause одинаковых метрик всех профилей: `reg:pseudohubererror` на полном `time_only` split выдавал почти константный raw-прогноз `-171.076`, затем clipping превращал все предсказания в `1.0`
+- Stage 5.2 objective заменён на `reg:squarederror`
+- В regression metrics добавлен `pred_summary` (`min`, `median`, `max`, `std`, `unique_rounded_4`)
+- Oracle gate больше не принимает `oracle_binary_pf = inf` / `pf_delta_vs_binary = None` как валидное сравнение
+- Старый `ML/reports/stage5_2_time_to_breach_regression.json` помечен как устаревший диагностический артефакт; нужен полный rerun Stage 5.2
+
 ### Добавлено
 - `--stage5-2-time-to-breach-regression`
 - `BR_TIME_TO_BREACH_COLUMNS` и `*_bars_to_breach_*` targets для Fractal Stop Breach
@@ -31,7 +38,7 @@
 - Массивы предсказаний в JSON не сохранены, поэтому post-mortem требует перезапуска
 
 ### Вывод
-Stage 5.2 не переоткрывает `H6_off05`, но текущий артефакт нельзя читать как надёжное опровержение идеи времени до пробоя. Сначала нужен технический post-mortem: сохранить `y_pred`/`y_true`, проверить feature/model contract и исправить oracle gate. Если продолжать тему, нужна постановка с учётом цензуры вместо обычной регрессии.
+Stage 5.2 не переоткрывает `H6_off05`, а старый JSON нельзя читать как надёжное опровержение идеи времени до пробоя из-за найденного bug root cause. Следующий шаг — полный rerun Stage 5.2 на `reg:squarederror`; только после него можно оценивать target.
 
 <!-- docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md -->
 

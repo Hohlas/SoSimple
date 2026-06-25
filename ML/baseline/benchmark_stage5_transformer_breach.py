@@ -250,6 +250,7 @@ STAGE5_2_TARGET_TO_BINARY = {
 STAGE5_2_HORIZON = 6
 STAGE5_2_CENSORED_VALUE = STAGE5_2_HORIZON + 1
 STAGE5_2_ENTRY_THRESHOLD = 4
+STAGE5_2_XGB_OBJECTIVE = "reg:squarederror"
 STAGE5_2_SEEDS = [42, 77, 123]
 STAGE5_2_PROFILE_KEYS = [
     "time_only",
@@ -5539,6 +5540,13 @@ def stage5_2_regression_metrics(y_true, y_pred,
         "mae": float(np.mean(np.abs(yp - yt))) if len(yt) else None,
         "uncensored_mae": float(np.mean(np.abs(yp[uncensored] - yt[uncensored]))) if np.any(uncensored) else None,
         "auc_true_ge_4": auc,
+        "pred_summary": {
+            "min": float(np.min(yp)) if len(yp) else None,
+            "median": float(np.median(yp)) if len(yp) else None,
+            "max": float(np.max(yp)) if len(yp) else None,
+            "std": float(np.std(yp)) if len(yp) else None,
+            "unique_rounded_4": int(len(np.unique(np.round(yp, 4)))) if len(yp) else 0,
+        },
         "fixed_threshold": {
             "threshold": int(threshold),
             "predicted_entries": int(pred_binary.sum()),
@@ -5584,7 +5592,15 @@ def stage5_2_gate_results(summary: dict, oracle_preflight: dict,
         "yearly_not_single_year": yearly_pass,
     }
     model_pass = all(model_checks.values())
-    oracle_pass = bool(oracle_preflight.get("pass"))
+    oracle_binary_pf = oracle_preflight.get("oracle_binary_pf")
+    pf_delta = oracle_preflight.get("pf_delta_vs_binary")
+    invalid_oracle_comparison = (
+        oracle_binary_pf is not None
+        and not np.isfinite(float(oracle_binary_pf))
+        and pf_delta is None
+    )
+    oracle_pass = bool(oracle_preflight.get("pass")) and not invalid_oracle_comparison
+    oracle_reason = "invalid_oracle_binary_comparison" if invalid_oracle_comparison else None
     if not censoring_pass:
         status = "DIAGNOSTIC_ONLY"
     elif not oracle_pass:
@@ -5596,7 +5612,7 @@ def stage5_2_gate_results(summary: dict, oracle_preflight: dict,
     return {
         "overall_status": status,
         "censoring_gate": {"pass": bool(censoring_pass), "train_censoring_rate": train_censor},
-        "oracle_gate": {"pass": oracle_pass},
+        "oracle_gate": {"pass": oracle_pass, "reason": oracle_reason},
         "model_gate": {"pass": model_pass, "checks": model_checks},
     }
 
@@ -6628,7 +6644,7 @@ def evaluate_stage5_2_profile_seed(split: dict, profile_key: str,
     y_low_n = low_n[target_col].astype(float).to_numpy() if len(low_n) else np.asarray([])
 
     model = xgb.XGBRegressor(
-        objective="reg:pseudohubererror",
+        objective=STAGE5_2_XGB_OBJECTIVE,
         n_estimators=300,
         max_depth=3,
         learning_rate=0.05,

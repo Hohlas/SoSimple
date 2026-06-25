@@ -3877,6 +3877,10 @@ def test_stage5_2_regression_metrics_include_auc_mae_spearman_and_calibration():
     assert metrics["fixed_threshold"]["threshold"] == 4
     assert metrics["fixed_threshold"]["predicted_entries"] == 4
     assert len(metrics["calibration_table"]) == 3
+    assert metrics["pred_summary"]["min"] == pytest.approx(1.2)
+    assert metrics["pred_summary"]["max"] == pytest.approx(6.8)
+    assert metrics["pred_summary"]["std"] > 0.0
+    assert metrics["pred_summary"]["unique_rounded_4"] == 7
 
 
 def test_stage5_2_constant_baseline_metrics_are_defined():
@@ -3923,6 +3927,43 @@ def test_stage5_2_gate_results_require_oracle_model_and_baseline_improvement():
 
     assert gates["overall_status"] == "CANDIDATE_HYPOTHESIS"
     assert gates["model_gate"]["pass"] is True
+
+
+def test_stage5_2_oracle_gate_rejects_invalid_binary_comparison():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "best_profile": {
+            "profile": "clock_shift_back_impulse",
+            "val_stop": {
+                "spearman_r": 0.35,
+                "mae": 2.5,
+                "auc_true_ge_4": 0.72,
+                "yearly": {"2021": {"spearman_r": 0.32}, "2022": {"spearman_r": 0.31}},
+            },
+            "improvement_vs_constant": {
+                "spearman_delta": 0.35,
+                "mae_improvement_frac": 0.12,
+            },
+            "improvement_vs_time_only": {"spearman_delta": 0.04},
+            "improvement_vs_clock_shift": {"spearman_delta": 0.05},
+        }
+    }
+    oracle = {
+        "pass": True,
+        "oracle_time_pf": 1.6,
+        "oracle_binary_pf": float("inf"),
+        "pf_delta_vs_binary": None,
+        "trades_per_year": 1000,
+        "yearly": {"2021": {"pf": 1.2}, "2022": {"pf": 1.4}},
+    }
+    censoring = {"train_core": {"censoring_rate": 0.60}}
+
+    gates = runner.stage5_2_gate_results(summary, oracle, censoring)
+
+    assert gates["overall_status"] == "ORACLE_FAILED"
+    assert gates["oracle_gate"]["pass"] is False
+    assert gates["oracle_gate"]["reason"] == "invalid_oracle_binary_comparison"
 
 
 def test_stage5_2_first_touch_trade_result_tp_sl_and_timeout():
@@ -3986,6 +4027,41 @@ def test_evaluate_stage5_2_profile_seed_returns_regression_metrics():
     assert "spearman_r" in result["val_stop"]
     assert "mae" in result["val_stop"]
     assert "auc_true_ge_4" in result["val_stop"]
+    assert "pred_summary" in result["val_stop"]
+
+
+def test_evaluate_stage5_2_profile_seed_uses_stable_squarederror_objective(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    split = runner.build_stage5_1_split(df, "sell_bars_to_breach_H6_off05")
+    seen = {}
+
+    class DummyRegressor:
+        def __init__(self, **kwargs):
+            seen.update(kwargs)
+
+        def fit(self, X, y):
+            self.n_features_ = X.shape[1]
+            return self
+
+        def predict(self, X):
+            return np.linspace(2.0, 7.0, len(X))
+
+    monkeypatch.setattr(runner.xgb, "XGBRegressor", DummyRegressor)
+
+    result = runner.evaluate_stage5_2_profile_seed(
+        split,
+        "clock_shift_back",
+        "sell_bars_to_breach_H6_off05",
+        seed=42,
+    )
+
+    assert seen["objective"] == "reg:squarederror"
+    assert result["val_stop"]["pred_summary"]["std"] > 0.0
 
 
 def test_summarize_stage5_2_target_selects_best_profile_and_baselines():
