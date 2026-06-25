@@ -19,6 +19,7 @@
 
 import argparse, json, os, sys, time
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 
@@ -2407,7 +2408,7 @@ def label_sanity_check(holdout_df: pd.DataFrame, target_col: str = TARGET_COLUMN
 # XGBoost baseline
 # ===========================================================================
 
-def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42):
+def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42, n_jobs=1):
     """Train XGBoost classifier with early stopping."""
     pos_weight = float((len(y_train) - y_train.sum()) / max(y_train.sum(), 1))
 
@@ -2423,7 +2424,7 @@ def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42):
         "colsample_bytree": 0.8,
         "scale_pos_weight": pos_weight,
         "seed": seed,
-        "n_jobs": 1,
+        "n_jobs": int(n_jobs),
         "verbosity": 0,
     }
 
@@ -4955,7 +4956,8 @@ def evaluate_stage5_1_profile_seed(split: dict, profile_key: str, target_col: st
 
 
 def evaluate_stage5_1b_profile_seed(split: dict, profile_key: str, target_col: str,
-                                    seed: int, transform_variant: str = "asinh") -> dict:
+                                    seed: int, transform_variant: str = "asinh",
+                                    xgb_threads: int = 1) -> dict:
     """Train one Stage 5.1b XGBoost model for one profile/target/seed."""
     train_core = split["train_core"]
     val_stop = split["val_stop"]
@@ -4978,7 +4980,9 @@ def evaluate_stage5_1b_profile_seed(split: dict, profile_key: str, target_col: s
     y_holdout = diagnostic_holdout[target_col]
     y_low_n = low_n_disclosure[target_col]
 
-    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+    model, val_auc = train_xgb_baseline(
+        X_train, y_train, X_val, y_val, seed=seed, n_jobs=xgb_threads
+    )
     train_probs = model.predict(xgb.DMatrix(X_train))
     val_probs = model.predict(xgb.DMatrix(X_val))
     holdout_probs = model.predict(xgb.DMatrix(X_holdout))
@@ -5018,6 +5022,127 @@ def _median_or_none(values: list) -> float | None:
     if not clean:
         return None
     return float(np.median(clean))
+
+
+def _stage5_1b_job_key(target: str, profile: str, seed: int) -> tuple[str, str, int]:
+    return (str(target), str(profile), int(seed))
+
+
+def _stage5_1b_collect_completed_runs(raw_runs: list[dict]) -> tuple[list[dict], set[tuple[str, str, int]]]:
+    deduped = {}
+    for run in raw_runs or []:
+        key = _stage5_1b_job_key(run["target"], run["profile"], run["seed"])
+        deduped[key] = run
+    ordered_keys = sorted(
+        deduped.keys(),
+        key=lambda key: (
+            STAGE5_1B_TARGETS.index(key[0]) if key[0] in STAGE5_1B_TARGETS else len(STAGE5_1B_TARGETS),
+            STAGE5_1B_PROFILE_KEYS.index(key[1]) if key[1] in STAGE5_1B_PROFILE_KEYS else len(STAGE5_1B_PROFILE_KEYS),
+            int(key[2]),
+        ),
+    )
+    ordered_runs = [deduped[key] for key in ordered_keys]
+    return ordered_runs, set(ordered_keys)
+
+
+def _stage5_1b_initialize_report(output_path: Path, total_runs: int, resume: bool) -> dict:
+    report = {
+        "stage": "5.1b",
+        "experiment": "updn_field_ablation",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "verdict_scope": "DIAGNOSTIC_ONLY",
+        "baseline": "clock + shift (log1p)",
+        "targets": list(STAGE5_1B_TARGETS),
+        "fields": list(STAGE5_1B_FIELDS),
+        "seeds": list(STAGE5_1B_SEEDS),
+        "profiles": list(STAGE5_1B_PROFILE_KEYS),
+        "raw_runs": [],
+        "summary": {},
+        "field_verdicts": {},
+        "group_analysis": {},
+        "preflight": {},
+        "multiple_testing_context": {
+            "diagnostic_only": True,
+            "correction_applied": None,
+            "comparison_count": 76,
+            "note": "19 fields × 2 ablation modes × 2 targets; likely_* labels are preliminary diagnostic categories.",
+        },
+        "holdout_disclosure": {
+            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
+            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f/5.1; disclosure only.",
+            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
+        },
+        "transform_config": {
+            "transform_variant": "asinh",
+            "transform_params_fit_on": "train_core",
+            "transform_params": {},
+            "shift_transform": "log1p(max(raw_shift, 0))",
+            "updn_units": "raw price units",
+        },
+        "sanity_checks": {
+            "time_only_stage5_1_reference": "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
+            "expected_model_count": int(total_runs),
+            "excluded_top_level_updn_columns": [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
+            "stage5_1b_structure_full_actual": {},
+            "clock_shift_actual": {},
+            "updn_full_vs_structure_full": {},
+            "back_impulse_combo_vs_structure_full": {},
+        },
+        "progress": {
+            "started_at_unix": time.time(),
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+    if resume and output_path.exists():
+        existing = json.loads(output_path.read_text())
+        if (
+            existing.get("stage") == "5.1b"
+            and existing.get("experiment") == "updn_field_ablation"
+        ):
+            report.update(existing)
+    raw_runs, completed_keys = _stage5_1b_collect_completed_runs(report.get("raw_runs", []))
+    report["raw_runs"] = raw_runs
+    report["targets"] = list(STAGE5_1B_TARGETS)
+    report["fields"] = list(STAGE5_1B_FIELDS)
+    report["seeds"] = list(STAGE5_1B_SEEDS)
+    report["profiles"] = list(STAGE5_1B_PROFILE_KEYS)
+    report["status"] = "RUNNING"
+    report["summary"] = {}
+    report["field_verdicts"] = {}
+    report["group_analysis"] = {}
+    report.setdefault("preflight", {})
+    report.setdefault("sanity_checks", {})
+    report["sanity_checks"].setdefault(
+        "time_only_stage5_1_reference",
+        "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
+    )
+    report["sanity_checks"].setdefault("expected_model_count", int(total_runs))
+    report["sanity_checks"].setdefault(
+        "excluded_top_level_updn_columns",
+        [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
+    )
+    report["sanity_checks"].setdefault("stage5_1b_structure_full_actual", {})
+    report["sanity_checks"].setdefault("clock_shift_actual", {})
+    report["sanity_checks"].setdefault("updn_full_vs_structure_full", {})
+    report["sanity_checks"].setdefault("back_impulse_combo_vs_structure_full", {})
+    report["progress"] = report.get("progress", {})
+    report["progress"]["started_at_unix"] = report["progress"].get("started_at_unix") or time.time()
+    report["progress"]["done_runs"] = len(completed_keys)
+    report["progress"]["total_runs"] = int(total_runs)
+    return report
+
+
+def _run_stage5_1b_job(job: dict) -> dict:
+    return evaluate_stage5_1b_profile_seed(
+        job["split"],
+        profile_key=job["profile"],
+        target_col=job["target"],
+        seed=job["seed"],
+        xgb_threads=job["xgb_threads"],
+    )
 
 
 def _min_or_none(values: list) -> float | None:
@@ -5186,15 +5311,19 @@ def _stage5_1_delta_summary(raw_runs: list[dict], profile: str,
         profile_run = profile_runs.get(seed)
         baseline_run = baseline_runs.get(seed)
         if profile_run and baseline_run:
-            ci = bootstrap_stage5_1_delta_ci(
-                profile_run["labels"][period_key],
-                profile_run["predictions"][period_key],
-                baseline_run["predictions"][period_key],
-                n_boot=STAGE5_1_BOOTSTRAP_N,
-                seed=seed,
-            )
-            ci_lows.append(ci.get("low"))
-            ci_highs.append(ci.get("high"))
+            profile_labels = (profile_run.get("labels") or {}).get(period_key)
+            profile_preds = (profile_run.get("predictions") or {}).get(period_key)
+            baseline_preds = (baseline_run.get("predictions") or {}).get(period_key)
+            if profile_labels is not None and profile_preds is not None and baseline_preds is not None:
+                ci = bootstrap_stage5_1_delta_ci(
+                    profile_labels,
+                    profile_preds,
+                    baseline_preds,
+                    n_boot=STAGE5_1_BOOTSTRAP_N,
+                    seed=seed,
+                )
+                ci_lows.append(ci.get("low"))
+                ci_highs.append(ci.get("high"))
     return {
         "baseline_profile": baseline_profile,
         "period": period_key,
@@ -5980,64 +6109,20 @@ def run_stage5_1_structural_field_ablation(target_splits: dict,
 
 
 def run_stage5_1b_updn_field_ablation(target_splits: dict,
-                                      output_path=STAGE5_1B_JSON_REPORT_PATH) -> dict:
+                                      output_path=STAGE5_1B_JSON_REPORT_PATH,
+                                      resume: bool = True,
+                                      workers: int = 1,
+                                      xgb_threads: int = 1) -> dict:
     """Run Stage 5.1b Up/Dn field ablation diagnostics."""
     started_at = time.time()
     print("[heartbeat] stage5.1b runner | started")
     total_runs = len(STAGE5_1B_TARGETS) * len(STAGE5_1B_PROFILE_KEYS) * len(STAGE5_1B_SEEDS)
-    report = {
-        "stage": "5.1b",
-        "experiment": "updn_field_ablation",
-        "status": "RUNNING",
-        "level": "exploratory",
-        "verdict_scope": "DIAGNOSTIC_ONLY",
-        "baseline": "clock + shift (log1p)",
-        "targets": list(STAGE5_1B_TARGETS),
-        "fields": list(STAGE5_1B_FIELDS),
-        "seeds": list(STAGE5_1B_SEEDS),
-        "profiles": list(STAGE5_1B_PROFILE_KEYS),
-        "raw_runs": [],
-        "summary": {},
-        "field_verdicts": {},
-        "group_analysis": {},
-        "preflight": {},
-        "multiple_testing_context": {
-            "diagnostic_only": True,
-            "correction_applied": None,
-            "comparison_count": 76,
-            "note": "19 fields × 2 ablation modes × 2 targets; likely_* labels are preliminary diagnostic categories.",
-        },
-        "holdout_disclosure": {
-            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
-            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f/5.1; disclosure only.",
-            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
-        },
-        "transform_config": {
-            "transform_variant": "asinh",
-            "transform_params_fit_on": "train_core",
-            "transform_params": {},
-            "shift_transform": "log1p(max(raw_shift, 0))",
-            "updn_units": "raw price units",
-        },
-        "sanity_checks": {
-            "time_only_stage5_1_reference": "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
-            "expected_model_count": int(total_runs),
-            "excluded_top_level_updn_columns": [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
-            "stage5_1b_structure_full_actual": {},
-            "clock_shift_actual": {},
-            "updn_full_vs_structure_full": {},
-            "back_impulse_combo_vs_structure_full": {},
-        },
-        "progress": {
-            "started_at_unix": started_at,
-            "done_runs": 0,
-            "total_runs": int(total_runs),
-            "last_completed": None,
-        },
-    }
-
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    report = _stage5_1b_initialize_report(output_path, total_runs=total_runs, resume=resume)
+    report["progress"]["started_at_unix"] = started_at
+    report["transform_config"]["xgb_threads"] = int(xgb_threads)
+    report["transform_config"]["workers"] = int(workers)
     _write_json_atomic(output_path, report)
 
     splits_by_target = {}
@@ -6063,38 +6148,74 @@ def run_stage5_1b_updn_field_ablation(target_splits: dict,
             _write_json_atomic(output_path, report)
             return report
 
+    report["raw_runs"], completed_keys = _stage5_1b_collect_completed_runs(report.get("raw_runs", []))
+    pending_jobs = []
     for target_col in STAGE5_1B_TARGETS:
         print(f"[heartbeat] stage5.1b runner | training target={target_col} profiles={len(STAGE5_1B_PROFILE_KEYS)} seeds={len(STAGE5_1B_SEEDS)}")
         split = splits_by_target[target_col]
         report["summary"].setdefault(target_col, {})
-        target_runs = []
         for profile_key in STAGE5_1B_PROFILE_KEYS:
             for seed in STAGE5_1B_SEEDS:
-                run = evaluate_stage5_1b_profile_seed(
-                    split, profile_key=profile_key, target_col=target_col, seed=seed)
-                run["elapsed_sec"] = round(time.time() - started_at, 1)
-                target_runs.append(run)
-                report["raw_runs"].append(_stage5_1_public_run(run))
-                report["progress"]["done_runs"] += 1
-                report["progress"]["last_completed"] = {
+                job_key = _stage5_1b_job_key(target_col, profile_key, seed)
+                if job_key in completed_keys:
+                    continue
+                pending_jobs.append({
                     "target": target_col,
                     "profile": profile_key,
                     "seed": int(seed),
-                    "val_auc": _safe(run["val_stop"].get("auc")),
-                    "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
-                    "elapsed_sec": run["elapsed_sec"],
-                }
-                done_runs = report["progress"]["done_runs"]
-                total = report["progress"]["total_runs"]
-                last = report["progress"]["last_completed"]
-                print(
-                    f"[{done_runs}/{total}] {target_col} | {profile_key} | "
-                    f"seed={seed} | val_auc={last['val_auc']} | "
-                    f"holdout_auc={last['holdout_auc']}"
-                )
-                _write_json_atomic(output_path, report)
+                    "split": split,
+                    "xgb_threads": int(xgb_threads),
+                })
 
-        report["summary"][target_col] = summarize_stage5_1b_target(target_runs, target_col)
+    heartbeat = HeartbeatLogger("stage5.1b runner")
+    heartbeat.emit(
+        f"pending_jobs={len(pending_jobs)} completed={len(completed_keys)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(_stage5_1_public_run(run))
+        report["raw_runs"][:] = _stage5_1b_collect_completed_runs(report["raw_runs"])[0]
+        report["progress"]["done_runs"] = len(report["raw_runs"])
+        report["progress"]["last_completed"] = {
+            "target": run["target"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "val_auc": _safe(run["val_stop"].get("auc")),
+            "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
+            "elapsed_sec": run["elapsed_sec"],
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['target']} | {run['profile']} | "
+            f"seed={run['seed']} | val_auc={last['val_auc']} | "
+            f"holdout_auc={last['holdout_auc']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in pending_jobs:
+            run = _run_stage5_1b_job(job)
+            run["elapsed_sec"] = round(time.time() - started_at, 1)
+            consume_run(run)
+    else:
+        with ProcessPoolExecutor(max_workers=int(workers)) as executor:
+            futures = [executor.submit(_run_stage5_1b_job, job) for job in pending_jobs]
+            for future in futures:
+                run = future.result()
+                run["elapsed_sec"] = round(time.time() - started_at, 1)
+                consume_run(run)
+
+    raw_runs_by_target = defaultdict(list)
+    for run in report["raw_runs"]:
+        raw_runs_by_target[run["target"]].append(run)
+    for target_col in STAGE5_1B_TARGETS:
+        report["summary"][target_col] = summarize_stage5_1b_target(
+            raw_runs_by_target.get(target_col, []), target_col
+        )
         target_summary = report["summary"][target_col]
         report["sanity_checks"]["stage5_1b_structure_full_actual"][target_col] = {
             "val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
@@ -6145,6 +6266,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.1: абляция структурных фрактальных полей H6_off05")
     parser.add_argument("--stage5-1b-updn-field-ablation", action="store_true",
                         help="Run Stage 5.1b Up/Dn field ablation with clock+shift baseline")
+    parser.add_argument("--stage5-1b-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.1b")
+    parser.add_argument("--stage5-1b-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.1b worker")
+    parser.add_argument("--stage5-1b-resume", dest="stage5_1b_resume", action="store_true",
+                        help="Resume Stage 5.1b from existing JSON if present")
+    parser.add_argument("--stage5-1b-no-resume", dest="stage5_1b_resume", action="store_false",
+                        help="Restart Stage 5.1b from scratch even if JSON exists")
+    parser.set_defaults(stage5_1b_resume=True)
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -6207,6 +6337,9 @@ def main():
                 "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
             },
             output_path=STAGE5_1B_JSON_REPORT_PATH,
+            resume=args.stage5_1b_resume,
+            workers=args.stage5_1b_workers,
+            xgb_threads=args.stage5_1b_xgb_threads,
         )
         print("\n" + "=" * 60)
         print("Stage 5.1b: абляция Up/Dn полей завершена")

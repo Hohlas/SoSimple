@@ -7,6 +7,7 @@
 # Updated: 2026-06-23
 # =============================================================================
 
+import json
 import os, sys
 import numpy as np
 import pandas as pd
@@ -3647,3 +3648,164 @@ def test_stage5_1b_cli_argument_exists_in_build_arg_parser():
     parser = runner.build_arg_parser()
     args = parser.parse_args(["--stage5-1b-updn-field-ablation"])
     assert args.stage5_1b_updn_field_ablation is True
+
+
+def test_stage5_1b_runner_resume_skips_completed_jobs(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_1B_TARGETS", ["sell_stop_broken_H6_off05_flag"])
+    monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", ["clock_shift", "structure_full"])
+    monkeypatch.setattr(runner, "STAGE5_1B_SEEDS", [42, 77])
+    monkeypatch.setattr(
+        runner, "load_stage5_1b_raw_shadow_split",
+        lambda target_col: runner.build_stage5_1_split(pd.concat([df, df, df], ignore_index=True), target_col)
+    )
+    monkeypatch.setattr(runner, "run_stage5_1b_preflight_with_source", lambda split, target, raw_split=None: {
+        "target": target,
+        "source_check": {"uses_fractal_columns_only": True, "forbidden_top_level_updn_columns_used": False},
+        "contract": {"short_fractal_count": 0},
+        "monotonicity": {"violations_total": 0},
+        "pass": True,
+    })
+
+    output_path = tmp_path / "stage5_1b_resume.json"
+    existing = {
+        "stage": "5.1b",
+        "experiment": "updn_field_ablation",
+        "status": "RUNNING",
+        "targets": ["sell_stop_broken_H6_off05_flag"],
+        "fields": [],
+        "seeds": [42, 77],
+        "profiles": ["clock_shift", "structure_full"],
+        "raw_runs": [{
+            "target": "sell_stop_broken_H6_off05_flag",
+            "profile": "clock_shift",
+            "seed": 42,
+            "val_stop": {"auc": 0.61},
+            "diagnostic_holdout": {"auc": 0.59},
+            "low_n_disclosure": {"auc": 0.58},
+            "yearly_val": {},
+            "yearly_diagnostic_holdout": {},
+            "elapsed_sec": 10.0,
+        }],
+        "summary": {},
+        "field_verdicts": {},
+        "group_analysis": {},
+        "preflight": {},
+        "multiple_testing_context": {},
+        "holdout_disclosure": {},
+        "transform_config": {},
+        "sanity_checks": {},
+        "progress": {"started_at_unix": 1.0, "done_runs": 999, "total_runs": 4, "last_completed": None},
+    }
+    output_path.write_text(json.dumps(existing), encoding="utf-8")
+
+    calls = []
+
+    def fake_worker(job):
+        calls.append((job["target"], job["profile"], job["seed"], job["xgb_threads"]))
+        return {
+            "profile": job["profile"],
+            "target": job["target"],
+            "seed": job["seed"],
+            "val_stop": {"auc": 0.62},
+            "diagnostic_holdout": {"auc": 0.6},
+            "low_n_disclosure": {"auc": 0.57},
+            "yearly_val": {},
+            "yearly_diagnostic_holdout": {},
+            "elapsed_sec": 20.0,
+        }
+
+    monkeypatch.setattr(runner, "_run_stage5_1b_job", fake_worker)
+    monkeypatch.setattr(runner, "summarize_stage5_1b_target", lambda raw_runs, target: {"n_runs": len(raw_runs)})
+    monkeypatch.setattr(runner, "stage5_1b_field_verdicts", lambda report: {"ok": True})
+    monkeypatch.setattr(runner, "stage5_1b_group_analysis", lambda report: {"ok": True})
+
+    report = runner.run_stage5_1b_updn_field_ablation(
+        target_splits={"sell_stop_broken_H6_off05_flag": (df, df, df)},
+        output_path=output_path,
+        resume=True,
+        workers=1,
+        xgb_threads=3,
+    )
+
+    assert len(calls) == 3
+    assert ("sell_stop_broken_H6_off05_flag", "clock_shift", 42, 3) not in calls
+    assert report["progress"]["done_runs"] == 4
+    assert len(report["raw_runs"]) == 4
+    assert report["summary"]["sell_stop_broken_H6_off05_flag"]["n_runs"] == 4
+
+
+def test_stage5_1b_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    monkeypatch.setattr(runner, "STAGE5_1B_TARGETS", ["sell_stop_broken_H6_off05_flag"])
+    monkeypatch.setattr(runner, "STAGE5_1B_PROFILE_KEYS", ["clock_shift", "structure_full"])
+    monkeypatch.setattr(runner, "STAGE5_1B_SEEDS", [42])
+    monkeypatch.setattr(
+        runner, "load_stage5_1b_raw_shadow_split",
+        lambda target_col: runner.build_stage5_1_split(pd.concat([df, df, df], ignore_index=True), target_col)
+    )
+    monkeypatch.setattr(runner, "run_stage5_1b_preflight_with_source", lambda split, target, raw_split=None: {
+        "target": target,
+        "source_check": {"uses_fractal_columns_only": True, "forbidden_top_level_updn_columns_used": False},
+        "contract": {"short_fractal_count": 0},
+        "monotonicity": {"violations_total": 0},
+        "pass": True,
+    })
+    monkeypatch.setattr(runner, "summarize_stage5_1b_target", lambda raw_runs, target: {"n_runs": len(raw_runs)})
+    monkeypatch.setattr(runner, "stage5_1b_field_verdicts", lambda report: {"ok": True})
+    monkeypatch.setattr(runner, "stage5_1b_group_analysis", lambda report: {"ok": True})
+
+    seen = {"max_workers": None, "jobs": []}
+
+    class FakeFuture:
+        def __init__(self, value):
+            self._value = value
+
+        def result(self):
+            return self._value
+
+    class FakeExecutor:
+        def __init__(self, max_workers):
+            seen["max_workers"] = max_workers
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def submit(self, fn, job):
+            seen["jobs"].append((job["profile"], job["seed"], job["xgb_threads"]))
+            return FakeFuture(fn(job))
+
+    def fake_worker(job):
+        return {
+            "profile": job["profile"],
+            "target": job["target"],
+            "seed": job["seed"],
+            "val_stop": {"auc": 0.7},
+            "diagnostic_holdout": {"auc": 0.69},
+            "low_n_disclosure": {"auc": 0.68},
+            "yearly_val": {},
+            "yearly_diagnostic_holdout": {},
+            "elapsed_sec": 15.0,
+        }
+
+    monkeypatch.setattr(runner, "ProcessPoolExecutor", FakeExecutor)
+    monkeypatch.setattr(runner, "_run_stage5_1b_job", fake_worker)
+
+    report = runner.run_stage5_1b_updn_field_ablation(
+        target_splits={"sell_stop_broken_H6_off05_flag": (df, df, df)},
+        output_path=tmp_path / "stage5_1b_parallel.json",
+        resume=False,
+        workers=2,
+        xgb_threads=4,
+    )
+
+    assert seen["max_workers"] == 2
+    assert seen["jobs"] == [("clock_shift", 42, 4), ("structure_full", 42, 4)]
+    assert report["progress"]["done_runs"] == 2
