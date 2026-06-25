@@ -19,7 +19,7 @@
 
 import argparse, json, os, sys, time
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from copy import deepcopy
 from pathlib import Path
 
@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from scipy import stats
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
@@ -34,6 +35,7 @@ import xgboost as xgb
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from ML.models.fractal_breach_transformer import FractalBreachTransformer, TokenSelector
+from processing.label_signals import load_ohlc_index
 
 # ===========================================================================
 # Constants
@@ -97,7 +99,8 @@ class HeartbeatLogger:
         if not force and (now - self.last_emit_at) < self.interval_sec:
             return
         elapsed = round(now - self.started_at, 1)
-        print(f"[heartbeat] {self.label} | elapsed={elapsed}s | {message}")
+        wall_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(now))
+        print(f"[heartbeat] ts={wall_time}Z | {self.label} | elapsed={elapsed}s | {message}")
         self.last_emit_at = now
 
 # Split years
@@ -235,6 +238,29 @@ STAGE5_1B_FIELD_TO_FRACTAL_INDEX = {
     "up_6": 19,
     "dn_6": 20,
 }
+STAGE5_2_JSON_REPORT_PATH = REPORTS_DIR / "stage5_2_time_to_breach_regression.json"
+STAGE5_2_TARGETS = [
+    "sell_bars_to_breach_H6_off05",
+    "buy_bars_to_breach_H6_off05",
+]
+STAGE5_2_TARGET_TO_BINARY = {
+    "sell_bars_to_breach_H6_off05": "sell_stop_broken_H6_off05_flag",
+    "buy_bars_to_breach_H6_off05": "buy_stop_broken_H6_off05_flag",
+}
+STAGE5_2_HORIZON = 6
+STAGE5_2_CENSORED_VALUE = STAGE5_2_HORIZON + 1
+STAGE5_2_ENTRY_THRESHOLD = 4
+STAGE5_2_SEEDS = [42, 77, 123]
+STAGE5_2_PROFILE_KEYS = [
+    "time_only",
+    "clock_shift",
+    "clock_shift_back",
+    "clock_shift_impulse",
+    "clock_shift_back_impulse",
+    "structure_full",
+    "structure_full_without_back",
+]
+STAGE5_2_STRUCTURE_FIELDS = STAGE5_1B_STRUCTURE_FIELDS.copy()
 
 # ===========================================================================
 # Profile definitions
@@ -2258,6 +2284,60 @@ def build_stage5_1_features(df: pd.DataFrame, profile_key: str,
     params = {} if transform_params is None else transform_params
     return build_flat_features(
         df, profile, transform_variant=transform_variant, transform_params=params)
+
+
+def _stage5_2_profile_for_key(profile_key: str) -> dict:
+    if profile_key == "time_only":
+        token_fields = []
+    elif profile_key == "clock_shift":
+        token_fields = ["shift"]
+    elif profile_key == "clock_shift_back":
+        token_fields = ["shift", "back"]
+    elif profile_key == "clock_shift_impulse":
+        token_fields = ["shift", "impulse"]
+    elif profile_key == "clock_shift_back_impulse":
+        token_fields = ["shift", "back", "impulse"]
+    elif profile_key == "structure_full":
+        token_fields = STAGE5_2_STRUCTURE_FIELDS.copy()
+    elif profile_key == "structure_full_without_back":
+        token_fields = [
+            field for field in STAGE5_2_STRUCTURE_FIELDS if field != "back"
+        ]
+    else:
+        raise ValueError(f"Unknown Stage 5.2 profile: {profile_key}")
+
+    return {
+        "name": f"stage5_2_{profile_key}",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "order": "freshness",
+        "stage5_2": True,
+    }
+
+
+def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    profile = _stage5_2_profile_for_key(profile_key)
+    token_fields = profile["token_fields"]
+    row_fields = profile["row_fields"]
+    n_rows = len(df)
+    token_width = len(token_fields) * N_FRACTALS
+    X = np.zeros((n_rows, token_width + len(row_fields)), dtype=np.float32)
+
+    for row_idx, (_, row) in enumerate(df.iterrows()):
+        offset = 0
+        for fractal_idx in range(N_FRACTALS):
+            fstr = str(row.get(f"fractal{fractal_idx}", ""))
+            fields = extract_stage5_1b_fields(fstr)
+            for field in token_fields:
+                X[row_idx, offset] = float(fields.get(field, 0.0))
+                offset += 1
+    row_features = build_row_features(df, profile).astype(np.float32)
+    if row_features.shape[1] != len(row_fields):
+        raise RuntimeError(
+            f"Stage 5.2 row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+        )
+    X[:, token_width:] = row_features
+    return X
 
 
 def _stage5_1b_profile_for_key(profile_key: str) -> dict:
@@ -5407,6 +5487,153 @@ def summarize_stage5_1b_target(raw_runs: list[dict], target_col: str) -> dict:
     return summary
 
 
+def _safe_spearman(y_true, y_pred) -> float:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    if len(yt) < 2 or np.nanstd(yt) == 0 or np.nanstd(yp) == 0:
+        return 0.0
+    rho, _ = stats.spearmanr(yt, yp)
+    return float(rho) if np.isfinite(rho) else 0.0
+
+
+def stage5_2_calibration_table(y_true, y_pred) -> list[dict]:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    bins = [
+        ("pred_1_2", yp < 3),
+        ("pred_3_4", (yp >= 3) & (yp < 5)),
+        ("pred_5_7", yp >= 5),
+    ]
+    rows = []
+    for name, mask in bins:
+        true_vals = yt[mask]
+        rows.append({
+            "bucket": name,
+            "n": int(mask.sum()),
+            "true_median": float(np.nanmedian(true_vals)) if len(true_vals) else None,
+            "true_ge_4_rate": float(np.mean(true_vals >= STAGE5_2_ENTRY_THRESHOLD)) if len(true_vals) else None,
+        })
+    return rows
+
+
+def stage5_2_regression_metrics(y_true, y_pred,
+                                threshold: int = STAGE5_2_ENTRY_THRESHOLD,
+                                censored_value: int = STAGE5_2_CENSORED_VALUE) -> dict:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    valid = np.isfinite(yt) & np.isfinite(yp)
+    yt = yt[valid]
+    yp = yp[valid]
+    true_binary = (yt >= threshold).astype(int)
+    pred_binary = yp >= threshold
+    uncensored = yt < censored_value
+    auc = None
+    if len(np.unique(true_binary)) == 2:
+        try:
+            auc = float(roc_auc_score(true_binary, yp))
+        except ValueError:
+            auc = 0.5
+    return {
+        "n": int(len(yt)),
+        "spearman_r": _safe_spearman(yt, yp),
+        "mae": float(np.mean(np.abs(yp - yt))) if len(yt) else None,
+        "uncensored_mae": float(np.mean(np.abs(yp[uncensored] - yt[uncensored]))) if np.any(uncensored) else None,
+        "auc_true_ge_4": auc,
+        "fixed_threshold": {
+            "threshold": int(threshold),
+            "predicted_entries": int(pred_binary.sum()),
+            "precision": float(np.mean(true_binary[pred_binary])) if np.any(pred_binary) else None,
+            "recall": float(np.sum(true_binary[pred_binary]) / max(np.sum(true_binary), 1)),
+        },
+        "calibration_table": stage5_2_calibration_table(yt, yp),
+    }
+
+
+def stage5_2_constant_baseline_metrics(y_true,
+                                       censored_value: int = STAGE5_2_CENSORED_VALUE) -> dict:
+    yt = np.asarray(y_true, dtype=float)
+    pred = np.full(len(yt), censored_value, dtype=float)
+    metrics = stage5_2_regression_metrics(yt, pred)
+    metrics["prediction_value"] = int(censored_value)
+    metrics["spearman_r"] = 0.0
+    return metrics
+
+
+def stage5_2_gate_results(summary: dict, oracle_preflight: dict,
+                          censoring: dict) -> dict:
+    train_censor = (censoring.get("train_core") or {}).get("censoring_rate")
+    censoring_pass = train_censor is not None and train_censor <= 0.70
+    best = summary.get("best_profile") or {}
+    val = best.get("val_stop") or {}
+    improvement_constant = best.get("improvement_vs_constant") or {}
+    improvement_time = best.get("improvement_vs_time_only") or {}
+    improvement_clock = best.get("improvement_vs_clock_shift") or {}
+    yearly = val.get("yearly") or {}
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for v in yearly.values() if (v.get("spearman_r") or 0.0) > 0.0) >= 2
+    )
+    model_checks = {
+        "spearman_ge_0_30": (val.get("spearman_r") or 0.0) >= 0.30,
+        "spearman_delta_constant_ge_0_05": (improvement_constant.get("spearman_delta") or 0.0) >= 0.05,
+        "spearman_delta_time_only_ge_0_03": (improvement_time.get("spearman_delta") or 0.0) >= 0.03,
+        "spearman_delta_clock_shift_ge_0_03": (improvement_clock.get("spearman_delta") or 0.0) >= 0.03,
+        "mae_le_3": val.get("mae") is not None and val["mae"] <= 3.0,
+        "mae_improvement_constant_ge_10pct": (improvement_constant.get("mae_improvement_frac") or 0.0) >= 0.10,
+        "auc_ge_0_70": val.get("auc_true_ge_4") is not None and val["auc_true_ge_4"] >= 0.70,
+        "yearly_not_single_year": yearly_pass,
+    }
+    model_pass = all(model_checks.values())
+    oracle_pass = bool(oracle_preflight.get("pass"))
+    if not censoring_pass:
+        status = "DIAGNOSTIC_ONLY"
+    elif not oracle_pass:
+        status = "ORACLE_FAILED"
+    elif not model_pass:
+        status = "MODEL_GATE_FAILED"
+    else:
+        status = "CANDIDATE_HYPOTHESIS"
+    return {
+        "overall_status": status,
+        "censoring_gate": {"pass": bool(censoring_pass), "train_censoring_rate": train_censor},
+        "oracle_gate": {"pass": oracle_pass},
+        "model_gate": {"pass": model_pass, "checks": model_checks},
+    }
+
+
+def stage5_2_first_touch_trade_result(entry_price: float, stop_price: float,
+                                      take_price: float, side: str,
+                                      future_bars: list[dict]) -> dict:
+    if side not in {"buy", "sell"}:
+        raise ValueError(f"side must be buy or sell, got {side}")
+    risk = abs(entry_price - stop_price)
+    reward = abs(take_price - entry_price)
+    for idx, bar in enumerate(future_bars, start=1):
+        high = float(bar["high"])
+        low = float(bar["low"])
+        if side == "buy":
+            sl_hit = low <= stop_price
+            tp_hit = high >= take_price
+        else:
+            sl_hit = high >= stop_price
+            tp_hit = low <= take_price
+        if sl_hit and tp_hit:
+            return {"outcome": "AMBIGUOUS_SL_FIRST", "bars": idx, "pnl_r": -1.0}
+        if sl_hit:
+            return {"outcome": "SL", "bars": idx, "pnl_r": -1.0}
+        if tp_hit:
+            return {"outcome": "TP", "bars": idx, "pnl_r": float(reward / risk) if risk > 0 else 0.0}
+    return {"outcome": "TIMEOUT", "bars": len(future_bars), "pnl_r": 0.0}
+
+
+def _stage5_2_pf(pnls: list[float]) -> float | None:
+    gains = sum(v for v in pnls if v > 0)
+    losses = -sum(v for v in pnls if v < 0)
+    if losses == 0:
+        return None if gains == 0 else float("inf")
+    return float(gains / losses)
+
+
 def _stage5_0f_get_summary(report: dict, target: str, profile: str,
                            strategy: str, year: int) -> dict | None:
     return (
@@ -6204,7 +6431,7 @@ def run_stage5_1b_updn_field_ablation(target_splits: dict,
     else:
         with ProcessPoolExecutor(max_workers=int(workers)) as executor:
             futures = [executor.submit(_run_stage5_1b_job, job) for job in pending_jobs]
-            for future in futures:
+            for future in as_completed(futures):
                 run = future.result()
                 run["elapsed_sec"] = round(time.time() - started_at, 1)
                 consume_run(run)
@@ -6245,6 +6472,437 @@ def run_stage5_1b_updn_field_ablation(target_splits: dict,
     return report
 
 
+def _stage5_2_row_datetime(row: pd.Series):
+    from datetime import datetime, timezone
+    try:
+        return datetime.strptime(str(row["time"]), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def _stage5_2_future_bars(ohlc: dict, times: list, idx0: int,
+                          horizon: int = STAGE5_2_HORIZON) -> list[dict]:
+    bars = []
+    for k in range(idx0 + 1, min(idx0 + 1 + horizon, len(times))):
+        opn, high, low, close = ohlc[times[k]]
+        bars.append({"open": opn, "high": high, "low": low, "close": close})
+    return bars
+
+
+def _stage5_2_oracle_trade_pnl(row: pd.Series, ohlc: dict, times: list,
+                               time_idx: dict) -> tuple[float | None, str | None]:
+    row_dt = _stage5_2_row_datetime(row)
+    if row_dt is None or row_dt not in time_idx:
+        return None, None
+    idx0 = time_idx[row_dt]
+    if idx0 + STAGE5_2_HORIZON >= len(times):
+        return None, None
+    fields = extract_stage5_1b_fields(str(row.get("fractal0", "")))
+    fractal_dir = fields.get("direction", 0.0)
+    fractal_price = fields.get("price", 0.0)
+    try:
+        atr = float(row["ATR"])
+    except (KeyError, TypeError, ValueError):
+        return None, None
+    if atr <= 0 or fractal_price <= 0:
+        return None, None
+    entry_price = float(ohlc[times[idx0]][3])
+    if fractal_dir == -1:
+        side = "buy"
+        stop_price = fractal_price - 0.5 * atr
+        take_price = entry_price + 2.0 * atr
+    elif fractal_dir == 1:
+        side = "sell"
+        stop_price = fractal_price + 0.5 * atr
+        take_price = entry_price - 2.0 * atr
+    else:
+        return None, None
+    result = stage5_2_first_touch_trade_result(
+        entry_price=entry_price,
+        stop_price=stop_price,
+        take_price=take_price,
+        side=side,
+        future_bars=_stage5_2_future_bars(ohlc, times, idx0),
+    )
+    return float(result["pnl_r"]), result["outcome"]
+
+
+def run_stage5_2_oracle_preflight(split: dict, target_col: str,
+                                  binary_col: str,
+                                  ohlc_path: Path = OHLC_FILE) -> dict:
+    val = split["val_stop"].copy()
+    if target_col not in val or binary_col not in val:
+        return {"pass": False, "reason": "missing_target_or_binary_column"}
+    valid = val[target_col].notna() & val[binary_col].notna()
+    val = val.loc[valid].copy()
+    ohlc, times, time_idx = load_ohlc_index(str(ohlc_path))
+    time_entries = val[target_col] >= STAGE5_2_ENTRY_THRESHOLD
+    binary_entries = val[binary_col] == 0.0
+
+    time_pnls = []
+    time_outcomes = defaultdict(int)
+    for _, row in val.loc[time_entries].iterrows():
+        pnl, outcome = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+        if pnl is not None:
+            time_pnls.append(pnl)
+            time_outcomes[outcome] += 1
+
+    binary_pnls = []
+    binary_outcomes = defaultdict(int)
+    for _, row in val.loc[binary_entries].iterrows():
+        pnl, outcome = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+        if pnl is not None:
+            binary_pnls.append(pnl)
+            binary_outcomes[outcome] += 1
+
+    time_pf = _stage5_2_pf(time_pnls)
+    binary_pf = _stage5_2_pf(binary_pnls)
+    years = sorted(int(y) for y in val["_year"].dropna().unique()) if "_year" in val else []
+    result = {
+        "oracle_time_pf": time_pf,
+        "oracle_binary_pf": binary_pf,
+        "oracle_time_outcomes": dict(time_outcomes),
+        "oracle_binary_outcomes": dict(binary_outcomes),
+        "trades": int(len(time_pnls)),
+        "trades_per_year": float(len(time_pnls) / max(len(years), 1)),
+        "yearly": {},
+    }
+    if "_year" in val:
+        for year, sub in val.loc[time_entries].groupby("_year"):
+            pnls = []
+            for _, row in sub.iterrows():
+                pnl, _ = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+                if pnl is not None:
+                    pnls.append(pnl)
+            result["yearly"][str(int(year))] = {
+                "trades": int(len(pnls)),
+                "pf": _stage5_2_pf(pnls),
+            }
+    pf_delta = None
+    if time_pf is not None and binary_pf is not None and np.isfinite(time_pf) and np.isfinite(binary_pf):
+        pf_delta = time_pf - binary_pf
+    result["pf_delta_vs_binary"] = pf_delta
+    yearly_pfs = [
+        row.get("pf") for row in result["yearly"].values()
+        if row.get("pf") is not None and np.isfinite(row.get("pf"))
+    ]
+    result["pass"] = (
+        time_pf is not None
+        and (np.isinf(time_pf) or time_pf >= 1.3)
+        and (pf_delta is None or pf_delta >= 0.2)
+        and result["trades_per_year"] >= 50
+        and len(yearly_pfs) >= 2
+        and max(yearly_pfs) < sum(yearly_pfs)
+    )
+    return result
+
+
+def _stage5_2_yearly_metrics(df: pd.DataFrame, target_col: str,
+                             pred: np.ndarray) -> dict:
+    if "_year" not in df:
+        return {}
+    out = {}
+    pred = np.asarray(pred, dtype=float)
+    for year, idx in df.groupby("_year").groups.items():
+        positions = df.index.get_indexer(idx)
+        y = df.loc[idx, target_col].astype(float).to_numpy()
+        out[str(int(year))] = stage5_2_regression_metrics(y, pred[positions])
+    return out
+
+
+def evaluate_stage5_2_profile_seed(split: dict, profile_key: str,
+                                   target_col: str, seed: int,
+                                   xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    X_train = build_stage5_2_features(train, profile_key)
+    X_val = build_stage5_2_features(val, profile_key)
+    X_holdout = build_stage5_2_features(holdout, profile_key)
+    X_low_n = build_stage5_2_features(low_n, profile_key) if len(low_n) else None
+    y_train = train[target_col].astype(float).to_numpy()
+    y_val = val[target_col].astype(float).to_numpy()
+    y_holdout = holdout[target_col].astype(float).to_numpy()
+    y_low_n = low_n[target_col].astype(float).to_numpy() if len(low_n) else np.asarray([])
+
+    model = xgb.XGBRegressor(
+        objective="reg:pseudohubererror",
+        n_estimators=300,
+        max_depth=3,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        random_state=seed,
+        n_jobs=int(xgb_threads),
+        tree_method="hist",
+    )
+    model.fit(X_train, y_train)
+    val_pred = np.clip(model.predict(X_val), 1.0, STAGE5_2_CENSORED_VALUE)
+    holdout_pred = np.clip(model.predict(X_holdout), 1.0, STAGE5_2_CENSORED_VALUE)
+    low_n_pred = (
+        np.clip(model.predict(X_low_n), 1.0, STAGE5_2_CENSORED_VALUE)
+        if X_low_n is not None else np.asarray([])
+    )
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {"n": int(len(train))},
+        "val_stop": stage5_2_regression_metrics(y_val, val_pred),
+        "diagnostic_holdout": stage5_2_regression_metrics(y_holdout, holdout_pred),
+        "low_n_disclosure": stage5_2_regression_metrics(y_low_n, low_n_pred) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_2_yearly_metrics(val, target_col, val_pred),
+        "yearly_diagnostic_holdout": _stage5_2_yearly_metrics(holdout, target_col, holdout_pred),
+    }
+
+
+def _median_metric(runs: list[dict], period: str, metric: str):
+    vals = [((r.get(period) or {}).get(metric)) for r in runs]
+    vals = [v for v in vals if v is not None and np.isfinite(v)]
+    return float(np.median(vals)) if vals else None
+
+
+def _median_yearly_metric(runs: list[dict], period: str, metric: str) -> dict:
+    years = sorted({
+        year for run in runs
+        for year in (run.get(period) or {}).keys()
+    })
+    out = {}
+    for year in years:
+        vals = [
+            ((run.get(period) or {}).get(year) or {}).get(metric)
+            for run in runs
+        ]
+        vals = [v for v in vals if v is not None and np.isfinite(v)]
+        out[year] = {metric: float(np.median(vals)) if vals else None}
+    return out
+
+
+def summarize_stage5_2_target(raw_runs: list[dict], target_col: str) -> dict:
+    target_runs = [r for r in raw_runs if r.get("target") == target_col]
+    by_profile = {}
+    for profile in STAGE5_2_PROFILE_KEYS:
+        runs = [r for r in target_runs if r.get("profile") == profile]
+        if not runs:
+            continue
+        by_profile[profile] = {
+            "profile": profile,
+            "n_seed_runs": len(runs),
+            "val_stop": {
+                "spearman_r": _median_metric(runs, "val_stop", "spearman_r"),
+                "mae": _median_metric(runs, "val_stop", "mae"),
+                "auc_true_ge_4": _median_metric(runs, "val_stop", "auc_true_ge_4"),
+                "yearly": _median_yearly_metric(runs, "yearly_val", "spearman_r"),
+            },
+            "diagnostic_holdout": {
+                "spearman_r": _median_metric(runs, "diagnostic_holdout", "spearman_r"),
+                "mae": _median_metric(runs, "diagnostic_holdout", "mae"),
+                "auc_true_ge_4": _median_metric(runs, "diagnostic_holdout", "auc_true_ge_4"),
+                "yearly": _median_yearly_metric(runs, "yearly_diagnostic_holdout", "spearman_r"),
+            },
+        }
+    best = max(
+        by_profile.values(),
+        key=lambda item: (item["val_stop"].get("spearman_r") or -999.0),
+    ) if by_profile else {}
+    if best:
+        time_rho = (by_profile.get("time_only") or {}).get("val_stop", {}).get("spearman_r")
+        clock_rho = (by_profile.get("clock_shift") or {}).get("val_stop", {}).get("spearman_r")
+        best_rho = best["val_stop"].get("spearman_r")
+        best["improvement_vs_time_only"] = {
+            "spearman_delta": None if time_rho is None or best_rho is None else best_rho - time_rho
+        }
+        best["improvement_vs_clock_shift"] = {
+            "spearman_delta": None if clock_rho is None or best_rho is None else best_rho - clock_rho
+        }
+    return {"profiles": by_profile, "best_profile": best}
+
+
+def _stage5_2_censoring(split: dict, target_col: str) -> dict:
+    out = {}
+    for name, df in split.items():
+        if not isinstance(df, pd.DataFrame) or target_col not in df.columns:
+            continue
+        vals = df[target_col].dropna().astype(float)
+        out[name] = {
+            "n": int(len(vals)),
+            "censored_count": int((vals >= STAGE5_2_CENSORED_VALUE).sum()),
+            "censoring_rate": float((vals >= STAGE5_2_CENSORED_VALUE).mean()) if len(vals) else None,
+        }
+    return out
+
+
+def _run_stage5_2_job(job: dict) -> dict:
+    started_at = time.time()
+    started_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(started_at))
+    print(
+        f"[heartbeat] ts={started_wall}Z | stage5.2 job | target={job['target']} "
+        f"profile={job['profile']} seed={job['seed']} xgb_threads={job['xgb_threads']} start"
+    )
+    run = evaluate_stage5_2_profile_seed(
+        job["split"], job["profile"], job["target"], job["seed"],
+        xgb_threads=job["xgb_threads"],
+    )
+    finished_at = time.time()
+    finished_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(finished_at))
+    print(
+        f"[heartbeat] ts={finished_wall}Z | stage5.2 job | target={job['target']} "
+        f"profile={job['profile']} seed={job['seed']} done elapsed={run.get('elapsed_sec')}"
+    )
+    run["started_at_unix"] = started_at
+    run["finished_at_unix"] = finished_at
+    return run
+
+
+def run_stage5_2_time_to_breach_regression(target_splits: dict,
+                                           output_path: Path = STAGE5_2_JSON_REPORT_PATH,
+                                           workers: int = 1,
+                                           xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    total_runs = len(STAGE5_2_TARGETS) * len(STAGE5_2_PROFILE_KEYS) * len(STAGE5_2_SEEDS)
+    report = {
+        "stage": "5.2_time_to_breach_regression",
+        "status": "RUNNING",
+        "level": "candidate_hypothesis",
+        "targets": STAGE5_2_TARGETS,
+        "profiles": STAGE5_2_PROFILE_KEYS,
+        "seeds": STAGE5_2_SEEDS,
+        "oracle_preflight": {},
+        "censoring": {},
+        "constant_baseline": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_target = {}
+    for target_col in STAGE5_2_TARGETS:
+        print(f"[heartbeat] stage5.2 runner | building split target={target_col}")
+        split = build_stage5_1_split(combined_by_name[target_col], target_col)
+        splits_by_target[target_col] = split
+        binary_col = STAGE5_2_TARGET_TO_BINARY[target_col]
+        report["censoring"][target_col] = _stage5_2_censoring(split, target_col)
+        report["oracle_preflight"][target_col] = run_stage5_2_oracle_preflight(split, target_col, binary_col)
+        y_val = split["val_stop"][target_col].astype(float).to_numpy()
+        report["constant_baseline"][target_col] = stage5_2_constant_baseline_metrics(y_val)
+        report["progress"]["updated_at_unix"] = time.time()
+        _write_json_atomic(output_path, report)
+
+    jobs = []
+    for target_col in STAGE5_2_TARGETS:
+        for profile in STAGE5_2_PROFILE_KEYS:
+            for seed in STAGE5_2_SEEDS:
+                jobs.append({
+                    "target": target_col,
+                    "profile": profile,
+                    "seed": int(seed),
+                    "split": splits_by_target[target_col],
+                    "xgb_threads": int(xgb_threads),
+                })
+
+    heartbeat = HeartbeatLogger("stage5.2 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        if report["progress"]["done_runs"] > 0:
+            elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+            avg_sec = elapsed / report["progress"]["done_runs"]
+            remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+            report["progress"]["eta_sec"] = round(avg_sec * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "target": run["target"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "elapsed_sec": run.get("elapsed_sec"),
+            "started_at_unix": run.get("started_at_unix"),
+            "finished_at_unix": run.get("finished_at_unix"),
+            "spearman_r": _safe((run.get("val_stop") or {}).get("spearman_r")),
+            "mae": _safe((run.get("val_stop") or {}).get("mae")),
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['target']} | {run['profile']} | seed={run['seed']} | "
+            f"spearman={last['spearman_r']} | mae={last['mae']} | elapsed={last['elapsed_sec']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            consume_run(_run_stage5_2_job(job))
+    else:
+        with ProcessPoolExecutor(max_workers=int(workers)) as executor:
+            futures = [executor.submit(_run_stage5_2_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    raw_runs_by_target = defaultdict(list)
+    for run in report["raw_runs"]:
+        raw_runs_by_target[run["target"]].append(run)
+    statuses = []
+    for target_col in STAGE5_2_TARGETS:
+        summary = summarize_stage5_2_target(raw_runs_by_target.get(target_col, []), target_col)
+        best = summary.get("best_profile") or {}
+        const = report["constant_baseline"][target_col]
+        if best:
+            best.setdefault("improvement_vs_constant", {})
+            best["improvement_vs_constant"]["spearman_delta"] = (
+                (best.get("val_stop", {}).get("spearman_r") or 0.0)
+                - (const.get("spearman_r") or 0.0)
+            )
+            if best.get("val_stop", {}).get("mae") is not None and const.get("mae"):
+                best["improvement_vs_constant"]["mae_improvement_frac"] = (
+                    (const["mae"] - best["val_stop"]["mae"]) / const["mae"]
+                )
+        report["summary"][target_col] = summary
+        gate = stage5_2_gate_results(
+            summary, report["oracle_preflight"][target_col], report["censoring"][target_col]
+        )
+        report["gate_results"][target_col] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "CANDIDATE_HYPOTHESIS"
+        if statuses and all(status == "CANDIDATE_HYPOTHESIS" for status in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -6275,6 +6933,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage5-1b-no-resume", dest="stage5_1b_resume", action="store_false",
                         help="Restart Stage 5.1b from scratch even if JSON exists")
     parser.set_defaults(stage5_1b_resume=True)
+    parser.add_argument("--stage5-2-time-to-breach-regression", action="store_true",
+                        help="Run Stage 5.2 time-to-breach regression candidate-hypothesis.")
+    parser.add_argument("--stage5-2-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.2")
+    parser.add_argument("--stage5-2-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.2 worker")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -6347,6 +7011,33 @@ def main():
             "json": str(STAGE5_1B_JSON_REPORT_PATH),
             "status": report.get("status"),
             "field_verdicts": report.get("field_verdicts", {}),
+        }, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_2_time_to_breach_regression:
+        print("\n" + "=" * 60)
+        print("Stage 5.2 fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.2...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+        report = run_stage5_2_time_to_breach_regression(
+            {
+                "sell": (train_df, val_stop_df, holdout_df),
+                "buy": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_2_JSON_REPORT_PATH,
+            workers=args.stage5_2_workers,
+            xgb_threads=args.stage5_2_xgb_threads,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.2: регрессия времени до пробоя завершена")
+        print(json.dumps({
+            "json": str(STAGE5_2_JSON_REPORT_PATH),
+            "status": report.get("status"),
+            "progress": report.get("progress", {}),
         }, indent=2))
         print("=" * 60)
         return

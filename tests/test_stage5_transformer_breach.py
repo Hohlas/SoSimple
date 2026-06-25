@@ -9,6 +9,7 @@
 
 import json
 import os, sys
+from concurrent.futures import Future
 import numpy as np
 import pandas as pd
 import pytest
@@ -3761,13 +3762,6 @@ def test_stage5_1b_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_p
 
     seen = {"max_workers": None, "jobs": []}
 
-    class FakeFuture:
-        def __init__(self, value):
-            self._value = value
-
-        def result(self):
-            return self._value
-
     class FakeExecutor:
         def __init__(self, max_workers):
             seen["max_workers"] = max_workers
@@ -3780,7 +3774,9 @@ def test_stage5_1b_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_p
 
         def submit(self, fn, job):
             seen["jobs"].append((job["profile"], job["seed"], job["xgb_threads"]))
-            return FakeFuture(fn(job))
+            fut = Future()
+            fut.set_result(fn(job))
+            return fut
 
     def fake_worker(job):
         return {
@@ -3808,4 +3804,375 @@ def test_stage5_1b_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_p
 
     assert seen["max_workers"] == 2
     assert seen["jobs"] == [("clock_shift", 42, 4), ("structure_full", 42, 4)]
+    assert report["progress"]["done_runs"] == 2
+
+
+def test_stage5_2_constants_and_profiles_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_2_TARGETS == [
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H6_off05",
+    ]
+    assert runner.STAGE5_2_TARGET_TO_BINARY == {
+        "sell_bars_to_breach_H6_off05": "sell_stop_broken_H6_off05_flag",
+        "buy_bars_to_breach_H6_off05": "buy_stop_broken_H6_off05_flag",
+    }
+    assert runner.STAGE5_2_PROFILE_KEYS == [
+        "time_only",
+        "clock_shift",
+        "clock_shift_back",
+        "clock_shift_impulse",
+        "clock_shift_back_impulse",
+        "structure_full",
+        "structure_full_without_back",
+    ]
+    assert str(runner.STAGE5_2_JSON_REPORT_PATH).endswith(
+        "stage5_2_time_to_breach_regression.json"
+    )
+
+
+def test_stage5_2_profile_token_fields():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner._stage5_2_profile_for_key("time_only")["token_fields"] == []
+    assert runner._stage5_2_profile_for_key("clock_shift")["token_fields"] == ["shift"]
+    assert runner._stage5_2_profile_for_key("clock_shift_back")["token_fields"] == ["shift", "back"]
+    assert runner._stage5_2_profile_for_key("clock_shift_impulse")["token_fields"] == ["shift", "impulse"]
+    assert runner._stage5_2_profile_for_key("clock_shift_back_impulse")["token_fields"] == ["shift", "back", "impulse"]
+    assert "back" in runner._stage5_2_profile_for_key("structure_full")["token_fields"]
+    assert "back" not in runner._stage5_2_profile_for_key("structure_full_without_back")["token_fields"]
+
+
+def test_build_stage5_2_features_shapes_and_no_updn():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["up_3"] = 999999.0
+    X_time = runner.build_stage5_2_features(df, "time_only")
+    X_clock_shift = runner.build_stage5_2_features(df, "clock_shift")
+    X_back_impulse = runner.build_stage5_2_features(df, "clock_shift_back_impulse")
+    X_structure = runner.build_stage5_2_features(df, "structure_full")
+
+    assert X_time.shape == (len(df), 4)
+    assert X_clock_shift.shape == (len(df), 104)
+    assert X_back_impulse.shape == (len(df), 304)
+    assert X_structure.shape == (len(df), 904)
+    assert np.isfinite(X_structure).all()
+
+
+def test_stage5_2_regression_metrics_include_auc_mae_spearman_and_calibration():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y_true = np.array([1, 2, 3, 4, 5, 7, 7], dtype=float)
+    y_pred = np.array([1.2, 2.2, 2.8, 4.2, 5.2, 6.5, 6.8], dtype=float)
+
+    metrics = runner.stage5_2_regression_metrics(y_true, y_pred)
+
+    assert metrics["n"] == 7
+    assert metrics["spearman_r"] > 0.9
+    assert metrics["mae"] < 0.5
+    assert metrics["uncensored_mae"] < 0.5
+    assert 0.0 <= metrics["auc_true_ge_4"] <= 1.0
+    assert metrics["fixed_threshold"]["threshold"] == 4
+    assert metrics["fixed_threshold"]["predicted_entries"] == 4
+    assert len(metrics["calibration_table"]) == 3
+
+
+def test_stage5_2_constant_baseline_metrics_are_defined():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y_true = np.array([1, 2, 7, 7], dtype=float)
+    metrics = runner.stage5_2_constant_baseline_metrics(y_true)
+
+    assert metrics["prediction_value"] == 7
+    assert metrics["mae"] == pytest.approx((6 + 5 + 0 + 0) / 4)
+    assert metrics["spearman_r"] == 0.0
+
+
+def test_stage5_2_gate_results_require_oracle_model_and_baseline_improvement():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "best_profile": {
+            "profile": "clock_shift_back_impulse",
+            "val_stop": {
+                "spearman_r": 0.35,
+                "mae": 2.5,
+                "auc_true_ge_4": 0.72,
+                "yearly": {"2021": {"spearman_r": 0.32}, "2022": {"spearman_r": 0.31}},
+            },
+            "improvement_vs_constant": {
+                "spearman_delta": 0.35,
+                "mae_improvement_frac": 0.12,
+            },
+            "improvement_vs_time_only": {"spearman_delta": 0.04},
+            "improvement_vs_clock_shift": {"spearman_delta": 0.05},
+        }
+    }
+    oracle = {
+        "pass": True,
+        "oracle_time_pf": 1.4,
+        "oracle_binary_pf": 1.1,
+        "trades_per_year": 80,
+        "yearly": {"2021": {"pf": 1.2}, "2022": {"pf": 1.4}},
+    }
+    censoring = {"train_core": {"censoring_rate": 0.60}}
+
+    gates = runner.stage5_2_gate_results(summary, oracle, censoring)
+
+    assert gates["overall_status"] == "CANDIDATE_HYPOTHESIS"
+    assert gates["model_gate"]["pass"] is True
+
+
+def test_stage5_2_first_touch_trade_result_tp_sl_and_timeout():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    buy_tp = runner.stage5_2_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[
+            {"high": 103.0, "low": 99.0},
+            {"high": 104.5, "low": 99.5},
+        ],
+    )
+    sell_sl = runner.stage5_2_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=102.0,
+        take_price=96.0,
+        side="sell",
+        future_bars=[
+            {"high": 102.5, "low": 99.0},
+            {"high": 101.0, "low": 95.5},
+        ],
+    )
+    timeout = runner.stage5_2_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"high": 101.0, "low": 99.0}],
+    )
+
+    assert buy_tp["outcome"] == "TP"
+    assert buy_tp["pnl_r"] == pytest.approx(2.0)
+    assert sell_sl["outcome"] == "SL"
+    assert sell_sl["pnl_r"] == pytest.approx(-1.0)
+    assert timeout["outcome"] == "TIMEOUT"
+    assert timeout["pnl_r"] == pytest.approx(0.0)
+
+
+def test_evaluate_stage5_2_profile_seed_returns_regression_metrics():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    split = runner.build_stage5_1_split(df, "sell_bars_to_breach_H6_off05")
+
+    result = runner.evaluate_stage5_2_profile_seed(
+        split,
+        "clock_shift_back",
+        "sell_bars_to_breach_H6_off05",
+        seed=42,
+    )
+
+    assert result["profile"] == "clock_shift_back"
+    assert result["target"] == "sell_bars_to_breach_H6_off05"
+    assert result["seed"] == 42
+    assert "spearman_r" in result["val_stop"]
+    assert "mae" in result["val_stop"]
+    assert "auc_true_ge_4" in result["val_stop"]
+
+
+def test_summarize_stage5_2_target_selects_best_profile_and_baselines():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    target = "sell_bars_to_breach_H6_off05"
+    raw_runs = []
+    for profile, rho, mae in [
+        ("time_only", 0.10, 3.5),
+        ("clock_shift", 0.12, 3.4),
+        ("clock_shift_back", 0.35, 2.7),
+    ]:
+        raw_runs.append({
+            "target": target,
+            "profile": profile,
+            "seed": 42,
+            "val_stop": {"spearman_r": rho, "mae": mae, "auc_true_ge_4": 0.71},
+            "diagnostic_holdout": {"spearman_r": rho - 0.05, "mae": mae + 0.2},
+        })
+
+    summary = runner.summarize_stage5_2_target(raw_runs, target)
+
+    assert summary["best_profile"]["profile"] == "clock_shift_back"
+    assert summary["best_profile"]["improvement_vs_time_only"]["spearman_delta"] == pytest.approx(0.25)
+    assert summary["best_profile"]["improvement_vs_clock_shift"]["spearman_delta"] == pytest.approx(0.23)
+
+
+def test_stage5_2_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    df["buy_bars_to_breach_H6_off05"] = np.where(
+        df["buy_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    target_splits = {"sell": (df, df, df), "buy": (df, df, df)}
+
+    monkeypatch.setattr(
+        runner,
+        "run_stage5_2_oracle_preflight",
+        lambda split, target_col, binary_col, ohlc_path=runner.OHLC_FILE: {
+            "pass": True,
+            "oracle_time_pf": 1.5,
+            "oracle_binary_pf": 1.1,
+            "trades_per_year": 80,
+            "yearly": {"2021": {"pf": 1.2}, "2022": {"pf": 1.4}},
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "evaluate_stage5_2_profile_seed",
+        lambda split, profile, target, seed, xgb_threads=1: {
+            "profile": profile,
+            "target": target,
+            "seed": seed,
+            "elapsed_sec": 1.25,
+            "val_stop": {"spearman_r": 0.35, "mae": 2.5, "auc_true_ge_4": 0.72},
+            "diagnostic_holdout": {"spearman_r": 0.30, "mae": 2.8, "auc_true_ge_4": 0.69},
+        },
+    )
+    monkeypatch.setattr(
+        runner,
+        "summarize_stage5_2_target",
+        lambda raw_runs, target: {
+            "profiles": {},
+            "best_profile": {
+                "profile": "clock_shift_back_impulse",
+                "val_stop": {
+                    "spearman_r": 0.35,
+                    "mae": 2.5,
+                    "auc_true_ge_4": 0.72,
+                    "yearly": {"2021": {"spearman_r": 0.31}, "2022": {"spearman_r": 0.32}},
+                },
+                "improvement_vs_constant": {
+                    "spearman_delta": 0.35,
+                    "mae_improvement_frac": 0.12,
+                },
+                "improvement_vs_time_only": {"spearman_delta": 0.04},
+                "improvement_vs_clock_shift": {"spearman_delta": 0.04},
+            },
+        },
+    )
+
+    report = runner.run_stage5_2_time_to_breach_regression(
+        target_splits,
+        output_path=tmp_path / "stage5_2.json",
+    )
+
+    assert report["stage"] == "5.2_time_to_breach_regression"
+    assert report["status"] in {"CANDIDATE_HYPOTHESIS", "MODEL_GATE_FAILED", "ORACLE_FAILED", "DIAGNOSTIC_ONLY"}
+    assert report["progress"]["done_runs"] == 42
+    assert report["progress"]["run_elapsed_sec"] == [1.25] * 42
+    assert (tmp_path / "stage5_2.json").exists()
+
+
+def test_stage5_2_cli_argument_exists_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--stage5-2-time-to-breach-regression"])
+
+    assert args.stage5_2_time_to_breach_regression is True
+
+
+def test_stage5_2_cli_parallel_arguments_exist_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args([
+        "--stage5-2-time-to-breach-regression",
+        "--stage5-2-workers", "8",
+        "--stage5-2-xgb-threads", "4",
+    ])
+
+    assert args.stage5_2_workers == 8
+    assert args.stage5_2_xgb_threads == 4
+
+
+def test_stage5_2_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    df["buy_bars_to_breach_H6_off05"] = np.where(
+        df["buy_stop_broken_H6_off05_flag"] == 1.0, 2, 7
+    )
+    monkeypatch.setattr(runner, "STAGE5_2_TARGETS", ["sell_bars_to_breach_H6_off05"])
+    monkeypatch.setattr(runner, "STAGE5_2_PROFILE_KEYS", ["time_only", "clock_shift"])
+    monkeypatch.setattr(runner, "STAGE5_2_SEEDS", [42])
+    monkeypatch.setattr(
+        runner,
+        "run_stage5_2_oracle_preflight",
+        lambda split, target_col, binary_col, ohlc_path=runner.OHLC_FILE: {
+            "pass": True,
+            "oracle_time_pf": 1.5,
+            "oracle_binary_pf": 1.1,
+            "trades_per_year": 80,
+            "yearly": {"2021": {"pf": 1.2}, "2022": {"pf": 1.4}},
+        },
+    )
+    monkeypatch.setattr(runner, "summarize_stage5_2_target", lambda raw_runs, target: {"best_profile": {}})
+
+    seen = {"max_workers": None, "jobs": []}
+
+    class FakeExecutor:
+        def __init__(self, max_workers):
+            seen["max_workers"] = max_workers
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def submit(self, fn, job):
+            seen["jobs"].append((job["profile"], job["seed"], job["xgb_threads"]))
+            fut = Future()
+            fut.set_result(fn(job))
+            return fut
+
+    def fake_worker(job):
+        return {
+            "profile": job["profile"],
+            "target": job["target"],
+            "seed": job["seed"],
+            "elapsed_sec": 0.5,
+            "val_stop": {"spearman_r": 0.35, "mae": 2.5, "auc_true_ge_4": 0.72},
+            "diagnostic_holdout": {"spearman_r": 0.30, "mae": 2.8, "auc_true_ge_4": 0.69},
+            "low_n_disclosure": {"n": 0},
+            "yearly_val": {},
+            "yearly_diagnostic_holdout": {},
+        }
+
+    monkeypatch.setattr(runner, "ProcessPoolExecutor", FakeExecutor)
+    monkeypatch.setattr(runner, "_run_stage5_2_job", fake_worker)
+
+    report = runner.run_stage5_2_time_to_breach_regression(
+        {"sell": (df, df, df), "buy": (df, df, df)},
+        output_path=tmp_path / "stage5_2_parallel.json",
+        workers=2,
+        xgb_threads=4,
+    )
+
+    assert seen["max_workers"] == 2
+    assert seen["jobs"] == [("time_only", 42, 4), ("clock_shift", 42, 4)]
     assert report["progress"]["done_runs"] == 2

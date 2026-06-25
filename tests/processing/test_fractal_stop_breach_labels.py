@@ -174,6 +174,83 @@ class TestColumns:
                 assert col in result.columns, f'{col} not found'
 
 
+def test_time_to_breach_columns_exist_for_all_horizon_offsets():
+    assert "buy_bars_to_breach_H6_off05" in ls.BR_TIME_TO_BREACH_COLUMNS
+    assert "sell_bars_to_breach_H6_off05" in ls.BR_TIME_TO_BREACH_COLUMNS
+    assert "buy_bars_to_breach_H12_off02" in ls.BR_TIME_TO_BREACH_COLUMNS
+    assert "sell_bars_to_breach_H12_off05" in ls.BR_TIME_TO_BREACH_COLUMNS
+    assert set(ls.BR_TIME_TO_BREACH_PRIMARY_COLUMNS) == {
+        "buy_bars_to_breach_H6_off02",
+        "sell_bars_to_breach_H6_off02",
+        "buy_bars_to_breach_H6_off05",
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H12_off02",
+        "sell_bars_to_breach_H12_off02",
+        "buy_bars_to_breach_H12_off05",
+        "sell_bars_to_breach_H12_off05",
+    }
+
+
+def test_buy_bars_to_breach_records_first_touch_and_matches_flag():
+    with tempfile.TemporaryDirectory() as tmp:
+        ohlc_path = os.path.join(tmp, "ohlc.csv")
+        bars = [("2020.01.01 00:00", 1502.0, 1503.0, 1501.0, 1502.0)]
+        for k in range(1, 7):
+            bars.append((f"2020.01.01 {k:02d}:00", 1501.0, 1502.0, 1500.0, 1501.0))
+        bars[3] = ("2020.01.01 03:00", 1501.0, 1502.0, 1495.0, 1498.0)
+        bars[5] = ("2020.01.01 05:00", 1501.0, 1502.0, 1490.0, 1492.0)
+        _make_ohlc_csv(ohlc_path, bars)
+        df = _make_nero_df(
+            times=["2020.01.01 00:00"],
+            atr_vals=[20.0],
+            fractal0_vals=[_fractal_str(1500.0, -1)],
+        )
+
+        result = LABEL_FN(df, ohlc_path)
+
+        assert result.at[0, "buy_stop_broken_H6_off02_flag"] == 1.0
+        assert result.at[0, "buy_bars_to_breach_H6_off02"] == 3
+        assert pd.isna(result.at[0, "sell_bars_to_breach_H6_off02"])
+
+
+def test_sell_bars_to_breach_records_h_plus_one_when_not_broken():
+    with tempfile.TemporaryDirectory() as tmp:
+        ohlc_path = os.path.join(tmp, "ohlc.csv")
+        bars = [("2020.01.01 00:00", 1498.0, 1499.0, 1497.0, 1498.0)]
+        for k in range(1, 7):
+            bars.append((f"2020.01.01 {k:02d}:00", 1499.0, 1500.0, 1498.0, 1499.0))
+        _make_ohlc_csv(ohlc_path, bars)
+        df = _make_nero_df(
+            times=["2020.01.01 00:00"],
+            atr_vals=[20.0],
+            fractal0_vals=[_fractal_str(1500.0, 1)],
+        )
+
+        result = LABEL_FN(df, ohlc_path)
+
+        assert result.at[0, "sell_stop_broken_H6_off02_flag"] == 0.0
+        assert result.at[0, "sell_bars_to_breach_H6_off02"] == 7
+
+
+def test_time_to_breach_is_nan_when_future_bars_are_insufficient():
+    with tempfile.TemporaryDirectory() as tmp:
+        ohlc_path = os.path.join(tmp, "ohlc.csv")
+        bars = [("2020.01.01 00:00", 1498.0, 1499.0, 1497.0, 1498.0)]
+        for k in range(1, 5):
+            bars.append((f"2020.01.01 {k:02d}:00", 1499.0, 1500.0, 1498.0, 1499.0))
+        _make_ohlc_csv(ohlc_path, bars)
+        df = _make_nero_df(
+            times=["2020.01.01 00:00"],
+            atr_vals=[20.0],
+            fractal0_vals=[_fractal_str(1500.0, 1)],
+        )
+
+        result = LABEL_FN(df, ohlc_path)
+
+        assert pd.isna(result.at[0, "sell_stop_broken_H6_off02_flag"])
+        assert pd.isna(result.at[0, "sell_bars_to_breach_H6_off02"])
+
+
 class TestEdgeCases:
     def test_missing_fractal0(self):
         """Пустой fractal0 → все breach колонки NaN."""

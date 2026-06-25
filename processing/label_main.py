@@ -324,7 +324,9 @@ def main():
     # 3f. Fractal Stop Breach labels (Stage 1: только пробой уровня, до нормализации)
     if args.fractal_stop_breach:
         print(f"\nРазметка Fractal Stop Breach (OHLC={args.ohlc})...")
+        print("[heartbeat] label_main | fractal_stop_breach start")
         labeled_df = label_fractal_stop_breach(labeled_df, ohlc_path=args.ohlc, debug=args.debug)
+        print("[heartbeat] label_main | fractal_stop_breach done")
 
     # 3g. Fractal Stop Fav labels (Stage 2: благоприятный ход, до нормализации)
     if args.fractal_stop_fav:
