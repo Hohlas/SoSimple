@@ -2,6 +2,24 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-26] — Stage 5.3: дискретная постановка time-to-breach
+### Добавлено/Изменено
+- Добавлен CLI `--stage5-3-target-reformulation` с параметрами `--stage5-3-workers` и `--stage5-3-xgb-threads`.
+- Stage 5.3 проверяет `breach_after_k`, bucket-цели `fast/medium/no_breach`, binary baseline и control `survives_at_least_k`.
+- Runner получил precompute признаков, 12-worker прогон, heartbeat-логи и JSON-прогресс.
+
+### Результаты
+- Полный прогон завершён: `432/432`, `workers=12`, `xgb_threads=1`.
+- JSON status: `TARGET_REFORMULATION_FOUND`.
+- Лучший sell: `sell_fast / clock_shift_back`, val AUC `0.6967`, delta vs same-profile binary baseline `+0.0279`, seeds `3/3`.
+- Лучший buy: `buy_fast / clock_shift_back_impulse`, val AUC `0.7127`, delta vs same-profile binary baseline `+0.0199`, seeds `3/3`.
+
+### Вывод
+- Stage 5.3 completed target reformulation diagnostics for time-to-breach; status is taken from `ML/reports/stage5_3_time_to_breach_target_reformulation.json`; artifact `ML/reports/stage5_3_time_to_breach_target_reformulation.json`.
+- Вердикт отчёта остаётся `DIAGNOSTIC_ONLY`: `2023-2025` — diagnostic disclosure, не независимое подтверждение.
+
+<!-- docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md -->
+
 ## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа
 
 ### Исправлено после ревью

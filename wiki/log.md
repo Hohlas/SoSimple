@@ -606,3 +606,8 @@
 - Reran `--stage5-2-time-to-breach-regression --stage5-2-workers 8 --stage5-2-xgb-threads 4`; completed `42/42`.
 - Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`.
 - Result: time-to-breach ranking exists (`clock_shift_back` sell, `clock_shift_back_impulse` buy), but candidate-gate remains `DIAGNOSTIC_ONLY` due to invalid oracle comparison and MAE worse than constant baseline.
+
+### 2026-06-26: Ingest Stage 5.3 time-to-breach target reformulation
+- Added `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.3 `fast` bucket finding, binary-baseline deltas, control-only interpretation for `survives_at_least_k`, and Stage 5.4 scope constraints.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.3, 26 report updates.

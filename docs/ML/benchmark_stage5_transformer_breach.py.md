@@ -1,8 +1,8 @@
 # benchmark_stage5_transformer_breach.py
 
-**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и диагностических подпотоков 5.0a-5.1. Умеет либо обучать/оценивать Transformer-модели breach-классификации, либо без обучения строить финальные входы, нормализовать их, считать raw corridor coverage до cap, агрегированные и per-position статистики распределений по профилям признаков, выполнять диагностический скрининг профилей, проверку устойчивости сигнала во времени и Stage 5.1 абляцию структурных фрактальных полей на XGBoost.
+**Назначение:** Основной раннер Stage 5.0 Transformer Breach Holdout и диагностических подпотоков 5.0a-5.3. Умеет обучать/оценивать Transformer breach-модели, строить preflight/audit артефакты признаков, выполнять XGBoost/Logistic screening, проверять устойчивость сигнала, запускать structural/UpDn ablation, а также Stage 5.2/5.3 time-to-breach диагностики.
 
-**Статус:** Завершён (Stage 5.0 FAIL); Stage 5.0a проверка распределения признаков — `DIAGNOSTIC_ONLY` (2026-06-20). Сравнение transform-ов 2026-06-21 — `DIAGNOSTIC_ONLY`, без обучения.
+**Статус:** Активный исследовательский раннер Fractal Stop Stage 5.x. Последний завершённый этап: Stage 5.3 `DIAGNOSTIC_ONLY` report, JSON status `TARGET_REFORMULATION_FOUND`.
 
 **Вход:**
 - `DATA/Nero_XAUUSD_train_labeled.csv` — обучающая выборка 2004-2020
@@ -22,6 +22,9 @@
 - `ML/reports/stage5_0b_asinh_rerun.json` — structured artifact Stage 5.0b diagnostic training rerun
 - `ML/reports/stage5_0f_signal_stationarity.json` — structured artifact Stage 5.0f: годовые окна `rolling/fixed/anchored`, прогресс прогона, итоговое диагностическое решение
 - `ML/reports/stage5_1_structural_field_ablation.json` — structured artifact Stage 5.1: `time_only` / `structure_full` / `drop_*` / `add_*`, field verdicts и paired bootstrap deltas
+- `ML/reports/stage5_1b_updn_field_ablation.json` — structured artifact Stage 5.1b: Up/Dn field ablation, `clock_shift` baseline, raw-shadow preflight
+- `ML/reports/stage5_2_time_to_breach_regression.json` — structured artifact Stage 5.2: регрессия `bars_to_breach`
+- `ML/reports/stage5_3_time_to_breach_target_reformulation.json` — structured artifact Stage 5.3: дискретные цели `breach_after_k`, `fast/medium/no_breach`, baseline и controls
 
 **Сплит:** train ≤2020, val_stop 2021-2022, holdout ≥2023
 
@@ -74,6 +77,9 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0b-asinh-reru
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0c-cross-target-rerun
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-0f-signal-stationarity
 python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-1-structural-field-ablation
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-1b-updn-field-ablation --stage5-1b-workers 8 --stage5-1b-xgb-threads 4
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-2-time-to-breach-regression --stage5-2-workers 8 --stage5-2-xgb-threads 4
+python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-3-target-reformulation --stage5-3-workers 12 --stage5-3-xgb-threads 1
 ```
 
 - `--stage5-0b-asinh-rerun` — Stage 5.0b diagnostic training run: `asinh`, frozen profile sets, mandatory label checks, XGBoost/time-only baselines, no trading winner.
@@ -83,6 +89,9 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-1-structural-
 - `ML/reports/stage5_0d_diagnostic_screening.json` — структурированный артефакт Stage 5.0d.
 - `--stage5-0f-signal-stationarity` — Stage 5.0f: диагностика устойчивости сигнала во времени на двух целях, четырёх наборах признаков и трёх схемах годовых окон.
 - `--stage5-1-structural-field-ablation` — Stage 5.1: диагностическая абляция 9 структурных полей `direction/front/back/strong/break/reverse/power/count/impulse` для `H6_off05 stop broken` на XGBoost.
+- `--stage5-1b-updn-field-ablation` — Stage 5.1b: Up/Dn ablation с baseline `clock_shift`, raw-shadow preflight и progressive JSON.
+- `--stage5-2-time-to-breach-regression` — Stage 5.2: регрессия `bars_to_breach` для `sell/buy_bars_to_breach_H6_off05`; результат диагностический.
+- `--stage5-3-target-reformulation` — Stage 5.3: дискретная постановка time-to-breach (`breach_after_k`, `fast/medium/no_breach`), binary baseline и control `survives_at_least_k`.
 - `build_flat_features` — расширен параметром `transform_variant` для XGBoost на том же профиле.
 - `build_xgb_features_for_profile` — новый helper для признаков XGBoost на произвольном профиле.
 - `compute_xgb_same_profile_baseline` — baseline XGBoost на тех же признаках, что и Transformer; transform params подбираются на train.
@@ -102,16 +111,21 @@ python -m ML.baseline.benchmark_stage5_transformer_breach --stage5-1-structural-
 - `evaluate_stage5_1_profile_seed` — один XGBoost прогон для profile/target/seed с yearly metrics, bootstrap CI и локальными prediction arrays для paired delta.
 - `bootstrap_stage5_1_delta_ci` / `summarize_stage5_1_target` / `stage5_1_field_verdicts` — paired bootstrap deltas и диагностические verdicts `likely_useful` / `likely_noise` / `mixed_or_unclear`.
 - `run_stage5_1_structural_field_ablation` — раннер Stage 5.1: `2 цели × 20 профилей × 3 seed = 120` XGBoost моделей, progressive JSON, field verdicts, multiple-testing disclosure.
+- `run_stage5_2_time_to_breach_regression` — раннер Stage 5.2: `2 цели × 7 профилей × 3 seed = 42` XGBoost-регрессии, censoring/oracle/model gates.
+- `run_stage5_3_target_reformulation` — раннер Stage 5.3: `2 цели × 12 target specs × 6 профилей × 3 seed = 432` XGBoost-классификации, precomputed feature cache, heartbeat/ETA JSON progress.
 
 **Связанные файлы:**
 - `ML/models/fractal_breach_transformer.py` — модель
-- `tests/test_stage5_transformer_breach.py` — тесты (100 тестов, включая log1p/signed-log/per-position, `price/ATR` профили, Stage 5.0b regression checks и Stage 5.0c tests)
+- `tests/test_stage5_transformer_breach.py` — тесты Stage 5.x, включая Stage 5.2/5.3 target builders, metrics, runner и CLI checks
 - `docs/methodology/A7-feature-distribution-audit.md` — методика feature distribution audit
 - `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт Stage 5.0
 - `docs/reports/2026-06-18-stage5_0a-feature-preflight.md` — канонический отчёт Stage 5.0a preflight
 - `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт feature distribution audit
 - `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md` — канонический отчёт Stage 5.0f
 - `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md` — канонический отчёт Stage 5.1
+- `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md` — канонический отчёт Stage 5.1b
+- `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md` — канонический отчёт Stage 5.2
+- `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md` — канонический отчёт Stage 5.3
 - `docs/superpowers/plans/2026-06-16-stage5_0-transformer-breach-holdout.md` — план
 - `docs/superpowers/plans/2026-06-18-stage5_0a-feature-preflight.md` — план preflight
 - `docs/superpowers/plans/2026-06-22-stage5_0c-cross-target-rerun.md` — план Stage 5.0c

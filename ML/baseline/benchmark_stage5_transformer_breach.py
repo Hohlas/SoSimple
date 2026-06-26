@@ -1,8 +1,8 @@
 # =============================================================================
 # File: ML/baseline/benchmark_stage5_transformer_breach.py
-# Purpose: Stage 5.0 runner + diagnostic sub-stages 5.0a-5.0f:
+# Purpose: Stage 5.0 runner + diagnostic sub-stages 5.0a-5.3:
 #          feature preflight, transform audit, profile screening,
-#          and signal stationarity diagnostics
+#          signal stationarity, field ablation, and time-to-breach diagnostics
 # Input: DATA/Nero_XAUUSD_*_labeled.csv
 # Output: ML/reports/stage5_transformer_breach.json,
 #         ML/reports/stage5_0a_feature_preflight.json,
@@ -11,10 +11,14 @@
 #         ML/reports/stage5_0a_profile_summary.csv,
 #         ML/reports/stage5_0a_transform_comparison.json,
 #         ML/reports/stage5_0d_diagnostic_screening.json,
-#         ML/reports/stage5_0f_signal_stationarity.json
+#         ML/reports/stage5_0f_signal_stationarity.json,
+#         ML/reports/stage5_1_structural_field_ablation.json,
+#         ML/reports/stage5_1b_updn_field_ablation.json,
+#         ML/reports/stage5_2_time_to_breach_regression.json,
+#         ML/reports/stage5_3_time_to_breach_target_reformulation.json
 # Language: Python 3.10+
 # Created: 2026-06-17
-# Updated: 2026-06-24
+# Updated: 2026-06-26
 # =============================================================================
 
 import argparse, json, os, sys, time
@@ -262,6 +266,44 @@ STAGE5_2_PROFILE_KEYS = [
     "structure_full_without_back",
 ]
 STAGE5_2_STRUCTURE_FIELDS = STAGE5_1B_STRUCTURE_FIELDS.copy()
+STAGE5_3_JSON_REPORT_PATH = REPORTS_DIR / "stage5_3_time_to_breach_target_reformulation.json"
+STAGE5_3_SOURCE_TARGETS = STAGE5_2_TARGETS.copy()
+STAGE5_3_HORIZON = STAGE5_2_HORIZON
+STAGE5_3_CENSORED_VALUE = STAGE5_2_CENSORED_VALUE
+STAGE5_3_SEEDS = STAGE5_2_SEEDS.copy()
+STAGE5_3_PROFILE_KEYS = [
+    "time_only",
+    "clock_shift",
+    "clock_shift_back",
+    "clock_shift_impulse",
+    "clock_shift_back_impulse",
+    "structure_full",
+]
+STAGE5_3_MAIN_TARGET_SPECS = [
+    {"name": "breach_after_k2", "family": "breach_after_k", "k": 2, "role": "main"},
+    {"name": "breach_after_k3", "family": "breach_after_k", "k": 3, "role": "main"},
+    {"name": "breach_after_k4", "family": "breach_after_k", "k": 4, "role": "main"},
+    {"name": "breach_after_k5", "family": "breach_after_k", "k": 5, "role": "main"},
+    {"name": "fast", "family": "bucket", "bucket": "fast", "role": "main"},
+    {"name": "medium", "family": "bucket", "bucket": "medium", "role": "main"},
+    {"name": "no_breach", "family": "bucket", "bucket": "no_breach", "role": "main"},
+]
+STAGE5_3_BINARY_BASELINE_SPECS = [
+    {"name": "binary_breach", "family": "binary_breach", "role": "baseline"},
+]
+STAGE5_3_CONTROL_TARGET_SPECS = [
+    {"name": "survives_at_least_k2", "family": "survives_at_least_k", "k": 2, "role": "control"},
+    {"name": "survives_at_least_k3", "family": "survives_at_least_k", "k": 3, "role": "control"},
+    {"name": "survives_at_least_k4", "family": "survives_at_least_k", "k": 4, "role": "control"},
+    {"name": "survives_at_least_k5", "family": "survives_at_least_k", "k": 5, "role": "control"},
+]
+STAGE5_3_TARGET_SPECS = (
+    STAGE5_3_MAIN_TARGET_SPECS
+    + STAGE5_3_BINARY_BASELINE_SPECS
+    + STAGE5_3_CONTROL_TARGET_SPECS
+)
+STAGE5_3_XGB_OBJECTIVE = "binary:logistic"
+STAGE5_3_TARGET_TO_BINARY = STAGE5_2_TARGET_TO_BINARY.copy()
 
 # ===========================================================================
 # Profile definitions
@@ -2320,17 +2362,36 @@ def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
     profile = _stage5_2_profile_for_key(profile_key)
     token_fields = profile["token_fields"]
     row_fields = profile["row_fields"]
+    if not token_fields:
+        row_features = build_row_features(df, profile).astype(np.float32)
+        if row_features.shape[1] != len(row_fields):
+            raise RuntimeError(
+                f"Stage 5.2 row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+            )
+        return row_features
     n_rows = len(df)
     token_width = len(token_fields) * N_FRACTALS
     X = np.zeros((n_rows, token_width + len(row_fields)), dtype=np.float32)
+    field_indices = {
+        field: STAGE5_1B_FIELD_TO_FRACTAL_INDEX.get(field, 22)
+        for field in token_fields
+    }
 
     for row_idx, (_, row) in enumerate(df.iterrows()):
         offset = 0
         for fractal_idx in range(N_FRACTALS):
             fstr = str(row.get(f"fractal{fractal_idx}", ""))
-            fields = extract_stage5_1b_fields(fstr)
+            parts = fstr.split(FRACTAL_SEP)
             for field in token_fields:
-                X[row_idx, offset] = float(fields.get(field, 0.0))
+                idx = field_indices[field]
+                try:
+                    value = float(parts[idx])
+                except (ValueError, IndexError):
+                    value = 0.0
+                value = float(np.nan_to_num(value, nan=0.0))
+                if field == "shift":
+                    value = float(np.log1p(max(value, 0.0)))
+                X[row_idx, offset] = value
                 offset += 1
     row_features = build_row_features(df, profile).astype(np.float32)
     if row_features.shape[1] != len(row_fields):
@@ -6737,6 +6798,385 @@ def summarize_stage5_2_target(raw_runs: list[dict], target_col: str) -> dict:
     return {"profiles": by_profile, "best_profile": best}
 
 
+def stage5_3_target_id(source_target: str, spec: dict) -> str:
+    side = "sell" if source_target.startswith("sell_") else "buy"
+    return f"{side}_{spec['name']}"
+
+
+def stage5_3_make_binary_target(values, spec: dict) -> np.ndarray:
+    y = np.asarray(values, dtype=float)
+    out = np.full(len(y), -1, dtype=np.int8)
+    valid = np.isfinite(y)
+    family = spec["family"]
+    if family == "breach_after_k":
+        k = int(spec["k"])
+        out[valid] = ((y[valid] > k) & (y[valid] <= STAGE5_3_HORIZON)).astype(np.int8)
+    elif family == "survives_at_least_k":
+        k = int(spec["k"])
+        out[valid] = (y[valid] > k).astype(np.int8)
+    elif family == "bucket":
+        bucket = spec["bucket"]
+        if bucket == "fast":
+            out[valid] = ((y[valid] >= 1) & (y[valid] <= 2)).astype(np.int8)
+        elif bucket == "medium":
+            out[valid] = ((y[valid] >= 3) & (y[valid] <= STAGE5_3_HORIZON)).astype(np.int8)
+        elif bucket == "no_breach":
+            out[valid] = (y[valid] >= STAGE5_3_CENSORED_VALUE).astype(np.int8)
+        else:
+            raise ValueError(f"Unknown Stage 5.3 bucket: {bucket}")
+    else:
+        raise ValueError(f"Unknown Stage 5.3 target family: {family}")
+    return out
+
+
+def stage5_3_make_binary_target_from_frame(df: pd.DataFrame, source_target: str,
+                                           spec: dict) -> np.ndarray:
+    if spec["family"] == "binary_breach":
+        binary_col = STAGE5_3_TARGET_TO_BINARY[source_target]
+        vals = pd.to_numeric(df[binary_col], errors="coerce").to_numpy(dtype=float)
+        out = np.full(len(vals), -1, dtype=np.int8)
+        valid = np.isfinite(vals)
+        out[valid] = vals[valid].astype(np.int8)
+        return out
+    return stage5_3_make_binary_target(df[source_target].to_numpy(), spec)
+
+
+def stage5_3_target_distribution(split: dict, source_target: str, spec: dict) -> dict:
+    out = {}
+    for split_name, df in split.items():
+        if not isinstance(df, pd.DataFrame) or source_target not in df:
+            continue
+        y = stage5_3_make_binary_target_from_frame(df, source_target, spec)
+        valid = y >= 0
+        yv = y[valid]
+        out[split_name] = {
+            "n": int(len(yv)),
+            "positive_count": int(yv.sum()) if len(yv) else 0,
+            "positive_rate": float(yv.mean()) if len(yv) else None,
+            "invalid_count": int((~valid).sum()),
+        }
+    return out
+
+
+def stage5_3_binary_metrics(y_true, y_score, threshold: float = 0.5) -> dict:
+    yt = np.asarray(y_true, dtype=int)
+    ys = np.asarray(y_score, dtype=float)
+    valid = np.isfinite(ys) & np.isin(yt, [0, 1])
+    yt = yt[valid]
+    ys = ys[valid]
+    pred = ys >= threshold
+    positives = int(yt.sum())
+    predicted_positive = int(pred.sum())
+    auc = None
+    pr_auc = None
+    if len(np.unique(yt)) == 2:
+        try:
+            auc = float(roc_auc_score(yt, ys))
+        except ValueError:
+            auc = 0.5
+        try:
+            pr_auc = float(average_precision_score(yt, ys))
+        except ValueError:
+            pr_auc = float(yt.mean()) if len(yt) else None
+    return {
+        "n": int(len(yt)),
+        "positive_count": positives,
+        "positive_rate": float(yt.mean()) if len(yt) else None,
+        "auc": auc,
+        "pr_auc": pr_auc,
+        "pred_summary": {
+            "min": float(np.min(ys)) if len(ys) else None,
+            "median": float(np.median(ys)) if len(ys) else None,
+            "max": float(np.max(ys)) if len(ys) else None,
+            "std": float(np.std(ys)) if len(ys) else None,
+            "unique_rounded_4": int(len(np.unique(np.round(ys, 4)))) if len(ys) else 0,
+        },
+        "threshold_0_5": {
+            "threshold": float(threshold),
+            "predicted_positive": predicted_positive,
+            "precision": float(np.mean(yt[pred])) if predicted_positive else None,
+            "recall": float(np.sum(yt[pred]) / max(positives, 1)),
+        },
+    }
+
+
+def stage5_3_gate_results(summary: dict) -> dict:
+    best = summary.get("best_main") or {}
+    val = best.get("val_stop") or {}
+    yearly = val.get("yearly") or {}
+    pos_rate = val.get("positive_rate")
+    pr_auc = val.get("pr_auc")
+    pr_lift = None
+    if pr_auc is not None and pos_rate is not None:
+        pr_lift = pr_auc - pos_rate
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for row in yearly.values() if (row.get("auc") or 0.0) >= 0.60) >= 2
+    )
+    binary = best.get("binary_breach_baseline") or {}
+    seed_consistency = best.get("seed_consistency") or {}
+    checks = {
+        "main_target_only": ((best.get("spec") or {}).get("role") == "main"),
+        "positive_rate_between_0_05_0_95": pos_rate is not None and 0.05 <= pos_rate <= 0.95,
+        "auc_ge_0_65": (val.get("auc") or 0.0) >= 0.65,
+        "pr_auc_lift_ge_0_05": pr_lift is not None and pr_lift >= 0.05,
+        "auc_delta_binary_breach_same_profile_ge_0_02": (binary.get("auc_delta") or 0.0) >= 0.02,
+        "auc_delta_time_only_ge_0_03": ((best.get("improvement_vs_time_only") or {}).get("auc_delta") or 0.0) >= 0.03,
+        "auc_delta_clock_shift_ge_0_03": ((best.get("improvement_vs_clock_shift") or {}).get("auc_delta") or 0.0) >= 0.03,
+        "seed_delta_binary_positive_ge_2_of_3": (seed_consistency.get("auc_delta_vs_binary_positive_count") or 0) >= 2,
+        "yearly_not_single_year": yearly_pass,
+    }
+    passed = all(checks.values())
+    return {
+        "overall_status": "TARGET_REFORMULATION_FOUND" if passed else "DIAGNOSTIC_ONLY",
+        "model_gate": {
+            "pass": bool(passed),
+            "checks": checks,
+            "pr_auc_lift": pr_lift,
+            "multiple_testing_note": "14 main comparisons across 2 sides; target families are correlated, so this is diagnostic evidence, not candidate validation.",
+        },
+    }
+
+
+def _stage5_3_yearly_metrics(df: pd.DataFrame, source_target: str,
+                             spec: dict, score: np.ndarray) -> dict:
+    if "_year" not in df:
+        return {}
+    out = {}
+    score = np.asarray(score, dtype=float)
+    for year, idx in df.groupby("_year").groups.items():
+        positions = df.index.get_indexer(idx)
+        y = stage5_3_make_binary_target_from_frame(df.loc[idx], source_target, spec)
+        out[str(int(year))] = stage5_3_binary_metrics(y, score[positions])
+    return out
+
+
+def _stage5_3_feature_importance_top20(model) -> list[dict]:
+    score = model.get_score(importance_type="gain")
+    rows = [
+        {"feature": str(feature), "gain": float(gain)}
+        for feature, gain in score.items()
+    ]
+    rows.sort(key=lambda row: row["gain"], reverse=True)
+    return rows[:20]
+
+
+def _build_stage5_3_feature_split(split: dict, profile_key: str) -> dict:
+    return {
+        "train_core": build_stage5_2_features(split["train_core"], profile_key),
+        "val_stop": build_stage5_2_features(split["val_stop"], profile_key),
+        "diagnostic_holdout": build_stage5_2_features(split["diagnostic_holdout"], profile_key),
+        "low_n_disclosure": (
+            build_stage5_2_features(split["low_n_disclosure"], profile_key)
+            if len(split["low_n_disclosure"]) else None
+        ),
+    }
+
+
+def evaluate_stage5_3_profile_seed(split: dict, source_target: str, spec: dict,
+                                   profile_key: str, seed: int,
+                                   xgb_threads: int = 1,
+                                   feature_split: dict | None = None) -> dict:
+    started_at = time.time()
+    def log_step(step: str) -> None:
+        elapsed = round(time.time() - started_at, 1)
+        print(
+            f"[heartbeat] stage5.3 eval | source={source_target} target={spec['name']} "
+            f"profile={profile_key} seed={seed} elapsed={elapsed}s | {step}",
+            flush=True,
+        )
+
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    if feature_split is None:
+        log_step("build feature_split start")
+        feature_split = _build_stage5_3_feature_split(split, profile_key)
+    X_train = feature_split["train_core"]
+    X_val = feature_split["val_stop"]
+    X_holdout = feature_split["diagnostic_holdout"]
+    X_low_n = feature_split["low_n_disclosure"]
+    log_step("build targets start")
+
+    y_train = stage5_3_make_binary_target_from_frame(train, source_target, spec)
+    train_valid = y_train >= 0
+    X_train = X_train[train_valid]
+    y_train = y_train[train_valid]
+    positives = int(y_train.sum())
+    negatives = int(len(y_train) - positives)
+    scale_pos_weight = float(negatives / max(positives, 1))
+
+    y_val = stage5_3_make_binary_target_from_frame(val, source_target, spec)
+    val_valid = y_val >= 0
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val[val_valid], label=y_val[val_valid])
+    params = {
+        "objective": STAGE5_3_XGB_OBJECTIVE,
+        "eval_metric": "auc",
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "scale_pos_weight": scale_pos_weight,
+        "seed": seed,
+        "n_jobs": int(xgb_threads),
+        "verbosity": 0,
+    }
+    log_step("xgb.train start")
+    model = xgb.train(
+        params,
+        dtrain,
+        num_boost_round=500,
+        evals=[(dtrain, "train"), (dval, "val")],
+        early_stopping_rounds=20,
+        verbose_eval=False,
+    )
+    log_step("predict start")
+    val_score = model.predict(xgb.DMatrix(X_val))
+    holdout_score = model.predict(xgb.DMatrix(X_holdout))
+    low_n_score = model.predict(xgb.DMatrix(X_low_n)) if X_low_n is not None else np.asarray([])
+
+    y_holdout = stage5_3_make_binary_target_from_frame(holdout, source_target, spec)
+    y_low_n = stage5_3_make_binary_target_from_frame(low_n, source_target, spec) if len(low_n) else np.asarray([])
+    return {
+        "source_target": source_target,
+        "target_id": stage5_3_target_id(source_target, spec),
+        "spec": dict(spec),
+        "profile": profile_key,
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {
+            "n": int(len(y_train)),
+            "positive_rate": float(y_train.mean()) if len(y_train) else None,
+            "scale_pos_weight": scale_pos_weight,
+            "best_iteration": int(model.best_iteration) if model.best_iteration is not None else None,
+        },
+        "val_stop": stage5_3_binary_metrics(y_val, val_score),
+        "diagnostic_holdout": stage5_3_binary_metrics(y_holdout, holdout_score),
+        "low_n_disclosure": stage5_3_binary_metrics(y_low_n, low_n_score) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_3_yearly_metrics(val, source_target, spec, val_score),
+        "yearly_diagnostic_holdout": _stage5_3_yearly_metrics(holdout, source_target, spec, holdout_score),
+        "feature_importance_gain_top20": _stage5_3_feature_importance_top20(model),
+    }
+
+
+def _stage5_3_profile_summary(runs: list[dict]) -> dict:
+    return {
+        "n_seed_runs": len(runs),
+        "val_stop": {
+            "auc": _median_metric(runs, "val_stop", "auc"),
+            "pr_auc": _median_metric(runs, "val_stop", "pr_auc"),
+            "positive_rate": _median_metric(runs, "val_stop", "positive_rate"),
+            "yearly": _median_yearly_metric(runs, "yearly_val", "auc"),
+        },
+        "diagnostic_holdout": {
+            "auc": _median_metric(runs, "diagnostic_holdout", "auc"),
+            "pr_auc": _median_metric(runs, "diagnostic_holdout", "pr_auc"),
+            "positive_rate": _median_metric(runs, "diagnostic_holdout", "positive_rate"),
+            "yearly": _median_yearly_metric(runs, "yearly_diagnostic_holdout", "auc"),
+        },
+    }
+
+
+def summarize_stage5_3_source(raw_runs: list[dict], source_target: str) -> dict:
+    source_runs = [r for r in raw_runs if r.get("source_target") == source_target]
+    targets = {}
+    for target_id in sorted({r.get("target_id") for r in source_runs}):
+        target_runs = [r for r in source_runs if r.get("target_id") == target_id]
+        if not target_runs:
+            continue
+        spec = target_runs[0].get("spec") or {}
+        profiles = {}
+        for profile in STAGE5_3_PROFILE_KEYS:
+            runs = [r for r in target_runs if r.get("profile") == profile]
+            if runs:
+                row = _stage5_3_profile_summary(runs)
+                row["profile"] = profile
+                profiles[profile] = row
+        best_profile = max(
+            profiles.values(),
+            key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        ) if profiles else {}
+        if best_profile:
+            best_auc = (best_profile.get("val_stop") or {}).get("auc")
+            time_auc = ((profiles.get("time_only") or {}).get("val_stop") or {}).get("auc")
+            clock_auc = ((profiles.get("clock_shift") or {}).get("val_stop") or {}).get("auc")
+            best_profile["target_id"] = target_id
+            best_profile["spec"] = spec
+            best_profile["improvement_vs_time_only"] = {
+                "auc_delta": None if best_auc is None or time_auc is None else best_auc - time_auc
+            }
+            best_profile["improvement_vs_clock_shift"] = {
+                "auc_delta": None if best_auc is None or clock_auc is None else best_auc - clock_auc
+            }
+        targets[target_id] = {
+            "target_id": target_id,
+            "spec": spec,
+            "profiles": profiles,
+            "best_profile": best_profile,
+        }
+
+    best_main = max(
+        [t["best_profile"] for t in targets.values()
+         if ((t.get("spec") or {}).get("role") == "main") and t.get("best_profile")],
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    best_control = max(
+        [t["best_profile"] for t in targets.values()
+         if ((t.get("spec") or {}).get("role") == "control") and t.get("best_profile")],
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    binary_target = next(
+        (t for t in targets.values() if ((t.get("spec") or {}).get("role") == "baseline")),
+        {},
+    )
+    if best_main and binary_target:
+        profile = best_main.get("profile")
+        binary_profile = ((binary_target.get("profiles") or {}).get(profile) or {})
+        binary_auc = ((binary_profile.get("val_stop") or {}).get("auc"))
+        best_auc = ((best_main.get("val_stop") or {}).get("auc"))
+        best_main["binary_breach_baseline"] = {
+            "same_profile_val_auc": binary_auc,
+            "auc_delta": None if best_auc is None or binary_auc is None else best_auc - binary_auc,
+        }
+        main_seed_runs = [
+            r for r in source_runs
+            if r.get("target_id") == best_main.get("target_id") and r.get("profile") == profile
+        ]
+        binary_seed_runs = {
+            int(r.get("seed")): r
+            for r in source_runs
+            if r.get("target_id") == binary_target.get("target_id") and r.get("profile") == profile
+        }
+        positive = 0
+        comparable = 0
+        for run in main_seed_runs:
+            seed = int(run.get("seed"))
+            base = binary_seed_runs.get(seed)
+            if not base:
+                continue
+            main_auc = ((run.get("val_stop") or {}).get("auc"))
+            base_auc = ((base.get("val_stop") or {}).get("auc"))
+            if main_auc is None or base_auc is None:
+                continue
+            comparable += 1
+            if main_auc > base_auc:
+                positive += 1
+        best_main["seed_consistency"] = {
+            "auc_delta_vs_binary_positive_count": int(positive),
+            "n_seeds": int(comparable),
+        }
+    return {
+        "source_target": source_target,
+        "targets": targets,
+        "best_main": best_main,
+        "best_control": best_control,
+    }
+
+
 def _stage5_2_censoring(split: dict, target_col: str) -> dict:
     out = {}
     for name, df in split.items():
@@ -6919,6 +7359,219 @@ def run_stage5_2_time_to_breach_regression(target_splits: dict,
     return report
 
 
+_STAGE5_3_WORKER_SPLITS = None
+_STAGE5_3_WORKER_FEATURES = None
+
+
+def _init_stage5_3_worker(splits_by_source: dict, features_by_source_profile: dict) -> None:
+    global _STAGE5_3_WORKER_SPLITS, _STAGE5_3_WORKER_FEATURES
+    _STAGE5_3_WORKER_SPLITS = splits_by_source
+    _STAGE5_3_WORKER_FEATURES = features_by_source_profile
+
+
+def _run_stage5_3_job(job: dict) -> dict:
+    started_at = time.time()
+    started_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(started_at))
+    print(
+        f"[heartbeat] ts={started_wall}Z | stage5.3 job | source={job['source_target']} "
+        f"target={job['spec']['name']} profile={job['profile']} seed={job['seed']} "
+        f"xgb_threads={job['xgb_threads']} start"
+    )
+    split = job.get("split")
+    if split is None:
+        if _STAGE5_3_WORKER_SPLITS is None:
+            raise RuntimeError("Stage 5.3 worker splits are not initialized")
+        split = _STAGE5_3_WORKER_SPLITS[job["source_target"]]
+    feature_split = job.get("feature_split")
+    if feature_split is None and _STAGE5_3_WORKER_FEATURES is not None:
+        feature_split = _STAGE5_3_WORKER_FEATURES[job["source_target"]][job["profile"]]
+    run = evaluate_stage5_3_profile_seed(
+        split, job["source_target"], job["spec"], job["profile"], job["seed"],
+        xgb_threads=job["xgb_threads"],
+        feature_split=feature_split,
+    )
+    finished_at = time.time()
+    finished_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(finished_at))
+    print(
+        f"[heartbeat] ts={finished_wall}Z | stage5.3 job | source={job['source_target']} "
+        f"target={job['spec']['name']} profile={job['profile']} seed={job['seed']} "
+        f"done elapsed={run.get('elapsed_sec')}"
+    )
+    run["started_at_unix"] = started_at
+    run["finished_at_unix"] = finished_at
+    return run
+
+
+def run_stage5_3_target_reformulation(target_splits: dict,
+                                      output_path: Path = STAGE5_3_JSON_REPORT_PATH,
+                                      workers: int = 1,
+                                      xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    target_specs = (
+        STAGE5_3_MAIN_TARGET_SPECS
+        + STAGE5_3_BINARY_BASELINE_SPECS
+        + STAGE5_3_CONTROL_TARGET_SPECS
+    )
+    total_runs = (
+        len(STAGE5_3_SOURCE_TARGETS)
+        * len(target_specs)
+        * len(STAGE5_3_PROFILE_KEYS)
+        * len(STAGE5_3_SEEDS)
+    )
+    report = {
+        "stage": "5.3_time_to_breach_target_reformulation",
+        "status": "RUNNING",
+        "level": "diagnostic_only",
+        "source_targets": STAGE5_3_SOURCE_TARGETS,
+        "target_specs": target_specs,
+        "profiles": STAGE5_3_PROFILE_KEYS,
+        "seeds": STAGE5_3_SEEDS,
+        "target_distribution": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "notes": {
+            "oracle_pf_gate": "disabled; Stage 5.2 binary-oracle comparison is invalid",
+            "price_features": "excluded; target formulation is isolated before feature expansion",
+            "multiple_testing": "14 main target/side comparisons; report must disclose correlated target families and no independent candidate validation",
+            "survives_at_least_k": "control only because censored rows all become positive",
+        },
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_source = {}
+    features_by_source_profile = {}
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        split = build_stage5_1_split(combined_by_name[source_target], source_target)
+        splits_by_source[source_target] = split
+        features_by_source_profile[source_target] = {}
+        report["target_distribution"][source_target] = {
+            spec["name"]: stage5_3_target_distribution(split, source_target, spec)
+            for spec in target_specs
+        }
+        for dist in report["target_distribution"][source_target].values():
+            train_rate = ((dist.get("train_core") or {}).get("positive_rate"))
+            if train_rate is not None and (train_rate < 0.05 or train_rate > 0.95):
+                dist["distribution_warning"] = "positive_rate_outside_0_05_0_95"
+        for profile in STAGE5_3_PROFILE_KEYS:
+            elapsed = round(time.time() - started_at, 1)
+            print(
+                f"[heartbeat] stage5.3 runner | elapsed={elapsed}s | "
+                f"precompute_features source={source_target} profile={profile} start",
+                flush=True,
+            )
+            features_by_source_profile[source_target][profile] = _build_stage5_3_feature_split(split, profile)
+            elapsed = round(time.time() - started_at, 1)
+            print(
+                f"[heartbeat] stage5.3 runner | elapsed={elapsed}s | "
+                f"precompute_features source={source_target} profile={profile} done",
+                flush=True,
+            )
+            report["progress"]["updated_at_unix"] = time.time()
+            _write_json_atomic(output_path, report)
+    _write_json_atomic(output_path, report)
+
+    jobs = []
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        for spec in target_specs:
+            for profile in STAGE5_3_PROFILE_KEYS:
+                for seed in STAGE5_3_SEEDS:
+                    jobs.append({
+                        "source_target": source_target,
+                        "spec": spec,
+                        "profile": profile,
+                        "seed": int(seed),
+                        "xgb_threads": int(xgb_threads),
+                    })
+
+    heartbeat = HeartbeatLogger("stage5.3 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+        remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+        report["progress"]["eta_sec"] = round((elapsed / max(report["progress"]["done_runs"], 1)) * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "source_target": run["source_target"],
+            "target_id": run["target_id"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "auc": _safe((run.get("val_stop") or {}).get("auc")),
+            "pr_auc": _safe((run.get("val_stop") or {}).get("pr_auc")),
+            "elapsed_sec": run.get("elapsed_sec"),
+            "started_at_unix": run.get("started_at_unix"),
+            "finished_at_unix": run.get("finished_at_unix"),
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['source_target']} | {run['target_id']} | "
+            f"{run['profile']} | seed={run['seed']} | auc={last['auc']} | "
+            f"pr_auc={last['pr_auc']} | elapsed={last['elapsed_sec']} | eta_sec={report['progress']['eta_sec']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            job["split"] = splits_by_source[job["source_target"]]
+            job["feature_split"] = features_by_source_profile[job["source_target"]][job["profile"]]
+            consume_run(_run_stage5_3_job(job))
+    else:
+        with ProcessPoolExecutor(
+            max_workers=int(workers),
+            initializer=_init_stage5_3_worker,
+            initargs=(splits_by_source, features_by_source_profile),
+        ) as executor:
+            futures = [executor.submit(_run_stage5_3_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    statuses = []
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        summary = summarize_stage5_3_source(report["raw_runs"], source_target)
+        report["summary"][source_target] = summary
+        gate = stage5_3_gate_results(summary)
+        report["gate_results"][source_target] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "TARGET_REFORMULATION_FOUND"
+        if statuses and any(s == "TARGET_REFORMULATION_FOUND" for s in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -6955,6 +7608,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Number of worker processes for Stage 5.2")
     parser.add_argument("--stage5-2-xgb-threads", type=int, default=1,
                         help="XGBoost threads per Stage 5.2 worker")
+    parser.add_argument("--stage5-3-target-reformulation", action="store_true",
+                        help="Run Stage 5.3 time-to-breach target reformulation diagnostics.")
+    parser.add_argument("--stage5-3-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.3")
+    parser.add_argument("--stage5-3-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.3 worker")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -6980,6 +7639,29 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
     print(f"Seeds: {seeds}")
+
+    if args.stage5_3_target_reformulation:
+        print("\n" + "=" * 60)
+        print("Stage 5.3 fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("Загрузка sell splits для Stage 5.3...")
+        sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
+        print("Загрузка buy splits для Stage 5.3...")
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+        report = run_stage5_3_target_reformulation(
+            {"sell": (sell_train, sell_val, sell_hold), "buy": (buy_train, buy_val, buy_hold)},
+            output_path=STAGE5_3_JSON_REPORT_PATH,
+            workers=args.stage5_3_workers,
+            xgb_threads=args.stage5_3_xgb_threads,
+        )
+        print("Stage 5.3: target reformulation diagnostics completed")
+        print(json.dumps({
+            "status": report["status"],
+            "json": str(STAGE5_3_JSON_REPORT_PATH),
+            "done_runs": report["progress"]["done_runs"],
+            "total_runs": report["progress"]["total_runs"],
+        }, indent=2))
+        return
 
     # Load data
     print("\n" + "=" * 60)

@@ -4252,3 +4252,248 @@ def test_stage5_2_runner_uses_process_pool_for_parallel_jobs(monkeypatch, tmp_pa
     assert seen["max_workers"] == 2
     assert seen["jobs"] == [("time_only", 42, 4), ("clock_shift", 42, 4)]
     assert report["progress"]["done_runs"] == 2
+
+
+def test_stage5_3_constants_and_target_specs_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_3_SOURCE_TARGETS == [
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H6_off05",
+    ]
+    assert runner.STAGE5_3_PROFILE_KEYS == [
+        "time_only",
+        "clock_shift",
+        "clock_shift_back",
+        "clock_shift_impulse",
+        "clock_shift_back_impulse",
+        "structure_full",
+    ]
+    assert [s["name"] for s in runner.STAGE5_3_MAIN_TARGET_SPECS] == [
+        "breach_after_k2",
+        "breach_after_k3",
+        "breach_after_k4",
+        "breach_after_k5",
+        "fast",
+        "medium",
+        "no_breach",
+    ]
+    assert [s["name"] for s in runner.STAGE5_3_BINARY_BASELINE_SPECS] == [
+        "binary_breach",
+    ]
+    assert [s["name"] for s in runner.STAGE5_3_CONTROL_TARGET_SPECS] == [
+        "survives_at_least_k2",
+        "survives_at_least_k3",
+        "survives_at_least_k4",
+        "survives_at_least_k5",
+    ]
+    assert str(runner.STAGE5_3_JSON_REPORT_PATH).endswith(
+        "stage5_3_time_to_breach_target_reformulation.json"
+    )
+
+
+def test_stage5_3_make_binary_target_for_breach_after_k_and_buckets():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y = np.array([1, 2, 3, 4, 5, 6, 7, np.nan], dtype=float)
+
+    assert runner.stage5_3_make_binary_target(
+        y, {"family": "breach_after_k", "k": 3}
+    ).tolist() == [0, 0, 0, 1, 1, 1, 0, -1]
+    assert runner.stage5_3_make_binary_target(
+        y, {"family": "survives_at_least_k", "k": 3}
+    ).tolist() == [0, 0, 0, 1, 1, 1, 1, -1]
+    assert runner.stage5_3_make_binary_target(
+        y, {"family": "bucket", "bucket": "fast"}
+    ).tolist() == [1, 1, 0, 0, 0, 0, 0, -1]
+    assert runner.stage5_3_make_binary_target(
+        y, {"family": "bucket", "bucket": "medium"}
+    ).tolist() == [0, 0, 1, 1, 1, 1, 0, -1]
+    assert runner.stage5_3_make_binary_target(
+        y, {"family": "bucket", "bucket": "no_breach"}
+    ).tolist() == [0, 0, 0, 0, 0, 0, 1, -1]
+
+
+def test_stage5_3_make_binary_target_from_frame_for_binary_breach_baseline():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = pd.DataFrame({
+        "sell_bars_to_breach_H6_off05": [1, 7, 4, np.nan],
+        "sell_stop_broken_H6_off05_flag": [1.0, 0.0, 1.0, np.nan],
+    })
+
+    y = runner.stage5_3_make_binary_target_from_frame(
+        df,
+        "sell_bars_to_breach_H6_off05",
+        {"name": "binary_breach", "family": "binary_breach", "role": "baseline"},
+    )
+
+    assert y.tolist() == [1, 0, 1, -1]
+
+
+def test_stage5_3_binary_metrics_include_auc_pr_auc_and_threshold_counts():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    y_true = np.array([0, 0, 1, 1], dtype=int)
+    y_score = np.array([0.1, 0.3, 0.7, 0.9], dtype=float)
+
+    metrics = runner.stage5_3_binary_metrics(y_true, y_score)
+
+    assert metrics["n"] == 4
+    assert metrics["positive_rate"] == pytest.approx(0.5)
+    assert metrics["auc"] == pytest.approx(1.0)
+    assert metrics["pr_auc"] == pytest.approx(1.0)
+    assert metrics["pred_summary"]["std"] > 0.0
+    assert metrics["threshold_0_5"]["predicted_positive"] == 2
+    assert metrics["threshold_0_5"]["precision"] == pytest.approx(1.0)
+    assert metrics["threshold_0_5"]["recall"] == pytest.approx(1.0)
+
+
+def test_stage5_3_gate_requires_main_target_auc_lift_and_yearly_consistency():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "best_main": {
+            "target_id": "sell_breach_after_k3",
+            "spec": {"role": "main"},
+            "profile": "clock_shift_back",
+            "val_stop": {
+                "auc": 0.70,
+                "pr_auc": 0.42,
+                "positive_rate": 0.30,
+                "yearly": {"2021": {"auc": 0.61}, "2022": {"auc": 0.62}},
+            },
+            "binary_breach_baseline": {"same_profile_val_auc": 0.66, "auc_delta": 0.04},
+            "improvement_vs_time_only": {"auc_delta": 0.04},
+            "improvement_vs_clock_shift": {"auc_delta": 0.05},
+            "seed_consistency": {"auc_delta_vs_binary_positive_count": 2, "n_seeds": 3},
+        }
+    }
+
+    gate = runner.stage5_3_gate_results(summary)
+
+    assert gate["overall_status"] == "TARGET_REFORMULATION_FOUND"
+    assert gate["model_gate"]["pass"] is True
+
+
+def test_evaluate_stage5_3_profile_seed_returns_binary_metrics(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 4, 7
+    )
+    split = runner.build_stage5_1_split(df, "sell_bars_to_breach_H6_off05")
+    spec = {"name": "breach_after_k3", "family": "breach_after_k", "k": 3, "role": "main"}
+
+    result = runner.evaluate_stage5_3_profile_seed(
+        split,
+        "sell_bars_to_breach_H6_off05",
+        spec,
+        "clock_shift_back",
+        seed=42,
+    )
+
+    assert result["source_target"] == "sell_bars_to_breach_H6_off05"
+    assert result["target_id"] == "sell_breach_after_k3"
+    assert result["profile"] == "clock_shift_back"
+    assert result["seed"] == 42
+    assert "auc" in result["val_stop"]
+    assert "pr_auc" in result["val_stop"]
+    assert "yearly_val" in result
+    assert "predictions" not in result
+    assert "labels" not in result
+    assert "feature_importance_gain_top20" in result
+
+
+def test_summarize_stage5_3_source_selects_best_main_and_keeps_controls():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    source = "sell_bars_to_breach_H6_off05"
+    raw_runs = []
+    for target_id, role, profile, auc in [
+        ("sell_breach_after_k3", "main", "time_only", 0.58),
+        ("sell_breach_after_k3", "main", "clock_shift_back", 0.69),
+        ("sell_binary_breach", "baseline", "clock_shift_back", 0.66),
+        ("sell_survives_at_least_k3", "control", "clock_shift_back", 0.75),
+    ]:
+        raw_runs.append({
+            "source_target": source,
+            "target_id": target_id,
+            "spec": {"name": target_id.replace("sell_", ""), "role": role},
+            "profile": profile,
+            "seed": 42,
+            "val_stop": {"auc": auc, "pr_auc": 0.40, "positive_rate": 0.30},
+            "diagnostic_holdout": {"auc": auc - 0.05, "pr_auc": 0.35, "positive_rate": 0.30},
+            "yearly_val": {"2021": {"auc": 0.61}, "2022": {"auc": 0.62}},
+        })
+
+    summary = runner.summarize_stage5_3_source(raw_runs, source)
+
+    assert summary["best_main"]["target_id"] == "sell_breach_after_k3"
+    assert summary["best_main"]["profile"] == "clock_shift_back"
+    assert summary["best_control"]["target_id"] == "sell_survives_at_least_k3"
+    assert summary["best_main"]["improvement_vs_time_only"]["auc_delta"] == pytest.approx(0.11)
+    assert summary["best_main"]["binary_breach_baseline"]["auc_delta"] == pytest.approx(0.03)
+
+
+def test_stage5_3_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df()
+    df["sell_bars_to_breach_H6_off05"] = np.where(
+        df["sell_stop_broken_H6_off05_flag"] == 1.0, 4, 7
+    )
+    df["buy_bars_to_breach_H6_off05"] = np.where(
+        df["buy_stop_broken_H6_off05_flag"] == 1.0, 4, 7
+    )
+    monkeypatch.setattr(runner, "STAGE5_3_MAIN_TARGET_SPECS", [
+        {"name": "breach_after_k3", "family": "breach_after_k", "k": 3, "role": "main"}
+    ])
+    monkeypatch.setattr(runner, "STAGE5_3_CONTROL_TARGET_SPECS", [])
+    monkeypatch.setattr(runner, "STAGE5_3_BINARY_BASELINE_SPECS", [])
+    monkeypatch.setattr(runner, "STAGE5_3_TARGET_SPECS", runner.STAGE5_3_MAIN_TARGET_SPECS)
+    monkeypatch.setattr(runner, "STAGE5_3_PROFILE_KEYS", ["time_only", "clock_shift_back"])
+    monkeypatch.setattr(runner, "STAGE5_3_SEEDS", [42])
+    monkeypatch.setattr(
+        runner,
+        "evaluate_stage5_3_profile_seed",
+        lambda split, source_target, spec, profile, seed, xgb_threads=1, feature_split=None: {
+            "source_target": source_target,
+            "target_id": runner.stage5_3_target_id(source_target, spec),
+            "spec": dict(spec),
+            "profile": profile,
+            "seed": seed,
+            "elapsed_sec": 0.5,
+            "val_stop": {"auc": 0.68, "pr_auc": 0.42, "positive_rate": 0.30},
+            "diagnostic_holdout": {"auc": 0.62, "pr_auc": 0.36, "positive_rate": 0.30},
+            "yearly_val": {"2021": {"auc": 0.61}, "2022": {"auc": 0.62}},
+            "yearly_diagnostic_holdout": {},
+        },
+    )
+
+    report = runner.run_stage5_3_target_reformulation(
+        {"sell": (df, df, df), "buy": (df, df, df)},
+        output_path=tmp_path / "stage5_3.json",
+    )
+
+    assert report["stage"] == "5.3_time_to_breach_target_reformulation"
+    assert report["progress"]["done_runs"] == 4
+    assert report["progress"]["total_runs"] == 4
+    assert set(report["summary"]) == set(runner.STAGE5_3_SOURCE_TARGETS)
+    assert (tmp_path / "stage5_3.json").exists()
+
+
+def test_stage5_3_cli_arguments_exist_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args([
+        "--stage5-3-target-reformulation",
+        "--stage5-3-workers", "8",
+        "--stage5-3-xgb-threads", "4",
+    ])
+
+    assert args.stage5_3_target_reformulation is True
+    assert args.stage5_3_workers == 8
+    assert args.stage5_3_xgb_threads == 4
