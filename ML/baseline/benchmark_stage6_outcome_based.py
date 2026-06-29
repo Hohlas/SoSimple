@@ -50,3 +50,41 @@ def stage6_target_columns() -> tuple[str, ...]:
 
 def stage6_feature_denylist() -> tuple[str, ...]:
     return stage6_target_columns()
+
+
+def stage6_first_touch_trade_result(entry_price: float, stop_price: float,
+                                    take_price: float, side: str,
+                                    future_bars: list[dict],
+                                    timeout_close: float | None = None) -> dict:
+    if side not in {"buy", "sell"}:
+        raise ValueError(f"side must be buy or sell, got {side}")
+    risk = abs(entry_price - stop_price)
+    reward = abs(take_price - entry_price)
+    if risk <= 0.0:
+        return {"close_reason": "INVALID", "bars_held": 0, "pnl_r": np.nan}
+
+    for idx, bar in enumerate(future_bars, start=1):
+        high = float(bar["high"])
+        low = float(bar["low"])
+        close = float(bar["close"])
+        if side == "buy":
+            sl_hit = low <= stop_price
+            tp_hit = high >= take_price
+        else:
+            sl_hit = high >= stop_price
+            tp_hit = low <= take_price
+        if sl_hit and tp_hit:
+            return {"close_reason": "AMBIGUOUS_SL_FIRST", "bars_held": idx, "pnl_r": -1.0}
+        if sl_hit:
+            return {"close_reason": "SL", "bars_held": idx, "pnl_r": -1.0}
+        if tp_hit:
+            return {"close_reason": "TP", "bars_held": idx, "pnl_r": float(reward / risk)}
+
+    if not future_bars:
+        return {"close_reason": "INVALID", "bars_held": 0, "pnl_r": np.nan}
+    close = float(timeout_close if timeout_close is not None else future_bars[-1]["close"])
+    if side == "buy":
+        pnl_r = (close - entry_price) / risk
+    else:
+        pnl_r = (entry_price - close) / risk
+    return {"close_reason": "TIMEOUT", "bars_held": len(future_bars), "pnl_r": float(pnl_r)}

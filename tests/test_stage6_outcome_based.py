@@ -25,3 +25,39 @@ def test_stage6_target_columns_are_denied_from_features():
     assert "stage6_pnl_r" in target_cols
     assert target_cols <= denylist
     assert all(col.startswith("stage6_") for col in target_cols)
+
+
+def test_stage6_first_touch_tp_sl_ambiguous_and_timeout():
+    buy_tp = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 104.5, "low": 99.0, "close": 104.0}],
+    )
+    sell_sl = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=102.0,
+        take_price=96.0,
+        side="sell",
+        future_bars=[{"open": 100.0, "high": 102.5, "low": 99.0, "close": 101.0}],
+    )
+    ambiguous = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 105.0, "low": 97.5, "close": 100.0}],
+    )
+    timeout = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 101.0, "low": 99.0, "close": 101.0}],
+    )
+
+    assert buy_tp == {"close_reason": "TP", "bars_held": 1, "pnl_r": 2.0}
+    assert sell_sl == {"close_reason": "SL", "bars_held": 1, "pnl_r": -1.0}
+    assert ambiguous == {"close_reason": "AMBIGUOUS_SL_FIRST", "bars_held": 1, "pnl_r": -1.0}
+    assert timeout == {"close_reason": "TIMEOUT", "bars_held": 1, "pnl_r": 0.5}
