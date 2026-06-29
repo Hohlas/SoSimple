@@ -4671,3 +4671,112 @@ def test_stage5_4_feature_distribution_audit_flags_price_back_correlation():
     assert "PRICE_COORD_BACK_CORR_GT_0_8" in audit["flags"]
     assert audit["correlation_audit"]["max_abs_spearman"] > 0.8
     assert audit["decisions"]["PRICE_COORD_BACK_CORR_GT_0_8"] == "accept_as_diagnostic"
+
+
+def test_evaluate_stage5_4_profile_seed_returns_fast_metrics(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df().copy()
+    df["sell_bars_to_breach_H6_off05"] = np.where(np.arange(len(df)) % 3 == 0, 1, 7)
+    split = runner.build_stage5_1_split(df, "sell_bars_to_breach_H6_off05")
+
+    result = runner.evaluate_stage5_4_profile_seed(
+        split,
+        "sell_bars_to_breach_H6_off05",
+        "clock_shift_back",
+        seed=42,
+        xgb_threads=1,
+    )
+
+    assert result["stage"] == "5.4"
+    assert result["target_id"] == "sell_fast"
+    assert result["profile"] == "clock_shift_back"
+    assert result["profile_role"] == "baseline"
+    assert result["val_stop"]["auc"] is not None
+    assert result["yearly_val"]
+    assert "feature_importance_gain_top20" in result
+
+
+def test_stage5_4_gate_uses_per_seed_threshold_not_median_only():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "side": "buy",
+        "side_baseline_profile": "clock_shift_back_impulse",
+        "side_primary_profile": "clock_shift_back_impulse_price_coord_atr",
+        "profiles": {
+            "clock_shift_back_impulse": {"val_stop": {"auc": 0.6900}},
+            "clock_shift_back_impulse_price_coord_atr": {
+                "profile": "clock_shift_back_impulse_price_coord_atr",
+                "profile_role": "primary",
+                "val_stop": {
+                    "auc": 0.7101,
+                    "pr_auc": 0.22,
+                    "positive_rate": 0.15,
+                    "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}},
+                },
+                "diagnostic_holdout": {"auc": 0.6600},
+                "delta_vs_side_baseline": {
+                    "median_auc_delta": 0.0201,
+                    "per_seed": [
+                        {"seed": 42, "auc_delta": 0.0210, "passes_0_02": True},
+                        {"seed": 77, "auc_delta": 0.0190, "passes_0_02": False},
+                        {"seed": 123, "auc_delta": 0.0180, "passes_0_02": False},
+                    ],
+                    "pass_count_ge_0_02": 1,
+                    "n_seeds": 3,
+                },
+            },
+        },
+        "best_primary": {
+            "profile": "clock_shift_back_impulse_price_coord_atr",
+            "profile_role": "primary",
+            "val_stop": {
+                "auc": 0.7101,
+                "pr_auc": 0.22,
+                "positive_rate": 0.15,
+                "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}},
+            },
+            "diagnostic_holdout": {"auc": 0.6600},
+            "delta_vs_side_baseline": {
+                "median_auc_delta": 0.0201,
+                "pass_count_ge_0_02": 1,
+                "n_seeds": 3,
+            },
+        },
+    }
+
+    gate = runner.stage5_4_gate_results(summary, "buy_bars_to_breach_H6_off05")
+    checks = gate["model_gate"]["checks"]
+    assert checks["per_seed_delta_ge_0_02_at_least_2_of_3"] is False
+    assert checks["pr_auc_lift_ge_0_03"] is True
+    assert gate["overall_status"] == "DIAGNOSTIC_ONLY"
+
+
+def test_stage5_4_gate_blocks_when_pr_auc_lift_is_too_small():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "side": "sell",
+        "target": "fast",
+        "best_primary": {
+            "profile": "clock_shift_back_price_coord_atr",
+            "profile_role": "primary",
+            "val_stop": {
+                "auc": 0.70,
+                "pr_auc": 0.17,
+                "positive_rate": 0.15,
+                "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.70}},
+            },
+            "diagnostic_holdout": {"auc": 0.68},
+            "delta_vs_side_baseline": {
+                "median_auc_delta": 0.03,
+                "pass_count_ge_0_02": 3,
+                "n_seeds": 3,
+            },
+        },
+    }
+
+    gate = runner.stage5_4_gate_results(summary, "sell_bars_to_breach_H6_off05")
+    assert gate["model_gate"]["checks"]["pr_auc_lift_ge_0_03"] is False
+    assert gate["overall_status"] == "DIAGNOSTIC_ONLY"

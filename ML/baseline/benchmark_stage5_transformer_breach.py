@@ -7734,6 +7734,204 @@ def _run_stage5_3_job(job: dict) -> dict:
     return run
 
 
+# ===========================================================================
+# Stage 5.4 evaluator, summary, gate
+# ===========================================================================
+
+def _build_stage5_4_feature_split(split: dict, profile_key: str) -> dict:
+    return {
+        "train_core": build_stage5_4_features(split["train_core"], profile_key),
+        "val_stop": build_stage5_4_features(split["val_stop"], profile_key),
+        "diagnostic_holdout": build_stage5_4_features(split["diagnostic_holdout"], profile_key),
+        "low_n_disclosure": (
+            build_stage5_4_features(split["low_n_disclosure"], profile_key)
+            if len(split["low_n_disclosure"]) else None
+        ),
+    }
+
+
+def evaluate_stage5_4_profile_seed(split: dict, source_target: str, profile_key: str,
+                                   seed: int, xgb_threads: int = 1,
+                                   feature_split: dict | None = None) -> dict:
+    started_at = time.time()
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    if feature_split is None:
+        feature_split = _build_stage5_4_feature_split(split, profile_key)
+
+    X_train = feature_split["train_core"]
+    X_val = feature_split["val_stop"]
+    X_holdout = feature_split["diagnostic_holdout"]
+    X_low_n = feature_split["low_n_disclosure"]
+
+    y_train = stage5_3_make_binary_target_from_frame(train, source_target, STAGE5_4_TARGET_SPEC)
+    train_valid = y_train >= 0
+    X_train = X_train[train_valid]
+    y_train = y_train[train_valid]
+    positives = int(y_train.sum())
+    negatives = int(len(y_train) - positives)
+    scale_pos_weight = float(negatives / max(positives, 1))
+
+    y_val = stage5_3_make_binary_target_from_frame(val, source_target, STAGE5_4_TARGET_SPEC)
+    val_valid = y_val >= 0
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val[val_valid], label=y_val[val_valid])
+    params = {
+        "objective": STAGE5_3_XGB_OBJECTIVE,
+        "eval_metric": "auc",
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "scale_pos_weight": scale_pos_weight,
+        "seed": seed,
+        "n_jobs": int(xgb_threads),
+        "verbosity": 0,
+    }
+    model = xgb.train(
+        params,
+        dtrain,
+        num_boost_round=500,
+        evals=[(dtrain, "train"), (dval, "val")],
+        early_stopping_rounds=20,
+        verbose_eval=False,
+    )
+    val_score = model.predict(xgb.DMatrix(X_val))
+    holdout_score = model.predict(xgb.DMatrix(X_holdout))
+    low_n_score = model.predict(xgb.DMatrix(X_low_n)) if X_low_n is not None else np.asarray([])
+    y_holdout = stage5_3_make_binary_target_from_frame(holdout, source_target, STAGE5_4_TARGET_SPEC)
+    y_low_n = stage5_3_make_binary_target_from_frame(low_n, source_target, STAGE5_4_TARGET_SPEC) if len(low_n) else np.asarray([])
+
+    return {
+        "stage": "5.4",
+        "source_target": source_target,
+        "target_id": stage5_3_target_id(source_target, STAGE5_4_TARGET_SPEC),
+        "spec": dict(STAGE5_4_TARGET_SPEC),
+        "profile": profile_key,
+        "profile_role": STAGE5_4_PROFILE_ROLES[profile_key],
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {
+            "n": int(len(y_train)),
+            "positive_rate": float(y_train.mean()) if len(y_train) else None,
+            "scale_pos_weight": scale_pos_weight,
+            "best_iteration": int(model.best_iteration) if model.best_iteration is not None else None,
+        },
+        "val_stop": stage5_3_binary_metrics(y_val, val_score),
+        "diagnostic_holdout": stage5_3_binary_metrics(y_holdout, holdout_score),
+        "low_n_disclosure": stage5_3_binary_metrics(y_low_n, low_n_score) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_3_yearly_metrics(val, source_target, STAGE5_4_TARGET_SPEC, val_score),
+        "yearly_diagnostic_holdout": _stage5_3_yearly_metrics(holdout, source_target, STAGE5_4_TARGET_SPEC, holdout_score),
+        "feature_importance_gain_top20": _stage5_3_feature_importance_top20(model),
+    }
+
+
+def summarize_stage5_4_source(raw_runs: list[dict], source_target: str) -> dict:
+    side = "sell" if source_target.startswith("sell_") else "buy"
+    source_runs = [r for r in raw_runs if r.get("source_target") == source_target]
+    profiles = {}
+    for profile in STAGE5_4_PROFILE_KEYS:
+        runs = [r for r in source_runs if r.get("profile") == profile]
+        if not runs:
+            continue
+        row = _stage5_3_profile_summary(runs)
+        row["profile"] = profile
+        row["profile_role"] = STAGE5_4_PROFILE_ROLES[profile]
+        profiles[profile] = row
+
+    baseline_profile = STAGE5_4_SIDE_BASELINE_PROFILE[side]
+    baseline_runs = [r for r in source_runs if r.get("profile") == baseline_profile]
+    baseline_by_seed = {
+        int(r["seed"]): ((r.get("val_stop") or {}).get("auc"))
+        for r in baseline_runs
+    }
+    baseline_auc = ((profiles.get(baseline_profile) or {}).get("val_stop") or {}).get("auc")
+    for profile, row in profiles.items():
+        auc = (row.get("val_stop") or {}).get("auc")
+        per_seed = []
+        for run in [r for r in source_runs if r.get("profile") == profile]:
+            seed = int(run["seed"])
+            run_auc = ((run.get("val_stop") or {}).get("auc"))
+            base_auc = baseline_by_seed.get(seed)
+            delta = None if run_auc is None or base_auc is None else run_auc - base_auc
+            per_seed.append({
+                "seed": seed,
+                "auc": run_auc,
+                "baseline_auc": base_auc,
+                "auc_delta": delta,
+                "passes_0_02": bool(delta is not None and delta >= 0.02),
+            })
+        pass_count = sum(1 for item in per_seed if item["passes_0_02"])
+        row["delta_vs_side_baseline"] = {
+            "baseline_profile": baseline_profile,
+            "baseline_val_auc": baseline_auc,
+            "median_auc_delta": None if auc is None or baseline_auc is None else auc - baseline_auc,
+            "per_seed": sorted(per_seed, key=lambda item: item["seed"]),
+            "pass_count_ge_0_02": int(pass_count),
+            "n_seeds": len(per_seed),
+        }
+        hold_auc = (row.get("diagnostic_holdout") or {}).get("auc")
+        row["holdout_drop"] = None if auc is None or hold_auc is None else auc - hold_auc
+
+    primary_profiles = [
+        row for row in profiles.values()
+        if row.get("profile_role") == "primary"
+    ]
+    best_primary = max(
+        primary_profiles,
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    return {
+        "source_target": source_target,
+        "side": side,
+        "target": "fast",
+        "side_baseline_profile": baseline_profile,
+        "side_primary_profile": STAGE5_4_SIDE_PRIMARY_PROFILE[side],
+        "profiles": profiles,
+        "best_primary": best_primary,
+    }
+
+
+def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
+    side = summary.get("side") or ("sell" if source_target.startswith("sell_") else "buy")
+    best = summary.get("best_primary") or {}
+    val = best.get("val_stop") or {}
+    yearly = val.get("yearly") or {}
+    delta = best.get("delta_vs_side_baseline") or {}
+    positive_rate = val.get("positive_rate")
+    pr_auc = val.get("pr_auc")
+    pr_auc_lift = None if pr_auc is None or positive_rate is None else pr_auc - positive_rate
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for row in yearly.values() if (row.get("auc") or 0.0) >= 0.60) >= 2
+    )
+    holdout_drop_threshold = 0.04 if side == "buy" else 0.06
+    checks = {
+        "target_is_fast": summary.get("target") == "fast",
+        "best_profile_is_primary": best.get("profile_role") == "primary",
+        "auc_ge_0_65": (val.get("auc") or 0.0) >= 0.65,
+        "pr_auc_lift_ge_0_03": pr_auc_lift is not None and pr_auc_lift >= 0.03,
+        "median_delta_vs_side_baseline_ge_0_02": (delta.get("median_auc_delta") or 0.0) >= 0.02,
+        "per_seed_delta_ge_0_02_at_least_2_of_3": (delta.get("pass_count_ge_0_02") or 0) >= 2,
+        "yearly_not_single_year": yearly_pass,
+    }
+    passed = all(checks.values())
+    return {
+        "overall_status": "PRICE_ATR_SIGNAL_FOUND" if passed else "DIAGNOSTIC_ONLY",
+        "model_gate": {
+            "pass": bool(passed),
+            "checks": checks,
+            "pr_auc_lift": pr_auc_lift,
+            "holdout_drop_warning": bool((best.get("holdout_drop") or 0.0) > holdout_drop_threshold),
+            "holdout_drop_warning_threshold": holdout_drop_threshold,
+            "note": "Stage 5.4 is diagnostic; holdout is disclosure only and cannot promote candidate status.",
+        },
+    }
+
+
 def run_stage5_3_target_reformulation(target_splits: dict,
                                       output_path: Path = STAGE5_3_JSON_REPORT_PATH,
                                       workers: int = 1,
