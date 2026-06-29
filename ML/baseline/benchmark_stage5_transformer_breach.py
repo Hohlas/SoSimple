@@ -7013,6 +7013,183 @@ def stage5_3_target_distribution(split: dict, source_target: str, spec: dict) ->
     return out
 
 
+# ===========================================================================
+# Stage 5.4 A7 feature distribution audit
+# ===========================================================================
+
+def _stage5_4_feature_stats(values: np.ndarray) -> dict:
+    arr = np.asarray(values, dtype=np.float64)
+    finite = arr[np.isfinite(arr)]
+    if len(finite) == 0:
+        return {
+            "n_valid": 0,
+            "missing_or_inf_count": int(len(arr)),
+            "min": None,
+            "p1": None,
+            "p5": None,
+            "p25": None,
+            "p50": None,
+            "p75": None,
+            "p95": None,
+            "p99": None,
+            "max": None,
+            "mean": None,
+            "std": None,
+            "frac_abs_gt10": None,
+            "frac_abs_gt20": None,
+            "zero_rate": None,
+            "unique_rounded_6": 0,
+        }
+    p1, p5, p25, p50, p75, p95, p99 = np.percentile(finite, [1, 5, 25, 50, 75, 95, 99])
+    return {
+        "n_valid": int(len(finite)),
+        "missing_or_inf_count": int(len(arr) - len(finite)),
+        "min": float(np.min(finite)),
+        "p1": float(p1),
+        "p5": float(p5),
+        "p25": float(p25),
+        "p50": float(p50),
+        "p75": float(p75),
+        "p95": float(p95),
+        "p99": float(p99),
+        "max": float(np.max(finite)),
+        "mean": float(np.mean(finite)),
+        "std": float(np.std(finite)),
+        "frac_abs_gt10": float(np.mean(np.abs(finite) > 10.0)),
+        "frac_abs_gt20": float(np.mean(np.abs(finite) > 20.0)),
+        "zero_rate": float(np.mean(finite == 0.0)),
+        "unique_rounded_6": int(len(np.unique(np.round(finite, 6)))),
+    }
+
+
+def _stage5_4_audit_feature_matrix(X: np.ndarray, feature_names: list[str]) -> dict:
+    arr = np.asarray(X, dtype=np.float32)
+    if arr.ndim != 2:
+        raise ValueError(f"Stage 5.4 audit expects 2D matrix, got shape={arr.shape}")
+    if arr.shape[1] != len(feature_names):
+        raise ValueError(
+            f"Stage 5.4 feature name mismatch: matrix_width={arr.shape[1]} names={len(feature_names)}"
+        )
+    return {
+        name: _stage5_4_feature_stats(arr[:, idx])
+        for idx, name in enumerate(feature_names)
+    }
+
+
+def _stage5_4_price_back_correlation(train_X: np.ndarray, feature_names: list[str]) -> dict:
+    arr = np.asarray(train_X, dtype=np.float32)
+    pairs = []
+    for fractal_idx in range(N_FRACTALS):
+        back_name = f"fractal{fractal_idx}.back"
+        coord_name = f"fractal{fractal_idx}.price_coord_atr"
+        if back_name not in feature_names or coord_name not in feature_names:
+            continue
+        back = arr[:, feature_names.index(back_name)]
+        coord = arr[:, feature_names.index(coord_name)]
+        valid = np.isfinite(back) & np.isfinite(coord)
+        if valid.sum() < 3:
+            continue
+        rho, _ = stats.spearmanr(back[valid], coord[valid])
+        if np.isfinite(rho):
+            pairs.append({
+                "fractal": int(fractal_idx),
+                "spearman": float(rho),
+                "abs_spearman": float(abs(rho)),
+            })
+    pairs.sort(key=lambda row: row["abs_spearman"], reverse=True)
+    return {
+        "max_abs_spearman": float(pairs[0]["abs_spearman"]) if pairs else None,
+        "top_pairs": pairs[:10],
+        "warning_threshold_abs_spearman": 0.8,
+    }
+
+
+def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
+                                        feature_names: list[str] | None = None) -> dict:
+    names = feature_names or stage5_4_feature_names(profile_key)
+    by_split = {
+        split_name: _stage5_4_audit_feature_matrix(X, names)
+        for split_name, X in feature_split.items()
+        if X is not None
+    }
+    flags = []
+    for split_stats in by_split.values():
+        for stats in split_stats.values():
+            if stats["missing_or_inf_count"] > 0:
+                flags.append("NaN_OR_INF")
+            if (stats["frac_abs_gt20"] or 0.0) > 0.0:
+                flags.append("TAIL_GT20")
+            if (stats["frac_abs_gt10"] or 0.0) > 0.01:
+                flags.append("TAIL_GT10")
+            if stats["zero_rate"] is not None and stats["zero_rate"] > 0.95:
+                flags.append("ZERO_GT95")
+
+    old_position_tail = {}
+    for name, stats in by_split.get("train_core", {}).items():
+        if ".price_coord_atr" not in name:
+            continue
+        try:
+            fractal_num = int(name.split(".", 1)[0].removeprefix("fractal"))
+        except ValueError:
+            continue
+        if fractal_num >= 90 and ((stats.get("frac_abs_gt10") or 0.0) > 0.0 or (stats.get("frac_abs_gt20") or 0.0) > 0.0):
+            old_position_tail[name] = {
+                "frac_abs_gt10": stats.get("frac_abs_gt10"),
+                "frac_abs_gt20": stats.get("frac_abs_gt20"),
+            }
+    if old_position_tail:
+        flags.append("OLD_POSITION_PRICE_COORD_TAIL")
+
+    correlation_audit = _stage5_4_price_back_correlation(
+        feature_split["train_core"], names
+    )
+    if (correlation_audit.get("max_abs_spearman") or 0.0) > 0.8:
+        flags.append("PRICE_COORD_BACK_CORR_GT_0_8")
+
+    train = by_split.get("train_core", {})
+    hold = by_split.get("diagnostic_holdout", {})
+    for name, train_stats in train.items():
+        hold_stats = hold.get(name)
+        if not hold_stats:
+            continue
+        train_std = train_stats.get("std") or 0.0
+        if train_std > 1e-8 and train_stats.get("p95") is not None and hold_stats.get("p95") is not None:
+            if abs(hold_stats["p95"] - train_stats["p95"]) > 3.0 * train_std:
+                flags.append("REGIME_SHIFT")
+
+    flags = sorted(set(flags))
+    status = "ERROR" if "NaN_OR_INF" in flags else ("WARNING" if flags else "PASS")
+    decisions = {}
+    for flag in flags:
+        if flag == "NaN_OR_INF":
+            decisions[flag] = "block_training"
+        elif flag in {
+            "TAIL_GT20",
+            "TAIL_GT10",
+            "ZERO_GT95",
+            "REGIME_SHIFT",
+            "OLD_POSITION_PRICE_COORD_TAIL",
+            "PRICE_COORD_BACK_CORR_GT_0_8",
+        }:
+            decisions[flag] = "accept_as_diagnostic"
+    return {
+        "profile": profile_key,
+        "status": status,
+        "flags": flags,
+        "decisions": decisions,
+        "by_split": by_split,
+        "old_position_price_coord_tail": old_position_tail,
+        "correlation_audit": correlation_audit,
+        "thresholds": {
+            "tail_gt10_warn_fraction": 0.01,
+            "tail_gt20_warn_any": True,
+            "regime_shift_p95_delta_train_std": 3.0,
+            "price_coord_back_corr_abs_spearman_warning": 0.8,
+            "old_position_tail_watch": "fractal90..fractal99 price_coord_atr",
+        },
+    }
+
+
 def stage5_3_binary_metrics(y_true, y_score, threshold: float = 0.5) -> dict:
     yt = np.asarray(y_true, dtype=int)
     ys = np.asarray(y_score, dtype=float)

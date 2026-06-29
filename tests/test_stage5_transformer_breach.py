@@ -4599,3 +4599,75 @@ def test_stage5_4_feature_builder_rejects_unknown_profile():
     df = _make_stage5_0f_year_df().head(2)
     with pytest.raises(ValueError, match="Unknown Stage 5.4 profile"):
         runner.build_stage5_4_features(df, "clock_shift_back_raw_price")
+
+
+def test_stage5_4_feature_distribution_audit_flags_nan_inf_and_tail():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    feature_split = {
+        "train_core": np.array([[0.0, 1.0], [np.nan, 2.0]], dtype=np.float32),
+        "val_stop": np.array([[0.0, np.inf]], dtype=np.float32),
+        "diagnostic_holdout": np.array([[0.0, 100.0]], dtype=np.float32),
+        "low_n_disclosure": np.array([[0.0, 1.0]], dtype=np.float32),
+    }
+    audit = runner.stage5_4_feature_distribution_audit(
+        feature_split,
+        "clock_shift_back",
+        feature_names=["f0", "f1"],
+    )
+
+    assert audit["status"] == "ERROR"
+    assert "NaN_OR_INF" in audit["flags"]
+    assert "TAIL_GT20" in audit["flags"]
+    assert audit["decisions"]["NaN_OR_INF"] == "block_training"
+
+
+def test_stage5_4_feature_distribution_audit_passes_small_clean_matrix():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    feature_split = {
+        "train_core": np.array([[0.0, 1.0], [0.2, 2.0], [0.3, 3.0]], dtype=np.float32),
+        "val_stop": np.array([[0.1, 1.5], [0.2, 2.5]], dtype=np.float32),
+        "diagnostic_holdout": np.array([[0.1, 1.2], [0.2, 2.2]], dtype=np.float32),
+        "low_n_disclosure": np.array([[0.1, 1.1]], dtype=np.float32),
+    }
+    audit = runner.stage5_4_feature_distribution_audit(
+        feature_split,
+        "clock_shift_back",
+        feature_names=["f0", "f1"],
+    )
+
+    assert audit["status"] == "PASS"
+    assert audit["flags"] == []
+    assert audit["by_split"]["train_core"]["f1"]["p95"] > 0
+
+
+def test_stage5_4_feature_distribution_audit_flags_price_back_correlation():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    feature_names = [
+        "fractal0.shift",
+        "fractal0.back",
+        "fractal0.price_coord_atr",
+        "hour_sin",
+    ]
+    X = np.array([
+        [0.0, 1.0, 1.0, 0.0],
+        [0.0, 2.0, 2.0, 0.0],
+        [0.0, 3.0, 3.0, 0.0],
+        [0.0, 4.0, 4.0, 0.0],
+    ], dtype=np.float32)
+    audit = runner.stage5_4_feature_distribution_audit(
+        {
+            "train_core": X,
+            "val_stop": X,
+            "diagnostic_holdout": X,
+            "low_n_disclosure": X,
+        },
+        "clock_shift_back_price_coord_atr",
+        feature_names=feature_names,
+    )
+
+    assert "PRICE_COORD_BACK_CORR_GT_0_8" in audit["flags"]
+    assert audit["correlation_audit"]["max_abs_spearman"] > 0.8
+    assert audit["decisions"]["PRICE_COORD_BACK_CORR_GT_0_8"] == "accept_as_diagnostic"
