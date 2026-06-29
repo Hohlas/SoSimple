@@ -1,10 +1,10 @@
 # Context Handoff
 
-Дата: 2026-06-26
+Дата: 2026-06-29
 
 ## Текущий этап
 
-Stage 5.3 завершён. Вердикт отчёта: **DIAGNOSTIC_ONLY**.
+Stage 5.4 завершён. Вердикт: **DIAGNOSTIC_ONLY**, **REJECT_PRICE_COORD**.
 
 JSON artifact имеет статус `TARGET_REFORMULATION_FOUND`, но это не торговый кандидат. Статус означает только одно: дискретная постановка цели time-to-breach достойна следующего диагностического шага.
 
@@ -99,25 +99,23 @@ Control `survives_at_least_k` показывает высокие AUC/PR AUC, н
 - Stage 5.3 не добавлял `price`, `price_coord_atr`, `price_atr_scaled`, raw `ATR`, Up/Dn.
 - Oracle-time PF не использовался как gate.
 
+## Stage 5.4: Price/ATR Ablation (завершён, rejected)
+
+Stage 5.4 проверил `price_coord_atr` и `price_atr_scaled` на fixed target `fast`. Результат:
+
+- Sell primary `price_coord_atr`: median delta +0.0066, 0/3 seeds ≥ 0.02 → **REJECT_PRICE_COORD**
+- Buy primary `price_coord_atr`: median delta +0.0014, 0/3 seeds ≥ 0.02 → **BUY_DISCLOSURE_ONLY**
+- A7 preflight pass: все 24 комбинации `WARNING` (только ZERO_GT95), ни одного ERROR.
+- Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
 ## Правильное направление дальше
 
-Разрешённый следующий шаг: Stage 5.4 price-coordinate / ATR ablation вокруг выбранной target family `fast`.
-
-Минимальный scope Stage 5.4:
-
-- держать target family фиксированной: `fast`
-- не смешивать новый target search и feature search
-- сравнить узко выбранные price/ATR варианты против текущих `clock_shift_back` и `clock_shift_back_impulse`
-- сохранить `2023-2025` как diagnostic disclosure, не как подтверждение
+Нет нового направления. Stage 5.3 `fast` sell остаётся best available signal. Stage 5.4 не нашёл способа улучшить его.
 
 ## Неправильное направление дальше
 
+- Продолжать поиск price/ATR признаков для `fast`.
 - Объявлять Stage 5.3 торговым кандидатом.
-- Использовать `survives_at_least_k` как winner.
-- Добавлять Up/Dn по умолчанию.
-- Делать широкий перебор новых целей и признаков одновременно.
-- Использовать `2023-2025` как независимое подтверждение.
-- Использовать oracle-time PF как trading gate.
 
 ## Ключевые файлы
 
@@ -128,13 +126,16 @@ Control `survives_at_least_k` показывает высокие AUC/PR AUC, н
 
 Артефакты:
 
+- `ML/reports/stage5_4_fast_price_atr_ablation.json`
 - `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
 - `ML/reports/stage5_2_time_to_breach_regression.json`
 
 Документация:
 
+- `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
 - `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- `docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - `docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
 
 Wiki:

@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
+- Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.4 REJECT_PRICE_COORD — price/ATR координата не улучшает `fast` ни на sell, ни на buy
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.4 (27 report updates)
+- Статус: price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
 ## [2026-06-25] ingest | Stage 5.1b: Up/Dn абляция и baseline clock+shift
 - Добавлен охват `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.1b подтвердил, что `back` остаётся устойчивым после добавления `shift`, а Up/Dn дают только слабый самостоятельный сигнал и не улучшают `structure_full`

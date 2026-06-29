@@ -2,6 +2,19 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, rejected)
+### Добавлено/Изменено
+- Добавлен Stage 5.4 с 12 профилями: 2 baselines, 2 primary (price_coord_atr), 2 secondary (price_atr_scaled), 6 diagnostic (ATR, Up/Dn).
+- Рефакторинг: общий `_build_stage5_flat_features_from_profile()` для Stage 5.2/5.4.
+- A7 preflight audit: `stage5_4_feature_distribution_audit()` с проверкой NaN/Inf, хвостов, regime shift, Spearman correlation price_coord_atr vs back.
+- Gate: per-seed delta ≥ 0.02 в 2/3 seeds + PR AUC lift ≥ 0.03.
+
+### Результаты
+- Полный прогон: `72/72`, `workers=12`, `xgb_threads=1`.
+- JSON status: `DIAGNOSTIC_ONLY`.
+- Price/ATR координата не улучшает `fast` ни на sell (delta +0.0066, 0/3 seeds), ни на buy (delta +0.0014, 0/3 seeds).
+- Вывод: **REJECT_PRICE_COORD**. Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
 ## [2026-06-26] — Stage 5.3: дискретная постановка time-to-breach
 ### Добавлено/Изменено
 - Добавлен CLI `--stage5-3-target-reformulation` с параметрами `--stage5-3-workers` и `--stage5-3-xgb-threads`.
