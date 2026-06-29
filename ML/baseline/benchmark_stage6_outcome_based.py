@@ -93,6 +93,38 @@ def stage6_first_touch_trade_result(entry_price: float, stop_price: float,
     return {"close_reason": "TIMEOUT", "bars_held": len(future_bars), "pnl_r": float(pnl_r)}
 
 
+def _stage6_pf_from_pnl(values) -> float | None:
+    arr = np.asarray(values, dtype=np.float64)
+    arr = arr[np.isfinite(arr)]
+    profit = float(arr[arr > 0.0].sum())
+    loss = float(-arr[arr < 0.0].sum())
+    if loss == 0.0:
+        return None if profit == 0.0 else float("inf")
+    return profit / loss
+
+
+def _stage6_add_year(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    ts = pd.to_datetime(out["time"], format="%Y.%m.%d %H:%M", errors="coerce")
+    out["_year"] = ts.dt.year
+    return out
+
+
+def _stage6_distribution_summary(values) -> dict:
+    arr = np.asarray(values, dtype=np.float64)
+    arr = arr[np.isfinite(arr)]
+    if len(arr) == 0:
+        return {"n": 0, "min": None, "p01": None, "median": None, "p99": None, "max": None}
+    return {
+        "n": int(len(arr)),
+        "min": float(np.min(arr)),
+        "p01": float(np.percentile(arr, 1)),
+        "median": float(np.median(arr)),
+        "p99": float(np.percentile(arr, 99)),
+        "max": float(np.max(arr)),
+    }
+
+
 def _stage6_parse_time(value) -> pd.Timestamp | None:
     ts = pd.to_datetime(value, format="%Y.%m.%d %H:%M", errors="coerce")
     if pd.isna(ts):
@@ -220,4 +252,127 @@ def stage6_build_outcome_labels(df: pd.DataFrame,
     labels_df = pd.DataFrame(rows, index=out.index)
     for col in stage6_target_columns():
         out[col] = labels_df[col]
+    return out
+
+
+def stage6_split_integrity_audit(full: pd.DataFrame, labeled: pd.DataFrame) -> dict:
+    warnings = []
+    duplicate_times = int(full["time"].duplicated().sum()) if "time" in full else 0
+    if duplicate_times:
+        warnings.append("DUPLICATE_TIME_VALUES")
+    year_counts = labeled["_year"].value_counts(dropna=False).sort_index().to_dict()
+    invalid_reasons = labeled.get("stage6_invalid_reason", pd.Series(["unknown"] * len(labeled))).value_counts().to_dict()
+    return {
+        "duplicate_times": duplicate_times,
+        "year_counts": {str(k): int(v) for k, v in year_counts.items()},
+        "invalid_reasons": {str(k): int(v) for k, v in invalid_reasons.items()},
+        "warnings": warnings,
+    }
+
+
+def stage6_load_labeled_splits(ohlc_path: Path = OHLC_FILE) -> dict[str, pd.DataFrame]:
+    train = pd.read_csv(DATA_DIR / "Nero_XAUUSD_train_labeled.csv", sep=";")
+    val = pd.read_csv(DATA_DIR / "Nero_XAUUSD_validation_labeled.csv", sep=";")
+    test = pd.read_csv(DATA_DIR / "Nero_XAUUSD_test_labeled.csv", sep=";")
+    full = pd.concat([train, val, test], ignore_index=True)
+    labeled = _stage6_add_year(stage6_build_outcome_labels(full, ohlc_path=ohlc_path))
+    splits = {
+        "train_core": labeled.loc[labeled["_year"] <= 2020].copy(),
+        "val_stop": labeled.loc[labeled["_year"].between(2021, 2022)].copy(),
+        "diagnostic_holdout": labeled.loc[labeled["_year"].between(2023, 2025)].copy(),
+        "low_n_disclosure": labeled.loc[labeled["_year"] == 2026].copy(),
+    }
+    splits["_integrity"] = stage6_split_integrity_audit(full, labeled)
+    return splits
+
+
+def _stage6_split_preflight(df: pd.DataFrame) -> dict:
+    valid = df["stage6_close_reason"] != "INVALID"
+    sub = df.loc[valid]
+    n = int(len(sub))
+    counts = sub["stage6_close_reason"].value_counts().to_dict()
+    tp = int(counts.get("TP", 0))
+    sl = int(counts.get("SL", 0) + counts.get("AMBIGUOUS_SL_FIRST", 0))
+    timeout = int(counts.get("TIMEOUT", 0))
+    yearly = {}
+    warnings = []
+    for year, group in sub.groupby("_year"):
+        yearly[str(int(year))] = int(len(group))
+        if len(group) < 200:
+            warnings.append(f"YEARLY_VALID_LT_200:{int(year)}")
+    tp_rate = float(tp / n) if n else 0.0
+    timeout_rate = float(timeout / n) if n else 0.0
+    risk = sub["stage6_risk_atr"].to_numpy(dtype=np.float64) if "stage6_risk_atr" in sub else np.asarray([])
+    reward_risk = sub["stage6_reward_risk"].to_numpy(dtype=np.float64) if "stage6_reward_risk" in sub else np.asarray([])
+    pnl = sub["stage6_pnl_r"].to_numpy(dtype=np.float64) if "stage6_pnl_r" in sub else np.asarray([])
+    timeout_pnl = sub.loc[sub["stage6_close_reason"] == "TIMEOUT", "stage6_pnl_r"].to_numpy(dtype=np.float64)
+    by_side = {}
+    if "stage6_side" in sub:
+        for side, group in sub.groupby("stage6_side"):
+            by_side[str(side)] = {
+                "n": int(len(group)),
+                "tp_rate": float((group["stage6_close_reason"] == "TP").mean()) if len(group) else 0.0,
+                "pf": _stage6_pf_from_pnl(group["stage6_pnl_r"]),
+            }
+    if tp_rate < 0.05 or tp_rate > 0.70:
+        warnings.append("TP_RATE_OUTSIDE_0_05_0_70")
+    if timeout_rate > 0.70:
+        warnings.append("TIMEOUT_GT_0_70")
+    if n < 1000:
+        warnings.append("VALID_ROWS_LT_1000")
+    if len(risk) and np.nanpercentile(risk, 1) <= 0:
+        warnings.append("RISK_ATR_P01_LE_0")
+    if len(risk) and np.nanpercentile(risk, 99) > 10:
+        warnings.append("RISK_ATR_P99_GT_10")
+    if len(reward_risk) and np.nanpercentile(reward_risk, 99) > 20:
+        warnings.append("REWARD_RISK_P99_GT_20")
+    if len(pnl) and np.nanmax(np.abs(pnl)) > 20:
+        warnings.append("PNL_R_ABS_MAX_GT_20")
+    return {
+        "n": n,
+        "invalid": int((~valid).sum()),
+        "counts": {str(k): int(v) for k, v in counts.items()},
+        "tp_rate": tp_rate,
+        "sl_or_ambiguous_rate": float(sl / n) if n else 0.0,
+        "timeout_rate": timeout_rate,
+        "risk_atr": _stage6_distribution_summary(risk),
+        "reward_risk": _stage6_distribution_summary(reward_risk),
+        "pnl_r": _stage6_distribution_summary(pnl),
+        "timeout_pnl_r": {
+            **_stage6_distribution_summary(timeout_pnl),
+            "profitable_timeout_rate": float((timeout_pnl > 0).mean()) if len(timeout_pnl) else None,
+            "total_timeout_pnl_r": float(np.nansum(timeout_pnl)) if len(timeout_pnl) else 0.0,
+        },
+        "by_side": by_side,
+        "yearly_valid_rows": yearly,
+        "warnings": warnings,
+    }
+
+
+def stage6_outcome_preflight(split: dict[str, pd.DataFrame]) -> dict:
+    out = {
+        name: _stage6_split_preflight(df)
+        for name, df in split.items()
+        if isinstance(df, pd.DataFrame)
+    }
+    if "_integrity" in split:
+        out["_integrity"] = split["_integrity"]
+    return out
+
+
+def stage6_oracle_preflight(split: dict[str, pd.DataFrame]) -> dict:
+    out = {}
+    for name, df in split.items():
+        if not isinstance(df, pd.DataFrame):
+            continue
+        valid = df["stage6_close_reason"] != "INVALID"
+        sub = df.loc[valid].copy()
+        tp_only = sub["stage6_close_reason"] == "TP"
+        out[name] = {
+            "all_trade_pf": _stage6_pf_from_pnl(sub["stage6_pnl_r"]),
+            "all_trade_trades": int(len(sub)),
+            "tp_only_oracle_pf": _stage6_pf_from_pnl(sub.loc[tp_only, "stage6_pnl_r"]),
+            "tp_only_oracle_trades": int(tp_only.sum()),
+            "trades_per_year": float(len(sub) / max(sub["_year"].nunique(), 1)) if len(sub) else 0.0,
+        }
     return out

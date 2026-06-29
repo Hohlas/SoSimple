@@ -109,3 +109,38 @@ def test_stage6_entry_bar_high_low_are_counted_after_open(tmp_path):
     assert out.loc[0, "stage6_entry_price"] == 101.0
     assert out.loc[0, "stage6_close_reason"] == "TP"
     assert out.loc[0, "stage6_bars_held"] == 1
+
+
+def test_stage6_preflight_counts_outcomes_and_pf_without_timeout_as_loss():
+    split = {
+        "train_core": pd.DataFrame({
+            "stage6_close_reason": ["TP", "SL", "TIMEOUT", "AMBIGUOUS_SL_FIRST"],
+            "stage6_tp_vs_rest_flag": [1, 0, 0, 0],
+            "stage6_pnl_r": [2.0, -1.0, 0.25, -1.0],
+            "stage6_risk_atr": [1.0, 1.2, 0.8, 1.1],
+            "stage6_reward_risk": [2.0, 1.7, 2.5, 1.8],
+            "_year": [2020, 2020, 2020, 2020],
+            "stage6_side": ["buy", "buy", "sell", "sell"],
+        }),
+        "val_stop": pd.DataFrame({
+            "stage6_close_reason": ["TP", "TIMEOUT"],
+            "stage6_tp_vs_rest_flag": [1, 0],
+            "stage6_pnl_r": [2.0, -0.2],
+            "stage6_risk_atr": [1.0, 1.0],
+            "stage6_reward_risk": [2.0, 2.0],
+            "_year": [2021, 2021],
+            "stage6_side": ["buy", "sell"],
+        }),
+    }
+
+    preflight = s6.stage6_outcome_preflight(split)
+    oracle = s6.stage6_oracle_preflight(split)
+
+    assert preflight["train_core"]["n"] == 4
+    assert preflight["train_core"]["tp_rate"] == 0.25
+    assert preflight["train_core"]["timeout_rate"] == 0.25
+    assert preflight["train_core"]["risk_atr"]["max"] == 1.2
+    assert preflight["train_core"]["reward_risk"]["median"] == 1.9
+    assert preflight["train_core"]["by_side"]["buy"]["n"] == 2
+    assert oracle["train_core"]["all_trade_pf"] == 2.25 / 2.0
+    assert oracle["train_core"]["tp_only_oracle_trades"] == 1
