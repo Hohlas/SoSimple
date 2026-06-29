@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from ML.baseline.benchmark_stage5_transformer_breach import (
     FRACTAL_SEP,
@@ -412,6 +417,7 @@ def evaluate_stage61_profile_seed(split: dict[str, pd.DataFrame],
         random_state=seed,
         eval_metric="logloss",
         verbosity=0,
+        n_jobs=24,
     )
     clf.fit(
         X_train[train_mask],
@@ -476,8 +482,8 @@ def stage61_gate_results(report: dict) -> dict:
         "auc_ge_0_60": bool(val.get("auc_median") is not None and val["auc_median"] >= 0.60),
         "pr_auc_lift_ge_0_05": bool(val.get("pr_auc_lift_median") is not None and val["pr_auc_lift_median"] >= 0.05),
         "permutation_p_value_le_0_10": bool(
-            primary.get("permutation_baseline", {}).get("p_value") is not None
-            and primary["permutation_baseline"]["p_value"] <= 0.10
+            (primary.get("permutation_baseline") or {}).get("empirical_p_value") is not None
+            and (primary.get("permutation_baseline") or {})["empirical_p_value"] <= 0.10
         ),
         "threshold_selected": bool(threshold.get("status") == "SELECTED" and threshold.get("selected") is not None),
     }
@@ -528,53 +534,116 @@ def stage61_input_file_manifest() -> dict:
     return out
 
 
-def run_stage6_1_relative_geometry(output_path: Path = STAGE6_1_JSON_REPORT_PATH) -> dict:
+def run_stage6_1_relative_geometry(
+    output_path: Path = STAGE6_1_JSON_REPORT_PATH,
+    resume: bool = True,
+) -> dict:
+    import datetime
     import time
-    started = time.time()
-    cfg = replace(
-        STAGE6_0_CONFIG,
-        horizon_bars=STAGE6_1_CONFIG.horizon_bars,
-        stop_offset_atr=STAGE6_1_CONFIG.stop_offset_atr,
-        take_profit_atr=STAGE6_1_CONFIG.take_profit_atr,
-        entry_lag_bars=STAGE6_1_CONFIG.entry_lag_bars,
-    )
-    split = stage6_load_labeled_splits(config=cfg)
-    report = {
-        "stage": "6.1",
-        "status": "RUNNING",
-        "config": {
-            "horizon_bars": STAGE6_1_CONFIG.horizon_bars,
-            "profiles": list(STAGE6_1_CONFIG.profile_keys),
-            "primary_profile": STAGE6_1_CONFIG.primary_profile,
-            "seeds": list(STAGE6_1_CONFIG.seeds),
-            "target": "stage6_definitive_tp_vs_sl_flag",
-            "ohlc_file": str(OHLC_FILE),
-        },
-        "input_manifest": stage61_input_file_manifest(),
-        "fractal_format_preflight": stage61_fractal_format_preflight(split),
-        "preflight": stage6_outcome_preflight(split),
-        "feature_preflight": stage61_feature_preflight(split),
-        "oracle_preflight": {
+
+    started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    wall0 = time.time()
+
+    if resume and output_path.exists():
+        report = json.loads(output_path.read_text())
+        done_set = {(r["profile"], int(r["seed"])) for r in report.get("raw_runs", [])}
+        print(f"[stage6.1] RESUME existing report: {output_path}")
+        print(f"[stage6.1] Already done: {len(done_set)} runs ({report.get('done_runs', 0)}/{report.get('total_runs', '?')})")
+        report["resumed_at"] = started_at
+    else:
+        report = {
+            "stage": "6.1",
+            "status": "RUNNING",
+            "started_at": started_at,
+            "config": {
+                "horizon_bars": STAGE6_1_CONFIG.horizon_bars,
+                "profiles": list(STAGE6_1_CONFIG.profile_keys),
+                "primary_profile": STAGE6_1_CONFIG.primary_profile,
+                "seeds": list(STAGE6_1_CONFIG.seeds),
+                "target": "stage6_definitive_tp_vs_sl_flag",
+                "ohlc_file": str(OHLC_FILE),
+                "xgb_n_jobs": 24,
+            },
+            "input_manifest": stage61_input_file_manifest(),
+            "raw_runs": [],
+            "done_runs": 0,
+            "total_runs": len(STAGE6_1_CONFIG.profile_keys) * len(STAGE6_1_CONFIG.seeds),
+        }
+        done_set = set()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(report, indent=2, default=str))
+        print(f"[stage6.1] Started fresh report: {output_path}", flush=True)
+
+    # Preflight (skipped if resuming with existing preflight data)
+    if "fractal_format_preflight" not in report:
+        print("[stage6.1] Loading splits and running preflight ...", flush=True)
+        cfg = replace(
+            STAGE6_0_CONFIG,
+            horizon_bars=STAGE6_1_CONFIG.horizon_bars,
+            stop_offset_atr=STAGE6_1_CONFIG.stop_offset_atr,
+            take_profit_atr=STAGE6_1_CONFIG.take_profit_atr,
+            entry_lag_bars=STAGE6_1_CONFIG.entry_lag_bars,
+        )
+        split = stage6_load_labeled_splits(config=cfg)
+        report["fractal_format_preflight"] = stage61_fractal_format_preflight(split)
+        report["preflight"] = stage6_outcome_preflight(split)
+        report["feature_preflight"] = stage61_feature_preflight(split)
+        report["oracle_preflight"] = {
             name: stage6_all_trade_baseline(df)
             for name, df in split.items()
             if isinstance(df, pd.DataFrame)
-        },
-        "raw_runs": [],
-        "done_runs": 0,
-        "total_runs": len(STAGE6_1_CONFIG.profile_keys) * len(STAGE6_1_CONFIG.seeds),
-    }
+        }
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(report, indent=2, default=str))
+        print("[stage6.1] Preflight done, saved checkpoint.", flush=True)
+    else:
+        print("[stage6.1] Preflight data present, resuming from last checkpoint.", flush=True)
+        cfg = replace(
+            STAGE6_0_CONFIG,
+            horizon_bars=STAGE6_1_CONFIG.horizon_bars,
+            stop_offset_atr=STAGE6_1_CONFIG.stop_offset_atr,
+            take_profit_atr=STAGE6_1_CONFIG.take_profit_atr,
+            entry_lag_bars=STAGE6_1_CONFIG.entry_lag_bars,
+        )
+        split = stage6_load_labeled_splits(config=cfg)
+
+    total_runs: int = report["total_runs"]
+    done_runs: int = report["done_runs"]
+
     for profile in STAGE6_1_CONFIG.profile_keys:
+        print(f"[stage6.1] Building features for profile={profile} ...", flush=True)
+        t0_profile = time.time()
         feature_split = {
             name: stage61_build_features(df, profile)
             for name, df in split.items()
             if isinstance(df, pd.DataFrame)
         }
+        print(f"[stage6.1] Features built in {time.time() - t0_profile:.1f}s", flush=True)
+
         for seed in STAGE6_1_CONFIG.seeds:
+            key = (profile, int(seed))
+            if key in done_set:
+                print(f"[stage6.1] SKIP profile={profile} seed={seed} (already done)", flush=True)
+                continue
+
+            t0_run = time.time()
+            print(f"[stage6.1] Training profile={profile} seed={seed} "
+                  f"({done_runs + 1}/{total_runs}) ...", flush=True)
             result = evaluate_stage61_profile_seed(split, feature_split, profile, seed)
+            result["elapsed_sec"] = float(time.time() - t0_run)
             report["raw_runs"].append(result)
-            report["done_runs"] += 1
+            done_runs += 1
+            report["done_runs"] = done_runs
+
+            elapsed = time.time() - wall0
+            remaining = (total_runs - done_runs) * (elapsed / max(done_runs, 1))
+            print(f"[stage6.1] done {done_runs}/{total_runs}  "
+                  f"elapsed={elapsed:.0f}s  ETA={remaining:.0f}s", flush=True)
+
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(json.dumps(report, indent=2, default=str))
+
+    # Summary
     summary = {}
     for profile in STAGE6_1_CONFIG.profile_keys:
         runs = [r for r in report["raw_runs"] if r["profile"] == profile]
@@ -607,7 +676,9 @@ def run_stage6_1_relative_geometry(output_path: Path = STAGE6_1_JSON_REPORT_PATH
     report["summary"] = summary
     report["gate"] = stage61_gate_results(report)
     report["status"] = report["gate"]["overall_status"]
-    report["elapsed_sec"] = float(time.time() - started)
+    finished_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    report["finished_at"] = finished_at
+    report["elapsed_sec"] = float(time.time() - wall0)
     output_path.write_text(json.dumps(report, indent=2, default=str))
     return report
 
@@ -616,9 +687,11 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--stage6-1-relative-geometry", action="store_true")
+    parser.add_argument("--resume", action="store_true", default=True, dest="resume")
+    parser.add_argument("--no-resume", action="store_false", dest="resume")
     args = parser.parse_args(argv)
     if args.stage6_1_relative_geometry:
-        report = run_stage6_1_relative_geometry()
+        report = run_stage6_1_relative_geometry(resume=args.resume)
         print({"status": report.get("status"), "json": str(STAGE6_1_JSON_REPORT_PATH)})
         return 0
     parser.print_help()

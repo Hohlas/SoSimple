@@ -52,6 +52,17 @@ def _row_with_fractals():
     })
 
 
+def _fake_split():
+    return {
+        k: pd.DataFrame({
+            "stage6_definitive_tp_vs_sl_flag": [1.0, 0.0],
+            "dummy": [0.1, 0.2],
+            "stage6_pnl_r": [0.5, -0.3],
+        })
+        for k in ("train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure")
+    }
+
+
 def test_stage61_relative_fractal_frame_nearest_price_uses_atr_coordinates():
     frame = s61.stage61_relative_fractal_frame(_row_with_fractals(), mode="nearest_price", k=2)
 
@@ -135,7 +146,7 @@ def test_stage61_gate_fails_when_no_threshold_even_if_auc_passes():
             "h12_corridor3_relative_geometry": {
                 "val_stop": {"auc_median": 0.68, "pr_auc_lift_median": 0.12},
                 "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
-                "permutation_baseline": {"p_value": 0.03},
+                "permutation_baseline": {"empirical_p_value": 0.03},
             }
         }
     }
@@ -161,7 +172,7 @@ def test_stage61_gate_fails_when_permutation_p_value_is_high():
                         "pf_spread_020": 1.1,
                     },
                 },
-                "permutation_baseline": {"p_value": 0.50},
+                "permutation_baseline": {"empirical_p_value": 0.50},
             }
         }
     }
@@ -202,3 +213,152 @@ def test_stage61_build_features_drops_stage6_columns(monkeypatch):
     assert X.shape == (1, 4)
     assert "stage6_pnl_r" not in captured["columns"]
     assert "stage6_definitive_tp_vs_sl_flag" not in captured["columns"]
+
+
+def test_stage61_xgboost_uses_n_jobs_24():
+    import inspect
+    src = inspect.getsource(s61.evaluate_stage61_profile_seed)
+    assert "n_jobs=24" in src, "evaluate_stage61_profile_seed must pass n_jobs=24 to XGBClassifier"
+
+
+def test_stage61_runner_writes_timestamps_and_n_jobs(monkeypatch, tmp_path):
+    import json
+
+    def fake_evaluate(split, feature_split, profile, seed):
+        return {
+            "profile": profile,
+            "seed": int(seed),
+            "val_stop": {"auc": 0.5, "pr_auc_lift": 0.0},
+            "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
+            "predictions": {},
+            "feature_importance": [],
+        }
+
+    monkeypatch.setattr(s61, "stage6_load_labeled_splits", lambda *a, **kw: _fake_split())
+    monkeypatch.setattr(s61, "evaluate_stage61_profile_seed", fake_evaluate)
+    monkeypatch.setattr(s61, "stage61_input_file_manifest", lambda: {"dummy": {"sha256": "a" * 64, "bytes": 100, "row_count": 10}})
+    monkeypatch.setattr(s61, "stage61_fractal_format_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage6_outcome_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage61_feature_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage6_all_trade_baseline", lambda s: {})
+    monkeypatch.setattr(s61, "stage61_build_features", lambda df, profile: np.ones((len(df), 2), dtype=np.float32))
+
+    out = tmp_path / "test_stage6_1.json"
+    report = s61.run_stage6_1_relative_geometry(output_path=out, resume=False)
+
+    data = json.loads(out.read_text())
+    assert "started_at" in data, "missing started_at"
+    assert "finished_at" in data, "missing finished_at"
+    assert data["config"].get("xgb_n_jobs") == 24, f"got xgb_n_jobs={data['config'].get('xgb_n_jobs')}"
+    for run in data.get("raw_runs", []):
+        assert "elapsed_sec" in run, f"missing elapsed_sec in {run.get('profile')} seed={run.get('seed')}"
+
+
+def test_stage61_runner_writes_initial_checkpoint_before_preflight(monkeypatch, tmp_path):
+    import json
+
+    def fail_load(*args, **kwargs):
+        raise RuntimeError("preflight boom")
+
+    monkeypatch.setattr(s61, "stage6_load_labeled_splits", fail_load)
+    monkeypatch.setattr(s61, "stage61_input_file_manifest", lambda: {"dummy": {"sha256": "a" * 64, "bytes": 100, "row_count": 10}})
+
+    out = tmp_path / "test_stage6_1_initial.json"
+    with pytest.raises(RuntimeError, match="preflight boom"):
+        s61.run_stage6_1_relative_geometry(output_path=out, resume=False)
+
+    data = json.loads(out.read_text())
+    assert data["status"] == "RUNNING"
+    assert "started_at" in data
+    assert data["config"]["xgb_n_jobs"] == 24
+    assert data["done_runs"] == 0
+    assert data["total_runs"] == len(s61.STAGE6_1_CONFIG.profile_keys) * len(s61.STAGE6_1_CONFIG.seeds)
+
+
+def test_stage61_script_help_runs_from_repo_root():
+    import subprocess
+    import sys
+
+    proc = subprocess.run(
+        [sys.executable, "ML/baseline/benchmark_stage6_1_relative_geometry.py", "--help"],
+        cwd=s61.REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert proc.returncode == 0
+    assert "--stage6-1-relative-geometry" in proc.stdout
+    assert "--no-resume" in proc.stdout
+
+
+def test_stage61_cli_has_resume_flags():
+    from ML.baseline.benchmark_stage6_1_relative_geometry import main
+    import sys
+    try:
+        main(argv=["prog", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+
+
+def test_stage61_runner_resume_skips_done_runs(monkeypatch, tmp_path):
+    import json
+
+    all_profiles = list(s61.STAGE6_1_CONFIG.profile_keys)
+    all_seeds = list(s61.STAGE6_1_CONFIG.seeds)
+    all_runs = [
+        {
+            "profile": p, "seed": int(s),
+            "val_stop": {"auc": 0.5, "pr_auc_lift": 0.0},
+            "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
+            "predictions": {},
+            "feature_importance": [],
+            "elapsed_sec": 0.1,
+        }
+        for p in all_profiles for s in all_seeds[:2]
+    ]
+    existing = {
+        "stage": "6.1",
+        "status": "RUNNING",
+        "started_at": "2026-06-29T00:00:00+00:00",
+        "config": {
+            "profiles": all_profiles,
+            "primary_profile": s61.STAGE6_1_CONFIG.primary_profile,
+            "seeds": all_seeds,
+            "xgb_n_jobs": 24,
+        },
+        "input_manifest": {"dummy": {"sha256": "a" * 64}},
+        "raw_runs": all_runs,
+        "done_runs": len(all_runs),
+        "total_runs": len(all_profiles) * len(all_seeds),
+    }
+    out = tmp_path / "test_resume.json"
+    out.write_text(json.dumps(existing))
+
+    seen = []
+    def fake_evaluate(split, feature_split, profile, seed):
+        seen.append((profile, int(seed)))
+        return {
+            "profile": profile,
+            "seed": int(seed),
+            "val_stop": {"auc": 0.5, "pr_auc_lift": 0.0},
+            "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
+            "predictions": {},
+            "feature_importance": [],
+        }
+
+    monkeypatch.setattr(s61, "stage6_load_labeled_splits", lambda *a, **kw: _fake_split())
+    monkeypatch.setattr(s61, "evaluate_stage61_profile_seed", fake_evaluate)
+    monkeypatch.setattr(s61, "stage61_input_file_manifest", lambda: {"dummy": {"sha256": "a" * 64}})
+    monkeypatch.setattr(s61, "stage61_fractal_format_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage6_outcome_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage61_feature_preflight", lambda s: {})
+    monkeypatch.setattr(s61, "stage6_all_trade_baseline", lambda s: {})
+    monkeypatch.setattr(s61, "stage61_build_features", lambda df, profile: np.ones((len(df), 2), dtype=np.float32))
+
+    s61.run_stage6_1_relative_geometry(output_path=out, resume=True)
+
+    assert len(seen) == len(all_profiles) * (len(all_seeds) - 2), \
+        f"expected {len(all_profiles) * (len(all_seeds) - 2)} new runs, got {len(seen)}: {seen}"
+    for p, s in seen:
+        assert s in all_seeds[2:], f"unexpected run: {p} seed={s}"

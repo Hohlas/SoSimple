@@ -1257,7 +1257,7 @@ git commit -m "feat: add stage 6.1 relative geometry runner"
 - Consumes: Stage 6.1 CLI and JSON artifact.
 - Produces: final report and current handoff.
 
-- [ ] **Step 1: Run Stage 6.1**
+- [x] **Step 1: Run Stage 6.1**
 
 Run:
 
@@ -1271,7 +1271,7 @@ Expected:
 - `done_runs == total_runs == 18`.
 - command prints final status.
 
-- [ ] **Step 2: Inspect JSON invariants**
+- [x] **Step 2: Inspect JSON invariants**
 
 Run:
 
@@ -1308,7 +1308,7 @@ PY
 
 Expected: prints status and primary metrics without assertion error.
 
-- [ ] **Step 3: Write report from JSON**
+- [x] **Step 3: Write report from JSON**
 
 Create `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md` with these required sections:
 
@@ -1335,14 +1335,14 @@ Report must state:
 - Top validation permutation feature importance for every non-baseline geometry profile.
 - Diagnostic holdout is disclosure only and did not influence profile selection, seed selection, threshold selection, or gate.
 
-- [ ] **Step 4: Update handoff and changelog**
+- [x] **Step 4: Update handoff and changelog**
 
 Update:
 
 - `CONTEXT_HANDOFF.md`: current Stage 6.1 status, artifact/report paths, next step, prohibited next actions.
 - `CHANGELOG.md`: one top entry with changed files, run size, key numbers, status, next direction.
 
-- [ ] **Step 5: Update wiki**
+- [x] **Step 5: Update wiki**
 
 Update `wiki/research/fractal-stop-research.md`, `wiki/index.md`, and `wiki/log.md`, then run:
 
@@ -1353,7 +1353,7 @@ Update `wiki/research/fractal-stop-research.md`, `wiki/index.md`, and `wiki/log.
 
 Expected: `Wiki is up to date. No gaps found.`
 
-- [ ] **Step 6: Final verification**
+- [x] **Step 6: Final verification**
 
 Run:
 

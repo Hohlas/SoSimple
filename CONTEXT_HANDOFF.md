@@ -17,6 +17,7 @@ Stage 6.1 завершён. Вердикт: **MODEL_GATE_FAILED** (`DIAGNOSTIC_O
 - A7-style preflight для всех профилей
 - Definitive touch evaluation (только TP-vs-SL definitive rows для метрик, timeout исключён)
 - Trading gate
+- Runtime contract: `xgb_n_jobs=24`, heartbeat, checkpoint before preflight, checkpoint after each run, `--resume` / `--no-resume`, top-level and per-run `elapsed_sec`
 
 ## Главный результат
 
@@ -25,6 +26,7 @@ Stage 6.1 завершён. Вердикт: **MODEL_GATE_FAILED** (`DIAGNOSTIC_O
 - artifact: `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
 - report: `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
 - `18/18` runs = 6 профилей × 3 seed
+- elapsed: `3581s` (59.7 мин)
 - gate: `MODEL_GATE_FAILED`
 
 Primary `h12_corridor3_relative_geometry`:
@@ -63,7 +65,7 @@ Baseline `h12_clock_shift_back` подтверждает валидность э
 Код:
 
 - `ML/baseline/benchmark_stage6_1_relative_geometry.py`
-- `tests/test_stage6_1_relative_geometry.py`
+- `tests/test_stage6_1_relative_geometry.py` (`19` тестов)
 
 Артефакты:
 

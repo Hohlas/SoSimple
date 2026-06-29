@@ -8,6 +8,11 @@
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 6.1 (29 report updates)
 - Статус: фрактальная геометрия не несёт сигнала для данного горизонта и контракта. Дальнейшие инвестиции в fractal-level geometry для H12 не рекомендуются.
 
+## [2026-06-29] update | Stage 6.1 runtime artifact refresh
+- Пересчитан `ML/reports/stage6_1_h12_relative_fractal_geometry.json` новым runner-ом с `xgb_n_jobs=24`, checkpoint before preflight, heartbeat, `started_at`/`finished_at` и per-run `elapsed_sec`.
+- Обновлены `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`, `CHANGELOG.md` и `CONTEXT_HANDOFF.md` под фактический elapsed `3581s` (59.7 мин).
+- Исследовательский вывод не изменился: Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
+
 ## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
 - Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.4 REJECT_PRICE_COORD — price/ATR координата не улучшает `fast` ни на sell, ни на buy

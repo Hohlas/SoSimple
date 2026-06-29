@@ -1,8 +1,14 @@
 # Stage 6.1: H12 Relative Fractal Geometry
 
-> **Status:** `MODEL_GATE_FAILED` → `DIAGNOSTIC_ONLY`  
+> **Дата**: 2026-06-29  
+> **Статус**: Completed  
+> **Вердикт**: DIAGNOSTIC_ONLY / MODEL_GATE_FAILED  
+> **Цель**: Проверить, даёт ли относительная геометрия фракталов вокруг `fractal0` сигнал для H12 TP/SL touch.  
+> **Related plan/spec**: [Stage 6.1 Plan](../superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)
+
 > **Run:** 2026-06-29, 6 profiles × 3 seeds = 18 XGBoost runs  
-> **Elapsed:** 2857s (47.6 min)
+> **Elapsed:** 3581s (59.7 min)  
+> **Runtime contract:** `xgb_n_jobs=24`, `started_at=2026-06-29T17:54:41.565617+00:00`, `finished_at=2026-06-29T18:54:22.599773+00:00`, per-run `elapsed_sec` present.
 
 ---
 
@@ -36,9 +42,31 @@ Per the research contract:
 
 - 6 profiles × 3 seeds (42, 77, 123) = 18 runs
 - Model: XGBoost (max_depth=6, lr=0.03, n_estimators=500, early_stopping=20)
+- Threads: `xgb_n_jobs=24`
+- Runner supports `--resume` / `--no-resume`, writes JSON checkpoint before preflight and after every run, and prints heartbeat progress.
 - Selection: val_stop (2021–2022) only
 - Disclosure-only: diagnostic_holdout (2023–2025), low_n_disclosure (2026)
 - No threshold, seed, or profile was selected using holdout data
+
+## Multiple Testing Context
+
+Stage 6.1 is exploratory and `DIAGNOSTIC_ONLY`.
+
+- Search budget: 1 horizon (`H12`) × 1 target (`stage6_definitive_tp_vs_sl_flag`) × 6 predeclared profiles × 3 seeds = 18 model runs.
+- No correction promotes the result to candidate status.
+- `h12_corridor3_relative_geometry` was the predeclared primary profile.
+- `diagnostic_holdout` (`2023-2025`) and `low_n_disclosure` (`2026`) were not used for profile, seed, threshold, or gate selection.
+
+## Changed Files
+
+- `ML/baseline/benchmark_stage6_1_relative_geometry.py`
+- `tests/test_stage6_1_relative_geometry.py`
+- `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
+- `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- `docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- `CHANGELOG.md`
+- `CONTEXT_HANDOFF.md`
+- `wiki/research/fractal-stop-research.md`, `wiki/index.md`, `wiki/log.md`, `wiki/REPO_integrity.md`
 
 ### Input Files
 
@@ -50,6 +78,23 @@ Per the research contract:
 | Nero_XAUUSD_test_labeled.csv | 9,463 | 182,725,354 | `a54c412c...` |
 
 ## Verification
+
+Commands:
+
+```bash
+./.venv/bin/python ML/baseline/benchmark_stage6_1_relative_geometry.py --stage6-1-relative-geometry --no-resume
+./.venv/bin/python -m pytest tests/test_stage6_1_relative_geometry.py -q
+./.venv/bin/python -m pytest tests/ -q
+```
+
+Structured artifact checks:
+
+- `done_runs == total_runs == 18`
+- `len(raw_runs) == 18`
+- `config.xgb_n_jobs == 24`
+- `started_at`, `finished_at`, top-level `elapsed_sec` present
+- every `raw_runs[*]` entry contains `elapsed_sec`
+- gate reads `empirical_p_value` from the inherited Stage 6 permutation baseline
 
 ### Fractal Format Preflight
 
@@ -128,6 +173,8 @@ Three independent lines of evidence support this:
 
 4. **Stage 6.1 is `DIAGNOSTIC_ONLY`.** Even if the gate had passed, this stage would not produce a `CANDIDATE` artifact. The diagnostics are complete.
 
+5. **Preflight is still a long silent section.** The runner now writes an initial checkpoint before preflight, but the heavy split loading / H12 relabeling step still has no internal progress marks. This does not affect metrics, but it is a runtime observability limitation.
+
 ## Validation Split Disclosure
 
 - **Model selection:** val_stop (2021–2022) only
@@ -147,10 +194,10 @@ The fractal geometry hypothesis is exhausted for this encoding family. Recommend
 
 ## Related Materials
 
-- [Plan](docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)
-- [Stage 6.0 Report](docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md)
-- [Stage 6.1 JSON](ML/reports/stage6_1_h12_relative_fractal_geometry.json)
-- [Stage 6.1 Runner](ML/baseline/benchmark_stage6_1_relative_geometry.py)
-- [Stage 6.1 Tests](tests/test_stage6_1_relative_geometry.py)
-- [Methodology: Feature Contract (A6)](docs/methodology/A6-fractal-feature-profile-catalog.md)
-- [Methodology: Feature Distribution Audit (A7)](docs/methodology/A7-feature-distribution-audit.md)
+- [Plan](../superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)
+- [Stage 6.0 Report](../reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md)
+- [Stage 6.1 JSON](../../ML/reports/stage6_1_h12_relative_fractal_geometry.json)
+- [Stage 6.1 Runner](../../ML/baseline/benchmark_stage6_1_relative_geometry.py)
+- [Stage 6.1 Tests](../../tests/test_stage6_1_relative_geometry.py)
+- [Methodology: Feature Contract (A6)](../methodology/A6-fractal-feature-profile-catalog.md)
+- [Methodology: Feature Distribution Audit (A7)](../methodology/A7-feature-distribution-audit.md)
