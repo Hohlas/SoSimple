@@ -144,3 +144,29 @@ def test_stage6_preflight_counts_outcomes_and_pf_without_timeout_as_loss():
     assert preflight["train_core"]["by_side"]["buy"]["n"] == 2
     assert oracle["train_core"]["all_trade_pf"] == 2.25 / 2.0
     assert oracle["train_core"]["tp_only_oracle_trades"] == 1
+
+
+def test_stage6_build_features_ignores_stage6_target_columns(monkeypatch):
+    captured = {}
+
+    def fake_builder(df, profile_key):
+        captured["columns"] = tuple(df.columns)
+        return np.zeros((len(df), 3), dtype=np.float32)
+
+    monkeypatch.setattr(s6, "build_stage5_4_features", fake_builder)
+    df = pd.DataFrame({
+        "time": ["2025.01.01 00:00"],
+        "stage6_tp_vs_rest_flag": [1],
+        "stage6_pnl_r": [2.0],
+    })
+
+    X = s6.stage6_build_features(df, "clock_shift_back")
+
+    assert X.shape == (1, 3)
+    assert "stage6_tp_vs_rest_flag" not in captured["columns"]
+    assert "stage6_pnl_r" not in captured["columns"]
+
+
+def test_stage6_assert_feature_names_rejects_stage6_targets():
+    with pytest.raises(AssertionError, match="stage6_"):
+        s6.stage6_assert_no_target_feature_names(["fractal0.back", "stage6_pnl_r"])

@@ -52,7 +52,7 @@ def stage6_feature_denylist() -> tuple[str, ...]:
     return stage6_target_columns()
 
 
-from ML.baseline.benchmark_stage5_transformer_breach import extract_stage5_1b_fields
+from ML.baseline.benchmark_stage5_transformer_breach import build_stage5_4_features, extract_stage5_1b_fields
 
 
 def stage6_first_touch_trade_result(entry_price: float, stop_price: float,
@@ -376,3 +376,26 @@ def stage6_oracle_preflight(split: dict[str, pd.DataFrame]) -> dict:
             "trades_per_year": float(len(sub) / max(sub["_year"].nunique(), 1)) if len(sub) else 0.0,
         }
     return out
+
+
+def stage6_assert_no_target_feature_names(feature_names: list[str] | tuple[str, ...] | None) -> None:
+    if not feature_names:
+        return
+    bad = [name for name in feature_names if str(name).startswith("stage6_")]
+    assert not bad, f"stage6 target leaked into feature names: {bad[:5]}"
+
+
+def stage6_build_features(df: pd.DataFrame, profile: str) -> np.ndarray:
+    clean = df.drop(columns=[c for c in stage6_feature_denylist() if c in df.columns])
+    X = build_stage5_4_features(clean, profile)
+    feature_names = getattr(X, "feature_names", None)
+    stage6_assert_no_target_feature_names(feature_names)
+    return X
+
+
+def stage6_build_feature_split(split: dict[str, pd.DataFrame], profile: str) -> dict[str, np.ndarray]:
+    return {
+        name: stage6_build_features(df, profile)
+        for name, df in split.items()
+        if isinstance(df, pd.DataFrame)
+    }
