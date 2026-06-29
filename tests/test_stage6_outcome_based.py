@@ -61,3 +61,51 @@ def test_stage6_first_touch_tp_sl_ambiguous_and_timeout():
     assert sell_sl == {"close_reason": "SL", "bars_held": 1, "pnl_r": -1.0}
     assert ambiguous == {"close_reason": "AMBIGUOUS_SL_FIRST", "bars_held": 1, "pnl_r": -1.0}
     assert timeout == {"close_reason": "TIMEOUT", "bars_held": 1, "pnl_r": 0.5}
+
+
+def test_stage6_build_outcome_labels_uses_next_bar_open_and_row_time(tmp_path):
+    ohlc_path = tmp_path / "ohlc.csv"
+    rows = [{"time": f"2025.01.01 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows += [{"time": f"2025.01.02 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows[1] = {"time": "2025.01.01 01:00", "open": 101.0, "high": 101.0, "low": 100.0, "close": 100.5}
+    rows[2] = {"time": "2025.01.01 02:00", "open": 101.0, "high": 105.5, "low": 100.8, "close": 105.0}
+    pd.DataFrame(rows).to_csv(ohlc_path, sep=";", index=False)
+
+    fractal0 = "0:100.0:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1.0:0"
+    df = pd.DataFrame([{
+        "time": "2025.01.01 01:00",
+        "ATR": 2.0,
+        "fractal0": fractal0,
+    }])
+
+    out = s6.stage6_build_outcome_labels(df, ohlc_path=ohlc_path)
+
+    assert out.loc[0, "stage6_side"] == "buy"
+    assert out.loc[0, "stage6_entry_price"] == 101.0
+    assert out.loc[0, "stage6_stop_price"] == 99.0
+    assert out.loc[0, "stage6_take_price"] == 105.0
+    assert out.loc[0, "stage6_close_reason"] == "TP"
+    assert out.loc[0, "stage6_tp_vs_rest_flag"] == 1
+
+
+def test_stage6_entry_bar_high_low_are_counted_after_open(tmp_path):
+    ohlc_path = tmp_path / "ohlc.csv"
+    rows = [{"time": f"2025.01.01 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows += [{"time": f"2025.01.02 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows[1] = {"time": "2025.01.01 01:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0}
+    rows[2] = {"time": "2025.01.01 02:00", "open": 101.0, "high": 105.2, "low": 100.9, "close": 104.0}
+    pd.DataFrame(rows).to_csv(ohlc_path, sep=";", index=False)
+
+    fractal0 = "0:100.0:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1.0:0"
+    df = pd.DataFrame([{
+        "time": "2025.01.01 01:00",
+        "ATR": 2.0,
+        "fractal0": fractal0,
+    }])
+
+    out = s6.stage6_build_outcome_labels(df, ohlc_path=ohlc_path)
+
+    assert out.loc[0, "stage6_entry_time"] == pd.Timestamp("2025-01-01 02:00:00")
+    assert out.loc[0, "stage6_entry_price"] == 101.0
+    assert out.loc[0, "stage6_close_reason"] == "TP"
+    assert out.loc[0, "stage6_bars_held"] == 1
