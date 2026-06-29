@@ -216,3 +216,22 @@ def test_stage6_threshold_plateau_rejects_single_point_spike():
 
     assert plateau["pass"] is False
     assert plateau["reason"] == "neighbor_pf_or_trades_drop"
+
+
+def test_stage6_gate_marks_missing_threshold_as_trading_gate_failed():
+    report = {
+        "preflight": {"val_stop": {"warnings": []}},
+        "oracle_preflight": {"val_stop": {"all_trade_pf": 0.8}},
+        "summary": {
+            "clock_shift_back": {
+                "val_stop": {"auc": 0.61, "pr_auc_lift": 0.06},
+                "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
+            }
+        },
+    }
+
+    gate = s6.stage6_gate_results(report)
+
+    assert gate["overall_status"] == "TRADING_GATE_FAILED"
+    assert gate["artifact_status"] == "DIAGNOSTIC_ONLY"
+    assert gate["checks"]["threshold_selected"] is False

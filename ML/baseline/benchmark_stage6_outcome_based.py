@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -545,3 +546,332 @@ def stage6_select_threshold_on_val(df: pd.DataFrame, y_score) -> dict:
     )[0]
     plateau = stage6_threshold_plateau_check(candidates, selected["threshold"])
     return {"status": "SELECTED", "candidates": candidates, "selected": selected, "plateau": plateau}
+
+
+def evaluate_stage6_profile_seed(split: dict[str, pd.DataFrame],
+                                 feature_split: dict[str, np.ndarray],
+                                 profile: str, seed: int) -> dict:
+    train_core = split.get("train_core")
+    val_stop = split.get("val_stop")
+    if train_core is None or val_stop is None:
+        return {"status": "SKIPPED", "reason": "missing splits"}
+    y_train = train_core["stage6_tp_vs_rest_flag"].to_numpy(dtype=np.float64)
+    y_val = val_stop["stage6_tp_vs_rest_flag"].to_numpy(dtype=np.float64)
+    train_valid = np.isfinite(y_train)
+    val_valid = np.isfinite(y_val)
+    if not train_valid.any() or not val_valid.any():
+        return {"status": "SKIPPED", "reason": "no valid labels"}
+    X_train = feature_split.get("train_core", np.zeros((0, 0)))
+    X_val = feature_split.get("val_stop", np.zeros((0, 0)))
+    if X_train.shape[0] == 0 or X_val.shape[0] == 0:
+        return {"status": "SKIPPED", "reason": "no features"}
+    clf = XGBClassifier(
+        max_depth=6, learning_rate=0.03, n_estimators=500,
+        subsample=0.8, colsample_bytree=0.8,
+        early_stopping_rounds=20, random_state=seed,
+        eval_metric="logloss", verbosity=0,
+    )
+    clf.fit(
+        X_train[train_valid], y_train[train_valid],
+        eval_set=[(X_val[val_valid], y_val[val_valid])],
+        verbose=False,
+    )
+    y_score_val = clf.predict_proba(X_val[val_valid])[:, 1]
+    y_score_diag = clf.predict_proba(
+        feature_split.get("diagnostic_holdout", np.zeros((0, X_val.shape[1])))[val_valid[:len(feature_split.get("diagnostic_holdout", []))]]
+    )[:, 1] if "diagnostic_holdout" in feature_split and len(feature_split["diagnostic_holdout"]) else np.array([])
+    y_score_low = clf.predict_proba(
+        feature_split.get("low_n_disclosure", np.zeros((0, X_val.shape[1])))[val_valid[:len(feature_split.get("low_n_disclosure", []))]]
+    )[:, 1] if "low_n_disclosure" in feature_split and len(feature_split["low_n_disclosure"]) else np.array([])
+
+    val_metrics = stage6_binary_metrics(y_val[val_valid], y_score_val)
+    val_threshold = stage6_select_threshold_on_val(split["val_stop"].loc[val_valid].copy(), y_score_val)
+    diag_metrics = stage6_binary_metrics(
+        split["diagnostic_holdout"]["stage6_tp_vs_rest_flag"].to_numpy(dtype=np.float64),
+        y_score_diag,
+    ) if len(y_score_diag) else {}
+    low_metrics = stage6_binary_metrics(
+        split["low_n_disclosure"]["stage6_tp_vs_rest_flag"].to_numpy(dtype=np.float64),
+        y_score_low,
+    ) if len(y_score_low) else {}
+
+    return {
+        "seed": int(seed),
+        "profile": str(profile),
+        "model_type": "XGBClassifier",
+        "params": {"max_depth": 6, "learning_rate": 0.03, "n_estimators": 500,
+                    "subsample": 0.8, "colsample_bytree": 0.8},
+        "train_n": int(train_valid.sum()),
+        "val_stop": val_metrics,
+        "diagnostic_holdout": diag_metrics,
+        "low_n_disclosure": low_metrics,
+        "threshold_selection": val_threshold,
+    }
+
+
+def stage6_gate_results(report: dict) -> dict:
+    preflight = report.get("preflight", {})
+    oracle = report.get("oracle_preflight", {})
+    summary = report.get("summary", {})
+    checks = {}
+
+    val_warnings = preflight.get("val_stop", {}).get("warnings", [])
+    train_warnings = preflight.get("train_core", {}).get("warnings", [])
+    preflight_warnings = set(val_warnings + train_warnings)
+    bad_tp = "TP_RATE_OUTSIDE_0_05_0_70" in preflight_warnings
+    bad_timeout = "TIMEOUT_GT_0_70" in preflight_warnings
+    bad_n = "VALID_ROWS_LT_1000" in preflight_warnings
+    checks["preflight_no_tp_outside_range"] = not bad_tp
+    checks["preflight_no_timeout_gt_70"] = not bad_timeout
+    checks["preflight_train_val_gt_1000"] = not bad_n
+    preflight_pass = not bad_tp and not bad_timeout and not bad_n
+    if not preflight_pass:
+        return {
+            "overall_status": "PREFLIGHT_FAILED",
+            "artifact_status": "DIAGNOSTIC_ONLY",
+            "checks": checks,
+        }
+
+    primary = summary.get(STAGE6_0_CONFIG.primary_profile, {})
+    val_metrics = primary.get("val_stop", {})
+    auc = val_metrics.get("auc")
+    pr_auc_lift = val_metrics.get("pr_auc_lift")
+    checks["auc_ge_0_60"] = bool(auc is not None and auc >= 0.60)
+    checks["pr_auc_lift_ge_0_05"] = bool(pr_auc_lift is not None and pr_auc_lift >= 0.05)
+    model_pass = checks["auc_ge_0_60"] and checks["pr_auc_lift_ge_0_05"]
+    if not model_pass:
+        return {
+            "overall_status": "MODEL_GATE_FAILED",
+            "artifact_status": "DIAGNOSTIC_ONLY",
+            "checks": checks,
+        }
+
+    thresh = primary.get("threshold_selection", {})
+    has_threshold = thresh.get("status") == "SELECTED" and thresh.get("selected") is not None
+    checks["threshold_selected"] = has_threshold
+    if not has_threshold:
+        return {
+            "overall_status": "TRADING_GATE_FAILED",
+            "artifact_status": "DIAGNOSTIC_ONLY",
+            "checks": checks,
+        }
+
+    selected = thresh["selected"]
+    checks["threshold_plateau_pass"] = thresh.get("plateau", {}).get("pass", False)
+
+    all_runs = report.get("raw_runs", [])
+    thresholds = [
+        float(run["threshold_selection"]["selected"]["threshold"])
+        for run in all_runs
+        if run.get("threshold_selection", {}).get("status") == "SELECTED"
+        and run["threshold_selection"].get("selected")
+    ]
+    if thresholds:
+        checks["threshold_seed_dispersion_le_0_10"] = (max(thresholds) - min(thresholds)) <= 0.10
+    else:
+        checks["threshold_seed_dispersion_le_0_10"] = False
+
+    val_pf = selected.get("pf")
+    val_pf_spread_020 = selected.get("pf_spread_020")
+    checks["val_pf_ge_1_15"] = bool(val_pf is not None and val_pf >= 1.15)
+    checks["val_pf_spread_020_ge_1_05"] = bool(val_pf_spread_020 is not None and val_pf_spread_020 >= 1.05)
+
+    trades_per_year = selected.get("trades_per_year", 0)
+    checks["val_trades_per_year_ge_25"] = bool(trades_per_year >= 25)
+
+    yearly = selected.get("yearly", {})
+    all_years_ok = bool(yearly) and all(
+        v["trades"] >= 20 and (v["pf"] is not None and v["pf"] >= 1.0)
+        for v in yearly.values()
+    )
+    checks["yearly_val_pf_not_single_year"] = all_years_ok
+
+    diag = primary.get("diagnostic_holdout", {})
+    diag_thresh = primary.get("threshold_on_diagnostic", None)
+    checks["holdout_disclosure_not_catastrophic"] = True
+    if diag_thresh is not None and diag_thresh.get("trades_per_year", 0) < 15:
+        checks["holdout_disclosure_not_catastrophic"] = False
+    if diag_thresh is not None and diag_thresh.get("pf") is not None and diag_thresh["pf"] < 0.95:
+        checks["holdout_disclosure_not_catastrophic"] = False
+
+    perm = primary.get("permutation_baseline", {})
+    p_value = perm.get("empirical_p_value")
+    checks["permutation_p_value_le_0_10"] = bool(p_value is not None and p_value <= 0.10)
+
+    trading_pass = (
+        checks["threshold_selected"]
+        and checks["threshold_plateau_pass"]
+        and checks["threshold_seed_dispersion_le_0_10"]
+        and checks["val_pf_ge_1_15"]
+        and checks["val_pf_spread_020_ge_1_05"]
+        and checks["val_trades_per_year_ge_25"]
+        and checks["yearly_val_pf_not_single_year"]
+        and checks["permutation_p_value_le_0_10"]
+    )
+
+    if not trading_pass:
+        return {
+            "overall_status": "TRADING_GATE_FAILED",
+            "artifact_status": "DIAGNOSTIC_ONLY",
+            "checks": checks,
+        }
+
+    return {
+        "overall_status": "DIAGNOSTIC_SIGNAL_FOUND",
+        "artifact_status": "DIAGNOSTIC_ONLY",
+        "checks": checks,
+    }
+
+
+def run_stage6_0_outcome_based(output_path: Path = STAGE6_0_JSON_REPORT_PATH) -> dict:
+    import time
+    start = time.time()
+    report = {
+        "stage": "6.0",
+        "description": "Outcome-Based Triple-Barrier Foundation",
+        "config": {
+            "horizon_bars": STAGE6_0_CONFIG.horizon_bars,
+            "stop_offset_atr": STAGE6_0_CONFIG.stop_offset_atr,
+            "take_profit_atr": STAGE6_0_CONFIG.take_profit_atr,
+            "entry_lag_bars": STAGE6_0_CONFIG.entry_lag_bars,
+            "same_bar_policy": STAGE6_0_CONFIG.same_bar_policy,
+            "primary_profile": STAGE6_0_CONFIG.primary_profile,
+            "disclosure_profiles": list(STAGE6_0_CONFIG.disclosure_profiles),
+            "seeds": list(STAGE6_0_CONFIG.seeds),
+        },
+        "status": "RUNNING",
+        "done_runs": 0,
+        "total_runs": 0,
+        "raw_runs": [],
+        "summary": {},
+        "last_error": None,
+    }
+
+    try:
+        split = stage6_load_labeled_splits()
+    except Exception as e:
+        report["status"] = "FAILED_LOAD"
+        report["last_error"] = str(e)
+        return report
+
+    preflight = stage6_outcome_preflight(split)
+    oracle = stage6_oracle_preflight(split)
+    report["preflight"] = preflight
+    report["oracle_preflight"] = oracle
+
+    profiles = [STAGE6_0_CONFIG.primary_profile] + list(STAGE6_0_CONFIG.disclosure_profiles)
+    seeds = list(STAGE6_0_CONFIG.seeds)
+    total_runs = len(profiles) * len(seeds)
+    report["total_runs"] = total_runs
+
+    for profile in profiles:
+        print(f"[stage6.0] Building features for profile={profile} ...", flush=True)
+        feature_split = stage6_build_feature_split(split, profile)
+
+        for seed in seeds:
+            print(f"[stage6.0] Training profile={profile} seed={seed} ...", flush=True)
+            try:
+                result = evaluate_stage6_profile_seed(split, feature_split, profile, seed)
+                report["raw_runs"].append(result)
+            except Exception as e:
+                err = f"profile={profile} seed={seed}: {e}"
+                print(f"[stage6.0] ERROR: {err}", flush=True)
+                report["last_error"] = err
+                report["raw_runs"].append({
+                    "seed": int(seed), "profile": str(profile),
+                    "status": "ERROR", "error": str(e),
+                })
+            report["done_runs"] += 1
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, "w") as f:
+                json.dump(report, f, indent=2, default=str)
+            print(f"[stage6.0] done {report['done_runs']}/{total_runs}", flush=True)
+
+    summary = {}
+    for profile in profiles:
+        profile_runs = [r for r in report["raw_runs"] if r.get("profile") == profile]
+        if not profile_runs:
+            continue
+        val_aucs = [r["val_stop"].get("auc") for r in profile_runs if r.get("val_stop")]
+        val_pr_lifts = [r["val_stop"].get("pr_auc_lift") for r in profile_runs if r.get("val_stop")]
+        thresholds = [
+            r["threshold_selection"].get("selected", {}).get("threshold")
+            for r in profile_runs
+            if r.get("threshold_selection", {}).get("status") == "SELECTED"
+        ]
+        thresholds = [t for t in thresholds if t is not None]
+        val_pfs = [
+            r["threshold_selection"].get("selected", {}).get("pf")
+            for r in profile_runs
+            if r.get("threshold_selection", {}).get("status") == "SELECTED"
+        ]
+        entry = {
+            "val_stop": {
+                "n_runs": int(len(profile_runs)),
+                "auc_median": float(np.median([x for x in val_aucs if x is not None])),
+                "pr_auc_lift_median": float(np.median([x for x in val_pr_lifts if x is not None])),
+            },
+            "threshold_selection": {
+                "n_selected": int(len(thresholds)),
+                "thresholds": thresholds,
+                "val_pf_median": float(np.median(val_pfs)) if val_pfs else None,
+                "threshold_dispersion": float(max(thresholds) - min(thresholds)) if len(thresholds) > 1 else 0.0,
+            },
+        }
+
+        best_run = max(profile_runs, key=lambda r: r.get("val_stop", {}).get("auc", 0) or 0)
+        if best_run.get("threshold_selection", {}).get("status") == "SELECTED":
+            best_selected = best_run["threshold_selection"]["selected"]
+            entry["threshold_on_diagnostic"] = None
+            if "diagnostic_holdout" in feature_split and len(feature_split["diagnostic_holdout"]):
+                try:
+                    entry["threshold_on_diagnostic"] = stage6_simulate_threshold(
+                        split["diagnostic_holdout"],
+                        best_run.get("diagnostic_holdout", {}).get("pred_median", None)
+                        or np.zeros(len(split["diagnostic_holdout"])),
+                        best_selected["threshold"],
+                    )
+                except Exception:
+                    pass
+
+            perm = stage6_permutation_threshold_baseline(
+                split["val_stop"].loc[split["val_stop"]["stage6_close_reason"] != "INVALID"].copy(),
+                np.ones(max(len(split["val_stop"].loc[split["val_stop"]["stage6_close_reason"] != "INVALID"]), 1)),
+                seed=42,
+            )
+            entry["permutation_baseline"] = perm
+            entry["all_trade_baseline"] = {
+                name: stage6_all_trade_baseline(df)
+                for name, df in split.items()
+                if isinstance(df, pd.DataFrame)
+            }
+
+        summary[profile] = entry
+
+    report["summary"] = summary
+    gate = stage6_gate_results(report)
+    report["gate"] = gate
+    report["status"] = gate["overall_status"]
+
+    report["elapsed_sec"] = float(time.time() - start)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(report, f, indent=2, default=str)
+    return report
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stage6-0-outcome-based", action="store_true")
+    args = parser.parse_args(argv)
+    if args.stage6_0_outcome_based:
+        report = run_stage6_0_outcome_based()
+        print({"status": report.get("status"), "json": str(STAGE6_0_JSON_REPORT_PATH)})
+        return 0
+    parser.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
