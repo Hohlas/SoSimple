@@ -2404,48 +2404,99 @@ def _stage5_2_profile_for_key(profile_key: str) -> dict:
     }
 
 
-def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
-    profile = _stage5_2_profile_for_key(profile_key)
+def _stage5_4_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+    row_fields = profile["row_fields"]
+    base_profile = {"row_fields": [f for f in row_fields if f != "ATR"]}
+    base = build_row_features(df, base_profile).astype(np.float32)
+    if "ATR" not in row_fields:
+        return base
+
+    atr_raw = pd.to_numeric(df["ATR"], errors="coerce").fillna(0.0).clip(lower=0.0).to_numpy(dtype=np.float32)
+    method = profile.get("atr_transform") or "log1p"
+    if method == "log1p":
+        atr_col = np.log1p(atr_raw).astype(np.float32)
+    elif method == "asinh":
+        atr_col = np.arcsinh(atr_raw).astype(np.float32)
+    elif method == "identity":
+        atr_col = atr_raw.astype(np.float32)
+    else:
+        raise ValueError(f"Unknown Stage 5.4 ATR transform: {method}")
+    return np.column_stack([base, atr_col]).astype(np.float32)
+
+
+def _build_stage5_flat_features_from_profile(df: pd.DataFrame, profile: dict) -> np.ndarray:
     token_fields = profile["token_fields"]
     row_fields = profile["row_fields"]
     if not token_fields:
         row_features = build_row_features(df, profile).astype(np.float32)
         if row_features.shape[1] != len(row_fields):
             raise RuntimeError(
-                f"Stage 5.2 row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+                f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
             )
         return row_features
+
     n_rows = len(df)
     token_width = len(token_fields) * N_FRACTALS
     X = np.zeros((n_rows, token_width + len(row_fields)), dtype=np.float32)
     field_indices = {
-        field: STAGE5_1B_FIELD_TO_FRACTAL_INDEX.get(field, 22)
+        field: STAGE5_1B_FIELD_TO_FRACTAL_INDEX.get(field)
         for field in token_fields
+        if field not in {"price_coord_atr", "price_atr_scaled"}
     }
 
     for row_idx, (_, row) in enumerate(df.iterrows()):
+        atr = pd.to_numeric(row.get("ATR", 0.0), errors="coerce")
+        safe_atr = max(float(atr) if not pd.isna(atr) else 0.0, 0.001)
+        f0_parts = str(row.get("fractal0", "")).split(FRACTAL_SEP)
+        try:
+            f0_price = float(f0_parts[1])
+        except (ValueError, IndexError):
+            f0_price = 0.0
+
         offset = 0
         for fractal_idx in range(N_FRACTALS):
-            fstr = str(row.get(f"fractal{fractal_idx}", ""))
-            parts = fstr.split(FRACTAL_SEP)
+            parts = str(row.get(f"fractal{fractal_idx}", "")).split(FRACTAL_SEP)
+            try:
+                price = float(parts[1])
+            except (ValueError, IndexError):
+                price = 0.0
             for field in token_fields:
-                idx = field_indices[field]
-                try:
-                    value = float(parts[idx])
-                except (ValueError, IndexError):
-                    value = 0.0
-                value = float(np.nan_to_num(value, nan=0.0))
-                if field == "shift":
-                    value = float(np.log1p(max(value, 0.0)))
+                if field == "price_coord_atr":
+                    raw_coord = (price - f0_price) / safe_atr
+                    value = float(_signed_log1p(np.asarray([raw_coord], dtype=np.float32))[0])
+                elif field == "price_atr_scaled":
+                    value = float(np.arcsinh(price / safe_atr))
+                else:
+                    idx = field_indices[field]
+                    try:
+                        value = float(parts[idx])
+                    except (ValueError, IndexError, TypeError):
+                        value = 0.0
+                    value = float(np.nan_to_num(value, nan=0.0))
+                    if field == "shift":
+                        value = float(np.log1p(max(value, 0.0)))
                 X[row_idx, offset] = value
                 offset += 1
-    row_features = build_row_features(df, profile).astype(np.float32)
+
+    if profile.get("stage5_4"):
+        row_features = _stage5_4_row_features(df, profile).astype(np.float32)
+    else:
+        row_features = build_row_features(df, profile).astype(np.float32)
     if row_features.shape[1] != len(row_fields):
         raise RuntimeError(
-            f"Stage 5.2 row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+            f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
         )
     X[:, token_width:] = row_features
     return X
+
+
+def build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    return _build_stage5_flat_features_from_profile(df, _stage5_4_profile_for_key(profile_key))
+
+
+def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    profile = _stage5_2_profile_for_key(profile_key)
+    return _build_stage5_flat_features_from_profile(df, profile)
 
 
 def _stage5_4_profile_for_key(profile_key: str) -> dict:

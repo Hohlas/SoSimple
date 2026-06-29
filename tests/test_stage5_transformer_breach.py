@@ -4555,3 +4555,47 @@ def test_stage5_4_profile_for_key_and_feature_names():
     atr_profile = runner._stage5_4_profile_for_key("clock_shift_back_atr_asinh")
     assert atr_profile["row_fields"] == runner.TIME_ONLY_ROW_FIELDS + ["ATR"]
     assert atr_profile["atr_transform"] == "asinh"
+
+
+def test_build_stage5_4_features_shapes_and_price_transforms():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df().head(3).copy()
+    df["ATR"] = [2.0, 4.0, 8.0]
+
+    parts0 = str(df.loc[df.index[0], "fractal0"]).split(runner.FRACTAL_SEP)
+    parts1 = str(df.loc[df.index[0], "fractal1"]).split(runner.FRACTAL_SEP)
+    parts0[1] = "100.0"
+    parts1[1] = "104.0"
+    df.loc[df.index[0], "fractal0"] = runner.FRACTAL_SEP.join(parts0)
+    df.loc[df.index[0], "fractal1"] = runner.FRACTAL_SEP.join(parts1)
+
+    X_base = runner.build_stage5_4_features(df, "clock_shift_back")
+    X_coord = runner.build_stage5_4_features(df, "clock_shift_back_price_coord_atr")
+    X_both = runner.build_stage5_4_features(
+        df, "clock_shift_back_price_coord_atr_price_atr_scaled"
+    )
+    X_atr = runner.build_stage5_4_features(df, "clock_shift_back_atr_log1p")
+    X_updn = runner.build_stage5_4_features(df, "clock_shift_back_updn")
+
+    assert X_base.shape == (3, 2 * runner.N_FRACTALS + 4)
+    assert X_coord.shape == (3, 3 * runner.N_FRACTALS + 4)
+    assert X_both.shape == (3, 4 * runner.N_FRACTALS + 4)
+    assert X_atr.shape == (3, 2 * runner.N_FRACTALS + 5)
+    assert X_updn.shape == (3, (2 + len(runner.STAGE5_1B_UPDN_FIELDS)) * runner.N_FRACTALS + 4)
+
+    names = runner.stage5_4_feature_names("clock_shift_back_price_coord_atr")
+    coord_idx = names.index("fractal1.price_coord_atr")
+    assert np.isclose(X_coord[0, coord_idx], np.sign(2.0) * np.log1p(abs(2.0)))
+
+    atr_names = runner.stage5_4_feature_names("clock_shift_back_atr_log1p")
+    assert atr_names[-1] == "ATR"
+    assert np.isclose(X_atr[0, -1], np.log1p(2.0))
+
+
+def test_stage5_4_feature_builder_rejects_unknown_profile():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df().head(2)
+    with pytest.raises(ValueError, match="Unknown Stage 5.4 profile"):
+        runner.build_stage5_4_features(df, "clock_shift_back_raw_price")
