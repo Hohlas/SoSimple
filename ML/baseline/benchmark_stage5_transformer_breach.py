@@ -1,8 +1,8 @@
 # =============================================================================
 # File: ML/baseline/benchmark_stage5_transformer_breach.py
-# Purpose: Stage 5.0 runner + diagnostic sub-stages 5.0a-5.0f:
+# Purpose: Stage 5.0 runner + diagnostic sub-stages 5.0a-5.3:
 #          feature preflight, transform audit, profile screening,
-#          and signal stationarity diagnostics
+#          signal stationarity, field ablation, and time-to-breach diagnostics
 # Input: DATA/Nero_XAUUSD_*_labeled.csv
 # Output: ML/reports/stage5_transformer_breach.json,
 #         ML/reports/stage5_0a_feature_preflight.json,
@@ -11,14 +11,19 @@
 #         ML/reports/stage5_0a_profile_summary.csv,
 #         ML/reports/stage5_0a_transform_comparison.json,
 #         ML/reports/stage5_0d_diagnostic_screening.json,
-#         ML/reports/stage5_0f_signal_stationarity.json
+#         ML/reports/stage5_0f_signal_stationarity.json,
+#         ML/reports/stage5_1_structural_field_ablation.json,
+#         ML/reports/stage5_1b_updn_field_ablation.json,
+#         ML/reports/stage5_2_time_to_breach_regression.json,
+#         ML/reports/stage5_3_time_to_breach_target_reformulation.json
 # Language: Python 3.10+
 # Created: 2026-06-17
-# Updated: 2026-06-24
+# Updated: 2026-06-26
 # =============================================================================
 
 import argparse, json, os, sys, time
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from copy import deepcopy
 from pathlib import Path
 
@@ -26,6 +31,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from scipy import stats
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
@@ -33,6 +39,7 @@ import xgboost as xgb
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from ML.models.fractal_breach_transformer import FractalBreachTransformer, TokenSelector
+from processing.label_signals import load_ohlc_index
 
 # ===========================================================================
 # Constants
@@ -46,12 +53,14 @@ TRAIN_FILE = DATA_DIR / 'Nero_XAUUSD_train_labeled.csv'
 VAL_FILE = DATA_DIR / 'Nero_XAUUSD_validation_labeled.csv'
 TEST_FILE = DATA_DIR / 'Nero_XAUUSD_test_labeled.csv'
 OHLC_FILE = DATA_DIR / 'XAUUSD_H1_OHLC.csv'
+RAW_NERO_FILE = PROJECT_ROOT / 'MT' / 'MQL4' / 'Files' / 'Nero.csv'
 
 CSV_SEP = ';'
 FRACTAL_SEP = ':'
 N_FRACTALS = 100
 
 TARGET_COLUMN = 'sell_stop_broken_H6_off05_flag'
+HEARTBEAT_INTERVAL_SEC = 30.0
 
 
 def find_buy_stop_target_columns(df: pd.DataFrame) -> list[str]:
@@ -78,6 +87,25 @@ def summarize_target_contract(df_by_split: dict[str, pd.DataFrame], target_col: 
             "unique_values": sorted([_safe(v) for v in non_null.unique().tolist()]),
         }
     return {"target": target_col, "splits": splits}
+
+
+class HeartbeatLogger:
+    """Rate-limited stdout heartbeat for long-running loops."""
+
+    def __init__(self, label: str, interval_sec: float = HEARTBEAT_INTERVAL_SEC):
+        self.label = label
+        self.interval_sec = float(interval_sec)
+        self.started_at = time.time()
+        self.last_emit_at = self.started_at
+
+    def emit(self, message: str, force: bool = False) -> None:
+        now = time.time()
+        if not force and (now - self.last_emit_at) < self.interval_sec:
+            return
+        elapsed = round(now - self.started_at, 1)
+        wall_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(now))
+        print(f"[heartbeat] ts={wall_time}Z | {self.label} | elapsed={elapsed}s | {message}")
+        self.last_emit_at = now
 
 # Split years
 TRAIN_MAX_YEAR = 2020
@@ -147,6 +175,181 @@ STAGE5_0F_LOW_N_YEAR = 2026
 STAGE5_0F_ROLLING_WINDOW_YEARS = 8
 STAGE5_0F_BOOTSTRAP_N = 1000
 STAGE5_0F_JSON_REPORT_PATH = REPORTS_DIR / "stage5_0f_signal_stationarity.json"
+STAGE5_1_JSON_REPORT_PATH = REPORTS_DIR / "stage5_1_structural_field_ablation.json"
+STAGE5_1_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_1_FIELDS = NO_PRICE_TOKEN_FIELDS.copy()
+STAGE5_1_PROFILE_KEYS = (
+    ["time_only", "structure_full"]
+    + [f"drop_{field}" for field in STAGE5_1_FIELDS]
+    + [f"add_{field}" for field in STAGE5_1_FIELDS]
+)
+STAGE5_1_SEEDS = [42, 77, 123]
+STAGE5_1_VAL_YEARS = [2021, 2022]
+STAGE5_1_HOLDOUT_YEARS = [2023, 2024, 2025]
+STAGE5_1_LOW_N_YEAR = 2026
+STAGE5_1_BOOTSTRAP_N = 1000
+STAGE5_1B_JSON_REPORT_PATH = REPORTS_DIR / "stage5_1b_updn_field_ablation.json"
+STAGE5_1B_TARGETS = [
+    "sell_stop_broken_H6_off05_flag",
+    "buy_stop_broken_H6_off05_flag",
+]
+STAGE5_1B_STRUCTURE_FIELDS = NO_PRICE_TOKEN_FIELDS.copy()
+STAGE5_1B_UPDN_FIELDS = [
+    "up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12",
+    "up_24", "dn_24", "up_48", "dn_48",
+]
+STAGE5_1B_FIELDS = STAGE5_1B_STRUCTURE_FIELDS + STAGE5_1B_UPDN_FIELDS
+STAGE5_1B_BASELINE_TOKEN_FIELDS = ["shift"]
+STAGE5_1B_SEEDS = STAGE5_1_SEEDS.copy()
+STAGE5_1B_BOOTSTRAP_N = STAGE5_1_BOOTSTRAP_N
+STAGE5_1B_VAL_YEARS = STAGE5_1_VAL_YEARS
+STAGE5_1B_HOLDOUT_YEARS = STAGE5_1_HOLDOUT_YEARS
+STAGE5_1B_LOW_N_YEAR = STAGE5_1_LOW_N_YEAR
+STAGE5_1B_BASE_PROFILE_KEYS = [
+    "clock_shift",
+    "structure_full",
+    "updn_full",
+    "structure_plus_updn",
+    "back_impulse_combo",
+]
+STAGE5_1B_PROFILE_KEYS = (
+    STAGE5_1B_BASE_PROFILE_KEYS
+    + [f"drop_{field}" for field in STAGE5_1B_FIELDS]
+    + [f"add_{field}" for field in STAGE5_1B_FIELDS]
+)
+STAGE5_1B_FIELD_TO_FRACTAL_INDEX = {
+    "price": 1,
+    "direction": 2,
+    "front": 3,
+    "back": 4,
+    "strong": 5,
+    "break": 6,
+    "reverse": 7,
+    "power": 8,
+    "count": 9,
+    "impulse": 10,
+    "up_12": 11,
+    "dn_12": 12,
+    "up_24": 13,
+    "dn_24": 14,
+    "up_48": 15,
+    "dn_48": 16,
+    "up_3": 17,
+    "dn_3": 18,
+    "up_6": 19,
+    "dn_6": 20,
+}
+STAGE5_2_JSON_REPORT_PATH = REPORTS_DIR / "stage5_2_time_to_breach_regression.json"
+STAGE5_2_TARGETS = [
+    "sell_bars_to_breach_H6_off05",
+    "buy_bars_to_breach_H6_off05",
+]
+STAGE5_2_TARGET_TO_BINARY = {
+    "sell_bars_to_breach_H6_off05": "sell_stop_broken_H6_off05_flag",
+    "buy_bars_to_breach_H6_off05": "buy_stop_broken_H6_off05_flag",
+}
+STAGE5_2_HORIZON = 6
+STAGE5_2_CENSORED_VALUE = STAGE5_2_HORIZON + 1
+STAGE5_2_ENTRY_THRESHOLD = 4
+STAGE5_2_XGB_OBJECTIVE = "reg:squarederror"
+STAGE5_2_SEEDS = [42, 77, 123]
+STAGE5_2_PROFILE_KEYS = [
+    "time_only",
+    "clock_shift",
+    "clock_shift_back",
+    "clock_shift_impulse",
+    "clock_shift_back_impulse",
+    "structure_full",
+    "structure_full_without_back",
+]
+STAGE5_2_STRUCTURE_FIELDS = STAGE5_1B_STRUCTURE_FIELDS.copy()
+STAGE5_3_JSON_REPORT_PATH = REPORTS_DIR / "stage5_3_time_to_breach_target_reformulation.json"
+STAGE5_3_SOURCE_TARGETS = STAGE5_2_TARGETS.copy()
+STAGE5_3_HORIZON = STAGE5_2_HORIZON
+STAGE5_3_CENSORED_VALUE = STAGE5_2_CENSORED_VALUE
+STAGE5_3_SEEDS = STAGE5_2_SEEDS.copy()
+STAGE5_3_PROFILE_KEYS = [
+    "time_only",
+    "clock_shift",
+    "clock_shift_back",
+    "clock_shift_impulse",
+    "clock_shift_back_impulse",
+    "structure_full",
+]
+STAGE5_3_MAIN_TARGET_SPECS = [
+    {"name": "breach_after_k2", "family": "breach_after_k", "k": 2, "role": "main"},
+    {"name": "breach_after_k3", "family": "breach_after_k", "k": 3, "role": "main"},
+    {"name": "breach_after_k4", "family": "breach_after_k", "k": 4, "role": "main"},
+    {"name": "breach_after_k5", "family": "breach_after_k", "k": 5, "role": "main"},
+    {"name": "fast", "family": "bucket", "bucket": "fast", "role": "main"},
+    {"name": "medium", "family": "bucket", "bucket": "medium", "role": "main"},
+    {"name": "no_breach", "family": "bucket", "bucket": "no_breach", "role": "main"},
+]
+STAGE5_3_BINARY_BASELINE_SPECS = [
+    {"name": "binary_breach", "family": "binary_breach", "role": "baseline"},
+]
+STAGE5_3_CONTROL_TARGET_SPECS = [
+    {"name": "survives_at_least_k2", "family": "survives_at_least_k", "k": 2, "role": "control"},
+    {"name": "survives_at_least_k3", "family": "survives_at_least_k", "k": 3, "role": "control"},
+    {"name": "survives_at_least_k4", "family": "survives_at_least_k", "k": 4, "role": "control"},
+    {"name": "survives_at_least_k5", "family": "survives_at_least_k", "k": 5, "role": "control"},
+]
+STAGE5_3_TARGET_SPECS = (
+    STAGE5_3_MAIN_TARGET_SPECS
+    + STAGE5_3_BINARY_BASELINE_SPECS
+    + STAGE5_3_CONTROL_TARGET_SPECS
+)
+STAGE5_3_XGB_OBJECTIVE = "binary:logistic"
+STAGE5_3_TARGET_TO_BINARY = STAGE5_2_TARGET_TO_BINARY.copy()
+
+STAGE5_4_JSON_REPORT_PATH = REPORTS_DIR / "stage5_4_fast_price_atr_ablation.json"
+STAGE5_4_SOURCE_TARGETS = STAGE5_3_SOURCE_TARGETS.copy()
+STAGE5_4_TARGET_SPEC = {
+    "name": "fast",
+    "family": "bucket",
+    "bucket": "fast",
+    "role": "main",
+}
+STAGE5_4_SEEDS = STAGE5_3_SEEDS.copy()
+STAGE5_4_PROFILE_KEYS = [
+    "clock_shift_back",
+    "clock_shift_back_price_coord_atr",
+    "clock_shift_back_price_coord_atr_price_atr_scaled",
+    "clock_shift_back_atr_log1p",
+    "clock_shift_back_atr_asinh",
+    "clock_shift_back_updn",
+    "clock_shift_back_impulse",
+    "clock_shift_back_impulse_price_coord_atr",
+    "clock_shift_back_impulse_price_coord_atr_price_atr_scaled",
+    "clock_shift_back_impulse_atr_log1p",
+    "clock_shift_back_impulse_atr_asinh",
+    "clock_shift_back_impulse_updn",
+]
+STAGE5_4_PROFILE_ROLES = {
+    "clock_shift_back": "baseline",
+    "clock_shift_back_price_coord_atr": "primary",
+    "clock_shift_back_price_coord_atr_price_atr_scaled": "secondary",
+    "clock_shift_back_atr_log1p": "diagnostic",
+    "clock_shift_back_atr_asinh": "diagnostic",
+    "clock_shift_back_updn": "diagnostic",
+    "clock_shift_back_impulse": "baseline",
+    "clock_shift_back_impulse_price_coord_atr": "primary",
+    "clock_shift_back_impulse_price_coord_atr_price_atr_scaled": "secondary",
+    "clock_shift_back_impulse_atr_log1p": "diagnostic",
+    "clock_shift_back_impulse_atr_asinh": "diagnostic",
+    "clock_shift_back_impulse_updn": "diagnostic",
+}
+STAGE5_4_SIDE_BASELINE_PROFILE = {
+    "sell": "clock_shift_back",
+    "buy": "clock_shift_back_impulse",
+}
+STAGE5_4_SIDE_PRIMARY_PROFILE = {
+    "sell": "clock_shift_back_price_coord_atr",
+    "buy": "clock_shift_back_impulse_price_coord_atr",
+}
 
 # ===========================================================================
 # Profile definitions
@@ -731,6 +934,30 @@ def extract_full29_fields(fractal_str: str) -> np.ndarray:
             result[j] = 0.0
     if np.isnan(result).any():
         result = np.nan_to_num(result, nan=0.0)
+    return result
+
+
+def extract_stage5_1b_fields(fractal_str: str) -> dict[str, float]:
+    """Extract named Stage 5.1b fields from one fractal string."""
+    names = list(STAGE5_1B_FIELD_TO_FRACTAL_INDEX.keys()) + ["shift"]
+    result = {name: 0.0 for name in names}
+    parts = fractal_str.split(FRACTAL_SEP)
+    if len(parts) < 23:
+        return result
+
+    for name, idx in STAGE5_1B_FIELD_TO_FRACTAL_INDEX.items():
+        try:
+            value = float(parts[idx])
+        except (ValueError, IndexError):
+            value = 0.0
+        result[name] = float(np.nan_to_num(value, nan=0.0))
+
+    try:
+        raw_shift = float(parts[22])
+    except (ValueError, IndexError):
+        raw_shift = 0.0
+    raw_shift = float(np.nan_to_num(raw_shift, nan=0.0))
+    result["shift"] = float(np.log1p(max(raw_shift, 0.0)))
     return result
 
 
@@ -2081,6 +2308,358 @@ def build_stage5_0f_features(df: pd.DataFrame, profile_key: str,
         df, profile, transform_variant=transform_variant, transform_params=transform_params)
 
 
+def _stage5_1_profile_for_key(profile_key: str) -> dict:
+    """Build Stage 5.1 feature profile for time-only, full, drop-one, or add-one."""
+    if profile_key == "time_only":
+        return {
+            "name": "stage5_1_time_only",
+            "selection": "all100",
+            "order": "freshness",
+            "token_fields": [],
+            "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+            "uses_time": True,
+            "seq_len": 0,
+            "token_dim": 0,
+            "row_dim": len(TIME_ONLY_ROW_FIELDS),
+        }
+
+    if profile_key == "structure_full":
+        token_fields = STAGE5_1_FIELDS.copy()
+    elif profile_key.startswith("drop_"):
+        field = profile_key.removeprefix("drop_")
+        if field not in STAGE5_1_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1 drop field: {field}")
+        token_fields = [name for name in STAGE5_1_FIELDS if name != field]
+    elif profile_key.startswith("add_"):
+        field = profile_key.removeprefix("add_")
+        if field not in STAGE5_1_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1 add field: {field}")
+        token_fields = [field]
+    else:
+        raise ValueError(f"Unknown Stage 5.1 profile_key: {profile_key}")
+
+    return {
+        "name": f"stage5_1_{profile_key}",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": len(token_fields),
+        "row_dim": len(TIME_ONLY_ROW_FIELDS),
+    }
+
+
+def fit_stage5_1_transform_params(df: pd.DataFrame, profile_key: str,
+                                  transform_variant: str = "asinh") -> dict:
+    """Stage 5.1 has no price/ATR fields, so transform params are intentionally empty."""
+    _ = df
+    _ = transform_variant
+    _stage5_1_profile_for_key(profile_key)
+    return {}
+
+
+def build_stage5_1_features(df: pd.DataFrame, profile_key: str,
+                            transform_variant: str = "asinh",
+                            transform_params: dict | None = None) -> np.ndarray:
+    """Build XGBoost feature matrix for Stage 5.1 without leaking price/ATR fields."""
+    profile = _stage5_1_profile_for_key(profile_key)
+    if profile_key == "time_only":
+        return build_row_features(
+            df, profile, transform_variant=transform_variant,
+            transform_params=transform_params).astype(np.float32)
+
+    params = {} if transform_params is None else transform_params
+    return build_flat_features(
+        df, profile, transform_variant=transform_variant, transform_params=params)
+
+
+def _stage5_2_profile_for_key(profile_key: str) -> dict:
+    if profile_key == "time_only":
+        token_fields = []
+    elif profile_key == "clock_shift":
+        token_fields = ["shift"]
+    elif profile_key == "clock_shift_back":
+        token_fields = ["shift", "back"]
+    elif profile_key == "clock_shift_impulse":
+        token_fields = ["shift", "impulse"]
+    elif profile_key == "clock_shift_back_impulse":
+        token_fields = ["shift", "back", "impulse"]
+    elif profile_key == "structure_full":
+        token_fields = STAGE5_2_STRUCTURE_FIELDS.copy()
+    elif profile_key == "structure_full_without_back":
+        token_fields = [
+            field for field in STAGE5_2_STRUCTURE_FIELDS if field != "back"
+        ]
+    else:
+        raise ValueError(f"Unknown Stage 5.2 profile: {profile_key}")
+
+    return {
+        "name": f"stage5_2_{profile_key}",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "order": "freshness",
+        "stage5_2": True,
+    }
+
+
+def _stage5_4_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
+    row_fields = profile["row_fields"]
+    base_profile = {"row_fields": [f for f in row_fields if f != "ATR"]}
+    base = build_row_features(df, base_profile).astype(np.float32)
+    if "ATR" not in row_fields:
+        return base
+
+    atr_raw = pd.to_numeric(df["ATR"], errors="coerce").fillna(0.0).clip(lower=0.0).to_numpy(dtype=np.float32)
+    method = profile.get("atr_transform") or "log1p"
+    if method == "log1p":
+        atr_col = np.log1p(atr_raw).astype(np.float32)
+    elif method == "asinh":
+        atr_col = np.arcsinh(atr_raw).astype(np.float32)
+    elif method == "identity":
+        atr_col = atr_raw.astype(np.float32)
+    else:
+        raise ValueError(f"Unknown Stage 5.4 ATR transform: {method}")
+    return np.column_stack([base, atr_col]).astype(np.float32)
+
+
+def _build_stage5_flat_features_from_profile(df: pd.DataFrame, profile: dict) -> np.ndarray:
+    token_fields = profile["token_fields"]
+    row_fields = profile["row_fields"]
+    if not token_fields:
+        row_features = build_row_features(df, profile).astype(np.float32)
+        if row_features.shape[1] != len(row_fields):
+            raise RuntimeError(
+                f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+            )
+        return row_features
+
+    n_rows = len(df)
+    token_width = len(token_fields) * N_FRACTALS
+    X = np.zeros((n_rows, token_width + len(row_fields)), dtype=np.float32)
+    field_indices = {
+        field: STAGE5_1B_FIELD_TO_FRACTAL_INDEX.get(field)
+        for field in token_fields
+        if field not in {"price_coord_atr", "price_atr_scaled"}
+    }
+
+    for row_idx, (_, row) in enumerate(df.iterrows()):
+        atr = pd.to_numeric(row.get("ATR", 0.0), errors="coerce")
+        safe_atr = max(float(atr) if not pd.isna(atr) else 0.0, 0.001)
+        f0_parts = str(row.get("fractal0", "")).split(FRACTAL_SEP)
+        try:
+            f0_price = float(f0_parts[1])
+        except (ValueError, IndexError):
+            f0_price = 0.0
+
+        offset = 0
+        for fractal_idx in range(N_FRACTALS):
+            parts = str(row.get(f"fractal{fractal_idx}", "")).split(FRACTAL_SEP)
+            try:
+                price = float(parts[1])
+            except (ValueError, IndexError):
+                price = 0.0
+            for field in token_fields:
+                if field == "price_coord_atr":
+                    raw_coord = (price - f0_price) / safe_atr
+                    value = float(_signed_log1p(np.asarray([raw_coord], dtype=np.float32))[0])
+                elif field == "price_atr_scaled":
+                    value = float(np.arcsinh(price / safe_atr))
+                else:
+                    idx = field_indices[field]
+                    try:
+                        value = float(parts[idx])
+                    except (ValueError, IndexError, TypeError):
+                        value = 0.0
+                    value = float(np.nan_to_num(value, nan=0.0))
+                    if field == "shift":
+                        value = float(np.log1p(max(value, 0.0)))
+                X[row_idx, offset] = value
+                offset += 1
+
+    if profile.get("stage5_4"):
+        row_features = _stage5_4_row_features(df, profile).astype(np.float32)
+    else:
+        row_features = build_row_features(df, profile).astype(np.float32)
+    if row_features.shape[1] != len(row_fields):
+        raise RuntimeError(
+            f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+        )
+    X[:, token_width:] = row_features
+    return X
+
+
+def build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    return _build_stage5_flat_features_from_profile(df, _stage5_4_profile_for_key(profile_key))
+
+
+def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    profile = _stage5_2_profile_for_key(profile_key)
+    return _build_stage5_flat_features_from_profile(df, profile)
+
+
+def _stage5_4_profile_for_key(profile_key: str) -> dict:
+    if profile_key.startswith("clock_shift_back_impulse"):
+        token_fields = ["shift", "back", "impulse"]
+        suffix = profile_key.removeprefix("clock_shift_back_impulse")
+    elif profile_key.startswith("clock_shift_back"):
+        token_fields = ["shift", "back"]
+        suffix = profile_key.removeprefix("clock_shift_back")
+    else:
+        raise ValueError(f"Unknown Stage 5.4 profile: {profile_key}")
+
+    row_fields = TIME_ONLY_ROW_FIELDS.copy()
+    atr_transform = None
+    price_coord_atr_transform = None
+    price_atr_scaled_transform = None
+
+    if suffix == "":
+        pass
+    elif suffix == "_price_coord_atr":
+        token_fields = token_fields + ["price_coord_atr"]
+        price_coord_atr_transform = "signed_log1p"
+    elif suffix == "_price_coord_atr_price_atr_scaled":
+        token_fields = token_fields + ["price_coord_atr", "price_atr_scaled"]
+        price_coord_atr_transform = "signed_log1p"
+        price_atr_scaled_transform = "asinh"
+    elif suffix == "_atr_log1p":
+        row_fields = row_fields + ["ATR"]
+        atr_transform = "log1p"
+    elif suffix == "_atr_asinh":
+        row_fields = row_fields + ["ATR"]
+        atr_transform = "asinh"
+    elif suffix == "_updn":
+        token_fields = token_fields + STAGE5_1B_UPDN_FIELDS.copy()
+    else:
+        raise ValueError(f"Unknown Stage 5.4 profile: {profile_key}")
+
+    return {
+        "name": f"stage5_4_{profile_key}",
+        "token_fields": token_fields,
+        "row_fields": row_fields,
+        "order": "freshness",
+        "stage5_4": True,
+        "role": STAGE5_4_PROFILE_ROLES[profile_key],
+        "atr_transform": atr_transform,
+        "price_coord_atr_transform": price_coord_atr_transform,
+        "price_atr_scaled_transform": price_atr_scaled_transform,
+    }
+
+
+def stage5_4_feature_names(profile_key: str) -> list[str]:
+    profile = _stage5_4_profile_for_key(profile_key)
+    names = []
+    for fractal_idx in range(N_FRACTALS):
+        for field in profile["token_fields"]:
+            names.append(f"fractal{fractal_idx}.{field}")
+    names.extend(profile["row_fields"])
+    return names
+
+
+def _stage5_1b_profile_for_key(profile_key: str) -> dict:
+    """Build Stage 5.1b profile with clock + token-level shift baseline."""
+    if profile_key == "clock_shift":
+        token_fields = ["shift"]
+    elif profile_key == "structure_full":
+        token_fields = STAGE5_1B_STRUCTURE_FIELDS + ["shift"]
+    elif profile_key == "updn_full":
+        token_fields = STAGE5_1B_UPDN_FIELDS + ["shift"]
+    elif profile_key == "structure_plus_updn":
+        token_fields = STAGE5_1B_FIELDS + ["shift"]
+    elif profile_key == "back_impulse_combo":
+        token_fields = ["shift", "back", "impulse"]
+    elif profile_key.startswith("drop_"):
+        field = profile_key.removeprefix("drop_")
+        if field in STAGE5_1B_STRUCTURE_FIELDS:
+            token_fields = [
+                name for name in STAGE5_1B_STRUCTURE_FIELDS if name != field
+            ] + ["shift"]
+        elif field in STAGE5_1B_UPDN_FIELDS:
+            token_fields = [
+                name for name in STAGE5_1B_UPDN_FIELDS if name != field
+            ] + ["shift"]
+        else:
+            raise ValueError(f"Unknown Stage 5.1b drop field: {field}")
+    elif profile_key.startswith("add_"):
+        field = profile_key.removeprefix("add_")
+        if field not in STAGE5_1B_FIELDS:
+            raise ValueError(f"Unknown Stage 5.1b add field: {field}")
+        token_fields = ["shift", field]
+    else:
+        raise ValueError(f"Unknown Stage 5.1b profile_key: {profile_key}")
+
+    return {
+        "name": f"stage5_1b_{profile_key}",
+        "selection": "all100",
+        "order": "freshness",
+        "token_fields": token_fields,
+        "row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+        "uses_time": True,
+        "seq_len": 100,
+        "token_dim": len(token_fields),
+        "row_dim": len(TIME_ONLY_ROW_FIELDS),
+        "stage5_1b": True,
+    }
+
+
+def fit_stage5_1b_transform_params(df: pd.DataFrame, profile_key: str,
+                                   transform_variant: str = "asinh") -> dict:
+    """Stage 5.1b has fixed raw Up/Dn and log1p shift; no fitted params."""
+    _ = df
+    _ = transform_variant
+    _stage5_1b_profile_for_key(profile_key)
+    return {}
+
+
+def build_stage5_1b_features(df: pd.DataFrame, profile_key: str,
+                             transform_variant: str = "asinh",
+                             transform_params: dict | None = None) -> np.ndarray:
+    """Build flattened XGBoost features for Stage 5.1b profiles."""
+    _ = transform_variant
+    _ = transform_params
+    profile = _stage5_1b_profile_for_key(profile_key)
+    token_fields = profile["token_fields"]
+    n_samples = len(df)
+    seq_len = profile["seq_len"]
+    token_dim = profile["token_dim"]
+    tokens = np.zeros((n_samples, seq_len, token_dim), dtype=np.float32)
+    mask = np.zeros((n_samples, seq_len), dtype=bool)
+
+    for sample_idx in range(n_samples):
+        raw_features = np.zeros((N_FRACTALS, token_dim), dtype=np.float32)
+        valid_count = 0
+        for f_idx in range(N_FRACTALS):
+            col = f"fractal{f_idx}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[sample_idx])
+            if not fstr or fstr == "nan":
+                continue
+            fields = extract_stage5_1b_fields(fstr)
+            values = np.asarray(
+                [fields[name] for name in token_fields], dtype=np.float32
+            )
+            if not np.any(values != 0):
+                continue
+            raw_features[valid_count, :] = values
+            valid_count += 1
+        if valid_count:
+            selected_idx, selected_mask = TokenSelector.all_fractals(valid_count, seq_len)
+            tokens[sample_idx, selected_mask, :] = raw_features[
+                selected_idx[selected_mask]
+            ]
+            mask[sample_idx, :] = selected_mask
+
+    row_features = build_row_features(
+        df, profile, transform_variant="asinh", transform_params={}
+    )
+    flat_tokens = tokens.reshape(n_samples, seq_len * token_dim)
+    return np.concatenate(
+        [flat_tokens, row_features.astype(np.float32)], axis=1
+    ).astype(np.float32)
+
+
 # ===========================================================================
 # Label sanity check (not full OHLC verification — see plan for manual step)
 # ===========================================================================
@@ -2126,7 +2705,7 @@ def label_sanity_check(holdout_df: pd.DataFrame, target_col: str = TARGET_COLUMN
 # XGBoost baseline
 # ===========================================================================
 
-def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42):
+def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42, n_jobs=1):
     """Train XGBoost classifier with early stopping."""
     pos_weight = float((len(y_train) - y_train.sum()) / max(y_train.sum(), 1))
 
@@ -2142,7 +2721,7 @@ def train_xgb_baseline(X_train, y_train, X_val, y_val, seed=42):
         "colsample_bytree": 0.8,
         "scale_pos_weight": pos_weight,
         "seed": seed,
-        "n_jobs": 1,
+        "n_jobs": int(n_jobs),
         "verbosity": 0,
     }
 
@@ -4209,6 +4788,342 @@ def build_stage5_0f_windows(df: pd.DataFrame, target_col: str) -> list[dict]:
     return windows
 
 
+def build_stage5_1_split(df: pd.DataFrame, target_col: str) -> dict:
+    """Build fixed Stage 5.1 train/val/diagnostic split."""
+    data = _stage5_0f_with_year(df)
+    train_core = data[data["_year"] <= 2020].copy()
+    val_stop = data[data["_year"].isin(STAGE5_1_VAL_YEARS)].copy()
+    diagnostic_holdout = data[data["_year"].isin(STAGE5_1_HOLDOUT_YEARS)].copy()
+    low_n_disclosure = data[data["_year"] == STAGE5_1_LOW_N_YEAR].copy()
+
+    manifest = {
+        "target": target_col,
+        "train_core": _stage5_0f_split_manifest_part(train_core, target_col),
+        "val_stop": _stage5_0f_split_manifest_part(val_stop, target_col),
+        "diagnostic_holdout": _stage5_0f_split_manifest_part(diagnostic_holdout, target_col),
+        "low_n_disclosure": _stage5_0f_split_manifest_part(low_n_disclosure, target_col),
+        "holdout_disclosure": "2023-2025 are diagnostic disclosure only, already used in Stage 5.0f.",
+    }
+    return {
+        "train_core": train_core,
+        "val_stop": val_stop,
+        "diagnostic_holdout": diagnostic_holdout,
+        "low_n_disclosure": low_n_disclosure,
+        "manifest": manifest,
+    }
+
+
+def _stage5_1b_raw_shift(fractal_str: str) -> float:
+    parts = fractal_str.split(FRACTAL_SEP)
+    if len(parts) < 23:
+        return 0.0
+    try:
+        return float(np.nan_to_num(float(parts[22]), nan=0.0))
+    except (ValueError, IndexError):
+        return 0.0
+
+
+def _stage5_1b_collect_fractals(df: pd.DataFrame, heartbeat: HeartbeatLogger | None = None,
+                                split_name: str = "") -> list[dict]:
+    records = []
+    total_rows = len(df)
+    for row_idx in range(len(df)):
+        if heartbeat is not None:
+            heartbeat.emit(
+                f"split={split_name or 'unknown'} row={row_idx + 1}/{total_rows} records={len(records)}"
+            )
+        atr = (
+            pd.to_numeric(pd.Series([df["ATR"].iloc[row_idx]]), errors="coerce").iloc[0]
+            if "ATR" in df.columns else np.nan
+        )
+        for f_idx in range(N_FRACTALS):
+            col = f"fractal{f_idx}"
+            if col not in df.columns:
+                break
+            fstr = str(df[col].iloc[row_idx])
+            if not fstr or fstr == "nan":
+                continue
+            parts = fstr.split(FRACTAL_SEP)
+            fields = extract_stage5_1b_fields(fstr)
+            raw_shift = max(_stage5_1b_raw_shift(fstr), 0.0)
+            records.append({
+                "row_idx": int(row_idx),
+                "fractal_idx": int(f_idx),
+                "num_fields": int(len(parts)),
+                "fields": fields,
+                "raw_shift": float(raw_shift),
+                "atr": float(atr) if np.isfinite(atr) and atr > 0 else None,
+            })
+    if heartbeat is not None:
+        heartbeat.emit(
+            f"split={split_name or 'unknown'} completed rows={total_rows} records={len(records)}",
+            force=True,
+        )
+    return records
+
+
+def _stage5_1b_shift_distribution(records: list[dict]) -> dict:
+    shifts = np.asarray([r["raw_shift"] for r in records], dtype=float)
+    if len(shifts) == 0:
+        return {"n": 0, "p50": None, "p90": None, "p95": None, "max": None}
+    out = {
+        "n": int(len(shifts)),
+        "p50": float(np.percentile(shifts, 50)),
+        "p90": float(np.percentile(shifts, 90)),
+        "p95": float(np.percentile(shifts, 95)),
+        "max": float(np.max(shifts)),
+    }
+    for horizon in [3, 6, 12, 24, 48]:
+        out[f"share_shift_ge_{horizon}"] = float(np.mean(shifts >= horizon))
+    return out
+
+
+def _stage5_1b_maturity(records: list[dict]) -> dict:
+    shifts = np.asarray([r["raw_shift"] for r in records], dtype=float)
+    out = {}
+    for horizon in [3, 6, 12, 24, 48]:
+        out[str(horizon)] = {
+            "n": int(len(shifts)),
+            "mature_count": int(np.sum(shifts >= horizon)) if len(shifts) else 0,
+            "mature_share": float(np.mean(shifts >= horizon)) if len(shifts) else None,
+            "non_mature_share": float(np.mean(shifts < horizon)) if len(shifts) else None,
+        }
+    return out
+
+
+def _stage5_1b_monotonicity(records: list[dict]) -> dict:
+    violations = []
+    for record in records:
+        fields = record["fields"]
+        up = [fields["up_3"], fields["up_6"], fields["up_12"], fields["up_24"], fields["up_48"]]
+        dn = [fields["dn_3"], fields["dn_6"], fields["dn_12"], fields["dn_24"], fields["dn_48"]]
+        if any(up[i] > up[i + 1] for i in range(len(up) - 1)):
+            violations.append({
+                "row_idx": record["row_idx"],
+                "fractal_idx": record["fractal_idx"],
+                "side": "up",
+            })
+        if any(dn[i] > dn[i + 1] for i in range(len(dn) - 1)):
+            violations.append({
+                "row_idx": record["row_idx"],
+                "fractal_idx": record["fractal_idx"],
+                "side": "dn",
+            })
+    return {"violations_total": int(len(violations)), "examples": violations[:20]}
+
+
+def _stage5_1b_updn_shift_correlation(records: list[dict]) -> dict:
+    from scipy.stats import pearsonr, spearmanr
+
+    out = {}
+    shifts = np.asarray([np.log1p(r["raw_shift"]) for r in records], dtype=float)
+    for field in STAGE5_1B_UPDN_FIELDS:
+        vals = np.asarray([r["fields"][field] for r in records], dtype=float)
+        if len(vals) < 3 or np.nanstd(vals) == 0 or np.nanstd(shifts) == 0:
+            out[field] = {"pearson": None, "spearman": None, "n": int(len(vals))}
+            continue
+        pear = pearsonr(vals, shifts)
+        spear = spearmanr(vals, shifts)
+        out[field] = {
+            "pearson": float(pear.statistic) if np.isfinite(pear.statistic) else None,
+            "spearman": float(spear.statistic) if np.isfinite(spear.statistic) else None,
+            "n": int(len(vals)),
+        }
+    return out
+
+
+def _stage5_1b_updn_atr_disclosure(records: list[dict]) -> dict:
+    out = {}
+    for field in STAGE5_1B_UPDN_FIELDS:
+        vals = [
+            record["fields"][field] / record["atr"]
+            for record in records
+            if record["atr"] is not None and record["atr"] > 0
+        ]
+        arr = np.asarray(vals, dtype=float)
+        key = f"{field}_over_atr"
+        out[key] = {
+            "n": int(len(arr)),
+            "p50": float(np.percentile(arr, 50)) if len(arr) else None,
+            "p90": float(np.percentile(arr, 90)) if len(arr) else None,
+            "p95": float(np.percentile(arr, 95)) if len(arr) else None,
+            "max": float(np.max(arr)) if len(arr) else None,
+        }
+    return out
+
+
+def run_stage5_1b_preflight(split: dict, target_col: str) -> dict:
+    """Audit Stage 5.1b field contract before full model training."""
+    return run_stage5_1b_preflight_with_source(split, target_col, raw_split=None)
+
+
+def _stage5_1b_validate_raw_shadow_alignment(split: dict, raw_split: dict) -> dict:
+    """Validate that raw-shadow sections mirror the model split row counts."""
+    sections = ["train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure"]
+    lengths = {}
+    mismatches = []
+    for name in sections:
+        split_len = len(split[name])
+        raw_len = len(raw_split[name])
+        lengths[name] = {"split_rows": int(split_len), "raw_shadow_rows": int(raw_len)}
+        if split_len != raw_len:
+            mismatches.append(f"{name}: split={split_len}, raw_shadow={raw_len}")
+    if mismatches:
+        raise RuntimeError(
+            "Raw-shadow split alignment mismatch: " + "; ".join(mismatches)
+        )
+    return lengths
+
+
+def run_stage5_1b_preflight_with_source(split: dict, target_col: str,
+                                        raw_split: dict | None = None) -> dict:
+    """Audit Stage 5.1b field contract before full model training.
+
+    If raw_split is provided, structural checks run on raw producer-exported
+    fractal strings instead of normalized labeled strings.
+    """
+    raw_shadow_alignment = (
+        _stage5_1b_validate_raw_shadow_alignment(split, raw_split)
+        if raw_split is not None else None
+    )
+    sections = {
+        "train_core": raw_split["train_core"] if raw_split is not None else split["train_core"],
+        "val_stop": raw_split["val_stop"] if raw_split is not None else split["val_stop"],
+        "diagnostic_holdout": raw_split["diagnostic_holdout"] if raw_split is not None else split["diagnostic_holdout"],
+        "low_n_disclosure": raw_split["low_n_disclosure"] if raw_split is not None else split["low_n_disclosure"],
+    }
+    heartbeat = HeartbeatLogger(label=f"stage5.1b preflight target={target_col}")
+    print(f"[heartbeat] stage5.1b preflight target={target_col} | started")
+    collected = {}
+    for name, df in sections.items():
+        print(f"[heartbeat] stage5.1b preflight target={target_col} | split={name} rows={len(df)} start")
+        collected[name] = _stage5_1b_collect_fractals(df, heartbeat=heartbeat, split_name=name)
+        print(
+            f"[heartbeat] stage5.1b preflight target={target_col} | "
+            f"split={name} done records={len(collected[name])}"
+        )
+    all_records = [record for records in collected.values() for record in records]
+    short_count = sum(1 for record in all_records if record["num_fields"] < 23)
+    monotonicity = _stage5_1b_monotonicity(all_records)
+    heartbeat.emit(
+        f"aggregating complete total_records={len(all_records)} short={short_count}",
+        force=True,
+    )
+
+    return {
+        "target": target_col,
+        "source_check": {
+            "uses_fractal_columns_only": True,
+            "forbidden_top_level_updn_columns_used": False,
+            "fractal_field_indices": STAGE5_1B_FIELD_TO_FRACTAL_INDEX.copy(),
+            "shift_index": 22,
+            "preflight_source": "raw_shadow_split" if raw_split is not None else "split",
+            "raw_shadow_alignment": raw_shadow_alignment,
+        },
+        "contract": {
+            "expected_num_fields": 23,
+            "observed_fractal_count": int(len(all_records)),
+            "short_fractal_count": int(short_count),
+            "short_fractal_rate": float(short_count / len(all_records)) if all_records else None,
+        },
+        "monotonicity": monotonicity,
+        "maturity": {
+            name: _stage5_1b_maturity(records) for name, records in collected.items()
+        },
+        "shift_distribution": {
+            name: _stage5_1b_shift_distribution(records)
+            for name, records in collected.items()
+        },
+        "updn_shift_correlation": {
+            "train_core": _stage5_1b_updn_shift_correlation(collected["train_core"]),
+        },
+        "updn_atr_disclosure": {
+            name: _stage5_1b_updn_atr_disclosure(records)
+            for name, records in collected.items()
+        },
+        "pass": bool(short_count == 0 and monotonicity["violations_total"] == 0),
+    }
+
+
+def stage5_1b_preflight_passed(preflight: dict) -> bool:
+    return bool(
+        preflight.get("source_check", {}).get("uses_fractal_columns_only") is True
+        and preflight.get("source_check", {}).get("forbidden_top_level_updn_columns_used") is False
+        and preflight.get("contract", {}).get("short_fractal_count") == 0
+        and preflight.get("monotonicity", {}).get("violations_total") == 0
+    )
+
+
+def load_stage5_1b_raw_shadow_split(target_col: str) -> dict:
+    """Build raw-shadow split aligned with current labeled XAUUSD split files.
+
+    The labeled files are created from one chronological raw source and then
+    split 70/15/15 without shuffling. We mirror those partitions over raw
+    `Nero.csv`, then apply the same year routing and non-null target mask as
+    `load_splits()`.
+    """
+    train_labeled = pd.read_csv(TRAIN_FILE, sep=CSV_SEP)
+    val_labeled = pd.read_csv(VAL_FILE, sep=CSV_SEP)
+    test_labeled = pd.read_csv(TEST_FILE, sep=CSV_SEP)
+    raw_all = pd.read_csv(RAW_NERO_FILE, sep=CSV_SEP)
+
+    expected_total = len(train_labeled) + len(val_labeled) + len(test_labeled)
+    if len(raw_all) != expected_total:
+        raise RuntimeError(
+            f"Raw-shadow split mismatch: raw rows={len(raw_all)} expected={expected_total}"
+        )
+
+    raw_train = raw_all.iloc[:len(train_labeled)].reset_index(drop=True)
+    raw_val = raw_all.iloc[len(train_labeled):len(train_labeled) + len(val_labeled)].reset_index(drop=True)
+    raw_test = raw_all.iloc[len(train_labeled) + len(val_labeled):].reset_index(drop=True)
+
+    for labeled_df, raw_df in [
+        (train_labeled, raw_train),
+        (val_labeled, raw_val),
+        (test_labeled, raw_test),
+    ]:
+        years = pd.to_datetime(
+            labeled_df["time"], format="%Y.%m.%d %H:%M", errors="coerce"
+        ).dt.year
+        labeled_df["_year"] = years
+        raw_df["_year"] = years
+
+    train_parts = []
+    val_parts = []
+    holdout_parts = []
+
+    def route(labeled_df: pd.DataFrame, raw_df: pd.DataFrame, allow_train: bool, allow_holdout: bool) -> None:
+        year_series = labeled_df["_year"]
+        target_mask = labeled_df[target_col].notna()
+        if allow_train:
+            train_mask = year_series <= TRAIN_MAX_YEAR
+            train_parts.append(raw_df.loc[train_mask & target_mask].copy())
+        val_mask = year_series.isin(VAL_STOP_YEARS)
+        val_parts.append(raw_df.loc[val_mask & target_mask].copy())
+        if allow_holdout:
+            hold_mask = year_series >= HOLDOUT_MIN_YEAR
+            holdout_parts.append(raw_df.loc[hold_mask & target_mask].copy())
+
+    route(train_labeled, raw_train, allow_train=True, allow_holdout=False)
+    route(val_labeled, raw_val, allow_train=True, allow_holdout=False)
+    route(test_labeled, raw_test, allow_train=False, allow_holdout=True)
+
+    train_core = pd.concat(train_parts, ignore_index=True) if train_parts else pd.DataFrame()
+    val_stop = pd.concat(val_parts, ignore_index=True) if val_parts else pd.DataFrame()
+    diagnostic_holdout = pd.concat(holdout_parts, ignore_index=True) if holdout_parts else pd.DataFrame()
+    low_n_disclosure = diagnostic_holdout[diagnostic_holdout["_year"] == STAGE5_1_LOW_N_YEAR].copy()
+    diagnostic_holdout = diagnostic_holdout[
+        diagnostic_holdout["_year"].isin(STAGE5_1_HOLDOUT_YEARS)
+    ].copy()
+
+    return {
+        "train_core": train_core.reset_index(drop=True),
+        "val_stop": val_stop.reset_index(drop=True),
+        "diagnostic_holdout": diagnostic_holdout.reset_index(drop=True),
+        "low_n_disclosure": low_n_disclosure.reset_index(drop=True),
+    }
+
+
 def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: str,
                                    seed: int, transform_variant: str = "asinh",
                                    parsed_cache: dict | None = None) -> dict:
@@ -4267,11 +5182,349 @@ def evaluate_stage5_0f_window_seed(window: dict, profile_key: str, target_col: s
     }
 
 
+def _stage5_1_metrics_with_ci(y_true: pd.Series, probs: np.ndarray, seed: int) -> dict:
+    metrics = compute_metrics(y_true, pd.Series(probs))
+    return {
+        **{k: _safe(v) for k, v in metrics.items()},
+        "auc_ci": bootstrap_stage5_0f_metric_ci(
+            y_true, probs, "auc", n_boot=STAGE5_1_BOOTSTRAP_N, seed=seed),
+        "lift_30_ci": bootstrap_stage5_0f_metric_ci(
+            y_true, probs, "lift_30", n_boot=STAGE5_1_BOOTSTRAP_N, seed=seed),
+    }
+
+
+def evaluate_stage5_1_profile_seed(split: dict, profile_key: str, target_col: str,
+                                   seed: int, transform_variant: str = "asinh") -> dict:
+    """Train one Stage 5.1 XGBoost model for one profile/target/seed."""
+    train_core = split["train_core"]
+    val_stop = split["val_stop"]
+    diagnostic_holdout = split["diagnostic_holdout"]
+    low_n_disclosure = split["low_n_disclosure"]
+    transform_params = fit_stage5_1_transform_params(
+        train_core, profile_key, transform_variant=transform_variant)
+
+    X_train = build_stage5_1_features(
+        train_core, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_val = build_stage5_1_features(
+        val_stop, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_holdout = build_stage5_1_features(
+        diagnostic_holdout, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+    X_low_n = build_stage5_1_features(
+        low_n_disclosure, profile_key, transform_variant=transform_variant, transform_params=transform_params)
+
+    y_train = train_core[target_col]
+    y_val = val_stop[target_col]
+    y_holdout = diagnostic_holdout[target_col]
+    y_low_n = low_n_disclosure[target_col]
+
+    model, val_auc = train_xgb_baseline(X_train, y_train, X_val, y_val, seed=seed)
+    train_probs = model.predict(xgb.DMatrix(X_train))
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    holdout_probs = model.predict(xgb.DMatrix(X_holdout))
+    low_n_probs = model.predict(xgb.DMatrix(X_low_n)) if len(low_n_disclosure) else np.asarray([])
+
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "transform_variant": transform_variant,
+        "transform_params": transform_params,
+        "transform_params_fit_on": "train_core",
+        "train_core": {k: _safe(v) for k, v in compute_metrics(y_train, pd.Series(train_probs)).items()},
+        "val_stop": _stage5_1_metrics_with_ci(y_val, val_probs, seed),
+        "diagnostic_holdout": _stage5_1_metrics_with_ci(y_holdout, holdout_probs, seed),
+        "low_n_disclosure": _stage5_1_metrics_with_ci(y_low_n, low_n_probs, seed),
+        "yearly_val": compute_yearly_metrics(val_stop, val_probs, target_col=target_col),
+        "yearly_diagnostic_holdout": compute_yearly_metrics(
+            diagnostic_holdout, holdout_probs, target_col=target_col),
+        "split_manifest": split["manifest"],
+        "val_auc_from_training": _safe(val_auc),
+        "predictions": {
+            "val_stop": [float(v) for v in val_probs],
+            "diagnostic_holdout": [float(v) for v in holdout_probs],
+            "low_n_disclosure": [float(v) for v in low_n_probs],
+        },
+        "labels": {
+            "val_stop": [int(v) for v in y_val.tolist()],
+            "diagnostic_holdout": [int(v) for v in y_holdout.tolist()],
+            "low_n_disclosure": [int(v) for v in y_low_n.tolist()],
+        },
+    }
+
+
+def evaluate_stage5_1b_profile_seed(split: dict, profile_key: str, target_col: str,
+                                    seed: int, transform_variant: str = "asinh",
+                                    xgb_threads: int = 1) -> dict:
+    """Train one Stage 5.1b XGBoost model for one profile/target/seed."""
+    train_core = split["train_core"]
+    val_stop = split["val_stop"]
+    diagnostic_holdout = split["diagnostic_holdout"]
+    low_n_disclosure = split["low_n_disclosure"]
+    transform_params = fit_stage5_1b_transform_params(
+        train_core, profile_key, transform_variant=transform_variant)
+
+    X_train = build_stage5_1b_features(
+        train_core, profile_key, transform_variant, transform_params)
+    X_val = build_stage5_1b_features(
+        val_stop, profile_key, transform_variant, transform_params)
+    X_holdout = build_stage5_1b_features(
+        diagnostic_holdout, profile_key, transform_variant, transform_params)
+    X_low_n = build_stage5_1b_features(
+        low_n_disclosure, profile_key, transform_variant, transform_params)
+
+    y_train = train_core[target_col]
+    y_val = val_stop[target_col]
+    y_holdout = diagnostic_holdout[target_col]
+    y_low_n = low_n_disclosure[target_col]
+
+    model, val_auc = train_xgb_baseline(
+        X_train, y_train, X_val, y_val, seed=seed, n_jobs=xgb_threads
+    )
+    train_probs = model.predict(xgb.DMatrix(X_train))
+    val_probs = model.predict(xgb.DMatrix(X_val))
+    holdout_probs = model.predict(xgb.DMatrix(X_holdout))
+    low_n_probs = model.predict(xgb.DMatrix(X_low_n)) if len(low_n_disclosure) else np.asarray([])
+
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "transform_variant": transform_variant,
+        "transform_params": transform_params,
+        "transform_params_fit_on": "train_core",
+        "train_core": {k: _safe(v) for k, v in compute_metrics(y_train, pd.Series(train_probs)).items()},
+        "val_stop": _stage5_1_metrics_with_ci(y_val, val_probs, seed),
+        "diagnostic_holdout": _stage5_1_metrics_with_ci(y_holdout, holdout_probs, seed),
+        "low_n_disclosure": _stage5_1_metrics_with_ci(y_low_n, low_n_probs, seed),
+        "yearly_val": compute_yearly_metrics(val_stop, val_probs, target_col=target_col),
+        "yearly_diagnostic_holdout": compute_yearly_metrics(
+            diagnostic_holdout, holdout_probs, target_col=target_col),
+        "split_manifest": split["manifest"],
+        "val_auc_from_training": _safe(val_auc),
+        "predictions": {
+            "val_stop": [float(v) for v in val_probs],
+            "diagnostic_holdout": [float(v) for v in holdout_probs],
+            "low_n_disclosure": [float(v) for v in low_n_probs],
+        },
+        "labels": {
+            "val_stop": [int(v) for v in y_val.tolist()],
+            "diagnostic_holdout": [int(v) for v in y_holdout.tolist()],
+            "low_n_disclosure": [int(v) for v in y_low_n.tolist()],
+        },
+    }
+
+
 def _median_or_none(values: list) -> float | None:
     clean = [float(v) for v in values if v is not None and np.isfinite(v)]
     if not clean:
         return None
     return float(np.median(clean))
+
+
+def _stage5_1b_job_key(target: str, profile: str, seed: int) -> tuple[str, str, int]:
+    return (str(target), str(profile), int(seed))
+
+
+def _stage5_1b_collect_completed_runs(raw_runs: list[dict]) -> tuple[list[dict], set[tuple[str, str, int]]]:
+    deduped = {}
+    for run in raw_runs or []:
+        key = _stage5_1b_job_key(run["target"], run["profile"], run["seed"])
+        deduped[key] = run
+    ordered_keys = sorted(
+        deduped.keys(),
+        key=lambda key: (
+            STAGE5_1B_TARGETS.index(key[0]) if key[0] in STAGE5_1B_TARGETS else len(STAGE5_1B_TARGETS),
+            STAGE5_1B_PROFILE_KEYS.index(key[1]) if key[1] in STAGE5_1B_PROFILE_KEYS else len(STAGE5_1B_PROFILE_KEYS),
+            int(key[2]),
+        ),
+    )
+    ordered_runs = [deduped[key] for key in ordered_keys]
+    return ordered_runs, set(ordered_keys)
+
+
+def _stage5_1b_initialize_report(output_path: Path, total_runs: int, resume: bool) -> dict:
+    report = {
+        "stage": "5.1b",
+        "experiment": "updn_field_ablation",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "verdict_scope": "DIAGNOSTIC_ONLY",
+        "baseline": "clock + shift (log1p)",
+        "targets": list(STAGE5_1B_TARGETS),
+        "fields": list(STAGE5_1B_FIELDS),
+        "seeds": list(STAGE5_1B_SEEDS),
+        "profiles": list(STAGE5_1B_PROFILE_KEYS),
+        "raw_runs": [],
+        "summary": {},
+        "field_verdicts": {},
+        "group_analysis": {},
+        "preflight": {},
+        "multiple_testing_context": {
+            "diagnostic_only": True,
+            "correction_applied": None,
+            "comparison_count": 76,
+            "note": "19 fields × 2 ablation modes × 2 targets; likely_* labels are preliminary diagnostic categories.",
+        },
+        "holdout_disclosure": {
+            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
+            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f/5.1; disclosure only.",
+            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
+        },
+        "transform_config": {
+            "transform_variant": "asinh",
+            "transform_params_fit_on": "train_core",
+            "transform_params": {},
+            "shift_transform": "log1p(max(raw_shift, 0))",
+            "updn_units": "raw price units",
+        },
+        "sanity_checks": {
+            "time_only_stage5_1_reference": "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
+            "expected_model_count": int(total_runs),
+            "excluded_top_level_updn_columns": [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
+            "stage5_1b_structure_full_actual": {},
+            "clock_shift_actual": {},
+            "updn_full_vs_structure_full": {},
+            "back_impulse_combo_vs_structure_full": {},
+        },
+        "progress": {
+            "started_at_unix": time.time(),
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+    if resume and output_path.exists():
+        existing = json.loads(output_path.read_text())
+        if (
+            existing.get("stage") == "5.1b"
+            and existing.get("experiment") == "updn_field_ablation"
+        ):
+            report.update(existing)
+    raw_runs, completed_keys = _stage5_1b_collect_completed_runs(report.get("raw_runs", []))
+    report["raw_runs"] = raw_runs
+    report["targets"] = list(STAGE5_1B_TARGETS)
+    report["fields"] = list(STAGE5_1B_FIELDS)
+    report["seeds"] = list(STAGE5_1B_SEEDS)
+    report["profiles"] = list(STAGE5_1B_PROFILE_KEYS)
+    report["status"] = "RUNNING"
+    report["summary"] = {}
+    report["field_verdicts"] = {}
+    report["group_analysis"] = {}
+    report.setdefault("preflight", {})
+    report.setdefault("sanity_checks", {})
+    report["sanity_checks"].setdefault(
+        "time_only_stage5_1_reference",
+        "clock_shift is not directly comparable with Stage 5.1 time_only because shift is added.",
+    )
+    report["sanity_checks"].setdefault("expected_model_count", int(total_runs))
+    report["sanity_checks"].setdefault(
+        "excluded_top_level_updn_columns",
+        [f"{side}_{h}" for h in [3, 6, 12, 24, 48] for side in ["up", "dn"]],
+    )
+    report["sanity_checks"].setdefault("stage5_1b_structure_full_actual", {})
+    report["sanity_checks"].setdefault("clock_shift_actual", {})
+    report["sanity_checks"].setdefault("updn_full_vs_structure_full", {})
+    report["sanity_checks"].setdefault("back_impulse_combo_vs_structure_full", {})
+    report["progress"] = report.get("progress", {})
+    report["progress"]["started_at_unix"] = report["progress"].get("started_at_unix") or time.time()
+    report["progress"]["done_runs"] = len(completed_keys)
+    report["progress"]["total_runs"] = int(total_runs)
+    return report
+
+
+def _run_stage5_1b_job(job: dict) -> dict:
+    return evaluate_stage5_1b_profile_seed(
+        job["split"],
+        profile_key=job["profile"],
+        target_col=job["target"],
+        seed=job["seed"],
+        xgb_threads=job["xgb_threads"],
+    )
+
+
+def _min_or_none(values: list) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.min(clean)) if clean else None
+
+
+def _max_or_none(values: list) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.max(clean)) if clean else None
+
+
+def bootstrap_stage5_1_delta_ci(y_true, pred_a, pred_b,
+                                n_boot: int = STAGE5_1_BOOTSTRAP_N,
+                                seed: int = 42) -> dict:
+    """Paired bootstrap CI for AUC(profile_a) - AUC(profile_b)."""
+    yt = pd.Series(y_true).reset_index(drop=True)
+    pa = np.asarray(pred_a, dtype=float)
+    pb = np.asarray(pred_b, dtype=float)
+    n = len(yt)
+    if n == 0 or yt.nunique() < 2:
+        return {"metric": "auc_delta", "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        sample_y = yt.iloc[idx].reset_index(drop=True)
+        if sample_y.nunique() < 2:
+            continue
+        try:
+            auc_a = roc_auc_score(sample_y, pa[idx])
+            auc_b = roc_auc_score(sample_y, pb[idx])
+        except ValueError:
+            continue
+        vals.append(float(auc_a - auc_b))
+
+    if not vals:
+        return {"metric": "auc_delta", "n_boot": int(n_boot), "low": None, "median": None, "high": None}
+
+    arr = np.asarray(vals, dtype=float)
+    return {
+        "metric": "auc_delta",
+        "n_boot": int(n_boot),
+        "low": float(np.percentile(arr, 2.5)),
+        "median": float(np.percentile(arr, 50.0)),
+        "high": float(np.percentile(arr, 97.5)),
+    }
+
+
+def _stage5_1_period_summary(runs: list[dict], period_key: str) -> dict:
+    aucs = [r[period_key].get("auc") for r in runs]
+    lifts = [r[period_key].get("lift_30") for r in runs]
+    auc_lows = [r[period_key].get("auc_ci", {}).get("low") for r in runs]
+    auc_highs = [r[period_key].get("auc_ci", {}).get("high") for r in runs]
+    return {
+        "n": runs[0][period_key].get("n") if runs else 0,
+        "auc_median": _median_or_none(aucs),
+        "auc_seed_min": _min_or_none(aucs),
+        "auc_seed_max": _max_or_none(aucs),
+        "lift_30_median": _median_or_none(lifts),
+        "lift_30_seed_min": _min_or_none(lifts),
+        "lift_30_seed_max": _max_or_none(lifts),
+        "auc_ci_low": _median_or_none(auc_lows),
+        "auc_ci_high": _median_or_none(auc_highs),
+    }
+
+
+def _stage5_1_yearly_summary(runs: list[dict], yearly_key: str) -> dict:
+    years = sorted({
+        year
+        for run in runs
+        for year in run.get(yearly_key, {}).keys()
+    })
+    out = {}
+    for year in years:
+        aucs = [run.get(yearly_key, {}).get(year, {}).get("auc") for run in runs]
+        lifts = [run.get(yearly_key, {}).get(year, {}).get("lift_30") for run in runs]
+        out[year] = {
+            "auc_median": _median_or_none(aucs),
+            "auc_seed_min": _min_or_none(aucs),
+            "auc_seed_max": _max_or_none(aucs),
+            "lift_30_median": _median_or_none(lifts),
+        }
+    return out
 
 
 def summarize_stage5_0f_seed_runs(runs: list[dict]) -> dict:
@@ -4300,6 +5553,317 @@ def summarize_stage5_0f_seed_runs(runs: list[dict]) -> dict:
         },
         "split_manifest": runs[0].get("split_manifest") if runs else None,
     }
+
+
+def summarize_stage5_1_seed_runs(runs: list[dict]) -> dict:
+    """Summarize Stage 5.1 seed-level runs by median and seed spread."""
+    return {
+        "n_seed_runs": int(len(runs)),
+        "train_core": {
+            "auc_median": _median_or_none([r["train_core"].get("auc") for r in runs]),
+        },
+        "val_stop": _stage5_1_period_summary(runs, "val_stop"),
+        "diagnostic_holdout": _stage5_1_period_summary(runs, "diagnostic_holdout"),
+        "low_n_disclosure": _stage5_1_period_summary(runs, "low_n_disclosure"),
+        "yearly_val": _stage5_1_yearly_summary(runs, "yearly_val"),
+        "yearly_diagnostic_holdout": _stage5_1_yearly_summary(runs, "yearly_diagnostic_holdout"),
+        "split_manifest": runs[0].get("split_manifest") if runs else None,
+    }
+
+
+def _stage5_1_seed_auc_by_profile(raw_runs: list[dict], profile: str,
+                                  period_key: str) -> dict[int, float | None]:
+    return {
+        int(run["seed"]): run[period_key].get("auc")
+        for run in raw_runs
+        if run["profile"] == profile
+    }
+
+
+def _stage5_1_run_by_profile_seed(raw_runs: list[dict], profile: str) -> dict[int, dict]:
+    return {
+        int(run["seed"]): run
+        for run in raw_runs
+        if run["profile"] == profile
+    }
+
+
+def _stage5_1_delta_summary(raw_runs: list[dict], profile: str,
+                            baseline_profile: str, period_key: str) -> dict:
+    profile_by_seed = _stage5_1_seed_auc_by_profile(raw_runs, profile, period_key)
+    baseline_by_seed = _stage5_1_seed_auc_by_profile(raw_runs, baseline_profile, period_key)
+    profile_runs = _stage5_1_run_by_profile_seed(raw_runs, profile)
+    baseline_runs = _stage5_1_run_by_profile_seed(raw_runs, baseline_profile)
+    deltas = []
+    ci_lows = []
+    ci_highs = []
+    signs = []
+    for seed, auc in profile_by_seed.items():
+        base_auc = baseline_by_seed.get(seed)
+        if auc is None or base_auc is None:
+            continue
+        delta = float(auc - base_auc)
+        deltas.append(delta)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+        profile_run = profile_runs.get(seed)
+        baseline_run = baseline_runs.get(seed)
+        if profile_run and baseline_run:
+            profile_labels = (profile_run.get("labels") or {}).get(period_key)
+            profile_preds = (profile_run.get("predictions") or {}).get(period_key)
+            baseline_preds = (baseline_run.get("predictions") or {}).get(period_key)
+            if profile_labels is not None and profile_preds is not None and baseline_preds is not None:
+                ci = bootstrap_stage5_1_delta_ci(
+                    profile_labels,
+                    profile_preds,
+                    baseline_preds,
+                    n_boot=STAGE5_1_BOOTSTRAP_N,
+                    seed=seed,
+                )
+                ci_lows.append(ci.get("low"))
+                ci_highs.append(ci.get("high"))
+    return {
+        "baseline_profile": baseline_profile,
+        "period": period_key,
+        "delta_median": _median_or_none(deltas),
+        "delta_seed_min": _min_or_none(deltas),
+        "delta_seed_max": _max_or_none(deltas),
+        "delta_ci_low": _median_or_none(ci_lows),
+        "delta_ci_high": _median_or_none(ci_highs),
+        "delta_ci_method": "median_of_per_seed_paired_bootstrap_bounds",
+        "positive_seed_count": int(sum(1 for s in signs if s > 0)),
+        "negative_seed_count": int(sum(1 for s in signs if s < 0)),
+        "zero_seed_count": int(sum(1 for s in signs if s == 0)),
+    }
+
+
+def summarize_stage5_1_target(raw_runs: list[dict], target_col: str) -> dict:
+    """Summarize one Stage 5.1 target across profiles and add drop/add deltas."""
+    target_runs = [r for r in raw_runs if r["target"] == target_col]
+    summary = {}
+    for profile in STAGE5_1_PROFILE_KEYS:
+        runs = [r for r in target_runs if r["profile"] == profile]
+        summary[profile] = summarize_stage5_1_seed_runs(runs)
+
+    for field in STAGE5_1_FIELDS:
+        drop_profile = f"drop_{field}"
+        add_profile = f"add_{field}"
+        if drop_profile in summary:
+            summary[drop_profile]["delta_vs_structure_full"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, drop_profile, "structure_full", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, drop_profile, "structure_full", "diagnostic_holdout"),
+            }
+        if add_profile in summary:
+            summary[add_profile]["delta_vs_time_only"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, add_profile, "time_only", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, add_profile, "time_only", "diagnostic_holdout"),
+            }
+    return summary
+
+
+def summarize_stage5_1b_target(raw_runs: list[dict], target_col: str) -> dict:
+    """Summarize one Stage 5.1b target across profiles and add drop/add deltas."""
+    target_runs = [r for r in raw_runs if r["target"] == target_col]
+    summary = {}
+    for profile in STAGE5_1B_PROFILE_KEYS:
+        runs = [r for r in target_runs if r["profile"] == profile]
+        summary[profile] = summarize_stage5_1_seed_runs(runs)
+
+    for field in STAGE5_1B_FIELDS:
+        drop_profile = f"drop_{field}"
+        add_profile = f"add_{field}"
+        if drop_profile in summary:
+            baseline = "structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "updn_full"
+            delta_key = "delta_vs_structure_full" if baseline == "structure_full" else "delta_vs_updn_full"
+            summary[drop_profile][delta_key] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, drop_profile, baseline, "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, drop_profile, baseline, "diagnostic_holdout"),
+            }
+        if add_profile in summary:
+            summary[add_profile]["delta_vs_clock_shift"] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, add_profile, "clock_shift", "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, add_profile, "clock_shift", "diagnostic_holdout"),
+            }
+
+    for profile, baseline, key in [
+        ("updn_full", "clock_shift", "delta_updn_group"),
+        ("structure_full", "clock_shift", "delta_structure_group"),
+        ("structure_plus_updn", "structure_full", "delta_combined"),
+        ("back_impulse_combo", "clock_shift", "delta_back_impulse"),
+        ("back_impulse_combo", "structure_full", "gap_back_impulse_full"),
+    ]:
+        if profile in summary:
+            summary[profile][key] = {
+                "val_stop": _stage5_1_delta_summary(target_runs, profile, baseline, "val_stop"),
+                "diagnostic_holdout": _stage5_1_delta_summary(
+                    target_runs, profile, baseline, "diagnostic_holdout"),
+            }
+    return summary
+
+
+def _safe_spearman(y_true, y_pred) -> float:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    if len(yt) < 2 or np.nanstd(yt) == 0 or np.nanstd(yp) == 0:
+        return 0.0
+    rho, _ = stats.spearmanr(yt, yp)
+    return float(rho) if np.isfinite(rho) else 0.0
+
+
+def stage5_2_calibration_table(y_true, y_pred) -> list[dict]:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    bins = [
+        ("pred_1_2", yp < 3),
+        ("pred_3_4", (yp >= 3) & (yp < 5)),
+        ("pred_5_7", yp >= 5),
+    ]
+    rows = []
+    for name, mask in bins:
+        true_vals = yt[mask]
+        rows.append({
+            "bucket": name,
+            "n": int(mask.sum()),
+            "true_median": float(np.nanmedian(true_vals)) if len(true_vals) else None,
+            "true_ge_4_rate": float(np.mean(true_vals >= STAGE5_2_ENTRY_THRESHOLD)) if len(true_vals) else None,
+        })
+    return rows
+
+
+def stage5_2_regression_metrics(y_true, y_pred,
+                                threshold: int = STAGE5_2_ENTRY_THRESHOLD,
+                                censored_value: int = STAGE5_2_CENSORED_VALUE) -> dict:
+    yt = np.asarray(y_true, dtype=float)
+    yp = np.asarray(y_pred, dtype=float)
+    valid = np.isfinite(yt) & np.isfinite(yp)
+    yt = yt[valid]
+    yp = yp[valid]
+    true_binary = (yt >= threshold).astype(int)
+    pred_binary = yp >= threshold
+    uncensored = yt < censored_value
+    auc = None
+    if len(np.unique(true_binary)) == 2:
+        try:
+            auc = float(roc_auc_score(true_binary, yp))
+        except ValueError:
+            auc = 0.5
+    return {
+        "n": int(len(yt)),
+        "spearman_r": _safe_spearman(yt, yp),
+        "mae": float(np.mean(np.abs(yp - yt))) if len(yt) else None,
+        "uncensored_mae": float(np.mean(np.abs(yp[uncensored] - yt[uncensored]))) if np.any(uncensored) else None,
+        "auc_true_ge_4": auc,
+        "pred_summary": {
+            "min": float(np.min(yp)) if len(yp) else None,
+            "median": float(np.median(yp)) if len(yp) else None,
+            "max": float(np.max(yp)) if len(yp) else None,
+            "std": float(np.std(yp)) if len(yp) else None,
+            "unique_rounded_4": int(len(np.unique(np.round(yp, 4)))) if len(yp) else 0,
+        },
+        "fixed_threshold": {
+            "threshold": int(threshold),
+            "predicted_entries": int(pred_binary.sum()),
+            "precision": float(np.mean(true_binary[pred_binary])) if np.any(pred_binary) else None,
+            "recall": float(np.sum(true_binary[pred_binary]) / max(np.sum(true_binary), 1)),
+        },
+        "calibration_table": stage5_2_calibration_table(yt, yp),
+    }
+
+
+def stage5_2_constant_baseline_metrics(y_true,
+                                       censored_value: int = STAGE5_2_CENSORED_VALUE) -> dict:
+    yt = np.asarray(y_true, dtype=float)
+    pred = np.full(len(yt), censored_value, dtype=float)
+    metrics = stage5_2_regression_metrics(yt, pred)
+    metrics["prediction_value"] = int(censored_value)
+    metrics["spearman_r"] = 0.0
+    return metrics
+
+
+def stage5_2_gate_results(summary: dict, oracle_preflight: dict,
+                          censoring: dict) -> dict:
+    train_censor = (censoring.get("train_core") or {}).get("censoring_rate")
+    censoring_pass = train_censor is not None and train_censor <= 0.70
+    best = summary.get("best_profile") or {}
+    val = best.get("val_stop") or {}
+    improvement_constant = best.get("improvement_vs_constant") or {}
+    improvement_time = best.get("improvement_vs_time_only") or {}
+    improvement_clock = best.get("improvement_vs_clock_shift") or {}
+    yearly = val.get("yearly") or {}
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for v in yearly.values() if (v.get("spearman_r") or 0.0) > 0.0) >= 2
+    )
+    model_checks = {
+        "spearman_ge_0_30": (val.get("spearman_r") or 0.0) >= 0.30,
+        "spearman_delta_constant_ge_0_05": (improvement_constant.get("spearman_delta") or 0.0) >= 0.05,
+        "spearman_delta_time_only_ge_0_03": (improvement_time.get("spearman_delta") or 0.0) >= 0.03,
+        "spearman_delta_clock_shift_ge_0_03": (improvement_clock.get("spearman_delta") or 0.0) >= 0.03,
+        "mae_le_3": val.get("mae") is not None and val["mae"] <= 3.0,
+        "mae_improvement_constant_ge_10pct": (improvement_constant.get("mae_improvement_frac") or 0.0) >= 0.10,
+        "auc_ge_0_70": val.get("auc_true_ge_4") is not None and val["auc_true_ge_4"] >= 0.70,
+        "yearly_not_single_year": yearly_pass,
+    }
+    model_pass = all(model_checks.values())
+    oracle_binary_pf = oracle_preflight.get("oracle_binary_pf")
+    pf_delta = oracle_preflight.get("pf_delta_vs_binary")
+    invalid_oracle_comparison = (
+        oracle_binary_pf is not None
+        and not np.isfinite(float(oracle_binary_pf))
+        and pf_delta is None
+    )
+    oracle_pass = bool(oracle_preflight.get("pass")) and not invalid_oracle_comparison
+    oracle_reason = "invalid_oracle_binary_comparison" if invalid_oracle_comparison else None
+    if not censoring_pass:
+        status = "DIAGNOSTIC_ONLY"
+    elif not oracle_pass:
+        status = "ORACLE_FAILED"
+    elif not model_pass:
+        status = "MODEL_GATE_FAILED"
+    else:
+        status = "CANDIDATE_HYPOTHESIS"
+    return {
+        "overall_status": status,
+        "censoring_gate": {"pass": bool(censoring_pass), "train_censoring_rate": train_censor},
+        "oracle_gate": {"pass": oracle_pass, "reason": oracle_reason},
+        "model_gate": {"pass": model_pass, "checks": model_checks},
+    }
+
+
+def stage5_2_first_touch_trade_result(entry_price: float, stop_price: float,
+                                      take_price: float, side: str,
+                                      future_bars: list[dict]) -> dict:
+    if side not in {"buy", "sell"}:
+        raise ValueError(f"side must be buy or sell, got {side}")
+    risk = abs(entry_price - stop_price)
+    reward = abs(take_price - entry_price)
+    for idx, bar in enumerate(future_bars, start=1):
+        high = float(bar["high"])
+        low = float(bar["low"])
+        if side == "buy":
+            sl_hit = low <= stop_price
+            tp_hit = high >= take_price
+        else:
+            sl_hit = high >= stop_price
+            tp_hit = low <= take_price
+        if sl_hit and tp_hit:
+            return {"outcome": "AMBIGUOUS_SL_FIRST", "bars": idx, "pnl_r": -1.0}
+        if sl_hit:
+            return {"outcome": "SL", "bars": idx, "pnl_r": -1.0}
+        if tp_hit:
+            return {"outcome": "TP", "bars": idx, "pnl_r": float(reward / risk) if risk > 0 else 0.0}
+    return {"outcome": "TIMEOUT", "bars": len(future_bars), "pnl_r": 0.0}
+
+
+def _stage5_2_pf(pnls: list[float]) -> float | None:
+    gains = sum(v for v in pnls if v > 0)
+    losses = -sum(v for v in pnls if v < 0)
+    if losses == 0:
+        return None if gains == 0 else float("inf")
+    return float(gains / losses)
 
 
 def _stage5_0f_get_summary(report: dict, target: str, profile: str,
@@ -4478,6 +6042,321 @@ def stage5_0f_stationarity_decision(report: dict) -> dict:
     }
 
 
+def _stage5_1_yearly_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_diagnostic_holdout", ["2023", "2024", "2025"])
+
+
+def _stage5_1_yearly_val_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_val", ["2021", "2022"])
+
+
+def _stage5_1_yearly_drop_signs_for_key(target_summary: dict, field: str,
+                                        yearly_key: str, years: list[str]) -> list[int]:
+    drop = target_summary.get(f"drop_{field}", {})
+    full = target_summary.get("structure_full", {})
+    signs = []
+    for year in years:
+        drop_auc = drop.get(yearly_key, {}).get(year, {}).get("auc_median")
+        full_auc = full.get(yearly_key, {}).get(year, {}).get("auc_median")
+        if drop_auc is None or full_auc is None:
+            continue
+        delta = float(drop_auc - full_auc)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+    return signs
+
+
+def _stage5_1_field_target_verdict(target_summary: dict, field: str) -> dict:
+    drop = target_summary.get(f"drop_{field}", {})
+    add = target_summary.get(f"add_{field}", {})
+    drop_val = drop.get("delta_vs_structure_full", {}).get("val_stop", {})
+    add_val = add.get("delta_vs_time_only", {}).get("val_stop", {}).get("delta_median")
+    add_holdout = add.get("delta_vs_time_only", {}).get("diagnostic_holdout", {}).get("delta_median")
+    drop_delta = drop_val.get("delta_median")
+    drop_ci_low = drop_val.get("delta_ci_low")
+    drop_ci_high = drop_val.get("delta_ci_high")
+    yearly_signs = _stage5_1_yearly_drop_signs(target_summary, field)
+    yearly_val_signs = _stage5_1_yearly_val_drop_signs(target_summary, field)
+    yearly_negative = sum(1 for s in yearly_signs if s < 0)
+    yearly_positive = sum(1 for s in yearly_signs if s > 0)
+    negative_seed_count = int(drop_val.get("negative_seed_count") or 0)
+    positive_seed_count = int(drop_val.get("positive_seed_count") or 0)
+    useful_ci_or_seed_confirmed = (
+        (drop_ci_high is not None and drop_ci_high < 0)
+        or negative_seed_count == 3
+    )
+    noise_ci_or_seed_confirmed = (
+        (drop_ci_low is not None and drop_ci_low > 0)
+        or positive_seed_count == 3
+    )
+
+    useful = (
+        drop_delta is not None
+        and drop_delta < 0
+        and yearly_negative >= 2
+        and negative_seed_count >= 2
+        and useful_ci_or_seed_confirmed
+        and (
+            (add_val is not None and add_val > 0)
+            or (add_holdout is not None and add_holdout > 0)
+        )
+    )
+    noise = (
+        drop_delta is not None
+        and drop_delta > 0
+        and yearly_positive >= 2
+        and positive_seed_count >= 2
+        and noise_ci_or_seed_confirmed
+        and add_val is not None
+        and add_val <= 0
+    )
+
+    if useful:
+        verdict = "likely_useful"
+    elif noise:
+        verdict = "likely_noise"
+    else:
+        verdict = "mixed_or_unclear"
+
+    return {
+        "verdict": verdict,
+        "drop_val_delta_median": drop_delta,
+        "drop_val_delta_ci_low": drop_ci_low,
+        "drop_val_delta_ci_high": drop_ci_high,
+        "drop_val_negative_seed_count": negative_seed_count,
+        "drop_val_positive_seed_count": positive_seed_count,
+        "yearly_val_drop_signs_2021_2022": yearly_val_signs,
+        "yearly_drop_signs_2023_2025": yearly_signs,
+        "add_val_delta_median": add_val,
+        "add_holdout_delta_median": add_holdout,
+    }
+
+
+def stage5_1_field_verdicts(report: dict) -> dict:
+    """Classify Stage 5.1 fields as diagnostic likely useful/noise/unclear."""
+    verdicts = {}
+    for field in STAGE5_1_FIELDS:
+        per_target = {}
+        target_verdicts = []
+        for target in STAGE5_1_TARGETS:
+            target_summary = report.get("summary", {}).get(target, {})
+            target_result = _stage5_1_field_target_verdict(target_summary, field)
+            per_target[target] = target_result
+            target_verdicts.append(target_result["verdict"])
+
+        if "likely_useful" in target_verdicts and "likely_noise" in target_verdicts:
+            overall = "mixed_or_unclear"
+        elif "likely_useful" in target_verdicts:
+            overall = "likely_useful"
+        elif "likely_noise" in target_verdicts:
+            overall = "likely_noise"
+        else:
+            overall = "mixed_or_unclear"
+
+        verdicts[field] = {
+            "overall_verdict": overall,
+            "targets": per_target,
+            "diagnostic_only": True,
+        }
+    return verdicts
+
+
+def _stage5_1b_drop_delta_block(target_summary: dict, field: str) -> dict:
+    drop = target_summary.get(f"drop_{field}", {})
+    key = "delta_vs_structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "delta_vs_updn_full"
+    return drop.get(key, {}).get("val_stop", {})
+
+
+def _stage5_1b_drop_baseline_profile(field: str) -> str:
+    return "structure_full" if field in STAGE5_1B_STRUCTURE_FIELDS else "updn_full"
+
+
+def _stage5_1b_yearly_drop_signs_for_key(target_summary: dict, field: str,
+                                         yearly_key: str, years: list[str]) -> list[int]:
+    drop = target_summary.get(f"drop_{field}", {})
+    baseline = target_summary.get(_stage5_1b_drop_baseline_profile(field), {})
+    signs = []
+    for year in years:
+        drop_auc = drop.get(yearly_key, {}).get(year, {}).get("auc_median")
+        baseline_auc = baseline.get(yearly_key, {}).get(year, {}).get("auc_median")
+        if drop_auc is None or baseline_auc is None:
+            continue
+        delta = float(drop_auc - baseline_auc)
+        signs.append(1 if delta > 0 else -1 if delta < 0 else 0)
+    return signs
+
+
+def _stage5_1b_yearly_val_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_val", ["2021", "2022"])
+
+
+def _stage5_1b_yearly_holdout_drop_signs(target_summary: dict, field: str) -> list[int]:
+    return _stage5_1b_yearly_drop_signs_for_key(
+        target_summary, field, "yearly_diagnostic_holdout", ["2023", "2024", "2025"])
+
+
+def _stage5_1b_field_target_verdict(target_summary: dict, field: str) -> dict:
+    drop_val = _stage5_1b_drop_delta_block(target_summary, field)
+    add_val = (
+        target_summary.get(f"add_{field}", {})
+        .get("delta_vs_clock_shift", {})
+        .get("val_stop", {})
+        .get("delta_median")
+    )
+    add_holdout = (
+        target_summary.get(f"add_{field}", {})
+        .get("delta_vs_clock_shift", {})
+        .get("diagnostic_holdout", {})
+        .get("delta_median")
+    )
+    drop_delta = drop_val.get("delta_median")
+    drop_ci_low = drop_val.get("delta_ci_low")
+    drop_ci_high = drop_val.get("delta_ci_high")
+    negative_seed_count = int(drop_val.get("negative_seed_count") or 0)
+    positive_seed_count = int(drop_val.get("positive_seed_count") or 0)
+    yearly_val_signs = _stage5_1b_yearly_val_drop_signs(target_summary, field)
+    yearly_holdout_signs = _stage5_1b_yearly_holdout_drop_signs(target_summary, field)
+    yearly_negative = sum(1 for sign in yearly_holdout_signs if sign < 0)
+    yearly_positive = sum(1 for sign in yearly_holdout_signs if sign > 0)
+
+    useful = (
+        drop_delta is not None
+        and drop_delta < 0
+        and yearly_negative >= 2
+        and negative_seed_count >= 2
+        and ((drop_ci_high is not None and drop_ci_high < 0) or negative_seed_count == 3)
+        and ((add_val is not None and add_val > 0) or (add_holdout is not None and add_holdout > 0))
+    )
+    noise = (
+        drop_delta is not None
+        and drop_delta > 0
+        and yearly_positive >= 2
+        and positive_seed_count >= 2
+        and ((drop_ci_low is not None and drop_ci_low > 0) or positive_seed_count == 3)
+        and add_val is not None
+        and add_val <= 0
+    )
+    if useful:
+        verdict = "target_likely_useful"
+    elif noise:
+        verdict = "target_likely_noise"
+    else:
+        verdict = "mixed_or_unclear"
+    return {
+        "verdict": verdict,
+        "drop_val_delta_median": drop_delta,
+        "drop_val_delta_ci_low": drop_ci_low,
+        "drop_val_delta_ci_high": drop_ci_high,
+        "drop_val_negative_seed_count": negative_seed_count,
+        "drop_val_positive_seed_count": positive_seed_count,
+        "yearly_val_drop_signs_2021_2022": yearly_val_signs,
+        "yearly_drop_signs_2023_2025": yearly_holdout_signs,
+        "add_val_delta_median": add_val,
+        "add_holdout_delta_median": add_holdout,
+    }
+
+
+def stage5_1b_field_verdicts(report: dict) -> dict:
+    verdicts = {}
+    for field in STAGE5_1B_FIELDS:
+        per_target = {}
+        labels = []
+        for target in STAGE5_1B_TARGETS:
+            target_summary = report.get("summary", {}).get(target, {})
+            target_result = _stage5_1b_field_target_verdict(target_summary, field)
+            per_target[target] = target_result
+            labels.append(target_result["verdict"])
+
+        if labels.count("target_likely_useful") == 2:
+            overall = "overall_likely_useful"
+        elif labels.count("target_likely_noise") == 2:
+            overall = "overall_likely_noise"
+        elif (
+            labels.count("target_likely_useful") == 1
+            and labels.count("mixed_or_unclear") == 1
+        ) or (
+            labels.count("target_likely_noise") == 1
+            and labels.count("mixed_or_unclear") == 1
+        ):
+            overall = "target_specific_signal"
+        else:
+            overall = "mixed_or_unclear"
+
+        verdicts[field] = {
+            "overall_verdict": overall,
+            "targets": per_target,
+            "diagnostic_only": True,
+        }
+    return verdicts
+
+
+def _stage5_1b_median(values: list[float | None]) -> float | None:
+    clean = [float(v) for v in values if v is not None and np.isfinite(v)]
+    return float(np.median(clean)) if clean else None
+
+
+def _stage5_1b_horizon_maturity(report: dict, target: str, horizon: str) -> dict:
+    maturity = report.get("preflight", {}).get(target, {}).get("maturity", {})
+    out = {}
+    for split_name in ["train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure"]:
+        if horizon in maturity.get(split_name, {}):
+            out[split_name] = maturity[split_name][horizon]
+    return out
+
+
+def stage5_1b_group_analysis(report: dict) -> dict:
+    out = {}
+    horizons = {
+        "3": ["up_3", "dn_3"],
+        "6": ["up_6", "dn_6"],
+        "12": ["up_12", "dn_12"],
+        "24": ["up_24", "dn_24"],
+        "48": ["up_48", "dn_48"],
+    }
+    for target, summary in report.get("summary", {}).items():
+        direction = {}
+        for side, fields in {
+            "up": ["up_3", "up_6", "up_12", "up_24", "up_48"],
+            "dn": ["dn_3", "dn_6", "dn_12", "dn_24", "dn_48"],
+        }.items():
+            direction[side] = {
+                "add_delta_val_median": _stage5_1b_median([
+                    summary.get(f"add_{field}", {}).get("delta_vs_clock_shift", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "drop_delta_val_median": _stage5_1b_median([
+                    summary.get(f"drop_{field}", {}).get("delta_vs_updn_full", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+            }
+        horizon = {}
+        for horizon_key, fields in horizons.items():
+            horizon[horizon_key] = {
+                "add_delta_val_median": _stage5_1b_median([
+                    summary.get(f"add_{field}", {}).get("delta_vs_clock_shift", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "drop_delta_val_median": _stage5_1b_median([
+                    summary.get(f"drop_{field}", {}).get("delta_vs_updn_full", {}).get("val_stop", {}).get("delta_median")
+                    for field in fields
+                ]),
+                "maturity": _stage5_1b_horizon_maturity(report, target, horizon_key),
+            }
+        out[target] = {
+            "direction": direction,
+            "horizon": horizon,
+            "group_deltas": {
+                "delta_updn_group_val": summary.get("updn_full", {}).get("delta_updn_group", {}).get("val_stop", {}).get("delta_median"),
+                "delta_structure_group_val": summary.get("structure_full", {}).get("delta_structure_group", {}).get("val_stop", {}).get("delta_median"),
+                "delta_combined_val": summary.get("structure_plus_updn", {}).get("delta_combined", {}).get("val_stop", {}).get("delta_median"),
+            },
+            "maturity_aware_note": "Horizon blocks include preflight mature/non-mature shares; no extra subgroup retraining is performed in Stage 5.1b.",
+        }
+    return out
+
+
 def run_stage5_0f_signal_stationarity(target_splits: dict,
                                       output_path=STAGE5_0F_JSON_REPORT_PATH) -> dict:
     """Run Stage 5.0f XGBoost signal stationarity diagnostics."""
@@ -4573,6 +6452,1847 @@ def run_stage5_0f_signal_stationarity(target_splits: dict,
     return report
 
 
+def _stage5_1_public_run(run: dict) -> dict:
+    """Return JSON-safe run metadata without arrays used only for local delta CI."""
+    return {
+        key: value
+        for key, value in run.items()
+        if key not in {"predictions", "labels"}
+    }
+
+
+def run_stage5_1_structural_field_ablation(target_splits: dict,
+                                           output_path=STAGE5_1_JSON_REPORT_PATH) -> dict:
+    """Run Stage 5.1 structural fractal field ablation diagnostics."""
+    started_at = time.time()
+    total_runs = len(STAGE5_1_TARGETS) * len(STAGE5_1_PROFILE_KEYS) * len(STAGE5_1_SEEDS)
+    report = {
+        "stage": "5.1_structural_field_ablation",
+        "status": "RUNNING",
+        "level": "exploratory",
+        "verdict_scope": "DIAGNOSTIC_ONLY",
+        "targets": list(STAGE5_1_TARGETS),
+        "fields": list(STAGE5_1_FIELDS),
+        "profiles": list(STAGE5_1_PROFILE_KEYS),
+        "seeds": list(STAGE5_1_SEEDS),
+        "raw_runs": [],
+        "summary": {},
+        "field_verdicts": {},
+        "multiple_testing_context": {
+            "diagnostic_only": True,
+            "correction_applied": None,
+            "note": "No Bonferroni/FDR correction; likely_* labels are preliminary diagnostic categories.",
+        },
+        "holdout_disclosure": {
+            "val_stop": "2021-2022 pooled primary diagnostic validation plus yearly disclosure.",
+            "diagnostic_holdout": "2023-2025 already used in Stage 5.0f; disclosure only.",
+            "low_n_disclosure": "2026 optional low-N disclosure, not used for verdict.",
+        },
+        "transform_config": {
+            "transform_variant": "asinh",
+            "transform_params_fit_on": "train_core",
+            "stage5_1_transform_params": {},
+            "reason": "Stage 5.1 excludes price/ATR fields; only structural tokens and clock row fields remain.",
+        },
+        "sanity_checks": {
+            "time_only_row_fields": TIME_ONLY_ROW_FIELDS.copy(),
+            "excluded_fields": ["price", "price_coord_atr", "price_atr_scaled", "ATR"],
+            "expected_model_count": int(total_runs),
+            "stage5_0d_no_price_reference": {
+                "source": "docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md",
+                "sell_val_auc": 0.6693,
+                "sell_holdout_auc": 0.6592,
+                "comparison_note": "Compare to Stage 5.1 structure_full; not a PASS/FAIL gate.",
+            },
+            "stage5_1_structure_full_actual": {},
+        },
+        "progress": {
+            "started_at_unix": started_at,
+            "done_runs": 0,
+            "total_runs": int(total_runs),
+            "last_completed": None,
+        },
+    }
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json_atomic(output_path, report)
+
+    for target_col in STAGE5_1_TARGETS:
+        train_df, val_df, hold_df = target_splits[target_col]
+        combined = pd.concat([train_df, val_df, hold_df], ignore_index=True)
+        split = build_stage5_1_split(combined, target_col)
+        report["summary"].setdefault(target_col, {})
+
+        target_runs = []
+        for profile_key in STAGE5_1_PROFILE_KEYS:
+            for seed in STAGE5_1_SEEDS:
+                run = evaluate_stage5_1_profile_seed(
+                    split, profile_key=profile_key, target_col=target_col, seed=seed)
+                run["elapsed_sec"] = round(time.time() - started_at, 1)
+                target_runs.append(run)
+                report["raw_runs"].append(_stage5_1_public_run(run))
+                report["progress"]["done_runs"] += 1
+                report["progress"]["last_completed"] = {
+                    "target": target_col,
+                    "profile": profile_key,
+                    "seed": int(seed),
+                    "val_auc": _safe(run["val_stop"].get("auc")),
+                    "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
+                    "elapsed_sec": run["elapsed_sec"],
+                }
+                done_runs = report["progress"]["done_runs"]
+                total = report["progress"]["total_runs"]
+                last = report["progress"]["last_completed"]
+                print(
+                    f"[{done_runs}/{total}] {target_col} | {profile_key} | "
+                    f"seed={seed} | val_auc={last['val_auc']} | "
+                    f"holdout_auc={last['holdout_auc']}"
+                )
+                _write_json_atomic(output_path, report)
+
+        report["summary"][target_col] = summarize_stage5_1_target(target_runs, target_col)
+        structure_summary = report["summary"][target_col].get("structure_full", {})
+        report["sanity_checks"]["stage5_1_structure_full_actual"][target_col] = {
+            "val_auc_median": structure_summary.get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": structure_summary.get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        _write_json_atomic(output_path, report)
+
+    report["field_verdicts"] = stage5_1_field_verdicts(report)
+    report["status"] = "DIAGNOSTIC_ONLY"
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 1)
+    _write_json_atomic(output_path, report)
+    return report
+
+
+def run_stage5_1b_updn_field_ablation(target_splits: dict,
+                                      output_path=STAGE5_1B_JSON_REPORT_PATH,
+                                      resume: bool = True,
+                                      workers: int = 1,
+                                      xgb_threads: int = 1) -> dict:
+    """Run Stage 5.1b Up/Dn field ablation diagnostics."""
+    started_at = time.time()
+    print("[heartbeat] stage5.1b runner | started")
+    total_runs = len(STAGE5_1B_TARGETS) * len(STAGE5_1B_PROFILE_KEYS) * len(STAGE5_1B_SEEDS)
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    report = _stage5_1b_initialize_report(output_path, total_runs=total_runs, resume=resume)
+    report["progress"]["started_at_unix"] = started_at
+    report["transform_config"]["xgb_threads"] = int(xgb_threads)
+    report["transform_config"]["workers"] = int(workers)
+    _write_json_atomic(output_path, report)
+
+    splits_by_target = {}
+    for target_col in STAGE5_1B_TARGETS:
+        print(f"[heartbeat] stage5.1b runner | building split target={target_col}")
+        train_df, val_df, hold_df = target_splits[target_col]
+        combined = pd.concat([train_df, val_df, hold_df], ignore_index=True)
+        split = build_stage5_1_split(combined, target_col)
+        raw_shadow_split = load_stage5_1b_raw_shadow_split(target_col)
+        splits_by_target[target_col] = split
+        preflight = run_stage5_1b_preflight_with_source(
+            split, target_col, raw_split=raw_shadow_split
+        )
+        report["preflight"][target_col] = preflight
+        _write_json_atomic(output_path, report)
+        if not stage5_1b_preflight_passed(preflight):
+            print(f"[heartbeat] stage5.1b runner | preflight failed target={target_col}")
+            report["status"] = "PREFLIGHT_FAILED"
+            report["progress"]["finished_at_unix"] = time.time()
+            report["progress"]["elapsed_sec"] = round(
+                report["progress"]["finished_at_unix"] - started_at, 1
+            )
+            _write_json_atomic(output_path, report)
+            return report
+
+    report["raw_runs"], completed_keys = _stage5_1b_collect_completed_runs(report.get("raw_runs", []))
+    pending_jobs = []
+    for target_col in STAGE5_1B_TARGETS:
+        print(f"[heartbeat] stage5.1b runner | training target={target_col} profiles={len(STAGE5_1B_PROFILE_KEYS)} seeds={len(STAGE5_1B_SEEDS)}")
+        split = splits_by_target[target_col]
+        report["summary"].setdefault(target_col, {})
+        for profile_key in STAGE5_1B_PROFILE_KEYS:
+            for seed in STAGE5_1B_SEEDS:
+                job_key = _stage5_1b_job_key(target_col, profile_key, seed)
+                if job_key in completed_keys:
+                    continue
+                pending_jobs.append({
+                    "target": target_col,
+                    "profile": profile_key,
+                    "seed": int(seed),
+                    "split": split,
+                    "xgb_threads": int(xgb_threads),
+                })
+
+    heartbeat = HeartbeatLogger("stage5.1b runner")
+    heartbeat.emit(
+        f"pending_jobs={len(pending_jobs)} completed={len(completed_keys)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(_stage5_1_public_run(run))
+        report["raw_runs"][:] = _stage5_1b_collect_completed_runs(report["raw_runs"])[0]
+        report["progress"]["done_runs"] = len(report["raw_runs"])
+        report["progress"]["last_completed"] = {
+            "target": run["target"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "val_auc": _safe(run["val_stop"].get("auc")),
+            "holdout_auc": _safe(run["diagnostic_holdout"].get("auc")),
+            "elapsed_sec": run["elapsed_sec"],
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['target']} | {run['profile']} | "
+            f"seed={run['seed']} | val_auc={last['val_auc']} | "
+            f"holdout_auc={last['holdout_auc']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in pending_jobs:
+            run = _run_stage5_1b_job(job)
+            run["elapsed_sec"] = round(time.time() - started_at, 1)
+            consume_run(run)
+    else:
+        with ProcessPoolExecutor(max_workers=int(workers)) as executor:
+            futures = [executor.submit(_run_stage5_1b_job, job) for job in pending_jobs]
+            for future in as_completed(futures):
+                run = future.result()
+                run["elapsed_sec"] = round(time.time() - started_at, 1)
+                consume_run(run)
+
+    raw_runs_by_target = defaultdict(list)
+    for run in report["raw_runs"]:
+        raw_runs_by_target[run["target"]].append(run)
+    for target_col in STAGE5_1B_TARGETS:
+        report["summary"][target_col] = summarize_stage5_1b_target(
+            raw_runs_by_target.get(target_col, []), target_col
+        )
+        target_summary = report["summary"][target_col]
+        report["sanity_checks"]["stage5_1b_structure_full_actual"][target_col] = {
+            "val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": target_summary.get("structure_full", {}).get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["clock_shift_actual"][target_col] = {
+            "val_auc_median": target_summary.get("clock_shift", {}).get("val_stop", {}).get("auc_median"),
+            "diagnostic_holdout_auc_median": target_summary.get("clock_shift", {}).get("diagnostic_holdout", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["updn_full_vs_structure_full"][target_col] = {
+            "updn_val_auc_median": target_summary.get("updn_full", {}).get("val_stop", {}).get("auc_median"),
+            "structure_val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+        }
+        report["sanity_checks"]["back_impulse_combo_vs_structure_full"][target_col] = {
+            "back_impulse_val_auc_median": target_summary.get("back_impulse_combo", {}).get("val_stop", {}).get("auc_median"),
+            "structure_val_auc_median": target_summary.get("structure_full", {}).get("val_stop", {}).get("auc_median"),
+        }
+        _write_json_atomic(output_path, report)
+
+    report["field_verdicts"] = stage5_1b_field_verdicts(report)
+    report["group_analysis"] = stage5_1b_group_analysis(report)
+    report["status"] = "DIAGNOSTIC_ONLY"
+    print("[heartbeat] stage5.1b runner | completed")
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 1)
+    _write_json_atomic(output_path, report)
+    return report
+
+
+def _stage5_2_row_datetime(row: pd.Series):
+    from datetime import datetime, timezone
+    try:
+        return datetime.strptime(str(row["time"]), "%Y.%m.%d %H:%M").replace(tzinfo=timezone.utc)
+    except (KeyError, ValueError, TypeError):
+        return None
+
+
+def _stage5_2_future_bars(ohlc: dict, times: list, idx0: int,
+                          horizon: int = STAGE5_2_HORIZON) -> list[dict]:
+    bars = []
+    for k in range(idx0 + 1, min(idx0 + 1 + horizon, len(times))):
+        opn, high, low, close = ohlc[times[k]]
+        bars.append({"open": opn, "high": high, "low": low, "close": close})
+    return bars
+
+
+def _stage5_2_oracle_trade_pnl(row: pd.Series, ohlc: dict, times: list,
+                               time_idx: dict) -> tuple[float | None, str | None]:
+    row_dt = _stage5_2_row_datetime(row)
+    if row_dt is None or row_dt not in time_idx:
+        return None, None
+    idx0 = time_idx[row_dt]
+    if idx0 + STAGE5_2_HORIZON >= len(times):
+        return None, None
+    fields = extract_stage5_1b_fields(str(row.get("fractal0", "")))
+    fractal_dir = fields.get("direction", 0.0)
+    fractal_price = fields.get("price", 0.0)
+    try:
+        atr = float(row["ATR"])
+    except (KeyError, TypeError, ValueError):
+        return None, None
+    if atr <= 0 or fractal_price <= 0:
+        return None, None
+    entry_price = float(ohlc[times[idx0]][3])
+    if fractal_dir == -1:
+        side = "buy"
+        stop_price = fractal_price - 0.5 * atr
+        take_price = entry_price + 2.0 * atr
+    elif fractal_dir == 1:
+        side = "sell"
+        stop_price = fractal_price + 0.5 * atr
+        take_price = entry_price - 2.0 * atr
+    else:
+        return None, None
+    result = stage5_2_first_touch_trade_result(
+        entry_price=entry_price,
+        stop_price=stop_price,
+        take_price=take_price,
+        side=side,
+        future_bars=_stage5_2_future_bars(ohlc, times, idx0),
+    )
+    return float(result["pnl_r"]), result["outcome"]
+
+
+def run_stage5_2_oracle_preflight(split: dict, target_col: str,
+                                  binary_col: str,
+                                  ohlc_path: Path = OHLC_FILE) -> dict:
+    val = split["val_stop"].copy()
+    if target_col not in val or binary_col not in val:
+        return {"pass": False, "reason": "missing_target_or_binary_column"}
+    valid = val[target_col].notna() & val[binary_col].notna()
+    val = val.loc[valid].copy()
+    ohlc, times, time_idx = load_ohlc_index(str(ohlc_path))
+    time_entries = val[target_col] >= STAGE5_2_ENTRY_THRESHOLD
+    binary_entries = val[binary_col] == 0.0
+
+    time_pnls = []
+    time_outcomes = defaultdict(int)
+    for _, row in val.loc[time_entries].iterrows():
+        pnl, outcome = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+        if pnl is not None:
+            time_pnls.append(pnl)
+            time_outcomes[outcome] += 1
+
+    binary_pnls = []
+    binary_outcomes = defaultdict(int)
+    for _, row in val.loc[binary_entries].iterrows():
+        pnl, outcome = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+        if pnl is not None:
+            binary_pnls.append(pnl)
+            binary_outcomes[outcome] += 1
+
+    time_pf = _stage5_2_pf(time_pnls)
+    binary_pf = _stage5_2_pf(binary_pnls)
+    years = sorted(int(y) for y in val["_year"].dropna().unique()) if "_year" in val else []
+    result = {
+        "oracle_time_pf": time_pf,
+        "oracle_binary_pf": binary_pf,
+        "oracle_time_outcomes": dict(time_outcomes),
+        "oracle_binary_outcomes": dict(binary_outcomes),
+        "trades": int(len(time_pnls)),
+        "trades_per_year": float(len(time_pnls) / max(len(years), 1)),
+        "yearly": {},
+    }
+    if "_year" in val:
+        for year, sub in val.loc[time_entries].groupby("_year"):
+            pnls = []
+            for _, row in sub.iterrows():
+                pnl, _ = _stage5_2_oracle_trade_pnl(row, ohlc, times, time_idx)
+                if pnl is not None:
+                    pnls.append(pnl)
+            result["yearly"][str(int(year))] = {
+                "trades": int(len(pnls)),
+                "pf": _stage5_2_pf(pnls),
+            }
+    pf_delta = None
+    if time_pf is not None and binary_pf is not None and np.isfinite(time_pf) and np.isfinite(binary_pf):
+        pf_delta = time_pf - binary_pf
+    result["pf_delta_vs_binary"] = pf_delta
+    yearly_pfs = [
+        row.get("pf") for row in result["yearly"].values()
+        if row.get("pf") is not None and np.isfinite(row.get("pf"))
+    ]
+    result["pass"] = (
+        time_pf is not None
+        and (np.isinf(time_pf) or time_pf >= 1.3)
+        and (pf_delta is None or pf_delta >= 0.2)
+        and result["trades_per_year"] >= 50
+        and len(yearly_pfs) >= 2
+        and max(yearly_pfs) < sum(yearly_pfs)
+    )
+    return result
+
+
+def _stage5_2_yearly_metrics(df: pd.DataFrame, target_col: str,
+                             pred: np.ndarray) -> dict:
+    if "_year" not in df:
+        return {}
+    out = {}
+    pred = np.asarray(pred, dtype=float)
+    for year, idx in df.groupby("_year").groups.items():
+        positions = df.index.get_indexer(idx)
+        y = df.loc[idx, target_col].astype(float).to_numpy()
+        out[str(int(year))] = stage5_2_regression_metrics(y, pred[positions])
+    return out
+
+
+def evaluate_stage5_2_profile_seed(split: dict, profile_key: str,
+                                   target_col: str, seed: int,
+                                   xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    X_train = build_stage5_2_features(train, profile_key)
+    X_val = build_stage5_2_features(val, profile_key)
+    X_holdout = build_stage5_2_features(holdout, profile_key)
+    X_low_n = build_stage5_2_features(low_n, profile_key) if len(low_n) else None
+    y_train = train[target_col].astype(float).to_numpy()
+    y_val = val[target_col].astype(float).to_numpy()
+    y_holdout = holdout[target_col].astype(float).to_numpy()
+    y_low_n = low_n[target_col].astype(float).to_numpy() if len(low_n) else np.asarray([])
+
+    model = xgb.XGBRegressor(
+        objective=STAGE5_2_XGB_OBJECTIVE,
+        n_estimators=300,
+        max_depth=3,
+        learning_rate=0.05,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        random_state=seed,
+        n_jobs=int(xgb_threads),
+        tree_method="hist",
+    )
+    model.fit(X_train, y_train)
+    val_pred = np.clip(model.predict(X_val), 1.0, STAGE5_2_CENSORED_VALUE)
+    holdout_pred = np.clip(model.predict(X_holdout), 1.0, STAGE5_2_CENSORED_VALUE)
+    low_n_pred = (
+        np.clip(model.predict(X_low_n), 1.0, STAGE5_2_CENSORED_VALUE)
+        if X_low_n is not None else np.asarray([])
+    )
+    return {
+        "profile": profile_key,
+        "target": target_col,
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {"n": int(len(train))},
+        "val_stop": stage5_2_regression_metrics(y_val, val_pred),
+        "diagnostic_holdout": stage5_2_regression_metrics(y_holdout, holdout_pred),
+        "low_n_disclosure": stage5_2_regression_metrics(y_low_n, low_n_pred) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_2_yearly_metrics(val, target_col, val_pred),
+        "yearly_diagnostic_holdout": _stage5_2_yearly_metrics(holdout, target_col, holdout_pred),
+    }
+
+
+def _median_metric(runs: list[dict], period: str, metric: str):
+    vals = [((r.get(period) or {}).get(metric)) for r in runs]
+    vals = [v for v in vals if v is not None and np.isfinite(v)]
+    return float(np.median(vals)) if vals else None
+
+
+def _median_yearly_metric(runs: list[dict], period: str, metric: str) -> dict:
+    years = sorted({
+        year for run in runs
+        for year in (run.get(period) or {}).keys()
+    })
+    out = {}
+    for year in years:
+        vals = [
+            ((run.get(period) or {}).get(year) or {}).get(metric)
+            for run in runs
+        ]
+        vals = [v for v in vals if v is not None and np.isfinite(v)]
+        out[year] = {metric: float(np.median(vals)) if vals else None}
+    return out
+
+
+def summarize_stage5_2_target(raw_runs: list[dict], target_col: str) -> dict:
+    target_runs = [r for r in raw_runs if r.get("target") == target_col]
+    by_profile = {}
+    for profile in STAGE5_2_PROFILE_KEYS:
+        runs = [r for r in target_runs if r.get("profile") == profile]
+        if not runs:
+            continue
+        by_profile[profile] = {
+            "profile": profile,
+            "n_seed_runs": len(runs),
+            "val_stop": {
+                "spearman_r": _median_metric(runs, "val_stop", "spearman_r"),
+                "mae": _median_metric(runs, "val_stop", "mae"),
+                "auc_true_ge_4": _median_metric(runs, "val_stop", "auc_true_ge_4"),
+                "yearly": _median_yearly_metric(runs, "yearly_val", "spearman_r"),
+            },
+            "diagnostic_holdout": {
+                "spearman_r": _median_metric(runs, "diagnostic_holdout", "spearman_r"),
+                "mae": _median_metric(runs, "diagnostic_holdout", "mae"),
+                "auc_true_ge_4": _median_metric(runs, "diagnostic_holdout", "auc_true_ge_4"),
+                "yearly": _median_yearly_metric(runs, "yearly_diagnostic_holdout", "spearman_r"),
+            },
+        }
+    best = max(
+        by_profile.values(),
+        key=lambda item: (item["val_stop"].get("spearman_r") or -999.0),
+    ) if by_profile else {}
+    if best:
+        time_rho = (by_profile.get("time_only") or {}).get("val_stop", {}).get("spearman_r")
+        clock_rho = (by_profile.get("clock_shift") or {}).get("val_stop", {}).get("spearman_r")
+        best_rho = best["val_stop"].get("spearman_r")
+        best["improvement_vs_time_only"] = {
+            "spearman_delta": None if time_rho is None or best_rho is None else best_rho - time_rho
+        }
+        best["improvement_vs_clock_shift"] = {
+            "spearman_delta": None if clock_rho is None or best_rho is None else best_rho - clock_rho
+        }
+    return {"profiles": by_profile, "best_profile": best}
+
+
+def stage5_3_target_id(source_target: str, spec: dict) -> str:
+    side = "sell" if source_target.startswith("sell_") else "buy"
+    return f"{side}_{spec['name']}"
+
+
+def stage5_3_make_binary_target(values, spec: dict) -> np.ndarray:
+    y = np.asarray(values, dtype=float)
+    out = np.full(len(y), -1, dtype=np.int8)
+    valid = np.isfinite(y)
+    family = spec["family"]
+    if family == "breach_after_k":
+        k = int(spec["k"])
+        out[valid] = ((y[valid] > k) & (y[valid] <= STAGE5_3_HORIZON)).astype(np.int8)
+    elif family == "survives_at_least_k":
+        k = int(spec["k"])
+        out[valid] = (y[valid] > k).astype(np.int8)
+    elif family == "bucket":
+        bucket = spec["bucket"]
+        if bucket == "fast":
+            out[valid] = ((y[valid] >= 1) & (y[valid] <= 2)).astype(np.int8)
+        elif bucket == "medium":
+            out[valid] = ((y[valid] >= 3) & (y[valid] <= STAGE5_3_HORIZON)).astype(np.int8)
+        elif bucket == "no_breach":
+            out[valid] = (y[valid] >= STAGE5_3_CENSORED_VALUE).astype(np.int8)
+        else:
+            raise ValueError(f"Unknown Stage 5.3 bucket: {bucket}")
+    else:
+        raise ValueError(f"Unknown Stage 5.3 target family: {family}")
+    return out
+
+
+def stage5_3_make_binary_target_from_frame(df: pd.DataFrame, source_target: str,
+                                           spec: dict) -> np.ndarray:
+    if spec["family"] == "binary_breach":
+        binary_col = STAGE5_3_TARGET_TO_BINARY[source_target]
+        vals = pd.to_numeric(df[binary_col], errors="coerce").to_numpy(dtype=float)
+        out = np.full(len(vals), -1, dtype=np.int8)
+        valid = np.isfinite(vals)
+        out[valid] = vals[valid].astype(np.int8)
+        return out
+    return stage5_3_make_binary_target(df[source_target].to_numpy(), spec)
+
+
+def stage5_3_target_distribution(split: dict, source_target: str, spec: dict) -> dict:
+    out = {}
+    for split_name, df in split.items():
+        if not isinstance(df, pd.DataFrame) or source_target not in df:
+            continue
+        y = stage5_3_make_binary_target_from_frame(df, source_target, spec)
+        valid = y >= 0
+        yv = y[valid]
+        out[split_name] = {
+            "n": int(len(yv)),
+            "positive_count": int(yv.sum()) if len(yv) else 0,
+            "positive_rate": float(yv.mean()) if len(yv) else None,
+            "invalid_count": int((~valid).sum()),
+        }
+    return out
+
+
+# ===========================================================================
+# Stage 5.4 A7 feature distribution audit
+# ===========================================================================
+
+def _stage5_4_feature_stats(values: np.ndarray) -> dict:
+    arr = np.asarray(values, dtype=np.float64)
+    finite = arr[np.isfinite(arr)]
+    if len(finite) == 0:
+        return {
+            "n_valid": 0,
+            "missing_or_inf_count": int(len(arr)),
+            "min": None,
+            "p1": None,
+            "p5": None,
+            "p25": None,
+            "p50": None,
+            "p75": None,
+            "p95": None,
+            "p99": None,
+            "max": None,
+            "mean": None,
+            "std": None,
+            "frac_abs_gt10": None,
+            "frac_abs_gt20": None,
+            "zero_rate": None,
+            "unique_rounded_6": 0,
+        }
+    p1, p5, p25, p50, p75, p95, p99 = np.percentile(finite, [1, 5, 25, 50, 75, 95, 99])
+    return {
+        "n_valid": int(len(finite)),
+        "missing_or_inf_count": int(len(arr) - len(finite)),
+        "min": float(np.min(finite)),
+        "p1": float(p1),
+        "p5": float(p5),
+        "p25": float(p25),
+        "p50": float(p50),
+        "p75": float(p75),
+        "p95": float(p95),
+        "p99": float(p99),
+        "max": float(np.max(finite)),
+        "mean": float(np.mean(finite)),
+        "std": float(np.std(finite)),
+        "frac_abs_gt10": float(np.mean(np.abs(finite) > 10.0)),
+        "frac_abs_gt20": float(np.mean(np.abs(finite) > 20.0)),
+        "zero_rate": float(np.mean(finite == 0.0)),
+        "unique_rounded_6": int(len(np.unique(np.round(finite, 6)))),
+    }
+
+
+def _stage5_4_audit_feature_matrix(X: np.ndarray, feature_names: list[str]) -> dict:
+    arr = np.asarray(X, dtype=np.float32)
+    if arr.ndim != 2:
+        raise ValueError(f"Stage 5.4 audit expects 2D matrix, got shape={arr.shape}")
+    if arr.shape[1] != len(feature_names):
+        raise ValueError(
+            f"Stage 5.4 feature name mismatch: matrix_width={arr.shape[1]} names={len(feature_names)}"
+        )
+    return {
+        name: _stage5_4_feature_stats(arr[:, idx])
+        for idx, name in enumerate(feature_names)
+    }
+
+
+def _stage5_4_price_back_correlation(train_X: np.ndarray, feature_names: list[str]) -> dict:
+    arr = np.asarray(train_X, dtype=np.float32)
+    pairs = []
+    for fractal_idx in range(N_FRACTALS):
+        back_name = f"fractal{fractal_idx}.back"
+        coord_name = f"fractal{fractal_idx}.price_coord_atr"
+        if back_name not in feature_names or coord_name not in feature_names:
+            continue
+        back = arr[:, feature_names.index(back_name)]
+        coord = arr[:, feature_names.index(coord_name)]
+        valid = np.isfinite(back) & np.isfinite(coord)
+        if valid.sum() < 3:
+            continue
+        rho, _ = stats.spearmanr(back[valid], coord[valid])
+        if np.isfinite(rho):
+            pairs.append({
+                "fractal": int(fractal_idx),
+                "spearman": float(rho),
+                "abs_spearman": float(abs(rho)),
+            })
+    pairs.sort(key=lambda row: row["abs_spearman"], reverse=True)
+    return {
+        "max_abs_spearman": float(pairs[0]["abs_spearman"]) if pairs else None,
+        "top_pairs": pairs[:10],
+        "warning_threshold_abs_spearman": 0.8,
+    }
+
+
+def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
+                                        feature_names: list[str] | None = None) -> dict:
+    names = feature_names or stage5_4_feature_names(profile_key)
+    by_split = {
+        split_name: _stage5_4_audit_feature_matrix(X, names)
+        for split_name, X in feature_split.items()
+        if X is not None
+    }
+    flags = []
+    for split_stats in by_split.values():
+        for stats in split_stats.values():
+            if stats["missing_or_inf_count"] > 0:
+                flags.append("NaN_OR_INF")
+            if (stats["frac_abs_gt20"] or 0.0) > 0.0:
+                flags.append("TAIL_GT20")
+            if (stats["frac_abs_gt10"] or 0.0) > 0.01:
+                flags.append("TAIL_GT10")
+            if stats["zero_rate"] is not None and stats["zero_rate"] > 0.95:
+                flags.append("ZERO_GT95")
+
+    old_position_tail = {}
+    for name, stats in by_split.get("train_core", {}).items():
+        if ".price_coord_atr" not in name:
+            continue
+        try:
+            fractal_num = int(name.split(".", 1)[0].removeprefix("fractal"))
+        except ValueError:
+            continue
+        if fractal_num >= 90 and ((stats.get("frac_abs_gt10") or 0.0) > 0.0 or (stats.get("frac_abs_gt20") or 0.0) > 0.0):
+            old_position_tail[name] = {
+                "frac_abs_gt10": stats.get("frac_abs_gt10"),
+                "frac_abs_gt20": stats.get("frac_abs_gt20"),
+            }
+    if old_position_tail:
+        flags.append("OLD_POSITION_PRICE_COORD_TAIL")
+
+    correlation_audit = _stage5_4_price_back_correlation(
+        feature_split["train_core"], names
+    )
+    if (correlation_audit.get("max_abs_spearman") or 0.0) > 0.8:
+        flags.append("PRICE_COORD_BACK_CORR_GT_0_8")
+
+    train = by_split.get("train_core", {})
+    hold = by_split.get("diagnostic_holdout", {})
+    for name, train_stats in train.items():
+        hold_stats = hold.get(name)
+        if not hold_stats:
+            continue
+        train_std = train_stats.get("std") or 0.0
+        if train_std > 1e-8 and train_stats.get("p95") is not None and hold_stats.get("p95") is not None:
+            if abs(hold_stats["p95"] - train_stats["p95"]) > 3.0 * train_std:
+                flags.append("REGIME_SHIFT")
+
+    flags = sorted(set(flags))
+    status = "ERROR" if "NaN_OR_INF" in flags else ("WARNING" if flags else "PASS")
+    decisions = {}
+    for flag in flags:
+        if flag == "NaN_OR_INF":
+            decisions[flag] = "block_training"
+        elif flag in {
+            "TAIL_GT20",
+            "TAIL_GT10",
+            "ZERO_GT95",
+            "REGIME_SHIFT",
+            "OLD_POSITION_PRICE_COORD_TAIL",
+            "PRICE_COORD_BACK_CORR_GT_0_8",
+        }:
+            decisions[flag] = "accept_as_diagnostic"
+    return {
+        "profile": profile_key,
+        "status": status,
+        "flags": flags,
+        "decisions": decisions,
+        "by_split": by_split,
+        "old_position_price_coord_tail": old_position_tail,
+        "correlation_audit": correlation_audit,
+        "thresholds": {
+            "tail_gt10_warn_fraction": 0.01,
+            "tail_gt20_warn_any": True,
+            "regime_shift_p95_delta_train_std": 3.0,
+            "price_coord_back_corr_abs_spearman_warning": 0.8,
+            "old_position_tail_watch": "fractal90..fractal99 price_coord_atr",
+        },
+    }
+
+
+def stage5_3_binary_metrics(y_true, y_score, threshold: float = 0.5) -> dict:
+    yt = np.asarray(y_true, dtype=int)
+    ys = np.asarray(y_score, dtype=float)
+    valid = np.isfinite(ys) & np.isin(yt, [0, 1])
+    yt = yt[valid]
+    ys = ys[valid]
+    pred = ys >= threshold
+    positives = int(yt.sum())
+    predicted_positive = int(pred.sum())
+    auc = None
+    pr_auc = None
+    if len(np.unique(yt)) == 2:
+        try:
+            auc = float(roc_auc_score(yt, ys))
+        except ValueError:
+            auc = 0.5
+        try:
+            pr_auc = float(average_precision_score(yt, ys))
+        except ValueError:
+            pr_auc = float(yt.mean()) if len(yt) else None
+    return {
+        "n": int(len(yt)),
+        "positive_count": positives,
+        "positive_rate": float(yt.mean()) if len(yt) else None,
+        "auc": auc,
+        "pr_auc": pr_auc,
+        "pred_summary": {
+            "min": float(np.min(ys)) if len(ys) else None,
+            "median": float(np.median(ys)) if len(ys) else None,
+            "max": float(np.max(ys)) if len(ys) else None,
+            "std": float(np.std(ys)) if len(ys) else None,
+            "unique_rounded_4": int(len(np.unique(np.round(ys, 4)))) if len(ys) else 0,
+        },
+        "threshold_0_5": {
+            "threshold": float(threshold),
+            "predicted_positive": predicted_positive,
+            "precision": float(np.mean(yt[pred])) if predicted_positive else None,
+            "recall": float(np.sum(yt[pred]) / max(positives, 1)),
+        },
+    }
+
+
+def stage5_3_gate_results(summary: dict) -> dict:
+    best = summary.get("best_main") or {}
+    val = best.get("val_stop") or {}
+    yearly = val.get("yearly") or {}
+    pos_rate = val.get("positive_rate")
+    pr_auc = val.get("pr_auc")
+    pr_lift = None
+    if pr_auc is not None and pos_rate is not None:
+        pr_lift = pr_auc - pos_rate
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for row in yearly.values() if (row.get("auc") or 0.0) >= 0.60) >= 2
+    )
+    binary = best.get("binary_breach_baseline") or {}
+    seed_consistency = best.get("seed_consistency") or {}
+    checks = {
+        "main_target_only": ((best.get("spec") or {}).get("role") == "main"),
+        "positive_rate_between_0_05_0_95": pos_rate is not None and 0.05 <= pos_rate <= 0.95,
+        "auc_ge_0_65": (val.get("auc") or 0.0) >= 0.65,
+        "pr_auc_lift_ge_0_05": pr_lift is not None and pr_lift >= 0.05,
+        "auc_delta_binary_breach_same_profile_ge_0_02": (binary.get("auc_delta") or 0.0) >= 0.02,
+        "auc_delta_time_only_ge_0_03": ((best.get("improvement_vs_time_only") or {}).get("auc_delta") or 0.0) >= 0.03,
+        "auc_delta_clock_shift_ge_0_03": ((best.get("improvement_vs_clock_shift") or {}).get("auc_delta") or 0.0) >= 0.03,
+        "seed_delta_binary_positive_ge_2_of_3": (seed_consistency.get("auc_delta_vs_binary_positive_count") or 0) >= 2,
+        "yearly_not_single_year": yearly_pass,
+    }
+    passed = all(checks.values())
+    return {
+        "overall_status": "TARGET_REFORMULATION_FOUND" if passed else "DIAGNOSTIC_ONLY",
+        "model_gate": {
+            "pass": bool(passed),
+            "checks": checks,
+            "pr_auc_lift": pr_lift,
+            "multiple_testing_note": "14 main comparisons across 2 sides; target families are correlated, so this is diagnostic evidence, not candidate validation.",
+        },
+    }
+
+
+def _stage5_3_yearly_metrics(df: pd.DataFrame, source_target: str,
+                             spec: dict, score: np.ndarray) -> dict:
+    if "_year" not in df:
+        return {}
+    out = {}
+    score = np.asarray(score, dtype=float)
+    for year, idx in df.groupby("_year").groups.items():
+        positions = df.index.get_indexer(idx)
+        y = stage5_3_make_binary_target_from_frame(df.loc[idx], source_target, spec)
+        out[str(int(year))] = stage5_3_binary_metrics(y, score[positions])
+    return out
+
+
+def _stage5_3_feature_importance_top20(model) -> list[dict]:
+    score = model.get_score(importance_type="gain")
+    rows = [
+        {"feature": str(feature), "gain": float(gain)}
+        for feature, gain in score.items()
+    ]
+    rows.sort(key=lambda row: row["gain"], reverse=True)
+    return rows[:20]
+
+
+def _build_stage5_3_feature_split(split: dict, profile_key: str) -> dict:
+    return {
+        "train_core": build_stage5_2_features(split["train_core"], profile_key),
+        "val_stop": build_stage5_2_features(split["val_stop"], profile_key),
+        "diagnostic_holdout": build_stage5_2_features(split["diagnostic_holdout"], profile_key),
+        "low_n_disclosure": (
+            build_stage5_2_features(split["low_n_disclosure"], profile_key)
+            if len(split["low_n_disclosure"]) else None
+        ),
+    }
+
+
+def evaluate_stage5_3_profile_seed(split: dict, source_target: str, spec: dict,
+                                   profile_key: str, seed: int,
+                                   xgb_threads: int = 1,
+                                   feature_split: dict | None = None) -> dict:
+    started_at = time.time()
+    def log_step(step: str) -> None:
+        elapsed = round(time.time() - started_at, 1)
+        print(
+            f"[heartbeat] stage5.3 eval | source={source_target} target={spec['name']} "
+            f"profile={profile_key} seed={seed} elapsed={elapsed}s | {step}",
+            flush=True,
+        )
+
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    if feature_split is None:
+        log_step("build feature_split start")
+        feature_split = _build_stage5_3_feature_split(split, profile_key)
+    X_train = feature_split["train_core"]
+    X_val = feature_split["val_stop"]
+    X_holdout = feature_split["diagnostic_holdout"]
+    X_low_n = feature_split["low_n_disclosure"]
+    log_step("build targets start")
+
+    y_train = stage5_3_make_binary_target_from_frame(train, source_target, spec)
+    train_valid = y_train >= 0
+    X_train = X_train[train_valid]
+    y_train = y_train[train_valid]
+    positives = int(y_train.sum())
+    negatives = int(len(y_train) - positives)
+    scale_pos_weight = float(negatives / max(positives, 1))
+
+    y_val = stage5_3_make_binary_target_from_frame(val, source_target, spec)
+    val_valid = y_val >= 0
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val[val_valid], label=y_val[val_valid])
+    params = {
+        "objective": STAGE5_3_XGB_OBJECTIVE,
+        "eval_metric": "auc",
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "scale_pos_weight": scale_pos_weight,
+        "seed": seed,
+        "n_jobs": int(xgb_threads),
+        "verbosity": 0,
+    }
+    log_step("xgb.train start")
+    model = xgb.train(
+        params,
+        dtrain,
+        num_boost_round=500,
+        evals=[(dtrain, "train"), (dval, "val")],
+        early_stopping_rounds=20,
+        verbose_eval=False,
+    )
+    log_step("predict start")
+    val_score = model.predict(xgb.DMatrix(X_val))
+    holdout_score = model.predict(xgb.DMatrix(X_holdout))
+    low_n_score = model.predict(xgb.DMatrix(X_low_n)) if X_low_n is not None else np.asarray([])
+
+    y_holdout = stage5_3_make_binary_target_from_frame(holdout, source_target, spec)
+    y_low_n = stage5_3_make_binary_target_from_frame(low_n, source_target, spec) if len(low_n) else np.asarray([])
+    return {
+        "source_target": source_target,
+        "target_id": stage5_3_target_id(source_target, spec),
+        "spec": dict(spec),
+        "profile": profile_key,
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {
+            "n": int(len(y_train)),
+            "positive_rate": float(y_train.mean()) if len(y_train) else None,
+            "scale_pos_weight": scale_pos_weight,
+            "best_iteration": int(model.best_iteration) if model.best_iteration is not None else None,
+        },
+        "val_stop": stage5_3_binary_metrics(y_val, val_score),
+        "diagnostic_holdout": stage5_3_binary_metrics(y_holdout, holdout_score),
+        "low_n_disclosure": stage5_3_binary_metrics(y_low_n, low_n_score) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_3_yearly_metrics(val, source_target, spec, val_score),
+        "yearly_diagnostic_holdout": _stage5_3_yearly_metrics(holdout, source_target, spec, holdout_score),
+        "feature_importance_gain_top20": _stage5_3_feature_importance_top20(model),
+    }
+
+
+def _stage5_3_profile_summary(runs: list[dict]) -> dict:
+    return {
+        "n_seed_runs": len(runs),
+        "val_stop": {
+            "auc": _median_metric(runs, "val_stop", "auc"),
+            "pr_auc": _median_metric(runs, "val_stop", "pr_auc"),
+            "positive_rate": _median_metric(runs, "val_stop", "positive_rate"),
+            "yearly": _median_yearly_metric(runs, "yearly_val", "auc"),
+        },
+        "diagnostic_holdout": {
+            "auc": _median_metric(runs, "diagnostic_holdout", "auc"),
+            "pr_auc": _median_metric(runs, "diagnostic_holdout", "pr_auc"),
+            "positive_rate": _median_metric(runs, "diagnostic_holdout", "positive_rate"),
+            "yearly": _median_yearly_metric(runs, "yearly_diagnostic_holdout", "auc"),
+        },
+    }
+
+
+def summarize_stage5_3_source(raw_runs: list[dict], source_target: str) -> dict:
+    source_runs = [r for r in raw_runs if r.get("source_target") == source_target]
+    targets = {}
+    for target_id in sorted({r.get("target_id") for r in source_runs}):
+        target_runs = [r for r in source_runs if r.get("target_id") == target_id]
+        if not target_runs:
+            continue
+        spec = target_runs[0].get("spec") or {}
+        profiles = {}
+        for profile in STAGE5_3_PROFILE_KEYS:
+            runs = [r for r in target_runs if r.get("profile") == profile]
+            if runs:
+                row = _stage5_3_profile_summary(runs)
+                row["profile"] = profile
+                profiles[profile] = row
+        best_profile = max(
+            profiles.values(),
+            key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        ) if profiles else {}
+        if best_profile:
+            best_auc = (best_profile.get("val_stop") or {}).get("auc")
+            time_auc = ((profiles.get("time_only") or {}).get("val_stop") or {}).get("auc")
+            clock_auc = ((profiles.get("clock_shift") or {}).get("val_stop") or {}).get("auc")
+            best_profile["target_id"] = target_id
+            best_profile["spec"] = spec
+            best_profile["improvement_vs_time_only"] = {
+                "auc_delta": None if best_auc is None or time_auc is None else best_auc - time_auc
+            }
+            best_profile["improvement_vs_clock_shift"] = {
+                "auc_delta": None if best_auc is None or clock_auc is None else best_auc - clock_auc
+            }
+        targets[target_id] = {
+            "target_id": target_id,
+            "spec": spec,
+            "profiles": profiles,
+            "best_profile": best_profile,
+        }
+
+    best_main = max(
+        [t["best_profile"] for t in targets.values()
+         if ((t.get("spec") or {}).get("role") == "main") and t.get("best_profile")],
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    best_control = max(
+        [t["best_profile"] for t in targets.values()
+         if ((t.get("spec") or {}).get("role") == "control") and t.get("best_profile")],
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    binary_target = next(
+        (t for t in targets.values() if ((t.get("spec") or {}).get("role") == "baseline")),
+        {},
+    )
+    if best_main and binary_target:
+        profile = best_main.get("profile")
+        binary_profile = ((binary_target.get("profiles") or {}).get(profile) or {})
+        binary_auc = ((binary_profile.get("val_stop") or {}).get("auc"))
+        best_auc = ((best_main.get("val_stop") or {}).get("auc"))
+        best_main["binary_breach_baseline"] = {
+            "same_profile_val_auc": binary_auc,
+            "auc_delta": None if best_auc is None or binary_auc is None else best_auc - binary_auc,
+        }
+        main_seed_runs = [
+            r for r in source_runs
+            if r.get("target_id") == best_main.get("target_id") and r.get("profile") == profile
+        ]
+        binary_seed_runs = {
+            int(r.get("seed")): r
+            for r in source_runs
+            if r.get("target_id") == binary_target.get("target_id") and r.get("profile") == profile
+        }
+        positive = 0
+        comparable = 0
+        for run in main_seed_runs:
+            seed = int(run.get("seed"))
+            base = binary_seed_runs.get(seed)
+            if not base:
+                continue
+            main_auc = ((run.get("val_stop") or {}).get("auc"))
+            base_auc = ((base.get("val_stop") or {}).get("auc"))
+            if main_auc is None or base_auc is None:
+                continue
+            comparable += 1
+            if main_auc > base_auc:
+                positive += 1
+        best_main["seed_consistency"] = {
+            "auc_delta_vs_binary_positive_count": int(positive),
+            "n_seeds": int(comparable),
+        }
+    return {
+        "source_target": source_target,
+        "targets": targets,
+        "best_main": best_main,
+        "best_control": best_control,
+    }
+
+
+def _stage5_2_censoring(split: dict, target_col: str) -> dict:
+    out = {}
+    for name, df in split.items():
+        if not isinstance(df, pd.DataFrame) or target_col not in df.columns:
+            continue
+        vals = df[target_col].dropna().astype(float)
+        out[name] = {
+            "n": int(len(vals)),
+            "censored_count": int((vals >= STAGE5_2_CENSORED_VALUE).sum()),
+            "censoring_rate": float((vals >= STAGE5_2_CENSORED_VALUE).mean()) if len(vals) else None,
+        }
+    return out
+
+
+def _run_stage5_2_job(job: dict) -> dict:
+    started_at = time.time()
+    started_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(started_at))
+    print(
+        f"[heartbeat] ts={started_wall}Z | stage5.2 job | target={job['target']} "
+        f"profile={job['profile']} seed={job['seed']} xgb_threads={job['xgb_threads']} start"
+    )
+    run = evaluate_stage5_2_profile_seed(
+        job["split"], job["profile"], job["target"], job["seed"],
+        xgb_threads=job["xgb_threads"],
+    )
+    finished_at = time.time()
+    finished_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(finished_at))
+    print(
+        f"[heartbeat] ts={finished_wall}Z | stage5.2 job | target={job['target']} "
+        f"profile={job['profile']} seed={job['seed']} done elapsed={run.get('elapsed_sec')}"
+    )
+    run["started_at_unix"] = started_at
+    run["finished_at_unix"] = finished_at
+    return run
+
+
+def run_stage5_2_time_to_breach_regression(target_splits: dict,
+                                           output_path: Path = STAGE5_2_JSON_REPORT_PATH,
+                                           workers: int = 1,
+                                           xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    total_runs = len(STAGE5_2_TARGETS) * len(STAGE5_2_PROFILE_KEYS) * len(STAGE5_2_SEEDS)
+    report = {
+        "stage": "5.2_time_to_breach_regression",
+        "status": "RUNNING",
+        "level": "candidate_hypothesis",
+        "targets": STAGE5_2_TARGETS,
+        "profiles": STAGE5_2_PROFILE_KEYS,
+        "seeds": STAGE5_2_SEEDS,
+        "oracle_preflight": {},
+        "censoring": {},
+        "constant_baseline": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_target = {}
+    for target_col in STAGE5_2_TARGETS:
+        print(f"[heartbeat] stage5.2 runner | building split target={target_col}")
+        split = build_stage5_1_split(combined_by_name[target_col], target_col)
+        splits_by_target[target_col] = split
+        binary_col = STAGE5_2_TARGET_TO_BINARY[target_col]
+        report["censoring"][target_col] = _stage5_2_censoring(split, target_col)
+        report["oracle_preflight"][target_col] = run_stage5_2_oracle_preflight(split, target_col, binary_col)
+        y_val = split["val_stop"][target_col].astype(float).to_numpy()
+        report["constant_baseline"][target_col] = stage5_2_constant_baseline_metrics(y_val)
+        report["progress"]["updated_at_unix"] = time.time()
+        _write_json_atomic(output_path, report)
+
+    jobs = []
+    for target_col in STAGE5_2_TARGETS:
+        for profile in STAGE5_2_PROFILE_KEYS:
+            for seed in STAGE5_2_SEEDS:
+                jobs.append({
+                    "target": target_col,
+                    "profile": profile,
+                    "seed": int(seed),
+                    "split": splits_by_target[target_col],
+                    "xgb_threads": int(xgb_threads),
+                })
+
+    heartbeat = HeartbeatLogger("stage5.2 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        if report["progress"]["done_runs"] > 0:
+            elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+            avg_sec = elapsed / report["progress"]["done_runs"]
+            remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+            report["progress"]["eta_sec"] = round(avg_sec * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "target": run["target"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "elapsed_sec": run.get("elapsed_sec"),
+            "started_at_unix": run.get("started_at_unix"),
+            "finished_at_unix": run.get("finished_at_unix"),
+            "spearman_r": _safe((run.get("val_stop") or {}).get("spearman_r")),
+            "mae": _safe((run.get("val_stop") or {}).get("mae")),
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['target']} | {run['profile']} | seed={run['seed']} | "
+            f"spearman={last['spearman_r']} | mae={last['mae']} | elapsed={last['elapsed_sec']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            consume_run(_run_stage5_2_job(job))
+    else:
+        with ProcessPoolExecutor(max_workers=int(workers)) as executor:
+            futures = [executor.submit(_run_stage5_2_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    raw_runs_by_target = defaultdict(list)
+    for run in report["raw_runs"]:
+        raw_runs_by_target[run["target"]].append(run)
+    statuses = []
+    for target_col in STAGE5_2_TARGETS:
+        summary = summarize_stage5_2_target(raw_runs_by_target.get(target_col, []), target_col)
+        best = summary.get("best_profile") or {}
+        const = report["constant_baseline"][target_col]
+        if best:
+            best.setdefault("improvement_vs_constant", {})
+            best["improvement_vs_constant"]["spearman_delta"] = (
+                (best.get("val_stop", {}).get("spearman_r") or 0.0)
+                - (const.get("spearman_r") or 0.0)
+            )
+            if best.get("val_stop", {}).get("mae") is not None and const.get("mae"):
+                best["improvement_vs_constant"]["mae_improvement_frac"] = (
+                    (const["mae"] - best["val_stop"]["mae"]) / const["mae"]
+                )
+        report["summary"][target_col] = summary
+        gate = stage5_2_gate_results(
+            summary, report["oracle_preflight"][target_col], report["censoring"][target_col]
+        )
+        report["gate_results"][target_col] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "CANDIDATE_HYPOTHESIS"
+        if statuses and all(status == "CANDIDATE_HYPOTHESIS" for status in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
+_STAGE5_3_WORKER_SPLITS = None
+_STAGE5_3_WORKER_FEATURES = None
+
+
+def _init_stage5_3_worker(splits_by_source: dict, features_by_source_profile: dict) -> None:
+    global _STAGE5_3_WORKER_SPLITS, _STAGE5_3_WORKER_FEATURES
+    _STAGE5_3_WORKER_SPLITS = splits_by_source
+    _STAGE5_3_WORKER_FEATURES = features_by_source_profile
+
+
+def _run_stage5_3_job(job: dict) -> dict:
+    started_at = time.time()
+    started_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(started_at))
+    print(
+        f"[heartbeat] ts={started_wall}Z | stage5.3 job | source={job['source_target']} "
+        f"target={job['spec']['name']} profile={job['profile']} seed={job['seed']} "
+        f"xgb_threads={job['xgb_threads']} start"
+    )
+    split = job.get("split")
+    if split is None:
+        if _STAGE5_3_WORKER_SPLITS is None:
+            raise RuntimeError("Stage 5.3 worker splits are not initialized")
+        split = _STAGE5_3_WORKER_SPLITS[job["source_target"]]
+    feature_split = job.get("feature_split")
+    if feature_split is None and _STAGE5_3_WORKER_FEATURES is not None:
+        feature_split = _STAGE5_3_WORKER_FEATURES[job["source_target"]][job["profile"]]
+    run = evaluate_stage5_3_profile_seed(
+        split, job["source_target"], job["spec"], job["profile"], job["seed"],
+        xgb_threads=job["xgb_threads"],
+        feature_split=feature_split,
+    )
+    finished_at = time.time()
+    finished_wall = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(finished_at))
+    print(
+        f"[heartbeat] ts={finished_wall}Z | stage5.3 job | source={job['source_target']} "
+        f"target={job['spec']['name']} profile={job['profile']} seed={job['seed']} "
+        f"done elapsed={run.get('elapsed_sec')}"
+    )
+    run["started_at_unix"] = started_at
+    run["finished_at_unix"] = finished_at
+    return run
+
+
+# ===========================================================================
+# Stage 5.4 evaluator, summary, gate
+# ===========================================================================
+
+def _build_stage5_4_feature_split(split: dict, profile_key: str) -> dict:
+    return {
+        "train_core": build_stage5_4_features(split["train_core"], profile_key),
+        "val_stop": build_stage5_4_features(split["val_stop"], profile_key),
+        "diagnostic_holdout": build_stage5_4_features(split["diagnostic_holdout"], profile_key),
+        "low_n_disclosure": (
+            build_stage5_4_features(split["low_n_disclosure"], profile_key)
+            if len(split["low_n_disclosure"]) else None
+        ),
+    }
+
+
+def evaluate_stage5_4_profile_seed(split: dict, source_target: str, profile_key: str,
+                                   seed: int, xgb_threads: int = 1,
+                                   feature_split: dict | None = None) -> dict:
+    started_at = time.time()
+    train = split["train_core"]
+    val = split["val_stop"]
+    holdout = split["diagnostic_holdout"]
+    low_n = split["low_n_disclosure"]
+    if feature_split is None:
+        feature_split = _build_stage5_4_feature_split(split, profile_key)
+
+    X_train = feature_split["train_core"]
+    X_val = feature_split["val_stop"]
+    X_holdout = feature_split["diagnostic_holdout"]
+    X_low_n = feature_split["low_n_disclosure"]
+
+    y_train = stage5_3_make_binary_target_from_frame(train, source_target, STAGE5_4_TARGET_SPEC)
+    train_valid = y_train >= 0
+    X_train = X_train[train_valid]
+    y_train = y_train[train_valid]
+    positives = int(y_train.sum())
+    negatives = int(len(y_train) - positives)
+    scale_pos_weight = float(negatives / max(positives, 1))
+
+    y_val = stage5_3_make_binary_target_from_frame(val, source_target, STAGE5_4_TARGET_SPEC)
+    val_valid = y_val >= 0
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dval = xgb.DMatrix(X_val[val_valid], label=y_val[val_valid])
+    params = {
+        "objective": STAGE5_3_XGB_OBJECTIVE,
+        "eval_metric": "auc",
+        "max_depth": 6,
+        "learning_rate": 0.05,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "scale_pos_weight": scale_pos_weight,
+        "seed": seed,
+        "n_jobs": int(xgb_threads),
+        "verbosity": 0,
+    }
+    model = xgb.train(
+        params,
+        dtrain,
+        num_boost_round=500,
+        evals=[(dtrain, "train"), (dval, "val")],
+        early_stopping_rounds=20,
+        verbose_eval=False,
+    )
+    val_score = model.predict(xgb.DMatrix(X_val))
+    holdout_score = model.predict(xgb.DMatrix(X_holdout))
+    low_n_score = model.predict(xgb.DMatrix(X_low_n)) if X_low_n is not None else np.asarray([])
+    y_holdout = stage5_3_make_binary_target_from_frame(holdout, source_target, STAGE5_4_TARGET_SPEC)
+    y_low_n = stage5_3_make_binary_target_from_frame(low_n, source_target, STAGE5_4_TARGET_SPEC) if len(low_n) else np.asarray([])
+
+    return {
+        "stage": "5.4",
+        "source_target": source_target,
+        "target_id": stage5_3_target_id(source_target, STAGE5_4_TARGET_SPEC),
+        "spec": dict(STAGE5_4_TARGET_SPEC),
+        "profile": profile_key,
+        "profile_role": STAGE5_4_PROFILE_ROLES[profile_key],
+        "seed": int(seed),
+        "elapsed_sec": round(time.time() - started_at, 3),
+        "train_core": {
+            "n": int(len(y_train)),
+            "positive_rate": float(y_train.mean()) if len(y_train) else None,
+            "scale_pos_weight": scale_pos_weight,
+            "best_iteration": int(model.best_iteration) if model.best_iteration is not None else None,
+        },
+        "val_stop": stage5_3_binary_metrics(y_val, val_score),
+        "diagnostic_holdout": stage5_3_binary_metrics(y_holdout, holdout_score),
+        "low_n_disclosure": stage5_3_binary_metrics(y_low_n, low_n_score) if len(y_low_n) else {"n": 0},
+        "yearly_val": _stage5_3_yearly_metrics(val, source_target, STAGE5_4_TARGET_SPEC, val_score),
+        "yearly_diagnostic_holdout": _stage5_3_yearly_metrics(holdout, source_target, STAGE5_4_TARGET_SPEC, holdout_score),
+        "feature_importance_gain_top20": _stage5_3_feature_importance_top20(model),
+    }
+
+
+def summarize_stage5_4_source(raw_runs: list[dict], source_target: str) -> dict:
+    side = "sell" if source_target.startswith("sell_") else "buy"
+    source_runs = [r for r in raw_runs if r.get("source_target") == source_target]
+    profiles = {}
+    for profile in STAGE5_4_PROFILE_KEYS:
+        runs = [r for r in source_runs if r.get("profile") == profile]
+        if not runs:
+            continue
+        row = _stage5_3_profile_summary(runs)
+        row["profile"] = profile
+        row["profile_role"] = STAGE5_4_PROFILE_ROLES[profile]
+        profiles[profile] = row
+
+    baseline_profile = STAGE5_4_SIDE_BASELINE_PROFILE[side]
+    baseline_runs = [r for r in source_runs if r.get("profile") == baseline_profile]
+    baseline_by_seed = {
+        int(r["seed"]): ((r.get("val_stop") or {}).get("auc"))
+        for r in baseline_runs
+    }
+    baseline_auc = ((profiles.get(baseline_profile) or {}).get("val_stop") or {}).get("auc")
+    for profile, row in profiles.items():
+        auc = (row.get("val_stop") or {}).get("auc")
+        per_seed = []
+        for run in [r for r in source_runs if r.get("profile") == profile]:
+            seed = int(run["seed"])
+            run_auc = ((run.get("val_stop") or {}).get("auc"))
+            base_auc = baseline_by_seed.get(seed)
+            delta = None if run_auc is None or base_auc is None else run_auc - base_auc
+            per_seed.append({
+                "seed": seed,
+                "auc": run_auc,
+                "baseline_auc": base_auc,
+                "auc_delta": delta,
+                "passes_0_02": bool(delta is not None and delta >= 0.02),
+            })
+        pass_count = sum(1 for item in per_seed if item["passes_0_02"])
+        row["delta_vs_side_baseline"] = {
+            "baseline_profile": baseline_profile,
+            "baseline_val_auc": baseline_auc,
+            "median_auc_delta": None if auc is None or baseline_auc is None else auc - baseline_auc,
+            "per_seed": sorted(per_seed, key=lambda item: item["seed"]),
+            "pass_count_ge_0_02": int(pass_count),
+            "n_seeds": len(per_seed),
+        }
+        hold_auc = (row.get("diagnostic_holdout") or {}).get("auc")
+        row["holdout_drop"] = None if auc is None or hold_auc is None else auc - hold_auc
+
+    primary_profiles = [
+        row for row in profiles.values()
+        if row.get("profile_role") == "primary"
+    ]
+    best_primary = max(
+        primary_profiles,
+        key=lambda row: (row.get("val_stop") or {}).get("auc") or -999.0,
+        default={},
+    )
+    return {
+        "source_target": source_target,
+        "side": side,
+        "target": "fast",
+        "side_baseline_profile": baseline_profile,
+        "side_primary_profile": STAGE5_4_SIDE_PRIMARY_PROFILE[side],
+        "profiles": profiles,
+        "best_primary": best_primary,
+    }
+
+
+def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
+    side = summary.get("side") or ("sell" if source_target.startswith("sell_") else "buy")
+    best = summary.get("best_primary") or {}
+    val = best.get("val_stop") or {}
+    yearly = val.get("yearly") or {}
+    delta = best.get("delta_vs_side_baseline") or {}
+    positive_rate = val.get("positive_rate")
+    pr_auc = val.get("pr_auc")
+    pr_auc_lift = None if pr_auc is None or positive_rate is None else pr_auc - positive_rate
+    yearly_pass = (
+        len(yearly) >= 2
+        and sum(1 for row in yearly.values() if (row.get("auc") or 0.0) >= 0.60) >= 2
+    )
+    holdout_drop_threshold = 0.04 if side == "buy" else 0.06
+    checks = {
+        "target_is_fast": summary.get("target") == "fast",
+        "best_profile_is_primary": best.get("profile_role") == "primary",
+        "auc_ge_0_65": (val.get("auc") or 0.0) >= 0.65,
+        "pr_auc_lift_ge_0_03": pr_auc_lift is not None and pr_auc_lift >= 0.03,
+        "median_delta_vs_side_baseline_ge_0_02": (delta.get("median_auc_delta") or 0.0) >= 0.02,
+        "per_seed_delta_ge_0_02_at_least_2_of_3": (delta.get("pass_count_ge_0_02") or 0) >= 2,
+        "yearly_not_single_year": yearly_pass,
+    }
+    passed = all(checks.values())
+    return {
+        "overall_status": "PRICE_ATR_SIGNAL_FOUND" if passed else "DIAGNOSTIC_ONLY",
+        "model_gate": {
+            "pass": bool(passed),
+            "checks": checks,
+            "pr_auc_lift": pr_auc_lift,
+            "holdout_drop_warning": bool((best.get("holdout_drop") or 0.0) > holdout_drop_threshold),
+            "holdout_drop_warning_threshold": holdout_drop_threshold,
+            "note": "Stage 5.4 is diagnostic; holdout is disclosure only and cannot promote candidate status.",
+        },
+    }
+
+
+# ===========================================================================
+# Stage 5.4 runner and worker globals
+# ===========================================================================
+
+def _load_stage5_time_to_breach_source_splits() -> dict:
+    print("Загрузка sell splits для time-to-breach stages...")
+    sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
+    print("Загрузка buy splits для time-to-breach stages...")
+    buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+    return {
+        "sell": (sell_train, sell_val, sell_hold),
+        "buy": (buy_train, buy_val, buy_hold),
+    }
+
+
+_STAGE5_4_WORKER_SPLITS = None
+_STAGE5_4_WORKER_FEATURES = None
+
+
+def _init_stage5_4_worker(splits_by_source: dict, features_by_source_profile: dict) -> None:
+    global _STAGE5_4_WORKER_SPLITS, _STAGE5_4_WORKER_FEATURES
+    _STAGE5_4_WORKER_SPLITS = splits_by_source
+    _STAGE5_4_WORKER_FEATURES = features_by_source_profile
+
+
+def _run_stage5_4_job(job: dict) -> dict:
+    split = job.get("split")
+    feature_split = job.get("feature_split")
+    if split is None:
+        split = _STAGE5_4_WORKER_SPLITS[job["source_target"]]
+    if feature_split is None and _STAGE5_4_WORKER_FEATURES is not None:
+        feature_split = _STAGE5_4_WORKER_FEATURES[job["source_target"]][job["profile"]]
+    return evaluate_stage5_4_profile_seed(
+        split,
+        job["source_target"],
+        job["profile"],
+        int(job["seed"]),
+        xgb_threads=int(job.get("xgb_threads", 1)),
+        feature_split=feature_split,
+    )
+
+
+def run_stage5_4_fast_price_atr_ablation(target_splits: dict,
+                                         output_path: Path = STAGE5_4_JSON_REPORT_PATH,
+                                         workers: int = 1,
+                                         xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    total_runs = len(STAGE5_4_SOURCE_TARGETS) * len(STAGE5_4_PROFILE_KEYS) * len(STAGE5_4_SEEDS)
+    report = {
+        "stage": "5.4_fast_price_atr_ablation",
+        "status": "RUNNING",
+        "level": "diagnostic_only",
+        "source_targets": STAGE5_4_SOURCE_TARGETS,
+        "target_spec": dict(STAGE5_4_TARGET_SPEC),
+        "profiles": STAGE5_4_PROFILE_KEYS,
+        "profile_roles": STAGE5_4_PROFILE_ROLES,
+        "side_baseline_profile": STAGE5_4_SIDE_BASELINE_PROFILE,
+        "side_primary_profile": STAGE5_4_SIDE_PRIMARY_PROFILE,
+        "seeds": STAGE5_4_SEEDS,
+        "feature_distribution_audit": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "notes": {
+            "target_fixed": "fast only; no target search in Stage 5.4",
+            "sell_primary": "sell passed Stage 5.3 target-reformulation gate",
+            "buy_borderline": "buy passed delta >= 0.02 in only 1/3 seed in Stage 5.3",
+            "raw_atr": "not a primary candidate; ATR profiles are diagnostic because ATR has known regime shift",
+            "updn": "diagnostic group only, not included by default",
+        },
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_source = {}
+    features_by_source_profile = {}
+    for source_target in STAGE5_4_SOURCE_TARGETS:
+        split = build_stage5_1_split(combined_by_name[source_target], source_target)
+        splits_by_source[source_target] = split
+        features_by_source_profile[source_target] = {}
+        report["feature_distribution_audit"][source_target] = {}
+        for profile in STAGE5_4_PROFILE_KEYS:
+            feature_split = _build_stage5_4_feature_split(split, profile)
+            audit = stage5_4_feature_distribution_audit(feature_split, profile)
+            report["feature_distribution_audit"][source_target][profile] = audit
+            if audit["status"] == "ERROR":
+                report["status"] = "PREFLIGHT_FAILED"
+                report["progress"]["finished_at_unix"] = time.time()
+                report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+                _write_json_atomic(output_path, report)
+                return report
+            features_by_source_profile[source_target][profile] = feature_split
+            report["progress"]["updated_at_unix"] = time.time()
+            _write_json_atomic(output_path, report)
+
+    jobs = [
+        {
+            "source_target": source_target,
+            "profile": profile,
+            "seed": int(seed),
+            "xgb_threads": int(xgb_threads),
+        }
+        for source_target in STAGE5_4_SOURCE_TARGETS
+        for profile in STAGE5_4_PROFILE_KEYS
+        for seed in STAGE5_4_SEEDS
+    ]
+
+    heartbeat = HeartbeatLogger("stage5.4 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+        remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+        report["progress"]["eta_sec"] = round((elapsed / max(report["progress"]["done_runs"], 1)) * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "source_target": run["source_target"],
+            "target_id": run["target_id"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "auc": _safe((run.get("val_stop") or {}).get("auc")),
+            "pr_auc": _safe((run.get("val_stop") or {}).get("pr_auc")),
+            "elapsed_sec": run.get("elapsed_sec"),
+        }
+        print(
+            f"[{report['progress']['done_runs']}/{report['progress']['total_runs']}] "
+            f"{run['source_target']} | {run['profile']} | seed={run['seed']} | "
+            f"auc={report['progress']['last_completed']['auc']} | eta_sec={report['progress']['eta_sec']}",
+            flush=True,
+        )
+        heartbeat.emit(f"progress={report['progress']['done_runs']}/{report['progress']['total_runs']}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            job["split"] = splits_by_source[job["source_target"]]
+            job["feature_split"] = features_by_source_profile[job["source_target"]][job["profile"]]
+            consume_run(_run_stage5_4_job(job))
+    else:
+        with ProcessPoolExecutor(
+            max_workers=int(workers),
+            initializer=_init_stage5_4_worker,
+            initargs=(splits_by_source, features_by_source_profile),
+        ) as executor:
+            futures = [executor.submit(_run_stage5_4_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    statuses = []
+    for source_target in STAGE5_4_SOURCE_TARGETS:
+        summary = summarize_stage5_4_source(report["raw_runs"], source_target)
+        report["summary"][source_target] = summary
+        gate = stage5_4_gate_results(summary, source_target)
+        report["gate_results"][source_target] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "PRICE_ATR_SIGNAL_FOUND"
+        if statuses and any(s == "PRICE_ATR_SIGNAL_FOUND" for s in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
+def run_stage5_3_target_reformulation(target_splits: dict,
+                                      output_path: Path = STAGE5_3_JSON_REPORT_PATH,
+                                      workers: int = 1,
+                                      xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    target_specs = (
+        STAGE5_3_MAIN_TARGET_SPECS
+        + STAGE5_3_BINARY_BASELINE_SPECS
+        + STAGE5_3_CONTROL_TARGET_SPECS
+    )
+    total_runs = (
+        len(STAGE5_3_SOURCE_TARGETS)
+        * len(target_specs)
+        * len(STAGE5_3_PROFILE_KEYS)
+        * len(STAGE5_3_SEEDS)
+    )
+    report = {
+        "stage": "5.3_time_to_breach_target_reformulation",
+        "status": "RUNNING",
+        "level": "diagnostic_only",
+        "source_targets": STAGE5_3_SOURCE_TARGETS,
+        "target_specs": target_specs,
+        "profiles": STAGE5_3_PROFILE_KEYS,
+        "seeds": STAGE5_3_SEEDS,
+        "target_distribution": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "notes": {
+            "oracle_pf_gate": "disabled; Stage 5.2 binary-oracle comparison is invalid",
+            "price_features": "excluded; target formulation is isolated before feature expansion",
+            "multiple_testing": "14 main target/side comparisons; report must disclose correlated target families and no independent candidate validation",
+            "survives_at_least_k": "control only because censored rows all become positive",
+        },
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_source = {}
+    features_by_source_profile = {}
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        split = build_stage5_1_split(combined_by_name[source_target], source_target)
+        splits_by_source[source_target] = split
+        features_by_source_profile[source_target] = {}
+        report["target_distribution"][source_target] = {
+            spec["name"]: stage5_3_target_distribution(split, source_target, spec)
+            for spec in target_specs
+        }
+        for dist in report["target_distribution"][source_target].values():
+            train_rate = ((dist.get("train_core") or {}).get("positive_rate"))
+            if train_rate is not None and (train_rate < 0.05 or train_rate > 0.95):
+                dist["distribution_warning"] = "positive_rate_outside_0_05_0_95"
+        for profile in STAGE5_3_PROFILE_KEYS:
+            elapsed = round(time.time() - started_at, 1)
+            print(
+                f"[heartbeat] stage5.3 runner | elapsed={elapsed}s | "
+                f"precompute_features source={source_target} profile={profile} start",
+                flush=True,
+            )
+            features_by_source_profile[source_target][profile] = _build_stage5_3_feature_split(split, profile)
+            elapsed = round(time.time() - started_at, 1)
+            print(
+                f"[heartbeat] stage5.3 runner | elapsed={elapsed}s | "
+                f"precompute_features source={source_target} profile={profile} done",
+                flush=True,
+            )
+            report["progress"]["updated_at_unix"] = time.time()
+            _write_json_atomic(output_path, report)
+    _write_json_atomic(output_path, report)
+
+    jobs = []
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        for spec in target_specs:
+            for profile in STAGE5_3_PROFILE_KEYS:
+                for seed in STAGE5_3_SEEDS:
+                    jobs.append({
+                        "source_target": source_target,
+                        "spec": spec,
+                        "profile": profile,
+                        "seed": int(seed),
+                        "xgb_threads": int(xgb_threads),
+                    })
+
+    heartbeat = HeartbeatLogger("stage5.3 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+        remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+        report["progress"]["eta_sec"] = round((elapsed / max(report["progress"]["done_runs"], 1)) * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "source_target": run["source_target"],
+            "target_id": run["target_id"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "auc": _safe((run.get("val_stop") or {}).get("auc")),
+            "pr_auc": _safe((run.get("val_stop") or {}).get("pr_auc")),
+            "elapsed_sec": run.get("elapsed_sec"),
+            "started_at_unix": run.get("started_at_unix"),
+            "finished_at_unix": run.get("finished_at_unix"),
+        }
+        done_runs = report["progress"]["done_runs"]
+        total = report["progress"]["total_runs"]
+        last = report["progress"]["last_completed"]
+        print(
+            f"[{done_runs}/{total}] {run['source_target']} | {run['target_id']} | "
+            f"{run['profile']} | seed={run['seed']} | auc={last['auc']} | "
+            f"pr_auc={last['pr_auc']} | elapsed={last['elapsed_sec']} | eta_sec={report['progress']['eta_sec']}"
+        )
+        heartbeat.emit(f"progress={done_runs}/{total}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            job["split"] = splits_by_source[job["source_target"]]
+            job["feature_split"] = features_by_source_profile[job["source_target"]][job["profile"]]
+            consume_run(_run_stage5_3_job(job))
+    else:
+        with ProcessPoolExecutor(
+            max_workers=int(workers),
+            initializer=_init_stage5_3_worker,
+            initargs=(splits_by_source, features_by_source_profile),
+        ) as executor:
+            futures = [executor.submit(_run_stage5_3_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    statuses = []
+    for source_target in STAGE5_3_SOURCE_TARGETS:
+        summary = summarize_stage5_3_source(report["raw_runs"], source_target)
+        report["summary"][source_target] = summary
+        gate = stage5_3_gate_results(summary)
+        report["gate_results"][source_target] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "TARGET_REFORMULATION_FOUND"
+        if statuses and any(s == "TARGET_REFORMULATION_FOUND" for s in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the argument parser for the benchmark CLI."""
     parser = argparse.ArgumentParser(description="Stage 5.0 Transformer Breach Holdout")
@@ -4590,6 +8310,37 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Stage 5.0e: проверка меньшего Transformer против переобучения")
     parser.add_argument("--stage5-0f-signal-stationarity", action="store_true",
                         help="Stage 5.0f: диагностика стационарности H6_off05 breach-сигнала")
+    parser.add_argument("--stage5-1-structural-field-ablation", action="store_true",
+                        help="Stage 5.1: абляция структурных фрактальных полей H6_off05")
+    parser.add_argument("--stage5-1b-updn-field-ablation", action="store_true",
+                        help="Run Stage 5.1b Up/Dn field ablation with clock+shift baseline")
+    parser.add_argument("--stage5-1b-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.1b")
+    parser.add_argument("--stage5-1b-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.1b worker")
+    parser.add_argument("--stage5-1b-resume", dest="stage5_1b_resume", action="store_true",
+                        help="Resume Stage 5.1b from existing JSON if present")
+    parser.add_argument("--stage5-1b-no-resume", dest="stage5_1b_resume", action="store_false",
+                        help="Restart Stage 5.1b from scratch even if JSON exists")
+    parser.set_defaults(stage5_1b_resume=True)
+    parser.add_argument("--stage5-2-time-to-breach-regression", action="store_true",
+                        help="Run Stage 5.2 time-to-breach regression candidate-hypothesis.")
+    parser.add_argument("--stage5-2-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.2")
+    parser.add_argument("--stage5-2-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.2 worker")
+    parser.add_argument("--stage5-3-target-reformulation", action="store_true",
+                        help="Run Stage 5.3 time-to-breach target reformulation diagnostics.")
+    parser.add_argument("--stage5-3-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.3")
+    parser.add_argument("--stage5-3-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.3 worker")
+    parser.add_argument("--stage5-4-fast-price-atr-ablation", action="store_true",
+                        help="Run Stage 5.4 fixed fast target price/ATR feature ablation.")
+    parser.add_argument("--stage5-4-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.4")
+    parser.add_argument("--stage5-4-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.4 worker")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -4616,6 +8367,48 @@ def main():
     print(f"Device: {device}")
     print(f"Seeds: {seeds}")
 
+    if args.stage5_3_target_reformulation:
+        print("\n" + "=" * 60)
+        print("Stage 5.3 fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("Загрузка sell splits для Stage 5.3...")
+        sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
+        print("Загрузка buy splits для Stage 5.3...")
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+        report = run_stage5_3_target_reformulation(
+            {"sell": (sell_train, sell_val, sell_hold), "buy": (buy_train, buy_val, buy_hold)},
+            output_path=STAGE5_3_JSON_REPORT_PATH,
+            workers=args.stage5_3_workers,
+            xgb_threads=args.stage5_3_xgb_threads,
+        )
+        print("Stage 5.3: target reformulation diagnostics completed")
+        print(json.dumps({
+            "status": report["status"],
+            "json": str(STAGE5_3_JSON_REPORT_PATH),
+            "done_runs": report["progress"]["done_runs"],
+            "total_runs": report["progress"]["total_runs"],
+        }, indent=2))
+        return
+
+    if args.stage5_4_fast_price_atr_ablation:
+        print("\n" + "=" * 60)
+        print("Stage 5.4 fast path: fixed fast target price/ATR ablation")
+        print("=" * 60)
+        report = run_stage5_4_fast_price_atr_ablation(
+            _load_stage5_time_to_breach_source_splits(),
+            output_path=STAGE5_4_JSON_REPORT_PATH,
+            workers=args.stage5_4_workers,
+            xgb_threads=args.stage5_4_xgb_threads,
+        )
+        print("Stage 5.4: fast price/ATR ablation completed")
+        print(json.dumps({
+            "status": report["status"],
+            "json": str(STAGE5_4_JSON_REPORT_PATH),
+            "done_runs": report["progress"]["done_runs"],
+            "total_runs": report["progress"]["total_runs"],
+        }, indent=2))
+        return
+
     # Load data
     print("\n" + "=" * 60)
     print("Loading data...")
@@ -4636,6 +8429,61 @@ def main():
         print("Stage 5.0a transform comparison completed")
         print(json.dumps(report["artifacts"], indent=2))
         print(f"{'='*60}")
+        return
+
+    if args.stage5_1b_updn_field_ablation:
+        print("\n" + "=" * 60)
+        print("Stage 5.1b fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.1b...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_1b_updn_field_ablation(
+            target_splits={
+                "sell_stop_broken_H6_off05_flag": (train_df, val_stop_df, holdout_df),
+                "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_1B_JSON_REPORT_PATH,
+            resume=args.stage5_1b_resume,
+            workers=args.stage5_1b_workers,
+            xgb_threads=args.stage5_1b_xgb_threads,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.1b: абляция Up/Dn полей завершена")
+        print(json.dumps({
+            "json": str(STAGE5_1B_JSON_REPORT_PATH),
+            "status": report.get("status"),
+            "field_verdicts": report.get("field_verdicts", {}),
+        }, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_2_time_to_breach_regression:
+        print("\n" + "=" * 60)
+        print("Stage 5.2 fast path: skipping generic Stage 5 prelude")
+        print("=" * 60)
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.2...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+        report = run_stage5_2_time_to_breach_regression(
+            {
+                "sell": (train_df, val_stop_df, holdout_df),
+                "buy": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_2_JSON_REPORT_PATH,
+            workers=args.stage5_2_workers,
+            xgb_threads=args.stage5_2_xgb_threads,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.2: регрессия времени до пробоя завершена")
+        print(json.dumps({
+            "json": str(STAGE5_2_JSON_REPORT_PATH),
+            "status": report.get("status"),
+            "progress": report.get("progress", {}),
+        }, indent=2))
+        print("=" * 60)
         return
 
     # OHLC label verification (mandatory before training)
@@ -4742,6 +8590,27 @@ def main():
         print("Stage 5.0f: диагностика стационарности завершена")
         print(json.dumps(report["decision"], indent=2))
         print(json.dumps({"json": str(STAGE5_0F_JSON_REPORT_PATH)}, indent=2))
+        print("=" * 60)
+        return
+
+    if args.stage5_1_structural_field_ablation:
+        print("\n" + "=" * 60)
+        print("Загрузка buy splits для Stage 5.1...")
+        print("=" * 60)
+        buy_train, buy_val, buy_hold = load_splits(target_col="buy_stop_broken_H6_off05_flag")
+        report = run_stage5_1_structural_field_ablation(
+            target_splits={
+                "sell_stop_broken_H6_off05_flag": (train_df, val_stop_df, holdout_df),
+                "buy_stop_broken_H6_off05_flag": (buy_train, buy_val, buy_hold),
+            },
+            output_path=STAGE5_1_JSON_REPORT_PATH,
+        )
+        print("\n" + "=" * 60)
+        print("Stage 5.1: абляция структурных фрактальных полей завершена")
+        print(json.dumps({
+            "json": str(STAGE5_1_JSON_REPORT_PATH),
+            "field_verdicts": report.get("field_verdicts", {}),
+        }, indent=2))
         print("=" * 60)
         return
 

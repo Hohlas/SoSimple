@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-06-24
-sources: 19
+last_updated: 2026-06-29
+sources: 27
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Stage 5.0d закрыл постановку `H6_off05` на текущих профилях. Stage 5.0e показал: меньший Transformer действительно уменьшает признаки переобучения, но не догоняет XGBoost на тех же признаках. Stage 5.0f добавил: H2 (temporal decay) скорее опровергнута — `fixed` последовательно превосходит `rolling`, старые данные не вредят; H1 (слабый сигнал) тоже не подтверждена — некоторые AUC выше 0.68. Природа отрицательного результата не установлена. Без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Stage 5.0d закрыл постановку `H6_off05` на текущих профилях. Stage 5.0e показал: меньший Transformer действительно уменьшает признаки переобучения, но не догоняет XGBoost на тех же признаках. Stage 5.0f добавил: H2 (temporal decay) скорее опровергнута — `fixed` последовательно превосходит `rolling`, старые данные не вредят; H1 (слабый сигнал) тоже не подтверждена — некоторые AUC выше 0.68. Stage 5.1 выделил `back` (`back_val`, сила тыловой границы уровня) как единственное устойчивое структурное поле. Stage 5.1b подтвердил, что сигнал `back` не сводится к возрасту фрактала (`shift`), а Up/Dn поля дают только слабую самостоятельную добавку и не улучшают `structure_full`. Stage 5.2 после bugfix показал содержательное ранжирование времени до пробоя (`Spearman≈0.31-0.33`, `AUC≈0.70`), снова вокруг `back`, но не прошёл candidate-gate из-за MAE хуже constant baseline и невалидного oracle comparison. Stage 5.3 показал, что дискретная bucket-цель `fast` сильнее обычной регрессии: sell проходит target-reformulation gate, buy пограничен и проходит порог delta только в 1/3 seed. Stage 5.4 проверил price/ATR вокруг `fast` и отверг `price_coord_atr`: дельты малы, per-seed порог не пройден ни на sell, ни на buy. Итог остаётся диагностическим. Без нового независимого периода `2026+` широкий перебор по `H6_off05` не оправдан.
 
 ## Хронология
 
@@ -331,6 +331,139 @@ Stage 5.0f не открывал нового кандидата и не пер�
 - природа отрицательного результата (H1 vs H2) остаётся неустановленной;
 - без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
 
+### Stage 5.1: структурная абляция фрактальных полей (2026-06-24) — ⚠️ DIAGNOSTIC_ONLY
+
+Stage 5.1 не открывал нового кандидата и не выбирал торговое правило. Он декомпозировал `structure_full` на 9 отдельных структурных полей:
+
+- `direction`
+- `front`
+- `back`
+- `strong`
+- `break`
+- `reverse`
+- `power`
+- `count`
+- `impulse`
+
+Протокол:
+
+- 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
+- 20 профилей: `time_only`, `structure_full`, 9 `drop_*`, 9 `add_*`
+- 3 seed
+- fixed split:
+  - `train_core <= 2020`
+  - `val_stop = 2021-2022`
+  - `diagnostic_holdout = 2023-2025`
+  - `low_n_disclosure = 2026`
+- всего `120` прогонов XGBoost
+- Stage 5.1 полностью исключает `price` и `ATR`; `time_only` содержит только 4 clock-признака
+
+Результаты:
+
+- `structure_full` уверенно выше `time_only` на обеих целях:
+  - sell val AUC `0.6693` vs `0.6351`, holdout `0.6662` vs `0.6144`
+  - buy val AUC `0.6879` vs `0.6418`, holdout `0.6610` vs `0.6252`
+- Единственное поле с согласованным итогом на обеих целях: `back`
+  - sell: `drop_back` ухудшает val AUC на `-0.0100`, `add_back` улучшает на `+0.0213`
+  - buy: `drop_back` ухудшает val AUC на `-0.0209`, `add_back` улучшает на `+0.0359`
+  - overall verdict: `likely_useful`
+- Предметная интерпретация `back`: это `back_val`, сила тыловой границы фрактального уровня. Гипотеза: уровень с сильной тыловой границей труднее пробить сзади, поэтому поле может быть связано с устойчивостью stop-пробоя. Это объяснение правдоподобно, но не доказано.
+- У `back` самый согласованный годовой рисунок: удаление ухудшает AUC на всех 5 годах `2021-2025` на обеих целях. По CI buy сильнее sell: buy drop CI `[-0.0317, -0.0101]`, sell drop CI `[-0.0228, +0.0009]`; sell держится на согласии 3/3 seed, а не на полностью отрицательном CI.
+- `back` одиночно захватывает примерно 64% структурной премии на sell и 74% на buy, но не заменяет весь `structure_full`; прямой тест `time+back` vs `structure_full` не проводился.
+- `impulse` выглядит потенциально интересным (`add_impulse` положителен на обеих целях), но не собирает достаточно согласованности и остаётся `mixed_or_unclear`: на sell holdout drop-signs `[+1, +1, -1]`, на buy CI пересекает 0 и `neg_seeds = 2`.
+- Большинство полей не имеют самостоятельного сигнала над clock: только `back` и `impulse` дают положительный `add_val` на обеих целях. Остальные могут быть полезны только в контексте полного профиля или быть коррелированными дублями.
+- Остальные поля (`direction`, `front`, `strong`, `break`, `reverse`, `power`, `count`) не дают согласованного рисунка
+- Полей с `likely_noise` не найдено
+- `direction` дал аномальный паттерн: удаление улучшает sell val AUC (`+0.0026`), но вредит на всех годах holdout. Это может быть связано с взаимодействием знака фрактала и стороны цели, но Stage 5.1 этого не проверял.
+- Ранний `2026` не подтверждает сильный sell-сигнал: `structure_full` sell AUC `0.5597` при `n=316`, а `time_only` `0.5294`. На buy 2026 лучше (`0.6498` vs `0.5999`). Это low-N disclosure, не решающий вывод.
+
+Итог Stage 5.1:
+
+- Stage 5.1 показывает диагностическую прибавку структурных полей над clock-only baseline, но не доказывает чисто структурный сигнал без времени;
+- внутри структуры самое сильное диагностическое поле — `back`;
+- Stage 5.1 **не переоткрывает** `H6_off05` как кандидата;
+- `2023-2025` здесь — только diagnostic disclosure, а не новый frozen test.
+
+### Stage 5.1b: Up/Dn поля и baseline `clock + shift` (2026-06-25) — ⚠️ DIAGNOSTIC_ONLY
+
+Stage 5.1b был узким уточнением Stage 5.1. Он добавил `shift` в baseline, чтобы проверить, не объяснялся ли сигнал структурных полей возрастом фрактала, и отдельно проверил 10 Up/Dn полей:
+
+- `up_3`, `dn_3`
+- `up_6`, `dn_6`
+- `up_12`, `dn_12`
+- `up_24`, `dn_24`
+- `up_48`, `dn_48`
+
+Протокол:
+
+- 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
+- 43 профиля: `clock_shift`, `structure_full`, `updn_full`, `structure_plus_updn`, `back_impulse_combo`, 19 `drop_*`, 19 `add_*`
+- 3 seed
+- всего `258` прогонов XGBoost
+- split повторяет Stage 5.1: `train_core=2004-2020`, `val_stop=2021-2022`, `diagnostic_holdout=2023-2025`, `low_n_disclosure=2026`
+- Up/Dn preflight проверял монотонность на raw-shadow `MT/MQL4/Files/Nero.csv`, потому что labeled CSV уже нормализует пары `up_X/dn_X` отдельно по горизонту
+- raw-shadow split совпал с модельным split; нарушений монотонности Up/Dn не найдено
+
+Результаты:
+
+- `updn_full` даёт слабую добавку над `clock_shift`: sell `+0.0048` AUC, buy `+0.0059`
+- `structure_full` намного сильнее: sell `+0.0460`, buy `+0.0561` AUC над `clock_shift`
+- `structure_plus_updn` не улучшает `structure_full` на validation: sell `-0.0017`, buy `-0.0021`
+- `back` сохранил `overall_likely_useful`:
+  - sell: drop `-0.0171`, add `+0.0408`
+  - buy: drop `-0.0186`, add `+0.0575`
+- `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но это diagnostic control, не winner
+- единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell; общий verdict = `target_specific_signal`, но drop delta всего `-0.0030` и CI отсутствует
+- `clock_shift` хуже Stage 5.1 `time_only` на обеих целях, поэтому add-one дельты Stage 5.1b считаются от более слабого baseline
+
+Итог Stage 5.1b:
+
+- вывод Stage 5.1 про `back` стал сильнее: он не исчез после добавления `shift`;
+- Up/Dn не стоит включать в следующий стартовый профиль по умолчанию;
+- модельные Up/Dn нормализованы per-pair; raw-shadow preflight не описывает их модельную шкалу;
+- field verdicts слабее Stage 5.1 из-за отсутствующих delta CI;
+- если делать ещё один шаг по `H6_off05`, он должен быть узким: `clock_shift`, `clock_shift+back`, `clock_shift+impulse`, `clock_shift+back+impulse`, `structure_full`, `structure_full_without_back`;
+- Stage 5.1b **не переоткрывает** `H6_off05` как кандидата.
+
+### Stage 5.2: регрессия времени до пробоя (2026-06-25) — ⚠️ DIAGNOSTIC_ONLY
+
+Stage 5.2 проверил новую постановку той же ветки: предсказывать не бинарный пробой стопа, а время до пробоя (`bars_to_breach`).
+
+Контракт цели:
+
+- `bars_to_breach = 1..H` — первый бар пробоя;
+- `bars_to_breach = H + 1` — пробоя не было в пределах горизонта;
+- основной горизонт `H=6`, значит censored value = `7`;
+- основные цели: `sell_bars_to_breach_H6_off05`, `buy_bars_to_breach_H6_off05`.
+
+Протокол:
+
+- 2 цели;
+- 7 профилей: `time_only`, `clock_shift`, `clock_shift_back`, `clock_shift_impulse`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`;
+- 3 seed;
+- всего `42` XGBoost-регрессии;
+- `2023-2025` только diagnostic holdout, не frozen test.
+
+Результаты после bugfix/rerun:
+
+- root cause старой аномалии: `reg:pseudohubererror` выдавал константу вне диапазона, clipping превращал все предсказания в `1.0`;
+- objective заменён на `reg:squarederror`, полный rerun `42/42`;
+- censoring gate прошёл: train censoring sell `0.6114`, buy `0.6299`;
+- oracle gate теперь честно падает: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`, comparison невалиден;
+- model gate провален на обеих целях только из-за MAE-improvement над constant baseline;
+- лучший sell: `clock_shift_back`, val Spearman `0.3072`, val AUC `0.7005`, holdout Spearman `0.2942`, holdout AUC `0.6784`;
+- лучший buy: `clock_shift_back_impulse`, val Spearman `0.3280`, val AUC `0.7071`, holdout Spearman `0.2660`, holdout AUC `0.6613`;
+- MAE модели хуже constant baseline:
+  - sell: model `1.6942` vs constant `1.4439`;
+  - buy: model `1.6434` vs constant `1.4329`.
+
+Итог Stage 5.2:
+
+- идея времени до пробоя не закрыта; ранжирование есть;
+- `back` снова главный компактный сигнал: `clock_shift_back` лучший на sell, `clock_shift_back_impulse` лучший на buy;
+- обычная регрессия одного числа `bars_to_breach` не проходит candidate-gate, потому что censored value `7` делает constant baseline сильным по MAE;
+- следующий шаг, если продолжать, — дискретная/цензурированная постановка (`breach_after_k`, `survives_at_least_k`, ordinal buckets), а не новый широкий перебор по `H6_off05`.
+
 ## Ключевые результаты
 
 ### Stage 1
@@ -604,8 +737,14 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 
 30. **Ветка `H6_off05` закрыта не только как поисковая, но и как гипотеза про размер модели.** После 5.0e нет оснований продолжать настройку Transformer на той же цели и том же профиле. Следующий осмысленный шаг — новая цель, новые признаки или объяснение, почему табличное представление лучше последовательной модели на тех же данных.
 31. **Stage 5.0f: H2 скорее опровергнута, H1 не подтверждена, итог неопределённый.** `fixed` последовательно численно превосходил `rolling` (sell 6/6, buy 4/6 лет) — старые данные не вредят, что противоречит temporal decay (H2). `time_only` деградирует сильнее фракталов и ниже по AUC (structure − time_only: sell +0.036…+0.071, buy +0.017…+0.050) — календарь не объясняет всё. `structure_only` (фракталы + clock, без price/ATR) в 12/18 ≥ базы. Spearman на n=3 неинформативен (`p=0.0` для buy — артефакт, истинный p≈0.33); на 7 точках тренд исчезает. Вердикт `temporal_decay` был структурно невозможен (требует `rho > 0`). Без нового периода `2026+` большой перебор по `H6_off05` не оправдан.
+32. **Stage 5.1: внутри structural-профиля устойчиво выделяется только `back`.** `structure_full` уверенно превосходит `time_only` на обеих целях, значит структурные поля дают диагностическую прибавку над clock-only. При этом только `back` (`back_val`, сила тыловой границы уровня) даёт согласованный рисунок `drop-one hurts / add-one helps` на sell и buy и получает `likely_useful`. Удаление `back` ухудшает AUC на всех 5 годах `2021-2025` на обеих целях. Но `back` не заменяет полный профиль: одиночно он захватывает около 64% структурной премии на sell и 74% на buy. `impulse` остаётся вторым по интересу, но не проходит `likely_useful`. Полей `likely_noise` не найдено. Это узкий диагностический вывод, а не новое открытие кандидата.
+33. **Stage 5.1b: `shift` не объяснил сигнал `back`, а Up/Dn не улучшили структуру.** После усиления baseline до `clock + shift` поле `back` осталось `overall_likely_useful`: sell add `+0.0408`, buy add `+0.0575`; drop ухудшает обе цели. Группа Up/Dn даёт только слабую добавку над baseline (`+0.0048/+0.0059` AUC), тогда как `structure_full` даёт `+0.0460/+0.0561`. `structure_plus_updn` хуже `structure_full` на validation (`-0.0017/-0.0021`), поэтому Up/Dn не являются обязательным стартовым профилем для следующего шага. Единственный частный след — `dn_24` на sell, но это слабый `target_specific_signal` после множественных сравнений: drop delta `-0.0030`, CI отсутствует. Stage 5.1b add-one дельты нужно читать осторожно, потому что `clock_shift` оказался хуже Stage 5.1 `time_only`.
+34. **Stage 5.2: time-to-breach даёт ранжирование, но не candidate.** После bugfix `reg:squarederror` лучший sell-профиль `clock_shift_back` даёт val Spearman `0.3072`, AUC `0.7005`, holdout Spearman `0.2942`; лучший buy `clock_shift_back_impulse` даёт val Spearman `0.3280`, AUC `0.7071`, holdout Spearman `0.2660`. Это подтверждает, что `back` связан не только с бинарным пробоем, но и с временем жизни уровня. Однако MAE хуже constant baseline (`7`) на обеих целях, а oracle comparison невалиден (`oracle_binary_pf = inf`), поэтому Stage 5.2 остаётся `DIAGNOSTIC_ONLY`. Следующий шаг — censored/ordinal formulation, не обычная регрессия.
+35. **Stage 5.3: дискретизация time-to-breach нашла полезную target family, но не кандидата.** Лучший main target на обеих сторонах — `fast`: sell `sell_fast / clock_shift_back` val AUC `0.6967`, delta vs same-profile binary baseline `+0.0279`, per-seed delta проходит порог `≥0.02` в `3/3` seed; buy `buy_fast / clock_shift_back_impulse` val AUC `0.7127`, delta `+0.0199`, но порог `≥0.02` проходит только `1/3` seed. Sell проходит target-reformulation gate, buy остаётся пограничным и держится на seed 42. Main comparisons для gate — `12` уникальных side/target comparisons, потому что `breach_after_k2` и `medium` тождественны. Control `survives_at_least_k` показывает высокие AUC/PR AUC, но не может быть winner-ом: censored rows становятся positive и модель может учить "не пробито", а не время жизни уровня.
 
-**Все этапы (Stage 2→5.0f) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал устойчивого улучшения, а диагностика устойчивости сигнала во времени не дала жёсткого решения. Ветка `H6_off05` остаётся в диагностическом неопределённом статусе.
+36. **Stage 5.4: price/ATR не объяснил `fast`-сигнал.** Проверка fixed target `fast` на 12 профилях × 2 стороны × 3 seeds показала: primary `price_coord_atr` даёт только +0.0066 AUC на sell и +0.0014 на buy, оба 0/3 seeds по порогу `≥0.02`. A7 preflight чистый по blocker-ошибкам: все 24 комбинации WARNING из-за ожидаемого `ZERO_GT95`, без `TAIL_GT10/TAIL_GT20`, `REGIME_SHIFT` и сильной корреляции `price_coord_atr` с `back`. Диагностические ATR/Up-Dn профили местами выше primary по median AUC, но не проходят per-seed gate и не могут продвинуть статус. Вывод: **REJECT_PRICE_COORD**; расширять price-поиск вокруг `fast` не нужно.
+
+**Все этапы (Stage 2→5.4) отклонены как торговые кандидаты.** Табличные модели достигли потолка, Transformer не дал устойчивого улучшения, а диагностика устойчивости сигнала во времени не дала жёсткого решения. Stage 5.1/5.1b уточнили носитель структурного сигнала, Stage 5.2/5.3 проверили time-to-breach постановки и нашли полезную дискретную цель `fast`, но Stage 5.4 не нашёл признаков, которые усиливают этот след до кандидата. Ветка остаётся диагностической.
 
 ## Открытые вопросы
 
@@ -613,6 +752,12 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - ~~Какие фрактальные профили и группы признаков вообще несут сигнал сверх raw features — Stage 5.0d~~ — Stage 5.0d завершён: h6_off05_target_exhausted. Разные кодирования не превосходят base; structure-признаки критичны, price/ATR не влияют.
 - ~~Был ли провал Transformer в 5.0c просто следствием слишком большой модели?~~ — Stage 5.0e завершён: частично да, переобучение было, но это не меняет итогового проигрыша XGBoost.
 - **Нужен ли отдельный подтверждающий цикл на новом периоде `2026+`?** Stage 5.0f не дал жёсткого ответа, но сжёг `2023-2025` для диагностического решения. H2 скорее опровергнута (fixed > rolling), H1 не подтверждена (AUC не uniformly слабый). Без нового периода большой перебор по `H6_off05` не оправдан; максимум — узкий разбор структурных групп как диагностика без статуса кандидата.
+- **Заслуживает ли `back+impulse` отдельного узкого follow-up?** Stage 5.1b показал, что `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но это diagnostic control, а не чистый кандидат. Если по `H6_off05` вообще делать ещё один диагностический шаг, он должен быть узким и заранее ограниченным: `clock_shift`, `clock_shift+back`, `clock_shift+impulse`, `clock_shift+back+impulse`, `structure_full`, `structure_full_without_back`.
+- **Что делать с Up/Dn?** Stage 5.1b не поддержал включение всей группы по умолчанию. `dn_24` на sell — только частный след после множественных сравнений; отдельная проверка имеет смысл только если будет новая постановка, где sell-only логика заранее обоснована.
+- ~~Почему Stage 5.2 дал одинаковые нулевые метрики для всех профилей?~~ Root cause найден: `reg:pseudohubererror` + clipping; rerun выполнен.
+- ~~Как лучше поставить time-to-breach после rerun?~~ Stage 5.3 показал, что bucket `fast` — лучший next target family. `survives_at_least_k` остаётся control-only, `breach_after_k5` слишком sparse.
+- ~~Поможет ли price/ATR ablation усилить Stage 5.3 `fast`?~~ Stage 5.4 завершён: `price_coord_atr` rejected, `price_atr_scaled` не добавил устойчивого сигнала, расширение price-поиска не требуется.
+- **Является ли слабый sell 2026 ранним признаком ослабления?** `structure_full` sell AUC `0.5597` при `n=316` не используется для verdict, но это риск для будущего подтверждения на `2026+`.
 - **Противоречие с Stage 5.0-prep:** prep показывал `time_only` AUC=0.6286 > `no_time` AUC=0.6113. В 5.0d `no_structure` (price+ATR+time, без 9 структурных) = 0.534 — ниже `time_only` на 0.094. Причина не разобрана: разные transforms (asinh vs current), или price-токены шумят.
 - Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
@@ -642,3 +787,8 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-06-23-stage5_0d-diagnostic-screening.md](../../docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md) — Stage 5.0d XGBoost + Logistic скрининг 9 профилей, абляция групп, вердикт: h6_off05_target_exhausted
 - [2026-06-23-stage5_0e-small-transformer-check.md](../../docs/reports/2026-06-23-stage5_0e-small-transformer-check.md) — Stage 5.0e: малый Transformer уменьшает признаки переобучения, но не открывает ветку заново
 - [2026-06-24-stage5_0f-signal-stationarity.md](../../docs/reports/2026-06-24-stage5_0f-signal-stationarity.md) — Stage 5.0f: диагностика устойчивости сигнала во времени, итог неопределённый
+- [2026-06-24-stage5_1-structural-field-ablation.md](../../docs/reports/2026-06-24-stage5_1-structural-field-ablation.md) — Stage 5.1: structural field ablation, `back` = единственное `likely_useful` поле, `impulse` = второй интересный, но не подтверждённый след
+- [2026-06-25-stage5_1b-updn-field-ablation.md](../../docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md) — Stage 5.1b: Up/Dn field ablation с baseline `clock + shift`; `back` остаётся устойчивым, Up/Dn не улучшают `structure_full`
+- [2026-06-25-stage5_2-time-to-breach-regression.md](../../docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md) — Stage 5.2: регрессия времени до пробоя после bugfix/rerun; ранжирование есть, лучший сигнал снова вокруг `back`, но candidate-gate не пройден
+- [2026-06-26-stage5_3-time-to-breach-target-reformulation.md](../../docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md) — Stage 5.3: дискретная target reformulation; `fast` bucket найден как лучшая target family, controls раскрыты отдельно, статус остаётся диагностическим
+- [2026-06-29-stage5_4-fast-price-atr-ablation.md](../../docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md) — Stage 5.4: price/ATR ablation вокруг fixed `fast`; `price_coord_atr` rejected, buy остаётся disclosure-only

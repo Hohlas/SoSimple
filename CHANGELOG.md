@@ -2,6 +2,144 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, rejected)
+### Добавлено/Изменено
+- Добавлен Stage 5.4 с 12 профилями: 2 baselines, 2 primary (price_coord_atr), 2 secondary (price_atr_scaled), 6 diagnostic (ATR, Up/Dn).
+- Рефакторинг: общий `_build_stage5_flat_features_from_profile()` для Stage 5.2/5.4.
+- A7 preflight audit: `stage5_4_feature_distribution_audit()` с проверкой NaN/Inf, хвостов, regime shift, Spearman correlation price_coord_atr vs back.
+- Gate: per-seed delta ≥ 0.02 в 2/3 seeds + PR AUC lift ≥ 0.03.
+
+### Результаты
+- Полный прогон: `72/72`, `workers=12`, `xgb_threads=1`.
+- JSON status: `DIAGNOSTIC_ONLY`.
+- Price/ATR координата не улучшает `fast` ни на sell (delta +0.0066, 0/3 seeds), ни на buy (delta +0.0014, 0/3 seeds).
+- Вывод: **REJECT_PRICE_COORD**. Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
+## [2026-06-26] — Stage 5.3: дискретная постановка time-to-breach
+### Добавлено/Изменено
+- Добавлен CLI `--stage5-3-target-reformulation` с параметрами `--stage5-3-workers` и `--stage5-3-xgb-threads`.
+- Stage 5.3 проверяет `breach_after_k`, bucket-цели `fast/medium/no_breach`, binary baseline и control `survives_at_least_k`.
+- Runner получил precompute признаков, 12-worker прогон, heartbeat-логи и JSON-прогресс.
+
+### Результаты
+- Полный прогон завершён: `432/432`, `workers=12`, `xgb_threads=1`.
+- JSON status: `TARGET_REFORMULATION_FOUND`.
+- Лучший sell: `sell_fast / clock_shift_back`, val AUC `0.6967`, delta vs same-profile binary baseline `+0.0279`, seeds `3/3`.
+- Лучший buy: `buy_fast / clock_shift_back_impulse`, val AUC `0.7127`, delta vs same-profile binary baseline `+0.0199`; строгий порог delta `≥0.02` проходит только `1/3` seed, поэтому buy остаётся пограничным.
+
+### Вывод
+- Stage 5.3 completed target reformulation diagnostics for time-to-breach; status is taken from `ML/reports/stage5_3_time_to_breach_target_reformulation.json`; artifact `ML/reports/stage5_3_time_to_breach_target_reformulation.json`.
+- Вердикт отчёта остаётся `DIAGNOSTIC_ONLY`: `2023-2025` — diagnostic disclosure, не независимое подтверждение.
+
+<!-- docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md -->
+
+## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа
+
+### Исправлено после ревью
+- Найден root cause одинаковых метрик всех профилей: `reg:pseudohubererror` на полном `time_only` split выдавал почти константный raw-прогноз `-171.076`, затем clipping превращал все предсказания в `1.0`
+- Stage 5.2 objective заменён на `reg:squarederror`
+- В regression metrics добавлен `pred_summary` (`min`, `median`, `max`, `std`, `unique_rounded_4`)
+- Oracle gate больше не принимает `oracle_binary_pf = inf` / `pf_delta_vs_binary = None` как валидное сравнение
+- Полный rerun Stage 5.2 выполнен после bugfix: `42/42`, `workers=8`, `xgb_threads=4`
+
+### Добавлено
+- `--stage5-2-time-to-breach-regression`
+- `BR_TIME_TO_BREACH_COLUMNS` и `*_bars_to_breach_*` targets для Fractal Stop Breach
+- `ML/reports/stage5_2_time_to_breach_regression.json`
+- `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- Stage 5.2 профили: `time_only`, `clock_shift`, `clock_shift_back`, `clock_shift_impulse`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`
+- oracle-preflight через first-touch simulator, censoring gate, regression metrics и model gate
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 7 профилей × 3 seed = `42` XGBoost-регрессии
+- Основные цели: `sell_bars_to_breach_H6_off05`, `buy_bars_to_breach_H6_off05`
+- `bars_to_breach = 7` означает "не пробит за 6 баров", а не фактический пробой на 7-м баре
+- `2023-2025` используются только как diagnostic disclosure; выбор winner-а по holdout запрещён
+- Up/Dn поля не включались в стартовые профили по итогам Stage 5.1b
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- Прогон завершён полностью: `42/42`
+- Censoring gate прошёл: train censoring sell `0.6114`, buy `0.6299`
+- Oracle gate провален честно: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`, сравнение time-oracle vs binary-oracle невалидно
+- Model gate провален только по MAE-improvement над constant baseline; Spearman/AUC/yearly checks проходят
+- Лучший sell: `clock_shift_back`, val Spearman `0.3072`, val AUC `0.7005`, holdout Spearman `0.2942`
+- Лучший buy: `clock_shift_back_impulse`, val Spearman `0.3280`, val AUC `0.7071`, holdout Spearman `0.2660`
+- Constant baseline по MAE лучше модели: sell `1.4439` vs `1.6942`, buy `1.4329` vs `1.6434`
+- Аномалия одинаковых метрик устранена: pred std ненулевой, профили различаются
+
+### Вывод
+Stage 5.2 не переоткрывает `H6_off05`, но после bugfix показывает содержательное ранжирование времени до пробоя. Главный повторяющийся сигнал снова `back`. Текущая обычная регрессия одного числа `bars_to_breach` не проходит candidate-gate из-за MAE хуже constant baseline и невалидного oracle comparison; следующий шаг — дискретная/цензурированная постановка (`breach_after_k`, ordinal buckets), без широкого перебора.
+
+<!-- docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md -->
+
+## [2026-06-25] — Stage 5.1b: Up/Dn абляция и baseline `clock + shift`
+
+### Добавлено
+- `--stage5-1b-updn-field-ablation`
+- `ML/reports/stage5_1b_updn_field_ablation.json`
+- `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
+- Stage 5.1b профили: `clock_shift`, `structure_full`, `updn_full`, `structure_plus_updn`, `back_impulse_combo`, 19 `drop_*`, 19 `add_*`
+- raw-shadow preflight для Up/Dn: структурная монотонность проверяется на `MT/MQL4/Files/Nero.csv`, а не на уже нормализованных `DATA/*_labeled.csv`
+- fail-fast проверка совпадения строк raw-shadow split и модельного split
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 43 профиля × 3 seed = `258` прогонов XGBoost
+- Baseline усилен с `clock-only` до `clock + shift`, где `shift = log1p(raw_shift)`
+- Проверены 9 структурных полей и 10 Up/Dn полей
+- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
+- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- `updn_full` даёт слабую добавку над `clock_shift`: sell `+0.0048` AUC, buy `+0.0059`
+- `structure_full` даёт существенно большую добавку над `clock_shift`: sell `+0.0460`, buy `+0.0561`
+- `structure_plus_updn` не улучшает `structure_full` на validation: sell `-0.0017`, buy `-0.0021`
+- `back` сохранил `overall_likely_useful`: sell add `+0.0408`, buy add `+0.0575` над `clock_shift`; удаление `back` ухудшает обе цели
+- `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но остаётся диагностическим контролем
+- Единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell (`target_specific_signal`)
+- Модельные Up/Dn — нормализованные per-pair значения из `DATA/*_labeled.csv`, не raw price units; raw-shadow preflight проверяет producer-контракт
+- Delta CI для field verdicts не вычислены, поэтому verdicts Stage 5.1b слабее Stage 5.1 и опираются на seed counts/yearly signs
+
+### Вывод
+Stage 5.1b не переоткрывает `H6_off05`. Up/Dn поля не стоит включать в следующий стартовый профиль по умолчанию: их самостоятельный сигнал мал, а добавка к структуре отрицательна на validation. Главный устойчивый след остаётся у `back`; допустимый следующий шаг — только узкий follow-up вокруг `back`/`impulse`, без нового широкого поиска по `H6_off05`.
+
+<!-- docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md -->
+
+## [2026-06-24] — Stage 5.1: структурная абляция фрактальных полей
+
+### Добавлено
+- `--stage5-1-structural-field-ablation`
+- `ML/reports/stage5_1_structural_field_ablation.json`
+- `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
+- helpers Stage 5.1: fixed split `<=2020 / 2021-2022 / 2023-2025 / 2026`, профили `time_only / structure_full / drop_* / add_*`, paired bootstrap delta, field verdicts, progressive JSON output
+
+### Методика
+- Уровень: поисковый, `DIAGNOSTIC_ONLY`
+- 2 цели × 20 профилей × 3 seed = `120` прогонов XGBoost
+- `time_only` = только `hour_sin/hour_cos/dow_sin/dow_cos`
+- Stage 5.1 полностью исключает `price`, `price_coord_atr`, `price_atr_scaled`, `ATR`
+- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
+- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
+
+### Результаты
+- **Вердикт: DIAGNOSTIC_ONLY**
+- Единственное поле с согласованным итогом на обеих целях: **`back` = `likely_useful`**
+- Все остальные поля: `mixed_or_unclear`
+- Полей с итоговым `likely_noise` не найдено
+- `structure_full` заметно превосходит `time_only`: sell val AUC `0.6693` vs `0.6351`, buy val AUC `0.6879` vs `0.6418`
+- Для `back`: drop-one ухудшает качество, add-one улучшает его и на sell, и на buy. Годовой рисунок согласован: удаление `back` ухудшает AUC на всех 5 годах `2021-2025` на обеих целях
+- `back` одиночно захватывает примерно 64% структурной премии на sell и 74% на buy, но не заменяет `structure_full`
+- `impulse` остаётся вторым по интересу, но не проходит `likely_useful`: add-дельты положительные, а drop-one/годовая согласованность недостаточны
+- Ранний `2026` не подтверждает сильный sell-сигнал: `structure_full` sell AUC `0.5597` при `n=316`; это low-N disclosure, а не решающий вывод
+
+### Вывод
+Stage 5.1 показывает диагностическую прибавку структурных полей над clock-only baseline, но не переоткрывает `H6_off05` как кандидата. Самый сильный след — `back` (`back_val`, сила тыловой границы уровня). Следующий допустимый шаг по этой ветке — только узкий mini-follow-up `time_only / time+back / time+impulse / time+back+impulse / structure_full / structure_full_without_back`, без нового широкого перебора.
+
+<!-- docs/reports/2026-06-24-stage5_1-structural-field-ablation.md -->
+
 ## [2026-06-24] — Stage 5.0f: диагностика устойчивости сигнала во времени
 
 ### Добавлено

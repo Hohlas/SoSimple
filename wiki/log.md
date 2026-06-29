@@ -2,6 +2,27 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
+- Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.4 REJECT_PRICE_COORD — price/ATR координата не улучшает `fast` ни на sell, ни на buy
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.4 (27 report updates)
+- Статус: price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
+## [2026-06-25] ingest | Stage 5.1b: Up/Dn абляция и baseline clock+shift
+- Добавлен охват `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.1b подтвердил, что `back` остаётся устойчивым после добавления `shift`, а Up/Dn дают только слабый самостоятельный сигнал и не улучшают `structure_full`
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.1b (24 report updates)
+- Зафиксировано: Up/Dn не стоит включать в следующий стартовый профиль по умолчанию; допустимый следующий шаг только узкий follow-up вокруг `back`/`impulse`
+- Post-review correction: модельные Up/Dn нормализованы per-pair в labeled CSV, raw-shadow preflight проверяет producer; delta CI для field verdicts Stage 5.1b отсутствуют
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
+## [2026-06-24] ingest | Stage 5.1: структурная абляция фрактальных полей
+- Добавлен охват `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: добавлен Stage 5.1 и уточнён общий итог по ветке `H6_off05`
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 5.1 (23 report updates)
+- Зафиксировано: `back` = единственное поле с итогом `likely_useful`; все остальные поля `mixed_or_unclear`; полей `likely_noise` не найдено; Stage 5.1 не переоткрывает `H6_off05`
+> Parse last 5 entries: `grep "^## \[" wiki/log.md | tail -5`
+
 ## [2026-06-24] ingest | Stage 5.0f: диагностика устойчивости сигнала во времени
 - Добавлен охват `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.0f переписан с уточнёнными выводами
@@ -567,3 +588,42 @@
 - Updated `wiki/research/fractal-stop-research.md`: added exact coverage for `2026-06-14-stage4-deep-diagnostics.md`, `2026-06-15-stage4_4-micro-check.md`, `2026-06-15-stage5-prep-diagnostics.md`, and `2026-06-15-walk-forward-diagnostics.md`.
 - Added missing synthesis for Stage 4 deep diagnostics and Stage 4.7 walk-forward diagnostics; Stage 4.4 and Stage 5.0-prep were already summarized but lacked exact source coverage.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 18 report updates.
+
+### 2026-06-24: Sync Stage 5.1 report refinements
+- Updated `CHANGELOG.md`: added Stage 5.1 refinements about `back` CI/yearly consistency, partial structural-premium coverage, `impulse`, and low-N 2026 sell risk.
+- Updated `wiki/research/fractal-stop-research.md`: synchronized Stage 5.1 synthesis with the revised report, including `back_val` interpretation, 5/5 yearly drop signs, `time+back` follow-up framing, and `sources: 23`.
+- Updated `wiki/index.md`: clarified that `back` is not a replacement for the full structural profile and that `impulse` remains unconfirmed.
+
+### 2026-06-25: Ingest Stage 5.2 time-to-breach regression
+- Added `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.2 target contract, oracle-positive result, full model gate failure, constant-baseline comparison, and censored/ordinal next-step framing.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.2, 25 report updates.
+
+### 2026-06-25: Correct Stage 5.2 interpretation after JSON review
+- Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`: marked identical profile metrics as likely implementation/model-contract anomaly, disclosed `oracle_binary_pf = inf`, unrealistic oracle trade frequency, and missing prediction arrays.
+- Updated `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: Stage 5.2 is now framed as an artifact requiring technical post-mortem, not a reliable negative result about time-to-breach itself.
+
+### 2026-06-25: Stage 5.2 root cause found
+- Updated `ML/baseline/benchmark_stage5_transformer_breach.py`: Stage 5.2 objective changed from `reg:pseudohubererror` to `reg:squarederror`, `pred_summary` added to regression metrics, oracle gate rejects invalid `oracle_binary_pf = inf` comparison.
+- Updated `tests/test_stage5_transformer_breach.py`: added regression tests for objective selection, prediction summaries, and invalid oracle comparison.
+- Updated report/changelog/handoff/wiki: old Stage 5.2 JSON is superseded by bugfix and requires full rerun.
+
+### 2026-06-25: Stage 5.2 rerun after bugfix
+- Reran `--stage5-2-time-to-breach-regression --stage5-2-workers 8 --stage5-2-xgb-threads 4`; completed `42/42`.
+- Updated `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`.
+- Result: time-to-breach ranking exists (`clock_shift_back` sell, `clock_shift_back_impulse` buy), but candidate-gate remains `DIAGNOSTIC_ONLY` due to invalid oracle comparison and MAE worse than constant baseline.
+
+### 2026-06-26: Ingest Stage 5.3 time-to-breach target reformulation
+- Added `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.3 `fast` bucket finding, binary-baseline deltas, control-only interpretation for `survives_at_least_k`, and Stage 5.4 scope constraints.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.3, 26 report updates.
+
+### 2026-06-29: Sync Stage 5.3 corrected interpretation
+- Updated `docs/superpowers/roadmap.md`: moved Stage 5.2/5.3 to closed context and set Stage 5.4 price-coordinate / ATR ablation around fixed `fast` as the next step.
+- Updated `CONTEXT_HANDOFF.md`: corrected main comparisons from 14 to 12 unique side/target comparisons.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: corrected Stage 5.3 buy interpretation from sign-positive seed count to threshold-passing count (`1/3` seed for delta ≥ 0.02).
+
+### 2026-06-29: Review Stage 5.4 report synchronization
+- Updated `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`: clarified that the gate evaluates the predeclared primary candidate, not the globally best profile among all diagnostic profiles; fixed secondary/diagnostic wording.
+- Updated `CHANGELOG.md` and `CONTEXT_HANDOFF.md`: corrected Stage 5.3 buy seed-count wording and separated Stage 5.3 `TARGET_REFORMULATION_FOUND` from Stage 5.4 `DIAGNOSTIC_ONLY`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.4 synthesis and marked price/ATR ablation as rejected.

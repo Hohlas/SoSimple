@@ -563,11 +563,20 @@ BR_BREACH_OFFSETS = (0.0, 0.2, 0.5)        # 0.0 = diagnostic only
 BR_BREACH_OFFSETS_PRIMARY = (0.2, 0.5)       # для отчётов (без diagnostic 0.0)
 
 BR_BREACH_COLUMNS = []
+BR_TIME_TO_BREACH_COLUMNS = []
+BR_TIME_TO_BREACH_PRIMARY_COLUMNS = []
 for h in BR_BREACH_HORIZONS:
     for off in BR_BREACH_OFFSETS:
         off_str = f'{int(off * 10):02d}'     # 0.0→00, 0.2→02, 0.5→05
         BR_BREACH_COLUMNS.append(f'buy_stop_broken_H{h}_off{off_str}_flag')
         BR_BREACH_COLUMNS.append(f'sell_stop_broken_H{h}_off{off_str}_flag')
+        buy_time_col = f'buy_bars_to_breach_H{h}_off{off_str}'
+        sell_time_col = f'sell_bars_to_breach_H{h}_off{off_str}'
+        BR_TIME_TO_BREACH_COLUMNS.append(buy_time_col)
+        BR_TIME_TO_BREACH_COLUMNS.append(sell_time_col)
+        if off in BR_BREACH_OFFSETS_PRIMARY:
+            BR_TIME_TO_BREACH_PRIMARY_COLUMNS.append(buy_time_col)
+            BR_TIME_TO_BREACH_PRIMARY_COLUMNS.append(sell_time_col)
 # Итого 12 колонок: buy_stop_broken_H6_off00_flag, ... sell_stop_broken_H12_off05_flag
 
 
@@ -635,6 +644,19 @@ def load_ohlc_index(ohlc_path):
     times = sorted(ohlc.keys())
     time_idx = {t: i for i, t in enumerate(times)}
     return ohlc, times, time_idx
+
+
+def first_fractal_stop_breach_bar(ohlc, times, idx0: int, horizon: int,
+                                  fractal_dir: float, stop_price: float):
+    """Return first 1-based future bar touching stop, or None if not touched."""
+    for k in range(idx0 + 1, idx0 + 1 + horizon):
+        if fractal_dir == -1:  # BUY: stop below valley
+            if ohlc[times[k]][2] <= stop_price:
+                return k - idx0
+        elif fractal_dir == 1:  # SELL: stop above peak
+            if ohlc[times[k]][1] >= stop_price:
+                return k - idx0
+    return None
 
 
 def compute_entry_path_slice(bars, direction, entry_price, atr, horizon):
@@ -1473,10 +1495,22 @@ def label_fractal_stop_breach(df, ohlc_path, debug=False):
     # Инициализация всех breach-колонок NaN (на случай если все строки пропущены)
     for col in BR_BREACH_COLUMNS:
         df[col] = np.nan
+    for col in BR_TIME_TO_BREACH_COLUMNS:
+        df[col] = np.nan
 
     ohlc, times, time_idx = load_ohlc_index(ohlc_path)
+    total_rows = len(df)
+    progress_every = 10000
+    processed = 0
+    print(
+        f"[heartbeat] fractal_stop_breach | start rows={total_rows} "
+        f"horizons={list(BR_BREACH_HORIZONS)} offsets={list(BR_BREACH_OFFSETS)}"
+    )
 
     for i, row in df.iterrows():
+        processed += 1
+        if processed == 1 or processed % progress_every == 0 or processed == total_rows:
+            print(f"[heartbeat] fractal_stop_breach | progress={processed}/{total_rows}")
         fractal0 = parse_fractal(row.get('fractal0'))
         if fractal0 is None:
             continue
@@ -1516,20 +1550,34 @@ def label_fractal_stop_breach(df, ohlc_path, debug=False):
                 if fractal_dir == -1:  # BUY: стоп ниже впадины
                     stop_price = fractal_price - stop_offset_price
                     col = f'buy_stop_broken_H{h}_off{off_str}_flag'
-                    breach = any(
-                        ohlc[times[k]][2] <= stop_price  # low
-                        for k in range(idx0 + 1, idx0 + 1 + h)
+                    time_col = f'buy_bars_to_breach_H{h}_off{off_str}'
+                    first_touch = first_fractal_stop_breach_bar(
+                        ohlc=ohlc,
+                        times=times,
+                        idx0=idx0,
+                        horizon=h,
+                        fractal_dir=fractal_dir,
+                        stop_price=stop_price,
                     )
+                    breach = first_touch is not None
                     df.at[i, col] = 1.0 if breach else 0.0
+                    df.at[i, time_col] = int(first_touch if breach else h + 1)
 
                 elif fractal_dir == 1:  # SELL: стоп выше пика
                     stop_price = fractal_price + stop_offset_price
                     col = f'sell_stop_broken_H{h}_off{off_str}_flag'
-                    breach = any(
-                        ohlc[times[k]][1] >= stop_price  # high
-                        for k in range(idx0 + 1, idx0 + 1 + h)
+                    time_col = f'sell_bars_to_breach_H{h}_off{off_str}'
+                    first_touch = first_fractal_stop_breach_bar(
+                        ohlc=ohlc,
+                        times=times,
+                        idx0=idx0,
+                        horizon=h,
+                        fractal_dir=fractal_dir,
+                        stop_price=stop_price,
                     )
+                    breach = first_touch is not None
                     df.at[i, col] = 1.0 if breach else 0.0
+                    df.at[i, time_col] = int(first_touch if breach else h + 1)
 
     if debug:
         print(f"\n[FRACTAL_STOP_BREACH]")
@@ -1544,6 +1592,8 @@ def label_fractal_stop_breach(df, ohlc_path, debug=False):
             n_no_breach = (vals == 0.0).sum()
             rate = n_breach / n_valid if n_valid > 0 else 0.0
             print(f"  {col}: valid={n_valid}/{n_total}, breach={n_breach} ({rate:.1%})")
+
+    print(f"[heartbeat] fractal_stop_breach | done rows={total_rows}")
 
     return df
 

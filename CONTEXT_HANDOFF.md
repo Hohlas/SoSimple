@@ -1,91 +1,153 @@
 # Context Handoff
 
-Дата: 2026-06-24
+Дата: 2026-06-29
 
 ## Текущий этап
 
-Stage 5.0f завершён. Вердикт: **DIAGNOSTIC_ONLY, inconclusive**.
+Stage 5.4 завершён. Вердикт: **DIAGNOSTIC_ONLY**, **REJECT_PRICE_COORD**.
 
-Состояние ветки `H6_off05 stop broken` не изменилось: она не переоткрыта.  
-Новый факт проекта: H2 (temporal decay) скорее опровергнута (`fixed` > `rolling`), H1 (слабый сигнал) не подтверждена (некоторые AUC > 0.68). Природа отрицательного результата не установлена.
+Stage 5.4 JSON artifact имеет статус `DIAGNOSTIC_ONLY`. Предыдущий Stage 5.3 JSON artifact имел статус `TARGET_REFORMULATION_FOUND`, но это не торговый кандидат: статус означал только, что дискретная постановка цели time-to-breach достойна следующего диагностического шага.
 
 ## Что сделано
 
-### Stage 5.0f (2026-06-24) — диагностика устойчивости сигнала во времени
-- Новый CLI `--stage5-0f-signal-stationarity`
-- Зафиксированы:
-  - 2 цели: `sell_stop_broken_H6_off05_flag`, `buy_stop_broken_H6_off05_flag`
-  - 4 набора признаков: `base_raw_plus_time`, `structure_only`, `time_only`, `all100_relative_price_time`
-  - 3 схемы годовых окон: `rolling`, `fixed`, `anchored`
-  - 3 seed: `[42, 77, 123]`
-- `rolling` зафиксирован как 8-летнее окно разработки:
-  - 7 лет `train_core`
-  - 1 год `val_stop`
-- Выполнено `456` прогонов XGBoost
-- Добавлена поэтапная запись `ML/reports/stage5_0f_signal_stationarity.json` и компактный лог прогресса
-- Структурированный артефакт: `ML/reports/stage5_0f_signal_stationarity.json`
-- Отчёт: `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
-- Полный набор тестов: `808 passed`
+Stage 5.3 проверил target reformulation поверх Stage 5.2 колонок:
+
+- `sell_bars_to_breach_H6_off05`
+- `buy_bars_to_breach_H6_off05`
+
+Проверенные цели:
+
+- main: `breach_after_k2`, `breach_after_k3`, `breach_after_k4`, `breach_after_k5`
+- main buckets: `fast`, `medium`, `no_breach`
+- baseline: `binary_breach`
+- controls: `survives_at_least_k2..k5`
+
+Профили:
+
+- `time_only`
+- `clock_shift`
+- `clock_shift_back`
+- `clock_shift_impulse`
+- `clock_shift_back_impulse`
+- `structure_full`
+
+Полный прогон:
+
+- `432/432` XGBoost-классификации
+- `workers=12`
+- `xgb_threads=1`
+- elapsed `1888.193s`
+- artifact: `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
+- report: `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
+
+Кодовые изменения:
+
+- `ML/baseline/benchmark_stage5_transformer_breach.py`
+- `tests/test_stage5_transformer_breach.py`
+
+Важная техническая правка: Stage 5.3 runner предвычисляет признаки один раз на `(source, profile, split)`, иначе структурные профили повторно строились сотни раз и создавали видимое зависание. `build_stage5_2_features()` также получил fast path для `time_only` и более прямой индексный парсер фрактальных полей.
 
 ## Главный результат
 
-Итог Stage 5.0f:
+Лучший main target на обеих сторонах — bucket `fast`.
 
-1. Не доказан распад сигнала, который лечится более близким по времени обучением (H2 скорее опровергнута: `fixed` > `rolling`).
-2. Не доказана и устойчивость сигнала.
-3. `time_only` деградирует сильнее фрактальных профилей и ниже по абсолютному AUC (`structure_only` − `time_only`: sell +0.036…+0.071, buy +0.017…+0.050).
-4. `structure_only` (фракталы + clock, без price/ATR) в 12 из 18 сравнений ≥ `base_raw_plus_time`.
-5. Spearman на n=3 неинформативен (`p=0.0` для buy — артефакт, истинный p≈0.33); на 7 точках тренд исчезает.
-6. Природа отрицательного результата (H1 vs H2) не установлена.
+Sell:
 
-Ключевые числа:
+- winner: `sell_fast`
+- profile: `clock_shift_back`
+- val AUC `0.6967`
+- val PR AUC `0.3171`
+- positive_rate `0.1501`
+- holdout AUC `0.6849`
+- same-profile binary baseline AUC `0.6688`
+- delta vs binary baseline `+0.0279` (median)
+- per-seed delta: s42 `+0.0232`, s77 `+0.0328`, s123 `+0.0276` — **3/3 проходят порог ≥0.02**
+- holdout drop: `−0.012` (умеренный)
+- gate: `TARGET_REFORMULATION_FOUND`
+- статус: подтверждённая диагностическая цель для Stage 5.4
 
-- Всего прогонов: `456`
-- Общее время: `21780.9` сек, то есть примерно `6 часов 3 минуты`
-- Для обеих целей:
-  - `rolling_ci_above_fixed_years = 0`
-  - `fixed` последовательно > `rolling` (sell 6/6, buy 4/6 лет)
-  - `time_only_not_worse_than_fractals = False`
-  - `structure_close_to_base = True`
-- `anchored` тренд (3 точки):
-  - sell: `rho = -0.5`, `p = 0.6667`
-  - buy: `rho = -1.0`, `p = 0.0` (артефакт t-аппроксимации)
-- `anchored` тренд (7 точек, sanity check):
-  - sell: `rho = 0.0`, `p = 1.0`
-  - buy: `rho = -0.18`, `p = 0.70`
+Buy:
 
-## Где мы сейчас
+- winner: `buy_fast`
+- profile: `clock_shift_back_impulse`
+- val AUC `0.7127`
+- val PR AUC `0.3235`
+- positive_rate `0.1562`
+- holdout AUC `0.6617`
+- same-profile binary baseline AUC `0.6928`
+- delta vs binary baseline `+0.0199` (median)
+- per-seed delta: s42 `+0.0217` (PASS), s77 `+0.0182` (FAIL, отрыв 0.0018), s123 `+0.0171` (FAIL, отрыв 0.0029) — **1/3 проходит порог ≥0.02**
+- holdout drop: `−0.051` (сильнее, чем у sell и любой другой buy-цели; согласуется с картиной "сигнал затухает на новых годах" из Stage 4.6/4.7 и 5.0f)
+- gate: `DIAGNOSTIC_ONLY`
+- статус: **пограничный** — держится на одном seed (42), не подтверждённая цель. Нужен расширенный seed list (Альтернатива A) или проверка в Stage 5.4.
 
-Ветка `H6_off05` не реабилитирована и не получила нового подтверждения. H2 (temporal decay) скорее опровергнута, H1 (слабый сигнал) не подтверждена.
+Дополнительно по целям:
 
-Правильное направление дальше:
-- если нужен строгий подтверждающий ответ, брать новый независимый период `2026+`;
-- или менять цель;
-- или делать узкий разбор структурных групп признаков как диагностику без статуса кандидата.
+- `breach_after_k2` ≡ `medium` (тождественные векторы меток для целочисленного `bars_to_breach`); 36 из 252 main-прогонов дубликаты.
+- `no_breach` ≈ инверсия binary breach; AUC практически совпадает с binary baseline, новой информации не несёт.
+- `breach_after_k4/k5` на buy — лучший профиль `time_only`, не структурный: структура (`back`) помогает только ранним пробоям, не поздним.
 
-Неправильное направление дальше:
-- объявлять, что проблема уже точно только во времени;
-- объявлять, что ветка уже доказанно устойчива;
-- снова использовать `2023-2025` как будто это независимая подтверждающая проверка;
-- запускать новый большой перебор по `H6_off05` без нового независимого периода.
+Control `survives_at_least_k` показывает высокие AUC/PR AUC, но не может быть winner-ом: censored rows становятся positive, поэтому модель может учить "не пробито", а не время жизни уровня.
+
+## Методические ограничения
+
+- `2021-2022` использованы для выбора winner-а.
+- `2023-2025` только diagnostic disclosure.
+- `2026` low-N disclosure.
+- Нет независимой candidate validation.
+- 12 уникальных main side/target comparisons коррелированы (`breach_after_k2` и `medium` тождественны); строгая поправка множественного тестирования не превращает результат в кандидата.
+- Stage 5.3 не добавлял `price`, `price_coord_atr`, `price_atr_scaled`, raw `ATR`, Up/Dn.
+- Oracle-time PF не использовался как gate.
+
+## Stage 5.4: Price/ATR Ablation (завершён, rejected)
+
+Stage 5.4 проверил `price_coord_atr` и `price_atr_scaled` на fixed target `fast`. Результат:
+
+- Sell primary `price_coord_atr`: median delta +0.0066, 0/3 seeds ≥ 0.02 → **REJECT_PRICE_COORD**
+- Buy primary `price_coord_atr`: median delta +0.0014, 0/3 seeds ≥ 0.02 → **BUY_DISCLOSURE_ONLY**
+- A7 preflight pass: все 24 комбинации `WARNING` (только ZERO_GT95), ни одного ERROR.
+- Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+
+## Правильное направление дальше
+
+Stage 6.0: outcome-based / triple barrier target foundation.
+
+Минимальный следующий шаг:
+
+- написать spec Stage 6.0;
+- определить один базовый triple-barrier target для XAUUSD H1;
+- зафиксировать split до обучения;
+- заранее задать preflight распределений классов и частоты сделок;
+- оценивать не только AUC, но и PF/частоту/годовую устойчивость через execution-aware simulation.
+
+## Неправильное направление дальше
+
+- Продолжать поиск price/ATR признаков для `fast`.
+- Объявлять Stage 5.3 торговым кандидатом.
+- Делать новый широкий перебор `H6_off05` без независимого периода.
 
 ## Ключевые файлы
 
 Код:
+
 - `ML/baseline/benchmark_stage5_transformer_breach.py`
 - `tests/test_stage5_transformer_breach.py`
 
-Отчёты:
-- `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
-- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
-- `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
-
 Артефакты:
-- `ML/reports/stage5_0f_signal_stationarity.json`
-- `ML/reports/stage5_0e_small_transformer_check.json`
 
-## Открытые вопросы
+- `ML/reports/stage5_4_fast_price_atr_ablation.json`
+- `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
+- `ML/reports/stage5_2_time_to_breach_regression.json`
 
-- Нужен ли отдельный подтверждающий цикл на новом периоде `2026+`, или ветку лучше закрыть окончательно без нового цикла.
-- Какие именно структурные подгруппы признаков несут остаточный сигнал сверх календарной компоненты.
-- Почему buy показывает более выраженное ухудшение по годам, чем sell, но всё равно не даёт честного жёсткого решения по правилам Stage 5.0f.
+Документация:
+
+- `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
+- `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- `docs/superpowers/roadmap.md`
+- `docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- `docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
+
+Wiki:
+
+- `wiki/research/fractal-stop-research.md`
