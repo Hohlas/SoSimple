@@ -14,7 +14,7 @@
 - Primary `h12_corridor3_relative_geometry`: median val AUC `0.5316` → MODEL_GATE_FAILED.
 - Все 5 геометрических профилей: AUC 0.51–0.55 (случайные).
 - Baseline `h12_clock_shift_back` подтверждает валидность: AUC `0.6174`, threshold SELECTED PF 1.25.
-- Гипотеза отвергнута: локальная геометрия фракталов не несёт сигнала для H12 TP/SL touch.
+- Текущие H12 geometry-only профили не получили поддержки: локальная геометрия в этих кодировках не дала полезного TP/SL touch сигнала.
 <!-- docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md -->
 
 ## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (TRADING_GATE_FAILED)

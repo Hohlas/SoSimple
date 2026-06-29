@@ -4,9 +4,9 @@
 
 ## [2026-06-29] ingest | Stage 6.1: H12 Relative Fractal Geometry
 - Добавлен охват `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
-- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 REJECTED — локальная геометрия фракталов вокруг fractal0 не предсказывает H12 TP/SL touch (AUC 0.51–0.55), гипотеза отвергнута
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 MODEL_GATE_FAILED — текущие H12 geometry-only профили вокруг fractal0 не предсказывают TP/SL touch (AUC 0.51–0.55)
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 6.1 (29 report updates)
-- Статус: фрактальная геометрия не несёт сигнала для данного горизонта и контракта. Дальнейшие инвестиции в fractal-level geometry для H12 не рекомендуются.
+- Статус: tested H12 geometry-only branch закрыта; дальнейшая геометрия требует новой узкой гипотезы, например baseline+geometry delta test.
 
 ## [2026-06-29] update | Stage 6.1 runtime artifact refresh
 - Пересчитан `ML/reports/stage6_1_h12_relative_fractal_geometry.json` новым runner-ом с `xgb_n_jobs=24`, checkpoint before preflight, heartbeat, `started_at`/`finished_at` и per-run `elapsed_sec`.

@@ -14,7 +14,7 @@
 
 ## Context
 
-Stage 6.0 established that H1 triple-barrier TP/SL touch prediction is feasible (AUC ~0.62 on clock_shift_back baseline). The question was whether local fractal geometry around `fractal0` — measured as relative price distance and recency — carries additional signal for *which* barrier is touched first.
+Stage 6.0 showed that H1 triple-barrier TP/SL touch prediction can contain ranking signal on clock/backward-looking features. The question was whether local fractal geometry around `fractal0` — measured as relative price distance and recency — carries signal for *which* barrier is touched first.
 
 Stage 6.1 fixes horizon to 12 bars, inherits the Stage 6.0 barrier contract (SL at −0.5 ATR, TP at +2.0 ATR, SL-first same-bar ambiguity), and uses `stage6_definitive_tp_vs_sl_flag` as the main training target. Timeout rows are excluded from model labels but included in trading simulation PnL.
 
@@ -72,10 +72,10 @@ Stage 6.1 is exploratory and `DIAGNOSTIC_ONLY`.
 
 | File | Rows | Bytes | SHA256 |
 |------|------|-------|--------|
-| XAUUSD_H1_OHLC.csv | 126,637 | 7,443,441 | `c2bc5ea1...` |
-| Nero_XAUUSD_train_labeled.csv | 44,159 | 845,963,293 | `ef9ba64c...` |
-| Nero_XAUUSD_validation_labeled.csv | 9,463 | 182,022,271 | `7b44aaba...` |
-| Nero_XAUUSD_test_labeled.csv | 9,463 | 182,725,354 | `a54c412c...` |
+| XAUUSD_H1_OHLC.csv | 126,637 | 7,443,441 | `84b0efbdab7fde3d862131d8f2b3d4945b596af40500dffb477845c0195ddce6` |
+| Nero_XAUUSD_train_labeled.csv | 44,159 | 845,963,293 | `2f02f1c1347dfda8ef8fa8163f3788acabeb9f3612cc9aacb71cd24aaa88e3ef` |
+| Nero_XAUUSD_validation_labeled.csv | 9,463 | 182,022,271 | `83f6fb607043ff003f73b26b2342cba6f9faa356001995d248af4032d896e707` |
+| Nero_XAUUSD_test_labeled.csv | 9,463 | 182,725,354 | `749752bc2088e01ab6107d7ca5e3911d9239e581859e74061f4fb16e27815d2a` |
 
 ## Verification
 
@@ -98,11 +98,13 @@ Structured artifact checks:
 
 ### Fractal Format Preflight
 
-- All 3 splits have 100% valid fractal0 strings with 23 colon-separated fields
+- All 4 analysis splits (`train_core`, `val_stop`, `diagnostic_holdout`, `low_n_disclosure`) have 100% valid `fractal0` strings with 23 colon-separated fields.
 - Zero short_fractal0_rows detected
 - No warnings
 
-### A7 Coverage
+### A7-Style Coverage Preflight
+
+This is an A7-style geometry coverage preflight, not a full A7 distribution audit. It checks token counts, corridor bounds, empty-token rates, and above/below balance. It does not audit every derived feature for tails, zero inflation, and train/validation/holdout distribution shift.
 
 | Profile | Median tokens | Zero-rate | min_coord | max_coord |
 |---------|---------------|-----------|-----------|-----------|
@@ -129,16 +131,45 @@ Structured artifact checks:
 
 ### All Profiles
 
-| Profile | Val AUC med | PR AUC lift med | Threshold | Selected PF med |
-|---------|-------------|-----------------|-----------|-----------------|
-| `h12_clock_shift_back` | **0.6174** | **0.1305** | SELECTED | 1.249 |
-| `h12_nearest_price40_relative_geometry` | 0.5194 | 0.0220 | NO_THRESHOLD | — |
-| `h12_nearest_time40_relative_geometry` | 0.5500 | 0.0381 | NO_THRESHOLD | — |
-| `h12_corridor3_relative_geometry` | 0.5316 | 0.0282 | NO_THRESHOLD | — |
-| `h12_corridor10_relative_geometry` | 0.5211 | 0.0278 | NO_THRESHOLD | — |
-| `h12_zones10_uniform_summary` | 0.5142 | 0.0211 | NO_THRESHOLD | — |
+| Profile | Val AUC med | PR AUC lift med | Threshold | Selected PF med | Permutation p-value |
+|---------|-------------|-----------------|-----------|-----------------|---------------------|
+| `h12_clock_shift_back` | **0.6174** | **0.1305** | SELECTED | 1.249 | 0.225 |
+| `h12_nearest_price40_relative_geometry` | 0.5194 | 0.0220 | NO_THRESHOLD | — | N/A |
+| `h12_nearest_time40_relative_geometry` | 0.5500 | 0.0381 | NO_THRESHOLD | — | N/A |
+| `h12_corridor3_relative_geometry` | 0.5316 | 0.0282 | NO_THRESHOLD | — | N/A |
+| `h12_corridor10_relative_geometry` | 0.5211 | 0.0278 | NO_THRESHOLD | — | N/A |
+| `h12_zones10_uniform_summary` | 0.5142 | 0.0211 | NO_THRESHOLD | — | N/A |
 
-The Stage 5.4 clock_shift_back baseline confirms the experimental setup is valid: it produces AUC 0.617 with a viable threshold (PF 1.25). All five geometry profiles are statistically indistinguishable from random (AUC 0.51–0.55).
+The Stage 5.4 clock_shift_back baseline confirms that the labels and feature pipeline are not completely broken: it produces AUC 0.617 and selects a threshold with PF 1.25. It does **not** prove trading suitability, because its permutation threshold test is not statistically convincing (`empirical_p_value=0.225`, above the required `0.10`). All five geometry-only profiles are weak (AUC 0.51–0.55) and do not select a threshold.
+
+### Diagnostic Holdout Disclosure
+
+Diagnostic holdout (`2023-2025`) is disclosure-only. It did not influence profile, seed, threshold, or gate selection.
+
+| Profile | Diagnostic holdout AUC med | Diagnostic PR lift med |
+|---------|----------------------------|------------------------|
+| `h12_clock_shift_back` | 0.6105 | 0.1209 |
+| `h12_nearest_price40_relative_geometry` | 0.5254 | 0.0257 |
+| `h12_nearest_time40_relative_geometry` | 0.5373 | 0.0339 |
+| `h12_corridor3_relative_geometry` | 0.5288 | 0.0234 |
+| `h12_corridor10_relative_geometry` | 0.5267 | 0.0253 |
+| `h12_zones10_uniform_summary` | 0.5134 | 0.0146 |
+
+The holdout disclosure is consistent with validation: geometry-only profiles remain weak.
+
+### Validation Feature Importance
+
+Rule: for each non-baseline geometry profile, select the seed with the highest `val_stop` AUC, then report top-5 validation permutation feature importance by AUC drop from `raw_runs[*].feature_importance`. This is interpretability disclosure only; it does not affect selection or gate.
+
+| Profile | Best seed | Best val AUC | Top validation permutation features |
+|---------|-----------|--------------|-------------------------------------|
+| `h12_nearest_price40_relative_geometry` | 123 | 0.5201 | `slot39_price_coord_atr` (0.0077), `slot39_abs_price_coord_atr` (0.0043), `slot37_abs_price_coord_atr` (0.0042), `slot33_back` (0.0042), `slot04_log_shift` (0.0032) |
+| `h12_nearest_time40_relative_geometry` | 42 | 0.5509 | `slot00_abs_price_coord_atr` (0.0208), `slot20_front` (0.0054), `slot00_log_shift` (0.0051), `slot30_price_coord_atr` (0.0035), `slot33_abs_price_coord_atr` (0.0033) |
+| `h12_corridor3_relative_geometry` | 123 | 0.5365 | `slot00_back` (0.0066), `slot14_price_coord_atr` (0.0053), `slot21_impulse` (0.0043), `slot07_log_shift` (0.0038), `slot12_impulse` (0.0035) |
+| `h12_corridor10_relative_geometry` | 77 | 0.5216 | `slot39_price_coord_atr` (0.0075), `slot22_front` (0.0050), `slot04_abs_price_coord_atr` (0.0042), `slot33_back` (0.0035), `slot38_front` (0.0035) |
+| `h12_zones10_uniform_summary` | 123 | 0.5264 | `zone_+00_+01_count` (0.0141), `zone_+01_+02_impulse_mean` (0.0080), `zone_-07_-06_back_mean` (0.0053), `zone_+03_+04_back_mean` (0.0039), `zone_+02_+03_impulse_mean` (0.0037) |
+
+Feature importance does not show a stable, high-magnitude geometry mechanism. The largest drops are small and appear in different slots/zones across profiles.
 
 ## Gate
 
@@ -153,15 +184,15 @@ The Stage 5.4 clock_shift_back baseline confirms the experimental setup is valid
 
 ## Conclusions
 
-**Hypothesis rejected.** Local support/resistance geometry around fractal0, encoded as relative ATR coordinates, does not predict which triple barrier is touched first within 12 H1 bars.
+**The predeclared H12 relative-geometry profiles did not receive support.** Local support/resistance geometry around `fractal0`, as encoded here by flat token-order, nearest/corridor, and uniform zone features, did not predict which triple barrier is touched first within 12 H1 bars.
 
 Three independent lines of evidence support this:
 
-1. **Near-zero AUC lift across all encodings.** Price proximity (nearest_price), recency (nearest_time), narrow corridor (±3 ATR), wide corridor (±10 ATR), and zone bucket summaries all produce AUC 0.51–0.55. No encoding scheme extracts signal.
+1. **Near-zero AUC lift across tested encodings.** Price proximity (nearest_price), recency (nearest_time), narrow corridor (±3 ATR), wide corridor (±10 ATR), and zone bucket summaries all produce AUC 0.51–0.55. None of the tested geometry-only encodings extracts useful signal.
 
 2. **No tradeable threshold found.** Even with the most permissive threshold search (all positive PF thresholds), none of the geometry profiles produced a threshold that survives basic validation. This rules out the possibility that the model captures signal that a different scoring rule would exploit.
 
-3. **Baseline confirms setup validity.** The Stage 5.4 clock_shift_back profile — trained and evaluated on the same splits with the same H12 horizon — produces AUC 0.617 and a threshold with PF 1.25. The data, labels, and evaluation pipeline are not the problem.
+3. **Baseline confirms ranking signal exists outside geometry-only profiles.** The Stage 5.4 clock_shift_back profile — trained and evaluated on the same splits with the same H12 horizon — produces AUC 0.617 and a threshold with PF 1.25. However, its permutation p-value is 0.225, so this is evidence that the pipeline can rank outcomes, not evidence of a statistically convincing trading rule.
 
 ## Limitations / Open Questions
 
@@ -175,22 +206,24 @@ Three independent lines of evidence support this:
 
 5. **Preflight is still a long silent section.** The runner now writes an initial checkpoint before preflight, but the heavy split loading / H12 relabeling step still has no internal progress marks. This does not affect metrics, but it is a runtime observability limitation.
 
+6. **No baseline-plus-geometry delta test.** Stage 6.1 tests geometry-only profiles against the baseline, but does not test whether geometry adds incremental value on top of `h12_clock_shift_back`. A future test could predeclare exactly one baseline+geometry delta profile, without reopening a broad horizon/ATR/TP/SL search.
+
 ## Validation Split Disclosure
 
 - **Model selection:** val_stop (2021–2022) only
 - **Holdout:** diagnostic_holdout (2023–2025) and low_n_disclosure (2026) were not used for any selection decision
 - **No profile, seed, or threshold was chosen using holdout data**
-- Holdout results are informational only and are not reported here because no threshold was available
+- Holdout AUC/PR lift is reported above as disclosure-only. Threshold holdout results are not reported for geometry profiles because no threshold was available.
 
 ## Next Step
 
-The fractal geometry hypothesis is exhausted for this encoding family. Recommended directions:
+The current H12 relative-geometry branch is closed for the tested encoding family. Recommended directions:
 
 1. **Stage 6.2 (recommended):** Attempt to replicate Stage 6.0 results with a fundamentally different feature family (e.g., multi-timeframe momentum, micro-structure, or volume-based features) to establish whether H12 TP/SL prediction is robust or fragile.
 
 2. **Stage 6.0 refinement:** The baseline achieves AUC 0.617 with clock_shift_back. Investigate whether ensembling or calibration improves trading results — but this is a separate research path.
 
-3. **Archive Stage 6.1 geometry approach.** The code and report are preserved, but no further investment in fractal-level geometry features for this horizon is warranted without new evidence.
+3. **Archive this Stage 6.1 geometry-only approach.** The code and report are preserved. Further work on fractal geometry should require a new, narrow hypothesis, such as one predeclared baseline+geometry delta test, rather than another broad feature search.
 
 ## Related Materials
 
