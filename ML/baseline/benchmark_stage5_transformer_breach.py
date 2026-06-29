@@ -7932,6 +7932,197 @@ def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
     }
 
 
+# ===========================================================================
+# Stage 5.4 runner and worker globals
+# ===========================================================================
+
+def _load_stage5_time_to_breach_source_splits() -> dict:
+    print("Загрузка sell splits для time-to-breach stages...")
+    sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
+    print("Загрузка buy splits для time-to-breach stages...")
+    buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+    return {
+        "sell": (sell_train, sell_val, sell_hold),
+        "buy": (buy_train, buy_val, buy_hold),
+    }
+
+
+_STAGE5_4_WORKER_SPLITS = None
+_STAGE5_4_WORKER_FEATURES = None
+
+
+def _init_stage5_4_worker(splits_by_source: dict, features_by_source_profile: dict) -> None:
+    global _STAGE5_4_WORKER_SPLITS, _STAGE5_4_WORKER_FEATURES
+    _STAGE5_4_WORKER_SPLITS = splits_by_source
+    _STAGE5_4_WORKER_FEATURES = features_by_source_profile
+
+
+def _run_stage5_4_job(job: dict) -> dict:
+    split = job.get("split")
+    feature_split = job.get("feature_split")
+    if split is None:
+        split = _STAGE5_4_WORKER_SPLITS[job["source_target"]]
+    if feature_split is None and _STAGE5_4_WORKER_FEATURES is not None:
+        feature_split = _STAGE5_4_WORKER_FEATURES[job["source_target"]][job["profile"]]
+    return evaluate_stage5_4_profile_seed(
+        split,
+        job["source_target"],
+        job["profile"],
+        int(job["seed"]),
+        xgb_threads=int(job.get("xgb_threads", 1)),
+        feature_split=feature_split,
+    )
+
+
+def run_stage5_4_fast_price_atr_ablation(target_splits: dict,
+                                         output_path: Path = STAGE5_4_JSON_REPORT_PATH,
+                                         workers: int = 1,
+                                         xgb_threads: int = 1) -> dict:
+    started_at = time.time()
+    total_runs = len(STAGE5_4_SOURCE_TARGETS) * len(STAGE5_4_PROFILE_KEYS) * len(STAGE5_4_SEEDS)
+    report = {
+        "stage": "5.4_fast_price_atr_ablation",
+        "status": "RUNNING",
+        "level": "diagnostic_only",
+        "source_targets": STAGE5_4_SOURCE_TARGETS,
+        "target_spec": dict(STAGE5_4_TARGET_SPEC),
+        "profiles": STAGE5_4_PROFILE_KEYS,
+        "profile_roles": STAGE5_4_PROFILE_ROLES,
+        "side_baseline_profile": STAGE5_4_SIDE_BASELINE_PROFILE,
+        "side_primary_profile": STAGE5_4_SIDE_PRIMARY_PROFILE,
+        "seeds": STAGE5_4_SEEDS,
+        "feature_distribution_audit": {},
+        "raw_runs": [],
+        "summary": {},
+        "gate_results": {},
+        "notes": {
+            "target_fixed": "fast only; no target search in Stage 5.4",
+            "sell_primary": "sell passed Stage 5.3 target-reformulation gate",
+            "buy_borderline": "buy passed delta >= 0.02 in only 1/3 seed in Stage 5.3",
+            "raw_atr": "not a primary candidate; ATR profiles are diagnostic because ATR has known regime shift",
+            "updn": "diagnostic group only, not included by default",
+        },
+        "progress": {
+            "done_runs": 0,
+            "total_runs": total_runs,
+            "run_elapsed_sec": [],
+            "started_at_unix": started_at,
+            "updated_at_unix": started_at,
+            "workers": int(workers),
+            "xgb_threads": int(xgb_threads),
+            "eta_sec": None,
+            "last_completed": None,
+        },
+    }
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    combined_by_name = {
+        "sell_bars_to_breach_H6_off05": pd.concat(target_splits["sell"], ignore_index=True),
+        "buy_bars_to_breach_H6_off05": pd.concat(target_splits["buy"], ignore_index=True),
+    }
+    splits_by_source = {}
+    features_by_source_profile = {}
+    for source_target in STAGE5_4_SOURCE_TARGETS:
+        split = build_stage5_1_split(combined_by_name[source_target], source_target)
+        splits_by_source[source_target] = split
+        features_by_source_profile[source_target] = {}
+        report["feature_distribution_audit"][source_target] = {}
+        for profile in STAGE5_4_PROFILE_KEYS:
+            feature_split = _build_stage5_4_feature_split(split, profile)
+            audit = stage5_4_feature_distribution_audit(feature_split, profile)
+            report["feature_distribution_audit"][source_target][profile] = audit
+            if audit["status"] == "ERROR":
+                report["status"] = "PREFLIGHT_FAILED"
+                report["progress"]["finished_at_unix"] = time.time()
+                report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+                _write_json_atomic(output_path, report)
+                return report
+            features_by_source_profile[source_target][profile] = feature_split
+            report["progress"]["updated_at_unix"] = time.time()
+            _write_json_atomic(output_path, report)
+
+    jobs = [
+        {
+            "source_target": source_target,
+            "profile": profile,
+            "seed": int(seed),
+            "xgb_threads": int(xgb_threads),
+        }
+        for source_target in STAGE5_4_SOURCE_TARGETS
+        for profile in STAGE5_4_PROFILE_KEYS
+        for seed in STAGE5_4_SEEDS
+    ]
+
+    heartbeat = HeartbeatLogger("stage5.4 runner")
+    heartbeat.emit(
+        f"pending_jobs={len(jobs)} workers={workers} xgb_threads={xgb_threads}",
+        force=True,
+    )
+
+    def consume_run(run: dict) -> None:
+        report["raw_runs"].append(run)
+        report["progress"]["done_runs"] += 1
+        report["progress"]["run_elapsed_sec"].append(run.get("elapsed_sec"))
+        report["progress"]["updated_at_unix"] = time.time()
+        elapsed = report["progress"]["updated_at_unix"] - report["progress"]["started_at_unix"]
+        remaining = report["progress"]["total_runs"] - report["progress"]["done_runs"]
+        report["progress"]["eta_sec"] = round((elapsed / max(report["progress"]["done_runs"], 1)) * remaining, 1)
+        report["progress"]["last_completed"] = {
+            "source_target": run["source_target"],
+            "target_id": run["target_id"],
+            "profile": run["profile"],
+            "seed": int(run["seed"]),
+            "auc": _safe((run.get("val_stop") or {}).get("auc")),
+            "pr_auc": _safe((run.get("val_stop") or {}).get("pr_auc")),
+            "elapsed_sec": run.get("elapsed_sec"),
+        }
+        print(
+            f"[{report['progress']['done_runs']}/{report['progress']['total_runs']}] "
+            f"{run['source_target']} | {run['profile']} | seed={run['seed']} | "
+            f"auc={report['progress']['last_completed']['auc']} | eta_sec={report['progress']['eta_sec']}",
+            flush=True,
+        )
+        heartbeat.emit(f"progress={report['progress']['done_runs']}/{report['progress']['total_runs']}")
+        _write_json_atomic(output_path, report)
+
+    if workers <= 1:
+        for job in jobs:
+            job["split"] = splits_by_source[job["source_target"]]
+            job["feature_split"] = features_by_source_profile[job["source_target"]][job["profile"]]
+            consume_run(_run_stage5_4_job(job))
+    else:
+        with ProcessPoolExecutor(
+            max_workers=int(workers),
+            initializer=_init_stage5_4_worker,
+            initargs=(splits_by_source, features_by_source_profile),
+        ) as executor:
+            futures = [executor.submit(_run_stage5_4_job, job) for job in jobs]
+            for future in as_completed(futures):
+                consume_run(future.result())
+
+    statuses = []
+    for source_target in STAGE5_4_SOURCE_TARGETS:
+        summary = summarize_stage5_4_source(report["raw_runs"], source_target)
+        report["summary"][source_target] = summary
+        gate = stage5_4_gate_results(summary, source_target)
+        report["gate_results"][source_target] = gate
+        statuses.append(gate["overall_status"])
+        _write_json_atomic(output_path, report)
+
+    report["status"] = (
+        "PRICE_ATR_SIGNAL_FOUND"
+        if statuses and any(s == "PRICE_ATR_SIGNAL_FOUND" for s in statuses)
+        else "DIAGNOSTIC_ONLY"
+    )
+    report["progress"]["finished_at_unix"] = time.time()
+    report["progress"]["updated_at_unix"] = report["progress"]["finished_at_unix"]
+    report["progress"]["elapsed_sec"] = round(report["progress"]["finished_at_unix"] - started_at, 3)
+    report["progress"]["eta_sec"] = 0.0
+    _write_json_atomic(output_path, report)
+    return report
+
+
 def run_stage5_3_target_reformulation(target_splits: dict,
                                       output_path: Path = STAGE5_3_JSON_REPORT_PATH,
                                       workers: int = 1,
@@ -8144,6 +8335,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                         help="Number of worker processes for Stage 5.3")
     parser.add_argument("--stage5-3-xgb-threads", type=int, default=1,
                         help="XGBoost threads per Stage 5.3 worker")
+    parser.add_argument("--stage5-4-fast-price-atr-ablation", action="store_true",
+                        help="Run Stage 5.4 fixed fast target price/ATR feature ablation.")
+    parser.add_argument("--stage5-4-workers", type=int, default=1,
+                        help="Number of worker processes for Stage 5.4")
+    parser.add_argument("--stage5-4-xgb-threads", type=int, default=1,
+                        help="XGBoost threads per Stage 5.4 worker")
     parser.add_argument("--target", type=str, default=TARGET_COLUMN,
                         help="Target column for Stage 5 training")
     parser.add_argument("--all-profiles-confirmatory", action="store_true",
@@ -8188,6 +8385,25 @@ def main():
         print(json.dumps({
             "status": report["status"],
             "json": str(STAGE5_3_JSON_REPORT_PATH),
+            "done_runs": report["progress"]["done_runs"],
+            "total_runs": report["progress"]["total_runs"],
+        }, indent=2))
+        return
+
+    if args.stage5_4_fast_price_atr_ablation:
+        print("\n" + "=" * 60)
+        print("Stage 5.4 fast path: fixed fast target price/ATR ablation")
+        print("=" * 60)
+        report = run_stage5_4_fast_price_atr_ablation(
+            _load_stage5_time_to_breach_source_splits(),
+            output_path=STAGE5_4_JSON_REPORT_PATH,
+            workers=args.stage5_4_workers,
+            xgb_threads=args.stage5_4_xgb_threads,
+        )
+        print("Stage 5.4: fast price/ATR ablation completed")
+        print(json.dumps({
+            "status": report["status"],
+            "json": str(STAGE5_4_JSON_REPORT_PATH),
             "done_runs": report["progress"]["done_runs"],
             "total_runs": report["progress"]["total_runs"],
         }, indent=2))

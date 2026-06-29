@@ -4780,3 +4780,62 @@ def test_stage5_4_gate_blocks_when_pr_auc_lift_is_too_small():
     gate = runner.stage5_4_gate_results(summary, "sell_bars_to_breach_H6_off05")
     assert gate["model_gate"]["checks"]["pr_auc_lift_ge_0_03"] is False
     assert gate["overall_status"] == "DIAGNOSTIC_ONLY"
+
+
+def test_stage5_4_runner_writes_json(monkeypatch, tmp_path):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    df = _make_stage5_0f_year_df().copy()
+    df["sell_bars_to_breach_H6_off05"] = np.where(np.arange(len(df)) % 3 == 0, 1, 7)
+    df["buy_bars_to_breach_H6_off05"] = np.where(np.arange(len(df)) % 4 == 0, 2, 7)
+    monkeypatch.setattr(runner, "STAGE5_4_PROFILE_KEYS", ["clock_shift_back"])
+    monkeypatch.setattr(runner, "STAGE5_4_SEEDS", [42])
+
+    report = runner.run_stage5_4_fast_price_atr_ablation(
+        {"sell": (df, df, df), "buy": (df, df, df)},
+        output_path=tmp_path / "stage5_4.json",
+        workers=1,
+        xgb_threads=1,
+    )
+
+    assert report["stage"] == "5.4_fast_price_atr_ablation"
+    assert report["progress"]["done_runs"] == 2
+    assert report["progress"]["total_runs"] == 2
+    assert "feature_distribution_audit" in report
+    assert (tmp_path / "stage5_4.json").exists()
+
+
+def test_stage5_4_cli_arguments_exist_in_build_arg_parser():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    parser = runner.build_arg_parser()
+    args = parser.parse_args([
+        "--stage5-4-fast-price-atr-ablation",
+        "--stage5-4-workers", "8",
+        "--stage5-4-xgb-threads", "4",
+    ])
+
+    assert args.stage5_4_fast_price_atr_ablation is True
+    assert args.stage5_4_workers == 8
+    assert args.stage5_4_xgb_threads == 4
+
+
+def test_load_stage5_time_to_breach_source_splits_helper(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    calls = []
+    frame = pd.DataFrame({"x": [1]})
+
+    def fake_load_splits(target_col):
+        calls.append(target_col)
+        return frame.copy(), frame.copy(), frame.copy()
+
+    monkeypatch.setattr(runner, "load_splits", fake_load_splits)
+    splits = runner._load_stage5_time_to_breach_source_splits()
+
+    assert calls == [
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H6_off05",
+    ]
+    assert sorted(splits) == ["buy", "sell"]
+    assert len(splits["sell"]) == 3
