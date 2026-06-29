@@ -436,3 +436,112 @@ def stage6_build_feature_split(split: dict[str, pd.DataFrame], profile: str) -> 
         for name, df in split.items()
         if isinstance(df, pd.DataFrame)
     }
+
+
+def stage6_simulate_threshold(df: pd.DataFrame, y_score, threshold: float) -> dict:
+    score = np.asarray(y_score, dtype=np.float64)
+    selected = df.loc[score >= threshold].copy()
+    pnl = selected["stage6_pnl_r"].to_numpy(dtype=np.float64)
+    pnl = pnl[np.isfinite(pnl)]
+    pnl_spread_020 = selected.get("stage6_pnl_r_spread_020", pd.Series(dtype=float)).to_numpy(dtype=np.float64)
+    pnl_spread_040 = selected.get("stage6_pnl_r_spread_040", pd.Series(dtype=float)).to_numpy(dtype=np.float64)
+    reasons = selected["stage6_close_reason"].value_counts().to_dict()
+    years = selected["_year"].dropna().astype(int)
+    yearly = {}
+    for year, group in selected.groupby("_year"):
+        yearly[str(int(year))] = {
+            "trades": int(len(group)),
+            "pf": _stage6_pf_from_pnl(group["stage6_pnl_r"]),
+        }
+    by_side = {}
+    if "stage6_side" in selected:
+        for side, group in selected.groupby("stage6_side"):
+            by_side[str(side)] = {
+                "trades": int(len(group)),
+                "pf": _stage6_pf_from_pnl(group["stage6_pnl_r"]),
+                "pf_spread_020": _stage6_pf_from_pnl(group.get("stage6_pnl_r_spread_020", [])),
+                "pf_spread_040": _stage6_pf_from_pnl(group.get("stage6_pnl_r_spread_040", [])),
+            }
+    return {
+        "threshold": float(threshold),
+        "trades": int(len(pnl)),
+        "wins": int(reasons.get("TP", 0)),
+        "losses": int(reasons.get("SL", 0) + reasons.get("AMBIGUOUS_SL_FIRST", 0)),
+        "timeouts": int(reasons.get("TIMEOUT", 0)),
+        "pf": _stage6_pf_from_pnl(pnl),
+        "pf_spread_020": _stage6_pf_from_pnl(pnl_spread_020),
+        "pf_spread_040": _stage6_pf_from_pnl(pnl_spread_040),
+        "mean_pnl_r": float(np.mean(pnl)) if len(pnl) else 0.0,
+        "total_pnl_r": float(np.sum(pnl)) if len(pnl) else 0.0,
+        "trades_per_year": float(len(pnl) / max(years.nunique(), 1)) if len(pnl) else 0.0,
+        "by_side": by_side,
+        "yearly": yearly,
+    }
+
+
+def stage6_threshold_plateau_check(candidates: list[dict], selected_threshold: float) -> dict:
+    by_threshold = {float(row["threshold"]): row for row in candidates}
+    selected = by_threshold[float(selected_threshold)]
+    selected_pf = float(selected["pf"])
+    selected_trades = int(selected["trades"])
+    neighbors = [
+        by_threshold[t]
+        for t in (round(selected_threshold - 0.025, 3), round(selected_threshold + 0.025, 3))
+        if t in by_threshold and by_threshold[t].get("passes_min_trades")
+    ]
+    if not neighbors:
+        return {"pass": False, "reason": "no_valid_neighbors"}
+    for row in neighbors:
+        if float(row["pf"]) < selected_pf - 0.15 or int(row["trades"]) < 0.70 * selected_trades:
+            return {"pass": False, "reason": "neighbor_pf_or_trades_drop"}
+    return {"pass": True, "reason": "stable_neighbors"}
+
+
+def stage6_all_trade_baseline(df: pd.DataFrame) -> dict:
+    score = np.ones(len(df), dtype=np.float64)
+    return stage6_simulate_threshold(df, score, threshold=0.5)
+
+
+def stage6_permutation_threshold_baseline(df: pd.DataFrame, y_score, seed: int, n_perm: int = 200) -> dict:
+    rng = np.random.default_rng(seed)
+    score = np.asarray(y_score, dtype=np.float64)
+    observed = stage6_select_threshold_on_val(df, score)
+    observed_pf = None if observed["selected"] is None else observed["selected"]["pf"]
+    permuted_pfs = []
+    for _ in range(n_perm):
+        perm = rng.permutation(score)
+        selected = stage6_select_threshold_on_val(df, perm)["selected"]
+        if selected is not None and selected["pf"] is not None:
+            permuted_pfs.append(float(selected["pf"]))
+    p_value = None
+    if observed_pf is not None and permuted_pfs:
+        p_value = float(np.mean(np.asarray(permuted_pfs) >= float(observed_pf)))
+    return {
+        "n_perm": int(n_perm),
+        "observed_pf": observed_pf,
+        "permuted_pf_median": float(np.median(permuted_pfs)) if permuted_pfs else None,
+        "permuted_pf_p95": float(np.percentile(permuted_pfs, 95)) if permuted_pfs else None,
+        "empirical_p_value": p_value,
+    }
+
+
+def stage6_select_threshold_on_val(df: pd.DataFrame, y_score) -> dict:
+    candidates = []
+    for threshold in np.round(np.arange(0.50, 0.9001, 0.025), 3):
+        row = stage6_simulate_threshold(df, y_score, float(threshold))
+        yearly_counts = [v["trades"] for v in row["yearly"].values()]
+        row["passes_min_trades"] = row["trades"] >= 50 and all(v >= 20 for v in yearly_counts)
+        candidates.append(row)
+    valid = [row for row in candidates if row["passes_min_trades"] and row["pf"] is not None]
+    if not valid:
+        return {"status": "NO_THRESHOLD", "candidates": candidates, "selected": None}
+    selected = sorted(
+        valid,
+        key=lambda row: (
+            -float(row["pf"]) if np.isfinite(row["pf"]) else -1e9,
+            -int(row["trades"]),
+            float(row["threshold"]),
+        ),
+    )[0]
+    plateau = stage6_threshold_plateau_check(candidates, selected["threshold"])
+    return {"status": "SELECTED", "candidates": candidates, "selected": selected, "plateau": plateau}

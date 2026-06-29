@@ -180,3 +180,39 @@ def test_stage6_binary_metrics_handles_constant_or_single_class():
     assert single["pr_auc"] is None
     assert constant["auc"] == 0.5
     assert 0.0 <= constant["brier"] <= 1.0
+
+
+def test_stage6_threshold_simulation_uses_realized_pnl_and_min_trades():
+    df = pd.DataFrame({
+        "stage6_pnl_r": [2.0, -1.0, 0.5, -0.25],
+        "stage6_pnl_r_spread_020": [1.8, -1.2, 0.3, -0.45],
+        "stage6_pnl_r_spread_040": [1.6, -1.4, 0.1, -0.65],
+        "stage6_close_reason": ["TP", "SL", "TIMEOUT", "TIMEOUT"],
+        "stage6_side": ["buy", "buy", "sell", "sell"],
+        "_year": [2021, 2021, 2022, 2022],
+    })
+    scores = np.array([0.9, 0.8, 0.7, 0.1])
+
+    result = s6.stage6_simulate_threshold(df, scores, threshold=0.65)
+
+    assert result["trades"] == 3
+    assert result["wins"] == 1
+    assert result["losses"] == 1
+    assert result["timeouts"] == 1
+    assert result["pf"] == 2.5
+    assert result["pf_spread_020"] == 2.1 / 1.2
+    assert result["by_side"]["buy"]["trades"] == 2
+    assert result["trades_per_year"] == 1.5
+
+
+def test_stage6_threshold_plateau_rejects_single_point_spike():
+    candidates = [
+        {"threshold": 0.50, "pf": 1.05, "trades": 120, "passes_min_trades": True},
+        {"threshold": 0.525, "pf": 1.80, "trades": 52, "passes_min_trades": True},
+        {"threshold": 0.55, "pf": 1.02, "trades": 110, "passes_min_trades": True},
+    ]
+
+    plateau = s6.stage6_threshold_plateau_check(candidates, selected_threshold=0.525)
+
+    assert plateau["pass"] is False
+    assert plateau["reason"] == "neighbor_pf_or_trades_drop"
