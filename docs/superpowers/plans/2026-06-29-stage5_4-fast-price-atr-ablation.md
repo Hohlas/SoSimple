@@ -4,7 +4,7 @@
 
 **Goal:** Проверить, усиливают ли физически обоснованные price/ATR-признаки фиксированную Stage 5.3 цель `fast` без нового поиска целей.
 
-**Architecture:** Stage 5.4 переиспользует Stage 5.2/5.3 `bars_to_breach` labels, fixed split Stage 5.x, XGBoost-классификатор Stage 5.3 и отдельный JSON artifact. Новый код добавляет только Stage 5.4 feature profiles, A7-аудит финальных матриц до обучения, summary/gate вокруг fixed target `fast` и CLI fast path; Stage 5.3 не изменяется по смыслу.
+**Architecture:** Stage 5.4 переиспользует Stage 5.2/5.3 `bars_to_breach` labels, fixed split Stage 5.x, XGBoost-классификатор Stage 5.3 и отдельный JSON artifact. Новый код добавляет Stage 5.4 feature profiles, общий расширяемый Stage 5.2/5.4 flat feature builder, A7-аудит финальных матриц до обучения, summary/gate вокруг fixed target `fast` и CLI fast path; Stage 5.3 не изменяется по смыслу.
 
 **Tech Stack:** Python 3.10, pandas, numpy, scikit-learn metrics, XGBoost, pytest, JSON reports.
 
@@ -24,9 +24,14 @@
 - Secondary feature addition: `price_atr_scaled = price / ATR`, transformed as `asinh`.
 - Diagnostic-only additions: `ATR` row feature (`log1p` and `asinh` variants) and Up/Dn group.
 - Raw identity `ATR` не является primary candidate из-за известного regime shift; если обучается, только как diagnostic negative control и с явным A7 warning.
+- `price_coord_atr` уже проверялся в Stage 5.0a/5.0b на binary breach профилях и не дал кандидата; Stage 5.4 разрешён только потому, что fixed target `fast` имеет другой физический смысл: расстояние до уровня в ATR должно сильнее влиять на ранний пробой, чем на любой пробой за H.
+- `price_atr_scaled` является нестационарным secondary control. Если он улучшает AUC, это не доказывает чистый физический сигнал: модель может читать price/volatility regime. Отчёт обязан отделить это от вывода по `price_coord_atr`.
 - A7 feature distribution audit обязателен до обучения для каждого нового Stage 5.4 profile. Если есть `ERROR`, training блокируется. Если есть `WARNING`, JSON должен содержать решение `accept_as_diagnostic`, `reject_profile` или `transform_and_rerun`.
+- A7 audit должен считать per-position хвосты: `fractal0.price_coord_atr` ... `fractal99.price_coord_atr`, с явным disclosure для `fractal90..fractal99`, потому что Stage 5.0a находил хвост на старших позициях.
+- A7 audit должен считать Spearman correlation между `price_coord_atr` и `back` на train для профилей, где оба поля присутствуют. `abs(rho) > 0.8` — `WARNING`, не блокер: интерпретация feature importance будет затруднена.
 - Gate по улучшению считается per-seed, не только по median: `delta_vs_side_baseline >= 0.02` должен пройти минимум `2/3` seed; `3/3` отмечается как strong.
-- Holdout не является gate, но report должен раскрыть `holdout_drop = val_auc - holdout_auc`; drop больше `0.06` — красный флаг.
+- Gate включает PR AUC lift: `pr_auc - positive_rate >= 0.03`. Если PR lift не проходит, статус не выше `DIAGNOSTIC_ONLY`, даже при проходе AUC-delta.
+- Holdout не является gate, но report должен раскрыть `holdout_drop = val_auc - holdout_auc`; sell drop больше `0.06` — красный флаг, buy drop больше `0.04` — critical warning из-за borderline статуса buy после Stage 5.3.
 - Search budget должен быть раскрыт в JSON и отчёте; итог не может стать trading candidate без нового независимого периода.
 
 ---
@@ -34,7 +39,7 @@
 ## File Structure
 
 - Modify: `ML/baseline/benchmark_stage5_transformer_breach.py`
-  - Add Stage 5.4 constants, profile definitions, feature-name helper, A7 matrix audit, evaluator/summary/gate, runner and CLI fast path.
+  - Add Stage 5.4 constants, profile definitions, feature-name helper, shared Stage 5.2/5.4 flat feature builder, A7 matrix audit, evaluator/summary/gate, runner and CLI fast path.
 - Modify: `tests/test_stage5_transformer_breach.py`
   - Add unit/smoke tests for Stage 5.4 profiles, feature shapes, A7 audit, evaluator, gate, runner and CLI.
 - Create after full run: `ML/reports/stage5_4_fast_price_atr_ablation.json`
@@ -88,6 +93,12 @@ Primary comparisons:
 - buy: `clock_shift_back_impulse_price_coord_atr` vs `clock_shift_back_impulse`.
 
 Secondary/diagnostic profiles cannot promote Stage 5.4 to candidate status. They only explain what to inspect next.
+
+### Prior Evidence Caveat
+
+`price_coord_atr` is not a new idea. Stage 5.0a/5.0b already tested relative-price/token profiles for binary breach and did not find a candidate; Stage 5.0a also exposed tail risk on old-token positions. Stage 5.4 is justified only as a narrower retest on a different fixed target: `fast` means early breach, so ATR-normalized distance to the level has a direct timing interpretation.
+
+`price_atr_scaled` is weaker methodologically than `price_coord_atr`: it may encode price/volatility regime even after `asinh`. Treat it as secondary diagnostic evidence, not as a clean signal source.
 
 ---
 
@@ -322,6 +333,8 @@ git commit -m "feat: add stage 5.4 profile contract"
 - Consumes: `_stage5_4_profile_for_key(profile_key: str) -> dict`
 - Produces: `build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray`
 - Produces: `_stage5_4_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray`
+- Produces: `_build_stage5_flat_features_from_profile(df: pd.DataFrame, profile: dict) -> np.ndarray`
+- Modifies: `build_stage5_2_features(df, profile_key)` to call `_build_stage5_flat_features_from_profile()` for token profiles.
 
 - [ ] **Step 1: Write failing tests for feature shapes and transforms**
 
@@ -384,9 +397,9 @@ Run:
 
 Expected: FAIL because `build_stage5_4_features()` does not exist.
 
-- [ ] **Step 3: Implement Stage 5.4 row and flat feature builders**
+- [ ] **Step 3: Refactor shared flat builder and implement Stage 5.4 wrapper**
 
-Add near `build_stage5_2_features()`:
+Replace the token-building body of `build_stage5_2_features()` with a shared helper. Add near `build_stage5_2_features()`:
 
 ```python
 def _stage5_4_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
@@ -409,10 +422,17 @@ def _stage5_4_row_features(df: pd.DataFrame, profile: dict) -> np.ndarray:
     return np.column_stack([base, atr_col]).astype(np.float32)
 
 
-def build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
-    profile = _stage5_4_profile_for_key(profile_key)
+def _build_stage5_flat_features_from_profile(df: pd.DataFrame, profile: dict) -> np.ndarray:
     token_fields = profile["token_fields"]
     row_fields = profile["row_fields"]
+    if not token_fields:
+        row_features = build_row_features(df, profile).astype(np.float32)
+        if row_features.shape[1] != len(row_fields):
+            raise RuntimeError(
+                f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+            )
+        return row_features
+
     n_rows = len(df)
     token_width = len(token_fields) * N_FRACTALS
     X = np.zeros((n_rows, token_width + len(row_fields)), dtype=np.float32)
@@ -456,14 +476,31 @@ def build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
                 X[row_idx, offset] = value
                 offset += 1
 
-    row_features = _stage5_4_row_features(df, profile).astype(np.float32)
+    if profile.get("stage5_4"):
+        row_features = _stage5_4_row_features(df, profile).astype(np.float32)
+    else:
+        row_features = build_row_features(df, profile).astype(np.float32)
     if row_features.shape[1] != len(row_fields):
         raise RuntimeError(
-            f"Stage 5.4 row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
+            f"Stage flat row feature width mismatch: got {row_features.shape[1]}, expected {len(row_fields)}"
         )
     X[:, token_width:] = row_features
     return X
+
+
+def build_stage5_4_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    return _build_stage5_flat_features_from_profile(df, _stage5_4_profile_for_key(profile_key))
 ```
+
+Then change `build_stage5_2_features()` to:
+
+```python
+def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
+    profile = _stage5_2_profile_for_key(profile_key)
+    return _build_stage5_flat_features_from_profile(df, profile)
+```
+
+This keeps one parser for Stage 5.2/5.3/5.4 token matrices. Regression tests in Step 5 are mandatory because closed Stage 5.2/5.3 behavior must not drift.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -505,6 +542,7 @@ git commit -m "feat: build stage 5.4 price atr features"
 - Consumes: `stage5_4_feature_names(profile_key) -> list[str]`
 - Produces: `stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str) -> dict`
 - Produces: `_stage5_4_audit_feature_matrix(X: np.ndarray, feature_names: list[str]) -> dict`
+- Produces: `_stage5_4_price_back_correlation(train_X: np.ndarray, feature_names: list[str]) -> dict`
 
 - [ ] **Step 1: Write failing tests for A7 audit flags and pass case**
 
@@ -550,6 +588,37 @@ def test_stage5_4_feature_distribution_audit_passes_small_clean_matrix():
     assert audit["status"] == "PASS"
     assert audit["flags"] == []
     assert audit["by_split"]["train_core"]["f1"]["p95"] > 0
+
+
+def test_stage5_4_feature_distribution_audit_flags_price_back_correlation():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    feature_names = [
+        "fractal0.shift",
+        "fractal0.back",
+        "fractal0.price_coord_atr",
+        "hour_sin",
+    ]
+    X = np.array([
+        [0.0, 1.0, 1.0, 0.0],
+        [0.0, 2.0, 2.0, 0.0],
+        [0.0, 3.0, 3.0, 0.0],
+        [0.0, 4.0, 4.0, 0.0],
+    ], dtype=np.float32)
+    audit = runner.stage5_4_feature_distribution_audit(
+        {
+            "train_core": X,
+            "val_stop": X,
+            "diagnostic_holdout": X,
+            "low_n_disclosure": X,
+        },
+        "clock_shift_back_price_coord_atr",
+        feature_names=feature_names,
+    )
+
+    assert "PRICE_COORD_BACK_CORR_GT_0_8" in audit["flags"]
+    assert audit["correlation_audit"]["max_abs_spearman"] > 0.8
+    assert audit["decisions"]["PRICE_COORD_BACK_CORR_GT_0_8"] == "accept_as_diagnostic"
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -557,7 +626,7 @@ def test_stage5_4_feature_distribution_audit_passes_small_clean_matrix():
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_nan_inf_and_tail tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_passes_small_clean_matrix -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_nan_inf_and_tail tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_passes_small_clean_matrix tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_price_back_correlation -q
 ```
 
 Expected: FAIL because audit helpers do not exist.
@@ -626,6 +695,34 @@ def _stage5_4_audit_feature_matrix(X: np.ndarray, feature_names: list[str]) -> d
     }
 
 
+def _stage5_4_price_back_correlation(train_X: np.ndarray, feature_names: list[str]) -> dict:
+    arr = np.asarray(train_X, dtype=np.float32)
+    pairs = []
+    for fractal_idx in range(N_FRACTALS):
+        back_name = f"fractal{fractal_idx}.back"
+        coord_name = f"fractal{fractal_idx}.price_coord_atr"
+        if back_name not in feature_names or coord_name not in feature_names:
+            continue
+        back = arr[:, feature_names.index(back_name)]
+        coord = arr[:, feature_names.index(coord_name)]
+        valid = np.isfinite(back) & np.isfinite(coord)
+        if valid.sum() < 3:
+            continue
+        rho, _ = spearmanr(back[valid], coord[valid])
+        if np.isfinite(rho):
+            pairs.append({
+                "fractal": int(fractal_idx),
+                "spearman": float(rho),
+                "abs_spearman": float(abs(rho)),
+            })
+    pairs.sort(key=lambda row: row["abs_spearman"], reverse=True)
+    return {
+        "max_abs_spearman": float(pairs[0]["abs_spearman"]) if pairs else None,
+        "top_pairs": pairs[:10],
+        "warning_threshold_abs_spearman": 0.8,
+    }
+
+
 def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
                                         feature_names: list[str] | None = None) -> dict:
     names = feature_names or stage5_4_feature_names(profile_key)
@@ -646,6 +743,28 @@ def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
             if stats["zero_rate"] is not None and stats["zero_rate"] > 0.95:
                 flags.append("ZERO_GT95")
 
+    old_position_tail = {}
+    for name, stats in by_split.get("train_core", {}).items():
+        if ".price_coord_atr" not in name:
+            continue
+        try:
+            fractal_num = int(name.split(".", 1)[0].removeprefix("fractal"))
+        except ValueError:
+            continue
+        if fractal_num >= 90 and ((stats.get("frac_abs_gt10") or 0.0) > 0.0 or (stats.get("frac_abs_gt20") or 0.0) > 0.0):
+            old_position_tail[name] = {
+                "frac_abs_gt10": stats.get("frac_abs_gt10"),
+                "frac_abs_gt20": stats.get("frac_abs_gt20"),
+            }
+    if old_position_tail:
+        flags.append("OLD_POSITION_PRICE_COORD_TAIL")
+
+    correlation_audit = _stage5_4_price_back_correlation(
+        feature_split["train_core"], names
+    )
+    if (correlation_audit.get("max_abs_spearman") or 0.0) > 0.8:
+        flags.append("PRICE_COORD_BACK_CORR_GT_0_8")
+
     train = by_split.get("train_core", {})
     hold = by_split.get("diagnostic_holdout", {})
     for name, train_stats in train.items():
@@ -663,7 +782,14 @@ def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
     for flag in flags:
         if flag == "NaN_OR_INF":
             decisions[flag] = "block_training"
-        elif flag in {"TAIL_GT20", "TAIL_GT10", "ZERO_GT95", "REGIME_SHIFT"}:
+        elif flag in {
+            "TAIL_GT20",
+            "TAIL_GT10",
+            "ZERO_GT95",
+            "REGIME_SHIFT",
+            "OLD_POSITION_PRICE_COORD_TAIL",
+            "PRICE_COORD_BACK_CORR_GT_0_8",
+        }:
             decisions[flag] = "accept_as_diagnostic"
     return {
         "profile": profile_key,
@@ -671,10 +797,14 @@ def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
         "flags": flags,
         "decisions": decisions,
         "by_split": by_split,
+        "old_position_price_coord_tail": old_position_tail,
+        "correlation_audit": correlation_audit,
         "thresholds": {
             "tail_gt10_warn_fraction": 0.01,
             "tail_gt20_warn_any": True,
             "regime_shift_p95_delta_train_std": 3.0,
+            "price_coord_back_corr_abs_spearman_warning": 0.8,
+            "old_position_tail_watch": "fractal90..fractal99 price_coord_atr",
         },
     }
 ```
@@ -684,7 +814,7 @@ def stage5_4_feature_distribution_audit(feature_split: dict, profile_key: str,
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_nan_inf_and_tail tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_passes_small_clean_matrix -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_nan_inf_and_tail tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_passes_small_clean_matrix tests/test_stage5_transformer_breach.py::test_stage5_4_feature_distribution_audit_flags_price_back_correlation -q
 ```
 
 Expected: PASS.
@@ -754,7 +884,12 @@ def test_stage5_4_gate_uses_per_seed_threshold_not_median_only():
             "clock_shift_back_impulse_price_coord_atr": {
                 "profile": "clock_shift_back_impulse_price_coord_atr",
                 "profile_role": "primary",
-                "val_stop": {"auc": 0.7101, "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}}},
+                "val_stop": {
+                    "auc": 0.7101,
+                    "pr_auc": 0.22,
+                    "positive_rate": 0.15,
+                    "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}},
+                },
                 "diagnostic_holdout": {"auc": 0.6600},
                 "delta_vs_side_baseline": {
                     "median_auc_delta": 0.0201,
@@ -771,7 +906,12 @@ def test_stage5_4_gate_uses_per_seed_threshold_not_median_only():
         "best_primary": {
             "profile": "clock_shift_back_impulse_price_coord_atr",
             "profile_role": "primary",
-            "val_stop": {"auc": 0.7101, "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}}},
+            "val_stop": {
+                "auc": 0.7101,
+                "pr_auc": 0.22,
+                "positive_rate": 0.15,
+                "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.71}},
+            },
             "diagnostic_holdout": {"auc": 0.6600},
             "delta_vs_side_baseline": {
                 "median_auc_delta": 0.0201,
@@ -784,6 +924,36 @@ def test_stage5_4_gate_uses_per_seed_threshold_not_median_only():
     gate = runner.stage5_4_gate_results(summary, "buy_bars_to_breach_H6_off05")
     checks = gate["model_gate"]["checks"]
     assert checks["per_seed_delta_ge_0_02_at_least_2_of_3"] is False
+    assert checks["pr_auc_lift_ge_0_03"] is True
+    assert gate["overall_status"] == "DIAGNOSTIC_ONLY"
+
+
+def test_stage5_4_gate_blocks_when_pr_auc_lift_is_too_small():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    summary = {
+        "side": "sell",
+        "target": "fast",
+        "best_primary": {
+            "profile": "clock_shift_back_price_coord_atr",
+            "profile_role": "primary",
+            "val_stop": {
+                "auc": 0.70,
+                "pr_auc": 0.17,
+                "positive_rate": 0.15,
+                "yearly": {"2021": {"auc": 0.70}, "2022": {"auc": 0.70}},
+            },
+            "diagnostic_holdout": {"auc": 0.68},
+            "delta_vs_side_baseline": {
+                "median_auc_delta": 0.03,
+                "pass_count_ge_0_02": 3,
+                "n_seeds": 3,
+            },
+        },
+    }
+
+    gate = runner.stage5_4_gate_results(summary, "sell_bars_to_breach_H6_off05")
+    assert gate["model_gate"]["checks"]["pr_auc_lift_ge_0_03"] is False
     assert gate["overall_status"] == "DIAGNOSTIC_ONLY"
 ```
 
@@ -792,7 +962,7 @@ def test_stage5_4_gate_uses_per_seed_threshold_not_median_only():
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_evaluate_stage5_4_profile_seed_returns_fast_metrics tests/test_stage5_transformer_breach.py::test_stage5_4_gate_uses_per_seed_threshold_not_median_only -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_evaluate_stage5_4_profile_seed_returns_fast_metrics tests/test_stage5_transformer_breach.py::test_stage5_4_gate_uses_per_seed_threshold_not_median_only tests/test_stage5_transformer_breach.py::test_stage5_4_gate_blocks_when_pr_auc_lift_is_too_small -q
 ```
 
 Expected: FAIL because evaluator/gate do not exist.
@@ -963,18 +1133,24 @@ def summarize_stage5_4_source(raw_runs: list[dict], source_target: str) -> dict:
 
 
 def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
+    side = summary.get("side") or ("sell" if source_target.startswith("sell_") else "buy")
     best = summary.get("best_primary") or {}
     val = best.get("val_stop") or {}
     yearly = val.get("yearly") or {}
     delta = best.get("delta_vs_side_baseline") or {}
+    positive_rate = val.get("positive_rate")
+    pr_auc = val.get("pr_auc")
+    pr_auc_lift = None if pr_auc is None or positive_rate is None else pr_auc - positive_rate
     yearly_pass = (
         len(yearly) >= 2
         and sum(1 for row in yearly.values() if (row.get("auc") or 0.0) >= 0.60) >= 2
     )
+    holdout_drop_threshold = 0.04 if side == "buy" else 0.06
     checks = {
         "target_is_fast": summary.get("target") == "fast",
         "best_profile_is_primary": best.get("profile_role") == "primary",
         "auc_ge_0_65": (val.get("auc") or 0.0) >= 0.65,
+        "pr_auc_lift_ge_0_03": pr_auc_lift is not None and pr_auc_lift >= 0.03,
         "median_delta_vs_side_baseline_ge_0_02": (delta.get("median_auc_delta") or 0.0) >= 0.02,
         "per_seed_delta_ge_0_02_at_least_2_of_3": (delta.get("pass_count_ge_0_02") or 0) >= 2,
         "yearly_not_single_year": yearly_pass,
@@ -985,7 +1161,9 @@ def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
         "model_gate": {
             "pass": bool(passed),
             "checks": checks,
-            "holdout_drop_warning": bool((best.get("holdout_drop") or 0.0) > 0.06),
+            "pr_auc_lift": pr_auc_lift,
+            "holdout_drop_warning": bool((best.get("holdout_drop") or 0.0) > holdout_drop_threshold),
+            "holdout_drop_warning_threshold": holdout_drop_threshold,
             "note": "Stage 5.4 is diagnostic; holdout is disclosure only and cannot promote candidate status.",
         },
     }
@@ -996,7 +1174,7 @@ def stage5_4_gate_results(summary: dict, source_target: str) -> dict:
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_evaluate_stage5_4_profile_seed_returns_fast_metrics tests/test_stage5_transformer_breach.py::test_stage5_4_gate_uses_per_seed_threshold_not_median_only -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_evaluate_stage5_4_profile_seed_returns_fast_metrics tests/test_stage5_transformer_breach.py::test_stage5_4_gate_uses_per_seed_threshold_not_median_only tests/test_stage5_transformer_breach.py::test_stage5_4_gate_blocks_when_pr_auc_lift_is_too_small -q
 ```
 
 Expected: PASS.
@@ -1019,6 +1197,7 @@ git commit -m "feat: evaluate stage 5.4 fast ablation"
 **Interfaces:**
 - Consumes: `run_stage5_3_target_reformulation(...)` patterns
 - Produces: `run_stage5_4_fast_price_atr_ablation(target_splits: dict, output_path: Path = STAGE5_4_JSON_REPORT_PATH, workers: int = 1, xgb_threads: int = 1) -> dict`
+- Produces: `_load_stage5_time_to_breach_source_splits() -> dict`
 - Produces CLI flags: `--stage5-4-fast-price-atr-ablation`, `--stage5-4-workers`, `--stage5-4-xgb-threads`
 
 - [ ] **Step 1: Write failing runner and CLI tests**
@@ -1062,6 +1241,27 @@ def test_stage5_4_cli_arguments_exist_in_build_arg_parser():
     assert args.stage5_4_fast_price_atr_ablation is True
     assert args.stage5_4_workers == 8
     assert args.stage5_4_xgb_threads == 4
+
+
+def test_load_stage5_time_to_breach_source_splits_helper(monkeypatch):
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    calls = []
+    frame = pd.DataFrame({"x": [1]})
+
+    def fake_load_splits(target_col):
+        calls.append(target_col)
+        return frame.copy(), frame.copy(), frame.copy()
+
+    monkeypatch.setattr(runner, "load_splits", fake_load_splits)
+    splits = runner._load_stage5_time_to_breach_source_splits()
+
+    assert calls == [
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H6_off05",
+    ]
+    assert sorted(splits) == ["buy", "sell"]
+    assert len(splits["sell"]) == 3
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -1069,7 +1269,7 @@ def test_stage5_4_cli_arguments_exist_in_build_arg_parser():
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_runner_writes_json tests/test_stage5_transformer_breach.py::test_stage5_4_cli_arguments_exist_in_build_arg_parser -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_runner_writes_json tests/test_stage5_transformer_breach.py::test_stage5_4_cli_arguments_exist_in_build_arg_parser tests/test_stage5_transformer_breach.py::test_load_stage5_time_to_breach_source_splits_helper -q
 ```
 
 Expected: FAIL because runner/CLI do not exist.
@@ -1079,6 +1279,17 @@ Expected: FAIL because runner/CLI do not exist.
 Add worker globals/functions by copying Stage 5.3 pattern with Stage 5.4 names:
 
 ```python
+def _load_stage5_time_to_breach_source_splits() -> dict:
+    print("Загрузка sell splits для time-to-breach stages...")
+    sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
+    print("Загрузка buy splits для time-to-breach stages...")
+    buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
+    return {
+        "sell": (sell_train, sell_val, sell_hold),
+        "buy": (buy_train, buy_val, buy_hold),
+    }
+
+
 _STAGE5_4_WORKER_SPLITS = None
 _STAGE5_4_WORKER_FEATURES = None
 
@@ -1271,12 +1482,8 @@ if args.stage5_4_fast_price_atr_ablation:
     print("\n" + "=" * 60)
     print("Stage 5.4 fast path: fixed fast target price/ATR ablation")
     print("=" * 60)
-    print("Загрузка sell splits для Stage 5.4...")
-    sell_train, sell_val, sell_hold = load_splits(target_col="sell_bars_to_breach_H6_off05")
-    print("Загрузка buy splits для Stage 5.4...")
-    buy_train, buy_val, buy_hold = load_splits(target_col="buy_bars_to_breach_H6_off05")
     report = run_stage5_4_fast_price_atr_ablation(
-        {"sell": (sell_train, sell_val, sell_hold), "buy": (buy_train, buy_val, buy_hold)},
+        _load_stage5_time_to_breach_source_splits(),
         output_path=STAGE5_4_JSON_REPORT_PATH,
         workers=args.stage5_4_workers,
         xgb_threads=args.stage5_4_xgb_threads,
@@ -1291,12 +1498,24 @@ if args.stage5_4_fast_price_atr_ablation:
     return
 ```
 
+Also replace the Stage 5.3 fast path duplicated `load_splits()` block with:
+
+```python
+target_splits = _load_stage5_time_to_breach_source_splits()
+report = run_stage5_3_target_reformulation(
+    target_splits,
+    output_path=STAGE5_3_JSON_REPORT_PATH,
+    workers=args.stage5_3_workers,
+    xgb_threads=args.stage5_3_xgb_threads,
+)
+```
+
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run:
 
 ```bash
-./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_runner_writes_json tests/test_stage5_transformer_breach.py::test_stage5_4_cli_arguments_exist_in_build_arg_parser -q
+./.venv/bin/python -m pytest tests/test_stage5_transformer_breach.py::test_stage5_4_runner_writes_json tests/test_stage5_transformer_breach.py::test_stage5_4_cli_arguments_exist_in_build_arg_parser tests/test_stage5_transformer_breach.py::test_load_stage5_time_to_breach_source_splits_helper -q
 ```
 
 Expected: PASS.
@@ -1451,18 +1670,21 @@ Report must include:
 - Context: Stage 5.4 fixed target `fast` after Stage 5.3.
 - What Was Done: 12 profiles, 2 sides, 3 seeds, 72 runs.
 - A7 Preflight: table of `PASS`/`WARNING` by profile; decisions for `TAIL`, `REGIME_SHIFT`, `ZERO_GT95`; explicit statement that `ERROR` blocks training.
+- A7 Preflight: per-position `price_coord_atr` tails with explicit `fractal90..fractal99` disclosure.
+- A7 Preflight: Spearman correlation audit between `price_coord_atr` and `back`; `abs(rho) > 0.8` warning means feature importance is hard to interpret.
 - Results: per-side baseline and primary profile table.
 - Per-seed delta table: each seed delta vs side baseline, not only median.
-- Gate: `delta >= 0.02` must pass at least `2/3` seed.
+- Gate: `delta >= 0.02` must pass at least `2/3` seed; PR AUC lift must be at least `0.03`.
 - Buy disclosure: buy remains borderline unless it passes per-seed gate.
-- Holdout disclosure: holdout drop and warning if drop > `0.06`.
-- Secondary/diagnostic results: `price_atr_scaled`, `ATR`, Up/Dn cannot become primary winner.
+- Holdout disclosure: sell warning if holdout drop > `0.06`; buy critical warning if holdout drop > `0.04`.
+- Secondary/diagnostic results: `price_atr_scaled`, `ATR`, Up/Dn cannot become primary winner. If `price_atr_scaled` improves, report must state whether this looks like regime sensitivity rather than clean level-distance signal.
 - Multiple Testing Context: fixed target, 12 profiles, 72 model runs; no independent candidate validation.
 - Limitations: `2023-2025` burned diagnostic disclosure, no trading PF, no new independent period, no survival-loss.
-- Next Step: depends on result:
-  - if sell primary passes: consider narrow trading/execution mapping or confirmation on new period;
-  - if only diagnostic profiles pass: do not promote; design narrower follow-up;
-  - if none pass: price/ATR does not explain missing `fast` signal.
+- Next Step numeric branching:
+  - `STRONG_SELL_PRICE_COORD_SIGNAL`: sell primary has median delta `>= 0.02`, per-seed delta `>= 0.02` in `3/3`, PR AUC lift `>= 0.03`, yearly AUC `>= 0.60` in `2/2` val years, and holdout drop `<= 0.06`. Next: narrow execution mapping or wait for a clean `2026+` confirmation slice.
+  - `WEAK_SELL_PRICE_COORD_SIGNAL`: sell primary passes `2/3` seed but not `3/3`, or has PR/holdout warning. Next: do not trade; either extend seed list or design one bounded follow-up.
+  - `REJECT_PRICE_COORD`: sell primary fails `2/3` seed or PR AUC lift `< 0.03`. Next: price/ATR does not explain the missing `fast` signal; do not expand to broader price search.
+  - `BUY_DISCLOSURE_ONLY`: buy can be noted as improved only if it passes `3/3` seed, PR AUC lift `>= 0.03`, and holdout drop `<= 0.04`; even then it remains disclosure because Stage 5.3 buy was borderline.
 
 - [ ] **Step 3: Verify report numbers against JSON**
 
@@ -1519,8 +1741,8 @@ git commit -m "docs: report stage 5.4 fast price atr ablation"
 
 ## Self-Review Checklist
 
-- Spec coverage: fixed `fast` target, primary `price_coord_atr`, secondary `price_atr_scaled`, diagnostic raw/ATR and Up/Dn, A7 preflight, per-seed gate, buy borderline disclosure and holdout warning are covered.
+- Spec coverage: fixed `fast` target, prior Stage 5.0a caveat, primary `price_coord_atr`, secondary `price_atr_scaled`, diagnostic raw/ATR and Up/Dn, A7 preflight, per-position tails, correlation audit, PR AUC gate, per-seed gate, buy borderline disclosure and side-specific holdout warning are covered.
 - Placeholder scan: no unresolved placeholders, copy-forward shortcuts or unspecified test steps.
 - Type consistency: Stage 5.4 functions use existing Stage 5.3 target/metric helpers; profile keys match constants and tests.
 - Scope control: no new target search, no trading PF gate, no Transformer, no survival-loss in Stage 5.4.
-- Known limitation: the implementation extends the compact Stage 5.2/5.3 feature builder instead of migrating to the older generic profile builder; this is intentional to reduce regression risk.
+- Feature-builder risk: Stage 5.4 must use a shared Stage 5.2/5.4 flat builder, not a copied parser. Regression tests on Stage 5.2/5.3 feature shapes are mandatory before full run.

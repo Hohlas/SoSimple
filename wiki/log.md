@@ -622,3 +622,8 @@
 - Updated `docs/superpowers/roadmap.md`: moved Stage 5.2/5.3 to closed context and set Stage 5.4 price-coordinate / ATR ablation around fixed `fast` as the next step.
 - Updated `CONTEXT_HANDOFF.md`: corrected main comparisons from 14 to 12 unique side/target comparisons.
 - Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: corrected Stage 5.3 buy interpretation from sign-positive seed count to threshold-passing count (`1/3` seed for delta ≥ 0.02).
+
+### 2026-06-29: Review Stage 5.4 report synchronization
+- Updated `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`: clarified that the gate evaluates the predeclared primary candidate, not the globally best profile among all diagnostic profiles; fixed secondary/diagnostic wording.
+- Updated `CHANGELOG.md` and `CONTEXT_HANDOFF.md`: corrected Stage 5.3 buy seed-count wording and separated Stage 5.3 `TARGET_REFORMULATION_FOUND` from Stage 5.4 `DIAGNOSTIC_ONLY`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 5.4 synthesis and marked price/ATR ablation as rejected.

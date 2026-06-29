@@ -104,7 +104,7 @@ All 24 profile-source-target combinations passed A7 audit with `WARNING` status 
 | Check | Result |
 |-------|:------:|
 | Target is `fast` | ✅ |
-| Best profile is primary | ✅ |
+| Evaluated candidate is primary | ✅ |
 | Val AUC ≥ 0.65 | ✅ (0.6925) |
 | PR AUC lift ≥ 0.03 | ✅ (0.321 - 0.150 = 0.171) |
 | Median delta vs baseline ≥ 0.02 | ❌ (+0.0066) |
@@ -117,7 +117,7 @@ All 24 profile-source-target combinations passed A7 audit with `WARNING` status 
 | Check | Result |
 |-------|:------:|
 | Target is `fast` | ✅ |
-| Best profile is primary | ✅ |
+| Evaluated candidate is primary | ✅ |
 | Val AUC ≥ 0.65 | ✅ (0.7136) |
 | PR AUC lift ≥ 0.03 | ✅ (0.318 - 0.156 = 0.162) |
 | Median delta vs baseline ≥ 0.02 | ❌ (+0.0014) |
@@ -133,9 +133,9 @@ All 24 profile-source-target combinations passed A7 audit with `WARNING` status 
 
 This is consistent with the Stage 5.0a/5.0b findings that price/ATR features do not help breach prediction, even when narrowed to the `fast` bucket. The prior caveat from the plan is confirmed: the physical argument (distance to level in ATR → earlier breach) does not materialize in the data.
 
-### Secondary/Dagnostic Profiles
+### Secondary/Diagnostic Profiles
 
-- **ATR row profiles** (`atr_log1p`, `atr_asinh`): show slightly higher AUC (0.6968 sell) but still well below the gate threshold. The improvement is consistent across seeds but too small to be actionable.
+- **ATR row profiles** (`atr_log1p`, `atr_asinh`): show slightly higher median AUC on sell (0.6968), but remain diagnostic-only. Their per-seed deltas do not pass the ≥0.02 rule, so this is not a promotable signal.
 - **Up/Dn group**: no meaningful improvement. Max delta +0.011 (sell `impulse_updn`), 0/3 seeds.
 - **`price_atr_scaled`** (secondary): no improvement over `price_coord_atr` alone. The regime-sensitivity concern is moot because neither candidate approaches the gate.
 

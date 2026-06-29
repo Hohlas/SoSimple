@@ -6,7 +6,7 @@
 
 Stage 5.4 завершён. Вердикт: **DIAGNOSTIC_ONLY**, **REJECT_PRICE_COORD**.
 
-JSON artifact имеет статус `TARGET_REFORMULATION_FOUND`, но это не торговый кандидат. Статус означает только одно: дискретная постановка цели time-to-breach достойна следующего диагностического шага.
+Stage 5.4 JSON artifact имеет статус `DIAGNOSTIC_ONLY`. Предыдущий Stage 5.3 JSON artifact имел статус `TARGET_REFORMULATION_FOUND`, но это не торговый кандидат: статус означал только, что дискретная постановка цели time-to-breach достойна следующего диагностического шага.
 
 ## Что сделано
 
