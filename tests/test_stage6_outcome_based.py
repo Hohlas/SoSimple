@@ -170,3 +170,13 @@ def test_stage6_build_features_ignores_stage6_target_columns(monkeypatch):
 def test_stage6_assert_feature_names_rejects_stage6_targets():
     with pytest.raises(AssertionError, match="stage6_"):
         s6.stage6_assert_no_target_feature_names(["fractal0.back", "stage6_pnl_r"])
+
+
+def test_stage6_binary_metrics_handles_constant_or_single_class():
+    single = s6.stage6_binary_metrics(np.array([0, 0, 0]), np.array([0.2, 0.2, 0.2]))
+    constant = s6.stage6_binary_metrics(np.array([0, 1, 0, 1]), np.array([0.5, 0.5, 0.5, 0.5]))
+
+    assert single["auc"] is None
+    assert single["pr_auc"] is None
+    assert constant["auc"] == 0.5
+    assert 0.0 <= constant["brier"] <= 1.0

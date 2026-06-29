@@ -53,6 +53,8 @@ def stage6_feature_denylist() -> tuple[str, ...]:
 
 
 from ML.baseline.benchmark_stage5_transformer_breach import build_stage5_4_features, extract_stage5_1b_fields
+from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
+from xgboost import XGBClassifier
 
 
 def stage6_first_touch_trade_result(entry_price: float, stop_price: float,
@@ -375,6 +377,41 @@ def stage6_oracle_preflight(split: dict[str, pd.DataFrame]) -> dict:
             "tp_only_oracle_trades": int(tp_only.sum()),
             "trades_per_year": float(len(sub) / max(sub["_year"].nunique(), 1)) if len(sub) else 0.0,
         }
+    return out
+
+
+def stage6_binary_metrics(y_true, y_score) -> dict:
+    y = np.asarray(y_true, dtype=np.int8)
+    score = np.asarray(y_score, dtype=np.float64)
+    out = {
+        "n": int(len(y)),
+        "positive_rate": float(y.mean()) if len(y) else None,
+        "auc": None,
+        "pr_auc": None,
+        "pr_auc_lift": None,
+        "brier": None,
+        "pred_min": float(score.min()) if len(score) else None,
+        "pred_median": float(np.median(score)) if len(score) else None,
+        "pred_max": float(score.max()) if len(score) else None,
+        "pred_std": float(score.std()) if len(score) else None,
+    }
+    if len(y) == 0:
+        return out
+    if len(np.unique(y)) == 2:
+        try:
+            out["auc"] = float(roc_auc_score(y, score))
+        except ValueError:
+            out["auc"] = None
+        try:
+            out["pr_auc"] = float(average_precision_score(y, score))
+            out["pr_auc_lift"] = float(out["pr_auc"] - y.mean())
+        except ValueError:
+            out["pr_auc"] = None
+            out["pr_auc_lift"] = None
+    try:
+        out["brier"] = float(brier_score_loss(y, score))
+    except ValueError:
+        out["brier"] = None
     return out
 
 
