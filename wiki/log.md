@@ -6,12 +6,17 @@
 - Добавлен охват `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 MODEL_GATE_FAILED — текущие H12 geometry-only профили вокруг fractal0 не предсказывают TP/SL touch (AUC 0.51–0.55)
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 6.1 (29 report updates)
-- Статус: tested H12 geometry-only branch закрыта; дальнейшая геометрия требует новой узкой гипотезы, например baseline+geometry delta test.
+- Статус: tested H12 geometry-only branch закрыта; baseline+geometry delta test выполнен отдельным follow-up ниже.
 
 ## [2026-06-29] update | Stage 6.1 runtime artifact refresh
 - Пересчитан `ML/reports/stage6_1_h12_relative_fractal_geometry.json` новым runner-ом с `xgb_n_jobs=24`, checkpoint before preflight, heartbeat, `started_at`/`finished_at` и per-run `elapsed_sec`.
 - Обновлены `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`, `CHANGELOG.md` и `CONTEXT_HANDOFF.md` под фактический elapsed `3581s` (59.7 мин).
 - Исследовательский вывод не изменился: Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
+
+## [2026-06-29] update | Stage 6.1 baseline+geometry delta
+- Добавлены 3 combined-профиля: `clock_shift_back + nearest_time40`, `clock_shift_back + corridor3`, `clock_shift_back + corridor10`.
+- Полный прогон стал `27/27`; все 3 combined-профиля провалили delta gate: AUC delta только `+0.0026..+0.0048`, median PF хуже baseline.
+- Обновлены report/changelog/handoff/wiki; итог Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
 
 ## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
 - Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`

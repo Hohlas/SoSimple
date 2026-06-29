@@ -6,15 +6,16 @@
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`: экстракция фракталов с ATR-координатами, 5 профилей геометрии, A7 preflight, definitive touch evaluator, runner, gate, CLI.
 - Runner обновлён под runtime contract: `xgb_n_jobs=24`, heartbeat, `started_at`/`finished_at`, per-run `elapsed_sec`, checkpoint before preflight, `--resume` / `--no-resume`.
-- Новый тест `tests/test_stage6_1_relative_geometry.py`: 19 тестов (контракт, геометрия, билдеры, preflight, mask, gate, runtime contract, resume, direct CLI).
+- Новый тест `tests/test_stage6_1_relative_geometry.py`: 24 теста (контракт, геометрия, билдеры, preflight, mask, gate, runtime contract, resume, direct CLI, baseline+geometry delta).
 - Новый отчёт `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`.
 
 ### Результаты
-- Полный прогон: `18/18` (6 профилей × 3 seed) за 59.7 мин.
+- Полный прогон: `27/27` (9 профилей × 3 seed) за 55.2 мин.
 - Primary `h12_corridor3_relative_geometry`: median val AUC `0.5316` → MODEL_GATE_FAILED.
 - Все 5 геометрических профилей: AUC 0.51–0.55 (случайные).
 - Baseline `h12_clock_shift_back` подтверждает валидность: AUC `0.6174`, threshold SELECTED PF 1.25.
-- Текущие H12 geometry-only профили не получили поддержки: локальная геометрия в этих кодировках не дала полезного TP/SL touch сигнала.
+- Baseline+geometry delta test: три combined-профиля дали только `+0.0026..+0.0048` AUC и ухудшили median PF; delta gate FAIL.
+- Текущие H12 geometry-only и baseline+geometry профили не получили поддержки.
 <!-- docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md -->
 
 ## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (TRADING_GATE_FAILED)

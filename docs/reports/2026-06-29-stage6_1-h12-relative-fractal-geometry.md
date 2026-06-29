@@ -6,8 +6,8 @@
 > **Цель**: Проверить, даёт ли относительная геометрия фракталов вокруг `fractal0` сигнал для H12 TP/SL touch.  
 > **Related plan/spec**: [Stage 6.1 Plan](../superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)
 
-> **Run:** 2026-06-29, 6 profiles × 3 seeds = 18 XGBoost runs  
-> **Elapsed:** 3581s (59.7 min)  
+> **Run:** 2026-06-29, 9 profiles × 3 seeds = 27 XGBoost runs
+> **Elapsed:** 3311s (55.2 min)
 > **Runtime contract:** `xgb_n_jobs=24`, `started_at=2026-06-29T17:54:41.565617+00:00`, `finished_at=2026-06-29T18:54:22.599773+00:00`, per-run `elapsed_sec` present.
 
 ---
@@ -40,7 +40,9 @@ Per the research contract:
 
 ### Search Budget
 
-- 6 profiles × 3 seeds (42, 77, 123) = 18 runs
+- 9 profiles × 3 seeds (42, 77, 123) = 27 runs:
+  - 6 original Stage 6.1 profiles;
+  - 3 fixed baseline+geometry delta profiles.
 - Model: XGBoost (max_depth=6, lr=0.03, n_estimators=500, early_stopping=20)
 - Threads: `xgb_n_jobs=24`
 - Runner supports `--resume` / `--no-resume`, writes JSON checkpoint before preflight and after every run, and prints heartbeat progress.
@@ -52,7 +54,8 @@ Per the research contract:
 
 Stage 6.1 is exploratory and `DIAGNOSTIC_ONLY`.
 
-- Search budget: 1 horizon (`H12`) × 1 target (`stage6_definitive_tp_vs_sl_flag`) × 6 predeclared profiles × 3 seeds = 18 model runs.
+- Search budget: 1 horizon (`H12`) × 1 target (`stage6_definitive_tp_vs_sl_flag`) × 9 predeclared profiles × 3 seeds = 27 model runs.
+- The last three profiles are a bounded follow-up: top three geometry-only profiles from Stage 6.1 by median `val_stop` AUC, each added to `h12_clock_shift_back`.
 - No correction promotes the result to candidate status.
 - `h12_corridor3_relative_geometry` was the predeclared primary profile.
 - `diagnostic_holdout` (`2023-2025`) and `low_n_disclosure` (`2026`) were not used for profile, seed, threshold, or gate selection.
@@ -89,8 +92,8 @@ Commands:
 
 Structured artifact checks:
 
-- `done_runs == total_runs == 18`
-- `len(raw_runs) == 18`
+- `done_runs == total_runs == 27`
+- `len(raw_runs) == 27`
 - `config.xgb_n_jobs == 24`
 - `started_at`, `finished_at`, top-level `elapsed_sec` present
 - every `raw_runs[*]` entry contains `elapsed_sec`
@@ -171,6 +174,42 @@ Rule: for each non-baseline geometry profile, select the seed with the highest `
 
 Feature importance does not show a stable, high-magnitude geometry mechanism. The largest drops are small and appear in different slots/zones across profiles.
 
+### Baseline + Geometry Delta Test
+
+Purpose: test whether the three strongest geometry-only profiles add incremental value on top of `h12_clock_shift_back`.
+
+Selection rule: top three geometry-only profiles by Stage 6.1 median `val_stop` AUC:
+
+- `h12_nearest_time40_relative_geometry`
+- `h12_corridor3_relative_geometry`
+- `h12_corridor10_relative_geometry`
+
+Delta gate:
+
+- AUC delta vs baseline at least `+0.02`
+- PR AUC lift delta vs baseline at least `0.00`
+- threshold status `SELECTED`
+- median selected PF not worse than baseline
+- permutation `empirical_p_value <= 0.10`
+
+| Profile | Val AUC med | AUC delta | PR lift med | PF med | PF delta | permutation p-value | Delta gate |
+|---------|-------------|-----------|-------------|--------|----------|---------------------|------------|
+| `h12_clock_shift_back` | 0.6174 | — | 0.1305 | 1.249 | — | 0.225 | baseline |
+| `h12_clock_shift_back_plus_nearest_time40_geometry` | 0.6222 | +0.0048 | 0.1348 | 1.226 | -0.023 | 0.095 | FAIL |
+| `h12_clock_shift_back_plus_corridor3_geometry` | 0.6216 | +0.0041 | 0.1352 | 1.190 | -0.059 | 0.445 | FAIL |
+| `h12_clock_shift_back_plus_corridor10_geometry` | 0.6201 | +0.0026 | 0.1321 | 1.177 | -0.073 | 0.340 | FAIL |
+
+Diagnostic holdout disclosure:
+
+| Profile | Diagnostic holdout AUC med | Diagnostic PR lift med |
+|---------|----------------------------|------------------------|
+| `h12_clock_shift_back` | 0.6105 | 0.1209 |
+| `h12_clock_shift_back_plus_nearest_time40_geometry` | 0.6105 | 0.1247 |
+| `h12_clock_shift_back_plus_corridor3_geometry` | 0.6099 | 0.1227 |
+| `h12_clock_shift_back_plus_corridor10_geometry` | 0.6090 | 0.1214 |
+
+Conclusion: the three combined profiles failed the delta gate. Geometry adds only a tiny ranking lift (`+0.0026..+0.0048` AUC), below the predeclared `+0.02` threshold, and median PF is worse than the baseline for all three combined profiles. `nearest_time40` has permutation p-value `0.095`, but it still fails the delta gate because the AUC gain is too small and median PF is lower.
+
 ## Gate
 
 | Check | Status |
@@ -184,15 +223,17 @@ Feature importance does not show a stable, high-magnitude geometry mechanism. Th
 
 ## Conclusions
 
-**The predeclared H12 relative-geometry profiles did not receive support.** Local support/resistance geometry around `fractal0`, as encoded here by flat token-order, nearest/corridor, and uniform zone features, did not predict which triple barrier is touched first within 12 H1 bars.
+**The predeclared H12 relative-geometry profiles did not receive support.** Local support/resistance geometry around `fractal0`, as encoded here by flat token-order, nearest/corridor, and uniform zone features, did not predict which triple barrier is touched first within 12 H1 bars and did not add useful value on top of `h12_clock_shift_back`.
 
-Three independent lines of evidence support this:
+Four independent lines of evidence support this:
 
 1. **Near-zero AUC lift across tested encodings.** Price proximity (nearest_price), recency (nearest_time), narrow corridor (±3 ATR), wide corridor (±10 ATR), and zone bucket summaries all produce AUC 0.51–0.55. None of the tested geometry-only encodings extracts useful signal.
 
 2. **No tradeable threshold found.** Even with the most permissive threshold search (all positive PF thresholds), none of the geometry profiles produced a threshold that survives basic validation. This rules out the possibility that the model captures signal that a different scoring rule would exploit.
 
 3. **Baseline confirms ranking signal exists outside geometry-only profiles.** The Stage 5.4 clock_shift_back profile — trained and evaluated on the same splits with the same H12 horizon — produces AUC 0.617 and a threshold with PF 1.25. However, its permutation p-value is 0.225, so this is evidence that the pipeline can rank outcomes, not evidence of a statistically convincing trading rule.
+
+4. **Baseline + geometry failed the delta test.** Adding the top three geometry-only profiles to `h12_clock_shift_back` produced only tiny AUC deltas (`+0.0026..+0.0048`), all below the required `+0.02`. Median PF worsened for all three combined profiles.
 
 ## Limitations / Open Questions
 
@@ -206,7 +247,7 @@ Three independent lines of evidence support this:
 
 5. **Preflight is still a long silent section.** The runner now writes an initial checkpoint before preflight, but the heavy split loading / H12 relabeling step still has no internal progress marks. This does not affect metrics, but it is a runtime observability limitation.
 
-6. **No baseline-plus-geometry delta test.** Stage 6.1 tests geometry-only profiles against the baseline, but does not test whether geometry adds incremental value on top of `h12_clock_shift_back`. A future test could predeclare exactly one baseline+geometry delta profile, without reopening a broad horizon/ATR/TP/SL search.
+6. **Baseline-plus-geometry scope is still narrow.** Stage 6.1 tested only the top three geometry-only profiles added to `h12_clock_shift_back`. It did not test all possible geometry interactions or new representations.
 
 ## Validation Split Disclosure
 
@@ -217,17 +258,19 @@ Three independent lines of evidence support this:
 
 ## Next Step
 
-The current H12 relative-geometry branch is closed for the tested encoding family. Recommended directions:
+The current H12 relative-geometry branch is closed for the tested encoding family, including the bounded baseline+geometry delta follow-up. Recommended directions:
 
 1. **Stage 6.2 (recommended):** Attempt to replicate Stage 6.0 results with a fundamentally different feature family (e.g., multi-timeframe momentum, micro-structure, or volume-based features) to establish whether H12 TP/SL prediction is robust or fragile.
 
 2. **Stage 6.0 refinement:** The baseline achieves AUC 0.617 with clock_shift_back. Investigate whether ensembling or calibration improves trading results — but this is a separate research path.
 
-3. **Archive this Stage 6.1 geometry-only approach.** The code and report are preserved. Further work on fractal geometry should require a new, narrow hypothesis, such as one predeclared baseline+geometry delta test, rather than another broad feature search.
+3. **Archive this Stage 6.1 geometry approach.** The code and report are preserved. Further work on fractal geometry should require a materially new representation or a new reason, not another variant of nearest/corridor/zones around `fractal0`.
 
 ## Related Materials
 
 - [Plan](../superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)
+- [Baseline + Geometry Delta Spec](../superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md)
+- [Baseline + Geometry Delta Plan](../superpowers/plans/2026-06-29-stage6_1-baseline-plus-geometry-delta.md)
 - [Stage 6.0 Report](../reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md)
 - [Stage 6.1 JSON](../../ML/reports/stage6_1_h12_relative_fractal_geometry.json)
 - [Stage 6.1 Runner](../../ML/baseline/benchmark_stage6_1_relative_geometry.py)

@@ -20,8 +20,35 @@ def test_stage61_config_is_fixed_and_narrow():
         "h12_corridor3_relative_geometry",
         "h12_corridor10_relative_geometry",
         "h12_zones10_uniform_summary",
+        "h12_clock_shift_back_plus_nearest_time40_geometry",
+        "h12_clock_shift_back_plus_corridor3_geometry",
+        "h12_clock_shift_back_plus_corridor10_geometry",
     )
     assert cfg.seeds == (42, 77, 123)
+
+
+def test_stage61_combined_profiles_are_fixed_to_top_three_geometry_profiles():
+    assert s61.stage61_combined_profile_keys() == (
+        "h12_clock_shift_back_plus_nearest_time40_geometry",
+        "h12_clock_shift_back_plus_corridor3_geometry",
+        "h12_clock_shift_back_plus_corridor10_geometry",
+    )
+    assert s61.STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY == {
+        "h12_clock_shift_back_plus_nearest_time40_geometry": "h12_nearest_time40_relative_geometry",
+        "h12_clock_shift_back_plus_corridor3_geometry": "h12_corridor3_relative_geometry",
+        "h12_clock_shift_back_plus_corridor10_geometry": "h12_corridor10_relative_geometry",
+    }
+
+
+def test_stage61_profile_keys_include_baseline_geometry_and_combined_profiles():
+    keys = s61.stage61_profile_keys()
+
+    assert keys[-3:] == s61.stage61_combined_profile_keys()
+    assert "h12_clock_shift_back_plus_nearest_time40_geometry" in keys
+    assert "h12_clock_shift_back_plus_corridor3_geometry" in keys
+    assert "h12_clock_shift_back_plus_corridor10_geometry" in keys
+    assert "h12_clock_shift_back_plus_nearest_price40_geometry" not in keys
+    assert "h12_clock_shift_back_plus_zones10_geometry" not in keys
 
 
 def test_stage61_feature_denylist_includes_stage6_targets():
@@ -183,6 +210,40 @@ def test_stage61_gate_fails_when_permutation_p_value_is_high():
     assert gate["checks"]["permutation_p_value_le_0_10"] is False
 
 
+def test_stage61_baseline_delta_summary_uses_val_stop_only():
+    report = {
+        "summary": {
+            "h12_clock_shift_back": {
+                "val_stop": {"auc_median": 0.61, "pr_auc_lift_median": 0.10},
+                "threshold_selection": {
+                    "status": "SELECTED",
+                    "val_pf_median": 1.20,
+                    "selected": {"pf": 1.20},
+                },
+                "permutation_baseline": {"empirical_p_value": 0.20},
+            },
+            "h12_clock_shift_back_plus_corridor3_geometry": {
+                "val_stop": {"auc_median": 0.64, "pr_auc_lift_median": 0.11},
+                "threshold_selection": {
+                    "status": "SELECTED",
+                    "val_pf_median": 1.25,
+                    "selected": {"pf": 1.05},
+                },
+                "permutation_baseline": {"empirical_p_value": 0.05},
+            },
+        }
+    }
+
+    delta = s61.stage61_baseline_delta_summary(report)
+
+    row = delta["profiles"]["h12_clock_shift_back_plus_corridor3_geometry"]
+    assert row["auc_delta_vs_baseline"] == pytest.approx(0.03)
+    assert row["pr_auc_lift_delta_vs_baseline"] == pytest.approx(0.01)
+    assert row["pf_delta_vs_baseline"] == pytest.approx(0.05)
+    assert row["passes_delta_gate"] is True
+    assert delta["best_profile"] == "h12_clock_shift_back_plus_corridor3_geometry"
+
+
 def test_stage61_definitive_mask_excludes_timeout_and_invalid():
     df = pd.DataFrame({
         "stage6_close_reason": ["TP", "SL", "AMBIGUOUS_SL_FIRST", "TIMEOUT", "INVALID"],
@@ -213,6 +274,48 @@ def test_stage61_build_features_drops_stage6_columns(monkeypatch):
     assert X.shape == (1, 4)
     assert "stage6_pnl_r" not in captured["columns"]
     assert "stage6_definitive_tp_vs_sl_flag" not in captured["columns"]
+
+
+def test_stage61_combined_features_concat_baseline_and_geometry(monkeypatch):
+    df = pd.DataFrame({
+        "time": ["2025.01.01 00:00", "2025.01.01 01:00"],
+        "stage6_pnl_r": [1.0, -1.0],
+        "stage6_definitive_tp_vs_sl_flag": [1.0, 0.0],
+        "dummy": [0.1, 0.2],
+    })
+    captured = {}
+
+    def fake_baseline_builder(clean_df, profile):
+        captured["baseline_columns"] = tuple(clean_df.columns)
+        assert profile == "clock_shift_back"
+        return np.asarray([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+
+    def fake_geometry_builder(clean_df, profile):
+        captured["geometry_columns"] = tuple(clean_df.columns)
+        assert profile == "h12_corridor3_relative_geometry"
+        return np.asarray([[5.0, 6.0, 7.0], [8.0, 9.0, 10.0]], dtype=np.float32)
+
+    monkeypatch.setattr(s61, "build_stage5_4_features", fake_baseline_builder)
+    monkeypatch.setattr(s61, "stage61_build_geometry_features", fake_geometry_builder)
+
+    X = s61.stage61_build_features(df, "h12_clock_shift_back_plus_corridor3_geometry")
+
+    assert X.dtype == np.float32
+    assert X.shape == (2, 5)
+    assert X.tolist() == [[1.0, 2.0, 5.0, 6.0, 7.0], [3.0, 4.0, 8.0, 9.0, 10.0]]
+    assert "stage6_pnl_r" not in captured["baseline_columns"]
+    assert "stage6_definitive_tp_vs_sl_flag" not in captured["geometry_columns"]
+
+
+def test_stage61_combined_feature_names_include_baseline_and_geometry_names():
+    names = s61.stage61_feature_names("h12_clock_shift_back_plus_corridor3_geometry")
+
+    assert names[0] == "baseline.fractal0.shift"
+    assert names[1] == "baseline.fractal0.back"
+    assert names[200] == "baseline.hour_sin"
+    assert names[204] == "geometry.slot00_price_coord_atr"
+    assert names[-1] == "geometry.slot39_selection_rank"
+    assert len(names) == 204 + 40 * 8
 
 
 def test_stage61_xgboost_uses_n_jobs_24():

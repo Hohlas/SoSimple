@@ -18,6 +18,7 @@ from ML.baseline.benchmark_stage5_transformer_breach import (
     STAGE5_1B_FIELD_TO_FRACTAL_INDEX,
     build_stage5_4_features,
     extract_stage5_1b_fields,
+    stage5_4_feature_names,
 )
 from sklearn.metrics import roc_auc_score
 from xgboost import XGBClassifier
@@ -43,6 +44,13 @@ from ML.baseline.benchmark_stage6_outcome_based import (
 STAGE6_1_JSON_REPORT_PATH = REPORTS_DIR / "stage6_1_h12_relative_fractal_geometry.json"
 
 
+STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY = {
+    "h12_clock_shift_back_plus_nearest_time40_geometry": "h12_nearest_time40_relative_geometry",
+    "h12_clock_shift_back_plus_corridor3_geometry": "h12_corridor3_relative_geometry",
+    "h12_clock_shift_back_plus_corridor10_geometry": "h12_corridor10_relative_geometry",
+}
+
+
 @dataclass(frozen=True)
 class Stage61Config:
     horizon_bars: int = 12
@@ -57,6 +65,9 @@ class Stage61Config:
         "h12_corridor3_relative_geometry",
         "h12_corridor10_relative_geometry",
         "h12_zones10_uniform_summary",
+        "h12_clock_shift_back_plus_nearest_time40_geometry",
+        "h12_clock_shift_back_plus_corridor3_geometry",
+        "h12_clock_shift_back_plus_corridor10_geometry",
     )
     seeds: tuple[int, ...] = (42, 77, 123)
 
@@ -218,6 +229,11 @@ def stage61_feature_names(profile: str) -> list[str]:
             for low, high in ZONE_BOUNDS
             for field in zone_fields
         ]
+    if profile in STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY:
+        geometry_profile = STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY[profile]
+        baseline_names = [f"baseline.{name}" for name in stage5_4_feature_names("clock_shift_back")]
+        geometry_names = [f"geometry.{name}" for name in stage61_feature_names(geometry_profile)]
+        return baseline_names + geometry_names
     raise ValueError(f"unknown Stage 6.1 profile: {profile}")
 
 
@@ -246,6 +262,18 @@ def stage61_build_geometry_features(df: pd.DataFrame, profile: str) -> np.ndarra
     return np.vstack(rows).astype(np.float32)
 
 
+def stage61_build_combined_features(df: pd.DataFrame, profile: str) -> np.ndarray:
+    geometry_profile = STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY[profile]
+    clean = df.drop(columns=[c for c in stage61_feature_denylist() if c in df.columns])
+    baseline = build_stage5_4_features(clean, "clock_shift_back")
+    geometry = stage61_build_geometry_features(clean, geometry_profile)
+    if len(baseline) != len(geometry):
+        raise ValueError(
+            f"combined feature row mismatch for {profile}: baseline={len(baseline)} geometry={len(geometry)}"
+        )
+    return np.concatenate([baseline.astype(np.float32), geometry.astype(np.float32)], axis=1)
+
+
 def stage61_build_features(df: pd.DataFrame, profile: str) -> np.ndarray:
     clean = df.drop(columns=[c for c in stage61_feature_denylist() if c in df.columns])
     if profile == "h12_clock_shift_back":
@@ -258,6 +286,8 @@ def stage61_build_features(df: pd.DataFrame, profile: str) -> np.ndarray:
         "h12_zones10_uniform_summary",
     }:
         return stage61_build_geometry_features(clean, profile)
+    if profile in STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY:
+        return stage61_build_combined_features(clean, profile)
     raise ValueError(f"unknown Stage 6.1 profile: {profile}")
 
 
@@ -509,6 +539,10 @@ def stage61_profile_keys() -> tuple[str, ...]:
     return STAGE6_1_CONFIG.profile_keys
 
 
+def stage61_combined_profile_keys() -> tuple[str, ...]:
+    return tuple(STAGE6_1_COMBINED_PROFILE_TO_GEOMETRY.keys())
+
+
 def stage61_feature_denylist() -> tuple[str, ...]:
     return stage6_feature_denylist()
 
@@ -532,6 +566,61 @@ def stage61_input_file_manifest() -> dict:
             "row_count": int(max(row_count, 0)),
         }
     return out
+
+
+def stage61_baseline_delta_summary(report: dict) -> dict:
+    summary = report.get("summary", {})
+    baseline = summary.get("h12_clock_shift_back", {})
+    baseline_val = baseline.get("val_stop", {})
+    baseline_threshold = baseline.get("threshold_selection", {})
+    baseline_selected = baseline_threshold.get("selected") or {}
+    baseline_auc = baseline_val.get("auc_median")
+    baseline_pr = baseline_val.get("pr_auc_lift_median")
+    baseline_pf = baseline_threshold.get("val_pf_median", baseline_selected.get("pf"))
+    rows = {}
+    best_profile = None
+    best_auc_delta = None
+    for profile in stage61_combined_profile_keys():
+        item = summary.get(profile, {})
+        val = item.get("val_stop", {})
+        threshold = item.get("threshold_selection", {}) or {}
+        selected = threshold.get("selected") or {}
+        perm = item.get("permutation_baseline") or {}
+        auc = val.get("auc_median")
+        pr = val.get("pr_auc_lift_median")
+        pf = threshold.get("val_pf_median", selected.get("pf"))
+        auc_delta = None if auc is None or baseline_auc is None else float(auc - baseline_auc)
+        pr_delta = None if pr is None or baseline_pr is None else float(pr - baseline_pr)
+        pf_delta = None if pf is None or baseline_pf is None else float(pf - baseline_pf)
+        passes = (
+            auc_delta is not None and auc_delta >= 0.02
+            and pr_delta is not None and pr_delta >= 0.0
+            and threshold.get("status") == "SELECTED"
+            and pf_delta is not None and pf_delta >= 0.0
+            and perm.get("empirical_p_value") is not None
+            and perm["empirical_p_value"] <= 0.10
+        )
+        rows[profile] = {
+            "auc_delta_vs_baseline": auc_delta,
+            "pr_auc_lift_delta_vs_baseline": pr_delta,
+            "pf_delta_vs_baseline": pf_delta,
+            "permutation_p_value": perm.get("empirical_p_value"),
+            "passes_delta_gate": bool(passes),
+        }
+        if auc_delta is not None and (best_auc_delta is None or auc_delta > best_auc_delta):
+            best_profile = profile
+            best_auc_delta = auc_delta
+    return {
+        "baseline_profile": "h12_clock_shift_back",
+        "best_profile": best_profile,
+        "profiles": rows,
+        "delta_gate": {
+            "auc_delta_ge_0_02": 0.02,
+            "pr_auc_lift_delta_ge_0": 0.0,
+            "pf_delta_ge_0": 0.0,
+            "permutation_p_value_le_0_10": 0.10,
+        },
+    }
 
 
 def run_stage6_1_relative_geometry(
@@ -674,6 +763,7 @@ def run_stage6_1_relative_geometry(
             "permutation_baseline": perm,
         }
     report["summary"] = summary
+    report["baseline_plus_geometry_delta"] = stage61_baseline_delta_summary(report)
     report["gate"] = stage61_gate_results(report)
     report["status"] = report["gate"]["overall_status"]
     finished_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
