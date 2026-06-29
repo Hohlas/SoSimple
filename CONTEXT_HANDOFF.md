@@ -60,9 +60,11 @@ Sell:
 - positive_rate `0.1501`
 - holdout AUC `0.6849`
 - same-profile binary baseline AUC `0.6688`
-- delta vs binary baseline `+0.0279`
-- seed consistency `3/3`
+- delta vs binary baseline `+0.0279` (median)
+- per-seed delta: s42 `+0.0232`, s77 `+0.0328`, s123 `+0.0276` — **3/3 проходят порог ≥0.02**
+- holdout drop: `−0.012` (умеренный)
 - gate: `TARGET_REFORMULATION_FOUND`
+- статус: подтверждённая диагностическая цель для Stage 5.4
 
 Buy:
 
@@ -73,9 +75,17 @@ Buy:
 - positive_rate `0.1562`
 - holdout AUC `0.6617`
 - same-profile binary baseline AUC `0.6928`
-- delta vs binary baseline `+0.0199`
-- seed consistency `3/3`
-- gate: `DIAGNOSTIC_ONLY`, потому что threshold `+0.02` не пройден примерно на `0.0001`
+- delta vs binary baseline `+0.0199` (median)
+- per-seed delta: s42 `+0.0217` (PASS), s77 `+0.0182` (FAIL, отрыв 0.0018), s123 `+0.0171` (FAIL, отрыв 0.0029) — **1/3 проходит порог ≥0.02**
+- holdout drop: `−0.051` (сильнее, чем у sell и любой другой buy-цели; согласуется с картиной "сигнал затухает на новых годах" из Stage 4.6/4.7 и 5.0f)
+- gate: `DIAGNOSTIC_ONLY`
+- статус: **пограничный** — держится на одном seed (42), не подтверждённая цель. Нужен расширенный seed list (Альтернатива A) или проверка в Stage 5.4.
+
+Дополнительно по целям:
+
+- `breach_after_k2` ≡ `medium` (тождественные векторы меток для целочисленного `bars_to_breach`); 36 из 252 main-прогонов дубликаты.
+- `no_breach` ≈ инверсия binary breach; AUC практически совпадает с binary baseline, новой информации не несёт.
+- `breach_after_k4/k5` на buy — лучший профиль `time_only`, не структурный: структура (`back`) помогает только ранним пробоям, не поздним.
 
 Control `survives_at_least_k` показывает высокие AUC/PR AUC, но не может быть winner-ом: censored rows становятся positive, поэтому модель может учить "не пробито", а не время жизни уровня.
 
@@ -85,7 +95,7 @@ Control `survives_at_least_k` показывает высокие AUC/PR AUC, н
 - `2023-2025` только diagnostic disclosure.
 - `2026` low-N disclosure.
 - Нет независимой candidate validation.
-- 14 main side/target comparisons коррелированы; строгая поправка множественного тестирования не превращает результат в кандидата.
+- 12 уникальных main side/target comparisons коррелированы (`breach_after_k2` и `medium` тождественны); строгая поправка множественного тестирования не превращает результат в кандидата.
 - Stage 5.3 не добавлял `price`, `price_coord_atr`, `price_atr_scaled`, raw `ATR`, Up/Dn.
 - Oracle-time PF не использовался как gate.
 

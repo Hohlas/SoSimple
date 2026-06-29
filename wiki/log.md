@@ -611,3 +611,8 @@
 - Added `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 5.3 `fast` bucket finding, binary-baseline deltas, control-only interpretation for `survives_at_least_k`, and Stage 5.4 scope constraints.
 - Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 5.3, 26 report updates.
+
+### 2026-06-29: Sync Stage 5.3 corrected interpretation
+- Updated `docs/superpowers/roadmap.md`: moved Stage 5.2/5.3 to closed context and set Stage 5.4 price-coordinate / ATR ablation around fixed `fast` as the next step.
+- Updated `CONTEXT_HANDOFF.md`: corrected main comparisons from 14 to 12 unique side/target comparisons.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: corrected Stage 5.3 buy interpretation from sign-positive seed count to threshold-passing count (`1/3` seed for delta ≥ 0.02).
