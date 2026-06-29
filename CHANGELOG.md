@@ -2,6 +2,25 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (MODEL_GATE_FAILED)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/benchmark_stage6_outcome_based.py`: Stage 6.0 runner
+- Новый тест `tests/test_stage6_outcome_based.py`: 12 тестов
+- Типы: TP/SL/TIMEOUT/AMBIGUOUS_SL_FIRST, first-touch scanning, spread stress, permutation baseline
+- Gate: preflight → model gate → trading gate
+
+### Результаты
+- Полный прогон: 6/6 (2 профиля × 3 seed)
+- Preflight pass: TP rate 37%, timeout 4%, valid rows > 5k
+- Median AUC: 0.585 (< 0.60 gate), PR AUC lift: 0.079 (> 0.05)
+- All-trade baseline PF: ~0.96
+- Permutation p-value: 1.0 (модель не превосходит случайный threshold)
+- Gate: MODEL_GATE_FAILED
+
+### Вывод
+Outcome-based TP/SL/target не даёт устойчивого сигнала с текущими признаками. `clock_shift_back` не отделяет TP-сделки от SL/timeout выше случайного уровня.
+<!-- docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md -->
+
 ## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, rejected)
 ### Добавлено/Изменено
 - Добавлен Stage 5.4 с 12 профилями: 2 baselines, 2 primary (price_coord_atr), 2 secondary (price_atr_scaled), 6 diagnostic (ATR, Up/Dn).
