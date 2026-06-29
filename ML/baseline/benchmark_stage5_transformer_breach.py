@@ -305,6 +305,52 @@ STAGE5_3_TARGET_SPECS = (
 STAGE5_3_XGB_OBJECTIVE = "binary:logistic"
 STAGE5_3_TARGET_TO_BINARY = STAGE5_2_TARGET_TO_BINARY.copy()
 
+STAGE5_4_JSON_REPORT_PATH = REPORTS_DIR / "stage5_4_fast_price_atr_ablation.json"
+STAGE5_4_SOURCE_TARGETS = STAGE5_3_SOURCE_TARGETS.copy()
+STAGE5_4_TARGET_SPEC = {
+    "name": "fast",
+    "family": "bucket",
+    "bucket": "fast",
+    "role": "main",
+}
+STAGE5_4_SEEDS = STAGE5_3_SEEDS.copy()
+STAGE5_4_PROFILE_KEYS = [
+    "clock_shift_back",
+    "clock_shift_back_price_coord_atr",
+    "clock_shift_back_price_coord_atr_price_atr_scaled",
+    "clock_shift_back_atr_log1p",
+    "clock_shift_back_atr_asinh",
+    "clock_shift_back_updn",
+    "clock_shift_back_impulse",
+    "clock_shift_back_impulse_price_coord_atr",
+    "clock_shift_back_impulse_price_coord_atr_price_atr_scaled",
+    "clock_shift_back_impulse_atr_log1p",
+    "clock_shift_back_impulse_atr_asinh",
+    "clock_shift_back_impulse_updn",
+]
+STAGE5_4_PROFILE_ROLES = {
+    "clock_shift_back": "baseline",
+    "clock_shift_back_price_coord_atr": "primary",
+    "clock_shift_back_price_coord_atr_price_atr_scaled": "secondary",
+    "clock_shift_back_atr_log1p": "diagnostic",
+    "clock_shift_back_atr_asinh": "diagnostic",
+    "clock_shift_back_updn": "diagnostic",
+    "clock_shift_back_impulse": "baseline",
+    "clock_shift_back_impulse_price_coord_atr": "primary",
+    "clock_shift_back_impulse_price_coord_atr_price_atr_scaled": "secondary",
+    "clock_shift_back_impulse_atr_log1p": "diagnostic",
+    "clock_shift_back_impulse_atr_asinh": "diagnostic",
+    "clock_shift_back_impulse_updn": "diagnostic",
+}
+STAGE5_4_SIDE_BASELINE_PROFILE = {
+    "sell": "clock_shift_back",
+    "buy": "clock_shift_back_impulse",
+}
+STAGE5_4_SIDE_PRIMARY_PROFILE = {
+    "sell": "clock_shift_back_price_coord_atr",
+    "buy": "clock_shift_back_impulse_price_coord_atr",
+}
+
 # ===========================================================================
 # Profile definitions
 # ===========================================================================
@@ -2400,6 +2446,64 @@ def build_stage5_2_features(df: pd.DataFrame, profile_key: str) -> np.ndarray:
         )
     X[:, token_width:] = row_features
     return X
+
+
+def _stage5_4_profile_for_key(profile_key: str) -> dict:
+    if profile_key.startswith("clock_shift_back_impulse"):
+        token_fields = ["shift", "back", "impulse"]
+        suffix = profile_key.removeprefix("clock_shift_back_impulse")
+    elif profile_key.startswith("clock_shift_back"):
+        token_fields = ["shift", "back"]
+        suffix = profile_key.removeprefix("clock_shift_back")
+    else:
+        raise ValueError(f"Unknown Stage 5.4 profile: {profile_key}")
+
+    row_fields = TIME_ONLY_ROW_FIELDS.copy()
+    atr_transform = None
+    price_coord_atr_transform = None
+    price_atr_scaled_transform = None
+
+    if suffix == "":
+        pass
+    elif suffix == "_price_coord_atr":
+        token_fields = token_fields + ["price_coord_atr"]
+        price_coord_atr_transform = "signed_log1p"
+    elif suffix == "_price_coord_atr_price_atr_scaled":
+        token_fields = token_fields + ["price_coord_atr", "price_atr_scaled"]
+        price_coord_atr_transform = "signed_log1p"
+        price_atr_scaled_transform = "asinh"
+    elif suffix == "_atr_log1p":
+        row_fields = row_fields + ["ATR"]
+        atr_transform = "log1p"
+    elif suffix == "_atr_asinh":
+        row_fields = row_fields + ["ATR"]
+        atr_transform = "asinh"
+    elif suffix == "_updn":
+        token_fields = token_fields + STAGE5_1B_UPDN_FIELDS.copy()
+    else:
+        raise ValueError(f"Unknown Stage 5.4 profile: {profile_key}")
+
+    return {
+        "name": f"stage5_4_{profile_key}",
+        "token_fields": token_fields,
+        "row_fields": row_fields,
+        "order": "freshness",
+        "stage5_4": True,
+        "role": STAGE5_4_PROFILE_ROLES[profile_key],
+        "atr_transform": atr_transform,
+        "price_coord_atr_transform": price_coord_atr_transform,
+        "price_atr_scaled_transform": price_atr_scaled_transform,
+    }
+
+
+def stage5_4_feature_names(profile_key: str) -> list[str]:
+    profile = _stage5_4_profile_for_key(profile_key)
+    names = []
+    for fractal_idx in range(N_FRACTALS):
+        for field in profile["token_fields"]:
+            names.append(f"fractal{fractal_idx}.{field}")
+    names.extend(profile["row_fields"])
+    return names
 
 
 def _stage5_1b_profile_for_key(profile_key: str) -> dict:

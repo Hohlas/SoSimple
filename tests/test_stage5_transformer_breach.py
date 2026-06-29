@@ -4497,3 +4497,61 @@ def test_stage5_3_cli_arguments_exist_in_build_arg_parser():
     assert args.stage5_3_target_reformulation is True
     assert args.stage5_3_workers == 8
     assert args.stage5_3_xgb_threads == 4
+
+
+def test_stage5_4_constants_and_profiles_are_frozen():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    assert runner.STAGE5_4_SOURCE_TARGETS == [
+        "sell_bars_to_breach_H6_off05",
+        "buy_bars_to_breach_H6_off05",
+    ]
+    assert runner.STAGE5_4_TARGET_SPEC == {
+        "name": "fast",
+        "family": "bucket",
+        "bucket": "fast",
+        "role": "main",
+    }
+    assert runner.STAGE5_4_SIDE_BASELINE_PROFILE == {
+        "sell": "clock_shift_back",
+        "buy": "clock_shift_back_impulse",
+    }
+    assert runner.STAGE5_4_PROFILE_KEYS == [
+        "clock_shift_back",
+        "clock_shift_back_price_coord_atr",
+        "clock_shift_back_price_coord_atr_price_atr_scaled",
+        "clock_shift_back_atr_log1p",
+        "clock_shift_back_atr_asinh",
+        "clock_shift_back_updn",
+        "clock_shift_back_impulse",
+        "clock_shift_back_impulse_price_coord_atr",
+        "clock_shift_back_impulse_price_coord_atr_price_atr_scaled",
+        "clock_shift_back_impulse_atr_log1p",
+        "clock_shift_back_impulse_atr_asinh",
+        "clock_shift_back_impulse_updn",
+    ]
+    assert runner.STAGE5_4_PROFILE_ROLES["clock_shift_back_price_coord_atr"] == "primary"
+    assert runner.STAGE5_4_PROFILE_ROLES["clock_shift_back_atr_log1p"] == "diagnostic"
+    assert str(runner.STAGE5_4_JSON_REPORT_PATH).endswith(
+        "stage5_4_fast_price_atr_ablation.json"
+    )
+
+
+def test_stage5_4_profile_for_key_and_feature_names():
+    import ML.baseline.benchmark_stage5_transformer_breach as runner
+
+    profile = runner._stage5_4_profile_for_key("clock_shift_back_price_coord_atr")
+    assert profile["token_fields"] == ["shift", "back", "price_coord_atr"]
+    assert profile["row_fields"] == runner.TIME_ONLY_ROW_FIELDS
+    assert profile["price_coord_atr_transform"] == "signed_log1p"
+
+    names = runner.stage5_4_feature_names("clock_shift_back_price_coord_atr")
+    assert names[0] == "fractal0.shift"
+    assert names[1] == "fractal0.back"
+    assert names[2] == "fractal0.price_coord_atr"
+    assert names[-4:] == ["hour_sin", "hour_cos", "dow_sin", "dow_cos"]
+    assert len(names) == 3 * runner.N_FRACTALS + 4
+
+    atr_profile = runner._stage5_4_profile_for_key("clock_shift_back_atr_asinh")
+    assert atr_profile["row_fields"] == runner.TIME_ONLY_ROW_FIELDS + ["ATR"]
+    assert atr_profile["atr_transform"] == "asinh"
