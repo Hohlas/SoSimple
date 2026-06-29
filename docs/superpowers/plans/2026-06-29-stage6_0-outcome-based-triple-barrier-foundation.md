@@ -43,7 +43,8 @@ Stage 6.0 is intentionally narrow.
 
 **Barrier convention:**
 
-- Horizon: `24` H1 bars after entry.
+- Primary horizon: `6` H1 bars after entry.
+- Disclosure horizon: `24` H1 bars after entry.
 - BUY stop: `fractal0.price - 0.5 * ATR`.
 - BUY take-profit: `entry_price + 2.0 * ATR`.
 - SELL stop: `fractal0.price + 0.5 * ATR`.
@@ -142,6 +143,8 @@ def test_stage6_config_is_fixed_and_narrow():
     cfg = s6.STAGE6_0_CONFIG
 
     assert cfg.horizon_bars == 24
+    assert cfg.horizon_bars_options == (6, 24)
+    assert cfg.primary_horizon_bars == 6
     assert cfg.stop_offset_atr == 0.5
     assert cfg.take_profit_atr == 2.0
     assert cfg.entry_lag_bars == 1
@@ -186,13 +189,15 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "DATA"
 REPORTS_DIR = ROOT / "ML" / "reports"
-OHLC_FILE = ROOT / "MT" / "MQL4" / "Files" / "Nero.csv"
+OHLC_FILE = DATA_DIR / "XAUUSD_H1_OHLC.csv"
 STAGE6_0_JSON_REPORT_PATH = REPORTS_DIR / "stage6_0_outcome_based_triple_barrier.json"
 
 
 @dataclass(frozen=True)
 class Stage60Config:
     horizon_bars: int = 24
+    horizon_bars_options: tuple[int, ...] = (6, 24)
+    primary_horizon_bars: int = 6
     stop_offset_atr: float = 0.5
     take_profit_atr: float = 2.0
     entry_lag_bars: int = 1
@@ -1480,7 +1485,7 @@ Run:
 Expected:
 
 - JSON exists at `ML/reports/stage6_0_outcome_based_triple_barrier.json`.
-- `done_runs == total_runs == 6` for `2 profiles × 3 seeds`.
+- `done_runs == total_runs == 12` for `2 horizons × 2 profiles × 3 seeds`.
 - The command prints final status.
 
 - [ ] **Step 2: Inspect JSON invariants**

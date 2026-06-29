@@ -627,3 +627,7 @@
 - Updated `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`: clarified that the gate evaluates the predeclared primary candidate, not the globally best profile among all diagnostic profiles; fixed secondary/diagnostic wording.
 - Updated `CHANGELOG.md` and `CONTEXT_HANDOFF.md`: corrected Stage 5.3 buy seed-count wording and separated Stage 5.3 `TARGET_REFORMULATION_FOUND` from Stage 5.4 `DIAGNOSTIC_ONLY`.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 5.4 synthesis and marked price/ATR ablation as rejected.
+
+### 2026-06-29: Ingest Stage 6.0 review-fix rerun
+- Updated `wiki/research/fractal-stop-research.md`: Stage 6.0 supersedes the old H24-only `MODEL_GATE_FAILED` reading; H6 passes model gate but fails trading gate due to `NO_THRESHOLD`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records corrected Stage 6.0 `TRADING_GATE_FAILED` outcome.

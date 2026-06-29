@@ -4,59 +4,97 @@
 
 ## Текущий этап
 
-Stage 6.0 завершён. Вердикт: **MODEL_GATE_FAILED** (DIAGNOSTIC_ONLY).
+Stage 6.0 завершён после review-fix rerun. Вердикт: **TRADING_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
 
-## Что сделано
+Старый промежуточный вывод `MODEL_GATE_FAILED` больше не актуален: после добавления короткого горизонта `H6` model gate проходит, но trading gate не проходит.
 
-Построен isolated outcome-based baseline (TP/SL/timeout, first-touch scanning, entry `Open[row+1]`) на XAUUSD H1:
+## Что исправлено после ревью
 
-- **Preflight pass:** TP rate 37%, timeout 4%, валидных rows > 5k на каждом split
-- **Oracle baseline:** all-trade PF ~0.96 (timeout компенсирует часть SL потерь)
-- **Primary profile `clock_shift_back`:** median val AUC 0.585 (gate: ≥0.60 → **FAIL**)
-- **PR AUC lift:** 0.079 (> 0.05 → PASS, но недостаточно)
-- **Permutation p-value:** 1.0 — threshold PF не лучше случайного
-- **JSON artifact:** `ML/reports/stage6_0_outcome_based_triple_barrier.json`
-- **Report:** `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
+В `ML/baseline/benchmark_stage6_outcome_based.py` исправлены критические ошибки Stage 6.0:
+
+- gate теперь читает `auc_median` / `pr_auc_lift_median`, а не отсутствующие поля `auc` / `pr_auc_lift`;
+- permutation baseline использует реальные model scores, а не constant score;
+- diagnostic threshold применяется к реальным score, если threshold выбран;
+- `INVALID` rows исключены из yearly/by-side trading counters;
+- JSON хранит predictions/labels для post-mortem;
+- добавлен fixed horizon `H6` как primary, `H24` оставлен как disclosure comparison.
 
 ## Главный результат
 
-Outcome-based TP/SL target **не даёт устойчивого сигнала** с текущими признаками. AUC ~0.585, PF ~0.96, permutation p-value = 1.0. Модель не может отделить TP-сделки от SL/timeout выше случайного уровня.
+Полный прогон:
 
-All-trade baseline уже даёт PF ~0.96, и модель не улучшает его. Threshold selection бессмысленна — любой порог даёт тот же PF.
+- artifact: `ML/reports/stage6_0_outcome_based_triple_barrier.json`
+- report: `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
+- `12/12` runs = 2 горизонта × 2 профиля × 3 seed
+- gate: `TRADING_GATE_FAILED`
 
-Timeout как отдельный исход оправдан (4% сделок, профиль отличен от SL), но доля слишком мала для существенного влияния.
+Primary `H6_clock_shift_back`:
+
+- val TP rate: `16.6%`
+- val timeout rate: `46.4%`
+- median val AUC: `0.6888`
+- median PR AUC lift: `0.1141`
+- model gate: PASS
+- threshold status: `NO_THRESHOLD` на fixed grid `0.50..0.90`
+- all-trade val PF: `0.942`
+- spread 0.20 all-trade val PF: `0.861`
+
+Disclosure `H6_clock_shift_back_impulse`:
+
+- median val AUC: `0.6937`
+- median PR AUC lift: `0.1286`
+- threshold status: `NO_THRESHOLD`
+
+Disclosure H24:
+
+- `H24_clock_shift_back` median val AUC: `0.5848`
+- selected val PF: `0.933`
+- permutation p-value: `0.635`
+- вывод: H24 не превосходит случайное ранжирование.
 
 ## Методические ограничения
 
-- Вход `Open[row+1]` — DIAGNOSTIC_ONLY (runtime timing не проверен)
-- Spread stress: 0.20 и 0.40 price-unit (диагностические, снижают PF на 5-10%)
-- Same-bar ambiguity: консервативный SL_FIRST
-- Горизонт 24 бара фиксирован (не оптимизировался)
-- `clock_shift_back` — единственный primary профиль
+- Stage 6.0 остаётся `DIAGNOSTIC_ONLY`.
+- `Open[row+1]` timing не подтверждён runtime parity.
+- Основной PnL gross; spread stress считается отдельно.
+- `DATA/XAUUSD_H1_OHLC.csv` используется как локальный OHLC source для first-touch; CSV-файлы в проекте игнорируются git.
+- `2023-2025` и `2026` не использовались для выбора.
+- Threshold grid ниже `0.50` не открывалась, чтобы не превратить review-fix в новый parameter search.
 
 ## Правильное направление дальше
 
-1. **Regression Up/Dn (восстановить Stage 4 направление).** Outcome-based классификация не работает — попробовать предсказывать величину движения (up/dn в risk units) через регрессию без бинарного порога.
-2. **Feature redesign.** `clock_shift_back` исчерпан. Нужны признаки, учитывающие режим волатильности, уровни накопления, или макро-контекст.
-3. **Multi-timeframe.** H1 может быть слишком мелким для структурных сигналов — проверить H4/H12.
+Если продолжать Stage 6 ветку, следующий шаг должен быть отдельным bounded follow-up:
+
+- `Stage 6.1` H6 calibration / threshold protocol;
+- заранее зафиксировать threshold-схему до обучения: например quantile/top-N или calibrated probability threshold;
+- оценивать PF, trades/year, yearly PF, spread stress и permutation baseline;
+- не использовать `2023-2025` для выбора;
+- не менять одновременно horizon, TP/SL и feature set.
+
+Альтернатива: перейти к Regression Up/Dn target foundation, если решено не тратить бюджет на H6 threshold-калибровку.
 
 ## Неправильное направление дальше
 
-- Продолжать outcome-based TP/SL с текущими признаками.
-- Открывать новый parameter search по horizon/ATR.
-- Пытаться чинить threshold selection — проблема не в пороге, а в отсутствии сигнала.
+- Объявлять Stage 6.0 кандидатом.
+- Снижать threshold ниже `0.50` post-hoc без нового плана.
+- Подбирать horizon/ATR/TP/SL широким перебором.
+- Использовать diagnostic holdout `2023-2025` для выбора порога.
+- Продолжать H24 как основное направление.
 
 ## Ключевые файлы
 
 Код:
-- `ML/baseline/benchmark_stage6_outcome_based.py` — новый модуль
-- `tests/test_stage6_outcome_based.py` — 12 тестов
+
+- `ML/baseline/benchmark_stage6_outcome_based.py`
+- `tests/test_stage6_outcome_based.py`
 
 Артефакты:
+
 - `ML/reports/stage6_0_outcome_based_triple_barrier.json`
 - `ML/reports/stage5_4_fast_price_atr_ablation.json`
 - `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
 
 Документация:
+
 - `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
 - `docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`

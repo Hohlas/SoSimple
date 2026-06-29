@@ -32,7 +32,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §21: Direct Direction Audit + Rebuild + Transformer Encoder | 4 reports (05-15 — 05-21) |
 | &nbsp;&nbsp;↳ [methodology-cycle-candidate-source-v2.md](research/methodology-cycle-candidate-source-v2.md) | Candidate-source v2 methodology cycle: live-safe protocol, Stage 09/10 invalidation | 1 report (05-25) |
 | &nbsp;&nbsp;↳ [limit-order-feature-foundation.md](research/limit-order-feature-foundation.md) | Limit-order entry, feature ablation, direction-only signal, fractal channel ablation, RF GridSearch | 5 reports (05-29 — 06-05) |
-| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-6.0: breach, fav, exit, walk-forward, Transformer, A7-аудит, profile screening, time-to-breach reformulation, price/ATR ablation, outcome-based triple-barrier foundation. Stage 6.0: MODEL_GATE_FAILED — outcome-based TP/SL/target не даёт сигнала с текущими признаками (AUC 0.585, PF~0.96). | 28 report updates (06-10 — 06-29) |
+| [fractal-stop-research.md](research/fractal-stop-research.md) | Fractal Stop Stage 1-6.0: breach, fav, exit, walk-forward, Transformer, A7-аудит, profile screening, time-to-breach reformulation, price/ATR ablation, outcome-based triple-barrier foundation. Stage 6.0: H6 даёт model-signal (AUC≈0.689), но fixed-threshold trading gate провален (`NO_THRESHOLD`); итог `TRADING_GATE_FAILED`, `DIAGNOSTIC_ONLY`. | 28 report updates (06-10 — 06-29) |
 
 ## Concepts
 

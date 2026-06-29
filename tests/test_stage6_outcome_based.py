@@ -9,6 +9,8 @@ def test_stage6_config_is_fixed_and_narrow():
     cfg = s6.STAGE6_0_CONFIG
 
     assert cfg.horizon_bars == 24
+    assert cfg.horizon_bars_options == (6, 24)
+    assert cfg.primary_horizon_bars == 6
     assert cfg.stop_offset_atr == 0.5
     assert cfg.take_profit_atr == 2.0
     assert cfg.entry_lag_bars == 1
@@ -184,14 +186,14 @@ def test_stage6_binary_metrics_handles_constant_or_single_class():
 
 def test_stage6_threshold_simulation_uses_realized_pnl_and_min_trades():
     df = pd.DataFrame({
-        "stage6_pnl_r": [2.0, -1.0, 0.5, -0.25],
-        "stage6_pnl_r_spread_020": [1.8, -1.2, 0.3, -0.45],
-        "stage6_pnl_r_spread_040": [1.6, -1.4, 0.1, -0.65],
-        "stage6_close_reason": ["TP", "SL", "TIMEOUT", "TIMEOUT"],
-        "stage6_side": ["buy", "buy", "sell", "sell"],
-        "_year": [2021, 2021, 2022, 2022],
+        "stage6_pnl_r": [2.0, -1.0, 0.5, -0.25, np.nan],
+        "stage6_pnl_r_spread_020": [1.8, -1.2, 0.3, -0.45, np.nan],
+        "stage6_pnl_r_spread_040": [1.6, -1.4, 0.1, -0.65, np.nan],
+        "stage6_close_reason": ["TP", "SL", "TIMEOUT", "TIMEOUT", "INVALID"],
+        "stage6_side": ["buy", "buy", "sell", "sell", ""],
+        "_year": [2021, 2021, 2022, 2022, 2022],
     })
-    scores = np.array([0.9, 0.8, 0.7, 0.1])
+    scores = np.array([0.9, 0.8, 0.7, 0.1, 0.95])
 
     result = s6.stage6_simulate_threshold(df, scores, threshold=0.65)
 
@@ -202,6 +204,8 @@ def test_stage6_threshold_simulation_uses_realized_pnl_and_min_trades():
     assert result["pf"] == 2.5
     assert result["pf_spread_020"] == 2.1 / 1.2
     assert result["by_side"]["buy"]["trades"] == 2
+    assert "" not in result["by_side"]
+    assert sum(v["trades"] for v in result["yearly"].values()) == result["trades"]
     assert result["trades_per_year"] == 1.5
 
 
@@ -235,3 +239,45 @@ def test_stage6_gate_marks_missing_threshold_as_trading_gate_failed():
     assert gate["overall_status"] == "TRADING_GATE_FAILED"
     assert gate["artifact_status"] == "DIAGNOSTIC_ONLY"
     assert gate["checks"]["threshold_selected"] is False
+
+
+def test_stage6_gate_reads_summary_median_metric_names():
+    report = {
+        "preflight": {"train_core": {"warnings": []}, "val_stop": {"warnings": []}},
+        "summary": {
+            "H6_clock_shift_back": {
+                "val_stop": {"auc_median": 0.61, "pr_auc_lift_median": 0.06},
+                "threshold_selection": {
+                    "status": "NO_THRESHOLD",
+                    "selected": None,
+                    "plateau": {"pass": False},
+                },
+            }
+        },
+        "raw_runs": [],
+    }
+
+    gate = s6.stage6_gate_results(report)
+
+    assert gate["checks"]["auc_ge_0_60"] is True
+    assert gate["checks"]["pr_auc_lift_ge_0_05"] is True
+    assert gate["overall_status"] == "TRADING_GATE_FAILED"
+
+
+def test_stage6_permutation_baseline_uses_supplied_scores():
+    df = pd.DataFrame({
+        "stage6_pnl_r": [2.0, 2.0, -1.0, -1.0],
+        "stage6_pnl_r_spread_020": [1.8, 1.8, -1.2, -1.2],
+        "stage6_pnl_r_spread_040": [1.6, 1.6, -1.4, -1.4],
+        "stage6_close_reason": ["TP", "TP", "SL", "SL"],
+        "stage6_side": ["buy", "sell", "buy", "sell"],
+        "_year": [2021, 2021, 2022, 2022],
+    })
+    scores = np.array([0.9, 0.8, 0.1, 0.2])
+
+    baseline = s6.stage6_permutation_threshold_baseline(
+        df, scores, seed=1, n_perm=10, min_trades=1, min_trades_per_year=0
+    )
+
+    assert baseline["observed_pf"] == float("inf")
+    assert baseline["score_std"] > 0.0

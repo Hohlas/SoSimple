@@ -2,23 +2,23 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
-## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (MODEL_GATE_FAILED)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_stage6_outcome_based.py`: Stage 6.0 runner
-- Новый тест `tests/test_stage6_outcome_based.py`: 12 тестов
-- Типы: TP/SL/TIMEOUT/AMBIGUOUS_SL_FIRST, first-touch scanning, spread stress, permutation baseline
-- Gate: preflight → model gate → trading gate
+## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (TRADING_GATE_FAILED)
+### Добавлено/Изменено/Исправлено
+- Новый модуль `ML/baseline/benchmark_stage6_outcome_based.py`: isolated Stage 6.0 runner.
+- Новый тест `tests/test_stage6_outcome_based.py`: 14 тестов.
+- Добавлен короткий fixed horizon `H6` рядом с disclosure `H24`.
+- Исправлены critical review issues: gate читает median summary metrics, permutation использует реальные model scores, diagnostic threshold применяется к real scores, `INVALID` rows исключены из trading counters.
+- JSON теперь хранит predictions/labels для post-mortem.
 
 ### Результаты
-- Полный прогон: 6/6 (2 профиля × 3 seed)
-- Preflight pass: TP rate 37%, timeout 4%, valid rows > 5k
-- Median AUC: 0.585 (< 0.60 gate), PR AUC lift: 0.079 (> 0.05)
-- All-trade baseline PF: ~0.96
-- Permutation p-value: 1.0 (модель не превосходит случайный threshold)
-- Gate: MODEL_GATE_FAILED
+- Полный прогон: `12/12` (2 горизонта × 2 профиля × 3 seed).
+- Primary `H6_clock_shift_back`: median val AUC `0.6888`, PR AUC lift `0.1141` → model gate PASS.
+- H6 trading gate FAIL: на fixed threshold grid `0.50..0.90` нет threshold с достаточным числом сделок.
+- Disclosure H24 повторяет слабый результат: median val AUC `0.5848`; selected PF `0.933`, permutation p-value `0.635`.
+- Gate: `TRADING_GATE_FAILED` (`DIAGNOSTIC_ONLY`).
 
 ### Вывод
-Outcome-based TP/SL/target не даёт устойчивого сигнала с текущими признаками. `clock_shift_back` не отделяет TP-сделки от SL/timeout выше случайного уровня.
+Короткий H6 target содержит модельный сигнал, но текущий fixed-threshold протокол не превращает его в торговое правило. Следующий допустимый шаг — только bounded H6 calibration/threshold follow-up, без широкого перебора horizon/ATR/TP/SL.
 <!-- docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md -->
 
 ## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, rejected)
