@@ -1,0 +1,3664 @@
+{
+  "stage": "6.0",
+  "description": "Outcome-Based Triple-Barrier Foundation",
+  "config": {
+    "horizon_bars": 24,
+    "stop_offset_atr": 0.5,
+    "take_profit_atr": 2.0,
+    "entry_lag_bars": 1,
+    "same_bar_policy": "sl_first",
+    "primary_profile": "clock_shift_back",
+    "disclosure_profiles": [
+      "clock_shift_back_impulse"
+    ],
+    "seeds": [
+      42,
+      77,
+      123
+    ]
+  },
+  "status": "MODEL_GATE_FAILED",
+  "done_runs": 6,
+  "total_runs": 6,
+  "raw_runs": [
+    {
+      "seed": 42,
+      "profile": "clock_shift_back",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5846755695485023,
+        "pr_auc": 0.44632462710979204,
+        "pr_auc_lift": 0.07862322282302192,
+        "brier": 0.22781491290981098,
+        "pred_min": 0.2519814968109131,
+        "pred_median": 0.3563643991947174,
+        "pred_max": 0.5941534042358398,
+        "pred_std": 0.055670374226238946
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5755304054409459,
+        "pr_auc": 0.44527966015735804,
+        "pr_auc_lift": 0.06731124041348135,
+        "brier": 0.23116268902519932,
+        "pred_min": 0.23801645636558533,
+        "pred_median": 0.366154283285141,
+        "pred_max": 0.5952813029289246,
+        "pred_std": 0.058836870535667565
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5514861740052028,
+        "pr_auc": 0.41337887570033455,
+        "pr_auc_lift": 0.05789714812558372,
+        "brier": 0.22814902148695457,
+        "pred_min": 0.2507132589817047,
+        "pred_median": 0.37710040807724,
+        "pred_max": 0.5959425568580627,
+        "pred_std": 0.05786041050219742
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 81,
+            "wins": 44,
+            "losses": 17,
+            "timeouts": 20,
+            "pf": 0.9019604432284477,
+            "pf_spread_020": 0.8663648725837743,
+            "pf_spread_040": 0.831986948140578,
+            "mean_pnl_r": -0.02727233603479378,
+            "total_pnl_r": -2.2090592188182963,
+            "trades_per_year": 40.5,
+            "by_side": {
+              "buy": {
+                "trades": 32,
+                "pf": 0.8773280213094369,
+                "pf_spread_020": 0.8454755142304677,
+                "pf_spread_040": 0.8144569028083892
+              },
+              "sell": {
+                "trades": 49,
+                "pf": 0.919223500100524,
+                "pf_spread_020": 0.8809275041148041,
+                "pf_spread_040": 0.844135852214627
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 40,
+                "pf": 0.8927096671563097
+              },
+              "2022": {
+                "trades": 41,
+                "pf": 0.9109098802256803
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 32,
+            "wins": 21,
+            "losses": 5,
+            "timeouts": 6,
+            "pf": 1.253928703298133,
+            "pf_spread_020": 1.2063592642999064,
+            "pf_spread_040": 1.160252225136049,
+            "mean_pnl_r": 0.05158355165872184,
+            "total_pnl_r": 1.6506736530790989,
+            "trades_per_year": 16.0,
+            "by_side": {
+              "buy": {
+                "trades": 15,
+                "pf": 0.823428423546522,
+                "pf_spread_020": 0.7939185974240334,
+                "pf_spread_040": 0.7652173197678667
+              },
+              "sell": {
+                "trades": 17,
+                "pf": 2.2008246090558803,
+                "pf_spread_020": 2.1084856785504824,
+                "pf_spread_040": 2.019657054108882
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 14,
+                "pf": 0.7338197648814879
+              },
+              "2022": {
+                "trades": 18,
+                "pf": 2.103295842501534
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.55,
+            "trades": 8,
+            "wins": 7,
+            "losses": 0,
+            "timeouts": 1,
+            "pf": 7.825904843579227,
+            "pf_spread_020": 7.409844799190792,
+            "pf_spread_040": 7.018331070105508,
+            "mean_pnl_r": 0.24777692820912073,
+            "total_pnl_r": 1.9822154256729658,
+            "trades_per_year": 4.0,
+            "by_side": {
+              "buy": {
+                "trades": 4,
+                "pf": 3.5905787037293915,
+                "pf_spread_020": 3.4030264280392797,
+                "pf_spread_040": 3.2265391833633346
+              },
+              "sell": {
+                "trades": 4,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 3,
+                "pf": Infinity
+              },
+              "2022": {
+                "trades": 5,
+                "pf": 4.82938408703399
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 1,
+            "wins": 1,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": Infinity,
+            "pf_spread_020": Infinity,
+            "pf_spread_040": Infinity,
+            "mean_pnl_r": 0.3295978905735012,
+            "total_pnl_r": 0.3295978905735012,
+            "trades_per_year": 1.0,
+            "by_side": {
+              "sell": {
+                "trades": 1,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2022": {
+                "trades": 1,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.5,
+          "trades": 81,
+          "wins": 44,
+          "losses": 17,
+          "timeouts": 20,
+          "pf": 0.9019604432284477,
+          "pf_spread_020": 0.8663648725837743,
+          "pf_spread_040": 0.831986948140578,
+          "mean_pnl_r": -0.02727233603479378,
+          "total_pnl_r": -2.2090592188182963,
+          "trades_per_year": 40.5,
+          "by_side": {
+            "buy": {
+              "trades": 32,
+              "pf": 0.8773280213094369,
+              "pf_spread_020": 0.8454755142304677,
+              "pf_spread_040": 0.8144569028083892
+            },
+            "sell": {
+              "trades": 49,
+              "pf": 0.919223500100524,
+              "pf_spread_020": 0.8809275041148041,
+              "pf_spread_040": 0.844135852214627
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 40,
+              "pf": 0.8927096671563097
+            },
+            "2022": {
+              "trades": 41,
+              "pf": 0.9109098802256803
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": false,
+          "reason": "no_valid_neighbors"
+        }
+      }
+    },
+    {
+      "seed": 77,
+      "profile": "clock_shift_back",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5881490297777608,
+        "pr_auc": 0.44953939785501235,
+        "pr_auc_lift": 0.08183799356824223,
+        "brier": 0.22739829037342008,
+        "pred_min": 0.22716620564460754,
+        "pred_median": 0.35355499386787415,
+        "pred_max": 0.5986105799674988,
+        "pred_std": 0.06265937890353566
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5743819826525138,
+        "pr_auc": 0.4431476306569819,
+        "pr_auc_lift": 0.06517921091310519,
+        "brier": 0.23135294779189486,
+        "pred_min": 0.22050741314888,
+        "pred_median": 0.36323827505111694,
+        "pred_max": 0.631891667842865,
+        "pred_std": 0.06597468861580477
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5487041140765005,
+        "pr_auc": 0.42208633677272617,
+        "pr_auc_lift": 0.06660460919797534,
+        "brier": 0.22825355947112047,
+        "pred_min": 0.2174871414899826,
+        "pred_median": 0.3801693618297577,
+        "pred_max": 0.5906152725219727,
+        "pred_std": 0.06983808867511113
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 138,
+            "wins": 76,
+            "losses": 32,
+            "timeouts": 30,
+            "pf": 0.9895260615341864,
+            "pf_spread_020": 0.9495833273968073,
+            "pf_spread_040": 0.9110042442863705,
+            "mean_pnl_r": -0.0030476581880661646,
+            "total_pnl_r": -0.4205768299531307,
+            "trades_per_year": 69.0,
+            "by_side": {
+              "buy": {
+                "trades": 62,
+                "pf": 0.8883093120544153,
+                "pf_spread_020": 0.8543483585577819,
+                "pf_spread_040": 0.8214095949870219
+              },
+              "sell": {
+                "trades": 76,
+                "pf": 1.0793521345266168,
+                "pf_spread_020": 1.0337503156283963,
+                "pf_spread_040": 0.9898720955625037
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 58,
+                "pf": 1.0832449026215658
+              },
+              "2022": {
+                "trades": 80,
+                "pf": 0.9386144302590422
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 60,
+            "wins": 33,
+            "losses": 11,
+            "timeouts": 16,
+            "pf": 0.920223990360577,
+            "pf_spread_020": 0.8825483491031866,
+            "pf_spread_040": 0.846250673371509,
+            "mean_pnl_r": -0.019730124726615318,
+            "total_pnl_r": -1.183807483596919,
+            "trades_per_year": 30.0,
+            "by_side": {
+              "buy": {
+                "trades": 32,
+                "pf": 0.6776434416399879,
+                "pf_spread_020": 0.6521728444336704,
+                "pf_spread_040": 0.6275753232593444
+              },
+              "sell": {
+                "trades": 28,
+                "pf": 1.4231870967686069,
+                "pf_spread_020": 1.357794941437233,
+                "pf_spread_040": 1.2952018238688074
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 26,
+                "pf": 1.1183153761948765
+              },
+              "2022": {
+                "trades": 34,
+                "pf": 0.8145435551797237
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.55,
+            "trades": 24,
+            "wins": 18,
+            "losses": 3,
+            "timeouts": 3,
+            "pf": 1.9980473056403745,
+            "pf_spread_020": 1.9241411249148008,
+            "pf_spread_040": 1.8522842881896062,
+            "mean_pnl_r": 0.13683211903493894,
+            "total_pnl_r": 3.283970856838535,
+            "trades_per_year": 12.0,
+            "by_side": {
+              "buy": {
+                "trades": 11,
+                "pf": 2.397648554794034,
+                "pf_spread_020": 2.296734731010756,
+                "pf_spread_040": 2.1995751600474933
+              },
+              "sell": {
+                "trades": 13,
+                "pf": 1.7402253799802423,
+                "pf_spread_020": 1.6809192867312306,
+                "pf_spread_040": 1.622879293905793
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 10,
+                "pf": Infinity
+              },
+              "2022": {
+                "trades": 14,
+                "pf": 1.0521060630891745
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 6,
+            "wins": 5,
+            "losses": 0,
+            "timeouts": 1,
+            "pf": Infinity,
+            "pf_spread_020": 374.13807607854557,
+            "pf_spread_040": 168.24661343990087,
+            "mean_pnl_r": 0.2616803531205518,
+            "total_pnl_r": 1.570082118723311,
+            "trades_per_year": 3.0,
+            "by_side": {
+              "buy": {
+                "trades": 2,
+                "pf": Infinity,
+                "pf_spread_020": 93.54907831394459,
+                "pf_spread_040": 42.423801046552086
+              },
+              "sell": {
+                "trades": 4,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 2,
+                "pf": Infinity
+              },
+              "2022": {
+                "trades": 4,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.5,
+          "trades": 138,
+          "wins": 76,
+          "losses": 32,
+          "timeouts": 30,
+          "pf": 0.9895260615341864,
+          "pf_spread_020": 0.9495833273968073,
+          "pf_spread_040": 0.9110042442863705,
+          "mean_pnl_r": -0.0030476581880661646,
+          "total_pnl_r": -0.4205768299531307,
+          "trades_per_year": 69.0,
+          "by_side": {
+            "buy": {
+              "trades": 62,
+              "pf": 0.8883093120544153,
+              "pf_spread_020": 0.8543483585577819,
+              "pf_spread_040": 0.8214095949870219
+            },
+            "sell": {
+              "trades": 76,
+              "pf": 1.0793521345266168,
+              "pf_spread_020": 1.0337503156283963,
+              "pf_spread_040": 0.9898720955625037
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 58,
+              "pf": 1.0832449026215658
+            },
+            "2022": {
+              "trades": 80,
+              "pf": 0.9386144302590422
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": false,
+          "reason": "neighbor_pf_or_trades_drop"
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "profile": "clock_shift_back",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5847672024646906,
+        "pr_auc": 0.4432512359703624,
+        "pr_auc_lift": 0.0755498316835923,
+        "brier": 0.2278800106112066,
+        "pred_min": 0.20709790289402008,
+        "pred_median": 0.3493289351463318,
+        "pred_max": 0.6316525936126709,
+        "pred_std": 0.06756704252267905
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5737932569405726,
+        "pr_auc": 0.4415685923859963,
+        "pr_auc_lift": 0.06360017264211959,
+        "brier": 0.23157856669957136,
+        "pred_min": 0.21045871078968048,
+        "pred_median": 0.36234647035598755,
+        "pred_max": 0.7002430558204651,
+        "pred_std": 0.07080008044465434
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5486559398786011,
+        "pr_auc": 0.4215986008300181,
+        "pr_auc_lift": 0.06611687325526727,
+        "brier": 0.22869479123830885,
+        "pred_min": 0.23547372221946716,
+        "pred_median": 0.3840157240629196,
+        "pred_max": 0.6350821852684021,
+        "pred_std": 0.07367023345358027
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 180,
+            "wins": 91,
+            "losses": 47,
+            "timeouts": 42,
+            "pf": 0.8320760829843711,
+            "pf_spread_020": 0.7977240391918248,
+            "pf_spread_040": 0.7646639238539732,
+            "mean_pnl_r": -0.05636782603252699,
+            "total_pnl_r": -10.146208685854859,
+            "trades_per_year": 90.0,
+            "by_side": {
+              "buy": {
+                "trades": 86,
+                "pf": 0.746988512529717,
+                "pf_spread_020": 0.7178555738872292,
+                "pf_spread_040": 0.689664822636736
+              },
+              "sell": {
+                "trades": 94,
+                "pf": 0.9220771150171019,
+                "pf_spread_020": 0.8818255246774244,
+                "pf_spread_040": 0.8432682883076542
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 73,
+                "pf": 0.7599210962325353
+              },
+              "2022": {
+                "trades": 107,
+                "pf": 0.8787659395283375
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 90,
+            "wins": 47,
+            "losses": 18,
+            "timeouts": 25,
+            "pf": 0.9332962482205736,
+            "pf_spread_020": 0.8957348044454334,
+            "pf_spread_040": 0.8595282025079878,
+            "mean_pnl_r": -0.018466360626956273,
+            "total_pnl_r": -1.6619724564260645,
+            "trades_per_year": 45.0,
+            "by_side": {
+              "buy": {
+                "trades": 44,
+                "pf": 1.0400617882430934,
+                "pf_spread_020": 1.0013760399090488,
+                "pf_spread_040": 0.9638323880958153
+              },
+              "sell": {
+                "trades": 46,
+                "pf": 0.8273957887939567,
+                "pf_spread_020": 0.7914738559270427,
+                "pf_spread_040": 0.7571702667044228
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 42,
+                "pf": 0.7541574977801353
+              },
+              "2022": {
+                "trades": 48,
+                "pf": 1.1248962164789493
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.55,
+            "trades": 47,
+            "wins": 28,
+            "losses": 6,
+            "timeouts": 13,
+            "pf": 1.1021921106812196,
+            "pf_spread_020": 1.0560618889553062,
+            "pf_spread_040": 1.0116713334695375,
+            "mean_pnl_r": 0.02268861035338847,
+            "total_pnl_r": 1.066364686609258,
+            "trades_per_year": 23.5,
+            "by_side": {
+              "buy": {
+                "trades": 23,
+                "pf": 1.7608009604331254,
+                "pf_spread_020": 1.6943139343635245,
+                "pf_spread_040": 1.6298847189646393
+              },
+              "sell": {
+                "trades": 24,
+                "pf": 0.6749006586297268,
+                "pf_spread_020": 0.643927968246945,
+                "pf_spread_040": 0.6149208360123248
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 24,
+                "pf": 0.7334349877259464
+              },
+              "2022": {
+                "trades": 23,
+                "pf": 1.6869492097633703
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 17,
+            "wins": 13,
+            "losses": 0,
+            "timeouts": 4,
+            "pf": 2.2943787818894474,
+            "pf_spread_020": 2.199657527669532,
+            "pf_spread_040": 2.108817267714126,
+            "mean_pnl_r": 0.14198350749885358,
+            "total_pnl_r": 2.4137196274805106,
+            "trades_per_year": 8.5,
+            "by_side": {
+              "buy": {
+                "trades": 6,
+                "pf": 2.4853197660504707,
+                "pf_spread_020": 2.402047972014644,
+                "pf_spread_040": 2.3212938437093023
+              },
+              "sell": {
+                "trades": 11,
+                "pf": 2.145933280120647,
+                "pf_spread_020": 2.0438846631853407,
+                "pf_spread_040": 1.9468525948391229
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 10,
+                "pf": 1.0979012570422684
+              },
+              "2022": {
+                "trades": 7,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 6,
+            "wins": 5,
+            "losses": 0,
+            "timeouts": 1,
+            "pf": 6.921546522037263,
+            "pf_spread_020": 6.655136949088079,
+            "pf_spread_040": 6.399123847278373,
+            "mean_pnl_r": 0.2650996874923541,
+            "total_pnl_r": 1.5905981249541243,
+            "trades_per_year": 3.0,
+            "by_side": {
+              "buy": {
+                "trades": 2,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              },
+              "sell": {
+                "trades": 4,
+                "pf": 3.3937033556396528,
+                "pf_spread_020": 3.2496646958097655,
+                "pf_spread_040": 3.111247056851289
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 2,
+                "pf": 2.0788325581724685
+              },
+              "2022": {
+                "trades": 4,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 2,
+            "wins": 2,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": Infinity,
+            "pf_spread_020": Infinity,
+            "pf_spread_040": Infinity,
+            "mean_pnl_r": 0.3083563682559394,
+            "total_pnl_r": 0.6167127365118787,
+            "trades_per_year": 2.0,
+            "by_side": {
+              "sell": {
+                "trades": 2,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2022": {
+                "trades": 2,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.525,
+          "trades": 90,
+          "wins": 47,
+          "losses": 18,
+          "timeouts": 25,
+          "pf": 0.9332962482205736,
+          "pf_spread_020": 0.8957348044454334,
+          "pf_spread_040": 0.8595282025079878,
+          "mean_pnl_r": -0.018466360626956273,
+          "total_pnl_r": -1.6619724564260645,
+          "trades_per_year": 45.0,
+          "by_side": {
+            "buy": {
+              "trades": 44,
+              "pf": 1.0400617882430934,
+              "pf_spread_020": 1.0013760399090488,
+              "pf_spread_040": 0.9638323880958153
+            },
+            "sell": {
+              "trades": 46,
+              "pf": 0.8273957887939567,
+              "pf_spread_020": 0.7914738559270427,
+              "pf_spread_040": 0.7571702667044228
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 42,
+              "pf": 0.7541574977801353
+            },
+            "2022": {
+              "trades": 48,
+              "pf": 1.1248962164789493
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": true,
+          "reason": "stable_neighbors"
+        }
+      }
+    },
+    {
+      "seed": 42,
+      "profile": "clock_shift_back_impulse",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5813194405692989,
+        "pr_auc": 0.44748895293472135,
+        "pr_auc_lift": 0.07978754864795123,
+        "brier": 0.2277884472873561,
+        "pred_min": 0.23191237449645996,
+        "pred_median": 0.35420389473438263,
+        "pred_max": 0.6055045127868652,
+        "pred_std": 0.06251614096527855
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5786299273067739,
+        "pr_auc": 0.4496210539266133,
+        "pr_auc_lift": 0.0716526341827366,
+        "brier": 0.23096608327331275,
+        "pred_min": 0.21410073339939117,
+        "pred_median": 0.36197859048843384,
+        "pred_max": 0.6178926229476929,
+        "pred_std": 0.06679268688728214
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5715627709798632,
+        "pr_auc": 0.4375320166540369,
+        "pr_auc_lift": 0.08205028907928608,
+        "brier": 0.22544500530792635,
+        "pred_min": 0.22988618910312653,
+        "pred_median": 0.36025016009807587,
+        "pred_max": 0.5723639726638794,
+        "pred_std": 0.0676826179168521
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 142,
+            "wins": 78,
+            "losses": 32,
+            "timeouts": 32,
+            "pf": 0.9998388748008369,
+            "pf_spread_020": 0.9583904138481623,
+            "pf_spread_040": 0.9184366162707442,
+            "mean_pnl_r": -4.717471015049278e-05,
+            "total_pnl_r": -0.006698808841369974,
+            "trades_per_year": 71.0,
+            "by_side": {
+              "buy": {
+                "trades": 64,
+                "pf": 0.9562394827051403,
+                "pf_spread_020": 0.9171262692338759,
+                "pf_spread_040": 0.8792864491790762
+              },
+              "sell": {
+                "trades": 78,
+                "pf": 1.0379067562519977,
+                "pf_spread_020": 0.9943111792904574,
+                "pf_spread_040": 0.9524025141861903
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 61,
+                "pf": 0.8560765164409008
+              },
+              "2022": {
+                "trades": 81,
+                "pf": 1.1084839181877175
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 64,
+            "wins": 37,
+            "losses": 15,
+            "timeouts": 12,
+            "pf": 0.9399504420258367,
+            "pf_spread_020": 0.9012671593751457,
+            "pf_spread_040": 0.8639896077820194,
+            "mean_pnl_r": -0.01670842271542227,
+            "total_pnl_r": -1.0693390537870253,
+            "trades_per_year": 32.0,
+            "by_side": {
+              "buy": {
+                "trades": 28,
+                "pf": 0.9159562548708217,
+                "pf_spread_020": 0.8809989426998053,
+                "pf_spread_040": 0.8470839838616697
+              },
+              "sell": {
+                "trades": 36,
+                "pf": 0.9607618096868055,
+                "pf_spread_020": 0.918769028890762,
+                "pf_spread_040": 0.8785095639782123
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 32,
+                "pf": 1.0903086487631384
+              },
+              "2022": {
+                "trades": 32,
+                "pf": 0.8087911300163575
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.55,
+            "trades": 23,
+            "wins": 14,
+            "losses": 4,
+            "timeouts": 5,
+            "pf": 1.0513761263386903,
+            "pf_spread_020": 1.0078216238181137,
+            "pf_spread_040": 0.9657908927443832,
+            "mean_pnl_r": 0.01075229445639569,
+            "total_pnl_r": 0.24730277249710086,
+            "trades_per_year": 11.5,
+            "by_side": {
+              "buy": {
+                "trades": 12,
+                "pf": 0.9787106299330777,
+                "pf_spread_020": 0.9448938024422268,
+                "pf_spread_040": 0.9119479595638904
+              },
+              "sell": {
+                "trades": 11,
+                "pf": 1.1715788424816778,
+                "pf_spread_020": 1.1107875413983013,
+                "pf_spread_040": 1.0524585546673717
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 10,
+                "pf": 2.5202524512245223
+              },
+              "2022": {
+                "trades": 13,
+                "pf": 0.6662055682603849
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 4,
+            "wins": 3,
+            "losses": 1,
+            "timeouts": 0,
+            "pf": 1.0936949553312205,
+            "pf_spread_020": 1.0649325320489447,
+            "pf_spread_040": 1.0365952739297475,
+            "mean_pnl_r": 0.023423738832805144,
+            "total_pnl_r": 0.09369495533122058,
+            "trades_per_year": 2.0,
+            "by_side": {
+              "buy": {
+                "trades": 4,
+                "pf": 1.0936949553312205,
+                "pf_spread_020": 1.0649325320489447,
+                "pf_spread_040": 1.0365952739297475
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 3,
+                "pf": 0.677949709864607
+              },
+              "2022": {
+                "trades": 1,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 1,
+            "wins": 1,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": Infinity,
+            "pf_spread_020": Infinity,
+            "pf_spread_040": Infinity,
+            "mean_pnl_r": 0.1688311688311677,
+            "total_pnl_r": 0.1688311688311677,
+            "trades_per_year": 1.0,
+            "by_side": {
+              "buy": {
+                "trades": 1,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 1,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.5,
+          "trades": 142,
+          "wins": 78,
+          "losses": 32,
+          "timeouts": 32,
+          "pf": 0.9998388748008369,
+          "pf_spread_020": 0.9583904138481623,
+          "pf_spread_040": 0.9184366162707442,
+          "mean_pnl_r": -4.717471015049278e-05,
+          "total_pnl_r": -0.006698808841369974,
+          "trades_per_year": 71.0,
+          "by_side": {
+            "buy": {
+              "trades": 64,
+              "pf": 0.9562394827051403,
+              "pf_spread_020": 0.9171262692338759,
+              "pf_spread_040": 0.8792864491790762
+            },
+            "sell": {
+              "trades": 78,
+              "pf": 1.0379067562519977,
+              "pf_spread_020": 0.9943111792904574,
+              "pf_spread_040": 0.9524025141861903
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 61,
+              "pf": 0.8560765164409008
+            },
+            "2022": {
+              "trades": 81,
+              "pf": 1.1084839181877175
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": false,
+          "reason": "neighbor_pf_or_trades_drop"
+        }
+      }
+    },
+    {
+      "seed": 77,
+      "profile": "clock_shift_back_impulse",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5858587208397334,
+        "pr_auc": 0.44422808556507565,
+        "pr_auc_lift": 0.07652668127830553,
+        "brier": 0.22763699171699386,
+        "pred_min": 0.21448945999145508,
+        "pred_median": 0.3523011654615402,
+        "pred_max": 0.6043797135353088,
+        "pred_std": 0.06448474648180166
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5751768675636723,
+        "pr_auc": 0.44899740454930503,
+        "pr_auc_lift": 0.07102898480542835,
+        "brier": 0.23121165888773124,
+        "pred_min": 0.20517966151237488,
+        "pred_median": 0.36104533076286316,
+        "pred_max": 0.6168085932731628,
+        "pred_std": 0.0689388944446025
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5693347143270064,
+        "pr_auc": 0.4431830752964213,
+        "pr_auc_lift": 0.08770134772167049,
+        "brier": 0.225356260729814,
+        "pred_min": 0.21829217672348022,
+        "pred_median": 0.3580755144357681,
+        "pred_max": 0.5849660038948059,
+        "pred_std": 0.07273444626769814
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 168,
+            "wins": 92,
+            "losses": 41,
+            "timeouts": 35,
+            "pf": 0.9754312764581313,
+            "pf_spread_020": 0.9364389267075619,
+            "pf_spread_040": 0.898758676080156,
+            "mean_pnl_r": -0.007708835016680772,
+            "total_pnl_r": -1.2950842828023696,
+            "trades_per_year": 84.0,
+            "by_side": {
+              "buy": {
+                "trades": 83,
+                "pf": 0.9659610823022055,
+                "pf_spread_020": 0.9279077614993906,
+                "pf_spread_040": 0.8910783349313538
+              },
+              "sell": {
+                "trades": 85,
+                "pf": 0.9841944840307829,
+                "pf_spread_020": 0.9443192476150527,
+                "pf_spread_040": 0.9058421070660945
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 67,
+                "pf": 1.0787174568880171
+              },
+              "2022": {
+                "trades": 101,
+                "pf": 0.9223964837271547
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 71,
+            "wins": 40,
+            "losses": 14,
+            "timeouts": 17,
+            "pf": 1.0229649916063732,
+            "pf_spread_020": 0.9817025420855487,
+            "pf_spread_040": 0.9418602300672113,
+            "mean_pnl_r": 0.006133553524895231,
+            "total_pnl_r": 0.4354823002675614,
+            "trades_per_year": 35.5,
+            "by_side": {
+              "buy": {
+                "trades": 31,
+                "pf": 0.711428780374221,
+                "pf_spread_020": 0.6838951285833591,
+                "pf_spread_040": 0.6572885158161249
+              },
+              "sell": {
+                "trades": 40,
+                "pf": 1.384805917299115,
+                "pf_spread_020": 1.3269879980795685,
+                "pf_spread_040": 1.2712608774564387
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 28,
+                "pf": 0.8982644181169063
+              },
+              "2022": {
+                "trades": 43,
+                "pf": 1.0992934365917022
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.55,
+            "trades": 26,
+            "wins": 12,
+            "losses": 6,
+            "timeouts": 8,
+            "pf": 0.5644522915951036,
+            "pf_spread_020": 0.5430293488246436,
+            "pf_spread_040": 0.522388555615137,
+            "mean_pnl_r": -0.13864494856490747,
+            "total_pnl_r": -3.604768662687594,
+            "trades_per_year": 13.0,
+            "by_side": {
+              "buy": {
+                "trades": 14,
+                "pf": 0.44891088476983076,
+                "pf_spread_020": 0.4326396738543538,
+                "pf_spread_040": 0.4169664364580627
+              },
+              "sell": {
+                "trades": 12,
+                "pf": 0.8161537657490763,
+                "pf_spread_020": 0.7825840044410806,
+                "pf_spread_040": 0.7503439080176055
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 11,
+                "pf": 0.8072692437298232
+              },
+              "2022": {
+                "trades": 15,
+                "pf": 0.4409501889909605
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 8,
+            "wins": 5,
+            "losses": 2,
+            "timeouts": 1,
+            "pf": 0.7306475878141878,
+            "pf_spread_020": 0.7052107434946192,
+            "pf_spread_040": 0.6804572177042897,
+            "mean_pnl_r": -0.06964207599708389,
+            "total_pnl_r": -0.5571366079766711,
+            "trades_per_year": 4.0,
+            "by_side": {
+              "buy": {
+                "trades": 2,
+                "pf": 0.0,
+                "pf_spread_020": 0.0,
+                "pf_spread_040": 0.0
+              },
+              "sell": {
+                "trades": 6,
+                "pf": 22.085248363575452,
+                "pf_spread_020": 20.179423450165974,
+                "pf_spread_040": 18.51034697320488
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 2,
+                "pf": 0.33649434077699547
+              },
+              "2022": {
+                "trades": 6,
+                "pf": 1.0995564070375068
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 1,
+            "wins": 1,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": Infinity,
+            "pf_spread_020": Infinity,
+            "pf_spread_040": Infinity,
+            "mean_pnl_r": 0.33649434077699547,
+            "total_pnl_r": 0.33649434077699547,
+            "trades_per_year": 1.0,
+            "by_side": {
+              "sell": {
+                "trades": 1,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 1,
+                "pf": Infinity
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.525,
+          "trades": 71,
+          "wins": 40,
+          "losses": 14,
+          "timeouts": 17,
+          "pf": 1.0229649916063732,
+          "pf_spread_020": 0.9817025420855487,
+          "pf_spread_040": 0.9418602300672113,
+          "mean_pnl_r": 0.006133553524895231,
+          "total_pnl_r": 0.4354823002675614,
+          "trades_per_year": 35.5,
+          "by_side": {
+            "buy": {
+              "trades": 31,
+              "pf": 0.711428780374221,
+              "pf_spread_020": 0.6838951285833591,
+              "pf_spread_040": 0.6572885158161249
+            },
+            "sell": {
+              "trades": 40,
+              "pf": 1.384805917299115,
+              "pf_spread_020": 1.3269879980795685,
+              "pf_spread_040": 1.2712608774564387
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 28,
+              "pf": 0.8982644181169063
+            },
+            "2022": {
+              "trades": 43,
+              "pf": 1.0992934365917022
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": true,
+          "reason": "stable_neighbors"
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "profile": "clock_shift_back_impulse",
+      "model_type": "XGBClassifier",
+      "params": {
+        "max_depth": 6,
+        "learning_rate": 0.03,
+        "n_estimators": 500,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "train_n": 48412,
+      "val_stop": {
+        "n": 5412,
+        "positive_rate": 0.3677014042867701,
+        "auc": 0.5871246207660159,
+        "pr_auc": 0.44852949785842045,
+        "pr_auc_lift": 0.08082809357165033,
+        "brier": 0.22750495421210623,
+        "pred_min": 0.2207690179347992,
+        "pred_median": 0.35257071256637573,
+        "pred_max": 0.5988002419471741,
+        "pred_std": 0.05984927144433217
+      },
+      "diagnostic_holdout": {
+        "n": 8043,
+        "positive_rate": 0.3779684197438767,
+        "auc": 0.5756685791156885,
+        "pr_auc": 0.44651181647062954,
+        "pr_auc_lift": 0.06854339672675286,
+        "brier": 0.2312272682869759,
+        "pred_min": 0.21817384660243988,
+        "pred_median": 0.3613665997982025,
+        "pred_max": 0.6438066959381104,
+        "pred_std": 0.06346972319401298
+      },
+      "low_n_disclosure": {
+        "n": 602,
+        "positive_rate": 0.3554817275747508,
+        "auc": 0.5494749012428943,
+        "pr_auc": 0.4336779926120863,
+        "pr_auc_lift": 0.07819626503733546,
+        "brier": 0.2268908561943945,
+        "pred_min": 0.23360271751880646,
+        "pred_median": 0.3601095825433731,
+        "pred_max": 0.5894937515258789,
+        "pred_std": 0.06690645644779557
+      },
+      "threshold_selection": {
+        "status": "SELECTED",
+        "candidates": [
+          {
+            "threshold": 0.5,
+            "trades": 122,
+            "wins": 70,
+            "losses": 26,
+            "timeouts": 26,
+            "pf": 1.0926118787920716,
+            "pf_spread_020": 1.047019250100262,
+            "pf_spread_040": 1.003096312602511,
+            "mean_pnl_r": 0.0249069584558059,
+            "total_pnl_r": 3.0386489316083196,
+            "trades_per_year": 61.0,
+            "by_side": {
+              "buy": {
+                "trades": 59,
+                "pf": 0.7680618293792902,
+                "pf_spread_020": 0.7359515356385874,
+                "pf_spread_040": 0.7050060417145061
+              },
+              "sell": {
+                "trades": 63,
+                "pf": 1.585306930149159,
+                "pf_spread_020": 1.517829909161507,
+                "pf_spread_040": 1.453055090760126
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 49,
+                "pf": 0.8839429830453196
+              },
+              "2022": {
+                "trades": 73,
+                "pf": 1.2473729498437074
+              }
+            },
+            "passes_min_trades": true
+          },
+          {
+            "threshold": 0.525,
+            "trades": 42,
+            "wins": 24,
+            "losses": 9,
+            "timeouts": 9,
+            "pf": 1.0362740248973266,
+            "pf_spread_020": 0.9957725910176476,
+            "pf_spread_040": 0.9565885943674299,
+            "mean_pnl_r": 0.009439606675832834,
+            "total_pnl_r": 0.39646348038497903,
+            "trades_per_year": 21.0,
+            "by_side": {
+              "buy": {
+                "trades": 18,
+                "pf": 0.3739356918386653,
+                "pf_spread_020": 0.36017440477874085,
+                "pf_spread_040": 0.34687006761322686
+              },
+              "sell": {
+                "trades": 24,
+                "pf": 2.4656541038588338,
+                "pf_spread_020": 2.3590312417754435,
+                "pf_spread_040": 2.256716681309051
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 19,
+                "pf": 0.681460675865116
+              },
+              "2022": {
+                "trades": 23,
+                "pf": 1.587028276301675
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.55,
+            "trades": 15,
+            "wins": 10,
+            "losses": 1,
+            "timeouts": 4,
+            "pf": 1.7246297299035074,
+            "pf_spread_020": 1.656957837420835,
+            "pf_spread_040": 1.591828064353497,
+            "mean_pnl_r": 0.11025932003997463,
+            "total_pnl_r": 1.6538898005996194,
+            "trades_per_year": 7.5,
+            "by_side": {
+              "buy": {
+                "trades": 6,
+                "pf": 0.7523222138375952,
+                "pf_spread_020": 0.7258554978244678,
+                "pf_spread_040": 0.700231377312995
+              },
+              "sell": {
+                "trades": 9,
+                "pf": 3.48002559831504,
+                "pf_spread_020": 3.3238185054920604,
+                "pf_spread_040": 3.175068603876859
+              }
+            },
+            "yearly": {
+              "2021": {
+                "trades": 4,
+                "pf": 0.9094166591166418
+              },
+              "2022": {
+                "trades": 11,
+                "pf": 2.3603265019122075
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.575,
+            "trades": 4,
+            "wins": 3,
+            "losses": 0,
+            "timeouts": 1,
+            "pf": 9.01938894963595,
+            "pf_spread_020": 8.491433756804346,
+            "pf_spread_040": 8.004644660879691,
+            "mean_pnl_r": 0.357711332815713,
+            "total_pnl_r": 1.430845331262852,
+            "trades_per_year": 4.0,
+            "by_side": {
+              "buy": {
+                "trades": 1,
+                "pf": 0.0,
+                "pf_spread_020": 0.0,
+                "pf_spread_040": 0.0
+              },
+              "sell": {
+                "trades": 3,
+                "pf": Infinity,
+                "pf_spread_020": Infinity,
+                "pf_spread_040": Infinity
+              }
+            },
+            "yearly": {
+              "2022": {
+                "trades": 4,
+                "pf": 9.01938894963595
+              }
+            },
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.6,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.625,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.65,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.675,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.7,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.725,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.75,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.775,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.8,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.825,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.85,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.875,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          },
+          {
+            "threshold": 0.9,
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "timeouts": 0,
+            "pf": null,
+            "pf_spread_020": null,
+            "pf_spread_040": null,
+            "mean_pnl_r": 0.0,
+            "total_pnl_r": 0.0,
+            "trades_per_year": 0.0,
+            "by_side": {},
+            "yearly": {},
+            "passes_min_trades": false
+          }
+        ],
+        "selected": {
+          "threshold": 0.5,
+          "trades": 122,
+          "wins": 70,
+          "losses": 26,
+          "timeouts": 26,
+          "pf": 1.0926118787920716,
+          "pf_spread_020": 1.047019250100262,
+          "pf_spread_040": 1.003096312602511,
+          "mean_pnl_r": 0.0249069584558059,
+          "total_pnl_r": 3.0386489316083196,
+          "trades_per_year": 61.0,
+          "by_side": {
+            "buy": {
+              "trades": 59,
+              "pf": 0.7680618293792902,
+              "pf_spread_020": 0.7359515356385874,
+              "pf_spread_040": 0.7050060417145061
+            },
+            "sell": {
+              "trades": 63,
+              "pf": 1.585306930149159,
+              "pf_spread_020": 1.517829909161507,
+              "pf_spread_040": 1.453055090760126
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 49,
+              "pf": 0.8839429830453196
+            },
+            "2022": {
+              "trades": 73,
+              "pf": 1.2473729498437074
+            }
+          },
+          "passes_min_trades": true
+        },
+        "plateau": {
+          "pass": false,
+          "reason": "no_valid_neighbors"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "clock_shift_back": {
+      "val_stop": {
+        "n_runs": 3,
+        "auc_median": 0.5847672024646906,
+        "pr_auc_lift_median": 0.07862322282302192
+      },
+      "threshold_selection": {
+        "n_selected": 3,
+        "thresholds": [
+          0.5,
+          0.5,
+          0.525
+        ],
+        "val_pf_median": 0.9332962482205736,
+        "threshold_dispersion": 0.025000000000000022
+      },
+      "threshold_on_diagnostic": null,
+      "permutation_baseline": {
+        "n_perm": 200,
+        "observed_pf": 0.9589883404629297,
+        "permuted_pf_median": 0.9589883404629297,
+        "permuted_pf_p95": 0.9589883404629297,
+        "empirical_p_value": 1.0
+      },
+      "all_trade_baseline": {
+        "train_core": {
+          "threshold": 0.5,
+          "trades": 48412,
+          "wins": 17929,
+          "losses": 28556,
+          "timeouts": 1927,
+          "pf": 0.9951874456884959,
+          "pf_spread_020": 1.560045158284045e-08,
+          "pf_spread_040": 7.435906043346682e-09,
+          "mean_pnl_r": -0.002869770311086605,
+          "total_pnl_r": -138.93132030032473,
+          "trades_per_year": 2847.764705882353,
+          "by_side": {
+            "buy": {
+              "trades": 22745,
+              "pf": 0.9808475422427513,
+              "pf_spread_020": 0.865004466309981,
+              "pf_spread_040": 0.7656909801631997
+            },
+            "sell": {
+              "trades": 25672,
+              "pf": 1.00765943437216,
+              "pf_spread_020": 8.449113392788562e-09,
+              "pf_spread_040": 4.027637876250943e-09
+            }
+          },
+          "yearly": {
+            "2004": {
+              "trades": 1943,
+              "pf": 1.0516564615948654
+            },
+            "2005": {
+              "trades": 3734,
+              "pf": 1.0383933805761338
+            },
+            "2006": {
+              "trades": 3170,
+              "pf": 1.0661588651804406
+            },
+            "2007": {
+              "trades": 3217,
+              "pf": 1.1050442067889907
+            },
+            "2008": {
+              "trades": 2909,
+              "pf": 0.9687167180770828
+            },
+            "2009": {
+              "trades": 2848,
+              "pf": 1.0228850673058134
+            },
+            "2010": {
+              "trades": 2732,
+              "pf": 0.8946170301014685
+            },
+            "2011": {
+              "trades": 2704,
+              "pf": 0.9840727595720918
+            },
+            "2012": {
+              "trades": 2757,
+              "pf": 0.9561370955271455
+            },
+            "2013": {
+              "trades": 2833,
+              "pf": 0.9831824997787918
+            },
+            "2014": {
+              "trades": 2846,
+              "pf": 0.9285589036390044
+            },
+            "2015": {
+              "trades": 2817,
+              "pf": 1.0473168677961844
+            },
+            "2016": {
+              "trades": 2801,
+              "pf": 0.9524615027923657
+            },
+            "2017": {
+              "trades": 2795,
+              "pf": 0.9264410480069473
+            },
+            "2018": {
+              "trades": 2757,
+              "pf": 1.0607857617294942
+            },
+            "2019": {
+              "trades": 2780,
+              "pf": 0.9304473437598568
+            },
+            "2020": {
+              "trades": 2774,
+              "pf": 0.9872912298689142
+            }
+          }
+        },
+        "val_stop": {
+          "threshold": 0.5,
+          "trades": 5412,
+          "wins": 1990,
+          "losses": 3175,
+          "timeouts": 247,
+          "pf": 0.9589883404629297,
+          "pf_spread_020": 0.8992323265104524,
+          "pf_spread_040": 0.8440888108597925,
+          "mean_pnl_r": -0.024376085964850483,
+          "total_pnl_r": -131.92337724177082,
+          "trades_per_year": 2706.0,
+          "by_side": {
+            "": {
+              "trades": 3,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 2580,
+              "pf": 0.9293926362442017,
+              "pf_spread_020": 0.872187255633859,
+              "pf_spread_040": 0.8192987057521763
+            },
+            "sell": {
+              "trades": 2832,
+              "pf": 0.9859908106936649,
+              "pf_spread_020": 0.923861191559328,
+              "pf_spread_040": 0.8666249784396675
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 2686,
+              "pf": 0.9355738763833464
+            },
+            "2022": {
+              "trades": 2729,
+              "pf": 0.9823180758218802
+            }
+          }
+        },
+        "diagnostic_holdout": {
+          "threshold": 0.5,
+          "trades": 8043,
+          "wins": 3040,
+          "losses": 4704,
+          "timeouts": 299,
+          "pf": 0.9796662331513543,
+          "pf_spread_020": 0.9262427298758049,
+          "pf_spread_040": 0.8766894820597068,
+          "mean_pnl_r": -0.012033655006877303,
+          "total_pnl_r": -96.78668722031415,
+          "trades_per_year": 2681.0,
+          "by_side": {
+            "": {
+              "trades": 48,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 3832,
+              "pf": 1.1630946549679992,
+              "pf_spread_020": 1.0954973172424045,
+              "pf_spread_040": 1.0332623770087692
+            },
+            "sell": {
+              "trades": 4211,
+              "pf": 0.8382048465548246,
+              "pf_spread_020": 0.7948090476825898,
+              "pf_spread_040": 0.7543247101217473
+            }
+          },
+          "yearly": {
+            "2023": {
+              "trades": 2679,
+              "pf": 0.9646149833615036
+            },
+            "2024": {
+              "trades": 2723,
+              "pf": 0.9534280535859071
+            },
+            "2025": {
+              "trades": 2689,
+              "pf": 1.0229286576182297
+            }
+          }
+        },
+        "low_n_disclosure": {
+          "threshold": 0.5,
+          "trades": 602,
+          "wins": 214,
+          "losses": 330,
+          "timeouts": 58,
+          "pf": 1.0511069841517826,
+          "pf_spread_020": 1.0391747001239446,
+          "pf_spread_040": 1.0274099541504724,
+          "mean_pnl_r": 0.02841077944723584,
+          "total_pnl_r": 17.103289227235976,
+          "trades_per_year": 602.0,
+          "by_side": {
+            "": {
+              "trades": 560,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 290,
+              "pf": 0.9422341090348363,
+              "pf_spread_020": 0.9315928639396265,
+              "pf_spread_040": 0.9210914978617127
+            },
+            "sell": {
+              "trades": 312,
+              "pf": 1.1470773238332053,
+              "pf_spread_020": 1.1339254853288376,
+              "pf_spread_040": 1.1209686752263437
+            }
+          },
+          "yearly": {
+            "2026": {
+              "trades": 1162,
+              "pf": 1.0511069841517826
+            }
+          }
+        }
+      }
+    },
+    "clock_shift_back_impulse": {
+      "val_stop": {
+        "n_runs": 3,
+        "auc_median": 0.5858587208397334,
+        "pr_auc_lift_median": 0.07978754864795123
+      },
+      "threshold_selection": {
+        "n_selected": 3,
+        "thresholds": [
+          0.5,
+          0.525,
+          0.5
+        ],
+        "val_pf_median": 1.0229649916063732,
+        "threshold_dispersion": 0.025000000000000022
+      },
+      "threshold_on_diagnostic": null,
+      "permutation_baseline": {
+        "n_perm": 200,
+        "observed_pf": 0.9589883404629297,
+        "permuted_pf_median": 0.9589883404629297,
+        "permuted_pf_p95": 0.9589883404629297,
+        "empirical_p_value": 1.0
+      },
+      "all_trade_baseline": {
+        "train_core": {
+          "threshold": 0.5,
+          "trades": 48412,
+          "wins": 17929,
+          "losses": 28556,
+          "timeouts": 1927,
+          "pf": 0.9951874456884959,
+          "pf_spread_020": 1.560045158284045e-08,
+          "pf_spread_040": 7.435906043346682e-09,
+          "mean_pnl_r": -0.002869770311086605,
+          "total_pnl_r": -138.93132030032473,
+          "trades_per_year": 2847.764705882353,
+          "by_side": {
+            "buy": {
+              "trades": 22745,
+              "pf": 0.9808475422427513,
+              "pf_spread_020": 0.865004466309981,
+              "pf_spread_040": 0.7656909801631997
+            },
+            "sell": {
+              "trades": 25672,
+              "pf": 1.00765943437216,
+              "pf_spread_020": 8.449113392788562e-09,
+              "pf_spread_040": 4.027637876250943e-09
+            }
+          },
+          "yearly": {
+            "2004": {
+              "trades": 1943,
+              "pf": 1.0516564615948654
+            },
+            "2005": {
+              "trades": 3734,
+              "pf": 1.0383933805761338
+            },
+            "2006": {
+              "trades": 3170,
+              "pf": 1.0661588651804406
+            },
+            "2007": {
+              "trades": 3217,
+              "pf": 1.1050442067889907
+            },
+            "2008": {
+              "trades": 2909,
+              "pf": 0.9687167180770828
+            },
+            "2009": {
+              "trades": 2848,
+              "pf": 1.0228850673058134
+            },
+            "2010": {
+              "trades": 2732,
+              "pf": 0.8946170301014685
+            },
+            "2011": {
+              "trades": 2704,
+              "pf": 0.9840727595720918
+            },
+            "2012": {
+              "trades": 2757,
+              "pf": 0.9561370955271455
+            },
+            "2013": {
+              "trades": 2833,
+              "pf": 0.9831824997787918
+            },
+            "2014": {
+              "trades": 2846,
+              "pf": 0.9285589036390044
+            },
+            "2015": {
+              "trades": 2817,
+              "pf": 1.0473168677961844
+            },
+            "2016": {
+              "trades": 2801,
+              "pf": 0.9524615027923657
+            },
+            "2017": {
+              "trades": 2795,
+              "pf": 0.9264410480069473
+            },
+            "2018": {
+              "trades": 2757,
+              "pf": 1.0607857617294942
+            },
+            "2019": {
+              "trades": 2780,
+              "pf": 0.9304473437598568
+            },
+            "2020": {
+              "trades": 2774,
+              "pf": 0.9872912298689142
+            }
+          }
+        },
+        "val_stop": {
+          "threshold": 0.5,
+          "trades": 5412,
+          "wins": 1990,
+          "losses": 3175,
+          "timeouts": 247,
+          "pf": 0.9589883404629297,
+          "pf_spread_020": 0.8992323265104524,
+          "pf_spread_040": 0.8440888108597925,
+          "mean_pnl_r": -0.024376085964850483,
+          "total_pnl_r": -131.92337724177082,
+          "trades_per_year": 2706.0,
+          "by_side": {
+            "": {
+              "trades": 3,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 2580,
+              "pf": 0.9293926362442017,
+              "pf_spread_020": 0.872187255633859,
+              "pf_spread_040": 0.8192987057521763
+            },
+            "sell": {
+              "trades": 2832,
+              "pf": 0.9859908106936649,
+              "pf_spread_020": 0.923861191559328,
+              "pf_spread_040": 0.8666249784396675
+            }
+          },
+          "yearly": {
+            "2021": {
+              "trades": 2686,
+              "pf": 0.9355738763833464
+            },
+            "2022": {
+              "trades": 2729,
+              "pf": 0.9823180758218802
+            }
+          }
+        },
+        "diagnostic_holdout": {
+          "threshold": 0.5,
+          "trades": 8043,
+          "wins": 3040,
+          "losses": 4704,
+          "timeouts": 299,
+          "pf": 0.9796662331513543,
+          "pf_spread_020": 0.9262427298758049,
+          "pf_spread_040": 0.8766894820597068,
+          "mean_pnl_r": -0.012033655006877303,
+          "total_pnl_r": -96.78668722031415,
+          "trades_per_year": 2681.0,
+          "by_side": {
+            "": {
+              "trades": 48,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 3832,
+              "pf": 1.1630946549679992,
+              "pf_spread_020": 1.0954973172424045,
+              "pf_spread_040": 1.0332623770087692
+            },
+            "sell": {
+              "trades": 4211,
+              "pf": 0.8382048465548246,
+              "pf_spread_020": 0.7948090476825898,
+              "pf_spread_040": 0.7543247101217473
+            }
+          },
+          "yearly": {
+            "2023": {
+              "trades": 2679,
+              "pf": 0.9646149833615036
+            },
+            "2024": {
+              "trades": 2723,
+              "pf": 0.9534280535859071
+            },
+            "2025": {
+              "trades": 2689,
+              "pf": 1.0229286576182297
+            }
+          }
+        },
+        "low_n_disclosure": {
+          "threshold": 0.5,
+          "trades": 602,
+          "wins": 214,
+          "losses": 330,
+          "timeouts": 58,
+          "pf": 1.0511069841517826,
+          "pf_spread_020": 1.0391747001239446,
+          "pf_spread_040": 1.0274099541504724,
+          "mean_pnl_r": 0.02841077944723584,
+          "total_pnl_r": 17.103289227235976,
+          "trades_per_year": 602.0,
+          "by_side": {
+            "": {
+              "trades": 560,
+              "pf": null,
+              "pf_spread_020": null,
+              "pf_spread_040": null
+            },
+            "buy": {
+              "trades": 290,
+              "pf": 0.9422341090348363,
+              "pf_spread_020": 0.9315928639396265,
+              "pf_spread_040": 0.9210914978617127
+            },
+            "sell": {
+              "trades": 312,
+              "pf": 1.1470773238332053,
+              "pf_spread_020": 1.1339254853288376,
+              "pf_spread_040": 1.1209686752263437
+            }
+          },
+          "yearly": {
+            "2026": {
+              "trades": 1162,
+              "pf": 1.0511069841517826
+            }
+          }
+        }
+      }
+    }
+  },
+  "last_error": null,
+  "preflight": {
+    "train_core": {
+      "n": 48412,
+      "invalid": 5,
+      "counts": {
+        "SL": 28261,
+        "TP": 17929,
+        "TIMEOUT": 1927,
+        "AMBIGUOUS_SL_FIRST": 295
+      },
+      "tp_rate": 0.3703420639510865,
+      "sl_or_ambiguous_rate": 0.5898537552672891,
+      "timeout_rate": 0.03980418078162439,
+      "risk_atr": {
+        "n": 48412,
+        "min": 8.12048840868686e-14,
+        "p01": 0.4999999999999716,
+        "median": 1.2235294117646967,
+        "p99": 4.590461722488047,
+        "max": 28.22972972972974
+      },
+      "reward_risk": {
+        "n": 48412,
+        "min": 0.07084729535663081,
+        "p01": 0.4356860539754456,
+        "median": 1.6346153846154134,
+        "p99": 4.000000000000284,
+        "max": 24629060462182.0
+      },
+      "pnl_r": {
+        "n": 48412,
+        "min": -1.0,
+        "p01": -1.0,
+        "median": -1.0,
+        "p99": 3.2173244147157316,
+        "max": 24.210526315797125
+      },
+      "timeout_pnl_r": {
+        "n": 1927,
+        "min": -0.9645390070921983,
+        "p01": -0.8112136689347211,
+        "median": 0.006514657980450236,
+        "p99": 1.6298850574712795,
+        "max": 3.1821561338289115,
+        "profitable_timeout_rate": 0.5038920601971977,
+        "total_timeout_pnl_r": 168.799663286444
+      },
+      "by_side": {
+        "buy": {
+          "n": 22743,
+          "tp_rate": 0.3719386184760146,
+          "pf": 0.9808475422427513
+        },
+        "sell": {
+          "n": 25669,
+          "tp_rate": 0.3689275000973937,
+          "pf": 1.00765943437216
+        }
+      },
+      "yearly_valid_rows": {
+        "2004": 1943,
+        "2005": 3730,
+        "2006": 3170,
+        "2007": 3216,
+        "2008": 2909,
+        "2009": 2848,
+        "2010": 2732,
+        "2011": 2704,
+        "2012": 2757,
+        "2013": 2833,
+        "2014": 2846,
+        "2015": 2817,
+        "2016": 2801,
+        "2017": 2795,
+        "2018": 2757,
+        "2019": 2780,
+        "2020": 2774
+      },
+      "warnings": [
+        "PNL_R_ABS_MAX_GT_20"
+      ]
+    },
+    "val_stop": {
+      "n": 5412,
+      "invalid": 3,
+      "counts": {
+        "SL": 3134,
+        "TP": 1990,
+        "TIMEOUT": 247,
+        "AMBIGUOUS_SL_FIRST": 41
+      },
+      "tp_rate": 0.3677014042867701,
+      "sl_or_ambiguous_rate": 0.5866592756836659,
+      "timeout_rate": 0.04563932002956393,
+      "risk_atr": {
+        "n": 5412,
+        "min": 0.1268292682926785,
+        "p01": 0.5680557713651466,
+        "median": 1.25,
+        "p99": 4.721847985347953,
+        "max": 11.846153846153857
+      },
+      "reward_risk": {
+        "n": 5412,
+        "min": 0.1688311688311677,
+        "p01": 0.42356321176918055,
+        "median": 1.600000000000005,
+        "p99": 3.5207825765965235,
+        "max": 15.769230769231408
+      },
+      "pnl_r": {
+        "n": 5412,
+        "min": -1.0,
+        "p01": -1.0,
+        "median": -1.0,
+        "p99": 2.9550316361790365,
+        "max": 4.270833333333195
+      },
+      "timeout_pnl_r": {
+        "n": 247,
+        "min": -0.9277003484320439,
+        "p01": -0.7950410284910963,
+        "median": 0.011666666666675004,
+        "p99": 1.261076071116297,
+        "max": 1.7628865979380854,
+        "profitable_timeout_rate": 0.5141700404858299,
+        "total_timeout_pnl_r": 13.97691647291179
+      },
+      "by_side": {
+        "buy": {
+          "n": 2580,
+          "tp_rate": 0.3631782945736434,
+          "pf": 0.9293926362442017
+        },
+        "sell": {
+          "n": 2832,
+          "tp_rate": 0.3718220338983051,
+          "pf": 0.9859908106936649
+        }
+      },
+      "yearly_valid_rows": {
+        "2021": 2686,
+        "2022": 2726
+      },
+      "warnings": []
+    },
+    "diagnostic_holdout": {
+      "n": 8043,
+      "invalid": 48,
+      "counts": {
+        "SL": 4649,
+        "TP": 3040,
+        "TIMEOUT": 299,
+        "AMBIGUOUS_SL_FIRST": 55
+      },
+      "tp_rate": 0.3779684197438767,
+      "sl_or_ambiguous_rate": 0.5848563968668408,
+      "timeout_rate": 0.03717518338928261,
+      "risk_atr": {
+        "n": 8043,
+        "min": 0.0024999999999977263,
+        "p01": 0.5086617647058693,
+        "median": 1.274096385542174,
+        "p99": 4.656649158592544,
+        "max": 11.693023255814001
+      },
+      "reward_risk": {
+        "n": 8043,
+        "min": 0.17104216388225685,
+        "p01": 0.42949467241220723,
+        "median": 1.5697399527186608,
+        "p99": 3.9320476460579634,
+        "max": 800.0000000007276
+      },
+      "pnl_r": {
+        "n": 8043,
+        "min": -1.0,
+        "p01": -1.0,
+        "median": -1.0,
+        "p99": 2.9463211448633904,
+        "max": 42.49999999999858
+      },
+      "timeout_pnl_r": {
+        "n": 299,
+        "min": -0.9719780219780347,
+        "p01": -0.8748287015473637,
+        "median": -0.020380434782590436,
+        "p99": 1.0626915360758817,
+        "max": 1.8940697148031114,
+        "profitable_timeout_rate": 0.4816053511705686,
+        "total_timeout_pnl_r": 4.221210362605504
+      },
+      "by_side": {
+        "buy": {
+          "n": 3832,
+          "tp_rate": 0.4279749478079332,
+          "pf": 1.1630946549679992
+        },
+        "sell": {
+          "n": 4211,
+          "tp_rate": 0.33246259795772976,
+          "pf": 0.8382048465548246
+        }
+      },
+      "yearly_valid_rows": {
+        "2023": 2631,
+        "2024": 2723,
+        "2025": 2689
+      },
+      "warnings": [
+        "PNL_R_ABS_MAX_GT_20"
+      ]
+    },
+    "low_n_disclosure": {
+      "n": 602,
+      "invalid": 560,
+      "counts": {
+        "SL": 330,
+        "TP": 214,
+        "TIMEOUT": 58
+      },
+      "tp_rate": 0.3554817275747508,
+      "sl_or_ambiguous_rate": 0.5481727574750831,
+      "timeout_rate": 0.09634551495016612,
+      "risk_atr": {
+        "n": 602,
+        "min": 0.1718213058419244,
+        "p01": 0.5535801587301427,
+        "median": 1.2323484290623539,
+        "p99": 5.127495509708726,
+        "max": 15.661885245901626
+      },
+      "reward_risk": {
+        "n": 602,
+        "min": 0.12769854769069797,
+        "p01": 0.3900539741878607,
+        "median": 1.6229177988924524,
+        "p99": 3.612846337837084,
+        "max": 11.639999999999963
+      },
+      "pnl_r": {
+        "n": 602,
+        "min": -1.0,
+        "p01": -1.0,
+        "median": -1.0,
+        "p99": 2.9081487363404794,
+        "max": 3.6072144288577417
+      },
+      "timeout_pnl_r": {
+        "n": 58,
+        "min": -0.6208631188774189,
+        "p01": -0.5673903457034623,
+        "median": 0.3508970324350285,
+        "p99": 1.7668916806293034,
+        "max": 2.4113179813817,
+        "profitable_timeout_rate": 0.7068965517241379,
+        "total_timeout_pnl_r": 20.699835915590246
+      },
+      "by_side": {
+        "buy": {
+          "n": 290,
+          "tp_rate": 0.3413793103448276,
+          "pf": 0.9422341090348363
+        },
+        "sell": {
+          "n": 312,
+          "tp_rate": 0.3685897435897436,
+          "pf": 1.1470773238332053
+        }
+      },
+      "yearly_valid_rows": {
+        "2026": 602
+      },
+      "warnings": [
+        "VALID_ROWS_LT_1000"
+      ]
+    },
+    "_integrity": {
+      "duplicate_times": 3788,
+      "year_counts": {
+        "2004": 1943,
+        "2005": 3734,
+        "2006": 3170,
+        "2007": 3217,
+        "2008": 2909,
+        "2009": 2848,
+        "2010": 2732,
+        "2011": 2704,
+        "2012": 2757,
+        "2013": 2833,
+        "2014": 2846,
+        "2015": 2817,
+        "2016": 2801,
+        "2017": 2795,
+        "2018": 2757,
+        "2019": 2780,
+        "2020": 2774,
+        "2021": 2686,
+        "2022": 2729,
+        "2023": 2679,
+        "2024": 2723,
+        "2025": 2689,
+        "2026": 1162
+      },
+      "invalid_reasons": {
+        "": 62474,
+        "TIME_NOT_FOUND": 602,
+        "OHLC_HORIZON_MISSING": 9
+      },
+      "warnings": [
+        "DUPLICATE_TIME_VALUES"
+      ]
+    }
+  },
+  "oracle_preflight": {
+    "train_core": {
+      "all_trade_pf": 0.9951874456884959,
+      "all_trade_trades": 48412,
+      "tp_only_oracle_pf": Infinity,
+      "tp_only_oracle_trades": 17929,
+      "trades_per_year": 2847.764705882353
+    },
+    "val_stop": {
+      "all_trade_pf": 0.9589883404629297,
+      "all_trade_trades": 5412,
+      "tp_only_oracle_pf": Infinity,
+      "tp_only_oracle_trades": 1990,
+      "trades_per_year": 2706.0
+    },
+    "diagnostic_holdout": {
+      "all_trade_pf": 0.9796662331513543,
+      "all_trade_trades": 8043,
+      "tp_only_oracle_pf": Infinity,
+      "tp_only_oracle_trades": 3040,
+      "trades_per_year": 2681.0
+    },
+    "low_n_disclosure": {
+      "all_trade_pf": 1.0511069841517826,
+      "all_trade_trades": 602,
+      "tp_only_oracle_pf": Infinity,
+      "tp_only_oracle_trades": 214,
+      "trades_per_year": 602.0
+    }
+  },
+  "gate": {
+    "overall_status": "MODEL_GATE_FAILED",
+    "artifact_status": "DIAGNOSTIC_ONLY",
+    "checks": {
+      "preflight_no_tp_outside_range": true,
+      "preflight_no_timeout_gt_70": true,
+      "preflight_train_val_gt_1000": true,
+      "auc_ge_0_60": false,
+      "pr_auc_lift_ge_0_05": false
+    }
+  },
+  "elapsed_sec": 415.59730792045593
+}
