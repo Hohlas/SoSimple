@@ -110,12 +110,21 @@ Stage 5.4 проверил `price_coord_atr` и `price_atr_scaled` на fixed ta
 
 ## Правильное направление дальше
 
-Нет нового направления. Stage 5.3 `fast` sell остаётся best available signal. Stage 5.4 не нашёл способа улучшить его.
+Stage 6.0: outcome-based / triple barrier target foundation.
+
+Минимальный следующий шаг:
+
+- написать spec Stage 6.0;
+- определить один базовый triple-barrier target для XAUUSD H1;
+- зафиксировать split до обучения;
+- заранее задать preflight распределений классов и частоты сделок;
+- оценивать не только AUC, но и PF/частоту/годовую устойчивость через execution-aware simulation.
 
 ## Неправильное направление дальше
 
 - Продолжать поиск price/ATR признаков для `fast`.
 - Объявлять Stage 5.3 торговым кандидатом.
+- Делать новый широкий перебор `H6_off05` без независимого периода.
 
 ## Ключевые файлы
 
@@ -135,6 +144,7 @@ Stage 5.4 проверил `price_coord_atr` и `price_atr_scaled` на fixed ta
 - `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
 - `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- `docs/superpowers/roadmap.md`
 - `docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - `docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
 

@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-29 09:18 UTC · git `178bedb`
+> Auto-generated 2026-06-29 10:57 UTC · git `ada43ad`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1533 files  ·  **Commit**: `178bedb`  ·  **Generated**: 2026-06-29 09:18 UTC
+**Tracked**: 1533 files  ·  **Commit**: `ada43ad`  ·  **Generated**: 2026-06-29 10:57 UTC
 
 ## Root Docs
 
@@ -18,7 +18,7 @@
 | [AGENTS.md](AGENTS.md) |  | 2026-06-24 | 11KB | `822f5437` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-29 | 206KB | `2d99ee57` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-29 | 6KB | `5eee56a3` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-29 | 7KB | `f82b2929` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-26 | 50KB | `01a54b4c` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -218,7 +218,7 @@
 | [docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md](docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md) |  | 2026-06-26 | 53KB | `ff2c4787` |
 | [docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md](docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md) |  | 2026-06-29 | 71KB | `e8302278` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-06-29 | 11KB | `128f8643` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-06-29 | 5KB | `fc8b3399` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
