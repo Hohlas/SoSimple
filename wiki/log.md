@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-29] ingest | Stage 6.1: H12 Relative Fractal Geometry
+- Добавлен охват `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 REJECTED — локальная геометрия фракталов вокруг fractal0 не предсказывает H12 TP/SL touch (AUC 0.51–0.55), гипотеза отвергнута
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 6.1 (29 report updates)
+- Статус: фрактальная геометрия не несёт сигнала для данного горизонта и контракта. Дальнейшие инвестиции в fractal-level geometry для H12 не рекомендуются.
+
 ## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
 - Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.4 REJECT_PRICE_COORD — price/ATR координата не улучшает `fast` ни на sell, ни на buy

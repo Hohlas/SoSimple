@@ -2,6 +2,19 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-29] — Stage 6.1: H12 Relative Fractal Geometry (MODEL_GATE_FAILED)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`: экстракция фракталов с ATR-координатами, 5 профилей геометрии, A7 preflight, definitive touch evaluator, runner, gate, CLI.
+- Новый тест `tests/test_stage6_1_relative_geometry.py`: 13 тестов (контракт, геометрия, билдеры, preflight, mask, gate).
+- Новый отчёт `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`.
+
+### Результаты
+- Полный прогон: `18/18` (6 профилей × 3 seed) за 47.6 мин.
+- Primary `h12_corridor3_relative_geometry`: median val AUC `0.5316` → MODEL_GATE_FAILED.
+- Все 5 геометрических профилей: AUC 0.51–0.55 (случайные).
+- Baseline `h12_clock_shift_back` подтверждает валидность: AUC `0.6174`, threshold SELECTED PF 1.25.
+- Гипотеза отвергнута: локальная геометрия фракталов не несёт сигнала для H12 TP/SL touch.
+
 ## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (TRADING_GATE_FAILED)
 ### Добавлено/Изменено/Исправлено
 - Новый модуль `ML/baseline/benchmark_stage6_outcome_based.py`: isolated Stage 6.0 runner.

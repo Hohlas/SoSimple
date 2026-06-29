@@ -4,97 +4,68 @@
 
 ## Текущий этап
 
-Stage 6.0 завершён после review-fix rerun. Вердикт: **TRADING_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
+Stage 6.1 завершён. Вердикт: **MODEL_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
 
-Старый промежуточный вывод `MODEL_GATE_FAILED` больше не актуален: после добавления короткого горизонта `H6` model gate проходит, но trading gate не проходит.
+Гипотеза отвергнута: локальная геометрия фракталов вокруг fractal0, закодированная как относительные ATR-координаты, не предсказывает, какой барьер будет достигнут первым за 12 H1 баров.
 
-## Что исправлено после ревью
+## Что сделано в Stage 6.1
 
-В `ML/baseline/benchmark_stage6_outcome_based.py` исправлены критические ошибки Stage 6.0:
+Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`:
 
-- gate теперь читает `auc_median` / `pr_auc_lift_median`, а не отсутствующие поля `auc` / `pr_auc_lift`;
-- permutation baseline использует реальные model scores, а не constant score;
-- diagnostic threshold применяется к реальным score, если threshold выбран;
-- `INVALID` rows исключены из yearly/by-side trading counters;
-- JSON хранит predictions/labels для post-mortem;
-- добавлен fixed horizon `H6` как primary, `H24` оставлен как disclosure comparison.
+- Экстракция фракталов с относительными ATR-координатами
+- 5 профилей геометрии: nearest_price, nearest_time, corridor3, corridor10, zones10 + baseline clock_shift_back
+- A7-style preflight для всех профилей
+- Definitive touch evaluation (только TP-vs-SL definitive rows для метрик, timeout исключён)
+- Trading gate
 
 ## Главный результат
 
 Полный прогон:
 
-- artifact: `ML/reports/stage6_0_outcome_based_triple_barrier.json`
-- report: `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
-- `12/12` runs = 2 горизонта × 2 профиля × 3 seed
-- gate: `TRADING_GATE_FAILED`
+- artifact: `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
+- report: `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- `18/18` runs = 6 профилей × 3 seed
+- gate: `MODEL_GATE_FAILED`
 
-Primary `H6_clock_shift_back`:
+Primary `h12_corridor3_relative_geometry`:
 
-- val TP rate: `16.6%`
-- val timeout rate: `46.4%`
-- median val AUC: `0.6888`
-- median PR AUC lift: `0.1141`
-- model gate: PASS
-- threshold status: `NO_THRESHOLD` на fixed grid `0.50..0.90`
-- all-trade val PF: `0.942`
-- spread 0.20 all-trade val PF: `0.861`
-
-Disclosure `H6_clock_shift_back_impulse`:
-
-- median val AUC: `0.6937`
-- median PR AUC lift: `0.1286`
+- median val AUC: `0.5316` (случайный)
 - threshold status: `NO_THRESHOLD`
+- все 5 геометрических профилей показали AUC 0.51–0.55
 
-Disclosure H24:
+Baseline `h12_clock_shift_back` подтверждает валидность эксперимента:
 
-- `H24_clock_shift_back` median val AUC: `0.5848`
-- selected val PF: `0.933`
-- permutation p-value: `0.635`
-- вывод: H24 не превосходит случайное ранжирование.
+- median val AUC: `0.6174`
+- threshold SELECTED, PF 1.249
 
 ## Методические ограничения
 
-- Stage 6.0 остаётся `DIAGNOSTIC_ONLY`.
-- `Open[row+1]` timing не подтверждён runtime parity.
-- Основной PnL gross; spread stress считается отдельно.
-- `DATA/XAUUSD_H1_OHLC.csv` используется как локальный OHLC source для first-touch; CSV-файлы в проекте игнорируются git.
-- `2023-2025` и `2026` не использовались для выбора.
-- Threshold grid ниже `0.50` не открывалась, чтобы не превратить review-fix в новый parameter search.
+- Stage 6.1 — `DIAGNOSTIC_ONLY`, не может стать `CANDIDATE`.
+- H12 фиксирован, TP/SL унаследованы от Stage 6.0.
+- Только XAUUSD H1.
+- Только одна семья признаков (fractal-level geometry).
 
 ## Правильное направление дальше
 
-Если продолжать Stage 6 ветку, следующий шаг должен быть отдельным bounded follow-up:
-
-- `Stage 6.1` H6 calibration / threshold protocol;
-- заранее зафиксировать threshold-схему до обучения: например quantile/top-N или calibrated probability threshold;
-- оценивать PF, trades/year, yearly PF, spread stress и permutation baseline;
-- не использовать `2023-2025` для выбора;
-- не менять одновременно horizon, TP/SL и feature set.
-
-Альтернатива: перейти к Regression Up/Dn target foundation, если решено не тратить бюджет на H6 threshold-калибровку.
+1. **Stage 6.2 (рекомендуется):** новая семья признаков (multi-timeframe momentum, micro-structure, объем) для H12.
+2. **Stage 6.0 refinement:** ансамблирование или калибровка для улучшения trading PF baseline.
+3. **Архивировать Stage 6.1** — код и отчёт сохранены, дальнейших вложений в fractal-level geometry для H12 не требуется без новых данных.
 
 ## Неправильное направление дальше
 
-- Объявлять Stage 6.0 кандидатом.
-- Снижать threshold ниже `0.50` post-hoc без нового плана.
-- Подбирать horizon/ATR/TP/SL широким перебором.
-- Использовать diagnostic holdout `2023-2025` для выбора порога.
-- Продолжать H24 как основное направление.
+- Открывать перебор horizon/ATR/TP/SL.
+- Выбирать порог или профиль на `2023-2025`.
+- Признавать Stage 6.1 кандидатом.
+- Продолжать инвестиции в fractal-level geometry features.
 
 ## Ключевые файлы
 
 Код:
 
-- `ML/baseline/benchmark_stage6_outcome_based.py`
-- `tests/test_stage6_outcome_based.py`
+- `ML/baseline/benchmark_stage6_1_relative_geometry.py`
+- `tests/test_stage6_1_relative_geometry.py`
 
 Артефакты:
 
-- `ML/reports/stage6_0_outcome_based_triple_barrier.json`
-- `ML/reports/stage5_4_fast_price_atr_ablation.json`
-- `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
-
-Документация:
-
-- `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
-- `docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
+- `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
+- `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
