@@ -6,6 +6,7 @@
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`: bounded post-mortem без переобучения, с разрезами по seed, BUY/SELL, годам, selected rows, activity proxy и zero-vector disclosure.
 - Новый артефакт `ML/reports/stage6_2_range_w1_postmortem.json` и отчёт `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
+- Post-review: отчёт приведён к канонической структуре `docs/reports/README.md`; JSON selected-trade секция теперь явно хранит known/unknown denominators.
 
 ### Результаты
 - `range_w1_atr` доминирует в Stage 6.2: top/second importance ratio `7.56`.

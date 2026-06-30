@@ -208,17 +208,24 @@ def _selected_trade_analysis(df: pd.DataFrame, seed_runs: list[dict]) -> dict:
         scores = pd.to_numeric(df[score_col], errors="coerce")
         selected = df[scores >= float(threshold)]
         non_selected = df[scores < float(threshold)]
+        selected_known = selected.dropna(subset=["stage6_definitive_tp_vs_sl_flag"])
+        non_selected_known = non_selected.dropna(subset=["stage6_definitive_tp_vs_sl_flag"])
         rows.append({
             "seed": seed,
             "threshold": float(threshold),
             "selected_n": int(len(selected)),
+            "selected_known_n": int(len(selected_known)),
+            "selected_unknown_n": int(len(selected) - len(selected_known)),
             "non_selected_n": int(len(non_selected)),
-            "selected_tp_rate": _mean_or_none(selected["stage6_definitive_tp_vs_sl_flag"]),
-            "non_selected_tp_rate": _mean_or_none(non_selected["stage6_definitive_tp_vs_sl_flag"]),
-            "selected_mean_pnl_r": _mean_or_none(selected["stage6_pnl_r"]),
-            "non_selected_mean_pnl_r": _mean_or_none(non_selected["stage6_pnl_r"]),
+            "non_selected_known_n": int(len(non_selected_known)),
+            "non_selected_unknown_n": int(len(non_selected) - len(non_selected_known)),
+            "tp_rate_denominator": "known_stage6_definitive_tp_vs_sl_flag_rows",
+            "selected_tp_rate": _mean_or_none(selected_known["stage6_definitive_tp_vs_sl_flag"]),
+            "non_selected_tp_rate": _mean_or_none(non_selected_known["stage6_definitive_tp_vs_sl_flag"]),
+            "selected_mean_pnl_r": _mean_or_none(selected_known["stage6_pnl_r"]),
+            "non_selected_mean_pnl_r": _mean_or_none(non_selected_known["stage6_pnl_r"]),
             "selected_bucket_target_rates": summarize_binary_by_bucket(
-                selected,
+                selected_known,
                 "range_w1_bucket",
                 "stage6_definitive_tp_vs_sl_flag",
             ),
@@ -372,22 +379,132 @@ def write_report(postmortem: dict) -> str:
     permutation = postmortem["permutation_context"]
     verdict = postmortem["verdict"]
     disclosure = postmortem["split_disclosure"]
+
+    def fmt(value, digits: int = 3) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float):
+            return f"{value:.{digits}f}"
+        return str(value)
+
+    def bucket_table() -> list[str]:
+        out = [
+            "| Bucket | Known rows | TP-rate |",
+            "|---|---:|---:|",
+        ]
+        for row in dominance["bucket_target_rates"]:
+            out.append(f"| `{row['bucket']}` | {row['n']} | {fmt(row['positive_rate'])} |")
+        return out
+
+    def selected_table() -> list[str]:
+        out = [
+            "| Seed | Threshold | Selected rows | Selected known | Selected unknown | Selected TP-rate | Selected mean PnL | Non-selected known | Non-selected TP-rate |",
+            "|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for row in selected["per_seed"]:
+            out.append(
+                f"| {row['seed']} | {fmt(row['threshold'])} | {row['selected_n']} | "
+                f"{row['selected_known_n']} | {row['selected_unknown_n']} | "
+                f"{fmt(row['selected_tp_rate'])} | {fmt(row['selected_mean_pnl_r'])} | "
+                f"{row['non_selected_known_n']} | {fmt(row['non_selected_tp_rate'])} |"
+            )
+        return out
+
+    def side_table() -> list[str]:
+        out = [
+            "| Side | Rows | TP-rate | Mean PnL | range_w1 vs target corr | range_w1 vs PnL corr |",
+            "|---|---:|---:|---:|---:|---:|",
+        ]
+        for row in postmortem["side_analysis"]:
+            out.append(
+                f"| `{row['side']}` | {row['n']} | {fmt(row['tp_rate'])} | "
+                f"{fmt(row['mean_pnl_r'])} | {fmt(row['range_w1_target_corr'])} | "
+                f"{fmt(row['range_w1_pnl_corr'])} |"
+            )
+        return out
+
+    def year_side_table() -> list[str]:
+        out = [
+            "| Year | Side | Rows | TP-rate | Mean PnL | range_w1 vs target corr | range_w1 vs PnL corr |",
+            "|---:|---|---:|---:|---:|---:|---:|",
+        ]
+        for row in postmortem["year_side_matrix"]:
+            out.append(
+                f"| {row['year']} | `{row['side']}` | {row['n']} | {fmt(row['tp_rate'])} | "
+                f"{fmt(row['mean_pnl_r'])} | {fmt(row['range_w1_target_corr'])} | "
+                f"{fmt(row['range_w1_pnl_corr'])} |"
+            )
+        return out
+
+    def permutation_table() -> list[str]:
+        out = [
+            "| Seed | Observed PF | Random PF median | Random PF p95 | Observed - p95 | p-value |",
+            "|---:|---:|---:|---:|---:|---:|",
+        ]
+        for row in permutation["per_seed"]:
+            out.append(
+                f"| {row['seed']} | {fmt(row['observed_pf'])} | {fmt(row['permuted_pf_median'])} | "
+                f"{fmt(row['permuted_pf_p95'])} | {fmt(row['observed_minus_permuted_p95'])} | "
+                f"{fmt(row['empirical_p_value'])} |"
+            )
+        return out
+
     lines = [
         "# Stage 6.2 Range W1 Post-Mortem",
         "",
         "> **Дата**: 2026-06-30",
         "> **Статус**: Completed",
         "> **Вердикт**: DIAGNOSTIC_ONLY",
-        "> **Цель**: Check why `range_w1_atr` dominates Stage 6.2 and why the stability check remains weak.",
+        "> **Цель**: Explain why `range_w1_atr` dominates Stage 6.2 and why the stability check remains weak.",
+        "> **Related plan/spec**: `docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md`",
         "",
-        "## Sources And Commands",
+        "## Context",
         "",
-        "- Source Stage 6.2 JSON: `ML/reports/stage6_2_h12_price_action_feature_family.json`.",
-        "- Generated JSON: `ML/reports/stage6_2_range_w1_postmortem.json`.",
-        "- Command: `./.venv/bin/python ML/baseline/analyze_stage6_2_range_w1_postmortem.py`.",
-        "- Scope: no retraining, no new horizon/ATR/TP/SL/profile search.",
+        "Stage 6.2 tested a fixed H12 OHLC price-action family. It stayed `DIAGNOSTIC_ONLY` because `h12_price_action_core` failed the permutation gate even though it had a weak validation ranking signal.",
         "",
-        "## Artifact Consistency",
+        "This post-mortem answers a narrower question: why `range_w1_atr` dominated feature importance, and why that did not become a robust trading result.",
+        "",
+        "## What Was Done",
+        "",
+        "- Added a bounded diagnostic script that reads the frozen Stage 6.2 JSON and rebuilds only the fixed `h12_price_action_core` features.",
+        "- Recomputed descriptive slices for `val_stop`, with `diagnostic_holdout` and `low_n_disclosure` kept as disclosure-only.",
+        "- Added bucket, side, year x side, selected-trade, activity-proxy, and permutation-context summaries.",
+        "- No model was retrained. No horizon, ATR, TP/SL, profile, seed, or threshold search was added.",
+        "",
+        "## Changed Files",
+        "",
+        "- `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`",
+        "- `tests/test_stage6_2_range_w1_postmortem.py`",
+        "- `ML/reports/stage6_2_range_w1_postmortem.json`",
+        "- `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`",
+        "- `docs/ML/analyze_stage6_2_range_w1_postmortem.py.md`",
+        "- `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `MODULE_INDEX.md`, `wiki/*`",
+        "",
+        "## Verification",
+        "",
+        "Commands:",
+        "",
+        "```bash",
+        "./.venv/bin/python ML/baseline/analyze_stage6_2_range_w1_postmortem.py",
+        "./.venv/bin/python -m pytest tests/test_stage6_2_range_w1_postmortem.py -q",
+        "./.venv/bin/python -m pytest tests/test_stage6_2_price_action.py tests/test_stage6_2_range_w1_postmortem.py -q",
+        "./.venv/bin/python -m pytest tests/ -q",
+        "git diff --check",
+        "./.venv/bin/python wiki/wiki.py verify",
+        "./.venv/bin/python wiki/wiki.py status",
+        "```",
+        "",
+        "Observed before report generation:",
+        "",
+        "- focused post-mortem tests: `7 passed`",
+        "- focused Stage 6.2 + post-mortem tests: `25 passed`",
+        "- full suite: `942 passed, 30 warnings`",
+        "- `git diff --check`: no output",
+        "- wiki verify/status: up to date, no gaps",
+        "",
+        "## Results",
+        "",
+        "Artifact consistency:",
         "",
         f"- Primary profile: `{consistency['primary_profile']}`.",
         f"- Stage 6.2 gate status: `{consistency['gate_status_from_stage62_json']}`.",
@@ -401,64 +518,89 @@ def write_report(postmortem: dict) -> str:
         "- `val_stop` is used only to explain the already failed Stage 6.2 gate.",
         "- `diagnostic_holdout` and `low_n_disclosure` remain disclosure-only.",
         "",
-        "## Facts",
+        "Dominance and direct relation:",
         "",
         f"- Top feature: `{dominance['top_feature']}`.",
-        f"- Top/second importance ratio: `{dominance['top_to_second_auc_drop_ratio']}`.",
-        f"- `range_w1_atr` vs target correlation on non-zero `val_stop`: `{dominance['range_w1_target_corr']}`.",
-        f"- `range_w1_atr` vs PnL correlation on non-zero `val_stop`: `{dominance['range_w1_pnl_corr']}`.",
-        f"- Primary permutation p-value: `{permutation['primary_p_value']}`; required `<= {permutation['required_p_value']}`.",
-        f"- Seed p-value range: `{stability['permutation_p_value_min']}` to `{stability['permutation_p_value_max']}`.",
+        f"- Top/second importance ratio: `{fmt(dominance['top_to_second_auc_drop_ratio'])}`.",
+        f"- `range_w1_atr` vs target correlation on non-zero `val_stop`: `{fmt(dominance['range_w1_target_corr'])}`.",
+        f"- `range_w1_atr` vs PnL correlation on non-zero `val_stop`: `{fmt(dominance['range_w1_pnl_corr'])}`.",
         f"- Zero-vector rows on `val_stop`: `{dominance['zero_vector_rows']}/{dominance['rows']}`.",
         f"- Evidence strength: `{postmortem['evidence_strength']}`.",
         "",
-        "## Selected Trade Analysis",
+        "The bucket table shows the core pattern: TP-rate rises from `0.251` in `q1` to `0.526` in `q5`. So `range_w1_atr` is visibly related to TP/SL ordering. But PnL correlation is only `0.008`, so it almost does not explain result size in R.",
+        "",
+        *bucket_table(),
+        "",
+        "Selected trade analysis:",
         "",
         f"- Seeds available for selected-trade analysis: `{selected['available_seed_count']}/{selected['seed_count']}`.",
-        "- See JSON section `selected_trade_analysis.per_seed` for selected vs non-selected TP-rate, PnL, and bucket rates.",
+        "- TP-rate denominator is known `stage6_definitive_tp_vs_sl_flag` rows, not all selected rows.",
         "",
-        "## Side And Year Disclosure",
+        *selected_table(),
         "",
-        "- See JSON section `side_analysis` for BUY/SELL counts, TP-rate, PnL, and correlations.",
-        "- See JSON section `year_side_matrix` for year x side breakdown.",
+        "BUY/SELL disclosure:",
         "",
-        "## Activity Proxy Checks",
+        *side_table(),
         "",
-        f"- `range_w1_atr` vs `ATR` correlation: `{activity['range_w1_vs_atr_corr']}`.",
-        f"- `range_w1_atr` vs `bar_range_1_atr` correlation: `{activity['range_w1_vs_bar_range_1_corr']}`.",
-        f"- Zero-vector share on `val_stop`: `{activity['zero_vector_share']}`.",
+        "Year x side disclosure:",
         "",
-        "## Validation Disclosure",
+        *year_side_table(),
+        "",
+        "Activity proxy checks:",
+        "",
+        f"- `range_w1_atr` vs `ATR` correlation: `{fmt(activity['range_w1_vs_atr_corr'])}`.",
+        f"- `range_w1_atr` vs `bar_range_1_atr` correlation: `{fmt(activity['range_w1_vs_bar_range_1_corr'])}`.",
+        f"- Zero-vector share on `val_stop`: `{fmt(activity['zero_vector_share'])}`.",
+        "- Interpretation: the dominant feature is not mainly a broad ATR regime proxy. It mostly reflects the size of the last candle before the decision row.",
+        "",
+        "Validation disclosure:",
         "",
         f"- `val_stop`: `{disclosure['val_stop']['zero_vector_rows']}/{disclosure['val_stop']['rows']}` zero-vector rows.",
         f"- `diagnostic_holdout`: `{disclosure['diagnostic_holdout']['zero_vector_rows']}/{disclosure['diagnostic_holdout']['rows']}` zero-vector rows.",
         f"- `low_n_disclosure`: `{disclosure['low_n_disclosure']['zero_vector_rows']}/{disclosure['low_n_disclosure']['rows']}` zero-vector rows.",
         "- `diagnostic_holdout` and `low_n_disclosure` were not used for choosing profiles, seeds, thresholds, or gates.",
         "",
-        "## Permutation Context",
+        "Permutation context:",
         "",
-        f"- Observed median PF: `{permutation['observed_pf_median']}`.",
-        f"- Observed PF range: `{permutation['observed_pf_min']}` to `{permutation['observed_pf_max']}`.",
-        "- See JSON section `permutation_context.per_seed` for observed PF vs median and p95 random PF by seed.",
+        f"- Primary permutation p-value: `{permutation['primary_p_value']}`; required `<= {permutation['required_p_value']}`.",
+        f"- Seed p-value range: `{stability['permutation_p_value_min']}` to `{stability['permutation_p_value_max']}`.",
+        f"- Observed median PF: `{fmt(permutation['observed_pf_median'])}`.",
+        f"- Observed PF range: `{fmt(permutation['observed_pf_min'])}` to `{fmt(permutation['observed_pf_max'])}`.",
         "",
-        "## Interpretation",
+        *permutation_table(),
         "",
-        "- Facts above are measurements from the frozen Stage 6.2 artifacts.",
-        "- The dominant feature is associated with the one-bar price range, but this is not enough to prove a robust trading rule.",
-        "- The stability check stayed weak because observed PF was not far enough above the random-permutation comparison across seeds.",
-        "- Any causal explanation remains a hypothesis unless a later fixed validation cycle tests it.",
+        "The key stability fact is that observed PF is below random-permutation p95 for every seed. That explains why `p=0.160` does not pass the gate: the selected PF is still inside a strong random tail.",
         "",
-        "This post-mortem does not change the Stage 6.2 verdict and does not promote the feature family.",
+        "## Conclusions",
         "",
-        "## Forbidden Next Steps",
+        "- `range_w1_atr` does not look like a zero-vector artifact on `val_stop`.",
+        "- It also does not look like a broad ATR-regime artifact: correlation with `ATR` is only `-0.059`.",
+        "- It most likely reflects the size of the last candle before the decision row: correlation with `bar_range_1_atr` is `0.846`.",
+        "- TP-rate grows monotonically by `range_w1_atr` bucket, so there is a weak ranking signal for TP/SL ordering.",
+        "- The signal is not a robust trading edge: PnL correlation is almost zero, and observed PF stays below random-permutation p95 in all three seeds.",
+        "- Stage 6.2 remains `DIAGNOSTIC_ONLY`; this post-mortem does not promote the feature family.",
         "",
-        "- Do not reopen H12/ATR/TP/SL search from this result.",
-        "- Do not create another small OHLC-window variant unless this report provides concrete evidence for a materially new family.",
+        "## Limitations / Open Questions",
         "",
-        "## Decision",
+        "- The post-mortem is descriptive and does not prove causality.",
+        "- Selected-trade TP-rate is computed on a small number of selected rows with known definitive TP/SL outcomes.",
+        "- `low_n_disclosure` is weak because `551/1162` rows are zero-vector price-action rows.",
+        "- The legacy global data-contract debt from Stage 6.2 remains: `statistics/data_contract_smoke_check.py` failed on unused historical target column `target_buy_H6_val`.",
+        "- The result cannot be used as a trading rule without a new clean validation cycle.",
         "",
-        f"- Promote Stage 6.2: `{verdict['promote_stage6_2']}`.",
-        f"- Next research step: `{verdict['next_research_step']}`.",
+        "## Next Step",
+        "",
+        f"Proceed to `{verdict['next_research_step']}`.",
+        "",
+        "This report does not provide enough evidence for another minor OHLC-window variant.",
+        "",
+        "## Related Materials",
+        "",
+        "- `docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md`",
+        "- `ML/reports/stage6_2_range_w1_postmortem.json`",
+        "- `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`",
+        "- `ML/reports/stage6_2_h12_price_action_feature_family.json`",
+        "- `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`",
         "",
     ]
     return "\n".join(lines)

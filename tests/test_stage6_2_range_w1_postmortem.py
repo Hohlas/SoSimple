@@ -163,6 +163,10 @@ def test_build_postmortem_reports_dominance_and_stability_shape():
     assert result["dominance"]["top_to_second_auc_drop_ratio"] > 1.0
     assert result["stability"]["seed_count"] == 3
     assert result["selected_trade_analysis"]["seed_count"] == 3
+    assert result["selected_trade_analysis"]["per_seed"][0]["selected_known_n"] == 2
+    assert result["selected_trade_analysis"]["per_seed"][0]["tp_rate_denominator"] == (
+        "known_stage6_definitive_tp_vs_sl_flag_rows"
+    )
     assert result["side_analysis"][0]["side"] in {"buy", "sell"}
     assert result["year_side_matrix"][0]["year"] in {2021, 2022}
     assert "range_w1_vs_bar_range_1_corr" in result["activity_proxy_checks"]

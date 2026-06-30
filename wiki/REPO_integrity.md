@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-06-30 11:30 UTC · git `be10736`
+> Auto-generated 2026-06-30 11:56 UTC · git `c8d6de9`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,14 +9,14 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1554 files  ·  **Commit**: `be10736`  ·  **Generated**: 2026-06-30 11:30 UTC
+**Tracked**: 1554 files  ·  **Commit**: `c8d6de9`  ·  **Generated**: 2026-06-30 11:56 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-06-24 | 11KB | `822f5437` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-30 | 211KB | `435a52f0` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-06-30 | 212KB | `bf95aa5b` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
 | [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-06-30 | 1KB | `0a5ea522` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-06-30 | 50KB | `1de89811` |
@@ -225,7 +225,7 @@
 | [docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-06-30 | 60KB | `83351232` |
 | [docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md](docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-06-30 | 36KB | `29a57550` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-06-30 | 6KB | `92891521` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-06-30 | 5KB | `9b660e39` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -362,7 +362,7 @@
 | [docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md](docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md) |  | 2026-06-29 | 9KB | `3f1cff23` |
 | [docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md](docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md) |  | 2026-06-30 | 18KB | `e98cf36e` |
 | [docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-06-30 | 13KB | `46ad7007` |
-| [docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md](docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-06-30 | 3KB | `095c4d47` |
+| [docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md](docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-06-30 | 7KB | `674ecf07` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-20 | 2KB | `9a64f8af` |
 
 ## ML
@@ -371,7 +371,7 @@
 |------|-------------|--------|----------|------|------|
 | [ML/README.md](ML/README.md) |  |  | 2026-06-17 | 17KB | `8e6c2c98` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-17 | 4KB | `dd55ee84` |
-| [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 DIAGNOSTIC_ONLY post-mortem: why `range_w1_atr` dominates and why permutation stability remains weak | ✅ | 2026-06-30 | 21KB | `277d075a` |
+| [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 DIAGNOSTIC_ONLY post-mortem: why `range_w1_atr` dominates and why permutation stability remains weak | ✅ | 2026-06-30 | 28KB | `6450da16` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach: Dummy/RF baseline и one-shot frozen test для пробоя уровня `fractal0` | ✅ | 2026-06-17 | 13KB | `186f1abf` |
 | [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav: RF breach+fav, grid search торговых порогов и frozen test | ✅ | 2026-06-17 | 26KB | `5b982cce` |
@@ -801,7 +801,7 @@
 | [ML/reports/stage5_0d_diagnostic_screening.json](ML/reports/stage5_0d_diagnostic_screening.json) |  |  | 2026-06-24 | 36KB | `53265c38` |
 | [ML/reports/stage5_prep_diagnostics.json](ML/reports/stage5_prep_diagnostics.json) |  |  | 2026-06-17 | 4KB | `50fdcdd1` |
 | [ML/reports/stage5_transformer_breach.json](ML/reports/stage5_transformer_breach.json) |  |  | 2026-06-20 | 32KB | `3d15c106` |
-| [ML/reports/stage6_2_range_w1_postmortem.json](ML/reports/stage6_2_range_w1_postmortem.json) |  |  | 2026-06-30 | 7KB | `47b5b9fd` |
+| [ML/reports/stage6_2_range_w1_postmortem.json](ML/reports/stage6_2_range_w1_postmortem.json) |  |  | 2026-06-30 | 7KB | `30a164cf` |
 | [ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json](ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json) |  |  | 2026-06-17 | 2KB | `a2d1b9ae` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json) |  |  | 2026-06-17 | 160B | `295db8d3` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json) |  |  | 2026-06-17 | 8KB | `6f06d60e` |
@@ -1160,7 +1160,7 @@
 | [tests/test_stage5_transformer_breach.py](tests/test_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach: профили признаков, tensor shapes, corridor validation, модель, split guard | ✅ | 2026-06-29 | 195KB | `90ebfbb7` |
 | [tests/test_stage6_1_relative_geometry.py](tests/test_stage6_1_relative_geometry.py) |  |  | 2026-06-29 | 18KB | `7c87a914` |
 | [tests/test_stage6_2_price_action.py](tests/test_stage6_2_price_action.py) |  |  | 2026-06-30 | 13KB | `e5bf3730` |
-| [tests/test_stage6_2_range_w1_postmortem.py](tests/test_stage6_2_range_w1_postmortem.py) |  |  | 2026-06-30 | 6KB | `86c522f3` |
+| [tests/test_stage6_2_range_w1_postmortem.py](tests/test_stage6_2_range_w1_postmortem.py) |  |  | 2026-06-30 | 6KB | `2fc4c754` |
 | [tests/test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) |  |  | 2026-06-29 | 10KB | `fe6c4420` |
 | [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-06-17 | 6KB | `df9c696d` |
 | [tests/test_take_skip_original_contour_feature_matrix.py](tests/test_take_skip_original_contour_feature_matrix.py) | `ML/run_take_skip_original_contour_feature_matrix.py` | ✅ | 2026-06-17 | 9KB | `88acdeac` |
