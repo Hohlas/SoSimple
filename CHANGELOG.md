@@ -1,4 +1,19 @@
 # Changelog SoSimple
+
+## [2026-06-30] — Stage 6.3: H6 Feature Parity Check (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/benchmark_stage6_3_h6_feature_parity.py`: bounded H6 parity runner, переиспользующий Stage 6.1/6.2 feature builders, с `horizon_bars=6`.
+- Новый тест `tests/test_stage6_3_h6_feature_parity.py`: 24 теста (контракт, профили, feature names, билдеры, gate, runner, CLI, resume).
+- Новый артефакт `ML/reports/stage6_3_h6_feature_parity.json` и отчёт `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
+
+### Результаты
+- Полный прогон: `39/39` (13 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `3175s`.
+- H6 baseline (`h6_clock_shift_back`): median val AUC `0.6649` (vs H12 `0.6174`), selected PF `1.006`, но permutation p-value `0.700`.
+- Все 5 geometry-only профилей: AUC `0.51–0.58`, NO_THRESHOLD — H6 не спасает геометрию.
+- Price-action на H6 сильнее, чем на H12: core AUC `0.6676`, regime AUC `0.6725`, SELECTED, PF `1.075–1.213`. Permutation p-values `0.305–0.570`.
+- Combined profiles: лучший `h6_clock_shift_back_plus_price_action_core` AUC `0.676`, delta `+0.011` (ниже `+0.02`), perm p `0.270`.
+- Gate: `NO_ADDITIVE_VALUE_CONFIRMED`; H6 parity не меняет standing conclusions.
+<!-- docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md -->
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 

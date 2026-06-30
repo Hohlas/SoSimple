@@ -238,6 +238,8 @@ Do not promote Stage 6.2 to candidate. The next defensible step is either:
 
 Do not open broad horizon/ATR/TP/SL search based on this result.
 
+> **Follow-up:** H6 parity for this feature family is reported separately in `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
+
 ## Related Materials
 
 - [Stage 6.2 JSON](../../ML/reports/stage6_2_h12_price_action_feature_family.json)

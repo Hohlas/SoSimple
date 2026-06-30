@@ -32,7 +32,7 @@ Cross-report synthesis of experiment results and evolution of approaches.
 | &nbsp;&nbsp;↳ [execution-tracks-direct-direction-audit.md](research/execution-tracks-direct-direction-audit.md) | §21: Direct Direction Audit + Rebuild + Transformer Encoder | 4 reports (05-15 — 05-21) |
 | &nbsp;&nbsp;↳ [methodology-cycle-candidate-source-v2.md](research/methodology-cycle-candidate-source-v2.md) | Candidate-source v2 methodology cycle: live-safe protocol, Stage 09/10 invalidation | 1 report (05-25) |
 | &nbsp;&nbsp;↳ [limit-order-feature-foundation.md](research/limit-order-feature-foundation.md) | Limit-order entry, feature ablation, direction-only signal, fractal channel ablation, RF GridSearch | 5 reports (05-29 — 06-05) |
-| [fractal-stop-research.md](research/fractal-stop-research.md) | Stage 1—6.2: breach, fav, exit, walk-forward, Transformer, A7-аудит, profile screening, time-to-breach reformulation, price/ATR ablation, outcome-based triple-barrier, H12 relative fractal geometry, H12 price action, and `range_w1_atr` post-mortem. Stage 6.2 remains DIAGNOSTIC_ONLY; next step is Regression Up/Dn target foundation. | 31 report updates (06-10 — 06-30) |
+| [fractal-stop-research.md](research/fractal-stop-research.md) | Stage 1—6.3: breach, fav, exit, walk-forward, Transformer, A7-аудит, profile screening, time-to-breach reformulation, price/ATR ablation, outcome-based triple-barrier, H12/H6 geometry and price-action parity check, and `range_w1_atr` post-mortem. Stage 6.3 confirms NO_ADDITIVE_VALUE on H6; all gates failed. Next step is Regression Up/Dn target foundation. | 32 report updates (06-10 — 06-30) |
 
 ## Concepts
 

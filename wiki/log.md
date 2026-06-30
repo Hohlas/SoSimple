@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-30] ingest | Stage 6.3 H6 feature parity check
+- Добавлен охват `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.3 — H6 feature parity check подтвердил NO_ADDITIVE_VALUE; H6 baseline сильнее H12, price-action на H6 почти проходит gate, но additive delta не достигает порога +0.02 и permutation не пройдена.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 32 report updates.
+- Зафиксировано: H6 feature parity не изменила verdict; следующий шаг — Regression Up/Dn target foundation.
+
 ## [2026-06-30] ingest | Stage 6.2 range_w1_atr post-mortem
 - Добавлен охват `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: `range_w1_atr` доминирует, но evidence strength остаётся `weak`; Stage 6.2 не продвигается.

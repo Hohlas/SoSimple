@@ -282,6 +282,8 @@ The current H12 relative-geometry branch is closed for the tested encoding famil
 
 3. **Archive this Stage 6.1 geometry approach.** The code and report are preserved. Further work on fractal geometry should require a materially new representation or a new source of information, not another variant of nearest/corridor/zones around `fractal0`.
 
+> **Follow-up:** H6 parity for this feature family is reported separately in `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
+
 ## Related Materials
 
 - [Plan](../superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md)

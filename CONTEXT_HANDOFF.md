@@ -4,39 +4,31 @@
 
 ## Текущий этап
 
-Stage 6.2 H12 price-action feature family закрыт как **TRADING_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
+Stage 6.3 H6 feature parity check закрыт как **DIAGNOSTIC_ONLY** (`NO_ADDITIVE_VALUE_CONFIRMED`).
 
-Post-mortem по `range_w1_atr` также завершён. Он не меняет вердикт Stage 6.2 и не продвигает price-action family в candidate.
+H6 parity confirmed: shorter horizon (H6) improves ranking over H12 (AUC 0.665 vs 0.617) but permutation robustness remains weak. Geometry features still fail on H6. Price-action shows a stronger trace on H6 but still fails the delta gate.
+
+Stage 6.3 is a bounded diagnostic — it does not change the standing conclusions from Stage 6.1 and 6.2.
 
 ## Главные артефакты
 
-- `ML/reports/stage6_2_h12_price_action_feature_family.json`
-- `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`
-- `ML/reports/stage6_2_range_w1_postmortem.json`
-- `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`
+- `ML/reports/stage6_3_h6_feature_parity.json`
+- `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`
+- `ML/baseline/benchmark_stage6_3_h6_feature_parity.py`
+- `tests/test_stage6_3_h6_feature_parity.py`
 
 ## Главный вывод
 
-`range_w1_atr` действительно доминирует среди price-action признаков Stage 6.2, но доказательство слабое:
-
-- top/second importance ratio: `7.56`;
-- связь с target на non-zero `val_stop`: `corr=0.202`;
-- связь с PnL почти отсутствует: `corr=0.008`;
-- primary permutation p-value: `0.160` при требовании `<=0.10`;
-- seed p-value range: `0.155..0.350`;
-- 2026 disclosure слабый: `551/1162` zero-vector строк.
-
-Итоговая сила доказательства в JSON: `weak`.
+H6 horizon helps ranking but does not fix the core robustness problem (permutation p-values remain high). No profile or combined profile passes the delta gate. The bounded H6 parity check is complete.
 
 ## Следующий шаг
 
 Proceed to `Regression Up/Dn target foundation`.
 
-Do not reopen H12/ATR/TP/SL search from Stage 6.2 results.
+Do not reopen H6/H12/ATR/TP/SL search from Stage 6.3 results.
 
 ## Запрещённые направления
 
 - Не открывать новый широкий перебор horizon/ATR/TP/SL.
 - Не выбирать профиль, seed или threshold по `diagnostic_holdout` или `low_n_disclosure`.
-- Не делать ещё одну мелкую вариацию тех же OHLC windows без materially new information family.
-- Не утверждать, что price action вообще бесполезен; отвергнута только проверенная Stage 6.2 family.
+- Не использовать H6 parity как аргумент для возобновления geometry или price-action поиска.
