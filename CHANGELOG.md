@@ -1,5 +1,23 @@
 # Changelog SoSimple
 
+## [2026-06-30] — Regression Up/Dn Target Foundation (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/benchmark_regression_updn_target_foundation.py`: bounded regression runner для top-level `up_*/dn_*` с allowlist feature contract, block bootstrap, baseline ladder и JSON checkpointing.
+- Новый тест `tests/test_regression_updn_target_foundation.py`: 22 теста (контракт, профили, feature source contract, метрики, gate, runner, CLI).
+- Новый артефакт `ML/reports/regression_updn_target_foundation.json` и отчёт `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
+
+### Результаты
+- Полный прогон: `75/75` (5 профилей × 5 model families × 3 seed), elapsed `4074.6s`, `xgb_n_jobs=24`.
+- Лучший bounded target-foundation signal: `selected_profile=structure_full`, `selected_horizon=3`.
+- `val_stop` medians for selected point: `up_3` improvement `0.4716`, `dn_3` improvement `0.4780`, `edge_3` Spearman `0.8017`, seed stability `3/3`.
+- Короткие горизонты (`H3/H6`) существенно сильнее `H12/H24/H48`; legacy `H12` не является главным победителем.
+- Structured signal виден уже на `Ridge`, усиливается на tree/forest, и не выглядит артефактом только XGBoost.
+
+### Вывод
+- `research_gate_status = TARGET_FOUNDATION_PASSED`, но `artifact_status = DIAGNOSTIC_ONLY`.
+- Следующий шаг: отдельный узкий confirmatory cycle поверх `structure_full` и короткого horizon (`H3` или `H6`) без нового широкого search.
+<!-- docs/reports/2026-06-30-regression-updn-target-foundation.md -->
+
 ## [2026-06-30] — Stage 6.3: H6 Feature Parity Check (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/benchmark_stage6_3_h6_feature_parity.py`: bounded H6 parity runner, переиспользующий Stage 6.1/6.2 feature builders, с `horizon_bars=6`.

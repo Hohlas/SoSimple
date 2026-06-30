@@ -8,6 +8,12 @@
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 32 report updates.
 - Зафиксировано: H6 feature parity не изменила verdict; следующий шаг — Regression Up/Dn target foundation.
 
+## [2026-06-30] ingest | Regression Up/Dn target foundation
+- Добавлен охват `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target family `up_*/dn_*` получила сильное bounded подтверждение на коротких горизонтах; лучший result дал `structure_full` на `H3`, а не legacy `H12`.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 33 report updates.
+- Зафиксировано: `TARGET_FOUNDATION_PASSED / DIAGNOSTIC_ONLY`; следующий шаг — confirmatory cycle с замороженным trading mapping поверх `structure_full` и `H3/H6`.
+
 ## [2026-06-30] ingest | Stage 6.2 range_w1_atr post-mortem
 - Добавлен охват `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: `range_w1_atr` доминирует, но evidence strength остаётся `weak`; Stage 6.2 не продвигается.
