@@ -2,6 +2,19 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-30] — Stage 6.2: range_w1_atr post-mortem (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`: bounded post-mortem без переобучения, с разрезами по seed, BUY/SELL, годам, selected rows, activity proxy и zero-vector disclosure.
+- Новый артефакт `ML/reports/stage6_2_range_w1_postmortem.json` и отчёт `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
+
+### Результаты
+- `range_w1_atr` доминирует в Stage 6.2: top/second importance ratio `7.56`.
+- На non-zero `val_stop` связь с target умеренная (`corr=0.202`), но связь с PnL почти нулевая (`corr=0.008`).
+- Проверка устойчивости остаётся слабой: primary permutation p-value `0.160`, seed range `0.155..0.350`.
+- 2026 disclosure слабый: `551/1162` zero-vector строк.
+- Stage 6.2 остаётся `DIAGNOSTIC_ONLY`; следующий исследовательский шаг — `Regression Up/Dn target foundation`.
+<!-- docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md -->
+
 ## [2026-06-30] — Stage 6.2: H12 Price Action Feature Family (TRADING_GATE_FAILED)
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/benchmark_stage6_2_price_action.py`: OHLC price-action features, regime add-on, same-run baseline delta, preflight, feature audit, runner, gate, CLI.

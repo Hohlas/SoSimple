@@ -1,0 +1,265 @@
+{
+  "source_stage62_status": "TRADING_GATE_FAILED",
+  "artifact_consistency": {
+    "primary_profile": "h12_price_action_core",
+    "primary_p_value": 0.16,
+    "top_feature_from_stage62_json": "range_w1_atr",
+    "gate_status_from_stage62_json": "TRADING_GATE_FAILED"
+  },
+  "dominance": {
+    "top_feature": "range_w1_atr",
+    "top_to_second_auc_drop_ratio": 7.561135293909447,
+    "range_w1_target_corr": 0.202190339994974,
+    "range_w1_pnl_corr": 0.008055152024203831,
+    "bucket_target_rates": [
+      {
+        "bucket": "q1",
+        "n": 932,
+        "positive_rate": 0.2510729613733906
+      },
+      {
+        "bucket": "q2",
+        "n": 907,
+        "positive_rate": 0.2921719955898567
+      },
+      {
+        "bucket": "q3",
+        "n": 884,
+        "positive_rate": 0.3495475113122172
+      },
+      {
+        "bucket": "q4",
+        "n": 839,
+        "positive_rate": 0.40405244338498214
+      },
+      {
+        "bucket": "q5",
+        "n": 656,
+        "positive_rate": 0.5259146341463414
+      }
+    ],
+    "yearly_range_w1": [
+      {
+        "year": 2021,
+        "n": 2686,
+        "mean": 1.4766429662704468,
+        "median": 1.1815873384475708
+      },
+      {
+        "year": 2022,
+        "n": 2726,
+        "mean": 1.4749977588653564,
+        "median": 1.2071468830108643
+      }
+    ],
+    "zero_vector_rows": 3,
+    "rows": 5415
+  },
+  "stability": {
+    "seed_count": 3,
+    "permutation_p_value_min": 0.155,
+    "permutation_p_value_max": 0.35,
+    "permutation_p_value_spread": 0.19499999999999998,
+    "val_auc_min": 0.6213442837220371,
+    "val_auc_max": 0.6238425675502902,
+    "val_auc_spread": 0.002498283828253123,
+    "pf_min": 1.1796434030029757,
+    "pf_max": 1.3587603797701053,
+    "thresholds": [
+      0.7,
+      0.725,
+      0.725
+    ]
+  },
+  "selected_trade_analysis": {
+    "seed_count": 3,
+    "available_seed_count": 3,
+    "per_seed": [
+      {
+        "seed": 42,
+        "threshold": 0.7,
+        "selected_n": 121,
+        "non_selected_n": 5291,
+        "selected_tp_rate": 0.8333333333333334,
+        "non_selected_tp_rate": 0.34609826589595377,
+        "selected_mean_pnl_r": 0.05850896290398098,
+        "non_selected_mean_pnl_r": -0.03421821160290466,
+        "selected_bucket_target_rates": [
+          {
+            "bucket": "q5",
+            "n": 66,
+            "positive_rate": 0.8333333333333334
+          }
+        ]
+      },
+      {
+        "seed": 77,
+        "threshold": 0.725,
+        "selected_n": 91,
+        "non_selected_n": 5321,
+        "selected_tp_rate": 0.82,
+        "non_selected_tp_rate": 0.3481285988483685,
+        "selected_mean_pnl_r": 0.035941679495706806,
+        "non_selected_mean_pnl_r": -0.03330946549778166,
+        "selected_bucket_target_rates": [
+          {
+            "bucket": "q5",
+            "n": 50,
+            "positive_rate": 0.82
+          }
+        ]
+      },
+      {
+        "seed": 123,
+        "threshold": 0.725,
+        "selected_n": 86,
+        "non_selected_n": 5326,
+        "selected_tp_rate": 0.8666666666666667,
+        "non_selected_tp_rate": 0.34819075005990896,
+        "selected_mean_pnl_r": 0.06110413938032343,
+        "non_selected_mean_pnl_r": -0.033650756490104156,
+        "selected_bucket_target_rates": [
+          {
+            "bucket": "q5",
+            "n": 45,
+            "positive_rate": 0.8666666666666667
+          }
+        ]
+      }
+    ]
+  },
+  "side_analysis": [
+    {
+      "side": "buy",
+      "n": 2580,
+      "tp_rate": 0.3568922305764411,
+      "mean_pnl_r": -0.03604053190054829,
+      "range_w1_target_corr": 0.1986354238217369,
+      "range_w1_pnl_corr": 0.008968795260947519
+    },
+    {
+      "side": "sell",
+      "n": 2832,
+      "tp_rate": 0.3508771929824561,
+      "mean_pnl_r": -0.028596186714750112,
+      "range_w1_target_corr": 0.2052605438910768,
+      "range_w1_pnl_corr": 0.007310528838382717
+    }
+  ],
+  "year_side_matrix": [
+    {
+      "year": 2021,
+      "side": "buy",
+      "n": 1290,
+      "tp_rate": 0.3563563563563564,
+      "mean_pnl_r": -0.041428331502594305,
+      "range_w1_target_corr": 0.18580936511772367,
+      "range_w1_pnl_corr": 0.004287574808342012
+    },
+    {
+      "year": 2021,
+      "side": "sell",
+      "n": 1396,
+      "tp_rate": 0.34386281588447654,
+      "mean_pnl_r": -0.04243270634475069,
+      "range_w1_target_corr": 0.21479875118392203,
+      "range_w1_pnl_corr": 0.016396793088989288
+    },
+    {
+      "year": 2022,
+      "side": "buy",
+      "n": 1290,
+      "tp_rate": 0.357429718875502,
+      "mean_pnl_r": -0.030652732298502273,
+      "range_w1_target_corr": 0.21451876177480902,
+      "range_w1_pnl_corr": 0.014522466139273035
+    },
+    {
+      "year": 2022,
+      "side": "sell",
+      "n": 1436,
+      "tp_rate": 0.357847533632287,
+      "mean_pnl_r": -0.015145085458844252,
+      "range_w1_target_corr": 0.19642617990446715,
+      "range_w1_pnl_corr": -0.0021351211054220446
+    }
+  ],
+  "activity_proxy_checks": {
+    "range_w1_vs_atr_corr": -0.05920375836345099,
+    "range_w1_vs_bar_range_1_corr": 0.8462004381696618,
+    "range_w1_by_year": [
+      {
+        "year": 2021,
+        "n": 2686,
+        "mean": 1.4766429662704468,
+        "median": 1.1815873384475708
+      },
+      {
+        "year": 2022,
+        "n": 2726,
+        "mean": 1.4749977588653564,
+        "median": 1.2071468830108643
+      }
+    ],
+    "zero_vector_share": 0.000554016620498615
+  },
+  "permutation_context": {
+    "primary_p_value": 0.16,
+    "required_p_value": 0.1,
+    "observed_pf_median": 1.306892558717911,
+    "observed_pf_min": 1.1796434030029757,
+    "observed_pf_max": 1.3587603797701053,
+    "per_seed": [
+      {
+        "seed": 42,
+        "observed_pf": 1.306892558717911,
+        "permuted_pf_median": 1.0893281533128962,
+        "permuted_pf_p95": 1.5038865609794148,
+        "observed_minus_permuted_p95": -0.19699400226150376,
+        "empirical_p_value": 0.16
+      },
+      {
+        "seed": 77,
+        "observed_pf": 1.1796434030029757,
+        "permuted_pf_median": 1.0932571718159083,
+        "permuted_pf_p95": 1.5322003995098472,
+        "observed_minus_permuted_p95": -0.35255699650687156,
+        "empirical_p_value": 0.35
+      },
+      {
+        "seed": 123,
+        "observed_pf": 1.3587603797701053,
+        "permuted_pf_median": 1.0947533089368586,
+        "permuted_pf_p95": 1.5671910720363178,
+        "observed_minus_permuted_p95": -0.20843069226621247,
+        "empirical_p_value": 0.155
+      }
+    ]
+  },
+  "split_disclosure": {
+    "val_stop": {
+      "rows": 5415,
+      "zero_vector_rows": 3,
+      "zero_vector_share": 0.000554016620498615,
+      "range_w1_target_corr_non_zero": 0.202190339994974
+    },
+    "diagnostic_holdout": {
+      "rows": 8091,
+      "zero_vector_rows": 48,
+      "zero_vector_share": 0.005932517612161661,
+      "range_w1_target_corr_non_zero": 0.1913958311289135
+    },
+    "low_n_disclosure": {
+      "rows": 1162,
+      "zero_vector_rows": 551,
+      "zero_vector_share": 0.47418244406196214,
+      "range_w1_target_corr_non_zero": 0.17718608025878427
+    }
+  },
+  "verdict": {
+    "artifact_status": "DIAGNOSTIC_ONLY",
+    "promote_stage6_2": false,
+    "next_research_step": "Regression Up/Dn target foundation"
+  },
+  "evidence_strength": "weak"
+}

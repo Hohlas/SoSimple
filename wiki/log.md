@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-06-30] ingest | Stage 6.2 range_w1_atr post-mortem
+- Добавлен охват `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: `range_w1_atr` доминирует, но evidence strength остаётся `weak`; Stage 6.2 не продвигается.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 31 report updates.
+- Следующее направление зафиксировано как `Regression Up/Dn target foundation`; H12 OHLC-window variations не переоткрывать.
+
 ## [2026-06-29] ingest | Stage 6.1: H12 Relative Fractal Geometry
 - Добавлен охват `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 MODEL_GATE_FAILED — текущие H12 geometry-only профили вокруг fractal0 не предсказывают TP/SL touch (AUC 0.51–0.55)
