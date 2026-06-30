@@ -569,6 +569,30 @@ def _stage62_median(values) -> float | None:
     return float(np.median(vals)) if vals else None
 
 
+def _stage62_min(values) -> float | None:
+    vals = [v for v in values if v is not None and np.isfinite(v)]
+    return float(np.min(vals)) if vals else None
+
+
+def _stage62_max(values) -> float | None:
+    vals = [v for v in values if v is not None and np.isfinite(v)]
+    return float(np.max(vals)) if vals else None
+
+
+def _stage62_median_selected(selected: list[dict]) -> dict | None:
+    if not selected:
+        return None
+    ranked = sorted(
+        selected,
+        key=lambda row: (
+            float(row.get("pf")) if row.get("pf") is not None and np.isfinite(row.get("pf")) else -1e9,
+            int(row.get("trades", 0)),
+            float(row.get("threshold", 0.0)),
+        ),
+    )
+    return ranked[len(ranked) // 2]
+
+
 def stage62_baseline_delta_summary(report: dict) -> dict:
     summary = report.get("summary", {})
     baseline = summary.get("h12_clock_shift_back", {})
@@ -687,11 +711,49 @@ def stage62_summary(report: dict, split: dict[str, pd.DataFrame]) -> dict:
             for r in runs
             if r["threshold_selection"].get("status") == "SELECTED" and r["threshold_selection"].get("selected")
         ]
+        seed_rows = []
+        permutation_rows = []
+        for run in runs:
+            val_scores = run.get("predictions", {}).get("val_stop", {}).get("y_score_all", [])
+            perm = None
+            if val_scores and "_year" in split["val_stop"].columns:
+                perm = stage6_permutation_threshold_baseline(
+                    split["val_stop"].copy(),
+                    np.asarray(val_scores),
+                    seed=int(run["seed"]),
+                )
+                permutation_rows.append(perm)
+            threshold = run.get("threshold_selection", {}) or {}
+            seed_rows.append({
+                "seed": int(run["seed"]),
+                "val_auc": run["val_stop"].get("auc"),
+                "val_pr_auc_lift": run["val_stop"].get("pr_auc_lift"),
+                "threshold_status": threshold.get("status"),
+                "threshold": (threshold.get("selected") or {}).get("threshold"),
+                "pf": (threshold.get("selected") or {}).get("pf"),
+                "trades": (threshold.get("selected") or {}).get("trades"),
+                "trades_per_year": (threshold.get("selected") or {}).get("trades_per_year"),
+                "pf_spread_020": (threshold.get("selected") or {}).get("pf_spread_020"),
+                "permutation_p_value": None if perm is None else perm.get("empirical_p_value"),
+            })
         best_run = max(runs, key=lambda r: r["val_stop"].get("auc") or 0.0)
-        val_scores = best_run.get("predictions", {}).get("val_stop", {}).get("y_score_all", [])
+        p_values = [row.get("empirical_p_value") for row in permutation_rows]
+        observed_pfs = [row.get("observed_pf") for row in permutation_rows]
         perm = None
-        if val_scores and "_year" in split["val_stop"].columns:
-            perm = stage6_permutation_threshold_baseline(split["val_stop"].copy(), np.asarray(val_scores), seed=42)
+        if permutation_rows:
+            perm = {
+                "n_seed": int(len(permutation_rows)),
+                "n_perm_per_seed": int(permutation_rows[0].get("n_perm", 0)),
+                "empirical_p_value": _stage62_median(p_values),
+                "empirical_p_value_min": _stage62_min(p_values),
+                "empirical_p_value_max": _stage62_max(p_values),
+                "observed_pf_median": _stage62_median(observed_pfs),
+                "observed_pf_min": _stage62_min(observed_pfs),
+                "observed_pf_max": _stage62_max(observed_pfs),
+                "per_seed": permutation_rows,
+                "aggregation": "median_over_seeds",
+            }
+        selected_median = _stage62_median_selected(selected)
         summary[profile] = {
             "val_stop": {
                 "auc_median": _stage62_median(aucs),
@@ -699,9 +761,10 @@ def stage62_summary(report: dict, split: dict[str, pd.DataFrame]) -> dict:
             },
             "threshold_selection": {
                 "status": "SELECTED" if selected else "NO_THRESHOLD",
-                "selected": selected[len(selected) // 2] if selected else None,
+                "selected": selected_median,
                 "n_selected": len(selected),
                 "val_pf_median": _stage62_median([s.get("pf") for s in selected]),
+                "selected_rule": "median_pf_over_selected_seeds",
             },
             "diagnostic_holdout": {
                 "auc_median": _stage62_median([r.get("diagnostic_holdout", {}).get("auc") for r in runs]),
@@ -716,7 +779,9 @@ def stage62_summary(report: dict, split: dict[str, pd.DataFrame]) -> dict:
                 ]),
             },
             "permutation_baseline": perm,
+            "seed_runs": seed_rows,
             "top_feature_importance": best_run.get("feature_importance", []),
+            "top_feature_importance_rule": "best_seed_by_val_auc",
         }
     return summary
 

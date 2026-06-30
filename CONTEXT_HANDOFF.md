@@ -28,7 +28,7 @@ Primary `h12_price_action_core`:
 - PR AUC lift `0.1402`
 - selected PF `1.307`
 - trades/year and spread 0.20 PF checks passed
-- permutation p-value `0.150` > required `0.10`
+- median permutation p-value `0.160` > required `0.10`
 - итог primary gate: trading/permutation gate failed
 
 Same-run baseline `h12_clock_shift_back`:
@@ -39,8 +39,8 @@ Same-run baseline `h12_clock_shift_back`:
 
 Combined delta:
 
-- `h12_clock_shift_back_plus_price_action_core`: AUC delta `+0.0098`, PF delta `+0.0766`, permutation p-value `0.205`
-- `h12_clock_shift_back_plus_price_action_regime`: AUC delta `+0.0101`, PF delta `+0.0007`, permutation p-value `0.205`
+- `h12_clock_shift_back_plus_price_action_core`: AUC delta `+0.0098`, PF delta `+0.0766`, median permutation p-value `0.185`
+- `h12_clock_shift_back_plus_price_action_regime`: AUC delta `+0.0101`, PF delta `+0.0007`, median permutation p-value `0.255`
 - оба ниже required AUC delta `+0.020`; delta gate FAIL
 
 ## Методический статус
@@ -55,8 +55,9 @@ Feature contract:
 
 Warnings:
 
-- Data smoke-check failed on existing missing column `target_buy_H6_val`; this reinforces `DIAGNOSTIC_ONLY`.
+- Legacy data smoke-check failed on unused historical target column `target_buy_H6_val`; Stage 6.2-specific checks passed, but global data-contract debt remains.
 - Missing exact OHLC rows: val `3`, holdout `48`, 2026 `551`; missing rows get all-zero price-action features by explicit diagnostic contract.
+- 2026 disclosure is weak for price-action profiles because `551/1162` rows have zero-vector price-action features.
 - `volume` is treated as source volume, not exchange volume.
 
 ## Правильное направление дальше

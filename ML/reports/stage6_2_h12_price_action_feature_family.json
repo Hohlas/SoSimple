@@ -303620,44 +303620,45 @@
         "status": "SELECTED",
         "selected": {
           "threshold": 0.7,
-          "trades": 54,
-          "wins": 24,
+          "trades": 50,
+          "wins": 23,
           "losses": 3,
-          "timeouts": 27,
-          "pf": 1.29666479815413,
-          "pf_spread_020": 1.2372264105515407,
-          "pf_spread_040": 1.1799712257508992,
-          "mean_pnl_r": 0.04588225737615787,
-          "total_pnl_r": 2.477641898312525,
-          "trades_per_year": 27.0,
+          "timeouts": 24,
+          "pf": 1.2491459872008652,
+          "pf_spread_020": 1.1951042995995733,
+          "pf_spread_040": 1.1428658823989988,
+          "mean_pnl_r": 0.04042605949704882,
+          "total_pnl_r": 2.021302974852441,
+          "trades_per_year": 25.0,
           "by_side": {
             "buy": {
-              "trades": 24,
-              "pf": 1.5981402391223942,
-              "pf_spread_020": 1.5306589645106523,
-              "pf_spread_040": 1.4656573232439964
+              "trades": 20,
+              "pf": 1.3853845226462722,
+              "pf_spread_020": 1.3310516866666506,
+              "pf_spread_040": 1.278582458479167
             },
             "sell": {
               "trades": 30,
-              "pf": 1.0870334215540043,
-              "pf_spread_020": 1.0337648130225727,
-              "pf_spread_040": 0.9827682620082868
+              "pf": 1.1578987871391933,
+              "pf_spread_020": 1.1042065037382858,
+              "pf_spread_040": 1.0524338553914032
             }
           },
           "yearly": {
             "2021": {
-              "trades": 21,
-              "pf": 0.912457128348016
+              "trades": 20,
+              "pf": 0.9320132574612178
             },
             "2022": {
-              "trades": 33,
-              "pf": 1.5372134143108038
+              "trades": 30,
+              "pf": 1.4502387048291725
             }
           },
           "passes_min_trades": true
         },
         "n_selected": 3,
-        "val_pf_median": 1.2491459872008652
+        "val_pf_median": 1.2491459872008652,
+        "selected_rule": "median_pf_over_selected_seeds"
       },
       "diagnostic_holdout": {
         "auc_median": 0.6104551382459886,
@@ -303668,14 +303669,82 @@
         "pr_auc_lift_median": 0.12733333734586083
       },
       "permutation_baseline": {
-        "n_perm": 200,
-        "observed_pf": 1.2491459872008652,
-        "permuted_pf_median": 1.0809109766532066,
-        "permuted_pf_p95": 1.6051067376590522,
+        "n_seed": 3,
+        "n_perm_per_seed": 200,
         "empirical_p_value": 0.225,
-        "score_std": 0.0943888493935348
+        "empirical_p_value_min": 0.205,
+        "empirical_p_value_max": 0.39,
+        "observed_pf_median": 1.2491459872008652,
+        "observed_pf_min": 1.1433537854875435,
+        "observed_pf_max": 1.29666479815413,
+        "per_seed": [
+          {
+            "n_perm": 200,
+            "observed_pf": 1.2491459872008652,
+            "permuted_pf_median": 1.0809109766532066,
+            "permuted_pf_p95": 1.6051067376590522,
+            "empirical_p_value": 0.225,
+            "score_std": 0.0943888493935348
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.29666479815413,
+            "permuted_pf_median": 1.085233558845511,
+            "permuted_pf_p95": 1.617264639269887,
+            "empirical_p_value": 0.205,
+            "score_std": 0.09929571365338949
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.1433537854875435,
+            "permuted_pf_median": 1.0924097798130374,
+            "permuted_pf_p95": 1.5214699813454524,
+            "empirical_p_value": 0.39,
+            "score_std": 0.09835951290005361
+          }
+        ],
+        "aggregation": "median_over_seeds"
       },
-      "top_feature_importance": []
+      "seed_runs": [
+        {
+          "seed": 42,
+          "val_auc": 0.6196770400807239,
+          "val_pr_auc_lift": 0.13082781069348354,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.2491459872008652,
+          "trades": 50,
+          "trades_per_year": 25.0,
+          "pf_spread_020": 1.1951042995995733,
+          "permutation_p_value": 0.225
+        },
+        {
+          "seed": 77,
+          "val_auc": 0.6144028853321899,
+          "val_pr_auc_lift": 0.12884408449588947,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.29666479815413,
+          "trades": 54,
+          "trades_per_year": 27.0,
+          "pf_spread_020": 1.2372264105515407,
+          "permutation_p_value": 0.205
+        },
+        {
+          "seed": 123,
+          "val_auc": 0.617431510486842,
+          "val_pr_auc_lift": 0.13047363250324356,
+          "threshold_status": "SELECTED",
+          "threshold": 0.6,
+          "pf": 1.1433537854875435,
+          "trades": 166,
+          "trades_per_year": 83.0,
+          "pf_spread_020": 1.0859581555857023,
+          "permutation_p_value": 0.39
+        }
+      ],
+      "top_feature_importance": [],
+      "top_feature_importance_rule": "best_seed_by_val_auc"
     },
     "h12_price_action_core": {
       "val_stop": {
@@ -303685,45 +303754,46 @@
       "threshold_selection": {
         "status": "SELECTED",
         "selected": {
-          "threshold": 0.725,
-          "trades": 91,
-          "wins": 41,
-          "losses": 9,
-          "timeouts": 41,
-          "pf": 1.1796434030029757,
-          "pf_spread_020": 1.1237009897875314,
-          "pf_spread_040": 1.0702323897362878,
-          "mean_pnl_r": 0.035941679495706806,
-          "total_pnl_r": 3.2706928341093193,
-          "trades_per_year": 45.5,
+          "threshold": 0.7,
+          "trades": 121,
+          "wins": 55,
+          "losses": 11,
+          "timeouts": 55,
+          "pf": 1.306892558717911,
+          "pf_spread_020": 1.2409527504140652,
+          "pf_spread_040": 1.1782661069735032,
+          "mean_pnl_r": 0.05850896290398098,
+          "total_pnl_r": 7.079584511381698,
+          "trades_per_year": 60.5,
           "by_side": {
             "buy": {
-              "trades": 31,
-              "pf": 0.6544098812539336,
-              "pf_spread_020": 0.6235701489091167,
-              "pf_spread_040": 0.5940339113692064
+              "trades": 50,
+              "pf": 1.108368454708621,
+              "pf_spread_020": 1.0542513256812502,
+              "pf_spread_040": 1.0026124446530884
             },
             "sell": {
-              "trades": 60,
-              "pf": 1.5522284733865932,
-              "pf_spread_020": 1.4778468052268434,
-              "pf_spread_040": 1.4068570878611788
+              "trades": 71,
+              "pf": 1.451890347314985,
+              "pf_spread_020": 1.3768672121758363,
+              "pf_spread_040": 1.3057381706464508
             }
           },
           "yearly": {
             "2021": {
-              "trades": 47,
-              "pf": 1.71748530418016
+              "trades": 59,
+              "pf": 1.9024218136035411
             },
             "2022": {
-              "trades": 44,
-              "pf": 0.8200763046301851
+              "trades": 62,
+              "pf": 0.957046337515805
             }
           },
           "passes_min_trades": true
         },
         "n_selected": 3,
-        "val_pf_median": 1.306892558717911
+        "val_pf_median": 1.306892558717911,
+        "selected_rule": "median_pf_over_selected_seeds"
       },
       "diagnostic_holdout": {
         "auc_median": 0.6050327368854714,
@@ -303734,13 +303804,80 @@
         "pr_auc_lift_median": 0.1465755352122945
       },
       "permutation_baseline": {
-        "n_perm": 200,
-        "observed_pf": 1.3587603797701053,
-        "permuted_pf_median": 1.077813531324196,
-        "permuted_pf_p95": 1.501127292564909,
-        "empirical_p_value": 0.15,
-        "score_std": 0.11358400570441345
+        "n_seed": 3,
+        "n_perm_per_seed": 200,
+        "empirical_p_value": 0.16,
+        "empirical_p_value_min": 0.155,
+        "empirical_p_value_max": 0.35,
+        "observed_pf_median": 1.306892558717911,
+        "observed_pf_min": 1.1796434030029757,
+        "observed_pf_max": 1.3587603797701053,
+        "per_seed": [
+          {
+            "n_perm": 200,
+            "observed_pf": 1.306892558717911,
+            "permuted_pf_median": 1.0893281533128962,
+            "permuted_pf_p95": 1.5038865609794148,
+            "empirical_p_value": 0.16,
+            "score_std": 0.11556733216862423
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.1796434030029757,
+            "permuted_pf_median": 1.0932571718159083,
+            "permuted_pf_p95": 1.5322003995098472,
+            "empirical_p_value": 0.35,
+            "score_std": 0.11428975680724868
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.3587603797701053,
+            "permuted_pf_median": 1.0947533089368586,
+            "permuted_pf_p95": 1.5671910720363178,
+            "empirical_p_value": 0.155,
+            "score_std": 0.11358400570441345
+          }
+        ],
+        "aggregation": "median_over_seeds"
       },
+      "seed_runs": [
+        {
+          "seed": 42,
+          "val_auc": 0.6232941547878733,
+          "val_pr_auc_lift": 0.1401660334780121,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.306892558717911,
+          "trades": 121,
+          "trades_per_year": 60.5,
+          "pf_spread_020": 1.2409527504140652,
+          "permutation_p_value": 0.16
+        },
+        {
+          "seed": 77,
+          "val_auc": 0.6213442837220371,
+          "val_pr_auc_lift": 0.13794786296733458,
+          "threshold_status": "SELECTED",
+          "threshold": 0.725,
+          "pf": 1.1796434030029757,
+          "trades": 91,
+          "trades_per_year": 45.5,
+          "pf_spread_020": 1.1237009897875314,
+          "permutation_p_value": 0.35
+        },
+        {
+          "seed": 123,
+          "val_auc": 0.6238425675502902,
+          "val_pr_auc_lift": 0.14193916521979077,
+          "threshold_status": "SELECTED",
+          "threshold": 0.725,
+          "pf": 1.3587603797701053,
+          "trades": 86,
+          "trades_per_year": 43.0,
+          "pf_spread_020": 1.289002328850005,
+          "permutation_p_value": 0.155
+        }
+      ],
       "top_feature_importance": [
         {
           "feature": "range_w1_atr",
@@ -303802,7 +303939,8 @@
           "baseline_auc": 0.6238425675502902,
           "permuted_auc": 0.6226948469607533
         }
-      ]
+      ],
+      "top_feature_importance_rule": "best_seed_by_val_auc"
     },
     "h12_price_action_regime": {
       "val_stop": {
@@ -303850,7 +303988,8 @@
           "passes_min_trades": true
         },
         "n_selected": 3,
-        "val_pf_median": 1.2572011083940673
+        "val_pf_median": 1.2572011083940673,
+        "selected_rule": "median_pf_over_selected_seeds"
       },
       "diagnostic_holdout": {
         "auc_median": 0.6063745944218671,
@@ -303861,13 +304000,80 @@
         "pr_auc_lift_median": 0.1366676694203094
       },
       "permutation_baseline": {
-        "n_perm": 200,
-        "observed_pf": 1.2572011083940673,
-        "permuted_pf_median": 1.0815017446370105,
-        "permuted_pf_p95": 1.610851636350511,
-        "empirical_p_value": 0.225,
-        "score_std": 0.11593804324339407
+        "n_seed": 3,
+        "n_perm_per_seed": 200,
+        "empirical_p_value": 0.26,
+        "empirical_p_value_min": 0.105,
+        "empirical_p_value_max": 0.4,
+        "observed_pf_median": 1.2572011083940673,
+        "observed_pf_min": 1.1295212895398423,
+        "observed_pf_max": 1.491221391131166,
+        "per_seed": [
+          {
+            "n_perm": 200,
+            "observed_pf": 1.1295212895398423,
+            "permuted_pf_median": 1.077586169389245,
+            "permuted_pf_p95": 1.4816737050094921,
+            "empirical_p_value": 0.4,
+            "score_std": 0.11337110329231279
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.2572011083940673,
+            "permuted_pf_median": 1.0954778239690333,
+            "permuted_pf_p95": 1.589829823779118,
+            "empirical_p_value": 0.26,
+            "score_std": 0.11593804324339407
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.491221391131166,
+            "permuted_pf_median": 1.0939085164288431,
+            "permuted_pf_p95": 1.6438033552258704,
+            "empirical_p_value": 0.105,
+            "score_std": 0.11746896795253722
+          }
+        ],
+        "aggregation": "median_over_seeds"
       },
+      "seed_runs": [
+        {
+          "seed": 42,
+          "val_auc": 0.6214771763909842,
+          "val_pr_auc_lift": 0.1373284387036517,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.1295212895398423,
+          "trades": 115,
+          "trades_per_year": 57.5,
+          "pf_spread_020": 1.0741327052717413,
+          "permutation_p_value": 0.4
+        },
+        {
+          "seed": 77,
+          "val_auc": 0.6231080312903841,
+          "val_pr_auc_lift": 0.13764139095653039,
+          "threshold_status": "SELECTED",
+          "threshold": 0.75,
+          "pf": 1.2572011083940673,
+          "trades": 82,
+          "trades_per_year": 41.0,
+          "pf_spread_020": 1.1930114489503727,
+          "permutation_p_value": 0.26
+        },
+        {
+          "seed": 123,
+          "val_auc": 0.6225459727497497,
+          "val_pr_auc_lift": 0.1394876824922739,
+          "threshold_status": "SELECTED",
+          "threshold": 0.75,
+          "pf": 1.491221391131166,
+          "trades": 74,
+          "trades_per_year": 37.0,
+          "pf_spread_020": 1.412247220728884,
+          "permutation_p_value": 0.105
+        }
+      ],
       "top_feature_importance": [
         {
           "feature": "range_w1_atr",
@@ -303929,7 +304135,8 @@
           "baseline_auc": 0.6231080312903841,
           "permuted_auc": 0.6214430004779711
         }
-      ]
+      ],
+      "top_feature_importance_rule": "best_seed_by_val_auc"
     },
     "h12_clock_shift_back_plus_price_action_core": {
       "val_stop": {
@@ -303940,44 +304147,45 @@
         "status": "SELECTED",
         "selected": {
           "threshold": 0.7,
-          "trades": 110,
+          "trades": 105,
           "wins": 49,
-          "losses": 9,
-          "timeouts": 52,
-          "pf": 1.2516092047862364,
-          "pf_spread_020": 1.1863273676824662,
-          "pf_spread_040": 1.1242163880715974,
-          "mean_pnl_r": 0.0431951101765777,
-          "total_pnl_r": 4.751462119423547,
-          "trades_per_year": 55.0,
+          "losses": 10,
+          "timeouts": 46,
+          "pf": 1.3257911095808754,
+          "pf_spread_020": 1.260561943709577,
+          "pf_spread_040": 1.1981602472242276,
+          "mean_pnl_r": 0.056844880765625855,
+          "total_pnl_r": 5.968712480390715,
+          "trades_per_year": 52.5,
           "by_side": {
             "buy": {
-              "trades": 41,
-              "pf": 1.0519211840736309,
-              "pf_spread_020": 1.000771353690565,
-              "pf_spread_040": 0.9518619701652147
+              "trades": 44,
+              "pf": 1.2748426698632445,
+              "pf_spread_020": 1.2168952412735956,
+              "pf_spread_040": 1.1611938073426868
             },
             "sell": {
-              "trades": 69,
-              "pf": 1.3899572095255934,
-              "pf_spread_020": 1.314227476128883,
-              "pf_spread_040": 1.2423479558091077
+              "trades": 61,
+              "pf": 1.3646506100963927,
+              "pf_spread_020": 1.2936796172148002,
+              "pf_spread_040": 1.2260219030463482
             }
           },
           "yearly": {
             "2021": {
-              "trades": 45,
-              "pf": 1.4987890569248732
+              "trades": 47,
+              "pf": 1.3799318549286295
             },
             "2022": {
-              "trades": 65,
-              "pf": 1.1343429801682514
+              "trades": 58,
+              "pf": 1.2905988643318325
             }
           },
           "passes_min_trades": true
         },
         "n_selected": 3,
-        "val_pf_median": 1.3257911095808754
+        "val_pf_median": 1.3257911095808754,
+        "selected_rule": "median_pf_over_selected_seeds"
       },
       "diagnostic_holdout": {
         "auc_median": 0.6150132190502134,
@@ -303988,13 +304196,80 @@
         "pr_auc_lift_median": 0.1361276325150068
       },
       "permutation_baseline": {
-        "n_perm": 200,
-        "observed_pf": 1.2516092047862364,
-        "permuted_pf_median": 1.077109972363838,
-        "permuted_pf_p95": 1.5210945935160944,
-        "empirical_p_value": 0.205,
-        "score_std": 0.11375273184143306
+        "n_seed": 3,
+        "n_perm_per_seed": 200,
+        "empirical_p_value": 0.185,
+        "empirical_p_value_min": 0.065,
+        "empirical_p_value_max": 0.285,
+        "observed_pf_median": 1.3257911095808754,
+        "observed_pf_min": 1.2516092047862364,
+        "observed_pf_max": 1.5030964826199331,
+        "per_seed": [
+          {
+            "n_perm": 200,
+            "observed_pf": 1.3257911095808754,
+            "permuted_pf_median": 1.0806410859451678,
+            "permuted_pf_p95": 1.5955676679626603,
+            "empirical_p_value": 0.185,
+            "score_std": 0.11292244124783397
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.2516092047862364,
+            "permuted_pf_median": 1.0949068680059733,
+            "permuted_pf_p95": 1.6133836141083977,
+            "empirical_p_value": 0.285,
+            "score_std": 0.11375273184143306
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.5030964826199331,
+            "permuted_pf_median": 1.098304496123877,
+            "permuted_pf_p95": 1.5235744024291038,
+            "empirical_p_value": 0.065,
+            "score_std": 0.11305847617033662
+          }
+        ],
+        "aggregation": "median_over_seeds"
       },
+      "seed_runs": [
+        {
+          "seed": 42,
+          "val_auc": 0.6264226031129094,
+          "val_pr_auc_lift": 0.14307153137097112,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.3257911095808754,
+          "trades": 105,
+          "trades_per_year": 52.5,
+          "pf_spread_020": 1.260561943709577,
+          "permutation_p_value": 0.185
+        },
+        {
+          "seed": 77,
+          "val_auc": 0.630246986127038,
+          "val_pr_auc_lift": 0.14752175090930242,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.2516092047862364,
+          "trades": 110,
+          "trades_per_year": 55.0,
+          "pf_spread_020": 1.1863273676824662,
+          "permutation_p_value": 0.285
+        },
+        {
+          "seed": 123,
+          "val_auc": 0.6272805660514675,
+          "val_pr_auc_lift": 0.1450699910638904,
+          "threshold_status": "SELECTED",
+          "threshold": 0.7,
+          "pf": 1.5030964826199331,
+          "trades": 107,
+          "trades_per_year": 53.5,
+          "pf_spread_020": 1.4241230910901619,
+          "permutation_p_value": 0.065
+        }
+      ],
       "top_feature_importance": [
         {
           "feature": "baseline.fractal0.back",
@@ -304056,7 +304331,8 @@
           "baseline_auc": 0.630246986127038,
           "permuted_auc": 0.629121762631319
         }
-      ]
+      ],
+      "top_feature_importance_rule": "best_seed_by_val_auc"
     },
     "h12_clock_shift_back_plus_price_action_regime": {
       "val_stop": {
@@ -304104,7 +304380,8 @@
           "passes_min_trades": true
         },
         "n_selected": 3,
-        "val_pf_median": 1.249833626208831
+        "val_pf_median": 1.249833626208831,
+        "selected_rule": "median_pf_over_selected_seeds"
       },
       "diagnostic_holdout": {
         "auc_median": 0.6170259799051706,
@@ -304115,13 +304392,80 @@
         "pr_auc_lift_median": 0.1386101691996532
       },
       "permutation_baseline": {
-        "n_perm": 200,
-        "observed_pf": 1.2899279937482464,
-        "permuted_pf_median": 1.0727788532101505,
-        "permuted_pf_p95": 1.510006094914844,
-        "empirical_p_value": 0.205,
-        "score_std": 0.11064098694968753
+        "n_seed": 3,
+        "n_perm_per_seed": 200,
+        "empirical_p_value": 0.255,
+        "empirical_p_value_min": 0.215,
+        "empirical_p_value_max": 0.54,
+        "observed_pf_median": 1.249833626208831,
+        "observed_pf_min": 1.0477978129151384,
+        "observed_pf_max": 1.2899279937482464,
+        "per_seed": [
+          {
+            "n_perm": 200,
+            "observed_pf": 1.0477978129151384,
+            "permuted_pf_median": 1.0593401264730808,
+            "permuted_pf_p95": 1.4807253888666854,
+            "empirical_p_value": 0.54,
+            "score_std": 0.11669205332738136
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.249833626208831,
+            "permuted_pf_median": 1.0935225164998261,
+            "permuted_pf_p95": 1.5542798058465692,
+            "empirical_p_value": 0.255,
+            "score_std": 0.11466150109725963
+          },
+          {
+            "n_perm": 200,
+            "observed_pf": 1.2899279937482464,
+            "permuted_pf_median": 1.1149388402120057,
+            "permuted_pf_p95": 1.5168723120943757,
+            "empirical_p_value": 0.215,
+            "score_std": 0.11064098694968753
+          }
+        ],
+        "aggregation": "median_over_seeds"
       },
+      "seed_runs": [
+        {
+          "seed": 42,
+          "val_auc": 0.6274843921801576,
+          "val_pr_auc_lift": 0.1442066186116036,
+          "threshold_status": "SELECTED",
+          "threshold": 0.5,
+          "pf": 1.0477978129151384,
+          "trades": 631,
+          "trades_per_year": 315.5,
+          "pf_spread_020": 0.9892844927741083,
+          "permutation_p_value": 0.54
+        },
+        {
+          "seed": 77,
+          "val_auc": 0.6265811891840858,
+          "val_pr_auc_lift": 0.14174514933606702,
+          "threshold_status": "SELECTED",
+          "threshold": 0.725,
+          "pf": 1.249833626208831,
+          "trades": 86,
+          "trades_per_year": 43.0,
+          "pf_spread_020": 1.1860354557572585,
+          "permutation_p_value": 0.255
+        },
+        {
+          "seed": 123,
+          "val_auc": 0.627905444345878,
+          "val_pr_auc_lift": 0.141868099756845,
+          "threshold_status": "SELECTED",
+          "threshold": 0.75,
+          "pf": 1.2899279937482464,
+          "trades": 56,
+          "trades_per_year": 28.0,
+          "pf_spread_020": 1.2211481041232355,
+          "permutation_p_value": 0.215
+        }
+      ],
       "top_feature_importance": [
         {
           "feature": "baseline.fractal0.back",
@@ -304183,7 +304527,8 @@
           "baseline_auc": 0.627905444345878,
           "permuted_auc": 0.6266458529619452
         }
-      ]
+      ],
+      "top_feature_importance_rule": "best_seed_by_val_auc"
     }
   },
   "baseline_plus_price_action_delta": {
@@ -304193,14 +304538,14 @@
         "auc_delta_vs_baseline": 0.009849055564625564,
         "pr_auc_lift_delta_vs_baseline": 0.014596358560646838,
         "pf_delta_vs_baseline": 0.0766451223800102,
-        "permutation_p_value": 0.205,
+        "permutation_p_value": 0.185,
         "passes_delta_gate": false
       },
       "h12_clock_shift_back_plus_price_action_regime": {
         "auc_delta_vs_baseline": 0.01005288169331564,
         "pr_auc_lift_delta_vs_baseline": 0.011394467253601437,
         "pf_delta_vs_baseline": 0.0006876390079657568,
-        "permutation_p_value": 0.205,
+        "permutation_p_value": 0.255,
         "passes_delta_gate": false
       }
     },

@@ -653,3 +653,7 @@
 - Added `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 6.2 OHLC price-action result, primary `h12_price_action_core` weak standalone signal, failed permutation gate, failed additive delta gate, and narrow rejection scope.
 - Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 6.2, 30 report updates.
+
+### 2026-06-30: Review-fix Stage 6.2 summary aggregation
+- Updated `ML/baseline/benchmark_stage6_2_price_action.py`: Stage 6.2 summary now stores per-seed rows, aggregates permutation p-values by median/min/max over seeds, and selects the representative threshold row by median PF.
+- Updated Stage 6.2 report/handoff/wiki wording: clarified row-time zero-vector contract, legacy smoke-check scope, top-importance selection rule, per-seed metrics, and weak validation ranking interpretation.

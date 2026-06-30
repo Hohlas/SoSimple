@@ -245,6 +245,59 @@ def test_stage62_delta_gate_requires_auc_and_pf_improvement():
     assert row["pf_delta_vs_baseline"] < 0.0
 
 
+def test_stage62_summary_aggregates_permutation_and_selected_by_seed_median(monkeypatch):
+    split = {"val_stop": pd.DataFrame({"_year": [2021, 2021], "stage6_pnl_r": [1.0, -1.0]})}
+    report = {
+        "raw_runs": [
+            {
+                "profile": "h12_price_action_core",
+                "seed": 42,
+                "val_stop": {"auc": 0.61, "pr_auc_lift": 0.06},
+                "threshold_selection": {"status": "SELECTED", "selected": {"threshold": 0.5, "pf": 1.1, "trades": 10}},
+                "predictions": {"val_stop": {"y_score_all": [0.1, 0.2]}},
+                "feature_importance": [{"feature": "range_w1_atr", "auc_drop": 0.01}],
+            },
+            {
+                "profile": "h12_price_action_core",
+                "seed": 77,
+                "val_stop": {"auc": 0.63, "pr_auc_lift": 0.08},
+                "threshold_selection": {"status": "SELECTED", "selected": {"threshold": 0.6, "pf": 1.3, "trades": 20}},
+                "predictions": {"val_stop": {"y_score_all": [0.2, 0.3]}},
+                "feature_importance": [{"feature": "body_1_atr", "auc_drop": 0.02}],
+            },
+            {
+                "profile": "h12_price_action_core",
+                "seed": 123,
+                "val_stop": {"auc": 0.62, "pr_auc_lift": 0.07},
+                "threshold_selection": {"status": "SELECTED", "selected": {"threshold": 0.7, "pf": 1.2, "trades": 30}},
+                "predictions": {"val_stop": {"y_score_all": [0.3, 0.4]}},
+                "feature_importance": [{"feature": "close_pos_w1", "auc_drop": 0.03}],
+            },
+        ]
+    }
+    p_values = {42: 0.30, 77: 0.10, 123: 0.20}
+    monkeypatch.setattr(
+        s62,
+        "stage6_permutation_threshold_baseline",
+        lambda df, score, seed: {
+            "n_perm": 200,
+            "observed_pf": 1.0 + seed / 1000.0,
+            "empirical_p_value": p_values[seed],
+        },
+    )
+
+    summary = s62.stage62_summary(report, split)["h12_price_action_core"]
+
+    assert summary["val_stop"]["auc_median"] == 0.62
+    assert summary["threshold_selection"]["selected"]["pf"] == 1.2
+    assert summary["threshold_selection"]["selected_rule"] == "median_pf_over_selected_seeds"
+    assert summary["permutation_baseline"]["empirical_p_value"] == 0.20
+    assert summary["permutation_baseline"]["empirical_p_value_min"] == 0.10
+    assert summary["permutation_baseline"]["empirical_p_value_max"] == 0.30
+    assert len(summary["seed_runs"]) == 3
+    assert summary["top_feature_importance_rule"] == "best_seed_by_val_auc"
+
+
 def _fake_split():
     base = pd.DataFrame({
         "time": ["2021.01.02 00:00", "2021.01.02 01:00", "2021.01.02 02:00", "2021.01.02 03:00"],

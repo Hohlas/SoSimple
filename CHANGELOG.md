@@ -10,10 +10,10 @@
 
 ### Результаты
 - Полный прогон: `15/15` (5 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `1341s`.
-- Primary `h12_price_action_core`: median val AUC `0.6233`, PR AUC lift `0.1402`, selected PF `1.307`, но permutation p-value `0.150` > `0.10`.
+- Primary `h12_price_action_core`: median val AUC `0.6233`, PR AUC lift `0.1402`, selected PF `1.307`, но median permutation p-value `0.160` > `0.10`.
 - Same-run baseline `h12_clock_shift_back`: median val AUC `0.6174`, selected PF `1.249`.
-- Combined profiles дали AUC delta около `+0.010`, ниже required `+0.020`, и permutation p-value `0.205`; delta gate FAIL.
-- Итог: price-action family содержит диагностический сигнал, но не доказала robust standalone/additive trading value поверх baseline.
+- Combined profiles дали AUC delta около `+0.010`, ниже required `+0.020`, и median permutation p-value `0.185`/`0.255`; delta gate FAIL.
+- Итог: price-action family показывает слабый validation ranking trace, но не доказала robust standalone/additive trading value поверх baseline.
 <!-- docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md -->
 
 ## [2026-06-29] — Stage 6.1: H12 Relative Fractal Geometry (MODEL_GATE_FAILED)

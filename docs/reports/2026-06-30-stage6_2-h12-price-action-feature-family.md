@@ -84,7 +84,7 @@ Observed:
 
 - focused Stage 6.2 tests: `17 passed in 1.42s`
 - full suite: `934 passed, 30 warnings in 161.39s`
-- smoke-check data contract: failed on existing missing column `target_buy_H6_val`; this keeps the result diagnostic-only and does not change the Stage 6.2 gate, which was already capped at `DIAGNOSTIC_ONLY`
+- legacy data smoke-check failed on an unused historical target column `target_buy_H6_val`; Stage 6.2-specific checks passed, but global data-contract debt remains
 - benchmark: `done_runs == total_runs == 15`
 - runtime: `started_at=2026-06-30T06:47:04.551186+00:00`, `finished_at=2026-06-30T07:09:25.966096+00:00`, `elapsed_sec=1341.4`
 - `config.xgb_n_jobs == 24`; top-level and per-run `elapsed_sec` present; runner writes initial checkpoint, checkpoint after preflight, checkpoint after every run, and supports `--resume` / `--no-resume`
@@ -102,8 +102,8 @@ Input files:
 
 Row-time contract:
 
-- `row.time` is matched to a closed OHLC bar.
-- Features use only bars at or before `row.time`.
+- For rows with exact OHLC match, features use the closed OHLC bar at `row.time`.
+- Rows without exact OHLC match receive a zero-vector for price-action features and are disclosed separately.
 - Unit tests mutate future bars and `Open[row+1]`; feature vectors do not change.
 
 OHLC coverage and feature audit:
@@ -121,22 +121,44 @@ The warnings are missing exact OHLC rows. Missing rows receive all-zero price-ac
 
 All-profile validation summary:
 
+Aggregation rule: AUC, PR lift, selected PF and permutation p-value are medians over the three seeds. The `selected` threshold stored in JSON is the selected seed row with median PF among selected seeds. Top feature importance is reported separately from the best validation-AUC seed and is not used for gate selection.
+
 | Profile | Val AUC med | PR AUC lift med | Threshold | Selected PF med | Permutation p-value |
 |---|---:|---:|---|---:|---:|
 | `h12_clock_shift_back` | 0.6174 | 0.1305 | SELECTED | 1.249 | 0.225 |
-| `h12_price_action_core` | 0.6233 | 0.1402 | SELECTED | 1.307 | 0.150 |
-| `h12_price_action_regime` | 0.6225 | 0.1376 | SELECTED | 1.257 | 0.225 |
-| `h12_clock_shift_back_plus_price_action_core` | 0.6273 | 0.1451 | SELECTED | 1.326 | 0.205 |
-| `h12_clock_shift_back_plus_price_action_regime` | 0.6275 | 0.1419 | SELECTED | 1.250 | 0.205 |
+| `h12_price_action_core` | 0.6233 | 0.1402 | SELECTED | 1.307 | 0.160 |
+| `h12_price_action_regime` | 0.6225 | 0.1376 | SELECTED | 1.257 | 0.260 |
+| `h12_clock_shift_back_plus_price_action_core` | 0.6273 | 0.1451 | SELECTED | 1.326 | 0.185 |
+| `h12_clock_shift_back_plus_price_action_regime` | 0.6275 | 0.1419 | SELECTED | 1.250 | 0.255 |
 
-The primary standalone profile `h12_price_action_core` passes AUC, PR lift, threshold, PF, trades/year, and spread 0.20 PF checks. It fails the permutation gate (`0.150 > 0.10`), so the overall result is `TRADING_GATE_FAILED`.
+The primary standalone profile `h12_price_action_core` passes AUC, PR lift, threshold, PF, trades/year, and spread 0.20 PF checks. It fails the median-over-seeds permutation gate (`0.160 > 0.10`), so the overall result is `TRADING_GATE_FAILED`.
+
+Per-seed validation disclosure:
+
+| Profile | Seed | Val AUC | Threshold | PF | Permutation p-value |
+|---|---:|---:|---:|---:|---:|
+| `h12_clock_shift_back` | 42 | 0.6197 | 0.700 | 1.249 | 0.225 |
+| `h12_clock_shift_back` | 77 | 0.6144 | 0.700 | 1.297 | 0.205 |
+| `h12_clock_shift_back` | 123 | 0.6174 | 0.600 | 1.143 | 0.390 |
+| `h12_price_action_core` | 42 | 0.6233 | 0.700 | 1.307 | 0.160 |
+| `h12_price_action_core` | 77 | 0.6213 | 0.725 | 1.180 | 0.350 |
+| `h12_price_action_core` | 123 | 0.6238 | 0.725 | 1.359 | 0.155 |
+| `h12_price_action_regime` | 42 | 0.6215 | 0.700 | 1.130 | 0.400 |
+| `h12_price_action_regime` | 77 | 0.6231 | 0.750 | 1.257 | 0.260 |
+| `h12_price_action_regime` | 123 | 0.6225 | 0.750 | 1.491 | 0.105 |
+| `h12_clock_shift_back_plus_price_action_core` | 42 | 0.6264 | 0.700 | 1.326 | 0.185 |
+| `h12_clock_shift_back_plus_price_action_core` | 77 | 0.6302 | 0.700 | 1.252 | 0.285 |
+| `h12_clock_shift_back_plus_price_action_core` | 123 | 0.6273 | 0.700 | 1.503 | 0.065 |
+| `h12_clock_shift_back_plus_price_action_regime` | 42 | 0.6275 | 0.500 | 1.048 | 0.540 |
+| `h12_clock_shift_back_plus_price_action_regime` | 77 | 0.6266 | 0.725 | 1.250 | 0.255 |
+| `h12_clock_shift_back_plus_price_action_regime` | 123 | 0.6279 | 0.750 | 1.290 | 0.215 |
 
 Baseline-plus-price-action delta, using only the same Stage 6.2 JSON baseline:
 
 | Combined profile | AUC delta | PR lift delta | PF delta | Permutation p-value | Delta gate |
 |---|---:|---:|---:|---:|---|
-| `h12_clock_shift_back_plus_price_action_core` | +0.0098 | +0.0146 | +0.0766 | 0.205 | FAIL |
-| `h12_clock_shift_back_plus_price_action_regime` | +0.0101 | +0.0114 | +0.0007 | 0.205 | FAIL |
+| `h12_clock_shift_back_plus_price_action_core` | +0.0098 | +0.0146 | +0.0766 | 0.185 | FAIL |
+| `h12_clock_shift_back_plus_price_action_regime` | +0.0101 | +0.0114 | +0.0007 | 0.255 | FAIL |
 
 Both combined profiles improve AUC and do not reduce median PF, but the AUC delta is below the required `+0.02` and permutation p-value is above `0.10`.
 
@@ -150,9 +172,11 @@ Diagnostic holdout disclosure:
 | `h12_clock_shift_back_plus_price_action_core` | 0.6150 | 0.1264 | 0.6063 | 0.1361 |
 | `h12_clock_shift_back_plus_price_action_regime` | 0.6170 | 0.1275 | 0.5961 | 0.1386 |
 
-Holdout was disclosure-only. It supports the narrow reading that combined profiles are close to the same-run baseline, not that a production signal is proven.
+Holdout was disclosure-only. It supports the narrow reading that combined profiles are close to the same-run baseline, not that a production signal is proven. The 2026 disclosure is especially weak for price-action profiles because `551/1162` rows have no exact OHLC match and therefore receive zero-vector price-action features.
 
 Top validation permutation feature importance per non-baseline profile:
+
+Rule: choose the seed with the highest `val_stop` AUC for that profile, then report top-5 validation permutation features from that model. This is interpretability disclosure only and is not used for gate selection.
 
 | Profile | Top-5 features by AUC drop |
 |---|---|
@@ -168,7 +192,7 @@ Top validation permutation feature importance per non-baseline profile:
 | Primary AUC >= 0.60 | PASS |
 | Primary PR AUC lift >= 0.05 | PASS |
 | Primary threshold selected | PASS |
-| Primary permutation p-value <= 0.10 | FAIL (`0.150`) |
+| Primary permutation p-value <= 0.10 | FAIL (`0.160`) |
 | Primary selected PF >= 1.15 | PASS |
 | Primary trades/year >= 25 | PASS |
 | Primary spread 0.20 PF >= 1.05 | PASS |
@@ -178,15 +202,15 @@ Overall: `TRADING_GATE_FAILED`, artifact status `DIAGNOSTIC_ONLY`.
 
 ## Conclusions
 
-The tested price-action family contains model signal on `val_stop`: `h12_price_action_core` improves median validation AUC over same-run `h12_clock_shift_back` from `0.6174` to `0.6233`, and combined profiles reach about `0.627`.
+The tested price-action family shows a weak ranking trace on `val_stop`: `h12_price_action_core` improves median validation AUC over same-run `h12_clock_shift_back` from `0.6174` to `0.6233`, and combined profiles reach about `0.627`.
 
-The signal is not strong enough for the predeclared Stage 6.2 gates. The primary standalone profile fails permutation (`p=0.150`), and combined profiles fail the additive delta gate because AUC delta is only about `+0.010`, below the required `+0.020`, with permutation `p=0.205`.
+The signal is not strong enough for the predeclared Stage 6.2 gates. The primary standalone profile fails median-over-seeds permutation (`p=0.160`), and combined profiles fail the additive delta gate because AUC delta is only about `+0.010`, below the required `+0.020`, with median permutation p-values `0.185` and `0.255`.
 
-Narrow verdict: recent OHLC price action, as encoded here, is a useful diagnostic signal but did not prove robust standalone or additive trading value over `h12_clock_shift_back`. This rejects only this fixed feature family, not every possible OHLC-derived representation.
+Narrow verdict: recent OHLC price action, as encoded here, has a weak validation ranking trace but did not prove robust standalone or additive trading value over `h12_clock_shift_back`. This rejects only this fixed feature family, not every possible OHLC-derived representation.
 
 ## Limitations / Open Questions
 
-- The data smoke-check failed on an existing missing `target_buy_H6_val` column; this reinforces `DIAGNOSTIC_ONLY`.
+- The legacy data smoke-check failed on an unused historical target column `target_buy_H6_val`; Stage 6.2-specific checks passed, but global data-contract debt remains.
 - Missing exact OHLC rows create all-zero price-action rows, especially in the 2026 low-N disclosure split.
 - `source_volume_to_source_volume_mean_24` uses source volume only; no claim is made about exchange volume.
 - Early stopping and threshold selection both use `val_stop`; this is acceptable only because the stage is exploratory and diagnostic.
