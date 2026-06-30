@@ -1,84 +1,90 @@
 # Context Handoff
 
-**Дата:** 2026-06-29
+**Дата:** 2026-06-30
 
 ## Текущий этап
 
-Stage 6.1 завершён. Вердикт: **MODEL_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
+Stage 6.2 завершён. Вердикт: **TRADING_GATE_FAILED** (`DIAGNOSTIC_ONLY`).
 
-Текущие H12 geometry-only и baseline+geometry профили не получили поддержки: локальная геометрия фракталов вокруг fractal0, закодированная как flat token-order, nearest/corridor и zones, не предсказывает, какой барьер будет достигнут первым за 12 H1 баров и не добавляет полезной ценности поверх `h12_clock_shift_back`.
-
-Закрыта только эта tested encoding family вокруг `fractal0` на XAUUSD H1 H12. Не закрыты другие горизонты, инструменты, multi-scale/path-based представления и новые источники информации.
-
-## Что сделано в Stage 6.1
-
-Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`:
-
-- Экстракция фракталов с относительными ATR-координатами
-- 5 профилей геометрии: nearest_price, nearest_time, corridor3, corridor10, zones10 + baseline clock_shift_back
-- 3 baseline+geometry delta профиля: `clock_shift_back + nearest_time40`, `clock_shift_back + corridor3`, `clock_shift_back + corridor10`
-- A7-style preflight для всех профилей
-- Definitive touch evaluation (только TP-vs-SL definitive rows для метрик, timeout исключён)
-- Trading gate
-- Runtime contract: `xgb_n_jobs=24`, heartbeat, checkpoint before preflight, checkpoint after each run, `--resume` / `--no-resume`, top-level and per-run `elapsed_sec`
+Проверялась fixed H12 price-action feature family: последние OHLC-окна `(1, 3, 6, 12, 24)` H1 баров до `row.time`, single-bar candle fields и regime add-on (`atr14`, source volume). Цель — понять, добавляют ли эти признаки сигнал для H12 TP/SL touch сверх same-run baseline `h12_clock_shift_back`.
 
 ## Главный результат
 
+Artifact:
+
+- `ML/reports/stage6_2_h12_price_action_feature_family.json`
+- `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`
+
 Полный прогон:
 
-- artifact: `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
-- report: `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
-- `27/27` runs = 9 профилей × 3 seed
-- elapsed: `3311s` (55.2 мин)
-- gate: `MODEL_GATE_FAILED`
+- `15/15` runs = 5 профилей × 3 seed
+- `xgb_n_jobs=24`
+- elapsed `1341s`
+- runner поддерживает initial checkpoint, checkpoint after preflight, checkpoint after every run, `--resume` / `--no-resume`
 
-Primary `h12_corridor3_relative_geometry`:
+Primary `h12_price_action_core`:
 
-- median val AUC: `0.5316` (случайный)
-- threshold status: `NO_THRESHOLD`
-- все 5 геометрических профилей показали AUC 0.51–0.55
+- median val AUC `0.6233`
+- PR AUC lift `0.1402`
+- selected PF `1.307`
+- trades/year and spread 0.20 PF checks passed
+- permutation p-value `0.150` > required `0.10`
+- итог primary gate: trading/permutation gate failed
 
-Baseline+geometry delta:
+Same-run baseline `h12_clock_shift_back`:
 
-- лучший combined профиль: `h12_clock_shift_back_plus_nearest_time40_geometry`
-- AUC delta vs baseline: `+0.0048` (< required `+0.02`)
-- median PF delta vs baseline: `-0.023`
-- permutation p-value: `0.095`, но delta gate FAIL из-за малого AUC delta и худшего median PF
-- все 3 combined профиля провалили delta gate
+- median val AUC `0.6174`
+- selected PF `1.249`
+- permutation p-value `0.225`
 
-Baseline `h12_clock_shift_back` подтверждает валидность эксперимента:
+Combined delta:
 
-- median val AUC: `0.6174`
-- threshold SELECTED, PF 1.249
+- `h12_clock_shift_back_plus_price_action_core`: AUC delta `+0.0098`, PF delta `+0.0766`, permutation p-value `0.205`
+- `h12_clock_shift_back_plus_price_action_regime`: AUC delta `+0.0101`, PF delta `+0.0007`, permutation p-value `0.205`
+- оба ниже required AUC delta `+0.020`; delta gate FAIL
 
-## Методические ограничения
+## Методический статус
 
-- Stage 6.1 — `DIAGNOSTIC_ONLY`, не может стать `CANDIDATE`.
-- H12 фиксирован, TP/SL унаследованы от Stage 6.0.
-- Только XAUUSD H1.
-- Только одна семья признаков (fractal-level geometry).
+Stage 6.2 — поисковый этап. Результат не может стать кандидатом.
+
+Feature contract:
+
+- OHLC features use only bars with timestamp `<= row.time`.
+- Unit tests mutate future bars and `Open[row+1]`; features remain unchanged.
+- Future-derived columns are denied: `stage6_*`, `trade_*`, `fav_*`, `adv_*`, `ret_*`, `path_*`, breach labels, bars-to-breach labels.
+
+Warnings:
+
+- Data smoke-check failed on existing missing column `target_buy_H6_val`; this reinforces `DIAGNOSTIC_ONLY`.
+- Missing exact OHLC rows: val `3`, holdout `48`, 2026 `551`; missing rows get all-zero price-action features by explicit diagnostic contract.
+- `volume` is treated as source volume, not exchange volume.
 
 ## Правильное направление дальше
 
-1. **Stage 6.2 (рекомендуется):** новая семья признаков (multi-timeframe momentum, micro-structure, объем) для H12.
-2. **Stage 6.0 refinement:** ансамблирование или калибровка для улучшения trading PF baseline.
-3. **Архивировать Stage 6.1** — код и отчёт сохранены, дальнейших вложений в fractal-level geometry для H12 не требуется без новых данных.
+1. Не продвигать Stage 6.2 в candidate.
+2. Если продолжать эту ветку, сначала сделать bounded post-mortem: почему `range_w1_atr` dominates и почему permutation остаётся слабой.
+3. Новый эксперимент допустим только как materially new information family, а не мелкая вариация тех же OHLC windows.
 
 ## Неправильное направление дальше
 
-- Открывать перебор horizon/ATR/TP/SL.
-- Выбирать порог или профиль на `2023-2025`.
-- Признавать Stage 6.1 кандидатом.
-- Продолжать варианты nearest/corridor/zones вокруг `fractal0` без materially new representation или нового источника информации.
+- Открывать широкий перебор horizon/ATR/TP/SL.
+- Выбирать профиль, seed или threshold по `2023-2025` или `2026`.
+- Сравнивать Stage 6.2 delta с Stage 6.1 “на глаз”: только same-run baseline внутри Stage 6.2 JSON.
+- Утверждать, что “price action не работает вообще”; отвергнута только проверенная fixed feature family.
 
 ## Ключевые файлы
 
 Код:
 
-- `ML/baseline/benchmark_stage6_1_relative_geometry.py`
-- `tests/test_stage6_1_relative_geometry.py` (`19` тестов)
+- `ML/baseline/benchmark_stage6_2_price_action.py`
+- `tests/test_stage6_2_price_action.py`
 
 Артефакты:
 
-- `ML/reports/stage6_1_h12_relative_fractal_geometry.json`
+- `ML/reports/stage6_2_h12_price_action_feature_family.json`
+- `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`
+
+Контекст:
+
+- `docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md`
 - `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`

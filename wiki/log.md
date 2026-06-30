@@ -648,3 +648,8 @@
 ### 2026-06-29: Ingest Stage 6.0 review-fix rerun
 - Updated `wiki/research/fractal-stop-research.md`: Stage 6.0 supersedes the old H24-only `MODEL_GATE_FAILED` reading; H6 passes model gate but fails trading gate due to `NO_THRESHOLD`.
 - Updated `wiki/index.md`: Fractal Stop coverage now records corrected Stage 6.0 `TRADING_GATE_FAILED` outcome.
+
+### 2026-06-30: Ingest Stage 6.2 H12 price action
+- Added `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 6.2 OHLC price-action result, primary `h12_price_action_core` weak standalone signal, failed permutation gate, failed additive delta gate, and narrow rejection scope.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 6.2, 30 report updates.

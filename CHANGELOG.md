@@ -2,6 +2,20 @@
 Хронология значимых изменений проекта (major milestones).
 > **Предупреждение**: Читай только первые 300 строк этого файла.
 
+## [2026-06-30] — Stage 6.2: H12 Price Action Feature Family (TRADING_GATE_FAILED)
+### Добавлено/Изменено
+- Новый модуль `ML/baseline/benchmark_stage6_2_price_action.py`: OHLC price-action features, regime add-on, same-run baseline delta, preflight, feature audit, runner, gate, CLI.
+- Новый тест `tests/test_stage6_2_price_action.py`: 17 тестов (контракт, denylist, no-future OHLC windows, feature names, preflight, definitive mask, gate, runtime metadata, CLI flags).
+- Новый артефакт `ML/reports/stage6_2_h12_price_action_feature_family.json` и отчёт `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`.
+
+### Результаты
+- Полный прогон: `15/15` (5 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `1341s`.
+- Primary `h12_price_action_core`: median val AUC `0.6233`, PR AUC lift `0.1402`, selected PF `1.307`, но permutation p-value `0.150` > `0.10`.
+- Same-run baseline `h12_clock_shift_back`: median val AUC `0.6174`, selected PF `1.249`.
+- Combined profiles дали AUC delta около `+0.010`, ниже required `+0.020`, и permutation p-value `0.205`; delta gate FAIL.
+- Итог: price-action family содержит диагностический сигнал, но не доказала robust standalone/additive trading value поверх baseline.
+<!-- docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md -->
+
 ## [2026-06-29] — Stage 6.1: H12 Relative Fractal Geometry (MODEL_GATE_FAILED)
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`: экстракция фракталов с ATR-координатами, 5 профилей геометрии, A7 preflight, definitive touch evaluator, runner, gate, CLI.
