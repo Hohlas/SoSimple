@@ -8,6 +8,8 @@ Stage 6.1 завершён. Вердикт: **MODEL_GATE_FAILED** (`DIAGNOSTIC_O
 
 Текущие H12 geometry-only и baseline+geometry профили не получили поддержки: локальная геометрия фракталов вокруг fractal0, закодированная как flat token-order, nearest/corridor и zones, не предсказывает, какой барьер будет достигнут первым за 12 H1 баров и не добавляет полезной ценности поверх `h12_clock_shift_back`.
 
+Закрыта только эта tested encoding family вокруг `fractal0` на XAUUSD H1 H12. Не закрыты другие горизонты, инструменты, multi-scale/path-based представления и новые источники информации.
+
 ## Что сделано в Stage 6.1
 
 Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`:
@@ -67,7 +69,7 @@ Baseline `h12_clock_shift_back` подтверждает валидность э
 - Открывать перебор horizon/ATR/TP/SL.
 - Выбирать порог или профиль на `2023-2025`.
 - Признавать Stage 6.1 кандидатом.
-- Продолжать варианты nearest/corridor/zones вокруг `fractal0` без materially new representation.
+- Продолжать варианты nearest/corridor/zones вокруг `fractal0` без materially new representation или нового источника информации.
 
 ## Ключевые файлы
 

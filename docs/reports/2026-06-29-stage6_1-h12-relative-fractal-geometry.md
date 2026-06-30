@@ -90,6 +90,11 @@ Commands:
 ./.venv/bin/python -m pytest tests/ -q
 ```
 
+Observed test output:
+
+- `./.venv/bin/python -m pytest tests/test_stage6_1_relative_geometry.py -q` → `24 passed in 2.99s`
+- `./.venv/bin/python -m pytest tests/ -q` → `917 passed, 30 warnings in 163.28s`
+
 Structured artifact checks:
 
 - `done_runs == total_runs == 27`
@@ -107,7 +112,7 @@ Structured artifact checks:
 
 ### A7-Style Coverage Preflight
 
-This is an A7-style geometry coverage preflight, not a full A7 distribution audit. It checks token counts, corridor bounds, empty-token rates, and above/below balance. It does not audit every derived feature for tails, zero inflation, and train/validation/holdout distribution shift.
+This is an A7-style geometry coverage preflight, not a full A7 distribution audit. It checks token counts, corridor bounds, empty-token rates, and above/below balance. It does not audit every derived feature for tails, zero inflation, and train/validation/holdout distribution shift. Therefore, this preflight confirms coverage and format, not full feature-distribution stability.
 
 | Profile | Median tokens | Zero-rate | min_coord | max_coord |
 |---------|---------------|-----------|-----------|-----------|
@@ -208,7 +213,7 @@ Diagnostic holdout disclosure:
 | `h12_clock_shift_back_plus_corridor3_geometry` | 0.6099 | 0.1227 |
 | `h12_clock_shift_back_plus_corridor10_geometry` | 0.6090 | 0.1214 |
 
-Conclusion: the three combined profiles failed the delta gate. Geometry adds only a tiny ranking lift (`+0.0026..+0.0048` AUC), below the predeclared `+0.02` threshold, and median PF is worse than the baseline for all three combined profiles. `nearest_time40` has permutation p-value `0.095`, but it still fails the delta gate because the AUC gain is too small and median PF is lower.
+Conclusion: the three combined profiles failed the delta gate. Geometry adds only a tiny ranking lift (`+0.0026..+0.0048` AUC), below the predeclared `+0.02` threshold, and median PF is worse than the baseline for all three combined profiles. `nearest_time40` has permutation p-value `0.095`, but this is not a near-success: it passes only one criterion while the ranking gain is just `+0.0048` and median PF is lower than baseline.
 
 ## Gate
 
@@ -229,7 +234,7 @@ Four independent lines of evidence support this:
 
 1. **Near-zero AUC lift across tested encodings.** Price proximity (nearest_price), recency (nearest_time), narrow corridor (±3 ATR), wide corridor (±10 ATR), and zone bucket summaries all produce AUC 0.51–0.55. None of the tested geometry-only encodings extracts useful signal.
 
-2. **No tradeable threshold found.** Even with the most permissive threshold search (all positive PF thresholds), none of the geometry profiles produced a threshold that survives basic validation. This rules out the possibility that the model captures signal that a different scoring rule would exploit.
+2. **No usable threshold was found in this selection protocol.** Even with the most permissive threshold search (all positive PF thresholds), none of the geometry-only profiles produced a selected threshold. This does not prove that no trading signal exists in all possible protocols; it shows that this predefined Stage 6.1 threshold protocol did not extract one from these profiles.
 
 3. **Baseline confirms ranking signal exists outside geometry-only profiles.** The Stage 5.4 clock_shift_back profile — trained and evaluated on the same splits with the same H12 horizon — produces AUC 0.617 and a threshold with PF 1.25. However, its permutation p-value is 0.225, so this is evidence that the pipeline can rank outcomes, not evidence of a statistically convincing trading rule.
 
@@ -249,6 +254,17 @@ Four independent lines of evidence support this:
 
 6. **Baseline-plus-geometry scope is still narrow.** Stage 6.1 tested only the top three geometry-only profiles added to `h12_clock_shift_back`. It did not test all possible geometry interactions or new representations.
 
+### What Is Closed / Not Closed
+
+| Closed by Stage 6.1 | Not closed by Stage 6.1 |
+|---------------------|-------------------------|
+| Nearest, corridor, and zone encodings around `fractal0` | Other horizons such as H6 or H24 |
+| XAUUSD H1 H12 TP/SL touch setup | Other instruments or timeframes |
+| Geometry-only profiles from this encoding family | Multi-scale or path-based geometry representations |
+| Top-three baseline+geometry delta profiles | New information sources outside the same fractal strings |
+
+The closed branch is the tested encoding family around `fractal0` on XAUUSD H1 H12. It is not a claim that every possible form of fractal geometry is exhausted.
+
 ## Validation Split Disclosure
 
 - **Model selection:** val_stop (2021–2022) only
@@ -258,13 +274,13 @@ Four independent lines of evidence support this:
 
 ## Next Step
 
-The current H12 relative-geometry branch is closed for the tested encoding family, including the bounded baseline+geometry delta follow-up. Recommended directions:
+The current H12 relative-geometry branch is closed for the tested encoding family around `fractal0`, including the bounded baseline+geometry delta follow-up. Recommended directions:
 
 1. **Stage 6.2 (recommended):** Attempt to replicate Stage 6.0 results with a fundamentally different feature family (e.g., multi-timeframe momentum, micro-structure, or volume-based features) to establish whether H12 TP/SL prediction is robust or fragile.
 
 2. **Stage 6.0 refinement:** The baseline achieves AUC 0.617 with clock_shift_back. Investigate whether ensembling or calibration improves trading results — but this is a separate research path.
 
-3. **Archive this Stage 6.1 geometry approach.** The code and report are preserved. Further work on fractal geometry should require a materially new representation or a new reason, not another variant of nearest/corridor/zones around `fractal0`.
+3. **Archive this Stage 6.1 geometry approach.** The code and report are preserved. Further work on fractal geometry should require a materially new representation or a new source of information, not another variant of nearest/corridor/zones around `fractal0`.
 
 ## Related Materials
 

@@ -17,6 +17,7 @@
 - Добавлены 3 combined-профиля: `clock_shift_back + nearest_time40`, `clock_shift_back + corridor3`, `clock_shift_back + corridor10`.
 - Полный прогон стал `27/27`; все 3 combined-профиля провалили delta gate: AUC delta только `+0.0026..+0.0048`, median PF хуже baseline.
 - Обновлены report/changelog/handoff/wiki; итог Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
+- Граница вывода: закрыта tested encoding family around `fractal0` на XAUUSD H1 H12, а не вся идея фрактальной геометрии.
 
 ## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
 - Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
