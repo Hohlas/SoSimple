@@ -8,6 +8,12 @@
 - Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 32 report updates.
 - Зафиксировано: H6 feature parity не изменила verdict; следующий шаг — Regression Up/Dn target foundation.
 
+## [2026-07-01] update | Regression Up/Dn target foundation post-review refresh
+- Пересчитан `ML/reports/regression_updn_target_foundation.json` после правок audit/diagnostics; полный прогон снова завершён `75/75`, elapsed `4501.9s`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target foundation дополнен честным `feature_read_audit`, disclosure по `log_ratio` и расширенной `calendar_dependence`.
+- Обновлён `wiki/index.md`: описание fractal-stop research уточнено без изменения охвата.
+- Зафиксировано: главный вывод не изменился — `structure_full` на `H3` остаётся лучшей bounded target-foundation точкой, статус `TARGET_FOUNDATION_PASSED / DIAGNOSTIC_ONLY`.
+
 ## [2026-06-30] ingest | Regression Up/Dn target foundation
 - Добавлен охват `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: target family `up_*/dn_*` получила сильное bounded подтверждение на коротких горизонтах; лучший result дал `structure_full` на `H3`, а не legacy `H12`.

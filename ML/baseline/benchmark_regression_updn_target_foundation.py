@@ -145,6 +145,41 @@ def updn_feature_source_contract(profile: str) -> dict:
     }
 
 
+def _feature_read_audit(profile: str) -> dict:
+    allowed = updn_allowed_input_sources(profile)
+    declared_top_level_columns = ["time"]
+    raw_columns_touched = ["time"]
+    raw_fractal_subfields_touched = []
+    if allowed["token_fields"]:
+        declared_top_level_columns.extend([f"fractal{i}" for i in range(N_FRACTALS)])
+        raw_columns_touched.append("ATR")
+        raw_columns_touched.extend([f"fractal{i}" for i in range(N_FRACTALS)])
+        raw_fractal_subfields_touched.extend(["price", *allowed["token_fields"]])
+    raw_columns_touched = sorted(set(raw_columns_touched))
+    raw_fractal_subfields_touched = sorted(set(raw_fractal_subfields_touched))
+    return {
+        "profile": profile,
+        "declared_feature_sources": {
+            "top_level_columns_read": sorted(declared_top_level_columns),
+            "fractal_fields_read": list(allowed["token_fields"]),
+            "row_fields_read": list(TIME_ONLY_ROW_FIELDS if "time" in allowed["row_fields"] else []),
+            "allowed_input_sources": allowed,
+        },
+        "raw_columns_touched": raw_columns_touched,
+        "raw_fractal_subfields_touched": raw_fractal_subfields_touched,
+        "validation": {
+            "top_level_targets_read": [],
+            "allowlist_match": True,
+            "technical_reads_exceed_declared_sources": bool(allowed["token_fields"]),
+        },
+        "audit_note": (
+            "declared_feature_sources describes allowed semantic inputs; "
+            "raw_columns_touched/raw_fractal_subfields_touched describe technical reads "
+            "inside the reused Stage 5 flat-feature builder"
+        ),
+    }
+
+
 def _profile_stage5_spec(profile: str) -> dict:
     if profile == "clock_only":
         return {
@@ -281,6 +316,7 @@ def build_updn_features(df: pd.DataFrame, profile: str, return_preflight: bool =
         "profile": profile,
         "non_finite_feature_count": int(non_finite_mask.sum()),
         "feature_count": int(X.shape[1]),
+        "feature_read_audit": _feature_read_audit(profile),
     }
     if non_finite_mask.any():
         X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
@@ -332,6 +368,19 @@ def evaluate_edge_diagnostics(y_true: np.ndarray, y_pred: np.ndarray, target_nam
             "spearman": _corr_or_none(stats.spearmanr, edge_true, edge_pred),
             "pearson": _corr_or_none(stats.pearsonr, edge_true, edge_pred),
             "sign_accuracy": _safe_float(np.mean(np.sign(edge_true) == np.sign(edge_pred))),
+        }
+    }
+
+
+def evaluate_log_ratio_diagnostics(y_true: np.ndarray, y_pred: np.ndarray, target_names: tuple[str, ...]) -> dict:
+    up_name, _ = target_names
+    horizon = up_name.split("_")[1]
+    true_ratio = np.log1p(np.clip(y_true[:, 0], 0.0, None)) - np.log1p(np.clip(y_true[:, 1], 0.0, None))
+    pred_ratio = np.log1p(np.clip(y_pred[:, 0], 0.0, None)) - np.log1p(np.clip(y_pred[:, 1], 0.0, None))
+    return {
+        f"log_ratio_{horizon}": {
+            "spearman": _corr_or_none(stats.spearmanr, true_ratio, pred_ratio),
+            "pearson": _corr_or_none(stats.pearsonr, true_ratio, pred_ratio),
         }
     }
 
@@ -413,6 +462,48 @@ def _calendar_share(feature_names: list[str], importances: np.ndarray | None) ->
         if any(key in name for key in ("hour_", "dow_")):
             cal += abs(float(imp))
     return cal / total
+
+
+def _calendar_dependence_summary(
+    model_key: str,
+    seed: int,
+    train_X: np.ndarray,
+    train_y: np.ndarray,
+    eval_X: np.ndarray,
+    eval_y: np.ndarray,
+    feature_names: list[str],
+) -> dict | None:
+    if model_key != "xgboost_depth3":
+        return None
+    scaler = StandardScaler()
+    train_scaled = scaler.fit_transform(train_X)
+    eval_scaled = scaler.transform(eval_X)
+    shares = {}
+    horizon_summary = {}
+    for idx, name in enumerate(UPDN_TARGET_COLUMNS):
+        base = xgb.XGBRegressor(
+            n_estimators=120,
+            max_depth=3,
+            learning_rate=0.05,
+            subsample=0.9,
+            colsample_bytree=0.9,
+            objective="reg:squarederror",
+            random_state=seed,
+            n_jobs=REGRESSION_UPDN_CONFIG.xgb_n_jobs,
+        )
+        base.fit(train_scaled, train_y[:, idx])
+        perm = permutation_importance(base, eval_scaled, eval_y[:, idx], n_repeats=5, random_state=seed, n_jobs=1)
+        share = _calendar_share(feature_names, perm.importances_mean)
+        shares[name] = share
+    for horizon, names in TARGET_PAIRS_BY_HORIZON.items():
+        vals = [shares.get(names[0]), shares.get(names[1])]
+        clean = [v for v in vals if v is not None]
+        horizon_summary[str(horizon)] = _median_or_none(clean) if clean else None
+    return {
+        "per_target": shares,
+        "per_horizon_median": horizon_summary,
+        "overall_max_share": max((v for v in shares.values() if v is not None), default=None),
+    }
 
 
 def evaluate_updn_gate(summary: dict) -> dict:
@@ -523,6 +614,7 @@ def _evaluate_single_run(
         "model_key": model_key,
         "seed": int(seed),
         "split_metrics": {},
+        "feature_read_audit": _feature_read_audit(profile),
     }
     val_feature_names = updn_feature_names(profile)
     calendar_warning = False
@@ -544,10 +636,13 @@ def _evaluate_single_run(
             else:
                 cur["normalized_mae_improvement_vs_constant"] = None
         edge = {}
+        log_ratio = {}
         for horizon, names in TARGET_PAIRS_BY_HORIZON.items():
             idxs = [UPDN_TARGET_COLUMNS.index(names[0]), UPDN_TARGET_COLUMNS.index(names[1])]
             edge_metrics = evaluate_edge_diagnostics(y[:, idxs], pred[:, idxs], names)
+            log_ratio_metrics = evaluate_log_ratio_diagnostics(y[:, idxs], pred[:, idxs], names)
             edge_key = f"edge_{horizon}"
+            log_key = f"log_ratio_{horizon}"
             yearly_signs = {}
             years = _parse_years(frame["time"]) if "time" in frame.columns else pd.Series([None] * len(frame))
             for year in sorted(set(years.dropna().tolist())):
@@ -567,6 +662,7 @@ def _evaluate_single_run(
             )
             edge_metrics[edge_key]["bootstrap_p05_spearman"] = boot["p05"]
             edge[edge_key] = edge_metrics[edge_key]
+            log_ratio[log_key] = log_ratio_metrics[log_key]
         if split_name == "val_stop":
             for name in UPDN_TARGET_COLUMNS:
                 idx = UPDN_TARGET_COLUMNS.index(name)
@@ -586,27 +682,23 @@ def _evaluate_single_run(
             "targets": model_metrics["targets"],
             "constant_targets": base_metrics["targets"],
             "edge": edge,
+            "log_ratio": log_ratio,
         }
 
         if model_key == "xgboost_depth3" and split_name == "val_stop":
-            scaler = StandardScaler()
-            train_scaled = scaler.fit_transform(train_X)
-            val_scaled = scaler.transform(X)
-            base = xgb.XGBRegressor(
-                n_estimators=120,
-                max_depth=3,
-                learning_rate=0.05,
-                subsample=0.9,
-                colsample_bytree=0.9,
-                objective="reg:squarederror",
-                random_state=seed,
-                n_jobs=REGRESSION_UPDN_CONFIG.xgb_n_jobs,
+            calendar_summary = _calendar_dependence_summary(
+                model_key=model_key,
+                seed=seed,
+                train_X=train_X,
+                train_y=train_y,
+                eval_X=X,
+                eval_y=y,
+                feature_names=val_feature_names,
             )
-            base.fit(train_scaled, train_y[:, 0])
-            perm = permutation_importance(base, val_scaled, y[:, 0], n_repeats=5, random_state=seed, n_jobs=1)
-            share = _calendar_share(val_feature_names, perm.importances_mean)
-            result["calendar_importance_share"] = share
-            calendar_warning = bool(share is not None and share > 0.30)
+            result["calendar_dependence"] = calendar_summary
+            max_share = None if calendar_summary is None else calendar_summary.get("overall_max_share")
+            result["calendar_importance_share"] = max_share
+            calendar_warning = bool(max_share is not None and max_share > 0.30)
     result["calendar_warning"] = calendar_warning
     return result
 

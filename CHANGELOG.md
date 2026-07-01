@@ -2,14 +2,16 @@
 
 ## [2026-06-30] — Regression Up/Dn Target Foundation (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_regression_updn_target_foundation.py`: bounded regression runner для top-level `up_*/dn_*` с allowlist feature contract, block bootstrap, baseline ladder и JSON checkpointing.
-- Новый тест `tests/test_regression_updn_target_foundation.py`: 22 теста (контракт, профили, feature source contract, метрики, gate, runner, CLI).
+- Новый модуль `ML/baseline/benchmark_regression_updn_target_foundation.py`: bounded regression runner для top-level `up_*/dn_*` с allowlist feature contract, честным `feature_read_audit`, `log_ratio`, расширенной `calendar_dependence`, block bootstrap, baseline ladder и JSON checkpointing.
+- Новый тест `tests/test_regression_updn_target_foundation.py`: 25 тестов (контракт, профили, feature read audit, метрики, gate, runner, CLI).
 - Новый артефакт `ML/reports/regression_updn_target_foundation.json` и отчёт `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
 
 ### Результаты
-- Полный прогон: `75/75` (5 профилей × 5 model families × 3 seed), elapsed `4074.6s`, `xgb_n_jobs=24`.
+- Полный прогон: `75/75` (5 профилей × 5 model families × 3 seed), elapsed `4501.9s`, `xgb_n_jobs=24`.
 - Лучший bounded target-foundation signal: `selected_profile=structure_full`, `selected_horizon=3`.
 - `val_stop` medians for selected point: `up_3` improvement `0.4716`, `dn_3` improvement `0.4780`, `edge_3` Spearman `0.8017`, seed stability `3/3`.
+- Post-review JSON теперь явно разделяет `declared_feature_sources` и технические чтения (`raw_columns_touched`, `raw_fractal_subfields_touched`); для фрактальных профилей раскрыты технические чтения `ATR` и `price`.
+- Добавлены диагностические disclosure-поля: `log_ratio_3` для selected run (`Spearman 0.8055`) и расширенная calendar dependence (`overall_max_share=0.1391`, ниже warning threshold `0.30`).
 - Короткие горизонты (`H3/H6`) существенно сильнее `H12/H24/H48`; legacy `H12` не является главным победителем.
 - Structured signal виден уже на `Ridge`, усиливается на tree/forest, и не выглядит артефактом только XGBoost.
 

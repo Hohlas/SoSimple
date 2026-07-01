@@ -22,7 +22,7 @@ Runner:
 
 - читает XAUUSD labeled splits;
 - трактует top-level `up_3/dn_3 ... up_48/dn_48` как labels only;
-- использует allowlist-based feature contract и сохраняет `feature_source_contract` в JSON;
+- использует allowlist-based feature contract и сохраняет в JSON и `feature_source_contract`, и честный `feature_read_audit`;
 - сравнивает 5 профилей:
   - `clock_only`
   - `clock_shift`
@@ -35,7 +35,7 @@ Runner:
   - `decision_tree_depth3`
   - `random_forest_depth4`
   - `xgboost_depth3`
-- считает метрики по всем 10 таргетам, edge-диагностику, block bootstrap и calendar-share disclosure;
+ - считает метрики по всем 10 таргетам, `edge_h`, `log_ratio_h`, block bootstrap и расширенную calendar-dependence disclosure;
 - пишет checkpoint JSON после preflight и после каждого run.
 
 ## Multiple Testing Context
@@ -80,9 +80,8 @@ Search budget фиксирован и ограничен:
 
 Наблюдения:
 
-- `tests/test_regression_updn_target_foundation.py`: `22 passed`
-- `tests/test_label_updn.py tests/test_regression_updn_target_foundation.py`: `29 passed`
-- полный benchmark завершён: `75/75`, `elapsed_sec=4074.6` (~67.9 мин)
+- `tests/test_regression_updn_target_foundation.py`: `25 passed`
+- полный benchmark завершён: `75/75`, `elapsed_sec=4501.9` (~75.0 мин)
 - итоговый JSON:
   - `experiment = regression_updn_target_foundation`
   - `selected_profile = structure_full`
@@ -107,9 +106,16 @@ Search budget фиксирован и ограничен:
 
 Top-level `up_*/dn_*` использовались только как labels. Во feature names они не попадали.
 
+Feature-read audit теперь разделён на два уровня:
+
+- `declared_feature_sources` описывает разрешённые смысловые входы профиля;
+- `raw_columns_touched` и `raw_fractal_subfields_touched` показывают технические чтения внутри переиспользованного Stage 5 builder.
+
+Это важно, потому что для профилей на фрактальных токенах builder технически читает `ATR` и `price`, даже если они не становятся итоговыми признаками. В текущем артефакте это уже раскрыто явно, а не скрыто под видом "фактически прочитанных" разрешённых полей.
+
 ### Main Horizon/Profile Selection
 
-Лучший по заранее неиспользующему holdout summary-score оказался:
+Лучший по summary на `val_stop` оказался:
 
 - `selected_profile = structure_full`
 - `selected_horizon = 3`
@@ -130,8 +136,14 @@ Seed stability for selected profile/horizon:
 
 Calendar dependence disclosure:
 
-- `structure_full` calendar share: `0.0322`, `0.0335`, `0.0363` by seed
-- warning threshold `> 0.30` not reached
+- по выбранному run (`seed=42`) `overall_max_share = 0.1391`;
+- horizon medians: `H3=0.0420`, `H6=0.1003`, `H12=0.1252`, `H24=0.0150`, `H48=0.0112`;
+- warning threshold `> 0.30` не достигнут.
+
+Ratio proxy disclosure:
+
+- для выбранного run `log_ratio_3` даёт `Spearman = 0.8055`, `Pearson = 0.8126`;
+- это диагностическая величина, она не участвует в gate, но подтверждает, что короткий горизонт силён не только по отдельным `up_3` и `dn_3`, но и по их лог-разности.
 
 ### `val_stop` Profile Summary
 
@@ -207,13 +219,15 @@ Below are XGBoost medians on `val_stop`.
 
 4. **Сигнал не сводится к одной сложной модели.** Даже `Ridge` уже показывает сильную связь на `structure_full`, а дерево/лес ещё усиливают её. Это делает найденный target foundation более правдоподобным.
 
-5. **Статус артефакта остаётся `DIAGNOSTIC_ONLY`.** Множественное тестирование не закрыто, trading rule не выбран, holdout не был частью gate, а общий project-level smoke-check сейчас несинхронизирован с фактической схемой XAUUSD CSV.
+5. **Честный feature-read audit показал технические чтения шире declared allowlist.** У профилей на фрактальных строках builder технически трогает `ATR` и `price`; утечка top-level targets не обнаружена, но это нужно раскрывать отдельно от семантически разрешённых источников.
+
+6. **Статус артефакта остаётся `DIAGNOSTIC_ONLY`.** Множественное тестирование не закрыто, trading rule не выбран, holdout не был частью gate, а общий project-level smoke-check сейчас несинхронизирован с фактической схемой XAUUSD CSV.
 
 ## Limitations / Open Questions
 
 1. `smoke_check` для XAUUSD currently expects columns вроде `target_buy_H6_val`; это отдельный data-contract debt и его нужно чинить до более сильных заявлений о качестве всего research pipeline.
 
-2. Runner сейчас действительно хранит `feature_source_contract`, но его heartbeat/logging слабее, чем в Stage 6.x. Для долгих прогонов стоит добавить явный progress `done/total`, ETA и per-run stdout.
+2. Runner теперь честно хранит `feature_read_audit`, `log_ratio` и расширенный `calendar_dependence`, но heartbeat/logging всё ещё слабее, чем в Stage 6.x. Для долгих прогонов стоит добавить явный progress `done/total`, ETA и per-run stdout.
 
 3. `selected_horizon = 3` не означает, что именно H3 надо сразу превращать в торговую систему. Это только strongest target foundation point на текущем ограниченном наборе профилей.
 

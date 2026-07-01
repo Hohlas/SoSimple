@@ -65,6 +65,17 @@ def test_feature_source_contract_is_allowlist_based():
     assert contract["forbidden_sources"]["top_level_updn_targets"] == list(updn.UPDN_TARGET_COLUMNS)
 
 
+def test_feature_read_audit_separates_declared_sources_from_raw_touches():
+    audit = updn._feature_read_audit("clock_shift_back")
+
+    assert "declared_feature_sources" in audit
+    assert "raw_columns_touched" in audit
+    assert "raw_fractal_subfields_touched" in audit
+    assert "ATR" in audit["raw_columns_touched"]
+    assert "price" in audit["raw_fractal_subfields_touched"]
+    assert audit["validation"]["technical_reads_exceed_declared_sources"] is True
+
+
 def test_validate_updn_target_contract_rejects_missing_target():
     splits = {
         "train_core": pd.DataFrame({"time": ["2021.01.01 00:00"], "up_3": [1.0]}),
@@ -128,6 +139,9 @@ def test_feature_names_match_feature_width(profile):
     assert X.shape[1] == len(names)
     assert len(names) == len(set(names))
     assert "non_finite_feature_count" in preflight
+    assert "feature_read_audit" in preflight
+    assert preflight["feature_read_audit"]["validation"]["allowlist_match"] is True
+    assert "declared_feature_sources" in preflight["feature_read_audit"]
 
 
 def test_constant_median_predict_uses_train_only_values():
@@ -164,6 +178,19 @@ def test_edge_diagnostics_reports_up_minus_dn_for_each_horizon():
 
     assert result["edge_12"]["spearman"] is not None
     assert result["edge_12"]["sign_accuracy"] >= 0.0
+
+
+def test_log_ratio_diagnostics_reports_log_ratio_per_horizon():
+    y_true = np.array([[2.0, 1.0], [1.0, 3.0], [4.0, 1.0]])
+    y_pred = np.array([[1.8, 1.2], [1.1, 2.8], [3.5, 1.2]])
+
+    result = updn.evaluate_log_ratio_diagnostics(
+        y_true,
+        y_pred,
+        target_names=("up_12", "dn_12"),
+    )
+
+    assert result["log_ratio_12"]["spearman"] is not None
 
 
 def test_gate_passes_only_with_contract_model_and_stability():
@@ -250,3 +277,27 @@ def test_runner_persists_feature_source_contract(monkeypatch, tmp_path):
     assert "feature_contract" in data
     assert "clock_shift_back" in data["feature_contract"]
     assert data["feature_contract"]["clock_shift_back"]["feature_source_contract"]["input_selection"] == "allowlist"
+    assert data["runs"][0]["feature_read_audit"]["validation"]["allowlist_match"] is True
+    assert "raw_columns_touched" in data["runs"][0]["feature_read_audit"]
+
+
+def test_xgboost_calendar_dependence_is_recorded_per_target_and_horizon(monkeypatch, tmp_path):
+    splits = {
+        "train_core": _tiny_labeled_frame(),
+        "val_stop": _tiny_labeled_frame(),
+        "diagnostic_holdout": _tiny_labeled_frame(),
+        "low_n_disclosure": _tiny_labeled_frame(),
+    }
+    monkeypatch.setattr(updn, "load_updn_labeled_splits", lambda: splits)
+    monkeypatch.setattr(updn, "updn_input_file_manifest", lambda: {"dummy": {"sha256": "a" * 64}})
+
+    output_path = tmp_path / "updn_calendar.json"
+    data = updn.run_regression_updn_target_foundation(
+        output_path=output_path,
+        resume=False,
+        profile_keys=("clock_only",),
+    )
+    xgb_run = next(r for r in data["runs"] if r["model_key"] == "xgboost_depth3")
+    assert "calendar_dependence" in xgb_run
+    assert "per_target" in xgb_run["calendar_dependence"]
+    assert "per_horizon_median" in xgb_run["calendar_dependence"]

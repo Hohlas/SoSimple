@@ -4,7 +4,7 @@
 
 ## Текущий этап
 
-Regression Up/Dn target foundation выполнен и закрыт как **DIAGNOSTIC_ONLY**.
+Regression Up/Dn target foundation выполнен, пересчитан после post-review правок и закрыт как **DIAGNOSTIC_ONLY**.
 
 Внутренний research gate на ограниченном поиске прошёл:
 
@@ -14,6 +14,12 @@ Regression Up/Dn target foundation выполнен и закрыт как **DIA
 - `artifact_status = DIAGNOSTIC_ONLY`
 
 Это не торговый winner и не готовый target для production. Это только подтверждение, что семейство top-level `up_*/dn_*` содержит сильный короткий horizon signal при корректном feature contract.
+
+Post-review уточнения уже внесены в код и JSON:
+
+- `feature_read_audit` теперь честно разделяет `declared_feature_sources` и технические чтения `raw_columns_touched` / `raw_fractal_subfields_touched`;
+- для профилей на фрактальных строках раскрыто, что reused builder технически трогает `ATR` и `price`, хотя эти поля не обязаны становиться признаками текущего профиля;
+- добавлены `log_ratio` и расширенный `calendar_dependence`.
 
 ## Главные артефакты
 
@@ -38,6 +44,10 @@ Regression Up/Dn target foundation выполнен и закрыт как **DIA
 - держать `H12` только как legacy reference;
 - заранее заморозить mapping `up_h/dn_h -> trading decision`;
 - не расширять feature search.
+
+Отдельный открытый технический долг:
+
+- `statistics/data_contract_smoke_check.py` по-прежнему ожидает историческую колонку `target_buy_H6_val`; это уже не проблема нового runner-а, но это несинхронизированный project-level contract check.
 
 ## Запрещённые направления
 
