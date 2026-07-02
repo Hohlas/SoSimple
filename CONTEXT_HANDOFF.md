@@ -1,57 +1,67 @@
 # Context Handoff
 
-**Дата:** 2026-06-30
+**Дата:** 2026-07-02
 
 ## Текущий этап
 
-Regression Up/Dn target foundation выполнен, пересчитан после post-review правок и закрыт как **DIAGNOSTIC_ONLY**.
+Связка `Regression Up/Dn target foundation` → `ratio audit` → `already moved audit` теперь закрыта как диагностическая линия.
 
-Внутренний research gate на ограниченном поиске прошёл:
+Главный факт больше не в том, что target family `up_*/dn_*` содержит сигнал. Это уже подтверждено. Главный новый вывод в другом: этот сигнал **не переносится** в схему немедленного входа `next open after signal_time`.
 
-- `selected_profile = structure_full`
-- `selected_horizon = 3`
-- `research_gate_status = TARGET_FOUNDATION_PASSED`
-- `artifact_status = DIAGNOSTIC_ONLY`
+Итоговый structured artifact:
 
-Это не торговый winner и не готовый target для production. Это только подтверждение, что семейство top-level `up_*/dn_*` содержит сильный короткий horizon signal при корректном feature contract.
-
-Post-review уточнения уже внесены в код и JSON:
-
-- `feature_read_audit` теперь честно разделяет `declared_feature_sources` и технические чтения `raw_columns_touched` / `raw_fractal_subfields_touched`;
-- для профилей на фрактальных строках раскрыто, что reused builder технически трогает `ATR` и `price`, хотя эти поля не обязаны становиться признаками текущего профиля;
-- добавлены `log_ratio` и расширенный `calendar_dependence`.
+- `ML/reports/regression_updn_already_moved_audit.json`
+- статус runner: `PASS_DIAGNOSTIC`
+- verdict этапа: `DIAGNOSTIC_ONLY`
 
 ## Главные артефакты
 
-- `ML/reports/regression_updn_target_foundation.json`
-- `docs/reports/2026-06-30-regression-updn-target-foundation.md`
-- `ML/baseline/benchmark_regression_updn_target_foundation.py`
-- `tests/test_regression_updn_target_foundation.py`
+- `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`
+- `docs/reports/2026-07-01-regression-updn-ratio-audit.md`
+- `ML/reports/regression_updn_already_moved_audit.json`
+- `ML/reports/regression_updn_already_moved_audit_rows.csv`
+- `ML/reports/regression_updn_ratio_audit.json`
 
 ## Главный вывод
 
-Короткие горизонты (`H3`, затем `H6`) заметно сильнее legacy `H12`.
+От цены `fractal0_price` сигнал остаётся сильным, особенно на коротких горизонтах:
 
-На bounded feature search лучший сигнал даёт `structure_full`, причём он виден уже на `Ridge` и затем усиливается на tree/forest/XGBoost. Это означает, что top-level `up_*/dn_*` можно считать рабочей target foundation, но только в диагностическом статусе и без готового trading mapping.
+- `val_stop` Spearman `pred vs actual from fractal`:
+  - `H3 = 0.8786`
+  - `H6 = 0.7815`
+  - `H12 = 0.6749`
 
-Отдельный риск остаётся в общем data-contract tooling: `statistics/data_contract_smoke_check.py` на текущих XAUUSD split-файлах падает на историческом ожидании колонки `target_buy_H6_val`. Новый Up/Dn runner от этого напрямую не ломается, но project-level smoke-check нужно синхронизировать.
+Но после реально доступного входа на следующий `open` связь практически исчезает и это повторяется на всех трёх split:
+
+- `val_stop`: `-0.0149 / -0.0174 / 0.0010`
+- `diagnostic_holdout=2023-2025`: `-0.0336 / -0.0252 / -0.0173`
+- `low_n_disclosure=2026`: `-0.0040 / -0.0038 / 0.0043`
+
+Это значит:
+
+- `Regression Up/Dn` как target family не опровергнут;
+- но `market-entry` на ближайшем следующем H1 `open` для этого target **отклонён**.
+
+Отдельно подтверждено, что заметная часть движения часто уже произошла до входа:
+
+- доля строк, где уже прошло не меньше половины движения хотя бы по одной стороне target:
+  - `H3 = 57.29%`
+  - `H6 = 42.15%`
+  - `H12 = 29.80%`
 
 ## Следующий шаг
 
-Нужен новый узкий confirmatory cycle:
+Разрешён только узкий follow-up по entry-механике, а не новый широкий поиск модели:
 
-- зафиксировать один short-horizon candidate (`H3` или `H6`);
-- держать `H12` только как legacy reference;
-- заранее заморозить mapping `up_h/dn_h -> trading decision`;
-- не расширять feature search.
-
-Отдельный открытый технический долг:
-
-- `statistics/data_contract_smoke_check.py` по-прежнему ожидает историческую колонку `target_buy_H6_val`; это уже не проблема нового runner-а, но это несинхронизированный project-level contract check.
+- вход, привязанный к `fractal0_price`;
+- `retest-entry` / `limit-entry`;
+- новый target, измеряемый прямо от `entry_open`, если задача именно про немедленный вход.
 
 ## Запрещённые направления
 
-- Не открывать новый широкий перебор horizon/ATR/TP/SL.
-- Не выбирать horizon/profile/model по `diagnostic_holdout` (`2023-2025`) или `low_n_disclosure` (`2026`).
-- Не объявлять `H3` торговым winner только по итогам target-foundation этапа.
-- Не игнорировать FAIL общего `data_contract_smoke_check.py`; его нужно либо починить, либо явно ограничить область применения.
+- Не использовать `pred_log_ratio`, `pred_up - pred_dn` или `pred_up / pred_dn` как немедленный `market-entry` на следующем `open`.
+- Не возвращаться к оптимизации `Stop/Profit` вокруг этой схемы входа: она уже диагностически отклонена.
+- Не выбирать новые правила по `diagnostic_holdout` (`2023-2025`) или `low_n_disclosure` (`2026`).
+- Не смешивать два разных объекта:
+  - сигнал движения от `fractal0_price`;
+  - сигнал остаточного движения после фактически доступного входа.

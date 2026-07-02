@@ -1,5 +1,36 @@
 # Changelog SoSimple
 
+## [2026-07-02] — Regression Up/Dn Already Moved Audit (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Добавлен итоговый отчёт `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
+- Отчёт приведён к финальному виду после рецензии: раскрыты все 3 split (`val_stop`, `diagnostic_holdout`, `low_n_disclosure`), уточнён `decision_time`, добавлен формальный `Stop Condition`, а блок проверки окна переписан как `PASS` с редкими крупными расхождениями, а не как идеальное совпадение.
+
+### Результаты
+- Во всех трёх split связь `pred_log_ratio` с будущим движением после входа на следующий `open` остаётся около нуля: `H3/H6/H12` на `val_stop` `-0.0149/-0.0174/0.0010`, на `2023-2025` `-0.0336/-0.0252/-0.0173`, на `2026` `-0.0040/-0.0038/0.0043`.
+- При этом связь с исходным target от `fractal0_price` остаётся высокой: на `val_stop` Spearman `0.8786 / 0.7815 / 0.6749` для `H3/H6/H12`.
+- На `H3` уже до входа проходит не меньше половины движения хотя бы по одной стороне target у `57.29%` строк; на `H6` `42.15%`, на `H12` `29.80%`.
+
+### Вывод
+- Для target family `Regression Up/Dn` схема входа `next open after signal_time` отклонена.
+- Следующий допустимый шаг — только механика входа, привязанная к `fractal0_price` или её ретесту, без возврата к немедленному `market-entry` на следующем баре.
+<!-- docs/reports/2026-07-02-regression-updn-already-moved-audit.md -->
+
+## [2026-07-01] — Regression Up/Dn Ratio Audit (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Добавлен анализатор `ML/baseline/analyze_regression_updn_ratio_audit.py`.
+- Добавлены артефакты `ML/reports/regression_updn_ratio_audit.json`, `ML/reports/regression_updn_ratio_audit_predictions.csv`, `ML/reports/regression_updn_ratio_audit_structure_full_features.npz`.
+- Добавлен отчёт `docs/reports/2026-07-01-regression-updn-ratio-audit.md`.
+
+### Результаты
+- Отношение `up_h/dn_h` действительно хорошо предсказывается от цены фрактала: на `val_stop` Spearman `pred_log_ratio` vs `actual_log_ratio` равен `0.7881 / 0.7212 / 0.6264` для `H3/H6/H12`.
+- Для входа на следующем `open` этот же сигнал почти исчезает: Spearman с `next-open log-ratio` равен `-0.011 / -0.017 / 0.001`.
+- Extreme 10% по `abs(pred_log_ratio)` остаются сильными для движения от `fractal0_price`, но почти случайны для `next-open move`.
+
+### Вывод
+- Target-сигнал и сигнал немедленного входа оказались разными объектами.
+- Ratio audit стал прямой методической подводкой к already-moved audit: перед торговой интерпретацией нужно отдельно измерять, какая часть движения уже произошла до доступной точки входа.
+<!-- docs/reports/2026-07-01-regression-updn-ratio-audit.md -->
+
 ## [2026-06-30] — Regression Up/Dn Target Foundation (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Новый модуль `ML/baseline/benchmark_regression_updn_target_foundation.py`: bounded regression runner для top-level `up_*/dn_*` с allowlist feature contract, честным `feature_read_audit`, `log_ratio`, расширенной `calendar_dependence`, block bootstrap, baseline ladder и JSON checkpointing.

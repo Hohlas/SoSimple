@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-02] ingest | Regression Up/Dn ratio + already moved audits
+- Добавлен охват `docs/reports/2026-07-01-regression-updn-ratio-audit.md` и `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target foundation теперь продолжена двумя новыми этапами, которые отделяют сигнал от `fractal0_price` от схемы немедленного входа.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 35 report updates.
+- Зафиксировано новое проектное знание: target family `Regression Up/Dn` подтверждена, но `next open after signal_time` для неё отклонён; следующий допустимый шаг только через entry-механику, привязанную к `fractal0_price` или её ретесту.
+
 ## [2026-06-30] ingest | Stage 6.3 H6 feature parity check
 - Добавлен охват `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.3 — H6 feature parity check подтвердил NO_ADDITIVE_VALUE; H6 baseline сильнее H12, price-action на H6 почти проходит gate, но additive delta не достигает порога +0.02 и permutation не пройдена.
