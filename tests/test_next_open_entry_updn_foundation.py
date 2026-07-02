@@ -67,6 +67,35 @@ def test_validate_summary_rejects_missing_required_fields():
 
     missing = foundation.validate_summary(summary)
 
+    assert "artifact_status" in missing
     assert "target_contract" in missing
     assert "primary_split" in missing
     assert "horizons" in missing
+
+
+def test_runner_decision_gate_checks_primary_and_disclosure_horizons():
+    report = {
+        "primary_split": "val_stop",
+        "disclosure_splits": ["diagnostic_holdout"],
+        "horizons": [3, 6],
+        "model_metrics": {
+            "val_stop": {
+                "log_ratio": {
+                    "log_ratio_3": {"spearman": 0.01},
+                    "log_ratio_6": {"spearman": 0.02},
+                }
+            },
+            "diagnostic_holdout": {
+                "log_ratio": {
+                    "log_ratio_3": {"spearman": 0.03},
+                    "log_ratio_6": {"spearman": 0.11},
+                }
+            },
+        },
+    }
+
+    gate = foundation.build_runner_decision_gate(report, threshold=0.10)
+
+    assert gate["passes"] is True
+    assert gate["max_checked_spearman"] == 0.11
+    assert foundation.decide_runner_status(report, threshold=0.10) == "PASS_DIAGNOSTIC"

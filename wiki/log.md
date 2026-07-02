@@ -607,6 +607,12 @@
 ### 2026-06-11: Update concept — folded-mov-channels
 - Updated `wiki/concepts/folded-mov-channels.md`: documented the decision to keep `Nero.csv` in the 23-field format, compute `mov_h` in Python only when needed, avoid `lib_PIC.mqh` re-export/relabel work, and keep current priority on `relative_geometry`.
 ### 2026-06-12: Update Stage 4 report with Stage 4.1 controls
+### 2026-07-02: Ingest Next Open Entry Up/Dn Foundation
+- Updated `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`: clarified `DIAGNOSTIC_ONLY` vs `NO_SIGNAL_FOUND`, explicit all-horizon/all-split runner gate, next-available-open delay distribution, and the difference between weak amplitude ranking and absent directional `entry_log_ratio` signal.
+- Updated `ML/baseline/benchmark_next_open_entry_updn_foundation.py`, `ML/reports/next_open_entry_updn_foundation.json`, and `tests/test_next_open_entry_updn_foundation.py`: separated artifact status from runner status and made gate evaluation cover primary/disclosure splits and all declared horizons.
+- Fixed `ML/baseline/analyze_regression_updn_already_moved_audit.py`: removed forbidden ML import of `processing.label_signals.parse_fractal` and kept only local `fractal0` field extraction needed by the audit.
+- Updated `CHANGELOG.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: recorded that next-open target retraining from actual `entry_open` still yields `NO_SIGNAL_FOUND` for directional ranking while leaving fractal-price entry mechanics open.
+
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.

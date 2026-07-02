@@ -14,7 +14,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from ML.baseline import benchmark_regression_updn_target_foundation as foundation
 from processing.denormalize_updn import denormalize_updn_pairs, load_updn_params
-from processing.label_signals import parse_fractal
 
 
 PROJECT_ROOT = foundation.PROJECT_ROOT
@@ -47,15 +46,18 @@ def _price_float(value: float) -> float:
 
 
 def parse_fractal0(fractal_value: object) -> dict | None:
-    parsed = parse_fractal(fractal_value)
-    if parsed is None:
+    parts = str(fractal_value).split(":")
+    if len(parts) < 23:
         return None
-    return {
-        "time": int(parsed["time"]),
-        "price": float(parsed["price"]),
-        "direction": int(parsed["direction"]),
-        "shift": int(parsed["shift"]),
-    }
+    try:
+        return {
+            "time": int(float(parts[0])),
+            "price": float(parts[1]),
+            "direction": int(float(parts[2])),
+            "shift": int(float(parts[22])),
+        }
+    except (TypeError, ValueError):
+        return None
 
 
 def safe_log_ratio(up: np.ndarray, dn: np.ndarray) -> np.ndarray:

@@ -1,6 +1,7 @@
 {
   "experiment": "next_open_entry_updn_foundation",
-  "status": "NO_SIGNAL_FOUND",
+  "status": "DIAGNOSTIC_ONLY",
+  "artifact_status": "DIAGNOSTIC_ONLY",
   "target_contract": "next_open_after_signal_time",
   "decision_time": "signal_time",
   "entry_rule": "first_open_strictly_after_signal_time",
@@ -694,6 +695,69 @@
         }
       }
     }
+  },
+  "runner_decision_gate": {
+    "metric": "model Spearman(pred_entry_log_ratio_h, actual_entry_log_ratio_h)",
+    "threshold": 0.1,
+    "rule": "PASS_DIAGNOSTIC only if any primary/disclosure horizon reaches threshold",
+    "checked": [
+      {
+        "split": "val_stop",
+        "horizon": 3,
+        "spearman": -0.002145179250615483,
+        "passes_threshold": false
+      },
+      {
+        "split": "val_stop",
+        "horizon": 6,
+        "spearman": 0.013577026468646062,
+        "passes_threshold": false
+      },
+      {
+        "split": "val_stop",
+        "horizon": 12,
+        "spearman": 0.010726121703192038,
+        "passes_threshold": false
+      },
+      {
+        "split": "diagnostic_holdout",
+        "horizon": 3,
+        "spearman": 0.005533187770137348,
+        "passes_threshold": false
+      },
+      {
+        "split": "diagnostic_holdout",
+        "horizon": 6,
+        "spearman": 0.004624287634307151,
+        "passes_threshold": false
+      },
+      {
+        "split": "diagnostic_holdout",
+        "horizon": 12,
+        "spearman": 0.0202910726464027,
+        "passes_threshold": false
+      },
+      {
+        "split": "low_n_disclosure",
+        "horizon": 3,
+        "spearman": -0.007380711104876478,
+        "passes_threshold": false
+      },
+      {
+        "split": "low_n_disclosure",
+        "horizon": 6,
+        "spearman": 0.014006970167304844,
+        "passes_threshold": false
+      },
+      {
+        "split": "low_n_disclosure",
+        "horizon": 12,
+        "spearman": -0.01223721008142655,
+        "passes_threshold": false
+      }
+    ],
+    "max_checked_spearman": 0.0202910726464027,
+    "passes": false
   },
   "runner_status": "NO_SIGNAL_FOUND",
   "finished_at": "2026-07-02T14:35:20.972704+00:00"

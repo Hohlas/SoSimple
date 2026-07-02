@@ -224,6 +224,7 @@ def rebuild_entry_targets(
 def validate_summary(summary: dict) -> list[str]:
     required = [
         "status",
+        "artifact_status",
         "target_contract",
         "decision_time",
         "entry_rule",
@@ -235,6 +236,39 @@ def validate_summary(summary: dict) -> list[str]:
         "model_metrics",
     ]
     return [key for key in required if key not in summary]
+
+
+def build_runner_decision_gate(report: dict, threshold: float = 0.10) -> dict:
+    """Summarize the fixed diagnostic gate over all declared evaluation splits."""
+    split_names = [report["primary_split"], *report["disclosure_splits"]]
+    checked = []
+    max_spearman = None
+    for split_name in split_names:
+        for horizon in report["horizons"]:
+            metric = report["model_metrics"][split_name]["log_ratio"][f"log_ratio_{horizon}"]["spearman"]
+            checked.append(
+                {
+                    "split": split_name,
+                    "horizon": int(horizon),
+                    "spearman": _safe_float(metric),
+                    "passes_threshold": bool(metric is not None and metric >= threshold),
+                }
+            )
+            if metric is not None:
+                max_spearman = metric if max_spearman is None else max(max_spearman, metric)
+    return {
+        "metric": "model Spearman(pred_entry_log_ratio_h, actual_entry_log_ratio_h)",
+        "threshold": float(threshold),
+        "rule": "PASS_DIAGNOSTIC only if any primary/disclosure horizon reaches threshold",
+        "checked": checked,
+        "max_checked_spearman": _safe_float(max_spearman),
+        "passes": any(item["passes_threshold"] for item in checked),
+    }
+
+
+def decide_runner_status(report: dict, threshold: float = 0.10) -> str:
+    gate = build_runner_decision_gate(report, threshold=threshold)
+    return "PASS_DIAGNOSTIC" if gate["passes"] else "NO_SIGNAL_FOUND"
 
 
 def _safe_float(value):
@@ -430,7 +464,9 @@ def run_next_open_entry_foundation(
 
     report = {
         "experiment": "next_open_entry_updn_foundation",
-        "status": "RUNNING",
+        "status": "DIAGNOSTIC_ONLY",
+        "artifact_status": "DIAGNOSTIC_ONLY",
+        "runner_status": "RUNNING",
         "target_contract": "next_open_after_signal_time",
         "decision_time": "signal_time",
         "entry_rule": "first_open_strictly_after_signal_time",
@@ -471,9 +507,8 @@ def run_next_open_entry_foundation(
         report["dummy_metrics"][split_name] = dummy
         report["model_metrics"][split_name] = model
 
-    val_log_ratio = report["model_metrics"]["val_stop"]["log_ratio"]["log_ratio_3"]["spearman"]
-    report["runner_status"] = "NO_SIGNAL_FOUND" if (val_log_ratio is None or val_log_ratio < 0.10) else "PASS_DIAGNOSTIC"
-    report["status"] = report["runner_status"]
+    report["runner_decision_gate"] = build_runner_decision_gate(report)
+    report["runner_status"] = decide_runner_status(report)
     missing = validate_summary(report)
     if missing:
         report["runner_status"] = "MODEL_REPRO_FAILED"

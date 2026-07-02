@@ -1,9 +1,27 @@
 # Changelog SoSimple
 
+## [2026-07-02] — Next Open Entry Up/Dn Foundation (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Добавлен итоговый отчёт `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`.
+- Добавлен runner `ML/baseline/benchmark_next_open_entry_updn_foundation.py`, тесты `tests/test_next_open_entry_updn_foundation.py` и артефакты `ML/reports/next_open_entry_updn_foundation.json`, `ML/reports/next_open_entry_updn_rows.csv`.
+- После ревью разделены `artifact_status = DIAGNOSTIC_ONLY` и `runner_status = NO_SIGNAL_FOUND`; gate теперь явно проверяет все `H3/H6/H12` на `val_stop`, `diagnostic_holdout` и `low_n_disclosure`, а не только один horizon.
+
+### Результаты
+- Target пересчитан от фактического `entry_open`: первый доступный H1 `open` строго после `signal_time`.
+- Направленный `entry_log_ratio` вне обучения почти не ранжируется: `val_stop` `-0.0021/0.0136/0.0107`, `2023-2025` `0.0055/0.0046/0.0203`, `2026` `-0.0074/0.0140/-0.0122` для `H3/H6/H12`.
+- Отдельные `entry_up_h` и `entry_dn_h` сохраняют слабое ранжирование, но это не превращается в устойчивый направленный сигнал.
+- `next open` означает следующий доступный OHLC `open`, не всегда следующий календарный час: на `val_stop` задержка больше 1 часа у `6.09%` строк, максимум `74h`.
+
+### Вывод
+- Ветка `next open after signal_time` отклонена именно как направленная механика входа для `Regression Up/Dn`.
+- Открытым остаётся только отдельный сценарий входа через область `fractal0_price` или другой target, измеряемый от фактического исполнения.
+<!-- docs/reports/2026-07-02-next-open-entry-updn-foundation.md -->
+
 ## [2026-07-02] — Regression Up/Dn Already Moved Audit (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Добавлен итоговый отчёт `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
 - Отчёт приведён к финальному виду после рецензии: раскрыты все 3 split (`val_stop`, `diagnostic_holdout`, `low_n_disclosure`), уточнён `decision_time`, добавлен формальный `Stop Condition`, а блок проверки окна переписан как `PASS` с редкими крупными расхождениями, а не как идеальное совпадение.
+- Исправлен контракт ML-кода: `ML/baseline/analyze_regression_updn_already_moved_audit.py` больше не импортирует `processing.label_signals.parse_fractal`, а локально читает только нужные поля `fractal0`.
 
 ### Результаты
 - Во всех трёх split связь `pred_log_ratio` с будущим движением после входа на следующий `open` остаётся около нуля: `H3/H6/H12` на `val_stop` `-0.0149/-0.0174/0.0010`, на `2023-2025` `-0.0336/-0.0252/-0.0173`, на `2026` `-0.0040/-0.0038/0.0043`.
