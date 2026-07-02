@@ -72,3 +72,4 @@
 | Post-mortem диагностика неудачного этапа: разбор причин `FAIL`/`reject`, формулирование гипотез для следующего цикла | [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md) |
 | Каталог вариантов представления фракталов для планирования feature-profile матриц | [A6-fractal-feature-profile-catalog.md](A6-fractal-feature-profile-catalog.md) |
 | Feature Distribution Audit: проверка распределений признаков, mask/padding, corridor coverage и сдвига split до обучения | [A7-feature-distribution-audit.md](A7-feature-distribution-audit.md) |
+| Канонический каталог семейств признаков, представлений входа и таргетов проекта | [A8-feature-target-catalog.md](A8-feature-target-catalog.md) |
