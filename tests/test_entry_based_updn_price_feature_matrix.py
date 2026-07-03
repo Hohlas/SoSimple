@@ -243,6 +243,40 @@ def test_run_preflight_includes_progress_and_smoke_check(monkeypatch):
     assert report["elapsed_sec"] >= 0.0
 
 
+def test_entry_based_target_contract_check_passes_on_entry_targets():
+    splits = {"train_core": _split_frame_with_targets(), "val_stop": _split_frame_with_targets()}
+
+    check = runner.run_entry_based_target_contract_check(splits)
+
+    assert check["status"] == "PASS"
+    assert check["target_columns"] == list(runner.TARGET_COLUMNS)
+    assert check["split_checks"]["train_core"]["rows"] == 4
+    assert check["split_checks"]["val_stop"]["entry_log_ratio"]["H3"]["finite"] is True
+    assert check["forbidden_feature_prefixes"] == list(runner.FORBIDDEN_TOP_LEVEL_TARGET_PREFIXES)
+
+
+def test_entry_based_target_contract_check_fails_on_missing_target():
+    broken = _split_frame_with_targets().drop(columns=["entry_dn_12"])
+
+    check = runner.run_entry_based_target_contract_check({"train_core": broken})
+
+    assert check["status"] == "FAIL"
+    assert "entry_dn_12" in check["split_checks"]["train_core"]["missing_target_columns"]
+
+
+def test_run_preflight_includes_entry_based_target_contract(monkeypatch):
+    monkeypatch.setattr(
+        runner,
+        "_run_data_contract_smoke_check",
+        lambda: {"status": "FAIL", "command": "legacy smoke"},
+    )
+
+    report = runner.run_preflight({"train_core": _split_frame_with_targets()})
+
+    assert report["data_contract_smoke_check"]["status"] == "FAIL"
+    assert report["entry_based_target_contract_check"]["status"] == "PASS"
+
+
 def _split_frame_with_targets() -> pd.DataFrame:
     frame = pd.concat([_sample_frame()] * 4, ignore_index=True)
     frame["entry_up_3"] = [1.0, 2.0, 3.0, 4.0]

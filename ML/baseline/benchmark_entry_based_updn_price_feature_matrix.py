@@ -446,11 +446,95 @@ def _run_data_contract_smoke_check() -> dict:
     }
 
 
+def _target_column_stats(frame: pd.DataFrame, column: str) -> dict:
+    values = pd.to_numeric(frame[column], errors="coerce")
+    return {
+        "finite": bool(np.isfinite(values.to_numpy(dtype=float)).all()),
+        "nan_count": int(values.isna().sum()),
+        "negative_count": int((values < 0.0).sum()),
+        "min": _safe_float(values.min()),
+        "max": _safe_float(values.max()),
+    }
+
+
+def run_entry_based_target_contract_check(split_frames: dict[str, pd.DataFrame]) -> dict:
+    split_checks = {}
+    feature_checks = {}
+    overall_pass = True
+
+    for split_name, frame in split_frames.items():
+        if split_name.startswith("_") or not isinstance(frame, pd.DataFrame):
+            continue
+        missing = [column for column in TARGET_COLUMNS if column not in frame.columns]
+        split_pass = not missing and len(frame) > 0
+        target_stats = {}
+        entry_log_ratio = {}
+        if not missing:
+            for column in TARGET_COLUMNS:
+                stats_payload = _target_column_stats(frame, column)
+                target_stats[column] = stats_payload
+                split_pass = split_pass and stats_payload["finite"] and stats_payload["negative_count"] == 0
+
+            targets = target_matrix(frame)
+            ratios = _entry_log_ratio_from_targets(targets)
+            for horizon, values in ratios.items():
+                entry_log_ratio[horizon] = {
+                    "finite": bool(np.isfinite(values).all()),
+                    "min": _safe_float(np.min(values)),
+                    "max": _safe_float(np.max(values)),
+                }
+                split_pass = split_pass and entry_log_ratio[horizon]["finite"]
+
+        split_checks[split_name] = {
+            "status": "PASS" if split_pass else "FAIL",
+            "rows": int(len(frame)),
+            "missing_target_columns": missing,
+            "target_stats": target_stats,
+            "entry_log_ratio": entry_log_ratio,
+        }
+        overall_pass = overall_pass and split_pass
+
+    feature_source = split_frames.get("train_core")
+    if isinstance(feature_source, pd.DataFrame):
+        for profile_key in PROFILE_KEYS:
+            try:
+                features, metadata = build_profile_features(feature_source.head(64), profile_key)
+                forbidden = _find_forbidden_feature_columns(list(features.columns))
+                profile_pass = not forbidden
+                feature_checks[profile_key] = {
+                    "status": "PASS" if profile_pass else "FAIL",
+                    "feature_count": int(features.shape[1]),
+                    "forbidden_feature_columns": forbidden,
+                    "feature_names_sha256": hashlib.sha256(
+                        "\n".join(metadata["feature_names"]).encode("utf-8")
+                    ).hexdigest(),
+                }
+                overall_pass = overall_pass and profile_pass
+            except Exception as exc:  # pragma: no cover - serialized for artifact diagnosis
+                feature_checks[profile_key] = {
+                    "status": "FAIL",
+                    "error": f"{type(exc).__name__}: {exc}",
+                }
+                overall_pass = False
+    else:
+        overall_pass = False
+
+    return {
+        "status": "PASS" if overall_pass else "FAIL",
+        "target_columns": list(TARGET_COLUMNS),
+        "forbidden_feature_prefixes": list(FORBIDDEN_TOP_LEVEL_TARGET_PREFIXES),
+        "split_checks": split_checks,
+        "feature_checks": feature_checks,
+        "scope": "entry-based Up/Dn target and profile feature contract",
+    }
+
+
 def run_preflight(split_frames: dict[str, pd.DataFrame]) -> dict:
     started_at = _utc_now_iso()
     start = time.time()
     heartbeat("preflight_start", done_runs=0, total_runs=len(CONFIG.profile_keys) * len(CONFIG.seeds))
     smoke = _run_data_contract_smoke_check()
+    entry_contract = run_entry_based_target_contract_check(split_frames)
     report = {
         "status": "RUNNING",
         "artifact_status": "DIAGNOSTIC_ONLY",
@@ -459,6 +543,7 @@ def run_preflight(split_frames: dict[str, pd.DataFrame]) -> dict:
         "elapsed_sec": max(time.time() - start, 0.0),
         "split_row_counts": {name: int(len(frame)) for name, frame in split_frames.items()},
         "data_contract_smoke_check": smoke,
+        "entry_based_target_contract_check": entry_contract,
         "runs": [],
         "progress": {
             "done_runs": 0,
@@ -660,6 +745,9 @@ def run_entry_based_updn_price_feature_matrix(
     if report is None:
         report = run_preflight(split_frames)
         report.setdefault("runs", [])
+    elif "entry_based_target_contract_check" not in report:
+        report["entry_based_target_contract_check"] = run_entry_based_target_contract_check(split_frames)
+        write_report_atomic(report, report_path)
     total_runs = len(PROFILE_KEYS) * len(CONFIG.seeds)
     done_keys = completed_run_keys(report)
     start = time.time()

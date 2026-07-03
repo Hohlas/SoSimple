@@ -1,5 +1,23 @@
 # Changelog SoSimple
 
+## [2026-07-02] — Entry-Based Up/Dn Price-Feature Matrix (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Добавлен итоговый отчёт `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.
+- Добавлен bounded runner `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py`, тесты `tests/test_entry_based_updn_price_feature_matrix.py` и артефакты `ML/reports/entry_based_updn_price_feature_matrix.json`, `ML/reports/entry_based_updn_price_feature_matrix_rows.csv`.
+- После рецензии отчёт уточнён: раскрыта disclosure-таблица по `entry_log_ratio`, ослаблена интерпретация `WEAK_TRACE_FOUND`, снят преждевременный выбор `distance_atr` как winner и добавлен stop-condition для `short_updn_source_audited`.
+- Добавлен stage-specific `entry_based_target_contract_check`: проверяет `entry_up/dn` targets, конечность `entry_log_ratio` и отсутствие target-префиксов в profile features; на реальных split-ах статус `PASS`.
+
+### Результаты
+- На том же `entry-based` target и той же механике `next open after signal_time` проверены 7 профилей (`21/21` run, 3 seed).
+- Ни один primary или secondary блок не дал убедительного направленного сигнала: лучший `val_stop entry_log_ratio` у `distance_atr` только `0.0354`; на disclosure лучший блок уже `path_reaction` (`0.0445` на `2023-2025`, `0.0881` на `2026`), то есть устойчивого winner нет.
+- Runner вернул `WEAK_TRACE_FOUND`, но текущая summary-логика ставит этот статус слишком широко: достаточно side-trace у любого не-baseline профиля без требования uplift к `structure_full`.
+- `rows.csv` оказался preview-артефактом, а не честной run-level таблицей: в текущем виде он записан comma-separated и содержит повторяющиеся preview-строки по run.
+
+### Вывод
+- Ограниченная price-feature matrix не переоткрыла ветку `next open`: проблема не выглядит как недобор одного простого ценового блока.
+- Следующий допустимый шаг — только после исправления summary logic и артефактного слоя; выбирать один follow-up block сейчас преждевременно.
+<!-- docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md -->
+
 ## [2026-07-02] — Next Open Entry Up/Dn Foundation (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Добавлен итоговый отчёт `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`.

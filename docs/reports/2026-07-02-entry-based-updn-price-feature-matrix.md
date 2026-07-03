@@ -52,17 +52,21 @@
 
 ## Важное ограничение перед интерпретацией
 
-Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-check завершился со статусом `FAIL` не из-за тензорного контракта новой матрицы, а из-за ожидания старых колонок `target_buy_H6_val` / `target_sell_*` в стандартном smoke-check.
+Runner выполнил `statistics/data_contract_smoke_check.py`, но legacy smoke-check завершился со статусом `FAIL` не из-за тензорного контракта новой матрицы, а из-за ожидания старых колонок `target_buy_H6_val` / `target_sell_*` в стандартном smoke-check.
+
+После этого был добавлен отдельный `entry_based_target_contract_check` внутри `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py`. Он проверяет именно контракт этого stage: наличие `entry_up_3/6/12`, `entry_dn_3/6/12`, конечность `entry_log_ratio`, неотрицательность амплитудных targets и отсутствие target-префиксов в profile feature blocks. На реальных split-ах проверка завершилась `PASS` и сохранена в JSON.
 
 Что это значит:
 
-- shape, NaN/inf, `signed_dist_atr`, breach targets и базовые инварианты train-части прошли;
-- итог этого этапа всё равно нельзя поднимать выше `DIAGNOSTIC_ONLY`;
+- legacy smoke-check остаётся `FAIL`, потому что он проверяет не этот target-контракт;
+- stage-specific entry-based target contract теперь имеет `PASS`;
+- shape, NaN/inf, `signed_dist_atr`, breach targets и базовые инварианты train-части в legacy smoke-check прошли до старого target-блока;
+- итог этого этапа всё равно нельзя поднимать выше `DIAGNOSTIC_ONLY`, потому что сам stage является диагностической матрицей, а не frozen-candidate;
 - сравнительные результаты по блокам допустимы только как bounded diagnostic evidence.
 
 Дополнительные ограничения аудита:
 
-- отдельный A7-style distribution audit для новых feature blocks не выполнялся; в JSON сохранены `feature_count`, `feature_names`, hash порядка признаков и transform metadata, но нет квантилирования/долей нулей/NaN до `fillna` по каждому split;
+- отдельный A7-style distribution audit для новых feature blocks не выполнялся; в JSON сохранены `feature_count`, `feature_names`, hash порядка признаков, transform metadata и stage-specific target contract check, но нет квантилирования/долей нулей/NaN до `fillna` по каждому split;
 - `short_updn_source_audited` фактически строится из `fractal*` строк, но сам `audit_updn_feature_source()` остаётся декларативной проверкой: он фиксирует намерение и metadata, а не доказывает происхождение полей через независимую трассировку producer-а;
 - seed `42`, `77`, `123` не являются полноценной проверкой стохастической устойчивости: при `subsample=1.0` и `colsample_bytree=1.0` XGBoost baseline фактически детерминирован, поэтому одинаковость seed нельзя трактовать как независимое подтверждение результата;
 - `rows.csv` является preview-артефактом, а не полной таблицей run-level метрик: строки повторяются по run, не содержат `profile_key`/`seed`, и текущий файл записан comma-separated, тогда как проектный CSV-контракт требует `sep=";"`.
@@ -83,6 +87,20 @@ Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-ch
 
 На disclosure split знак не даёт устойчивого полезного выигрыша: значения обычно остаются малыми и не формируют убедительный winner.
 
+Лучшие `entry_log_ratio` на disclosure split:
+
+| Профиль | `diagnostic_holdout` | `low_n_disclosure` |
+|---|---:|---:|
+| `structure_full` | `0.0271` | `0.0628` |
+| `relative_price` | `0.0384` | `0.0538` |
+| `distance_atr` | `0.0332` | `0.0794` |
+| `price_coord_atr` | `0.0384` | `0.0538` |
+| `short_updn_source_audited` | `0.0108` | `0.0678` |
+| `path_reaction` | `0.0445` | `0.0881` |
+| `price_atr_scaled` | `0.0279` | `0.0127` |
+
+Это всё ещё слабый результат: ни один блок не достигает уровня, который можно было бы считать убедительным направленным сигналом. Но для честной интерпретации важно, что на disclosure лучшим выглядит уже не `distance_atr`, а `path_reaction`.
+
 ## Отдельный след по `entry_up` / `entry_dn`
 
 Хотя `entry_log_ratio` остался слабым, отдельные стороны движения дают воспроизводимый ненулевой след:
@@ -95,6 +113,22 @@ Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-ch
 Важно: этот след нельзя считать доказанным вкладом новых блоков. `structure_full` уже показывает близкий `entry_up` trace, поэтому runner-статус `WEAK_TRACE_FOUND` означает не "новые блоки нашли сигнал", а более узкий факт: в постановке `next open` сохраняется амплитудная ранжируемость отдельных `entry_up`/`entry_dn`, но она почти не превращается в направленный баланс `entry_log_ratio`.
 
 Практический вывод: новые блоки местами немного меняют amplitude trace, но не дают убедительного uplift поверх baseline.
+
+## Почему `WEAK_TRACE_FOUND` пока нельзя читать буквально
+
+Текущий runner выставляет `WEAK_TRACE_FOUND`, если для любого не-baseline профиля выполняются два условия:
+
+- `best_log_ratio < 0.10`;
+- `best_side_trace >= 0.10`.
+
+При этом текущее summary-правило не требует:
+
+- улучшения относительно `structure_full`;
+- устойчивости на disclosure split;
+- согласованности между `entry_up` и `entry_dn`;
+- проверки, что слабый след не является просто baseline-эффектом.
+
+Поэтому `WEAK_TRACE_FOUND` здесь надо читать не как надёжный исследовательский вердикт, а как промежуточный статус текущей summary logic. Содержательный вывод слабее: в задаче наблюдается амплитудный след, но его нельзя честно приписать новым блокам без дополнительного критерия uplift к baseline.
 
 ## Uplift Относительно `structure_full`
 
@@ -119,8 +153,8 @@ Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-ch
 | `structure_full` | `entry_log_ratio` отрицателен, `entry_up/dn` не нули | baseline не даёт направленного сигнала, но видит грубую амплитуду |
 | `relative_price` | почти нулевой uplift | локальное положение цены не решает проблему `next open` |
 | `distance_atr` | лучший слабый `entry_log_ratio` (`0.0354`) | даёт небольшой uplift к baseline, но уровень слишком мал для candidate |
-| `price_coord_atr` | повторяет `relative_price` | signed coordinate не даёт новой пользы поверх простого relative block |
-| `short_updn_source_audited` | `entry_log_ratio` почти ноль, `entry_up/dn` ненулевые | локальная историческая реакция не даёт направленного улучшения, amplitude trace близок к baseline |
+| `price_coord_atr` | даёт те же лучшие числа, что и `relative_price` | пока видно только совпадение итоговых метрик; без отдельной проверки нельзя утверждать, что блоки эквивалентны |
+| `short_updn_source_audited` | `entry_log_ratio` почти ноль, `entry_up/dn` ненулевые | локальная историческая реакция не даёт направленного улучшения, но сам блок нельзя считать полностью подтверждённым без независимой трассировки источника `Up/Dn` |
 | `path_reaction` | `entry_log_ratio` почти ноль, самый сильный `entry_up` trace | почти не улучшает baseline по `entry_up`, но немного сильнее по `entry_dn` |
 | `price_atr_scaled` | directional пользы нет | ценовой regime сам по себе не объясняет проблему |
 
@@ -135,8 +169,8 @@ Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-ch
 
 1. Ограниченная price-feature matrix воспроизводимо выполнена: `21/21` run, JSON и rows CSV сохранены.
 2. Ни один primary или secondary блок не дал полезного устойчивого улучшения для `entry_log_ratio` на `val_stop`.
-3. Runner завершился статусом `WEAK_TRACE_FOUND`, но этот статус нужно читать осторожно: он отражает наличие amplitude trace в задаче, а не доказанный вклад новых блоков поверх `structure_full`.
-4. Следовательно, проблема ветки `next open` не выглядит как простой недобор одного ценового блока: bounded матрица не нашла winner для направленного баланса.
+3. Runner завершился статусом `WEAK_TRACE_FOUND`, но этот статус нужно читать осторожно: в текущей реализации он фиксирует наличие side-trace у не-baseline профиля, а не доказанный полезный uplift поверх `structure_full`.
+4. Следовательно, проблема ветки `next open` не выглядит как простой недобор одного ценового блока: bounded матрица не нашла устойчивого winner для направленного баланса ни на `val_stop`, ни на disclosure.
 
 ## Следующий шаг
 
@@ -145,17 +179,21 @@ Runner выполнил `statistics/data_contract_smoke_check.py`, но smoke-ch
 - сначала исправить артефактный слой: писать rows/metrics CSV с `sep=";"`, добавить `profile_key`, `seed`, `split`, `target`, `horizon`, `spearman`, и не смешивать preview rows с run-level metrics;
 - усилить summary logic: `WEAK_TRACE_FOUND` должен требовать uplift к `structure_full`, а не только абсолютный `entry_up/dn` trace;
 - добавить distribution audit для новых price/path blocks или явно зафиксировать отказ от него как ограничение stage;
+- ввести явное правило выбора follow-up блока: отдельно по `val_stop`, отдельно по disclosure, чтобы не назначать победителя вручную;
 - если продолжать моделирование, заморозить один follow-up block, а не расширять матрицу;
-- кандидат для follow-up только после исправления summary logic: `distance_atr`, потому что он дал лучший слабый `entry_log_ratio` uplift; `path_reaction` пока скорее amplitude-disclosure, чем направленный кандидат;
+- на текущих артефактах единственного кандидата нет: `distance_atr` лучший на `val_stop`, а `path_reaction` лучший на disclosure;
+- для `short_updn_source_audited` ввести stop-condition: без независимой трассировки происхождения `Up3/Dn3...Up12/Dn12` не считать блок подтверждённым кандидатом;
 - цель follow-up: проверить, можно ли превратить amplitude trace в полезный directional gate без смены `entry-based` target.
 
 Не делать следующий шаг в виде «добавим ещё фильтры к next open».
 
 ## Verification
 
-- Focused tests: `./.venv/bin/python -m pytest tests/test_entry_based_updn_price_feature_matrix.py -q` -> `18 passed`.
+- Focused tests: `./.venv/bin/python -m pytest tests/test_entry_based_updn_price_feature_matrix.py -q` -> `21 passed`.
+- Entry-based contract check on real splits: `entry_based_target_contract_check.status = PASS` in `ML/reports/entry_based_updn_price_feature_matrix.json`.
 - Artifact cross-check: ключевые максимумы `entry_log_ratio`, `entry_up`, `entry_dn` сверены с `ML/reports/entry_based_updn_price_feature_matrix.json`.
-- Full test suite в рамках этого отчёта не запускался.
+- Full test suite: `./.venv/bin/python -m pytest tests/ -q` -> `1033 passed, 30 warnings`.
+- Whitespace check: `git diff --check` -> no output.
 
 ## Артефакты
 

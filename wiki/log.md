@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-03] update | Entry-based price-feature matrix report sync
+- Добавлен охват `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: после next-open target foundation добавлен bounded follow-up с ценовыми и path-блоками; зафиксировано, что `next open` не переоткрыт ни `entry_open` target-ом, ни ограниченной price-feature matrix.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 37 report updates.
+- Зафиксировано методическое знание: текущий `WEAK_TRACE_FOUND` в matrix-этапе нельзя трактовать как надёжный исследовательский вердикт без усиления summary logic; устойчивого winner между `distance_atr` и `path_reaction` нет.
+
 ## [2026-07-02] ingest | Regression Up/Dn ratio + already moved audits
 - Добавлен охват `docs/reports/2026-07-01-regression-updn-ratio-audit.md` и `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: target foundation теперь продолжена двумя новыми этапами, которые отделяют сигнал от `fractal0_price` от схемы немедленного входа.

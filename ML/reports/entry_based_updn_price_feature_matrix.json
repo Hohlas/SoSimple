@@ -2,7 +2,7 @@
   "status": "WEAK_TRACE_FOUND",
   "artifact_status": "DIAGNOSTIC_ONLY",
   "started_at": "2026-07-02T20:44:38+00:00",
-  "finished_at": "2026-07-02T20:59:03+00:00",
+  "finished_at": "2026-07-03T05:43:44+00:00",
   "elapsed_sec": 429.6264474391937,
   "split_row_counts": {
     "train_core": 44159,
@@ -39808,5 +39808,334 @@
         "improves_over_e0": true
       }
     }
+  },
+  "entry_based_target_contract_check": {
+    "status": "PASS",
+    "target_columns": [
+      "entry_up_3",
+      "entry_dn_3",
+      "entry_up_6",
+      "entry_dn_6",
+      "entry_up_12",
+      "entry_dn_12"
+    ],
+    "forbidden_feature_prefixes": [
+      "entry_up_",
+      "entry_dn_",
+      "entry_log_ratio_",
+      "up_",
+      "dn_"
+    ],
+    "split_checks": {
+      "train_core": {
+        "status": "PASS",
+        "rows": 44159,
+        "missing_target_columns": [],
+        "target_stats": {
+          "entry_up_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 64.06000000000017
+          },
+          "entry_dn_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 99.34999999999991
+          },
+          "entry_up_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 105.20000000000005
+          },
+          "entry_dn_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 113.5
+          },
+          "entry_up_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 111.70000000000005
+          },
+          "entry_dn_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 117.75999999999999
+          }
+        },
+        "entry_log_ratio": {
+          "H3": {
+            "finite": true,
+            "min": -4.108904838562012,
+            "max": 3.653252363204956
+          },
+          "H6": {
+            "finite": true,
+            "min": -4.315307140350342,
+            "max": 3.945457696914673
+          },
+          "H12": {
+            "finite": true,
+            "min": -4.475268363952637,
+            "max": 4.181591987609863
+          }
+        }
+      },
+      "val_stop": {
+        "status": "PASS",
+        "rows": 5205,
+        "missing_target_columns": [],
+        "target_stats": {
+          "entry_up_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 43.210000000000036
+          },
+          "entry_dn_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 77.87999999999988
+          },
+          "entry_up_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 63.61999999999989
+          },
+          "entry_dn_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 81.33999999999992
+          },
+          "entry_up_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 64.73000000000002
+          },
+          "entry_dn_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 116.47000000000003
+          }
+        },
+        "entry_log_ratio": {
+          "H3": {
+            "finite": true,
+            "min": -3.5840258598327637,
+            "max": 3.6066293716430664
+          },
+          "H6": {
+            "finite": true,
+            "min": -4.025202751159668,
+            "max": 3.7150344848632812
+          },
+          "H12": {
+            "finite": true,
+            "min": -4.025202751159668,
+            "max": 4.037135601043701
+          }
+        }
+      },
+      "diagnostic_holdout": {
+        "status": "PASS",
+        "rows": 8091,
+        "missing_target_columns": [],
+        "target_stats": {
+          "entry_up_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 88.0600000000004
+          },
+          "entry_dn_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 161.10999999999967
+          },
+          "entry_up_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 98.38999999999987
+          },
+          "entry_dn_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 183.65000000000055
+          },
+          "entry_up_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 136.1800000000003
+          },
+          "entry_dn_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 261.8699999999999
+          }
+        },
+        "entry_log_ratio": {
+          "H3": {
+            "finite": true,
+            "min": -4.081690311431885,
+            "max": 4.287441253662109
+          },
+          "H6": {
+            "finite": true,
+            "min": -4.422808647155762,
+            "max": 4.433537006378174
+          },
+          "H12": {
+            "finite": true,
+            "min": -5.058835983276367,
+            "max": 4.463079452514648
+          }
+        }
+      },
+      "low_n_disclosure": {
+        "status": "PASS",
+        "rows": 1162,
+        "missing_target_columns": [],
+        "target_stats": {
+          "entry_up_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 267.96000000000004
+          },
+          "entry_dn_3": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 438.66000000000076
+          },
+          "entry_up_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 300.5199999999995
+          },
+          "entry_dn_6": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 438.66000000000076
+          },
+          "entry_up_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 327.8299999999999
+          },
+          "entry_dn_12": {
+            "finite": true,
+            "nan_count": 0,
+            "negative_count": 0,
+            "min": 0.0,
+            "max": 530.3800000000001
+          }
+        },
+        "entry_log_ratio": {
+          "H3": {
+            "finite": true,
+            "min": -5.248601913452148,
+            "max": 5.411199569702148
+          },
+          "H6": {
+            "finite": true,
+            "min": -5.403852939605713,
+            "max": 5.498315334320068
+          },
+          "H12": {
+            "finite": true,
+            "min": -5.82440185546875,
+            "max": 5.498315334320068
+          }
+        }
+      }
+    },
+    "feature_checks": {
+      "structure_full": {
+        "status": "PASS",
+        "feature_count": 1004,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "e65cf685ab1c8d9ffdd4cfbd6ec7569efa4f755ad6b4623c5965cc14398a5f43"
+      },
+      "structure_full_relative_price": {
+        "status": "PASS",
+        "feature_count": 1104,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "36ddcae028e4cec9baf76941a547122af4d00e5f40512e17c850f0bcc8565547"
+      },
+      "structure_full_distance_atr": {
+        "status": "PASS",
+        "feature_count": 1204,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "fe6ab9b2079523c560db211b59aa5661c7957892bbde5525f2b8957d168ccb3d"
+      },
+      "structure_full_price_coord_atr": {
+        "status": "PASS",
+        "feature_count": 1104,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "879e99cc8d0aaa2516afd3baea78362478b14b767230a22f205cb8efeb8bd0ca"
+      },
+      "structure_full_short_updn_source_audited": {
+        "status": "PASS",
+        "feature_count": 1904,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "b113d3e697ce29e9243b47ba18443675594113fd0c02d0d6008a9c32963f650d"
+      },
+      "structure_full_path_reaction": {
+        "status": "PASS",
+        "feature_count": 1309,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "5a857be06b756bcb307b512490abe19fc7cdf85f38d03303d40b715e63ae5d83"
+      },
+      "structure_full_price_atr_scaled": {
+        "status": "PASS",
+        "feature_count": 1104,
+        "forbidden_feature_columns": [],
+        "feature_names_sha256": "a30c26ef9699c00c76d21e9edcb798ad895a349156edffd2b64a4688d720f2f7"
+      }
+    },
+    "scope": "entry-based Up/Dn target and profile feature contract"
   }
 }
