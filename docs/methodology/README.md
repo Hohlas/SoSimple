@@ -48,12 +48,12 @@
 | Проверка на утечки: feature contract, future-derived, online mismatch, candidate-source | [03-feature-contract-leakage.md](03-feature-contract-leakage.md) |
 | Разметка целей: label convention, SL/TP/timeout, multi-target | [04-labeling.md](04-labeling.md) |
 | EDA, качество данных, дисбаланс классов, константные признаки | [05-eda-data-quality.md](05-eda-data-quality.md) |
-| Train/val/test split, событийный ряд, regime shift, walk-forward, разделение validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
+| Train/validation/locked_test split, событийный ряд, regime shift, sample size gate, walk-forward, роли validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
 | Предварительно проверяешь oracle-потолок торговой механики при идеальном знании будущих labels и выбираешь перспективную side/H/off-зону | [06b-oracle-preflight.md](06b-oracle-preflight.md) |
 | Baseline-модели: dummy, простые ML, сравнение | [07-baseline-first.md](07-baseline-first.md) |
 | Обучение: архитектура, seed, кеш, ablation, CPU/GPU | [08-model-development.md](08-model-development.md) |
-| Выбор winner на validation (с разделением `val-stop`/`val-select`/`val-eval`), заморозка перед test, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
-| Frozen test, OOS, walk-forward | [10-frozen-test-oos.md](10-frozen-test-oos.md) |
+| Выбор winner на validation (с ролями `val-stop`/`val-select`/`val-eval`), заморозка перед `locked_test`, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
+| Locked test, OOS, walk-forward | [10-frozen-test-oos.md](10-frozen-test-oos.md) |
 | Устойчивость: по годам, сторонам, seeds, block bootstrap, permutation test, календарные признаки | [11-robustness.md](11-robustness.md) |
 | Бэктест: издержки, симулятор (включая SL-триггер с направленной spread-коррекцией), gross/net | [12-backtest-costs.md](12-backtest-costs.md) |
 | Экспорт, MT4 parity, reconciliation | [13-export-mt4-parity.md](13-export-mt4-parity.md) |

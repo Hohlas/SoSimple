@@ -5,9 +5,20 @@
 | `reject` | Гипотеза не прошла обязательные gates | Закрыть или сформулировать новую гипотезу |
 | `diagnostic_only` | Проверялась механика, но ML quality не доказана | Использовать только для отладки pipeline |
 | `research_only` | Есть сигнал, но не хватает устойчивости или contract неполный | Продолжать исследования, не подключать к production |
-| `candidate` | Прошёл validation/test, но нет полного execution/forward подтверждения | Готовить parity, robustness, forward |
-| `production_candidate` | Прошёл data contract, baseline comparison, frozen test, net-cost backtest, robustness и walk-forward, MT4 parity/reconciliation | Допускается controlled forward/online diagnostic; forward ещё не обязателен |
+| `candidate` | Прошёл validation/locked_test, но нет полного execution/forward подтверждения | Готовить parity, robustness, forward |
+| `production_candidate` | Прошёл data contract, baseline comparison, locked test, net-cost backtest, robustness и walk-forward, MT4 parity/reconciliation | Допускается controlled forward/online diagnostic; forward ещё не обязателен |
 | `confirmed` | Forward подтвердил frozen rule на заранее заданных критериях | Поддерживать monitoring, rollback и periodic retrain policy |
+
+### Lifecycle-статусы
+
+| Статус | Значение |
+|---|---|
+| `exploratory_result` | Найдено в поиске; может породить гипотезу, не candidate |
+| `frozen_rule_for_locked_test` | Правило заморожено для одной проверки на `locked_test` |
+| `locked_test_pass` | Замороженное правило прошло `locked_test`; ещё не production |
+| `candidate` | Verdict после PASS на validation/locked_test и раскрытия cumulative search budget |
+| `production_candidate` | Candidate прошёл execution, costs, robustness, parity |
+| `confirmed` | Forward подтвердил заранее заданные критерии |
 
 ### Связь verdict-статусов с уровнями исследования
 
@@ -25,7 +36,7 @@
 - data contract не прошёл leakage gate;
 - online features недоступны;
 - candidate-source не live-safe;
-- test уже был использован для выбора;
+- `locked_test` уже был использован для выбора;
 - validation gate не пройден;
 - oracle-preflight для торговой механики не прошёл канонические издержки;
 - единственный плюс кандидата держится на одной стороне, одном году или очень малом N;

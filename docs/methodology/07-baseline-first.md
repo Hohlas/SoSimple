@@ -46,7 +46,7 @@
 - Если сравниваются разные архитектуры (например, Transformer vs XGBoost), сравнение включает вариант baseline на тех же признаках, что и сложная модель (flattened). Иначе вывод «модель слабее baseline» не отделён от вывода «признаки слабее».
 - Если oracle-preflight применим, его результат не используется как модельный baseline и не попадает в признаки.
 - Baseline использует тот же execution convention, что и будущий winner.
-- Baseline не подбирается на test.
+- Baseline не подбирается на `locked_test`.
 - При дисбалансе смотреть precision/recall/F1/MCC, а не только accuracy.
 - Trading baseline включает издержки или помечен gross diagnostic.
 - Если canonical spread уже влияет на labels/fill, baseline без него имеет статус `DIAGNOSTIC_ONLY`.

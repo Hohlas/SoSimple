@@ -162,7 +162,7 @@ corridor_width_atr = (max_price_in_profile - min_price_in_profile) / ATR
 | `NaN` / `Inf` | Найти источник: парсинг, деление на ноль, ATR, логарифм, missing value |
 | `PADDING_NOT_ZERO` | Исправить mask/padding; перенормализация не считается исправлением |
 | Признак отсутствует в одном split | Исправить feature contract или исключить профиль |
-| train scaler fit использует validation/test/holdout | Исправить pipeline; старый результат `DIAGNOSTIC_ONLY` |
+| train scaler fit использует validation/locked_test/holdout | Исправить pipeline; старый результат `DIAGNOSTIC_ONLY` |
 | `corridor_Xatr` выходит за заявленные границы | Исправить отбор, ATR или формулу координаты |
 | Значимая доля строк без валидных токенов | Профиль reject или изменить заранее заданный отбор |
 
@@ -182,7 +182,7 @@ corridor_width_atr = (max_price_in_profile - min_price_in_profile) / ATR
 
 ## Преобразования
 
-Преобразования выбираются по train/validation audit, а не по test/holdout метрикам.
+Преобразования выбираются по train/validation audit, а не по locked_test/holdout метрикам.
 
 | Преобразование | Когда применять |
 |---|---|
@@ -229,6 +229,6 @@ Feature Distribution Audit сам по себе — это поисковый и
 - Сравнивать time-профиль с фрактальным профилем, где price подан абсолютным уровнем на длинном историческом периоде.
 - Делать вывод “фракталы слабее времени” без `relative_price`, `no_price` и corridor-контролей.
 - Исключать абсолютную цену без проверки `price/ATR`, если такая проверка дешёвая и заранее зафиксирована.
-- Подбирать clipping или логарифмирование после просмотра holdout/test метрик.
+- Подбирать clipping или логарифмирование после просмотра locked_test/holdout метрик.
 - Считать padding реальными нулями.
 - Менять ширину corridor после просмотра holdout результата.

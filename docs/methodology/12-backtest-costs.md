@@ -92,7 +92,7 @@
 - Не учитывать requote и missed opens.
 - Делать вывод о модели по M5 diagnostic, если production H1.
 - Делать zero-spread результат каноническим или равноправным trading experiment.
-- Менять spread/entry/fill convention после validation и считать это тем же frozen candidate.
+- Менять spread/entry/fill convention после validation и считать это тем же `frozen_rule_for_locked_test`.
 
 ### Проверка симулятора сделок
 

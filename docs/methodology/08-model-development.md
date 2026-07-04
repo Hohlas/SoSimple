@@ -14,7 +14,7 @@
 
 ### Пошаговые действия
 
-0. **Smoke-check данных.** Перед обучением/абляцией запустить `statistics/data_contract_smoke_check.py` на текущих train/val/test файлах. Если хотя бы одна проверка не пройдена — статус результата `DIAGNOSTIC_ONLY` или `FAIL`, PF/R² не интерпретировать. Особенно обязательно после изменения признаков, нормализации, разметки, CSV-схемы или MT4-экспорта. См. `docs/methodology/05-eda-data-quality.md`.
+0. **Smoke-check данных.** Перед обучением/абляцией запустить `statistics/data_contract_smoke_check.py` на текущих train/validation/locked_test файлах. Если хотя бы одна проверка не пройдена — статус результата `DIAGNOSTIC_ONLY` или `FAIL`, PF/R² не интерпретировать. Особенно обязательно после изменения признаков, нормализации, разметки, CSV-схемы или MT4-экспорта. См. `docs/methodology/05-eda-data-quality.md`.
 
 1. Выбрать модельную формулировку:
    - классификация;
@@ -31,20 +31,22 @@
    - Добавить в metadata кеша хеш feature contract-а (имена, порядок, count признаков). При несовпадении — ошибка, а не silent fallback.
    - Периодическая проверка: пересобрать кеш с нуля и сравнить validation-метрики с cached-версией. Расхождение = stale cache.
 6. Выполнить Final Tensor Scale Audit: проверить масштаб финальных tensor/матриц, которые реально подаются в `fit/train`, а не только исходный CSV или промежуточный DataFrame. Для каждого нового feature profile выполнить [A7 Feature Distribution Audit](A7-feature-distribution-audit.md) до обучения.
-7. Обучать и логировать каждую конфигурацию.
-8. Сохранять checkpoint, config, metrics, predictions и run metadata.
-9. Для нейросетей проверить несколько seed или объяснить, почему это невозможно.
+7. Проверить `sample_size_gate` из [06-temporal-split.md](06-temporal-split.md). Если `train` слишком мал, обучение имеет только `DIAGNOSTIC_ONLY`.
+8. Обучать и логировать каждую конфигурацию.
+9. Сохранять checkpoint, config, metrics, predictions и run metadata.
+10. Для нейросетей проверить несколько seed или объяснить, почему это невозможно.
 
 ### Runtime contract для benchmark runner-ов
 
 Для каждого нового ML benchmark/runner-а:
 
-1. Использовать не менее `24` потоков из `32` доступных для обучения, если это не конфликтует с параллельными worker-ами. Для XGBoost и аналогичных библиотек явно задавать `n_jobs` / `nthread` / `xgb_threads` и писать фактическое значение в JSON.
-2. Печатать heartbeat во время долгих этапов: старт, preflight, начало и конец каждого run, прогресс `done_runs/total_runs`, `elapsed`, по возможности `ETA`.
-3. Писать время выполнения в JSON: общий `elapsed_sec`, `started_at`, `finished_at`, а также `elapsed_sec` для каждого отдельного run.
-4. Поддерживать остановку и продолжение: сохранять JSON после каждого run; при повторном запуске пропускать уже завершённые ключи `profile/seed/job`.
-5. Добавлять CLI-флаги `--resume` / `--no-resume`; значение по умолчанию — `--resume`.
-6. Покрывать тестами resume, progress JSON и передачу thread count в модель.
+1. Сначала проверить существующие runner-ы той же ветки и переиспользовать их split, preflight, cache, resume, reporting и тестовые паттерны. Новый runner с нуля допустим только если прежний контракт не подходит; причину указать в плане.
+2. Использовать не менее `24` потоков из `32` доступных для обучения, если это не конфликтует с параллельными worker-ами. Для XGBoost и аналогичных библиотек явно задавать `n_jobs` / `nthread` / `xgb_threads` и писать фактическое значение в JSON.
+3. Печатать heartbeat во время долгих этапов: старт, preflight, начало и конец каждого run, прогресс `done_runs/total_runs`, `elapsed`, по возможности `ETA`.
+4. Писать время выполнения в JSON: общий `elapsed_sec`, `started_at`, `finished_at`, а также `elapsed_sec` для каждого отдельного run.
+5. Поддерживать остановку и продолжение: сохранять JSON после каждого run; при повторном запуске пропускать уже завершённые ключи `profile/seed/job`.
+6. Добавлять CLI-флаги `--resume` / `--no-resume`; значение по умолчанию — `--resume`.
+7. Покрывать тестами resume, progress JSON и передачу thread count в модель.
 
 ### Если Final Tensor Scale Audit не проходит
 
@@ -58,8 +60,8 @@
    - clipping финальных значений, например `[-8, 8]`, если правило заранее задано;
    - `log1p(x)` для неотрицательных величин с длинным правым хвостом;
    - `sign(x) * log1p(abs(x))` для signed-величин, которые бывают положительными и отрицательными.
-4. `REGIME_SHIFT` — предупреждение о сдвиге периода. Не перенормализовывать validation/test/holdout отдельно. Описать сдвиг, проверить смысл признака и при необходимости добавить заранее заданный диагностический профиль.
-5. Любое изменение scaler, clipping, log/signed-log или групп нормализации должно быть выбрано по train/validation diagnostic, а не по holdout/test-метрикам.
+4. `REGIME_SHIFT` — предупреждение о сдвиге периода. Не перенормализовывать validation/locked_test/holdout отдельно. Описать сдвиг, проверить смысл признака и при необходимости добавить заранее заданный диагностический профиль.
+5. Любое изменение scaler, clipping, log/signed-log или групп нормализации должно быть выбрано по train/validation diagnostic, а не по locked_test/holdout-метрикам.
 6. Если после исправления меняется feature builder или normalization, очистить кеши и повторить Final Tensor Scale Audit.
 
 ### Обязательные проверки
@@ -69,20 +71,20 @@
 - Early stopping использует только train-internal split или заранее выделенный `val-stop`, который не участвует в выборе торгового правила и финальной оценке. Использование одного validation для early stopping и последующей оценки завышает результат.
 - Production retrain воспроизводим на зафиксированном устройстве.
 - Для production retrain зафиксировать не только seed, но и устройство (CPU/GPU). Два последовательных запуска на одном устройстве должны давать идентичные чекпоинты (детерминированные операции, отключён cuDNN benchmark).
-- Если обучение велось на удалённом сервере, проверить воспроизводимость на локальной машине: тот же seed, те же predictions на фиксированном test.
+- Если обучение велось на удалённом сервере, проверить воспроизводимость на локальной машине: тот же seed, те же predictions на фиксированном `locked_test`.
 - Checkpoint нельзя использовать без metadata.
 - Если модель использует early stopping: доказать, что данные для остановки (`val-stop`) не пересекаются с данными для выбора торгового правила (`val-select`) и финальной оценки (`val-eval`). При отсутствии разделения — результат не выше `RESEARCH_ONLY`; если по этому же набору заявляется production/verdict, статус `DIAGNOSTIC_ONLY`.
-- Если модель использует scaler/normalization: доказать, что scaler fit-ится только на train, validation/test/holdout не участвуют в fit, а параметры scaler сохранены в metadata/JSON.
+- Если модель использует scaler/normalization: доказать, что scaler fit-ится только на train, validation/locked_test/holdout не участвуют в fit, а параметры scaler сохранены в metadata/JSON.
 - Для token/sequence моделей: padding и mask не участвуют в fit scaler; padding после normalization остаётся нулём.
 - Для нейросетей: выполнен scale audit финальных входов. После normalization train-признаки должны иметь ожидаемый масштаб, не должно быть NaN/inf и не должно быть признака, который доминирует над остальными только из-за масштаба.
-- Для новых feature profiles есть [A7 Feature Distribution Audit](A7-feature-distribution-audit.md): распределения train/validation, shift на test/holdout, mask/padding/corridor coverage и решение по каждому `ERROR`/`WARNING`.
+- Для новых feature profiles есть [A7 Feature Distribution Audit](A7-feature-distribution-audit.md): распределения train/validation, shift на locked_test/holdout, mask/padding/corridor coverage и решение по каждому `ERROR`/`WARNING`.
 - Для новых ML-раннеров тесты проверяют не только shape contract, но и scale contract:
   - после normalize train-признаки имеют ожидаемый масштаб;
   - padding остаётся 0;
   - scaler fit-ится только на train;
-  - val/test/holdout не влияют на scaler;
+  - validation/locked_test/holdout не влияют на scaler;
   - нет доминирующего признака по масштабу.
-- Если `normalized_feature_distribution_audit` дал `ERROR` или `WARNING`, решение по каждому флагу зафиксировано до интерпретации holdout/test.
+- Если `normalized_feature_distribution_audit` дал `ERROR` или `WARNING`, решение по каждому флагу зафиксировано до интерпретации locked_test/holdout.
 
 ### Критерии успешного завершения
 

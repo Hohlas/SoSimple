@@ -2,7 +2,7 @@
 
 ### Цель
 
-Не допустить, чтобы после допуска к online frozen candidate незаметно устарел, начал работать в другом data regime или был заменён новой моделью без полного validation cycle.
+Не допустить, чтобы после допуска к online candidate незаметно устарел, начал работать в другом data regime или был заменён новой моделью без полного validation cycle.
 
 ### Входы
 
@@ -10,7 +10,7 @@
 - online predictions;
 - trade event-log;
 - post-factum outcomes;
-- baseline distributions train/validation/test;
+- baseline distributions train/validation/locked_test;
 - feature contract version;
 - risk limits.
 
@@ -43,7 +43,7 @@
    - data drift;
    - feature/data contract change;
    - broker/provider change.
-7. Новый retrain проводить только через полный cycle методики: feature contract -> validation -> frozen test -> robustness/parity -> forward.
+7. Новый retrain проводить только через полный cycle методики: feature contract -> validation -> locked test -> robustness/parity -> forward.
 8. Поддерживать rollback: предыдущий frozen checkpoint/rule остаётся доступен до принятия нового.
 
 ### Обязательные проверки
@@ -52,7 +52,7 @@
 - Drift alert означает audit, а не автоматическое включение новой модели.
 - Метрики исполнения отделены от метрик качества сигнала.
 - Feature contract version сохранён рядом с prediction и trade event.
-- Retrain не использует forward/test как validation.
+- Retrain не использует forward/locked_test как validation.
 
 ### Критерии успешного завершения
 
@@ -77,4 +77,3 @@
 - Если contract изменился: старый checkpoint нельзя использовать без compatibility audit.
 
 ---
-

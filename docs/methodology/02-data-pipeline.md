@@ -2,7 +2,7 @@
 
 ### Цель
 
-Получить воспроизводимый путь от raw данных до подготовленного train/validation/test набора без скрытых ручных операций.
+Получить воспроизводимый путь от raw данных до подготовленного train/validation/locked_test набора без скрытых ручных операций.
 
 ### Входы
 
@@ -32,7 +32,7 @@
    - hash или manifest.
 10. Проверить, что runtime/inference path не запускает offline-labeling.
 
-Пример текущего проекта: `Nero.csv` -> сортировка фракталов внутри строки -> offline labeling -> row-wise normalization -> sequential split -> train/validation/test. Это пример структуры pipeline, а не разрешение переносить конкретные решения без нового source audit.
+Пример текущего проекта: `Nero.csv` -> сортировка фракталов внутри строки -> offline labeling -> row-wise normalization -> sequential split -> train/validation/locked_test. Это пример структуры pipeline, а не разрешение переносить конкретные решения без нового source audit.
 
 ### Порядок режимов для `Nero.csv`
 

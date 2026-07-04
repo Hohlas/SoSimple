@@ -2,7 +2,7 @@
 
 ### Цель
 
-Проверить frozen candidate на новых данных после принятия решения.
+Проверить candidate на новых данных после принятия решения.
 
 ### Входы
 
@@ -27,7 +27,8 @@
 
 ### Обязательные проверки
 
-- Forward window строго новее validation/test.
+- Forward window строго новее validation/locked_test.
+- Forward проходит заранее заданный minimum N; если сделок/сигналов мало, verdict только `watch`.
 - Нет ретюнинга на forward до verdict.
 - Online preprocessing проходит leakage preflight.
 - Diagnostic timeframe не подменяет production timeframe.
@@ -41,7 +42,7 @@
 
 ### Типовые ошибки
 
-- Называть старый frozen test forward validation.
+- Называть старый `locked_test` forward validation.
 - Менять threshold после нескольких online сделок.
 - Делать вывод о H1-модели по M5 diagnostic.
 - Не отделять пропущенный вход от плохого сигнала.
@@ -54,4 +55,3 @@
 - Если signal ok, execution fail: чинить execution layer.
 
 ---
-

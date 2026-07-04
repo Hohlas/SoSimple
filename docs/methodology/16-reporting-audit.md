@@ -19,13 +19,13 @@
     - Context;
     - Уровень этапа: поисковый / проверочный (см. [00-research-management.md](00-research-management.md));
     - What Was Done;
-    - Multiple Testing Context: search budget (модели × профили × таргеты × горизонты × инструменты × параметры), применённая коррекция (или пометка `DIAGNOSTIC_ONLY`/`RESEARCH_ONLY`);
+    - Multiple Testing Context: current и cumulative search budget (модели × профили × таргеты × стороны × горизонты × seed × инструменты × entry/exit policy × spread/fill convention × transforms/scalers × filters × параметры), применённая коррекция или статус `DIAGNOSTIC_ONLY`/`RESEARCH_ONLY`;
     - Changed Files;
     - Verification;
     - Results;
     - Conclusions;
     - Limitations / Open Questions;
-    - Validation Split Disclosure: как данные были разделены на `val-stop`, `val-select`, `val-eval` (или почему результат не претендует на frozen-candidate);
+    - Split Disclosure: границы `train`/`validation`/`locked_test`, роли `val-stop`/`val-select`/`val-eval`, `sample_size_gate`;
     - Next Step;
     - Related Materials.
 2. Указать команды, версии, paths, hashes, rules, checkpoints.
@@ -34,10 +34,10 @@
    - `normalization_config`;
    - где fit-ился scaler и какие данные не участвовали в fit;
    - какие признаки, padding и mask исключены из fit;
-   - `normalized_feature_distribution_audit` для train/validation/test или holdout;
+   - `normalized_feature_distribution_audit` для train/validation/locked_test или disclosure holdout;
    - список флагов аудита распределений и решение по каждому флагу: block, fix, rerun или accept-as-warning;
    - какие дополнительные преобразования применены (`RobustScaler`, clipping, `log1p`, signed-log), почему они выбраны и на каком split принято решение;
-   - подтверждение, что holdout/test не использовался для выбора normalization/scaler/clipping/log-преобразований;
+   - подтверждение, что locked_test/disclosure holdout не использовался для выбора normalization/scaler/clipping/log-преобразований;
    - ссылку на artifact [A7 Feature Distribution Audit](A7-feature-distribution-audit.md), если создавался новый feature profile или sequence-вход;
    - итоговый вывод `scale_contract`: `PASS`/`FAIL`/`DIAGNOSTIC_ONLY`.
 5. Для принятого кандидата создать model card:
@@ -46,10 +46,11 @@
    - `decision_time`;
    - feature contract version;
    - target/label contract;
-   - training/validation/test/forward windows;
+   - train/validation/locked_test/forward windows;
    - checkpoint/rule/export paths;
+   - `cumulative_search_budget_id`;
    - cost assumptions;
-   - validation/test/forward verdict;
+   - validation/locked_test/forward verdict;
    - known risks;
    - monitoring/retraining policy;
    - stop conditions.
@@ -63,8 +64,9 @@
 ### Обязательные проверки
 
 - Отчёт отделяет факты от гипотез.
-- В отчёте явно указан уровень этапа: поисковый или проверочный. Для поискового — раскрыт search budget и явно отмечено, что результат не может быть кандидатом без нового проверочного цикла. Для проверочного — указано, какие правила, split и инструменты были заморожены до запуска.
+- В отчёте явно указан уровень этапа: поисковый или проверочный. Для поискового — раскрыты current/cumulative search budget и явно отмечено, что результат не может быть кандидатом без нового проверочного цикла. Для проверочного — указано, какие правила, split и инструменты были заморожены до запуска.
 - Выбор по holdout запрещён; отчёт содержит явное подтверждение, что holdout не использовался для выбора.
+- Отчёт содержит количество raw rows, событий, сигналов и сделок после фильтров по каждому split; малый N понижает статус.
 - Есть список limitations.
 - Все источники результата доступны.
 - Ключевые числа в отчёте (AUC, PF, trades count, yearly PF) сверены со structured artifact (JSON/CSV/parquet). Если structured artifact отсутствует, отчёт обязан содержать команду воспроизведения и hash входов. Расхождение отчёт↔artifact — блокирующая ошибка.
