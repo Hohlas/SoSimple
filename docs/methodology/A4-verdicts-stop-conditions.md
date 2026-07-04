@@ -13,14 +13,14 @@
 
 | Уровень | Verdict-статусы | Разрешено |
 |---|---|---|
-| Поисковый (exploratory) | `reject`, `diagnostic_only`, `research_only` | Генерация гипотез, расслабленные пороги, диагностические прогоны |
-| Проверочный (confirmatory) | `candidate`, `production_candidate`, `confirmed` | Предзарегистрированные пороги, frozen test, замороженный profile/target/transform |
+| Поисковый (exploratory) | `reject`, `diagnostic_only`, `research_only` | Широкий поиск гипотез при раскрытом search budget |
+| Проверочный (confirmatory) | `candidate`, `production_candidate`, `confirmed` | Проверка заранее замороженных правил без подбора |
 
 Нельзя задним числом поднять статус поискового результата до кандидата. Переход из поискового уровня в проверочный требует нового плана с заранее зафиксированными условиями (см. [00-research-management.md](00-research-management.md)).
 
 ## Stop conditions
 
-Остановить текущий cycle и не продолжать model sweep, если:
+Остановить текущий проверочный cycle и не продолжать в нём model sweep, если:
 
 - data contract не прошёл leakage gate;
 - online features недоступны;
@@ -38,3 +38,5 @@ Oracle-preflight может остановить неудачную механи
 Если кандидат получил `reject`, но до этого oracle-preflight показывал сильный потолок или модель имела заметный ranking-сигнал, следующий шаг — [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md). Такой разбор не отменяет `reject`, а только формулирует новую ограниченную гипотезу.
 
 Правильный следующий шаг в этих случаях: написать reject/diagnostic report и сформулировать новую ограниченную гипотезу.
+
+Если цель — продолжить широкий поиск, это должен быть новый поисковый cycle с явным search budget и максимальным verdict не выше `research_only`, а не расширение проваленного проверочного cycle.

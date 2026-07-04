@@ -342,3 +342,5 @@ Pipeline, генерирующий ML-сигналы, пригодные для 
 ---
 
 You have 2 usage limit resets available. Run /usage to use one
+
+мажинное обучение применительно к временным рядам и поиску уязвимостей 
