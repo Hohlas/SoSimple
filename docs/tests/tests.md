@@ -102,6 +102,22 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | `test_ml_code_does_not_import_label_signals_parse_fractal` | `ML/` не использует `processing.label_signals.parse_fractal()` как feature extractor |
 | `test_ml_code_does_not_hard_cast_normalized_categorical_fractal_fields` | нормализованные `strong`, `break`, `count` не приводятся обратно к `int` |
 
+---
+
+### [test_entry_based_updn_fractal_selection_ablation.py](../../tests/test_entry_based_updn_fractal_selection_ablation.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py`
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen registry | порядок representation profile и model grid |
+| CLI | `--resume` по умолчанию, `--no-resume` override |
+| Anchor contract | `nearest_k` и `corridor_Xatr` строятся от `fractal0.price` и row-level `ATR` |
+| Feature contract | общий `same_feature_bundle`, target denylist, запрет `up_24/dn_24/up_48/dn_48` во всех representation profile |
+| Coverage audit | пустые строки, truncation, corridor coverage summary |
+| Runtime contract | progress JSON, per-run save, `thread_count` propagation |
+| Summary logic | `WEAK_TRACE_FOUND` / `NO_SIGNAL_FOUND`, best-by tables по всем `H3/H6/H12`, smoke-check disclosure |
+
 ## Зависимости
 
 - `pytest>=8.0`

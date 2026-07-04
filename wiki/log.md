@@ -8,6 +8,13 @@
 - Обновлён `wiki/index.md`: охват fractal-stop research расширен до 37 report updates.
 - Зафиксировано методическое знание: текущий `WEAK_TRACE_FOUND` в matrix-этапе нельзя трактовать как надёжный исследовательский вердикт без усиления summary logic; устойчивого winner между `distance_atr` и `path_reaction` нет.
 
+## [2026-07-03] update | Fractal selection ablation clean rerun
+- Добавлен охват `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: после исправления feature horizon contract (`Up/Dn` только 3/6/12) и all-horizon summary лучший чистый след — `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, но устойчивого directional winner нет.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 38 report updates.
+- Зафиксировано методическое знание: старый `zones_plus_nearest_k40 / H3` shortlist был следствием `H3-only` summary и смешанных `Up/Dn` горизонтов; следующий допустимый shortlist — `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80`.
+- Post-review correction: runner status logic приведена к weak-trace rule плана; отчёт дополнен disclosure split, distribution flags, direction-vs-amplitude таблицей и оговоркой, что H12 требует отдельного методического решения перед rerun.
+
 ## [2026-07-02] ingest | Regression Up/Dn ratio + already moved audits
 - Добавлен охват `docs/reports/2026-07-01-regression-updn-ratio-audit.md` и `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: target foundation теперь продолжена двумя новыми этапами, которые отделяют сигнал от `fractal0_price` от схемы немедленного входа.

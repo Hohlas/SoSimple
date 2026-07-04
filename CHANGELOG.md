@@ -1,5 +1,27 @@
 # Changelog SoSimple
 
+## [2026-07-03] — Fractal Selection Ablation On Entry-Based Target (DIAGNOSTIC_ONLY)
+### Добавлено/Изменено
+- Добавлен bounded runner `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py` для frozen representation ablation на фиксированном `entry-based next open` target.
+- Добавлен тест `tests/test_entry_based_updn_fractal_selection_ablation.py` для frozen registry, progress/resume JSON, thread-count propagation и summary logic.
+- Добавлены артефакты `ML/reports/entry_based_updn_fractal_selection_ablation.json`, `ML/reports/entry_based_updn_fractal_selection_ablation_metrics.csv` и `ML/reports/entry_based_updn_fractal_selection_ablation_rows.csv`.
+- Добавлен итоговый отчёт `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md` и модульная документация `docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md`.
+- Runner доведён до runtime contract: `thread_count=24`, heartbeat, early progress JSON, сохранение после каждого run, `--resume` по умолчанию и пропуск уже завершённых тяжёлых фаз preflight/audit.
+- После ревью исправлена честность сравнения: `nearest/zones` больше не протаскивают `up_24/dn_24/up_48/dn_48`, summary считает все `H3/H6/H12`, добавлен `smoke_check_disclosure`.
+
+### Результаты
+- Чистый повторный прогон `--no-resume` завершён: `120/120` run за `12525.8s` (`3 ч 29 мин`), `target_mode=rebuilt`, `entry_based_target_contract_check=PASS`.
+- Контрольные точки зафиксированы в structured artifact: `anchor_contract`, `same_feature_bundle`, `updn_horizons=3/6/12`, target-builder fingerprint и progress metadata.
+- Лучший `val_stop` directional trace после исправления summary: `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, uplift к `all100` внутри модели `+0.0498`.
+- Дополнительные слабые H12-следы: `nearest_k20`, `nearest_k60`, `nearest_k80`; старый `zones_plus_nearest_k40` больше не входит в главный shortlist.
+- Итоговый status runner-а: `WEAK_TRACE_FOUND`; stage verdict остаётся `DIAGNOSTIC_ONLY`.
+- `distribution_audit` завершился со статусом `WARNING`; legacy `data_contract_smoke_check=FAIL`, но `smoke_check_disclosure=LEGACY_SMOKE_FAIL_STAGE_CONTRACT_PASS`.
+
+### Вывод
+- Смена способа отбора фракталов не переоткрыла ветку `entry-based next open` как устойчивый направленный сигнал.
+- Если продолжать линию, сначала нужно решить, имеет ли `H12` практический смысл для `next open after signal_time`, и добавить entry-based smoke-check. Узкий rerun по `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` допустим только после этого решения.
+<!-- docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md -->
+
 ## [2026-07-02] — Entry-Based Up/Dn Price-Feature Matrix (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Добавлен итоговый отчёт `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.

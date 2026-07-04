@@ -1,67 +1,74 @@
 # Context Handoff
 
-**Дата:** 2026-07-02
+**Дата:** 2026-07-03
 
 ## Текущий этап
 
-Связка `Regression Up/Dn target foundation` → `ratio audit` → `already moved audit` теперь закрыта как диагностическая линия.
-
-Главный факт больше не в том, что target family `up_*/dn_*` содержит сигнал. Это уже подтверждено. Главный новый вывод в другом: этот сигнал **не переносится** в схему немедленного входа `next open after signal_time`.
+Этап `Fractal Selection Ablation On Entry-Based Target` завершён.
 
 Итоговый structured artifact:
 
-- `ML/reports/regression_updn_already_moved_audit.json`
-- статус runner: `PASS_DIAGNOSTIC`
+- `ML/reports/entry_based_updn_fractal_selection_ablation.json`
+- статус runner: `WEAK_TRACE_FOUND`
 - verdict этапа: `DIAGNOSTIC_ONLY`
+
+Это не reversal предыдущего вывода про `next open after signal_time`. После исправления честности сравнения слабый след остаётся только диагностическим: лучший directional trace находится на `H12`, но не достигает уровня подтверждённого winner.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`
-- `docs/reports/2026-07-01-regression-updn-ratio-audit.md`
-- `ML/reports/regression_updn_already_moved_audit.json`
-- `ML/reports/regression_updn_already_moved_audit_rows.csv`
-- `ML/reports/regression_updn_ratio_audit.json`
+- `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md`
+- `ML/reports/entry_based_updn_fractal_selection_ablation.json`
+- `ML/reports/entry_based_updn_fractal_selection_ablation_metrics.csv`
+- `ML/reports/entry_based_updn_fractal_selection_ablation_rows.csv`
+- `docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md`
 
 ## Главный вывод
 
-От цены `fractal0_price` сигнал остаётся сильным, особенно на коротких горизонтах:
+Технический контракт этапа выполнен:
 
-- `val_stop` Spearman `pred vs actual from fractal`:
-  - `H3 = 0.8786`
-  - `H6 = 0.7815`
-  - `H12 = 0.6749`
+- `target_mode = rebuilt`
+- `entry_based_target_contract_check = PASS`
+- `anchor_contract` и `same_feature_bundle` записаны в artifact
+- `updn_horizons = 3/6/12` для всех representation profile
+- запрещённые `up_24/dn_24/up_48/dn_48` в `feature_names`: `0`
+- `smoke_check_disclosure = LEGACY_SMOKE_FAIL_STAGE_CONTRACT_PASS`
+- `thread_count = 24`
+- чистый полный прогон `120/120`, `elapsed_sec = 12525.8`
 
-Но после реально доступного входа на следующий `open` связь практически исчезает и это повторяется на всех трёх split:
+По содержанию результат слабый:
 
-- `val_stop`: `-0.0149 / -0.0174 / 0.0010`
-- `diagnostic_holdout=2023-2025`: `-0.0336 / -0.0252 / -0.0173`
-- `low_n_disclosure=2026`: `-0.0040 / -0.0038 / 0.0043`
+- устойчивого направленного winner нет;
+- лучший `val_stop` trace: `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, uplift к `all100` `+0.0498`;
+- дополнительные слабые H12-следы:
+  - `nearest_k20`
+  - `nearest_k60`
+  - `nearest_k80`
+- эти следы в основном `amplitude-only`, а не directional.
 
-Это значит:
-
-- `Regression Up/Dn` как target family не опровергнут;
-- но `market-entry` на ближайшем следующем H1 `open` для этого target **отклонён**.
-
-Отдельно подтверждено, что заметная часть движения часто уже произошла до входа:
-
-- доля строк, где уже прошло не меньше половины движения хотя бы по одной стороне target:
-  - `H3 = 57.29%`
-  - `H6 = 42.15%`
-  - `H12 = 29.80%`
+`all100` не выглядит обязательным baseline-победителем, но результат остаётся exploratory и не создаёт trading candidate.
 
 ## Следующий шаг
 
-Разрешён только узкий follow-up по entry-механике, а не новый широкий поиск модели:
+Если продолжать эту ветку, сначала нужен методический preflight:
 
-- вход, привязанный к `fractal0_price`;
-- `retest-entry` / `limit-entry`;
-- новый target, измеряемый прямо от `entry_open`, если задача именно про немедленный вход.
+- решить, имеет ли `H12` практический смысл для механики `next open after signal_time`;
+- если `H12` не подходит, остановить ветку или задать короткий-horizon stop condition;
+- добавить отдельный entry-based smoke-check, чтобы не зависеть от legacy `statistics/data_contract_smoke_check.py`.
+
+Только после этого можно обсуждать узкий rerun:
+
+- shortlist:
+  - `corridor_5atr`
+  - `nearest_k20`
+  - `nearest_k60`
+  - `nearest_k80`
+- без расширения model grid;
+- без новых `k` и новых corridor width;
+- без выбора по disclosure split.
 
 ## Запрещённые направления
 
-- Не использовать `pred_log_ratio`, `pred_up - pred_dn` или `pred_up / pred_dn` как немедленный `market-entry` на следующем `open`.
-- Не возвращаться к оптимизации `Stop/Profit` вокруг этой схемы входа: она уже диагностически отклонена.
-- Не выбирать новые правила по `diagnostic_holdout` (`2023-2025`) или `low_n_disclosure` (`2026`).
-- Не смешивать два разных объекта:
-  - сигнал движения от `fractal0_price`;
-  - сигнал остаточного движения после фактически доступного входа.
+- Не трактовать `WEAK_TRACE_FOUND` как подтверждённый торговый сигнал.
+- Не использовать `diagnostic_holdout` или `low_n_disclosure` для выбора representation winner.
+- Не расширять representation matrix задним числом по итогам этого же прогона.
+- Не смешивать amplitude-only trace с directional uplift.
