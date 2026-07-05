@@ -626,6 +626,11 @@
 - Fixed `ML/baseline/analyze_regression_updn_already_moved_audit.py`: removed forbidden ML import of `processing.label_signals.parse_fractal` and kept only local `fractal0` field extraction needed by the audit.
 - Updated `CHANGELOG.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: recorded that next-open target retraining from actual `entry_open` still yields `NO_SIGNAL_FOUND` for directional ranking while leaving fractal-price entry mechanics open.
 
+### 2026-07-04: Ingest Entry-Based Next Open Closeout
+- Added `docs/reports/2026-07-04-entry-based-next-open-closeout.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded closeout verdict `PIVOT`, weak direction (`all100 / xgboost_depth3 / H24 = 0.0533 -> 0.0335`), strong amplitude trace (`nearest_k80 / hist_gradient_boosting / entry_up H3 = 0.3414 -> 0.4449`), and the next-step shift toward amplitude / movement-regime targets.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-04 closeout, 39 report updates.
+
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.

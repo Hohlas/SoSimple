@@ -1,5 +1,26 @@
 # Changelog SoSimple
 
+## [2026-07-04] — Entry-Based Next Open Closeout (DIAGNOSTIC_ONLY / PIVOT)
+### Добавлено/Изменено
+- Добавлен closeout runner `ML/baseline/benchmark_entry_based_next_open_closeout.py` для shortlist профилей `all100`, `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` на split-контракте `train` / large `validation`.
+- Добавлен focused-тест `tests/test_entry_based_next_open_closeout.py`: frozen scope, entry-based smoke-check, `H24`, full serialized `Up/Dn`, scale audit, simple trade diagnostic и verdict rules.
+- Базовый builder `benchmark_entry_based_updn_fractal_selection_ablation.py` получил управляемый список serialized `Up/Dn` horizons: старый runner по умолчанию остаётся `3/6/12`, closeout отдельно запрашивает `3/6/12/24/48`.
+- Добавлены артефакты `ML/reports/entry_based_next_open_closeout.json`, `*_metrics.csv`, `*_rows.csv`, `*_scale_audit.csv`.
+- Добавлен отчёт `docs/reports/2026-07-04-entry-based-next-open-closeout.md` и модульная документация `docs/ML/benchmark_entry_based_next_open_closeout.py.md`.
+
+### Результаты
+- Чистый прогон `--no-resume` завершён: `20/20`, `elapsed_sec=2274.4`, `thread_count=24`.
+- `entry_based_smoke_check.status=PASS`; rows: `train=44159`, `validation=13296`, `low_n_disclosure=1162`.
+- `representation_preflight=PASS`, `distribution_audit=WARNING`, `scale_audit=WARNING`.
+- Лучший directional result: `all100 / xgboost_depth3 / H24`, `val_select=0.0533`, `val_eval=0.0335`; gate `0.10` не пройден.
+- Лучший amplitude result: `nearest_k80 / hist_gradient_boosting / entry_up H3`, `val_select=0.3414`, `val_eval=0.4449`.
+- Лучший gross simple trade diagnostic: `all100 / xgboost_depth3 / H24`, `select_mean=0.0833`, `eval_mean=0.0129`; это не backtest и не trading candidate.
+
+### Вывод
+- Текущая направленная ветка `entry-based next open` не проходит closeout как direction signal.
+- Вердикт closeout: `PIVOT`. Следующий допустимый шаг — отдельная bounded постановка для amplitude / movement-regime target, без открытия `locked_test` до freeze.
+<!-- docs/reports/2026-07-04-entry-based-next-open-closeout.md -->
+
 ## [2026-07-03] — Fractal Selection Ablation On Entry-Based Target (DIAGNOSTIC_ONLY)
 ### Добавлено/Изменено
 - Добавлен bounded runner `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py` для frozen representation ablation на фиксированном `entry-based next open` target.

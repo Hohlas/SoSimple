@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-04 06:09 UTC · git `7de4cd3`
+> Auto-generated 2026-07-04 23:04 UTC · git `aee8d0d`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1586 files  ·  **Commit**: `7de4cd3`  ·  **Generated**: 2026-07-04 06:09 UTC
+**Tracked**: 1591 files  ·  **Commit**: `aee8d0d`  ·  **Generated**: 2026-07-04 23:04 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-06-24 | 11KB | `822f5437` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-04 | 227KB | `c66cf2af` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-04 | 230KB | `82552e16` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-04 | 3KB | `f345c185` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-03 | 51KB | `1d1e48c4` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-04 | 3KB | `10abc15b` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-04 | 52KB | `df360ee4` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -28,11 +28,12 @@
 |------|-------------|----------|------|------|
 | [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-06-17 | 1KB | `c7573738` |
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-06-17 | 20KB | `bb5a5097` |
-| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-06-17 | 26KB | `b9448b9f` |
+| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-04 | 26KB | `e29295c8` |
 | [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-06-30 | 1KB | `24414c2c` |
 | [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-06-17 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-06-17 | 3KB | `facaa586` |
+| [docs/ML/benchmark_entry_based_next_open_closeout.py.md](docs/ML/benchmark_entry_based_next_open_closeout.py.md) |  | 2026-07-04 | 4KB | `2e4e368c` |
 | [docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md](docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md) |  | 2026-07-04 | 4KB | `69b30968` |
 | [docs/ML/benchmark_entry_path_all_rows_ranking.py.md](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | All-rows ranking benchmark без offline `signal != 0` gate | 2026-06-17 | 1KB | `0bc4a19a` |
 | [docs/ML/benchmark_entry_path_causal_surrogate.py.md](docs/ML/benchmark_entry_path_causal_surrogate.py.md) | Causal surrogate benchmark для offline `label_all().signal` | 2026-06-17 | 1KB | `2fd85fde` |
@@ -98,36 +99,36 @@
 | [docs/audit/2026-06-30-Вывод-по-Stage-5-6.md](docs/audit/2026-06-30-Вывод-по-Stage-5-6.md) |  | 2026-06-30 | 7KB | `91677d99` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-17 | 1KB | `67407e17` |
 | [docs/audit/next.md](docs/audit/next.md) | Текущий research-план после Stage 4.3 | 2026-06-30 | 5KB | `31356f8b` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-06-30 | 29KB | `aa5d2247` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-07-04 | 30KB | `5f0824a6` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-17 | 14KB | `11dc384e` |
-| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-06-24 | 7KB | `2691a751` |
+| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-07-04 | 9KB | `638bb201` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-06-17 | 5KB | `6bf55f21` |
-| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-06-17 | 7KB | `db9dba4c` |
-| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-06-17 | 31KB | `ab30e935` |
+| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-07-04 | 7KB | `3edd87b0` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-07-04 | 31KB | `a1757847` |
 | [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-20 | 6KB | `13a28e56` |
-| [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-06-17 | 10KB | `a158f78f` |
-| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-06-20 | 7KB | `d6a44e56` |
-| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-06-17 | 5KB | `4ce7ab0b` |
-| [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-06-17 | 9KB | `4152c2c8` |
-| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-06-24 | 5KB | `500789b2` |
-| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-07-02 | 14KB | `98b20c82` |
-| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-06-24 | 9KB | `3523d28b` |
-| [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-06-17 | 3KB | `da6c66c6` |
-| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-06-24 | 11KB | `d8eaf905` |
-| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-06-17 | 9KB | `3c1b8457` |
-| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-06-17 | 2KB | `c1028a82` |
-| [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-06-17 | 2KB | `c11c0bbb` |
-| [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-06-17 | 3KB | `c9457c9b` |
-| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-06-24 | 7KB | `7781e222` |
-| [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-06-17 | 3KB | `c8f22299` |
-| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-06-20 | 5KB | `082359b4` |
-| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-06-24 | 5KB | `df334595` |
-| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-06-24 | 3KB | `90abc08d` |
-| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-06-20 | 29KB | `b4df17c9` |
-| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-07-02 | 15KB | `b08904dd` |
-| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-07-02 | 17KB | `8d283029` |
+| [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-07-04 | 10KB | `b6ff44a6` |
+| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-07-04 | 7KB | `345e9aa3` |
+| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-07-04 | 9KB | `23deff38` |
+| [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-07-04 | 9KB | `da8d2f19` |
+| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-07-04 | 5KB | `5446b875` |
+| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-07-04 | 15KB | `8f893540` |
+| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-07-04 | 10KB | `a9b7c9db` |
+| [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-07-04 | 3KB | `17fd2a84` |
+| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-07-04 | 11KB | `50b2880b` |
+| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-07-04 | 9KB | `807d77f8` |
+| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-04 | 2KB | `49598973` |
+| [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-07-04 | 2KB | `25d2c512` |
+| [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-07-04 | 3KB | `c463688b` |
+| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-07-04 | 8KB | `f4cd00b2` |
+| [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-07-04 | 3KB | `1adbbef0` |
+| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-07-04 | 5KB | `fa741eb4` |
+| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-07-04 | 5KB | `0b8f610b` |
+| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-07-04 | 4KB | `39bd54ac` |
+| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject: воспроизведение провала, декомпозиция причин, oracle-отклонения, negative controls и гипотезы следующего цикла | 2026-07-04 | 30KB | `b2287af7` |
+| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог вариантов представления фракталов: all100/newest/nearest/corridor/zones/path/time-control для планирования bounded feature-profile матриц | 2026-07-04 | 15KB | `968752dc` |
+| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-07-04 | 17KB | `4e827324` |
 | [docs/methodology/A8-feature-target-catalog.md](docs/methodology/A8-feature-target-catalog.md) |  | 2026-07-02 | 19KB | `c3844712` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-02 | 8KB | `c6c82acd` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-04 | 8KB | `0d2c8cef` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-06-17 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-17 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-17 | 2KB | `8f996d16` |
@@ -233,6 +234,7 @@
 | [docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md](docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-02 | 22KB | `44b4a44c` |
 | [docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md](docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 57KB | `085a51d6` |
 | [docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-03 | 34KB | `b3050713` |
+| [docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md](docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-04 | 49KB | `4e328f17` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-02 | 8KB | `d3669173` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
@@ -271,7 +273,7 @@
 | [docs/superpowers/specs/2026-06-24-stage5_1b-updn-fields-and-shift-baseline-design.md](docs/superpowers/specs/2026-06-24-stage5_1b-updn-fields-and-shift-baseline-design.md) |  | 2026-06-29 | 32KB | `942aba53` |
 | [docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md](docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md) |  | 2026-06-29 | 23KB | `8c41f47b` |
 | [docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md](docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md) |  | 2026-06-29 | 3KB | `ad0ca2f6` |
-| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-03 | 6KB | `1a314aaa` |
+| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-04 | 6KB | `dcd6307b` |
 
 ## Reports
 
@@ -379,6 +381,7 @@
 | [docs/reports/2026-07-02-next-open-entry-updn-foundation.md](docs/reports/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-03 | 14KB | `fcbbbaf2` |
 | [docs/reports/2026-07-02-regression-updn-already-moved-audit.md](docs/reports/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 11KB | `204ff3fc` |
 | [docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-04 | 17KB | `7ec6722b` |
+| [docs/reports/2026-07-04-entry-based-next-open-closeout.md](docs/reports/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-04 | 10KB | `a408d165` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-20 | 2KB | `9a64f8af` |
 
 ## ML
@@ -390,7 +393,8 @@
 | [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) |  |  | 2026-07-02 | 28KB | `04568800` |
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 DIAGNOSTIC_ONLY post-mortem: why `range_w1_atr` dominates and why permutation stability remains weak | ✅ | 2026-06-30 | 28KB | `6450da16` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
-| [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | DIAGNOSTIC_ONLY runner: frozen representation ablation (`all100`, `nearest_k`, `corridor_Xatr`, `zones`) на фиксированном `entry-based next open` target; единые `Up/Dn` горизонты 3/6/12, all-horizon summary, smoke disclosure | ✅ | 2026-07-04 | 51KB | `8549df45` |
+| [ML/baseline/benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | DIAGNOSTIC_ONLY closeout runner: shortlist `entry-based next open`, large validation, `H3/H6/H12/H24`, entry smoke-check, full serialized `Up/Dn`, scale audit и verdict `STOP/PIVOT/CONTINUE` | ✅ | 2026-07-04 | 30KB | `38b668b0` |
+| [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | DIAGNOSTIC_ONLY runner: frozen representation ablation (`all100`, `nearest_k`, `corridor_Xatr`, `zones`) на фиксированном `entry-based next open` target; единые `Up/Dn` горизонты 3/6/12, all-horizon summary, smoke disclosure | ✅ | 2026-07-04 | 51KB | `cbbee1d3` |
 | [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) |  |  | 2026-07-03 | 30KB | `1dd98792` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach: Dummy/RF baseline и one-shot frozen test для пробоя уровня `fractal0` | ✅ | 2026-06-17 | 13KB | `186f1abf` |
 | [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav: RF breach+fav, grid search торговых порогов и frozen test | ✅ | 2026-06-17 | 26KB | `5b982cce` |
@@ -1128,6 +1132,7 @@
 | [tests/test_diagnose_stage4_3.py](tests/test_diagnose_stage4_3.py) |  |  | 2026-06-17 | 7KB | `744416e4` |
 | [tests/test_diagnose_stage4_4.py](tests/test_diagnose_stage4_4.py) |  |  | 2026-06-17 | 5KB | `92b2ee48` |
 | [tests/test_diagnose_stage5_prep.py](tests/test_diagnose_stage5_prep.py) |  |  | 2026-06-17 | 3KB | `bdbbbf12` |
+| [tests/test_entry_based_next_open_closeout.py](tests/test_entry_based_next_open_closeout.py) | `ML/baseline/benchmark_entry_based_next_open_closeout.py` — shortlist scope, entry smoke-check, `H24`, full serialized `Up/Dn`, scale audit, metrics и verdict rules | ✅ | 2026-07-04 | 10KB | `69900961` |
 | [tests/test_entry_based_updn_fractal_selection_ablation.py](tests/test_entry_based_updn_fractal_selection_ablation.py) | `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py` — frozen registry, feature horizon contract, progress/resume, thread contract, all-horizon summary и artifact logic | ✅ | 2026-07-04 | 16KB | `68712af1` |
 | [tests/test_entry_based_updn_price_feature_matrix.py](tests/test_entry_based_updn_price_feature_matrix.py) |  |  | 2026-07-03 | 14KB | `9f72d46c` |
 | [tests/test_entry_path_direct_direction_targets.py](tests/test_entry_path_direct_direction_targets.py) |  |  | 2026-06-17 | 3KB | `f28963bf` |
@@ -1619,8 +1624,8 @@
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-06-17 | 89KB | `11a5246a` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-03 | 5KB | `b2a665fe` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-04 | 56KB | `4054e54e` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-04 | 5KB | `606bb10a` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-04 | 56KB | `bfb27bd5` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1631,7 +1636,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-04 | 103KB | `53fd4f3f` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-04 | 105KB | `6018acff` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |

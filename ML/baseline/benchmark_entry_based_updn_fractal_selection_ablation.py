@@ -97,7 +97,9 @@ MODEL_ORDER = (
 SPLIT_ORDER = ("train_core", "val_stop", "diagnostic_holdout", "low_n_disclosure")
 HORIZON_MAP = {"H3": (0, 1), "H6": (2, 3), "H12": (4, 5)}
 SUMMARY_HORIZONS = ("3", "6", "12")
-ALLOWED_UPDN_HORIZONS = ("3", "6", "12")
+DEFAULT_SERIALIZED_UPDN_FEATURE_HORIZONS = ("3", "6", "12")
+FULL_SERIALIZED_UPDN_FEATURE_HORIZONS = ("3", "6", "12", "24", "48")
+ALLOWED_UPDN_HORIZONS = DEFAULT_SERIALIZED_UPDN_FEATURE_HORIZONS
 EXCLUDED_UPDN_HORIZONS = ("24", "48")
 COMMON_SELECTION_FIELDS = (
     "direction",
@@ -116,6 +118,10 @@ COMMON_SELECTION_FIELDS = (
     "dn_6",
     "up_12",
     "dn_12",
+    "up_24",
+    "dn_24",
+    "up_48",
+    "dn_48",
 )
 STRUCTURE_CONTEXT_FIELDS = ("atr", "fractal0_direction", "fractals_above_count", "fractals_below_count", "fractal0_price_rank")
 
@@ -268,9 +274,14 @@ def _fill_selection_slot(row_features: dict[str, float], prefix: str, parsed: di
         row_features[f"{prefix}_{field}"] = float(parsed.get(field, 0.0) or 0.0)
 
 
-def _drop_excluded_updn_horizon_columns(features: pd.DataFrame) -> pd.DataFrame:
-    excluded_parts = tuple(f"_{side}_{horizon}" for side in ("up", "dn") for horizon in EXCLUDED_UPDN_HORIZONS)
-    return features.loc[:, [column for column in features.columns if not any(part in column for part in excluded_parts)]].copy()
+def _filter_serialized_updn_horizon_columns(features: pd.DataFrame, allowed_horizons: tuple[str, ...]) -> pd.DataFrame:
+    allowed_parts = tuple(f"_{side}_{horizon}" for horizon in allowed_horizons for side in ("up", "dn"))
+    filtered_columns = []
+    for column in features.columns:
+        is_updn = any(f"_{side}_" in column for side in ("up", "dn"))
+        if not is_updn or any(part in column for part in allowed_parts):
+            filtered_columns.append(column)
+    return features.loc[:, filtered_columns].copy()
 
 
 def _candidate_fractals(row: pd.Series) -> tuple[float, list[dict[str, Any]]]:
@@ -415,7 +426,11 @@ def _build_zones_features(frame: pd.DataFrame, with_nearest_k: int | None = None
     return features, coverage
 
 
-def build_representation_features(df: pd.DataFrame, profile_key: str) -> tuple[pd.DataFrame, dict]:
+def build_representation_features(
+    df: pd.DataFrame,
+    profile_key: str,
+    serialized_updn_horizons: tuple[str, ...] = DEFAULT_SERIALIZED_UPDN_FEATURE_HORIZONS,
+) -> tuple[pd.DataFrame, dict]:
     registry = build_representation_registry()
     spec = registry[profile_key]
     selection_family = spec["selection_family"]
@@ -433,7 +448,7 @@ def build_representation_features(df: pd.DataFrame, profile_key: str) -> tuple[p
     else:
         raise ValueError(f"Unsupported selection_family: {selection_family}")
 
-    features = _drop_excluded_updn_horizon_columns(features)
+    features = _filter_serialized_updn_horizon_columns(features, serialized_updn_horizons)
     metadata = {
         "profile_key": profile_key,
         "selection_family": selection_family,
@@ -442,8 +457,10 @@ def build_representation_features(df: pd.DataFrame, profile_key: str) -> tuple[p
         "coverage_summary": coverage,
         "anchor_contract": {"price": "fractal0.price", "atr": "row_ATR"},
         "same_feature_bundle": "structure_full + distance_atr + price_coord_atr",
-        "updn_horizons": list(ALLOWED_UPDN_HORIZONS),
-        "excluded_updn_horizons": list(EXCLUDED_UPDN_HORIZONS),
+        "updn_horizons": list(serialized_updn_horizons),
+        "excluded_updn_horizons": [
+            horizon for horizon in FULL_SERIALIZED_UPDN_FEATURE_HORIZONS if horizon not in serialized_updn_horizons
+        ],
     }
     if "k" in spec:
         metadata["k"] = int(spec["k"])

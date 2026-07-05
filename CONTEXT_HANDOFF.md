@@ -1,74 +1,72 @@
 # Context Handoff
 
-**Дата:** 2026-07-03
+**Дата:** 2026-07-04
 
 ## Текущий этап
 
-Этап `Fractal Selection Ablation On Entry-Based Target` завершён.
+Этап `Entry-Based Next Open Closeout` завершён.
 
 Итоговый structured artifact:
 
-- `ML/reports/entry_based_updn_fractal_selection_ablation.json`
-- статус runner: `WEAK_TRACE_FOUND`
-- verdict этапа: `DIAGNOSTIC_ONLY`
+- `ML/reports/entry_based_next_open_closeout.json`
+- closeout verdict: `PIVOT`
+- verdict этапа: `DIAGNOSTIC_ONLY / PIVOT`
 
-Это не reversal предыдущего вывода про `next open after signal_time`. После исправления честности сравнения слабый след остаётся только диагностическим: лучший directional trace находится на `H12`, но не достигает уровня подтверждённого winner.
+Текущая направленная ветка `entry-based next open` не прошла closeout как direction signal. Directional gate не пройден, но amplitude trace заметно сильнее, поэтому ветка не закрыта как "нет вообще никакого следа"; её нужно перенаправить на amplitude / movement-regime target.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md`
-- `ML/reports/entry_based_updn_fractal_selection_ablation.json`
-- `ML/reports/entry_based_updn_fractal_selection_ablation_metrics.csv`
-- `ML/reports/entry_based_updn_fractal_selection_ablation_rows.csv`
-- `docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md`
+- `docs/reports/2026-07-04-entry-based-next-open-closeout.md`
+- `ML/reports/entry_based_next_open_closeout.json`
+- `ML/reports/entry_based_next_open_closeout_metrics.csv`
+- `ML/reports/entry_based_next_open_closeout_rows.csv`
+- `ML/reports/entry_based_next_open_closeout_scale_audit.csv`
+- `docs/ML/benchmark_entry_based_next_open_closeout.py.md`
 
 ## Главный вывод
 
 Технический контракт этапа выполнен:
 
-- `target_mode = rebuilt`
-- `entry_based_target_contract_check = PASS`
-- `anchor_contract` и `same_feature_bundle` записаны в artifact
-- `updn_horizons = 3/6/12` для всех representation profile
-- запрещённые `up_24/dn_24/up_48/dn_48` в `feature_names`: `0`
-- `smoke_check_disclosure = LEGACY_SMOKE_FAIL_STAGE_CONTRACT_PASS`
+- `entry_based_smoke_check.status = PASS`
+- split: `train=44159`, `validation=13296`, `low_n_disclosure=1162`
+- `locked_test` не открыт
+- `EURUSD` и cross-pair validation не запускались
+- closeout features используют serialized `Up/Dn` horizons `3/6/12/24/48`
+- старый ablation runner сохраняет default `3/6/12`
+- `representation_preflight = PASS`
+- `distribution_audit = WARNING`
+- `scale_audit = WARNING`
 - `thread_count = 24`
-- чистый полный прогон `120/120`, `elapsed_sec = 12525.8`
+- чистый полный прогон `20/20`, `elapsed_sec = 2274.4`
 
-По содержанию результат слабый:
+По содержанию:
 
-- устойчивого направленного winner нет;
-- лучший `val_stop` trace: `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, uplift к `all100` `+0.0498`;
-- дополнительные слабые H12-следы:
-  - `nearest_k20`
-  - `nearest_k60`
-  - `nearest_k80`
-- эти следы в основном `amplitude-only`, а не directional.
+- лучший direction: `all100 / xgboost_depth3 / H24`, `val_select=0.0533`, `val_eval=0.0335`;
+- direction gate `0.10` не пройден;
+- лучший amplitude: `nearest_k80 / hist_gradient_boosting / entry_up H3`, `val_select=0.3414`, `val_eval=0.4449`;
+- лучший gross simple trade diagnostic: `all100 / xgboost_depth3 / H24`, `select_mean=0.0833`, `eval_mean=0.0129`;
+- simple trade diagnostic не является backtest и не учитывает costs.
 
-`all100` не выглядит обязательным baseline-победителем, но результат остаётся exploratory и не создаёт trading candidate.
+`PIVOT` означает: не продолжать текущий вопрос "up or down" для этой mechanics, а формулировать отдельную амплитудную постановку.
 
 ## Следующий шаг
 
-Если продолжать эту ветку, сначала нужен методический preflight:
+Следующий файл читать:
 
-- решить, имеет ли `H12` практический смысл для механики `next open after signal_time`;
-- если `H12` не подходит, остановить ветку или задать короткий-horizon stop condition;
-- добавить отдельный entry-based smoke-check, чтобы не зависеть от legacy `statistics/data_contract_smoke_check.py`.
+- `docs/reports/2026-07-04-entry-based-next-open-closeout.md`
+- `docs/ML/benchmark_entry_based_next_open_closeout.py.md`
 
-Только после этого можно обсуждать узкий rerun:
+Если продолжать исследование, писать новый bounded plan для amplitude / movement-regime target:
 
-- shortlist:
-  - `corridor_5atr`
-  - `nearest_k20`
-  - `nearest_k60`
-  - `nearest_k80`
-- без расширения model grid;
-- без новых `k` и новых corridor width;
-- без выбора по disclosure split.
+- заранее зафиксировать target family и gates;
+- не использовать `entry_log_ratio` как главный вопрос;
+- не открывать `locked_test` до freeze;
+- не использовать 2026 для выбора;
+- раскрыть search width.
 
 ## Запрещённые направления
 
-- Не трактовать `WEAK_TRACE_FOUND` как подтверждённый торговый сигнал.
-- Не использовать `diagnostic_holdout` или `low_n_disclosure` для выбора representation winner.
-- Не расширять representation matrix задним числом по итогам этого же прогона.
-- Не смешивать amplitude-only trace с directional uplift.
+- Не трактовать `PIVOT` как trading candidate.
+- Не продолжать широкий перебор `k`, corridor width, model family или entry rule внутри этой же ветки.
+- Не использовать `low_n_disclosure=2026` для выбора.
+- Не открывать `locked_test` без отдельного frozen-rule плана.

@@ -118,6 +118,25 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Runtime contract | progress JSON, per-run save, `thread_count` propagation |
 | Summary logic | `WEAK_TRACE_FOUND` / `NO_SIGNAL_FOUND`, best-by tables по всем `H3/H6/H12`, smoke-check disclosure |
 
+### [test_entry_based_next_open_closeout.py](../../tests/test_entry_based_next_open_closeout.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_next_open_closeout.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_next_open_closeout.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen scope | shortlist `all100/corridor_5atr/nearest_k20/60/80`, `H3/H6/H12/H24`, no cross-pair validation |
+| Entry smoke-check | stage-specific target columns без legacy target dependency |
+| Feature contract | `H24` target matrix, serialized `Up/Dn 3/6/12/24/48`, запрет top-level targets во входе |
+| Scale audit | `none_tree_raw`, разделение input/target normalization pools, dominance checks |
+| Metrics | direction/amplitude Spearman и gross `simple_trade` diagnostic |
+| Verdict | `STOP`, `PIVOT`, `CONTINUE` rules и запрет `CONTINUE` при combined validation roles |
+
 ## Зависимости
 
 - `pytest>=8.0`
