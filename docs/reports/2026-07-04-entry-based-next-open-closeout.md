@@ -32,7 +32,7 @@ Target families:
 
 Инструмент: текущий инструмент без cross-pair validation.
 
-Entry/exit policy: сигнал существует на `signal_time`, вход только по следующему доступному `entry_open`; выход здесь не моделируется, `simple_trade` использует знак фактического `entry_log_ratio`.
+Entry/exit policy: сигнал существует на `signal_time`, вход только по следующему доступному `entry_open`; выход здесь не моделируется. `simple_trade` выбирает сторону по знаку `pred_entry_log_ratio_H` и умножает эту сторону на фактический `entry_log_ratio_H`.
 
 Статус результата ограничен `DIAGNOSTIC_ONLY` / `RESEARCH_ONLY`, потому что `locked_test` не открыт.
 
@@ -43,6 +43,7 @@ Stage-specific smoke-check прошёл:
 - `entry_based_smoke_check.status = PASS`;
 - legacy target columns не требуются;
 - проверены `entry_up`, `entry_dn`, `entry_log_ratio` для `H3/H6/H12/H24`;
+- проверены `NaN`/`inf`, ненулевая вариативность target, порядок `entry_time > signal_time` и временный порядок split-ов;
 - rows: `train=44159`, `validation=13296`, `low_n_disclosure=1162`.
 
 Legacy `statistics/data_contract_smoke_check.py` не является stage verdict для этого closeout.
@@ -56,10 +57,12 @@ Closeout использует тот же representation builder, что и пр
 - structure fields;
 - shift/age и ATR-координаты;
 - price/distance относительно `fractal0.price`, scaled by row `ATR`;
-- serialized `Up/Dn` horizons `3/6/12/24/48` внутри фрактального snapshot;
+- serialized `Up/Dn` horizons `3/6/12/24/48` внутри `slot_*` признаков фрактального snapshot;
 - row time context через `row_hour_sin/cos`, `row_dow_sin/cos`.
 
 Запрещённые top-level target/label поля не входят в feature matrix. Старый runner по умолчанию сохраняет прежний контракт `3/6/12`; полный `3/6/12/24/48` включается только новым closeout runner-ом.
+
+После рецензии удалены отдельные добавочные признаки `fractal0_up_*` / `fractal0_dn_*`: в первом clean run они были полностью нулевыми (`unique_count=1`, `zero_rate=1.0`) и не добавляли живой информации. Новый clean run подтверждает `fractal0_updn rows = 0` в scale CSV. Живые serialized `Up/Dn` остаются в `slot_*_up_*` / `slot_*_dn_*`.
 
 ## Scale Audit And Normalization Contract
 
@@ -70,13 +73,15 @@ Input normalization groups и target groups разделены. Target columns �
 Scale audit:
 
 - overall status: `WARNING`;
-- `all100`: `WARNING`, 716 flags;
-- `corridor_5atr`: `WARNING`, 1441 flags;
-- `nearest_k20`: `WARNING`, 90 flags;
-- `nearest_k60`: `WARNING`, 210 flags;
-- `nearest_k80`: `WARNING`, 270 flags.
+- `all100`: `WARNING`, 686 near-constant / missing flags по CSV rule;
+- `corridor_5atr`: `WARNING`, 1411 near-constant / missing flags по CSV rule;
+- `nearest_k20`: `WARNING`, 60 near-constant / missing flags по CSV rule;
+- `nearest_k60`: `WARNING`, 180 near-constant / missing flags по CSV rule;
+- `nearest_k80`: `WARNING`, 240 near-constant / missing flags по CSV rule.
 
-Dominance checks не стали блокером, но большое число near-constant flags по широким профилям снижает силу интерпретации.
+Принятый как шум класс предупреждений: near-constant slot columns, возникающие из пустых или неприменимых фрактальных слотов в конкретном profile/split. Они не создают leakage, но раздувают матрицу и снижают читаемость feature importance.
+
+Требующий исправления класс предупреждений: полностью нулевые добавочные `fractal0_updn` признаки. Они удалены из runner-а и из нового scale CSV. Dominance checks и оставшиеся near-constant flags не стали блокером для verdict, но запрещают сильный вывод о конкретном profile winner.
 
 ## Split Policy
 
@@ -108,6 +113,18 @@ Validation roles были разделены внутри validation:
 
 Main directional gate `0.10` не пройден. Даже лучший score остаётся слабым.
 
+Candidate-only directional top без control `all100`:
+
+| Profile | Model | Horizon | `val_select` Spearman | `val_eval` Spearman |
+|---|---|---:|---:|---:|
+| `nearest_k60` | `xgboost_depth5` | `H12` | `0.0373` | `0.0274` |
+| `corridor_5atr` | `hist_gradient_boosting` | `H12` | `0.0301` | `0.0182` |
+| `corridor_5atr` | `ridge` | `H6` | `0.0292` | `0.0188` |
+| `nearest_k60` | `xgboost_depth3` | `H12` | `0.0288` | `0.0173` |
+| `nearest_k60` | `hist_gradient_boosting` | `H12` | `0.0286` | `0.0095` |
+
+Это слабее общей картины: без control-профиля направленный след не приближается к gate `0.10`.
+
 ## Direction Versus Amplitude
 
 Amplitude trace заметно сильнее direction trace:
@@ -132,11 +149,24 @@ Amplitude trace заметно сильнее direction trace:
 
 Это gross diagnostic без spread, commission, slippage, position limits и executable MT4 simulator. Его нельзя читать как trading candidate.
 
+Top `simple_trade` по `val_eval`:
+
+| Profile | Model | Horizon | Select mean | Eval mean | Eval trades | Eval long | Eval short | Eval win rate |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `corridor_5atr` | `xgboost_depth5` | `H6` | `0.0233` | `0.0372` | 6648 | 2825 | 3823 | `0.5191` |
+| `all100` | `xgboost_depth5` | `H24` | `0.0565` | `0.0248` | 6648 | 2496 | 4152 | `0.5108` |
+| `nearest_k80` | `ridge` | `H6` | `0.0094` | `0.0143` | 6648 | 2380 | 4268 | `0.5078` |
+| `nearest_k60` | `ridge` | `H6` | `-0.0002` | `0.0140` | 6648 | 2458 | 4190 | `0.5062` |
+| `nearest_k80` | `ridge` | `H12` | `0.0084` | `0.0131` | 6648 | 2298 | 4350 | `0.5080` |
+
+Trade diagnostic нестабилен как правило выбора: лучший `val_select` профиль `all100/xgboost_depth3/H24` падает `0.0833 -> 0.0129`, а лучший `val_eval` профиль уже `corridor_5atr/xgboost_depth5/H6 = 0.0372`.
+
 ## Validation Role Check
 
 Роли validation разведены, но `CONTINUE` всё равно невозможен:
 
 - direction gate не пройден: `0.0533 < 0.10`;
+- лучший directional профиль — `all100`, а это control baseline, не candidate; даже при прохождении gate он не мог бы дать `CONTINUE`;
 - amplitude survives: `0.3414` на select и `0.4449` на eval;
 - simple trade diagnostic местами положительный, но он не заменяет направленный gate.
 
@@ -158,7 +188,7 @@ Amplitude trace заметно сильнее direction trace:
 
 ## Verdict: PIVOT
 
-`CONTINUE` не разрешён: лучший directional validation score ниже `0.10`.
+`CONTINUE` не разрешён: лучший directional validation score ниже `0.10`, а лучший directional профиль `all100` является control baseline, не candidate.
 
 `STOP` тоже не лучший вывод: amplitude trace заметно сильнее и проходит заданный amplitude gate.
 
@@ -174,6 +204,40 @@ Amplitude trace заметно сильнее direction trace:
 - Ridge выдавал `LinAlgWarning: Ill-conditioned matrix`; ridge-строки только диагностический линейный контроль.
 - Scale audit и distribution audit имеют `WARNING`, поэтому сильный вывод о конкретном profile winner запрещён.
 - `next open` всё ещё означает следующий доступный OHLC open, а не доказанную live-executable цену с учётом watcher/inference/order-send latency.
+
+## Reproduction And Verification
+
+Чистый запуск после исправлений:
+
+```bash
+./.venv/bin/python ML/baseline/benchmark_entry_based_next_open_closeout.py --entry-based-next-open-closeout --no-resume
+```
+
+Результат clean run:
+
+- `progress.done_runs = 20`;
+- `progress.total_runs = 20`;
+- `started_at = 2026-07-05T04:13:50+00:00`;
+- `finished_at = 2026-07-05T04:50:33+00:00`;
+- `elapsed_sec = 2281.284088373184`;
+- `entry_based_smoke_check.status = PASS`;
+- `summary.verdict = PIVOT`.
+
+Verification:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_next_open_closeout.py -q
+```
+
+Результат: `23 passed`.
+
+Полный regression-прогон проекта:
+
+```bash
+./.venv/bin/python -m pytest tests/ -q
+```
+
+Результат: `1071 passed, 30 warnings`.
 
 ## Next Step
 

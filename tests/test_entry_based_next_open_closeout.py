@@ -80,11 +80,18 @@ def test_closeout_split_policy_uses_large_validation_and_no_locked_test():
 
 
 def test_entry_based_smoke_check_passes_without_legacy_target_columns():
-    splits = {"train": _minimal_entry_frame(), "validation": _minimal_entry_frame()}
+    train = _minimal_entry_frame()
+    validation = _minimal_entry_frame()
+    validation["time"] = ["2021.01.02 00:00", "2021.01.02 01:00"]
+    validation["entry_time"] = ["2021.01.02 01:00", "2021.01.02 02:00"]
+    splits = {"train": train, "validation": validation}
     result = runner.run_entry_based_smoke_check(splits)
     assert result["status"] == "PASS"
     assert result["legacy_target_columns_required"] is False
     assert result["horizons"] == ["3", "6", "12", "24"]
+    assert result["nonfinite_columns"] == {}
+    assert result["constant_target_columns"] == {}
+    assert result["entry_time_order_violations"] == {}
 
 
 def test_entry_based_smoke_check_fails_when_h24_target_is_missing():
@@ -92,6 +99,40 @@ def test_entry_based_smoke_check_fails_when_h24_target_is_missing():
     result = runner.run_entry_based_smoke_check({"train": frame})
     assert result["status"] == "FAIL"
     assert "entry_log_ratio_24" in result["missing_columns"]["train"]
+
+
+def test_entry_based_smoke_check_fails_on_nonfinite_target_values():
+    frame = _minimal_entry_frame()
+    frame.loc[0, "entry_log_ratio_24"] = np.inf
+    result = runner.run_entry_based_smoke_check({"train": frame})
+    assert result["status"] == "FAIL"
+    assert "entry_log_ratio_24" in result["nonfinite_columns"]["train"]
+
+
+def test_entry_based_smoke_check_fails_on_constant_direction_target():
+    frame = _minimal_entry_frame()
+    frame["entry_log_ratio_24"] = 0.0
+    result = runner.run_entry_based_smoke_check({"train": frame})
+    assert result["status"] == "FAIL"
+    assert "entry_log_ratio_24" in result["constant_target_columns"]["train"]
+
+
+def test_entry_based_smoke_check_fails_when_entry_is_not_after_signal_time():
+    frame = _minimal_entry_frame()
+    frame.loc[0, "entry_time"] = frame.loc[0, "time"]
+    result = runner.run_entry_based_smoke_check({"train": frame})
+    assert result["status"] == "FAIL"
+    assert result["entry_time_order_violations"]["train"] == 1
+
+
+def test_entry_based_smoke_check_fails_when_split_times_overlap():
+    train = _minimal_entry_frame()
+    validation = _minimal_entry_frame()
+    validation["time"] = ["2020.12.31 23:00", "2021.01.01 00:00"]
+    validation["entry_time"] = ["2021.01.01 00:00", "2021.01.01 01:00"]
+    result = runner.run_entry_based_smoke_check({"train": train, "validation": validation})
+    assert result["status"] == "FAIL"
+    assert result["split_order_violations"]
 
 
 def test_closeout_target_matrix_includes_h24():
@@ -106,6 +147,8 @@ def test_closeout_features_include_serialized_h24_updn_but_not_top_level_targets
     serialized_h24 = [column for column in features.columns if "_up_24" in column or "_dn_24" in column]
     assert serialized_h24
     assert any(column.startswith("slot_00_") for column in serialized_h24)
+    assert not any(column.startswith("fractal0_up_") for column in features.columns)
+    assert not any(column.startswith("fractal0_dn_") for column in features.columns)
     assert "entry_up_24" not in features.columns
     assert "entry_dn_24" not in features.columns
     assert "entry_log_ratio_24" not in features.columns
@@ -214,12 +257,22 @@ def test_closeout_verdict_pivot_when_amplitude_survives_but_direction_does_not()
 
 def test_closeout_verdict_continue_requires_direction_and_trade_eval():
     summary = {
-        "best_directional": {"selection_score": 0.12, "eval_score": 0.04},
+        "best_directional": {"representation_key": "nearest_k60", "selection_score": 0.12, "eval_score": 0.04},
         "best_amplitude": {"selection_score": 0.18, "eval_score": 0.12},
         "best_trade": {"select_mean": 0.002, "eval_mean": 0.001},
         "validation_roles_combined": False,
     }
     assert runner.decide_closeout_verdict(summary) == "CONTINUE"
+
+
+def test_closeout_verdict_cannot_continue_when_best_direction_is_all100_control():
+    summary = {
+        "best_directional": {"representation_key": "all100", "selection_score": 0.12, "eval_score": 0.04},
+        "best_amplitude": {"selection_score": 0.18, "eval_score": 0.12},
+        "best_trade": {"select_mean": 0.002, "eval_mean": 0.001},
+        "validation_roles_combined": False,
+    }
+    assert runner.decide_closeout_verdict(summary) == "PIVOT"
 
 
 def test_closeout_verdict_cannot_continue_when_validation_roles_are_combined():
@@ -233,12 +286,23 @@ def test_closeout_verdict_cannot_continue_when_validation_roles_are_combined():
 
 
 def test_run_closeout_benchmark_writes_artifacts_with_small_mock(tmp_path: Path, monkeypatch):
-    frame = _frame_with_fractal(rows=6)
+    train_frame = _frame_with_fractal(rows=6)
+    train_frame["time"] = pd.date_range("2020-01-01", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    train_frame["entry_time"] = pd.date_range("2020-01-01 01:00", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    val_stop_frame = _frame_with_fractal(rows=6)
+    val_stop_frame["time"] = pd.date_range("2021-01-01", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    val_stop_frame["entry_time"] = pd.date_range("2021-01-01 01:00", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    holdout_frame = _frame_with_fractal(rows=6)
+    holdout_frame["time"] = pd.date_range("2022-01-01", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    holdout_frame["entry_time"] = pd.date_range("2022-01-01 01:00", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    disclosure_frame = _frame_with_fractal(rows=6)
+    disclosure_frame["time"] = pd.date_range("2026-01-01", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
+    disclosure_frame["entry_time"] = pd.date_range("2026-01-01 01:00", periods=6, freq="h").strftime("%Y.%m.%d %H:%M")
     old_splits = {
-        "train_core": frame,
-        "val_stop": frame,
-        "diagnostic_holdout": frame,
-        "low_n_disclosure": frame,
+        "train_core": train_frame,
+        "val_stop": val_stop_frame,
+        "diagnostic_holdout": holdout_frame,
+        "low_n_disclosure": disclosure_frame,
     }
     monkeypatch.setattr(runner.base, "load_entry_based_splits", lambda target_mode="rebuilt": old_splits)
     monkeypatch.setattr(

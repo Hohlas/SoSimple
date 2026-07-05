@@ -629,6 +629,7 @@
 ### 2026-07-04: Ingest Entry-Based Next Open Closeout
 - Added `docs/reports/2026-07-04-entry-based-next-open-closeout.md`.
 - Updated `wiki/research/fractal-stop-research.md`: recorded closeout verdict `PIVOT`, weak direction (`all100 / xgboost_depth3 / H24 = 0.0533 -> 0.0335`), strong amplitude trace (`nearest_k80 / hist_gradient_boosting / entry_up H3 = 0.3414 -> 0.4449`), and the next-step shift toward amplitude / movement-regime targets.
+- Post-review closeout sync: recorded that `all100` is control-only and cannot produce `CONTINUE`, candidate-only direction is weaker (`nearest_k60 / xgboost_depth5 / H12 = 0.0373 -> 0.0274`), `simple_trade` is unstable between `val_select` and `val_eval`, and zero `fractal0_updn` add-on features were removed from the closeout runner.
 - Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-04 closeout, 39 report updates.
 
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.

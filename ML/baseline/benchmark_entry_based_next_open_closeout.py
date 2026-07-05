@@ -3,7 +3,7 @@
 # Назначение: closeout runner для `entry-based next open` на shortlist профилей
 #   с H3/H6/H12/H24, scale audit и простым торговым diagnostic.
 # Язык: Python 3.10+
-# Обновлён: 2026-07-04
+# Обновлён: 2026-07-05
 # =============================================================================
 
 from __future__ import annotations
@@ -52,6 +52,7 @@ CLOSEOUT_MODEL_KEYS = (
     "ridge",
 )
 CLOSEOUT_SEEDS = (42,)
+CANDIDATE_REPRESENTATIONS = tuple(key for key in SHORTLIST_REPRESENTATIONS if key != "all100")
 TARGET_COLUMN_PREFIXES = (
     "entry_up_",
     "entry_dn_",
@@ -108,18 +109,59 @@ def _required_entry_target_columns() -> list[str]:
 def run_entry_based_smoke_check(splits: dict[str, pd.DataFrame]) -> dict:
     required = _required_entry_target_columns()
     missing_columns: dict[str, list[str]] = {}
+    nonfinite_columns: dict[str, list[str]] = {}
+    constant_target_columns: dict[str, list[str]] = {}
+    entry_time_order_violations: dict[str, int] = {}
     row_counts: dict[str, int] = {}
+    time_ranges: dict[str, dict[str, str | None]] = {}
     for split_name, frame in splits.items():
         row_counts[split_name] = int(len(frame))
         missing = [column for column in required if column not in frame.columns]
         if missing:
             missing_columns[split_name] = missing
+            continue
+        bad_nonfinite: list[str] = []
+        bad_constant: list[str] = []
+        for column in required:
+            values = pd.to_numeric(frame[column], errors="coerce").replace([np.inf, -np.inf], np.nan)
+            if values.isna().any():
+                bad_nonfinite.append(column)
+            if values.dropna().nunique() <= 1:
+                bad_constant.append(column)
+        if bad_nonfinite:
+            nonfinite_columns[split_name] = bad_nonfinite
+        if bad_constant:
+            constant_target_columns[split_name] = bad_constant
+        signal_time = pd.to_datetime(frame.get("time"), format="%Y.%m.%d %H:%M", errors="coerce")
+        entry_time = pd.to_datetime(frame.get("entry_time"), format="%Y.%m.%d %H:%M", errors="coerce")
+        order_bad = int(((entry_time <= signal_time) | signal_time.isna() | entry_time.isna()).sum())
+        if order_bad:
+            entry_time_order_violations[split_name] = order_bad
+        if len(signal_time.dropna()):
+            time_ranges[split_name] = {
+                "min_time": signal_time.min().isoformat(),
+                "max_time": signal_time.max().isoformat(),
+            }
+        else:
+            time_ranges[split_name] = {"min_time": None, "max_time": None}
+    split_order_violations: list[dict[str, str]] = []
+    ordered_split_names = [name for name in ("train", "validation", "low_n_disclosure") if name in time_ranges]
+    for left, right in zip(ordered_split_names, ordered_split_names[1:]):
+        left_max = time_ranges[left]["max_time"]
+        right_min = time_ranges[right]["min_time"]
+        if left_max is not None and right_min is not None and left_max >= right_min:
+            split_order_violations.append({"left_split": left, "right_split": right, "left_max_time": left_max, "right_min_time": right_min})
     return {
-        "status": "FAIL" if missing_columns else "PASS",
+        "status": "FAIL" if missing_columns or nonfinite_columns or constant_target_columns or entry_time_order_violations or split_order_violations else "PASS",
         "legacy_target_columns_required": False,
         "horizons": list(CLOSEOUT_HORIZONS),
         "required_columns": required,
         "missing_columns": missing_columns,
+        "nonfinite_columns": nonfinite_columns,
+        "constant_target_columns": constant_target_columns,
+        "entry_time_order_violations": entry_time_order_violations,
+        "time_ranges": time_ranges,
+        "split_order_violations": split_order_violations,
         "row_counts": row_counts,
     }
 
@@ -150,21 +192,6 @@ def _row_context_time_features(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def _fractal0_updn_features(df: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    for value in df.get("fractal0", pd.Series([""] * len(df), index=df.index)):
-        parsed = base.parse_fractal(value)
-        parsed = parsed or {}
-        rows.append(
-            {
-                f"fractal0_{side}_{horizon}": float(parsed.get(f"{side}_{horizon}", 0.0) or 0.0)
-                for horizon in base.FULL_SERIALIZED_UPDN_FEATURE_HORIZONS
-                for side in ("up", "dn")
-            }
-        )
-    return pd.DataFrame(rows, index=df.index).fillna(0.0)
-
-
 def build_closeout_representation_features(df: pd.DataFrame, profile_key: str) -> tuple[pd.DataFrame, dict]:
     features, metadata = base.build_representation_features(
         df,
@@ -174,7 +201,6 @@ def build_closeout_representation_features(df: pd.DataFrame, profile_key: str) -
     features = pd.concat(
         [
             features.reset_index(drop=True),
-            _fractal0_updn_features(df).reset_index(drop=True),
             _row_context_time_features(df).reset_index(drop=True),
         ],
         axis=1,
@@ -374,6 +400,8 @@ def decide_closeout_verdict(summary: dict) -> str:
     amplitude = summary["best_amplitude"]
     trade = summary["best_trade"]
     direction_survives = (
+        direction.get("representation_key") in CANDIDATE_REPRESENTATIONS
+        and
         direction["selection_score"] >= DIRECTIONAL_SCORE_GATE
         and direction["eval_score"] >= VALIDATION_EVAL_NONZERO_GATE
     )

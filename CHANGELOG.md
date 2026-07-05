@@ -4,6 +4,8 @@
 ### Добавлено/Изменено
 - Добавлен closeout runner `ML/baseline/benchmark_entry_based_next_open_closeout.py` для shortlist профилей `all100`, `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` на split-контракте `train` / large `validation`.
 - Добавлен focused-тест `tests/test_entry_based_next_open_closeout.py`: frozen scope, entry-based smoke-check, `H24`, full serialized `Up/Dn`, scale audit, simple trade diagnostic и verdict rules.
+- Post-review fix: `all100` теперь явно не может дать `CONTINUE`, потому что это control baseline; entry smoke-check дополнен проверками `NaN`/`inf`, вариативности target, `entry_time > signal_time` и временного порядка split-ов.
+- Удалены отдельные добавочные `fractal0_up_*` / `fractal0_dn_*` из closeout runner-а: clean run показал, что они полностью нулевые; живые serialized `Up/Dn` остаются в `slot_*` признаках.
 - Базовый builder `benchmark_entry_based_updn_fractal_selection_ablation.py` получил управляемый список serialized `Up/Dn` horizons: старый runner по умолчанию остаётся `3/6/12`, closeout отдельно запрашивает `3/6/12/24/48`.
 - Добавлены артефакты `ML/reports/entry_based_next_open_closeout.json`, `*_metrics.csv`, `*_rows.csv`, `*_scale_audit.csv`.
 - Добавлен отчёт `docs/reports/2026-07-04-entry-based-next-open-closeout.md` и модульная документация `docs/ML/benchmark_entry_based_next_open_closeout.py.md`.

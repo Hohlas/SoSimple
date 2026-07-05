@@ -131,11 +131,11 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Область | Примеры тестов |
 |---------|----------------|
 | Frozen scope | shortlist `all100/corridor_5atr/nearest_k20/60/80`, `H3/H6/H12/H24`, no cross-pair validation |
-| Entry smoke-check | stage-specific target columns без legacy target dependency |
-| Feature contract | `H24` target matrix, serialized `Up/Dn 3/6/12/24/48`, запрет top-level targets во входе |
+| Entry smoke-check | stage-specific target columns без legacy target dependency, `NaN`/`inf`, вариативность target, `entry_time > signal_time`, порядок split-ов |
+| Feature contract | `H24` target matrix, serialized `Up/Dn 3/6/12/24/48`, запрет top-level targets и нулевых `fractal0_updn` добавок во входе |
 | Scale audit | `none_tree_raw`, разделение input/target normalization pools, dominance checks |
 | Metrics | direction/amplitude Spearman и gross `simple_trade` diagnostic |
-| Verdict | `STOP`, `PIVOT`, `CONTINUE` rules и запрет `CONTINUE` при combined validation roles |
+| Verdict | `STOP`, `PIVOT`, `CONTINUE` rules, запрет `CONTINUE` при combined validation roles и для `all100` control |
 
 ## Зависимости
 

@@ -4,7 +4,7 @@
 
 Closeout runner для ветки `entry-based next open`.
 
-Он проверяет только frozen shortlist профилей после предыдущей абляции и принимает решение `STOP`, `PIVOT` или `CONTINUE` без открытия `locked_test` и без cross-pair validation.
+Он проверяет только frozen shortlist профилей после предыдущей абляции и принимает решение `STOP`, `PIVOT` или `CONTINUE` без открытия `locked_test` и без cross-pair validation. `all100` входит только как control baseline и не может дать `CONTINUE`.
 
 ## Запуск
 
@@ -63,6 +63,8 @@ Seed: только `42`.
 
 Runner переиспользует builder старой абляции, но вызывает его с serialized `Up/Dn` horizons `3/6/12/24/48`.
 
+Отдельные добавочные `fractal0_up_*` / `fractal0_dn_*` не создаются: в clean run они были полностью нулевыми. Живые serialized `Up/Dn` берутся из `slot_*_up_*` / `slot_*_dn_*`.
+
 Старый runner сохраняет default `3/6/12`, поэтому исторический результат 2026-07-03 не меняется.
 
 Top-level target/label columns запрещены во входной feature matrix:
@@ -108,6 +110,7 @@ Input normalization groups и target normalization groups разделены. Ta
 - directional eval score `>= 0.02`;
 - positive simple trade mean на `val_select` и `val_eval`;
 - validation roles not combined.
+- best directional representation must be candidate, not `all100` control.
 
 `PIVOT` ставится, если direction слабый, но amplitude select score `>= 0.15` и eval score `>= 0.02`.
 
