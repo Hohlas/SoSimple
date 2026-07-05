@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-05 06:35 UTC · git `75bdfb2`
+> Auto-generated 2026-07-05 07:12 UTC · git `d71af5b`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1592 files  ·  **Commit**: `75bdfb2`  ·  **Generated**: 2026-07-05 06:35 UTC
+**Tracked**: 1594 files  ·  **Commit**: `d71af5b`  ·  **Generated**: 2026-07-05 07:12 UTC
 
 ## Root Docs
 
@@ -235,9 +235,9 @@
 | [docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md](docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 57KB | `085a51d6` |
 | [docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-03 | 34KB | `b3050713` |
 | [docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md](docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-04 | 49KB | `4e328f17` |
-| [docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md](docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md) |  | 2026-07-05 | 37KB | `18918517` |
+| [docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md](docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md) |  | 2026-07-05 | 63KB | `2df74471` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-05 | 16KB | `ec9ea0e7` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-05 | 10KB | `e775a68a` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -395,6 +395,7 @@
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 DIAGNOSTIC_ONLY post-mortem: why `range_w1_atr` dominates and why permutation stability remains weak | ✅ | 2026-06-30 | 28KB | `6450da16` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | DIAGNOSTIC_ONLY closeout runner: shortlist `entry-based next open`, large validation, `H3/H6/H12/H24`, entry smoke-check, full serialized `Up/Dn`, scale audit и verdict `STOP/PIVOT/CONTINUE` | ✅ | 2026-07-05 | 32KB | `e118810a` |
+| [ML/baseline/benchmark_entry_based_powerful_tabular.py](ML/baseline/benchmark_entry_based_powerful_tabular.py) |  |  | 2026-07-05 | 37KB | `f41a5cd5` |
 | [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | DIAGNOSTIC_ONLY runner: frozen representation ablation (`all100`, `nearest_k`, `corridor_Xatr`, `zones`) на фиксированном `entry-based next open` target; единые `Up/Dn` горизонты 3/6/12, all-horizon summary, smoke disclosure | ✅ | 2026-07-04 | 51KB | `cbbee1d3` |
 | [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) |  |  | 2026-07-03 | 30KB | `1dd98792` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach: Dummy/RF baseline и one-shot frozen test для пробоя уровня `fractal0` | ✅ | 2026-06-17 | 13KB | `186f1abf` |
@@ -1134,6 +1135,7 @@
 | [tests/test_diagnose_stage4_4.py](tests/test_diagnose_stage4_4.py) |  |  | 2026-06-17 | 5KB | `92b2ee48` |
 | [tests/test_diagnose_stage5_prep.py](tests/test_diagnose_stage5_prep.py) |  |  | 2026-06-17 | 3KB | `bdbbbf12` |
 | [tests/test_entry_based_next_open_closeout.py](tests/test_entry_based_next_open_closeout.py) | `ML/baseline/benchmark_entry_based_next_open_closeout.py` — shortlist scope, entry smoke-check, `H24`, full serialized `Up/Dn`, scale audit, metrics и verdict rules | ✅ | 2026-07-05 | 14KB | `d407400f` |
+| [tests/test_entry_based_powerful_tabular.py](tests/test_entry_based_powerful_tabular.py) |  |  | 2026-07-05 | 12KB | `177785ac` |
 | [tests/test_entry_based_updn_fractal_selection_ablation.py](tests/test_entry_based_updn_fractal_selection_ablation.py) | `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py` — frozen registry, feature horizon contract, progress/resume, thread contract, all-horizon summary и artifact logic | ✅ | 2026-07-04 | 16KB | `68712af1` |
 | [tests/test_entry_based_updn_price_feature_matrix.py](tests/test_entry_based_updn_price_feature_matrix.py) |  |  | 2026-07-03 | 14KB | `9f72d46c` |
 | [tests/test_entry_path_direct_direction_targets.py](tests/test_entry_path_direct_direction_targets.py) |  |  | 2026-06-17 | 3KB | `f28963bf` |
