@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-05 04:52 UTC · git `8bf2c7e`
+> Auto-generated 2026-07-05 06:35 UTC · git `75bdfb2`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 1591 files  ·  **Commit**: `8bf2c7e`  ·  **Generated**: 2026-07-05 04:52 UTC
+**Tracked**: 1592 files  ·  **Commit**: `75bdfb2`  ·  **Generated**: 2026-07-05 06:35 UTC
 
 ## Root Docs
 
@@ -235,8 +235,9 @@
 | [docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md](docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 57KB | `085a51d6` |
 | [docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-03 | 34KB | `b3050713` |
 | [docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md](docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-04 | 49KB | `4e328f17` |
+| [docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md](docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md) |  | 2026-07-05 | 37KB | `18918517` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-02 | 8KB | `d3669173` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-05 | 16KB | `ec9ea0e7` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -381,7 +382,7 @@
 | [docs/reports/2026-07-02-next-open-entry-updn-foundation.md](docs/reports/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-03 | 14KB | `fcbbbaf2` |
 | [docs/reports/2026-07-02-regression-updn-already-moved-audit.md](docs/reports/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 11KB | `204ff3fc` |
 | [docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-04 | 17KB | `7ec6722b` |
-| [docs/reports/2026-07-04-entry-based-next-open-closeout.md](docs/reports/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-05 | 14KB | `4147f8bf` |
+| [docs/reports/2026-07-04-entry-based-next-open-closeout.md](docs/reports/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-05 | 14KB | `4550f805` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-06-20 | 2KB | `9a64f8af` |
 
 ## ML
