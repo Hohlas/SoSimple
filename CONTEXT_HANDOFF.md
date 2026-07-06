@@ -1,75 +1,86 @@
 # Context Handoff
 
-**Дата:** 2026-07-05
+**Дата:** 2026-07-06
 
 ## Текущий этап
 
-Этап `Entry-Based Next Open Closeout` завершён.
+Этап `Entry-Based Powerful Tabular Models` завершён.
 
 Итоговый structured artifact:
 
-- `ML/reports/entry_based_next_open_closeout.json`
-- closeout verdict: `PIVOT`
-- verdict этапа: `DIAGNOSTIC_ONLY / PIVOT`
+- `ML/reports/entry_based_powerful_tabular.json`
+- `summary.verdict = PIVOT_AMPLITUDE`
+- verdict этапа: `DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE`
 
-Текущая направленная ветка `entry-based next open` не прошла closeout как direction signal. Directional gate не пройден, но amplitude trace заметно сильнее, поэтому ветка не закрыта как "нет вообще никакого следа"; её нужно перенаправить на amplitude / movement-regime target.
+Мощные табличные модели не спасли direction в текущей mechanics `entry-based next open`. Amplitude trace подтверждён сильнее и устойчивее.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-04-entry-based-next-open-closeout.md`
-- `ML/reports/entry_based_next_open_closeout.json`
-- `ML/reports/entry_based_next_open_closeout_metrics.csv`
-- `ML/reports/entry_based_next_open_closeout_rows.csv`
-- `ML/reports/entry_based_next_open_closeout_scale_audit.csv`
-- `docs/ML/benchmark_entry_based_next_open_closeout.py.md`
+- `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
+- `ML/reports/entry_based_powerful_tabular.json`
+- `ML/reports/entry_based_powerful_tabular_metrics.csv`
+- `ML/reports/entry_based_powerful_tabular_rows.csv`
+- `ML/reports/entry_based_powerful_tabular_scale_audit.csv`
+- `docs/ML/benchmark_entry_based_powerful_tabular.py.md`
+- `tests/test_entry_based_powerful_tabular.py`
 
 ## Главный вывод
 
-Технический контракт этапа выполнен:
+Технический контракт выполнен:
 
+- `progress.done_runs = 40`
+- `failed_runs = []`
 - `entry_based_smoke_check.status = PASS`
-- split: `train=44159`, `validation=13296`, `low_n_disclosure=1162`
-- `locked_test` не открыт
-- `EURUSD` и cross-pair validation не запускались
-- closeout features используют serialized `Up/Dn` horizons `3/6/12/24/48`
-- отдельные `fractal0_up_*` / `fractal0_dn_*` удалены как полностью нулевые; живые `Up/Dn` остаются в `slot_*`
-- старый ablation runner сохраняет default `3/6/12`
-- `representation_preflight = PASS`
-- `distribution_audit = WARNING`
-- `scale_audit = WARNING`
+- `split_horizon_overlap_check.status = PASS`
+- `scale_audit.status = WARNING`
+- `audit_decisions` записаны
+- `normalization_contract.fit_split = train`
+- top-level JSON fields present: `schema_version`, `verdict`, `dependency_versions`, `normalization_contract`
+- `run_config_hash = 7a67a59aa22a5d153ae541a8f9fc3eb3698ba3172a4217eb8572058d3ebb518e`
 - `thread_count = 24`
-- чистый полный прогон `20/20`, `elapsed_sec = 2281.3`, `finished_at = 2026-07-05T04:50:33+00:00`
+- `locked_test` не открыт
+- `low_n_disclosure=2026` не использовался для verdict
+
+Search width:
+
+- 4 representations;
+- 10 models;
+- 1 seed;
+- 4 horizons;
+- 3 predicted target families;
+- 480 metric comparisons.
 
 По содержанию:
 
-- лучший direction: `all100 / xgboost_depth3 / H24`, `val_select=0.0533`, `val_eval=0.0335`;
-- `all100` является control baseline, не candidate, и не может дать `CONTINUE`;
+- лучший candidate direction: `nearest_k80 / hist_gradient_boosting_strong / entry_log_ratio H12`, `val_select=0.0519`, `val_eval=-0.0009`;
+- best-by-`val_eval` direction: `corridor_5atr / extra_trees_regressor / H12`, `val_select=0.0042`, `val_eval=0.0475`; это hindsight disclosure, не selectable winner;
 - direction gate `0.10` не пройден;
-- лучший amplitude: `nearest_k80 / hist_gradient_boosting / entry_up H3`, `val_select=0.3414`, `val_eval=0.4449`;
-- лучший gross simple trade diagnostic: `all100 / xgboost_depth3 / H24`, `select_mean=0.0833`, `eval_mean=0.0129`;
-- simple trade diagnostic не является backtest и не учитывает costs.
-
-`PIVOT` означает: не продолжать текущий вопрос "up or down" для этой mechanics, а формулировать отдельную амплитудную постановку.
+- same-model `all100` лучше на `val_eval`;
+- yearly check для direction на `val_eval` не пройден;
+- `simple_trade` для лучшего direction: `0.0732 -> -0.0609`;
+- лучший amplitude: `nearest_k60 / hist_gradient_boosting_strong / entry_up H3`, `val_select=0.3412`, `val_eval=0.4419`;
+- amplitude yearly diagnostics проходят.
 
 ## Следующий шаг
 
 Следующий файл читать:
 
-- `docs/reports/2026-07-04-entry-based-next-open-closeout.md`
-- `docs/ML/benchmark_entry_based_next_open_closeout.py.md`
+- `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
+- `docs/ML/benchmark_entry_based_powerful_tabular.py.md`
 
 Если продолжать исследование, писать новый bounded plan для amplitude / movement-regime target:
 
-- заранее зафиксировать target family и gates;
+- основной target заранее формулировать вокруг `entry_up` / `entry_dn` / movement potential;
 - не использовать `entry_log_ratio` как главный вопрос;
 - не открывать `locked_test` до freeze;
 - не использовать 2026 для выбора;
-- раскрыть search width.
+- заранее определить, как amplitude превращается в решение: movement/no-movement filter, горизонт, отдельный gross/backtest слой;
+- раскрыть search width и cumulative post-hoc context.
 
 ## Запрещённые направления
 
-- Не трактовать `PIVOT` как trading candidate.
-- Не трактовать `all100` как candidate для freeze.
-- Не продолжать широкий перебор `k`, corridor width, model family или entry rule внутри этой же ветки.
+- Не трактовать `PIVOT_AMPLITUDE` как trading candidate.
+- Не трактовать amplitude trace как подтверждённый direction signal.
+- Не запускать direction freeze по текущей mechanics.
 - Не использовать `low_n_disclosure=2026` для выбора.
 - Не открывать `locked_test` без отдельного frozen-rule плана.

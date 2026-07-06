@@ -137,6 +137,27 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Metrics | direction/amplitude Spearman и gross `simple_trade` diagnostic |
 | Verdict | `STOP`, `PIVOT`, `CONTINUE` rules, запрет `CONTINUE` при combined validation roles и для `all100` control |
 
+### [test_entry_based_powerful_tabular.py](../../tests/test_entry_based_powerful_tabular.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_powerful_tabular.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_powerful_tabular.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Scope | `all100/corridor_5atr/nearest_k60/nearest_k80`, 10 model keys, один seed `42` |
+| Control/candidate split | `all100` участвует в overall ranking, но не может дать `DIRECTION_REPLICATION_REQUIRED` |
+| Model factory | XGBoost, LightGBM, CatBoost, ExtraTrees, HistGradientBoosting и thread-count metadata |
+| Leakage guard | запрет top-level `entry_*`, `target_*`, `label_*`, `ret_*`, `fav_*`, `adv_*` во входах |
+| Split contract | `low_n_disclosure=2026` не влияет на verdict, horizon embargo убирает boundary crossing |
+| Audit contract | `WARNING` требует `audit_decisions`, `ERROR` блокирует fit |
+| Runtime metadata | `feature_count`, `actual_thread_count`, top-level JSON metadata, `normalization_contract`, `yearly_metrics` в run payload |
+| Verdict | `REJECT_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
+
 ## Зависимости
 
 - `pytest>=8.0`

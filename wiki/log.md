@@ -632,6 +632,12 @@
 - Post-review closeout sync: recorded that `all100` is control-only and cannot produce `CONTINUE`, candidate-only direction is weaker (`nearest_k60 / xgboost_depth5 / H12 = 0.0373 -> 0.0274`), `simple_trade` is unstable between `val_select` and `val_eval`, and zero `fractal0_updn` add-on features were removed from the closeout runner.
 - Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-04 closeout, 39 report updates.
 
+### 2026-07-06: Ingest Entry-Based Powerful Tabular Models
+- Added `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded the stronger tabular model check, direction failure (`nearest_k80 / hist_gradient_boosting_strong / H12 = 0.0519 -> -0.0009`), amplitude confirmation (`nearest_k60 / hist_gradient_boosting_strong / entry_up H3 = 0.3412 -> 0.4419`), and verdict `PIVOT_AMPLITUDE`.
+- Post-review sync: recorded that best-by-`val_eval` direction (`corridor_5atr / extra_trees_regressor / H12 = 0.0475`) has weak `val_select=0.0042` and is hindsight disclosure only.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-06 powerful tabular capacity check, 40 report updates.
+
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.

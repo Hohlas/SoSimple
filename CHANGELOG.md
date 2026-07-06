@@ -1,5 +1,27 @@
 # Changelog SoSimple
 
+## [2026-07-06] — Entry-Based Powerful Tabular Models (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
+### Добавлено/Изменено
+- Добавлен runner `ML/baseline/benchmark_entry_based_powerful_tabular.py` для проверки мощных табличных моделей на ветке `entry-based next open`: XGBoost, LightGBM, CatBoost, ExtraTrees, HistGradientBoosting.
+- Добавлен focused-тест `tests/test_entry_based_powerful_tabular.py`: scope, model factory, `all100` control/candidate split, split-overlap guard, audit decisions, normalization contract, yearly diagnostics и verdict rules.
+- Добавлен `catboost==1.2.8` в `requirements.txt`.
+- Добавлены артефакты `ML/reports/entry_based_powerful_tabular.json`, `*_metrics.csv`, `*_rows.csv`, `*_scale_audit.csv`.
+- Добавлен отчёт `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md` и модульная документация `docs/ML/benchmark_entry_based_powerful_tabular.py.md`.
+- Post-review fix: JSON получил верхнеуровневые `schema_version`, `verdict`, `dependency_versions`, `normalization_contract`; отчёт раскрывает задний best-by-`val_eval`, scale warnings по профилям, 2026 H24 disclosure и запрет трактовать `simple_trade`/amplitude как готовый торговый сигнал.
+
+### Результаты
+- Чистый прогон `--no-resume` завершён: `40/40`, `failed_runs=[]`, `elapsed_sec=37777.7`, `thread_count=24`.
+- `entry_based_smoke_check.status=PASS`, `split_horizon_overlap_check.status=PASS`, `scale_audit.status=WARNING`, `audit_decisions` записаны.
+- Лучший candidate direction: `nearest_k80 / hist_gradient_boosting_strong / entry_log_ratio H12`, `val_select=0.0519`, `val_eval=-0.0009`; direction gates не пройдены.
+- Best-by-`val_eval` direction (`corridor_5atr / extra_trees_regressor / H12 = 0.0475`) имеет слабый `val_select=0.0042` и является hindsight disclosure, не selectable winner.
+- Лучший amplitude: `nearest_k60 / hist_gradient_boosting_strong / entry_up H3`, `val_select=0.3412`, `val_eval=0.4419`; yearly diagnostics проходят.
+- `simple_trade` для лучшего direction падает `0.0732 -> -0.0609`; gross diagnostic не подтверждает direction.
+
+### Вывод
+- Рост мощности табличных моделей не спас direction в текущей mechanics `entry-based next open`.
+- Вердикт: `PIVOT_AMPLITUDE`. Следующий честный шаг — отдельный bounded план для amplitude / movement-regime target, а не freeze direction.
+<!-- docs/reports/2026-07-06-entry-based-powerful-tabular-models.md -->
+
 ## [2026-07-04] — Entry-Based Next Open Closeout (DIAGNOSTIC_ONLY / PIVOT)
 ### Добавлено/Изменено
 - Добавлен closeout runner `ML/baseline/benchmark_entry_based_next_open_closeout.py` для shortlist профилей `all100`, `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` на split-контракте `train` / large `validation`.

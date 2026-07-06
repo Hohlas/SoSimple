@@ -1,60 +1,135 @@
-Цель: провести аудит корректности предварительной обработки ценовых признаков фракталов.
-                                                                                          
-  Контекст:                                                                               
-  Stage 5 и Stage 6 не дали торгового кандидата, но показали повторяющиеся слабые сигналы.
-  Лучше всего проявлялись `back`, `back + impulse`, частично `range_w1_atr` и календарные 
-  признаки. При этом признаки, явно описывающие положение фракталов в цене (`relative     
-  price`, `corridor`, `nearest40`, `absolute price/ATR`, `price_coord_atr`), не дали      
-  ожидаемого прироста.
+Hi @lyonzin,
 
-  Гипотеза:
-  Это вполне может указывать на ошибку в тракте формирования или нормализации ценовых признаков. Нужно проверить не качество модели, а корректность данных и признаков.
+Thanks again for maintaining `knowledge-rag`. This is a separate follow-up PR from real-world usage of exact/path-oriented searches in larger mixed documentation/code repositories.
 
-  Задача:
-  Проверить полный путь ценовых признаков фракталов:
-  1. формирование в `MT/MQL4/Include/lib_PIC.mqh`;
-  2. запись в `MT/MQL4/Files/Nero.csv`;
-  3. обработка в `processing/`;
-  4. попадание в `DATA/*_labeled.csv`;
-  5. сборка признаков в `ML/lib_pic_feature_profiles.py`, `ML/
-  lib_pic_geometry_feature_bank.py`, Stage 5 и Stage 6 builders;
-  6. итоговая матрица, которая подаётся в ML модель.
-  7. остальные возможные причины, не перечисленные здесь
+## Summary
 
-  Проверить инварианты:
-  - `fractal0` и остальные фракталы сохраняют ожидаемый порядок;
-  - цена фрактала, текущая цена, `ATR`, `shift`, `back`, `front`, `impulse`, `Up/Dn` не
-  меняют смысл между этапами;
-  - знак `price_coord_atr` соответствует ожидаемой формуле;
-  - `ATR` и OHLC берутся только из данных, доступных на момент решения;
-  - padding, нули и пропуски не маскируют реальные фракталы;
-  - порядок колонок в feature names совпадает с порядком значений в матрице;
-  - нет случайного исключения нужных колонок denylist-ом;
-  - нет повторной нормализации, которая уничтожает смысл ценовых координат;
-  - BUY/SELL не перепутаны;
-  - нет future leakage;
-  - остальные возможные причины, не перечисленные здесь
+Adds a small generic ranking signal for indexed `source` and `filename` metadata. When query terms match the file path or file name, hybrid search gives that candidate a bounded boost before final sorting/reranking. This helps navigational queries surface the most relevant file-oriented chunks without adding project-specific rules or changing the public API.
 
+Closes N/A
 
-Ожидаемый результат:
-  - список проверенных файлов и функций;
-  - таблица “инвариант → как проверен → PASS/FAIL/UNKNOWN”;
-  - минимальные примеры строк из `Nero.csv`, `*_labeled.csv` и ML feature matrix;
-  - если найден баг или подозрение на него — указать точную причину, затронутые этапы и какие прошлые выводы могут быть недостоверны;
-  - если баг не найден — указать, какие проверки это подтверждают и какие риски остаются;
-  - не запускать новые широкие ML-эксперименты до завершения аудита данных.
+## Type of change
+
+- [x] feat - new feature
+- [ ] fix - bug fix
+- [ ] docs - documentation only
+- [ ] refactor - no behavior change
+- [ ] perf - performance improvement
+- [x] test - adding or improving tests
+- [ ] chore - tooling, deps, CI
+- [ ] BREAKING CHANGE (explain in Migration section below)
+
+## What changed
+
+- `mcp_server/server.py`: add `_metadata_path_score()` to compute a small bounded boost from query matches in `source` and `filename` metadata.
+- `mcp_server/server.py`: add that boost to the fused RRF score before sorting/reranking.
+- `tests/test_search.py`: add a deterministic test showing that a filename/path match can lift the more navigationally relevant result.
+- `README.md`: add a `### Unreleased` changelog entry.
+
+## Why
+
+For large repositories, users often search by stable file-oriented terms: module names, report names, feature names, or words that appear in paths. BM25 and semantic search only score chunk content, so two chunks with similar content can rank counterintuitively when one of them is clearly a better path/filename match.
+
+This PR keeps the behavior generic. It does not add hardcoded categories, project-specific terms, config assumptions, or new dependencies. The boost is intentionally small and capped so content relevance remains the primary signal.
 
 ---
 
- На основе аудита основные открытые вопросы:                                          
-                                                                                          
-     1. signed_log1p vs identity на price_coord_atr: Запустить Stage 5.4 с                
-        transform_variant="identity", чтобы проверить, не компрессия ли съедает сигнал.   
-        Это единственный прямой эксперимент, вытекающий из аудита.                        
-                                                                                          
-     2. Выборочная сквозная проверка: Взять 2 строки из Nero.csv, прогнать через          
-        label_main.py вручную, сверить price_coord_atr на выходе с эталоном. Подтвердит,  
-         что в pipeline нет скрытой модификации.                                          
-                                                                                          
-     3. Сверить STAGE5_1B_FIELD_TO_FRACTAL_INDEX с 23-полевым форматом: Убедиться, что    
-        индексы не разъехались.                                     
+## 7 Pillars Quality Gate
+
+> Mark each item. CI enforces these via the `quality-gate.yml` workflow.
+
+### 1. Security
+
+- [x] No new secrets, tokens, or credentials in the diff (gitleaks will block)
+- [x] No new use of `eval`, `exec`, `subprocess shell=True`, `pickle.loads` on untrusted input, or arbitrary deserialization
+- [x] New dependencies (if any) reviewed for known CVEs and license compatibility
+- [x] Path traversal, command injection, and SSRF surfaces explicitly considered for any new I/O code
+
+### 2. Stability
+
+- [ ] All existing tests still pass on Linux + Windows x Python 3.11/3.12
+- [x] New behavior covered by tests; tests are deterministic (no `time.sleep` / network / OS-scheduler dependencies)
+- [ ] Coverage does not regress (codecov gate)
+- [x] No tests were skipped, deleted, or marked `xfail` to make the PR pass
+
+### 3. Memory leak
+
+- [x] Long-lived objects (orchestrator, watcher, cache) are bounded
+- [x] New caches have eviction policy (LRU, TTL, or explicit size limit)
+- [x] No new global state that grows unbounded with usage
+- [x] If you added a new module that loads heavy resources, consider lazy initialization
+
+### 4. Versatility
+
+- [x] Works on Linux, Windows, macOS (paths, line endings, locale considered)
+- [x] Works on Python 3.11, 3.12, 3.13 (no Python-version-specific syntax without fallback)
+- [x] No hardcoded paths, locales, or encodings
+- [x] If you touched a parser, all 20 supported formats still parse correctly
+
+### 5. Scalability
+
+- [x] No O(n^2) or worse algorithms on user-controlled inputs
+- [ ] Benchmark impact considered (run `pytest bench/` locally if you touched search/index/embed)
+- [x] If perf regression > 10% in any metric, justification provided below
+- [x] Concurrency safety: no new shared mutable state without lock or documented thread confinement
+
+**Performance impact** (required if you touched `mcp_server/server.py`, `mcp_server/ingestion.py`, or `bench/`):
+
+```text
+metric          before    after    delta
+search p95      N/A       N/A      N/A
+index docs/sec  N/A       N/A      N/A
+RSS @ 1k docs   N/A       N/A      N/A
+```
+
+This adds a small per-candidate metadata scoring calculation during result fusion. It does not add indexing work, model calls, database writes, network I/O, or persistent state. I did not run the benchmark suite locally.
+
+### 6. Versioning
+
+- [ ] If this is user-facing change: bumped version in `pyproject.toml`, `mcp_server/__init__.py`, and `npm/package.json` atomically
+- [ ] If this is a breaking change: bumped MAJOR, added migration notes in CHANGELOG, marked `BREAKING CHANGE:` in commit footer
+- [x] CHANGELOG updated with entry under `## Unreleased` in README.md
+- [x] Public API surface (`mcp_server/server.py` MCP tool decorators) unchanged, OR breaking changes documented
+
+### 7. Quality
+
+- [ ] `ruff check` passes
+- [ ] `ruff format --check` passes
+- [x] Type hints on new public functions (`mypy --strict` clean for new files)
+- [x] Docstrings on new public functions (used by `interrogate`)
+- [x] Cyclomatic complexity reasonable (`radon cc --max=C`)
+- [x] No dead code (`vulture` would not flag new code)
+- [x] PR is reasonably sized (< 500 lines of diff preferred; bigger PRs split or justify)
+
+---
+
+## Migration / Breaking changes
+
+N/A. This is not a breaking change. Existing `search_knowledge` parameters and response schema are unchanged.
+
+## Test plan
+
+- [ ] `pytest tests/ -v` passed locally
+- [ ] `pre-commit run --all-files` clean
+- [x] Manual smoke test: N/A for external system behavior; the change is covered by a deterministic unit test with fake BM25/collection/cache objects.
+- [x] Ran targeted test locally: `.venv/bin/python -m pytest tests/test_search.py -q` -> `23 passed`.
+- [x] Ran changelog check locally: `python3 scripts/check_changelog.py --pr-title 'feat: improve search ranking with path metadata' --base-ref origin/master` -> `OK`.
+
+## Documentation
+
+- [x] Updated `README.md` (if user-facing)
+- [ ] Updated `docs/` (if applicable)
+- [x] Added entry to `## Unreleased` in README CHANGELOG section
+
+## Reviewer checklist
+
+<!-- Do not edit. The reviewer fills this. -->
+
+- [ ] Reviewed line-by-line
+- [ ] Verified the 7 pillars CI status checks are green
+- [ ] Verified no obvious adversarial implications
+- [ ] Approved performance impact
+
+---
+
+By submitting this PR I confirm I read [CONTRIBUTING.md](../CONTRIBUTING.md) and agree to the [Code of Conduct](../CODE_OF_CONDUCT.md).
