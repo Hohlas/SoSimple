@@ -12,7 +12,7 @@
 - `summary.verdict = PIVOT_AMPLITUDE`
 - verdict этапа: `DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE`
 
-Мощные табличные модели не спасли direction в текущей mechanics `entry-based next open`. Amplitude trace подтверждён сильнее и устойчивее.
+Мощные табличные модели не спасли direction в текущей mechanics `entry-based next open`. Amplitude trace подтверждён сильнее и устойчивее. Но это закрывает только tabular-capacity гипотезу, а не roadmap-пункт про sequence-transformer на serialized 100-fractal history.
 
 ## Главные артефакты
 
@@ -65,10 +65,21 @@ Search width:
 
 Следующий файл читать:
 
+- `docs/superpowers/roadmap.md`
 - `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
 - `docs/ML/benchmark_entry_based_powerful_tabular.py.md`
 
-Если продолжать исследование, писать новый bounded plan для amplitude / movement-regime target:
+Ближайший незавершённый roadmap-шаг: написать bounded plan для `Fractal-sequence transformer on serialized 100-fractal history`.
+
+Суть plan:
+
+- восстановить вход `[rows, 100 fractals, fields]` из serialized `slot_*`;
+- сравнить transformer с табличной моделью на тех же split, target families и disclosure;
+- не открывать `locked_test`;
+- не выбирать по 2026;
+- заранее раскрыть search width и post-hoc context.
+
+Amplitude / movement-regime остается следующим допустимым направлением после transformer-проверки или отдельной параллельной веткой:
 
 - основной target заранее формулировать вокруг `entry_up` / `entry_dn` / movement potential;
 - не использовать `entry_log_ratio` как главный вопрос;

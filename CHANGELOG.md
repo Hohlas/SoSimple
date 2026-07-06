@@ -19,7 +19,7 @@
 
 ### Вывод
 - Рост мощности табличных моделей не спас direction в текущей mechanics `entry-based next open`.
-- Вердикт: `PIVOT_AMPLITUDE`. Следующий честный шаг — отдельный bounded план для amplitude / movement-regime target, а не freeze direction.
+- Вердикт: `PIVOT_AMPLITUDE`. Этот отчёт закрывает tabular-capacity гипотезу, но не roadmap-пункт про sequence-transformer на serialized 100-fractal history. Ближайший незавершённый шаг — отдельный bounded plan для sequence-transformer; amplitude / movement-regime остаётся следующим допустимым направлением после этой проверки или отдельной параллельной веткой.
 <!-- docs/reports/2026-07-06-entry-based-powerful-tabular-models.md -->
 
 ## [2026-07-04] — Entry-Based Next Open Closeout (DIAGNOSTIC_ONLY / PIVOT)

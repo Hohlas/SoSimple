@@ -305,11 +305,13 @@ Positive 2026 H24 rows do not change verdict:
 
 Лучший direction стал немного выше на `val_select` относительно closeout candidate-only baseline, но не удержался на `val_eval`, проиграл same-model `all100` на `val_eval`, не прошёл yearly gate и дал отрицательный `simple_trade` на `val_eval`.
 
-Модельная мощность не была главным ограничением direction; ограничение, вероятно, в постановке входа `next open` или в самой directed-цели.
+Мощность табличных моделей не была главным ограничением direction; ограничение, вероятно, в постановке входа `next open`, в самой directed-цели или в том, что плоское табличное представление теряет последовательную структуру фракталов.
 
 Amplitude trace подтверждён сильнее и устойчивее direction: `entry_up H3` на `nearest_k60 / hist_gradient_boosting_strong` даёт `0.3412 -> 0.4419` и проходит yearly diagnostics.
 
 Вердикт: `PIVOT_AMPLITUDE`.
+
+Scope note: этот отчет закрывает только powerful tabular closeout. Он не закрывает отдельную roadmap-гипотезу `Fractal-sequence transformer on serialized 100-fractal history`, где вход меняется с плоской таблицы на последовательность `[rows, 100 fractals, fields]`.
 
 ## Limitations / Open Questions
 
@@ -324,9 +326,11 @@ Amplitude trace подтверждён сильнее и устойчивее di
 
 ## Next Step
 
-Не продолжать direction search внутри текущей `entry-based next open` постановки как candidate-cycle.
+Не продолжать direction search внутри текущей `entry-based next open` постановки как табличный candidate-cycle.
 
-Допустимый следующий план: отдельная bounded amplitude / movement-regime постановка, где основной вопрос заранее формулируется вокруг `entry_up` / `entry_dn` / movement potential, а не вокруг `entry_log_ratio`.
+Ближайший незакрытый roadmap-шаг: отдельный bounded plan для fractal-sequence transformer на serialized 100-fractal history. Это не “ещё одна мощная табличная модель”, а проверка другого входного представления.
+
+Дополнительный допустимый план после этого: отдельная bounded amplitude / movement-regime постановка, где основной вопрос заранее формулируется вокруг `entry_up` / `entry_dn` / movement potential, а не вокруг `entry_log_ratio`.
 
 До backtest-слоя нужно заранее зафиксировать: movement/no-movement filter, выбор горизонта, запрет брать направление из текущего direction result и отдельный gross/backtest слой только после чистого отбора.
 
