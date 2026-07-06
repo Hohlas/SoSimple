@@ -14,2528 +14,1011 @@
 - **notes**: только критичные ограничения, если есть.
 ```
 
+
 ## [2026-07-06] — Entry-Based Powerful Tabular Models (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
-### Добавлено/Изменено
-- Добавлен runner `ML/baseline/benchmark_entry_based_powerful_tabular.py` для проверки мощных табличных моделей на ветке `entry-based next open`: XGBoost, LightGBM, CatBoost, ExtraTrees, HistGradientBoosting.
-- Добавлен focused-тест `tests/test_entry_based_powerful_tabular.py`: scope, model factory, `all100` control/candidate split, split-overlap guard, audit decisions, normalization contract, yearly diagnostics и verdict rules.
-- Добавлен `catboost==1.2.8` в `requirements.txt`.
-- Добавлены артефакты `ML/reports/entry_based_powerful_tabular.json`, `*_metrics.csv`, `*_rows.csv`, `*_scale_audit.csv`.
-- Добавлен отчёт `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md` и модульная документация `docs/ML/benchmark_entry_based_powerful_tabular.py.md`.
-- Post-review fix: JSON получил верхнеуровневые `schema_version`, `verdict`, `dependency_versions`, `normalization_contract`; отчёт раскрывает задний best-by-`val_eval`, scale warnings по профилям, 2026 H24 disclosure и запрет трактовать `simple_trade`/amplitude как готовый торговый сигнал.
-
-### Результаты
-- Чистый прогон `--no-resume` завершён: `40/40`, `failed_runs=[]`, `elapsed_sec=37777.7`, `thread_count=24`.
-- `entry_based_smoke_check.status=PASS`, `split_horizon_overlap_check.status=PASS`, `scale_audit.status=WARNING`, `audit_decisions` записаны.
-- Лучший candidate direction: `nearest_k80 / hist_gradient_boosting_strong / entry_log_ratio H12`, `val_select=0.0519`, `val_eval=-0.0009`; direction gates не пройдены.
-- Best-by-`val_eval` direction (`corridor_5atr / extra_trees_regressor / H12 = 0.0475`) имеет слабый `val_select=0.0042` и является hindsight disclosure, не selectable winner.
-- Лучший amplitude: `nearest_k60 / hist_gradient_boosting_strong / entry_up H3`, `val_select=0.3412`, `val_eval=0.4419`; yearly diagnostics проходят.
-- `simple_trade` для лучшего direction падает `0.0732 -> -0.0609`; gross diagnostic не подтверждает direction.
-
-### Вывод
-- Рост мощности табличных моделей не спас direction в текущей mechanics `entry-based next open`.
-- Вердикт: `PIVOT_AMPLITUDE`. Этот отчёт закрывает tabular-capacity гипотезу, но не roadmap-пункт про sequence-transformer на serialized 100-fractal history. Ближайший незавершённый шаг — отдельный bounded plan для sequence-transformer; amplitude / movement-regime остаётся следующим допустимым направлением после этой проверки или отдельной параллельной веткой.
-<!-- docs/reports/2026-07-06-entry-based-powerful-tabular-models.md -->
+- **report**: `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
+- **topics**: `entry_based`, `next_open`, `powerful_tabular`, `pivot_amplitude`, `xgboost`
+- **summary**: Чистый прогон `--no-resume` завершён: `40/40`, `failed_runs=[]`, `elapsed_sec=37777.7`, `thread_count=24`. `entry_based_smoke_check.status=PASS`, `split_horizon_overlap_check.status=PASS`, `scale_audit.status=WARNING`, `audit_decisions` записаны.
+- **artifacts**: `ML/reports/entry_based_powerful_tabular.json`, `ML/baseline/benchmark_entry_based_powerful_tabular.py`
+- **decision**: Рост мощности табличных моделей не спас direction в текущей mechanics `entry-based next open`. Вердикт: `PIVOT_AMPLITUDE`. Этот отчёт закрывает tabular-capacity гипотезу, но не roadmap-пункт про sequence-transformer на serialized 100-fractal history. Ближайший незавершённый шаг — отдельный bounded plan для sequence-transformer; amplitude / movement-regime остаётся следующим допустимым направлением после этой проверки или отдельной параллельной веткой.
+- **notes**: `locked_test` не открыт; `scale_audit=WARNING`; amplitude не является trading signal.
 
 ## [2026-07-04] — Entry-Based Next Open Closeout (DIAGNOSTIC_ONLY / PIVOT)
-### Добавлено/Изменено
-- Добавлен closeout runner `ML/baseline/benchmark_entry_based_next_open_closeout.py` для shortlist профилей `all100`, `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` на split-контракте `train` / large `validation`.
-- Добавлен focused-тест `tests/test_entry_based_next_open_closeout.py`: frozen scope, entry-based smoke-check, `H24`, full serialized `Up/Dn`, scale audit, simple trade diagnostic и verdict rules.
-- Post-review fix: `all100` теперь явно не может дать `CONTINUE`, потому что это control baseline; entry smoke-check дополнен проверками `NaN`/`inf`, вариативности target, `entry_time > signal_time` и временного порядка split-ов.
-- Удалены отдельные добавочные `fractal0_up_*` / `fractal0_dn_*` из closeout runner-а: clean run показал, что они полностью нулевые; живые serialized `Up/Dn` остаются в `slot_*` признаках.
-- Базовый builder `benchmark_entry_based_updn_fractal_selection_ablation.py` получил управляемый список serialized `Up/Dn` horizons: старый runner по умолчанию остаётся `3/6/12`, closeout отдельно запрашивает `3/6/12/24/48`.
-- Добавлены артефакты `ML/reports/entry_based_next_open_closeout.json`, `*_metrics.csv`, `*_rows.csv`, `*_scale_audit.csv`.
-- Добавлен отчёт `docs/reports/2026-07-04-entry-based-next-open-closeout.md` и модульная документация `docs/ML/benchmark_entry_based_next_open_closeout.py.md`.
-
-### Результаты
-- Чистый прогон `--no-resume` завершён: `20/20`, `elapsed_sec=2274.4`, `thread_count=24`.
-- `entry_based_smoke_check.status=PASS`; rows: `train=44159`, `validation=13296`, `low_n_disclosure=1162`.
-- `representation_preflight=PASS`, `distribution_audit=WARNING`, `scale_audit=WARNING`.
-- Лучший directional result: `all100 / xgboost_depth3 / H24`, `val_select=0.0533`, `val_eval=0.0335`; gate `0.10` не пройден.
-- Лучший amplitude result: `nearest_k80 / hist_gradient_boosting / entry_up H3`, `val_select=0.3414`, `val_eval=0.4449`.
-- Лучший gross simple trade diagnostic: `all100 / xgboost_depth3 / H24`, `select_mean=0.0833`, `eval_mean=0.0129`; это не backtest и не trading candidate.
-
-### Вывод
-- Текущая направленная ветка `entry-based next open` не проходит closeout как direction signal.
-- Вердикт closeout: `PIVOT`. Следующий допустимый шаг — отдельная bounded постановка для amplitude / movement-regime target, без открытия `locked_test` до freeze.
-<!-- docs/reports/2026-07-04-entry-based-next-open-closeout.md -->
+- **report**: `docs/reports/2026-07-04-entry-based-next-open-closeout.md`
+- **topics**: `entry_based`, `next_open`, `fractal_selection`, `updn`
+- **summary**: Чистый прогон `--no-resume` завершён: `20/20`, `elapsed_sec=2274.4`, `thread_count=24`. `entry_based_smoke_check.status=PASS`; rows: `train=44159`, `validation=13296`, `low_n_disclosure=1162`.
+- **artifacts**: `ML/reports/entry_based_next_open_closeout.json`, `ML/baseline/benchmark_entry_based_next_open_closeout.py`
+- **decision**: Текущая направленная ветка `entry-based next open` не проходит closeout как direction signal. Вердикт closeout: `PIVOT`. Следующий допустимый шаг — отдельная bounded постановка для amplitude / movement-regime target, без открытия `locked_test` до freeze.
+- **notes**: `locked_test` не открывать до freeze; есть low-N disclosure
 
 ## [2026-07-03] — Fractal Selection Ablation On Entry-Based Target (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Добавлен bounded runner `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py` для frozen representation ablation на фиксированном `entry-based next open` target.
-- Добавлен тест `tests/test_entry_based_updn_fractal_selection_ablation.py` для frozen registry, progress/resume JSON, thread-count propagation и summary logic.
-- Добавлены артефакты `ML/reports/entry_based_updn_fractal_selection_ablation.json`, `ML/reports/entry_based_updn_fractal_selection_ablation_metrics.csv` и `ML/reports/entry_based_updn_fractal_selection_ablation_rows.csv`.
-- Добавлен итоговый отчёт `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md` и модульная документация `docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md`.
-- Runner доведён до runtime contract: `thread_count=24`, heartbeat, early progress JSON, сохранение после каждого run, `--resume` по умолчанию и пропуск уже завершённых тяжёлых фаз preflight/audit.
-- После ревью исправлена честность сравнения: `nearest/zones` больше не протаскивают `up_24/dn_24/up_48/dn_48`, summary считает все `H3/H6/H12`, добавлен `smoke_check_disclosure`.
-
-### Результаты
-- Чистый повторный прогон `--no-resume` завершён: `120/120` run за `12525.8s` (`3 ч 29 мин`), `target_mode=rebuilt`, `entry_based_target_contract_check=PASS`.
-- Контрольные точки зафиксированы в structured artifact: `anchor_contract`, `same_feature_bundle`, `updn_horizons=3/6/12`, target-builder fingerprint и progress metadata.
-- Лучший `val_stop` directional trace после исправления summary: `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, uplift к `all100` внутри модели `+0.0498`.
-- Дополнительные слабые H12-следы: `nearest_k20`, `nearest_k60`, `nearest_k80`; старый `zones_plus_nearest_k40` больше не входит в главный shortlist.
-- Итоговый status runner-а: `WEAK_TRACE_FOUND`; stage verdict остаётся `DIAGNOSTIC_ONLY`.
-- `distribution_audit` завершился со статусом `WARNING`; legacy `data_contract_smoke_check=FAIL`, но `smoke_check_disclosure=LEGACY_SMOKE_FAIL_STAGE_CONTRACT_PASS`.
-
-### Вывод
-- Смена способа отбора фракталов не переоткрыла ветку `entry-based next open` как устойчивый направленный сигнал.
-- Если продолжать линию, сначала нужно решить, имеет ли `H12` практический смысл для `next open after signal_time`, и добавить entry-based smoke-check. Узкий rerun по `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` допустим только после этого решения.
-<!-- docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md -->
+- **report**: `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md`
+- **topics**: `entry_based`, `next_open`, `fractal_selection`, `updn`
+- **summary**: Чистый повторный прогон `--no-resume` завершён: `120/120` run за `12525.8s` (`3 ч 29 мин`), `target_mode=rebuilt`, `entry_based_target_contract_check=PASS`. Контрольные точки зафиксированы в structured artifact: `anchor_contract`, `same_feature_bundle`, `updn_horizons=3/6/12`, target-builder fingerprint и progress metadata.
+- **artifacts**: `ML/reports/entry_based_updn_fractal_selection_ablation.json`, `ML/reports/entry_based_updn_fractal_selection_ablation_rows.csv`, `ML/reports/entry_based_updn_fractal_selection_ablation_metrics.csv`
+- **decision**: Смена способа отбора фракталов не переоткрыла ветку `entry-based next open` как устойчивый направленный сигнал. Если продолжать линию, сначала нужно решить, имеет ли `H12` практический смысл для `next open after signal_time`, и добавить entry-based smoke-check. Узкий rerun по `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80` допустим только после этого решения.
+- **notes**: `diagnostic_holdout` и `low_n_disclosure` только disclosure; `distribution_audit=WARNING`.
 
 ## [2026-07-02] — Entry-Based Up/Dn Price-Feature Matrix (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Добавлен итоговый отчёт `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.
-- Добавлен bounded runner `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py`, тесты `tests/test_entry_based_updn_price_feature_matrix.py` и артефакты `ML/reports/entry_based_updn_price_feature_matrix.json`, `ML/reports/entry_based_updn_price_feature_matrix_rows.csv`.
-- После рецензии отчёт уточнён: раскрыта disclosure-таблица по `entry_log_ratio`, ослаблена интерпретация `WEAK_TRACE_FOUND`, снят преждевременный выбор `distance_atr` как winner и добавлен stop-condition для `short_updn_source_audited`.
-- Добавлен stage-specific `entry_based_target_contract_check`: проверяет `entry_up/dn` targets, конечность `entry_log_ratio` и отсутствие target-префиксов в profile features; на реальных split-ах статус `PASS`.
-
-### Результаты
-- На том же `entry-based` target и той же механике `next open after signal_time` проверены 7 профилей (`21/21` run, 3 seed).
-- Ни один primary или secondary блок не дал убедительного направленного сигнала: лучший `val_stop entry_log_ratio` у `distance_atr` только `0.0354`; на disclosure лучший блок уже `path_reaction` (`0.0445` на `2023-2025`, `0.0881` на `2026`), то есть устойчивого winner нет.
-- Runner вернул `WEAK_TRACE_FOUND`, но текущая summary-логика ставит этот статус слишком широко: достаточно side-trace у любого не-baseline профиля без требования uplift к `structure_full`.
-- `rows.csv` оказался preview-артефактом, а не честной run-level таблицей: в текущем виде он записан comma-separated и содержит повторяющиеся preview-строки по run.
-
-### Вывод
-- Ограниченная price-feature matrix не переоткрыла ветку `next open`: проблема не выглядит как недобор одного простого ценового блока.
-- Следующий допустимый шаг — только после исправления summary logic и артефактного слоя; выбирать один follow-up block сейчас преждевременно.
-<!-- docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md -->
+- **report**: `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`
+- **topics**: `entry_based`, `next_open`, `updn`
+- **summary**: На том же `entry-based` target и той же механике `next open after signal_time` проверены 7 профилей (`21/21` run, 3 seed). Ни один primary или secondary блок не дал убедительного направленного сигнала: лучший `val_stop entry_log_ratio` у `distance_atr` только `0.0354`; на disclosure лучший блок уже `path_reaction` (`0.0445` на `2023-2025`, `0.0881` на `2026`), то есть устойчивого winner нет.
+- **artifacts**: `ML/reports/entry_based_updn_price_feature_matrix.json`, `ML/reports/entry_based_updn_price_feature_matrix_rows.csv`, `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py`
+- **decision**: Ограниченная price-feature matrix не переоткрыла ветку `next open`: проблема не выглядит как недобор одного простого ценового блока. Следующий допустимый шаг — только после исправления summary logic и артефактного слоя; выбирать один follow-up block сейчас преждевременно.
+- **notes**: нужен fix summary/artifact layer; единственного follow-up кандидата нет.
 
 ## [2026-07-02] — Next Open Entry Up/Dn Foundation (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Добавлен итоговый отчёт `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`.
-- Добавлен runner `ML/baseline/benchmark_next_open_entry_updn_foundation.py`, тесты `tests/test_next_open_entry_updn_foundation.py` и артефакты `ML/reports/next_open_entry_updn_foundation.json`, `ML/reports/next_open_entry_updn_rows.csv`.
-- После ревью разделены `artifact_status = DIAGNOSTIC_ONLY` и `runner_status = NO_SIGNAL_FOUND`; gate теперь явно проверяет все `H3/H6/H12` на `val_stop`, `diagnostic_holdout` и `low_n_disclosure`, а не только один horizon.
-
-### Результаты
-- Target пересчитан от фактического `entry_open`: первый доступный H1 `open` строго после `signal_time`.
-- Направленный `entry_log_ratio` вне обучения почти не ранжируется: `val_stop` `-0.0021/0.0136/0.0107`, `2023-2025` `0.0055/0.0046/0.0203`, `2026` `-0.0074/0.0140/-0.0122` для `H3/H6/H12`.
-- Отдельные `entry_up_h` и `entry_dn_h` сохраняют слабое ранжирование, но это не превращается в устойчивый направленный сигнал.
-- `next open` означает следующий доступный OHLC `open`, не всегда следующий календарный час: на `val_stop` задержка больше 1 часа у `6.09%` строк, максимум `74h`.
-
-### Вывод
-- Ветка `next open after signal_time` отклонена именно как направленная механика входа для `Regression Up/Dn`.
-- Открытым остаётся только отдельный сценарий входа через область `fractal0_price` или другой target, измеряемый от фактического исполнения.
-<!-- docs/reports/2026-07-02-next-open-entry-updn-foundation.md -->
+- **report**: `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`
+- **topics**: `next_open`, `updn`, `h6`, `h12`
+- **summary**: Target пересчитан от фактического `entry_open`: первый доступный H1 `open` строго после `signal_time`. Направленный `entry_log_ratio` вне обучения почти не ранжируется: `val_stop` `-0.0021/0.0136/0.0107`, `2023-2025` `0.0055/0.0046/0.0203`, `2026` `-0.0074/0.0140/-0.0122` для `H3/H6/H12`.
+- **artifacts**: `ML/reports/next_open_entry_updn_rows.csv`, `ML/reports/next_open_entry_updn_foundation.json`, `ML/baseline/benchmark_next_open_entry_updn_foundation.py`
+- **decision**: Ветка `next open after signal_time` отклонена именно как направленная механика входа для `Regression Up/Dn`. Открытым остаётся только отдельный сценарий входа через область `fractal0_price` или другой target, измеряемый от фактического исполнения.
+- **notes**: есть low-N disclosure; доступность всех `structure_full` признаков к `signal_time` отдельно не доказана.
 
 ## [2026-07-02] — Regression Up/Dn Already Moved Audit (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Добавлен итоговый отчёт `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
-- Отчёт приведён к финальному виду после рецензии: раскрыты все 3 split (`val_stop`, `diagnostic_holdout`, `low_n_disclosure`), уточнён `decision_time`, добавлен формальный `Stop Condition`, а блок проверки окна переписан как `PASS` с редкими крупными расхождениями, а не как идеальное совпадение.
-- Исправлен контракт ML-кода: `ML/baseline/analyze_regression_updn_already_moved_audit.py` больше не импортирует `processing.label_signals.parse_fractal`, а локально читает только нужные поля `fractal0`.
-
-### Результаты
-- Во всех трёх split связь `pred_log_ratio` с будущим движением после входа на следующий `open` остаётся около нуля: `H3/H6/H12` на `val_stop` `-0.0149/-0.0174/0.0010`, на `2023-2025` `-0.0336/-0.0252/-0.0173`, на `2026` `-0.0040/-0.0038/0.0043`.
-- При этом связь с исходным target от `fractal0_price` остаётся высокой: на `val_stop` Spearman `0.8786 / 0.7815 / 0.6749` для `H3/H6/H12`.
-- На `H3` уже до входа проходит не меньше половины движения хотя бы по одной стороне target у `57.29%` строк; на `H6` `42.15%`, на `H12` `29.80%`.
-
-### Вывод
-- Для target family `Regression Up/Dn` схема входа `next open after signal_time` отклонена.
-- Следующий допустимый шаг — только механика входа, привязанная к `fractal0_price` или её ретесту, без возврата к немедленному `market-entry` на следующем баре.
-<!-- docs/reports/2026-07-02-regression-updn-already-moved-audit.md -->
+- **report**: `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`
+- **topics**: `updn`, `regression_updn`, `already_moved`, `h6`, `h12`
+- **summary**: Во всех трёх split связь `pred_log_ratio` с будущим движением после входа на следующий `open` остаётся около нуля: `H3/H6/H12` на `val_stop` `-0.0149/-0.0174/0.0010`, на `2023-2025` `-0.0336/-0.0252/-0.0173`, на `2026` `-0.0040/-0.0038/0.0043`. При этом связь с исходным target от `fractal0_price` остаётся высокой: на `val_stop` Spearman `0.8786 / 0.7815 / 0.6749` для `H3/H6/H12`.
+- **artifacts**: `ML/baseline/analyze_regression_updn_already_moved_audit.py`
+- **decision**: Для target family `Regression Up/Dn` схема входа `next open after signal_time` отклонена. Следующий допустимый шаг — только механика входа, привязанная к `fractal0_price` или её ретесту, без возврата к немедленному `market-entry` на следующем баре.
+- **notes**: есть low-N disclosure
 
 ## [2026-07-01] — Regression Up/Dn Ratio Audit (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Добавлен анализатор `ML/baseline/analyze_regression_updn_ratio_audit.py`.
-- Добавлены артефакты `ML/reports/regression_updn_ratio_audit.json`, `ML/reports/regression_updn_ratio_audit_predictions.csv`, `ML/reports/regression_updn_ratio_audit_structure_full_features.npz`.
-- Добавлен отчёт `docs/reports/2026-07-01-regression-updn-ratio-audit.md`.
-
-### Результаты
-- Отношение `up_h/dn_h` действительно хорошо предсказывается от цены фрактала: на `val_stop` Spearman `pred_log_ratio` vs `actual_log_ratio` равен `0.7881 / 0.7212 / 0.6264` для `H3/H6/H12`.
-- Для входа на следующем `open` этот же сигнал почти исчезает: Spearman с `next-open log-ratio` равен `-0.011 / -0.017 / 0.001`.
-- Extreme 10% по `abs(pred_log_ratio)` остаются сильными для движения от `fractal0_price`, но почти случайны для `next-open move`.
-
-### Вывод
-- Target-сигнал и сигнал немедленного входа оказались разными объектами.
-- Ratio audit стал прямой методической подводкой к already-moved audit: перед торговой интерпретацией нужно отдельно измерять, какая часть движения уже произошла до доступной точки входа.
-<!-- docs/reports/2026-07-01-regression-updn-ratio-audit.md -->
+- **report**: `docs/reports/2026-07-01-regression-updn-ratio-audit.md`
+- **topics**: `next_open`, `updn`, `regression_updn`, `already_moved`, `ratio_audit`
+- **summary**: Отношение `up_h/dn_h` действительно хорошо предсказывается от цены фрактала: на `val_stop` Spearman `pred_log_ratio` vs `actual_log_ratio` равен `0.7881 / 0.7212 / 0.6264` для `H3/H6/H12`. Для входа на следующем `open` этот же сигнал почти исчезает: Spearman с `next-open log-ratio` равен `-0.011 / -0.017 / 0.001`.
+- **artifacts**: `ML/reports/regression_updn_ratio_audit_predictions.csv`
+- **decision**: Target-сигнал и сигнал немедленного входа оказались разными объектами. Ratio audit стал прямой методической подводкой к already-moved audit: перед торговой интерпретацией нужно отдельно измерять, какая часть движения уже произошла до доступной точки входа.
+- **notes**: JSON/cache из отчёта отсутствуют в текущем дереве.
 
 ## [2026-06-30] — Regression Up/Dn Target Foundation (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_regression_updn_target_foundation.py`: bounded regression runner для top-level `up_*/dn_*` с allowlist feature contract, честным `feature_read_audit`, `log_ratio`, расширенной `calendar_dependence`, block bootstrap, baseline ladder и JSON checkpointing.
-- Новый тест `tests/test_regression_updn_target_foundation.py`: 25 тестов (контракт, профили, feature read audit, метрики, gate, runner, CLI).
-- Новый артефакт `ML/reports/regression_updn_target_foundation.json` и отчёт `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
-
-### Результаты
-- Полный прогон: `75/75` (5 профилей × 5 model families × 3 seed), elapsed `4501.9s`, `xgb_n_jobs=24`.
-- Лучший bounded target-foundation signal: `selected_profile=structure_full`, `selected_horizon=3`.
-- `val_stop` medians for selected point: `up_3` improvement `0.4716`, `dn_3` improvement `0.4780`, `edge_3` Spearman `0.8017`, seed stability `3/3`.
-- Post-review JSON теперь явно разделяет `declared_feature_sources` и технические чтения (`raw_columns_touched`, `raw_fractal_subfields_touched`); для фрактальных профилей раскрыты технические чтения `ATR` и `price`.
-- Добавлены диагностические disclosure-поля: `log_ratio_3` для selected run (`Spearman 0.8055`) и расширенная calendar dependence (`overall_max_share=0.1391`, ниже warning threshold `0.30`).
-- Короткие горизонты (`H3/H6`) существенно сильнее `H12/H24/H48`; legacy `H12` не является главным победителем.
-- Structured signal виден уже на `Ridge`, усиливается на tree/forest, и не выглядит артефактом только XGBoost.
-
-### Вывод
-- `research_gate_status = TARGET_FOUNDATION_PASSED`, но `artifact_status = DIAGNOSTIC_ONLY`.
-- Следующий шаг: отдельный узкий confirmatory cycle поверх `structure_full` и короткого horizon (`H3` или `H6`) без нового широкого search.
-<!-- docs/reports/2026-06-30-regression-updn-target-foundation.md -->
+- **report**: `docs/reports/2026-06-30-regression-updn-target-foundation.md`
+- **topics**: `updn`, `regression_updn`
+- **summary**: Полный прогон: `75/75` (5 профилей × 5 model families × 3 seed), elapsed `4501.9s`, `xgb_n_jobs=24`. Лучший bounded target-foundation signal: `selected_profile=structure_full`, `selected_horizon=3`.
+- **artifacts**: `ML/reports/regression_updn_target_foundation.json`, `ML/baseline/benchmark_regression_updn_target_foundation.py`
+- **decision**: `research_gate_status = TARGET_FOUNDATION_PASSED`, но `artifact_status = DIAGNOSTIC_ONLY`. Следующий шаг: отдельный узкий confirmatory cycle поверх `structure_full` и короткого horizon (`H3` или `H6`) без нового широкого search.
+- **notes**: нет
 
 ## [2026-06-30] — Stage 6.3: H6 Feature Parity Check (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_stage6_3_h6_feature_parity.py`: bounded H6 parity runner, переиспользующий Stage 6.1/6.2 feature builders, с `horizon_bars=6`.
-- Новый тест `tests/test_stage6_3_h6_feature_parity.py`: 24 теста (контракт, профили, feature names, билдеры, gate, runner, CLI, resume).
-- Новый артефакт `ML/reports/stage6_3_h6_feature_parity.json` и отчёт `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
-
-### Результаты
-- Полный прогон: `39/39` (13 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `3175s`.
-- H6 baseline (`h6_clock_shift_back`): median val AUC `0.6649` (vs H12 `0.6174`), selected PF `1.006`, но permutation p-value `0.700`.
-- Все 5 geometry-only профилей: AUC `0.51–0.58`, NO_THRESHOLD — H6 не спасает геометрию.
-- Price-action на H6 сильнее, чем на H12: core AUC `0.6676`, regime AUC `0.6725`, SELECTED, PF `1.075–1.213`. Permutation p-values `0.305–0.570`.
-- Combined profiles: лучший `h6_clock_shift_back_plus_price_action_core` AUC `0.676`, delta `+0.011` (ниже `+0.02`), perm p `0.270`.
-- Gate: `NO_ADDITIVE_VALUE_CONFIRMED`; H6 parity не меняет standing conclusions.
-<!-- docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md -->
-Хронология значимых изменений проекта (major milestones).
-> **Предупреждение**: Читай только первые 300 строк этого файла.
+- **report**: `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`
+- **topics**: `stage6`, `h6`, `h12`, `price_action`
+- **summary**: Полный прогон: `39/39` (13 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `3175s`. H6 baseline (`h6_clock_shift_back`): median val AUC `0.6649` (vs H12 `0.6174`), selected PF `1.006`, но permutation p-value `0.700`.
+- **artifacts**: `ML/reports/stage6_3_h6_feature_parity.json`, `ML/baseline/benchmark_stage6_3_h6_feature_parity.py`
+- **decision**: Новый тест `tests/test_stage6_3_h6_feature_parity.py`: 24 теста (контракт, профили, feature names, билдеры, gate, runner, CLI, resume). Gate: `NO_ADDITIVE_VALUE_CONFIRMED`; H6 parity не меняет standing conclusions.
+- **notes**: нет
 
 ## [2026-06-30] — Stage 6.2: range_w1_atr post-mortem (DIAGNOSTIC_ONLY)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`: bounded post-mortem без переобучения, с разрезами по seed, BUY/SELL, годам, selected rows, activity proxy и zero-vector disclosure.
-- Новый артефакт `ML/reports/stage6_2_range_w1_postmortem.json` и отчёт `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
-- Post-review: отчёт приведён к канонической структуре `docs/reports/README.md`; JSON selected-trade секция теперь явно хранит known/unknown denominators.
-
-### Результаты
-- `range_w1_atr` доминирует в Stage 6.2: top/second importance ratio `7.56`.
-- На non-zero `val_stop` связь с target умеренная (`corr=0.202`), но связь с PnL почти нулевая (`corr=0.008`).
-- Проверка устойчивости остаётся слабой: primary permutation p-value `0.160`, seed range `0.155..0.350`.
-- 2026 disclosure слабый: `551/1162` zero-vector строк.
-- Stage 6.2 остаётся `DIAGNOSTIC_ONLY`; следующий исследовательский шаг — `Regression Up/Dn target foundation`.
-<!-- docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md -->
+- **report**: `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`
+- **topics**: `stage6`, `range`, `atr`, `post`, `mortem`
+- **summary**: `range_w1_atr` доминирует в Stage 6.2: top/second importance ratio `7.56`. На non-zero `val_stop` связь с target умеренная (`corr=0.202`), но связь с PnL почти нулевая (`corr=0.008`).
+- **artifacts**: `ML/reports/stage6_2_range_w1_postmortem.json`, `ML/baseline/analyze_stage6_2_range_w1_postmortem.py`
+- **decision**: Stage 6.2 остаётся `DIAGNOSTIC_ONLY`; следующий исследовательский шаг — `Regression Up/Dn target foundation`.
+- **notes**: нет
 
 ## [2026-06-30] — Stage 6.2: H12 Price Action Feature Family (TRADING_GATE_FAILED)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_stage6_2_price_action.py`: OHLC price-action features, regime add-on, same-run baseline delta, preflight, feature audit, runner, gate, CLI.
-- Новый тест `tests/test_stage6_2_price_action.py`: 17 тестов (контракт, denylist, no-future OHLC windows, feature names, preflight, definitive mask, gate, runtime metadata, CLI flags).
-- Новый артефакт `ML/reports/stage6_2_h12_price_action_feature_family.json` и отчёт `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`.
-
-### Результаты
-- Полный прогон: `15/15` (5 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `1341s`.
-- Primary `h12_price_action_core`: median val AUC `0.6233`, PR AUC lift `0.1402`, selected PF `1.307`, но median permutation p-value `0.160` > `0.10`.
-- Same-run baseline `h12_clock_shift_back`: median val AUC `0.6174`, selected PF `1.249`.
-- Combined profiles дали AUC delta около `+0.010`, ниже required `+0.020`, и median permutation p-value `0.185`/`0.255`; delta gate FAIL.
-- Итог: price-action family показывает слабый validation ranking trace, но не доказала robust standalone/additive trading value поверх baseline.
-<!-- docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md -->
+- **report**: `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`
+- **topics**: `stage6`, `h12`, `price_action`
+- **summary**: Полный прогон: `15/15` (5 профилей × 3 seed), `xgb_n_jobs=24`, elapsed `1341s`. Primary `h12_price_action_core`: median val AUC `0.6233`, PR AUC lift `0.1402`, selected PF `1.307`, но median permutation p-value `0.160` > `0.10`.
+- **artifacts**: `ML/reports/stage6_2_h12_price_action_feature_family.json`, `ML/baseline/benchmark_stage6_2_price_action.py`
+- **decision**: Новый тест `tests/test_stage6_2_price_action.py`: 17 тестов (контракт, denylist, no-future OHLC windows, feature names, preflight, definitive mask, gate, runtime metadata, CLI flags). Combined profiles дали AUC delta около `+0.010`, ниже required `+0.020`, и median permutation p-value `0.185`/`0.255`; delta gate FAIL.
+- **notes**: нет
 
 ## [2026-06-29] — Stage 6.1: H12 Relative Fractal Geometry (MODEL_GATE_FAILED)
-### Добавлено/Изменено
-- Новый модуль `ML/baseline/benchmark_stage6_1_relative_geometry.py`: экстракция фракталов с ATR-координатами, 5 профилей геометрии, A7 preflight, definitive touch evaluator, runner, gate, CLI.
-- Runner обновлён под runtime contract: `xgb_n_jobs=24`, heartbeat, `started_at`/`finished_at`, per-run `elapsed_sec`, checkpoint before preflight, `--resume` / `--no-resume`.
-- Новый тест `tests/test_stage6_1_relative_geometry.py`: 24 теста (контракт, геометрия, билдеры, preflight, mask, gate, runtime contract, resume, direct CLI, baseline+geometry delta).
-- Новый отчёт `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`.
-
-### Результаты
-- Полный прогон: `27/27` (9 профилей × 3 seed) за 55.2 мин.
-- Primary `h12_corridor3_relative_geometry`: median val AUC `0.5316` → MODEL_GATE_FAILED.
-- Все 5 геометрических профилей: AUC 0.51–0.55 (случайные).
-- Baseline `h12_clock_shift_back` подтверждает валидность: AUC `0.6174`, threshold SELECTED PF 1.25.
-- Baseline+geometry delta test: три combined-профиля дали только `+0.0026..+0.0048` AUC и ухудшили median PF; delta gate FAIL.
-- Текущие H12 geometry-only и baseline+geometry профили не получили поддержки.
-<!-- docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md -->
+- **report**: `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- **topics**: `stage6`, `h12`, `relative_geometry`
+- **summary**: Полный прогон: `27/27` (9 профилей × 3 seed) за 55.2 мин. Primary `h12_corridor3_relative_geometry`: median val AUC `0.5316` -> MODEL_GATE_FAILED.
+- **artifacts**: `ML/baseline/benchmark_stage6_1_relative_geometry.py`
+- **decision**: Baseline `h12_clock_shift_back` подтверждает валидность: AUC `0.6174`, threshold SELECTED PF 1.25. Baseline+geometry delta test: три combined-профиля дали только `+0.0026..+0.0048` AUC и ухудшили median PF; delta gate FAIL.
+- **notes**: нет
 
 ## [2026-06-29] — Stage 6.0: Outcome-Based Triple-Barrier Foundation (TRADING_GATE_FAILED)
-### Добавлено/Изменено/Исправлено
-- Новый модуль `ML/baseline/benchmark_stage6_outcome_based.py`: isolated Stage 6.0 runner.
-- Новый тест `tests/test_stage6_outcome_based.py`: 14 тестов.
-- Добавлен короткий fixed horizon `H6` рядом с disclosure `H24`.
-- Исправлены critical review issues: gate читает median summary metrics, permutation использует реальные model scores, diagnostic threshold применяется к real scores, `INVALID` rows исключены из trading counters.
-- JSON теперь хранит predictions/labels для post-mortem.
-
-### Результаты
-- Полный прогон: `12/12` (2 горизонта × 2 профиля × 3 seed).
-- Primary `H6_clock_shift_back`: median val AUC `0.6888`, PR AUC lift `0.1141` → model gate PASS.
-- H6 trading gate FAIL: на fixed threshold grid `0.50..0.90` нет threshold с достаточным числом сделок.
-- Disclosure H24 повторяет слабый результат: median val AUC `0.5848`; selected PF `0.933`, permutation p-value `0.635`.
-- Gate: `TRADING_GATE_FAILED` (`DIAGNOSTIC_ONLY`).
-
-### Вывод
-Короткий H6 target содержит модельный сигнал, но текущий fixed-threshold протокол не превращает его в торговое правило. Следующий допустимый шаг — только bounded H6 calibration/threshold follow-up, без широкого перебора horizon/ATR/TP/SL.
-<!-- docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md -->
-
-## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, rejected)
-### Добавлено/Изменено
-- Добавлен Stage 5.4 с 12 профилями: 2 baselines, 2 primary (price_coord_atr), 2 secondary (price_atr_scaled), 6 diagnostic (ATR, Up/Dn).
-- Рефакторинг: общий `_build_stage5_flat_features_from_profile()` для Stage 5.2/5.4.
-- A7 preflight audit: `stage5_4_feature_distribution_audit()` с проверкой NaN/Inf, хвостов, regime shift, Spearman correlation price_coord_atr vs back.
-- Gate: per-seed delta ≥ 0.02 в 2/3 seeds + PR AUC lift ≥ 0.03.
-
-### Результаты
-- Полный прогон: `72/72`, `workers=12`, `xgb_threads=1`.
-- JSON status: `DIAGNOSTIC_ONLY`.
-- Price/ATR координата не улучшает `fast` ни на sell (delta +0.0066, 0/3 seeds), ни на buy (delta +0.0014, 0/3 seeds).
-- Вывод: **REJECT_PRICE_COORD**. Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
-
-## [2026-06-26] — Stage 5.3: дискретная постановка time-to-breach
-### Добавлено/Изменено
-- Добавлен CLI `--stage5-3-target-reformulation` с параметрами `--stage5-3-workers` и `--stage5-3-xgb-threads`.
-- Stage 5.3 проверяет `breach_after_k`, bucket-цели `fast/medium/no_breach`, binary baseline и control `survives_at_least_k`.
-- Runner получил precompute признаков, 12-worker прогон, heartbeat-логи и JSON-прогресс.
-
-### Результаты
-- Полный прогон завершён: `432/432`, `workers=12`, `xgb_threads=1`.
-- JSON status: `TARGET_REFORMULATION_FOUND`.
-- Лучший sell: `sell_fast / clock_shift_back`, val AUC `0.6967`, delta vs same-profile binary baseline `+0.0279`, seeds `3/3`.
-- Лучший buy: `buy_fast / clock_shift_back_impulse`, val AUC `0.7127`, delta vs same-profile binary baseline `+0.0199`; строгий порог delta `≥0.02` проходит только `1/3` seed, поэтому buy остаётся пограничным.
-
-### Вывод
-- Stage 5.3 completed target reformulation diagnostics for time-to-breach; status is taken from `ML/reports/stage5_3_time_to_breach_target_reformulation.json`; artifact `ML/reports/stage5_3_time_to_breach_target_reformulation.json`.
-- Вердикт отчёта остаётся `DIAGNOSTIC_ONLY`: `2023-2025` — diagnostic disclosure, не независимое подтверждение.
-
-<!-- docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md -->
-
-## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа
-
-### Исправлено после ревью
-- Найден root cause одинаковых метрик всех профилей: `reg:pseudohubererror` на полном `time_only` split выдавал почти константный raw-прогноз `-171.076`, затем clipping превращал все предсказания в `1.0`
-- Stage 5.2 objective заменён на `reg:squarederror`
-- В regression metrics добавлен `pred_summary` (`min`, `median`, `max`, `std`, `unique_rounded_4`)
-- Oracle gate больше не принимает `oracle_binary_pf = inf` / `pf_delta_vs_binary = None` как валидное сравнение
-- Полный rerun Stage 5.2 выполнен после bugfix: `42/42`, `workers=8`, `xgb_threads=4`
-
-### Добавлено
-- `--stage5-2-time-to-breach-regression`
-- `BR_TIME_TO_BREACH_COLUMNS` и `*_bars_to_breach_*` targets для Fractal Stop Breach
-- `ML/reports/stage5_2_time_to_breach_regression.json`
-- `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
-- Stage 5.2 профили: `time_only`, `clock_shift`, `clock_shift_back`, `clock_shift_impulse`, `clock_shift_back_impulse`, `structure_full`, `structure_full_without_back`
-- oracle-preflight через first-touch simulator, censoring gate, regression metrics и model gate
-
-### Методика
-- Уровень: поисковый, `DIAGNOSTIC_ONLY`
-- 2 цели × 7 профилей × 3 seed = `42` XGBoost-регрессии
-- Основные цели: `sell_bars_to_breach_H6_off05`, `buy_bars_to_breach_H6_off05`
-- `bars_to_breach = 7` означает "не пробит за 6 баров", а не фактический пробой на 7-м баре
-- `2023-2025` используются только как diagnostic disclosure; выбор winner-а по holdout запрещён
-- Up/Dn поля не включались в стартовые профили по итогам Stage 5.1b
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY**
-- Прогон завершён полностью: `42/42`
-- Censoring gate прошёл: train censoring sell `0.6114`, buy `0.6299`
-- Oracle gate провален честно: `oracle_binary_pf = inf`, `pf_delta_vs_binary = None`, сравнение time-oracle vs binary-oracle невалидно
-- Model gate провален только по MAE-improvement над constant baseline; Spearman/AUC/yearly checks проходят
-- Лучший sell: `clock_shift_back`, val Spearman `0.3072`, val AUC `0.7005`, holdout Spearman `0.2942`
-- Лучший buy: `clock_shift_back_impulse`, val Spearman `0.3280`, val AUC `0.7071`, holdout Spearman `0.2660`
-- Constant baseline по MAE лучше модели: sell `1.4439` vs `1.6942`, buy `1.4329` vs `1.6434`
-- Аномалия одинаковых метрик устранена: pred std ненулевой, профили различаются
-
-### Вывод
-Stage 5.2 не переоткрывает `H6_off05`, но после bugfix показывает содержательное ранжирование времени до пробоя. Главный повторяющийся сигнал снова `back`. Текущая обычная регрессия одного числа `bars_to_breach` не проходит candidate-gate из-за MAE хуже constant baseline и невалидного oracle comparison; следующий шаг — дискретная/цензурированная постановка (`breach_after_k`, ordinal buckets), без широкого перебора.
-
-<!-- docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md -->
-
-## [2026-06-25] — Stage 5.1b: Up/Dn абляция и baseline `clock + shift`
-
-### Добавлено
-- `--stage5-1b-updn-field-ablation`
-- `ML/reports/stage5_1b_updn_field_ablation.json`
-- `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
-- Stage 5.1b профили: `clock_shift`, `structure_full`, `updn_full`, `structure_plus_updn`, `back_impulse_combo`, 19 `drop_*`, 19 `add_*`
-- raw-shadow preflight для Up/Dn: структурная монотонность проверяется на `MT/MQL4/Files/Nero.csv`, а не на уже нормализованных `DATA/*_labeled.csv`
-- fail-fast проверка совпадения строк raw-shadow split и модельного split
-
-### Методика
-- Уровень: поисковый, `DIAGNOSTIC_ONLY`
-- 2 цели × 43 профиля × 3 seed = `258` прогонов XGBoost
-- Baseline усилен с `clock-only` до `clock + shift`, где `shift = log1p(raw_shift)`
-- Проверены 9 структурных полей и 10 Up/Dn полей
-- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
-- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY**
-- `updn_full` даёт слабую добавку над `clock_shift`: sell `+0.0048` AUC, buy `+0.0059`
-- `structure_full` даёт существенно большую добавку над `clock_shift`: sell `+0.0460`, buy `+0.0561`
-- `structure_plus_updn` не улучшает `structure_full` на validation: sell `-0.0017`, buy `-0.0021`
-- `back` сохранил `overall_likely_useful`: sell add `+0.0408`, buy add `+0.0575` над `clock_shift`; удаление `back` ухудшает обе цели
-- `back_impulse_combo` почти догоняет `structure_full` на sell и превосходит его на buy, но остаётся диагностическим контролем
-- Единственный частный Up/Dn-сигнал: `dn_24` получил `target_likely_useful` только на sell (`target_specific_signal`)
-- Модельные Up/Dn — нормализованные per-pair значения из `DATA/*_labeled.csv`, не raw price units; raw-shadow preflight проверяет producer-контракт
-- Delta CI для field verdicts не вычислены, поэтому verdicts Stage 5.1b слабее Stage 5.1 и опираются на seed counts/yearly signs
-
-### Вывод
-Stage 5.1b не переоткрывает `H6_off05`. Up/Dn поля не стоит включать в следующий стартовый профиль по умолчанию: их самостоятельный сигнал мал, а добавка к структуре отрицательна на validation. Главный устойчивый след остаётся у `back`; допустимый следующий шаг — только узкий follow-up вокруг `back`/`impulse`, без нового широкого поиска по `H6_off05`.
-
-<!-- docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md -->
-
-## [2026-06-24] — Stage 5.1: структурная абляция фрактальных полей
-
-### Добавлено
-- `--stage5-1-structural-field-ablation`
-- `ML/reports/stage5_1_structural_field_ablation.json`
-- `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
-- helpers Stage 5.1: fixed split `<=2020 / 2021-2022 / 2023-2025 / 2026`, профили `time_only / structure_full / drop_* / add_*`, paired bootstrap delta, field verdicts, progressive JSON output
-
-### Методика
-- Уровень: поисковый, `DIAGNOSTIC_ONLY`
-- 2 цели × 20 профилей × 3 seed = `120` прогонов XGBoost
-- `time_only` = только `hour_sin/hour_cos/dow_sin/dow_cos`
-- Stage 5.1 полностью исключает `price`, `price_coord_atr`, `price_atr_scaled`, `ATR`
-- `2023-2025` используются только как diagnostic disclosure; `2026` раскрывается отдельно как low-N disclosure
-- Коррекция множественного тестирования не применялась; `likely_*` — только предварительные диагностические категории
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY**
-- Единственное поле с согласованным итогом на обеих целях: **`back` = `likely_useful`**
-- Все остальные поля: `mixed_or_unclear`
-- Полей с итоговым `likely_noise` не найдено
-- `structure_full` заметно превосходит `time_only`: sell val AUC `0.6693` vs `0.6351`, buy val AUC `0.6879` vs `0.6418`
-- Для `back`: drop-one ухудшает качество, add-one улучшает его и на sell, и на buy. Годовой рисунок согласован: удаление `back` ухудшает AUC на всех 5 годах `2021-2025` на обеих целях
-- `back` одиночно захватывает примерно 64% структурной премии на sell и 74% на buy, но не заменяет `structure_full`
-- `impulse` остаётся вторым по интересу, но не проходит `likely_useful`: add-дельты положительные, а drop-one/годовая согласованность недостаточны
-- Ранний `2026` не подтверждает сильный sell-сигнал: `structure_full` sell AUC `0.5597` при `n=316`; это low-N disclosure, а не решающий вывод
-
-### Вывод
-Stage 5.1 показывает диагностическую прибавку структурных полей над clock-only baseline, но не переоткрывает `H6_off05` как кандидата. Самый сильный след — `back` (`back_val`, сила тыловой границы уровня). Следующий допустимый шаг по этой ветке — только узкий mini-follow-up `time_only / time+back / time+impulse / time+back+impulse / structure_full / structure_full_without_back`, без нового широкого перебора.
-
-<!-- docs/reports/2026-06-24-stage5_1-structural-field-ablation.md -->
-
-## [2026-06-24] — Stage 5.0f: диагностика устойчивости сигнала во времени
-
-### Добавлено
-- `--stage5-0f-signal-stationarity`
-- `ML/reports/stage5_0f_signal_stationarity.json`
-- `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
-- helpers для Stage 5.0f: годовые окна `rolling/fixed/anchored`, bootstrap-интервалы, агрегация по seed, функция решения и поэтапная запись JSON с прогрессом
-
-### Методика
-- Уровень: поисковый, `DIAGNOSTIC_ONLY`
-- 2 цели × 4 набора признаков × 3 схемы годовых окон × 3 seed = `456` прогонов XGBoost
-- `rolling` трактуется как 8-летнее окно разработки: 7 лет `train_core` + 1 год `val_stop`
-- Годы `2023-2025` используются для диагностического управленческого решения; `2026` раскрывается отдельно как год с малым числом наблюдений (sell `n=316`, buy `n=293`)
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY, overall_verdict = inconclusive**
-- Общий итог: **неопределённый** — не удалось ни доказать распад сигнала, который лечится более близким по времени обучением, ни подтвердить его устойчивость
-- Для обеих целей `rolling` не дал ни одного года, где его доверительный интервал был бы строго лучше `fixed` на решающих годах `2023-2025`. Более того, `fixed` последовательно численно превосходил `rolling` (sell 6/6 лет, buy 4/6 лет), что скорее противоречит H2 (temporal decay)
-- `time_only` деградирует сильнее фрактальных профилей при переходе от fixed к rolling; по абсолютному AUC стабильно ниже `structure_only` (sell +0.036…+0.071, buy +0.017…+0.050)
-- `structure_only` (фрактальные поля + clock, без price/ATR) остался близок к `base_raw_plus_time`; в 12 из 18 сравнений ≥ базы
-- Spearman на n=3 статистически неинформативен: `p=0.0` для buy — артефакт t-аппроксимации scipy при `rho=±1.0`, истинный p≈0.33. На 7 точках (2019-2025) тренд исчезает для обеих целей
-- `all100_relative_price_time` стабильно рядом с базой (±0.01-0.02), подтверждает вывод 5.0d
-
-### Вывод
-Stage 5.0f не даёт оснований ни закрыть тему как доказанно неустойчивую, ни реабилитировать её как устойчивую. H2 (temporal decay) скорее опровергнута направлением fixed>rolling, но природа отрицательного результата (H1 vs H2) не установлена. Без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
-
-<!-- docs/reports/2026-06-24-stage5_0f-signal-stationarity.md -->
-
-## [2026-06-23] — Stage 5.0e: проверка малого Transformer после провала
-
-### Добавлено
-- `--stage5-0e-small-transformer-check`
-- `ML/reports/stage5_0e_small_transformer_check.json`
-- `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
-- `train_transformer(..., model_config=None)` и расширенная история обучения (`best_epoch`, `overfit_drop_after_best`)
-
-### Методика
-- Уровень: проверка после провала внутри уже закрытой ветки `H6_off05`.
-- 1 профиль × 1 цель × 2 конфигурации × 3 seed = 6 прогонов Transformer.
-- XGBoost на тех же признаках остаётся главным сравнением.
-- Holdout 2023-2026 только раскрывается, но не участвует в решении.
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY**.
-- `overfit_hypothesis_supported = yes`: `small_regularized` уменьшил median `overfit_drop_after_best` с `0.0170` до `0.0009` при потере median `val_auc` только `-0.0028`.
-- `transformer_reopens_h6_off05 = no`: XGBoost на тех же признаках остаётся лучше по `val_auc` (`0.6742` против `0.6685`/`0.6657`), и ни один seed Transformer не прошёл сравнение одновременно по `val_auc` и `val_lift_30`.
-- Лучшая Transformer-конфигурация по median `val_auc`: `current` (`0.6685`), а не `small_regularized` (`0.6657`).
-
-### Вывод
-Меньшая модель действительно уменьшает признаки переобучения, но не меняет итогового решения. `H6_off05 stop broken` остаётся закрытым; дальнейшие шаги только через новую цель или новые признаки.
-
-<!-- docs/reports/2026-06-23-stage5_0e-small-transformer-check.md -->
-
-## [2026-06-23] — Stage 5.0d: диагностический скрининг профилей
-
-### Добавлено
-- `--stage5-0d-diagnostic-screening`
-- `ML/reports/stage5_0d_diagnostic_screening.json`
-- `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
-- `compute_logistic_same_profile_baseline`, `compute_feature_group_ablation`
-
-### Методика
-- Уровень: поисковый (exploratory).
-- Transformer не обучается. Только XGBoost (3 seeds) + Logistic Regression (1 seed).
-- Абляция групп признаков: price / structure / ATR / time.
-- Критерий: профиль с запасом >0.02 над base_raw_plus_time → гипотеза для 5.0e.
-- Если ни один профиль не проходит — текущая постановка `H6_off05 stop broken` на 9 профилях исследовательски исчерпана; Fractal Stop как семейство целей не закрыт.
-
-### Результаты
-- **Вердикт: DIAGNOSTIC_ONLY**, решение этапа: `h6_off05_target_exhausted` — ни один профиль не прошёл порог +0.02.
-- Лучший: sell `all100_relative_price_time` (delta +0.0111), lift_pass OK (0.5415 ≤ 0.5539), но AUC_pass FAIL.
-- Buy: ни один профиль не превосходит base (все дельты ≤ 0).
-- Абляция: structure-признаки критичны (AUC падает на 0.14–0.19 при их удалении), price/ATR почти не влияют.
-- XGBoost >> Logistic (gap 0.04–0.05) — сигнал во взаимодействиях, не линейный.
-
-<!-- docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md -->
-
-## [2026-06-22] — Stage 5.0c: повторная проверка на двух целях
-
-### Добавлено
-- `--stage5-0c-cross-target-rerun`
-- `ML/reports/stage5_0c_cross_target_rerun.json`
-- `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
-- `build_xgb_features_for_profile`, `compute_xgb_same_profile_baseline` — честное сравнение Transformer vs XGBoost на тех же признаках
-
-### Методика
-- Статус `DIAGNOSTIC_ONLY`; holdout не используется для решения (`holdout_used_for_decision: false`).
-- Framing: повторная проверка гипотезы 5.0b, не независимое открытие.
-- Заранее зафиксированные числовые пороги для 4 решающих gate (AUC, lift_30, проверка на двух целях, seed spread) + `holdout_check` как предупреждение.
-- 5 seeds безусловно (без single-seed gate).
-- XGBoost на том же профиле изолирует «признаки vs модель»; transform params подбираются на train, не на val/holdout.
-
-### Результаты
-- **overall_pass: FAIL** — гипотеза не воспроизвелась.
-- G1 (AUC): FAIL — Transformer уступил XGBoost same-profile на обеих целях. Sell: median val AUC 0.6643 vs XGBoost 0.6723 (0 seeds выше порога). Buy: median val AUC 0.6752 vs XGBoost 0.6873 (0 seeds выше порога).
-- G2 (lift_30): FAIL — Transformer lift_30 выше XGBoost на обеих целях (меньше = лучше не выполнено). Sell: 0.5570 vs 0.5229. Buy: 0.5423 vs 0.5147.
-- G3 (cross_target): FAIL — ни одна цель не прошла G1+G2.
-- G5 (seed_spread): PASS — sell spread 0.0054, buy spread 0.0104 (оба < 0.03).
-- Holdout check: OK — sell drop 0.024, buy drop 0.028 (оба < 0.05).
-- Transformer на тех же признаках не превосходит XGBoost: в профиле есть умеренный сигнал, но текущая Transformer-реализация извлекает его хуже табличной модели.
-
-<!-- docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md -->
-
-## [2026-06-21] — Stage 5.0b: Asinh Transformer rerun
-
-### Добавлено
-- `--stage5-0b-asinh-rerun`
-- `ML/reports/stage5_0b_asinh_rerun.json`
-- `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
-
-### Методика
-- Статус `DIAGNOSTIC_ONLY`; holdout не используется для выбора.
-- Confirmatory candidates отделены от diagnostic controls.
-- Dynamic corridor `seq_len` отключён.
-- Дополнительно выполнен диагностический buy-прогон `buy_stop_broken_H6_off05_flag` после исправления загрузки: фильтрация строк теперь идёт по выбранной целевой колонке, а не всегда по `sell_stop_broken_H6_off05_flag`.
-
-### Результаты
-- Sell: лучший Transformer `all100_relative_price_time` не прошёл AUC-порог (`0.6719` против `0.6731`); разрыв `0.0012` мал и в single-seed режиме не считается устойчивым сигналом. `lift_30` на `val_stop` лучше XGBoost (`0.5044` против `0.5539`), но оба условия отбора одновременно не выполнены.
-- Buy: цель оказалась непустой после исправления загрузки (`22745` train rows, positive_rate `0.3701`, OHLC verification `PASS 50/50`). Лучший Transformer `all100_relative_price_time` уступил XGBoost по AUC (`0.6762` против `0.6894`).
-- Проверка распределения признаков после `asinh` дала `OK` и `0` критических флагов для всех sell/buy профилей.
-- `all100_absolute_price_atr_scaled_time_asinh` повторно оказался рядом с лидером на двух целевых: sell `0.6673` против лидера `0.6719`, buy `0.6752` против лидера `0.6762`.
-
-### Вывод
-⚠️ DIAGNOSTIC_ONLY. Stage 5.0b не открывает multi-seed продолжение и не объявляет trading winner. Следующая обоснованная гипотеза — отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с честным сравнением против XGBoost на тех же строках.
-
-<!-- docs/reports/2026-06-21-stage5_0b-asinh-rerun.md -->
-
-## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison
-
-### Добавлено
-- `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md` — канонический отчёт проверки распределения признаков перед rerun Stage 5.0
-- `ML/reports/stage5_0a_feature_stats_per_position.csv` — per-position статистики признаков
-- `ML/reports/stage5_0a_transform_comparison.json` — structured artifact сравнения `current` / `asinh` / `piecewise_tail`
-- `ML/reports/stage5_0a_transform_comparison_summary.csv`, `*_stats.csv`, `*_per_position.csv` — CSV-артефакты сравнения способов сжатия хвостов
-- Дополнительные диагностические профили `price/ATR`: `all100_absolute_price_atr_scaled_time_raw`, `all100_absolute_price_atr_scaled_time_asinh`, `corridor_5atr_price_unit_atr_full`, `corridor_10atr_price_unit_atr_full`
-
-### Результаты
-- Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`; остался только `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14.
-- Per-position audit выявил скрытую проблему старого `price_coord_atr`: `all100_relative_price_*` имел `TAIL_GT10` на позиции 99 (самый старый фрактал); signed-log убрал этот хвост.
-- Дополнительное сравнение без обучения после расширения до 11 профилей: `current` = 11 WARNING / 0 OK, `asinh` = 0 WARNING / 11 OK, `piecewise_tail` = 0 WARNING / 11 OK.
-- `all100_absolute_price_atr_scaled_time_raw` не имеет хвоста `abs>10` после нормализации даже без `asinh`; `asinh(price/ATR)` дополнительно снижает train max с 6.67 до 3.39.
-- Кусочное сжатие использует пороги `p05/p95`, рассчитанные только на train; val_stop/holdout используются только для disclosure.
-
-### Вывод
-⚠️ DIAGNOSTIC_ONLY. `asinh` и `piecewise_tail` лучше текущего варианта по проверке распределения признаков, но это не доказательство качества модели: обучение не запускалось. Следующий Transformer rerun можно планировать с заранее зафиксированным transform-кандидатом или как явно диагностическое сравнение, чтобы не создать новый скрытый перебор конфигураций.
-
-<!-- docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md -->
-
-## [2026-06-17] — Stage 5.0: Transformer Breach Holdout — FAIL
-
-### Добавлено
-- `ML/baseline/benchmark_stage5_transformer_breach.py` — раннер Stage 5.0 (5 профилей A6, XGBoost baselines, phased execution)
-- `ML/models/fractal_breach_transformer.py` — Transformer-энкодер для breach-классификации (d_model=64, masked mean + newest-token pooling)
-- `tests/test_stage5_transformer_breach.py` — 39 тестов (профили, tensor shapes, corridor validation, модель, split guard)
-- `docs/reports/2026-06-17-stage5-transformer-breach.md` — канонический отчёт
-- `docs/ML/benchmark_stage5_transformer_breach.py.md` — документация раннера
-- `docs/ML/fractal_breach_transformer.py.md` — документация модели
-- `ML/reports/stage5_transformer_breach.json` — структурированные результаты
-
-### Результаты
-- **Полноразмерный Transformer (d_model=64, nhead=4, dim_feedforward=128, 40 эпох, train ≤2020) на CPU, single seed [42]**
-- Primary profile `all100_base10_time` holdout AUC=0.6018 vs XGBoost=0.6524 (gap −0.051)
-- Все 5 Transformer профилей проигрывают XGBoost на holdout 2023-2026
-- `no_time` профиль AUC=0.4987 — без времени Transformer бесполезен (ниже случайного)
-- `time_only` XGBoost AUC=0.6059 — почти догоняет Transformer с фракталами
-- Yearly degradation: AUC 0.646→0.513 от 2023 к 2026 (совпадает со Stage 4.6)
-- **Lift_30:** Transformer 0.766 vs XGBoost 0.620 (lift_30 = доля пробоев в нижних 30% / baseline; меньше = лучше) — Transformer ХУЖЕ XGBoost в безопасной зоне
-- Вердикт: FAIL по всем gate. Transformer не бьёт XGBoost ни по AUC, ни в low-risk зоне
-
-### Вывод
-**5 последовательных этапов Fractal Stop провалились** (Stage 2→3→4→4.6→5.0). Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-архитектуре. Методический risk: признаки Transformer не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации. Не строить Stage 5.1 trading layer. Решение: пересмотр постановки или закрытие Fractal Stop ветки.
-
-## [2026-06-15] — Stage 4.7: Walk-Forward Optimization Diagnostics
-
-### Добавлено
-- `ML/baseline/diagnose_walk_forward.py` — 4 варианта walk-forward: Expanding Window, Anchored WFO, Rolling 10yr, XGBoost Warm-start
-- `docs/reports/2026-06-15-walk-forward-diagnostics.md` — канонический отчёт
-- `ML/reports/walk_forward_diagnostics.json` — структурированные результаты
-
-### Результаты
-- **Expanding Window (Stage 4.6 protocol — temporal early stopping):** ≤2016 → 2023-2026 PF=0.897, BS_p05=0.679, 357 trades — точное совпадение со Stage 4.6. Расширение обучения до ≤2022: PF=0.84, BS_p05=0.739.
-- Self-val (Anchored/Rolling/Warm-start) завышает количество сделок (1364-1973 vs 357), но паттерн «2023-2026 провал» устойчив во всех 4 вариантах.
-- Warm-start не даёт преимущества над свежим обучением.
-- Результат совместим с календарным риском и regime drift, но не доказан причинно-следственно.
-
-### Вывод
-⚠️ DIAGNOSTIC_ONLY. Проблема не в объёме данных — расширение обучения не спасает. Требуется иной подход (Stage 5.0 Transformer с календарным baseline). Официальный frozen test не открыт; 2023-2026 = диагностический holdout.
-
-<!-- docs/reports/2026-06-15-walk-forward-diagnostics.md -->
-
-## [2026-06-15] — Stage 4.x Remaining Hypotheses Master Plan (Stage 5.0-prep / 4.5 / 4.6)
-
-### Добавлено
-- `ML/baseline/diagnose_stage5_prep.py` — feature ablation + AUC→PF sensitivity
-- `ML/baseline/diagnose_stage4_5_exit_mechanics.py` — trailing/breakeven/partial exit mechanics
-- `ML/baseline/benchmark_stage4_6_clean_cycle.py` — clean val_select/val_eval candidate-cycle (ext to 2026)
-- 3 канонических отчёта, 3 документации модулей, 26 smoke-тестов
-
-### Результаты
-- Stage 5.0-prep: календарный риск подтверждён (time_only AUC=0.6286 > no_time 0.6113), oracle-mix: PF-gate при AUC≥0.8442 (gap +1768 bp)
-- Stage 4.5: trail_atr_0_2 PF=1.831 (BS_p05=1.462) — лучший diagnostic-результат Fractal Stop; breakeven PF=0.717
-- Stage 4.6: trail_atr_0_2 прошёл val_select 2019-2022 (PF=2.041, conc=0.434) но провалил val_eval 2023-2026 (PF=0.897) — breach-модель ≤2016 не обобщается на +7 лет
-- Permutation test: exit-политика доминирует над breach-сигналом в протоколе выбора
-
-### Вывод
-⚠️ DIAGNOSTIC_ONLY. Все гипотезы `docs/audit/to_do.md` выполнены. Stage 4.x закрыт. Следующий шаг — Stage 5.0 Transformer с календарным baseline. Fixed TP R=0.7 — baseline торгового слоя. Trail_atr_0_2 — отдельная диагностическая ветка.
-
-<!-- docs/reports/2026-06-15-stage4_4-micro-check.md -->
-
-## [2026-06-14] — Stage 4: Глубокая диагностика провала и трейлинг-стоп
-
-### Добавлено
-- `ML/baseline/diagnose_stage4_gap.py` — Partial Oracle декомпозиция + breach-калибровка + fav-ошибки
-- `ML/baseline/improve_stage4.py` — 8 улучшающих экспериментов (параметры, фильтры, dynamic TP, quantile fav)
-- `ML/baseline/trail_stop_stage4.py` — 14 стратегий трейлинг-стопа
-- `ML/reports/stage4_gap_diagnostics.json`, `stage4_improvements.json`, `trail_stop_stage4.json`
-- `docs/reports/2026-06-14-stage4-deep-diagnostics.md` — лаконичный отчёт
-- `docs/audit/2026-06-14-stage4-brainstorm_deep.md` — полный аудит
-
-### Результаты
-- **Partial Oracle:** fav — большее узкое место, чем breach (PF 14.72 vs 6.61), но синергия колоссальна (perfect_both PF=104.88)
-- **Параметры и фильтры:** все уже оптимальны. tp_fraction/stop_offset/min_rr — уникальный локальный оптимум. Strong fractal (~0 сделок), ATR regime (вредит), combined breach (вредит), quantile fav (слишком консервативен)
-- **Трейлинг-стоп atr_02 (0.2 ATR отступ): PF 1.015 → 1.655 (+64%).** avg_loss вдвое меньше (0.872 → 0.365 ATR), TIMEOUT исчезают (15% → 0%), R:R становится симметричным
-- Step-стратегии (ступенчатый трейлинг) — нулевой эффект на H1
-- Breakeven (be_03, 30% TP): скромный прирост PF=1.116 (+10%)
-
-### Вывод
-Модель находит хорошие точки входа, но фиксированный TP/SL не даёт зафиксировать прибыль до разворота. Трейлинг-стоп atr_02 решает проблему механики выхода (PF=1.655) без переобучения моделей. Gap до oracle (104.88) остаётся — нужен Transformer (Stage 5.0) для улучшения breach+fav. Stage 5.1 должен тестировать Transformer с трейлинг-стопом.
-
-<!-- docs/reports/2026-06-14-stage4-deep-diagnostics.md --><!-- docs/audit/2026-06-14-stage4-brainstorm_deep.md -->
-
-## [2026-06-12] — Stage 4.2: Diagnostic recalc с исправленной методикой
-
-### Добавлено
-- `ML/baseline/benchmark_fractal_stop_stage4_2.py` — диагностический пересчёт winner Stage 4 с исправленной методикой
-- `ML/reports/stage4_2_diagnostic.json` — результаты Stage 4.2
-
-### Исправления методики
-- Трёхслойный split: train (2004–2016), val_stop (2017–2018, early stopping), val_eval (2019–2022, оценка)
-- Early stopping XGBoost на val_stop (не на val_eval) — устранено тройное использование validation внутри диагностического пересчёта; исторический selection bias winner остаётся
-- Фиксированная конфигурация (sell_H6_off05, p=0.4, mf=0.3, rr=1.0, tf=0.4), без нового grid search (конфигурация унаследована из Stage 4)
-- Spread-коррекция под OHLC=Bid: SELL bars shifted +spread, BUY entry+spread
-- Block bootstrap (block_size=15) вместо i.i.d.
-- Permutation test для одного target (без выбора среди 8)
-
-### Результаты
-- PF Stage 4 winner: 1.106 → Stage 4.2: **1.015** (Δ = **−0.091** — совокупный эффект исправленного диагностического протокола, не изолированное «завышение»)
-- BS_p05: 0.923 → 0.837 (Δ = −0.086)
-- Breach AUC val_eval: 0.6674 (Stage 4: 0.6741 на том же validation → разница −0.0067 AUC после исправленного протокола)
-- Permutation test: 0/500 перестановок breach-вероятностей достигли PF ≥ 1.015 (консервативная оценка p ≈ 1/501 ≈ 0.002) — breach-модель отделяется от случайной перестановки **для фиксированного диагностического правила**
-- Perm median PF = 0.817, perm max = 0.959 — наблюдаемый PF=1.015 выше всего случайного распределения для данного правила
-- Годовая устойчивость: 1/4 убыточных лет (vs 3/4 в Stage 4), 2019 улучшен с 0.48 до 0.774
-
-### Вывод
-⚠️ DIAGNOSTIC — breach-модель добавляет реальный сигнал для фиксированного правила (0/500 перестановок, p ≈ 0.002, +0.20 PF над случайным), но его силы недостаточно для устойчивой прибыльности (gate PF > 1.15, исторический selection bias winner не исправлен). Совокупный эффект исправленного диагностического протокола: ΔPF = −0.091. Проблема не в отсутствии сигнала, а в его слабости. Табличные модели на текущем представлении фракталов достигли потолка. Next: Transformer encoder (Stage 5.0) с чистой методикой от Stage 4.2.
-
-<!-- docs/reports/2026-06-11-stage4-trade-xgboost.md --><!-- docs/audit/2026-06-11-stage4-GLM-audit.md --><!-- docs/audit/2026-06-11-stage4-Qwen-audit.md -->
-
-## [2026-06-11] — Stage 4: XGBoost Trading Layer + Stage 4.1 controls (отрицательный результат)
-
-### Добавлено
-- `ML/baseline/benchmark_fractal_stop_stage4.py` — XGBoost breach + RF fav + trade simulation + grid search + bootstrap PF
-- `ML/reports/stage4_trade.json` — base_raw_plus_time результаты
-- `ML/reports/stage4_trade_geom.json` — relative_geometry_clean результаты
-- `ML/baseline/benchmark_fractal_stop_stage4_1.py` — XGBoost-fav, combined breach H6/H12 и permutation test
-- `ML/reports/stage4_1.json` — Stage 4.1 результаты
-
-### Результаты
-- Primary (`base_raw_plus_time`): winner sell_H6_off05, PF=1.106, BS_p05=0.923, 1/8 таргетов PF≥1.0
-- Control (`relative_geometry_clean`): winner sell_H6_off05, PF=1.142, BS_p05=0.906, 2/8 таргетов PF≥1.0
-- Buy-таргеты все убыточны (PF 0.79–0.94). Sell-таргеты marginal (PF 0.91–1.14)
-- Оба профиля эквивалентны (разница winner PF 0.036 — шум). Gate PF>1.15 не пройден ни одним таргетом.
-- AUC не предсказывает PF: лучший AUC sell_H12_off02 (0.696) дал PF=0.976; winner sell_H6_off05 (AUC 0.674) дал PF=1.106
-- Stage 4.1 XGBoost-fav ухудшил PF на всех 4 SELL-таргетах: sell_H6_off05 1.106 → 0.904, sell_H6_off02 0.984 → 0.899, sell_H12_off02 0.976 → 0.915, sell_H12_off05 0.912 → 0.901
-- Stage 4.1 combined breach H6 AND H12: лучший sell_comb_off05 PF=1.065, BS_p05=0.883, perm_p=0.050 — ниже Stage 4 winner и статистически слабо
-
-### Вывод
-❌ FAIL — рост AUC breach-классификатора с RF 0.645 до XGBoost 0.680 (+345 bp) не конвертируется в статистически значимый PF. Stage 4.1 не подтвердил быстрые улучшения: XGBoost-fav хуже RF-fav, combined breach не проходит gate. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка для текущей торговой постановки. Next: Transformer encoder на фрактальной sequence либо пересмотр торговой логики/таргета.
-
-<!-- docs/reports/2026-06-11-stage4-trade-xgboost.md -->
-
-## [2026-06-11] — Fractal parser contract hardening
-
-### Исправлено
-- `processing/label_signals.py`: `parse_fractal()` теперь принимает только integer-like значения в полях `time`, `direction`, `strong`, `break`, `count`, `shift` (`1`, `1.0`) и отвергает дробные нормализованные значения (`0.1700000018`).
-- Добавлен regression-тест, который предотвращает тихое применение разметочного parser-а к нормализованным `fractal*` полям.
-
-## [2026-06-10] — Stage 3.x: feature profiles + XGBoost breach classifier
-
-### Добавлено
-- `ML/baseline/benchmark_fractal_stop_stage3.py` — 3 feature profiles, RF breach classifier, metric uplift
-- `ML/baseline/benchmark_fractal_stop_stage3_1.py` — RF ablation of `relative_geometry`
-- `ML/baseline/benchmark_fractal_stop_stage3_2.py` — XGBoost comparison
-- `ML/reports/stage3_profiles.json` — полные результаты сравнения
-- `ML/reports/stage3_1_profiles.json` — Stage 3.1 ablation results
-- `ML/reports/stage3_2_xgboost.json` — Stage 3.2 XGBoost results
-
-### Результаты
-- Stage 3 RF: `base_plus_path` (+700 фич: folded mov_h + shift + atr_ratio) FAIL — AUC drops 64–166 bp on all 8 targets
-- Stage 3 RF: `relative_geometry` (+10 фич: price→ATR-relative, density, time) PASS as whole profile — mean +119 bp
-- Stage 3.1 RF ablation: uplift даёт time, не density; `relative_price_only` −40 bp, `relative_price_plus_time` +121 bp, `relative_geometry_clean` +127 bp
-- Stage 3.2 XGBoost: `base_raw` +140 bp over RF base_raw; `base_raw_plus_time` AUC mean 0.6799 (+345 bp); `relative_geometry_clean` AUC mean 0.6808 (+354 bp)
-- `time_only` AUC mean 0.6300 — время полезно, но не заменяет фракталы
-- Все Stage 3.x профили: без year-slices AUC<0.55
-
-### Вывод
-Folded mov_h не несут breach-сигнала для RF в комбинированном профиле. Практический uplift Stage 3.1 даёт time, а не density. Лучший простой кандидат для Stage 4 — XGBoost `base_raw_plus_time`; `relative_geometry_clean` выше всего на 9 bp, но сложнее. Mean AUC 0.70 формально не достигнут: gap около 192–201 bp. Next: Stage 4 validation-only trading simulation.
-
-<!-- docs/reports/2026-06-10-feature-profiles-stage3.md -->
-
-## [2026-06-10] — Fractal Stop Fav Stage 2: торговый слой (отрицательный результат)
-
-### Добавлено
-- `label_fractal_stop_fav_targets()` — fav regression labels (4 H-specific, 2 направления)
-- `evaluate_fractal_stop_trade()` — first-touch SL/TP/TIMEOUT evaluator (pnl в ATR)
-- `--fractal-stop-fav` в `label_main.py`
-- `tests/processing/test_fractal_stop_fav.py` — 9 тестов (4 fav + 5 trade evaluation)
-- `ML/baseline/benchmark_fractal_stop_fav.py` — RF breach+reg + grid search + frozen test
-
-### Результаты
-- Grid search на val (8 комбинаций H x off x side, 81 порог): лучшая комбинация sell_H12_off05 PF=0.975. Ни одна не достигла PF > 1.0
-- Frozen test (test 2022–2026, frozen rule sell_H12_off05): PF=0.837 canonical, 3/5 лет убыточны
-- Test breach AUC 0.65 — классификатор работает, но сигнал не транслируется в прибыль
-
-### Вывод
-❌ FAIL — торговая постановка breach+fav на RF не работает: PF 0.6–0.98, gap 10–30× до oracle. Oracle (проверка потолка) показывает высокий диагностический потолок механики (perfect_breach PF=8–28, perfect_fav PF=7–24, perfect_both PF=∞ на val), но не является торговым доказательством. Рекомендация: Stage 3 — улучшение breach-классификатора и признаков.
-<!-- docs/reports/2026-06-10-fractal-stop-fav-stage2.md -->
-
-## [2026-06-10] — Fractal Stop Breach Stage 1: сигнал о пробое уровня подтверждён
-
-### Добавлено
-- `label_fractal_stop_breach()` — разметка breach таргетов (H∈{6,12}, off∈{0.0,0.2,0.5}, 12 колонок)
-- `--fractal-stop-breach` флаг в `label_main.py`
-- `tests/processing/test_fractal_stop_breach_labels.py` — 10 тестов
-- `ML/baseline/benchmark_fractal_stop_breach.py` — Dummy + RF baseline (1001 признак) + frozen test
-- `statistics/data_contract_smoke_check.py` — breach-проверки
-
-### Результаты
-- RF baseline (val, 8 primary таргетов): AUC 0.62–0.68, lift 1.52–1.77, без годовых провалов
-- Frozen test (H=6, off=0.2): buy AUC=0.640, sell AUC=0.649 — сигнал подтверждён на невиданных данных
-- Все критерии перехода к Этапу 2 выполнены
-
-### Вывод
-Фрактальные признаки несут сигнал о будущем пробое уровня. Можно переходить к торговому слою (Этап 2).
-<!-- docs/reports/2026-06-10-fractal-stop-breach-stage1.md -->
-
-## [2026-06-04] - Direction-only signal confirmed + TB extension
-
-### Эксперименты
-- 100 бинарных направлений фракталов (±1) → RF → `edge_h = up_h − dn_h`. Test (2022-2026, XAUUSD): edge_6 PF=6.43 (R²=0.33, win=81%), edge_12 PF=3.92 (R²=0.21, win=73%). f0.dir baseline PF=0.16 — направления несут реальный сигнал. PnL = MFE−MAE (идеализировано, не торговый PnL).
-- Проверка тех же 100 направлений → RF-классификатор на 12 TB-таргетах (buy/sell × SL2/SL3 × TP3/TP6/TP9) с порядком касаний. Test: лучший buy_sl2_tp3 PF=1.11 (3/5 лет убыточны), остальные таргеты ниже 1.0. f0.dir baseline: buy_sl2_tp3 PF=1.14, buy_sl3_tp3 PF=1.28 — слабый BUY-сдвиг в данных, RF не усиливает. Сильный edge_h-сигнал не переносится на порядок касаний (разные вопросы: «куда пойдёт цена» vs «что случится первым»).
-- Отчёт: `docs/reports/2026-06-03-direction-only-signal.md`, скрипты: `ML/baseline/direction_only_signal.py`, `ML/baseline/tb_direction_signal.py`, JSON: `ML/reports/direction_only_signal.json`, `ML/reports/tb_direction_signal.json`.
-- **Fractal channel ablation**: 10 вариантов групп признаков на 29-канальном тензоре → RF на edge_6 (диагностическая цель) и buy_sl3_tp3 (торговая цель). Пороги только train, frozen test 2022–2026. edge_6 test: all PF=11.30 (все 5 лет прибыльны), only_base PF=8.75 (77% сигнала в 10 каналах), no_horizon6 PF=11.26 (горизонт цели не нужен модели). ATR-distance не добавляют к edge_h (Δ +0.06). TB: при честном train-пороге большинство вариантов → 0 сделок; only_dir PF=1.34 (225 сделок) без годовой устойчивости. Отчёт: `docs/reports/2026-06-04-fractal-ablation.md`, скрипт: `ML/baseline/fractal_ablation.py`, JSON: `ML/reports/fractal_ablation.json`, `ML/reports/fractal_ablation_test.json`.
-
-### Исправлено
-- `parse_fractals_to_3d()`: up_3/dn_3/up_6/dn_6 (поля 17-20) включены в тензор, N_FRACTAL_FEATURES=26
-- `normalize.py`: per-pair нормализация up/dn (5 пар со своим p85/p99), параметры из фракталов без таргетов
-- `label_trade_targets()`, `label_trailing_stop_targets()`: исправлена цена входа — была Close текущего бара (look-ahead), стала Open следующего (реальный earliest entry)
-- `label_entry_path_targets()`, `label_trailing_stop_targets()`: флаг `use_fractal_dir` для всестрочной разметки
-- Удалены мёртвые признаки: range_atr_6, body_atr_3, ret_dir_atr_lag1, vol_regime_24
-- delta_shift[99] через маску валидности вместо хардкода
-- DATA_VERSION = 'fractal_v23' с проверкой в validate_fractal_format
-- `direction_only_signal.py`, `tb_direction_signal.py`: `json_safe()` — inf/nan → null для строгого JSON
-- `statistics/data_contract_smoke_check.py` — обязательный входной контроль перед ML-экспериментами (тензор, цена не бинарна, direction ∈ {-1,1}, ATR-признаки не в [0,1], доли классов TB-таргетов)
-
-## [2026-05-29] - Limit-Order Entry Convention: Phase 1–3
-
-### Добавлено
-- `label_limit_order_barriers()` в `processing/label_signals.py` — 6-bar fill window, 24-bar barrier, spread-adjusted exit, per-side fill_lag, PnL columns (`_pnl_r`), ambiguous flags
-- `tests/processing/test_limit_order_barriers.py` — 15 тестов: BUY/SELL fill, NO_FILL, spread, ambiguity, PnL, skipped rows
-- `--limit-order --spread` флаги в `label_main.py`, вывод в `DATA/limit_order/`
-- `processing/purge_split.py` — 30-bar time-based purge на train→val, val→test, test tail границах
-- `processing/label_audit.py` — аудит fill_lag, ambiguity per target, PnL comparison
-- `ML/baseline/benchmark_limit_order_entry.py` — RF/HGB baseline на limit-order labels, PF из `_pnl_r`, negative_years через groupby
-- `ML/limit_order_train.py` — Transformer Phase 3 на BUY TB таргетах
-- `.opencode/agents/reviewer.md` — QA review agent для docs/code/experiments
-
-### Результаты
-- **Phase 1+2 PASS** для канонического BUY лимитника (spread=0.20): RF PF=1.53, fill 96.4%, 55 сделок/год, 0 отрицательных лет
-- **SELL FAIL**: HGB PF=1.36 (neg_years=1), RF PF=0.91 (neg_years=3) — XAUUSD bull market асимметрия
-- **Spread sensitivity**: PF монотонно падает: 1.56→1.53→1.23→1.02 (0→0.20→0.40→0.80)
-- **Fill statistics** (spread=0): 98.5% BUY fill, 97.4% instant (lag=0), 1.4% ambiguous
-- **Phase 3 Transformer FAIL**: Mean AUC=0.575, главный target buy_sl2_tp3 AUC=0.498 — fractal features без predictивного сигнала
-- **Вердикт**: Close-entry сделан исполнимым через лимитные ордера. Transformer на fractal features не работает (консистентно с transformer-direction 2026-05-21).
-
-### Исправлено
-- Skipped rows (bad fractal0, missing time): TB targets теперь получают NO_FILL_SENTINEL вместо stale default 0.5
-- Mismatch bug: fill_lag=-1 в skipped rows, TB targets оставались на 0.5 вместо -999
-
-<!-- подробности: docs/reports/2026-05-29-limit-order-entry.md -->
-
-## [2026-05-27] — Methodology Cycle: Entry Timing Correction
-
-### Изменено
-- Методика усилена правилом исполнимой entry price: label/backtest не может входить раньше фактической доступности признаков и runtime-задержек.
-- Для `fractal0` зафиксировано: он полностью готов только на `Close` подтверждающего третьего бара; `Close[row]` entry в текущем live path является `DIAGNOSTIC_ONLY`.
-- Stage 09 текущего candidate-source цикла зафиксирован как `FAIL`, Stage 10 — как `INVALID`.
-- `ML/stage10_frozen_test_oos.py` теперь сам выставляет `INVALID`, если frozen protocol checks не проходят.
-
-### Вывод
-Результаты с `Close[row]` больше нельзя интерпретировать как live/OOS evidence для MT watcher-контура. Следующий валидный кандидат должен доказать first executable entry после feature readiness.
-
-<!-- подробности: docs/reports/2026-05-25-methodology-cycle-stages-00-04.md -->
-
-## [2026-05-25] — Methodology Cycle: Stages 00–02 — Pipeline Foundation
-
-### Добавлено
-- Полный контракт methodology-цикла: гипотеза live-safe candidate-source, gate-критерии, split-протокол
-- 23-е поле `Shift` в fractal CSV формате (`SHIFT(F[f].T)` — bar index без искажений выходных)
-- 4 новых семейства признаков в `fractal_level_feature_builder.py`: `log_price_rel`, `atr_band_4/12`, `count_in_band_4/12`, `delta_shift_N`
-- `ML/pll_normalizer.py` — Piecewise Linear-Log нормализатор с per-group scalers (8 групп, fit train only)
-- `ML/checkpoints/pll_normalizer_v1.pkl` — fit на 44104 train samples
-- Artifacts: `stage00_research_contract.json`, `stage01_raw_data_inventory.json`, `stage01_gate_verdict.json`, `stage02_data_pipeline.json`, `feature_contract.csv`, `candidate_source_live_safe_audit.md`, `stage02_scale_audit_*.csv`
-
-### Результаты
-- Pipeline: 63006 rows (2004–2026) → sort (0 errors) → label (3192 signals, 63006 predicts) → split 44104/9451/9451
-- Все raw поля классифицированы (live_safe / target_only / future_derived / unknown)
-- Старый `signal != 0` gate явно отвергнут как future-derived
-- PLL группы: price, front_back, impulse, power, count, updn_h12/h24/h48. Break clip 5.
-
-### Вывод
-Фундамент live-safe candidate-source цикла заложен. Данные готовы к baseline-экспериментам.
-
-<!-- подробности: docs/reports/2026-05-25-methodology-cycle-stages-00-04.md -->
-
-## [2026-05-21] - Transformer Encoder Direction: TB/Reg/Trail таргеты
-
-### Добавлено
-- `ML/prepare_raw_features.py` — raw up_N/dn_N из OHLC (1000 колонок, sliding_window_view)
-- `ML/transformer_direction_train.py` — DataLoader, frozen RF baseline, fine-tune loop
-- 18 жизнеспособных комбинаций таргетов: 16 TB + 2 Reg (Trail — on-demand)
-
-### Результаты
-- **TB**: 16 комбинаций, лучший BUY PF=1.35 (val), Gate A провален
-- **Reg**: r_up=0.36, r_dn=0.41, лучший PF=1.21 (margin=4, 41 сделка) — провален
-- **Trail**: BUY PF=2.41 (58 сделок, 0.6% utilisation) — формально пройден, но ненадёжно
-- **Fine-tune Transformer**: хуже frozen RF на всех комбинациях
-- **SeqPF признан невалидной метрикой**: shuffle-тест показал разброс 0.68–4728 при одном и том же PF=1.10
-- **Вердикт**: fractal features не несут direction-сигнала. Тупик для direct direction prediction.
-
-### Исправлено
-- Raw up/dn баг: fractal.price нормализован (ratio), исправлено на OHLC close
-- Checkpoint загрузка: num_classes=10 не был в model_kwargs
-
-<!-- подробности: docs/reports/2026-05-21-transformer-direction.md -->
-
-## [2026-05-21] - Direct Direction Rebuild (E0–E5 audit + исправление)
-
-### Добавлено
-- `ML/prepare_raw_features.py` — извлечение сырых признаков из OHLC (raw prices, raw ATR)
-- `ML/benchmark_buy_only_direction.py` — BUY-only RF с исправленными признаками, directional close target, corrected winner protocol
-
-### Исправлено (6 критических ошибок)
-- Feature-in-target contamination: признаки строятся из OHLC raw prices (не из normalized CSV)
-- Неверные единицы расстояния: `(raw_price_i − raw_price_0) / raw_ATR`
-- A/C targets из normalized значений: таргеты строятся из OHLC
-- Winner selection protocol: negative_years=0 gate, сортировка по sequential PF
-- SELL anti-signal: полный отказ от SELL (BUY-only)
-- Шумный trailing-profit таргет: заменён на directional close
-
-### Результаты
-- Phase A validation: PF=1.77, SeqPF=1.99 (83 сделки) — gate passed
-- Phase B (+regime features): PF=1.64, SeqPF=2.22 — regime features не улучшили
-- Phase D frozen test: **PF=0.99, SeqPF=1.96** (639 сделок) — gate FAILED
-- **Вердикт**: fractal-level признаки не несут direction-сигнала. Test BUY win rate 50.5% (случайный).
-- Рекомендация: не деплоить; исследовать Transformer encoder + score gate.
-<!-- подробности: docs/reports/2026-05-18-direct-direction-rebuild.md -->
-
-## [2026-05-16] - Wiki: execution-tracks.md decomposition
-
-### Изменено
-- Монолит `wiki/research/execution-tracks.md` (1450 строк, 39 отчётов) разбит на 8 тематических подстраниц + 1 overview. Каждая подстраница 50-340 строк — агент читает только релевантный трек.
-- `wiki/index.md` обновлён: одна строка заменена на дерево из 9 строк с ссылками на подстраницы.
-
-### Результат
-- `search_knowledge("Triple Barrier")` вернёт `execution-tracks-early-research.md` (84 строки) вместо монолита.
-- `search_knowledge("live safe retrain")` вернёт `execution-tracks-live-safe-audit.md` (243 строки).
-- Экономия токенов: агент получает ~200 строк вместо 1450 при поиске по конкретной теме.
-
-## [2026-05-15] - Direct direction improvement experiments E0–E5
-
-### Добавлено
-- Binary BUY/SELL direction benchmark (`ML/benchmark_entry_path_binary_direction.py`) — две независимых модели (BUY-vs-REST, SELL-vs-REST) с RF и HGB, threshold/margin grid, frozen-test stage
-- Score-filtered direction resolver (`ML/benchmark_entry_path_score_direction.py`) — HGB direction resolver на score universe
-- Zone features в `fractal_level_feature_builder.py` — `input_family="zones"` и `"zones_plus_nearest_k"`, `geometry_only` параметр
-- Model variant support в `benchmark_entry_path_fractal_level_direct_direction.py` — `--model rf/hgb/lr`, `--input-family`, `--k`, `--geometry-only`, `--e0-grid`
-- Test coverage: k variants (97/143/373 features), geometry_only (57 features), zones, binary signal logic
-
-### Результаты
-- **E0 Feature Ablation**: k=4 (97 features) — лучший вариант. Увеличение k ухудшает PF. up/dn признаки дают маргинальный вклад.
-- **E1 Binary Models**: RF margin=0.10 — **validation winner** (PF=1.25, SeqPF=1.30, 1923 trades, BUY/SELL balance=0.37)
-- **E1 Frozen Test**: Test PF=1.226, SeqPF=1.537, 2045 trades. BUY PF=1.90, **SELL PF=0.62** — слабое SELL направление.
-- **E2 HGB/LR 3-class**: Оба хуже RF (HGB PF=1.01, LR PF=1.05). Линейный сигнал частично присутствует.
-- **E3 Zone Features**: Хуже baseline (zones PF=1.08, zones+k4 PF=1.04). Агрегация теряет proximity-информацию.
-- **E5 Score Direction**: HGB на score universe PF=1.09, лучше fractal0.direction (PF=0.98), но ниже gate.
-
-### Вывод
-3-class SELL/SKIP/BUY нежизнеспособна. Binary BUY/SELL RF с margin rule — лучший результат (Test PF=1.23 > direct bar baseline PF=1.11). SELL направление слабое, требует отдельного решения.
-<!-- подробности: docs/reports/2026-05-15-direct-direction-improvement.md -->
-
-## [2026-05-14] - Entry path candidate-source audit
-
-- Проведён `signal_only` ablation для `entry_path_v1_live_safe`: сам offline
-  `signal != 0` на test убыточен (`486` trades, PF `0.1757`; sequential
-  `237` trades, PF `0.1696`), а текущий score gate даёт основной положительный
-  вклад (`41` trades, PF `7.5737`; sequential `27` trades, PF `5.9352`).
-- Проверен all-rows ranking без offline `signal != 0` gate: score
-  `pred_ret_24_dir_atr`, направление из `fractal0.direction`, результат сделки
-  пересчитан по OHLC. Validation winner `5%` coverage уже слабый
-  (`471` trades, PF `0.9661`), frozen test убыточен (`329` trades, PF
-  `0.9134`), sequential test ещё хуже (`133` trades, PF `0.5908`).
-- Проверен causal surrogate для `label_all().signal`: RandomForest по
-  live-доступным полям текущего `fractal0` + старый score gate. Frozen test
-  слабоположительный (`36` trades, PF `1.1537`), sequential test лучше
-  (`31` trades, PF `1.4111`), но precision active-сигнала низкий (`20.41%`).
-- Проверена прямая модель `BUY / SELL / SKIP` для каждого бара без offline
-  `signal != 0` gate. Validation winner `threshold=0.80` дал `1450` trades,
-  PF `1.1673`; frozen test дал `1277` trades, PF `1.1141`; sequential test
-  дал `274` trades, PF `1.1334`.
-- Вывод: просто снять `signal != 0` gate нельзя; causal surrogate не провалился,
-  а прямой score+direction выглядит лучшим направлением. Но это ещё не
-  production-ready: test PF слабый, 2022 год отрицательный, направление среди
-  выбранных active-строк почти случайное (`~50.5%`).
-- Подробности:
-  [docs/reports/2026-05-14-entry-path-all-rows-ranking.md](docs/reports/2026-05-14-entry-path-all-rows-ranking.md),
-  [docs/reports/2026-05-14-entry-path-causal-surrogate.md](docs/reports/2026-05-14-entry-path-causal-surrogate.md),
-  [docs/reports/2026-05-14-entry-path-direct-bar-model.md](docs/reports/2026-05-14-entry-path-direct-bar-model.md).
-
-## [2026-05-13] - Live-safe entry_path online watcher
-
-- `API.telemetry_signal_watcher` переведён на production-кандидат
-  `entry_path_v1_live_safe + A @ 7.5%` по умолчанию; legacy take/skip watcher
-  оставлен отдельным `telemetry_frequency_v1_legacy` mode и по-прежнему требует
-  явный unsafe override.
-- M5 diagnostic для `entry_path_v1_live_safe` зафиксирован как threshold
-  override: тот же checkpoint/rule/feature profile, тот же gate `signal != 0`,
-  то же направление из prediction/export frame; меняется только
-  `score_threshold`.
-- `--entry-path-diagnostic-all-rows` оставлен только как отдельный mechanical
-  stress mode, не parity с production candidate.
-- Benchmark runtime window: полный 60k rebuild остановлен после 5 минут;
-  high-frequency diagnostic занял `17.217s` на 1000 строках, `3.541s` на 100,
-  `2.149s` на 24 и `2.084s` на latest-row; последний сигнал совпал.
-- Watcher ускорен для online polling: при неизменном `mtime` он не читает
-  `Nero.csv`, а при rebuild берёт последние строки seek-чтением с конца файла.
-- Runtime default уменьшен до `1` строки: watcher использует compatibility
-  substitution `vol_regime_24 := ATR`, проверенную на validation/test с
-  `signal_mismatch_rows=0`; тяжёлые legacy stress-окна задаются только через
-  явный `--max-runtime-rows`.
-
-## [2026-05-12] - Online/tester execution reconciliation
-
-- Проверена M5-цепочка `MT4 -> ML -> MT4` на online/tester срезах: сигналы и
-  направления совпадают, `OPEN_FAILED` фиксируется явно, потерянных сигналов
-  без следа в новом срезе нет.
-- Основной практический риск перед реальным счётом - `requote ERROR-138` при
-  исполнении; PnL-расхождения по парным сделкам заметно меньше, чем эффект
-  пропущенных входов.
-- Follow-up: в `260.336` `OrderSend`/`OrderClose` для ML-сделок используют
-  адаптивный slippage с ATR-потолком и 5 попыток, чтобы снизить частоту
-  `requote ERROR-138` без принятия чрезмерно плохих цен.
-- Подробности и команды повторной сверки:
-  [docs/reports/2026-05-12-online-tester-execution-reconciliation.md](docs/reports/2026-05-12-online-tester-execution-reconciliation.md),
-  [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md).
-
-## [2026-05-05] - Live-safe ML audit and entry_path rebuilds
-
-- Проведён live-safe аудит исторически прибыльных контуров: старые `quality`,
-  `frequency`, `original_plus_path`, `entry_path_v1` и
-  `entry_path_v1_quantile` нельзя переносить в online как есть из-за
-  future-derived признаков (`predict`, `ret_*`, `fav_*`, `adv_*`,
-  `ret_dir_atr_lag1`).
-- Основным production-кандидатом после очистки выбран
-  `entry_path_v1_live_safe + A @ 7.5%`; он прошёл retrain, CPU
-  reproducibility follow-up и MT4 parity. Quantile-слой оставлен research-only
-  из-за нестабильного выбора правила и малого числа сделок.
-- Для online/forward diagnostic подготовлен M5 telemetry-контур с подробным
-  MT4 trade event-log; PF этого режима не является критерием успеха.
-- Подробности:
-  [docs/reports/2026-05-05-live-safe-ml-audit.md](docs/reports/2026-05-05-live-safe-ml-audit.md),
-  [docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md](docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md),
-  [docs/reports/2026-05-07-entry-path-mt4-parity.md](docs/reports/2026-05-07-entry-path-mt4-parity.md).
-
-## [2026-04-29] - Online inference contract hardening
-
-### Добавлено
-- `processing.online_causal_preprocessing` теперь проверяет порядок
-  `fractal*` после сортировки и запускает `normalize_rowwise(verbose=False)`
-  для runtime-процессов.
-- `API.telemetry_signal_watcher` получил online contract guard: legacy
-  `original_contour/original_baseline` заблокирован по умолчанию, потому что
-  его training/test input включает future-derived row features (`predict`,
-  `ret_*`, `fav_*`, `adv_*`).
-- `API.api_server` переведён на общий live-safe preprocessing вместо прямого
-  вызова `normalize_rowwise()`.
-- Добавлены тесты на CSV I/O preprocessing, legacy 18-field фракталы,
-  validation сортировки, quiet runtime, watcher guard и REST preprocessing path.
-
-### Вывод
-- Старый watcher можно использовать с `--allow-unsafe-future-features` только
-  для механической диагностики связи MT4 -> Python -> CSV -> MT4.
-- ML-корректный online/test этап требует отдельного live-safe retrain без
-  future-derived входных признаков.
-- Подробности: [docs/reports/2026-04-29-online-inference-contract-hardening.md](docs/reports/2026-04-29-online-inference-contract-hardening.md)
-
-## [2026-04-28] - MQL runtime architecture snapshot
-
-### Добавлено
-- Online diagnostic export теперь может брать направление из `fractal0.direction` для raw `Nero.csv`, где `predict` ещё не может быть рассчитан без будущих данных.
-
-### Изменено
-- MT4 expert теперь прогревает `PIC()` по истории через `RECOUNT_HISTORY()` при старте, чтобы восстановить массив сильных уровней до online-работы.
-- `POC_SIMPLE()` перенесён внутрь `PIC()`, чтобы исторический прогрев и обычный bar-by-bar проход использовали один расчётный шаг.
-- Watcher переведён на runtime snapshot из хвоста `Nero.csv` через `--max-runtime-rows`, чтобы не держать весь многолетний CSV в RAM.
-- `ML_TRADE()` в online-режиме ждёт не только изменения `ml_signals.csv`, но и того, что последний `time` внутри файла дошёл до текущего `bar_time`; добавлены диагностические логи `MLP NO_SIGNAL` и `MLP ZERO_SIGNAL`.
-
-### Результаты
-- `Nero.csv` локально пересобирается по истории и дописывается при новых уровнях.
-- Full-vs-12000 проверка на хвосте дала `signal_mismatch_rows=0`, максимальное отличие `pred_* <= 3.37e-7`.
-- Локальный watcher rebuild по raw `Nero.csv` сформировал `runtime_ml_signals.csv`: `11459` строк, `500` ненулевых сигналов, `444` BUY, `56` SELL.
-- На локальном M5-наблюдении подтверждены ветки `MLP_WAIT file still behind`, `MLP_WAIT timeout`, `MLP NO_SIGNAL` и `MLP ZERO_SIGNAL`; торговый сигнал пока не менялся.
-
-### Вывод
-- Следующий этап - оставить M5-наблюдение на несколько часов, собрать статистику `MLP_WAIT/NO_SIGNAL/ZERO_SIGNAL/BUY/SELL`, затем решить, нужен ли баланс diagnostic-сигналов.
-- Подробности: [docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md](docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md)
-
-## [2026-04-27] - Telemetry frequency demo launch
-
-### Добавлено
-- High-frequency diagnostic export `telemetry_frequency_v1_highfreq500`.
-- Runtime reload `ml_signals.csv` в `lib_ML_Signal.mqh`.
-- Multi-position diagnostic режим через существующую `EXPERT::ML_TRADE()`.
-- Structured MQL logs `MLP BUY/SELL/CLOSE/SKIP`, включая `source=broker_history` для SL/TP.
-- Daily reconciliation CLI `ML/telemetry_daily_reconciliation.py`.
-- Наблюдаемый watcher `API.telemetry_signal_watcher` для server-режима через `tmux` с heartbeat в stdout.
-
-### Результаты
-- MT4 tester proof на `XAUUSD,H1` за 2025:
-  - `495` ожидаемых сигналов;
-  - `468` открытых сделок;
-  - `27` ожидаемых пропусков по `ML_MaxPositions=10`;
-  - `77` broker-side TP, `138` broker-side SL;
-  - `critical_mismatch_count=0`;
-  - `missing_close_count=1` из-за открытой позиции на конце периода.
-- `OnTester returns 15064.255859375`.
-- Watcher больше не падает на `header-only` `Nero.csv`: это штатное ожидание первого закрытого бара.
-
-### Вывод
-- На дату 2026-04-27 diagnostic-контур считался готовым к online demo launch
-  как механическая цепочка; 2026-04-29 этот вывод уточнён: legacy
-  `original_baseline` не является ML-корректным online-контрактом.
-- Операционный запуск watcher-а переведён из скрытого `nohup`-режима в наблюдаемый `tmux`-режим.
-- Результат тестера не является production-доказательством прибыльности: профиль выбран для частоты сделок и проверки pipeline.
-- Подробности: [docs/reports/2026-04-27-telemetry-frequency-demo-launch.md](docs/reports/2026-04-27-telemetry-frequency-demo-launch.md)
-
-## [2026-04-24] - System correlation and portfolio check
-
-### Добавлено
-- `ML/benchmark_system_correlation.py`
-- `tests/test_benchmark_system_correlation.py`
-- `docs/ML/benchmark_system_correlation.py.md`
-- `ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json`
-- benchmark-артефакты в `ML/reports/system_correlation_portfolio/xauusd_system_correlation/`
-
-### Изменено
-- `ML/README.md`
-- `MODULE_INDEX.md`
-
-### Результаты
-- Построен канонический pairwise benchmark по пяти зрелым `XAUUSD` системам:
-  - `quality`
-  - `frequency`
-  - `original_plus_path`
-  - `entry_path_v1`
-  - `entry_path_v1_quantile`
-- Для `entry_path_v1` и `entry_path_v1_quantile` trade-level baseline был честно восстановлен из frozen checkpoints и fixed-hold execution, потому что в baseline-каталоге не было готового `trades.csv`.
-- Pairwise split на `XAUUSD`:
-  - `portfolio_redundant`: `frequency × original_plus_path`
-  - `portfolio_complementary`: `quality × entry_path_v1`, `quality × entry_path_v1_quantile`, `original_plus_path × entry_path_v1`, `original_plus_path × entry_path_v1_quantile`
-  - `portfolio_partially_overlapping`: ещё 5 пар
-- `entry_path_v1_quantile` подтвердился как другой risk-profile относительно `quality` и `original_plus_path`, но не как независимый слой поверх `entry_path_v1`.
-
-### Вывод
-- На `XAUUSD` нельзя считать `frequency` и `original_plus_path` двумя независимыми portfolio sleeves.
-- Прагматичный первый portfolio-layer: `quality + entry_path_v1_quantile`; baseline `entry_path_v1` не нужно ставить рядом с quantile-версией как отдельный слой.
-- Следующий шаг — уже не поиск новой пары систем, а bounded benchmark composite portfolio без новых trading modes.
-- Подробности: [docs/reports/2026-04-24-system-correlation-and-portfolio-check.md](docs/reports/2026-04-24-system-correlation-and-portfolio-check.md)
-
-## [2026-04-24] - Entry path cross-instrument robustness
-
-### Добавлено
-- `API/export_entry_path_v1_signals.py`
-- `ML/export_entry_path_predictions.py`
-- `tests/test_export_entry_path_v1_signals.py`
-- `tests/test_export_entry_path_predictions.py`
-- `docs/ML/export_entry_path_predictions.py.md`
-- stage artifacts в `ML/reports/entry_path_cross_instrument_robustness/`
-
-### Изменено
-- `ML/benchmark_execution_policy_v2.py`
-- `tests/test_benchmark_execution_policy_v2.py`
-- `docs/ML/benchmark_execution_policy_v2.py.md`
-- `docs/ML/benchmark_cross_instrument_robustness.py.md`
-- `docs/MT/ml_signal_integration.md`
-- `ML/README.md`
-- `API/README.md`
-- `MODULE_INDEX.md`
-
-### Результаты
-- Для `entry_path_v1` и `entry_path_v1_quantile` введён единый export-contract `time;signal`.
-- `XAUUSD MetaQuotes -> Alpari` проверен отдельно как `provider drift baseline`:
-  - `entry_path_v1` -> `provider_stable`
-  - `entry_path_v1_quantile` -> `provider_stable`
-- `cross-instrument transfer` без retraining и без новых порогов:
-  - `entry_path_v1`: `1 supported / 0 inconclusive / 3 failed`
-  - `entry_path_v1_quantile`: `2 supported / 0 inconclusive / 2 failed`
-- Сильнейший положительный перенос:
-  - `XAGUSD` для обеих систем
-  - `USDCHF` для `entry_path_v1_quantile`
-- Явный провал переноса:
-  - `EURUSD` и `GBPUSD` для обеих систем
-
-### Вывод
-- Provider drift на том же `XAUUSD` не является основной проблемой для `entry_path` execution-систем.
-- Перенос baseline `entry_path_v1` узкий; quantile-версия заметно живучее, но тоже не универсальна.
-- Следующий этап должен быть portfolio-level: `System correlation and portfolio check`.
-- Подробности: [docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md](docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md)
-
-## [2026-04-24] - Cross-instrument robustness check
-
-### Добавлено
-- `ML/benchmark_cross_instrument_robustness.py`
-- `tests/test_benchmark_cross_instrument_robustness.py`
-- `docs/ML/benchmark_cross_instrument_robustness.py.md`
-- manifest/run-helpers в `ML/reports/cross_instrument_robustness/`
-
-### Изменено
-- `ML/export_take_skip_v2_predictions.py`
-- `ML/README.md`
-- `MODULE_INDEX.md`
-
-### Результаты
-- Этап разделён на `provider_drift_baseline` и `cross_instrument_transfer`, чтобы не смешивать эффект нового провайдера и эффект нового рынка.
-- На `XAUUSD MetaQuotes -> Alpari` все три режима сохранили статус `provider_stable`.
-- Полная transfer-матрица по `XAGUSD/EURUSD/GBPUSD/USDCHF` завершена без ретюнинга frozen rules.
-- Итог transfer verdicts:
-  - `quality`: `1 supported / 1 inconclusive / 2 failed`
-  - `frequency`: `2 supported / 1 inconclusive / 1 failed`
-  - `original_plus_path`: `2 supported / 0 inconclusive / 2 failed`
-- `USDCHF` дал лучший перенос: все три режима получили `transfer_supported`.
-
-### Вывод
-- Drift котировок сам по себе не ломает текущие системы на `XAUUSD`.
-- Реальный перенос на новые инструменты частичный, а не универсальный: `EURUSD` провалился полностью, `USDCHF` прошёл полностью.
-- Следующий этап — не новый transfer, а `System correlation and portfolio check`.
-- Подробности: [docs/reports/2026-04-24-cross-instrument-robustness-check.md](docs/reports/2026-04-24-cross-instrument-robustness-check.md)
-
-## [2026-04-22] - Signal export parity benchmark
-
-### Добавлено
-- `ML/benchmark_signal_export_parity.py`
-- `tests/test_signal_export_parity.py`
-- `docs/ML/benchmark_signal_export_parity.py.md`
-
-### Результаты
-- Добавлен инструмент, который сравнивает exported `ml_signals.csv` с MT4 tester log.
-- Для `original_plus_path_20260420`: `51` ненулевая строка export, `37` уникальных `time+signal`, `29` MT4 opened trades.
-- Найдено `14` повторов одного `time+signal`; противоположных сигналов на одном времени нет.
-- MT4 diagnostics: `Position blocked=0`, `Score filtered=0`, `Opened=29`, `Trailing closes=29`.
-
-### Вывод
-- Дубли времени в DATA являются ожидаемыми разными пиками одного бара и не должны схлопываться.
-- Runtime-формат `time;signal` грубее DATA: он исполняет сигнал на уровне времени бара.
-- Parity-хвост закрыт; следующий крупный шаг — cross-instrument robustness check.
-- Подробности: [docs/reports/2026-04-22-signal-export-parity.md](docs/reports/2026-04-22-signal-export-parity.md)
-
-## [2026-04-20] - take_skip_v2 original contour feature ablation
-
-### Добавлено
-- `ML/run_take_skip_original_contour_feature_matrix.py`
-- `tests/test_take_skip_original_contour_feature_matrix.py`
-- `docs/ML/run_take_skip_original_contour_feature_matrix.py.md`
-
-### Изменено
-- `ML/README.md`
-- `MODULE_INDEX.md`
-
-### Результаты
-- Реализован отдельный runner для проверки `lib_PIC` path/geometry признаков в старом single-tensor `take_skip_v2` контуре.
-- Старый baseline не заменяется на `baseline_clean`: новые признаки добавляются поверх исходного engineered-представления.
-- Поддержаны режимы `original_baseline`, `original_plus_path`, `original_plus_geometry_path`.
-- Runner пишет checkpoint, validation/test prediction CSV, benchmark и summary.
-- Зафиксован executable rule `ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json`.
-- Фокусные тесты: `15 passed`, одно предупреждение PyTorch про nested tensors.
-- Полная серверная матрица `3 feature modes × seq_len 20/50/100` завершилась за `2840.42 sec`; все 9 конфигураций получили `go`.
-- Контроль подтвердил восстановление старого контура: `input_features=539`, `take_24_x8`, validation `PF=inf`, test `PF=49.58`.
-- Лучший practical candidate: `original_plus_path_seq50`, `take_24_x8`, `prob>=0.60`; validation `9.75` trades/year, `PF=16.07`; test `10.2` trades/year, `PF=38.78`, negative years `0`.
-- MT4 подтвердил candidate: `TrailATR=8`, `TP=0`, `29` сделок, net `22294.65`, PF `23.79`, relative DD `14.74%`.
-- Осторожный MT4-вариант с `TP=12`: net `15873.12`, PF `17.23`, relative DD `6.64%`.
-
-### Вывод
-- `path` признаки дают полезный trade-off: больше сделок, PF остаётся высоким.
-- `geometry` не выбран как practical candidate: высокий PF, но test частота только `4.8` trades/year.
-- `original_plus_path_seq50` становится третьим MT4-подтверждённым кандидатом рядом с `quality` и `frequency`.
-- Перед production packaging нужен короткий parity benchmark: exported rows vs unique timestamps vs MT4 opened trades.
-- Подробности: [docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md](docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md)
-
-## [2026-04-20] - take_skip_v2 lib_PIC feature training
-
-### Добавлено
-- `ML/run_take_skip_lib_pic_feature_matrix.py`
-- `ML/models/take_skip_dual_stream_transformer.py`
-- `tests/test_take_skip_lib_pic_feature_matrix.py`
-
-### Результаты
-- Проверен training track, где модель получает фрактальную последовательность и `lib_PIC` feature profile внутри одной dual-stream модели.
-- Полная сетка: `baseline_clean`, `baseline_clean_path`, `baseline_clean_geometry_path` × `seq_len 20/50/100`.
-- Все 9 конфигураций получили `verdict=reject`.
-- В validation grid найдено `79` строк с `PF > 1`, но `0` строк с `PF > 1` и `trades_per_year >= 6`.
-- Лучший practical-area результат при `trades_per_year >= 6`: `baseline_clean_seq20`, `take_12_x2`, `top_k=5%`, validation `PF=0.9476`.
-
-### Вывод
-- Простое добавление `lib_PIC`-признаков внутрь этой модели не создало рабочий selection layer.
-- `lib_PIC`-признаки пока выглядят полезнее как внешний фильтр, чем как добавка во вход dual-stream модели.
-- Следующий шаг — controlled ablation: добавить сильные `lib_PIC`-признаки к исходному baseline-контракту и сравнить с воспроизведённым старым baseline.
-- Подробности: [docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md](docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md)
-
-## [2026-04-20] - take_skip_v2 lib_PIC external selection benchmark
-
-### Добавлено
-- `ML/benchmark_take_skip_lib_pic_selection.py`
-- `tests/test_benchmark_take_skip_lib_pic_selection.py`
-- `docs/ML/benchmark_take_skip_lib_pic_selection.py.md`
-
-### Результаты
-- Проверен внешний слой отбора поверх готовых `take_skip_trailing_stop_v2` exports без нового обучения.
-- Quality-first снова выбрал старый rule без `lib_PIC`-фильтра: test `PF=39.74`, `trades_per_year=8.2`, `negative_year_slices=0`.
-- Raw frequency-first без фильтра: test `PF=7.18`, `trades_per_year=19.2`, но `negative_year_slices=1`.
-- Лучший feature-frequency вариант: `take_24_x8`, `top_k=20%`, exit `x10`, фильтр `pic_path_win_proxy24_share_w20 >= 0.25`; test `PF=5.30`, `trades_per_year=14.8`, `negative_year_slices=0`.
-
-### Вывод
-- `lib_PIC`-фильтр не заменяет текущие `quality` / `frequency` правила.
-- Признак `pic_path_win_proxy24_share_w20` выглядит полезным как диагностический фильтр устойчивости: он режет часть сделок, но убирает отрицательный годовой срез.
-- Следующий шаг — не усложнять внешний слой, а проверить новые `lib_PIC`-производные признаки внутри нового training track.
-- Подробности: [docs/reports/2026-04-20-take-skip-lib-pic-selection.md](docs/reports/2026-04-20-take-skip-lib-pic-selection.md)
-
-## [2026-04-17] - Take/skip trailing-stop matrix verdict
-
-### Добавлено
-- `take_skip_trailing_stop_v1`: бинарный `take/skip` по `trail_48_pnl_atr_xN >= 0.5`
-- `ML/benchmark_take_skip_trailing_stop.py`, `ML/run_take_skip_trailing_stop_matrix.py`
-- candidate families: `prob_ge_threshold`, `top_k_probability`
-
-### Результаты
-- Во всех трёх конфигурациях `seq20/50/100`: `verdict = reject`
-- Ни один кандидат не прошёл gate `PF >= 1.0`
-- Вывод: смена постановки с regression/quantile на бинарный `take/skip` не решила проблему. Модель выдаёт слишком слабый и сжатый скор. Текущий Track A почти исчерпан.
-- Подробности: [docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md](docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md)
-
-## [2026-04-17] - Multi-horizon take/skip feature track handoff
-
-### Добавлено
-- multi-horizon trailing-stop grid: горизонты `12/24/48`, `X = 2/4/8`
-- `ML/multi_scale_fractal_features.py` — сводки по окнам `5/10/20/50/100`
-- `ML/take_skip_trailing_stop_v2_task.py` — 9 бинарных targets `take_H_xX`
-- `ML/benchmark_take_skip_trailing_stop_v2.py`, `ML/run_take_skip_trailing_stop_v2_matrix.py`
-
-### Изменено
-- `ML/data_loader.py`: вход v2 собирается как 100 фракталов + multi-scale summaries + row-wise features
-- `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`: новый task протянут через stack
-
-### Результаты
-- Локальный smoke-run `transformer_seq20`: `verdict = go`
-- Validation winner: `take_48_x4 + top_k_probability 0.05`, `PF=6.39`, 24 сделки, `negative_year_slices=0`
-- Это не итоговый verdict — ждёт полного remote matrix run
-- Подробности: [docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md](docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md)
-
-## [2026-04-19] - Clean lib_PIC feature profile diagnostic
-
-### Результаты
-- В `ML/reports/feature_bank_clean_comparison/report.md` зафиксирована read-only диагностика признаков для цели `trail_24_pnl_atr_x8`.
-- Лучший диагностический вариант: `baseline_clean` — 117 признаков, validation R² `0.083736`, MAE `0.238819`, совпадение знака `0.842623`.
-- Для сравнения, `baseline_full` — 261 признак, validation R² `0.060763`, MAE `0.280381`, совпадение знака `0.836066`.
-
-### Вывод
-- Чистка групп `direction`, `price_position`, `path_long`, `path_short` выглядит полезной на диагностике признаков.
-- Follow-up `entry_path_v1` training не подтвердил улучшение: `transformer + baseline_clean seq20` дал validation `ret_pearson_r=0.2920` против старого `0.2921`, но test `ret_pearson_r=0.2269` против старого `0.2681`.
-- Вывод ограничен модельными метриками; trading verdict для этого профиля не формировался, потому что test-метрики стали хуже baseline.
-
-## [2026-04-19] - Execution policy v2: Python benchmark + MT4 confirmation
-
-### Добавлено
-- `ML/benchmark_execution_policy_v2.py`
-- `tests/test_benchmark_execution_policy_v2.py`
-- `docs/ML/benchmark_execution_policy_v2.py.md`
-
-### Изменено
-- `MT/MQL4/Experts/$o$imple.mq4`
-- `MT/MQL4/Include/lib_ML_Signal.mqh`
-
-### Результаты
-- Добавлен benchmark вариантов выхода для готовых `quality` и `frequency` ML-сигналов без нового обучения.
-- В MT4 добавлен `ML_TakeProfitATR`: take profit в ATR от входа, `0=выключен`.
-- Для `quality` MT4 подтвердил, что `TrailATR=8, TP=12` снижает зависимость от одной большой сделки: net `18037.59 -> 11544.89`, PF `51.95 -> 33.61`, DD `11.70% -> 4.97%`.
-- Для `frequency` MT4 подтвердил, что take profit режет прибыль: `TrailATR=8, TP=12` дал net `12085.05`, PF `2.37` против `TrailATR=8, TP=0` net `24521.88`, PF `3.77`.
-- Узкий Python scan показал лучший practical candidate для `frequency`: `TrailATR=8, TP=0`; осторожная альтернатива — `TrailATR=6, TP=0`.
-
-### Вывод
-- Для `frequency` take profit временно снимается: основной выход — чистый trailing.
-- `TrailATR=10` не выбран основным, потому что даёт больше прибыли ценой худшей формы equity и высокой концентрации прибыли.
-- Подробности: [docs/reports/2026-04-19-execution-policy-v2.md](docs/reports/2026-04-19-execution-policy-v2.md)
-
-## [2026-04-18] - MT4 trailing-stop execution for direct ML mode
-
-### Добавлено
-- `docs/superpowers/plans/2026-04-18-mt4-trailing-stop-execution.md`
-
-### Изменено
-- `MT/MQL4/Experts/$o$imple.mq4`
-- `MT/MQL4/Include/lib_ML_Signal.mqh`
-- `docs/MT/ml_signal_integration.md`
-- `docs/MT/trading_strategy.md`
-
-### Результаты
-- В прямой MT4-контур `iSignal=3` добавлен новый режим выхода:
-  - `ML_ExitMode=0` -> timeout
-  - `ML_ExitMode=1` -> trailing-stop по `ML_TrailATR * ATR`
-- Трейлинг реализован отдельно внутри `ML_TRADE()`, без возврата к старому `OUTPUT()/TRAILING_STOP()`
-- В логах tester появились явные закрытия `reason=TrailingStop`
-
-### Вывод
-- Теперь MT4 может честно проверять не только новый слой входа, но и новый тип выхода, под который строился `take_skip_trailing_stop_v2`
-- Следующий шаг — ручной MT4 прогон `quality` и `frequency` уже в trailing-mode
-- Подробности: [docs/reports/2026-04-18-mt4-trailing-stop-execution.md](docs/reports/2026-04-18-mt4-trailing-stop-execution.md)
-
-## [2026-04-18] - Take/skip v2 rule consumer
-
-### Добавлено
-- `API/export_take_skip_trailing_stop_v2_signals.py`
-- `tests/test_export_take_skip_trailing_stop_v2_signals.py`
-
-### Изменено
-- `API/README.md`
-- `docs/MT/ml_signal_integration.md`
-- `MODULE_INDEX.md`
-
-### Результаты
-- Добавлен единый CLI для применения frozen `take_skip_trailing_stop_v2` rules к готовому prediction CSV
-- Поддержаны оба зафиксированных режима:
-  - `quality`: `prob_ge_threshold`
-  - `frequency`: `top_k_probability`
-- Exporter умеет:
-  - писать sparse `time;signal`;
-  - разворачивать результат в полный ряд через `--base-csv`;
-  - копировать результат сразу в tester/runtime MT4 paths
-
-### Вывод
-- `take_skip_trailing_stop_v2_*_selected_rule.json` теперь стали не только отчётными артефактами, но и рабочим интерфейсом применения
-- Следующий шаг уже операционный: сравнивать `quality` и `frequency` режимы на одном и том же prediction CSV без ручного разбора rule JSON
-- Подробности: [docs/reports/2026-04-18-take-skip-rule-consumer.md](docs/reports/2026-04-18-take-skip-rule-consumer.md)
-
-## [2026-04-18] - Take/skip frequency follow-up
-
-### Добавлено
-- `ML/benchmark_take_skip_trailing_stop.py`
-- `ML/benchmark_take_skip_trailing_stop_v2_followup.py`
-- `tests/test_benchmark_take_skip_trailing_stop_v2_followup.py`
-
-### Изменено
-- `processing/label_signals.py`: trailing-stop grid расширен до `x10 / x12`
-- `ML/take_skip_trailing_stop_v2_task.py`: `take_skip_v2` contract расширен до `x10 / x12`
-
-### Результаты
-- На базе уже обученного `seq50` без нового training-cycle выполнен follow-up benchmark
-- quality-first winner сохранился:
-  - `take_24_x8 + prob >= 0.70`
-  - test `PF=39.74`, `trades_per_year=8.2`
-- frequency-first winner найден:
-  - `score=take_24_x4`, `exit=x10`, `top_k=20%`
-  - validation `PF=3.92`, `trades_per_year=23.75`
-  - test `PF=7.18`, `trades_per_year=19.2`
-- follow-up refinement дал лучший frequent-кандидат:
-  - `anchor_expansion = take_24_x8 + exit x8 + top_k=20%`
-  - test `PF=7.17`, `trades_per_year=19.2`, `negative_year_slices=0`
-- узкий frozen-sweep `top_k 16%–20%` дал ещё более сильную рабочую точку:
-  - `anchor_sweet_spot = take_24_x8 + exit x8 + top_k=17%`
-  - test `PF=13.12`, `trades_per_year=16.4`, `negative_year_slices=0`, `max_drawdown_atr=4.03`
-- зафиксированы два канонических frozen rule-артефакта:
-  - `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`
-  - `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`
-
-### Вывод
-- Частоту сделок удалось резко поднять без падения ниже `PF > 1`
-- raw `frequency-first` показал полезную область, но не стал финальным winner-ом
-- лучшим frequent-режимом оказался anchored-вариант вокруг уже подтверждённого `take_24_x8`
-- внутри anchored-зоны лучший practical compromise сейчас даёт `top_k 17%`, а не `20%`
-- чистый quality-first winner остаётся базовым эталоном, а anchored sweet spot становится главным frequent-кандидатом
-- Подробности: [docs/reports/2026-04-18-take-skip-frequency-followup.md](docs/reports/2026-04-18-take-skip-frequency-followup.md)
-
-## [2026-04-17] - Trailing-stop target quantile first wave
-
-### Добавлено
-- `ML/trailing_stop_target_quantile_task.py`
-- `ML/models/trailing_stop_target_quantile_transformer.py`
-- `ML/benchmark_trailing_stop_target_quantile.py`
-- `ML/run_trailing_stop_target_quantile.py`
-- tests для quantile task/model/benchmark/runner
-
-### Изменено
-- `ML/train.py`, `ML/evaluate_test.py`, `API/generate_signals.py`, `ML/data_loader.py`: task `trailing_stop_target_quantile_v1` протянут через train/evaluate/export stack
-- benchmark hardened: fail-fast date validation, full-split `trades_per_year`, обязательный checkpoint copy без stale reuse
-
-### Результаты
-- bounded run: `transformer_seq20_x3_quantile`, `trail_48_pnl_atr_x3`, `q10/q50/q90`
-- best val `q50_pearson_r=0.0389`, test `q50_pearson_r=0.0541`
-- лучший validation candidate: `q10_gt_m`, `PF=0.1750`, `95` trades
-- `PF >= 1.0` на validation не найден, verdict: `reject`
-
-### Вывод
-- quantile-постановка не улучшила обычную regression-постановку на том же target-е (`0.1750` против `0.4206` best validation PF)
-- дальнейшее расширение этой же family на `seq_len=50/100` без новой идеи не выглядит рациональным
-- следующий содержательный ход: другая целевая постановка, например бинарное `брать/не брать` или ranking внутри периода
-- Подробности: [docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md)
-
-## [2026-04-16] - Trailing-stop target first wave verdict
-
-### Добавлено
-- `ML/trailing_stop_target_task.py`, `ML/benchmark_trailing_stop_target.py`, `ML/run_trailing_stop_target_matrix.py`
-- `tests/test_trailing_stop_target_labels.py`, `tests/test_trailing_stop_target_task.py`, `tests/test_benchmark_trailing_stop_target.py`, `tests/test_run_trailing_stop_target_matrix.py`
-- bounded research contour `trailing_stop_target_v1` для матрицы `seq_len = 20 / 50 / 100`
-
-### Изменено
-- `processing/label_signals.py`, `processing/label_main.py`: trailing-stop targets теперь корректно рассчитываются для split CSV через OHLC lookup
-- `ML/evaluate_test.py`, `API/generate_signals.py`, `ML/train.py`: зафиксирован `seq_len` contract для trailing-stop matrix run
-
-### Результаты
-- Первый bounded run нового target-а завершён для `transformer_seq20/50/100`
-- Лучший validation candidate всего этапа: `transformer_seq20 + trail_48_pnl_atr_x3`, `PF=0.4206`
-- Во всех конфигурациях `validation PF > 1` не найден
-
-### Вывод
-- Новый trailing-stop target в текущем виде не вытягивает вход: даже лучший candidate далеко ниже `PF > 1`
-- Увеличение длины истории до `50 / 100` не помогло
-- Этап дал полезный отрицательный verdict и закрыл два real-world operational defect-а в labeling и export/evaluate wiring
-- Подробности: [docs/reports/2026-04-16-trailing-stop-target-first-wave.md](docs/reports/2026-04-16-trailing-stop-target-first-wave.md)
-
-## [2026-04-15] - Track A max-out verdict
-
-### Добавлено
-- `ML/entry_path_feature_bank.py`, `ML/models/entry_path_dual_stream_transformer.py`, `ML/run_track_a_max_out_matrix.py`
-- bounded research contour для short/deep matrix по `entry_path_v1`
-
-### Результаты
-- Short sweep `6 configs x 3 epochs` и deeper rerun лучших `transformer_seq20/seq50` (`10 epochs`) завершены
-- Лучший validation candidate всего этапа: `transformer_seq50 + ret24_over_adv24`, `PF=0.4784297662870411`
-- Во всех конфигурациях `validation_rows_pf_gt_1 = 0`
-
-### Вывод
-- Track A заметно улучшен, но не достиг даже мягкого success gate `PF > 1` на validation
-- Следующий шаг должен менять само обучение или постановку задачи, а не повторять ещё один похожий benchmark-only цикл
-- Подробности: [docs/reports/2026-04-15-track-a-max-out.md](docs/reports/2026-04-15-track-a-max-out.md)
-
-## [2026-04-13] - Quantile forward validation scaffold
-
-### Добавлено
-- `ML/benchmark_quantile_forward_validation.py`: frozen forward benchmark для текущего `entry_path_v1_quantile` rule без перенастройки
-- `tests/test_benchmark_quantile_forward_validation.py`: проверки метрик, verdict, квартальных срезов, CLI и ошибочного ввода
-- `ML/reports/quantile_forward_validation/`: артефакты текущего состояния forward validation
-
-### Результаты
-- Инструмент готов: CLI пишет `summary.json`, `time_slices.csv`, `run_metadata.json`
-- Нового strictly-forward prediction CSV в репозитории нет; доступны только historical validation/test prediction-файлы
-- Operational verdict текущего этапа: `watch`, reason: `no_forward_data`
-
-### Вывод
-- `quantile` не подтверждён и не опровергнут на новых данных: нужна новая forward-выборка после production decision
-- Старый frozen test не использован повторно, чтобы не подменять forward validation уже известным окном
-
-## [2026-04-13] - PF uplift discovery beyond ML layer: SHORTLISTED (3)
-
-### Результаты
-- Baseline: `entry_path_v1_quantile` test set N=48, PF=8.179, WR=81.25%, negative_year_slices=0
-- 20 гипотез по 5 категориям проверены, 6 cheap read-only probes на `trade_enriched.csv`, path-dep check через OHLC simulation
-- Shortlisted (3 STRONG):
-  - NY session exclusion: PF=20.276, N=34, pf_delta=+12.097 — все Asia-сделки выигрышные (19/19), failure-архетип в NY даёт PF=0.28
-  - Early timeout hold_bars=12: PF=13.731, N=48, pf_delta=+5.552 — 0 из 37 wins-at-bar-12 перевернулись к bar-24
-  - pred_adv12 ≤ Q75 cap: PF=12.746, N=37, pf_delta=+4.567 — MAE 4x выше для отброшенных сделок (0.35 vs 1.38 ATR)
-
-### Вывод
-Три ортогональных механизма (session / hold duration / predicted adverse) дают значимый PF uplift без переобучения. Skeleton plans созданы. Следующий шаг: `/writing-plans` для любой из трёх. Подробности: [docs/reports/2026-04-13-pf-uplift-discovery.md](docs/reports/2026-04-13-pf-uplift-discovery.md)
-
-## [2026-04-13] - Composition track verdict (quantile × fav_3_vs_12)
-
-### Результаты
-- `quantile_only` воспроизведён exactly: validation `N=32, PF=11.240091883688192`; test `N=48, PF=8.178675196069868`
-- после пересборки правильного источника `pred_fav_3/pred_fav_12` на тех же активных строках composition стал честно измерим: test `N=47`, `PF=7.860844837655267`, `n_boost_composition.verdict = gate_fail`
-- composition почти не режет quantile (`47/48` test trades survived), но получает один отрицательный годовой срез в 2023 (`PF=0.47526255177309695`)
-
-### Вывод
-- Направление composition закрыто: дополнительный фильтр почти ничего не добавляет к `quantile`, но ломает yearly stability, поэтому усложнение не оправдано
-
-## [2026-04-13] - Fav 3 vs 12 standalone verdict
-
-### Результаты
-- самостоятельная проверка `fav_3_vs_12 <= threshold` на active universe не нашла ни одного рабочего порога: на validation лучший порог с `N>=30` дал только `PF=0.1378609915504136` (`threshold=0.22`, `N=36`)
-- на test лучшая диагностическая точка с `N>=30` тоже слабая: `PF=0.3129480021818097` (`threshold=0.24`, `N=164`)
-- итог benchmark: `selected_threshold = null`, `verdict = reject_as_standalone`
-
-### Вывод
-- Направление `fav_3_vs_12` как самостоятельной второй торговой системы закрыто: без `quantile` и без другого базового отбора признак не даёт рабочего standalone-режима
-
-## [2026-04-13] — Label convention audit: timeout больше не штрафуется как SL в TB analytics
-
-### Исправлено
-- `ML/tb_signal_logic.py`: `loss_mask = ~win_mask` считал timeout (`0.5`) как loss и завышал `losses`, `loss`, `PF`. Теперь loss считается только по `outcomes == 0.0`, добавлен assert на полное разбиение `TP/SL/Timeout`
-- `ML/threshold_analysis.py`: `losses = n_trades - wins` сливал `SL` и `Timeout`; теперь `losses` считаются только по `true == 0.0`
-- Восстановлен missing baseline module `ML/benchmark_triple_barrier_mt4_execution.py`, чтобы TB regression suite снова проходил collection
-
-### Добавлено
-- `ML/reports/label_convention_audit_inventory.csv`: inventory всех релевантных TB label handling patterns с risk-категориями `R1..R8`
-- `ML/reports/label_convention_audit.md`: полный audit report
-- `tests/test_tb_label_invariants.py`: permanent guards против смешения timeout и loss в TB analytics
-
-### Вывод
-Аудит подтвердил ещё два реальных `R2 not_win_is_loss` бага после уже известного фикса MT4 simulator. Source-of-truth в `processing/label_signals.py` не менялся, frozen `tb_selected_rule.json` не ретюнился. Подробности: [docs/reports/2026-04-13-label-convention-audit.md](docs/reports/2026-04-13-label-convention-audit.md)
-Дополнительный frozen rerun на canonical `ml_signals_tb.csv` + `Nero_{validation,test}_labeled.csv` подтвердил, что historical verdict от `2026-04-12` не меняется: validation/test summary совпали exactly.
+- **report**: `docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md`
+- **topics**: `stage6`, `h6`, `triple_barrier`
+- **summary**: Полный прогон: `12/12` (2 горизонта × 2 профиля × 3 seed). Primary `H6_clock_shift_back`: median val AUC `0.6888`, PR AUC lift `0.1141` -> model gate PASS.
+- **artifacts**: `ML/baseline/benchmark_stage6_outcome_based.py`
+- **decision**: Короткий H6 target содержит модельный сигнал, но текущий fixed-threshold протокол не превращает его в торговое правило. Следующий допустимый шаг — только bounded H6 calibration/threshold follow-up, без широкого перебора horizon/ATR/TP/SL.
+- **notes**: нет
+
+## [2026-06-29] — Stage 5.4: Fast Price/ATR Ablation (DIAGNOSTIC_ONLY, REJECTED)
+- **report**: `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- **topics**: `stage5`, `fast`, `price`, `atr`, `ablation`
+- **summary**: Полный прогон: `72/72`, `workers=12`, `xgb_threads=1`. JSON status: `DIAGNOSTIC_ONLY`.
+- **artifacts**: `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
+- **decision**: Gate: per-seed delta ≥ 0.02 в 2/3 seeds + PR AUC lift ≥ 0.03. Вывод: REJECT_PRICE_COORD. Price/ATR признаки не объясняют missing `fast` сигнал. Расширение price-поиска не требуется.
+- **notes**: нет
+
+## [2026-06-26] — Stage 5.3: дискретная постановка time-to-breach (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md`
+- **topics**: `stage5`, `time_to_breach`, `back_impulse`
+- **summary**: Полный прогон завершён: `432/432`, `workers=12`, `xgb_threads=1`. JSON status: `TARGET_REFORMULATION_FOUND`.
+- **artifacts**: `ML/reports/stage5_3_time_to_breach_target_reformulation.json`
+- **decision**: Stage 5.3 completed target reformulation diagnostics for time-to-breach; status is taken from `ML/reports/stage5_3_time_to_breach_target_reformulation.json`; artifact `ML/reports/stage5_3_time_to_breach_target_reformulation.json`. Вердикт отчёта остаётся `DIAGNOSTIC_ONLY`: `2023-2025` — diagnostic disclosure, не независимое подтверждение.
+- **notes**: `2023-2025` только diagnostic disclosure
+
+## [2026-06-25] — Stage 5.2: регрессия времени до пробоя фрактального стопа (COMPLETED)
+- **report**: `docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md`
+- **topics**: `stage5`, `time_to_breach`, `back_impulse`, `fractal_stop`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY Прогон завершён полностью: `42/42`
+- **artifacts**: `ML/reports/stage5_2_time_to_breach_regression.json`
+- **decision**: Stage 5.2 не переоткрывает `H6_off05`, но после bugfix показывает содержательное ранжирование времени до пробоя. Главный повторяющийся сигнал снова `back`. Текущая обычная регрессия одного числа `bars_to_breach` не проходит candidate-gate из-за MAE хуже constant baseline и невалидного oracle comparison; следующий шаг — дискретная/цензурированная постановка (`breach_after_k`, ordinal buckets), без широкого перебора.
+- **notes**: `2023-2025` только diagnostic disclosure
+
+## [2026-06-25] — Stage 5.1b: Up/Dn абляция и baseline `clock + shift` (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-25-stage5_1b-updn-field-ablation.md`
+- **topics**: `updn`, `stage5`, `back_impulse`, `xgboost`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY `updn_full` даёт слабую добавку над `clock_shift`: sell `+0.0048` AUC, buy `+0.0059`
+- **artifacts**: `ML/reports/stage5_1b_updn_field_ablation.json`, `MT/MQL4/Files/Nero.csv`
+- **decision**: Stage 5.1b не переоткрывает `H6_off05`. Up/Dn поля не стоит включать в следующий стартовый профиль по умолчанию: их самостоятельный сигнал мал, а добавка к структуре отрицательна на validation. Главный устойчивый след остаётся у `back`; допустимый следующий шаг — только узкий follow-up вокруг `back`/`impulse`, без нового широкого поиска по `H6_off05`.
+- **notes**: `2023-2025` только diagnostic disclosure; есть low-N disclosure
+
+## [2026-06-24] — Stage 5.1: структурная абляция фрактальных полей (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-24-stage5_1-structural-field-ablation.md`
+- **topics**: `stage5`, `xgboost`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY Единственное поле с согласованным итогом на обеих целях: `back` = `likely_useful`
+- **artifacts**: `ML/reports/stage5_1_structural_field_ablation.json`
+- **decision**: Stage 5.1 показывает диагностическую прибавку структурных полей над clock-only baseline, но не переоткрывает `H6_off05` как кандидата. Самый сильный след — `back` (`back_val`, сила тыловой границы уровня). Следующий допустимый шаг по этой ветке — только узкий mini-follow-up `time_only / time+back / time+impulse / time+back+impulse / structure_full / structure_full_without_back`, без нового широкого перебора.
+- **notes**: `2023-2025` только diagnostic disclosure; есть low-N disclosure
+
+## [2026-06-24] — Stage 5.0f: диагностика устойчивости сигнала во времени (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-24-stage5_0f-signal-stationarity.md`
+- **topics**: `stage5`, `signal_stationarity`, `xgboost`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY, overall_verdict = inconclusive Общий итог: неопределённый — не удалось ни доказать распад сигнала, который лечится более близким по времени обучением, ни подтвердить его устойчивость
+- **artifacts**: `ML/reports/stage5_0f_signal_stationarity.json`
+- **decision**: Stage 5.0f не даёт оснований ни закрыть тему как доказанно неустойчивую, ни реабилитировать её как устойчивую. H2 (temporal decay) скорее опровергнута направлением fixed>rolling, но природа отрицательного результата (H1 vs H2) не установлена. Без нового независимого периода `2026+` большой перебор по `H6_off05` не оправдан.
+- **notes**: нет
+
+## [2026-06-23] — Stage 5.0e: проверка малого Transformer после провала (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-23-stage5_0e-small-transformer-check.md`
+- **topics**: `stage5`, `h6`, `xgboost`, `transformer`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY. `overfit_hypothesis_supported = yes`: `small_regularized` уменьшил median `overfit_drop_after_best` с `0.0170` до `0.0009` при потере median `val_auc` только `-0.0028`.
+- **artifacts**: `ML/reports/stage5_0e_small_transformer_check.json`
+- **decision**: Меньшая модель действительно уменьшает признаки переобучения, но не меняет итогового решения. `H6_off05 stop broken` остаётся закрытым; дальнейшие шаги только через новую цель или новые признаки.
+- **notes**: нет
+
+## [2026-06-23] — Stage 5.0d: диагностический скрининг профилей (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-23-stage5_0d-diagnostic-screening.md`
+- **topics**: `stage5`, `h6`, `fractal_stop`, `xgboost`, `transformer`
+- **summary**: Вердикт: DIAGNOSTIC_ONLY, решение этапа: `h6_off05_target_exhausted` — ни один профиль не прошёл порог +0.02. Лучший: sell `all100_relative_price_time` (delta +0.0111), lift_pass OK (0.5415 ≤ 0.5539), но AUC_pass FAIL.
+- **artifacts**: `ML/reports/stage5_0d_diagnostic_screening.json`
+- **decision**: Вердикт: DIAGNOSTIC_ONLY, решение этапа: `h6_off05_target_exhausted` — ни один профиль не прошёл порог +0.02. Лучший: sell `all100_relative_price_time` (delta +0.0111), lift_pass OK (0.5415 ≤ 0.5539), но AUC_pass FAIL.
+- **notes**: нет
+
+## [2026-06-22] — Stage 5.0c: повторная проверка на двух целях (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-22-stage5_0c-cross-target-rerun.md`
+- **topics**: `stage5`, `xgboost`, `transformer`
+- **summary**: overall_pass: FAIL — гипотеза не воспроизвелась. G1 (AUC): FAIL — Transformer уступил XGBoost same-profile на обеих целях. Sell: median val AUC 0.6643 vs XGBoost 0.6723 (0 seeds выше порога). Buy: median val AUC 0.6752 vs XGBoost 0.6873 (0 seeds выше порога).
+- **artifacts**: `ML/reports/stage5_0c_cross_target_rerun.json`
+- **decision**: G3 (cross_target): FAIL — ни одна цель не прошла G1+G2. G5 (seed_spread): PASS — sell spread 0.0054, buy spread 0.0104 (оба < 0.03).
+- **notes**: holdout раскрыт только диагностически
+
+## [2026-06-21] — Stage 5.0b: Asinh Transformer rerun (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-21-stage5_0b-asinh-rerun.md`
+- **topics**: `stage5`, `h6`, `xgboost`, `transformer`
+- **summary**: Sell: лучший Transformer `all100_relative_price_time` не прошёл AUC-порог (`0.6719` против `0.6731`); разрыв `0.0012` мал и в single-seed режиме не считается устойчивым сигналом. `lift_30` на `val_stop` лучше XGBoost (`0.5044` против `0.5539`), но оба условия отбора одновременно не выполнены. Buy: цель оказалась непустой после исправления загрузки (`22745` train rows, positive_rate `0.3701`, OHLC verification `PASS 50/50`). Лучший Transformer `all100_relative_price_time` уступил XGBoost по AUC (`0.6762` против `0.6894`).
+- **artifacts**: `ML/reports/stage5_0b_asinh_rerun.json`
+- **decision**: DIAGNOSTIC_ONLY. Stage 5.0b не открывает multi-seed продолжение и не объявляет trading winner. Следующая обоснованная гипотеза — отдельный заранее зафиксированный прогон `all100_absolute_price_atr_scaled_time_asinh` по sell и buy с честным сравнением против XGBoost на тех же строках.
+- **notes**: holdout раскрыт только диагностически
+
+## [2026-06-21] — Stage 5.0a: Feature Distribution Audit + transform comparison (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-20-stage5_0a-feature-distribution-audit.md`
+- **topics**: `stage5`, `feature`, `distribution`, `audit`, `transform`
+- **summary**: Для 7 rerun-кандидатов после `log1p(ATR)` + signed-log(`price_coord_atr`) исчезли `TAIL_GT10/TAIL_GT20`; остался только `REGIME_SHIFT in ATR`: train p95=1.66, holdout p95=4.80, delta=3.14. Per-position audit выявил скрытую проблему старого `price_coord_atr`: `all100_relative_price_*` имел `TAIL_GT10` на позиции 99 (самый старый фрактал); signed-log убрал этот хвост.
+- **artifacts**: `ML/reports/stage5_0a_transform_comparison.json`, `ML/reports/stage5_0a_feature_stats_per_position.csv`, `ML/reports/stage5_0a_transform_comparison_summary.csv`
+- **decision**: DIAGNOSTIC_ONLY. `asinh` и `piecewise_tail` лучше текущего варианта по проверке распределения признаков, но это не доказательство качества модели: обучение не запускалось. Следующий Transformer rerun можно планировать с заранее зафиксированным transform-кандидатом или как явно диагностическое сравнение, чтобы не создать новый скрытый перебор конфигураций.
+- **notes**: нет
+
+## [2026-06-17] — Stage 5.0: Transformer Breach Holdout — FAIL (FAIL)
+- **report**: `docs/reports/2026-06-17-stage5-transformer-breach.md`
+- **topics**: `stage5`, `transformer_breach`, `xgboost`, `transformer`
+- **summary**: Полноразмерный Transformer (d_model=64, nhead=4, dim_feedforward=128, 40 эпох, train ≤2020) на CPU, single seed [42] Primary profile `all100_base10_time` holdout AUC=0.6018 vs XGBoost=0.6524 (gap −0.051)
+- **artifacts**: `ML/reports/stage5_transformer_breach.json`, `ML/models/fractal_breach_transformer.py`, `ML/baseline/benchmark_stage5_transformer_breach.py`
+- **decision**: 5 последовательных этапов Fractal Stop провалились (Stage 2->3->4->4.6->5.0). Breach-сигнал статистически подтверждён, но недостаточен для устойчивого ML-превосходства ни в табличной, ни в sequence-архитектуре. Методический risk: признаки Transformer не масштабированы под нейросеть (цена в сотнях/тысячах, остальные ~0..1) — вывод относится к текущей реализации и нормализации. Не строить Stage 5.1 trading layer. Решение: пересмотр постановки или закрытие Fractal Stop ветки.
+- **notes**: нет
+
+## [2026-06-15] — Stage 4.7: Walk-Forward Optimization Diagnostics (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-15-walk-forward-diagnostics.md`
+- **topics**: `walk_forward`, `xgboost`, `transformer`
+- **summary**: Expanding Window (Stage 4.6 protocol — temporal early stopping): ≤2016 -> 2023-2026 PF=0.897, BS_p05=0.679, 357 trades — точное совпадение со Stage 4.6. Расширение обучения до ≤2022: PF=0.84, BS_p05=0.739. Self-val (Anchored/Rolling/Warm-start) завышает количество сделок (1364-1973 vs 357), но паттерн «2023-2026 провал» устойчив во всех 4 вариантах.
+- **artifacts**: `ML/reports/walk_forward_diagnostics.json`, `ML/baseline/diagnose_walk_forward.py`
+- **decision**: DIAGNOSTIC_ONLY. Проблема не в объёме данных — расширение обучения не спасает. Требуется иной подход (Stage 5.0 Transformer с календарным baseline). Официальный frozen test не открыт; 2023-2026 = диагностический holdout.
+- **notes**: нет
+
+## [2026-06-15] — Stage 4.x Remaining Hypotheses Master Plan (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-15-stage4_4-micro-check.md`
+- **topics**: `stage5`, `fractal_stop`, `feature_ablation`, `transformer`
+- **summary**: Stage 5.0-prep: календарный риск подтверждён (time_only AUC=0.6286 > no_time 0.6113), oracle-mix: PF-gate при AUC≥0.8442 (gap +1768 bp) Stage 4.5: trail_atr_0_2 PF=1.831 (BS_p05=1.462) — лучший diagnostic-результат Fractal Stop; breakeven PF=0.717
+- **artifacts**: `ML/baseline/diagnose_stage5_prep.py`, `ML/baseline/benchmark_stage4_6_clean_cycle.py`, `ML/baseline/diagnose_stage4_5_exit_mechanics.py`
+- **decision**: DIAGNOSTIC_ONLY. Все гипотезы `docs/audit/to_do.md` выполнены. Stage 4.x закрыт. Следующий шаг — Stage 5.0 Transformer с календарным baseline. Fixed TP R=0.7 — baseline торгового слоя. Trail_atr_0_2 — отдельная диагностическая ветка.
+- **notes**: нет
+
+## [2026-06-14] — Stage 4: Глубокая диагностика провала и трейлинг-стоп (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-14-stage4-deep-diagnostics.md`
+- **topics**: `fav`, `quantile`
+- **summary**: Partial Oracle: fav — большее узкое место, чем breach (PF 14.72 vs 6.61), но синергия колоссальна (perfect_both PF=104.88) Параметры и фильтры: все уже оптимальны. tp_fraction/stop_offset/min_rr — уникальный локальный оптимум. Strong fractal (~0 сделок), ATR regime (вредит), combined breach (вредит), quantile fav (слишком консервативен)
+- **artifacts**: `ML/reports/stage4_gap_diagnostics.json`, `ML/baseline/improve_stage4.py`, `ML/baseline/trail_stop_stage4.py`
+- **decision**: Модель находит хорошие точки входа, но фиксированный TP/SL не даёт зафиксировать прибыль до разворота. Трейлинг-стоп atr_02 решает проблему механики выхода (PF=1.655) без переобучения моделей. Gap до oracle (104.88) остаётся — нужен Transformer (Stage 5.0) для улучшения breach+fav. Stage 5.1 должен тестировать Transformer с трейлинг-стопом.
+- **notes**: нет
+
+## [2026-06-12] — Stage 4.2: Diagnostic recalc с исправленной методикой (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-11-stage4-trade-xgboost.md`
+- **topics**: `h6`, `fractal_stop`, `xgboost`
+- **summary**: PF Stage 4 winner: 1.106 -> Stage 4.2: 1.015 (Δ = −0.091 — совокупный эффект исправленного диагностического протокола, не изолированное «завышение») BS_p05: 0.923 -> 0.837 (Δ = −0.086)
+- **artifacts**: `ML/reports/stage4_2_diagnostic.json`, `ML/baseline/benchmark_fractal_stop_stage4_2.py`
+- **decision**: DIAGNOSTIC — breach-модель добавляет реальный сигнал для фиксированного правила (0/500 перестановок, p ≈ 0.002, +0.20 PF над случайным), но его силы недостаточно для устойчивой прибыльности (gate PF > 1.15, исторический selection bias winner не исправлен). Совокупный эффект исправленного диагностического протокола: ΔPF = −0.091. Проблема не в отсутствии сигнала, а в его слабости. Табличные модели на текущем представлении фракталов достигли потолка. Next: Transformer encoder (Stage 5.0) с чистой методикой от Stage 4.2.
+- **notes**: нет
+
+## [2026-06-11] — Stage 4: XGBoost Trading Layer + Stage 4.1 controls (COMPLETED)
+- **report**: `docs/reports/2026-06-11-stage4-trade-xgboost.md`
+- **topics**: `h6`, `h12`, `relative_geometry`, `fractal_stop`, `xgboost`
+- **summary**: Primary (`base_raw_plus_time`): winner sell_H6_off05, PF=1.106, BS_p05=0.923, 1/8 таргетов PF≥1.0 Control (`relative_geometry_clean`): winner sell_H6_off05, PF=1.142, BS_p05=0.906, 2/8 таргетов PF≥1.0
+- **artifacts**: `ML/reports/stage4_1.json`, `ML/reports/stage4_trade.json`, `ML/reports/stage4_trade_geom.json`
+- **decision**: FAIL — рост AUC breach-классификатора с RF 0.645 до XGBoost 0.680 (+345 bp) не конвертируется в статистически значимый PF. Stage 4.1 не подтвердил быстрые улучшения: XGBoost-fav хуже RF-fav, combined breach не проходит gate. Табличные модели (RF, XGBoost) на плоских фрактальных признаках достигли потолка для текущей торговой постановки. Next: Transformer encoder на фрактальной sequence либо пересмотр торговой логики/таргета.
+- **notes**: нет
+
+## [2026-06-11] — Fractal parser contract hardening (COMPLETED)
+- **report**: `docs/reports/2026-06-11-stage4-trade-xgboost.md`
+- **topics**: `fractal`, `parser`, `contract`, `hardening`
+- **summary**: `processing/label_signals.py`: `parse_fractal()` теперь принимает только integer-like значения в полях `time`, `direction`, `strong`, `break`, `count`, `shift` (`1`, `1.0`) и отвергает дробные нормализованные значения (`0.1700000018`). Добавлен regression-тест, который предотвращает тихое применение разметочного parser-а к нормализованным `fractal*` полям.
+- **artifacts**: `processing/label_signals.py`
+- **decision**: `processing/label_signals.py`: `parse_fractal()` теперь принимает только integer-like значения в полях `time`, `direction`, `strong`, `break`, `count`, `shift` (`1`, `1.0`) и отвергает дробные нормализованные значения (`0.1700000018`). Добавлен regression-тест, который предотвращает тихое применение разметочного parser-а к нормализованным `fractal*` полям.
+- **notes**: нет
+
+## [2026-06-10] — Stage 3.x: feature profiles + XGBoost breach classifier (FAIL)
+- **report**: `docs/reports/2026-06-10-feature-profiles-stage3.md`
+- **topics**: `relative_geometry`, `fractal_stop`, `xgboost`, `breach_classifier`
+- **summary**: Stage 3 RF: `base_plus_path` (+700 фич: folded mov_h + shift + atr_ratio) FAIL — AUC drops 64–166 bp on all 8 targets Stage 3 RF: `relative_geometry` (+10 фич: price->ATR-relative, density, time) PASS as whole profile — mean +119 bp
+- **artifacts**: `ML/reports/stage3_profiles.json`, `ML/reports/stage3_2_xgboost.json`, `ML/reports/stage3_1_profiles.json`
+- **decision**: Folded mov_h не несут breach-сигнала для RF в комбинированном профиле. Практический uplift Stage 3.1 даёт time, а не density. Лучший простой кандидат для Stage 4 — XGBoost `base_raw_plus_time`; `relative_geometry_clean` выше всего на 9 bp, но сложнее. Mean AUC 0.70 формально не достигнут: gap около 192–201 bp. Next: Stage 4 validation-only trading simulation.
+- **notes**: нет
+
+## [2026-06-10] — Fractal Stop Fav Stage 2: торговый слой (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-10-fractal-stop-fav-stage2.md`
+- **topics**: `h12`, `fractal_stop`, `fav`
+- **summary**: Grid search на val (8 комбинаций H x off x side, 81 порог): лучшая комбинация sell_H12_off05 PF=0.975. Ни одна не достигла PF > 1.0 Frozen test (test 2022–2026, frozen rule sell_H12_off05): PF=0.837 canonical, 3/5 лет убыточны
+- **artifacts**: `ML/baseline/benchmark_fractal_stop_fav.py`
+- **decision**: FAIL — торговая постановка breach+fav на RF не работает: PF 0.6–0.98, gap 10–30× до oracle. Oracle (проверка потолка) показывает высокий диагностический потолок механики (perfect_breach PF=8–28, perfect_fav PF=7–24, perfect_both PF=∞ на val), но не является торговым доказательством. Рекомендация: Stage 3 — улучшение breach-классификатора и признаков.
+- **notes**: нет
+
+## [2026-06-10] — Fractal Stop Breach Stage 1: сигнал о пробое уровня подтверждён (PASS)
+- **report**: `docs/reports/2026-06-10-fractal-stop-breach-stage1.md`
+- **topics**: `fractal_stop`, `fractal`, `stop`, `breach`
+- **summary**: RF baseline (val, 8 primary таргетов): AUC 0.62–0.68, lift 1.52–1.77, без годовых провалов Frozen test (H=6, off=0.2): buy AUC=0.640, sell AUC=0.649 — сигнал подтверждён на невиданных данных
+- **artifacts**: `statistics/data_contract_smoke_check.py`, `ML/baseline/benchmark_fractal_stop_breach.py`
+- **decision**: Фрактальные признаки несут сигнал о будущем пробое уровня. Можно переходить к торговому слою (Этап 2).
+- **notes**: нет
+
+## [2026-06-04] — Direction-only signal confirmed + TB extension (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-06-04-fractal-ablation.md`
+- **topics**: `direction_only`, `direction`, `only`, `signal`, `confirmed`
+- **summary**: `parse_fractals_to_3d()`: up_3/dn_3/up_6/dn_6 (поля 17-20) включены в тензор, N_FRACTAL_FEATURES=26 `normalize.py`: per-pair нормализация up/dn (5 пар со своим p85/p99), параметры из фракталов без таргетов
+- **artifacts**: `ML/reports/fractal_ablation.json`, `ML/reports/tb_direction_signal.json`, `ML/reports/direction_only_signal.json`
+- **decision**: `direction_only_signal.py`, `tb_direction_signal.py`: `json_safe()` — inf/nan -> null для строгого JSON `statistics/data_contract_smoke_check.py` — обязательный входной контроль перед ML-экспериментами (тензор, цена не бинарна, direction ∈ {-1,1}, ATR-признаки не в [0,1], доли классов TB-таргетов)
+- **notes**: нет
+
+## [2026-05-29] — Limit-Order Entry Convention: Phase 1–3 (FAIL)
+- **report**: `docs/reports/2026-05-29-limit-order-entry.md`
+- **topics**: `limit_order`, `transformer`
+- **summary**: Skipped rows (bad fractal0, missing time): TB targets теперь получают NO_FILL_SENTINEL вместо stale default 0.5 Mismatch bug: fill_lag=-1 в skipped rows, TB targets оставались на 0.5 вместо -999
+- **artifacts**: `processing/purge_split.py`, `processing/label_audit.py`, `processing/label_signals.py`
+- **decision**: Phase 3 Transformer FAIL: Mean AUC=0.575, главный target buy_sl2_tp3 AUC=0.498 — fractal features без predictивного сигнала Вердикт: Close-entry сделан исполнимым через лимитные ордера. Transformer на fractal features не работает (консистентно с transformer-direction 2026-05-21).
+- **notes**: нет
+
+## [2026-05-27] — Methodology Cycle: Entry Timing Correction (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md`
+- **topics**: `methodology`, `cycle`, `timing`, `correction`
+- **summary**: Методика усилена правилом исполнимой entry price: label/backtest не может входить раньше фактической доступности признаков и runtime-задержек. Для `fractal0` зафиксировано: он полностью готов только на `Close` подтверждающего третьего бара; `Close[row]` entry в текущем live path является `DIAGNOSTIC_ONLY`.
+- **artifacts**: `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md`
+- **decision**: Результаты с `Close[row]` больше нельзя интерпретировать как live/OOS evidence для MT watcher-контура. Следующий валидный кандидат должен доказать first executable entry после feature readiness.
+- **notes**: нет
+
+## [2026-05-25] — Methodology Cycle: Stages 00–02 — Pipeline Foundation (COMPLETED)
+- **report**: `docs/reports/2026-05-25-methodology-cycle-stages-00-04.md`
+- **topics**: `updn`, `h12`, `live_safe`
+- **summary**: Pipeline: 63006 rows (2004–2026) -> sort (0 errors) -> label (3192 signals, 63006 predicts) -> split 44104/9451/9451 Все raw поля классифицированы (live_safe / target_only / future_derived / unknown)
+- **artifacts**: `ML/checkpoints/pll_normalizer_v1.pkl`
+- **decision**: Фундамент live-safe candidate-source цикла заложен. Данные готовы к baseline-экспериментам.
+- **notes**: есть запрет на future-derived признаки
+
+## [2026-05-21] — Transformer Encoder Direction: TB/Reg/Trail таргеты (FAIL)
+- **report**: `docs/reports/2026-05-21-transformer-direction.md`
+- **topics**: `transformer`, `encoder`, `direction`, `reg`
+- **summary**: Raw up/dn баг: fractal.price нормализован (ratio), исправлено на OHLC close Checkpoint загрузка: num_classes=10 не был в model_kwargs
+- **artifacts**: `docs/reports/2026-05-21-transformer-direction.md`
+- **decision**: TB: 16 комбинаций, лучший BUY PF=1.35 (val), Gate A провален Вердикт: fractal features не несут direction-сигнала. Тупик для direct direction prediction.
+- **notes**: нет
+
+## [2026-05-21] — Direct Direction Rebuild (FAIL)
+- **report**: `docs/reports/2026-05-18-direct-direction-rebuild.md`
+- **topics**: `transformer`, `direct`, `direction`, `rebuild`, `audit`
+- **summary**: Phase A validation: PF=1.77, SeqPF=1.99 (83 сделки) — gate passed Phase B (+regime features): PF=1.64, SeqPF=2.22 — regime features не улучшили
+- **artifacts**: `docs/reports/2026-05-18-direct-direction-rebuild.md`
+- **decision**: Вердикт: fractal-level признаки не несут direction-сигнала. Test BUY win rate 50.5% (случайный). Рекомендация: не деплоить; исследовать Transformer encoder + score gate.
+- **notes**: нет
+
+## [2026-05-16] — Wiki: execution-tracks.md decomposition (COMPLETED)
+- **report**: `wiki/index.md`
+- **topics**: `triple_barrier`, `live_safe`
+- **summary**: `search_knowledge("Triple Barrier")` вернёт `execution-tracks-early-research.md` (84 строки) вместо монолита. `search_knowledge("live safe retrain")` вернёт `execution-tracks-live-safe-audit.md` (243 строки).
+- **artifacts**: `wiki/research/execution-tracks-overview.md`, `wiki/index.md`, `wiki/.archive/execution-tracks-monolith-deprecated.md`
+- **decision**: `search_knowledge("live safe retrain")` вернёт `execution-tracks-live-safe-audit.md` (243 строки). Экономия токенов: агент получает ~200 строк вместо 1450 при поиске по конкретной теме.
+- **notes**: источник найден в wiki; канонический `docs/reports` отчёт не найден
+
+## [2026-05-15] — Direct direction improvement experiments E0–E5 (COMPLETED)
+- **report**: `docs/reports/2026-05-15-direct-direction-improvement.md`
+- **topics**: `entry_path`, `feature_ablation`
+- **summary**: E0 Feature Ablation: k=4 (97 features) — лучший вариант. Увеличение k ухудшает PF. up/dn признаки дают маргинальный вклад. E1 Binary Models: RF margin=0.10 — validation winner (PF=1.25, SeqPF=1.30, 1923 trades, BUY/SELL balance=0.37)
+- **artifacts**: `docs/reports/2026-05-15-direct-direction-improvement.md`
+- **decision**: 3-class SELL/SKIP/BUY нежизнеспособна. Binary BUY/SELL RF с margin rule — лучший результат (Test PF=1.23 > direct bar baseline PF=1.11). SELL направление слабое, требует отдельного решения.
+- **notes**: нет
+
+## [2026-05-14] — Entry path candidate-source audit (COMPLETED)
+- **report**: `docs/reports/2026-05-14-entry-path-all-rows-ranking.md`
+- **topics**: `live_safe`, `entry_path`
+- **summary**: Проверены `signal_only` ablation, all-rows ranking, causal surrogate и прямая модель `BUY / SELL / SKIP` без offline `signal != 0` gate. Offline gate сам по себе убыточен, а прямой score+direction выглядит лучшим направлением, но остаётся слабым.
+- **artifacts**: `docs/reports/2026-05-14-entry-path-all-rows-ranking.md`, `docs/reports/2026-05-14-entry-path-causal-surrogate.md`, `docs/reports/2026-05-14-entry-path-direct-bar-model.md`
+- **decision**: Просто снять `signal != 0` gate нельзя; causal surrogate не провалился, а прямой score+direction выглядит лучшим направлением. Production-ready статус не достигнут: test PF слабый, 2022 год отрицательный, направление среди active-строк почти случайное.
+- **notes**: нет
+
+## [2026-05-13] — Live-safe entry_path online watcher (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `live_safe`, `entry_path`, `telemetry`
+- **summary**: `API.telemetry_signal_watcher` переведён на production-кандидат `entry_path_v1_live_safe + A @ 7.5%` по умолчанию. Legacy take/skip watcher оставлен отдельным режимом `telemetry_frequency_v1_legacy` и требует unsafe override.
+- **artifacts**: `API/telemetry_signal_watcher.py`, `ML/reports/entry_path_v1_live_safe/runtime/telemetry_signal_watcher.log`, `ML/reports/entry_path_v1_live_safe/runtime/runtime_state.json`
+- **decision**: M5 diagnostic зафиксирован как threshold override того же checkpoint/rule/feature profile; `--entry-path-diagnostic-all-rows` оставлен только как mechanical stress mode, не parity с production candidate.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-05-12] — Online/tester execution reconciliation (FAIL)
+- **report**: `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`
+- **topics**: `online`, `tester`, `execution`, `reconciliation`
+- **summary**: Проверена M5-цепочка `MT4 -> ML -> MT4` на online/tester срезах: сигналы и направления совпадают, `OPEN_FAILED` фиксируется явно, потерянных сигналов без следа в новом срезе нет.
+- **artifacts**: `docs/reports/2026-05-12-online-tester-execution-reconciliation.md`, `docs/ML/online_tester_reconciliation.py.md`
+- **decision**: Основной практический риск перед реальным счётом — `requote ERROR-138` при исполнении; follow-up перевёл `OrderSend`/`OrderClose` для ML-сделок на адаптивный slippage с ATR-потолком и 5 попытками.
+- **notes**: нет
+
+## [2026-05-05] — Live-safe ML audit and entry_path rebuilds (COMPLETED)
+- **report**: `docs/reports/2026-05-05-live-safe-ml-audit.md`
+- **topics**: `fav`, `live_safe`, `entry_path`, `quantile`, `mt4_parity`
+- **summary**: Проведён live-safe аудит исторически прибыльных контуров: старые `quality`, `frequency`, `original_plus_path`, `entry_path_v1` и `entry_path_v1_quantile` нельзя переносить в online как есть из-за future-derived признаков.
+- **artifacts**: `docs/reports/2026-05-05-live-safe-ml-audit.md`, `docs/reports/2026-05-07-entry-path-live-safe-reproducibility.md`, `docs/reports/2026-05-07-entry-path-mt4-parity.md`
+- **decision**: Основным production-кандидатом после очистки выбран `entry_path_v1_live_safe + A @ 7.5%`; он прошёл retrain, CPU reproducibility follow-up и MT4 parity. Quantile-слой оставлен research-only из-за нестабильного выбора правила и малого числа сделок.
+- **notes**: есть запрет на future-derived признаки
+
+## [2026-04-29] — Online inference contract hardening (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-04-29-online-inference-contract-hardening.md`
+- **topics**: `fav`, `live_safe`, `telemetry`
+- **summary**: `processing.online_causal_preprocessing` теперь проверяет порядок `fractal*` после сортировки и запускает `normalize_rowwise(verbose=False)`
+- **artifacts**: `docs/reports/2026-04-29-online-inference-contract-hardening.md`
+- **decision**: Старый watcher можно использовать с `--allow-unsafe-future-features` только для механической диагностики связи MT4 -> Python -> CSV -> MT4.
+- **notes**: есть запрет на future-derived признаки
+
+## [2026-04-28] — MQL runtime architecture snapshot (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`
+- **topics**: `mql_runtime`, `mql`, `runtime`, `architecture`, `snapshot`
+- **summary**: `Nero.csv` локально пересобирается по истории и дописывается при новых уровнях. Full-vs-12000 проверка на хвосте дала `signal_mismatch_rows=0`, максимальное отличие `pred_* <= 3.37e-7`.
+- **artifacts**: `docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`
+- **decision**: Следующий этап - оставить M5-наблюдение на несколько часов, собрать статистику `MLP_WAIT/NO_SIGNAL/ZERO_SIGNAL/BUY/SELL`, затем решить, нужен ли баланс diagnostic-сигналов. Подробности: `docs/reports/2026-04-28-mql-runtime-architecture-snapshot.md`
+- **notes**: нет
+
+## [2026-04-27] — Telemetry frequency demo launch (COMPLETED)
+- **report**: `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`
+- **topics**: `telemetry`, `frequency`, `demo`, `launch`
+- **summary**: MT4 tester proof на `XAUUSD,H1` за 2025: `495` ожидаемых сигналов;
+- **artifacts**: `docs/reports/2026-04-27-telemetry-frequency-demo-launch.md`
+- **decision**: На дату 2026-04-27 diagnostic-контур считался готовым к online demo launch как механическая цепочка; 2026-04-29 этот вывод уточнён: legacy
+- **notes**: нет
+
+## [2026-04-24] — System correlation and portfolio check (COMPLETED)
+- **report**: `docs/reports/2026-04-24-system-correlation-and-portfolio-check.md`
+- **topics**: `entry_path`, `quantile`, `portfolio`
+- **summary**: Построен канонический pairwise benchmark по пяти зрелым `XAUUSD` системам: `quality`
+- **artifacts**: `ML/reports/system_correlation_portfolio/xauusd_system_correlation/`, `ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json`
+- **decision**: На `XAUUSD` нельзя считать `frequency` и `original_plus_path` двумя независимыми portfolio sleeves. Прагматичный первый portfolio-layer: `quality + entry_path_v1_quantile`; baseline `entry_path_v1` не нужно ставить рядом с quantile-версией как отдельный слой.
+- **notes**: нет
+
+## [2026-04-24] — Entry path cross-instrument robustness (FAIL)
+- **report**: `docs/reports/2026-04-24-entry-path-cross-instrument-robustness.md`
+- **topics**: `entry_path`, `quantile`, `cross_instrument`, `execution_policy`
+- **summary**: Для `entry_path_v1` и `entry_path_v1_quantile` введён единый export-contract `time;signal`. `XAUUSD MetaQuotes -> Alpari` проверен отдельно как `provider drift baseline`:
+- **artifacts**: `ML/reports/entry_path_cross_instrument_robustness/`, `API/export_entry_path_v1_signals.py`, `API/README.md`
+- **decision**: Provider drift на том же `XAUUSD` не является основной проблемой для `entry_path` execution-систем. Перенос baseline `entry_path_v1` узкий; quantile-версия заметно живучее, но тоже не универсальна.
+- **notes**: нет
+
+## [2026-04-24] — Cross-instrument robustness check (FAIL)
+- **report**: `docs/reports/2026-04-24-cross-instrument-robustness-check.md`
+- **topics**: `cross_instrument`, `take_skip_v2`
+- **summary**: Этап разделён на `provider_drift_baseline` и `cross_instrument_transfer`, чтобы не смешивать эффект нового провайдера и эффект нового рынка. На `XAUUSD MetaQuotes -> Alpari` все три режима сохранили статус `provider_stable`.
+- **artifacts**: `ML/reports/cross_instrument_robustness/`
+- **decision**: Drift котировок сам по себе не ломает текущие системы на `XAUUSD`. Реальный перенос на новые инструменты частичный, а не универсальный: `EURUSD` провалился полностью, `USDCHF` прошёл полностью.
+- **notes**: нет
+
+## [2026-04-22] — Signal export parity benchmark (COMPLETED)
+- **report**: `docs/reports/2026-04-22-signal-export-parity.md`
+- **topics**: `cross_instrument`, `signal`, `export`, `parity`, `benchmark`
+- **summary**: Добавлен инструмент, который сравнивает exported `ml_signals.csv` с MT4 tester log. Для `original_plus_path_20260420`: `51` ненулевая строка export, `37` уникальных `time+signal`, `29` MT4 opened trades.
+- **artifacts**: `docs/reports/2026-04-22-signal-export-parity.md`
+- **decision**: Дубли времени в DATA являются ожидаемыми разными пиками одного бара и не должны схлопываться. Runtime-формат `time;signal` грубее DATA: он исполняет сигнал на уровне времени бара.
+- **notes**: нет
+
+## [2026-04-20] — take_skip_v2 original contour feature ablation (PASS)
+- **report**: `docs/reports/2026-04-20-take-skip-original-contour-feature-ablation.md`
+- **topics**: `take_skip_v2`, `lib_pic`, `trailing_stop`, `feature_ablation`
+- **summary**: Реализован отдельный runner для проверки `lib_PIC` path/geometry признаков в старом single-tensor `take_skip_v2` контуре. Старый baseline не заменяется на `baseline_clean`: новые признаки добавляются поверх исходного engineered-представления.
+- **artifacts**: `ML/reports/take_skip_trailing_stop_v2_original_plus_path_selected_rule.json`
+- **decision**: `path` признаки дают полезный trade-off: больше сделок, PF остаётся высоким. `geometry` не выбран как practical candidate: высокий PF, но test частота только `4.8` trades/year.
+- **notes**: нет
+
+## [2026-04-20] — take_skip_v2 lib_PIC feature training (FAIL)
+- **report**: `docs/reports/2026-04-20-take-skip-lib-pic-feature-training.md`
+- **topics**: `take_skip_v2`, `lib_pic`, `transformer`
+- **summary**: Проверен training track, где модель получает фрактальную последовательность и `lib_PIC` feature profile внутри одной dual-stream модели. Полная сетка: `baseline_clean`, `baseline_clean_path`, `baseline_clean_geometry_path` × `seq_len 20/50/100`.
+- **artifacts**: `ML/models/take_skip_dual_stream_transformer.py`
+- **decision**: Простое добавление `lib_PIC`-признаков внутрь этой модели не создало рабочий selection layer. `lib_PIC`-признаки пока выглядят полезнее как внешний фильтр, чем как добавка во вход dual-stream модели.
+- **notes**: нет
+
+## [2026-04-20] — take_skip_v2 lib_PIC external selection benchmark (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-04-20-take-skip-lib-pic-selection.md`
+- **topics**: `take_skip_v2`, `lib_pic`, `trailing_stop`
+- **summary**: Проверен внешний слой отбора поверх готовых `take_skip_trailing_stop_v2` exports без нового обучения. Quality-first снова выбрал старый rule без `lib_PIC`-фильтра: test `PF=39.74`, `trades_per_year=8.2`, `negative_year_slices=0`.
+- **artifacts**: `docs/reports/2026-04-20-take-skip-lib-pic-selection.md`
+- **decision**: `lib_PIC`-фильтр не заменяет текущие `quality` / `frequency` правила. Признак `pic_path_win_proxy24_share_w20` выглядит полезным как диагностический фильтр устойчивости: он режет часть сделок, но убирает отрицательный годовой срез.
+- **notes**: нет
+
+## [2026-04-17] — Take/skip trailing-stop matrix verdict (FAIL)
+- **report**: `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
+- **topics**: `quantile`, `trailing_stop`
+- **summary**: Во всех трёх конфигурациях `seq20/50/100`: `verdict = reject` Ни один кандидат не прошёл gate `PF >= 1.0`
+- **artifacts**: `docs/reports/2026-04-17-take-skip-trailing-stop-matrix.md`
+- **decision**: Ни один кандидат не прошёл gate `PF >= 1.0` Вывод: смена постановки с regression/quantile на бинарный `take/skip` не решила проблему. Модель выдаёт слишком слабый и сжатый скор. Текущий Track A почти исчерпан.
+- **notes**: нет
+
+## [2026-04-17] — Multi-horizon take/skip feature track handoff (COMPLETED)
+- **report**: `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+- **topics**: `trailing_stop`, `data_loader`, `transformer`
+- **summary**: Локальный smoke-run `transformer_seq20`: `verdict = go` Validation winner: `take_48_x4 + top_k_probability 0.05`, `PF=6.39`, 24 сделки, `negative_year_slices=0`
+- **artifacts**: `API/generate_signals.py`
+- **decision**: Это не итоговый verdict — ждёт полного remote matrix run Подробности: `docs/reports/2026-04-17-multi-horizon-take-skip-feature-track-handoff.md`
+- **notes**: нет
+
+## [2026-04-19] — Clean lib_PIC feature profile diagnostic (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-04-19-lib-pic-feature-source-audit.md`
+- **topics**: `entry_path`, `lib_pic`, `transformer`
+- **summary**: В `ML/reports/feature_bank_clean_comparison/report.md` зафиксирована read-only диагностика признаков для цели `trail_24_pnl_atr_x8`. Лучший диагностический вариант: `baseline_clean` — 117 признаков, validation R² `0.083736`, MAE `0.238819`, совпадение знака `0.842623`.
+- **artifacts**: `ML/reports/feature_bank_clean_comparison/report.md`
+- **decision**: Чистка групп `direction`, `price_position`, `path_long`, `path_short` выглядит полезной на диагностике признаков. Follow-up `entry_path_v1` training не подтвердил улучшение: `transformer + baseline_clean seq20` дал validation `ret_pearson_r=0.2920` против старого `0.2921`, но test `ret_pearson_r=0.2269` против старого `0.2681`.
+- **notes**: нет
+
+## [2026-04-19] — Execution policy v2: Python benchmark + MT4 confirmation (COMPLETED)
+- **report**: `docs/reports/2026-04-19-execution-policy-v2.md`
+- **topics**: `execution_policy`, `execution`, `policy`, `python`, `benchmark`
+- **summary**: Добавлен benchmark вариантов выхода для готовых `quality` и `frequency` ML-сигналов без нового обучения. В MT4 добавлен `ML_TakeProfitATR`: take profit в ATR от входа, `0=выключен`.
+- **artifacts**: `MT/MQL4/Experts/$o$imple.mq4`, `MT/MQL4/Include/lib_ML_Signal.mqh`
+- **decision**: Для `frequency` take profit временно снимается: основной выход — чистый trailing. `TrailATR=10` не выбран основным, потому что даёт больше прибыли ценой худшей формы equity и высокой концентрации прибыли.
+- **notes**: нет
+
+## [2026-04-18] — MT4 trailing-stop execution for direct ML mode (COMPLETED)
+- **report**: `docs/reports/2026-04-18-mt4-trailing-stop-execution.md`
+- **topics**: `trailing_stop`, `mt4`, `trailing`, `stop`, `execution`
+- **summary**: В прямой MT4-контур `iSignal=3` добавлен новый режим выхода: `ML_ExitMode=0` -> timeout
+- **artifacts**: `MT/MQL4/Experts/$o$imple.mq4`, `MT/MQL4/Include/lib_ML_Signal.mqh`, `docs/superpowers/plans/2026-04-18-mt4-trailing-stop-execution.md`
+- **decision**: Теперь MT4 может честно проверять не только новый слой входа, но и новый тип выхода, под который строился `take_skip_trailing_stop_v2` Следующий шаг — ручной MT4 прогон `quality` и `frequency` уже в trailing-mode
+- **notes**: нет
+
+## [2026-04-18] — Take/skip v2 rule consumer (COMPLETED)
+- **report**: `docs/reports/2026-04-18-take-skip-rule-consumer.md`
+- **topics**: `trailing_stop`, `take`, `skip`, `rule`, `consumer`
+- **summary**: Добавлен единый CLI для применения frozen `take_skip_trailing_stop_v2` rules к готовому prediction CSV Поддержаны оба зафиксированных режима:
+- **artifacts**: `API/export_take_skip_trailing_stop_v2_signals.py`, `API/README.md`
+- **decision**: `take_skip_trailing_stop_v2_*_selected_rule.json` теперь стали не только отчётными артефактами, но и рабочим интерфейсом применения Следующий шаг уже операционный: сравнивать `quality` и `frequency` режимы на одном и том же prediction CSV без ручного разбора rule JSON
+- **notes**: нет
+
+## [2026-04-18] — Take/skip frequency follow-up (COMPLETED)
+- **report**: `docs/reports/2026-04-18-take-skip-frequency-followup.md`
+- **topics**: `take_skip_v2`, `trailing_stop`
+- **summary**: На базе уже обученного `seq50` без нового training-cycle выполнен follow-up benchmark quality-first winner сохранился:
+- **artifacts**: `ML/reports/take_skip_trailing_stop_v2_quality_selected_rule.json`, `ML/reports/take_skip_trailing_stop_v2_frequency_selected_rule.json`, `processing/label_signals.py`
+- **decision**: Частоту сделок удалось резко поднять без падения ниже `PF > 1` raw `frequency-first` показал полезную область, но не стал финальным winner-ом
+- **notes**: нет
+
+## [2026-04-17] — Trailing-stop target quantile first wave (FAIL)
+- **report**: `docs/reports/2026-04-16-trailing-stop-target-quantile-first-wave.md`
+- **topics**: `quantile`, `trailing_stop`, `data_loader`, `transformer`
+- **summary**: bounded run: `transformer_seq20_x3_quantile`, `trail_48_pnl_atr_x3`, `q10/q50/q90` best val `q50_pearson_r=0.0389`, test `q50_pearson_r=0.0541`
+- **artifacts**: `API/generate_signals.py`, `ML/models/trailing_stop_target_quantile_transformer.py`
+- **decision**: quantile-постановка не улучшила обычную regression-постановку на том же target-е (`0.1750` против `0.4206` best validation PF) дальнейшее расширение этой же family на `seq_len=50/100` без новой идеи не выглядит рациональным
+- **notes**: нет
+
+## [2026-04-16] — Trailing-stop target first wave verdict (COMPLETED)
+- **report**: `docs/reports/2026-04-16-trailing-stop-target-first-wave.md`
+- **topics**: `trailing_stop`, `transformer`
+- **summary**: Первый bounded run нового target-а завершён для `transformer_seq20/50/100` Лучший validation candidate всего этапа: `transformer_seq20 + trail_48_pnl_atr_x3`, `PF=0.4206`
+- **artifacts**: `API/generate_signals.py`, `processing/label_main.py`, `processing/label_signals.py`
+- **decision**: Новый trailing-stop target в текущем виде не вытягивает вход: даже лучший candidate далеко ниже `PF > 1` Увеличение длины истории до `50 / 100` не помогло
+- **notes**: нет
+
+## [2026-04-15] — Track A max-out verdict (COMPLETED)
+- **report**: `docs/reports/2026-04-15-track-a-max-out.md`
+- **topics**: `entry_path`, `transformer`
+- **summary**: Short sweep `6 configs x 3 epochs` и deeper rerun лучших `transformer_seq20/seq50` (`10 epochs`) завершены Лучший validation candidate всего этапа: `transformer_seq50 + ret24_over_adv24`, `PF=0.4784297662870411`
+- **artifacts**: `ML/models/entry_path_dual_stream_transformer.py`
+- **decision**: Track A заметно улучшен, но не достиг даже мягкого success gate `PF > 1` на validation Следующий шаг должен менять само обучение или постановку задачи, а не повторять ещё один похожий benchmark-only цикл
+- **notes**: нет
+
+## [2026-04-13] — Quantile forward validation scaffold (PASS)
+- **report**: `docs/reports/2026-04-13-quantile-forward-validation.md`
+- **topics**: `entry_path`, `quantile`
+- **summary**: Инструмент готов: CLI пишет `summary.json`, `time_slices.csv`, `run_metadata.json` Нового strictly-forward prediction CSV в репозитории нет; доступны только historical validation/test prediction-файлы
+- **artifacts**: `ML/reports/quantile_forward_validation/`
+- **decision**: `quantile` не подтверждён и не опровергнут на новых данных: нужна новая forward-выборка после production decision Старый frozen test не использован повторно, чтобы не подменять forward validation уже известным окном
+- **notes**: нет
+
+## [2026-04-13] — PF uplift discovery beyond ML layer: SHORTLISTED (FAIL)
+- **report**: `docs/reports/2026-04-13-pf-uplift-discovery.md`
+- **topics**: `entry_path`, `quantile`
+- **summary**: Baseline: `entry_path_v1_quantile` test set N=48, PF=8.179, WR=81.25%, negative_year_slices=0 20 гипотез по 5 категориям проверены, 6 cheap read-only probes на `trade_enriched.csv`, path-dep check через OHLC simulation
+- **artifacts**: `docs/reports/2026-04-13-pf-uplift-discovery.md`
+- **decision**: Три ортогональных механизма (session / hold duration / predicted adverse) дают значимый PF uplift без переобучения. Skeleton plans созданы. Следующий шаг: `/writing-plans` для любой из трёх. Подробности: `docs/reports/2026-04-13-pf-uplift-discovery.md`
+- **notes**: нет
+
+## [2026-04-13] — Composition track verdict (FAIL)
+- **report**: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- **topics**: `fav`, `quantile`
+- **summary**: `quantile_only` воспроизведён exactly: validation `N=32, PF=11.240091883688192`; test `N=48, PF=8.178675196069868` после пересборки правильного источника `pred_fav_3/pred_fav_12` на тех же активных строках composition стал честно измерим: test `N=47`, `PF=7.860844837655267`, `n_boost_composition.verdict = gate_fail`
+- **artifacts**: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- **decision**: Направление composition закрыто: дополнительный фильтр почти ничего не добавляет к `quantile`, но ломает yearly stability, поэтому усложнение не оправдано
+- **notes**: нет
+
+## [2026-04-13] — Fav 3 vs 12 standalone verdict (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- **topics**: `fav`, `quantile`
+- **summary**: самостоятельная проверка `fav_3_vs_12 <= threshold` на active universe не нашла ни одного рабочего порога: на validation лучший порог с `N>=30` дал только `PF=0.1378609915504136` (`threshold=0.22`, `N=36`) на test лучшая диагностическая точка с `N>=30` тоже слабая: `PF=0.3129480021818097` (`threshold=0.24`, `N=164`)
+- **artifacts**: `docs/reports/2026-04-13-fav-3-vs-12-standalone.md`
+- **decision**: Направление `fav_3_vs_12` как самостоятельной второй торговой системы закрыто: без `quantile` и без другого базового отбора признак не даёт рабочего standalone-режима
+- **notes**: нет
+
+## [2026-04-13] — Label convention audit: timeout больше не штрафуется как SL в TB analytics (COMPLETED)
+- **report**: `docs/reports/2026-04-13-label-convention-audit.md`
+- **topics**: `triple_barrier`, `label_convention`, `threshold_analysis`
+- **summary**: `ML/reports/label_convention_audit_inventory.csv`: inventory всех релевантных TB label handling patterns с risk-категориями `R1..R8` `ML/reports/label_convention_audit.md`: полный audit report
+- **artifacts**: `ML/reports/label_convention_audit.md`, `processing/label_signals.py`
+- **decision**: Аудит подтвердил ещё два реальных `R2 not_win_is_loss` бага после уже известного фикса MT4 simulator. Source-of-truth в `processing/label_signals.py` не менялся, frozen `tb_selected_rule.json` не ретюнился. Подробности: `docs/reports/2026-04-13-label-convention-audit.md` Дополнительный frozen rerun на canonical `ml_signals_tb.csv` + `Nero_{validation,test}_labeled.csv` подтвердил, что historical verdict от `2026-04-12` не меняется: validation/test summary совпали exactly.
+- **notes**: нет
 
 ## [2026-04-12] — Triple Barrier verdict: не production (gate_fail)
-
-### Исправлено
-- `ML/triple_barrier_mt4_execution.py`: симулятор кастовал outcome через `int(...)` и терял дискриминацию между SL (`0.0`) и Timeout (`0.5`) в float-конвенции labels из `processing/label_signals.py:919`. Обе ветки падали в `else` (HoldOverTime, pnl_atr=+0.5), из-за чего все прогоны давали `losses=0, pf=inf`. Заменено на `_classify_tb_outcome` с порогами `>=0.75` → TP, `<=0.25` → SL, else → Timeout; фикс применён в обеих точках закрытия позиции (регулярная и финальная)
-- `tests/test_triple_barrier_mt4_execution.py`: тесты использовали старую `{1, -1, 0}` int-схему и проходили ложно; переведены на float `{1.0, 0.0, 0.5}`. 6/6 зелёные
-
-### Результаты
-После фикса прогон на `tb_selected_rule.json` (`theta=0.475`, `min_ev=0.1`):
-- **Validation (2019–2022)**: 28 trades, PF=4.33, win_rate=57.1%, все годы положительные
-- **Test (2023–2026)**: 69 trades, PF=1.28, win_rate=42.0%, годовые срезы 2023 (PF=0.55, N=6) и 2026 (PF=0.00, N=8) отрицательные
-
-Gate-проверка (унифицированно с quantile: N≥30, PF>2.0, `negative_year_slices=0`):
-- N_trades: ✅ (69)
-- PF: ❌ (1.28 < 2.0)
-- negative_year_slices: ❌ (2023, 2026)
-
-### Вывод
-TB-слой **не** подключается к MT4 как production или parallel execution mode — gate_fail на test, явный regime shift между validation и test. Production-опора остаётся `regression_updn` baseline + `entry_path_v1_quantile` parallel. `tb_selected_rule.json` зафиксирован как frozen исторический артефакт; пересмотр возможен только после накопления forward-данных post-2026-06. Подробности: [docs/reports/2026-04-12-tb-verdict.md](docs/reports/2026-04-12-tb-verdict.md)
-
-## [2026-04-12] — Entry Path v1 Quantile: production-ready через n-boost gate
-
-### Добавлено
-- `ML/entry_path_v1_quantile_ensemble.py`: `load_seed_predictions`, `aggregate_mean_quantile`, `majority_vote` для multi-seed агрегации
-- `ML/benchmark_entry_path_v1_quantile_n_boost.py`: full n-boost orchestration (relax quantile sweep + ensemble benchmark + strict go/no-go gate)
-- `ML/export_entry_path_v1_quantile_rule.py`: production rule export через median m/w/correction по 5 сидам
-- `ML/reports/entry_path_v1_quantile_selected_rule.json`: production rule с winner `lb_gt_m_q35`
-- `ML/reports/n_boost_result.json`, `n_boost_validation_sweep.csv`: артефакты gate
-- tests: `test_entry_path_v1_quantile_ensemble.py` (3), `test_entry_path_v1_quantile_n_boost.py` (8), `test_export_entry_path_v1_quantile_rule.py` (2); +1 тест в `test_export_entry_path_v1_quantile_signals.py`
-
-### Изменено
-- `ML/benchmark_entry_path_v1_quantile_filter.py`: добавлен `compute_m_at_quantile(frame, quantile)` для sweep
-- `API/export_entry_path_v1_quantile_signals.py`: новый `--rule-path` режим с production rule; baseline_score теперь берётся из baseline-модели через inner join, а не из quantile frame; дедупликация по `time` с приоритетом non-zero signal
-- `docs/MT/ml_signal_integration.md`, `docs/MT/trading_strategy.md`: актуализированы под production rule, seed_007, `ML_UseScoreFilter=false` и expected 22 trades
-
-### Исправлено
-- `pick_winner` не уважал `GATE_MIN_TRADES` — pool предфильтруется по `trades ≥ 30` до сортировки по PF
-- Strict `same_winner_ratio` ловил FP-шум в квантильной полосе — stability tolerance ±0.05 для quantile при сохранении требования same rule
-- Экспортёр терял 2 сделки на mixed-signal bars (`2023.11.22`, `2025.03.10`) из-за `drop_duplicates(keep='last')` до применения правила
-
-### Результаты
-- Gate PASS на frozen test (seed 007, production параметры median):
-  - `n_trades=48`, `pf=8.18`, `win_rate=0.8125`
-  - `negative_year_slices=0`, `same_winner_ratio=1.0`
-  - sequential (hold_bars=24): 22 trades, PF=3.64, win_rate=0.73
-- MT4 parity (tester лог `20260412.log`, period 2023.01.03 — 2025.11.03):
-  - **20/20 сделок совпадают** по (time, signal, direction)
-  - win rate 80.00% exact match, направление pnl совпадает у всех сделок
-  - mean pnl_atr: Python 2.37 vs MT4 2.55 (~8% diff из-за ATR/spread/exit timing)
-  - MT4 money metrics: net=4477.25, PF=11.91, DD=4.01%
-  - Пропущено 2 сигнала (2022.10.13, 2022.11.22) — усечение периода тестера, не логическое расхождение
-
-### Вывод
-`entry_path_v1_quantile` подтверждён как **production-ready parallel execution mode** для MT4. Winner `lb_gt_m_q35` стабилен по 5 сидам (все выбирают `lb_gt_m` с q∈{30,35,40}). Production rule зафиксирован в `entry_path_v1_quantile_selected_rule.json` через median параметры. Старый plan `2026-04-11-entry-path-v1-quantile-production-path.md` superseded. Подробности: [docs/reports/2026-04-12-quantile-status-decision.md](docs/reports/2026-04-12-quantile-status-decision.md)
-
-## [2026-04-11] — Entry Path v1 Quantile: MT4 parity подтверждён
-
-### Добавлено
-- `API/export_entry_path_v1_quantile_signals.py`: канонический exporter frozen quantile winner `lb_gt_m` в `time;signal` для MT4
-- `tests/test_export_entry_path_v1_quantile_signals.py`
-- `tests/test_signal_tracer_mlp.py`
-- `ML/reports/entry_path_v1_quantile_mt4_reconciliation.csv`: trade-level сверка direct `MLP`-прогона
-
-### Изменено
-- `statistics/signal_tracer.py`: добавлена поддержка direct `MLP CLOSE BUY/SELL` логов и отдельный `mlp` dossier path
-- `docs/MT/trading_strategy.md` и `docs/MT/ml_signal_integration.md`: синхронизированы с реальной логикой `ML_TRADE()` и новым quantile export path
-- `MT/tester/$o$imple.ini`: quantile parity зафиксирован на `ML_HoldBars=24`, `ML_AllowReversal=0`, `ML_UseScoreFilter=0`
-
-### Исправлено
-- `API/export_entry_path_v1_quantile_signals.py`: дубликаты `time` теперь схлопываются как в MT4 (`keep='last'`), поэтому Python export и MQL execution больше не расходятся по числу сигналов
-
-### Результаты
-- после исправления exporter-а канонический `ml_signals.csv` для quantile-layer содержит `8872` строк и `8` активных сигналов (`4 BUY`, `4 SELL`)
-- MT4 tester по `20260411.log` показал:
-  - `8` сделок
-  - `PF=58.88`
-  - `net=2951.63`
-  - `DD=2.85%`
-  - `7W / 1L`
-- log counters и reconciliation полностью согласованы:
-  - `Opened=8`
-  - `Timeout closes=8`
-  - `Position blocked=0`
-  - `Score filtered=0`
-
-### Вывод
-`entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Синтез: [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md)
-
-## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён
-
-### Добавлено
-- `ML/entry_path_v1_quantile_robustness.py` и `ML/benchmark_entry_path_v1_quantile_robustness.py`: repeatable multi-seed robustness-оценка для `entry_path_v1_quantile`
-- seed-scoped artifact layout для `entry_path_v1_quantile_robustness/seed_{007,017,042,077,123}`
-- `ML/triple_barrier_mt4_execution.py` и `ML/benchmark_triple_barrier_mt4_execution.py`: Python-контур для будущей MT4-matched оценки Triple Barrier
-
-### Изменено
-- `ML/train.py`: добавлены `--checkpoint-dir` и `--result-dir` для изоляции run-артефактов
-- `ML/evaluate_test.py`: добавлен `--output-dir`
-- `ML/export_entry_path_v1_quantile_predictions.py`: экспорт больше не строит лишние split/loaders для незапрошенных наборов
-- yearly/rolling robustness summary теперь считаются по winner-selected сделкам, а не по всей active universe
-
-### Результаты
-- Полный 5-seed pass (`7, 17, 42, 77, 123`) дал:
-  - `same_rule_count = 5`
-  - `median_test_pf = inf`
-  - `median_sequential_pf = inf`
-  - `worst_seed_test_trades = 20`
-  - `negative_year_slices = 0`
-  - final verdict: `go_mt4`
-- Во всех пяти seed validation winner совпал: `lb_gt_m`
-- `seed_123` подтвердил, что линия держится и без `PF=inf`: frozen test `26 trades`, `PF=25.17`
-
-### Вывод
-`entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Синтез: [wiki/research/execution-tracks-overview.md](wiki/research/execution-tracks-overview.md)
-## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate
-
-### Добавлено
-- Новый task `entry_path_v1_quantile`: сохранены головы `entry_path_v1`, добавлены quantile-головы `ret_24_q10/q90`
-- `ML/export_entry_path_v1_quantile_predictions.py`: отдельный экспорт `train/validation/test` для нового трека
-- `ML/benchmark_entry_path_v1_quantile_filter.py`: quantile-layer поверх frozen базы `A @ 7.5%`
-
-### Изменено
-- `ML/evaluate_test.py`: добавлена CLI-поддержка `--task entry_path_v1_quantile`
-- Усилен quantile benchmark:
-  - finite-sample conformal correction
-  - frozen test check только для validation winner
-  - sequential check с `hold_bars` из frozen baseline
-- Quantile report summary переведён на active-only строки и теперь явно показывает `crossed_quantile_rows`
-
-### Результаты
-- Validation (`entry_path_v1_quantile`): `ret_pearson_r=0.1981`, `interval_coverage=0.8013`, `median_interval_width=7.1442`
-- Test: `ret_pearson_r=0.1455`, `interval_coverage=0.7562`, `median_interval_width=7.0826`
-- Quantile filter winner: `lb_gt_m`
-  - validation: `25 trades`, `PF=11.0465`
-  - frozen test: `24 trades`, `PF=inf`
-  - sequential: `11 trades`, `PF=inf`
-
-### Вывод
-`entry_path_v1_quantile` в текущем run проходит success gate и даёт рабочий confidence-layer поверх `A @ 7.5%`. Подробности: [docs/reports/2026-04-10-entry-path-v1-quantile.md](docs/reports/2026-04-10-entry-path-v1-quantile.md)
-
-## [2026-04-09] — MT4-сверка: замороженный победитель подтверждён одним финальным прогоном
-
-### Изменено
-- `MT/MQL4/Include/MAIN.mqh`: прямой режим `iSignal=3` теперь определяется только после `EXPERT_SET()`, чтобы тестер не сваливался в старый путь из-за раннего чтения параметров
-- `docs/MT/trading_strategy.md`: инструкция по финальной сверке и псевдокод `MAIN()` приведены в соответствие с реальным порядком вызовов
-
-### Исправлено
-- `MT/MQL4/Include/lib_ML_Signal.mqh`: возвращена `ML_DIAG_PRINT()`, которую вызывает `OnTester()`
-- `MT/MQL4/Include/lib_ML_Signal.mqh`: BUY back-stop больше не может уходить в отрицательную цену и давать `OrderSend error 4107`
-
-### Результаты
-- Финальный MT4-прогон по уже отфильтрованному `ml_signals.csv` дал:
-  - `8872` строк в CSV, `22` активных сигнала
-  - `22` сделки, `PF=8.47`, `net=+3077.05`, `DD=5.12%`
-  - `TB` в этом прогоне не участвовал, `Position blocked=0`, `Timeout closes=22`
-
-### Вывод
-Финальный победитель подтверждён в MT4 по одному честному прогону на `test`. Теперь главный технический долг не в новом выборе победителя, а в переносе скрипта выпуска CSV и слоя отбора из черновой ветки в основной контур. Подробности: [docs/reports/2026-04-09-mt4-parity-check-winner.md](docs/reports/2026-04-09-mt4-parity-check-winner.md)
-
-## [2026-04-09] — Entry Path v1: добавлен слой отбора сделок и выбран рабочий базовый вариант
-
-### Добавлено
-- `ML/entry_path_trade_filter.py`: простой фильтр `A`, составной фильтр `B`, проверка по периодам и последовательная проверка
-- `ML/benchmark_entry_path_trade_filter.py`: подбор порога только на validation и замороженная проверка на test
-- `tests/test_entry_path_trade_filter.py`
-
-### Изменено
-- `ML/models/entry_path_transformer.py`: для `path_cls` добавлен отдельный путь по последовательности, чтобы эта голова смотрела не только на общий итоговый вектор
-- `ML/entry_path_task.py` и `ML/train.py`: уточнены active-only метрики для `path_6_class`
-- скрипт проверки теперь защищён от слишком маленького и неустойчивого хвоста: победитель выбирается только среди более рабочих режимов, если такие есть
-
-### Результаты
-- После доработки модели:
-  - validation: `ret_pearson_r=0.2758`, `path_reg_pearson_r=0.2987`, `path_cls_f1_macro=0.4074`
-  - test: `ret_pearson_r=0.2507`, `path_reg_pearson_r=0.2667`, `path_cls_f1_macro=0.4013`
-- Составной фильтр `B` перестал быть почти точной копией `A`: на validation в зоне `7.5%–12.5%` наборы сделок уже расходятся
-- Финальный рабочий winner после защитного правила:
-  - validation: `A @ 7.5%`, `36` сделок, `PF=2.67`, `stability_ratio=1.00`
-  - test: `44` сделки, `PF=4.29`
-  - последовательная проверка: `30` сделок, `PF=2.87`
-
-### Вывод
-Слой `торговать / не торговать` для `entry_path_v1` теперь есть и уже даёт рабочий базовый вариант. Текущий лучший практический вариант — простой фильтр `A` в зоне `7.5%`. Следующий шаг — строить conformal-слой поверх этого базового варианта, а `B` пока держать как вторую исследовательскую ветку. Подробности: [docs/reports/2026-04-09-entry-path-trade-filter.md](docs/reports/2026-04-09-entry-path-trade-filter.md)
-
-## [2026-04-09] — Entry Path v1: проверено перевзвешивание функции потерь, выбран рабочий базовый вариант
-
-### Изменено
-- `ML/data_loader.py`: `entry_path_v1` dataset и test-loader теперь передают `signal`, чтобы цикл обучения видел активные BUY/SELL строки
-- `ML.train`: для `entry_path_v1` добавлена перевзвешенная функция потерь по активным строкам
-- `ML.evaluate_test` и `ML.entry_path_task`: test-report теперь явно показывает `Checkpoint epoch` и лучший `val`-результат, по которому собран отчёт
-
-### Результаты
-- Проверены три режима:
-  - только активные строки: провал (`test ret_pearson_r=0.0112`)
-  - вес `5.0` только для `path_6_class`: частичное улучшение, но не лучший итог
-  - вес `5.0` для `ret_*` и `path_6_class`: лучший общий результат
-- Выбранный базовый вариант теперь такой:
-  - validation: `ret_pearson_r=0.2736`, `path_reg_pearson_r=0.3006`, `path_cls_f1_macro=0.4059`
-  - test: `ret_pearson_r=0.2494`, `path_reg_pearson_r=0.2722`, `path_cls_f1_macro=0.4160`
-  - test в срезе только по активным сделкам: `ret_pearson_r=0.2285`
-
-### Вывод
-Лучший рабочий вариант для `entry_path_v1` сейчас — перевзвешивание активных строк с весом `5.0` сразу в `ret_*` и `path_6_class`. Следующий шаг уже не в новом подборе весов, а в слое `торговать / не торговать` поверх этого базового варианта. Подробности: [docs/reports/2026-04-09-entry-path-v1-loss-weighting.md](docs/reports/2026-04-09-entry-path-v1-loss-weighting.md)
-
-## [2026-04-08] — Entry Path v1: baseline очищен от старого кэша, результаты пересчитаны
-
-### Добавлено
-- Новый трек `entry_path_v1`: новая разметка `ret_*`, `fav/adv`, `path_6_class`, новый dataset contract, multitask transformer, test-отчёт и research-only exports
-- Новый набор тестов: `tests/test_entry_path_labels.py`, `tests/test_entry_path_task.py`, `tests/test_entry_path_model.py`, `tests/test_entry_path_reports.py`, `tests/test_entry_path_training.py`
-- Baseline artifacts: `transformer_entry_path_v1_best.pt`, `transformer_entry_path_v1_result.json`, `evaluate_test_entry_path_v1.md`, `entry_path_v1_validation_predictions.csv`, `entry_path_v1_test_predictions.csv`
-
-### Исправлено
-- `ML.train`: флаг `--clear_cache` теперь действительно доходит до `train_model()`
-- После этого train/validation cache для `entry_path_v1` был честно пересобран; старые ложные цели у строк `signal=0` исчезли
-
-### Результаты
-- Старые числа `best_ret_pearson_r=0.5253` и `test ret_pearson_r=-0.0216` оказались неактуальны: они были получены на старом cache
-- После чистого retrain новый baseline стал таким:
-  - validation: `ret_pearson_r=0.2656`, `path_reg_pearson_r=0.3004`, `path_cls_f1_macro=0.3261`
-  - test: `ret_pearson_r=0.2450`, `path_reg_pearson_r=0.2745`, `path_cls_f1_macro=0.3259`
-- Active-only test по реальным BUY/SELL строкам тоже живой:
-  - `active ret_pearson_r=0.2039`
-  - top 10% по `pred_ret_24_dir_atr` дают `mean true_ret_24 = 0.2442`
-  - bottom 10% дают `mean true_ret_24 = -2.2741`
-- `path_6_class` остаётся слабым: на активных строках модель почти всегда предсказывает класс `0`
-
-### Вывод
-Теперь baseline выглядит честно: `ret_*` не сломан, а просто заметно слабее старого ложного результата. `entry_path_v1` можно сохранять как рабочий исследовательский трек. Следующий шаг уже уже не в поиске “почему test упал”, а в том, как учить этот трек на реальных сделках при том, что активных строк всего около `5%`. Подробный отчёт: [docs/reports/2026-04-08-entry-path-v1-baseline.md](docs/reports/2026-04-08-entry-path-v1-baseline.md)
-
-## [2026-04-08] — Outcome-aligned retraining: validation-first verdict = no winner
-
-### Добавлено
-- Новый validation benchmark `ML/benchmark_outcome_targets.py` для трёх outcome-aligned family с общим trade-floor и yearly-stability filter
-- Outcome task tests: `tests/test_trade_target_labels.py`, `tests/test_outcome_tasks.py`, `tests/test_benchmark_outcome_targets.py`
-- Канонический отчёт этапа: [docs/reports/2026-04-08-outcome-aligned-retraining.md](docs/reports/2026-04-08-outcome-aligned-retraining.md)
-
-### Изменено
-- `processing/label_signals.py` и `processing/label_main.py`: добавлены `trade_outcome_h12`, `trade_pnl_h12_atr`, `archetype_target`
-- `ML/data_loader.py`, `ML/train.py`, `ML/evaluate_test.py`, `ML/utils.py`: outcome-aligned задачи встроены в training/evaluation stack
-- Outcome-task loaders переведены на `signal != 0` rows с отдельным signal-only кэшем после отладки objective mismatch
-- `ML/benchmark_outcome_targets.py` теперь умеет корректно фиксировать семьи без viable slice и сценарий “winner отсутствует”
-
-### Результаты
-- После signal-only retraining на `2208` train / `473` validation signal rows:
-  - `trade_outcome_cls`: best val `AUC=0.6534`
-  - `trade_pnl_reg`: best val `pearson_r=0.1099`
-  - `signal_archetype_cls`: best val `AUC=0.6260`
-- Validation benchmark по единым правилам отбора не дал winner-а:
-  - `trade_outcome_cls`: best rejected slice `PF=0.1983`, `N=24`
-  - `trade_pnl_reg`: best rejected slice `PF=0.1105`, `N=24`
-  - `signal_archetype_cls`: best rejected slice `PF=0.1369`, `N=48`
-- Ни одно семейство не прошло shared `min_trades=80` и `stability_ratio>=0.75`
-- `frozen_outcome_target.json` не создан; финальный запуск на `test` не выполнялся
-
-### Вывод
-Validation-first protocol отработал правильно: outcome-aligned track в текущем виде не дал ни одного target family, который можно честно переносить на `test`. Это не “лучший из плохих”, а явный сигнал пересмотреть саму label definition ближе к реальному execution loop MT4. Подробности: [docs/reports/2026-04-08-outcome-aligned-retraining.md](docs/reports/2026-04-08-outcome-aligned-retraining.md)
-
-## [2026-04-08] — Triple Barrier: найдена причина старого расхождения Python ↔ MT4
-
-### Исправлено
-- `processing/label_signals.py`: TB-разметка теперь считает исход от времени строки сигнала, а не от `fractal0.time`
-- `statistics/signal_tracer.py`: исправлены разбор 22-польного `fractal0`, расчёт времени в UTC и TB-сверка сделка за сделкой
-- `MT/MQL4/Include/OUTPUT.mqh`: в лог добавлены понятные причины рыночного закрытия TB-сделок
-
-### Результаты
-- Старый отрицательный вывод по MT4 оказался ложным: главная причина была в сдвиге времени в TB-разметке
-- После полной пересборки зафиксированное правило стало таким: `theta=0.475`, `min_ev=0.10`, validation `PF=1.53`, test `PF=1.11`
-- Новый MT4-прогон по свежему `ml_signals_tb.csv` дал `PF=1.27`, `net=2932.44`, `N=92`
-- В новой сверке уровни SL/TP почти совпали с Python, а жёсткие исходы `TP/SL` совпали в `61 из 65` случаев
-- Основная оставшаяся разница теперь связана не с ошибкой разметки, а с правилами торговли в MT4: `PosBlock=113`, `HoldOverTime=22`, `TB_Reversal=4`
-
-### Вывод
-Triple Barrier больше нельзя считать треком, который “ломается” при переносе в MT4. Главная старая ошибка найдена и исправлена. Теперь следующий шаг не в новых порогах, а в оценке вне MT4, которая повторяет правила торговли MT4 один в один. Подробный отчёт: [docs/reports/2026-04-08-triple-barrier-runtime-verdict.md](docs/reports/2026-04-08-triple-barrier-runtime-verdict.md)
-
-## [2026-04-08] — Triple Barrier: усиление схемы и исправленная база вне MT4
-
-### Добавлено
-- `ML/tb_signal_logic.py`: общая TB логика выбора сигнала по calibrated probability + expected value, итоговая оценка rules и no-trade gate по `min_ev`
-- `ML/tb_probability_calibration.py`: validation-only isotonic calibration для `triple_barrier`
-- Новый набор TB-тестов: `tests/test_triple_barrier_first_touch.py`, `tests/test_triple_barrier_calibration.py`, `tests/test_generate_signals_research.py`, `tests/test_signal_tracer_tb.py`, `tests/test_triple_barrier_training.py`
-- Frozen artifacts: `ML/reports/tb_probability_calibrator.joblib`, `ML/reports/tb_selected_rule.json`, `ML/reports/tb_validation_logits.npy`, `ML/reports/tb_validation_targets.npy`
-
-### Изменено
-- TB-разметка переведена на реальное первое касание барьеров по OHLC-path; timeouts теперь хранятся отдельно как `0.5`
-- Исправлена привязка времени в TB-разметке: исход теперь считается от времени строки сигнала
-- `ML.train`, `ML.threshold_analysis`, `ML.evaluate_test` и `API.generate_signals` переведены на calibrated TB probabilities и validation-first freeze
-- Исправлен transfer-learning path для TB: модель теперь наследует недостающие encoder `model_kwargs` из source checkpoint и реально загружает `40` слоёв вместо прежнего частичного матча
-- `statistics/signal_tracer.py` теперь понимает TB-логи `TB BUY/SELL prob=... ev=... SL=...ATR TP=...ATR ...` и умеет строить TB dossier поверх labeled CSV
-
-### Результаты
-- Validation зафиксированное правило:
-  - `theta=0.475`, `min_ev=0.10`, `N=121`, `wins=70`, `losses=51`, `timeouts=14`, `PF=1.53`
-- Final one-shot `test` confirmation:
-  - `theta=0.475`, `min_ev=0.10`, `N=253`, `wins=128`, `losses=125`, `timeouts=24`, `PF=1.11`, `win_rate=50.6%`
-- Fresh `ml_signals_tb.csv` regenerated from calibrated probabilities: `BUY=670`, `SELL=46`, `FLAT=58050`
-
-### Вывод
-Это усиление было нужно и полезно, но старые слишком сильные TB-цифры больше не актуальны: после исправления времени старта сделки база вне MT4 стала заметно слабее, зато честнее. Теперь смысл TB определяется не “бумажным PF”, а тем, что после новой проверки в MT4 он больше не расходится с торговой системой по самой сути сделки. Подробный отчёт: [docs/reports/2026-04-08-triple-barrier-hardening.md](docs/reports/2026-04-08-triple-barrier-hardening.md)
-
-## [2026-04-08] — Validation-first ML Exit Research: frozen winner = timeout-only
-
-### Добавлено
-- Новый standalone research tool `API/exit_policy_research.py` для offline-симуляции выходов и position blocking поверх существующего `MT/MQL4/Files/ml_signals.csv`, с жёстким split по `DATA/Nero_validation_labeled.csv` / `DATA/Nero_test_labeled.csv`
-- `tests/test_exit_policy_research.py` (10 тестов) на exit triggers, split boundary, same-bar reversal, ranking и guard против search-loop на `test_final`
-- Frozen policy artifact `ML/reports/frozen_exit_policy.json`
-
-### Результаты
-- Validation grid-search по exit-policy library (`reverse`, `weak_edge`, `profit_guard`, layered) не обогнал baseline:
-  - `timeout_only`: `PF=1.17`, `N=567`, `win_rate=50.97%`, `avg_hold_bars=12.0`
-  - лучший новый кандидат `profit_guard_p1.5_k1.8_h2`: `PF=1.16`, `N=777`
-- Final one-shot check на `test` по frozen JSON:
-  - `timeout_only`: `PF=1.12`, `N=558`, `win_rate=50.72%`, `avg_hold_bars=11.98`
-
-### Вывод
-Validation-first protocol отработал как intended: ни одно новое ML-exit правило не прошло честную проверку против уже существующего `ML_Timeout(12H)` baseline. Поэтому новый exit rule в MQL4 не переносился; замороженной политикой остаётся `timeout_only`, уже реализованный в `MT/MQL4/Include/OUTPUT.mqh`.
-Подробный отчёт: [docs/reports/2026-04-08-ml-exit-validation-first.md](docs/reports/2026-04-08-ml-exit-validation-first.md)
-
-
-## [2026-04-04] — Archetype × Filter Bridge: fav_3_vs_12 обогащает winning архетип, pullback не нужен
-
-### Результаты
-- `fav_3_vs_12 <= 0.653` повышает долю winning архетипа на holdout: 44.0% vs 37.4% baseline (+6.6 pp)
-- `ratio_3_vs_12 > 4.751` НЕ обогащает winning архетип: 33.5% на holdout (хуже baseline)
-- Pullback 1ATR заполняет 84% failure vs 20% winning сигналов; pullback 3ATR + фильтр = 0 winning fills
-- `fav_3_vs_12 <= 0.653` + market: PF=1.78, N=84, 44% winning — лучшая комбинация
-- `ratio_3_vs_12 > 4.751` + market: PF=0.81 — не работает без pullback
-
-### Вывод
-`fav_3_vs_12 <= 0.653` — единственный фильтр, коррелирующий с winning архетипом. С ним market entry достаточен (PF=1.78). Pullback поверх фильтра теряет winning сигналы (они не откатываются). `ratio_3_vs_12 > 4.751` работает только через pullback + mechanical price improvement, не через archetype selection. Оба фильтра ортогональны.
-Подробный отчёт: [docs/reports/2026-04-04-archetype-filter-bridge.md](docs/reports/2026-04-04-archetype-filter-bridge.md)
-
----
-
-## [2026-04-04] — Signal Path Atlas Readout: двумодальная структура сигнала, edge = selection, не timing
-
-### Результаты
-- Первый канонический atlas readout на 1752 discovery + 851 holdout signals
-- Глобальный сигнал direction-neutral: медиана signed_ret_12 = -0.064 ATR, first-passage и ordering практически симметричны
-- Двумодальная архетипная структура реплицирована на holdout: 64% failure (ret Q50 = -0.80 ATR) vs 36% flat_or_noisy_drift (ret Q50 = +1.73 ATR)
-- Winning архетип имеет минимальный adverse excursion (adv Q50 = 0.48 ATR) — у winning signals нет отката для pullback entry
-- ATR Q4 failed holdout replication (N=530) — ATR bucket conditioning нестабильно из-за volatility regime shift
-- ratio_bin_12=4-5 только directionally consistent, не fully replicated
-- 31 artifact Replicated, 45 Failed: spread features переносятся лучше ratio features
-- Execution implications: `neither` — ни market ни pullback не поддержаны как самостоятельные направления; edge — в signal selection
-
-### Вывод
-Atlas переформулирует задачу: проблема edge — в отборе 36% winning signals (flat_or_noisy_drift), а не в оптимизации entry timing на population из 64% failures. Pullback «работает» через mechanical price improvement + selection filtering, а не через direction-level dip-then-rally pattern. Locked Variant 3 winner ослаблен (оба pillar — ratio 4-5 и ATR Q4 — weakly supported). Следующий шаг — проверить, предсказывают ли quality filters принадлежность к winning архетипу.
-Подробный отчёт: [docs/reports/2026-04-04-signal-path-atlas-readout.md](docs/reports/2026-04-04-signal-path-atlas-readout.md)
-
----
-
-## [2026-04-04] — Signal Quality Filter Research (Variant 4): multi-horizon quality filters × pullback entry
-
-### Добавлено
-- Создан новый standalone research tool `API/signal_quality_research.py` с 6-step pipeline: variance check → univariate response maps → shallow tree → pairwise combinations с negative control → score holdout validation → cross-analysis quality filters × pullback entry
-- Реализованы 3 filter feature families (17 features): `ratio_h`, `spread_h`, `short_vs_long` divergence из multi-horizon predictions (up_3..dn_48)
-- Добавлен cross-analysis: quality filters × Variant 3 pullback entry scenarios на discovery и holdout отдельно
-- `tests/test_signal_quality_research.py` (19 тестов)
-
-### Результаты
-- Score-based подход (additive score из нескольких features) не работает — holdout не подтверждает (7/8 NOT CONFIRMED)
-- Индивидуальные правила работают: 7/10 top rules подтверждены на holdout
-- Shallow tree выделил `fav_3_vs_12` (pred_fav_3/pred_fav_12) как доминирующий discriminator (100% importance)
-- Два discovery-confirmed filter axis: `fav_3_vs_12 <= 0.653` и `ratio_3_vs_12 > 4.751`
-- Cross-analysis выявил два holdout-confirmed кандидата:
-  - Агрессивный: `ratio_3_vs_12 > 4.751 + pullback entry_close-1ATR` — PF=1.62, N=94 (holdout)
-  - Консервативный: `ratio_3_vs_12 > 4.751 + pullback entry_close-3ATR` — PF=3.52, N=24 (holdout)
-
-### Вывод
-Multi-horizon predictions дают лучшую фильтрацию, чем ratio_12 alone, но через индивидуальные правила, а не additive scores. Pullback entry без фильтра — generic "better price" effect; quality filter добавляет cohort-specific uplift поверх. Следующий шаг — верификация кандидатов через Signal Path Atlas pipeline.
-Подробный отчёт: [docs/reports/2026-04-04-signal-quality-filter.md](docs/reports/2026-04-04-signal-quality-filter.md)
-
----
-
-## [2026-04-03] — Signal Path Atlas: standalone research CLI, frozen holdout replication и stage close
-
-### Добавлено
-- Добавлен новый standalone research tool `API/signal_path_atlas.py` для ATR-normalized `discovery / holdout` path atlas без возврата к прямому `PF`-ranking rule search
-- Добавлены discovery-atlas outputs: `path_quantiles`, `first_passage`, `ordering`, numeric/categorical slices, path archetypes, holdout verdicts и optional CSV export
-- `tests/test_signal_path_atlas.py` покрывает split semantics, path tensor, feature screen, slice merging, archetypes, holdout verdicts и CLI smoke
-- Обновлён `API/README.md` с командой запуска path atlas CLI
-
-### Исправлено
-- Убран holdout leakage из `atr_bucket`: ATR bucket edges теперь фиксируются только по discovery и переиспользуются на holdout
-- Исправлен holdout numeric slice matching: повторяющиеся bin boundaries больше не double-count строки между соседними slices
-- `main()` больше не падает, если feature screen убирает все live numeric features
-- Archetype naming стабилизирован для collapsed / role-collision случаев, чтобы нейтральные кластеры не получали ложные recovery labels
-
-### Результаты
-- Новый atlas CLI успешно проходит верификацию:
-  - `pytest tests/test_signal_path_atlas.py -q` → `38 passed`
-  - `python -m API.signal_path_atlas --test-only` → успешно
-  - `python -m API.signal_path_atlas --test-only --export-dir /tmp/signal_path_atlas` → успешно
-- Экспортируемый atlas surface теперь включает `split_summary`, `feature_screen`, `path_quantiles`, `first_passage`, `ordering`, `numeric_slices`, `categorical_slices`, `archetype_summary`, `holdout_verdicts`, `execution_implications`
-- На текущем smoke run path-atlas слой не даёт немедленной execution-рекомендации: `execution_implications = neither`
-
-### Вывод
-Stage B research сместился с narrow winner-specific PF follow-up к reusable path-atlas workflow. Следующий шаг — читать atlas outputs как канонический research artefact и уже из replicated path claims решать, оправдан ли будущий `market`, `pullback`, оба или ни один.
-Подробный отчёт: [docs/reports/2026-04-03-signal-path-atlas.md](docs/reports/2026-04-03-signal-path-atlas.md)
-
----
-
-## [2026-04-02] — signal_research Variant 3 robustness pass: support ladder и stricter shortlist
-
-### Добавлено
-- В `API/signal_research.py` добавлен robustness-layer поверх полной Variant 3 matrix: support ladder `10/5 -> 20/10 -> 30/10 -> 40/15`, baseline deltas против `market` (`PF_delta`, `AvgPnL_delta`) и helpers для filtered verdict
-- `Variant 3 Shortlist Verdict` теперь требует не только положительный uplift против `market`, но и support tier не ниже `Supported` (`30/10` или `40/15`), поэтому tiny-fill rows больше не могут выигрывать по голому `PF`
-- `tests/test_signal_research.py` расширен тестами на robustness annotation, floor-by-floor support ladder и новый shortlist verdict
-
-### Результаты
-- Low-fill artefacts удалены из shortlist: `cancel-window entry_close-3ATR@1b` / `@3b` больше не становятся “победителями”, а `ratio 4-5 × ATR Q4 + pullback pic_price-1ATR` понижен до exploratory/standard-only варианта
-- После фильтра robust survivors для primary cohorts: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` (`PF=3.69`, `36` fill-ов, `35.6%`), `ratio 4-5 + pullback entry_close-3ATR` (`PF=3.55`), `BUY + pullback entry_close-3ATR` (`PF=2.35`), `ATR Q4 + pullback entry_close-3ATR` (`PF=2.57`)
-- Negative controls под тем же фильтром тоже улучшаются, но слабее: `ratio 3-4 + pullback entry_close-3ATR` (`PF=1.62`, `ΔPF=+0.69`), `non-Q4 + cancel-window entry_close-1ATR@1b` (`PF=1.41`, `ΔPF=+0.39`)
-- Самый чистый transportable survivor — `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`: на тех же controls его uplift почти исчезает (`ratio 3-4: PF=1.13`, `non-Q4: PF=1.04`)
-
-### Вывод
-Robustness pass оставил один действительно интересный кандидат для будущего EA-прототипа: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`. Более глубокий `entry_close-3ATR` остаётся сильным research-эффектом на primary cohorts, но уже не выглядит чисто cohort-specific, потому что заметно улучшает и controls.
-Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3.md](docs/reports/2026-04-02-signal-research-variant-3.md)
-
----
-
-## [2026-04-02] — signal_research Variant 3: scenario matrix, raw pic_price и OHLC validation
-
-### Добавлено
-- `API/signal_research.py` расширен до full Variant 3: `market`, `pullback`, `delayed`, `cancel-window`, общая матрица `cohort x scenario x params`, новые секции `Variant 3 Scenario Matrix`, `Variant 3 Shortlist Verdict`, `Variant 3 Negative Controls`
-- `pic_price` теперь извлекается из raw `MT/MQL4/Files/Nero.csv` как цена самого позднего embedded fractal внутри строки, а не по порядку колонок и не через OHLC proxy
-- `tests/test_signal_research.py` расширен тестами на raw fractal parsing, row-level latest-fractal extraction, OHLC validation, fill logic и Variant 3 report smoke
-
-### Исправлено
-- Исправлена критичная ошибка research-layer: `pic_price` теперь протягивается в excursion/matrix pipeline, поэтому pic-relative Variant 3 scenarios больше не падают в ложный `0 fill`
-
-### Результаты
-- OOS CLI run (`2022-07-18 11:00:00` — `2026-03-20 06:00:00`) дал `2603` реальных сигналов с excursion-данными и полную Variant 3 matrix на shortlist/controls
-- OOS `pic_price` validation: `9403/9403` test-slice rows matched expected OHLC `High/Low` side within tolerance
-- Deep pullback entries заметно улучшают primary cohorts на бумаге: например, `ratio 4-5 × ATR Q4` вырос от `market PF=1.34` до `pullback pic_price-1ATR PF=6.20` (`22` fill-а), а `ATR Q4` от `1.12` до `pullback entry_close-3ATR PF=2.57` (`106` fill-ов)
-- Но negative controls тоже улучшаются: `ratio 3-4` от `market PF=0.92` до `pullback entry_close-3ATR PF=1.62`, `non-Q4` от `1.02` до `cancel-window entry_close-1ATR@1b PF=1.41`
-
-### Вывод
-Variant 3 tooling и каноническая execution matrix готовы, но финальный winner ещё не зафиксирован: текущий auto-verdict слишком чувствителен к low-fill сценариям, а uplift частично переносится и на negative controls. Следующий шаг — ужесточить robustness-фильтр и только потом выбирать кандидатов для EA.
-Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3.md](docs/reports/2026-04-02-signal-research-variant-3.md)
-
----
-
-## [2026-04-02] — signal_research Variant 3 prep: canonical ATR, cohort map и shortlist для Variant 3
-
-### Добавлено
-- `MT/MQL4/Scripts/ExportOHLC.mq4` теперь экспортирует `time;open;high;low;close;volume;atr14`, а `API/signal_research.py` использует канонический `atr14` из CSV с Python fallback для старых файлов
-- `API/signal_research.py` расширен секциями `Cohort Map`, `Entry Opportunity Profile`, `Stability Split`, `Priority Cohorts`
-- В исследовательский слой добавлена baseline-аннотация фиксированного сетапа `12H / SL=5 / TP=50`
-- `tests/test_signal_research.py` расширен тестами на ATR source selection, cohort summaries, entry-opportunity метрики и новые секции отчёта
-
-### Результаты
-- OOS `2022-07-18 11:00:00` — `2026-03-20 06:00:00`: `2603` реальных сигналов с excursion-данными
-- Лучший кандидат для Variant 3: `ratio 4-5 × ATR Q4` (`N=101`, `PF_12=2.62`, `Net_12 mean=22.2`, `AvgPnL_baseline=1.4`)
-- Лучший широкий ratio-бакет не изменился: `ratio 4-5` (`PF_12=1.95`), а `ratio 3-4` остался устойчивым анти-паттерном (`PF_12=0.87`)
-- `pic_price` validated against OHLC on the full deduplicated `Nero.csv` universe: `58766` rows, `100%` match to fractal-bar `High/Low` within `0.05` tolerance (`max abs error = 0.05`)
-- После пересчёта prep path profile в ATR-единицы старое преимущество Q4 по раннему pullback почти исчезло; surviving edge остался в favorable continuation, особенно у `ratio 4-5 × ATR Q4`
-- Broad `SELL` по-прежнему слабый (`PF_12=0.95`), а `BUY` и `ATR Q4` выглядят лучшими общими группами для следующего этапа
-
-### Вывод
-Этап подтвердил, что Variant 3 нужно запускать не по всей выборке, а по shortlist когорт. При этом ATR-нормализация убрала иллюзию “очевидного pullback edge” у Q4, поэтому главный приоритет теперь — прямое сравнение `market / pullback / delayed / cancel-window` на `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`, с `ratio 3-4` и `non-Q4` как отрицательными контролями.
-Подробный отчёт: [docs/reports/2026-04-02-signal-research-variant-3-prep.md](docs/reports/2026-04-02-signal-research-variant-3-prep.md)
-
----
-
-## [2026-04-01] — signal_research Variant 2: path-dependent профили сигнала и торговые выводы
-
-### Добавлено
-- `API/signal_research.py` расширен до Variant 2: `Signal Passport`, `Pullback Profile`, `First-Hit Barrier Matrix`, `Amplitude Filters`, `Regime Split`, `Practical Conclusions`
-- Path-dependent анализ барьеров по OHLC: для каждой пары `SL/TP` фиксируется `TP_FIRST` / `SL_FIRST` / `NEITHER`, а не только итоговый MFE/MAE
-- Расчёт `ATR(14)` внутри Python и regime split по квартилям волатильности
-- Новые unit-тесты `tests/test_signal_research.py` для ATR, pullback-метрик, barrier logic, отчётных секций и регрессии по `ratio_bin`
-
-### Исправлено
-- `report_by_ratio()` больше не мутирует `ratio_bin` и не создаёт ложную строку `ALL` в последующих секциях отчёта
-
-### Результаты
-- OOS `2022-07-18` — `2026-03-20`: `2603` реальных сигналов с excursion-данными
-- Ранний откат после входа существенный: `adv_1=5.6`, `adv_3=8.8`, `adv_6=12.2` пункта по всей выборке
-- По first-hit матрице лучший базовый сетап на горизонте `12H`: `SL=5`, `TP=50`, `PF=1.05`, `AvgPnL=0.2`
-- По режимам: `BUY PF_12=1.35`, `SELL PF_12=0.95`; лучший ratio-бакет `4-5` (`PF_12=1.95`), бакет `3-4` остаётся убыточным (`PF_12=0.87`)
-- По волатильности: `ATR Q4` даёт `PF_12=1.23`, тогда как `Q1/Q3` близки к нулевому edge
-
-### Вывод
-Исследование подтвердило, что сигнал даёт не сильный импульс, а слабый статистический дрейф, который легко теряется неудачной механикой входа. Для Variant 3 нужно тестировать не только `SL/TP`, но и сам способ входа: `market`, вход на откате, задержанный вход и окна отмены сигнала.
-Подробный отчёт: [docs/reports/2026-04-01-signal-research-variant-2.md](docs/reports/2026-04-01-signal-research-variant-2.md)
-
----
-
-## [2026-04-01] — 10-target модель, новый CSV формат, исследование фильтров
-
-### Добавлено
-- 10-target регрессия (up_3..dn_48): pearson_r=0.5625 (+28% vs 6-target)
-- CSV v3.0: `time;signal;up_3;dn_3;up_6;dn_6;up_12;dn_12;up_24;dn_24;up_48;dn_48` (ratio удалён)
-- EA: параметры ML_Filter3, ML_Filter6 (фильтры по коротким горизонтам)
-- `API/signal_research.py` — статистика MFE/MAE/PF по горизонтам, ratio-бакетам, SL/TP сетке
-
-### Результаты
-- MT4 PF=1.18 (идентично 6-target — сигнал по-прежнему на up_12/dn_12)
-- Filter3/Filter6 как ratio-threshold **бесполезны**: 96% сигналов имеют ratio_3 > 5.0
-- Аномалия: ratio_12 бакет 3-4 убыточен (PF=0.87), бакет 4-5 лучший (PF=1.95)
-- Лучший фиксированный SL/TP: SL=5, TP=30, R:R=6x, PF=1.43
-
-### Вывод
-Короткие горизонты (up_3 r=0.80, up_6 r=0.67) предсказываются отлично, но как фильтр направления не работают — модель всегда согласна по направлению на всех горизонтах. Нужен другой подход: амплитудный фильтр, исключение убыточного ratio-бакета 3-4, или оптимизация SL/TP.
-
----
-
-## [2026-03-31] — Bugfix: ATR-индекс сдвинулся при добавлении полей B.1 — PF восстановлен 1.24
-
-### Исправлено
-- **Корневая причина падения PF**: в `data_loader.py` проверка `split.shape[1] == 18` стала ложной после расширения формата фрактала с 18 до 22 полей. Все фракталы помечались как padding → X = нули → модель обучалась на пустых данных.
-- `data_loader.py`: `split.shape[1] == N_RAW_FEATURES` → `>= N_RAW_FEATURES`; добавлен `FRACTAL_ATR_RAW_IDX=21`; поля 17-20 (up_3/dn_3/up_6/dn_6) пропускаются в X
-- `processing/normalize.py`: `FRACTAL_INDICES['fractal_atr']` = 17 → 21; `parse_fractal` читает до 22 полей; `n_features` = 18 → 22
-
-### Результаты
-- Старый чекпоинт (из `cfeacfc`) на исправленном пайплайне: **PF=1.24** ✓ (baseline воспроизведён)
-- BUY=8460, SELL=7962 — баланс сигналов восстановлен (~1:1)
-- Все предыдущие эксперименты этой сессии (pearson_r=0.43-0.45, PF=0.87-0.97) были испорчены этим багом
-
-### Вывод
-Добавление полей up_3/dn_3/up_6/dn_6 в формат фрактала (Phase B.1) сдвинуло `fractal_atr` с индекса 17 на 21. Python-код не был обновлён синхронно → единственный символ `==` убил все результаты. Гипотезы о нормализации и capacity dilution были ложными.
-
-После исправления свежеобученная модель (pearson_r=0.437): **PF=1.18, 584 сделки, просадка 12.66%** — лучше старого чекпоинта по числу сделок и прибыли. Добавлены три уровня валидации в `data_loader.py` для предотвращения повторных рассинхронов формата.
-
----
-
-## [2026-03-31] — Phase B.1: Добавлены 3H/6H таргеты — pearson_r вырос, PF упал
-
-### Добавлено
-- Новые горизонты up_3/dn_3/up_6/dn_6 в MQL4 (LEVELS_FIND_AROUND, NERO_CSV) и Python-пайплайне
-- UPDN_TARGETS расширен с 6 до 10 таргетов
-- N_FRACTAL_FEATURES: 20 → 24 (4 новых фичи в X)
-
-### Результаты
-- **pearson_r: 0.433 → 0.565** (+30%) — значительное улучшение качества модели
-- **PF: 1.20 → 0.87** — результат в тестере хуже baseline
-- BUY=12986, SELL=6349 (дисбаланс 2:1, раньше было ближе к равному)
-- Win rate: BUY=50%, SELL=35% — SELL-сигналы нерабочие
-
-### Гипотеза причины провала
-Короткие таргеты up_3/dn_3 (34% нулей, мелкие значения) попали в общий пул нормализации с up_12..dn_48. Это сдвинуло перцентили brk/cap вниз, изменив масштаб нормализации всех updn-значений. Модель обучилась лучше предсказывать короткий горизонт, но сигналы по 12H ухудшились.
-
-### Вывод
-Добавление 3H/6H таргетов без раздельной нормализации не работает. Возможные направления: (1) нормализовать up_3/dn_3/up_6/dn_6 отдельным пулом от up_12..dn_48; (2) использовать 3H/6H только как фичи, не как таргеты; (3) откатить B.1 и пробовать другой подход.
-
-
-## [2026-03-31] — Phase B.4: Directional Asymmetric Loss — эксперимент провален
-
-### Результаты
-- **Directional α=2.5**: PF=1.04, 352 сделки (baseline: PF=1.20, 366 сделок)
-- **Directional α=5.0**: PF=0.97, 533 сделки (убыточно)
-- Все варианты хуже production модели (huber loss, r=0.56)
-
-### Вывод
-Directional asymmetric loss не работает. Снижение r с 0.56 до 0.43 не компенсируется консервативностью на adverse direction — модель теряет предсказательную силу сильнее, чем выигрывает от асимметрии. Production модель восстановлена (`git checkout ML/checkpoints/transformer_updn_best.pt`).
-
-**Не повторять**: directional asymmetric loss на regression_updn с текущими фичами не даёт прироста PF.
-
-
-## [2026-03-27] — Phase A EA Optimization: финал PF=1.23, лучшая конфигурация найдена
-
-### Добавлено
-- **`ML_MaxRatio`** параметр: фильтр ratio>4.5 убирает 72% SL-сделок (321→91)
-- **`ML_CalcRR()`**: динамический R:R — Mode 1 (log+cap=2.5) вместо жёсткого cap
-- **`ML_RR_Mode`, `ML_RR_Cap`, `ML_ExitEnabled`, `ML_ExitThreshold`** — новые extern параметры EA
-- **`ExportOHLC.mq4`**: скрипт экспорта 126,637 H1 баров XAUUSD → DATA/XAUUSD_H1_OHLC.csv
-- **`signal_tracer.py`**: поля `close_price`, `mt4_pnl_pips`, `mt4_pnl_atr` в CSV
-- **`analyze_path_ordering.py`**: bar-by-bar scan OHLC, определение SL_FIRST vs TP_FIRST
-
-### Результаты тестов
-- **PF: 0.53 → 1.23** — лучший конфиг: ML_MaxRatio=4.5, ML_RR_Mode=1, ML_ExitEnabled=1, ExitThreshold=2.0
-- ML_Exit OFF + T1=7 (21 баров): PF=1.20 — хуже: avg loss растёт ($85→$95) сильнее avg win ($108→$114)
-- ML_Exit даёт +0.03 PF за счёт 94 ранних выходов из losers до SL
-- T1 (hold time) неважен при ML_Exit ON — HoldOverTime=0, ML_Exit закрывает всё первым
-
-### Path-ordering анализ (analyze_path_ordering.py)
-- BOTH_HIT: 92% SL_FIRST — подтверждено, но теперь только 24 сделки (7%)
-- TP_CLEAR + SL_FIRST: 33 сделки — цель для first-barrier-hit лейблинга
-- TP_CLEAR + TIMEOUT: 100 сделок; 83% достигают TP за ≤24 бара (текущее окно = 12)
-- Главный вывод: модель правильно предсказывает направление, но TP слишком далеко и/или путь идёт через SL
-
-### Вывод
-- Phase A потолок достигнут — дальнейший рост требует переобучения модели
-- Phase B план: [docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md)
-- Приоритет Phase B: first-barrier-hit лейблинг → asymmetric loss → лимитный вход
-
-
-## [2026-03-26] — ME-13 Diagnostics: анализ 922 сделок MT4 Strategy Tester
-
-### Результаты
-- **PF(SL/TP) = 0.53** при текущих параметрах (922 сделки, WR=37.3%). 51% сделок закрываются по MARKET-таймауту, не достигая ни SL, ни TP
-- **Ratio > 4.5 — убыточная зона**: TP = 8 ATR недостижим, PF падает до 0.08–0.40. Прибыльный диапазон — ratio [3.5, 4.5) с PF=1.05–1.13
-- **Рекомендация**: ограничить ML_MaxRR ≤ 2.0 или ввести ML_MaxRatio ≤ 4.5
-
-### Вывод
-- Полный отчёт: `docs/archive/signal_tracer/trade_analysis_20260324.md` (архивный файл отсутствует в текущем дереве)
-
-
-## [2026-03-25] — ME-13 Diagnostics: per-row updn_params + точная денормализация ground truth
-
-### Добавлено
-- **`DATA/Nero_{train,validation,test}_updn_params.npy`**: per-row `(brk, cap)` параметры нормализации, сохраняются pipeline-ом при каждом запуске `label_main.py`
-- **`processing/normalize.py`**: параметр `return_updn_params=True` → возвращает `(df, updn_params)` с shape `(N, 2)`
-- **`statistics/signal_tracer.py`** v2.2: денормализация up_12/dn_12 через per-row brk/cap (точный inverse piecewise_linear_log), 4-категорийная классификация теперь работает корректно
-- **`tests/test_inverse_piecewise.py`**: 6 round-trip тестов для `inverse_piecewise_linear_log` + тест `normalize_rowwise(return_updn_params=True)`
-
-### Исправлено
-- **Классификация TP_CLEAR/SL_CLEAR/BOTH_HIT/TIMEOUT**: ранее up_12/dn_12 брались из fractal[0] (всегда 0) → все сделки падали в TIMEOUT. Теперь правильно денормализуются из строки labeled CSV.
-
-### Вывод
-- Инструмент `signal_tracer.py` теперь способен выдавать реальные категории расхождения Python/MT4: какой % сделок — BOTH_HIT (MFE/MAE иллюзия), какой — SL_CLEAR (реальные убытки)
-
-
-## [2026-03-24] — ME-13 Diagnostics: signal_tracer.py v2.0 (Trade-level reconciliation)
-
-### Добавлено
-- **`statistics/signal_tracer.py`**: инструмент разбора полётов — сравнивает ML-предсказание с реальным ходом цены.
-  - **`--time`**: полное досье одного сигнала
-  - **`--batch`**: top-N высокорейтинговых сигналов, сводная таблица + CSV
-  - **`--from-log`**: разбор реальных сделок из лога MT4 Strategy Tester
-- **Точная реплика формулы MT4 SL/TP** (lib_ML_Signal.mqh): `SL = max(pred * ScaleK * ATR, ATR * Min_SL_ATR)`, `TP = SL * min(ratio / MinRatio, MaxRR)`
-- **INI-парсер**: параметры ML читаются из `$o$imple.ini`
-- **4-категорийная классификация**: `TP_CLEAR` / `SL_CLEAR` / `BOTH_HIT` / `TIMEOUT`
-
-### Результаты (--from-log --losses-only, 321 убыточная SL-сделка, 2023–2026)
-| Категория | Кол-во | % | Смысл |
-|-----------|--------|---|-------|
-| TIMEOUT | 161 | 50% | Ни SL ни TP за 12H |
-| SL_CLEAR | 108 | 34% | SL был неизбежен |
-| **TP_CLEAR** | **33** | **10%** | **TP достижим, но MT4 выбил SL раньше** |
-| BOTH_HIT | 13 | 4% | Оба барьера, порядок неизвестен |
-
-Погрешность формулы: `SL Δ = −3.91`, `TP Δ = −7.40` (причина: fractal_atr < ATR на баре входа).
-
-### Вывод
-1. **MFE/MAE иллюзия подтверждена**: 33 сделки — Python видел TP достижимым, MT4 выбило SL первым.
-2. **SL от пола (Min_SL_ATR)**: `pred_dn * ScaleK * ATR` ≪ `ATR * 2.0` — модель предсказывает dn близко к нулю при высоком ratio, но реальный ход вниз превышает SL.
-3. **Формула недооценивает SL/TP**: ATR фрактала ниже ATR на баре входа при росте волатильности.
-
-## [2026-03-23] — Triple Barrier Classification (параллельный ML-трек)
-
-### Добавлено
-- **Triple Barrier таргет**: 12 бинарных таргетов (6 SL/TP комбо × 2 направления), предсказывающих P(TP hit before SL). SL grid: [2, 3] ATR, TP grid: [3, 6, 9] ATR, timeout: 24 бара.
-- **`label_triple_barrier()`**: Маркировка на сырых up_24/dn_24 до нормализации. Неоднозначные случаи (оба барьера) → label=0 (консервативно).
-- **`--task triple_barrier`**: Поддержка во всех ML-скриптах (train, evaluate_test, threshold_analysis, compare_architectures, optimize, generate_signals).
-- **BCEWithLogitsLoss с pos_weight**: Автоматически вычисляемый вес для компенсации дисбаланса классов.
-- **Реалистичный PF**: `PF = (wins × TP) / (losses × SL)`, timeouts = полный SL loss (консервативная нижняя граница).
-- **`generate_tb_signals()`**: Выбор лучшей SL/TP комбинации по Expected Value: `EV = P × TP - (1-P) × SL`.
-- **`lib_ML_Signal_TB.mqh`**: MT4 интеграция (iSignal=5), фиксированные SL/TP из CSV вместо адаптивных.
-- **`ml_signals_tb.csv`**: Формат `time;signal;sl_atr;tp_atr;prob;ev`.
-
-### Результаты
-- **Transfer learning**: Энкодер из regression_updn checkpoint обязателен — обучение с нуля даёт AUC=0.5000 (коллапс энкодера при BCE+pos_weight=n_neg/n_pos создаёт нейтральную точку sigma=0.5).
-- **Val Mean AUC = 0.7172** (transformer, 104k params, epoch 5, LR=0.001).
-- **OOS Mean AUC = 0.7002**: buy_sl2_tp3 AUC=0.68 PF=1.41, buy_sl3_tp3 PF=1.11. SELL-таргеты на тестовой выборке PF < 1.0 (период теста — преимущественно бычий рынок).
-- Threshold θ=0.5: BUY сигналов 14,865, SELL 19,623 из 58,766 строк в ml_signals_tb.csv.
-
-### Вывод
-Цель: устранить разрыв между Python PF (MFE-based, 4.50) и MT4 PF (фиксированные SL/TP, 1.03). Triple Barrier считает PF из фиксированных уровней — Python PF напрямую соответствует торговой механике MT4. Ожидаемый gap < 20%.
-
-## [2026-03-23] — ME-14 & ME-15: Адаптивная фиксация прибыли и Оптимизация (R:R и Trailing Stop)
-
-### Добавлено
-- **Жесткий Trailing Stop**: Внедрен отдельный ML-трал (по умолчанию поджим `0.5 ATR`), чтобы фиксировать пиковые рывки (MFE) до истечения горизонта 12 баров.
-- **Физическая реализация Асимметричного R:R**: Концепция из этапа ME-13 теперь полноценно прописана в коде `lib_ML_Signal.mqh`, заменив временный хардкод `R:R=1:1`.
-- **Внешние параметры оптимизации**: Глобальные константы ML вынесены в `SoSimple.mq4` (раздел `inputs`) для генетической оптимизации тестером: `ML_Trl_Start_ATR`, `ML_Trl_Step_ATR`, `ML_MinRatio`, `ML_MaxRR`, `ML_ScaleK`, `ML_Min_SL_ATR`, `ML_BypassTrend`. В файл `SoSimple.ini` добавлены диапазоны оптимизации.
-
-### Изменено
-- **Защита от MT4-выходов**: ML-сделки (iSignal == 3) больше не закрываются преждевременно до срабатывания SL/TP по общим правилам эксперта (например, `ImpulseOver`, `Global<0`, NearBuy).
-- **Переворот позиций (Reversal)**: При поступлении уверенного (> ML_MinRatio) противоположного сигнала, текущая позиция немедленно закрывается с причиной `ML_Reversal`, вместо блокировки нового сигнала (`PosBlock` снизился с 51% до 2%).
-
-### Результаты (XAUUSD H1, 2023-2026, Базовый Trailing=0.5 ATR)
-- Проблема блокировки сигналов решена: исполнено **762** сделки.
-- Экстремальный рост доли прибыльных сделок (Win Rate): с 34.55% до **54.07%**.
-- Profit Factor (PF) практически достиг точки безубыточности: **0.99** (ранее 0.93).
-- *Открытие (до глобальной оптимизации)*: Чем жестче шаг трала (`0.5 ATR` vs `1.5 ATR`), тем выше оборачиваемость и PF (0.96 vs 0.91), так как цена почти всегда откатывается перед 12-м часом, а трал успевает "прихватить" пик (MFE) задолго до окончания таймаута.
-
-### Итоги Глобальной Генетической Оптимизации (Holistic Optimization)
-После выноса метрик во внешние переменные (`SoSimple.mq4`) мы пробили долгожданный порог прибыльности в MT4! 
-**Лучший сет (PF=1.03, Сделок=922, Profit=+1207.61)**:
-- `ML_MinRatio = 3.5` (Чуть более мягкий фильтр входов, повысил количество сделок)
-- `ML_Min_SL_ATR = 2.0` (Широкий стоп-лосс, дающий цене "подышать" без случайных выбиваний рыночным шумом)
-- `ML_Trl_Start_ATR = 1.0` (Трал включается только после достижения уверенного профита в 1 ATR)
-- `ML_Trl_Step_ATR = 1.5` (Широкий и "ленивый" трал, позволяющий прибыли расти)
-
-Как видно, когда мы позволили MT4 искать баланс среди всех параметров сразу (вместо жестко фиксированного Stop Loss в `1.5 ATR`), лучшим вариантом оказалась стратегия **"Дать прибыли расти"**. При широком стопе (`2.0`) и широком трале (`1.5`) общая прибыльность перекрывает стратегию жесткой мгновенной фиксации пиков. Впервые сырая ML-модель стала прибыльной в условиях сурового симулятора MT4!
-Прогон генетического алгоритма в значительно более широких диапазонах параметров (`ML_Min_SL_ATR` до 6.0, `ML_ScaleK` до 30, `ML_MaxRR` до 16, `ML_Trl_Start` до 6.0) показал, что:
-1. Максимум **PF=1.03** является *устойчивым глобальным экстремумом* в данном пространстве.
-2. Экстремально широкие стопы (например, `4.0+ ATR`) и сниженные фильтры (`ML_MinRatio=3`) приводят к 1165 сделкам, но снижают Profit Factor обратно до уровня безубыточности `PF=1.00` (max Profit=+169).
-
-## [2026-03-22] — ME-13: Асимметричный R:R и диагностика ML-интеграции
-
-### Добавлено
-- **Асимметричный R:R**: TP = SL × min(ratio / ML_MinRatio, ML_MaxRR). Вместо фиксированного R:R=1:1 TP масштабируется по уверенности модели (ratio). При ratio=10 и ML_MinRatio=2.665 → R:R=1:3.75
-- **Диагностические счётчики**: ML_cnt_total/trend/lowratio/posblock/executed — количественная оценка потерь на каждом фильтре
-- **ML_DIAG_PRINT()**: Итоговый отчёт в OnTester() — показывает разбивку фильтрации
-
-### Изменено
-- `ML_MinRatio`: 5.0 → 2.665 (совпадает с Python θ)
-- `lib_ML_Signal.mqh`: v1.1 → v2.0
-
-### Результаты (XAUUSD H1, 2023-2026, ML_MinRatio=2.665, ML_MaxRR=4.0, ML_BypassTrend=true)
-
-**ML DIAGNOSTICS:**
-| Фильтр | Сигналов | % от Total |
-|---|---|---|
-| Total (non-FLAT) | 1749 | 100% |
-| Trend blocked | 382 | 21.8% (bypass — считаются, не блокируют) |
-| LowRatio blocked | 0 | 0% |
-| **Position blocked** | **898** | **51.3%** |
-| Executed | 851 | 48.7% (BUY=410, SELL=441) |
-
-**Strategy Tester Report:**
-| Метрика | Значение |
-|---|---|
-| Сделок | 851 |
-| **PF** | **0.93** |
-| Win Rate | 34.55% (294 win / 557 loss) |
-| Чистая прибыль | -4461.72 |
-| Общая прибыль / убыток | 61836 / -66298 |
-| Средняя прибыльная сделка | 210.33 |
-| Средняя убыточная сделка | -119.03 |
-| **Фактический R:R** | **1:1.77** (210.33 / 119.03) |
-| Макс. просадка | 64.08% (7649) |
-| Long win rate | **41.22%** |
-| Short win rate | **28.34%** |
-
-**Ключевое наблюдение**: Асимметричный R:R работает — средний выигрыш 1.77× среднего проигрыша. Но win rate 34.55% ниже порога безубыточности 36.1% (для R:R=1:1.77). SELL-сигналы значительно хуже: 28.34% vs 41.22% у BUY.
-
-### Вывод
-1. **Первопричина расхождения PF=4.50 (OOS) → PF<1 (MT4)**: Python PF считает суммы сырых экскурсий (true_up vs true_dn) без SL/TP, а MT4 использует фиксированный SL=TP=1.6×ATR. Ошибка заглядывания в будущее (Look-ahead bias) в Python забирает идеальный пик прибыли (MFE), тогда как MT4 выходит по закрытию 12-го бара (HoldOverTime), когда цена уже откатилась.
-2. **Главный bottleneck — Position blocking (51.3%)**: больше половины сигналов теряются из-за уже открытой позиции. В Python все сигналы независимы. В логе видно: модель генерирует противоположный сигнал (ratio=25.49), но он отклоняется, текущая позиция потом hit SL.
-3. **Слабые сигналы доминируют**: большинство ratio≈2.7-3.0 дают R:R≈1:1.0-1:1.1 — асимметрия несущественна. Высокие ratio (7+, R:R=1:2.6+) — меньшинство.
-4. **Решение проблемы (Look-ahead bias)**: Чтобы реализовать "пиковый" профит (`true_up`), заложенный в оценку модели, необходим агрессивный **Trailing Stop** для фиксации прибыли на выбросах цены, не дожидаясь отката к 12-му бару.
-5. **Следующие шаги**: (a) разрешить переворот позиции при противоположном сигнале; (b) повысить ML_MinRatio для фильтрации слабых сигналов; (c) внедрить математику Trailing Stop'а для удержания MFE.
-
-
-
-## [2026-03-21] — ME-12: Отладка ML_TRADE() в MT4 Strategy Tester
-
-### Результаты (XAUUSD H1, 2023-2026, Stp=Prf=3, R:R=1:1)
-| Конфигурация | Сделок | PF | Итог |
-|---|---|---|---|
-| Базовый (Target=1, одновременные позиции) | 602 | 0.77 | -3735 |
-| Target=0 | ~500 | — | -3511 |
-| + fix одновременных позиций | 424 | — | -2663 |
-| + ML_MinRatio=5.0 | **182** | **0.85** | **-1097** |
-
-### Вывод
-Модель генерирует сигналы, механика торговли работает корректно. Фундаментальная проблема: win rate ~46% при симметричном R:R=1:1 → PF < 1. Следующий шаг: асимметричный R:R на основе `ratio` (TP = SL × ratio / ML_MinRatio), либо повышение порога ML_MinRatio.
-
-## [2026-03-20] — ME-11: Conformal Prediction — Исследование и Инфраструктура
-
-### Добавлено
-- `ML/conformal/calibrate.py`: Split Conformal Prediction калибровка на validation set. Вычисляет nonconformity scores (|y_true − y_pred|) и квантили 90% на 6 Up/Dn таргетах.
-- `ML/conformal/conformal_quantiles.json`: Откалиброванные квантили (q_up_12=0.217, q_dn_12=0.231 и т.д.).
-- `API/generate_signals.py`: Флаг `--conformal` для фильтрации сигналов по минимальной величине предсказания (magnitude filter).
-
-### Результаты (Test Set OOS, θ=2.665, 12H)
-| Метрика | Без CP | С CP |
-|---------|--------|------|
-| Сделок | 2203 | 2187 (−16) |
-| Win Rate | 86.20% | 86.15% |
-| **Profit Factor** | **4.5056** | **4.4891** |
-
-### Вывод
-**Split Conformal Prediction не добавляет ценности при θ=2.665.** Причина: порог θ уже настолько агрессивен, что пропускает только 23.6% фракталов — все высококачественные сигналы. Глобальный квантиль не может отличить хорошие сигналы от плохих внутри этой группы. Из 16 отфильтрованных сигналов 15 оказались прибыльными. CP будет полезен при более мягком θ, для управления размером позиции или при переходе на CQR (Conformalized Quantile Regression). Инфраструктура готова для будущих экспериментов.
-
-## [2026-03-20] — ME-10: MT4 ↔ ML Integration (File-Based Signals)
-
-### Добавлено
-- **`API/generate_signals.py`**: Генерация предрассчитанных ML-сигналов. Прогоняет все три датасета через `transformer_updn_best.pt`, применяет порог θ=2.665 на горизонте 12H, записывает `ml_signals.csv` (58,540 строк, 2004–2026).
-- **`MT/MQL4/Include/lib_ML_Signal.mqh`**: Библиотека файлового обмена сигналами. Загружает CSV при первом вызове (lazy init), бинарный поиск по `Time[bar]`, вызов `OPEN_BUY`/`OPEN_SELL`.
-- **`MT/MQL4/Include/MAIN.mqh`**: Интеграция `ML_TRADE()` в основной цикл после `COUNT()` — 3 строки изменений.
-
-### Изменено
-- Отказ от HTTP/WebRequest (`lib_ML_API.mqh`, `api_server.py`, `SoSimple_ML.mq4`) в пользу файлового обмена. WebRequest не работает в Strategy Tester и ненадёжен под Wine (error 5200).
-
-### Результат
-- ✅ Полная цепочка работает: `Python → ml_signals.csv → MQL4 → торговые сигналы в тестере`
-- Логи тестера подтверждают: `ML_INIT: Loaded 58540 signals`, `ML Signal=1/−1` с корректными pred_up/pred_dn
-- Документация: [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md)
-
-
-## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis
-
-### Добавлено
-- Скрипт `ML/evaluate_test.py`: Запуск обученной модели на отложенной (Test) выборке `Nero_test_labeled.csv`.
-- `ML/data_loader.py`: Поддержка загрузки и кэширования тестовой выборки (`TEST_FILE`).
-
-### Обновлено
-- **`threshold_analysis.py`**: нативная поддержка таргета `regression_updn`. Внедрена логика конвертации выходов `(N, 6)` в торговые сигналы путем оценки отношения `pred_up / pred_dn > θ`. Добавлен параметр `--horizon` (12, 24, 48).
-
-### Зафиксированные Отчеты
-- [`ML/reports/threshold_analysis_12H.md`](ML/reports/threshold_analysis_12H.md): Оптимальный горизонт. PF = **2.94**, Precision = 78.3%, Trades = 2502.
-- [`ML/reports/threshold_analysis_24H.md`](ML/reports/threshold_analysis_24H.md): Хороший результат. PF = **2.34**, Precision = 73.3%, Trades = 2115.
-- [`ML/reports/threshold_analysis_48H.md`](ML/reports/threshold_analysis_48H.md): Удовлетворительный результат. PF = **1.97**, Precision = 69.6%, Trades = 1870.
-- [`ML/reports/evaluate_test_H12.md`](ML/reports/evaluate_test_H12.md): Результаты OOS тестирования.
-
-### Прорывной Результат (Out-Of-Sample)
-Применение порога `θ=2.665` (выявленного на валидации 12H) к новой отложенной выборке (Test) показало феноменальный результат:
-- Сделок: **2203**
-- Win Rate (Precision): **86.20%**
-- **Profit Factor: 4.50**
-
-Этот результат подтверждает устойчивость выявленных (Transformer) рыночных паттернов на новых данных и открывает дорогу к интеграции модели в торговый эксперт MQL4.
-
-## [2026-03-19] — ME-8: Multi-Task Regression (6 Up/Dn targets)
-
-### Добавлено
-- **`data_loader.py`**: `target='updn'` — загрузка 6 таргетов (up_12, dn_12, up_24, dn_24, up_48, dn_48), y shape (N, 6).
-- **`train.py`**: `--task regression_updn` — multi-target обучение, HuberLoss на 6 выходов, per-target Pearson r.
-- **`utils.py`**: `compute_multitarget_regression_metrics()` — per-target и средние метрики.
-- **`compare_architectures.py`**: поддержка `--task regression_updn`.
-- **`train.py`**: Multi-target scatter/residual графики (6 subplots).
-- **`statistics/statistics.py`**: статистика по Up/Dn таргетам (колонки строки).
-- **`statistics/EDA.ipynb`**: Секция 10 — анализ таргетов Up/Dn (гистограммы, scatter, по классам).
-
-### Обновлено
-- **`statistics/statistics.py`**: парсинг 18-полевых фракталов (было 11).
-- **`statistics/EDA.ipynb`**: парсинг 18-полевых фракталов, `n_features=18`.
-
-### Результат: Transformer regression_updn
-- **Per-target Pearson r**: up_12=0.502, dn_12=0.538, up_24=0.406, dn_24=0.421, up_48=0.333, dn_48=0.359
-- **Средний Pearson r**: 0.427 | MAE: 0.169 | R²: 0.183
-
-### Profit Factor (ratio = pred_up/pred_dn)
-| Горизонт | Порог | PF (val) | PF (test) | Сделок (%) |
-|----------|-------|----------|-----------|------------|
-| **12H** | 1.5 | 2.54 | **2.53** | 77% |
-| **12H** | 2.0 | 3.14 | **3.21** | 47% |
-| **12H** | 3.0 | 4.97 | **4.51** | 20% |
-| **24H** | 1.5 | 2.22 | **2.21** | 55% |
-| **24H** | 2.0 | 2.93 | **2.85** | 24% |
-| **48H** | 1.5 | 2.00 | **1.98** | 37% |
-| **48H** | 2.0 | 2.85 | **2.66** | 10% |
-
-**Per-target Pearson r (test)**: up_12=0.514, dn_12=0.535, up_24=0.407, dn_24=0.430, up_48=0.322, dn_48=0.364
-
-**Критерий успеха PF > 1.0 при ratio_min=1.5 — выполнен с запасом.**
-Val и test PF совпадают (нет переобучения). Прорыв: от PF=0.728 (старый `predict` таргет) до PF=2.0+ (multi-target Up/Dn).
-
-### Compare Architectures (regression_updn)
-| Модель | Val Pearson r | MAE | Параметры | Best Epoch | Время (с) |
-|--------|---------------|-------|-----------|------------|-----------|
-| **transformer** ⭐ | **0.4265** | 0.1691 | 70,630 | 23 | 256 |
-| bilstm | 0.4262 | 0.1659 | 152,006 | 6 | 44 |
-| hybrid | 0.4099 | 0.1706 | 84,838 | 3 | 28 |
-| cnn1d | 0.3751 | 0.1722 | 43,238 | 3 | 30 |
-
-Transformer и BiLSTM практически идентичны. Transformer выбран для Optuna-оптимизации.
-
-### Обновлено
-- **`optimize.py`**: поддержка `--task regression_updn`, архитектурные параметры для transformer (d_model, nhead, num_layers, dim_feedforward, dropout).
-
----
-
-## [2026-03-19] — ME-7: Time Features + Up/Dn Normalization + ATR_ratio Fix
-
-### Добавлено
-- **`data_loader.py`**: 3 новые time-фичи на фрактал (вычисляются из fractal_time на лету):
-  - `hour_sin` = sin(2π·hour/24) — циклическое кодирование часа суток
-  - `hour_cos` = cos(2π·hour/24) — вторая координата цикла
-  - `time_pos` = позиция фрактала на временной оси строки [0..1] (newest=1, oldest=0)
-- **`normalize.py`**: Joint Piecewise Linear-Log нормализация для Up/Dn (606 значений на строку = 100 фракталов × 6 полей + 6 таргетов).
-- **`data_loader.py`**: `N_FRACTAL_FEATURES=20` (17 исходных + 3 time-фичи). Автоинвалидация кэша при изменении shape.
-- **`train.py`**: `input_features=N_FRACTAL_FEATURES` передаётся в модели автоматически.
-
-### Исправлено
-- **`data_loader.py`**: ATR_ratio теперь вычисляется как `log(fractal_Atr.Fast / Atr.Slow)`.
-- **`label_main.py`**: Убрана ATR нормализация (RobustScaler). Atr.Slow сохраняется в CSV сырым — используется только как знаменатель для ATR_ratio в data_loader.
-
-### Удалено
-- Артефакт `DATA/Nero_atr_scaler.pkl` больше не создаётся.
-- Вызовы `normalize_atr_train()` / `normalize_atr_inference()` убраны из pipeline.
-
-## [2026-03-18] — ME-6: Up/Dn Fixed-Horizon Targets + ATR_ratio
-### Причина
-Все 4 модели убыточны (PF=0.728). Решение: заменить таргет `predict` шумный (переменный горизонт, зависимость от `direction`) на — direction-independent таргеты с фиксированным горизонтом.
-up_12 = max(High[i] - price) за 12 баров от момента формирования фрактала.
-- dn_12 = max(price - Low[i]) за 12 баров.
-- up_24, dn_24 (float) – аналогично за 24 бара.
-- up_48, dn_48 (float) – аналогично за 48 баров. 
-
-### Добавлено
-- **`dataset_description.md`**: Добавлены признаки `Up/Dn` (12/24/48 баров) и Atr.Fast для каждого фрактала. 
-`up_N` = max(High - P), `dn_N` = max(P - Low) за первые N баров после формирования фрактала. Оба ≥ 0, не зависят от направления.
-Строка-ATR переключена на `Atr.Slow` - общий для всей строки.
-- **`label_signals.py`**: `parse_fractal()` расширен до 18 полей (поле 17 = `fractal_atr`). Новая функция `label_updn()`: для каждой строки сканирует вперёд до вытеснения fractal0, берёт последние накопленные Up/Dn.
-- **`label_main.py`**: шаг `label_updn` добавлен в pipeline после `label_all`.
-
-
-## [2026-03-16] — ME-5: Custom Trading Loss (AsymmetricLoss)
-### Добавлено
-- `ML/losses.py`: Реализован класс `AsymmetricLoss`, позволяющий задавать разные штрафы за перепрогноз (over-prediction, FP) и недопрогноз (under-prediction, FN).
-- `ML/train.py`: Добавлена поддержка `--regression_loss asymmetric` с параметрами `--asym_over_penalty` и `--asym_under_penalty`.
-- `ML/optimize.py`: Добавлена поддержка оптимизации асимметричного штрафа (`asym_under_penalty`) через Optuna.
-- **Логика**: По умолчанию штраф за "пропуск" тренда (under-prediction) в 10 раз выше, чем за "ложный сигнал" (over-prediction), чтобы заставить модель не бояться предсказывать крупные движения в хвосте распределения.
-- **Результат (Threshold Analysis)**: Profit Factor вырос с **0.61** (baseline) до **0.728**. Асимметричный лосс и более глубокая архитектура (3 слоя BiLSTM) дали прирост ~19%, но модель все еще убыточна (PF < 1.0).
-- **Вывод**: Изменение функции потерь помогает, но основной лимит — в слабых признаках или шумном таргете.
-- **Инфраструктура**: Скрипт `ML/threshold_analysis.py` теперь автоматически адаптируется под архитектуру чекпоинта (число слоев и т.д.).
-
-## [2026-03-12] — ME-3: Feature Engineering (Динамические признаки)
-### Добавлено
-- `ML/feature_engineering.py`: динамические признаки (price momentum), относительные фичи (нормировка front/back/impulse и momentum на ATR) и скользящие средние (MA3).
-- Интеграция в пайплайн загрузки `ML/data_loader.py` — теперь сеть получает 16 признаков вместо сырых 11, что должно усилить сигнал тренда.
-
-### Результат оценки (Threshold Analysis)
-- Profit Factor остался **ниже 1.0 (0.5908)**. Ни подбор гиперпараметров (ME-1), ни усечение истории (ME-2), ни новые динамические признаки (ME-3) не смогли вытянуть прибыльную модель регрессии. 
-
-## [2026-03-12] — ME-2: Ablation Study (Влияние длины истории)
-### Исследование
-- Создан скрипт `ML/ablation_study.py` для оценки влияния длины подаваемой истории фракталов (`seq_len`).
-- **Критический вывод**: Усечение `seq_len` со 100 до 20 последних фракталов сохраняет и даже чуть улучшает качество модели (Pearson r = 0.328 vs 0.324), при этом сокращая время обучения в 2.5 раза (18 с вместо 46 с). Огромный пласт "старых" данных признан шумом.
-- `seq_len=20` установлена как дефолтная длина признакового окна для будущих экспериментов.
-
-## [2026-03-12] — Оптимизация regression завершена!
-HPO для BiLSTM успешно отработал, найдя параметры (lr=0.004, batch=256, dropout=0.36), которые позволили поднять best_value (Pearson r) с 0.323 до 0.342
-"сырые" данные фракталов (цены + базовый ATR) исчерпали свой потенциал
-✅ Лучшие параметры сохранены: [optuna_best_params_bilstm_regression.json](ML/reports/optuna_best_params_bilstm_regression.json)
-✅ История trials сохранена: [optuna_study_bilstm_regression_20260312_003636.json](ML/reports/optuna_study_bilstm_regression_20260312_003636.json)
-
-
-## [2026-03-11] — ME-1: Подготовка к Optuna HPO для регрессии
-### Изменено
-- `ML/train.py`: функция `train_model` теперь принимает `model_kwargs` и прокидывает их в `get_model()` для инициализации параметров архитектуры. Добавлено сохранение этих параметров в логи `experiments_log.csv`.
-- `ML/optimize.py`: добавлена поддержка функции генерации гиперпараметров архитектуры `hidden_size`, `num_layers`, `dropout` для `bilstm`.
-
-## [2026-03-11] — QW-4: Threshold Analysis (Regression → Trading Signal)
-### Добавлено
-- Новый скрипт `ML/threshold_analysis.py`: поиск оптимального порога θ для конвертации регрессионных предсказаний `|predict|` в торговые сигналы
-- Генерация Precision-Recall curve, Metrics vs θ, Profit Factor vs θ графиков
-- Markdown-отчёт `ML/reports/threshold_analysis.md`
-
-### Результат
-- При Pearson r ≈ 0.32 (BiLSTM): лучший PF = 0.618, precision = 23%, recall = 20%
-- **Вывод**: сигнал слишком слаб для торговли → необходим HPO (ME-1) или feature engineering (ME-3)
-
-## [2026-03-11] — Обеспечение 100% воспроизводимости экспериментов
-### Добавлено
-- В `experiments_log.csv` теперь логируются все гиперпараметры, влияющие на результат: `seed`, `weight_decay`, `huber_delta`, `scheduler_patience`, `scheduler_factor`, `focal_gamma`, `use_weighted_sampler`, `num_parameters`.
-- Автоматический сбор текущего `git_commit` при каждом запуске для точной привязки чекпоинта к кодовой базе.
-
-### Тесты на воспроизводимость очень позитивные!
-
-Скрипт ML/reproducibility_tests.py успешно отработал и сгенерировал отчёт ML/reports/reproducibility_report.md. Вот главные выводы:
-Тест 1 Выполнили задачу полного переобучения с фиксированным seed и исправленными метриками. Вот честные результаты (до настройки гиперпараметров):
-
-🏆 Лучшая модель: BiLSTM
-
-Pearson r: 0.3236 (Корреляция с реальным predict = ~32.3%)
-MAE: 0.1083
-Время обучения: 408 секунд
-Результаты из аудита (Pearson r = 0.555) оказались невоспроизводимым артефактом (возможно, из-за случайного seed, отсутствия dropout или "удачного" локального минимума в тот конкретный запуск). Текущая честная (reproducible) корреляция — 0.32. 
-Тест 2 (Детерминизм): Три запуска с seed=42 выдали абсолютно идентичный результат вплоть до 5-го знака: Pearson r = 0.32255. Это подтверждает, что при фиксированном seed проект строго детерминирован.
-Тест 3 (Чувствительность к seed): Пять запусков с разными сидами (42, 123, 456, 789, 1000) показали средний Pearson r = 0.32072 со стандартным отклонением 0.00228. Это означает, что модель очень стабильна: изменение seed'а почти не влияет на результат (отклонение крошечное, значительно меньше допустимых 0.03). Результат ~0.32 — это истинная характеристика модели, а не случайность рандома.
-Хэши данных (Тест 4): Сгенерированы и зафиксированы MD5 хэши датасетов для будущих сверок.
-
-## [2026-03-11] — Ускорение загрузки данных
-### Добавлено
-- Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
-
-## [2026-03-10] — Ключевые находки аудита проекта (`docs/archive/03.10_audit_answers/opus-project_audit_and_plan.md`, архивный файл отсутствует в текущем дереве)
-- **DirAcc = 97.5% — НЕ data leakage.** Это артефакт кода. В [`ML/data_loader.py`](ML/data_loader.py) (строка 270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в [`ML/utils.py`](ML/utils.py) (строка 145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок.
-- **`direction` как feature**: `fractal[0].direction` ∈ {-1, 1} напрямую коррелирует со знаком `predict` (по определению: `predict = -back * direction`). Для задачи классификации `signal` это может быть мягкая форма leakage — direction определяет **направление** сигнала, хотя не его **наличие**. Для регрессии `|predict|` проблемы нет, т.к. знак удалён.
-- Классификация уперлась в потолок данных — 5 архитектур (RF + 4 NN) дают F1_minority 0.35-0.39, разброс в пределах стат. ошибки. ~1000 сигнальных примеров недостаточно для deep learning.
-- Регрессия показывает потенциал — Pearson r=0.56, R²=0.30. Все 43K примеров работают.
-- **Для классификации**: ~1000 примеров Sell и ~1100 Buy в train — это порог выживания для deep learning. При 11 features × 100 timesteps даже простой BiLSTM имеет 147K параметров. Ratio параметров к сигнальным примерам ≈ 67:1 — катастрофический оверфиттинг неизбежен.
-- **Дисбаланс 95:2.5:2.5 — экстремальный.**
-- **Для регрессии**: все 43 593 примера вносят вклад (регрессия на `|predict|`). Ratio параметров к примерам ≈ 3.4:1 — приемлемо.
-- **Validation**: 232 Sell + 244 Buy = 476 примеров для оценки. Стандартная ошибка F1 при таком размере: ±0.03-0.05. Разница между моделями (0.017 F1) **статистически незначима**.
-
-
-## [2026-02-27] — Оптимизация под торговые сигналы: метрики и балансировка
-### Добавлено
-- Новые метрики для оценки качества сигнальных классов: `signal_precision`, `signal_recall`, `f1_minority`
-- Поддержка WeightedRandomSampler для балансировки train-батчей
-
-### Изменено
-- Early stopping теперь может использовать Precision сигнальных классов вместо Macro F1
-
-### Примечание
-- WeightedRandomSampler используется только для train; val/test сохраняют реальное распределение
-- Для `metric_mode=signal_precision` применяется штраф, если recall < min_signal_recall
-
-### Исправлено
-- Ошибка в WeightedRandomSampler: преобразование меток {-1, 0, 1} → {0, 1, 2} через `y_train + 1` вместо list comprehension
-
-## [2026-02-27] — Критический анализ: ловушка дисбаланса классов
-### Проблема
-- **Macro F1 = 0.57 — обманчивая метрика**: высокое значение достигается за счёт F1(0)=0.95 (neutral, 95% данных)
-- **Торгово-значимые классы (-1 и 1) имеют F1 ≈ 0.35** — катастрофически низкое качество
-- **Precision сигнальных классов**: 0.25–0.30 → 70-75% ложных торговых сигналов
-- Веса Focal Loss [0.445, 0.11, 0.445] недостаточны для компенсации дисбаланса 5%/95%
-
-### Вывод
-- Модели с "хорошим" Macro F1 фактически непригодны для торговли
-- Требуется смена целевой метрики (F1 minority, MCC) и балансировка батчей (WeightedRandomSampler)
-
-## [2026-02-27] — Сравнение архитектур нейросетей (регрессия)
-### Результаты
-- **Bi-LSTM**: лучший Pearson r = 0.3236, 147K параметров
-- **Hybrid CNN+LSTM**: Pearson r = 0.2825, 83K параметров
-- **1D-CNN**: Pearson r = 0.2518, 42K параметров (самая быстрая)
-- **Transformer**: Pearson r = 0.1143, 70K параметров
-
-## [2026-02-25] — Оптимизация гиперпараметров (Optuna)
-### Добавлено
-- Автоматический подбор гиперпараметров с помощью Optuna
-- Поддержка pruning (досрочная остановка неперспективных trials)
-- Оптимизация для classification (macro F1) и regression (pearson_r)
-
-## [2026-02-23] — Поддержка обучения в режиме регрессии (predict target)
-### Добавлено
-- Поддержка раннего останова по корреляции Пирсона (`pearson_r`)
-- HuberLoss (δ=1.0) для робастной функции ошибок при регрессии
-- Метрики регрессии: MAE, RMSE, R², pearson_r, DirAcc
-
-## [2026-02-18] — Baseline ML эксперименты
-### Добавлено
-- 5 baseline-моделей: Dummy, LogReg, RF, XGBoost, LightGBM
-
-## [2026-02-07] — Исправление нормализации predict
-### Исправлено
-- Обработка знакового `predict` в `normalize.py`
-- `predict` теперь корректно нормализуется: модуль → нормализация → восстановление знака
+- **report**: `docs/reports/2026-04-12-tb-verdict.md`
+- **topics**: `triple_barrier`, `quantile`
+- **summary**: После фикса прогон на `tb_selected_rule.json` (`theta=0.475`, `min_ev=0.1`): Validation (2019–2022): 28 trades, PF=4.33, win_rate=57.1%, все годы положительные
+- **artifacts**: `processing/label_signals.py`
+- **decision**: TB-слой не подключается к MT4 как production или parallel execution mode — gate_fail на test, явный regime shift между validation и test. Production-опора остаётся `regression_updn` baseline + `entry_path_v1_quantile` parallel. `tb_selected_rule.json` зафиксирован как frozen исторический артефакт; пересмотр возможен только после накопления forward-данных post-2026-06. Подробности: `docs/reports/2026-04-12-tb-verdict.md`
+- **notes**: нет
+
+## [2026-04-12] — Entry Path v1 Quantile: production-ready через n-boost gate (PASS)
+- **report**: `docs/reports/2026-04-12-quantile-status-decision.md`
+- **topics**: `entry_path`, `quantile`
+- **summary**: Gate PASS на frozen test (seed 007, production параметры median): `n_trades=48`, `pf=8.18`, `win_rate=0.8125`
+- **artifacts**: `ML/reports/n_boost_result.json`, `ML/reports/entry_path_v1_quantile_selected_rule.json`, `API/export_entry_path_v1_quantile_signals.py`
+- **decision**: `entry_path_v1_quantile` подтверждён как production-ready parallel execution mode для MT4. Winner `lb_gt_m_q35` стабилен по 5 сидам (все выбирают `lb_gt_m` с q∈{30,35,40}). Production rule зафиксирован в `entry_path_v1_quantile_selected_rule.json` через median параметры. Старый plan `2026-04-11-entry-path-v1-quantile-production-path.md` superseded. Подробности: `docs/reports/2026-04-12-quantile-status-decision.md`
+- **notes**: нет
+
+## [2026-04-11] — Entry Path v1 Quantile: MT4 parity подтверждён (PASS)
+- **report**: `wiki/research/execution-tracks-reproducibility-plus-parity.md`
+- **topics**: `entry_path`, `quantile`, `mt4_parity`
+- **summary**: после исправления exporter-а канонический `ml_signals.csv` для quantile-layer содержит `8872` строк и `8` активных сигналов (`4 BUY`, `4 SELL`) MT4 tester по `20260411.log` показал:
+- **artifacts**: `ML/reports/entry_path_v1_quantile_filter_report.md`, `ML/reports/entry_path_v1_quantile_filter_selected_rule.json`, `wiki/research/execution-tracks-reproducibility-plus-parity.md`
+- **decision**: `entry_path_v1_quantile` теперь подтверждён и по multi-seed robustness, и в реальном MT4-контуре. Следующий практический вопрос уже не в новом поиске, а в решении, становится ли quantile-layer основным execution mode. Синтез: `wiki/research/execution-tracks-overview.md`
+- **notes**: источник найден в wiki/ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-04-11] — Entry Path v1 Quantile: multi-seed robustness pass подтверждён (PASS)
+- **report**: `wiki/research/execution-tracks-reproducibility-plus-parity.md`
+- **topics**: `triple_barrier`, `entry_path`, `quantile`
+- **summary**: Полный 5-seed pass (`7, 17, 42, 77, 123`) дал: `same_rule_count = 5`
+- **artifacts**: `ML/reports/entry_path_v1_quantile_filter_report.md`, `ML/reports/entry_path_v1_quantile_selected_rule.json`, `ML/reports/entry_path_v1_quantile_live_safe_baseline/multi_seed_summary.json`
+- **decision**: `entry_path_v1_quantile` вышел из статуса single-run гипотезы и прошёл multi-seed robustness-pass. Следующий главный шаг теперь не новый поиск, а `MT4 parity-check` для quantile-layer. Синтез: `wiki/research/execution-tracks-overview.md`
+- **notes**: источник найден в wiki/ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-04-10] — Entry Path v1 Quantile: гибридный трек прошёл success gate (COMPLETED)
+- **report**: `docs/reports/2026-04-10-entry-path-v1-quantile.md`
+- **topics**: `entry_path`, `quantile`
+- **summary**: Validation (`entry_path_v1_quantile`): `ret_pearson_r=0.1981`, `interval_coverage=0.8013`, `median_interval_width=7.1442` Test: `ret_pearson_r=0.1455`, `interval_coverage=0.7562`, `median_interval_width=7.0826`
+- **artifacts**: `docs/reports/2026-04-10-entry-path-v1-quantile.md`
+- **decision**: `entry_path_v1_quantile` в текущем run проходит success gate и даёт рабочий confidence-layer поверх `A @ 7.5%`. Подробности: `docs/reports/2026-04-10-entry-path-v1-quantile.md`
+- **notes**: нет
+
+## [2026-04-09] — MT4-сверка: замороженный победитель подтверждён одним финальным прогоном (PASS)
+- **report**: `docs/reports/2026-04-09-mt4-parity-check-winner.md`
+- **topics**: `mt4`
+- **summary**: Финальный MT4-прогон по уже отфильтрованному `ml_signals.csv` дал: `8872` строк в CSV, `22` активных сигнала
+- **artifacts**: `MT/MQL4/Include/MAIN.mqh`, `MT/MQL4/Include/lib_ML_Signal.mqh`
+- **decision**: Финальный победитель подтверждён в MT4 по одному честному прогону на `test`. Теперь главный технический долг не в новом выборе победителя, а в переносе скрипта выпуска CSV и слоя отбора из черновой ветки в основной контур. Подробности: `docs/reports/2026-04-09-mt4-parity-check-winner.md`
+- **notes**: нет
+
+## [2026-04-09] — Entry Path v1: добавлен слой отбора сделок и выбран рабочий базовый вариант (COMPLETED)
+- **report**: `docs/reports/2026-04-09-entry-path-trade-filter.md`
+- **topics**: `entry_path`, `transformer`
+- **summary**: После доработки модели: validation: `ret_pearson_r=0.2758`, `path_reg_pearson_r=0.2987`, `path_cls_f1_macro=0.4074`
+- **artifacts**: `ML/models/entry_path_transformer.py`
+- **decision**: Слой `торговать / не торговать` для `entry_path_v1` теперь есть и уже даёт рабочий базовый вариант. Текущий лучший практический вариант — простой фильтр `A` в зоне `7.5%`. Следующий шаг — строить conformal-слой поверх этого базового варианта, а `B` пока держать как вторую исследовательскую ветку. Подробности: `docs/reports/2026-04-09-entry-path-trade-filter.md`
+- **notes**: нет
+
+## [2026-04-09] — Entry Path v1: проверено перевзвешивание функции потерь, выбран рабочий базовый вариант (COMPLETED)
+- **report**: `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
+- **topics**: `entry_path`, `data_loader`
+- **summary**: Проверены три режима: только активные строки: провал (`test ret_pearson_r=0.0112`)
+- **artifacts**: `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
+- **decision**: Лучший рабочий вариант для `entry_path_v1` сейчас — перевзвешивание активных строк с весом `5.0` сразу в `ret_*` и `path_6_class`. Следующий шаг уже не в новом подборе весов, а в слое `торговать / не торговать` поверх этого базового варианта. Подробности: `docs/reports/2026-04-09-entry-path-v1-loss-weighting.md`
+- **notes**: нет
+
+## [2026-04-08] — Entry Path v1: baseline очищен от старого кэша, результаты пересчитаны (COMPLETED)
+- **report**: `docs/reports/2026-04-08-entry-path-v1-baseline.md`
+- **topics**: `fav`, `entry_path`, `transformer`
+- **summary**: Старые числа `best_ret_pearson_r=0.5253` и `test ret_pearson_r=-0.0216` оказались неактуальны: они были получены на старом cache После чистого retrain новый baseline стал таким:
+- **artifacts**: `docs/reports/2026-04-08-entry-path-v1-baseline.md`
+- **decision**: Теперь baseline выглядит честно: `ret_*` не сломан, а просто заметно слабее старого ложного результата. `entry_path_v1` можно сохранять как рабочий исследовательский трек. Следующий шаг уже уже не в поиске “почему test упал”, а в том, как учить этот трек на реальных сделках при том, что активных строк всего около `5%`. Подробный отчёт: `docs/reports/2026-04-08-entry-path-v1-baseline.md`
+- **notes**: нет
+
+## [2026-04-08] — Outcome-aligned retraining: validation-first verdict = no winner (COMPLETED)
+- **report**: `docs/reports/2026-04-08-outcome-aligned-retraining.md`
+- **topics**: `h12`, `data_loader`
+- **summary**: После signal-only retraining на `2208` train / `473` validation signal rows: `trade_outcome_cls`: best val `AUC=0.6534`
+- **artifacts**: `processing/label_main.py`, `processing/label_signals.py`
+- **decision**: Validation-first protocol отработал правильно: outcome-aligned track в текущем виде не дал ни одного target family, который можно честно переносить на `test`. Это не “лучший из плохих”, а явный сигнал пересмотреть саму label definition ближе к реальному execution loop MT4. Подробности: `docs/reports/2026-04-08-outcome-aligned-retraining.md`
+- **notes**: нет
+
+## [2026-04-08] — Triple Barrier: найдена причина старого расхождения Python ↔ MT4 (COMPLETED)
+- **report**: `docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
+- **topics**: `triple_barrier`, `triple`, `barrier`, `python`, `mt4`
+- **summary**: Старый отрицательный вывод по MT4 оказался ложным: главная причина была в сдвиге времени в TB-разметке После полной пересборки зафиксированное правило стало таким: `theta=0.475`, `min_ev=0.10`, validation `PF=1.53`, test `PF=1.11`
+- **artifacts**: `MT/MQL4/Include/OUTPUT.mqh`, `processing/label_signals.py`, `statistics/signal_tracer.py`
+- **decision**: Triple Barrier больше нельзя считать треком, который “ломается” при переносе в MT4. Главная старая ошибка найдена и исправлена. Теперь следующий шаг не в новых порогах, а в оценке вне MT4, которая повторяет правила торговли MT4 один в один. Подробный отчёт: `docs/reports/2026-04-08-triple-barrier-runtime-verdict.md`
+- **notes**: нет
+
+## [2026-04-08] — Triple Barrier: усиление схемы и исправленная база вне MT4 (COMPLETED)
+- **report**: `docs/reports/2026-04-08-triple-barrier-hardening.md`
+- **topics**: `triple_barrier`, `threshold_analysis`
+- **summary**: Validation зафиксированное правило: `theta=0.475`, `min_ev=0.10`, `N=121`, `wins=70`, `losses=51`, `timeouts=14`, `PF=1.53`
+- **artifacts**: `ML/reports/tb_selected_rule.json`, `ML/reports/tb_validation_logits.npy`, `ML/reports/tb_validation_targets.npy`
+- **decision**: Это усиление было нужно и полезно, но старые слишком сильные TB-цифры больше не актуальны: после исправления времени старта сделки база вне MT4 стала заметно слабее, зато честнее. Теперь смысл TB определяется не “бумажным PF”, а тем, что после новой проверки в MT4 он больше не расходится с торговой системой по самой сути сделки. Подробный отчёт: `docs/reports/2026-04-08-triple-barrier-hardening.md`
+- **notes**: нет
+
+## [2026-04-08] — Validation-first ML Exit Research: frozen winner = timeout-only (COMPLETED)
+- **report**: `docs/reports/2026-04-08-ml-exit-validation-first.md`
+- **topics**: `validation`, `first`, `exit`, `research`, `frozen`
+- **summary**: Validation grid-search по exit-policy library (`reverse`, `weak_edge`, `profit_guard`, layered) не обогнал baseline: `timeout_only`: `PF=1.17`, `N=567`, `win_rate=50.97%`, `avg_hold_bars=12.0`
+- **artifacts**: `ML/reports/frozen_exit_policy.json`, `MT/MQL4/Include/OUTPUT.mqh`, `API/exit_policy_research.py`
+- **decision**: Validation-first protocol отработал как intended: ни одно новое ML-exit правило не прошло честную проверку против уже существующего `ML_Timeout(12H)` baseline. Поэтому новый exit rule в MQL4 не переносился; замороженной политикой остаётся `timeout_only`, уже реализованный в `MT/MQL4/Include/OUTPUT.mqh`. Подробный отчёт: `docs/reports/2026-04-08-ml-exit-validation-first.md`
+- **notes**: нет
+
+## [2026-04-04] — Archetype × Filter Bridge: fav_3_vs_12 обогащает winning архетип, pullback не нужен (FAIL)
+- **report**: `docs/reports/2026-04-04-archetype-filter-bridge.md`
+- **topics**: `fav`, `archetype_filter`
+- **summary**: `fav_3_vs_12 <= 0.653` повышает долю winning архетипа на holdout: 44.0% vs 37.4% baseline (+6.6 pp) `ratio_3_vs_12 > 4.751` НЕ обогащает winning архетип: 33.5% на holdout (хуже baseline)
+- **artifacts**: `docs/reports/2026-04-04-archetype-filter-bridge.md`
+- **decision**: `fav_3_vs_12 <= 0.653` — единственный фильтр, коррелирующий с winning архетипом. С ним market entry достаточен (PF=1.78). Pullback поверх фильтра теряет winning сигналы (они не откатываются). `ratio_3_vs_12 > 4.751` работает только через pullback + mechanical price improvement, не через archetype selection. Оба фильтра ортогональны. Подробный отчёт: `docs/reports/2026-04-04-archetype-filter-bridge.md`
+- **notes**: нет
+
+## [2026-04-04] — Signal Path Atlas Readout: двумодальная структура сигнала, edge = selection, не timing (FAIL)
+- **report**: `docs/reports/2026-04-04-signal-path-atlas-readout.md`
+- **topics**: `signal_path_atlas`, `signal`, `atlas`, `readout`, `edge`
+- **summary**: Первый канонический atlas readout на 1752 discovery + 851 holdout signals Глобальный сигнал direction-neutral: медиана signed_ret_12 = -0.064 ATR, first-passage и ordering практически симметричны
+- **artifacts**: `docs/reports/2026-04-04-signal-path-atlas-readout.md`
+- **decision**: Atlas переформулирует задачу: проблема edge — в отборе 36% winning signals (flat_or_noisy_drift), а не в оптимизации entry timing на population из 64% failures. Pullback «работает» через mechanical price improvement + selection filtering, а не через direction-level dip-then-rally pattern. Locked Variant 3 winner ослаблен (оба pillar — ratio 4-5 и ATR Q4 — weakly supported). Следующий шаг — проверить, предсказывают ли quality filters принадлежность к winning архетипу. Подробный отчёт: `docs/reports/2026-04-04-signal-path-atlas-readout.md`
+- **notes**: нет
+
+## [2026-04-04] — Signal Quality Filter Research (Variant 4): multi-horizon quality filters × pullback entry (PASS)
+- **report**: `docs/reports/2026-04-04-signal-quality-filter.md`
+- **topics**: `fav`, `signal`, `quality`, `filter`, `research`
+- **summary**: Score-based подход (additive score из нескольких features) не работает — holdout не подтверждает (7/8 NOT CONFIRMED) Индивидуальные правила работают: 7/10 top rules подтверждены на holdout
+- **artifacts**: `API/signal_quality_research.py`
+- **decision**: Multi-horizon predictions дают лучшую фильтрацию, чем ratio_12 alone, но через индивидуальные правила, а не additive scores. Pullback entry без фильтра — generic "better price" effect; quality filter добавляет cohort-specific uplift поверх. Следующий шаг — верификация кандидатов через Signal Path Atlas pipeline. Подробный отчёт: `docs/reports/2026-04-04-signal-quality-filter.md`
+- **notes**: нет
+
+## [2026-04-03] — Signal Path Atlas: standalone research CLI, frozen holdout replication и stage close (PASS)
+- **report**: `docs/reports/2026-04-03-signal-path-atlas.md`
+- **topics**: `quantile`, `signal_path_atlas`
+- **summary**: Новый atlas CLI успешно проходит верификацию: `pytest tests/test_signal_path_atlas.py -q` -> `38 passed`
+- **artifacts**: `API/signal_path_atlas.py`, `API/README.md`
+- **decision**: Stage B research сместился с narrow winner-specific PF follow-up к reusable path-atlas workflow. Следующий шаг — читать atlas outputs как канонический research artefact и уже из replicated path claims решать, оправдан ли будущий `market`, `pullback`, оба или ни один. Подробный отчёт: `docs/reports/2026-04-03-signal-path-atlas.md`
+- **notes**: нет
+
+## [2026-04-02] — signal_research Variant 3 robustness pass: support ladder и stricter shortlist (PASS)
+- **report**: `docs/reports/2026-04-02-signal-research-variant-3.md`
+- **topics**: `signal_research`, `signal`, `research`, `variant`, `robustness`
+- **summary**: Low-fill artefacts удалены из shortlist: `cancel-window entry_close-3ATR@1b` / `@3b` больше не становятся “победителями”, а `ratio 4-5 × ATR Q4 + pullback pic_price-1ATR` понижен до exploratory/standard-only варианта После фильтра robust survivors для primary cohorts: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR` (`PF=3.69`, `36` fill-ов, `35.6%`), `ratio 4-5 + pullback entry_close-3ATR` (`PF=3.55`), `BUY + pullback entry_close-3ATR` (`PF=2.35`), `ATR Q4 + pullback entry_close-3ATR` (`PF=2.57`)
+- **artifacts**: `API/signal_research.py`
+- **decision**: Robustness pass оставил один действительно интересный кандидат для будущего EA-прототипа: `ratio 4-5 × ATR Q4 + pullback entry_close-2ATR`. Более глубокий `entry_close-3ATR` остаётся сильным research-эффектом на primary cohorts, но уже не выглядит чисто cohort-specific, потому что заметно улучшает и controls. Подробный отчёт: `docs/reports/2026-04-02-signal-research-variant-3.md`
+- **notes**: нет
+
+## [2026-04-02] — signal_research Variant 3: scenario matrix, raw pic_price и OHLC validation (COMPLETED)
+- **report**: `docs/reports/2026-04-02-signal-research-variant-3.md`
+- **topics**: `signal_research`, `signal`, `research`, `variant`, `scenario`
+- **summary**: OOS CLI run (`2022-07-18 11:00:00` — `2026-03-20 06:00:00`) дал `2603` реальных сигналов с excursion-данными и полную Variant 3 matrix на shortlist/controls OOS `pic_price` validation: `9403/9403` test-slice rows matched expected OHLC `High/Low` side within tolerance
+- **artifacts**: `API/signal_research.py`, `MT/MQL4/Files/Nero.csv`
+- **decision**: Variant 3 tooling и каноническая execution matrix готовы, но финальный winner ещё не зафиксирован: текущий auto-verdict слишком чувствителен к low-fill сценариям, а uplift частично переносится и на negative controls. Следующий шаг — ужесточить robustness-фильтр и только потом выбирать кандидатов для EA. Подробный отчёт: `docs/reports/2026-04-02-signal-research-variant-3.md`
+- **notes**: нет
+
+## [2026-04-02] — signal_research Variant 3 prep: canonical ATR, cohort map и shortlist для Variant 3 (COMPLETED)
+- **report**: `docs/reports/2026-04-02-signal-research-variant-3-prep.md`
+- **topics**: `signal_research`, `signal`, `research`, `variant`, `prep`
+- **summary**: OOS `2022-07-18 11:00:00` — `2026-03-20 06:00:00`: `2603` реальных сигналов с excursion-данными Лучший кандидат для Variant 3: `ratio 4-5 × ATR Q4` (`N=101`, `PF_12=2.62`, `Net_12 mean=22.2`, `AvgPnL_baseline=1.4`)
+- **artifacts**: `API/signal_research.py`, `MT/MQL4/Scripts/ExportOHLC.mq4`
+- **decision**: Этап подтвердил, что Variant 3 нужно запускать не по всей выборке, а по shortlist когорт. При этом ATR-нормализация убрала иллюзию “очевидного pullback edge” у Q4, поэтому главный приоритет теперь — прямое сравнение `market / pullback / delayed / cancel-window` на `ratio 4-5 × ATR Q4`, `ratio 4-5`, `BUY`, `ATR Q4`, с `ratio 3-4` и `non-Q4` как отрицательными контролями. Подробный отчёт: `docs/reports/2026-04-02-signal-research-variant-3-prep.md`
+- **notes**: нет
+
+## [2026-04-01] — signal_research Variant 2: path-dependent профили сигнала и торговые выводы (PASS)
+- **report**: `docs/reports/2026-04-01-signal-research-variant-2.md`
+- **topics**: `signal_research`, `signal`, `research`, `variant`, `dependent`
+- **summary**: OOS `2022-07-18` — `2026-03-20`: `2603` реальных сигналов с excursion-данными Ранний откат после входа существенный: `adv_1=5.6`, `adv_3=8.8`, `adv_6=12.2` пункта по всей выборке
+- **artifacts**: `API/signal_research.py`
+- **decision**: Исследование подтвердило, что сигнал даёт не сильный импульс, а слабый статистический дрейф, который легко теряется неудачной механикой входа. Для Variant 3 нужно тестировать не только `SL/TP`, но и сам способ входа: `market`, вход на откате, задержанный вход и окна отмены сигнала. Подробный отчёт: `docs/reports/2026-04-01-signal-research-variant-2.md`
+- **notes**: нет
+
+## [2026-04-01] — 10-target модель, новый CSV формат, исследование фильтров (COMPLETED)
+- **report**: `docs/reports/2026-04-01-signal-research-variant-2.md`
+- **topics**: `signal_research`, `target`, `csv`
+- **summary**: MT4 PF=1.18 (идентично 6-target — сигнал по-прежнему на up_12/dn_12) Filter3/Filter6 как ratio-threshold бесполезны: 96% сигналов имеют ratio_3 > 5.0
+- **artifacts**: `API/signal_research.py`
+- **decision**: Короткие горизонты (up_3 r=0.80, up_6 r=0.67) предсказываются отлично, но как фильтр направления не работают — модель всегда согласна по направлению на всех горизонтах. Нужен другой подход: амплитудный фильтр, исключение убыточного ratio-бакета 3-4, или оптимизация SL/TP.
+- **notes**: нет
+
+## [2026-03-31] — Bugfix: ATR-индекс сдвинулся при добавлении полей B.1 — PF восстановлен 1.24 (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `data_loader`, `bugfix`, `atr`
+- **summary**: Старый чекпоинт (из `cfeacfc`) на исправленном пайплайне: PF=1.24 ✓ (baseline воспроизведён) BUY=8460, SELL=7962 — баланс сигналов восстановлен (~1:1)
+- **artifacts**: `processing/normalize.py`, `ML/data_loader.py`, `ML/reports/evaluate_test_H12.md`
+- **decision**: Добавление полей up_3/dn_3/up_6/dn_6 в формат фрактала (Phase B.1) сдвинуло `fractal_atr` с индекса 17 на 21. Python-код не был обновлён синхронно -> единственный символ `==` убил все результаты. Гипотезы о нормализации и capacity dilution были ложными. После исправления свежеобученная модель (pearson_r=0.437): PF=1.18, 584 сделки, просадка 12.66% — лучше старого чекпоинта по числу сделок и прибыли. Добавлены три уровня валидации в `data_loader.py` для предотвращения повторных рассинхронов формата.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-31] — Phase B.1: Добавлены 3H/6H таргеты — pearson_r вырос, PF упал (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `pearson`
+- **summary**: pearson_r: 0.433 -> 0.565 (+30%) — значительное улучшение качества модели PF: 1.20 -> 0.87 — результат в тестере хуже baseline
+- **artifacts**: `processing/label_signals.py`, `processing/normalize.py`, `ML/reports/architecture_comparison_regression_updn.md`
+- **decision**: Добавление 3H/6H таргетов без раздельной нормализации не работает. Возможные направления: (1) нормализовать up_3/dn_3/up_6/dn_6 отдельным пулом от up_12..dn_48; (2) использовать 3H/6H только как фичи, не как таргеты; (3) откатить B.1 и пробовать другой подход.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-31] — Phase B.4: Directional Asymmetric Loss — эксперимент провален (FAIL)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `regression_updn`, `asymmetric_loss`, `transformer`
+- **summary**: Directional α=2.5: PF=1.04, 352 сделки (baseline: PF=1.20, 366 сделок) Directional α=5.0: PF=0.97, 533 сделки (убыточно)
+- **artifacts**: `ML/losses.py`, `ML/train.py`, `ML/reports/optuna_study_bilstm_regression_20260316_102024.json`
+- **decision**: Directional asymmetric loss не работает. Снижение r с 0.56 до 0.43 не компенсируется консервативностью на adverse direction — модель теряет предсказательную силу сильнее, чем выигрывает от асимметрии. Production модель восстановлена (`git checkout ML/checkpoints/transformer_updn_best.pt`). Не повторять: directional asymmetric loss на regression_updn с текущими фичами не даёт прироста PF.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-27] — Phase A EA Optimization: финал PF=1.23, лучшая конфигурация найдена (PASS)
+- **report**: `docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md`
+- **topics**: `optimization`
+- **summary**: PF: 0.53 -> 1.23 — лучший конфиг: ML_MaxRatio=4.5, ML_RR_Mode=1, ML_ExitEnabled=1, ExitThreshold=2.0 ML_Exit OFF + T1=7 (21 баров): PF=1.20 — хуже: avg loss растёт ($85->$95) сильнее avg win ($108->$114)
+- **artifacts**: `docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md`, `statistics/signal_tracer.py`, `ML/reports/evaluate_test_H12.md`
+- **decision**: Phase A потолок достигнут — дальнейший рост требует переобучения модели Phase B план: `docs/superpowers/plans/2026-03-27-pf-improvement-phase-b.md`
+- **notes**: источник найден в docs/superpowers/plans; канонический `docs/reports` отчёт не найден
+
+## [2026-03-26] — ME-13 Diagnostics: анализ 922 сделок MT4 Strategy Tester (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `mt4`, `strategy`, `tester`
+- **summary**: PF(SL/TP) = 0.53 при текущих параметрах (922 сделки, WR=37.3%). 51% сделок закрываются по MARKET-таймауту, не достигая ни SL, ни TP Ratio > 4.5 — убыточная зона: TP = 8 ATR недостижим, PF падает до 0.08–0.40. Прибыльный диапазон — ratio [3.5, 4.5) с PF=1.05–1.13
+- **artifacts**: `docs/archive/answer.md`, `statistics/signal_tracer.py`
+- **decision**: Полный отчёт: `docs/archive/signal_tracer/trade_analysis_20260324.md` (архивный файл отсутствует в текущем дереве)
+- **notes**: исторический архивный источник `docs/archive/signal_tracer/trade_analysis_20260324.md` отсутствует; найден общий архивный источник `docs/archive/answer.md`; канонический `docs/reports` отчёт не найден
+
+## [2026-03-25] — ME-13 Diagnostics: per-row updn_params + точная денормализация ground truth (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `per`, `row`, `params`
+- **summary**: Классификация TP_CLEAR/SL_CLEAR/BOTH_HIT/TIMEOUT: ранее up_12/dn_12 брались из fractal[0] (всегда 0) -> все сделки падали в TIMEOUT. Теперь правильно денормализуются из строки labeled CSV.
+- **artifacts**: `processing/normalize.py`, `statistics/signal_tracer.py`
+- **decision**: Инструмент `signal_tracer.py` теперь способен выдавать реальные категории расхождения Python/MT4: какой % сделок — BOTH_HIT (MFE/MAE иллюзия), какой — SL_CLEAR (реальные убытки)
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-24] — ME-13 Diagnostics: signal_tracer.py v2.0 (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `signal`, `tracer`, `trade`, `level`, `reconciliation`
+- **summary**: Погрешность формулы: `SL Δ = −3.91`, `TP Δ = −7.40` (причина: fractal_atr < ATR на баре входа).
+- **artifacts**: `statistics/signal_tracer.py`
+- **decision**: 1. MFE/MAE иллюзия подтверждена: 33 сделки — Python видел TP достижимым, MT4 выбило SL первым. 2. SL от пола (Min_SL_ATR): `pred_dn * ScaleK * ATR` ≪ `ATR * 2.0` — модель предсказывает dn близко к нулю при высоком ratio, но реальный ход вниз превышает SL.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-23] — Triple Barrier Classification (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `regression_updn`, `triple_barrier`, `threshold_analysis`
+- **summary**: Transfer learning: Энкодер из regression_updn checkpoint обязателен — обучение с нуля даёт AUC=0.5000 (коллапс энкодера при BCE+pos_weight=n_neg/n_pos создаёт нейтральную точку sigma=0.5). Val Mean AUC = 0.7172 (transformer, 104k params, epoch 5, LR=0.001).
+- **artifacts**: `ML/reports/threshold_analysis_tb.md`, `ML/reports/tb_selected_rule.json`, `ML/reports/evaluate_test_tb.md`
+- **decision**: Цель: устранить разрыв между Python PF (MFE-based, 4.50) и MT4 PF (фиксированные SL/TP, 1.03). Triple Barrier считает PF из фиксированных уровней — Python PF напрямую соответствует торговой механике MT4. Ожидаемый gap < 20%.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-23] — ME-14 & ME-15: Адаптивная фиксация прибыли и Оптимизация (PASS)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `trailing_stop`, `trailing`, `stop`
+- **summary**: Проблема блокировки сигналов решена: исполнено 762 сделки. Экстремальный рост доли прибыльных сделок (Win Rate): с 34.55% до 54.07%.
+- **artifacts**: `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Experts/$o$imple.mq4`, `ML/reports/evaluate_test_H12.md`
+- **decision**: После выноса метрик во внешние переменные (`SoSimple.mq4`) мы пробили долгожданный порог прибыльности в MT4! Лучший сет (PF=1.03, Сделок=922, Profit=+1207.61):
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-22] — ME-13: Асимметричный R:R и диагностика ML-интеграции (DIAGNOSTIC_ONLY)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `project_history`
+- **summary**: ML DIAGNOSTICS: Strategy Tester Report:
+- **artifacts**: `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Experts/$o$imple.mq4`
+- **decision**: 1. Первопричина расхождения PF=4.50 (OOS) -> PF<1 (MT4): Python PF считает суммы сырых экскурсий (true_up vs true_dn) без SL/TP, а MT4 использует фиксированный SL=TP=1.6×ATR. Ошибка заглядывания в будущее (Look-ahead bias) в Python забирает идеальный пик прибыли (MFE), тогда как MT4 выходит по закрытию 12-го бара (HoldOverTime), когда цена уже откатилась. 2. Главный bottleneck — Position blocking (51.3%): больше половины сигналов теряются из-за уже открытой позиции. В Python все сигналы независимы. В логе видно: модель генерирует противоположный сигнал (ratio=25.49), но он отклоняется, текущая позиция потом hit SL.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-21] — ME-12: Отладка ML_TRADE() в MT4 Strategy Tester (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `trade`, `mt4`, `strategy`, `tester`
+- **summary**: ME-12: Отладка ML_TRADE() в MT4 Strategy Tester
+- **artifacts**: `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Include/MAIN.mqh`
+- **decision**: Модель генерирует сигналы, механика торговли работает корректно. Фундаментальная проблема: win rate ~46% при симметричном R:R=1:1 -> PF < 1. Следующий шаг: асимметричный R:R на основе `ratio` (TP = SL × ratio / ML_MinRatio), либо повышение порога ML_MinRatio.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-20] — ME-11: Conformal Prediction — Исследование и Инфраструктура (COMPLETED)
+- **report**: `docs/ML/conformal_prediction.md`
+- **topics**: `quantile`, `conformal_prediction`
+- **summary**: ME-11: Conformal Prediction — Исследование и Инфраструктура
+- **artifacts**: `API/generate_signals.py`, `ML/conformal/calibrate.py`, `ML/conformal/conformal_quantiles.json`
+- **decision**: Split Conformal Prediction не добавляет ценности при θ=2.665. Причина: порог θ уже настолько агрессивен, что пропускает только 23.6% фракталов — все высококачественные сигналы. Глобальный квантиль не может отличить хорошие сигналы от плохих внутри этой группы. Из 16 отфильтрованных сигналов 15 оказались прибыльными. CP будет полезен при более мягком θ, для управления размером позиции или при переходе на CQR (Conformalized Quantile Regression). Инфраструктура готова для будущих экспериментов.
+- **notes**: источник найден в docs/ML; канонический `docs/reports` отчёт не найден
+
+## [2026-03-20] — ME-10: MT4 ↔ ML Integration (PASS)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `transformer`
+- **summary**: Полная цепочка работает: `Python -> ml_signals.csv -> MQL4 -> торговые сигналы в тестере` Логи тестера подтверждают: `ML_INIT: Loaded 58540 signals`, `ML Signal=1/−1` с корректными pred_up/pred_dn
+- **artifacts**: `API/generate_signals.py`, `MT/MQL4/Include/MAIN.mqh`, `MT/MQL4/Include/lib_ML_Signal.mqh`
+- **decision**: Отказ от HTTP/WebRequest (`lib_ML_API.mqh`, `api_server.py`, `SoSimple_ML.mq4`) в пользу файлового обмена. WebRequest не работает в Strategy Tester и ненадёжен под Wine (error 5200). Логи тестера подтверждают: `ML_INIT: Loaded 58540 signals`, `ML Signal=1/−1` с корректными pred_up/pred_dn
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-19] — ME-9: Out-of-Sample Evaluation & Threshold Analysis (COMPLETED)
+- **report**: `ML/reports/evaluate_test_H12.md`
+- **topics**: `updn`, `regression_updn`, `h12`, `threshold_analysis`, `data_loader`
+- **summary**: Скрипт `ML/evaluate_test.py`: Запуск обученной модели на отложенной (Test) выборке `Nero_test_labeled.csv`. `ML/data_loader.py`: Поддержка загрузки и кэширования тестовой выборки (`TEST_FILE`).
+- **artifacts**: `ML/reports/evaluate_test_H12.md`, `ML/reports/threshold_analysis_12H.md`, `ML/evaluate_test.py`
+- **decision**: Этот результат подтверждает устойчивость выявленных (Transformer) рыночных паттернов на новых данных и открывает дорогу к интеграции модели в торговый эксперт MQL4.
+- **notes**: источник найден в ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-03-19] — ME-8: Multi-Task Regression (COMPLETED)
+- **report**: `ML/reports/architecture_comparison_regression_updn.md`
+- **topics**: `updn`, `regression_updn`, `data_loader`, `transformer`
+- **summary**: Per-target Pearson r: up_12=0.502, dn_12=0.538, up_24=0.406, dn_24=0.421, up_48=0.333, dn_48=0.359 Средний Pearson r: 0.427 | MAE: 0.169 | R²: 0.183
+- **artifacts**: `ML/reports/architecture_comparison_regression_updn.md`, `ML/reports/optuna_best_params_transformer_regression_updn.json`, `ML/data_loader.py`
+- **decision**: Transformer и BiLSTM практически идентичны. Transformer выбран для Optuna-оптимизации. `optimize.py`: поддержка `--task regression_updn`, архитектурные параметры для transformer (d_model, nhead, num_layers, dim_feedforward, dropout).
+- **notes**: источник найден в ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-03-19] — ME-7: Time Features + Up/Dn Normalization + ATR_ratio Fix (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `normalization`, `data_loader`
+- **summary**: `data_loader.py`: ATR_ratio теперь вычисляется как `log(fractal_Atr.Fast / Atr.Slow)`. `label_main.py`: Убрана ATR нормализация (RobustScaler). Atr.Slow сохраняется в CSV сырым — используется только как знаменатель для ATR_ratio в data_loader.
+- **artifacts**: `ML/data_loader.py`, `processing/normalize.py`, `processing/label_main.py`
+- **decision**: Артефакт `DATA/Nero_atr_scaler.pkl` больше не создаётся. Вызовы `normalize_atr_train()` / `normalize_atr_inference()` убраны из pipeline.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-18] — ME-6: Up/Dn Fixed-Horizon Targets + ATR_ratio (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `updn`, `fixed`, `horizon`, `targets`, `atr`
+- **summary**: `dataset_description.md`: Добавлены признаки `Up/Dn` (12/24/48 баров) и Atr.Fast для каждого фрактала. `up_N` = max(High - P), `dn_N` = max(P - Low) за первые N баров после формирования фрактала. Оба ≥ 0, не зависят от направления.
+- **artifacts**: `processing/label_signals.py`, `processing/label_main.py`, `docs/DATA_FLOW.md`
+- **decision**: Все 4 модели убыточны (PF=0.728). Решение: заменить таргет `predict` шумный (переменный горизонт, зависимость от `direction`) на — direction-independent таргеты с фиксированным горизонтом.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-16] — ME-5: Custom Trading Loss (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `threshold_analysis`, `optuna`
+- **summary**: `ML/losses.py`: Реализован класс `AsymmetricLoss`, позволяющий задавать разные штрафы за перепрогноз (over-prediction, FP) и недопрогноз (under-prediction, FN). `ML/train.py`: Добавлена поддержка `--regression_loss asymmetric` с параметрами `--asym_over_penalty` и `--asym_under_penalty`.
+- **artifacts**: `ML/losses.py`, `ML/train.py`, `ML/optimize.py`
+- **decision**: Вывод: Изменение функции потерь помогает, но основной лимит — в слабых признаках или шумном таргете.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-12] — ME-3: Feature Engineering (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `threshold_analysis`, `data_loader`
+- **summary**: Profit Factor остался ниже 1.0 (0.5908). Ни подбор гиперпараметров (ME-1), ни усечение истории (ME-2), ни новые динамические признаки (ME-3) не смогли вытянуть прибыльную модель регрессии.
+- **artifacts**: `ML/data_loader.py`
+- **decision**: Интеграция в пайплайн загрузки `ML/data_loader.py` — теперь сеть получает 16 признаков вместо сырых 11, что должно усилить сигнал тренда. Profit Factor остался ниже 1.0 (0.5908). Ни подбор гиперпараметров (ME-1), ни усечение истории (ME-2), ни новые динамические признаки (ME-3) не смогли вытянуть прибыльную модель регрессии.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-12] — ME-2: Ablation Study (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `ablation`, `study`
+- **summary**: Создан скрипт `ML/ablation_study.py` для оценки влияния длины подаваемой истории фракталов (`seq_len`). Критический вывод: Усечение `seq_len` со 100 до 20 последних фракталов сохраняет и даже чуть улучшает качество модели (Pearson r = 0.328 vs 0.324), при этом сокращая время обучения в 2.5 раза (18 с вместо 46 с). Огромный пласт "старых" данных признан шумом.
+- **artifacts**: `ML/ablation_study.py`, `ML/data_loader.py`
+- **decision**: Критический вывод: Усечение `seq_len` со 100 до 20 последних фракталов сохраняет и даже чуть улучшает качество модели (Pearson r = 0.328 vs 0.324), при этом сокращая время обучения в 2.5 раза (18 с вместо 46 с). Огромный пласт "старых" данных признан шумом.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-12] — Оптимизация regression завершена! (COMPLETED)
+- **report**: `ML/reports/optuna_best_params_bilstm_regression.json`
+- **topics**: `optuna`, `regression`
+- **summary**: HPO для BiLSTM успешно отработал, найдя параметры (lr=0.004, batch=256, dropout=0.36), которые позволили поднять best_value (Pearson r) с 0.323 до 0.342 "сырые" данные фракталов (цены + базовый ATR) исчерпали свой потенциал
+- **artifacts**: `ML/reports/optuna_best_params_bilstm_regression.json`, `ML/reports/optuna_study_bilstm_regression_20260312_003636.json`, `ML/optimize.py`
+- **decision**: Лучшие параметры сохранены: `ML/reports/optuna_best_params_bilstm_regression.json` История trials сохранена: `ML/reports/optuna_study_bilstm_regression_20260312_003636.json`
+- **notes**: источник найден в ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-03-11] — ME-1: Подготовка к Optuna HPO для регрессии (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `optuna`, `hpo`
+- **summary**: `ML/train.py`: функция `train_model` теперь принимает `model_kwargs` и прокидывает их в `get_model()` для инициализации параметров архитектуры. Добавлено сохранение этих параметров в логи `experiments_log.csv`. `ML/optimize.py`: добавлена поддержка функции генерации гиперпараметров архитектуры `hidden_size`, `num_layers`, `dropout` для `bilstm`.
+- **artifacts**: `ML/train.py`, `ML/optimize.py`, `ML/reports/experiments_log.csv`
+- **decision**: `ML/train.py`: функция `train_model` теперь принимает `model_kwargs` и прокидывает их в `get_model()` для инициализации параметров архитектуры. Добавлено сохранение этих параметров в логи `experiments_log.csv`. `ML/optimize.py`: добавлена поддержка функции генерации гиперпараметров архитектуры `hidden_size`, `num_layers`, `dropout` для `bilstm`.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-11] — QW-4: Threshold Analysis (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `threshold_analysis`, `threshold`, `regression`, `trading`
+- **summary**: При Pearson r ≈ 0.32 (BiLSTM): лучший PF = 0.618, precision = 23%, recall = 20% Вывод: сигнал слишком слаб для торговли -> необходим HPO (ME-1) или feature engineering (ME-3)
+- **artifacts**: `ML/threshold_analysis.py`, `ML/reports/threshold_analysis_12H.md`
+- **decision**: Вывод: сигнал слишком слаб для торговли -> необходим HPO (ME-1) или feature engineering (ME-3)
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-11] — Обеспечение 100% воспроизводимости экспериментов (COMPLETED)
+- **report**: `ML/reports/reproducibility_report_12H.md`
+- **topics**: `weighted_sampler`
+- **summary**: В `experiments_log.csv` теперь логируются все гиперпараметры, влияющие на результат: `seed`, `weight_decay`, `huber_delta`, `scheduler_patience`, `scheduler_factor`, `focal_gamma`, `use_weighted_sampler`, `num_parameters`. Автоматический сбор текущего `git_commit` при каждом запуске для точной привязки чекпоинта к кодовой базе.
+- **artifacts**: `ML/reports/reproducibility_report_12H.md`, `ML/reports/experiments_log.csv`
+- **decision**: Скрипт ML/reproducibility_tests.py успешно отработал и сгенерировал отчёт ML/reports/reproducibility_report.md. Вот главные выводы: Тест 2 (Детерминизм): Три запуска с seed=42 выдали абсолютно идентичный результат вплоть до 5-го знака: Pearson r = 0.32255. Это подтверждает, что при фиксированном seed проект строго детерминирован.
+- **notes**: источник найден в ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-03-11] — Ускорение загрузки данных (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `data_loader`
+- **summary**: Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
+- **artifacts**: `ML/data_loader.py`
+- **decision**: Кэширование распарсенных тензоров в `.npy` файлы в `data_loader.py` для значительного ускорения повторных запусков обучения.
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-03-10] — Ключевые находки аудита проекта (COMPLETED)
+- **report**: `docs/archive/answer.md`
+- **topics**: `data_loader`, `docs`, `archive`, `audit`, `answers`
+- **summary**: DirAcc = 97.5% — НЕ data leakage. Это артефакт кода. В `ML/data_loader.py` (строка 270) регрессионный таргет берётся как `np.abs(df_train[target])` — все значения ≥ 0. Метрика `directional_accuracy` в `ML/utils.py` (строка 145) вычисляет `sign(y_true) == sign(y_pred)`. Поскольку y_true ≥ 0 и модель обучена предсказывать неотрицательные значения, DirAcc тривиально высок. `direction` как feature: `fractal[0].direction` ∈ {-1, 1} напрямую коррелирует со знаком `predict` (по определению: `predict = -back * direction`). Для задачи классификации `signal` это может быть мягкая форма leakage — direction определяет направление сигнала, хотя не его наличие. Для регрессии `|predict|` проблемы нет, т.к. знак удалён.
+- **artifacts**: `docs/archive/answer.md`, `ML/data_loader.py`, `ML/utils.py`
+- **decision**: Для регрессии: все 43 593 примера вносят вклад (регрессия на `|predict|`). Ratio параметров к примерам ≈ 3.4:1 — приемлемо. Validation: 232 Sell + 244 Buy = 476 примеров для оценки. Стандартная ошибка F1 при таком размере: ±0.03-0.05. Разница между моделями (0.017 F1) статистически незначима.
+- **notes**: источник найден в docs/archive; исходный архивный audit path из старой записи отсутствует
+
+## [2026-02-27] — Оптимизация под торговые сигналы: метрики и балансировка (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `project_history`
+- **summary**: Ошибка в WeightedRandomSampler: преобразование меток {-1, 0, 1} -> {0, 1, 2} через `y_train + 1` вместо list comprehension
+- **artifacts**: `ML/train.py`, `ML/utils.py`, `ML/data_loader.py`
+- **decision**: WeightedRandomSampler используется только для train; val/test сохраняют реальное распределение Для `metric_mode=signal_precision` применяется штраф, если recall < min_signal_recall
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-02-27] — Критический анализ: ловушка дисбаланса классов (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `project_history`
+- **summary**: Macro F1 = 0.57 — обманчивая метрика: высокое значение достигается за счёт F1(0)=0.95 (neutral, 95% данных) Торгово-значимые классы (-1 и 1) имеют F1 ≈ 0.35 — катастрофически низкое качество
+- **artifacts**: `docs/archive/answer.md`, `ML/utils.py`
+- **decision**: Модели с "хорошим" Macro F1 фактически непригодны для торговли Требуется смена целевой метрики (F1 minority, MCC) и балансировка батчей (WeightedRandomSampler)
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-02-27] — Сравнение архитектур нейросетей (COMPLETED)
+- **report**: `ML/reports/architecture_comparison_regression.md`
+- **topics**: `transformer`
+- **summary**: Bi-LSTM: лучший Pearson r = 0.3236, 147K параметров Hybrid CNN+LSTM: Pearson r = 0.2825, 83K параметров
+- **artifacts**: `ML/reports/architecture_comparison_regression.md`, `ML/reports/architecture_comparison_classification.md`
+- **decision**: 1D-CNN: Pearson r = 0.2518, 42K параметров (самая быстрая) Transformer: Pearson r = 0.1143, 70K параметров
+- **notes**: источник найден в ML/reports; канонический `docs/reports` отчёт не найден
+
+## [2026-02-25] — Оптимизация гиперпараметров (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `optuna`
+- **summary**: Автоматический подбор гиперпараметров с помощью Optuna Поддержка pruning (досрочная остановка неперспективных trials)
+- **artifacts**: `ML/optimize.py`, `ML/reports/optuna_best_params_cnn1d_classification.json`
+- **decision**: Поддержка pruning (досрочная остановка неперспективных trials) Оптимизация для classification (macro F1) и regression (pearson_r)
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-02-23] — Поддержка обучения в режиме регрессии (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `predict_target`, `predict`, `target`
+- **summary**: Поддержка раннего останова по корреляции Пирсона (`pearson_r`) HuberLoss (δ=1.0) для робастной функции ошибок при регрессии
+- **artifacts**: `ML/train.py`, `ML/utils.py`
+- **decision**: HuberLoss (δ=1.0) для робастной функции ошибок при регрессии Метрики регрессии: MAE, RMSE, R², pearson_r, DirAcc
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-02-18] — Baseline ML эксперименты (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `xgboost`, `baseline`
+- **summary**: 5 baseline-моделей: Dummy, LogReg, RF, XGBoost, LightGBM
+- **artifacts**: `ML/reports/architecture_comparison_classification.md`, `ML/reports/architecture_comparison_regression.md`
+- **decision**: 5 baseline-моделей: Dummy, LogReg, RF, XGBoost, LightGBM
+- **notes**: канонический `docs/reports` отчёт не найден
+
+## [2026-02-07] — Исправление нормализации predict (COMPLETED)
+- **report**: отсутствует (legacy запись; канонический отчёт не найден)
+- **topics**: `predict`
+- **summary**: Обработка знакового `predict` в `normalize.py` `predict` теперь корректно нормализуется: модуль -> нормализация -> восстановление знака
+- **artifacts**: `processing/normalize.py`
+- **decision**: Обработка знакового `predict` в `normalize.py` `predict` теперь корректно нормализуется: модуль -> нормализация -> восстановление знака
+- **notes**: канонический `docs/reports` отчёт не найден
