@@ -1,5 +1,19 @@
 # Changelog SoSimple
 
+> Компактный индекс отчётов, решений и ключевых артефактов завершённых этапов (новые записи в начале).
+
+## Формат записи
+
+```md
+## [YYYY-MM-DD] — Краткое описание (VERDICT)
+- **report**: `docs/reports/YYYY-MM-DD-topic.md`
+- **topics**: `topic_a`, `topic_b`
+- **summary**: 1-2 предложения о сути этапа.
+- **artifacts**: `path/to/main_artifact`, `path/to/main_entrypoint`
+- **decision**: что (не) достигнуто; что принято / запрещено.
+- **notes**: только критичные ограничения, если есть.
+```
+
 ## [2026-07-06] — Entry-Based Powerful Tabular Models (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
 ### Добавлено/Изменено
 - Добавлен runner `ML/baseline/benchmark_entry_based_powerful_tabular.py` для проверки мощных табличных моделей на ветке `entry-based next open`: XGBoost, LightGBM, CatBoost, ExtraTrees, HistGradientBoosting.
