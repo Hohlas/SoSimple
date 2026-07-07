@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-07] — Entry-Based Amplitude Movement Regime Audit (DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES)
+- **report**: `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`
+- **topics**: `entry_based`, `amplitude`, `movement_regime`, `simple_baselines`, `leakage_audit`
+- **summary**: Полный clean run завершён: `384/384`, `failed_runs=[]`, `elapsed_sec=4008.4`, `effective_threads=24`. Лучший eligible результат `simple_combined / extra_trees_small / H3`: `val_select_spearman_median=0.571142`, `val_eval_spearman_median=0.693452`; после ревью `yearly.csv` расширен до `2136 x 11` с идентификаторами запуска.
+- **artifacts**: `ML/reports/entry_based_amplitude_movement.json`, `ML/baseline/benchmark_entry_based_amplitude_movement.py`, `ML/reports/entry_based_amplitude_movement_seed_aggregate.csv`
+- **decision**: Amplitude / movement-regime связь сильная, но объясняется простыми baseline-признаками (`time+ATR`, `simple_combined`). Verdict: `AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`; freeze, direction-trading вывод и открытие `locked_test` запрещены.
+- **notes**: `low_n_disclosure=2026` не использовался для verdict; `distance_to_level_pre_entry_only` пропущен как `SKIPPED_NO_DECISION_PRICE`; post-entry diagnostic имеет `selection_eligible=false`; wide search требует отдельной репликации.
+
 ## [2026-07-07] — Entry-Based Fractal Sequence Transformer (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
 - **report**: `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
 - **topics**: `entry_based`, `next_open`, `sequence_transformer`, `fractal_sequence`, `pivot_amplitude`

@@ -4,91 +4,103 @@
 
 ## Текущий этап
 
-Этап `Entry-Based Fractal Sequence Transformer` завершён.
+Этап `Entry-Based Amplitude Movement Regime Audit` завершён.
 
 Итоговый structured artifact:
 
-- `ML/reports/entry_based_sequence_transformer.json`
-- `verdict = PIVOT_AMPLITUDE`
-- verdict этапа: `DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE`
+- `ML/reports/entry_based_amplitude_movement.json`
+- `verdict = AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`
+- verdict этапа: `DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`
 
-Sequence Transformer не спас direction в текущей mechanics `entry-based next open`. Более точная граница вывода: текущая ограниченная матрица sequence-признаков/моделей не подтвердила объяснение “плоская таблица потеряла порядок 100 фракталов”. Это не закрывает глобально всю идею фрактальной последовательности. Amplitude trace снова сильнее и устойчивее direction.
+Amplitude / movement-regime связь сильная, но лучший результат объясняется простыми baseline-признаками. Это не trading signal и не freeze-кандидат.
+
+После ревью отчёта исправлено:
+
+- `ML/reports/entry_based_amplitude_movement_yearly.csv` теперь содержит идентификатор запуска: `profile`, `model_key`, `seed`, `target_family`;
+- `yearly` artifact имеет размер `2136 x 11`;
+- `distance_to_level_pre_entry_only` явно зафиксирован как `SKIPPED_NO_DECISION_PRICE`;
+- в отчёт добавлены таблицы simple-vs-complex, feature audit, target-distribution interpretation и winner disclosure по `low_n_disclosure`.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
-- `docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md`
-- `ML/reports/entry_based_sequence_transformer.json`
-- `ML/reports/entry_based_sequence_transformer_metrics.csv`
-- `ML/reports/entry_based_sequence_transformer_rows.csv`
-- `ML/reports/entry_based_sequence_transformer_tensor_audit.csv`
-- `ML/reports/entry_based_sequence_transformer_run.log`
-- `ML/baseline/benchmark_entry_based_sequence_transformer.py`
-- `docs/ML/benchmark_entry_based_sequence_transformer.py.md`
-- `tests/test_entry_based_sequence_transformer.py`
+- `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`
+- `docs/superpowers/plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md`
+- `ML/reports/entry_based_amplitude_movement.json`
+- `ML/reports/entry_based_amplitude_movement_metrics.csv`
+- `ML/reports/entry_based_amplitude_movement_seed_aggregate.csv`
+- `ML/reports/entry_based_amplitude_movement_quantiles.csv`
+- `ML/reports/entry_based_amplitude_movement_yearly.csv`
+- `ML/reports/entry_based_amplitude_movement_target_distribution.csv`
+- `ML/reports/entry_based_amplitude_movement_feature_audit.csv`
+- `ML/baseline/benchmark_entry_based_amplitude_movement.py`
+- `docs/ML/benchmark_entry_based_amplitude_movement.py.md`
+- `tests/test_entry_based_amplitude_movement.py`
 
 ## Главный вывод
 
 Технический контракт выполнен:
 
-- `progress.done_runs = 9`
-- `progress.total_runs = 9`
+- `progress.done_runs = 384`
+- `progress.total_runs = 384`
 - `failed_runs = []`
-- `elapsed_sec = 45477.6`
-- `entry_based_smoke_check.status = PASS`
-- `split_horizon_overlap_check.status = PASS`
-- `tensor_audit.status = WARNING`
-- `audit_decisions` записаны
-- `normalization_contract.fit_split = train`
-- `target_normalization_contract.fit_split = train`
-- `run_config_hash = d2b6f0d61cab59409fe7c6b67406599643eb8c3d0b5524cb6f91552d8875fae0`
+- `elapsed_sec = 4008.4`
+- `effective_threads = 24`
+- `target_contract.status = PASS`
+- `target_unit_contract.verdict = PASS`
+- `run_config_hash = 772528c243fc8485fe0a9d290de851078123631f7040687cf5e0b80c010d0795`
 - `locked_test` не открыт
 - `low_n_disclosure=2026` не использовался для verdict
 
-Search width:
+Лучший eligible профиль:
 
-- 3 representations;
-- 3 models;
-- 1 seed;
-- 4 horizons;
-- 3 predicted target families;
-- 108 metric comparisons.
+- `simple_combined / extra_trees_small / H3`
+- `val_select_spearman_median = 0.571142`
+- `val_eval_spearman_median = 0.693452`
+- `val_select_top10_lift_median = 2.076212`
+- `val_eval_top10_lift_median = 2.289916`
+- `yearly_check_pass = True`
 
-По содержанию:
+No-price/no-time sequence не побил simple baseline:
 
-- лучший candidate direction: `nearest_k80_sequence / transformer_medium / entry_log_ratio H24`, `val_select=0.0539`, `val_eval=0.0050`;
-- direction gate `0.10 / 0.05` не пройден;
-- yearly check для выбранного direction не пройден;
-- best-by-`val_eval` direction `nearest_k80_sequence / transformer_small / H24`, `val_select=0.0167`, `val_eval=0.0374`, это hindsight disclosure;
-- лучший amplitude: `nearest_k60_sequence / sequence_flat_hist_gradient_boosting / entry_up H3`, `val_select=0.3229`, `val_eval=0.3337`;
-- amplitude yearly diagnostics проходят.
+- лучший `nearest_k60_no_price_coord_sequence_flat / extra_trees_small / H3`;
+- `val_select_spearman_median = 0.544603`;
+- `val_eval_spearman_median = 0.436387`.
+
+Post-entry diagnostic исключён из выбора:
+
+- лучший `distance_to_entry_open_post_entry_diagnostic_only / extra_trees_small / H3`;
+- `selection_eligible = False`;
+- `val_select_spearman_median = 0.200225`.
+
+Ограничения интерпретации:
+
+- `simple_combined` фактически = `ATR + time + fractal_density`, потому что безопасный distance-control без цены решения не выполнен;
+- `entry_movement_3` p50 сдвигается `3.00 train -> 5.01 val_select -> 7.99 val_eval -> 28.59 low_n_disclosure`;
+- у winner на `low_n_disclosure` Spearman только `0.154219..0.169164`, при top10 lift `1.567015..1.676254`.
 
 ## Следующий шаг
 
 Следующий файл читать:
 
-- `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
-- `docs/ML/benchmark_entry_based_sequence_transformer.py.md`
-- `docs/superpowers/roadmap.md`
+- `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`
+- `docs/ML/benchmark_entry_based_amplitude_movement.py.md`
+- `ML/reports/entry_based_amplitude_movement.json`
 
-Ближайший честный исследовательский шаг: отдельный plan для `amplitude / movement-regime`.
+Ближайший честный исследовательский шаг: отдельный bounded plan для decision layer поверх movement regime.
 
 Минимальная формулировка:
 
-- не “торговать amplitude”, а сначала определить decision layer: movement/no-movement filter, горизонт, отдельный direction/exit слой;
-- не использовать `entry_log_ratio` как главный target;
+- заранее зафиксировать movement threshold;
+- отделить movement/no-movement filter от direction/exit policy;
+- сравнивать с `time_plus_atr` и `simple_combined`;
+- не выбирать winner по `val_eval` или `low_n_disclosure=2026`;
 - не открывать `locked_test`;
-- не выбирать по `low_n_disclosure=2026`;
-- заранее раскрыть search width;
-- обязательно включить `time_only_clean`, `no_time_sequence`, `no_price_coord_sequence`;
-- добавить простые amplitude baselines: ATR-only, time-only, distance-to-level-only, last-N-fractal-counts-only;
-- отдельно решить `tensor_audit=WARNING` по `price_coord_atr`: сколько значений обрезается, что меняется без этих признаков, и нужен ли другой tail-transform.
+- не трактовать amplitude как direction signal.
 
 ## Запрещённые направления
 
-- Не трактовать `PIVOT_AMPLITUDE` как trading candidate.
-- Не трактовать amplitude trace как подтверждённый direction signal.
-- Не запускать direction freeze по текущей mechanics `entry-based next open`.
-- Не выбирать winner по `val_eval` или `low_n_disclosure=2026`.
+- Не запускать freeze по amplitude audit.
+- Не трактовать `AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES` как торговый сигнал.
 - Не открывать `locked_test` без отдельного frozen-rule плана.
-- Не закрывать всю идею фрактальной последовательности глобально; закрыта только текущая ограниченная `entry-based next open` direction-ветка.
+- Не продолжать wide-search усложнение модели без простой репликации.
+- Не использовать post-entry diagnostic profiles для выбора политики.

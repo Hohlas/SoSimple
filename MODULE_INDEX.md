@@ -95,6 +95,7 @@
 | [benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | Entry-based closeout runner | foundation splits → closeout JSON/CSV | [docs][docs-entry-closeout] | ✅ |
 | [benchmark_entry_based_powerful_tabular.py](ML/baseline/benchmark_entry_based_powerful_tabular.py) | Entry-based tabular runner | foundation splits → tabular JSON/CSV | [docs](docs/ML/benchmark_entry_based_powerful_tabular.py.md) | ✅ |
 | [benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | foundation splits → sequence JSON/CSV | [docs](docs/ML/benchmark_entry_based_sequence_transformer.py.md) | ✅ |
+| [benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | foundation splits → amplitude movement JSON/CSV | [docs](docs/ML/benchmark_entry_based_amplitude_movement.py.md) | ✅ |
 | [fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5 breach Transformer | — | [docs](docs/ML/fractal_breach_transformer.py.md) | 🏁 |
 | [diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 exit mechanics | labeled CSV + OHLC → exit JSON | [docs](docs/ML/diagnose_stage4_5_exit_mechanics.py.md) | ✅ |
 | [benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean cycle | labeled CSV + OHLC → cycle JSON | [docs](docs/ML/benchmark_stage4_6_clean_cycle.py.md) | ✅ |
@@ -253,6 +254,7 @@
 | [test_entry_based_next_open_closeout.py](tests/test_entry_based_next_open_closeout.py) | entry-based closeout runner | [docs](docs/tests/tests.md) | ✅ |
 | [test_entry_based_powerful_tabular.py](tests/test_entry_based_powerful_tabular.py) | entry-based powerful tabular runner | [docs](docs/tests/tests.md) | ✅ |
 | [test_entry_based_sequence_transformer.py](tests/test_entry_based_sequence_transformer.py) | entry-based sequence Transformer runner | [docs](docs/tests/tests.md) | ✅ |
+| [test_entry_based_amplitude_movement.py](tests/test_entry_based_amplitude_movement.py) | entry-based amplitude movement-regime audit | [docs](docs/tests/tests.md) | ✅ |
 | [test_regression_updn_target_foundation.py](tests/test_regression_updn_target_foundation.py) | `ML/baseline/benchmark_regression_updn_target_foundation.py` | — | ✅ |
 | [test_regression_updn_already_moved_audit.py](tests/test_regression_updn_already_moved_audit.py) | `ML/baseline/analyze_regression_updn_already_moved_audit.py` | — | ✅ |
 | [test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | — | ✅ |

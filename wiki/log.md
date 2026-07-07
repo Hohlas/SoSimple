@@ -726,3 +726,13 @@
 ### 2026-07-07: Refine sequence Transformer report after review
 - Updated `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`: narrowed the sequence conclusion, strengthened `price_coord_atr` warning treatment, renamed `simple_trade` to post-hoc sanity check, and added required controls for the next amplitude plan.
 - Updated `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: clarified that the current result closes only the bounded `entry-based next open` direction branch, not the whole idea of fractal sequence representations.
+
+### 2026-07-07: Ingest entry-based amplitude movement-regime audit
+- Added `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`.
+- Updated `wiki/research/fractal-stop-research.md`: movement-regime target `max(entry_up_H, entry_dn_H)` is strong diagnostically but explained by simple baselines; no complex representation winner and no trading verdict.
+- Updated `wiki/index.md`: Fractal Stop coverage now includes amplitude movement-regime audit and records 42 report updates.
+
+### 2026-07-07: Refine amplitude movement-regime audit after review
+- Updated `ML/reports/entry_based_amplitude_movement_yearly.csv` and JSON yearly rows: added `profile`, `model_key`, `seed`, `target_family` to each yearly diagnostic row.
+- Updated `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`: clarified skipped distance-control, feature-audit warning families, target-distribution shift, winner disclosure on 2026, and simple-vs-complex comparison.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: clarified that amplitude is explained mainly by `time+ATR`, while `distance_to_level_pre_entry_only` was not a valid completed control.

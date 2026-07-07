@@ -179,6 +179,26 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Resume/output | `run_config_hash`, output isolation от closeout/powerful artifacts |
 | Verdict | `REJECT_SEQUENCE_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
 
+### [test_entry_based_amplitude_movement.py](../../tests/test_entry_based_amplitude_movement.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_amplitude_movement.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_amplitude_movement.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Target contract | `entry_movement_H = max(entry_up_H, entry_dn_H)`, train-only quantile thresholds |
+| Feature profiles | simple baseline, post-entry diagnostic-only, no-time/no-price sequence profiles |
+| Leakage guard | запрет target/outcome/return колонок во входах |
+| Selection policy | post-entry diagnostic имеет `selection_eligible=false`, freeze-like verdict запрещён |
+| Runtime contract | resume/progress, failed-run accounting, skipped profiles |
+| Metrics | Spearman, top-lift, yearly check, yearly artifact identity, seed aggregate |
+| Report contract | target unit contract, feature audit, verdict allowlist |
+
 ## Зависимости
 
 - `pytest>=8.0`
