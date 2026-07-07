@@ -13,7 +13,15 @@
 - **decision**: что (не) достигнуто; что принято / запрещено.
 - **notes**: только критичные ограничения, если есть.
 ```
+---
 
+## [2026-07-07] — Entry-Based Fractal Sequence Transformer (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
+- **report**: `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
+- **topics**: `entry_based`, `next_open`, `sequence_transformer`, `fractal_sequence`, `pivot_amplitude`
+- **summary**: Полный sequence-прогон завершён: `9/9`, `failed_runs=[]`, `elapsed_sec=45477.6`, `entry_based_smoke_check.status=PASS`, `split_horizon_overlap_check.status=PASS`, `tensor_audit.status=WARNING` с `audit_decisions`.
+- **artifacts**: `ML/reports/entry_based_sequence_transformer.json`, `ML/baseline/benchmark_entry_based_sequence_transformer.py`
+- **decision**: Sequence Transformer не спас direction для `entry-based next open`: лучший candidate direction `nearest_k80_sequence / transformer_medium / H24` дал `0.0539 -> 0.0050`. Amplitude снова сильнее: `nearest_k60_sequence / sequence_flat_hist_gradient_boosting / entry_up H3` дал `0.3229 -> 0.3337`. Вердикт: `PIVOT_AMPLITUDE`; следующий честный шаг — отдельная amplitude / movement-regime постановка.
+- **notes**: `locked_test` не открыт; 2026 только disclosure; `tensor_audit=WARNING`; amplitude не является trading signal.
 
 ## [2026-07-06] — Entry-Based Powerful Tabular Models (DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE)
 - **report**: `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`

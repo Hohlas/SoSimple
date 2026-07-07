@@ -158,6 +158,27 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Runtime metadata | `feature_count`, `actual_thread_count`, top-level JSON metadata, `normalization_contract`, `yearly_metrics` в run payload |
 | Verdict | `REJECT_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
 
+### [test_entry_based_sequence_transformer.py](../../tests/test_entry_based_sequence_transformer.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_sequence_transformer.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_sequence_transformer.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Scope | `all100_sequence/nearest_k80_sequence/nearest_k60_sequence`, 3 model keys, один seed `42` |
+| Tensor contract | shape `[rows, 100, token_features]`, порядок `fractal0 -> fractal99`, padding/mask |
+| Feature contract | `fractal0` `Up/Dn` занулены, `fractal1..99` serialized `Up/Dn` разрешены |
+| Leakage guard | запрет top-level `entry_*`, `target_*`, `label_*`, `ret_*`, `fav_*`, `adv_*` во входах |
+| Split contract | `low_n_disclosure=2026` не влияет на winner selection, `locked_test` не открыт |
+| Normalization | input scaler fit only on valid train tokens, target scaler fit only on train targets |
+| Resume/output | `run_config_hash`, output isolation от closeout/powerful artifacts |
+| Verdict | `REJECT_SEQUENCE_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
+
 ## Зависимости
 
 - `pytest>=8.0`

@@ -1,0 +1,13 @@
+split,feature,family,rate
+train,price_coord_atr,TAIL_GT10,0.40773522951153784
+train,abs_price_coord_atr,TAIL_GT10,0.40773522951153784
+train,dir_price_coord_atr,TAIL_GT10,0.40773522951153784
+val_select,price_coord_atr,TAIL_GT10,0.4202000601684717
+val_select,abs_price_coord_atr,TAIL_GT10,0.4202000601684717
+val_select,dir_price_coord_atr,TAIL_GT10,0.4202000601684717
+val_eval,price_coord_atr,TAIL_GT10,0.41976828167318686
+val_eval,abs_price_coord_atr,TAIL_GT10,0.41976828167318686
+val_eval,dir_price_coord_atr,TAIL_GT10,0.41976828167318686
+low_n_disclosure,price_coord_atr,TAIL_GT10,0.3827796901893287
+low_n_disclosure,abs_price_coord_atr,TAIL_GT10,0.3827796901893287
+low_n_disclosure,dir_price_coord_atr,TAIL_GT10,0.3827796901893287

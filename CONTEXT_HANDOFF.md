@@ -1,97 +1,94 @@
 # Context Handoff
 
-**Дата:** 2026-07-06
+**Дата:** 2026-07-07
 
 ## Текущий этап
 
-Этап `Entry-Based Powerful Tabular Models` завершён.
+Этап `Entry-Based Fractal Sequence Transformer` завершён.
 
 Итоговый structured artifact:
 
-- `ML/reports/entry_based_powerful_tabular.json`
-- `summary.verdict = PIVOT_AMPLITUDE`
+- `ML/reports/entry_based_sequence_transformer.json`
+- `verdict = PIVOT_AMPLITUDE`
 - verdict этапа: `DIAGNOSTIC_ONLY / PIVOT_AMPLITUDE`
 
-Мощные табличные модели не спасли direction в текущей mechanics `entry-based next open`. Amplitude trace подтверждён сильнее и устойчивее. Но это закрывает только tabular-capacity гипотезу, а не roadmap-пункт про sequence-transformer на serialized 100-fractal history.
+Sequence Transformer не спас direction в текущей mechanics `entry-based next open`. Более точная граница вывода: текущая ограниченная матрица sequence-признаков/моделей не подтвердила объяснение “плоская таблица потеряла порядок 100 фракталов”. Это не закрывает глобально всю идею фрактальной последовательности. Amplitude trace снова сильнее и устойчивее direction.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
-- `ML/reports/entry_based_powerful_tabular.json`
-- `ML/reports/entry_based_powerful_tabular_metrics.csv`
-- `ML/reports/entry_based_powerful_tabular_rows.csv`
-- `ML/reports/entry_based_powerful_tabular_scale_audit.csv`
-- `docs/ML/benchmark_entry_based_powerful_tabular.py.md`
-- `tests/test_entry_based_powerful_tabular.py`
+- `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
+- `docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md`
+- `ML/reports/entry_based_sequence_transformer.json`
+- `ML/reports/entry_based_sequence_transformer_metrics.csv`
+- `ML/reports/entry_based_sequence_transformer_rows.csv`
+- `ML/reports/entry_based_sequence_transformer_tensor_audit.csv`
+- `ML/reports/entry_based_sequence_transformer_run.log`
+- `ML/baseline/benchmark_entry_based_sequence_transformer.py`
+- `docs/ML/benchmark_entry_based_sequence_transformer.py.md`
+- `tests/test_entry_based_sequence_transformer.py`
 
 ## Главный вывод
 
 Технический контракт выполнен:
 
-- `progress.done_runs = 40`
+- `progress.done_runs = 9`
+- `progress.total_runs = 9`
 - `failed_runs = []`
+- `elapsed_sec = 45477.6`
 - `entry_based_smoke_check.status = PASS`
 - `split_horizon_overlap_check.status = PASS`
-- `scale_audit.status = WARNING`
+- `tensor_audit.status = WARNING`
 - `audit_decisions` записаны
 - `normalization_contract.fit_split = train`
-- top-level JSON fields present: `schema_version`, `verdict`, `dependency_versions`, `normalization_contract`
-- `run_config_hash = 7a67a59aa22a5d153ae541a8f9fc3eb3698ba3172a4217eb8572058d3ebb518e`
-- `thread_count = 24`
+- `target_normalization_contract.fit_split = train`
+- `run_config_hash = d2b6f0d61cab59409fe7c6b67406599643eb8c3d0b5524cb6f91552d8875fae0`
 - `locked_test` не открыт
 - `low_n_disclosure=2026` не использовался для verdict
 
 Search width:
 
-- 4 representations;
-- 10 models;
+- 3 representations;
+- 3 models;
 - 1 seed;
 - 4 horizons;
 - 3 predicted target families;
-- 480 metric comparisons.
+- 108 metric comparisons.
 
 По содержанию:
 
-- лучший candidate direction: `nearest_k80 / hist_gradient_boosting_strong / entry_log_ratio H12`, `val_select=0.0519`, `val_eval=-0.0009`;
-- best-by-`val_eval` direction: `corridor_5atr / extra_trees_regressor / H12`, `val_select=0.0042`, `val_eval=0.0475`; это hindsight disclosure, не selectable winner;
-- direction gate `0.10` не пройден;
-- same-model `all100` лучше на `val_eval`;
-- yearly check для direction на `val_eval` не пройден;
-- `simple_trade` для лучшего direction: `0.0732 -> -0.0609`;
-- лучший amplitude: `nearest_k60 / hist_gradient_boosting_strong / entry_up H3`, `val_select=0.3412`, `val_eval=0.4419`;
+- лучший candidate direction: `nearest_k80_sequence / transformer_medium / entry_log_ratio H24`, `val_select=0.0539`, `val_eval=0.0050`;
+- direction gate `0.10 / 0.05` не пройден;
+- yearly check для выбранного direction не пройден;
+- best-by-`val_eval` direction `nearest_k80_sequence / transformer_small / H24`, `val_select=0.0167`, `val_eval=0.0374`, это hindsight disclosure;
+- лучший amplitude: `nearest_k60_sequence / sequence_flat_hist_gradient_boosting / entry_up H3`, `val_select=0.3229`, `val_eval=0.3337`;
 - amplitude yearly diagnostics проходят.
 
 ## Следующий шаг
 
 Следующий файл читать:
 
+- `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`
+- `docs/ML/benchmark_entry_based_sequence_transformer.py.md`
 - `docs/superpowers/roadmap.md`
-- `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`
-- `docs/ML/benchmark_entry_based_powerful_tabular.py.md`
 
-Ближайший незавершённый roadmap-шаг: написать bounded plan для `Fractal-sequence transformer on serialized 100-fractal history`.
+Ближайший честный исследовательский шаг: отдельный plan для `amplitude / movement-regime`.
 
-Суть plan:
+Минимальная формулировка:
 
-- восстановить вход `[rows, 100 fractals, fields]` из serialized `slot_*`;
-- сравнить transformer с табличной моделью на тех же split, target families и disclosure;
+- не “торговать amplitude”, а сначала определить decision layer: movement/no-movement filter, горизонт, отдельный direction/exit слой;
+- не использовать `entry_log_ratio` как главный target;
 - не открывать `locked_test`;
-- не выбирать по 2026;
-- заранее раскрыть search width и post-hoc context.
-
-Amplitude / movement-regime остается следующим допустимым направлением после transformer-проверки или отдельной параллельной веткой:
-
-- основной target заранее формулировать вокруг `entry_up` / `entry_dn` / movement potential;
-- не использовать `entry_log_ratio` как главный вопрос;
-- не открывать `locked_test` до freeze;
-- не использовать 2026 для выбора;
-- заранее определить, как amplitude превращается в решение: movement/no-movement filter, горизонт, отдельный gross/backtest слой;
-- раскрыть search width и cumulative post-hoc context.
+- не выбирать по `low_n_disclosure=2026`;
+- заранее раскрыть search width;
+- обязательно включить `time_only_clean`, `no_time_sequence`, `no_price_coord_sequence`;
+- добавить простые amplitude baselines: ATR-only, time-only, distance-to-level-only, last-N-fractal-counts-only;
+- отдельно решить `tensor_audit=WARNING` по `price_coord_atr`: сколько значений обрезается, что меняется без этих признаков, и нужен ли другой tail-transform.
 
 ## Запрещённые направления
 
 - Не трактовать `PIVOT_AMPLITUDE` как trading candidate.
 - Не трактовать amplitude trace как подтверждённый direction signal.
-- Не запускать direction freeze по текущей mechanics.
-- Не использовать `low_n_disclosure=2026` для выбора.
+- Не запускать direction freeze по текущей mechanics `entry-based next open`.
+- Не выбирать winner по `val_eval` или `low_n_disclosure=2026`.
 - Не открывать `locked_test` без отдельного frozen-rule плана.
+- Не закрывать всю идею фрактальной последовательности глобально; закрыта только текущая ограниченная `entry-based next open` direction-ветка.

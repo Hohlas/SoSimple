@@ -718,3 +718,11 @@
 ### 2026-06-30: Review-fix Stage 6.2 summary aggregation
 - Updated `ML/baseline/benchmark_stage6_2_price_action.py`: Stage 6.2 summary now stores per-seed rows, aggregates permutation p-values by median/min/max over seeds, and selects the representative threshold row by median PF.
 - Updated Stage 6.2 report/handoff/wiki wording: clarified row-time zero-vector contract, legacy smoke-check scope, top-importance selection rule, per-seed metrics, and weak validation ranking interpretation.
+### 2026-07-07: Ingest entry-based sequence Transformer closeout
+- Added `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`.
+- Updated `wiki/research/fractal-stop-research.md`: sequence Transformer did not rescue `entry-based next open` direction (`0.0539 -> 0.0050`), while amplitude remained stronger (`0.3229 -> 0.3337`).
+- Updated `wiki/index.md`: Fractal Stop coverage now includes ordered sequence Transformer and records 41 report updates.
+
+### 2026-07-07: Refine sequence Transformer report after review
+- Updated `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`: narrowed the sequence conclusion, strengthened `price_coord_atr` warning treatment, renamed `simple_trade` to post-hoc sanity check, and added required controls for the next amplitude plan.
+- Updated `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: clarified that the current result closes only the bounded `entry-based next open` direction branch, not the whole idea of fractal sequence representations.
