@@ -115,6 +115,7 @@ ML/reports/**/*.svg
 *.onnx
 *.pkl
 *.joblib
+*.json
 
 # Statistics generated outputs.
 statistics/EDA_files/
@@ -135,6 +136,14 @@ wiki/REPO_integrity.md
 
 # Для скрытых файлов и папок:
 .*
+
+# длинный хронологический журнал плохо подходит для смыслового графа
+CHANGELOG.md
+MODULE_INDEX.md
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+requirements.txt
 
 
 # Notebook and editor noise.
