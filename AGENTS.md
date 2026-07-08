@@ -140,12 +140,14 @@ ML-бот для прогнозирования движения цены Forex.
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+This project has a knowledge graph.
 
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+Use the installed graphify skill for document/code navigation and relationship discovery, not as the source of truth.
+Verify important conclusions in original project files before changing code or making final claims.
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- For document and codebase questions, use Graphify before broad manual search when the graph is available.
+- Use `graphify path "<A>" "<B>"` for relationships between two concepts.
+- Use `graphify explain "<concept>"` for focused concept lookup.
+- Skip Graphify only when the task is about stale/incorrect graph output or the user explicitly says not to use it.
+- Do not treat Graphify as a replacement for reading original files, local `README.md`, tests, or methodology rules.
