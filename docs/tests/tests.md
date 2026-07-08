@@ -237,6 +237,25 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Verdict | `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`, `RESEARCH_ONLY_REPLICATED`, reject и abort ветки |
 | CLI | fixture smoke с записью freeze JSON/CSV |
 
+### [test_direction_inside_frozen_movement_regime.py](../../tests/test_direction_inside_frozen_movement_regime.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen contract | exact frozen movement rule, stable hash, `locked_test=not_opened` |
+| Join contract | unique `split + time`, invalid `selected`, selected-count mismatch |
+| Target / leakage | `entry_up_3 > entry_dn_3`, tie exclusion, forbidden input columns |
+| Metrics / selection | classification metrics, winner only from `val_select`, `val_eval` check-only |
+| Robustness / verdict | incomplete robustness cannot produce frozen verdict |
+| CLI | fixture smoke, JSON + `_rows.csv`, contract-fail artifact path |
+
 ## Зависимости
 
 - `pytest>=8.0`

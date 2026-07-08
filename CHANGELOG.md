@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-08] — Direction Inside Frozen Movement Regime (ABORT_CONTRACT_FAIL)
+- **report**: `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
+- **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `contract_fail`, `split_time_key`
+- **summary**: Добавлен runner для direction-проверки внутри frozen movement mask, но canonical run остановлен до обучения: `split + time` не является уникальным ключом в freeze scores и split-ах.
+- **artifacts**: `ML/reports/direction_inside_frozen_movement_regime.json`, `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py`, `tests/test_direction_inside_frozen_movement_regime.py`
+- **decision**: Direction baseline не запускался (`direction_baselines_trained=0`); ветка закрыта как contract fail. Нужен отдельный repair-plan для стабильного уникального row id в frozen score export.
+- **notes**: `locked_test` не открыт; PnL/PF и trading claims запрещены; frozen movement rule не менялся.
+
 ## [2026-07-08] — Entry-Based Movement Filter Replication Freeze (FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN)
 - **report**: `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`
 - **topics**: `entry_based`, `movement_filter`, `freeze`, `replication`, `research_segmentation`

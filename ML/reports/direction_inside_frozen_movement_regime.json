@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "stage_status": "RESEARCH_ONLY",
+  "verdict": "ABORT_CONTRACT_FAIL",
+  "allowed_verdicts": [
+    "FROZEN_DIRECTION_RULE_FOR_NEXT_PLAN",
+    "RESEARCH_ONLY_DIRECTION_SIGNAL",
+    "REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME",
+    "ABORT_CONTRACT_FAIL"
+  ],
+  "frozen_direction_config": {
+    "movement_rule": {
+      "profile": "simple_combined",
+      "model_key": "extra_trees_small",
+      "horizon": 3,
+      "target_family": "entry_movement",
+      "threshold_type": "top_fraction",
+      "selected_fraction": 0.05,
+      "score_aggregation": "median_across_rerun_seeds",
+      "seeds": [
+        42,
+        43,
+        44
+      ]
+    },
+    "movement_rule_hash": "56361f12104b55c4cac6bd04426349f71d8944c139563a8c9b68d3b25e97deaf",
+    "direction_horizon": 3,
+    "locked_test": "not_opened",
+    "forbidden_input_columns": [
+      "score",
+      "entry_movement_3",
+      "entry_up_3",
+      "entry_dn_3",
+      "target_direction_3",
+      "target_is_tie_3",
+      "target_up_3",
+      "target_dn_3",
+      "label_direction_3"
+    ]
+  },
+  "contract": {
+    "status": "ABORT_CONTRACT_FAIL",
+    "reasons": [
+      "scores.duplicate_split_time",
+      "splits.train.duplicate_time",
+      "splits.validation.duplicate_time",
+      "splits.low_n_disclosure.duplicate_time",
+      "splits.val_select.duplicate_time",
+      "splits.val_eval.duplicate_time"
+    ],
+    "movement_rule_hash": "56361f12104b55c4cac6bd04426349f71d8944c139563a8c9b68d3b25e97deaf"
+  },
+  "baseline_results": {
+    "baselines": {}
+  },
+  "selection": {
+    "status": "NO_CANDIDATE",
+    "winner": null,
+    "selection_metric": "val_select.balanced_accuracy_then_mcc",
+    "selection_policy": "winner_only_from_val_select"
+  },
+  "robustness": {
+    "status": "NOT_RUN"
+  },
+  "search_budget": {
+    "direction_baselines_trained": 0,
+    "selection_split": "val_select",
+    "disclosure_splits_not_used_for_selection": [
+      "val_eval",
+      "low_n_disclosure"
+    ]
+  },
+  "forbidden_interpretations": [
+    "not_pnl",
+    "not_pf",
+    "not_trading_candidate",
+    "not_live_rule",
+    "not_locked_test_permission"
+  ],
+  "artifact_hashes": {
+    "freeze_report_sha256": "9f3133cc1994428d28245c2a7cbb4d34d006633c93adddff9265e22cd07f6668",
+    "freeze_scores_sha256": "5d55be1e950c83dcda88f02050046f8b372185a1f162d0f695579935f9737af8"
+  }
+}

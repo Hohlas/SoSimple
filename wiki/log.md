@@ -748,3 +748,8 @@
 - Updated `ML/reports/entry_based_amplitude_movement_yearly.csv` and JSON yearly rows: added `profile`, `model_key`, `seed`, `target_family` to each yearly diagnostic row.
 - Updated `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`: clarified skipped distance-control, feature-audit warning families, target-distribution shift, winner disclosure on 2026, and simple-vs-complex comparison.
 - Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: clarified that amplitude is explained mainly by `time+ATR`, while `distance_to_level_pre_entry_only` was not a valid completed control.
+
+### 2026-07-08: Ingest direction inside frozen movement contract failure
+- Added `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`.
+- Updated `wiki/research/fractal-stop-research.md`: direction-inside-mask plan stopped with `ABORT_CONTRACT_FAIL` because `split + time` is not unique in freeze scores and split rows; no direction baselines were trained.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 45 report updates and points the next step to row-id repair before repeating direction-inside-mask.

@@ -98,6 +98,7 @@
 | [benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | foundation splits → amplitude movement JSON/CSV | [docs](docs/ML/benchmark_entry_based_amplitude_movement.py.md) | ✅ |
 | [benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | amplitude artifact → movement filter JSON/CSV | [docs](docs/ML/benchmark_entry_based_movement_filter.py.md) | ⚠️ |
 | [benchmark_entry_based_movement_filter_freeze.py](ML/baseline/benchmark_entry_based_movement_filter_freeze.py) | Entry-based movement filter freeze runner | movement filter + amplitude artifacts → freeze JSON/CSV | [docs](docs/ML/benchmark_entry_based_movement_filter_freeze.py.md) | ✅ |
+| [benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | freeze JSON/CSV + entry-based splits → direction contract JSON/CSV | [docs](docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md) | ✅ |
 | [fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5 breach Transformer | — | [docs](docs/ML/fractal_breach_transformer.py.md) | 🏁 |
 | [diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 exit mechanics | labeled CSV + OHLC → exit JSON | [docs](docs/ML/diagnose_stage4_5_exit_mechanics.py.md) | ✅ |
 | [benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean cycle | labeled CSV + OHLC → cycle JSON | [docs](docs/ML/benchmark_stage4_6_clean_cycle.py.md) | ✅ |
@@ -268,6 +269,7 @@
 | [test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) | `ML/baseline/benchmark_stage6_outcome_based.py` | — | ✅ |
 | [test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | — | ⚠️ |
 | [test_entry_based_movement_filter_freeze.py](tests/test_entry_based_movement_filter_freeze.py) | `ML/baseline/benchmark_entry_based_movement_filter_freeze.py` | — | ✅ |
+| [test_direction_inside_frozen_movement_regime.py](tests/test_direction_inside_frozen_movement_regime.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py` | — | ✅ |
 | **Legacy / auxiliary tests** | Старые и разовые тесты для grouped research scripts | — | — | 📦 |
 
 ## Docs

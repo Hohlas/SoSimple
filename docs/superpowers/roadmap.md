@@ -10,7 +10,42 @@
 
 ## Ближайшие направления
 
-### 1. Fractal-price entry mechanics foundation
+### 1. Repair frozen score row identity
+
+**Контекст:** direction-inside-mask план завершился `ABORT_CONTRACT_FAIL`.
+Причина не в качестве direction-сигнала: frozen score export и split-ы не имеют
+уникального ключа `split + time`.
+
+Frozen segmentation mask остаётся ровно тем же:
+
+```text
+simple_combined / extra_trees_small / H3 / top_fraction=0.05
+```
+
+**Задача:** добавить стабильный уникальный row id в frozen score export и
+source split rows, затем повторить direction-inside-mask проверку без изменения
+movement rule.
+
+**Предлагаемый следующий план:**
+
+1. Найти источник стабильного row identity в entry-based splits.
+2. Добавить этот id в `entry_based_movement_filter_freeze_scores.csv`.
+3. Проверить, что join mask к split-ам проходит по `split + row_id` или
+   эквивалентному заранее зафиксированному ключу.
+4. Перегенерировать freeze score artifacts без изменения frozen rule.
+5. Повторить direction-inside-mask runner только после `PASS` join contract.
+
+**Ограничения:**
+
+- не менять `profile/model/horizon/threshold`;
+- не расширять mask и не менять `top_fraction`;
+- не чинить join через direction outcome;
+- `2026` и `locked_test` не участвуют в выборе;
+- запрещены PnL/PF и торговые claims.
+
+Статус: рекомендуемый следующий инфраструктурный repair branch.
+
+### 2. Fractal-price entry mechanics foundation
 
 **Контекст:** уже есть сильный признак, что исходный Up/Dn target связан с
 областью вокруг `fractal0_price`, а не с немедленным входом по следующему open.
@@ -36,39 +71,8 @@
   разметку без проверки исполнимости;
 - не открывать `locked_test` до frozen rule.
 
-Статус: следующий крупный research branch после завершённого movement-filter
-freeze или параллельная отдельная гипотеза по решению пользователя.
-
-### 2. Direction inside frozen movement regimes
-
-**Контекст:** direction по всей выборке `entry-based next open` не прошёл.
-Теперь есть ровно один frozen segmentation mask:
-
-```text
-simple_combined / extra_trees_small / H3 / top_fraction=0.05
-```
-
-Он пригоден только как входной контракт для следующего research plan.
-
-**Задача:** проверить направление только внутри заранее замороженных
-movement-regime сегментов, не меняя сам segmentation rule.
-
-**Минимальные условия входа в этот этап:**
-
-- segmentation rule уже frozen;
-- новый план не меняет `profile/model/horizon/threshold`;
-- direction-план заранее фиксирует scope и не выбирает сегменты по direction;
-- `locked_test` остаётся закрытым до собственного frozen contract следующей
-  постановки.
-
-**Ограничения:**
-
-- direction нельзя брать из amplitude-result как скрытый proxy;
-- segmentation freeze не является live rule;
-- 2026 и `locked_test` не участвуют в выборе;
-- запрещены PnL/PF и торговые claims на этом шаге.
-
-Статус: следующий узкий research branch после завершённого freeze.
+Статус: отдельная крупная research branch. Не смешивать с direction-inside-mask
+планом.
 
 ### 3. Мульти-актив / мульти-таймфрейм валидация
 
