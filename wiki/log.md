@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-07] ingest | Entry-based movement filter design
+- Добавлен охват `docs/reports/2026-07-07-entry-based-movement-filter-design.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: amplitude / movement-regime ветка продолжена bounded movement-filter этапом; зафиксирован единственный допустимый research-only winner `simple_combined / extra_trees_small / H3 / top_fraction=0.05`.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 43 report updates.
+- Зафиксировано методическое знание: новый этап не поднимает ветку до direction или trading candidate; следующий допустимый шаг — только узкая репликация/заморозка одного filter-а без расширения search space.
+
 ## [2026-07-03] update | Entry-based price-feature matrix report sync
 - Добавлен охват `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: после next-open target foundation добавлен bounded follow-up с ценовыми и path-блоками; зафиксировано, что `next open` не переоткрыт ни `entry_open` target-ом, ни ограниченной price-feature matrix.

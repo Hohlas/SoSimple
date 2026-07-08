@@ -34,16 +34,26 @@ ordered sequence Transformer. При этом `entry_up` / `entry_dn` amplitude 
 - `low_n_disclosure=2026` только disclosure;
 - `locked_test` не открывать.
 
-Статус: ближайший незавершённый план.
+Статус: завершено 2026-07-07.
+
+Итог: `DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`.
+Движение после входа хорошо ранжируется, но лучший результат объясняется
+простыми признаками (`time_plus_atr`, `simple_combined`). Это не trading signal
+и не freeze-кандидат. См.
+[`docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`](../reports/2026-07-07-entry-based-amplitude-movement-regime.md).
 
 ### 2. Movement filter design
 
-**Контекст:** если amplitude / movement-regime audit покажет добавочную ценность
-поверх простых baselines, следующим шагом нужно определить, как это превращается
-в decision layer.
+**Контекст:** amplitude / movement-regime audit не показал добавочную ценность
+сложных фрактальных профилей поверх простых baseline. Поэтому следующий шаг —
+не усложнение модели, а проверка, можно ли заранее зафиксированный простой
+movement-filter превратить в полезный decision layer без выбора направления.
 
 **Задача:** сформулировать фильтр “есть движение / нет движения” без выбора
 стороны сделки.
+
+**План:** выполнить
+[`2026-07-07-entry-based-movement-filter-design.md`](plans/2026-07-07-entry-based-movement-filter-design.md).
 
 **Возможный контракт:**
 
@@ -58,7 +68,7 @@ ordered sequence Transformer. При этом `entry_up` / `entry_dn` amplitude 
 - не смешивать movement filter и trading backtest в одном первом плане;
 - до gross/backtest слоя нужен frozen movement-filter rule на validation.
 
-Статус: отложено до завершения amplitude / movement-regime audit.
+Статус: ближайший незавершённый план.
 
 ### 3. Fractal-price entry mechanics foundation
 

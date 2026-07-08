@@ -199,6 +199,25 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Metrics | Spearman, top-lift, yearly check, yearly artifact identity, seed aggregate |
 | Report contract | target unit contract, feature audit, verdict allowlist |
 
+### [test_entry_based_movement_filter.py](../../tests/test_entry_based_movement_filter.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_movement_filter.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_movement_filter.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Source contract | `locked_test=not_opened`, `run_config_hash`, metadata-audit для `time_plus_atr` и `simple_combined` |
+| Candidate scope | только `time_plus_atr` / `simple_combined`, только `entry_movement`, только `top_fraction` `0.05/0.10/0.20/0.30` |
+| Selection guard | `selection_eligible=true`, `post_entry_diagnostic_only=false`, winner выбирается только на `val_select` |
+| Metrics | `selected_n`, `movement_lift`, `selected_p80 > skipped_p80`, yearly lift pass rate |
+| Disclosure contract | `low_n_disclosure` обязан содержать только `2026`, disclosure не участвует в выборе |
+| Verdict / CLI | allowlist verdict-ов, fixture CLI smoke, output artifacts |
+
 ## Зависимости
 
 - `pytest>=8.0`

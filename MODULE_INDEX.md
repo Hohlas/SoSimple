@@ -96,6 +96,7 @@
 | [benchmark_entry_based_powerful_tabular.py](ML/baseline/benchmark_entry_based_powerful_tabular.py) | Entry-based tabular runner | foundation splits → tabular JSON/CSV | [docs](docs/ML/benchmark_entry_based_powerful_tabular.py.md) | ✅ |
 | [benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | foundation splits → sequence JSON/CSV | [docs](docs/ML/benchmark_entry_based_sequence_transformer.py.md) | ✅ |
 | [benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | foundation splits → amplitude movement JSON/CSV | [docs](docs/ML/benchmark_entry_based_amplitude_movement.py.md) | ✅ |
+| [benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | amplitude artifact → movement filter JSON/CSV | [docs](docs/ML/benchmark_entry_based_movement_filter.py.md) | ⚠️ |
 | [fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5 breach Transformer | — | [docs](docs/ML/fractal_breach_transformer.py.md) | 🏁 |
 | [diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 exit mechanics | labeled CSV + OHLC → exit JSON | [docs](docs/ML/diagnose_stage4_5_exit_mechanics.py.md) | ✅ |
 | [benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean cycle | labeled CSV + OHLC → cycle JSON | [docs](docs/ML/benchmark_stage4_6_clean_cycle.py.md) | ✅ |
@@ -264,6 +265,7 @@
 | [test_stage6_2_range_w1_postmortem.py](tests/test_stage6_2_range_w1_postmortem.py) | `ML/baseline/analyze_stage6_2_range_w1_postmortem.py` | — | ✅ |
 | [test_stage6_3_h6_feature_parity.py](tests/test_stage6_3_h6_feature_parity.py) | `ML/baseline/benchmark_stage6_3_h6_feature_parity.py` | — | ✅ |
 | [test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) | `ML/baseline/benchmark_stage6_outcome_based.py` | — | ✅ |
+| [test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | — | ⚠️ |
 | **Legacy / auxiliary tests** | Старые и разовые тесты для grouped research scripts | — | — | 📦 |
 
 ## Docs

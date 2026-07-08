@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-07] — Entry-Based Movement Filter Design (SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY)
+- **report**: `docs/reports/2026-07-07-entry-based-movement-filter-design.md`
+- **topics**: `entry_based`, `movement_filter`, `movement_regime`, `simple_baseline`
+- **summary**: Поверх amplitude artifact добавлен bounded CLI для простого pre-entry movement filter без direction и без PnL/PF. Выбран один filter: `simple_combined / extra_trees_small / H3 / top_fraction=0.05`; на `val_eval` он дал `movement_lift=2.4806` при `selected_n=333`.
+- **artifacts**: `ML/reports/entry_based_movement_filter.json`, `ML/baseline/benchmark_entry_based_movement_filter.py`, `tests/test_entry_based_movement_filter.py`
+- **decision**: Разрешён только вывод `SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`; direction, торговая интерпретация и открытие `locked_test` запрещены. Следующий допустимый шаг — только узкая репликация/заморозка этого одного filter-а без расширения search space.
+- **notes**: `2026` остаётся только disclosure (`selected_n=59`, `movement_lift=1.6292`); full verification: `1180 passed, 30 warnings`.
+
 ## [2026-07-07] — Entry-Based Amplitude Movement Regime Audit (DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES)
 - **report**: `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`
 - **topics**: `entry_based`, `amplitude`, `movement_regime`, `simple_baselines`, `leakage_audit`
