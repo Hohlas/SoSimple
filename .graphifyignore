@@ -130,21 +130,12 @@ statistics/reports/**/*.svg
 docs/archive/
 docs/audit/
 wiki/.archive/
-
-# Temporary staged Graphify extraction for free Gemini quota.
-# Stage 1 keeps root navigation docs, docs/README.md, docs/DATA_FLOW.md,
-# docs/methodology/, compact wiki pages, and module docs. Remove these
-# exclusions gradually after Stage 1 succeeds.
-docs/superpowers/plans/
-docs/superpowers/specs/
-docs/reports/
-docs/ML/
-docs/MT/
-ML/reports/
-ML/baseline/reports/
-wiki/REPO_integrity.md
 wiki/log.md
-wiki/research/fractal-stop-research.md
+wiki/REPO_integrity.md
+
+# Для скрытых файлов и папок:
+.*
+
 
 # Notebook and editor noise.
 .ipynb_checkpoints/

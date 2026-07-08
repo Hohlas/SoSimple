@@ -9,3 +9,8 @@ movement_filter Task 3: complete (working-tree task, review clean; 6 focused tes
 movement_filter Task 4: complete (working-tree task, review clean after fix; minor coverage note: movement_lift threshold test)
 movement_filter Task 5: complete (working-tree task, review clean after fixes; 15 focused tests passed; verdict=SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY)
 movement_filter Task 6: complete (working-tree task; docs/wiki synced; full tests 1179 passed, 30 warnings)
+freeze Task 1: complete (working-tree task, review clean after fix; 6 focused tests passed)
+freeze Task 2: complete (working-tree task, review clean; 9 focused tests passed)
+freeze Task 3: complete (working-tree task, review clean after fix; 13 focused tests passed; DOC note: ML/baseline/README.md absent)
+freeze Task 4: complete (working-tree task, review clean after fix; 19 focused tests passed)
+freeze Task 5: complete (working-tree task, review clean; 20 focused tests passed; real CLI verdict=FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN)
