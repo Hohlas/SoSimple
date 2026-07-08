@@ -4,6 +4,12 @@
 
 **Goal:** Проверить, появляется ли предсказуемое направление только внутри уже замороженной movement-mask `top_fraction=0.05`, не меняя сам фильтр движения.
 
+**Execution note 2026-07-08:** исходный контракт `split + time` оказался
+неверным, потому что один бар может давать несколько entry-строк. В ходе
+продолжения этапа frozen score export получил `split_row_id`, join переведён на
+`split + split_row_id`, frozen movement rule не менялся. Финальный canonical
+verdict после repair: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+
 **Architecture:** Новый runner читает frozen score export, восстанавливает те же split-ы и признаки, оставляет только строки `selected=True`, строит direction target `entry_up_3 > entry_dn_3` / `entry_dn_3 > entry_up_3`, обучает только простые direction baselines и сохраняет JSON/CSV отчёты. Movement-mask считается входным контрактом: профиль, модель, горизонт, доля отбора и score не подбираются заново. Runner разделяет input-признаки, future targets и diagnostic columns: target-derived поля не должны жить в feature frame и не должны проходить через feature builder.
 
 **Tech Stack:** Python 3.10+, pandas, numpy, scikit-learn, pytest, существующие helpers из `ML.baseline.benchmark_entry_based_amplitude_movement` и `ML.baseline.benchmark_entry_based_movement_filter_freeze`.

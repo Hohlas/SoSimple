@@ -43,6 +43,7 @@ def _scores() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "split": ["train", "train", "val_select", "val_eval", "low_n_disclosure"],
+            "split_row_id": [0, 1, 0, 0, 0],
             "time": [
                 "2020-01-01 00:00:00",
                 "2020-01-02 00:00:00",
@@ -172,6 +173,7 @@ def test_build_masked_direction_dataset_keeps_only_selected_rows_by_split():
     scores = pd.DataFrame(
         {
             "split": ["train", "train", "val_select"],
+            "split_row_id": [0, 1, 0],
             "time": ["2020-01-01 00:00:00", "2020-01-02 00:00:00", "2021-01-01 00:00:00"],
             "selected": [True, False, True],
             "score": [10.0, 1.0, 9.0],
@@ -191,6 +193,36 @@ def test_build_masked_direction_dataset_keeps_only_selected_rows_by_split():
     assert "entry_movement_3" not in dataset["train"].columns
     assert "target_up_3" in dataset["train"].columns
     assert "target_dn_3" in dataset["train"].columns
+
+
+def test_build_masked_direction_dataset_joins_duplicate_times_by_split_row_id():
+    splits = {
+        "train": pd.DataFrame(
+            {
+                "time": ["2020-01-01 00:00:00", "2020-01-01 00:00:00"],
+                "entry_up_3": [3.0, 1.0],
+                "entry_dn_3": [1.0, 3.0],
+                "ATR": [0.5, 0.6],
+            }
+        )
+    }
+    scores = pd.DataFrame(
+        {
+            "split": ["train", "train"],
+            "split_row_id": [0, 1],
+            "time": ["2020-01-01 00:00:00", "2020-01-01 00:00:00"],
+            "selected": [False, True],
+            "score": [1.0, 10.0],
+            "entry_movement_3": [3.0, 3.0],
+            "year": [2020, 2020],
+        }
+    )
+
+    dataset = build_masked_direction_dataset(splits, scores)
+
+    assert len(dataset["train"]) == 1
+    assert dataset["train"]["ATR"].tolist() == [0.6]
+    assert dataset["train"]["target_direction_3"].tolist() == [-1]
 
 
 def test_validate_mask_join_keys_rejects_duplicate_split_time():
@@ -538,6 +570,7 @@ def test_cli_smoke_writes_direction_artifacts(tmp_path: Path, monkeypatch):
     scores = pd.DataFrame(
         {
             "split": ["train", "train", "val_select", "val_select", "val_eval", "val_eval"],
+            "split_row_id": [0, 1, 0, 1, 0, 1],
             "time": [
                 "2020-01-01 00:00:00",
                 "2020-01-02 00:00:00",

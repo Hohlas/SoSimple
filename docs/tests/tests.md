@@ -250,7 +250,7 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Область | Примеры тестов |
 |---------|----------------|
 | Frozen contract | exact frozen movement rule, stable hash, `locked_test=not_opened` |
-| Join contract | unique `split + time`, invalid `selected`, selected-count mismatch |
+| Join contract | unique `split + split_row_id`, duplicate legacy `split + time`, invalid `selected`, selected-count mismatch |
 | Target / leakage | `entry_up_3 > entry_dn_3`, tie exclusion, forbidden input columns |
 | Metrics / selection | classification metrics, winner only from `val_select`, `val_eval` check-only |
 | Robustness / verdict | incomplete robustness cannot produce frozen verdict |

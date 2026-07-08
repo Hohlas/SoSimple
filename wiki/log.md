@@ -753,3 +753,8 @@
 - Added `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`.
 - Updated `wiki/research/fractal-stop-research.md`: direction-inside-mask plan stopped with `ABORT_CONTRACT_FAIL` because `split + time` is not unique in freeze scores and split rows; no direction baselines were trained.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 45 report updates and points the next step to row-id repair before repeating direction-inside-mask.
+
+### 2026-07-08: Continue direction inside frozen movement after row-id repair
+- Updated `ML/reports/entry_based_movement_filter_freeze_scores.csv`: added `split_row_id` as the stable join key while keeping the frozen movement rule unchanged.
+- Updated `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`: final verdict changed from contract abort to `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME` after the repaired direction run.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: recorded that `split + time` duplicates come from multiple entry rows per bar, and direction inside the frozen mask is rejected after repair.

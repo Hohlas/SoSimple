@@ -33,6 +33,7 @@ from ML.baseline.benchmark_entry_based_movement_filter_freeze import (
 
 REQUIRED_SCORE_COLUMNS = (
     "split",
+    "split_row_id",
     "time",
     "year",
     "score",
@@ -171,8 +172,16 @@ def validate_mask_join_keys(
     scores: pd.DataFrame,
 ) -> dict[str, object]:
     reasons: list[str] = []
+    use_row_id = {"split", "split_row_id"} <= set(scores.columns)
 
-    if {"split", "time"} <= set(scores.columns):
+    if use_row_id:
+        score_keys = scores[["split", "split_row_id"]].copy()
+        score_keys["split_row_id"] = pd.to_numeric(score_keys["split_row_id"], errors="coerce")
+        if score_keys[["split", "split_row_id"]].duplicated().any():
+            reasons.append("scores.duplicate_split_row_id")
+        if score_keys["split_row_id"].isna().any():
+            reasons.append("scores.invalid_split_row_id")
+    elif {"split", "time"} <= set(scores.columns):
         score_keys = scores[["split", "time"]].copy()
         score_keys["_time_key"] = _time_key(score_keys["time"])
         if score_keys[["split", "_time_key"]].duplicated().any():
@@ -186,18 +195,27 @@ def validate_mask_join_keys(
         if "time" not in frame.columns:
             reasons.append(f"splits.{split_name}.missing_time")
             continue
-        split_keys = pd.DataFrame({"_time_key": _time_key(frame["time"])})
-        if split_keys["_time_key"].duplicated().any():
-            reasons.append(f"splits.{split_name}.duplicate_time")
-        if split_keys["_time_key"].isna().any():
-            reasons.append(f"splits.{split_name}.invalid_time")
-        if {"split", "time", "selected"} <= set(scores.columns):
+        if use_row_id:
+            split_keys = pd.DataFrame({"split_row_id": frame.index.to_numpy()})
             selected_scores = score_keys.loc[
                 (score_keys["split"] == split_name) & (scores["selected"].astype(bool).to_numpy())
             ]
-            missing_selected = ~selected_scores["_time_key"].isin(split_keys["_time_key"])
+            missing_selected = ~selected_scores["split_row_id"].isin(split_keys["split_row_id"])
             if missing_selected.any():
                 reasons.append(f"splits.{split_name}.selected_count_mismatch")
+        else:
+            split_keys = pd.DataFrame({"_time_key": _time_key(frame["time"])})
+            if split_keys["_time_key"].duplicated().any():
+                reasons.append(f"splits.{split_name}.duplicate_time")
+            if split_keys["_time_key"].isna().any():
+                reasons.append(f"splits.{split_name}.invalid_time")
+            if {"split", "time", "selected"} <= set(scores.columns):
+                selected_scores = score_keys.loc[
+                    (score_keys["split"] == split_name) & (scores["selected"].astype(bool).to_numpy())
+                ]
+                missing_selected = ~selected_scores["_time_key"].isin(split_keys["_time_key"])
+                if missing_selected.any():
+                    reasons.append(f"splits.{split_name}.selected_count_mismatch")
 
     return {"status": "ABORT_CONTRACT_FAIL" if reasons else "PASS", "reasons": reasons}
 
@@ -212,16 +230,16 @@ def join_mask_to_splits(
 
     joined: dict[str, pd.DataFrame] = {}
     selected_scores = scores.loc[scores["selected"].astype(bool)].copy()
-    selected_scores["_time_key"] = _time_key(selected_scores["time"])
+    selected_scores["split_row_id"] = pd.to_numeric(selected_scores["split_row_id"], errors="raise")
 
     for split_name, frame in splits.items():
-        split_scores = selected_scores.loc[selected_scores["split"] == split_name, ["_time_key"]].copy()
+        split_scores = selected_scores.loc[selected_scores["split"] == split_name, ["split_row_id"]].copy()
         split_scores["_mask_selected"] = True
 
         working = frame.copy()
-        working["_time_key"] = _time_key(working["time"])
-        merged = working.merge(split_scores.drop_duplicates(), on="_time_key", how="left")
-        merged = merged.loc[merged["_mask_selected"].eq(True)].drop(columns=["_time_key", "_mask_selected"])
+        working["split_row_id"] = working.index.to_numpy()
+        merged = working.merge(split_scores.drop_duplicates(), on="split_row_id", how="left")
+        merged = merged.loc[merged["_mask_selected"].eq(True)].drop(columns=["split_row_id", "_mask_selected"])
 
         if len(merged) != len(split_scores):
             raise ValueError(

@@ -10,44 +10,19 @@
 
 ## Ближайшие направления
 
-### 1. Repair frozen score row identity
+### 1. Fractal-price entry mechanics foundation
 
-**Контекст:** direction-inside-mask план завершился `ABORT_CONTRACT_FAIL`.
-Причина не в качестве direction-сигнала: frozen score export и split-ы не имеют
-уникального ключа `split + time`.
+**Контекст:** frozen movement mask подтверждена как research segmentation rule,
+а direction внутри этой mask после repair `split_row_id` отвергнут:
+`REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
 
-Frozen segmentation mask остаётся ровно тем же:
+Frozen segmentation mask остаётся только исследовательским контуром:
 
 ```text
 simple_combined / extra_trees_small / H3 / top_fraction=0.05
 ```
 
-**Задача:** добавить стабильный уникальный row id в frozen score export и
-source split rows, затем повторить direction-inside-mask проверку без изменения
-movement rule.
-
-**Предлагаемый следующий план:**
-
-1. Найти источник стабильного row identity в entry-based splits.
-2. Добавить этот id в `entry_based_movement_filter_freeze_scores.csv`.
-3. Проверить, что join mask к split-ам проходит по `split + row_id` или
-   эквивалентному заранее зафиксированному ключу.
-4. Перегенерировать freeze score artifacts без изменения frozen rule.
-5. Повторить direction-inside-mask runner только после `PASS` join contract.
-
-**Ограничения:**
-
-- не менять `profile/model/horizon/threshold`;
-- не расширять mask и не менять `top_fraction`;
-- не чинить join через direction outcome;
-- `2026` и `locked_test` не участвуют в выборе;
-- запрещены PnL/PF и торговые claims.
-
-Статус: рекомендуемый следующий инфраструктурный repair branch.
-
-### 2. Fractal-price entry mechanics foundation
-
-**Контекст:** уже есть сильный признак, что исходный Up/Dn target связан с
+Также уже есть сильный признак, что исходный Up/Dn target связан с
 областью вокруг `fractal0_price`, а не с немедленным входом по следующему open.
 Отрицательный результат по `next open` не закрывает гипотезу уровня.
 
@@ -71,10 +46,10 @@ movement rule.
   разметку без проверки исполнимости;
 - не открывать `locked_test` до frozen rule.
 
-Статус: отдельная крупная research branch. Не смешивать с direction-inside-mask
-планом.
+Статус: рекомендуемый следующий research branch. Не смешивать с
+direction-inside-mask планом.
 
-### 3. Мульти-актив / мульти-таймфрейм валидация
+### 2. Мульти-актив / мульти-таймфрейм валидация
 
 Проверить fractal-концепт на другом инструменте или таймфрейме. Это полезно
 только после того, как появится подтверждённая рабочая постановка сигнала или

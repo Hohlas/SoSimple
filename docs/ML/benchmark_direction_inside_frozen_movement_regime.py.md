@@ -6,7 +6,9 @@
 
 Runner отвечает на узкий вопрос: можно ли честно построить direction baseline внутри frozen movement regime, не меняя сам movement filter.
 
-Текущий canonical result: `ABORT_CONTRACT_FAIL`, потому что `split + time` не является уникальным ключом для join frozen score export к split-ам.
+Текущий canonical result: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+После repair frozen score export использует `split + split_row_id` как join key.
+`split + time` остаётся неуникальным и используется только как диагностическое поле.
 
 ## Inputs
 
@@ -30,6 +32,9 @@ On contract fail, rows CSV is empty but keeps canonical columns:
 ```text
 split,time,target_direction_3,target_is_tie_3,target_up_3,target_dn_3
 ```
+
+В canonical run после repair rows CSV содержит выбранные строки frozen movement
+mask после удаления direction ties.
 
 ## Target Convention
 
@@ -72,7 +77,8 @@ Coverage:
 
 - frozen rule and `locked_test` guards;
 - `selected` format contract;
-- unique `split + time` join contract;
+- unique `split + split_row_id` join contract;
+- legacy `split + time` duplicate guard when `split_row_id` is absent;
 - direction target and tie exclusion;
 - leakage guard for forbidden columns;
 - classification-only metrics;
@@ -82,7 +88,7 @@ Coverage:
 
 ## Limitations
 
-- Current canonical frozen scores do not contain a stable unique row id.
-- Current canonical run does not train direction baselines.
+- `split + time` is not unique because one bar may produce multiple entry rows.
+- Current canonical run trains direction baselines but rejects the direction signal.
 - No PnL/PF, spread, stop-loss, take-profit, BUY/SELL or trading-candidate claim is produced.
 - `locked_test` remains closed.

@@ -15,12 +15,12 @@
 ```
 ---
 
-## [2026-07-08] — Direction Inside Frozen Movement Regime (ABORT_CONTRACT_FAIL)
+## [2026-07-08] — Direction Inside Frozen Movement Regime (REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME)
 - **report**: `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
-- **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `contract_fail`, `split_time_key`
-- **summary**: Добавлен runner для direction-проверки внутри frozen movement mask, но canonical run остановлен до обучения: `split + time` не является уникальным ключом в freeze scores и split-ах.
+- **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `split_row_id`, `reject_direction`
+- **summary**: Расследован root cause дубликатов `split + time`: один бар может дать несколько entry-строк/фракталов, поэтому freeze export получил `split_row_id` и direction join переведён на `split + split_row_id`. После repair baseline-и запущены, но direction signal отвергнут.
 - **artifacts**: `ML/reports/direction_inside_frozen_movement_regime.json`, `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py`, `tests/test_direction_inside_frozen_movement_regime.py`
-- **decision**: Direction baseline не запускался (`direction_baselines_trained=0`); ветка закрыта как contract fail. Нужен отдельный repair-plan для стабильного уникального row id в frozen score export.
+- **decision**: Winner `extra_trees_small` выбран только на `val_select`, но не прошёл `val_eval`/robustness: `val_eval balanced_accuracy=0.5287`, `mcc=0.0579`, disclosure 2026 хуже случайного. Ветка закрыта как reject, не trading candidate.
 - **notes**: `locked_test` не открыт; PnL/PF и trading claims запрещены; frozen movement rule не менялся.
 
 ## [2026-07-08] — Entry-Based Movement Filter Replication Freeze (FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN)

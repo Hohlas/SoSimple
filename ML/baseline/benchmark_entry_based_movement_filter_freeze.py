@@ -307,6 +307,7 @@ def build_score_export(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
         working = frame.copy()
         working["split"] = split_name
+        working["split_row_id"] = working.index.to_numpy()
         if "time" in working.columns:
             timestamps = pd.to_datetime(working["time"], errors="coerce")
             working["year"] = timestamps.dt.year.astype("Int64")
@@ -315,11 +316,11 @@ def build_score_export(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
             working["year"] = pd.Series(pd.array([pd.NA] * len(working), dtype="Int64"), index=working.index)
         working["selected"] = _selected_mask(working, score_col, selected_fraction)
         exported.append(
-            working[["split", "time", "year", score_col, target_col, "selected"]].copy()
+            working[["split", "split_row_id", "time", "year", score_col, target_col, "selected"]].copy()
         )
 
     if not exported:
-        return pd.DataFrame(columns=["split", "time", "year", score_col, target_col, "selected"])
+        return pd.DataFrame(columns=["split", "split_row_id", "time", "year", score_col, target_col, "selected"])
     return pd.concat(exported, ignore_index=True)
 
 

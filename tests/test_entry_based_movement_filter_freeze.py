@@ -262,8 +262,9 @@ def test_build_score_export_contains_all_splits_and_selected_flag():
     exported = build_score_export(frames)
 
     assert set(exported["split"]) == {"train", "val_select", "val_eval", "low_n_disclosure"}
-    assert {"split", "time", "year", "score", "entry_movement_3", "selected"}.issubset(exported.columns)
+    assert {"split", "split_row_id", "time", "year", "score", "entry_movement_3", "selected"}.issubset(exported.columns)
     assert int(exported.loc[exported["split"] == "val_eval", "selected"].sum()) == 5
+    assert exported.loc[exported["split"] == "val_eval", "split_row_id"].tolist() == list(range(100))
 
 
 def test_build_score_export_selects_highest_numeric_score_when_scores_are_strings():

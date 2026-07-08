@@ -73,11 +73,16 @@ Runner аварийно завершает шаг, если нарушено х�
 | Column | Смысл |
 |---|---|
 | `split` | `train`, `val_select`, `val_eval`, `low_n_disclosure` |
+| `split_row_id` | позиция строки внутри split-а после построения split-ов; стабильный ключ для join |
 | `time` | исходный timestamp строки |
 | `year` | календарный год |
 | `score` | агрегированный score правила |
 | `entry_movement_3` | фактическая величина движения для `H3` |
 | `selected` | входит ли строка в top `5%` по своему split |
+
+`time` не является уникальным ключом: один бар может дать несколько entry-строк
+с разными фракталами. Для downstream join нужно использовать `split + split_row_id`,
+а не `split + time`.
 
 `*_score_cutoffs.csv`:
 
