@@ -218,6 +218,25 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Disclosure contract | `low_n_disclosure` обязан содержать только `2026`, disclosure не участвует в выборе |
 | Verdict / CLI | allowlist verdict-ов, fixture CLI smoke, output artifacts |
 
+### [test_entry_based_movement_filter_freeze.py](../../tests/test_entry_based_movement_filter_freeze.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_movement_filter_freeze.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_movement_filter_freeze.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen rule contract | exact `simple_combined / extra_trees_small / H3 / top_fraction=0.05`, stable hash, seed contract |
+| Source guards | hash amplitude source, canonical path guard, `locked_test=not_opened` |
+| Metrics | fixed top `5%`, `selected_n`, `movement_lift`, yearly pass rate, disclosure year check |
+| Export schema | `scores.csv`, `selected_rows.csv`, `score_cutoffs.csv`, random baseline rows |
+| Verdict | `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`, `RESEARCH_ONLY_REPLICATED`, reject и abort ветки |
+| CLI | fixture smoke с записью freeze JSON/CSV |
+
 ## Зависимости
 
 - `pytest>=8.0`

@@ -10,67 +10,7 @@
 
 ## Ближайшие направления
 
-### 1. Amplitude / movement-regime audit для `entry-based next open`
-
-**Контекст:** ветка `entry-based next open` не дала устойчивого direction после
-price-feature matrix, fractal-selection ablation, closeout, powerful tabular и
-ordered sequence Transformer. При этом `entry_up` / `entry_dn` amplitude trace
-повторяется сильнее direction.
-
-**Задача:** выполнить план
-[2026-07-07-entry-based-amplitude-movement-regime-audit.md](plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md):
-проверить, является ли amplitude полезным movement-regime signal или он
-объясняется простыми признаками вроде ATR, времени суток, расстояния до уровня
-и плотности фракталов.
-
-**Что важно для интерпретации:**
-
-- это не торговый сигнал и не выбор направления;
-- `entry_log_ratio` не является primary target;
-- `time_only_clean`, `no_time_sequence` и `no_price_coord_sequence` обязательны;
-- `price_coord_atr` tails около 40% требуют отдельного audit;
-- результат должен включать quantile tables: top 5/10/20% predicted movement
-  против остальных, по годам;
-- `low_n_disclosure=2026` только disclosure;
-- `locked_test` не открывать.
-
-Статус: завершено 2026-07-07.
-
-Итог: `DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`.
-Движение после входа хорошо ранжируется, но лучший результат объясняется
-простыми признаками (`time_plus_atr`, `simple_combined`). Это не trading signal
-и не freeze-кандидат. См.
-[`docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`](../reports/2026-07-07-entry-based-amplitude-movement-regime.md).
-
-### 2. Movement filter design
-
-**Контекст:** amplitude / movement-regime audit не показал добавочную ценность
-сложных фрактальных профилей поверх простых baseline. Поэтому следующий шаг —
-не усложнение модели, а проверка, можно ли заранее зафиксированный простой
-movement-filter превратить в полезный decision layer без выбора направления.
-
-**Задача:** сформулировать фильтр “есть движение / нет движения” без выбора
-стороны сделки.
-
-**План:** выполнить
-[`2026-07-07-entry-based-movement-filter-design.md`](plans/2026-07-07-entry-based-movement-filter-design.md).
-
-**Возможный контракт:**
-
-- модель выдаёт вероятность или score сильного движения;
-- фильтр разрешает или запрещает вход;
-- отдельный слой позже решает направление или выход;
-- если направления нет, сигнал пропускается.
-
-**Ограничения:**
-
-- не брать direction из `entry_up - entry_dn` без отдельной проверки;
-- не смешивать movement filter и trading backtest в одном первом плане;
-- до gross/backtest слоя нужен frozen movement-filter rule на validation.
-
-Статус: ближайший незавершённый план.
-
-### 3. Fractal-price entry mechanics foundation
+### 1. Fractal-price entry mechanics foundation
 
 **Контекст:** уже есть сильный признак, что исходный Up/Dn target связан с
 областью вокруг `fractal0_price`, а не с немедленным входом по следующему open.
@@ -96,34 +36,41 @@ movement-filter превратить в полезный decision layer без �
   разметку без проверки исполнимости;
 - не открывать `locked_test` до frozen rule.
 
-Статус: следующий крупный research branch после movement-regime audit или
-параллельная отдельная гипотеза по решению пользователя.
+Статус: следующий крупный research branch после завершённого movement-filter
+freeze или параллельная отдельная гипотеза по решению пользователя.
 
-### 4. Direction inside confirmed movement regimes
+### 2. Direction inside frozen movement regimes
 
-**Контекст:** direction по всей выборке `entry-based next open` не прошёл. Но
-если будет найден устойчивый movement filter, можно проверить direction только
-внутри режимов, где движение вообще ожидаемо.
+**Контекст:** direction по всей выборке `entry-based next open` не прошёл.
+Теперь есть ровно один frozen segmentation mask:
 
-**Задача:** проверить направление внутри заранее выбранных movement-regime
-сегментов.
+```text
+simple_combined / extra_trees_small / H3 / top_fraction=0.05
+```
+
+Он пригоден только как входной контракт для следующего research plan.
+
+**Задача:** проверить направление только внутри заранее замороженных
+movement-regime сегментов, не меняя сам segmentation rule.
 
 **Минимальные условия входа в этот этап:**
 
-- movement filter выбран на `val_select`;
-- movement filter survived `val_eval`;
-- quantile/yearly checks пройдены;
-- direction-план заранее фиксирует сегменты и не выбирает их по direction.
+- segmentation rule уже frozen;
+- новый план не меняет `profile/model/horizon/threshold`;
+- direction-план заранее фиксирует scope и не выбирает сегменты по direction;
+- `locked_test` остаётся закрытым до собственного frozen contract следующей
+  постановки.
 
 **Ограничения:**
 
-- direction нельзя брать из того же amplitude-result как скрытый proxy;
-- direction проверяется только после freeze movement segmentation;
-- 2026 и `locked_test` не участвуют в выборе.
+- direction нельзя брать из amplitude-result как скрытый proxy;
+- segmentation freeze не является live rule;
+- 2026 и `locked_test` не участвуют в выборе;
+- запрещены PnL/PF и торговые claims на этом шаге.
 
-Статус: отложено до подтверждения movement-regime.
+Статус: следующий узкий research branch после завершённого freeze.
 
-### 5. Мульти-актив / мульти-таймфрейм валидация
+### 3. Мульти-актив / мульти-таймфрейм валидация
 
 Проверить fractal-концепт на другом инструменте или таймфрейме. Это полезно
 только после того, как появится подтверждённая рабочая постановка сигнала или

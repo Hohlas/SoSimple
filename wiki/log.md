@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-08] ingest | Entry-based movement filter freeze
+- Добавлен охват `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: bounded movement-filter ветка дополнена freeze-репликацией; зафиксировано, что результат означает только frozen research segmentation mask для следующего плана.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 44 report updates.
+- Зафиксировано методическое знание: freeze не является direction, PnL/PF, trading candidate, live rule или permission to open `locked_test`.
+
 ## [2026-07-07] ingest | Entry-based movement filter design
 - Добавлен охват `docs/reports/2026-07-07-entry-based-movement-filter-design.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: amplitude / movement-regime ветка продолжена bounded movement-filter этапом; зафиксирован единственный допустимый research-only winner `simple_combined / extra_trees_small / H3 / top_fraction=0.05`.

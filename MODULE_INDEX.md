@@ -97,6 +97,7 @@
 | [benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | foundation splits → sequence JSON/CSV | [docs](docs/ML/benchmark_entry_based_sequence_transformer.py.md) | ✅ |
 | [benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | foundation splits → amplitude movement JSON/CSV | [docs](docs/ML/benchmark_entry_based_amplitude_movement.py.md) | ✅ |
 | [benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | amplitude artifact → movement filter JSON/CSV | [docs](docs/ML/benchmark_entry_based_movement_filter.py.md) | ⚠️ |
+| [benchmark_entry_based_movement_filter_freeze.py](ML/baseline/benchmark_entry_based_movement_filter_freeze.py) | Entry-based movement filter freeze runner | movement filter + amplitude artifacts → freeze JSON/CSV | [docs](docs/ML/benchmark_entry_based_movement_filter_freeze.py.md) | ✅ |
 | [fractal_breach_transformer.py](ML/models/fractal_breach_transformer.py) | Stage 5 breach Transformer | — | [docs](docs/ML/fractal_breach_transformer.py.md) | 🏁 |
 | [diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 exit mechanics | labeled CSV + OHLC → exit JSON | [docs](docs/ML/diagnose_stage4_5_exit_mechanics.py.md) | ✅ |
 | [benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean cycle | labeled CSV + OHLC → cycle JSON | [docs](docs/ML/benchmark_stage4_6_clean_cycle.py.md) | ✅ |
@@ -266,6 +267,7 @@
 | [test_stage6_3_h6_feature_parity.py](tests/test_stage6_3_h6_feature_parity.py) | `ML/baseline/benchmark_stage6_3_h6_feature_parity.py` | — | ✅ |
 | [test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) | `ML/baseline/benchmark_stage6_outcome_based.py` | — | ✅ |
 | [test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | — | ⚠️ |
+| [test_entry_based_movement_filter_freeze.py](tests/test_entry_based_movement_filter_freeze.py) | `ML/baseline/benchmark_entry_based_movement_filter_freeze.py` | — | ✅ |
 | **Legacy / auxiliary tests** | Старые и разовые тесты для grouped research scripts | — | — | 📦 |
 
 ## Docs
@@ -292,6 +294,7 @@
 | [2026-06-18-stage5_0a-corridor-full-preflight.md](docs/superpowers/plans/2026-06-18-stage5_0a-corridor-full-preflight.md) | План Stage 5.0a Corridor Full Preflight |
 | [2026-06-10-fractal-stop-breach-stage1.md](docs/reports/2026-06-10-fractal-stop-breach-stage1.md) | Итоговый отчёт Stage 1: breach-разметка, baseline, frozen test и переход к Stage 2 |
 | [2026-06-10-fractal-stop-fav-stage2.md](docs/reports/2026-06-10-fractal-stop-fav-stage2.md) | Итоговый отчёт Stage 2: fav-разметка, торговый слой, RF FAIL и oracle-диагностика |
+| [2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md) | Итоговый отчёт freeze-репликации одного entry-based movement-filter без direction/PnL/PF и без открытия `locked_test` |
 | [2026-05-14-entry-path-all-rows-level-signal-design.md](docs/superpowers/specs/2026-05-14-entry-path-all-rows-level-signal-design.md) | Спецификация поиска live-safe `signal_candidate` по всей строке фракталов |
 | [2026-05-15-entry-path-all-rows-level-signal.md](docs/superpowers/plans/2026-05-15-entry-path-all-rows-level-signal.md) | План реализации live-safe `signal_candidate` по всей строке фракталов |
 | [2026-05-15-entry-path-fractal-level-direct-direction-design.md](docs/superpowers/specs/2026-05-15-entry-path-fractal-level-direct-direction-design.md) | Спецификация direct `SELL/SKIP/BUY` модели по всей строке фракталов |

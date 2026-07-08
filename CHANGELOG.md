@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-08] — Entry-Based Movement Filter Replication Freeze (FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN)
+- **report**: `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`
+- **topics**: `entry_based`, `movement_filter`, `freeze`, `replication`, `research_segmentation`
+- **summary**: Заморожен ровно один заранее выбранный movement-filter без расширения search space: `simple_combined / extra_trees_small / H3 / top_fraction=0.05`. Source hashes, frozen rule hash, frozen config hash, yearly gate, random baseline и score cutoff diagnostics зафиксированы в freeze artifact.
+- **artifacts**: `ML/reports/entry_based_movement_filter_freeze.json`, `ML/baseline/benchmark_entry_based_movement_filter_freeze.py`, `tests/test_entry_based_movement_filter_freeze.py`
+- **decision**: Разрешён только вывод `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`; это research segmentation mask для следующего плана, а не direction, не PnL/PF, не trading candidate, не live rule и не permission to open `locked_test`.
+- **notes**: `2026` остаётся disclosure-only; `top_fraction=0.05` не является фиксированным абсолютным cutoff между split-ами и годами.
+
 ## [2026-07-07] — Entry-Based Movement Filter Design (SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY)
 - **report**: `docs/reports/2026-07-07-entry-based-movement-filter-design.md`
 - **topics**: `entry_based`, `movement_filter`, `movement_regime`, `simple_baseline`
