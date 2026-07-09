@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-09] — Direction Inside Frozen Mask Rich Features Runner Fix (FAIL)
+- **report**: `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
+- **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `rich_features`, `real_smoke`
+- **summary**: Новый runner теперь подключён к реальным split/freeze артефактам, строит metrics/rows и сохраняет full-train политику, rich feature profiles, target families, sample-size gate и selection/verdict helper.
+- **artifacts**: `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`, `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`, `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
+- **decision**: Выполнен ограниченный real smoke `simple_combined / H3 / entry_log_ratio / extra_trees`: `val_select_inside_mask=0.528851`, `val_eval_inside_mask=0.472188`, verdict `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`. Полный rich-features grid `240` run ещё не запускался.
+- **notes**: `locked_test` не открыт; PnL/PF/trading claims запрещены; smoke не закрывает всю rich-features гипотезу.
+
 ## [2026-07-08] — Direction Inside Frozen Movement Regime (REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME)
 - **report**: `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
 - **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `split_row_id`, `reject_direction`

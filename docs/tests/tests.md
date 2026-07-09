@@ -256,6 +256,24 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Robustness / verdict | incomplete robustness cannot produce frozen verdict |
 | CLI | fixture smoke, JSON + `_rows.csv`, contract-fail artifact path |
 
+### [test_direction_inside_frozen_movement_regime_rich_features.py](../../tests/test_direction_inside_frozen_movement_regime_rich_features.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime_rich_features.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen mask join | strict `split + split_row_id`, строковые `selected`, mismatch row identity |
+| Feature contract | rich profiles, `nearest_k80` exploratory-only, forbidden feature audit, JSON metadata handoff |
+| Target construction | horizons `3/6/12/24`, log-ratio direction, up/dn comparison, dead-zone rows |
+| Fit/evaluation helpers | full-train count, masked sample-size gate |
+| Selection / CLI | winner only from `val_select` inside mask, artifact writer scaffold |
+
 ## Зависимости
 
 - `pytest>=8.0`

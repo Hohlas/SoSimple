@@ -14,7 +14,9 @@
 
 **Контекст:** frozen movement mask подтверждена как research segmentation rule,
 а direction внутри этой mask после repair `split_row_id` отвергнут:
-`REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+`REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`. Follow-up rich-features runner
+исправлен и дал real smoke по старому simple-control профилю, но полный
+rich-features grid ещё не запускался, поэтому roadmap-вывод не меняется.
 
 Frozen segmentation mask остаётся только исследовательским контуром:
 

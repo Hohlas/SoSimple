@@ -1,12 +1,13 @@
 # Context Handoff
 
-**Дата:** 2026-07-08
+**Дата:** 2026-07-09
 
 ## Текущее состояние
 
-Direction-inside-frozen-movement этап продолжен после contract fail,
-root cause дубликатов найден и repair выполнен. Финальный вердикт:
-`REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+После reject старого direction-inside-frozen-movement этапа был начат rich
+features follow-up. Runner исправлен: он подключён к реальным split/freeze
+артефактам и пишет непустые metrics/rows. Полный rich-features grid ещё не
+запускался; выполнен только ограниченный smoke.
 
 Текущая линия:
 
@@ -14,6 +15,7 @@ root cause дубликатов найден и repair выполнен. Фин�
 - movement-filter design: `SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`;
 - movement-filter freeze: `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`;
 - direction inside frozen movement: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+- direction inside frozen movement rich features smoke: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
 
 ## Что выяснено
 
@@ -31,6 +33,12 @@ Repair:
 
 ## Главные артефакты
 
+- `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
+- `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`
+- `ML/reports/direction_inside_frozen_movement_regime_rich_features_metrics.csv`
+- `ML/reports/direction_inside_frozen_movement_regime_rich_features_rows.csv`
+- `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
+- `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
 - `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
 - `ML/reports/direction_inside_frozen_movement_regime.json`
 - `ML/reports/direction_inside_frozen_movement_regime_rows.csv`
@@ -51,7 +59,7 @@ Frozen movement rule не менялся:
 
 ## Direction Result
 
-Canonical artifact:
+Старый simple direction artifact:
 
 - `verdict = REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`
 - `contract.status = PASS`
@@ -67,18 +75,39 @@ Key metrics:
 Robustness failed: only one active `val_eval` year, weak `val_eval` metrics,
 low confidence lower bound, and block stability remains `NOT_RUN`.
 
+Rich-features smoke artifact:
+
+- `verdict = REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`
+- `contract_status = PASS`
+- `training_scope = full_train`
+- `frozen_mask_usage = evaluation_only`
+- `selection_metric = val_select_inside_mask`
+- `train_rows = 44159`
+- frozen-mask rows: `train=2208`, `val_select=333`, `val_eval=333`, `low_n_disclosure=59`
+- smoke config: `simple_combined / H3 / entry_log_ratio / extra_trees`
+- `val_select_inside_mask balanced_accuracy = 0.528851`
+- `val_eval_inside_mask balanced_accuracy = 0.472188`
+- `low_n_disclosure_inside_mask balanced_accuracy = 0.412069`, sample-size gate `FAIL`
+- metrics/rows CSV are non-empty.
+
+Это только smoke direction-result. Полный rich-features grid ещё не выполнен.
+
 ## Следующий Шаг
 
 Следующим агентом сначала читать:
 
+- `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
 - `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
+- `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
 - `docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md`
 - `docs/ML/benchmark_entry_based_movement_filter_freeze.py.md`
+- `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`
 - `ML/reports/direction_inside_frozen_movement_regime.json`
 
-Практический следующий шаг: закрыть текущую direction-inside-mask ветку как
-reject. Новый direction-поиск, если нужен, должен быть отдельным заранее
-сформулированным планом, а не тюнингом по этому `val_eval`.
+Практический следующий шаг: если branch важен, запустить полный rich-features
+grid или разумно ограниченную заранее зафиксированную подматрицу. Если нет,
+вернуться к roadmap-направлению `fractal0_price` entry mechanics. Не считать
+один smoke-run проверкой всей rich-features гипотезы.
 
 ## Запрещённые Направления
 
@@ -87,3 +116,4 @@ reject. Новый direction-поиск, если нужен, должен бы�
 - Не тюнить по `val_eval` или `low_n_disclosure`.
 - Не добавлять PnL/PF, BUY/SELL или trading claims.
 - Не открывать `locked_test`.
+- Не выдавать один rich-features smoke-run за полный rich-features closeout.
