@@ -46,6 +46,7 @@
 | Аудит сырых данных: источник, формат, producer, момент доступности полей | [01-raw-data-inventory.md](01-raw-data-inventory.md) |
 | Сортировка, нормализация, labelling, split — сборка pipeline | [02-data-pipeline.md](02-data-pipeline.md) |
 | Проверка на утечки: feature contract, future-derived, online mismatch, candidate-source | [03-feature-contract-leakage.md](03-feature-contract-leakage.md) |
+| Минимизация признаков: корреляционный фильтр, шумовые, константные, производные (после leakage gate) | [03b-feature-selection.md](03b-feature-selection.md) |
 | Разметка целей: label convention, SL/TP/timeout, multi-target | [04-labeling.md](04-labeling.md) |
 | EDA, качество данных, дисбаланс классов, константные признаки | [05-eda-data-quality.md](05-eda-data-quality.md) |
 | Train/validation/locked_test split, событийный ряд, regime shift, sample size gate, walk-forward, роли validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
