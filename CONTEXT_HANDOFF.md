@@ -4,32 +4,31 @@
 
 ## Текущее состояние
 
-После reject старого direction-inside-frozen-movement этапа был начат rich
-features follow-up. Runner исправлен: он подключён к реальным split/freeze
-артефактам и пишет непустые metrics/rows. Полный rich-features grid ещё не
-запускался; выполнен только ограниченный smoke.
+Direction внутри frozen movement-mask проверен повторно с rich features и
+full-train политикой. Полный grid завершён: `240/240`, `failed_runs=0`,
+`verdict=DIRECTION_REPLICATION_REQUIRED`.
 
 Текущая линия:
 
 - amplitude audit: `DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`;
 - movement-filter design: `SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`;
 - movement-filter freeze: `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`;
-- direction inside frozen movement: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
-- direction inside frozen movement rich features smoke: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`.
+- old direction inside frozen movement: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`;
+- rich direction inside frozen movement: `DIAGNOSTIC_ONLY / DIRECTION_REPLICATION_REQUIRED`.
 
-## Что выяснено
+## Главный вывод
 
-`split + time` не является уникальным ключом, потому что один бар может дать
-несколько entry-строк. Частая причина: на одном баре есть разные фрактальные
-события, включая противоположные `direction`; часть дублей имеет одинаковый
-видимый `fractal0`, но всё равно остаётся отдельными строками.
+Rich features нашли слабый direction-effect внутри заранее замороженной
+movement-mask, но этого недостаточно для кандидата:
 
-Repair:
+- winner: `nearest_k60|H3|entry_log_ratio|extra_trees`;
+- `val_select_inside_mask balanced_accuracy = 0.570170`;
+- `val_eval_inside_mask balanced_accuracy = 0.529056`;
+- `val_select`/`val_eval` sample-size gates: `PASS`;
+- `low_n_disclosure` frozen rows: `59`, disclosure-only, low-N;
+- full-split diagnostics около случайного уровня.
 
-- `ML/reports/entry_based_movement_filter_freeze_scores.csv` теперь содержит
-  `split_row_id`;
-- direction join использует `split + split_row_id`;
-- `split + time` остаётся только диагностикой.
+Интерпретация: нужна заранее зафиксированная репликация. Это не trading signal.
 
 ## Главные артефакты
 
@@ -39,14 +38,25 @@ Repair:
 - `ML/reports/direction_inside_frozen_movement_regime_rich_features_rows.csv`
 - `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
 - `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
-- `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
-- `ML/reports/direction_inside_frozen_movement_regime.json`
-- `ML/reports/direction_inside_frozen_movement_regime_rows.csv`
-- `ML/reports/entry_based_movement_filter_freeze_scores.csv`
-- `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py`
-- `ML/baseline/benchmark_entry_based_movement_filter_freeze.py`
-- `tests/test_direction_inside_frozen_movement_regime.py`
-- `tests/test_entry_based_movement_filter_freeze.py`
+- `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
+
+## Runner Status
+
+Runner поддерживает:
+
+- `--resume` / `--no-resume`, default `--resume`;
+- progress JSON после каждого run;
+- heartbeat: загрузка split/scores, start, preflight, run start/end, ETA;
+- per-run `elapsed_sec`;
+- default `--threads 24`;
+- `n_jobs=24` для `ExtraTrees` и `XGBoost`;
+- `xgb_threads` / `nthread` в JSON для XGBoost;
+- очистку legacy resume rows без текущего `resume_key`.
+
+Тесты:
+
+- focused: `30 passed`;
+- full suite after implementation: `1254 passed, 30 warnings`.
 
 ## Exact Frozen Rule
 
@@ -57,63 +67,26 @@ Frozen movement rule не менялся:
 - `seeds = [42, 43, 44]`
 - `rule_hash = 56361f12104b55c4cac6bd04426349f71d8944c139563a8c9b68d3b25e97deaf`
 
-## Direction Result
-
-Старый simple direction artifact:
-
-- `verdict = REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`
-- `contract.status = PASS`
-- `search_budget.direction_baselines_trained = 3`
-- winner by `val_select`: `extra_trees_small`
-
-Key metrics:
-
-- `val_select`: `n=333`, balanced accuracy `0.5792`, MCC `0.1701`;
-- `val_eval`: `n=333`, balanced accuracy `0.5287`, MCC `0.0579`;
-- `low_n_disclosure`: `n=59`, balanced accuracy `0.4747`, MCC `-0.0506`.
-
-Robustness failed: only one active `val_eval` year, weak `val_eval` metrics,
-low confidence lower bound, and block stability remains `NOT_RUN`.
-
-Rich-features smoke artifact:
-
-- `verdict = REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`
-- `contract_status = PASS`
-- `training_scope = full_train`
-- `frozen_mask_usage = evaluation_only`
-- `selection_metric = val_select_inside_mask`
-- `train_rows = 44159`
-- frozen-mask rows: `train=2208`, `val_select=333`, `val_eval=333`, `low_n_disclosure=59`
-- smoke config: `simple_combined / H3 / entry_log_ratio / extra_trees`
-- `val_select_inside_mask balanced_accuracy = 0.528851`
-- `val_eval_inside_mask balanced_accuracy = 0.472188`
-- `low_n_disclosure_inside_mask balanced_accuracy = 0.412069`, sample-size gate `FAIL`
-- metrics/rows CSV are non-empty.
-
-Это только smoke direction-result. Полный rich-features grid ещё не выполнен.
-
 ## Следующий Шаг
 
 Следующим агентом сначала читать:
 
 - `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
-- `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
 - `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
-- `docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md`
-- `docs/ML/benchmark_entry_based_movement_filter_freeze.py.md`
 - `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`
-- `ML/reports/direction_inside_frozen_movement_regime.json`
+- `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
+- `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`
 
-Практический следующий шаг: если branch важен, запустить полный rich-features
-grid или разумно ограниченную заранее зафиксированную подматрицу. Если нет,
-вернуться к roadmap-направлению `fractal0_price` entry mechanics. Не считать
-один smoke-run проверкой всей rich-features гипотезы.
+Практический следующий шаг: написать narrow replication plan. Не выбирать
+новый winner по `val_eval`; сначала freeze допустимой репликационной матрицы,
+например вокруг `nearest_k60 / H3 / extra_trees`, затем проверять seed/year/block
+robustness без открытия `locked_test`.
 
 ## Запрещённые Направления
 
-- Не трактовать `val_select` uplift как кандидат.
-- Не расширять movement mask и не менять `top_fraction` в рамках этого этапа.
+- Не трактовать `DIRECTION_REPLICATION_REQUIRED` как candidate.
 - Не тюнить по `val_eval` или `low_n_disclosure`.
+- Не менять frozen movement-mask в рамках этой ветки.
 - Не добавлять PnL/PF, BUY/SELL или trading claims.
 - Не открывать `locked_test`.
-- Не выдавать один rich-features smoke-run за полный rich-features closeout.
+- Не выдавать weak direction-effect за production/live rule.

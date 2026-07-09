@@ -272,7 +272,9 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Feature contract | rich profiles, `nearest_k80` exploratory-only, forbidden feature audit, JSON metadata handoff |
 | Target construction | horizons `3/6/12/24`, log-ratio direction, up/dn comparison, dead-zone rows |
 | Fit/evaluation helpers | full-train count, masked sample-size gate |
-| Selection / CLI | winner only from `val_select` inside mask, artifact writer scaffold |
+| Selection / CLI | winner only from `val_select` inside mask, artifact writer, `--resume` / `--no-resume` |
+| Progress / runtime | progress JSON, per-run elapsed, completed keys, legacy resume-row cleanup |
+| Threading | `n_jobs=24` / XGBoost thread metadata passed into supported models |
 
 ## Зависимости
 

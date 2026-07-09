@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-09 05:28 UTC · git `4dc2047`
+> Auto-generated 2026-07-09 12:04 UTC · git `79beebe`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3070 files  ·  **Commit**: `4dc2047`  ·  **Generated**: 2026-07-09 05:28 UTC
+**Tracked**: 3077 files  ·  **Commit**: `79beebe`  ·  **Generated**: 2026-07-09 12:04 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-07-08 | 10KB | `445d1a28` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-09 | 140KB | `abd13aa7` |
+| [AGENTS.md](AGENTS.md) |  | 2026-07-09 | 10KB | `ec418fbd` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-09 | 140KB | `4cad7f07` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-09 | 5KB | `a5e461a7` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-09 | 55KB | `9ae09ed7` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-09 | 4KB | `ba9b9ffb` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-09 | 55KB | `88673276` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -34,7 +34,7 @@
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-06-17 | 3KB | `facaa586` |
 | [docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md) |  | 2026-07-08 | 3KB | `7e0fdf41` |
-| [docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md) |  | 2026-07-09 | 3KB | `703fb8f4` |
+| [docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md) |  | 2026-07-09 | 5KB | `4a9184f2` |
 | [docs/ML/benchmark_entry_based_amplitude_movement.py.md](docs/ML/benchmark_entry_based_amplitude_movement.py.md) |  | 2026-07-08 | 3KB | `e3cb4d50` |
 | [docs/ML/benchmark_entry_based_movement_filter.py.md](docs/ML/benchmark_entry_based_movement_filter.py.md) |  | 2026-07-08 | 4KB | `7dde5fcc` |
 | [docs/ML/benchmark_entry_based_movement_filter_freeze.py.md](docs/ML/benchmark_entry_based_movement_filter_freeze.py.md) |  | 2026-07-08 | 6KB | `89fd386a` |
@@ -136,7 +136,7 @@
 | [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог fractal feature profiles | 2026-07-04 | 15KB | `968752dc` |
 | [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-07-04 | 17KB | `4e827324` |
 | [docs/methodology/A8-feature-target-catalog.md](docs/methodology/A8-feature-target-catalog.md) |  | 2026-07-02 | 19KB | `c3844712` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-04 | 8KB | `0d2c8cef` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-09 | 8KB | `b83c78b1` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-06-17 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-17 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-17 | 2KB | `8f996d16` |
@@ -289,7 +289,7 @@
 | [docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md](docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md) |  | 2026-06-29 | 23KB | `8c41f47b` |
 | [docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md](docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md) |  | 2026-06-29 | 3KB | `ad0ca2f6` |
 | [docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md](docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md) |  | 2026-07-08 | 11KB | `5731ade6` |
-| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-09 | 14KB | `95882af3` |
+| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-09 | 14KB | `a9659d74` |
 
 ## Reports
 
@@ -404,7 +404,7 @@
 | [docs/reports/2026-07-07-entry-based-movement-filter-design.md](docs/reports/2026-07-07-entry-based-movement-filter-design.md) |  | 2026-07-08 | 10KB | `2522ea1a` |
 | [docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md](docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md) |  | 2026-07-08 | 8KB | `6c380c1b` |
 | [docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md) | Итоговый отчёт freeze-репликации одного entry-based movement-filter без direction/PnL/PF и без открытия `locked_test` | 2026-07-08 | 13KB | `bf821cdf` |
-| [docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) |  | 2026-07-09 | 6KB | `719dbd48` |
+| [docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) |  | 2026-07-09 | 9KB | `28c0eb53` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -417,7 +417,7 @@
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-06-30 | 28KB | `6450da16` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | ✅ | 2026-07-08 | 30KB | `691d70bc` |
-| [ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py) | Rich feature direction check scaffold inside frozen movement mask | ⚠️ | 2026-07-09 | 40KB | `734b3a89` |
+| [ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py) | Rich feature direction check inside frozen movement mask with resume/progress | ✅ | 2026-07-09 | 51KB | `f5ff61c8` |
 | [ML/baseline/benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | ✅ | 2026-07-08 | 59KB | `f107dda3` |
 | [ML/baseline/benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | ⚠️ | 2026-07-08 | 27KB | `099f88d6` |
 | [ML/baseline/benchmark_entry_based_movement_filter_freeze.py](ML/baseline/benchmark_entry_based_movement_filter_freeze.py) | Entry-based movement filter freeze runner | ✅ | 2026-07-08 | 33KB | `0e12e5a3` |
@@ -578,7 +578,6 @@
 | [ML/reports/current_feature_importance/summary.json](ML/reports/current_feature_importance/summary.json) |  |  | 2026-06-17 | 498B | `a286b27a` |
 | [ML/reports/direct_direction_chain_audit/minimal_repro_checks.json](ML/reports/direct_direction_chain_audit/minimal_repro_checks.json) |  |  | 2026-06-17 | 3KB | `221806f9` |
 | [ML/reports/direction_inside_frozen_movement_regime.json](ML/reports/direction_inside_frozen_movement_regime.json) |  |  | 2026-07-08 | 22KB | `f879bd3a` |
-| [ML/reports/direction_inside_frozen_movement_regime_rich_features.json](ML/reports/direction_inside_frozen_movement_regime_rich_features.json) |  |  | 2026-07-09 | 21KB | `69ae6ccb` |
 | [ML/reports/direction_only_signal.json](ML/reports/direction_only_signal.json) |  |  | 2026-06-17 | 2KB | `e760a7ba` |
 | [ML/reports/entry_based_movement_filter.json](ML/reports/entry_based_movement_filter.json) |  |  | 2026-07-08 | 5KB | `4df425e2` |
 | [ML/reports/entry_based_movement_filter_freeze.json](ML/reports/entry_based_movement_filter_freeze.json) |  |  | 2026-07-08 | 14KB | `e0dcfc86` |
@@ -1167,7 +1166,7 @@
 | [tests/test_diagnose_stage4_4.py](tests/test_diagnose_stage4_4.py) |  |  | 2026-06-17 | 5KB | `92b2ee48` |
 | [tests/test_diagnose_stage5_prep.py](tests/test_diagnose_stage5_prep.py) |  |  | 2026-06-17 | 3KB | `bdbbbf12` |
 | [tests/test_direction_inside_frozen_movement_regime.py](tests/test_direction_inside_frozen_movement_regime.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py` | ✅ | 2026-07-08 | 22KB | `0e4763c3` |
-| [tests/test_direction_inside_frozen_movement_regime_rich_features.py](tests/test_direction_inside_frozen_movement_regime_rich_features.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py` | ✅ | 2026-07-09 | 12KB | `7b81a04a` |
+| [tests/test_direction_inside_frozen_movement_regime_rich_features.py](tests/test_direction_inside_frozen_movement_regime_rich_features.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py` | ✅ | 2026-07-09 | 20KB | `85cd913a` |
 | [tests/test_entry_based_amplitude_movement.py](tests/test_entry_based_amplitude_movement.py) | entry-based amplitude movement-regime audit | ✅ | 2026-07-08 | 34KB | `4789fd32` |
 | [tests/test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | ⚠️ | 2026-07-08 | 16KB | `c32b142a` |
 | [tests/test_entry_based_movement_filter_freeze.py](tests/test_entry_based_movement_filter_freeze.py) | `ML/baseline/benchmark_entry_based_movement_filter_freeze.py` | ✅ | 2026-07-08 | 16KB | `84faba19` |
@@ -1665,8 +1664,8 @@
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-06-17 | 89KB | `11a5246a` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-09 | 5KB | `b2732f94` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-09 | 63KB | `a296f1db` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-09 | 5KB | `18d9fe68` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-09 | 63KB | `74793743` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1677,7 +1676,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-09 | 117KB | `3717e700` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-09 | 117KB | `d6ee48e5` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1701,7 +1700,7 @@
 | [.opencode/opencode.json](.opencode/opencode.json) |  | 2026-07-08 | 105B | `bd28a1b3` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-09 | 374B | `60571928` |
+| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-09 | 562B | `3b43b9eb` |
 | [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-08 | 2KB | `1cf5c760` |
 | [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-08 | 3KB | `db11a291` |
 | [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-08 | 2KB | `62c882ef` |
@@ -1714,14 +1713,14 @@
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-09 | 1KB | `e832676a` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-09 | 2KB | `ecaad3c0` |
 | [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-09 | 1KB | `cbda9841` |
-| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-09 | 49KB | `cb2f9713` |
+| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-09 | 49KB | `d7b82023` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |
 | [graphify-out/2026-07-08/.graphify_labels.json](graphify-out/2026-07-08/.graphify_labels.json) |  | 2026-07-08 | 48KB | `47ef2de8` |
 | [graphify-out/2026-07-08/GRAPH_REPORT.md](graphify-out/2026-07-08/GRAPH_REPORT.md) |  | 2026-07-08 | 288KB | `99b96678` |
-| [graphify-out/2026-07-09/.graphify_labels.json](graphify-out/2026-07-09/.graphify_labels.json) |  | 2026-07-08 | 48KB | `52b53c27` |
-| [graphify-out/2026-07-09/GRAPH_REPORT.md](graphify-out/2026-07-09/GRAPH_REPORT.md) |  | 2026-07-08 | 283KB | `f62a0e90` |
-| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-09 | 293KB | `b71be844` |
+| [graphify-out/2026-07-09/.graphify_labels.json](graphify-out/2026-07-09/.graphify_labels.json) |  | 2026-07-09 | 48KB | `a8851cd4` |
+| [graphify-out/2026-07-09/GRAPH_REPORT.md](graphify-out/2026-07-09/GRAPH_REPORT.md) |  | 2026-07-09 | 290KB | `80ebee6a` |
+| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-09 | 291KB | `7fc99869` |
 | [graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json](graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json) |  | 2026-07-08 | 135KB | `54d7dbf7` |
 | [graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json](graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json) |  | 2026-07-08 | 17KB | `f7a19787` |
 | [graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json](graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json) |  | 2026-07-07 | 846B | `0a6019ff` |
@@ -1790,6 +1789,7 @@
 | [graphify-out/cache/ast/v0.9.8/112755fc7e00b7cec1b2dc638a360c5b7a453fd3e61ad9a4beccd9aba4977656.json](graphify-out/cache/ast/v0.9.8/112755fc7e00b7cec1b2dc638a360c5b7a453fd3e61ad9a4beccd9aba4977656.json) |  | 2026-07-08 | 32KB | `fbf16019` |
 | [graphify-out/cache/ast/v0.9.8/112ece3257c83c1e61f8372c8709a7c5d8b211a624916874f68d0e550e7ce7f3.json](graphify-out/cache/ast/v0.9.8/112ece3257c83c1e61f8372c8709a7c5d8b211a624916874f68d0e550e7ce7f3.json) |  | 2026-07-08 | 39KB | `aed43e02` |
 | [graphify-out/cache/ast/v0.9.8/11698e3c74fb27fae13aafc1a3b5c56e1977bf64d271edceac752edab13a50f1.json](graphify-out/cache/ast/v0.9.8/11698e3c74fb27fae13aafc1a3b5c56e1977bf64d271edceac752edab13a50f1.json) |  | 2026-07-07 | 7KB | `fa32e596` |
+| [graphify-out/cache/ast/v0.9.8/11c6b1fe88721b0422ec768fb9876b570d7f475c92ec4bf7ca5506b1aac0cdc9.json](graphify-out/cache/ast/v0.9.8/11c6b1fe88721b0422ec768fb9876b570d7f475c92ec4bf7ca5506b1aac0cdc9.json) |  | 2026-07-09 | 45KB | `9163989b` |
 | [graphify-out/cache/ast/v0.9.8/11ccb1abf86d3867c5440690f44a0b4f96678d5567b9fa5e3bf4c338d0733579.json](graphify-out/cache/ast/v0.9.8/11ccb1abf86d3867c5440690f44a0b4f96678d5567b9fa5e3bf4c338d0733579.json) |  | 2026-07-08 | 5KB | `837fc993` |
 | [graphify-out/cache/ast/v0.9.8/1282a0f72cd7013507c6d5f134cd55b9a4d926d62640a7108929b74a6a4b8c35.json](graphify-out/cache/ast/v0.9.8/1282a0f72cd7013507c6d5f134cd55b9a4d926d62640a7108929b74a6a4b8c35.json) |  | 2026-07-08 | 28KB | `d095df9e` |
 | [graphify-out/cache/ast/v0.9.8/12b6577b672334a9566046d18e8b3f49f467c9e858c500589b9e61d9c8a7db5d.json](graphify-out/cache/ast/v0.9.8/12b6577b672334a9566046d18e8b3f49f467c9e858c500589b9e61d9c8a7db5d.json) |  | 2026-07-07 | 12KB | `42c2fcbb` |
@@ -1937,6 +1937,7 @@
 | [graphify-out/cache/ast/v0.9.8/354c6e3c5b46d930de810e663ef36fc43e7fe1c04b998801c2c248cc0b7074ab.json](graphify-out/cache/ast/v0.9.8/354c6e3c5b46d930de810e663ef36fc43e7fe1c04b998801c2c248cc0b7074ab.json) |  | 2026-07-08 | 22KB | `944710f2` |
 | [graphify-out/cache/ast/v0.9.8/36984379909949cafbd4278bf6ea5f1f51fd0d3cad4fcf6b76b5c2dc42a4ca96.json](graphify-out/cache/ast/v0.9.8/36984379909949cafbd4278bf6ea5f1f51fd0d3cad4fcf6b76b5c2dc42a4ca96.json) |  | 2026-07-08 | 10KB | `8006fa55` |
 | [graphify-out/cache/ast/v0.9.8/36a1cc4781db9bc84a18ea083681d0bdda12abf4ed62fc9ca7f5e8d7e69e0d34.json](graphify-out/cache/ast/v0.9.8/36a1cc4781db9bc84a18ea083681d0bdda12abf4ed62fc9ca7f5e8d7e69e0d34.json) |  | 2026-07-08 | 13KB | `9ec2ab96` |
+| [graphify-out/cache/ast/v0.9.8/36dbc60a4d3f86af41aaf6a1cd9634ab6031876ea9db043c38f826bdd141a752.json](graphify-out/cache/ast/v0.9.8/36dbc60a4d3f86af41aaf6a1cd9634ab6031876ea9db043c38f826bdd141a752.json) |  | 2026-07-09 | 6KB | `737a0d20` |
 | [graphify-out/cache/ast/v0.9.8/36de11ec48547aef6a3baf854b014026158c7848fb1d25dda977f83fae83f752.json](graphify-out/cache/ast/v0.9.8/36de11ec48547aef6a3baf854b014026158c7848fb1d25dda977f83fae83f752.json) |  | 2026-07-08 | 21KB | `7a967608` |
 | [graphify-out/cache/ast/v0.9.8/376b2d25d459655cc55d44d7112b33fb012abe48cc4c97ab953aa05f38242100.json](graphify-out/cache/ast/v0.9.8/376b2d25d459655cc55d44d7112b33fb012abe48cc4c97ab953aa05f38242100.json) |  | 2026-07-08 | 10KB | `42588f8c` |
 | [graphify-out/cache/ast/v0.9.8/37d8bb40b13b83311bd75280804f8c8835cf2ca9cc4198c10fb07bc4b67d1048.json](graphify-out/cache/ast/v0.9.8/37d8bb40b13b83311bd75280804f8c8835cf2ca9cc4198c10fb07bc4b67d1048.json) |  | 2026-07-07 | 18KB | `199bde05` |
@@ -1968,6 +1969,7 @@
 | [graphify-out/cache/ast/v0.9.8/40707394dc7b4887ce92985548b9634d241bb48b43f333c5be0d44aacb6b1547.json](graphify-out/cache/ast/v0.9.8/40707394dc7b4887ce92985548b9634d241bb48b43f333c5be0d44aacb6b1547.json) |  | 2026-07-08 | 26KB | `9353250e` |
 | [graphify-out/cache/ast/v0.9.8/409542d95910afbc07eaaba8aba21f782e71e89c16702e758e2d01ea71cc6617.json](graphify-out/cache/ast/v0.9.8/409542d95910afbc07eaaba8aba21f782e71e89c16702e758e2d01ea71cc6617.json) |  | 2026-07-08 | 35KB | `438a3003` |
 | [graphify-out/cache/ast/v0.9.8/40a092641d5b7c0b0bdcdd7ca6e3db8ebff5cd52652145f8bfe3121e8b60cf89.json](graphify-out/cache/ast/v0.9.8/40a092641d5b7c0b0bdcdd7ca6e3db8ebff5cd52652145f8bfe3121e8b60cf89.json) |  | 2026-07-08 | 3KB | `acf99f10` |
+| [graphify-out/cache/ast/v0.9.8/40ae4943f0103688358d58197ddd909be27443ffff8731c2f23afca744765a93.json](graphify-out/cache/ast/v0.9.8/40ae4943f0103688358d58197ddd909be27443ffff8731c2f23afca744765a93.json) |  | 2026-07-09 | 7KB | `00223d89` |
 | [graphify-out/cache/ast/v0.9.8/40c4ebc5f978b7a50691d192585a3e23f3f577c39c940244221d608035c5d9fa.json](graphify-out/cache/ast/v0.9.8/40c4ebc5f978b7a50691d192585a3e23f3f577c39c940244221d608035c5d9fa.json) |  | 2026-07-08 | 5KB | `f7df2045` |
 | [graphify-out/cache/ast/v0.9.8/41282e42c81a293e628575bb5a6c01f9f3dbe3cff5efcf95b549d46d8a022d90.json](graphify-out/cache/ast/v0.9.8/41282e42c81a293e628575bb5a6c01f9f3dbe3cff5efcf95b549d46d8a022d90.json) |  | 2026-07-08 | 7KB | `e98e243f` |
 | [graphify-out/cache/ast/v0.9.8/416ccdc852bc7b834d0a3bba8743d436f4441d3d84b3f613910d5ca4ab7183ce.json](graphify-out/cache/ast/v0.9.8/416ccdc852bc7b834d0a3bba8743d436f4441d3d84b3f613910d5ca4ab7183ce.json) |  | 2026-07-07 | 1KB | `d99bd6a3` |
@@ -2094,6 +2096,7 @@
 | [graphify-out/cache/ast/v0.9.8/6204403545072e545f67251e27bd293f579973a8444173efe43d57836f214f02.json](graphify-out/cache/ast/v0.9.8/6204403545072e545f67251e27bd293f579973a8444173efe43d57836f214f02.json) |  | 2026-07-07 | 41KB | `7fb8275c` |
 | [graphify-out/cache/ast/v0.9.8/6214ae76a414f3f30e1d7fe60ef275c13c6cd245d40f1f9f4d836723fa4c1139.json](graphify-out/cache/ast/v0.9.8/6214ae76a414f3f30e1d7fe60ef275c13c6cd245d40f1f9f4d836723fa4c1139.json) |  | 2026-07-08 | 3KB | `8a5f5bf2` |
 | [graphify-out/cache/ast/v0.9.8/621b1e0d815a6a83c16ff6234a35c1a78609dab6061ddb78327df8e630ceb33f.json](graphify-out/cache/ast/v0.9.8/621b1e0d815a6a83c16ff6234a35c1a78609dab6061ddb78327df8e630ceb33f.json) |  | 2026-07-08 | 17KB | `f4d49076` |
+| [graphify-out/cache/ast/v0.9.8/6230c3177b913244740085c2a6c487d85afb3ca67b31f456646cc9fb29d6982c.json](graphify-out/cache/ast/v0.9.8/6230c3177b913244740085c2a6c487d85afb3ca67b31f456646cc9fb29d6982c.json) |  | 2026-07-09 | 8KB | `8155ea7f` |
 | [graphify-out/cache/ast/v0.9.8/6275e90b2d5bc964eca193312233a9aaadc4d6d32a83d7caeb3bf35bf362817d.json](graphify-out/cache/ast/v0.9.8/6275e90b2d5bc964eca193312233a9aaadc4d6d32a83d7caeb3bf35bf362817d.json) |  | 2026-07-08 | 19KB | `e6ba8dd5` |
 | [graphify-out/cache/ast/v0.9.8/629974d767afb5b67572a4b2aca49a8a474ad282a4ab6be95461de40d4b18f41.json](graphify-out/cache/ast/v0.9.8/629974d767afb5b67572a4b2aca49a8a474ad282a4ab6be95461de40d4b18f41.json) |  | 2026-07-07 | 6KB | `b632a389` |
 | [graphify-out/cache/ast/v0.9.8/62c3cf8c7038a6b3653baa63a71d47b5fdbf7e15b002e876247faebd6ace4270.json](graphify-out/cache/ast/v0.9.8/62c3cf8c7038a6b3653baa63a71d47b5fdbf7e15b002e876247faebd6ace4270.json) |  | 2026-07-08 | 7KB | `ba8839f3` |
@@ -2144,6 +2147,7 @@
 | [graphify-out/cache/ast/v0.9.8/6ed535f36401cdfc14e7154fa2923249344bec3c894740e5764b9107819d6f63.json](graphify-out/cache/ast/v0.9.8/6ed535f36401cdfc14e7154fa2923249344bec3c894740e5764b9107819d6f63.json) |  | 2026-07-08 | 11KB | `f01916be` |
 | [graphify-out/cache/ast/v0.9.8/6fd8a07078fdf93f11abcb2513e16dcc725d049fc8d0bad63bf90c42c5bf682f.json](graphify-out/cache/ast/v0.9.8/6fd8a07078fdf93f11abcb2513e16dcc725d049fc8d0bad63bf90c42c5bf682f.json) |  | 2026-07-08 | 9KB | `b670a093` |
 | [graphify-out/cache/ast/v0.9.8/702f9c6362c3ac815ea7609703d4c152623cb692519b1cd96d2f7f2f78000c87.json](graphify-out/cache/ast/v0.9.8/702f9c6362c3ac815ea7609703d4c152623cb692519b1cd96d2f7f2f78000c87.json) |  | 2026-07-08 | 10KB | `45fe6a4b` |
+| [graphify-out/cache/ast/v0.9.8/7045e07058d30f0b3b057998bf664570e7600fedd6b28aaa6d7528ce933d2e71.json](graphify-out/cache/ast/v0.9.8/7045e07058d30f0b3b057998bf664570e7600fedd6b28aaa6d7528ce933d2e71.json) |  | 2026-07-09 | 10KB | `e525ea42` |
 | [graphify-out/cache/ast/v0.9.8/704788ac17d277997d22a65c1c3e3c314baacb470c4e62810fbace40a0f1bfd6.json](graphify-out/cache/ast/v0.9.8/704788ac17d277997d22a65c1c3e3c314baacb470c4e62810fbace40a0f1bfd6.json) |  | 2026-07-08 | 98KB | `7316b146` |
 | [graphify-out/cache/ast/v0.9.8/706a8d13c003ce9e275d3675b150ba7d02f95d5751addf35f89a5b9ccf5d5aa6.json](graphify-out/cache/ast/v0.9.8/706a8d13c003ce9e275d3675b150ba7d02f95d5751addf35f89a5b9ccf5d5aa6.json) |  | 2026-07-08 | 35KB | `87eb6161` |
 | [graphify-out/cache/ast/v0.9.8/709ef3982f0c8817dfa6bc6d081109343d2702e60ab60797541e9a185ae4ff86.json](graphify-out/cache/ast/v0.9.8/709ef3982f0c8817dfa6bc6d081109343d2702e60ab60797541e9a185ae4ff86.json) |  | 2026-07-08 | 35KB | `5e49b76c` |
@@ -2229,6 +2233,7 @@
 | [graphify-out/cache/ast/v0.9.8/82f13ffaf4654a955334e794bd3e8f2c4c856cf3db363aea180eff0b4300367b.json](graphify-out/cache/ast/v0.9.8/82f13ffaf4654a955334e794bd3e8f2c4c856cf3db363aea180eff0b4300367b.json) |  | 2026-07-08 | 69KB | `29529399` |
 | [graphify-out/cache/ast/v0.9.8/8307fafdc94f136d7b0c23b97fc1968c513e6c41953abeffc7a3a9fee6520bee.json](graphify-out/cache/ast/v0.9.8/8307fafdc94f136d7b0c23b97fc1968c513e6c41953abeffc7a3a9fee6520bee.json) |  | 2026-07-08 | 47KB | `5c468ce3` |
 | [graphify-out/cache/ast/v0.9.8/835302ba7517dc74bdffcc9af81df1c6a158dd7b588fe65a1089b9499868fb15.json](graphify-out/cache/ast/v0.9.8/835302ba7517dc74bdffcc9af81df1c6a158dd7b588fe65a1089b9499868fb15.json) |  | 2026-07-07 | 237B | `6210f229` |
+| [graphify-out/cache/ast/v0.9.8/83739a36c382efc75f1c9e5fcc5354b2172470e8be2acd5b74f9a57d99602f47.json](graphify-out/cache/ast/v0.9.8/83739a36c382efc75f1c9e5fcc5354b2172470e8be2acd5b74f9a57d99602f47.json) |  | 2026-07-09 | 12KB | `d90cf55b` |
 | [graphify-out/cache/ast/v0.9.8/846639d49fb117fa0d29d7ba0ac0359ae19dc160be2c4a4f4ef6e9d5b186352f.json](graphify-out/cache/ast/v0.9.8/846639d49fb117fa0d29d7ba0ac0359ae19dc160be2c4a4f4ef6e9d5b186352f.json) |  | 2026-07-08 | 102KB | `f0712727` |
 | [graphify-out/cache/ast/v0.9.8/84734d75d38e7f9b9ba1e9757d2b0acad41860167524825704f2e3be26cc8572.json](graphify-out/cache/ast/v0.9.8/84734d75d38e7f9b9ba1e9757d2b0acad41860167524825704f2e3be26cc8572.json) |  | 2026-07-08 | 3KB | `30988505` |
 | [graphify-out/cache/ast/v0.9.8/84fa2683086e58761eec0f656b51adc0c48e16157eb3901b55eab507149d2fcf.json](graphify-out/cache/ast/v0.9.8/84fa2683086e58761eec0f656b51adc0c48e16157eb3901b55eab507149d2fcf.json) |  | 2026-07-08 | 4KB | `856dfb34` |
@@ -2378,6 +2383,7 @@
 | [graphify-out/cache/ast/v0.9.8/a7d4e0b0d378c1cc9d3013d43205346d817f8a6de4d03866b02789744a676df4.json](graphify-out/cache/ast/v0.9.8/a7d4e0b0d378c1cc9d3013d43205346d817f8a6de4d03866b02789744a676df4.json) |  | 2026-07-08 | 65KB | `7d6b9889` |
 | [graphify-out/cache/ast/v0.9.8/a86b7035ee0b4077f3ba5e6e8861f2286abe6404971ed336c1f170dab80def68.json](graphify-out/cache/ast/v0.9.8/a86b7035ee0b4077f3ba5e6e8861f2286abe6404971ed336c1f170dab80def68.json) |  | 2026-07-08 | 31KB | `89b561ae` |
 | [graphify-out/cache/ast/v0.9.8/a891bb5de614fffba4be1c4a7a06f4b1e04bd3f36340c754737e8e2df05b8a94.json](graphify-out/cache/ast/v0.9.8/a891bb5de614fffba4be1c4a7a06f4b1e04bd3f36340c754737e8e2df05b8a94.json) |  | 2026-07-08 | 6KB | `90016b03` |
+| [graphify-out/cache/ast/v0.9.8/a8b34029a5cafa149ebbc357c9e23dd94f803b5e426ae650202c9e060be171f7.json](graphify-out/cache/ast/v0.9.8/a8b34029a5cafa149ebbc357c9e23dd94f803b5e426ae650202c9e060be171f7.json) |  | 2026-07-09 | 4KB | `3b330bfd` |
 | [graphify-out/cache/ast/v0.9.8/a9330cd12d806432d444c0cff54cea2433750c23c913dc4f302780343af88d93.json](graphify-out/cache/ast/v0.9.8/a9330cd12d806432d444c0cff54cea2433750c23c913dc4f302780343af88d93.json) |  | 2026-07-08 | 7KB | `549a7f81` |
 | [graphify-out/cache/ast/v0.9.8/a9579435b6c2f5a40f4fe95e83fd4cb2a518af0a0aad7f769f5491b6785cc79b.json](graphify-out/cache/ast/v0.9.8/a9579435b6c2f5a40f4fe95e83fd4cb2a518af0a0aad7f769f5491b6785cc79b.json) |  | 2026-07-08 | 7KB | `c2ddc190` |
 | [graphify-out/cache/ast/v0.9.8/a971c550eb4d37b1ca047efaeaf0f824b3e744b931c560f1910b8750a33dac03.json](graphify-out/cache/ast/v0.9.8/a971c550eb4d37b1ca047efaeaf0f824b3e744b931c560f1910b8750a33dac03.json) |  | 2026-07-08 | 111KB | `b316354e` |
@@ -2711,6 +2717,7 @@
 | [graphify-out/cache/ast/v0.9.8/fb9b8c64a4188ac50355ea155dfddb591d5140d91532196cd5f9dba506c1a0e8.json](graphify-out/cache/ast/v0.9.8/fb9b8c64a4188ac50355ea155dfddb591d5140d91532196cd5f9dba506c1a0e8.json) |  | 2026-07-08 | 25KB | `35cf5b54` |
 | [graphify-out/cache/ast/v0.9.8/fc2888b605b45bfa25766f7f7872a8501b427da66326672bb93ad8c484381da7.json](graphify-out/cache/ast/v0.9.8/fc2888b605b45bfa25766f7f7872a8501b427da66326672bb93ad8c484381da7.json) |  | 2026-07-08 | 10KB | `52d1f7b7` |
 | [graphify-out/cache/ast/v0.9.8/fc3428ec8778d4f8dbc5bd512a27e13fb5c72b49b98a8286caae3be07f326d4f.json](graphify-out/cache/ast/v0.9.8/fc3428ec8778d4f8dbc5bd512a27e13fb5c72b49b98a8286caae3be07f326d4f.json) |  | 2026-07-07 | 17KB | `c85bf212` |
+| [graphify-out/cache/ast/v0.9.8/fd34c4620392d235854c4c1f24283f846f0d984cabf5aa4e814405feec1e19fe.json](graphify-out/cache/ast/v0.9.8/fd34c4620392d235854c4c1f24283f846f0d984cabf5aa4e814405feec1e19fe.json) |  | 2026-07-09 | 57KB | `665245fc` |
 | [graphify-out/cache/ast/v0.9.8/fd42d0b31dbbb5d35560cf7388c8f06aa15813b13c08a30b7398029e635f24f6.json](graphify-out/cache/ast/v0.9.8/fd42d0b31dbbb5d35560cf7388c8f06aa15813b13c08a30b7398029e635f24f6.json) |  | 2026-07-07 | 20KB | `1b2b7bae` |
 | [graphify-out/cache/ast/v0.9.8/fd617802363b74f51d011d3e7b5e4d109fecc0901484fae1b7fce93dd76717ed.json](graphify-out/cache/ast/v0.9.8/fd617802363b74f51d011d3e7b5e4d109fecc0901484fae1b7fce93dd76717ed.json) |  | 2026-07-08 | 63KB | `62fabfe7` |
 | [graphify-out/cache/ast/v0.9.8/fd82b980b1981441ce8de412bad5b33f7e1417de9e5aba598366d2a42bb47013.json](graphify-out/cache/ast/v0.9.8/fd82b980b1981441ce8de412bad5b33f7e1417de9e5aba598366d2a42bb47013.json) |  | 2026-07-08 | 6KB | `2a859c60` |

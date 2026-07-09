@@ -14,8 +14,9 @@
 
 Текущая реализация закрывает контрактный слой, feature/target helpers, базовые
 fit/evaluation helpers, selection/verdict, запись артефактов и подключение к
-реальным split/freeze артефактам. Полный grid может быть тяжёлым; для smoke
-можно ограничивать профили, горизонты, target family и модели CLI-флагами.
+реальным split/freeze артефактам. Runner поддерживает heartbeat, progress JSON,
+resume после остановки и явное управление числом потоков для параллельных
+моделей.
 
 ## Входы
 
@@ -30,6 +31,14 @@ fit/evaluation helpers, selection/verdict, запись артефактов и 
 - `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`;
 - `ML/reports/direction_inside_frozen_movement_regime_rich_features_metrics.csv`;
 - `ML/reports/direction_inside_frozen_movement_regime_rich_features_rows.csv`.
+
+JSON содержит:
+
+- `started_at`, `finished_at`, общий `elapsed_sec`;
+- `progress.done_runs`, `progress.total_runs`, `completed_keys`;
+- `threading.requested_threads`, `threading.effective_threads`;
+- per-run `elapsed_sec`, `resume_key`, `threading`;
+- `selection`, `winner`, `contract_status`, `verdict`.
 
 ## Feature Profiles
 
@@ -57,11 +66,24 @@ top-level future target columns (`entry_up_*`, `entry_dn_*`,
 
 ```bash
 MPLCONFIGDIR=/tmp/matplotlib \
-./.venv/bin/python ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py
+./.venv/bin/python ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py \
+  --threads 24 \
+  --resume
 ```
 
-Текущий CLI создаёт артефакты с `verdict = ABORT_CONTRACT_FAIL`, если
-scores-файл отсутствует. Если `ML/reports/entry_based_movement_filter_freeze_scores.csv`
+По умолчанию включён `--resume`. Повторный запуск пропускает завершённые
+ключи `profile/seed/model/Hhorizon/target_family` и продолжает с оставшихся
+run-ов. Для чистого полного прогона:
+
+```bash
+MPLCONFIGDIR=/tmp/matplotlib \
+./.venv/bin/python ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py \
+  --threads 24 \
+  --no-resume
+```
+
+CLI создаёт артефакты с `verdict = ABORT_CONTRACT_FAIL`, если scores-файл
+отсутствует. Если `ML/reports/entry_based_movement_filter_freeze_scores.csv`
 есть, CLI строит реальные metrics/rows.
 
 Ограниченный smoke на реальных данных:
@@ -72,8 +94,39 @@ MPLCONFIGDIR=/tmp/matplotlib \
   --profiles simple_combined \
   --horizons 3 \
   --target-families entry_log_ratio \
-  --model-keys extra_trees
+  --model-keys extra_trees \
+  --threads 24 \
+  --no-resume
 ```
+
+## Threading / Resume / Progress
+
+- default threads: `24`;
+- `ExtraTreesClassifier`: `n_jobs=24`;
+- `XGBoost`: `n_jobs=24`, JSON также раскрывает `nthread=24` и
+  `xgb_threads=24`;
+- `HistGradientBoostingClassifier`: `n_jobs` не поддерживается estimator-ом,
+  это явно записывается как `not_supported_by_estimator`;
+- JSON и CSV сохраняются после каждого завершённого run;
+- heartbeat печатает загрузку split/scores, start, preflight, run start/end,
+  `done_runs/total_runs`, `elapsed`, `ETA`.
+
+## Последний полный результат
+
+Full grid `5 x 4 x 3 x 4 = 240` завершён:
+
+- `verdict = DIRECTION_REPLICATION_REQUIRED`;
+- `contract_status = PASS`;
+- `progress.done_runs = 240`, `progress.total_runs = 240`;
+- `failed_runs = 0`;
+- winner: `nearest_k60|H3|entry_log_ratio|extra_trees`;
+- `val_select_inside_mask balanced_accuracy = 0.570170`;
+- `val_eval_inside_mask balanced_accuracy = 0.529056`;
+- metrics CSV: `1440` data rows;
+- rows CSV: `3,469,440` data rows.
+
+Интерпретация: найден слабый direction-effect внутри frozen movement-mask,
+который требует заранее зафиксированной репликации. Это не trading candidate.
 
 ## Тесты
 
@@ -82,5 +135,6 @@ MPLCONFIGDIR=/tmp/matplotlib \
 ```
 
 Тесты покрывают row identity join, full-train policy, feature denylist,
-target construction, masked sample-size gate, winner selection и базовый CLI
-contract.
+target construction, masked sample-size gate, winner selection, CLI-флаги,
+resume-пропуск, progress JSON, очистку legacy resume rows и передачу thread
+count в модели.

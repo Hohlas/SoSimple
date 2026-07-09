@@ -763,3 +763,8 @@
 - Added `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`.
 - Updated `wiki/research/fractal-stop-research.md`: rich-features runner is now wired to real split/freeze inputs; smoke `simple_combined / H3 / entry_log_ratio / extra_trees` produces real metrics and rejects the simple control.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 46 report updates and marks the full rich-features grid as still pending.
+
+### 2026-07-09: Ingest rich-features direction-inside-mask full grid
+- Updated `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`: full grid `240/240` replaces the earlier smoke-only result.
+- Updated `wiki/research/fractal-stop-research.md`: recorded `DIRECTION_REPLICATION_REQUIRED` for `nearest_k60 / H3 / entry_log_ratio / extra_trees` with `val_select_inside_mask=0.570170` and `val_eval_inside_mask=0.529056`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 47 report updates and marks the next step as a narrow replication plan, not candidate promotion.
