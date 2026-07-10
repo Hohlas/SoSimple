@@ -10,21 +10,25 @@
 
 ## Ближайшие направления
 
-### 1. Fractal-price entry mechanics foundation
+### 1. Механика входа от `fractal0_price`
 
-**Контекст:** frozen movement mask подтверждена как research segmentation rule,
-а direction внутри этой mask после repair `split_row_id` отвергнут:
-`REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`. Follow-up rich-features runner
-исправлен и дал real smoke по старому simple-control профилю, но полный
-rich-features grid ещё не запускался, поэтому roadmap-вывод не меняется.
+**Контекст:** direction внутри frozen movement-mask закрыт как ближайшая ветка.
+Rich-features full-grid 2026-07-09 нашёл weak direction-effect
+`nearest_k60 / H3 / entry_log_ratio / extra_trees`, но narrow seed-stability
+репликация 2026-07-10 отвергла H3:
 
-Frozen segmentation mask остаётся только исследовательским контуром:
+- `H3 val_eval_inside_mask median balanced_accuracy = 0.499080`;
+- только `2/5` H3 seeds достигли `>= 0.52`;
+- H6 был сильнее, но был заранее объявлен secondary robustness horizon и не
+  может заменить H3 задним числом;
+- H9 был пропущен preflight из-за отсутствующих target columns.
 
-```text
-simple_combined / extra_trees_small / H3 / top_fraction=0.05
-```
+Завершённые отчёты:
 
-Также уже есть сильный признак, что исходный Up/Dn target связан с
+- [2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](../reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md)
+- [2026-07-10-direction-inside-frozen-mask-narrow-replication.md](../reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md)
+
+Параллельно уже есть сильный признак, что исходный Up/Dn target связан с
 областью вокруг `fractal0_price`, а не с немедленным входом по следующему open.
 Отрицательный результат по `next open` не закрывает гипотезу уровня.
 
@@ -48,7 +52,7 @@ simple_combined / extra_trees_small / H3 / top_fraction=0.05
   разметку без проверки исполнимости;
 - не открывать `locked_test` до frozen rule.
 
-Статус: рекомендуемый следующий research branch. Не смешивать с
+Статус: следующий самостоятельный research branch. Не смешивать с закрытым
 direction-inside-mask планом.
 
 ### 2. Мульти-актив / мульти-таймфрейм валидация

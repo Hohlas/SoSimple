@@ -768,3 +768,8 @@
 - Updated `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`: full grid `240/240` replaces the earlier smoke-only result.
 - Updated `wiki/research/fractal-stop-research.md`: recorded `DIRECTION_REPLICATION_REQUIRED` for `nearest_k60 / H3 / entry_log_ratio / extra_trees` with `val_select_inside_mask=0.570170` and `val_eval_inside_mask=0.529056`.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 47 report updates and marks the next step as a narrow replication plan, not candidate promotion.
+
+### 2026-07-10: Ingest narrow direction-inside-mask replication reject
+- Added `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded `REJECT_DIRECTION_REPLICATION` for the pre-registered `nearest_k60 / extra_trees / entry_log_ratio` narrow matrix; H3 median `val_eval_inside_mask=0.499080`, only `2/5` seeds reached `>=0.52`, H9 skipped by target preflight.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 48 report updates and moves the next branch away from direction-inside-mask toward execution-aware `fractal0_price` mechanics.

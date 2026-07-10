@@ -218,6 +218,23 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | Disclosure contract | `low_n_disclosure` обязан содержать только `2026`, disclosure не участвует в выборе |
 | Verdict / CLI | allowlist verdict-ов, fixture CLI smoke, output artifacts |
 
+### [test_direction_inside_frozen_movement_regime_rich_features.py](../../tests/test_direction_inside_frozen_movement_regime_rich_features.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime_rich_features.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen mask join | `split_row_id`, CSV-style `selected`, защита от нецелых/битых row ids |
+| Feature / target contract | full-train policy, target denylist, target construction, masked sample-size gate |
+| Rich direction runner | winner selection, resume, progress JSON, thread-count metadata, legacy resume cleanup |
+| Narrow replication | frozen matrix `nearest_k60 / extra_trees / entry_log_ratio`, H9 preflight, multi-seed jobs, seed aggregation, verdict rules, year/block diagnostics, CLI `--replication-mode narrow` |
+
 ### [test_entry_based_movement_filter_freeze.py](../../tests/test_entry_based_movement_filter_freeze.py)
 
 **Тестирует**: `ML/baseline/benchmark_entry_based_movement_filter_freeze.py`

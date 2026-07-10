@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-10] — Direction Inside Frozen Mask Narrow Replication (FAIL / REJECT_DIRECTION_REPLICATION)
+- **report**: `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
+- **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `narrow_replication`, `seed_stability`, `reject_direction`
+- **summary**: Заранее зафиксированная narrow replication матрица `nearest_k60 / extra_trees / entry_log_ratio` выполнена на seeds `41..45`; H9 пропущен preflight из-за отсутствующих target columns, выполнено `10/10`.
+- **artifacts**: `ML/reports/direction_inside_frozen_movement_regime_narrow_replication.json`, `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`, `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
+- **decision**: H3 не воспроизвёл weak direction-effect: median `val_eval_inside_mask=0.499080`, seeds `>=0.52` только `2/5`; verdict `REJECT_DIRECTION_REPLICATION`. Direction-inside-frozen-mask снят с near-term roadmap.
+- **notes**: H6 был сильнее, но secondary robustness horizon не может заменить H3 задним числом; `locked_test` не открыт, PnL/PF/trading claims запрещены.
+
 ## [2026-07-09] — Direction Inside Frozen Mask Rich Features Full Grid (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
 - **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `rich_features`, `full_grid`, `resume`

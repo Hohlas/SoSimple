@@ -1,12 +1,13 @@
 # Context Handoff
 
-**Дата:** 2026-07-09
+**Дата:** 2026-07-10
 
 ## Текущее состояние
 
-Direction внутри frozen movement-mask проверен повторно с rich features и
-full-train политикой. Полный grid завершён: `240/240`, `failed_runs=0`,
-`verdict=DIRECTION_REPLICATION_REQUIRED`.
+Direction внутри frozen movement-mask закрыт как ближайшая исследовательская
+ветка. Узкая seed-stability репликация заранее зафиксированной семьи
+`nearest_k60 / extra_trees / entry_log_ratio` завершилась
+`REJECT_DIRECTION_REPLICATION`.
 
 Текущая линия:
 
@@ -14,49 +15,58 @@ full-train политикой. Полный grid завершён: `240/240`, `f
 - movement-filter design: `SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`;
 - movement-filter freeze: `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`;
 - old direction inside frozen movement: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`;
-- rich direction inside frozen movement: `DIAGNOSTIC_ONLY / DIRECTION_REPLICATION_REQUIRED`.
+- rich direction full grid: `DIAGNOSTIC_ONLY / DIRECTION_REPLICATION_REQUIRED`;
+- narrow direction replication: `FAIL / REJECT_DIRECTION_REPLICATION`.
 
 ## Главный вывод
 
-Rich features нашли слабый direction-effect внутри заранее замороженной
-movement-mask, но этого недостаточно для кандидата:
+H3 weak direction-effect из full-grid не воспроизвёлся по seed stability:
 
-- winner: `nearest_k60|H3|entry_log_ratio|extra_trees`;
-- `val_select_inside_mask balanced_accuracy = 0.570170`;
-- `val_eval_inside_mask balanced_accuracy = 0.529056`;
-- `val_select`/`val_eval` sample-size gates: `PASS`;
-- `low_n_disclosure` frozen rows: `59`, disclosure-only, low-N;
-- full-split diagnostics около случайного уровня.
+- matrix: `nearest_k60 / extra_trees / entry_log_ratio`;
+- planned horizons: `H3`, `H6`, `H9`;
+- executed horizons: `H3`, `H6`;
+- H9: `SKIPPED_MISSING_TARGET_COLUMNS`;
+- seeds: `41`, `42`, `43`, `44`, `45`;
+- progress: `10/10`, `failed_runs=0`, `contract_status=PASS`;
+- H3 median `val_eval_inside_mask balanced_accuracy = 0.499080`;
+- H3 seeds `val_eval_inside_mask >= 0.52`: `2/5`;
+- H3 same positive sign on `val_select` and `val_eval`: `1/5`;
+- H6 median `val_eval_inside_mask balanced_accuracy = 0.528590`, but H6 was
+  secondary robustness and cannot replace failed H3.
 
-Интерпретация: нужна заранее зафиксированная репликация. Это не trading signal.
+Итог: direction-inside-frozen-mask не является near-term branch. Это не trading
+signal и не candidate.
 
 ## Главные артефакты
 
-- `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
-- `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`
-- `ML/reports/direction_inside_frozen_movement_regime_rich_features_metrics.csv`
-- `ML/reports/direction_inside_frozen_movement_regime_rich_features_rows.csv`
+- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
+- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication.json`
+- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication_metrics.csv`
+- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication_rows.csv`
 - `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
 - `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
 - `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
+- `docs/superpowers/roadmap.md`
 
 ## Runner Status
 
-Runner поддерживает:
+Rich-features runner теперь поддерживает:
 
-- `--resume` / `--no-resume`, default `--resume`;
-- progress JSON после каждого run;
-- heartbeat: загрузка split/scores, start, preflight, run start/end, ETA;
-- per-run `elapsed_sec`;
-- default `--threads 24`;
-- `n_jobs=24` для `ExtraTrees` и `XGBoost`;
-- `xgb_threads` / `nthread` в JSON для XGBoost;
-- очистку legacy resume rows без текущего `resume_key`.
+- обычный full-grid режим без H9;
+- `--replication-mode narrow`;
+- narrow default horizons `H3/H6/H9`;
+- `--replication-seeds`;
+- H9 target preflight;
+- `replication_summary`, `replication_verdict`, `time_diagnostics`;
+- search-budget disclosure для narrow replication;
+- default `--resume`, progress JSON и heartbeat.
 
 Тесты:
 
-- focused: `30 passed`;
-- full suite after implementation: `1254 passed, 30 warnings`.
+- focused: `44 passed`;
+- full suite: `1272 passed`;
+- smoke narrow: `contract_status=PASS`, `progress=1/1`;
+- full narrow run: `contract_status=PASS`, `progress=10/10`.
 
 ## Exact Frozen Rule
 
@@ -71,22 +81,22 @@ Frozen movement rule не менялся:
 
 Следующим агентом сначала читать:
 
+- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
+- `docs/superpowers/roadmap.md`
 - `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
-- `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
-- `ML/reports/direction_inside_frozen_movement_regime_rich_features.json`
-- `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`
-- `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`
+- `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`
+- `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`
 
-Практический следующий шаг: написать narrow replication plan. Не выбирать
-новый winner по `val_eval`; сначала freeze допустимой репликационной матрицы,
-например вокруг `nearest_k60 / H3 / extra_trees`, затем проверять seed/year/block
-robustness без открытия `locked_test`.
+Практический следующий шаг: отдельный план для execution-aware механики входа
+от `fractal0_price`: exact `decision_time`, entry eligibility, first executable
+price, oracle-preflight и новые targets от фактической точки входа.
 
 ## Запрещённые Направления
 
-- Не трактовать `DIRECTION_REPLICATION_REQUIRED` как candidate.
+- Не продолжать wide direction search внутри frozen movement-mask без новой
+  заранее обоснованной гипотезы.
+- Не продвигать H6 post-hoc как replacement primary horizon.
 - Не тюнить по `val_eval` или `low_n_disclosure`.
-- Не менять frozen movement-mask в рамках этой ветки.
-- Не добавлять PnL/PF, BUY/SELL или trading claims.
+- Не менять frozen movement-mask в рамках закрытой ветки.
+- Не добавлять PnL/PF, BUY/SELL или trading claims к этому результату.
 - Не открывать `locked_test`.
-- Не выдавать weak direction-effect за production/live rule.

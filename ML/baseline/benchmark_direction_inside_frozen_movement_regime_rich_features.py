@@ -3,7 +3,7 @@
 # Назначение: контрактный runner для проверки direction внутри frozen movement-mask
 #   с богатыми feature-профилями и full-train политикой обучения.
 # Язык: Python 3.10+
-# Обновлён: 2026-07-09
+# Обновлён: 2026-07-10
 # Зависимости:
 #   Входные данные:
 #     - entry-based split-ы из существующих baseline runners
@@ -12,8 +12,10 @@
 #     - ML/reports/direction_inside_frozen_movement_regime_rich_features.json
 #     - ML/reports/direction_inside_frozen_movement_regime_rich_features_metrics.csv
 #     - ML/reports/direction_inside_frozen_movement_regime_rich_features_rows.csv
+#     - ML/reports/direction_inside_frozen_movement_regime_narrow_replication*.json/csv
 # Использование:
 #   ./.venv/bin/python ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py
+#   ./.venv/bin/python ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py --replication-mode narrow
 # Примечания:
 #   - locked_test не открывается.
 #   - CLI подключён к реальным split/freeze артефактам; полный grid может быть
@@ -41,9 +43,12 @@ from ML.baseline import benchmark_entry_based_next_open_closeout as closeout
 from ML.baseline.benchmark_entry_based_movement_filter_freeze import frozen_rule, stable_rule_hash
 
 RICH_DIRECTION_OUTPUT_PREFIX = "direction_inside_frozen_movement_regime_rich_features"
+NARROW_REPLICATION_OUTPUT_PREFIX = "direction_inside_frozen_movement_regime_narrow_replication"
 REQUIRED_SCORE_COLUMNS = ("split", "split_row_id", "selected")
 RICH_FEATURE_PROFILES = ("simple_combined", "nearest_k60", "nearest_k80", "corridor_5atr", "all100")
 RICH_TARGET_HORIZONS = (3, 6, 12, 24)
+NARROW_REPLICATION_HORIZONS = (3, 6, 9)
+NARROW_REPLICATION_SEEDS = (41, 42, 43, 44, 45)
 RICH_TARGET_FAMILIES = ("entry_log_ratio", "entry_up_dn_delta", "entry_up_dn_classifier")
 RICH_MODEL_KEYS = ("hist_gradient_boosting", "extra_trees", "xgboost_depth3", "xgboost_depth5")
 ALLOWED_RICH_VERDICTS = (
@@ -180,6 +185,55 @@ def rich_direction_config() -> dict[str, object]:
             "ATR": "row_value_available_at_row",
         },
     }
+
+
+def narrow_replication_config() -> dict[str, object]:
+    config = rich_direction_config()
+    config.update(
+        {
+            "stage_name": "direction_inside_frozen_mask_narrow_replication",
+            "output_prefix_name": NARROW_REPLICATION_OUTPUT_PREFIX,
+            "replication_mode": "narrow",
+            "feature_profiles": ["nearest_k60"],
+            "model_keys": ["extra_trees"],
+            "target_families": ["entry_log_ratio"],
+            "target_horizons": list(NARROW_REPLICATION_HORIZONS),
+            "replication_seeds": list(NARROW_REPLICATION_SEEDS),
+            "primary_horizon": 3,
+            "secondary_horizons": [6, 9],
+            "selection_policy": "pre_registered_no_new_winner_search",
+            "max_positive_verdict": "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY",
+            "locked_test": "not_opened",
+            "threads": DEFAULT_THREADS,
+            "parallel_workers": 1,
+        }
+    )
+    return config
+
+
+def build_rich_direction_jobs(config: dict[str, object]) -> list[dict[str, object]]:
+    profiles = tuple(config.get("feature_profiles", RICH_FEATURE_PROFILES))
+    horizons = tuple(
+        int(value)
+        for value in config.get("executable_horizons", config.get("target_horizons", RICH_TARGET_HORIZONS))
+    )
+    target_families = tuple(config.get("target_families", RICH_TARGET_FAMILIES))
+    model_keys = tuple(config.get("model_keys", RICH_MODEL_KEYS))
+    seeds = tuple(int(value) for value in config.get("replication_seeds", [config.get("seed", DEFAULT_SEED)]))
+    return [
+        {
+            "profile": str(profile),
+            "horizon": int(horizon),
+            "target_family": str(target_family),
+            "model_key": str(model_key),
+            "seed": int(seed),
+        }
+        for seed in seeds
+        for profile in profiles
+        for horizon in horizons
+        for target_family in target_families
+        for model_key in model_keys
+    ]
 
 
 def _normalize_split_row_ids(scores: pd.DataFrame) -> pd.Series:
@@ -395,12 +449,51 @@ def _required_target_columns(horizon: int) -> tuple[str, str, str]:
     return (f"entry_log_ratio_{horizon}", f"entry_up_{horizon}", f"entry_dn_{horizon}")
 
 
+def preflight_target_horizons(
+    splits: dict[str, pd.DataFrame],
+    horizons: tuple[int, ...] | list[int],
+) -> dict[str, object]:
+    horizon_results: dict[str, dict[str, object]] = {}
+    executable: list[int] = []
+    skipped: list[int] = []
+    for horizon_value in horizons:
+        horizon = int(horizon_value)
+        required = list(_required_target_columns(horizon))
+        missing_by_split = {
+            split_name: [column for column in required if column not in frame.columns]
+            for split_name, frame in splits.items()
+        }
+        missing_by_split = {name: missing for name, missing in missing_by_split.items() if missing}
+        if missing_by_split:
+            skipped.append(horizon)
+            horizon_results[str(horizon)] = {
+                "status": "SKIPPED_MISSING_TARGET_COLUMNS",
+                "required_columns": required,
+                "missing_by_split": missing_by_split,
+            }
+            continue
+        executable.append(horizon)
+        horizon_results[str(horizon)] = {
+            "status": "PASS",
+            "required_columns": required,
+            "missing_by_split": {},
+        }
+
+    return {
+        "status": "PASS" if not skipped else "WARNING",
+        "horizons": horizon_results,
+        "executable_horizons": executable,
+        "skipped_horizons": skipped,
+    }
+
+
 def build_direction_targets(
     frame: pd.DataFrame,
     horizon: int,
     dead_zone: float = 0.0,
 ) -> pd.DataFrame:
-    if horizon not in RICH_TARGET_HORIZONS:
+    allowed_horizons = set(RICH_TARGET_HORIZONS).union(NARROW_REPLICATION_HORIZONS)
+    if horizon not in allowed_horizons:
         raise ValueError(f"unknown target horizon: {horizon}")
 
     log_ratio_column, up_column, dn_column = _required_target_columns(horizon)
@@ -623,6 +716,261 @@ def _json_ready(value: object) -> object:
     return value
 
 
+def _summarize_metric_window(frame: pd.DataFrame) -> dict[str, object]:
+    numeric = pd.to_numeric(frame["balanced_accuracy"], errors="coerce").dropna()
+    if numeric.empty:
+        return {
+            "median_balanced_accuracy": float("nan"),
+            "mean_balanced_accuracy": float("nan"),
+            "min_balanced_accuracy": float("nan"),
+            "max_balanced_accuracy": float("nan"),
+        }
+    return {
+        "median_balanced_accuracy": float(numeric.median()),
+        "mean_balanced_accuracy": float(numeric.mean()),
+        "min_balanced_accuracy": float(numeric.min()),
+        "max_balanced_accuracy": float(numeric.max()),
+    }
+
+
+def aggregate_narrow_replication(metrics: pd.DataFrame, summary: dict[str, object]) -> dict[str, object]:
+    target_preflight = summary.get("target_preflight", {}) if isinstance(summary.get("target_preflight"), dict) else {}
+    requested_horizons = [
+        int(value)
+        for value in summary.get("target_horizons", list(NARROW_REPLICATION_HORIZONS))
+    ]
+    primary_horizon = int(summary.get("primary_horizon", 3))
+    secondary_horizons = [int(value) for value in summary.get("secondary_horizons", [6, 9])]
+    filtered = metrics.copy()
+    if "slice" in filtered.columns:
+        filtered = filtered.loc[filtered["slice"].eq("frozen_selected")].copy()
+    if "split" in filtered.columns:
+        filtered = filtered.loc[filtered["split"].isin(["val_select", "val_eval"])].copy()
+    if "horizon" in filtered.columns:
+        filtered["horizon"] = pd.to_numeric(filtered["horizon"], errors="coerce").astype("Int64")
+    if "seed" in filtered.columns:
+        filtered["seed"] = pd.to_numeric(filtered["seed"], errors="coerce").astype("Int64")
+    if "balanced_accuracy" in filtered.columns:
+        filtered["balanced_accuracy"] = pd.to_numeric(filtered["balanced_accuracy"], errors="coerce")
+
+    failed_runs = summary.get("failed_runs", []) if isinstance(summary.get("failed_runs"), list) else []
+    horizon_summaries: dict[str, dict[str, object]] = {}
+    for horizon in requested_horizons:
+        horizon_key = str(horizon)
+        horizon_rows = filtered.loc[filtered["horizon"].eq(horizon)].copy() if "horizon" in filtered.columns else filtered.iloc[0:0]
+        preflight_entry = target_preflight.get("horizons", {}).get(horizon_key, {})
+        horizon_target_failures = [
+            run
+            for run in failed_runs
+            if str(run.get("stage")) == "targets" and int(run.get("horizon", -1)) == int(horizon)
+        ]
+        executed = not horizon_rows.empty
+        gate_failures: list[dict[str, object]] = []
+        same_positive_sign_seed_count = 0
+        val_eval_seeds_ge_0_52 = 0
+        val_eval_seeds_ge_0_50 = 0
+        seed_rows: list[dict[str, object]] = []
+
+        for seed_value in sorted(horizon_rows["seed"].dropna().astype(int).unique()) if "seed" in horizon_rows.columns else []:
+            seed_frame = horizon_rows.loc[horizon_rows["seed"].eq(seed_value)].copy()
+            val_select_row = seed_frame.loc[seed_frame["split"].eq("val_select")].head(1)
+            val_eval_row = seed_frame.loc[seed_frame["split"].eq("val_eval")].head(1)
+            val_select_score = float(val_select_row["balanced_accuracy"].iloc[0]) if not val_select_row.empty else float("nan")
+            val_eval_score = float(val_eval_row["balanced_accuracy"].iloc[0]) if not val_eval_row.empty else float("nan")
+            val_select_gate = str(val_select_row["sample_size_gate"].iloc[0]) if not val_select_row.empty else "MISSING"
+            val_eval_gate = str(val_eval_row["sample_size_gate"].iloc[0]) if not val_eval_row.empty else "MISSING"
+            if val_select_gate != "PASS" or val_eval_gate != "PASS":
+                gate_failures.append(
+                    {
+                        "seed": int(seed_value),
+                        "val_select_gate": val_select_gate,
+                        "val_eval_gate": val_eval_gate,
+                    }
+                )
+            if np.isfinite(val_eval_score) and val_eval_score >= 0.52:
+                val_eval_seeds_ge_0_52 += 1
+            if np.isfinite(val_eval_score) and val_eval_score >= 0.50:
+                val_eval_seeds_ge_0_50 += 1
+            if np.isfinite(val_select_score) and np.isfinite(val_eval_score) and val_select_score > 0.50 and val_eval_score > 0.50:
+                same_positive_sign_seed_count += 1
+            seed_rows.append(
+                {
+                    "seed": int(seed_value),
+                    "val_select_balanced_accuracy": val_select_score,
+                    "val_eval_balanced_accuracy": val_eval_score,
+                    "val_select_gate": val_select_gate,
+                    "val_eval_gate": val_eval_gate,
+                }
+            )
+
+        if "split" in horizon_rows.columns:
+            val_eval_rows = horizon_rows.loc[horizon_rows["split"].eq("val_eval")].copy()
+            val_select_rows = horizon_rows.loc[horizon_rows["split"].eq("val_select")].copy()
+        else:
+            val_eval_rows = horizon_rows.iloc[0:0].copy()
+            val_select_rows = horizon_rows.iloc[0:0].copy()
+        val_eval_summary = _summarize_metric_window(val_eval_rows) if not val_eval_rows.empty else _summarize_metric_window(
+            pd.DataFrame({"balanced_accuracy": []})
+        )
+        val_select_summary = _summarize_metric_window(val_select_rows) if not val_select_rows.empty else _summarize_metric_window(
+            pd.DataFrame({"balanced_accuracy": []})
+        )
+
+        status = str(preflight_entry.get("status", "PASS"))
+        if horizon_target_failures:
+            status = "TARGET_CONTRACT_FAIL"
+        if executed:
+            status = "PASS"
+        horizon_summaries[horizon_key] = {
+            "status": status,
+            "executed": executed,
+            "seed_count": int(len(seed_rows)),
+            "seed_rows": seed_rows,
+            "val_select_median_balanced_accuracy": val_select_summary["median_balanced_accuracy"],
+            "val_select_mean_balanced_accuracy": val_select_summary["mean_balanced_accuracy"],
+            "val_select_min_balanced_accuracy": val_select_summary["min_balanced_accuracy"],
+            "val_select_max_balanced_accuracy": val_select_summary["max_balanced_accuracy"],
+            "val_eval_median_balanced_accuracy": val_eval_summary["median_balanced_accuracy"],
+            "val_eval_mean_balanced_accuracy": val_eval_summary["mean_balanced_accuracy"],
+            "val_eval_min_balanced_accuracy": val_eval_summary["min_balanced_accuracy"],
+            "val_eval_max_balanced_accuracy": val_eval_summary["max_balanced_accuracy"],
+            "val_eval_seeds_ge_0_52": int(val_eval_seeds_ge_0_52),
+            "val_eval_seeds_ge_0_50": int(val_eval_seeds_ge_0_50),
+            "same_positive_sign_seed_count": int(same_positive_sign_seed_count),
+            "gate_failures": gate_failures,
+            "gate_failures_count": int(len(gate_failures)),
+            "required_columns": preflight_entry.get("required_columns", list(_required_target_columns(horizon))),
+            "missing_by_split": preflight_entry.get("missing_by_split", {}),
+            "target_contract_failures": _json_ready(horizon_target_failures),
+        }
+
+    contract_status = str(summary.get("contract_status", "PASS"))
+    return {
+        "status": "PASS" if contract_status == "PASS" else "WARNING",
+        "scope": "research_only",
+        "contract_status": contract_status,
+        "failed_run_count": int(len(failed_runs)),
+        "primary_horizon": primary_horizon,
+        "secondary_horizons": secondary_horizons,
+        "requested_horizons": requested_horizons,
+        "executed_horizons": [int(value) for value in target_preflight.get("executable_horizons", [])] or [
+            int(key) for key, value in horizon_summaries.items() if value.get("executed")
+        ],
+        "skipped_horizons": [int(value) for value in target_preflight.get("skipped_horizons", [])],
+        "horizons": horizon_summaries,
+    }
+
+
+def narrow_replication_verdict(replication: dict[str, object]) -> str:
+    horizons = replication.get("horizons", {}) if isinstance(replication.get("horizons"), dict) else {}
+    primary = horizons.get(str(replication.get("primary_horizon", 3)), {})
+    primary_median = float(primary.get("val_eval_median_balanced_accuracy", float("nan")))
+    primary_seeds_ge_0_52 = int(primary.get("val_eval_seeds_ge_0_52", 0))
+    primary_same_positive = int(primary.get("same_positive_sign_seed_count", 0))
+    primary_gate_failures = int(primary.get("gate_failures_count", 0))
+
+    if not np.isfinite(primary_median):
+        return "DIRECTION_REPLICATION_INCONCLUSIVE"
+    if primary_median < 0.515 or primary_seeds_ge_0_52 < 2:
+        return "REJECT_DIRECTION_REPLICATION"
+
+    if replication.get("contract_status") != "PASS" or int(replication.get("failed_run_count", 0)) > 0:
+        return "DIRECTION_REPLICATION_INCONCLUSIVE"
+
+    primary_pass = (
+        primary_seeds_ge_0_52 >= 3
+        and primary_median >= 0.525
+        and primary_same_positive >= 3
+        and primary_gate_failures == 0
+    )
+    if not primary_pass:
+        return "DIRECTION_REPLICATION_INCONCLUSIVE"
+
+    for horizon in replication.get("secondary_horizons", []):
+        horizon_summary = horizons.get(str(horizon), {})
+        status = horizon_summary.get("status")
+        if status == "SKIPPED_MISSING_TARGET_COLUMNS":
+            continue
+        if not horizon_summary.get("executed"):
+            continue
+        median_score = float(horizon_summary.get("val_eval_median_balanced_accuracy", float("nan")))
+        seeds_ge_0_50 = int(horizon_summary.get("val_eval_seeds_ge_0_50", 0))
+        if not np.isfinite(median_score) or median_score < 0.505 or seeds_ge_0_50 < 2:
+            return "DIRECTION_REPLICATION_INCONCLUSIVE"
+
+    return "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY"
+
+
+def compute_narrow_time_diagnostics(rows: pd.DataFrame, block_count: int = 4) -> dict[str, object]:
+    filtered = rows.copy()
+    if "split" in filtered.columns:
+        filtered = filtered.loc[filtered["split"].isin(["val_select", "val_eval"])].copy()
+    if "frozen_selected" in filtered.columns:
+        filtered = filtered.loc[pd.Series(filtered["frozen_selected"]).astype(bool)].copy()
+    else:
+        filtered = filtered.iloc[0:0]
+
+    by_year: dict[str, dict[str, object]] = {}
+    by_block: list[dict[str, object]] = []
+    status = "PASS"
+
+    if "time" in filtered.columns:
+        filtered["parsed_time"] = pd.to_datetime(filtered["time"], errors="coerce")
+        time_available = filtered["parsed_time"].notna().any()
+        if time_available:
+            for year, year_frame in filtered.loc[filtered["parsed_time"].notna()].groupby(filtered["parsed_time"].dt.year.astype(str)):
+                metrics = _direction_metrics(year_frame["target_direction"], year_frame["prediction"])
+                by_year[str(year)] = {
+                    "n": int(metrics["n"]),
+                    "accuracy": metrics["accuracy"],
+                    "balanced_accuracy": metrics["balanced_accuracy"],
+                    "status": "LOW_N_DIAGNOSTIC_ONLY" if int(metrics["n"]) < 30 else "PASS",
+                }
+        else:
+            status = "WARNING"
+    else:
+        status = "WARNING"
+        filtered["parsed_time"] = pd.NaT
+
+    group_columns = ["resume_key", "split"] if {"resume_key", "split"} <= set(filtered.columns) else ["split"]
+    for group_key, group_frame in filtered.groupby(group_columns, dropna=False):
+        ordered = group_frame.sort_values(
+            by=["parsed_time", "row_id"] if "row_id" in group_frame.columns else ["parsed_time"],
+            ascending=[True, True] if "row_id" in group_frame.columns else [True],
+            na_position="last",
+        ).reset_index(drop=True)
+        blocks = np.array_split(np.arange(len(ordered)), max(1, int(block_count)))
+        if not isinstance(group_key, tuple):
+            group_key = (group_key,)
+        for block_index, block_indices in enumerate(blocks, start=1):
+            block_frame = ordered.iloc[block_indices].copy() if len(block_indices) else ordered.iloc[0:0].copy()
+            metrics = _direction_metrics(block_frame["target_direction"], block_frame["prediction"]) if not block_frame.empty else {
+                "n": 0,
+                "accuracy": float("nan"),
+                "balanced_accuracy": float("nan"),
+            }
+            block_record = {
+                "resume_key": str(group_key[0]) if group_columns[0] == "resume_key" else "",
+                "split": str(group_key[-1]),
+                "block_index": int(block_index),
+                "n": int(metrics["n"]),
+                "accuracy": metrics["accuracy"],
+                "balanced_accuracy": metrics["balanced_accuracy"],
+                "status": "LOW_N_DIAGNOSTIC_ONLY" if int(metrics["n"]) < 30 else "PASS",
+            }
+            if not block_frame.empty:
+                block_record["row_id_start"] = int(block_frame["row_id"].min()) if "row_id" in block_frame.columns else 0
+                block_record["row_id_end"] = int(block_frame["row_id"].max()) if "row_id" in block_frame.columns else 0
+            by_block.append(block_record)
+
+    return {
+        "status": status,
+        "scope": "diagnostic_only_not_verdict_gate",
+        "by_year": by_year,
+        "by_block": by_block,
+    }
+
+
 def select_rich_direction_winner(metrics: pd.DataFrame) -> dict[str, object]:
     required = {"run_id", "split", "slice", "balanced_accuracy"}
     missing = sorted(required - set(metrics.columns))
@@ -707,7 +1055,7 @@ def _empty_metrics_frame() -> pd.DataFrame:
 
 
 def _empty_rows_frame() -> pd.DataFrame:
-    return pd.DataFrame(columns=["run_id", "split", "row_id", "prediction", "target_direction", "frozen_selected"])
+    return pd.DataFrame(columns=["run_id", "split", "row_id", "prediction", "target_direction", "frozen_selected", "time"])
 
 
 def _target_direction_for_family(targets: pd.DataFrame, target_family: str) -> pd.Series:
@@ -761,37 +1109,28 @@ def run_rich_direction_experiment(
     started = time.time()
     config = rich_direction_config()
     config.update(config_overrides or {})
+    replication_mode = str(config.get("replication_mode", "none"))
     profiles = tuple(config.get("feature_profiles", RICH_FEATURE_PROFILES))
-    horizons = tuple(int(value) for value in config.get("target_horizons", RICH_TARGET_HORIZONS))
+    requested_horizons = tuple(int(value) for value in config.get("target_horizons", RICH_TARGET_HORIZONS))
     target_families = tuple(config.get("target_families", RICH_TARGET_FAMILIES))
     model_keys = tuple(config.get("model_keys", RICH_MODEL_KEYS))
     requested_threads = int(config.get("threads", DEFAULT_THREADS))
     effective_threads = resolve_effective_threads(requested_threads, int(config.get("parallel_workers", 1)))
-    seed = int(config.get("seed", DEFAULT_SEED))
     min_masked_rows = int(config.get("min_masked_rows", 100))
     min_active_sign_rows = int(config.get("min_active_sign_rows", 30))
-    jobs = [
-        {
-            "profile": str(profile),
-            "horizon": int(horizon),
-            "target_family": str(target_family),
-            "model_key": str(model_key),
-            "seed": seed,
-        }
-        for profile in profiles
-        for horizon in horizons
-        for target_family in target_families
-        for model_key in model_keys
-    ]
-    current_job_keys = {resume_key(job) for job in jobs}
-    completed_keys = load_completed_keys(output_prefix, resume) if output_prefix is not None else set()
-    completed_keys = completed_keys.intersection(current_job_keys)
-    progress = build_initial_progress(len(jobs), requested_threads, effective_threads)
-    progress["completed_keys"] = sorted(completed_keys)
-    progress["done_runs"] = len(completed_keys)
+    target_preflight: dict[str, object] = {
+        "status": "NOT_RUN",
+        "horizons": {},
+        "executable_horizons": list(requested_horizons),
+        "skipped_horizons": [],
+    }
+    planned_jobs = build_rich_direction_jobs({**config, "target_horizons": list(requested_horizons)})
+    planned_search_budget = int(len(planned_jobs))
+    discovery_search_budget = 240 if replication_mode == "narrow" else 0
+    executable_horizons = requested_horizons
     run_records: list[dict[str, object]] = []
 
-    def build_summary(metric_frame: pd.DataFrame) -> dict[str, object]:
+    def build_summary(metric_frame: pd.DataFrame, row_frame: pd.DataFrame) -> dict[str, object]:
         selection = select_rich_direction_winner(metric_frame)
         val_eval_score = None
         if selection.get("status") == "SELECTED" and selection.get("val_eval_inside_mask"):
@@ -814,15 +1153,20 @@ def run_rich_direction_experiment(
         summary = {
             "schema_version": 1,
             "stage_status": "DIAGNOSTIC_ONLY",
+            "replication_mode": replication_mode,
             "training_scope": config["training_scope"],
             "frozen_mask_usage": config["frozen_mask_usage"],
             "selection_metric": config["selection_metric"],
             "validation_roles": config["validation_roles"],
             "feature_profiles": list(profiles),
-            "target_horizons": list(horizons),
+            "target_horizons": list(requested_horizons),
+            "executable_horizons": list(executable_horizons),
             "target_families": list(target_families),
             "model_keys": list(model_keys),
-            "seed": seed,
+            "seed": int(config.get("seed", DEFAULT_SEED)),
+            "replication_seeds": [int(value) for value in config.get("replication_seeds", [config.get("seed", DEFAULT_SEED)])],
+            "primary_horizon": int(config.get("primary_horizon", 3)),
+            "secondary_horizons": [int(value) for value in config.get("secondary_horizons", [6, 9])],
             "locked_test": "not_opened",
             "low_n_disclosure_used_for_selection": False,
             "training_scope_counts": train_scope,
@@ -844,7 +1188,14 @@ def run_rich_direction_experiment(
             "progress": progress,
             "runs": run_records,
             "failed_runs": failed_runs,
-            "cumulative_search_budget": int(len(profiles) * len(horizons) * len(target_families) * len(model_keys)),
+            "target_preflight": target_preflight,
+            "planned_search_budget": planned_search_budget,
+            "executed_search_budget": int(len(jobs)),
+            "replication_search_budget_planned": planned_search_budget if replication_mode == "narrow" else None,
+            "replication_search_budget_executed": int(len(jobs)) if replication_mode == "narrow" else None,
+            "discovery_search_budget": discovery_search_budget,
+            "cumulative_search_budget": int(len(jobs)),
+            "cumulative_search_budget_disclosed": int(discovery_search_budget + len(jobs)),
             "selection": selection,
             "winner": selection,
             "val_eval_inside_mask_balanced_accuracy": val_eval_score,
@@ -853,11 +1204,28 @@ def run_rich_direction_experiment(
             "contract_reasons": [],
             "forbidden_interpretations": ["not_live_rule", "not_trading_candidate", "not_pnl", "not_pf"],
             "allowed_verdicts": list(ALLOWED_RICH_VERDICTS),
+            "time_diagnostics": compute_narrow_time_diagnostics(row_frame),
         }
+        if replication_mode == "narrow":
+            if any(run.get("stage") == "targets" for run in failed_runs):
+                summary["contract_status"] = "TARGET_CONTRACT_FAIL"
+                summary["contract_reasons"] = ["target_construction_failed_after_preflight"]
+            elif failed_runs:
+                summary["contract_status"] = "MODEL_RUN_FAIL"
+                summary["contract_reasons"] = ["model_fit_or_evaluation_failed"]
+            summary["allowed_verdicts"] = [
+                "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY",
+                "DIRECTION_REPLICATION_INCONCLUSIVE",
+                "REJECT_DIRECTION_REPLICATION",
+            ]
+            summary["replication_summary"] = aggregate_narrow_replication(metric_frame, summary)
+            summary["replication_verdict"] = narrow_replication_verdict(summary["replication_summary"])
         summary["elapsed_sec"] = float(time.time() - started)
         summary["started_at"] = progress["started_at"]
         summary["finished_at"] = progress["finished_at"]
-        summary["verdict"] = rich_direction_verdict(summary)
+        summary["verdict"] = (
+            summary["replication_verdict"] if replication_mode == "narrow" else rich_direction_verdict(summary)
+        )
         return summary
 
     def save_progress() -> None:
@@ -865,7 +1233,7 @@ def run_rich_direction_experiment(
             return
         metric_frame = pd.DataFrame(metric_rows) if metric_rows else _empty_metrics_frame()
         row_frame = pd.DataFrame(prediction_rows) if prediction_rows else _empty_rows_frame()
-        summary = build_summary(metric_frame)
+        summary = build_summary(metric_frame, row_frame)
         Path(output_prefix).parent.mkdir(parents=True, exist_ok=True)
         Path(f"{output_prefix}.json").write_text(
             json.dumps(_json_ready(summary), ensure_ascii=True, indent=2, allow_nan=True),
@@ -874,15 +1242,28 @@ def run_rich_direction_experiment(
         metric_frame.to_csv(Path(f"{output_prefix}_metrics.csv"), index=False)
         row_frame.to_csv(Path(f"{output_prefix}_rows.csv"), index=False)
 
-    heartbeat("start", 0, len(jobs), started)
+    heartbeat("start", 0, planned_search_budget, started)
 
     required_splits = ("train", "val_select", "val_eval", "low_n_disclosure")
     missing_splits = [split_name for split_name in required_splits if split_name not in splits]
     if missing_splits:
         raise ValueError(f"missing required rich direction splits: {missing_splits}")
     role_splits = {split_name: splits[split_name] for split_name in required_splits}
-    heartbeat("preflight", 0, len(jobs), started)
+    heartbeat("preflight", 0, planned_search_budget, started)
     masked_splits = attach_frozen_mask_by_row_id(role_splits, scores)
+    if replication_mode == "narrow":
+        target_preflight = preflight_target_horizons(masked_splits, list(requested_horizons))
+        executable_horizons = tuple(int(value) for value in target_preflight["executable_horizons"])
+        config["executable_horizons"] = list(executable_horizons)
+    else:
+        executable_horizons = requested_horizons
+    jobs = build_rich_direction_jobs(config)
+    current_job_keys = {resume_key(job) for job in jobs}
+    completed_keys = load_completed_keys(output_prefix, resume) if output_prefix is not None else set()
+    completed_keys = completed_keys.intersection(current_job_keys)
+    progress = build_initial_progress(len(jobs), requested_threads, effective_threads)
+    progress["completed_keys"] = sorted(completed_keys)
+    progress["done_runs"] = len(completed_keys)
     metric_rows: list[dict[str, object]] = []
     prediction_rows: list[dict[str, object]] = []
     failed_runs: list[dict[str, object]] = []
@@ -923,17 +1304,38 @@ def run_rich_direction_experiment(
                 if str(run.get("resume_key", "")) in current_job_keys
             ]
 
-    for profile in profiles:
-        try:
-            features_by_split = build_rich_feature_frames(masked_splits, str(profile))
-            feature_metadata[str(profile)] = rich_feature_metadata_for_json()
-        except Exception as exc:
-            failed_runs.append({"profile": str(profile), "stage": "features", "error": type(exc).__name__, "message": str(exc)})
-            continue
+    feature_cache: dict[str, dict[str, pd.DataFrame] | Exception] = {}
+    target_cache: dict[int, dict[str, pd.DataFrame] | Exception] = {}
 
-        for horizon in horizons:
+    for job in jobs:
+        profile = str(job["profile"])
+        horizon = int(job["horizon"])
+        target_family = str(job["target_family"])
+        model_key = str(job["model_key"])
+        seed = int(job["seed"])
+        if should_skip_job(job, completed_keys, resume):
+            continue
+        if profile not in feature_cache:
             try:
-                targets_by_split = {
+                feature_cache[profile] = build_rich_feature_frames(masked_splits, profile)
+                feature_metadata[profile] = rich_feature_metadata_for_json()
+            except Exception as exc:
+                failed_runs.append(
+                    {
+                        "profile": profile,
+                        "stage": "features",
+                        "error": type(exc).__name__,
+                        "message": str(exc),
+                    }
+                )
+                feature_cache[profile] = exc
+        if isinstance(feature_cache[profile], Exception):
+            continue
+        features_by_split = feature_cache[profile]
+
+        if horizon not in target_cache:
+            try:
+                target_cache[horizon] = {
                     split_name: build_direction_targets(frame, horizon)
                     for split_name, frame in masked_splits.items()
                     if split_name in features_by_split
@@ -941,130 +1343,110 @@ def run_rich_direction_experiment(
             except Exception as exc:
                 failed_runs.append(
                     {
-                        "profile": str(profile),
-                        "horizon": int(horizon),
+                        "profile": profile,
+                        "horizon": horizon,
                         "stage": "targets",
                         "error": type(exc).__name__,
                         "message": str(exc),
                     }
                 )
-                continue
+                target_cache[horizon] = exc
+        if isinstance(target_cache[horizon], Exception):
+            continue
+        targets_by_split = target_cache[horizon]
+        train_targets = targets_by_split["train"].copy()
+        train_targets["target_direction"] = _target_direction_for_family(train_targets, target_family)
+        fit_result = fit_direction_models(
+            features_by_split["train"],
+            train_targets,
+            {**config, "model_keys": [model_key], "threads": effective_threads, "seed": seed},
+        )
+        for failed in fit_result["failed_runs"]:
+            failed_runs.append(
+                {
+                    "profile": profile,
+                    "horizon": horizon,
+                    "target_family": target_family,
+                    "stage": "fit",
+                    **failed,
+                }
+            )
+        if not fit_result["models"]:
+            continue
 
-            for target_family in target_families:
-                pending_model_keys = [
-                    model_key
-                    for model_key in model_keys
-                    if not should_skip_job(
-                        {
-                            "profile": str(profile),
-                            "horizon": int(horizon),
-                            "target_family": str(target_family),
-                            "model_key": str(model_key),
-                            "seed": seed,
-                        },
-                        completed_keys,
-                        resume,
-                    )
-                ]
-                if not pending_model_keys:
+        for fitted_model_key, model in fit_result["models"].items():
+            run_started = time.time()
+            run_id = f"{profile}|S{seed}|H{horizon}|{target_family}|{fitted_model_key}"
+            key = resume_key(job)
+            heartbeat(f"run_start:{key}", int(progress["done_runs"]), len(jobs), started)
+            run_context = {
+                "run_id": run_id,
+                "resume_key": key,
+                "profile": profile,
+                "horizon": horizon,
+                "target_family": target_family,
+                "model_key": fitted_model_key,
+                "seed": seed,
+            }
+            for split_name in ("val_select", "val_eval", "low_n_disclosure"):
+                if split_name not in features_by_split or split_name not in targets_by_split:
                     continue
-                train_targets = targets_by_split["train"].copy()
-                train_targets["target_direction"] = _target_direction_for_family(train_targets, str(target_family))
-                fit_result = fit_direction_models(
-                    features_by_split["train"],
-                    train_targets,
-                    {**config, "model_keys": pending_model_keys, "threads": effective_threads, "seed": seed},
+                split_targets = targets_by_split[split_name].copy()
+                split_targets["target_direction"] = _target_direction_for_family(split_targets, target_family)
+                predictions = _model_prediction_direction(model, features_by_split[split_name])
+                frozen = masked_splits[split_name]["frozen_selected"].astype(bool)
+                evaluated = evaluate_direction_predictions(predictions, split_targets, frozen)
+                gate_input = pd.DataFrame(
+                    {
+                        "split": [split_name] * len(split_targets),
+                        "frozen_selected": frozen.to_numpy(dtype=bool),
+                        "target_direction": split_targets["target_direction"].to_numpy(),
+                    },
+                    index=split_targets.index,
                 )
-                for failed in fit_result["failed_runs"]:
-                    failed_runs.append(
-                        {
-                            "profile": str(profile),
-                            "horizon": int(horizon),
-                            "target_family": str(target_family),
-                            "stage": "fit",
-                            **failed,
-                        }
-                    )
+                gate = masked_sample_size_gate(
+                    gate_input,
+                    split=split_name,
+                    min_masked_rows=min_masked_rows,
+                    min_active_sign_rows=min_active_sign_rows,
+                )
+                _append_metric_rows(metric_rows, run_context, split_name, evaluated, gate)
 
-                for model_key, model in fit_result["models"].items():
-                    run_started = time.time()
-                    run_id = f"{profile}|H{horizon}|{target_family}|{model_key}"
-                    job = {
-                        "profile": str(profile),
-                        "horizon": int(horizon),
-                        "target_family": str(target_family),
-                        "model_key": str(model_key),
-                        "seed": seed,
+                for row_id, prediction in predictions.items():
+                    row_payload = {
+                        **run_context,
+                        "split": split_name,
+                        "row_id": int(row_id),
+                        "prediction": int(prediction),
+                        "target_direction": int(split_targets.loc[row_id, "target_direction"]),
+                        "frozen_selected": bool(frozen.loc[row_id]),
                     }
-                    key = resume_key(job)
-                    heartbeat(f"run_start:{key}", int(progress["done_runs"]), len(jobs), started)
-                    run_context = {
-                        "run_id": run_id,
-                        "resume_key": key,
-                        "profile": str(profile),
-                        "horizon": int(horizon),
-                        "target_family": str(target_family),
-                        "model_key": str(model_key),
-                        "seed": seed,
-                    }
-                    for split_name in ("val_select", "val_eval", "low_n_disclosure"):
-                        if split_name not in features_by_split or split_name not in targets_by_split:
-                            continue
-                        split_targets = targets_by_split[split_name].copy()
-                        split_targets["target_direction"] = _target_direction_for_family(split_targets, str(target_family))
-                        predictions = _model_prediction_direction(model, features_by_split[split_name])
-                        frozen = masked_splits[split_name]["frozen_selected"].astype(bool)
-                        evaluated = evaluate_direction_predictions(predictions, split_targets, frozen)
-                        gate_input = pd.DataFrame(
-                            {
-                                "split": [split_name] * len(split_targets),
-                                "frozen_selected": frozen.to_numpy(dtype=bool),
-                                "target_direction": split_targets["target_direction"].to_numpy(),
-                            },
-                            index=split_targets.index,
-                        )
-                        gate = masked_sample_size_gate(
-                            gate_input,
-                            split=split_name,
-                            min_masked_rows=min_masked_rows,
-                            min_active_sign_rows=min_active_sign_rows,
-                        )
-                        _append_metric_rows(metric_rows, run_context, split_name, evaluated, gate)
-
-                        for row_id, prediction in predictions.items():
-                            prediction_rows.append(
-                                {
-                                    **run_context,
-                                    "split": split_name,
-                                    "row_id": int(row_id),
-                                    "prediction": int(prediction),
-                                    "target_direction": int(split_targets.loc[row_id, "target_direction"]),
-                                    "frozen_selected": bool(frozen.loc[row_id]),
-                                }
-                            )
-                    run_elapsed = float(time.time() - run_started)
-                    completed_keys.add(key)
-                    progress["completed_keys"] = sorted(completed_keys)
-                    progress["done_runs"] = len(completed_keys)
-                    progress["elapsed_sec"] = float(time.time() - started)
-                    run_records.append(
-                        {
-                            **run_context,
-                            "status": "completed",
-                            "started_at": dt.datetime.fromtimestamp(run_started, tz=dt.timezone.utc).isoformat(),
-                            "finished_at": utc_now_iso(),
-                            "elapsed_sec": run_elapsed,
-                            "threading": model_thread_settings(str(model_key), effective_threads),
-                        }
-                    )
-                    save_progress()
-                    heartbeat(f"run_end:{key}", int(progress["done_runs"]), len(jobs), started)
+                    if "time" in masked_splits[split_name].columns:
+                        row_payload["time"] = str(masked_splits[split_name].loc[row_id, "time"])
+                    prediction_rows.append(row_payload)
+            run_elapsed = float(time.time() - run_started)
+            completed_keys.add(key)
+            progress["completed_keys"] = sorted(completed_keys)
+            progress["done_runs"] = len(completed_keys)
+            progress["elapsed_sec"] = float(time.time() - started)
+            run_records.append(
+                {
+                    **run_context,
+                    "status": "completed",
+                    "started_at": dt.datetime.fromtimestamp(run_started, tz=dt.timezone.utc).isoformat(),
+                    "finished_at": utc_now_iso(),
+                    "elapsed_sec": run_elapsed,
+                    "threading": model_thread_settings(str(fitted_model_key), effective_threads),
+                }
+            )
+            save_progress()
+            heartbeat(f"run_end:{key}", int(progress["done_runs"]), len(jobs), started)
 
     metrics = pd.DataFrame(metric_rows) if metric_rows else _empty_metrics_frame()
     rows = pd.DataFrame(prediction_rows) if prediction_rows else _empty_rows_frame()
     progress["finished_at"] = utc_now_iso()
     progress["elapsed_sec"] = float(time.time() - started)
-    summary = build_summary(metrics)
+    summary = build_summary(metrics, rows)
     return {"summary": summary, "metrics": metrics, "rows": rows}
 
 
@@ -1092,23 +1474,32 @@ def run_rich_direction_cli(
 ) -> dict[str, object]:
     cli_started = time.time()
     heartbeat("cli_start", 0, 0, cli_started)
+    config = rich_direction_config()
+    config.update(config_overrides or {})
     if not Path(freeze_scores_path).exists():
-        config = rich_direction_config()
         started = time.time()
         progress = build_initial_progress(0, DEFAULT_THREADS, DEFAULT_THREADS)
         metrics = _empty_metrics_frame()
         rows = _empty_rows_frame()
+        requested_horizons = [int(value) for value in config.get("target_horizons", RICH_TARGET_HORIZONS)]
+        planned_jobs = build_rich_direction_jobs({**config, "target_horizons": requested_horizons})
+        discovery_search_budget = 240 if str(config.get("replication_mode", "none")) == "narrow" else 0
         summary = {
             "schema_version": 1,
             "stage_status": "DIAGNOSTIC_ONLY",
+            "replication_mode": str(config.get("replication_mode", "none")),
             "training_scope": config["training_scope"],
             "frozen_mask_usage": config["frozen_mask_usage"],
             "selection_metric": config["selection_metric"],
             "validation_roles": config["validation_roles"],
-            "feature_profiles": list(RICH_FEATURE_PROFILES),
-            "target_horizons": list(RICH_TARGET_HORIZONS),
-            "target_families": list(RICH_TARGET_FAMILIES),
-            "model_keys": list(RICH_MODEL_KEYS),
+            "feature_profiles": list(config.get("feature_profiles", RICH_FEATURE_PROFILES)),
+            "target_horizons": requested_horizons,
+            "executable_horizons": requested_horizons,
+            "target_families": list(config.get("target_families", RICH_TARGET_FAMILIES)),
+            "model_keys": list(config.get("model_keys", RICH_MODEL_KEYS)),
+            "replication_seeds": [int(value) for value in config.get("replication_seeds", [config.get("seed", DEFAULT_SEED)])],
+            "primary_horizon": int(config.get("primary_horizon", 3)),
+            "secondary_horizons": [int(value) for value in config.get("secondary_horizons", [6, 9])],
             "locked_test": "not_opened",
             "low_n_disclosure_used_for_selection": False,
             "selection": {"status": "NO_CANDIDATE", "selection_split": "val_select", "selection_slice": "frozen_selected"},
@@ -1120,8 +1511,32 @@ def run_rich_direction_cli(
             "contract_reasons": [f"freeze_scores_missing:{freeze_scores_path}"],
             "forbidden_interpretations": ["not_live_rule", "not_trading_candidate", "not_pnl", "not_pf"],
             "allowed_verdicts": list(ALLOWED_RICH_VERDICTS),
+            "target_preflight": {
+                "status": "NOT_RUN",
+                "horizons": {},
+                "executable_horizons": requested_horizons,
+                "skipped_horizons": [],
+            },
+            "planned_search_budget": int(len(planned_jobs)),
+            "executed_search_budget": 0,
+            "replication_search_budget_planned": int(len(planned_jobs)) if str(config.get("replication_mode", "none")) == "narrow" else None,
+            "replication_search_budget_executed": 0 if str(config.get("replication_mode", "none")) == "narrow" else None,
+            "discovery_search_budget": discovery_search_budget,
+            "cumulative_search_budget": 0,
+            "cumulative_search_budget_disclosed": discovery_search_budget,
+            "time_diagnostics": compute_narrow_time_diagnostics(rows),
         }
-        summary["verdict"] = rich_direction_verdict(summary)
+        if str(config.get("replication_mode", "none")) == "narrow":
+            summary["allowed_verdicts"] = [
+                "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY",
+                "DIRECTION_REPLICATION_INCONCLUSIVE",
+                "REJECT_DIRECTION_REPLICATION",
+            ]
+            summary["replication_summary"] = aggregate_narrow_replication(metrics, summary)
+            summary["replication_verdict"] = "DIRECTION_REPLICATION_INCONCLUSIVE"
+            summary["verdict"] = summary["replication_verdict"]
+        else:
+            summary["verdict"] = rich_direction_verdict(summary)
         write_rich_direction_artifacts(summary, metrics, rows, output_prefix)
         return summary
 
@@ -1141,9 +1556,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-prefix", default=str(DEFAULT_OUTPUT_PREFIX))
     parser.add_argument("--freeze-scores", default=str(DEFAULT_FREEZE_SCORES_PATH))
     parser.add_argument("--profiles", nargs="+", default=list(RICH_FEATURE_PROFILES), choices=list(RICH_FEATURE_PROFILES))
-    parser.add_argument("--horizons", nargs="+", type=int, default=list(RICH_TARGET_HORIZONS), choices=list(RICH_TARGET_HORIZONS))
+    parser.add_argument("--horizons", nargs="+", type=int, default=None)
     parser.add_argument("--target-families", nargs="+", default=list(RICH_TARGET_FAMILIES), choices=list(RICH_TARGET_FAMILIES))
     parser.add_argument("--model-keys", nargs="+", default=list(RICH_MODEL_KEYS), choices=list(RICH_MODEL_KEYS))
+    parser.add_argument("--replication-mode", choices=["none", "narrow"], default="none")
+    parser.add_argument("--replication-seeds", nargs="+", type=int, default=None)
     parser.add_argument("--min-masked-rows", type=int, default=100)
     parser.add_argument("--min-active-sign-rows", type=int, default=30)
     parser.add_argument("--threads", type=int, default=DEFAULT_THREADS)
@@ -1153,24 +1570,69 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def validate_horizon_args(replication_mode: str, horizons: tuple[int, ...] | list[int]) -> None:
+    allowed = set(RICH_TARGET_HORIZONS)
+    if replication_mode == "narrow":
+        allowed = allowed.union(NARROW_REPLICATION_HORIZONS)
+    invalid = sorted(set(int(value) for value in horizons).difference(allowed))
+    if invalid:
+        raise ValueError(f"unsupported horizons for {replication_mode}: {invalid}")
+
+
+def config_from_args(args: argparse.Namespace) -> dict[str, object]:
+    horizons = list(args.horizons) if args.horizons is not None else list(
+        NARROW_REPLICATION_HORIZONS if args.replication_mode == "narrow" else RICH_TARGET_HORIZONS
+    )
+    validate_horizon_args(args.replication_mode, horizons)
+    if args.replication_mode == "narrow":
+        rejected_overrides = []
+        if list(args.profiles) != list(RICH_FEATURE_PROFILES):
+            rejected_overrides.append("--profiles")
+        if list(args.target_families) != list(RICH_TARGET_FAMILIES):
+            rejected_overrides.append("--target-families")
+        if list(args.model_keys) != list(RICH_MODEL_KEYS):
+            rejected_overrides.append("--model-keys")
+        if rejected_overrides:
+            raise ValueError(
+                "narrow replication mode uses the pre-registered matrix; unsupported overrides: "
+                + ", ".join(rejected_overrides)
+            )
+        config = narrow_replication_config()
+        config["target_horizons"] = horizons
+        config["threads"] = args.threads
+        config["parallel_workers"] = args.parallel_workers
+        config["min_masked_rows"] = args.min_masked_rows
+        config["min_active_sign_rows"] = args.min_active_sign_rows
+        if args.replication_seeds is not None:
+            config["replication_seeds"] = list(args.replication_seeds)
+        return config
+
+    return {
+        "replication_mode": args.replication_mode,
+        "feature_profiles": args.profiles,
+        "target_horizons": horizons,
+        "target_families": args.target_families,
+        "model_keys": args.model_keys,
+        "min_masked_rows": args.min_masked_rows,
+        "min_active_sign_rows": args.min_active_sign_rows,
+        "threads": args.threads,
+        "parallel_workers": args.parallel_workers,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
+    config = config_from_args(args)
+    output_prefix = Path(args.output_prefix)
+    if args.replication_mode == "narrow" and str(output_prefix) == str(DEFAULT_OUTPUT_PREFIX):
+        output_prefix = Path(f"ML/reports/{NARROW_REPLICATION_OUTPUT_PREFIX}")
     summary = run_rich_direction_cli(
-        Path(args.output_prefix),
+        output_prefix,
         Path(args.freeze_scores),
-        {
-            "feature_profiles": args.profiles,
-            "target_horizons": args.horizons,
-            "target_families": args.target_families,
-            "model_keys": args.model_keys,
-            "min_masked_rows": args.min_masked_rows,
-            "min_active_sign_rows": args.min_active_sign_rows,
-            "threads": args.threads,
-            "parallel_workers": args.parallel_workers,
-        },
+        config,
         resume=args.resume,
     )
-    print(json.dumps({"verdict": summary["verdict"], "output_prefix": str(args.output_prefix)}, ensure_ascii=True))
+    print(json.dumps({"verdict": summary["verdict"], "output_prefix": str(output_prefix)}, ensure_ascii=True))
     return 0
 
 

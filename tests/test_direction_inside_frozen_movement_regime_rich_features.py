@@ -613,3 +613,291 @@ def test_resume_discards_legacy_rows_without_current_resume_key(monkeypatch, tmp
     assert set(result["rows"]["resume_key"]) == {key}
     assert result["summary"]["runs"] == [{"resume_key": key, "status": "completed"}]
     assert result["summary"]["failed_runs"] == []
+
+
+def test_narrow_replication_config_freezes_search_space():
+    config = runner.narrow_replication_config()
+
+    assert config["stage_name"] == "direction_inside_frozen_mask_narrow_replication"
+    assert config["output_prefix_name"] == "direction_inside_frozen_movement_regime_narrow_replication"
+    assert config["feature_profiles"] == ["nearest_k60"]
+    assert config["model_keys"] == ["extra_trees"]
+    assert config["target_families"] == ["entry_log_ratio"]
+    assert config["target_horizons"] == [3, 6, 9]
+    assert config["replication_seeds"] == [41, 42, 43, 44, 45]
+    assert config["primary_horizon"] == 3
+    assert config["secondary_horizons"] == [6, 9]
+    assert config["selection_policy"] == "pre_registered_no_new_winner_search"
+    assert config["max_positive_verdict"] == "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY"
+    assert config["locked_test"] == "not_opened"
+
+
+def test_preflight_target_horizons_marks_h9_missing_without_crash():
+    splits = {
+        "train": pd.DataFrame(
+            {
+                "entry_log_ratio_3": [0.1],
+                "entry_up_3": [2.0],
+                "entry_dn_3": [1.0],
+                "entry_log_ratio_6": [0.2],
+                "entry_up_6": [3.0],
+                "entry_dn_6": [1.0],
+            }
+        ),
+        "val_select": pd.DataFrame(
+            {
+                "entry_log_ratio_3": [0.1],
+                "entry_up_3": [2.0],
+                "entry_dn_3": [1.0],
+                "entry_log_ratio_6": [0.2],
+                "entry_up_6": [3.0],
+                "entry_dn_6": [1.0],
+            }
+        ),
+    }
+
+    preflight = runner.preflight_target_horizons(splits, horizons=[3, 6, 9])
+
+    assert preflight["status"] == "WARNING"
+    assert preflight["horizons"]["3"]["status"] == "PASS"
+    assert preflight["horizons"]["6"]["status"] == "PASS"
+    assert preflight["horizons"]["9"]["status"] == "SKIPPED_MISSING_TARGET_COLUMNS"
+    assert preflight["executable_horizons"] == [3, 6]
+    assert preflight["skipped_horizons"] == [9]
+
+
+def test_preflight_target_horizons_allows_h9_when_columns_exist():
+    splits = {
+        "train": pd.DataFrame(
+            {
+                "entry_log_ratio_9": [0.1],
+                "entry_up_9": [2.0],
+                "entry_dn_9": [1.0],
+            }
+        )
+    }
+
+    preflight = runner.preflight_target_horizons(splits, horizons=[9])
+
+    assert preflight["status"] == "PASS"
+    assert preflight["horizons"]["9"]["status"] == "PASS"
+    assert preflight["executable_horizons"] == [9]
+
+
+def test_replication_jobs_use_all_pre_registered_seeds():
+    config = runner.narrow_replication_config()
+    config.update(
+        {
+            "target_horizons": [3, 6],
+            "replication_seeds": [41, 42],
+        }
+    )
+
+    jobs = runner.build_rich_direction_jobs(config)
+
+    assert [job["seed"] for job in jobs] == [41, 41, 42, 42]
+    assert [job["horizon"] for job in jobs] == [3, 6, 3, 6]
+    assert {job["profile"] for job in jobs} == {"nearest_k60"}
+    assert {job["model_key"] for job in jobs} == {"extra_trees"}
+    assert {job["target_family"] for job in jobs} == {"entry_log_ratio"}
+
+
+def test_replication_jobs_use_only_executable_horizons_after_h9_preflight():
+    config = runner.narrow_replication_config()
+    config.update(
+        {
+            "target_horizons": [3, 6, 9],
+            "executable_horizons": [3, 6],
+            "replication_seeds": [41],
+        }
+    )
+
+    jobs = runner.build_rich_direction_jobs(config)
+
+    assert [job["horizon"] for job in jobs] == [3, 6]
+
+
+def _replication_metric(run_id, seed, horizon, split, bal_acc, gate="PASS"):
+    return {
+        "run_id": run_id,
+        "resume_key": f"nearest_k60/{seed}/extra_trees/H{horizon}/entry_log_ratio",
+        "profile": "nearest_k60",
+        "seed": seed,
+        "model_key": "extra_trees",
+        "horizon": horizon,
+        "target_family": "entry_log_ratio",
+        "split": split,
+        "slice": "frozen_selected",
+        "balanced_accuracy": bal_acc,
+        "sample_size_gate": gate,
+        "gate_reasons": "",
+    }
+
+
+def test_narrow_replication_verdict_supported_when_h3_repeats():
+    rows = []
+    for seed, score in zip([41, 42, 43, 44, 45], [0.526, 0.531, 0.529, 0.521, 0.533]):
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_select", score + 0.02))
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_eval", score))
+    for seed, score in zip([41, 42, 43, 44, 45], [0.507, 0.509, 0.501, 0.506, 0.508]):
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_select", score + 0.01))
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_eval", score))
+
+    replication = runner.aggregate_narrow_replication(pd.DataFrame(rows), {"target_preflight": {"skipped_horizons": [9]}})
+
+    assert replication["primary_horizon"] == 3
+    assert replication["horizons"]["3"]["val_eval_median_balanced_accuracy"] == pytest.approx(0.529)
+    assert replication["horizons"]["3"]["val_eval_seeds_ge_0_52"] == 5
+    assert runner.narrow_replication_verdict(replication) == "DIRECTION_REPLICATION_SUPPORTED_RESEARCH_ONLY"
+
+
+def test_narrow_replication_verdict_rejects_weak_h3():
+    rows = []
+    for seed, score in zip([41, 42, 43, 44, 45], [0.501, 0.511, 0.514, 0.509, 0.506]):
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_select", score + 0.02))
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_eval", score))
+
+    replication = runner.aggregate_narrow_replication(pd.DataFrame(rows), {"target_preflight": {"skipped_horizons": [9]}})
+
+    assert runner.narrow_replication_verdict(replication) == "REJECT_DIRECTION_REPLICATION"
+
+
+def test_narrow_replication_verdict_inconclusive_when_val_select_eval_sign_disagree():
+    rows = []
+    for seed, eval_score in zip([41, 42, 43, 44, 45], [0.526, 0.531, 0.529, 0.521, 0.533]):
+        select_score = 0.499 if seed in {41, 42, 43} else 0.551
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_select", select_score))
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_eval", eval_score))
+    for seed, score in zip([41, 42, 43, 44, 45], [0.507, 0.509, 0.501, 0.506, 0.508]):
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_select", score + 0.01))
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_eval", score))
+
+    replication = runner.aggregate_narrow_replication(pd.DataFrame(rows), {"target_preflight": {"skipped_horizons": [9]}})
+
+    assert replication["horizons"]["3"]["same_positive_sign_seed_count"] == 2
+    assert runner.narrow_replication_verdict(replication) == "DIRECTION_REPLICATION_INCONCLUSIVE"
+
+
+def test_narrow_replication_verdict_inconclusive_when_h6_contradicts_and_h9_skipped():
+    rows = []
+    for seed, score in zip([41, 42, 43, 44, 45], [0.526, 0.531, 0.529, 0.521, 0.533]):
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_select", score + 0.02))
+        rows.append(_replication_metric(f"h3-{seed}", seed, 3, "val_eval", score))
+    for seed, score in zip([41, 42, 43, 44, 45], [0.491, 0.498, 0.501, 0.494, 0.499]):
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_select", score + 0.01))
+        rows.append(_replication_metric(f"h6-{seed}", seed, 6, "val_eval", score))
+
+    replication = runner.aggregate_narrow_replication(pd.DataFrame(rows), {"target_preflight": {"skipped_horizons": [9]}})
+
+    assert runner.narrow_replication_verdict(replication) == "DIRECTION_REPLICATION_INCONCLUSIVE"
+
+
+def test_aggregate_narrow_replication_marks_target_contract_fail_by_horizon():
+    summary = {
+        "target_horizons": [3, 9],
+        "target_preflight": {
+            "horizons": {
+                "3": {"status": "PASS"},
+                "9": {"status": "PASS"},
+            },
+            "executable_horizons": [3, 9],
+            "skipped_horizons": [],
+        },
+        "failed_runs": [{"stage": "targets", "horizon": 9, "error": "ValueError"}],
+        "contract_status": "TARGET_CONTRACT_FAIL",
+    }
+
+    replication = runner.aggregate_narrow_replication(pd.DataFrame([]), summary)
+
+    assert replication["horizons"]["9"]["status"] == "TARGET_CONTRACT_FAIL"
+    assert replication["horizons"]["9"]["target_contract_failures"] == [
+        {"stage": "targets", "horizon": 9, "error": "ValueError"}
+    ]
+
+
+def test_compute_narrow_time_diagnostics_reports_year_and_blocks():
+    rows = pd.DataFrame(
+        {
+            "resume_key": ["nearest_k60/41/extra_trees/H3/entry_log_ratio"] * 8,
+            "split": ["val_eval"] * 8,
+            "row_id": list(range(8)),
+            "time": [
+                "2021-01-01",
+                "2021-02-01",
+                "2021-03-01",
+                "2021-04-01",
+                "2022-01-01",
+                "2022-02-01",
+                "2022-03-01",
+                "2022-04-01",
+            ],
+            "prediction": [1, 1, -1, -1, 1, -1, 1, -1],
+            "target_direction": [1, -1, -1, -1, 1, -1, -1, -1],
+            "frozen_selected": [True] * 8,
+        }
+    )
+
+    diagnostics = runner.compute_narrow_time_diagnostics(rows, block_count=4)
+
+    assert diagnostics["status"] == "PASS"
+    assert diagnostics["scope"] == "diagnostic_only_not_verdict_gate"
+    assert set(diagnostics["by_year"].keys()) == {"2021", "2022"}
+    assert len(diagnostics["by_block"]) == 4
+    assert diagnostics["by_year"]["2021"]["n"] == 4
+
+
+def test_arg_parser_accepts_narrow_replication_mode_and_seeds():
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--replication-mode", "narrow", "--replication-seeds", "41", "42", "43"])
+
+    assert args.replication_mode == "narrow"
+    assert args.replication_seeds == [41, 42, 43]
+
+
+def test_narrow_smoke_horizons_override_limits_to_one_horizon():
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--replication-mode", "narrow", "--horizons", "3", "--replication-seeds", "41"])
+    config = runner.config_from_args(args)
+
+    assert config["target_horizons"] == [3]
+    assert config["replication_seeds"] == [41]
+
+
+def test_narrow_replication_mode_defaults_to_narrow_horizons():
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--replication-mode", "narrow"])
+    config = runner.config_from_args(args)
+
+    assert config["target_horizons"] == [3, 6, 9]
+
+
+def test_narrow_replication_mode_rejects_matrix_overrides():
+    parser = runner.build_arg_parser()
+    args = parser.parse_args(["--replication-mode", "narrow", "--profiles", "all100"])
+
+    with pytest.raises(ValueError, match="pre-registered matrix"):
+        runner.config_from_args(args)
+
+
+def test_validate_horizon_args_keeps_h9_replication_only():
+    runner.validate_horizon_args("narrow", [3, 9])
+    with pytest.raises(ValueError, match="unsupported horizons"):
+        runner.validate_horizon_args("none", [3, 9])
+
+
+def test_narrow_abort_artifact_keeps_replication_schema(tmp_path):
+    output_prefix = tmp_path / "missing_freeze_narrow"
+
+    summary = runner.run_rich_direction_cli(
+        output_prefix=output_prefix,
+        freeze_scores_path=tmp_path / "missing_scores.csv",
+        config_overrides=runner.narrow_replication_config(),
+        resume=False,
+    )
+
+    assert summary["contract_status"] == "ABORT_CONTRACT_FAIL"
+    assert summary["replication_mode"] == "narrow"
+    assert "replication_summary" in summary
+    assert summary["replication_verdict"] == "DIRECTION_REPLICATION_INCONCLUSIVE"
+    assert summary["replication_search_budget_planned"] == 15
+    assert summary["replication_search_budget_executed"] == 0
