@@ -9,7 +9,7 @@
 | `production_candidate` | Прошёл data contract, baseline comparison, locked test, net-cost backtest, robustness и walk-forward, MT4 parity/reconciliation | Допускается controlled forward/online diagnostic; forward ещё не обязателен |
 | `confirmed` | Forward подтвердил frozen rule на заранее заданных критериях | Поддерживать monitoring, rollback и periodic retrain policy |
 
-### Lifecycle-статусы
+### Lifecycle и late-stage статусы
 
 | Статус | Значение |
 |---|---|
