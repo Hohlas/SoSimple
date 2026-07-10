@@ -10,6 +10,16 @@ status: active
 
 ## Хронология
 
+### 2026-07-10: Fractal0 price entry mechanics oracle-preflight
+
+Retest-zone oracle от `fractal0_price` проверил execution-aware вход после
+доступности сигнала. Selected train rule:
+`zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2`. На `val_stop`:
+`favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`,
+side contract `PASS`. Gate не пройден из-за `active_years=2` при требовании
+`3`; verdict `DIAGNOSTIC_ONLY`. Продолжение возможно только через отдельный
+frozen probe-plan, без `locked_test` и без trading claims.
+
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
 Stage 1 проверял только один вопрос: можно ли по текущим фрактальным признакам предсказать, будет ли пробит уровень `fractal0` против предполагаемой сделки за горизонт `H`.
@@ -782,7 +792,7 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - ~~Как лучше поставить time-to-breach после rerun?~~ Stage 5.3 показал, что bucket `fast` — лучший next target family. `survives_at_least_k` остаётся control-only, `breach_after_k5` слишком sparse.
 - ~~Поможет ли price/ATR ablation усилить Stage 5.3 `fast`?~~ Stage 5.4 завершён: `price_coord_atr` rejected, `price_atr_scaled` не добавил устойчивого сигнала, расширение price-поиска не требуется.
 - **Является ли слабый sell 2026 ранним признаком ослабления?** `structure_full` sell AUC `0.5597` при `n=316` не используется для verdict, но это риск для будущего подтверждения на `2026+`.
-- **Что делать после movement-filter freeze?** Уже ясно, что `next open after signal_time` не работает как direction target ни при старом target от `fractal0_price`, ни при новом target от фактического `entry_open`, ни после closeout shortlist, ни после более мощных табличных моделей, ни после bounded sequence-проверки. Amplitude / movement-regime цель от фактического исполнения тоже не дала сложного winner-а: её объясняют главным образом `time+ATR`, а не фрактальная структура. Теперь узкая репликация/заморозка уже завершена. Открыты только два честных направления: использовать frozen segmentation mask `simple_combined / extra_trees_small / H3 / top_fraction=0.05` как входной контракт для нового отдельного плана или отдельно проверять entry-механику, привязанную к `fractal0_price` (`retest-entry`, `limit-entry`, касание зоны).
+- **Что делать после movement-filter freeze и fractal0 retest oracle?** Уже ясно, что `next open after signal_time` не работает как direction target ни при старом target от `fractal0_price`, ни при новом target от фактического `entry_open`, ни после closeout shortlist, ни после более мощных табличных моделей, ни после bounded sequence-проверки. Fractal0 retest-zone oracle показал diagnostic-потолок, но не прошёл sample-size gate по активным годам `val_stop`. Открыты только два честных направления: использовать frozen segmentation mask `simple_combined / extra_trees_small / H3 / top_fraction=0.05` как входной контракт для нового отдельного плана или оформить отдельный frozen probe-plan для `fractal0_price` retest mechanics.
 - **Противоречие с Stage 5.0-prep:** prep показывал `time_only` AUC=0.6286 > `no_time` AUC=0.6113. В 5.0d `no_structure` (price+ATR+time, без 9 структурных) = 0.534 — ниже `time_only` на 0.094. Причина не разобрана: разные transforms (asinh vs current), или price-токены шумят.
 - Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.

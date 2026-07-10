@@ -90,6 +90,7 @@
 | [benchmark_regression_updn_target_foundation.py](ML/baseline/benchmark_regression_updn_target_foundation.py) | Regression Up/Dn target foundation | labeled CSV → `regression_updn_target_foundation.json` | — | ✅ |
 | [analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | foundation artifacts + OHLC → audit JSON/CSV | — | ✅ |
 | [benchmark_next_open_entry_updn_foundation.py](ML/baseline/benchmark_next_open_entry_updn_foundation.py) | Next-open entry Up/Dn foundation | labeled CSV + OHLC → foundation JSON/CSV | — | ✅ |
+| [benchmark_fractal0_price_entry_mechanics.py](ML/baseline/benchmark_fractal0_price_entry_mechanics.py) | Oracle-preflight входа через возврат цены к зоне `fractal0_price` | labeled CSV + OHLC → oracle JSON/CSV | [docs](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) | ✅ |
 | [benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | foundation splits → matrix JSON/CSV | — | ✅ |
 | [benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | foundation splits → ablation JSON/CSV | [docs][docs-entry-ablation] | ✅ |
 | [benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | Entry-based closeout runner | foundation splits → closeout JSON/CSV | [docs][docs-entry-closeout] | ✅ |
@@ -262,6 +263,7 @@
 | [test_regression_updn_target_foundation.py](tests/test_regression_updn_target_foundation.py) | `ML/baseline/benchmark_regression_updn_target_foundation.py` | — | ✅ |
 | [test_regression_updn_already_moved_audit.py](tests/test_regression_updn_already_moved_audit.py) | `ML/baseline/analyze_regression_updn_already_moved_audit.py` | — | ✅ |
 | [test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | — | ✅ |
+| [test_fractal0_price_entry_mechanics.py](tests/test_fractal0_price_entry_mechanics.py) | `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` | — | ✅ |
 | [test_entry_based_updn_price_feature_matrix.py](tests/test_entry_based_updn_price_feature_matrix.py) | `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py` | — | ✅ |
 | [test_stage6_1_relative_geometry.py](tests/test_stage6_1_relative_geometry.py) | `ML/baseline/benchmark_stage6_1_relative_geometry.py` | — | ✅ |
 | [test_stage6_2_price_action.py](tests/test_stage6_2_price_action.py) | `ML/baseline/benchmark_stage6_2_price_action.py` | — | ✅ |

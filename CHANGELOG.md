@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-10] — Fractal0 Price Entry Mechanics Oracle-Preflight (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`
+- **topics**: `fractal0_price`, `entry_mechanics`, `oracle_preflight`, `retest_zone`, `research_only`
+- **summary**: Добавлен oracle-runner для входа через возврат цены к зоне около `fractal0_price`; выбранное на `train_core` правило `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2` дало diagnostic ratio `1.2421` на `val_stop`.
+- **artifacts**: `ML/reports/fractal0_price_entry_mechanics.json`, `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`, `tests/test_fractal0_price_entry_mechanics.py`
+- **decision**: Gate не пройден: `val_stop` содержит 2 активных года при требовании 3, поэтому verdict `diagnostic_only`, lifecycle `exploratory_result`; повышение до `research_only` запрещено.
+- **notes**: `locked_test` не открыт; `spread=0.00` не участвовал в gate; exit contract отсутствует, поэтому PnL/PF/trading claims запрещены.
+
 ## [2026-07-10] — Direction Inside Frozen Mask Narrow Replication (FAIL / REJECT_DIRECTION_REPLICATION)
 - **report**: `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
 - **topics**: `entry_based`, `direction`, `frozen_movement_mask`, `narrow_replication`, `seed_stability`, `reject_direction`

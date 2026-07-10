@@ -4,99 +4,65 @@
 
 ## Текущее состояние
 
-Direction внутри frozen movement-mask закрыт как ближайшая исследовательская
-ветка. Узкая seed-stability репликация заранее зафиксированной семьи
-`nearest_k60 / extra_trees / entry_log_ratio` завершилась
-`REJECT_DIRECTION_REPLICATION`.
+Ветка `fractal0_price` entry mechanics выполнена как oracle-preflight.
+Добавлен runner `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`,
+тесты и отчёт:
 
-Текущая линия:
+- `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`
+- `ML/reports/fractal0_price_entry_mechanics.json`
+- `ML/reports/fractal0_price_entry_mechanics_rows.csv`
+- `docs/ML/benchmark_fractal0_price_entry_mechanics.py.md`
 
-- amplitude audit: `DIAGNOSTIC_ONLY / AMPLITUDE_EXPLAINED_BY_SIMPLE_BASELINES`;
-- movement-filter design: `SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`;
-- movement-filter freeze: `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`;
-- old direction inside frozen movement: `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`;
-- rich direction full grid: `DIAGNOSTIC_ONLY / DIRECTION_REPLICATION_REQUIRED`;
-- narrow direction replication: `FAIL / REJECT_DIRECTION_REPLICATION`.
+Итог: `diagnostic_only`, `lifecycle_status = exploratory_result`.
 
 ## Главный вывод
 
-H3 weak direction-effect из full-grid не воспроизвёлся по seed stability:
+Выбранное на `train_core` правило:
 
-- matrix: `nearest_k60 / extra_trees / entry_log_ratio`;
-- planned horizons: `H3`, `H6`, `H9`;
-- executed horizons: `H3`, `H6`;
-- H9: `SKIPPED_MISSING_TARGET_COLUMNS`;
-- seeds: `41`, `42`, `43`, `44`, `45`;
-- progress: `10/10`, `failed_runs=0`, `contract_status=PASS`;
-- H3 median `val_eval_inside_mask balanced_accuracy = 0.499080`;
-- H3 seeds `val_eval_inside_mask >= 0.52`: `2/5`;
-- H3 same positive sign on `val_select` and `val_eval`: `1/5`;
-- H6 median `val_eval_inside_mask balanced_accuracy = 0.528590`, but H6 was
-  secondary robustness and cannot replace failed H3.
+```text
+entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2
+```
 
-Итог: direction-inside-frozen-mask не является near-term branch. Это не trading
-signal и не candidate.
+На `val_stop` оно имеет высокий oracle-ratio:
 
-## Главные артефакты
+- `filled_events = 3854`;
+- `no_fill_rate = 0.25955811719500477`;
+- `favorable_to_adverse_ratio = 1.2421118400499844`;
+- `stress_favorable_to_adverse_ratio = 1.1895354754041108`;
+- `ratio_without_best_year = 1.2397913622895531`.
 
-- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
-- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication.json`
-- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication_metrics.csv`
-- `ML/reports/direction_inside_frozen_movement_regime_narrow_replication_rows.csv`
-- `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
-- `tests/test_direction_inside_frozen_movement_regime_rich_features.py`
-- `docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md`
-- `docs/superpowers/roadmap.md`
+Но gate не прошёл: `active_years = 2`, а требуется минимум `3`.
+Поэтому результат нельзя повышать до `research_only`.
 
-## Runner Status
+## Контракты
 
-Rich-features runner теперь поддерживает:
+- `locked_test` не открыт.
+- `spread=0.00` только diagnostic, не gate.
+- Сторона: `direction = -fractal0.dir`.
+- Side audit: `PASS`, counts `-1: 20740`, `1: 23419`.
+- Старые `up_*/dn_*` не используются как торговая разметка.
+- Новые targets считаются только от фактической достижимой цены входа.
+- Exit contract отсутствует.
 
-- обычный full-grid режим без H9;
-- `--replication-mode narrow`;
-- narrow default horizons `H3/H6/H9`;
-- `--replication-seeds`;
-- H9 target preflight;
-- `replication_summary`, `replication_verdict`, `time_diagnostics`;
-- search-budget disclosure для narrow replication;
-- default `--resume`, progress JSON и heartbeat.
+## Следующий шаг
 
-Тесты:
+Не продолжать как candidate. Если ветку продолжать, нужен отдельный frozen
+probe-plan: заранее фиксировать правило входа, split-роли, горизонты, критерии
+устойчивости, sample-size gate и разрешённый максимум verdict.
 
-- focused: `44 passed`;
-- full suite: `1272 passed`;
-- smoke narrow: `contract_status=PASS`, `progress=1/1`;
-- full narrow run: `contract_status=PASS`, `progress=10/10`.
+## Читать следующему агенту
 
-## Exact Frozen Rule
-
-Frozen movement rule не менялся:
-
-- `simple_combined / extra_trees_small / H3 / top_fraction=0.05`
-- `score_aggregation = median_across_rerun_seeds`
-- `seeds = [42, 43, 44]`
-- `rule_hash = 56361f12104b55c4cac6bd04426349f71d8944c139563a8c9b68d3b25e97deaf`
-
-## Следующий Шаг
-
-Следующим агентом сначала читать:
-
-- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
-- `docs/superpowers/roadmap.md`
-- `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`
-- `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`
+- `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`
+- `ML/reports/fractal0_price_entry_mechanics.json`
+- `docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md`
 - `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`
+- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
 
-Практический следующий шаг: отдельный план для execution-aware механики входа
-от `fractal0_price`: exact `decision_time`, entry eligibility, first executable
-price, oracle-preflight и новые targets от фактической точки входа.
+## Запрещённые направления
 
-## Запрещённые Направления
-
-- Не продолжать wide direction search внутри frozen movement-mask без новой
-  заранее обоснованной гипотезы.
-- Не продвигать H6 post-hoc как replacement primary horizon.
-- Не тюнить по `val_eval` или `low_n_disclosure`.
-- Не менять frozen movement-mask в рамках закрытой ветки.
-- Не добавлять PnL/PF, BUY/SELL или trading claims к этому результату.
 - Не открывать `locked_test`.
+- Не делать PnL/PF/trading claims по этому этапу.
+- Не использовать `diagnostic_holdout` или `low_n_disclosure` для выбора.
+- Не тюнить по `val_stop` после просмотра результата без нового плана.
+- Не продвигать результат выше `diagnostic_only` без нового sample-size
+  contract и frozen probe-cycle.

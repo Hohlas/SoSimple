@@ -773,3 +773,9 @@
 - Added `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`.
 - Updated `wiki/research/fractal-stop-research.md`: recorded `REJECT_DIRECTION_REPLICATION` for the pre-registered `nearest_k60 / extra_trees / entry_log_ratio` narrow matrix; H3 median `val_eval_inside_mask=0.499080`, only `2/5` seeds reached `>=0.52`, H9 skipped by target preflight.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 48 report updates and moves the next branch away from direction-inside-mask toward execution-aware `fractal0_price` mechanics.
+
+### 2026-07-10: Ingest fractal0 price entry mechanics oracle-preflight
+- Added `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`.
+- Added `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` and `tests/test_fractal0_price_entry_mechanics.py`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded selected `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2`, `val_stop favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`, side contract `PASS`, and failed gate due to `active_years=2 < 3`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 49 report updates and points any continuation to a separate frozen probe-plan.

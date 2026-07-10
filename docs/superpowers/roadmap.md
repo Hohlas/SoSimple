@@ -10,7 +10,7 @@
 
 ## Ближайшие направления
 
-### 1. Механика входа от `fractal0_price`
+### 1. Frozen probe для механики входа от `fractal0_price`
 
 **Контекст:** direction внутри frozen movement-mask закрыт как ближайшая ветка.
 Rich-features full-grid 2026-07-09 нашёл weak direction-effect
@@ -28,34 +28,60 @@ Rich-features full-grid 2026-07-09 нашёл weak direction-effect
 - [2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](../reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md)
 - [2026-07-10-direction-inside-frozen-mask-narrow-replication.md](../reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md)
 
-Параллельно уже есть сильный признак, что исходный Up/Dn target связан с
-областью вокруг `fractal0_price`, а не с немедленным входом по следующему open.
-Отрицательный результат по `next open` не закрывает гипотезу уровня.
+Oracle-preflight 2026-07-10 проверил механику входа через возврат цены к зоне
+около `fractal0_price`:
 
-**Задача:** отдельно проверить механику входа, привязанную к `fractal0_price`:
-возврат к уровню, ретест, лимитный вход около цены фрактала или вход после
-касания/подтверждения.
+- selected train rule: `entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2`;
+- `val_stop favorable_to_adverse_ratio = 1.2421118400499844`;
+- `stress_favorable_to_adverse_ratio = 1.1895354754041108`;
+- side contract `PASS`;
+- gate не прошёл из-за `active_years = 2` при требовании `3`.
 
-**Что должно быть в будущем плане:**
+Отчёт:
 
-- точный `decision_time`;
-- точное правило entry eligibility;
-- first executable price после доступности признаков;
-- oracle-preflight потолка механики;
-- новые targets от фактической точки входа;
-- отдельный split/audit contract.
+- [2026-07-10-fractal0-price-entry-mechanics.md](../reports/2026-07-10-fractal0-price-entry-mechanics.md)
+
+**Задача:** если продолжать эту ветку, оформить отдельный frozen probe-plan.
+План должен заранее зафиксировать rule, split-роли, горизонты, sample-size
+gate, yearly/window contract и `allowed_max_verdict`.
 
 **Ограничения:**
 
-- не смешивать с `next open` audit;
-- не использовать старые цели от `fractal0_price` как готовую торговую
-  разметку без проверки исполнимости;
-- не открывать `locked_test` до frozen rule.
+- текущий результат остаётся `diagnostic_only`;
+- не открывать `locked_test`;
+- не делать PnL/PF/trading claims;
+- не тюнить правило по `val_stop` без нового плана.
 
-Статус: следующий самостоятельный research branch. Не смешивать с закрытым
-direction-inside-mask планом.
+Статус: потенциальный следующий research branch, но только через новый frozen
+probe-plan.
 
-### 2. Мульти-актив / мульти-таймфрейм валидация
+### 2. H6 direction inside frozen mask
+
+**Контекст:** narrow replication 2026-07-10 отвергла primary H3, но H6 в том
+же фиксированном срезе выглядел заметно сильнее:
+
+- `H6 val_eval_inside_mask median balanced_accuracy = 0.528590`;
+- `5/5` seeds были выше `0.50`;
+- H6 был заранее объявлен secondary robustness horizon, поэтому не может
+  заменить H3 задним числом и не является кандидатом.
+
+**Задача:** не потерять эту зацепку. Если основная ветка `fractal0_price`
+entry mechanics не даст полезного потолка или будет закрыта, можно оформить
+отдельный H6-first research plan.
+
+**Обязательные условия будущего плана:**
+
+- `origin_bias = horizon`, потому что идея выделена после просмотра H3/H6;
+- статус не выше `research_hypothesis` до нового заранее замороженного probe;
+- H6 должен быть primary horizon с самого начала, а не заменой H3;
+- нельзя переиспользовать H3-fail как доказательство H6;
+- нужен новый `next_probe_freeze`: признаки, модель, target, seeds, split,
+  пороги и `allowed_max_verdict`;
+- без `locked_test`, PnL/PF и trading-выводов.
+
+Статус: отложенная исследовательская зацепка второй очереди.
+
+### 3. Мульти-актив / мульти-таймфрейм валидация
 
 Проверить fractal-концепт на другом инструменте или таймфрейме. Это полезно
 только после того, как появится подтверждённая рабочая постановка сигнала или
