@@ -13,12 +13,18 @@
 
 | Статус | Значение |
 |---|---|
+| `research_scan` | Идёт поисковая партия: широкий перебор в заранее описанной области |
 | `exploratory_result` | Найдено в поиске; может породить гипотезу, не candidate |
+| `research_hypothesis` | Исследовательская зацепка готова к отдельному probe-плану, но не является `candidate` |
 | `frozen_rule_for_locked_test` | Правило заморожено для одной проверки на `locked_test` |
 | `locked_test_pass` | Замороженное правило прошло `locked_test`; ещё не production |
 | `candidate` | Verdict после PASS на validation/locked_test и раскрытия cumulative search budget |
 | `production_candidate` | Candidate прошёл execution, costs, robustness, parity |
 | `confirmed` | Forward подтвердил заранее заданные критерии |
+
+`probe_type` описывает вид следующей проверки, а не статус результата. Примеры:
+`cross_instrument_probe`, `walk_forward_probe`, `new_period_probe`,
+`cost_stress_probe`.
 
 ### Связь verdict-статусов с уровнями исследования
 
@@ -51,3 +57,9 @@ Oracle-preflight может остановить неудачную механи
 Правильный следующий шаг в этих случаях: написать reject/diagnostic report и сформулировать новую ограниченную гипотезу.
 
 Если цель — продолжить широкий поиск, это должен быть новый поисковый cycle с явным search budget и максимальным verdict не выше `research_only`, а не расширение проваленного проверочного cycle.
+
+Для исследовательского контура stop condition не обязан закрывать всё
+направление. Он закрывает текущую зацепку или текущую probe-партию, если
+исчерпан `continuation_budget`, результат не поднялся выше
+`exploratory_result`, эффект держится на одном seed/year/side/instrument,
+результат хуже dummy-фона или найден leakage/broken contract.
