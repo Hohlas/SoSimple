@@ -1,6 +1,6 @@
 ---
 name: knowledge-rag
-description: Use RAG search across project docs, code, wiki, reports, and cross-document context when grep is too narrow or the answer depends on accumulated project knowledge; find candidate sources first, then verify original files.
+description: Use RAG search across project content for accumulated project knowledge when the exact source is unknown or the task needs project history, conclusions, or cross-document context.
 ---
 
 # knowledge-rag
