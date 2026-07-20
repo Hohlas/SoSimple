@@ -29,9 +29,10 @@ ML-бот для прогнозирования движения цены Forex.
 
 | Задача | Инструмент |
 |--------|-----------|
-| Найти файл по имени/пути/шаблону (`*.py`, `docs/**/*.md`) | `Glob` |
-| Найти символ/строку в содержимом кода | `Grep` |
-| Содержательный поиск по `docs/`, `wiki/`, отчётам, коду | `knowledge-rag` → `search_knowledge` |
+| Найти файл по имени/пути/шаблону (`*.py`, `docs/**/*.md`) | `rg --files` / `Glob` |
+| Найти точную строку, символ, колонку, метрику | `rg` / `Grep` |
+| Найти прошлые выводы, отчёты, планы, wiki-контекст | `knowledge-rag` → `search_knowledge` |
+| Понять связи, соседние понятия, путь между сущностями | `graphify query/path/explain` |
 | Прочитать конкретный известный файл целиком или фрагментом | `Read` |
 
 ## Обязательные правила
@@ -120,8 +121,12 @@ Use the installed graphify skill for document/code navigation and relationship d
 Verify important conclusions in original project files before changing code or making final claims.
 
 Rules:
-- For document and codebase questions, use Graphify before broad manual search when the graph is available.
+- Use Graphify for relationships, paths, neighboring concepts, and architecture navigation when the graph is available.
 - Use `graphify path "<A>" "<B>"` for relationships between two concepts.
 - Use `graphify explain "<concept>"` for focused concept lookup.
 - Skip Graphify only when the task is about stale/incorrect graph output or the user explicitly says not to use it.
 - Do not treat Graphify as a replacement for reading original files, local `README.md`, tests, or methodology rules.
+
+## knowledge-rag
+
+Use `knowledge-rag` skill first for project memory: reports, wiki, plans, prior decisions, and cross-document context.
