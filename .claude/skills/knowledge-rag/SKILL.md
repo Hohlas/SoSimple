@@ -6,12 +6,13 @@ description: Use when a task needs project memory: prior decisions, reports, wik
 # knowledge-rag
 
 Use `knowledge-rag` as project search, not as a source of truth.
+Goal: maximize project coverage with minimal context by finding candidate sources before reading files.
 
 ## Workflow
 
 1. Start with `search_knowledge` for semantic project navigation, prior conclusions, cross-document context, and substantive document review.
 2. For overview tasks, run 2-4 narrow searches instead of one broad query.
-3. Open the original files returned by search before drawing conclusions.
+3. Open only the smallest source fragments needed to verify the answer.
 4. If results are empty or noisy, change terms or `hybrid_alpha`.
 5. Treat search snippets as pointers only; final claims must come from original files.
 

@@ -17,7 +17,7 @@ Turn any folder of files into a navigable knowledge graph with community detecti
 /graphify <path> --no-viz                             # skip visualization, just report + JSON
 /graphify query "<question>"                          # BFS traversal - broad context
 /graphify query "<question>" --dfs                    # DFS - trace a specific path
-/graphify query "<question>" --budget 1500            # cap answer at N tokens
+/graphify query "<question>" --budget 1500            # cap query output tokens
 /graphify path "AuthModule" "Database"                # shortest path between two concepts
 /graphify explain "SwinTransformer"                   # plain-language explanation of a node
 ```
@@ -28,7 +28,7 @@ Drop any folder of code, docs, papers, markdown into graphify and get a queryabl
 
 ## What You Must Do When Invoked
 
-**Fast path — existing graph:** Before doing anything else, check whether `graphify-out/graph.json` exists. The expected location is `graphify-out/graph.json` relative to the **current working directory** (i.e. the project root where you are running commands). If it exists AND the user's request is a natural-language question about the codebase or documentation (e.g. "How does X work?", "What calls Y?", "Trace the data flow through Z") and NOT an explicit rebuild command (`--update`, `--cluster-only`, or a bare path/URL that implies fresh extraction): run `graphify query "<question>"` immediately. Do not run detect. Do not check corpus size. Do not ask the user to narrow. The graph is already built — use it.
+**Fast path — existing graph:** If the user's request is a natural-language question about codebase or documentation relationships (e.g. "How does X work?", "What calls Y?", "Trace the data flow through Z") and NOT an explicit rebuild command (`--update`, `--cluster-only`, or a bare path/URL that implies fresh extraction): run `graphify query "<question>" --budget 1500` immediately. Do not run detect. Do not check corpus size. Do not ask the user to narrow. The graph is already built — use it.
 
 If no path was given, use `.` (current directory). Do not ask the user for a path.
 
@@ -40,12 +40,13 @@ Both are non-default subcommands. `--update` re-extracts only new or changed fil
 
 ## For /graphify query
 
-When `graphify-out/graph.json` already exists and the user asks a question about the corpus, answer from the graph rather than rebuilding it:
+When the user asks a question about the corpus, answer from the graph rather than rebuilding it:
 
 ```bash
-graphify query "<question>"
+graphify query "<question>" --budget 2000
 ```
 
+`--budget` caps query output tokens. Use a modest first-pass budget (1500-2000); increase it only if you need more relevant nodes.
 Before traversal, expand the question against the graph's own vocabulary so a wording mismatch does not collapse the answer to noise. If the `graphify query` CLI is unavailable, fall back to an inline NetworkX traversal of `graphify-out/graph.json`. Answer using only what the graph output contains, and quote `source_location` when citing a specific fact.
 
 ---
