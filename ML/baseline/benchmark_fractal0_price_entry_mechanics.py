@@ -147,9 +147,12 @@ def fractal0_entry_config() -> dict[str, object]:
 def audit_side_contract(rows: pd.DataFrame) -> dict:
     directions = pd.to_numeric(rows.get("fractal0_direction"), errors="coerce").dropna().astype(int)
     counts = {str(key): int(value) for key, value in directions.value_counts().sort_index().items()}
+    has_only_known_directions = set(counts).issubset({"-1", "1"})
+    has_both_directions = all(key in counts for key in ("-1", "1"))
     return {
-        "status": "PASS" if set(counts).issubset({"-1", "1"}) and counts else "FAIL",
+        "status": "PASS" if has_only_known_directions and has_both_directions else "FAIL",
         "direction_counts": counts,
+        "has_both_directions": has_both_directions,
         "required_before_research_only": True,
         "side_rule": CONFIG.side_rule,
         "note": "Project contract: direction = -fractal0.dir; -1 -> BUY, 1 -> SELL.",
@@ -387,12 +390,33 @@ def _ratio_without_best_year(events: pd.DataFrame) -> float | None:
     if events.empty:
         return None
     years = pd.to_datetime(events["time"]).dt.year
-    yearly = events.groupby(years)["oracle_favorable_move_after_cost"].sum()
+    yearly = events.assign(_year=years).groupby("_year", sort=True).agg(
+        favorable=("oracle_favorable_move_after_cost", "sum"),
+        adverse=("oracle_adverse_move", "sum"),
+    )
+    yearly = yearly.loc[yearly["adverse"] > 0].copy()
     if len(yearly) <= 1:
         return None
-    best_year = yearly.idxmax()
+    yearly["ratio"] = yearly["favorable"] / yearly["adverse"]
+    best_year = yearly["ratio"].idxmax()
     reduced = events.loc[years != best_year]
     return summarize_mfe_metrics(reduced, rows_total=len(reduced), rows_filled=len(reduced))["favorable_to_adverse_ratio"]
+
+
+def _best_year_by_ratio(events: pd.DataFrame) -> int | None:
+    if events.empty:
+        return None
+    work = events.copy()
+    work["_year"] = pd.to_datetime(work["time"]).dt.year
+    yearly = work.groupby("_year", sort=True).agg(
+        favorable=("oracle_favorable_move_after_cost", "sum"),
+        adverse=("oracle_adverse_move", "sum"),
+    )
+    yearly = yearly.loc[yearly["adverse"] > 0].copy()
+    if yearly.empty:
+        return None
+    yearly["ratio"] = yearly["favorable"] / yearly["adverse"]
+    return int(yearly["ratio"].idxmax())
 
 
 def summarize_mfe_metrics(events: pd.DataFrame, rows_total: int, rows_filled: int) -> dict:
@@ -406,6 +430,7 @@ def summarize_mfe_metrics(events: pd.DataFrame, rows_total: int, rows_filled: in
             "favorable_to_adverse_ratio": None,
             "active_years": 0,
             "filled_events_per_year_min": 0,
+            "best_year_by_ratio": None,
             "ratio_without_best_year": None,
         }
     favorable = pd.to_numeric(events["oracle_favorable_move_after_cost"], errors="coerce").fillna(0.0)
@@ -423,6 +448,7 @@ def summarize_mfe_metrics(events: pd.DataFrame, rows_total: int, rows_filled: in
         "favorable_to_adverse_ratio": float(favorable_sum / adverse_sum) if adverse_sum > 0 else None,
         "active_years": int(per_year.size),
         "filled_events_per_year_min": int(per_year.min()) if len(per_year) else 0,
+        "best_year_by_ratio": _best_year_by_ratio(events),
         "ratio_without_best_year": _ratio_without_best_year(events),
     }
 
@@ -449,6 +475,7 @@ def research_gate(selected_train_summary: dict, eval_summary: dict, side_contrac
             eval_summary.get("ratio_without_best_year") is not None
             and eval_summary["ratio_without_best_year"] >= CONFIG.ratio_without_best_year_min
         ),
+        "dummy_or_simple_rule_comparison": eval_summary.get("dummy_or_simple_rule_comparison", {}).get("status") == "PASS",
     }
     return {
         "passes": all(checks.values()),
@@ -513,6 +540,27 @@ def _rule_key(entry_price_mode: str, zone_width: float, fill_lag: int, horizon: 
         f"_h{horizon}"
         f"_spread_{spread}"
     )
+
+
+def build_simple_rule_comparison(selected_summary: dict, eval_split_summary: dict) -> dict:
+    simple_key = _rule_key(
+        "limit_at_fractal0",
+        0.0,
+        int(selected_summary.get("max_fill_lag_bars", 0)),
+        int(selected_summary.get("horizon", 0)),
+        float(selected_summary.get("spread", 0.0)),
+    )
+    simple_summary = eval_split_summary.get(simple_key)
+    selected_ratio = selected_summary.get("favorable_to_adverse_ratio")
+    simple_ratio = simple_summary.get("favorable_to_adverse_ratio") if simple_summary else None
+    comparable = selected_ratio is not None and simple_ratio is not None
+    return {
+        "status": "PASS" if comparable and selected_ratio >= simple_ratio else "FAIL",
+        "comparison_rule": simple_key,
+        "selected_favorable_to_adverse_ratio": selected_ratio,
+        "simple_favorable_to_adverse_ratio": simple_ratio,
+        "required_before_research_only": True,
+    }
 
 
 def run_fractal0_entry_mechanics(
@@ -581,6 +629,10 @@ def run_fractal0_entry_mechanics(
         stress_key = eval_key.replace(f"_spread_{CONFIG.canonical_spread}", f"_spread_{CONFIG.stress_spread}")
         stress = oracle_summary.get(CONFIG.primary_eval_split, {}).get(stress_key, {})
         eval_summary["stress_favorable_to_adverse_ratio"] = stress.get("favorable_to_adverse_ratio")
+        eval_summary["dummy_or_simple_rule_comparison"] = build_simple_rule_comparison(
+            eval_summary,
+            oracle_summary.get(CONFIG.primary_eval_split, {}),
+        )
 
     gate = research_gate(selected_train_rule.get("summary") or {}, eval_summary, side_contract_audit)
     verdict = gate["verdict_if_pass"] if gate["passes"] else gate["verdict_if_fail"]

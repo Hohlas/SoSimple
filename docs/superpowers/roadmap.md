@@ -34,6 +34,7 @@ Oracle-preflight 2026-07-10 проверил механику входа чер�
 - selected train rule: `entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2`;
 - `val_stop favorable_to_adverse_ratio = 1.2421118400499844`;
 - `stress_favorable_to_adverse_ratio = 1.1895354754041108`;
+- simple baseline ratio `= 1.061228066744197`, comparison `PASS`;
 - side contract `PASS`;
 - gate не прошёл из-за `active_years = 2` при требовании `3`.
 

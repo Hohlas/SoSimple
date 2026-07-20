@@ -30,6 +30,8 @@ entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2
 - `favorable_to_adverse_ratio = 1.2421118400499844`;
 - `stress_favorable_to_adverse_ratio = 1.1895354754041108`;
 - `ratio_without_best_year = 1.2397913622895531`.
+- `dummy_or_simple_rule_comparison = PASS`;
+- simple rule ratio `= 1.061228066744197`.
 
 Но gate не прошёл: `active_years = 2`, а требуется минимум `3`.
 Поэтому результат нельзя повышать до `research_only`.
@@ -39,7 +41,7 @@ entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2
 - `locked_test` не открыт.
 - `spread=0.00` только diagnostic, не gate.
 - Сторона: `direction = -fractal0.dir`.
-- Side audit: `PASS`, counts `-1: 20740`, `1: 23419`.
+- Side audit: `PASS`, counts `-1: 20740`, `1: 23419`, обе стороны есть.
 - Старые `up_*/dn_*` не используются как торговая разметка.
 - Новые targets считаются только от фактической достижимой цены входа.
 - Exit contract отсутствует.

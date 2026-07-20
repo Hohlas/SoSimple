@@ -32,5 +32,9 @@
 - `spread=0.00` только отладочный diagnostic и не участвует в gate.
 - Сторона берётся из `fractal0.dir`: `fractal0.dir == -1 -> BUY`,
   `fractal0.dir == 1 -> SELL`.
+- Side audit проходит только если в реальном split есть обе стороны.
+- Gate требует сравнение с простым правилом `limit_at_fractal0 / zone 0.0`.
+- `ratio_without_best_year` удаляет год с лучшим yearly ratio
+  `favorable/adverse`.
 - Старые `up_*/dn_*` от `fractal0_price` не используются как торговая
   разметка; новые target-поля считаются от фактической достижимой цены входа.

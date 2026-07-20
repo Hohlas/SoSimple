@@ -779,3 +779,8 @@
 - Added `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` and `tests/test_fractal0_price_entry_mechanics.py`.
 - Updated `wiki/research/fractal-stop-research.md`: recorded selected `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2`, `val_stop favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`, side contract `PASS`, and failed gate due to `active_years=2 < 3`.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 49 report updates and points any continuation to a separate frozen probe-plan.
+
+### 2026-07-20: Review fixes for fractal0 price entry mechanics
+- Updated `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`: `ratio_without_best_year` removes the year with best yearly ratio, `research_gate` requires simple-rule comparison, and `audit_side_contract` requires both directions.
+- Updated `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`, `CONTEXT_HANDOFF.md`, `CHANGELOG.md`, `docs/superpowers/roadmap.md`, and module docs with corrected robustness/gate contract.
+- Updated `wiki/research/fractal-stop-research.md` metadata to `sources: 49` and recorded the review fixes.

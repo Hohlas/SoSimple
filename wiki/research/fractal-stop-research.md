@@ -1,6 +1,6 @@
 ---
-last_updated: 2026-07-10
-sources: 48
+last_updated: 2026-07-20
+sources: 49
 status: active
 ---
 
@@ -15,10 +15,13 @@ status: active
 Retest-zone oracle от `fractal0_price` проверил execution-aware вход после
 доступности сигнала. Selected train rule:
 `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2`. На `val_stop`:
-`favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`,
-side contract `PASS`. Gate не пройден из-за `active_years=2` при требовании
-`3`; verdict `DIAGNOSTIC_ONLY`. Продолжение возможно только через отдельный
-frozen probe-plan, без `locked_test` и без trading claims.
+`favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`, simple baseline
+ratio `1.0612`, side contract `PASS`. Gate не пройден из-за `active_years=2`
+при требовании `3`; verdict `DIAGNOSTIC_ONLY`. Review fixes 2026-07-20
+усилили gate: `ratio_without_best_year` удаляет год с лучшим yearly ratio,
+simple comparison обязателен, side audit требует обе стороны. Продолжение
+возможно только через отдельный frozen probe-plan, без `locked_test` и без
+trading claims.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
@@ -845,3 +848,6 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-07-07-entry-based-movement-filter-design.md](../../docs/reports/2026-07-07-entry-based-movement-filter-design.md) — bounded simple movement-filter поверх amplitude artifact: выбран один research-only filter `simple_combined / extra_trees_small / H3 / top_fraction=0.05`, без direction, без PnL/PF и без открытия `locked_test`
 - [2026-07-08-entry-based-movement-filter-replication-freeze.md](../../docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md) — freeze-репликация того же одного filter-а: exact rule/hash/source contract, yearly gate, random baseline и score cutoff diagnostics; итог `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`
 - [2026-07-08-direction-inside-frozen-movement-regime.md](../../docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md) — direction внутри frozen movement mask после repair `split_row_id`: contract PASS, но direction отвергнут на `val_eval`/robustness; итог `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME`
+- [2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](../../docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) — rich-features full grid внутри frozen movement mask: H3 weak direction-effect требовал narrow replication
+- [2026-07-10-direction-inside-frozen-mask-narrow-replication.md](../../docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) — narrow seed-stability replication: H3 effect не воспроизвёлся; verdict `REJECT_DIRECTION_REPLICATION`
+- [2026-07-10-fractal0-price-entry-mechanics.md](../../docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) — retest-zone oracle от `fractal0_price`: diagnostic ratio есть, gate не прошёл по active years; review fixes усилили robustness/gate/side audit

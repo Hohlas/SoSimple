@@ -54,6 +54,16 @@ def test_audit_side_contract_requires_real_distribution():
     assert audit["required_before_research_only"] is True
 
 
+def test_audit_side_contract_fails_when_only_one_direction_present():
+    rows = pd.DataFrame({"fractal0_direction": [-1, -1, -1]})
+
+    audit = runner.audit_side_contract(rows)
+
+    assert audit["status"] == "FAIL"
+    assert audit["direction_counts"] == {"-1": 3}
+    assert audit["has_both_directions"] is False
+
+
 def _ohlc_frame():
     return runner.next_open.prepare_ohlc(pd.DataFrame({
         "time": [
@@ -198,6 +208,19 @@ def test_summarize_mfe_metrics_reports_ratio_and_no_fill_context():
     assert summary["active_years"] == 3
 
 
+def test_ratio_without_best_year_removes_year_with_best_ratio_not_best_sum():
+    events = pd.DataFrame({
+        "oracle_favorable_move_after_cost": [100.0, 1.0, 10.0],
+        "oracle_adverse_move": [100.0, 0.1, 5.0],
+        "time": pd.to_datetime(["2021-01-01", "2022-01-01", "2023-01-01"]),
+    })
+
+    summary = runner.summarize_mfe_metrics(events, rows_total=3, rows_filled=3)
+
+    assert summary["best_year_by_ratio"] == 2022
+    assert round(summary["ratio_without_best_year"], 6) == round(110.0 / 105.0, 6)
+
+
 def test_research_gate_ignores_zero_spread_and_requires_side_contract_pass():
     selected_train = {"spread": 0.2, "favorable_to_adverse_ratio": 1.20, "filled_events": 500}
     eval_summary = {
@@ -209,6 +232,7 @@ def test_research_gate_ignores_zero_spread_and_requires_side_contract_pass():
         "favorable_to_adverse_ratio": 1.08,
         "ratio_without_best_year": 1.00,
         "stress_favorable_to_adverse_ratio": 0.96,
+        "dummy_or_simple_rule_comparison": {"status": "PASS"},
     }
     side_contract_audit = {"status": "PASS"}
 
@@ -231,12 +255,32 @@ def test_research_gate_blocks_failed_side_contract():
             "favorable_to_adverse_ratio": 9.0,
             "ratio_without_best_year": 9.0,
             "stress_favorable_to_adverse_ratio": 9.0,
+            "dummy_or_simple_rule_comparison": {"status": "PASS"},
         },
         {"status": "FAIL"},
     )
 
     assert gate["passes"] is False
     assert gate["checks"]["side_contract_status"] is False
+
+
+def test_research_gate_requires_dummy_or_simple_rule_comparison():
+    selected_train = {"spread": 0.2, "favorable_to_adverse_ratio": 1.20, "filled_events": 500}
+    eval_summary = {
+        "spread": 0.2,
+        "filled_events": 200,
+        "filled_events_per_year_min": 40,
+        "active_years": 3,
+        "no_fill_rate": 0.50,
+        "favorable_to_adverse_ratio": 1.08,
+        "ratio_without_best_year": 1.00,
+        "stress_favorable_to_adverse_ratio": 0.96,
+    }
+
+    gate = runner.research_gate(selected_train, eval_summary, {"status": "PASS"})
+
+    assert gate["passes"] is False
+    assert gate["checks"]["dummy_or_simple_rule_comparison"] is False
 
 
 def test_select_best_rule_uses_train_core_only_and_ignores_zero_spread():

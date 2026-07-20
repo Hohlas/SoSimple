@@ -81,7 +81,8 @@ no_fill_rate: 0.25883738309291426
 favorable_to_adverse_ratio: 1.20615838702499
 active_years: 16
 filled_events_per_year_min: 938
-ratio_without_best_year: 1.2010025156708224
+best_year_by_ratio: 2009
+ratio_without_best_year: 1.1973559489017238
 ```
 
 `val_stop` summary for the selected rule:
@@ -93,15 +94,31 @@ no_fill_rate: 0.25955811719500477
 favorable_to_adverse_ratio: 1.2421118400499844
 active_years: 2
 filled_events_per_year_min: 1864
+best_year_by_ratio: 2022
 ratio_without_best_year: 1.2397913622895531
 stress_favorable_to_adverse_ratio: 1.1895354754041108
+dummy_or_simple_rule_comparison: PASS
+simple_rule: entry_limit_at_fractal0_zone_0.0_lag_6_h3_spread_0.2
+simple_favorable_to_adverse_ratio: 1.061228066744197
 ```
 
-Side contract audit: `PASS`, direction counts `-1: 20740`, `1: 23419`.
+Side contract audit: `PASS`, direction counts `-1: 20740`, `1: 23419`,
+`has_both_directions = true`.
 
 Research gate: `passes = false`. Единственный failed check:
 `min_years_or_windows_val_stop = false`, потому что `val_stop` содержит 2
-активных года при требовании 3.
+активных года при требовании 3. Check `dummy_or_simple_rule_comparison`
+теперь присутствует и проходит.
+
+## Review Fixes
+
+После review исправлены три методических дефекта runner-а:
+
+- `ratio_without_best_year` теперь удаляет год с лучшим yearly ratio, а не
+  год с максимальной суммой favorable move.
+- `research_gate` требует `dummy_or_simple_rule_comparison`.
+- `audit_side_contract` требует обе стороны `-1` и `1`, а не только отсутствие
+  неизвестных направлений.
 
 ## Conclusions
 

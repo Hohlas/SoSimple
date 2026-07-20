@@ -21,7 +21,7 @@
 - **summary**: Добавлен oracle-runner для входа через возврат цены к зоне около `fractal0_price`; выбранное на `train_core` правило `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2` дало diagnostic ratio `1.2421` на `val_stop`.
 - **artifacts**: `ML/reports/fractal0_price_entry_mechanics.json`, `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`, `tests/test_fractal0_price_entry_mechanics.py`
 - **decision**: Gate не пройден: `val_stop` содержит 2 активных года при требовании 3, поэтому verdict `diagnostic_only`, lifecycle `exploratory_result`; повышение до `research_only` запрещено.
-- **notes**: `locked_test` не открыт; `spread=0.00` не участвовал в gate; exit contract отсутствует, поэтому PnL/PF/trading claims запрещены.
+- **notes**: Review fixes 2026-07-20: `ratio_without_best_year` считает лучший год по yearly ratio, gate требует simple-rule comparison, side audit требует обе стороны. `locked_test` не открыт; `spread=0.00` не участвовал в gate; exit contract отсутствует.
 
 ## [2026-07-10] — Direction Inside Frozen Mask Narrow Replication (FAIL / REJECT_DIRECTION_REPLICATION)
 - **report**: `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
