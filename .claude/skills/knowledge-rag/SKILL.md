@@ -1,6 +1,6 @@
 ---
 name: knowledge-rag
-description: Use when any task needs semantic project navigation or accumulated project knowledge across docs, wiki, reports, plans, codebase context, or prior decisions; use before broad manual search and before reviewing substantive project documents.
+description: Use when a task needs project memory: prior decisions, reports, wiki pages, plans, research conclusions, or cross-document context; use before broad manual search over docs/wiki/reports.
 ---
 
 # knowledge-rag
