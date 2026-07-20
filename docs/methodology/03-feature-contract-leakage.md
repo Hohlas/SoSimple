@@ -2,14 +2,14 @@
 
 ### Цель
 
-Исключить заглядывание вперёд, target-derived inputs и несовпадение training/online feature contract до того, как метрики validation/test/MT4/online будут интерпретированы как качество ML.
+Исключить заглядывание вперёд, target-derived inputs и несовпадение training/online feature contract до того, как метрики validation/locked_test/MT4/online будут интерпретированы как качество ML.
 
 ### Когда применять
 
 Применять перед каждым запуском, где результат может быть использован как доказательство качества ML:
 
 - обучение или retrain модели;
-- validation/test/frozen-test benchmark;
+- validation/locked_test benchmark;
 - изменение feature builder, target builder, preprocessing, normalization или split logic;
 - экспорт `ml_signals.csv`;
 - MT4 tester-прогон;
@@ -81,7 +81,7 @@ Reason: unresolved leakage/preprocessing contract risk.
 | # | Проверка | Зачем | Чем подтвердить | `FAIL`, если |
 |---:|---|---|---|---|
 | 1 | Зафиксирован `decision_time` | Нужно знать, какие данные доступны модели на баре `t` | В отчёте указан open/close бара, таймфрейм, инструмент, момент входа | Непонятно, на каком баре и в какой момент модель видит данные |
-| 2 | Split строго временной | Будущее не должно попадать в train/validation | Указаны границы train/validation/test; нет shuffle по строкам | Есть случайное перемешивание временных строк до split |
+| 2 | Split строго временной | Будущее не должно попадать в train/validation | Указаны границы train/validation/locked_test; нет shuffle по строкам | Есть случайное перемешивание временных строк до split |
 | 3 | Целевые и future-derived поля не входят во вход модели | Модель должна предсказывать результат, а не читать ответ | Input columns сравнены со списком target/label/future-derived columns | Во входе есть `predict`, `ret_*`, `ret_dir_atr_lag1`, `fav_*`, `adv_*`, `target_*`, `label_*`, `outcome_*` или другие поля из будущих баров |
 | 4 | Row features разделены на live-safe и future-derived | Часть строковых признаков может быть доступна online, часть нет | Есть явный allowlist live-safe полей и denylist target/future-derived полей | Недостающие online-поля молча заполняются нулями и подаются в модель |
 | 5 | Training и online feature contract совпадают | Модель должна получать одинаковое число признаков с одинаковым смыслом | Для checkpoint зафиксированы input names/count/order; online builder воспроизводит их без заглушек | Training builder создаёт N признаков, online честно создаёт M<N, а остальные заполняются `0` |
@@ -92,10 +92,10 @@ Reason: unresolved leakage/preprocessing contract risk.
 | 10 | Input и target normalization разделены | Метки могут менять масштаб признаков и создавать косвенную утечку | Есть отдельные input scaler/pools и target scaler/pools | Один pool содержит одновременно input-признаки и target/label/future-derived поля |
 | 11 | Внутри normalization pool нет dominance | Крупные величины могут затмить мелкие и исказить обучение | Есть dominance-check по каждому proposed pool | Одно поле определяет p85/p99/std pool настолько, что остальные становятся почти константными |
 | 12 | Labeling не запускается в online path | Online не знает будущий исход сделки | В online runner нет вызова future label builders | Online перед inference создаёт `ret_*`, `fav_*`, `adv_*` или аналоги по будущим барам |
-| 13 | Global scaler не использует future validation/test/online | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train | Scaler fit-ится на полном датасете включая validation/test/forward |
+| 13 | Global scaler не использует future validation/locked_test/online | Нельзя fit-ить scaler на данных, которые модель ещё не должна знать | Для StandardScaler/RobustScaler/min-max указано: fit только на train | Scaler fit-ится на полном датасете включая validation/locked_test/forward |
 | 14 | ATR/volatility contract совпадает | ATR может быть raw, ratio или scaled | В отчёте указано, ждёт ли checkpoint raw `ATR`, `ATR_ratio` или scaler-normalized ATR | Training использовал один ATR contract, online подаёт другой |
 | 15 | Константные признаки выявлены до retrain | Мёртвые признаки маскируют реальный feature contract | Есть variance/unique-count check по train input columns | Признак константный на train, но оставлен как информативный input без решения |
-| 16 | Exporter не меняет правило после test | Test должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до test | Порог, top-k, target, exit или фильтр выбираются после просмотра test |
+| 16 | Exporter не меняет правило после `locked_test` | `locked_test` должен проверять уже выбранное правило | Rule JSON/checkpoint зафиксирован до `locked_test` | Порог, top-k, target, exit или фильтр выбираются после просмотра `locked_test` |
 | 17 | MT4 получает тот же сигнал, который проверял Python | Иначе прибыль MT4 нельзя сравнивать с Python | Сверка rows, nonzero rows, unique time, opened trades | Python считает строки, а MT4 исполняет уникальные времена без parity |
 | 18 | Online runner блокирует неподдержанный ML-контракт | Лучше не выдать сигнал, чем выдать нечестный сигнал | При несовместимом checkpoint есть явная ошибка | Watcher публикует `ml_signals.csv`, хотя нужные live-safe признаки отсутствуют |
  | 19 | Entry price исполним после доступности признаков | Backtest должен входить не раньше, чем live реально может отправить ордер | В отчёте указаны: тип входа, цена входа, fill convention, latency sources и first executable price | Label/evaluation использует цену, которая недоступна в live на момент принятия решения |
@@ -161,7 +161,7 @@ Reason: unresolved leakage/preprocessing contract risk.
 `normalize_rowwise()` сама по себе не является leakage, если её параметры считаются только внутри текущей строки по уже известным фракталам. Проверять нужно две разные вещи:
 
 - для row-wise normalization: в её pool не должны попадать future-derived поля, влияющие на live-признаки;
-- для global scaler (`StandardScaler`, `RobustScaler`, min-max по датасету): параметры fit-ятся только на train и затем применяются к validation/test/online.
+- для global scaler (`StandardScaler`, `RobustScaler`, min-max по датасету): параметры fit-ятся только на train и затем применяются к validation/locked_test/online.
 
 Перед утверждением normalization groups нужен scale audit. Сначала поля разделяются по роли:
 
@@ -203,7 +203,7 @@ ATR нужно проверять отдельно. Если checkpoint обуч
 - список input columns или ссылку на feature builder;
 - список запрещённых target/future-derived колонок и подтверждение, что их нет во входе;
 - feature count и порядок признаков для checkpoint;
-- границы train/validation/test;
+- границы train/validation/locked_test;
 - результат проверки сортировки фракталов или других event elements;
 - scale audit inputs/targets;
 - normalization groups и dominance-check;

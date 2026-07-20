@@ -39,7 +39,7 @@
 ### Обязательные проверки
 
 - MT4 читает именно проверенный файл.
-- Exporter не меняет rule после test.
+- Exporter не меняет rule после `locked_test`.
 - Есть reconciliation report.
 - Все missing trades объяснены или помечены blocker.
 - Механический parity не объявляется forward profitability proof.
@@ -66,4 +66,3 @@
 - Если open failures существенны: улучшать retry/slippage или снижать trading frequency.
 
 ---
-

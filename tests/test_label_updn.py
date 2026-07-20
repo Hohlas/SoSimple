@@ -119,3 +119,40 @@ def test_label_updn_fractal0_missing():
     result = label_updn(df)
     assert result.at[0, 'up_12'] == 0.0
     assert result.at[0, 'up_48'] == 0.0
+
+
+def test_label_updn_distinguishes_two_fractals_on_same_bar():
+    t0 = 1705312800
+    hi_now = (
+        f"{t0}:101.00000:1:0.001:0.001:0:0:0.0:0.001:1:0.001"
+        f":0.00000:0.00000:0.00000:0.00000:0.00000:0.00000"
+        f":0.00000:0.00000:0.00000:0.00000:0.00100:0"
+    )
+    lo_now = (
+        f"{t0}:99.00000:-1:0.001:0.001:0:0:0.0:0.001:1:0.001"
+        f":0.00000:0.00000:0.00000:0.00000:0.00000:0.00000"
+        f":0.00000:0.00000:0.00000:0.00000:0.00100:0"
+    )
+    hi_future = (
+        f"{t0}:101.00000:1:0.001:0.001:0:0:0.0:0.001:1:0.001"
+        f":2.00000:1.00000:3.00000:1.50000:4.00000:2.00000"
+        f":0.50000:0.25000:1.00000:0.50000:0.00100:1"
+    )
+    lo_future = (
+        f"{t0}:99.00000:-1:0.001:0.001:0:0:0.0:0.001:1:0.001"
+        f":1.50000:2.50000:2.00000:3.50000:2.50000:4.50000"
+        f":0.25000:0.75000:0.50000:1.25000:0.00100:1"
+    )
+
+    df = pd.DataFrame([
+        {"time": "2026.01.15 10:00", "fractal0": hi_now, "fractal1": lo_now},
+        {"time": "2026.01.15 11:00", "fractal0": "", "fractal1": hi_future, "fractal2": lo_future},
+        {"time": "2026.01.15 12:00", "fractal0": ""},
+    ])
+
+    result = label_updn(df)
+
+    assert result.at[0, "up_3"] == pytest.approx(0.5, abs=1e-6)
+    assert result.at[0, "dn_3"] == pytest.approx(0.25, abs=1e-6)
+    assert result.at[0, "up_12"] == pytest.approx(2.0, abs=1e-6)
+    assert result.at[0, "dn_12"] == pytest.approx(1.0, abs=1e-6)

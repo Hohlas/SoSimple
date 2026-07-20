@@ -34,47 +34,21 @@ ML-бот для прогнозирования движения цены Forex.
 | Содержательный поиск по `docs/`, `wiki/`, отчётам, коду | `knowledge-rag` → `search_knowledge` |
 | Прочитать конкретный известный файл целиком или фрагментом | `Read` |
 
-`knowledge-rag` — это поисковик, **не источник истины**. Правило:
-- сначала найди кандидатов через `search_knowledge`;
-- затем открой найденные файлы через `Read`;
-- выводы делай только после проверки первоисточника.
-- Для обзорных задач используй несколько узких запросов к `search_knowledge`, а не один общий.
-
-Подбор режима `search_knowledge` (`hybrid_alpha`):
-
-| `hybrid_alpha` | Тип запроса | Пример |
-|----------------|-------------|--------|
-| `0.0` | Точные имена, метрики, функции, файлы | `search_knowledge("signal_tracer")` |
-| `0.3` | Технические запросы с устойчивыми терминами проекта | `search_knowledge("stage 4 breach fav profit factor")` |
-| `0.5` | Смешанные запросы по коду и документации | `search_knowledge("signal archetype research synthesis")` |
-| `1.0` | Смысловой поиск по идеям, гипотезам и выводам | `search_knowledge("bimodal signal failure flat drift")` |
-
-Если в keyword-режиме (низкий `hybrid_alpha`) приходят пустые результаты, попробуй другой термин, или повысь `hybrid_alpha`. В semantic-режиме (высокий `hybrid_alpha`) фразы из нескольких слов работают нормально: embedding ловит смысл всей фразы, а не требует совпадения каждого слова.
-
 ## Обязательные правила
 
 ### Навигация и чтение
 - Перед исследованием нового каталога сначала читать его локальный `README.md`.
 - Для файлов более 100Кб предпочитать точечное чтение (`Grep`, `Read` с `offset`/`limit`).
-- `MODULE_INDEX.md` читать точечно; целиком открывать только при пересборке индекса или аудите всей структуры.
+- `CHANGELOG.md` и `MODULE_INDEX.md` не открывать целиком: читать точечно, использовать `rg` по ключевым словам.
 
-### Работа с кодом
+### Работа с кодом и документацией
 - Использовать окружение `~/git/SoSimple/.venv` через вызов `./.venv/bin/python`.
 - После изменений в Python-коде запускать тесты: `./.venv/bin/python -m pytest tests/ -q`.
 - Для bugfix не делать рефакторинг «заодно».
-- Документация модулей (header, Docstrings, docs/, MODULE_INDEX.md) — скилл `update-docs` по запросу.
-- Для задач ML-пайплайна (новый эксперимент, аудит признаков/таргетов/split, leakage-проверка) — читать `docs/methodology/README.md` и придерживаться соответствующего этапа как инструкции.
-
-### Работа с данными
-- Для чтения CSV файлов использовать скилл `csv-processing`.
-
-### Закрытие этапа
+- Для задач ML-пайплайна (новый эксперимент, аудит признаков/таргетов/split, leakage-проверка) — скилл `methodology-processing`.
+- Для чтения CSV файлов - скилл `csv-processing`.
 - Финальная синхронизация `report` / `CHANGELOG.md` / `CONTEXT_HANDOFF.md` + wiki Ingest — скилл `stage-reporting`.
-
-### Git и окружение
-- `git commit` выполняется скиллом `stage-reporting` при закрытии этапа.
 - `git push` не делать без явной просьбы пользователя.
-- Не использовать worktree.
 
 ## Структура проекта
 
@@ -120,7 +94,7 @@ ML-бот для прогнозирования движения цены Forex.
 │   └── (API, ML, MT, processing, statistics, tests — docs для одноимённых каталогов кода)
 ├── AGENTS.md            # ← ВЫ ЗДЕСЬ. Главный индекс
 ├── MODULE_INDEX.md      # Реестр всех модулей со статусами
-├── CHANGELOG.md         # Краткая история значимых изменений (первые 300 строк)
+├── CHANGELOG.md         # Краткий индекс значимых изменений (новые записи в начале)
 ├── CONTEXT_HANDOFF.md   # Короткий baton pass: где мы, что дальше, что читать
 └── README.md            # Точка входа
 ```
@@ -137,3 +111,17 @@ ML-бот для прогнозирования движения цены Forex.
 Правила мониторинга:
 - Не искать ошибки специально
 - Не останавливать выполнение задачи
+
+## graphify
+
+This project has a knowledge graph.
+
+Use the installed graphify skill for document/code navigation and relationship discovery, not as the source of truth.
+Verify important conclusions in original project files before changing code or making final claims.
+
+Rules:
+- For document and codebase questions, use Graphify before broad manual search when the graph is available.
+- Use `graphify path "<A>" "<B>"` for relationships between two concepts.
+- Use `graphify explain "<concept>"` for focused concept lookup.
+- Skip Graphify only when the task is about stale/incorrect graph output or the user explicitly says not to use it.
+- Do not treat Graphify as a replacement for reading original files, local `README.md`, tests, or methodology rules.

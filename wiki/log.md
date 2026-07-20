@@ -2,6 +2,78 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-08] ingest | Entry-based movement filter freeze
+- Добавлен охват `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: bounded movement-filter ветка дополнена freeze-репликацией; зафиксировано, что результат означает только frozen research segmentation mask для следующего плана.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 44 report updates.
+- Зафиксировано методическое знание: freeze не является direction, PnL/PF, trading candidate, live rule или permission to open `locked_test`.
+
+## [2026-07-07] ingest | Entry-based movement filter design
+- Добавлен охват `docs/reports/2026-07-07-entry-based-movement-filter-design.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: amplitude / movement-regime ветка продолжена bounded movement-filter этапом; зафиксирован единственный допустимый research-only winner `simple_combined / extra_trees_small / H3 / top_fraction=0.05`.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 43 report updates.
+- Зафиксировано методическое знание: новый этап не поднимает ветку до direction или trading candidate; следующий допустимый шаг — только узкая репликация/заморозка одного filter-а без расширения search space.
+
+## [2026-07-03] update | Entry-based price-feature matrix report sync
+- Добавлен охват `docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: после next-open target foundation добавлен bounded follow-up с ценовыми и path-блоками; зафиксировано, что `next open` не переоткрыт ни `entry_open` target-ом, ни ограниченной price-feature matrix.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 37 report updates.
+- Зафиксировано методическое знание: текущий `WEAK_TRACE_FOUND` в matrix-этапе нельзя трактовать как надёжный исследовательский вердикт без усиления summary logic; устойчивого winner между `distance_atr` и `path_reaction` нет.
+
+## [2026-07-03] update | Fractal selection ablation clean rerun
+- Добавлен охват `docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: после исправления feature horizon contract (`Up/Dn` только 3/6/12) и all-horizon summary лучший чистый след — `corridor_5atr / xgboost_depth3 / H12 = 0.0795`, но устойчивого directional winner нет.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 38 report updates.
+- Зафиксировано методическое знание: старый `zones_plus_nearest_k40 / H3` shortlist был следствием `H3-only` summary и смешанных `Up/Dn` горизонтов; следующий допустимый shortlist — `corridor_5atr`, `nearest_k20`, `nearest_k60`, `nearest_k80`.
+- Post-review correction: runner status logic приведена к weak-trace rule плана; отчёт дополнен disclosure split, distribution flags, direction-vs-amplitude таблицей и оговоркой, что H12 требует отдельного методического решения перед rerun.
+
+## [2026-07-02] ingest | Regression Up/Dn ratio + already moved audits
+- Добавлен охват `docs/reports/2026-07-01-regression-updn-ratio-audit.md` и `docs/reports/2026-07-02-regression-updn-already-moved-audit.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target foundation теперь продолжена двумя новыми этапами, которые отделяют сигнал от `fractal0_price` от схемы немедленного входа.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 35 report updates.
+- Зафиксировано новое проектное знание: target family `Regression Up/Dn` подтверждена, но `next open after signal_time` для неё отклонён; следующий допустимый шаг только через entry-механику, привязанную к `fractal0_price` или её ретесту.
+
+## [2026-06-30] ingest | Stage 6.3 H6 feature parity check
+- Добавлен охват `docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.3 — H6 feature parity check подтвердил NO_ADDITIVE_VALUE; H6 baseline сильнее H12, price-action на H6 почти проходит gate, но additive delta не достигает порога +0.02 и permutation не пройдена.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 32 report updates.
+- Зафиксировано: H6 feature parity не изменила verdict; следующий шаг — Regression Up/Dn target foundation.
+
+## [2026-07-01] update | Regression Up/Dn target foundation post-review refresh
+- Пересчитан `ML/reports/regression_updn_target_foundation.json` после правок audit/diagnostics; полный прогон снова завершён `75/75`, elapsed `4501.9s`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target foundation дополнен честным `feature_read_audit`, disclosure по `log_ratio` и расширенной `calendar_dependence`.
+- Обновлён `wiki/index.md`: описание fractal-stop research уточнено без изменения охвата.
+- Зафиксировано: главный вывод не изменился — `structure_full` на `H3` остаётся лучшей bounded target-foundation точкой, статус `TARGET_FOUNDATION_PASSED / DIAGNOSTIC_ONLY`.
+
+## [2026-06-30] ingest | Regression Up/Dn target foundation
+- Добавлен охват `docs/reports/2026-06-30-regression-updn-target-foundation.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: target family `up_*/dn_*` получила сильное bounded подтверждение на коротких горизонтах; лучший result дал `structure_full` на `H3`, а не legacy `H12`.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 33 report updates.
+- Зафиксировано: `TARGET_FOUNDATION_PASSED / DIAGNOSTIC_ONLY`; следующий шаг — confirmatory cycle с замороженным trading mapping поверх `structure_full` и `H3/H6`.
+
+## [2026-06-30] ingest | Stage 6.2 range_w1_atr post-mortem
+- Добавлен охват `docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: `range_w1_atr` доминирует, но evidence strength остаётся `weak`; Stage 6.2 не продвигается.
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 31 report updates.
+- Следующее направление зафиксировано как `Regression Up/Dn target foundation`; H12 OHLC-window variations не переоткрывать.
+
+## [2026-06-29] ingest | Stage 6.1: H12 Relative Fractal Geometry
+- Добавлен охват `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`
+- Обновлён `wiki/research/fractal-stop-research.md`: Stage 6.1 MODEL_GATE_FAILED — текущие H12 geometry-only профили вокруг fractal0 не предсказывают TP/SL touch (AUC 0.51–0.55)
+- Обновлён `wiki/index.md`: охват fractal-stop-research расширен до 6.1 (29 report updates)
+- Статус: tested H12 geometry-only branch закрыта; baseline+geometry delta test выполнен отдельным follow-up ниже.
+
+## [2026-06-29] update | Stage 6.1 runtime artifact refresh
+- Пересчитан `ML/reports/stage6_1_h12_relative_fractal_geometry.json` новым runner-ом с `xgb_n_jobs=24`, checkpoint before preflight, heartbeat, `started_at`/`finished_at` и per-run `elapsed_sec`.
+- Обновлены `docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md`, `CHANGELOG.md` и `CONTEXT_HANDOFF.md` под фактический elapsed `3581s` (59.7 мин).
+- Исследовательский вывод не изменился: Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
+
+## [2026-06-29] update | Stage 6.1 baseline+geometry delta
+- Добавлены 3 combined-профиля: `clock_shift_back + nearest_time40`, `clock_shift_back + corridor3`, `clock_shift_back + corridor10`.
+- Полный прогон стал `27/27`; все 3 combined-профиля провалили delta gate: AUC delta только `+0.0026..+0.0048`, median PF хуже baseline.
+- Обновлены report/changelog/handoff/wiki; итог Stage 6.1 остаётся `MODEL_GATE_FAILED` / `DIAGNOSTIC_ONLY`.
+- Граница вывода: закрыта tested encoding family around `fractal0` на XAUUSD H1 H12, а не вся идея фрактальной геометрии.
+
 ## [2026-06-29] ingest | Stage 5.4: Fast Price/ATR Ablation
 - Добавлен охват `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`
 - Обновлён `wiki/research/fractal-stop-research.md`: Stage 5.4 REJECT_PRICE_COORD — price/ATR координата не улучшает `fast` ни на sell, ни на buy
@@ -560,6 +632,24 @@
 ### 2026-06-11: Update concept — folded-mov-channels
 - Updated `wiki/concepts/folded-mov-channels.md`: documented the decision to keep `Nero.csv` in the 23-field format, compute `mov_h` in Python only when needed, avoid `lib_PIC.mqh` re-export/relabel work, and keep current priority on `relative_geometry`.
 ### 2026-06-12: Update Stage 4 report with Stage 4.1 controls
+### 2026-07-02: Ingest Next Open Entry Up/Dn Foundation
+- Updated `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`: clarified `DIAGNOSTIC_ONLY` vs `NO_SIGNAL_FOUND`, explicit all-horizon/all-split runner gate, next-available-open delay distribution, and the difference between weak amplitude ranking and absent directional `entry_log_ratio` signal.
+- Updated `ML/baseline/benchmark_next_open_entry_updn_foundation.py`, `ML/reports/next_open_entry_updn_foundation.json`, and `tests/test_next_open_entry_updn_foundation.py`: separated artifact status from runner status and made gate evaluation cover primary/disclosure splits and all declared horizons.
+- Fixed `ML/baseline/analyze_regression_updn_already_moved_audit.py`: removed forbidden ML import of `processing.label_signals.parse_fractal` and kept only local `fractal0` field extraction needed by the audit.
+- Updated `CHANGELOG.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: recorded that next-open target retraining from actual `entry_open` still yields `NO_SIGNAL_FOUND` for directional ranking while leaving fractal-price entry mechanics open.
+
+### 2026-07-04: Ingest Entry-Based Next Open Closeout
+- Added `docs/reports/2026-07-04-entry-based-next-open-closeout.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded closeout verdict `PIVOT`, weak direction (`all100 / xgboost_depth3 / H24 = 0.0533 -> 0.0335`), strong amplitude trace (`nearest_k80 / hist_gradient_boosting / entry_up H3 = 0.3414 -> 0.4449`), and the next-step shift toward amplitude / movement-regime targets.
+- Post-review closeout sync: recorded that `all100` is control-only and cannot produce `CONTINUE`, candidate-only direction is weaker (`nearest_k60 / xgboost_depth5 / H12 = 0.0373 -> 0.0274`), `simple_trade` is unstable between `val_select` and `val_eval`, and zero `fractal0_updn` add-on features were removed from the closeout runner.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-04 closeout, 39 report updates.
+
+### 2026-07-06: Ingest Entry-Based Powerful Tabular Models
+- Added `docs/reports/2026-07-06-entry-based-powerful-tabular-models.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded the stronger tabular model check, direction failure (`nearest_k80 / hist_gradient_boosting_strong / H12 = 0.0519 -> -0.0009`), amplitude confirmation (`nearest_k60 / hist_gradient_boosting_strong / entry_up H3 = 0.3412 -> 0.4419`), and verdict `PIVOT_AMPLITUDE`.
+- Post-review sync: recorded that best-by-`val_eval` direction (`corridor_5atr / extra_trees_regressor / H12 = 0.0475`) has weak `val_select=0.0042` and is hindsight disclosure only.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through 2026-07-06 powerful tabular capacity check, 40 report updates.
+
 - Updated existing `docs/reports/2026-06-11-stage4-trade-xgboost.md` instead of creating a new report.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 4.1 XGBoost-fav and combined breach results, corrected Stage 4 yearly winner table, and marked quick controls rejected.
 - Updated `wiki/index.md`: coverage wording changed to Stage 1-4.1.
@@ -627,3 +717,70 @@
 - Updated `docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md`: clarified that the gate evaluates the predeclared primary candidate, not the globally best profile among all diagnostic profiles; fixed secondary/diagnostic wording.
 - Updated `CHANGELOG.md` and `CONTEXT_HANDOFF.md`: corrected Stage 5.3 buy seed-count wording and separated Stage 5.3 `TARGET_REFORMULATION_FOUND` from Stage 5.4 `DIAGNOSTIC_ONLY`.
 - Updated `wiki/research/fractal-stop-research.md`: added Stage 5.4 synthesis and marked price/ATR ablation as rejected.
+
+### 2026-06-29: Ingest Stage 6.0 review-fix rerun
+- Updated `wiki/research/fractal-stop-research.md`: Stage 6.0 supersedes the old H24-only `MODEL_GATE_FAILED` reading; H6 passes model gate but fails trading gate due to `NO_THRESHOLD`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records corrected Stage 6.0 `TRADING_GATE_FAILED` outcome.
+
+### 2026-06-30: Ingest Stage 6.2 H12 price action
+- Added `docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md`.
+- Updated `wiki/research/fractal-stop-research.md`: added Stage 6.2 OHLC price-action result, primary `h12_price_action_core` weak standalone signal, failed permutation gate, failed additive delta gate, and narrow rejection scope.
+- Updated `wiki/index.md`: Fractal Stop coverage now extends through Stage 6.2, 30 report updates.
+
+### 2026-06-30: Review-fix Stage 6.2 summary aggregation
+- Updated `ML/baseline/benchmark_stage6_2_price_action.py`: Stage 6.2 summary now stores per-seed rows, aggregates permutation p-values by median/min/max over seeds, and selects the representative threshold row by median PF.
+- Updated Stage 6.2 report/handoff/wiki wording: clarified row-time zero-vector contract, legacy smoke-check scope, top-importance selection rule, per-seed metrics, and weak validation ranking interpretation.
+### 2026-07-07: Ingest entry-based sequence Transformer closeout
+- Added `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`.
+- Updated `wiki/research/fractal-stop-research.md`: sequence Transformer did not rescue `entry-based next open` direction (`0.0539 -> 0.0050`), while amplitude remained stronger (`0.3229 -> 0.3337`).
+- Updated `wiki/index.md`: Fractal Stop coverage now includes ordered sequence Transformer and records 41 report updates.
+
+### 2026-07-07: Refine sequence Transformer report after review
+- Updated `docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md`: narrowed the sequence conclusion, strengthened `price_coord_atr` warning treatment, renamed `simple_trade` to post-hoc sanity check, and added required controls for the next amplitude plan.
+- Updated `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: clarified that the current result closes only the bounded `entry-based next open` direction branch, not the whole idea of fractal sequence representations.
+
+### 2026-07-07: Ingest entry-based amplitude movement-regime audit
+- Added `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`.
+- Updated `wiki/research/fractal-stop-research.md`: movement-regime target `max(entry_up_H, entry_dn_H)` is strong diagnostically but explained by simple baselines; no complex representation winner and no trading verdict.
+- Updated `wiki/index.md`: Fractal Stop coverage now includes amplitude movement-regime audit and records 42 report updates.
+
+### 2026-07-07: Refine amplitude movement-regime audit after review
+- Updated `ML/reports/entry_based_amplitude_movement_yearly.csv` and JSON yearly rows: added `profile`, `model_key`, `seed`, `target_family` to each yearly diagnostic row.
+- Updated `docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md`: clarified skipped distance-control, feature-audit warning families, target-distribution shift, winner disclosure on 2026, and simple-vs-complex comparison.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: clarified that amplitude is explained mainly by `time+ATR`, while `distance_to_level_pre_entry_only` was not a valid completed control.
+
+### 2026-07-08: Ingest direction inside frozen movement contract failure
+- Added `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`.
+- Updated `wiki/research/fractal-stop-research.md`: direction-inside-mask plan stopped with `ABORT_CONTRACT_FAIL` because `split + time` is not unique in freeze scores and split rows; no direction baselines were trained.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 45 report updates and points the next step to row-id repair before repeating direction-inside-mask.
+
+### 2026-07-08: Continue direction inside frozen movement after row-id repair
+- Updated `ML/reports/entry_based_movement_filter_freeze_scores.csv`: added `split_row_id` as the stable join key while keeping the frozen movement rule unchanged.
+- Updated `docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md`: final verdict changed from contract abort to `REJECT_DIRECTION_INSIDE_MOVEMENT_REGIME` after the repaired direction run.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: recorded that `split + time` duplicates come from multiple entry rows per bar, and direction inside the frozen mask is rejected after repair.
+
+### 2026-07-09: Ingest rich-features direction-inside-mask runner fix
+- Added `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`.
+- Updated `wiki/research/fractal-stop-research.md`: rich-features runner is now wired to real split/freeze inputs; smoke `simple_combined / H3 / entry_log_ratio / extra_trees` produces real metrics and rejects the simple control.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 46 report updates and marks the full rich-features grid as still pending.
+
+### 2026-07-09: Ingest rich-features direction-inside-mask full grid
+- Updated `docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md`: full grid `240/240` replaces the earlier smoke-only result.
+- Updated `wiki/research/fractal-stop-research.md`: recorded `DIRECTION_REPLICATION_REQUIRED` for `nearest_k60 / H3 / entry_log_ratio / extra_trees` with `val_select_inside_mask=0.570170` and `val_eval_inside_mask=0.529056`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 47 report updates and marks the next step as a narrow replication plan, not candidate promotion.
+
+### 2026-07-10: Ingest narrow direction-inside-mask replication reject
+- Added `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded `REJECT_DIRECTION_REPLICATION` for the pre-registered `nearest_k60 / extra_trees / entry_log_ratio` narrow matrix; H3 median `val_eval_inside_mask=0.499080`, only `2/5` seeds reached `>=0.52`, H9 skipped by target preflight.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 48 report updates and moves the next branch away from direction-inside-mask toward execution-aware `fractal0_price` mechanics.
+
+### 2026-07-10: Ingest fractal0 price entry mechanics oracle-preflight
+- Added `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`.
+- Added `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` and `tests/test_fractal0_price_entry_mechanics.py`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded selected `zone_edge / 0.5 ATR / lag 6 / H3 / spread 0.2`, `val_stop favorable_to_adverse_ratio=1.2421`, stress ratio `1.1895`, side contract `PASS`, and failed gate due to `active_years=2 < 3`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 49 report updates and points any continuation to a separate frozen probe-plan.
+
+### 2026-07-20: Review fixes for fractal0 price entry mechanics
+- Updated `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`: `ratio_without_best_year` removes the year with best yearly ratio, `research_gate` requires simple-rule comparison, and `audit_side_contract` requires both directions.
+- Updated `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`, `CONTEXT_HANDOFF.md`, `CHANGELOG.md`, `docs/superpowers/roadmap.md`, and module docs with corrected robustness/gate contract.
+- Updated `wiki/research/fractal-stop-research.md` metadata to `sources: 49` and recorded the review fixes.

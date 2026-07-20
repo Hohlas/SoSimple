@@ -1,91 +1,135 @@
-# Предлагаемый план исследований — после Stage 4.3
+Hi @lyonzin,
 
-> **Дата:** 2026-06-15
-> **Контекст:** Stage 4.3 post-mortem diagnostic завершён. Табличные модели (RF/XGBoost) на плоских фрактальных признаках не дают прибыльный PF выше 1.015. Oracle ceiling = 104.9 PF — проблема в извлечении сигнала, не в механике правил.
+Thanks again for maintaining `knowledge-rag`. This is a separate follow-up PR from real-world usage of exact/path-oriented searches in larger mixed documentation/code repositories.
 
-## Что имеем на входе
+## Summary
 
-**Fractal Stop (текущий трек):** Stage 1→4.3 показали, что табличные модели (RF/XGBoost) на плоских фрактальных признаках не дают прибыльный PF выше 1.015. Ключевые ограничения:
-- Breach-модель грубо ранжирует риск, но блокирует ~38% oracle-безопасных строк
-- Fav-модель слабо коррелирует с истиной (Spearman=0.218), систематически завышает TP
-- Оба слоя дают сопоставимые прямые потери (breach false-safe −383 vs fav false-accept −410 ATR)
-- Диагностический потолок oracle — PF=104.9 — показывает, что проблема не в механике правил, а в извлечении сигнала
+Adds a small generic ranking signal for indexed `source` and `filename` metadata. When query terms match the file path or file name, hybrid search gives that candidate a bounded boost before final sorting/reranking. This helps navigational queries surface the most relevant file-oriented chunks without adding project-specific rules or changing the public API.
 
-**Transformer Direction (deepseek-ветка, май 2025):** Fine-tune `transformer_updn_best.pt` на direction-таргетах TB. Результаты: best val PF ~1.0-1.24 для отдельных BUY/SELL, без комбинации, без test, без trailing. Trail-таргеты не собраны. Это другой подход (20-фракталов, hold-1-bar), не Fractal Stop.
+Closes N/A
 
----
+## Type of change
 
-## Вектор A: Stage 5.0 — Transformer для Fractal Stop (основной исследовательский путь)
+- [x] feat - new feature
+- [ ] fix - bug fix
+- [ ] docs - documentation only
+- [ ] refactor - no behavior change
+- [ ] perf - performance improvement
+- [x] test - adding or improving tests
+- [ ] chore - tooling, deps, CI
+- [ ] BREAKING CHANGE (explain in Migration section below)
 
-**Почему основной:** Oracle показывает потолок 104.9 PF. Проблема не в механике правил, а в качестве извлечения сигнала из 100-фрактальной последовательности. Transformer (в отличие от плоских признаков) способен улавливать зависимости между фракталами.
+## What changed
 
-**Что:** Transformer Encoder (d_model=64, 4 головы, 2-3 слоя) на 100-фрактальной последовательности с теми же признаками, что в Stage 4.2. Две головы: breach-классификация + fav-регрессия.
+- `mcp_server/server.py`: add `_metadata_path_score()` to compute a small bounded boost from query matches in `source` and `filename` metadata.
+- `mcp_server/server.py`: add that boost to the fused RRF score before sorting/reranking.
+- `tests/test_search.py`: add a deterministic test showing that a filename/path match can lift the more navigationally relevant result.
+- `README.md`: add a `### Unreleased` changelog entry.
 
-**Gate для 5.0a:** не только средний AUC. Минимальный проход:
-- +100 bp mean AUC над XGBoost baseline (0.6674) или явное улучшение lift в рабочей зоне входа;
-- годовые AUC без провалов;
-- калибровка `predict_break` лучше Stage 4.3;
-- seed-устойчивость;
-- сравнение с XGBoost на том же split и тех же target.
+## Why
 
-**Этапы:**
-- 5.0a: Breach-only Transformer — воспроизвести Stage 4.2 split, обучить, сравнить годовые AUC/lift/calibration с XGBoost
-- 5.0b: Добавить fav-голову (shared encoder) — сравнить не только MSE/R², но и Spearman, ошибки по квантилям, false accept / false reject относительно fav-фильтра и влияние на TP/PnL
-- 5.0c: Торговый слой — только если 5.0a/5.0b прошли gates; отдельный `val-select` / `val-eval`, block bootstrap, permutation test
+For large repositories, users often search by stable file-oriented terms: module names, report names, feature names, or words that appear in paths. BM25 and semantic search only score chunk content, so two chunks with similar content can rank counterintuitively when one of them is clearly a better path/filename match.
 
-**Риски:** Transformer может переобучиться (мало данных: ~44k train строк, но это 100-позиционные последовательности, каждая позиция — временной срез, не независимые семплы). Нужна хорошая регуляризация.
-
-### Вектор B: Stage 4.4 — Диагностический micro-check перед Transformer
-
-**Почему перед A:** Не требует перестройки модели и может быстро уточнить дизайн Stage 5. Но это не новый поиск winner. Статус всех результатов Stage 4.4 — только `DIAGNOSTIC_ONLY`: без test, без повышения verdict, без выбора торгового правила.
-
-Что проверяем (все на val_eval, без test, с заранее раскрытым числом вариантов):
-
-1. **Relax breach filter** — проверить один заранее заданный вариант `p=0.5` против текущего `p=0.4`. Stage 4.3 показал, что breach блокирует 37.5% oracle-безопасных строк. Но это не доказывает, что повышение `p` улучшит PF: ослабление фильтра также пропустит больше плохих входов. Поэтому это только диагностический тест с yearly PF, block bootstrap и permutation test.
-
-2. **Abandon fav-based TP → Fixed TP** — заменить `tp = pred_fav × tf` на фиксированный `tp = stop_val × R` для ограниченной сетки `R ∈ {0.5, 0.7, 1.0}`. Stage 4.3 показал, что `pred_fav` слабо коррелирует с истиной и не даёт преимущества как регулятор цены TP. Проверка отвечает на вопрос: нужно ли Stage 5 учить fav как цену TP или достаточно использовать fav только как фильтр.
-
-3. **Breach-only entry, no fav filter** — убрать `min_fav` и `min_rr`, оставить только breach-фильтр + fixed TP. Это чистый тест: работает ли breach сам по себе без искажений от fav.
-
-4. **No winner selection** — если какая-то ячейка выглядит лучше baseline, она получает только статус `hypothesis_only`. Для превращения в кандидата нужен отдельный план с чистым `val-select` / `val-eval` или permutation test, повторяющим весь процесс выбора.
-
-**Trailing stop:** не включать в Stage 4.4 как обычную ячейку перебора. Старый результат atr_02 PF=1.655 интересен, но не является доказательством: он получен в другом диагностическом контуре и делит данные с selection. Трейлинг должен идти отдельным планом Stage 4.5 или как вариант выхода в Stage 5.1 после фиксации модели.
-
-### Вектор C: Признаковый слой — улучшение fav через новые фичи
-
-**Почему отдельный путь:** Fav/TP — главный подозреваемый по oracle-потолку, но не единственная проблема: прямые отрицательные категории breach false-safe и fav false-accept сопоставимы. RF на текущих признаках исчерпан, поэтому для fav нужны либо новые признаки, либо новая архитектура.
-
-**Что:** Добавить признаки, которых нет в текущем плоском представлении:
-- Импульс цены за N баров до/после фрактала (из OHLC)
-- Угол/наклон движения между фракталами
-- Волатильность на разных окнах (не только H1 ATR)
-- Признаки из `lib_PIC`, не попавшие в CSV
-
-Проверять через RF на Stage 4.2 baseline: если Spearman с true_fav вырастает с 0.218 → 0.35+ и одновременно уменьшаются `model_fav_false_accept` / `fav_overpredict`, это подтверждение. Один только рост MSE/R² не достаточен: важно, улучшается ли TP/PnL-решение.
+This PR keeps the behavior generic. It does not add hardcoded categories, project-specific terms, config assumptions, or new dependencies. The boost is intentionally small and capped so content relevance remains the primary signal.
 
 ---
 
-## Рекомендуемая последовательность
+## 7 Pillars Quality Gate
 
+> Mark each item. CI enforces these via the `quality-gate.yml` workflow.
+
+### 1. Security
+
+- [x] No new secrets, tokens, or credentials in the diff (gitleaks will block)
+- [x] No new use of `eval`, `exec`, `subprocess shell=True`, `pickle.loads` on untrusted input, or arbitrary deserialization
+- [x] New dependencies (if any) reviewed for known CVEs and license compatibility
+- [x] Path traversal, command injection, and SSRF surfaces explicitly considered for any new I/O code
+
+### 2. Stability
+
+- [ ] All existing tests still pass on Linux + Windows x Python 3.11/3.12
+- [x] New behavior covered by tests; tests are deterministic (no `time.sleep` / network / OS-scheduler dependencies)
+- [ ] Coverage does not regress (codecov gate)
+- [x] No tests were skipped, deleted, or marked `xfail` to make the PR pass
+
+### 3. Memory leak
+
+- [x] Long-lived objects (orchestrator, watcher, cache) are bounded
+- [x] New caches have eviction policy (LRU, TTL, or explicit size limit)
+- [x] No new global state that grows unbounded with usage
+- [x] If you added a new module that loads heavy resources, consider lazy initialization
+
+### 4. Versatility
+
+- [x] Works on Linux, Windows, macOS (paths, line endings, locale considered)
+- [x] Works on Python 3.11, 3.12, 3.13 (no Python-version-specific syntax without fallback)
+- [x] No hardcoded paths, locales, or encodings
+- [x] If you touched a parser, all 20 supported formats still parse correctly
+
+### 5. Scalability
+
+- [x] No O(n^2) or worse algorithms on user-controlled inputs
+- [ ] Benchmark impact considered (run `pytest bench/` locally if you touched search/index/embed)
+- [x] If perf regression > 10% in any metric, justification provided below
+- [x] Concurrency safety: no new shared mutable state without lock or documented thread confinement
+
+**Performance impact** (required if you touched `mcp_server/server.py`, `mcp_server/ingestion.py`, or `bench/`):
+
+```text
+metric          before    after    delta
+search p95      N/A       N/A      N/A
+index docs/sec  N/A       N/A      N/A
+RSS @ 1k docs   N/A       N/A      N/A
 ```
-B (Stage 4.4 diagnostic micro-check) → A (Stage 5.0 Transformer) → C (fav-feature branch, если нужен) → Stage 5.1 trading layer
-                1 день                         5-7 дней                         2-3 дня                    2-3 дня
-```
 
-B-вектор идёт первым только как короткая диагностика, потому что:
-- Даёт быстрые ответы, не требующие перестройки модели;
-- Может уточнить, вреден ли fav-based TP именно как способ выставления TP;
-- Может повлиять на дизайн A: например, если fixed TP не хуже fav-based TP, fav-голову Transformer нужно оценивать прежде всего как фильтр, а не как прямую цену TP.
+This adds a small per-candidate metadata scoring calculation during result fusion. It does not add indexing work, model calls, database writes, network I/O, or persistent state. I did not run the benchmark suite locally.
 
-Если B не показывает улучшений — это аргумент в пользу того, что проблема не в порогах/TP-политике, а в качестве модели, что ускоряет переход к A. Если B показывает красивую ячейку, это не winner: нужен отдельный clean-протокол, иначе повторится selection bias Stage 4.
+### 6. Versioning
 
-Trailing stop вынести в отдельный план после Stage 5.0 или как независимую Stage 4.5. Его нельзя смешивать с Transformer-этапом без разделения, иначе будет непонятно, что улучшило PF: модель или механика выхода.
+- [ ] If this is user-facing change: bumped version in `pyproject.toml`, `mcp_server/__init__.py`, and `npm/package.json` atomically
+- [ ] If this is a breaking change: bumped MAJOR, added migration notes in CHANGELOG, marked `BREAKING CHANGE:` in commit footer
+- [x] CHANGELOG updated with entry under `## Unreleased` in README.md
+- [x] Public API surface (`mcp_server/server.py` MCP tool decorators) unchanged, OR breaking changes documented
 
-## Связанные файлы
+### 7. Quality
 
-- `docs/reports/2026-06-15-stage4_3-diagnostics.md` — канонический отчёт Stage 4.3
-- `docs/audit/2026-06-14-stage4-brainstorm_result_codex.md` — source аудит Codex для Stage 4.3
-- `ML/baseline/diagnose_stage4_3.py` — diagnostic runner
-- `ML/baseline/diagnose_stage4_gap.py` — reusable infrastructure (simulator, models, features)
-- `ML/baseline/benchmark_fractal_stop_stage4_2.py` — Stage 4.2 reference baseline
-- `wiki/research/fractal-stop-research.md` — синтез всего fractal-stop трека
+- [ ] `ruff check` passes
+- [ ] `ruff format --check` passes
+- [x] Type hints on new public functions (`mypy --strict` clean for new files)
+- [x] Docstrings on new public functions (used by `interrogate`)
+- [x] Cyclomatic complexity reasonable (`radon cc --max=C`)
+- [x] No dead code (`vulture` would not flag new code)
+- [x] PR is reasonably sized (< 500 lines of diff preferred; bigger PRs split or justify)
+
+---
+
+## Migration / Breaking changes
+
+N/A. This is not a breaking change. Existing `search_knowledge` parameters and response schema are unchanged.
+
+## Test plan
+
+- [ ] `pytest tests/ -v` passed locally
+- [ ] `pre-commit run --all-files` clean
+- [x] Manual smoke test: N/A for external system behavior; the change is covered by a deterministic unit test with fake BM25/collection/cache objects.
+- [x] Ran targeted test locally: `.venv/bin/python -m pytest tests/test_search.py -q` -> `23 passed`.
+- [x] Ran changelog check locally: `python3 scripts/check_changelog.py --pr-title 'feat: improve search ranking with path metadata' --base-ref origin/master` -> `OK`.
+
+## Documentation
+
+- [x] Updated `README.md` (if user-facing)
+- [ ] Updated `docs/` (if applicable)
+- [x] Added entry to `## Unreleased` in README CHANGELOG section
+
+## Reviewer checklist
+
+<!-- Do not edit. The reviewer fills this. -->
+
+- [ ] Reviewed line-by-line
+- [ ] Verified the 7 pillars CI status checks are green
+- [ ] Verified no obvious adversarial implications
+- [ ] Approved performance impact
+
+---
+
+By submitting this PR I confirm I read [CONTRIBUTING.md](../CONTRIBUTING.md) and agree to the [Code of Conduct](../CODE_OF_CONDUCT.md).

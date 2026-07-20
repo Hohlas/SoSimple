@@ -16,14 +16,15 @@
 - [ ] Preprocessing воспроизводим.
 - [ ] Нормализация не использует будущие поля.
 - [ ] Split строго временной. Для событийного ряда учтена специфика неравномерного сэмплирования.
-- [ ] Validation/test/forward границы указаны.
+- [ ] `train`/`validation`/`locked_test`/`forward` границы указаны.
+- [ ] `sample_size_gate` задан и пройден после всех фильтров.
 - [ ] Baseline-модели запущены.
 - [ ] Baseline использует тот же execution convention, что и кандидат.
 - [ ] Метрики и gates заданы до validation sweep.
 - [ ] Hyperparameter/model selection не использует test.
-- [ ] Один frozen candidate выбран на validation.
-- [ ] Rule/checkpoint/exporter заморожены до test.
-- [ ] Test открыт один раз для frozen candidate.
+- [ ] Один `frozen_rule_for_locked_test` выбран на validation.
+- [ ] Rule/checkpoint/exporter заморожены до `locked_test`.
+- [ ] `locked_test` открыт один раз для frozen rule.
 - [ ] Backtest учитывает spread, commission, swap, slippage и position limits. Проверена устойчивость к удвоению издержек.
 - [ ] Zero-spread результат, если запускался, помечен `DIAGNOSTIC_ONLY` и не участвует в trading gates.
 - [ ] Симулятор сделок проверен на синтетических тестах с известным исходом.

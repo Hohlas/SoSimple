@@ -33,7 +33,7 @@
    - `fill_lag`;
    - ambiguous same-bar policy;
    - `pnl_r` или другую заранее выбранную PnL-единицу для evaluation.
-7. Проверить distribution targets по train/validation/test.
+7. Проверить distribution targets по train/validation/locked_test.
 8. Проверить distribution по сторонам BUY/SELL.
 9. Добавить invariant tests или воспроизводимый audit label convention.
 
@@ -62,7 +62,7 @@
 ### Типовые ошибки
 
 - Приведение label к неподходящему типу и перекодировка исходов.
-- Подбор target по лучшему test PF.
+- Подбор target по лучшему `locked_test` PF.
 - Смешивание timeout, SL и neutral без явного смысла.
 - Использование future target как feature из-за удобного расположения в CSV.
 - Использование `signal` как источника кандидатов для рабочего контура. `signal` построен по будущему состоянию уровня `fractal0` — это фильтр по будущим данным. Для фрактальных BUY/SELL-постановок направление должно браться из `fractal0.dir`.

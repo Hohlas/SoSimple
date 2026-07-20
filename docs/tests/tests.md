@@ -102,6 +102,197 @@ Round-trip `piecewise_linear_log_transform → inverse_piecewise_linear_log`.
 | `test_ml_code_does_not_import_label_signals_parse_fractal` | `ML/` не использует `processing.label_signals.parse_fractal()` как feature extractor |
 | `test_ml_code_does_not_hard_cast_normalized_categorical_fractal_fields` | нормализованные `strong`, `break`, `count` не приводятся обратно к `int` |
 
+---
+
+### [test_entry_based_updn_fractal_selection_ablation.py](../../tests/test_entry_based_updn_fractal_selection_ablation.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py`
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen registry | порядок representation profile и model grid |
+| CLI | `--resume` по умолчанию, `--no-resume` override |
+| Anchor contract | `nearest_k` и `corridor_Xatr` строятся от `fractal0.price` и row-level `ATR` |
+| Feature contract | общий `same_feature_bundle`, target denylist, запрет `up_24/dn_24/up_48/dn_48` во всех representation profile |
+| Coverage audit | пустые строки, truncation, corridor coverage summary |
+| Runtime contract | progress JSON, per-run save, `thread_count` propagation |
+| Summary logic | `WEAK_TRACE_FOUND` / `NO_SIGNAL_FOUND`, best-by tables по всем `H3/H6/H12`, smoke-check disclosure |
+
+### [test_entry_based_next_open_closeout.py](../../tests/test_entry_based_next_open_closeout.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_next_open_closeout.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_next_open_closeout.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen scope | shortlist `all100/corridor_5atr/nearest_k20/60/80`, `H3/H6/H12/H24`, no cross-pair validation |
+| Entry smoke-check | stage-specific target columns без legacy target dependency, `NaN`/`inf`, вариативность target, `entry_time > signal_time`, порядок split-ов |
+| Feature contract | `H24` target matrix, serialized `Up/Dn 3/6/12/24/48`, запрет top-level targets и нулевых `fractal0_updn` добавок во входе |
+| Scale audit | `none_tree_raw`, разделение input/target normalization pools, dominance checks |
+| Metrics | direction/amplitude Spearman и gross `simple_trade` diagnostic |
+| Verdict | `STOP`, `PIVOT`, `CONTINUE` rules, запрет `CONTINUE` при combined validation roles и для `all100` control |
+
+### [test_entry_based_powerful_tabular.py](../../tests/test_entry_based_powerful_tabular.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_powerful_tabular.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_powerful_tabular.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Scope | `all100/corridor_5atr/nearest_k60/nearest_k80`, 10 model keys, один seed `42` |
+| Control/candidate split | `all100` участвует в overall ranking, но не может дать `DIRECTION_REPLICATION_REQUIRED` |
+| Model factory | XGBoost, LightGBM, CatBoost, ExtraTrees, HistGradientBoosting и thread-count metadata |
+| Leakage guard | запрет top-level `entry_*`, `target_*`, `label_*`, `ret_*`, `fav_*`, `adv_*` во входах |
+| Split contract | `low_n_disclosure=2026` не влияет на verdict, horizon embargo убирает boundary crossing |
+| Audit contract | `WARNING` требует `audit_decisions`, `ERROR` блокирует fit |
+| Runtime metadata | `feature_count`, `actual_thread_count`, top-level JSON metadata, `normalization_contract`, `yearly_metrics` в run payload |
+| Verdict | `REJECT_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
+
+### [test_entry_based_sequence_transformer.py](../../tests/test_entry_based_sequence_transformer.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_sequence_transformer.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_sequence_transformer.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Scope | `all100_sequence/nearest_k80_sequence/nearest_k60_sequence`, 3 model keys, один seed `42` |
+| Tensor contract | shape `[rows, 100, token_features]`, порядок `fractal0 -> fractal99`, padding/mask |
+| Feature contract | `fractal0` `Up/Dn` занулены, `fractal1..99` serialized `Up/Dn` разрешены |
+| Leakage guard | запрет top-level `entry_*`, `target_*`, `label_*`, `ret_*`, `fav_*`, `adv_*` во входах |
+| Split contract | `low_n_disclosure=2026` не влияет на winner selection, `locked_test` не открыт |
+| Normalization | input scaler fit only on valid train tokens, target scaler fit only on train targets |
+| Resume/output | `run_config_hash`, output isolation от closeout/powerful artifacts |
+| Verdict | `REJECT_SEQUENCE_CAPACITY_EXPLANATION`, `PIVOT_AMPLITUDE`, `DIRECTION_REPLICATION_REQUIRED`; freeze-like verdict запрещён |
+
+### [test_entry_based_amplitude_movement.py](../../tests/test_entry_based_amplitude_movement.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_amplitude_movement.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_amplitude_movement.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Target contract | `entry_movement_H = max(entry_up_H, entry_dn_H)`, train-only quantile thresholds |
+| Feature profiles | simple baseline, post-entry diagnostic-only, no-time/no-price sequence profiles |
+| Leakage guard | запрет target/outcome/return колонок во входах |
+| Selection policy | post-entry diagnostic имеет `selection_eligible=false`, freeze-like verdict запрещён |
+| Runtime contract | resume/progress, failed-run accounting, skipped profiles |
+| Metrics | Spearman, top-lift, yearly check, yearly artifact identity, seed aggregate |
+| Report contract | target unit contract, feature audit, verdict allowlist |
+
+### [test_entry_based_movement_filter.py](../../tests/test_entry_based_movement_filter.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_movement_filter.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_movement_filter.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Source contract | `locked_test=not_opened`, `run_config_hash`, metadata-audit для `time_plus_atr` и `simple_combined` |
+| Candidate scope | только `time_plus_atr` / `simple_combined`, только `entry_movement`, только `top_fraction` `0.05/0.10/0.20/0.30` |
+| Selection guard | `selection_eligible=true`, `post_entry_diagnostic_only=false`, winner выбирается только на `val_select` |
+| Metrics | `selected_n`, `movement_lift`, `selected_p80 > skipped_p80`, yearly lift pass rate |
+| Disclosure contract | `low_n_disclosure` обязан содержать только `2026`, disclosure не участвует в выборе |
+| Verdict / CLI | allowlist verdict-ов, fixture CLI smoke, output artifacts |
+
+### [test_direction_inside_frozen_movement_regime_rich_features.py](../../tests/test_direction_inside_frozen_movement_regime_rich_features.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime_rich_features.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen mask join | `split_row_id`, CSV-style `selected`, защита от нецелых/битых row ids |
+| Feature / target contract | full-train policy, target denylist, target construction, masked sample-size gate |
+| Rich direction runner | winner selection, resume, progress JSON, thread-count metadata, legacy resume cleanup |
+| Narrow replication | frozen matrix `nearest_k60 / extra_trees / entry_log_ratio`, H9 preflight, multi-seed jobs, seed aggregation, verdict rules, year/block diagnostics, CLI `--replication-mode narrow` |
+
+### [test_entry_based_movement_filter_freeze.py](../../tests/test_entry_based_movement_filter_freeze.py)
+
+**Тестирует**: `ML/baseline/benchmark_entry_based_movement_filter_freeze.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_entry_based_movement_filter_freeze.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen rule contract | exact `simple_combined / extra_trees_small / H3 / top_fraction=0.05`, stable hash, seed contract |
+| Source guards | hash amplitude source, canonical path guard, `locked_test=not_opened` |
+| Metrics | fixed top `5%`, `selected_n`, `movement_lift`, yearly pass rate, disclosure year check |
+| Export schema | `scores.csv`, `selected_rows.csv`, `score_cutoffs.csv`, random baseline rows |
+| Verdict | `FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`, `RESEARCH_ONLY_REPLICATED`, reject и abort ветки |
+| CLI | fixture smoke с записью freeze JSON/CSV |
+
+### [test_direction_inside_frozen_movement_regime.py](../../tests/test_direction_inside_frozen_movement_regime.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen contract | exact frozen movement rule, stable hash, `locked_test=not_opened` |
+| Join contract | unique `split + split_row_id`, duplicate legacy `split + time`, invalid `selected`, selected-count mismatch |
+| Target / leakage | `entry_up_3 > entry_dn_3`, tie exclusion, forbidden input columns |
+| Metrics / selection | classification metrics, winner only from `val_select`, `val_eval` check-only |
+| Robustness / verdict | incomplete robustness cannot produce frozen verdict |
+| CLI | fixture smoke, JSON + `_rows.csv`, contract-fail artifact path |
+
+### [test_direction_inside_frozen_movement_regime_rich_features.py](../../tests/test_direction_inside_frozen_movement_regime_rich_features.py)
+
+**Тестирует**: `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py`
+
+Команда:
+
+```bash
+./.venv/bin/python -m pytest tests/test_direction_inside_frozen_movement_regime_rich_features.py -q
+```
+
+| Область | Примеры тестов |
+|---------|----------------|
+| Frozen mask join | strict `split + split_row_id`, строковые `selected`, mismatch row identity |
+| Feature contract | rich profiles, `nearest_k80` exploratory-only, forbidden feature audit, JSON metadata handoff |
+| Target construction | horizons `3/6/12/24`, log-ratio direction, up/dn comparison, dead-zone rows |
+| Fit/evaluation helpers | full-train count, masked sample-size gate |
+| Selection / CLI | winner only from `val_select` inside mask, artifact writer, `--resume` / `--no-resume` |
+| Progress / runtime | progress JSON, per-run elapsed, completed keys, legacy resume-row cleanup |
+| Threading | `n_jobs=24` / XGBoost thread metadata passed into supported models |
+
 ## Зависимости
 
 - `pytest>=8.0`

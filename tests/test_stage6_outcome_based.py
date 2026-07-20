@@ -1,0 +1,283 @@
+import numpy as np
+import pandas as pd
+import pytest
+
+import ML.baseline.benchmark_stage6_outcome_based as s6
+
+
+def test_stage6_config_is_fixed_and_narrow():
+    cfg = s6.STAGE6_0_CONFIG
+
+    assert cfg.horizon_bars == 24
+    assert cfg.horizon_bars_options == (6, 24)
+    assert cfg.primary_horizon_bars == 6
+    assert cfg.stop_offset_atr == 0.5
+    assert cfg.take_profit_atr == 2.0
+    assert cfg.entry_lag_bars == 1
+    assert cfg.same_bar_policy == "sl_first"
+    assert cfg.primary_profile == "clock_shift_back"
+    assert cfg.disclosure_profiles == ("clock_shift_back_impulse",)
+
+
+def test_stage6_target_columns_are_denied_from_features():
+    target_cols = set(s6.stage6_target_columns())
+    denylist = set(s6.stage6_feature_denylist())
+
+    assert "stage6_tp_vs_rest_flag" in target_cols
+    assert "stage6_pnl_r" in target_cols
+    assert target_cols <= denylist
+    assert all(col.startswith("stage6_") for col in target_cols)
+
+
+def test_stage6_first_touch_tp_sl_ambiguous_and_timeout():
+    buy_tp = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 104.5, "low": 99.0, "close": 104.0}],
+    )
+    sell_sl = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=102.0,
+        take_price=96.0,
+        side="sell",
+        future_bars=[{"open": 100.0, "high": 102.5, "low": 99.0, "close": 101.0}],
+    )
+    ambiguous = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 105.0, "low": 97.5, "close": 100.0}],
+    )
+    timeout = s6.stage6_first_touch_trade_result(
+        entry_price=100.0,
+        stop_price=98.0,
+        take_price=104.0,
+        side="buy",
+        future_bars=[{"open": 100.0, "high": 101.0, "low": 99.0, "close": 101.0}],
+    )
+
+    assert buy_tp == {"close_reason": "TP", "bars_held": 1, "pnl_r": 2.0}
+    assert sell_sl == {"close_reason": "SL", "bars_held": 1, "pnl_r": -1.0}
+    assert ambiguous == {"close_reason": "AMBIGUOUS_SL_FIRST", "bars_held": 1, "pnl_r": -1.0}
+    assert timeout == {"close_reason": "TIMEOUT", "bars_held": 1, "pnl_r": 0.5}
+
+
+def test_stage6_build_outcome_labels_uses_next_bar_open_and_row_time(tmp_path):
+    ohlc_path = tmp_path / "ohlc.csv"
+    rows = [{"time": f"2025.01.01 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows += [{"time": f"2025.01.02 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows[1] = {"time": "2025.01.01 01:00", "open": 101.0, "high": 101.0, "low": 100.0, "close": 100.5}
+    rows[2] = {"time": "2025.01.01 02:00", "open": 101.0, "high": 105.5, "low": 100.8, "close": 105.0}
+    pd.DataFrame(rows).to_csv(ohlc_path, sep=";", index=False)
+
+    fractal0 = "0:100.0:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1.0:0"
+    df = pd.DataFrame([{
+        "time": "2025.01.01 01:00",
+        "ATR": 2.0,
+        "fractal0": fractal0,
+    }])
+
+    out = s6.stage6_build_outcome_labels(df, ohlc_path=ohlc_path)
+
+    assert out.loc[0, "stage6_side"] == "buy"
+    assert out.loc[0, "stage6_entry_price"] == 101.0
+    assert out.loc[0, "stage6_stop_price"] == 99.0
+    assert out.loc[0, "stage6_take_price"] == 105.0
+    assert out.loc[0, "stage6_close_reason"] == "TP"
+    assert out.loc[0, "stage6_tp_vs_rest_flag"] == 1
+
+
+def test_stage6_entry_bar_high_low_are_counted_after_open(tmp_path):
+    ohlc_path = tmp_path / "ohlc.csv"
+    rows = [{"time": f"2025.01.01 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows += [{"time": f"2025.01.02 {i:02d}:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0} for i in range(24)]
+    rows[1] = {"time": "2025.01.01 01:00", "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0}
+    rows[2] = {"time": "2025.01.01 02:00", "open": 101.0, "high": 105.2, "low": 100.9, "close": 104.0}
+    pd.DataFrame(rows).to_csv(ohlc_path, sep=";", index=False)
+
+    fractal0 = "0:100.0:-1:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:1.0:0"
+    df = pd.DataFrame([{
+        "time": "2025.01.01 01:00",
+        "ATR": 2.0,
+        "fractal0": fractal0,
+    }])
+
+    out = s6.stage6_build_outcome_labels(df, ohlc_path=ohlc_path)
+
+    assert out.loc[0, "stage6_entry_time"] == pd.Timestamp("2025-01-01 02:00:00")
+    assert out.loc[0, "stage6_entry_price"] == 101.0
+    assert out.loc[0, "stage6_close_reason"] == "TP"
+    assert out.loc[0, "stage6_bars_held"] == 1
+
+
+def test_stage6_preflight_counts_outcomes_and_pf_without_timeout_as_loss():
+    split = {
+        "train_core": pd.DataFrame({
+            "stage6_close_reason": ["TP", "SL", "TIMEOUT", "AMBIGUOUS_SL_FIRST"],
+            "stage6_tp_vs_rest_flag": [1, 0, 0, 0],
+            "stage6_pnl_r": [2.0, -1.0, 0.25, -1.0],
+            "stage6_risk_atr": [1.0, 1.2, 0.8, 1.1],
+            "stage6_reward_risk": [2.0, 1.7, 2.5, 1.8],
+            "_year": [2020, 2020, 2020, 2020],
+            "stage6_side": ["buy", "buy", "sell", "sell"],
+        }),
+        "val_stop": pd.DataFrame({
+            "stage6_close_reason": ["TP", "TIMEOUT"],
+            "stage6_tp_vs_rest_flag": [1, 0],
+            "stage6_pnl_r": [2.0, -0.2],
+            "stage6_risk_atr": [1.0, 1.0],
+            "stage6_reward_risk": [2.0, 2.0],
+            "_year": [2021, 2021],
+            "stage6_side": ["buy", "sell"],
+        }),
+    }
+
+    preflight = s6.stage6_outcome_preflight(split)
+    oracle = s6.stage6_oracle_preflight(split)
+
+    assert preflight["train_core"]["n"] == 4
+    assert preflight["train_core"]["tp_rate"] == 0.25
+    assert preflight["train_core"]["timeout_rate"] == 0.25
+    assert preflight["train_core"]["risk_atr"]["max"] == 1.2
+    assert preflight["train_core"]["reward_risk"]["median"] == 1.9
+    assert preflight["train_core"]["by_side"]["buy"]["n"] == 2
+    assert oracle["train_core"]["all_trade_pf"] == 2.25 / 2.0
+    assert oracle["train_core"]["tp_only_oracle_trades"] == 1
+
+
+def test_stage6_build_features_ignores_stage6_target_columns(monkeypatch):
+    captured = {}
+
+    def fake_builder(df, profile_key):
+        captured["columns"] = tuple(df.columns)
+        return np.zeros((len(df), 3), dtype=np.float32)
+
+    monkeypatch.setattr(s6, "build_stage5_4_features", fake_builder)
+    df = pd.DataFrame({
+        "time": ["2025.01.01 00:00"],
+        "stage6_tp_vs_rest_flag": [1],
+        "stage6_pnl_r": [2.0],
+    })
+
+    X = s6.stage6_build_features(df, "clock_shift_back")
+
+    assert X.shape == (1, 3)
+    assert "stage6_tp_vs_rest_flag" not in captured["columns"]
+    assert "stage6_pnl_r" not in captured["columns"]
+
+
+def test_stage6_assert_feature_names_rejects_stage6_targets():
+    with pytest.raises(AssertionError, match="stage6_"):
+        s6.stage6_assert_no_target_feature_names(["fractal0.back", "stage6_pnl_r"])
+
+
+def test_stage6_binary_metrics_handles_constant_or_single_class():
+    single = s6.stage6_binary_metrics(np.array([0, 0, 0]), np.array([0.2, 0.2, 0.2]))
+    constant = s6.stage6_binary_metrics(np.array([0, 1, 0, 1]), np.array([0.5, 0.5, 0.5, 0.5]))
+
+    assert single["auc"] is None
+    assert single["pr_auc"] is None
+    assert constant["auc"] == 0.5
+    assert 0.0 <= constant["brier"] <= 1.0
+
+
+def test_stage6_threshold_simulation_uses_realized_pnl_and_min_trades():
+    df = pd.DataFrame({
+        "stage6_pnl_r": [2.0, -1.0, 0.5, -0.25, np.nan],
+        "stage6_pnl_r_spread_020": [1.8, -1.2, 0.3, -0.45, np.nan],
+        "stage6_pnl_r_spread_040": [1.6, -1.4, 0.1, -0.65, np.nan],
+        "stage6_close_reason": ["TP", "SL", "TIMEOUT", "TIMEOUT", "INVALID"],
+        "stage6_side": ["buy", "buy", "sell", "sell", ""],
+        "_year": [2021, 2021, 2022, 2022, 2022],
+    })
+    scores = np.array([0.9, 0.8, 0.7, 0.1, 0.95])
+
+    result = s6.stage6_simulate_threshold(df, scores, threshold=0.65)
+
+    assert result["trades"] == 3
+    assert result["wins"] == 1
+    assert result["losses"] == 1
+    assert result["timeouts"] == 1
+    assert result["pf"] == 2.5
+    assert result["pf_spread_020"] == 2.1 / 1.2
+    assert result["by_side"]["buy"]["trades"] == 2
+    assert "" not in result["by_side"]
+    assert sum(v["trades"] for v in result["yearly"].values()) == result["trades"]
+    assert result["trades_per_year"] == 1.5
+
+
+def test_stage6_threshold_plateau_rejects_single_point_spike():
+    candidates = [
+        {"threshold": 0.50, "pf": 1.05, "trades": 120, "passes_min_trades": True},
+        {"threshold": 0.525, "pf": 1.80, "trades": 52, "passes_min_trades": True},
+        {"threshold": 0.55, "pf": 1.02, "trades": 110, "passes_min_trades": True},
+    ]
+
+    plateau = s6.stage6_threshold_plateau_check(candidates, selected_threshold=0.525)
+
+    assert plateau["pass"] is False
+    assert plateau["reason"] == "neighbor_pf_or_trades_drop"
+
+
+def test_stage6_gate_marks_missing_threshold_as_trading_gate_failed():
+    report = {
+        "preflight": {"val_stop": {"warnings": []}},
+        "oracle_preflight": {"val_stop": {"all_trade_pf": 0.8}},
+        "summary": {
+            "clock_shift_back": {
+                "val_stop": {"auc": 0.61, "pr_auc_lift": 0.06},
+                "threshold_selection": {"status": "NO_THRESHOLD", "selected": None},
+            }
+        },
+    }
+
+    gate = s6.stage6_gate_results(report)
+
+    assert gate["overall_status"] == "TRADING_GATE_FAILED"
+    assert gate["artifact_status"] == "DIAGNOSTIC_ONLY"
+    assert gate["checks"]["threshold_selected"] is False
+
+
+def test_stage6_gate_reads_summary_median_metric_names():
+    report = {
+        "preflight": {"train_core": {"warnings": []}, "val_stop": {"warnings": []}},
+        "summary": {
+            "H6_clock_shift_back": {
+                "val_stop": {"auc_median": 0.61, "pr_auc_lift_median": 0.06},
+                "threshold_selection": {
+                    "status": "NO_THRESHOLD",
+                    "selected": None,
+                    "plateau": {"pass": False},
+                },
+            }
+        },
+        "raw_runs": [],
+    }
+
+    gate = s6.stage6_gate_results(report)
+
+    assert gate["checks"]["auc_ge_0_60"] is True
+    assert gate["checks"]["pr_auc_lift_ge_0_05"] is True
+    assert gate["overall_status"] == "TRADING_GATE_FAILED"
+
+
+def test_stage6_permutation_baseline_uses_supplied_scores():
+    df = pd.DataFrame({
+        "stage6_pnl_r": [2.0, 2.0, -1.0, -1.0],
+        "stage6_pnl_r_spread_020": [1.8, 1.8, -1.2, -1.2],
+        "stage6_pnl_r_spread_040": [1.6, 1.6, -1.4, -1.4],
+        "stage6_close_reason": ["TP", "TP", "SL", "SL"],
+        "stage6_side": ["buy", "sell", "buy", "sell"],
+        "_year": [2021, 2021, 2022, 2022],
+    })
+    scores = np.array([0.9, 0.8, 0.1, 0.2])
+
+    baseline = s6.stage6_permutation_threshold_baseline(
+        df, scores, seed=1, n_perm=10, min_trades=1, min_trades_per_year=0
+    )
+
+    assert baseline["observed_pf"] == float("inf")
+    assert baseline["score_std"] > 0.0

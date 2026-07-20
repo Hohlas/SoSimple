@@ -1,0 +1,154 @@
+# Graphify index policy for SoSimple.
+# Keep source code, current docs, wiki, reports, tests, and project MQL4 files.
+# Exclude generated data, caches, vendored tools, model artifacts, and archive/audit noise.
+
+# Graphify output and local query state.
+graphify-out/
+.graphify/
+.graphify_learning.json
+
+# Version control and local agent/tool state.
+.git/
+.github/
+.agents/
+.codex/
+.claude/memory/
+.kilocode/
+.mimocode/
+.opencode/node_modules/
+.qoder/
+.superpowers/
+.vscode/
+opencode.json
+
+# Existing retrieval indexes and local caches.
+.knowledge-rag-data/
+.pytest_cache/
+.ruff_cache/
+.cache/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Python environments and packaging/build artifacts.
+.venv/
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+site/
+docs/_build/
+
+# Large/generated datasets.
+DATA/
+MT/tester/
+MT/MQL4/Files/
+MT/MQL4/Images/
+MT/MQL4/Logs/
+MT/MQL4/Presets/
+MT/MQL4/Profiles/
+MT/MQL4/Projects/
+MT/MQL4/Trash/
+MT/MQL5/
+
+# MetaTrader compiled/runtime artifacts.
+*.ex4
+*.ex5
+*.dll
+*.dat
+*.hst
+*.fxt
+*.frx
+*.log
+*.index
+
+# Standard MetaTrader platform libraries and bundled indicators.
+# Project-specific MQL4 sources in Experts/, Scripts/, Libraries/, and Include/
+# remain indexable unless excluded below.
+MT/MQL4/Include/Arrays/
+MT/MQL4/Include/Canvas/
+MT/MQL4/Include/ChartObjects/
+MT/MQL4/Include/Charts/
+MT/MQL4/Include/Controls/
+MT/MQL4/Include/Files/
+MT/MQL4/Include/Indicators/
+MT/MQL4/Include/Strings/
+MT/MQL4/Include/Tools/
+MT/MQL4/Include/MovingAverages.mqh
+MT/MQL4/Include/Object.mqh
+MT/MQL4/Indicators/Accelerator.mq4
+MT/MQL4/Indicators/Accumulation.mq4
+MT/MQL4/Indicators/Alligator.mq4
+MT/MQL4/Indicators/Awesome.mq4
+MT/MQL4/Indicators/Bands.mq4
+MT/MQL4/Indicators/Bears.mq4
+MT/MQL4/Indicators/Bulls.mq4
+MT/MQL4/Indicators/CCI.mq4
+MT/MQL4/Indicators/Custom Moving Averages.mq4
+MT/MQL4/Indicators/Examples/
+MT/MQL4/Indicators/Heiken Ashi.mq4
+MT/MQL4/Indicators/Ichimoku.mq4
+MT/MQL4/Indicators/MACD.mq4
+MT/MQL4/Indicators/Momentum.mq4
+MT/MQL4/Indicators/OsMA.mq4
+
+# ML artifacts: keep Python code and compact JSON/Markdown reports, skip bulky outputs.
+ML/checkpoints/
+ML/plots/
+ML/baseline/plots/
+ML/reports/**/runtime/
+ML/reports/**/*.csv
+ML/reports/**/*.parquet
+ML/reports/**/*.pkl
+ML/reports/**/*.joblib
+ML/reports/**/*.pt
+ML/reports/**/*.png
+ML/reports/**/*.jpg
+ML/reports/**/*.jpeg
+ML/reports/**/*.webp
+ML/reports/**/*.svg
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pkl
+*.joblib
+*.json
+
+# Statistics generated outputs.
+statistics/EDA_files/
+statistics/plots/
+statistics/reports/EDA_report_files/
+statistics/reports/**/*.png
+statistics/reports/**/*.jpg
+statistics/reports/**/*.jpeg
+statistics/reports/**/*.webp
+statistics/reports/**/*.svg
+
+# Documentation zones that AGENTS.md says not to read without explicit request.
+docs/archive/
+docs/audit/
+wiki/.archive/
+wiki/log.md
+wiki/REPO_integrity.md
+
+# Для скрытых файлов и папок:
+.*
+
+# длинный хронологический журнал плохо подходит для смыслового графа
+CHANGELOG.md
+MODULE_INDEX.md
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+requirements.txt
+
+
+# Notebook and editor noise.
+.ipynb_checkpoints/
+*.tmp
+*.bak
+*.swp
+*.swo

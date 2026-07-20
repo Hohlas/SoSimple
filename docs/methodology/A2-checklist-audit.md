@@ -13,17 +13,18 @@
 - [ ] Внутри normalization pool нет dominance крупномасштабного поля над остальными.
 - [ ] Нормализация не использует future-derived поля в live-пулах.
 - [ ] Global scaler fit только на train.
-- [ ] В JSON/report есть `normalization_config`: метод, fit-период, группы признаков, исключённые поля и путь применения к validation/test/holdout.
+- [ ] В JSON/report есть `normalization_config`: метод, fit-период, группы признаков, исключённые поля и путь применения к validation/locked_test/holdout.
 - [ ] Проверены диапазоны финальных tensor/матриц, реально поданных в модель, а не только исходного CSV.
 - [ ] Для всех новых feature profiles выполнен [A7 Feature Distribution Audit](A7-feature-distribution-audit.md); artifact приложен к отчёту.
 - [ ] Padding/mask не участвовали в fit scaler; padding после normalization остался 0.
 - [ ] Для нейросети нет доминирующего признака по масштабу после финальной подготовки входов.
-- [ ] Для новых ML-раннеров есть scale-тесты: ожидаемый масштаб train после normalize, fit только на train, val/test/holdout не влияют на scaler, padding остаётся 0.
+- [ ] Для новых ML-раннеров есть scale-тесты: ожидаемый масштаб train после normalize, fit только на train, validation/locked_test/holdout не влияют на scaler, padding остаётся 0.
 - [ ] Если `normalized_feature_distribution_audit` дал `ERROR`/`WARNING`, по каждому флагу есть решение: block/fix/rerun/accept-as-warning.
-- [ ] `RobustScaler`, clipping, `log1p` или signed-log выбраны до просмотра holdout/test-метрик; выбор не подогнан под test.
+- [ ] `RobustScaler`, clipping, `log1p` или signed-log выбраны до просмотра locked_test/holdout-метрик; выбор не подогнан под `locked_test`.
 - [ ] Target order одинаков в train/evaluate/export.
-- [ ] Rule/checkpoint/threshold заморожены до test.
+- [ ] Rule/checkpoint/threshold заморожены до `locked_test`.
 - [ ] Test не использовался для выбора.
+- [ ] `sample_size_gate` пройден на `train`/`validation`/`locked_test` после всех фильтров; малый N отражён в verdict.
 - [ ] PF не основан на малом N без пометки research-only.
 - [ ] Нет скрытого провала одной стороны BUY/SELL.
 - [ ] Нет скрытого провала отдельных годов.
@@ -37,9 +38,9 @@
 - [ ] Reproducibility metadata сохранена.
 - [ ] Для production/confirmed кандидата есть model card.
 - [ ] Старые противоречащие выводы обновлены или помечены.
-- [ ] Search budget посчитан: модели × профили × таргеты × стороны × горизонты × параметры.
+- [ ] Current и cumulative search budget посчитаны: модели × профили × таргеты × стороны × горизонты × seed × инструменты × entry/exit policy × spread/fill convention × transforms/scalers × filters × параметры.
 - [ ] Validation не использован одновременно для early stopping, grid search и финальной оценки (`val-stop` / `val-select` / `val-eval` разделены или статус не выше `RESEARCH_ONLY`).
-- [ ] Множественное тестирование скорректировано (holdout `val-eval`, Bonferroni/FDR/Holm или permutation test с повторением полного selection protocol).
+- [ ] Множественное тестирование скорректировано (`val-eval`, Bonferroni/FDR/Holm или permutation test с повторением полного selection protocol).
 - [ ] SL-триггер проверен с направленной spread-коррекцией согласно OHLC price convention (bid/ask/mid/executable price).
 - [ ] Bootstrap учитывает временную корреляцию сделок (block bootstrap или stationary bootstrap).
 - [ ] При использовании календарных признаков — проверена их доля в важности модели и устойчивость PF к сдвигу часового пояса.

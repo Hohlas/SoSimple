@@ -28,7 +28,7 @@
 
 ### Обязательный smoke-check перед интерпретацией результатов
 
-Перед любым запуском, где результат может быть интерпретирован как качество ML (PF, R², AUC, ablation, baseline), **обязательно** прогнать `statistics/data_contract_smoke_check.py` на текущих train/val/test файлах:
+Перед любым запуском, где результат может быть интерпретирован как качество ML (PF, R², AUC, ablation, baseline), **обязательно** прогнать `statistics/data_contract_smoke_check.py` на текущих train/validation/locked_test файлах:
 
 ```bash
 .venv/bin/python statistics/data_contract_smoke_check.py
@@ -82,7 +82,7 @@
 - По p-value или feature importance легализовать future-derived поле.
 - Игнорировать minority-class precision/recall.
 - Делать вывод по aggregate metric без годовых и сторонних срезов.
-- Переносить EDA-вывод с validation на test.
+- Переносить EDA-вывод с validation на `locked_test`.
 
 ### Ветвления
 

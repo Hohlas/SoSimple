@@ -1,0 +1,87 @@
+[heartbeat] preflight: done_runs=0/9, elapsed=0.0s, eta=unknown
+[heartbeat] tensor_build: done_runs=1/9, elapsed=58.5s, eta=468.1s
+[heartbeat] run_start:all100_sequence/transformer_medium/42: done_runs=1/9, elapsed=112.8s, eta=902.8s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=1/60, loss=0.987557, elapsed=199.6s, eta=11779.2s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=5/60, loss=0.835045, elapsed=1027.9s, eta=11306.8s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=10/60, loss=0.813658, elapsed=2054.9s, eta=10274.6s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=15/60, loss=0.782772, elapsed=3087.0s, eta=9261.1s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=20/60, loss=0.758740, elapsed=4128.8s, eta=8257.7s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=25/60, loss=0.720588, elapsed=5186.8s, eta=7261.5s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=30/60, loss=0.691518, elapsed=6236.1s, eta=6236.1s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=35/60, loss=0.658803, elapsed=7278.1s, eta=5198.6s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=40/60, loss=0.646899, elapsed=8322.9s, eta=4161.5s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=45/60, loss=0.620838, elapsed=9366.4s, eta=3122.1s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=50/60, loss=0.597144, elapsed=10405.3s, eta=2081.1s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=55/60, loss=0.577635, elapsed=11459.0s, eta=1041.7s
+[heartbeat] train:all100_sequence/transformer_medium/42: epoch=60/60, loss=0.557876, elapsed=12501.4s, eta=0.0s
+/home/hohla/git/SoSimple/.venv/lib/python3.10/site-packages/torch/nn/modules/transformer.py:531: UserWarning: The PyTorch API of nested tensors is in prototype stage and will change in the near future. We recommend specifying layout=torch.jagged when constructing a nested tensor, as this layout receives active development, has better operator coverage, and works with torch.compile. (Triggered internally at /pytorch/aten/src/ATen/NestedTensorImpl.cpp:178.)
+  output = torch._nested_tensor_from_mask(
+[heartbeat] run_end:all100_sequence/transformer_medium/42: done_runs=2/9, elapsed=12708.5s, eta=44479.7s
+[heartbeat] run_start:all100_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=2/9, elapsed=12708.5s, eta=44479.7s
+[heartbeat] run_end:all100_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=3/9, elapsed=12945.1s, eta=25890.2s
+[heartbeat] run_start:nearest_k80_sequence/transformer_small/42: done_runs=3/9, elapsed=12945.1s, eta=25890.2s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=1/60, loss=1.021310, elapsed=57.9s, eta=3417.0s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=5/60, loss=0.897025, elapsed=288.8s, eta=3177.1s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=10/60, loss=0.856931, elapsed=579.2s, eta=2896.0s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=15/60, loss=0.841740, elapsed=865.9s, eta=2597.7s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=20/60, loss=0.827731, elapsed=1152.0s, eta=2304.0s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=25/60, loss=0.810589, elapsed=1435.7s, eta=2009.9s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=30/60, loss=0.794182, elapsed=1718.3s, eta=1718.3s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=35/60, loss=0.787978, elapsed=2004.7s, eta=1431.9s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=40/60, loss=0.778587, elapsed=2287.1s, eta=1143.6s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=45/60, loss=0.762822, elapsed=2569.5s, eta=856.5s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=50/60, loss=0.757150, elapsed=2855.7s, eta=571.1s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=55/60, loss=0.746386, elapsed=3140.9s, eta=285.5s
+[heartbeat] train:nearest_k80_sequence/transformer_small/42: epoch=60/60, loss=0.738101, elapsed=3429.3s, eta=0.0s
+[heartbeat] run_end:nearest_k80_sequence/transformer_small/42: done_runs=4/9, elapsed=16440.2s, eta=20550.3s
+[heartbeat] run_start:nearest_k80_sequence/transformer_medium/42: done_runs=4/9, elapsed=16440.2s, eta=20550.3s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=1/60, loss=1.009823, elapsed=201.5s, eta=11888.3s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=5/60, loss=0.856242, elapsed=1018.0s, eta=11198.2s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=10/60, loss=0.810271, elapsed=2047.8s, eta=10239.2s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=15/60, loss=0.773807, elapsed=3080.1s, eta=9240.2s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=20/60, loss=0.731902, elapsed=4104.6s, eta=8209.1s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=25/60, loss=0.696719, elapsed=5123.8s, eta=7173.3s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=30/60, loss=0.662224, elapsed=6153.4s, eta=6153.4s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=35/60, loss=0.636593, elapsed=7182.0s, eta=5130.0s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=40/60, loss=0.606178, elapsed=8212.9s, eta=4106.5s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=45/60, loss=0.585186, elapsed=9228.5s, eta=3076.2s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=50/60, loss=0.562656, elapsed=10265.7s, eta=2053.1s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=55/60, loss=0.546834, elapsed=11291.4s, eta=1026.5s
+[heartbeat] train:nearest_k80_sequence/transformer_medium/42: epoch=60/60, loss=0.536048, elapsed=12311.7s, eta=0.0s
+[heartbeat] run_end:nearest_k80_sequence/transformer_medium/42: done_runs=5/9, elapsed=28833.6s, eta=23066.9s
+[heartbeat] run_start:nearest_k80_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=5/9, elapsed=28833.6s, eta=23066.9s
+[heartbeat] run_end:nearest_k80_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=6/9, elapsed=29072.8s, eta=14536.4s
+[heartbeat] run_start:nearest_k60_sequence/transformer_small/42: done_runs=6/9, elapsed=29072.8s, eta=14536.4s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=1/60, loss=1.021317, elapsed=56.8s, eta=3350.3s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=5/60, loss=0.904829, elapsed=285.0s, eta=3135.1s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=10/60, loss=0.867440, elapsed=572.3s, eta=2861.5s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=15/60, loss=0.852099, elapsed=857.2s, eta=2571.6s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=20/60, loss=0.836679, elapsed=1146.9s, eta=2293.8s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=25/60, loss=0.821543, elapsed=1434.5s, eta=2008.3s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=30/60, loss=0.804132, elapsed=1719.2s, eta=1719.2s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=35/60, loss=0.789256, elapsed=2000.8s, eta=1429.1s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=40/60, loss=0.784400, elapsed=2285.1s, eta=1142.6s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=45/60, loss=0.771819, elapsed=2571.6s, eta=857.2s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=50/60, loss=0.759373, elapsed=2854.3s, eta=570.9s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=55/60, loss=0.755081, elapsed=3137.6s, eta=285.2s
+[heartbeat] train:nearest_k60_sequence/transformer_small/42: epoch=60/60, loss=0.751553, elapsed=3419.0s, eta=0.0s
+[heartbeat] run_end:nearest_k60_sequence/transformer_small/42: done_runs=7/9, elapsed=32550.8s, eta=9300.2s
+[heartbeat] run_start:nearest_k60_sequence/transformer_medium/42: done_runs=7/9, elapsed=32550.8s, eta=9300.2s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=1/60, loss=1.009146, elapsed=209.8s, eta=12378.8s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=5/60, loss=0.876091, elapsed=1057.8s, eta=11636.1s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=10/60, loss=0.831859, elapsed=2110.4s, eta=10552.0s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=15/60, loss=0.784357, elapsed=3162.2s, eta=9486.7s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=20/60, loss=0.742546, elapsed=4214.6s, eta=8429.2s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=25/60, loss=0.707049, elapsed=5268.0s, eta=7375.2s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=30/60, loss=0.666365, elapsed=6314.6s, eta=6314.6s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=35/60, loss=0.637579, elapsed=7366.0s, eta=5261.4s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=40/60, loss=0.610193, elapsed=8413.3s, eta=4206.6s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=45/60, loss=0.586305, elapsed=9464.4s, eta=3154.8s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=50/60, loss=0.566713, elapsed=10525.7s, eta=2105.1s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=55/60, loss=0.547639, elapsed=11569.7s, eta=1051.8s
+[heartbeat] train:nearest_k60_sequence/transformer_medium/42: epoch=60/60, loss=0.529624, elapsed=12619.7s, eta=0.0s
+[heartbeat] run_end:nearest_k60_sequence/transformer_medium/42: done_runs=8/9, elapsed=45244.6s, eta=5655.6s
+[heartbeat] run_start:nearest_k60_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=8/9, elapsed=45244.6s, eta=5655.6s
+[heartbeat] run_end:nearest_k60_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=9/9, elapsed=45477.6s, eta=0.0s
+s=8/9, elapsed=45244.6s, eta=5655.6s
+2026-07-07T00:06:08+00:00 [heartbeat] run_end:nearest_k60_sequence/sequence_flat_hist_gradient_boosting/42: done_runs=9/9, elapsed=45477.6s, eta=0.0s

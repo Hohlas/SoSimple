@@ -4,6 +4,12 @@
 > Область: ML-модели торговых систем на событийных и временных данных Forex.
 > Роль в проекте: управляющий документ качества ML-разработки. `docs/DATA_FLOW.md` описывает маршрут данных, а эта методика задаёт обязательные проверки, критерии перехода между этапами и правила интерпретации результатов.
 > Главный принцип: результат нельзя считать качеством модели, пока не доказано, что данные, признаки, разметка, split, правило отбора, экспорт и исполнение соответствуют моменту торгового решения.
+> Research-first уточнение: методика работает в двух контурах. Сначала
+> исследовательский контур ищет и ранжирует гипотезы (`research_scan`,
+> `exploratory_result`, `research_hypothesis`, `research_only`). Затем
+> проверочный контур замораживает одно правило перед `locked_test` и
+> `candidate`. Поиск может быть широким, но `locked_test`, PnL/PF и
+> trading-выводы остаются только для позднего проверочного контура.
 > Для live-кандидатов цена входа в label/backtest должна быть исполнима после фактической доступности признаков и runtime-задержек; более ранний вход допускается только как `DIAGNOSTIC_ONLY`.
 
 ## Как использовать
@@ -46,14 +52,15 @@
 | Аудит сырых данных: источник, формат, producer, момент доступности полей | [01-raw-data-inventory.md](01-raw-data-inventory.md) |
 | Сортировка, нормализация, labelling, split — сборка pipeline | [02-data-pipeline.md](02-data-pipeline.md) |
 | Проверка на утечки: feature contract, future-derived, online mismatch, candidate-source | [03-feature-contract-leakage.md](03-feature-contract-leakage.md) |
+| Минимизация признаков: корреляционный фильтр, шумовые, константные, производные (после leakage gate) | [03b-feature-selection.md](03b-feature-selection.md) |
 | Разметка целей: label convention, SL/TP/timeout, multi-target | [04-labeling.md](04-labeling.md) |
 | EDA, качество данных, дисбаланс классов, константные признаки | [05-eda-data-quality.md](05-eda-data-quality.md) |
-| Train/val/test split, событийный ряд, regime shift, walk-forward, разделение validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
+| Train/validation/locked_test split, событийный ряд, regime shift, sample size gate, walk-forward, роли validation (`val-stop`/`val-select`/`val-eval`) | [06-temporal-split.md](06-temporal-split.md) |
 | Предварительно проверяешь oracle-потолок торговой механики при идеальном знании будущих labels и выбираешь перспективную side/H/off-зону | [06b-oracle-preflight.md](06b-oracle-preflight.md) |
 | Baseline-модели: dummy, простые ML, сравнение | [07-baseline-first.md](07-baseline-first.md) |
 | Обучение: архитектура, seed, кеш, ablation, CPU/GPU | [08-model-development.md](08-model-development.md) |
-| Выбор winner на validation (с разделением `val-stop`/`val-select`/`val-eval`), заморозка перед test, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
-| Frozen test, OOS, walk-forward | [10-frozen-test-oos.md](10-frozen-test-oos.md) |
+| Выбор winner на validation (с ролями `val-stop`/`val-select`/`val-eval`), заморозка перед `locked_test`, коррекция множественного тестирования | [09-validation-freeze.md](09-validation-freeze.md) |
+| Locked test, OOS, walk-forward | [10-frozen-test-oos.md](10-frozen-test-oos.md) |
 | Устойчивость: по годам, сторонам, seeds, block bootstrap, permutation test, календарные признаки | [11-robustness.md](11-robustness.md) |
 | Бэктест: издержки, симулятор (включая SL-триггер с направленной spread-коррекцией), gross/net | [12-backtest-costs.md](12-backtest-costs.md) |
 | Экспорт, MT4 parity, reconciliation | [13-export-mt4-parity.md](13-export-mt4-parity.md) |
@@ -72,3 +79,4 @@
 | Post-mortem диагностика неудачного этапа: разбор причин `FAIL`/`reject`, формулирование гипотез для следующего цикла | [A5-post-mortem-diagnostics.md](A5-post-mortem-diagnostics.md) |
 | Каталог вариантов представления фракталов для планирования feature-profile матриц | [A6-fractal-feature-profile-catalog.md](A6-fractal-feature-profile-catalog.md) |
 | Feature Distribution Audit: проверка распределений признаков, mask/padding, corridor coverage и сдвига split до обучения | [A7-feature-distribution-audit.md](A7-feature-distribution-audit.md) |
+| Канонический каталог семейств признаков, представлений входа и таргетов проекта | [A8-feature-target-catalog.md](A8-feature-target-catalog.md) |

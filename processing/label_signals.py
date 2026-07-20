@@ -375,9 +375,10 @@ def label_updn(df, debug=False):
 
     Алгоритм: два прохода O(n*K) вместо O(n²).
     Проход 1 (снизу вверх): для каждой строки j парсим все K фракталов,
-      обновляем словарь last_seen[fractal_time] = {up_3..dn_48}.
-    Проход 2 (сверху вниз): для строки i берём fractal0.time,
-      смотрим last_seen[time] — это и есть самые накопленные Up/Dn.
+      обновляем словарь last_seen[(fractal_time, price, direction)] = {up_3..dn_48}.
+    Проход 2 (сверху вниз): для строки i берём identity fractal0
+      `(time, price, direction)`, смотрим last_seen[key] — это и есть
+      самые накопленные Up/Dn именно этого фрактала.
 
     Записывает в колонки up_3, dn_3, up_6, dn_6, up_12, dn_12, up_24, dn_24, up_48, dn_48.
 
@@ -399,11 +400,12 @@ def label_updn(df, debug=False):
     )
     n_rows = len(df)
 
-    # Проход 1: снизу вверх — для каждого fractal_time запоминаем последние (самые накопленные) Up/Dn.
-    # "Последние" = из строки с наибольшим индексом, где фрактал ещё виден.
-    # Идём снизу вверх: первое встреченное значение для каждого time — и есть самое накопленное.
-    last_seen = {}  # {fractal_time: {up_3: float, ...}}
-    fractal0_times = [None] * n_rows  # запоминаем time fractal0 каждой строки
+    # Проход 1: снизу вверх — для каждого конкретного фрактала запоминаем
+    # последние (самые накопленные) Up/Dn.
+    # Ключ только по времени недостаточен: на одном баре могут существовать
+    # два разных фрактала с разными price/direction.
+    last_seen = {}  # {(time, price, direction): {up_3: float, ...}}
+    fractal0_keys = [None] * n_rows
 
     fractal0_col = df['fractal0'].values
     all_cols_values = {col: df[col].values for col in fractal_columns}
@@ -413,23 +415,23 @@ def label_updn(df, debug=False):
             parsed = parse_fractal(all_cols_values[col][j])
             if parsed is None:
                 continue
-            t = parsed['time']
-            if t not in last_seen:
-                last_seen[t] = {k: parsed.get(k, 0.0) for k in updn_keys}
+            key = (parsed['time'], parsed['price'], parsed['direction'])
+            if key not in last_seen:
+                last_seen[key] = {k: parsed.get(k, 0.0) for k in updn_keys}
 
         f0 = parse_fractal(fractal0_col[j])
         if f0 is not None:
-            fractal0_times[j] = f0['time']
+            fractal0_keys[j] = (f0['time'], f0['price'], f0['direction'])
 
     # Проход 2: сверху вниз — lookup O(1) по словарю
     result = {k: np.zeros(n_rows, dtype=np.float32) for k in updn_keys}
     found_count = 0
 
     for i in range(n_rows):
-        t = fractal0_times[i]
-        if t is None:
+        key = fractal0_keys[i]
+        if key is None:
             continue
-        best = last_seen.get(t)
+        best = last_seen.get(key)
         if best is None:
             continue
         for k in updn_keys:
