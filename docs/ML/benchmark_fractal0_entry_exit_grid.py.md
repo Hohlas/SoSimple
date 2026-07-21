@@ -39,6 +39,8 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
 - `ML/reports/fractal0_entry_exit_grid_progress.json`
 - `ML/reports/fractal0_entry_exit_grid_m5_winner*.json/csv` для post-review
   winner-only пересчёта
+- `ML/reports/fractal0_entry_exit_grid_m5_full*.json/csv` для полного M5
+  full-grid rerun
 
 ## Контракт
 
@@ -60,12 +62,17 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
 ## Ограничения
 
 - Verdict не выше `research_only`.
-- Первичный full-grid artifact содержит устаревший `diagnostic_only` cap по
-  ambiguity. После M5/bugfix winner-only пересчёта previous winner имеет
-  `ambiguous_same_bar_rate = 0.0`, но полный grid ещё не пересчитан.
+- Первичный H1 full-grid artifact содержит устаревший `diagnostic_only` cap по
+  ambiguity. Текущий полный M5 artifact:
+  `ML/reports/fractal0_entry_exit_grid_m5_full.json`.
+- В полном M5 rerun winner сменился на
+  `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`: `val_eval
+  PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`,
+  `ambiguous_same_bar_rate=0.0074`.
 - `fractal0_entry_exit_grid_yearly.csv` является глобальной диагностикой по
-  всем конфигурациям, а не yearly-разрезом winner. Для текущего M5
-  winner-only пересчёта используется
+  всем конфигурациям, а не yearly-разрезом winner. Для текущего full M5
+  winner используется `fractal0_entry_exit_grid_m5_full_winner_yearly.csv`;
+  для исторического M5 winner-only пересчёта используется
   `fractal0_entry_exit_grid_m5_winner_winner_yearly.csv`.
 - До review fix `effective_profit_years` считался как число прибыльных лет.
   Текущий runner считает методическую формулу `1 / sum(share_y^2)`.
@@ -73,5 +80,7 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
   `200` строк, метод `block_shuffled_val_select_pnl_r`.
 - Для практичного пересчёта перестановочной коррекции использовано `20`
   bootstrap-сэмплов на перестановочную метрику; это зафиксировано в JSON.
+  В полном M5 rerun использовано `200` bootstrap-сэмплов на перестановочную
+  метрику.
 - M5 используется только для execution ordering после H1-входа, не как признак
   модели.

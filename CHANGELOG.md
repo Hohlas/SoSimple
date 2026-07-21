@@ -18,10 +18,10 @@
 ## [2026-07-21] — Fractal0 Entry/Exit Grid (RESEARCH_ONLY)
 - **report**: `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
 - **topics**: `fractal0`, `entry_exit_grid`, `ohlc_simulation`, `ml_exit`, `permutation_correction`
-- **summary**: Полная сетка `4 x 2 x 48` выполнена на canonical spread, stress-spread disclosure и ML-exit слой обучены; permutation correction исправлена, а post-review M5 winner-only пересчёт снял искусственный ambiguity cap у ML-exit winner.
-- **artifacts**: `ML/reports/fractal0_entry_exit_grid.json`, `ML/reports/fractal0_entry_exit_grid_m5_winner.json`, `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, `tests/test_fractal0_entry_exit_grid.py`
-- **decision**: Previous winner остаётся research-only, не candidate: `locked_test` не открыт, полный grid ещё не пересчитан с M5 execution contract.
-- **notes**: Winner `E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_55` имеет `val_eval PF=1.9438`, `BS_p05=1.7601`, stress PF `1.5743`; после bugfix+M5 winner-only `ambiguous_same_bar_rate=0.0`.
+- **summary**: Полная сетка `4 x 2 x 48` выполнена на H1 и затем полностью пересчитана с M5 execution ordering; permutation correction PASS, stress-spread disclosure выполнен.
+- **artifacts**: `ML/reports/fractal0_entry_exit_grid_m5_full.json`, `ML/reports/fractal0_entry_exit_grid_m5_full_summary.csv`, `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, `tests/test_fractal0_entry_exit_grid.py`
+- **decision**: Новый M5 full-grid winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7` остаётся `research_only`, не candidate: `locked_test` не открыт, winner выбран после широкого validation grid-search.
+- **notes**: `val_eval PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`, `ambiguous_same_bar_rate=0.0074`; следующий шаг — заранее зафиксированный stop-policy / entry-quality follow-up, не `locked_test`.
 
 ## [2026-07-10] — Fractal0 Price Entry Mechanics Oracle-Preflight (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`

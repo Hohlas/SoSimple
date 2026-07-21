@@ -800,3 +800,9 @@
 - Fixed `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: `rows_by_split_before_after_mask.before` now reports entry rows before mask, trades include per-trade `spread`, and `effective_profit_years` uses the methodology formula `1 / sum(share_y^2)`.
 - Added `ML/reports/fractal0_entry_exit_grid_m5_winner_winner_yearly.csv`: current yearly breakdown for previous winner on `val_eval`, canonical spread, `2298` trades, `effective_profit_years=1.9864`.
 - Updated primary `ML/reports/fractal0_entry_exit_grid.json`: added `canonical_current_artifact`, `post_review_artifacts`, `superseded_fields`, and limitations for old trades without per-trade spread.
+
+### 2026-07-21: Full M5 rerun for Fractal0 entry/exit grid
+- Added `ML/reports/fractal0_entry_exit_grid_m5_full.json` and companion CSV artifacts: full `384` canonical configs, `384` stress configs, `progress.completed=1152`, `failed=0`.
+- Recorded new M5 full-grid winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`: `val_eval PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`, `ambiguous_same_bar_rate=0.0074`.
+- Updated `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`, `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: current next step is stop-policy / entry-quality follow-up, not full M5 rerun.
+- Corrected report/module/wiki wording: listed `m5_full_trades.csv`, separated old `20` bootstrap disclosure from current full M5 `200`, and updated the report source note from winner-only to full M5 rerun.

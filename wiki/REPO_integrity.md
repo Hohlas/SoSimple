@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-21 05:53 UTC · git `08fdd7b`
+> Auto-generated 2026-07-21 08:02 UTC · git `6ffdf41`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3138 files  ·  **Commit**: `08fdd7b`  ·  **Generated**: 2026-07-21 05:53 UTC
+**Tracked**: 3137 files  ·  **Commit**: `6ffdf41`  ·  **Generated**: 2026-07-21 08:02 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-21 | 143KB | `5d2d031e` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-21 | 143KB | `e5e62ce3` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-21 | 3KB | `0f5f999f` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-21 | 3KB | `99c9ecb5` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-21 | 56KB | `5f5b2996` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -47,7 +47,7 @@
 | [docs/ML/benchmark_entry_path_direct_bar_model.py.md](docs/ML/benchmark_entry_path_direct_bar_model.py.md) | Direct BUY/SELL/SKIP benchmark для каждого бара | 2026-06-17 | 1KB | `531300e8` |
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
-| [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 4KB | `115020ab` |
+| [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 4KB | `aa860d20` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
@@ -109,7 +109,7 @@
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-17 | 1KB | `67407e17` |
 | [docs/audit/next.md](docs/audit/next.md) | Текущий research-план после Stage 4.3 | 2026-07-20 | 6KB | `eee5c1aa` |
 | [docs/audit/project_structure_modernisation.md](docs/audit/project_structure_modernisation.md) |  | 2026-07-20 | 5KB | `d94835a0` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-07-20 | 30KB | `5f0824a6` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-07-21 | 32KB | `e2243822` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-17 | 14KB | `11dc384e` |
 | [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-07-20 | 10KB | `96323966` |
 | [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-07-21 | 6KB | `e4dad714` |
@@ -415,7 +415,7 @@
 | [docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) |  | 2026-07-20 | 9KB | `28c0eb53` |
 | [docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md](docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) |  | 2026-07-20 | 8KB | `85885de8` |
 | [docs/reports/2026-07-10-fractal0-price-entry-mechanics.md](docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) |  | 2026-07-20 | 6KB | `f147cfc6` |
-| [docs/reports/2026-07-21-fractal0-entry-exit-grid.md](docs/reports/2026-07-21-fractal0-entry-exit-grid.md) |  | 2026-07-21 | 11KB | `5f296cbe` |
+| [docs/reports/2026-07-21-fractal0-entry-exit-grid.md](docs/reports/2026-07-21-fractal0-entry-exit-grid.md) |  | 2026-07-21 | 13KB | `63625f45` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -768,7 +768,8 @@
 | [ML/reports/feature_bank_clean_comparison/summary.json](ML/reports/feature_bank_clean_comparison/summary.json) |  |  | 2026-06-17 | 1KB | `84b8ec2f` |
 | [ML/reports/feature_bank_comparison/report.md](ML/reports/feature_bank_comparison/report.md) |  |  | 2026-06-17 | 1KB | `f4f494ed` |
 | [ML/reports/feature_bank_comparison/summary.json](ML/reports/feature_bank_comparison/summary.json) |  |  | 2026-06-17 | 1KB | `97d30738` |
-| [ML/reports/fractal0_entry_exit_grid.json](ML/reports/fractal0_entry_exit_grid.json) |  |  | 2026-07-21 | 37KB | `dc87e719` |
+| [ML/reports/fractal0_entry_exit_grid.json](ML/reports/fractal0_entry_exit_grid.json) |  |  | 2026-07-21 | 37KB | `e2d18822` |
+| [ML/reports/fractal0_entry_exit_grid_m5_full.json](ML/reports/fractal0_entry_exit_grid_m5_full.json) |  |  | 2026-07-21 | 36KB | `1fdf8f40` |
 | [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
 | [ML/reports/fractal_ablation_test.json](ML/reports/fractal_ablation_test.json) |  |  | 2026-06-17 | 10KB | `5de28e52` |
@@ -1281,8 +1282,6 @@
 | [MT/.vscode/settings.json](MT/.vscode/settings.json) |  |  | 2026-06-17 | 928B | `d6834b74` |
 | [MT/MQL4/.vscode/settings.json](MT/MQL4/.vscode/settings.json) |  |  | 2026-06-17 | 927B | `c3c0af89` |
 | [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-06-17 | 12KB | `02964edd` |
-| [MT/MQL4/Experts/MACD Sample.mq4](MT/MQL4/Experts/MACD Sample.mq4) |  |  | 2026-07-21 | 6KB | `0a6a5d9d` |
-| [MT/MQL4/Experts/Moving Average.mq4](MT/MQL4/Experts/Moving Average.mq4) |  |  | 2026-07-21 | 5KB | `7710f58a` |
 | [MT/MQL4/Include/Arrays/Array.mqh](MT/MQL4/Include/Arrays/Array.mqh) |  |  | 2026-07-21 | 6KB | `29d804ca` |
 | [MT/MQL4/Include/Arrays/ArrayChar.mqh](MT/MQL4/Include/Arrays/ArrayChar.mqh) |  |  | 2026-07-21 | 23KB | `3df8fe54` |
 | [MT/MQL4/Include/Arrays/ArrayDouble.mqh](MT/MQL4/Include/Arrays/ArrayDouble.mqh) |  |  | 2026-07-21 | 24KB | `c44a2bc3` |
@@ -1684,8 +1683,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-21 | 5KB | `f663a24d` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-21 | 67KB | `eab07dfa` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-21 | 5KB | `647a0a92` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-21 | 68KB | `058f2529` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1696,7 +1695,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-21 | 110KB | `f7cf10f1` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-21 | 111KB | `4c35623e` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |

@@ -34,6 +34,9 @@
   исправлена ошибка `ambiguous_same_bar_rate`: для ML-exit правил больше не
   считается гипотетический fixed TP `0.7R`, если TP не является реальным
   условием выхода.
+- После этого выполнен полный M5 full-grid rerun на тех же `384`
+  canonical-spread конфигурациях и `384` stress-spread конфигурациях. Текущий
+  канонический full-grid artifact: `ML/reports/fractal0_entry_exit_grid_m5_full.json`.
 
 ## Multiple Testing Context
 
@@ -61,6 +64,10 @@ Cumulative search budget в артефакте раскрыт как
 которая сэмплировала агрегаты `summary`, но не является поводом повышать
 verdict выше `research_only`.
 
+В полном M5 full-grid rerun permutation correction пересчитана с
+`metric_bootstrap_samples = 200`; empirical p-value остался
+`0.004975124378109453`, status `PASS`.
+
 ## Changed Files
 
 - `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
@@ -79,6 +86,15 @@ verdict выше `research_only`.
 - `ML/reports/fractal0_entry_exit_grid_m5_winner.json`
 - `ML/reports/fractal0_entry_exit_grid_m5_winner_summary.csv`
 - `ML/reports/fractal0_entry_exit_grid_m5_winner_trades.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full.json`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_summary.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_spread_stress.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_trades.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_yearly.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_winner_yearly.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_attribution.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_permutation.csv`
+- `ML/reports/fractal0_entry_exit_grid_m5_full_progress.json`
 
 ## Verification
 
@@ -109,6 +125,9 @@ finished fractal0_entry_exit_grid
 - Primary JSON теперь содержит `canonical_current_artifact`,
   `post_review_artifacts` и `superseded_fields`, чтобы машинный читатель не
   принял устаревший H1 ambiguity cap за текущий verdict.
+- M5 full-grid artifact: `status=PASS`, `progress.completed=1152`,
+  `progress.failed=0`, `summary.csv=768` строк,
+  `spread_stress.csv=384` строки, `permutation.csv=200` строк.
 
 ## Results
 
@@ -117,8 +136,21 @@ Winner выбран на `val_select`:
 ```text
 entry_id = E3_open_pullback_1_0atr
 mask_id  = M0_no_mask
-exit_id  = X2_ml_opposite_any_p0_55
+exit_id  = X0_fixed_r_0_7
 ```
+
+Текущий winner полного M5 rerun:
+
+- `val_select`: trades `2294`, PF `2.9127176728597752`,
+  BS p05 `2.6717396986296746`, ambiguous same-bar rate
+  `0.013513513513513514`;
+- `val_eval`: trades `2298`, PF `2.7246860862703013`,
+  BS p05 `2.486754106484057`, stress PF `2.2945114989452584`,
+  ambiguous same-bar rate `0.0073977371627502175`;
+- `val_eval` yearly: 2021 PF `2.649154333064076`, 2022 PF
+  `2.791791`; effective profit years `1.985599875865133`;
+- exit counts on `val_eval`: `TP=1817`, `SL=462`, `TIME=19`;
+- verdict: `PASS / research_only / research_hypothesis`, `locked_test` not opened.
 
 Первичный полный H1-прогон записал такие значения `val_select`:
 
@@ -159,6 +191,11 @@ Post-review winner-only пересчёт с M5 execution ordering:
 - stress spread `0.40`: trades `2247`, PF `1.5742797668285895`,
   BS p05 `1.4025462198808076`, ambiguous same-bar rate `0.0`.
 
+Полный M5 rerun изменил winner: fixed TP `X0_fixed_r_0_7` стал лучше ML-exit
+вариантов. Это ожидаемо для fixed TP exits: M5 уточняет порядок TP/SL внутри
+H1-свечи, тогда как первичный H1-only прогон слишком часто применял
+консервативное `SL first`.
+
 ## Conclusions
 
 Сетка технически выполнена полностью, runner воспроизводим, прогресс и resume
@@ -166,33 +203,34 @@ Post-review winner-only пересчёт с M5 execution ordering:
 только на `val_select` и проверяется на `val_eval`.
 
 Первичный вывод `DIAGNOSTIC_ONLY` из-за `ambiguous_same_bar_rate_gt_0_10`
-считается устаревшим для выбранного ML-exit winner. Root cause: симулятор
-считал same-bar ambiguity против гипотетического fixed TP `0.7R` даже для
-ML-exit правил, где такого TP нет. После исправления и winner-only пересчёта
-с M5 execution ordering `ambiguous_same_bar_rate = 0.0`, а PF/BS p05 не
-изменились для canonical winner.
+считается устаревшим. Root cause для ML-exit winner: симулятор считал
+same-bar ambiguity против гипотетического fixed TP `0.7R` даже для ML-exit
+правил, где такого TP нет. Для fixed TP exits M5 full rerun показал другой
+эффект: M5 execution ordering существенно улучшает оценку fixed TP вариантов,
+потому что часть H1 TP/SL конфликтов разрешается по младшему таймфрейму.
 
 Повышение до candidate всё равно запрещено: это поисковый research-этап,
-полный grid ещё не пересчитан с исправленной ambiguity-семантикой и M5
-execution contract, а `locked_test` не открыт.
+winner выбран после широкого validation grid-search, а `locked_test` не открыт.
 
 ## Limitations / Open Questions
 
-- Полный grid artifact `fractal0_entry_exit_grid.json` содержит устаревший
-  `diagnostic_only` cap по ambiguity; исправленный M5 artifact пересчитан пока
-  только для previous winner.
+- Primary H1 artifact `fractal0_entry_exit_grid.json` содержит устаревший
+  `diagnostic_only` cap по ambiguity. Текущий full-grid источник:
+  `ML/reports/fractal0_entry_exit_grid_m5_full.json`.
 - Старый полный `_trades.csv` был создан до записи `spread` на уровне каждой
   сделки, поэтому строгий canonical/stress yearly-разрез winner из него не
   восстанавливается. Для текущего M5 winner-only artifact сохранён отдельный
   `fractal0_entry_exit_grid_m5_winner_winner_yearly.csv`.
 - `fractal0_entry_exit_grid_yearly.csv` — глобальная диагностика по всем
   конфигурациям/сплитам, не годовой разрез выбранного winner.
-- Для fixed TP exits H1 OHLC всё ещё может иметь настоящую TP/SL ambiguity;
-  M5 execution ordering должен применяться в полном rerun.
+- Для fixed TP exits остаётся небольшая настоящая TP/SL ambiguity даже на M5:
+  у текущего winner `ambiguous_same_bar_rate=0.0073977371627502175` на
+  `val_eval`. Это не блокирующий уровень, но его нужно раскрывать.
 - `locked_test` не открыт.
 - Cumulative search budget раскрыт только для текущего этапа.
-- Перестановочная коррекция пересчитана честным перемешиванием сделок, но с
-  `20` bootstrap-сэмплами на перестановочную метрику.
+- Primary H1 / winner-only post-review permutation disclosure использовал
+  `20` bootstrap-сэмплов на перестановочную метрику. Текущий M5 full-grid
+  artifact пересчитан с `200` bootstrap-сэмплами.
 - Результат нельзя называть trading candidate.
 
 ## Split Disclosure
@@ -213,14 +251,15 @@ execution contract, а `locked_test` не открыт.
 
 ## Next Step
 
-Следующий честный шаг — полный rerun или bounded rerun с уже исправленным
-execution contract:
+Следующий честный шаг — не открывать `locked_test`, а провести заранее
+зафиксированный follow-up вокруг risk-механики:
 
-- использовать M5 `execution_ohlc_path`;
-- оставить H1 признаки и H1 split без изменений;
-- использовать младший таймфрейм только для порядка исполнения после входа;
-- пересчитать весь grid или заранее ограниченный frozen subset;
-- не открывать `locked_test` до нового frozen validation-cycle.
+- добавить stop-policy grid, включая entry-floor варианты
+  `fractal0 ± 0.5 ATR` с минимальной дистанцией от входа `1/2/3 ATR`;
+- сначала можно пропустить stress-spread и потом прогнать stress только для
+  shortlist winners;
+- отдельно спроектировать entry-quality ML filter для E3, который учится на
+  PnL/SL-исходах конкретной E3-сделки, а не на абстрактном movement target.
 
 ## Related Materials
 

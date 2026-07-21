@@ -6,7 +6,7 @@ status: active
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: retest-zone oracle дал diagnostic ratio, а полный Fractal0 entry/exit grid с ML-exit дал сильный `val_eval PF=1.9438`. Post-review M5 winner-only пересчёт показал, что прежний ambiguity cap был искусственным для ML-exit winner: `ambiguous_same_bar_rate=0.0`. Следующий честный шаг — полный rerun или frozen subset с M5 execution contract, без открытия `locked_test`.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: retest-zone oracle дал diagnostic ratio, а полный Fractal0 entry/exit grid с M5 execution ordering выбрал fixed TP winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`: `val_eval PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`. Это остаётся `research_only`: `locked_test` не открыт, следующий шаг — заранее зафиксированный stop-policy / entry-quality follow-up.
 
 ## Хронология
 
@@ -23,11 +23,11 @@ simple comparison обязателен, side audit требует обе сто�
 возможно только через отдельный frozen probe-plan, без `locked_test` и без
 trading claims.
 
-### 2026-07-21: Fractal0 entry/exit grid with ML-exit
+### 2026-07-21: Fractal0 entry/exit grid with M5 execution ordering
 
 Полная сетка `4 entry x 2 masks x 48 exits` выполнена на H1 OHLC с
 canonical spread `0.20`, stress spread `0.40`, frozen movement mask и ML-exit
-слоем (`4` target families x `3` seeds). Winner на `val_select`:
+слоем (`4` target families x `3` seeds). Первичный H1 winner был:
 `E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_55`.
 На `val_eval`: `n_trades=2298`, `PF=1.9438`, `BS_p05=1.7601`,
 stress PF `1.5743`. Перестановочная коррекция исправлена и прошла:
@@ -40,6 +40,16 @@ PF/BS числа и дал `ambiguous_same_bar_rate=0.0`; val_eval
 full-grid JSON lifecycle `diagnostic_only` по ambiguity считается устаревшим
 для этого winner; primary JSON теперь содержит `canonical_current_artifact`,
 `post_review_artifacts` и `superseded_fields`.
+
+Полный M5 full-grid rerun затем пересчитал все `384` canonical и `384`
+stress конфигурации с тем же M5 execution contract. Winner сменился на fixed
+TP: `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`. На `val_eval`:
+`n_trades=2298`, `PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`,
+`ambiguous_same_bar_rate=0.0074`, `effective_profit_years=1.9856`;
+yearly PF: 2021 `2.6492`, 2022 `2.7918`. Вывод остаётся
+`research_only`, потому что winner выбран после широкого validation search и
+`locked_test` не открыт. Новый near-term follow-up: stop-policy grid и
+entry-quality ML filter для E3, без открытия `locked_test`.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
@@ -813,7 +823,7 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - ~~Как лучше поставить time-to-breach после rerun?~~ Stage 5.3 показал, что bucket `fast` — лучший next target family. `survives_at_least_k` остаётся control-only, `breach_after_k5` слишком sparse.
 - ~~Поможет ли price/ATR ablation усилить Stage 5.3 `fast`?~~ Stage 5.4 завершён: `price_coord_atr` rejected, `price_atr_scaled` не добавил устойчивого сигнала, расширение price-поиска не требуется.
 - **Является ли слабый sell 2026 ранним признаком ослабления?** `structure_full` sell AUC `0.5597` при `n=316` не используется для verdict, но это риск для будущего подтверждения на `2026+`.
-- **Что делать после movement-filter freeze и fractal0 retest/entry-exit grid?** Уже ясно, что `next open after signal_time` не работает как direction target ни при старом target от `fractal0_price`, ни при новом target от фактического `entry_open`, ни после closeout shortlist, ни после более мощных табличных моделей, ни после bounded sequence-проверки. Fractal0 retest-zone oracle показал diagnostic-потолок, а полный entry/exit grid с ML-exit дал сильные PF/BS числа. Post-review M5 winner-only пересчёт снял old ambiguity cap для winner (`ambiguous_same_bar_rate=0.0`), но это ещё не candidate: нужен полный rerun или заранее ограниченный frozen subset с M5 execution contract.
+- **Что делать после movement-filter freeze и fractal0 retest/entry-exit grid?** Уже ясно, что `next open after signal_time` не работает как direction target ни при старом target от `fractal0_price`, ни при новом target от фактического `entry_open`, ни после closeout shortlist, ни после более мощных табличных моделей, ни после bounded sequence-проверки. Fractal0 retest-zone oracle показал diagnostic-потолок, а полный M5 entry/exit grid дал сильный fixed TP winner (`val_eval PF=2.7247`, `BS_p05=2.4868`). Это ещё не candidate: нужен заранее зафиксированный stop-policy / entry-quality follow-up, без `locked_test`.
 - **Противоречие с Stage 5.0-prep:** prep показывал `time_only` AUC=0.6286 > `no_time` AUC=0.6113. В 5.0d `no_structure` (price+ATR+time, без 9 структурных) = 0.534 — ниже `time_only` на 0.094. Причина не разобрана: разные transforms (asinh vs current), или price-токены шумят.
 - Почему XGBoost извлекает умеренный сигнал из flattened-представления, а Transformer на тех же данных — нет.
 - Может ли другая постановка fav/exit-таргета снизить шум сильнее, чем простая замена RF-fav на XGBoost-fav.
@@ -869,4 +879,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](../../docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) — rich-features full grid внутри frozen movement mask: H3 weak direction-effect требовал narrow replication
 - [2026-07-10-direction-inside-frozen-mask-narrow-replication.md](../../docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) — narrow seed-stability replication: H3 effect не воспроизвёлся; verdict `REJECT_DIRECTION_REPLICATION`
 - [2026-07-10-fractal0-price-entry-mechanics.md](../../docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) — retest-zone oracle от `fractal0_price`: diagnostic ratio есть, gate не прошёл по active years; review fixes усилили robustness/gate/side audit
-- [2026-07-21-fractal0-entry-exit-grid.md](../../docs/reports/2026-07-21-fractal0-entry-exit-grid.md) — полный Fractal0 entry/exit grid с OHLC-симуляцией и ML-exit: permutation correction PASS; post-review M5 winner-only пересчёт исправил искусственный ambiguity cap для ML-exit winner
+- [2026-07-21-fractal0-entry-exit-grid.md](../../docs/reports/2026-07-21-fractal0-entry-exit-grid.md) — полный Fractal0 entry/exit grid с OHLC-симуляцией, ML-exit и M5 execution ordering: full M5 rerun выбрал fixed TP winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`; verdict `research_only`
