@@ -58,6 +58,10 @@
 - SeqPF не используется как gate-критерий выбора winner (допустим только diagnostic-only).
 - Если используется ensemble/stacking, нужен out-of-fold protocol или отдельный holdout.
 - Frozen rule невалиден после изменения `entry_price`, canonical spread, fill policy или PnL convention.
+- Frozen rule невалиден после изменения `execution_ohlc_path`, lower-timeframe
+  ordering policy или same-bar TP/SL fallback, если эти параметры влияют на
+  PnL/gates/winner selection. Такое изменение требует нового validation rerun
+  или явно помечается как post-review diagnostic.
 - Frozen rule невалиден без first executable price и доказательства, что признаки, inference и order-send доступны до входа.
 - Validation PF для execution-aware кандидата считается по PnL, а не по счёту TP/SL.
 - Zero-spread validation sweep не может выбрать frozen winner для production, если canonical spread не равен нулю.
@@ -108,6 +112,8 @@ effective_profit_years >= max(1.5, 0.6 * n_years)
 - Выбирать rule-family по `locked_test`, а параметры по validation.
 - Считать структурную стабильность между seeds доказанной без формального tolerance.
 - Подменять frozen execution convention после validation и считать это тем же кандидатом.
+- Добавлять M1/M5 ordering после выбора winner и повышать verdict без rerun
+  того же selection protocol.
 - Сравнивать canonical-spread winner с zero-spread candidate как с равноправными торговыми вариантами.
 - Считать рост PF доказательством улучшения модели без проверки, что изменился рейтинг сделок, а не цена входа: если PF вырос после смены entry_price/spread/fill, а рейтинг сделок не изменился — это entry-price effect, не signal improvement.
 - Использовать validation для early stopping, grid search И финальной оценки одновременно (тройная утечка). Каждый уровень оптимизации на одном наборе завышает итоговую оценку.

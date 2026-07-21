@@ -26,6 +26,25 @@
 6. Зафиксировать known quirks: неполные края, смена таймфрейма, разные провайдеры, tester/online отличия.
 7. Сохранить data inventory: путь, период, размеры, provider, frequency, fields, risks.
 
+### 1.Y. Lower-Timeframe Execution OHLC Audit
+
+Если H1-исследование использует `M1`/`M5` только для уточнения порядка
+исполнения внутри H1-свечи, этот файл всё равно проходит raw-data inventory.
+Такой младший таймфрейм не становится ML-input автоматически.
+
+Минимально зафиксировать:
+
+- путь к файлу и CSV contract;
+- symbol, broker/source, timezone и период покрытия;
+- price convention: Bid, Ask, Mid или executable price;
+- частоту и ожидаемое число младших свечей внутри H1;
+- gaps, неполные края, weekend/holiday breaks;
+- соответствие H1 source: тот же broker/source или documented mismatch;
+- статус использования: `execution_ordering_only`, не `feature_source`.
+
+Если source/timezone/price convention младшего таймфрейма не доказаны,
+результат с его использованием не выше `DIAGNOSTIC_ONLY` для execution-выводов.
+
 ### 1.X. Data Producer Audit
 
 #### Цель
@@ -51,6 +70,8 @@
 - Raw-поля не объявляются безопасными только потому, что они есть в CSV.
 - Дубли времени не удаляются без доказательства.
 - Таймфрейм соответствует задаче.
+- Младший таймфрейм, используемый для execution ordering, не попадает в
+  признаки, split или обучение модели.
 - Provider drift отделён от transfer на другой инструмент.
 - Поля `unknown` не допускаются во вход модели.
 
@@ -76,4 +97,3 @@
 - Если provider changed: сначала проверить provider drift на том же инструменте, потом cross-instrument transfer.
 
 ---
-

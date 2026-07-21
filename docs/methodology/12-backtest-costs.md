@@ -74,6 +74,41 @@
 - Timeout PnL и SL/TP PnL анализируются отдельно.
 - Пропущенные входы не считаются нулевым риском без обоснования.
 
+### Lower-timeframe execution ordering
+
+Для H1-моделей младший таймфрейм (`M1`/`M5`) может использоваться только как
+execution diagnostic: восстановить порядок исполнения внутри H1-свечи, когда
+H1 OHLC одновременно допускает TP и SL. Это не новый источник признаков и не
+способ повысить статус без нового validation/freeze protocol.
+
+Правила:
+
+- H1 остаётся source of truth для признаков, split, `signal_time`,
+  `decision_time` и model inference.
+- `M1`/`M5` не используется как feature source, не участвует в training,
+  selection, threshold tuning или mask/filter learning.
+- `M1`/`M5` применяется только после факта входа, внутри окна уже открытой
+  сделки, чтобы уточнить порядок касаний TP/SL.
+- Если H1-bar ambiguous, simulator раскрывает этот H1-bar через младшие
+  свечи того же интервала и с тем же price convention.
+- Если младший таймфрейм тоже ambiguous или нужных младших свечей нет,
+  применяется заранее заданный fallback, например `SL first`.
+- Execution OHLC должен иметь тот же broker/source, timezone, symbol и
+  Bid/Ask/Mid convention, что основной OHLC, либо результат не выше
+  `DIAGNOSTIC_ONLY` для execution-выводов.
+- Отчёт обязан показывать `ambiguous_same_bar_rate_h1` и
+  `ambiguous_same_bar_rate_execution_tf` либо явно объяснять, почему один из
+  показателей неприменим.
+- Для exit families без реального TP нельзя считать hypothetical TP-touch
+  ambiguity. Например, ML-exit правило без fixed TP не должно получать
+  TP/SL ambiguity от искусственного `0.7R` уровня.
+
+Пример допустимого использования: H1-модель выбрала сделку и H1-свеча выхода
+имеет `high >= TP` и `low <= SL`. Тогда M5-свечи внутри этого H1-часа
+используются, чтобы понять, что произошло раньше. Если порядок восстановлен,
+сделка закрывается по первому реальному условию. Если порядок не восстановлен,
+используется fallback.
+
 ### Критерии успешного завершения
 
 - Net PF и drawdown проходят gates.
@@ -93,6 +128,8 @@
 - Делать вывод о модели по M5 diagnostic, если production H1.
 - Делать zero-spread результат каноническим или равноправным trading experiment.
 - Менять spread/entry/fill convention после validation и считать это тем же `frozen_rule_for_locked_test`.
+- Использовать M5/M1 как скрытый feature source под видом execution diagnostic.
+- Считать `M5`-уточнение заменой MT4 tester parity.
 
 ### Проверка симулятора сделок
 
@@ -115,6 +152,7 @@
 - Ветка else, съедающая SL и timeout без разбора.
 - Timeout считается loss без явного решения.
 - Проверять SL-триггер по цене, не соответствующей bid/ask/executable convention, — искажает PF и может маскировать реальные SL-срабатывания.
+- Считать TP/SL ambiguity по TP-уровню, которого нет в реальном exit rule.
 
 ### Ветвления
 

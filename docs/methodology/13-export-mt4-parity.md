@@ -35,6 +35,9 @@
 6. В online/tester сверке сопоставлять по `signal_time + direction`, а не по ticket.
 7. Логировать `OPEN_FAILED`, spread, slippage, Bid/Ask, commission, swap, balance/equity.
 8. Исключить неполные края периода из строгого verdict.
+9. Если offline backtest использовал M1/M5 для порядка TP/SL внутри H1,
+   зафиксировать этот execution contract и сверить с MT4 tester/runtime:
+   младший таймфрейм помогает offline-симулятору, но не заменяет tester parity.
 
 ### Обязательные проверки
 
@@ -43,6 +46,8 @@
 - Есть reconciliation report.
 - Все missing trades объяснены или помечены blocker.
 - Механический parity не объявляется forward profitability proof.
+- Offline M1/M5 ordering не объявляется MT4 parity: tester/runtime всё равно
+  должен подтвердить opened trades, close reasons и PnL.
 
 ### Критерии успешного завершения
 
@@ -58,6 +63,8 @@
 - Не писать `OPEN_FAILED`.
 - Смешивать mechanical parity и ML quality.
 - Не очищать tester event-log перед новым прогоном.
+- Считать совпадение offline M5 ordering достаточным доказательством MT4
+  исполнения без tester/reconciliation.
 
 ### Ветвления
 
