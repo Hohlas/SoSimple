@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-21] — Fractal0 Entry Quality Filter (RESEARCH_ONLY)
+- **report**: `docs/reports/2026-07-21-fractal0-entry-quality-filter.md`
+- **topics**: `fractal0`, `entry_quality_filter`, `ml_entry`, `m5_execution_ordering`, `research_only`
+- **summary**: Добавлен bounded runner ML-entry фильтра для `S2/E3/M0/X2` stop-grid winner; после аудита cutoff для simple baselines стал NaN-safe, а ML-entry признаки переведены на pre-order planned limit/stop/R contract.
+- **artifacts**: `ML/reports/fractal0_entry_quality_filter.json`, `ML/reports/fractal0_entry_quality_filter_summary.csv`, `ML/reports/fractal0_entry_quality_filter_score_diagnostics.csv`, `ML/baseline/benchmark_fractal0_entry_quality_filter.py`, `tests/test_fractal0_entry_quality_filter.py`
+- **decision**: Исправленный winner `entry_quality_top10` выбран на `val_select`, но провалился на `val_eval`: `PF=1.9543`, `BS_p05=0.9713` против no-mask `BS_p05=2.2865`; lifecycle `research_hint`, не frozen rule.
+- **notes**: `locked_test=not_opened`; actual `val_eval` selected fraction `2.31%`; simple baselines теперь валидны и конкурентны (`simple_r_value_top50 val_eval BS_p05=2.3350`).
+
 ## [2026-07-21] — Fractal0 Stop Grid M5 (RESEARCH_ONLY)
 - **report**: `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`
 - **topics**: `fractal0`, `stop_policy`, `m5_execution_ordering`, `ml_exit`, `research_only`

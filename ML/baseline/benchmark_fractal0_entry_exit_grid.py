@@ -432,6 +432,7 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
             continue
         atr = float(row.get("ATR", row.get("atr14", np.nan)))
         limit_price = resolve_limit_price(row, entry_rule, float(opens[idx]))
+        planned_entry_bid_equivalent = float(limit_price) - float(spread) if side == "BUY" else float(limit_price)
         start = idx + 1
         end = min(start + int(entry_rule.get("lag_bars", 6)), len(ohlc))
         fill = {"filled": False, "fill_index": None, "fill_time": pd.NaT, "entry_effective_price": np.nan, "entry_bid_equivalent": np.nan}
@@ -454,10 +455,11 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
                     "entry_bid_equivalent": float(limit_price),
                 }
                 break
-        entry_bid_equivalent = float(fill["entry_bid_equivalent"]) if fill["filled"] else limit_price
+        entry_bid_equivalent = float(fill["entry_bid_equivalent"]) if fill["filled"] else planned_entry_bid_equivalent
         stop_info = resolve_protective_stop(side, fractal["price"], entry_bid_equivalent, atr, policy)
         stop = float(stop_info["protective_stop_price"])
         r_value = abs(float(fill["entry_effective_price"]) - stop) if fill["filled"] else np.nan
+        planned_r_value = abs(float(limit_price) - stop)
         out.append(
             {
                 **fill,
@@ -467,6 +469,12 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
                 "signal_time": signal_time,
                 "time": signal_time,
                 "side": side,
+                "calculation_open": float(opens[idx]),
+                "limit_price": float(limit_price),
+                "planned_entry_price": float(limit_price),
+                "planned_entry_bid_equivalent": planned_entry_bid_equivalent,
+                "planned_protective_stop_price": stop,
+                "planned_r_value": planned_r_value,
                 "atr": atr,
                 "ATR": atr,
                 "fractal0_price": fractal["price"],

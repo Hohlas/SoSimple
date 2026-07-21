@@ -83,6 +83,11 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
 - Stop policy меняет `protective_stop_price`, `R`, ML-exit признаки в `R` и
   `target_exit_*`, поэтому ML-exit обучается отдельно для каждой
   `stop_policy_id`.
+- Entry rows дополнительно сохраняют planned pre-order поля:
+  `calculation_open`, `limit_price`, `planned_entry_price`,
+  `planned_entry_bid_equivalent`, `planned_protective_stop_price`,
+  `planned_r_value`. Они нужны downstream entry-filter runner-ам, чтобы
+  строить признаки от планируемой заявки, а не от post-fill outcome.
 - `pnl_r` означает одинаковый риск на сделку, а не одинаковый фиксированный
   лот. Более широкий stop при фиксированном лоте меняет денежный риск.
 

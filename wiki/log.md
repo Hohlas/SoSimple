@@ -817,3 +817,15 @@
 - Updated `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`: weakened the S2 conclusion because S2 improves PF but does not beat S0/X0 baseline by `val_eval BS_p05` (`2.5085` vs `2.5120`).
 - Updated artifacts: `ML/reports/fractal0_stop_grid_m5.json` now contains `rejected_alternatives`, `sample_size_warnings`, stress-spread interpretation, and yearly scope; `ML/reports/fractal0_stop_grid_m5_spread_stress.csv` now contains a status row.
 - Added `ML/reports/fractal0_stop_grid_m5_focused_stop_diagnostics.csv` and `ML/reports/fractal0_stop_grid_m5_all_grid_yearly.csv`; updated wiki synthesis to distinguish all-grid diagnostics from winner diagnostics.
+
+### 2026-07-21: Ingest Fractal0 entry-quality filter result
+- Added `docs/reports/2026-07-21-fractal0-entry-quality-filter.md`.
+- Added `ML/baseline/benchmark_fractal0_entry_quality_filter.py` and `tests/test_fractal0_entry_quality_filter.py`: bounded ML-entry filter runner for `S2/E3/M0/X2`, reusing the stop-grid simulator and ML-exit layer.
+- Added `ML/reports/fractal0_entry_quality_filter.json` and companion CSV artifacts: `17` filters x `2` validation roles = `34` completed rows, `locked_test=not_opened`.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: recorded winner `entry_quality_top20`, `val_eval PF=2.9439`, `BS_p05=2.1886`, no proven superiority over no-mask `BS_p05=2.2865`, and next step as frozen shortlist/stress probe only.
+
+### 2026-07-21: Audit corrections for Fractal0 entry-quality filter
+- Fixed `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: top fraction cutoffs now ignore missing scores, JSON artifact is self-contained, and score distribution diagnostics are exported.
+- Updated `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: E3 entry rows now include planned limit/stop/R fields so the entry-quality feature contract is pre-order rather than post-fill.
+- Recomputed `ML/reports/fractal0_entry_quality_filter*`: corrected winner is `entry_quality_top10`; it passes `val_select` selection diagnostics but fails `val_eval` versus no-mask (`BS_p05=0.9713` vs `2.2865`), lifecycle `research_hint`.
+- Updated report, handoff, changelog and wiki synthesis to reject the selected entry-quality rule as a frozen candidate.

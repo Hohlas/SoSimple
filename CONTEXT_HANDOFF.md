@@ -8,157 +8,138 @@
 
 Текущий завершённый этап:
 
+- отчёт: `docs/reports/2026-07-21-fractal0-entry-quality-filter.md`
+- аудит: `docs/superpowers/audit.md`
+- план: `docs/superpowers/plans/2026-07-21-fractal0-entry-quality-filter.md`
+- module docs: `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`
+
+Предыдущие связанные этапы:
+
 - `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`
-- план: `docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md`
-
-Предыдущий базовый этап:
-
 - `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
-- полный M5 baseline artifact: `ML/reports/fractal0_entry_exit_grid_m5_full.json`
 
-## Что изменено
+## Что изменено после аудита
 
-Основной runner расширен:
+Добавлен bounded runner:
 
-- `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
-- `tests/test_fractal0_entry_exit_grid.py`
-- `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`
+- `ML/baseline/benchmark_fractal0_entry_quality_filter.py`
+- `tests/test_fractal0_entry_quality_filter.py`
 
-Добавлено:
+Также слегка расширен базовый runner:
 
-- stop-policy registry `S0`/`S1`/`S2`/`S3`;
-- `stop_policy_id` в `run_config_hash`, `resume_key`, summary, trades, JSON,
-  permutation, attribution, winner eval и rule matching;
-- отдельное обучение ML-exit для каждой `stop_policy_id`;
-- CLI:
-  - `--stop-grid-mode full|current-only`;
-  - `--exit-shortlist full|stop_grid`;
-  - `--skip-stress-spread`;
-- stop diagnostics CSV.
+- `ML/baseline/benchmark_fractal0_entry_exit_grid.py` теперь сохраняет
+  planned entry поля: `calculation_open`, `limit_price`,
+  `planned_entry_price`, `planned_entry_bid_equivalent`,
+  `planned_protective_stop_price`, `planned_r_value`.
 
-## Артефакты stop-grid
+Причина: ML-entry filter должен иметь pre-order feature contract, а не зависеть
+от post-fill колонок.
 
-- `ML/reports/fractal0_stop_grid_m5.json`
-- `ML/reports/fractal0_stop_grid_m5_summary.csv`
-- `ML/reports/fractal0_stop_grid_m5_trades.csv` — большой файл, около `321M`,
-  не читать целиком.
-- `ML/reports/fractal0_stop_grid_m5_progress.json`
-- `ML/reports/fractal0_stop_grid_m5_permutation.csv`
-- `ML/reports/fractal0_stop_grid_m5_stop_diagnostics.csv`
-- `ML/reports/fractal0_stop_grid_m5_focused_stop_diagnostics.csv`
-- `ML/reports/fractal0_stop_grid_m5_all_grid_yearly.csv`
-- `ML/reports/fractal0_stop_grid_m5.log`
+Исправления аудита:
 
-Итог запуска:
+- simple topX cutoff считается только по finite score rows;
+- `simple_stop_distance_top50` и `simple_r_value_top50` больше не дают 0
+  сделок из-за NaN cutoff;
+- JSON artifact содержит `status`, `verdict`, `lifecycle_status`,
+  `split_roles`, `forbidden_interpretations`, `entry_feature_columns`,
+  `entry_label_contract`, `filter_contract`;
+- добавлен `ML/reports/fractal0_entry_quality_filter_score_diagnostics.csv`.
 
-```text
-completed = 576
-failed = 0
-stress_spread_status = deferred_shortlist_only
-locked_test = not_opened
-```
+## Артефакты entry-quality
+
+- `ML/reports/fractal0_entry_quality_filter.json`
+- `ML/reports/fractal0_entry_quality_filter_summary.csv`
+- `ML/reports/fractal0_entry_quality_filter_trades.csv` — большой CSV, читать
+  только через `nrows`/`usecols`/`chunksize`.
+- `ML/reports/fractal0_entry_quality_filter_scores.csv`
+- `ML/reports/fractal0_entry_quality_filter_score_diagnostics.csv`
+- `ML/reports/fractal0_entry_quality_filter_yearly.csv`
+- `ML/reports/fractal0_entry_quality_filter_permutation.csv`
 
 Команда воспроизведения:
 
 ```bash
-PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_grid.py \
+PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quality_filter.py \
   --threads 24 \
   --no-resume \
-  --output-prefix ML/reports/fractal0_stop_grid_m5 \
+  --output-prefix ML/reports/fractal0_entry_quality_filter \
   --execution-ohlc-path MT/MQL4/Files/XAUUSD_M5_OHLC.csv \
-  --stop-grid-mode full \
-  --exit-shortlist stop_grid \
-  --skip-stress-spread \
+  --stop-policy-id S2_fractal0_buffer_0_5_entry_floor_2 \
   --permutation-repeats 200
 ```
 
-## Stop-grid winner
+## Итог entry-quality после исправлений
 
 Winner выбран только на `val_select`:
 
 ```text
-S2_fractal0_buffer_0_5_entry_floor_2 /
-E3_open_pullback_1_0atr /
-M0_no_mask /
-X2_ml_opposite_any_p0_50
+entry_quality_top10
+score_cutoff_on_val_select = 0.36753163277225726
 ```
 
 `val_select`:
 
-- `n_trades = 2294`
-- `PF = 3.329117`
-- `BS_p05 = 3.032558`
-- `risk_distance_atr = 2.0`
+- `n_trades = 196`
+- `PF = 5.496736`
+- `BS_p05 = 3.937030`
+- `selected_fraction = 0.085440`
+- `SL-rate = 0.030612`
 
-`val_eval` проверка того же ключа:
+`val_eval` проверка того же cutoff:
+
+- `n_trades = 53`
+- `PF = 1.954347`
+- `BS_p05 = 0.971312`
+- `mean_pnl_r = 0.167059`
+- `max_drawdown_r = 2.582476`
+- `selected_fraction = 0.023064`
+- `SL-rate = 0.094340`
+
+No-mask baseline в том же run на `val_eval`:
 
 - `n_trades = 2298`
-- `PF = 2.787295`
-- `BS_p05 = 2.508541`
-- `mean_pnl_r = 0.288315`
-- `max_drawdown_r = 8.385976`
-- `pf_without_best_year = 2.742403`
-- `effective_profit_years = 1.979596`
-- `ambiguous_same_bar_rate = 0.0`
+- `PF = 2.531716`
+- `BS_p05 = 2.286458`
+- `mean_pnl_r = 0.263844`
+- `max_drawdown_r = 9.135903`
+- `SL-rate = 0.062663`
 
-Permutation:
+Previous S0/X0 baseline из stop-grid `val_eval`:
 
-- `method = block_shuffled_val_select_pnl_r`
-- `empirical_p_value = 0.004975`
-- `status = PASS`
-- `null_repeats = 200`
-
-## Сравнение с предыдущим M5 baseline
-
-Предыдущий полный M5 baseline winner:
-
-```text
-S0_current_0_5 /
-E3_open_pullback_1_0atr /
-M0_no_mask /
-X0_fixed_r_0_7
-```
-
-Его `val_eval`:
-
+- `n_trades = 2298`
 - `PF = 2.724686`
-- `BS_p05 = 2.486754`
-- `stress_pf = 2.294511`
+- `BS_p05 = 2.512015`
+- `mean_pnl_r = 0.350482`
+- `max_drawdown_r = 7.300000`
 
-Новый stop-grid winner чуть лучше на canonical `val_eval`, но полный
-stress-spread был намеренно отложен. По консервативной метрике `BS_p05` он
-не лучше текущего S0/X0 baseline в этом же stop-grid summary:
-
-```text
-S2/E3/M0/X2 p0.50: BS_p05 = 2.508541
-S0/E3/M0/X0:       BS_p05 = 2.512015
-```
-
-Это не frozen candidate.
+Вывод: selected `entry_quality_top10` не пережил `val_eval`. Artifact
+`lifecycle_status = research_hint`, не `research_hypothesis`.
 
 ## Методические ограничения
 
 - Verdict не выше `research_only`.
 - `locked_test` не открыт.
-- `val_select` выбирает winner; `val_eval` только проверяет выбранный ключ.
-- Полный stress-spread не выполнен: только `deferred_shortlist_only`.
-- `ML/reports/fractal0_stop_grid_m5_spread_stress.csv` содержит status row,
-  а не рассчитанные stress-метрики.
-- `pnl_r` трактуется как одинаковый риск на сделку, а не одинаковый
-  фиксированный лот; широкий stop меняет денежный риск при фиксированном лоте.
+- `val_select` выбирает filter family и cutoff; `val_eval` только проверяет.
+- На `val_eval` нельзя пересчитывать topX по распределению `val_eval`.
+- Фактическая доля selected на `val_eval` стала `2.31%`, а не `10%`.
+- Diagnostic `val_eval` winners (`entry_avoid_sl_top50`, `entry_quality_top50`,
+  `entry_quality_top30`) нельзя подставлять вместо selected winner.
+- Simple baselines теперь валидны и конкурентны: `simple_r_value_top50`
+  имеет `val_eval BS_p05=2.3350`.
 - M5 используется только для порядка исполнения внутри H1-свечи, не как
   признак модели.
-- `M1_frozen_movement_top5` в этом прогоне low-N control: на `val_eval`
-  минимум `9` сделок, медиана `11`; не сравнивать M1 с M0 на равных.
-- `ML/reports/fractal0_stop_grid_m5_yearly.csv` — all-grid yearly aggregate,
-  не winner yearly. Winner yearly: `fractal0_stop_grid_m5_winner_yearly.csv`.
 
 ## Следующий допустимый шаг
 
-Shortlist-only stress-spread без расширения grid:
+Не открывать `locked_test`.
 
-- `S2/E3/M0/X2_ml_opposite_any_p0_50` — текущий stop-grid winner;
-- `S0/E3/M0/X0_fixed_r_0_7` — прежний M5 baseline;
-- ближайшие `S1`/`S3` варианты вокруг того же entry/mask/exit family.
+Текущий selected rule не должен идти в frozen rule. Следующий корректный шаг —
+новый bounded shortlist/stress plan с заранее заданными контролями:
 
-Открывать `locked_test` сейчас нельзя.
+- `S0/E3/M0/X0_fixed_r_0_7`;
+- `S2/E3/M0/X2/M0_no_mask`;
+- selected failed disclosure `S2/E3/M0/X2/entry_quality_top10`;
+- максимум небольшой заранее заданный diagnostic shortlist:
+  `entry_avoid_sl_top50`, `entry_quality_top50`, `simple_r_value_top50`.
+
+Новый план должен заранее задать minimum selected trades и calibration rule.
