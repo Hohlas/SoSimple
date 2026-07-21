@@ -1,70 +1,76 @@
 # Context Handoff
 
-**Дата:** 2026-07-10
+**Дата:** 2026-07-21
 
 ## Текущее состояние
 
-Ветка `fractal0_price` entry mechanics выполнена как oracle-preflight.
-Добавлен runner `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`,
-тесты и отчёт:
+Ветка Fractal0 entry/exit grid выполнена как research-этап.
+Добавлены runner, тесты, structured artifacts и отчёт:
 
-- `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`
-- `ML/reports/fractal0_price_entry_mechanics.json`
-- `ML/reports/fractal0_price_entry_mechanics_rows.csv`
-- `docs/ML/benchmark_fractal0_price_entry_mechanics.py.md`
+- `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
+- `tests/test_fractal0_entry_exit_grid.py`
+- `ML/reports/fractal0_entry_exit_grid.json`
+- `ML/reports/fractal0_entry_exit_grid_m5_winner.json`
+- `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
+- `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`
 
-Итог: `diagnostic_only`, `lifecycle_status = exploratory_result`.
+Полная сетка завершена: `1152/1152`, `failed=0`. Post-review winner-only
+пересчёт с M5 execution ordering завершён отдельно.
 
 ## Главный вывод
 
-Выбранное на `train_core` правило:
+Winner на `val_select`:
 
 ```text
-entry_zone_edge_zone_0.5_lag_6_h3_spread_0.2
+E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_55
 ```
 
-На `val_stop` оно имеет высокий oracle-ratio:
+На `val_eval`:
 
-- `filled_events = 3854`;
-- `no_fill_rate = 0.25955811719500477`;
-- `favorable_to_adverse_ratio = 1.2421118400499844`;
-- `stress_favorable_to_adverse_ratio = 1.1895354754041108`;
-- `ratio_without_best_year = 1.2397913622895531`.
-- `dummy_or_simple_rule_comparison = PASS`;
-- simple rule ratio `= 1.061228066744197`.
+- `n_trades = 2298`;
+- `PF = 1.943813746344068`;
+- `BS_p05 = 1.7601441464181098`;
+- `stress_pf = 1.5742797668285895`;
+- `ambiguous_same_bar_rate = 0.0` после M5/bugfix winner-only пересчёта.
 
-Но gate не прошёл: `active_years = 2`, а требуется минимум `3`.
-Поэтому результат нельзя повышать до `research_only`.
+Итог: previous winner выглядит `research_only`, но не candidate. Старый
+`diagnostic_only` cap в full-grid JSON был вызван ошибкой ambiguity-семантики:
+для ML-exit считался гипотетический fixed TP, которого нет в exit rule.
 
 ## Контракты
 
 - `locked_test` не открыт.
-- `spread=0.00` только diagnostic, не gate.
-- Сторона: `direction = -fractal0.dir`.
-- Side audit: `PASS`, counts `-1: 20740`, `1: 23419`, обе стороны есть.
-- Старые `up_*/dn_*` не используются как торговая разметка.
-- Новые targets считаются только от фактической достижимой цены входа.
-- Exit contract отсутствует.
+- `train_core` только для ML-exit training.
+- `val_select` выбирает winner.
+- `val_eval` проверяет frozen winner.
+- Canonical spread `0.20`, stress spread `0.40`.
+- OHLC считается Bid; SELL exit учитывает Ask через spread.
+- M5 `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` используется только для порядка
+  исполнения внутри H1-свечи, не как признак модели.
+- TP+SL в одной H1/M5-свече трактуется как `SL first`, но только если TP
+  является реальным exit-условием.
+- Перестановочная коррекция исправлена: `permutation.csv` содержит `200`
+  строк, method `block_shuffled_val_select_pnl_r`.
 
 ## Следующий шаг
 
-Не продолжать как candidate. Если ветку продолжать, нужен отдельный frozen
-probe-plan: заранее фиксировать правило входа, split-роли, горизонты, критерии
-устойчивости, sample-size gate и разрешённый максимум verdict.
+Не продвигать result как candidate. Следующий честный шаг — полный rerun или
+заранее ограниченный frozen subset с M5 `execution_ohlc_path` и исправленной
+ambiguity-семантикой.
 
 ## Читать следующему агенту
 
-- `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`
-- `ML/reports/fractal0_price_entry_mechanics.json`
-- `docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md`
-- `docs/reports/2026-07-02-next-open-entry-updn-foundation.md`
-- `docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md`
+- `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
+- `ML/reports/fractal0_entry_exit_grid.json`
+- `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`
+- `docs/superpowers/plans/2026-07-20-fractal0-entry-exit-grid.md`
+- `docs/superpowers/specs/2026-07-20-fractal0-entry-exit-grid-design.md`
 
 ## Запрещённые направления
 
 - Не открывать `locked_test`.
-- Не делать PnL/PF/trading claims по этому этапу.
-- Не использовать `diagnostic_holdout` или `low_n_disclosure` для выбора.
-- Не тюнить по `val_stop` после просмотра результата без нового плана.
-- Не продвигать результат выше `diagnostic_only` без нового sample-size
-  contract и frozen probe-cycle.
+- Не делать trading/live-ready claims по H1-result.
+- Не считать old full-grid JSON lifecycle актуальным без учёта M5/bugfix
+  winner-only artifact.
+- Не добавлять M1/M5 в признаки модели в рамках execution refinement.
+- Не тюнить по `val_eval`; новый цикл должен быть заранее зафиксирован.

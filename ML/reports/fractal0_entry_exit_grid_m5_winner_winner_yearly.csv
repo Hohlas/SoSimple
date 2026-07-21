@@ -1,0 +1,3 @@
+entry_id;mask_id;exit_id;spread;metric_split;year;n_trades;gross_profit;gross_loss;pf;mean_pnl_r;median_pnl_r;max_drawdown_r;win_rate;ambiguous_same_bar_rate;exit_reason_counts
+E3_open_pullback_1_0atr;M0_no_mask;X2_ml_opposite_any_p0_55;0.2;val_eval;2021;1059;820.2267293814446;420.71629061614556;1.9495958385167584;0.37725253896628796;-0.1367924528302248;28.88537818041287;0.4400377714825307;0.0;{'ML_CLOSE': 620, 'SL': 347, 'TIME': 92}
+E3_open_pullback_1_0atr;M0_no_mask;X2_ml_opposite_any_p0_55;0.2;val_eval;2022;1239;968.3420057993046;499.417512606872;1.938942831108843;0.37847013171302063;-0.1571428571428293;19.662832308127577;0.41646489104116224;0.0;{'ML_CLOSE': 721, 'SL': 407, 'TIME': 111}

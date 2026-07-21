@@ -1,0 +1,5 @@
+check_id;baseline_pf
+A0_matched_entry_mask_baseline_exit;1.0187594364218189
+A1_same_exit_no_mask;2.211453757130436
+A2_same_exit_simple_entry;1.7747284044476592
+A4_same_entry_mask_time_exit;0.9598989238765292

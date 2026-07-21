@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-20 06:41 UTC · git `956d9a6`
+> Auto-generated 2026-07-21 05:53 UTC · git `08fdd7b`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3125 files  ·  **Commit**: `956d9a6`  ·  **Generated**: 2026-07-20 06:41 UTC
+**Tracked**: 3138 files  ·  **Commit**: `08fdd7b`  ·  **Generated**: 2026-07-21 05:53 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
-| [AGENTS.md](AGENTS.md) |  | 2026-07-10 | 10KB | `5b086823` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-20 | 142KB | `fa6f048b` |
+| [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-21 | 143KB | `5d2d031e` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-20 | 3KB | `ddce8894` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-10 | 55KB | `ba7fcb03` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-21 | 3KB | `0f5f999f` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-21 | 56KB | `5f5b2996` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -28,30 +28,31 @@
 |------|-------------|----------|------|------|
 | [docs/API/api_server.py.md](docs/API/api_server.py.md) | Документация экспериментального REST API inference-пути | 2026-06-17 | 1KB | `c7573738` |
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-06-17 | 20KB | `bb5a5097` |
-| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-04 | 26KB | `e29295c8` |
-| [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-06-30 | 1KB | `24414c2c` |
+| [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-20 | 26KB | `e29295c8` |
+| [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-07-20 | 1KB | `24414c2c` |
 | [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-06-17 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-06-17 | 3KB | `facaa586` |
-| [docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md) |  | 2026-07-08 | 3KB | `7e0fdf41` |
-| [docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md) |  | 2026-07-10 | 9KB | `95daba6d` |
-| [docs/ML/benchmark_entry_based_amplitude_movement.py.md](docs/ML/benchmark_entry_based_amplitude_movement.py.md) |  | 2026-07-08 | 3KB | `e3cb4d50` |
-| [docs/ML/benchmark_entry_based_movement_filter.py.md](docs/ML/benchmark_entry_based_movement_filter.py.md) |  | 2026-07-08 | 4KB | `7dde5fcc` |
-| [docs/ML/benchmark_entry_based_movement_filter_freeze.py.md](docs/ML/benchmark_entry_based_movement_filter_freeze.py.md) |  | 2026-07-08 | 6KB | `89fd386a` |
-| [docs/ML/benchmark_entry_based_next_open_closeout.py.md](docs/ML/benchmark_entry_based_next_open_closeout.py.md) |  | 2026-07-05 | 4KB | `07a4b4b8` |
-| [docs/ML/benchmark_entry_based_powerful_tabular.py.md](docs/ML/benchmark_entry_based_powerful_tabular.py.md) |  | 2026-07-06 | 2KB | `36dab164` |
-| [docs/ML/benchmark_entry_based_sequence_transformer.py.md](docs/ML/benchmark_entry_based_sequence_transformer.py.md) |  | 2026-07-07 | 3KB | `0977f096` |
-| [docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md](docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md) |  | 2026-07-04 | 4KB | `69b30968` |
+| [docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime.py.md) |  | 2026-07-20 | 3KB | `7e0fdf41` |
+| [docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md](docs/ML/benchmark_direction_inside_frozen_movement_regime_rich_features.py.md) |  | 2026-07-20 | 9KB | `95daba6d` |
+| [docs/ML/benchmark_entry_based_amplitude_movement.py.md](docs/ML/benchmark_entry_based_amplitude_movement.py.md) |  | 2026-07-20 | 3KB | `e3cb4d50` |
+| [docs/ML/benchmark_entry_based_movement_filter.py.md](docs/ML/benchmark_entry_based_movement_filter.py.md) |  | 2026-07-20 | 4KB | `7dde5fcc` |
+| [docs/ML/benchmark_entry_based_movement_filter_freeze.py.md](docs/ML/benchmark_entry_based_movement_filter_freeze.py.md) |  | 2026-07-20 | 6KB | `89fd386a` |
+| [docs/ML/benchmark_entry_based_next_open_closeout.py.md](docs/ML/benchmark_entry_based_next_open_closeout.py.md) |  | 2026-07-20 | 4KB | `07a4b4b8` |
+| [docs/ML/benchmark_entry_based_powerful_tabular.py.md](docs/ML/benchmark_entry_based_powerful_tabular.py.md) |  | 2026-07-20 | 2KB | `36dab164` |
+| [docs/ML/benchmark_entry_based_sequence_transformer.py.md](docs/ML/benchmark_entry_based_sequence_transformer.py.md) |  | 2026-07-20 | 3KB | `0977f096` |
+| [docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md](docs/ML/benchmark_entry_based_updn_fractal_selection_ablation.py.md) |  | 2026-07-20 | 4KB | `69b30968` |
 | [docs/ML/benchmark_entry_path_all_rows_ranking.py.md](docs/ML/benchmark_entry_path_all_rows_ranking.py.md) | All-rows ranking benchmark без offline `signal != 0` gate | 2026-06-17 | 1KB | `0bc4a19a` |
 | [docs/ML/benchmark_entry_path_causal_surrogate.py.md](docs/ML/benchmark_entry_path_causal_surrogate.py.md) | Causal surrogate benchmark для offline `label_all().signal` | 2026-06-17 | 1KB | `2fd85fde` |
 | [docs/ML/benchmark_entry_path_direct_bar_model.py.md](docs/ML/benchmark_entry_path_direct_bar_model.py.md) | Direct BUY/SELL/SKIP benchmark для каждого бара | 2026-06-17 | 1KB | `531300e8` |
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
+| [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 4KB | `115020ab` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
 | [docs/ML/benchmark_stage5_transformer_breach.py.md](docs/ML/benchmark_stage5_transformer_breach.py.md) |  | 2026-06-29 | 15KB | `3ebbe683` |
-| [docs/ML/benchmark_stage6_2_price_action.py.md](docs/ML/benchmark_stage6_2_price_action.py.md) |  | 2026-06-30 | 1KB | `a58e9a24` |
+| [docs/ML/benchmark_stage6_2_price_action.py.md](docs/ML/benchmark_stage6_2_price_action.py.md) |  | 2026-07-20 | 1KB | `a58e9a24` |
 | [docs/ML/benchmark_system_correlation.py.md](docs/ML/benchmark_system_correlation.py.md) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам | 2026-06-17 | 4KB | `a0880c32` |
 | [docs/ML/benchmark_take_skip_lib_pic_selection.py.md](docs/ML/benchmark_take_skip_lib_pic_selection.py.md) | Внешний отбор `take_skip_v2` по признакам `lib_PIC` | 2026-06-17 | 2KB | `085cc039` |
 | [docs/ML/benchmark_telemetry_frequency_calibration.py.md](docs/ML/benchmark_telemetry_frequency_calibration.py.md) | Калибровка частого diagnostic telemetry режима | 2026-06-17 | 2KB | `ca3c7c56` |
@@ -85,7 +86,7 @@
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-06-17 | 25KB | `aa7313db` |
 | [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-06-17 | 45KB | `30e59566` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-06-17 | 4KB | `dba0c943` |
-| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-07-02 | 4KB | `48d1282c` |
+| [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-07-20 | 4KB | `48d1282c` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](docs/audit/2026-05-18-codex-direct-direction-chain-audit.md) |  | 2026-06-17 | 8KB | `4771493f` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-rebuild.md](docs/audit/2026-05-18-codex-direct-direction-chain-rebuild.md) |  | 2026-06-17 | 6KB | `799c481b` |
 | [docs/audit/2026-05-18-consolidated-audit.md](docs/audit/2026-05-18-consolidated-audit.md) |  | 2026-06-17 | 16KB | `68633e6f` |
@@ -104,40 +105,40 @@
 | [docs/audit/2026-06-14-stage4-brainstorm_mimo.md](docs/audit/2026-06-14-stage4-brainstorm_mimo.md) |  | 2026-06-17 | 7KB | `875a2cfd` |
 | [docs/audit/2026-06-14-stage4-brainstorm_result_codex.md](docs/audit/2026-06-14-stage4-brainstorm_result_codex.md) |  | 2026-06-17 | 20KB | `fd09b561` |
 | [docs/audit/2026-06-14-stage4-brainstorm_result_deep.md](docs/audit/2026-06-14-stage4-brainstorm_result_deep.md) |  | 2026-06-17 | 12KB | `faaf44f1` |
-| [docs/audit/2026-06-30-Вывод-по-Stage-5-6.md](docs/audit/2026-06-30-Вывод-по-Stage-5-6.md) |  | 2026-06-30 | 7KB | `91677d99` |
+| [docs/audit/2026-06-30-Вывод-по-Stage-5-6.md](docs/audit/2026-06-30-Вывод-по-Stage-5-6.md) |  | 2026-07-20 | 7KB | `91677d99` |
 | [docs/audit/README.md](docs/audit/README.md) | Карта audit-артефактов и правил их обновления | 2026-06-17 | 1KB | `67407e17` |
-| [docs/audit/next.md](docs/audit/next.md) | Текущий research-план после Stage 4.3 | 2026-07-05 | 6KB | `eee5c1aa` |
-| [docs/audit/project_structure_modernisation.md](docs/audit/project_structure_modernisation.md) |  | 2026-07-05 | 5KB | `d94835a0` |
-| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-07-04 | 30KB | `5f0824a6` |
+| [docs/audit/next.md](docs/audit/next.md) | Текущий research-план после Stage 4.3 | 2026-07-20 | 6KB | `eee5c1aa` |
+| [docs/audit/project_structure_modernisation.md](docs/audit/project_structure_modernisation.md) |  | 2026-07-20 | 5KB | `d94835a0` |
+| [docs/audit/to_do.md](docs/audit/to_do.md) |  | 2026-07-20 | 30KB | `5f0824a6` |
 | [docs/dataset_description.md](docs/dataset_description.md) | Описание структуры датасета Nero.csv | 2026-06-17 | 14KB | `11dc384e` |
-| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-07-10 | 10KB | `96323966` |
-| [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-06-17 | 5KB | `6bf55f21` |
-| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-07-04 | 7KB | `3edd87b0` |
-| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-07-04 | 31KB | `a1757847` |
+| [docs/methodology/00-research-management.md](docs/methodology/00-research-management.md) |  | 2026-07-20 | 10KB | `96323966` |
+| [docs/methodology/01-raw-data-inventory.md](docs/methodology/01-raw-data-inventory.md) |  | 2026-07-21 | 6KB | `e4dad714` |
+| [docs/methodology/02-data-pipeline.md](docs/methodology/02-data-pipeline.md) |  | 2026-07-20 | 7KB | `3edd87b0` |
+| [docs/methodology/03-feature-contract-leakage.md](docs/methodology/03-feature-contract-leakage.md) |  | 2026-07-20 | 31KB | `a1757847` |
 | [docs/methodology/03b-feature-selection.md](docs/methodology/03b-feature-selection.md) |  | 2026-06-20 | 6KB | `13a28e56` |
-| [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-07-04 | 10KB | `b6ff44a6` |
-| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-07-04 | 7KB | `345e9aa3` |
-| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-07-04 | 9KB | `23deff38` |
-| [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-07-04 | 9KB | `da8d2f19` |
-| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-07-04 | 5KB | `5446b875` |
-| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-07-04 | 15KB | `8f893540` |
-| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-07-10 | 10KB | `a60ba219` |
-| [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-07-04 | 3KB | `17fd2a84` |
-| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-07-04 | 11KB | `50b2880b` |
-| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-07-04 | 9KB | `807d77f8` |
-| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-04 | 2KB | `49598973` |
-| [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-07-04 | 2KB | `25d2c512` |
-| [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-07-04 | 3KB | `c463688b` |
-| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-07-10 | 8KB | `33c362bc` |
-| [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-07-04 | 3KB | `1adbbef0` |
-| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-07-04 | 5KB | `fa741eb4` |
-| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-07-04 | 5KB | `0b8f610b` |
-| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-07-10 | 5KB | `5c52891f` |
-| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject | 2026-07-10 | 30KB | `1fe0bd1d` |
-| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог fractal feature profiles | 2026-07-04 | 15KB | `968752dc` |
-| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-07-04 | 17KB | `4e827324` |
-| [docs/methodology/A8-feature-target-catalog.md](docs/methodology/A8-feature-target-catalog.md) |  | 2026-07-02 | 19KB | `c3844712` |
-| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-10 | 9KB | `1b8afdb4` |
+| [docs/methodology/04-labeling.md](docs/methodology/04-labeling.md) |  | 2026-07-20 | 10KB | `b6ff44a6` |
+| [docs/methodology/05-eda-data-quality.md](docs/methodology/05-eda-data-quality.md) |  | 2026-07-20 | 7KB | `345e9aa3` |
+| [docs/methodology/06-temporal-split.md](docs/methodology/06-temporal-split.md) |  | 2026-07-20 | 9KB | `23deff38` |
+| [docs/methodology/06b-oracle-preflight.md](docs/methodology/06b-oracle-preflight.md) | Предварительная oracle-проверка теоретического потолка торговой постановки | 2026-07-20 | 9KB | `da8d2f19` |
+| [docs/methodology/07-baseline-first.md](docs/methodology/07-baseline-first.md) |  | 2026-07-20 | 5KB | `5446b875` |
+| [docs/methodology/08-model-development.md](docs/methodology/08-model-development.md) |  | 2026-07-20 | 15KB | `8f893540` |
+| [docs/methodology/09-validation-freeze.md](docs/methodology/09-validation-freeze.md) |  | 2026-07-21 | 11KB | `d394dfe6` |
+| [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-07-20 | 3KB | `17fd2a84` |
+| [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-07-20 | 11KB | `bf60036a` |
+| [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-07-21 | 12KB | `03a3ec5a` |
+| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-21 | 3KB | `c499309d` |
+| [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-07-20 | 2KB | `25d2c512` |
+| [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-07-20 | 3KB | `c463688b` |
+| [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-07-20 | 8KB | `33c362bc` |
+| [docs/methodology/A1-checklist-dev.md](docs/methodology/A1-checklist-dev.md) |  | 2026-07-20 | 3KB | `1adbbef0` |
+| [docs/methodology/A2-checklist-audit.md](docs/methodology/A2-checklist-audit.md) |  | 2026-07-20 | 5KB | `fa741eb4` |
+| [docs/methodology/A3-typical-false-conclusions.md](docs/methodology/A3-typical-false-conclusions.md) |  | 2026-07-20 | 5KB | `0b8f610b` |
+| [docs/methodology/A4-verdicts-stop-conditions.md](docs/methodology/A4-verdicts-stop-conditions.md) |  | 2026-07-20 | 5KB | `5c52891f` |
+| [docs/methodology/A5-post-mortem-diagnostics.md](docs/methodology/A5-post-mortem-diagnostics.md) | Post-mortem диагностика FAIL/reject | 2026-07-20 | 30KB | `1fe0bd1d` |
+| [docs/methodology/A6-fractal-feature-profile-catalog.md](docs/methodology/A6-fractal-feature-profile-catalog.md) | Каталог fractal feature profiles | 2026-07-20 | 15KB | `968752dc` |
+| [docs/methodology/A7-feature-distribution-audit.md](docs/methodology/A7-feature-distribution-audit.md) |  | 2026-07-20 | 17KB | `4e827324` |
+| [docs/methodology/A8-feature-target-catalog.md](docs/methodology/A8-feature-target-catalog.md) |  | 2026-07-20 | 19KB | `c3844712` |
+| [docs/methodology/README.md](docs/methodology/README.md) | Методика разработки и аудита ML-моделей ТС (16 этапов + oracle-preflight + приложения) | 2026-07-20 | 9KB | `1b8afdb4` |
 | [docs/processing/fractal_preprocessing.py.md](docs/processing/fractal_preprocessing.py.md) | Документация общей сортировки фракталов | 2026-06-17 | 856B | `876e71c9` |
 | [docs/processing/label_main.py.md](docs/processing/label_main.py.md) | Документация оркестратора | 2026-06-17 | 4KB | `22a08f92` |
 | [docs/processing/label_signals.py.md](docs/processing/label_signals.py.md) | Логика маркировки signal/predict | 2026-06-17 | 2KB | `8f996d16` |
@@ -232,28 +233,29 @@
 | [docs/superpowers/plans/2026-06-25-stage5_2-time-to-breach-regression.md](docs/superpowers/plans/2026-06-25-stage5_2-time-to-breach-regression.md) |  | 2026-06-29 | 57KB | `db7d429b` |
 | [docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md](docs/superpowers/plans/2026-06-26-stage5_3-time-to-breach-target-reformulation.md) |  | 2026-06-29 | 53KB | `ff2c4787` |
 | [docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md](docs/superpowers/plans/2026-06-29-stage5_4-fast-price-atr-ablation.md) |  | 2026-06-29 | 71KB | `e8302278` |
-| [docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md](docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md) |  | 2026-06-29 | 59KB | `0938de7a` |
-| [docs/superpowers/plans/2026-06-29-stage6_1-baseline-plus-geometry-delta.md](docs/superpowers/plans/2026-06-29-stage6_1-baseline-plus-geometry-delta.md) |  | 2026-06-29 | 18KB | `44ae1cf9` |
-| [docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md](docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md) |  | 2026-06-29 | 51KB | `9a0874f6` |
-| [docs/superpowers/plans/2026-06-30-regression-updn-target-foundation.md](docs/superpowers/plans/2026-06-30-regression-updn-target-foundation.md) |  | 2026-06-30 | 30KB | `e53b90e4` |
-| [docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-06-30 | 60KB | `83351232` |
-| [docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md](docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-06-30 | 36KB | `29a57550` |
-| [docs/superpowers/plans/2026-06-30-stage6_3-h6-feature-parity-check.md](docs/superpowers/plans/2026-06-30-stage6_3-h6-feature-parity-check.md) |  | 2026-06-30 | 9KB | `77ba0972` |
-| [docs/superpowers/plans/2026-07-02-entry-based-updn-price-feature-matrix.md](docs/superpowers/plans/2026-07-02-entry-based-updn-price-feature-matrix.md) |  | 2026-07-02 | 22KB | `467bd49b` |
-| [docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md](docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-02 | 22KB | `44b4a44c` |
-| [docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md](docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 57KB | `085a51d6` |
-| [docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-03 | 34KB | `b3050713` |
-| [docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md](docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-04 | 49KB | `4e328f17` |
-| [docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md](docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md) |  | 2026-07-05 | 63KB | `2df74471` |
-| [docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md](docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md) |  | 2026-07-06 | 44KB | `a90560aa` |
-| [docs/superpowers/plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md](docs/superpowers/plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md) |  | 2026-07-07 | 72KB | `6cc1d967` |
-| [docs/superpowers/plans/2026-07-07-entry-based-movement-filter-design.md](docs/superpowers/plans/2026-07-07-entry-based-movement-filter-design.md) |  | 2026-07-08 | 20KB | `15fae646` |
-| [docs/superpowers/plans/2026-07-08-direction-inside-frozen-mask-rich-features.md](docs/superpowers/plans/2026-07-08-direction-inside-frozen-mask-rich-features.md) |  | 2026-07-08 | 19KB | `cd9c7d72` |
-| [docs/superpowers/plans/2026-07-08-direction-inside-frozen-movement-regime.md](docs/superpowers/plans/2026-07-08-direction-inside-frozen-movement-regime.md) |  | 2026-07-08 | 55KB | `76b5b4e7` |
-| [docs/superpowers/plans/2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/superpowers/plans/2026-07-08-entry-based-movement-filter-replication-freeze.md) |  | 2026-07-08 | 30KB | `e3869a19` |
-| [docs/superpowers/plans/2026-07-10-direction-inside-frozen-mask-narrow-replication.md](docs/superpowers/plans/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) |  | 2026-07-10 | 41KB | `5647980d` |
-| [docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md](docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md) |  | 2026-07-10 | 55KB | `a3ae710a` |
-| [docs/superpowers/plans/2026-07-10-research-first-methodology-sync.md](docs/superpowers/plans/2026-07-10-research-first-methodology-sync.md) |  | 2026-07-10 | 17KB | `9c8ea4c0` |
+| [docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md](docs/superpowers/plans/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md) |  | 2026-07-20 | 59KB | `0938de7a` |
+| [docs/superpowers/plans/2026-06-29-stage6_1-baseline-plus-geometry-delta.md](docs/superpowers/plans/2026-06-29-stage6_1-baseline-plus-geometry-delta.md) |  | 2026-07-20 | 18KB | `44ae1cf9` |
+| [docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md](docs/superpowers/plans/2026-06-29-stage6_1-h12-relative-fractal-geometry.md) |  | 2026-07-20 | 51KB | `9a0874f6` |
+| [docs/superpowers/plans/2026-06-30-regression-updn-target-foundation.md](docs/superpowers/plans/2026-06-30-regression-updn-target-foundation.md) |  | 2026-07-20 | 30KB | `e53b90e4` |
+| [docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/superpowers/plans/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-07-20 | 60KB | `83351232` |
+| [docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md](docs/superpowers/plans/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-07-20 | 36KB | `29a57550` |
+| [docs/superpowers/plans/2026-06-30-stage6_3-h6-feature-parity-check.md](docs/superpowers/plans/2026-06-30-stage6_3-h6-feature-parity-check.md) |  | 2026-07-20 | 9KB | `77ba0972` |
+| [docs/superpowers/plans/2026-07-02-entry-based-updn-price-feature-matrix.md](docs/superpowers/plans/2026-07-02-entry-based-updn-price-feature-matrix.md) |  | 2026-07-20 | 22KB | `467bd49b` |
+| [docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md](docs/superpowers/plans/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-20 | 22KB | `44b4a44c` |
+| [docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md](docs/superpowers/plans/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-20 | 57KB | `085a51d6` |
+| [docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/superpowers/plans/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-20 | 34KB | `b3050713` |
+| [docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md](docs/superpowers/plans/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-20 | 49KB | `4e328f17` |
+| [docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md](docs/superpowers/plans/2026-07-05-entry-based-powerful-tabular-models.md) |  | 2026-07-20 | 63KB | `2df74471` |
+| [docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md](docs/superpowers/plans/2026-07-06-entry-based-fractal-sequence-transformer.md) |  | 2026-07-20 | 44KB | `a90560aa` |
+| [docs/superpowers/plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md](docs/superpowers/plans/2026-07-07-entry-based-amplitude-movement-regime-audit.md) |  | 2026-07-20 | 72KB | `6cc1d967` |
+| [docs/superpowers/plans/2026-07-07-entry-based-movement-filter-design.md](docs/superpowers/plans/2026-07-07-entry-based-movement-filter-design.md) |  | 2026-07-20 | 20KB | `15fae646` |
+| [docs/superpowers/plans/2026-07-08-direction-inside-frozen-mask-rich-features.md](docs/superpowers/plans/2026-07-08-direction-inside-frozen-mask-rich-features.md) |  | 2026-07-20 | 19KB | `cd9c7d72` |
+| [docs/superpowers/plans/2026-07-08-direction-inside-frozen-movement-regime.md](docs/superpowers/plans/2026-07-08-direction-inside-frozen-movement-regime.md) |  | 2026-07-20 | 55KB | `76b5b4e7` |
+| [docs/superpowers/plans/2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/superpowers/plans/2026-07-08-entry-based-movement-filter-replication-freeze.md) |  | 2026-07-20 | 30KB | `e3869a19` |
+| [docs/superpowers/plans/2026-07-10-direction-inside-frozen-mask-narrow-replication.md](docs/superpowers/plans/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) |  | 2026-07-20 | 41KB | `5647980d` |
+| [docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md](docs/superpowers/plans/2026-07-10-fractal0-price-entry-mechanics.md) |  | 2026-07-20 | 55KB | `a3ae710a` |
+| [docs/superpowers/plans/2026-07-10-research-first-methodology-sync.md](docs/superpowers/plans/2026-07-10-research-first-methodology-sync.md) |  | 2026-07-20 | 17KB | `9c8ea4c0` |
+| [docs/superpowers/plans/2026-07-20-fractal0-entry-exit-grid.md](docs/superpowers/plans/2026-07-20-fractal0-entry-exit-grid.md) |  | 2026-07-20 | 60KB | `61bf4737` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-20 | 8KB | `fb8abe8d` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
@@ -291,10 +293,11 @@
 | [docs/superpowers/specs/2026-06-24-stage5_1-structural-fractal-field-ablation-design.md](docs/superpowers/specs/2026-06-24-stage5_1-structural-fractal-field-ablation-design.md) |  | 2026-06-29 | 18KB | `7c2d03a8` |
 | [docs/superpowers/specs/2026-06-24-stage5_1b-updn-fields-and-shift-baseline-design.md](docs/superpowers/specs/2026-06-24-stage5_1b-updn-fields-and-shift-baseline-design.md) |  | 2026-06-29 | 32KB | `942aba53` |
 | [docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md](docs/superpowers/specs/2026-06-25-stage5_2-time-to-breach-regression-design.md) |  | 2026-06-29 | 23KB | `8c41f47b` |
-| [docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md](docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md) |  | 2026-06-29 | 3KB | `ad0ca2f6` |
-| [docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md](docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md) |  | 2026-07-08 | 11KB | `5731ade6` |
-| [docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md](docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md) |  | 2026-07-10 | 16KB | `8fa556cd` |
-| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-10 | 15KB | `f69190cc` |
+| [docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md](docs/superpowers/specs/2026-06-29-stage6_1-baseline-plus-geometry-delta-design.md) |  | 2026-07-20 | 3KB | `ad0ca2f6` |
+| [docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md](docs/superpowers/specs/2026-07-08-direction-inside-frozen-mask-rich-features-design.md) |  | 2026-07-20 | 11KB | `5731ade6` |
+| [docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md](docs/superpowers/specs/2026-07-10-research-first-methodology-redesign.md) |  | 2026-07-20 | 16KB | `8fa556cd` |
+| [docs/superpowers/specs/2026-07-20-fractal0-entry-exit-grid-design.md](docs/superpowers/specs/2026-07-20-fractal0-entry-exit-grid-design.md) |  | 2026-07-20 | 31KB | `b684a5b7` |
+| [docs/tests/tests.md](docs/tests/tests.md) |  | 2026-07-20 | 15KB | `f69190cc` |
 
 ## Reports
 
@@ -391,27 +394,28 @@
 | [docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md](docs/reports/2026-06-25-stage5_2-time-to-breach-regression.md) |  | 2026-06-29 | 17KB | `c99aba27` |
 | [docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md](docs/reports/2026-06-26-stage5_3-time-to-breach-target-reformulation.md) |  | 2026-06-29 | 17KB | `99983a37` |
 | [docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md](docs/reports/2026-06-29-stage5_4-fast-price-atr-ablation.md) |  | 2026-06-29 | 8KB | `c11ad432` |
-| [docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md](docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md) |  | 2026-06-29 | 9KB | `3f1cff23` |
-| [docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md](docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md) |  | 2026-06-30 | 18KB | `80774af5` |
-| [docs/reports/2026-06-30-regression-updn-target-foundation.md](docs/reports/2026-06-30-regression-updn-target-foundation.md) |  | 2026-07-01 | 15KB | `2e629297` |
-| [docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-06-30 | 13KB | `a7a26748` |
-| [docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md](docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-06-30 | 7KB | `674ecf07` |
-| [docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md](docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md) |  | 2026-06-30 | 13KB | `04a16eec` |
-| [docs/reports/2026-07-01-regression-updn-ratio-audit.md](docs/reports/2026-07-01-regression-updn-ratio-audit.md) |  | 2026-07-02 | 13KB | `8991f98e` |
-| [docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md](docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md) |  | 2026-07-03 | 17KB | `05a83fbe` |
-| [docs/reports/2026-07-02-next-open-entry-updn-foundation.md](docs/reports/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-03 | 14KB | `fcbbbaf2` |
-| [docs/reports/2026-07-02-regression-updn-already-moved-audit.md](docs/reports/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-02 | 11KB | `204ff3fc` |
-| [docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-04 | 17KB | `7ec6722b` |
-| [docs/reports/2026-07-04-entry-based-next-open-closeout.md](docs/reports/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-05 | 14KB | `4550f805` |
-| [docs/reports/2026-07-06-entry-based-powerful-tabular-models.md](docs/reports/2026-07-06-entry-based-powerful-tabular-models.md) |  | 2026-07-06 | 16KB | `77a6feb1` |
-| [docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md](docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md) |  | 2026-07-08 | 12KB | `fa358840` |
-| [docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md](docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md) |  | 2026-07-07 | 24KB | `9e5be1ad` |
-| [docs/reports/2026-07-07-entry-based-movement-filter-design.md](docs/reports/2026-07-07-entry-based-movement-filter-design.md) |  | 2026-07-08 | 10KB | `2522ea1a` |
-| [docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md](docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md) |  | 2026-07-08 | 8KB | `6c380c1b` |
-| [docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md) | Итоговый отчёт freeze-репликации одного entry-based movement-filter без direction/PnL/PF и без открытия `locked_test` | 2026-07-08 | 13KB | `bf821cdf` |
-| [docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) |  | 2026-07-09 | 9KB | `28c0eb53` |
-| [docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md](docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) |  | 2026-07-10 | 8KB | `85885de8` |
+| [docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md](docs/reports/2026-06-29-stage6_0-outcome-based-triple-barrier-foundation.md) |  | 2026-07-20 | 9KB | `3f1cff23` |
+| [docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md](docs/reports/2026-06-29-stage6_1-h12-relative-fractal-geometry.md) |  | 2026-07-20 | 18KB | `80774af5` |
+| [docs/reports/2026-06-30-regression-updn-target-foundation.md](docs/reports/2026-06-30-regression-updn-target-foundation.md) |  | 2026-07-20 | 15KB | `2e629297` |
+| [docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md](docs/reports/2026-06-30-stage6_2-h12-price-action-feature-family.md) |  | 2026-07-20 | 13KB | `a7a26748` |
+| [docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md](docs/reports/2026-06-30-stage6_2-range-w1-postmortem.md) |  | 2026-07-20 | 7KB | `674ecf07` |
+| [docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md](docs/reports/2026-06-30-stage6_3-h6-feature-parity-check.md) |  | 2026-07-20 | 13KB | `04a16eec` |
+| [docs/reports/2026-07-01-regression-updn-ratio-audit.md](docs/reports/2026-07-01-regression-updn-ratio-audit.md) |  | 2026-07-20 | 13KB | `8991f98e` |
+| [docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md](docs/reports/2026-07-02-entry-based-updn-price-feature-matrix.md) |  | 2026-07-20 | 17KB | `05a83fbe` |
+| [docs/reports/2026-07-02-next-open-entry-updn-foundation.md](docs/reports/2026-07-02-next-open-entry-updn-foundation.md) |  | 2026-07-20 | 14KB | `fcbbbaf2` |
+| [docs/reports/2026-07-02-regression-updn-already-moved-audit.md](docs/reports/2026-07-02-regression-updn-already-moved-audit.md) |  | 2026-07-20 | 11KB | `204ff3fc` |
+| [docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md](docs/reports/2026-07-03-fractal-selection-ablation-entry-based-target.md) |  | 2026-07-20 | 17KB | `7ec6722b` |
+| [docs/reports/2026-07-04-entry-based-next-open-closeout.md](docs/reports/2026-07-04-entry-based-next-open-closeout.md) |  | 2026-07-20 | 14KB | `4550f805` |
+| [docs/reports/2026-07-06-entry-based-powerful-tabular-models.md](docs/reports/2026-07-06-entry-based-powerful-tabular-models.md) |  | 2026-07-20 | 16KB | `77a6feb1` |
+| [docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md](docs/reports/2026-07-07-entry-based-amplitude-movement-regime.md) |  | 2026-07-20 | 12KB | `fa358840` |
+| [docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md](docs/reports/2026-07-07-entry-based-fractal-sequence-transformer.md) |  | 2026-07-20 | 24KB | `9e5be1ad` |
+| [docs/reports/2026-07-07-entry-based-movement-filter-design.md](docs/reports/2026-07-07-entry-based-movement-filter-design.md) |  | 2026-07-20 | 10KB | `2522ea1a` |
+| [docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md](docs/reports/2026-07-08-direction-inside-frozen-movement-regime.md) |  | 2026-07-20 | 8KB | `6c380c1b` |
+| [docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md](docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md) | Итоговый отчёт freeze-репликации одного entry-based movement-filter без direction/PnL/PF и без открытия `locked_test` | 2026-07-20 | 13KB | `bf821cdf` |
+| [docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md](docs/reports/2026-07-09-direction-inside-frozen-movement-regime-rich-features.md) |  | 2026-07-20 | 9KB | `28c0eb53` |
+| [docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md](docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) |  | 2026-07-20 | 8KB | `85885de8` |
 | [docs/reports/2026-07-10-fractal0-price-entry-mechanics.md](docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) |  | 2026-07-20 | 6KB | `f147cfc6` |
+| [docs/reports/2026-07-21-fractal0-entry-exit-grid.md](docs/reports/2026-07-21-fractal0-entry-exit-grid.md) |  | 2026-07-21 | 11KB | `5f296cbe` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -420,19 +424,20 @@
 |------|-------------|--------|----------|------|------|
 | [ML/README.md](ML/README.md) |  |  | 2026-06-17 | 17KB | `8e6c2c98` |
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-17 | 4KB | `dd55ee84` |
-| [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | ✅ | 2026-07-02 | 28KB | `04568800` |
-| [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-06-30 | 28KB | `6450da16` |
+| [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | ✅ | 2026-07-20 | 28KB | `04568800` |
+| [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-07-20 | 28KB | `6450da16` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
-| [ML/baseline/benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | ✅ | 2026-07-08 | 30KB | `691d70bc` |
-| [ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py) | Rich feature direction check and narrow seed replication inside frozen movement mask with resume/progress | ✅ | 2026-07-10 | 74KB | `b2680e6e` |
-| [ML/baseline/benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | ✅ | 2026-07-08 | 59KB | `f107dda3` |
-| [ML/baseline/benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | ⚠️ | 2026-07-08 | 27KB | `099f88d6` |
-| [ML/baseline/benchmark_entry_based_movement_filter_freeze.py](ML/baseline/benchmark_entry_based_movement_filter_freeze.py) | Entry-based movement filter freeze runner | ✅ | 2026-07-08 | 33KB | `0e12e5a3` |
-| [ML/baseline/benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | Entry-based closeout runner | ✅ | 2026-07-05 | 32KB | `e118810a` |
-| [ML/baseline/benchmark_entry_based_powerful_tabular.py](ML/baseline/benchmark_entry_based_powerful_tabular.py) | Entry-based tabular runner | ✅ | 2026-07-06 | 45KB | `09236427` |
-| [ML/baseline/benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | ✅ | 2026-07-06 | 46KB | `f8d73f1a` |
-| [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | ✅ | 2026-07-04 | 51KB | `cbbee1d3` |
-| [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | ✅ | 2026-07-03 | 30KB | `1dd98792` |
+| [ML/baseline/benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | ✅ | 2026-07-20 | 30KB | `691d70bc` |
+| [ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py) | Rich feature direction check and narrow seed replication inside frozen movement mask with resume/progress | ✅ | 2026-07-20 | 74KB | `b2680e6e` |
+| [ML/baseline/benchmark_entry_based_amplitude_movement.py](ML/baseline/benchmark_entry_based_amplitude_movement.py) | Entry-based amplitude movement-regime audit | ✅ | 2026-07-20 | 59KB | `f107dda3` |
+| [ML/baseline/benchmark_entry_based_movement_filter.py](ML/baseline/benchmark_entry_based_movement_filter.py) | Entry-based simple movement filter | ⚠️ | 2026-07-20 | 27KB | `099f88d6` |
+| [ML/baseline/benchmark_entry_based_movement_filter_freeze.py](ML/baseline/benchmark_entry_based_movement_filter_freeze.py) | Entry-based movement filter freeze runner | ✅ | 2026-07-20 | 33KB | `0e12e5a3` |
+| [ML/baseline/benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | Entry-based closeout runner | ✅ | 2026-07-20 | 32KB | `e118810a` |
+| [ML/baseline/benchmark_entry_based_powerful_tabular.py](ML/baseline/benchmark_entry_based_powerful_tabular.py) | Entry-based tabular runner | ✅ | 2026-07-20 | 45KB | `09236427` |
+| [ML/baseline/benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | ✅ | 2026-07-20 | 46KB | `f8d73f1a` |
+| [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | ✅ | 2026-07-20 | 51KB | `cbbee1d3` |
+| [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | ✅ | 2026-07-20 | 30KB | `1dd98792` |
+| [ML/baseline/benchmark_fractal0_entry_exit_grid.py](ML/baseline/benchmark_fractal0_entry_exit_grid.py) | Fractal0 entry/exit grid с OHLC-симуляцией, ML-exit и permutation correction | ✅ | 2026-07-21 | 61KB | `754f8bcc` |
 | [ML/baseline/benchmark_fractal0_price_entry_mechanics.py](ML/baseline/benchmark_fractal0_price_entry_mechanics.py) | Oracle-preflight входа через возврат цены к зоне `fractal0_price` | ✅ | 2026-07-20 | 30KB | `9be21f55` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach | ✅ | 2026-06-17 | 13KB | `186f1abf` |
 | [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav | ✅ | 2026-06-17 | 26KB | `5b982cce` |
@@ -443,14 +448,14 @@
 | [ML/baseline/benchmark_fractal_stop_stage4_1.py](ML/baseline/benchmark_fractal_stop_stage4_1.py) | Stage 4.1 controls | ✅ | 2026-06-17 | 34KB | `455369c6` |
 | [ML/baseline/benchmark_fractal_stop_stage4_2.py](ML/baseline/benchmark_fractal_stop_stage4_2.py) | Stage 4.2 corrected diagnostic | ✅ | 2026-06-17 | 27KB | `1151a158` |
 | [ML/baseline/benchmark_limit_order_entry.py](ML/baseline/benchmark_limit_order_entry.py) |  |  | 2026-06-17 | 9KB | `32700fef` |
-| [ML/baseline/benchmark_next_open_entry_updn_foundation.py](ML/baseline/benchmark_next_open_entry_updn_foundation.py) | Next-open entry Up/Dn foundation | ✅ | 2026-07-02 | 19KB | `1463ca6c` |
-| [ML/baseline/benchmark_regression_updn_target_foundation.py](ML/baseline/benchmark_regression_updn_target_foundation.py) | Regression Up/Dn target foundation | ✅ | 2026-07-02 | 34KB | `742e5523` |
+| [ML/baseline/benchmark_next_open_entry_updn_foundation.py](ML/baseline/benchmark_next_open_entry_updn_foundation.py) | Next-open entry Up/Dn foundation | ✅ | 2026-07-20 | 19KB | `1463ca6c` |
+| [ML/baseline/benchmark_regression_updn_target_foundation.py](ML/baseline/benchmark_regression_updn_target_foundation.py) | Regression Up/Dn target foundation | ✅ | 2026-07-20 | 34KB | `742e5523` |
 | [ML/baseline/benchmark_stage4_6_clean_cycle.py](ML/baseline/benchmark_stage4_6_clean_cycle.py) | Stage 4.6 clean cycle | ✅ | 2026-06-17 | 17KB | `d9822538` |
 | [ML/baseline/benchmark_stage5_transformer_breach.py](ML/baseline/benchmark_stage5_transformer_breach.py) | Stage 5 Transformer Breach | 🏁 | 2026-06-29 | 363KB | `ae8b81ac` |
-| [ML/baseline/benchmark_stage6_1_relative_geometry.py](ML/baseline/benchmark_stage6_1_relative_geometry.py) | Stage 6.1 relative fractal geometry profiles | ✅ | 2026-06-29 | 32KB | `6cde1ca0` |
-| [ML/baseline/benchmark_stage6_2_price_action.py](ML/baseline/benchmark_stage6_2_price_action.py) | Stage 6.2 price-action family | ✅ | 2026-06-30 | 35KB | `d45863fb` |
-| [ML/baseline/benchmark_stage6_3_h6_feature_parity.py](ML/baseline/benchmark_stage6_3_h6_feature_parity.py) | Stage 6.3 H6/H12 feature parity audit | ✅ | 2026-06-30 | 28KB | `d3c357c7` |
-| [ML/baseline/benchmark_stage6_outcome_based.py](ML/baseline/benchmark_stage6_outcome_based.py) | Stage 6.0 outcome-based triple-barrier baseline | ✅ | 2026-06-29 | 40KB | `02e85144` |
+| [ML/baseline/benchmark_stage6_1_relative_geometry.py](ML/baseline/benchmark_stage6_1_relative_geometry.py) | Stage 6.1 relative fractal geometry profiles | ✅ | 2026-07-20 | 32KB | `6cde1ca0` |
+| [ML/baseline/benchmark_stage6_2_price_action.py](ML/baseline/benchmark_stage6_2_price_action.py) | Stage 6.2 price-action family | ✅ | 2026-07-20 | 35KB | `d45863fb` |
+| [ML/baseline/benchmark_stage6_3_h6_feature_parity.py](ML/baseline/benchmark_stage6_3_h6_feature_parity.py) | Stage 6.3 H6/H12 feature parity audit | ✅ | 2026-07-20 | 28KB | `d3c357c7` |
+| [ML/baseline/benchmark_stage6_outcome_based.py](ML/baseline/benchmark_stage6_outcome_based.py) | Stage 6.0 outcome-based triple-barrier baseline | ✅ | 2026-07-20 | 40KB | `02e85144` |
 | [ML/baseline/diagnose_stage4_3.py](ML/baseline/diagnose_stage4_3.py) | Stage 4.3 loss decomposition | ✅ | 2026-06-17 | 64KB | `84f7957b` |
 | [ML/baseline/diagnose_stage4_4.py](ML/baseline/diagnose_stage4_4.py) | Stage 4.4 micro-check | ✅ | 2026-06-17 | 29KB | `c1595a48` |
 | [ML/baseline/diagnose_stage4_5_exit_mechanics.py](ML/baseline/diagnose_stage4_5_exit_mechanics.py) | Stage 4.5 exit mechanics | ✅ | 2026-06-17 | 22KB | `2d551922` |
@@ -585,10 +590,10 @@
 | [ML/reports/current_feature_importance/report.md](ML/reports/current_feature_importance/report.md) |  |  | 2026-06-17 | 2KB | `c58147a6` |
 | [ML/reports/current_feature_importance/summary.json](ML/reports/current_feature_importance/summary.json) |  |  | 2026-06-17 | 498B | `a286b27a` |
 | [ML/reports/direct_direction_chain_audit/minimal_repro_checks.json](ML/reports/direct_direction_chain_audit/minimal_repro_checks.json) |  |  | 2026-06-17 | 3KB | `221806f9` |
-| [ML/reports/direction_inside_frozen_movement_regime.json](ML/reports/direction_inside_frozen_movement_regime.json) |  |  | 2026-07-08 | 22KB | `f879bd3a` |
+| [ML/reports/direction_inside_frozen_movement_regime.json](ML/reports/direction_inside_frozen_movement_regime.json) |  |  | 2026-07-20 | 22KB | `f879bd3a` |
 | [ML/reports/direction_only_signal.json](ML/reports/direction_only_signal.json) |  |  | 2026-06-17 | 2KB | `e760a7ba` |
-| [ML/reports/entry_based_movement_filter.json](ML/reports/entry_based_movement_filter.json) |  |  | 2026-07-08 | 5KB | `4df425e2` |
-| [ML/reports/entry_based_movement_filter_freeze.json](ML/reports/entry_based_movement_filter_freeze.json) |  |  | 2026-07-08 | 14KB | `e0dcfc86` |
+| [ML/reports/entry_based_movement_filter.json](ML/reports/entry_based_movement_filter.json) |  |  | 2026-07-20 | 5KB | `4df425e2` |
+| [ML/reports/entry_based_movement_filter_freeze.json](ML/reports/entry_based_movement_filter_freeze.json) |  |  | 2026-07-20 | 14KB | `e0dcfc86` |
 | [ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/run_metadata.json](ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/run_metadata.json) |  |  | 2026-06-17 | 95B | `5cc06b98` |
 | [ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/summary.json](ML/reports/entry_path_cross_instrument_robustness/eurusd_transfer/summary.json) |  |  | 2026-06-17 | 10KB | `f4c3f606` |
 | [ML/reports/entry_path_cross_instrument_robustness/gbpusd_transfer/run_metadata.json](ML/reports/entry_path_cross_instrument_robustness/gbpusd_transfer/run_metadata.json) |  |  | 2026-06-17 | 95B | `5cc06b98` |
@@ -763,6 +768,8 @@
 | [ML/reports/feature_bank_clean_comparison/summary.json](ML/reports/feature_bank_clean_comparison/summary.json) |  |  | 2026-06-17 | 1KB | `84b8ec2f` |
 | [ML/reports/feature_bank_comparison/report.md](ML/reports/feature_bank_comparison/report.md) |  |  | 2026-06-17 | 1KB | `f4f494ed` |
 | [ML/reports/feature_bank_comparison/summary.json](ML/reports/feature_bank_comparison/summary.json) |  |  | 2026-06-17 | 1KB | `97d30738` |
+| [ML/reports/fractal0_entry_exit_grid.json](ML/reports/fractal0_entry_exit_grid.json) |  |  | 2026-07-21 | 37KB | `dc87e719` |
+| [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
 | [ML/reports/fractal_ablation_test.json](ML/reports/fractal_ablation_test.json) |  |  | 2026-06-17 | 10KB | `5de28e52` |
 | [ML/reports/fractal_stop_breach_baseline.json](ML/reports/fractal_stop_breach_baseline.json) |  |  | 2026-06-17 | 12KB | `9920d61d` |
@@ -817,7 +824,7 @@
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json) |  |  | 2026-06-17 | 3KB | `5cb5fe58` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.md](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.md) |  |  | 2026-06-17 | 279B | `75a53f21` |
 | [ML/reports/n_boost_result.json](ML/reports/n_boost_result.json) |  |  | 2026-06-17 | 1KB | `9248dae1` |
-| [ML/reports/next_open_entry_updn_foundation.json](ML/reports/next_open_entry_updn_foundation.json) |  |  | 2026-07-02 | 22KB | `5e26459c` |
+| [ML/reports/next_open_entry_updn_foundation.json](ML/reports/next_open_entry_updn_foundation.json) |  |  | 2026-07-20 | 22KB | `5e26459c` |
 | [ML/reports/optuna_best_params_bilstm_regression.json](ML/reports/optuna_best_params_bilstm_regression.json) |  |  | 2026-06-17 | 496B | `b1a36a79` |
 | [ML/reports/optuna_best_params_cnn1d_classification.json](ML/reports/optuna_best_params_cnn1d_classification.json) |  |  | 2026-06-17 | 461B | `25ae2754` |
 | [ML/reports/optuna_best_params_transformer_regression_updn.json](ML/reports/optuna_best_params_transformer_regression_updn.json) |  |  | 2026-06-17 | 539B | `5a6d031a` |
@@ -850,7 +857,7 @@
 | [ML/reports/quantile_forward_validation/run_metadata.json](ML/reports/quantile_forward_validation/run_metadata.json) |  |  | 2026-06-17 | 554B | `eeb46771` |
 | [ML/reports/quantile_forward_validation/summary.json](ML/reports/quantile_forward_validation/summary.json) |  |  | 2026-06-17 | 440B | `f208a93b` |
 | [ML/reports/quantile_relaxed_composition/selected_baseline.json](ML/reports/quantile_relaxed_composition/selected_baseline.json) |  |  | 2026-06-17 | 118B | `3c6efae0` |
-| [ML/reports/regression_updn_already_moved_audit.json](ML/reports/regression_updn_already_moved_audit.json) |  |  | 2026-07-02 | 42KB | `0ceab39f` |
+| [ML/reports/regression_updn_already_moved_audit.json](ML/reports/regression_updn_already_moved_audit.json) |  |  | 2026-07-20 | 42KB | `0ceab39f` |
 | [ML/reports/reproducibility_report_12H.md](ML/reports/reproducibility_report_12H.md) |  |  | 2026-06-17 | 1KB | `c9af48ba` |
 | [ML/reports/rf_gridsearch.json](ML/reports/rf_gridsearch.json) |  |  | 2026-06-17 | 1KB | `66d3935f` |
 | [ML/reports/signal_export_parity/original_plus_path_20260420/summary.json](ML/reports/signal_export_parity/original_plus_path_20260420/summary.json) |  |  | 2026-06-17 | 3KB | `b17fa136` |
@@ -870,7 +877,7 @@
 | [ML/reports/stage5_0d_diagnostic_screening.json](ML/reports/stage5_0d_diagnostic_screening.json) |  |  | 2026-06-24 | 36KB | `53265c38` |
 | [ML/reports/stage5_prep_diagnostics.json](ML/reports/stage5_prep_diagnostics.json) |  |  | 2026-06-17 | 4KB | `50fdcdd1` |
 | [ML/reports/stage5_transformer_breach.json](ML/reports/stage5_transformer_breach.json) |  |  | 2026-06-20 | 32KB | `3d15c106` |
-| [ML/reports/stage6_2_range_w1_postmortem.json](ML/reports/stage6_2_range_w1_postmortem.json) |  |  | 2026-06-30 | 7KB | `30a164cf` |
+| [ML/reports/stage6_2_range_w1_postmortem.json](ML/reports/stage6_2_range_w1_postmortem.json) |  |  | 2026-07-20 | 7KB | `30a164cf` |
 | [ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json](ML/reports/system_correlation_portfolio/manifest_xauusd_systems.json) |  |  | 2026-06-17 | 2KB | `a2d1b9ae` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/run_metadata.json) |  |  | 2026-06-17 | 160B | `295db8d3` |
 | [ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json](ML/reports/system_correlation_portfolio/xauusd_system_correlation/summary.json) |  |  | 2026-06-17 | 8KB | `6f06d60e` |
@@ -1097,11 +1104,11 @@
 | [processing/fractal_preprocessing.py](processing/fractal_preprocessing.py) | Общая сортировка фракталов внутри строки для training/online | ✅ | 2026-06-17 | 3KB | `37670f70` |
 | [processing/label_audit.py](processing/label_audit.py) | Аудит разметки и контрактов labels | ✅ | 2026-06-17 | 4KB | `29974629` |
 | [processing/label_main.py](processing/label_main.py) | CLI оркестратор pipeline | 🏁 | 2026-06-29 | 16KB | `ecd899bb` |
-| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-07-02 | 69KB | `0145d44a` |
+| [processing/label_signals.py](processing/label_signals.py) | Маркировка signal/predict/UpDn | 🏁 | 2026-07-20 | 69KB | `0145d44a` |
 | [processing/normalize.py](processing/normalize.py) | Построчная нормализация признаков | 🏁 | 2026-06-17 | 28KB | `109b2cc6` |
 | [processing/online_causal_preprocessing.py](processing/online_causal_preprocessing.py) | Online-safe preprocessing | ✅ | 2026-06-17 | 4KB | `c194aa91` |
 | [processing/purge_split.py](processing/purge_split.py) | Purge/embargo границ train/val/test | ✅ | 2026-06-17 | 2KB | `9b5e1faf` |
-| [processing/rebuild_xauusd_top_level_updn.py](processing/rebuild_xauusd_top_level_updn.py) | Пересборка top-level Up/Dn для XAUUSD | ✅ | 2026-07-02 | 5KB | `ee31485e` |
+| [processing/rebuild_xauusd_top_level_updn.py](processing/rebuild_xauusd_top_level_updn.py) | Пересборка top-level Up/Dn для XAUUSD | ✅ | 2026-07-20 | 5KB | `ee31485e` |
 
 ## API
 
@@ -1173,16 +1180,16 @@
 | [tests/test_diagnose_stage4_3.py](tests/test_diagnose_stage4_3.py) |  |  | 2026-06-17 | 7KB | `744416e4` |
 | [tests/test_diagnose_stage4_4.py](tests/test_diagnose_stage4_4.py) |  |  | 2026-06-17 | 5KB | `92b2ee48` |
 | [tests/test_diagnose_stage5_prep.py](tests/test_diagnose_stage5_prep.py) |  |  | 2026-06-17 | 3KB | `bdbbbf12` |
-| [tests/test_direction_inside_frozen_movement_regime.py](tests/test_direction_inside_frozen_movement_regime.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py` | ✅ | 2026-07-08 | 22KB | `0e4763c3` |
-| [tests/test_direction_inside_frozen_movement_regime_rich_features.py](tests/test_direction_inside_frozen_movement_regime_rich_features.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py` | ✅ | 2026-07-10 | 31KB | `a4f9cfcb` |
-| [tests/test_entry_based_amplitude_movement.py](tests/test_entry_based_amplitude_movement.py) | entry-based amplitude movement-regime audit | ✅ | 2026-07-08 | 34KB | `4789fd32` |
-| [tests/test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | ⚠️ | 2026-07-08 | 16KB | `c32b142a` |
-| [tests/test_entry_based_movement_filter_freeze.py](tests/test_entry_based_movement_filter_freeze.py) | `ML/baseline/benchmark_entry_based_movement_filter_freeze.py` | ✅ | 2026-07-08 | 16KB | `84faba19` |
-| [tests/test_entry_based_next_open_closeout.py](tests/test_entry_based_next_open_closeout.py) | entry-based closeout runner | ✅ | 2026-07-05 | 14KB | `d407400f` |
-| [tests/test_entry_based_powerful_tabular.py](tests/test_entry_based_powerful_tabular.py) | entry-based powerful tabular runner | ✅ | 2026-07-06 | 18KB | `ea7f4653` |
-| [tests/test_entry_based_sequence_transformer.py](tests/test_entry_based_sequence_transformer.py) | entry-based sequence Transformer runner | ✅ | 2026-07-06 | 12KB | `11a3aecc` |
-| [tests/test_entry_based_updn_fractal_selection_ablation.py](tests/test_entry_based_updn_fractal_selection_ablation.py) | entry-based fractal ablation runner | ✅ | 2026-07-04 | 16KB | `68712af1` |
-| [tests/test_entry_based_updn_price_feature_matrix.py](tests/test_entry_based_updn_price_feature_matrix.py) | `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py` | ✅ | 2026-07-03 | 14KB | `9f72d46c` |
+| [tests/test_direction_inside_frozen_movement_regime.py](tests/test_direction_inside_frozen_movement_regime.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime.py` | ✅ | 2026-07-20 | 22KB | `0e4763c3` |
+| [tests/test_direction_inside_frozen_movement_regime_rich_features.py](tests/test_direction_inside_frozen_movement_regime_rich_features.py) | `ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py` | ✅ | 2026-07-20 | 31KB | `a4f9cfcb` |
+| [tests/test_entry_based_amplitude_movement.py](tests/test_entry_based_amplitude_movement.py) | entry-based amplitude movement-regime audit | ✅ | 2026-07-20 | 34KB | `4789fd32` |
+| [tests/test_entry_based_movement_filter.py](tests/test_entry_based_movement_filter.py) | `ML/baseline/benchmark_entry_based_movement_filter.py` | ⚠️ | 2026-07-20 | 16KB | `c32b142a` |
+| [tests/test_entry_based_movement_filter_freeze.py](tests/test_entry_based_movement_filter_freeze.py) | `ML/baseline/benchmark_entry_based_movement_filter_freeze.py` | ✅ | 2026-07-20 | 16KB | `84faba19` |
+| [tests/test_entry_based_next_open_closeout.py](tests/test_entry_based_next_open_closeout.py) | entry-based closeout runner | ✅ | 2026-07-20 | 14KB | `d407400f` |
+| [tests/test_entry_based_powerful_tabular.py](tests/test_entry_based_powerful_tabular.py) | entry-based powerful tabular runner | ✅ | 2026-07-20 | 18KB | `ea7f4653` |
+| [tests/test_entry_based_sequence_transformer.py](tests/test_entry_based_sequence_transformer.py) | entry-based sequence Transformer runner | ✅ | 2026-07-20 | 12KB | `11a3aecc` |
+| [tests/test_entry_based_updn_fractal_selection_ablation.py](tests/test_entry_based_updn_fractal_selection_ablation.py) | entry-based fractal ablation runner | ✅ | 2026-07-20 | 16KB | `68712af1` |
+| [tests/test_entry_based_updn_price_feature_matrix.py](tests/test_entry_based_updn_price_feature_matrix.py) | `ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py` | ✅ | 2026-07-20 | 14KB | `9f72d46c` |
 | [tests/test_entry_path_direct_direction_targets.py](tests/test_entry_path_direct_direction_targets.py) |  |  | 2026-06-17 | 3KB | `f28963bf` |
 | [tests/test_entry_path_dual_stream_transformer.py](tests/test_entry_path_dual_stream_transformer.py) | `ML/models/entry_path_dual_stream_transformer.py` | ✅ | 2026-06-17 | 1KB | `e9c80f90` |
 | [tests/test_entry_path_feature_bank.py](tests/test_entry_path_feature_bank.py) | `ML/entry_path_feature_bank.py` | ✅ | 2026-06-17 | 3KB | `8ee46497` |
@@ -1209,11 +1216,12 @@
 | [tests/test_feature_bank_comparison_diagnostics.py](tests/test_feature_bank_comparison_diagnostics.py) | `ML/feature_bank_comparison_diagnostics.py` | ✅ | 2026-06-17 | 3KB | `83c6338e` |
 | [tests/test_feature_importance_diagnostics.py](tests/test_feature_importance_diagnostics.py) | `ML/feature_importance_diagnostics.py` | ✅ | 2026-06-17 | 2KB | `666e9ecb` |
 | [tests/test_feature_screen_entry_path.py](tests/test_feature_screen_entry_path.py) | `ML/feature_screen_entry_path.py` | ✅ | 2026-06-17 | 567B | `b99a62db` |
+| [tests/test_fractal0_entry_exit_grid.py](tests/test_fractal0_entry_exit_grid.py) | `ML/baseline/benchmark_fractal0_entry_exit_grid.py` | ✅ | 2026-07-21 | 19KB | `895a59d6` |
 | [tests/test_fractal0_price_entry_mechanics.py](tests/test_fractal0_price_entry_mechanics.py) | `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` | ✅ | 2026-07-20 | 10KB | `c364834b` |
 | [tests/test_fractal_level_feature_builder.py](tests/test_fractal_level_feature_builder.py) |  |  | 2026-06-17 | 8KB | `dae37ed1` |
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-06-17 | 831B | `6bed18cd` |
 | [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-06-17 | 9KB | `3cc10cfe` |
-| [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-07-02 | 6KB | `9c704c7e` |
+| [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-07-20 | 6KB | `9c704c7e` |
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-06-17 | 3KB | `025247c8` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-06-17 | 2KB | `5d44f49d` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-06-17 | 3KB | `14cd19b8` |
@@ -1221,14 +1229,14 @@
 | [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-17 | 3KB | `281dac57` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-06-17 | 8KB | `f2a68e78` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-17 | 1KB | `de0eeac6` |
-| [tests/test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | ✅ | 2026-07-02 | 3KB | `b453393c` |
+| [tests/test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | ✅ | 2026-07-20 | 3KB | `b453393c` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-06-17 | 1KB | `7d04f504` |
 | [tests/test_online_tester_reconciliation.py](tests/test_online_tester_reconciliation.py) |  |  | 2026-06-17 | 7KB | `e461ccdf` |
 | [tests/test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | ✅ | 2026-06-17 | 1KB | `8be56a6e` |
 | [tests/test_prepare_entry_path_mt4_parity.py](tests/test_prepare_entry_path_mt4_parity.py) | `ML/prepare_entry_path_mt4_parity.py` | ✅ | 2026-06-17 | 1KB | `43e1848e` |
-| [tests/test_rebuild_xauusd_top_level_updn.py](tests/test_rebuild_xauusd_top_level_updn.py) |  |  | 2026-07-02 | 3KB | `5554cbb1` |
-| [tests/test_regression_updn_already_moved_audit.py](tests/test_regression_updn_already_moved_audit.py) | `ML/baseline/analyze_regression_updn_already_moved_audit.py` | ✅ | 2026-07-02 | 7KB | `a41a8003` |
-| [tests/test_regression_updn_target_foundation.py](tests/test_regression_updn_target_foundation.py) | `ML/baseline/benchmark_regression_updn_target_foundation.py` | ✅ | 2026-06-30 | 10KB | `ae507443` |
+| [tests/test_rebuild_xauusd_top_level_updn.py](tests/test_rebuild_xauusd_top_level_updn.py) |  |  | 2026-07-20 | 3KB | `5554cbb1` |
+| [tests/test_regression_updn_already_moved_audit.py](tests/test_regression_updn_already_moved_audit.py) | `ML/baseline/analyze_regression_updn_already_moved_audit.py` | ✅ | 2026-07-20 | 7KB | `a41a8003` |
+| [tests/test_regression_updn_target_foundation.py](tests/test_regression_updn_target_foundation.py) | `ML/baseline/benchmark_regression_updn_target_foundation.py` | ✅ | 2026-07-20 | 10KB | `ae507443` |
 | [tests/test_run_entry_path_live_safe_retrain.py](tests/test_run_entry_path_live_safe_retrain.py) |  |  | 2026-06-17 | 3KB | `0ed8f0c4` |
 | [tests/test_run_entry_path_quantile_live_safe_retrain.py](tests/test_run_entry_path_quantile_live_safe_retrain.py) |  |  | 2026-06-17 | 6KB | `5f3b4b02` |
 | [tests/test_run_take_skip_trailing_stop_matrix.py](tests/test_run_take_skip_trailing_stop_matrix.py) |  |  | 2026-06-17 | 3KB | `7c59dae6` |
@@ -1243,11 +1251,11 @@
 | [tests/test_stage4_5_exit_mechanics.py](tests/test_stage4_5_exit_mechanics.py) |  |  | 2026-06-17 | 5KB | `6e91f20c` |
 | [tests/test_stage4_6_clean_cycle.py](tests/test_stage4_6_clean_cycle.py) |  |  | 2026-06-17 | 3KB | `5f2c5556` |
 | [tests/test_stage5_transformer_breach.py](tests/test_stage5_transformer_breach.py) | Stage 5.0 Transformer Breach: профили признаков, tensor shapes, corridor validation, модель, split guard | ✅ | 2026-06-29 | 195KB | `90ebfbb7` |
-| [tests/test_stage6_1_relative_geometry.py](tests/test_stage6_1_relative_geometry.py) | `ML/baseline/benchmark_stage6_1_relative_geometry.py` | ✅ | 2026-06-29 | 18KB | `7c87a914` |
-| [tests/test_stage6_2_price_action.py](tests/test_stage6_2_price_action.py) | `ML/baseline/benchmark_stage6_2_price_action.py` | ✅ | 2026-06-30 | 13KB | `e5bf3730` |
-| [tests/test_stage6_2_range_w1_postmortem.py](tests/test_stage6_2_range_w1_postmortem.py) | `ML/baseline/analyze_stage6_2_range_w1_postmortem.py` | ✅ | 2026-06-30 | 6KB | `2fc4c754` |
-| [tests/test_stage6_3_h6_feature_parity.py](tests/test_stage6_3_h6_feature_parity.py) | `ML/baseline/benchmark_stage6_3_h6_feature_parity.py` | ✅ | 2026-06-30 | 16KB | `e099f106` |
-| [tests/test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) | `ML/baseline/benchmark_stage6_outcome_based.py` | ✅ | 2026-06-29 | 10KB | `fe6c4420` |
+| [tests/test_stage6_1_relative_geometry.py](tests/test_stage6_1_relative_geometry.py) | `ML/baseline/benchmark_stage6_1_relative_geometry.py` | ✅ | 2026-07-20 | 18KB | `7c87a914` |
+| [tests/test_stage6_2_price_action.py](tests/test_stage6_2_price_action.py) | `ML/baseline/benchmark_stage6_2_price_action.py` | ✅ | 2026-07-20 | 13KB | `e5bf3730` |
+| [tests/test_stage6_2_range_w1_postmortem.py](tests/test_stage6_2_range_w1_postmortem.py) | `ML/baseline/analyze_stage6_2_range_w1_postmortem.py` | ✅ | 2026-07-20 | 6KB | `2fc4c754` |
+| [tests/test_stage6_3_h6_feature_parity.py](tests/test_stage6_3_h6_feature_parity.py) | `ML/baseline/benchmark_stage6_3_h6_feature_parity.py` | ✅ | 2026-07-20 | 16KB | `e099f106` |
+| [tests/test_stage6_outcome_based.py](tests/test_stage6_outcome_based.py) | `ML/baseline/benchmark_stage6_outcome_based.py` | ✅ | 2026-07-20 | 10KB | `fe6c4420` |
 | [tests/test_take_skip_lib_pic_feature_matrix.py](tests/test_take_skip_lib_pic_feature_matrix.py) | `ML/run_take_skip_lib_pic_feature_matrix.py` и `ML/models/take_skip_dual_stream_transformer.py` | ✅ | 2026-06-17 | 6KB | `df9c696d` |
 | [tests/test_take_skip_original_contour_feature_matrix.py](tests/test_take_skip_original_contour_feature_matrix.py) | `ML/run_take_skip_original_contour_feature_matrix.py` | ✅ | 2026-06-17 | 9KB | `88acdeac` |
 | [tests/test_take_skip_trailing_stop_task.py](tests/test_take_skip_trailing_stop_task.py) |  |  | 2026-06-17 | 7KB | `f917ec48` |
@@ -1273,82 +1281,84 @@
 | [MT/.vscode/settings.json](MT/.vscode/settings.json) |  |  | 2026-06-17 | 928B | `d6834b74` |
 | [MT/MQL4/.vscode/settings.json](MT/MQL4/.vscode/settings.json) |  |  | 2026-06-17 | 927B | `c3c0af89` |
 | [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-06-17 | 12KB | `02964edd` |
-| [MT/MQL4/Include/Arrays/Array.mqh](MT/MQL4/Include/Arrays/Array.mqh) |  |  | 2026-05-27 | 6KB | `29d804ca` |
-| [MT/MQL4/Include/Arrays/ArrayChar.mqh](MT/MQL4/Include/Arrays/ArrayChar.mqh) |  |  | 2026-05-27 | 23KB | `3df8fe54` |
-| [MT/MQL4/Include/Arrays/ArrayDouble.mqh](MT/MQL4/Include/Arrays/ArrayDouble.mqh) |  |  | 2026-05-27 | 24KB | `c44a2bc3` |
-| [MT/MQL4/Include/Arrays/ArrayFloat.mqh](MT/MQL4/Include/Arrays/ArrayFloat.mqh) |  |  | 2026-05-27 | 24KB | `92fa9ff2` |
-| [MT/MQL4/Include/Arrays/ArrayInt.mqh](MT/MQL4/Include/Arrays/ArrayInt.mqh) |  |  | 2026-05-27 | 23KB | `ebbf910b` |
-| [MT/MQL4/Include/Arrays/ArrayLong.mqh](MT/MQL4/Include/Arrays/ArrayLong.mqh) |  |  | 2026-05-27 | 23KB | `6ff220ef` |
-| [MT/MQL4/Include/Arrays/ArrayObj.mqh](MT/MQL4/Include/Arrays/ArrayObj.mqh) |  |  | 2026-05-27 | 24KB | `d0b3a268` |
-| [MT/MQL4/Include/Arrays/ArrayShort.mqh](MT/MQL4/Include/Arrays/ArrayShort.mqh) |  |  | 2026-05-27 | 24KB | `60d79bb6` |
-| [MT/MQL4/Include/Arrays/ArrayString.mqh](MT/MQL4/Include/Arrays/ArrayString.mqh) |  |  | 2026-05-27 | 24KB | `83273ae5` |
-| [MT/MQL4/Include/Arrays/List.mqh](MT/MQL4/Include/Arrays/List.mqh) |  |  | 2026-05-27 | 20KB | `63551a44` |
-| [MT/MQL4/Include/Arrays/Tree.mqh](MT/MQL4/Include/Arrays/Tree.mqh) |  |  | 2026-05-27 | 13KB | `6f58f568` |
-| [MT/MQL4/Include/Arrays/TreeNode.mqh](MT/MQL4/Include/Arrays/TreeNode.mqh) |  |  | 2026-05-27 | 6KB | `4c496c31` |
+| [MT/MQL4/Experts/MACD Sample.mq4](MT/MQL4/Experts/MACD Sample.mq4) |  |  | 2026-07-21 | 6KB | `0a6a5d9d` |
+| [MT/MQL4/Experts/Moving Average.mq4](MT/MQL4/Experts/Moving Average.mq4) |  |  | 2026-07-21 | 5KB | `7710f58a` |
+| [MT/MQL4/Include/Arrays/Array.mqh](MT/MQL4/Include/Arrays/Array.mqh) |  |  | 2026-07-21 | 6KB | `29d804ca` |
+| [MT/MQL4/Include/Arrays/ArrayChar.mqh](MT/MQL4/Include/Arrays/ArrayChar.mqh) |  |  | 2026-07-21 | 23KB | `3df8fe54` |
+| [MT/MQL4/Include/Arrays/ArrayDouble.mqh](MT/MQL4/Include/Arrays/ArrayDouble.mqh) |  |  | 2026-07-21 | 24KB | `c44a2bc3` |
+| [MT/MQL4/Include/Arrays/ArrayFloat.mqh](MT/MQL4/Include/Arrays/ArrayFloat.mqh) |  |  | 2026-07-21 | 24KB | `92fa9ff2` |
+| [MT/MQL4/Include/Arrays/ArrayInt.mqh](MT/MQL4/Include/Arrays/ArrayInt.mqh) |  |  | 2026-07-21 | 23KB | `ebbf910b` |
+| [MT/MQL4/Include/Arrays/ArrayLong.mqh](MT/MQL4/Include/Arrays/ArrayLong.mqh) |  |  | 2026-07-21 | 23KB | `6ff220ef` |
+| [MT/MQL4/Include/Arrays/ArrayObj.mqh](MT/MQL4/Include/Arrays/ArrayObj.mqh) |  |  | 2026-07-21 | 24KB | `d0b3a268` |
+| [MT/MQL4/Include/Arrays/ArrayShort.mqh](MT/MQL4/Include/Arrays/ArrayShort.mqh) |  |  | 2026-07-21 | 24KB | `60d79bb6` |
+| [MT/MQL4/Include/Arrays/ArrayString.mqh](MT/MQL4/Include/Arrays/ArrayString.mqh) |  |  | 2026-07-21 | 24KB | `83273ae5` |
+| [MT/MQL4/Include/Arrays/List.mqh](MT/MQL4/Include/Arrays/List.mqh) |  |  | 2026-07-21 | 20KB | `63551a44` |
+| [MT/MQL4/Include/Arrays/Tree.mqh](MT/MQL4/Include/Arrays/Tree.mqh) |  |  | 2026-07-21 | 13KB | `6f58f568` |
+| [MT/MQL4/Include/Arrays/TreeNode.mqh](MT/MQL4/Include/Arrays/TreeNode.mqh) |  |  | 2026-07-21 | 6KB | `4c496c31` |
 | [MT/MQL4/Include/COUNT.mqh](MT/MQL4/Include/COUNT.mqh) |  |  | 2026-06-17 | 8KB | `2ec8513b` |
-| [MT/MQL4/Include/Canvas/Canvas.mqh](MT/MQL4/Include/Canvas/Canvas.mqh) |  |  | 2026-05-27 | 82KB | `35bff7bb` |
-| [MT/MQL4/Include/ChartObjects/ChartObject.mqh](MT/MQL4/Include/ChartObjects/ChartObject.mqh) |  |  | 2026-05-27 | 41KB | `1fe4ca68` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectPanel.mqh](MT/MQL4/Include/ChartObjects/ChartObjectPanel.mqh) |  |  | 2026-05-27 | 7KB | `185cc1c1` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsArrows.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsArrows.mqh) |  |  | 2026-05-27 | 23KB | `1bdc4250` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsBmpControls.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsBmpControls.mqh) |  |  | 2026-05-27 | 20KB | `cd93d9d3` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsChannels.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsChannels.mqh) |  |  | 2026-05-27 | 11KB | `681634d9` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsFibo.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsFibo.mqh) |  |  | 2026-05-27 | 17KB | `9a593088` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsGann.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsGann.mqh) |  |  | 2026-05-27 | 16KB | `f7a2a428` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsLines.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsLines.mqh) |  |  | 2026-05-27 | 15KB | `870b6a4c` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsShapes.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsShapes.mqh) |  |  | 2026-05-27 | 7KB | `ed4de27c` |
-| [MT/MQL4/Include/ChartObjects/ChartObjectsTxtControls.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsTxtControls.mqh) |  |  | 2026-05-27 | 36KB | `e2dac30a` |
-| [MT/MQL4/Include/Charts/Chart.mqh](MT/MQL4/Include/Charts/Chart.mqh) |  |  | 2026-05-27 | 62KB | `1a0d0ee5` |
-| [MT/MQL4/Include/Controls/BmpButton.mqh](MT/MQL4/Include/Controls/BmpButton.mqh) |  |  | 2026-05-27 | 11KB | `e6636dc2` |
-| [MT/MQL4/Include/Controls/Button.mqh](MT/MQL4/Include/Controls/Button.mqh) |  |  | 2026-05-27 | 6KB | `b420f9ff` |
-| [MT/MQL4/Include/Controls/CheckBox.mqh](MT/MQL4/Include/Controls/CheckBox.mqh) |  |  | 2026-05-27 | 7KB | `5c78edfa` |
-| [MT/MQL4/Include/Controls/CheckGroup.mqh](MT/MQL4/Include/Controls/CheckGroup.mqh) |  |  | 2026-05-27 | 13KB | `396afe09` |
-| [MT/MQL4/Include/Controls/ComboBox.mqh](MT/MQL4/Include/Controls/ComboBox.mqh) |  |  | 2026-05-27 | 13KB | `6eddc276` |
-| [MT/MQL4/Include/Controls/DateDropList.mqh](MT/MQL4/Include/Controls/DateDropList.mqh) |  |  | 2026-05-27 | 14KB | `64f7cc0b` |
-| [MT/MQL4/Include/Controls/DatePicker.mqh](MT/MQL4/Include/Controls/DatePicker.mqh) |  |  | 2026-05-27 | 10KB | `e4fb2dba` |
-| [MT/MQL4/Include/Controls/Defines.mqh](MT/MQL4/Include/Controls/Defines.mqh) |  |  | 2026-05-27 | 12KB | `24dff7f9` |
-| [MT/MQL4/Include/Controls/Dialog.mqh](MT/MQL4/Include/Controls/Dialog.mqh) |  |  | 2026-05-27 | 37KB | `08542849` |
-| [MT/MQL4/Include/Controls/Edit.mqh](MT/MQL4/Include/Controls/Edit.mqh) |  |  | 2026-05-27 | 8KB | `55d19722` |
-| [MT/MQL4/Include/Controls/Label.mqh](MT/MQL4/Include/Controls/Label.mqh) |  |  | 2026-05-27 | 4KB | `69bc9423` |
-| [MT/MQL4/Include/Controls/ListView.mqh](MT/MQL4/Include/Controls/ListView.mqh) |  |  | 2026-05-27 | 19KB | `cf4da8db` |
-| [MT/MQL4/Include/Controls/Panel.mqh](MT/MQL4/Include/Controls/Panel.mqh) |  |  | 2026-05-27 | 5KB | `c3e6d302` |
-| [MT/MQL4/Include/Controls/Picture.mqh](MT/MQL4/Include/Controls/Picture.mqh) |  |  | 2026-05-27 | 5KB | `12aeafe8` |
-| [MT/MQL4/Include/Controls/RadioButton.mqh](MT/MQL4/Include/Controls/RadioButton.mqh) |  |  | 2026-05-27 | 6KB | `1f730fd0` |
-| [MT/MQL4/Include/Controls/RadioGroup.mqh](MT/MQL4/Include/Controls/RadioGroup.mqh) |  |  | 2026-05-27 | 13KB | `ac89d216` |
-| [MT/MQL4/Include/Controls/Rect.mqh](MT/MQL4/Include/Controls/Rect.mqh) |  |  | 2026-05-27 | 10KB | `e3b2d600` |
-| [MT/MQL4/Include/Controls/Scrolls.mqh](MT/MQL4/Include/Controls/Scrolls.mqh) |  |  | 2026-05-27 | 26KB | `98c3c8a8` |
-| [MT/MQL4/Include/Controls/SpinEdit.mqh](MT/MQL4/Include/Controls/SpinEdit.mqh) |  |  | 2026-05-27 | 10KB | `40a03d96` |
-| [MT/MQL4/Include/Controls/TimePicker.mqh](MT/MQL4/Include/Controls/TimePicker.mqh) |  |  | 2026-05-27 | 14KB | `9ae8f057` |
-| [MT/MQL4/Include/Controls/Wnd.mqh](MT/MQL4/Include/Controls/Wnd.mqh) |  |  | 2026-05-27 | 29KB | `55cbb430` |
-| [MT/MQL4/Include/Controls/WndClient.mqh](MT/MQL4/Include/Controls/WndClient.mqh) |  |  | 2026-05-27 | 12KB | `560fb482` |
-| [MT/MQL4/Include/Controls/WndContainer.mqh](MT/MQL4/Include/Controls/WndContainer.mqh) |  |  | 2026-05-27 | 15KB | `8827a68b` |
-| [MT/MQL4/Include/Controls/WndObj.mqh](MT/MQL4/Include/Controls/WndObj.mqh) |  |  | 2026-05-27 | 10KB | `32def100` |
+| [MT/MQL4/Include/Canvas/Canvas.mqh](MT/MQL4/Include/Canvas/Canvas.mqh) |  |  | 2026-07-21 | 82KB | `35bff7bb` |
+| [MT/MQL4/Include/ChartObjects/ChartObject.mqh](MT/MQL4/Include/ChartObjects/ChartObject.mqh) |  |  | 2026-07-21 | 41KB | `1fe4ca68` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectPanel.mqh](MT/MQL4/Include/ChartObjects/ChartObjectPanel.mqh) |  |  | 2026-07-21 | 7KB | `185cc1c1` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsArrows.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsArrows.mqh) |  |  | 2026-07-21 | 23KB | `1bdc4250` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsBmpControls.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsBmpControls.mqh) |  |  | 2026-07-21 | 20KB | `cd93d9d3` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsChannels.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsChannels.mqh) |  |  | 2026-07-21 | 11KB | `681634d9` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsFibo.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsFibo.mqh) |  |  | 2026-07-21 | 17KB | `9a593088` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsGann.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsGann.mqh) |  |  | 2026-07-21 | 16KB | `f7a2a428` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsLines.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsLines.mqh) |  |  | 2026-07-21 | 15KB | `870b6a4c` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsShapes.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsShapes.mqh) |  |  | 2026-07-21 | 7KB | `ed4de27c` |
+| [MT/MQL4/Include/ChartObjects/ChartObjectsTxtControls.mqh](MT/MQL4/Include/ChartObjects/ChartObjectsTxtControls.mqh) |  |  | 2026-07-21 | 36KB | `e2dac30a` |
+| [MT/MQL4/Include/Charts/Chart.mqh](MT/MQL4/Include/Charts/Chart.mqh) |  |  | 2026-07-21 | 62KB | `1a0d0ee5` |
+| [MT/MQL4/Include/Controls/BmpButton.mqh](MT/MQL4/Include/Controls/BmpButton.mqh) |  |  | 2026-07-21 | 11KB | `e6636dc2` |
+| [MT/MQL4/Include/Controls/Button.mqh](MT/MQL4/Include/Controls/Button.mqh) |  |  | 2026-07-21 | 6KB | `b420f9ff` |
+| [MT/MQL4/Include/Controls/CheckBox.mqh](MT/MQL4/Include/Controls/CheckBox.mqh) |  |  | 2026-07-21 | 7KB | `5c78edfa` |
+| [MT/MQL4/Include/Controls/CheckGroup.mqh](MT/MQL4/Include/Controls/CheckGroup.mqh) |  |  | 2026-07-21 | 13KB | `396afe09` |
+| [MT/MQL4/Include/Controls/ComboBox.mqh](MT/MQL4/Include/Controls/ComboBox.mqh) |  |  | 2026-07-21 | 13KB | `6eddc276` |
+| [MT/MQL4/Include/Controls/DateDropList.mqh](MT/MQL4/Include/Controls/DateDropList.mqh) |  |  | 2026-07-21 | 14KB | `64f7cc0b` |
+| [MT/MQL4/Include/Controls/DatePicker.mqh](MT/MQL4/Include/Controls/DatePicker.mqh) |  |  | 2026-07-21 | 10KB | `e4fb2dba` |
+| [MT/MQL4/Include/Controls/Defines.mqh](MT/MQL4/Include/Controls/Defines.mqh) |  |  | 2026-07-21 | 12KB | `24dff7f9` |
+| [MT/MQL4/Include/Controls/Dialog.mqh](MT/MQL4/Include/Controls/Dialog.mqh) |  |  | 2026-07-21 | 37KB | `08542849` |
+| [MT/MQL4/Include/Controls/Edit.mqh](MT/MQL4/Include/Controls/Edit.mqh) |  |  | 2026-07-21 | 8KB | `55d19722` |
+| [MT/MQL4/Include/Controls/Label.mqh](MT/MQL4/Include/Controls/Label.mqh) |  |  | 2026-07-21 | 4KB | `69bc9423` |
+| [MT/MQL4/Include/Controls/ListView.mqh](MT/MQL4/Include/Controls/ListView.mqh) |  |  | 2026-07-21 | 19KB | `cf4da8db` |
+| [MT/MQL4/Include/Controls/Panel.mqh](MT/MQL4/Include/Controls/Panel.mqh) |  |  | 2026-07-21 | 5KB | `c3e6d302` |
+| [MT/MQL4/Include/Controls/Picture.mqh](MT/MQL4/Include/Controls/Picture.mqh) |  |  | 2026-07-21 | 5KB | `12aeafe8` |
+| [MT/MQL4/Include/Controls/RadioButton.mqh](MT/MQL4/Include/Controls/RadioButton.mqh) |  |  | 2026-07-21 | 6KB | `1f730fd0` |
+| [MT/MQL4/Include/Controls/RadioGroup.mqh](MT/MQL4/Include/Controls/RadioGroup.mqh) |  |  | 2026-07-21 | 13KB | `ac89d216` |
+| [MT/MQL4/Include/Controls/Rect.mqh](MT/MQL4/Include/Controls/Rect.mqh) |  |  | 2026-07-21 | 10KB | `e3b2d600` |
+| [MT/MQL4/Include/Controls/Scrolls.mqh](MT/MQL4/Include/Controls/Scrolls.mqh) |  |  | 2026-07-21 | 26KB | `98c3c8a8` |
+| [MT/MQL4/Include/Controls/SpinEdit.mqh](MT/MQL4/Include/Controls/SpinEdit.mqh) |  |  | 2026-07-21 | 10KB | `40a03d96` |
+| [MT/MQL4/Include/Controls/TimePicker.mqh](MT/MQL4/Include/Controls/TimePicker.mqh) |  |  | 2026-07-21 | 14KB | `9ae8f057` |
+| [MT/MQL4/Include/Controls/Wnd.mqh](MT/MQL4/Include/Controls/Wnd.mqh) |  |  | 2026-07-21 | 29KB | `55cbb430` |
+| [MT/MQL4/Include/Controls/WndClient.mqh](MT/MQL4/Include/Controls/WndClient.mqh) |  |  | 2026-07-21 | 12KB | `560fb482` |
+| [MT/MQL4/Include/Controls/WndContainer.mqh](MT/MQL4/Include/Controls/WndContainer.mqh) |  |  | 2026-07-21 | 15KB | `8827a68b` |
+| [MT/MQL4/Include/Controls/WndObj.mqh](MT/MQL4/Include/Controls/WndObj.mqh) |  |  | 2026-07-21 | 10KB | `32def100` |
 | [MT/MQL4/Include/ERRORs.mqh](MT/MQL4/Include/ERRORs.mqh) |  |  | 2026-06-17 | 20KB | `09c555ab` |
 | [MT/MQL4/Include/FUNCTIONS.mqh](MT/MQL4/Include/FUNCTIONS.mqh) |  |  | 2026-06-17 | 18KB | `038b6541` |
-| [MT/MQL4/Include/Files/File.mqh](MT/MQL4/Include/Files/File.mqh) |  |  | 2026-05-27 | 11KB | `d679fd98` |
-| [MT/MQL4/Include/Files/FileBin.mqh](MT/MQL4/Include/Files/FileBin.mqh) |  |  | 2026-05-27 | 20KB | `7d828698` |
-| [MT/MQL4/Include/Files/FilePipe.mqh](MT/MQL4/Include/Files/FilePipe.mqh) |  |  | 2026-05-27 | 12KB | `0272c296` |
-| [MT/MQL4/Include/Files/FileTxt.mqh](MT/MQL4/Include/Files/FileTxt.mqh) |  |  | 2026-05-27 | 2KB | `e92ef484` |
+| [MT/MQL4/Include/Files/File.mqh](MT/MQL4/Include/Files/File.mqh) |  |  | 2026-07-21 | 11KB | `d679fd98` |
+| [MT/MQL4/Include/Files/FileBin.mqh](MT/MQL4/Include/Files/FileBin.mqh) |  |  | 2026-07-21 | 20KB | `7d828698` |
+| [MT/MQL4/Include/Files/FilePipe.mqh](MT/MQL4/Include/Files/FilePipe.mqh) |  |  | 2026-07-21 | 12KB | `0272c296` |
+| [MT/MQL4/Include/Files/FileTxt.mqh](MT/MQL4/Include/Files/FileTxt.mqh) |  |  | 2026-07-21 | 2KB | `e92ef484` |
 | [MT/MQL4/Include/INPUT.mqh](MT/MQL4/Include/INPUT.mqh) |  |  | 2026-06-17 | 22KB | `27ad874f` |
-| [MT/MQL4/Include/Indicators/BillWilliams.mqh](MT/MQL4/Include/Indicators/BillWilliams.mqh) |  |  | 2026-05-27 | 29KB | `c27ca4b9` |
-| [MT/MQL4/Include/Indicators/Custom.mqh](MT/MQL4/Include/Indicators/Custom.mqh) |  |  | 2026-05-27 | 5KB | `97e02c64` |
-| [MT/MQL4/Include/Indicators/Indicator.mqh](MT/MQL4/Include/Indicators/Indicator.mqh) |  |  | 2026-05-27 | 6KB | `76365508` |
-| [MT/MQL4/Include/Indicators/Indicators.mqh](MT/MQL4/Include/Indicators/Indicators.mqh) |  |  | 2026-05-27 | 11KB | `7e280f54` |
-| [MT/MQL4/Include/Indicators/Oscilators.mqh](MT/MQL4/Include/Indicators/Oscilators.mqh) |  |  | 2026-05-27 | 55KB | `64f2642f` |
-| [MT/MQL4/Include/Indicators/Series.mqh](MT/MQL4/Include/Indicators/Series.mqh) |  |  | 2026-05-27 | 5KB | `f97ef82c` |
-| [MT/MQL4/Include/Indicators/TimeSeries.mqh](MT/MQL4/Include/Indicators/TimeSeries.mqh) |  |  | 2026-05-27 | 19KB | `9d9048a3` |
-| [MT/MQL4/Include/Indicators/Trend.mqh](MT/MQL4/Include/Indicators/Trend.mqh) |  |  | 2026-05-27 | 35KB | `81111941` |
-| [MT/MQL4/Include/Indicators/Volumes.mqh](MT/MQL4/Include/Indicators/Volumes.mqh) |  |  | 2026-05-27 | 11KB | `dd2a52e4` |
+| [MT/MQL4/Include/Indicators/BillWilliams.mqh](MT/MQL4/Include/Indicators/BillWilliams.mqh) |  |  | 2026-07-21 | 29KB | `c27ca4b9` |
+| [MT/MQL4/Include/Indicators/Custom.mqh](MT/MQL4/Include/Indicators/Custom.mqh) |  |  | 2026-07-21 | 5KB | `97e02c64` |
+| [MT/MQL4/Include/Indicators/Indicator.mqh](MT/MQL4/Include/Indicators/Indicator.mqh) |  |  | 2026-07-21 | 6KB | `76365508` |
+| [MT/MQL4/Include/Indicators/Indicators.mqh](MT/MQL4/Include/Indicators/Indicators.mqh) |  |  | 2026-07-21 | 11KB | `7e280f54` |
+| [MT/MQL4/Include/Indicators/Oscilators.mqh](MT/MQL4/Include/Indicators/Oscilators.mqh) |  |  | 2026-07-21 | 55KB | `64f2642f` |
+| [MT/MQL4/Include/Indicators/Series.mqh](MT/MQL4/Include/Indicators/Series.mqh) |  |  | 2026-07-21 | 5KB | `f97ef82c` |
+| [MT/MQL4/Include/Indicators/TimeSeries.mqh](MT/MQL4/Include/Indicators/TimeSeries.mqh) |  |  | 2026-07-21 | 19KB | `9d9048a3` |
+| [MT/MQL4/Include/Indicators/Trend.mqh](MT/MQL4/Include/Indicators/Trend.mqh) |  |  | 2026-07-21 | 35KB | `81111941` |
+| [MT/MQL4/Include/Indicators/Volumes.mqh](MT/MQL4/Include/Indicators/Volumes.mqh) |  |  | 2026-07-21 | 11KB | `dd2a52e4` |
 | [MT/MQL4/Include/MAIN.mqh](MT/MQL4/Include/MAIN.mqh) |  |  | 2026-06-17 | 10KB | `37231467` |
 | [MT/MQL4/Include/MM.mqh](MT/MQL4/Include/MM.mqh) |  |  | 2026-06-17 | 10KB | `c7d3005a` |
-| [MT/MQL4/Include/MovingAverages.mqh](MT/MQL4/Include/MovingAverages.mqh) |  |  | 2026-05-27 | 8KB | `d87e9a1b` |
+| [MT/MQL4/Include/MovingAverages.mqh](MT/MQL4/Include/MovingAverages.mqh) |  |  | 2026-07-21 | 8KB | `d87e9a1b` |
 | [MT/MQL4/Include/ORDERS.mqh](MT/MQL4/Include/ORDERS.mqh) |  |  | 2026-06-17 | 40KB | `fbab4671` |
 | [MT/MQL4/Include/OUTPUT.mqh](MT/MQL4/Include/OUTPUT.mqh) |  |  | 2026-06-17 | 19KB | `7ff1d32e` |
-| [MT/MQL4/Include/Object.mqh](MT/MQL4/Include/Object.mqh) |  |  | 2026-05-27 | 1KB | `6519631b` |
+| [MT/MQL4/Include/Object.mqh](MT/MQL4/Include/Object.mqh) |  |  | 2026-07-21 | 1KB | `6519631b` |
 | [MT/MQL4/Include/SERVICE.mqh](MT/MQL4/Include/SERVICE.mqh) |  |  | 2026-06-17 | 81KB | `67e9cd04` |
-| [MT/MQL4/Include/StdLibErr.mqh](MT/MQL4/Include/StdLibErr.mqh) |  |  | 2026-06-17 | 683B | `987aa510` |
-| [MT/MQL4/Include/Strings/String.mqh](MT/MQL4/Include/Strings/String.mqh) |  |  | 2026-05-27 | 13KB | `a2a8f645` |
-| [MT/MQL4/Include/Tools/DateTime.mqh](MT/MQL4/Include/Tools/DateTime.mqh) |  |  | 2026-05-27 | 17KB | `f1732e44` |
-| [MT/MQL4/Include/WinUser32.mqh](MT/MQL4/Include/WinUser32.mqh) |  |  | 2026-06-17 | 17KB | `c4be55b2` |
+| [MT/MQL4/Include/StdLibErr.mqh](MT/MQL4/Include/StdLibErr.mqh) |  |  | 2026-07-21 | 683B | `987aa510` |
+| [MT/MQL4/Include/Strings/String.mqh](MT/MQL4/Include/Strings/String.mqh) |  |  | 2026-07-21 | 13KB | `a2a8f645` |
+| [MT/MQL4/Include/Tools/DateTime.mqh](MT/MQL4/Include/Tools/DateTime.mqh) |  |  | 2026-07-21 | 17KB | `f1732e44` |
+| [MT/MQL4/Include/WinUser32.mqh](MT/MQL4/Include/WinUser32.mqh) |  |  | 2026-07-21 | 17KB | `c4be55b2` |
 | [MT/MQL4/Include/head_PIC.mqh](MT/MQL4/Include/head_PIC.mqh) |  |  | 2026-06-17 | 9KB | `b5a78736` |
 | [MT/MQL4/Include/iGRAPH.mqh](MT/MQL4/Include/iGRAPH.mqh) |  |  | 2026-06-17 | 38KB | `73d71482` |
 | [MT/MQL4/Include/lib_ATR.mqh](MT/MQL4/Include/lib_ATR.mqh) |  |  | 2026-06-17 | 2KB | `e8fa3ca7` |
@@ -1357,49 +1367,49 @@
 | [MT/MQL4/Include/lib_ML_Signal_TB.mqh](MT/MQL4/Include/lib_ML_Signal_TB.mqh) |  |  | 2026-06-17 | 8KB | `86f9658b` |
 | [MT/MQL4/Include/lib_ML_Signal_back.mqh](MT/MQL4/Include/lib_ML_Signal_back.mqh) |  |  | 2026-06-17 | 14KB | `996e3367` |
 | [MT/MQL4/Include/lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | ⚠️ | 2026-06-17 | 57KB | `75237554` |
-| [MT/MQL4/Include/stderror.mqh](MT/MQL4/Include/stderror.mqh) |  |  | 2026-06-17 | 9KB | `aec87c86` |
-| [MT/MQL4/Include/stdlib.mqh](MT/MQL4/Include/stdlib.mqh) |  |  | 2026-06-17 | 662B | `268bec52` |
-| [MT/MQL4/Indicators/ATR.mq4](MT/MQL4/Indicators/ATR.mq4) |  |  | 2026-06-17 | 3KB | `dd312b03` |
+| [MT/MQL4/Include/stderror.mqh](MT/MQL4/Include/stderror.mqh) |  |  | 2026-07-21 | 9KB | `aec87c86` |
+| [MT/MQL4/Include/stdlib.mqh](MT/MQL4/Include/stdlib.mqh) |  |  | 2026-07-21 | 662B | `268bec52` |
+| [MT/MQL4/Indicators/ATR.mq4](MT/MQL4/Indicators/ATR.mq4) |  |  | 2026-07-21 | 3KB | `dd312b03` |
 | [MT/MQL4/Indicators/ATR_original.mq4](MT/MQL4/Indicators/ATR_original.mq4) |  |  | 2026-06-17 | 3KB | `efe79c20` |
-| [MT/MQL4/Indicators/Accelerator.mq4](MT/MQL4/Indicators/Accelerator.mq4) |  |  | 2026-05-27 | 3KB | `245c5aa7` |
-| [MT/MQL4/Indicators/Accumulation.mq4](MT/MQL4/Indicators/Accumulation.mq4) |  |  | 2026-05-27 | 2KB | `a0c2fbe4` |
-| [MT/MQL4/Indicators/Alligator.mq4](MT/MQL4/Indicators/Alligator.mq4) |  |  | 2026-05-27 | 3KB | `82fea67e` |
-| [MT/MQL4/Indicators/Awesome.mq4](MT/MQL4/Indicators/Awesome.mq4) |  |  | 2026-05-27 | 3KB | `0e492ca3` |
-| [MT/MQL4/Indicators/Bands.mq4](MT/MQL4/Indicators/Bands.mq4) |  |  | 2026-05-27 | 4KB | `894a6a9f` |
-| [MT/MQL4/Indicators/Bears.mq4](MT/MQL4/Indicators/Bears.mq4) |  |  | 2026-05-27 | 2KB | `549f60ef` |
-| [MT/MQL4/Indicators/Bulls.mq4](MT/MQL4/Indicators/Bulls.mq4) |  |  | 2026-05-27 | 2KB | `80e8e544` |
-| [MT/MQL4/Indicators/CCI.mq4](MT/MQL4/Indicators/CCI.mq4) |  |  | 2026-05-27 | 4KB | `613fa2e1` |
-| [MT/MQL4/Indicators/Custom Moving Averages.mq4](MT/MQL4/Indicators/Custom Moving Averages.mq4) |  |  | 2026-05-27 | 6KB | `1aa756f5` |
-| [MT/MQL4/Indicators/Examples/SimplePanel/PanelDialog.mqh](MT/MQL4/Indicators/Examples/SimplePanel/PanelDialog.mqh) |  |  | 2026-05-27 | 15KB | `9a2575df` |
-| [MT/MQL4/Indicators/Examples/SimplePanel/SimplePanel.mq4](MT/MQL4/Indicators/Examples/SimplePanel/SimplePanel.mq4) |  |  | 2026-05-27 | 2KB | `98b689e0` |
-| [MT/MQL4/Indicators/Heiken Ashi.mq4](MT/MQL4/Indicators/Heiken Ashi.mq4) |  |  | 2026-05-27 | 4KB | `dc166238` |
-| [MT/MQL4/Indicators/Ichimoku.mq4](MT/MQL4/Indicators/Ichimoku.mq4) |  |  | 2026-05-27 | 6KB | `cd834b55` |
-| [MT/MQL4/Indicators/MACD.mq4](MT/MQL4/Indicators/MACD.mq4) |  |  | 2026-05-27 | 3KB | `11b86bdc` |
-| [MT/MQL4/Indicators/Momentum.mq4](MT/MQL4/Indicators/Momentum.mq4) |  |  | 2026-05-27 | 2KB | `4e49723b` |
-| [MT/MQL4/Indicators/OsMA.mq4](MT/MQL4/Indicators/OsMA.mq4) |  |  | 2026-05-27 | 3KB | `a4980656` |
-| [MT/MQL4/Indicators/Parabolic.mq4](MT/MQL4/Indicators/Parabolic.mq4) |  |  | 2026-05-27 | 7KB | `432cb924` |
-| [MT/MQL4/Indicators/RSI.mq4](MT/MQL4/Indicators/RSI.mq4) |  |  | 2026-05-27 | 4KB | `c3187582` |
-| [MT/MQL4/Indicators/Stochastic.mq4](MT/MQL4/Indicators/Stochastic.mq4) |  |  | 2026-05-27 | 5KB | `0ecf23fb` |
-| [MT/MQL4/Indicators/ZigZag.mq4](MT/MQL4/Indicators/ZigZag.mq4) |  |  | 2026-05-27 | 8KB | `511620e8` |
+| [MT/MQL4/Indicators/Accelerator.mq4](MT/MQL4/Indicators/Accelerator.mq4) |  |  | 2026-07-21 | 3KB | `245c5aa7` |
+| [MT/MQL4/Indicators/Accumulation.mq4](MT/MQL4/Indicators/Accumulation.mq4) |  |  | 2026-07-21 | 2KB | `a0c2fbe4` |
+| [MT/MQL4/Indicators/Alligator.mq4](MT/MQL4/Indicators/Alligator.mq4) |  |  | 2026-07-21 | 3KB | `82fea67e` |
+| [MT/MQL4/Indicators/Awesome.mq4](MT/MQL4/Indicators/Awesome.mq4) |  |  | 2026-07-21 | 3KB | `0e492ca3` |
+| [MT/MQL4/Indicators/Bands.mq4](MT/MQL4/Indicators/Bands.mq4) |  |  | 2026-07-21 | 4KB | `894a6a9f` |
+| [MT/MQL4/Indicators/Bears.mq4](MT/MQL4/Indicators/Bears.mq4) |  |  | 2026-07-21 | 2KB | `549f60ef` |
+| [MT/MQL4/Indicators/Bulls.mq4](MT/MQL4/Indicators/Bulls.mq4) |  |  | 2026-07-21 | 2KB | `80e8e544` |
+| [MT/MQL4/Indicators/CCI.mq4](MT/MQL4/Indicators/CCI.mq4) |  |  | 2026-07-21 | 4KB | `613fa2e1` |
+| [MT/MQL4/Indicators/Custom Moving Averages.mq4](MT/MQL4/Indicators/Custom Moving Averages.mq4) |  |  | 2026-07-21 | 6KB | `1aa756f5` |
+| [MT/MQL4/Indicators/Examples/SimplePanel/PanelDialog.mqh](MT/MQL4/Indicators/Examples/SimplePanel/PanelDialog.mqh) |  |  | 2026-07-21 | 15KB | `9a2575df` |
+| [MT/MQL4/Indicators/Examples/SimplePanel/SimplePanel.mq4](MT/MQL4/Indicators/Examples/SimplePanel/SimplePanel.mq4) |  |  | 2026-07-21 | 2KB | `98b689e0` |
+| [MT/MQL4/Indicators/Heiken Ashi.mq4](MT/MQL4/Indicators/Heiken Ashi.mq4) |  |  | 2026-07-21 | 4KB | `dc166238` |
+| [MT/MQL4/Indicators/Ichimoku.mq4](MT/MQL4/Indicators/Ichimoku.mq4) |  |  | 2026-07-21 | 6KB | `cd834b55` |
+| [MT/MQL4/Indicators/MACD.mq4](MT/MQL4/Indicators/MACD.mq4) |  |  | 2026-07-21 | 3KB | `11b86bdc` |
+| [MT/MQL4/Indicators/Momentum.mq4](MT/MQL4/Indicators/Momentum.mq4) |  |  | 2026-07-21 | 2KB | `4e49723b` |
+| [MT/MQL4/Indicators/OsMA.mq4](MT/MQL4/Indicators/OsMA.mq4) |  |  | 2026-07-21 | 3KB | `a4980656` |
+| [MT/MQL4/Indicators/Parabolic.mq4](MT/MQL4/Indicators/Parabolic.mq4) |  |  | 2026-07-21 | 7KB | `432cb924` |
+| [MT/MQL4/Indicators/RSI.mq4](MT/MQL4/Indicators/RSI.mq4) |  |  | 2026-07-21 | 4KB | `c3187582` |
+| [MT/MQL4/Indicators/Stochastic.mq4](MT/MQL4/Indicators/Stochastic.mq4) |  |  | 2026-07-21 | 5KB | `0ecf23fb` |
+| [MT/MQL4/Indicators/ZigZag.mq4](MT/MQL4/Indicators/ZigZag.mq4) |  |  | 2026-07-21 | 8KB | `511620e8` |
 | [MT/MQL4/Indicators/iATR.mq4](MT/MQL4/Indicators/iATR.mq4) |  |  | 2026-06-17 | 3KB | `2053ea50` |
 | [MT/MQL4/Indicators/iATRcycle.mq4](MT/MQL4/Indicators/iATRcycle.mq4) |  |  | 2026-06-17 | 2KB | `3a5033e7` |
-| [MT/MQL4/Indicators/iExposure.mq4](MT/MQL4/Indicators/iExposure.mq4) |  |  | 2026-05-27 | 8KB | `7d98a88b` |
+| [MT/MQL4/Indicators/iExposure.mq4](MT/MQL4/Indicators/iExposure.mq4) |  |  | 2026-07-21 | 8KB | `7d98a88b` |
 | [MT/MQL4/Indicators/iPIC.mq4](MT/MQL4/Indicators/iPIC.mq4) |  |  | 2026-06-17 | 13KB | `802c9a21` |
 | [MT/MQL4/Indicators/iPOC.mq4](MT/MQL4/Indicators/iPOC.mq4) |  |  | 2026-06-17 | 7KB | `4b4df898` |
 | [MT/MQL4/Indicators/iVolumeCluster.mq4](MT/MQL4/Indicators/iVolumeCluster.mq4) |  |  | 2026-06-17 | 44KB | `db9c3442` |
 | [MT/MQL4/Libraries/StdLibErr.mqh](MT/MQL4/Libraries/StdLibErr.mqh) |  |  | 2026-06-17 | 673B | `01044c60` |
 | [MT/MQL4/Libraries/WinUser32.mqh](MT/MQL4/Libraries/WinUser32.mqh) |  |  | 2026-06-17 | 17KB | `84f99057` |
 | [MT/MQL4/Libraries/stderror.mqh](MT/MQL4/Libraries/stderror.mqh) |  |  | 2026-06-17 | 9KB | `47505e6c` |
-| [MT/MQL4/Libraries/stdlib.mq4](MT/MQL4/Libraries/stdlib.mq4) |  |  | 2026-06-17 | 19KB | `cdb0a440` |
+| [MT/MQL4/Libraries/stdlib.mq4](MT/MQL4/Libraries/stdlib.mq4) |  |  | 2026-07-21 | 19KB | `cdb0a440` |
 | [MT/MQL4/Libraries/stdlib.mqh](MT/MQL4/Libraries/stdlib.mqh) |  |  | 2026-06-17 | 648B | `5695494a` |
 | [MT/MQL4/README.md](MT/MQL4/README.md) |  |  | 2026-06-20 | 820B | `4fc86c9a` |
-| [MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4](MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4) |  |  | 2026-06-17 | 2KB | `7d447b15` |
-| [MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4) |  |  | 2026-06-17 | 3KB | `d0dbff33` |
-| [MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4) |  |  | 2026-06-17 | 4KB | `c0c67ebe` |
+| [MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4](MT/MQL4/Scripts/Examples/DLL/DLLSampleTester.mq4) |  |  | 2026-07-21 | 2KB | `7d447b15` |
+| [MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClient.mq4) |  |  | 2026-07-21 | 3KB | `d0dbff33` |
+| [MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4](MT/MQL4/Scripts/Examples/Pipes/PipeClientPure.mq4) |  |  | 2026-07-21 | 4KB | `c0c67ebe` |
 | [MT/MQL4/Scripts/ExportOHLC.mq4](MT/MQL4/Scripts/ExportOHLC.mq4) |  |  | 2026-06-17 | 2KB | `134c533f` |
 | [MT/MQL4/Scripts/HistoryConvertor1002.mq4](MT/MQL4/Scripts/HistoryConvertor1002.mq4) |  |  | 2026-06-17 | 4KB | `2a904122` |
 | [MT/MQL4/Scripts/MATLABLOG.mq4](MT/MQL4/Scripts/MATLABLOG.mq4) |  |  | 2026-06-17 | 10KB | `01bef2dd` |
-| [MT/MQL4/Scripts/PeriodConverter.mq4](MT/MQL4/Scripts/PeriodConverter.mq4) |  |  | 2026-06-17 | 6KB | `b5a97900` |
+| [MT/MQL4/Scripts/PeriodConverter.mq4](MT/MQL4/Scripts/PeriodConverter.mq4) |  |  | 2026-07-21 | 6KB | `b5a97900` |
 | [MT/MQL4/Scripts/trade.mq4](MT/MQL4/Scripts/trade.mq4) |  |  | 2026-06-17 | 1KB | `7c2e252f` |
 | [MT/MQL4/Trash/iSIG_FALSE_BREAK.mqh](MT/MQL4/Trash/iSIG_FALSE_BREAK.mqh) |  |  | 2026-06-17 | 3KB | `98d2d8a4` |
 | [MT/MQL4/Trash/iSIG_FIRST_LEVELS.mqh](MT/MQL4/Trash/iSIG_FIRST_LEVELS.mqh) |  |  | 2026-06-17 | 2KB | `ec173678` |
@@ -1671,10 +1681,11 @@
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [wiki/.archive/execution-tracks-monolith-deprecated.md](wiki/.archive/execution-tracks-monolith-deprecated.md) |  | 2026-06-17 | 89KB | `11a5246a` |
+| [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-20 | 5KB | `329ace66` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-20 | 65KB | `0ead4cf1` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-21 | 5KB | `f663a24d` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-21 | 67KB | `eab07dfa` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1685,7 +1696,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-20 | 119KB | `cafb1e36` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-21 | 110KB | `f7cf10f1` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1706,10 +1717,11 @@
 |------|-------------|----------|------|------|
 | [.mimocode/plans/1781449924517-mighty-star.md](.mimocode/plans/1781449924517-mighty-star.md) |  | 2026-06-17 | 7KB | `a2896455` |
 | [.opencode/agents/reviewer.md](.opencode/agents/reviewer.md) |  | 2026-06-20 | 4KB | `4ec43f10` |
-| [.opencode/opencode.json](.opencode/opencode.json) |  | 2026-07-08 | 105B | `bd28a1b3` |
+| [.opencode/opencode.json](.opencode/opencode.json) |  | 2026-07-20 | 105B | `bd28a1b3` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-09 | 562B | `3b43b9eb` |
+| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-20 | 562B | `3b43b9eb` |
+| [.superpowers/sdd/run_task7_fractal0_grid.py](.superpowers/sdd/run_task7_fractal0_grid.py) |  | 2026-07-20 | 7KB | `a69dc580` |
 | [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-08 | 2KB | `1cf5c760` |
 | [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-08 | 3KB | `db11a291` |
 | [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-08 | 2KB | `62c882ef` |
@@ -1722,7 +1734,7 @@
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-09 | 1KB | `e832676a` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-09 | 2KB | `ecaad3c0` |
 | [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-09 | 1KB | `cbda9841` |
-| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-20 | 49KB | `d660b23c` |
+| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-20 | 49KB | `3a283a36` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |
 | [graphify-out/2026-07-08/.graphify_labels.json](graphify-out/2026-07-08/.graphify_labels.json) |  | 2026-07-08 | 48KB | `47ef2de8` |
@@ -1731,9 +1743,9 @@
 | [graphify-out/2026-07-09/GRAPH_REPORT.md](graphify-out/2026-07-09/GRAPH_REPORT.md) |  | 2026-07-09 | 290KB | `80ebee6a` |
 | [graphify-out/2026-07-10/.graphify_labels.json](graphify-out/2026-07-10/.graphify_labels.json) |  | 2026-07-10 | 49KB | `061b3f0c` |
 | [graphify-out/2026-07-10/GRAPH_REPORT.md](graphify-out/2026-07-10/GRAPH_REPORT.md) |  | 2026-07-10 | 291KB | `4ca12462` |
-| [graphify-out/2026-07-20/.graphify_labels.json](graphify-out/2026-07-20/.graphify_labels.json) |  | 2026-07-10 | 49KB | `886c4025` |
-| [graphify-out/2026-07-20/GRAPH_REPORT.md](graphify-out/2026-07-20/GRAPH_REPORT.md) |  | 2026-07-10 | 296KB | `c8445a38` |
-| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-20 | 295KB | `79198ab0` |
+| [graphify-out/2026-07-20/.graphify_labels.json](graphify-out/2026-07-20/.graphify_labels.json) |  | 2026-07-20 | 49KB | `b88f3203` |
+| [graphify-out/2026-07-20/GRAPH_REPORT.md](graphify-out/2026-07-20/GRAPH_REPORT.md) |  | 2026-07-20 | 293KB | `b3b6fefa` |
+| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-20 | 297KB | `27750780` |
 | [graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json](graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json) |  | 2026-07-08 | 135KB | `54d7dbf7` |
 | [graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json](graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json) |  | 2026-07-08 | 17KB | `f7a19787` |
 | [graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json](graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json) |  | 2026-07-07 | 846B | `0a6019ff` |
@@ -2171,6 +2183,7 @@
 | [graphify-out/cache/ast/v0.9.8/6eac5e64d96cb4f907fc0bb3e2c9807032375d2081f1f998aa1e41f1a636b429.json](graphify-out/cache/ast/v0.9.8/6eac5e64d96cb4f907fc0bb3e2c9807032375d2081f1f998aa1e41f1a636b429.json) |  | 2026-07-07 | 44KB | `2c7b4140` |
 | [graphify-out/cache/ast/v0.9.8/6ec449962db367d4fb55faf4be5a2fa4ef45f58a8011ff0ae02d57943c094b5c.json](graphify-out/cache/ast/v0.9.8/6ec449962db367d4fb55faf4be5a2fa4ef45f58a8011ff0ae02d57943c094b5c.json) |  | 2026-07-20 | 89KB | `26effd5c` |
 | [graphify-out/cache/ast/v0.9.8/6ed535f36401cdfc14e7154fa2923249344bec3c894740e5764b9107819d6f63.json](graphify-out/cache/ast/v0.9.8/6ed535f36401cdfc14e7154fa2923249344bec3c894740e5764b9107819d6f63.json) |  | 2026-07-08 | 11KB | `f01916be` |
+| [graphify-out/cache/ast/v0.9.8/6f881c4850ba718d01ced28b028e8330e5895c701a20bb962d1f4c4a465a3330.json](graphify-out/cache/ast/v0.9.8/6f881c4850ba718d01ced28b028e8330e5895c701a20bb962d1f4c4a465a3330.json) |  | 2026-07-20 | 4KB | `49673589` |
 | [graphify-out/cache/ast/v0.9.8/6fd8a07078fdf93f11abcb2513e16dcc725d049fc8d0bad63bf90c42c5bf682f.json](graphify-out/cache/ast/v0.9.8/6fd8a07078fdf93f11abcb2513e16dcc725d049fc8d0bad63bf90c42c5bf682f.json) |  | 2026-07-08 | 9KB | `b670a093` |
 | [graphify-out/cache/ast/v0.9.8/702f9c6362c3ac815ea7609703d4c152623cb692519b1cd96d2f7f2f78000c87.json](graphify-out/cache/ast/v0.9.8/702f9c6362c3ac815ea7609703d4c152623cb692519b1cd96d2f7f2f78000c87.json) |  | 2026-07-08 | 10KB | `45fe6a4b` |
 | [graphify-out/cache/ast/v0.9.8/7045e07058d30f0b3b057998bf664570e7600fedd6b28aaa6d7528ce933d2e71.json](graphify-out/cache/ast/v0.9.8/7045e07058d30f0b3b057998bf664570e7600fedd6b28aaa6d7528ce933d2e71.json) |  | 2026-07-09 | 10KB | `e525ea42` |
@@ -3193,6 +3206,6 @@
 | [graphify-out/cache/semantic/ffab892cca599aab64f9017529f1fbf09d183ff2bfb40cf6952e827231c66395.json](graphify-out/cache/semantic/ffab892cca599aab64f9017529f1fbf09d183ff2bfb40cf6952e827231c66395.json) |  | 2026-07-08 | 7KB | `ad83fc8b` |
 | [graphify-out/cache/semantic/ffc0013009bda95d2ae73888908e50b640c9fc90a76b4415620853ed29333eee.json](graphify-out/cache/semantic/ffc0013009bda95d2ae73888908e50b640c9fc90a76b4415620853ed29333eee.json) |  | 2026-07-08 | 363B | `2d6402e9` |
 | [opencode.json](opencode.json) |  | 2026-06-20 | 184B | `45617caa` |
-| [package-lock.json](package-lock.json) |  | 2026-07-08 | 10KB | `f5f1777e` |
-| [package.json](package.json) |  | 2026-07-08 | 60B | `50d532ca` |
+| [package-lock.json](package-lock.json) |  | 2026-07-20 | 10KB | `f5f1777e` |
+| [package.json](package.json) |  | 2026-07-20 | 60B | `50d532ca` |
 

@@ -784,3 +784,19 @@
 - Updated `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`: `ratio_without_best_year` removes the year with best yearly ratio, `research_gate` requires simple-rule comparison, and `audit_side_contract` requires both directions.
 - Updated `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`, `CONTEXT_HANDOFF.md`, `CHANGELOG.md`, `docs/superpowers/roadmap.md`, and module docs with corrected robustness/gate contract.
 - Updated `wiki/research/fractal-stop-research.md` metadata to `sources: 49` and recorded the review fixes.
+
+### 2026-07-21: Ingest Fractal0 entry/exit grid diagnostic result
+- Added `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`.
+- Added `ML/baseline/benchmark_fractal0_entry_exit_grid.py` and `tests/test_fractal0_entry_exit_grid.py`.
+- Updated `wiki/research/fractal-stop-research.md`: recorded full `4 x 2 x 48` entry/exit grid, winner `E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_55`, `val_eval PF=1.9438`, `BS_p05=1.7601`, stress PF `1.5743`, permutation PASS, and `diagnostic_only` cap from H1 `ambiguous_same_bar_rate=0.2250`.
+- Updated `wiki/index.md`: Fractal Stop coverage now records 50 report updates and points next work to execution-refinement with a lower timeframe for fill/exit ordering.
+
+### 2026-07-21: Update Fractal0 entry/exit grid after M5 winner-only ambiguity fix
+- Updated `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: added optional M5 `execution_ohlc_path`, fast H1-hour index for execution OHLC, and fixed ambiguity semantics so ML-exit rules do not count hypothetical fixed TP touches.
+- Added `ML/reports/fractal0_entry_exit_grid_m5_winner.json`: previous winner only, M5 execution ordering, `val_eval PF=1.9438`, `BS_p05=1.7601`, stress PF `1.5743`, `ambiguous_same_bar_rate=0.0`.
+- Updated `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: old `diagnostic_only` ambiguity cap is marked stale for the ML-exit winner; next step is full rerun or frozen subset with M5 execution contract.
+
+### 2026-07-21: Review fixes for Fractal0 entry/exit grid artifacts
+- Fixed `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: `rows_by_split_before_after_mask.before` now reports entry rows before mask, trades include per-trade `spread`, and `effective_profit_years` uses the methodology formula `1 / sum(share_y^2)`.
+- Added `ML/reports/fractal0_entry_exit_grid_m5_winner_winner_yearly.csv`: current yearly breakdown for previous winner on `val_eval`, canonical spread, `2298` trades, `effective_profit_years=1.9864`.
+- Updated primary `ML/reports/fractal0_entry_exit_grid.json`: added `canonical_current_artifact`, `post_review_artifacts`, `superseded_fields`, and limitations for old trades without per-trade spread.
