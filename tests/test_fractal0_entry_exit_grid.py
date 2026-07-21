@@ -22,7 +22,41 @@ def test_grid_has_disclosed_size_and_required_controls():
         "X7_time_12",
     }
     assert [item["mask_id"] for item in runner.mask_grid()] == ["M0_no_mask", "M1_frozen_movement_top5"]
-    assert len(runner.expanded_grid()) == 384
+    assert len(runner.expanded_grid()) == 1536
+
+
+def test_stop_policy_grid_has_current_and_entry_floor_variants():
+    ids = [item["stop_policy_id"] for item in runner.stop_policy_grid()]
+    assert ids == [
+        "S0_current_0_5",
+        "S1_fractal0_buffer_0_5_entry_floor_1",
+        "S2_fractal0_buffer_0_5_entry_floor_2",
+        "S3_fractal0_buffer_0_5_entry_floor_3",
+    ]
+
+
+def test_entry_floor_stop_keeps_buy_stop_at_least_x_atr_from_entry():
+    policy = {
+        "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+        "family": "fractal0_buffer_entry_floor",
+        "fractal0_buffer_atr": 0.5,
+        "entry_floor_atr": 2.0,
+    }
+    resolved = runner.resolve_protective_stop("BUY", 100.0, 101.0, 2.0, policy)
+    assert resolved["protective_stop_price"] == 97.0
+    assert resolved["stop_source"] == "entry_floor"
+
+
+def test_entry_floor_stop_keeps_sell_stop_at_least_x_atr_from_entry():
+    policy = {
+        "stop_policy_id": "S3_fractal0_buffer_0_5_entry_floor_3",
+        "family": "fractal0_buffer_entry_floor",
+        "fractal0_buffer_atr": 0.5,
+        "entry_floor_atr": 3.0,
+    }
+    resolved = runner.resolve_protective_stop("SELL", 100.0, 99.0, 2.0, policy)
+    assert resolved["protective_stop_price"] == 105.0
+    assert resolved["stop_source"] == "entry_floor"
 
 
 def test_hash_is_stable_and_resume_key_ignores_runtime_order():
@@ -30,6 +64,41 @@ def test_hash_is_stable_and_resume_key_ignores_runtime_order():
     left = {"entry_id": "E1", "exit_id": "X0", "mask_id": "M0", "spread": 0.2}
     right = {"spread": 0.2, "mask_id": "M0", "exit_id": "X0", "entry_id": "E1"}
     assert runner.resume_key(left) == runner.resume_key(right)
+
+
+def test_expanded_grid_includes_stop_policy_id():
+    grid = runner.expanded_grid(
+        active_stop_policies=[{"stop_policy_id": "S0_current_0_5", "family": "current", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 0.5}],
+        active_entries=[runner.entry_grid()[0]],
+        active_masks=[runner.mask_grid()[0]],
+        active_exits=[runner.exit_grid()[0]],
+    )
+    assert grid[0]["stop_policy_id"] == "S0_current_0_5"
+
+
+def test_resume_key_distinguishes_stop_policy():
+    base = {"entry_id": "E3", "mask_id": "M0", "exit_id": "X2", "spread": 0.2, "stop_policy_id": "S0"}
+    changed = {**base, "stop_policy_id": "S1"}
+    assert runner.resume_key(base) != runner.resume_key(changed)
+
+
+def test_stop_grid_exit_shortlist_is_bounded():
+    exits = runner.exit_grid(shortlist="stop_grid")
+    ids = {item["exit_id"] for item in exits}
+    assert ids == {
+        "X0_fixed_r_0_7",
+        "X1_ml_opposite_strong_p0_55",
+        "X1_ml_opposite_strong_p0_65",
+        "X1_ml_opposite_strong_p0_75",
+        "X2_ml_opposite_any_p0_50",
+        "X2_ml_opposite_any_p0_55",
+        "X2_ml_opposite_any_p0_60",
+        "X3_ml_hold_close_p0_50",
+        "X3_ml_hold_close_p0_60",
+        "X3_ml_hold_close_p0_70",
+        "X7_time_6",
+        "X7_time_12",
+    }
 
 
 def test_load_progress_rejects_hash_mismatch(tmp_path: Path):
@@ -186,7 +255,7 @@ def test_entry_cache_reports_rows_before_mask_not_entry_rule_count(monkeypatch):
     splits = {"val_select": pd.DataFrame({"split_row_id": [1, 2, 3]})}
     scores = pd.DataFrame({"split": ["val_select", "val_select", "val_select"], "split_row_id": [1, 2, 3], "selected": [True, False, True], "score": [0.9, 0.1, 0.8]})
 
-    def fake_build_entry_rows(rows, ohlc, entry, spread):
+    def fake_build_entry_rows(rows, ohlc, entry, spread, stop_policy=None):
         out = rows.copy()
         out["filled"] = [True, False, True]
         return out
@@ -202,10 +271,10 @@ def test_entry_cache_reports_rows_before_mask_not_entry_rule_count(monkeypatch):
     )
 
     rows_report = report["rows_by_split_before_after_mask"]["val_select"]
-    assert rows_report["E1:M0_no_mask"]["entry_rows_before_mask"] == 3
-    assert rows_report["E1:M0_no_mask"]["rows_after_mask"] == 3
-    assert rows_report["E1:M1_frozen_movement_top5"]["entry_rows_before_mask"] == 3
-    assert rows_report["E1:M1_frozen_movement_top5"]["rows_after_mask"] == 2
+    assert rows_report["S0_current_0_5:E1:M0_no_mask"]["entry_rows_before_mask"] == 3
+    assert rows_report["S0_current_0_5:E1:M0_no_mask"]["rows_after_mask"] == 3
+    assert rows_report["S0_current_0_5:E1:M1_frozen_movement_top5"]["entry_rows_before_mask"] == 3
+    assert rows_report["S0_current_0_5:E1:M1_frozen_movement_top5"]["rows_after_mask"] == 2
 
 
 def test_summary_uses_effective_profit_years_formula():
@@ -235,6 +304,17 @@ def test_filter_trades_for_rule_selects_winner_split_and_spread():
 
     selected = runner.filter_trades_for_rule(trades, {"entry_id": "E1", "mask_id": "M0", "exit_id": "X0"}, split="val_eval", spread=0.2)
 
+    assert selected["pnl_r"].tolist() == [1.0]
+
+
+def test_filter_trades_for_rule_matches_stop_policy():
+    trades = pd.DataFrame(
+        [
+            {"stop_policy_id": "S0", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2", "split": "val_eval", "spread": 0.2, "pnl_r": 9.0},
+            {"stop_policy_id": "S1", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2", "split": "val_eval", "spread": 0.2, "pnl_r": 1.0},
+        ]
+    )
+    selected = runner.filter_trades_for_rule(trades, {"stop_policy_id": "S1", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2"}, split="val_eval", spread=0.2)
     assert selected["pnl_r"].tolist() == [1.0]
 
 
@@ -316,6 +396,70 @@ def test_evaluate_winner_on_val_eval_uses_eval_metrics_not_select_metrics():
     assert evaluated["pf"] == 1.2
     assert verdict["lifecycle_status"] == "research_hint"
     assert "val_eval_gate_failed" in verdict["reasons"]
+
+
+def test_evaluate_winner_on_val_eval_matches_stop_policy():
+    winner = {"stop_policy_id": "S1", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2"}
+    rows = pd.DataFrame(
+        [
+            {"stop_policy_id": "S0", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2", "pf": 9.0, "bs_p05": 9.0, "n_trades": 350},
+            {"stop_policy_id": "S1", "entry_id": "E3", "mask_id": "M0", "exit_id": "X2", "pf": 1.5, "bs_p05": 1.2, "n_trades": 350},
+        ]
+    )
+    assert runner.evaluate_winner_on_val_eval(winner, rows)["pf"] == 1.5
+
+
+def test_compute_stop_diagnostics_reports_source_sl_rate():
+    trades = pd.DataFrame(
+        [
+            {"stop_policy_id": "S0", "split": "val_eval", "stop_source": "entry_floor", "close_reason": "SL", "stop_distance_atr": 0.5, "r_value": 1.0},
+            {"stop_policy_id": "S0", "split": "val_eval", "stop_source": "entry_floor", "close_reason": "ML_CLOSE", "stop_distance_atr": 0.5, "r_value": 1.0},
+            {"stop_policy_id": "S0", "split": "val_eval", "stop_source": "fractal0_buffer", "close_reason": "ML_CLOSE", "stop_distance_atr": 1.2, "r_value": 2.4},
+        ]
+    )
+    rows = runner.compute_stop_diagnostics(trades)
+    by_source = {(row["stop_policy_id"], row["stop_source"]): row for row in rows}
+    assert by_source[("S0", "entry_floor")]["n_trades"] == 2
+    assert by_source[("S0", "entry_floor")]["sl_rate"] == 0.5
+
+
+def test_sample_size_warnings_marks_m1_control_as_low_n():
+    summary = pd.DataFrame(
+        [
+            {"split": "val_eval", "mask_id": "M0_no_mask", "n_trades": 350},
+            {"split": "val_eval", "mask_id": "M1_frozen_movement_top5", "n_trades": 9},
+        ]
+    )
+    warnings = runner.sample_size_warnings(summary)
+    assert warnings == [
+        {
+            "split": "val_eval",
+            "mask_id": "M1_frozen_movement_top5",
+            "warning": "low_trade_count_control_only",
+            "min_n_trades": 9,
+            "median_n_trades": 9.0,
+            "interpretation": "do_not_compare_to_M0_as_equal_sample",
+        }
+    ]
+
+
+def test_rejected_alternatives_discloses_baseline_and_eval_only_rows():
+    summary = pd.DataFrame(
+        [
+            {"stop_policy_id": "S0_current_0_5", "entry_id": "E3_open_pullback_1_0atr", "mask_id": "M0_no_mask", "exit_id": "X0_fixed_r_0_7", "split": "val_eval", "n_trades": 350, "pf": 2.7, "bs_p05": 2.5, "risk_distance_atr": 0.5, "tp_distance_atr": 0.35},
+            {"stop_policy_id": "S1_fractal0_buffer_0_5_entry_floor_1", "entry_id": "E3_open_pullback_1_0atr", "mask_id": "M0_no_mask", "exit_id": "X2_ml_opposite_any_p0_55", "split": "val_select", "n_trades": 350, "pf": 2.9, "bs_p05": 2.6, "risk_distance_atr": 1.0, "tp_distance_atr": None},
+            {"stop_policy_id": "S3_fractal0_buffer_0_5_entry_floor_3", "entry_id": "E3_open_pullback_1_0atr", "mask_id": "M0_no_mask", "exit_id": "X2_ml_opposite_any_p0_50", "split": "val_select", "n_trades": 350, "pf": 2.7, "bs_p05": 2.4, "risk_distance_atr": 3.0, "tp_distance_atr": None},
+            {"stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2", "entry_id": "E1_simple_limit_at_fractal0", "mask_id": "M0_no_mask", "exit_id": "X2_ml_opposite_any_p0_50", "split": "val_eval", "n_trades": 350, "pf": 2.94, "bs_p05": 2.69, "risk_distance_atr": 2.0, "tp_distance_atr": None},
+        ]
+    )
+    winner = {"stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2", "entry_id": "E3_open_pullback_1_0atr", "mask_id": "M0_no_mask", "exit_id": "X2_ml_opposite_any_p0_50"}
+    alternatives = runner.rejected_alternatives(summary, winner)
+    assert {row["alternative_id"] for row in alternatives} == {
+        "current_s0_fixed_r_baseline",
+        "s1_neighbor_same_family",
+        "s3_neighbor_same_key",
+        "diagnostic_best_val_eval_s2_e1",
+    }
 
 
 def test_permutation_verdict_passes_when_tail_probability_is_small():

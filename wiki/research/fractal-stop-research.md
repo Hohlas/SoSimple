@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-07-21
-sources: 50
+sources: 51
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: retest-zone oracle дал diagnostic ratio, а полный Fractal0 entry/exit grid с M5 execution ordering выбрал fixed TP winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`: `val_eval PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`. Это остаётся `research_only`: `locked_test` не открыт, следующий шаг — заранее зафиксированный stop-policy / entry-quality follow-up.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: полный Fractal0 entry/exit grid с M5 execution ordering выбрал fixed TP baseline `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`, а последующий stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50` с `val_eval PF=2.7873`, `BS_p05=2.5085`. `S2` перспективен, но не доказал превосходство над S0/X0 baseline по BS_p05 (`2.5085` против `2.5120`). Это остаётся `research_only`: `locked_test` не открыт, stress-spread отложен только для shortlist.
 
 ## Хронология
 
@@ -50,6 +50,45 @@ yearly PF: 2021 `2.6492`, 2022 `2.7918`. Вывод остаётся
 `research_only`, потому что winner выбран после широкого validation search и
 `locked_test` не открыт. Новый near-term follow-up: stop-policy grid и
 entry-quality ML filter для E3, без открытия `locked_test`.
+
+### 2026-07-21: Fractal0 stop-policy grid with M5 execution ordering
+
+Stop-policy follow-up расширил текущий runner без нового симулятора. В сетку
+добавлены `S0_current_0_5`, `S1/S2/S3_fractal0_buffer_0_5_entry_floor_X`;
+`stop_policy_id` включён в run/resume/summary/trades/JSON/permutation/winner
+matching. ML-exit обучается отдельно для каждой stop policy, потому что
+меняются `R`, признаки в `R` и `target_exit_*`.
+
+Budget: `4 stop policies x 3 entries x 2 masks x 12 exits = 288` selection
+cells; без stress выполнено `576/576`, `failed=0`. Полный stress-spread
+намеренно не запускался: `stress_spread_status=deferred_shortlist_only`.
+
+Winner по `val_select`:
+`S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr /
+M0_no_mask / X2_ml_opposite_any_p0_50`. На `val_eval` тот же ключ дал
+`n_trades=2298`, `PF=2.7873`, `BS_p05=2.5085`, `mean_pnl_r=0.2883`,
+`max_drawdown_r=8.3860`, `pf_without_best_year=2.7424`,
+`ambiguous_same_bar_rate=0.0`. Permutation PASS:
+`empirical_p_value=0.004975`, `200` repeats.
+
+По сравнению с S0/X0 baseline в текущем stop-grid summary S2 выше по PF, но
+не выше по BS_p05: `S2=2.5085`, `S0=2.5120`. Поэтому корректная
+интерпретация — перспективная stop-policy гипотеза, а не доказанное
+улучшение.
+
+All-grid stop diagnostics показывают снижение SL-rate: на `val_eval`
+агрегат по всем симуляциям сетки снижается от `0.5750` у `S0_current_0_5`
+до `0.3476` на `S2` entry-floor и до `0.2414` на `S3` entry-floor.
+Focused diagnostics для winner/baseline: у `S2/E3/M0/X2` SL-rate около
+`0.060-0.078` по stop_source, у `S0/E3/M0/X0` — `0.2010`. При этом `S3`
+хуже `S2` по `BS_p05`, что указывает на компромисс между меньшей частотой
+SL и размыванием `R`-нормированного преимущества.
+
+Методический вывод: stop policy не является вторичной настройкой после entry
+и exit. Она меняет риск `R`, ML-exit targets, признаки и ranking. Результат
+не является trading candidate: `locked_test=not_opened`, полный stress-spread
+отложен, а `pnl_r` означает одинаковый риск на сделку, не одинаковый
+фиксированный лот.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
@@ -880,3 +919,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-07-10-direction-inside-frozen-mask-narrow-replication.md](../../docs/reports/2026-07-10-direction-inside-frozen-mask-narrow-replication.md) — narrow seed-stability replication: H3 effect не воспроизвёлся; verdict `REJECT_DIRECTION_REPLICATION`
 - [2026-07-10-fractal0-price-entry-mechanics.md](../../docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) — retest-zone oracle от `fractal0_price`: diagnostic ratio есть, gate не прошёл по active years; review fixes усилили robustness/gate/side audit
 - [2026-07-21-fractal0-entry-exit-grid.md](../../docs/reports/2026-07-21-fractal0-entry-exit-grid.md) — полный Fractal0 entry/exit grid с OHLC-симуляцией, ML-exit и M5 execution ordering: full M5 rerun выбрал fixed TP winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`; verdict `research_only`
+- [2026-07-21-fractal0-stop-grid-m5.md](../../docs/reports/2026-07-21-fractal0-stop-grid-m5.md) — stop-policy grid с M5 execution ordering: winner `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`, `val_eval PF=2.7873`, `BS_p05=2.5085`; не доказал превосходство над S0/X0 baseline по BS_p05, stress-spread deferred, `locked_test` not opened

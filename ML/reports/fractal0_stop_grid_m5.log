@@ -1,0 +1,733 @@
+start fractal0_entry_exit_grid
+preflight PASS
+prepare load inputs
+prepare execution ohlc rows=1476850 path=MT/MQL4/Files/XAUUSD_M5_OHLC.csv
+prepare entry cache canonical
+prepare train ml-exit
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask filled=24713 elapsed=0.0
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask decision_rows=593112 total_decision_rows=593112 elapsed=11.1
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 filled=1239 elapsed=11.1
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 decision_rows=29736 total_decision_rows=622848 elapsed=11.6
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask filled=29959 elapsed=11.6
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask decision_rows=719016 total_decision_rows=1341864 elapsed=25.1
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 filled=1593 elapsed=25.1
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 decision_rows=38232 total_decision_rows=1380096 elapsed=25.7
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask filled=21343 elapsed=25.7
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask decision_rows=512232 total_decision_rows=1892328 elapsed=35.3
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 filled=1263 elapsed=35.3
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 decision_rows=30312 total_decision_rows=1922640 elapsed=35.8
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask filled=24713 elapsed=35.8
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask decision_rows=593112 total_decision_rows=2515752 elapsed=46.8
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 filled=1239 elapsed=46.8
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 decision_rows=29736 total_decision_rows=2545488 elapsed=47.3
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask filled=29959 elapsed=47.3
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask decision_rows=719016 total_decision_rows=3264504 elapsed=60.9
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 filled=1593 elapsed=60.9
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 decision_rows=38232 total_decision_rows=3302736 elapsed=61.5
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask filled=21343 elapsed=61.5
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask decision_rows=512232 total_decision_rows=3814968 elapsed=71.1
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 filled=1263 elapsed=71.1
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 decision_rows=30312 total_decision_rows=3845280 elapsed=71.5
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask filled=24713 elapsed=71.5
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask decision_rows=593112 total_decision_rows=4438392 elapsed=82.3
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 filled=1239 elapsed=82.3
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 decision_rows=29736 total_decision_rows=4468128 elapsed=82.7
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask filled=29959 elapsed=82.7
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask decision_rows=719016 total_decision_rows=5187144 elapsed=96.4
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 filled=1593 elapsed=96.4
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 decision_rows=38232 total_decision_rows=5225376 elapsed=97.0
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask filled=21343 elapsed=97.0
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask decision_rows=512232 total_decision_rows=5737608 elapsed=106.1
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 filled=1263 elapsed=106.1
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 decision_rows=30312 total_decision_rows=5767920 elapsed=106.6
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask filled=24713 elapsed=106.6
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M0_no_mask decision_rows=593112 total_decision_rows=6361032 elapsed=117.6
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 filled=1239 elapsed=117.6
+prepare train ml-exit decisions entry=E1_simple_limit_at_fractal0 mask=M1_frozen_movement_top5 decision_rows=29736 total_decision_rows=6390768 elapsed=118.1
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask filled=29959 elapsed=118.1
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M0_no_mask decision_rows=719016 total_decision_rows=7109784 elapsed=131.7
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 filled=1593 elapsed=131.7
+prepare train ml-exit decisions entry=E2_open_pullback_0_5atr mask=M1_frozen_movement_top5 decision_rows=38232 total_decision_rows=7148016 elapsed=132.3
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask filled=21343 elapsed=132.3
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M0_no_mask decision_rows=512232 total_decision_rows=7660248 elapsed=141.9
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 filled=1263 elapsed=142.0
+prepare train ml-exit decisions entry=E3_open_pullback_1_0atr mask=M1_frozen_movement_top5 decision_rows=30312 total_decision_rows=7690560 elapsed=142.4
+prepare train ml-exit fit stop_policy=S0_current_0_5 rows=1922640 seeds=[42, 43, 44] n_estimators=200 threads=24
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=42 rows=1922640 features=5 elapsed=0.0
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=43 rows=1922640 features=5 elapsed=9.4
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=44 rows=1922640 features=5 elapsed=18.7
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=42 rows=1922640 features=5 elapsed=28.1
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=43 rows=1922640 features=5 elapsed=37.5
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=44 rows=1922640 features=5 elapsed=46.9
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=42 rows=1922640 features=5 elapsed=56.3
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=43 rows=1922640 features=5 elapsed=66.1
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=44 rows=1922640 features=5 elapsed=76.0
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=42 rows=1922640 features=5 elapsed=85.9
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=43 rows=1922640 features=5 elapsed=103.7
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=44 rows=1922640 features=5 elapsed=121.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=42 rows=1922640 features=7 elapsed=139.3
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=43 rows=1922640 features=7 elapsed=148.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=44 rows=1922640 features=7 elapsed=156.8
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=42 rows=1922640 features=7 elapsed=165.7
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=43 rows=1922640 features=7 elapsed=174.4
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=44 rows=1922640 features=7 elapsed=183.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=42 rows=1922640 features=7 elapsed=191.8
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=43 rows=1922640 features=7 elapsed=201.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=44 rows=1922640 features=7 elapsed=209.8
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=42 rows=1922640 features=7 elapsed=218.8
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=43 rows=1922640 features=7 elapsed=235.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=44 rows=1922640 features=7 elapsed=252.2
+prepare train ml-exit fit stop_policy=S1_fractal0_buffer_0_5_entry_floor_1 rows=1922640 seeds=[42, 43, 44] n_estimators=200 threads=24
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=42 rows=1922640 features=5 elapsed=0.0
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=43 rows=1922640 features=5 elapsed=9.3
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=44 rows=1922640 features=5 elapsed=18.7
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=42 rows=1922640 features=5 elapsed=28.1
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=43 rows=1922640 features=5 elapsed=38.6
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=44 rows=1922640 features=5 elapsed=49.3
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=42 rows=1922640 features=5 elapsed=60.0
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=43 rows=1922640 features=5 elapsed=78.1
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=44 rows=1922640 features=5 elapsed=97.0
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=42 rows=1922640 features=5 elapsed=115.2
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=43 rows=1922640 features=5 elapsed=132.8
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=44 rows=1922640 features=5 elapsed=150.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=42 rows=1922640 features=7 elapsed=168.2
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=43 rows=1922640 features=7 elapsed=177.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=44 rows=1922640 features=7 elapsed=185.7
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=42 rows=1922640 features=7 elapsed=194.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=43 rows=1922640 features=7 elapsed=204.8
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=44 rows=1922640 features=7 elapsed=214.9
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=42 rows=1922640 features=7 elapsed=225.2
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=43 rows=1922640 features=7 elapsed=242.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=44 rows=1922640 features=7 elapsed=259.9
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=42 rows=1922640 features=7 elapsed=277.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=43 rows=1922640 features=7 elapsed=294.2
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=44 rows=1922640 features=7 elapsed=311.1
+prepare train ml-exit fit stop_policy=S2_fractal0_buffer_0_5_entry_floor_2 rows=1922640 seeds=[42, 43, 44] n_estimators=200 threads=24
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=42 rows=1922640 features=5 elapsed=0.0
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=43 rows=1922640 features=5 elapsed=10.7
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=44 rows=1922640 features=5 elapsed=21.7
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=42 rows=1922640 features=5 elapsed=32.6
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=43 rows=1922640 features=5 elapsed=43.8
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=44 rows=1922640 features=5 elapsed=55.0
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=42 rows=1922640 features=5 elapsed=66.2
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=43 rows=1922640 features=5 elapsed=84.2
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=44 rows=1922640 features=5 elapsed=102.4
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=42 rows=1922640 features=5 elapsed=120.6
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=43 rows=1922640 features=5 elapsed=138.1
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=44 rows=1922640 features=5 elapsed=155.7
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=42 rows=1922640 features=7 elapsed=173.3
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=43 rows=1922640 features=7 elapsed=183.3
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=44 rows=1922640 features=7 elapsed=193.4
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=42 rows=1922640 features=7 elapsed=203.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=43 rows=1922640 features=7 elapsed=214.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=44 rows=1922640 features=7 elapsed=224.5
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=42 rows=1922640 features=7 elapsed=235.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=43 rows=1922640 features=7 elapsed=252.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=44 rows=1922640 features=7 elapsed=269.7
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=42 rows=1922640 features=7 elapsed=287.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=43 rows=1922640 features=7 elapsed=304.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=44 rows=1922640 features=7 elapsed=320.7
+prepare train ml-exit fit stop_policy=S3_fractal0_buffer_0_5_entry_floor_3 rows=1922640 seeds=[42, 43, 44] n_estimators=200 threads=24
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=42 rows=1922640 features=5 elapsed=0.0
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=43 rows=1922640 features=5 elapsed=11.2
+train ml-exit mask=M0_no_mask target=target_exit_opposite_any seed=44 rows=1922640 features=5 elapsed=22.4
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=42 rows=1922640 features=5 elapsed=33.6
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=43 rows=1922640 features=5 elapsed=50.9
+train ml-exit mask=M0_no_mask target=target_exit_opposite_strong seed=44 rows=1922640 features=5 elapsed=68.0
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=42 rows=1922640 features=5 elapsed=85.3
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=43 rows=1922640 features=5 elapsed=103.3
+train ml-exit mask=M0_no_mask target=target_exit_hold_close seed=44 rows=1922640 features=5 elapsed=121.4
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=42 rows=1922640 features=5 elapsed=139.5
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=43 rows=1922640 features=5 elapsed=157.1
+train ml-exit mask=M0_no_mask target=target_exit_movement_exhaustion seed=44 rows=1922640 features=5 elapsed=174.7
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=42 rows=1922640 features=7 elapsed=192.4
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=43 rows=1922640 features=7 elapsed=202.9
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_any seed=44 rows=1922640 features=7 elapsed=213.4
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=42 rows=1922640 features=7 elapsed=224.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=43 rows=1922640 features=7 elapsed=241.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_opposite_strong seed=44 rows=1922640 features=7 elapsed=257.6
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=42 rows=1922640 features=7 elapsed=274.5
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=43 rows=1922640 features=7 elapsed=292.0
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_hold_close seed=44 rows=1922640 features=7 elapsed=309.1
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=42 rows=1922640 features=7 elapsed=326.4
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=43 rows=1922640 features=7 elapsed=343.3
+train ml-exit mask=M1_frozen_movement_top5 target=target_exit_movement_exhaustion seed=44 rows=1922640 features=7 elapsed=360.0
+prepare train ml-exit fit complete elapsed=1455.2
+prepare score ml-exit canonical
+progress done_runs=1/576 elapsed=1548.9
+progress done_runs=2/576 elapsed=1550.5
+progress done_runs=3/576 elapsed=1553.2
+progress done_runs=4/576 elapsed=1555.8
+progress done_runs=5/576 elapsed=1558.6
+progress done_runs=6/576 elapsed=1561.0
+progress done_runs=7/576 elapsed=1563.6
+progress done_runs=8/576 elapsed=1566.0
+progress done_runs=9/576 elapsed=1568.5
+progress done_runs=10/576 elapsed=1570.8
+progress done_runs=11/576 elapsed=1573.3
+progress done_runs=12/576 elapsed=1575.7
+progress done_runs=13/576 elapsed=1578.2
+progress done_runs=14/576 elapsed=1580.6
+progress done_runs=15/576 elapsed=1583.2
+progress done_runs=16/576 elapsed=1585.6
+progress done_runs=17/576 elapsed=1588.2
+progress done_runs=18/576 elapsed=1590.7
+progress done_runs=19/576 elapsed=1593.4
+progress done_runs=20/576 elapsed=1595.8
+progress done_runs=21/576 elapsed=1597.2
+progress done_runs=22/576 elapsed=1598.5
+progress done_runs=23/576 elapsed=1600.1
+progress done_runs=24/576 elapsed=1601.4
+progress done_runs=25/576 elapsed=1601.5
+progress done_runs=26/576 elapsed=1601.5
+progress done_runs=27/576 elapsed=1601.6
+progress done_runs=28/576 elapsed=1601.7
+progress done_runs=29/576 elapsed=1601.8
+progress done_runs=30/576 elapsed=1601.8
+progress done_runs=31/576 elapsed=1602.0
+progress done_runs=32/576 elapsed=1602.0
+progress done_runs=33/576 elapsed=1602.1
+progress done_runs=34/576 elapsed=1602.1
+progress done_runs=35/576 elapsed=1602.3
+progress done_runs=36/576 elapsed=1602.3
+progress done_runs=37/576 elapsed=1602.4
+progress done_runs=38/576 elapsed=1602.4
+progress done_runs=39/576 elapsed=1602.6
+progress done_runs=40/576 elapsed=1602.6
+progress done_runs=41/576 elapsed=1602.8
+progress done_runs=42/576 elapsed=1602.8
+progress done_runs=43/576 elapsed=1602.9
+progress done_runs=44/576 elapsed=1602.9
+progress done_runs=45/576 elapsed=1603.0
+progress done_runs=46/576 elapsed=1603.0
+progress done_runs=47/576 elapsed=1603.1
+progress done_runs=48/576 elapsed=1603.1
+progress done_runs=49/576 elapsed=1605.3
+progress done_runs=50/576 elapsed=1607.1
+progress done_runs=51/576 elapsed=1610.5
+progress done_runs=52/576 elapsed=1613.6
+progress done_runs=53/576 elapsed=1617.0
+progress done_runs=54/576 elapsed=1620.2
+progress done_runs=55/576 elapsed=1623.6
+progress done_runs=56/576 elapsed=1626.8
+progress done_runs=57/576 elapsed=1629.9
+progress done_runs=58/576 elapsed=1632.8
+progress done_runs=59/576 elapsed=1636.0
+progress done_runs=60/576 elapsed=1638.9
+progress done_runs=61/576 elapsed=1642.1
+progress done_runs=62/576 elapsed=1645.2
+progress done_runs=63/576 elapsed=1648.5
+progress done_runs=64/576 elapsed=1651.7
+progress done_runs=65/576 elapsed=1655.2
+progress done_runs=66/576 elapsed=1658.3
+progress done_runs=67/576 elapsed=1661.8
+progress done_runs=68/576 elapsed=1665.0
+progress done_runs=69/576 elapsed=1666.9
+progress done_runs=70/576 elapsed=1668.5
+progress done_runs=71/576 elapsed=1670.5
+progress done_runs=72/576 elapsed=1672.3
+progress done_runs=73/576 elapsed=1672.4
+progress done_runs=74/576 elapsed=1672.4
+progress done_runs=75/576 elapsed=1672.6
+progress done_runs=76/576 elapsed=1672.6
+progress done_runs=77/576 elapsed=1672.8
+progress done_runs=78/576 elapsed=1672.8
+progress done_runs=79/576 elapsed=1673.0
+progress done_runs=80/576 elapsed=1673.0
+progress done_runs=81/576 elapsed=1673.2
+progress done_runs=82/576 elapsed=1673.2
+progress done_runs=83/576 elapsed=1673.4
+progress done_runs=84/576 elapsed=1673.4
+progress done_runs=85/576 elapsed=1673.6
+progress done_runs=86/576 elapsed=1673.6
+progress done_runs=87/576 elapsed=1673.8
+progress done_runs=88/576 elapsed=1673.9
+progress done_runs=89/576 elapsed=1674.0
+progress done_runs=90/576 elapsed=1674.1
+progress done_runs=91/576 elapsed=1674.3
+progress done_runs=92/576 elapsed=1674.3
+progress done_runs=93/576 elapsed=1674.4
+progress done_runs=94/576 elapsed=1674.4
+progress done_runs=95/576 elapsed=1674.5
+progress done_runs=96/576 elapsed=1674.5
+progress done_runs=97/576 elapsed=1676.0
+progress done_runs=98/576 elapsed=1677.2
+progress done_runs=99/576 elapsed=1679.5
+progress done_runs=100/576 elapsed=1681.7
+progress done_runs=101/576 elapsed=1684.0
+progress done_runs=102/576 elapsed=1686.2
+progress done_runs=103/576 elapsed=1688.5
+progress done_runs=104/576 elapsed=1690.7
+progress done_runs=105/576 elapsed=1692.9
+progress done_runs=106/576 elapsed=1694.9
+progress done_runs=107/576 elapsed=1697.2
+progress done_runs=108/576 elapsed=1699.5
+progress done_runs=109/576 elapsed=1701.9
+progress done_runs=110/576 elapsed=1704.1
+progress done_runs=111/576 elapsed=1706.4
+progress done_runs=112/576 elapsed=1708.6
+progress done_runs=113/576 elapsed=1711.1
+progress done_runs=114/576 elapsed=1713.5
+progress done_runs=115/576 elapsed=1716.0
+progress done_runs=116/576 elapsed=1718.3
+progress done_runs=117/576 elapsed=1719.6
+progress done_runs=118/576 elapsed=1720.7
+progress done_runs=119/576 elapsed=1722.1
+progress done_runs=120/576 elapsed=1723.2
+progress done_runs=121/576 elapsed=1723.3
+progress done_runs=122/576 elapsed=1723.3
+progress done_runs=123/576 elapsed=1723.5
+progress done_runs=124/576 elapsed=1723.5
+progress done_runs=125/576 elapsed=1723.6
+progress done_runs=126/576 elapsed=1723.6
+progress done_runs=127/576 elapsed=1723.8
+progress done_runs=128/576 elapsed=1723.8
+progress done_runs=129/576 elapsed=1723.9
+progress done_runs=130/576 elapsed=1723.9
+progress done_runs=131/576 elapsed=1724.0
+progress done_runs=132/576 elapsed=1724.1
+progress done_runs=133/576 elapsed=1724.2
+progress done_runs=134/576 elapsed=1724.2
+progress done_runs=135/576 elapsed=1724.3
+progress done_runs=136/576 elapsed=1724.4
+progress done_runs=137/576 elapsed=1724.5
+progress done_runs=138/576 elapsed=1724.5
+progress done_runs=139/576 elapsed=1724.6
+progress done_runs=140/576 elapsed=1724.6
+progress done_runs=141/576 elapsed=1724.7
+progress done_runs=142/576 elapsed=1724.7
+progress done_runs=143/576 elapsed=1724.8
+progress done_runs=144/576 elapsed=1724.8
+progress done_runs=145/576 elapsed=1726.3
+progress done_runs=146/576 elapsed=1727.7
+progress done_runs=147/576 elapsed=1730.5
+progress done_runs=148/576 elapsed=1733.1
+progress done_runs=149/576 elapsed=1735.9
+progress done_runs=150/576 elapsed=1738.5
+progress done_runs=151/576 elapsed=1741.2
+progress done_runs=152/576 elapsed=1743.8
+progress done_runs=153/576 elapsed=1746.5
+progress done_runs=154/576 elapsed=1748.9
+progress done_runs=155/576 elapsed=1751.5
+progress done_runs=156/576 elapsed=1754.0
+progress done_runs=157/576 elapsed=1756.7
+progress done_runs=158/576 elapsed=1759.1
+progress done_runs=159/576 elapsed=1761.9
+progress done_runs=160/576 elapsed=1764.5
+progress done_runs=161/576 elapsed=1767.3
+progress done_runs=162/576 elapsed=1769.9
+progress done_runs=163/576 elapsed=1772.7
+progress done_runs=164/576 elapsed=1775.4
+progress done_runs=165/576 elapsed=1776.9
+progress done_runs=166/576 elapsed=1778.3
+progress done_runs=167/576 elapsed=1779.9
+progress done_runs=168/576 elapsed=1781.4
+progress done_runs=169/576 elapsed=1781.5
+progress done_runs=170/576 elapsed=1781.5
+progress done_runs=171/576 elapsed=1781.7
+progress done_runs=172/576 elapsed=1781.7
+progress done_runs=173/576 elapsed=1781.8
+progress done_runs=174/576 elapsed=1781.9
+progress done_runs=175/576 elapsed=1782.0
+progress done_runs=176/576 elapsed=1782.0
+progress done_runs=177/576 elapsed=1782.2
+progress done_runs=178/576 elapsed=1782.2
+progress done_runs=179/576 elapsed=1782.3
+progress done_runs=180/576 elapsed=1782.4
+progress done_runs=181/576 elapsed=1782.5
+progress done_runs=182/576 elapsed=1782.6
+progress done_runs=183/576 elapsed=1782.7
+progress done_runs=184/576 elapsed=1782.7
+progress done_runs=185/576 elapsed=1782.9
+progress done_runs=186/576 elapsed=1782.9
+progress done_runs=187/576 elapsed=1783.1
+progress done_runs=188/576 elapsed=1783.1
+progress done_runs=189/576 elapsed=1783.2
+progress done_runs=190/576 elapsed=1783.2
+progress done_runs=191/576 elapsed=1783.3
+progress done_runs=192/576 elapsed=1783.3
+progress done_runs=193/576 elapsed=1785.2
+progress done_runs=194/576 elapsed=1786.9
+progress done_runs=195/576 elapsed=1790.4
+progress done_runs=196/576 elapsed=1793.6
+progress done_runs=197/576 elapsed=1797.1
+progress done_runs=198/576 elapsed=1800.4
+progress done_runs=199/576 elapsed=1803.9
+progress done_runs=200/576 elapsed=1807.2
+progress done_runs=201/576 elapsed=1810.5
+progress done_runs=202/576 elapsed=1813.5
+progress done_runs=203/576 elapsed=1816.7
+progress done_runs=204/576 elapsed=1819.8
+progress done_runs=205/576 elapsed=1823.1
+progress done_runs=206/576 elapsed=1826.2
+progress done_runs=207/576 elapsed=1829.7
+progress done_runs=208/576 elapsed=1833.0
+progress done_runs=209/576 elapsed=1836.5
+progress done_runs=210/576 elapsed=1839.8
+progress done_runs=211/576 elapsed=1843.3
+progress done_runs=212/576 elapsed=1846.6
+progress done_runs=213/576 elapsed=1848.5
+progress done_runs=214/576 elapsed=1850.2
+progress done_runs=215/576 elapsed=1852.3
+progress done_runs=216/576 elapsed=1854.1
+progress done_runs=217/576 elapsed=1854.2
+progress done_runs=218/576 elapsed=1854.2
+progress done_runs=219/576 elapsed=1854.4
+progress done_runs=220/576 elapsed=1854.5
+progress done_runs=221/576 elapsed=1854.7
+progress done_runs=222/576 elapsed=1854.7
+progress done_runs=223/576 elapsed=1854.9
+progress done_runs=224/576 elapsed=1854.9
+progress done_runs=225/576 elapsed=1855.1
+progress done_runs=226/576 elapsed=1855.1
+progress done_runs=227/576 elapsed=1855.3
+progress done_runs=228/576 elapsed=1855.3
+progress done_runs=229/576 elapsed=1855.5
+progress done_runs=230/576 elapsed=1855.6
+progress done_runs=231/576 elapsed=1855.8
+progress done_runs=232/576 elapsed=1855.8
+progress done_runs=233/576 elapsed=1856.0
+progress done_runs=234/576 elapsed=1856.0
+progress done_runs=235/576 elapsed=1856.2
+progress done_runs=236/576 elapsed=1856.2
+progress done_runs=237/576 elapsed=1856.3
+progress done_runs=238/576 elapsed=1856.4
+progress done_runs=239/576 elapsed=1856.5
+progress done_runs=240/576 elapsed=1856.5
+progress done_runs=241/576 elapsed=1857.9
+progress done_runs=242/576 elapsed=1859.0
+progress done_runs=243/576 elapsed=1861.5
+progress done_runs=244/576 elapsed=1863.7
+progress done_runs=245/576 elapsed=1866.1
+progress done_runs=246/576 elapsed=1868.4
+progress done_runs=247/576 elapsed=1870.9
+progress done_runs=248/576 elapsed=1873.2
+progress done_runs=249/576 elapsed=1875.6
+progress done_runs=250/576 elapsed=1877.7
+progress done_runs=251/576 elapsed=1880.0
+progress done_runs=252/576 elapsed=1882.2
+progress done_runs=253/576 elapsed=1884.6
+progress done_runs=254/576 elapsed=1886.9
+progress done_runs=255/576 elapsed=1889.5
+progress done_runs=256/576 elapsed=1891.9
+progress done_runs=257/576 elapsed=1894.6
+progress done_runs=258/576 elapsed=1896.9
+progress done_runs=259/576 elapsed=1899.3
+progress done_runs=260/576 elapsed=1901.6
+progress done_runs=261/576 elapsed=1903.0
+progress done_runs=262/576 elapsed=1904.2
+progress done_runs=263/576 elapsed=1905.7
+progress done_runs=264/576 elapsed=1907.1
+progress done_runs=265/576 elapsed=1907.1
+progress done_runs=266/576 elapsed=1907.2
+progress done_runs=267/576 elapsed=1907.3
+progress done_runs=268/576 elapsed=1907.3
+progress done_runs=269/576 elapsed=1907.5
+progress done_runs=270/576 elapsed=1907.5
+progress done_runs=271/576 elapsed=1907.7
+progress done_runs=272/576 elapsed=1907.7
+progress done_runs=273/576 elapsed=1907.8
+progress done_runs=274/576 elapsed=1907.8
+progress done_runs=275/576 elapsed=1908.0
+progress done_runs=276/576 elapsed=1908.0
+progress done_runs=277/576 elapsed=1908.1
+progress done_runs=278/576 elapsed=1908.2
+progress done_runs=279/576 elapsed=1908.3
+progress done_runs=280/576 elapsed=1908.3
+progress done_runs=281/576 elapsed=1908.5
+progress done_runs=282/576 elapsed=1908.5
+progress done_runs=283/576 elapsed=1908.7
+progress done_runs=284/576 elapsed=1908.7
+progress done_runs=285/576 elapsed=1908.8
+progress done_runs=286/576 elapsed=1908.8
+progress done_runs=287/576 elapsed=1908.9
+progress done_runs=288/576 elapsed=1908.9
+progress done_runs=289/576 elapsed=1910.7
+progress done_runs=290/576 elapsed=1912.2
+progress done_runs=291/576 elapsed=1915.3
+progress done_runs=292/576 elapsed=1918.1
+progress done_runs=293/576 elapsed=1921.2
+progress done_runs=294/576 elapsed=1924.1
+progress done_runs=295/576 elapsed=1927.2
+progress done_runs=296/576 elapsed=1930.1
+progress done_runs=297/576 elapsed=1932.9
+progress done_runs=298/576 elapsed=1935.5
+progress done_runs=299/576 elapsed=1938.4
+progress done_runs=300/576 elapsed=1941.0
+progress done_runs=301/576 elapsed=1943.9
+progress done_runs=302/576 elapsed=1946.6
+progress done_runs=303/576 elapsed=1949.7
+progress done_runs=304/576 elapsed=1952.5
+progress done_runs=305/576 elapsed=1955.6
+progress done_runs=306/576 elapsed=1958.5
+progress done_runs=307/576 elapsed=1961.6
+progress done_runs=308/576 elapsed=1964.5
+progress done_runs=309/576 elapsed=1966.1
+progress done_runs=310/576 elapsed=1967.5
+progress done_runs=311/576 elapsed=1969.3
+progress done_runs=312/576 elapsed=1970.9
+progress done_runs=313/576 elapsed=1971.0
+progress done_runs=314/576 elapsed=1971.0
+progress done_runs=315/576 elapsed=1971.2
+progress done_runs=316/576 elapsed=1971.3
+progress done_runs=317/576 elapsed=1971.4
+progress done_runs=318/576 elapsed=1971.5
+progress done_runs=319/576 elapsed=1971.6
+progress done_runs=320/576 elapsed=1971.7
+progress done_runs=321/576 elapsed=1971.8
+progress done_runs=322/576 elapsed=1971.8
+progress done_runs=323/576 elapsed=1972.0
+progress done_runs=324/576 elapsed=1972.0
+progress done_runs=325/576 elapsed=1972.2
+progress done_runs=326/576 elapsed=1972.2
+progress done_runs=327/576 elapsed=1972.4
+progress done_runs=328/576 elapsed=1972.4
+progress done_runs=329/576 elapsed=1972.6
+progress done_runs=330/576 elapsed=1972.6
+progress done_runs=331/576 elapsed=1972.8
+progress done_runs=332/576 elapsed=1972.8
+progress done_runs=333/576 elapsed=1972.9
+progress done_runs=334/576 elapsed=1972.9
+progress done_runs=335/576 elapsed=1973.1
+progress done_runs=336/576 elapsed=1973.1
+progress done_runs=337/576 elapsed=1975.2
+progress done_runs=338/576 elapsed=1977.1
+progress done_runs=339/576 elapsed=1980.8
+progress done_runs=340/576 elapsed=1984.4
+progress done_runs=341/576 elapsed=1988.2
+progress done_runs=342/576 elapsed=1991.7
+progress done_runs=343/576 elapsed=1995.5
+progress done_runs=344/576 elapsed=1999.1
+progress done_runs=345/576 elapsed=2002.7
+progress done_runs=346/576 elapsed=2006.0
+progress done_runs=347/576 elapsed=2009.5
+progress done_runs=348/576 elapsed=2013.0
+progress done_runs=349/576 elapsed=2016.6
+progress done_runs=350/576 elapsed=2019.9
+progress done_runs=351/576 elapsed=2024.0
+progress done_runs=352/576 elapsed=2027.5
+progress done_runs=353/576 elapsed=2031.3
+progress done_runs=354/576 elapsed=2034.9
+progress done_runs=355/576 elapsed=2038.7
+progress done_runs=356/576 elapsed=2042.2
+progress done_runs=357/576 elapsed=2044.2
+progress done_runs=358/576 elapsed=2046.0
+progress done_runs=359/576 elapsed=2048.2
+progress done_runs=360/576 elapsed=2050.1
+progress done_runs=361/576 elapsed=2050.2
+progress done_runs=362/576 elapsed=2050.3
+progress done_runs=363/576 elapsed=2050.5
+progress done_runs=364/576 elapsed=2050.5
+progress done_runs=365/576 elapsed=2050.7
+progress done_runs=366/576 elapsed=2050.8
+progress done_runs=367/576 elapsed=2051.0
+progress done_runs=368/576 elapsed=2051.0
+progress done_runs=369/576 elapsed=2051.2
+progress done_runs=370/576 elapsed=2051.2
+progress done_runs=371/576 elapsed=2051.5
+progress done_runs=372/576 elapsed=2051.5
+progress done_runs=373/576 elapsed=2051.7
+progress done_runs=374/576 elapsed=2051.7
+progress done_runs=375/576 elapsed=2051.9
+progress done_runs=376/576 elapsed=2052.0
+progress done_runs=377/576 elapsed=2052.2
+progress done_runs=378/576 elapsed=2052.2
+progress done_runs=379/576 elapsed=2052.4
+progress done_runs=380/576 elapsed=2052.5
+progress done_runs=381/576 elapsed=2052.6
+progress done_runs=382/576 elapsed=2052.6
+progress done_runs=383/576 elapsed=2052.8
+progress done_runs=384/576 elapsed=2052.8
+progress done_runs=385/576 elapsed=2054.3
+progress done_runs=386/576 elapsed=2055.5
+progress done_runs=387/576 elapsed=2058.2
+progress done_runs=388/576 elapsed=2060.6
+progress done_runs=389/576 elapsed=2063.2
+progress done_runs=390/576 elapsed=2065.7
+progress done_runs=391/576 elapsed=2068.4
+progress done_runs=392/576 elapsed=2070.8
+progress done_runs=393/576 elapsed=2073.2
+progress done_runs=394/576 elapsed=2075.5
+progress done_runs=395/576 elapsed=2078.0
+progress done_runs=396/576 elapsed=2080.3
+progress done_runs=397/576 elapsed=2082.8
+progress done_runs=398/576 elapsed=2085.1
+progress done_runs=399/576 elapsed=2087.7
+progress done_runs=400/576 elapsed=2090.2
+progress done_runs=401/576 elapsed=2092.9
+progress done_runs=402/576 elapsed=2095.4
+progress done_runs=403/576 elapsed=2098.3
+progress done_runs=404/576 elapsed=2100.7
+progress done_runs=405/576 elapsed=2102.2
+progress done_runs=406/576 elapsed=2103.4
+progress done_runs=407/576 elapsed=2104.9
+progress done_runs=408/576 elapsed=2106.3
+progress done_runs=409/576 elapsed=2106.4
+progress done_runs=410/576 elapsed=2106.4
+progress done_runs=411/576 elapsed=2106.5
+progress done_runs=412/576 elapsed=2106.6
+progress done_runs=413/576 elapsed=2106.7
+progress done_runs=414/576 elapsed=2106.7
+progress done_runs=415/576 elapsed=2106.9
+progress done_runs=416/576 elapsed=2106.9
+progress done_runs=417/576 elapsed=2107.1
+progress done_runs=418/576 elapsed=2107.1
+progress done_runs=419/576 elapsed=2107.2
+progress done_runs=420/576 elapsed=2107.3
+progress done_runs=421/576 elapsed=2107.4
+progress done_runs=422/576 elapsed=2107.4
+progress done_runs=423/576 elapsed=2107.6
+progress done_runs=424/576 elapsed=2107.6
+progress done_runs=425/576 elapsed=2107.8
+progress done_runs=426/576 elapsed=2107.8
+progress done_runs=427/576 elapsed=2108.0
+progress done_runs=428/576 elapsed=2108.0
+progress done_runs=429/576 elapsed=2108.1
+progress done_runs=430/576 elapsed=2108.1
+progress done_runs=431/576 elapsed=2108.2
+progress done_runs=432/576 elapsed=2108.2
+progress done_runs=433/576 elapsed=2110.2
+progress done_runs=434/576 elapsed=2111.9
+progress done_runs=435/576 elapsed=2115.0
+progress done_runs=436/576 elapsed=2118.1
+progress done_runs=437/576 elapsed=2121.3
+progress done_runs=438/576 elapsed=2124.2
+progress done_runs=439/576 elapsed=2127.5
+progress done_runs=440/576 elapsed=2130.5
+progress done_runs=441/576 elapsed=2133.5
+progress done_runs=442/576 elapsed=2136.2
+progress done_runs=443/576 elapsed=2139.2
+progress done_runs=444/576 elapsed=2142.0
+progress done_runs=445/576 elapsed=2145.0
+progress done_runs=446/576 elapsed=2147.9
+progress done_runs=447/576 elapsed=2151.1
+progress done_runs=448/576 elapsed=2154.1
+progress done_runs=449/576 elapsed=2157.3
+progress done_runs=450/576 elapsed=2160.3
+progress done_runs=451/576 elapsed=2163.6
+progress done_runs=452/576 elapsed=2166.6
+progress done_runs=453/576 elapsed=2168.3
+progress done_runs=454/576 elapsed=2169.7
+progress done_runs=455/576 elapsed=2171.5
+progress done_runs=456/576 elapsed=2173.2
+progress done_runs=457/576 elapsed=2173.3
+progress done_runs=458/576 elapsed=2173.3
+progress done_runs=459/576 elapsed=2173.5
+progress done_runs=460/576 elapsed=2173.5
+progress done_runs=461/576 elapsed=2173.7
+progress done_runs=462/576 elapsed=2173.7
+progress done_runs=463/576 elapsed=2173.9
+progress done_runs=464/576 elapsed=2174.0
+progress done_runs=465/576 elapsed=2174.1
+progress done_runs=466/576 elapsed=2174.2
+progress done_runs=467/576 elapsed=2174.3
+progress done_runs=468/576 elapsed=2174.4
+progress done_runs=469/576 elapsed=2174.5
+progress done_runs=470/576 elapsed=2174.6
+progress done_runs=471/576 elapsed=2174.8
+progress done_runs=472/576 elapsed=2174.8
+progress done_runs=473/576 elapsed=2175.0
+progress done_runs=474/576 elapsed=2175.0
+progress done_runs=475/576 elapsed=2175.2
+progress done_runs=476/576 elapsed=2175.2
+progress done_runs=477/576 elapsed=2175.3
+progress done_runs=478/576 elapsed=2175.3
+progress done_runs=479/576 elapsed=2175.5
+progress done_runs=480/576 elapsed=2175.5
+progress done_runs=481/576 elapsed=2177.9
+progress done_runs=482/576 elapsed=2180.0
+progress done_runs=483/576 elapsed=2183.9
+progress done_runs=484/576 elapsed=2187.6
+progress done_runs=485/576 elapsed=2191.5
+progress done_runs=486/576 elapsed=2195.3
+progress done_runs=487/576 elapsed=2199.3
+progress done_runs=488/576 elapsed=2203.0
+progress done_runs=489/576 elapsed=2206.7
+progress done_runs=490/576 elapsed=2210.1
+progress done_runs=491/576 elapsed=2213.8
+progress done_runs=492/576 elapsed=2217.3
+progress done_runs=493/576 elapsed=2221.0
+progress done_runs=494/576 elapsed=2224.5
+progress done_runs=495/576 elapsed=2228.4
+progress done_runs=496/576 elapsed=2232.2
+progress done_runs=497/576 elapsed=2236.1
+progress done_runs=498/576 elapsed=2239.8
+progress done_runs=499/576 elapsed=2243.8
+progress done_runs=500/576 elapsed=2247.5
+progress done_runs=501/576 elapsed=2249.5
+progress done_runs=502/576 elapsed=2251.3
+progress done_runs=503/576 elapsed=2253.6
+progress done_runs=504/576 elapsed=2255.6
+progress done_runs=505/576 elapsed=2255.8
+progress done_runs=506/576 elapsed=2255.8
+progress done_runs=507/576 elapsed=2256.0
+progress done_runs=508/576 elapsed=2256.1
+progress done_runs=509/576 elapsed=2256.3
+progress done_runs=510/576 elapsed=2256.3
+progress done_runs=511/576 elapsed=2256.6
+progress done_runs=512/576 elapsed=2256.6
+progress done_runs=513/576 elapsed=2256.8
+progress done_runs=514/576 elapsed=2256.9
+progress done_runs=515/576 elapsed=2257.1
+progress done_runs=516/576 elapsed=2257.1
+progress done_runs=517/576 elapsed=2257.3
+progress done_runs=518/576 elapsed=2257.4
+progress done_runs=519/576 elapsed=2257.6
+progress done_runs=520/576 elapsed=2257.6
+progress done_runs=521/576 elapsed=2257.9
+progress done_runs=522/576 elapsed=2257.9
+progress done_runs=523/576 elapsed=2258.1
+progress done_runs=524/576 elapsed=2258.2
+progress done_runs=525/576 elapsed=2258.3
+progress done_runs=526/576 elapsed=2258.3
+progress done_runs=527/576 elapsed=2258.5
+progress done_runs=528/576 elapsed=2258.5
+progress done_runs=529/576 elapsed=2260.2
+progress done_runs=530/576 elapsed=2261.6
+progress done_runs=531/576 elapsed=2264.4
+progress done_runs=532/576 elapsed=2266.9
+progress done_runs=533/576 elapsed=2269.7
+progress done_runs=534/576 elapsed=2272.3
+progress done_runs=535/576 elapsed=2275.1
+progress done_runs=536/576 elapsed=2277.6
+progress done_runs=537/576 elapsed=2280.2
+progress done_runs=538/576 elapsed=2282.6
+progress done_runs=539/576 elapsed=2285.2
+progress done_runs=540/576 elapsed=2287.6
+progress done_runs=541/576 elapsed=2290.3
+progress done_runs=542/576 elapsed=2292.7
+progress done_runs=543/576 elapsed=2295.5
+progress done_runs=544/576 elapsed=2298.0
+progress done_runs=545/576 elapsed=2300.8
+progress done_runs=546/576 elapsed=2303.4
+progress done_runs=547/576 elapsed=2306.2
+progress done_runs=548/576 elapsed=2308.7
+progress done_runs=549/576 elapsed=2310.2
+progress done_runs=550/576 elapsed=2311.5
+progress done_runs=551/576 elapsed=2313.0
+progress done_runs=552/576 elapsed=2314.5
+progress done_runs=553/576 elapsed=2314.6
+progress done_runs=554/576 elapsed=2314.6
+progress done_runs=555/576 elapsed=2314.8
+progress done_runs=556/576 elapsed=2314.8
+progress done_runs=557/576 elapsed=2315.0
+progress done_runs=558/576 elapsed=2315.0
+progress done_runs=559/576 elapsed=2315.2
+progress done_runs=560/576 elapsed=2315.2
+progress done_runs=561/576 elapsed=2315.4
+progress done_runs=562/576 elapsed=2315.4
+progress done_runs=563/576 elapsed=2315.6
+progress done_runs=564/576 elapsed=2315.6
+progress done_runs=565/576 elapsed=2315.8
+progress done_runs=566/576 elapsed=2315.8
+progress done_runs=567/576 elapsed=2316.0
+progress done_runs=568/576 elapsed=2316.0
+progress done_runs=569/576 elapsed=2316.2
+progress done_runs=570/576 elapsed=2316.2
+progress done_runs=571/576 elapsed=2316.4
+progress done_runs=572/576 elapsed=2316.4
+progress done_runs=573/576 elapsed=2316.5
+progress done_runs=574/576 elapsed=2316.6
+progress done_runs=575/576 elapsed=2316.7
+progress done_runs=576/576 elapsed=2316.7
+finished fractal0_entry_exit_grid

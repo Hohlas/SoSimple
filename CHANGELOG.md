@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-21] — Fractal0 Stop Grid M5 (RESEARCH_ONLY)
+- **report**: `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`
+- **topics**: `fractal0`, `stop_policy`, `m5_execution_ordering`, `ml_exit`, `research_only`
+- **summary**: Stop-policy grid `4 x 3 x 2 x 12` выполнен без полного stress-spread: `completed=576`, `failed=0`; `stop_policy_id` включён в ключи выбора, resume, permutation, attribution и artifacts.
+- **artifacts**: `ML/reports/fractal0_stop_grid_m5.json`, `ML/reports/fractal0_stop_grid_m5_summary.csv`, `ML/reports/fractal0_stop_grid_m5_stop_diagnostics.csv`, `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
+- **decision**: Winner по `val_select`: `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; на `val_eval` PF `2.7873`, `BS_p05=2.5085`, но он не доказал превосходство над S0/X0 baseline по BS_p05.
+- **notes**: `locked_test=not_opened`; `stress_spread_status=deferred_shortlist_only`; `pnl_r` означает одинаковый риск на сделку, а не одинаковый фиксированный лот; M1 control имеет малый N и не сравнивается с M0 на равных.
+
 ## [2026-07-21] — Fractal0 Entry/Exit Grid (RESEARCH_ONLY)
 - **report**: `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
 - **topics**: `fractal0`, `entry_exit_grid`, `ohlc_simulation`, `ml_exit`, `permutation_correction`

@@ -806,3 +806,14 @@
 - Recorded new M5 full-grid winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`: `val_eval PF=2.7247`, `BS_p05=2.4868`, stress PF `2.2945`, `ambiguous_same_bar_rate=0.0074`.
 - Updated `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`, `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`, `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md`: current next step is stop-policy / entry-quality follow-up, not full M5 rerun.
 - Corrected report/module/wiki wording: listed `m5_full_trades.csv`, separated old `20` bootstrap disclosure from current full M5 `200`, and updated the report source note from winner-only to full M5 rerun.
+
+### 2026-07-21: Ingest Fractal0 stop-policy grid M5 result
+- Added `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`.
+- Updated `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: added stop-policy registry, stop-aware resume/matching/permutation keys, per-stop-policy ML-exit training, `stop_grid` exit shortlist, `--skip-stress-spread`, and stop diagnostics.
+- Added `ML/reports/fractal0_stop_grid_m5.json` and companion CSV artifacts: `288` selection cells, `progress.completed=576`, `failed=0`, stress-spread deferred.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: recorded winner `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`, `val_eval PF=2.7873`, `BS_p05=2.5085`, permutation PASS, `locked_test=not_opened`.
+
+### 2026-07-21: Review corrections for Fractal0 stop-policy grid report
+- Updated `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`: weakened the S2 conclusion because S2 improves PF but does not beat S0/X0 baseline by `val_eval BS_p05` (`2.5085` vs `2.5120`).
+- Updated artifacts: `ML/reports/fractal0_stop_grid_m5.json` now contains `rejected_alternatives`, `sample_size_warnings`, stress-spread interpretation, and yearly scope; `ML/reports/fractal0_stop_grid_m5_spread_stress.csv` now contains a status row.
+- Added `ML/reports/fractal0_stop_grid_m5_focused_stop_diagnostics.csv` and `ML/reports/fractal0_stop_grid_m5_all_grid_yearly.csv`; updated wiki synthesis to distinguish all-grid diagnostics from winner diagnostics.

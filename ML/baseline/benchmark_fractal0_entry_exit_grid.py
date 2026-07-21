@@ -1,7 +1,7 @@
 # =============================================================================
 # Файл: benchmark_fractal0_entry_exit_grid.py
-# Назначение: Research-runner полной Fractal0 entry/exit сетки с OHLC-симуляцией,
-#   ML-exit слоем, stress-spread и перестановочной коррекцией.
+# Назначение: Research-runner Fractal0 entry/exit и stop-policy сеток с
+#   OHLC/M5-симуляцией, ML-exit слоем и перестановочной коррекцией.
 # Обновлён: 2026-07-21
 # Зависимости:
 #   Входные данные:
@@ -13,8 +13,10 @@
 #     - ML/reports/entry_based_movement_filter_freeze_scores.csv
 #   Выходные данные:
 #     - ML/reports/fractal0_entry_exit_grid*.json/csv
+#     - ML/reports/fractal0_stop_grid_m5*.json/csv
 # Использование:
 #   ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_grid.py --threads 24
+#   ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_grid.py --exit-shortlist stop_grid --skip-stress-spread
 # Примечания:
 #   - locked_test не открывается; результат не выше research_only.
 # =============================================================================
@@ -143,7 +145,24 @@ def entry_grid() -> list[dict[str, object]]:
     ]
 
 
-def exit_grid() -> list[dict[str, object]]:
+STOP_GRID_EXIT_IDS = {
+    "X0_fixed_r_0_7",
+    "X1_ml_opposite_strong_p0_55",
+    "X1_ml_opposite_strong_p0_65",
+    "X1_ml_opposite_strong_p0_75",
+    "X2_ml_opposite_any_p0_50",
+    "X2_ml_opposite_any_p0_55",
+    "X2_ml_opposite_any_p0_60",
+    "X3_ml_hold_close_p0_50",
+    "X3_ml_hold_close_p0_60",
+    "X3_ml_hold_close_p0_70",
+    "X7_time_6",
+    "X7_time_12",
+}
+STOP_GRID_ENTRY_IDS = {"E1_simple_limit_at_fractal0", "E2_open_pullback_0_5atr", "E3_open_pullback_1_0atr"}
+
+
+def exit_grid(shortlist: str | None = None) -> list[dict[str, object]]:
     out: list[dict[str, object]] = [{"exit_id": "X0_fixed_r_0_7", "family": "fixed_r", "tp_r": 0.7}]
     for t in (0.55, 0.65, 0.75):
         out.append({"exit_id": f"X1_ml_opposite_strong_p{t:.2f}".replace(".", "_"), "family": "ml_opposite_strong", "prob_threshold": t})
@@ -164,7 +183,18 @@ def exit_grid() -> list[dict[str, object]]:
     for giveback in (0.30, 0.50, 0.70):
         for activation in (1.0, 2.0, 3.0):
             out.append({"exit_id": f"X8_giveback_{int(giveback * 100)}_activation_{activation:g}".replace(".", "_"), "family": "profit_giveback", "giveback_fraction": giveback, "activation_atr": activation})
+    if shortlist == "stop_grid":
+        return [item for item in out if item["exit_id"] in STOP_GRID_EXIT_IDS]
     return out
+
+
+def stop_policy_grid() -> list[dict[str, object]]:
+    return [
+        {"stop_policy_id": "S0_current_0_5", "family": "current", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 0.5},
+        {"stop_policy_id": "S1_fractal0_buffer_0_5_entry_floor_1", "family": "fractal0_buffer_entry_floor", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 1.0},
+        {"stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2", "family": "fractal0_buffer_entry_floor", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 2.0},
+        {"stop_policy_id": "S3_fractal0_buffer_0_5_entry_floor_3", "family": "fractal0_buffer_entry_floor", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 3.0},
+    ]
 
 
 def mask_grid() -> list[dict[str, object]]:
@@ -174,8 +204,17 @@ def mask_grid() -> list[dict[str, object]]:
     ]
 
 
-def expanded_grid() -> list[dict[str, object]]:
-    return [{**entry, **mask, **exit_rule, "spread": CONFIG.canonical_spread} for entry in entry_grid() for mask in mask_grid() for exit_rule in exit_grid()]
+def expanded_grid(
+    active_stop_policies: list[dict[str, object]] | None = None,
+    active_entries: list[dict[str, object]] | None = None,
+    active_masks: list[dict[str, object]] | None = None,
+    active_exits: list[dict[str, object]] | None = None,
+) -> list[dict[str, object]]:
+    stops = active_stop_policies or stop_policy_grid()
+    entries = active_entries or entry_grid()
+    masks = active_masks or mask_grid()
+    exits = active_exits or exit_grid()
+    return [{**stop, **entry, **mask, **exit_rule, "spread": CONFIG.canonical_spread} for stop in stops for entry in entries for mask in masks for exit_rule in exits]
 
 
 def stable_json_hash(payload: dict[str, object]) -> str:
@@ -187,7 +226,7 @@ def run_config_hash(config: dict[str, object]) -> str:
 
 
 def resume_key(run: dict[str, object]) -> str:
-    keys = ("entry_id", "mask_id", "exit_id", "spread")
+    keys = ("stop_policy_id", "entry_id", "mask_id", "exit_id", "spread")
     if "split" in run:
         keys = (*keys, "split")
     return stable_json_hash({key: run.get(key) for key in keys})
@@ -329,14 +368,53 @@ def resolve_executable_fill(side: str, signal_time: pd.Timestamp, limit_price: f
     return {"filled": False, "fill_index": None, "fill_time": pd.NaT, "entry_effective_price": np.nan, "entry_bid_equivalent": np.nan}
 
 
-def protective_stop_price(side: str, fractal0_price: float, entry_bid_equivalent: float, atr: float) -> float:
-    if side == "BUY":
-        return float(min(fractal0_price, entry_bid_equivalent) - CONFIG.protective_stop_atr * atr)
-    return float(max(fractal0_price, entry_bid_equivalent) + CONFIG.protective_stop_atr * atr)
+def resolve_protective_stop(
+    side: str,
+    fractal0_price: float,
+    entry_bid_equivalent: float,
+    atr: float,
+    stop_policy: dict[str, object] | None = None,
+) -> dict[str, object]:
+    policy = stop_policy or stop_policy_grid()[0]
+    family = str(policy.get("family", "current"))
+    fractal_buffer = float(policy.get("fractal0_buffer_atr", CONFIG.protective_stop_atr))
+    entry_floor = float(policy.get("entry_floor_atr", CONFIG.protective_stop_atr))
+    if family == "current":
+        if side == "BUY":
+            stop = float(min(fractal0_price, entry_bid_equivalent) - fractal_buffer * atr)
+        else:
+            stop = float(max(fractal0_price, entry_bid_equivalent) + fractal_buffer * atr)
+        source = "current_entry_or_fractal_anchor"
+    elif family == "fractal0_buffer_entry_floor":
+        if side == "BUY":
+            fractal_stop = float(fractal0_price - fractal_buffer * atr)
+            floor_stop = float(entry_bid_equivalent - entry_floor * atr)
+            stop = min(fractal_stop, floor_stop)
+            source = "fractal0_buffer" if fractal_stop <= floor_stop else "entry_floor"
+        else:
+            fractal_stop = float(fractal0_price + fractal_buffer * atr)
+            floor_stop = float(entry_bid_equivalent + entry_floor * atr)
+            stop = max(fractal_stop, floor_stop)
+            source = "fractal0_buffer" if fractal_stop >= floor_stop else "entry_floor"
+    else:
+        raise ValueError(f"unknown stop policy family: {family}")
+    distance_atr = abs(float(entry_bid_equivalent) - stop) / float(atr) if atr else float("nan")
+    return {"protective_stop_price": stop, "stop_source": source, "stop_distance_atr": distance_atr, "risk_distance_atr": distance_atr}
 
 
-def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[str, object], spread: float) -> pd.DataFrame:
+def protective_stop_price(
+    side: str,
+    fractal0_price: float,
+    entry_bid_equivalent: float,
+    atr: float,
+    stop_policy: dict[str, object] | None = None,
+) -> float:
+    return float(resolve_protective_stop(side, fractal0_price, entry_bid_equivalent, atr, stop_policy)["protective_stop_price"])
+
+
+def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[str, object], spread: float, stop_policy: dict[str, object] | None = None) -> pd.DataFrame:
     out = []
+    policy = stop_policy or stop_policy_grid()[0]
     ohlc_times = pd.to_datetime(ohlc["time"]).to_numpy()
     opens = pd.to_numeric(ohlc["open"], errors="coerce").to_numpy(dtype=float)
     highs = pd.to_numeric(ohlc["high"], errors="coerce").to_numpy(dtype=float)
@@ -376,12 +454,14 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
                     "entry_bid_equivalent": float(limit_price),
                 }
                 break
-        stop = protective_stop_price(side, fractal["price"], float(fill["entry_bid_equivalent"]) if fill["filled"] else limit_price, atr)
+        entry_bid_equivalent = float(fill["entry_bid_equivalent"]) if fill["filled"] else limit_price
+        stop_info = resolve_protective_stop(side, fractal["price"], entry_bid_equivalent, atr, policy)
+        stop = float(stop_info["protective_stop_price"])
         r_value = abs(float(fill["entry_effective_price"]) - stop) if fill["filled"] else np.nan
         out.append(
             {
                 **fill,
-                "position_id": f"{entry_rule['entry_id']}:{split_row_id}",
+                "position_id": f"{policy['stop_policy_id']}:{entry_rule['entry_id']}:{split_row_id}",
                 "split": row.get("split"),
                 "split_row_id": int(row.get("split_row_id", split_row_id)),
                 "signal_time": signal_time,
@@ -392,6 +472,13 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
                 "fractal0_price": fractal["price"],
                 "protective_stop_price": stop,
                 "r_value": r_value,
+                "stop_policy_id": policy["stop_policy_id"],
+                "stop_family": policy["family"],
+                "entry_floor_atr": policy["entry_floor_atr"],
+                "fractal0_buffer_atr": policy["fractal0_buffer_atr"],
+                "stop_source": stop_info["stop_source"],
+                "stop_distance_atr": stop_info["stop_distance_atr"],
+                "risk_distance_atr": stop_info["risk_distance_atr"],
             }
         )
     return pd.DataFrame(out)
@@ -522,11 +609,12 @@ def yearly_metrics(trades: pd.DataFrame) -> list[dict[str, object]]:
 def filter_trades_for_rule(trades: pd.DataFrame, rule: dict[str, object], split: str | None = None, spread: float | None = None) -> pd.DataFrame:
     if trades.empty:
         return trades.copy()
-    mask = (
-        trades["entry_id"].eq(rule["entry_id"])
-        & trades["mask_id"].eq(rule["mask_id"])
-        & trades["exit_id"].eq(rule["exit_id"])
-    )
+    key_cols = ["entry_id", "mask_id", "exit_id"]
+    if "stop_policy_id" in trades.columns and "stop_policy_id" in rule:
+        key_cols.insert(0, "stop_policy_id")
+    mask = pd.Series(True, index=trades.index)
+    for key in key_cols:
+        mask &= trades[key].eq(rule[key])
     if split is not None and "split" in trades:
         mask &= trades["split"].eq(split)
     spread_col = "spread" if "spread" in trades else "metric_spread" if "metric_spread" in trades else None
@@ -582,11 +670,12 @@ def validate_movement_mask_coverage(rows: pd.DataFrame, scores: pd.DataFrame) ->
 
 
 def compute_attribution(summary: pd.DataFrame, winner: dict[str, object]) -> list[dict[str, object]]:
+    stop_filter = {"stop_policy_id": winner["stop_policy_id"]} if "stop_policy_id" in summary.columns and "stop_policy_id" in winner else {}
     checks = [
-        ("A0_matched_entry_mask_baseline_exit", {"entry_id": winner["entry_id"], "mask_id": winner["mask_id"], "exit_id": "X0_fixed_r_0_7"}),
-        ("A1_same_exit_no_mask", {"entry_id": winner["entry_id"], "mask_id": "M0_no_mask", "exit_id": winner["exit_id"]}),
-        ("A2_same_exit_simple_entry", {"entry_id": "E1_simple_limit_at_fractal0", "mask_id": winner["mask_id"], "exit_id": winner["exit_id"]}),
-        ("A4_same_entry_mask_time_exit", {"entry_id": winner["entry_id"], "mask_id": winner["mask_id"], "exit_id": "X7_time_6"}),
+        ("A0_matched_entry_mask_baseline_exit", {**stop_filter, "entry_id": winner["entry_id"], "mask_id": winner["mask_id"], "exit_id": "X0_fixed_r_0_7"}),
+        ("A1_same_exit_no_mask", {**stop_filter, "entry_id": winner["entry_id"], "mask_id": "M0_no_mask", "exit_id": winner["exit_id"]}),
+        ("A2_same_exit_simple_entry", {**stop_filter, "entry_id": "E1_simple_limit_at_fractal0", "mask_id": winner["mask_id"], "exit_id": winner["exit_id"]}),
+        ("A4_same_entry_mask_time_exit", {**stop_filter, "entry_id": winner["entry_id"], "mask_id": winner["mask_id"], "exit_id": "X7_time_6"}),
     ]
     out = []
     for check_id, filters in checks:
@@ -764,6 +853,8 @@ def select_winner(summary: pd.DataFrame) -> dict[str, object]:
 
 def _summary_from_trades(trades: pd.DataFrame, run: dict[str, object], split: str, spread: float, n_bootstrap: int = 200) -> dict[str, object]:
     metrics = compute_trade_metrics(trades)
+    risk_distance_atr = pd.to_numeric(trades.get("risk_distance_atr"), errors="coerce") if "risk_distance_atr" in trades else pd.Series(dtype=float)
+    tp_distance_atr = pd.to_numeric(trades.get("tp_distance_atr"), errors="coerce") if "tp_distance_atr" in trades else pd.Series(dtype=float)
     bs = block_bootstrap_pf(trades, seed=int(resume_key({**run, "split": split, "spread": spread})[:8], 16), n_bootstrap=n_bootstrap)
     yearly = yearly_metrics(trades)
     yearly_pf = [row.get("pf") for row in yearly if row.get("pf") is not None]
@@ -781,10 +872,12 @@ def _summary_from_trades(trades: pd.DataFrame, run: dict[str, object], split: st
     else:
         pf_without_best = metrics.get("pf")
     return {
-        **{k: run[k] for k in ("entry_id", "mask_id", "exit_id")},
+        **{k: run[k] for k in ("stop_policy_id", "entry_id", "mask_id", "exit_id") if k in run},
         "split": split,
         "spread": float(spread),
         **metrics,
+        "risk_distance_atr": float(risk_distance_atr.median()) if not risk_distance_atr.dropna().empty else None,
+        "tp_distance_atr": float(tp_distance_atr.median()) if not tp_distance_atr.dropna().empty else None,
         "bs_p05": bs["bs_p05"],
         "negative_years": int(negative_years),
         "pf_without_best_year": pf_without_best,
@@ -818,6 +911,14 @@ def _simulate_entries(
                 "entry_id": run["entry_id"],
                 "mask_id": run["mask_id"],
                 "exit_id": run["exit_id"],
+                "stop_policy_id": run.get("stop_policy_id", entry_dict.get("stop_policy_id")),
+                "stop_family": entry_dict.get("stop_family"),
+                "entry_floor_atr": entry_dict.get("entry_floor_atr"),
+                "fractal0_buffer_atr": entry_dict.get("fractal0_buffer_atr"),
+                "stop_source": entry_dict.get("stop_source"),
+                "stop_distance_atr": entry_dict.get("stop_distance_atr"),
+                "risk_distance_atr": entry_dict.get("risk_distance_atr"),
+                "tp_distance_atr": float(run.get("tp_r", np.nan)) * float(entry_dict.get("risk_distance_atr", np.nan)) if str(run.get("family")) == "fixed_r" else np.nan,
                 "side": entry_dict["side"],
                 "entry_effective_price": entry_dict["entry_effective_price"],
                 "entry_bid_equivalent": entry_dict["entry_bid_equivalent"],
@@ -846,46 +947,50 @@ def _entry_cache_for_spread(
     ohlc: pd.DataFrame,
     spread: float,
     frozen_scores: pd.DataFrame,
+    stop_policies: list[dict[str, object]] | None = None,
     entries: list[dict[str, object]] | None = None,
     masks: list[dict[str, object]] | None = None,
-) -> tuple[dict[tuple[str, str, str], pd.DataFrame], dict[str, object]]:
-    cache: dict[tuple[str, str, str], pd.DataFrame] = {}
+) -> tuple[dict[tuple[str, str, str, str], pd.DataFrame], dict[str, object]]:
+    cache: dict[tuple[str, str, str, str], pd.DataFrame] = {}
     rows_by_split_before_after_mask: dict[str, object] = {}
     fill_rate_by_entry: dict[str, object] = {}
     entry_rules = entries or entry_grid()
+    stop_rules = stop_policies or [stop_policy_grid()[0]]
     masks = masks or mask_grid()
     for split, rows in splits.items():
         split_scores = frozen_scores.loc[frozen_scores["split"].eq("train" if split == "train_core" else split)].copy()
         rows_by_split_before_after_mask[split] = {}
-        for entry in entry_rules:
-            entry_rows = build_entry_rows(rows, ohlc, entry, spread)
-            filled_rate = float(entry_rows["filled"].mean()) if len(entry_rows) else 0.0
-            fill_rate_by_entry.setdefault(entry["entry_id"], {})[split] = filled_rate
-            for mask in masks:
-                masked = apply_mask(entry_rows, str(mask["mask_id"]), split_scores)
-                cache[(split, str(entry["entry_id"]), str(mask["mask_id"]))] = masked
-                rows_by_split_before_after_mask[split][f"{entry['entry_id']}:{mask['mask_id']}"] = {
-                    "raw_rows_before_entry": int(len(rows)),
-                    "entry_rows_before_mask": int(len(entry_rows)),
-                    "rows_after_mask": int(len(masked)),
-                    "before": int(len(entry_rows)),
-                    "after": int(len(masked)),
-                    "filled_after": int(masked["filled"].sum()) if "filled" in masked else 0,
-                }
+        for stop_policy in stop_rules:
+            stop_id = str(stop_policy["stop_policy_id"])
+            for entry in entry_rules:
+                entry_rows = build_entry_rows(rows, ohlc, entry, spread, stop_policy)
+                filled_rate = float(entry_rows["filled"].mean()) if len(entry_rows) else 0.0
+                fill_rate_by_entry.setdefault(f"{stop_id}:{entry['entry_id']}", {})[split] = filled_rate
+                for mask in masks:
+                    masked = apply_mask(entry_rows, str(mask["mask_id"]), split_scores)
+                    cache[(split, stop_id, str(entry["entry_id"]), str(mask["mask_id"]))] = masked
+                    rows_by_split_before_after_mask[split][f"{stop_id}:{entry['entry_id']}:{mask['mask_id']}"] = {
+                        "raw_rows_before_entry": int(len(rows)),
+                        "entry_rows_before_mask": int(len(entry_rows)),
+                        "rows_after_mask": int(len(masked)),
+                        "before": int(len(entry_rows)),
+                        "after": int(len(masked)),
+                        "filled_after": int(masked["filled"].sum()) if "filled" in masked else 0,
+                    }
     return cache, {"rows_by_split_before_after_mask": rows_by_split_before_after_mask, "fill_rate_by_entry": fill_rate_by_entry}
 
 
 def _train_ml_exit_layer(
-    entry_cache: dict[tuple[str, str, str], pd.DataFrame],
+    entry_cache: dict[tuple[str, str, str, str], pd.DataFrame],
     ohlc: pd.DataFrame,
     threads: int,
     seeds: tuple[int, ...] = EXIT_MODEL_SEEDS,
     n_estimators: int = 200,
 ) -> tuple[dict[str, object], dict[str, object]]:
-    train_decisions = []
+    train_decisions_by_stop: dict[str, list[pd.DataFrame]] = {}
     started = time.time()
     built_rows = 0
-    for (split, _entry_id, mask_id), entries in entry_cache.items():
+    for (split, stop_policy_id, _entry_id, mask_id), entries in entry_cache.items():
         if split != "train_core":
             continue
         filled = entries.loc[entries["filled"].astype(bool)].copy()
@@ -901,30 +1006,32 @@ def _train_ml_exit_layer(
                 flush=True,
             )
             decisions["mask_id"] = mask_id
-            train_decisions.append(decisions)
-    rows = pd.concat(train_decisions, ignore_index=True) if train_decisions else pd.DataFrame()
-    print(
-        f"prepare train ml-exit fit rows={len(rows)} seeds={list(seeds)} n_estimators={n_estimators} threads={threads}",
-        flush=True,
-    )
-    models = train_exit_models(rows, threads=threads, seeds=seeds, n_estimators=n_estimators)
-    print(f"prepare train ml-exit fit complete elapsed={time.time() - started:.1f}", flush=True)
+            decisions["stop_policy_id"] = stop_policy_id
+            train_decisions_by_stop.setdefault(stop_policy_id, []).append(decisions)
+    models: dict[str, object] = {}
     target_rates: dict[str, object] = {"train_core": {}}
-    if not rows.empty:
-        targets = build_exit_targets(rows)
-        for target in EXIT_TARGETS:
-            target_rates["train_core"][target] = float(targets[target].mean())
+    for stop_policy_id, frames in train_decisions_by_stop.items():
+        rows = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+        print(
+            f"prepare train ml-exit fit stop_policy={stop_policy_id} rows={len(rows)} seeds={list(seeds)} n_estimators={n_estimators} threads={threads}",
+            flush=True,
+        )
+        models[stop_policy_id] = train_exit_models(rows, threads=threads, seeds=seeds, n_estimators=n_estimators)
+        if not rows.empty:
+            targets = build_exit_targets(rows)
+            target_rates["train_core"][stop_policy_id] = {target: float(targets[target].mean()) for target in EXIT_TARGETS}
+    print(f"prepare train ml-exit fit complete elapsed={time.time() - started:.1f}", flush=True)
     return models, target_rates
 
 
 def _score_decision_cache(
-    entry_cache: dict[tuple[str, str, str], pd.DataFrame],
+    entry_cache: dict[tuple[str, str, str, str], pd.DataFrame],
     ohlc: pd.DataFrame,
     models: dict[str, object],
-) -> dict[tuple[str, str, str], pd.DataFrame]:
-    scored: dict[tuple[str, str, str], pd.DataFrame] = {}
+) -> dict[tuple[str, str, str, str], pd.DataFrame]:
+    scored: dict[tuple[str, str, str, str], pd.DataFrame] = {}
     for key, entries in entry_cache.items():
-        split, _entry_id, mask_id = key
+        split, stop_policy_id, _entry_id, mask_id = key
         if split == "train_core":
             continue
         filled = entries.loc[entries["filled"].astype(bool)].copy()
@@ -932,12 +1039,16 @@ def _score_decision_cache(
             scored[key] = pd.DataFrame()
             continue
         decisions = build_exit_decision_rows(filled, ohlc)
-        scored[key] = score_exit_models({mask_id: models.get(mask_id, {})}, decisions)
+        stop_models = models.get(stop_policy_id, {}) if isinstance(models.get(stop_policy_id, {}), dict) else {}
+        scored[key] = score_exit_models({mask_id: stop_models.get(mask_id, {})}, decisions)
     return scored
 
 
 def evaluate_winner_on_val_eval(winner: dict[str, object], val_eval_summary: pd.DataFrame) -> dict[str, object]:
-    row = val_eval_summary[(val_eval_summary["entry_id"] == winner["entry_id"]) & (val_eval_summary["mask_id"] == winner["mask_id"]) & (val_eval_summary["exit_id"] == winner["exit_id"])]
+    mask = val_eval_summary["entry_id"].eq(winner["entry_id"]) & val_eval_summary["mask_id"].eq(winner["mask_id"]) & val_eval_summary["exit_id"].eq(winner["exit_id"])
+    if "stop_policy_id" in val_eval_summary.columns and "stop_policy_id" in winner:
+        mask &= val_eval_summary["stop_policy_id"].eq(winner["stop_policy_id"])
+    row = val_eval_summary[mask]
     return row.iloc[0].to_dict() if not row.empty else dict(winner)
 
 
@@ -976,6 +1087,8 @@ def run_selection_permutation(
     groups = _permutation_groups(val_select_trades)
     pnl = pd.to_numeric(val_select_trades["pnl_r"], errors="coerce").fillna(0.0).to_numpy()
     key_cols = ["entry_id", "mask_id", "exit_id"]
+    if "stop_policy_id" in val_select_trades.columns and "stop_policy_id" in summary.columns:
+        key_cols.insert(0, "stop_policy_id")
     summary_spread = None
     if "spread" in summary.columns:
         if summary["spread"].nunique(dropna=True) == 1:
@@ -1007,13 +1120,134 @@ def run_selection_permutation(
     return verdict
 
 
-def decide_research_verdict(val_eval_metrics: dict[str, object], permutation: dict[str, object]) -> dict[str, object]:
+def compute_stop_diagnostics(trades: pd.DataFrame) -> list[dict[str, object]]:
+    if trades.empty:
+        return []
+    required = {"stop_policy_id", "split", "stop_source"}
+    if not required.issubset(trades.columns):
+        return []
+    rows: list[dict[str, object]] = []
+    group_cols = ["stop_policy_id", "split", "stop_source"]
+    for keys, group in trades.groupby(group_cols, dropna=False):
+        stop_policy_id, split, stop_source = keys
+        close_reason = group["close_reason"].astype(str)
+        stop_distance = pd.to_numeric(group.get("stop_distance_atr"), errors="coerce")
+        r_value = pd.to_numeric(group.get("r_value"), errors="coerce")
+        rows.append(
+            {
+                "stop_policy_id": stop_policy_id,
+                "split": split,
+                "stop_source": stop_source,
+                "n_trades": int(len(group)),
+                "sl_count": int(close_reason.eq("SL").sum()),
+                "sl_rate": float(close_reason.eq("SL").mean()),
+                "median_stop_distance_atr": float(stop_distance.median()),
+                "p10_stop_distance_atr": float(stop_distance.quantile(0.10)),
+                "p90_stop_distance_atr": float(stop_distance.quantile(0.90)),
+                "mean_r_value": float(r_value.mean()),
+                "median_r_value": float(r_value.median()),
+            }
+        )
+    return rows
+
+
+def sample_size_warnings(summary: pd.DataFrame) -> list[dict[str, object]]:
+    if summary.empty:
+        return []
+    warnings: list[dict[str, object]] = []
+    for (split, mask_id), group in summary.groupby(["split", "mask_id"], dropna=False):
+        n_trades = pd.to_numeric(group.get("n_trades"), errors="coerce")
+        min_trades = int(n_trades.min()) if not n_trades.dropna().empty else 0
+        median_trades = float(n_trades.median()) if not n_trades.dropna().empty else 0.0
+        if str(mask_id) == "M1_frozen_movement_top5" and min_trades < 100:
+            warnings.append(
+                {
+                    "split": split,
+                    "mask_id": mask_id,
+                    "warning": "low_trade_count_control_only",
+                    "min_n_trades": min_trades,
+                    "median_n_trades": median_trades,
+                    "interpretation": "do_not_compare_to_M0_as_equal_sample",
+                }
+            )
+    return warnings
+
+
+def rejected_alternatives(summary: pd.DataFrame, winner: dict[str, object]) -> list[dict[str, object]]:
+    if summary.empty:
+        return []
+    keys = ["stop_policy_id", "entry_id", "mask_id", "exit_id"]
+    rows: list[dict[str, object]] = []
+    wanted = [
+        (
+            "current_s0_fixed_r_baseline",
+            {
+                "stop_policy_id": "S0_current_0_5",
+                "entry_id": "E3_open_pullback_1_0atr",
+                "mask_id": "M0_no_mask",
+                "exit_id": "X0_fixed_r_0_7",
+                "split": "val_eval",
+            },
+            "S0 baseline retained for comparison; not selected by stop-grid val_select winner key.",
+        ),
+        (
+            "s1_neighbor_same_family",
+            {
+                "stop_policy_id": "S1_fractal0_buffer_0_5_entry_floor_1",
+                "entry_id": winner.get("entry_id"),
+                "mask_id": winner.get("mask_id"),
+                "exit_id": "X2_ml_opposite_any_p0_55",
+                "split": "val_select",
+            },
+            "Neighbor stop policy had lower val_select BS_p05 than S2 winner.",
+        ),
+        (
+            "s3_neighbor_same_key",
+            {
+                "stop_policy_id": "S3_fractal0_buffer_0_5_entry_floor_3",
+                "entry_id": winner.get("entry_id"),
+                "mask_id": winner.get("mask_id"),
+                "exit_id": winner.get("exit_id"),
+                "split": "val_select",
+            },
+            "Wider stop reduced SL rate but had lower val_select BS_p05 than S2.",
+        ),
+        (
+            "diagnostic_best_val_eval_s2_e1",
+            {
+                "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+                "entry_id": "E1_simple_limit_at_fractal0",
+                "mask_id": "M0_no_mask",
+                "exit_id": "X2_ml_opposite_any_p0_50",
+                "split": "val_eval",
+            },
+            "Best S2 row on val_eval is diagnostic-only; winner selection is restricted to val_select.",
+        ),
+    ]
+    for alt_id, filters, reason in wanted:
+        frame = summary
+        for key, value in filters.items():
+            frame = frame.loc[frame[key].eq(value)]
+        if frame.empty:
+            continue
+        row = frame.iloc[0].to_dict()
+        rows.append(
+            {
+                "alternative_id": alt_id,
+                **{key: row.get(key) for key in (*keys, "split", "n_trades", "pf", "bs_p05", "risk_distance_atr", "tp_distance_atr")},
+                "reason": reason,
+            }
+        )
+    return rows
+
+
+def decide_research_verdict(val_eval_metrics: dict[str, object], permutation: dict[str, object], stress_required: bool = True) -> dict[str, object]:
     reasons = []
     lifecycle = "research_hypothesis"
     if float(val_eval_metrics.get("pf") or 0) < 1.50 or float(val_eval_metrics.get("bs_p05") or 0) < 1.10 or int(val_eval_metrics.get("n_trades") or 0) < 300:
         lifecycle = "research_hint"
         reasons.append("val_eval_gate_failed")
-    if float(val_eval_metrics.get("stress_pf") or 0) < 1.20:
+    if stress_required and float(val_eval_metrics.get("stress_pf") or 0) < 1.20:
         lifecycle = "research_hint"
         reasons.append("stress_warning")
     if permutation.get("status") != "PASS":
@@ -1056,8 +1290,13 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
         raise SystemExit(f"preflight failed: {preflight['errors']}")
     prefix = _path(args.output_prefix)
     progress_path = prefix.with_name(prefix.name + "_progress.json")
-    runs = expanded_grid()[: args.smoke_limit_runs] if args.smoke_limit_runs else expanded_grid()
-    cfg_hash = run_config_hash({"config": dataclasses.asdict(config), "grid": runs, "implementation": "real_ohlc_ml_exit_v1"})
+    active_stop_policies = stop_policy_grid() if args.stop_grid_mode == "full" else [stop_policy_grid()[0]]
+    active_exits = exit_grid(None if args.exit_shortlist == "full" else args.exit_shortlist)
+    stop_grid_entries = [entry for entry in entry_grid() if str(entry["entry_id"]) in STOP_GRID_ENTRY_IDS]
+    requested_entries = stop_grid_entries if args.exit_shortlist == "stop_grid" else entry_grid()
+    runs_all = expanded_grid(active_stop_policies=active_stop_policies, active_entries=requested_entries, active_exits=active_exits)
+    runs = runs_all[: args.smoke_limit_runs] if args.smoke_limit_runs else runs_all
+    cfg_hash = run_config_hash({"config": dataclasses.asdict(config), "grid": runs, "implementation": "real_ohlc_ml_exit_stop_policy_v1", "skip_stress_spread": bool(args.skip_stress_spread)})
     progress = load_progress(progress_path, cfg_hash) if args.resume else {"run_config_hash": cfg_hash, "completed": {}, "failed": {}}
 
     print("prepare load inputs", flush=True)
@@ -1074,25 +1313,31 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
     frozen_scores = _read_frozen_scores(config)
     run_entry_ids = {str(run["entry_id"]) for run in runs}
     run_mask_ids = {str(run["mask_id"]) for run in runs}
+    run_stop_ids = {str(run["stop_policy_id"]) for run in runs}
     active_entries = [entry for entry in entry_grid() if str(entry["entry_id"]) in run_entry_ids]
     active_masks = [mask for mask in mask_grid() if str(mask["mask_id"]) in run_mask_ids]
+    active_stop_policies = [policy for policy in active_stop_policies if str(policy["stop_policy_id"]) in run_stop_ids]
     print("prepare entry cache canonical", flush=True)
-    canonical_entry_cache, cache_report = _entry_cache_for_spread(splits, ohlc, CONFIG.canonical_spread, frozen_scores, active_entries, active_masks)
-    print("prepare entry cache stress", flush=True)
-    stress_entry_cache, _ = _entry_cache_for_spread({"val_eval": splits["val_eval"]}, ohlc, CONFIG.stress_spread, frozen_scores, active_entries, active_masks)
+    canonical_entry_cache, cache_report = _entry_cache_for_spread(splits, ohlc, CONFIG.canonical_spread, frozen_scores, active_stop_policies, active_entries, active_masks)
+    stress_entry_cache = {}
+    if not args.skip_stress_spread:
+        print("prepare entry cache stress", flush=True)
+        stress_entry_cache, _ = _entry_cache_for_spread({"val_eval": splits["val_eval"]}, ohlc, CONFIG.stress_spread, frozen_scores, active_stop_policies, active_entries, active_masks)
     print("prepare train ml-exit", flush=True)
     ml_seeds = (42,) if args.smoke_limit_runs else EXIT_MODEL_SEEDS
     ml_estimators = 25 if args.smoke_limit_runs else 200
     ml_models, target_rates = _train_ml_exit_layer(canonical_entry_cache, ohlc, int(args.threads), seeds=ml_seeds, n_estimators=ml_estimators)
     print("prepare score ml-exit canonical", flush=True)
     canonical_decisions = _score_decision_cache(canonical_entry_cache, ohlc, ml_models)
-    print("prepare score ml-exit stress", flush=True)
-    stress_decisions = _score_decision_cache(stress_entry_cache, ohlc, ml_models)
+    stress_decisions = {}
+    if not args.skip_stress_spread:
+        print("prepare score ml-exit stress", flush=True)
+        stress_decisions = _score_decision_cache(stress_entry_cache, ohlc, ml_models)
 
     summary_rows: list[dict[str, object]] = []
     stress_rows: list[dict[str, object]] = []
     trade_frames: list[pd.DataFrame] = []
-    total_runs = len(runs) * 3
+    total_runs = len(runs) * (2 if args.skip_stress_spread else 3)
     done_runs = 0
     for run in runs:
         for split in ("val_select", "val_eval"):
@@ -1103,7 +1348,7 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
                 done_runs += 1
                 continue
             try:
-                entry_key = (split, str(run["entry_id"]), str(run["mask_id"]))
+                entry_key = (split, str(run["stop_policy_id"]), str(run["entry_id"]), str(run["mask_id"]))
                 result = run_one_config(
                     run_with_split,
                     {split: canonical_entry_cache[entry_key]},
@@ -1123,26 +1368,27 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
             write_progress_atomic(progress_path, progress)
             print(f"progress done_runs={done_runs}/{total_runs} elapsed={time.time() - started:.1f}", flush=True)
 
-        stress_run = {**run, "split": "val_eval"}
-        stress_key = resume_key({**stress_run, "spread": CONFIG.stress_spread})
-        try:
-            entry_key = ("val_eval", str(run["entry_id"]), str(run["mask_id"]))
-            stress_result = run_one_config(
-                stress_run,
-                {"val_eval": stress_entry_cache[entry_key]},
-                ohlc,
-                {"val_eval": stress_decisions.get(entry_key, pd.DataFrame())},
-                CONFIG.stress_spread,
-                execution_ohlc,
-            )
-            stress_result.pop("trades", None)
-            stress_rows.append(stress_result)
-            progress["completed"][stress_key] = stress_result
-        except Exception as exc:  # pragma: no cover - defensive runner behavior
-            progress["failed"][stress_key] = {"error": str(exc), "run": stress_run}
-        done_runs += 1
-        write_progress_atomic(progress_path, progress)
-        print(f"progress done_runs={done_runs}/{total_runs} elapsed={time.time() - started:.1f}", flush=True)
+        if not args.skip_stress_spread:
+            stress_run = {**run, "split": "val_eval"}
+            stress_key = resume_key({**stress_run, "spread": CONFIG.stress_spread})
+            try:
+                entry_key = ("val_eval", str(run["stop_policy_id"]), str(run["entry_id"]), str(run["mask_id"]))
+                stress_result = run_one_config(
+                    stress_run,
+                    {"val_eval": stress_entry_cache[entry_key]},
+                    ohlc,
+                    {"val_eval": stress_decisions.get(entry_key, pd.DataFrame())},
+                    CONFIG.stress_spread,
+                    execution_ohlc,
+                )
+                stress_result.pop("trades", None)
+                stress_rows.append(stress_result)
+                progress["completed"][stress_key] = stress_result
+            except Exception as exc:  # pragma: no cover - defensive runner behavior
+                progress["failed"][stress_key] = {"error": str(exc), "run": stress_run}
+            done_runs += 1
+            write_progress_atomic(progress_path, progress)
+            print(f"progress done_runs={done_runs}/{total_runs} elapsed={time.time() - started:.1f}", flush=True)
 
     summary = pd.DataFrame(summary_rows)
     stress_summary = pd.DataFrame(stress_rows)
@@ -1157,13 +1403,14 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
             stress_summary["entry_id"].eq(winner["entry_id"])
             & stress_summary["mask_id"].eq(winner["mask_id"])
             & stress_summary["exit_id"].eq(winner["exit_id"])
+            & stress_summary["stop_policy_id"].eq(winner["stop_policy_id"])
         ]
         if not stress_match.empty:
             eval_metrics["stress_pf"] = stress_match.iloc[0].get("pf")
     attribution = compute_attribution(summary, winner)
     trades = pd.concat(trade_frames, ignore_index=True) if trade_frames else pd.DataFrame()
     permutation = run_selection_permutation(val_select_summary, trades, int(args.permutation_repeats), CONFIG.permutation_seed)
-    verdict = decide_research_verdict(eval_metrics, permutation)
+    verdict = decide_research_verdict(eval_metrics, permutation, stress_required=not args.skip_stress_spread)
     yearly = pd.DataFrame(yearly_metrics(trades))
     winner_yearly = pd.DataFrame(yearly_metrics(filter_trades_for_rule(trades, winner, split="val_eval", spread=CONFIG.canonical_spread)))
     if not winner_yearly.empty:
@@ -1172,6 +1419,12 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
         winner_yearly.insert(0, "exit_id", winner["exit_id"])
         winner_yearly.insert(0, "mask_id", winner["mask_id"])
         winner_yearly.insert(0, "entry_id", winner["entry_id"])
+        winner_yearly.insert(0, "stop_policy_id", winner["stop_policy_id"])
+    stop_diagnostics = pd.DataFrame(compute_stop_diagnostics(trades))
+    sample_warnings = sample_size_warnings(summary)
+    alternatives = rejected_alternatives(summary, winner)
+    selection_cells = len(active_stop_policies) * len(active_entries) * len(active_masks) * len(active_exits)
+    stress_spread_status = "deferred_shortlist_only" if args.skip_stress_spread else "computed"
     artifact = {
         **preflight,
         **verdict,
@@ -1184,23 +1437,39 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
         "ambiguous_same_bar_rate": float(eval_metrics.get("ambiguous_same_bar_rate") or 0.0),
         "ml_feature_columns_used": {"M0_no_mask": exit_feature_columns("M0_no_mask"), "M1_frozen_movement_top5": exit_feature_columns("M1_frozen_movement_top5")},
         "ml_target_positive_rate_by_split": target_rates,
-        "current_search_budget": {"selection_cells": 384, "stress_cells": 384, "ml_exit_model_jobs": 12, "permutation_repeats": int(args.permutation_repeats)},
+        "current_search_budget": {
+            "selection_cells": selection_cells,
+            "expected_completed_without_stress": selection_cells * 2,
+            "stress_cells": 0 if args.skip_stress_spread else selection_cells,
+            "ml_exit_model_jobs": len(active_stop_policies) * len(active_exits),
+            "permutation_repeats": int(args.permutation_repeats),
+        },
         "cumulative_search_budget": {"status": "disclosed_current_stage_only"},
-        "exact_grid": {"entries": entry_grid(), "masks": mask_grid(), "exits": exit_grid()},
+        "stop_policy_grid": stop_policy_grid(),
+        "exact_grid": {"stop_policies": active_stop_policies, "entries": active_entries, "masks": active_masks, "exits": active_exits},
+        "winner_selection_key": "stop_policy_id + entry_id + mask_id + exit_id",
+        "permutation_key": "stop_policy_id + entry_id + mask_id + exit_id",
+        "stress_spread_status": stress_spread_status,
+        "stress_spread_interpretation": "configured_but_not_computed" if args.skip_stress_spread else "computed",
+        "fixed_risk_interpretation": "pnl_r assumes equal risk per trade, not equal lot size",
         "multiple_testing_correction": permutation,
         "ml_exit_target_contracts": list(EXIT_TARGETS),
         "pnl_convention": {"ohlc_price_type": "bid", "spread": "full bid-ask spread", "same_bar_tp_sl_policy": CONFIG.same_bar_tp_sl_policy, "execution_ohlc_path": config.execution_ohlc_path or None, "execution_ohlc_usage": "resolve_same_h1_bar_tp_sl_order_only" if config.execution_ohlc_path else None},
         "simulator_test_status": "covered_by_unit_tests",
         "attribution_status": "computed",
+        "stop_diagnostics_status": "computed",
         "movement_mask_live_cutoff_status": "no_absolute_live_cutoff",
         "sample_size_warning_status": "computed",
+        "sample_size_warnings": sample_warnings,
         "selected_winner": {k: _jsonable(v) for k, v in winner.items()},
         "val_select_winner_metrics": {k: _jsonable(v) for k, v in winner.items()},
         "val_eval_winner_metrics": {k: _jsonable(v) for k, v in eval_metrics.items()},
-        "rejected_alternatives": [],
+        "rejected_alternatives": alternatives,
         "split_roles": {"train_core": "model_training_only", "val_select": "winner_selection", "val_eval": "frozen_rule_check"},
         "canonical_spread": CONFIG.canonical_spread,
         "stress_spread": CONFIG.stress_spread,
+        "yearly_scope": "all_grid_simulated_trade_rows",
+        "winner_yearly_scope": "selected_winner_val_eval_only",
         "attribution": attribution,
         "forbidden_interpretations": ["production ready", "live-ready", "tradable", "ready_for_locked_test"],
         "allowed_max_verdict": CONFIG.allowed_max_verdict,
@@ -1210,8 +1479,21 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
     summary.drop(columns=[], errors="ignore").to_csv(prefix.with_name(prefix.name + "_summary.csv"), index=False, sep=";")
     trades.to_csv(prefix.with_name(prefix.name + "_trades.csv"), index=False, sep=";")
     yearly.to_csv(prefix.with_name(prefix.name + "_yearly.csv"), index=False, sep=";")
+    yearly.to_csv(prefix.with_name(prefix.name + "_all_grid_yearly.csv"), index=False, sep=";")
     winner_yearly.to_csv(prefix.with_name(prefix.name + "_winner_yearly.csv"), index=False, sep=";")
-    stress_summary.to_csv(prefix.with_name(prefix.name + "_spread_stress.csv"), index=False, sep=";")
+    if args.skip_stress_spread:
+        pd.DataFrame(
+            [
+                {
+                    "stress_spread_status": stress_spread_status,
+                    "stress_spread": CONFIG.stress_spread,
+                    "reason": "full stress-spread deferred to shortlist-only follow-up",
+                }
+            ]
+        ).to_csv(prefix.with_name(prefix.name + "_spread_stress.csv"), index=False, sep=";")
+    else:
+        stress_summary.to_csv(prefix.with_name(prefix.name + "_spread_stress.csv"), index=False, sep=";")
+    stop_diagnostics.to_csv(prefix.with_name(prefix.name + "_stop_diagnostics.csv"), index=False, sep=";")
     pd.DataFrame(attribution).to_csv(prefix.with_name(prefix.name + "_attribution.csv"), index=False, sep=";")
     pd.DataFrame({"null_best_bs_p05": permutation.get("null_best_bs_p05", [])}).to_csv(prefix.with_name(prefix.name + "_permutation.csv"), index=False, sep=";")
     print("finished fractal0_entry_exit_grid", flush=True)
@@ -1234,6 +1516,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--smoke-limit-runs", type=int, default=0)
     parser.add_argument("--permutation-repeats", type=int, default=CONFIG.permutation_repeats)
     parser.add_argument("--execution-ohlc-path", default=CONFIG.execution_ohlc_path)
+    parser.add_argument("--stop-grid-mode", choices=("full", "current-only"), default="full")
+    parser.add_argument("--exit-shortlist", choices=("full", "stop_grid"), default="full")
+    parser.add_argument("--skip-stress-spread", action="store_true")
     return parser.parse_args(argv)
 
 
