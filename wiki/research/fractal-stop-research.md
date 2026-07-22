@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-07-21
-sources: 52
+sources: 53
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`, а исправленный entry-quality filter выбрал `entry_quality_top10` на `val_select`, но провалился на `val_eval` (`PF=1.9543`, `BS_p05=0.9713`, `53` сделки) против no-mask `BS_p05=2.2865`. Это остаётся `research_hint`/`research_only`: `locked_test` не открыт, нужен новый заранее зафиксированный shortlist/stress plan.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; corrected rerun прошёл feature-contract gates, но winner остался `time_only`, поэтому rich/fractal признаки не доказали превосходство. `locked_test` не открыт.
 
 ## Хронология
 
@@ -129,6 +129,45 @@ No-mask baseline в том же run на `val_eval`: `n_trades=2298`,
 winner после просмотра `val_eval`. Следующий шаг — новый заранее
 зафиксированный shortlist/stress plan с minimum selected trades и calibration
 rule, не `locked_test`.
+
+### 2026-07-21: Fractal0 rich entry-quality search
+
+Rich-entry follow-up расширил entry-quality постановку без нового симулятора:
+тот же `S2/E3/M0/X2` contour, M5 только для execution ordering, planned
+limit/stop/R contract и explicit feature allowlist. Phase A eligible search:
+`9` feature profiles x `3` models x `3` targets x `3` primary filters =
+`243` ranked configurations. Diagnostic profiles/filters и XGBoost/LightGBM
+не участвовали в выборе winner.
+
+Corrected full rerun после audit fixes завершился: `243/243`,
+`locked_test=not_opened`. Winner на `val_select`:
+`time_only / linear / target_entry_ev_regression / top30`,
+`score_cutoff_on_val_select=-0.026392849103777025`. На `val_select`:
+`n_trades=625`, `PF=5.3059`, `BS_p05=4.4198`, `mean_pnl_r=0.4447`.
+
+Fixed `val_eval` того же rule: `n_trades=660`, `PF=4.0268`,
+`BS_p05=3.3955`, `mean_pnl_r=0.3397`, `max_drawdown_r=3.3906`,
+`selected_fraction=0.2872`, `SL-rate=0.0197`.
+
+Controls на `val_eval`: `S2/E3/M0/X2 no-mask` имеет `n_trades=2298`,
+`PF=2.7873`, `BS_p05=2.5085`; `S0/E3/M0/X0_fixed_r_0_7` имеет
+`PF=2.7247`, `BS_p05=2.5120`. Rich winner лучше по `BS_p05`, но выбран
+после wide validation search без полной correction. Вердикт structured
+artifact: `RESEARCH_HINT_RICH_FEATURES`, не candidate.
+
+Audit resolution: `fractal0..fractal99` теперь сохраняются в `entry_cache`,
+nearest-структурные профили сортируются по `planned_limit`, score diagnostics
+содержат `rich_entry_score`, target distribution содержит `year`, forbidden
+column audit даёт `0` forbidden hits, все 9 feature-distribution gates `PASS`.
+`feature_importance_by_profile.csv` не произведён, потому что модели по
+профилям не сохраняются и importance не участвовал в выборе. JSON также
+раскрывает cumulative search budget и фиксирует
+`permutation_null_repeats_executed_for_full_selection=0`; `--permutation-repeats
+200` не является full-selection statistical gate.
+
+Практический вывод: разрешён только новый pre-registered replication/probe
+одного rule или малого заранее заданного shortlist. Это не freeze decision.
+Открывать `locked_test` на основании этого результата запрещено.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
@@ -888,6 +927,7 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 51. **Entry-Based Movement Filter выделил один простой research-only filter без смены уровня доказательности.** Поверх amplitude artifact добавлен bounded CLI, который разрешает только `time_plus_atr` и `simple_combined`, ищет winner только на `val_select`, проверяет ровно один filter на `val_eval`, а `2026` использует только как disclosure. Выбранный filter: `simple_combined / extra_trees_small / H3 / top_fraction=0.05`. На `val_select` он даёт `selected_n=333`, `movement_lift=2.1528`; на `val_eval` — `selected_n=333`, `movement_lift=2.4806`, `yearly_lift_pass_rate=1.0`; на `2026` disclosure — `selected_n=59`, `movement_lift=1.6292`. Ключевой смысл этапа: movement/no-movement слой действительно можно сузить до одного простого правила, но это всё ещё только **`SIMPLE_MOVEMENT_FILTER_RESEARCH_ONLY`**. Direction, BUY/SELL, PnL/PF и `locked_test` по-прежнему запрещены; следующий допустимый шаг — только узкая репликация/заморозка этого одного filter-а без расширения search space.
 52. **Entry-Based Movement Filter Freeze завершил узкую репликацию без повышения интерпретации.** Freeze-этап не расширял search space и не выбирал нового winner. Он проверил source hashes, exact frozen rule, frozen config hash, yearly gate, random baseline и score cutoff diagnostics для того же правила `simple_combined / extra_trees_small / H3 / top_fraction=0.05`. Вердикт artifact: **`FROZEN_MOVEMENT_FILTER_FOR_NEXT_RESEARCH_PLAN`**. Смысл этого шага узкий: теперь есть frozen research segmentation mask для следующего плана. Это по-прежнему не direction, не BUY/SELL, не PnL/PF, не trading candidate, не live rule и не permission to open `locked_test`.
 53. **Fractal0 Entry Quality Filter после аудита стал отрицательным для selected winner.** Поверх stop-grid winner `S2/E3/M0/X2` runner проверил 17 фильтров. Аудит исправил две методические проблемы: simple top50 baselines больше не схлопываются в 0 из-за NaN cutoff, а ML-entry признаки считаются от pre-order planned limit/stop/R полей. Исправленный winner `entry_quality_top10` выбран только на `val_select` (`PF=5.4967`, `BS_p05=3.9370`, permutation `p=0.0597`), но на `val_eval` оставил только `53` сделки и проиграл no-mask: `PF=1.9543`, `BS_p05=0.9713` против no-mask `BS_p05=2.2865`. Lifecycle — `research_hint`; текущий selected rule не годится для frozen rule.
+54. **Fractal0 Rich Entry Quality после audit fixes остался time-only winner.** Rich-entry mode расширил постановку до `243` Phase A configs с explicit feature allowlists и planned/no-fill diagnostics. Audit обнаружил потерю `fractal0..fractal99` в `entry_cache`; bugfix добавил перенос serialized fractals, nearest sorting по `planned_limit`, score diagnostics, target-year distribution, movement provenance и forbidden-column audit. Corrected full rerun прошёл все 9 feature-distribution gates (`PASS`), но winner остался `time_only / linear / target_entry_ev_regression / top30`: fixed `val_eval n_trades=660`, `PF=4.0268`, `BS_p05=3.3955` против `S2/E3/M0/X2 no-mask BS_p05=2.5085` и `S0/E3/M0/X0 BS_p05=2.5120`. Verdict канонически `RESEARCH_HINT_RICH_FEATURES`, `TIME_ONLY_WINNER` только result note; cumulative budget раскрыт, full-selection permutation null repeats `0`. Это не доказательство rich/fractal превосходства и не permission to open `locked_test`.
 
 **Все этапы (Stage 2→6.3 и entry-based/Fractal0 execution-aware линия) отклонены как торговые кандидаты.** Табличные модели достигли потолка для текущего direction-вопроса, Transformer не дал устойчивого улучшения, а отдельный amplitude/movement-regime audit показал, что сильная связь движения объясняется простыми baseline-признаками. Stage 5.1/5.1b уточнили носитель структурного сигнала, Stage 5.2/5.3 проверили time-to-breach постановки и нашли полезную дискретную цель `fast`, Stage 5.4 не нашёл признаков, которые усиливают этот след до кандидата, Stage 6.0-6.3 не превратили outcome-based H6/H12 постановки в устойчивое торговое правило, а Fractal0 stop/entry-quality ветка остаётся `research_only`.
 
@@ -961,4 +1001,5 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-07-10-fractal0-price-entry-mechanics.md](../../docs/reports/2026-07-10-fractal0-price-entry-mechanics.md) — retest-zone oracle от `fractal0_price`: diagnostic ratio есть, gate не прошёл по active years; review fixes усилили robustness/gate/side audit
 - [2026-07-21-fractal0-entry-exit-grid.md](../../docs/reports/2026-07-21-fractal0-entry-exit-grid.md) — полный Fractal0 entry/exit grid с OHLC-симуляцией, ML-exit и M5 execution ordering: full M5 rerun выбрал fixed TP winner `E3_open_pullback_1_0atr / M0_no_mask / X0_fixed_r_0_7`; verdict `research_only`
 - [2026-07-21-fractal0-stop-grid-m5.md](../../docs/reports/2026-07-21-fractal0-stop-grid-m5.md) — stop-policy grid с M5 execution ordering: winner `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`, `val_eval PF=2.7873`, `BS_p05=2.5085`; не доказал превосходство над S0/X0 baseline по BS_p05, stress-spread deferred, `locked_test` not opened
-- [2026-07-21-fractal0-entry-quality-filter.md](../../docs/reports/2026-07-21-fractal0-entry-quality-filter.md) — ML-entry filter для `S2/E3/M0/X2`: winner `entry_quality_top20`, `val_eval PF=2.9439`, `BS_p05=2.1886`; не доказал превосходство над no-mask по BS_p05, `locked_test` not opened
+- [2026-07-21-fractal0-entry-quality-filter.md](../../docs/reports/2026-07-21-fractal0-entry-quality-filter.md) — ML-entry filter для `S2/E3/M0/X2`: после audit correction winner `entry_quality_top10` провалился на fixed `val_eval` (`PF=1.9543`, `BS_p05=0.9713`, `53` сделки) против no-mask `BS_p05=2.2865`, `locked_test` not opened
+- [2026-07-21-fractal0-rich-entry-quality.md](../../docs/reports/2026-07-21-fractal0-rich-entry-quality.md) — rich-entry quality search для `S2/E3/M0/X2`: `243` Phase A configs, selected `time_only / linear / target_entry_ev_regression / top30`, fixed `val_eval PF=4.0268`, `BS_p05=3.3955`; verdict `RESEARCH_HINT_RICH_FEATURES`, `locked_test` not opened

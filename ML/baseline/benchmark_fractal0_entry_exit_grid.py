@@ -460,9 +460,11 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
         stop = float(stop_info["protective_stop_price"])
         r_value = abs(float(fill["entry_effective_price"]) - stop) if fill["filled"] else np.nan
         planned_r_value = abs(float(limit_price) - stop)
+        fractal_snapshot = {col: row.get(col) for col in rows.columns if str(col).startswith("fractal") and str(col)[7:].isdigit()}
         out.append(
             {
                 **fill,
+                **fractal_snapshot,
                 "position_id": f"{policy['stop_policy_id']}:{entry_rule['entry_id']}:{split_row_id}",
                 "split": row.get("split"),
                 "split_row_id": int(row.get("split_row_id", split_row_id)),

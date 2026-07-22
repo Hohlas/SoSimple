@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-21] — Fractal0 Rich Entry Quality (RESEARCH_HINT_RICH_FEATURES)
+- **report**: `docs/reports/2026-07-21-fractal0-rich-entry-quality.md`
+- **topics**: `fractal0`, `rich_entry_quality`, `ml_entry`, `feature_contract`, `research_hint`
+- **summary**: Добавлен rich-entry mode для `S2/E3/M0/X2`: 243 eligible Phase A configurations по профилям признаков, моделям, целям и top-фильтрам; planned/no-fill diagnostics и полный feature contract сохранены в structured artifacts.
+- **artifacts**: `ML/reports/fractal0_rich_entry_quality.json`, `ML/reports/fractal0_rich_entry_quality_summary.csv`, `ML/reports/fractal0_rich_entry_quality_feature_contract.csv`, `ML/baseline/benchmark_fractal0_entry_quality_filter.py`, `tests/test_fractal0_entry_quality_filter.py`
+- **decision**: После audit bugfix и corrected full rerun winner остался `time_only / linear / target_entry_ev_regression / top30`; fixed `val_eval PF=4.0268`, `BS_p05=3.3955`. Structural/rich profiles прошли feature-contract gates, но не победили selection protocol.
+- **notes**: `locked_test=not_opened`; внесён bugfix переноса `fractal*`, nearest selection, score diagnostics, movement provenance и audit artifacts. JSON теперь раскрывает cumulative search budget, `TIME_ONLY_WINNER` как note, `feature_importance_by_profile.csv=NOT_PRODUCED` и `permutation_null_repeats_executed_for_full_selection=0`.
+
 ## [2026-07-21] — Fractal0 Entry Quality Filter (RESEARCH_ONLY)
 - **report**: `docs/reports/2026-07-21-fractal0-entry-quality-filter.md`
 - **topics**: `fractal0`, `entry_quality_filter`, `ml_entry`, `m5_execution_ordering`, `research_only`

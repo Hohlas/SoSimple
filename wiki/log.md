@@ -791,6 +791,20 @@
 - Updated `wiki/research/fractal-stop-research.md`: recorded full `4 x 2 x 48` entry/exit grid, winner `E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_55`, `val_eval PF=1.9438`, `BS_p05=1.7601`, stress PF `1.5743`, permutation PASS, and `diagnostic_only` cap from H1 `ambiguous_same_bar_rate=0.2250`.
 - Updated `wiki/index.md`: Fractal Stop coverage now records 50 report updates and points next work to execution-refinement with a lower timeframe for fill/exit ordering.
 
+### 2026-07-21: Audit response for Fractal0 rich entry-quality
+- Verified reviewer finding: first rich run lost serialized `fractal0..fractal99` before rich feature building, invalidating structural/rich interpretation.
+- Fixed `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: `build_entry_rows()` now preserves serialized `fractal*` snapshot.
+- Fixed `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: nearest profiles sort by planned-limit distance, rich score diagnostics includes `rich_entry_score`, target distribution includes year, movement provenance is checked, and diagnostic-best eligibility flags are computed.
+- Corrected full rerun completed with code `0`; all 9 feature-distribution gates `PASS`, forbidden-column audit has `0` forbidden hits, winner remains `time_only / linear / target_entry_ev_regression / top30`.
+- Updated report/module docs/changelog/handoff/wiki to mark the corrected result as canonical `RESEARCH_HINT_RICH_FEATURES` with `TIME_ONLY_WINNER` as note; rich/fractal profiles are validly tested but did not beat `time_only`.
+- Added disclosures for cumulative search budget, constant feature names, `feature_importance_by_profile.csv=NOT_PRODUCED`, and `permutation_null_repeats_executed_for_full_selection=0`.
+
+### 2026-07-21: Ingest Fractal0 rich entry-quality result
+- Added `docs/reports/2026-07-21-fractal0-rich-entry-quality.md`.
+- Updated `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: added rich-entry grids, explicit feature allowlists, planned/no-fill labels, rich target diagnostics, winner eligibility and artifact disclosures.
+- Added `ML/reports/fractal0_rich_entry_quality.json` and companion CSV artifacts: `243` eligible Phase A configs, selected `time_only / linear / target_entry_ev_regression / top30`, fixed `val_eval PF=4.0268`, `BS_p05=3.3955`.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: recorded verdict `RESEARCH_HINT_RICH_FEATURES`, `locked_test=not_opened`, and next step as pre-registered probe only.
+
 ### 2026-07-21: Update Fractal0 entry/exit grid after M5 winner-only ambiguity fix
 - Updated `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: added optional M5 `execution_ohlc_path`, fast H1-hour index for execution OHLC, and fixed ambiguity semantics so ML-exit rules do not count hypothetical fixed TP touches.
 - Added `ML/reports/fractal0_entry_exit_grid_m5_winner.json`: previous winner only, M5 execution ordering, `val_eval PF=1.9438`, `BS_p05=1.7601`, stress PF `1.5743`, `ambiguous_same_bar_rate=0.0`.
