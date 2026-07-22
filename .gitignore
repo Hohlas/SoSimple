@@ -293,6 +293,7 @@ MT/tester/logs/*
 
 # CSV, XLSX files
 *.csv
+!ML/reports/fractal0_rich_entry_quality_summary.csv
 *.xlsx
 DATA/*.npy
 

@@ -3,10 +3,10 @@
 > **Дата**: 2026-07-21
 > **Статус**: Completed
 > **Вердикт**: RESEARCH_HINT_RICH_FEATURES
-> **Result note**: TIME_ONLY_WINNER
+> **Result note**: SHORTLIST_FOR_REPLICATION
 > **Цель**: Проверить, может ли pre-order ML-entry quality ranking улучшить выбранный `S2/E3/M0/X2` контур за счёт planned geometry, H1 price action и структуры `fractal*`.
 > **Related plan/spec**: `docs/superpowers/plans/2026-07-21-fractal0-rich-entry-quality.md`
-> **Audit update**: первый full run был invalidated для structural/rich интерпретации: `fractal0..fractal99` не переносились в `entry_cache`. Исправленный full rerun завершён с кодом `0`; structural/rich profiles прошли feature-contract gates, но winner остался `time_only / linear / target_entry_ev_regression / top30`.
+> **Итоговый фокус**: формальный winner — `time_only / linear / target_entry_ev_regression / top30`, но практический research focus смещён на shortlist кандидатов из `ML/reports/fractal0_rich_entry_quality_summary.csv`.
 
 ## Context
 
@@ -65,7 +65,7 @@ Cumulative search budget:
 ./.venv/bin/python -m pytest tests/ -q
 ```
 
-Результат после bugfix индексации labels/features: `1361 passed, 52 warnings`.
+Результат: `1361 passed, 52 warnings`.
 
 Smoke run:
 
@@ -98,22 +98,9 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quali
 
 Full run exited with code `0`, elapsed `3437.4 sec`, JSON status `completed`.
 
-Corrected full rerun after audit fixes:
+Final full run exited with code `0`, final line `finished fractal0_rich_entry_quality`. JSON status `completed`, `locked_test=not_opened`, `allowed_max_verdict=RESEARCH_HINT_RICH_FEATURES`, `permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
 
-```bash
-PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quality_filter.py \
-  --rich-entry-quality \
-  --threads 24 \
-  --no-resume \
-  --output-prefix ML/reports/fractal0_rich_entry_quality \
-  --execution-ohlc-path MT/MQL4/Files/XAUUSD_M5_OHLC.csv \
-  --stop-policy-id S2_fractal0_buffer_0_5_entry_floor_2 \
-  --permutation-repeats 200
-```
-
-Corrected rerun exited with code `0`, final line `finished fractal0_rich_entry_quality`. JSON status `completed`, `locked_test=not_opened`, `allowed_max_verdict=RESEARCH_HINT_RICH_FEATURES`, `permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
-
-Post-rerun artifact checks:
+Final artifact checks:
 
 - `feature_distribution_flags`: 9 profiles, all `PASS`.
 - `forbidden_column_audit`: 2025 profile-feature rows, forbidden count `0`.
@@ -123,6 +110,8 @@ Post-rerun artifact checks:
 - `diagnostic_best_val_eval_not_eligible=False`; diagnostic best equals selected fixed `val_eval`.
 
 ## Results
+
+Primary table source: `ML/reports/fractal0_rich_entry_quality_summary.csv`. Файл должен храниться в git: это компактный источник всех 243 eligible configurations по `val_select` и их fixed `val_eval` строк.
 
 Selected winner on `val_select`:
 
@@ -160,6 +149,26 @@ Baselines on `val_eval`:
 |---|---:|---:|---:|---:|---:|
 | `S2/E3/M0/X2 no-mask` | 2298 | 2.7873 | 2.5085 | 0.2883 | 8.3860 |
 | `S0/E3/M0/X0_fixed_r_0_7` | 2298 | 2.7247 | 2.5120 | 0.3505 | 7.3000 |
+
+Candidate Shortlist:
+
+Эти строки не являются новым winner selection. Это research shortlist для следующей заранее заданной проверки. Колонки `sel_*` показывают качество на `val_select`, где правило выбиралось; колонки `eval_*` показывают fixed check на следующем отрезке. `eval_status=PASS` означает: `val_eval` имеет `PF > 2.7873`, `BS_p05 > 2.5085`, `n_trades >= 300` и положительный `mean_pnl_r`.
+
+| # | profile | model | target | filter | sel_frac | sel_PF | sel_BS_p05 | sel_mean | sel_DD | eval_n | eval_PF | eval_BS_p05 | eval_mean | eval_DD | eval_status |
+|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 1 | `planned_geometry_only` | `extra_trees_shallow` | `target_entry_avoid_sl` | `top30` | 27.2% | 4.4560 | 3.7863 | 0.4585 | 6.7478 | 532 | 3.2069 | 2.6519 | 0.3577 | 5.3952 | PASS |
+| 2 | `movement_plus_time` | `linear` | `target_entry_ev_regression` | `top50` | 47.2% | 4.0525 | 3.5705 | 0.3816 | 4.0928 | 1332 | 3.2690 | 2.7998 | 0.3173 | 5.6900 | PASS |
+| 3 | `planned_geometry_only` | `extra_trees_shallow` | `target_entry_avoid_sl` | `top40` | 37.0% | 4.2409 | 3.5535 | 0.4277 | 7.0745 | 828 | 3.0329 | 2.5265 | 0.3178 | 6.6663 | PASS |
+| 4 | `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top40` | 36.7% | 4.0203 | 3.4529 | 0.3733 | 4.5776 | 997 | 3.2496 | 2.7501 | 0.2970 | 5.6621 | PASS |
+| 5 | `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top30` | 26.1% | 4.1523 | 3.3506 | 0.3878 | 4.3405 | 785 | 3.5465 | 3.0671 | 0.3126 | 4.3695 | PASS |
+| 6 | `structure_nearest_k40` | `hist_gradient_boosting` | `target_entry_good_0_5r` | `top30` | 28.2% | 3.6348 | 3.0126 | 0.3703 | 3.9464 | 658 | 3.4858 | 2.9337 | 0.3599 | 6.5776 | PASS |
+| 7 | `relative_geometry_k40` | `hist_gradient_boosting` | `target_entry_good_0_5r` | `top30` | 28.2% | 3.6348 | 3.0126 | 0.3703 | 3.9464 | 658 | 3.4858 | 2.9337 | 0.3599 | 6.5776 | PASS |
+| 8 | `movement_plus_time` | `extra_trees_shallow` | `target_entry_good_0_5r` | `top40` | 38.6% | 3.4982 | 2.9923 | 0.3523 | 4.9535 | 916 | 3.3393 | 2.8512 | 0.3616 | 3.8051 | PASS |
+| 9 | `structure_nearest_k40` | `linear` | `target_entry_good_0_5r` | `top30` | 30.1% | 3.1336 | 2.6120 | 0.3485 | 5.0244 | 643 | 3.3038 | 2.8030 | 0.3552 | 3.7064 | PASS |
+| 10 | `relative_geometry_k40` | `linear` | `target_entry_good_0_5r` | `top30` | 30.1% | 3.1336 | 2.6120 | 0.3485 | 5.0244 | 643 | 3.3038 | 2.8030 | 0.3552 | 3.7064 | PASS |
+| 11 | `planned_geometry_only` | `linear` | `target_entry_good_0_5r` | `top30` | 27.0% | 3.1865 | 2.7351 | 0.3304 | 5.2751 | 549 | 3.3574 | 2.7743 | 0.3325 | 3.9482 | PASS |
+
+Critical read: shortlist содержит только варианты, которые сохраняют превышение no-mask baseline на `val_eval`. Приоритет следующей проверки: взять малый заранее заданный набор из разных семейств (`planned_geometry_only`, `movement_plus_time`, `structure_nearest_k40`/`relative_geometry_k40`) и не добавлять новый перебор.
 
 Diagnostic Disclosure: Best Val Eval Row:
 
@@ -199,11 +208,11 @@ For `structure_f0_only`, constant fields on `train_core` are `fractal0_break`, `
 
 ## Conclusions
 
-Corrected rich-entry search дал честный, но более узкий вывод: после исправления переноса `fractal0..fractal99` и проверки feature contracts лучший rule всё равно использует только календарные признаки (`time_only`). Он выбран на `val_select` и на fixed `val_eval` превысил оба baseline по `BS_p05`, PF и drawdown.
+Rich-entry search дал честный, но более широкий вывод: формальный winner использует только календарные признаки (`time_only`). Однако это не единственный полезный результат: `summary.csv` содержит ряд non-time кандидатов, которые на fixed `val_eval` превысили no-mask baseline по `BS_p05`, PF и среднему PnL.
 
-Structural/rich profiles теперь нельзя считать сломанными контрактно: они прошли gates, а `structure_nearest_k20/k40` сортируются по расстоянию до `planned_limit`. Но они не победили выбранный заранее протокол selection. Поэтому этот этап даёт research hint о полезности entry-quality фильтра, а не доказательство полезности fractal/rich признаков.
+Structural/rich profiles теперь нельзя считать сломанными контрактно: они прошли gates, а `structure_nearest_k20/k40` сортируются по расстоянию до `planned_limit`. Они не победили формальный протокол selection, но часть из них достаточно сильна как shortlist для следующей заранее зарегистрированной проверки. Поэтому этот этап даёт research hint о полезности entry-quality фильтра и shortlist кандидатов, а не доказательство торговой пригодности fractal/rich признаков.
 
-Главный риск вывода: winner выбран после широкого validation search из 243 ranked configurations на фоне предыдущих stop-grid и narrow entry-quality решений. Поэтому это не frozen rule и не trading candidate. Следующий честный шаг — отдельная заранее зарегистрированная replication/probe проверка одного правила или малого shortlist, а не открытие `locked_test`.
+Главный риск вывода: и winner, и shortlist появились после широкого validation search из 243 ranked configurations на фоне предыдущих stop-grid и narrow entry-quality решений. Поэтому это не frozen rule и не trading candidate. Следующий честный шаг — отдельная заранее зарегистрированная replication/probe проверка малого shortlist, а не открытие `locked_test`.
 
 ## Limitations / Open Questions
 
@@ -242,26 +251,27 @@ Planned-order diagnostics:
 
 Не открывать `locked_test`.
 
-Допустимый следующий шаг: новый pre-registered replication/probe с одним заранее заданным rule:
+Допустимый следующий шаг: новый pre-registered replication/probe с малым заранее заданным shortlist. Предпочтительный набор для проверки без нового перебора:
 
 ```text
 S2_fractal0_buffer_0_5_entry_floor_2 /
 E3_open_pullback_1_0atr /
 M0_no_mask /
 X2_ml_opposite_any_p0_50 /
-profile=time_only /
-model=linear /
-target=target_entry_ev_regression /
-filter=top30 /
-score_cutoff_on_val_select=-0.026392849103777025
+
+1. planned_geometry_only / extra_trees_shallow / target_entry_avoid_sl / top30
+2. movement_plus_time / linear / target_entry_ev_regression / top50
+3. planned_geometry_only / extra_trees_shallow / target_entry_avoid_sl / top40
+4. movement_plus_time / linear / target_entry_good_0_5r / top30
+5. structure_nearest_k40 / hist_gradient_boosting / target_entry_good_0_5r / top30
 ```
 
-Для повышения статуса нужны: заранее заданный split protocol, PASS/FAIL gates, yearly/side robustness, scale cleanup и явное решение, будет ли permutation повторять весь selection protocol или проверяться ровно одно заранее заданное правило. Только после этого возможна freeze decision.
+Для повышения статуса нужны: заранее заданный split protocol, PASS/FAIL gates, yearly/side robustness, scale cleanup и явное решение, будет ли permutation повторять весь shortlist protocol или проверяться каждый заранее заданный кандидат отдельно. Только после этого возможна freeze decision.
 
 ## Related Materials
 
 - `ML/reports/fractal0_rich_entry_quality.json`
-- `ML/reports/fractal0_rich_entry_quality_summary.csv`
+- `ML/reports/fractal0_rich_entry_quality_summary.csv` — primary source for full candidate table; tracked despite global `*.csv` ignore.
 - `ML/reports/fractal0_rich_entry_quality_feature_contract.csv`
 - `ML/reports/fractal0_rich_entry_quality_target_distribution.csv`
 - `ML/reports/fractal0_rich_entry_quality_planned_order_diagnostics.csv`
@@ -274,20 +284,3 @@ score_cutoff_on_val_select=-0.026392849103777025
 - `ML/reports/fractal0_rich_entry_quality_winner_yearly.csv`
 - `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`
 - `docs/superpowers/plans/2026-07-21-fractal0-rich-entry-quality.md`
-
-## Audit Resolution
-
-- Согласен: `fractal0..fractal99` терялись в `build_entry_rows()`. Исправлено, покрыто тестом, corrected full rerun выполнен.
-- Согласен: `structure_nearest_k20/k40` раньше брали recent slots, а не ближайшие к `planned_limit`. Исправлено и покрыто тестом.
-- Согласен: `diagnostic_best_val_eval_not_eligible=True` было неверным при совпадении diagnostic best и selected winner. Исправлено; теперь `False`, `diagnostic_best_val_eval_is_selected_winner=True`.
-- Согласен: score diagnostics были пустыми для score. Исправлено; `rich_entry_score` включён.
-- Согласен: full-selection permutation gate не запускался. Формулировки снижены до `NOT_RUN_FOR_FULL_SELECTION`.
-- Согласен: feature distribution audit должен быть gate. Добавлен `feature_distribution_flags`; corrected run прошёл `PASS`.
-- Согласен частично: movement provenance требовал правильного hash key. Исправлено. Но `movement_plus_time` не победил, поэтому вывод не зависит от этого профиля.
-- Согласен: нужны `forbidden_column_audit`, selected score diagnostics и target distribution с year. Добавлено.
-- Не согласен с требованием считать constant `fractal0_shift` автоматическим fail для `structure_f0_only`: в текущем контракте достаточно живых `fractal0_price`, `fractal0_direction` и non-null `fractal0_shift`; constant поля раскрыты в distribution audit.
-- `feature_importance_by_profile.csv` не добавлен: без сохранённых fitted estimators он не восстанавливается честно post-hoc. Отмечено как `NOT_PRODUCED`, не как выполненный artifact.
-- Согласен: верхний verdict должен быть каноническим `RESEARCH_HINT_RICH_FEATURES`; `TIME_ONLY_WINNER` перенесён в result note.
-- Согласен: старый заголовок `Diagnostic Disclosure: Not Eligible For Winner` стал неверным; заменён на `Best Val Eval Row`.
-- Согласен: PASS feature-distribution gate не доказывает полезность rich/fractal полей; добавлена таблица constant features и ограничение интерпретации.
-- Согласен: фраза `frozen rule` для следующего шага преждевременна; заменено на pre-registered replication/probe.
