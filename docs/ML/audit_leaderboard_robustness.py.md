@@ -49,3 +49,10 @@ Validation-slice audit для 11 fixed audit input rows из normalized rich-ent
   permutation importance are not computed from saved filtered artifacts unless
   a later implementation adds an explicitly frozen resimulation/rescore path.
 - The script preserves `original_rank` and never selects a new winner.
+
+## Follow-up Closure
+
+The follow-up closure script is `ML/baseline/audit_leaderboard_closure.py`.
+It reuses the same 11 fixed leaderboard rows and adds
+cost/calendar/sequential/multi-seed disclosure under
+`scope=validation_artifact_leaderboard_cost_calendar_sequential_multiseed_closure`.

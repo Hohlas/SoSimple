@@ -1,0 +1,91 @@
+{
+  "experiment": "leaderboard_closure_audit",
+  "status": "completed",
+  "run_status": "completed",
+  "verdict": "research_only",
+  "locked_test": "not_opened",
+  "scope": "validation_artifact_leaderboard_cost_calendar_sequential_multiseed_closure",
+  "leaderboard_rule_count": 11,
+  "input_artifacts": {
+    "artifact_json": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized.json",
+      "sha256": "124859f3aba89a4fe2b4b663919740315d9218b8f2c748298a1dc013e00379cb",
+      "size_bytes": 3480367
+    },
+    "summary_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_summary.csv",
+      "sha256": "89e825e2d54f24c6cb0167dab4a87fba7e415036f62006f6402a53166aa6dd81",
+      "size_bytes": 349060
+    },
+    "trades_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_trades.csv",
+      "sha256": "871413b9bab8758a78b9924abe27223c8bf2df037947b49d23c79d7424b22259",
+      "size_bytes": 310798934
+    },
+    "scores_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_scores.csv",
+      "sha256": "03a765a9134afd99add5c92dd58e018bcc0871156ebe650acb6d2f29f276f92d",
+      "size_bytes": 491649054
+    }
+  },
+  "locked_test_status": "not_opened",
+  "stress_costs_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "time_calendar_status": "COMPUTED",
+  "timezone_shift_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "sequential_position_constraint_status": "COMPUTED",
+  "multi_seed_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "provider_drift_status": "NOT_IN_SCOPE",
+  "transfer_status": "NOT_IN_SCOPE",
+  "allowed_max_verdict": "research_only",
+  "cost_model_disclosure_status": "DISCLOSED_BASELINE,NOT_IN_SCOPE",
+  "calendar_permutation_importance_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "calendar_no_ml_baseline_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "calendar_low_n_slice_count_lt_30": 306,
+  "calendar_low_n_slice_count_lt_10": 92,
+  "calendar_n_trades_gate_status": "LOW_N_DIAGNOSTIC_ONLY",
+  "overall_decision": "LEADERBOARD_CLOSURE_INCOMPLETE_RESEARCH_ONLY",
+  "bounded_multiseed_rerun_contract": {
+    "seeds": [
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "rule_count": 11,
+    "rule_ids": [
+      "rank01_time_only_linear_target_entry_ev_regression_top30",
+      "rank02_time_only_linear_target_entry_ev_regression_top40",
+      "rank03_time_only_linear_target_entry_ev_regression_top50",
+      "rank04_time_only_linear_target_entry_good_0_5r_top40",
+      "rank05_time_only_linear_target_entry_avoid_sl_top30",
+      "rank06_time_only_linear_target_entry_good_0_5r_top50",
+      "rank07_movement_plus_time_linear_target_entry_good_0_5r_top40",
+      "rank08_movement_plus_time_linear_target_entry_good_0_5r_top30",
+      "rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50",
+      "rank10_movement_plus_time_linear_target_entry_ev_regression_top50",
+      "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50"
+    ],
+    "new_search_allowed": false,
+    "locked_test": "not_opened",
+    "fixed_universe": "same 11 LEADERBOARD_RULES, same profiles/models/targets/filters, saved val_select cutoff only",
+    "required_outputs": [
+      "per_seed_summary_csv",
+      "per_seed_trades_csv",
+      "per_seed_scores_csv",
+      "per_rule_seed_aggregate_csv"
+    ]
+  },
+  "artifacts": {
+    "rules_csv": "ML/reports/leaderboard_closure_audit_rules.csv",
+    "stress_cost_csv": "ML/reports/leaderboard_closure_audit_stress_cost.csv",
+    "cost_model_disclosure_csv": "ML/reports/leaderboard_closure_audit_cost_model_disclosure.csv",
+    "calendar_csv": "ML/reports/leaderboard_closure_audit_calendar.csv",
+    "calendar_permutation_importance_csv": "ML/reports/leaderboard_closure_audit_calendar_permutation_importance.csv",
+    "calendar_no_ml_baselines_csv": "ML/reports/leaderboard_closure_audit_calendar_no_ml_baselines.csv",
+    "timezone_shift_csv": "ML/reports/leaderboard_closure_audit_timezone_shift.csv",
+    "sequential_positions_csv": "ML/reports/leaderboard_closure_audit_sequential_positions.csv",
+    "multiseed_csv": "ML/reports/leaderboard_closure_audit_multiseed.csv",
+    "classification_csv": "ML/reports/leaderboard_closure_audit_classification.csv"
+  }
+}
