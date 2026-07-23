@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-07-21
-sources: 53
+last_updated: 2026-07-22
+sources: 54
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; corrected rerun прошёл feature-contract gates, но winner остался `time_only`, поэтому rich/fractal признаки не доказали превосходство. `locked_test` не открыт.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; normalized rerun исправил raw price-like scale contract, но winner остался `time_only`. Rich/fractal признаки получили более честную проверку, но не доказали превосходство. `locked_test` не открыт.
 
 ## Хронология
 
@@ -168,6 +168,46 @@ column audit даёт `0` forbidden hits, все 9 feature-distribution gates `P
 Практический вывод: разрешён только новый pre-registered replication/probe
 одного rule или малого заранее заданного shortlist. Это не freeze decision.
 Открывать `locked_test` на основании этого результата запрещено.
+
+### 2026-07-22: Fractal0 rich entry-quality normalized rerun
+
+Normalized rerun повторил тот же `S2/E3/M0/X2` rich-entry search с новым
+feature contract: raw price-like inputs запрещены, price-like values сначала
+переводятся в ATR-координаты, затем final model inputs приводятся к `[0,1]`
+train-only scaler-ом. Scaler fit выполняется только на `train_core`; missing
+indicators входят в fixed schema; padded fractal token values остаются `0.0`
+и исключаются из scaler fit через `fractalN_present`.
+
+Ranked budget остался `243`:
+`9 eligible profiles x 3 models x 3 targets x 3 filters`. Фактически выполнено
+`324` jobs, потому что дополнительно исполнялись diagnostic-only controls
+`atr_only`, `time_plus_atr`, `planned_geometry_no_atr`. Они не участвовали в
+winner selection.
+
+Full run завершился с `status=completed`, `locked_test=not_opened`,
+`feature_contract_variant=normalized_atr_unit`. Final normalized audit:
+`below_zero_rate.max=0.0`, `above_one_rate.max=0.0`, forbidden raw-price audit
+`0`, Up/Dn provenance gate `PASS`. Есть disclosure warnings:
+constant/near-constant columns in normalized audit и token truncation
+`truncation_rate=1.0` for nearest-k profiles; zero-token rows отсутствуют.
+
+Winner не изменился:
+`time_only / linear / target_entry_ev_regression / top30`. На `val_select`:
+`n_trades=625`, `PF=5.3059`, `BS_p05=4.4198`. Fixed `val_eval`:
+`n_trades=660`, `PF=4.0268`, `BS_p05=3.3955`, `mean_pnl_r=0.3397`,
+`max_drawdown_r=3.3906`, `SL-rate=0.0197`.
+
+Protocol comparison old-vs-normalized показывает, что normalized contract
+улучшил `rich_combined_k40` (`+0.3994 BS_p05`, `+0.3009 PF`),
+`price_action_h1` (`+0.1831 BS_p05`) и `structure_f0_only`
+(`+0.1261 BS_p05`). Но эти улучшения не сменили protocol winner:
+`time_only` остаётся сильнее. Full-selection permutation не выполнена:
+`permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
+
+Практический вывод: normalized artifacts становятся каноническим источником
+для сравнения rich/fractal profiles. Следующий допустимый шаг — только новый
+pre-registered shortlist replication/probe с малым fixed set; не открывать
+`locked_test`.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 
@@ -1003,3 +1043,4 @@ Gate verdict (primary profile): FAIL. Все три gate не пройдены (
 - [2026-07-21-fractal0-stop-grid-m5.md](../../docs/reports/2026-07-21-fractal0-stop-grid-m5.md) — stop-policy grid с M5 execution ordering: winner `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`, `val_eval PF=2.7873`, `BS_p05=2.5085`; не доказал превосходство над S0/X0 baseline по BS_p05, stress-spread deferred, `locked_test` not opened
 - [2026-07-21-fractal0-entry-quality-filter.md](../../docs/reports/2026-07-21-fractal0-entry-quality-filter.md) — ML-entry filter для `S2/E3/M0/X2`: после audit correction winner `entry_quality_top10` провалился на fixed `val_eval` (`PF=1.9543`, `BS_p05=0.9713`, `53` сделки) против no-mask `BS_p05=2.2865`, `locked_test` not opened
 - [2026-07-21-fractal0-rich-entry-quality.md](../../docs/reports/2026-07-21-fractal0-rich-entry-quality.md) — rich-entry quality search для `S2/E3/M0/X2`: `243` Phase A configs, selected `time_only / linear / target_entry_ev_regression / top30`, fixed `val_eval PF=4.0268`, `BS_p05=3.3955`; verdict `RESEARCH_HINT_RICH_FEATURES`, `locked_test` not opened
+- [2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](../../docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) — normalized rich-entry rerun: raw price-like inputs запрещены, scaler fit только на `train_core`, final inputs `[0,1]`; winner остался `time_only`, protocol comparison улучшил часть rich/fractal profiles, `locked_test` not opened

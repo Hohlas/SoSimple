@@ -558,6 +558,215 @@ def test_target_distribution_audit_counts_classes_and_regression_stats_by_split(
     assert {"mean", "median", "p05", "p50", "p95", "std", "nan_rate"}.issubset(reg.columns)
 
 
+def test_normalized_rich_allowlist_excludes_raw_price_like_columns():
+    for profile_id in [
+        "atr_only",
+        "time_plus_atr",
+        "planned_geometry_no_atr",
+        "planned_geometry_only",
+        "time_only",
+        "structure_f0_only",
+        "structure_nearest_k20",
+        "structure_nearest_k40",
+        "relative_geometry_k40",
+        "price_action_h1",
+        "movement_plus_time",
+        "rich_combined_k40",
+    ]:
+        cols = runner.normalized_rich_feature_allowlist(profile_id)
+        assert all(not col.endswith("_price") for col in cols)
+        assert not {"h1_open", "h1_high", "h1_low", "h1_close"}.intersection(cols)
+        assert "fractal0_price" not in cols
+        runner.assert_no_raw_price_like_features(cols)
+
+    for raw_name in ["h1_body", "h1_range", "planned_limit_distance", "entry_price_delta", "fractal12_price"]:
+        with pytest.raises(ValueError, match="raw price-like"):
+            runner.assert_no_raw_price_like_features([raw_name])
+
+
+def test_normalized_fractal_geometry_uses_atr_coordinates():
+    raw0 = "1700000000:100.0:1:2:3:1:0:1:4:5:6:0.1:0.2:0.3:0.4:0.5:0.6:0.7:0.8:0.9:1.0:2.5:12"
+    raw1 = "1699996400:104.0:-1:1:2:0:1:0:3:4:5:0.2:0.1:0.4:0.3:0.6:0.5:0.8:0.7:1.0:0.9:2.0:24"
+    entries = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2020-01-01 10:00:00"]),
+            "side": ["BUY"],
+            "ATR": [2.0],
+            "fractal0_price": [100.0],
+            "planned_entry_bid_equivalent": [101.0],
+            "planned_protective_stop_price": [97.0],
+            "planned_r_value": [4.0],
+            "fractal0": [raw0],
+            "fractal1": [raw1],
+        }
+    )
+    ohlc = pd.DataFrame(columns=["time", "open", "high", "low", "close"])
+
+    frame, _ = runner.build_normalized_rich_feature_frame(entries, ohlc, "structure_nearest_k20")
+
+    assert "fractal0_price_rel_f0_atr" in frame.columns
+    assert "fractal0_distance_to_planned_limit_atr" in frame.columns
+    assert "fractal0_distance_to_planned_stop_atr" in frame.columns
+    assert "fractal0_present" in frame.columns
+    assert "fractal0_price_rel_f0" not in frame.columns
+    assert "fractal0_distance_to_planned_limit" not in frame.columns
+
+
+def test_normalized_fractal_padding_is_zero_and_explicitly_masked():
+    raw0 = "1700000000:100.0:1:2:3:1:0:1:4:5:6:0.1:0.2:0.3:0.4:0.5:0.6:0.7:0.8:0.9:1.0:2.5:12"
+    entries = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2020-01-01 10:00:00"]),
+            "side": ["BUY"],
+            "ATR": [2.0],
+            "fractal0_price": [100.0],
+            "planned_entry_bid_equivalent": [101.0],
+            "planned_protective_stop_price": [97.0],
+            "planned_r_value": [4.0],
+            "fractal0": [raw0],
+        }
+    )
+    ohlc = pd.DataFrame(columns=["time", "open", "high", "low", "close"])
+
+    frame, _ = runner.build_normalized_rich_feature_frame(entries, ohlc, "structure_nearest_k20")
+
+    padded_cols = [col for col in frame.columns if col.startswith("fractal1_") and col != "fractal1_present"]
+    assert frame.loc[0, "fractal0_present"] == 1.0
+    assert frame.loc[0, "fractal1_present"] == 0.0
+    assert frame.loc[0, padded_cols].eq(0.0).all()
+
+
+def test_normalized_token_coverage_uses_profile_k20_length():
+    raws = [
+        f"{1700000000 - i * 300}:{100.0 + i}:1:2:3:1:0:1:4:5:6:0.1:0.2:0.3:0.4:0.5:0.6:0.7:0.8:0.9:1.0:2.5:{12+i}"
+        for i in range(25)
+    ]
+    entries = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2020-01-01 10:00:00"]),
+            "side": ["BUY"],
+            "ATR": [2.0],
+            "fractal0_price": [100.0],
+            "planned_entry_bid_equivalent": [101.0],
+            "planned_protective_stop_price": [97.0],
+            "planned_r_value": [4.0],
+            **{f"fractal{i}": [raw] for i, raw in enumerate(raws)},
+        }
+    )
+    ohlc = pd.DataFrame(columns=["time", "open", "high", "low", "close"])
+
+    _, audit_rows = runner.build_normalized_rich_feature_frame(entries, ohlc, "structure_nearest_k20")
+    coverage = runner.token_coverage_audit([{**row, "split": "train_core"} for row in audit_rows if "valid_token_count" in row])
+
+    row = coverage.iloc[0]
+    assert row["profile_id"] == "structure_nearest_k20"
+    assert row["p50_valid_token_count"] == 20.0
+    assert row["truncation_rate"] == 1.0
+
+
+def test_normalized_schema_keeps_missing_indicator_columns_stable_across_splits():
+    train = pd.DataFrame({"a": [0.0, 10.0], "b": [5.0, 6.0]})
+    val = pd.DataFrame({"a": [1.0, None], "b": [5.0, 7.0]})
+    schema = runner.build_normalized_feature_schema("unit_test_profile", train, missing_capable_columns=["a"])
+    scaler = runner.fit_unit_scaler({"train_core": train}, schema)
+
+    out_train = runner.apply_unit_scaler(train, scaler, schema)
+    out_val = runner.apply_unit_scaler(val, scaler, schema)
+
+    assert list(out_train.columns) == list(out_val.columns)
+    assert "a_missing" in out_train.columns
+    assert out_train["a_missing"].tolist() == [0.0, 0.0]
+    assert out_val["a_missing"].tolist() == [0.0, 1.0]
+
+
+def test_unit_scaler_fits_train_only_and_clips_validation():
+    train = pd.DataFrame({"a": [0.0, 10.0], "b": [5.0, 5.0]})
+    val = pd.DataFrame({"a": [-100.0, 100.0], "b": [5.0, 7.0]})
+    schema = runner.build_normalized_feature_schema("unit_test_profile", train)
+    scaler = runner.fit_unit_scaler({"train_core": train}, schema)
+
+    out_train = runner.apply_unit_scaler(train, scaler, schema)
+    out_val = runner.apply_unit_scaler(val, scaler, schema)
+
+    assert out_train["a"].tolist() == [0.0, 1.0]
+    assert out_train["b"].tolist() == [0.0, 0.0]
+    assert out_val["a"].tolist() == [0.0, 1.0]
+    assert out_val["b"].tolist() == [0.0, 0.0]
+    assert scaler["a"]["fit_split"] == "train_core"
+    assert scaler["b"]["constant"] is True
+
+
+def test_assert_unit_scaled_frame_rejects_out_of_range_values():
+    frame = pd.DataFrame({"ok": [0.0, 0.5, 1.0], "bad": [0.0, 1.2, 0.3]})
+    with pytest.raises(ValueError, match="outside 0..1"):
+        runner.assert_unit_scaled_frame(frame, "unit_test_profile")
+
+
+def test_normalized_structure_f0_gate_uses_normalized_required_fields():
+    features = pd.DataFrame(
+        {
+            "fractal0_price_to_planned_limit_atr": [0.1, 0.5, 0.9],
+            "fractal0_direction_unit": [0.0, 1.0, 0.0],
+            "fractal0_shift": [0.0, 0.0, 0.0],
+            "fractal0_price_to_planned_limit_atr_missing": [0.0, 0.0, 0.0],
+            "fractal0_direction_unit_missing": [0.0, 0.0, 0.0],
+        }
+    )
+
+    gate = runner.structural_feature_gate("structure_f0_only", features)
+
+    assert gate["status"] == "PASS"
+    assert "fractal0_price_to_planned_limit_atr" in gate["required_live_fields"]
+    assert "fractal0_direction_unit" in gate["required_live_fields"]
+
+
+def test_forbidden_column_audit_exposes_raw_price_like_result(monkeypatch):
+    monkeypatch.setattr(runner, "normalized_rich_feature_allowlist", lambda profile_id: ["target_leak", "fractal0_price", "safe_atr"])
+
+    audit = runner.forbidden_column_audit(["unit_profile"])
+
+    assert {"target_or_future_forbidden", "raw_price_like", "forbidden"}.issubset(audit.columns)
+    assert bool(audit.loc[audit["feature"].eq("target_leak"), "target_or_future_forbidden"].iloc[0]) is True
+    assert bool(audit.loc[audit["feature"].eq("fractal0_price"), "raw_price_like"].iloc[0]) is True
+    assert bool(audit.loc[audit["feature"].eq("safe_atr"), "forbidden"].iloc[0]) is False
+
+
+def test_normalized_updn_gate_marks_source_provenance_unknown():
+    gate = runner.normalized_updn_provenance_gate()
+
+    assert {"usage_status", "source_provenance_status", "status"}.issubset(gate.columns)
+    row = gate.iloc[0]
+    assert row["usage_status"] == "PASS"
+    assert row["source_provenance_status"] == "UNKNOWN"
+    assert row["status"] == "SOURCE_PROVENANCE_NOT_VERIFIED"
+
+
+def test_compare_rich_runs_protocol_uses_val_select_then_fixed_val_eval():
+    old = pd.DataFrame(
+        [
+            {"split": "val_select", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_ev_regression", "filter_id": "top30", "eligible_for_winner": True, "bs_p05": 3.0, "pf": 4.0, "n_trades": 600},
+            {"split": "val_eval", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_ev_regression", "filter_id": "top30", "eligible_for_winner": True, "bs_p05": 2.7, "pf": 3.7, "n_trades": 610},
+            {"split": "val_eval", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_good_0_5r", "filter_id": "top10", "eligible_for_winner": True, "bs_p05": 9.9, "pf": 10.0, "n_trades": 120},
+        ]
+    )
+    new = pd.DataFrame(
+        [
+            {"split": "val_select", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_ev_regression", "filter_id": "top30", "eligible_for_winner": True, "bs_p05": 2.5, "pf": 3.5, "n_trades": 600},
+            {"split": "val_eval", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_ev_regression", "filter_id": "top30", "eligible_for_winner": True, "bs_p05": 2.4, "pf": 3.3, "n_trades": 610},
+            {"split": "val_eval", "profile_id": "time_only", "model_id": "linear", "target_id": "target_entry_good_0_5r", "filter_id": "top10", "eligible_for_winner": True, "bs_p05": 8.8, "pf": 9.0, "n_trades": 120},
+        ]
+    )
+
+    comparison = runner.compare_rich_runs_protocol(old, new)
+
+    row = comparison.loc[comparison["profile_id"].eq("time_only")].iloc[0]
+    assert row["old_eval_bs_p05"] == 2.7
+    assert row["new_eval_bs_p05"] == 2.4
+    assert row["delta_eval_bs_p05"] == pytest.approx(-0.3)
+    assert row["old_filter_id"] == "top30"
+    assert row["new_filter_id"] == "top30"
+
+
 def test_split_manifest_has_dates_and_order():
     entries = {
         "val_select": pd.DataFrame({"time": pd.to_datetime(["2020-01-01", "2020-01-02"]), "filled": [True, False]}),

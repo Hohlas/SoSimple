@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-22] — Fractal0 Rich Entry Quality Normalized Rerun (RESEARCH_HINT_RICH_FEATURES)
+- **report**: `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`
+- **topics**: `fractal0`, `rich_entry_quality`, `normalized_features`, `feature_contract`, `train_only_scaler`
+- **summary**: Rich-entry search rerun выполнен с normalized contract: raw price-like inputs запрещены, price-like признаки переведены в ATR-координаты и затем в `[0,1]` через train-core scaler.
+- **artifacts**: `ML/reports/fractal0_rich_entry_quality_normalized.json`, `ML/reports/fractal0_rich_entry_quality_normalized_summary.csv`, `ML/reports/fractal0_rich_entry_quality_normalized_protocol_comparison.csv`, `ML/reports/fractal0_rich_entry_quality_normalized_normalization_config.json`
+- **decision**: Winner не изменился: `time_only / linear / target_entry_ev_regression / top30`; fixed `val_eval PF=4.0268`, `BS_p05=3.3955`. Normalized contract улучшил protocol comparison для `rich_combined_k40`, `price_action_h1` и `structure_f0_only`, но не доказал превосходство rich/fractal profiles над `time_only`.
+- **notes**: `locked_test=not_opened`; ranked budget `243`, executed jobs `324` из-за diagnostic-only controls; full-selection permutation не выполнена (`permutation_gate=NOT_RUN_FOR_FULL_SELECTION`); final normalized audit имеет `ERROR=0`, но `WARNING` по constant/near-constant features и token truncation disclosure.
+
 ## [2026-07-21] — Fractal0 Rich Entry Quality (RESEARCH_HINT_RICH_FEATURES)
 - **report**: `docs/reports/2026-07-21-fractal0-rich-entry-quality.md`
 - **topics**: `fractal0`, `rich_entry_quality`, `ml_entry`, `feature_contract`, `research_hint`

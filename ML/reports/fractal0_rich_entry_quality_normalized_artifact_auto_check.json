@@ -1,0 +1,150 @@
+{
+  "artifact_auto_check_version": "2026-07-23.audit-response.v1",
+  "checked_at_utc": "2026-07-23T00:00:00Z",
+  "scope": "normalized rich-entry rerun structured artifact consistency after audit fixes",
+  "input_artifacts": {
+    "json": "ML/reports/fractal0_rich_entry_quality_normalized.json",
+    "summary_csv": "ML/reports/fractal0_rich_entry_quality_normalized_summary.csv",
+    "feature_contract_csv": "ML/reports/fractal0_rich_entry_quality_normalized_feature_contract.csv",
+    "forbidden_column_audit_csv": "ML/reports/fractal0_rich_entry_quality_normalized_forbidden_column_audit.csv",
+    "normalized_feature_distribution_audit_csv": "ML/reports/fractal0_rich_entry_quality_normalized_normalized_feature_distribution_audit.csv",
+    "token_coverage_csv": "ML/reports/fractal0_rich_entry_quality_normalized_token_coverage.csv",
+    "updn_usage_gate_csv": "ML/reports/fractal0_rich_entry_quality_normalized_updn_provenance_gate.csv"
+  },
+  "checks": [
+    {
+      "check": "json_status_completed",
+      "status": "PASS",
+      "observed": "completed"
+    },
+    {
+      "check": "locked_test_not_opened",
+      "status": "PASS",
+      "observed": "not_opened"
+    },
+    {
+      "check": "ranked_budget_243",
+      "status": "PASS",
+      "observed": 243
+    },
+    {
+      "check": "executed_jobs_324",
+      "status": "PASS",
+      "observed": 324
+    },
+    {
+      "check": "winner_time_only",
+      "status": "PASS",
+      "observed": {
+        "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+        "entry_id": "E3_open_pullback_1_0atr",
+        "mask_id": "M0_no_mask",
+        "exit_id": "X2_ml_opposite_any_p0_50",
+        "split": "val_select",
+        "spread": 0.2,
+        "n_trades": 625,
+        "gross_profit": 342.50512414909787,
+        "gross_loss": 64.55149569334455,
+        "pf": 5.30592080741533,
+        "mean_pnl_r": 0.4447258055292054,
+        "median_pnl_r": 0.05000000000001137,
+        "max_drawdown_r": 2.9655541579315354,
+        "win_rate": 0.568,
+        "ambiguous_same_bar_rate": 0.0,
+        "exit_reason_counts": {
+          "ML_CLOSE": 419,
+          "TIME": 193,
+          "SL": 13
+        },
+        "risk_distance_atr": 2.0,
+        "tp_distance_atr": null,
+        "bs_p05": 4.419769810033542,
+        "negative_years": 0,
+        "pf_without_best_year": 4.976321646247657,
+        "effective_profit_years": 2.2888026789764124,
+        "n_years": 3,
+        "filter_id": "top30",
+        "filter_family": "rich_entry_quality",
+        "top_fraction": 0.3,
+        "score_cutoff_on_val_select": -0.026718184259660646,
+        "entry_filter_score_col": "rich_entry_score",
+        "selected_fraction": 0.2724498692240628,
+        "sl_rate": 0.0208,
+        "profile_id": "time_only",
+        "model_id": "linear",
+        "target_id": "target_entry_ev_regression",
+        "eligible_for_winner": true,
+        "not_eligible_for_winner": false,
+        "not_eligible_reason": ""
+      }
+    },
+    {
+      "check": "full_selection_permutation_not_run",
+      "status": "PASS",
+      "observed": "NOT_RUN_FOR_FULL_SELECTION"
+    },
+    {
+      "check": "normalized_audit_no_error",
+      "status": "PASS",
+      "observed": 0
+    },
+    {
+      "check": "normalized_audit_unit_range",
+      "status": "PASS",
+      "observed": {
+        "below_zero_rate_max": 0.0,
+        "above_one_rate_max": 0.0
+      }
+    },
+    {
+      "check": "forbidden_no_target_future_or_raw_price_like",
+      "status": "PASS",
+      "observed": {
+        "forbidden_sum": 0,
+        "raw_price_like_sum": 0,
+        "target_or_future_forbidden_sum": 0
+      }
+    },
+    {
+      "check": "token_k20_coverage_length",
+      "status": "PASS",
+      "observed": [
+        {
+          "split": "train_core",
+          "p50_valid_token_count": 20.0
+        },
+        {
+          "split": "val_eval",
+          "p50_valid_token_count": 20.0
+        },
+        {
+          "split": "val_select",
+          "p50_valid_token_count": 20.0
+        }
+      ]
+    },
+    {
+      "check": "updn_usage_pass_source_provenance_unknown",
+      "status": "PASS",
+      "observed": [
+        {
+          "field_family": "fractal0_updn",
+          "source": "serialized_fractal_fields",
+          "source_producer": "lib_PIC serialized fractal snapshots",
+          "source_audit_scope": "usage_only_python_builder",
+          "python_recomputed_from_future_labels": false,
+          "top_level_updn_columns_used": false,
+          "usage_status": "PASS",
+          "source_provenance_status": "UNKNOWN",
+          "status": "SOURCE_PROVENANCE_NOT_VERIFIED",
+          "note": "normalized mode reads Up/Dn only from serialized fractal snapshots; producer-level lib_PIC provenance was not re-audited in this rerun"
+        }
+      ]
+    }
+  ],
+  "overall_status": "PASS",
+  "notes": [
+    "Model metrics were not recomputed; this checks completed rerun artifacts and regenerated small audit artifacts only.",
+    "Up/Dn gate is usage-level PASS with source producer provenance UNKNOWN, not source-level PASS."
+  ]
+}

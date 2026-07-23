@@ -172,6 +172,79 @@ permutation; `_permutation.csv` содержит только заголовок
 `feature_importance_by_profile.csv` не производится, потому что runner не
 сохраняет fitted per-profile модели и этот artifact не участвовал в selection.
 
+## Normalized Rich Entry Quality Mode
+
+Команда:
+
+```bash
+PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quality_filter.py \
+  --rich-entry-quality \
+  --normalized-rich-features \
+  --threads 24 \
+  --no-resume \
+  --output-prefix ML/reports/fractal0_rich_entry_quality_normalized \
+  --execution-ohlc-path MT/MQL4/Files/XAUUSD_M5_OHLC.csv \
+  --stop-policy-id S2_fractal0_buffer_0_5_entry_floor_2 \
+  --permutation-repeats 200
+```
+
+Normalized rich mode не заменяет legacy rich mode. Он добавляет отдельный
+feature contract:
+
+- raw price-like inputs запрещены;
+- price-like values переводятся в ATR-координаты до unit scaling;
+- unit scaler fit выполняется только на `train_core`;
+- `val_select` и `val_eval` применяют train-core scaler bounds;
+- финальные model inputs должны быть finite и в диапазоне `0..1`;
+- missing indicators входят в fixed schema заранее;
+- padded fractal token values остаются `0.0` и исключаются из scaler fit через
+  `fractalN_present`.
+
+Новые diagnostic-only profiles:
+
+- `atr_only`
+- `time_plus_atr`
+- `planned_geometry_no_atr`
+
+Они исполняются в normalized run, но не участвуют в winner selection. Поэтому
+ranked budget остаётся `243`, а фактически выполненных jobs в full run может
+быть `324`.
+
+Основные normalized artifacts:
+
+- `ML/reports/fractal0_rich_entry_quality_normalized.json`
+- `ML/reports/fractal0_rich_entry_quality_normalized_summary.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_feature_contract.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_feature_distribution_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_normalized_feature_distribution_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_token_coverage.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_normalization_config.json`
+- `ML/reports/fractal0_rich_entry_quality_normalized_forbidden_column_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_protocol_comparison.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_diagnostic_best_val_eval_by_profile.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_updn_provenance_gate.csv`
+
+Итог normalized rerun `2026-07-22`:
+
+- `status=completed`;
+- `locked_test=not_opened`;
+- `feature_contract_variant=normalized_atr_unit`;
+- `ranked_search_budget=243`;
+- `n_total_executed_configs=324`;
+- selected on `val_select`: `time_only / linear / target_entry_ev_regression / top30`;
+- fixed `val_eval`: `n_trades=660`, `PF=4.0268`, `BS_p05=3.3955`;
+- final normalized audit: `below_zero_rate.max=0.0`, `above_one_rate.max=0.0`;
+- forbidden raw-price audit: `0` forbidden columns;
+- Up/Dn provenance gate: `PASS`;
+- full-selection permutation not run:
+  `permutation_null_repeats_executed_for_full_selection=0`,
+  `permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
+
+Protocol comparison against legacy rich shows that normalized contract improves
+`rich_combined_k40`, `price_action_h1` and `structure_f0_only`, but formal
+winner remains `time_only`. Result remains `RESEARCH_HINT_RICH_FEATURES`, not a
+candidate and not permission to open `locked_test`.
+
 ## Ограничения rich-entry corrected rerun
 
 - `locked_test` не открывается.

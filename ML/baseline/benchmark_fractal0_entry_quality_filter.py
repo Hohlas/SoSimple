@@ -2,9 +2,10 @@
 # Файл: benchmark_fractal0_entry_quality_filter.py
 # Назначение: Research-runner ML-entry фильтра для E3 Fractal0 поверх
 #   существующего stop-grid/M5 runner без отдельной копии симулятора.
-# Обновлён: 2026-07-21
+# Обновлён: 2026-07-22
 # Примечания:
 #   - locked_test не открывается; максимальный verdict — research_only.
+#   - normalized rich mode использует ATR/unit feature contract.
 # =============================================================================
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ import json
 import math
 import sys
 import time
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +37,7 @@ DEFAULT_OUTPUT_PREFIX = "ML/reports/fractal0_entry_quality_filter"
 DEFAULT_NARROW_ENTRY_QUALITY_ARTIFACT = "ML/reports/fractal0_entry_quality_filter.json"
 RICH_ALLOWED_MAX_VERDICT = "RESEARCH_HINT_RICH_FEATURES"
 RICH_OUTPUT_PREFIX = "ML/reports/fractal0_rich_entry_quality"
+DEFAULT_NORMALIZED_RICH_OUTPUT_PREFIX = "ML/reports/fractal0_rich_entry_quality_normalized"
 ENTRY_ID = "E3_open_pullback_1_0atr"
 MASK_ID = "M0_no_mask"
 RICH_PRIMARY_TOP_FRACTIONS = (0.50, 0.40, 0.30)
@@ -74,6 +77,9 @@ FORBIDDEN_FEATURE_PREFIXES = (
     "outcome_",
 )
 FORBIDDEN_FEATURE_EXACT = {"pnl_r", "close_reason", "hold_bars", "exit_time", "target_leak", "signal", "predict", "fill_lag"}
+RAW_PRICE_LIKE_EXACT = {"h1_open", "h1_high", "h1_low", "h1_close", "h1_body", "h1_range", "fractal0_price"}
+RAW_PRICE_LIKE_WORDS = ("open", "high", "low", "close", "body", "range", "price", "distance", "delta")
+RAW_PRICE_LIKE_ALLOWED_SUFFIXES = ("_atr", "_unit", "_missing", "_present")
 FRACTAL_FIELD_NAMES = (
     "time",
     "price",
@@ -125,6 +131,9 @@ def entry_filter_grid() -> list[dict[str, object]]:
 
 def rich_feature_profile_grid() -> list[dict[str, object]]:
     return [
+        {"profile_id": "atr_only", "eligible_for_winner": False, "selection_basis": "diagnostic_atr_only"},
+        {"profile_id": "time_plus_atr", "eligible_for_winner": False, "selection_basis": "diagnostic_time_plus_atr"},
+        {"profile_id": "planned_geometry_no_atr", "eligible_for_winner": False, "selection_basis": "diagnostic_planned_geometry_no_atr"},
         {"profile_id": "planned_geometry_only", "eligible_for_winner": True, "selection_basis": "planned_geometry"},
         {"profile_id": "time_only", "eligible_for_winner": True, "selection_basis": "time"},
         {"profile_id": "structure_f0_only", "eligible_for_winner": True, "selection_basis": "fractal0_only"},
@@ -299,6 +308,19 @@ def _assert_no_forbidden_feature_columns(columns: list[str]) -> None:
         raise ValueError(f"forbidden feature columns: {bad[:10]}")
 
 
+def assert_no_raw_price_like_features(columns: list[str]) -> None:
+    bad = []
+    for col in columns:
+        if col in RAW_PRICE_LIKE_EXACT:
+            bad.append(col)
+            continue
+        lower = col.lower()
+        if any(word in lower for word in RAW_PRICE_LIKE_WORDS) and not lower.endswith(RAW_PRICE_LIKE_ALLOWED_SUFFIXES):
+            bad.append(col)
+    if bad:
+        raise ValueError(f"raw price-like features are forbidden in normalized rich mode: {bad[:10]}")
+
+
 def parse_serialized_fractal(value: object) -> dict[str, object] | None:
     if pd.isna(value) or value == "":
         return None
@@ -358,6 +380,103 @@ def rich_feature_allowlist(profile_id: str) -> list[str]:
     if profile_id == "structure_all100":
         return rich_feature_allowlist("structure_nearest_k40")
     raise ValueError(f"unknown rich feature profile: {profile_id}")
+
+
+@dataclass(frozen=True)
+class NormalizedFeatureSchema:
+    profile_id: str
+    raw_feature_columns: tuple[str, ...]
+    missing_indicator_columns: tuple[str, ...]
+    final_feature_columns: tuple[str, ...]
+    scaler_columns: tuple[str, ...]
+    non_scaled_columns: tuple[str, ...]
+    token_present_columns: tuple[str, ...]
+    padded_exclusion_masks: dict[str, str]
+
+
+def normalized_rich_feature_allowlist(profile_id: str) -> list[str]:
+    atr_cols = ["ATR"]
+    planned_no_atr = ["side_buy", "entry_to_fractal0_atr", "stop_distance_atr", "r_value_atr"]
+    planned = ["side_buy", "ATR", "entry_to_fractal0_atr", "stop_distance_atr", "r_value_atr"]
+    time_cols = ["session_hour_unit", "weekday_unit", "hour_sin_unit", "hour_cos_unit", "weekday_sin_unit", "weekday_cos_unit"]
+    h1_cols = [
+        "h1_open_to_planned_limit_atr",
+        "h1_high_to_planned_limit_atr",
+        "h1_low_to_planned_limit_atr",
+        "h1_close_to_planned_limit_atr",
+        "h1_body_atr",
+        "h1_range_atr",
+        "h1_close_position_in_range_unit",
+    ]
+    movement = ["movement_score"]
+    if profile_id == "atr_only":
+        return atr_cols
+    if profile_id == "time_plus_atr":
+        return time_cols + atr_cols
+    if profile_id == "planned_geometry_no_atr":
+        return planned_no_atr
+    if profile_id == "planned_geometry_only":
+        return planned
+    if profile_id == "time_only":
+        return time_cols
+    if profile_id == "price_action_h1":
+        return h1_cols
+    if profile_id == "movement_plus_time":
+        return movement + time_cols
+    if profile_id == "structure_f0_only":
+        return [
+            "fractal0_price_to_planned_limit_atr",
+            "fractal0_direction_unit",
+            "fractal0_front",
+            "fractal0_back",
+            "fractal0_strong",
+            "fractal0_break",
+            "fractal0_reverse",
+            "fractal0_power",
+            "fractal0_count",
+            "fractal0_impulse",
+            "fractal0_fractal_atr",
+            "fractal0_shift",
+            "fractal0_up_3",
+            "fractal0_dn_3",
+            "fractal0_up_6",
+            "fractal0_dn_6",
+            "fractal0_up_12",
+            "fractal0_dn_12",
+            "fractal0_up_24",
+            "fractal0_dn_24",
+            "fractal0_up_48",
+            "fractal0_dn_48",
+        ]
+    if profile_id in {"structure_nearest_k20", "structure_nearest_k40", "relative_geometry_k40", "rich_combined_k40"}:
+        k = 20 if profile_id == "structure_nearest_k20" else 40
+        fractal_cols: list[str] = []
+        for idx in range(k):
+            fractal_cols.extend(
+                [
+                    f"fractal{idx}_present",
+                    f"fractal{idx}_price_rel_f0_atr",
+                    f"fractal{idx}_direction_unit",
+                    f"fractal{idx}_front",
+                    f"fractal{idx}_back",
+                    f"fractal{idx}_strong",
+                    f"fractal{idx}_break",
+                    f"fractal{idx}_reverse",
+                    f"fractal{idx}_power",
+                    f"fractal{idx}_count",
+                    f"fractal{idx}_impulse",
+                    f"fractal{idx}_fractal_atr",
+                    f"fractal{idx}_shift",
+                    f"fractal{idx}_distance_to_planned_limit_atr",
+                    f"fractal{idx}_distance_to_planned_stop_atr",
+                ]
+            )
+        if profile_id == "relative_geometry_k40":
+            return fractal_cols
+        if profile_id == "rich_combined_k40":
+            return planned + time_cols + h1_cols + fractal_cols
+        return fractal_cols
+    raise ValueError(f"unknown normalized rich feature profile: {profile_id}")
 
 
 def _attach_closed_h1_features(out: pd.DataFrame, ohlc: pd.DataFrame) -> tuple[pd.DataFrame, list[dict[str, object]]]:
@@ -423,6 +542,223 @@ def extract_fractal_feature_dict(row: pd.Series, k: int, selection_basis: str = 
         result[f"{prefix}distance_to_planned_limit"] = price - planned_limit
         result[f"{prefix}distance_to_planned_stop"] = price - planned_stop
     return result
+
+
+def _safe_atr(row: pd.Series) -> float:
+    atr = pd.to_numeric(pd.Series([row.get("ATR")]), errors="coerce").iloc[0]
+    if pd.isna(atr) or float(atr) <= 0.0:
+        raise ValueError("normalized rich mode requires positive ATR")
+    return float(atr)
+
+
+def extract_normalized_fractal_feature_dict(row: pd.Series, k: int, selection_basis: str = "recent") -> tuple[dict[str, float], dict[str, object]]:
+    result: dict[str, float] = {}
+    atr = _safe_atr(row)
+    fractal0 = parse_serialized_fractal(row.get("fractal0"))
+    base_price = float(row.get("fractal0_price", fractal0.get("price") if fractal0 else 0.0) or 0.0)
+    planned_limit = float(row.get("planned_entry_bid_equivalent") or 0.0)
+    planned_stop = float(row.get("planned_protective_stop_price") or 0.0)
+    parsed_items: list[dict[str, object]] = []
+    for source_idx in range(100):
+        parsed = parse_serialized_fractal(row.get(f"fractal{source_idx}"))
+        if parsed:
+            parsed_items.append({**parsed, "_source_idx": source_idx})
+    if selection_basis == "nearest_to_planned_limit":
+        parsed_items = sorted(parsed_items, key=lambda item: (abs(float(item["price"]) - planned_limit), int(item["_source_idx"])))
+    else:
+        parsed_items = sorted(parsed_items, key=lambda item: int(item["_source_idx"]))
+    valid_count = len(parsed_items)
+    truncated_count = max(0, valid_count - k)
+    for idx in range(k):
+        prefix = f"fractal{idx}_"
+        parsed = parsed_items[idx] if idx < len(parsed_items) else None
+        if parsed is None:
+            result[f"{prefix}present"] = 0.0
+            for field in (
+                "price_rel_f0_atr",
+                "direction_unit",
+                "front",
+                "back",
+                "strong",
+                "break",
+                "reverse",
+                "power",
+                "count",
+                "impulse",
+                "fractal_atr",
+                "shift",
+                "distance_to_planned_limit_atr",
+                "distance_to_planned_stop_atr",
+            ):
+                result[f"{prefix}{field}"] = 0.0
+            continue
+        price = float(parsed["price"])
+        direction = float(parsed.get("direction", 0.0))
+        result[f"{prefix}present"] = 1.0
+        result[f"{prefix}direction_unit"] = (direction + 1.0) / 2.0
+        for field in ("front", "back", "strong", "break", "reverse", "power", "count", "impulse", "fractal_atr", "shift"):
+            result[f"{prefix}{field}"] = float(parsed.get(field, 0.0)) if parsed else 0.0
+        result[f"{prefix}price_rel_f0_atr"] = (price - base_price) / atr
+        result[f"{prefix}distance_to_planned_limit_atr"] = (price - planned_limit) / atr
+        result[f"{prefix}distance_to_planned_stop_atr"] = (price - planned_stop) / atr
+    token_audit = {
+        "valid_token_count": min(valid_count, k),
+        "raw_valid_token_count": valid_count,
+        "padding_count": max(0, k - valid_count),
+        "truncation_count": truncated_count,
+        "selection_basis": selection_basis,
+        "anchor_for_coordinate": "fractal0_price",
+        "anchor_for_selection": "planned_limit" if selection_basis == "nearest_to_planned_limit" else "source_order",
+    }
+    return result, token_audit
+
+
+def build_normalized_rich_feature_frame(entries: pd.DataFrame, ohlc: pd.DataFrame, profile_id: str) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    out = build_entry_feature_frame(entries)
+    audit: list[dict[str, object]] = []
+    atr = pd.to_numeric(out["ATR"], errors="coerce").replace(0, pd.NA)
+    planned_limit = pd.to_numeric(out["planned_entry_bid_equivalent"], errors="coerce")
+    if profile_id in {"time_only", "time_plus_atr", "movement_plus_time", "rich_combined_k40"}:
+        times = pd.to_datetime(out["time"])
+        hour = times.dt.hour.astype(float)
+        weekday = times.dt.weekday.astype(float)
+        out["session_hour_unit"] = hour / 23.0
+        out["weekday_unit"] = weekday / 6.0
+        out["hour_sin_unit"] = (np.sin(2 * np.pi * hour / 24.0) + 1.0) / 2.0
+        out["hour_cos_unit"] = (np.cos(2 * np.pi * hour / 24.0) + 1.0) / 2.0
+        out["weekday_sin_unit"] = (np.sin(2 * np.pi * weekday / 7.0) + 1.0) / 2.0
+        out["weekday_cos_unit"] = (np.cos(2 * np.pi * weekday / 7.0) + 1.0) / 2.0
+    if profile_id in {"price_action_h1", "rich_combined_k40"}:
+        out, _ = _attach_closed_h1_features(out, ohlc)
+        for col in ("open", "high", "low", "close"):
+            out[f"h1_{col}_to_planned_limit_atr"] = (pd.to_numeric(out[f"h1_{col}"], errors="coerce") - planned_limit) / atr
+        out["h1_body_atr"] = pd.to_numeric(out["h1_body"], errors="coerce") / atr
+        out["h1_range_atr"] = pd.to_numeric(out["h1_range"], errors="coerce") / atr
+        out["h1_close_position_in_range_unit"] = pd.to_numeric(out["h1_close_position_in_range"], errors="coerce")
+    if profile_id in {"structure_f0_only", "structure_nearest_k20", "structure_nearest_k40", "relative_geometry_k40", "rich_combined_k40"}:
+        k = 1 if profile_id == "structure_f0_only" else (20 if profile_id == "structure_nearest_k20" else 40)
+        basis = "recent" if profile_id == "structure_f0_only" else "nearest_to_planned_limit"
+        extracted = [extract_normalized_fractal_feature_dict(row, k, selection_basis=basis) for _, row in entries.iterrows()]
+        fractal_features = pd.DataFrame([features for features, _ in extracted], index=out.index)
+        audit.extend([{**token_audit, "profile_id": profile_id, "row_index": idx} for idx, (_, token_audit) in enumerate(extracted)])
+        out = pd.concat([out, fractal_features], axis=1)
+        if profile_id == "structure_f0_only":
+            parsed_f0 = [parse_serialized_fractal(value) for value in entries.get("fractal0", pd.Series(index=entries.index, dtype=object))]
+            out["fractal0_price_to_planned_limit_atr"] = (pd.to_numeric(out["fractal0_price"], errors="coerce") - planned_limit) / atr
+            for field in ("up_3", "dn_3", "up_6", "dn_6", "up_12", "dn_12", "up_24", "dn_24", "up_48", "dn_48"):
+                out[f"fractal0_{field}"] = [float(item.get(field, 0.0)) if item else 0.0 for item in parsed_f0]
+    if profile_id == "movement_plus_time" and ("movement_score" not in out or pd.to_numeric(out["movement_score"], errors="coerce").isna().any()):
+        raise ValueError("movement_plus_time requires movement_score provenance; do not fill with zero")
+    feature_columns = normalized_rich_feature_allowlist(profile_id)
+    missing = [col for col in feature_columns if col not in out.columns]
+    if missing:
+        raise ValueError(f"missing normalized feature columns for {profile_id}: {missing[:10]}")
+    _assert_no_forbidden_feature_columns(feature_columns)
+    assert_no_raw_price_like_features(feature_columns)
+    audit.extend([{"feature": col, "normalization_stage": "pre_scaler_atr_or_unit", "live_safe": True} for col in feature_columns])
+    return out[feature_columns].copy(), audit
+
+
+def build_normalized_feature_schema(
+    profile_id: str,
+    raw_frame: pd.DataFrame,
+    missing_capable_columns: list[str] | None = None,
+) -> NormalizedFeatureSchema:
+    raw_columns = tuple(str(col) for col in raw_frame.columns)
+    missing_source = set(missing_capable_columns or raw_columns)
+    missing_columns = tuple(f"{col}_missing" for col in raw_columns if col in missing_source)
+    token_present_columns = tuple(col for col in raw_columns if col.startswith("fractal") and col.endswith("_present"))
+    padded_exclusion_masks: dict[str, str] = {}
+    for col in raw_columns:
+        if not col.startswith("fractal") or col.endswith("_present"):
+            continue
+        token_id = col.split("_", 1)[0]
+        present_col = f"{token_id}_present"
+        if present_col in raw_columns:
+            padded_exclusion_masks[col] = present_col
+    non_scaled_columns = tuple(
+        col
+        for col in raw_columns
+        if col == "side_buy" or col.endswith("_unit") or col.endswith("_present")
+    )
+    scaler_columns = tuple(col for col in raw_columns if col not in set(non_scaled_columns))
+    final_columns = raw_columns + missing_columns
+    return NormalizedFeatureSchema(
+        profile_id=profile_id,
+        raw_feature_columns=raw_columns,
+        missing_indicator_columns=missing_columns,
+        final_feature_columns=final_columns,
+        scaler_columns=scaler_columns,
+        non_scaled_columns=non_scaled_columns,
+        token_present_columns=token_present_columns,
+        padded_exclusion_masks=padded_exclusion_masks,
+    )
+
+
+def fit_unit_scaler(frames: dict[str, pd.DataFrame], schema: NormalizedFeatureSchema) -> dict[str, dict[str, float]]:
+    train = frames.get("train_core")
+    if train is None or train.empty:
+        raise ValueError("unit scaler requires non-empty train_core frame")
+    scaler: dict[str, dict[str, float]] = {}
+    for col in schema.scaler_columns:
+        if col not in train:
+            raise ValueError(f"train_core missing feature required by schema: {col}")
+        mask_col = schema.padded_exclusion_masks.get(col)
+        if mask_col:
+            mask = pd.to_numeric(train[mask_col], errors="coerce").fillna(0.0).eq(1.0)
+            values = pd.to_numeric(train.loc[mask, col], errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
+        else:
+            values = pd.to_numeric(train[col], errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
+        if values.empty:
+            scaler[col] = {"low": 0.0, "high": 0.0, "constant": True, "fit_split": "train_core"}
+            continue
+        low = float(values.quantile(0.01))
+        high = float(values.quantile(0.99))
+        if not np.isfinite(low) or not np.isfinite(high) or high <= low:
+            low = float(values.min())
+            high = float(values.max())
+        constant = bool(not np.isfinite(low) or not np.isfinite(high) or high <= low)
+        scaler[col] = {"low": low, "high": high, "constant": constant, "fit_split": "train_core"}
+    return scaler
+
+
+def apply_unit_scaler(frame: pd.DataFrame, scaler: dict[str, dict[str, float]], schema: NormalizedFeatureSchema) -> pd.DataFrame:
+    out = pd.DataFrame(index=frame.index)
+    missing_cols = {name[:-8] for name in schema.missing_indicator_columns if name.endswith("_missing")}
+    for col in schema.raw_feature_columns:
+        if col not in frame:
+            raise ValueError(f"frame missing feature required by schema: {col}")
+        values = pd.to_numeric(frame[col], errors="coerce")
+        if col in missing_cols:
+            out[f"{col}_missing"] = values.isna().astype(float)
+        values = values.fillna(0.0)
+        if col in schema.non_scaled_columns:
+            out[col] = values.clip(lower=0.0, upper=1.0).astype(float)
+            continue
+        cfg = scaler.get(col)
+        if cfg is None:
+            raise ValueError(f"missing unit scaler config for feature: {col}")
+        if bool(cfg.get("constant")):
+            out[col] = 0.0
+            continue
+        low = float(cfg["low"])
+        high = float(cfg["high"])
+        scaled = (values.clip(lower=low, upper=high) - low) / (high - low)
+        out[col] = scaled.astype(float)
+    return out.loc[:, list(schema.final_feature_columns)]
+
+
+def assert_unit_scaled_frame(frame: pd.DataFrame, profile_id: str) -> None:
+    numeric = frame.apply(pd.to_numeric, errors="coerce")
+    if numeric.isna().any().any():
+        bad = numeric.columns[numeric.isna().any()].tolist()
+        raise ValueError(f"normalized profile {profile_id} contains NaN features: {bad[:10]}")
+    if np.isinf(numeric.to_numpy(dtype=float)).any():
+        raise ValueError(f"normalized profile {profile_id} contains Inf features")
+    low = float(numeric.min().min()) if not numeric.empty else 0.0
+    high = float(numeric.max().max()) if not numeric.empty else 0.0
+    if low < -1e-12 or high > 1.0 + 1e-12:
+        raise ValueError(f"normalized profile {profile_id} has features outside 0..1: min={low}, max={high}")
 
 
 def build_rich_feature_frame(entries: pd.DataFrame, ohlc: pd.DataFrame, profile_id: str) -> tuple[pd.DataFrame, list[dict[str, object]]]:
@@ -887,32 +1223,58 @@ def validate_movement_provenance(entries: pd.DataFrame, provenance: dict[str, ob
 def forbidden_column_audit(profile_ids: list[str]) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for profile_id in profile_ids:
-        for feature in rich_feature_allowlist(profile_id):
-            forbidden = (
+        try:
+            features = normalized_rich_feature_allowlist(profile_id)
+        except ValueError:
+            features = rich_feature_allowlist(profile_id)
+        for feature in features:
+            target_or_future_forbidden = (
                 feature in FORBIDDEN_FEATURE_EXACT
                 or feature.startswith(FORBIDDEN_FEATURE_PREFIXES)
                 or "_pnl_" in feature
             )
-            rows.append({"profile_id": profile_id, "feature": feature, "forbidden": bool(forbidden)})
+            raw_price_like = False
+            try:
+                assert_no_raw_price_like_features([feature])
+            except ValueError:
+                raw_price_like = True
+            rows.append(
+                {
+                    "profile_id": profile_id,
+                    "feature": feature,
+                    "target_or_future_forbidden": bool(target_or_future_forbidden),
+                    "raw_price_like": bool(raw_price_like),
+                    "forbidden": bool(target_or_future_forbidden or raw_price_like),
+                }
+            )
     return pd.DataFrame(rows)
 
 
 def structural_feature_gate(profile_id: str, features: pd.DataFrame) -> dict[str, object]:
     numeric = features.apply(pd.to_numeric, errors="coerce")
+    gate_numeric = numeric.loc[:, [col for col in numeric.columns if not str(col).endswith("_missing")]]
     unique_counts = numeric.nunique(dropna=True)
-    constant_names = [str(name) for name, count in unique_counts.items() if count <= 1]
-    constant = int((unique_counts <= 1).sum())
-    total = int(len(unique_counts))
+    gate_unique_counts = gate_numeric.nunique(dropna=True)
+    constant_names = [str(name) for name, count in gate_unique_counts.items() if count <= 1]
+    constant = int((gate_unique_counts <= 1).sum())
+    total = int(len(gate_unique_counts))
     non_constant_fraction = float((total - constant) / total) if total else 0.0
     status = "PASS"
     required: dict[str, bool] = {}
     informational_constant_fields: list[str] = []
     if profile_id == "structure_f0_only":
-        required = {
-            "fractal0_price": float(numeric["fractal0_price"].std(ddof=0)) > 0 if "fractal0_price" in numeric else False,
-            "fractal0_direction": int(numeric["fractal0_direction"].nunique(dropna=True)) >= 2 if "fractal0_direction" in numeric else False,
-            "fractal0_shift": numeric["fractal0_shift"].notna().any() if "fractal0_shift" in numeric else False,
-        }
+        if {"fractal0_price_to_planned_limit_atr", "fractal0_direction_unit"}.issubset(gate_numeric.columns):
+            required = {
+                "fractal0_price_to_planned_limit_atr": float(gate_numeric["fractal0_price_to_planned_limit_atr"].std(ddof=0)) > 0,
+                "fractal0_direction_unit": int(gate_numeric["fractal0_direction_unit"].nunique(dropna=True)) >= 2,
+                "fractal0_shift": gate_numeric["fractal0_shift"].notna().any() if "fractal0_shift" in gate_numeric else False,
+            }
+        else:
+            required = {
+                "fractal0_price": float(gate_numeric["fractal0_price"].std(ddof=0)) > 0 if "fractal0_price" in gate_numeric else False,
+                "fractal0_direction": int(gate_numeric["fractal0_direction"].nunique(dropna=True)) >= 2 if "fractal0_direction" in gate_numeric else False,
+                "fractal0_shift": gate_numeric["fractal0_shift"].notna().any() if "fractal0_shift" in gate_numeric else False,
+            }
         informational_constant_fields = [name for name in constant_names if name.startswith("fractal0_")]
         status = "PASS" if all(required.values()) else "FEATURE_CONTRACT_FAIL"
     elif profile_id.startswith("structure_") or profile_id in {"relative_geometry_k40", "rich_combined_k40"}:
@@ -1030,6 +1392,180 @@ def feature_distribution_audit(frames: dict[tuple[str, str], pd.DataFrame]) -> p
     return pd.DataFrame(rows)
 
 
+def normalized_feature_distribution_audit(frames: dict[tuple[str, str], pd.DataFrame]) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    train_stats: dict[tuple[str, str], dict[str, float | None]] = {}
+    for (split, profile_id), frame in frames.items():
+        numeric = frame.apply(pd.to_numeric, errors="coerce")
+        for col in numeric.columns:
+            series = numeric[col]
+            valid = series.replace([np.inf, -np.inf], np.nan).dropna()
+            stats = {
+                "min": float(valid.min()) if len(valid) else None,
+                "p1": float(valid.quantile(0.01)) if len(valid) else None,
+                "p5": float(valid.quantile(0.05)) if len(valid) else None,
+                "p25": float(valid.quantile(0.25)) if len(valid) else None,
+                "p50": float(valid.quantile(0.50)) if len(valid) else None,
+                "p75": float(valid.quantile(0.75)) if len(valid) else None,
+                "p95": float(valid.quantile(0.95)) if len(valid) else None,
+                "p99": float(valid.quantile(0.99)) if len(valid) else None,
+                "max": float(valid.max()) if len(valid) else None,
+                "mean": float(valid.mean()) if len(valid) else None,
+                "std": float(valid.std(ddof=0)) if len(valid) else None,
+            }
+            if split == "train_core":
+                train_stats[(profile_id, col)] = stats
+            train = train_stats.get((profile_id, col), {})
+            train_p95 = train.get("p95")
+            train_std = train.get("std")
+            p95_shift_vs_train = None
+            if split != "train_core" and train_p95 is not None and train_std not in (None, 0.0):
+                p95_shift_vs_train = (stats["p95"] - train_p95) / train_std if stats["p95"] is not None else None
+            rows.append(
+                {
+                    "split": split,
+                    "profile_id": profile_id,
+                    "feature": col,
+                    "rows": int(len(series)),
+                    "n_valid": int(len(valid)),
+                    "missing_rate": float(series.isna().mean()) if len(series) else 0.0,
+                    "zero_rate": float(series.fillna(np.nan).eq(0.0).mean()) if len(series) else 0.0,
+                    "inf_rate": float(np.isinf(series.to_numpy(dtype=float, na_value=np.nan)).mean()) if len(series) else 0.0,
+                    "below_zero_rate": float(series.lt(0.0).mean()) if len(series) else 0.0,
+                    "above_one_rate": float(series.gt(1.0).mean()) if len(series) else 0.0,
+                    **stats,
+                    "frac_abs_gt3": float(valid.abs().gt(3.0).mean()) if len(valid) else 0.0,
+                    "frac_abs_gt5": float(valid.abs().gt(5.0).mean()) if len(valid) else 0.0,
+                    "frac_abs_gt10": float(valid.abs().gt(10.0).mean()) if len(valid) else 0.0,
+                    "frac_abs_gt20": float(valid.abs().gt(20.0).mean()) if len(valid) else 0.0,
+                    "unique_count": int(series.nunique(dropna=True)),
+                    "constant": bool(valid.nunique(dropna=True) <= 1),
+                    "near_constant": bool(valid.nunique(dropna=True) <= 2 or (len(valid) and valid.value_counts(normalize=True, dropna=True).iloc[0] >= 0.99)),
+                    "p95_shift_vs_train_std": p95_shift_vs_train,
+                    "flag": "ERROR" if series.isna().any() or float(series.lt(0.0).mean()) > 0.0 or float(series.gt(1.0).mean()) > 0.0 else ("WARNING" if valid.nunique(dropna=True) <= 1 or float(series.eq(0.0).mean()) > 0.95 else "PASS"),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def token_coverage_audit(token_rows: list[dict[str, object]]) -> pd.DataFrame:
+    if not token_rows:
+        return pd.DataFrame(columns=["split", "profile_id", "rows", "p50_valid_token_count", "padding_rate", "truncation_rate", "anchor_for_coordinate", "anchor_for_selection"])
+    frame = pd.DataFrame(token_rows)
+    rows: list[dict[str, object]] = []
+    for (split, profile_id), group in frame.groupby(["split", "profile_id"], dropna=False):
+        valid = pd.to_numeric(group["valid_token_count"], errors="coerce")
+        padding = pd.to_numeric(group["padding_count"], errors="coerce")
+        raw_valid = pd.to_numeric(group["raw_valid_token_count"], errors="coerce")
+        truncation = pd.to_numeric(group["truncation_count"], errors="coerce")
+        denom = (valid + padding).replace(0, np.nan)
+        rows.append(
+            {
+                "split": split,
+                "profile_id": profile_id,
+                "rows": int(len(group)),
+                "p5_valid_token_count": float(valid.quantile(0.05)),
+                "p25_valid_token_count": float(valid.quantile(0.25)),
+                "p50_valid_token_count": float(valid.quantile(0.50)),
+                "p75_valid_token_count": float(valid.quantile(0.75)),
+                "p95_valid_token_count": float(valid.quantile(0.95)),
+                "rows_with_zero_tokens_rate": float(raw_valid.eq(0).mean()),
+                "padding_rate": float((padding / denom).mean()),
+                "truncation_rate": float(truncation.gt(0).mean()),
+                "anchor_for_coordinate": str(group["anchor_for_coordinate"].iloc[0]),
+                "anchor_for_selection": str(group["anchor_for_selection"].iloc[0]),
+                "flag": "ERROR" if raw_valid.eq(0).any() else ("WARNING" if truncation.gt(0).any() else "PASS"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def normalized_updn_provenance_gate() -> pd.DataFrame:
+    return pd.DataFrame(
+        [
+            {
+                "field_family": "fractal0_updn",
+                "source": "serialized_fractal_fields",
+                "source_producer": "lib_PIC serialized fractal snapshots",
+                "source_audit_scope": "usage_only_python_builder",
+                "python_recomputed_from_future_labels": False,
+                "top_level_updn_columns_used": False,
+                "usage_status": "PASS",
+                "source_provenance_status": "UNKNOWN",
+                "status": "SOURCE_PROVENANCE_NOT_VERIFIED",
+                "note": "normalized mode reads Up/Dn only from serialized fractal snapshots; producer-level lib_PIC provenance was not re-audited in this rerun",
+            }
+        ]
+    )
+
+
+def _selected_val_select_by_profile(summary: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    work = summary.loc[summary["split"].astype(str).eq("val_select")].copy()
+    if "eligible_for_winner" in work:
+        work = work.loc[work["eligible_for_winner"].astype(bool)]
+    work = work.loc[pd.to_numeric(work["n_trades"], errors="coerce") >= 300]
+    if work.empty:
+        return pd.DataFrame(columns=["profile_id"])
+    work["_bs"] = pd.to_numeric(work["bs_p05"], errors="coerce").fillna(-np.inf)
+    work["_dd"] = pd.to_numeric(work.get("max_drawdown_r", pd.Series(np.inf, index=work.index)), errors="coerce").fillna(np.inf)
+    idx = work.sort_values(["profile_id", "_bs", "_dd", "model_id"], ascending=[True, False, True, True]).groupby("profile_id", sort=False).head(1).index
+    cols = ["profile_id", "model_id", "target_id", "filter_id", "n_trades", "pf", "bs_p05", "mean_pnl_r", "max_drawdown_r"]
+    available = [col for col in cols if col in work.columns]
+    out = work.loc[idx, available].copy()
+    return out.rename(columns={col: f"{prefix}_{col}" for col in available if col != "profile_id"})
+
+
+def _fixed_val_eval_for_selected(summary: pd.DataFrame, selected: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    val_eval = summary.loc[summary["split"].astype(str).eq("val_eval")].copy()
+    rows = []
+    for _, selected_row in selected.iterrows():
+        mask = val_eval["profile_id"].eq(selected_row["profile_id"])
+        for key in ("model_id", "target_id", "filter_id"):
+            selected_key = f"{prefix}_{key}"
+            if key in val_eval and selected_key in selected_row:
+                mask &= val_eval[key].eq(selected_row[selected_key])
+        fixed = val_eval.loc[mask]
+        if fixed.empty:
+            continue
+        eval_row = fixed.iloc[0].to_dict()
+        rows.append(
+            {
+                "profile_id": selected_row["profile_id"],
+                f"{prefix}_eval_n_trades": eval_row.get("n_trades"),
+                f"{prefix}_eval_pf": eval_row.get("pf"),
+                f"{prefix}_eval_bs_p05": eval_row.get("bs_p05"),
+                f"{prefix}_eval_mean_pnl_r": eval_row.get("mean_pnl_r"),
+                f"{prefix}_eval_max_drawdown_r": eval_row.get("max_drawdown_r"),
+            }
+        )
+    return selected.merge(pd.DataFrame(rows), on="profile_id", how="left")
+
+
+def diagnostic_best_val_eval_by_profile(summary: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    work = summary.loc[summary["split"].astype(str).eq("val_eval")].copy()
+    if "eligible_for_winner" in work:
+        work = work.loc[work["eligible_for_winner"].astype(bool)]
+    if work.empty:
+        return pd.DataFrame(columns=["profile_id"])
+    idx = work.groupby("profile_id")["bs_p05"].idxmax()
+    cols = ["profile_id", "model_id", "target_id", "filter_id", "n_trades", "pf", "bs_p05", "mean_pnl_r", "max_drawdown_r"]
+    available = [col for col in cols if col in work.columns]
+    out = work.loc[idx, available].copy()
+    return out.rename(columns={col: f"{prefix}_{col}" for col in available if col != "profile_id"})
+
+
+def compare_rich_runs_protocol(old_summary: pd.DataFrame, new_summary: pd.DataFrame) -> pd.DataFrame:
+    old_selected = _fixed_val_eval_for_selected(old_summary, _selected_val_select_by_profile(old_summary, "old"), "old")
+    new_selected = _fixed_val_eval_for_selected(new_summary, _selected_val_select_by_profile(new_summary, "new"), "new")
+    comparison = old_selected.merge(new_selected, on="profile_id", how="outer")
+    if {"old_eval_bs_p05", "new_eval_bs_p05"}.issubset(comparison.columns):
+        comparison["delta_eval_bs_p05"] = comparison["new_eval_bs_p05"] - comparison["old_eval_bs_p05"]
+    if {"old_eval_pf", "new_eval_pf"}.issubset(comparison.columns):
+        comparison["delta_eval_pf"] = comparison["new_eval_pf"] - comparison["old_eval_pf"]
+    comparison["comparison_kind"] = "selected_on_val_select_then_fixed_val_eval"
+    return comparison.sort_values("new_eval_bs_p05", ascending=False, na_position="last")
+
+
 def rich_feature_contract_rows(profile_ids: list[str]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for profile_id in profile_ids:
@@ -1056,6 +1592,53 @@ def rich_feature_contract_rows(profile_ids: list[str]) -> list[dict[str, object]
                     "source": source,
                     "available_at": available_at,
                     "decision_time": "pre_order_after_signal_before_limit_order_send",
+                    "live_safe": True,
+                }
+            )
+    return rows
+
+
+def normalized_rich_feature_contract_rows(profile_ids: list[str], schemas_by_profile: dict[str, NormalizedFeatureSchema]) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for profile_id in profile_ids:
+        schema = schemas_by_profile.get(profile_id)
+        feature_columns = list(schema.final_feature_columns) if schema else normalized_rich_feature_allowlist(profile_id)
+        for order, feature in enumerate(feature_columns):
+            if feature.endswith("_missing"):
+                source = "missing_indicator_from_schema"
+                transformation = "1.0 when source feature is missing else 0.0"
+                normalization = "already_unit"
+            elif feature.startswith("h1_"):
+                source = "DATA/XAUUSD_H1_OHLC.csv"
+                transformation = "last closed H1 value converted to ATR coordinate or unit value"
+                normalization = "ATR coordinate before train-only unit scaling"
+            elif feature.startswith("fractal"):
+                source = "serialized_fractal_fields"
+                transformation = "serialized snapshot field; price-like values converted to ATR coordinates; padded token fields stay zero"
+                normalization = "train_core unit scaler, padded values excluded by fractalN_present"
+            elif feature == "movement_score":
+                source = "frozen_movement_score"
+                transformation = "frozen diagnostic score"
+                normalization = "train_core unit scaler"
+            elif feature.endswith("_unit") or feature == "side_buy":
+                source = "entry_time_or_planned_execution_geometry"
+                transformation = "bounded deterministic unit feature"
+                normalization = "already_unit"
+            else:
+                source = "planned_execution_geometry"
+                transformation = "ATR coordinate or current volatility field"
+                normalization = "train_core unit scaler"
+            rows.append(
+                {
+                    "profile_id": profile_id,
+                    "feature_order": order,
+                    "feature": feature,
+                    "source": source,
+                    "available_at": "pre_order_after_signal_before_limit_order_send",
+                    "decision_time": "pre_order_after_signal_before_limit_order_send",
+                    "transformation": transformation,
+                    "normalization": normalization,
+                    "feature_contract_variant": "normalized_atr_unit",
                     "live_safe": True,
                 }
             )
@@ -1231,7 +1814,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     started = time.time()
     print("start fractal0_rich_entry_quality", flush=True)
     if args.output_prefix == DEFAULT_OUTPUT_PREFIX:
-        args.output_prefix = RICH_OUTPUT_PREFIX
+        args.output_prefix = DEFAULT_NORMALIZED_RICH_OUTPUT_PREFIX if args.normalized_rich_features else RICH_OUTPUT_PREFIX
     profiles = rich_feature_profile_grid()
     models = rich_model_grid(include_diagnostic_models=bool(args.include_diagnostic_models))
     targets = rich_target_grid()
@@ -1301,11 +1884,14 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
         scored_decisions[split] = base.score_exit_models({MASK_ID: ml_models[str(stop_policy["stop_policy_id"])][MASK_ID]}, decisions)
 
     eligible_profiles = [p for p in profiles if p.get("eligible_for_winner")]
+    diagnostic_control_ids = {"atr_only", "time_plus_atr", "planned_geometry_no_atr"} if args.normalized_rich_features else set()
+    runnable_profiles = eligible_profiles + [p for p in profiles if str(p["profile_id"]) in diagnostic_control_ids]
     if any(str(profile["profile_id"]) == "movement_plus_time" for profile in eligible_profiles):
         try:
             movement_provenance = validate_movement_provenance(entry_cache["train_core"], movement_provenance)
         except ValueError as exc:
             eligible_profiles = [p for p in eligible_profiles if str(p["profile_id"]) != "movement_plus_time"]
+            runnable_profiles = [p for p in runnable_profiles if str(p["profile_id"]) != "movement_plus_time"]
             movement_provenance = {**movement_provenance, "status": "PROFILE_EXCLUDED", "reason": str(exc)}
     runnable_models = [m for m in models if m.get("eligible_for_winner") or (args.include_diagnostic_models and m.get("runnable_by_default"))]
     eligible_targets = [t for t in targets if t.get("eligible_for_winner")]
@@ -1313,12 +1899,13 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     active_search_budget = compute_search_budget(eligible_profiles, [m for m in models if m.get("eligible_for_winner")], eligible_targets, primary_filters)
     if args.smoke_limit_filters:
         eligible_profiles = eligible_profiles[:1]
+        runnable_profiles = runnable_profiles[:1]
         runnable_models = runnable_models[:1]
         eligible_targets = eligible_targets[:1]
         primary_filters = primary_filters[: int(args.smoke_limit_filters)]
     job_list = [
         (profile, model, target, filter_spec)
-        for profile in eligible_profiles
+        for profile in runnable_profiles
         for model in runnable_models
         for target in eligible_targets
         for filter_spec in primary_filters
@@ -1328,9 +1915,46 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     summary_rows: list[dict[str, object]] = []
     trade_frames: list[pd.DataFrame] = []
     score_frames: list[pd.DataFrame] = []
-    feature_contract_rows = rich_feature_contract_rows([str(profile["profile_id"]) for profile in eligible_profiles])
+    feature_contract_rows: list[dict[str, object]] = []
     feature_frames_for_audit: dict[tuple[str, str], pd.DataFrame] = {}
+    normalized_raw_frames_for_audit: dict[tuple[str, str], pd.DataFrame] = {}
+    normalized_schemas_by_profile: dict[str, NormalizedFeatureSchema] = {}
+    normalized_scalers_by_profile: dict[str, dict[str, dict[str, float]]] = {}
+    normalized_feature_frame_cache: dict[tuple[str, str], pd.DataFrame] = {}
+    all_token_rows: list[dict[str, object]] = []
     structural_gate_rows: list[dict[str, object]] = []
+
+    def get_feature_frame(split: str, profile_id: str) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+        if not args.normalized_rich_features:
+            return build_rich_feature_frame(entry_cache[split], ohlc, profile_id)
+        cache_key = (split, profile_id)
+        if cache_key in normalized_feature_frame_cache:
+            return normalized_feature_frame_cache[cache_key], []
+        if profile_id not in normalized_schemas_by_profile:
+            raw_profile_frames: dict[str, pd.DataFrame] = {}
+            raw_contract_rows: list[dict[str, object]] = []
+            for split_name in ("train_core", "val_select", "val_eval"):
+                raw_frame, contract_rows = build_normalized_rich_feature_frame(entry_cache[split_name], ohlc, profile_id)
+                raw_profile_frames[split_name] = raw_frame
+                normalized_raw_frames_for_audit[(split_name, profile_id)] = raw_frame
+                for row in contract_rows:
+                    row_with_split = {**row, "split": split_name}
+                    raw_contract_rows.append(row_with_split)
+                    if "valid_token_count" in row:
+                        all_token_rows.append(row_with_split)
+            schema = build_normalized_feature_schema(profile_id, raw_profile_frames["train_core"])
+            scaler = fit_unit_scaler({"train_core": raw_profile_frames["train_core"]}, schema)
+            normalized_schemas_by_profile[profile_id] = schema
+            normalized_scalers_by_profile[profile_id] = scaler
+            for split_name, raw_frame in raw_profile_frames.items():
+                scaled = apply_unit_scaler(raw_frame, scaler, schema)
+                assert_unit_scaled_frame(scaled, profile_id)
+                if list(scaled.columns) != list(schema.final_feature_columns):
+                    raise ValueError(f"normalized schema mismatch for {profile_id}/{split_name}")
+                normalized_feature_frame_cache[(split_name, profile_id)] = scaled
+            return normalized_feature_frame_cache[cache_key], raw_contract_rows
+        return normalized_feature_frame_cache[cache_key], []
+
     total_jobs = len(job_list)
     for done, (profile, model_spec, target_spec, filter_spec) in enumerate(job_list):
         profile_id = str(profile["profile_id"])
@@ -1338,7 +1962,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
         target_id = str(target_spec["target_id"])
         target_kind = str(target_spec["kind"])
         print(f"rich job start {done + 1}/{total_jobs} profile={profile_id} model={model_id} target={target_id}", flush=True)
-        x_train, contract = build_rich_feature_frame(entry_cache["train_core"], ohlc, profile_id)
+        x_train, contract = get_feature_frame("train_core", profile_id)
         feature_frames_for_audit.setdefault(("train_core", profile_id), x_train)
         if not any(row["profile_id"] == profile_id for row in structural_gate_rows):
             gate = structural_feature_gate(profile_id, x_train)
@@ -1349,7 +1973,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
         rich_model = train_rich_entry_model(x_fit, y_train, target_kind, model_id, int(args.threads), seed=42)
         scored_by_split: dict[str, pd.DataFrame] = {}
         for split in ("val_select", "val_eval"):
-            x_split, contract_split = build_rich_feature_frame(entry_cache[split], ohlc, profile_id)
+            x_split, contract_split = get_feature_frame(split, profile_id)
             feature_frames_for_audit.setdefault((split, profile_id), x_split)
             scored = entry_cache[split].copy()
             scored["rich_entry_score"] = score_rich_entry_model(rich_model, x_split, target_kind)
@@ -1431,12 +2055,16 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     ].copy() if not trades.empty and winner.get("status") != "no_eligible_winner" else pd.DataFrame()
     winner_yearly = pd.DataFrame([{**{"split": "val_eval", "filter_id": winner.get("filter_id")}, **row} for row in base.yearly_metrics(winner_trades)])
     feature_distribution = feature_distribution_audit(feature_frames_for_audit)
+    if args.normalized_rich_features:
+        feature_contract_rows = normalized_rich_feature_contract_rows([str(profile["profile_id"]) for profile in runnable_profiles], normalized_schemas_by_profile)
+    else:
+        feature_contract_rows = rich_feature_contract_rows([str(profile["profile_id"]) for profile in eligible_profiles])
     score_diagnostics = score_distribution_diagnostics(scores)
     selected_score_diagnostics = selected_rule_score_diagnostics(scores, selected_val_eval, selected_val_eval.get("score_cutoff_on_val_select"))
     permutation = {"method": "selected_rule_only", "null_repeats": int(args.permutation_repeats), "status": "DIAGNOSTIC_ONLY", "null_best_bs_p05": []}
 
     pd.DataFrame(feature_contract_rows).drop_duplicates().to_csv(prefix.with_name(prefix.name + "_feature_contract.csv"), sep=";", index=False)
-    forbidden_column_audit([str(profile["profile_id"]) for profile in eligible_profiles]).to_csv(prefix.with_name(prefix.name + "_forbidden_column_audit.csv"), sep=";", index=False)
+    forbidden_column_audit([str(profile["profile_id"]) for profile in runnable_profiles]).to_csv(prefix.with_name(prefix.name + "_forbidden_column_audit.csv"), sep=";", index=False)
     pd.DataFrame(structural_gate_rows).to_csv(prefix.with_name(prefix.name + "_feature_distribution_flags.csv"), sep=";", index=False)
     target_distribution.to_csv(prefix.with_name(prefix.name + "_target_distribution.csv"), sep=";", index=False)
     pd.DataFrame(planned_diagnostics).to_csv(prefix.with_name(prefix.name + "_planned_order_diagnostics.csv"), sep=";", index=False)
@@ -1449,6 +2077,42 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     pd.DataFrame(score_diagnostics).to_csv(prefix.with_name(prefix.name + "_score_diagnostics.csv"), sep=";", index=False)
     selected_score_diagnostics.to_csv(prefix.with_name(prefix.name + "_selected_score_diagnostics.csv"), sep=";", index=False)
     pd.DataFrame(permutation.get("null_best_bs_p05", []), columns=["null_best_bs_p05"]).to_csv(prefix.with_name(prefix.name + "_permutation.csv"), sep=";", index=False)
+    normalization_config_path = None
+    normalized_audit_path = None
+    token_coverage_path = None
+    updn_gate_path = None
+    protocol_comparison_path = None
+    diagnostic_best_by_profile_path = None
+    if args.normalized_rich_features:
+        normalization_config = {
+            "mode": "normalized_atr_unit",
+            "fit_split": "train_core",
+            "price_like_policy": "price-like inputs converted to ATR coordinates before unit scaling",
+            "unit_scaler": normalized_scalers_by_profile,
+            "feature_schemas": {profile_id: asdict(schema) for profile_id, schema in normalized_schemas_by_profile.items()},
+            "clip_policy": "train_core q01/q99, clipped to 0..1",
+            "missing_policy": "missing indicators are schema columns, not split-dependent columns; no silent missing-as-real-zero",
+            "padding_policy": "padded fractal token fields remain 0.0 and are excluded from scaler fit by fractalN_present",
+        }
+        normalization_config_path = prefix.with_name(prefix.name + "_normalization_config.json")
+        normalization_config_path.write_text(json.dumps(normalization_config, ensure_ascii=True, indent=2, default=str), encoding="utf-8")
+        normalized_audit_path = prefix.with_name(prefix.name + "_normalized_feature_distribution_audit.csv")
+        normalized_feature_distribution_audit(feature_frames_for_audit).to_csv(normalized_audit_path, sep=";", index=False)
+        token_coverage_path = prefix.with_name(prefix.name + "_token_coverage.csv")
+        token_coverage_audit(all_token_rows).to_csv(token_coverage_path, sep=";", index=False)
+        updn_gate_path = prefix.with_name(prefix.name + "_updn_provenance_gate.csv")
+        normalized_updn_provenance_gate().to_csv(updn_gate_path, sep=";", index=False)
+        old_summary_path = _path("ML/reports/fractal0_rich_entry_quality_summary.csv")
+        if old_summary_path.exists():
+            old_summary = pd.read_csv(old_summary_path, sep=";")
+            protocol_comparison_path = prefix.with_name(prefix.name + "_protocol_comparison.csv")
+            compare_rich_runs_protocol(old_summary, summary).to_csv(protocol_comparison_path, sep=";", index=False)
+            diagnostic_old = diagnostic_best_val_eval_by_profile(old_summary, "old")
+            diagnostic_new = diagnostic_best_val_eval_by_profile(summary, "new")
+            diagnostic = diagnostic_old.merge(diagnostic_new, on="profile_id", how="outer")
+            diagnostic["comparison_kind"] = "diagnostic_best_val_eval_not_eligible_for_selection"
+            diagnostic_best_by_profile_path = prefix.with_name(prefix.name + "_diagnostic_best_val_eval_by_profile.csv")
+            diagnostic.to_csv(diagnostic_best_by_profile_path, sep=";", index=False)
 
     artifact = empty_rich_artifact(ranked_search_budget, pd.DataFrame(feature_contract_rows).drop_duplicates().to_dict(orient="records"))
     artifact.update(
@@ -1493,6 +2157,9 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
             ],
             "target_rates": target_rates,
             "preflight": preflight,
+            "feature_contract_variant": "normalized_atr_unit" if args.normalized_rich_features else "legacy_rich",
+            "normalization_config": normalization_config if args.normalized_rich_features else None,
+            "legacy_rich_artifact_for_comparison": str(_path(RICH_OUTPUT_PREFIX + ".json")) if args.normalized_rich_features else None,
             "input_artifact_hashes": preflight["input_artifact_hashes"],
             "artifacts": {
                 "summary_csv": str(prefix.with_name(prefix.name + "_summary.csv")),
@@ -1504,6 +2171,12 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
                 "forbidden_column_audit_csv": str(prefix.with_name(prefix.name + "_forbidden_column_audit.csv")),
                 "feature_distribution_flags_csv": str(prefix.with_name(prefix.name + "_feature_distribution_flags.csv")),
                 "selected_score_diagnostics_csv": str(prefix.with_name(prefix.name + "_selected_score_diagnostics.csv")),
+                "normalized_feature_distribution_audit_csv": str(normalized_audit_path) if normalized_audit_path else None,
+                "token_coverage_csv": str(token_coverage_path) if token_coverage_path else None,
+                "normalization_config_json": str(normalization_config_path) if normalization_config_path else None,
+                "updn_provenance_gate_csv": str(updn_gate_path) if updn_gate_path else None,
+                "protocol_comparison_csv": str(protocol_comparison_path) if protocol_comparison_path else None,
+                "diagnostic_best_val_eval_by_profile_csv": str(diagnostic_best_by_profile_path) if diagnostic_best_by_profile_path else None,
             },
         }
     )
@@ -1524,6 +2197,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--smoke-limit-filters", type=int, default=0)
     parser.add_argument("--rich-entry-quality", action="store_true")
     parser.add_argument("--include-diagnostic-models", action="store_true")
+    parser.add_argument("--normalized-rich-features", action="store_true")
     return parser.parse_args(argv)
 
 

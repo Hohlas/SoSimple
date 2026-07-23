@@ -783,6 +783,13 @@
 ### 2026-07-20: Review fixes for fractal0 price entry mechanics
 - Updated `ML/baseline/benchmark_fractal0_price_entry_mechanics.py`: `ratio_without_best_year` removes the year with best yearly ratio, `research_gate` requires simple-rule comparison, and `audit_side_contract` requires both directions.
 - Updated `docs/reports/2026-07-10-fractal0-price-entry-mechanics.md`, `CONTEXT_HANDOFF.md`, `CHANGELOG.md`, `docs/superpowers/roadmap.md`, and module docs with corrected robustness/gate contract.
+### 2026-07-22: Ingest Fractal0 rich entry-quality normalized rerun
+- Added `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`.
+- Updated `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: added `--normalized-rich-features`, raw price-like guard, ATR-coordinate feature construction, train-core unit scaler, normalized audits, token coverage, Up/Dn provenance gate and old-vs-normalized comparison artifacts.
+- Added `ML/reports/fractal0_rich_entry_quality_normalized.json` and companion normalized artifacts. Full run completed with `324` executed jobs, `243` ranked configs, `locked_test=not_opened`, `feature_contract_variant=normalized_atr_unit`.
+- Recorded outcome: winner remains `time_only / linear / target_entry_ev_regression / top30`; fixed `val_eval PF=4.0268`, `BS_p05=3.3955`. Normalized contract improved protocol comparison for `rich_combined_k40`, `price_action_h1` and `structure_f0_only`, but not enough to beat `time_only`.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: normalized artifacts are now the canonical old-vs-normalized source; next step remains pre-registered shortlist replication/probe only, not `locked_test`.
+
 - Updated `wiki/research/fractal-stop-research.md` metadata to `sources: 49` and recorded the review fixes.
 
 ### 2026-07-21: Ingest Fractal0 entry/exit grid diagnostic result

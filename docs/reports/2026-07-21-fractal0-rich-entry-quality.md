@@ -8,6 +8,8 @@
 > **Related plan/spec**: `docs/superpowers/plans/2026-07-21-fractal0-rich-entry-quality.md`
 > **Итоговый фокус**: формальный winner — `time_only / linear / target_entry_ev_regression / top30`, но практический research focus смещён на shortlist кандидатов из `ML/reports/fractal0_rich_entry_quality_summary.csv`.
 
+> **Follow-up**: `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md` reruns the same rich search with price-like inputs converted to ATR/unit features. Use that report and `ML/reports/fractal0_rich_entry_quality_normalized_protocol_comparison.csv` for final old-vs-normalized comparison.
+
 ## Context
 
 Предыдущий `fractal0_entry_quality_filter` с узкими признаками провалился на `val_eval`: выбранный на `val_select` фильтр оказался слишком малым и хуже no-mask baseline по `BS_p05`. Этот этап расширил постановку: вместо одного узкого entry-quality score выполнен rich search по профилям признаков, моделям, целям и top-фильтрам.

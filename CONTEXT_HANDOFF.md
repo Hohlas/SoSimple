@@ -1,6 +1,6 @@
 # Context Handoff
 
-**Дата:** 2026-07-21
+**Дата:** 2026-07-22
 
 ## Текущее состояние
 
@@ -8,13 +8,14 @@
 
 Текущий завершённый этап:
 
-- отчёт: `docs/reports/2026-07-21-fractal0-rich-entry-quality.md`
-- план: `docs/superpowers/plans/2026-07-21-fractal0-rich-entry-quality.md`
-- module docs: `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`
+- отчёт: `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`
+- план: `docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`
 - runner: `ML/baseline/benchmark_fractal0_entry_quality_filter.py`
+- module docs: `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`
 
-Связанные предыдущие этапы:
+Связанные предыдущие отчёты:
 
+- `docs/reports/2026-07-21-fractal0-rich-entry-quality.md`
 - `docs/reports/2026-07-21-fractal0-entry-quality-filter.md`
 - `docs/reports/2026-07-21-fractal0-stop-grid-m5.md`
 - `docs/reports/2026-07-21-fractal0-entry-exit-grid.md`
@@ -24,57 +25,70 @@
 `benchmark_fractal0_entry_quality_filter.py` получил отдельный режим:
 
 ```bash
+--normalized-rich-features
+```
+
+Он работает только вместе с:
+
+```bash
 --rich-entry-quality
 ```
 
-Rich mode расширяет старый entry-quality runner, но не копирует симулятор:
+Normalized rich mode:
 
-- entry rows, M5 execution ordering, ML-exit, simulation и метрики берутся из
-  `ML/baseline/benchmark_fractal0_entry_exit_grid.py`;
-- feature builder использует explicit allowlist;
-- M5 остаётся только execution ordering, не источник признаков;
-- `locked_test` не открывается.
+- не перезаписывает legacy rich artifacts;
+- использует prefix `ML/reports/fractal0_rich_entry_quality_normalized`;
+- запрещает raw price-like inputs;
+- переводит price-like признаки в ATR-координаты;
+- fit-ит unit scaler только на `train_core`;
+- применяет тот же scaler к `val_select` и `val_eval`;
+- требует finite final model inputs в `[0,1]`;
+- держит missing indicators как fixed schema;
+- исключает padded fractal token values из scaler fit через `fractalN_present`.
 
-Добавлены unit tests в `tests/test_fractal0_entry_quality_filter.py`, включая
-контракты grids, labels, H1 closed-bar lookup, serialized fractal parsing,
-winner eligibility, rich artifact schema, split/target diagnostics и bugfix
-выравнивания features/labels по `position_id`.
+Добавлены diagnostic-only controls:
 
-## Артефакты rich-entry
+- `atr_only`
+- `time_plus_atr`
+- `planned_geometry_no_atr`
 
-- `ML/reports/fractal0_rich_entry_quality.json`
-- `ML/reports/fractal0_rich_entry_quality_summary.csv`
-- `ML/reports/fractal0_rich_entry_quality_trades.csv` — большой CSV, читать
-  только через `nrows`/`usecols`/`chunksize`.
-- `ML/reports/fractal0_rich_entry_quality_scores.csv`
-- `ML/reports/fractal0_rich_entry_quality_feature_contract.csv`
-- `ML/reports/fractal0_rich_entry_quality_target_distribution.csv`
-- `ML/reports/fractal0_rich_entry_quality_planned_order_diagnostics.csv`
-- `ML/reports/fractal0_rich_entry_quality_split_manifest.csv`
-- `ML/reports/fractal0_rich_entry_quality_feature_distribution_audit.csv`
-- `ML/reports/fractal0_rich_entry_quality_feature_distribution_flags.csv`
-- `ML/reports/fractal0_rich_entry_quality_forbidden_column_audit.csv`
-- `ML/reports/fractal0_rich_entry_quality_score_diagnostics.csv`
-- `ML/reports/fractal0_rich_entry_quality_selected_score_diagnostics.csv`
-- `ML/reports/fractal0_rich_entry_quality_winner_yearly.csv`
+Они исполняются, но не eligible для winner selection.
+
+## Артефакты normalized rerun
+
+Основные:
+
+- `ML/reports/fractal0_rich_entry_quality_normalized.json`
+- `ML/reports/fractal0_rich_entry_quality_normalized_summary.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_trades.csv` — большой CSV, читать через `usecols`/`nrows`/`chunksize`.
+- `ML/reports/fractal0_rich_entry_quality_normalized_scores.csv` — большой CSV, читать через `usecols`/`nrows`/`chunksize`.
+- `ML/reports/fractal0_rich_entry_quality_normalized_feature_contract.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_feature_distribution_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_normalized_feature_distribution_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_token_coverage.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_normalization_config.json`
+- `ML/reports/fractal0_rich_entry_quality_normalized_forbidden_column_audit.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_protocol_comparison.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_diagnostic_best_val_eval_by_profile.csv`
+- `ML/reports/fractal0_rich_entry_quality_normalized_updn_provenance_gate.csv`
 
 Команда воспроизведения:
 
 ```bash
 PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quality_filter.py \
   --rich-entry-quality \
+  --normalized-rich-features \
   --threads 24 \
   --no-resume \
-  --output-prefix ML/reports/fractal0_rich_entry_quality \
+  --output-prefix ML/reports/fractal0_rich_entry_quality_normalized \
   --execution-ohlc-path MT/MQL4/Files/XAUUSD_M5_OHLC.csv \
   --stop-policy-id S2_fractal0_buffer_0_5_entry_floor_2 \
   --permutation-repeats 200
 ```
 
-Corrected full rerun после audit fixes завершился: `243/243`, code `0`,
-final line `finished fractal0_rich_entry_quality`.
+Full run завершился: `finished fractal0_rich_entry_quality`, exit code `0`.
 
-## Итог rich-entry
+## Итог normalized rerun
 
 Winner выбран только на `val_select`:
 
@@ -83,7 +97,7 @@ profile = time_only
 model = linear
 target = target_entry_ev_regression
 filter = top30
-score_cutoff_on_val_select = -0.026392849103777025
+score_cutoff_on_val_select = -0.026718184259660646
 ```
 
 `val_select`:
@@ -105,71 +119,69 @@ Fixed `val_eval`:
 - `selected_fraction = 0.2872`
 - `SL-rate = 0.0197`
 
-Baselines на `val_eval`:
+Main comparison:
 
-- `S2/E3/M0/X2 no-mask`: `n_trades=2298`, `PF=2.7873`,
-  `BS_p05=2.5085`, `mean_pnl_r=0.2883`, `max_drawdown_r=8.3860`.
-- `S0/E3/M0/X0_fixed_r_0_7`: `n_trades=2298`, `PF=2.7247`,
-  `BS_p05=2.5120`, `mean_pnl_r=0.3505`, `max_drawdown_r=7.3000`.
+- formal winner stayed `time_only`;
+- normalized protocol improved `rich_combined_k40` by `+0.3994 BS_p05` and `+0.3009 PF` versus old rich protocol comparison;
+- `price_action_h1` and `structure_f0_only` also improved;
+- `relative_geometry_k40` and `structure_nearest_k40` did not improve enough and still trail `time_only`.
 
-Audit update: первый full run был invalidated для structural/rich
-интерпретации. Причина: `fractal0..fractal99` не переносились из source split
-rows в `entry_cache`, поэтому structural profiles были почти нулевыми.
-Исправленный full rerun выполнен; feature-contract gates прошли все 9
-профилей, но winner всё равно остался `time_only`.
+## Verification
 
-Внесены исправления:
+Final checks after all code changes:
 
-- `base.build_entry_rows()` теперь сохраняет serialized `fractal*` snapshot;
-- `structure_nearest_k20/k40` теперь сортируют уровни по расстоянию к planned
-  limit, а не просто берут первые recent slots;
-- rich score diagnostics включает `rich_entry_score`;
-- target distribution содержит `year`;
-- `diagnostic_best_val_eval_not_eligible` вычисляется из строки;
-- movement provenance использует `movement_freeze_scores` hash и при проблемах
-  исключает `movement_plus_time` из eligible grid.
-- `forbidden_column_audit`, `feature_distribution_flags`,
-  `selected_score_diagnostics` добавлены в артефакты.
-- `feature_importance_by_profile.csv` не произведён: модели по профилям не
-  сохраняются, feature importance не участвовал в выборе winner.
-- JSON раскрывает cumulative search budget: parent stop-grid, narrow
-  entry-quality predecessor, текущие `243` rich ranked configs и `1143`
-  listed diagnostic configs.
-- Full-selection permutation не запускался:
-  `permutation_null_repeats_executed_for_full_selection=0`.
-
-## Методические ограничения
-
-- Это research hint, не frozen rule и не trading candidate.
-- `locked_test=not_opened`.
-- Search budget: `243` ranked configurations; full correction не выполнена.
-- `diagnostic_best_val_eval` не должен влиять на verdict.
-- `top20`, `top10`, `structure_nearest_k80`, `structure_all100`,
-  XGBoost и LightGBM не участвовали в выборе Phase A winner.
-- No-fill rate около `51.4-51.7%`; planned diagnostics сохранены отдельно.
-- pandas `FutureWarning` по `fillna` и LogisticRegression convergence warnings
-  на `rich_combined_k40` не меняют selected winner, но это cleanup item.
-
-## Следующий допустимый шаг
-
-Только pre-registered replication/probe одного заранее заданного rule или
-малого shortlist. Это не freeze decision и не основание для `locked_test`.
-
-Не открывать `locked_test`.
-
-Следующий корректный шаг — отдельный pre-registered probe одного frozen rule:
-
-```text
-S2_fractal0_buffer_0_5_entry_floor_2 /
-E3_open_pullback_1_0atr /
-M0_no_mask /
-X2_ml_opposite_any_p0_50 /
-profile=time_only /
-model=linear /
-target=target_entry_ev_regression /
-filter=top30 /
-score_cutoff_on_val_select=-0.026392849103777025
+```bash
+./.venv/bin/python -m pytest tests/ -q
 ```
 
-Перед повышением статуса нужны независимая проверка или полная correction,
-yearly/side robustness, scale cleanup и явная freeze policy.
+Result:
+
+```text
+1376 passed, 52 warnings
+```
+
+Artifact contract check:
+
+```text
+normalized full artifact contract PASS
+```
+
+Confirmed:
+
+- `status=completed`
+- `locked_test=not_opened`
+- `feature_contract_variant=normalized_atr_unit`
+- `normalization_config.fit_split=train_core`
+- `ranked_search_budget.n_total_ranked_configs=243`
+- `active_search_budget.n_total_ranked_configs=243`
+- `n_total_executed_configs=324`
+- final normalized audit has `below_zero_rate.max=0.0`
+- final normalized audit has `above_one_rate.max=0.0`
+- forbidden column audit has `forbidden.sum=0`
+- Up/Dn provenance gate `PASS`
+
+## Methodological Constraints
+
+- This is `RESEARCH_HINT_RICH_FEATURES`, not candidate.
+- `locked_test=not_opened`.
+- Ranked budget is `243`; executed jobs are `324` because diagnostic controls were run.
+- Full-selection permutation was not run:
+  `permutation_null_repeats_executed_for_full_selection=0`,
+  `permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
+- `normalized_feature_distribution_audit` has `WARNING` rows due constant/near-constant columns.
+- `token_coverage` has `WARNING` rows due truncation rate `1.0`; no zero-token rows.
+- pandas `PerformanceWarning` appeared during scaling; this is performance debt, not a result invalidation.
+
+## Next Step
+
+Do not open `locked_test`.
+
+Recommended next step: a new pre-registered shortlist replication/probe with a small fixed set:
+
+```text
+1. time_only / linear / target_entry_ev_regression / top30
+2. rich_combined_k40 normalized control
+3. one compact normalized control: structure_f0_only or price_action_h1
+```
+
+Do not add new profiles, filters or targets inside that probe. Before any freeze/candidate claim, require yearly/side robustness and a clear decision on token truncation warnings.
