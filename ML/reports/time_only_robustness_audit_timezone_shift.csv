@@ -1,0 +1,2 @@
+status;reason
+NOT_RUN;"requires predefined timezone-shift resimulation of time-only features; not available from this saved-artifact slice"

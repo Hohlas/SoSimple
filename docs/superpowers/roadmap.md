@@ -15,11 +15,12 @@
 
 ## Active Research Queue
 
-### ACTIVE: `time_only` robustness audit
+### COMPLETED: `time_only` robustness audit
 
 Источник решения:
 
 - [`2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`](../reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md)
+- [`2026-07-23-time-only-robustness-audit.md`](../reports/2026-07-23-time-only-robustness-audit.md)
 
 Цель: без нового перебора проверить устойчивость текущего winner:
 
@@ -50,6 +51,18 @@ filter=top30
 - результат должен закончиться решением: `time_only` one-rule probe,
   regime-filter reformulation или закрытие rich/fractal entry-quality ветки.
 
+Результат: `REGIME_REFORMULATION_REQUIRED`.
+
+### ACTIVE: `Regime filter reformulation`
+
+Основание: `time_only` robustness audit завершился с решением
+`REGIME_REFORMULATION_REQUIRED`.
+
+Цель: переосмыслить `time_only` winner как режимный фильтр без открытия
+`locked_test` и без переноса validation-находки в candidate. Первый блок
+работы должен закрыть недостающие проверки: stress-cost resimulation,
+entry-time calendar slices и timezone-shift disclosure.
+
 ### BLOCKED: shortlist locked probe
 
 План:
@@ -79,7 +92,6 @@ filter=top30
 
 - `time_only` one-rule replication/probe;
 - rich/fractal salvage probe;
-- regime filter reformulation;
 - закрытие rich/fractal entry-quality ветки;
 - frozen probe для механики входа от `fractal0_price`;
 - H6 direction inside frozen mask;
@@ -136,8 +148,10 @@ profile=time_only /
 model=linear /
 target=target_entry_ev_regression /
 filter=top30 /
-score_cutoff_on_val_select=-0.026392849103777025
+score_cutoff_on_val_select=-0.026718184259660646
 ```
+
+Старое значение `-0.026392849103777025` superseded normalized audit cutoff.
 
 Когда запускать:
 
@@ -151,7 +165,7 @@ score_cutoff_on_val_select=-0.026392849103777025
 - поможет отделить реальный regime effect от результата широкого validation
   search.
 
-Статус: `PARKED_UNTIL_TIME_ONLY_ROBUSTNESS`.
+Статус: `PARKED_BY_REGIME_REFORMULATION_REQUIRED`.
 
 ### 2. `time_only` robustness audit
 
@@ -172,7 +186,7 @@ score_cutoff_on_val_select=-0.026392849103777025
 - покажет, не держится ли результат на одном коротком режиме 2021-2022;
 - подготовит честные gates для будущего one-rule probe.
 
-Статус: `ACTIVE`.
+Статус: `COMPLETED`; decision `REGIME_REFORMULATION_REQUIRED`.
 
 ### 3. Rich/fractal salvage probe
 
@@ -215,7 +229,7 @@ score_cutoff_on_val_select=-0.026392849103777025
 - если `time_only` robustness audit не показывает явной концентрации на одном
   узком участке.
 
-Статус: `PARKED`.
+Статус: `ACTIVE`.
 
 ### 5. Close rich/fractal entry-quality branch
 

@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-23 05:11 UTC · git `70f4a4d`
+> Auto-generated 2026-07-23 07:59 UTC · git `e0fe14c`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3180 files  ·  **Commit**: `70f4a4d`  ·  **Generated**: 2026-07-23 05:11 UTC
+**Tracked**: 3202 files  ·  **Commit**: `e0fe14c`  ·  **Generated**: 2026-07-23 07:59 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 149KB | `4320b8e9` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 151KB | `921011ad` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-22 | 6KB | `d66c6607` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-22 | 56KB | `59d44d59` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 3KB | `1d9bfa11` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 57KB | `bcefb240` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -30,6 +30,7 @@
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-06-17 | 20KB | `bb5a5097` |
 | [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-20 | 26KB | `e29295c8` |
 | [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-07-20 | 1KB | `24414c2c` |
+| [docs/ML/audit_time_only_robustness.py.md](docs/ML/audit_time_only_robustness.py.md) |  | 2026-07-23 | 2KB | `aeafc3d7` |
 | [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-06-17 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
 | [docs/ML/benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты | 2026-06-17 | 3KB | `facaa586` |
@@ -48,7 +49,7 @@
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
 | [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 7KB | `170916af` |
-| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-22 | 12KB | `e4aff88a` |
+| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `bdc1932c` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
@@ -151,7 +152,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 22KB | `0f592ed6` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 22KB | `d1a72cc6` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -263,8 +264,9 @@
 | [docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md](docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 25KB | `58b0a6e6` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-22 | 81KB | `e2847072` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md) |  | 2026-07-22 | 14KB | `07746cec` |
+| [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-22 | 17KB | `6449ef7a` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-23 | 18KB | `8c4743e8` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -428,6 +430,7 @@
 | [docs/reports/2026-07-21-fractal0-rich-entry-quality.md](docs/reports/2026-07-21-fractal0-rich-entry-quality.md) |  | 2026-07-22 | 18KB | `7994be66` |
 | [docs/reports/2026-07-21-fractal0-stop-grid-m5.md](docs/reports/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 16KB | `8d4cc249` |
 | [docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-23 | 27KB | `3f5a0204` |
+| [docs/reports/2026-07-23-time-only-robustness-audit.md](docs/reports/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 9KB | `b90f6a05` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -438,6 +441,7 @@
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-17 | 4KB | `dd55ee84` |
 | [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | ✅ | 2026-07-20 | 28KB | `04568800` |
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-07-20 | 28KB | `6450da16` |
+| [ML/baseline/audit_time_only_robustness.py](ML/baseline/audit_time_only_robustness.py) | Validation-slice audit fixed normalized `time_only` winner без нового поиска и без `locked_test` | ✅ | 2026-07-23 | 28KB | `943d65a5` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | ✅ | 2026-07-20 | 30KB | `691d70bc` |
 | [ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime_rich_features.py) | Rich feature direction check and narrow seed replication inside frozen movement mask with resume/progress | ✅ | 2026-07-20 | 74KB | `b2680e6e` |
@@ -1015,6 +1019,7 @@
 | [ML/reports/threshold_analysis_24H.md](ML/reports/threshold_analysis_24H.md) |  |  | 2026-06-17 | 2KB | `b6b5b9d3` |
 | [ML/reports/threshold_analysis_48H.md](ML/reports/threshold_analysis_48H.md) |  |  | 2026-06-17 | 2KB | `9f692fd3` |
 | [ML/reports/threshold_analysis_tb.md](ML/reports/threshold_analysis_tb.md) |  |  | 2026-06-17 | 975B | `d501c624` |
+| [ML/reports/time_only_robustness_audit.json](ML/reports/time_only_robustness_audit.json) |  |  | 2026-07-23 | 7KB | `b82c0866` |
 | [ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/final_verdict.json](ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/final_verdict.json) |  |  | 2026-06-17 | 1KB | `4210c896` |
 | [ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/run_metadata.json](ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/run_metadata.json) |  |  | 2026-06-17 | 349B | `36a6a110` |
 | [ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/selected_candidate.json](ML/reports/track_a_max_out_matrix/entry_path_dual_stream_seq100/benchmark_v2/selected_candidate.json) |  |  | 2026-06-17 | 498B | `47947c94` |
@@ -1281,6 +1286,7 @@
 | [tests/test_tb_label_invariants.py](tests/test_tb_label_invariants.py) |  |  | 2026-06-17 | 1KB | `46510bd4` |
 | [tests/test_telemetry_daily_reconciliation.py](tests/test_telemetry_daily_reconciliation.py) | `ML/telemetry_daily_reconciliation.py` | ✅ | 2026-06-17 | 8KB | `7fd9bb8d` |
 | [tests/test_telemetry_signal_watcher.py](tests/test_telemetry_signal_watcher.py) | `API/telemetry_signal_watcher.py` | ✅ | 2026-06-17 | 24KB | `759d5060` |
+| [tests/test_time_only_robustness_audit.py](tests/test_time_only_robustness_audit.py) |  |  | 2026-07-23 | 9KB | `790cf8bc` |
 | [tests/test_track_a_max_out_matrix.py](tests/test_track_a_max_out_matrix.py) | `ML/run_track_a_max_out_matrix.py` | ✅ | 2026-06-17 | 706B | `da3502cc` |
 | [tests/test_trade_target_labels.py](tests/test_trade_target_labels.py) | `processing/label_signals.py` — trade target labels | ✅ | 2026-06-17 | 2KB | `01005f96` |
 | [tests/test_trailing_stop_target_labels.py](tests/test_trailing_stop_target_labels.py) | `processing/label_signals.py` — trailing-stop target labels | ✅ | 2026-06-17 | 5KB | `102ae22d` |
@@ -1700,8 +1706,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `cbbf7eea` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 75KB | `86c8a8c2` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `99d666f2` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 76KB | `f5fa96e3` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1712,7 +1718,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 126KB | `a03d9952` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 128KB | `9545581b` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1738,9 +1744,9 @@
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
 | [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-20 | 562B | `3b43b9eb` |
 | [.superpowers/sdd/run_task7_fractal0_grid.py](.superpowers/sdd/run_task7_fractal0_grid.py) |  | 2026-07-20 | 7KB | `a69dc580` |
-| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-08 | 2KB | `1cf5c760` |
-| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-08 | 3KB | `db11a291` |
-| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-08 | 2KB | `62c882ef` |
+| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-23 | 8KB | `cb0dd012` |
+| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-23 | 2KB | `60aad5ca` |
+| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-23 | 12KB | `d2cef587` |
 | [.superpowers/sdd/task-2-report.md](.superpowers/sdd/task-2-report.md) |  | 2026-07-08 | 1KB | `dbebf384` |
 | [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-08 | 2KB | `ac2fe505` |
 | [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-08 | 1KB | `08c45335` |
@@ -1750,7 +1756,7 @@
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-09 | 1KB | `e832676a` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-09 | 2KB | `ecaad3c0` |
 | [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-09 | 1KB | `cbda9841` |
-| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-22 | 50KB | `316ec3fb` |
+| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-23 | 50KB | `82c63767` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |
 | [graphify-out/2026-07-08/.graphify_labels.json](graphify-out/2026-07-08/.graphify_labels.json) |  | 2026-07-08 | 48KB | `47ef2de8` |
@@ -1763,7 +1769,9 @@
 | [graphify-out/2026-07-20/GRAPH_REPORT.md](graphify-out/2026-07-20/GRAPH_REPORT.md) |  | 2026-07-20 | 293KB | `b3b6fefa` |
 | [graphify-out/2026-07-22/.graphify_labels.json](graphify-out/2026-07-22/.graphify_labels.json) |  | 2026-07-20 | 49KB | `3a283a36` |
 | [graphify-out/2026-07-22/GRAPH_REPORT.md](graphify-out/2026-07-22/GRAPH_REPORT.md) |  | 2026-07-20 | 297KB | `27750780` |
-| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-22 | 302KB | `0906ad2f` |
+| [graphify-out/2026-07-23/.graphify_labels.json](graphify-out/2026-07-23/.graphify_labels.json) |  | 2026-07-23 | 49KB | `703da3be` |
+| [graphify-out/2026-07-23/GRAPH_REPORT.md](graphify-out/2026-07-23/GRAPH_REPORT.md) |  | 2026-07-23 | 300KB | `8f308a65` |
+| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-23 | 307KB | `5f8c1954` |
 | [graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json](graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json) |  | 2026-07-08 | 135KB | `54d7dbf7` |
 | [graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json](graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json) |  | 2026-07-08 | 17KB | `f7a19787` |
 | [graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json](graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json) |  | 2026-07-07 | 846B | `0a6019ff` |
@@ -1793,6 +1801,7 @@
 | [graphify-out/cache/ast/v0.9.8/079a0a120a9d99bb5b71a944b7446ca7bd8b3f75cdf953671be030ac60c27366.json](graphify-out/cache/ast/v0.9.8/079a0a120a9d99bb5b71a944b7446ca7bd8b3f75cdf953671be030ac60c27366.json) |  | 2026-07-08 | 4KB | `041597ca` |
 | [graphify-out/cache/ast/v0.9.8/07ef3a9e35ee281d20ce6e4dc1f93324828f71e534fcf879930621f60c45bc0f.json](graphify-out/cache/ast/v0.9.8/07ef3a9e35ee281d20ce6e4dc1f93324828f71e534fcf879930621f60c45bc0f.json) |  | 2026-07-08 | 107KB | `7f4f6730` |
 | [graphify-out/cache/ast/v0.9.8/08002bbbf1bd9687a3fb5354cb3b4b8ea6f991843753fbfc1a2cc531355b2710.json](graphify-out/cache/ast/v0.9.8/08002bbbf1bd9687a3fb5354cb3b4b8ea6f991843753fbfc1a2cc531355b2710.json) |  | 2026-07-08 | 35KB | `81d01cc2` |
+| [graphify-out/cache/ast/v0.9.8/083ef32108d803d4e9caf26aa275f10b2bc4240ea9a927d0478e064bd77f4ceb.json](graphify-out/cache/ast/v0.9.8/083ef32108d803d4e9caf26aa275f10b2bc4240ea9a927d0478e064bd77f4ceb.json) |  | 2026-07-23 | 7KB | `00223d89` |
 | [graphify-out/cache/ast/v0.9.8/0898130be08fa2d8e4e22c29ad74783a6ba9cd4d70743fe7af7a9998bfbbb0e3.json](graphify-out/cache/ast/v0.9.8/0898130be08fa2d8e4e22c29ad74783a6ba9cd4d70743fe7af7a9998bfbbb0e3.json) |  | 2026-07-07 | 15KB | `7ba1d1e9` |
 | [graphify-out/cache/ast/v0.9.8/08c9f950c423096f9947baad20e5e188e7a9be054bedda5a4206d0801f035ff6.json](graphify-out/cache/ast/v0.9.8/08c9f950c423096f9947baad20e5e188e7a9be054bedda5a4206d0801f035ff6.json) |  | 2026-07-08 | 10KB | `31f29ca9` |
 | [graphify-out/cache/ast/v0.9.8/08d89f3a96cfdca501ffdce8a049f6f3db0adbae4174e37dd7543e7fa98dfe41.json](graphify-out/cache/ast/v0.9.8/08d89f3a96cfdca501ffdce8a049f6f3db0adbae4174e37dd7543e7fa98dfe41.json) |  | 2026-07-08 | 14KB | `e436559b` |
@@ -1909,6 +1918,7 @@
 | [graphify-out/cache/ast/v0.9.8/202e7af32edbc7d3eb8cbe8cbabe66741133bce83f015a4719f74532e465441b.json](graphify-out/cache/ast/v0.9.8/202e7af32edbc7d3eb8cbe8cbabe66741133bce83f015a4719f74532e465441b.json) |  | 2026-07-22 | 3KB | `88a05787` |
 | [graphify-out/cache/ast/v0.9.8/206ae554d15a6419e11c315fb31d45255e636d9117b6d961dc0effcc684b102a.json](graphify-out/cache/ast/v0.9.8/206ae554d15a6419e11c315fb31d45255e636d9117b6d961dc0effcc684b102a.json) |  | 2026-07-08 | 50KB | `0e94ea79` |
 | [graphify-out/cache/ast/v0.9.8/206b61001df8bbd0cf9329348da7d175a35634a7e43ffd6d947e9fd4077529ea.json](graphify-out/cache/ast/v0.9.8/206b61001df8bbd0cf9329348da7d175a35634a7e43ffd6d947e9fd4077529ea.json) |  | 2026-07-08 | 10KB | `233f6730` |
+| [graphify-out/cache/ast/v0.9.8/209a3f3d9d6d0d7be1fa4b672b747e99138ab8cd642a3f6970fc0ac26253e182.json](graphify-out/cache/ast/v0.9.8/209a3f3d9d6d0d7be1fa4b672b747e99138ab8cd642a3f6970fc0ac26253e182.json) |  | 2026-07-23 | 8KB | `b3ce71b1` |
 | [graphify-out/cache/ast/v0.9.8/20a29c493bb839c29bf9ac2b161405eff34d84125b39fcf3f20531b3f832f494.json](graphify-out/cache/ast/v0.9.8/20a29c493bb839c29bf9ac2b161405eff34d84125b39fcf3f20531b3f832f494.json) |  | 2026-07-08 | 11KB | `722ee61a` |
 | [graphify-out/cache/ast/v0.9.8/20ab9aeb9f9099fb04a67518ad13c1082667ea33d7cbbc672bac64a4b8aca406.json](graphify-out/cache/ast/v0.9.8/20ab9aeb9f9099fb04a67518ad13c1082667ea33d7cbbc672bac64a4b8aca406.json) |  | 2026-07-07 | 80KB | `89897a72` |
 | [graphify-out/cache/ast/v0.9.8/20c7321b4c865e9a4a6ec65bf6cfcd07d0188ccc30492689e8873a74ec590ad5.json](graphify-out/cache/ast/v0.9.8/20c7321b4c865e9a4a6ec65bf6cfcd07d0188ccc30492689e8873a74ec590ad5.json) |  | 2026-07-08 | 8KB | `5a4ea15e` |
@@ -1929,6 +1939,7 @@
 | [graphify-out/cache/ast/v0.9.8/23c1c45a6e98dcdb9707c932b0d53f5034c7fcb890e94868311fdf54c015d2e8.json](graphify-out/cache/ast/v0.9.8/23c1c45a6e98dcdb9707c932b0d53f5034c7fcb890e94868311fdf54c015d2e8.json) |  | 2026-07-08 | 103KB | `04c020eb` |
 | [graphify-out/cache/ast/v0.9.8/2408a6890d8b1d33dc02e028c1271bab165d447aa9c634c2bf77815282c4fdec.json](graphify-out/cache/ast/v0.9.8/2408a6890d8b1d33dc02e028c1271bab165d447aa9c634c2bf77815282c4fdec.json) |  | 2026-07-08 | 8KB | `619daa67` |
 | [graphify-out/cache/ast/v0.9.8/2461162e1830049470c22808cf0afadef672ab26eb0306fdaa7a916bce9e2813.json](graphify-out/cache/ast/v0.9.8/2461162e1830049470c22808cf0afadef672ab26eb0306fdaa7a916bce9e2813.json) |  | 2026-07-07 | 2KB | `58ca5dae` |
+| [graphify-out/cache/ast/v0.9.8/24729f53f18e5f9f287344c0be45e3af6b757c20da0ca75da57b957f7ccd0ab5.json](graphify-out/cache/ast/v0.9.8/24729f53f18e5f9f287344c0be45e3af6b757c20da0ca75da57b957f7ccd0ab5.json) |  | 2026-07-23 | 4KB | `746b184c` |
 | [graphify-out/cache/ast/v0.9.8/24a0d508a77219d34d2f52afff922dfdc497063350dae50b6ea747fd87ab8db6.json](graphify-out/cache/ast/v0.9.8/24a0d508a77219d34d2f52afff922dfdc497063350dae50b6ea747fd87ab8db6.json) |  | 2026-07-08 | 8KB | `15f1cf15` |
 | [graphify-out/cache/ast/v0.9.8/2505910c1e5bd1a917abed389c8bf07a1bb6dac5cad5aeed8584132986655412.json](graphify-out/cache/ast/v0.9.8/2505910c1e5bd1a917abed389c8bf07a1bb6dac5cad5aeed8584132986655412.json) |  | 2026-07-08 | 48KB | `04d05965` |
 | [graphify-out/cache/ast/v0.9.8/2576dbbb2fb3a28fa1f9b280d43208b34ff23aeb492e62e86edc63862dae063a.json](graphify-out/cache/ast/v0.9.8/2576dbbb2fb3a28fa1f9b280d43208b34ff23aeb492e62e86edc63862dae063a.json) |  | 2026-07-08 | 1KB | `8552ac19` |
@@ -2103,6 +2114,8 @@
 | [graphify-out/cache/ast/v0.9.8/54047e10eeb6320c75bb24e8f7b6b6ca63aced65fae467dc82fe821388730627.json](graphify-out/cache/ast/v0.9.8/54047e10eeb6320c75bb24e8f7b6b6ca63aced65fae467dc82fe821388730627.json) |  | 2026-07-08 | 118KB | `8c3bd1d7` |
 | [graphify-out/cache/ast/v0.9.8/54ad088b85cf2b282d79552975959fef2d6a1ac01d142c7170a4b57bb1fecfd9.json](graphify-out/cache/ast/v0.9.8/54ad088b85cf2b282d79552975959fef2d6a1ac01d142c7170a4b57bb1fecfd9.json) |  | 2026-07-07 | 763B | `1d68ab8d` |
 | [graphify-out/cache/ast/v0.9.8/54e15a9e328b88a8a85d08433685141bad2c2cd6e58bdf9746d77f9399bf7476.json](graphify-out/cache/ast/v0.9.8/54e15a9e328b88a8a85d08433685141bad2c2cd6e58bdf9746d77f9399bf7476.json) |  | 2026-07-08 | 6KB | `c7ce18a4` |
+| [graphify-out/cache/ast/v0.9.8/5507a1a26175dc35682b5ff360cc04496a5000b8e60ed4d5f0e8d04ac8939e5e.json](graphify-out/cache/ast/v0.9.8/5507a1a26175dc35682b5ff360cc04496a5000b8e60ed4d5f0e8d04ac8939e5e.json) |  | 2026-07-23 | 14KB | `2a70b2e0` |
+| [graphify-out/cache/ast/v0.9.8/551c859c8c6d37d751673a03a5cb41c2c73d70fb5b1068817da98e27c958b4b2.json](graphify-out/cache/ast/v0.9.8/551c859c8c6d37d751673a03a5cb41c2c73d70fb5b1068817da98e27c958b4b2.json) |  | 2026-07-23 | 13KB | `0cf80e18` |
 | [graphify-out/cache/ast/v0.9.8/554b2525b0e0ffb9c56d7d73d71f8dc49fd7cc96eeef01e88127fd95f76b2613.json](graphify-out/cache/ast/v0.9.8/554b2525b0e0ffb9c56d7d73d71f8dc49fd7cc96eeef01e88127fd95f76b2613.json) |  | 2026-07-08 | 61KB | `1504a8d7` |
 | [graphify-out/cache/ast/v0.9.8/554cbc8443af0a7571518f94af62f556a387dd361aaa7a73ed70c98a8ca019e3.json](graphify-out/cache/ast/v0.9.8/554cbc8443af0a7571518f94af62f556a387dd361aaa7a73ed70c98a8ca019e3.json) |  | 2026-07-08 | 32KB | `bb8e499a` |
 | [graphify-out/cache/ast/v0.9.8/5550146359b4660605501d00768b1a931178c2c77e937c5437ed7af4d4691f9a.json](graphify-out/cache/ast/v0.9.8/5550146359b4660605501d00768b1a931178c2c77e937c5437ed7af4d4691f9a.json) |  | 2026-07-07 | 12KB | `e1d9f8e2` |
@@ -2266,6 +2279,7 @@
 | [graphify-out/cache/ast/v0.9.8/785270b19a96ab86dcabb8b7522771a27d9479485209883758433eb99231e388.json](graphify-out/cache/ast/v0.9.8/785270b19a96ab86dcabb8b7522771a27d9479485209883758433eb99231e388.json) |  | 2026-07-07 | 11KB | `6d2331be` |
 | [graphify-out/cache/ast/v0.9.8/792c0ec314a852c514495ae68fff8569362624bd6b1bce152f51bc43de40d2a9.json](graphify-out/cache/ast/v0.9.8/792c0ec314a852c514495ae68fff8569362624bd6b1bce152f51bc43de40d2a9.json) |  | 2026-07-07 | 35KB | `eb7a7e8d` |
 | [graphify-out/cache/ast/v0.9.8/793688e1f4d8f7777dd0081240f60289984572c79577858d10efcf95c5902f0a.json](graphify-out/cache/ast/v0.9.8/793688e1f4d8f7777dd0081240f60289984572c79577858d10efcf95c5902f0a.json) |  | 2026-07-10 | 9KB | `91e8d376` |
+| [graphify-out/cache/ast/v0.9.8/79be15457e31f1c64159d8cad9276940c61022b761d5c0785e19704ca5a2d657.json](graphify-out/cache/ast/v0.9.8/79be15457e31f1c64159d8cad9276940c61022b761d5c0785e19704ca5a2d657.json) |  | 2026-07-23 | 7KB | `cb678c2f` |
 | [graphify-out/cache/ast/v0.9.8/7a03b53a2b3d5cd5fe0ca8ddf5d742b16ec98f5cfb5cb1e5a31457942ead7d47.json](graphify-out/cache/ast/v0.9.8/7a03b53a2b3d5cd5fe0ca8ddf5d742b16ec98f5cfb5cb1e5a31457942ead7d47.json) |  | 2026-07-08 | 12KB | `4fb55d55` |
 | [graphify-out/cache/ast/v0.9.8/7a62b6972598bef4db954eb30f867b1888f8badd87f28de1d46290d8c42ac228.json](graphify-out/cache/ast/v0.9.8/7a62b6972598bef4db954eb30f867b1888f8badd87f28de1d46290d8c42ac228.json) |  | 2026-07-08 | 3KB | `aa4012af` |
 | [graphify-out/cache/ast/v0.9.8/7b4802f9d1a7617a227608d514b1be307d9eaabab967ca766303eb5da7531cc3.json](graphify-out/cache/ast/v0.9.8/7b4802f9d1a7617a227608d514b1be307d9eaabab967ca766303eb5da7531cc3.json) |  | 2026-07-08 | 1KB | `8458e7e8` |
@@ -2391,6 +2405,7 @@
 | [graphify-out/cache/ast/v0.9.8/94ef631ea54a40a14887974be1778590d3f0e68cfb906984644ee5c5627b7b08.json](graphify-out/cache/ast/v0.9.8/94ef631ea54a40a14887974be1778590d3f0e68cfb906984644ee5c5627b7b08.json) |  | 2026-07-07 | 3KB | `f45a8ef4` |
 | [graphify-out/cache/ast/v0.9.8/9519084224c236c39152f72b32d42af07053c1b7fe09e6a1ae0ab8aa6070e20f.json](graphify-out/cache/ast/v0.9.8/9519084224c236c39152f72b32d42af07053c1b7fe09e6a1ae0ab8aa6070e20f.json) |  | 2026-07-07 | 25KB | `c2b86fef` |
 | [graphify-out/cache/ast/v0.9.8/953fd8fd74cc4d6aaa42140f7be63bb0680396e68304c4432c69199fb29c049a.json](graphify-out/cache/ast/v0.9.8/953fd8fd74cc4d6aaa42140f7be63bb0680396e68304c4432c69199fb29c049a.json) |  | 2026-07-08 | 8KB | `3c2f1487` |
+| [graphify-out/cache/ast/v0.9.8/959891838a3bdcbf0f768c1e74e1d4edd2947315d36434b0eb6619d8f64b0c7f.json](graphify-out/cache/ast/v0.9.8/959891838a3bdcbf0f768c1e74e1d4edd2947315d36434b0eb6619d8f64b0c7f.json) |  | 2026-07-23 | 98KB | `f2de6908` |
 | [graphify-out/cache/ast/v0.9.8/960cef72044394446ea4f1022890ac9c90b5c3226ebaad7b6643ee6ceb76c1d9.json](graphify-out/cache/ast/v0.9.8/960cef72044394446ea4f1022890ac9c90b5c3226ebaad7b6643ee6ceb76c1d9.json) |  | 2026-07-08 | 58KB | `9c4699fa` |
 | [graphify-out/cache/ast/v0.9.8/9612557a4803061367440fe418ad72b901b484158716c3f2f8106839fcd2c353.json](graphify-out/cache/ast/v0.9.8/9612557a4803061367440fe418ad72b901b484158716c3f2f8106839fcd2c353.json) |  | 2026-07-07 | 26KB | `2634bb3a` |
 | [graphify-out/cache/ast/v0.9.8/96277739c5da55b999bdc7ecedefdbb584b374c573408a2aebc7e2e8d177dfea.json](graphify-out/cache/ast/v0.9.8/96277739c5da55b999bdc7ecedefdbb584b374c573408a2aebc7e2e8d177dfea.json) |  | 2026-07-08 | 14KB | `5eaad856` |
@@ -2442,6 +2457,7 @@
 | [graphify-out/cache/ast/v0.9.8/a12c984903befc0abf5de574ccc13ece0107aa2e423efabf2d2f4d0e842d4772.json](graphify-out/cache/ast/v0.9.8/a12c984903befc0abf5de574ccc13ece0107aa2e423efabf2d2f4d0e842d4772.json) |  | 2026-07-07 | 5KB | `4a1b90fd` |
 | [graphify-out/cache/ast/v0.9.8/a1333970037f3a017cf56241196c29904f845789f51aa33432d68da17f284327.json](graphify-out/cache/ast/v0.9.8/a1333970037f3a017cf56241196c29904f845789f51aa33432d68da17f284327.json) |  | 2026-07-08 | 61KB | `e873e2df` |
 | [graphify-out/cache/ast/v0.9.8/a1847d0b25e4c26e8a4b0281ac5ec169d5219e66c50a55b1aad4572a8c01d946.json](graphify-out/cache/ast/v0.9.8/a1847d0b25e4c26e8a4b0281ac5ec169d5219e66c50a55b1aad4572a8c01d946.json) |  | 2026-07-07 | 16KB | `a42b8320` |
+| [graphify-out/cache/ast/v0.9.8/a18fa8393dfec91d32e34efd5f8f99aecf299dc41fcf89cf399becb6bbccf5d4.json](graphify-out/cache/ast/v0.9.8/a18fa8393dfec91d32e34efd5f8f99aecf299dc41fcf89cf399becb6bbccf5d4.json) |  | 2026-07-23 | 16KB | `5fa67b54` |
 | [graphify-out/cache/ast/v0.9.8/a1e7c21338055a4f6f60a8f9cb6f3e497912c305aece1e4150773af37f22f585.json](graphify-out/cache/ast/v0.9.8/a1e7c21338055a4f6f60a8f9cb6f3e497912c305aece1e4150773af37f22f585.json) |  | 2026-07-08 | 6KB | `575e33ad` |
 | [graphify-out/cache/ast/v0.9.8/a21a114d555c1d3a27fbeeec09b09e0d68347405ddbd781d70ca38865767961a.json](graphify-out/cache/ast/v0.9.8/a21a114d555c1d3a27fbeeec09b09e0d68347405ddbd781d70ca38865767961a.json) |  | 2026-07-08 | 15KB | `2277ca50` |
 | [graphify-out/cache/ast/v0.9.8/a239b7352b3e2d684db0ffebb5d42a8ee02e3bd1b0c4d48a1bc8e8088ab8c0f6.json](graphify-out/cache/ast/v0.9.8/a239b7352b3e2d684db0ffebb5d42a8ee02e3bd1b0c4d48a1bc8e8088ab8c0f6.json) |  | 2026-07-08 | 7KB | `00223d89` |
@@ -2463,6 +2479,7 @@
 | [graphify-out/cache/ast/v0.9.8/a5f063dbf051a316de990c9d754da6d401e9600d028c96adbd1b1bf2f58e2b11.json](graphify-out/cache/ast/v0.9.8/a5f063dbf051a316de990c9d754da6d401e9600d028c96adbd1b1bf2f58e2b11.json) |  | 2026-07-08 | 17KB | `efe593ac` |
 | [graphify-out/cache/ast/v0.9.8/a5ff158c9dec02fa7c58c020676839f81f86d633b2cfdb0d64c507420d753305.json](graphify-out/cache/ast/v0.9.8/a5ff158c9dec02fa7c58c020676839f81f86d633b2cfdb0d64c507420d753305.json) |  | 2026-07-08 | 37KB | `b4f947b5` |
 | [graphify-out/cache/ast/v0.9.8/a63be16d6223f623cefe9331b35043bf6e92e9f37e9c02eb10674f40abf8fd71.json](graphify-out/cache/ast/v0.9.8/a63be16d6223f623cefe9331b35043bf6e92e9f37e9c02eb10674f40abf8fd71.json) |  | 2026-07-08 | 13KB | `fc1dde50` |
+| [graphify-out/cache/ast/v0.9.8/a6a72d98b5392da5e89c993d40cea93ae1f88c56ffa82b1a850cad3819cf7388.json](graphify-out/cache/ast/v0.9.8/a6a72d98b5392da5e89c993d40cea93ae1f88c56ffa82b1a850cad3819cf7388.json) |  | 2026-07-23 | 7KB | `ea3eb173` |
 | [graphify-out/cache/ast/v0.9.8/a6a9a842009cfccb966482b49653fc3eb844343b30b15b38e9d8b06dc1de5e47.json](graphify-out/cache/ast/v0.9.8/a6a9a842009cfccb966482b49653fc3eb844343b30b15b38e9d8b06dc1de5e47.json) |  | 2026-07-07 | 16KB | `f7808b20` |
 | [graphify-out/cache/ast/v0.9.8/a6daad232ce9ef112c35637cdca69da3d4fac309adc0f203f87d7acdfa91eb10.json](graphify-out/cache/ast/v0.9.8/a6daad232ce9ef112c35637cdca69da3d4fac309adc0f203f87d7acdfa91eb10.json) |  | 2026-07-08 | 6KB | `7f03108f` |
 | [graphify-out/cache/ast/v0.9.8/a6e09565398ee5640cfe0c40f0e88506523f5ea2d730b16a8a572cad96cce742.json](graphify-out/cache/ast/v0.9.8/a6e09565398ee5640cfe0c40f0e88506523f5ea2d730b16a8a572cad96cce742.json) |  | 2026-07-08 | 41KB | `5b02d655` |
@@ -2532,6 +2549,7 @@
 | [graphify-out/cache/ast/v0.9.8/b40c5968f2285afeb2dfb7e8993ebe3eeeaeb4798077b8b5fdfe27473644f66b.json](graphify-out/cache/ast/v0.9.8/b40c5968f2285afeb2dfb7e8993ebe3eeeaeb4798077b8b5fdfe27473644f66b.json) |  | 2026-07-08 | 7KB | `00223d89` |
 | [graphify-out/cache/ast/v0.9.8/b4112fa8df11d7d3fc5272b7238791e2109d07dfda027bc8b7f3a98c6164abc1.json](graphify-out/cache/ast/v0.9.8/b4112fa8df11d7d3fc5272b7238791e2109d07dfda027bc8b7f3a98c6164abc1.json) |  | 2026-07-08 | 7KB | `8050f519` |
 | [graphify-out/cache/ast/v0.9.8/b43fecd9154db72e86bea0480d8dfec6687a67ffef7f79d7e40d8c8aad395404.json](graphify-out/cache/ast/v0.9.8/b43fecd9154db72e86bea0480d8dfec6687a67ffef7f79d7e40d8c8aad395404.json) |  | 2026-07-08 | 18KB | `5760d4b4` |
+| [graphify-out/cache/ast/v0.9.8/b4516f9c5c6fbfb3c81e8076ecb8b9ef1cc9f059c15b121036d43dae9f88de36.json](graphify-out/cache/ast/v0.9.8/b4516f9c5c6fbfb3c81e8076ecb8b9ef1cc9f059c15b121036d43dae9f88de36.json) |  | 2026-07-23 | 23KB | `fab1524b` |
 | [graphify-out/cache/ast/v0.9.8/b4880edb449b002c587fef71b88d7044f9a917b4fad9bfc3d9bf433a7d6ae44b.json](graphify-out/cache/ast/v0.9.8/b4880edb449b002c587fef71b88d7044f9a917b4fad9bfc3d9bf433a7d6ae44b.json) |  | 2026-07-08 | 9KB | `75a087a6` |
 | [graphify-out/cache/ast/v0.9.8/b4b01f8d29f1c42d877e389901770bc905cf3f10f9de5a2a8953d760ae8eb24e.json](graphify-out/cache/ast/v0.9.8/b4b01f8d29f1c42d877e389901770bc905cf3f10f9de5a2a8953d760ae8eb24e.json) |  | 2026-07-08 | 4KB | `5a38ecc0` |
 | [graphify-out/cache/ast/v0.9.8/b4b5d88b7be8bbde190d80a657f19595e1362266ca022550a4618a7b87d655cd.json](graphify-out/cache/ast/v0.9.8/b4b5d88b7be8bbde190d80a657f19595e1362266ca022550a4618a7b87d655cd.json) |  | 2026-07-08 | 9KB | `fd237a14` |
@@ -2545,11 +2563,13 @@
 | [graphify-out/cache/ast/v0.9.8/b6d43c123903c50e693e949b552345a5e528cedbad6d47436ff44d521eab0642.json](graphify-out/cache/ast/v0.9.8/b6d43c123903c50e693e949b552345a5e528cedbad6d47436ff44d521eab0642.json) |  | 2026-07-08 | 7KB | `350bab9c` |
 | [graphify-out/cache/ast/v0.9.8/b7440e5231c1818c76c67b28a2898950dab56790904ff92d835adc972b9d6c8d.json](graphify-out/cache/ast/v0.9.8/b7440e5231c1818c76c67b28a2898950dab56790904ff92d835adc972b9d6c8d.json) |  | 2026-07-07 | 26KB | `a766cd3b` |
 | [graphify-out/cache/ast/v0.9.8/b75c5cca2b36c21aeb9c1f636d8e6280a8d68307579f23b038f1d0655bda40c9.json](graphify-out/cache/ast/v0.9.8/b75c5cca2b36c21aeb9c1f636d8e6280a8d68307579f23b038f1d0655bda40c9.json) |  | 2026-07-07 | 7KB | `361a6e3a` |
+| [graphify-out/cache/ast/v0.9.8/b768104a955fcc80cbb7c184dbd7bead1c248d591494212f37f788dc5c845511.json](graphify-out/cache/ast/v0.9.8/b768104a955fcc80cbb7c184dbd7bead1c248d591494212f37f788dc5c845511.json) |  | 2026-07-23 | 51KB | `1e360500` |
 | [graphify-out/cache/ast/v0.9.8/b7a12eb94aa5be0dc4e13d0ccce3a55b24ff7c35fca6d4f6475bcd7cc9ad4c59.json](graphify-out/cache/ast/v0.9.8/b7a12eb94aa5be0dc4e13d0ccce3a55b24ff7c35fca6d4f6475bcd7cc9ad4c59.json) |  | 2026-07-08 | 8KB | `afaa8a33` |
 | [graphify-out/cache/ast/v0.9.8/b8297ccdae757273b9fa5c319640f03f2d65b40c543ffbe599b41b9d8667bb6a.json](graphify-out/cache/ast/v0.9.8/b8297ccdae757273b9fa5c319640f03f2d65b40c543ffbe599b41b9d8667bb6a.json) |  | 2026-07-08 | 2KB | `e835f97a` |
 | [graphify-out/cache/ast/v0.9.8/b82bc2eec6ee63c461629d34179760772a2b0ba4d6c8107e02966c3279fd34fc.json](graphify-out/cache/ast/v0.9.8/b82bc2eec6ee63c461629d34179760772a2b0ba4d6c8107e02966c3279fd34fc.json) |  | 2026-07-08 | 5KB | `0a96598e` |
 | [graphify-out/cache/ast/v0.9.8/b89f52016d477ab8e05fa62cb5cfcbbf874f6f33f0248d854530f9e789304534.json](graphify-out/cache/ast/v0.9.8/b89f52016d477ab8e05fa62cb5cfcbbf874f6f33f0248d854530f9e789304534.json) |  | 2026-07-08 | 4KB | `4905783d` |
 | [graphify-out/cache/ast/v0.9.8/b8f46aa111167cd9236ef3ffd46c464f635b9aaf6611b5f50d2bbed7506d5b1a.json](graphify-out/cache/ast/v0.9.8/b8f46aa111167cd9236ef3ffd46c464f635b9aaf6611b5f50d2bbed7506d5b1a.json) |  | 2026-07-08 | 5KB | `a00a4bdf` |
+| [graphify-out/cache/ast/v0.9.8/b9c40fe7d5a8f6ca3ce7e2987398a05ae740f03fb21d32059f9eed1d2722810f.json](graphify-out/cache/ast/v0.9.8/b9c40fe7d5a8f6ca3ce7e2987398a05ae740f03fb21d32059f9eed1d2722810f.json) |  | 2026-07-23 | 8KB | `be1195e7` |
 | [graphify-out/cache/ast/v0.9.8/ba3cc6578575460c3810ed012053d238d2dd304791052186b553926bf7fb8224.json](graphify-out/cache/ast/v0.9.8/ba3cc6578575460c3810ed012053d238d2dd304791052186b553926bf7fb8224.json) |  | 2026-07-08 | 25KB | `da351983` |
 | [graphify-out/cache/ast/v0.9.8/ba8ac42609755a8ef04b97a94f28e85cbaf6ab5b7d50dae94526d9d549f0c307.json](graphify-out/cache/ast/v0.9.8/ba8ac42609755a8ef04b97a94f28e85cbaf6ab5b7d50dae94526d9d549f0c307.json) |  | 2026-07-08 | 7KB | `92f1ce90` |
 | [graphify-out/cache/ast/v0.9.8/ba9f72d9081dcffe4c390b8e65e9708b002f315dfd580e717629880b000804c2.json](graphify-out/cache/ast/v0.9.8/ba9f72d9081dcffe4c390b8e65e9708b002f315dfd580e717629880b000804c2.json) |  | 2026-07-08 | 44KB | `2d80ea50` |
@@ -2581,6 +2601,7 @@
 | [graphify-out/cache/ast/v0.9.8/c280e0791591d16fc14c0d0effa682a454bb49c7bd7f28ee6a18b82fe079650e.json](graphify-out/cache/ast/v0.9.8/c280e0791591d16fc14c0d0effa682a454bb49c7bd7f28ee6a18b82fe079650e.json) |  | 2026-07-08 | 145KB | `2fce072c` |
 | [graphify-out/cache/ast/v0.9.8/c2ea788e6c182d6862d94922885ea0dfa4e6a7017c59b26e501be30797b646e4.json](graphify-out/cache/ast/v0.9.8/c2ea788e6c182d6862d94922885ea0dfa4e6a7017c59b26e501be30797b646e4.json) |  | 2026-07-08 | 11KB | `ffc61a9a` |
 | [graphify-out/cache/ast/v0.9.8/c349a774b749129d6c5228e99110cee08d5446ae4cdca7bf269a0ac13ce689eb.json](graphify-out/cache/ast/v0.9.8/c349a774b749129d6c5228e99110cee08d5446ae4cdca7bf269a0ac13ce689eb.json) |  | 2026-07-08 | 30KB | `d3be285a` |
+| [graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json](graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json) |  | 2026-07-23 | 18KB | `2bb95e05` |
 | [graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json](graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json) |  | 2026-07-22 | 9KB | `a7476293` |
 | [graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json](graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json) |  | 2026-07-08 | 12KB | `e2bdad62` |
 | [graphify-out/cache/ast/v0.9.8/c4f7cef1ff3319c4cb9ec2b2fac63c08d92e938f090eb93b15ab1c4670feffc4.json](graphify-out/cache/ast/v0.9.8/c4f7cef1ff3319c4cb9ec2b2fac63c08d92e938f090eb93b15ab1c4670feffc4.json) |  | 2026-07-07 | 6KB | `13484135` |
@@ -2661,6 +2682,7 @@
 | [graphify-out/cache/ast/v0.9.8/d816b5cbf090b90e1e2e9137db12124035b6d3d48d9e4340894bb5b472a27084.json](graphify-out/cache/ast/v0.9.8/d816b5cbf090b90e1e2e9137db12124035b6d3d48d9e4340894bb5b472a27084.json) |  | 2026-07-07 | 11KB | `3973528e` |
 | [graphify-out/cache/ast/v0.9.8/d8420d735aea05633c9ded080ec0119e5fce75868ad1343434cea0f22762d9c8.json](graphify-out/cache/ast/v0.9.8/d8420d735aea05633c9ded080ec0119e5fce75868ad1343434cea0f22762d9c8.json) |  | 2026-07-08 | 867B | `729ec6db` |
 | [graphify-out/cache/ast/v0.9.8/d8c8c5aa60df24a1dac37b4d2c97386ffd67118cd2e3587489a0cb20e52b2950.json](graphify-out/cache/ast/v0.9.8/d8c8c5aa60df24a1dac37b4d2c97386ffd67118cd2e3587489a0cb20e52b2950.json) |  | 2026-07-08 | 14KB | `bec795f6` |
+| [graphify-out/cache/ast/v0.9.8/d9251d638957cea5676528af94ec088869fefb359eb2cc33ebeee34adce29d85.json](graphify-out/cache/ast/v0.9.8/d9251d638957cea5676528af94ec088869fefb359eb2cc33ebeee34adce29d85.json) |  | 2026-07-23 | 7KB | `9bcdf11a` |
 | [graphify-out/cache/ast/v0.9.8/d9754ce50772383721da317062494a248160c4716046f060439fce274218ede3.json](graphify-out/cache/ast/v0.9.8/d9754ce50772383721da317062494a248160c4716046f060439fce274218ede3.json) |  | 2026-07-07 | 19KB | `765aa7fc` |
 | [graphify-out/cache/ast/v0.9.8/d9fc1400deb049c2d94ba8bb4b718d201b67af875576e001c5d5cbb7a6c1af0c.json](graphify-out/cache/ast/v0.9.8/d9fc1400deb049c2d94ba8bb4b718d201b67af875576e001c5d5cbb7a6c1af0c.json) |  | 2026-07-07 | 101KB | `ea31e5af` |
 | [graphify-out/cache/ast/v0.9.8/da713305e9e0c790a4b1cb33cd933e6de84ce1958adbb41ee6ec980bcb506dfc.json](graphify-out/cache/ast/v0.9.8/da713305e9e0c790a4b1cb33cd933e6de84ce1958adbb41ee6ec980bcb506dfc.json) |  | 2026-07-08 | 8KB | `afadfb99` |

@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-23] — Time-only robustness audit (research_only)
+- **report**: `docs/reports/2026-07-23-time-only-robustness-audit.md`
+- **topics**: `fractal0`, `time_only`, `robustness`, `validation_slice`, `regime_filter`
+- **summary**: Добавлен audit fixed normalized `time_only / linear / target_entry_ev_regression / top30` winner по saved validation artifacts без нового поиска и без открытия `locked_test`.
+- **artifacts**: `ML/reports/time_only_robustness_audit.json`, `ML/reports/time_only_robustness_audit_yearly.csv`, `ML/reports/time_only_robustness_audit_side.csv`, `ML/baseline/audit_time_only_robustness.py`
+- **decision**: `REGIME_REFORMULATION_REQUIRED`; следующий active-трек — regime filter reformulation.
+- **notes**: `locked_test=not_opened`; `stricter_cutoff_sample_fragile`; `stress_costs_not_computable`; entry-time calendar slices added; `timezone_shift_status=NOT_RUN`, `calendar_permutation_importance_status=NOT_RUN`, `multi_seed_status=NOT_RUN`, `provider_drift_status=NOT_RUN`, `transfer_status=NOT_RUN`.
+
 ## [2026-07-22] — Fractal0 Rich Entry Quality Normalized Rerun (RESEARCH_HINT_RICH_FEATURES)
 - **report**: `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`
 - **topics**: `fractal0`, `rich_entry_quality`, `normalized_features`, `feature_contract`, `train_only_scaler`

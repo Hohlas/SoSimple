@@ -1,0 +1,2 @@
+status;reason
+NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS;"saved trades contain realized pnl for canonical spread only; stress spread requires explicit resimulation"

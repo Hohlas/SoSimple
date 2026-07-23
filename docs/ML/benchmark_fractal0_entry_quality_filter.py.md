@@ -172,6 +172,13 @@ permutation; `_permutation.csv` содержит только заголовок
 `feature_importance_by_profile.csv` не производится, потому что runner не
 сохраняет fitted per-profile модели и этот artifact не участвовал в selection.
 
+## Time Only Robustness Audit
+
+After normalized rich-entry rerun, `ML/baseline/audit_time_only_robustness.py`
+audits the fixed `time_only / linear / target_entry_ev_regression / top30`
+winner from saved normalized artifacts. It does not retrain, does not select a
+new rule and does not open `locked_test`.
+
 ## Normalized Rich Entry Quality Mode
 
 Команда:

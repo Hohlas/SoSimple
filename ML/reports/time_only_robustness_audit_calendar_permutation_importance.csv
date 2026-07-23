@@ -1,0 +1,2 @@
+status;reason
+NOT_RUN;"requires model-level permutation importance or a predefined calendar-feature ablation; not part of this fixed-rule artifact audit"

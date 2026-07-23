@@ -1,0 +1,217 @@
+{
+  "experiment": "time_only_robustness_audit",
+  "status": "completed",
+  "verdict": "research_only",
+  "locked_test": "not_opened",
+  "fixed_rule_contract": {
+    "status": "PASS",
+    "checks": {
+      "locked_test": true,
+      "feature_contract_variant": true,
+      "selected_winner": {
+        "status": "PASS",
+        "checks": {
+          "stop_policy_id": true,
+          "entry_id": true,
+          "mask_id": true,
+          "exit_id": true,
+          "spread": true,
+          "profile_id": true,
+          "model_id": true,
+          "target_id": true,
+          "filter_id": true,
+          "entry_filter_score_col": true,
+          "score_cutoff_on_val_select": true
+        }
+      },
+      "selected_winner_val_eval": {
+        "status": "PASS",
+        "checks": {
+          "stop_policy_id": true,
+          "entry_id": true,
+          "mask_id": true,
+          "exit_id": true,
+          "spread": true,
+          "profile_id": true,
+          "model_id": true,
+          "target_id": true,
+          "filter_id": true,
+          "entry_filter_score_col": true,
+          "score_cutoff_on_val_select": true
+        }
+      }
+    },
+    "expected_rule": {
+      "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+      "entry_id": "E3_open_pullback_1_0atr",
+      "mask_id": "M0_no_mask",
+      "exit_id": "X2_ml_opposite_any_p0_50",
+      "spread": 0.2,
+      "profile_id": "time_only",
+      "model_id": "linear",
+      "target_id": "target_entry_ev_regression",
+      "filter_id": "top30",
+      "entry_filter_score_col": "rich_entry_score",
+      "score_cutoff_on_val_select": -0.026718184259660646
+    }
+  },
+  "input_artifacts": {
+    "json": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized.json",
+      "size_bytes": 3480367,
+      "sha256": "124859f3aba89a4fe2b4b663919740315d9218b8f2c748298a1dc013e00379cb"
+    },
+    "summary_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_summary.csv",
+      "size_bytes": 349060,
+      "sha256": "89e825e2d54f24c6cb0167dab4a87fba7e415036f62006f6402a53166aa6dd81"
+    },
+    "trades_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_trades.csv",
+      "size_bytes": 310798934,
+      "sha256": "871413b9bab8758a78b9924abe27223c8bf2df037947b49d23c79d7424b22259"
+    },
+    "scores_csv": {
+      "path": "ML/reports/fractal0_rich_entry_quality_normalized_scores.csv",
+      "size_bytes": 491649054,
+      "sha256": "03a765a9134afd99add5c92dd58e018bcc0871156ebe650acb6d2f29f276f92d"
+    }
+  },
+  "source_input_artifact_hashes": {
+    "movement_freeze_json": "52c3340150dde391e94db3d9023150275d94777ac76da6647505b4741155abaa",
+    "ohlc": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
+    "train_core": "5cc0c1180d96966ac08c4832947be6b2770f1d14b0b572a4f63f0f28b3e49b62",
+    "validation": "f31d54f8e47b29675cbd21f78f457ee4b135936480698baac54180c5a83f14fd",
+    "movement_freeze_scores": "385dc1c125e9b2ba9ec9a278e4a56f60fe3f2c10a66a425ff92fd5b9cb105eae",
+    "execution_ohlc": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+    "stop_grid_artifact": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6"
+  },
+  "selected_summary": {
+    "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+    "entry_id": "E3_open_pullback_1_0atr",
+    "mask_id": "M0_no_mask",
+    "exit_id": "X2_ml_opposite_any_p0_50",
+    "split": "val_eval",
+    "spread": 0.2,
+    "n_trades": 660,
+    "gross_profit": 298.25991072399506,
+    "gross_loss": 74.06949529403207,
+    "pf": 4.026757702884287,
+    "mean_pnl_r": 0.339682447621156,
+    "median_pnl_r": 0.0265243902438916,
+    "max_drawdown_r": 3.390579268292761,
+    "win_rate": 0.5272727272727272,
+    "bs_p05": 3.3067645101786955,
+    "negative_years": 0,
+    "pf_without_best_year": 3.546497776318488,
+    "effective_profit_years": 1.9922337231982865,
+    "n_years": 2,
+    "filter_id": "top30",
+    "score_cutoff_on_val_select": -0.0267181842596606,
+    "entry_filter_score_col": "rich_entry_score",
+    "profile_id": "time_only",
+    "model_id": "linear",
+    "target_id": "target_entry_ev_regression"
+  },
+  "profit_concentration": {
+    "n_years": 2,
+    "effective_profit_years": 1.9922337231982863,
+    "best_year_share": 0.5312180874889839,
+    "profitable_years": 2,
+    "min_year_pf": 3.5464977763184886
+  },
+  "block_bootstrap": {
+    "bs_p05": 3.3067645101786955,
+    "samples": 1000,
+    "bootstrap_method": "sequential_block",
+    "block_size": 20,
+    "seed": 20260723
+  },
+  "scope": "validation_artifact_robustness_slice",
+  "multi_seed_status": "NOT_RUN",
+  "provider_drift_status": "NOT_RUN",
+  "transfer_status": "NOT_RUN",
+  "locked_test_status": "not_opened",
+  "stress_costs_status": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS",
+  "timezone_shift_status": "NOT_RUN",
+  "calendar_permutation_importance_status": "NOT_RUN",
+  "sequential_position_constraint_status": "NOT_RUN",
+  "decision": {
+    "decision": "REGIME_REFORMULATION_REQUIRED",
+    "reasons": [
+      "stricter_cutoff_sample_fragile",
+      "stress_costs_not_computable"
+    ],
+    "disclosures": [
+      "sequential_position_constraint_not_run"
+    ],
+    "decision_gate_config": {
+      "side": {
+        "min_pf": 1.0,
+        "min_n_trades": 30,
+        "max_drawdown_r": 8.5,
+        "min_mean_pnl_r": 0.0
+      },
+      "concentration": {
+        "min_effective_profit_years_formula": "max(1.5, 0.6 * n_years)",
+        "min_pf_without_best_year": 1.0
+      },
+      "block_bootstrap": {
+        "method": "sequential_block",
+        "min_bs_p05": 1.0,
+        "seed": 20260723,
+        "n_bootstrap": 1000,
+        "block_size": 20
+      },
+      "stress_costs": {
+        "required_for_slice_ok": true,
+        "status_when_saved_artifacts_lack_resimulation": "NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS"
+      },
+      "stricter_cutoff": {
+        "offsets": [
+          0.0,
+          0.005,
+          0.01,
+          0.02
+        ],
+        "min_n_trades": 300,
+        "looser_cutoff_supported": false
+      },
+      "topk": {
+        "filter_ids": [
+          "top30",
+          "top40",
+          "top50"
+        ],
+        "min_required_rows": 3,
+        "min_pf": 1.0,
+        "min_n_trades": 300
+      },
+      "sequential_position_constraint": {
+        "required_for_slice_ok": false
+      }
+    }
+  },
+  "forbidden_interpretations": [
+    "candidate",
+    "tradable",
+    "live_ready",
+    "production",
+    "permission_to_open_locked_test"
+  ],
+  "artifacts": {
+    "yearly_csv": "ML/reports/time_only_robustness_audit_yearly.csv",
+    "quarterly_csv": "ML/reports/time_only_robustness_audit_quarterly.csv",
+    "side_csv": "ML/reports/time_only_robustness_audit_side.csv",
+    "year_side_csv": "ML/reports/time_only_robustness_audit_year_side.csv",
+    "score_shift_csv": "ML/reports/time_only_robustness_audit_score_shift.csv",
+    "stricter_cutoff_csv": "ML/reports/time_only_robustness_audit_stricter_cutoff.csv",
+    "topk_sensitivity_csv": "ML/reports/time_only_robustness_audit_topk_sensitivity.csv",
+    "calendar_no_ml_baselines_csv": "ML/reports/time_only_robustness_audit_calendar_no_ml_baselines.csv",
+    "calendar_slices_csv": "ML/reports/time_only_robustness_audit_calendar_slices.csv",
+    "spread_stress_csv": "ML/reports/time_only_robustness_audit_spread_stress.csv",
+    "timezone_shift_csv": "ML/reports/time_only_robustness_audit_timezone_shift.csv",
+    "calendar_permutation_importance_csv": "ML/reports/time_only_robustness_audit_calendar_permutation_importance.csv",
+    "sequential_csv": "ML/reports/time_only_robustness_audit_sequential.csv"
+  }
+}

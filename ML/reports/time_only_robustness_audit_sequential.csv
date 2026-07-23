@@ -1,0 +1,2 @@
+status;reason
+NOT_RUN;plan records this diagnostic as missing unless an implementation adds position-overlap simulation

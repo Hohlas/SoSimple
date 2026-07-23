@@ -2,6 +2,13 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-23] ingest | Time-only robustness audit
+- Добавлен охват `docs/reports/2026-07-23-time-only-robustness-audit.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: normalized `time_only` winner прошёл yearly/side checks, но итоговое решение `REGIME_REFORMULATION_REQUIRED`.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 55 report updates.
+- Зафиксировано: `locked_test=not_opened`; stress costs не вычислимы из saved artifacts, stricter cutoff становится маловыборочным.
+- Post-audit revision: добавлены entry/fill/exit calendar slices, input artifact hashes, `timezone_shift_status=NOT_RUN` и `calendar_permutation_importance_status=NOT_RUN`; roadmap уточнён, что следующий plan сначала закрывает недостающие проверки.
+
 ## [2026-07-23] update | Normalized rich-entry leaderboard pointers
 - Updated `CHANGELOG.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md` with pointers to the old `Candidate Shortlist` table in `docs/reports/2026-07-21-fractal0-rich-entry-quality.md` and the new `Candidate Shortlist / Leaderboard` plus `Normalization impact on leaderboard rules` tables in `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`.
 - Recorded the key table takeaway: normalized top-11 practical screen is occupied only by `time_only` and `movement_plus_time`; normalized fractal-geometry profiles do not enter that leaderboard.

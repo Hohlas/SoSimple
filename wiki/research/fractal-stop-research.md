@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-07-22
-sources: 54
+last_updated: 2026-07-23
+sources: 55
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; normalized rerun исправил raw price-like scale contract, но winner остался `time_only`. Rich/fractal признаки получили более честную проверку, но не доказали превосходство. `locked_test` не открыт.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; normalized rerun исправил raw price-like scale contract, но winner остался `time_only`. Robustness audit не провалил годы/стороны, но дал решение `REGIME_REFORMULATION_REQUIRED` из-за fragile stricter cutoff и отсутствия stress-cost пересчёта. `locked_test` не открыт.
 
 ## Хронология
 
@@ -217,6 +217,36 @@ normalized screen занят только `time_only` и `movement_plus_time`; �
 Так старый отчёт показывает rich/fractal survivors до нормализации, а новый
 normalized leaderboard показывает, что после scale cleanup верхний practical
 screen сместился к time-heavy rules.
+
+### 2026-07-23: Time-only robustness audit
+
+Audit ([report](../../docs/reports/2026-07-23-time-only-robustness-audit.md))
+проверил только fixed normalized winner из
+`fractal0_rich_entry_quality_normalized.json`:
+`S2/E3/M0/X2_ml_opposite_any_p0_50 / time_only / linear /
+target_entry_ev_regression / top30`,
+`score_cutoff_on_val_select=-0.026718184259660646`. Нового поиска не было,
+`locked_test=not_opened`.
+
+Fixed `val_eval`: `n_trades=660`, `PF=4.0268`, `BS_p05=3.3068`,
+`pf_without_best_year=3.5465`, `effective_profit_years=1.9922`,
+`best_year_share=0.5312`. Yearly и side slices не показали явного слома:
+2021 `PF=4.7567`, 2022 `PF=3.5465`; BUY `PF=5.1463`, SELL `PF=3.2554`.
+Worst quarter: `2022Q4`, `n_trades=68`, `PF=2.2322`.
+
+Top-k sensitivity осталась положительной (`top30 PF=4.0268`, `top40 PF=3.7417`,
+`top50 PF=3.5710`), но stricter cutoff при offset `0.020` оставляет только
+`139` сделок. Stress costs не пересчитаны, потому что saved trades содержат
+только canonical spread realized PnL. Sequential position constraint не
+запускался и не используется как доказательство.
+
+Decision: `REGIME_REFORMULATION_REQUIRED`. После audit-report revision
+calendar slices считаются по `signal_time`, `fill_time` и `exit_time`;
+хуже всего по entry-time month выглядит month `10` (`PF=2.3309`,
+`n_trades=54`). Решение — консервативный маршрут из плана, а не доказанный
+провал режима. Следующий план regime filter reformulation должен сначала
+закрыть stress-cost resimulation, entry-time calendar robustness и
+timezone-shift disclosure без открытия `locked_test`.
 
 Практический вывод: normalized artifacts становятся каноническим источником
 для сравнения rich/fractal profiles. Следующий допустимый шаг — только новый
