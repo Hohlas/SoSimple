@@ -21,6 +21,7 @@
 - **summary**: Rich-entry search rerun выполнен с normalized contract: raw price-like inputs запрещены, price-like признаки переведены в ATR-координаты и затем в `[0,1]` через train-core scaler.
 - **artifacts**: `ML/reports/fractal0_rich_entry_quality_normalized.json`, `ML/reports/fractal0_rich_entry_quality_normalized_summary.csv`, `ML/reports/fractal0_rich_entry_quality_normalized_protocol_comparison.csv`, `ML/reports/fractal0_rich_entry_quality_normalized_normalization_config.json`
 - **decision**: Winner не изменился: `time_only / linear / target_entry_ev_regression / top30`; fixed `val_eval PF=4.0268`, `BS_p05=3.3955`. Normalized contract улучшил protocol comparison для `rich_combined_k40`, `price_action_h1` и `structure_f0_only`, но не доказал превосходство rich/fractal profiles над `time_only`.
+- **leaderboard**: в отчёте добавлены секции `Candidate Shortlist / Leaderboard` и `Normalization impact on leaderboard rules`. Они показывают, что top-11 practical screen после нормализации занят только `time_only` и `movement_plus_time`; фрактальные профили туда не вошли.
 - **notes**: `locked_test=not_opened`; ranked budget `243`, executed jobs `324` из-за diagnostic-only controls; full-selection permutation не выполнена (`permutation_gate=NOT_RUN_FOR_FULL_SELECTION`); final normalized audit имеет `ERROR=0`, но `WARNING` по constant/near-constant features и token truncation disclosure.
 
 ## [2026-07-21] — Fractal0 Rich Entry Quality (RESEARCH_HINT_RICH_FEATURES)
@@ -29,6 +30,7 @@
 - **summary**: Добавлен rich-entry mode для `S2/E3/M0/X2`: 243 eligible Phase A configurations по профилям признаков, моделям, целям и top-фильтрам; planned/no-fill diagnostics и полный feature contract сохранены в structured artifacts.
 - **artifacts**: `ML/reports/fractal0_rich_entry_quality.json`, `ML/reports/fractal0_rich_entry_quality_summary.csv`, `ML/reports/fractal0_rich_entry_quality_feature_contract.csv`, `ML/baseline/benchmark_fractal0_entry_quality_filter.py`, `tests/test_fractal0_entry_quality_filter.py`
 - **decision**: После audit bugfix и corrected full rerun winner остался `time_only / linear / target_entry_ev_regression / top30`; fixed `val_eval PF=4.0268`, `BS_p05=3.3955`. Structural/rich profiles прошли feature-contract gates, но не победили selection protocol.
+- **leaderboard**: в отчёте есть таблица `Candidate Shortlist`, отсортированная по fixed `val_eval` screen. Она показывает research shortlist из `planned_geometry_only`, `movement_plus_time`, `structure_nearest_k40`/`relative_geometry_k40` для следующей заранее заданной проверки, а не новый winner selection.
 - **notes**: `locked_test=not_opened`; внесён bugfix переноса `fractal*`, nearest selection, score diagnostics, movement provenance и audit artifacts. JSON теперь раскрывает cumulative search budget, `TIME_ONLY_WINNER` как note, `feature_importance_by_profile.csv=NOT_PRODUCED` и `permutation_null_repeats_executed_for_full_selection=0`.
 
 ## [2026-07-21] — Fractal0 Entry Quality Filter (RESEARCH_ONLY)

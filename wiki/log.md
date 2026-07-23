@@ -2,6 +2,10 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-23] update | Normalized rich-entry leaderboard pointers
+- Updated `CHANGELOG.md`, `wiki/research/fractal-stop-research.md`, and `wiki/index.md` with pointers to the old `Candidate Shortlist` table in `docs/reports/2026-07-21-fractal0-rich-entry-quality.md` and the new `Candidate Shortlist / Leaderboard` plus `Normalization impact on leaderboard rules` tables in `docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`.
+- Recorded the key table takeaway: normalized top-11 practical screen is occupied only by `time_only` and `movement_plus_time`; normalized fractal-geometry profiles do not enter that leaderboard.
+
 ## [2026-07-08] ingest | Entry-based movement filter freeze
 - Добавлен охват `docs/reports/2026-07-08-entry-based-movement-filter-replication-freeze.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: bounded movement-filter ветка дополнена freeze-репликацией; зафиксировано, что результат означает только frozen research segmentation mask для следующего плана.

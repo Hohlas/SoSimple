@@ -277,6 +277,46 @@ Fixed `val_eval` for selected rule:
 
 Diagnostic best `val_eval` equals the selected fixed `val_eval`; it is not a separate rule and does not raise the verdict.
 
+### Candidate Shortlist / Leaderboard
+
+These rows are not a new winner selection. They show the strongest normalized rows that passed the same practical `val_eval` screen used in the previous rich report: `PF > 2.7873`, `BS_p05 > 2.5085`, `n_trades >= 300` and positive `mean_pnl_r`. Columns `sel_*` are from `val_select`, where the rule was chosen; columns `eval_*` are the fixed check on the next validation segment.
+
+| # | profile | model | target | filter | sel_frac | sel_PF | sel_BS_p05 | sel_mean | sel_DD | eval_n | eval_PF | eval_BS_p05 | eval_mean | eval_DD | eval_status |
+|---:|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 1 | `time_only` | `linear` | `target_entry_ev_regression` | `top30` | 27.2% | 5.3059 | 4.4198 | 0.4447 | 2.9656 | 660 | 4.0268 | 3.3955 | 0.3397 | 3.3906 | PASS |
+| 2 | `time_only` | `linear` | `target_entry_ev_regression` | `top40` | 38.0% | 4.2040 | 3.4943 | 0.3936 | 3.5356 | 900 | 3.7417 | 3.1972 | 0.3401 | 4.9122 | PASS |
+| 3 | `time_only` | `linear` | `target_entry_ev_regression` | `top50` | 48.0% | 4.0981 | 3.5928 | 0.3816 | 5.3712 | 1109 | 3.5710 | 3.1720 | 0.3284 | 6.1749 | PASS |
+| 4 | `time_only` | `linear` | `target_entry_good_0_5r` | `top40` | 36.6% | 4.4321 | 3.7596 | 0.4137 | 4.2250 | 840 | 3.7279 | 3.1386 | 0.3346 | 4.2618 | PASS |
+| 5 | `time_only` | `linear` | `target_entry_avoid_sl` | `top30` | 25.6% | 3.8982 | 3.1916 | 0.3698 | 4.2615 | 570 | 3.7630 | 3.1078 | 0.3338 | 3.5590 | PASS |
+| 6 | `time_only` | `linear` | `target_entry_good_0_5r` | `top50` | 47.1% | 4.0090 | 3.5016 | 0.3907 | 5.5356 | 1099 | 3.5826 | 3.1054 | 0.3347 | 5.7347 | PASS |
+| 7 | `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top40` | 36.7% | 4.0134 | 3.4647 | 0.3751 | 6.1843 | 979 | 3.3121 | 2.8836 | 0.3030 | 5.7166 | PASS |
+| 8 | `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top30` | 26.0% | 4.1877 | 3.3793 | 0.3858 | 3.9608 | 760 | 3.4238 | 2.8551 | 0.3102 | 5.5577 | PASS |
+| 9 | `time_only` | `hist_gradient_boosting` | `target_entry_good_0_5r` | `top50` | 48.6% | 3.6783 | 3.1580 | 0.3759 | 7.1506 | 1107 | 3.2926 | 2.8409 | 0.3367 | 4.4918 | PASS |
+| 10 | `movement_plus_time` | `linear` | `target_entry_ev_regression` | `top50` | 46.9% | 4.0153 | 3.5155 | 0.3774 | 4.0928 | 1335 | 3.2778 | 2.8343 | 0.3196 | 5.6900 | PASS |
+| 11 | `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top50` | 46.6% | 4.0341 | 3.5054 | 0.3835 | 5.3383 | 1223 | 3.2669 | 2.8338 | 0.3037 | 5.2031 | PASS |
+
+Critical read: the normalized leaderboard is dominated by `time_only`; the remaining rows are `movement_plus_time`, which is also time-heavy. No normalized fractal-geometry profile enters this top-11 practical screen.
+
+### Normalization impact on leaderboard rules
+
+This table compares the exact same rules as the normalized leaderboard against their old rich-run `val_eval` results.
+
+| profile | model | target | filter | old_BS_p05 | new_BS_p05 | delta_BS_p05 | old_PF | new_PF | delta_PF |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|
+| `time_only` | `linear` | `target_entry_ev_regression` | `top30` | 3.3955 | 3.3955 | +0.0000 | 4.0268 | 4.0268 | +0.0000 |
+| `time_only` | `linear` | `target_entry_ev_regression` | `top40` | 3.1972 | 3.1972 | +0.0000 | 3.7417 | 3.7417 | +0.0000 |
+| `time_only` | `linear` | `target_entry_ev_regression` | `top50` | 3.1720 | 3.1720 | +0.0000 | 3.5710 | 3.5710 | +0.0000 |
+| `time_only` | `linear` | `target_entry_good_0_5r` | `top40` | 3.2373 | 3.1386 | -0.0987 | 3.8202 | 3.7279 | -0.0923 |
+| `time_only` | `linear` | `target_entry_avoid_sl` | `top30` | 3.1078 | 3.1078 | +0.0000 | 3.7630 | 3.7630 | +0.0000 |
+| `time_only` | `linear` | `target_entry_good_0_5r` | `top50` | 2.9846 | 3.1054 | +0.1208 | 3.4275 | 3.5826 | +0.1552 |
+| `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top40` | 2.7501 | 2.8836 | +0.1335 | 3.2496 | 3.3121 | +0.0625 |
+| `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top30` | 3.0671 | 2.8551 | -0.2120 | 3.5465 | 3.4238 | -0.1227 |
+| `time_only` | `hist_gradient_boosting` | `target_entry_good_0_5r` | `top50` | 2.6369 | 2.8409 | +0.2040 | 3.0959 | 3.2926 | +0.1967 |
+| `movement_plus_time` | `linear` | `target_entry_ev_regression` | `top50` | 2.7998 | 2.8343 | +0.0345 | 3.2690 | 3.2778 | +0.0089 |
+| `movement_plus_time` | `linear` | `target_entry_good_0_5r` | `top50` | 2.8127 | 2.8338 | +0.0212 | 3.2655 | 3.2669 | +0.0014 |
+
+Normalization barely changed the pure `time_only` rules because they do not contain raw price-like inputs. It modestly improved some time-heavy rules, especially `time_only / hist_gradient_boosting / target_entry_good_0_5r / top50` and `movement_plus_time / linear / target_entry_good_0_5r / top40`, but this did not create a stronger non-time leader.
+
 ### Old-vs-normalized protocol comparison
 
 Primary comparison uses protocol path: select per profile on `val_select`, then report fixed `val_eval`.

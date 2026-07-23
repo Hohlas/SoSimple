@@ -165,6 +165,11 @@ column audit даёт `0` forbidden hits, все 9 feature-distribution gates `P
 `permutation_null_repeats_executed_for_full_selection=0`; `--permutation-repeats
 200` не является full-selection statistical gate.
 
+В отчёте `2026-07-21-fractal0-rich-entry-quality.md` есть таблица
+`Candidate Shortlist`: она сортирует practical fixed `val_eval` survivors и
+выносит research shortlist `planned_geometry_only`, `movement_plus_time`,
+`structure_nearest_k40`/`relative_geometry_k40` для следующего frozen probe.
+
 Практический вывод: разрешён только новый pre-registered replication/probe
 одного rule или малого заранее заданного shortlist. Это не freeze decision.
 Открывать `locked_test` на основании этого результата запрещено.
@@ -203,6 +208,15 @@ Protocol comparison old-vs-normalized показывает, что normalized co
 (`+0.1261 BS_p05`). Но эти улучшения не сменили protocol winner:
 `time_only` остаётся сильнее. Full-selection permutation не выполнена:
 `permutation_gate=NOT_RUN_FOR_FULL_SELECTION`.
+
+В отчёте добавлены навигационные таблицы `Candidate Shortlist / Leaderboard`
+и `Normalization impact on leaderboard rules`. Их практический вывод: top-11
+normalized screen занят только `time_only` и `movement_plus_time`; фрактальные
+профили в этот лидерский screen не вошли.
+
+Так старый отчёт показывает rich/fractal survivors до нормализации, а новый
+normalized leaderboard показывает, что после scale cleanup верхний practical
+screen сместился к time-heavy rules.
 
 Практический вывод: normalized artifacts становятся каноническим источником
 для сравнения rich/fractal profiles. Следующий допустимый шаг — только новый
