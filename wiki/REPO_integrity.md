@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-23 07:59 UTC · git `e0fe14c`
+> Auto-generated 2026-07-23 10:28 UTC · git `8b98430`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3202 files  ·  **Commit**: `e0fe14c`  ·  **Generated**: 2026-07-23 07:59 UTC
+**Tracked**: 3207 files  ·  **Commit**: `8b98430`  ·  **Generated**: 2026-07-23 10:28 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 151KB | `921011ad` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 151KB | `400fdfbd` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 3KB | `1d9bfa11` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 57KB | `bcefb240` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 1KB | `8a50fe38` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 57KB | `1355cdcc` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -30,6 +30,7 @@
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-06-17 | 20KB | `bb5a5097` |
 | [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-20 | 26KB | `e29295c8` |
 | [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-07-20 | 1KB | `24414c2c` |
+| [docs/ML/audit_leaderboard_robustness.py.md](docs/ML/audit_leaderboard_robustness.py.md) |  | 2026-07-23 | 2KB | `a2a1e08c` |
 | [docs/ML/audit_time_only_robustness.py.md](docs/ML/audit_time_only_robustness.py.md) |  | 2026-07-23 | 2KB | `aeafc3d7` |
 | [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-06-17 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
@@ -49,7 +50,7 @@
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
 | [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 7KB | `170916af` |
-| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `bdc1932c` |
+| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `587a75b3` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
@@ -152,7 +153,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 22KB | `d1a72cc6` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 16KB | `0af4b4ae` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -264,9 +265,10 @@
 | [docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md](docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 25KB | `58b0a6e6` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-22 | 81KB | `e2847072` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md) |  | 2026-07-22 | 14KB | `07746cec` |
+| [docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 79KB | `6f0ce2e3` |
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-23 | 18KB | `8c4743e8` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-23 | 18KB | `9416e476` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -430,6 +432,7 @@
 | [docs/reports/2026-07-21-fractal0-rich-entry-quality.md](docs/reports/2026-07-21-fractal0-rich-entry-quality.md) |  | 2026-07-22 | 18KB | `7994be66` |
 | [docs/reports/2026-07-21-fractal0-stop-grid-m5.md](docs/reports/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 16KB | `8d4cc249` |
 | [docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-23 | 27KB | `3f5a0204` |
+| [docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 10KB | `ec2503bf` |
 | [docs/reports/2026-07-23-time-only-robustness-audit.md](docs/reports/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 9KB | `b90f6a05` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
@@ -441,6 +444,7 @@
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-17 | 4KB | `dd55ee84` |
 | [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | ✅ | 2026-07-20 | 28KB | `04568800` |
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-07-20 | 28KB | `6450da16` |
+| [ML/baseline/audit_leaderboard_robustness.py](ML/baseline/audit_leaderboard_robustness.py) | Validation-slice audit 11 fixed normalized rich-entry leaderboard input rows без нового поиска и без `locked_test` | ✅ | 2026-07-23 | 30KB | `88ed537e` |
 | [ML/baseline/audit_time_only_robustness.py](ML/baseline/audit_time_only_robustness.py) | Validation-slice audit fixed normalized `time_only` winner без нового поиска и без `locked_test` | ✅ | 2026-07-23 | 28KB | `943d65a5` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
 | [ML/baseline/benchmark_direction_inside_frozen_movement_regime.py](ML/baseline/benchmark_direction_inside_frozen_movement_regime.py) | Direction check inside frozen movement mask | ✅ | 2026-07-20 | 30KB | `691d70bc` |
@@ -1245,6 +1249,7 @@
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-06-17 | 831B | `6bed18cd` |
 | [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-06-17 | 9KB | `3cc10cfe` |
 | [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-07-20 | 6KB | `9c704c7e` |
+| [tests/test_leaderboard_robustness_audit.py](tests/test_leaderboard_robustness_audit.py) |  |  | 2026-07-23 | 14KB | `eb3c6516` |
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-06-17 | 3KB | `025247c8` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-06-17 | 2KB | `5d44f49d` |
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-06-17 | 3KB | `14cd19b8` |
@@ -1706,8 +1711,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `99d666f2` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 76KB | `f5fa96e3` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `79841887` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 77KB | `146a5bec` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1718,7 +1723,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 128KB | `9545581b` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 130KB | `3fb28e87` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |

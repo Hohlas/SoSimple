@@ -1,12 +1,12 @@
 ---
 last_updated: 2026-07-23
-sources: 55
+sources: 56
 status: active
 ---
 
 # Fractal Stop Research
 
-> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; normalized rerun исправил raw price-like scale contract, но winner остался `time_only`. Robustness audit не провалил годы/стороны, но дал решение `REGIME_REFORMULATION_REQUIRED` из-за fragile stricter cutoff и отсутствия stress-cost пересчёта. `locked_test` не открыт.
+> Фрактальные признаки предсказывают пробой уровня, oracle (проверка потолка) показывает высокий диагностический потолок механики, но RF/XGBoost/Transformer пока не дают устойчивого торгового или модельного превосходства. Последний подцикл перешёл к execution-aware `fractal0_price` mechanics: stop-policy grid выбрал `S2_fractal0_buffer_0_5_entry_floor_2 / E3_open_pullback_1_0atr / M0_no_mask / X2_ml_opposite_any_p0_50`; узкий entry-quality filter провалился. Rich-entry audit исправил потерю `fractal0..fractal99`; normalized rerun исправил raw price-like scale contract, но winner остался `time_only`. Robustness audit по winner и top-11 leaderboard не доказал standalone non-time/fractal additive evidence; следующий маршрут — bounded stress-cost/time-calendar/sequential-position closure внутри regime-filter reformulation. `locked_test` не открыт.
 
 ## Хронология
 
@@ -252,6 +252,44 @@ timezone-shift disclosure без открытия `locked_test`.
 для сравнения rich/fractal profiles. Следующий допустимый шаг — только новый
 pre-registered shortlist replication/probe с малым fixed set; не открывать
 `locked_test`.
+
+### 2026-07-23: Leaderboard robustness audit
+
+Audit ([report](../../docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md))
+проверил 11 fixed rows из normalized `Candidate Shortlist / Leaderboard`
+без нового поиска, без переобучения и без открытия `locked_test`.
+Источник правил: строки 1-11 из normalized rich-entry report; порядок
+`original_rank` сохранён, winner selection не выполнялся.
+
+Result artifact:
+`ML/reports/leaderboard_robustness_audit.json`,
+`status=completed`, `verdict=research_only`,
+`locked_test=not_opened`, `leaderboard_rule_count=11`,
+`scale_contract=DIAGNOSTIC_ONLY` из-за accepted `WARNING` rows в финальном
+normalized feature distribution audit.
+
+Все 11 rows получили `RULE_ROBUSTNESS_INCOMPLETE`. Decision:
+`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`, причины:
+`stress_costs_not_computable`, `timezone_shift_not_run`,
+`calendar_permutation_importance_not_run`,
+`sequential_position_constraint_not_run`, `multi_seed_not_run`,
+`provider_drift_not_run` и `transfer_not_run`. Classification:
+7 rows — `stable_but_time_explained_needs_cost_resimulation`, 4 rows —
+`time_heavy_not_additive_evidence_needs_cost_resimulation`.
+
+Anchor row rank 1:
+`rank01_time_only_linear_target_entry_ev_regression_top30`,
+`n_trades=660`, `PF=4.026757702884287`,
+`sequential_block_bs_p05=3.3067645101786955`.
+
+Методический вывод: checked leaderboard остаётся time-heavy
+(`time_only`/`movement_plus_time`), поэтому audit не устанавливает
+standalone fractal/additive non-time evidence. Более сильный вывод блокируют
+missing checks: stress-cost resimulation, timezone-shift rescore, calendar
+permutation importance, sequential-position constraint, multi-seed,
+provider-drift и transfer. Следующий шаг остаётся `Regime filter
+reformulation`, начиная с bounded stress-cost/time-calendar/sequential-position
+robustness closure.
 
 ### Stage 1: пробой уровня (2026-06-10) — ✅ PASS
 

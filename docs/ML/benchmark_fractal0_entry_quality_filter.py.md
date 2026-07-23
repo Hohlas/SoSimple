@@ -179,6 +179,12 @@ audits the fixed `time_only / linear / target_entry_ev_regression / top30`
 winner from saved normalized artifacts. It does not retrain, does not select a
 new rule and does not open `locked_test`.
 
+## Leaderboard Robustness Audit
+
+`ML/baseline/audit_leaderboard_robustness.py` checks the 11 fixed audit input rows from
+the normalized `Candidate Shortlist / Leaderboard`. It does not retrain, does
+not select a new winner and does not open `locked_test`.
+
 ## Normalized Rich Entry Quality Mode
 
 Команда:

@@ -56,12 +56,15 @@ filter=top30
 ### ACTIVE: `Regime filter reformulation`
 
 Основание: `time_only` robustness audit завершился с решением
-`REGIME_REFORMULATION_REQUIRED`.
+`REGIME_REFORMULATION_REQUIRED`; leaderboard robustness audit для 11 fixed
+normalized rows дал
+`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`.
 
 Цель: переосмыслить `time_only` winner как режимный фильтр без открытия
 `locked_test` и без переноса validation-находки в candidate. Первый блок
 работы должен закрыть недостающие проверки: stress-cost resimulation,
-entry-time calendar slices и timezone-shift disclosure.
+time-calendar robustness, timezone-shift disclosure и sequential-position
+constraint.
 
 ### BLOCKED: shortlist locked probe
 

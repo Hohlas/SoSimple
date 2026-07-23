@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-23] — Leaderboard robustness audit (research_only)
+- **report**: `docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md`
+- **topics**: `fractal0`, `rich_entry_quality`, `leaderboard`, `robustness`, `validation_slice`
+- **summary**: Added validation-slice robustness audit for 11 fixed normalized rich-entry leaderboard input rows without new search and without opening `locked_test`.
+- **artifacts**: `ML/reports/leaderboard_robustness_audit.json`, `ML/reports/leaderboard_robustness_audit_classification.csv`, `ML/baseline/audit_leaderboard_robustness.py`
+- **decision**: `LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`.
+- **notes**: `verdict=research_only`; `scale_contract=DIAGNOSTIC_ONLY` because final normalized audit has accepted `WARNING` rows; winner selection was not performed; `locked_test=not_opened`; missing stress/time/sequential/provider/multi-seed checks disclosed.
+
 ## [2026-07-23] — Time-only robustness audit (research_only)
 - **report**: `docs/reports/2026-07-23-time-only-robustness-audit.md`
 - **topics**: `fractal0`, `time_only`, `robustness`, `validation_slice`, `regime_filter`

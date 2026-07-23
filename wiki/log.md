@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-23] ingest | Leaderboard robustness audit
+- Добавлен охват `docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: 11 fixed normalized leaderboard rows остаются time-heavy и получают `RULE_ROBUSTNESS_INCOMPLETE`.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 56 report updates.
+- Зафиксировано: `LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`; `scale_contract=DIAGNOSTIC_ONLY` из-за accepted normalized audit warnings; `locked_test=not_opened`; следующий шаг — bounded stress-cost/time-calendar/sequential-position closure внутри `Regime filter reformulation`.
+
 ## [2026-07-23] ingest | Time-only robustness audit
 - Добавлен охват `docs/reports/2026-07-23-time-only-robustness-audit.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: normalized `time_only` winner прошёл yearly/side checks, но итоговое решение `REGIME_REFORMULATION_REQUIRED`.
