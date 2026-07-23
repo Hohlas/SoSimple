@@ -112,6 +112,16 @@ def _path(value: str | Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+def _resolve_stop_grid_artifact_path(path: str | Path) -> Path:
+    artifact_path = _path(path)
+    if artifact_path.exists():
+        return artifact_path
+    fallback = _path(DEFAULT_STOP_GRID_ARTIFACT)
+    if artifact_path.name == "fractal0_entry_exit_grid_stop_policy.json" and fallback.exists():
+        return fallback
+    return artifact_path
+
+
 def entry_filter_grid() -> list[dict[str, object]]:
     filters: list[dict[str, object]] = [
         {"filter_id": "M0_no_mask", "family": "none", "score_col": None, "top_fraction": 1.0}
@@ -209,6 +219,113 @@ def compute_search_budget(
         "n_diagnostic_configs": len(profiles) * len(models) * len(targets) * len(filters) - ranked,
         "n_total_executed_configs_default": ranked,
     }
+
+
+def _by_id(items: list[dict[str, object]], key: str) -> dict[str, dict[str, object]]:
+    return {str(item[key]): item for item in items}
+
+
+def build_fixed_leaderboard_job_list(
+    profiles: list[dict[str, object]],
+    models: list[dict[str, object]],
+    targets: list[dict[str, object]],
+    filters: list[dict[str, object]],
+    rules: tuple[object, ...],
+) -> list[tuple[dict[str, object], dict[str, object], dict[str, object], dict[str, object], dict[str, object]]]:
+    profiles_by_id = _by_id(profiles, "profile_id")
+    models_by_id = _by_id(models, "model_id")
+    targets_by_id = _by_id(targets, "target_id")
+    filters_by_id = _by_id(filters, "filter_id")
+    jobs = []
+    for rule in rules:
+        jobs.append(
+            (
+                dict(profiles_by_id[str(rule.profile_id)]),
+                dict(models_by_id[str(rule.model_id)]),
+                dict(targets_by_id[str(rule.target_id)]),
+                dict(filters_by_id[str(rule.filter_id)]),
+                {
+                    "original_rank": int(rule.original_rank),
+                    "rule_id": str(rule.rule_id),
+                },
+            )
+        )
+    return jobs
+
+
+def load_fixed_cutoff_table(path: str | Path) -> dict[str, float]:
+    frame = pd.read_csv(_path(path), sep=";", usecols=["rule_id", "score_cutoff_on_val_select"])
+    return {str(row["rule_id"]): float(row["score_cutoff_on_val_select"]) for _, row in frame.iterrows()}
+
+
+def resolve_fixed_cutoff(rule_id: str, fixed_cutoffs: dict[str, float] | None, selected_val: pd.DataFrame) -> float:
+    if fixed_cutoffs is not None:
+        if rule_id not in fixed_cutoffs:
+            raise ValueError(f"fixed cutoff missing for rule_id={rule_id}")
+        return float(fixed_cutoffs[rule_id])
+    cutoff = selected_val.attrs.get("score_cutoff_on_val_select")
+    if cutoff is None:
+        raise ValueError(f"score_cutoff_on_val_select missing for rule_id={rule_id}")
+    return float(cutoff)
+
+
+def verify_fixed_output_contract(
+    rows: pd.DataFrame,
+    *,
+    expected_spread: float,
+    expected_seed: int,
+    timezone_shift_hours: int,
+    fixed_cutoff_source: str,
+) -> None:
+    if rows.empty:
+        return
+    required = [
+        "rule_id",
+        "original_rank",
+        "profile_id",
+        "model_id",
+        "target_id",
+        "filter_id",
+        "stop_policy_id",
+        "entry_id",
+        "mask_id",
+        "exit_id",
+        "entry_filter_score_col",
+        "score_cutoff_on_val_select",
+        "rich_entry_seed",
+        "timezone_shift_hours",
+        "spread",
+        "locked_test",
+        "fixed_cutoff_source",
+    ]
+    missing = [col for col in required if col not in rows.columns]
+    if missing:
+        raise ValueError(f"fixed output contract missing columns: {missing}")
+    if rows["rule_id"].astype(str).eq("").any() or rows["rule_id"].isna().any():
+        raise ValueError("rule_id missing in fixed output contract")
+    if pd.to_numeric(rows["original_rank"], errors="coerce").isna().any():
+        raise ValueError("original_rank missing in fixed output contract")
+    if rows["entry_filter_score_col"].astype(str).ne("rich_entry_score").any():
+        raise ValueError("entry_filter_score_col mismatch in fixed output contract")
+    if pd.to_numeric(rows["score_cutoff_on_val_select"], errors="coerce").isna().any():
+        raise ValueError("score_cutoff_on_val_select missing in fixed output contract")
+    if pd.to_numeric(rows["spread"], errors="coerce").ne(float(expected_spread)).any():
+        raise ValueError("spread mismatch in fixed output contract")
+    if pd.to_numeric(rows["rich_entry_seed"], errors="coerce").ne(int(expected_seed)).any():
+        raise ValueError("rich_entry_seed mismatch in fixed output contract")
+    if pd.to_numeric(rows["timezone_shift_hours"], errors="coerce").ne(int(timezone_shift_hours)).any():
+        raise ValueError("timezone_shift_hours mismatch in fixed output contract")
+    if rows["fixed_cutoff_source"].astype(str).ne(str(fixed_cutoff_source)).any():
+        raise ValueError("fixed_cutoff_source mismatch in fixed output contract")
+    if rows["locked_test"].astype(str).ne("not_opened").any():
+        raise ValueError("locked_test mismatch in fixed output contract")
+
+
+def _apply_output_metadata(frame: pd.DataFrame, metadata: dict[str, object]) -> pd.DataFrame:
+    out = frame.copy()
+    for column, value in metadata.items():
+        out[column] = value
+    return out
 
 
 def score_cutoff_for_top_fraction(rows: pd.DataFrame, score_col: str, fraction: float) -> float:
@@ -613,13 +730,18 @@ def extract_normalized_fractal_feature_dict(row: pd.Series, k: int, selection_ba
     return result, token_audit
 
 
-def build_normalized_rich_feature_frame(entries: pd.DataFrame, ohlc: pd.DataFrame, profile_id: str) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+def build_normalized_rich_feature_frame(
+    entries: pd.DataFrame,
+    ohlc: pd.DataFrame,
+    profile_id: str,
+    timezone_shift_hours: int = 0,
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     out = build_entry_feature_frame(entries)
     audit: list[dict[str, object]] = []
     atr = pd.to_numeric(out["ATR"], errors="coerce").replace(0, pd.NA)
     planned_limit = pd.to_numeric(out["planned_entry_bid_equivalent"], errors="coerce")
     if profile_id in {"time_only", "time_plus_atr", "movement_plus_time", "rich_combined_k40"}:
-        times = pd.to_datetime(out["time"])
+        times = pd.to_datetime(out["time"]) + pd.to_timedelta(int(timezone_shift_hours), unit="h")
         hour = times.dt.hour.astype(float)
         weekday = times.dt.weekday.astype(float)
         out["session_hour_unit"] = hour / 23.0
@@ -928,7 +1050,7 @@ def apply_entry_filter(
 
 
 def load_stop_grid_choice(path: str | Path, explicit_stop_policy_id: str | None) -> dict[str, object]:
-    artifact_path = _path(path)
+    artifact_path = _resolve_stop_grid_artifact_path(path)
     if not artifact_path.exists():
         raise SystemExit(f"entry-quality full run requires completed stop-grid artifact: {artifact_path}")
     data = json.loads(artifact_path.read_text(encoding="utf-8"))
@@ -968,13 +1090,14 @@ def _entry_rule() -> dict[str, object]:
 
 
 def _simulate_for_filter(entries: pd.DataFrame, ohlc: pd.DataFrame, run: dict[str, object], scored_decisions: pd.DataFrame, execution_ohlc: pd.DataFrame | None) -> pd.DataFrame:
-    trades = base._simulate_entries(entries, ohlc, run, base.CONFIG.canonical_spread, scored_decisions, execution_ohlc)
+    active_spread = float(run.get("spread", base.CONFIG.canonical_spread))
+    trades = base._simulate_entries(entries, ohlc, run, active_spread, scored_decisions, execution_ohlc)
     if trades.empty:
         return trades
     trades["filter_id"] = run["filter_id"]
     trades["score_cutoff_on_val_select"] = run.get("score_cutoff_on_val_select")
     trades["entry_filter_score_col"] = run.get("entry_filter_score_col")
-    trades["spread"] = base.CONFIG.canonical_spread
+    trades["spread"] = active_spread
     return trades
 
 
@@ -990,7 +1113,8 @@ def _summary_for_filter(trades: pd.DataFrame, run: dict[str, object], split: str
                 "exit_time",
             ]
         )
-    summary = base._summary_from_trades(trades, run, split, base.CONFIG.canonical_spread)
+    active_spread = float(run.get("spread", base.CONFIG.canonical_spread))
+    summary = base._summary_from_trades(trades, run, split, active_spread)
     summary["filter_id"] = run["filter_id"]
     summary["filter_family"] = run["filter_family"]
     summary["top_fraction"] = run["top_fraction"]
@@ -1651,7 +1775,8 @@ def run_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     choice = load_stop_grid_choice(args.stop_grid_artifact, args.stop_policy_id)
     config = dataclasses.replace(base.CONFIG, output_prefix=args.output_prefix, execution_ohlc_path=args.execution_ohlc_path)
     preflight = base.preflight_inputs(config)
-    preflight["stop_grid_artifact"] = {"path": str(_path(args.stop_grid_artifact)), "sha256": base.sha256_file(_path(args.stop_grid_artifact))}
+    resolved_stop_grid_artifact = _resolve_stop_grid_artifact_path(args.stop_grid_artifact)
+    preflight["stop_grid_artifact"] = {"path": str(resolved_stop_grid_artifact), "sha256": base.sha256_file(resolved_stop_grid_artifact)}
     preflight["input_artifact_hashes"]["stop_grid_artifact"] = preflight["stop_grid_artifact"]["sha256"]
     print(f"preflight {preflight['status']}", flush=True)
     if preflight["status"] != "PASS":
@@ -1815,6 +1940,9 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     print("start fractal0_rich_entry_quality", flush=True)
     if args.output_prefix == DEFAULT_OUTPUT_PREFIX:
         args.output_prefix = DEFAULT_NORMALIZED_RICH_OUTPUT_PREFIX if args.normalized_rich_features else RICH_OUTPUT_PREFIX
+    active_spread = float(getattr(args, "spread", base.CONFIG.canonical_spread))
+    timezone_shift_hours = int(getattr(args, "timezone_shift_hours", 0))
+    rich_entry_seed = int(getattr(args, "rich_entry_seed", 42))
     profiles = rich_feature_profile_grid()
     models = rich_model_grid(include_diagnostic_models=bool(args.include_diagnostic_models))
     targets = rich_target_grid()
@@ -1826,8 +1954,13 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     choice = load_stop_grid_choice(args.stop_grid_artifact, args.stop_policy_id)
     config = dataclasses.replace(base.CONFIG, output_prefix=args.output_prefix, execution_ohlc_path=args.execution_ohlc_path)
     preflight = base.preflight_inputs(config)
-    preflight["stop_grid_artifact"] = {"path": str(_path(args.stop_grid_artifact)), "sha256": base.sha256_file(_path(args.stop_grid_artifact))}
+    resolved_stop_grid_artifact = _resolve_stop_grid_artifact_path(args.stop_grid_artifact)
+    preflight["stop_grid_artifact"] = {"path": str(resolved_stop_grid_artifact), "sha256": base.sha256_file(resolved_stop_grid_artifact)}
     preflight["input_artifact_hashes"]["stop_grid_artifact"] = preflight["stop_grid_artifact"]["sha256"]
+    fixed_cutoff_source = str(getattr(args, "fixed_cutoffs_csv", "") or "")
+    fixed_cutoffs = load_fixed_cutoff_table(fixed_cutoff_source) if fixed_cutoff_source else None
+    if fixed_cutoff_source:
+        preflight["input_artifact_hashes"]["fixed_cutoffs_csv"] = base.sha256_file(_path(fixed_cutoff_source))
     print(f"preflight {preflight['status']}", flush=True)
     if preflight["status"] != "PASS":
         artifact = empty_rich_artifact(ranked_search_budget, [])
@@ -1847,15 +1980,15 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
 
     stop_policy = choice["stop_policy"]
     exit_rule = choice["exit_rule"]
-    run_base = {**stop_policy, **_entry_rule(), **{"mask_id": MASK_ID, "kind": "none"}, **exit_rule, "spread": base.CONFIG.canonical_spread}
+    run_base = {**stop_policy, **_entry_rule(), **{"mask_id": MASK_ID, "kind": "none"}, **exit_rule, "spread": active_spread}
     entry_cache: dict[str, pd.DataFrame] = {}
     labels_by_split: dict[str, pd.DataFrame] = {}
     planned_diagnostics: list[dict[str, object]] = []
     for split, rows in splits.items():
-        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), base.CONFIG.canonical_spread, stop_policy)
+        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), active_spread, stop_policy)
         entries = attach_movement_scores(entries, frozen_scores, split)
         entry_cache[split] = entries
-        simulated = base._simulate_entries(entries, ohlc, run_base, base.CONFIG.canonical_spread, pd.DataFrame(), execution_ohlc)
+        simulated = base._simulate_entries(entries, ohlc, run_base, active_spread, pd.DataFrame(), execution_ohlc)
         labels = build_rich_entry_labels(entries, simulated)
         labels["split"] = split
         labels["side"] = entries["side"].to_numpy() if "side" in entries else pd.NA
@@ -1897,20 +2030,27 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     eligible_targets = [t for t in targets if t.get("eligible_for_winner")]
     primary_filters = [f for f in filters if f.get("eligible_for_winner")]
     active_search_budget = compute_search_budget(eligible_profiles, [m for m in models if m.get("eligible_for_winner")], eligible_targets, primary_filters)
-    if args.smoke_limit_filters:
+    fixed_mode = bool(getattr(args, "fixed_leaderboard_rules_only", False))
+    if args.smoke_limit_filters and not fixed_mode:
         eligible_profiles = eligible_profiles[:1]
         runnable_profiles = runnable_profiles[:1]
         runnable_models = runnable_models[:1]
         eligible_targets = eligible_targets[:1]
         primary_filters = primary_filters[: int(args.smoke_limit_filters)]
-    job_list = [
-        (profile, model, target, filter_spec)
-        for profile in runnable_profiles
-        for model in runnable_models
-        for target in eligible_targets
-        for filter_spec in primary_filters
-        if model.get("runnable_by_default", True)
-    ]
+    if fixed_mode:
+        from ML.baseline import audit_leaderboard_robustness as leaderboard
+
+        fixed_rules = leaderboard.LEADERBOARD_RULES[:1] if getattr(args, "smoke_first_rule_only", False) else leaderboard.LEADERBOARD_RULES
+        job_list = build_fixed_leaderboard_job_list(runnable_profiles, runnable_models, eligible_targets, primary_filters, fixed_rules)
+    else:
+        job_list = [
+            (profile, model, target, filter_spec, {})
+            for profile in runnable_profiles
+            for model in runnable_models
+            for target in eligible_targets
+            for filter_spec in primary_filters
+            if model.get("runnable_by_default", True)
+        ]
 
     summary_rows: list[dict[str, object]] = []
     trade_frames: list[pd.DataFrame] = []
@@ -1934,7 +2074,12 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
             raw_profile_frames: dict[str, pd.DataFrame] = {}
             raw_contract_rows: list[dict[str, object]] = []
             for split_name in ("train_core", "val_select", "val_eval"):
-                raw_frame, contract_rows = build_normalized_rich_feature_frame(entry_cache[split_name], ohlc, profile_id)
+                raw_frame, contract_rows = build_normalized_rich_feature_frame(
+                    entry_cache[split_name],
+                    ohlc,
+                    profile_id,
+                    timezone_shift_hours=timezone_shift_hours,
+                )
                 raw_profile_frames[split_name] = raw_frame
                 normalized_raw_frames_for_audit[(split_name, profile_id)] = raw_frame
                 for row in contract_rows:
@@ -1956,7 +2101,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
         return normalized_feature_frame_cache[cache_key], []
 
     total_jobs = len(job_list)
-    for done, (profile, model_spec, target_spec, filter_spec) in enumerate(job_list):
+    for done, (profile, model_spec, target_spec, filter_spec, job_meta) in enumerate(job_list):
         profile_id = str(profile["profile_id"])
         model_id = str(model_spec["model_id"])
         target_id = str(target_spec["target_id"])
@@ -1970,8 +2115,22 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
             if gate["status"] == "FEATURE_CONTRACT_FAIL":
                 raise SystemExit(f"rich feature contract failed for {profile_id}: {gate}")
         x_fit, y_train = prepare_rich_training_target(entry_cache["train_core"], x_train, labels_by_split["train_core"], target_id)
-        rich_model = train_rich_entry_model(x_fit, y_train, target_kind, model_id, int(args.threads), seed=42)
+        rich_model = train_rich_entry_model(x_fit, y_train, target_kind, model_id, int(args.threads), seed=rich_entry_seed)
         scored_by_split: dict[str, pd.DataFrame] = {}
+        base_metadata = {
+            "original_rank": job_meta.get("original_rank"),
+            "rule_id": job_meta.get("rule_id", ""),
+            "stop_policy_id": stop_policy["stop_policy_id"],
+            "entry_id": ENTRY_ID,
+            "mask_id": MASK_ID,
+            "exit_id": exit_rule["exit_id"],
+            "entry_filter_score_col": "rich_entry_score",
+            "rich_entry_seed": rich_entry_seed,
+            "timezone_shift_hours": timezone_shift_hours,
+            "spread": active_spread,
+            "locked_test": "not_opened",
+            "fixed_cutoff_source": fixed_cutoff_source or "val_select_dynamic",
+        }
         for split in ("val_select", "val_eval"):
             x_split, contract_split = get_feature_frame(split, profile_id)
             feature_frames_for_audit.setdefault((split, profile_id), x_split)
@@ -1982,11 +2141,20 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
             scored["model_id"] = model_id
             scored["target_id"] = target_id
             scored["filter_id"] = filter_spec["filter_id"]
-            score_frames.append(scored[["position_id", "split", "profile_id", "model_id", "target_id", "filter_id", "rich_entry_score"]])
             scored_by_split[split] = scored
-        selected_val = apply_entry_filter(scored_by_split["val_select"], _rich_filter_rule(filter_spec), mode="select")
-        cutoff = selected_val.attrs.get("score_cutoff_on_val_select")
+        if fixed_mode:
+            preview_selected = apply_entry_filter(scored_by_split["val_select"], _rich_filter_rule(filter_spec), mode="select")
+            cutoff = resolve_fixed_cutoff(str(job_meta["rule_id"]), fixed_cutoffs, preview_selected)
+            selected_val = apply_entry_filter(scored_by_split["val_select"], _rich_filter_rule(filter_spec), mode="eval", score_cutoff=cutoff)
+            selected_val.attrs["score_cutoff_on_val_select"] = cutoff
+        else:
+            selected_val = apply_entry_filter(scored_by_split["val_select"], _rich_filter_rule(filter_spec), mode="select")
+            cutoff = resolve_fixed_cutoff("", None, selected_val)
         selected_eval = apply_entry_filter(scored_by_split["val_eval"], _rich_filter_rule(filter_spec), mode="eval", score_cutoff=cutoff)
+        for split, scored in scored_by_split.items():
+            score_frame = scored[["position_id", "split", "profile_id", "model_id", "target_id", "filter_id", "rich_entry_score"]]
+            score_frame = _apply_output_metadata(score_frame, {**base_metadata, "score_cutoff_on_val_select": cutoff})
+            score_frames.append(score_frame)
         for split, selected_entries in {"val_select": selected_val, "val_eval": selected_eval}.items():
             run = {
                 **run_base,
@@ -2004,6 +2172,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
                 trades["profile_id"] = profile_id
                 trades["model_id"] = model_id
                 trades["target_id"] = target_id
+                trades = _apply_output_metadata(trades, {**base_metadata, "score_cutoff_on_val_select": cutoff})
                 trade_frames.append(trades)
             row = _summary_for_filter(trades, run, split)
             eligible = bool(profile.get("eligible_for_winner") and model_spec.get("eligible_for_winner") and target_spec.get("eligible_for_winner") and filter_spec.get("eligible_for_winner"))
@@ -2015,6 +2184,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
                     "eligible_for_winner": eligible,
                     "not_eligible_for_winner": not eligible,
                     "not_eligible_reason": "" if eligible else "diagnostic_grid",
+                    **base_metadata,
                 }
             )
             summary_rows.append(row)
@@ -2063,6 +2233,45 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     selected_score_diagnostics = selected_rule_score_diagnostics(scores, selected_val_eval, selected_val_eval.get("score_cutoff_on_val_select"))
     permutation = {"method": "selected_rule_only", "null_repeats": int(args.permutation_repeats), "status": "DIAGNOSTIC_ONLY", "null_best_bs_p05": []}
 
+    if fixed_mode:
+        contract_cutoff_source = fixed_cutoff_source or "val_select_dynamic"
+        try:
+            verify_fixed_output_contract(
+                summary,
+                expected_spread=active_spread,
+                expected_seed=rich_entry_seed,
+                timezone_shift_hours=timezone_shift_hours,
+                fixed_cutoff_source=contract_cutoff_source,
+            )
+            verify_fixed_output_contract(
+                trades,
+                expected_spread=active_spread,
+                expected_seed=rich_entry_seed,
+                timezone_shift_hours=timezone_shift_hours,
+                fixed_cutoff_source=contract_cutoff_source,
+            )
+            verify_fixed_output_contract(
+                scores,
+                expected_spread=active_spread,
+                expected_seed=rich_entry_seed,
+                timezone_shift_hours=timezone_shift_hours,
+                fixed_cutoff_source=contract_cutoff_source,
+            )
+        except ValueError as exc:
+            artifact = empty_rich_artifact(ranked_search_budget, [])
+            artifact.update(
+                {
+                    "status": "unknown_input_or_contract",
+                    "decision": "UNKNOWN_INPUT_OR_CONTRACT",
+                    "error": str(exc),
+                    "locked_test": "not_opened",
+                    "fixed_cutoff_source": fixed_cutoff_source,
+                    "preflight": preflight,
+                }
+            )
+            prefix.with_suffix(".json").write_text(json.dumps(artifact, ensure_ascii=True, indent=2, default=str), encoding="utf-8")
+            raise SystemExit(str(exc))
+
     pd.DataFrame(feature_contract_rows).drop_duplicates().to_csv(prefix.with_name(prefix.name + "_feature_contract.csv"), sep=";", index=False)
     forbidden_column_audit([str(profile["profile_id"]) for profile in runnable_profiles]).to_csv(prefix.with_name(prefix.name + "_forbidden_column_audit.csv"), sep=";", index=False)
     pd.DataFrame(structural_gate_rows).to_csv(prefix.with_name(prefix.name + "_feature_distribution_flags.csv"), sep=";", index=False)
@@ -2103,7 +2312,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
         updn_gate_path = prefix.with_name(prefix.name + "_updn_provenance_gate.csv")
         normalized_updn_provenance_gate().to_csv(updn_gate_path, sep=";", index=False)
         old_summary_path = _path("ML/reports/fractal0_rich_entry_quality_summary.csv")
-        if old_summary_path.exists():
+        if old_summary_path.exists() and not fixed_mode:
             old_summary = pd.read_csv(old_summary_path, sep=";")
             protocol_comparison_path = prefix.with_name(prefix.name + "_protocol_comparison.csv")
             compare_rich_runs_protocol(old_summary, summary).to_csv(protocol_comparison_path, sep=";", index=False)
@@ -2161,6 +2370,12 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
             "normalization_config": normalization_config if args.normalized_rich_features else None,
             "legacy_rich_artifact_for_comparison": str(_path(RICH_OUTPUT_PREFIX + ".json")) if args.normalized_rich_features else None,
             "input_artifact_hashes": preflight["input_artifact_hashes"],
+            "spread": active_spread,
+            "rich_entry_seed": rich_entry_seed,
+            "timezone_shift_hours": timezone_shift_hours,
+            "fixed_cutoff_source": fixed_cutoff_source or "val_select_dynamic",
+            "fixed_leaderboard_rules_only": fixed_mode,
+            "smoke_first_rule_only": bool(getattr(args, "smoke_first_rule_only", False)),
             "artifacts": {
                 "summary_csv": str(prefix.with_name(prefix.name + "_summary.csv")),
                 "trades_csv": str(prefix.with_name(prefix.name + "_trades.csv")),
@@ -2198,6 +2413,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--rich-entry-quality", action="store_true")
     parser.add_argument("--include-diagnostic-models", action="store_true")
     parser.add_argument("--normalized-rich-features", action="store_true")
+    parser.add_argument("--rich-entry-seed", type=int, default=42)
+    parser.add_argument("--fixed-leaderboard-rules-only", action="store_true")
+    parser.add_argument("--fixed-cutoffs-csv", default="")
+    parser.add_argument("--spread", type=float, default=base.CONFIG.canonical_spread)
+    parser.add_argument("--timezone-shift-hours", type=int, default=0)
+    parser.add_argument("--smoke-first-rule-only", action="store_true")
     return parser.parse_args(argv)
 
 

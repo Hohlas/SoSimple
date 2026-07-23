@@ -15,56 +15,23 @@
 
 ## Active Research Queue
 
-### COMPLETED: `time_only` robustness audit
-
-Источник решения:
-
-- [`2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md`](../reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md)
-- [`2026-07-23-time-only-robustness-audit.md`](../reports/2026-07-23-time-only-robustness-audit.md)
-
-Цель: без нового перебора проверить устойчивость текущего winner:
-
-```text
-S2_fractal0_buffer_0_5_entry_floor_2 /
-E3_open_pullback_1_0atr /
-M0_no_mask /
-X2_ml_opposite_any_p0_50 /
-profile=time_only /
-model=linear /
-target=target_entry_ev_regression /
-filter=top30
-```
-
-Почему это следующий шаг:
-
-- normalized rerun уже завершён и не сменил winner;
-- normalized leaderboard занят в основном `time_only` и `movement_plus_time`;
-- rich/fractal profiles не доказали добавочную пользу;
-- перед любым frozen probe нужно понять, не держится ли `time_only` результат
-  на одном году, стороне, месяце или узком режиме.
-
-Ограничения:
-
-- `locked_test` не открывать;
-- не добавлять новые profiles, targets, models, filters или cutoff;
-- не превращать audit в новый selection search;
-- результат должен закончиться решением: `time_only` one-rule probe,
-  regime-filter reformulation или закрытие rich/fractal entry-quality ветки.
-
-Результат: `REGIME_REFORMULATION_REQUIRED`.
-
 ### ACTIVE: `Regime filter reformulation`
 
 Основание: `time_only` robustness audit завершился с решением
 `REGIME_REFORMULATION_REQUIRED`; leaderboard robustness audit для 11 fixed
 normalized rows дал
-`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`.
+`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`; follow-up closure
+дал `LEADERBOARD_CLOSURE_INCOMPLETE_RESEARCH_ONLY`; producer-level fixed11
+rerun дал `FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY`.
 
 Цель: переосмыслить `time_only` winner как режимный фильтр без открытия
-`locked_test` и без переноса validation-находки в candidate. Первый блок
-работы должен закрыть недостающие проверки: stress-cost resimulation,
-time-calendar robustness, timezone-shift disclosure и sequential-position
-constraint.
+`locked_test` и без переноса validation-находки в candidate. Closure уже
+пересчитал producer-level stress-cost, frozen timezone/calendar diagnostics и
+bounded multi-seed для ровно 11 fixed rule families. Все diagnostics computed,
+но `11/11` classification rows risk-flagged: stress-cost и calendar baseline
+dominance блокируют provider/transfer/locked-test discussion. Следующий шаг:
+закрыть rich/fractal entry-quality ветку как time-heavy research-only и
+написать более узкий regime-filter reformulation plan.
 
 ### BLOCKED: shortlist locked probe
 
@@ -101,32 +68,6 @@ constraint.
 - multi-asset / multi-timeframe validation;
 - central multi-profile inference service;
 - bounded risk filters after system discovery.
-
----
-
-## Applied Decision After Normalized Rerun
-
-Normalized rerun завершён. Применён Case A: normalized winner снова
-`time_only`, а normalized leaderboard не сохранил strong non-time shortlist.
-
-Вывод:
-
-```text
-Исправление контракта признаков не помогло rich/fractal профилям победить
-формальный time_only winner. Текущая ветка поддерживает entry-quality filtering
-в основном как календарную/режимную гипотезу.
-```
-
-Разрешённые действия:
-
-- сначала выполнить `time_only` robustness audit без открытия `locked_test`;
-- затем либо выполнить `time_only` one-rule replication/probe, либо перейти к
-  regime-filter reformulation;
-- старый shortlist locked probe не запускать без нового frozen protocol;
-- rich/fractal salvage probe считать parked/superseded, пока нет нового
-  additive contract.
-
----
 
 ## Five Follow-Up Directions
 
@@ -170,28 +111,7 @@ score_cutoff_on_val_select=-0.026718184259660646
 
 Статус: `PARKED_BY_REGIME_REFORMULATION_REQUIRED`.
 
-### 2. `time_only` robustness audit
-
-Цель: без нового поиска разобрать устойчивость текущего `time_only` winner.
-
-Проверки:
-
-- yearly;
-- side;
-- месяцы или кварталы;
-- чувствительность к spread;
-- стабильность cutoff;
-- распределение score между `val_select` и `val_eval`;
-- сравнение с простыми календарными правилами без ML.
-
-Что даст:
-
-- покажет, не держится ли результат на одном коротком режиме 2021-2022;
-- подготовит честные gates для будущего one-rule probe.
-
-Статус: `COMPLETED`; decision `REGIME_REFORMULATION_REQUIRED`.
-
-### 3. Rich/fractal salvage probe
+### 2. Rich/fractal salvage probe
 
 Цель: проверить не абсолютную победу rich/fractal профилей, а их добавочную
 пользу поверх `time_only`.
@@ -214,7 +134,7 @@ score_cutoff_on_val_select=-0.026718184259660646
 
 Статус: `PARKED_OR_SUPERSEDED`.
 
-### 4. Regime filter reformulation
+### 3. Regime filter reformulation
 
 Цель: переосмыслить `time_only` winner как режимный фильтр, а не как модель
 качества конкретного фрактального входа.
@@ -234,7 +154,7 @@ score_cutoff_on_val_select=-0.026718184259660646
 
 Статус: `ACTIVE`.
 
-### 5. Close rich/fractal entry-quality branch
+### 4. Close rich/fractal entry-quality branch
 
 Цель: не тратить новые циклы на ветку, если она не даёт добавочной пользы.
 

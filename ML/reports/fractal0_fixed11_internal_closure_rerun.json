@@ -1,0 +1,268 @@
+{
+  "status": "completed",
+  "decision": "FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY",
+  "locked_test": "not_opened",
+  "locked_test_status": "not_opened",
+  "allowed_max_verdict": "research_only",
+  "new_winner_selected": false,
+  "run_groups": [
+    "stress_cost",
+    "timezone_calendar",
+    "multiseed"
+  ],
+  "run_matrix": {
+    "path": "ML/reports/fractal0_fixed11_internal_closure_rerun_run_matrix.csv",
+    "row_count": 143,
+    "group_counts": {
+      "multiseed": 55,
+      "stress_cost": 33,
+      "timezone_calendar": 55
+    }
+  },
+  "source_input_prefix": "ML/reports/fractal0_rich_entry_quality_normalized",
+  "source_input_json": "ML/reports/fractal0_rich_entry_quality_normalized.json",
+  "source_input_artifact_hashes": {
+    "movement_freeze_json": "52c3340150dde391e94db3d9023150275d94777ac76da6647505b4741155abaa",
+    "ohlc": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
+    "train_core": "5cc0c1180d96966ac08c4832947be6b2770f1d14b0b572a4f63f0f28b3e49b62",
+    "validation": "f31d54f8e47b29675cbd21f78f457ee4b135936480698baac54180c5a83f14fd",
+    "movement_freeze_scores": "385dc1c125e9b2ba9ec9a278e4a56f60fe3f2c10a66a425ff92fd5b9cb105eae",
+    "execution_ohlc": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+    "stop_grid_artifact": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6"
+  },
+  "source_input_json_sha256": "124859f3aba89a4fe2b4b663919740315d9218b8f2c748298a1dc013e00379cb",
+  "fixed_cutoff_source": "ML/reports/leaderboard_closure_audit_rules.csv",
+  "threads_requested": 24,
+  "smoke_first_rule_only": false,
+  "resume_enabled": true,
+  "resume_skipped_run_count": 0,
+  "child_runs": [
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0.json"
+    },
+    {
+      "run_prefix": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0",
+      "status": "executed",
+      "child_status": "completed",
+      "child_json": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0.json"
+    }
+  ],
+  "statuses": {
+    "stress_cost": "COMPUTED",
+    "timezone_rescore": "COMPUTED",
+    "timezone_calendar": "COMPUTED",
+    "calendar_permutation": "COMPUTED",
+    "calendar_no_ml_baseline": "COMPUTED",
+    "multiseed": "COMPUTED"
+  },
+  "risk_flags": {
+    "stress_cost": {
+      "any": true,
+      "flagged_count": 12,
+      "row_count": 33
+    },
+    "timezone_rescore": {
+      "any": false,
+      "flagged_count": 0,
+      "row_count": 55
+    },
+    "calendar_permutation": {
+      "any": true,
+      "flagged_count": 4,
+      "row_count": 11
+    },
+    "calendar_no_ml_baseline": {
+      "any": true,
+      "flagged_count": 11,
+      "row_count": 11
+    },
+    "multiseed": {
+      "any": false,
+      "flagged_count": 0,
+      "row_count": 11
+    },
+    "classification": {
+      "any": true,
+      "flagged_count": 11,
+      "row_count": 11
+    }
+  },
+  "status_counts": {
+    "stress_cost": {
+      "COMPUTED": 33
+    },
+    "timezone_rescore": {
+      "COMPUTED": 55
+    },
+    "calendar_permutation": {
+      "COMPUTED": 11
+    },
+    "calendar_no_ml_baseline": {
+      "COMPUTED": 11
+    },
+    "multiseed": {
+      "COMPUTED": 55
+    },
+    "multiseed_aggregate": {
+      "COMPUTED": 11
+    },
+    "classification": {}
+  },
+  "classification_decision_counts": {
+    "INTERNAL_CLOSURE_RISK_FLAGGED": 11
+  },
+  "input_artifact_hashes": {
+    "source_rules_csv": "d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c",
+    "source_input_json": "124859f3aba89a4fe2b4b663919740315d9218b8f2c748298a1dc013e00379cb",
+    "source_input_artifact_hashes": {
+      "movement_freeze_json": "52c3340150dde391e94db3d9023150275d94777ac76da6647505b4741155abaa",
+      "ohlc": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
+      "train_core": "5cc0c1180d96966ac08c4832947be6b2770f1d14b0b572a4f63f0f28b3e49b62",
+      "validation": "f31d54f8e47b29675cbd21f78f457ee4b135936480698baac54180c5a83f14fd",
+      "movement_freeze_scores": "385dc1c125e9b2ba9ec9a278e4a56f60fe3f2c10a66a425ff92fd5b9cb105eae",
+      "execution_ohlc": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+      "stop_grid_artifact": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6"
+    }
+  },
+  "stress_cost_status": "COMPUTED",
+  "timezone_rescore_status": "COMPUTED",
+  "timezone_calendar_status": "COMPUTED",
+  "calendar_permutation_status": "COMPUTED",
+  "calendar_no_ml_baseline_status": "COMPUTED",
+  "multiseed_status": "COMPUTED",
+  "stress_spreads": [
+    0.2,
+    0.4,
+    0.8
+  ],
+  "timezone_shift_hours": [
+    0,
+    -8,
+    -4,
+    4,
+    8
+  ],
+  "multiseed_seeds": [
+    41,
+    42,
+    43,
+    44,
+    45
+  ],
+  "stress_row_count": 33,
+  "timezone_rescore_row_count": 55,
+  "calendar_permutation_row_count": 11,
+  "calendar_no_ml_baseline_row_count": 11,
+  "multiseed_row_count": 55,
+  "multiseed_aggregate_row_count": 11,
+  "classification_row_count": 11,
+  "calendar_permutation_repeats": 50,
+  "baseline_family_count": 3,
+  "producer_level_computation": "rich.run_rich_entry_quality",
+  "timezone_rescore_computation": "feature_rescore_rich_runner_fixed_saved_cutoffs",
+  "calendar_diagnostics_computation": "computed_from_fresh_canonical_train_val_state_no_locked_test",
+  "multiseed_computation": "frozen_cutoff_seed_stress_saved_cutoff_reuse",
+  "stress_trade_required_columns": [
+    "entry_effective_price",
+    "fill_time",
+    "exit_time",
+    "close_reason",
+    "r_value",
+    "pnl_r",
+    "spread"
+  ],
+  "source_rules_csv": "ML/reports/leaderboard_closure_audit_rules.csv",
+  "source_rules_csv_sha256": "d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c",
+  "ohlc_price_convention": "bid_ohlc_with_spread_adjusted_sell_exit_bars",
+  "spread_definition": "full_bid_ask_spread_in_price_units",
+  "entry_price_rule": "buy_fill_when_low_plus_spread_le_limit_and_sell_fill_when_high_ge_limit; entry_effective_price_equals_limit_price",
+  "sl_trigger_rule": "protective_stop_checked_on_effective_exit_bars; same_bar_tp_sl_without_execution_ohlc_resolves_sl_first",
+  "tp_rule": "fixed_r_take_profit_from_entry_effective_price_plus_or_minus_tp_r_times_r_value",
+  "timeout_pnl_rule": "time_exit_marks_to_close_price_of_hold_limit_bar_on_effective_exit_bars",
+  "artifacts": {
+    "json": "ML/reports/fractal0_fixed11_internal_closure_rerun.json",
+    "run_matrix_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_run_matrix.csv",
+    "stress_cost_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost.csv",
+    "timezone_rescore_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_rescore.csv",
+    "calendar_permutation_importance_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_calendar_permutation_importance.csv",
+    "calendar_no_ml_baselines_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_calendar_no_ml_baselines.csv",
+    "multiseed_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed.csv",
+    "multiseed_aggregate_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_aggregate.csv",
+    "classification_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_classification.csv",
+    "canonical_feature_state_manifest_csv": "ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state_manifest.csv"
+  },
+  "overall_decision": "FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY",
+  "verdict": "research_only",
+  "provider_drift_status": "NOT_IN_SCOPE",
+  "transfer_status": "NOT_IN_SCOPE",
+  "leaderboard_rule_count": 11
+}

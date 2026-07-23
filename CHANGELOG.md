@@ -15,6 +15,22 @@
 ```
 ---
 
+## [2026-07-23] — Fixed-11 internal closure rerun (research_only risk-flagged)
+- **report**: `docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md`
+- **topics**: `fractal0`, `fixed11`, `stress_cost`, `timezone`, `calendar`, `multi_seed`
+- **summary**: Producer-level fixed rerun computed stress-cost, frozen timezone/calendar diagnostics and bounded multi-seed for the exact 11 normalized leaderboard rule families with `--threads 24`.
+- **artifacts**: `ML/reports/fractal0_fixed11_internal_closure_rerun.json`, `ML/reports/fractal0_fixed11_internal_closure_rerun_classification.csv`, `ML/baseline/fractal0_fixed11_internal_closure_rerun.py`
+- **decision**: `FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY`; all diagnostics computed, but all 11 rules are risk-flagged by stress/calendar evidence.
+- **notes**: `locked_test=not_opened`; `provider_drift_status=NOT_IN_SCOPE`; `transfer_status=NOT_IN_SCOPE`; next step is close rich/fractal entry-quality as time-heavy research-only and write a narrower regime-filter reformulation plan.
+
+## [2026-07-23] — Leaderboard cost/calendar/sequential/multi-seed closure (research_only)
+- **report**: `docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md`
+- **topics**: `fractal0`, `leaderboard`, `costs`, `calendar`, `sequential_positions`, `multi_seed`
+- **summary**: Added closure/disclosure audit for the same 11 fixed normalized leaderboard rows. Time-calendar and sequential-position diagnostics are computed; stress-cost, timezone shift, calendar permutation/no-ML baseline and multi-seed are disclosed as not computable from saved artifacts.
+- **artifacts**: `ML/reports/leaderboard_closure_audit.json`, `ML/reports/leaderboard_closure_audit_classification.csv`, `ML/baseline/audit_leaderboard_closure.py`
+- **decision**: `LEADERBOARD_CLOSURE_INCOMPLETE_RESEARCH_ONLY`; no winner selection and no freeze/locked-test permission.
+- **notes**: `locked_test=not_opened`; `provider_drift_status=NOT_IN_SCOPE`; `transfer_status=NOT_IN_SCOPE`; next step is producer-level stress-cost resimulation, frozen timezone rescore, bounded multi-seed rerun for exactly 11 families, or closing rich/fractal entry-quality as time-heavy research-only.
+
 ## [2026-07-23] — Leaderboard robustness audit (research_only)
 - **report**: `docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md`
 - **topics**: `fractal0`, `rich_entry_quality`, `leaderboard`, `robustness`, `validation_slice`

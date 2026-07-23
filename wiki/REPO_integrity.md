@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-23 10:28 UTC · git `8b98430`
+> Auto-generated 2026-07-23 19:05 UTC · git `d866212`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3207 files  ·  **Commit**: `8b98430`  ·  **Generated**: 2026-07-23 10:28 UTC
+**Tracked**: 3243 files  ·  **Commit**: `d866212`  ·  **Generated**: 2026-07-23 19:05 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 151KB | `400fdfbd` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 154KB | `ad3df6e8` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 1KB | `8a50fe38` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 57KB | `1355cdcc` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 1KB | `89bb46b4` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 58KB | `3f5b4354` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -30,7 +30,8 @@
 | [docs/API/telemetry_signal_watcher.py.md](docs/API/telemetry_signal_watcher.py.md) |  | 2026-06-17 | 20KB | `bb5a5097` |
 | [docs/DATA_FLOW.md](docs/DATA_FLOW.md) | Поток данных + навигация по этапам | 2026-07-20 | 26KB | `e29295c8` |
 | [docs/ML/analyze_stage6_2_range_w1_postmortem.py.md](docs/ML/analyze_stage6_2_range_w1_postmortem.py.md) |  | 2026-07-20 | 1KB | `24414c2c` |
-| [docs/ML/audit_leaderboard_robustness.py.md](docs/ML/audit_leaderboard_robustness.py.md) |  | 2026-07-23 | 2KB | `a2a1e08c` |
+| [docs/ML/audit_leaderboard_closure.py.md](docs/ML/audit_leaderboard_closure.py.md) |  | 2026-07-23 | 2KB | `f9139c2f` |
+| [docs/ML/audit_leaderboard_robustness.py.md](docs/ML/audit_leaderboard_robustness.py.md) |  | 2026-07-23 | 2KB | `45f5565a` |
 | [docs/ML/audit_time_only_robustness.py.md](docs/ML/audit_time_only_robustness.py.md) |  | 2026-07-23 | 2KB | `aeafc3d7` |
 | [docs/ML/baseline_candidate_source.py.md](docs/ML/baseline_candidate_source.py.md) |  | 2026-06-17 | 906B | `405058a5` |
 | [docs/ML/baseline_experiments.py.md](docs/ML/baseline_experiments.py.md) |  | 2026-06-17 | 2KB | `8dc50028` |
@@ -50,7 +51,7 @@
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
 | [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 7KB | `170916af` |
-| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `587a75b3` |
+| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `8a4232bc` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
@@ -67,6 +68,7 @@
 | [docs/ML/export_entry_path_predictions.py.md](docs/ML/export_entry_path_predictions.py.md) | Inference entry_path-моделей на arbitrary labeled CSV без переобучения | 2026-06-17 | 4KB | `594cc77b` |
 | [docs/ML/feature_bank_comparison_diagnostics.py.md](docs/ML/feature_bank_comparison_diagnostics.py.md) | Сравнение baseline/geometry/path feature-bank вариантов | 2026-06-17 | 2KB | `5bfce017` |
 | [docs/ML/feature_importance_diagnostics.py.md](docs/ML/feature_importance_diagnostics.py.md) | Диагностика важности групп текущих fractal-признаков | 2026-06-17 | 2KB | `fd76dcaf` |
+| [docs/ML/fractal0_fixed11_internal_closure_rerun.py.md](docs/ML/fractal0_fixed11_internal_closure_rerun.py.md) |  | 2026-07-23 | 2KB | `cbe7c6f0` |
 | [docs/ML/fractal_breach_transformer.py.md](docs/ML/fractal_breach_transformer.py.md) |  | 2026-06-20 | 1KB | `46f52377` |
 | [docs/ML/lib_pic_feature_profiles.py.md](docs/ML/lib_pic_feature_profiles.py.md) | Единая сборка профилей признаков `lib_PIC` | 2026-06-17 | 2KB | `3947bb49` |
 | [docs/ML/lib_pic_geometry_feature_bank.py.md](docs/ML/lib_pic_geometry_feature_bank.py.md) | Производные признаки геометрии уровней `lib_PIC` | 2026-06-17 | 3KB | `1da45c79` |
@@ -153,7 +155,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 16KB | `0af4b4ae` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 18KB | `a12c38ea` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -265,10 +267,12 @@
 | [docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md](docs/superpowers/plans/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 25KB | `58b0a6e6` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-22 | 81KB | `e2847072` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md) |  | 2026-07-22 | 14KB | `07746cec` |
-| [docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 79KB | `6f0ce2e3` |
+| [docs/superpowers/plans/2026-07-23-fractal0-fixed11-internal-closure-rerun.md](docs/superpowers/plans/2026-07-23-fractal0-fixed11-internal-closure-rerun.md) |  | 2026-07-23 | 61KB | `c5276367` |
+| [docs/superpowers/plans/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md](docs/superpowers/plans/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md) |  | 2026-07-23 | 54KB | `fc6a5e9a` |
+| [docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 80KB | `32dd4131` |
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-23 | 18KB | `9416e476` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-23 | 15KB | `1e54620e` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -432,6 +436,8 @@
 | [docs/reports/2026-07-21-fractal0-rich-entry-quality.md](docs/reports/2026-07-21-fractal0-rich-entry-quality.md) |  | 2026-07-22 | 18KB | `7994be66` |
 | [docs/reports/2026-07-21-fractal0-stop-grid-m5.md](docs/reports/2026-07-21-fractal0-stop-grid-m5.md) |  | 2026-07-21 | 16KB | `8d4cc249` |
 | [docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/reports/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-23 | 27KB | `3f5a0204` |
+| [docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md](docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md) |  | 2026-07-23 | 12KB | `d422b89f` |
+| [docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md](docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md) |  | 2026-07-23 | 10KB | `bccc7161` |
 | [docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 10KB | `ec2503bf` |
 | [docs/reports/2026-07-23-time-only-robustness-audit.md](docs/reports/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 9KB | `b90f6a05` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
@@ -444,6 +450,7 @@
 | [ML/ablation_study.py](ML/ablation_study.py) | Ablation Study (ME-2): влияние длины истории на качество | 🏁 | 2026-06-17 | 4KB | `dd55ee84` |
 | [ML/baseline/analyze_regression_updn_already_moved_audit.py](ML/baseline/analyze_regression_updn_already_moved_audit.py) | Audit: движение до next-open entry | ✅ | 2026-07-20 | 28KB | `04568800` |
 | [ML/baseline/analyze_stage6_2_range_w1_postmortem.py](ML/baseline/analyze_stage6_2_range_w1_postmortem.py) | Stage 6.2 post-mortem | ✅ | 2026-07-20 | 28KB | `6450da16` |
+| [ML/baseline/audit_leaderboard_closure.py](ML/baseline/audit_leaderboard_closure.py) | Closure/disclosure audit для 11 fixed leaderboard rows: cost, calendar, timezone, sequential positions и multi-seed без нового поиска | ✅ | 2026-07-23 | 26KB | `0b231fc1` |
 | [ML/baseline/audit_leaderboard_robustness.py](ML/baseline/audit_leaderboard_robustness.py) | Validation-slice audit 11 fixed normalized rich-entry leaderboard input rows без нового поиска и без `locked_test` | ✅ | 2026-07-23 | 30KB | `88ed537e` |
 | [ML/baseline/audit_time_only_robustness.py](ML/baseline/audit_time_only_robustness.py) | Validation-slice audit fixed normalized `time_only` winner без нового поиска и без `locked_test` | ✅ | 2026-07-23 | 28KB | `943d65a5` |
 | [ML/baseline/baseline_experiments.py](ML/baseline/baseline_experiments.py) | Baseline-модели (XGBoost, LightGBM, RF, SVM, LogReg) | 🏁 | 2026-06-17 | 40KB | `e1216862` |
@@ -458,7 +465,7 @@
 | [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | ✅ | 2026-07-20 | 51KB | `cbbee1d3` |
 | [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | ✅ | 2026-07-20 | 30KB | `1dd98792` |
 | [ML/baseline/benchmark_fractal0_entry_exit_grid.py](ML/baseline/benchmark_fractal0_entry_exit_grid.py) | Fractal0 entry/exit grid со stop-policy grid, OHLC/M5 execution ordering, ML-exit и permutation correction | ✅ | 2026-07-21 | 77KB | `ee7ae1dd` |
-| [ML/baseline/benchmark_fractal0_entry_quality_filter.py](ML/baseline/benchmark_fractal0_entry_quality_filter.py) | ML-entry, rich-entry и normalized rich-entry quality фильтр для Fractal0 E3 поверх stop-grid winner без нового симулятора | ✅ | 2026-07-23 | 120KB | `7448eac6` |
+| [ML/baseline/benchmark_fractal0_entry_quality_filter.py](ML/baseline/benchmark_fractal0_entry_quality_filter.py) | ML-entry, rich-entry и normalized rich-entry quality фильтр для Fractal0 E3 поверх stop-grid winner без нового симулятора | ✅ | 2026-07-23 | 130KB | `eca685cf` |
 | [ML/baseline/benchmark_fractal0_price_entry_mechanics.py](ML/baseline/benchmark_fractal0_price_entry_mechanics.py) | Oracle-preflight входа через возврат цены к зоне `fractal0_price` | ✅ | 2026-07-20 | 30KB | `9be21f55` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach | ✅ | 2026-06-17 | 13KB | `186f1abf` |
 | [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav | ✅ | 2026-06-17 | 26KB | `5b982cce` |
@@ -486,6 +493,7 @@
 | [ML/baseline/direction_only_signal.py](ML/baseline/direction_only_signal.py) |  |  | 2026-06-17 | 6KB | `8d683a5b` |
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-17 | 3KB | `70523b5b` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-17 | 16KB | `704db67c` |
+| [ML/baseline/fractal0_fixed11_internal_closure_rerun.py](ML/baseline/fractal0_fixed11_internal_closure_rerun.py) | Producer-level fixed11 internal closure rerun: stress-cost, timezone/calendar и multi-seed без `locked_test` | ✅ | 2026-07-23 | 69KB | `694fec17` |
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-17 | 9KB | `1e6b236f` |
 | [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-17 | 33KB | `e5c6ddc8` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle Fractal Stop Fav | ✅ | 2026-06-17 | 8KB | `02e614cf` |
@@ -793,6 +801,31 @@
 | [ML/reports/fractal0_entry_exit_grid_m5_full.json](ML/reports/fractal0_entry_exit_grid_m5_full.json) |  |  | 2026-07-21 | 36KB | `1fdf8f40` |
 | [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal0_entry_quality_filter.json](ML/reports/fractal0_entry_quality_filter.json) |  |  | 2026-07-21 | 29KB | `1968cec0` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank01_rank01_time_only_linear_target_entry_ev_regression_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank01_rank01_time_only_linear_target_entry_ev_regression_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `658c6719` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank02_rank02_time_only_linear_target_entry_ev_regression_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank02_rank02_time_only_linear_target_entry_ev_regression_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `0e2a8178` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank03_rank03_time_only_linear_target_entry_ev_regression_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank03_rank03_time_only_linear_target_entry_ev_regression_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `14c6614e` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank04_rank04_time_only_linear_target_entry_good_0_5r_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank04_rank04_time_only_linear_target_entry_good_0_5r_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `ad386a56` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank05_rank05_time_only_linear_target_entry_avoid_sl_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank05_rank05_time_only_linear_target_entry_avoid_sl_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `afa9b0fd` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank06_rank06_time_only_linear_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank06_rank06_time_only_linear_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `c3ca29b9` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank07_rank07_movement_plus_time_linear_target_entry_good_0_5r_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank07_rank07_movement_plus_time_linear_target_entry_good_0_5r_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `70e64d98` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank08_rank08_movement_plus_time_linear_target_entry_good_0_5r_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank08_rank08_movement_plus_time_linear_target_entry_good_0_5r_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `4d649e38` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank09_rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank09_rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `f774f3ab` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank10_rank10_movement_plus_time_linear_target_entry_ev_regression_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank10_rank10_movement_plus_time_linear_target_entry_ev_regression_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `13aefa88` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank11_rank11_movement_plus_time_linear_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank11_rank11_movement_plus_time_linear_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `2d533472` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
+| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
@@ -803,6 +836,7 @@
 | [ML/reports/fractal_stop_fav_frozen_test.json](ML/reports/fractal_stop_fav_frozen_test.json) |  |  | 2026-06-17 | 4KB | `9a68bebd` |
 | [ML/reports/frozen_exit_policy.json](ML/reports/frozen_exit_policy.json) |  |  | 2026-06-17 | 537B | `4da12318` |
 | [ML/reports/label_convention_audit.md](ML/reports/label_convention_audit.md) |  |  | 2026-06-17 | 3KB | `72706b95` |
+| [ML/reports/leaderboard_closure_audit.json](ML/reports/leaderboard_closure_audit.json) |  |  | 2026-07-23 | 4KB | `b3bde77c` |
 | [ML/reports/limit_order_transformer.json](ML/reports/limit_order_transformer.json) |  |  | 2026-06-17 | 1KB | `e843ef45` |
 | [ML/reports/live_safe_ml_audit/entry_path_v1/artifact_inventory.json](ML/reports/live_safe_ml_audit/entry_path_v1/artifact_inventory.json) |  |  | 2026-06-17 | 997B | `2c0fea7b` |
 | [ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export_metadata.json](ML/reports/live_safe_ml_audit/entry_path_v1/legacy_export_metadata.json) |  |  | 2026-06-17 | 347B | `7e79d1b9` |
@@ -1243,12 +1277,14 @@
 | [tests/test_feature_importance_diagnostics.py](tests/test_feature_importance_diagnostics.py) | `ML/feature_importance_diagnostics.py` | ✅ | 2026-06-17 | 2KB | `666e9ecb` |
 | [tests/test_feature_screen_entry_path.py](tests/test_feature_screen_entry_path.py) | `ML/feature_screen_entry_path.py` | ✅ | 2026-06-17 | 567B | `b99a62db` |
 | [tests/test_fractal0_entry_exit_grid.py](tests/test_fractal0_entry_exit_grid.py) | `ML/baseline/benchmark_fractal0_entry_exit_grid.py` | ✅ | 2026-07-21 | 26KB | `e3fe4d37` |
-| [tests/test_fractal0_entry_quality_filter.py](tests/test_fractal0_entry_quality_filter.py) |  |  | 2026-07-23 | 33KB | `292a63fd` |
+| [tests/test_fractal0_entry_quality_filter.py](tests/test_fractal0_entry_quality_filter.py) |  |  | 2026-07-23 | 38KB | `2d763bb8` |
+| [tests/test_fractal0_fixed11_internal_closure_rerun.py](tests/test_fractal0_fixed11_internal_closure_rerun.py) |  |  | 2026-07-23 | 31KB | `861e59e9` |
 | [tests/test_fractal0_price_entry_mechanics.py](tests/test_fractal0_price_entry_mechanics.py) | `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` | ✅ | 2026-07-20 | 10KB | `c364834b` |
 | [tests/test_fractal_level_feature_builder.py](tests/test_fractal_level_feature_builder.py) |  |  | 2026-06-17 | 8KB | `dae37ed1` |
 | [tests/test_generate_signals_research.py](tests/test_generate_signals_research.py) | TB signal selection в `API/generate_signals.py` | ✅ | 2026-06-17 | 831B | `6bed18cd` |
 | [tests/test_inverse_piecewise.py](tests/test_inverse_piecewise.py) | `processing/normalize.py` + `statistics/signal_tracer.py` — round-trip piecewise | ✅ | 2026-06-17 | 9KB | `3cc10cfe` |
 | [tests/test_label_updn.py](tests/test_label_updn.py) | `processing/label_signals.py` — parse_fractal, label_updn | ✅ | 2026-07-20 | 6KB | `9c704c7e` |
+| [tests/test_leaderboard_closure_audit.py](tests/test_leaderboard_closure_audit.py) |  |  | 2026-07-23 | 9KB | `bfb04c6a` |
 | [tests/test_leaderboard_robustness_audit.py](tests/test_leaderboard_robustness_audit.py) |  |  | 2026-07-23 | 14KB | `eb3c6516` |
 | [tests/test_lib_pic_feature_profiles.py](tests/test_lib_pic_feature_profiles.py) | `ML/lib_pic_feature_profiles.py` | ✅ | 2026-06-17 | 3KB | `025247c8` |
 | [tests/test_lib_pic_geometry_feature_bank.py](tests/test_lib_pic_geometry_feature_bank.py) | `ML/lib_pic_geometry_feature_bank.py` | ✅ | 2026-06-17 | 2KB | `5d44f49d` |
@@ -1711,8 +1747,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `79841887` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 77KB | `146a5bec` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `cd2e4621` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 78KB | `3c52d9d3` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1723,7 +1759,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 130KB | `3fb28e87` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 133KB | `3769ebb7` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1749,18 +1785,18 @@
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
 | [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-20 | 562B | `3b43b9eb` |
 | [.superpowers/sdd/run_task7_fractal0_grid.py](.superpowers/sdd/run_task7_fractal0_grid.py) |  | 2026-07-20 | 7KB | `a69dc580` |
-| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-23 | 8KB | `cb0dd012` |
-| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-23 | 2KB | `60aad5ca` |
-| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-23 | 12KB | `d2cef587` |
-| [.superpowers/sdd/task-2-report.md](.superpowers/sdd/task-2-report.md) |  | 2026-07-08 | 1KB | `dbebf384` |
-| [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-08 | 2KB | `ac2fe505` |
-| [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-08 | 1KB | `08c45335` |
-| [.superpowers/sdd/task-4-brief.md](.superpowers/sdd/task-4-brief.md) |  | 2026-07-08 | 2KB | `0259c8a1` |
-| [.superpowers/sdd/task-4-report.md](.superpowers/sdd/task-4-report.md) |  | 2026-07-09 | 1KB | `caad49e7` |
-| [.superpowers/sdd/task-5-brief.md](.superpowers/sdd/task-5-brief.md) |  | 2026-07-08 | 2KB | `738b8716` |
-| [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-09 | 1KB | `e832676a` |
-| [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-09 | 2KB | `ecaad3c0` |
-| [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-09 | 1KB | `cbda9841` |
+| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-23 | 7KB | `e86576af` |
+| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-23 | 1KB | `cda4d1f3` |
+| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-23 | 12KB | `246e1543` |
+| [.superpowers/sdd/task-2-report.md](.superpowers/sdd/task-2-report.md) |  | 2026-07-23 | 5KB | `32dbad90` |
+| [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-23 | 7KB | `18b45d73` |
+| [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-23 | 4KB | `d8a57601` |
+| [.superpowers/sdd/task-4-brief.md](.superpowers/sdd/task-4-brief.md) |  | 2026-07-23 | 7KB | `9fcb64d5` |
+| [.superpowers/sdd/task-4-report.md](.superpowers/sdd/task-4-report.md) |  | 2026-07-23 | 6KB | `b845b097` |
+| [.superpowers/sdd/task-5-brief.md](.superpowers/sdd/task-5-brief.md) |  | 2026-07-23 | 4KB | `e2725156` |
+| [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-23 | 3KB | `16f9bbca` |
+| [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-23 | 6KB | `7a08a27b` |
+| [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-23 | 7KB | `40a9879a` |
 | [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-23 | 50KB | `82c63767` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |

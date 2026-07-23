@@ -1,8 +1,10 @@
+import argparse
 import json
 
 import pandas as pd
 import pytest
 
+from ML.baseline import audit_leaderboard_robustness as leaderboard
 import ML.baseline.benchmark_fractal0_entry_exit_grid as base
 import ML.baseline.benchmark_fractal0_entry_quality_filter as runner
 
@@ -256,6 +258,114 @@ def test_rich_feature_frame_uses_closed_h1_and_forbids_top_level_targets():
     assert forbidden.isdisjoint(features.columns)
     assert features.loc[0, "h1_close"] == 102.0
     assert all(item["live_safe"] for item in audit)
+
+
+def test_build_fixed_leaderboard_job_list_returns_exact_11_rules():
+    jobs = runner.build_fixed_leaderboard_job_list(
+        runner.rich_feature_profile_grid(),
+        runner.rich_model_grid(include_diagnostic_models=True),
+        runner.rich_target_grid(),
+        runner.rich_filter_grid(),
+        leaderboard.LEADERBOARD_RULES,
+    )
+
+    rule_ids = [job[4]["rule_id"] for job in jobs]
+    assert len(jobs) == 11
+    assert rule_ids == [rule.rule_id for rule in leaderboard.LEADERBOARD_RULES]
+
+
+def test_resolve_fixed_cutoff_prefers_saved_cutoff():
+    selected_val = pd.DataFrame({"rich_entry_score": [0.5, 0.4]})
+    selected_val.attrs["score_cutoff_on_val_select"] = 0.4
+
+    result = runner.resolve_fixed_cutoff("rank01", {"rank01": -0.0267}, selected_val)
+
+    assert result == -0.0267
+
+
+def test_verify_fixed_output_contract_rejects_wrong_spread():
+    rows = pd.DataFrame(
+        {
+            "rule_id": ["rank01_time_only_linear_target_entry_ev_regression_top30"],
+            "original_rank": [1],
+            "profile_id": ["time_only"],
+            "model_id": ["linear"],
+            "target_id": ["target_entry_ev_regression"],
+            "filter_id": ["top30"],
+            "stop_policy_id": ["S2_fractal0_buffer_0_5_entry_floor_2"],
+            "entry_id": ["E3_open_pullback_1_0atr"],
+            "mask_id": ["M0_no_mask"],
+            "exit_id": ["X2_ml_opposite_any_p0_50"],
+            "entry_filter_score_col": ["rich_entry_score"],
+            "score_cutoff_on_val_select": [-0.026718184259660646],
+            "rich_entry_seed": [42],
+            "timezone_shift_hours": [0],
+            "spread": [0.2],
+            "locked_test": ["not_opened"],
+            "fixed_cutoff_source": ["tmp_rules.csv"],
+        }
+    )
+
+    with pytest.raises(ValueError, match="spread"):
+        runner.verify_fixed_output_contract(
+            rows,
+            expected_spread=0.4,
+            expected_seed=42,
+            timezone_shift_hours=0,
+            fixed_cutoff_source="tmp_rules.csv",
+        )
+
+
+def test_normalized_time_features_shift_without_mutating_input_times():
+    entries = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-04 22:00:00"]),
+            "side": ["BUY"],
+            "ATR": [10.0],
+            "planned_entry_bid_equivalent": [100.0],
+            "planned_protective_stop_price": [99.0],
+            "planned_r_value": [1.0],
+            "entry_bid_equivalent": [100.0],
+            "fractal0_price": [99.5],
+        }
+    )
+
+    base_frame, _ = runner.build_normalized_rich_feature_frame(entries, pd.DataFrame(), "time_only", timezone_shift_hours=0)
+    shifted_frame, _ = runner.build_normalized_rich_feature_frame(entries, pd.DataFrame(), "time_only", timezone_shift_hours=4)
+
+    assert float(base_frame["session_hour_unit"].iloc[0]) == 22.0 / 23.0
+    assert float(shifted_frame["session_hour_unit"].iloc[0]) == 2.0 / 23.0
+    assert entries["time"].iloc[0] == pd.Timestamp("2021-01-04 22:00:00")
+
+
+def test_spread_override_is_consistent_in_fixed_rerun_smoke(tmp_path):
+    prefix = tmp_path / "fixed_spread_smoke"
+    args = argparse.Namespace(
+        threads=1,
+        no_resume=True,
+        output_prefix=str(prefix),
+        execution_ohlc_path="MT/MQL4/Files/XAUUSD_M5_OHLC.csv",
+        stop_policy_id="",
+        stop_grid_artifact="ML/reports/fractal0_entry_exit_grid_stop_policy.json",
+        permutation_repeats=0,
+        smoke_limit_filters=1,
+        smoke_first_rule_only=True,
+        rich_entry_quality=True,
+        include_diagnostic_models=True,
+        normalized_rich_features=True,
+        rich_entry_seed=42,
+        fixed_leaderboard_rules_only=True,
+        fixed_cutoffs_csv="ML/reports/leaderboard_closure_audit_rules.csv",
+        spread=0.4,
+        timezone_shift_hours=0,
+    )
+
+    runner.run_rich_entry_quality(args)
+
+    summary = pd.read_csv(prefix.with_name(prefix.name + "_summary.csv"), sep=";")
+    trades = pd.read_csv(prefix.with_name(prefix.name + "_trades.csv"), sep=";")
+    assert set(summary["spread"].dropna().astype(float)) == {0.4}
+    assert set(trades["spread"].dropna().astype(float)) == {0.4}
 
 
 def test_closed_h1_excludes_exact_open_time():

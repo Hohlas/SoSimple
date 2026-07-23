@@ -2,37 +2,41 @@
 
 ## Current Completed Stage
 
-- report: `docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md`
-- script: `ML/baseline/audit_leaderboard_robustness.py`
-- artifacts: `ML/reports/leaderboard_robustness_audit*`
+- report: `docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md`
+- script: `ML/baseline/fractal0_fixed11_internal_closure_rerun.py`
+- artifacts: `ML/reports/fractal0_fixed11_internal_closure_rerun*`
 
 ## Decision
 
-`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`.
+`FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY`.
 
 Verdict: `research_only`.
 locked_test: `not_opened`.
+provider_drift_status: `NOT_IN_SCOPE`.
+transfer_status: `NOT_IN_SCOPE`.
 
 ## Key Result
 
-The audit checked 11 fixed normalized rich-entry leaderboard rows without new
-search and without opening `locked_test`. All 11 rows remain
-`RULE_ROBUSTNESS_INCOMPLETE`: 7 are `time_only`, 4 are `movement_plus_time`.
-No standalone non-time/fractal additive evidence was established.
+The producer-level rerun checked the exact 11 fixed normalized leaderboard
+rule families with `--threads 24`, saved cutoffs and no new winner selection.
 
-Main blockers:
+Computed:
 
-- `stress_costs_status=NOT_COMPUTABLE_FROM_SAVED_ARTIFACTS`
-- `timezone_shift_status=NOT_RUN`
-- `calendar_permutation_importance_status=NOT_RUN`
-- `sequential_position_constraint_status=NOT_RUN`
-- `multi_seed_status=NOT_RUN`
-- `provider_drift_status=NOT_RUN`
-- `transfer_status=NOT_RUN`
+- `stress_cost_status=COMPUTED` with `33` rows, `12` risk flags.
+- `timezone_rescore_status=COMPUTED` with `55` rows, `0` risk flags.
+- `calendar_permutation_status=COMPUTED` with `11` rows, `4` risk flags.
+- `calendar_no_ml_baseline_status=COMPUTED` with `11` rows, `11` risk flags.
+- `multiseed_status=COMPUTED` with `55` rows; aggregate has `11` rows and `0` risk flags.
+- classification: `11/11 INTERNAL_CLOSURE_RISK_FLAGGED`.
+
+Main interpretation: rich/fractal entry-quality remains time-heavy
+`research_only`; calendar baseline dominance and stress-cost fragility block
+any provider/transfer/locked-test discussion.
 
 ## Next Step
 
-`Regime filter reformulation`.
+`Regime filter reformulation` remains the only active track.
 
-First write a bounded stress-cost/time-calendar/sequential-position robustness
-closure plan before any new shortlist, freeze or `locked_test` discussion.
+Next allowed action: close rich/fractal entry-quality branch as time-heavy
+research-only, then write a narrower regime-filter reformulation plan. Do not
+open `locked_test`.

@@ -8,6 +8,12 @@
 - Обновлён `wiki/index.md`: охват fractal-stop research расширен до 56 report updates.
 - Зафиксировано: `LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`; `scale_contract=DIAGNOSTIC_ONLY` из-за accepted normalized audit warnings; `locked_test=not_opened`; следующий шаг — bounded stress-cost/time-calendar/sequential-position closure внутри `Regime filter reformulation`.
 
+## [2026-07-23] ingest | Leaderboard closure audit
+- Добавлен охват `docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: closure computed time-calendar и sequential-position diagnostics, но stress-cost/timezone/multi-seed требуют отдельных bounded rerun-планов.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 57 report updates.
+- Зафиксировано: `LEADERBOARD_CLOSURE_INCOMPLETE_RESEARCH_ONLY`; `locked_test=not_opened`; `provider_drift_status=NOT_IN_SCOPE`; `transfer_status=NOT_IN_SCOPE`.
+
 ## [2026-07-23] ingest | Time-only robustness audit
 - Добавлен охват `docs/reports/2026-07-23-time-only-robustness-audit.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: normalized `time_only` winner прошёл yearly/side checks, но итоговое решение `REGIME_REFORMULATION_REQUIRED`.
@@ -867,3 +873,8 @@
 - Updated `ML/baseline/benchmark_fractal0_entry_exit_grid.py`: E3 entry rows now include planned limit/stop/R fields so the entry-quality feature contract is pre-order rather than post-fill.
 - Recomputed `ML/reports/fractal0_entry_quality_filter*`: corrected winner is `entry_quality_top10`; it passes `val_select` selection diagnostics but fails `val_eval` versus no-mask (`BS_p05=0.9713` vs `2.2865`), lifecycle `research_hint`.
 - Updated report, handoff, changelog and wiki synthesis to reject the selected entry-quality rule as a frozen candidate.
+### 2026-07-23: Ingest fixed11 internal closure rerun
+- Added `docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md`.
+- Added `ML/baseline/fractal0_fixed11_internal_closure_rerun.py` and module docs.
+- Added `ML/reports/fractal0_fixed11_internal_closure_rerun*`: stress-cost, timezone rescore, calendar permutation, no-ML calendar baseline, multi-seed and classification artifacts.
+- Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: fixed11 closure is computed but risk-flagged (`11/11 INTERNAL_CLOSURE_RISK_FLAGGED`), `locked_test=not_opened`, next step is closing rich/fractal entry-quality as time-heavy research-only and writing a narrower regime-filter reformulation plan.

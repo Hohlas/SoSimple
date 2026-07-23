@@ -179,6 +179,23 @@ audits the fixed `time_only / linear / target_entry_ev_regression / top30`
 winner from saved normalized artifacts. It does not retrain, does not select a
 new rule and does not open `locked_test`.
 
+## Fixed-11 Internal Closure Support
+
+Для `ML/baseline/fractal0_fixed11_internal_closure_rerun.py` rich-runner
+поддерживает fixed rerun режим:
+
+- `--rich-entry-seed`
+- `--fixed-leaderboard-rules-only`
+- `--fixed-cutoffs-csv`
+- `--spread`
+- `--timezone-shift-hours`
+- `--smoke-first-rule-only`
+
+В этом режиме job list берётся из `audit_leaderboard_robustness.LEADERBOARD_RULES`,
+cutoff берётся из saved `score_cutoff_on_val_select`, а `spread` и timezone
+shift записываются в summary/trades/scores metadata. Это служебный режим для
+bounded closure diagnostics, не новый search.
+
 ## Leaderboard Robustness Audit
 
 `ML/baseline/audit_leaderboard_robustness.py` checks the 11 fixed audit input rows from
