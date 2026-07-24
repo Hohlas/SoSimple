@@ -63,6 +63,239 @@ Verification:
 ./.venv/bin/python -m pytest tests/test_fractal0_entry_exit_grid.py tests/test_fractal0_fixed11_rich_entry_locked_test.py -q
 ```
 
+## Execution Log / Method
+
+Этот раздел фиксирует полный ход пересчёта, чтобы результат можно было независимо воспроизвести и проверить.
+
+### 1. Выбор источников
+
+Использованы только заранее зафиксированные источники:
+
+- `ML/reports/leaderboard_closure_audit_rules.csv` — список 11 правил, их `profile_id`, `model_id`, `target_id`, `filter_id` и сохранённые `score_cutoff_on_val_select`;
+- `ML/reports/fractal0_stop_grid_m5.json` — source artifact для execution contract;
+- `DATA/Nero_XAUUSD_test_labeled.csv` — новый `locked_test` split;
+- `DATA/XAUUSD_H1_OHLC.csv` — H1 OHLC для построения входов и признаков;
+- `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` — M5 OHLC только для восстановления порядка исполнения внутри H1-свечи.
+
+Файл `ML/reports/leaderboard_closure_audit_rules.csv` проверяется harness-ом на наличие обязательных колонок и ровно 11 строк. Execution contract загружается из `selected_winner` в `ML/reports/fractal0_stop_grid_m5.json`.
+
+### 2. Зафиксированный execution contract
+
+Для всех 11 правил использовался один и тот же торговый contract:
+
+- `stop_policy_id = S2_fractal0_buffer_0_5_entry_floor_2`;
+- `entry_id = E3_open_pullback_1_0atr`;
+- `mask_id = M0_no_mask`;
+- `exit_id = X2_ml_opposite_any_p0_50`;
+- `spread = 0.20`;
+- price convention inherited from source runner: H1 OHLC as bid, spread as full bid-ask spread.
+
+M5 не используется как источник признаков, target-ов, фильтров или выбора параметров. M5 применяется только после факта открытия сделки, чтобы уточнить, что произошло раньше внутри H1-свечи: SL/TP/exit event по правилам старого runner-а.
+
+### 3. Подготовка split-ов
+
+Harness вызывает `base.load_role_splits(config)` из `ML/baseline/benchmark_fractal0_entry_exit_grid.py` и получает стандартные project split-ы:
+
+- `train_core`;
+- `val_select`;
+- `val_eval`.
+
+Затем `locked_test` добавляется отдельной загрузкой из `DATA/Nero_XAUUSD_test_labeled.csv`:
+
+- CSV читается с `sep=";"`;
+- `time` парсится через `base.parse_project_time`;
+- `split` принудительно выставляется в `locked_test`;
+- `split_row_id` назначается как последовательный индекс строк.
+
+В расчёте итоговых метрик используются `train_core`, `val_select` и `locked_test`. `val_eval` не используется для нового выбора.
+
+### 4. Построение entry rows
+
+Для `train_core`, `val_select` и `locked_test` вызывается:
+
+```python
+base.build_entry_rows(rows, ohlc, entry_rule, active_spread, stop_policy)
+```
+
+Это строит planned entry rows по frozen entry/stop contract. В этом запуске получено:
+
+- `train_core`: `44159` rows, `21343` filled entries;
+- `val_select`: `4731` rows, `2294` filled entries;
+- `locked_test`: `9463` rows, `4763` filled entries.
+
+### 5. Movement score
+
+Для `time_only` правил `movement_score` не является входом модели.
+
+Для `movement_plus_time` правил нужен `movement_score`. Source freeze scores artifact не содержит `locked_test`, поэтому для `locked_test` score восстановлен через тот же frozen movement protocol:
+
+- movement scorer обучается на `train_core`;
+- target: `entry_movement_3`;
+- feature profile: `simple_combined`;
+- model family: `extra_trees_small`;
+- seeds берутся из `seeds_for_model("extra_trees_small")`;
+- итоговый score — медиана предсказаний по seed-ам;
+- scaler для movement scorer fit-ится только на train split внутри movement protocol.
+
+`locked_test` используется только для применения уже обученного movement scorer-а и получения `movement_score`.
+
+### 6. Разметка train labels для rich-entry моделей
+
+Для каждого split-а строятся simulated trades через:
+
+```python
+base._simulate_entries(entries, ohlc, run_base, active_spread, pd.DataFrame(), execution_ohlc)
+```
+
+Из этих сделок строятся rich-entry labels через:
+
+```python
+rich.build_rich_entry_labels(entries, simulated)
+```
+
+Для обучения rich-entry моделей используются только labels из `train_core`. Labels на `locked_test` не используются для обучения, выбора или cutoff.
+
+### 7. ML-exit слой
+
+ML-exit слой обучается один раз на `train_core`:
+
+```python
+base._train_ml_exit_layer(exit_cache, ohlc, threads, seeds=base.EXIT_MODEL_SEEDS, n_estimators=200)
+```
+
+Вход `exit_cache` содержит только `train_core` entries для frozen execution contract. Затем для `locked_test` строятся exit decision rows и scoring:
+
+```python
+base.build_exit_decision_rows(entry_cache["locked_test"], ohlc)
+base.score_exit_models(...)
+```
+
+`locked_test` не участвует в fit-е ML-exit моделей.
+
+### 8. Обучение 11 rich-entry моделей
+
+Для каждой строки из `leaderboard_closure_audit_rules.csv` выполняется отдельный frozen-rule run:
+
+1. Берутся `profile_id`, `model_id`, `target_id`, `filter_id`, `score_cutoff_on_val_select`.
+2. Для `train_core` строится normalized rich feature frame через `rich.build_normalized_rich_feature_frame`.
+3. Normalization schema и scaler fit-ятся только на `train_core`:
+
+```python
+schema = rich.build_normalized_feature_schema(profile_id, x_train)
+scaler = rich.fit_unit_scaler({"train_core": x_train}, schema)
+```
+
+4. `train_core` features масштабируются этим scaler-ом.
+5. Training target готовится из `train_core` labels:
+
+```python
+rich.prepare_rich_training_target(...)
+```
+
+6. Rich-entry model обучается на `train_core`:
+
+```python
+rich.train_rich_entry_model(..., seed=42)
+```
+
+7. Для `locked_test` строятся признаки тем же profile-id и масштабируются train-only scaler-ом.
+8. Модель выдаёт `rich_entry_score` для `locked_test`.
+
+### 9. Применение frozen cutoff
+
+Для каждой из 11 строк cutoff берётся из `score_cutoff_on_val_select` в `leaderboard_closure_audit_rules.csv`.
+
+На `locked_test` cutoff не пересчитывается. Фильтр применяется в eval mode:
+
+```python
+rich.apply_entry_filter(scored_locked, rich._rich_filter_rule(filter_spec), mode="eval", score_cutoff=cutoff)
+```
+
+Это ключевой anti-leakage шаг: `locked_test` score distribution не используется для выбора нового top-fraction threshold.
+
+### 10. Симуляция locked-test сделок
+
+Для отобранных locked-test entries каждой строки вызывается:
+
+```python
+rich._simulate_for_filter(selected_locked, ohlc, run, scored_decisions["locked_test"], execution_ohlc)
+```
+
+Здесь:
+
+- `ohlc` = H1 OHLC;
+- `execution_ohlc` = M5 OHLC;
+- `run` содержит frozen execution contract и fixed cutoff;
+- `scored_decisions["locked_test"]` — ML-exit scores, полученные моделью, обученной на `train_core`.
+
+### 11. Расчёт метрик и selection
+
+Для каждой строки считается summary через:
+
+```python
+rich._summary_for_filter(trades, run, "locked_test")
+```
+
+Она использует метрики из старого runner-а, включая:
+
+- `n_trades`;
+- `gross_profit`;
+- `gross_loss`;
+- `pf`;
+- `max_drawdown_r`;
+- `win_rate`;
+- `ambiguous_same_bar_rate`;
+- `bs_p05`;
+- `negative_years`;
+- `pf_without_best_year`;
+- `effective_profit_years`.
+
+Дополнительно сохраняются:
+
+- per-trade rows;
+- yearly metrics;
+- BUY/SELL side metrics;
+- selection table.
+
+Selection не выбирает нового winner-а. Она только помечает каждую заранее заданную строку по gates:
+
+- `PF >= 1.20`;
+- `BS p05 >= 1.00`;
+- `n_trades >= 100`.
+
+### 12. Записанные артефакты
+
+Harness записывает:
+
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`;
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv`;
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`;
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_yearly.csv`;
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_side.csv`;
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_selection.csv`.
+
+JSON содержит:
+
+- source paths;
+- SHA256 для source rules CSV, source M5 artifact, locked_test CSV, H1 OHLC, M5 OHLC;
+- execution contract;
+- split roles;
+- current search budget;
+- rule count;
+- kept candidates;
+- best PF / best BS p05;
+- links на CSV artifacts.
+
+### 13. Что не делалось
+
+- Не запускался full-grid на `locked_test`.
+- Не выбирался новый winner по `locked_test`.
+- Не пересчитывались `score_cutoff_on_val_select` по `locked_test`.
+- Не добавлялись новые profiles/models/targets/filters.
+- Не менялись `entry_id`, `stop_policy_id`, `mask_id`, `exit_id`, `spread`.
+- Не выполнялся MT4/tester parity.
+- Не выполнялся locked-test stress-spread disclosure.
+
 ## Artifacts
 
 - `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`
