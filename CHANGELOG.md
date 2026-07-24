@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-24] — Fixed-11 rich-entry locked test (candidate_check_required)
+- **report**: `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`
+- **topics**: `fractal0`, `fixed11`, `rich_entry_quality`, `locked_test`, `m5_execution_ordering`
+- **summary**: One-shot OOS evaluation of 11 frozen normalized rich-entry leaderboard rules on locked_test split using the M5 execution contract. All 11 rules pass PF/BS/sample-size gates; PF range `2.6747-3.3667`.
+- **artifacts**: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, `ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv`, `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`
+- **decision**: `candidate_check_required`; next required checks are independent audit, MT4/tester parity, stress-spread disclosure and model card.
+- **notes**: `kept_candidates=11`; BUY PF range `3.6196-5.1218`; SELL PF range `1.9485-3.0798`; movement_plus_time locked-test scores were restored via the frozen movement protocol because source scores did not include locked_test.
+
 ## [2026-07-23] — Fixed-11 internal closure rerun (research_only risk-flagged)
 - **report**: `docs/reports/2026-07-23-fractal0-fixed11-internal-closure-rerun.md`
 - **topics**: `fractal0`, `fixed11`, `stress_cost`, `timezone`, `calendar`, `multi_seed`

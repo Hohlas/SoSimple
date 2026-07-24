@@ -1,0 +1,57 @@
+{
+  "status": "completed",
+  "verdict": "candidate_check_required",
+  "decision": "FIXED11_RICH_ENTRY_LOCKED_TEST",
+  "source_runner": "ML/baseline/benchmark_fractal0_entry_quality_filter.py",
+  "source_rules_csv": "ML/reports/leaderboard_closure_audit_rules.csv",
+  "source_rules_csv_sha256": "d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c",
+  "source_artifact": "ML/reports/fractal0_stop_grid_m5.json",
+  "source_artifact_sha256": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6",
+  "locked_test_path": "DATA/Nero_XAUUSD_test_labeled.csv",
+  "locked_test_sha256": "5beb70f29ee27caa2b20a8cd80376879b64179d4ef0e5197a29357b58483f535",
+  "execution_ohlc_path": "MT/MQL4/Files/XAUUSD_M5_OHLC.csv",
+  "execution_ohlc_sha256": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+  "h1_ohlc_path": "DATA/XAUUSD_H1_OHLC.csv",
+  "h1_ohlc_sha256": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
+  "rule_count": 11,
+  "kept_candidates": 11,
+  "best_pf": 3.366672260628524,
+  "best_bs_p05": 2.923856656424035,
+  "execution_contract": {
+    "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+    "entry_id": "E3_open_pullback_1_0atr",
+    "mask_id": "M0_no_mask",
+    "exit_id": "X2_ml_opposite_any_p0_50",
+    "spread": 0.2
+  },
+  "split_roles": {
+    "train_core": "model_training_only",
+    "locked_test": "one_shot_evaluation_only"
+  },
+  "current_search_budget": {
+    "fixed_rules": 11,
+    "new_thresholds": 0,
+    "new_profiles": 0,
+    "new_models": 0,
+    "new_filters": 0
+  },
+  "movement_score_for_locked_test": "retrained_from_frozen_movement_protocol_for_movement_plus_time_profiles",
+  "ml_target_positive_rate_by_split": {
+    "train_core": {
+      "S2_fractal0_buffer_0_5_entry_floor_2": {
+        "target_exit_opposite_any": 0.4746872510893501,
+        "target_exit_opposite_strong": 0.3211923503412516,
+        "target_exit_hold_close": 0.3991257867528776,
+        "target_exit_movement_exhaustion": 0.4110246919364663
+      }
+    }
+  },
+  "artifacts": {
+    "summary_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv",
+    "trades_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
+    "yearly_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_yearly.csv",
+    "side_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_side.csv",
+    "selection_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_selection.csv"
+  },
+  "elapsed_seconds": 217.828
+}

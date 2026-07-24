@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-23 19:05 UTC · git `d866212`
+> Auto-generated 2026-07-24 12:22 UTC · git `3788305`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3243 files  ·  **Commit**: `d866212`  ·  **Generated**: 2026-07-23 19:05 UTC
+**Tracked**: 3227 files  ·  **Commit**: `3788305`  ·  **Generated**: 2026-07-24 12:22 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-23 | 154KB | `ad3df6e8` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-24 | 154KB | `4474b168` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-23 | 1KB | `89bb46b4` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-24 | 1KB | `67de0ee2` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-23 | 58KB | `3f5b4354` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -155,7 +155,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-23 | 18KB | `a12c38ea` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-24 | 25KB | `1539aea8` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -268,6 +268,7 @@
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-quality-normalized-rerun.md) |  | 2026-07-22 | 81KB | `e2847072` |
 | [docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md](docs/superpowers/plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md) |  | 2026-07-22 | 14KB | `07746cec` |
 | [docs/superpowers/plans/2026-07-23-fractal0-fixed11-internal-closure-rerun.md](docs/superpowers/plans/2026-07-23-fractal0-fixed11-internal-closure-rerun.md) |  | 2026-07-23 | 61KB | `c5276367` |
+| [docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md](docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md) |  | 2026-07-24 | 32KB | `721c5f02` |
 | [docs/superpowers/plans/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md](docs/superpowers/plans/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md) |  | 2026-07-23 | 54KB | `fc6a5e9a` |
 | [docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 80KB | `32dd4131` |
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
@@ -440,6 +441,7 @@
 | [docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md](docs/reports/2026-07-23-fractal0-leaderboard-cost-calendar-sequential-multiseed-closure.md) |  | 2026-07-23 | 10KB | `bccc7161` |
 | [docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 10KB | `ec2503bf` |
 | [docs/reports/2026-07-23-time-only-robustness-audit.md](docs/reports/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 9KB | `b90f6a05` |
+| [docs/reports/2026-07-24-fractal0-fixed11-locked-test.md](docs/reports/2026-07-24-fractal0-fixed11-locked-test.md) |  | 2026-07-24 | 5KB | `d4f30e89` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -802,30 +804,6 @@
 | [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal0_entry_quality_filter.json](ML/reports/fractal0_entry_quality_filter.json) |  |  | 2026-07-21 | 29KB | `1968cec0` |
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank01_rank01_time_only_linear_target_entry_ev_regression_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank01_rank01_time_only_linear_target_entry_ev_regression_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `658c6719` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank02_rank02_time_only_linear_target_entry_ev_regression_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank02_rank02_time_only_linear_target_entry_ev_regression_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `0e2a8178` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank03_rank03_time_only_linear_target_entry_ev_regression_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank03_rank03_time_only_linear_target_entry_ev_regression_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `14c6614e` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank04_rank04_time_only_linear_target_entry_good_0_5r_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank04_rank04_time_only_linear_target_entry_good_0_5r_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `ad386a56` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank05_rank05_time_only_linear_target_entry_avoid_sl_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank05_rank05_time_only_linear_target_entry_avoid_sl_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `afa9b0fd` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank06_rank06_time_only_linear_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank06_rank06_time_only_linear_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `c3ca29b9` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank07_rank07_movement_plus_time_linear_target_entry_good_0_5r_top40_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank07_rank07_movement_plus_time_linear_target_entry_good_0_5r_top40_scaler.json) |  |  | 2026-07-23 | 1KB | `70e64d98` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank08_rank08_movement_plus_time_linear_target_entry_good_0_5r_top30_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank08_rank08_movement_plus_time_linear_target_entry_good_0_5r_top30_scaler.json) |  |  | 2026-07-23 | 1KB | `4d649e38` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank09_rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank09_rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `f774f3ab` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank10_rank10_movement_plus_time_linear_target_entry_ev_regression_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank10_rank10_movement_plus_time_linear_target_entry_ev_regression_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `13aefa88` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank11_rank11_movement_plus_time_linear_target_entry_good_0_5r_top50_scaler.json](ML/reports/fractal0_fixed11_internal_closure_rerun_canonical_feature_state/rank11_rank11_movement_plus_time_linear_target_entry_good_0_5r_top50_scaler.json) |  |  | 2026-07-23 | 1KB | `2d533472` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed41_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed43_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed44_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_multiseed_seed45_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p4_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_stress_cost_seed42_spread0p8_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+0_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+4_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz+8_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-4_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
-| [ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8_normalization_config.json](ML/reports/fractal0_fixed11_internal_closure_rerun_timezone_calendar_seed42_spread0p2_tz-8_normalization_config.json) |  |  | 2026-07-23 | 3KB | `f7cfe2c2` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
@@ -1747,8 +1725,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-23 | 5KB | `cd2e4621` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-23 | 78KB | `3c52d9d3` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-24 | 5KB | `ed8febce` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-24 | 78KB | `76149b71` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1759,7 +1737,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-23 | 133KB | `3769ebb7` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-24 | 133KB | `29e60e3f` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -3313,4 +3291,3 @@
 | [opencode.json](opencode.json) |  | 2026-06-20 | 184B | `45617caa` |
 | [package-lock.json](package-lock.json) |  | 2026-07-20 | 10KB | `f5f1777e` |
 | [package.json](package.json) |  | 2026-07-20 | 60B | `50d532ca` |
-

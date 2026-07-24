@@ -878,3 +878,5 @@
 - Added `ML/baseline/fractal0_fixed11_internal_closure_rerun.py` and module docs.
 - Added `ML/reports/fractal0_fixed11_internal_closure_rerun*`: stress-cost, timezone rescore, calendar permutation, no-ML calendar baseline, multi-seed and classification artifacts.
 - Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: fixed11 closure is computed but risk-flagged (`11/11 INTERNAL_CLOSURE_RISK_FLAGGED`), `locked_test=not_opened`, next step is closing rich/fractal entry-quality as time-heavy research-only and writing a narrower regime-filter reformulation plan.
+
+- 2026-07-24: Ingested 2026-07-24-fractal0-fixed11-locked-test.md into fractal-stop-research.md (locked_test FAIL, all 11 rules PF<1.0, 0 kept candidates)
