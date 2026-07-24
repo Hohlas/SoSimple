@@ -406,7 +406,7 @@ Done!
 ## Integration
 
 **Required workflow skills:**
-- **git branch** — работай на текущей feature-ветке (worktree запрещён AGENTS.md); новую ветку создавай от актуальной spec/plan-ветки
+- **git branch** — работай на текущей feature-ветке; новую ветку создавай от актуальной spec/plan-ветки
 - **superpowers:writing-plans** - Creates the plan this skill executes
 - **superpowers:requesting-code-review** - Code review template for the final whole-branch review
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks

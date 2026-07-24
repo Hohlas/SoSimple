@@ -65,6 +65,6 @@ After all tasks complete and verified:
 ## Integration
 
 **Required workflow skills:**
-- **git branch** — текущая feature-ветка (worktree запрещён AGENTS.md)
+- **git branch** — текущая feature-ветка
 - **superpowers:writing-plans** - Creates the plan this skill executes
 - **superpowers:finishing-a-development-branch** - Complete development after all tasks

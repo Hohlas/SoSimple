@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** Работай на текущей feature-ветке (worktree запрещён AGENTS.md). Brainstorming skill создаёт spec, не ветку.
+**Context:** Работай на текущей feature-ветке. Brainstorming skill создаёт spec, не ветку.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
