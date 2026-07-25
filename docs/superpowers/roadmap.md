@@ -15,46 +15,32 @@
 
 ## Active Research Queue
 
-### ACTIVE: `Regime filter reformulation`
-
-Основание: `time_only` robustness audit завершился с решением
-`REGIME_REFORMULATION_REQUIRED`; leaderboard robustness audit для 11 fixed
-normalized rows дал
-`LEADERBOARD_ROBUSTNESS_INCOMPLETE_NEEDS_COST_TIME_CHECKS`; follow-up closure
-дал `LEADERBOARD_CLOSURE_INCOMPLETE_RESEARCH_ONLY`; producer-level fixed11
-rerun дал `FIXED11_INTERNAL_CLOSURE_RISK_FLAGS_RESEARCH_ONLY`.
-
-Цель: переосмыслить `time_only` winner как режимный фильтр без открытия
-`locked_test` и без переноса validation-находки в candidate. Closure уже
-пересчитал producer-level stress-cost, frozen timezone/calendar diagnostics и
-bounded multi-seed для ровно 11 fixed rule families. Все diagnostics computed,
-но `11/11` classification rows risk-flagged: stress-cost и calendar baseline
-dominance блокируют provider/transfer/locked-test discussion. Следующий шаг:
-закрыть rich/fractal entry-quality ветку как time-heavy research-only и
-написать более узкий regime-filter reformulation plan.
-
-### BLOCKED: shortlist locked probe
+### ACTIVE: `Fixed-11 candidate audit`
 
 План:
 
-- [`2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md`](plans/2026-07-22-fractal0-rich-entry-shortlist-replication-probe.md)
+- [`2026-07-25-fractal0-fixed11-candidate-audit.md`](plans/2026-07-25-fractal0-fixed11-candidate-audit.md)
 
-Статус: `SUPERSEDED_BY_NORMALIZED_RERUN_RESULT`.
+Основание: `locked_test` был открыт 2026-07-24 для ровно 11 frozen normalized
+rich-entry leaderboard rules по M5 execution contract. Все 11 правил прошли
+PF/BS/sample-size gates на `locked_test`: PF range `2.6747-3.3667`, best rule
+`rank01_time_only_linear_target_entry_ev_regression_top30`, verdict
+`candidate_check_required`.
 
-Причина блокировки:
+Цель: независимо проверить `ML/reports/fractal0_fixed11_rich_entry_locked_test*`
+артефакты до повышения статуса. Аудит должен подтвердить contract/freeze,
+split isolation, отсутствие выбора по `locked_test`, корректность CSV/JSON,
+side/yearly gates, M5 execution-order disclosure и слабые места
+`movement_plus_time` score restoration.
 
-- план открывает `locked_test`;
-- shortlist построен на старом rich-entry feature contract;
-- normalized rerun показал, что top-11 practical leaderboard теперь занят
-  только `time_only` и `movement_plus_time`;
-- старые rich/fractal shortlist survivors больше нельзя переносить в
-  locked probe без нового frozen protocol.
+Следующий шаг после аудита:
 
-Условие разблокировки:
+- если блокеров нет: MT4/tester parity, locked-test stress-spread disclosure и
+  model card для оставшихся candidate-правил;
+- если есть блокеры: downgrade до `research_only` или повторный план только для
+  исправления проверяемой ошибки без нового выбора по `locked_test`.
 
-- новый frozen protocol явно выбран после `time_only` robustness audit;
-- shortlist задан заново и не наследует старую таблицу автоматически;
-- `locked_test` остаётся закрытым до отдельного решения.
+
 
 ### PARKED: остальные направления
 
@@ -63,6 +49,7 @@ dominance блокируют provider/transfer/locked-test discussion. След�
 - `time_only` one-rule replication/probe;
 - rich/fractal salvage probe;
 - закрытие rich/fractal entry-quality ветки;
+- regime filter reformulation;
 - frozen probe для механики входа от `fractal0_price`;
 - H6 direction inside frozen mask;
 - multi-asset / multi-timeframe validation;
@@ -152,7 +139,7 @@ score_cutoff_on_val_select=-0.026718184259660646
 - если `time_only` robustness audit не показывает явной концентрации на одном
   узком участке.
 
-Статус: `ACTIVE`.
+Статус: `PARKED_AFTER_LOCKED_TEST_CANDIDATE_CHECK`.
 
 ### 4. Close rich/fractal entry-quality branch
 
