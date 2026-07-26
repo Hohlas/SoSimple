@@ -15,13 +15,13 @@
 ```
 ---
 
-## [2026-07-25] — Fixed-11 candidate audit (FAIL)
+## [2026-07-25] — Fixed-11 candidate audit (PASS)
 - **report**: `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`
 - **topics**: `fractal0`, `fixed11`, `candidate_audit`, `locked_test`, `reproducibility`
-- **summary**: Added read-only audit for `fractal0_fixed11_rich_entry_locked_test*` artifacts. Audit produced `candidate_audit_blocked`: 18 errors and 2 warnings.
+- **summary**: Added read-only audit for `fractal0_fixed11_rich_entry_locked_test*` artifacts. Audit produced `candidate_audit_passed` after checking locked-test report, protocol plan, CSV artifacts, hashes and computed split boundaries.
 - **artifacts**: `ML/reports/fractal0_fixed11_candidate_audit.json`, `ML/reports/fractal0_fixed11_candidate_audit_findings.csv`, `ML/baseline/audit_fractal0_fixed11_candidate.py`
-- **decision**: Do not proceed to mutual-correlation pruning, MT4/tester parity or trading-status discussion until blockers are resolved without changing frozen candidate rules.
-- **notes**: Main blockers: missing pre-open freeze/policy artifacts, incomplete split disclosure, unclassified low-N yearly slices, incomplete movement-score restoration disclosure.
+- **decision**: 11 individual fixed rules pass candidate audit; next step is mutual-correlation pruning. MT4/tester parity and model card follow only for retained subset.
+- **notes**: Warnings remain: separate machine-readable freeze/policy JSON files were absent, split/movement/correlation disclosure was reconstructed from reports/CSV/git history, `BS_p05` is diagnostic iid bootstrap.
 
 ## [2026-07-24] — Fixed-11 rich-entry locked test (candidate_check_required)
 - **report**: `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`

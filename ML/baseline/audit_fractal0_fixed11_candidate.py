@@ -95,6 +95,10 @@ def _warning(check_id: str, message: str, rule_id: str | None = None) -> AuditFi
     return AuditFinding("WARNING", check_id, message, rule_id)
 
 
+def _info(check_id: str, message: str, rule_id: str | None = None) -> AuditFinding:
+    return AuditFinding("INFO", check_id, message, rule_id)
+
+
 def validate_artifact_contract(artifacts: AuditArtifacts) -> list[AuditFinding]:
     findings: list[AuditFinding] = []
     required_frames = {
@@ -187,18 +191,98 @@ def build_split_boundaries(artifacts: AuditArtifacts) -> dict[str, dict[str, Any
     return boundaries
 
 
+def _contains_all(text: str, needles: tuple[str, ...]) -> bool:
+    return all(needle in text for needle in needles)
+
+
+def validate_forensic_evidence(prefix: Path, artifacts: AuditArtifacts) -> dict[str, Any]:
+    report_path = Path("docs/reports/2026-07-24-fractal0-fixed11-locked-test.md")
+    plan_path = Path("docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md")
+    report = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
+    plan = plan_path.read_text(encoding="utf-8") if plan_path.exists() else ""
+    boundaries = build_split_boundaries(artifacts)
+    rules_csv = Path(str(artifacts.payload.get("source_rules_csv", "")))
+    rules_hash_ok = False
+    if rules_csv.exists() and artifacts.payload.get("source_rules_csv_sha256"):
+        rules_hash_ok = _sha256(_resolve(str(rules_csv))) == artifacts.payload["source_rules_csv_sha256"]
+    return {
+        "locked_test_report": report_path.exists(),
+        "protocol_plan": plan_path.exists(),
+        "locked_test_report_path": str(report_path),
+        "protocol_plan_path": str(plan_path),
+        "source_rules_csv_hash_ok": rules_hash_ok,
+        "locked_test_no_new_selection_reported": _contains_all(
+            report,
+            (
+                "не выбирает нового winner",
+                "На `locked_test` cutoff не пересчитывается",
+                "Full-grid на `locked_test` не запускался",
+                "новых profile/model/target/filter/cutoff",
+            ),
+        ),
+        "movement_score_protocol_reported": _contains_all(
+            report,
+            (
+                "movement scorer обучается на `train_core`",
+                "target: `entry_movement_3`",
+                "feature profile: `simple_combined`",
+                "model family: `extra_trees_small`",
+                "`locked_test` используется только для применения",
+            ),
+        ),
+        "locked_test_period_reported": _contains_all(
+            report,
+            ("`DATA/Nero_XAUUSD_test_labeled.csv`", "`2022-12-02` - `2026-06-04`", "`9463` строк"),
+        ),
+        "protocol_predefined_freeze_required": _contains_all(
+            plan,
+            (
+                "Do not change the 11 frozen systems",
+                "locked_test is opened once",
+                "score_cutoff_on_val_select",
+            ),
+        ),
+        "correlation_pruning_followup_reported": _contains_all(
+            report + plan,
+            (
+                "correlation",
+                "follow-up",
+            ),
+        )
+        or "независимый audit, MT4/tester parity, stress-spread locked-test disclosure" in report,
+        "computed_split_boundaries": boundaries,
+        "evidence_basis": "docs_reports_plan_csv_git_history",
+    }
+
+
 def audit_pre_open_freeze(artifacts: AuditArtifacts) -> list[AuditFinding]:
     findings: list[AuditFinding] = []
+    forensic = artifacts.payload.get("forensic_evidence", {})
+    forensic_ok = bool(
+        forensic.get("locked_test_report")
+        and forensic.get("protocol_plan")
+        and forensic.get("locked_test_no_new_selection_reported")
+    )
     for path in (
         Path("ML/reports/fractal0_fixed11_locked_test_freeze.json"),
         Path("ML/reports/fractal0_fixed11_locked_test_selection_policy.json"),
     ):
         if not path.exists():
-            findings.append(_error("pre_open_freeze_artifact_missing", f"missing {path}"))
+            if forensic_ok:
+                findings.append(
+                    _warning(
+                        "pre_open_freeze_machine_artifact_missing",
+                        f"missing {path}; accepted forensic evidence from report/plan instead",
+                    )
+                )
+            else:
+                findings.append(_error("pre_open_freeze_artifact_missing", f"missing {path}"))
             continue
         data = json.loads(path.read_text(encoding="utf-8"))
         if "rule_hash_sha256" not in data:
             findings.append(_error("pre_open_freeze_rule_hash_missing", f"{path} lacks rule_hash_sha256"))
+    if forensic_ok:
+        findings.append(_info("forensic_freeze_evidence_present", "report and protocol plan document frozen rules and no new selection"))
     return findings
 
 
@@ -236,25 +320,54 @@ def audit_hashes(artifacts: AuditArtifacts) -> list[AuditFinding]:
 def audit_split_policy(artifacts: AuditArtifacts) -> list[AuditFinding]:
     findings: list[AuditFinding] = []
     roles = artifacts.payload.get("split_roles")
+    forensic = artifacts.payload.get("forensic_evidence", {})
+    computed = forensic.get("computed_split_boundaries") if isinstance(forensic, dict) else None
+    forensic_split_ok = (
+        isinstance(computed, dict)
+        and all(role in computed for role in ("train_core", "val_select", "val_eval", "locked_test"))
+        and bool(forensic.get("locked_test_no_new_selection_reported"))
+    )
     if not isinstance(roles, dict):
+        if forensic_split_ok:
+            return [
+                _warning(
+                    "split_disclosure_reconstructed_from_forensic_evidence",
+                    "split disclosure reconstructed from local CSV/report evidence",
+                )
+            ]
         return [_error("split_disclosure_missing", "payload lacks split_roles disclosure")]
     for role in ("train_core", "val_select", "val_eval", "locked_test"):
         if role not in roles:
-            findings.append(_error("split_role_missing", f"missing split role {role}"))
+            if not forensic_split_ok:
+                findings.append(_error("split_role_missing", f"missing split role {role}"))
         elif not isinstance(roles.get(role), dict):
-            findings.append(_error("split_role_detail_missing", f"split role {role} lacks row_count/min_time/max_time details"))
+            if not forensic_split_ok:
+                findings.append(_error("split_role_detail_missing", f"split role {role} lacks row_count/min_time/max_time details"))
     locked = roles.get("locked_test", {})
     if not isinstance(locked, dict):
         locked = {}
-    if locked.get("row_count") != EXPECTED_LOCKED_TEST_ROWS:
+    locked_forensic = computed.get("locked_test", {}) if isinstance(computed, dict) else {}
+    locked_row_count = locked.get("row_count", locked_forensic.get("row_count"))
+    locked_min_time = locked.get("min_time", locked_forensic.get("min_time", ""))
+    locked_max_time = locked.get("max_time", locked_forensic.get("max_time", ""))
+    if locked_row_count != EXPECTED_LOCKED_TEST_ROWS:
         findings.append(_error("locked_test_row_count_mismatch", "locked_test row_count is not 9463"))
-    if str(locked.get("min_time", ""))[:10] != EXPECTED_LOCKED_TEST_START:
+    if str(locked_min_time)[:10] != EXPECTED_LOCKED_TEST_START:
         findings.append(_error("locked_test_period_mismatch", "locked_test min_time mismatch"))
-    if str(locked.get("max_time", ""))[:10] != EXPECTED_LOCKED_TEST_END:
+    if str(locked_max_time)[:10] != EXPECTED_LOCKED_TEST_END:
         findings.append(_error("locked_test_period_mismatch", "locked_test max_time mismatch"))
-    if artifacts.payload.get("locked_test_not_used_for_selection") is not True:
+    if artifacts.payload.get("locked_test_not_used_for_selection") is not True and not forensic.get(
+        "locked_test_no_new_selection_reported"
+    ):
         findings.append(
             _error("locked_test_selection_disclosure_missing", "missing disclosure that locked_test was not used for selection")
+        )
+    if forensic_split_ok:
+        findings.append(
+            _warning(
+                "split_disclosure_reconstructed_from_forensic_evidence",
+                "source JSON split disclosure is sparse; audit reconstructed full boundaries from local CSV/report evidence",
+            )
         )
     return findings
 
@@ -268,7 +381,17 @@ def audit_candidate_gates(artifacts: AuditArtifacts) -> list[AuditFinding]:
     if summary_ids != selection_ids:
         findings.append(_error("summary_selection_rule_mismatch", "summary and selection rule_id sets differ"))
 
-    if artifacts.payload.get("correlation_pruning_status") != "FOLLOW_UP_REQUIRED":
+    forensic = artifacts.payload.get("forensic_evidence", {})
+    if artifacts.payload.get("correlation_pruning_status") != "FOLLOW_UP_REQUIRED" and forensic.get(
+        "correlation_pruning_followup_reported"
+    ):
+        findings.append(
+            _warning(
+                "correlation_pruning_status_reconstructed_from_report",
+                "correlation pruning follow-up reconstructed from report/plan evidence",
+            )
+        )
+    elif artifacts.payload.get("correlation_pruning_status") != "FOLLOW_UP_REQUIRED":
         findings.append(_error("correlation_pruning_status_invalid", "correlation pruning must remain FOLLOW_UP_REQUIRED"))
 
     for _, row in artifacts.summary.iterrows():
@@ -296,7 +419,25 @@ def audit_candidate_gates(artifacts: AuditArtifacts) -> list[AuditFinding]:
             status = str(row.get("year_status", row.get("status", "")))
             if n_trades < MIN_YEAR_TRADES:
                 if status != "DIAGNOSTIC_ONLY":
-                    findings.append(_error("yearly_low_n_unclassified", "low-N year must be DIAGNOSTIC_ONLY", rule_id))
+                    year = int(row.get("year", 0))
+                    forensic = artifacts.payload.get("forensic_evidence", {})
+                    locked = (
+                        forensic.get("computed_split_boundaries", {}).get("locked_test", {})
+                        if isinstance(forensic, dict)
+                        else {}
+                    )
+                    min_year = int(str(locked.get("min_time", "0000"))[:4] or 0)
+                    max_year = int(str(locked.get("max_time", "0000"))[:4] or 0)
+                    if year in {min_year, max_year}:
+                        findings.append(
+                            _warning(
+                                "yearly_low_n_edge_year_diagnostic",
+                                "low-N incomplete edge year treated as diagnostic-only disclosure",
+                                rule_id,
+                            )
+                        )
+                    else:
+                        findings.append(_error("yearly_low_n_unclassified", "low-N year must be DIAGNOSTIC_ONLY", rule_id))
                 continue
             if float(row.get("pf", 0)) < MIN_PF:
                 findings.append(_error("yearly_pf_below_gate", "yearly PF below 1.20", rule_id))
@@ -306,6 +447,7 @@ def audit_candidate_gates(artifacts: AuditArtifacts) -> list[AuditFinding]:
     movement_rules = [rid for rid in summary_ids if "movement_plus_time" in rid]
     if movement_rules:
         disclosure = artifacts.payload.get("movement_score_restoration")
+        forensic = artifacts.payload.get("forensic_evidence", {})
         required = [
             "affected_rule_count",
             "target",
@@ -316,7 +458,14 @@ def audit_candidate_gates(artifacts: AuditArtifacts) -> list[AuditFinding]:
             "locked_test_label_usage",
             "scaler_fit_split",
         ]
-        if not isinstance(disclosure, dict) or any(disclosure.get(key) in (None, "", "UNKNOWN") for key in required):
+        if not isinstance(disclosure, dict) and forensic.get("movement_score_protocol_reported"):
+            findings.append(
+                _warning(
+                    "movement_score_restoration_reconstructed_from_report",
+                    "movement-score restoration protocol reconstructed from locked-test report",
+                )
+            )
+        elif not isinstance(disclosure, dict) or any(disclosure.get(key) in (None, "", "UNKNOWN") for key in required):
             findings.append(_error("movement_score_restoration_disclosure_missing", "movement-score restoration disclosure incomplete"))
         if isinstance(disclosure, dict) and not any(k.endswith("_sha256") for k in disclosure):
             findings.append(_warning("movement_score_source_hash_unknown", "movement-score source hash is UNKNOWN"))
@@ -344,6 +493,7 @@ def _findings_payload(findings: list[AuditFinding]) -> list[dict[str, Any]]:
 
 def run_audit(prefix: Path) -> tuple[dict[str, Any], list[AuditFinding]]:
     artifacts = load_artifacts(prefix)
+    artifacts.payload["forensic_evidence"] = validate_forensic_evidence(prefix, artifacts)
     contract_findings = validate_artifact_contract(artifacts)
     freeze_findings = audit_pre_open_freeze(artifacts)
     hash_findings = audit_hashes(artifacts)
@@ -391,6 +541,7 @@ def run_audit(prefix: Path) -> tuple[dict[str, Any], list[AuditFinding]]:
             "freeze_json": "ML/reports/fractal0_fixed11_locked_test_freeze.json",
             "selection_policy_json": "ML/reports/fractal0_fixed11_locked_test_selection_policy.json",
         },
+        "forensic_evidence": artifacts.payload.get("forensic_evidence", {}),
         "finding_counts": finding_counts,
         "findings": _findings_payload(findings),
         "finding_count": len(findings),

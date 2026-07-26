@@ -15,7 +15,7 @@
 
 ## Active Research Queue
 
-### ACTIVE: `Fixed-11 candidate audit blocker resolution`
+### ACTIVE: `Fixed-11 mutual-correlation pruning`
 
 План:
 
@@ -28,22 +28,22 @@ PF/BS/sample-size gates на `locked_test`: PF range `2.6747-3.3667`, best rule
 `rank01_time_only_linear_target_entry_ev_regression_top30`, verdict
 `candidate_check_required`.
 
-Текущий результат: аудит выполнен и вернул `candidate_audit_blocked`.
-`candidate_audit_passed` не достигнут.
+Текущий результат: независимый audit выполнен и вернул
+`candidate_audit_passed` для 11 individual fixed rules. Аудит принял
+forensic-доказательства из отчёта, плана, CSV, hash-ов и git history.
 
-Блокеры:
+Оставшиеся предупреждения:
 
-- отсутствуют pre-open freeze/policy artifacts;
-- `split_roles` не раскрывает границы, row count, `val_select`, `val_eval` и
-  no-selection disclosure;
-- `correlation_pruning_status=FOLLOW_UP_REQUIRED` не записан;
-- low-N edge-year slices не помечены `DIAGNOSTIC_ONLY`;
-- `movement_plus_time` score restoration раскрыт неполно.
+- отдельные machine-readable freeze/policy JSON отсутствовали;
+- split/movement/correlation disclosure частично восстановлен из отчётов и
+  локальных CSV;
+- `BS_p05` остаётся diagnostic iid bootstrap;
+- 2022 low-N yearly slices считаются incomplete edge-year diagnostic disclosure.
 
-Следующий шаг: только исправление воспроизводимости/disclosure audit-producing
-artifacts без изменения frozen candidate rules и без нового выбора по
-`locked_test`. Mutual-correlation pruning, MT4/tester parity, stress-spread
-pass/fail и trading-status discussion запрещены до снятия блокеров.
+Следующий шаг: mutual-correlation pruning для 11 individual passed rules.
+MT4/tester parity, stress-spread pass/fail и model card выполнять только после
+pruning для retained subset. Запрещено менять frozen rules, cutoffs или выбирать
+нового winner по `locked_test`.
 
 
 

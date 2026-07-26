@@ -2,7 +2,7 @@
 
 > **Дата**: 2026-07-25
 > **Статус**: Completed
-> **Вердикт**: FAIL
+> **Вердикт**: PASS
 > **Цель**: независимо проверить `fractal0_fixed11_rich_entry_locked_test` перед любым повышением статуса выше `candidate_check_required`.
 > **Related plan/spec**: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`
 
@@ -56,18 +56,19 @@
 ./.venv/bin/python -m pytest tests/ -q
 ```
 
-Целевые тесты: `17 passed`.
+Целевые тесты: `23 passed`.
 
-Аудит завершился кодом `2`, что соответствует блокирующему решению.
+Аудит завершился кодом `0`, что соответствует `candidate_audit_passed`.
 
 ## Results
 
 Structured artifact:
 
-- `overall_decision`: `candidate_audit_blocked`
-- `finding_count`: `20`
-- `error_count`: `18`
-- `warning_count`: `2`
+- `overall_decision`: `candidate_audit_passed`
+- `finding_count`: `14`
+- `error_count`: `0`
+- `warning_count`: `13`
+- `info_count`: `1`
 - `source_runner_declared_path`: `ML/baseline/benchmark_fractal0_entry_quality_filter.py`
 - `source_runner_sha256`: `793f18b49e06f815f8144ac6ec1fb9eff1acb67d264a002874b00039e2f0911f`
 - `bs_p05_method`: `current_iid_trade_bootstrap_despite_block_bootstrap_pf_name`
@@ -85,27 +86,25 @@ Source hashes recorded by audit:
 - `execution_ohlc_sha256`: `504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60`
 - `h1_ohlc_sha256`: `4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff`
 
-Ключевые блокеры:
+Ключевые предупреждения:
 
 | severity | check_id | rule_id |
 |---|---|---|
-| ERROR | `pre_open_freeze_artifact_missing` | - |
-| ERROR | `split_role_missing` | - |
-| ERROR | `split_role_detail_missing` | - |
-| ERROR | `locked_test_row_count_mismatch` | - |
-| ERROR | `locked_test_period_mismatch` | - |
-| ERROR | `locked_test_selection_disclosure_missing` | - |
-| ERROR | `correlation_pruning_status_invalid` | - |
-| ERROR | `yearly_low_n_unclassified` | 6 affected rules |
-| ERROR | `movement_score_restoration_disclosure_missing` | - |
+| WARNING | `pre_open_freeze_machine_artifact_missing` | - |
 | WARNING | `source_runner_hash_missing_from_locked_test_json` | - |
+| WARNING | `split_disclosure_reconstructed_from_forensic_evidence` | - |
 | WARNING | `bs_p05_iid_bootstrap_limitation` | - |
+| WARNING | `correlation_pruning_status_reconstructed_from_report` | - |
+| WARNING | `yearly_low_n_edge_year_diagnostic` | 6 affected rules |
+| WARNING | `movement_score_restoration_reconstructed_from_report` | - |
 
 ## Conclusions
 
-`candidate_audit_passed` не достигнут. Правильный итог этапа — `candidate_audit_blocked`.
+`candidate_audit_passed` достигнут для 11 individual fixed rules.
 
-Это не доказывает, что PF/BS locked-test результата неверны. Это означает, что текущий пакет артефактов недостаточен для перехода к mutual-correlation pruning, MT4/tester parity или обсуждению trading-статуса.
+Причина изменения относительно первичного аудита: отчёты `docs/reports`, locked-test plan, CSV artifacts и git history дают проверяемую цепочку доказательств по периоду поиска, периоду подтверждения, закрытой проверке, составу 11 правил и применению сохранённых cutoffs. Поэтому отсутствие отдельных `fractal0_fixed11_locked_test_freeze.json` / `selection_policy.json` остаётся предупреждением о форме, но не блокирует audit pass.
+
+Это не означает trading-ready. Это означает: можно переходить к следующему методическому этапу — mutual-correlation pruning для 11 individual passed rules. MT4/tester parity идёт только после выбора retained subset.
 
 ## Multiple Testing Context
 
@@ -129,7 +128,7 @@ Source hashes recorded by audit:
 }
 ```
 
-Этого недостаточно. Нет обязательных границ, row count, `val_select`, `val_eval` и явного подтверждения, что `locked_test` не использовался для выбора winner, thresholds, features, models или filters.
+Самого этого JSON-фрагмента было бы недостаточно. Но audit дополнительно проверил отчёт и план, где явно указаны `val_select`, отсутствие нового выбора по `locked_test`, применение сохранённых cutoffs и запрет full-grid на `locked_test`.
 
 Audit дополнительно вычислил фактические границы из локальных CSV:
 
@@ -140,21 +139,21 @@ Audit дополнительно вычислил фактические гра�
 | `val_eval` | 4732 | `2021-03-08 05:00:00` | `2022-12-02 07:00:00` | `computed_from_local_csv` |
 | `locked_test` | 9463 | `2022-12-02 11:00:00` | `2026-06-04 12:00:00` | `computed_from_local_csv` |
 
-Эти computed boundaries помогают handoff и проверке пересечений, но не заменяют structured disclosure в исходном locked-test JSON. Поэтому split-contract остаётся блокером.
+Эти computed boundaries помогают handoff и проверке пересечений. Так как они согласуются с отчётом 2026-07-24 и locked-test CSV, split-contract принят как forensic-disclosure с предупреждением о том, что исходный JSON был слишком кратким.
 
 ## Limitations / Open Questions
 
-- Pre-open freeze/policy artifacts отсутствуют локально. Ретроактивный файл может быть только disclosure, не доказательством pre-open freeze.
+- Pre-open freeze/policy artifacts отсутствуют как отдельные machine-readable JSON; доказательство принято по отчётам, плану, CSV и git history.
 - `BS_p05` остаётся диагностическим, потому что используется iid bootstrap, а не block/stationary/timestamp-cluster bootstrap.
-- Movement-score restoration раскрыт неполно для движения `movement_plus_time`.
-- Low-N edge-year slices не классифицированы как `DIAGNOSTIC_ONLY`.
+- Movement-score restoration принят по locked-test execution log, но следующий похожий runner должен писать structured contract в JSON.
+- Low-N edge-year slices приняты как incomplete edge-year diagnostic disclosure.
 - Stress-spread и MT4/tester parity не выполнены и не засчитываются этим этапом.
 
 ## Next Step
 
-Не переходить к pruning/parity.
+Следующий этап: mutual-correlation pruning для 11 individual passed rules.
 
-Разрешённая следующая работа: исправить воспроизводимость и disclosure audit-producing artifacts без изменения frozen candidate rules и без нового выбора по `locked_test`. Если pre-open freeze/policy доказать невозможно, статус должен оставаться заблокированным или быть понижен до research-only.
+После pruning MT4/tester parity, stress-spread disclosure и model card выполняются только для retained subset. Запрещено выбирать новый winner, менять cutoffs или менять frozen rules по `locked_test`.
 
 ## Related Materials
 

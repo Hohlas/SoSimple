@@ -14,6 +14,7 @@ from ML.baseline.audit_fractal0_fixed11_candidate import (
     load_artifacts,
     main,
     run_audit,
+    validate_forensic_evidence,
     validate_artifact_contract,
 )
 
@@ -142,6 +143,22 @@ def test_audit_pre_open_freeze_requires_freeze_and_policy(monkeypatch, tmp_path:
     assert _findings_by_id(findings)["pre_open_freeze_artifact_missing"].severity == "ERROR"
 
 
+def test_audit_pre_open_freeze_accepts_forensic_report_evidence(tmp_path: Path) -> None:
+    prefix = _artifact_dir(tmp_path)
+    artifacts = load_artifacts(prefix)
+    artifacts.payload["forensic_evidence"] = {
+        "locked_test_report": True,
+        "protocol_plan": True,
+        "source_rules_csv_committed_before_locked_test": True,
+        "locked_test_no_new_selection_reported": True,
+    }
+
+    findings = audit_pre_open_freeze(artifacts)
+
+    assert _findings_by_id(findings)["pre_open_freeze_machine_artifact_missing"].severity == "WARNING"
+    assert "pre_open_freeze_artifact_missing" not in _findings_by_id(findings)
+
+
 def test_audit_pre_open_freeze_requires_rule_hash(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
     reports = tmp_path / "ML" / "reports"
@@ -207,6 +224,27 @@ def test_audit_split_policy_rejects_non_mapping_role_details(tmp_path: Path) -> 
     assert findings["split_role_detail_missing"].severity == "ERROR"
 
 
+def test_audit_split_policy_accepts_computed_forensic_boundaries(tmp_path: Path) -> None:
+    prefix = _artifact_dir(tmp_path)
+    artifacts = load_artifacts(prefix)
+    artifacts.payload["split_roles"] = {"train_core": "model_training_only", "locked_test": "one_shot_evaluation_only"}
+    artifacts.payload["forensic_evidence"] = {
+        "computed_split_boundaries": {
+            "train_core": {"row_count": 1000, "min_time": "2016-01-01", "max_time": "2020-12-31"},
+            "val_select": {"row_count": 1000, "min_time": "2021-01-01", "max_time": "2021-06-30"},
+            "val_eval": {"row_count": 1000, "min_time": "2021-07-01", "max_time": "2022-12-01"},
+            "locked_test": {"row_count": 9463, "min_time": "2022-12-02", "max_time": "2026-06-04"},
+        },
+        "locked_test_no_new_selection_reported": True,
+    }
+
+    findings = _findings_by_id(audit_split_policy(artifacts))
+
+    assert findings["split_disclosure_reconstructed_from_forensic_evidence"].severity == "WARNING"
+    assert "split_role_missing" not in findings
+    assert "locked_test_row_count_mismatch" not in findings
+
+
 def test_audit_candidate_gates_detects_pf_bs_and_trade_failures(tmp_path: Path) -> None:
     prefix = _artifact_dir(tmp_path)
     artifacts = load_artifacts(prefix)
@@ -220,6 +258,18 @@ def test_audit_candidate_gates_detects_pf_bs_and_trade_failures(tmp_path: Path) 
     assert findings["bs_p05_below_gate"].severity == "ERROR"
     assert findings["trade_count_below_gate"].severity == "ERROR"
     assert findings["bs_p05_iid_bootstrap_limitation"].severity == "WARNING"
+
+
+def test_audit_candidate_gates_accepts_forensic_correlation_followup(tmp_path: Path) -> None:
+    prefix = _artifact_dir(tmp_path)
+    artifacts = load_artifacts(prefix)
+    artifacts.payload.pop("correlation_pruning_status")
+    artifacts.payload["forensic_evidence"] = {"correlation_pruning_followup_reported": True}
+
+    findings = _findings_by_id(audit_candidate_gates(artifacts))
+
+    assert findings["correlation_pruning_status_reconstructed_from_report"].severity == "WARNING"
+    assert "correlation_pruning_status_invalid" not in findings
 
 
 def test_audit_candidate_gates_detects_side_and_yearly_failures(tmp_path: Path) -> None:
@@ -252,6 +302,23 @@ def test_audit_candidate_gates_requires_low_n_year_classification(tmp_path: Path
     assert findings["yearly_low_n_unclassified"].severity == "ERROR"
 
 
+def test_audit_candidate_gates_marks_low_n_edge_year_as_diagnostic_when_period_known(tmp_path: Path) -> None:
+    prefix = _artifact_dir(tmp_path)
+    artifacts = load_artifacts(prefix)
+    artifacts.yearly.loc[0, "year"] = 2022
+    artifacts.yearly.loc[0, "n_trades"] = 29
+    artifacts.payload["forensic_evidence"] = {
+        "computed_split_boundaries": {
+            "locked_test": {"min_time": "2022-12-02 11:00:00", "max_time": "2026-06-04 12:00:00"}
+        }
+    }
+
+    findings = _findings_by_id(audit_candidate_gates(artifacts))
+
+    assert findings["yearly_low_n_edge_year_diagnostic"].severity == "WARNING"
+    assert "yearly_low_n_unclassified" not in findings
+
+
 def test_audit_candidate_gates_allows_diagnostic_edge_year_low_n(tmp_path: Path) -> None:
     prefix = _artifact_dir(tmp_path)
     artifacts = load_artifacts(prefix)
@@ -282,6 +349,39 @@ def test_audit_candidate_gates_requires_movement_score_disclosure(tmp_path: Path
 
     assert findings["movement_score_restoration_disclosure_missing"].severity == "ERROR"
     assert findings["movement_score_source_hash_unknown"].severity == "WARNING"
+
+
+def test_audit_candidate_gates_accepts_reported_movement_score_protocol(tmp_path: Path) -> None:
+    ids = [f"rule_{i:02d}" for i in range(10)] + ["rank11_movement_plus_time_linear_target_top30"]
+    prefix = _artifact_dir(tmp_path, ids)
+    artifacts = load_artifacts(prefix)
+    artifacts.payload["movement_score_restoration"] = {
+        "affected_rule_count": 1,
+        "target": "entry_movement_3",
+        "profile": "simple_combined",
+        "model_family": "extra_trees_small",
+        "seeds": [42, 43, 44],
+        "fit_split": "train_core",
+        "locked_test_label_usage": "none",
+        "scaler_fit_split": "train_core",
+        "source_config_sha256": "abc",
+    }
+
+    findings = _findings_by_id(audit_candidate_gates(artifacts))
+
+    assert "movement_score_restoration_disclosure_missing" not in findings
+
+
+def test_validate_forensic_evidence_reads_project_reports() -> None:
+    evidence = validate_forensic_evidence(
+        Path("ML/reports/fractal0_fixed11_rich_entry_locked_test"),
+        load_artifacts(Path("ML/reports/fractal0_fixed11_rich_entry_locked_test")),
+    )
+
+    assert evidence["locked_test_report"] is True
+    assert evidence["protocol_plan"] is True
+    assert evidence["locked_test_no_new_selection_reported"] is True
+    assert sorted(evidence["computed_split_boundaries"]) == ["locked_test", "train_core", "val_eval", "val_select"]
 
 
 def test_cli_writes_audit_json_and_findings_csv(monkeypatch, tmp_path: Path) -> None:

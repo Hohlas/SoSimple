@@ -49,6 +49,12 @@ computed split boundaries from local CSV files. Computed boundaries are
 disclosure for audit handoff; they do not prove that the source locked-test
 JSON contained complete pre-open split disclosure.
 
+The auditor also reads primary project evidence from `docs/reports/`, the
+locked-test protocol plan, CSV artifacts and git history. This forensic evidence
+can satisfy sparse source JSON disclosure when the facts are exact and
+reproducible. Missing standalone machine-readable freeze/policy JSON files then
+remain warnings, not blocking errors.
+
 ## Command
 
 ```bash

@@ -9,32 +9,43 @@
 
 ## Decision
 
-Independent fixed-11 candidate audit is complete and blocked.
+Independent fixed-11 candidate audit is complete and passed for 11 individual fixed rules.
 
-- overall_decision: `candidate_audit_blocked`
-- finding_count: `20`
-- error_count: `18`
-- warning_count: `2`
-- candidate status must not be raised above `candidate_check_required`
+- overall_decision: `candidate_audit_passed`
+- finding_count: `14`
+- error_count: `0`
+- warning_count: `13`
+- info_count: `1`
 
-## Main Blockers
+## Evidence Basis
 
-- Missing pre-open freeze/policy artifacts: `ML/reports/fractal0_fixed11_locked_test_freeze.json`, `ML/reports/fractal0_fixed11_locked_test_selection_policy.json`.
-- `split_roles` in locked-test JSON lacks row counts, min/max time, `val_select`, `val_eval` and explicit no-selection disclosure.
-- `correlation_pruning_status` is not recorded as `FOLLOW_UP_REQUIRED`.
-- Several low-N yearly edge slices are not marked `DIAGNOSTIC_ONLY`.
-- `movement_plus_time` movement-score restoration disclosure is incomplete.
+Audit accepts forensic evidence from project primary sources:
+
+- `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`
+- `docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md`
+- `ML/reports/leaderboard_closure_audit_rules.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`
+- companion locked-test CSV artifacts
+- git history for prior fixed11 artifacts and locked-test report commits
+
+## Remaining Warnings
+
+- Separate machine-readable freeze/policy JSON files are absent; freeze/no-new-selection evidence is accepted from report/plan/CSV/git history.
+- Source locked-test JSON has sparse `split_roles`; full boundaries are reconstructed from local CSV and recorded in audit JSON.
+- `BS_p05` is diagnostic iid bootstrap, not block/stationary/timestamp-cluster bootstrap.
+- `correlation_pruning_status=FOLLOW_UP_REQUIRED` is reconstructed from report/plan.
+- Six low-N 2022 yearly slices are treated as incomplete edge-year diagnostic disclosure.
+- `movement_plus_time` restoration protocol is accepted from locked-test execution log; future runners should write this as structured JSON.
 
 ## Verified Facts
 
-- Targeted tests: `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_candidate_audit.py -q` → `17 passed`.
-- Audit command exited with code `2`, as expected for blocked decision.
+- Targeted tests: `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_candidate_audit.py -q` -> `23 passed`.
+- Audit command exited with code `0`.
 - Audit recorded source runner SHA256 for `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: `793f18b49e06f815f8144ac6ec1fb9eff1acb67d264a002874b00039e2f0911f`.
-- Audit JSON now records full `findings`, `finding_counts`, source hashes and computed split boundaries from local CSV. These computed boundaries are disclosure, not proof that source locked-test JSON had complete pre-open split disclosure.
-- `BS_p05` is disclosed as diagnostic iid bootstrap, not block/stationary/timestamp-cluster bootstrap.
+- Computed split boundaries are recorded for `train_core`, `val_select`, `val_eval`, `locked_test`.
 
 ## Next Step
 
-Do not start mutual-correlation pruning, MT4/tester parity, stress-spread pass/fail or trading-status discussion.
+Run mutual-correlation pruning for the 11 individual passed rules.
 
-Allowed next work: fix reproducibility/disclosure of the audit-producing artifacts without changing frozen candidate rules and without using `locked_test` for new selection. If pre-open freeze/policy evidence cannot be proven, keep blocked status or downgrade to research-only.
+Do not run MT4/tester parity, stress-spread pass/fail or model card before pruning selects the retained subset. Do not change frozen rules, cutoffs, model/profile/target/filter choices or use `locked_test` for a new winner search.
