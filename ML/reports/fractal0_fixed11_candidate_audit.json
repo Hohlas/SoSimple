@@ -1,0 +1,184 @@
+{
+  "input_prefix": "ML/reports/fractal0_fixed11_rich_entry_locked_test",
+  "overall_decision": "candidate_audit_blocked",
+  "status": "completed",
+  "source_locked_test_verdict": "candidate_check_required",
+  "source_runner_declared_path": "ML/baseline/benchmark_fractal0_entry_quality_filter.py",
+  "source_runner_sha256": "793f18b49e06f815f8144ac6ec1fb9eff1acb67d264a002874b00039e2f0911f",
+  "rule_count": 11,
+  "evaluated_rule_count": 11,
+  "gate_pass_count": 11,
+  "kept_candidates": 11,
+  "correlation_pruning_status": "MISSING",
+  "bs_p05_method": "current_iid_trade_bootstrap_despite_block_bootstrap_pf_name",
+  "split_roles": {
+    "train_core": "model_training_only",
+    "locked_test": "one_shot_evaluation_only"
+  },
+  "split_boundaries": {
+    "locked_test": {
+      "row_count": 9463,
+      "min_time": "2022-12-02 11:00:00",
+      "max_time": "2026-06-04 12:00:00",
+      "source": "computed_from_local_csv"
+    },
+    "train_core": {
+      "row_count": 44159,
+      "min_time": "2004-07-06 20:00:00",
+      "max_time": "2019-06-20 14:00:00",
+      "source": "computed_from_local_csv"
+    },
+    "val_select": {
+      "row_count": 4731,
+      "min_time": "2019-06-20 16:00:00",
+      "max_time": "2021-03-08 03:00:00",
+      "source": "computed_from_local_csv"
+    },
+    "val_eval": {
+      "row_count": 4732,
+      "min_time": "2021-03-08 05:00:00",
+      "max_time": "2022-12-02 07:00:00",
+      "source": "computed_from_local_csv"
+    }
+  },
+  "source_hashes": {
+    "source_rules_csv_sha256": "d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c",
+    "source_artifact_sha256": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6",
+    "locked_test_sha256": "5beb70f29ee27caa2b20a8cd80376879b64179d4ef0e5197a29357b58483f535",
+    "execution_ohlc_sha256": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+    "h1_ohlc_sha256": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff"
+  },
+  "pre_open_freeze_paths": {
+    "freeze_json": "ML/reports/fractal0_fixed11_locked_test_freeze.json",
+    "selection_policy_json": "ML/reports/fractal0_fixed11_locked_test_selection_policy.json"
+  },
+  "finding_counts": {
+    "ERROR": 18,
+    "WARNING": 2
+  },
+  "findings": [
+    {
+      "severity": "ERROR",
+      "check_id": "pre_open_freeze_artifact_missing",
+      "message": "missing ML/reports/fractal0_fixed11_locked_test_freeze.json",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "pre_open_freeze_artifact_missing",
+      "message": "missing ML/reports/fractal0_fixed11_locked_test_selection_policy.json",
+      "rule_id": null
+    },
+    {
+      "severity": "WARNING",
+      "check_id": "source_runner_hash_missing_from_locked_test_json",
+      "message": "locked-test JSON lacks runner hash",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "split_role_detail_missing",
+      "message": "split role train_core lacks row_count/min_time/max_time details",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "split_role_missing",
+      "message": "missing split role val_select",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "split_role_missing",
+      "message": "missing split role val_eval",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "split_role_detail_missing",
+      "message": "split role locked_test lacks row_count/min_time/max_time details",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "locked_test_row_count_mismatch",
+      "message": "locked_test row_count is not 9463",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "locked_test_period_mismatch",
+      "message": "locked_test min_time mismatch",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "locked_test_period_mismatch",
+      "message": "locked_test max_time mismatch",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "locked_test_selection_disclosure_missing",
+      "message": "missing disclosure that locked_test was not used for selection",
+      "rule_id": null
+    },
+    {
+      "severity": "WARNING",
+      "check_id": "bs_p05_iid_bootstrap_limitation",
+      "message": "BS_p05 is diagnostic until block/stationary/timestamp-cluster bootstrap exists",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "correlation_pruning_status_invalid",
+      "message": "correlation pruning must remain FOLLOW_UP_REQUIRED",
+      "rule_id": null
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank05_time_only_linear_target_entry_avoid_sl_top30"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank10_movement_plus_time_linear_target_entry_ev_regression_top50"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank08_movement_plus_time_linear_target_entry_good_0_5r_top30"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank07_movement_plus_time_linear_target_entry_good_0_5r_top40"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank01_time_only_linear_target_entry_ev_regression_top30"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "yearly_low_n_unclassified",
+      "message": "low-N year must be DIAGNOSTIC_ONLY",
+      "rule_id": "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50"
+    },
+    {
+      "severity": "ERROR",
+      "check_id": "movement_score_restoration_disclosure_missing",
+      "message": "movement-score restoration disclosure incomplete",
+      "rule_id": null
+    }
+  ],
+  "finding_count": 20,
+  "error_count": 18,
+  "warning_count": 2
+}

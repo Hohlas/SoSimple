@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-25] — Fixed-11 candidate audit (FAIL)
+- **report**: `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`
+- **topics**: `fractal0`, `fixed11`, `candidate_audit`, `locked_test`, `reproducibility`
+- **summary**: Added read-only audit for `fractal0_fixed11_rich_entry_locked_test*` artifacts. Audit produced `candidate_audit_blocked`: 18 errors and 2 warnings.
+- **artifacts**: `ML/reports/fractal0_fixed11_candidate_audit.json`, `ML/reports/fractal0_fixed11_candidate_audit_findings.csv`, `ML/baseline/audit_fractal0_fixed11_candidate.py`
+- **decision**: Do not proceed to mutual-correlation pruning, MT4/tester parity or trading-status discussion until blockers are resolved without changing frozen candidate rules.
+- **notes**: Main blockers: missing pre-open freeze/policy artifacts, incomplete split disclosure, unclassified low-N yearly slices, incomplete movement-score restoration disclosure.
+
 ## [2026-07-24] — Fixed-11 rich-entry locked test (candidate_check_required)
 - **report**: `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`
 - **topics**: `fractal0`, `fixed11`, `rich_entry_quality`, `locked_test`, `m5_execution_ordering`

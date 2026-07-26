@@ -15,11 +15,12 @@
 
 ## Active Research Queue
 
-### ACTIVE: `Fixed-11 candidate audit`
+### ACTIVE: `Fixed-11 candidate audit blocker resolution`
 
 План:
 
 - [`2026-07-25-fractal0-fixed11-candidate-audit.md`](plans/2026-07-25-fractal0-fixed11-candidate-audit.md)
+- [report `2026-07-25-fractal0-fixed11-candidate-audit.md`](../reports/2026-07-25-fractal0-fixed11-candidate-audit.md)
 
 Основание: `locked_test` был открыт 2026-07-24 для ровно 11 frozen normalized
 rich-entry leaderboard rules по M5 execution contract. Все 11 правил прошли
@@ -27,18 +28,22 @@ PF/BS/sample-size gates на `locked_test`: PF range `2.6747-3.3667`, best rule
 `rank01_time_only_linear_target_entry_ev_regression_top30`, verdict
 `candidate_check_required`.
 
-Цель: независимо проверить `ML/reports/fractal0_fixed11_rich_entry_locked_test*`
-артефакты до повышения статуса. Аудит должен подтвердить contract/freeze,
-split isolation, отсутствие выбора по `locked_test`, корректность CSV/JSON,
-side/yearly gates, M5 execution-order disclosure и слабые места
-`movement_plus_time` score restoration.
+Текущий результат: аудит выполнен и вернул `candidate_audit_blocked`.
+`candidate_audit_passed` не достигнут.
 
-Следующий шаг после аудита:
+Блокеры:
 
-- если блокеров нет: MT4/tester parity, locked-test stress-spread disclosure и
-  model card для оставшихся candidate-правил;
-- если есть блокеры: downgrade до `research_only` или повторный план только для
-  исправления проверяемой ошибки без нового выбора по `locked_test`.
+- отсутствуют pre-open freeze/policy artifacts;
+- `split_roles` не раскрывает границы, row count, `val_select`, `val_eval` и
+  no-selection disclosure;
+- `correlation_pruning_status=FOLLOW_UP_REQUIRED` не записан;
+- low-N edge-year slices не помечены `DIAGNOSTIC_ONLY`;
+- `movement_plus_time` score restoration раскрыт неполно.
+
+Следующий шаг: только исправление воспроизводимости/disclosure audit-producing
+artifacts без изменения frozen candidate rules и без нового выбора по
+`locked_test`. Mutual-correlation pruning, MT4/tester parity, stress-spread
+pass/fail и trading-status discussion запрещены до снятия блокеров.
 
 
 

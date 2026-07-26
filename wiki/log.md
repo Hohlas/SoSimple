@@ -880,3 +880,4 @@
 - Updated `wiki/research/fractal-stop-research.md` and `wiki/index.md`: fixed11 closure is computed but risk-flagged (`11/11 INTERNAL_CLOSURE_RISK_FLAGGED`), `locked_test=not_opened`, next step is closing rich/fractal entry-quality as time-heavy research-only and writing a narrower regime-filter reformulation plan.
 
 - 2026-07-24: Ingested 2026-07-24-fractal0-fixed11-locked-test.md into fractal-stop-research.md (locked_test FAIL, all 11 rules PF<1.0, 0 kept candidates)
+- 2026-07-25: Ingested 2026-07-25-fractal0-fixed11-candidate-audit.md into fractal-stop-research.md; corrected fixed11 synthesis to candidate_audit_blocked after strong locked-test metrics, with pruning/parity blocked by disclosure/reproducibility findings.

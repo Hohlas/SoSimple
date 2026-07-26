@@ -1,0 +1,21 @@
+severity;check_id;message;rule_id
+ERROR;pre_open_freeze_artifact_missing;missing ML/reports/fractal0_fixed11_locked_test_freeze.json;
+ERROR;pre_open_freeze_artifact_missing;missing ML/reports/fractal0_fixed11_locked_test_selection_policy.json;
+WARNING;source_runner_hash_missing_from_locked_test_json;locked-test JSON lacks runner hash;
+ERROR;split_role_detail_missing;split role train_core lacks row_count/min_time/max_time details;
+ERROR;split_role_missing;missing split role val_select;
+ERROR;split_role_missing;missing split role val_eval;
+ERROR;split_role_detail_missing;split role locked_test lacks row_count/min_time/max_time details;
+ERROR;locked_test_row_count_mismatch;locked_test row_count is not 9463;
+ERROR;locked_test_period_mismatch;locked_test min_time mismatch;
+ERROR;locked_test_period_mismatch;locked_test max_time mismatch;
+ERROR;locked_test_selection_disclosure_missing;missing disclosure that locked_test was not used for selection;
+WARNING;bs_p05_iid_bootstrap_limitation;BS_p05 is diagnostic until block/stationary/timestamp-cluster bootstrap exists;
+ERROR;correlation_pruning_status_invalid;correlation pruning must remain FOLLOW_UP_REQUIRED;
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank05_time_only_linear_target_entry_avoid_sl_top30
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank10_movement_plus_time_linear_target_entry_ev_regression_top50
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank08_movement_plus_time_linear_target_entry_good_0_5r_top30
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank07_movement_plus_time_linear_target_entry_good_0_5r_top40
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank01_time_only_linear_target_entry_ev_regression_top30
+ERROR;yearly_low_n_unclassified;low-N year must be DIAGNOSTIC_ONLY;rank11_movement_plus_time_linear_target_entry_good_0_5r_top50
+ERROR;movement_score_restoration_disclosure_missing;movement-score restoration disclosure incomplete;
