@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-27] — Fixed-11 mutual-correlation pruning (PASS)
+- **report**: `docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md`
+- **topics**: `fractal0`, `fixed11`, `mutual_correlation`, `pruning`, `locked_test`
+- **summary**: Added read-only pruning runner for the 11 passed fixed rules. The run produced `pruning_passed` with retained subset manifest and pairwise overlap/correlation artifacts.
+- **artifacts**: `ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json`, `ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json`, `ML/baseline/prune_fractal0_fixed11_mutual_correlation.py`
+- **decision**: Retain 5 rules and drop 6 direct strong duplicates; no new winner was selected by `locked_test` performance.
+- **notes**: MT4/tester parity, stress-spread disclosure and model card remain pending for the retained subset only.
+
 ## [2026-07-25] — Fixed-11 candidate audit (PASS)
 - **report**: `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`
 - **topics**: `fractal0`, `fixed11`, `candidate_audit`, `locked_test`, `reproducibility`

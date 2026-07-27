@@ -1,5 +1,21 @@
 from __future__ import annotations
 
+# =============================================================================
+# Файл: prune_fractal0_fixed11_mutual_correlation.py
+# Назначение: Read-only pruning 11 fixed Fractal0 rules by mutual overlap.
+# Обновлён: 2026-07-27
+# Зависимости:
+#   Входные данные:
+#     - ML/reports/fractal0_fixed11_candidate_audit.json
+#     - ML/reports/fractal0_fixed11_rich_entry_locked_test_*.csv
+#   Выходные данные:
+#     - ML/reports/fractal0_fixed11_mutual_correlation_pruning_*
+# Использование:
+#   ./.venv/bin/python ML/baseline/prune_fractal0_fixed11_mutual_correlation.py
+# Примечания:
+#   - Не обучает, не симулирует и не выбирает winner по locked_test.
+# =============================================================================
+
 import argparse
 import hashlib
 import json

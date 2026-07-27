@@ -2,50 +2,60 @@
 
 ## Current Completed Stage
 
-- report: `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`
-- script: `ML/baseline/audit_fractal0_fixed11_candidate.py`
-- artifacts: `ML/reports/fractal0_fixed11_candidate_audit.json`, `ML/reports/fractal0_fixed11_candidate_audit_findings.csv`
-- audited input: `ML/reports/fractal0_fixed11_rich_entry_locked_test*`
+- report: `docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md`
+- script: `ML/baseline/prune_fractal0_fixed11_mutual_correlation.py`
+- artifacts: `ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json`, `ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json`, `ML/reports/fractal0_fixed11_mutual_correlation_pruning_pairwise.csv`
+- inputs: `ML/reports/fractal0_fixed11_rich_entry_locked_test*`, `ML/reports/fractal0_fixed11_candidate_audit.json`
 
 ## Decision
 
-Independent fixed-11 candidate audit is complete and passed for 11 individual fixed rules.
+Fixed-11 mutual-correlation pruning is complete.
 
-- overall_decision: `candidate_audit_passed`
-- finding_count: `14`
-- error_count: `0`
-- warning_count: `13`
-- info_count: `1`
+- overall_decision: `pruning_passed`
+- input_rule_count: `11`
+- retained_count: `5`
+- removed_count: `6`
+- pair_count: `55`
+- locked_test_policy: `overlap_measurement_only_no_winner_selection`
+- representative_policy: `lowest_original_rank_then_rule_id`
+- locked_test_performance_used_for_representative_choice: `false`
+
+## Retained Subset
+
+- `rank01_time_only_linear_target_entry_ev_regression_top30`
+- `rank05_time_only_linear_target_entry_avoid_sl_top30`
+- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
+- `rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50`
+- `rank10_movement_plus_time_linear_target_entry_ev_regression_top50`
+
+## Dropped Strong Duplicates
+
+- `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank03_time_only_linear_target_entry_ev_regression_top50`
+- `rank04_time_only_linear_target_entry_good_0_5r_top40`
+- `rank06_time_only_linear_target_entry_good_0_5r_top50`
+- `rank08_movement_plus_time_linear_target_entry_good_0_5r_top30`
+- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
 
 ## Evidence Basis
 
-Audit accepts forensic evidence from project primary sources:
-
-- `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`
-- `docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md`
-- `ML/reports/leaderboard_closure_audit_rules.csv`
-- `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`
-- companion locked-test CSV artifacts
-- git history for prior fixed11 artifacts and locked-test report commits
-
-## Remaining Warnings
-
-- Separate machine-readable freeze/policy JSON files are absent; freeze/no-new-selection evidence is accepted from report/plan/CSV/git history.
-- Source locked-test JSON has sparse `split_roles`; full boundaries are reconstructed from local CSV and recorded in audit JSON.
-- `BS_p05` is diagnostic iid bootstrap, not block/stationary/timestamp-cluster bootstrap.
-- `correlation_pruning_status=FOLLOW_UP_REQUIRED` is reconstructed from report/plan.
-- Six low-N 2022 yearly slices are treated as incomplete edge-year diagnostic disclosure.
-- `movement_plus_time` restoration protocol is accepted from locked-test execution log; future runners should write this as structured JSON.
+- `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`
+- `ML/reports/fractal0_fixed11_candidate_audit.json`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_selection.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`
+- pruning artifacts under `ML/reports/fractal0_fixed11_mutual_correlation_pruning_*`
 
 ## Verified Facts
 
-- Targeted tests: `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_candidate_audit.py -q` -> `23 passed`.
-- Audit command exited with code `0`.
-- Audit recorded source runner SHA256 for `ML/baseline/benchmark_fractal0_entry_quality_filter.py`: `793f18b49e06f815f8144ac6ec1fb9eff1acb67d264a002874b00039e2f0911f`.
-- Computed split boundaries are recorded for `train_core`, `val_select`, `val_eval`, `locked_test`.
+- Targeted tests: `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_mutual_correlation_pruning.py -q` -> `12 passed`.
+- Pruning command exited with code `0`.
+- All expected pruning CSV/JSON artifacts exist.
+- Pairwise CSV has `55` rows.
+- Correlation matrices are `11 x 11`, symmetric, with diagonal `1.0`.
 
 ## Next Step
 
-Run mutual-correlation pruning for the 11 individual passed rules.
+Run MT4/tester parity for the retained subset only.
 
-Do not run MT4/tester parity, stress-spread pass/fail or model card before pruning selects the retained subset. Do not change frozen rules, cutoffs, model/profile/target/filter choices or use `locked_test` for a new winner search.
+Do not export all 11 rules as independent. Do not change frozen rules, cutoffs, model/profile/target/filter choices, entry/exit/stop, spread, fill policy or PnL convention. Stress-spread disclosure should run after parity for the retained subset. Model card remains blocked until pruning, parity and stress disclosure are complete.

@@ -98,6 +98,7 @@
 | [audit_leaderboard_closure.py](ML/baseline/audit_leaderboard_closure.py) | Closure/disclosure audit для 11 fixed leaderboard rows: cost, calendar, timezone, sequential positions и multi-seed без нового поиска | normalized rich-entry JSON/CSV → `leaderboard_closure_audit*` JSON/CSV | [docs](docs/ML/audit_leaderboard_closure.py.md) | ✅ |
 | [fractal0_fixed11_internal_closure_rerun.py](ML/baseline/fractal0_fixed11_internal_closure_rerun.py) | Producer-level fixed11 internal closure rerun: stress-cost, timezone/calendar и multi-seed без `locked_test` | normalized rich-entry JSON/CSV + saved fixed cutoffs → `fractal0_fixed11_internal_closure_rerun*` JSON/CSV | [docs](docs/ML/fractal0_fixed11_internal_closure_rerun.py.md) | ✅ |
 | [audit_fractal0_fixed11_candidate.py](ML/baseline/audit_fractal0_fixed11_candidate.py) | Read-only candidate audit для `fractal0_fixed11_rich_entry_locked_test*` без нового выбора по `locked_test` | locked-test JSON/CSV → `fractal0_fixed11_candidate_audit*` JSON/CSV | [docs](docs/ML/audit_fractal0_fixed11_candidate.py.md) | ✅ |
+| [prune_fractal0_fixed11_mutual_correlation.py](ML/baseline/prune_fractal0_fixed11_mutual_correlation.py) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap без нового winner по `locked_test` | fixed11 locked-test CSV/JSON → `fractal0_fixed11_mutual_correlation_pruning*` JSON/CSV | [docs](docs/ML/prune_fractal0_fixed11_mutual_correlation.py.md) | ✅ |
 | [benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | foundation splits → matrix JSON/CSV | — | ✅ |
 | [benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | foundation splits → ablation JSON/CSV | [docs][docs-entry-ablation] | ✅ |
 | [benchmark_entry_based_next_open_closeout.py](ML/baseline/benchmark_entry_based_next_open_closeout.py) | Entry-based closeout runner | foundation splits → closeout JSON/CSV | [docs][docs-entry-closeout] | ✅ |
@@ -248,6 +249,7 @@
 | [test_api_server_preprocessing.py](tests/test_api_server_preprocessing.py) | `API/api_server.py` shared online preprocessing contract | — | ✅ |
 | [test_benchmark_cross_instrument_robustness.py](tests/test_benchmark_cross_instrument_robustness.py) | `ML/benchmark_cross_instrument_robustness.py` | — | ✅ |
 | [test_benchmark_system_correlation.py](tests/test_benchmark_system_correlation.py) | `ML/benchmark_system_correlation.py` | — | ✅ |
+| [test_fractal0_fixed11_mutual_correlation_pruning.py](tests/test_fractal0_fixed11_mutual_correlation_pruning.py) | `ML/baseline/prune_fractal0_fixed11_mutual_correlation.py` | — | ✅ |
 | [test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | — | ✅ |
 | [test_run_trailing_stop_target_quantile.py](tests/test_run_trailing_stop_target_quantile.py) | `ML/run_trailing_stop_target_quantile.py` | — | ✅ |
 | [test_track_a_max_out_matrix.py](tests/test_track_a_max_out_matrix.py) | `ML/run_track_a_max_out_matrix.py` | — | ✅ |
@@ -332,6 +334,7 @@
 | [telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов |
 | [benchmark_cross_instrument_robustness.py.md](docs/ML/benchmark_cross_instrument_robustness.py.md) | Benchmark устойчивости при смене провайдера и переносе на новые инструменты |
 | [benchmark_system_correlation.py.md](docs/ML/benchmark_system_correlation.py.md) | Pairwise benchmark совместимости торговых систем по сделкам и PnL-рядам |
+| [prune_fractal0_fixed11_mutual_correlation.py.md](docs/ML/prune_fractal0_fixed11_mutual_correlation.py.md) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap |
 | [live_safe_audit.py.md](docs/ML/live_safe_audit.py.md) | Core-типы live-safe audit и свод feature verdict → system verdict |
 | [live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit |
 | [run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict |

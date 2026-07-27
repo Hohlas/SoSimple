@@ -881,3 +881,4 @@
 
 - 2026-07-24: Ingested 2026-07-24-fractal0-fixed11-locked-test.md into fractal-stop-research.md (locked_test FAIL, all 11 rules PF<1.0, 0 kept candidates)
 - 2026-07-25: Ingested 2026-07-25-fractal0-fixed11-candidate-audit.md into fractal-stop-research.md; candidate audit now passes via forensic evidence from reports/plan/CSV/git history, with warnings and next step mutual-correlation pruning.
+- 2026-07-27: Ingested 2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md into fractal-stop-research.md; pruning passed, retained subset has 5 rules and next step is MT4/tester parity for retained subset only.

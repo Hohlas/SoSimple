@@ -14,53 +14,9 @@
 
 ## ACTIVE
 
-### `Fixed-11 mutual-correlation pruning`
-
-Цель: сократить 11 individual fixed rules до retained subset, не выбирая новый
-winner по `locked_test` и не меняя frozen rules.
-
-Входы:
-
-- `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`
-- `ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv`
-- `ML/reports/fractal0_fixed11_rich_entry_locked_test_selection.csv`
-- `ML/reports/fractal0_fixed11_candidate_audit.json`
-- `ML/benchmark_system_correlation.py` как возможная база для расчёта
-
-Минимальные проверки:
-
-- overlap сделок по `fill_time` / `signal_time`;
-- совпадение направлений на общих временах;
-- daily/weekly PnL correlation;
-- drawdown overlap;
-- число реально независимых retained rules;
-- запрет выбирать retained subset только по лучшему PF.
-
-Выходы:
-
-- pairwise matrix;
-- retained subset manifest;
-- pruning report;
-- решение: `pruning_passed`, `all_rules_duplicate_research_only` или
-  `pruning_blocked`.
-
-Ограничения:
-
-- не менять `rule_id`, cutoffs, profile/model/target/filter, entry/exit/stop,
-  spread или fill/PnL convention;
-- не запускать новый поиск;
-- не использовать `locked_test` для выбора нового winner;
-- MT4/tester parity и model card выполнять только после retained subset.
-
----
-
-## BLOCKED Until Pruning
-
 ### `MT4/tester parity for retained subset`
 
 Цель: доказать, что MT4/tester исполняет те же сигналы и сделки, что Python.
-
-Разблокируется только после `Fixed-11 mutual-correlation pruning`.
 
 Запрещено до разблокировки:
 
@@ -68,11 +24,15 @@ winner по `locked_test` и не меняя frozen rules.
 - чинить PnL через изменение правил;
 - считать parity доказательством прибыльности.
 
+---
+
+## BLOCKED Until Parity
+
 ### `Locked-test stress-spread disclosure`
 
 Цель: показать чувствительность retained subset к ухудшению spread/costs.
 
-Разблокируется только после pruning. Stress-spread не должен менять winner и не
+Разблокируется только после MT4/tester parity. Stress-spread не должен менять winner и не
 должен становиться новым search по spread.
 
 ### `Model card for retained subset`
