@@ -227,3 +227,100 @@ def test_repeated_fill_time_is_aggregated_without_losing_trade_count() -> None:
     assert metrics["left_trade_count_at_shared_fills"] == 2
     assert metrics["right_trade_count_at_shared_fills"] == 1
     assert metrics["fill_bucket_pnl_corr"] == 1.0
+
+
+def test_retained_subset_uses_original_rank_not_locked_test_pf() -> None:
+    summary = pd.DataFrame(
+        {
+            "rule_id": ["r1", "r2"],
+            "original_rank": [1, 2],
+            "pf": [1.2, 9.9],
+            "bs_p05": [1.1, 9.0],
+            "n_trades": [100, 100],
+        }
+    )
+    selection = pd.DataFrame({"rule_id": ["r1", "r2"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE"]})
+    trades = pd.concat(
+        [
+            _trade_frame("r1", 1, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -0.5], ["BUY", "SELL"]),
+            _trade_frame("r2", 2, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [9.0, -4.5], ["BUY", "SELL"]),
+        ],
+        ignore_index=True,
+    )
+    inputs = pruning.Fixed11Inputs(
+        audit={"overall_decision": "candidate_audit_passed"},
+        summary=summary,
+        selection=selection,
+        trades=trades,
+        paths={},
+        sha256={},
+    )
+    pairwise = pruning.build_pairwise_matrix(trades)
+
+    manifest = pruning.build_retained_subset(inputs, pairwise)
+
+    retained = [item["rule_id"] for item in manifest["rules"] if item["decision"] == "RETAIN"]
+    dropped = [item["rule_id"] for item in manifest["rules"] if item["decision"] == "DROP_STRONG_DUPLICATE"]
+    assert retained == ["r1"]
+    assert dropped == ["r2"]
+    assert manifest["representative_policy"] == "lowest_original_rank_then_rule_id"
+
+
+def test_retained_subset_can_keep_all_rules_when_no_strong_duplicates() -> None:
+    trades = pd.concat(
+        [
+            _trade_frame("r1", 1, ["2025-01-01 01:00:00"], [1.0], ["BUY"]),
+            _trade_frame("r2", 2, ["2025-01-02 01:00:00"], [1.0], ["SELL"]),
+        ],
+        ignore_index=True,
+    )
+    inputs = pruning.Fixed11Inputs(
+        audit={"overall_decision": "candidate_audit_passed"},
+        summary=pd.DataFrame({"rule_id": ["r1", "r2"], "original_rank": [1, 2], "n_trades": [100, 100]}),
+        selection=pd.DataFrame({"rule_id": ["r1", "r2"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE"]}),
+        trades=trades,
+        paths={},
+        sha256={},
+    )
+
+    manifest = pruning.build_retained_subset(inputs, pruning.build_pairwise_matrix(trades))
+
+    assert manifest["overall_decision"] == "pruning_passed"
+    assert manifest["retained_count"] == 2
+    assert manifest["removed_count"] == 0
+
+
+def test_transitive_duplicate_does_not_drop_without_direct_representative_edge() -> None:
+    trades = pd.concat(
+        [
+            _trade_frame("r1", 1, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -1.0], ["BUY", "SELL"]),
+            _trade_frame("r2", 2, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -1.0], ["BUY", "SELL"]),
+            _trade_frame("r3", 3, ["2025-01-02 01:00:00", "2025-01-03 01:00:00"], [-1.0, 1.0], ["SELL", "BUY"]),
+        ],
+        ignore_index=True,
+    )
+    inputs = pruning.Fixed11Inputs(
+        audit={"overall_decision": "candidate_audit_passed"},
+        summary=pd.DataFrame({"rule_id": ["r1", "r2", "r3"], "original_rank": [1, 2, 3], "n_trades": [100, 100, 100]}),
+        selection=pd.DataFrame(
+            {"rule_id": ["r1", "r2", "r3"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE", "KEEP_CANDIDATE"]}
+        ),
+        trades=trades,
+        paths={},
+        sha256={},
+    )
+    pairwise = pd.DataFrame(
+        [
+            {"left_rule_id": "r1", "right_rule_id": "r2", "redundancy_verdict": "strong_duplicate"},
+            {"left_rule_id": "r1", "right_rule_id": "r3", "redundancy_verdict": "partial_overlap"},
+            {"left_rule_id": "r2", "right_rule_id": "r3", "redundancy_verdict": "strong_duplicate"},
+        ]
+    )
+
+    manifest = pruning.build_retained_subset(inputs, pairwise)
+
+    decisions = {item["rule_id"]: item["decision"] for item in manifest["rules"]}
+    assert decisions["r1"] == "RETAIN"
+    assert decisions["r2"] == "DROP_STRONG_DUPLICATE"
+    assert decisions["r3"] == "RETAIN"
+    assert manifest["indirect_duplicate_edges_not_used_for_drop"]

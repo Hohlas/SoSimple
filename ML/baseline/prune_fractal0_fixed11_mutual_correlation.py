@@ -173,7 +173,11 @@ def _safe_corr(left: pd.Series, right: pd.Series) -> float:
     if len(left) == 0 or len(right) == 0 or len(left) != len(right):
         return 0.0
     if len(left) == 1:
-        return 1.0 if np.isclose(float(left.iloc[0]), float(right.iloc[0])) else 0.0
+        left_value = float(left.iloc[0])
+        right_value = float(right.iloc[0])
+        if np.isclose(left_value, 0.0) and np.isclose(right_value, 0.0):
+            return 1.0
+        return 1.0 if np.sign(left_value) == np.sign(right_value) else 0.0
     if np.isclose(float(left.std(ddof=0)), 0.0) or np.isclose(float(right.std(ddof=0)), 0.0):
         return 1.0 if np.allclose(left.to_numpy(dtype=float), right.to_numpy(dtype=float)) else 0.0
     value = float(left.corr(right))
@@ -371,3 +375,120 @@ def build_pairwise_matrix(trades: pd.DataFrame) -> pd.DataFrame:
     if len(pairwise) != len(rule_ids) * (len(rule_ids) - 1) // 2:
         raise ValueError("pairwise matrix has unexpected row count")
     return pairwise
+
+
+def _rule_metadata(inputs: Fixed11Inputs) -> pd.DataFrame:
+    columns = ["rule_id", "original_rank", "profile_id", "model_id", "target_id", "filter_id"]
+    metadata = inputs.trades[columns].drop_duplicates("rule_id").copy()
+    metadata["original_rank"] = pd.to_numeric(metadata["original_rank"], errors="raise").astype(int)
+    return metadata.sort_values(["original_rank", "rule_id"], kind="stable").reset_index(drop=True)
+
+
+def build_duplicate_clusters(pairwise: pd.DataFrame, rule_order: pd.DataFrame) -> pd.DataFrame:
+    rule_ids = rule_order.sort_values(["original_rank", "rule_id"], kind="stable")["rule_id"].astype(str).tolist()
+    strong_edges = {
+        frozenset((str(row.left_rule_id), str(row.right_rule_id)))
+        for row in pairwise.itertuples(index=False)
+        if row.redundancy_verdict == "strong_duplicate"
+    }
+    retained: list[str] = []
+    representative_by_rule: dict[str, str] = {}
+    for rule_id in rule_ids:
+        direct_representative = next(
+            (candidate for candidate in retained if frozenset((candidate, rule_id)) in strong_edges),
+            None,
+        )
+        if direct_representative is None:
+            retained.append(rule_id)
+            representative_by_rule[rule_id] = rule_id
+        else:
+            representative_by_rule[rule_id] = direct_representative
+    clusters = rule_order.copy()
+    clusters["rule_id"] = clusters["rule_id"].astype(str)
+    clusters["representative_rule_id"] = clusters["rule_id"].map(representative_by_rule)
+    cluster_ids = {rule_id: index + 1 for index, rule_id in enumerate(retained)}
+    clusters["duplicate_cluster_id"] = clusters["representative_rule_id"].map(cluster_ids).astype(int)
+    clusters["cluster_size"] = clusters.groupby("duplicate_cluster_id")["rule_id"].transform("count").astype(int)
+    return clusters.sort_values(["duplicate_cluster_id", "original_rank", "rule_id"], kind="stable").reset_index(drop=True)
+
+
+def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict[str, Any]:
+    metadata = _rule_metadata(inputs)
+    clusters = build_duplicate_clusters(pairwise, metadata)
+    strong_lookup = {
+        frozenset((str(row.left_rule_id), str(row.right_rule_id))): row._asdict()
+        for row in pairwise.itertuples(index=False)
+        if row.redundancy_verdict == "strong_duplicate"
+    }
+    partial_overlap_warnings = [
+        row._asdict()
+        for row in pairwise.itertuples(index=False)
+        if row.redundancy_verdict == "partial_overlap"
+    ]
+    rules: list[dict[str, Any]] = []
+    for row in clusters.itertuples(index=False):
+        representative = str(row.representative_rule_id)
+        decision = "RETAIN" if str(row.rule_id) == representative else "DROP_STRONG_DUPLICATE"
+        reason = "cluster_representative_lowest_original_rank" if decision == "RETAIN" else f"strong_duplicate_of={representative}"
+        direct_evidence = strong_lookup.get(frozenset((str(row.rule_id), representative)))
+        rules.append(
+            {
+                "rule_id": str(row.rule_id),
+                "original_rank": int(row.original_rank),
+                "profile_id": str(row.profile_id),
+                "model_id": str(row.model_id),
+                "target_id": str(row.target_id),
+                "filter_id": str(row.filter_id),
+                "duplicate_cluster_id": int(row.duplicate_cluster_id),
+                "cluster_size": int(row.cluster_size),
+                "representative_rule_id": representative,
+                "decision": decision,
+                "reason": reason,
+                "direct_strong_duplicate_evidence": direct_evidence,
+                "warnings": [
+                    warning
+                    for warning in partial_overlap_warnings
+                    if str(row.rule_id) in {str(warning["left_rule_id"]), str(warning["right_rule_id"])}
+                ],
+            }
+        )
+    retained_count = sum(1 for item in rules if item["decision"] == "RETAIN")
+    removed_count = sum(1 for item in rules if item["decision"] == "DROP_STRONG_DUPLICATE")
+    all_rules_direct_duplicate_of_one_representative = retained_count == 1 and removed_count == len(rules) - 1
+    non_representative_strong_duplicate_pairs = [
+        row._asdict()
+        for row in pairwise.itertuples(index=False)
+        if row.redundancy_verdict == "strong_duplicate"
+        and not any(
+            item["decision"] == "DROP_STRONG_DUPLICATE"
+            and frozenset((item["rule_id"], item["representative_rule_id"]))
+            == frozenset((str(row.left_rule_id), str(row.right_rule_id)))
+            for item in rules
+        )
+    ]
+    return {
+        "overall_decision": "all_rules_duplicate_research_only"
+        if all_rules_direct_duplicate_of_one_representative
+        else "pruning_passed",
+        "input_rule_count": int(len(rules)),
+        "retained_count": int(retained_count),
+        "removed_count": int(removed_count),
+        "representative_policy": "lowest_original_rank_then_rule_id",
+        "locked_test_performance_used_for_representative_choice": False,
+        "redundancy_thresholds": {
+            "strong_duplicate": {
+                "fill_overlap_ratio_min": 0.75,
+                "same_direction_ratio_min": 0.90,
+                "fill_bucket_pnl_corr_min": 0.85,
+                "fill_daily_pnl_corr_min": 0.75,
+                "fill_weekly_pnl_corr_min": 0.75,
+                "exit_daily_pnl_corr_min": 0.75,
+                "exit_weekly_pnl_corr_min": 0.75,
+            }
+        },
+        "rules": rules,
+        "strong_duplicate_edges": list(strong_lookup.values()),
+        "partial_overlap_warnings": partial_overlap_warnings,
+        "non_representative_strong_duplicate_pairs": non_representative_strong_duplicate_pairs,
+        "indirect_duplicate_edges_not_used_for_drop": non_representative_strong_duplicate_pairs,
+    }
