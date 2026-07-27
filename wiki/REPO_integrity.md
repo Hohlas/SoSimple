@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-26 17:56 UTC · git `3338cb9`
+> Auto-generated 2026-07-27 05:58 UTC · git `054d426`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3273 files  ·  **Commit**: `3338cb9`  ·  **Generated**: 2026-07-26 17:56 UTC
+**Tracked**: 3273 files  ·  **Commit**: `054d426`  ·  **Generated**: 2026-07-27 05:58 UTC
 
 ## Root Docs
 
@@ -275,7 +275,7 @@
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-25 | 15KB | `e52b9233` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-26 | 14KB | `bcd663db` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-27 | 8KB | `d4fec96e` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
