@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-27 09:15 UTC · git `4403d48`
+> Auto-generated 2026-07-27 09:37 UTC · git `dcdedf4`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3290 files  ·  **Commit**: `4403d48`  ·  **Generated**: 2026-07-27 09:15 UTC
+**Tracked**: 3290 files  ·  **Commit**: `dcdedf4`  ·  **Generated**: 2026-07-27 09:37 UTC
 
 ## Root Docs
 
@@ -275,7 +275,7 @@
 | [docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md](docs/superpowers/plans/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md) |  | 2026-07-23 | 80KB | `32dd4131` |
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-25 | 15KB | `e52b9233` |
-| [docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md](docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 67KB | `1472ba48` |
+| [docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md](docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 14KB | `ac1038f1` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-27 | 6KB | `6306f640` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
