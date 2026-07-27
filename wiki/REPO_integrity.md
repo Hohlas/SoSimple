@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-27 07:14 UTC · git `0a71b91`
+> Auto-generated 2026-07-27 07:52 UTC · git `888b0dd`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3290 files  ·  **Commit**: `0a71b91`  ·  **Generated**: 2026-07-27 07:14 UTC
+**Tracked**: 3290 files  ·  **Commit**: `888b0dd`  ·  **Generated**: 2026-07-27 07:52 UTC
 
 ## Root Docs
 
@@ -157,7 +157,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-27 | 19KB | `5a7ca31f` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-27 | 17KB | `9e476202` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -447,7 +447,7 @@
 | [docs/reports/2026-07-23-time-only-robustness-audit.md](docs/reports/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 9KB | `b90f6a05` |
 | [docs/reports/2026-07-24-fractal0-fixed11-locked-test.md](docs/reports/2026-07-24-fractal0-fixed11-locked-test.md) |  | 2026-07-24 | 17KB | `5eac9b41` |
 | [docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-26 | 8KB | `88a957c4` |
-| [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 8KB | `fbc7d644` |
+| [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 9KB | `4a5c004d` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -506,7 +506,7 @@
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-17 | 9KB | `1e6b236f` |
 | [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-17 | 33KB | `e5c6ddc8` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle Fractal Stop Fav | ✅ | 2026-06-17 | 8KB | `02e614cf` |
-| [ML/baseline/prune_fractal0_fixed11_mutual_correlation.py](ML/baseline/prune_fractal0_fixed11_mutual_correlation.py) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap без нового winner по `locked_test` | ✅ | 2026-07-27 | 27KB | `16621551` |
+| [ML/baseline/prune_fractal0_fixed11_mutual_correlation.py](ML/baseline/prune_fractal0_fixed11_mutual_correlation.py) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap без нового winner по `locked_test` | ✅ | 2026-07-27 | 28KB | `9544c088` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-06-17 | 4KB | `66cbf52f` |
 | [ML/baseline/reports/limit_order_spread_grid.md](ML/baseline/reports/limit_order_spread_grid.md) |  |  | 2026-06-17 | 3KB | `f8f3c27b` |
 | [ML/baseline/rf_gridsearch.py](ML/baseline/rf_gridsearch.py) |  |  | 2026-06-17 | 6KB | `31bd8826` |
@@ -815,7 +815,7 @@
 | [ML/reports/fractal0_fixed11_candidate_audit.json](ML/reports/fractal0_fixed11_candidate_audit.json) |  |  | 2026-07-26 | 6KB | `25e76fe9` |
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json) |  |  | 2026-07-27 | 190KB | `d762821a` |
-| [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 1KB | `2f7e99ea` |
+| [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 3KB | `2d7ee3fe` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test.json](ML/reports/fractal0_fixed11_rich_entry_locked_test.json) |  |  | 2026-07-24 | 2KB | `374ed486` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
@@ -1271,7 +1271,7 @@
 | [tests/test_fractal0_entry_quality_filter.py](tests/test_fractal0_entry_quality_filter.py) |  |  | 2026-07-23 | 38KB | `2d763bb8` |
 | [tests/test_fractal0_fixed11_candidate_audit.py](tests/test_fractal0_fixed11_candidate_audit.py) |  |  | 2026-07-26 | 17KB | `8e2c75a0` |
 | [tests/test_fractal0_fixed11_internal_closure_rerun.py](tests/test_fractal0_fixed11_internal_closure_rerun.py) |  |  | 2026-07-23 | 31KB | `861e59e9` |
-| [tests/test_fractal0_fixed11_mutual_correlation_pruning.py](tests/test_fractal0_fixed11_mutual_correlation_pruning.py) | `ML/baseline/prune_fractal0_fixed11_mutual_correlation.py` | ✅ | 2026-07-27 | 15KB | `b65d3263` |
+| [tests/test_fractal0_fixed11_mutual_correlation_pruning.py](tests/test_fractal0_fixed11_mutual_correlation_pruning.py) | `ML/baseline/prune_fractal0_fixed11_mutual_correlation.py` | ✅ | 2026-07-27 | 16KB | `4242b890` |
 | [tests/test_fractal0_fixed11_rich_entry_locked_test.py](tests/test_fractal0_fixed11_rich_entry_locked_test.py) |  |  | 2026-07-24 | 1012B | `c0e00480` |
 | [tests/test_fractal0_price_entry_mechanics.py](tests/test_fractal0_price_entry_mechanics.py) | `ML/baseline/benchmark_fractal0_price_entry_mechanics.py` | ✅ | 2026-07-20 | 10KB | `c364834b` |
 | [tests/test_fractal_level_feature_builder.py](tests/test_fractal_level_feature_builder.py) |  |  | 2026-06-17 | 8KB | `dae37ed1` |

@@ -364,6 +364,12 @@ def test_run_pruning_writes_artifacts(tmp_path: Path) -> None:
     summary = pruning.run_pruning(prefix, audit_json, output_prefix)
 
     assert summary["overall_decision"] == "all_rules_duplicate_research_only"
+    assert summary["cumulative_search_budget"] == "inherited_from_fixed11_candidate_audit"
+    assert summary["lifecycle_status"] == "post_locked_test_read_only_pruning"
+    assert summary["allowed_max_verdict_note"] == "local stage interpretation cap, not a methodology verdict value"
+    assert summary["strong_duplicate_edge_count"] == 55
+    assert summary["partial_overlap_count"] == 0
+    assert summary["non_representative_strong_duplicate_pair_count"] == 45
     assert output_prefix.with_name(output_prefix.name + "_pairwise.csv").exists()
     assert output_prefix.with_name(output_prefix.name + "_clusters.csv").exists()
     assert output_prefix.with_name(output_prefix.name + "_retained_subset.json").exists()

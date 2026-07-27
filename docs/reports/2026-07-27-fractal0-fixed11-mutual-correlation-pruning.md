@@ -17,6 +17,7 @@
 - `lifecycle_status`: `post_locked_test_read_only_pruning`
 - `stage_level`: проверочный audit/disclosure, без повышения выше `candidate`
 - `allowed_max_verdict`: `candidate_not_trading_ready`
+- `allowed_max_verdict_note`: local stage interpretation cap, not a methodology verdict value
 - `overall_decision`: `pruning_passed`
 
 ## Methodology
@@ -26,6 +27,8 @@
 Политика запуска:
 
 - `current_search_budget`: `0_new_rules`
+- `cumulative_search_budget`: `inherited_from_fixed11_candidate_audit`
+- `origin_bias`: `follow_up_required_from_fixed11_candidate_audit`
 - `locked_test_policy`: `overlap_measurement_only_no_winner_selection`
 - `representative_policy`: `lowest_original_rank_then_rule_id`
 - `locked_test_performance_used_for_representative_choice`: `false`
@@ -56,6 +59,7 @@ Retained subset не является новым winner по `locked_test`; пр
 
 ```bash
 ./.venv/bin/python -m pytest tests/test_fractal0_fixed11_mutual_correlation_pruning.py -q
+./.venv/bin/python -m pytest tests/ -q
 ./.venv/bin/python ML/baseline/prune_fractal0_fixed11_mutual_correlation.py \
   --input-prefix ML/reports/fractal0_fixed11_rich_entry_locked_test \
   --audit-json ML/reports/fractal0_fixed11_candidate_audit.json \
@@ -65,6 +69,7 @@ Retained subset не является новым winner по `locked_test`; пр
 Результаты проверки:
 
 - unit tests: `12 passed`
+- full test suite: `1480 passed, 52 warnings`
 - CLI result: `overall_decision=pruning_passed`
 - pairwise rows: `55`
 - input rules: `11`
@@ -118,11 +123,20 @@ Pairwise verdict counts:
 - `partial_overlap`: `42`
 - `unclear_or_complementary`: `0`
 
+There are `7` additional `strong_duplicate` edges recorded as disclosure-only in `non_representative_strong_duplicate_pairs`. They were not used for drops because the pruning policy drops a rule only on a direct `strong_duplicate` edge to its retained representative.
+
 Partial-overlap links are disclosure warnings only. They did not remove rules automatically.
 
 ## Split Disclosure
 
 Split boundaries and sample-size checks are inherited from `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md` and `ML/reports/fractal0_fixed11_candidate_audit.json`.
+
+| role | row_count | min_time | max_time | source |
+|---|---:|---|---|---|
+| `train_core` | 44159 | `2004-07-06 20:00:00` | `2019-06-20 14:00:00` | `computed_from_local_csv` |
+| `val_select` | 4731 | `2019-06-20 16:00:00` | `2021-03-08 03:00:00` | `computed_from_local_csv` |
+| `val_eval` | 4732 | `2021-03-08 05:00:00` | `2022-12-02 07:00:00` | `computed_from_local_csv` |
+| `locked_test` | 9463 | `2022-12-02 11:00:00` | `2026-06-04 12:00:00` | `computed_from_local_csv` |
 
 This pruning stage did not open a new period and did not combine `locked_test` with forward data. Every input rule had at least `100` locked-test trades; the preflight also checked that `summary`, `selection`, and `trades` use the same 11 `rule_id`.
 
