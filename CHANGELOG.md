@@ -15,6 +15,22 @@
 ```
 ---
 
+## [2026-07-27] — Fixed-11 retained-rule MT4 switch (not parity yet)
+- **report**: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
+- **topics**: `mt4`, `fixed11`, `retained_subset`, `rule_slot`, `tester_settings`
+- **summary**: Added `ML_RuleSlot` to the expert/runtime contract, replaced the tester `#.csv` with 5 retained-rule rows selectable via `BackTest=2..6`, and created per-rule signal files for manual MT4 tester runs.
+- **artifacts**: `MT/MQL4/Experts/$o$imple.mq4`, `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Files/#.csv`, `MT/tester/files/#.csv`, `MT/MQL4/Files/ml_signals_fixed11_rule01.csv`, `ML/reports/fractal0_fixed11_retained_mt4_parity/fixed11_rule_signal_exports.json`, `tests/test_mql_telemetry_params_csv_contract.py`
+- **decision**: MT4 can now switch and load one retained rule per tester run, but retained-subset parity is still not passed.
+- **notes**: Same-direction duplicate times are collapsed; opposite-direction same-time groups are omitted because `time;signal` cannot represent both directions. MT4 compile/tester run must be done externally.
+
+## [2026-07-27] — Fixed-11 retained-subset MT4 parity feasibility (UNKNOWN)
+- **report**: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
+- **topics**: `fractal0`, `fixed11`, `retained_subset`, `mt4_parity`, `export_contract`
+- **summary**: Checked whether the 5 retained fixed11 rules can be honestly exported to the current MT4 tester route. The feasibility gate blocked export because one plain `time;signal` stream would lose `rule_id` and collapse duplicate/opposite `signal_time` rows.
+- **artifacts**: `ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json`, `ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json`
+- **decision**: `parity_blocked`; no MT4 export, tester run or reconciliation was produced.
+- **notes**: Next route must be per-rule export, a new MT4 runtime preserving `rule_id` and fixed11 execution, or a lower-status aggregate diagnostic.
+
 ## [2026-07-27] — Fixed-11 mutual-correlation pruning (PASS)
 - **report**: `docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md`
 - **topics**: `fractal0`, `fixed11`, `mutual_correlation`, `pruning`, `locked_test`

@@ -8,6 +8,17 @@ ML_SIGNAL = ROOT / "MT/MQL4/Include/lib_ML_Signal.mqh"
 PARAMS_CSV = ROOT / "MT/MQL4/Files/#.csv"
 TESTER_PARAMS_CSV = ROOT / "MT/tester/files/#.csv"
 TESTER_INI = ROOT / "MT/tester/$o$imple.ini"
+EXPERT = ROOT / "MT/MQL4/Experts/$o$imple.mq4"
+MT4_FILES = ROOT / "MT/MQL4/Files"
+MT4_TESTER_FILES = ROOT / "MT/tester/files"
+
+FIXED11_RETAINED_RULES = [
+    "rank05_time_only_linear_target_entry_avoid_sl_top30",
+    "rank02_time_only_linear_target_entry_ev_regression_top40",
+    "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50",
+    "rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50",
+    "rank10_movement_plus_time_linear_target_entry_ev_regression_top50",
+]
 
 
 def test_mql_parameter_storage_supports_ml_types():
@@ -39,41 +50,70 @@ def test_extern_vars_tracks_active_ml_parameters():
         "ML_UseScoreFilter",
         "ML_ScoreThreshold",
         "ML_BackStopATR",
+        "ML_RuleSlot",
     ):
         assert f'DATA("{name}", {name});' in text
+
+
+def test_expert_exposes_fixed11_rule_slot_setting():
+    text = EXPERT.read_text(encoding="utf-8", errors="replace")
+
+    assert "extern int    ML_RuleSlot" in text
+    assert "ML_RuleSlot: fixed11 retained rule slot" in text
+    assert "extern bool   ML_LogNoSignal" in text
+    assert "ML_LogNoSignal: " in text
 
 
 def _read_semicolon_csv(path: Path) -> list[list[str]]:
     return [line.rstrip("\n\r").split(";") for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def test_hash_csv_contains_single_telemetry_row_with_ml_values():
+def test_hash_csv_contains_five_fixed11_rule_rows_with_ml_values():
     rows = _read_semicolon_csv(PARAMS_CSV)
     header = rows[0]
     data_rows = [row for row in rows[1:] if row and row[0].startswith("SoSimple")]
 
-    assert len(data_rows) == 1
-    row = data_rows[0]
-    values = dict(zip(header, row))
+    assert len(data_rows) == 5
+    assert "ML_RuleSlot" in header
 
-    assert len(header) == 16 + 80
-    assert len(row) == len(header)
-    assert values["SymPer"] == "XAUUSD5"
-    assert values["Risk"] == "1"
-    assert values["A"] == "5"
-    assert values["a"] == "3"
-    assert values["iSignal"] == "3"
-    assert values["T1"] == "8"
-    assert values["ML_ExitMode"] == "0"
-    assert values["ML_TrailATR"] == "0"
-    assert values["ML_TakeProfitATR"] == "5"
-    assert values["ML_MaxPositions"] == "20"
-    assert values["ML_HoldBars"] == "24"
-    assert values["ML_AllowReversal"] == "0"
-    assert values["ML_UseScoreFilter"] == "0"
-    assert values["ML_ScoreThreshold"] == "0"
-    assert values["ML_BackStopATR"] == "3"
-    assert int(values["Magic"]) == _mql_magic_from_row(header, row)
+    seen_slots = []
+    seen_rules = []
+    for expected_slot, (expected_rule, row) in enumerate(zip(FIXED11_RETAINED_RULES, data_rows, strict=True), start=1):
+        values = dict(zip(header, row))
+
+        assert len(row) == len(header)
+        assert " " in values["INFO"]
+        assert "-" in values["INFO"]
+        assert expected_rule in values["INFO"]
+        assert values["SymPer"] == "XAUUSD60"
+        assert values["Risk"] == "1"
+        assert values["iSignal"] == "3"
+        assert values["ML_ExitMode"] == "0"
+        assert values["ML_TrailATR"] == "0"
+        assert values["ML_TakeProfitATR"] == "0"
+        assert values["ML_MaxPositions"] == "1"
+        assert values["ML_HoldBars"] == "24"
+        assert values["ML_AllowReversal"] == "0"
+        assert values["ML_UseScoreFilter"] == "0"
+        assert values["ML_ScoreThreshold"] == "0"
+        assert values["ML_BackStopATR"] == "50"
+        assert values["ML_RuleSlot"] == str(expected_slot)
+        assert int(values["Magic"]) == _mql_magic_from_row(header, row)
+        seen_slots.append(values["ML_RuleSlot"])
+        seen_rules.append(expected_rule)
+
+    assert seen_slots == ["1", "2", "3", "4", "5"]
+    assert seen_rules == FIXED11_RETAINED_RULES
+
+
+def test_fixed11_backtest_numbers_match_mql_csv_reader_line_numbers():
+    rows = _read_semicolon_csv(PARAMS_CSV)
+    header = rows[0]
+
+    for backtest, row in enumerate(rows[1:], start=2):
+        values = dict(zip(header, row))
+
+        assert values["ML_RuleSlot"] == str(backtest - 1)
 
 
 def test_runtime_and_tester_params_csv_are_identical():
@@ -123,6 +163,7 @@ def _mql_magic_from_row(header: list[str], row: list[str]) -> int:
         "ML_UseScoreFilter",
         "ML_ScoreThreshold",
         "ML_BackStopATR",
+        "ML_RuleSlot",
     ]
     values = dict(zip(header, row))
     magic = 0
@@ -139,11 +180,16 @@ def test_tester_ini_selects_telemetry_backtest_row():
     text = TESTER_INI.read_text(encoding="utf-8", errors="replace")
 
     assert "BackTest=2" in text
+    assert "BackTest,1=2" in text
+    assert "BackTest,2=1" in text
+    assert "BackTest,3=6" in text
     assert "ML_ExitMode=0" in text
-    assert "ML_TakeProfitATR=5.00000000" in text
-    assert "ML_MaxPositions=20" in text
+    assert "ML_TakeProfitATR=0.00000000" in text
+    assert "ML_MaxPositions=1" in text
     assert "ML_HoldBars=24" in text
-    assert "ML_BackStopATR=3.00000000" in text
+    assert "ML_BackStopATR=50.00000000" in text
+    assert "ML_RuleSlot=1" in text
+    assert "ML_LogNoSignal=0" in text
 
 
 def test_service_logs_loaded_csv_parameters():
@@ -159,10 +205,50 @@ def test_ml_signal_runtime_reload_uses_file_modify_time():
 
     assert "MLP_LoadedFileModifyTime" in text
     assert "MLP_FileModifyTime()" in text
+    assert "MLP_SignalsFileName()" in text
     assert "FILE_MODIFY_DATE" in text
     assert "MLP_RELOAD_IF_CHANGED()" in text
     assert "MLP_RELOAD: file changed" in text
     assert "MLP_INIT()" in text
+
+
+def test_ml_signal_runtime_selects_file_by_fixed11_rule_slot():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert '#define MLP_DEFAULT_SIGNALS_FILE "ml_signals.csv"' in text
+    for slot in range(1, 6):
+        assert f'if (ML_RuleSlot == {slot}) return "ml_signals_fixed11_rule0{slot}.csv";' in text
+    assert "MLP_SignalsFileName()" in text
+    assert "MLP_INIT: rule_slot=" in text
+
+
+def test_ml_no_signal_logging_is_optional_to_keep_tester_log_readable():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert "if (!ML_LogNoSignal) return;" in text
+    assert ":: MLP NO_SIGNAL" in text
+
+
+def test_fixed11_rule_signal_files_exist_in_runtime_and_tester_dirs():
+    for slot in range(1, 6):
+        filename = f"ml_signals_fixed11_rule0{slot}.csv"
+        runtime_path = MT4_FILES / filename
+        tester_path = MT4_TESTER_FILES / filename
+
+        assert runtime_path.exists()
+        assert tester_path.exists()
+        assert runtime_path.read_text(encoding="utf-8") == tester_path.read_text(encoding="utf-8")
+
+
+def test_fixed11_rule_signal_files_use_plain_time_signal_contract():
+    for slot in range(1, 6):
+        path = MT4_FILES / f"ml_signals_fixed11_rule0{slot}.csv"
+        rows = _read_semicolon_csv(path)
+
+        assert rows[0] == ["time", "signal"]
+        assert len(rows) > 1
+        assert len({row[0] for row in rows[1:]}) == len(rows) - 1
+        assert {row[1] for row in rows[1:]} <= {"-1", "1"}
 
 
 def test_ml_signal_writes_structured_trade_event_csv():

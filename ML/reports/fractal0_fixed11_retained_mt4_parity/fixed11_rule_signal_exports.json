@@ -1,0 +1,60 @@
+{
+  "source": "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
+  "exports": [
+    {
+      "slot": 1,
+      "filename": "ml_signals_fixed11_rule01.csv",
+      "rule_id": "rank05_time_only_linear_target_entry_avoid_sl_top30",
+      "source_rows": 1196,
+      "unique_signal_time": 1147,
+      "exported_rows": 1137,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 49,
+      "opposite_signal_time_groups_omitted": 10,
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+    },
+    {
+      "slot": 2,
+      "filename": "ml_signals_fixed11_rule02.csv",
+      "rule_id": "rank02_time_only_linear_target_entry_ev_regression_top40",
+      "source_rows": 1782,
+      "unique_signal_time": 1719,
+      "exported_rows": 1708,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 63,
+      "opposite_signal_time_groups_omitted": 11,
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+    },
+    {
+      "slot": 3,
+      "filename": "ml_signals_fixed11_rule03.csv",
+      "rule_id": "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50",
+      "source_rows": 693,
+      "unique_signal_time": 666,
+      "exported_rows": 662,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 27,
+      "opposite_signal_time_groups_omitted": 4,
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+    },
+    {
+      "slot": 4,
+      "filename": "ml_signals_fixed11_rule04.csv",
+      "rule_id": "rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50",
+      "source_rows": 2265,
+      "unique_signal_time": 2183,
+      "exported_rows": 2166,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 82,
+      "opposite_signal_time_groups_omitted": 17,
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+    },
+    {
+      "slot": 5,
+      "filename": "ml_signals_fixed11_rule05.csv",
+      "rule_id": "rank10_movement_plus_time_linear_target_entry_ev_regression_top50",
+      "source_rows": 241,
+      "unique_signal_time": 231,
+      "exported_rows": 231,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 10,
+      "opposite_signal_time_groups_omitted": 0,
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+    }
+  ]
+}

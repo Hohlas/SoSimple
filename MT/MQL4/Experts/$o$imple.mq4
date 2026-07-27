@@ -79,6 +79,8 @@ extern bool   ML_AllowReversal = false;// ML_AllowReversal: закрывать �
 extern bool   ML_UseScoreFilter = true;// ML_UseScoreFilter: применять порог по pred_ret_24_dir_atr, если колонка есть
 extern double ML_ScoreThreshold = -0.03594103; // ML_ScoreThreshold: текущий порог отбора winner A@7.5%
 extern double ML_BackStopATR   = 50.0; // ML_BackStopATR: дальний страховочный SL для корректного выставления ордера
+extern int    ML_RuleSlot      = 0;    // ML_RuleSlot: fixed11 retained rule slot 1..5; 0=ml_signals.csv
+extern bool   ML_LogNoSignal   = false;// ML_LogNoSignal: печатать каждый бар без строки в ml_signals*.csv
 
 datetime BarTime;
 uchar    ExpTotal;

@@ -196,6 +196,7 @@ void EXPERT_PARENT_CLASS::EXTERN_VARS(){// функция родительско
    DATA("ML_UseScoreFilter", ML_UseScoreFilter);
    DATA("ML_ScoreThreshold", ML_ScoreThreshold);
    DATA("ML_BackStopATR", ML_BackStopATR);
+   DATA("ML_RuleSlot", ML_RuleSlot);
    }  
         
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ 

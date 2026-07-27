@@ -112,6 +112,21 @@ threshold. Цель этого режима - проверить тракт `MT 
 reconciliation. PF в этом режиме не используется как критерий успеха.
 Ослабленный threshold всегда помечать как diagnostic-only.
 
+Для fixed11 retained subset `#.csv` содержит пять рабочих строк. В tester можно
+переключать правило через `BackTest=2..6`, потому что `BackTest=2` выбирает
+первую строку после заголовка `#.csv`; каждая строка задаёт свой
+`ML_RuleSlot=1..5`, а `lib_ML_Signal.mqh` читает соответствующий файл
+`ml_signals_fixed11_rule01.csv` ... `ml_signals_fixed11_rule05.csv`.
+
+Это разделяет пять retained rules на пять отдельных прогонов. Если внутри
+одного правила есть несколько сделок на один `signal_time`, отдельный export
+всё равно должен иметь явную политику представления таких строк.
+
+Текущие файлы `ml_signals_fixed11_rule01.csv` ...
+`ml_signals_fixed11_rule05.csv` созданы из locked-test trades. Политика дублей
+консервативная: одинаковые направления на одном времени схлопываются в одну
+строку, противоположные направления на одном времени не экспортируются.
+
 All-rows top-N selection с direction из `fractal0.direction` не является parity
 с production candidate. Это отдельный mechanical stress mode, а не основной M5
 diagnostic.
@@ -504,6 +519,11 @@ prediction/export frame, а не из `fractal0.direction`.
    - `MLP SELL` - найден `signal=-1`, отправлен SELL;
    - `MLP SKIP` - сигнал найден, но отфильтрован или заблокирован правилом.
 
+`MLP NO_SIGNAL` - это отладочная запись, а не ошибка. По умолчанию она
+выключена через `ML_LogNoSignal=false`, чтобы tester log не разрастался на
+каждом баре без сигнала. Включать её стоит только при ручной проверке
+конкретного пропущенного времени.
+
 Важное следствие: `Nero.csv` не обязан дописываться на каждом M5/H1 баре. Он
 пишется при появлении нового уровня. Поэтому `MLP NO_SIGNAL` и timeout на барах
 без новой строки `Nero.csv` сами по себе не являются ошибкой исполнения. Ошибка
@@ -703,6 +723,8 @@ MT4, а не доказательством прибыльности или со
 | `ML_UseScoreFilter` | применять ли порог по `pred_ret_24_dir_atr`, если колонка есть |
 | `ML_ScoreThreshold` | порог score для текущего winner |
 | `ML_BackStopATR` | дальний страховочный SL |
+| `ML_RuleSlot` | выбор файла fixed11 retained rule: `0=ml_signals.csv`, `1..5=ml_signals_fixed11_rule01..05.csv` |
+| `ML_LogNoSignal` | печатать ли каждый бар без строки сигнала; по умолчанию выключено |
 
 Практический нюанс для текущего `entry_path_v1_quantile` parity-check
 (production `lb_gt_m_q35`, frozen 2026-04-12):

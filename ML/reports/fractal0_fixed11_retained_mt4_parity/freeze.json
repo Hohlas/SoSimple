@@ -1,0 +1,55 @@
+{
+  "stage": "fixed11_retained_subset_mt4_parity",
+  "depends_on": [
+    "docs/reports/2026-07-24-fractal0-fixed11-locked-test.md",
+    "docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md",
+    "docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md",
+    "ML/reports/fractal0_fixed11_rich_entry_locked_test.json",
+    "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
+    "ML/reports/fractal0_fixed11_candidate_audit.json",
+    "ML/reports/fractal0_fixed11_candidate_audit_findings.csv",
+    "ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json",
+    "ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json"
+  ],
+  "retained_rule_ids": [
+    "rank05_time_only_linear_target_entry_avoid_sl_top30",
+    "rank02_time_only_linear_target_entry_ev_regression_top40",
+    "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50",
+    "rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50",
+    "rank10_movement_plus_time_linear_target_entry_ev_regression_top50"
+  ],
+  "locked_test_boundaries": {
+    "source": "docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md",
+    "locked_test_min_time": "2022-12-02 11:00:00",
+    "locked_test_max_time": "2026-06-04 12:00:00",
+    "edge_exclusions": []
+  },
+  "input_sha256": {
+    "locked_test_report_md": "8d62a1f948226c89c9a9c00184ea6f9aef8a94d687f2ab6e338b16a3aad98231",
+    "candidate_audit_report_md": "d0cf0d900fcdf8c4799fe9b6d2f0e5838bd85c1d819f01844e5cb4326b1cbdd0",
+    "pruning_report_md": "33973bf1f0b9992fe3ca175d6ad0b31d311ea4acf26940fd018a4f7c1c71447f",
+    "locked_test_json": "db737be2012a45aa251bbc7eb33a67c3ae062b5158c379d0e0bfc7d01b355e97",
+    "locked_test_trades_csv": "5f73f3399968099a674b1e533be45c69a3f11e4e6c45521fea00148b6dd9b0b6",
+    "candidate_audit_json": "a131479a8460bd480df6c871f40192b8e15e45769a503d256f94bb090c28bb6a",
+    "candidate_audit_findings_csv": "d3d3befa5a49aa7eb2fb4b006d328bab46826929fdcec48ebe8f2081e7b3bc41",
+    "retained_subset_json": "14a98c3e746a7280ff8ce0543479c703da6fe4b5cfa5b96118fb5b1b08bb88b9",
+    "pruning_summary_json": "0c3fb1c045bd557d4c3524270c9578e12c89fefce644e0a4d6d61e64d8c78f7d",
+    "tester_ini": "989fc5ec8c1233028f82e4a7095a9fd67c34353386aeac26c604ee6383768099",
+    "params_csv": "ef7eca91e4c05d63061ff0f97b269f84ce9074cd38e912428a6d58dd623cc062",
+    "opt_set": "92b43d2ae741a5c24f188e55b5f971545c639da9064e66f7c6b4d16408993914"
+  },
+  "forbidden_changes": [
+    "rules",
+    "cutoffs",
+    "profiles",
+    "models",
+    "targets",
+    "filters",
+    "entries",
+    "exits",
+    "stops",
+    "spread",
+    "fill_policy",
+    "pnl_convention"
+  ]
+}

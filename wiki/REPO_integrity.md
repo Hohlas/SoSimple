@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-27 09:37 UTC · git `dcdedf4`
+> Auto-generated 2026-07-27 12:27 UTC · git `b57d7ad`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3290 files  ·  **Commit**: `dcdedf4`  ·  **Generated**: 2026-07-27 09:37 UTC
+**Tracked**: 3294 files  ·  **Commit**: `b57d7ad`  ·  **Generated**: 2026-07-27 12:27 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-20 | 10KB | `2d2844bd` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-27 | 157KB | `c6f5e8c6` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-27 | 158KB | `c212050f` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-27 | 2KB | `e7046678` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-27 | 3KB | `4d7f62b2` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-27 | 59KB | `eeb3de7d` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -90,8 +90,8 @@
 | [docs/ML/stage10_frozen_test_oos.py.md](docs/ML/stage10_frozen_test_oos.py.md) |  | 2026-06-17 | 1KB | `9fc4ae1d` |
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-06-17 | 4KB | `b02fd806` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-06-17 | 8KB | `e40ecf3c` |
-| [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-06-17 | 25KB | `aa7313db` |
-| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-06-17 | 45KB | `30e59566` |
+| [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-07-27 | 26KB | `de59eb6a` |
+| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-07-27 | 46KB | `b26f1d5e` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-06-17 | 4KB | `dba0c943` |
 | [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-07-20 | 4KB | `48d1282c` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](docs/audit/2026-05-18-codex-direct-direction-chain-audit.md) |  | 2026-06-17 | 8KB | `4771493f` |
@@ -157,7 +157,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-27 | 17KB | `9e476202` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-27 | 24KB | `58afbfa7` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -276,6 +276,7 @@
 | [docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md](docs/superpowers/plans/2026-07-23-time-only-robustness-audit.md) |  | 2026-07-23 | 53KB | `958b565b` |
 | [docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-25 | 15KB | `e52b9233` |
 | [docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md](docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 14KB | `ac1038f1` |
+| [docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md](docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-27 | 31KB | `8a7257f3` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-27 | 6KB | `6306f640` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
@@ -448,6 +449,7 @@
 | [docs/reports/2026-07-24-fractal0-fixed11-locked-test.md](docs/reports/2026-07-24-fractal0-fixed11-locked-test.md) |  | 2026-07-24 | 17KB | `5eac9b41` |
 | [docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-26 | 8KB | `88a957c4` |
 | [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 10KB | `fe9774d5` |
+| [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-27 | 7KB | `76dae005` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -816,6 +818,8 @@
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json) |  |  | 2026-07-27 | 194KB | `b616f0c9` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 3KB | `4165a1a9` |
+| [ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json](ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json) |  |  | 2026-07-27 | 2KB | `0d1e0a82` |
+| [ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json](ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json) |  |  | 2026-07-27 | 2KB | `00a86f7d` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test.json](ML/reports/fractal0_fixed11_rich_entry_locked_test.json) |  |  | 2026-07-24 | 2KB | `374ed486` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
@@ -1285,7 +1289,7 @@
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-06-17 | 3KB | `14cd19b8` |
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-06-17 | 5KB | `3d37ad7d` |
 | [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-17 | 3KB | `281dac57` |
-| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-06-17 | 8KB | `f2a68e78` |
+| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-07-27 | 10KB | `191d1175` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-17 | 1KB | `de0eeac6` |
 | [tests/test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | ✅ | 2026-07-20 | 3KB | `b453393c` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-06-17 | 1KB | `7d04f504` |
@@ -1339,7 +1343,7 @@
 |------|-------------|--------|----------|------|------|
 | [MT/.vscode/settings.json](MT/.vscode/settings.json) |  |  | 2026-06-17 | 928B | `d6834b74` |
 | [MT/MQL4/.vscode/settings.json](MT/MQL4/.vscode/settings.json) |  |  | 2026-06-17 | 927B | `c3c0af89` |
-| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-06-17 | 12KB | `02964edd` |
+| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-07-27 | 12KB | `34654d03` |
 | [MT/MQL4/Include/Arrays/Array.mqh](MT/MQL4/Include/Arrays/Array.mqh) |  |  | 2026-07-21 | 6KB | `29d804ca` |
 | [MT/MQL4/Include/Arrays/ArrayChar.mqh](MT/MQL4/Include/Arrays/ArrayChar.mqh) |  |  | 2026-07-21 | 23KB | `3df8fe54` |
 | [MT/MQL4/Include/Arrays/ArrayDouble.mqh](MT/MQL4/Include/Arrays/ArrayDouble.mqh) |  |  | 2026-07-21 | 24KB | `c44a2bc3` |
@@ -1405,7 +1409,7 @@
 | [MT/MQL4/Include/Indicators/TimeSeries.mqh](MT/MQL4/Include/Indicators/TimeSeries.mqh) |  |  | 2026-07-21 | 19KB | `9d9048a3` |
 | [MT/MQL4/Include/Indicators/Trend.mqh](MT/MQL4/Include/Indicators/Trend.mqh) |  |  | 2026-07-21 | 35KB | `81111941` |
 | [MT/MQL4/Include/Indicators/Volumes.mqh](MT/MQL4/Include/Indicators/Volumes.mqh) |  |  | 2026-07-21 | 11KB | `dd2a52e4` |
-| [MT/MQL4/Include/MAIN.mqh](MT/MQL4/Include/MAIN.mqh) |  |  | 2026-06-17 | 10KB | `37231467` |
+| [MT/MQL4/Include/MAIN.mqh](MT/MQL4/Include/MAIN.mqh) |  |  | 2026-07-27 | 10KB | `4f526ceb` |
 | [MT/MQL4/Include/MM.mqh](MT/MQL4/Include/MM.mqh) |  |  | 2026-06-17 | 10KB | `c7d3005a` |
 | [MT/MQL4/Include/MovingAverages.mqh](MT/MQL4/Include/MovingAverages.mqh) |  |  | 2026-07-21 | 8KB | `d87e9a1b` |
 | [MT/MQL4/Include/ORDERS.mqh](MT/MQL4/Include/ORDERS.mqh) |  |  | 2026-06-17 | 40KB | `fbab4671` |
@@ -1420,7 +1424,7 @@
 | [MT/MQL4/Include/iGRAPH.mqh](MT/MQL4/Include/iGRAPH.mqh) |  |  | 2026-06-17 | 38KB | `73d71482` |
 | [MT/MQL4/Include/lib_ATR.mqh](MT/MQL4/Include/lib_ATR.mqh) |  |  | 2026-06-17 | 2KB | `e8fa3ca7` |
 | [MT/MQL4/Include/lib_Flat.mqh](MT/MQL4/Include/lib_Flat.mqh) |  |  | 2026-06-17 | 13KB | `bc1a865b` |
-| [MT/MQL4/Include/lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | ✅ | 2026-06-17 | 43KB | `961e7c47` |
+| [MT/MQL4/Include/lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | ✅ | 2026-07-27 | 44KB | `fffee365` |
 | [MT/MQL4/Include/lib_ML_Signal_TB.mqh](MT/MQL4/Include/lib_ML_Signal_TB.mqh) |  |  | 2026-06-17 | 8KB | `86f9658b` |
 | [MT/MQL4/Include/lib_ML_Signal_back.mqh](MT/MQL4/Include/lib_ML_Signal_back.mqh) |  |  | 2026-06-17 | 14KB | `996e3367` |
 | [MT/MQL4/Include/lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | ⚠️ | 2026-06-17 | 57KB | `75237554` |
@@ -1741,8 +1745,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-27 | 5KB | `bdab7b75` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-27 | 79KB | `f79dabfe` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-27 | 6KB | `4055d458` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-27 | 80KB | `310aa22a` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1753,7 +1757,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-27 | 136KB | `96c707cd` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-27 | 138KB | `55bec735` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |

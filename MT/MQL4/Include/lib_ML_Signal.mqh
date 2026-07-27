@@ -5,7 +5,7 @@
 //| Автор: SoSimple                                                  |
 //| Обновлён: 2026-05-13                                             |
 //| Входные данные:                                                  |
-//|   - MQL4/Files/ml_signals.csv                                    |
+//|   - MQL4/Files/ml_signals.csv or fixed11 rule-slot file          |
 //| Поддерживаемые форматы CSV:                                      |
 //|   - time;signal                                                  |
 //|   - time;signal;...;pred_ret_24_dir_atr;...                      |
@@ -17,7 +17,7 @@
 //+------------------------------------------------------------------+
 #property strict
 
-#define MLP_SIGNALS_FILE "ml_signals.csv"
+#define MLP_DEFAULT_SIGNALS_FILE "ml_signals.csv"
 #define MLP_EVENTS_FILE_PREFIX "ML_Trade_Events_"
 #define MLP_MAX_SIGNALS  200000
 #define MLP_Ver          4.3
@@ -63,6 +63,15 @@ int MLP_EventsFilePreparedCount = 0;
 
 string MLP_EventsFileName(int magic) {
    return MLP_EVENTS_FILE_PREFIX + NAME + "_" + S0(magic) + ".csv";
+}
+
+string MLP_SignalsFileName() {
+   if (ML_RuleSlot == 1) return "ml_signals_fixed11_rule01.csv";
+   if (ML_RuleSlot == 2) return "ml_signals_fixed11_rule02.csv";
+   if (ML_RuleSlot == 3) return "ml_signals_fixed11_rule03.csv";
+   if (ML_RuleSlot == 4) return "ml_signals_fixed11_rule04.csv";
+   if (ML_RuleSlot == 5) return "ml_signals_fixed11_rule05.csv";
+   return MLP_DEFAULT_SIGNALS_FILE;
 }
 
 void MLP_WriteEventHeaderIfNeeded(int handle) {
@@ -230,7 +239,8 @@ bool MLP_PassScore(int idx) {
 }
 
 datetime MLP_FileModifyTime() {
-   int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_BIN);
+   string signals_file = MLP_SignalsFileName();
+   int handle = FileOpen(signals_file, FILE_READ | FILE_BIN);
    if (handle < 0) return 0;
    datetime modified = (datetime)FileGetInteger(handle, FILE_MODIFY_DATE);
    FileClose(handle);
@@ -709,6 +719,8 @@ int MLP_FindSignalInsertPos(datetime barTime) {
 }
 
 void MLP_LogNoSignal(int magic, datetime barTime) {
+   if (!ML_LogNoSignal) return;
+
    if (MLP_SignalCount <= 0) {
       Print(magic, ":: MLP NO_SIGNAL"
             " bar_time=", TimeToString(barTime),
@@ -750,17 +762,18 @@ void MLP_LogZeroSignal(int magic, datetime barTime, int idx) {
 }
 
 bool MLP_INIT() {
+   string signals_file = MLP_SignalsFileName();
    datetime file_modify_time = MLP_FileModifyTime();
-   int handle = FileOpen(MLP_SIGNALS_FILE, FILE_READ | FILE_CSV | FILE_ANSI, ';');
+   int handle = FileOpen(signals_file, FILE_READ | FILE_CSV | FILE_ANSI, ';');
    if (handle < 0) {
-      Print("MLP_INIT: Cannot open ", MLP_SIGNALS_FILE, " Error=", GetLastError());
+      Print("MLP_INIT: Cannot open ", signals_file, " Error=", GetLastError());
       return false;
    }
 
    string header_time = FileReadString(handle);
    string header_signal = FileReadString(handle);
    if (header_time != "time" || header_signal != "signal") {
-      Print("MLP_INIT: Unexpected header in ", MLP_SIGNALS_FILE,
+      Print("MLP_INIT: Unexpected header in ", signals_file,
             " first=", header_time, " second=", header_signal);
       FileClose(handle);
       return false;
@@ -823,11 +836,12 @@ bool MLP_INIT() {
    if (MLP_RuntimeStartTime <= 0) MLP_RuntimeStartTime = Time[0];
 
    if (MLP_SignalCount <= 0) {
-      Print("MLP_INIT: Loaded 0 rows from ", MLP_SIGNALS_FILE);
+      Print("MLP_INIT: Loaded 0 rows from ", signals_file);
       return true;
    }
 
-   Print("MLP_INIT: Loaded V", MLP_Ver, " ", MLP_SignalCount, " rows from ", MLP_SIGNALS_FILE,
+   Print("MLP_INIT: rule_slot=", ML_RuleSlot,
+         " Loaded V", MLP_Ver, " ", MLP_SignalCount, " rows from ", signals_file,
          " Range: ", TimeToString(MLP_Times[0]), " — ", TimeToString(MLP_Times[MLP_SignalCount - 1]),
          " ScoreCol=", MLP_HasScoreColumn,
          " ScoreFilter=", ML_UseScoreFilter,
@@ -846,13 +860,14 @@ bool MLP_INIT() {
 }
 
 void MLP_RELOAD_IF_CHANGED() {
+   string signals_file = MLP_SignalsFileName();
    datetime file_modify_time = MLP_FileModifyTime();
    if (!MLP_Loaded) {
       MLP_INIT();
       return;
    }
    if (file_modify_time > 0 && file_modify_time != MLP_LoadedFileModifyTime) {
-      Print("MLP_RELOAD: file changed ", MLP_SIGNALS_FILE,
+      Print("MLP_RELOAD: file changed ", signals_file,
             " old=", TimeToString(MLP_LoadedFileModifyTime),
             " new=", TimeToString(file_modify_time));
       MLP_INIT();

@@ -1,0 +1,49 @@
+{
+  "stage": "fixed11_retained_subset_mt4_parity",
+  "feasibility_decision": "parity_blocked",
+  "methodology_status": "UNKNOWN",
+  "python_execution_contract": {
+    "stop_policy_id": "S2_fractal0_buffer_0_5_entry_floor_2",
+    "entry_id": "E3_open_pullback_1_0atr",
+    "mask_id": "M0_no_mask",
+    "exit_id": "X2_ml_opposite_any_p0_50",
+    "spread": 0.2,
+    "execution_ohlc": "MT/MQL4/Files/XAUUSD_M5_OHLC.csv"
+  },
+  "mt4_runtime_contract": {
+    "expert": "MT/MQL4/Experts/$o$imple.mq4",
+    "tester_ini": "MT/tester/$o$imple.ini",
+    "tester_backtest_row": 2,
+    "params_csv": "MT/MQL4/Files/#.csv",
+    "opt_set": "MT/tester/opt.set",
+    "runtime_contract_match": false,
+    "runtime_contract_match_reason": "current iSignal=3 direct mode opens on next bar and does not prove E3/S2/X2 fixed11 execution or preserve five-rule identity in one plain time;signal stream"
+  },
+  "retained_stream_counts": {
+    "retained_trade_count": 6177,
+    "unique_signal_time_count": 2806,
+    "unique_signal_time_direction_count": 2827,
+    "duplicate_signal_time_count": 1670,
+    "opposite_signal_time_count": 21
+  },
+  "plain_time_signal_export_allowed": false,
+  "plain_time_signal_export_blocker": "time;signal cannot preserve five-rule trade stream because it drops rule_id and collapses duplicate signal_time rows; MT4 keeps only one effective signal per time",
+  "allowed_next_modes": [
+    "separate_per_rule_export_and_mt4_run",
+    "new_mt4_runtime_with_rule_id_and_fixed11_execution_contract",
+    "weaker_aggregated_signal_reading_diagnostic_without_trade_parity_claim"
+  ],
+  "evidence": {
+    "retained_stream_command": "Task 1 Step 1 command returned 6177 trades, 2806 unique signal_time, 1670 duplicate signal_time groups, 21 opposite signal_time groups",
+    "python_contract_source": "ML/reports/fractal0_fixed11_rich_entry_locked_test.json:execution_contract",
+    "mt4_runtime_sources": [
+      "docs/MT/trading_strategy.md",
+      "docs/MT/ml_signal_integration.md",
+      "MT/MQL4/Include/lib_ML_Signal.mqh",
+      "MT/MQL4/Experts/$o$imple.mq4",
+      "MT/tester/$o$imple.ini",
+      "MT/MQL4/Files/#.csv",
+      "MT/tester/opt.set"
+    ]
+  }
+}
