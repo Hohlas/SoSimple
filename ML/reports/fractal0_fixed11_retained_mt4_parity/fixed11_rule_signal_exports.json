@@ -8,9 +8,15 @@
       "source_rows": 1196,
       "unique_signal_time": 1147,
       "exported_rows": 1137,
-      "same_time_duplicate_rows_collapsed_or_conflicted": 49,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 59,
       "opposite_signal_time_groups_omitted": 10,
-      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because one time;signal row cannot represent both directions",
+      "columns": [
+        "time",
+        "signal",
+        "atr",
+        "stop"
+      ]
     },
     {
       "slot": 2,
@@ -19,9 +25,15 @@
       "source_rows": 1782,
       "unique_signal_time": 1719,
       "exported_rows": 1708,
-      "same_time_duplicate_rows_collapsed_or_conflicted": 63,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 74,
       "opposite_signal_time_groups_omitted": 11,
-      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because one time;signal row cannot represent both directions",
+      "columns": [
+        "time",
+        "signal",
+        "atr",
+        "stop"
+      ]
     },
     {
       "slot": 3,
@@ -30,9 +42,15 @@
       "source_rows": 693,
       "unique_signal_time": 666,
       "exported_rows": 662,
-      "same_time_duplicate_rows_collapsed_or_conflicted": 27,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 31,
       "opposite_signal_time_groups_omitted": 4,
-      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because one time;signal row cannot represent both directions",
+      "columns": [
+        "time",
+        "signal",
+        "atr",
+        "stop"
+      ]
     },
     {
       "slot": 4,
@@ -41,9 +59,15 @@
       "source_rows": 2265,
       "unique_signal_time": 2183,
       "exported_rows": 2166,
-      "same_time_duplicate_rows_collapsed_or_conflicted": 82,
+      "same_time_duplicate_rows_collapsed_or_conflicted": 99,
       "opposite_signal_time_groups_omitted": 17,
-      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because one time;signal row cannot represent both directions",
+      "columns": [
+        "time",
+        "signal",
+        "atr",
+        "stop"
+      ]
     },
     {
       "slot": 5,
@@ -54,7 +78,17 @@
       "exported_rows": 231,
       "same_time_duplicate_rows_collapsed_or_conflicted": 10,
       "opposite_signal_time_groups_omitted": 0,
-      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because time;signal cannot represent both"
+      "duplicate_policy": "same-direction duplicates collapse to one row; opposite-direction same-time groups are omitted because one time;signal row cannot represent both directions",
+      "columns": [
+        "time",
+        "signal",
+        "atr",
+        "stop"
+      ]
     }
-  ]
+  ],
+  "export_format": "time;signal;atr;stop",
+  "atr_source": "DATA/Nero_XAUUSD_test_labeled.csv:ATR matched by time",
+  "entry_contract": "E3_open_pullback_1_0atr: BUY limit=calculation_open-ATR, SELL limit=calculation_open+ATR, fill window covers 6 bars after calculation bar",
+  "stop_source": "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv:protective_stop_price"
 }

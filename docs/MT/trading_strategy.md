@@ -118,6 +118,33 @@ reconciliation. PF в этом режиме не используется как
 `ML_RuleSlot=1..5`, а `lib_ML_Signal.mqh` читает соответствующий файл
 `ml_signals_fixed11_rule01.csv` ... `ml_signals_fixed11_rule05.csv`.
 
+Для этих fixed11 retained diagnostic rows сейчас нужны:
+
+- `ML_MaxPositions=20`;
+- `ML_AllowReversal=1`;
+- `ML_HoldBars=24`;
+- `ML_BackStopATR=50` как fallback для старых CSV без `stop`;
+- `ML_TakeProfitATR=0`.
+- signal CSV format: `time;signal;atr;stop`.
+- tester Spread `20` для XAUUSD при `Point=0.01`, чтобы получить Python
+  `spread=0.20`.
+
+Причина: Python fixed11 stream допускает несколько одновременных сделок и
+использует pullback-limit вход `E3_open_pullback_1_0atr` и выход по обратному
+ML-сигналу. При `ML_MaxPositions=1` tester блокирует большую часть сигналов,
+а при `ML_AllowReversal=0` не повторяет `X2_ml_opposite_any_p0_50`.
+
+В fixed11 multi-position режиме эксперт не должен открывать market-order сразу.
+Он ставит pending order:
+
+- BUY: `OP_BUYLIMIT` по `Open[0] - atr`;
+- SELL: `OP_SELLLIMIT` по `Open[0] + atr`;
+- expiration покрывает шесть проверяемых Python-баров после бара расчёта и
+  ещё один защитный H1-бар, потому что MT4 удаляет pending order на timestamp
+  `expiration`;
+- `atr` берётся из третьей колонки signal CSV;
+- `stop` берётся из четвёртой колонки signal CSV.
+
 Это разделяет пять retained rules на пять отдельных прогонов. Если внутри
 одного правила есть несколько сделок на один `signal_time`, отдельный export
 всё равно должен иметь явную политику представления таких строк.
@@ -125,7 +152,8 @@ reconciliation. PF в этом режиме не используется как
 Текущие файлы `ml_signals_fixed11_rule01.csv` ...
 `ml_signals_fixed11_rule05.csv` созданы из locked-test trades. Политика дублей
 консервативная: одинаковые направления на одном времени схлопываются в одну
-строку, противоположные направления на одном времени не экспортируются.
+строку, противоположные направления на одном времени не экспортируются. Колонка
+`stop` содержит Python `protective_stop_price` для `S2`.
 
 All-rows top-N selection с direction из `fractal0.direction` не является parity
 с production candidate. Это отдельный mechanical stress mode, а не основной M5
@@ -616,20 +644,20 @@ MT4, а не доказательством прибыльности или со
 
 Для `iSignal=3`:
 
-- `signal = 1` -> BUY по текущему `ASK`
-- `signal = -1` -> SELL по текущему `BID`
+- fixed11 multi-position: `signal = 1` -> `OP_BUYLIMIT` по `Open[0] - atr`
+- fixed11 multi-position: `signal = -1` -> `OP_SELLLIMIT` по `Open[0] + atr`
 - при `ML_MaxPositions=1` одновременно может быть только одна активная позиция
 - при `ML_MaxPositions>1` открытие идёт напрямую через ticket-level order helper,
   и старое ограничение `BUY.Typ/SEL.Typ` не блокирует вторую позицию того же направления
 
 В single-position режиме `set.BUY` / `set.SEL` заполняются прямо в `ML_TRADE()`,
 затем сделка проходит через обычные `MODIFY()` и `ORDERS_SET()`. В multi-position
-режиме используется локальный `MLP_OpenMarketOrder()`, чтобы работать по ticket,
+режиме используется локальный `MLP_OpenLimitOrder()`, чтобы работать по ticket,
 а не через один общий `set.BUY` / `set.SEL`.
 
 ### Защитный стоп
 
-Текущий режим ставит очень дальний технический стоп:
+Обычный fallback-режим ставит очень дальний технический стоп:
 
 - BUY: `entry - ML_BackStopATR * ATR`
 - SELL: `entry + ML_BackStopATR * ATR`
@@ -641,6 +669,10 @@ MT4, а не доказательством прибыльности или со
 - не ломать parity-check нулевым `SL`.
 
 Целевой выход при этом всё равно идёт не по этому стопу, а по таймауту или обратному сигналу.
+
+В fixed11 retained режиме, если signal CSV содержит колонку `stop`, эксперт
+использует её как защитный стоп из Python `S2`. `ML_BackStopATR` в таком прогоне
+остаётся только запасным расчётом для старого CSV без `stop`.
 
 В telemetry diagnostic режиме стоп можно сделать рабочим:
 
@@ -662,10 +694,10 @@ MT4, а не доказательством прибыльности или со
 
 - `hold_bars >= ML_HoldBars`
 
-эксперт вызывает закрытие по рынку с причиной `MLP_Timeout`. Для открытия и
-рыночного закрытия ML-сделок используется 5 попыток и адаптивный slippage:
-текущий спред плюс небольшой буфер, минимум `3` пункта, верхний предел
-`0.25 * ATR`.
+эксперт вызывает закрытие по рынку с причиной `MLP_Timeout`. Для постановки
+pending order и рыночного закрытия ML-сделок используется 5 попыток и
+адаптивный slippage: текущий спред плюс небольшой буфер, минимум `3` пункта,
+верхний предел `0.25 * ATR`.
 
 ### 5.2 Trailing-stop (`ML_ExitMode=1`)
 
@@ -834,7 +866,8 @@ MT/MQL4/Files/ML_Trade_Events_<NAME>_<magic>.csv
 ```
 
 Цель файла - не заменить журнал MT4, а упростить точную сверку online/test.
-В нём одна строка на торговое событие `OPEN`, `OPEN_FAILED` или `CLOSE` с полями:
+В нём одна строка на торговое событие `ORDER_PLACED`, `OPEN`, `OPEN_FAILED`
+или `CLOSE` с полями:
 
 - `ticket`, `direction`, `signal_time`, `entry_time`, `exit_time`, `reason`;
 - `bid`, `ask`, `spread`, `spread_atr`;
@@ -848,6 +881,15 @@ MT/MQL4/Files/ML_Trade_Events_<NAME>_<magic>.csv
 Практический смысл: если online и tester расходятся по прибыли, можно увидеть
 не только факт сделки, но и причину расхождения - цена `Bid/Ask`, spread,
 проскальзывание, комиссия, swap, баровый OHLC или другой момент закрытия.
+В fixed11 retained режиме `ORDER_PLACED` пишет `signal_time`, `order_time`,
+`expires`, `calculation_open`, `requested_price`, `atr`, цену заявки `Val`,
+`Stp`, `Prf` и `stop_source`; `OPEN` пишется после фактического исполнения
+лимитки tester-ом и повторяет исходные `signal_time`, `calculation_open`,
+`requested_price` и `atr`.
+
+Если pending order открылся и закрылся внутри одного H1-бара, runtime увидит его
+уже в broker-history. В этом случае `ML_Trade_Events` должен сначала дописать
+`OPEN` с причиной `broker_history_missing_open`, а потом `CLOSE`.
 
 В tester-режиме файл очищается один раз перед первой записью текущего прогона.
 В online-режиме файл не очищается автоматически, чтобы сохранить append-only

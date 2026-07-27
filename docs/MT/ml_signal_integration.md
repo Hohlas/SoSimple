@@ -85,6 +85,8 @@ Strategy Tester читает файл:
 `ml_signals_fixed11_rule05.csv` уже лежат в `MT/MQL4/Files/` и
 `MT/tester/files/`. Политика дублей: одинаковые направления на одном времени
 схлопываются, противоположные направления на одном времени пропускаются.
+Формат fixed11 retained CSV: `time;signal;atr;stop`, где `stop` - Python
+`protective_stop_price` для правила `S2`.
 
 Обычно рабочая последовательность такая:
 
@@ -339,10 +341,14 @@ WATCHER HEARTBEAT: status=IDLE last_bar=2025.01.01 00:00 input=MT/MQL4/Files/Ner
 При `iSignal=3`:
 
 1. эксперт ищет строку по `Time[bar]`;
-2. если на баре есть сигнал, открывает сделку на следующем баре по рынку;
-3. при `ML_MaxPositions=1` держит только одну позицию, при `ML_MaxPositions>1`
+2. если на баре есть fixed11 retained сигнал, ставит pullback-limit заявку
+   `E3_open_pullback_1_0atr` на следующем баре: BUY по `Open[0] - atr`, SELL
+   по `Open[0] + atr`;
+3. держит pending order на период Python fill-window плюс один защитный H1-бар,
+   потому что MT4 удаляет pending order на timestamp `expiration`;
+4. при `ML_MaxPositions=1` держит только одну позицию, при `ML_MaxPositions>1`
    включает диагностический multi-position режим;
-4. закрывает её:
+5. закрывает её:
    - по `ML_HoldBars`, если `ML_ExitMode=0`;
    - по bar-based trailing-stop `X * ATR`, если `ML_ExitMode=1`;
    - по broker-side take profit, если `ML_TakeProfitATR>0`;
@@ -408,6 +414,23 @@ slippage по текущему спреду инструмента. Верхни
 | `ML_BackStopATR` | `50.0` | дальний страховочный stop |
 | `ML_AllowReversal` | `false` | benchmark и MT4 parity без reverse-close |
 | `ML_UseScoreFilter` | `false` | CSV уже предфильтрован в Python |
+
+Для fixed11 retained diagnostic это правило не применять: Python fixed11
+использует pullback-limit вход `E3_open_pullback_1_0atr` и закрывает сделки по
+`X2_ml_opposite_any_p0_50`, поэтому ручной per-rule tester должен идти с
+`ML_MaxPositions=20`, `ML_AllowReversal=true` и CSV формата
+`time;signal;atr;stop`. Если колонка `stop` есть, она задаёт broker-side SL;
+`ML_BackStopATR=50` остаётся только fallback для старых файлов без `stop`. Иначе
+tester либо открывает не тот тип входа, либо блокирует остальные сигналы через
+`MaxPositions`, либо не закрывает позиции на обратном сигнале, либо ставит не
+тот защитный стоп.
+
+Для parity с locked-test spread в MT4 tester должен соответствовать Python
+`spread=0.20`. В логе tester это не входной параметр эксперта, а строка
+`TestGenerator: spread set to ...`. Для XAUUSD при `Point=0.01` нужно ставить
+tester Spread `20`; Spread `100` даёт `Ask-Bid=1.00` и делает прогон
+невалидным для fixed11 parity. Runtime печатает `MLP SPREAD_MISMATCH`, если
+фактический `Ask-Bid` отличается от `0.20`.
 
 Для чистой проверки нового trailing-stop execution:
 
@@ -513,19 +536,32 @@ MLP SKIP reason=MaxPositions ...
 
 - вход: `ticket`, `signal_time`, `entry_time`, `atr`, `spread`, `spread_atr`,
   `open_positions`, `MaxPositions`;
-- выход: `ticket`, `entry_time`, `exit_time`, `hold_bars`, `pnl_atr`, `profit`.
+- выход: `ticket`, `signal_time`, `entry_time`, `exit_time`, `hold_bars`,
+  `pnl_atr`, `profit`.
 
 Для более точного сравнения online/test эксперт также пишет
 per-magic файл `MT/MQL4/Files/ML_Trade_Events_<NAME>_<magic>.csv`. Это
-CSV-журнал торговых событий с `OPEN`/`OPEN_FAILED`/`CLOSE`, `Bid/Ask`, spread,
-OHLC бара, запрошенной и фактической ценой, проскальзыванием, SL/TP, profit,
-swap, commission, balance и equity. Его использовать, когда простой
+CSV-журнал торговых событий с `ORDER_PLACED`/`OPEN`/`OPEN_FAILED`/`CLOSE`,
+`Bid/Ask`, spread, OHLC бара, запрошенной и фактической ценой,
+проскальзыванием, SL/TP, profit, swap, commission, balance и equity. Для
+fixed11 retained `ORDER_PLACED` содержит цену pullback-limit заявки; реальный
+`OPEN` появляется только после исполнения заявки tester-ом и повторяет
+`signal_time`, `calculation_open`, `requested_price` и `atr` исходной заявки.
+`ORDER_PLACED` также пишет `stop_source`, чтобы отличить Python `stop` из CSV от
+fallback-стопа. Если сделка открылась и закрылась внутри одного H1-бара, close
+из broker-history дописывает отсутствующий `OPEN` перед `CLOSE`. Этот CSV
+использовать, когда простой
 reconciliation показывает расхождение в торговых метриках и нужно понять
 причину.
 
 В tester-режиме этот CSV очищается один раз перед первой записью нового
 прогона. В online-режиме он остаётся append-only, чтобы сохранить историю
 наблюдения.
+
+Для закрытий `signal_time` восстанавливается из comment ордера. Поэтому после
+изменения формата comment старые открытые ордера могут закрыться без
+сопоставимого `signal_time`; для чистой сверки нужен новый tester-прогон после
+перекомпиляции.
 
 Ежедневная автоматическая сверка:
 

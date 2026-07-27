@@ -8,9 +8,11 @@
 //|   - MQL4/Files/ml_signals.csv or fixed11 rule-slot file          |
 //| Поддерживаемые форматы CSV:                                      |
 //|   - time;signal                                                  |
+//|   - time;signal;atr                                              |
+//|   - time;signal;atr;stop                                         |
 //|   - time;signal;...;pred_ret_24_dir_atr;...                      |
 //| Логика:                                                          |
-//|   - сигнал на баре t -> вход по рынку на следующем баре          |
+//|   - сигнал на баре t -> E3 pullback limit на следующем баре      |
 //|   - одна или несколько открытых позиций, если ML_MaxPositions > 1|
 //|   - режим 0: закрытие по удержанию либо по обратному сигналу     |
 //|   - режим 1: отдельный bar-based trailing-stop по X*ATR          |
@@ -26,15 +28,25 @@
 #define MLP_WAIT_SIGNAL_SEC 120
 #define MLP_TRADE_RETRIES 5
 #define MLP_MAX_SLIPPAGE_ATR 0.25
+#define MLP_ENTRY_FILL_LAG_BARS 6
+#define MLP_EXPECTED_SPREAD 0.20
 
 int      MLP_SignalCount = 0;
 datetime MLP_Times[];
 char     MLP_Signals[];
 float    MLP_Scores[];
+float    MLP_ATRs[];
+float    MLP_Stops[];
 bool     MLP_HasScoreColumn = false;
+bool     MLP_HasAtrColumn = false;
+bool     MLP_HasStopColumn = false;
 bool     MLP_Loaded = false;
+bool     MLP_SpreadWarned = false;
 datetime MLP_LoadedFileModifyTime = 0;
 datetime MLP_RuntimeStartTime = 0;
+int      MLP_ExitCount = 0;
+datetime MLP_ExitSignalTimes[];
+datetime MLP_ExitTimes[];
 
 datetime MLP_BuySignalTime = 0;
 datetime MLP_SellSignalTime = 0;
@@ -52,12 +64,22 @@ int MLP_cnt_sell     = 0;
 int MLP_cnt_timeout  = 0;
 int MLP_cnt_trailing = 0;
 int MLP_cnt_reverse  = 0;
+int MLP_cnt_mlclose  = 0;
 int MLP_cnt_broker_take = 0;
 int MLP_cnt_broker_stop = 0;
 int MLP_cnt_broker_other = 0;
 
 int MLP_LoggedCloseTickets[];
 int MLP_LoggedCloseCount = 0;
+int MLP_LoggedOpenTickets[];
+int MLP_LoggedOpenCount = 0;
+int MLP_PlacedOrderTickets[];
+datetime MLP_PlacedOrderSignalTimes[];
+double MLP_PlacedOrderCalculationOpens[];
+double MLP_PlacedOrderRequestedPrices[];
+double MLP_PlacedOrderATRs[];
+double MLP_PlacedOrderScores[];
+int MLP_PlacedOrderCount = 0;
 int MLP_EventsFilePrepared[];
 int MLP_EventsFilePreparedCount = 0;
 
@@ -72,6 +94,15 @@ string MLP_SignalsFileName() {
    if (ML_RuleSlot == 4) return "ml_signals_fixed11_rule04.csv";
    if (ML_RuleSlot == 5) return "ml_signals_fixed11_rule05.csv";
    return MLP_DEFAULT_SIGNALS_FILE;
+}
+
+string MLP_ExitsFileName() {
+   if (ML_RuleSlot == 1) return "ml_exits_fixed11_rule01.csv";
+   if (ML_RuleSlot == 2) return "ml_exits_fixed11_rule02.csv";
+   if (ML_RuleSlot == 3) return "ml_exits_fixed11_rule03.csv";
+   if (ML_RuleSlot == 4) return "ml_exits_fixed11_rule04.csv";
+   if (ML_RuleSlot == 5) return "ml_exits_fixed11_rule05.csv";
+   return "";
 }
 
 void MLP_WriteEventHeaderIfNeeded(int handle) {
@@ -94,6 +125,7 @@ void MLP_WriteEventHeaderIfNeeded(int handle) {
       "bar_high",
       "bar_low",
       "bar_close",
+      "calculation_open",
       "requested_price",
       "order_open_price",
       "order_close_price",
@@ -143,6 +175,7 @@ void MLP_LogTradeEvent(
    string reason,
    double score,
    double atr_value,
+   double calculation_open,
    double requested_price,
    double order_open_price,
    double stop_price,
@@ -197,6 +230,7 @@ void MLP_LogTradeEvent(
       DoubleToString(High[bar], Digits),
       DoubleToString(Low[bar], Digits),
       DoubleToString(Close[bar], Digits),
+      DoubleToString(calculation_open, Digits),
       DoubleToString(requested_price, Digits),
       DoubleToString(order_open_price, Digits),
       DoubleToString(order_close_price, Digits),
@@ -219,6 +253,23 @@ void MLP_LogTradeEvent(
 string MLP_ExitModeName() {
    if (ML_ExitMode == MLP_EXIT_TRAIL) return "trailing_stop";
    return "timeout";
+}
+
+void MLP_CheckExpectedSpread(int magic, string sym) {
+   if (MLP_SpreadWarned) return;
+   if (ML_RuleSlot <= 0) return;
+
+   RefreshRates();
+   double spread_value = Ask - Bid;
+   double tolerance = MathMax(MarketInfo(sym, MODE_POINT), 0.0000001);
+   if (MathAbs(spread_value - MLP_EXPECTED_SPREAD) <= tolerance) return;
+
+   Print(magic, ":: MLP SPREAD_MISMATCH expected=", DoubleToString(MLP_EXPECTED_SPREAD, Digits),
+         " actual=", DoubleToString(spread_value, Digits),
+         " tester_spread_points=", MarketInfo(sym, MODE_SPREAD),
+         " rule_slot=", ML_RuleSlot,
+         " status=invalid_for_fixed11_parity");
+   MLP_SpreadWarned = true;
 }
 
 void MLP_ResetBuyState() {
@@ -254,11 +305,34 @@ bool MLP_IsOwnMarketOrder(int magic, string sym) {
    return (typ == OP_BUY || typ == OP_SELL);
 }
 
+bool MLP_IsOwnWorkingOrder(int magic, string sym) {
+   if (OrderMagicNumber() != magic) return false;
+   if (OrderSymbol() != sym) return false;
+   int typ = OrderType();
+   return (typ == OP_BUY || typ == OP_SELL || typ == OP_BUYLIMIT || typ == OP_SELLLIMIT);
+}
+
+bool MLP_IsOwnPendingOrder(int magic, string sym) {
+   if (OrderMagicNumber() != magic) return false;
+   if (OrderSymbol() != sym) return false;
+   int typ = OrderType();
+   return (typ == OP_BUYLIMIT || typ == OP_SELLLIMIT);
+}
+
 int MLP_CountOwnMarketOrders(int magic, string sym) {
    int count = 0;
    for (int i = 0; i < OrdersTotal(); i++) {
       if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
       if (MLP_IsOwnMarketOrder(magic, sym)) count++;
+   }
+   return count;
+}
+
+int MLP_CountOwnWorkingOrders(int magic, string sym) {
+   int count = 0;
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (MLP_IsOwnWorkingOrder(magic, sym)) count++;
    }
    return count;
 }
@@ -275,6 +349,94 @@ void MLP_MarkCloseTicketLogged(int ticket) {
    ArrayResize(MLP_LoggedCloseTickets, MLP_LoggedCloseCount + 1);
    MLP_LoggedCloseTickets[MLP_LoggedCloseCount] = ticket;
    MLP_LoggedCloseCount++;
+}
+
+bool MLP_OpenTicketWasLogged(int ticket) {
+   for (int i = 0; i < MLP_LoggedOpenCount; i++) {
+      if (MLP_LoggedOpenTickets[i] == ticket) return true;
+   }
+   return false;
+}
+
+void MLP_MarkOpenTicketLogged(int ticket) {
+   if (ticket <= 0 || MLP_OpenTicketWasLogged(ticket)) return;
+   ArrayResize(MLP_LoggedOpenTickets, MLP_LoggedOpenCount + 1);
+   MLP_LoggedOpenTickets[MLP_LoggedOpenCount] = ticket;
+   MLP_LoggedOpenCount++;
+}
+
+int MLP_FindPlacedOrder(int ticket) {
+   for (int i = 0; i < MLP_PlacedOrderCount; i++) {
+      if (MLP_PlacedOrderTickets[i] == ticket) return i;
+   }
+   return -1;
+}
+
+void MLP_RememberPlacedOrder(
+   int ticket,
+   datetime signal_time,
+   double calculation_open,
+   double requested_price,
+   double atr_value,
+   double score
+) {
+   if (ticket <= 0) return;
+
+   int idx = MLP_FindPlacedOrder(ticket);
+   if (idx < 0) {
+      idx = MLP_PlacedOrderCount;
+      ArrayResize(MLP_PlacedOrderTickets, MLP_PlacedOrderCount + 1);
+      ArrayResize(MLP_PlacedOrderSignalTimes, MLP_PlacedOrderCount + 1);
+      ArrayResize(MLP_PlacedOrderCalculationOpens, MLP_PlacedOrderCount + 1);
+      ArrayResize(MLP_PlacedOrderRequestedPrices, MLP_PlacedOrderCount + 1);
+      ArrayResize(MLP_PlacedOrderATRs, MLP_PlacedOrderCount + 1);
+      ArrayResize(MLP_PlacedOrderScores, MLP_PlacedOrderCount + 1);
+      MLP_PlacedOrderCount++;
+   }
+
+   MLP_PlacedOrderTickets[idx] = ticket;
+   MLP_PlacedOrderSignalTimes[idx] = signal_time;
+   MLP_PlacedOrderCalculationOpens[idx] = calculation_open;
+   MLP_PlacedOrderRequestedPrices[idx] = requested_price;
+   MLP_PlacedOrderATRs[idx] = atr_value;
+   MLP_PlacedOrderScores[idx] = score;
+}
+
+int MLP_BarsSinceOrderOpen(string sym) {
+   int shift = iBarShift(sym, Period(), OrderOpenTime(), false);
+   if (shift < 0) return 0;
+   return shift;
+}
+
+void MLP_DeleteExpiredPendingOrders(int magic, uchar exp_num, string sym) {
+   for (int i = OrdersTotal() - 1; i >= 0; i--) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (!MLP_IsOwnPendingOrder(magic, sym)) continue;
+
+      int bars_since_order = MLP_BarsSinceOrderOpen(sym);
+      if (bars_since_order <= MLP_ENTRY_FILL_LAG_BARS) continue;
+
+      int ticket = OrderTicket();
+      int typ = OrderType();
+      datetime signal_time = MLP_OrderSignalTime();
+      datetime order_time = OrderOpenTime();
+      double requested_price = OrderOpenPrice();
+      bool deleted = OrderDelete(ticket, clrGray);
+      if (deleted) {
+         Print(magic, ":: MLP LIMIT_EXPIRED",
+               " ticket=", ticket,
+               " direction=", (typ == OP_BUYLIMIT ? "BUY" : "SELL"),
+               " signal_time=", TimeToString(signal_time),
+               " order_time=", TimeToString(order_time),
+               " delete_time=", TimeToString(Time[0]),
+               " bars_since_order=", bars_since_order,
+               " fill_lag_bars=", MLP_ENTRY_FILL_LAG_BARS,
+               " requested_price=", DoubleToString(requested_price, Digits));
+      }
+      else {
+         ERROR_CHECK("MLP_DeleteExpiredPendingOrders", exp_num);
+      }
+   }
 }
 
 string MLP_BrokerCloseReason(int typ, double close_price, double stop_loss, double take_profit, string sym) {
@@ -297,6 +459,167 @@ int MLP_HoldBars(datetime entry_time, datetime exit_time, string sym) {
    return MathMax(0, entry_shift - exit_shift);
 }
 
+string MLP_OrderComment(int magic, datetime signal_time) {
+   return S0(magic) + "-MLP-" + TimeToString(signal_time, TIME_DATE | TIME_MINUTES);
+}
+
+datetime MLP_OrderSignalTime() {
+   string comment = OrderComment();
+   int pos = StringFind(comment, "-MLP-", 0);
+   if (pos < 0) return 0;
+   return StringToTime(StringSubstr(comment, pos + 5, 16));
+}
+
+void MLP_LogFilledMarketOrders(int magic, string sym, double atr_value) {
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+      if (!MLP_IsOwnMarketOrder(magic, sym)) continue;
+
+      int ticket = OrderTicket();
+      if (MLP_OpenTicketWasLogged(ticket)) continue;
+
+      int typ = OrderType();
+      datetime signal_time = MLP_OrderSignalTime();
+      double entry_price = OrderOpenPrice();
+      double stop_loss = OrderStopLoss();
+      double take_profit = OrderTakeProfit();
+      datetime entry_time = OrderOpenTime();
+      double lots = OrderLots();
+      double calculation_open = 0.0;
+      double requested_price = entry_price;
+      double event_atr = atr_value;
+      double score = 0.0;
+      int placed_idx = MLP_FindPlacedOrder(ticket);
+      if (placed_idx >= 0) {
+         signal_time = MLP_PlacedOrderSignalTimes[placed_idx];
+         calculation_open = MLP_PlacedOrderCalculationOpens[placed_idx];
+         requested_price = MLP_PlacedOrderRequestedPrices[placed_idx];
+         event_atr = MLP_PlacedOrderATRs[placed_idx];
+         score = MLP_PlacedOrderScores[placed_idx];
+      }
+      double spread_value = Ask - Bid;
+      double spread_atr = 0.0;
+      if (event_atr > 0) spread_atr = spread_value / event_atr;
+      int open_positions = MLP_CountOwnMarketOrders(magic, sym);
+
+      MLP_cnt_opened++;
+      if (typ == OP_BUY) MLP_cnt_buy++;
+      else MLP_cnt_sell++;
+
+      Print(magic, ":: MLP ", (typ == OP_BUY ? "BUY" : "SELL"),
+            " mode=e3_pullback_limit_v1",
+            " ticket=", ticket,
+            " signal_time=", TimeToString(signal_time),
+            " entry_time=", TimeToString(entry_time),
+            " calculation_open=", DoubleToString(calculation_open, Digits),
+            " requested_price=", DoubleToString(requested_price, Digits),
+            " atr=", DoubleToString(event_atr, Digits),
+            " spread=", DoubleToString(spread_value, Digits),
+            " spread_atr=", DoubleToString(spread_atr, 4),
+            " exit_mode=", MLP_ExitModeName(),
+            " TrailATR=", DoubleToString(ML_TrailATR, 2),
+            " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
+            " open_positions=", open_positions,
+            " MaxPositions=", ML_MaxPositions,
+            " Val=", DoubleToString(entry_price, Digits),
+            " Stp=", DoubleToString(stop_loss, Digits),
+            " Prf=", DoubleToString(take_profit, Digits),
+            " Lot=", DoubleToString(lots, 2));
+      MLP_LogTradeEvent(magic,
+            "OPEN",
+            ticket,
+            (typ == OP_BUY ? "BUY" : "SELL"),
+            signal_time,
+            entry_time,
+            0,
+            "",
+            score,
+            event_atr,
+            calculation_open,
+            requested_price,
+            entry_price,
+            stop_loss,
+            take_profit,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0,
+            open_positions,
+            ML_MaxPositions);
+
+      MLP_MarkOpenTicketLogged(ticket);
+   }
+}
+
+void MLP_LogHistoryOpenIfNeeded(
+   int magic,
+   string sym,
+   int ticket,
+   int typ,
+   datetime signal_time,
+   double entry_price,
+   double stop_loss,
+   double take_profit,
+   double atr_value
+) {
+   if (MLP_OpenTicketWasLogged(ticket)) return;
+
+   double calculation_open = 0.0;
+   double requested_price = entry_price;
+   double event_atr = atr_value;
+   double score = 0.0;
+   int placed_idx = MLP_FindPlacedOrder(ticket);
+   if (placed_idx >= 0) {
+      signal_time = MLP_PlacedOrderSignalTimes[placed_idx];
+      calculation_open = MLP_PlacedOrderCalculationOpens[placed_idx];
+      requested_price = MLP_PlacedOrderRequestedPrices[placed_idx];
+      event_atr = MLP_PlacedOrderATRs[placed_idx];
+      score = MLP_PlacedOrderScores[placed_idx];
+   }
+
+   MLP_cnt_opened++;
+   if (typ == OP_BUY) MLP_cnt_buy++;
+   else MLP_cnt_sell++;
+
+   Print(magic, ":: MLP ", (typ == OP_BUY ? "BUY" : "SELL"),
+         " mode=e3_pullback_limit_v1",
+         " source=broker_history_missing_open",
+         " ticket=", ticket,
+         " signal_time=", TimeToString(signal_time),
+         " entry_time=", TimeToString(OrderOpenTime()),
+         " calculation_open=", DoubleToString(calculation_open, Digits),
+         " requested_price=", DoubleToString(requested_price, Digits),
+         " atr=", DoubleToString(event_atr, Digits),
+         " Val=", DoubleToString(entry_price, Digits),
+         " Stp=", DoubleToString(stop_loss, Digits),
+         " Prf=", DoubleToString(take_profit, Digits),
+         " Lot=", DoubleToString(OrderLots(), 2));
+   MLP_LogTradeEvent(magic,
+         "OPEN",
+         ticket,
+         (typ == OP_BUY ? "BUY" : "SELL"),
+         signal_time,
+         OrderOpenTime(),
+         0,
+         "broker_history_missing_open",
+         score,
+         event_atr,
+         calculation_open,
+         requested_price,
+         entry_price,
+         stop_loss,
+         take_profit,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         0,
+         0,
+         ML_MaxPositions);
+   MLP_MarkOpenTicketLogged(ticket);
+}
+
 void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
    for (int i = OrdersHistoryTotal() - 1; i >= 0; i--) {
       if (!OrderSelect(i, SELECT_BY_POS, MODE_HISTORY)) continue;
@@ -317,6 +640,8 @@ void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
       double stop_loss = OrderStopLoss();
       double take_profit = OrderTakeProfit();
       double profit_value = OrderProfit() + OrderSwap() + OrderCommission();
+      datetime signal_time = MLP_OrderSignalTime();
+      MLP_LogHistoryOpenIfNeeded(magic, sym, ticket, typ, signal_time, entry_price, stop_loss, take_profit, atr_value);
       double pnl_atr = 0.0;
       if (atr_value > 0) {
          if (typ == OP_BUY) pnl_atr = (close_price - entry_price) / atr_value;
@@ -346,12 +671,13 @@ void MLP_LogBrokerClosedOrders(int magic, string sym, double atr_value) {
             "CLOSE",
             ticket,
             (typ == OP_BUY ? "BUY" : "SELL"),
-            0,
+            signal_time,
             OrderOpenTime(),
             close_time,
             reason,
             0.0,
             atr_value,
+            0.0,
             close_price,
             entry_price,
             stop_loss,
@@ -445,6 +771,7 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
    double actual_close_price = exit_price;
    double close_stop_price = OrderStopLoss();
    double close_take_profit_price = OrderTakeProfit();
+   datetime signal_time = MLP_OrderSignalTime();
    if (ok && OrderSelect(ticket, SELECT_BY_TICKET, MODE_HISTORY)) {
       actual_close_price = OrderClosePrice();
       close_stop_price = OrderStopLoss();
@@ -459,9 +786,11 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
       if (reason == "TrailingStop") MLP_cnt_trailing++;
       else if (reason == "Timeout") MLP_cnt_timeout++;
       else if (reason == "ReverseSignal") MLP_cnt_reverse++;
+      else if (reason == "MLClose") MLP_cnt_mlclose++;
       Print(magic, ":: MLP CLOSE ", (typ == OP_BUY ? "BUY" : "SELL"),
             " reason=", reason,
             " ticket=", ticket,
+            " signal_time=", TimeToString(signal_time),
             " entry_time=", TimeToString(entry_time),
             " exit_time=", TimeToString(Time[0]),
             " hold_bars=", hold_bars,
@@ -479,12 +808,13 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
             "CLOSE",
             ticket,
             (typ == OP_BUY ? "BUY" : "SELL"),
-            0,
+            signal_time,
             entry_time,
             Time[0],
             reason,
             0.0,
             atr_value,
+            0.0,
             exit_price,
             entry_price,
             close_stop_price,
@@ -500,7 +830,7 @@ bool MLP_CloseSelectedOrder(int magic, uchar exp_num, double atr_value, string r
    return ok;
 }
 
-void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_value) {
+void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_value, int current_sig) {
    if (atr_value <= 0) return;
 
    for (int i = OrdersTotal() - 1; i >= 0; i--) {
@@ -513,9 +843,22 @@ void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_v
       double trail_price = entry_price;
       bool should_close = false;
       string close_reason = "";
+      datetime signal_time = MLP_OrderSignalTime();
 
       int hold_bars = SHIFT(OrderOpenTime());
-      if (ML_ExitMode == MLP_EXIT_TIMEOUT && MLP_IsTimeoutDue(hold_bars)) {
+      if (MLP_ShouldCloseByML(signal_time, Time[bar])) {
+         should_close = true;
+         close_reason = "MLClose";
+      }
+      else if (ML_AllowReversal && current_sig == -1 && typ == OP_BUY) {
+         should_close = true;
+         close_reason = "ReverseSignal";
+      }
+      else if (ML_AllowReversal && current_sig == 1 && typ == OP_SELL) {
+         should_close = true;
+         close_reason = "ReverseSignal";
+      }
+      else if (ML_ExitMode == MLP_EXIT_TIMEOUT && MLP_IsTimeoutDue(hold_bars)) {
          should_close = true;
          close_reason = "Timeout";
       }
@@ -538,28 +881,33 @@ void MLP_ManageMultiPositions(int magic, uchar exp_num, string sym, double atr_v
    }
 }
 
-bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double score, datetime signal_time, double atr_value, int open_positions_before) {
+bool MLP_OpenLimitOrder(int magic, uchar exp_num, string sym, int sig, double score, datetime signal_time, double calculation_open, double atr_value, double csv_stop_price, int open_positions_before) {
    if (atr_value <= 0) return false;
    if (sig != 1 && sig != -1) return false;
 
    RefreshRates();
-   double back_stop = MathMax(atr_value * ML_BackStopATR, StopLevel * 2.0);
    double min_price = MarketInfo(sym, MODE_POINT);
+   double limit_price = (sig == 1) ? calculation_open - atr_value : calculation_open + atr_value;
+   double stop_distance = MathMax(atr_value * ML_BackStopATR, StopLevel * 2.0);
+   if (csv_stop_price > 0.0) stop_distance = MathMax(MathAbs(limit_price - csv_stop_price), StopLevel * 2.0);
    double lot_to_send = Lot;
    if (Risk == 0 || IsTesting()) lot_to_send = 0.1;
-   else lot_to_send = MM((float)back_stop, CurExp);
+   else lot_to_send = MM((float)stop_distance, CurExp);
    lot_to_send = NormalizeDouble(lot_to_send, LotDigits);
    if (lot_to_send <= 0) return false;
 
-   int order_type = (sig == 1) ? OP_BUY : OP_SELL;
-   double entry_price = (sig == 1) ? Ask : Bid;
+   bool market_after_limit_passed = (sig == 1 && Ask <= limit_price) || (sig == -1 && Bid >= limit_price);
+   int order_type = market_after_limit_passed ? (sig == 1 ? OP_BUY : OP_SELL) : (sig == 1 ? OP_BUYLIMIT : OP_SELLLIMIT);
+   double order_price = market_after_limit_passed ? (sig == 1 ? Ask : Bid) : limit_price;
    double stop_price = (sig == 1)
-      ? MathMax(min_price, entry_price - back_stop)
-      : entry_price + back_stop;
+      ? MathMax(min_price, order_price - stop_distance)
+      : order_price + stop_distance;
+   if (csv_stop_price > 0.0) stop_price = csv_stop_price;
    double take_profit_price = 0.0;
+   datetime expiration = 0;
 
    if (Real && Risk > 0) {
-      double trade_risk = CHECK_RISK(lot_to_send, back_stop, sym);
+      double trade_risk = CHECK_RISK(lot_to_send, stop_distance, sym);
       if (trade_risk > MaxRisk) {
          REPORT(exp_num, "MLP risk too big: " + S2(trade_risk) + "% Lot=" + S2(lot_to_send));
          return false;
@@ -571,29 +919,80 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
    WAITING(magic, "Terminal", 20);
    for (int repeat = MLP_TRADE_RETRIES; repeat > 0 && !ok; repeat--) {
       RefreshRates();
-      entry_price = (sig == 1) ? Ask : Bid;
+      limit_price = (sig == 1) ? calculation_open - atr_value : calculation_open + atr_value;
+      market_after_limit_passed = (sig == 1 && Ask <= limit_price) || (sig == -1 && Bid >= limit_price);
+      order_type = market_after_limit_passed ? (sig == 1 ? OP_BUY : OP_SELL) : (sig == 1 ? OP_BUYLIMIT : OP_SELLLIMIT);
+      order_price = market_after_limit_passed ? (sig == 1 ? Ask : Bid) : limit_price;
+      stop_distance = MathMax(atr_value * ML_BackStopATR, StopLevel * 2.0);
+      if (csv_stop_price > 0.0) stop_distance = MathMax(MathAbs(order_price - csv_stop_price), StopLevel * 2.0);
       stop_price = (sig == 1)
-         ? MathMax(min_price, entry_price - back_stop)
-         : entry_price + back_stop;
+         ? MathMax(min_price, order_price - stop_distance)
+         : order_price + stop_distance;
+      if (csv_stop_price > 0.0) stop_price = csv_stop_price;
+      if (market_after_limit_passed && ((sig == 1 && stop_price >= order_price) || (sig == -1 && stop_price <= order_price))) {
+         Print(magic, ":: MLP OPEN_FAILED",
+               " reason=MarketAfterLimitPassedStopInvalid",
+               " sig=", sig,
+               " signal_time=", TimeToString(signal_time),
+               " entry_time=", TimeToString(Time[0]),
+               " score=", DoubleToString(score, 6),
+               " atr=", DoubleToString(atr_value, Digits),
+               " spread=", DoubleToString(Ask - Bid, Digits),
+               " open_positions=", open_positions_before,
+               " MaxPositions=", ML_MaxPositions,
+               " calculation_open=", DoubleToString(calculation_open, Digits),
+               " requested_price=", DoubleToString(limit_price, Digits),
+               " order_price=", DoubleToString(order_price, Digits),
+               " stop_source=", (csv_stop_price > 0.0 ? "csv_stop" : "fallback_backstop_atr"),
+               " fill_lag_bars=", MLP_ENTRY_FILL_LAG_BARS,
+               " Val=", DoubleToString(limit_price, Digits),
+               " Stp=", DoubleToString(stop_price, Digits),
+               " Prf=", DoubleToString(take_profit_price, Digits),
+               " Lot=", DoubleToString(lot_to_send, 2));
+         MLP_LogTradeEvent(magic,
+               "OPEN_FAILED",
+               -1,
+               (sig == 1 ? "BUY" : "SELL"),
+               signal_time,
+               Time[0],
+               0,
+               "MarketAfterLimitPassedStopInvalid",
+               score,
+               atr_value,
+               calculation_open,
+               limit_price,
+               0.0,
+               stop_price,
+               take_profit_price,
+               0.0,
+               0.0,
+               0.0,
+               0.0,
+               0,
+               open_positions_before,
+               ML_MaxPositions);
+         FREE(magic, "Terminal");
+         return false;
+      }
       take_profit_price = 0.0;
       if (ML_TakeProfitATR > 0) {
          take_profit_price = (sig == 1)
-            ? entry_price + atr_value * ML_TakeProfitATR
-            : entry_price - atr_value * ML_TakeProfitATR;
-         if (MathAbs(take_profit_price - entry_price) <= StopLevel) take_profit_price = 0.0;
+            ? order_price + atr_value * ML_TakeProfitATR
+            : order_price - atr_value * ML_TakeProfitATR;
+         if (MathAbs(take_profit_price - order_price) <= StopLevel) take_profit_price = 0.0;
       }
-      ticket = OrderSend(sym, order_type, lot_to_send, N5(entry_price, sym), MLP_TradeSlippagePoints(sym, atr_value),
-                         N5(stop_price, sym), N5(take_profit_price, sym), S0(magic) + "-MLP", magic, 0,
+      ticket = OrderSend(sym, order_type, lot_to_send, N5(order_price, sym), MLP_TradeSlippagePoints(sym, atr_value),
+                         N5(stop_price, sym), N5(take_profit_price, sym), MLP_OrderComment(magic, signal_time), magic, expiration,
                          (sig == 1 ? clrGreen : clrRed));
       ok = (ticket > 0);
       if (ok) break;
-      if (!ERROR_CHECK("MLP_OpenMarketOrder", exp_num)) break;
+      if (!ERROR_CHECK("MLP_OpenLimitOrder", exp_num)) break;
    }
    FREE(magic, "Terminal");
 
    if (ok) {
       RefreshRates();
-      double actual_open_price = entry_price;
+      double actual_open_price = order_price;
       double actual_stop_price = stop_price;
       double actual_take_profit_price = take_profit_price;
       if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) {
@@ -604,14 +1003,12 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
       double spread_value = Ask - Bid;
       double spread_atr = 0.0;
       if (atr_value > 0) spread_atr = spread_value / atr_value;
-      MLP_cnt_opened++;
-      if (sig == 1) MLP_cnt_buy++;
-      else MLP_cnt_sell++;
-      Print(magic, ":: MLP ", (sig == 1 ? "BUY" : "SELL"),
-            " mode=telemetry_frequency_v1",
+      Print(magic, ":: MLP ", (market_after_limit_passed ? "MARKET_AFTER_LIMIT_PASSED" : "LIMIT"),
+            " direction=", (sig == 1 ? "BUY" : "SELL"),
             " ticket=", ticket,
             " signal_time=", TimeToString(signal_time),
-            " entry_time=", TimeToString(Time[0]),
+            " order_time=", TimeToString(Time[0]),
+            " expires=manual_bar_window",
             " score=", DoubleToString(score, 6),
             " atr=", DoubleToString(atr_value, Digits),
             " spread=", DoubleToString(spread_value, Digits),
@@ -621,12 +1018,17 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
             " open_positions=", open_positions_before,
             " MaxPositions=", ML_MaxPositions,
-            " Val=", DoubleToString(entry_price, Digits),
+            " calculation_open=", DoubleToString(calculation_open, Digits),
+            " requested_price=", DoubleToString(limit_price, Digits),
+            " order_price=", DoubleToString(order_price, Digits),
+            " stop_source=", (csv_stop_price > 0.0 ? "csv_stop" : "fallback_backstop_atr"),
+            " fill_lag_bars=", MLP_ENTRY_FILL_LAG_BARS,
+            " Val=", DoubleToString(limit_price, Digits),
             " Stp=", DoubleToString(stop_price, Digits),
             " Prf=", DoubleToString(take_profit_price, Digits),
             " Lot=", DoubleToString(lot_to_send, 2));
       MLP_LogTradeEvent(magic,
-            "OPEN",
+            "ORDER_PLACED",
             ticket,
             (sig == 1 ? "BUY" : "SELL"),
             signal_time,
@@ -635,7 +1037,8 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             "",
             score,
             atr_value,
-            entry_price,
+            calculation_open,
+            limit_price,
             actual_open_price,
             actual_stop_price,
             actual_take_profit_price,
@@ -646,6 +1049,7 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             0,
             open_positions_before,
             ML_MaxPositions);
+      MLP_RememberPlacedOrder(ticket, signal_time, calculation_open, limit_price, atr_value, score);
    }
    else {
       double fail_spread = Ask - Bid;
@@ -662,7 +1066,12 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             " spread_atr=", DoubleToString(fail_spread_atr, 4),
             " open_positions=", open_positions_before,
             " MaxPositions=", ML_MaxPositions,
-            " Val=", DoubleToString(entry_price, Digits),
+            " calculation_open=", DoubleToString(calculation_open, Digits),
+            " requested_price=", DoubleToString(limit_price, Digits),
+            " order_price=", DoubleToString(order_price, Digits),
+            " stop_source=", (csv_stop_price > 0.0 ? "csv_stop" : "fallback_backstop_atr"),
+            " fill_lag_bars=", MLP_ENTRY_FILL_LAG_BARS,
+            " Val=", DoubleToString(limit_price, Digits),
             " Stp=", DoubleToString(stop_price, Digits),
             " Prf=", DoubleToString(take_profit_price, Digits),
             " Lot=", DoubleToString(lot_to_send, 2));
@@ -676,7 +1085,8 @@ bool MLP_OpenMarketOrder(int magic, uchar exp_num, string sym, int sig, double s
             "OrderSendFailed",
             score,
             atr_value,
-            entry_price,
+            calculation_open,
+            limit_price,
             0.0,
             stop_price,
             take_profit_price,
@@ -716,6 +1126,80 @@ int MLP_FindSignalInsertPos(datetime barTime) {
    }
 
    return lo;
+}
+
+int MLP_FindExit(datetime signal_time) {
+   int lo = 0;
+   int hi = MLP_ExitCount - 1;
+   while (lo <= hi) {
+      int mid = (lo + hi) / 2;
+      if (MLP_ExitSignalTimes[mid] == signal_time) return mid;
+      if (MLP_ExitSignalTimes[mid] < signal_time) lo = mid + 1;
+      else hi = mid - 1;
+   }
+   return -1;
+}
+
+bool MLP_ShouldCloseByML(datetime signal_time, datetime bar_time) {
+   int idx = MLP_FindExit(signal_time);
+   if (idx < 0) return false;
+   if (MLP_ExitTimes[idx] <= 0) return false;
+   return bar_time >= MLP_ExitTimes[idx];
+}
+
+bool MLP_LoadExits() {
+   MLP_ExitCount = 0;
+   ArrayResize(MLP_ExitSignalTimes, 0);
+   ArrayResize(MLP_ExitTimes, 0);
+
+   string exits_file = MLP_ExitsFileName();
+   if (exits_file == "") return true;
+
+   int handle = FileOpen(exits_file, FILE_READ | FILE_CSV | FILE_ANSI, ';');
+   if (handle < 0) {
+      Print("MLP_INIT: Cannot open ", exits_file, " Error=", GetLastError(), " ML_CLOSE disabled");
+      return true;
+   }
+
+   string header_signal_time = FileReadString(handle);
+   string header_exit_time = FileReadString(handle);
+   if (header_signal_time != "signal_time" || header_exit_time != "exit_time") {
+      Print("MLP_INIT: Unexpected header in ", exits_file,
+            " first=", header_signal_time, " second=", header_exit_time, " ML_CLOSE disabled");
+      FileClose(handle);
+      return true;
+   }
+   while (!FileIsLineEnding(handle)) FileReadString(handle);
+
+   ArrayResize(MLP_ExitSignalTimes, MLP_MAX_SIGNALS);
+   ArrayResize(MLP_ExitTimes, MLP_MAX_SIGNALS);
+
+   while (!FileIsEnding(handle) && MLP_ExitCount < MLP_MAX_SIGNALS) {
+      string signal_time_str = FileReadString(handle);
+      if (signal_time_str == "") {
+         while (!FileIsEnding(handle) && !FileIsLineEnding(handle)) FileReadString(handle);
+         continue;
+      }
+      string exit_time_str = FileReadString(handle);
+      while (!FileIsLineEnding(handle)) FileReadString(handle);
+
+      datetime parsed_signal_time = StringToTime(signal_time_str);
+      datetime parsed_exit_time = StringToTime(exit_time_str);
+      if (parsed_signal_time <= 0 || parsed_exit_time <= 0) continue;
+
+      if (MLP_ExitCount > 0 && MLP_ExitSignalTimes[MLP_ExitCount - 1] == parsed_signal_time) {
+         MLP_ExitTimes[MLP_ExitCount - 1] = parsed_exit_time;
+         continue;
+      }
+      MLP_ExitSignalTimes[MLP_ExitCount] = parsed_signal_time;
+      MLP_ExitTimes[MLP_ExitCount] = parsed_exit_time;
+      MLP_ExitCount++;
+   }
+   FileClose(handle);
+
+   ArrayResize(MLP_ExitSignalTimes, MLP_ExitCount);
+   ArrayResize(MLP_ExitTimes, MLP_ExitCount);
+   return true;
 }
 
 void MLP_LogNoSignal(int magic, datetime barTime) {
@@ -780,18 +1264,24 @@ bool MLP_INIT() {
    }
 
    MLP_HasScoreColumn = false;
+   MLP_HasAtrColumn = false;
+   MLP_HasStopColumn = false;
    string col3 = "";
    string col4 = "";
    string col5 = "";
    if (!FileIsLineEnding(handle)) col3 = FileReadString(handle);
    if (!FileIsLineEnding(handle)) col4 = FileReadString(handle);
    if (!FileIsLineEnding(handle)) col5 = FileReadString(handle);
+   if (col3 == "atr" || col3 == "ATR") MLP_HasAtrColumn = true;
+   if (col4 == "stop" || col4 == "protective_stop_price") MLP_HasStopColumn = true;
    if (col5 == "pred_ret_24_dir_atr") MLP_HasScoreColumn = true;
    while (!FileIsLineEnding(handle)) FileReadString(handle);
 
    ArrayResize(MLP_Times, MLP_MAX_SIGNALS);
    ArrayResize(MLP_Signals, MLP_MAX_SIGNALS);
    ArrayResize(MLP_Scores, MLP_MAX_SIGNALS);
+   ArrayResize(MLP_ATRs, MLP_MAX_SIGNALS);
+   ArrayResize(MLP_Stops, MLP_MAX_SIGNALS);
    MLP_SignalCount = 0;
 
    while (!FileIsEnding(handle) && MLP_SignalCount < MLP_MAX_SIGNALS) {
@@ -805,9 +1295,17 @@ bool MLP_INIT() {
       datetime parsed_time = StringToTime(time_str);
       char parsed_signal = (char)StringToInteger(sig_str);
       double parsed_score = 0.0;
+      double parsed_atr = 0.0;
+      double parsed_stop = 0.0;
 
-      if (!FileIsLineEnding(handle)) FileReadString(handle);
-      if (!FileIsLineEnding(handle)) FileReadString(handle);
+      if (!FileIsLineEnding(handle)) {
+         string value3 = FileReadString(handle);
+         if (MLP_HasAtrColumn) parsed_atr = StringToDouble(value3);
+      }
+      if (!FileIsLineEnding(handle)) {
+         string value4 = FileReadString(handle);
+         if (MLP_HasStopColumn) parsed_stop = StringToDouble(value4);
+      }
       if (!FileIsLineEnding(handle)) {
          string value5 = FileReadString(handle);
          if (MLP_HasScoreColumn) parsed_score = StringToDouble(value5);
@@ -817,12 +1315,16 @@ bool MLP_INIT() {
       if (MLP_SignalCount > 0 && MLP_Times[MLP_SignalCount - 1] == parsed_time) {
          MLP_Signals[MLP_SignalCount - 1] = parsed_signal;
          MLP_Scores[MLP_SignalCount - 1] = (float)parsed_score;
+         MLP_ATRs[MLP_SignalCount - 1] = (float)parsed_atr;
+         MLP_Stops[MLP_SignalCount - 1] = (float)parsed_stop;
          continue;
       }
 
       MLP_Times[MLP_SignalCount] = parsed_time;
       MLP_Signals[MLP_SignalCount] = parsed_signal;
       MLP_Scores[MLP_SignalCount] = (float)parsed_score;
+      MLP_ATRs[MLP_SignalCount] = (float)parsed_atr;
+      MLP_Stops[MLP_SignalCount] = (float)parsed_stop;
       MLP_SignalCount++;
    }
 
@@ -831,6 +1333,9 @@ bool MLP_INIT() {
    ArrayResize(MLP_Times, MLP_SignalCount);
    ArrayResize(MLP_Signals, MLP_SignalCount);
    ArrayResize(MLP_Scores, MLP_SignalCount);
+   ArrayResize(MLP_ATRs, MLP_SignalCount);
+   ArrayResize(MLP_Stops, MLP_SignalCount);
+   MLP_LoadExits();
    MLP_Loaded = true;
    MLP_LoadedFileModifyTime = file_modify_time;
    if (MLP_RuntimeStartTime <= 0) MLP_RuntimeStartTime = Time[0];
@@ -843,9 +1348,12 @@ bool MLP_INIT() {
    Print("MLP_INIT: rule_slot=", ML_RuleSlot,
          " Loaded V", MLP_Ver, " ", MLP_SignalCount, " rows from ", signals_file,
          " Range: ", TimeToString(MLP_Times[0]), " — ", TimeToString(MLP_Times[MLP_SignalCount - 1]),
+         " AtrCol=", MLP_HasAtrColumn,
+         " StopCol=", MLP_HasStopColumn,
          " ScoreCol=", MLP_HasScoreColumn,
          " ScoreFilter=", ML_UseScoreFilter,
          " Threshold=", DoubleToString(ML_ScoreThreshold, 6),
+         " ExitRows=", MLP_ExitCount,
          " ExitMode=", MLP_ExitModeName(),
          " TrailATR=", DoubleToString(ML_TrailATR, 2),
          " TakeProfitATR=", DoubleToString(ML_TakeProfitATR, 2),
@@ -915,7 +1423,10 @@ void EXPERT::ML_TRADE() {
    if (MLP_SignalCount <= 0) {
       return;
    }
+   MLP_CheckExpectedSpread(Mgc, Sym);
    MLP_LogBrokerClosedOrders(Mgc, Sym, ATR);
+   MLP_LogFilledMarketOrders(Mgc, Sym, ATR);
+   MLP_DeleteExpiredPendingOrders(Mgc, ExpNum, Sym);
 
    set.BUY.Sig = NONE;
    set.SEL.Sig = NONE;
@@ -935,44 +1446,62 @@ void EXPERT::ML_TRADE() {
       sig = MLP_Signals[idx];
       score = MLP_Scores[idx];
       score_ok = MLP_PassScore(idx);
-      if (sig != 0) MLP_cnt_total++;
+      if (sig != 0 && ML_MaxPositions <= 1) MLP_cnt_total++;
    }
 
    if (ML_MaxPositions > 1) {
-      MLP_ManageMultiPositions(Mgc, ExpNum, Sym, ATR);
+      MLP_ManageMultiPositions(Mgc, ExpNum, Sym, ATR, sig);
 
-      if (idx < 0) {
-         MLP_LogNoSignal(Mgc, Time[bar]);
+      int entry_idx = -1;
+      datetime entry_signal_bar_time = 0;
+      double entry_calculation_open = 0.0;
+      if (Bars > bar + 1) {
+         entry_signal_bar_time = Time[bar + 1];
+         entry_idx = MLP_FindSignal(entry_signal_bar_time);
+         entry_calculation_open = Open[bar];
+      }
+
+      if (entry_idx < 0) {
+         MLP_LogNoSignal(Mgc, entry_signal_bar_time);
          return;
       }
-      if (sig == 0) {
-         MLP_LogZeroSignal(Mgc, Time[bar], idx);
+      char entry_sig = MLP_Signals[entry_idx];
+      double entry_score = MLP_Scores[entry_idx];
+      bool entry_score_ok = MLP_PassScore(entry_idx);
+      if (entry_sig != 0) MLP_cnt_total++;
+
+      if (entry_sig == 0) {
+         MLP_LogZeroSignal(Mgc, entry_signal_bar_time, entry_idx);
          return;
       }
 
-      if (!score_ok) {
+      if (!entry_score_ok) {
          MLP_cnt_filtered++;
          Print(Mgc, ":: MLP SKIP reason=ScoreFilter"
-               " sig=", sig,
-               " signal_time=", TimeToString(MLP_Times[idx]),
-               " score=", DoubleToString(score, 6),
+               " sig=", entry_sig,
+               " signal_time=", TimeToString(MLP_Times[entry_idx]),
+               " score=", DoubleToString(entry_score, 6),
                " threshold=", DoubleToString(ML_ScoreThreshold, 6));
          return;
       }
 
-      int open_positions = MLP_CountOwnMarketOrders(Mgc, Sym);
+      int open_positions = MLP_CountOwnWorkingOrders(Mgc, Sym);
       if (open_positions >= ML_MaxPositions) {
          MLP_cnt_posblock++;
          Print(Mgc, ":: MLP SKIP reason=MaxPositions"
-               " sig=", sig,
-               " signal_time=", TimeToString(MLP_Times[idx]),
-               " score=", DoubleToString(score, 6),
+               " sig=", entry_sig,
+               " signal_time=", TimeToString(MLP_Times[entry_idx]),
+               " score=", DoubleToString(entry_score, 6),
                " open_positions=", open_positions,
                " max_positions=", ML_MaxPositions);
          return;
       }
 
-      MLP_OpenMarketOrder(Mgc, ExpNum, Sym, sig, score, MLP_Times[idx], ATR, open_positions);
+      double entry_atr = ATR;
+      if (MLP_ATRs[entry_idx] > 0) entry_atr = MLP_ATRs[entry_idx];
+      double entry_stop = 0.0;
+      if (MLP_Stops[entry_idx] > 0) entry_stop = MLP_Stops[entry_idx];
+      MLP_OpenLimitOrder(Mgc, ExpNum, Sym, entry_sig, entry_score, MLP_Times[entry_idx], entry_calculation_open, entry_atr, entry_stop, open_positions);
       return;
    }
 
@@ -1244,6 +1773,7 @@ void ML_DIAG_PRINT() {
    Print("  Timeout closes:   ", MLP_cnt_timeout);
    Print("  Trailing closes:  ", MLP_cnt_trailing);
    Print("  Reverse closes:   ", MLP_cnt_reverse);
+   Print("  ML closes:        ", MLP_cnt_mlclose);
    Print("  Broker TP closes: ", MLP_cnt_broker_take);
    Print("  Broker SL closes: ", MLP_cnt_broker_stop);
    Print("  Broker other closes: ", MLP_cnt_broker_other);
