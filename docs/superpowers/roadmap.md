@@ -18,10 +18,33 @@
 
 Цель: доказать, что MT4/tester исполняет те же сигналы и сделки, что Python.
 
+Текущий статус: `ACTIVE`, `DIAGNOSTIC_ONLY`, `parity_in_progress`.
+
+Актуальный отчёт:
+`docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`.
+
+Последний ручной tester-run проверял только `ML_RuleSlot=1`:
+
+- artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`;
+- `ORDER_PLACED=1132`, `OPEN=1072`, `CLOSE=1072`, `OPEN_FAILED=5`;
+- close reasons: `MLClose=826`, `Timeout=223`, `StopLoss=23`;
+- closed profit sum: `62238.59`.
+
+Главный оставшийся блокер: `MLClose` в MT4 всё ещё закрывает большинство
+сопоставленных сделок примерно на один H1-бар позже Python.
+
+Следующий шаг:
+
+1. Исправить one-bar `MLClose` timing в `MT/MQL4/Include/lib_ML_Signal.mqh`.
+2. Перекомпилировать MT4 expert и заново прогнать `ML_RuleSlot=1`.
+3. Сверить exit times, close reasons и R-sum против Python.
+4. Только после приемлемого результата по slot 1 прогонять retained slots 2-5.
+
 Запрещено до разблокировки:
 
 - экспортировать все 11 rules как будто они независимы;
 - чинить PnL через изменение правил;
+- использовать свежий MT4 PnL как новый критерий отбора;
 - считать parity доказательством прибыльности.
 
 ---

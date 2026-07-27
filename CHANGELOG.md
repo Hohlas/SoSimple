@@ -15,21 +15,13 @@
 ```
 ---
 
-## [2026-07-27] — Fixed-11 retained-rule MT4 switch (not parity yet)
+## [2026-07-27] — Fixed-11 retained-subset MT4 parity diagnostic (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
-- **topics**: `mt4`, `fixed11`, `retained_subset`, `rule_slot`, `tester_settings`
-- **summary**: Added `ML_RuleSlot` to the expert/runtime contract, replaced the tester `#.csv` with 5 retained-rule rows selectable via `BackTest=2..6`, created per-rule `time;signal;atr;stop` files, and adjusted fixed11 diagnostic settings, spread warning, history-open logging, limit-order logging and pending expiration after manual tester evidence.
-- **artifacts**: `MT/MQL4/Experts/$o$imple.mq4`, `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Files/#.csv`, `MT/tester/files/#.csv`, `MT/MQL4/Files/ml_signals_fixed11_rule01.csv`, `ML/reports/fractal0_fixed11_retained_mt4_parity/fixed11_rule_signal_exports.json`, `tests/test_mql_telemetry_params_csv_contract.py`
-- **decision**: MT4 can now switch and load one retained rule per tester run; diagnostic rows use `ML_MaxPositions=20`, `ML_AllowReversal=1`, and fixed11 multi-position entry now places `E3_open_pullback_1_0atr` limit orders with Python `S2` stop from CSV instead of market orders.
-- **notes**: Same-direction duplicate times are collapsed; opposite-direction same-time groups are omitted because one signal row cannot represent both directions. Full parity still requires recompilation/rerun after the expiration guard and a real MT4 representation of Python `X2_ml_opposite_any_p0_50` exits.
-
-## [2026-07-27] — Fixed-11 retained-subset MT4 parity feasibility (UNKNOWN)
-- **report**: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
-- **topics**: `fractal0`, `fixed11`, `retained_subset`, `mt4_parity`, `export_contract`
-- **summary**: Checked whether the 5 retained fixed11 rules can be honestly exported to the current MT4 tester route. The feasibility gate blocked export because one plain `time;signal` stream would lose `rule_id` and collapse duplicate/opposite `signal_time` rows.
-- **artifacts**: `ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json`, `ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json`
-- **decision**: `parity_blocked`; no MT4 export, tester run or reconciliation was produced.
-- **notes**: Next route must be per-rule export, a new MT4 runtime preserving `rule_id` and fixed11 execution, or a lower-status aggregate diagnostic.
+- **topics**: `mt4`, `fixed11`, `retained_subset`, `rule_slot`, `mlclose`, `tester_parity`
+- **summary**: MT4 fixed11 route now runs retained rules one slot at a time with per-rule signal and exit CSV files, E3 limit entries, Python S2 stops, disabled raw reversal and exported Python-style `MLClose`. Latest manual tester run for slot 1 produced `ORDER_PLACED=1132`, `OPEN=1072`, `CLOSE=1072`, `MLClose=826`, `StopLoss=23`, closed profit sum `62238.59`.
+- **artifacts**: `MT/MQL4/Include/lib_ML_Signal.mqh`, `MT/MQL4/Files/#.csv`, `MT/tester/files/#.csv`, `MT/MQL4/Files/ml_signals_fixed11_rule01.csv`, `MT/MQL4/Files/ml_exits_fixed11_rule01.csv`, `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`, `tests/test_mql_telemetry_params_csv_contract.py`
+- **decision**: `parity_in_progress`; parity is much closer for `ML_RuleSlot=1`, but not passed because `MLClose` usually closes about one H1 bar later than Python.
+- **notes**: Do not use this MT4 PnL as a new selection criterion. Next step is to fix one-bar `MLClose` timing, rerun slot 1, then repeat reconciliation for retained slots 2-5.
 
 ## [2026-07-27] — Fixed-11 mutual-correlation pruning (PASS)
 - **report**: `docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md`
