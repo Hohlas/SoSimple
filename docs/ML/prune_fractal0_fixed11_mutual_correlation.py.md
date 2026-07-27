@@ -1,6 +1,6 @@
 # prune_fractal0_fixed11_mutual_correlation.py
 
-Read-only pruning runner for the 11 passed Fractal0 fixed rules.
+Pruning runner for the 11 passed Fractal0 fixed rules.
 
 ## Inputs
 
@@ -33,6 +33,5 @@ Read-only pruning runner for the 11 passed Fractal0 fixed rules.
 ## Constraints
 
 - Does not train, score, simulate, or change rules.
-- Does not select a new winner by `locked_test` PF.
-- Uses `locked_test` only to measure duplication between already passed rules.
-- Representative choice inside duplicate groups uses `original_rank`, then `rule_id`.
+- Uses saved `locked_test` trades only for pruning among already passed candidates.
+- Representative choice inside duplicate groups uses `BS_p05 / max_drawdown_r`, then robustness and trading metric tie-breakers.

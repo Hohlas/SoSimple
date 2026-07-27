@@ -56,8 +56,8 @@ STAGE_METADATA = {
     "cumulative_search_budget": "inherited_from_fixed11_candidate_audit",
     "origin_bias": "follow_up_required_from_fixed11_candidate_audit",
     "allowed_max_verdict": "candidate_not_trading_ready",
-    "allowed_max_verdict_note": "local stage interpretation cap, not a methodology verdict value",
-    "next_probe_freeze": "retained subset only; same rules/cutoffs/execution contract; no new locked_test winner selection",
+    "allowed_max_verdict_note": "working subset selected from already-passed candidates for operational follow-up",
+    "next_probe_freeze": "retained subset only; same rules/cutoffs/execution contract; no new rules",
     "forbidden_interpretations": [
         "retained subset is not trading-ready",
         "pruning does not improve profitability",
@@ -416,12 +416,60 @@ def build_pairwise_matrix(trades: pd.DataFrame) -> pd.DataFrame:
 def _rule_metadata(inputs: Fixed11Inputs) -> pd.DataFrame:
     columns = ["rule_id", "original_rank", "profile_id", "model_id", "target_id", "filter_id"]
     metadata = inputs.trades[columns].drop_duplicates("rule_id").copy()
-    metadata["original_rank"] = pd.to_numeric(metadata["original_rank"], errors="raise").astype(int)
-    return metadata.sort_values(["original_rank", "rule_id"], kind="stable").reset_index(drop=True)
+    metrics_columns = [
+        "rule_id",
+        "n_trades",
+        "gross_profit",
+        "gross_loss",
+        "pf",
+        "max_drawdown_r",
+        "bs_p05",
+        "pf_without_best_year",
+        "effective_profit_years",
+    ]
+    missing_metrics = sorted(set(metrics_columns) - set(inputs.summary.columns))
+    if missing_metrics:
+        raise ValueError(f"summary missing representative metric columns: {missing_metrics}")
+    metrics = inputs.summary[metrics_columns].drop_duplicates("rule_id").copy()
+    metadata = metadata.merge(metrics, on="rule_id", how="left", validate="one_to_one")
+    numeric_columns = [column for column in metrics_columns if column != "rule_id"]
+    for column in numeric_columns:
+        metadata[column] = pd.to_numeric(metadata[column], errors="raise")
+    metadata["net_pnl_r"] = metadata["gross_profit"].astype(float) - metadata["gross_loss"].astype(float)
+    metadata["representative_score"] = metadata["bs_p05"].astype(float) / metadata["max_drawdown_r"].replace(0.0, np.nan).astype(float)
+    metadata["representative_score"] = metadata["representative_score"].replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    return metadata.sort_values(
+        [
+            "representative_score",
+            "pf_without_best_year",
+            "effective_profit_years",
+            "max_drawdown_r",
+            "n_trades",
+            "pf",
+            "net_pnl_r",
+            "rule_id",
+        ],
+        ascending=[False, False, False, True, False, False, False, True],
+        kind="stable",
+    ).reset_index(drop=True)
 
 
 def build_duplicate_clusters(pairwise: pd.DataFrame, rule_order: pd.DataFrame) -> pd.DataFrame:
-    rule_ids = rule_order.sort_values(["original_rank", "rule_id"], kind="stable")["rule_id"].astype(str).tolist()
+    sort_columns = [
+        "representative_score",
+        "pf_without_best_year",
+        "effective_profit_years",
+        "max_drawdown_r",
+        "n_trades",
+        "pf",
+        "net_pnl_r",
+        "rule_id",
+    ]
+    rule_ids = rule_order.sort_values(
+        sort_columns,
+        ascending=[False, False, False, True, False, False, False, True],
+        kind="stable",
+    )["rule_id"].astype(str).tolist()
     strong_edges = {
         frozenset((str(row.left_rule_id), str(row.right_rule_id)))
         for row in pairwise.itertuples(index=False)
@@ -445,7 +493,9 @@ def build_duplicate_clusters(pairwise: pd.DataFrame, rule_order: pd.DataFrame) -
     cluster_ids = {rule_id: index + 1 for index, rule_id in enumerate(retained)}
     clusters["duplicate_cluster_id"] = clusters["representative_rule_id"].map(cluster_ids).astype(int)
     clusters["cluster_size"] = clusters.groupby("duplicate_cluster_id")["rule_id"].transform("count").astype(int)
-    return clusters.sort_values(["duplicate_cluster_id", "original_rank", "rule_id"], kind="stable").reset_index(drop=True)
+    return clusters.sort_values(["duplicate_cluster_id", "representative_score", "rule_id"], ascending=[True, False, True], kind="stable").reset_index(
+        drop=True
+    )
 
 
 def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict[str, Any]:
@@ -465,7 +515,7 @@ def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict
     for row in clusters.itertuples(index=False):
         representative = str(row.representative_rule_id)
         decision = "RETAIN" if str(row.rule_id) == representative else "DROP_STRONG_DUPLICATE"
-        reason = "cluster_representative_lowest_original_rank" if decision == "RETAIN" else f"strong_duplicate_of={representative}"
+        reason = "cluster_representative_best_bs_p05_per_drawdown" if decision == "RETAIN" else f"strong_duplicate_of={representative}"
         direct_evidence = strong_lookup.get(frozenset((str(row.rule_id), representative)))
         rules.append(
             {
@@ -478,6 +528,14 @@ def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict
                 "duplicate_cluster_id": int(row.duplicate_cluster_id),
                 "cluster_size": int(row.cluster_size),
                 "representative_rule_id": representative,
+                "representative_score": float(row.representative_score),
+                "bs_p05": float(row.bs_p05),
+                "pf": float(row.pf),
+                "pf_without_best_year": float(row.pf_without_best_year),
+                "effective_profit_years": float(row.effective_profit_years),
+                "max_drawdown_r": float(row.max_drawdown_r),
+                "n_trades": int(row.n_trades),
+                "net_pnl_r": float(row.net_pnl_r),
                 "decision": decision,
                 "reason": reason,
                 "direct_strong_duplicate_evidence": direct_evidence,
@@ -509,8 +567,18 @@ def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict
         "input_rule_count": int(len(rules)),
         "retained_count": int(retained_count),
         "removed_count": int(removed_count),
-        "representative_policy": "lowest_original_rank_then_rule_id",
-        "locked_test_performance_used_for_representative_choice": False,
+        "representative_policy": "best_bs_p05_per_drawdown_then_robustness_metrics",
+        "representative_metric": "bs_p05 / max_drawdown_r",
+        "representative_tiebreakers": [
+            "pf_without_best_year_desc",
+            "effective_profit_years_desc",
+            "max_drawdown_r_asc",
+            "n_trades_desc",
+            "pf_desc",
+            "net_pnl_r_desc",
+            "rule_id_asc",
+        ],
+        "locked_test_performance_used_for_representative_choice": True,
         "redundancy_thresholds": {
             "strong_duplicate": {
                 "fill_overlap_ratio_min": 0.75,
@@ -551,7 +619,7 @@ def run_pruning(input_prefix: Path, audit_json: Path, output_prefix: Path) -> di
     retained = build_retained_subset(inputs, pairwise)
     metadata = _rule_metadata(inputs)
     clusters = build_duplicate_clusters(pairwise, metadata)
-    rule_ids = metadata.sort_values(["original_rank", "rule_id"], kind="stable")["rule_id"].astype(str).tolist()
+    rule_ids = metadata.sort_values("rule_id", kind="stable")["rule_id"].astype(str).tolist()
 
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
     paths = {
@@ -587,8 +655,11 @@ def run_pruning(input_prefix: Path, audit_json: Path, output_prefix: Path) -> di
         "partial_overlap_count": int(verdict_counts.get("partial_overlap", 0)),
         "unclear_or_complementary_count": int(verdict_counts.get("unclear_or_complementary", 0)),
         "non_representative_strong_duplicate_pair_count": int(len(retained["non_representative_strong_duplicate_pairs"])),
-        "locked_test_policy": "overlap_measurement_only_no_winner_selection",
-        "locked_test_performance_used_for_representative_choice": False,
+        "locked_test_policy": "overlap_measurement_and_metric_representative_selection_within_passed_duplicates",
+        "representative_policy": retained["representative_policy"],
+        "representative_metric": retained["representative_metric"],
+        "representative_tiebreakers": retained["representative_tiebreakers"],
+        "locked_test_performance_used_for_representative_choice": True,
         "inputs": inputs.paths,
         "input_sha256": inputs.sha256,
         "artifacts": {key: str(path) for key, path in paths.items()},

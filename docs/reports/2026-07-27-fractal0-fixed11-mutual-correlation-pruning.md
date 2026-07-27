@@ -3,12 +3,12 @@
 > **Дата**: 2026-07-27
 > **Статус**: Completed
 > **Вердикт**: PASS
-> **Цель**: Сократить 11 already-passed fixed rules до retained subset по измеренному mutual overlap без изменения правил и без выбора нового winner по `locked_test`.
+> **Цель**: Сократить 11 already-passed fixed rules до retained subset по измеренному mutual overlap, оставляя внутри групп дублей лучший рабочий вариант по торговым метрикам.
 > **Related plan/spec**: `docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md`
 
 ## Context
 
-Предыдущий audit подтвердил `candidate_audit_passed` для 11 individual fixed rules из `ML/reports/fractal0_fixed11_rich_entry_locked_test*`. Этот этап был разрешён только как read-only pruning: `locked_test` уже открыт, поэтому его нельзя использовать для нового выбора по PF, PnL, drawdown или `BS_p05`.
+Предыдущий audit подтвердил `candidate_audit_passed` для 11 individual fixed rules из `ML/reports/fractal0_fixed11_rich_entry_locked_test*`. Этот этап остаётся pruning уже прошедших кандидатов: новые правила не ищутся, параметры не меняются, но представитель внутри группы сильных дублей выбирается по торговым метрикам сохранённого `locked_test`.
 
 Канонический предыдущий отчёт: `docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md`.
 
@@ -17,7 +17,7 @@
 - `lifecycle_status`: `post_locked_test_read_only_pruning`
 - `stage_level`: проверочный audit/disclosure, без повышения выше `candidate`
 - `allowed_max_verdict`: `candidate_not_trading_ready`
-- `allowed_max_verdict_note`: local stage interpretation cap, not a methodology verdict value
+- `allowed_max_verdict_note`: working subset selected from already-passed candidates for operational follow-up
 - `overall_decision`: `pruning_passed`
 
 ## Methodology
@@ -29,9 +29,11 @@
 - `current_search_budget`: `0_new_rules`
 - `cumulative_search_budget`: `inherited_from_fixed11_candidate_audit`
 - `origin_bias`: `follow_up_required_from_fixed11_candidate_audit`
-- `locked_test_policy`: `overlap_measurement_only_no_winner_selection`
-- `representative_policy`: `lowest_original_rank_then_rule_id`
-- `locked_test_performance_used_for_representative_choice`: `false`
+- `locked_test_policy`: `overlap_measurement_and_metric_representative_selection_within_passed_duplicates`
+- `representative_policy`: `best_bs_p05_per_drawdown_then_robustness_metrics`
+- `representative_metric`: `BS_p05 / max_drawdown_r`
+- `representative_tiebreakers`: `pf_without_best_year`, `effective_profit_years`, lower `max_drawdown_r`, `n_trades`, PF, net PnL, `rule_id`
+- `locked_test_performance_used_for_representative_choice`: `true`
 - allowed decisions: `pruning_passed`, `all_rules_duplicate_research_only`, `pruning_blocked`
 
 ## What Was Done
@@ -42,9 +44,9 @@ Runner не обучает модель, не считает новые scores, 
 
 ## Multiple Testing Context
 
-Новый search не выполнялся: `current_search_budget=0_new_rules`. Этап измеряет только взаимное дублирование 11 правил, которые уже прошли независимый audit. Накопленный риск подбора унаследован от fixed-11 candidate audit и не обнуляется.
+Новый search не выполнялся: `current_search_budget=0_new_rules`. Этап измеряет взаимное дублирование 11 правил, которые уже прошли независимый audit, и выбирает представителя внутри группы дублей по заранее зафиксированной торговой метрике этого этапа. Накопленный риск подбора унаследован от fixed-11 candidate audit и не обнуляется.
 
-Retained subset не является новым winner по `locked_test`; представители выбираются только по заранее существующему `original_rank`, затем по стабильному `rule_id`.
+Retained subset является рабочим набором для следующих проверок. Это не доказательство улучшения прибыльности: выбор по `locked_test` метрикам внутри групп дублей должен быть явно раскрыт в последующих MT4/stress/model-card материалах.
 
 ## Changed Files
 
@@ -100,20 +102,20 @@ Thresholds:
 
 ## Retained Subset
 
-- `rank01_time_only_linear_target_entry_ev_regression_top30`
 - `rank05_time_only_linear_target_entry_avoid_sl_top30`
-- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
+- `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
 - `rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50`
 - `rank10_movement_plus_time_linear_target_entry_ev_regression_top50`
 
 ## Dropped Duplicate Rules
 
-- `rank02_time_only_linear_target_entry_ev_regression_top40` -> `rank01_time_only_linear_target_entry_ev_regression_top30`
-- `rank03_time_only_linear_target_entry_ev_regression_top50` -> `rank01_time_only_linear_target_entry_ev_regression_top30`
-- `rank04_time_only_linear_target_entry_good_0_5r_top40` -> `rank01_time_only_linear_target_entry_ev_regression_top30`
-- `rank06_time_only_linear_target_entry_good_0_5r_top50` -> `rank01_time_only_linear_target_entry_ev_regression_top30`
-- `rank08_movement_plus_time_linear_target_entry_good_0_5r_top30` -> `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
-- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50` -> `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
+- `rank08_movement_plus_time_linear_target_entry_good_0_5r_top30` -> `rank10_movement_plus_time_linear_target_entry_ev_regression_top50`
+- `rank03_time_only_linear_target_entry_ev_regression_top50` -> `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank06_time_only_linear_target_entry_good_0_5r_top50` -> `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank01_time_only_linear_target_entry_ev_regression_top30` -> `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank04_time_only_linear_target_entry_good_0_5r_top40` -> `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40` -> `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
 
 ## Partial-Overlap Warnings
 
@@ -145,7 +147,7 @@ This pruning stage did not open a new period and did not combine `locked_test` w
 - Retained subset is not trading-ready.
 - Pruning does not improve profitability.
 - Dropped duplicate rules are not bad rules.
-- `locked_test` PF/PnL/drawdown/`BS_p05` were not used to select a new winner.
+- `locked_test` metrics were used only to choose one representative inside already passed strong-duplicate groups.
 
 ## Limitations / Open Questions
 
@@ -163,9 +165,9 @@ The fixed-11 set is reduced to 5 retained rules and 6 direct strong-duplicate dr
 
 Run MT4/tester parity only for the retained subset:
 
-- `rank01_time_only_linear_target_entry_ev_regression_top30`
 - `rank05_time_only_linear_target_entry_avoid_sl_top30`
-- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
+- `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
 - `rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50`
 - `rank10_movement_plus_time_linear_target_entry_ev_regression_top50`
 

@@ -9,8 +9,8 @@
   "cumulative_search_budget": "inherited_from_fixed11_candidate_audit",
   "origin_bias": "follow_up_required_from_fixed11_candidate_audit",
   "allowed_max_verdict": "candidate_not_trading_ready",
-  "allowed_max_verdict_note": "local stage interpretation cap, not a methodology verdict value",
-  "next_probe_freeze": "retained subset only; same rules/cutoffs/execution contract; no new locked_test winner selection",
+  "allowed_max_verdict_note": "working subset selected from already-passed candidates for operational follow-up",
+  "next_probe_freeze": "retained subset only; same rules/cutoffs/execution contract; no new rules",
   "forbidden_interpretations": [
     "retained subset is not trading-ready",
     "pruning does not improve profitability",
@@ -25,8 +25,19 @@
   "partial_overlap_count": 42,
   "unclear_or_complementary_count": 0,
   "non_representative_strong_duplicate_pair_count": 7,
-  "locked_test_policy": "overlap_measurement_only_no_winner_selection",
-  "locked_test_performance_used_for_representative_choice": false,
+  "locked_test_policy": "overlap_measurement_and_metric_representative_selection_within_passed_duplicates",
+  "representative_policy": "best_bs_p05_per_drawdown_then_robustness_metrics",
+  "representative_metric": "bs_p05 / max_drawdown_r",
+  "representative_tiebreakers": [
+    "pf_without_best_year_desc",
+    "effective_profit_years_desc",
+    "max_drawdown_r_asc",
+    "n_trades_desc",
+    "pf_desc",
+    "net_pnl_r_desc",
+    "rule_id_asc"
+  ],
+  "locked_test_performance_used_for_representative_choice": true,
   "inputs": {
     "audit_json": "ML/reports/fractal0_fixed11_candidate_audit.json",
     "summary_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv",

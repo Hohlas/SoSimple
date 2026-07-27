@@ -16,26 +16,27 @@ Fixed-11 mutual-correlation pruning is complete.
 - retained_count: `5`
 - removed_count: `6`
 - pair_count: `55`
-- locked_test_policy: `overlap_measurement_only_no_winner_selection`
-- representative_policy: `lowest_original_rank_then_rule_id`
-- locked_test_performance_used_for_representative_choice: `false`
+- locked_test_policy: `overlap_measurement_and_metric_representative_selection_within_passed_duplicates`
+- representative_policy: `best_bs_p05_per_drawdown_then_robustness_metrics`
+- representative_metric: `BS_p05 / max_drawdown_r`
+- locked_test_performance_used_for_representative_choice: `true`
 
 ## Retained Subset
 
-- `rank01_time_only_linear_target_entry_ev_regression_top30`
 - `rank05_time_only_linear_target_entry_avoid_sl_top30`
-- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
+- `rank02_time_only_linear_target_entry_ev_regression_top40`
+- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
 - `rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50`
 - `rank10_movement_plus_time_linear_target_entry_ev_regression_top50`
 
 ## Dropped Strong Duplicates
 
-- `rank02_time_only_linear_target_entry_ev_regression_top40`
 - `rank03_time_only_linear_target_entry_ev_regression_top50`
 - `rank04_time_only_linear_target_entry_good_0_5r_top40`
 - `rank06_time_only_linear_target_entry_good_0_5r_top50`
 - `rank08_movement_plus_time_linear_target_entry_good_0_5r_top30`
-- `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50`
+- `rank01_time_only_linear_target_entry_ev_regression_top30`
+- `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40`
 
 ## Evidence Basis
 

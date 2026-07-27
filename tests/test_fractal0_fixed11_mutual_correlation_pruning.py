@@ -229,15 +229,36 @@ def test_repeated_fill_time_is_aggregated_without_losing_trade_count() -> None:
     assert metrics["fill_bucket_pnl_corr"] == 1.0
 
 
-def test_retained_subset_uses_original_rank_not_locked_test_pf() -> None:
+def _summary_row(
+    rule_id: str,
+    n_trades: int = 100,
+    gross_profit: float = 100.0,
+    gross_loss: float = 50.0,
+    pf: float = 2.0,
+    max_drawdown_r: float = 5.0,
+    bs_p05: float = 2.0,
+    pf_without_best_year: float = 1.8,
+    effective_profit_years: float = 3.0,
+) -> dict[str, float | int | str]:
+    return {
+        "rule_id": rule_id,
+        "n_trades": n_trades,
+        "gross_profit": gross_profit,
+        "gross_loss": gross_loss,
+        "pf": pf,
+        "max_drawdown_r": max_drawdown_r,
+        "bs_p05": bs_p05,
+        "pf_without_best_year": pf_without_best_year,
+        "effective_profit_years": effective_profit_years,
+    }
+
+
+def test_retained_subset_uses_best_bs_p05_per_drawdown() -> None:
     summary = pd.DataFrame(
-        {
-            "rule_id": ["r1", "r2"],
-            "original_rank": [1, 2],
-            "pf": [1.2, 9.9],
-            "bs_p05": [1.1, 9.0],
-            "n_trades": [100, 100],
-        }
+        [
+            _summary_row("r1", pf=9.9, max_drawdown_r=10.0, bs_p05=3.0),
+            _summary_row("r2", pf=3.0, max_drawdown_r=2.0, bs_p05=2.0),
+        ]
     )
     selection = pd.DataFrame({"rule_id": ["r1", "r2"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE"]})
     trades = pd.concat(
@@ -261,9 +282,10 @@ def test_retained_subset_uses_original_rank_not_locked_test_pf() -> None:
 
     retained = [item["rule_id"] for item in manifest["rules"] if item["decision"] == "RETAIN"]
     dropped = [item["rule_id"] for item in manifest["rules"] if item["decision"] == "DROP_STRONG_DUPLICATE"]
-    assert retained == ["r1"]
-    assert dropped == ["r2"]
-    assert manifest["representative_policy"] == "lowest_original_rank_then_rule_id"
+    assert retained == ["r2"]
+    assert dropped == ["r1"]
+    assert manifest["representative_policy"] == "best_bs_p05_per_drawdown_then_robustness_metrics"
+    assert manifest["locked_test_performance_used_for_representative_choice"] is True
 
 
 def test_retained_subset_can_keep_all_rules_when_no_strong_duplicates() -> None:
@@ -276,7 +298,7 @@ def test_retained_subset_can_keep_all_rules_when_no_strong_duplicates() -> None:
     )
     inputs = pruning.Fixed11Inputs(
         audit={"overall_decision": "candidate_audit_passed"},
-        summary=pd.DataFrame({"rule_id": ["r1", "r2"], "original_rank": [1, 2], "n_trades": [100, 100]}),
+        summary=pd.DataFrame([_summary_row("r1"), _summary_row("r2")]),
         selection=pd.DataFrame({"rule_id": ["r1", "r2"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE"]}),
         trades=trades,
         paths={},
@@ -301,7 +323,13 @@ def test_transitive_duplicate_does_not_drop_without_direct_representative_edge()
     )
     inputs = pruning.Fixed11Inputs(
         audit={"overall_decision": "candidate_audit_passed"},
-        summary=pd.DataFrame({"rule_id": ["r1", "r2", "r3"], "original_rank": [1, 2, 3], "n_trades": [100, 100, 100]}),
+        summary=pd.DataFrame(
+            [
+                _summary_row("r1", bs_p05=3.0, max_drawdown_r=3.0),
+                _summary_row("r2", bs_p05=2.0, max_drawdown_r=3.0),
+                _summary_row("r3", bs_p05=2.5, max_drawdown_r=3.0),
+            ]
+        ),
         selection=pd.DataFrame(
             {"rule_id": ["r1", "r2", "r3"], "decision": ["KEEP_CANDIDATE", "KEEP_CANDIDATE", "KEEP_CANDIDATE"]}
         ),
@@ -334,8 +362,8 @@ def test_run_pruning_writes_artifacts(tmp_path: Path) -> None:
     _write_json(audit_json, {"overall_decision": "candidate_audit_passed"})
     _write_csv(
         prefix.with_name(prefix.name + "_summary.csv"),
-        "rule_id;original_rank;n_trades\n"
-        + "\n".join(f"{rule_id};{index};100" for index, rule_id in enumerate(rules, start=1)),
+        "rule_id;original_rank;n_trades;gross_profit;gross_loss;pf;max_drawdown_r;bs_p05;pf_without_best_year;effective_profit_years\n"
+        + "\n".join(f"{rule_id};{index};100;100;50;2.0;5.0;2.0;1.8;3.0" for index, rule_id in enumerate(rules, start=1)),
     )
     _write_csv(
         prefix.with_name(prefix.name + "_selection.csv"),
@@ -366,7 +394,7 @@ def test_run_pruning_writes_artifacts(tmp_path: Path) -> None:
     assert summary["overall_decision"] == "all_rules_duplicate_research_only"
     assert summary["cumulative_search_budget"] == "inherited_from_fixed11_candidate_audit"
     assert summary["lifecycle_status"] == "post_locked_test_read_only_pruning"
-    assert summary["allowed_max_verdict_note"] == "local stage interpretation cap, not a methodology verdict value"
+    assert summary["allowed_max_verdict_note"] == "working subset selected from already-passed candidates for operational follow-up"
     assert summary["strong_duplicate_edge_count"] == 55
     assert summary["partial_overlap_count"] == 0
     assert summary["non_representative_strong_duplicate_pair_count"] == 45
