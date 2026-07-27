@@ -24,6 +24,9 @@
    - duplicate time;
    - opposite signals on same time.
 4. Запустить MT4 tester на заданном периоде.
+   - Стандартные строки MT4 tester вида `unmatched data error (...)` не считать
+     ошибкой MQL/runtime и не использовать как blocker для проверки загрузки
+     сигналов, открытия сделок и логики советника.
 5. Сверить:
    - expected signals;
    - opened trades;
@@ -65,6 +68,10 @@
 - Не очищать tester event-log перед новым прогоном.
 - Считать совпадение offline M5 ordering достаточным доказательством MT4
   исполнения без tester/reconciliation.
+- Принимать стандартный `unmatched data error` за ошибку советника. Это
+  предупреждение качества tester-истории; MQL/runtime ошибки искать отдельно:
+  `array out of range`, `Cannot open`, `OPEN_FAILED`, wrong direction,
+  missing open, close mismatch.
 
 ### Ветвления
 
