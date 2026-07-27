@@ -492,3 +492,83 @@ def build_retained_subset(inputs: Fixed11Inputs, pairwise: pd.DataFrame) -> dict
         "non_representative_strong_duplicate_pairs": non_representative_strong_duplicate_pairs,
         "indirect_duplicate_edges_not_used_for_drop": non_representative_strong_duplicate_pairs,
     }
+
+
+def _metric_matrix(pairwise: pd.DataFrame, rule_ids: list[str], field: str) -> pd.DataFrame:
+    matrix = pd.DataFrame(index=rule_ids, columns=rule_ids, dtype=float)
+    for rule_id in rule_ids:
+        matrix.loc[rule_id, rule_id] = 1.0
+    for row in pairwise.itertuples(index=False):
+        value = float(getattr(row, field))
+        matrix.loc[str(row.left_rule_id), str(row.right_rule_id)] = value
+        matrix.loc[str(row.right_rule_id), str(row.left_rule_id)] = value
+    return matrix.fillna(0.0)
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+
+
+def run_pruning(input_prefix: Path, audit_json: Path, output_prefix: Path) -> dict[str, Any]:
+    inputs = load_inputs(input_prefix, audit_json)
+    pairwise = build_pairwise_matrix(inputs.trades)
+    retained = build_retained_subset(inputs, pairwise)
+    metadata = _rule_metadata(inputs)
+    clusters = build_duplicate_clusters(pairwise, metadata)
+    rule_ids = metadata.sort_values(["original_rank", "rule_id"], kind="stable")["rule_id"].astype(str).tolist()
+
+    output_prefix.parent.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "pairwise_csv": output_prefix.with_name(output_prefix.name + "_pairwise.csv"),
+        "clusters_csv": output_prefix.with_name(output_prefix.name + "_clusters.csv"),
+        "fill_daily_pnl_matrix_csv": output_prefix.with_name(output_prefix.name + "_fill_daily_pnl_matrix.csv"),
+        "fill_weekly_pnl_matrix_csv": output_prefix.with_name(output_prefix.name + "_fill_weekly_pnl_matrix.csv"),
+        "exit_daily_pnl_matrix_csv": output_prefix.with_name(output_prefix.name + "_exit_daily_pnl_matrix.csv"),
+        "exit_weekly_pnl_matrix_csv": output_prefix.with_name(output_prefix.name + "_exit_weekly_pnl_matrix.csv"),
+        "exit_drawdown_overlap_matrix_csv": output_prefix.with_name(output_prefix.name + "_exit_drawdown_overlap_matrix.csv"),
+        "retained_subset_json": output_prefix.with_name(output_prefix.name + "_retained_subset.json"),
+        "summary_json": output_prefix.with_name(output_prefix.name + "_summary.json"),
+    }
+    pairwise.to_csv(paths["pairwise_csv"], sep=";", index=False)
+    clusters.to_csv(paths["clusters_csv"], sep=";", index=False)
+    _metric_matrix(pairwise, rule_ids, "fill_daily_pnl_corr").to_csv(paths["fill_daily_pnl_matrix_csv"], sep=";", index_label="rule_id")
+    _metric_matrix(pairwise, rule_ids, "fill_weekly_pnl_corr").to_csv(paths["fill_weekly_pnl_matrix_csv"], sep=";", index_label="rule_id")
+    _metric_matrix(pairwise, rule_ids, "exit_daily_pnl_corr").to_csv(paths["exit_daily_pnl_matrix_csv"], sep=";", index_label="rule_id")
+    _metric_matrix(pairwise, rule_ids, "exit_weekly_pnl_corr").to_csv(paths["exit_weekly_pnl_matrix_csv"], sep=";", index_label="rule_id")
+    _metric_matrix(pairwise, rule_ids, "exit_drawdown_overlap_ratio").to_csv(
+        paths["exit_drawdown_overlap_matrix_csv"], sep=";", index_label="rule_id"
+    )
+    _write_json(paths["retained_subset_json"], retained)
+    summary = {
+        "overall_decision": retained["overall_decision"],
+        "input_rule_count": retained["input_rule_count"],
+        "retained_count": retained["retained_count"],
+        "removed_count": retained["removed_count"],
+        "pair_count": int(len(pairwise)),
+        "current_search_budget": "0_new_rules",
+        "locked_test_policy": "overlap_measurement_only_no_winner_selection",
+        "locked_test_performance_used_for_representative_choice": False,
+        "inputs": inputs.paths,
+        "input_sha256": inputs.sha256,
+        "artifacts": {key: str(path) for key, path in paths.items()},
+    }
+    _write_json(paths["summary_json"], summary)
+    return summary
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Prune fixed-11 rules by mutual overlap and PnL correlation.")
+    parser.add_argument("--input-prefix", default="ML/reports/fractal0_fixed11_rich_entry_locked_test")
+    parser.add_argument("--audit-json", default="ML/reports/fractal0_fixed11_candidate_audit.json")
+    parser.add_argument("--output-prefix", default="ML/reports/fractal0_fixed11_mutual_correlation_pruning")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    summary = run_pruning(Path(args.input_prefix), Path(args.audit_json), Path(args.output_prefix))
+    print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
+
+
+if __name__ == "__main__":
+    main()

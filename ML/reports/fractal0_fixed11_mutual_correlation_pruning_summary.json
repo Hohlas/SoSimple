@@ -1,0 +1,33 @@
+{
+  "overall_decision": "pruning_passed",
+  "input_rule_count": 11,
+  "retained_count": 5,
+  "removed_count": 6,
+  "pair_count": 55,
+  "current_search_budget": "0_new_rules",
+  "locked_test_policy": "overlap_measurement_only_no_winner_selection",
+  "locked_test_performance_used_for_representative_choice": false,
+  "inputs": {
+    "audit_json": "ML/reports/fractal0_fixed11_candidate_audit.json",
+    "summary_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_summary.csv",
+    "selection_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_selection.csv",
+    "trades_csv": "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv"
+  },
+  "input_sha256": {
+    "audit_json": "a131479a8460bd480df6c871f40192b8e15e45769a503d256f94bb090c28bb6a",
+    "summary_csv": "b17321a7d2c12fb1d547191cba2cc4c1462cdaa4c90d1872518d176a00ca6159",
+    "selection_csv": "2ff7df47e21555281741ba0af2d1e505aabfb7b36f4d7c9bd8e87217de2d7ec7",
+    "trades_csv": "5f73f3399968099a674b1e533be45c69a3f11e4e6c45521fea00148b6dd9b0b6"
+  },
+  "artifacts": {
+    "pairwise_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_pairwise.csv",
+    "clusters_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_clusters.csv",
+    "fill_daily_pnl_matrix_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_fill_daily_pnl_matrix.csv",
+    "fill_weekly_pnl_matrix_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_fill_weekly_pnl_matrix.csv",
+    "exit_daily_pnl_matrix_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_exit_daily_pnl_matrix.csv",
+    "exit_weekly_pnl_matrix_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_exit_weekly_pnl_matrix.csv",
+    "exit_drawdown_overlap_matrix_csv": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_exit_drawdown_overlap_matrix.csv",
+    "retained_subset_json": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json",
+    "summary_json": "ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json"
+  }
+}

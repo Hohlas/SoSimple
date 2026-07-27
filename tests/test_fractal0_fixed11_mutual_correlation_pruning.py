@@ -324,3 +324,47 @@ def test_transitive_duplicate_does_not_drop_without_direct_representative_edge()
     assert decisions["r2"] == "DROP_STRONG_DUPLICATE"
     assert decisions["r3"] == "RETAIN"
     assert manifest["indirect_duplicate_edges_not_used_for_drop"]
+
+
+def test_run_pruning_writes_artifacts(tmp_path: Path) -> None:
+    prefix = tmp_path / "fixed11"
+    audit_json = tmp_path / "audit.json"
+    output_prefix = tmp_path / "pruning"
+    rules = [f"r{index:02d}" for index in range(1, 12)]
+    _write_json(audit_json, {"overall_decision": "candidate_audit_passed"})
+    _write_csv(
+        prefix.with_name(prefix.name + "_summary.csv"),
+        "rule_id;original_rank;n_trades\n"
+        + "\n".join(f"{rule_id};{index};100" for index, rule_id in enumerate(rules, start=1)),
+    )
+    _write_csv(
+        prefix.with_name(prefix.name + "_selection.csv"),
+        "rule_id;original_rank;decision\n"
+        + "\n".join(f"{rule_id};{index};KEEP_CANDIDATE" for index, rule_id in enumerate(rules, start=1)),
+    )
+    trade_rows = []
+    for index, rule_id in enumerate(rules, start=1):
+        for trade_index in range(100):
+            day = trade_index % 28 + 1
+            hour = trade_index % 24
+            side = "BUY" if trade_index % 2 == 0 else "SELL"
+            pnl = "1.0" if trade_index % 2 == 0 else "-0.5"
+            trade_rows.append(
+                f"{rule_id};{index};p;m;t;f;{rule_id}_{trade_index};{trade_index};{trade_index};"
+                f"2025-01-{day:02d} {hour:02d}:00:00;"
+                f"2025-01-{day:02d} {hour:02d}:00:00;"
+                f"2025-01-{day:02d} {hour:02d}:30:00;{side};{pnl};1"
+            )
+    _write_csv(
+        prefix.with_name(prefix.name + "_trades.csv"),
+        "rule_id;original_rank;profile_id;model_id;target_id;filter_id;position_id;split_row_id;fill_index;signal_time;fill_time;exit_time;side;pnl_r;hold_bars\n"
+        + "\n".join(trade_rows),
+    )
+
+    summary = pruning.run_pruning(prefix, audit_json, output_prefix)
+
+    assert summary["overall_decision"] == "all_rules_duplicate_research_only"
+    assert output_prefix.with_name(output_prefix.name + "_pairwise.csv").exists()
+    assert output_prefix.with_name(output_prefix.name + "_clusters.csv").exists()
+    assert output_prefix.with_name(output_prefix.name + "_retained_subset.json").exists()
+    assert output_prefix.with_name(output_prefix.name + "_summary.json").exists()
