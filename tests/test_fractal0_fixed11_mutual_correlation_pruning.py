@@ -90,3 +90,140 @@ def test_preflight_rejects_mismatched_summary_selection_trades(tmp_path: Path) -
 
     with pytest.raises(ValueError, match="rule_id sets must match"):
         pruning.load_inputs(prefix, audit_json)
+
+
+def _trade_frame(rule_id: str, rank: int, times: list[str], pnl: list[float], sides: list[str]) -> pd.DataFrame:
+    return pruning.normalize_fixed11_trades(
+        pd.DataFrame(
+            {
+                "rule_id": [rule_id] * len(times),
+                "original_rank": [rank] * len(times),
+                "profile_id": ["time_only"] * len(times),
+                "model_id": ["linear"] * len(times),
+                "target_id": ["target"] * len(times),
+                "filter_id": ["top30"] * len(times),
+                "position_id": [f"{rule_id}_pos_{index}" for index in range(len(times))],
+                "split_row_id": list(range(len(times))),
+                "fill_index": list(range(len(times))),
+                "signal_time": times,
+                "fill_time": times,
+                "exit_time": times,
+                "side": sides,
+                "pnl_r": pnl,
+                "hold_bars": [1] * len(times),
+            }
+        )
+    )
+
+
+def test_pair_metrics_classify_strong_duplicate() -> None:
+    left = _trade_frame("r1", 1, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -0.5], ["BUY", "SELL"])
+    right = _trade_frame("r2", 2, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -0.5], ["BUY", "SELL"])
+
+    metrics = pruning.compute_pair_metrics(left, right)
+
+    assert metrics["fill_overlap_ratio"] == 1.0
+    assert metrics["signal_overlap_ratio"] == 1.0
+    assert metrics["same_direction_ratio"] == 1.0
+    assert metrics["fill_bucket_pnl_corr"] == 1.0
+    assert metrics["redundancy_verdict"] == "strong_duplicate"
+
+
+def test_pair_metrics_classify_unclear_or_complementary() -> None:
+    left = _trade_frame("r1", 1, ["2025-01-01 01:00:00", "2025-01-03 01:00:00"], [1.0, 1.0], ["BUY", "BUY"])
+    right = _trade_frame("r2", 2, ["2025-01-02 01:00:00", "2025-01-04 01:00:00"], [1.0, 1.0], ["SELL", "SELL"])
+
+    metrics = pruning.compute_pair_metrics(left, right)
+
+    assert metrics["fill_overlap_ratio"] == 0.0
+    assert metrics["signal_overlap_ratio"] == 0.0
+    assert metrics["same_direction_ratio"] == 0.0
+    assert metrics["exit_drawdown_overlap_ratio"] == 0.0
+    assert metrics["redundancy_verdict"] == "unclear_or_complementary"
+
+
+def test_build_pairwise_matrix_emits_all_pairs() -> None:
+    trades = pd.concat(
+        [
+            _trade_frame("r1", 1, ["2025-01-01 01:00:00"], [1.0], ["BUY"]),
+            _trade_frame("r2", 2, ["2025-01-01 01:00:00"], [1.0], ["BUY"]),
+            _trade_frame("r3", 3, ["2025-01-02 01:00:00"], [1.0], ["SELL"]),
+        ],
+        ignore_index=True,
+    )
+
+    pairwise = pruning.build_pairwise_matrix(trades)
+
+    assert len(pairwise) == 3
+    assert set(pairwise["left_rule_id"]) | set(pairwise["right_rule_id"]) == {"r1", "r2", "r3"}
+
+
+def test_single_trade_bucket_matches_existing_correlation_module() -> None:
+    left = _trade_frame("r1", 1, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -0.5], ["BUY", "SELL"])
+    right = _trade_frame("r2", 2, ["2025-01-01 01:00:00", "2025-01-02 01:00:00"], [1.0, -0.5], ["BUY", "SELL"])
+    left_canonical = left.rename(columns={"rule_id": "system_name", "fill_time": "entry_time", "pnl_r": "pnl_atr"}).assign(
+        instrument="XAUUSD", provider="MetaQuotes", holding_bars=left["hold_bars"]
+    )
+    right_canonical = right.rename(columns={"rule_id": "system_name", "fill_time": "entry_time", "pnl_r": "pnl_atr"}).assign(
+        instrument="XAUUSD", provider="MetaQuotes", holding_bars=right["hold_bars"]
+    )
+
+    metrics = pruning.compute_pair_metrics(left, right)
+    canonical = canonical_correlation.compute_pair_metrics(left_canonical, right_canonical)
+
+    assert metrics["fill_overlap_ratio"] == canonical["trade_overlap_ratio"]
+    assert metrics["fill_jaccard"] == canonical["entry_time_jaccard"]
+    assert metrics["same_direction_ratio"] == canonical["same_direction_ratio"]
+    assert metrics["exit_daily_pnl_corr"] == canonical["daily_pnl_corr"]
+
+
+def test_repeated_fill_time_is_aggregated_without_losing_trade_count() -> None:
+    left = pruning.normalize_fixed11_trades(
+        pd.DataFrame(
+            {
+                "rule_id": ["r1", "r1"],
+                "original_rank": [1, 1],
+                "profile_id": ["time_only", "time_only"],
+                "model_id": ["linear", "linear"],
+                "target_id": ["target", "target"],
+                "filter_id": ["top30", "top30"],
+                "position_id": ["r1_a", "r1_b"],
+                "split_row_id": [1, 2],
+                "fill_index": [10, 10],
+                "signal_time": ["2025-01-01 00:00:00", "2025-01-01 00:30:00"],
+                "fill_time": ["2025-01-01 01:00:00", "2025-01-01 01:00:00"],
+                "exit_time": ["2025-01-01 02:00:00", "2025-01-01 03:00:00"],
+                "side": ["BUY", "BUY"],
+                "pnl_r": [1.0, 2.0],
+                "hold_bars": [1, 2],
+            }
+        )
+    )
+    right = pruning.normalize_fixed11_trades(
+        pd.DataFrame(
+            {
+                "rule_id": ["r2"],
+                "original_rank": [2],
+                "profile_id": ["time_only"],
+                "model_id": ["linear"],
+                "target_id": ["target"],
+                "filter_id": ["top30"],
+                "position_id": ["r2_a"],
+                "split_row_id": [3],
+                "fill_index": [10],
+                "signal_time": ["2025-01-01 00:00:00"],
+                "fill_time": ["2025-01-01 01:00:00"],
+                "exit_time": ["2025-01-01 02:00:00"],
+                "side": ["BUY"],
+                "pnl_r": [3.0],
+                "hold_bars": [1],
+            }
+        )
+    )
+
+    metrics = pruning.compute_pair_metrics(left, right)
+
+    assert metrics["shared_fill_bucket_count"] == 1
+    assert metrics["left_trade_count_at_shared_fills"] == 2
+    assert metrics["right_trade_count_at_shared_fills"] == 1
+    assert metrics["fill_bucket_pnl_corr"] == 1.0

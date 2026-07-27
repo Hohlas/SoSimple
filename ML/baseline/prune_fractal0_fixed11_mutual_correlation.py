@@ -167,3 +167,207 @@ def load_inputs(input_prefix: Path, audit_json: Path) -> Fixed11Inputs:
         paths={key: str(path) for key, path in paths.items()},
         sha256={key: sha256_file(path) for key, path in paths.items()},
     )
+
+
+def _safe_corr(left: pd.Series, right: pd.Series) -> float:
+    if len(left) == 0 or len(right) == 0 or len(left) != len(right):
+        return 0.0
+    if len(left) == 1:
+        return 1.0 if np.isclose(float(left.iloc[0]), float(right.iloc[0])) else 0.0
+    if np.isclose(float(left.std(ddof=0)), 0.0) or np.isclose(float(right.std(ddof=0)), 0.0):
+        return 1.0 if np.allclose(left.to_numpy(dtype=float), right.to_numpy(dtype=float)) else 0.0
+    value = float(left.corr(right))
+    if np.isnan(value):
+        return 0.0
+    return max(-1.0, min(1.0, value))
+
+
+def _jaccard(left: pd.Series, right: pd.Series) -> float:
+    left_set = set(left.tolist())
+    right_set = set(right.tolist())
+    union = left_set | right_set
+    return float(len(left_set & right_set) / len(union)) if union else 0.0
+
+
+def _overlap_ratio(left: pd.Series, right: pd.Series) -> float:
+    left_set = set(left.tolist())
+    right_set = set(right.tolist())
+    denominator = min(len(left_set), len(right_set))
+    return float(len(left_set & right_set) / denominator) if denominator else 0.0
+
+
+def _bucket_direction(direction_sum: int) -> int:
+    if direction_sum > 0:
+        return 1
+    if direction_sum < 0:
+        return -1
+    return 0
+
+
+def _fill_bucket_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    grouped = (
+        frame.groupby("fill_time", sort=True)
+        .agg(
+            pnl_r=("pnl_r", "sum"),
+            direction_sum=("direction", "sum"),
+            trade_count=("position_id", "count"),
+            unique_directions=("direction", "nunique"),
+            first_signal_time=("signal_time", "min"),
+            last_exit_time=("exit_time", "max"),
+        )
+        .reset_index()
+    )
+    grouped["direction"] = grouped["direction_sum"].map(_bucket_direction).astype(int)
+    grouped["mixed_direction"] = grouped["unique_directions"].astype(int) > 1
+    return grouped
+
+
+def _align_on_fill_bucket(left: pd.DataFrame, right: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    left_bucket = _fill_bucket_frame(left)
+    right_bucket = _fill_bucket_frame(right)
+    shared = sorted(set(left_bucket["fill_time"]) & set(right_bucket["fill_time"]))
+    if not shared:
+        return left_bucket.iloc[0:0].copy(), right_bucket.iloc[0:0].copy()
+    left_aligned = left_bucket[left_bucket["fill_time"].isin(shared)].sort_values("fill_time", kind="stable")
+    right_aligned = right_bucket[right_bucket["fill_time"].isin(shared)].sort_values("fill_time", kind="stable")
+    return left_aligned.reset_index(drop=True), right_aligned.reset_index(drop=True)
+
+
+def _period_pnl(frame: pd.DataFrame, period: str, time_column: str) -> pd.Series:
+    return (
+        frame.assign(period=frame[time_column].dt.to_period(period).dt.to_timestamp())
+        .groupby("period", sort=True)["pnl_r"]
+        .sum()
+        .astype(float)
+    )
+
+
+def _period_corr(left: pd.DataFrame, right: pd.DataFrame, period: str, time_column: str) -> float:
+    left_shared_days = set(left[time_column].dt.floor("D"))
+    right_shared_days = set(right[time_column].dt.floor("D"))
+    if not left_shared_days & right_shared_days:
+        return 0.0
+    left_pnl = _period_pnl(left, period, time_column)
+    right_pnl = _period_pnl(right, period, time_column)
+    union = sorted(set(left_pnl.index) | set(right_pnl.index))
+    if not union:
+        return 0.0
+    return _safe_corr(left_pnl.reindex(union, fill_value=0.0), right_pnl.reindex(union, fill_value=0.0))
+
+
+def _drawdown_state(frame: pd.DataFrame) -> pd.Series:
+    daily = _period_pnl(frame, "D", "exit_time")
+    if daily.empty:
+        return pd.Series(dtype=bool)
+    equity = daily.cumsum()
+    return equity < equity.cummax()
+
+
+def _mask_union_ratio(left_mask: pd.Series, right_mask: pd.Series) -> float:
+    union_index = sorted(set(left_mask.index) | set(right_mask.index))
+    if not union_index:
+        return 0.0
+    left = left_mask.reindex(union_index, fill_value=False).astype(bool)
+    right = right_mask.reindex(union_index, fill_value=False).astype(bool)
+    union = left | right
+    return float((left & right).sum() / union.sum()) if int(union.sum()) else 0.0
+
+
+def _co_loss_ratio(left: pd.DataFrame, right: pd.DataFrame) -> float:
+    left_daily = _period_pnl(left, "D", "exit_time")
+    right_daily = _period_pnl(right, "D", "exit_time")
+    union_index = sorted(set(left_daily.index) | set(right_daily.index))
+    if not union_index:
+        return 0.0
+    left_loss = left_daily.reindex(union_index, fill_value=0.0) < 0.0
+    right_loss = right_daily.reindex(union_index, fill_value=0.0) < 0.0
+    union = left_loss | right_loss
+    return float((left_loss & right_loss).sum() / union.sum()) if int(union.sum()) else 0.0
+
+
+def _staggered_gain_ratio(left: pd.DataFrame, right: pd.DataFrame) -> float:
+    left_daily = _period_pnl(left, "D", "exit_time")
+    right_daily = _period_pnl(right, "D", "exit_time")
+    union_index = sorted(set(left_daily.index) | set(right_daily.index))
+    if not union_index:
+        return 0.0
+    left_gain = left_daily.reindex(union_index, fill_value=0.0) > 0.0
+    right_gain = right_daily.reindex(union_index, fill_value=0.0) > 0.0
+    gain_union = left_gain | right_gain
+    staggered = (left_gain & ~right_gain) | (right_gain & ~left_gain)
+    return float(staggered.sum() / gain_union.sum()) if int(gain_union.sum()) else 0.0
+
+
+def classify_redundancy(metrics: dict[str, float]) -> str:
+    if (
+        metrics["fill_overlap_ratio"] >= 0.75
+        and metrics["same_direction_ratio"] >= 0.90
+        and metrics["fill_bucket_pnl_corr"] >= 0.85
+        and metrics["fill_daily_pnl_corr"] >= 0.75
+        and metrics["fill_weekly_pnl_corr"] >= 0.75
+        and metrics["exit_daily_pnl_corr"] >= 0.75
+        and metrics["exit_weekly_pnl_corr"] >= 0.75
+    ):
+        return "strong_duplicate"
+    if (
+        metrics["fill_overlap_ratio"] >= 0.35
+        or metrics["fill_jaccard"] >= 0.20
+        or metrics["fill_daily_pnl_corr"] >= 0.35
+        or metrics["fill_weekly_pnl_corr"] >= 0.45
+        or metrics["exit_daily_pnl_corr"] >= 0.35
+        or metrics["exit_weekly_pnl_corr"] >= 0.45
+        or metrics["exit_drawdown_overlap_ratio"] >= 0.35
+        or metrics["same_direction_ratio"] >= 0.60
+    ):
+        return "partial_overlap"
+    return "unclear_or_complementary"
+
+
+def compute_pair_metrics(left: pd.DataFrame, right: pd.DataFrame) -> dict[str, float | str]:
+    left_aligned, right_aligned = _align_on_fill_bucket(left, right)
+    shared_fill_bucket_count = int(len(left_aligned))
+    mixed_direction_bucket_count = int(left_aligned.get("mixed_direction", pd.Series(dtype=bool)).sum()) + int(
+        right_aligned.get("mixed_direction", pd.Series(dtype=bool)).sum()
+    )
+    metrics: dict[str, float] = {
+        "fill_overlap_ratio": _overlap_ratio(left["fill_time"], right["fill_time"]),
+        "signal_overlap_ratio": _overlap_ratio(left["signal_time"], right["signal_time"]),
+        "fill_jaccard": _jaccard(left["fill_time"], right["fill_time"]),
+        "signal_jaccard": _jaccard(left["signal_time"], right["signal_time"]),
+        "same_direction_ratio": float((left_aligned["direction"].to_numpy() == right_aligned["direction"].to_numpy()).mean())
+        if not left_aligned.empty
+        else 0.0,
+        "fill_bucket_pnl_corr": _safe_corr(left_aligned["pnl_r"], right_aligned["pnl_r"]) if not left_aligned.empty else 0.0,
+        "shared_fill_bucket_count": float(shared_fill_bucket_count),
+        "left_trade_count_at_shared_fills": float(left_aligned["trade_count"].sum()) if not left_aligned.empty else 0.0,
+        "right_trade_count_at_shared_fills": float(right_aligned["trade_count"].sum()) if not right_aligned.empty else 0.0,
+        "mixed_direction_bucket_count": float(mixed_direction_bucket_count),
+        "fill_daily_pnl_corr": _period_corr(left, right, "D", "fill_time"),
+        "fill_weekly_pnl_corr": _period_corr(left, right, "W", "fill_time"),
+        "exit_daily_pnl_corr": _period_corr(left, right, "D", "exit_time"),
+        "exit_weekly_pnl_corr": _period_corr(left, right, "W", "exit_time"),
+        "exit_drawdown_overlap_ratio": _mask_union_ratio(_drawdown_state(left), _drawdown_state(right)),
+        "exit_co_loss_ratio": _co_loss_ratio(left, right),
+        "exit_staggered_gain_ratio": _staggered_gain_ratio(left, right),
+        "benchmark_system_correlation_parity": "MATCHED_ON_SYNTHETIC_SINGLE_TRADE_BUCKET_CASE",
+    }
+    return {**metrics, "redundancy_verdict": classify_redundancy(metrics)}
+
+
+def build_pairwise_matrix(trades: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    rule_ids = sorted(trades["rule_id"].astype(str).unique())
+    grouped = {rule_id: frame.copy() for rule_id, frame in trades.groupby("rule_id", sort=False)}
+    for left_index, left_rule_id in enumerate(rule_ids):
+        for right_rule_id in rule_ids[left_index + 1 :]:
+            rows.append(
+                {
+                    "left_rule_id": left_rule_id,
+                    "right_rule_id": right_rule_id,
+                    **compute_pair_metrics(grouped[left_rule_id], grouped[right_rule_id]),
+                }
+            )
+    pairwise = pd.DataFrame(rows)
+    if len(pairwise) != len(rule_ids) * (len(rule_ids) - 1) // 2:
+        raise ValueError("pairwise matrix has unexpected row count")
+    return pairwise
