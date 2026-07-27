@@ -29,8 +29,9 @@ Workflow для фиксации завершённого этапа без по
 3. Обнови `CHANGELOG.md`: добавь краткую навигационную запись по фиксированным полям — `report`, `topics`, `summary`, `artifacts`, `decision`, `notes`.
 4. Перепиши `CONTEXT_HANDOFF.md` до актуального состояния — не дополняй старое, а сжимай до текущего контекста.
 5. Если этап изменял кодовые модули (новые файлы, изменённые CLI/входы/выходы/назначение), запусти скилл `my:update-docs`. Скилл обновит headers, `docs/<category>/<module>.md`, `MODULE_INDEX.md`.
-6. Выполни wiki Ingest — скилл `my:wiki`. Ingest обновит `wiki/research/`, `wiki/concepts/`, `wiki/index.md`, `wiki/log.md`, `wiki/REPO_integrity.md`.
-7. Проверь `git status`. Отдели файлы этого этапа от посторонних изменений. Закоммить только файлы этапа (включая wiki-изменения из шага 6). `git push` не делать.
+6. Перед закрытием крупного Python/ML-этапа запусти полный `./.venv/bin/python -m pytest tests/ -q`; в остальных случаях достаточно уже выполненных релевантных проверок.
+7. Выполни wiki Ingest — скилл `my:wiki`. Ingest обновит `wiki/research/`, `wiki/concepts/`, `wiki/index.md`, `wiki/log.md`, `wiki/REPO_integrity.md`.
+8. Проверь `git status`. Отдели файлы этого этапа от посторонних изменений. Закоммить только файлы этапа (включая wiki-изменения из шага 7). `git push` не делать.
 
 ## Правила
 
