@@ -29,7 +29,7 @@ int OnInit() {
    SetIndexBuffer(0, ExtSpreadMax);
    SetIndexBuffer(1, ExtSpreadMin);
    SetIndexStyle(0, DRAW_HISTOGRAM);
-   SetIndexStyle(1, DRAW_NONE);
+   SetIndexStyle(1, DRAW_HISTOGRAM, STYLE_SOLID, 3, clrGainsboro);
    SetIndexLabel(0, "Max");
    SetIndexLabel(1, "Min");
 
