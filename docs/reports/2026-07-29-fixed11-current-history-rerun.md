@@ -208,7 +208,93 @@ Comparison creation and validation:
 
 ```bash
 ./.venv/bin/python - <<'PY'
-# inline comparison script from the plan
+import json
+import math
+import hashlib
+from pathlib import Path
+
+import pandas as pd
+
+OLD_JSON = Path("ML/reports/fractal0_fixed11_rich_entry_locked_test.json")
+OLD = Path("ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv")
+NEW_JSON = Path("ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json")
+NEW = Path("ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv")
+OUT = Path("ML/reports/fractal0_fixed11_current_history_comparison.json")
+SLOT1 = "rank05_time_only_linear_target_entry_avoid_sl_top30"
+
+def sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def pf(s: pd.Series) -> float:
+    gains = float(s[s > 0].sum())
+    losses = float(-s[s < 0].sum())
+    return math.inf if losses == 0 else gains / losses
+
+def summarize(df: pd.DataFrame) -> dict[str, object]:
+    return {
+        "trades": int(len(df)),
+        "pnl_r_sum": round(float(df["pnl_r"].sum()), 6),
+        "pnl_r_mean": round(float(df["pnl_r"].mean()), 6) if len(df) else None,
+        "pf": None if len(df) == 0 else round(float(pf(df["pnl_r"])), 6),
+        "hold_bars_0": int((df["hold_bars"] == 0).sum()),
+        "close_reasons": {str(k): int(v) for k, v in df["close_reason"].value_counts().items()},
+        "side_counts": {str(k): int(v) for k, v in df["side"].value_counts().items()},
+        "year_pnl_r": {
+            str(int(k)): round(float(v), 6)
+            for k, v in df.assign(year=pd.to_datetime(df["signal_time"]).dt.year).groupby("year")["pnl_r"].sum().items()
+        },
+    }
+
+old = pd.read_csv(OLD, sep=";")
+new = pd.read_csv(NEW, sep=";")
+for frame in [old, new]:
+    frame["signal_time_norm"] = pd.to_datetime(frame["signal_time"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+    frame["key"] = frame["rule_id"].astype(str) + "|" + frame["side"].astype(str) + "|" + frame["signal_time_norm"]
+
+rules = sorted(set(old["rule_id"]) | set(new["rule_id"]))
+per_rule = {}
+for rule in rules:
+    o = old[old["rule_id"] == rule]
+    n = new[new["rule_id"] == rule]
+    old_keys = set(o["key"])
+    new_keys = set(n["key"])
+    per_rule[rule] = {
+        "old": summarize(o),
+        "current": summarize(n),
+        "added_keys": int(len(new_keys - old_keys)),
+        "removed_keys": int(len(old_keys - new_keys)),
+        "common_keys": int(len(old_keys & new_keys)),
+    }
+
+out = {
+    "stage": "fixed11_current_history_rerun",
+    "status": "DIAGNOSTIC_ONLY",
+    "old_json_path": str(OLD_JSON),
+    "old_json_sha256": sha256(OLD_JSON),
+    "old_trades_path": str(OLD),
+    "old_trades_sha256": sha256(OLD),
+    "current_json_path": str(NEW_JSON),
+    "current_json_sha256": sha256(NEW_JSON),
+    "current_trades_path": str(NEW),
+    "current_trades_sha256": sha256(NEW),
+    "comparison_key": "signal_time + side + rule_id",
+    "logic_change": "none",
+    "aggregate_old": summarize(old),
+    "aggregate_current": summarize(new),
+    "per_rule": per_rule,
+    "slot1_rule_id": SLOT1,
+    "slot1": per_rule[SLOT1],
+}
+OUT.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+print(OUT)
+print("aggregate_old", out["aggregate_old"])
+print("aggregate_current", out["aggregate_current"])
+print("slot1_old", out["slot1"]["old"])
+print("slot1_current", out["slot1"]["current"])
 PY
 ```
 
