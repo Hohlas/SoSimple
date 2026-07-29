@@ -45,7 +45,7 @@
       "2026": 485.671357
     }
   },
-  "comparison_key": "rule_id + side + signal_time",
+  "comparison_key": "signal_time + side + rule_id",
   "current_json_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json",
   "current_json_sha256": "d97a4167968b9152808b414a64033d61dac3c9b8d653f174a15d9dde7c26bc78",
   "current_trades_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv",

@@ -54,6 +54,7 @@ Scope stayed diagnostic only. I did not change execution logic, runner rules, cu
 - Confirmed all four recorded input hashes are 64 hex characters.
 - Confirmed the retained slot 1 diagnostic was run on `fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv` with `sep=';'`.
 - Confirmed no full `pytest` run was executed.
+- Re-ran Task 3 Step 2 after correcting the `comparison_key` label to `signal_time + side + rule_id`; output stayed `comparison_ok` with `rules 11`.
 
 ## Notes
 
