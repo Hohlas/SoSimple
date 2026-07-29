@@ -10,12 +10,15 @@
 
 Анализ продолжает parity-разбор retained fixed11 rule slot 1:
 
-- MT4 event artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`;
+- MT4 event artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`
+  (`sha256=b0e017cdf6556935882d3fa481c82bb07490f4c7673092039f44d90035e91f8a`);
 - Python trades artifact: `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`;
 - Python run metadata: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`;
 - H1 OHLC: `DATA/XAUUSD_H1_OHLC.csv`;
 - M5 execution OHLC: `MT/MQL4/Files/XAUUSD_M5_OHLC.csv`;
-- MT4 tester history checked manually from `XAUUSD60.hst`, `XAUUSD5.hst`, `XAUUSD1.hst`;
+- current MT4-exported H1 OHLC: `MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv`;
+- MT4 tester history checked from `/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD60.hst`,
+  `XAUUSD5.hst`, `XAUUSD1.hst`;
 - inspected runner: `ML/baseline/benchmark_fractal0_entry_exit_grid.py`.
 
 Перед этим MT4 был изменён так, чтобы ставить лимитные ордера по Python-правилу
@@ -70,8 +73,14 @@ path. Он не подтверждает прибыльность и не дол
 
 - `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
 - `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv`
 
-Код и CSV-артефакты этим анализом не менялись.
+В рамках написания отчёта не менялись Python code, Python trades и signal/exit
+export CSV. Анализ использовал уже созданный MT4 stale-handling event-log:
+`MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`. Этот tester path
+перезаписываемый; поэтому его hash зафиксирован в manifest.
 
 ## Verification
 
@@ -85,12 +94,13 @@ rg -n "execution_ohlc|_resolve_same_bar_with_execution_ohlc|simulate_trade\\(|bu
 ```
 
 ```bash
-./.venv/bin/python - <<'PY'
-# CSV/HST reconciliation scripts запускались inline, чтобы посчитать stale
-# categories, сравнить H1 CSV vs MT4 HST, проверить первое касание по M1/M5
-# и разложить Python PnL по hold_bars. Эти скрипты не меняли файлы проекта.
-PY
+./.venv/bin/python ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py
 ```
+
+Команда создаёт/обновляет read-only evidence artifacts:
+
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`;
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv`.
 
 Полный project pytest намеренно не запускался: это была документационная и
 диагностическая проверка, а не изменение кода. Кроме того, проектное правило
@@ -141,12 +151,16 @@ CLOSE=717
 OPEN_FAILED=404
 ```
 
-Основные stale-категории:
+Основные stale-категории из текущего `fill_chronology_manifest.json`:
 
-| Category | Count | Python PnL по тем же signal keys |
-|---|---:|---:|
-| `StalePendingAfterMLClose` | 324 | `-63.592028R` |
-| `StaleFillAfterMLClose` | 66 | `-19.812954R` |
+| Category | MT4 rows | Python matched rows | Python PnL по тем же `signal_time + direction` |
+|---|---:|---:|---:|
+| `StalePendingAfterMLClose` | 324 | 336 | `-65.558961R` |
+| `StaleFillAfterMLClose` | 66 | 66 | `-19.812954R` |
+
+Для `StalePendingAfterMLClose` Python matched rows больше MT4 rows из-за
+дублей `signal_time + direction` в Python trade stream. Это отдельная причина,
+почему текущая сверка остаётся диагностической.
 
 Это объясняет, почему свежий MT4 PnL выглядел подозрительно хорошим: многие
 короткие убыточные Python-сделки в MT4 либо пропущены как pending deletions,
@@ -156,17 +170,25 @@ OPEN_FAILED=404
 
 ### Python H1 против текущей истории MT4 tester
 
-Сравнение `DATA/XAUUSD_H1_OHLC.csv` с текущим MT4 `XAUUSD60.hst` показало:
+Сравнение `DATA/XAUUSD_H1_OHLC.csv` с текущим MT4 history file
+`/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD60.hst`
+через `reconcile_fill_chronology.py` показало:
 
 ```text
-2004-2022: точное совпадение для проверенных H1 rows
-2023: 1984 крупных отличия
-2024: 4046 крупных отличий
-2025: 4008 крупных отличий
-2026: 2549+ крупных отличий
+csv_rows=128306
+hst_rows=128679
+matched_rows=127829
+HST record size=60 bytes
+large_differences_by_year:
+  2023: 2189
+  2024: 4390
+  2025: 4216
+  2026: 2709
 ```
 
 Проверка offset не показала сдвиг timezone. Лучшее совпадение при offset `0`.
+Hash и `mtime` HST/CSV файлов зафиксированы в
+`ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`.
 
 Интерпретация: с 2023 года Python locked-test OHLC и текущая история MT4 tester
 существенно отличаются. Это объясняет часть fill mismatch, особенно случаи,
@@ -217,6 +239,7 @@ M5 показывает, что первое касание лимитки пр�
 | Python `exit_time` | `2022-12-06 03:00:00` |
 | limit | `1772.28` |
 | первое M5-касание лимитки | `2022-12-06 03:10` |
+| M5 OHLC этого бара | `open=1771.32 high=1772.59 low=1771.07 close=1772.24` |
 | Python close reason | `ML_CLOSE` |
 | Python PnL | `-0.3085365853658486R` |
 
@@ -233,6 +256,7 @@ M5 показывает, что первое касание лимитки пр�
 | Python `exit_time` | `2022-12-15 03:00:00` |
 | limit | `1802.05` |
 | первое M5-касание лимитки | `2022-12-15 03:15` |
+| M5 OHLC этого бара | `open=1803.84 high=1804.06 low=1801.36 close=1802.58` |
 | Python close reason | `ML_CLOSE` |
 | Python PnL | `-0.3793478260869556R` |
 
@@ -243,9 +267,9 @@ M5 показывает, что первое касание лимитки пр�
 
 ```text
 total = 374
-first M5 limit touch after H1 open = 172
-first M5 limit touch at H1 open = 64
-M5 no hit = 138
+first M5 limit touch after H1 open = 174
+first M5 limit touch at H1 open = 65
+M5 no hit = 135
 ```
 
 Группа `M5 no hit` частично объясняется найденным рассинхроном истории между
@@ -261,6 +285,13 @@ Python locked-test result для текущего fixed11 path получает 
 `DIAGNOSTIC_ONLY` в части исполнения. Его нельзя считать надёжным
 доказательством прибыльности, пока не исправлена хронология fill и same-H1
 `MLClose`, а locked-test artifacts не пересчитаны.
+
+Методическая причина: по `docs/methodology/A4-verdicts-stop-conditions.md`
+critical mismatch в MT4 parity останавливает текущий проверочный cycle; по
+`docs/methodology/10-frozen-test-oos.md` неполный first executable price /
+latency proof ограничивает результат статусом `DIAGNOSTIC_ONLY`; по
+`docs/methodology/13-export-mt4-parity.md` расхождения должны быть сведены к
+`critical_mismatch_count = 0` или явно приняты как non-blocking.
 
 Свежий MT4 result также `DIAGNOSTIC_ONLY`. Его высокий PnL объясняется
 сочетанием факторов:
@@ -278,8 +309,9 @@ MT4.
 - Анализ покрывал только retained rule slot 1.
 - Текущие Python artifacts не пересчитывались.
 - Код в рамках этого отчёта не исправлялся.
-- M1/M5 проверки были диагностическими inline-скриптами; reusable
-  reconciliation script ещё не создан.
+- M1/M5/HST проверки теперь вынесены в
+  `ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py`,
+  но это диагностический скрипт, а не исправление execution contract.
 - Правильный replacement contract ещё не финализирован.
 - Нужно решить:
   - запретить `MLClose` на H1-баре fill;
@@ -328,4 +360,8 @@ MT4.
 - `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`
 - `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`
 - `MT/MQL4/Files/XAUUSD_M5_OHLC.csv`
+- `MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv`
 - `DATA/XAUUSD_H1_OHLC.csv`

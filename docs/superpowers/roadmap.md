@@ -32,7 +32,7 @@
 - artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`;
 - expert version: `260.338`;
 - `ORDER_PLACED=1115`, `OPEN=717`, `CLOSE=717`, `OPEN_FAILED=404`;
-- close/open-failed reasons: `MLClose=633`, `StaleFillAfterMLClose=63`,
+- close/open-failed reasons: `MLClose=630`, `StaleFillAfterMLClose=66`,
   `StopLoss=15`, `Timeout=6`, `StalePendingAfterMLClose=324`,
   `LimitExpired=74`, `MarketAfterLimitPassedStopInvalid=2`,
   `OrderSendFailed=4`;

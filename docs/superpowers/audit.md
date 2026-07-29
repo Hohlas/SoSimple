@@ -1,181 +1,121 @@
-# Аудит плана `2026-07-25-fractal0-fixed11-candidate-audit.md`
+# Аудит отчётов fixed11 Python/MT4 fill chronology
 
-Дата аудита: 2026-07-25.
+Дата аудита: 2026-07-29
 
-Проверяемый файл: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`.
+Проверены полностью:
 
-Проверены только связанные источники: связанный locked-test отчёт, предыдущий locked-test protocol plan, методика `06/09/10/11/12/13/16`, `docs/DATA_FLOW.md`, `docs/superpowers/roadmap.md`, runner `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`, bootstrap helper, JSON/CSV `ML/reports/fractal0_fixed11_rich_entry_locked_test*`, `leaderboard_closure_audit_rules.csv`.
+- `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
+- `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`
 
-## Краткий вывод
+Точечно проверены связанные первоисточники:
 
-План в целом правильно ставит задачу read-only аудита и не предлагает новый подбор по `locked_test`. Базовые факты по текущим артефактам подтверждаются: JSON/CSV существуют, 11 правил совпадают с `leaderboard_closure_audit_rules.csv`, хэши основных входов совпадают с локальными файлами, основной PF/BS/N и BUY/SELL PF проходят заявленные пороги.
+- `docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md`
+- `docs/superpowers/roadmap.md`
+- `docs/methodology/README.md`
+- `docs/methodology/10-frozen-test-oos.md`
+- `docs/methodology/12-backtest-costs.md`
+- `docs/methodology/13-export-mt4-parity.md`
+- `docs/methodology/A4-verdicts-stop-conditions.md`
+- `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`
+- `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`
 
-Блокеры плана: он не требует машинно проверяемого pre-open freeze/policy artifact, пропускает малый N в годовых срезах, использует `BS_p05` как жёсткое условие без проверки, что это настоящий block bootstrap, и не заставляет structured artifact раскрыть все роли split.
+## Вывод
+
+Последний отчёт от 2026-07-29 в целом фактически подтверждается текущими кодом и CSV-артефактами. Главный вывод о статусе `DIAGNOSTIC_ONLY` и о неполном execution contract между Python и MT4 соответствует методологии.
+
+Основные проблемы не в логике последнего вывода, а в воспроизводимости доказательств: часть чисел получена одноразовыми inline-скриптами, а один MT4 event-log path используется в двух отчётах для разных прогонов.
 
 ## Замечания
 
-### 1. Критично - нет проверки pre-open freeze/policy artifacts
+### 1. Важно: один и тот же MT4 event-log path используется как доказательство двух разных прогонов
 
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 28-36, 81-90, 157-172.
+- Место: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`, строки 89-129; `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 13 и 135-142.
+- Суть проблемы: оба отчёта ссылаются на `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`, но описывают разные counts.
+- Доказательство:
+  - отчёт 2026-07-27 утверждает `ORDER_PLACED=1132`, `OPEN=1072`, `CLOSE=1072`, `OPEN_FAILED=5`;
+  - отчёт 2026-07-29 утверждает `ORDER_PLACED=1115`, `OPEN=717`, `CLOSE=717`, `OPEN_FAILED=404`;
+  - текущий файл даёт второй набор: команда `./.venv/bin/python` с `csv.DictReader(..., delimiter=";")` по `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv` вернула `{'ORDER_PLACED': 1115, 'OPEN': 717, 'CLOSE': 717, 'OPEN_FAILED': 404}`.
+- Почему это важно: отчёт 2026-07-27 сейчас нельзя воспроизвести по указанному артефакту. Это снижает доказательную силу предыстории и может привести к неверной сверке, если читатель использует текущий файл как "fresh MLClose run" из старого отчёта.
+- Рекомендуемое исправление: в отчёте 2026-07-27 явно пометить, что файл был перезаписан новым stale-handling прогоном, либо добавить сохранённый snapshot старого event-log с уникальным именем и ссылкой. Для будущих прогонов сохранять immutable path, например с датой, настройкой и кратким hash.
 
-Суть проблемы: план говорит, что аудит проверяет frozen 11-rule contract, но не включает в `depends_on` и проверки pre-open freeze/policy artifacts из предыдущего протокола: `ML/reports/fractal0_fixed11_locked_test_freeze.json` и `ML/reports/fractal0_fixed11_locked_test_selection_policy.json`.
+### 2. Важно: численные проверки последнего отчёта не воспроизводимы как отдельный артефакт
 
-Доказательство:
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 87-92, 135-149, 157-174, 180-193, 242-249.
+- Суть проблемы: отчёт сообщает важные counts по stale-категориям, H1-vs-HST отличиям, M5 first touch и PnL buckets, но вместо кода проверки сохранён только заглушечный inline-блок.
+- Доказательство:
+  - строки 87-92 показывают только комментарий внутри `./.venv/bin/python - <<'PY'`, без реального скрипта;
+  - методология требует reconciliation tool как вход (`docs/methodology/13-export-mt4-parity.md`, строки 7-13) и reconciliation report как обязательную проверку (строки 50-55);
+  - сам отчёт признаёт, что reusable reconciliation script ещё не создан (`docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 281-282).
+- Почему это важно: выводы выглядят правдоподобно и частично проверяются текущими CSV, но будущий аудит не сможет точно повторить HST/M1/M5 проверки, offset-поиск и классификацию `M5 no hit` без восстановления логики вручную.
+- Рекомендуемое исправление: добавить read-only reconciliation script или notebook-free Python-модуль, который воспроизводит таблицы отчёта: event counts, stale counts, PnL по stale keys, H1-vs-HST diff by year, first M5/M1 touch для examples и агрегаты `hold_bars=0`.
 
-- Предыдущий протокол требует создать эти файлы: `docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md`, строки 55-61.
-- Там же указано, что freeze artifact должен записать `rule_hash_sha256`, execution contract и selection policy до открытия `locked_test`: строки 71-75, 284-319.
-- В текущем дереве команда `rg --files | rg 'fractal0_fixed11_locked_test|fractal0_fixed11_rich_entry_locked_test|leaderboard_closure_audit_rules'` нашла только:
-  - `tests/test_fractal0_fixed11_rich_entry_locked_test.py`
-  - `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`
-  - `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`
-- Методика требует сохранить rule/threshold/checkpoint/feature/export/execution contract и запретить изменения после просмотра `locked_test`: `docs/methodology/09-validation-freeze.md`, строки 44-47, 60-65.
+### 3. Важно: вывод о рассинхроне Python H1 и текущей MT4 history недостаточно привязан к конкретным файлам HST
 
-Почему это важно: после открытия `locked_test` нельзя честно восстановить факт, что конкретный rule hash и selection policy были зафиксированы заранее. Без этого аудит может проверить текущую согласованность файлов, но не докажет pre-open freeze.
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 157-174.
+- Суть проблемы: отчёт ссылается на ручную проверку `XAUUSD60.hst`, `XAUUSD5.hst`, `XAUUSD1.hst`, но не указывает точные пути, размеры, время изменения, hash или команду чтения `.hst`.
+- Доказательство:
+  - в `Context` указаны только имена файлов без пути (`docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строка 18);
+  - результат по годам указан численно, но в `Verification` нет кода для чтения HST, есть только общий комментарий (`строки 87-92`);
+  - методология требует зафиксировать execution contract и источник младшего таймфрейма; если broker/source/timezone/price convention не совпадают, результат не выше `DIAGNOSTIC_ONLY` (`docs/methodology/12-backtest-costs.md`, строки 96-98).
+- Почему это важно: рассинхрон истории с 2023 года является одним из трёх объяснений высокого MT4 PnL. Без точной фиксации HST-источников нельзя отличить реальный data drift от ошибки чтения файла, другой папки tester, другого broker history или последующего обновления истории.
+- Рекомендуемое исправление: добавить в отчёт или отдельный JSON manifest точные пути HST, `sha256`, `mtime`, период, timezone/offset-проверку, формат парсера и команду, которая считает yearly diff.
 
-Рекомендуемое исправление: добавить freeze/policy artifacts в `depends_on` и в `audit_hashes`/`audit_split_policy`. Если их действительно нет, итог аудита должен быть не `candidate_audit_passed`, а минимум `candidate_audit_blocked` с явной причиной `pre_open_freeze_artifact_missing`. Ретроактивно созданный freeze можно использовать только как disclosure, не как доказательство pre-open freeze.
+### 4. Улучшение: в отчёте не раскрыты hash экспортов и проверяемого event-log
 
-### 2. Улучшение - нужно явно развести аудит 11 правил и последующий отбор по корреляции
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, разделы `Context`, `Verification`, `Related Materials`.
+- Суть проблемы: отчёт перечисляет CSV/JSON пути, но не фиксирует hash для `ML_Trade_Events_SoSimple_1709200448.csv`, `ml_signals_fixed11_ruleNN.csv`, `ml_exits_fixed11_ruleNN.csv`, H1/M5 CSV и Python trades CSV.
+- Доказательство:
+  - методология `docs/methodology/13-export-mt4-parity.md` требует зафиксировать hash экспортированного файла, строка 18;
+  - отчёт 2026-07-29 не содержит `sha256` для связанных файлов;
+  - Python metadata содержит hash для M5 execution OHLC (`ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строки 12-13), но отчёт не переносит его в проверочный manifest.
+- Почему это важно: parity-аудит чувствителен к перезаписи CSV и tester history. Без hash нельзя доказать, что отчёт, Python trades и MT4 event-log относятся к одному состоянию данных.
+- Рекомендуемое исправление: добавить секцию `Artifact hashes` или отдельный manifest в `ML/reports/fractal0_fixed11_retained_mt4_parity/`, включив hash всех входов и выходов, которые участвуют в сверке.
 
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 83-96.
+### 5. Вопрос: "код и CSV-артефакты этим анализом не менялись" конфликтует с текущим состоянием event-log, если stale handling был частью того же шага
 
-Суть проблемы: план использует `kept_candidates=11` как условие прохода аудита. По уточнённому решению пользователя от 2026-07-25 это допустимо: нужно проверить все 11 кандидатов, а взаимную корреляцию и финальное число оставляемых правил оценить отдельным следующим этапом. Но в плане это стоит назвать точнее, чтобы `kept_candidates=11` не читалось как финальный portfolio selection.
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 69-74 и 135-142.
+- Суть проблемы: отчёт утверждает, что код и CSV-артефакты не менялись, но результат `ORDER_PLACED=1115`, `OPEN_FAILED=404` содержится в том же CSV path, который в отчёте 2026-07-27 ранее содержал `ORDER_PLACED=1132`, `OPEN_FAILED=5`.
+- Доказательство:
+  - текущее содержимое `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv` подтверждает counts отчёта 2026-07-29;
+  - отчёт 2026-07-27, строки 89-129, использует тот же path для другого результата;
+  - по имеющимся файлам нельзя установить, был ли CSV перезаписан до начала анализа 2026-07-29 или в ходе анализа. Это именно вопрос, а не доказанная ошибка.
+- Почему это важно: формулировка может быть понята как "текущие артефакты не затрагивались", хотя фактически проверяемый event-log уже отличается от предшествующего отчёта.
+- Рекомендуемое исправление: уточнить фразу: "в рамках написания отчёта не менялись Python code/trades/export CSV; анализ использовал уже созданный stale-handling MT4 event-log". Если stale-handling требовал изменения MQL4 до этого анализа, добавить ссылку на соответствующий commit/report.
 
-Доказательство:
+### 6. Улучшение: статус `DIAGNOSTIC_ONLY` корректен, но стоит явно связать его с методическим blocker
 
-- Новый план: `rule_count=11`, `kept_candidates=11` как условие pass, строки 83-84; `candidate_audit_passed` ведёт к MT4/tester parity, строки 94-96, 296-298.
-- Пользовательское уточнение от 2026-07-25: ограничение до 3 не учитывать в этом аудите; проверить все 11, затем отдельно проверить взаимную корреляцию и решить, сколько оставить.
-- Фактический JSON: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строки 16-17: `rule_count=11`, `kept_candidates=11`.
-- Runner помечает `KEEP_CANDIDATE` только по PF/BS/N и не применяет max-3/correlation pruning: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`, строки 256-268.
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 260-274 и 276-287.
+- Суть проблемы: вывод правильный, но отчёт не цитирует конкретные stop conditions, из-за которых нельзя продолжать проверочный cycle как будто parity почти пройден.
+- Доказательство:
+  - `docs/methodology/A4-verdicts-stop-conditions.md`, строки 40-51, требует остановить проверочный cycle, если MT4 parity показывает critical mismatch;
+  - `docs/methodology/10-frozen-test-oos.md`, строки 31 и 37, ограничивает verdict при неполном или изменённом execution contract;
+  - `docs/methodology/13-export-mt4-parity.md`, строки 60-64, требует либо `critical_mismatch_count = 0`, либо явно принятые non-blocking расхождения.
+- Почему это важно: следующий шаг должен быть не "докрутить текущий кандидат", а исправить contract и заново пересчитать locked-test artifacts. Отчёт это говорит, но методическая привязка сделает запрет сильнее и менее двусмысленным.
+- Рекомендуемое исправление: добавить в `Conclusions` или `Next Step` короткую ссылку: "по A4 stop condition это blocker проверочного cycle; до пересчёта artifacts статус не выше `DIAGNOSTIC_ONLY`".
 
-Почему это важно: без явного разделения этапов следующий исполнитель может принять `kept_candidates=11` за финальный портфельный отбор, хотя это только список правил, прошедших индивидуальный аудит перед корреляционной проверкой.
+### 7. Улучшение: примеры нарушения хронологии подтверждаются Python trades, но M5 first-touch доказательство не приложено
 
-Рекомендуемое исправление: заменить или дополнить `kept_candidates=11` полями `evaluated_rule_count=11`, `gate_pass_count=11`, `correlation_pruning_status=FOLLOW_UP_REQUIRED`. В `Next Step` явно указать: сначала проверить взаимную корреляцию всех 11 прошедших правил, затем принять отдельное решение о количестве оставляемых кандидатов.
+- Место: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, строки 210-240.
+- Суть проблемы: строки Python trades подтверждают `signal_time`, `fill_time`, `exit_time`, `limit`, `close_reason` и `pnl_r` для обоих примеров, но первое M5-касание `03:10` и `03:15` не воспроизводится из отчёта.
+- Доказательство:
+  - `rg` по `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv` подтверждает пример 1 для rule `rank05_time_only_linear_target_entry_avoid_sl_top30`: `signal_time=2022-12-05 23:00:00`, `fill_time=2022-12-06 03:00:00`, `ML_CLOSE`, `pnl_r=-0.3085365853658486`, `limit=1772.28`;
+  - тот же CSV подтверждает пример 2: `signal_time=2022-12-14 22:00:00`, `fill_time=2022-12-15 03:00:00`, `ML_CLOSE`, `pnl_r=-0.3793478260869556`, `limit=1802.05`;
+  - команда или сохранённая таблица, доказывающая first M5 touch, отсутствует.
+- Почему это важно: именно M5 first-touch делает эти примеры доказательством нарушения хронологии, а не просто сделками с одинаковым H1 `fill_time == exit_time`.
+- Рекомендуемое исправление: сохранить небольшой CSV `chronology_examples.csv` с колонками `signal_time`, `side`, `limit`, `python_fill_time`, `python_exit_time`, `first_m5_touch_time`, `first_m5_bar_ohlc`, `source_m5_sha256`.
 
-### 3. Важно - годовой gate игнорирует минимальный размер годового среза
+## Подтверждённые утверждения без замечаний
 
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 86-87, 197-199.
+- `execution_ohlc_path = MT/MQL4/Files/XAUUSD_M5_OHLC.csv` подтверждён в `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строка 12.
+- `execution_ohlc_usage = resolve_same_h1_bar_tp_sl_order_only` подтверждён в `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, строка 1467.
+- M5 используется в `_resolve_same_bar_with_execution_ohlc(...)` только для порядка SL/TP: функция проверяет `stop_hit` и `tp_hit` на строках 536-545, а вызывается при ambiguous SL/TP на строках 571-577.
+- Python fill фиксируется H1 timestamp: `build_entry_rows(...)` пишет `fill_time = pd.Timestamp(ohlc_times[pos])` на строках 443-455.
+- `build_exit_decision_rows(...)` начинает решения с `idx = fill_index` и пишет H1 `decision_time` на строках 708-735.
+- PnL buckets по `hold_bars` для `rank05_time_only_linear_target_entry_avoid_sl_top30` воспроизведены из `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`: `0: n=406, sum=-113.0071, PF=0.0481`; `1: n=85, sum=-10.9074`; `2: n=60, sum=-3.7852`; `3..5: n=121, sum=+4.1459`; `>5: n=524, sum=+518.5808`. Для `hold_bars=0`: `ML_CLOSE=374`, `SL=32`.
+- Locked-test interval `2022-12-02 11:00:00` to `2026-06-04 12:00:00` подтверждён в `docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md`, строки 140-141.
 
-Суть проблемы: план требует годовые строки и PF >= 1.20, но не требует `n_trades >= 30` для годового вывода. В фактическом yearly CSV есть 6 годовых срезов с числом сделок меньше 30.
+## Ошибки мониторинга
 
-Доказательство:
-
-- Методика: для годовых выводов минимум 30 сделок в год, иначе годовой срез только diagnostic: `docs/methodology/06-temporal-split.md`, строки 59-65.
-- Методика robustness требует проверять годовые срезы и принимать решение пакетом проверок, включая число сделок: `docs/methodology/11-robustness.md`, строки 72-106.
-- Команда:
-
-```bash
-./.venv/bin/python - <<'PY'
-import pandas as pd
-yearly=pd.read_csv('ML/reports/fractal0_fixed11_rich_entry_locked_test_yearly.csv', sep=';')
-print(yearly.loc[pd.to_numeric(yearly['n_trades'], errors='coerce')<30,
-                 ['original_rank','rule_id','year','n_trades','pf']].to_string(index=False))
-PY
-```
-
-Результат: 6 строк с `n_trades < 30`, включая 2022 год для ranks 1, 5, 7, 8, 10, 11; минимальный `n_trades=6`.
-
-Почему это важно: высокий PF на 6-25 сделках не может подтверждать годовую устойчивость. План может ошибочно выдать yearly PASS, хотя методика разрешает только diagnostic для таких срезов.
-
-Рекомендуемое исправление: добавить проверку `yearly_n_trades >= 30` для каждого годового среза, по крайней мере как `WARNING`, а для candidate pass - как блокер годовой устойчивости. Для неполных крайних лет заранее задать правило: исключить из yearly gate с disclosure или считать diagnostic-only, но не PASS.
-
-### 4. Важно - `BS_p05` используется как жёсткий gate, но текущий helper не делает block bootstrap
-
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 84, 193-199.
-
-Суть проблемы: план требует `BS_p05 >= 1.00`, но не проверяет метод расчёта `BS_p05`. В текущем helper с названием `block_bootstrap_pf` параметр `block_size` есть в сигнатуре, но выборка делается одиночными сделками через `rng.choice(pnl, size=len(pnl), replace=True)`.
-
-Доказательство:
-
-- Реализация: `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, строки 645-655. В строках 651-654 выборка идёт по отдельным `pnl`, блоки последовательных сделок не строятся.
-- Методика требует при временной зависимости сделок использовать block/bootstrap подходы, учитывающие соседние сделки: `docs/methodology/11-robustness.md`, строки 39-42; типовая ошибка - iid bootstrap на временно связанных сделках, строки 120-121.
-- Предыдущий protocol plan уже фиксировал эту известную limitation: `docs/superpowers/plans/2026-07-23-fractal0-fixed11-locked-test-protocol.md`, строки 211-217.
-
-Почему это важно: `BS_p05` может быть завышен, если сделки зависимы во времени. Тогда hard pass по `BS_p05` создаёт ложную уверенность в устойчивости.
-
-Рекомендуемое исправление: в audit plan явно проверять и записывать `bs_p05_method`. До настоящего block/stationary bootstrap считать текущий `BS_p05` diagnostic или `WARNING`, а `candidate_audit_passed` не должен опираться на него как на полноценный uncertainty gate.
-
-### 5. Важно - split disclosure в JSON неполный, а интерфейс аудита проверяет только payload
-
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 87-88, 163-172.
-
-Суть проблемы: план требует проверить период `locked_test`, row count и отсутствие повторного использования train/validation для выбора, но интерфейс `audit_split_policy(payload)` принимает только JSON payload. В JSON нет дат split, row count, `val_select` и `val_eval` ролей.
-
-Доказательство:
-
-- Фактический JSON содержит только `train_core` и `locked_test`: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строки 27-30.
-- Locked-test report содержит больше disclosure: `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`, строки 355-361.
-- Методика требует явные даты и размеры `train`/`validation`/`locked_test`: `docs/methodology/06-temporal-split.md`, строки 84-90.
-- Методика отчётности требует Split Disclosure с ролями `val-stop`/`val-select`/`val-eval` и sample size gate: `docs/methodology/16-reporting-audit.md`, строки 18-30, 88-99.
-- Команда по CSV подтвердила фактические границы без перекрытия по времени: train `2004.07.06 20:00` - `2019.06.20 14:00`, validation `2019.06.20 16:00` - `2022.12.02 07:00`, locked_test `2022.12.02 11:00` - `2026.06.04 12:00`.
-
-Почему это важно: текущий план может пройти по JSON, не доказав в structured artifact, откуда взялись cutoffs (`val_select`) и что `val_eval` не был использован для нового выбора.
-
-Рекомендуемое исправление: расширить входы аудита: JSON + locked-test report + исходные split CSV или split manifest. В audit JSON требовать поля `split_boundaries`, `split_roles` с `train_core`, `val_select`, `val_eval`, `locked_test`, `locked_test_source_rows=9463`, `locked_test_min_time`, `locked_test_max_time`.
-
-### 6. Важно - hash policy не покрывает все источники результата
-
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 81-83, 166-172.
-
-Суть проблемы: план требует сверить хэши rules CSV, H1 OHLC, M5 OHLC и locked-test CSV. Но результат также зависит от `ML/reports/fractal0_stop_grid_m5.json` и от runner code. JSON содержит `source_artifact_sha256`, но план не включает его в обязательную hash policy. Для `source_runner` в JSON есть только путь, без SHA256.
-
-Доказательство:
-
-- Locked-test report говорит, что execution contract загружается из `selected_winner` в `ML/reports/fractal0_stop_grid_m5.json`: `docs/reports/2026-07-24-fractal0-fixed11-locked-test.md`, строки 74-80.
-- Фактический JSON содержит `source_artifact` и `source_artifact_sha256`: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строки 8-9.
-- Фактический JSON содержит `source_runner`, но без hash: строка 5.
-- Методика отчётности требует paths и hashes: `docs/methodology/16-reporting-audit.md`, строки 31-32, 96-97.
-
-Почему это важно: если source artifact или код runner поменялись, audit может не обнаружить изменение execution behavior, хотя PF/PNL напрямую зависит от execution contract и симулятора.
-
-Рекомендуемое исправление: добавить в `audit_hashes` обязательную сверку `source_artifact_sha256`. Для runner добавить `source_runner_sha256` в новый audit artifact; если исходный locked-test JSON не содержит hash runner-а, пометить как limitation/blocker для полного reproducibility, а не молча PASS.
-
-### 7. Важно - восстановление `movement_score` раскрыто слишком общо для воспроизводимого аудита
-
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 89, 193-199.
-
-Суть проблемы: план требует disclosure и extra parity scrutiny для `movement_plus_time`, но не задаёт проверяемые поля: какие правила затронуты, какие параметры movement scorer-а использованы, какие source hashes/thresholds/scaler fit применены, и что locked labels не участвовали в обучении.
-
-Доказательство:
-
-- Фактический JSON содержит только строковое описание: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`, строка 38.
-- Locked-test report раскрывает общий протокол: scorer обучается на `train_core`, target `entry_movement_3`, profile `simple_combined`, model `extra_trees_small`, seeds из `seeds_for_model`, строки 128-140.
-- Runner действительно пересчитывает scores для locked-test: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`, строки 66-116, 147-152.
-- В selection/summary сейчас 4 правила с `profile_id=movement_plus_time`; команда `value_counts()` по summary дала `time_only=7`, `movement_plus_time=4`.
-- Методика для моделей с scaler/normalization требует раскрыть config, fit split и что locked_test не участвовал в выборе scaler/transform: `docs/methodology/16-reporting-audit.md`, строки 33-42, 98-100.
-
-Почему это важно: movement-score restoration является новым вычислением после открытия `locked_test`. Даже если оно задумано как применение frozen protocol, без структурированных параметров и хэшей его трудно независимо повторить и отличить от постфактум изменения.
-
-Рекомендуемое исправление: добавить отдельный audit check `movement_score_restoration_contract` с полями `affected_rule_count=4`, `target`, `profile`, `model_family`, `seeds`, `fit_split=train_core`, `locked_test_label_usage=false`, hashes исходного movement protocol/config или явный `UNKNOWN`. При `UNKNOWN` не блокировать time_only правила, но блокировать или понижать `movement_plus_time` правила до `research_only` до полного disclosure.
-
-### 8. Улучшение - roadmap metadata содержит устаревшее supersedes-утверждение
-
-Место: `docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md`, строки 42-43.
-
-Суть проблемы: план говорит, что supersedes `docs/superpowers/roadmap.md ACTIVE: Regime filter reformulation as next immediate action`. В текущем `roadmap.md` активен уже `Fixed-11 candidate audit`, а `regime filter reformulation` находится в parked-направлениях.
-
-Доказательство:
-
-- Текущий roadmap: `docs/superpowers/roadmap.md`, строки 16-23: `ACTIVE: Fixed-11 candidate audit`.
-- `regime filter reformulation` в parked list: `docs/superpowers/roadmap.md`, строки 45-57 и 124-142.
-
-Почему это важно: это не ломает сам аудит, но вводит следующего исполнителя в заблуждение о том, какое состояние roadmap реально superseded.
-
-Рекомендуемое исправление: заменить metadata на `supersedes_prior_roadmap_snapshot: regime filter reformulation was previously next immediate action; current roadmap already points to this audit` или убрать блок `supersedes`.
-
-## Подтверждённые факты без замечаний
-
-- Все ожидаемые locked-test CSV существуют и не пустые. `wc -l` дал: summary 12 строк, selection 12, yearly 56, side 23, trades 14508, rules 12, locked-test source 9464 включая заголовок.
-- Текущие локальные SHA256 совпадают с JSON для rules CSV, source artifact, locked-test CSV, H1 OHLC и M5 OHLC:
-  - `leaderboard_closure_audit_rules.csv`: `d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c`
-  - `fractal0_stop_grid_m5.json`: `20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6`
-  - `DATA/Nero_XAUUSD_test_labeled.csv`: `5beb70f29ee27caa2b20a8cd80376879b64179d4ef0e5197a29357b58483f535`
-  - `DATA/XAUUSD_H1_OHLC.csv`: `4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff`
-  - `MT/MQL4/Files/XAUUSD_M5_OHLC.csv`: `504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60`
-- Identity rules в summary совпадают с `leaderboard_closure_audit_rules.csv` по `original_rank`, `rule_id`, `profile_id`, `model_id`, `target_id`, `filter_id`, `score_cutoff_on_val_select`.
-- Основные locked-test gate-метрики по summary проходят: min PF `2.6746637849511434`, min `BS_p05=1.927254428301627`, min `n_trades=241`.
-- BUY/SELL rows покрывают все 11 правил; min side PF: BUY `3.6196321730145824`, SELL `1.94845364722068`; min side trades: BUY `78`, SELL `163`.
-- Locked-test CSV по `time` имеет 9463 строк, период `2022.12.02 11:00` - `2026.06.04 12:00`; train заканчивается `2019.06.20 14:00`, validation заканчивается `2022.12.02 07:00`, то есть проверенная команда не выявила временного перекрытия по `time`.
-
-## Ошибки инструментов
-
-- `knowledge-rag` вернул `no_results` для поиска похожих документов по самому плану и связанному locked-test отчёту. Это использовано только как навигационная неудача; выводы выше проверены по первичным файлам и локальным командам.
+- MCP: `knowledge-rag search_similar` по `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md` вернул `no_results`, вероятно документ не проиндексирован.

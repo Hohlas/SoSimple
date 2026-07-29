@@ -92,6 +92,15 @@ Fresh MT4 tester event artifact:
 MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv
 ```
 
+Примечание от 2026-07-29: этот path является перезаписываемым tester output.
+Текущий файл уже относится к более позднему stale-handling прогону и не
+воспроизводит числа ниже. Для актуального файла см.
+`docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md` и
+`ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`.
+Старый snapshot этого прогона не был сохранён отдельным immutable path, поэтому
+числа ниже являются исторической записью отчёта, а не свежей проверкой текущего
+CSV.
+
 Manual summary command used after tester run:
 
 ```bash

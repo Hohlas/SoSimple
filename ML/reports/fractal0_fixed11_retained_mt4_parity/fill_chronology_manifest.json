@@ -1,0 +1,319 @@
+{
+  "artifact_hashes": {
+    "hst_h1": {
+      "exists": true,
+      "mtime_utc": "2026-07-28T16:04:19",
+      "path": "/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD60.hst",
+      "sha256": "b12c67871a97e39ca88c9c88d5a28b57664a2ad3ab212e5e2d35c3e5ff3b72b9",
+      "size_bytes": 7720888
+    },
+    "hst_m1": {
+      "exists": true,
+      "mtime_utc": "2026-07-28T16:04:19",
+      "path": "/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD1.hst",
+      "sha256": "2813ecf5da16ceec0e030e73c97aac750873a7a3c40a6aa4c9afb08c17bf9e8e",
+      "size_bytes": 419808328
+    },
+    "hst_m5": {
+      "exists": true,
+      "mtime_utc": "2026-07-28T05:57:07",
+      "path": "/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD5.hst",
+      "sha256": "6080a9605ec53f9d7789f50ecf84ac216b35671cbe3f2f92352e33248bff43b2",
+      "size_bytes": 89091088
+    },
+    "m5_csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-21T05:00:27",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/XAUUSD_M5_OHLC.csv",
+      "sha256": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
+      "size_bytes": 85377382
+    },
+    "mql4_ml_exits_fixed11_rule01.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_exits_fixed11_rule01.csv",
+      "sha256": "4f95893961698399bca9406d742c088485cd044032efd4f9c2a3e869dd722569",
+      "size_bytes": 38680
+    },
+    "mql4_ml_exits_fixed11_rule02.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_exits_fixed11_rule02.csv",
+      "sha256": "a4210a4796ed4dd2649b51015b4bea7b57612175d9336f28e2caa9ae0524fe96",
+      "size_bytes": 58094
+    },
+    "mql4_ml_exits_fixed11_rule03.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_exits_fixed11_rule03.csv",
+      "sha256": "742bef29fe31114716cea7b909f8700c119b7502ce0cce8ddbbe10557c8ef994",
+      "size_bytes": 22530
+    },
+    "mql4_ml_exits_fixed11_rule04.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:30",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_exits_fixed11_rule04.csv",
+      "sha256": "a827dfaf310a0de39b51c1e0f34d7ac57cf147ce2f8efc2136d343b81afca181",
+      "size_bytes": 73666
+    },
+    "mql4_ml_exits_fixed11_rule05.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:30",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_exits_fixed11_rule05.csv",
+      "sha256": "683ffc650ea2ca7b73008241aa9f2c287dceb16fd4ab6fcde3fde923b3f9ecc8",
+      "size_bytes": 7876
+    },
+    "mql4_ml_signals_fixed11_rule01.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals_fixed11_rule01.csv",
+      "sha256": "e228d56bf2aa1ef594ab4ece7192e554e6cbb6c3eb00a17c42209e995a36b386",
+      "size_bytes": 51049
+    },
+    "mql4_ml_signals_fixed11_rule02.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals_fixed11_rule02.csv",
+      "sha256": "18c39ab3be1eda277e4b55f21aff0198d1cf7c108231db829a4fa711a72422da",
+      "size_bytes": 76578
+    },
+    "mql4_ml_signals_fixed11_rule03.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals_fixed11_rule03.csv",
+      "sha256": "bf97f95af39219dc187a84d5ff5d00aff8802a8c024ebc457ea885399472e343",
+      "size_bytes": 29730
+    },
+    "mql4_ml_signals_fixed11_rule04.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:11",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals_fixed11_rule04.csv",
+      "sha256": "5e840220637fcf0588cd860765a9bd9c4e85a0553215113d8baa3df79003d2e9",
+      "size_bytes": 97107
+    },
+    "mql4_ml_signals_fixed11_rule05.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:11",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/ml_signals_fixed11_rule05.csv",
+      "sha256": "a13de1b1a31f420212798bb2b2d3653e02b054ab136bcfbfb99072a6241b0b9e",
+      "size_bytes": 10415
+    },
+    "mt4_event_log": {
+      "exists": true,
+      "mtime_utc": "2026-07-28T16:04:46",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv",
+      "sha256": "b0e017cdf6556935e914b609b8b0e0970ae9150e080572f88fe134661dac53b9",
+      "size_bytes": 863405
+    },
+    "mt4_exported_h1": {
+      "exists": true,
+      "mtime_utc": "2026-07-29T11:29:36",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv",
+      "sha256": "affd627e55ad777cd763a4f5105420e38cefdf6e4ae94974f14c33509865029f",
+      "size_bytes": 7569866
+    },
+    "python_h1": {
+      "exists": true,
+      "mtime_utc": "2026-07-01T08:21:59",
+      "path": "/home/hohla/git/SoSimple/DATA/XAUUSD_H1_OHLC.csv",
+      "sha256": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
+      "size_bytes": 7545493
+    },
+    "python_metadata": {
+      "exists": true,
+      "mtime_utc": "2026-07-24T14:27:44",
+      "path": "/home/hohla/git/SoSimple/ML/reports/fractal0_fixed11_rich_entry_locked_test.json",
+      "sha256": "db737be2012a45aa251bbc7eb33a67c3ae062b5158c379d0e0bfc7d01b355e97",
+      "size_bytes": 2496
+    },
+    "python_trades": {
+      "exists": true,
+      "mtime_utc": "2026-07-24T14:27:44",
+      "path": "/home/hohla/git/SoSimple/ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
+      "sha256": "5f73f3399968099a674b1e533be45c69a3f11e4e6c45521fea00148b6dd9b0b6",
+      "size_bytes": 8480827
+    },
+    "tester_ml_exits_fixed11_rule01.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_exits_fixed11_rule01.csv",
+      "sha256": "4f95893961698399bca9406d742c088485cd044032efd4f9c2a3e869dd722569",
+      "size_bytes": 38680
+    },
+    "tester_ml_exits_fixed11_rule02.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_exits_fixed11_rule02.csv",
+      "sha256": "a4210a4796ed4dd2649b51015b4bea7b57612175d9336f28e2caa9ae0524fe96",
+      "size_bytes": 58094
+    },
+    "tester_ml_exits_fixed11_rule03.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:29",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_exits_fixed11_rule03.csv",
+      "sha256": "742bef29fe31114716cea7b909f8700c119b7502ce0cce8ddbbe10557c8ef994",
+      "size_bytes": 22530
+    },
+    "tester_ml_exits_fixed11_rule04.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:30",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_exits_fixed11_rule04.csv",
+      "sha256": "a827dfaf310a0de39b51c1e0f34d7ac57cf147ce2f8efc2136d343b81afca181",
+      "size_bytes": 73666
+    },
+    "tester_ml_exits_fixed11_rule05.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T18:13:30",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_exits_fixed11_rule05.csv",
+      "sha256": "683ffc650ea2ca7b73008241aa9f2c287dceb16fd4ab6fcde3fde923b3f9ecc8",
+      "size_bytes": 7876
+    },
+    "tester_ml_signals_fixed11_rule01.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_signals_fixed11_rule01.csv",
+      "sha256": "e228d56bf2aa1ef594ab4ece7192e554e6cbb6c3eb00a17c42209e995a36b386",
+      "size_bytes": 51049
+    },
+    "tester_ml_signals_fixed11_rule02.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_signals_fixed11_rule02.csv",
+      "sha256": "18c39ab3be1eda277e4b55f21aff0198d1cf7c108231db829a4fa711a72422da",
+      "size_bytes": 76578
+    },
+    "tester_ml_signals_fixed11_rule03.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:10",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_signals_fixed11_rule03.csv",
+      "sha256": "bf97f95af39219dc187a84d5ff5d00aff8802a8c024ebc457ea885399472e343",
+      "size_bytes": 29730
+    },
+    "tester_ml_signals_fixed11_rule04.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:11",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_signals_fixed11_rule04.csv",
+      "sha256": "5e840220637fcf0588cd860765a9bd9c4e85a0553215113d8baa3df79003d2e9",
+      "size_bytes": 97107
+    },
+    "tester_ml_signals_fixed11_rule05.csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-27T15:08:11",
+      "path": "/home/hohla/git/SoSimple/MT/tester/files/ml_signals_fixed11_rule05.csv",
+      "sha256": "a13de1b1a31f420212798bb2b2d3653e02b054ab136bcfbfb99072a6241b0b9e",
+      "size_bytes": 10415
+    }
+  },
+  "chronology_examples_csv": "ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv",
+  "event_counts": {
+    "closed_profit_sum": 87857.69,
+    "events": {
+      "CLOSE": 717,
+      "OPEN": 717,
+      "OPEN_FAILED": 404,
+      "ORDER_PLACED": 1115
+    },
+    "reasons": {
+      "LimitExpired": 74,
+      "MLClose": 630,
+      "MarketAfterLimitPassedStopInvalid": 2,
+      "OrderSendFailed": 4,
+      "StaleFillAfterMLClose": 66,
+      "StalePendingAfterMLClose": 324,
+      "StopLoss": 15,
+      "Timeout": 6
+    }
+  },
+  "generated_by": "ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py",
+  "h1_vs_hst": {
+    "best_offset_hours_checked": 0,
+    "csv_rows": 128306,
+    "hst_record_size": 60,
+    "hst_rows": 128679,
+    "large_differences_by_year": {
+      "2023": 2189,
+      "2024": 4390,
+      "2025": 4216,
+      "2026": 2709
+    },
+    "matched_rows": 127829
+  },
+  "hold0_m5_aggregate": {
+    "first_m5_touch_after_h1_open": 174,
+    "first_m5_touch_at_h1_open": 65,
+    "m5_no_hit": 135,
+    "total": 374
+  },
+  "hold_bars_summary": {
+    "0": {
+      "mean_r": -0.2783,
+      "n": 406,
+      "pf": 0.0481,
+      "sum_pnl_r": -113.0071
+    },
+    "1": {
+      "mean_r": -0.1283,
+      "n": 85,
+      "pf": 0.2293,
+      "sum_pnl_r": -10.9074
+    },
+    "2": {
+      "mean_r": -0.0631,
+      "n": 60,
+      "pf": 0.4537,
+      "sum_pnl_r": -3.7852
+    },
+    "3..5": {
+      "mean_r": 0.0343,
+      "n": 121,
+      "pf": 1.4775,
+      "sum_pnl_r": 4.1459
+    },
+    ">5": {
+      "mean_r": 0.9897,
+      "n": 524,
+      "pf": 22.978,
+      "sum_pnl_r": 518.5808
+    },
+    "hold0_close_reasons": {
+      "ML_CLOSE": {
+        "n": 374,
+        "sum_pnl_r": -81.0071
+      },
+      "SL": {
+        "n": 32,
+        "sum_pnl_r": -32.0
+      }
+    }
+  },
+  "hst_parser": {
+    "header_bytes": 148,
+    "record_size_auto_detected": "60_or_44_bytes",
+    "timezone_offset_hours_selected": 0
+  },
+  "rule_id": "rank05_time_only_linear_target_entry_avoid_sl_top30",
+  "stage": "fixed11_python_mt4_fill_chronology",
+  "stale_pnl": {
+    "StaleFillAfterMLClose": {
+      "count": 66,
+      "python_close_reasons": {
+        "ML_CLOSE": 63,
+        "SL": 3
+      },
+      "python_matched_rows": 66,
+      "python_pnl_r_sum": -19.812954,
+      "unique_signal_direction_keys": 66
+    },
+    "StalePendingAfterMLClose": {
+      "count": 324,
+      "python_close_reasons": {
+        "ML_CLOSE": 326,
+        "SL": 10
+      },
+      "python_matched_rows": 336,
+      "python_pnl_r_sum": -65.558961,
+      "unique_signal_direction_keys": 324
+    }
+  },
+  "status": "DIAGNOSTIC_ONLY"
+}

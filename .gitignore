@@ -294,6 +294,7 @@ MT/tester/logs/*
 # CSV, XLSX files
 *.csv
 !ML/reports/fractal0_rich_entry_quality_summary.csv
+!ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv
 *.xlsx
 DATA/*.npy
 
