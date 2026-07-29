@@ -64,6 +64,7 @@
 | Устойчивость: по годам, сторонам, seeds, block bootstrap, permutation test, календарные признаки | [11-robustness.md](11-robustness.md) |
 | Бэктест: издержки, симулятор (включая SL-триггер с направленной spread-коррекцией), gross/net | [12-backtest-costs.md](12-backtest-costs.md) |
 | Экспорт, MT4 parity, reconciliation | [13-export-mt4-parity.md](13-export-mt4-parity.md) |
+| MT5 execution parity: компиляция, tester-контур, сверка исполнения | [13b-mt5-execution-parity.md](13b-mt5-execution-parity.md) |
 | Forward-test, online diagnostic, новый период | [14-forward-test-online.md](14-forward-test-online.md) |
 | Мониторинг, retraining policy, drift, rollback | [15-monitoring-retraining.md](15-monitoring-retraining.md) |
 | Отчёт (с disclosure N конфигураций и auto-verification отчёт↔JSON), model card, воспроизводимость, работа с багами | [16-reporting-audit.md](16-reporting-audit.md) |
