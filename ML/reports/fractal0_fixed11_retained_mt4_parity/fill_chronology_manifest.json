@@ -1,5 +1,12 @@
 {
   "artifact_hashes": {
+    "current_data_h1": {
+      "exists": true,
+      "mtime_utc": "2026-07-29T11:29:36",
+      "path": "/home/hohla/git/SoSimple/DATA/XAUUSD_H1_OHLC.csv",
+      "sha256": "affd627e55ad777cd763a4f5105420e38cefdf6e4ae94974f14c33509865029f",
+      "size_bytes": 7569866
+    },
     "hst_h1": {
       "exists": true,
       "mtime_utc": "2026-07-28T16:04:19",
@@ -21,12 +28,19 @@
       "sha256": "6080a9605ec53f9d7789f50ecf84ac216b35671cbe3f2f92352e33248bff43b2",
       "size_bytes": 89091088
     },
+    "labeled_locked_test": {
+      "exists": true,
+      "mtime_utc": "2026-07-02T11:27:20",
+      "path": "/home/hohla/git/SoSimple/DATA/Nero_XAUUSD_test_labeled.csv",
+      "sha256": "5beb70f29ee27caa2b20a8cd80376879b64179d4ef0e5197a29357b58483f535",
+      "size_bytes": 183388722
+    },
     "m5_csv": {
       "exists": true,
-      "mtime_utc": "2026-07-21T05:00:27",
+      "mtime_utc": "2026-07-29T12:28:44",
       "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/XAUUSD_M5_OHLC.csv",
-      "sha256": "504666ce286b27f3ae61679d5e722a629a0d8662d93a428c4f8dd5e6b2ce4f60",
-      "size_bytes": 85377382
+      "sha256": "85e6bbc49bc7e4049810cfb4a3d603576b9cd7b363c7b2f52bc43b59ef8c9a9b",
+      "size_bytes": 85878931
     },
     "mql4_ml_exits_fixed11_rule01.csv": {
       "exists": true,
@@ -108,14 +122,14 @@
     "mt4_exported_h1": {
       "exists": true,
       "mtime_utc": "2026-07-29T11:29:36",
-      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv",
+      "path": "/home/hohla/git/SoSimple/MT/MQL4/Files/XAUUSD_H1_OHLC.csv",
       "sha256": "affd627e55ad777cd763a4f5105420e38cefdf6e4ae94974f14c33509865029f",
       "size_bytes": 7569866
     },
-    "python_h1": {
+    "previous_python_h1": {
       "exists": true,
       "mtime_utc": "2026-07-01T08:21:59",
-      "path": "/home/hohla/git/SoSimple/DATA/XAUUSD_H1_OHLC.csv",
+      "path": "/home/hohla/git/SoSimple/DATA/XAUUSD_H1_OHLC_prev_20260701.csv",
       "sha256": "4bf7a23ab79f41824713fa881078d06fb84fd7c484b2840c3cdec0bfdfda5aff",
       "size_bytes": 7545493
     },
@@ -132,6 +146,20 @@
       "path": "/home/hohla/git/SoSimple/ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
       "sha256": "5f73f3399968099a674b1e533be45c69a3f11e4e6c45521fea00148b6dd9b0b6",
       "size_bytes": 8480827
+    },
+    "source_artifact": {
+      "exists": true,
+      "mtime_utc": "2026-07-21T13:32:33",
+      "path": "/home/hohla/git/SoSimple/ML/reports/fractal0_stop_grid_m5.json",
+      "sha256": "20e6931a1b47d7d2fe3c5455e698d8bb3160bd570a418a35a0a0ea083358e0b6",
+      "size_bytes": 53044
+    },
+    "source_rules_csv": {
+      "exists": true,
+      "mtime_utc": "2026-07-23T11:52:14",
+      "path": "/home/hohla/git/SoSimple/ML/reports/leaderboard_closure_audit_rules.csv",
+      "sha256": "d98c1194d954e20aaa7d7a132547a9ac52caf1c7073f5ce98997cda1ee3b808c",
+      "size_bytes": 2267
     },
     "tester_ml_exits_fixed11_rule01.csv": {
       "exists": true,
@@ -205,6 +233,51 @@
     }
   },
   "chronology_examples_csv": "ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv",
+  "current_data_h1_vs_hst": {
+    "best_offset_hours_checked": 0,
+    "csv_first_time": "2004-06-11 07:00:00",
+    "csv_last_time": "2026-07-29 13:00:00",
+    "csv_only_rows": 19,
+    "csv_rows": 128698,
+    "diff_rows": 1,
+    "hst_first_time": "2004-06-11 07:00:00",
+    "hst_last_time": "2026-07-28 18:00:00",
+    "hst_only_rows": 0,
+    "hst_record_size": 60,
+    "hst_rows": 128679,
+    "large_differences_by_year": {
+      "2026": 1
+    },
+    "matched_rows": 128679,
+    "timeframe": "H1"
+  },
+  "current_data_h1_vs_mt4_exported_h1": {
+    "diff_by_year": {},
+    "diff_rows": 0,
+    "left_only_rows": 0,
+    "left_rows": 128698,
+    "matched_rows": 128698,
+    "right_only_rows": 0,
+    "right_rows": 128698
+  },
+  "current_m5_vs_hst_m5": {
+    "best_offset_hours_checked": 0,
+    "csv_first_time": "2004-06-11 07:15:00",
+    "csv_last_time": "2026-07-29 14:25:00",
+    "csv_only_rows": 355,
+    "csv_rows": 1485204,
+    "diff_rows": 1,
+    "hst_first_time": "2004-06-11 07:15:00",
+    "hst_last_time": "2026-07-28 07:55:00",
+    "hst_only_rows": 0,
+    "hst_record_size": 60,
+    "hst_rows": 1484849,
+    "large_differences_by_year": {
+      "2026": 1
+    },
+    "matched_rows": 1484849,
+    "timeframe": "M5"
+  },
   "event_counts": {
     "closed_profit_sum": 87857.69,
     "events": {
@@ -225,19 +298,6 @@
     }
   },
   "generated_by": "ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py",
-  "h1_vs_hst": {
-    "best_offset_hours_checked": 0,
-    "csv_rows": 128306,
-    "hst_record_size": 60,
-    "hst_rows": 128679,
-    "large_differences_by_year": {
-      "2023": 2189,
-      "2024": 4390,
-      "2025": 4216,
-      "2026": 2709
-    },
-    "matched_rows": 127829
-  },
   "hold0_m5_aggregate": {
     "first_m5_touch_after_h1_open": 174,
     "first_m5_touch_at_h1_open": 65,
@@ -290,6 +350,41 @@
     "header_bytes": 148,
     "record_size_auto_detected": "60_or_44_bytes",
     "timezone_offset_hours_selected": 0
+  },
+  "previous_python_h1_vs_current_data_h1": {
+    "diff_by_year": {
+      "2023": 2189,
+      "2024": 4390,
+      "2025": 4216,
+      "2026": 2709
+    },
+    "diff_rows": 13504,
+    "left_only_rows": 477,
+    "left_rows": 128306,
+    "matched_rows": 127829,
+    "right_only_rows": 869,
+    "right_rows": 128698
+  },
+  "previous_python_h1_vs_hst": {
+    "best_offset_hours_checked": 0,
+    "csv_first_time": "2004-06-11 07:00:00",
+    "csv_last_time": "2026-07-01 09:00:00",
+    "csv_only_rows": 477,
+    "csv_rows": 128306,
+    "diff_rows": 13504,
+    "hst_first_time": "2004-06-11 07:00:00",
+    "hst_last_time": "2026-07-28 18:00:00",
+    "hst_only_rows": 850,
+    "hst_record_size": 60,
+    "hst_rows": 128679,
+    "large_differences_by_year": {
+      "2023": 2189,
+      "2024": 4390,
+      "2025": 4216,
+      "2026": 2709
+    },
+    "matched_rows": 127829,
+    "timeframe": "H1"
   },
   "rule_id": "rank05_time_only_linear_target_entry_avoid_sl_top30",
   "stage": "fixed11_python_mt4_fill_chronology",

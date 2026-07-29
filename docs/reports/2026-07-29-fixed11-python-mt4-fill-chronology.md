@@ -14,9 +14,11 @@
   (`sha256=b0e017cdf6556935882d3fa481c82bb07490f4c7673092039f44d90035e91f8a`);
 - Python trades artifact: `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`;
 - Python run metadata: `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`;
-- H1 OHLC: `DATA/XAUUSD_H1_OHLC.csv`;
+- H1 OHLC used by original locked-test artifacts:
+  `DATA/XAUUSD_H1_OHLC_prev_20260701.csv`;
+- current H1 OHLC source: `DATA/XAUUSD_H1_OHLC.csv`;
 - M5 execution OHLC: `MT/MQL4/Files/XAUUSD_M5_OHLC.csv`;
-- current MT4-exported H1 OHLC: `MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv`;
+- current MT4-exported H1 OHLC: `MT/MQL4/Files/XAUUSD_H1_OHLC.csv`;
 - MT4 tester history checked from `/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD60.hst`,
   `XAUUSD5.hst`, `XAUUSD1.hst`;
 - inspected runner: `ML/baseline/benchmark_fractal0_entry_exit_grid.py`.
@@ -170,7 +172,8 @@ OPEN_FAILED=404
 
 ### Python H1 против текущей истории MT4 tester
 
-Сравнение `DATA/XAUUSD_H1_OHLC.csv` с текущим MT4 history file
+Сравнение старого locked-test H1 source
+`DATA/XAUUSD_H1_OHLC_prev_20260701.csv` с текущим MT4 history file
 `/home/hohla/.mt4/drive_c/Program Files (x86)/MetaTrader 4/history/MetaQuotes-Demo/XAUUSD60.hst`
 через `reconcile_fill_chronology.py` показало:
 
@@ -189,6 +192,11 @@ large_differences_by_year:
 Проверка offset не показала сдвиг timezone. Лучшее совпадение при offset `0`.
 Hash и `mtime` HST/CSV файлов зафиксированы в
 `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`.
+
+После замены текущего source на свежий export `DATA/XAUUSD_H1_OHLC.csv`
+сверка с `XAUUSD60.hst` даёт `matched_rows=128679` и только `1` отличающуюся
+строку в 2026 году. `DATA/XAUUSD_H1_OHLC.csv` и
+`MT/MQL4/Files/XAUUSD_H1_OHLC.csv` совпадают полностью: `diff_rows=0`.
 
 Интерпретация: с 2023 года Python locked-test OHLC и текущая история MT4 tester
 существенно отличаются. Это объясняет часть fill mismatch, особенно случаи,
@@ -360,7 +368,8 @@ MT4.
 - `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv`
 - `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`
 - `MT/MQL4/Files/XAUUSD_M5_OHLC.csv`
-- `MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv`
+- `MT/MQL4/Files/XAUUSD_H1_OHLC.csv`
+- `DATA/XAUUSD_H1_OHLC_prev_20260701.csv`
 - `ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py`
 - `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`
 - `ML/reports/fractal0_fixed11_retained_mt4_parity/chronology_examples.csv`

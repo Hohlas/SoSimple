@@ -27,8 +27,12 @@ FILES = {
     "mt4_event_log": ROOT / "MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv",
     "python_trades": ROOT / "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
     "python_metadata": ROOT / "ML/reports/fractal0_fixed11_rich_entry_locked_test.json",
-    "python_h1": ROOT / "DATA/XAUUSD_H1_OHLC.csv",
-    "mt4_exported_h1": ROOT / "MT/MQL4/Files/XAUUSD_H1_OHLC_new.csv",
+    "labeled_locked_test": ROOT / "DATA/Nero_XAUUSD_test_labeled.csv",
+    "source_rules_csv": ROOT / "ML/reports/leaderboard_closure_audit_rules.csv",
+    "source_artifact": ROOT / "ML/reports/fractal0_stop_grid_m5.json",
+    "previous_python_h1": ROOT / "DATA/XAUUSD_H1_OHLC_prev_20260701.csv",
+    "current_data_h1": ROOT / "DATA/XAUUSD_H1_OHLC.csv",
+    "mt4_exported_h1": ROOT / "MT/MQL4/Files/XAUUSD_H1_OHLC.csv",
     "m5_csv": ROOT / "MT/MQL4/Files/XAUUSD_M5_OHLC.csv",
     "hst_h1": HST_DIR / "XAUUSD60.hst",
     "hst_m5": HST_DIR / "XAUUSD5.hst",
@@ -195,7 +199,7 @@ def hold_bars_summary(trades_path: Path) -> dict[str, object]:
     return out
 
 
-def h1_vs_hst_summary(csv_path: Path, hst_path: Path) -> dict[str, object]:
+def tf_vs_hst_summary(csv_path: Path, hst_path: Path, timeframe: str) -> dict[str, object]:
     left = read_ohlc(csv_path)
     right = read_hst(hst_path)
     merged = left.merge(right, on="time", suffixes=("_csv", "_hst"))
@@ -209,13 +213,52 @@ def h1_vs_hst_summary(csv_path: Path, hst_path: Path) -> dict[str, object]:
         for year, group in merged.groupby("year")
         if int(group["diff"].sum()) > 0
     }
+    left_only = left[~left["time"].isin(right["time"])]
+    right_only = right[~right["time"].isin(left["time"])]
     return {
+        "timeframe": timeframe,
         "csv_rows": int(len(left)),
         "hst_rows": int(len(right)),
         "matched_rows": int(len(merged)),
+        "diff_rows": int(diffs.sum()),
+        "csv_only_rows": int(len(left_only)),
+        "hst_only_rows": int(len(right_only)),
+        "csv_first_time": left["time"].min().strftime("%Y-%m-%d %H:%M:%S") if len(left) else None,
+        "csv_last_time": left["time"].max().strftime("%Y-%m-%d %H:%M:%S") if len(left) else None,
+        "hst_first_time": right["time"].min().strftime("%Y-%m-%d %H:%M:%S") if len(right) else None,
+        "hst_last_time": right["time"].max().strftime("%Y-%m-%d %H:%M:%S") if len(right) else None,
         "hst_record_size": int(right.attrs["record_size"]),
         "large_differences_by_year": yearly,
         "best_offset_hours_checked": 0,
+    }
+
+
+def h1_vs_hst_summary(csv_path: Path, hst_path: Path) -> dict[str, object]:
+    return tf_vs_hst_summary(csv_path, hst_path, "H1")
+
+
+def h1_pair_summary(left_path: Path, right_path: Path) -> dict[str, object]:
+    left = read_ohlc(left_path)
+    right = read_ohlc(right_path)
+    merged = left.merge(right, on="time", suffixes=("_left", "_right"))
+    diffs = pd.Series(False, index=merged.index)
+    for col in ["open", "high", "low", "close"]:
+        diffs |= (merged[f"{col}_left"] - merged[f"{col}_right"]).abs() > 1e-6
+    merged["diff"] = diffs
+    merged["year"] = merged["time"].dt.year
+    yearly = {
+        str(int(year)): int(group["diff"].sum())
+        for year, group in merged.groupby("year")
+        if int(group["diff"].sum()) > 0
+    }
+    return {
+        "left_rows": int(len(left)),
+        "right_rows": int(len(right)),
+        "matched_rows": int(len(merged)),
+        "diff_rows": int(diffs.sum()),
+        "left_only_rows": int((~left["time"].isin(right["time"])).sum()),
+        "right_only_rows": int((~right["time"].isin(left["time"])).sum()),
+        "diff_by_year": yearly,
     }
 
 
@@ -328,7 +371,17 @@ def main() -> int:
         "artifact_hashes": {name: file_info(path) for name, path in FILES.items()},
         "event_counts": event_counts(FILES["mt4_event_log"]),
         "stale_pnl": stale_pnl(FILES["mt4_event_log"], FILES["python_trades"]),
-        "h1_vs_hst": h1_vs_hst_summary(FILES["python_h1"], FILES["hst_h1"]),
+        "previous_python_h1_vs_hst": h1_vs_hst_summary(
+            FILES["previous_python_h1"], FILES["hst_h1"]
+        ),
+        "current_data_h1_vs_hst": h1_vs_hst_summary(FILES["current_data_h1"], FILES["hst_h1"]),
+        "current_m5_vs_hst_m5": tf_vs_hst_summary(FILES["m5_csv"], FILES["hst_m5"], "M5"),
+        "previous_python_h1_vs_current_data_h1": h1_pair_summary(
+            FILES["previous_python_h1"], FILES["current_data_h1"]
+        ),
+        "current_data_h1_vs_mt4_exported_h1": h1_pair_summary(
+            FILES["current_data_h1"], FILES["mt4_exported_h1"]
+        ),
         "hold_bars_summary": hold_bars_summary(FILES["python_trades"]),
         "hold0_m5_aggregate": hold0_m5_aggregate(FILES["python_trades"], FILES["m5_csv"]),
         "chronology_examples_csv": str(
