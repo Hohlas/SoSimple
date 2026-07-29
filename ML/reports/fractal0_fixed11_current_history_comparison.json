@@ -1,0 +1,675 @@
+{
+  "aggregate_current": {
+    "close_reasons": {
+      "ML_CLOSE": 9345,
+      "SL": 464,
+      "TIME": 3230
+    },
+    "hold_bars_0": 4495,
+    "pf": 3.116313,
+    "pnl_r_mean": 0.31176,
+    "pnl_r_sum": 4065.034595,
+    "side_counts": {
+      "BUY": 5415,
+      "SELL": 7624
+    },
+    "trades": 13039,
+    "year_pnl_r": {
+      "2022": 83.153483,
+      "2023": 1188.435487,
+      "2024": 1263.74067,
+      "2025": 1059.2841,
+      "2026": 470.420855
+    }
+  },
+  "aggregate_old": {
+    "close_reasons": {
+      "ML_CLOSE": 10448,
+      "SL": 477,
+      "TIME": 3582
+    },
+    "hold_bars_0": 5100,
+    "pf": 3.09752,
+    "pnl_r_mean": 0.305355,
+    "pnl_r_sum": 4429.782419,
+    "side_counts": {
+      "BUY": 6180,
+      "SELL": 8327
+    },
+    "trades": 14507,
+    "year_pnl_r": {
+      "2022": 83.153483,
+      "2023": 1163.449012,
+      "2024": 1431.171396,
+      "2025": 1266.337171,
+      "2026": 485.671357
+    }
+  },
+  "comparison_key": "rule_id + side + signal_time",
+  "current_json_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json",
+  "current_json_sha256": "d97a4167968b9152808b414a64033d61dac3c9b8d653f174a15d9dde7c26bc78",
+  "current_trades_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv",
+  "current_trades_sha256": "71e72e986d94df1b5389929d280f2bd572be99b066e094e3eab555fc766528c3",
+  "logic_change": "none",
+  "old_json_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test.json",
+  "old_json_sha256": "db737be2012a45aa251bbc7eb33a67c3ae062b5158c379d0e0bfc7d01b355e97",
+  "old_trades_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv",
+  "old_trades_sha256": "5f73f3399968099a674b1e533be45c69a3f11e4e6c45521fea00148b6dd9b0b6",
+  "per_rule": {
+    "rank01_time_only_linear_target_entry_ev_regression_top30": {
+      "added_keys": 33,
+      "common_keys": 1017,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 769,
+          "SL": 31,
+          "TIME": 281
+        },
+        "hold_bars_0": 340,
+        "pf": 3.424707,
+        "pnl_r_mean": 0.33224,
+        "pnl_r_sum": 359.151977,
+        "side_counts": {
+          "BUY": 444,
+          "SELL": 637
+        },
+        "trades": 1081,
+        "year_pnl_r": {
+          "2022": 6.944598,
+          "2023": 101.585821,
+          "2024": 124.019239,
+          "2025": 88.867212,
+          "2026": 37.735107
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 874,
+          "SL": 31,
+          "TIME": 302
+        },
+        "hold_bars_0": 395,
+        "pf": 3.366672,
+        "pnl_r_mean": 0.318811,
+        "pnl_r_sum": 384.804482,
+        "side_counts": {
+          "BUY": 506,
+          "SELL": 701
+        },
+        "trades": 1207,
+        "year_pnl_r": {
+          "2022": 6.944598,
+          "2023": 104.900395,
+          "2024": 127.78467,
+          "2025": 102.496329,
+          "2026": 42.678491
+        }
+      },
+      "removed_keys": 156
+    },
+    "rank02_time_only_linear_target_entry_ev_regression_top40": {
+      "added_keys": 51,
+      "common_keys": 1483,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 1144,
+          "SL": 48,
+          "TIME": 388
+        },
+        "hold_bars_0": 546,
+        "pf": 3.146895,
+        "pnl_r_mean": 0.307577,
+        "pnl_r_sum": 485.972241,
+        "side_counts": {
+          "BUY": 674,
+          "SELL": 906
+        },
+        "trades": 1580,
+        "year_pnl_r": {
+          "2022": 8.79241,
+          "2023": 142.643876,
+          "2024": 162.294437,
+          "2025": 111.962119,
+          "2026": 60.279398
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 1297,
+          "SL": 51,
+          "TIME": 434
+        },
+        "hold_bars_0": 630,
+        "pf": 3.092163,
+        "pnl_r_mean": 0.298143,
+        "pnl_r_sum": 531.291592,
+        "side_counts": {
+          "BUY": 778,
+          "SELL": 1004
+        },
+        "trades": 1782,
+        "year_pnl_r": {
+          "2022": 8.79241,
+          "2023": 136.8911,
+          "2024": 174.130615,
+          "2025": 146.334717,
+          "2026": 65.14275
+        }
+      },
+      "removed_keys": 247
+    },
+    "rank03_time_only_linear_target_entry_ev_regression_top50": {
+      "added_keys": 60,
+      "common_keys": 1857,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 1408,
+          "SL": 72,
+          "TIME": 496
+        },
+        "hold_bars_0": 698,
+        "pf": 3.147832,
+        "pnl_r_mean": 0.315726,
+        "pnl_r_sum": 623.873668,
+        "side_counts": {
+          "BUY": 840,
+          "SELL": 1136
+        },
+        "trades": 1976,
+        "year_pnl_r": {
+          "2022": 13.064434,
+          "2023": 183.993722,
+          "2024": 199.605418,
+          "2025": 156.270791,
+          "2026": 70.939304
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 1591,
+          "SL": 73,
+          "TIME": 550
+        },
+        "hold_bars_0": 796,
+        "pf": 3.164913,
+        "pnl_r_mean": 0.314255,
+        "pnl_r_sum": 695.760928,
+        "side_counts": {
+          "BUY": 964,
+          "SELL": 1250
+        },
+        "trades": 2214,
+        "year_pnl_r": {
+          "2022": 13.064434,
+          "2023": 184.773367,
+          "2024": 225.280524,
+          "2025": 194.730268,
+          "2026": 77.912336
+        }
+      },
+      "removed_keys": 292
+    },
+    "rank04_time_only_linear_target_entry_good_0_5r_top40": {
+      "added_keys": 50,
+      "common_keys": 1437,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 1091,
+          "SL": 43,
+          "TIME": 395
+        },
+        "hold_bars_0": 512,
+        "pf": 3.424237,
+        "pnl_r_mean": 0.33552,
+        "pnl_r_sum": 513.0095,
+        "side_counts": {
+          "BUY": 644,
+          "SELL": 885
+        },
+        "trades": 1529,
+        "year_pnl_r": {
+          "2022": 11.787277,
+          "2023": 151.186001,
+          "2024": 146.569047,
+          "2025": 130.282321,
+          "2026": 73.184854
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 1228,
+          "SL": 49,
+          "TIME": 430
+        },
+        "hold_bars_0": 585,
+        "pf": 3.287984,
+        "pnl_r_mean": 0.31635,
+        "pnl_r_sum": 540.009409,
+        "side_counts": {
+          "BUY": 732,
+          "SELL": 975
+        },
+        "trades": 1707,
+        "year_pnl_r": {
+          "2022": 11.787277,
+          "2023": 138.802566,
+          "2024": 161.12284,
+          "2025": 156.452613,
+          "2026": 71.844114
+        }
+      },
+      "removed_keys": 222
+    },
+    "rank05_time_only_linear_target_entry_avoid_sl_top30": {
+      "added_keys": 37,
+      "common_keys": 1017,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 789,
+          "SL": 35,
+          "TIME": 267
+        },
+        "hold_bars_0": 368,
+        "pf": 3.113871,
+        "pnl_r_mean": 0.3109,
+        "pnl_r_sum": 339.192111,
+        "side_counts": {
+          "BUY": 439,
+          "SELL": 652
+        },
+        "trades": 1091,
+        "year_pnl_r": {
+          "2022": 9.024859,
+          "2023": 89.486589,
+          "2024": 102.114185,
+          "2025": 98.993929,
+          "2026": 39.572548
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 859,
+          "SL": 34,
+          "TIME": 303
+        },
+        "hold_bars_0": 406,
+        "pf": 3.295678,
+        "pnl_r_mean": 0.33029,
+        "pnl_r_sum": 395.026902,
+        "side_counts": {
+          "BUY": 499,
+          "SELL": 697
+        },
+        "trades": 1196,
+        "year_pnl_r": {
+          "2022": 9.024859,
+          "2023": 87.014685,
+          "2024": 131.750139,
+          "2025": 127.341494,
+          "2026": 39.895726
+        }
+      },
+      "removed_keys": 140
+    },
+    "rank06_time_only_linear_target_entry_good_0_5r_top50": {
+      "added_keys": 64,
+      "common_keys": 1871,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 1429,
+          "SL": 65,
+          "TIME": 498
+        },
+        "hold_bars_0": 714,
+        "pf": 3.088232,
+        "pnl_r_mean": 0.306261,
+        "pnl_r_sum": 610.07115,
+        "side_counts": {
+          "BUY": 853,
+          "SELL": 1139
+        },
+        "trades": 1992,
+        "year_pnl_r": {
+          "2022": 11.734977,
+          "2023": 170.748779,
+          "2024": 191.543831,
+          "2025": 163.068533,
+          "2026": 72.975029
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 1602,
+          "SL": 73,
+          "TIME": 560
+        },
+        "hold_bars_0": 804,
+        "pf": 3.064872,
+        "pnl_r_mean": 0.303409,
+        "pnl_r_sum": 678.119585,
+        "side_counts": {
+          "BUY": 978,
+          "SELL": 1257
+        },
+        "trades": 2235,
+        "year_pnl_r": {
+          "2022": 11.734977,
+          "2023": 170.22792,
+          "2024": 221.314954,
+          "2025": 195.41021,
+          "2026": 79.431524
+        }
+      },
+      "removed_keys": 300
+    },
+    "rank07_movement_plus_time_linear_target_entry_good_0_5r_top40": {
+      "added_keys": 13,
+      "common_keys": 471,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 364,
+          "SL": 20,
+          "TIME": 117
+        },
+        "hold_bars_0": 157,
+        "pf": 2.998668,
+        "pnl_r_mean": 0.286699,
+        "pnl_r_sum": 143.636247,
+        "side_counts": {
+          "BUY": 198,
+          "SELL": 303
+        },
+        "trades": 501,
+        "year_pnl_r": {
+          "2022": 3.037359,
+          "2023": 42.168737,
+          "2024": 29.621008,
+          "2025": 41.378579,
+          "2026": 27.430564
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 405,
+          "SL": 16,
+          "TIME": 128
+        },
+        "hold_bars_0": 182,
+        "pf": 2.849981,
+        "pnl_r_mean": 0.258774,
+        "pnl_r_sum": 142.067057,
+        "side_counts": {
+          "BUY": 222,
+          "SELL": 327
+        },
+        "trades": 549,
+        "year_pnl_r": {
+          "2022": 3.037359,
+          "2023": 40.319485,
+          "2024": 38.317614,
+          "2025": 37.82345,
+          "2026": 22.56915
+        }
+      },
+      "removed_keys": 60
+    },
+    "rank08_movement_plus_time_linear_target_entry_good_0_5r_top30": {
+      "added_keys": 7,
+      "common_keys": 365,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 278,
+          "SL": 17,
+          "TIME": 90
+        },
+        "hold_bars_0": 119,
+        "pf": 2.949935,
+        "pnl_r_mean": 0.293017,
+        "pnl_r_sum": 112.811423,
+        "side_counts": {
+          "BUY": 140,
+          "SELL": 245
+        },
+        "trades": 385,
+        "year_pnl_r": {
+          "2022": 3.254016,
+          "2023": 40.050759,
+          "2024": 23.033018,
+          "2025": 32.71826,
+          "2026": 13.75537
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 307,
+          "SL": 15,
+          "TIME": 96
+        },
+        "hold_bars_0": 134,
+        "pf": 2.674664,
+        "pnl_r_mean": 0.252504,
+        "pnl_r_sum": 105.546673,
+        "side_counts": {
+          "BUY": 159,
+          "SELL": 259
+        },
+        "trades": 418,
+        "year_pnl_r": {
+          "2022": 3.254016,
+          "2023": 36.681564,
+          "2024": 27.518584,
+          "2025": 27.361598,
+          "2026": 10.730912
+        }
+      },
+      "removed_keys": 40
+    },
+    "rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50": {
+      "added_keys": 68,
+      "common_keys": 1931,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 1464,
+          "SL": 99,
+          "TIME": 498
+        },
+        "hold_bars_0": 780,
+        "pf": 2.820656,
+        "pnl_r_mean": 0.296844,
+        "pnl_r_sum": 611.796354,
+        "side_counts": {
+          "BUY": 872,
+          "SELL": 1189
+        },
+        "trades": 2061,
+        "year_pnl_r": {
+          "2022": 10.695525,
+          "2023": 177.940869,
+          "2024": 218.490732,
+          "2025": 168.135693,
+          "2026": 36.533534
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 1596,
+          "SL": 106,
+          "TIME": 563
+        },
+        "hold_bars_0": 870,
+        "pf": 2.89571,
+        "pnl_r_mean": 0.304244,
+        "pnl_r_sum": 689.112124,
+        "side_counts": {
+          "BUY": 981,
+          "SELL": 1284
+        },
+        "trades": 2265,
+        "year_pnl_r": {
+          "2022": 10.695525,
+          "2023": 176.133787,
+          "2024": 251.241237,
+          "2025": 209.836836,
+          "2026": 41.20474
+        }
+      },
+      "removed_keys": 269
+    },
+    "rank10_movement_plus_time_linear_target_entry_ev_regression_top50": {
+      "added_keys": 4,
+      "common_keys": 209,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 163,
+          "SL": 12,
+          "TIME": 48
+        },
+        "hold_bars_0": 68,
+        "pf": 2.83181,
+        "pnl_r_mean": 0.29705,
+        "pnl_r_sum": 66.242219,
+        "side_counts": {
+          "BUY": 69,
+          "SELL": 154
+        },
+        "trades": 223,
+        "year_pnl_r": {
+          "2022": 2.192573,
+          "2023": 25.845934,
+          "2024": 10.468788,
+          "2025": 17.838098,
+          "2026": 9.896825
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 183,
+          "SL": 9,
+          "TIME": 49
+        },
+        "hold_bars_0": 77,
+        "pf": 2.693889,
+        "pnl_r_mean": 0.258151,
+        "pnl_r_sum": 62.214432,
+        "side_counts": {
+          "BUY": 78,
+          "SELL": 163
+        },
+        "trades": 241,
+        "year_pnl_r": {
+          "2022": 2.192573,
+          "2023": 25.8167,
+          "2024": 12.272958,
+          "2025": 14.241313,
+          "2026": 7.690888
+        }
+      },
+      "removed_keys": 22
+    },
+    "rank11_movement_plus_time_linear_target_entry_good_0_5r_top50": {
+      "added_keys": 20,
+      "common_keys": 578,
+      "current": {
+        "close_reasons": {
+          "ML_CLOSE": 446,
+          "SL": 22,
+          "TIME": 152
+        },
+        "hold_bars_0": 193,
+        "pf": 3.221013,
+        "pnl_r_mean": 0.321416,
+        "pnl_r_sum": 199.277705,
+        "side_counts": {
+          "BUY": 242,
+          "SELL": 378
+        },
+        "trades": 620,
+        "year_pnl_r": {
+          "2022": 2.625454,
+          "2023": 62.7844,
+          "2024": 55.980966,
+          "2025": 49.768565,
+          "2026": 28.11832
+        }
+      },
+      "old": {
+        "close_reasons": {
+          "ML_CLOSE": 506,
+          "SL": 20,
+          "TIME": 167
+        },
+        "hold_bars_0": 221,
+        "pf": 3.112464,
+        "pnl_r_mean": 0.297012,
+        "pnl_r_sum": 205.829231,
+        "side_counts": {
+          "BUY": 283,
+          "SELL": 410
+        },
+        "trades": 693,
+        "year_pnl_r": {
+          "2022": 2.625454,
+          "2023": 61.887443,
+          "2024": 60.437263,
+          "2025": 54.308344,
+          "2026": 26.570727
+        }
+      },
+      "removed_keys": 92
+    }
+  },
+  "slot1": {
+    "added_keys": 37,
+    "common_keys": 1017,
+    "current": {
+      "close_reasons": {
+        "ML_CLOSE": 789,
+        "SL": 35,
+        "TIME": 267
+      },
+      "hold_bars_0": 368,
+      "pf": 3.113871,
+      "pnl_r_mean": 0.3109,
+      "pnl_r_sum": 339.192111,
+      "side_counts": {
+        "BUY": 439,
+        "SELL": 652
+      },
+      "trades": 1091,
+      "year_pnl_r": {
+        "2022": 9.024859,
+        "2023": 89.486589,
+        "2024": 102.114185,
+        "2025": 98.993929,
+        "2026": 39.572548
+      }
+    },
+    "old": {
+      "close_reasons": {
+        "ML_CLOSE": 859,
+        "SL": 34,
+        "TIME": 303
+      },
+      "hold_bars_0": 406,
+      "pf": 3.295678,
+      "pnl_r_mean": 0.33029,
+      "pnl_r_sum": 395.026902,
+      "side_counts": {
+        "BUY": 499,
+        "SELL": 697
+      },
+      "trades": 1196,
+      "year_pnl_r": {
+        "2022": 9.024859,
+        "2023": 87.014685,
+        "2024": 131.750139,
+        "2025": 127.341494,
+        "2026": 39.895726
+      }
+    },
+    "removed_keys": 140
+  },
+  "slot1_rule_id": "rank05_time_only_linear_target_entry_avoid_sl_top30",
+  "stage": "fixed11_current_history_rerun",
+  "status": "DIAGNOSTIC_ONLY"
+}
