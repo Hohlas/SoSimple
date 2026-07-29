@@ -18,47 +18,8 @@
 
 Цель: доказать, что MT4/tester исполняет те же сигналы и сделки, что Python.
 
-Текущий статус: `ACTIVE`, `DIAGNOSTIC_ONLY`, `parity_in_progress`.
-
-Актуальный отчёт:
-`docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`.
-
-Актуальный анализ блокера:
-`docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`.
-
-Актуальный current-OHLC rerun:
-`docs/reports/2026-07-29-fixed11-current-history-rerun.md`.
-
-Актуальный Python chronology-fix rerun:
-`docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`.
-
-Структурное сравнение old/current OHLC:
-`ML/reports/fractal0_fixed11_current_history_comparison.json`.
-
-Сравнение current-history и chronology-fix:
-`ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`.
-
-Последний ручной tester-run проверял только `ML_RuleSlot=1` после правок
-`MLClose`/stale handling:
-
-- artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`;
-- expert version: `260.338`;
-- `ORDER_PLACED=1115`, `OPEN=717`, `CLOSE=717`, `OPEN_FAILED=404`;
-- close/open-failed reasons: `MLClose=630`, `StaleFillAfterMLClose=66`,
-  `StopLoss=15`, `Timeout=6`, `StalePendingAfterMLClose=324`,
-  `LimitExpired=74`, `MarketAfterLimitPassedStopInvalid=2`,
-  `OrderSendFailed=4`;
-- closed profit sum: `87857.69`;
-- verdict: `DIAGNOSTIC_ONLY`, because PnL is too good to treat as parity proof
-  until fill mismatch is explained.
-
-Python chronology-fix rerun 2026-07-29 устранил прежний внутри-H1 дефект:
-`same_h1_ml_close` упал `4070 -> 0`, `hold_bars=0` упал `4495 -> 488`, все
-новые сделки имеют `fill_execution_time_source=m5_touch`. Но после исправления
-edge исчез: aggregate PnL R `4065.034595 -> -530.513260`, PF range
-`2.820656-3.424707 -> 0.819373-0.938880`, `kept_candidates=0`. Это не
-торговый вывод, а `DIAGNOSTIC_ONLY`, но старый fixed11 positive locked-test
-contract больше нельзя считать валидным тем же frozen chain.
+Текущий статус: `ACTIVE`, но fixed11 retained-subset path требует решения перед
+новым MT4 export.
 
 Следующий шаг:
 
@@ -96,7 +57,7 @@ contract больше нельзя считать валидным тем же f
 Цель: оформить назначение, split, frozen rules, known risks, execution contract,
 monitoring/retraining policy и stop conditions для retained subset.
 
-Разблокируется только после pruning и parity/stress disclosure.
+Разблокируется только после parity/stress disclosure.
 
 ---
 
