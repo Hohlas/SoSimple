@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Исправить Python-симуляцию fixed11 так, чтобы внутри H1-бара она восстанавливала единый порядок событий `limit fill -> SL/TP/MLClose/timeout` по M5 и не теряла фактическое время исполнения лимитки.
+**Goal:** Исправить Python-симуляцию fixed11 так, чтобы ML-exit признаки были доступны строго на момент решения, а внутри H1-бара симулятор восстанавливал единый порядок событий `limit fill -> SL/TP/MLClose/timeout` по M5 и не терял фактическое время исполнения лимитки.
 
-**Architecture:** H1 остаётся источником признаков, `signal_time`, split и ML-решений. M5 используется только после H1-сигнала как execution-уточнение: найти первый M5-блок, где лимитка реально могла исполниться, и затем проверять только события, которые могли произойти после этого fill. Вход и выход в одном H1-баре разрешены, если порядок внутри часа доказан M5; старые locked-test артефакты не перезаписываются, новый контракт пишется отдельным output-prefix и получает максимум `DIAGNOSTIC_ONLY`, пока не пройдёт отдельная freeze/parity цепочка.
+**Architecture:** Сначала исправляется контракт ML-exit признаков: input-признаки должны описывать только уже известное состояние открытой позиции, а будущие поля остаются только target/diagnostic. Для текущего H1-only ML-exit контракта строки `bars_since_fill=0` не являются рабочими ML-решениями: без отдельного post-fill decision timestamp их нужно исключить из train/score rows или оставить только как diagnostic rows с `ml_exit_eligible=False`. Затем H1 остаётся источником `signal_time`, split и ML-решений, а M5 используется только после H1-сигнала как execution-уточнение: найти первый M5-блок, где лимитка реально могла исполниться, и затем проверять только события, которые могли произойти после этого fill. Вход и выход в одном H1-баре разрешены, если порядок внутри часа доказан M5; старые locked-test артефакты не перезаписываются, новый контракт пишется отдельным output-prefix и получает максимум `DIAGNOSTIC_ONLY`, пока не пройдёт отдельная freeze/parity цепочка.
 
 **Tech Stack:** `./.venv/bin/python`, pandas, pytest, CSV/JSON, `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`, `docs/reports/`.
 
@@ -18,7 +18,7 @@
 - M5 нельзя использовать как ML-признак, фильтр выбора сделок, источник нового winner или способ подбора threshold.
 - Новый execution contract должен быть явно отделён от старого: старые artifacts `ML/reports/fractal0_fixed11_rich_entry_locked_test*` не перезаписывать.
 - Новый output-prefix для диагностического rerun: `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix`.
-- Максимальный вердикт результата этого плана: `DIAGNOSTIC_ONLY`, потому что меняется execution convention после уже открытого locked_test.
+- Максимальный вердикт результата этого плана: `DIAGNOSTIC_ONLY`, потому что меняются ML-exit feature contract и execution convention после уже открытого locked_test.
 - Неизвестное, которое план не может закрыть сам: точный live bid/ask источник и полная эквивалентность M5 tester-history реальному исполнению. Это должно остаться limitation в отчёте.
 
 ---
@@ -27,13 +27,40 @@
 
 Проблема не в самом факте `fill_time == exit_time` на H1. Это нормальная ситуация, если лимитка исполнилась, например, в `10:10`, а стоп или `MLClose` сработал в `10:15` внутри того же часа.
 
-Подтверждённая причина старой ошибки в Python-симуляторе:
+Подтверждённые причины старой ошибки в Python-симуляторе:
 
 - `ML/baseline/benchmark_fractal0_entry_exit_grid.py::build_entry_rows(...)` ищет исполнение лимитки по H1 OHLC и сохраняет только H1 `fill_time`;
 - `ML/baseline/benchmark_fractal0_entry_exit_grid.py::simulate_trade(...)` начинает жизнь сделки с `fill_index` H1-бара и не знает фактическое M5-время входа;
 - `ML/baseline/benchmark_fractal0_entry_exit_grid.py::_resolve_same_bar_with_execution_ohlc(...)` использует M5 только для спорного порядка TP/SL, но не для времени fill и не для общего порядка событий внутри H1.
+- `ML/baseline/benchmark_fractal0_entry_exit_grid.py::build_exit_decision_rows(...)` строит первую строку ML-exit с `idx = fill_index`, то есть `bars_since_fill = 0`, и при этом заполняет position-state признаки.
 
 Следствие: симулятор знает “в каком H1-баре была исполнена лимитка”, но не знает “в какой M5-свече внутри этого H1-бара”. Поэтому он может считать сделку существующей с начала H1-бара и обработать выход, который фактически был раньше M5-fill.
+
+Отдельный критичный риск: признаки ML-exit с суффиксом `_before_decision` должны быть известны до момента решения. При `bars_since_fill = 0` H1-бар fill ещё не закрыт в момент внутрибаравого исполнения лимитки. Поэтому `unrealized_pnl_r_before_decision`, `max_favorable_r_before_decision` и `max_adverse_r_before_decision` не имеют честного рабочего значения для ML-решения в начале этого же H1-бара. Нулевые значения лучше, чем использование закрытого H1-бара, но рабочий контракт этого плана строже: без отдельного post-fill decision timestamp строки `bars_since_fill=0` должны быть исключены из ML-exit train/score rows или оставлены только как diagnostic rows с `ml_exit_eligible=False`; `simulate_trade(...)` не должен использовать ML score для `i=0`.
+
+Текущий код также смешивает названия признаков и будущих полей:
+
+- `future_favorable_r_3` — максимальное благоприятное движение за следующие до 3 H1-бара после `decision_time`; это будущая величина, она может быть target/diagnostic, но не input-признак.
+- `future_adverse_r_3` — максимальное неблагоприятное движение за следующие до 3 H1-бара; это будущая величина, она может быть target/diagnostic, но не input-признак.
+- `hold_3_pnl_r` — результат удержания позиции до конца окна до 3 H1-баров; это будущий исход, он может быть target/diagnostic, но не input-признак.
+- `close_now_pnl_r` в текущем коде звучит как “известно сейчас”, но при решении на H1-open закрытие текущего H1-бара ещё неизвестно. Если поле остаётся для target construction, его роль должна быть явно записана как `target_or_diagnostic_only`; предпочтительное новое имя в артефактах/отчёте — `decision_bar_close_pnl_r_for_target`.
+- Любое поле, рассчитанное из этих величин или из будущих `high/low/close`, запрещено использовать как input ML-exit.
+
+Для каждого exit decision должен быть согласован единый порядок:
+
+```text
+feature_time <= decision_time <= execution_time
+```
+
+Это означает:
+
+- признаки берутся только из уже известных баров;
+- ML-решение имеет понятный момент принятия;
+- закрытие сделки происходит не раньше момента, когда это решение могло быть принято.
+
+Текущий код требует отдельной проверки, потому что `build_exit_decision_rows(...)` пишет `first_exit_execution_time = idx + 1`, а `simulate_trade(...)` при `ML_CLOSE` закрывает по `bar["close"]` текущего `idx`. План должен привести эти два места к одному контракту. Важно: `idx + 1` означает первый исполнимый момент после того, как решение по закрытому H1-бару `idx` стало известно. В live это не ожидание ещё одного полного часа после появления сигнала, а немедленное закрытие на текущем рынке после расчёта ML-сигнала; в H1-бэктесте ближайшее приближение этого момента — open следующего H1-бара.
+
+Исполнитель обязан сначала проверить и исправить feature contract ML-exit. Если окажется, что `max_favorable_r_before_decision` или `max_adverse_r_before_decision` фактически считаются из будущего окна, их нужно либо пересчитать только по прошлым барам после fill, либо убрать из `EXIT_FEATURE_COLUMNS_BASE`. Нельзя переходить к прибыльному rerun, пока этот контракт не имеет `PASS` или явного `DIAGNOSTIC_ONLY`.
 
 Исправление должно устранять именно потерю внутрибаравой хронологии:
 
@@ -51,10 +78,287 @@ H1 signal -> first eligible H1 bar -> first M5 limit touch -> events at/after th
 - `docs/methodology/01-raw-data-inventory.md`: H1/M5 source, CSV contract, provider, timezone, price convention и статус M5 как `execution_ordering_only`.
 - `docs/methodology/03-feature-contract-leakage.md`: зафиксировать `decision_time`; не допустить, чтобы M5 стал feature source или candidate filter.
 - `docs/methodology/06-temporal-split.md`: old locked_test нельзя использовать для нового выбора; новый rerun только диагностический.
-- `docs/methodology/10-frozen-test-oos.md`: смена `entry_price`, fill policy или execution convention после freeze понижает статус до `DIAGNOSTIC_ONLY` или требует нового цикла.
+- `docs/methodology/10-frozen-test-oos.md`: смена `entry_price`, ML-exit feature contract, fill policy или execution convention после freeze понижает статус до `DIAGNOSTIC_ONLY` или требует нового цикла.
 - `docs/methodology/12-backtest-costs.md`: симулятор сделок должен иметь синтетические тесты на edge cases; M5 допустим только для порядка исполнения внутри H1.
 - `docs/methodology/13-export-mt4-parity.md`: Python fixed contract должен быть затем сверяем с MT4 по `signal_time + direction`, open/fill/close reasons и missing opens.
 - `docs/methodology/16-reporting-audit.md`: отчёт обязан содержать команды, paths, hashes, invalidated assumptions, limitations, raw rows/signals/trades и запреты интерпретации.
+
+---
+
+### Task 0: Audit And Fix ML-Exit Feature Contract
+
+**Files:**
+- Modify: `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
+- Modify: `tests/test_fractal0_entry_exit_grid.py`
+- Read: `docs/methodology/03-feature-contract-leakage.md`
+
+**Interfaces:**
+- Consumes: current `EXIT_FEATURE_COLUMNS_BASE`, `build_exit_decision_rows(...)`, `build_exit_targets(...)`, `exit_feature_columns(...)`.
+- Produces:
+  - ML-exit input features that are available at `decision_time`;
+  - explicit separation between future target fields and input fields;
+  - tests proving `bars_since_fill=0` is not a working ML-exit decision under the current H1-only timestamp contract.
+
+**Applicable Methodology:**
+- `docs/methodology/03-feature-contract-leakage.md`: target/future-derived fields must not enter model input; every feature needs a known availability moment.
+- `docs/methodology/12-backtest-costs.md`: backtest decisions must match data available at the simulated decision moment.
+
+**Mandatory Checks:**
+- `future_favorable_r_3`, `future_adverse_r_3`, `hold_3_pnl_r`, `close_now_pnl_r` and every target column are absent from `exit_feature_columns(...)`.
+- `max_favorable_r_before_decision` and `max_adverse_r_before_decision` are not computed from `idx+1:idx+4` future bars.
+- At `bars_since_fill=0`, if no post-fill decision timestamp exists yet, the row must not be used for ML-exit train/score. Preferred implementation: do not emit `bars_since_fill=0` rows from `build_exit_decision_rows(...)`; acceptable diagnostic alternative: emit them with `ml_exit_eligible=False` and filter them before train/score/map.
+- `_score_map_for_entries(...)` must not create key `0` for the current contract.
+- `simulate_trade(...)` must not use ML score for `i=0`.
+- ML-close timing must satisfy `feature_time <= decision_time <= execution_time`. If `build_exit_decision_rows(...)` says `first_exit_execution_time = idx + 1`, then `simulate_trade(...)` cannot close that ML decision on current `idx` close. This is immediate execution after the signal becomes available, represented in H1 OHLC as next-bar open.
+- If a field cannot be proven live-safe at `decision_time`, remove it from `EXIT_FEATURE_COLUMNS_BASE` or mark the rerun `DIAGNOSTIC_ONLY`; do not silently keep it as input.
+
+**Completion Criterion:**
+- Targeted tests pass and the ML-exit feature contract is explicit: future fields are targets/diagnostics only, input fields are available at the simulated decision time, and `bars_since_fill=0` cannot drive ML-close.
+
+- [ ] **Step 1: Add test that future-derived columns are not ML-exit inputs**
+
+Add this test near `test_exit_features_do_not_include_future_or_target_columns` in `tests/test_fractal0_entry_exit_grid.py`:
+
+```python
+def test_exit_features_exclude_future_derived_decision_fields():
+    cols = set(runner.exit_feature_columns("M1_frozen_movement_top5"))
+
+    forbidden = {
+        "future_favorable_r_3",
+        "future_adverse_r_3",
+        "hold_3_pnl_r",
+        "close_now_pnl_r",
+        "target_exit_opposite_any",
+        "target_exit_opposite_strong",
+        "target_exit_hold_close",
+        "target_exit_movement_exhaustion",
+    }
+
+    assert cols.isdisjoint(forbidden)
+```
+
+- [ ] **Step 2: Add failing test that `bars_since_fill=0` is not emitted as a working ML-exit row**
+
+Add this test after Step 1:
+
+```python
+def test_exit_decision_rows_start_after_fill_bar_without_post_fill_decision_timestamp():
+    trades = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "side": "BUY",
+                "fill_index": 0,
+                "fill_time": pd.Timestamp("2021-01-01 10:00"),
+                "entry_effective_price": 100.0,
+                "r_value": 1.0,
+                "ATR": 2.0,
+            }
+        ]
+    )
+    bars = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 11:00", "2021-01-01 12:00", "2021-01-01 13:00"]),
+            "open": [100.0, 100.0, 100.0, 100.0],
+            "high": [105.0, 101.0, 101.0, 101.0],
+            "low": [95.0, 99.0, 99.0, 99.0],
+            "close": [104.0, 100.0, 100.0, 100.0],
+        }
+    )
+
+    decisions = runner.build_exit_decision_rows(trades, bars)
+
+    assert 0 not in set(decisions["bars_since_fill"])
+    first = decisions.iloc[0]
+    assert first["bars_since_fill"] == 1
+    assert first["decision_time"] == pd.Timestamp("2021-01-01 11:00")
+    assert first["first_exit_execution_time"] == pd.Timestamp("2021-01-01 12:00")
+```
+
+This test encodes the rule in plain terms: at the fill H1 timestamp, without a separate post-fill decision timestamp, there is no honest working ML-exit decision yet. The first ML-exit decision row starts only after the fill H1 bar has completed.
+
+- [ ] **Step 3: Add failing test that score map cannot contain key 0**
+
+Add this test after Step 2:
+
+```python
+def test_score_map_excludes_bars_since_fill_zero():
+    entries = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "filled": True,
+                "side": "BUY",
+                "fill_index": 0,
+            }
+        ]
+    )
+    scored_decisions = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "bars_since_fill": 0,
+                "ml_exit_eligible": False,
+                "score_target_exit_opposite_any_M0_no_mask": 0.99,
+            },
+            {
+                "position_id": "p1",
+                "bars_since_fill": 1,
+                "ml_exit_eligible": True,
+                "score_target_exit_opposite_any_M0_no_mask": 0.75,
+            },
+        ]
+    )
+
+    score_map = runner._score_map_for_entries(
+        entries,
+        pd.DataFrame(),
+        scored_decisions,
+        {"family": "ml_opposite_any"},
+        "M0_no_mask",
+    )
+
+    assert score_map["p1"] == {1: 0.75}
+```
+
+- [ ] **Step 4: Run the new feature-contract tests and confirm expected failure**
+
+Run:
+
+```bash
+./.venv/bin/python -m pytest \
+  tests/test_fractal0_entry_exit_grid.py::test_exit_features_exclude_future_derived_decision_fields \
+  tests/test_fractal0_entry_exit_grid.py::test_exit_decision_rows_start_after_fill_bar_without_post_fill_decision_timestamp \
+  tests/test_fractal0_entry_exit_grid.py::test_score_map_excludes_bars_since_fill_zero \
+  -q
+```
+
+Expected:
+
+```text
+At least test_exit_decision_rows_start_after_fill_bar_without_post_fill_decision_timestamp and test_score_map_excludes_bars_since_fill_zero fail against current code, because build_exit_decision_rows currently emits bars_since_fill=0 and _score_map_for_entries currently keeps key 0.
+```
+
+- [ ] **Step 5: Fix `build_exit_decision_rows(...)` so working ML-exit rows start after fill H1**
+
+In `ML/baseline/benchmark_fractal0_entry_exit_grid.py`, keep future fields for target construction, but emit only working rows that can satisfy the timing contract.
+
+Change the loop start from:
+
+```python
+        for idx in range(fill, last_decision):
+```
+
+to:
+
+```python
+        for idx in range(fill + 1, last_decision):
+```
+
+Inside the loop compute input features from already elapsed bars only. Because the first working row is `idx = fill + 1`, the fill H1 bar is not used as a position-state feature source. The current decision bar `idx` is allowed only under this explicit contract: decision is made after H1 bar `idx` is complete, and execution is no earlier than H1 bar `idx + 1`.
+
+```python
+            bars_since_fill = idx - fill
+            known_start = fill + 1
+            known_end = idx + 1
+            close_now = _pnl_r(side, entry_price, closes[idx], r_value)
+            if side == "BUY":
+                favorable_before = (float(np.nanmax(highs[known_start:known_end])) - entry_price) / r_value
+                adverse_before = (entry_price - float(np.nanmin(lows[known_start:known_end]))) / r_value
+            else:
+                favorable_before = (entry_price - float(np.nanmin(lows[known_start:known_end]))) / r_value
+                adverse_before = (float(np.nanmax(highs[known_start:known_end])) - entry_price) / r_value
+            favorable_before = max(0.0, float(favorable_before))
+            adverse_before = max(0.0, float(adverse_before))
+```
+
+Keep target/diagnostic future fields separate:
+
+```python
+            future_start = idx + 1
+            future_end = min(idx + 4, len(ohlc))
+```
+
+When appending the row, use:
+
+```python
+                    "bars_since_fill": bars_since_fill,
+                    "ml_exit_eligible": True,
+                    "unrealized_pnl_r_before_decision": close_now,
+                    "max_favorable_r_before_decision": favorable_before,
+                    "max_adverse_r_before_decision": adverse_before,
+```
+
+Do not remove `future_favorable_r_3`, `future_adverse_r_3`, `close_now_pnl_r` or `hold_3_pnl_r` from decision rows; they are still needed for `build_exit_targets(...)`. The rule is that they must not be returned by `exit_feature_columns(...)`.
+
+If touching artifact column names is low-risk for this runner, add a duplicate diagnostic alias:
+
+```python
+                    "decision_bar_close_pnl_r_for_target": close_now,
+```
+
+Then keep `close_now_pnl_r` only for backward compatibility with `build_exit_targets(...)` and document its role as target/diagnostic, not input.
+
+- [ ] **Step 6: Filter ineligible score rows before building score maps**
+
+In `_score_map_for_entries(...)`, before grouping, filter scored decisions:
+
+```python
+    eligible = scored_decisions.copy()
+    if "ml_exit_eligible" in eligible.columns:
+        eligible = eligible.loc[eligible["ml_exit_eligible"].astype(bool)].copy()
+    eligible = eligible.loc[pd.to_numeric(eligible["bars_since_fill"], errors="coerce") > 0].copy()
+```
+
+Then change:
+
+```python
+    for position_id, group in scored_decisions.groupby("position_id"):
+```
+
+to:
+
+```python
+    for position_id, group in eligible.groupby("position_id"):
+```
+
+- [ ] **Step 7: Run feature-contract tests**
+
+Run:
+
+```bash
+./.venv/bin/python -m pytest \
+  tests/test_fractal0_entry_exit_grid.py::test_exit_features_exclude_future_derived_decision_fields \
+  tests/test_fractal0_entry_exit_grid.py::test_exit_decision_rows_start_after_fill_bar_without_post_fill_decision_timestamp \
+  tests/test_fractal0_entry_exit_grid.py::test_score_map_excludes_bars_since_fill_zero \
+  tests/test_fractal0_entry_exit_grid.py::test_exit_features_do_not_include_future_or_target_columns \
+  -q
+```
+
+Expected:
+
+```text
+4 passed
+```
+
+- [ ] **Step 8: Record the feature-contract decision in the new JSON/report**
+
+Later report and JSON tasks must include:
+
+```text
+ml_exit_feature_contract_status = PASS
+bars_since_fill_0_ml_exit_policy = excluded_until_post_fill_decision_timestamp_exists
+ml_exit_timing_contract = feature_time <= decision_time <= execution_time
+future_exit_fields_role = target_or_diagnostic_only
+close_now_pnl_r_role = target_or_diagnostic_only_backward_compatibility_name
+```
+
+If Step 5 cannot pass without removing `max_favorable_r_before_decision` or `max_adverse_r_before_decision` from `EXIT_FEATURE_COLUMNS_BASE`, remove only the unsafe fields and record:
+
+```text
+ml_exit_feature_contract_status = PASS_WITH_REDUCED_FEATURE_SET
+removed_ml_exit_features = [...]
+```
 
 ---
 
@@ -312,6 +616,7 @@ At least one test fails because build_entry_rows has no execution_ohlc argument 
 - New tests from Task 1 pass.
 - Same-H1 entry+exit is not globally banned.
 - The implementation fixes the missing inside-H1 order source; it is not only a one-off `ML_CLOSE` guard.
+- ML-close score, decision and execution are synchronized: no score key `0`, no ML close before `first_exit_execution_time`, no current-bar close if the decision contract says next-bar execution.
 - No changes to grid definitions, rule selection, score cutoffs or MQL4 files.
 
 **Completion Criterion:**
@@ -595,16 +900,34 @@ resolved = _resolve_same_bar_with_execution_ohlc(side, bar, execution_ohlc, spre
 
 - [ ] **Step 8: Do not allow fill-H1 ML-close under the current H1-only ML-exit timestamp contract**
 
-Keep ML-close as an H1 decision event, but make it part of the same event-ordering model. In the current code, `build_exit_decision_rows(...)` stores `decision_time` as H1 timestamp and has no real post-fill M5 decision timestamp. Therefore any `ML_CLOSE` on the fill H1 bar is not proven as a post-fill event and must not be counted as ordinary `ML_CLOSE`.
+Keep ML-close as an H1 decision event, but make it part of the same event-ordering model. In the current code, `build_exit_decision_rows(...)` stores `decision_time` as H1 timestamp and `first_exit_execution_time = idx + 1`, while `simulate_trade(...)` closes `ML_CLOSE` at current `bar["close"]`. This is inconsistent. The fixed contract is:
+
+```text
+score key k means: decision is made after H1 bar k is known, and the first executable close is the next H1 bar.
+```
+
+Therefore `simulate_trade(...)` must never use score key `0`, and when score key `i` triggers `ML_CLOSE`, it must close at the first executable moment after the signal is available. In H1 OHLC backtest this is represented as the next H1 bar open, not current `i` close. In live MT4 this corresponds to closing immediately after Python writes the signal, without waiting for another full H1 bar.
 
 Change the ML-close block in `simulate_trade(...)` to use this predicate:
 
 ```python
-        ml_decision_is_after_fill = not same_h1_as_fill
-        if ml_decision_is_after_fill and (str(exit_rule.get("family", "")).startswith("ml") or exit_rule.get("family") == "fixed_sl_ml_profit_exit"):
+        ml_decision_is_after_fill = i > 0 and not same_h1_as_fill
+        ml_execution_pos = i + 1
+        can_execute_ml_close = ml_execution_pos < len(bars)
+        if (
+            ml_decision_is_after_fill
+            and can_execute_ml_close
+            and (str(exit_rule.get("family", "")).startswith("ml") or exit_rule.get("family") == "fixed_sl_ml_profit_exit")
+        ):
+            score = (ml_scores or {}).get(i, 0.0)
+            ml_exit_bar = bars.iloc[ml_execution_pos]
+            ml_exit_price = float(ml_exit_bar["open"])
+            now_r = _pnl_r(side, entry_price, close_price, r_value)
+            if score >= float(exit_rule.get("prob_threshold", 1.1)) and (exit_rule.get("family") != "fixed_sl_ml_profit_exit" or now_r >= 0):
+                return _trade_result("ML_CLOSE", side, entry_price, ml_exit_price, r_value, ml_execution_pos, ml_exit_bar, False)
 ```
 
-This is not a global ban on same-H1 entry+exit. SL/TP can still close on the fill H1 if M5 shows the touch at or after fill. Same-H1 `ML_CLOSE` can be reintroduced only after a separate implementation adds a real post-fill ML decision timestamp inside H1 and tests it explicitly.
+This is not a global ban on same-H1 entry+exit. SL/TP can still close on the fill H1 if M5 shows the touch at or after fill. Same-H1 `ML_CLOSE` can be reintroduced only after a separate implementation adds a real post-fill ML decision timestamp inside H1, proves its feature availability and tests it explicitly.
 
 - [ ] **Step 9: Add machine-readable execution contract to JSON writers**
 
@@ -612,6 +935,11 @@ In `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py`, extend the arti
 
 ```python
         "execution_ohlc_usage": "limit_fill_timestamp_and_same_h1_post_fill_event_order",
+        "ml_exit_feature_contract_status": "PASS",
+        "bars_since_fill_0_ml_exit_policy": "excluded_until_post_fill_decision_timestamp_exists",
+        "ml_exit_timing_contract": "feature_time <= decision_time <= execution_time",
+        "future_exit_fields_role": "target_or_diagnostic_only",
+        "close_now_pnl_r_role": "target_or_diagnostic_only_backward_compatibility_name",
         "fill_execution_time_contract": {
             "column": "fill_execution_time",
             "source_column": "fill_execution_time_source",
@@ -699,6 +1027,7 @@ All tests in tests/test_fractal0_fixed11_rich_entry_locked_test.py pass.
 - JSON top-level `verdict`/`decision` must be patched or generated as `DIAGNOSTIC_ONLY`, not `candidate_check_required`.
 - Selection CSV must not be readable as a fresh candidate verdict; add `allowed_max_verdict=DIAGNOSTIC_ONLY` and diagnostic decision labels.
 - Compare old current-history rerun to chronology-fix rerun: total trades, `hold_bars=0`, same-H1 fill/exit, PnL, PF, close reasons, fill confirmation sources and ambiguous counts.
+- Report and JSON must state that the rerun changed both ML-exit feature contract and execution convention; old fixed11 metrics/cutoffs are not the same frozen verification chain.
 
 **Completion Criterion:**
 - New JSON/CSV artifacts exist, include hashes and show whether `hold_bars=0` and impossible same-H1 ML exits decreased.
@@ -737,8 +1066,13 @@ d["original_runner_verdict"] = d.get("verdict")
 d["verdict"] = "DIAGNOSTIC_ONLY"
 d["decision"] = "FIXED11_H1_CHRONOLOGY_FIX_DIAGNOSTIC_ONLY"
 d["allowed_max_verdict"] = "DIAGNOSTIC_ONLY"
-d["diagnostic_reason"] = "execution convention changed after fixed11 locked_test; rerun is for simulator chronology validation, not candidate selection"
+d["diagnostic_reason"] = "ML-exit feature contract and execution convention changed after fixed11 locked_test; rerun is for simulator chronology validation, not candidate selection"
 d.setdefault("execution_ohlc_usage", "limit_fill_timestamp_and_same_h1_post_fill_event_order")
+d.setdefault("ml_exit_feature_contract_status", "PASS")
+d.setdefault("bars_since_fill_0_ml_exit_policy", "excluded_until_post_fill_decision_timestamp_exists")
+d.setdefault("ml_exit_timing_contract", "feature_time <= decision_time <= execution_time")
+d.setdefault("future_exit_fields_role", "target_or_diagnostic_only")
+d.setdefault("close_now_pnl_r_role", "target_or_diagnostic_only_backward_compatibility_name")
 d.setdefault("same_h1_ml_close_policy", "disabled_on_fill_h1_until_real_post_fill_ml_decision_timestamp_exists")
 d.setdefault("missing_m5_fill_policy", "do_not_process_same_h1_exits_as_confirmed_post_fill_events")
 d.setdefault("fill_m5_double_touch_policy", "SL_first_with_ambiguous_true")
@@ -754,7 +1088,7 @@ if selection_path.exists():
         "REJECT": "DIAGNOSTIC_GATE_FAILED",
     }).fillna(selection["decision"])
     selection["allowed_max_verdict"] = "DIAGNOSTIC_ONLY"
-    selection["decision_reason"] = "execution convention changed after fixed11 locked_test; gate is diagnostic only"
+    selection["decision_reason"] = "ML-exit feature contract and execution convention changed after fixed11 locked_test; gate is diagnostic only"
     selection.to_csv(selection_path, sep=";", index=False)
 print("diagnostic_verdict_ok")
 PY
@@ -881,6 +1215,7 @@ No diff for old locked-test/current-history artifacts.
 - New report must include `Stage Level` and `Changed Files`.
 - New report must include `allowed_max_verdict=DIAGNOSTIC_ONLY`.
 - New report must state that M5 was not used as ML input.
+- New report must state that old fixed11 metrics/cutoffs are invalidated as the same frozen chain because ML-exit feature contract changed.
 - Changelog/handoff/wiki must not claim production readiness or MT4 parity.
 
 **Completion Criterion:**
@@ -907,6 +1242,15 @@ Create `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md` with these 
 ## Changed Files
 
 ## What Changed
+
+Include:
+
+```text
+ML-exit feature contract changed:
+- bars_since_fill=0 is excluded from working ML-exit train/score rows;
+- future exit fields remain target/diagnostic only;
+- ML_CLOSE execution is aligned with first_exit_execution_time.
+```
 
 ## What Did Not Change
 
