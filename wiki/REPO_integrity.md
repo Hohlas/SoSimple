@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-29 16:00 UTC · git `926f944`
+> Auto-generated 2026-07-29 18:41 UTC · git `93b47a8`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3347 files  ·  **Commit**: `926f944`  ·  **Generated**: 2026-07-29 16:00 UTC
+**Tracked**: 3361 files  ·  **Commit**: `93b47a8`  ·  **Generated**: 2026-07-29 18:41 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-27 | 10KB | `8b0976f5` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-29 | 159KB | `e72657e1` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-29 | 160KB | `fc212521` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-29 | 3KB | `c2876b3b` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-27 | 59KB | `eeb3de7d` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-29 | 3KB | `dc1c3467` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-29 | 59KB | `c7384b83` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -51,8 +51,8 @@
 | [docs/ML/benchmark_entry_path_direct_bar_model.py.md](docs/ML/benchmark_entry_path_direct_bar_model.py.md) | Direct BUY/SELL/SKIP benchmark для каждого бара | 2026-06-17 | 1KB | `531300e8` |
 | [docs/ML/benchmark_entry_path_signal_only_ablation.py.md](docs/ML/benchmark_entry_path_signal_only_ablation.py.md) | Ablation benchmark вклада offline `signal != 0` | 2026-06-17 | 2KB | `f5a2fa77` |
 | [docs/ML/benchmark_execution_policy_v2.py.md](docs/ML/benchmark_execution_policy_v2.py.md) | Benchmark вариантов выхода для готовых ML-сигналов | 2026-06-17 | 4KB | `03bec021` |
-| [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-21 | 7KB | `170916af` |
-| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-23 | 13KB | `8a4232bc` |
+| [docs/ML/benchmark_fractal0_entry_exit_grid.py.md](docs/ML/benchmark_fractal0_entry_exit_grid.py.md) |  | 2026-07-29 | 8KB | `980c4582` |
+| [docs/ML/benchmark_fractal0_entry_quality_filter.py.md](docs/ML/benchmark_fractal0_entry_quality_filter.py.md) |  | 2026-07-29 | 14KB | `56a42e1e` |
 | [docs/ML/benchmark_fractal0_price_entry_mechanics.py.md](docs/ML/benchmark_fractal0_price_entry_mechanics.py.md) |  | 2026-07-20 | 1KB | `ffe4c83f` |
 | [docs/ML/benchmark_signal_export_parity.py.md](docs/ML/benchmark_signal_export_parity.py.md) | Диагностика соответствия exported `ml_signals.csv` и MT4 tester log | 2026-06-17 | 2KB | `5c430c60` |
 | [docs/ML/benchmark_stage4_6_clean_cycle.py.md](docs/ML/benchmark_stage4_6_clean_cycle.py.md) |  | 2026-06-17 | 1KB | `b7950d61` |
@@ -83,6 +83,7 @@
 | [docs/ML/prune_fractal0_fixed11_mutual_correlation.py.md](docs/ML/prune_fractal0_fixed11_mutual_correlation.py.md) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap | 2026-07-27 | 1KB | `81ee8c21` |
 | [docs/ML/run_entry_path_live_safe_retrain.py.md](docs/ML/run_entry_path_live_safe_retrain.py.md) |  | 2026-06-17 | 2KB | `72abe04a` |
 | [docs/ML/run_entry_path_quantile_live_safe_retrain.py.md](docs/ML/run_entry_path_quantile_live_safe_retrain.py.md) |  | 2026-06-17 | 2KB | `82076ca6` |
+| [docs/ML/run_fractal0_fixed11_rich_entry_locked_test.py.md](docs/ML/run_fractal0_fixed11_rich_entry_locked_test.py.md) |  | 2026-07-29 | 2KB | `663a2e64` |
 | [docs/ML/run_live_safe_ml_audit.py.md](docs/ML/run_live_safe_ml_audit.py.md) | CLI для audit inventory, feature trace, legacy replay и verdict | 2026-06-17 | 708B | `445a83ae` |
 | [docs/ML/run_take_skip_lib_pic_feature_matrix.py.md](docs/ML/run_take_skip_lib_pic_feature_matrix.py.md) | Training matrix для `take_skip_v2` с признаками `lib_PIC` внутри модели | 2026-06-17 | 4KB | `8d21f1a7` |
 | [docs/ML/run_take_skip_original_contour_feature_matrix.py.md](docs/ML/run_take_skip_original_contour_feature_matrix.py.md) | Training matrix для старого single-tensor `take_skip_v2` контура + `lib_PIC` признаки | 2026-06-17 | 6KB | `133b0f2e` |
@@ -157,7 +158,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-29 | 14KB | `582d6f46` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-29 | 21KB | `9bcb4c30` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -278,8 +279,9 @@
 | [docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md](docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 14KB | `ac1038f1` |
 | [docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md](docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-27 | 31KB | `8a7257f3` |
 | [docs/superpowers/plans/2026-07-29-fixed11-current-history-rerun.md](docs/superpowers/plans/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 29KB | `1503352f` |
+| [docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md](docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md) |  | 2026-07-29 | 63KB | `550fbc1e` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-29 | 11KB | `69b6bfea` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-29 | 9KB | `49b05e45` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -452,7 +454,8 @@
 | [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 10KB | `fe9774d5` |
 | [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-29 | 12KB | `5aa0c736` |
 | [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 23KB | `e0a084a7` |
-| [docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md](docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md) |  | 2026-07-29 | 18KB | `81b1b454` |
+| [docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md](docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md) |  | 2026-07-29 | 12KB | `536d886f` |
+| [docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md](docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md) |  | 2026-07-29 | 18KB | `fa4c8910` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -478,8 +481,8 @@
 | [ML/baseline/benchmark_entry_based_sequence_transformer.py](ML/baseline/benchmark_entry_based_sequence_transformer.py) | Entry-based sequence Transformer runner | ✅ | 2026-07-20 | 46KB | `f8d73f1a` |
 | [ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py](ML/baseline/benchmark_entry_based_updn_fractal_selection_ablation.py) | Entry-based fractal ablation | ✅ | 2026-07-20 | 51KB | `cbbee1d3` |
 | [ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py](ML/baseline/benchmark_entry_based_updn_price_feature_matrix.py) | Entry-based Up/Dn price-feature matrix | ✅ | 2026-07-20 | 30KB | `1dd98792` |
-| [ML/baseline/benchmark_fractal0_entry_exit_grid.py](ML/baseline/benchmark_fractal0_entry_exit_grid.py) | Fractal0 entry/exit grid со stop-policy grid, OHLC/M5 execution ordering, ML-exit и permutation correction | ✅ | 2026-07-21 | 77KB | `ee7ae1dd` |
-| [ML/baseline/benchmark_fractal0_entry_quality_filter.py](ML/baseline/benchmark_fractal0_entry_quality_filter.py) | ML-entry, rich-entry и normalized rich-entry quality фильтр для Fractal0 E3 поверх stop-grid winner без нового симулятора | ✅ | 2026-07-23 | 130KB | `eca685cf` |
+| [ML/baseline/benchmark_fractal0_entry_exit_grid.py](ML/baseline/benchmark_fractal0_entry_exit_grid.py) | Fractal0 entry/exit grid со stop-policy grid, M5 fill timestamp / same-H1 ordering, ML-exit и permutation correction | ✅ | 2026-07-29 | 83KB | `8c22e81f` |
+| [ML/baseline/benchmark_fractal0_entry_quality_filter.py](ML/baseline/benchmark_fractal0_entry_quality_filter.py) | ML-entry, rich-entry и normalized rich-entry quality фильтр для Fractal0 E3 поверх stop-grid winner без нового симулятора | ✅ | 2026-07-29 | 130KB | `1be7905b` |
 | [ML/baseline/benchmark_fractal0_price_entry_mechanics.py](ML/baseline/benchmark_fractal0_price_entry_mechanics.py) | Oracle-preflight входа через возврат цены к зоне `fractal0_price` | ✅ | 2026-07-20 | 30KB | `9be21f55` |
 | [ML/baseline/benchmark_fractal_stop_breach.py](ML/baseline/benchmark_fractal_stop_breach.py) | Stage 1 Fractal Stop Breach | ✅ | 2026-06-17 | 13KB | `186f1abf` |
 | [ML/baseline/benchmark_fractal_stop_fav.py](ML/baseline/benchmark_fractal_stop_fav.py) | Stage 2 Fractal Stop Fav | ✅ | 2026-06-17 | 26KB | `5b982cce` |
@@ -515,7 +518,7 @@
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-06-17 | 4KB | `66cbf52f` |
 | [ML/baseline/reports/limit_order_spread_grid.md](ML/baseline/reports/limit_order_spread_grid.md) |  |  | 2026-06-17 | 3KB | `f8f3c27b` |
 | [ML/baseline/rf_gridsearch.py](ML/baseline/rf_gridsearch.py) |  |  | 2026-06-17 | 6KB | `31bd8826` |
-| [ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py](ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py) |  |  | 2026-07-24 | 15KB | `4e50eee4` |
+| [ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py](ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py) | Wrapper 11 fixed normalized rich-entry rules для locked-test/rerun с M5 fill timestamp и diagnostic contract fields | ✅ | 2026-07-29 | 20KB | `c74f9a77` |
 | [ML/baseline/tb_direction_signal.py](ML/baseline/tb_direction_signal.py) |  |  | 2026-06-17 | 8KB | `d211235a` |
 | [ML/baseline/trail_stop_stage4.py](ML/baseline/trail_stop_stage4.py) |  |  | 2026-06-17 | 21KB | `684b667a` |
 | [ML/baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | ✅ | 2026-06-17 | 10KB | `d2608702` |
@@ -819,6 +822,7 @@
 | [ML/reports/fractal0_entry_quality_filter.json](ML/reports/fractal0_entry_quality_filter.json) |  |  | 2026-07-21 | 29KB | `1968cec0` |
 | [ML/reports/fractal0_fixed11_candidate_audit.json](ML/reports/fractal0_fixed11_candidate_audit.json) |  |  | 2026-07-26 | 6KB | `25e76fe9` |
 | [ML/reports/fractal0_fixed11_current_history_comparison.json](ML/reports/fractal0_fixed11_current_history_comparison.json) |  |  | 2026-07-29 | 16KB | `09ff58f8` |
+| [ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json](ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json) |  |  | 2026-07-29 | 1KB | `f9c41c45` |
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json) |  |  | 2026-07-27 | 194KB | `b616f0c9` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 3KB | `4165a1a9` |
@@ -829,6 +833,7 @@
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py](ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py) |  |  | 2026-07-29 | 14KB | `f2c1cee7` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test.json](ML/reports/fractal0_fixed11_rich_entry_locked_test.json) |  |  | 2026-07-24 | 2KB | `374ed486` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json](ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json) |  |  | 2026-07-29 | 3KB | `6a8ea239` |
+| [ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json](ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json) |  |  | 2026-07-29 | 4KB | `5bd02cdf` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
@@ -1279,7 +1284,7 @@
 | [tests/test_feature_bank_comparison_diagnostics.py](tests/test_feature_bank_comparison_diagnostics.py) | `ML/feature_bank_comparison_diagnostics.py` | ✅ | 2026-06-17 | 3KB | `83c6338e` |
 | [tests/test_feature_importance_diagnostics.py](tests/test_feature_importance_diagnostics.py) | `ML/feature_importance_diagnostics.py` | ✅ | 2026-06-17 | 2KB | `666e9ecb` |
 | [tests/test_feature_screen_entry_path.py](tests/test_feature_screen_entry_path.py) | `ML/feature_screen_entry_path.py` | ✅ | 2026-06-17 | 567B | `b99a62db` |
-| [tests/test_fractal0_entry_exit_grid.py](tests/test_fractal0_entry_exit_grid.py) | `ML/baseline/benchmark_fractal0_entry_exit_grid.py` | ✅ | 2026-07-21 | 26KB | `e3fe4d37` |
+| [tests/test_fractal0_entry_exit_grid.py](tests/test_fractal0_entry_exit_grid.py) | `ML/baseline/benchmark_fractal0_entry_exit_grid.py` | ✅ | 2026-07-29 | 34KB | `fa619ff9` |
 | [tests/test_fractal0_entry_quality_filter.py](tests/test_fractal0_entry_quality_filter.py) |  |  | 2026-07-23 | 38KB | `2d763bb8` |
 | [tests/test_fractal0_fixed11_candidate_audit.py](tests/test_fractal0_fixed11_candidate_audit.py) |  |  | 2026-07-26 | 17KB | `8e2c75a0` |
 | [tests/test_fractal0_fixed11_internal_closure_rerun.py](tests/test_fractal0_fixed11_internal_closure_rerun.py) |  |  | 2026-07-23 | 31KB | `861e59e9` |
@@ -1754,8 +1759,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-29 | 6KB | `83172147` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-29 | 81KB | `25f5fe8f` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-29 | 6KB | `93d9a02d` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-29 | 81KB | `679f9a1b` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1766,7 +1771,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-29 | 141KB | `5297adc4` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-29 | 142KB | `9a77a34f` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1804,7 +1809,7 @@
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-23 | 3KB | `16f9bbca` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-23 | 6KB | `7a08a27b` |
 | [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-23 | 7KB | `40a9879a` |
-| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-29 | 51KB | `ba92cdb3` |
+| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-29 | 52KB | `5d635fbe` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |
 | [graphify-out/2026-07-08/.graphify_labels.json](graphify-out/2026-07-08/.graphify_labels.json) |  | 2026-07-08 | 48KB | `47ef2de8` |
@@ -1827,9 +1832,9 @@
 | [graphify-out/2026-07-27/GRAPH_REPORT.md](graphify-out/2026-07-27/GRAPH_REPORT.md) |  | 2026-07-27 | 313KB | `4d8e2c99` |
 | [graphify-out/2026-07-28/.graphify_labels.json](graphify-out/2026-07-28/.graphify_labels.json) |  | 2026-07-28 | 51KB | `db0e3bd3` |
 | [graphify-out/2026-07-28/GRAPH_REPORT.md](graphify-out/2026-07-28/GRAPH_REPORT.md) |  | 2026-07-28 | 314KB | `4298cc89` |
-| [graphify-out/2026-07-29/.graphify_labels.json](graphify-out/2026-07-29/.graphify_labels.json) |  | 2026-07-29 | 51KB | `d52d8d53` |
-| [graphify-out/2026-07-29/GRAPH_REPORT.md](graphify-out/2026-07-29/GRAPH_REPORT.md) |  | 2026-07-29 | 312KB | `dab8d41e` |
-| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-29 | 314KB | `8cd901af` |
+| [graphify-out/2026-07-29/.graphify_labels.json](graphify-out/2026-07-29/.graphify_labels.json) |  | 2026-07-29 | 51KB | `fbac476a` |
+| [graphify-out/2026-07-29/GRAPH_REPORT.md](graphify-out/2026-07-29/GRAPH_REPORT.md) |  | 2026-07-29 | 312KB | `98db1155` |
+| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-29 | 317KB | `15d37d17` |
 | [graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json](graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json) |  | 2026-07-08 | 135KB | `54d7dbf7` |
 | [graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json](graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json) |  | 2026-07-08 | 17KB | `f7a19787` |
 | [graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json](graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json) |  | 2026-07-07 | 846B | `0a6019ff` |
@@ -2027,6 +2032,7 @@
 | [graphify-out/cache/ast/v0.9.8/294899c715493f8d1c1d22ee60cf529eade1d02e285d0f6da5dd226a0135f17d.json](graphify-out/cache/ast/v0.9.8/294899c715493f8d1c1d22ee60cf529eade1d02e285d0f6da5dd226a0135f17d.json) |  | 2026-07-08 | 27KB | `45f98288` |
 | [graphify-out/cache/ast/v0.9.8/295391dfb904b7853f81c600337ca0afabf208b5c7575ccd44d0690fa82847f9.json](graphify-out/cache/ast/v0.9.8/295391dfb904b7853f81c600337ca0afabf208b5c7575ccd44d0690fa82847f9.json) |  | 2026-07-07 | 15KB | `06c93767` |
 | [graphify-out/cache/ast/v0.9.8/297368ecce188c0c124a3b46725710835dfa55fc67884dc6874f34e3086f40fa.json](graphify-out/cache/ast/v0.9.8/297368ecce188c0c124a3b46725710835dfa55fc67884dc6874f34e3086f40fa.json) |  | 2026-07-08 | 8KB | `b779cf83` |
+| [graphify-out/cache/ast/v0.9.8/298c94d487c4385fa47e43af4a5f1165823f4ab5b9729111fff94f7662eb37a5.json](graphify-out/cache/ast/v0.9.8/298c94d487c4385fa47e43af4a5f1165823f4ab5b9729111fff94f7662eb37a5.json) |  | 2026-07-29 | 7KB | `257fd11b` |
 | [graphify-out/cache/ast/v0.9.8/2990ff3864a646d07f0b2ae2dced76e080d01c07c213f29ea1b754f592d201d1.json](graphify-out/cache/ast/v0.9.8/2990ff3864a646d07f0b2ae2dced76e080d01c07c213f29ea1b754f592d201d1.json) |  | 2026-07-08 | 37KB | `55ce8b30` |
 | [graphify-out/cache/ast/v0.9.8/29df3abf0c83a25ffe58a83001ca40decc9790770c4b23bc7e7d35b7fc2c2b0a.json](graphify-out/cache/ast/v0.9.8/29df3abf0c83a25ffe58a83001ca40decc9790770c4b23bc7e7d35b7fc2c2b0a.json) |  | 2026-07-08 | 6KB | `4571ef1a` |
 | [graphify-out/cache/ast/v0.9.8/2a0d3aa5fa0cb8673d19ea217320f360e01be567b0b908ceed61af7834afdb68.json](graphify-out/cache/ast/v0.9.8/2a0d3aa5fa0cb8673d19ea217320f360e01be567b0b908ceed61af7834afdb68.json) |  | 2026-07-08 | 19KB | `aba91fdc` |
@@ -2161,6 +2167,7 @@
 | [graphify-out/cache/ast/v0.9.8/4a6e608ec09d36fc914f8cc87a048b6b68a0a0a2cb29fd3c9da6df238fa7b210.json](graphify-out/cache/ast/v0.9.8/4a6e608ec09d36fc914f8cc87a048b6b68a0a0a2cb29fd3c9da6df238fa7b210.json) |  | 2026-07-08 | 15KB | `6681a94e` |
 | [graphify-out/cache/ast/v0.9.8/4aed268cb23626e2c05566103fb2ba9368165719d4835783614446f0b4bb0fe0.json](graphify-out/cache/ast/v0.9.8/4aed268cb23626e2c05566103fb2ba9368165719d4835783614446f0b4bb0fe0.json) |  | 2026-07-08 | 6KB | `e06bef4d` |
 | [graphify-out/cache/ast/v0.9.8/4b1fc24593120b13c7870f68e04a05cc09e2e5eecce9d870b60b5552a81e7a92.json](graphify-out/cache/ast/v0.9.8/4b1fc24593120b13c7870f68e04a05cc09e2e5eecce9d870b60b5552a81e7a92.json) |  | 2026-07-08 | 9KB | `850157cb` |
+| [graphify-out/cache/ast/v0.9.8/4b34e5b0fd15cae51309043a67af2f5420a7b3ceb5e87fd146eaf893958de51a.json](graphify-out/cache/ast/v0.9.8/4b34e5b0fd15cae51309043a67af2f5420a7b3ceb5e87fd146eaf893958de51a.json) |  | 2026-07-29 | 11KB | `bb830609` |
 | [graphify-out/cache/ast/v0.9.8/4b7193739c2dc0c25fed018b8b1068406df0b14e917b3b096722277f655b02a6.json](graphify-out/cache/ast/v0.9.8/4b7193739c2dc0c25fed018b8b1068406df0b14e917b3b096722277f655b02a6.json) |  | 2026-07-08 | 3KB | `8b7d8be1` |
 | [graphify-out/cache/ast/v0.9.8/4b937953b2304fdc4fff05af307b498f4aa258c2d5d937be53f1054c074b3af0.json](graphify-out/cache/ast/v0.9.8/4b937953b2304fdc4fff05af307b498f4aa258c2d5d937be53f1054c074b3af0.json) |  | 2026-07-08 | 1KB | `a43d6f02` |
 | [graphify-out/cache/ast/v0.9.8/4be2f5bcfc256eed5494ade8000482ebb38dabdf3822ebd481801bf1a45e25f1.json](graphify-out/cache/ast/v0.9.8/4be2f5bcfc256eed5494ade8000482ebb38dabdf3822ebd481801bf1a45e25f1.json) |  | 2026-07-08 | 19KB | `f7a8dda2` |
@@ -2289,6 +2296,7 @@
 | [graphify-out/cache/ast/v0.9.8/6626ead3e8a7b18fd62d2f0615fca58c9f8c5b2f53a7818ca01153e7ac2ca7cc.json](graphify-out/cache/ast/v0.9.8/6626ead3e8a7b18fd62d2f0615fca58c9f8c5b2f53a7818ca01153e7ac2ca7cc.json) |  | 2026-07-08 | 7KB | `ef7f9f29` |
 | [graphify-out/cache/ast/v0.9.8/66375d86e06b5aff6c3e80aeb9dc0ba68a2b86ad7e37417c83fa56b9e55f17c8.json](graphify-out/cache/ast/v0.9.8/66375d86e06b5aff6c3e80aeb9dc0ba68a2b86ad7e37417c83fa56b9e55f17c8.json) |  | 2026-07-08 | 4KB | `f3f3218d` |
 | [graphify-out/cache/ast/v0.9.8/66a1346195366c12e866a6cfe031e908e010168d69d3dae74f55fd3d1e71ca9a.json](graphify-out/cache/ast/v0.9.8/66a1346195366c12e866a6cfe031e908e010168d69d3dae74f55fd3d1e71ca9a.json) |  | 2026-07-08 | 10KB | `74c2c991` |
+| [graphify-out/cache/ast/v0.9.8/66ab8d72d92a87e99f946a22a0141f312727e25e837c916be301679c94662ebb.json](graphify-out/cache/ast/v0.9.8/66ab8d72d92a87e99f946a22a0141f312727e25e837c916be301679c94662ebb.json) |  | 2026-07-29 | 8KB | `10a203e1` |
 | [graphify-out/cache/ast/v0.9.8/66e30844e1693ae1a4a826e79ac67b77f8fe6d77d12fbf030a679e480b1cbed5.json](graphify-out/cache/ast/v0.9.8/66e30844e1693ae1a4a826e79ac67b77f8fe6d77d12fbf030a679e480b1cbed5.json) |  | 2026-07-08 | 9KB | `1ba787ec` |
 | [graphify-out/cache/ast/v0.9.8/677d62db8f0cbb5175598707950ffff428483c73c1e21b0ffb77e378d51f9d8c.json](graphify-out/cache/ast/v0.9.8/677d62db8f0cbb5175598707950ffff428483c73c1e21b0ffb77e378d51f9d8c.json) |  | 2026-07-08 | 15KB | `ab96ee34` |
 | [graphify-out/cache/ast/v0.9.8/67be740985d7b214d2a4164130dff4b31cd8640f9b2776f5c09e9bad18221e72.json](graphify-out/cache/ast/v0.9.8/67be740985d7b214d2a4164130dff4b31cd8640f9b2776f5c09e9bad18221e72.json) |  | 2026-07-08 | 10KB | `351382a6` |
@@ -2584,6 +2592,7 @@
 | [graphify-out/cache/ast/v0.9.8/a4b417464e1d490893f6c712963b90412d5d02f3f85189e324b4c947892401e4.json](graphify-out/cache/ast/v0.9.8/a4b417464e1d490893f6c712963b90412d5d02f3f85189e324b4c947892401e4.json) |  | 2026-07-07 | 15KB | `d89f7c20` |
 | [graphify-out/cache/ast/v0.9.8/a4e57b554ef81cbfaf8eabfc598d1eeb67d6c3720f8a86821c0de9bb2740ad5b.json](graphify-out/cache/ast/v0.9.8/a4e57b554ef81cbfaf8eabfc598d1eeb67d6c3720f8a86821c0de9bb2740ad5b.json) |  | 2026-07-24 | 54KB | `fb7f8c70` |
 | [graphify-out/cache/ast/v0.9.8/a536969a05ec8c2f63092be767a13864737bfd0a004259703b04cfe1e33cb5c6.json](graphify-out/cache/ast/v0.9.8/a536969a05ec8c2f63092be767a13864737bfd0a004259703b04cfe1e33cb5c6.json) |  | 2026-07-07 | 16KB | `b3ac3ee9` |
+| [graphify-out/cache/ast/v0.9.8/a59ea3dd521155cef11f48247d36f7d75c47dec78e8eda7cc86ce5b9388fc325.json](graphify-out/cache/ast/v0.9.8/a59ea3dd521155cef11f48247d36f7d75c47dec78e8eda7cc86ce5b9388fc325.json) |  | 2026-07-29 | 56KB | `efeccd9d` |
 | [graphify-out/cache/ast/v0.9.8/a5d16e94efd764ebab19b2918b9f6ffc61451109ae6015245000d820f2df1e66.json](graphify-out/cache/ast/v0.9.8/a5d16e94efd764ebab19b2918b9f6ffc61451109ae6015245000d820f2df1e66.json) |  | 2026-07-08 | 19KB | `2d650633` |
 | [graphify-out/cache/ast/v0.9.8/a5db4aa0a1fcfd03fc92577e0240ae3f0d9161d6288db5b10143cffd01bd22f9.json](graphify-out/cache/ast/v0.9.8/a5db4aa0a1fcfd03fc92577e0240ae3f0d9161d6288db5b10143cffd01bd22f9.json) |  | 2026-07-08 | 16KB | `f5387239` |
 | [graphify-out/cache/ast/v0.9.8/a5f063dbf051a316de990c9d754da6d401e9600d028c96adbd1b1bf2f58e2b11.json](graphify-out/cache/ast/v0.9.8/a5f063dbf051a316de990c9d754da6d401e9600d028c96adbd1b1bf2f58e2b11.json) |  | 2026-07-08 | 17KB | `efe593ac` |
@@ -2595,6 +2604,7 @@
 | [graphify-out/cache/ast/v0.9.8/a6e09565398ee5640cfe0c40f0e88506523f5ea2d730b16a8a572cad96cce742.json](graphify-out/cache/ast/v0.9.8/a6e09565398ee5640cfe0c40f0e88506523f5ea2d730b16a8a572cad96cce742.json) |  | 2026-07-08 | 41KB | `5b02d655` |
 | [graphify-out/cache/ast/v0.9.8/a7b2e4e2a6f138e3e48942c1c828349d578e9398ac2f088d1260ba13f807eeb1.json](graphify-out/cache/ast/v0.9.8/a7b2e4e2a6f138e3e48942c1c828349d578e9398ac2f088d1260ba13f807eeb1.json) |  | 2026-07-08 | 8KB | `16710a0d` |
 | [graphify-out/cache/ast/v0.9.8/a7d4e0b0d378c1cc9d3013d43205346d817f8a6de4d03866b02789744a676df4.json](graphify-out/cache/ast/v0.9.8/a7d4e0b0d378c1cc9d3013d43205346d817f8a6de4d03866b02789744a676df4.json) |  | 2026-07-08 | 65KB | `7d6b9889` |
+| [graphify-out/cache/ast/v0.9.8/a8206b8e21ecb51f6b376398dbd79fabce539c6d8ae5f536986da4d61b5002a7.json](graphify-out/cache/ast/v0.9.8/a8206b8e21ecb51f6b376398dbd79fabce539c6d8ae5f536986da4d61b5002a7.json) |  | 2026-07-29 | 3KB | `2211f62e` |
 | [graphify-out/cache/ast/v0.9.8/a86b7035ee0b4077f3ba5e6e8861f2286abe6404971ed336c1f170dab80def68.json](graphify-out/cache/ast/v0.9.8/a86b7035ee0b4077f3ba5e6e8861f2286abe6404971ed336c1f170dab80def68.json) |  | 2026-07-08 | 31KB | `89b561ae` |
 | [graphify-out/cache/ast/v0.9.8/a891bb5de614fffba4be1c4a7a06f4b1e04bd3f36340c754737e8e2df05b8a94.json](graphify-out/cache/ast/v0.9.8/a891bb5de614fffba4be1c4a7a06f4b1e04bd3f36340c754737e8e2df05b8a94.json) |  | 2026-07-08 | 6KB | `90016b03` |
 | [graphify-out/cache/ast/v0.9.8/a8b34029a5cafa149ebbc357c9e23dd94f803b5e426ae650202c9e060be171f7.json](graphify-out/cache/ast/v0.9.8/a8b34029a5cafa149ebbc357c9e23dd94f803b5e426ae650202c9e060be171f7.json) |  | 2026-07-09 | 4KB | `3b330bfd` |
@@ -2616,6 +2626,7 @@
 | [graphify-out/cache/ast/v0.9.8/ac61499103f18f5bf9241312c8e4c50d0c0f7f07e2c3cc5783ae88e4376ad2b2.json](graphify-out/cache/ast/v0.9.8/ac61499103f18f5bf9241312c8e4c50d0c0f7f07e2c3cc5783ae88e4376ad2b2.json) |  | 2026-07-08 | 188KB | `c008109d` |
 | [graphify-out/cache/ast/v0.9.8/ac85d76c2d22a6ed1b460b1b0aeb581b14c6bbb564267b1856ae31c21641e1cc.json](graphify-out/cache/ast/v0.9.8/ac85d76c2d22a6ed1b460b1b0aeb581b14c6bbb564267b1856ae31c21641e1cc.json) |  | 2026-07-08 | 6KB | `309bbf69` |
 | [graphify-out/cache/ast/v0.9.8/ac8ee54ebacd7912dd3157dd784bf021de44a86f802cb0894210fbe5f283d5ad.json](graphify-out/cache/ast/v0.9.8/ac8ee54ebacd7912dd3157dd784bf021de44a86f802cb0894210fbe5f283d5ad.json) |  | 2026-07-10 | 7KB | `00223d89` |
+| [graphify-out/cache/ast/v0.9.8/acd1c113d837fd688106744379e00734762fa9a2e30b56538379387c23a1a6c6.json](graphify-out/cache/ast/v0.9.8/acd1c113d837fd688106744379e00734762fa9a2e30b56538379387c23a1a6c6.json) |  | 2026-07-29 | 10KB | `804130cb` |
 | [graphify-out/cache/ast/v0.9.8/ad0246ef07f80dfba5c8551b498935aecd2a684d13497426d023b20fd69add17.json](graphify-out/cache/ast/v0.9.8/ad0246ef07f80dfba5c8551b498935aecd2a684d13497426d023b20fd69add17.json) |  | 2026-07-08 | 8KB | `89ee3aeb` |
 | [graphify-out/cache/ast/v0.9.8/ad0a16db1fbd0e0fe4e831cc4914cd4a7d9fc20e01c2525cdf5a6e9916e20b5b.json](graphify-out/cache/ast/v0.9.8/ad0a16db1fbd0e0fe4e831cc4914cd4a7d9fc20e01c2525cdf5a6e9916e20b5b.json) |  | 2026-07-08 | 2KB | `692cd2fd` |
 | [graphify-out/cache/ast/v0.9.8/ade7d1955a6e03ddf2b8006bcfbef0db96d7ff1ba58b9a288f7b6d4754eebb8f.json](graphify-out/cache/ast/v0.9.8/ade7d1955a6e03ddf2b8006bcfbef0db96d7ff1ba58b9a288f7b6d4754eebb8f.json) |  | 2026-07-08 | 6KB | `ecf69e42` |
@@ -2706,6 +2717,7 @@
 | [graphify-out/cache/ast/v0.9.8/be9546814d49cd726cbd397251f659ac33d59661422f7d04dbe031a0e8d66cb2.json](graphify-out/cache/ast/v0.9.8/be9546814d49cd726cbd397251f659ac33d59661422f7d04dbe031a0e8d66cb2.json) |  | 2026-07-08 | 8KB | `97b66047` |
 | [graphify-out/cache/ast/v0.9.8/bec4e559877963fa21b701867e185e46e42cb050310f66b7aa66706d532202d1.json](graphify-out/cache/ast/v0.9.8/bec4e559877963fa21b701867e185e46e42cb050310f66b7aa66706d532202d1.json) |  | 2026-07-24 | 107KB | `8ce1cae5` |
 | [graphify-out/cache/ast/v0.9.8/bf12e1fcac0b85bf73aa37e9702c278ce52ac4c73fa89632730a688a677c4181.json](graphify-out/cache/ast/v0.9.8/bf12e1fcac0b85bf73aa37e9702c278ce52ac4c73fa89632730a688a677c4181.json) |  | 2026-07-27 | 3KB | `13ffb184` |
+| [graphify-out/cache/ast/v0.9.8/bf2bc06cad10b87225904ae1cfab7cc57f5a3eb1f0bb387890d619f81e7c157d.json](graphify-out/cache/ast/v0.9.8/bf2bc06cad10b87225904ae1cfab7cc57f5a3eb1f0bb387890d619f81e7c157d.json) |  | 2026-07-29 | 9KB | `cc4f853f` |
 | [graphify-out/cache/ast/v0.9.8/bf4763cd6c0bae7373325a81f43233fe3f13c95691f9a15e6b5893bf486afad1.json](graphify-out/cache/ast/v0.9.8/bf4763cd6c0bae7373325a81f43233fe3f13c95691f9a15e6b5893bf486afad1.json) |  | 2026-07-08 | 136KB | `3fa101a4` |
 | [graphify-out/cache/ast/v0.9.8/bf959e84e1b505dca449324d8cecc6ce0c26b256caeb5db47d1ad818acc5072a.json](graphify-out/cache/ast/v0.9.8/bf959e84e1b505dca449324d8cecc6ce0c26b256caeb5db47d1ad818acc5072a.json) |  | 2026-07-08 | 5KB | `942865d8` |
 | [graphify-out/cache/ast/v0.9.8/bfb866d646b4061024f4d6f408d0594865f1127edde458cd9d65b663a84e0c77.json](graphify-out/cache/ast/v0.9.8/bfb866d646b4061024f4d6f408d0594865f1127edde458cd9d65b663a84e0c77.json) |  | 2026-07-07 | 13KB | `aa169424` |
@@ -2727,6 +2739,7 @@
 | [graphify-out/cache/ast/v0.9.8/c349a774b749129d6c5228e99110cee08d5446ae4cdca7bf269a0ac13ce689eb.json](graphify-out/cache/ast/v0.9.8/c349a774b749129d6c5228e99110cee08d5446ae4cdca7bf269a0ac13ce689eb.json) |  | 2026-07-08 | 30KB | `d3be285a` |
 | [graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json](graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json) |  | 2026-07-23 | 18KB | `2bb95e05` |
 | [graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json](graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json) |  | 2026-07-22 | 9KB | `a7476293` |
+| [graphify-out/cache/ast/v0.9.8/c4a5ce7f810bdc4be399f752481cd5210855657f659e72dc79cb31d8f1d5bd13.json](graphify-out/cache/ast/v0.9.8/c4a5ce7f810bdc4be399f752481cd5210855657f659e72dc79cb31d8f1d5bd13.json) |  | 2026-07-29 | 8KB | `2ba02d33` |
 | [graphify-out/cache/ast/v0.9.8/c4a6d325b610018dfe2e5b888de24daed5e156505f64dbf0b529d09707f2571f.json](graphify-out/cache/ast/v0.9.8/c4a6d325b610018dfe2e5b888de24daed5e156505f64dbf0b529d09707f2571f.json) |  | 2026-07-25 | 15KB | `7bea32cf` |
 | [graphify-out/cache/ast/v0.9.8/c4bc6ccd49090ed7f0b4f4365d3e565bd7121a1ae5d42a1d75177e015c39a716.json](graphify-out/cache/ast/v0.9.8/c4bc6ccd49090ed7f0b4f4365d3e565bd7121a1ae5d42a1d75177e015c39a716.json) |  | 2026-07-29 | 56KB | `15360e42` |
 | [graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json](graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json) |  | 2026-07-08 | 12KB | `e2bdad62` |
@@ -2891,6 +2904,7 @@
 | [graphify-out/cache/ast/v0.9.8/ea07f2f163d3405507f072a04d10adfa8c149f015a1122abfd4d9388498d8263.json](graphify-out/cache/ast/v0.9.8/ea07f2f163d3405507f072a04d10adfa8c149f015a1122abfd4d9388498d8263.json) |  | 2026-07-08 | 3KB | `cc1d1250` |
 | [graphify-out/cache/ast/v0.9.8/ea0ef3612d7481bf2119ed17bd429538e878ec09b0d50f5d4c4a3c4852cb4d72.json](graphify-out/cache/ast/v0.9.8/ea0ef3612d7481bf2119ed17bd429538e878ec09b0d50f5d4c4a3c4852cb4d72.json) |  | 2026-07-27 | 135KB | `4b98ef9c` |
 | [graphify-out/cache/ast/v0.9.8/ea3985d54e60995524c40f11ac2db0b088c08a1a64295dbd270a9b50c2d07abc.json](graphify-out/cache/ast/v0.9.8/ea3985d54e60995524c40f11ac2db0b088c08a1a64295dbd270a9b50c2d07abc.json) |  | 2026-07-08 | 108KB | `dd8f338e` |
+| [graphify-out/cache/ast/v0.9.8/ea4a9f5930d10c330e62948b8001690bd8a3b39d7442c63790386419da322779.json](graphify-out/cache/ast/v0.9.8/ea4a9f5930d10c330e62948b8001690bd8a3b39d7442c63790386419da322779.json) |  | 2026-07-29 | 7KB | `d09b1dc6` |
 | [graphify-out/cache/ast/v0.9.8/ea59e2d3d463e17fd8db346e1f24a73be19b086d47e6bf365aa13baff0f624a5.json](graphify-out/cache/ast/v0.9.8/ea59e2d3d463e17fd8db346e1f24a73be19b086d47e6bf365aa13baff0f624a5.json) |  | 2026-07-08 | 10KB | `9ae160dd` |
 | [graphify-out/cache/ast/v0.9.8/ea716e5082a551d5c8fe23201c28c7b2fe21d2291ff4170a299a23b7f0ea2c8a.json](graphify-out/cache/ast/v0.9.8/ea716e5082a551d5c8fe23201c28c7b2fe21d2291ff4170a299a23b7f0ea2c8a.json) |  | 2026-07-08 | 9KB | `15228566` |
 | [graphify-out/cache/ast/v0.9.8/eaefab7a894c95bd29aa9315a758d85b358620ceb3a1c4d1f92ef206022f4779.json](graphify-out/cache/ast/v0.9.8/eaefab7a894c95bd29aa9315a758d85b358620ceb3a1c4d1f92ef206022f4779.json) |  | 2026-07-07 | 14KB | `d9991119` |

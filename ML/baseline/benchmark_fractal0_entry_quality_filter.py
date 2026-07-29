@@ -1797,7 +1797,7 @@ def run_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     run_base = {**stop_policy, **_entry_rule(), **{"mask_id": MASK_ID, "kind": "none"}, **exit_rule, "spread": base.CONFIG.canonical_spread}
     entry_cache = {}
     for split, rows in splits.items():
-        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), base.CONFIG.canonical_spread, stop_policy)
+        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), base.CONFIG.canonical_spread, stop_policy, execution_ohlc)
         entries = attach_movement_scores(entries, frozen_scores, split)
         entry_cache[split] = entries
         print(f"prepared entries split={split} rows={len(entries)} filled={int(entries['filled'].sum()) if len(entries) else 0}", flush=True)
@@ -1985,7 +1985,7 @@ def run_rich_entry_quality(args: argparse.Namespace) -> dict[str, object]:
     labels_by_split: dict[str, pd.DataFrame] = {}
     planned_diagnostics: list[dict[str, object]] = []
     for split, rows in splits.items():
-        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), active_spread, stop_policy)
+        entries = base.build_entry_rows(rows, ohlc, _entry_rule(), active_spread, stop_policy, execution_ohlc)
         entries = attach_movement_scores(entries, frozen_scores, split)
         entry_cache[split] = entries
         simulated = base._simulate_entries(entries, ohlc, run_base, active_spread, pd.DataFrame(), execution_ohlc)

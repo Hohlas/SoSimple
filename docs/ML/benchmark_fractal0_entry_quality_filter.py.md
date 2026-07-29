@@ -36,8 +36,8 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_quali
 ## Входы
 
 - `DATA/XAUUSD_H1_OHLC.csv`
-- `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` — только для порядка исполнения внутри
-  H1-свечи
+- `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` — только для timestamp лимитного fill и
+  порядка исполнения внутри H1-свечи после fill
 - `DATA/Nero_XAUUSD_train_labeled.csv`
 - `DATA/Nero_XAUUSD_validation_labeled.csv`
 - `ML/reports/entry_based_movement_filter_freeze.json`

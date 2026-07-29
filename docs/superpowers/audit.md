@@ -1,234 +1,155 @@
-# Аудит плана `2026-07-29-fixed11-python-h1-chronology-fix`
+# Аудит отчёта `2026-07-29-fixed11-python-h1-chronology-fix`
 
-Проверялся план `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`.
-Читал только связанные первоисточники: методики `01`, `03`, `06`, `10`,
-`12`, `13`, `16`, `docs/DATA_FLOW.md`, отчёты
-`2026-07-29-fixed11-python-mt4-fill-chronology.md` и
-`2026-07-29-fixed11-current-history-rerun.md`, текущие runner/test-файлы и
-минимальные сведения из JSON/CSV-артефактов. `knowledge-rag` использовался как
-поиск кандидатов, `graphify query` - как карта связей; выводы ниже проверены по
-файлам.
+Проверяемый файл: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`
 
-## Итог
+Проверка выполнена по связанным первоисточникам: плану
+`docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`,
+методике `docs/methodology`, затронутому коду, тестам и новым
+`ML/reports/*_h1_chronology_fix*` артефактам. `knowledge-rag` и `graphify`
+использовались только как навигация, выводы ниже подтверждены файлами и
+командами.
 
-Основная постановка плана подтверждена: текущий Python-код действительно хранит
-для limit fill только H1 `fill_time`, а M5 используется только для спорного
-порядка SL/TP внутри H1. План правильно ограничивает результат статусом
-`DIAGNOSTIC_ONLY` и не предлагает менять rules/cutoffs/models.
+## Подтверждено
 
-Найдены замечания, которые стоит исправить до выполнения плана, чтобы не
-получить частичное исправление хронологии.
+- Ключевые числа отчёта совпадают с
+  `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json` и
+  `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
+- Hash для двух указанных в отчёте primary artifacts совпадает с `sha256sum`.
+- Точечные тесты из отчёта проходят:
+  `./.venv/bin/python -m pytest tests/test_fractal0_entry_exit_grid.py -q`
+  → `50 passed`;
+  `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_rich_entry_locked_test.py -q`
+  → `2 passed`.
+- Старые locked-test/current-history артефакты не перезаписаны:
+  `git diff -- ML/reports/fractal0_fixed11_rich_entry_locked_test.json ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv`
+  вернул пустой diff.
 
-## 1. Команда запуска тестов содержит неправильное имя теста
+---
 
-- **Важность**: важно
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 1 Step 2 и Step 4, строки 136 и 224-228
-- **Суть проблемы**: план предлагает создать тест
-  `test_ml_exit_on_h1_open_is_not_processed_before_m5_fill_in_same_h1`, но в
-  команде pytest указан другой тест:
-  `test_ml_exit_on_h1_open_is_ignored_when_m5_fill_happens_later_in_same_h1`.
-- **Доказательство**:
-  - определение теста в плане: строка 136;
-  - команда pytest в плане: строки 224-228.
-- **Почему это важно**: команда не проверит нужный тест и завершится ошибкой
-  "not found" или создаст ложное впечатление, что failure относится к
-  симулятору, а не к опечатке в плане.
-- **Рекомендуемое исправление**: привести имя в команде к фактическому имени
-  теста или переименовать сам тест. Лучше использовать одно имя:
-  `test_ml_exit_on_h1_open_is_not_processed_before_m5_fill_in_same_h1`.
+## 1. Финальный `DIAGNOSTIC_ONLY` не воспроизводится командами из отчёта
 
-## 2. План допускает same-H1 `ML_CLOSE` без реального post-fill ML decision timestamp
+- **Важность:** важно
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, раздел `Verification`, строки 66-76; раздел `Results`, строка 90
+- **Суть проблемы:** отчёт говорит, что после принудительной диагностической маркировки итог стал `verdict=DIAGNOSTIC_ONLY`, но в списке команд указана только runner-команда. Эта команда сама по себе пишет исходный verdict `reject` или `candidate_check_required`, а не финальный diagnostic override.
+- **Доказательство:**
+  - В отчёте перечислены только две pytest-команды и runner-команда: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:70-73`.
+  - Код wrapper-а создаёт `selection_df["decision"]` как `KEEP_CANDIDATE` или `REJECT`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:256-268`.
+  - Код wrapper-а пишет JSON verdict как `candidate_check_required` или `reject`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:284-288`.
+  - `main()` только печатает этот artifact, отдельного diagnostic override там нет: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:355-357`.
+  - Текущий JSON уже содержит patched поля `verdict=DIAGNOSTIC_ONLY`, `allowed_max_verdict=DIAGNOSTIC_ONLY`, `original_runner_verdict=reject`: команда
+    `rg -n "verdict|allowed_max_verdict|original_runner_verdict" ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
+- **Почему это важно:** следующий запуск команды из отчёта может перезаписать финальный JSON/selection CSV в недиагностическом виде и сломать hash-и, приведённые в отчёте. Это нарушает требование воспроизводимости из `docs/methodology/16-reporting-audit.md:31` и `docs/methodology/16-reporting-audit.md:106-110`.
+- **Рекомендуемое исправление:** добавить в `Verification` точную команду post-processing из плана, которая ставит `DIAGNOSTIC_ONLY` и diagnostic selection columns, либо лучше добавить в wrapper явный флаг вроде `--diagnostic-only --allowed-max-verdict DIAGNOSTIC_ONLY` и обновить отчёт/команды под этот флаг.
 
-- **Важность**: критично
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 2 Step 8, строки 473-482
-- **Суть проблемы**: план сам пишет, что same-H1 `ML_CLOSE` может быть валиден
-  только при будущем наличии реального post-fill ML decision timestamp внутри H1
-  (строка 482), но предложенный predicate разрешит `ML_CLOSE` на fill-H1, если
-  `decision_time == fill_execution_time`. В текущем коде такого реального
-  внутрибаравого ML decision timestamp нет: `decision_time` строится как H1 time.
-- **Доказательство**:
-  - текущий `build_exit_decision_rows(...)` задаёт
-    `decision_time = pd.Timestamp(times[idx])` и
-    `first_exit_execution_time = pd.Timestamp(times[idx + 1])`:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:732-736`;
-  - отчёт о проблеме фиксирует, что `decision_time` получает H1 timestamp, а не
-    M5 timestamp:
-    `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md:136-143`;
-  - roadmap формулирует это как ещё нерешённый выбор контракта:
-    либо первое `MLClose` не раньше следующего закрытого H1, либо нужен настоящий
-    lower-timeframe timestamp:
-    `docs/superpowers/roadmap.md:70-78`;
-  - методика требует исполнимость после доступности признаков и runtime delay:
-    `docs/methodology/03-feature-contract-leakage.md:101`,
-    `docs/methodology/12-backtest-costs.md:68-70`.
-- **Почему это важно**: можно исправить timestamp fill, но оставить в системе
-  неподтверждённый выход `ML_CLOSE` на том же H1-баре. Тогда ключевая причина
-  `hold_bars=0`/same-H1 риска будет закрыта не полностью.
-- **Рекомендуемое исправление**: в текущем H1 ML-exit контракте явно запретить
-  `ML_CLOSE` на H1-баре fill, пока не добавлен и не доказан отдельный
-  post-fill ML decision timestamp. Альтернатива: добавить в данные и тесты
-  отдельное поле реального времени ML-выхода внутри H1 и использовать его вместо
-  H1 `decision_time`.
+---
 
-## 3. Missing M5 fill touch превращается в H1-open fallback и теряет статус неизвестности
+## 2. `ml_exit_timing_contract` заявлен сильнее, чем доказано текущими колонками
 
-- **Важность**: важно
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 2 Step 3, строки 362-367
-- **Суть проблемы**: если H1 говорит, что limit fill был, но M5 окно не
-  подтверждает касание, план предлагает заменить `fill_execution_time` на H1
-  `fill_time`. Это снова делает сделку существующей с открытия H1 и маскирует
-  отсутствие доказанного M5 fill.
-- **Доказательство**:
-  - fallback в плане: строки 362-367;
-  - предыдущий аудит уже находил группу `M5 no hit = 135` для hold0
-    `ML_CLOSE` сделок:
-    `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md:274-284`;
-  - методика по младшему таймфрейму требует учитывать отсутствие младших свечей
-    и заранее заданный fallback:
-    `docs/methodology/12-backtest-costs.md:92-98`;
-  - raw-data методика понижает execution-выводы до `DIAGNOSTIC_ONLY`, если
-    source/timezone/price convention младшего таймфрейма не доказаны:
-    `docs/methodology/01-raw-data-inventory.md:35-46`.
-- **Почему это важно**: после исправления невозможно будет отличить "M5 доказал
-  fill на открытии H1" от "M5 не подтвердил fill, но мы молча подставили H1".
-  Это ухудшает аудит и может оставить часть невозможных same-H1 выходов.
-- **Рекомендуемое исправление**: добавить поля вроде
-  `fill_execution_time_source` (`m5_touch`, `h1_fallback`, `missing_m5_touch`)
-  и `fill_execution_confirmed`. Для `missing_m5_touch` не разрешать same-H1
-  `ML_CLOSE`; для SL/TP применять явно описанный fallback и отражать число таких
-  случаев в отчёте.
+- **Важность:** важно
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 23, 34, 108-110
+- **Суть проблемы:** отчёт и JSON заявляют `feature_time <= decision_time <= execution_time`, но `decision_time` в `build_exit_decision_rows(...)` хранит timestamp H1-бара, из которого уже берутся `high/low/close`. Если H1 `time` означает начало часа, то эти признаки становятся известны только на следующем H1-open, то есть не к записанному `decision_time`.
+- **Доказательство:**
+  - M5-окно для H1 строится как `[h1_time, h1_time + 1 hour)`, значит `h1_time` используется как начало H1-бара: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:415-428`.
+  - В `build_exit_decision_rows(...)` признаки берутся из `highs/lows/closes[idx]`: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:807-819`.
+  - В той же строке `decision_time` пишется как `times[idx]`, а `first_exit_execution_time` как `times[idx + 1]`: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:839-840`.
+  - Тест закрепляет именно такую схему: при барах `10:00, 11:00, 12:00` первая строка имеет `decision_time=11:00`, `first_exit_execution_time=12:00`: `tests/test_fractal0_entry_exit_grid.py:502-507` и `tests/test_fractal0_entry_exit_grid.py:553-583`.
+  - Методика требует явно зафиксировать open/close бара и момент решения: `docs/methodology/03-feature-contract-leakage.md:46-56`, `docs/methodology/03-feature-contract-leakage.md:81-84`.
+- **Почему это важно:** downstream может прочитать `decision_time=11:00` как момент, когда модель уже могла принять решение, хотя признаки H1-бара `11:00-12:00` доступны только после закрытия этого бара. Это создаёт риск ошибки в будущем export/parity и делает JSON-контракт неоднозначным.
+- **Рекомендуемое исправление:** либо заменить/дополнить поля на явные `decision_bar_time`, `feature_available_time`, `ml_decision_time`, `first_exit_execution_time`; либо писать `decision_time = times[idx + 1]`, если решение действительно принимается после закрытия бара `idx`. В отчёте уточнить, что текущий `decision_time` является меткой feature bar, а не фактическим временем доступности решения, если сохраняется старое имя.
 
-## 4. Не покрыт случай, когда fill и SL/TP попадают в одну M5-свечу
+---
 
-- **Важность**: важно
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 1 Mandatory Checks и Task 2 Step 7, строки 76-80 и 421-465
-- **Суть проблемы**: план проверяет SL после fill на следующей M5-свече, но не
-  проверяет случай, где сама M5-свеча fill одновременно содержит SL или TP. M5
-  OHLC в таком случае не доказывает, что было раньше внутри этих пяти минут.
-- **Доказательство**:
-  - обязательные проверки плана перечисляют fill в `10:10` и SL после fill, но
-    не содержат теста на double-touch в самой fill-M5 свече: строки 76-80;
-  - предложенный lower bound оставляет M5-свечу с `time >= fill_execution_time`,
-    то есть включает саму fill-свечу: строки 440-441;
-  - текущий resolver при одновременном `stop_hit` и `tp_hit` возвращает SL с
-    `ambiguous=True`, но не знает порядок limit fill относительно SL/TP внутри
-    той же M5-свечи:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:536-545`;
-  - методика требует fallback, если младший таймфрейм тоже ambiguous:
-    `docs/methodology/12-backtest-costs.md:92-95`.
-- **Почему это важно**: цель плана - восстановить порядок
-  `limit fill -> SL/TP/MLClose/timeout`. M5 даёт только порядок между M5-свечами,
-  но не внутри одной M5-свечи. Без отдельного правила часть сделок получит
-  недоказанный порядок.
-- **Рекомендуемое исправление**: добавить синтетический тест на fill-M5 candle
-  double-touch и явно выбрать fallback: например `SL first` с `ambiguous=True`,
-  либо помечать сделку отдельным reason/flag. В отчёт добавить счётчик таких
-  случаев.
+## 3. `Changed Files` неполный относительно фактических изменений этапа
 
-## 5. В плане нет обновления machine-readable execution contract в JSON
+- **Важность:** важно
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 58-64
+- **Суть проблемы:** раздел перечисляет только пять файлов, но текущий этап фактически изменил больше связанных файлов документации/контекста и создал новые docs/ML/report artifacts.
+- **Доказательство:**
+  - В отчёте указаны только `benchmark_fractal0_entry_exit_grid.py`, `benchmark_fractal0_entry_quality_filter.py`, `run_fractal0_fixed11_rich_entry_locked_test.py`, `tests/test_fractal0_entry_exit_grid.py`, сам новый report: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:58-64`.
+  - `git diff --name-only` показывает также `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `MODULE_INDEX.md`, `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`, `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`, `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, `docs/superpowers/roadmap.md`, `wiki/REPO_integrity.md`, `wiki/index.md`, `wiki/log.md`, `wiki/research/fractal-stop-research.md`.
+  - `git ls-files --others --exclude-standard` показывает новые `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`, `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`, `docs/ML/run_fractal0_fixed11_rich_entry_locked_test.py.md`, `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`.
+  - Методика отчётности включает `modified files` во входы отчёта: `docs/methodology/16-reporting-audit.md:7-14`.
+- **Почему это важно:** следующий агент не увидит полный объём синхронизации контекста и может пропустить связанные изменения в wiki/changelog/module docs.
+- **Рекомендуемое исправление:** расширить раздел `Changed Files` или разделить его на `Code/test changes`, `Documentation/context changes`, `Generated artifacts`. Включить все изменённые связанные файлы либо явно написать, что список намеренно показывает только source/test файлы, а остальные перечислены отдельно.
 
-- **Важность**: важно
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 3 Step 2 и Task 4, строки 563-581 и 703-745
-- **Суть проблемы**: план патчит только top-level `verdict`/`decision`, но не
-  требует записать в JSON новый execution contract: как именно используется M5,
-  что означает `fill_execution_time`, какой fallback применяется при missing M5
-  и как ограничены same-H1 выходы.
-- **Доказательство**:
-  - текущий grid JSON writer для M5 пишет старый режим
-    `execution_ohlc_usage = resolve_same_h1_bar_tp_sl_order_only`:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:1467`;
-  - fixed11 runner JSON сейчас содержит `execution_contract` только с
-    stop/entry/mask/exit/spread, но не содержит `execution_ohlc_usage`:
-    `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:304-310`;
-  - методика требует paths, hashes, rules и воспроизводимый отчёт:
-    `docs/methodology/16-reporting-audit.md:31`,
-    а backtest-методика требует зафиксировать price/execution convention:
-    `docs/methodology/12-backtest-costs.md:52-58`.
-- **Почему это важно**: следующий агент не сможет по structured artifact
-  отличить старый fixed11 rerun от исправленного, кроме наличия новой колонки.
-  Это повышает риск неверного сравнения и неверной MT4 parity постановки.
-- **Рекомендуемое исправление**: изменить runner так, чтобы новый JSON содержал,
-  например:
-  `execution_ohlc_usage=limit_fill_timestamp_and_same_h1_post_fill_event_order`,
-  `fill_execution_time_contract`, `same_h1_ml_close_policy`,
-  `missing_m5_fill_policy`, `fill_m5_double_touch_policy` и счётчики по каждой
-  категории.
+---
 
-## 6. `_entry_cache_for_spread` и общий grid CLI останутся без M5 fill timestamp
+## 4. Раздел `Artifacts` пропускает два generated CSV и не даёт hashes для большинства outputs
 
-- **Важность**: важно
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 2 Step 4, строки 369-395
-- **Суть проблемы**: план меняет fixed11 wrapper и два rich/current-history
-  вызова, но не меняет общий `_entry_cache_for_spread(...)`. При запуске
-  `benchmark_fractal0_entry_exit_grid.py` с `--execution-ohlc-path` entry cache
-  всё равно будет строиться без M5 fill timestamp.
-- **Доказательство**:
-  - текущий `_entry_cache_for_spread(...)` вызывает `build_entry_rows(...)` без
-    `execution_ohlc`:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:955-977`;
-  - `run_matrix(...)` загружает `execution_ohlc`:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:1312-1316`;
-  - затем симуляция получает `execution_ohlc`, но entry rows уже не содержат
-    фактического M5 fill timestamp:
-    `ML/baseline/benchmark_fractal0_entry_exit_grid.py:1361-1369`;
-  - план в self-review заявляет, что code exposes `fill_execution_time` в
-    entries/trades и scope включает `ML/baseline/benchmark_fractal0_entry_exit_grid.py`:
-    `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md:828-831`.
-- **Почему это важно**: fixed11 path может быть исправлен, но базовый runner,
-  который создаёт исходные stop-grid/M5 артефакты, останется с прежним
-  неполным контрактом. Это создаст два несовместимых режима с одинаковым
-  названием `execution_ohlc_path`.
-- **Рекомендуемое исправление**: расширить `_entry_cache_for_spread(...)`
-  параметром `execution_ohlc` и передавать его из `run_matrix(...)` для
-  canonical и stress cache. Обновить monkeypatch-тест
-  `tests/test_fractal0_entry_exit_grid.py:254-264`, чтобы fake function
-  принимала новый параметр.
+- **Важность:** улучшение
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 78-84
+- **Суть проблемы:** wrapper создаёт `_yearly.csv` и `_side.csv`, эти файлы существуют, но в отчёте они не перечислены. Hash-и указаны только для JSON и trades CSV, хотя методика требует фиксировать paths и hashes.
+- **Доказательство:**
+  - Отчёт перечисляет JSON, trades, summary, selection и comparison: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:78-84`.
+  - Фактически существуют также `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix_yearly.csv` и `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix_side.csv`: команда `ls -l ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix* ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`.
+  - Код wrapper-а всегда пишет `summary_csv`, `trades_csv`, `yearly_csv`, `side_csv`, `selection_csv`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:270-282`.
+  - Hash-и для неуказанных/нехешированных файлов по текущей рабочей копии:
+    - `summary.csv`: `b9a00b19c19200b4e939829327c12d43d6cc3dec6e1d064a0b725918d0979b66`
+    - `selection.csv`: `1ba8896906196b2978d6526ca699dd42f5b002c9a682640c8544aef798cb11a6`
+    - `side.csv`: `cc1aa29ac7bc39bd464b66faa8c0c5e67deab0382a527710fafba5be3e8b9ed0`
+    - `yearly.csv`: `893ddc92eaf249082587bee5fcd2b3418890a2c5ef33b9dfcc828cdf2942ca6a`
+    - `comparison.json`: `65c0a1129d1883fb1f50ac79c4e3468a1fb43dfacaa7e198163aa057dcdb3ef3`
+  - Методика требует указывать paths и hashes: `docs/methodology/16-reporting-audit.md:31`; ключевые числа должны сверяться со structured artifact: `docs/methodology/16-reporting-audit.md:96-97`.
+- **Почему это важно:** отчёт хуже воспроизводится: часть generated outputs остаётся “невидимой”, а hashes для CSV, по которым можно проверять yearly/side/selection, отсутствуют.
+- **Рекомендуемое исправление:** добавить `_yearly.csv` и `_side.csv` в `Artifacts`; добавить sha256 для всех generated outputs или явно обозначить primary/secondary artifacts и дать hash хотя бы для всех файлов, из которых берутся выводы.
 
-## 7. Selection CSV продолжит писать `KEEP_CANDIDATE`, хотя rerun должен быть diagnostic-only
+---
 
-- **Важность**: улучшение
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 3 Step 2, строки 563-581
-- **Суть проблемы**: план принудительно меняет top-level JSON verdict на
-  `DIAGNOSTIC_ONLY`, но не уточняет, что делать с
-  `_selection.csv`, где runner продолжает писать `KEEP_CANDIDATE`/`REJECT`.
-- **Доказательство**:
-  - текущий fixed11 runner создаёт `selection_df["decision"]` как
-    `KEEP_CANDIDATE` по PF/BS/N gate:
-    `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:256-267`;
-  - проверка текущего current-history selection CSV показала первые строки с
-    `decision=KEEP_CANDIDATE`;
-  - методика требует явно запрещать неверные интерпретации и отделять
-    diagnostic PnL/PF:
-    `docs/methodology/16-reporting-audit.md:79-86`,
-    `docs/methodology/16-reporting-audit.md:90-103`.
-- **Почему это важно**: даже при правильном JSON следующий агент может открыть
-  `_selection.csv` и ошибочно воспринять `KEEP_CANDIDATE` как новый candidate
-  verdict после изменения execution convention.
-- **Рекомендуемое исправление**: либо изменить selection CSV для этого output
-  prefix на `DIAGNOSTIC_KEEP_GATE_PASSED`/`DIAGNOSTIC_REJECT_GATE_FAILED`, либо
-  добавить рядом отдельную колонку `allowed_max_verdict=DIAGNOSTIC_ONLY` и
-  явно описать в отчёте, что `KEEP_CANDIDATE` является legacy gate output, а не
-  итоговым verdict.
+## 5. Нет раскрытия scaler/normalization для movement-score части wrapper-а
 
-## 8. Отчётный шаблон не содержит обязательного уровня этапа и changed files
+- **Важность:** важно
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, разделы `Methodology`, `What Was Done`, `Split Disclosure`; `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`
+- **Суть проблемы:** отчёт корректно говорит, что M5 не стал ML input, но не раскрывает scaler/normalization contract для части, где wrapper заново считает `movement_score` для locked_test.
+- **Доказательство:**
+  - Wrapper использует `RobustScaler`, fit на train features и transform locked_test features: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:80`, `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:98-101`.
+  - Затем обучает модель и пишет `movement_score`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:104-116`.
+  - JSON содержит только краткое поле `movement_score_for_locked_test`, без `normalization_config`, `normalized_feature_distribution_audit` или `scale_contract`: `rg -n "normalization_config|scale_contract|normalized_feature_distribution_audit|movement_score_for_locked_test" ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
+  - Методика требует для моделей со scaler/normalization указать `normalization_config`, где fit-ился scaler, audit распределений и `scale_contract`: `docs/methodology/16-reporting-audit.md:33-42`, `docs/methodology/16-reporting-audit.md:98-100`.
+- **Почему это важно:** даже при `DIAGNOSTIC_ONLY` следующий агент должен понимать, что отрицательный rerun не вызван скрытым изменением preprocessing/scaler-контракта. Сейчас это можно проверить только через код, а не через отчёт/JSON.
+- **Рекомендуемое исправление:** добавить в отчёт и JSON отдельный блок: `movement_score_model_contract`, `normalization_config=RobustScaler fit on train only`, `locked_test_not_used_for_scaler_fit=true`, ссылку на исходный frozen movement protocol или явное объяснение, почему A7/scale audit не применялся в этом debug rerun.
 
-- **Важность**: улучшение
-- **Место**: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`, Task 4 Step 1, строки 707-738
-- **Суть проблемы**: план требует секции `Methodology`, `What Changed`,
-  `Commands`, `Artifacts`, но не требует отдельные секции "уровень этапа" и
-  "changed files", которые прямо перечислены в методике отчётности.
-- **Доказательство**:
-  - обязательный шаблон плана: строки 707-738;
-  - методика отчётности требует указать уровень этапа и секцию `Changed Files`:
-    `docs/methodology/16-reporting-audit.md:18-30`;
-  - она также требует отличать поисковый/проверочный уровень:
-    `docs/methodology/16-reporting-audit.md:88-92`.
-- **Почему это важно**: этот план меняет execution convention после уже
-  открытого locked_test. Без явного уровня этапа и списка changed files отчёт
-  будет хуже защищать от неверного повышения статуса.
-- **Рекомендуемое исправление**: добавить в шаблон секции `## Stage Level` и
-  `## Changed Files`, где зафиксировать:
-  `diagnostic verification rerun`, `allowed_max_verdict=DIAGNOSTIC_ONLY`,
-  список изменённых code/docs/artifact files и запрет трактовать rerun как
-  новый locked-test PASS.
+---
+
+## 6. Уровень этапа сформулирован двусмысленно относительно методики
+
+- **Важность:** улучшение
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 15-17
+- **Суть проблемы:** отчёт называет этап “Проверочный debug/parity этап”. По смыслу это diagnostic rerun после изменения контракта, а не полноценная проверочная candidate-стадия. Формулировка может быть прочитана как confirmatory-проверка, хотя сам отчёт правильно ставит `DIAGNOSTIC_ONLY`.
+- **Доказательство:**
+  - Строка отчёта: `Проверочный debug/parity этап`: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:15-17`.
+  - Методика требует явно указать уровень “поисковый / проверочный” и для проверочного уровня указать, что было заморожено до запуска: `docs/methodology/16-reporting-audit.md:18-23`, `docs/methodology/16-reporting-audit.md:90-92`.
+  - Методика locked-test говорит, что смена execution convention после freeze делает такой locked_test невалидным как тот же проверочный результат: `docs/methodology/10-frozen-test-oos.md:27-38`, `docs/methodology/10-frozen-test-oos.md:47-54`.
+- **Почему это важно:** статус `DIAGNOSTIC_ONLY` выставлен правильно, но слово “проверочный” без уточнения может создать ложное ощущение, что это новый confirmatory locked-test.
+- **Рекомендуемое исправление:** заменить на более точное: “Диагностический debug/parity rerun в проверочном контуре; не новый confirmatory locked-test и не candidate evidence”. В `Multiple Testing Context` добавить `lifecycle_status=diagnostic_rerun_after_contract_bugfix`.
+
+---
+
+## 7. `Multiple Testing Context` не раскрывает cumulative budget и изменение fill convention в машинно-читаемом виде
+
+- **Важность:** улучшение
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 48-56
+- **Суть проблемы:** отчёт указывает, что новых rules/cutoffs/profiles/models/targets/filters/spreads не было, но методика требует current и cumulative search budget с учётом entry/exit policy, spread/fill convention, transforms/scalers и filters. Изменение ML-exit feature contract и fill/execution convention описано текстом, но не раскрыто в самом budget-блоке.
+- **Доказательство:**
+  - Текущий блок содержит только `fixed rules tested: 11`, `new rules/cutoffs/profiles/models/targets/filters/spreads: 0`, `status: diagnostic rerun`: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:48-56`.
+  - Методика требует current и cumulative search budget с перечислением моделей, профилей, таргетов, сторон, горизонтов, seed, инструментов, entry/exit policy, spread/fill convention, transforms/scalers, filters и параметров: `docs/methodology/16-reporting-audit.md:18-23`.
+  - JSON содержит `current_search_budget`, но там тоже нет явного `changed_fill_convention=true` или ссылки на cumulative budget id: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:333-335`.
+- **Почему это важно:** именно изменение fill/execution convention является причиной `DIAGNOSTIC_ONLY`. Если оно не отражено в budget-блоке, будущий читатель может ошибочно считать rerun тем же frozen-chain экспериментом с нулевым изменением условий.
+- **Рекомендуемое исправление:** расширить блок до явного вида:
+  `current_search_budget: fixed_rules=11, new_selection=0, changed_ml_exit_feature_contract=true, changed_fill_execution_convention=true, changed_spread=false`;
+  `cumulative_search_budget: inherited_from=<fixed11 reports>`;
+  `allowed_max_verdict=DIAGNOSTIC_ONLY`.
+
+---
+
+## 8. Для проваленного fixed11 path не указано, выполнен ли post-mortem или почему он отложен
+
+- **Важность:** улучшение
+- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 116-142
+- **Суть проблемы:** вывод говорит, что edge исчез и ветку нужно остановить или перевести в post-mortem, но отчёт не фиксирует, выполнен ли post-mortem или почему он не выполнялся в этом этапе.
+- **Доказательство:**
+  - Вывод: `PF max < 1`, path должен быть остановлен или переведён в post-mortem: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:116-118`.
+  - Next Step предлагает принять решение между post-mortem и diagnostic-only MT4 parity: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:137-142`.
+  - Методика требует для `FAIL`/`reject` результата указать, выполнен ли post-mortem, а если нет — причину: `docs/methodology/16-reporting-audit.md:57-62`, `docs/methodology/16-reporting-audit.md:102-104`.
+- **Почему это важно:** результат фактически `reject` до diagnostic marking (`original_runner_verdict=reject`) и разрушает старый edge. Без явного post-mortem status следующий шаг остаётся менее определённым.
+- **Рекомендуемое исправление:** добавить короткий блок `Post-mortem status`: `not done in this stage; reason: chronology bug explains invalidation, separate A5 post-mortem required only if continuing fixed11 mechanics` либо сразу оформить post-mortem как следующий обязательный документ перед новой исследовательской веткой.
 

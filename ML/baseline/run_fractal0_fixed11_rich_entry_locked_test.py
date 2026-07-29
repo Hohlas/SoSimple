@@ -145,7 +145,7 @@ def run_locked_test(args: argparse.Namespace) -> dict[str, Any]:
     entry_cache: dict[str, pd.DataFrame] = {}
     labels_by_split: dict[str, pd.DataFrame] = {}
     for split in ("train_core", "val_select", "locked_test"):
-        entries = base.build_entry_rows(splits[split], ohlc, entry_rule, active_spread, stop_policy)
+        entries = base.build_entry_rows(splits[split], ohlc, entry_rule, active_spread, stop_policy, execution_ohlc)
         if split == "locked_test":
             entries = compute_locked_movement_scores(entries, splits["train_core"], splits["locked_test"], int(args.threads))
         else:
@@ -266,6 +266,19 @@ def run_locked_test(args: argparse.Namespace) -> dict[str, Any]:
         "",
         "failed predefined PF/BS/sample-size gate",
     )
+    if args.diagnostic_only:
+        selection_df["legacy_gate_decision"] = selection_df["decision"]
+        selection_df["decision"] = selection_df["decision"].map(
+            {
+                "KEEP_CANDIDATE": "DIAGNOSTIC_GATE_PASSED",
+                "REJECT": "DIAGNOSTIC_GATE_FAILED",
+            }
+        ).fillna(selection_df["decision"])
+        selection_df["allowed_max_verdict"] = "DIAGNOSTIC_ONLY"
+        selection_df["decision_reason"] = (
+            "ML-exit feature contract and execution convention changed after fixed11 locked_test; "
+            "gate is diagnostic only"
+        )
 
     output_prefix.parent.mkdir(parents=True, exist_ok=True)
     paths = {
@@ -281,11 +294,21 @@ def run_locked_test(args: argparse.Namespace) -> dict[str, Any]:
     side_df.to_csv(paths["side_csv"], sep=";", index=False)
     selection_df.to_csv(paths["selection_csv"], sep=";", index=False)
 
-    kept = selection_df.loc[selection_df["decision"].eq("KEEP_CANDIDATE")]
+    gate_decision_col = "legacy_gate_decision" if "legacy_gate_decision" in selection_df.columns else "decision"
+    kept = selection_df.loc[selection_df[gate_decision_col].eq("KEEP_CANDIDATE")]
+    runner_verdict = "candidate_check_required" if len(kept) else "reject"
     artifact = {
         "status": "completed",
-        "verdict": "candidate_check_required" if len(kept) else "reject",
-        "decision": "FIXED11_RICH_ENTRY_LOCKED_TEST",
+        "verdict": "DIAGNOSTIC_ONLY" if args.diagnostic_only else runner_verdict,
+        "original_runner_verdict": runner_verdict if args.diagnostic_only else None,
+        "decision": "FIXED11_H1_CHRONOLOGY_FIX_DIAGNOSTIC_ONLY" if args.diagnostic_only else "FIXED11_RICH_ENTRY_LOCKED_TEST",
+        "allowed_max_verdict": "DIAGNOSTIC_ONLY" if args.diagnostic_only else None,
+        "diagnostic_reason": (
+            "ML-exit feature contract and execution convention changed after fixed11 locked_test; "
+            "rerun is for simulator chronology validation, not candidate selection"
+        )
+        if args.diagnostic_only
+        else None,
         "source_runner": "ML/baseline/benchmark_fractal0_entry_quality_filter.py",
         "source_rules_csv": str(source_rules_csv),
         "source_rules_csv_sha256": base.sha256_file(source_rules_csv),
@@ -308,9 +331,51 @@ def run_locked_test(args: argparse.Namespace) -> dict[str, Any]:
             "exit_id": exit_rule["exit_id"],
             "spread": active_spread,
         },
+        "execution_ohlc_usage": "limit_fill_timestamp_and_same_h1_post_fill_event_order",
+        "ml_exit_feature_contract_status": "PASS",
+        "bars_since_fill_0_ml_exit_policy": "excluded_until_post_fill_decision_timestamp_exists",
+        "ml_exit_timing_contract": "feature_time <= decision_time <= execution_time",
+        "ml_exit_decision_time_columns": {
+            "decision_bar_time": "H1 bar timestamp whose closed OHLC values produce ML-exit input features",
+            "feature_available_time": "first H1 timestamp when decision-bar OHLC is available",
+            "decision_time": "actual ML-exit decision timestamp, equal to feature_available_time",
+            "ml_decision_time": "explicit alias for decision_time",
+            "first_exit_execution_time": "first executable H1 timestamp for the decision",
+        },
+        "future_exit_fields_role": "target_or_diagnostic_only",
+        "close_now_pnl_r_role": "target_or_diagnostic_only_backward_compatibility_name",
+        "fill_execution_time_contract": {
+            "column": "fill_execution_time",
+            "source_column": "fill_execution_time_source",
+            "confirmed_column": "fill_execution_confirmed",
+            "confirmed_source": "m5_touch",
+        },
+        "same_h1_ml_close_policy": "disabled_on_fill_h1_until_real_post_fill_ml_decision_timestamp_exists",
+        "missing_m5_fill_policy": "do_not_process_same_h1_exits_as_confirmed_post_fill_events",
+        "fill_m5_double_touch_policy": "SL_first_with_ambiguous_true",
+        "execution_chronology_counts": {
+            "fill_execution_time_source": trades_df.get("fill_execution_time_source", pd.Series(dtype=object)).fillna("missing").value_counts().to_dict() if not trades_df.empty else {},
+            "fill_execution_confirmed": int(trades_df.get("fill_execution_confirmed", pd.Series(dtype=bool)).astype(bool).sum()) if not trades_df.empty else 0,
+            "same_h1_fill_exit": int((pd.to_datetime(trades_df.get("fill_time"), errors="coerce") == pd.to_datetime(trades_df.get("exit_time"), errors="coerce")).sum()) if not trades_df.empty else 0,
+            "same_h1_ml_close": int(((pd.to_datetime(trades_df.get("fill_time"), errors="coerce") == pd.to_datetime(trades_df.get("exit_time"), errors="coerce")) & trades_df.get("close_reason", pd.Series(dtype=object)).eq("ML_CLOSE")).sum()) if not trades_df.empty else 0,
+            "ambiguous": int(trades_df.get("ambiguous", pd.Series(dtype=bool)).astype(bool).sum()) if not trades_df.empty else 0,
+        },
         "split_roles": {"train_core": "model_training_only", "locked_test": "one_shot_evaluation_only"},
         "current_search_budget": {"fixed_rules": 11, "new_thresholds": 0, "new_profiles": 0, "new_models": 0, "new_filters": 0},
         "movement_score_for_locked_test": "retrained_from_frozen_movement_protocol_for_movement_plus_time_profiles",
+        "movement_score_model_contract": {
+            "feature_profile": "simple_combined",
+            "model": "extra_trees_small",
+            "target": "entry_movement_3",
+            "normalization_config": {
+                "scaler": "RobustScaler",
+                "fit_split": "train_core",
+                "transform_splits": ["locked_test"],
+                "locked_test_used_for_scaler_fit": False,
+            },
+            "scale_contract": "DIAGNOSTIC_ONLY",
+            "normalized_feature_distribution_audit": "not rerun in this debug chronology rerun; inherited frozen movement protocol used for fixed11 compatibility",
+        },
         "ml_target_positive_rate_by_split": target_rates,
         "artifacts": {key: str(path) for key, path in paths.items()},
         "elapsed_seconds": round(time.time() - started, 3),
@@ -327,6 +392,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--execution-ohlc-path", default="MT/MQL4/Files/XAUUSD_M5_OHLC.csv")
     parser.add_argument("--output-prefix", default="ML/reports/fractal0_fixed11_rich_entry_locked_test")
     parser.add_argument("--threads", type=int, default=base.CONFIG.default_threads)
+    parser.add_argument("--diagnostic-only", action="store_true")
     return parser.parse_args()
 
 

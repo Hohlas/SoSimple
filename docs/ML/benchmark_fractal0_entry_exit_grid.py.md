@@ -35,8 +35,8 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
 ## Входы
 
 - `DATA/XAUUSD_H1_OHLC.csv`
-- `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` опционально, только для порядка
-  исполнения внутри H1-свечи
+- `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` опционально, только для timestamp
+  лимитного fill и порядка исполнения внутри H1-свечи после fill
 - `DATA/Nero_XAUUSD_train_labeled.csv`
 - `DATA/Nero_XAUUSD_validation_labeled.csv`
 - `ML/reports/entry_based_movement_filter_freeze.json`
@@ -73,9 +73,17 @@ PYTHONUNBUFFERED=1 ./.venv/bin/python ML/baseline/benchmark_fractal0_entry_exit_
 - Canonical spread: `0.20`; stress spread: `0.40`.
 - Сторона сделки: `fractal0.dir == -1 -> BUY`, `fractal0.dir == 1 -> SELL`.
 - OHLC считается Bid; BUY exit по Bid, SELL exit по Ask.
-- Если для exit rule с реальным fixed TP в одной H1-свече задеты TP и SL,
-  порядок может уточняться через `--execution-ohlc-path`; если младший
-  таймфрейм не задан или сам неоднозначен, применяется `SL first`.
+- Если `--execution-ohlc-path` задан, M5 фиксирует
+  `fill_execution_time` для лимитного fill и same-H1 SL/TP проверяются только
+  по M5-барам не раньше фактического fill. Если младший таймфрейм не задан или
+  сам неоднозначен, применяется `SL first`.
+- Рабочие ML-exit rows начинаются с `bars_since_fill=1`; `bars_since_fill=0`
+  исключён до появления отдельного post-fill decision timestamp.
+- В ML-exit rows `decision_bar_time` хранит H1 timestamp бара признаков,
+  `feature_available_time` и `decision_time` означают первый H1 timestamp после
+  закрытия этого бара, когда признаки доступны.
+- `ML_CLOSE` по H1-контракту исполняется на open следующего H1-бара после
+  decision bar, а не на close текущего бара.
 - Для ML-exit правил не считается гипотетический fixed TP; ambiguity относится
   только к реально активным exit-условиям.
 - В новых trades runner записывает `spread` на уровне сделки; это необходимо,

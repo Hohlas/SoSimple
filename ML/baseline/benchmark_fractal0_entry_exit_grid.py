@@ -412,7 +412,50 @@ def protective_stop_price(
     return float(resolve_protective_stop(side, fractal0_price, entry_bid_equivalent, atr, stop_policy)["protective_stop_price"])
 
 
-def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[str, object], spread: float, stop_policy: dict[str, object] | None = None) -> pd.DataFrame:
+def _execution_window_for_h1_bar(execution_ohlc: pd.DataFrame | None, h1_time: pd.Timestamp) -> pd.DataFrame:
+    if execution_ohlc is None or execution_ohlc.empty or "time" not in execution_ohlc.columns:
+        return pd.DataFrame()
+    start = pd.Timestamp(h1_time)
+    if "_h1_time" in execution_ohlc.columns and execution_ohlc.index.name == "_h1_time":
+        try:
+            window = execution_ohlc.loc[start]
+            if isinstance(window, pd.Series):
+                window = window.to_frame().T
+            return window.reset_index(drop=True)
+        except KeyError:
+            return pd.DataFrame()
+    end = start + pd.Timedelta(hours=1)
+    return execution_ohlc.loc[(execution_ohlc["time"] >= start) & (execution_ohlc["time"] < end)].reset_index(drop=True)
+
+
+def _first_limit_touch_execution_time(
+    side: str,
+    h1_time: pd.Timestamp,
+    limit_price: float,
+    spread: float,
+    execution_ohlc: pd.DataFrame | None,
+) -> pd.Timestamp | pd.NaT:
+    window = _execution_window_for_h1_bar(execution_ohlc, h1_time)
+    if window.empty:
+        return pd.NaT
+    for _, bar in window.iterrows():
+        low_bid = float(bar["low"])
+        high_bid = float(bar["high"])
+        if side == "BUY" and low_bid + float(spread) <= float(limit_price):
+            return pd.Timestamp(bar["time"])
+        if side == "SELL" and high_bid >= float(limit_price):
+            return pd.Timestamp(bar["time"])
+    return pd.NaT
+
+
+def build_entry_rows(
+    rows: pd.DataFrame,
+    ohlc: pd.DataFrame,
+    entry_rule: dict[str, object],
+    spread: float,
+    stop_policy: dict[str, object] | None = None,
+    execution_ohlc: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     out = []
     policy = stop_policy or stop_policy_grid()[0]
     ohlc_times = pd.to_datetime(ohlc["time"]).to_numpy()
@@ -435,13 +478,25 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
         planned_entry_bid_equivalent = float(limit_price) - float(spread) if side == "BUY" else float(limit_price)
         start = idx + 1
         end = min(start + int(entry_rule.get("lag_bars", 6)), len(ohlc))
-        fill = {"filled": False, "fill_index": None, "fill_time": pd.NaT, "entry_effective_price": np.nan, "entry_bid_equivalent": np.nan}
+        fill = {
+            "filled": False,
+            "fill_index": None,
+            "fill_time": pd.NaT,
+            "fill_execution_time": pd.NaT,
+            "fill_execution_time_source": "not_filled",
+            "fill_execution_confirmed": False,
+            "entry_effective_price": np.nan,
+            "entry_bid_equivalent": np.nan,
+        }
         for pos in range(start, end):
             if side == "BUY" and lows[pos] + float(spread) <= float(limit_price):
                 fill = {
                     "filled": True,
                     "fill_index": int(pos),
                     "fill_time": pd.Timestamp(ohlc_times[pos]),
+                    "fill_execution_time": _first_limit_touch_execution_time(side, pd.Timestamp(ohlc_times[pos]), float(limit_price), float(spread), execution_ohlc),
+                    "fill_execution_time_source": "pending",
+                    "fill_execution_confirmed": False,
                     "entry_effective_price": float(limit_price),
                     "entry_bid_equivalent": float(limit_price) - float(spread),
                 }
@@ -451,10 +506,24 @@ def build_entry_rows(rows: pd.DataFrame, ohlc: pd.DataFrame, entry_rule: dict[st
                     "filled": True,
                     "fill_index": int(pos),
                     "fill_time": pd.Timestamp(ohlc_times[pos]),
+                    "fill_execution_time": _first_limit_touch_execution_time(side, pd.Timestamp(ohlc_times[pos]), float(limit_price), float(spread), execution_ohlc),
+                    "fill_execution_time_source": "pending",
+                    "fill_execution_confirmed": False,
                     "entry_effective_price": float(limit_price),
                     "entry_bid_equivalent": float(limit_price),
                 }
                 break
+        if fill["filled"]:
+            if execution_ohlc is None:
+                fill["fill_execution_time"] = fill["fill_time"]
+                fill["fill_execution_time_source"] = "h1_no_execution_ohlc"
+                fill["fill_execution_confirmed"] = False
+            elif pd.isna(fill.get("fill_execution_time")):
+                fill["fill_execution_time_source"] = "missing_m5_touch"
+                fill["fill_execution_confirmed"] = False
+            else:
+                fill["fill_execution_time_source"] = "m5_touch"
+                fill["fill_execution_confirmed"] = True
         entry_bid_equivalent = float(fill["entry_bid_equivalent"]) if fill["filled"] else planned_entry_bid_equivalent
         stop_info = resolve_protective_stop(side, fractal["price"], entry_bid_equivalent, atr, policy)
         stop = float(stop_info["protective_stop_price"])
@@ -514,24 +583,18 @@ def _resolve_same_bar_with_execution_ohlc(
     spread: float,
     stop: float,
     tp: float,
+    not_before: pd.Timestamp | None = None,
 ) -> tuple[str, pd.Series, bool] | None:
-    if execution_ohlc is None or execution_ohlc.empty or "time" not in execution_ohlc.columns:
-        return None
     start = pd.to_datetime(h1_bar.get("time"), errors="coerce")
     if pd.isna(start):
         return None
-    if "_h1_time" in execution_ohlc.columns and execution_ohlc.index.name == "_h1_time":
-        try:
-            window = execution_ohlc.loc[start]
-            if isinstance(window, pd.Series):
-                window = window.to_frame().T
-        except KeyError:
-            return None
-    else:
-        end = start + pd.Timedelta(hours=1)
-        window = execution_ohlc.loc[(execution_ohlc["time"] >= start) & (execution_ohlc["time"] < end)]
+    window = _execution_window_for_h1_bar(execution_ohlc, start)
     if window.empty:
         return None
+    if not_before is not None and pd.notna(not_before):
+        window = window.loc[pd.to_datetime(window["time"]) >= pd.Timestamp(not_before)].reset_index(drop=True)
+        if window.empty:
+            return None
     bars = _effective_exit_bars(side, window.reset_index(drop=True), spread)
     for _, bar in bars.iterrows():
         high, low = float(bar["high"]), float(bar["low"])
@@ -565,12 +628,34 @@ def simulate_trade(
     hold_limit = int(exit_rule.get("hold_bars", MAX_EXIT_HOLD_BARS))
     best_r = -np.inf
     for i, bar in bars.iloc[: min(len(bars), max(hold_limit + 1, MAX_EXIT_HOLD_BARS + 1))].iterrows():
+        decision_time = pd.Timestamp(bar.get("time", pd.NaT))
+        fill_execution_time = pd.Timestamp(entry.get("fill_execution_time", entry.get("fill_time", pd.NaT)))
+        fill_execution_confirmed = bool(entry.get("fill_execution_confirmed", pd.notna(fill_execution_time)))
+        fill_h1_time = pd.Timestamp(entry.get("fill_time", pd.NaT))
+        same_h1_as_fill = pd.notna(fill_h1_time) and decision_time == fill_h1_time
+        earliest_event_time = fill_execution_time if same_h1_as_fill and fill_execution_confirmed and pd.notna(fill_execution_time) else None
+        fill_h1_missing_m5_touch = same_h1_as_fill and not fill_execution_confirmed
         high, low = float(bar["high"]), float(bar["low"])
         stop_hit = low <= stop if side == "BUY" else high >= stop
         tp_hit = (high >= tp if side == "BUY" else low <= tp) if fixed_tp_enabled else False
         ambiguous = bool(stop_hit and tp_hit)
+        if fill_h1_missing_m5_touch:
+            stop_hit = False
+            tp_hit = False
+            ambiguous = False
+        if same_h1_as_fill and (stop_hit or tp_hit) and execution_ohlc is not None:
+            resolved = _resolve_same_bar_with_execution_ohlc(side, bar, execution_ohlc, spread, stop, tp, earliest_event_time)
+            if resolved is not None:
+                reason, resolved_bar, still_ambiguous = resolved
+                price = stop if reason == "SL" else tp
+                if pd.Timestamp(resolved_bar.get("time", pd.NaT)) == earliest_event_time:
+                    still_ambiguous = True
+                return _trade_result(reason, side, entry_price, price, r_value, i, resolved_bar, still_ambiguous)
+            stop_hit = False
+            tp_hit = False
+            ambiguous = False
         if ambiguous:
-            resolved = _resolve_same_bar_with_execution_ohlc(side, bar, execution_ohlc, spread, stop, tp)
+            resolved = _resolve_same_bar_with_execution_ohlc(side, bar, execution_ohlc, spread, stop, tp, None)
             if resolved is not None:
                 reason, resolved_bar, still_ambiguous = resolved
                 price = stop if reason == "SL" else tp
@@ -586,10 +671,19 @@ def simulate_trade(
             return _trade_result("TIME", side, entry_price, close_price, r_value, i, bar, False)
         if exit_rule.get("family") == "profit_giveback" and best_r >= float(exit_rule.get("activation_atr", 1.0)) and now_r <= best_r * (1.0 - float(exit_rule.get("giveback_fraction", 0.5))):
             return _trade_result("GIVEBACK", side, entry_price, close_price, r_value, i, bar, False)
-        if str(exit_rule.get("family", "")).startswith("ml") or exit_rule.get("family") == "fixed_sl_ml_profit_exit":
+        ml_decision_is_after_fill = i > 0 and not same_h1_as_fill
+        ml_execution_pos = i + 1
+        can_execute_ml_close = ml_execution_pos < len(bars)
+        if (
+            ml_decision_is_after_fill
+            and can_execute_ml_close
+            and (str(exit_rule.get("family", "")).startswith("ml") or exit_rule.get("family") == "fixed_sl_ml_profit_exit")
+        ):
             score = (ml_scores or {}).get(i, 0.0)
+            ml_exit_bar = bars.iloc[ml_execution_pos]
+            ml_exit_price = float(ml_exit_bar["open"])
             if score >= float(exit_rule.get("prob_threshold", 1.1)) and (exit_rule.get("family") != "fixed_sl_ml_profit_exit" or now_r >= 0):
-                return _trade_result("ML_CLOSE", side, entry_price, close_price, r_value, i, bar, False)
+                return _trade_result("ML_CLOSE", side, entry_price, ml_exit_price, r_value, ml_execution_pos, ml_exit_bar, False)
     last = bars.iloc[-1]
     return _trade_result("TIME", side, entry_price, float(last["close"]), r_value, len(bars) - 1, last, False)
 
@@ -710,8 +804,19 @@ def build_exit_decision_rows(trades: pd.DataFrame, ohlc: pd.DataFrame) -> pd.Dat
         side = str(trade["side"])
         entry_price = float(trade["entry_effective_price"])
         r_value = float(trade["r_value"])
-        for idx in range(fill, last_decision):
+        for idx in range(fill + 1, last_decision):
+            bars_since_fill = idx - fill
+            known_start = fill + 1
+            known_end = idx + 1
             close_now = _pnl_r(side, entry_price, closes[idx], r_value)
+            if side == "BUY":
+                favorable_before = (float(np.nanmax(highs[known_start:known_end])) - entry_price) / r_value
+                adverse_before = (entry_price - float(np.nanmin(lows[known_start:known_end]))) / r_value
+            else:
+                favorable_before = (entry_price - float(np.nanmin(lows[known_start:known_end]))) / r_value
+                adverse_before = (float(np.nanmax(highs[known_start:known_end])) - entry_price) / r_value
+            favorable_before = max(0.0, float(favorable_before))
+            adverse_before = max(0.0, float(adverse_before))
             future_start = idx + 1
             future_end = min(idx + 4, len(ohlc))
             if future_start >= future_end:
@@ -731,18 +836,23 @@ def build_exit_decision_rows(trades: pd.DataFrame, ohlc: pd.DataFrame) -> pd.Dat
                 {
                     "position_id": trade.get("position_id"),
                     "side": side,
-                    "decision_time": pd.Timestamp(times[idx]),
+                    "decision_bar_time": pd.Timestamp(times[idx]),
+                    "feature_available_time": pd.Timestamp(times[idx + 1]),
+                    "decision_time": pd.Timestamp(times[idx + 1]),
+                    "ml_decision_time": pd.Timestamp(times[idx + 1]),
                     "first_exit_execution_time": pd.Timestamp(times[idx + 1]),
-                    "bars_since_fill": idx - fill,
+                    "bars_since_fill": bars_since_fill,
+                    "ml_exit_eligible": True,
                     "entry_effective_price": entry_price,
                     "r_value": r_value,
                     "ATR": trade.get("ATR", trade.get("atr", np.nan)),
                     "unrealized_pnl_r_before_decision": close_now,
-                    "max_favorable_r_before_decision": max(0.0, fav),
-                    "max_adverse_r_before_decision": max(0.0, adv),
+                    "max_favorable_r_before_decision": favorable_before,
+                    "max_adverse_r_before_decision": adverse_before,
                     "future_favorable_r_3": fav,
                     "future_adverse_r_3": adv,
                     "close_now_pnl_r": close_now,
+                    "decision_bar_close_pnl_r_for_target": close_now,
                     "hold_3_pnl_r": hold_3,
                     "movement_score": movement_score,
                     "movement_score_available": bool(pd.notna(movement_score)),
@@ -840,8 +950,12 @@ def _score_map_for_entries(
     score_col = f"score_{target}_{mask_id}"
     if score_col not in scored_decisions.columns:
         return {}
+    eligible = scored_decisions.copy()
+    if "ml_exit_eligible" in eligible.columns:
+        eligible = eligible.loc[eligible["ml_exit_eligible"].astype(bool)].copy()
+    eligible = eligible.loc[pd.to_numeric(eligible["bars_since_fill"], errors="coerce") > 0].copy()
     maps: dict[str, dict[int, float]] = {}
-    for position_id, group in scored_decisions.groupby("position_id"):
+    for position_id, group in eligible.groupby("position_id"):
         maps[str(position_id)] = {
             int(row["bars_since_fill"]): float(row[score_col])
             for _, row in group.iterrows()
@@ -921,6 +1035,9 @@ def _simulate_entries(
                 "entry_id": run["entry_id"],
                 "mask_id": run["mask_id"],
                 "exit_id": run["exit_id"],
+                "fill_execution_time": entry_dict.get("fill_execution_time"),
+                "fill_execution_time_source": entry_dict.get("fill_execution_time_source"),
+                "fill_execution_confirmed": entry_dict.get("fill_execution_confirmed"),
                 "stop_policy_id": run.get("stop_policy_id", entry_dict.get("stop_policy_id")),
                 "stop_family": entry_dict.get("stop_family"),
                 "entry_floor_atr": entry_dict.get("entry_floor_atr"),
@@ -960,6 +1077,7 @@ def _entry_cache_for_spread(
     stop_policies: list[dict[str, object]] | None = None,
     entries: list[dict[str, object]] | None = None,
     masks: list[dict[str, object]] | None = None,
+    execution_ohlc: pd.DataFrame | None = None,
 ) -> tuple[dict[tuple[str, str, str, str], pd.DataFrame], dict[str, object]]:
     cache: dict[tuple[str, str, str, str], pd.DataFrame] = {}
     rows_by_split_before_after_mask: dict[str, object] = {}
@@ -973,7 +1091,7 @@ def _entry_cache_for_spread(
         for stop_policy in stop_rules:
             stop_id = str(stop_policy["stop_policy_id"])
             for entry in entry_rules:
-                entry_rows = build_entry_rows(rows, ohlc, entry, spread, stop_policy)
+                entry_rows = build_entry_rows(rows, ohlc, entry, spread, stop_policy, execution_ohlc)
                 filled_rate = float(entry_rows["filled"].mean()) if len(entry_rows) else 0.0
                 fill_rate_by_entry.setdefault(f"{stop_id}:{entry['entry_id']}", {})[split] = filled_rate
                 for mask in masks:
@@ -1328,11 +1446,29 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
     active_masks = [mask for mask in mask_grid() if str(mask["mask_id"]) in run_mask_ids]
     active_stop_policies = [policy for policy in active_stop_policies if str(policy["stop_policy_id"]) in run_stop_ids]
     print("prepare entry cache canonical", flush=True)
-    canonical_entry_cache, cache_report = _entry_cache_for_spread(splits, ohlc, CONFIG.canonical_spread, frozen_scores, active_stop_policies, active_entries, active_masks)
+    canonical_entry_cache, cache_report = _entry_cache_for_spread(
+        splits,
+        ohlc,
+        CONFIG.canonical_spread,
+        frozen_scores,
+        active_stop_policies,
+        active_entries,
+        active_masks,
+        execution_ohlc,
+    )
     stress_entry_cache = {}
     if not args.skip_stress_spread:
         print("prepare entry cache stress", flush=True)
-        stress_entry_cache, _ = _entry_cache_for_spread({"val_eval": splits["val_eval"]}, ohlc, CONFIG.stress_spread, frozen_scores, active_stop_policies, active_entries, active_masks)
+        stress_entry_cache, _ = _entry_cache_for_spread(
+            {"val_eval": splits["val_eval"]},
+            ohlc,
+            CONFIG.stress_spread,
+            frozen_scores,
+            active_stop_policies,
+            active_entries,
+            active_masks,
+            execution_ohlc,
+        )
     print("prepare train ml-exit", flush=True)
     ml_seeds = (42,) if args.smoke_limit_runs else EXIT_MODEL_SEEDS
     ml_estimators = 25 if args.smoke_limit_runs else 200
@@ -1464,7 +1600,7 @@ def run_matrix(args: argparse.Namespace) -> dict[str, object]:
         "fixed_risk_interpretation": "pnl_r assumes equal risk per trade, not equal lot size",
         "multiple_testing_correction": permutation,
         "ml_exit_target_contracts": list(EXIT_TARGETS),
-        "pnl_convention": {"ohlc_price_type": "bid", "spread": "full bid-ask spread", "same_bar_tp_sl_policy": CONFIG.same_bar_tp_sl_policy, "execution_ohlc_path": config.execution_ohlc_path or None, "execution_ohlc_usage": "resolve_same_h1_bar_tp_sl_order_only" if config.execution_ohlc_path else None},
+        "pnl_convention": {"ohlc_price_type": "bid", "spread": "full bid-ask spread", "same_bar_tp_sl_policy": CONFIG.same_bar_tp_sl_policy, "execution_ohlc_path": config.execution_ohlc_path or None, "execution_ohlc_usage": "limit_fill_timestamp_and_same_h1_post_fill_event_order" if config.execution_ohlc_path else None},
         "simulator_test_status": "covered_by_unit_tests",
         "attribution_status": "computed",
         "stop_diagnostics_status": "computed",

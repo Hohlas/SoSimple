@@ -6,6 +6,8 @@
 > **Цель**: зафиксировать проблему расхождения fill между Python и MT4 и проверить, соблюдает ли Python-runner хронологию событий внутри H1-бара при наличии M5 execution OHLC.
 > **Related plan/spec**: `docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md`
 
+> **Superseded follow-up**: проблема, описанная здесь, исправляется отдельным Python execution-contract планом `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md` и отчётом `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`. Этот документ остаётся исходным аудитом причины, но его старые выводы о следующих шагах не должны читаться как финальный статус после chronology-fix rerun.
+
 ## Context
 
 Анализ продолжает parity-разбор retained fixed11 rule slot 1:

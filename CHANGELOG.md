@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-29] — Fixed11 Python H1 chronology fix (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`
+- **topics**: `fixed11`, `h1_chronology`, `ml_exit`, `m5_execution_ordering`, `locked_test`
+- **summary**: Исправлен Python execution contract: M5 теперь фиксирует фактическое время лимитного fill, same-H1 выходы проверяются только после fill, а `bars_since_fill=0` исключён из рабочих ML-exit rows. Диагностический rerun показал исчезновение старого edge: PF range `0.819373-0.938880`, `kept_candidates=0`.
+- **artifacts**: `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`, `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`, `ML/baseline/benchmark_fractal0_entry_exit_grid.py`
+- **decision**: `DIAGNOSTIC_ONLY`; старые fixed11 locked-test/current-history positive metrics invalidated as the same frozen chain after ML-exit feature contract and execution convention changed.
+- **notes**: M5 не стал ML input; MT4 parity не доказан; следующий шаг — закрыть fixed11 path или делать MT4 slot parity только как diagnostic engineering check.
+
 ## [2026-07-29] — Fixed11 current-history OHLC rerun (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-29-fixed11-current-history-rerun.md`
 - **topics**: `fixed11`, `current_history`, `ohlc`, `locked_test`, `fill_chronology`

@@ -29,8 +29,14 @@
 Актуальный current-OHLC rerun:
 `docs/reports/2026-07-29-fixed11-current-history-rerun.md`.
 
+Актуальный Python chronology-fix rerun:
+`docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`.
+
 Структурное сравнение old/current OHLC:
 `ML/reports/fractal0_fixed11_current_history_comparison.json`.
+
+Сравнение current-history и chronology-fix:
+`ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`.
 
 Последний ручной tester-run проверял только `ML_RuleSlot=1` после правок
 `MLClose`/stale handling:
@@ -46,46 +52,26 @@
 - verdict: `DIAGNOSTIC_ONLY`, because PnL is too good to treat as parity proof
   until fill mismatch is explained.
 
-Главный оставшийся блокер: расхождение fill между Python и MT4. В свежем
-прогоне много случаев, где Python успевает открыть и закрыть сделку, а MT4
-либо не исполняет лимитку до `MLClose` (`StalePendingAfterMLClose`), либо
-исполняет её уже после Python `MLClose` (`StaleFillAfterMLClose`). Эти случаи
-нельзя смешивать с обычной прибыльностью, пока не доказано, что MT4 и Python
-исполняют один и тот же входной контракт.
-
-Дополнительный confirmed blocker из анализа 2026-07-29: M5 execution OHLC в
-текущем Python runner используется только для порядка SL/TP внутри одного H1,
-но не для timestamp лимитного fill и не для проверки, что same-H1 `MLClose`
-происходит после fill. Поэтому Python locked-test artifacts нужно пересчитать
-после исправления execution contract.
-
-Current-OHLC rerun 2026-07-29 отделил эффект смены истории от ошибки
-хронологии. Свежие OHLC materially меняют результат (`14507 -> 13039` trades
-по fixed11 aggregate; slot 1 `1196 -> 1091` trades), но same-H1 риск не
-исчезает: slot 1 current-history сохраняет `368` `hold_bars=0` сделок и `368`
-same-H1 fill/exit случаев. Значит current-OHLC rerun является последней
-Python-side диагностикой до изменения H1 chronology logic, а не основанием для
-нового MT4 export/parity claim.
+Python chronology-fix rerun 2026-07-29 устранил прежний внутри-H1 дефект:
+`same_h1_ml_close` упал `4070 -> 0`, `hold_bars=0` упал `4495 -> 488`, все
+новые сделки имеют `fill_execution_time_source=m5_touch`. Но после исправления
+edge исчез: aggregate PnL R `4065.034595 -> -530.513260`, PF range
+`2.820656-3.424707 -> 0.819373-0.938880`, `kept_candidates=0`. Это не
+торговый вывод, а `DIAGNOSTIC_ONLY`, но старый fixed11 positive locked-test
+contract больше нельзя считать валидным тем же frozen chain.
 
 Следующий шаг:
 
-1. Написать отдельный chronology-fix plan.
-2. Определить исправленный Python execution contract:
-   - минимальный вариант: после fill на H1-баре `T` первое ML-exit решение
-     возможно не раньше следующего закрытого H1-бара;
-   - более точный вариант: использовать M5/M1 для timestamp лимитного fill и
-     разрешать same-H1 exit только если exit decision хронологически позже
-     fill.
-3. Реализовать contract в Python с точечными тестами:
-   - fill на открытии H1;
-   - fill после открытия H1;
-   - `MLClose` на H1-баре fill;
-   - SL/TP same-bar M5 ordering должен остаться прежним.
-4. Пересчитать fixed11 locked-test artifacts.
-5. Заново экспортировать `ml_signals_fixed11_ruleNN.csv` и
-   `ml_exits_fixed11_ruleNN.csv`.
-6. Перезапустить MT4 slot 1 и выполнить reconciliation.
-7. Только после приемлемого slot 1 проверять slots 2-5.
+1. Не экспортировать новые fixed11 MT4 signals как candidate.
+2. Решить, закрывается ли current fixed11 retained-subset path как invalidated
+   by chronology fix.
+3. Если продолжать только инженерную parity-проверку: экспортировать corrected
+   fixed11 signals/trades с diagnostic маркировкой и перезапустить MT4 slot 1
+   reconciliation по `signal_time + direction`, open/fill/close reasons и
+   missing opens.
+4. Если edge считается уничтоженным: написать post-mortem и перейти к новой
+   заранее ограниченной постановке без использования старого locked_test как
+   источника выбора.
 
 Запрещено до разблокировки:
 

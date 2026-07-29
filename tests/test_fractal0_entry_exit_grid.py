@@ -149,6 +149,47 @@ def test_sell_limit_fill_uses_bid_side():
     assert fill["entry_bid_equivalent"] == 103.0
 
 
+def test_limit_fill_records_first_execution_ohlc_timestamp_inside_h1():
+    rows = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 08:00"]),
+            "fractal0": [":".join(["0", "100.0", "1"] + ["0"] * 20)],
+            "ATR": [1.0],
+            "split": ["locked_test"],
+            "split_row_id": [7],
+        }
+    )
+    h1 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 09:00", "2021-01-01 10:00", "2021-01-01 11:00"]),
+            "open": [100.0, 100.2, 101.0],
+            "high": [100.4, 101.2, 102.0],
+            "low": [99.6, 99.8, 100.0],
+            "close": [100.1, 100.8, 101.5],
+        }
+    )
+    m5 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 10:05", "2021-01-01 10:10"]),
+            "open": [100.0, 100.4, 100.7],
+            "high": [100.3, 100.6, 101.2],
+            "low": [99.8, 100.2, 100.6],
+            "close": [100.2, 100.5, 101.0],
+        }
+    )
+    entry_rule = {"entry_id": "E3_open_pullback_1_0atr", "entry_mode": "open_pullback", "pullback_atr": 1.0, "lag_bars": 2}
+    policy = {"stop_policy_id": "S2", "family": "fractal0_buffer_entry_floor", "fractal0_buffer_atr": 0.5, "entry_floor_atr": 2.0}
+
+    entries = runner.build_entry_rows(rows, h1, entry_rule, spread=0.2, stop_policy=policy, execution_ohlc=m5)
+
+    assert bool(entries.loc[0, "filled"]) is True
+    assert entries.loc[0, "side"] == "SELL"
+    assert entries.loc[0, "limit_price"] == 101.0
+    assert entries.loc[0, "fill_index"] == 1
+    assert entries.loc[0, "fill_time"] == pd.Timestamp("2021-01-01 10:00")
+    assert entries.loc[0, "fill_execution_time"] == pd.Timestamp("2021-01-01 10:10")
+
+
 def test_protective_stop_uses_fixed_half_atr():
     assert runner.protective_stop_price("BUY", 100.0, 100.5, 2.0) == 99.0
     assert runner.protective_stop_price("SELL", 100.0, 99.5, 2.0) == 101.0
@@ -199,6 +240,129 @@ def test_ml_exit_does_not_count_hypothetical_fixed_tp_as_same_bar_ambiguity():
 
     assert result["close_reason"] == "SL"
     assert result["ambiguous"] is False
+
+
+def test_ml_exit_on_h1_open_is_not_processed_before_m5_fill_in_same_h1():
+    entry = {
+        "side": "SELL",
+        "fill_index": 0,
+        "fill_time": pd.Timestamp("2021-01-01 10:00"),
+        "fill_execution_time": pd.Timestamp("2021-01-01 10:10"),
+        "entry_effective_price": 101.0,
+        "entry_bid_equivalent": 101.0,
+        "protective_stop_price": 105.0,
+        "r_value": 4.0,
+        "atr": 2.0,
+    }
+    h1 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 11:00"]),
+            "open": [100.0, 100.2],
+            "high": [101.2, 100.4],
+            "low": [99.0, 99.4],
+            "close": [100.5, 99.7],
+        }
+    )
+    ml_scores = {0: 1.0, 1: 0.0}
+
+    result = runner.simulate_trade(
+        entry,
+        h1,
+        {"family": "ml_opposite_any", "prob_threshold": 0.55, "hold_bars": 1},
+        spread=0.2,
+        ml_scores=ml_scores,
+    )
+
+    assert result["close_reason"] == "TIME"
+    assert result["exit_time"] == "2021-01-01 11:00:00"
+
+
+def test_same_h1_stop_after_m5_fill_is_valid_when_touch_is_after_fill():
+    entry = {
+        "side": "BUY",
+        "fill_index": 0,
+        "fill_time": pd.Timestamp("2021-01-01 10:00"),
+        "fill_execution_time": pd.Timestamp("2021-01-01 10:10"),
+        "entry_effective_price": 100.2,
+        "entry_bid_equivalent": 100.0,
+        "protective_stop_price": 99.0,
+        "r_value": 1.2,
+        "atr": 2.0,
+    }
+    h1 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00"]),
+            "open": [100.0],
+            "high": [100.4],
+            "low": [98.8],
+            "close": [99.2],
+        }
+    )
+    m5 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 10:05", "2021-01-01 10:10", "2021-01-01 10:15"]),
+            "open": [100.0, 100.1, 100.2, 99.8],
+            "high": [100.3, 100.2, 100.3, 100.0],
+            "low": [99.5, 99.4, 100.0, 98.8],
+            "close": [100.1, 100.0, 100.1, 99.0],
+        }
+    )
+
+    result = runner.simulate_trade(
+        entry,
+        h1,
+        {"family": "ml_opposite_any", "prob_threshold": 0.55},
+        spread=0.2,
+        execution_ohlc=m5,
+    )
+
+    assert result["close_reason"] == "SL"
+    assert result["exit_time"] == "2021-01-01 10:15:00"
+
+
+def test_fill_m5_candle_stop_touch_is_marked_ambiguous_and_resolves_sl_first():
+    entry = {
+        "side": "BUY",
+        "fill_index": 0,
+        "fill_time": pd.Timestamp("2021-01-01 10:00"),
+        "fill_execution_time": pd.Timestamp("2021-01-01 10:10"),
+        "fill_execution_confirmed": True,
+        "entry_effective_price": 100.2,
+        "entry_bid_equivalent": 100.0,
+        "protective_stop_price": 99.0,
+        "r_value": 1.2,
+        "atr": 2.0,
+    }
+    h1 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00"]),
+            "open": [100.0],
+            "high": [100.5],
+            "low": [98.8],
+            "close": [99.5],
+        }
+    )
+    m5 = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 10:05", "2021-01-01 10:10"]),
+            "open": [100.0, 100.1, 100.3],
+            "high": [100.3, 100.2, 100.4],
+            "low": [99.5, 99.4, 98.8],
+            "close": [100.1, 100.0, 99.0],
+        }
+    )
+
+    result = runner.simulate_trade(
+        entry,
+        h1,
+        {"family": "ml_opposite_any", "prob_threshold": 0.55},
+        spread=0.2,
+        execution_ohlc=m5,
+    )
+
+    assert result["close_reason"] == "SL"
+    assert result["ambiguous"] is True
+    assert result["exit_time"] == "2021-01-01 10:10:00"
 
 
 def test_prepare_execution_ohlc_index_supports_fast_h1_lookup():
@@ -255,7 +419,7 @@ def test_entry_cache_reports_rows_before_mask_not_entry_rule_count(monkeypatch):
     splits = {"val_select": pd.DataFrame({"split_row_id": [1, 2, 3]})}
     scores = pd.DataFrame({"split": ["val_select", "val_select", "val_select"], "split_row_id": [1, 2, 3], "selected": [True, False, True], "score": [0.9, 0.1, 0.8]})
 
-    def fake_build_entry_rows(rows, ohlc, entry, spread, stop_policy=None):
+    def fake_build_entry_rows(rows, ohlc, entry, spread, stop_policy=None, execution_ohlc=None):
         out = rows.copy()
         out["filled"] = [True, False, True]
         return out
@@ -339,8 +503,11 @@ def test_exit_decision_rows_use_next_open_execution_time():
     trades = pd.DataFrame([{"position_id": "p1", "side": "BUY", "fill_index": 0, "entry_effective_price": 100.2, "entry_bid_equivalent": 100.0, "protective_stop_price": 99.0, "r_value": 1.2, "atr": 2.0}])
     bars = pd.DataFrame({"time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 11:00", "2021-01-01 12:00"]), "open": [100.0, 100.4, 100.6], "high": [100.3, 100.5, 100.7], "low": [99.8, 100.1, 100.3], "close": [100.2, 100.5, 100.6]})
     decisions = runner.build_exit_decision_rows(trades, bars)
-    assert decisions.loc[0, "decision_time"] == pd.Timestamp("2021-01-01 10:00")
-    assert decisions.loc[0, "first_exit_execution_time"] == pd.Timestamp("2021-01-01 11:00")
+    assert decisions.loc[0, "decision_bar_time"] == pd.Timestamp("2021-01-01 11:00")
+    assert decisions.loc[0, "feature_available_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert decisions.loc[0, "decision_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert decisions.loc[0, "ml_decision_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert decisions.loc[0, "first_exit_execution_time"] == pd.Timestamp("2021-01-01 12:00")
     assert "target_exit_hold_close" not in decisions.columns
 
 
@@ -348,9 +515,11 @@ def test_exit_decision_rows_create_sequence_until_last_executable_bar():
     trades = pd.DataFrame([{"position_id": "p1", "side": "BUY", "fill_index": 0, "entry_effective_price": 100.2, "entry_bid_equivalent": 100.0, "protective_stop_price": 99.0, "r_value": 1.2, "atr": 2.0}])
     bars = pd.DataFrame({"time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 11:00", "2021-01-01 12:00", "2021-01-01 13:00"]), "open": [100.0, 100.4, 100.6, 100.7], "high": [100.3, 100.5, 100.7, 100.8], "low": [99.8, 100.1, 100.3, 100.5], "close": [100.2, 100.5, 100.6, 100.7]})
     decisions = runner.build_exit_decision_rows(trades, bars)
-    assert decisions["bars_since_fill"].tolist() == [0, 1, 2]
-    assert decisions["decision_time"].tolist() == list(bars["time"].iloc[:3])
-    assert decisions["first_exit_execution_time"].tolist() == list(bars["time"].iloc[1:4])
+    assert decisions["bars_since_fill"].tolist() == [1, 2]
+    assert decisions["decision_bar_time"].tolist() == list(bars["time"].iloc[1:3])
+    assert decisions["feature_available_time"].tolist() == list(bars["time"].iloc[2:4])
+    assert decisions["decision_time"].tolist() == list(bars["time"].iloc[2:4])
+    assert decisions["first_exit_execution_time"].tolist() == list(bars["time"].iloc[2:4])
 
 
 def test_exit_targets_are_named_as_future_derived_targets():
@@ -367,6 +536,98 @@ def test_exit_features_do_not_include_future_or_target_columns():
     assert {"hold_3_pnl_r", "close_now_pnl_r", "target_exit_hold_close"}.isdisjoint(cols)
     assert "movement_score" in cols
     assert "movement_score_available" in cols
+
+
+def test_exit_features_exclude_future_derived_decision_fields():
+    cols = set(runner.exit_feature_columns("M1_frozen_movement_top5"))
+
+    forbidden = {
+        "future_favorable_r_3",
+        "future_adverse_r_3",
+        "hold_3_pnl_r",
+        "close_now_pnl_r",
+        "target_exit_opposite_any",
+        "target_exit_opposite_strong",
+        "target_exit_hold_close",
+        "target_exit_movement_exhaustion",
+    }
+
+    assert cols.isdisjoint(forbidden)
+
+
+def test_exit_decision_rows_start_after_fill_bar_without_post_fill_decision_timestamp():
+    trades = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "side": "BUY",
+                "fill_index": 0,
+                "fill_time": pd.Timestamp("2021-01-01 10:00"),
+                "entry_effective_price": 100.0,
+                "r_value": 1.0,
+                "ATR": 2.0,
+            }
+        ]
+    )
+    bars = pd.DataFrame(
+        {
+            "time": pd.to_datetime(["2021-01-01 10:00", "2021-01-01 11:00", "2021-01-01 12:00", "2021-01-01 13:00"]),
+            "open": [100.0, 100.0, 100.0, 100.0],
+            "high": [105.0, 101.0, 101.0, 101.0],
+            "low": [95.0, 99.0, 99.0, 99.0],
+            "close": [104.0, 100.0, 100.0, 100.0],
+        }
+    )
+
+    decisions = runner.build_exit_decision_rows(trades, bars)
+
+    assert 0 not in set(decisions["bars_since_fill"])
+    first = decisions.iloc[0]
+    assert first["bars_since_fill"] == 1
+    assert first["decision_bar_time"] == pd.Timestamp("2021-01-01 11:00")
+    assert first["feature_available_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert first["decision_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert first["ml_decision_time"] == pd.Timestamp("2021-01-01 12:00")
+    assert first["first_exit_execution_time"] == pd.Timestamp("2021-01-01 12:00")
+
+
+def test_score_map_excludes_bars_since_fill_zero():
+    entries = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "filled": True,
+                "side": "BUY",
+                "fill_index": 0,
+            }
+        ]
+    )
+    scored_decisions = pd.DataFrame(
+        [
+            {
+                "position_id": "p1",
+                "bars_since_fill": 0,
+                "ml_exit_eligible": False,
+                "score_target_exit_opposite_any_M0_no_mask": 0.99,
+            },
+            {
+                "position_id": "p1",
+                "bars_since_fill": 1,
+                "ml_exit_eligible": True,
+                "score_target_exit_opposite_any_M0_no_mask": 0.75,
+            },
+        ]
+    )
+
+    score_map = runner._score_map_for_entries(
+        entries,
+        pd.DataFrame(),
+        scored_decisions,
+        {"family": "ml_opposite_any"},
+        "M0_no_mask",
+    )
+
+    assert score_map["p1"] == {1: 0.75}
 
 
 def test_exit_features_for_no_mask_do_not_use_movement_score():

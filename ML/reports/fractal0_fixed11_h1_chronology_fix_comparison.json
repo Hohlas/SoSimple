@@ -1,0 +1,54 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "old_current_history_prefix": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history",
+  "new_h1_chronology_fix_prefix": "ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix",
+  "hashes": {
+    "old_json": "ec4cd304b5cd70f2f750f513b0f11a2162249f4cf7139a71e233d7ba094da767",
+    "old_trades": "71e72e986d94df1b5389929d280f2bd572be99b066e094e3eab555fc766528c3",
+    "new_json": "1855ea1284501f80ce0561d3672488ffe7c3a02f59f52df78a527b7a293b1e5c",
+    "new_trades": "f78537feca961543ac654c58acd8ce03bc7a3d78d6b8b43d2918b8c2c617cb78"
+  },
+  "old_current_history": {
+    "summary_rows": 11,
+    "trades": 13039,
+    "pnl_r_sum": 4065.0345949850794,
+    "pf_min": 2.820656233079218,
+    "pf_max": 3.424706750117015,
+    "hold_bars_0": 4495,
+    "same_h1_fill_exit": 4495,
+    "fill_execution_after_h1_open": null,
+    "fill_execution_confirmed": 0,
+    "fill_execution_time_source_counts": {
+      "absent": 13039
+    },
+    "ambiguous_count": 0,
+    "same_h1_ml_close": 4070,
+    "close_reason_counts": {
+      "ML_CLOSE": 9345,
+      "TIME": 3230,
+      "SL": 464
+    }
+  },
+  "new_h1_chronology_fix": {
+    "summary_rows": 11,
+    "trades": 14387,
+    "pnl_r_sum": -530.5132601882248,
+    "pf_min": 0.8193728123123779,
+    "pf_max": 0.938880089717736,
+    "hold_bars_0": 488,
+    "same_h1_fill_exit": 72,
+    "fill_execution_after_h1_open": 11765,
+    "fill_execution_confirmed": 14387,
+    "fill_execution_time_source_counts": {
+      "m5_touch": 14387
+    },
+    "ambiguous_count": 150,
+    "same_h1_ml_close": 0,
+    "close_reason_counts": {
+      "ML_CLOSE": 7379,
+      "TIME": 4073,
+      "SL": 2913,
+      "TP": 22
+    }
+  }
+}
