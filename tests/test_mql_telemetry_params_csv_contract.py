@@ -249,13 +249,29 @@ def test_fixed11_multi_position_mode_can_close_on_exported_ml_exit_time():
     assert "datetime MLP_ExitTimes[];" in text
     assert "bool MLP_LoadExits()" in text
     assert "int MLP_FindExit(datetime signal_time)" in text
-    assert "bool MLP_ShouldCloseByML(datetime signal_time, datetime bar_time)" in text
-    assert "MLP_ShouldCloseByML(signal_time, Time[bar])" in text
+    assert "datetime MLP_MLCloseDecisionTime()" in text
+    assert "if (IsTesting() && ML_RuleSlot > 0) return Time[0];" in text
+    assert "return Time[bar];" in text
+    assert "datetime MLP_ExitTimeForSignal(datetime signal_time)" in text
+    assert "bool MLP_ShouldCloseByML(datetime signal_time, datetime decision_time)" in text
+    assert "datetime decision_bar_time = MLP_MLCloseDecisionTime();" in text
+    assert "MLP_ShouldCloseByML(signal_time, decision_bar_time)" in text
     assert 'close_reason = "MLClose";' in text
     assert "MLP_cnt_mlclose++" in text
     assert '"  ML closes:        "' in text
     assert "MLP_LoadExits();" in text
     assert '" ExitRows="' in text
+
+
+def test_fixed11_tester_skips_fills_after_exported_ml_exit_time():
+    text = ML_SIGNAL.read_text(encoding="utf-8", errors="replace")
+
+    assert "bool MLP_IsFixed11TesterMode()" in text
+    assert "return (IsTesting() && ML_RuleSlot > 0);" in text
+    assert 'string reason = stale_pending ? "StalePendingAfterMLClose" : "LimitExpired";' in text
+    assert '"StaleFillAfterMLClose"' in text
+    assert "ml_exit_time > 0 && ml_exit_time < entry_time" in text
+    assert 'MLP_CloseSelectedOrder(magic, exp_num, event_atr, "StaleFillAfterMLClose"' in text
 
 
 def test_multi_position_orders_preserve_signal_time_for_reconciliation():
@@ -280,12 +296,13 @@ def test_fixed11_multi_position_entry_uses_e3_pullback_limit_order():
     assert "#define MLP_ENTRY_FILL_LAG_BARS 6" in text
     assert "datetime expiration = 0;" in text
     assert "void MLP_DeleteExpiredPendingOrders(" in text
-    assert "if (bars_since_order <= MLP_ENTRY_FILL_LAG_BARS) continue;" in text
+    assert "bool stale_pending = (MLP_IsFixed11TesterMode() && ml_exit_time > 0 && decision_bar_time >= ml_exit_time);" in text
+    assert "if (!stale_pending && bars_since_order <= MLP_ENTRY_FILL_LAG_BARS) continue;" in text
     assert "OrderDelete(ticket, clrGray)" in text
     assert '" expires=manual_bar_window"' in text
     assert "MLP_OpenLimitOrder(Mgc, ExpNum, Sym, entry_sig, entry_score, MLP_Times[entry_idx], entry_calculation_open, entry_atr, entry_stop, open_positions)" in text
-    assert "MLP_DeleteExpiredPendingOrders(Mgc, ExpNum, Sym);" in text
-    assert "MLP_LogFilledMarketOrders(Mgc, Sym, ATR);" in text
+    assert "MLP_DeleteExpiredPendingOrders(Mgc, ExpNum, Sym, ATR);" in text
+    assert "MLP_LogFilledMarketOrders(Mgc, ExpNum, Sym, ATR);" in text
     assert '" calculation_open="' in text
     assert '" order_price="' in text
     assert '"MARKET_AFTER_LIMIT_PASSED"' in text
@@ -414,6 +431,9 @@ def test_ml_signal_writes_structured_trade_event_csv():
         "swap",
         "commission",
         "reason",
+        "ml_exit_time",
+        "decision_bar_time",
+        "bars_late",
     ):
         assert field in text
 

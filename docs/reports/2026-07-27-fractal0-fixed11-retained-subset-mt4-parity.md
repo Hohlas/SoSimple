@@ -194,9 +194,17 @@ exit times, MT4 kept positions open after Python had already exited by
 `X2_ml_opposite_any_p0_50`; those positions then often reached StopLoss or
 closed on raw reverse entry signals.
 
-This is strong diagnostic evidence that Python/MT4 parity is now much closer for rule slot 1.
+Обновление после отчёта, 2026-07-29: оптимистичная интерпретация этого прогона
+заменена анализом `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`.
+Свежий MT4 PnL и вывод "parity is now much closer" нельзя использовать как
+актуальное доказательство parity. Поздний анализ показал, что rule slot 1 всё
+ещё имеет существенный fill mismatch, а Python runner может записывать
+`ML_CLOSE` на тот же H1 timestamp, что и fill, даже когда M5 показывает первое
+касание лимитки позже внутри этого часа.
 
-The stage still remains `DIAGNOSTIC_ONLY`, not `PASS`, because MT4 `MLClose` currently closes about one H1 bar later than Python on most matched `MLClose` trades.
+Этап остаётся `DIAGNOSTIC_ONLY`, не `PASS`. Текущий blocker уже не только
+one-bar `MLClose` timing в MQL4; blocker теперь в Python/MT4 execution contract
+для хронологии fill и same-H1-bar ML exits.
 
 ## Limitations / Open Questions
 
@@ -222,12 +230,21 @@ Split role:
 
 ## Next Step
 
-Immediate next step:
+Обновление после отчёта, 2026-07-29: следующий шаг ниже заменён. Не продолжать
+только подстройкой MQL4 `MLClose` timing.
 
-1. Fix one-bar `MLClose` timing in MQL4. MT4 should decide closure using the last closed H1 bar, not wait one extra H1 bar after Python `exit_time`.
-2. Recompile MT4 and rerun rule slot 1.
-3. Reconcile `MLClose` exit times, StopLoss count, Timeout count, and R-sum again.
-4. Only after rule slot 1 timing is acceptable, repeat the same tester/reconciliation loop for retained slots 2-5.
+Актуальный следующий шаг:
+
+1. Исправить или перепроектировать Python execution contract так, чтобы fill и
+   same-H1-bar `MLClose` decisions сохраняли хронологический порядок.
+2. Пересчитать Python locked-test artifacts после исправления execution
+   contract.
+3. Заново сгенерировать fixed11 MT4 signal/exit exports из исправленного
+   Python output.
+4. Перезапустить MT4 rule slot 1 и снова сверить fill time, exit time, close
+   reasons и R-sum.
+5. Только после приемлемого slot 1 повторять tester/reconciliation loop для
+   retained slots 2-5.
 
 Stress-spread disclosure and model card remain blocked until retained-subset MT4 parity is either passed or explicitly replaced by a lower-status documented diagnostic.
 

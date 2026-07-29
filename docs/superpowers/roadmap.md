@@ -23,22 +23,54 @@
 Актуальный отчёт:
 `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`.
 
-Последний ручной tester-run проверял только `ML_RuleSlot=1`:
+Актуальный анализ блокера:
+`docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`.
+
+Последний ручной tester-run проверял только `ML_RuleSlot=1` после правок
+`MLClose`/stale handling:
 
 - artifact: `MT/tester/files/ML_Trade_Events_SoSimple_1709200448.csv`;
-- `ORDER_PLACED=1132`, `OPEN=1072`, `CLOSE=1072`, `OPEN_FAILED=5`;
-- close reasons: `MLClose=826`, `Timeout=223`, `StopLoss=23`;
-- closed profit sum: `62238.59`.
+- expert version: `260.338`;
+- `ORDER_PLACED=1115`, `OPEN=717`, `CLOSE=717`, `OPEN_FAILED=404`;
+- close/open-failed reasons: `MLClose=633`, `StaleFillAfterMLClose=63`,
+  `StopLoss=15`, `Timeout=6`, `StalePendingAfterMLClose=324`,
+  `LimitExpired=74`, `MarketAfterLimitPassedStopInvalid=2`,
+  `OrderSendFailed=4`;
+- closed profit sum: `87857.69`;
+- verdict: `DIAGNOSTIC_ONLY`, because PnL is too good to treat as parity proof
+  until fill mismatch is explained.
 
-Главный оставшийся блокер: `MLClose` в MT4 всё ещё закрывает большинство
-сопоставленных сделок примерно на один H1-бар позже Python.
+Главный оставшийся блокер: расхождение fill между Python и MT4. В свежем
+прогоне много случаев, где Python успевает открыть и закрыть сделку, а MT4
+либо не исполняет лимитку до `MLClose` (`StalePendingAfterMLClose`), либо
+исполняет её уже после Python `MLClose` (`StaleFillAfterMLClose`). Эти случаи
+нельзя смешивать с обычной прибыльностью, пока не доказано, что MT4 и Python
+исполняют один и тот же входной контракт.
+
+Дополнительный confirmed blocker из анализа 2026-07-29: M5 execution OHLC в
+текущем Python runner используется только для порядка SL/TP внутри одного H1,
+но не для timestamp лимитного fill и не для проверки, что same-H1 `MLClose`
+происходит после fill. Поэтому Python locked-test artifacts нужно пересчитать
+после исправления execution contract.
 
 Следующий шаг:
 
-1. Исправить one-bar `MLClose` timing в `MT/MQL4/Include/lib_ML_Signal.mqh`.
-2. Перекомпилировать MT4 expert и заново прогнать `ML_RuleSlot=1`.
-3. Сверить exit times, close reasons и R-sum против Python.
-4. Только после приемлемого результата по slot 1 прогонять retained slots 2-5.
+1. Определить исправленный Python execution contract:
+   - минимальный вариант: после fill на H1-баре `T` первое ML-exit решение
+     возможно не раньше следующего закрытого H1-бара;
+   - более точный вариант: использовать M5/M1 для timestamp лимитного fill и
+     разрешать same-H1 exit только если exit decision хронологически позже
+     fill.
+2. Реализовать contract в Python с точечными тестами:
+   - fill на открытии H1;
+   - fill после открытия H1;
+   - `MLClose` на H1-баре fill;
+   - SL/TP same-bar M5 ordering должен остаться прежним.
+3. Пересчитать fixed11 locked-test artifacts.
+4. Заново экспортировать `ml_signals_fixed11_ruleNN.csv` и
+   `ml_exits_fixed11_ruleNN.csv`.
+5. Перезапустить MT4 slot 1 и выполнить reconciliation.
+6. Только после приемлемого slot 1 проверять slots 2-5.
 
 Запрещено до разблокировки:
 

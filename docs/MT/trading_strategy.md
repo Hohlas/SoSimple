@@ -121,18 +121,19 @@ reconciliation. PF в этом режиме не используется как
 Для этих fixed11 retained diagnostic rows сейчас нужны:
 
 - `ML_MaxPositions=20`;
-- `ML_AllowReversal=1`;
+- `ML_AllowReversal=0`;
 - `ML_HoldBars=24`;
 - `ML_BackStopATR=50` как fallback для старых CSV без `stop`;
 - `ML_TakeProfitATR=0`.
 - signal CSV format: `time;signal;atr;stop`.
+- exit CSV format: `signal_time;exit_time`.
 - tester Spread `20` для XAUUSD при `Point=0.01`, чтобы получить Python
   `spread=0.20`.
 
 Причина: Python fixed11 stream допускает несколько одновременных сделок и
-использует pullback-limit вход `E3_open_pullback_1_0atr` и выход по обратному
-ML-сигналу. При `ML_MaxPositions=1` tester блокирует большую часть сигналов,
-а при `ML_AllowReversal=0` не повторяет `X2_ml_opposite_any_p0_50`.
+использует pullback-limit вход `E3_open_pullback_1_0atr` и отдельный ML-выход
+`X2_ml_opposite_any_p0_50`. Этот выход должен исполняться через exported
+`MLClose`, а не через сырой обратный entry-сигнал.
 
 В fixed11 multi-position режиме эксперт не должен открывать market-order сразу.
 Он ставит pending order:
@@ -164,14 +165,15 @@ diagnostic.
 `ML_BackStopATR=999`.
 
 После изменения `#.csv` или торговой MQL-логики обязательно перекомпилировать
-советник. Для текущего online/tester diagnostic этапа ожидаемая версия в логе:
-`OnInit() SoSimple.V260.336`. Версии ниже `260.333` могут читать `PARAMS` как
+советник. Для текущего fixed11 tester diagnostic этапа ожидаемая версия в логе:
+`OnInit() SoSimple.V260.338`. Версии ниже `260.333` могут читать `PARAMS` как
 `char`, из-за чего большие значения вроде `ML_BackStopATR=999` искажаются и
 `Magic` не совпадает. Версия `260.334` дополнительно очищает tester event-log
 перед первой записью нового tester-прогона. Версия `260.336` исполняет
 `OrderSend`/`OrderClose` ML-сделок с 5 попытками и адаптивным slippage по
 текущему спреду, но ограничивает его долей ATR, чтобы не принимать чрезмерно
-плохие цены.
+плохие цены. Версия `260.338` добавляет fixed11 tester-защиту от stale pending
+и stale fill после уже наступившего exported `MLClose`.
 
 ### Онлайн-торговля
 
@@ -447,6 +449,13 @@ MQL не должен запускать ML-модель внутри себя. 
 данные, читать готовый `ml_signals.csv`, открывать/закрывать сделки и подробно
 логировать исполнение. Python отвечает за модель, нормализацию, отбор сигналов,
 атомарную запись файла и диагностические отчёты.
+
+Тот же принцип ожидания Python-ответа применяется к ML-выходам. В live-режиме
+MT4 не должен ждать следующего H1-бара, если после новой строки `Nero.csv`
+Python уже опубликовал свежий `MLClose`: эксперт должен перечитать готовый
+файл после короткого ожидания и закрыть позицию сразу на доступном тике.
+В tester-режиме future wait не нужен, потому что frozen exit CSV уже готов до
+старта тестера.
 
 Важное уточнение по preprocessing:
 
