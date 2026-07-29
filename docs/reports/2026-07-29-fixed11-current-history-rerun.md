@@ -63,7 +63,6 @@ exit, stop, spread или PnL convention.
 ## Changed Files
 
 - `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json`
-- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv`
 - `ML/reports/fractal0_fixed11_current_history_comparison.json`
 - `docs/reports/2026-07-29-fixed11-current-history-rerun.md`
 - `docs/superpowers/roadmap.md`
@@ -72,6 +71,14 @@ exit, stop, spread или PnL convention.
 - `wiki/research/fractal-stop-research.md`
 - `wiki/index.md`
 - `wiki/log.md`
+
+Generated local artifacts under the same output-prefix:
+
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_summary.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_yearly.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_side.csv`
+- `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_selection.csv`
 
 ## Verification
 
@@ -414,6 +421,17 @@ slot1_same_h1_fill_exit=368
 slot1_hold_bars_0=368
 slot1_hold0_close_reasons={'ML_CLOSE': 335, 'SL': 33}
 slot1_hold0_pnl_r_sum=-98.196808
+```
+
+Machine-readable current-history JSON metadata was normalized after review:
+
+```text
+verdict=DIAGNOSTIC_ONLY
+decision=FIXED11_CURRENT_HISTORY_DIAGNOSTIC_ONLY
+stage_status=DIAGNOSTIC_ONLY
+allowed_max_verdict=DIAGNOSTIC_ONLY
+runner_original_verdict=candidate_check_required
+runner_original_decision=FIXED11_RICH_ENTRY_LOCKED_TEST
 ```
 
 ## Conclusions

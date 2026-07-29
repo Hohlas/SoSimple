@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-29 14:04 UTC · git `9598ee6`
+> Auto-generated 2026-07-29 14:10 UTC · git `037d2ba`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3347 files  ·  **Commit**: `9598ee6`  ·  **Generated**: 2026-07-29 14:04 UTC
+**Tracked**: 3347 files  ·  **Commit**: `037d2ba`  ·  **Generated**: 2026-07-29 14:10 UTC
 
 ## Root Docs
 
@@ -451,7 +451,7 @@
 | [docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-26 | 8KB | `88a957c4` |
 | [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 10KB | `fe9774d5` |
 | [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-29 | 12KB | `5aa0c736` |
-| [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 16KB | `43023f26` |
+| [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 17KB | `e164ddea` |
 | [docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md](docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md) |  | 2026-07-29 | 18KB | `81b1b454` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
@@ -818,7 +818,7 @@
 | [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal0_entry_quality_filter.json](ML/reports/fractal0_entry_quality_filter.json) |  |  | 2026-07-21 | 29KB | `1968cec0` |
 | [ML/reports/fractal0_fixed11_candidate_audit.json](ML/reports/fractal0_fixed11_candidate_audit.json) |  |  | 2026-07-26 | 6KB | `25e76fe9` |
-| [ML/reports/fractal0_fixed11_current_history_comparison.json](ML/reports/fractal0_fixed11_current_history_comparison.json) |  |  | 2026-07-29 | 15KB | `f93bddcc` |
+| [ML/reports/fractal0_fixed11_current_history_comparison.json](ML/reports/fractal0_fixed11_current_history_comparison.json) |  |  | 2026-07-29 | 16KB | `09ff58f8` |
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json) |  |  | 2026-07-27 | 194KB | `b616f0c9` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 3KB | `4165a1a9` |
@@ -828,7 +828,7 @@
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json](ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json) |  |  | 2026-07-27 | 2KB | `00a86f7d` |
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py](ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py) |  |  | 2026-07-29 | 14KB | `f2c1cee7` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test.json](ML/reports/fractal0_fixed11_rich_entry_locked_test.json) |  |  | 2026-07-24 | 2KB | `374ed486` |
-| [ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json](ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json) |  |  | 2026-07-29 | 2KB | `19f7dfc9` |
+| [ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json](ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json) |  |  | 2026-07-29 | 3KB | `6a8ea239` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |

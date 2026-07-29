@@ -46,8 +46,11 @@
     }
   },
   "comparison_key": "signal_time + side + rule_id",
+  "current_json_allowed_max_verdict": "DIAGNOSTIC_ONLY",
+  "current_json_diagnostic_only_reason": "current-history OHLC diagnostic rerun without Python H1 chronology logic change; labeled locked-test input was not rebuilt; same-H1/hold_bars=0 chronology risk remains material",
   "current_json_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json",
-  "current_json_sha256": "d97a4167968b9152808b414a64033d61dac3c9b8d653f174a15d9dde7c26bc78",
+  "current_json_sha256": "ec4cd304b5cd70f2f750f513b0f11a2162249f4cf7139a71e233d7ba094da767",
+  "current_json_stage_status": "DIAGNOSTIC_ONLY",
   "current_trades_path": "ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv",
   "current_trades_sha256": "71e72e986d94df1b5389929d280f2bd572be99b066e094e3eab555fc766528c3",
   "logic_change": "none",
