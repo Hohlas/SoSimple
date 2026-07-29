@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-29 13:58 UTC · git `ce924d9`
+> Auto-generated 2026-07-29 14:04 UTC · git `9598ee6`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3347 files  ·  **Commit**: `ce924d9`  ·  **Generated**: 2026-07-29 13:58 UTC
+**Tracked**: 3347 files  ·  **Commit**: `9598ee6`  ·  **Generated**: 2026-07-29 14:04 UTC
 
 ## Root Docs
 
@@ -451,7 +451,7 @@
 | [docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-26 | 8KB | `88a957c4` |
 | [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 10KB | `fe9774d5` |
 | [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-29 | 12KB | `5aa0c736` |
-| [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 13KB | `0bb9ce8b` |
+| [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 16KB | `43023f26` |
 | [docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md](docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md) |  | 2026-07-29 | 18KB | `81b1b454` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
@@ -1799,7 +1799,7 @@
 | [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-29 | 6KB | `16164984` |
 | [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-29 | 2KB | `bf36e25e` |
 | [.superpowers/sdd/task-4-brief.md](.superpowers/sdd/task-4-brief.md) |  | 2026-07-29 | 7KB | `ade27007` |
-| [.superpowers/sdd/task-4-report.md](.superpowers/sdd/task-4-report.md) |  | 2026-07-23 | 6KB | `b845b097` |
+| [.superpowers/sdd/task-4-report.md](.superpowers/sdd/task-4-report.md) |  | 2026-07-29 | 3KB | `ea2d1415` |
 | [.superpowers/sdd/task-5-brief.md](.superpowers/sdd/task-5-brief.md) |  | 2026-07-23 | 4KB | `e2725156` |
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-23 | 3KB | `16f9bbca` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-23 | 6KB | `7a08a27b` |
