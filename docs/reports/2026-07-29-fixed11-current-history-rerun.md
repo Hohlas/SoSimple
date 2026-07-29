@@ -55,6 +55,8 @@ changed_labeled_dataset=false
 logic_change=none
 allowed_max_verdict=DIAGNOSTIC_ONLY
 forbidden_interpretations=PASS/candidate/live-ready/MT4 parity/profitability proof
+cumulative_search_budget=inherited_from_fixed11_locked_test_candidate_audit_and_mutual_correlation_pruning_reports
+current_rerun_search_budget=new_rules=0,new_models=0,new_thresholds=0,new_entry_policy=0,new_exit_policy=0
 ```
 
 `locked_test` не использовался для нового выбора rule, cutoff, filter, entry,
@@ -71,6 +73,10 @@ exit, stop, spread или PnL convention.
 - `wiki/research/fractal-stop-research.md`
 - `wiki/index.md`
 - `wiki/log.md`
+
+Verified supporting artifacts:
+
+- `ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json`
 
 Generated local artifacts under the same output-prefix:
 
@@ -115,6 +121,24 @@ MT4 exported H1 = affd627e55ad777cd763a4f5105420e38cefdf6e4ae94974f14c3350986502
 M5 CSV = 85e6bbc49bc7e4049810cfb4a3d603576b9cd7b363c7b2f52bc43b59ef8c9a9b
 labeled input = 5beb70f29ee27caa2b20a8cd80376879b64179d4ef0e5197a29357b58483f535
 ```
+
+OHLC inventory:
+
+| File | Symbol | Timeframe | CSV contract | Producer | Broker/source | Timezone | Price convention | Period | Rows | Usage |
+|---|---|---|---|---|---|---|---|---|---:|---|
+| `DATA/XAUUSD_H1_OHLC.csv` | XAUUSD | H1 | `;`, `time/open/high/low/close/volume/atr14` | `MT/MQL4/Scripts/ExportOHLC.mq4` | current terminal source: `MetaQuotes-Demo - MetaQuotes Software Corp.` | UNKNOWN | OHLC treated as Bid by project execution policy; exporter writes chart OHLC, exact Bid/Ask source not independently proven here | `2004-06-11 07:00:00` - `2026-07-29 13:00:00` | 128698 | H1 source for locked-test execution rerun; labeled features remain inherited |
+| `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` | XAUUSD | M5 | `;`, `time/open/high/low/close/volume/atr14` | `MT/MQL4/Scripts/ExportOHLC.mq4` | current terminal source: `MetaQuotes-Demo - MetaQuotes Software Corp.` | UNKNOWN | OHLC treated as Bid by project execution policy; exact Bid/Ask source not independently proven here | `2004-06-11 07:15:00` - `2026-07-29 14:25:00` | 1485204 | `execution_ordering_only`, not `feature_source` |
+
+Inventory limitations: source, timezone and exact price convention are not fully
+proven by this diagnostic report, so execution conclusions remain capped at
+`DIAGNOSTIC_ONLY`. HST comparison has incomplete latest edges: H1 CSV ends at
+`2026-07-29 13:00:00` while HST ends at `2026-07-28 18:00:00`; M5 CSV ends at
+`2026-07-29 14:25:00` while HST ends at `2026-07-28 07:55:00`.
+
+Possible broker/source drift: the previous H1 history source is not proven and
+may have been exported from an Alpari terminal/server. Therefore old-vs-current
+differences should be read as possible broker/source drift plus history refresh,
+not as a clean refresh of the same broker history.
 
 History reconciliation:
 
@@ -164,7 +188,33 @@ sha256sum ML/reports/fractal0_fixed11_rich_entry_locked_test.json \
   ML/baseline/benchmark_fractal0_entry_quality_filter.py
 ```
 
-Pre/post hashes matched exactly for all ten paths.
+Persisted and currently verifiable hashes:
+
+| Path | SHA256 source |
+|---|---|
+| `ML/reports/fractal0_fixed11_rich_entry_locked_test.json` | `ML/reports/fractal0_fixed11_current_history_comparison.json.old_json_sha256` |
+| `ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv` | `ML/reports/fractal0_fixed11_current_history_comparison.json.old_trades_sha256` |
+| `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json` | `ML/reports/fractal0_fixed11_current_history_comparison.json.current_json_sha256` |
+| `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv` | `ML/reports/fractal0_fixed11_current_history_comparison.json.current_trades_sha256` |
+| `ML/reports/leaderboard_closure_audit_rules.csv` | `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json.source_rules_csv_sha256` |
+| `ML/reports/fractal0_stop_grid_m5.json` | `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json.source_artifact_sha256` |
+| `DATA/Nero_XAUUSD_test_labeled.csv` | `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json.locked_test_sha256` |
+| `DATA/XAUUSD_H1_OHLC.csv` | `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json.h1_ohlc_sha256` |
+| `MT/MQL4/Files/XAUUSD_M5_OHLC.csv` | `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json.execution_ohlc_sha256` |
+
+Runner code hashes were verified from the working tree during report audit, but
+pre-rerun code hashes were not persisted in structured artifacts:
+
+| Path | Current SHA256 |
+|---|---|
+| `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py` | `0eeb7b3a25206855696964c0ba0a2f2671d37230b9374891ed6e769cd4593a96` |
+| `ML/baseline/benchmark_fractal0_entry_exit_grid.py` | `c4f1213afa74066d54538e4a2d0971a370a6bf89c982f5a0a814585a6a85d565` |
+| `ML/baseline/benchmark_fractal0_entry_quality_filter.py` | `793f18b49e06f815f8144ac6ec1fb9eff1acb67d264a002874b00039e2f0911f` |
+
+Therefore the stronger statement "pre/post hashes matched exactly for all ten
+paths" is not used as machine-verifiable evidence for runner code. The
+reproducible claim is limited to persisted artifact/data hashes plus the
+no-code-diff check below.
 
 Runner CLI and no-code-diff checks:
 
@@ -379,6 +429,35 @@ H1/M5 source checks:
   `large_differences_by_year={"2026": 1}`.
 - Old H1 vs current H1: `diff_rows=13504`.
 
+Locked-test input and sample size disclosure:
+
+```text
+locked_test_raw_rows=9463
+locked_test_signal_counts={0: 7102, BUY: 1207, SELL: 1154}
+locked_test_nonzero_signals=2361
+sample_size_gate=DIAGNOSTIC_ONLY
+sample_size_gate_criteria=locked_test_trades_after_filters >= 100 and active_side_trades >= 30 by default from docs/methodology/06-temporal-split.md
+sample_size_gate_observed_min_rule_trades=223
+sample_size_gate_observed_min_rule_side_trades=69
+sample_size_gate_reason=rule-level trade counts are above the default trade-count thresholds, but the stage remains DIAGNOSTIC_ONLY because this rerun changed only OHLC execution source and did not rebuild labeled locked-test rows
+```
+
+Current-history trades after filters by rule:
+
+| Rule | n_trades |
+|---|---:|
+| `rank01_time_only_linear_target_entry_ev_regression_top30` | 1081 |
+| `rank02_time_only_linear_target_entry_ev_regression_top40` | 1580 |
+| `rank03_time_only_linear_target_entry_ev_regression_top50` | 1976 |
+| `rank04_time_only_linear_target_entry_good_0_5r_top40` | 1529 |
+| `rank05_time_only_linear_target_entry_avoid_sl_top30` | 1091 |
+| `rank06_time_only_linear_target_entry_good_0_5r_top50` | 1992 |
+| `rank07_movement_plus_time_linear_target_entry_good_0_5r_top40` | 501 |
+| `rank08_movement_plus_time_linear_target_entry_good_0_5r_top30` | 385 |
+| `rank09_time_only_hist_gradient_boosting_target_entry_good_0_5r_top50` | 2061 |
+| `rank10_movement_plus_time_linear_target_entry_ev_regression_top50` | 223 |
+| `rank11_movement_plus_time_linear_target_entry_good_0_5r_top50` | 620 |
+
 Aggregate fixed11:
 
 | Metric | Old OHLC | Current OHLC |
@@ -466,8 +545,18 @@ remaining issue is still the Python execution chronology inside H1.
 ## Split Disclosure
 
 - locked-test input path: `DATA/Nero_XAUUSD_test_labeled.csv`;
+- locked-test raw rows: `9463`;
+- locked-test signal counts before filters: `0=7102`, `BUY=1207`,
+  `SELL=1154`, non-zero signals `2361`;
 - split role: unchanged diagnostic locked-test input;
 - old/current comparison key: `signal_time + side + rule_id`;
+- trades after filters by rule are disclosed in `Results`;
+- `sample_size_gate=DIAGNOSTIC_ONLY`: default trade-count thresholds from
+  `docs/methodology/06-temporal-split.md` are met at rule level
+  (`locked_test_trades_after_filters >= 100`, active side trades `>=30`;
+  observed minimums are `223` trades per rule and `69` trades per rule/side),
+  but the rerun is capped because the labeled locked-test dataset was not
+  rebuilt and execution chronology inside H1 was not fixed;
 - `locked_test` was not used for new rule/cutoff/filter selection;
 - old Python artifact split is inherited from
   `ML/reports/fractal0_fixed11_rich_entry_locked_test.json`;
