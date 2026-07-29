@@ -26,6 +26,12 @@
 Актуальный анализ блокера:
 `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`.
 
+Актуальный current-OHLC rerun:
+`docs/reports/2026-07-29-fixed11-current-history-rerun.md`.
+
+Структурное сравнение old/current OHLC:
+`ML/reports/fractal0_fixed11_current_history_comparison.json`.
+
 Последний ручной tester-run проверял только `ML_RuleSlot=1` после правок
 `MLClose`/stale handling:
 
@@ -53,24 +59,33 @@
 происходит после fill. Поэтому Python locked-test artifacts нужно пересчитать
 после исправления execution contract.
 
+Current-OHLC rerun 2026-07-29 отделил эффект смены истории от ошибки
+хронологии. Свежие OHLC materially меняют результат (`14507 -> 13039` trades
+по fixed11 aggregate; slot 1 `1196 -> 1091` trades), но same-H1 риск не
+исчезает: slot 1 current-history сохраняет `368` `hold_bars=0` сделок и `368`
+same-H1 fill/exit случаев. Значит current-OHLC rerun является последней
+Python-side диагностикой до изменения H1 chronology logic, а не основанием для
+нового MT4 export/parity claim.
+
 Следующий шаг:
 
-1. Определить исправленный Python execution contract:
+1. Написать отдельный chronology-fix plan.
+2. Определить исправленный Python execution contract:
    - минимальный вариант: после fill на H1-баре `T` первое ML-exit решение
      возможно не раньше следующего закрытого H1-бара;
    - более точный вариант: использовать M5/M1 для timestamp лимитного fill и
      разрешать same-H1 exit только если exit decision хронологически позже
      fill.
-2. Реализовать contract в Python с точечными тестами:
+3. Реализовать contract в Python с точечными тестами:
    - fill на открытии H1;
    - fill после открытия H1;
    - `MLClose` на H1-баре fill;
    - SL/TP same-bar M5 ordering должен остаться прежним.
-3. Пересчитать fixed11 locked-test artifacts.
-4. Заново экспортировать `ml_signals_fixed11_ruleNN.csv` и
+4. Пересчитать fixed11 locked-test artifacts.
+5. Заново экспортировать `ml_signals_fixed11_ruleNN.csv` и
    `ml_exits_fixed11_ruleNN.csv`.
-5. Перезапустить MT4 slot 1 и выполнить reconciliation.
-6. Только после приемлемого slot 1 проверять slots 2-5.
+6. Перезапустить MT4 slot 1 и выполнить reconciliation.
+7. Только после приемлемого slot 1 проверять slots 2-5.
 
 Запрещено до разблокировки:
 

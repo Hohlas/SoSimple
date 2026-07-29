@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-07-27 18:26 UTC · git `8b2b50e`
+> Auto-generated 2026-07-29 13:58 UTC · git `ce924d9`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,16 +9,16 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3315 files  ·  **Commit**: `8b2b50e`  ·  **Generated**: 2026-07-27 18:26 UTC
+**Tracked**: 3347 files  ·  **Commit**: `ce924d9`  ·  **Generated**: 2026-07-29 13:58 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-27 | 10KB | `8b0976f5` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-27 | 158KB | `ac343840` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-07-29 | 159KB | `e72657e1` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-27 | 3KB | `bda10ef5` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-07-29 | 3KB | `c2876b3b` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-07-27 | 59KB | `eeb3de7d` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -91,7 +91,7 @@
 | [docs/ML/telemetry_daily_reconciliation.py.md](docs/ML/telemetry_daily_reconciliation.py.md) | Ежедневная сверка telemetry ML-сигналов и MT4 MLP-логов | 2026-06-17 | 4KB | `b02fd806` |
 | [docs/MT/lib_PIC.mqh.md](docs/MT/lib_PIC.mqh.md) | Описание библиотеки PIC | 2026-06-17 | 8KB | `e40ecf3c` |
 | [docs/MT/ml_signal_integration.md](docs/MT/ml_signal_integration.md) | Архитектура ML ↔ MT4 (файловый обмен) | 2026-07-27 | 30KB | `663c1deb` |
-| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-07-27 | 50KB | `8b87decc` |
+| [docs/MT/trading_strategy.md](docs/MT/trading_strategy.md) | Полный алгоритм торгового эксперта MAIN() | 2026-07-28 | 51KB | `db3b04db` |
 | [docs/PRD.md](docs/PRD.md) | Product Requirements Document | 2026-06-17 | 4KB | `dba0c943` |
 | [docs/README.md](docs/README.md) | Карта артефактов `docs/` и правила обновления | 2026-07-20 | 4KB | `48d1282c` |
 | [docs/audit/2026-05-18-codex-direct-direction-chain-audit.md](docs/audit/2026-05-18-codex-direct-direction-chain-audit.md) |  | 2026-06-17 | 8KB | `4771493f` |
@@ -133,7 +133,7 @@
 | [docs/methodology/10-frozen-test-oos.md](docs/methodology/10-frozen-test-oos.md) |  | 2026-07-20 | 3KB | `17fd2a84` |
 | [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-07-20 | 11KB | `bf60036a` |
 | [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-07-21 | 12KB | `03a3ec5a` |
-| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-27 | 3KB | `e9cdaaa5` |
+| [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-28 | 5KB | `2b0afdd8` |
 | [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-07-20 | 2KB | `25d2c512` |
 | [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-07-20 | 3KB | `c463688b` |
 | [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-07-20 | 8KB | `33c362bc` |
@@ -157,7 +157,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-27 | 21KB | `55a5daf8` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-07-29 | 18KB | `bebdae4e` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -277,8 +277,9 @@
 | [docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/superpowers/plans/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-25 | 15KB | `e52b9233` |
 | [docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md](docs/superpowers/plans/2026-07-27-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 14KB | `ac1038f1` |
 | [docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md](docs/superpowers/plans/2026-07-27-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-27 | 31KB | `8a7257f3` |
+| [docs/superpowers/plans/2026-07-29-fixed11-current-history-rerun.md](docs/superpowers/plans/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 29KB | `1503352f` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-27 | 8KB | `909008ac` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-07-29 | 11KB | `69b6bfea` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -449,7 +450,9 @@
 | [docs/reports/2026-07-24-fractal0-fixed11-locked-test.md](docs/reports/2026-07-24-fractal0-fixed11-locked-test.md) |  | 2026-07-24 | 17KB | `5eac9b41` |
 | [docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md](docs/reports/2026-07-25-fractal0-fixed11-candidate-audit.md) |  | 2026-07-26 | 8KB | `88a957c4` |
 | [docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md](docs/reports/2026-07-27-fractal0-fixed11-mutual-correlation-pruning.md) |  | 2026-07-27 | 10KB | `fe9774d5` |
-| [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-27 | 10KB | `f7496848` |
+| [docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md](docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md) |  | 2026-07-29 | 12KB | `5aa0c736` |
+| [docs/reports/2026-07-29-fixed11-current-history-rerun.md](docs/reports/2026-07-29-fixed11-current-history-rerun.md) |  | 2026-07-29 | 13KB | `0bb9ce8b` |
+| [docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md](docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md) |  | 2026-07-29 | 18KB | `81b1b454` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML
@@ -815,13 +818,17 @@
 | [ML/reports/fractal0_entry_exit_grid_m5_winner.json](ML/reports/fractal0_entry_exit_grid_m5_winner.json) |  |  | 2026-07-21 | 3KB | `832edcae` |
 | [ML/reports/fractal0_entry_quality_filter.json](ML/reports/fractal0_entry_quality_filter.json) |  |  | 2026-07-21 | 29KB | `1968cec0` |
 | [ML/reports/fractal0_fixed11_candidate_audit.json](ML/reports/fractal0_fixed11_candidate_audit.json) |  |  | 2026-07-26 | 6KB | `25e76fe9` |
+| [ML/reports/fractal0_fixed11_current_history_comparison.json](ML/reports/fractal0_fixed11_current_history_comparison.json) |  |  | 2026-07-29 | 15KB | `f93bddcc` |
 | [ML/reports/fractal0_fixed11_internal_closure_rerun.json](ML/reports/fractal0_fixed11_internal_closure_rerun.json) |  |  | 2026-07-23 | 10KB | `8680ed76` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_retained_subset.json) |  |  | 2026-07-27 | 194KB | `b616f0c9` |
 | [ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json](ML/reports/fractal0_fixed11_mutual_correlation_pruning_summary.json) |  |  | 2026-07-27 | 3KB | `4165a1a9` |
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json](ML/reports/fractal0_fixed11_retained_mt4_parity/feasibility.json) |  |  | 2026-07-27 | 2KB | `0d1e0a82` |
+| [ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json](ML/reports/fractal0_fixed11_retained_mt4_parity/fill_chronology_manifest.json) |  |  | 2026-07-29 | 14KB | `5d4041b3` |
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/fixed11_rule_signal_exports.json](ML/reports/fractal0_fixed11_retained_mt4_parity/fixed11_rule_signal_exports.json) |  |  | 2026-07-27 | 3KB | `4c1d8c05` |
 | [ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json](ML/reports/fractal0_fixed11_retained_mt4_parity/freeze.json) |  |  | 2026-07-27 | 2KB | `00a86f7d` |
+| [ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py](ML/reports/fractal0_fixed11_retained_mt4_parity/reconcile_fill_chronology.py) |  |  | 2026-07-29 | 14KB | `f2c1cee7` |
 | [ML/reports/fractal0_fixed11_rich_entry_locked_test.json](ML/reports/fractal0_fixed11_rich_entry_locked_test.json) |  |  | 2026-07-24 | 2KB | `374ed486` |
+| [ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json](ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json) |  |  | 2026-07-29 | 2KB | `19f7dfc9` |
 | [ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json](ML/reports/fractal0_rich_entry_quality_normalized_artifact_auto_check.json) |  |  | 2026-07-23 | 4KB | `e6ae7b37` |
 | [ML/reports/fractal0_stop_grid_m5.json](ML/reports/fractal0_stop_grid_m5.json) |  |  | 2026-07-21 | 51KB | `99c3e349` |
 | [ML/reports/fractal_ablation.json](ML/reports/fractal_ablation.json) |  |  | 2026-06-17 | 14KB | `087d60c8` |
@@ -1290,7 +1297,7 @@
 | [tests/test_lib_pic_path_reaction_feature_bank.py](tests/test_lib_pic_path_reaction_feature_bank.py) | `ML/lib_pic_path_reaction_feature_bank.py` | ✅ | 2026-06-17 | 3KB | `14cd19b8` |
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-06-17 | 5KB | `3d37ad7d` |
 | [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-17 | 3KB | `281dac57` |
-| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-07-27 | 18KB | `fa698f8f` |
+| [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-07-28 | 19KB | `b95df2f2` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-17 | 1KB | `de0eeac6` |
 | [tests/test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | ✅ | 2026-07-20 | 3KB | `b453393c` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-06-17 | 1KB | `7d04f504` |
@@ -1344,7 +1351,7 @@
 |------|-------------|--------|----------|------|------|
 | [MT/.vscode/settings.json](MT/.vscode/settings.json) |  |  | 2026-06-17 | 928B | `d6834b74` |
 | [MT/MQL4/.vscode/settings.json](MT/MQL4/.vscode/settings.json) |  |  | 2026-06-17 | 927B | `c3c0af89` |
-| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-07-27 | 12KB | `2ac68ae7` |
+| [MT/MQL4/Experts/$o$imple.mq4](MT/MQL4/Experts/$o$imple.mq4) |  |  | 2026-07-28 | 12KB | `06af5552` |
 | [MT/MQL4/Include/Arrays/Array.mqh](MT/MQL4/Include/Arrays/Array.mqh) |  |  | 2026-07-21 | 6KB | `29d804ca` |
 | [MT/MQL4/Include/Arrays/ArrayChar.mqh](MT/MQL4/Include/Arrays/ArrayChar.mqh) |  |  | 2026-07-21 | 23KB | `3df8fe54` |
 | [MT/MQL4/Include/Arrays/ArrayDouble.mqh](MT/MQL4/Include/Arrays/ArrayDouble.mqh) |  |  | 2026-07-21 | 24KB | `c44a2bc3` |
@@ -1425,7 +1432,7 @@
 | [MT/MQL4/Include/iGRAPH.mqh](MT/MQL4/Include/iGRAPH.mqh) |  |  | 2026-06-17 | 38KB | `73d71482` |
 | [MT/MQL4/Include/lib_ATR.mqh](MT/MQL4/Include/lib_ATR.mqh) |  |  | 2026-06-17 | 2KB | `e8fa3ca7` |
 | [MT/MQL4/Include/lib_Flat.mqh](MT/MQL4/Include/lib_Flat.mqh) |  |  | 2026-06-17 | 13KB | `bc1a865b` |
-| [MT/MQL4/Include/lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | ✅ | 2026-07-27 | 64KB | `7a2cd0fe` |
+| [MT/MQL4/Include/lib_ML_Signal.mqh](MT/MQL4/Include/lib_ML_Signal.mqh) | Чтение ML-сигналов из CSV, single/multi-position telemetry trading | ✅ | 2026-07-28 | 68KB | `ee3ba971` |
 | [MT/MQL4/Include/lib_ML_Signal_TB.mqh](MT/MQL4/Include/lib_ML_Signal_TB.mqh) |  |  | 2026-06-17 | 8KB | `86f9658b` |
 | [MT/MQL4/Include/lib_ML_Signal_back.mqh](MT/MQL4/Include/lib_ML_Signal_back.mqh) |  |  | 2026-06-17 | 14KB | `996e3367` |
 | [MT/MQL4/Include/lib_PIC.mqh](MT/MQL4/Include/lib_PIC.mqh) | Алгоритм формирования фракталов | ⚠️ | 2026-06-17 | 57KB | `75237554` |
@@ -1451,6 +1458,7 @@
 | [MT/MQL4/Indicators/OsMA.mq4](MT/MQL4/Indicators/OsMA.mq4) |  |  | 2026-07-21 | 3KB | `a4980656` |
 | [MT/MQL4/Indicators/Parabolic.mq4](MT/MQL4/Indicators/Parabolic.mq4) |  |  | 2026-07-21 | 7KB | `432cb924` |
 | [MT/MQL4/Indicators/RSI.mq4](MT/MQL4/Indicators/RSI.mq4) |  |  | 2026-07-21 | 4KB | `c3187582` |
+| [MT/MQL4/Indicators/SpreadCollector.mq4](MT/MQL4/Indicators/SpreadCollector.mq4) |  |  | 2026-07-28 | 3KB | `4964ffa4` |
 | [MT/MQL4/Indicators/Stochastic.mq4](MT/MQL4/Indicators/Stochastic.mq4) |  |  | 2026-07-21 | 5KB | `0ecf23fb` |
 | [MT/MQL4/Indicators/ZigZag.mq4](MT/MQL4/Indicators/ZigZag.mq4) |  |  | 2026-07-21 | 8KB | `511620e8` |
 | [MT/MQL4/Indicators/iATR.mq4](MT/MQL4/Indicators/iATR.mq4) |  |  | 2026-06-17 | 3KB | `2053ea50` |
@@ -1746,8 +1754,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-21 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-07-27 | 6KB | `5057afca` |
-| [wiki/log.md](wiki/log.md) |  | 2026-07-27 | 80KB | `af66bb85` |
+| [wiki/index.md](wiki/index.md) |  | 2026-07-29 | 6KB | `83172147` |
+| [wiki/log.md](wiki/log.md) |  | 2026-07-29 | 81KB | `25f5fe8f` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1758,7 +1766,7 @@
 | [wiki/research/execution-tracks-robustness-plus-portfolio.md](wiki/research/execution-tracks-robustness-plus-portfolio.md) |  | 2026-06-17 | 6KB | `91183bdb` |
 | [wiki/research/execution-tracks-take-skip-v2.md](wiki/research/execution-tracks-take-skip-v2.md) |  | 2026-06-17 | 24KB | `ec105d66` |
 | [wiki/research/execution-tracks-telemetry-plus-mql.md](wiki/research/execution-tracks-telemetry-plus-mql.md) |  | 2026-06-17 | 10KB | `7b5c0cf0` |
-| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-27 | 138KB | `b0a732ec` |
+| [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-29 | 141KB | `5297adc4` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
@@ -1782,21 +1790,21 @@
 | [.opencode/opencode.json](.opencode/opencode.json) |  | 2026-07-20 | 105B | `bd28a1b3` |
 | [.opencode/package-lock.json](.opencode/package-lock.json) |  | 2026-05-20 | 13KB | `afac1cb9` |
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
-| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-20 | 562B | `3b43b9eb` |
+| [.superpowers/sdd/progress.md](.superpowers/sdd/progress.md) |  | 2026-07-29 | 829B | `302bc590` |
 | [.superpowers/sdd/run_task7_fractal0_grid.py](.superpowers/sdd/run_task7_fractal0_grid.py) |  | 2026-07-20 | 7KB | `a69dc580` |
-| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-23 | 7KB | `e86576af` |
-| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-23 | 1KB | `cda4d1f3` |
-| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-23 | 12KB | `246e1543` |
-| [.superpowers/sdd/task-2-report.md](.superpowers/sdd/task-2-report.md) |  | 2026-07-23 | 5KB | `32dbad90` |
-| [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-23 | 7KB | `18b45d73` |
-| [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-23 | 4KB | `d8a57601` |
-| [.superpowers/sdd/task-4-brief.md](.superpowers/sdd/task-4-brief.md) |  | 2026-07-23 | 7KB | `9fcb64d5` |
+| [.superpowers/sdd/task-1-brief.md](.superpowers/sdd/task-1-brief.md) |  | 2026-07-29 | 4KB | `469f1294` |
+| [.superpowers/sdd/task-1-report.md](.superpowers/sdd/task-1-report.md) |  | 2026-07-29 | 6KB | `f66bcbc7` |
+| [.superpowers/sdd/task-2-brief.md](.superpowers/sdd/task-2-brief.md) |  | 2026-07-29 | 5KB | `462b8837` |
+| [.superpowers/sdd/task-2-report.md](.superpowers/sdd/task-2-report.md) |  | 2026-07-29 | 6KB | `1e30c78b` |
+| [.superpowers/sdd/task-3-brief.md](.superpowers/sdd/task-3-brief.md) |  | 2026-07-29 | 6KB | `16164984` |
+| [.superpowers/sdd/task-3-report.md](.superpowers/sdd/task-3-report.md) |  | 2026-07-29 | 2KB | `bf36e25e` |
+| [.superpowers/sdd/task-4-brief.md](.superpowers/sdd/task-4-brief.md) |  | 2026-07-29 | 7KB | `ade27007` |
 | [.superpowers/sdd/task-4-report.md](.superpowers/sdd/task-4-report.md) |  | 2026-07-23 | 6KB | `b845b097` |
 | [.superpowers/sdd/task-5-brief.md](.superpowers/sdd/task-5-brief.md) |  | 2026-07-23 | 4KB | `e2725156` |
 | [.superpowers/sdd/task-5-report.md](.superpowers/sdd/task-5-report.md) |  | 2026-07-23 | 3KB | `16f9bbca` |
 | [.superpowers/sdd/task-6-brief.md](.superpowers/sdd/task-6-brief.md) |  | 2026-07-23 | 6KB | `7a08a27b` |
 | [.superpowers/sdd/task-6-report.md](.superpowers/sdd/task-6-report.md) |  | 2026-07-23 | 7KB | `40a9879a` |
-| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-27 | 51KB | `7b6acf42` |
+| [graphify-out/.graphify_labels.json](graphify-out/.graphify_labels.json) |  | 2026-07-29 | 51KB | `ba92cdb3` |
 | [graphify-out/2026-07-07/.graphify_labels.json](graphify-out/2026-07-07/.graphify_labels.json) |  | 2026-07-07 | 41KB | `974e6f34` |
 | [graphify-out/2026-07-07/GRAPH_REPORT.md](graphify-out/2026-07-07/GRAPH_REPORT.md) |  | 2026-07-07 | 329KB | `b44fa01c` |
 | [graphify-out/2026-07-08/.graphify_labels.json](graphify-out/2026-07-08/.graphify_labels.json) |  | 2026-07-08 | 48KB | `47ef2de8` |
@@ -1815,9 +1823,13 @@
 | [graphify-out/2026-07-24/GRAPH_REPORT.md](graphify-out/2026-07-24/GRAPH_REPORT.md) |  | 2026-07-24 | 309KB | `07cc2655` |
 | [graphify-out/2026-07-25/.graphify_labels.json](graphify-out/2026-07-25/.graphify_labels.json) |  | 2026-07-24 | 51KB | `226cadb3` |
 | [graphify-out/2026-07-25/GRAPH_REPORT.md](graphify-out/2026-07-25/GRAPH_REPORT.md) |  | 2026-07-24 | 314KB | `774070f6` |
-| [graphify-out/2026-07-27/.graphify_labels.json](graphify-out/2026-07-27/.graphify_labels.json) |  | 2026-07-27 | 51KB | `7eefe0ae` |
-| [graphify-out/2026-07-27/GRAPH_REPORT.md](graphify-out/2026-07-27/GRAPH_REPORT.md) |  | 2026-07-27 | 316KB | `cc0aef3e` |
-| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-27 | 313KB | `4d8e2c99` |
+| [graphify-out/2026-07-27/.graphify_labels.json](graphify-out/2026-07-27/.graphify_labels.json) |  | 2026-07-27 | 51KB | `7b6acf42` |
+| [graphify-out/2026-07-27/GRAPH_REPORT.md](graphify-out/2026-07-27/GRAPH_REPORT.md) |  | 2026-07-27 | 313KB | `4d8e2c99` |
+| [graphify-out/2026-07-28/.graphify_labels.json](graphify-out/2026-07-28/.graphify_labels.json) |  | 2026-07-28 | 51KB | `db0e3bd3` |
+| [graphify-out/2026-07-28/GRAPH_REPORT.md](graphify-out/2026-07-28/GRAPH_REPORT.md) |  | 2026-07-28 | 314KB | `4298cc89` |
+| [graphify-out/2026-07-29/.graphify_labels.json](graphify-out/2026-07-29/.graphify_labels.json) |  | 2026-07-29 | 51KB | `d52d8d53` |
+| [graphify-out/2026-07-29/GRAPH_REPORT.md](graphify-out/2026-07-29/GRAPH_REPORT.md) |  | 2026-07-29 | 312KB | `dab8d41e` |
+| [graphify-out/GRAPH_REPORT.md](graphify-out/GRAPH_REPORT.md) |  | 2026-07-29 | 314KB | `8cd901af` |
 | [graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json](graphify-out/cache/ast/v0.9.8/00272354297312ab71fced4688851e223c59ee595787f25ba8b052eb12ef6d03.json) |  | 2026-07-08 | 135KB | `54d7dbf7` |
 | [graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json](graphify-out/cache/ast/v0.9.8/0031b7e4444bb7d47f5f5f0a8c8e52794bdd75c255d786a67d66c7ff83723529.json) |  | 2026-07-08 | 17KB | `f7a19787` |
 | [graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json](graphify-out/cache/ast/v0.9.8/00786492bf33bc63eac4efd674fd8b019aa576b4f1c563a37f235929c8dfc8ef.json) |  | 2026-07-07 | 846B | `0a6019ff` |
@@ -1879,6 +1891,7 @@
 | [graphify-out/cache/ast/v0.9.8/0e0f63e5ceb1b7a33a41226e751f96358761d0c0db025b646371852a17109807.json](graphify-out/cache/ast/v0.9.8/0e0f63e5ceb1b7a33a41226e751f96358761d0c0db025b646371852a17109807.json) |  | 2026-07-08 | 15KB | `59a6b88d` |
 | [graphify-out/cache/ast/v0.9.8/0e359e18761cc89f5a559dacdcbe02a4ee3660227a01e1b49a80d31e93dc6ab7.json](graphify-out/cache/ast/v0.9.8/0e359e18761cc89f5a559dacdcbe02a4ee3660227a01e1b49a80d31e93dc6ab7.json) |  | 2026-07-07 | 16KB | `2a36e3cd` |
 | [graphify-out/cache/ast/v0.9.8/0e3c081b2e7a7ce57f9ef79df69bb51a04a90854809c9e63c3e85ee382fab171.json](graphify-out/cache/ast/v0.9.8/0e3c081b2e7a7ce57f9ef79df69bb51a04a90854809c9e63c3e85ee382fab171.json) |  | 2026-07-08 | 8KB | `5598c8ba` |
+| [graphify-out/cache/ast/v0.9.8/0e4b29577d9f58dc192894c7b8e8b9bded5d5850ae5437b22fc8d9283173c1f0.json](graphify-out/cache/ast/v0.9.8/0e4b29577d9f58dc192894c7b8e8b9bded5d5850ae5437b22fc8d9283173c1f0.json) |  | 2026-07-29 | 64KB | `9a88b47a` |
 | [graphify-out/cache/ast/v0.9.8/0e7fb3b6ec55617be9083b7870b8caf22aea200cb9cf10255449a1501004ea0e.json](graphify-out/cache/ast/v0.9.8/0e7fb3b6ec55617be9083b7870b8caf22aea200cb9cf10255449a1501004ea0e.json) |  | 2026-07-08 | 3KB | `6b001e3e` |
 | [graphify-out/cache/ast/v0.9.8/0edd9f39418a12ffda12c17ad9e6ab71ae1835d69e76e3bedfbb34cec7a0056a.json](graphify-out/cache/ast/v0.9.8/0edd9f39418a12ffda12c17ad9e6ab71ae1835d69e76e3bedfbb34cec7a0056a.json) |  | 2026-07-08 | 28KB | `699ced26` |
 | [graphify-out/cache/ast/v0.9.8/0f3943ea04379ffd6aade82b659f5d4a443ae4c0ba49615e48959f1e1e964d61.json](graphify-out/cache/ast/v0.9.8/0f3943ea04379ffd6aade82b659f5d4a443ae4c0ba49615e48959f1e1e964d61.json) |  | 2026-07-08 | 43KB | `86766ae5` |
@@ -1909,6 +1922,7 @@
 | [graphify-out/cache/ast/v0.9.8/14036bfdedaeffbd8e81caab79e1ee8331c5eb02522b9a49aeecb1c2471250c8.json](graphify-out/cache/ast/v0.9.8/14036bfdedaeffbd8e81caab79e1ee8331c5eb02522b9a49aeecb1c2471250c8.json) |  | 2026-07-08 | 5KB | `60c530f9` |
 | [graphify-out/cache/ast/v0.9.8/147fc9a743b71244a94a2a5acac1a804f462abe8d64f913e8758a57cca8f02be.json](graphify-out/cache/ast/v0.9.8/147fc9a743b71244a94a2a5acac1a804f462abe8d64f913e8758a57cca8f02be.json) |  | 2026-07-08 | 3KB | `e1b3610c` |
 | [graphify-out/cache/ast/v0.9.8/149673d0d4dbdc73cfed45cdca7629b999f502d4c40bb7b981164739e81e4058.json](graphify-out/cache/ast/v0.9.8/149673d0d4dbdc73cfed45cdca7629b999f502d4c40bb7b981164739e81e4058.json) |  | 2026-07-07 | 15KB | `fead6b99` |
+| [graphify-out/cache/ast/v0.9.8/14ce8f4268834ba0d5f11298ca2ecc9545548594bef5c6a0600db1a54f6c18b9.json](graphify-out/cache/ast/v0.9.8/14ce8f4268834ba0d5f11298ca2ecc9545548594bef5c6a0600db1a54f6c18b9.json) |  | 2026-07-29 | 6KB | `9d98a468` |
 | [graphify-out/cache/ast/v0.9.8/150f4feb73e1f2dffb37211a058f4b113e975e116e61ef72ff917714fa689fa6.json](graphify-out/cache/ast/v0.9.8/150f4feb73e1f2dffb37211a058f4b113e975e116e61ef72ff917714fa689fa6.json) |  | 2026-07-08 | 12KB | `60475caf` |
 | [graphify-out/cache/ast/v0.9.8/1565599dabced929444c3b61fba8a2fe0e5fc880837f7e38ebd1308580d506c1.json](graphify-out/cache/ast/v0.9.8/1565599dabced929444c3b61fba8a2fe0e5fc880837f7e38ebd1308580d506c1.json) |  | 2026-07-08 | 4KB | `77160858` |
 | [graphify-out/cache/ast/v0.9.8/15ccb40518ff35743c03959b116931f02bc4dcdaaf29ffbdd66a5e182cbdd0a9.json](graphify-out/cache/ast/v0.9.8/15ccb40518ff35743c03959b116931f02bc4dcdaaf29ffbdd66a5e182cbdd0a9.json) |  | 2026-07-08 | 66KB | `7edd589b` |
@@ -2067,6 +2081,7 @@
 | [graphify-out/cache/ast/v0.9.8/376b2d25d459655cc55d44d7112b33fb012abe48cc4c97ab953aa05f38242100.json](graphify-out/cache/ast/v0.9.8/376b2d25d459655cc55d44d7112b33fb012abe48cc4c97ab953aa05f38242100.json) |  | 2026-07-08 | 10KB | `42588f8c` |
 | [graphify-out/cache/ast/v0.9.8/37d8bb40b13b83311bd75280804f8c8835cf2ca9cc4198c10fb07bc4b67d1048.json](graphify-out/cache/ast/v0.9.8/37d8bb40b13b83311bd75280804f8c8835cf2ca9cc4198c10fb07bc4b67d1048.json) |  | 2026-07-07 | 18KB | `199bde05` |
 | [graphify-out/cache/ast/v0.9.8/386a9d892815c133af95a3548d83d602b23dea824971d7d0053409c77d5acfdd.json](graphify-out/cache/ast/v0.9.8/386a9d892815c133af95a3548d83d602b23dea824971d7d0053409c77d5acfdd.json) |  | 2026-07-07 | 14KB | `59c4d0a6` |
+| [graphify-out/cache/ast/v0.9.8/3870651428b3b536f7115f11cbbf6e40edd53e2f361657a3d3b08d96ee2abe59.json](graphify-out/cache/ast/v0.9.8/3870651428b3b536f7115f11cbbf6e40edd53e2f361657a3d3b08d96ee2abe59.json) |  | 2026-07-29 | 9KB | `2ff7bd40` |
 | [graphify-out/cache/ast/v0.9.8/388d1d1c2a99ed64beec2b416b964240af7e52c036320165042a31d67699ef96.json](graphify-out/cache/ast/v0.9.8/388d1d1c2a99ed64beec2b416b964240af7e52c036320165042a31d67699ef96.json) |  | 2026-07-07 | 28KB | `5e02e47c` |
 | [graphify-out/cache/ast/v0.9.8/38bd25ea0b5e7ffc22c1edc9d8ee2c6a459795315810f089f11f48d89d337cff.json](graphify-out/cache/ast/v0.9.8/38bd25ea0b5e7ffc22c1edc9d8ee2c6a459795315810f089f11f48d89d337cff.json) |  | 2026-07-07 | 7KB | `1fbe70f5` |
 | [graphify-out/cache/ast/v0.9.8/38c09bf86ba84aae4cd6d301633dc880185eacdf814f5765a6f5fa76ac7b5bd2.json](graphify-out/cache/ast/v0.9.8/38c09bf86ba84aae4cd6d301633dc880185eacdf814f5765a6f5fa76ac7b5bd2.json) |  | 2026-07-08 | 5KB | `4fd64a6c` |
@@ -2084,6 +2099,7 @@
 | [graphify-out/cache/ast/v0.9.8/3be2c35a6c0712ef882155bffcc48dd991117a30f03bbdb584dd0f9f7fafbd40.json](graphify-out/cache/ast/v0.9.8/3be2c35a6c0712ef882155bffcc48dd991117a30f03bbdb584dd0f9f7fafbd40.json) |  | 2026-07-27 | 13KB | `89cca3b1` |
 | [graphify-out/cache/ast/v0.9.8/3c08615b2d80aaf472346912931bd635cf2ac7135cfc85599b4be3eaf747b2bd.json](graphify-out/cache/ast/v0.9.8/3c08615b2d80aaf472346912931bd635cf2ac7135cfc85599b4be3eaf747b2bd.json) |  | 2026-07-07 | 5KB | `d849df16` |
 | [graphify-out/cache/ast/v0.9.8/3c3bf57cffff7d8e260bf4c294b3790b4f08a4a060e856b01d0b9cda43c68882.json](graphify-out/cache/ast/v0.9.8/3c3bf57cffff7d8e260bf4c294b3790b4f08a4a060e856b01d0b9cda43c68882.json) |  | 2026-07-08 | 11KB | `e619ccd2` |
+| [graphify-out/cache/ast/v0.9.8/3c3d9db721fd6dc7aff2f52496b17f98228f62182cd16c54f6af57aee991f3aa.json](graphify-out/cache/ast/v0.9.8/3c3d9db721fd6dc7aff2f52496b17f98228f62182cd16c54f6af57aee991f3aa.json) |  | 2026-07-27 | 9KB | `87b4b5c5` |
 | [graphify-out/cache/ast/v0.9.8/3cfb662f099c51a9d3e292fead5edd13d386f96154a2ca650e312e7715863c1e.json](graphify-out/cache/ast/v0.9.8/3cfb662f099c51a9d3e292fead5edd13d386f96154a2ca650e312e7715863c1e.json) |  | 2026-07-22 | 7KB | `30cb8749` |
 | [graphify-out/cache/ast/v0.9.8/3d11e91324a942e79dd74ed17e95e5ca0ec80bf213281e885866e683a2b95a5b.json](graphify-out/cache/ast/v0.9.8/3d11e91324a942e79dd74ed17e95e5ca0ec80bf213281e885866e683a2b95a5b.json) |  | 2026-07-08 | 14KB | `5675219f` |
 | [graphify-out/cache/ast/v0.9.8/3d60227a95909d9c000b702e66431794c4c92baceafe0dff3bdeb2d0edca3768.json](graphify-out/cache/ast/v0.9.8/3d60227a95909d9c000b702e66431794c4c92baceafe0dff3bdeb2d0edca3768.json) |  | 2026-07-08 | 11KB | `da8327d0` |
@@ -2128,6 +2144,7 @@
 | [graphify-out/cache/ast/v0.9.8/46661ff32d8e70739bf55b31aab0c1736a977a4aa637f667cb16b4a528c3aa25.json](graphify-out/cache/ast/v0.9.8/46661ff32d8e70739bf55b31aab0c1736a977a4aa637f667cb16b4a528c3aa25.json) |  | 2026-07-08 | 8KB | `1c90345f` |
 | [graphify-out/cache/ast/v0.9.8/46821a0db4ce6627e98443d023733a60e61dc8bf5b1b0c1c6468486c6848cc11.json](graphify-out/cache/ast/v0.9.8/46821a0db4ce6627e98443d023733a60e61dc8bf5b1b0c1c6468486c6848cc11.json) |  | 2026-07-08 | 5KB | `c6d835d7` |
 | [graphify-out/cache/ast/v0.9.8/4697ee15db0a208fcdef6e77ce632f8222cdc7267d7f82a2849b89f8e27c9116.json](graphify-out/cache/ast/v0.9.8/4697ee15db0a208fcdef6e77ce632f8222cdc7267d7f82a2849b89f8e27c9116.json) |  | 2026-07-27 | 3KB | `6f6c1283` |
+| [graphify-out/cache/ast/v0.9.8/46a8ea3be4138b3a4f6ba352a146b87da6ae4317750fe6bd3b4775a127f39fa4.json](graphify-out/cache/ast/v0.9.8/46a8ea3be4138b3a4f6ba352a146b87da6ae4317750fe6bd3b4775a127f39fa4.json) |  | 2026-07-29 | 13KB | `d29be7e6` |
 | [graphify-out/cache/ast/v0.9.8/4706f2b63bc0df3b11300059f084705b8efc8b49e77203962d67f096acf7c9a7.json](graphify-out/cache/ast/v0.9.8/4706f2b63bc0df3b11300059f084705b8efc8b49e77203962d67f096acf7c9a7.json) |  | 2026-07-07 | 18KB | `5be21e6d` |
 | [graphify-out/cache/ast/v0.9.8/48360a9a2d5daad51e8b13c2cea763416dfd6ffefe328732621980e8012f87c9.json](graphify-out/cache/ast/v0.9.8/48360a9a2d5daad51e8b13c2cea763416dfd6ffefe328732621980e8012f87c9.json) |  | 2026-07-08 | 4KB | `d90d691e` |
 | [graphify-out/cache/ast/v0.9.8/487f4addaed7b1ff55d0d706c33aa95cc48ebc861d11b01d68ca60cbd160b97b.json](graphify-out/cache/ast/v0.9.8/487f4addaed7b1ff55d0d706c33aa95cc48ebc861d11b01d68ca60cbd160b97b.json) |  | 2026-07-08 | 13KB | `d647255f` |
@@ -2194,6 +2211,7 @@
 | [graphify-out/cache/ast/v0.9.8/56b70e319b936832a32316622e5c379bb4bea6a2365224f4e6b84284e5dde2c6.json](graphify-out/cache/ast/v0.9.8/56b70e319b936832a32316622e5c379bb4bea6a2365224f4e6b84284e5dde2c6.json) |  | 2026-07-08 | 25KB | `47734074` |
 | [graphify-out/cache/ast/v0.9.8/56d406ea5801e4db4da447bf6b17ffc9030211a67c16293acfd7e0e2b56c3b6a.json](graphify-out/cache/ast/v0.9.8/56d406ea5801e4db4da447bf6b17ffc9030211a67c16293acfd7e0e2b56c3b6a.json) |  | 2026-07-08 | 13KB | `058027ba` |
 | [graphify-out/cache/ast/v0.9.8/56dff6e3d62cbd54e11e90cf883404e45d2536fd5b7cd1bec9b0f8a563ba7c7b.json](graphify-out/cache/ast/v0.9.8/56dff6e3d62cbd54e11e90cf883404e45d2536fd5b7cd1bec9b0f8a563ba7c7b.json) |  | 2026-07-08 | 7KB | `d2e07c5c` |
+| [graphify-out/cache/ast/v0.9.8/575fb6705259d380b773c6f3ac7e00ae35de19981043e7879a65879546401b65.json](graphify-out/cache/ast/v0.9.8/575fb6705259d380b773c6f3ac7e00ae35de19981043e7879a65879546401b65.json) |  | 2026-07-29 | 13KB | `918a2a82` |
 | [graphify-out/cache/ast/v0.9.8/576c130ec9fc0a18f238504274edfb77ddd7a20ca7e44501ea521b6bce7371d5.json](graphify-out/cache/ast/v0.9.8/576c130ec9fc0a18f238504274edfb77ddd7a20ca7e44501ea521b6bce7371d5.json) |  | 2026-07-24 | 106KB | `3102774a` |
 | [graphify-out/cache/ast/v0.9.8/57e3d98318646ea481b0de1408483810e227e86a9ed2673a9c7202cfa14c6ff1.json](graphify-out/cache/ast/v0.9.8/57e3d98318646ea481b0de1408483810e227e86a9ed2673a9c7202cfa14c6ff1.json) |  | 2026-07-25 | 13KB | `dc96b3bd` |
 | [graphify-out/cache/ast/v0.9.8/5801dd603326e0386a55f151a97a32b9e1a9d507cb45f931ca1f4947dadb450b.json](graphify-out/cache/ast/v0.9.8/5801dd603326e0386a55f151a97a32b9e1a9d507cb45f931ca1f4947dadb450b.json) |  | 2026-07-08 | 7KB | `25d08079` |
@@ -2229,6 +2247,7 @@
 | [graphify-out/cache/ast/v0.9.8/5da08e41064a8331a70ff81ecea7ec4992adf9a62f2a2274dd89867e148b5a96.json](graphify-out/cache/ast/v0.9.8/5da08e41064a8331a70ff81ecea7ec4992adf9a62f2a2274dd89867e148b5a96.json) |  | 2026-07-07 | 820B | `391e47cf` |
 | [graphify-out/cache/ast/v0.9.8/5dded1c30dc278325d596be2e524f3fcf3fd6b77f015f2cf8f6aa6b2d6e72654.json](graphify-out/cache/ast/v0.9.8/5dded1c30dc278325d596be2e524f3fcf3fd6b77f015f2cf8f6aa6b2d6e72654.json) |  | 2026-07-08 | 20KB | `39bebe28` |
 | [graphify-out/cache/ast/v0.9.8/5df11efcf8155016a490d81626e8f203c1bc586d3b817920bde7c7980e94f8c1.json](graphify-out/cache/ast/v0.9.8/5df11efcf8155016a490d81626e8f203c1bc586d3b817920bde7c7980e94f8c1.json) |  | 2026-07-08 | 6KB | `ff596df8` |
+| [graphify-out/cache/ast/v0.9.8/5e8126731af6e88a1cd2afde54b6995a64fd7453d120e8dd17400f6e0baffbf8.json](graphify-out/cache/ast/v0.9.8/5e8126731af6e88a1cd2afde54b6995a64fd7453d120e8dd17400f6e0baffbf8.json) |  | 2026-07-29 | 13KB | `b294bdd4` |
 | [graphify-out/cache/ast/v0.9.8/5ea3a7725ed35747757032c7ef184988ce07bf3326d6290896db08ab3a7ada47.json](graphify-out/cache/ast/v0.9.8/5ea3a7725ed35747757032c7ef184988ce07bf3326d6290896db08ab3a7ada47.json) |  | 2026-07-07 | 4KB | `e6cec6b2` |
 | [graphify-out/cache/ast/v0.9.8/5ed52418ddc6561bc32f7328f59be55f7986a565693cf8662dbc7c617df04f9e.json](graphify-out/cache/ast/v0.9.8/5ed52418ddc6561bc32f7328f59be55f7986a565693cf8662dbc7c617df04f9e.json) |  | 2026-07-07 | 21KB | `d78679e5` |
 | [graphify-out/cache/ast/v0.9.8/5f10746f8ff4c0acf951ada19fb80dd6943044f881f2b43d6c4ea9b436563b83.json](graphify-out/cache/ast/v0.9.8/5f10746f8ff4c0acf951ada19fb80dd6943044f881f2b43d6c4ea9b436563b83.json) |  | 2026-07-08 | 21KB | `733d9c78` |
@@ -2299,6 +2318,7 @@
 | [graphify-out/cache/ast/v0.9.8/6d4c0e1426fdeaee8a7ca8a50e06578cfb57d5d1c4a936cabe2c887e800a932e.json](graphify-out/cache/ast/v0.9.8/6d4c0e1426fdeaee8a7ca8a50e06578cfb57d5d1c4a936cabe2c887e800a932e.json) |  | 2026-07-08 | 63KB | `a80d6fa1` |
 | [graphify-out/cache/ast/v0.9.8/6d8adb100a382634ca065c5005eb2a4f143caf324f63811f7a0fafc672aaeb25.json](graphify-out/cache/ast/v0.9.8/6d8adb100a382634ca065c5005eb2a4f143caf324f63811f7a0fafc672aaeb25.json) |  | 2026-07-08 | 8KB | `2e6f1aa6` |
 | [graphify-out/cache/ast/v0.9.8/6e5588b5ed974d05d9308594fc162fad11bcf47165c190380f3d4a21ddf6ba08.json](graphify-out/cache/ast/v0.9.8/6e5588b5ed974d05d9308594fc162fad11bcf47165c190380f3d4a21ddf6ba08.json) |  | 2026-07-08 | 15KB | `37b623f9` |
+| [graphify-out/cache/ast/v0.9.8/6e55f0502b72e693e24278ef8d9f822794bd07d7ab9cea5040b72e5ff10a166b.json](graphify-out/cache/ast/v0.9.8/6e55f0502b72e693e24278ef8d9f822794bd07d7ab9cea5040b72e5ff10a166b.json) |  | 2026-07-29 | 16KB | `92261ed2` |
 | [graphify-out/cache/ast/v0.9.8/6eac5e64d96cb4f907fc0bb3e2c9807032375d2081f1f998aa1e41f1a636b429.json](graphify-out/cache/ast/v0.9.8/6eac5e64d96cb4f907fc0bb3e2c9807032375d2081f1f998aa1e41f1a636b429.json) |  | 2026-07-07 | 44KB | `2c7b4140` |
 | [graphify-out/cache/ast/v0.9.8/6ec449962db367d4fb55faf4be5a2fa4ef45f58a8011ff0ae02d57943c094b5c.json](graphify-out/cache/ast/v0.9.8/6ec449962db367d4fb55faf4be5a2fa4ef45f58a8011ff0ae02d57943c094b5c.json) |  | 2026-07-20 | 89KB | `26effd5c` |
 | [graphify-out/cache/ast/v0.9.8/6ed138b6bfb398ded289fdb929bef755a1b2efb1cdc5d48f9209d26554cf6b04.json](graphify-out/cache/ast/v0.9.8/6ed138b6bfb398ded289fdb929bef755a1b2efb1cdc5d48f9209d26554cf6b04.json) |  | 2026-07-24 | 11KB | `e679f120` |
@@ -2413,6 +2433,7 @@
 | [graphify-out/cache/ast/v0.9.8/853517802ad560db08b48da4bf5e62c4a5aefa6d9691e06e6b79bb1bb7c5b42f.json](graphify-out/cache/ast/v0.9.8/853517802ad560db08b48da4bf5e62c4a5aefa6d9691e06e6b79bb1bb7c5b42f.json) |  | 2026-07-07 | 29KB | `264697cb` |
 | [graphify-out/cache/ast/v0.9.8/854af447a34ded15655aafaebedc70c287a15bed8c7f32170d7cabf88fe27d7f.json](graphify-out/cache/ast/v0.9.8/854af447a34ded15655aafaebedc70c287a15bed8c7f32170d7cabf88fe27d7f.json) |  | 2026-07-07 | 15KB | `cdaeb452` |
 | [graphify-out/cache/ast/v0.9.8/85578e618706bb1c3ac24225c7aca13da60f84bf298ee7f4c77291c99bc088dc.json](graphify-out/cache/ast/v0.9.8/85578e618706bb1c3ac24225c7aca13da60f84bf298ee7f4c77291c99bc088dc.json) |  | 2026-07-08 | 20KB | `ed5cb6f9` |
+| [graphify-out/cache/ast/v0.9.8/85994d24b76eaa336d09fd78ed9c50129edc76b12f8ac1704606fd13fba342f3.json](graphify-out/cache/ast/v0.9.8/85994d24b76eaa336d09fd78ed9c50129edc76b12f8ac1704606fd13fba342f3.json) |  | 2026-07-27 | 55KB | `5f9dc602` |
 | [graphify-out/cache/ast/v0.9.8/862fce5ee92dafb485cf4f68e3464215aea4763a66dcf8a251f006034c56b4ae.json](graphify-out/cache/ast/v0.9.8/862fce5ee92dafb485cf4f68e3464215aea4763a66dcf8a251f006034c56b4ae.json) |  | 2026-07-08 | 48KB | `f6b24acb` |
 | [graphify-out/cache/ast/v0.9.8/8630cc49eaf96db801c449400d2104715fc5e39d90bbbb9e6af57991ad77611f.json](graphify-out/cache/ast/v0.9.8/8630cc49eaf96db801c449400d2104715fc5e39d90bbbb9e6af57991ad77611f.json) |  | 2026-07-08 | 17KB | `eea48a9d` |
 | [graphify-out/cache/ast/v0.9.8/86697d0f34af8d293a24acdd731edc43b03253efd0ef58db9590e9892ec8632f.json](graphify-out/cache/ast/v0.9.8/86697d0f34af8d293a24acdd731edc43b03253efd0ef58db9590e9892ec8632f.json) |  | 2026-07-07 | 6KB | `444d50da` |
@@ -2433,6 +2454,7 @@
 | [graphify-out/cache/ast/v0.9.8/8aaef477fcdd4a2c62424c9fba67d664c664ad7328e118d9dda1ccc19d50a1d0.json](graphify-out/cache/ast/v0.9.8/8aaef477fcdd4a2c62424c9fba67d664c664ad7328e118d9dda1ccc19d50a1d0.json) |  | 2026-07-08 | 43KB | `e102cc43` |
 | [graphify-out/cache/ast/v0.9.8/8ae2881daabb96a8ba72e39563f0276f41f70055836e01f8d2a8991c5160af19.json](graphify-out/cache/ast/v0.9.8/8ae2881daabb96a8ba72e39563f0276f41f70055836e01f8d2a8991c5160af19.json) |  | 2026-07-08 | 2KB | `674f24c3` |
 | [graphify-out/cache/ast/v0.9.8/8b02e354cb6d7500a0dfb3242ec6c4061753bdb7daa17ac59a2dad43309d1082.json](graphify-out/cache/ast/v0.9.8/8b02e354cb6d7500a0dfb3242ec6c4061753bdb7daa17ac59a2dad43309d1082.json) |  | 2026-07-08 | 17KB | `73f17541` |
+| [graphify-out/cache/ast/v0.9.8/8b083354d68b20e7eb77a697dfa8a455ee4afc1526baebbe44976ff6e31c50ff.json](graphify-out/cache/ast/v0.9.8/8b083354d68b20e7eb77a697dfa8a455ee4afc1526baebbe44976ff6e31c50ff.json) |  | 2026-07-29 | 31KB | `b56c1f9e` |
 | [graphify-out/cache/ast/v0.9.8/8b0d76e596f5e471afc58e621779f5500d5050e536aa647f76168769e5037be0.json](graphify-out/cache/ast/v0.9.8/8b0d76e596f5e471afc58e621779f5500d5050e536aa647f76168769e5037be0.json) |  | 2026-07-07 | 23KB | `1eb9c7dc` |
 | [graphify-out/cache/ast/v0.9.8/8b4b0e701c9599c7cc9482565b4b803bd477e43105d39acefbe910448661c238.json](graphify-out/cache/ast/v0.9.8/8b4b0e701c9599c7cc9482565b4b803bd477e43105d39acefbe910448661c238.json) |  | 2026-07-08 | 11KB | `a3129bd0` |
 | [graphify-out/cache/ast/v0.9.8/8b71bb658c0b3e9d67af17e5dfc09253c9f07e4ea9c0d72fb9a14575719941f6.json](graphify-out/cache/ast/v0.9.8/8b71bb658c0b3e9d67af17e5dfc09253c9f07e4ea9c0d72fb9a14575719941f6.json) |  | 2026-07-07 | 155KB | `3e3f87e6` |
@@ -2496,9 +2518,11 @@
 | [graphify-out/cache/ast/v0.9.8/9628b466d2b0c2113df74882298164147325cd09f13d1e30d3e00d54826cf57d.json](graphify-out/cache/ast/v0.9.8/9628b466d2b0c2113df74882298164147325cd09f13d1e30d3e00d54826cf57d.json) |  | 2026-07-08 | 28KB | `a21b1d01` |
 | [graphify-out/cache/ast/v0.9.8/96549d841c6bbc248d07f5a0d78262cdef105f6034d47d8da858039108d9b2b0.json](graphify-out/cache/ast/v0.9.8/96549d841c6bbc248d07f5a0d78262cdef105f6034d47d8da858039108d9b2b0.json) |  | 2026-07-08 | 73KB | `1ac212bd` |
 | [graphify-out/cache/ast/v0.9.8/96a310366350ba4d8d15faf0c4ff6f5eaad53d202f6bc4bee2a4f88dbb96d7dc.json](graphify-out/cache/ast/v0.9.8/96a310366350ba4d8d15faf0c4ff6f5eaad53d202f6bc4bee2a4f88dbb96d7dc.json) |  | 2026-07-07 | 21KB | `d4545d0f` |
+| [graphify-out/cache/ast/v0.9.8/96ce3ffc615dd69bacc0b91762da04e033298673ad34bf50ad6aebefcb07d5d8.json](graphify-out/cache/ast/v0.9.8/96ce3ffc615dd69bacc0b91762da04e033298673ad34bf50ad6aebefcb07d5d8.json) |  | 2026-07-27 | 9KB | `e935575c` |
 | [graphify-out/cache/ast/v0.9.8/972756de038b8e4c933fa348487925c268a897e29432974262aca4ffeed494d6.json](graphify-out/cache/ast/v0.9.8/972756de038b8e4c933fa348487925c268a897e29432974262aca4ffeed494d6.json) |  | 2026-07-07 | 17KB | `52e439f5` |
 | [graphify-out/cache/ast/v0.9.8/974a3cfc3c59745d1267387ff54f6cbae77f99d356f5f444429a69de88526137.json](graphify-out/cache/ast/v0.9.8/974a3cfc3c59745d1267387ff54f6cbae77f99d356f5f444429a69de88526137.json) |  | 2026-07-09 | 6KB | `a7a28909` |
 | [graphify-out/cache/ast/v0.9.8/97a6712d082fd191344bb3cc728e64864089e9e031193a302780b0a3374b408f.json](graphify-out/cache/ast/v0.9.8/97a6712d082fd191344bb3cc728e64864089e9e031193a302780b0a3374b408f.json) |  | 2026-07-22 | 8KB | `72960df6` |
+| [graphify-out/cache/ast/v0.9.8/97f43f1caffe8d00aa33ffc63fefdc89aeb37fa0e2ff7d23368dff5995e595b2.json](graphify-out/cache/ast/v0.9.8/97f43f1caffe8d00aa33ffc63fefdc89aeb37fa0e2ff7d23368dff5995e595b2.json) |  | 2026-07-29 | 9KB | `eb52a9f0` |
 | [graphify-out/cache/ast/v0.9.8/9822eaaeb609c0e679f6172608ccd1c1cdd5c35642603c084714ed3d15ee2f96.json](graphify-out/cache/ast/v0.9.8/9822eaaeb609c0e679f6172608ccd1c1cdd5c35642603c084714ed3d15ee2f96.json) |  | 2026-07-07 | 22KB | `e4adf3dc` |
 | [graphify-out/cache/ast/v0.9.8/988301b60a14dedf01e918ffde291794e3a7831ab84bcebc3bf2f9046c9c69fe.json](graphify-out/cache/ast/v0.9.8/988301b60a14dedf01e918ffde291794e3a7831ab84bcebc3bf2f9046c9c69fe.json) |  | 2026-07-08 | 11KB | `54aca945` |
 | [graphify-out/cache/ast/v0.9.8/98e894c4260a729e97109e043e3fd102a925f172a94c2c45ee03864b4a4615ca.json](graphify-out/cache/ast/v0.9.8/98e894c4260a729e97109e043e3fd102a925f172a94c2c45ee03864b4a4615ca.json) |  | 2026-07-08 | 54KB | `778ee011` |
@@ -2611,12 +2635,14 @@
 | [graphify-out/cache/ast/v0.9.8/afbfc9ac9947e1736753df22adba4fb45e9b9da3a77f74527caa55dc90785a67.json](graphify-out/cache/ast/v0.9.8/afbfc9ac9947e1736753df22adba4fb45e9b9da3a77f74527caa55dc90785a67.json) |  | 2026-07-08 | 33KB | `d6c49f1c` |
 | [graphify-out/cache/ast/v0.9.8/afd1b98a4b501e29b4c95cf84a28bb216e5d73d9f119d98f7595a6b986d74961.json](graphify-out/cache/ast/v0.9.8/afd1b98a4b501e29b4c95cf84a28bb216e5d73d9f119d98f7595a6b986d74961.json) |  | 2026-07-07 | 1KB | `5ea94bba` |
 | [graphify-out/cache/ast/v0.9.8/b030df7ee4cdc6f408bc6edea6272f382e7adea05d2af0e5eb509274bb3845c7.json](graphify-out/cache/ast/v0.9.8/b030df7ee4cdc6f408bc6edea6272f382e7adea05d2af0e5eb509274bb3845c7.json) |  | 2026-07-24 | 7KB | `a2ff798e` |
+| [graphify-out/cache/ast/v0.9.8/b048c611803ff678d37e13ba0f04ea60a9d1c7a9335dcf7a4c2635c299a16846.json](graphify-out/cache/ast/v0.9.8/b048c611803ff678d37e13ba0f04ea60a9d1c7a9335dcf7a4c2635c299a16846.json) |  | 2026-07-29 | 9KB | `bb817cfa` |
 | [graphify-out/cache/ast/v0.9.8/b09e5bfdd8a7b8837b339b7d23eade42d885aa0f13a1b20e52bb7362188f6af4.json](graphify-out/cache/ast/v0.9.8/b09e5bfdd8a7b8837b339b7d23eade42d885aa0f13a1b20e52bb7362188f6af4.json) |  | 2026-07-08 | 2KB | `8d66c012` |
 | [graphify-out/cache/ast/v0.9.8/b0a07aaa139bb7667e9643b05bff7e358adcd3f1b0880f18733aa698de7d248e.json](graphify-out/cache/ast/v0.9.8/b0a07aaa139bb7667e9643b05bff7e358adcd3f1b0880f18733aa698de7d248e.json) |  | 2026-07-08 | 4KB | `bdefba6d` |
 | [graphify-out/cache/ast/v0.9.8/b0d09534d921f0fbe497c83054aeff0c853acc7662241c793b96cf8fd0ad7011.json](graphify-out/cache/ast/v0.9.8/b0d09534d921f0fbe497c83054aeff0c853acc7662241c793b96cf8fd0ad7011.json) |  | 2026-07-27 | 13KB | `5ea0eccb` |
 | [graphify-out/cache/ast/v0.9.8/b0faa75c86e79d3dac151228208d0ca97df772246e78c445552ac24bb946808f.json](graphify-out/cache/ast/v0.9.8/b0faa75c86e79d3dac151228208d0ca97df772246e78c445552ac24bb946808f.json) |  | 2026-07-08 | 11KB | `b9c98e0f` |
 | [graphify-out/cache/ast/v0.9.8/b11b333434b961f6a898de9e3ad7f208b9041d1e53ac108995878e2b718c11b4.json](graphify-out/cache/ast/v0.9.8/b11b333434b961f6a898de9e3ad7f208b9041d1e53ac108995878e2b718c11b4.json) |  | 2026-07-27 | 13KB | `25553db4` |
 | [graphify-out/cache/ast/v0.9.8/b1865470bf158b6e3e84a5c8f9d8b58b31297441c549057e6ab542ce5f1e8f79.json](graphify-out/cache/ast/v0.9.8/b1865470bf158b6e3e84a5c8f9d8b58b31297441c549057e6ab542ce5f1e8f79.json) |  | 2026-07-08 | 8KB | `e15081a1` |
+| [graphify-out/cache/ast/v0.9.8/b1ac2b1c08ba024b8b02d1750c2c963179132aeef7c1991ef20c858bc9319c74.json](graphify-out/cache/ast/v0.9.8/b1ac2b1c08ba024b8b02d1750c2c963179132aeef7c1991ef20c858bc9319c74.json) |  | 2026-07-27 | 3KB | `7d9237cc` |
 | [graphify-out/cache/ast/v0.9.8/b1b99371b6f8bd32b1a7e6be3f7e0fe3ee5e466fea52087832fcc94dcca85a32.json](graphify-out/cache/ast/v0.9.8/b1b99371b6f8bd32b1a7e6be3f7e0fe3ee5e466fea52087832fcc94dcca85a32.json) |  | 2026-07-08 | 31KB | `3273d7de` |
 | [graphify-out/cache/ast/v0.9.8/b20488a83f5fed43652a9e43dc63b4ef8a2513ede797bd9a6ca8791cf60d3d34.json](graphify-out/cache/ast/v0.9.8/b20488a83f5fed43652a9e43dc63b4ef8a2513ede797bd9a6ca8791cf60d3d34.json) |  | 2026-07-07 | 816B | `2161f1c7` |
 | [graphify-out/cache/ast/v0.9.8/b21a9502704a4189038ade35ced6cc31254eecf8635347914f83f0a343fe18a5.json](graphify-out/cache/ast/v0.9.8/b21a9502704a4189038ade35ced6cc31254eecf8635347914f83f0a343fe18a5.json) |  | 2026-07-08 | 2KB | `178678cb` |
@@ -2658,6 +2684,7 @@
 | [graphify-out/cache/ast/v0.9.8/b7a12eb94aa5be0dc4e13d0ccce3a55b24ff7c35fca6d4f6475bcd7cc9ad4c59.json](graphify-out/cache/ast/v0.9.8/b7a12eb94aa5be0dc4e13d0ccce3a55b24ff7c35fca6d4f6475bcd7cc9ad4c59.json) |  | 2026-07-08 | 8KB | `afaa8a33` |
 | [graphify-out/cache/ast/v0.9.8/b8297ccdae757273b9fa5c319640f03f2d65b40c543ffbe599b41b9d8667bb6a.json](graphify-out/cache/ast/v0.9.8/b8297ccdae757273b9fa5c319640f03f2d65b40c543ffbe599b41b9d8667bb6a.json) |  | 2026-07-08 | 2KB | `e835f97a` |
 | [graphify-out/cache/ast/v0.9.8/b82bc2eec6ee63c461629d34179760772a2b0ba4d6c8107e02966c3279fd34fc.json](graphify-out/cache/ast/v0.9.8/b82bc2eec6ee63c461629d34179760772a2b0ba4d6c8107e02966c3279fd34fc.json) |  | 2026-07-08 | 5KB | `0a96598e` |
+| [graphify-out/cache/ast/v0.9.8/b83dc799e4c17a9ea4b26c8978ee843f2430c6f3b1518813250a36213e7132e2.json](graphify-out/cache/ast/v0.9.8/b83dc799e4c17a9ea4b26c8978ee843f2430c6f3b1518813250a36213e7132e2.json) |  | 2026-07-29 | 9KB | `bb817cfa` |
 | [graphify-out/cache/ast/v0.9.8/b89f52016d477ab8e05fa62cb5cfcbbf874f6f33f0248d854530f9e789304534.json](graphify-out/cache/ast/v0.9.8/b89f52016d477ab8e05fa62cb5cfcbbf874f6f33f0248d854530f9e789304534.json) |  | 2026-07-08 | 4KB | `4905783d` |
 | [graphify-out/cache/ast/v0.9.8/b8f46aa111167cd9236ef3ffd46c464f635b9aaf6611b5f50d2bbed7506d5b1a.json](graphify-out/cache/ast/v0.9.8/b8f46aa111167cd9236ef3ffd46c464f635b9aaf6611b5f50d2bbed7506d5b1a.json) |  | 2026-07-08 | 5KB | `a00a4bdf` |
 | [graphify-out/cache/ast/v0.9.8/b97858c00d6d3937e1f9487d9f7d1328e6f3a453d6af02603739d75f72807874.json](graphify-out/cache/ast/v0.9.8/b97858c00d6d3937e1f9487d9f7d1328e6f3a453d6af02603739d75f72807874.json) |  | 2026-07-24 | 2KB | `309beb10` |
@@ -2684,6 +2711,7 @@
 | [graphify-out/cache/ast/v0.9.8/bfb866d646b4061024f4d6f408d0594865f1127edde458cd9d65b663a84e0c77.json](graphify-out/cache/ast/v0.9.8/bfb866d646b4061024f4d6f408d0594865f1127edde458cd9d65b663a84e0c77.json) |  | 2026-07-07 | 13KB | `aa169424` |
 | [graphify-out/cache/ast/v0.9.8/bfc22b5278a3c78b4d65a8b6c0f47cba58963a8dd732af400e012264aeb0a40c.json](graphify-out/cache/ast/v0.9.8/bfc22b5278a3c78b4d65a8b6c0f47cba58963a8dd732af400e012264aeb0a40c.json) |  | 2026-07-08 | 6KB | `7d0cd07f` |
 | [graphify-out/cache/ast/v0.9.8/c00199e604a457cf41bc2bc372f6770abddce82a38cd42240fdaf9aff6babfed.json](graphify-out/cache/ast/v0.9.8/c00199e604a457cf41bc2bc372f6770abddce82a38cd42240fdaf9aff6babfed.json) |  | 2026-07-08 | 7KB | `ac4d86e6` |
+| [graphify-out/cache/ast/v0.9.8/c050a0b63bdde1ae1fc4316f32299cee534b567e36b39d7fe79359285d239886.json](graphify-out/cache/ast/v0.9.8/c050a0b63bdde1ae1fc4316f32299cee534b567e36b39d7fe79359285d239886.json) |  | 2026-07-29 | 13KB | `3244f4e6` |
 | [graphify-out/cache/ast/v0.9.8/c0579c4cc8a2c51ba068a5f13dca0638d6d821c77cf7b18ab5c822339c272182.json](graphify-out/cache/ast/v0.9.8/c0579c4cc8a2c51ba068a5f13dca0638d6d821c77cf7b18ab5c822339c272182.json) |  | 2026-07-07 | 96KB | `8f3e17f5` |
 | [graphify-out/cache/ast/v0.9.8/c05f2c62e7a5c974e11b3b78fd0f71186f03a15e6bb45653c33bf79b7cd4016a.json](graphify-out/cache/ast/v0.9.8/c05f2c62e7a5c974e11b3b78fd0f71186f03a15e6bb45653c33bf79b7cd4016a.json) |  | 2026-07-07 | 18KB | `b06c8e0d` |
 | [graphify-out/cache/ast/v0.9.8/c0b7d4e9ed294e1aac7f5cb16ba7785d8762ae334de7231be926a4ec32b39290.json](graphify-out/cache/ast/v0.9.8/c0b7d4e9ed294e1aac7f5cb16ba7785d8762ae334de7231be926a4ec32b39290.json) |  | 2026-07-08 | 4KB | `4ff73f04` |
@@ -2700,6 +2728,7 @@
 | [graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json](graphify-out/cache/ast/v0.9.8/c3612b6a2eeb9c9bc242e717031575f47f5839dd62240f1283565d237f91555f.json) |  | 2026-07-23 | 18KB | `2bb95e05` |
 | [graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json](graphify-out/cache/ast/v0.9.8/c492731516e5bfb10276347c7b6b846aaa8ab266ed819d504f50a85620492e7c.json) |  | 2026-07-22 | 9KB | `a7476293` |
 | [graphify-out/cache/ast/v0.9.8/c4a6d325b610018dfe2e5b888de24daed5e156505f64dbf0b529d09707f2571f.json](graphify-out/cache/ast/v0.9.8/c4a6d325b610018dfe2e5b888de24daed5e156505f64dbf0b529d09707f2571f.json) |  | 2026-07-25 | 15KB | `7bea32cf` |
+| [graphify-out/cache/ast/v0.9.8/c4bc6ccd49090ed7f0b4f4365d3e565bd7121a1ae5d42a1d75177e015c39a716.json](graphify-out/cache/ast/v0.9.8/c4bc6ccd49090ed7f0b4f4365d3e565bd7121a1ae5d42a1d75177e015c39a716.json) |  | 2026-07-29 | 56KB | `15360e42` |
 | [graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json](graphify-out/cache/ast/v0.9.8/c4def0769fa7b12a927fde991141b10f5a14b32a42c4e9291355e6748962cc4d.json) |  | 2026-07-08 | 12KB | `e2bdad62` |
 | [graphify-out/cache/ast/v0.9.8/c4f7cef1ff3319c4cb9ec2b2fac63c08d92e938f090eb93b15ab1c4670feffc4.json](graphify-out/cache/ast/v0.9.8/c4f7cef1ff3319c4cb9ec2b2fac63c08d92e938f090eb93b15ab1c4670feffc4.json) |  | 2026-07-07 | 6KB | `13484135` |
 | [graphify-out/cache/ast/v0.9.8/c51619a80bbb4598e62a0b571fe06c31040338ce34c2817041be6dc5d44d256e.json](graphify-out/cache/ast/v0.9.8/c51619a80bbb4598e62a0b571fe06c31040338ce34c2817041be6dc5d44d256e.json) |  | 2026-07-08 | 768B | `8c90fa78` |
@@ -2877,6 +2906,7 @@
 | [graphify-out/cache/ast/v0.9.8/edadad53b1999148660638468768e8549ff01fdb81fcce1dfa9ba1a7e3543b43.json](graphify-out/cache/ast/v0.9.8/edadad53b1999148660638468768e8549ff01fdb81fcce1dfa9ba1a7e3543b43.json) |  | 2026-07-08 | 19KB | `c8fa66f0` |
 | [graphify-out/cache/ast/v0.9.8/edb2005f33cdb4c2fb64ba074ee1217fd2b65d1fa85e0d4d806b4ae2d378ea29.json](graphify-out/cache/ast/v0.9.8/edb2005f33cdb4c2fb64ba074ee1217fd2b65d1fa85e0d4d806b4ae2d378ea29.json) |  | 2026-07-08 | 44KB | `85fdf15d` |
 | [graphify-out/cache/ast/v0.9.8/ee300e9631c3cb7cdae200e31919529495a09f87ae09309ff50dd0b2335ccef9.json](graphify-out/cache/ast/v0.9.8/ee300e9631c3cb7cdae200e31919529495a09f87ae09309ff50dd0b2335ccef9.json) |  | 2026-07-08 | 17KB | `c3a807ef` |
+| [graphify-out/cache/ast/v0.9.8/ee66da9f6a26bf3cf949549b0ed774bbb6c273ed6a7bc2099f008a749d346198.json](graphify-out/cache/ast/v0.9.8/ee66da9f6a26bf3cf949549b0ed774bbb6c273ed6a7bc2099f008a749d346198.json) |  | 2026-07-27 | 9KB | `f015fb73` |
 | [graphify-out/cache/ast/v0.9.8/ee7a4d2be4f6018b6819a8d0c7311265f1813a20cb6919886ea75b2b57eae355.json](graphify-out/cache/ast/v0.9.8/ee7a4d2be4f6018b6819a8d0c7311265f1813a20cb6919886ea75b2b57eae355.json) |  | 2026-07-08 | 6KB | `54a1f0f5` |
 | [graphify-out/cache/ast/v0.9.8/eeb27b936fee65178a3e7ad18a56240f49d5193116f1e58f7f82038fbe19c670.json](graphify-out/cache/ast/v0.9.8/eeb27b936fee65178a3e7ad18a56240f49d5193116f1e58f7f82038fbe19c670.json) |  | 2026-07-08 | 18KB | `532d3350` |
 | [graphify-out/cache/ast/v0.9.8/eebd8b17a1528bebeb50bf75a322069027f4fa9d87308233f4b88950ceb77ae4.json](graphify-out/cache/ast/v0.9.8/eebd8b17a1528bebeb50bf75a322069027f4fa9d87308233f4b88950ceb77ae4.json) |  | 2026-07-08 | 7KB | `44cd1237` |
@@ -2906,6 +2936,7 @@
 | [graphify-out/cache/ast/v0.9.8/f22d6556f968a6a1d6dd9d19c9d3a4bfe9bc70647d3e432af59ce5c873a553d7.json](graphify-out/cache/ast/v0.9.8/f22d6556f968a6a1d6dd9d19c9d3a4bfe9bc70647d3e432af59ce5c873a553d7.json) |  | 2026-07-07 | 247B | `30045dcd` |
 | [graphify-out/cache/ast/v0.9.8/f2d96f07c580dff86252cb9300bd3cb5f945ad87b9ed0370683ef8a67cf0c504.json](graphify-out/cache/ast/v0.9.8/f2d96f07c580dff86252cb9300bd3cb5f945ad87b9ed0370683ef8a67cf0c504.json) |  | 2026-07-08 | 10KB | `2074d264` |
 | [graphify-out/cache/ast/v0.9.8/f2f408d0de2feb49f1fa8d04bd24cff288aa955e63f0e53fe06d2c570f7da10e.json](graphify-out/cache/ast/v0.9.8/f2f408d0de2feb49f1fa8d04bd24cff288aa955e63f0e53fe06d2c570f7da10e.json) |  | 2026-07-08 | 8KB | `116bfd0c` |
+| [graphify-out/cache/ast/v0.9.8/f304a4a5fe86bf60e31b3c7bfbff2b83236d4729429aa2b1eda3168c50e73688.json](graphify-out/cache/ast/v0.9.8/f304a4a5fe86bf60e31b3c7bfbff2b83236d4729429aa2b1eda3168c50e73688.json) |  | 2026-07-29 | 41KB | `c66e3f6d` |
 | [graphify-out/cache/ast/v0.9.8/f33009af14accaa3b6488cf7e5018053b03d52e2f7b4b55f2e6b969a8596deb1.json](graphify-out/cache/ast/v0.9.8/f33009af14accaa3b6488cf7e5018053b03d52e2f7b4b55f2e6b969a8596deb1.json) |  | 2026-07-07 | 9KB | `bb328e77` |
 | [graphify-out/cache/ast/v0.9.8/f3326a7d01bd1b69f188ceb65d637a876779c2c2953b05a50ffe7868d052712c.json](graphify-out/cache/ast/v0.9.8/f3326a7d01bd1b69f188ceb65d637a876779c2c2953b05a50ffe7868d052712c.json) |  | 2026-07-08 | 20KB | `d3df2959` |
 | [graphify-out/cache/ast/v0.9.8/f3a7112d82fd5e950f9f1359a9740f1bb9cf3b557bc6d38a00c90f8526f3fa5b.json](graphify-out/cache/ast/v0.9.8/f3a7112d82fd5e950f9f1359a9740f1bb9cf3b557bc6d38a00c90f8526f3fa5b.json) |  | 2026-07-08 | 22KB | `ced2773f` |
@@ -2926,6 +2957,7 @@
 | [graphify-out/cache/ast/v0.9.8/f5d64a3cb5b7a3f9075d33538142540ca532a627fd20cccc3dc056498673e203.json](graphify-out/cache/ast/v0.9.8/f5d64a3cb5b7a3f9075d33538142540ca532a627fd20cccc3dc056498673e203.json) |  | 2026-07-24 | 87KB | `76303f22` |
 | [graphify-out/cache/ast/v0.9.8/f603536cf6bd3d3fc8b62f3e06b64fab3b74c4f4cbacacaf06eebe58a04d43bd.json](graphify-out/cache/ast/v0.9.8/f603536cf6bd3d3fc8b62f3e06b64fab3b74c4f4cbacacaf06eebe58a04d43bd.json) |  | 2026-07-08 | 5KB | `b2f8c28c` |
 | [graphify-out/cache/ast/v0.9.8/f60d4259d1dba63a77d96b4993ba8584f11d9bebee995a165aa3b94d27ec3a0d.json](graphify-out/cache/ast/v0.9.8/f60d4259d1dba63a77d96b4993ba8584f11d9bebee995a165aa3b94d27ec3a0d.json) |  | 2026-07-22 | 7KB | `00223d89` |
+| [graphify-out/cache/ast/v0.9.8/f6864b7578007ac816b86164caa349eba15ceb2353e8d2309476181786366fb3.json](graphify-out/cache/ast/v0.9.8/f6864b7578007ac816b86164caa349eba15ceb2353e8d2309476181786366fb3.json) |  | 2026-07-29 | 6KB | `a42cacfa` |
 | [graphify-out/cache/ast/v0.9.8/f6ea77008a1846e3ba130ad387b8ec542b0fbbe387078a34e6642e6f72d95101.json](graphify-out/cache/ast/v0.9.8/f6ea77008a1846e3ba130ad387b8ec542b0fbbe387078a34e6642e6f72d95101.json) |  | 2026-07-07 | 847B | `07702ade` |
 | [graphify-out/cache/ast/v0.9.8/f6fe8b800c12c536efc1c2bfb1e049f6caf72cf42d7791e3687f332762d94348.json](graphify-out/cache/ast/v0.9.8/f6fe8b800c12c536efc1c2bfb1e049f6caf72cf42d7791e3687f332762d94348.json) |  | 2026-07-08 | 8KB | `9287a8c2` |
 | [graphify-out/cache/ast/v0.9.8/f7809745b98e6eef8cc5a51a9d6379a8663aef99563a6ba315b87b7bec53eb90.json](graphify-out/cache/ast/v0.9.8/f7809745b98e6eef8cc5a51a9d6379a8663aef99563a6ba315b87b7bec53eb90.json) |  | 2026-07-08 | 21KB | `1fffae22` |

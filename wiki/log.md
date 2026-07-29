@@ -2,6 +2,12 @@
 > Append-only chronological record of wiki operations.
 > Format: `## [YYYY-MM-DD] operation | description`
 
+## [2026-07-29] ingest | Fixed11 fill chronology and current-history rerun
+- Добавлен охват `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md` и `docs/reports/2026-07-29-fixed11-current-history-rerun.md`.
+- Обновлён `wiki/research/fractal-stop-research.md`: Python M5 execution OHLC защищает только порядок SL/TP внутри H1, а current-OHLC rerun не устранил material same-H1/`hold_bars=0` риск.
+- Обновлён `wiki/index.md`: охват fractal-stop research расширен до 64 report updates.
+- Зафиксировано: следующий допустимый шаг — отдельный Python chronology-fix plan до любого нового MT4 export/parity claim.
+
 ## [2026-07-23] ingest | Leaderboard robustness audit
 - Добавлен охват `docs/reports/2026-07-23-fractal0-rich-entry-leaderboard-robustness-audit.md`.
 - Обновлён `wiki/research/fractal-stop-research.md`: 11 fixed normalized leaderboard rows остаются time-heavy и получают `RULE_ROBUSTNESS_INCOMPLETE`.

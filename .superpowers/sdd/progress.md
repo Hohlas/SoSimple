@@ -6,3 +6,6 @@ Task 5: complete as scaffold (no commit per AGENTS.md, canonical CLI returns ABO
 Task 6: complete with FAIL report (no commit per AGENTS.md)
 
 Fix after user follow-up: complete (runner now wires real splits + freeze scores; real smoke artifact has contract_status PASS, 7 metrics lines, 14457 row lines; full tests 1246 passed).
+fixed11-current-history-rerun Task 1: complete (commits 3fbd705..c2d1b6b, review clean)
+fixed11-current-history-rerun Task 2: complete (commits c2d1b6b..45692d7, review clean)
+fixed11-current-history-rerun Task 3: complete (commits 45692d7..ce924d9, re-review clean)

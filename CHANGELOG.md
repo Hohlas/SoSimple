@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-29] — Fixed11 current-history OHLC rerun (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-29-fixed11-current-history-rerun.md`
+- **topics**: `fixed11`, `current_history`, `ohlc`, `locked_test`, `fill_chronology`
+- **summary**: Re-ran fixed11 locked-test artifacts on current canonical H1/M5 OHLC without changing Python execution logic or rebuilding the labeled locked-test input. The rerun materially changed trade counts and PnL, but retained slot 1 still has material same-H1/`hold_bars=0` risk.
+- **artifacts**: `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json`, `ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv`, `ML/reports/fractal0_fixed11_current_history_comparison.json`
+- **decision**: `DIAGNOSTIC_ONLY`; write and execute a separate Python chronology-fix plan before any new MT4 export or parity claim.
+- **notes**: `DATA/Nero_XAUUSD_test_labeled.csv` was unchanged; old locked-test artifacts were not overwritten; no new rules/cutoffs/filters were selected.
+
 ## [2026-07-27] — Fixed-11 retained-subset MT4 parity diagnostic (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-27-fractal0-fixed11-retained-subset-mt4-parity.md`
 - **topics**: `mt4`, `fixed11`, `retained_subset`, `rule_slot`, `mlclose`, `tester_parity`
