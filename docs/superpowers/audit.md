@@ -1,155 +1,100 @@
-# Аудит отчёта `2026-07-29-fixed11-python-h1-chronology-fix`
+# Аудит плана `2026-07-29-mt5-execution-loop-migration`
 
-Проверяемый файл: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`
+Проверенный документ: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`.
 
-Проверка выполнена по связанным первоисточникам: плану
-`docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`,
-методике `docs/methodology`, затронутому коду, тестам и новым
-`ML/reports/*_h1_chronology_fix*` артефактам. `knowledge-rag` и `graphify`
-использовались только как навигация, выводы ниже подтверждены файлами и
-командами.
+Проверенные связанные артефакты: `MT/README.md`, `MT/MQL5/Experts/$o$imple.mq5`, `MT/MQL5/Include/lib_PIC.mqh`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/MAIN.mqh`, `MT/MQL5/Include/INPUT.mqh`, `MT/MQL5/Include/ORDERS.mqh`, `MT/MQL5/Include/SERVICE.mqh`, `MT/MQL4/Include/lib_PIC.mqh`, `MT/MQL4/Include/lib_ML_Signal.mqh`, `docs/MT/lib_PIC.mqh.md`, `docs/MT/ml_signal_integration.md`, `docs/DATA_FLOW.md`, `docs/dataset_description.md`, `ML/data_loader.py`, `ML/online_tester_reconciliation.py`, `docs/ML/online_tester_reconciliation.py.md`, `docs/methodology/01-raw-data-inventory.md`, `03-feature-contract-leakage.md`, `06-temporal-split.md`, `09-validation-freeze.md`, `10-frozen-test-oos.md`, `12-backtest-costs.md`, `13-export-mt4-parity.md`, `13b-mt5-execution-parity.md`, `16-reporting-audit.md`, `A4-verdicts-stop-conditions.md`.
+
+Навигация: `knowledge-rag search_similar` по плану вернул `no_results`; `graphify query` использовался только как карта кандидатов, не как источник доказательств.
 
 ## Подтверждено
 
-- Ключевые числа отчёта совпадают с
-  `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json` и
-  `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
-- Hash для двух указанных в отчёте primary artifacts совпадает с `sha256sum`.
-- Точечные тесты из отчёта проходят:
-  `./.venv/bin/python -m pytest tests/test_fractal0_entry_exit_grid.py -q`
-  → `50 passed`;
-  `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_rich_entry_locked_test.py -q`
-  → `2 passed`.
-- Старые locked-test/current-history артефакты не перезаписаны:
-  `git diff -- ML/reports/fractal0_fixed11_rich_entry_locked_test.json ML/reports/fractal0_fixed11_rich_entry_locked_test_trades.csv ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history.json ML/reports/fractal0_fixed11_rich_entry_locked_test_current_history_trades.csv`
-  вернул пустой diff.
+- Основная идея плана методологически верная: MT5 tester может проверять исполнение, но не доказывает честность ML-признаков сам по себе. Это совпадает с `docs/methodology/03-feature-contract-leakage.md:21-30`, `docs/methodology/13b-mt5-execution-parity.md:56-63`.
+- Выбор существующего `MT/MQL5/Experts/$o$imple.mq5` как первичного target подтверждён: файл есть, `MT/README.md:17-20` называет `MQL5/` экспериментальным портом, а `docs/methodology/13b-mt5-execution-parity.md:16-17` фиксирует этот expert и `.ex5`.
+- MT5 terminal фактически установлен: команда `find '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5' -maxdepth 1 -type f` показала `MetaEditor64.exe`, `metatester64.exe`, `terminal64.exe`.
+- На диске есть свежий compile log: `/tmp/sosimple_mt5_compile.log` содержит `Result: 0 errors, 0 warnings`; `stat` показал `MT/MQL5/Experts/$o$imple.ex5` с датой `2026-07-29 19:22:27`.
 
----
+## Замечания
 
-## 1. Финальный `DIAGNOSTIC_ONLY` не воспроизводится командами из отчёта
+### 1. Критично: MT5 `Nero.csv` сейчас не совместим с текущим Python-контрактом
 
-- **Важность:** важно
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, раздел `Verification`, строки 66-76; раздел `Results`, строка 90
-- **Суть проблемы:** отчёт говорит, что после принудительной диагностической маркировки итог стал `verdict=DIAGNOSTIC_ONLY`, но в списке команд указана только runner-команда. Эта команда сама по себе пишет исходный verdict `reject` или `candidate_check_required`, а не финальный diagnostic override.
-- **Доказательство:**
-  - В отчёте перечислены только две pytest-команды и runner-команда: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:70-73`.
-  - Код wrapper-а создаёт `selection_df["decision"]` как `KEEP_CANDIDATE` или `REJECT`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:256-268`.
-  - Код wrapper-а пишет JSON verdict как `candidate_check_required` или `reject`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:284-288`.
-  - `main()` только печатает этот artifact, отдельного diagnostic override там нет: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:355-357`.
-  - Текущий JSON уже содержит patched поля `verdict=DIAGNOSTIC_ONLY`, `allowed_max_verdict=DIAGNOSTIC_ONLY`, `original_runner_verdict=reject`: команда
-    `rg -n "verdict|allowed_max_verdict|original_runner_verdict" ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
-- **Почему это важно:** следующий запуск команды из отчёта может перезаписать финальный JSON/selection CSV в недиагностическом виде и сломать hash-и, приведённые в отчёте. Это нарушает требование воспроизводимости из `docs/methodology/16-reporting-audit.md:31` и `docs/methodology/16-reporting-audit.md:106-110`.
-- **Рекомендуемое исправление:** добавить в `Verification` точную команду post-processing из плана, которая ставит `DIAGNOSTIC_ONLY` и diagnostic selection columns, либо лучше добавить в wrapper явный флаг вроде `--diagnostic-only --allowed-max-verdict DIAGNOSTIC_ONLY` и обновить отчёт/команды под этот флаг.
+- **Место:** план, Task 1A, строки 220-228 и 267-278.
+- **Суть проблемы:** план требует `Nero.csv`-совместимость, но его parity-проверки не проверяют число вложенных полей в `fractal*` и наличие `Shift`.
+- **Доказательство:** текущий Python-контракт требует 23 поля: `ML/data_loader.py:94`, `ML/data_loader.py:612-617`, `processing/label_signals.py:57-97`, `docs/dataset_description.md:24-34`. MT4 producer пишет `Shift` как 23-е поле: `MT/MQL4/Include/lib_PIC.mqh:897-901` и `903-919`. MT5 producer сейчас заканчивает строку на `FractalAtr` и `Shift` не пишет: `MT/MQL5/Include/lib_PIC.mqh:878-894` и `896-912`.
+- **Почему это важно:** MT5 export может пройти поверхностную проверку по `fractal0.direction` и `fractal0.price`, но затем сломать Python-парсер или silently дать другой набор признаков.
+- **Рекомендуемое исправление:** в Task 1A добавить обязательную проверку `len(fractalN.split(':')) == 23` для всех `fractal0..fractal99`, проверку `Shift` и сравнение MT4/MT5 по полному вложенному формату. В MQL5 `NERO_CSV_CREATE(int cur_bar)` добавить `":" + S0(SHIFT(F[f].T) - cur_bar)`.
 
----
+### 2. Критично: нет мостика от `mt5_entry_signals.csv` к MQL5-исполнению
 
-## 2. `ml_exit_timing_contract` заявлен сильнее, чем доказано текущими колонками
+- **Место:** план, Task 3 и Task 4, строки 604-618, 791-800, 916-917.
+- **Суть проблемы:** Python exporter создаёт новый entry-only CSV, но план не добавляет MQL5-код, который читает именно этот CSV и применяет `limit_price`, `stop_price`, `max_fill_lag_bars`.
+- **Доказательство:** текущий MQL5 `lib_ML_Signal.mqh` читает только `ml_signals.csv`: `MT/MQL5/Include/lib_ML_Signal.mqh:20`, `55-99`. Поиск `rg -n "mt5_entry_signals|limit_price|protective_stop_price|max_fill_lag_bars" MT/MQL5/...` нашёл эти слова только в плане, не в MQL5-коде. `INPUT.mqh` вызывает старый `ML_TRADE()` при `iSignal=3`: `MT/MQL5/Include/INPUT.mqh:14-19`.
+- **Почему это важно:** после выполнения Task 3 у MT5 всё ещё нечего исполнять из нового файла. Цель плана про tester-executed limit orders не будет достигнута.
+- **Рекомендуемое исправление:** добавить отдельный MQL5 reader для `mt5_entry_signals.csv`: массивы `signal_time/rule_id/side/entry_type/limit_price/stop_price/atr/max_fill_lag_bars`, поиск по времени, постановку именно этих pending/limit orders, истечение заявки и лог `ORDER_PLACED`/`ORDER_EXPIRED`/`OPEN_FAILED`.
 
-- **Важность:** важно
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 23, 34, 108-110
-- **Суть проблемы:** отчёт и JSON заявляют `feature_time <= decision_time <= execution_time`, но `decision_time` в `build_exit_decision_rows(...)` хранит timestamp H1-бара, из которого уже берутся `high/low/close`. Если H1 `time` означает начало часа, то эти признаки становятся известны только на следующем H1-open, то есть не к записанному `decision_time`.
-- **Доказательство:**
-  - M5-окно для H1 строится как `[h1_time, h1_time + 1 hour)`, значит `h1_time` используется как начало H1-бара: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:415-428`.
-  - В `build_exit_decision_rows(...)` признаки берутся из `highs/lows/closes[idx]`: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:807-819`.
-  - В той же строке `decision_time` пишется как `times[idx]`, а `first_exit_execution_time` как `times[idx + 1]`: `ML/baseline/benchmark_fractal0_entry_exit_grid.py:839-840`.
-  - Тест закрепляет именно такую схему: при барах `10:00, 11:00, 12:00` первая строка имеет `decision_time=11:00`, `first_exit_execution_time=12:00`: `tests/test_fractal0_entry_exit_grid.py:502-507` и `tests/test_fractal0_entry_exit_grid.py:553-583`.
-  - Методика требует явно зафиксировать open/close бара и момент решения: `docs/methodology/03-feature-contract-leakage.md:46-56`, `docs/methodology/03-feature-contract-leakage.md:81-84`.
-- **Почему это важно:** downstream может прочитать `decision_time=11:00` как момент, когда модель уже могла принять решение, хотя признаки H1-бара `11:00-12:00` доступны только после закрытия этого бара. Это создаёт риск ошибки в будущем export/parity и делает JSON-контракт неоднозначным.
-- **Рекомендуемое исправление:** либо заменить/дополнить поля на явные `decision_bar_time`, `feature_available_time`, `ml_decision_time`, `first_exit_execution_time`; либо писать `decision_time = times[idx + 1]`, если решение действительно принимается после закрытия бара `idx`. В отчёте уточнить, что текущий `decision_time` является меткой feature bar, а не фактическим временем доступности решения, если сохраняется старое имя.
+### 3. Важно: план не использует MT5-специфическую методологию `13b`
 
----
+- **Место:** Methodology Map, строки 63-72; Task 1 Unknowns, строки 26-32 и 121-143.
+- **Суть проблемы:** план ссылается на MT4 parity как аналог, но пропускает `docs/methodology/13b-mt5-execution-parity.md`, где уже есть конкретный MT5-контур, пути и команда компиляции.
+- **Доказательство:** `docs/methodology/13b-mt5-execution-parity.md:14-25` фиксирует terminal path и команду MetaEditor; `13b:34-39` объясняет, как читать compile verdict; `13b:56-63` задаёт обязательные проверки. План при этом пишет `mt5_terminal_executable_path: "UNKNOWN"` и `absolute MT5 terminal executable path` как blocker: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md:125`, `140`.
+- **Почему это важно:** исполнитель может зря остановиться на ручном handoff, хотя часть автоматической проверки уже описана и доступна.
+- **Рекомендуемое исправление:** добавить `docs/methodology/13b-mt5-execution-parity.md` в Methodology Map и заменить `UNKNOWN` по terminal path на `/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe`; отдельно оставить неизвестным только возможность автоматического tester-run.
 
-## 3. `Changed Files` неполный относительно фактических изменений этапа
+### 4. Важно: финальная проверка не компилирует MQL5 после изменений
 
-- **Важность:** важно
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 58-64
-- **Суть проблемы:** раздел перечисляет только пять файлов, но текущий этап фактически изменил больше связанных файлов документации/контекста и создал новые docs/ML/report artifacts.
-- **Доказательство:**
-  - В отчёте указаны только `benchmark_fractal0_entry_exit_grid.py`, `benchmark_fractal0_entry_quality_filter.py`, `run_fractal0_fixed11_rich_entry_locked_test.py`, `tests/test_fractal0_entry_exit_grid.py`, сам новый report: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:58-64`.
-  - `git diff --name-only` показывает также `CHANGELOG.md`, `CONTEXT_HANDOFF.md`, `MODULE_INDEX.md`, `docs/ML/benchmark_fractal0_entry_exit_grid.py.md`, `docs/ML/benchmark_fractal0_entry_quality_filter.py.md`, `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`, `docs/superpowers/roadmap.md`, `wiki/REPO_integrity.md`, `wiki/index.md`, `wiki/log.md`, `wiki/research/fractal-stop-research.md`.
-  - `git ls-files --others --exclude-standard` показывает новые `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`, `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`, `docs/ML/run_fractal0_fixed11_rich_entry_locked_test.py.md`, `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`.
-  - Методика отчётности включает `modified files` во входы отчёта: `docs/methodology/16-reporting-audit.md:7-14`.
-- **Почему это важно:** следующий агент не увидит полный объём синхронизации контекста и может пропустить связанные изменения в wiki/changelog/module docs.
-- **Рекомендуемое исправление:** расширить раздел `Changed Files` или разделить его на `Code/test changes`, `Documentation/context changes`, `Generated artifacts`. Включить все изменённые связанные файлы либо явно написать, что список намеренно показывает только source/test файлы, а остальные перечислены отдельно.
+- **Место:** Final Verification, строки 1523-1549.
+- **Суть проблемы:** план меняет `.mq5/.mqh`, но финальная проверка запускает только Python tests и `rg`.
+- **Доказательство:** `docs/methodology/13b-mt5-execution-parity.md:19-35` требует компиляцию через MetaEditor и verdict по логу `0 errors, 0 warnings`; `13b:58-59` делает это обязательной проверкой. В плане Final Verification такой команды нет.
+- **Почему это важно:** статический поиск символов не доказывает, что MQL5-код компилируется. Для MQL это особенно рискованно из-за include-порядка и отличий MQL4/MQL5 API.
+- **Рекомендуемое исправление:** добавить compile check из `13b` в Task 4 и Final Verification. Если агент не может запустить Wine/MetaEditor, отчёт должен явно содержать `compile_status: MANUAL_REQUIRED`, а не только `rg`-проверку.
 
----
+### 5. Важно: event schema недостаточна для cost/reconciliation audit
 
-## 4. Раздел `Artifacts` пропускает два generated CSV и не даёт hashes для большинства outputs
+- **Место:** Task 2, строки 363-367 и 489-505; Task 6, строки 1074-1081.
+- **Суть проблемы:** плановый MT5 event-log содержит базовые поля, но не содержит spread, slippage, Bid/Ask, OHLC бара, commission, swap, balance/equity, `order_open_price`, `order_close_price`, `entry_time`, `exit_time`.
+- **Доказательство:** методология требует логировать `OPEN_FAILED`, spread, slippage, Bid/Ask, commission, swap, balance/equity: `docs/methodology/13-export-mt4-parity.md:38-40`. Существующий MT4 event-log уже пишет эти поля: `MT/MQL4/Include/lib_ML_Signal.mqh:110-147`, `180-255`; документация это подтверждает: `docs/MT/ml_signal_integration.md:542-549`. Парсер reconciliation ожидает эти числовые поля: `ML/online_tester_reconciliation.py:37-66`.
+- **Почему это важно:** без этих полей нельзя честно объяснить разницу PnL, проскальзывание, издержки и причины пропущенных входов.
+- **Рекомендуемое исправление:** расширить `MT5_EVENT_COLUMNS` до уровня MT4 event-log или явно сделать `mt5_event_v1_minimal` только debug-схемой, а для parity добавить `mt5_event_v2_reconciliation` с полями cost/execution.
 
-- **Важность:** улучшение
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 78-84
-- **Суть проблемы:** wrapper создаёт `_yearly.csv` и `_side.csv`, эти файлы существуют, но в отчёте они не перечислены. Hash-и указаны только для JSON и trades CSV, хотя методика требует фиксировать paths и hashes.
-- **Доказательство:**
-  - Отчёт перечисляет JSON, trades, summary, selection и comparison: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:78-84`.
-  - Фактически существуют также `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix_yearly.csv` и `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix_side.csv`: команда `ls -l ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix* ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`.
-  - Код wrapper-а всегда пишет `summary_csv`, `trades_csv`, `yearly_csv`, `side_csv`, `selection_csv`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:270-282`.
-  - Hash-и для неуказанных/нехешированных файлов по текущей рабочей копии:
-    - `summary.csv`: `b9a00b19c19200b4e939829327c12d43d6cc3dec6e1d064a0b725918d0979b66`
-    - `selection.csv`: `1ba8896906196b2978d6526ca699dd42f5b002c9a682640c8544aef798cb11a6`
-    - `side.csv`: `cc1aa29ac7bc39bd464b66faa8c0c5e67deab0382a527710fafba5be3e8b9ed0`
-    - `yearly.csv`: `893ddc92eaf249082587bee5fcd2b3418890a2c5ef33b9dfcc828cdf2942ca6a`
-    - `comparison.json`: `65c0a1129d1883fb1f50ac79c4e3468a1fb43dfacaa7e198163aa057dcdb3ef3`
-  - Методика требует указывать paths и hashes: `docs/methodology/16-reporting-audit.md:31`; ключевые числа должны сверяться со structured artifact: `docs/methodology/16-reporting-audit.md:96-97`.
-- **Почему это важно:** отчёт хуже воспроизводится: часть generated outputs остаётся “невидимой”, а hashes для CSV, по которым можно проверять yearly/side/selection, отсутствуют.
-- **Рекомендуемое исправление:** добавить `_yearly.csv` и `_side.csv` в `Artifacts`; добавить sha256 для всех generated outputs или явно обозначить primary/secondary artifacts и дать hash хотя бы для всех файлов, из которых берутся выводы.
+### 6. Важно: плановый event-log не очищается перед tester-run
 
----
+- **Место:** Task 4 logger, строки 871-885; Task 7 runbook, строки 1236-1247.
+- **Суть проблемы:** предложенный logger дописывает в существующий файл и пишет заголовок только если файл пустой; отдельного удаления файла в tester-режиме нет.
+- **Доказательство:** `docs/methodology/13-export-mt4-parity.md:77` называет неочищенный event-log типовой ошибкой. Существующий MT4 logger удаляет файл при `IsTesting()`: `MT/MQL4/Include/lib_ML_Signal.mqh:164-167`, а docs фиксируют очистку tester CSV: `docs/MT/ml_signal_integration.md:557-559`.
+- **Почему это важно:** старые события смешаются с новым прогоном, и counts/PnL будут неверными.
+- **Рекомендуемое исправление:** добавить `MT5_PrepareEventFileIfNeeded()` с `FileDelete(MT5_EventFile)` при `IsTesting()` перед первой записью; добавить тест/ручную проверку, что новый run начинается с чистого файла.
 
-## 5. Нет раскрытия scaler/normalization для movement-score части wrapper-а
+### 7. Важно: timing contract заявлен, но не представлен в данных
 
-- **Важность:** важно
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, разделы `Methodology`, `What Was Done`, `Split Disclosure`; `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`
-- **Суть проблемы:** отчёт корректно говорит, что M5 не стал ML input, но не раскрывает scaler/normalization contract для части, где wrapper заново считает `movement_score` для locked_test.
-- **Доказательство:**
-  - Wrapper использует `RobustScaler`, fit на train features и transform locked_test features: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:80`, `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:98-101`.
-  - Затем обучает модель и пишет `movement_score`: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:104-116`.
-  - JSON содержит только краткое поле `movement_score_for_locked_test`, без `normalization_config`, `normalized_feature_distribution_audit` или `scale_contract`: `rg -n "normalization_config|scale_contract|normalized_feature_distribution_audit|movement_score_for_locked_test" ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`.
-  - Методика требует для моделей со scaler/normalization указать `normalization_config`, где fit-ился scaler, audit распределений и `scale_contract`: `docs/methodology/16-reporting-audit.md:33-42`, `docs/methodology/16-reporting-audit.md:98-100`.
-- **Почему это важно:** даже при `DIAGNOSTIC_ONLY` следующий агент должен понимать, что отрицательный rerun не вызван скрытым изменением preprocessing/scaler-контракта. Сейчас это можно проверить только через код, а не через отчёт/JSON.
-- **Рекомендуемое исправление:** добавить в отчёт и JSON отдельный блок: `movement_score_model_contract`, `normalization_config=RobustScaler fit on train only`, `locked_test_not_used_for_scaler_fit=true`, ссылку на исходный frozen movement protocol или явное объяснение, почему A7/scale audit не применялся в этом debug rerun.
+- **Место:** Task 2 schema, строки 546-579; Task 5 contract, строки 987-1001.
+- **Суть проблемы:** документ пишет `feature_time <= decision_time <= execution_time`, но в signal/event CSV нет отдельных колонок `feature_time`, `decision_time`, `execution_time` или `feature_available_time`.
+- **Доказательство:** `MT5_SIGNAL_COLUMNS` содержит только `time`, `rule_id`, `side`, `entry_type`, `limit_price`, `stop_price`, `atr`, `max_fill_lag_bars`: план строки 468-477. `MT5_EVENT_COLUMNS` содержит `time` и `signal_time`, но не decision/execution timestamps: строки 489-505. Методология требует явно фиксировать `decision_time`: `docs/methodology/03-feature-contract-leakage.md:46-56`.
+- **Почему это важно:** нельзя доказать, что признаки были известны до решения, а исполнение произошло после решения.
+- **Рекомендуемое исправление:** добавить в signal/event schema поля `feature_time`, `feature_available_time`, `decision_time`, `execution_time`; для ML-exit добавить `fill_time`, `decision_bar_time` и `feature_bar_close_time`.
 
----
+### 8. Улучшение: exporter metadata не выполняет собственный список обязательных полей
 
-## 6. Уровень этапа сформулирован двусмысленно относительно методики
+- **Место:** Task 3, строки 624-627 и 726-735.
+- **Суть проблемы:** Mandatory Checks требуют `nonzero counts`, но JSON meta их не пишет. Также нет hash входного source CSV, rule/model metadata и run config.
+- **Доказательство:** план требует `Hash, row counts, nonzero counts and duplicate times are written to JSON`: строка 627. Реальный шаблон meta содержит `rows`, `unique_times`, `duplicate_time_rows`, `side_counts`, `output_csv_sha256`, но не `nonzero_rows`, `source_csv_sha256`, `rule_hash`: строки 726-735. Методология требует paths, hashes, rules, checkpoints: `docs/methodology/16-reporting-audit.md:31`.
+- **Почему это важно:** следующий агент не сможет проверить, из каких входов получен signal CSV и сколько реально активных сигналов экспортировано.
+- **Рекомендуемое исправление:** добавить `source_csv`, `source_csv_sha256`, `rule_id`, `rule_hash`, `active_signal_rows`, `buy_rows`, `sell_rows`, `run_config_hash`.
 
-- **Важность:** улучшение
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 15-17
-- **Суть проблемы:** отчёт называет этап “Проверочный debug/parity этап”. По смыслу это diagnostic rerun после изменения контракта, а не полноценная проверочная candidate-стадия. Формулировка может быть прочитана как confirmatory-проверка, хотя сам отчёт правильно ставит `DIAGNOSTIC_ONLY`.
-- **Доказательство:**
-  - Строка отчёта: `Проверочный debug/parity этап`: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:15-17`.
-  - Методика требует явно указать уровень “поисковый / проверочный” и для проверочного уровня указать, что было заморожено до запуска: `docs/methodology/16-reporting-audit.md:18-23`, `docs/methodology/16-reporting-audit.md:90-92`.
-  - Методика locked-test говорит, что смена execution convention после freeze делает такой locked_test невалидным как тот же проверочный результат: `docs/methodology/10-frozen-test-oos.md:27-38`, `docs/methodology/10-frozen-test-oos.md:47-54`.
-- **Почему это важно:** статус `DIAGNOSTIC_ONLY` выставлен правильно, но слово “проверочный” без уточнения может создать ложное ощущение, что это новый confirmatory locked-test.
-- **Рекомендуемое исправление:** заменить на более точное: “Диагностический debug/parity rerun в проверочном контуре; не новый confirmatory locked-test и не candidate evidence”. В `Multiple Testing Context` добавить `lifecycle_status=diagnostic_rerun_after_contract_bugfix`.
+### 9. Улучшение: `InpMT5_ExportNero=false -> no producer side effect` недоказуемо текущей статической проверкой
 
----
+- **Место:** Task 1A, строки 315-340.
+- **Суть проблемы:** план задаёт guard для Nero export, но проверяет только наличие строк через `rg`, а не то, что оба overload-а `NERO_CSV_CREATE()` и все вызовы реально защищены.
+- **Доказательство:** текущий MQL5 код вызывает `NERO_CSV_CREATE()` в `EXPERT::INIT()`: `MT/MQL5/Include/lib_PIC.mqh:96-129`, и пишет строки через `NERO_CSV_CREATE(bar)` при обновлении уровней: `MT/MQL5/Include/lib_PIC.mqh:312`, `677-692`, `779-922`. Плановая проверка `rg` на строки `InpMT5_ExportNero|...` не доказывает отсутствие записи файла: план строки 329-340.
+- **Почему это важно:** при default `false` эксперт всё равно может удалить/создать `Nero.csv`, если guard вставлен не во все нужные места.
+- **Рекомендуемое исправление:** явно прописать: оба `NERO_CSV_CREATE` должны начинаться с `if(!MT5_ExportNero) return;`, имя файла должно использовать `MT5_NeroFile`, а проверка должна включать compile plus source grep по обоим overload-ам.
 
-## 7. `Multiple Testing Context` не раскрывает cumulative budget и изменение fill convention в машинно-читаемом виде
+### 10. Вопрос: runbook не даёт точный путь к MT5 tester `Files`
 
-- **Важность:** улучшение
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 48-56
-- **Суть проблемы:** отчёт указывает, что новых rules/cutoffs/profiles/models/targets/filters/spreads не было, но методика требует current и cumulative search budget с учётом entry/exit policy, spread/fill convention, transforms/scalers и filters. Изменение ML-exit feature contract и fill/execution convention описано текстом, но не раскрыто в самом budget-блоке.
-- **Доказательство:**
-  - Текущий блок содержит только `fixed rules tested: 11`, `new rules/cutoffs/profiles/models/targets/filters/spreads: 0`, `status: diagnostic rerun`: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:48-56`.
-  - Методика требует current и cumulative search budget с перечислением моделей, профилей, таргетов, сторон, горизонтов, seed, инструментов, entry/exit policy, spread/fill convention, transforms/scalers, filters и параметров: `docs/methodology/16-reporting-audit.md:18-23`.
-  - JSON содержит `current_search_budget`, но там тоже нет явного `changed_fill_convention=true` или ссылки на cumulative budget id: `ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py:333-335`.
-- **Почему это важно:** именно изменение fill/execution convention является причиной `DIAGNOSTIC_ONLY`. Если оно не отражено в budget-блоке, будущий читатель может ошибочно считать rerun тем же frozen-chain экспериментом с нулевым изменением условий.
-- **Рекомендуемое исправление:** расширить блок до явного вида:
-  `current_search_budget: fixed_rules=11, new_selection=0, changed_ml_exit_feature_contract=true, changed_fill_execution_convention=true, changed_spread=false`;
-  `cumulative_search_budget: inherited_from=<fixed11 reports>`;
-  `allowed_max_verdict=DIAGNOSTIC_ONLY`.
+- **Место:** Task 1 manifest, строка 137; Task 7 runbook, строки 1236-1247.
+- **Суть проблемы:** обязательная проверка говорит, что runbook должен точно сказать, куда копировать файлы, но шаблон пишет только `MT5 tester Files directory`.
+- **Доказательство:** `MT/MQL5/Files` сейчас не существует: команда `test -d MT/MQL5/Files` вернула exit code `1`; `find MT/MQL5 -maxdepth 2 -type d` показал `Experts`, `Include`, `Profiles`, но не `Files`. План при этом указывает `"mt5_files_dir_planned": "MT/MQL5/Files"` и шаг `Copy signal CSV to MT5 tester Files directory`: строки 137, 1239.
+- **Почему это важно:** пользователь может положить CSV не туда, эксперт не найдёт файл, и tester-run будет ошибочно интерпретирован как проблема стратегии.
+- **Рекомендуемое исправление:** добавить шаг discovery: записать `TerminalInfoString(TERMINAL_DATA_PATH)`, tester agent files path или использовать `FILE_COMMON` с явно указанным common path. В manifest хранить фактический путь входного и выходного CSV.
 
----
+## Итог
 
-## 8. Для проваленного fixed11 path не указано, выполнен ли post-mortem или почему он отложен
-
-- **Важность:** улучшение
-- **Место:** `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`, строки 116-142
-- **Суть проблемы:** вывод говорит, что edge исчез и ветку нужно остановить или перевести в post-mortem, но отчёт не фиксирует, выполнен ли post-mortem или почему он не выполнялся в этом этапе.
-- **Доказательство:**
-  - Вывод: `PF max < 1`, path должен быть остановлен или переведён в post-mortem: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:116-118`.
-  - Next Step предлагает принять решение между post-mortem и diagnostic-only MT4 parity: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md:137-142`.
-  - Методика требует для `FAIL`/`reject` результата указать, выполнен ли post-mortem, а если нет — причину: `docs/methodology/16-reporting-audit.md:57-62`, `docs/methodology/16-reporting-audit.md:102-104`.
-- **Почему это важно:** результат фактически `reject` до diagnostic marking (`original_runner_verdict=reject`) и разрушает старый edge. Без явного post-mortem status следующий шаг остаётся менее определённым.
-- **Рекомендуемое исправление:** добавить короткий блок `Post-mortem status`: `not done in this stage; reason: chronology bug explains invalidation, separate A5 post-mortem required only if continuing fixed11 mechanics` либо сразу оформить post-mortem как следующий обязательный документ перед новой исследовательской веткой.
-
+План правильный по направлению, но в текущем виде его нельзя исполнять как надёжный implementation plan без правок. Главные блокеры: несовместимый MT5 `Nero.csv` без `Shift`, отсутствие MQL5 reader/executor для нового `mt5_entry_signals.csv`, слишком бедный event-log для reconciliation и отсутствие обязательной MT5 compile verification в финальных проверках.

@@ -25,7 +25,6 @@
 
 ## Unknowns / Questions To Resolve Before Full Automation
 
-- Абсолютный путь к исполняемому файлу `terminal64.exe` MT5 в Wine/Linux окружении. Известный проектный каталог исходников: `MT/MQL5`.
 - Доступен ли командный запуск MT5 Strategy Tester из текущей среды агента.
 - Какой режим MT5 tester использовать как основной для XAUUSD H1: real ticks, generated ticks или control/open prices. Для parity лучше real/generated ticks, но скорость может быть blocker.
 - Доступна ли в текущем билде MT5 поддержка ONNX для нужной модели. Если нет, первый прототип должен использовать простую экспортируемую модель или rule-based scorer.
@@ -69,6 +68,7 @@ MT/MQL5/Experts/SoSimpleMT5SignalExecutor.mq5
 - `docs/methodology/10-frozen-test-oos.md`: изменение execution engine после freeze требует нового цикла или понижает статус до `DIAGNOSTIC_ONLY`.
 - `docs/methodology/12-backtest-costs.md`: tester execution, spread, commission, slippage, missed opens, latency и close reasons должны быть частью отчёта.
 - `docs/methodology/13-export-mt4-parity.md`: применить тот же смысл к MT5: доказать, что tester исполняет тот же signal/model contract, который выбран Python.
+- `docs/methodology/13b-mt5-execution-parity.md`: использовать MT5-specific paths, MetaEditor compile command, compile verdict по UTF-16LE log и обязательную проверку `.ex5`.
 - `docs/methodology/16-reporting-audit.md`: все команды, paths, hashes, artifacts, limitations и invalidated assumptions фиксируются в отчёте.
 
 ---
@@ -89,6 +89,7 @@ MT/MQL5/Experts/SoSimpleMT5SignalExecutor.mq5
 **Applicable Methodology:**
 - `docs/methodology/01-raw-data-inventory.md`: source, producer, timezone, symbol and history availability.
 - `docs/methodology/12-backtest-costs.md`: tester data and execution mode must be known before interpreting metrics.
+- `docs/methodology/13b-mt5-execution-parity.md`: MT5 terminal path, MetaEditor compile command and `.ex5` freshness must be checked.
 
 **Mandatory Checks:**
 - Confirm whether `MT/MQL5/Experts/$o$imple.mq5` compiles or is only legacy/experimental source.
@@ -122,7 +123,9 @@ Create `ML/reports/mt5_execution_loop/mt5_environment_manifest.json` with this s
 {
   "status": "DIAGNOSTIC_ONLY",
   "mt5_source_root": "MT/MQL5",
-  "mt5_terminal_executable_path": "UNKNOWN",
+  "mt5_terminal_executable_path": "/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe",
+  "mt5_metaeditor_executable_path": "/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe",
+  "mt5_compile_log": "/tmp/sosimple_mt5_compile.log",
   "agent_can_run_mt5_tester": false,
   "manual_user_run_required": true,
   "symbol": "XAUUSD",
@@ -134,11 +137,9 @@ Create `ML/reports/mt5_execution_loop/mt5_environment_manifest.json` with this s
     "mt5_ml_signal_include_primary": "MT/MQL5/Include/lib_ML_Signal.mqh",
     "mt5_new_expert_fallback_only": "MT/MQL5/Experts/SoSimpleMT5SignalExecutor.mq5",
     "python_output_dir": "ML/reports/mt5_execution_loop",
-    "mt5_files_dir_planned": "MT/MQL5/Files"
+    "mt5_files_dir_planned": "DISCOVER_WITH_TERMINAL_DATA_PATH_OR_FILE_COMMON"
   },
   "blocking_unknowns": [
-    "absolute MT5 terminal executable path",
-    "compile status of existing MT/MQL5/Experts/$o$imple.mq5",
     "whether agent can invoke MT5 tester",
     "whether selected model can be exported to ONNX or simple MQL5 scorer"
   ]
@@ -171,10 +172,11 @@ Create `docs/reports/2026-07-29-mt5-feasibility.md`:
 
 ## Unknowns
 
-- MT5 terminal executable path is unknown.
+- MT5 terminal path is known: `/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe`.
+- MetaEditor path is known: `/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe`.
 - Automated tester launch is unknown.
 - ONNX/model execution path is unknown.
-- Compile status of existing `$o$imple.mq5` is unknown until user/agent runs MetaEditor 5.
+- Compile status of existing `$o$imple.mq5` must be checked with the `13b` MetaEditor command before tester run.
 
 ## Decision
 
@@ -221,6 +223,9 @@ Both commands exit 0.
 - MT5 can write a `Nero.csv`-compatible file from tester/runtime history.
 - Column order and delimiter match the Python processing expectation or are documented with an adapter.
 - `fractal0` ordering and `time` convention are compared against MT4 `Nero.csv` on the same interval.
+- Every `fractal0..fractal99` cell has exactly 23 colon-separated fields:
+  `T:P:Dir:FrntVal:BackVal:Strong:Brk:Rev:PwrSum:Cnt:Imp:Up12:Dn12:Up24:Dn24:Up48:Dn48:Up3:Dn3:Up6:Dn6:FractalAtr:Shift`.
+- MT5 producer writes the 23rd `Shift` field exactly like MT4: `SHIFT(F[f].T) - cur_bar`.
 - MT5 `Nero.csv` is producer data only; it must not contain Python labels, future exit times, Python fill times or PnL.
 - If full parity is not reached, downstream training status remains `DIAGNOSTIC_ONLY`.
 
@@ -273,7 +278,10 @@ symbol, timeframe and interval:
 - min/max time;
 - duplicate time count;
 - column names/order;
-- `fractal0` parse success;
+- `fractal0..fractal99` parse success;
+- `len(fractalN.split(':')) == 23` for every non-empty fractal field;
+- 23rd nested field is `Shift`;
+- full nested format agreement against MT4 on sampled rows;
 - `fractal0.direction` agreement rate;
 - `fractal0.price` difference summary.
 
@@ -301,7 +309,10 @@ Create `ML/reports/mt5_execution_loop/mt5_nero_parity_manifest.json`:
     "time_range": "UNKNOWN",
     "duplicate_time_count": "UNKNOWN",
     "column_contract": "UNKNOWN",
-    "fractal0_parse_success": "UNKNOWN",
+    "fractal_parse_success": "UNKNOWN",
+    "fractal_nested_field_count_23": "UNKNOWN",
+    "shift_field_present": "UNKNOWN",
+    "sampled_full_nested_format_agreement": "UNKNOWN",
     "fractal0_direction_agreement": "UNKNOWN",
     "fractal0_price_diff_summary": "UNKNOWN"
   }
@@ -311,6 +322,12 @@ Create `ML/reports/mt5_execution_loop/mt5_nero_parity_manifest.json`:
 - [ ] **Step 4: Add or repair MT5 producer only after reading existing code**
 
 If `MT/MQL5/Include/lib_PIC.mqh` already has `NERO_CSV_CREATE(...)`, adapt it minimally to write the same raw columns as MT4. If it does not, port only the producer path from `MT/MQL4/Include/lib_PIC.mqh`; do not port unrelated trading logic.
+
+Known gap to fix first: current MQL5 `NERO_CSV_CREATE(int cur_bar)` ends each fractal field at `FractalAtr`, while Python expects the MT4 23-field format with `Shift`. Add the final field to both normalized and raw MQL5 branches:
+
+```cpp
+":" + S0(SHIFT(F[f].T) - cur_bar)
+```
 
 Required guard in code:
 
@@ -326,12 +343,22 @@ InpMT5_ExportNero=false -> no producer side effect.
 InpMT5_ExportNero=true -> MT5 writes Nero-compatible rows on new H1 bars.
 ```
 
+Both overloads `NERO_CSV_CREATE()` and `NERO_CSV_CREATE(int cur_bar)` must start with:
+
+```cpp
+if(!MT5_ExportNero)
+   return;
+```
+
+All output file names must use `MT5_NeroFile`; no default-off tester run may create or append `Nero.csv`/`Nero_MT5.csv`.
+
 - [ ] **Step 5: Static checks**
 
 Run:
 
 ```bash
 rg -n "InpMT5_ExportNero|InpMT5_NeroFile|NERO_CSV_CREATE|Nero_MT5.csv" MT/MQL5/Experts/'$o$imple.mq5' MT/MQL5/Include/lib_PIC.mqh docs/schemas/mt5_nero_csv_contract.md ML/reports/mt5_execution_loop/mt5_nero_parity_manifest.json
+rg -n "SHIFT\\(F\\[f\\]\\.T\\) - cur_bar|if\\(!MT5_ExportNero\\)|MT5_NeroFile" MT/MQL5/Include/lib_PIC.mqh
 ```
 
 Expected:
@@ -363,7 +390,8 @@ All required producer symbols appear, or the report explicitly marks producer pa
 **Mandatory Checks:**
 - Schema separates entry signal from open-position ML-exit features.
 - Entry rows must not contain future fill/exit time.
-- Event rows must include enough fields for reconciliation: `event`, `time`, `rule_id`, `signal_time`, `ticket`, `side`, `requested_price`, `fill_price`, `stop_price`, `close_reason`, `profit`, `bars_since_fill`.
+- Entry rows must include explicit timing fields: `feature_time`, `feature_available_time`, `decision_time`.
+- Event rows must include enough fields for reconciliation: `event`, `time`, `feature_time`, `feature_available_time`, `decision_time`, `execution_time`, `rule_id`, `signal_time`, `ticket`, `side`, `requested_price`, `fill_price`, `stop_price`, `close_reason`, `profit`, `bars_since_fill`, `bid`, `ask`, `spread`, `slippage_points`, `commission`, `swap`, `balance`, `equity`, `order_open_price`, `order_close_price`, `entry_time`, `exit_time`.
 
 **Completion Criterion:**
 - Schema tests pass and document defines exact CSV columns.
@@ -389,6 +417,9 @@ def test_mt5_signal_schema_rejects_future_exit_columns():
         [
             {
                 "time": "2023.01.02 10:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
                 "rule_id": "rule01",
                 "side": "BUY",
                 "entry_type": "BUY_LIMIT",
@@ -410,6 +441,9 @@ def test_mt5_signal_schema_accepts_entry_only_contract():
         [
             {
                 "time": "2023.01.02 10:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
                 "rule_id": "rule01",
                 "side": "BUY",
                 "entry_type": "BUY_LIMIT",
@@ -428,16 +462,32 @@ def test_mt5_event_schema_requires_reconciliation_columns():
     assert {
         "event",
         "time",
+        "feature_time",
+        "feature_available_time",
+        "decision_time",
+        "execution_time",
         "rule_id",
         "signal_time",
         "ticket",
         "side",
         "requested_price",
         "fill_price",
+        "order_open_price",
+        "order_close_price",
         "stop_price",
         "close_reason",
         "profit",
         "bars_since_fill",
+        "bid",
+        "ask",
+        "spread",
+        "slippage_points",
+        "commission",
+        "swap",
+        "balance",
+        "equity",
+        "entry_time",
+        "exit_time",
     }.issubset(set(MT5_EVENT_COLUMNS))
 ```
 
@@ -467,6 +517,9 @@ import pandas as pd
 
 MT5_SIGNAL_COLUMNS = [
     "time",
+    "feature_time",
+    "feature_available_time",
+    "decision_time",
     "rule_id",
     "side",
     "entry_type",
@@ -489,16 +542,44 @@ MT5_FORBIDDEN_SIGNAL_COLUMNS = {
 MT5_EVENT_COLUMNS = [
     "event",
     "time",
+    "feature_time",
+    "feature_available_time",
+    "decision_time",
+    "execution_time",
     "rule_id",
     "signal_time",
     "ticket",
     "side",
     "requested_price",
     "fill_price",
+    "order_open_price",
+    "order_close_price",
     "stop_price",
     "close_reason",
     "profit",
     "bars_since_fill",
+    "bid",
+    "ask",
+    "spread",
+    "spread_atr",
+    "bar_open",
+    "bar_high",
+    "bar_low",
+    "bar_close",
+    "calculation_open",
+    "slippage_points",
+    "entry",
+    "take_profit",
+    "close",
+    "swap",
+    "commission",
+    "hold_bars",
+    "open_positions",
+    "max_positions",
+    "balance",
+    "equity",
+    "entry_time",
+    "exit_time",
     "ml_exit_score",
     "ml_exit_decision",
     "comment",
@@ -546,7 +627,7 @@ ML/reports/mt5_execution_loop/mt5_entry_signals_<run_id>.csv
 Columns:
 
 ```text
-time;rule_id;side;entry_type;limit_price;stop_price;atr;max_fill_lag_bars
+time;feature_time;feature_available_time;decision_time;rule_id;side;entry_type;limit_price;stop_price;atr;max_fill_lag_bars
 ```
 
 Forbidden columns:
@@ -569,7 +650,7 @@ ML/reports/mt5_execution_loop/mt5_trade_events_<run_id>.csv
 Columns:
 
 ```text
-event;time;rule_id;signal_time;ticket;side;requested_price;fill_price;stop_price;close_reason;profit;bars_since_fill;ml_exit_score;ml_exit_decision;comment
+event;time;feature_time;feature_available_time;decision_time;execution_time;rule_id;signal_time;ticket;side;requested_price;fill_price;order_open_price;order_close_price;stop_price;close_reason;profit;bars_since_fill;bid;ask;spread;spread_atr;bar_open;bar_high;bar_low;bar_close;calculation_open;slippage_points;entry;take_profit;close;swap;commission;hold_bars;open_positions;max_positions;balance;equity;entry_time;exit_time;ml_exit_score;ml_exit_decision;comment
 ```
 
 ## Timing Contract
@@ -583,6 +664,8 @@ For ML-exit:
 - `bars_since_fill=0` is not a working ML-exit decision.
 - open-position features are computed by the MT5 expert after factual tester fill.
 - first working ML-exit decision is allowed only after at least one closed H1 bar after fill.
+- `feature_time`, `feature_available_time`, `decision_time` and `execution_time` must be material columns in signal/event CSV, not only prose in this document.
+- If a decision is made at H1-open using the previous closed H1 bar, close execution may happen immediately after that decision; do not add an extra H1-bar delay.
 ```
 
 - [ ] **Step 5: Run schema tests**
@@ -624,7 +707,7 @@ Expected:
 **Mandatory Checks:**
 - Export contains only entry decisions and static risk parameters.
 - Export has no `exit_time`, `pnl_r`, `fill_time` or future outcome fields.
-- Hash, row counts, nonzero counts and duplicate times are written to JSON.
+- Hash, row counts, active/nonzero counts, side counts, duplicate times, source CSV hash, rule/model metadata and run config hash are written to JSON.
 
 **Completion Criterion:**
 - Python can generate a small deterministic MT5 entry CSV for one rule.
@@ -641,6 +724,9 @@ def test_export_mt5_entry_signals_writes_entry_only_csv(tmp_path):
         [
             {
                 "time": "2023.01.02 10:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
                 "rule_id": "rule01",
                 "side": "BUY",
                 "limit_price": 1900.0,
@@ -707,6 +793,9 @@ def export_mt5_entry_signals(
     out = pd.DataFrame(
         {
             "time": source["time"].astype(str),
+            "feature_time": source["feature_time"].astype(str),
+            "feature_available_time": source["feature_available_time"].astype(str),
+            "decision_time": source["decision_time"].astype(str),
             "rule_id": source.get("rule_id", pd.Series("rule01", index=source.index)).astype(str),
             "side": source["side"].astype(str),
             "entry_type": source["side"].astype(str).map({"BUY": "BUY_LIMIT", "SELL": "SELL_LIMIT"}),
@@ -727,9 +816,17 @@ def export_mt5_entry_signals(
         "status": "DIAGNOSTIC_ONLY",
         "schema": "mt5_entry_signal_v1",
         "rows": int(len(out)),
+        "active_signal_rows": int(out["side"].isin(["BUY", "SELL"]).sum()),
+        "buy_rows": int(out["side"].eq("BUY").sum()),
+        "sell_rows": int(out["side"].eq("SELL").sum()),
         "unique_times": int(out["time"].nunique()),
         "duplicate_time_rows": int(len(out) - out["time"].nunique()),
         "side_counts": out["side"].value_counts().to_dict(),
+        "source_csv": "DATAFRAME_INPUT_OR_CLI_SOURCE",
+        "source_csv_sha256": "AVAILABLE_IN_CLI_MODE",
+        "rule_id": sorted(out["rule_id"].astype(str).unique().tolist()),
+        "rule_hash": "USER_FILLS_OR_EXPORTER_COMPUTES_FROM_RULE_METADATA",
+        "run_config_hash": "USER_FILLS_OR_EXPORTER_COMPUTES_FROM_EXPORT_ARGS",
         "output_csv": str(output_csv),
         "output_csv_sha256": _sha256(output_csv),
         "forbidden_future_lifecycle_columns_removed": True,
@@ -792,6 +889,8 @@ Expected:
 - Existing `$o$imple.mq5` remains the primary target unless it fails compile or is too coupled for safe diagnostic instrumentation.
 - `MT/MQL5/Include/lib_ML_Signal.mqh` is audited before any new MQL5 executor is created.
 - Expert reads entry-only CSV or documented current ML CSV.
+- Diagnostic path must read `mt5_entry_signals.csv` with fields from `docs/schemas/mt5_signal_executor_schema.md`: `feature_time`, `feature_available_time`, `decision_time`, `rule_id`, `side`, `entry_type`, `limit_price`, `stop_price`, `atr`, `max_fill_lag_bars`.
+- Diagnostic path must use `limit_price`, `stop_price` and `max_fill_lag_bars` from that CSV; it must not infer those values from old `ml_signals.csv`.
 - Expert places tester-executed pending/limit orders for the diagnostic path, not Python-simulated fills.
 - Expert logs `INIT`, `ORDER_PLACED`, `OPEN`, `CLOSE`, `ORDER_EXPIRED`, `OPEN_FAILED`, `ML_EVAL`.
 - Event log format matches `docs/schemas/mt5_signal_executor_schema.md`.
@@ -826,6 +925,7 @@ In `MT/MQL5/Experts/$o$imple.mq5`, add inputs near existing ML inputs:
 
 ```cpp
 input bool   InpMT5_DiagnosticExecutor = false;
+input string InpMT5_EntrySignalFile    = "mt5_entry_signals.csv";
 input string InpMT5_EventFile          = "mt5_trade_events.csv";
 input bool   InpMT5_BlockBarsSinceFill0Exit = true;
 ```
@@ -834,6 +934,7 @@ Add corresponding runtime globals near existing ML globals:
 
 ```cpp
 bool   MT5_DiagnosticExecutor = false;
+string MT5_EntrySignalFile = "mt5_entry_signals.csv";
 string MT5_EventFile = "mt5_trade_events.csv";
 bool   MT5_BlockBarsSinceFill0Exit = true;
 ```
@@ -842,11 +943,45 @@ In `SyncInputs()`, copy:
 
 ```cpp
    MT5_DiagnosticExecutor = InpMT5_DiagnosticExecutor;
+   MT5_EntrySignalFile = InpMT5_EntrySignalFile;
    MT5_EventFile = InpMT5_EventFile;
    MT5_BlockBarsSinceFill0Exit = InpMT5_BlockBarsSinceFill0Exit;
 ```
 
-- [ ] **Step 3: Add event logger to existing `lib_ML_Signal.mqh`**
+- [ ] **Step 3: Add diagnostic entry-signal reader**
+
+In `MT/MQL5/Include/lib_ML_Signal.mqh`, add a diagnostic reader for `MT5_EntrySignalFile`, separate from the legacy `ML_SIGNALS_FILE` reader.
+
+Required loaded arrays:
+
+```cpp
+datetime MT5_EntryTimes[];
+datetime MT5_FeatureTimes[];
+datetime MT5_FeatureAvailableTimes[];
+datetime MT5_DecisionTimes[];
+string   MT5_RuleIds[];
+string   MT5_Sides[];
+string   MT5_EntryTypes[];
+double   MT5_LimitPrices[];
+double   MT5_StopPrices[];
+double   MT5_Atrs[];
+int      MT5_MaxFillLagBars[];
+```
+
+Required behavior:
+
+```text
+Read `mt5_entry_signals.csv`.
+Find rows by current bar time / decision_time.
+For BUY_LIMIT or SELL_LIMIT place tester-executed pending order at `limit_price`.
+Set protective SL from `stop_price`.
+Expire/delete pending order after `max_fill_lag_bars`.
+Log ORDER_PLACED, ORDER_EXPIRED and OPEN_FAILED with the original timing fields.
+```
+
+The current MQL5 legacy `ML_INIT()` only reads `ml_signals.csv`; do not rely on it for this diagnostic path.
+
+- [ ] **Step 4: Add event logger to existing `lib_ML_Signal.mqh`**
 
 In `MT/MQL5/Include/lib_ML_Signal.mqh`, add a logger function:
 
@@ -854,16 +989,25 @@ In `MT/MQL5/Include/lib_ML_Signal.mqh`, add a logger function:
 void MT5_ML_LogEvent(
    string event_name,
    datetime event_time,
+   datetime feature_time,
+   datetime feature_available_time,
+   datetime decision_time,
+   datetime execution_time,
    string rule_id,
    string signal_time,
    ulong ticket,
    string side,
    double requested_price,
    double fill_price,
+   double order_open_price,
+   double order_close_price,
    double stop_price,
    string close_reason,
    double profit,
    int bars_since_fill,
+   double atr_value,
+   datetime entry_time,
+   datetime exit_time,
    double ml_exit_score,
    int ml_exit_decision,
    string comment
@@ -871,6 +1015,7 @@ void MT5_ML_LogEvent(
 {
    if(!MT5_DiagnosticExecutor)
       return;
+   MT5_PrepareEventFileIfNeeded();
    int handle = FileOpen(MT5_EventFile, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ';');
    if(handle == INVALID_HANDLE)
    {
@@ -878,16 +1023,54 @@ void MT5_ML_LogEvent(
       return;
    }
    if(FileSize(handle) == 0)
-      FileWrite(handle, "event", "time", "rule_id", "signal_time", "ticket", "side", "requested_price", "fill_price", "stop_price", "close_reason", "profit", "bars_since_fill", "ml_exit_score", "ml_exit_decision", "comment");
+      FileWrite(handle, "event", "time", "feature_time", "feature_available_time", "decision_time", "execution_time", "rule_id", "signal_time", "ticket", "side", "requested_price", "fill_price", "order_open_price", "order_close_price", "stop_price", "close_reason", "profit", "bars_since_fill", "bid", "ask", "spread", "spread_atr", "bar_open", "bar_high", "bar_low", "bar_close", "calculation_open", "slippage_points", "entry", "take_profit", "close", "swap", "commission", "hold_bars", "open_positions", "max_positions", "balance", "equity", "entry_time", "exit_time", "ml_exit_score", "ml_exit_decision", "comment");
    FileSeek(handle, 0, SEEK_END);
-   FileWrite(handle, event_name, TimeToString(event_time, TIME_DATE | TIME_MINUTES), rule_id, signal_time, (string)ticket, side, requested_price, fill_price, stop_price, close_reason, profit, bars_since_fill, ml_exit_score, ml_exit_decision, comment);
+   RefreshRates();
+   double spread_value = Ask - Bid;
+   double spread_atr = (atr_value > 0.0 ? spread_value / atr_value : 0.0);
+   FileWrite(handle, event_name, TimeToString(event_time, TIME_DATE | TIME_MINUTES), TimeToString(feature_time, TIME_DATE | TIME_MINUTES), TimeToString(feature_available_time, TIME_DATE | TIME_MINUTES), TimeToString(decision_time, TIME_DATE | TIME_MINUTES), TimeToString(execution_time, TIME_DATE | TIME_MINUTES), rule_id, signal_time, (string)ticket, side, requested_price, fill_price, order_open_price, order_close_price, stop_price, close_reason, profit, bars_since_fill, Bid, Ask, spread_value, spread_atr, Open[bar], High[bar], Low[bar], Close[bar], Open[bar], 0.0, order_open_price, 0.0, order_close_price, 0.0, 0.0, 0, 0, 1, AccountBalance(), AccountEquity(), TimeToString(entry_time, TIME_DATE | TIME_MINUTES), TimeToString(exit_time, TIME_DATE | TIME_MINUTES), ml_exit_score, ml_exit_decision, comment);
    FileClose(handle);
+}
+```
+
+Add a one-run cleanup guard before the logger:
+
+```cpp
+bool MT5_EventFilePrepared = false;
+
+void MT5_PrepareEventFileIfNeeded()
+{
+   if(MT5_EventFilePrepared)
+      return;
+   if(IsTesting())
+      FileDelete(MT5_EventFile);
+   MT5_EventFilePrepared = true;
 }
 ```
 
 Use this logger only in diagnostic path first. Do not rewrite all order code in this task.
 
-- [ ] **Step 4: Document manual compile/run handoff**
+- [ ] **Step 5: Compile after MQL5 instrumentation**
+
+Run the MetaEditor compile check from `docs/methodology/13b-mt5-execution-parity.md`:
+
+```bash
+WINEPREFIX=/home/hohla/.mt5 xvfb-run -a wine \
+  '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe' \
+  /compile:'/home/hohla/git/SoSimple/MT/MQL5/Experts/$o$imple.mq5' \
+  /log:'/tmp/sosimple_mt5_compile.log'
+iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile.log | tail -n 20
+```
+
+Expected:
+
+```text
+MetaEditor log contains `Result: 0 errors, 0 warnings`, and `MT/MQL5/Experts/$o$imple.ex5` modification time is after the source edits.
+```
+
+If the agent cannot run Wine/MetaEditor, record `compile_status: MANUAL_REQUIRED` in the report and handoff.
+
+- [ ] **Step 6: Document manual compile/run handoff**
 
 Create `docs/MT/mt5_signal_executor.md`:
 
@@ -918,7 +1101,7 @@ instrumented.
 
 ## Manual User Step
 
-Compile `MT/MQL5/Experts/$o$imple.mq5` in MetaEditor 5.
+Compile `MT/MQL5/Experts/$o$imple.mq5` in MetaEditor 5. If agent-side compile is available, use the exact command from `docs/methodology/13b-mt5-execution-parity.md` and save `/tmp/sosimple_mt5_compile.log`.
 
 Run MT5 Strategy Tester on:
 
@@ -933,12 +1116,12 @@ The first prototype is `DIAGNOSTIC_ONLY`. It checks whether MT5 can replace
 Python execution simulation for fill/order/SL/close mechanics.
 ```
 
-- [ ] **Step 5: Static text check**
+- [ ] **Step 7: Static text check**
 
 Run:
 
 ```bash
-rg -n "InpMT5_DiagnosticExecutor|MT5_ML_LogEvent|bars_since_fill|\\$o\\$imple.mq5" MT/MQL5/Experts/'$o$imple.mq5' MT/MQL5/Include/lib_ML_Signal.mqh docs/MT/mt5_signal_executor.md
+rg -n "InpMT5_DiagnosticExecutor|InpMT5_EntrySignalFile|MT5_ML_LogEvent|MT5_PrepareEventFileIfNeeded|MT5_EntrySignalFile|bars_since_fill|\\$o\\$imple.mq5" MT/MQL5/Experts/'$o$imple.mq5' MT/MQL5/Include/lib_ML_Signal.mqh docs/MT/mt5_signal_executor.md
 ```
 
 Expected:
@@ -1095,11 +1278,57 @@ from ML.baseline.parse_mt5_execution_report import compute_mt5_metrics, parse_mt
 
 def test_parse_mt5_events_and_compute_metrics(tmp_path):
     path = tmp_path / "events.csv"
+    def event_row(event, time, profit=0.0, bars_since_fill=0, close_reason=""):
+        return {
+            "event": event,
+            "time": time,
+            "feature_time": "2023.01.02 09:00",
+            "feature_available_time": "2023.01.02 10:00",
+            "decision_time": "2023.01.02 10:00",
+            "execution_time": time,
+            "rule_id": "rule01",
+            "signal_time": "2023.01.02 10:00",
+            "ticket": 1,
+            "side": "BUY",
+            "requested_price": 1900.0,
+            "fill_price": 1900.0 if event != "ORDER_PLACED" else 0.0,
+            "order_open_price": 1900.0 if event != "ORDER_PLACED" else 0.0,
+            "order_close_price": 1912.5 if event == "CLOSE" else 0.0,
+            "stop_price": 1890.0,
+            "close_reason": close_reason,
+            "profit": profit,
+            "bars_since_fill": bars_since_fill,
+            "bid": 1900.0,
+            "ask": 1900.2,
+            "spread": 0.2,
+            "spread_atr": 0.02,
+            "bar_open": 1901.0,
+            "bar_high": 1913.0,
+            "bar_low": 1899.0,
+            "bar_close": 1912.5,
+            "calculation_open": 1901.0,
+            "slippage_points": 0.0,
+            "entry": 1900.0,
+            "take_profit": 0.0,
+            "close": 1912.5 if event == "CLOSE" else 0.0,
+            "swap": 0.0,
+            "commission": 0.0,
+            "hold_bars": bars_since_fill,
+            "open_positions": 1 if event != "CLOSE" else 0,
+            "max_positions": 1,
+            "balance": 10000.0,
+            "equity": 10012.5,
+            "entry_time": "2023.01.02 10:05" if event != "ORDER_PLACED" else "",
+            "exit_time": time if event == "CLOSE" else "",
+            "ml_exit_score": 1.0 if close_reason == "ML_CLOSE" else 0.0,
+            "ml_exit_decision": 1 if close_reason == "ML_CLOSE" else 0,
+            "comment": "",
+        }
     pd.DataFrame(
         [
-            {"event": "ORDER_PLACED", "time": "2023.01.02 10:00", "rule_id": "rule01", "signal_time": "2023.01.02 10:00", "ticket": 1, "side": "BUY", "requested_price": 1900.0, "fill_price": 0.0, "stop_price": 1890.0, "close_reason": "", "profit": 0.0, "bars_since_fill": 0, "ml_exit_score": 0.0, "ml_exit_decision": 0, "comment": ""},
-            {"event": "OPEN", "time": "2023.01.02 10:05", "rule_id": "rule01", "signal_time": "2023.01.02 10:00", "ticket": 1, "side": "BUY", "requested_price": 1900.0, "fill_price": 1900.0, "stop_price": 1890.0, "close_reason": "", "profit": 0.0, "bars_since_fill": 0, "ml_exit_score": 0.0, "ml_exit_decision": 0, "comment": ""},
-            {"event": "CLOSE", "time": "2023.01.02 12:00", "rule_id": "rule01", "signal_time": "2023.01.02 10:00", "ticket": 1, "side": "BUY", "requested_price": 1900.0, "fill_price": 1900.0, "stop_price": 1890.0, "close_reason": "ML_CLOSE", "profit": 12.5, "bars_since_fill": 1, "ml_exit_score": 1.0, "ml_exit_decision": 1, "comment": ""},
+            event_row("ORDER_PLACED", "2023.01.02 10:00"),
+            event_row("OPEN", "2023.01.02 10:05"),
+            event_row("CLOSE", "2023.01.02 12:00", profit=12.5, bars_since_fill=1, close_reason="ML_CLOSE"),
         ]
     ).to_csv(path, sep=";", index=False)
 
@@ -1210,6 +1439,7 @@ Expected:
 
 **Mandatory Checks:**
 - Runbook tells user exactly which files to copy into MT5 tester files directory.
+- Runbook must not assume `MT/MQL5/Files` exists; it must discover the actual file directory with `TerminalInfoString(TERMINAL_DATA_PATH)` / tester agent path or explicitly use `FILE_COMMON`.
 - Runbook asks user to report tester mode, symbol, timeframe, date range, spread mode and generated output path.
 - Runbook forbids interpreting the diagnostic scorer as ML-quality proof.
 
@@ -1236,15 +1466,19 @@ Create `docs/reports/2026-07-29-mt5-manual-tester-runbook.md`:
 ## User Steps
 
 1. Compile `MT/MQL5/Experts/$o$imple.mq5` in MetaEditor 5.
-2. Copy signal CSV to MT5 tester `Files` directory as `mt5_entry_signals.csv`.
-3. Run Strategy Tester:
+2. Discover the actual MT5 file directory before copying CSV:
+   - preferred: expert prints `TerminalInfoString(TERMINAL_DATA_PATH)` and the directory where `FileOpen()` reads/writes tester files;
+   - fallback: diagnostic path uses `FILE_COMMON` and the runbook records `TERMINAL_COMMONDATA_PATH`;
+   - do not assume repo path `MT/MQL5/Files`, because it may not exist.
+3. Copy signal CSV to the discovered MT5 tester `Files` directory as `mt5_entry_signals.csv`.
+4. Run Strategy Tester:
    - symbol: `XAUUSD`;
    - timeframe: `H1`;
    - date range: selected diagnostic interval;
    - model: record exact tester mode;
    - expert input `InpMT5_DiagnosticExecutor=true`;
    - expert input `InpMT5_EventFile=mt5_trade_events.csv`.
-4. Return `mt5_trade_events.csv` and tester HTML/XML report if available.
+5. Return `mt5_trade_events.csv` from the discovered output path and tester HTML/XML report if available.
 
 ## Required Metadata
 
@@ -1279,6 +1513,10 @@ Create `ML/reports/mt5_execution_loop/manual_run_manifest_template.json`:
   "date_to": "USER_FILLS_AFTER_RUN",
   "spread_mode": "USER_FILLS_AFTER_RUN",
   "account_mode": "USER_FILLS_AFTER_RUN",
+  "terminal_data_path": "USER_FILLS_AFTER_RUN",
+  "terminal_commondata_path": "USER_FILLS_IF_FILE_COMMON_USED",
+  "actual_signal_csv_path": "USER_FILLS_AFTER_RUN",
+  "actual_event_csv_path": "USER_FILLS_AFTER_RUN",
   "signal_csv": "mt5_entry_signals.csv",
   "event_csv": "mt5_trade_events.csv",
   "interpretation": "diagnostic execution-loop run only"
@@ -1534,6 +1772,24 @@ Expected:
 All MT5 prototype Python tests pass.
 ```
 
+Compile MQL5 after any `.mq5/.mqh` changes:
+
+```bash
+WINEPREFIX=/home/hohla/.mt5 xvfb-run -a wine \
+  '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe' \
+  /compile:'/home/hohla/git/SoSimple/MT/MQL5/Experts/$o$imple.mq5' \
+  /log:'/tmp/sosimple_mt5_compile.log'
+iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile.log | tail -n 20
+stat -c '%y %n' MT/MQL5/Experts/'$o$imple.ex5'
+```
+
+Expected:
+
+```text
+MetaEditor log contains `Result: 0 errors, 0 warnings`, and `.ex5` is newer than edited source files.
+If the agent cannot run MetaEditor/Wine, final report must state `compile_status: MANUAL_REQUIRED`.
+```
+
 ```bash
 rg -n "future_exit_time|pnl_r|fill_time" ML/baseline/export_mt5_entry_signals.py docs/schemas/mt5_signal_executor_schema.md
 ```
@@ -1545,7 +1801,7 @@ Matches only forbidden-column checks and documentation, not exported signal colu
 ```
 
 ```bash
-rg -n "DIAGNOSTIC_ONLY|feature_time <= decision_time <= execution_time|bars_since_fill=0|Nero.csv" docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md docs/schemas/mt5_signal_executor_schema.md docs/schemas/mt5_open_position_feature_contract.md docs/schemas/mt5_nero_csv_contract.md
+rg -n "DIAGNOSTIC_ONLY|feature_time <= decision_time <= execution_time|bars_since_fill=0|Nero.csv|MT5_PrepareEventFileIfNeeded|mt5_entry_signals.csv|Result: 0 errors, 0 warnings" docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md docs/schemas/mt5_signal_executor_schema.md docs/schemas/mt5_open_position_feature_contract.md docs/schemas/mt5_nero_csv_contract.md
 ```
 
 Expected:
