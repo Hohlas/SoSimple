@@ -69,6 +69,12 @@ input double InpML_Filter3       = 0.0;
 input double InpML_Filter6       = 0.0;
 input double InpML_Trl_Start_ATR = 1.0;
 input double InpML_Trl_Step_ATR  = 1.5;
+input bool   InpMT5_ExportNero   = false;
+input string InpMT5_NeroFile     = "Nero_MT5.csv";
+input bool   InpMT5_DiagnosticExecutor = false;
+input string InpMT5_EntrySignalFile    = "mt5_entry_signals.csv";
+input string InpMT5_EventFile          = "mt5_trade_events.csv";
+input bool   InpMT5_BlockBarsSinceFill0Exit = true;
 
 datetime BarTime;
 uchar    ExpTotal;
@@ -97,6 +103,12 @@ double  ML_MinRatio=3.5, ML_MaxRatio=0, ML_MaxRR=4.0, ML_RR_Cap=2.5, ML_ScaleK=2
         ML_Trl_Start_ATR=1.0, ML_Trl_Step_ATR=1.5;
 int     ML_RR_Mode=0;
 bool    ML_BypassTrend=true, ML_ExitEnabled=true;
+bool    MT5_ExportNero=false;
+string  MT5_NeroFile="Nero_MT5.csv";
+bool    MT5_DiagnosticExecutor=false;
+string  MT5_EntrySignalFile="mt5_entry_signals.csv";
+string  MT5_EventFile="mt5_trade_events.csv";
+bool    MT5_BlockBarsSinceFill0Exit=true;
 
 void SyncInputs(){
    BackTest=InpBackTest; Opt_Trades=InpOpt_Trades; RF_=InpRF_; PF_=InpPF_; MO_=InpMO_; Risk=InpRisk; MM_Mode=InpMM_Mode; Real=InpReal; CustMax=InpCustMax; SkipPer=InpSkipPer;
@@ -108,6 +120,8 @@ void SyncInputs(){
    ML_MinRatio=InpML_MinRatio; ML_MaxRatio=InpML_MaxRatio; ML_MaxRR=InpML_MaxRR; ML_RR_Mode=InpML_RR_Mode; ML_RR_Cap=InpML_RR_Cap; ML_ScaleK=InpML_ScaleK;
    ML_Min_SL_ATR=InpML_Min_SL_ATR; ML_BypassTrend=InpML_BypassTrend; ML_ExitEnabled=InpML_ExitEnabled; ML_ExitThreshold=InpML_ExitThreshold;
    ML_Filter3=InpML_Filter3; ML_Filter6=InpML_Filter6; ML_Trl_Start_ATR=InpML_Trl_Start_ATR; ML_Trl_Step_ATR=InpML_Trl_Step_ATR;
+   MT5_ExportNero=InpMT5_ExportNero; MT5_NeroFile=InpMT5_NeroFile;
+   MT5_DiagnosticExecutor=InpMT5_DiagnosticExecutor; MT5_EntrySignalFile=InpMT5_EntrySignalFile; MT5_EventFile=InpMT5_EventFile; MT5_BlockBarsSinceFill0Exit=InpMT5_BlockBarsSinceFill0Exit;
 }
 
 #define  SO_SIMLE_EXPERT  1 // для добавления в компиляцию библиотек A,V,LINE в функции iGRAPH

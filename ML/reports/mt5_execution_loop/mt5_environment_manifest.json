@@ -1,0 +1,32 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "automation_status": "manual_user_run_required",
+  "mt5_source_root": "MT/MQL5",
+  "mt5_terminal_executable_path": "/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe",
+  "mt5_metaeditor_executable_path": "/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe",
+  "mt5_compile_log": "/tmp/sosimple_mt5_compile.log",
+  "agent_can_run_mt5_tester": false,
+  "manual_user_run_required": true,
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "execution_mode_preference": "real_ticks_or_generated_ticks",
+  "account_mode_assumption": "one_position_per_rule",
+  "source_layout": {
+    "mt5_expert_primary": "MT/MQL5/Experts/$o$imple.mq5",
+    "mt5_ml_signal_include_primary": "MT/MQL5/Include/lib_ML_Signal.mqh",
+    "mt5_new_expert_fallback_only": "MT/MQL5/Experts/SoSimpleMT5SignalExecutor.mq5",
+    "python_output_dir": "ML/reports/mt5_execution_loop",
+    "mt5_files_dir_planned": "DISCOVER_WITH_TERMINAL_DATA_PATH_OR_FILE_COMMON"
+  },
+  "compile_check": {
+    "checked_at_utc": "2026-07-30T05:33:50Z",
+    "result": "0 errors, 0 warnings",
+    "expert_ex5_path": "MT/MQL5/Experts/$o$imple.ex5",
+    "expert_ex5_mtime_utc": "2026-07-30T05:33:50Z"
+  },
+  "blocking_unknowns": [
+    "whether agent can invoke MT5 tester",
+    "whether selected model can be exported to ONNX or simple MQL5 scorer",
+    "where MT5 tester Files input/output directory must be mounted for signal and event exchange"
+  ]
+}

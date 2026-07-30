@@ -2,79 +2,66 @@
 
 ## Current Active State
 
-- active track: `MT4/tester parity for retained subset`
-- latest report: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`
-- superseded blocker analysis: `docs/reports/2026-07-29-fixed11-python-mt4-fill-chronology.md`
-- current-history rerun: `docs/reports/2026-07-29-fixed11-current-history-rerun.md`
-- latest plan: `docs/superpowers/plans/2026-07-29-fixed11-python-h1-chronology-fix.md`
-- chronology-fix artifact: `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix.json`
-- chronology-fix trades: `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix_trades.csv`
-- comparison artifact: `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`
+- active track: `MT5 execution-loop prototype`
+- latest report: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
+- latest plan: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`
+- primary MT5 expert: `MT/MQL5/Experts/$o$imple.mq5`
+- MT5 signal schema: `docs/schemas/mt5_signal_executor_schema.md`
+- MT5 open-position feature contract: `docs/schemas/mt5_open_position_feature_contract.md`
+- MT5 producer contract: `docs/schemas/mt5_nero_csv_contract.md`
+- Python exporter: `ML/baseline/export_mt5_entry_signals.py`
+- Python event parser: `ML/baseline/parse_mt5_execution_report.py`
+- environment manifest: `ML/reports/mt5_execution_loop/mt5_environment_manifest.json`
+- parity manifest: `ML/reports/mt5_execution_loop/mt5_nero_parity_manifest.json`
 
 ## Decision
 
-Fixed11 retained-subset MT4 parity remains unresolved, and the old positive
-fixed11 locked-test/current-history interpretation is invalidated as the same
-frozen chain.
+MT5 diagnostic execution-loop prototype is prepared, but remains
+`DIAGNOSTIC_ONLY`.
 
 - verdict: `DIAGNOSTIC_ONLY`
-- runner original verdict before diagnostic override: `reject`
-- best PF after chronology fix: `0.9388800897177361`
-- kept candidates: `0`
-- reason: ML-exit feature contract and execution convention changed after
-  fixed11 locked_test; rerun is simulator chronology validation, not candidate
-  selection.
+- compile status: MetaEditor reports `0 errors, 0 warnings`
+- tester runtime status: not run by agent
+- MT5 `Nero.csv` producer parity: `UNKNOWN`
+- manual user run: required before event metrics can be interpreted
 
 ## Current Diagnostic Facts
 
-Current-history -> H1 chronology fix aggregate:
-
-- trades: `13039 -> 14387`
-- PnL R sum: `4065.034595 -> -530.513260`
-- PF range: `2.820656-3.424707 -> 0.819373-0.938880`
-- `hold_bars=0`: `4495 -> 488`
-- same-H1 fill/exit: `4495 -> 72`
-- same-H1 `ML_CLOSE`: `4070 -> 0`
-- fill confirmation: `14387` confirmed, all `fill_execution_time_source=m5_touch`
-- ambiguous trades: `150`
-
-Python contract now says:
-
-- `bars_since_fill=0` is excluded from working ML-exit train/score rows;
-- future exit fields are target/diagnostic only;
-- `ML_CLOSE` is executed at next H1 open after the decision bar;
-- M5 is execution ordering only, not ML input.
+- Existing MT5 `$o$imple.mq5` is the primary target; no fallback expert was created.
+- MT5 producer is default-off through `InpMT5_ExportNero=false`.
+- MT5 diagnostic executor is default-off through `InpMT5_DiagnosticExecutor=false`.
+- Entry signal CSV is entry-only and forbids `fill_time`, `exit_time`, `future_exit_time`, `pnl_r`.
+- Event log schema includes order/fill/close fields and post-fill features.
+- Diagnostic scorer can request `ML_CLOSE`, but it is not a trained model.
+- `bars_since_fill=0` cannot trigger diagnostic ML-close.
+- `OPEN/CLOSE` logging remains limited until actual MT5 tester history/deals are reconciled.
 
 ## Do Not Do
 
-- Do not claim fixed11 is profitable, live-ready, production-ready or MT4 parity
-  passed.
-- Do not treat old fixed11 locked-test/current-history PF as still valid under
-  the corrected chronology contract.
-- Do not change retained rules, cutoffs, profiles, models, targets, filters,
-  entry rule, exit rule, stop policy, spread or MQL4 code without a new plan.
-- Do not use locked_test or chronology-fix PnL as a new selection criterion.
+- Do not claim MT5 metrics exist until `mt5_trade_events.csv` comes from a real tester run.
+- Do not treat the diagnostic scorer as ML-quality proof.
+- Do not use Python PF/PnL as final selection metric when MT5 is the execution engine.
+- Do not run batch selection before single-rule MT5 run and `Nero.csv` producer parity are understood.
+- Do not claim feature-leakage safety from tester execution alone.
 
 ## Next Step
 
-Choose one narrow path:
+Run one manual MT5 tester diagnostic:
 
-1. Close the current fixed11 retained-subset path with a post-mortem because
-   chronology-fix destroyed the edge.
-2. Or export corrected fixed11 signals/trades only as `DIAGNOSTIC_ONLY` and run
-   MT4 slot 1 parity to verify mechanics by `signal_time + direction`,
-   open/fill/close reasons and missing opens.
+1. Follow `docs/reports/2026-07-29-mt5-manual-tester-runbook.md`.
+2. Confirm MT5 tester file directory.
+3. Generate/copy `mt5_entry_signals.csv`.
+4. Run `MT/MQL5/Experts/$o$imple.mq5` with `InpMT5_DiagnosticExecutor=true`.
+5. Return `mt5_trade_events.csv`.
+6. Parse it with `ML/baseline/parse_mt5_execution_report.py`.
 
 ## Verification
 
 Completed:
 
-- `./.venv/bin/python -m pytest tests/test_fractal0_entry_exit_grid.py -q`
-- `./.venv/bin/python -m pytest tests/test_fractal0_fixed11_rich_entry_locked_test.py -q`
-- fixed11 chronology-fix rerun with output prefix
-  `ML/reports/fractal0_fixed11_rich_entry_locked_test_h1_chronology_fix`
-- comparison artifact generation:
-  `ML/reports/fractal0_fixed11_h1_chronology_fix_comparison.json`
+- `./.venv/bin/python -m pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py -q`
+- MetaEditor compile of `MT/MQL5/Experts/$o$imple.mq5`: `Result: 0 errors, 0 warnings`
+- static checks from MT5 migration plan
 
 Full `./.venv/bin/python -m pytest tests/ -q` was not run because this plan
 explicitly forbids the full suite.

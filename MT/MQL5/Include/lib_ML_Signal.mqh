@@ -50,6 +50,392 @@ float    ML_Dn24[];
 float    ML_Up48[];
 float    ML_Dn48[];
 
+// ─── MT5 diagnostic entry-only executor ────────────────────────────
+
+int      MT5_EntrySignalCount = 0;
+datetime MT5_EntryTimes[];
+datetime MT5_FeatureTimes[];
+datetime MT5_FeatureAvailableTimes[];
+datetime MT5_DecisionTimes[];
+string   MT5_RuleIds[];
+string   MT5_Sides[];
+string   MT5_EntryTypes[];
+double   MT5_LimitPrices[];
+double   MT5_StopPrices[];
+double   MT5_Atrs[];
+int      MT5_MaxFillLagBars[];
+
+bool     MT5_DiagSignalsLoaded = false;
+bool     MT5_EventFilePrepared = false;
+int      MT5_LastPlacedIdx = -1;
+int      MT5_LastPlacedMagic = 0;
+datetime MT5_LastPlacedExpiry = 0;
+ulong    MT5_TrackedTicket = 0;
+int      MT5_TrackedMagic = 0;
+int      MT5_TrackedIdx = -1;
+bool     MT5_TrackedOpenLogged = false;
+
+string MT5_TimeText(datetime value) {
+   if (value <= 0) return "";
+   return TimeToString(value, TIME_DATE | TIME_MINUTES);
+}
+
+void MT5_PrepareEventFileIfNeeded() {
+   if (MT5_EventFilePrepared) return;
+   if (IsTesting()) FileDelete(MT5_EventFile);
+   MT5_EventFilePrepared = true;
+}
+
+int MT5_OpenPositionsForMagic(int magic) {
+   int count = 0;
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES) != true) continue;
+      if (OrderMagicNumber() != magic) continue;
+      int typ = OrderType();
+      if (typ == OP_BUY || typ == OP_SELL) count++;
+   }
+   return count;
+}
+
+ulong MT5_FindActiveTicket(int magic, int typ1, int typ2) {
+   for (int i = 0; i < OrdersTotal(); i++) {
+      if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES) != true) continue;
+      if (OrderMagicNumber() != magic) continue;
+      int typ = OrderType();
+      if (typ == typ1 || typ == typ2) return (ulong)OrderTicket();
+   }
+   return 0;
+}
+
+int MT5_FindEntrySignal(datetime barTime) {
+   for (int i = 0; i < MT5_EntrySignalCount; i++) {
+      if (MT5_DecisionTimes[i] == barTime || MT5_EntryTimes[i] == barTime) return i;
+   }
+   return -1;
+}
+
+double DiagnosticMlExitScore(int bars_since_fill, double unrealized_r, double favorable_r, double adverse_r)
+{
+   if(bars_since_fill <= 0)
+      return 0.0;
+   if(adverse_r >= 0.75 && unrealized_r <= 0.0)
+      return 1.0;
+   if(bars_since_fill >= 24)
+      return 1.0;
+   return 0.0;
+}
+
+bool MT5_CalculateOpenPositionFeatures(
+   int order_type,
+   double entry_price,
+   double stop_price,
+   int bars_since_fill,
+   double &unrealized_r,
+   double &favorable_r,
+   double &adverse_r
+) {
+   unrealized_r = 0.0;
+   favorable_r = 0.0;
+   adverse_r = 0.0;
+
+   if (bars_since_fill <= 0) return false;
+   double risk_r = MathAbs(entry_price - stop_price);
+   if (risk_r <= 0.0) return false;
+
+   int fill_shift = bar + bars_since_fill;
+   if (fill_shift > Bars) return false;
+
+   bool has_known_bar = false;
+   double max_high = 0.0;
+   double min_low = 0.0;
+   for (int shift = bar; shift < fill_shift; shift++) {
+      if (shift < 1 || shift >= Bars) continue;
+      if (!has_known_bar) {
+         max_high = High[shift];
+         min_low = Low[shift];
+         has_known_bar = true;
+      } else {
+         if (High[shift] > max_high) max_high = High[shift];
+         if (Low[shift] < min_low) min_low = Low[shift];
+      }
+   }
+   if (!has_known_bar) return false;
+
+   if (order_type == OP_BUY) {
+      unrealized_r = (Close[bar] - entry_price) / risk_r;
+      favorable_r = (max_high - entry_price) / risk_r;
+      adverse_r = (entry_price - min_low) / risk_r;
+      return true;
+   }
+   if (order_type == OP_SELL) {
+      unrealized_r = (entry_price - Close[bar]) / risk_r;
+      favorable_r = (entry_price - min_low) / risk_r;
+      adverse_r = (max_high - entry_price) / risk_r;
+      return true;
+   }
+   return false;
+}
+
+void MT5_ML_LogEvent(
+   string event_name,
+   datetime event_time,
+   datetime feature_time,
+   datetime feature_available_time,
+   datetime decision_time,
+   datetime execution_time,
+   string rule_id,
+   string signal_time,
+   ulong ticket,
+   string side,
+   double requested_price,
+   double fill_price,
+   double order_open_price,
+   double order_close_price,
+   double stop_price,
+   string close_reason,
+   double profit,
+   int bars_since_fill,
+   double atr_value,
+   datetime entry_time,
+   datetime exit_time,
+   double unrealized_r,
+   double favorable_r,
+   double adverse_r,
+   double ml_exit_score,
+   int ml_exit_decision,
+   string comment
+) {
+   if (!MT5_DiagnosticExecutor) return;
+   MT5_PrepareEventFileIfNeeded();
+
+   int handle = FileOpen(MT5_EventFile, FILE_READ | FILE_WRITE | FILE_CSV | FILE_ANSI, ';');
+   if (handle == INVALID_HANDLE) {
+      Print("MT5_ML_LogEvent: Cannot open ", MT5_EventFile, " Error=", GetLastError());
+      return;
+   }
+
+   if (FileSize(handle) == 0) {
+      FileWrite(handle, "event", "time", "feature_time", "feature_available_time", "decision_time", "execution_time", "rule_id", "signal_time", "ticket", "side", "requested_price", "fill_price", "order_open_price", "order_close_price", "stop_price", "close_reason", "profit", "bars_since_fill", "bid", "ask", "spread", "spread_atr", "bar_open", "bar_high", "bar_low", "bar_close", "calculation_open", "slippage_points", "entry", "take_profit", "close", "swap", "commission", "hold_bars", "open_positions", "max_positions", "balance", "equity", "entry_time", "exit_time", "unrealized_pnl_r_before_decision", "max_favorable_r_before_decision", "max_adverse_r_before_decision", "ml_exit_score", "ml_exit_decision", "comment");
+   }
+
+   FileSeek(handle, 0, SEEK_END);
+   RefreshRates();
+   double spread_value = Ask - Bid;
+   double spread_atr = (atr_value > 0.0 ? spread_value / atr_value : 0.0);
+   double slippage_points = (Point > 0.0 ? MathAbs(fill_price - requested_price) / Point : 0.0);
+   int open_positions = MT5_OpenPositionsForMagic(MT5_TrackedMagic);
+
+   FileWrite(handle,
+      event_name,
+      MT5_TimeText(event_time),
+      MT5_TimeText(feature_time),
+      MT5_TimeText(feature_available_time),
+      MT5_TimeText(decision_time),
+      MT5_TimeText(execution_time),
+      rule_id,
+      signal_time,
+      (string)ticket,
+      side,
+      requested_price,
+      fill_price,
+      order_open_price,
+      order_close_price,
+      stop_price,
+      close_reason,
+      profit,
+      bars_since_fill,
+      Bid,
+      Ask,
+      spread_value,
+      spread_atr,
+      Open[bar],
+      High[bar],
+      Low[bar],
+      Close[bar],
+      Open[bar],
+      slippage_points,
+      order_open_price,
+      0.0,
+      order_close_price,
+      0.0,
+      0.0,
+      bars_since_fill,
+      open_positions,
+      1,
+      AccountBalance(),
+      AccountEquity(),
+      MT5_TimeText(entry_time),
+      MT5_TimeText(exit_time),
+      unrealized_r,
+      favorable_r,
+      adverse_r,
+      ml_exit_score,
+      ml_exit_decision,
+      comment
+   );
+   FileClose(handle);
+}
+
+void MT5_LogSignalEvent(string event_name, int idx, ulong ticket, string comment) {
+   if (idx < 0 || idx >= MT5_EntrySignalCount) return;
+   MT5_ML_LogEvent(
+      event_name,
+      TimeCurrent(),
+      MT5_FeatureTimes[idx],
+      MT5_FeatureAvailableTimes[idx],
+      MT5_DecisionTimes[idx],
+      TimeCurrent(),
+      MT5_RuleIds[idx],
+      MT5_TimeText(MT5_EntryTimes[idx]),
+      ticket,
+      MT5_Sides[idx],
+      MT5_LimitPrices[idx],
+      0.0,
+      0.0,
+      0.0,
+      MT5_StopPrices[idx],
+      "",
+      0.0,
+      -1,
+      MT5_Atrs[idx],
+      0,
+      0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0,
+      comment
+   );
+}
+
+bool MT5_ENTRY_INIT() {
+   int handle = FileOpen(MT5_EntrySignalFile, FILE_READ | FILE_CSV | FILE_ANSI, ';');
+   if (handle < 0) {
+      Print("MT5_ENTRY_INIT: Cannot open ", MT5_EntrySignalFile, " Error=", GetLastError());
+      MT5_ML_LogEvent("INIT", TimeCurrent(), 0, 0, 0, TimeCurrent(), "", "", 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0.0, -1, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, "entry_signal_file_open_failed");
+      return false;
+   }
+
+   for (int h = 0; h < 11; h++) FileReadString(handle);
+
+   ArrayResize(MT5_EntryTimes,  ML_MAX_SIGNALS);
+   ArrayResize(MT5_FeatureTimes, ML_MAX_SIGNALS);
+   ArrayResize(MT5_FeatureAvailableTimes, ML_MAX_SIGNALS);
+   ArrayResize(MT5_DecisionTimes, ML_MAX_SIGNALS);
+   ArrayResize(MT5_RuleIds, ML_MAX_SIGNALS);
+   ArrayResize(MT5_Sides, ML_MAX_SIGNALS);
+   ArrayResize(MT5_EntryTypes, ML_MAX_SIGNALS);
+   ArrayResize(MT5_LimitPrices, ML_MAX_SIGNALS);
+   ArrayResize(MT5_StopPrices, ML_MAX_SIGNALS);
+   ArrayResize(MT5_Atrs, ML_MAX_SIGNALS);
+   ArrayResize(MT5_MaxFillLagBars, ML_MAX_SIGNALS);
+
+   MT5_EntrySignalCount = 0;
+   while (!FileIsEnding(handle) && MT5_EntrySignalCount < ML_MAX_SIGNALS) {
+      string time_str = FileReadString(handle);
+      if (time_str == "") break;
+
+      int i = MT5_EntrySignalCount;
+      MT5_EntryTimes[i] = StringToTime(time_str);
+      MT5_FeatureTimes[i] = StringToTime(FileReadString(handle));
+      MT5_FeatureAvailableTimes[i] = StringToTime(FileReadString(handle));
+      MT5_DecisionTimes[i] = StringToTime(FileReadString(handle));
+      MT5_RuleIds[i] = FileReadString(handle);
+      MT5_Sides[i] = FileReadString(handle);
+      MT5_EntryTypes[i] = FileReadString(handle);
+      MT5_LimitPrices[i] = StringToDouble(FileReadString(handle));
+      MT5_StopPrices[i] = StringToDouble(FileReadString(handle));
+      MT5_Atrs[i] = StringToDouble(FileReadString(handle));
+      MT5_MaxFillLagBars[i] = (int)StringToInteger(FileReadString(handle));
+      MT5_EntrySignalCount++;
+   }
+   FileClose(handle);
+
+   ArrayResize(MT5_EntryTimes, MT5_EntrySignalCount);
+   ArrayResize(MT5_FeatureTimes, MT5_EntrySignalCount);
+   ArrayResize(MT5_FeatureAvailableTimes, MT5_EntrySignalCount);
+   ArrayResize(MT5_DecisionTimes, MT5_EntrySignalCount);
+   ArrayResize(MT5_RuleIds, MT5_EntrySignalCount);
+   ArrayResize(MT5_Sides, MT5_EntrySignalCount);
+   ArrayResize(MT5_EntryTypes, MT5_EntrySignalCount);
+   ArrayResize(MT5_LimitPrices, MT5_EntrySignalCount);
+   ArrayResize(MT5_StopPrices, MT5_EntrySignalCount);
+   ArrayResize(MT5_Atrs, MT5_EntrySignalCount);
+   ArrayResize(MT5_MaxFillLagBars, MT5_EntrySignalCount);
+
+   Print("MT5_ENTRY_INIT: Loaded ", MT5_EntrySignalCount, " diagnostic entry signals from ", MT5_EntrySignalFile);
+   MT5_ML_LogEvent("INIT", TimeCurrent(), 0, 0, 0, TimeCurrent(), "", "", 0, "", 0.0, 0.0, 0.0, 0.0, 0.0, "", 0.0, -1, 0.0, 0, 0, 0.0, 0.0, 0.0, 0.0, 0, "loaded=" + S0(MT5_EntrySignalCount));
+   return true;
+}
+
+void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
+   ml_close_order_type = -1;
+
+   if (MT5_LastPlacedIdx >= 0 && MT5_LastPlacedMagic == magic) {
+      ulong buy_pending = MT5_FindActiveTicket(magic, OP_BUYLIMIT, OP_BUYSTOP);
+      ulong sell_pending = MT5_FindActiveTicket(magic, OP_SELLLIMIT, OP_SELLSTOP);
+      ulong buy_market = MT5_FindActiveTicket(magic, OP_BUY, OP_BUY);
+      ulong sell_market = MT5_FindActiveTicket(magic, OP_SELL, OP_SELL);
+      if (buy_market > 0 || sell_market > 0) {
+         MT5_TrackedTicket = (buy_market > 0 ? buy_market : sell_market);
+         MT5_TrackedMagic = magic;
+         MT5_TrackedIdx = MT5_LastPlacedIdx;
+         MT5_TrackedOpenLogged = false;
+         MT5_LastPlacedIdx = -1;
+      } else if (buy_pending == 0 && sell_pending == 0 && MT5_LastPlacedExpiry > 0 && TimeCurrent() > MT5_LastPlacedExpiry) {
+         MT5_LogSignalEvent("ORDER_EXPIRED", MT5_LastPlacedIdx, 0, "pending order not active after max_fill_lag_bars");
+         MT5_LastPlacedIdx = -1;
+      } else if (buy_pending == 0 && sell_pending == 0) {
+         MT5_LogSignalEvent("OPEN_FAILED", MT5_LastPlacedIdx, 0, "pending order was not found after ORDER_PLACED");
+         MT5_LastPlacedIdx = -1;
+      }
+   }
+
+   if (MT5_TrackedTicket > 0 && OrderSelect((int)MT5_TrackedTicket, SELECT_BY_TICKET, MODE_TRADES) == true) {
+      int typ = OrderType();
+      if (typ == OP_BUY || typ == OP_SELL) {
+         int idx = MT5_TrackedIdx;
+         int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - bar);
+         if (!MT5_TrackedOpenLogged) {
+            MT5_ML_LogEvent("OPEN", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderOpenTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", 0.0, bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, 0.0, 0.0, 0.0, 0.0, 0, "tester fill observed");
+            MT5_TrackedOpenLogged = true;
+         }
+         double unrealized_r = 0.0;
+         double favorable_r = 0.0;
+         double adverse_r = 0.0;
+         bool features_ready = MT5_CalculateOpenPositionFeatures(typ, OrderOpenPrice(), OrderStopLoss(), bars_since_fill, unrealized_r, favorable_r, adverse_r);
+         int ml_exit_decision = 0;
+         double ml_exit_score = 0.0;
+         if (MT5_BlockBarsSinceFill0Exit && bars_since_fill <= 0) {
+            ml_exit_decision = 0;
+         } else if (features_ready) {
+            ml_exit_score = DiagnosticMlExitScore(bars_since_fill, unrealized_r, favorable_r, adverse_r);
+            ml_exit_decision = (ml_exit_score >= 1.0 ? 1 : 0);
+         }
+         string eval_comment = (features_ready ? "diagnostic eval only" : "diagnostic eval skipped: post-fill features not ready");
+         MT5_ML_LogEvent("ML_EVAL", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], Time[bar], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), 0.0, OrderStopLoss(), "", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), 0, unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, eval_comment);
+         if (ml_exit_decision == 1) {
+            double close_price = (typ == OP_BUY ? Bid : Ask);
+            MT5_ML_LogEvent("ML_CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], Time[bar], TimeCurrent(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), close_price, OrderStopLoss(), "ML_CLOSE", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), TimeCurrent(), unrealized_r, favorable_r, adverse_r, ml_exit_score, ml_exit_decision, "diagnostic ml exit requested");
+            ml_close_order_type = typ;
+         }
+      }
+      return;
+   }
+
+   if (MT5_TrackedTicket > 0 && OrderSelect((int)MT5_TrackedTicket, SELECT_BY_TICKET, MODE_HISTORY) == true) {
+      int idx = MT5_TrackedIdx;
+      if (idx >= 0 && idx < MT5_EntrySignalCount) {
+         int bars_since_fill = (int)MathMax(0, SHIFT(OrderOpenTime()) - SHIFT(OrderCloseTime()));
+         MT5_ML_LogEvent("CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx], OrderCloseTime(), MT5_RuleIds[idx], MT5_TimeText(MT5_EntryTimes[idx]), MT5_TrackedTicket, MT5_Sides[idx], MT5_LimitPrices[idx], OrderOpenPrice(), OrderOpenPrice(), OrderOpenPrice(), OrderStopLoss(), "broker_history_limited", OrderProfit(), bars_since_fill, MT5_Atrs[idx], OrderOpenTime(), OrderCloseTime(), 0.0, 0.0, 0.0, 0.0, 0, "history price/reason is limited in Task 4");
+      }
+      MT5_TrackedTicket = 0;
+      MT5_TrackedIdx = -1;
+      MT5_TrackedOpenLogged = false;
+   }
+}
+
 // ─── Инициализация: загрузка CSV ────────────────────────────────────
 
 bool ML_INIT() {
@@ -159,6 +545,87 @@ float ML_CalcRR(double ratio) {
 // ─── Торговая функция (вызывается из INPUT) ─────────────────────────
 
 void EXPERT::ML_TRADE() {
+   if (MT5_DiagnosticExecutor) {
+      if (!MT5_DiagSignalsLoaded) {
+         MT5_DiagSignalsLoaded = true;
+         MT5_ENTRY_INIT();
+      }
+      MT5_TrackedMagic = Mgc;
+      int mt5_close_order_type = -1;
+      MT5_LogLifecycleForCurrentState(Mgc, mt5_close_order_type);
+      if (mt5_close_order_type == OP_BUY) {
+         BUY.Val = 0;
+         return;
+      }
+      if (mt5_close_order_type == OP_SELL) {
+         SEL.Val = 0;
+         return;
+      }
+      if (MT5_EntrySignalCount <= 0) return;
+
+      int mt5_idx = MT5_FindEntrySignal(Time[bar]);
+      if (mt5_idx < 0) return;
+      if (BUY.Typ != NONE || SEL.Typ != NONE) {
+         MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "position_or_pending_order_exists");
+         return;
+      }
+
+      string side = MT5_Sides[mt5_idx];
+      string entry_type = MT5_EntryTypes[mt5_idx];
+      double limit_price = MT5_LimitPrices[mt5_idx];
+      double stop_price = MT5_StopPrices[mt5_idx];
+      int max_fill_lag_bars = MT5_MaxFillLagBars[mt5_idx];
+      datetime expiry = 0;
+      if (max_fill_lag_bars > 0) expiry = MT5_DecisionTimes[mt5_idx] + datetime(max_fill_lag_bars * Period() * 60);
+
+      bool is_buy_limit = (side == "BUY" || side == "LONG" || side == "1") && (entry_type == "BUY_LIMIT" || entry_type == "LIMIT");
+      bool is_sell_limit = (side == "SELL" || side == "SHORT" || side == "-1") && (entry_type == "SELL_LIMIT" || entry_type == "LIMIT");
+
+      if (limit_price <= 0.0 || stop_price <= 0.0) {
+         MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "limit_price_or_stop_price_not_positive");
+         return;
+      }
+
+      if (is_buy_limit) {
+         if (limit_price >= Ask - StopLevel || stop_price >= limit_price) {
+            MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "BUY_LIMIT price/stop invalid for current market");
+            return;
+         }
+         set.BUY.Sig = GOGO;
+         set.BUY.Val = (float)limit_price;
+         set.BUY.Stp = (float)stop_price;
+         set.BUY.Prf = 0;
+         set.BUY.Exp = expiry;
+         UP = 1;
+         MT5_LastPlacedIdx = mt5_idx;
+         MT5_LastPlacedMagic = Mgc;
+         MT5_LastPlacedExpiry = expiry;
+         MT5_LogSignalEvent("ORDER_PLACED", mt5_idx, 0, "set.BUY path prepared");
+         return;
+      }
+
+      if (is_sell_limit) {
+         if (limit_price <= Bid + StopLevel || stop_price <= limit_price) {
+            MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "SELL_LIMIT price/stop invalid for current market");
+            return;
+         }
+         set.SEL.Sig = GOGO;
+         set.SEL.Val = (float)limit_price;
+         set.SEL.Stp = (float)stop_price;
+         set.SEL.Prf = 0;
+         set.SEL.Exp = expiry;
+         DN = 1;
+         MT5_LastPlacedIdx = mt5_idx;
+         MT5_LastPlacedMagic = Mgc;
+         MT5_LastPlacedExpiry = expiry;
+         MT5_LogSignalEvent("ORDER_PLACED", mt5_idx, 0, "set.SEL path prepared");
+         return;
+      }
+
+      MT5_LogSignalEvent("OPEN_FAILED", mt5_idx, 0, "unsupported side or entry_type");
+      return;
+   }
+
    static bool ml_loaded = false;
    if (!ml_loaded) {
       ml_loaded = true;

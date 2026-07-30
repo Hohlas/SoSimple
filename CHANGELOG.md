@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-29] — MT5 execution-loop diagnostic prototype (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
+- **topics**: `mt5`, `execution_loop`, `nero_csv`, `strategy_tester`, `fixed11`
+- **summary**: Added MT5 diagnostic execution-loop migration plan and prototype artifacts. Existing `MT/MQL5/Experts/$o$imple.mq5` remains the primary target; Python now has entry-signal schema/export and event-log parser scaffolding.
+- **artifacts**: `MT/MQL5/Experts/$o$imple.mq5`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `ML/baseline/export_mt5_entry_signals.py`, `ML/baseline/parse_mt5_execution_report.py`, `ML/reports/mt5_execution_loop/`
+- **decision**: `DIAGNOSTIC_ONLY`; MT5 `Nero.csv` producer parity and tester results are not available until manual compile/run and reconciliation.
+- **notes**: Do not claim MT5 metrics, profitability, live-readiness or candidate selection until single-rule tester run, feature contract and parity checks pass.
+
 ## [2026-07-29] — Fixed11 Python H1 chronology fix (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-29-fixed11-python-h1-chronology-fix.md`
 - **topics**: `fixed11`, `h1_chronology`, `ml_exit`, `m5_execution_ordering`, `locked_test`

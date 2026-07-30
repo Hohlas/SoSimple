@@ -14,12 +14,17 @@
 
 ## ACTIVE
 
+### MT5 execution-loop prototype
+
+Status: planned/diagnostic.
+Next action: first prove or document MT5 `Nero.csv` producer parity from existing `MT/MQL5/Experts/$o$imple.mq5`; then compile/run one fixed11-like rule with `InpMT5_DiagnosticExecutor=true` and parse `mt5_trade_events.csv` with `ML/baseline/parse_mt5_execution_report.py`.
+
 ### `MT4/tester parity for retained subset`
 
 Цель: доказать, что MT4/tester исполняет те же сигналы и сделки, что Python.
 
-Текущий статус: `ACTIVE`, но fixed11 retained-subset path требует решения перед
-новым MT4 export.
+Текущий статус: `PARKED_BY_MT5_PROTOTYPE`, потому chronology-fix уничтожил
+старый edge, а следующий инженерный контур перенесён в MT5 Strategy Tester.
 
 Следующий шаг:
 

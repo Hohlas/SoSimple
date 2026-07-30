@@ -1,0 +1,21 @@
+{
+  "status": "UNKNOWN",
+  "allowed_max_verdict_until_parity": "DIAGNOSTIC_ONLY",
+  "producer": "MT/MQL5/Experts/$o$imple.mq5",
+  "source_symbol": "XAUUSD",
+  "source_timeframe": "H1",
+  "mt5_nero_csv": "USER_FILLS_AFTER_EXPORT",
+  "reference_nero_csv": "USER_FILLS_AFTER_EXPORT",
+  "checks": {
+    "row_count": "UNKNOWN",
+    "time_range": "UNKNOWN",
+    "duplicate_time_count": "UNKNOWN",
+    "column_contract": "UNKNOWN",
+    "fractal_parse_success": "UNKNOWN",
+    "fractal_nested_field_count_23": "UNKNOWN",
+    "shift_field_present": "UNKNOWN",
+    "sampled_full_nested_format_agreement": "UNKNOWN",
+    "fractal0_direction_agreement": "UNKNOWN",
+    "fractal0_price_diff_summary": "UNKNOWN"
+  }
+}

@@ -675,7 +675,9 @@ void EXPERT::TARGET_COUNT(){// расчет целевых уровней око
 /// @details Создаёт файл Nero_{SYMBOL}{PERIOD}.csv с заголовками.
 /// @note Вызывается один раз при инициализации
 void EXPERT::NERO_CSV_CREATE() {
-   string FileName = "Nero" + ".csv"; //  + "_"+Symbol() + S0(Period())
+   if(!MT5_ExportNero)
+      return;
+   string FileName = MT5_NeroFile;
    if (FileIsExist(FileName)) {
       if (!FileDelete(FileName))
          ERROR_CHECK("Delete " + FileName);
@@ -777,7 +779,9 @@ string S_NORM(float value) {
 /// @warning Файл записывается только после заполнения всего массива
 /// (cnt==LevelsAmount)
 void EXPERT::NERO_CSV_CREATE(int cur_bar) {
-   string FileName = "Nero" + ".csv"; //  + "_"+Symbol() + S0(Period())
+   if(!MT5_ExportNero)
+      return;
+   string FileName = MT5_NeroFile;
    int File = FileOpen(FileName, FILE_READ | FILE_WRITE);
    string NeroInfo = BTIME(cur_bar) + ";0;0;" + S4(Atr.Slow);
    uchar cnt = 1;
@@ -891,7 +895,8 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
                     S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
                     S4(F[f].Up[H3])  + ":" + S4(F[f].Dn[H3])  + ":" +
-                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr);
+                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" +
+                    S4(F[f].Atr) + ":" + S0(SHIFT(F[f].T) - cur_bar);
       } else {
          NeroInfo = NeroInfo + ";" +
                     S0(F[f].T) + ":" +
@@ -909,7 +914,8 @@ void EXPERT::NERO_CSV_CREATE(int cur_bar) {
                     S4(F[f].Up[H24]) + ":" + S4(F[f].Dn[H24]) + ":" +
                     S4(F[f].Up[H48]) + ":" + S4(F[f].Dn[H48]) + ":" +
                     S4(F[f].Up[H3])  + ":" + S4(F[f].Dn[H3])  + ":" +
-                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" + S4(F[f].Atr);
+                    S4(F[f].Up[H6])  + ":" + S4(F[f].Dn[H6])  + ":" +
+                    S4(F[f].Atr) + ":" + S0(SHIFT(F[f].T) - cur_bar);
       }
       cnt++;
    }

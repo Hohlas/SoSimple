@@ -1,0 +1,32 @@
+{
+  "status": "PLANNED_AFTER_SINGLE_RULE_PROTOTYPE",
+  "allowed_max_verdict_before_successful_single_rule_run": "DIAGNOSTIC_ONLY",
+  "python_role": [
+    "train models",
+    "audit feature contract",
+    "create shortlist",
+    "export entry/model artifacts",
+    "parse MT5 metrics"
+  ],
+  "mt5_role": [
+    "place limit orders",
+    "detect factual fill",
+    "manage SL/TP",
+    "compute open-position features after fill",
+    "apply ML-exit or diagnostic scorer",
+    "write events/deals"
+  ],
+  "shortlist_size_target": {
+    "min": 20,
+    "max": 50
+  },
+  "selection_metric_source": "MT5 validation tester metrics",
+  "locked_test_policy": "freeze selected MT5 contract before locked_test",
+  "selection_scope": "single-rule prototype first, then 20-50 candidate batch selection",
+  "notes": [
+    "Batch selection is not enabled until the single-rule prototype works.",
+    "MT5 Nero.csv producer parity must be understood and documented before batch selection is promoted.",
+    "Python proxy metrics are allowed only for shortlist, not for the final PF/PnL verdict.",
+    "MT5 tester metrics become the selection metric only in validation, not in opened locked_test."
+  ]
+}

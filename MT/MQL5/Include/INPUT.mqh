@@ -8,7 +8,7 @@ void EXPERT::INPUT(){
    set.SEL.Val=0; set.SEL.Stp=0; set.SEL.Prf=0; // значения приказов
    UP=(BUY.Typ!=MARKET && Trnd.Global>=0 && Trnd.Local>=0); 
    DN=(SEL.Typ!=MARKET && Trnd.Global<=0 && Trnd.Local<=0);
-   if (!UP && !DN) return;
+   if (!UP && !DN && !MT5_DiagnosticExecutor) return;
    //SIG_LINES(UP==1," UP="+S0(UP)+" Buy="+S4(BUY.Val)+" BuyLim="+S4(BUYLIM), 
    //          DN==1," DN="+S0(DN)+" Sel="+S4(SEL.Val)+" SelLim="+S4(SELLIM),clrSIG1);
    switch(iSignal){// ГЛОБАЛЬНЫЕ СИГНАЛЫ

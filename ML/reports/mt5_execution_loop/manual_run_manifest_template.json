@@ -1,0 +1,20 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "mt5_build": "USER_FILLS_AFTER_RUN",
+  "broker_server": "USER_FILLS_AFTER_RUN",
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "tester_model": "USER_FILLS_AFTER_RUN",
+  "date_from": "USER_FILLS_AFTER_RUN",
+  "date_to": "USER_FILLS_AFTER_RUN",
+  "spread_mode": "USER_FILLS_AFTER_RUN",
+  "account_mode": "USER_FILLS_AFTER_RUN",
+  "terminal_data_path": "USER_FILLS_AFTER_RUN",
+  "terminal_commondata_path": "USER_FILLS_IF_FILE_COMMON_USED",
+  "actual_signal_csv_path": "USER_FILLS_AFTER_RUN",
+  "actual_event_csv_path": "USER_FILLS_AFTER_RUN",
+  "signal_csv": "mt5_entry_signals.csv",
+  "event_csv": "mt5_trade_events.csv",
+  "interpretation": "diagnostic execution-loop run only"
+}
+
