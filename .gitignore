@@ -278,6 +278,27 @@ MT/MQL5/Include/Object.mqh
 MT/MQL5/Include/StdLibErr.mqh
 MT/MQL5/Include/VirtualKeys.mqh
 
+MT/MQL5/Include/Arrays/
+MT/MQL5/Include/Canvas/
+MT/MQL5/Include/ChartObjects/
+MT/MQL5/Include/Charts/
+MT/MQL5/Include/Controls/                                                                       
+MT/MQL5/Include/Expert/                                                                         
+MT/MQL5/Include/Files/                                                                          
+MT/MQL5/Include/Generic/                                                                        
+MT/MQL5/Include/Graphics/                                                                       
+MT/MQL5/Include/Indicators/                                                                     
+MT/MQL5/Include/Math/                                                                           
+MT/MQL5/Include/OpenCL/                                                                         
+MT/MQL5/Include/Strings/                                                                        
+MT/MQL5/Include/Tools/                                                                          
+MT/MQL5/Include/Trade/                                                                          
+MT/MQL5/Include/WinAPI/                          
+MT/MQL5/Include/MQL4Compat.mqh
+MT/MQL5/Include/StdLibErr.mqh                                                                   
+MT/MQL5/Include/stdlib.mqh                                                                      
+MT/MQL5/Include/stderror.mqh        
+
 
 # файлы тестера стратегий MT4
 MT/tester/caches/*
