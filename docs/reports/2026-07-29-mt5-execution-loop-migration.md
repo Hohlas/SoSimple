@@ -54,9 +54,8 @@ forbidden_interpretations: нельзя говорить, что MT5-прото�
 - `ML/baseline/parse_mt5_execution_report.py`
 - `tests/test_mt5_signal_executor_schema.py`
 - `tests/test_parse_mt5_execution_report.py`
-- `docs/MT/mt5_signal_executor.md`
+- `docs/methodology/13b-mt5-execution-parity.md`
 - `docs/schemas/mt5_nero_csv_contract.md`
-- `docs/schemas/mt5_signal_executor_schema.md`
 - `docs/schemas/mt5_open_position_feature_contract.md`
 - `ML/reports/mt5_execution_loop/*`
 
@@ -97,7 +96,7 @@ Manual tester status: `manual_user_run_required`.
 
 ## Conclusions
 
-Что MT5 решает: исполнение pending/limit orders, фактический fill, SL/TP и close mechanics должны проверяться в tester, а не финально выбираться Python-симулятором.
+Что MT5 должен решать после полного tester-сопровождения: исполнение pending/limit orders, фактический fill, SL/TP и close mechanics должны проверяться в tester, а не финально выбираться Python-симулятором. Текущий прототип компилируется, но не доказывает intrabar fill-and-close logging: диагностический lifecycle вызывается на H1-баре, поэтому сделка, открытая и закрытая внутри одного H1-бара, может не попасть в event log как полноценные `OPEN`/`CLOSE`.
 
 Что MT5 не решает: tester не доказывает, что признаки Python доступны без утечки в момент решения. Feature leakage gate, split/freeze и reconciliation остаются обязательными.
 
@@ -106,8 +105,10 @@ Manual tester status: `manual_user_run_required`.
 - Автоматический запуск MT5 Strategy Tester агентом не доказан.
 - Фактическая parity MT5 `Nero.csv` против MT4/current source не выполнена.
 - `OPEN/CLOSE` history logging в текущем `MQL4Compat` остаётся диагностически ограниченным; close reason требует сверки по MT5 history/deals.
+- Cost/execution поля `take_profit`, `swap`, `commission`, `order_close_price` и связанные PnL-поля пока нельзя читать как полноценный источник reconciliation без MT5 history/deal сверки.
 - Диагностический scorer не является trained ML-exit model.
 - Terminal file directory для tester input/output должен быть подтверждён пользователем.
+- `mt5_entry_signals.csv` не является готовым артефактом этого этапа; его нужно сгенерировать отдельной командой `ML/baseline/export_mt5_entry_signals.py` из выбранного frozen source и затем скопировать в MT5 tester `Files`.
 
 ## Split Disclosure
 
@@ -118,7 +119,7 @@ Train/validation/locked_test split на этом этапе не открыва�
 Сначала вручную или автоматизированно выполнить single-rule MT5 compile/run:
 
 1. Сгенерировать или подтвердить MT5 `Nero.csv` parity.
-2. Подать `mt5_entry_signals.csv` в MT5 tester с `InpMT5_DiagnosticExecutor=true`.
+2. Сгенерировать `mt5_entry_signals_<run_id>.csv` через `ML/baseline/export_mt5_entry_signals.py`, положить его в MT5 tester `Files` как `mt5_entry_signals.csv` и запустить с `InpMT5_DiagnosticExecutor=true`.
 3. Вернуть `mt5_trade_events.csv`.
 4. Запустить `ML/baseline/parse_mt5_execution_report.py` и сверить events/deals.
 

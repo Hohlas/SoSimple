@@ -6,7 +6,8 @@
 - latest report: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
 - latest plan: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`
 - primary MT5 expert: `MT/MQL5/Experts/$o$imple.mq5`
-- MT5 signal schema: `docs/schemas/mt5_signal_executor_schema.md`
+- MT5 signal schema validator: `ML/baseline/mt5_signal_schema.py`
+- MT5 execution methodology: `docs/methodology/13b-mt5-execution-parity.md`
 - MT5 open-position feature contract: `docs/schemas/mt5_open_position_feature_contract.md`
 - MT5 producer contract: `docs/schemas/mt5_nero_csv_contract.md`
 - Python exporter: `ML/baseline/export_mt5_entry_signals.py`

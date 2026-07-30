@@ -19,10 +19,16 @@
     "mt5_files_dir_planned": "DISCOVER_WITH_TERMINAL_DATA_PATH_OR_FILE_COMMON"
   },
   "compile_check": {
-    "checked_at_utc": "2026-07-30T05:33:50Z",
+    "checked_at_utc": "2026-07-30T06:12:07Z",
     "result": "0 errors, 0 warnings",
     "expert_ex5_path": "MT/MQL5/Experts/$o$imple.ex5",
-    "expert_ex5_mtime_utc": "2026-07-30T05:33:50Z"
+    "expert_ex5_mtime_utc": "2026-07-30T06:12:07Z",
+    "source_hashes_sha256": {
+      "MT/MQL5/Experts/$o$imple.mq5": "24a357ee8456bbfba33e8355052c43114ab6b9ebbb6730d834942af637d47108",
+      "MT/MQL5/Include/lib_ML_Signal.mqh": "cb3168138c074ad25ad011a0c17003419a92749c685262e5bd5c783911261ee8",
+      "MT/MQL5/Include/lib_PIC.mqh": "8c649dfa85a18be5ec1531010fbf1d9cf16ce1a62a56f12d5bd24119ebea982b",
+      "MT/MQL5/Experts/$o$imple.ex5": "afaa6379c267da6a4c6f1809ae489c42c9f76b117b089cf4e8e335f506784905"
+    }
   },
   "blocking_unknowns": [
     "whether agent can invoke MT5 tester",

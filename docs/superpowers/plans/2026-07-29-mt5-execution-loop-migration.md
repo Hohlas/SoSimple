@@ -8,6 +8,21 @@
 
 **Tech Stack:** `./.venv/bin/python`, pandas, pytest, CSV/JSON, MQL5, MT5 Strategy Tester, `MT/MQL5/`, `ML/baseline/`, `ML/reports/`, `docs/reports/`.
 
+## Execution Status
+
+This plan has been executed as a diagnostic prototype. Task status by section:
+
+- Task 1: done.
+- Task 1A: done, but MT5 `Nero.csv` row-by-row parity remains `UNKNOWN`.
+- Task 2: done.
+- Task 3: done; generated signal CSV is produced on demand by `ML/baseline/export_mt5_entry_signals.py`, not committed as a fixed artifact.
+- Task 4: done as source-level instrumentation; MT5 tester runtime and intrabar fill-and-close logging remain manual/unproven.
+- Task 5: done as diagnostic scorer only; not a trained ML-exit model.
+- Task 6: done as diagnostic parser; factual PnL still requires real `CLOSE`/deal rows.
+- Task 7: done.
+- Task 8: done.
+- Task 9: done.
+
 ## Global Constraints
 
 - Работать на текущей ветке, не делать `git push` без явной просьбы пользователя.

@@ -25,12 +25,7 @@ def _filtered_reason_counts(events: pd.DataFrame) -> dict[str, int]:
         return {}
     closes = events.loc[events["event"].astype(str).eq("CLOSE"), "close_reason"].astype(str)
     closes = closes[closes.ne("") & closes.ne("nan")]
-    counts = {str(key): int(value) for key, value in closes.value_counts(dropna=False).items()}
-
-    ml_close_events = events.loc[events["event"].astype(str).eq("ML_CLOSE")]
-    if not ml_close_events.empty:
-        counts["ML_CLOSE"] = int(counts.get("ML_CLOSE", 0) + len(ml_close_events))
-    return counts
+    return {str(key): int(value) for key, value in closes.value_counts(dropna=False).items()}
 
 
 def compute_mt5_metrics(events: pd.DataFrame) -> dict[str, object]:

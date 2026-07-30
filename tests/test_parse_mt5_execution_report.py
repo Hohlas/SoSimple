@@ -101,7 +101,7 @@ def test_parse_mt5_events_and_compute_metrics(tmp_path: Path) -> None:
     assert metrics["open_counts"]["OPEN"] == 1
     assert metrics["close_counts"]["CLOSE"] == 1
     assert metrics["ml_close_decision_count"] == 1
-    assert metrics["close_reason_counts"]["ML_CLOSE"] == 1
+    assert "ML_CLOSE" not in metrics["close_reason_counts"]
     assert metrics["close_reason_counts"]["broker_history_limited"] == 1
     assert metrics["profit_sum"] == 12.5
     assert metrics["missing_open_estimate"] == 0

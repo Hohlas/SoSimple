@@ -76,6 +76,28 @@ MT5_EVENT_COLUMNS = [
 ]
 
 
+def _validate_time_order(frame: pd.DataFrame, columns: list[str]) -> None:
+    parsed = {
+        col: pd.to_datetime(frame[col], errors="coerce")
+        for col in columns
+        if col in frame.columns
+    }
+    bad_parse = [
+        col
+        for col, values in parsed.items()
+        if values.isna().any() and frame[col].astype(str).str.strip().ne("").any()
+    ]
+    if bad_parse:
+        raise ValueError(f"invalid MT5 timestamp values in columns: {bad_parse}")
+
+    for left, right in zip(columns, columns[1:]):
+        if left not in parsed or right not in parsed:
+            continue
+        invalid = parsed[left].notna() & parsed[right].notna() & parsed[left].gt(parsed[right])
+        if invalid.any():
+            raise ValueError(f"MT5 timing contract violation: {left} > {right}")
+
+
 def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     missing = [col for col in MT5_SIGNAL_COLUMNS if col not in frame.columns]
     if missing:
@@ -95,8 +117,12 @@ def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     if bad_entry:
         raise ValueError(f"unsupported entry_type values: {sorted(bad_entry)}")
 
+    _validate_time_order(frame, ["feature_time", "decision_time"])
+
 
 def validate_mt5_event_frame(frame: pd.DataFrame) -> None:
     missing = [col for col in MT5_EVENT_COLUMNS if col not in frame.columns]
     if missing:
         raise ValueError(f"missing MT5 event columns: {missing}")
+
+    _validate_time_order(frame, ["feature_time", "decision_time", "execution_time"])
