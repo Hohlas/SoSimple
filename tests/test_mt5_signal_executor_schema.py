@@ -74,7 +74,30 @@ def test_mt5_signal_schema_rejects_decision_before_features():
         ]
     )
 
-    with pytest.raises(ValueError, match="feature_time > decision_time"):
+    with pytest.raises(ValueError, match="decision_time"):
+        validate_mt5_signal_frame(frame)
+
+
+def test_mt5_signal_schema_rejects_decision_before_feature_available_time():
+    frame = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 10:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:01",
+                "decision_time": "2023.01.02 10:00",
+                "rule_id": "rule01",
+                "side": "BUY",
+                "entry_type": "BUY_LIMIT",
+                "limit_price": 1900.0,
+                "stop_price": 1890.0,
+                "atr": 10.0,
+                "max_fill_lag_bars": 6,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="feature_available_time > decision_time"):
         validate_mt5_signal_frame(frame)
 
 
@@ -172,6 +195,65 @@ def test_mt5_event_schema_rejects_execution_before_decision():
     )
 
     with pytest.raises(ValueError, match="decision_time > execution_time"):
+        validate_mt5_event_frame(frame)
+
+
+def test_mt5_event_schema_rejects_decision_before_feature_available_time():
+    frame = pd.DataFrame(
+        [
+            {
+                "event": "OPEN",
+                "time": "2023.01.02 10:05",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:01",
+                "decision_time": "2023.01.02 10:00",
+                "execution_time": "2023.01.02 10:05",
+                "rule_id": "rule01",
+                "signal_time": "2023.01.02 10:00",
+                "ticket": 1,
+                "side": "BUY",
+                "requested_price": 1900.0,
+                "fill_price": 1900.0,
+                "order_open_price": 1900.0,
+                "order_close_price": 0.0,
+                "stop_price": 1890.0,
+                "close_reason": "",
+                "profit": 0.0,
+                "bars_since_fill": 0,
+                "bid": 1900.0,
+                "ask": 1900.2,
+                "spread": 0.2,
+                "spread_atr": 0.02,
+                "bar_open": 1901.0,
+                "bar_high": 1913.0,
+                "bar_low": 1899.0,
+                "bar_close": 1912.5,
+                "calculation_open": 1901.0,
+                "slippage_points": 0.0,
+                "entry": 1900.0,
+                "take_profit": 0.0,
+                "close": 0.0,
+                "swap": 0.0,
+                "commission": 0.0,
+                "hold_bars": 0,
+                "open_positions": 1,
+                "max_positions": 1,
+                "balance": 10000.0,
+                "equity": 10012.5,
+                "entry_time": "2023.01.02 10:05",
+                "exit_time": "",
+                "unrealized_pnl_r_before_decision": 0.0,
+                "max_favorable_r_before_decision": 0.0,
+                "max_adverse_r_before_decision": 0.0,
+                "ml_exit_score": 0.0,
+                "ml_exit_decision": 0,
+                "comment": "",
+            }
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    with pytest.raises(ValueError, match="feature_available_time > decision_time"):
         validate_mt5_event_frame(frame)
 
 

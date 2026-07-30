@@ -6,9 +6,9 @@
 История, результаты и численные выводы живут в `docs/reports/`. Текущая рабочая
 точка живёт в `CONTEXT_HANDOFF.md`.
 
-Главное правило: в работе может быть только один `ACTIVE`-трек. Остальные
-направления должны быть явно помечены как `BLOCKED`, `PARKED` или
-`CLOSED_OR_SUPERSEDED`.
+Главное правило: в работе может быть только один `ACTIVE`-трек. Roadmap не
+хранит закрытые этапы и ссылки на отчёты; история живёт в `CHANGELOG.md`,
+`docs/reports/` и wiki.
 
 ---
 
@@ -17,52 +17,56 @@
 ### MT5 execution-loop prototype
 
 Status: planned/diagnostic.
-Next action: first prove or document MT5 `Nero.csv` producer parity from existing `MT/MQL5/Experts/$o$imple.mq5`; then compile/run one fixed11-like rule with `InpMT5_DiagnosticExecutor=true` and parse `mt5_trade_events.csv` with `ML/baseline/parse_mt5_execution_report.py`.
+Next action:
 
-### `MT4/tester parity for retained subset`
-
-Цель: доказать, что MT4/tester исполняет те же сигналы и сделки, что Python.
-
-Текущий статус: `PARKED_BY_MT5_PROTOTYPE`, потому chronology-fix уничтожил
-старый edge, а следующий инженерный контур перенесён в MT5 Strategy Tester.
-
-Следующий шаг:
-
-1. Не экспортировать новые fixed11 MT4 signals как candidate.
-2. Решить, закрывается ли current fixed11 retained-subset path как invalidated
-   by chronology fix.
-3. Если продолжать только инженерную parity-проверку: экспортировать corrected
-   fixed11 signals/trades с diagnostic маркировкой и перезапустить MT4 slot 1
-   reconciliation по `signal_time + direction`, open/fill/close reasons и
-   missing opens.
-4. Если edge считается уничтоженным: написать post-mortem и перейти к новой
-   заранее ограниченной постановке без использования старого locked_test как
-   источника выбора.
-
-Запрещено до разблокировки:
-
-- экспортировать все 11 rules как будто они независимы;
-- чинить PnL через изменение правил;
-- использовать свежий MT4 PnL как новый критерий отбора;
-- считать parity доказательством прибыльности.
+1. Prove or document MT5 `Nero.csv` producer parity from existing
+   `MT/MQL5/Experts/$o$imple.mq5`.
+2. Generate an entry-only `mt5_entry_signals.csv` for one diagnostic rule.
+3. Run one MT5 Strategy Tester diagnostic with
+   `InpMT5_DiagnosticExecutor=true`.
+4. Parse `mt5_trade_events.csv` with
+   `ML/baseline/parse_mt5_execution_report.py`.
+5. Reconcile event/deal rows before treating tester metrics as usable.
 
 ---
 
-## BLOCKED Until Parity
+## NEXT_AFTER_MT5_SINGLE_RULE
 
-### `Locked-test stress-spread disclosure`
+### MT5 batch selection for 20-50 candidates
 
-Цель: показать чувствительность retained subset к ухудшению spread/costs.
+Цель: после успешного single-rule MT5-контура проверять 20-50 заранее
+отобранных кандидатов через MT5 tester, а не через Python trade PF/PnL.
 
-Разблокируется только после MT4/tester parity. Stress-spread не должен менять winner и не
-должен становиться новым search по spread.
+Условия старта:
 
-### `Model card for retained subset`
+- single-rule MT5 execution loop пишет корректные entry/open/close events;
+- `Nero.csv` producer parity доказан или явно ограничен диагностическим статусом;
+- selection идёт на validation, не на opened locked_test;
+- есть отдельный план с fixed rules, split roles, costs и stop conditions.
 
-Цель: оформить назначение, split, frozen rules, known risks, execution contract,
-monitoring/retraining policy и stop conditions для retained subset.
+### `fractal0_price entry mechanics frozen probe`
 
-Разблокируется только после parity/stress disclosure.
+Цель: отдельно проверить механику входа от зоны `fractal0_price` уже поверх
+исправленного execution-контура.
+
+Условия старта:
+
+- MT5 single-rule контур пройден или его ограничения явно приняты;
+- есть новый frozen probe-plan с rule, split roles, horizons, sample-size gate,
+  yearly/window contract и `allowed_max_verdict`;
+- нет PnL/PF/trading claims без MT5 tester/reconciliation.
+
+### `H3/H6 live-safe direction`
+
+Цель: проверить короткий горизонт направления только по признакам, доступным в
+момент решения.
+
+Условия старта:
+
+- H3 или H6 выбран до запуска;
+- feature contract и forbidden future columns зафиксированы до обучения;
+- models/seeds/thresholds/split заранее ограничены;
+- `locked_test` не используется для выбора.
 
 ---
 
@@ -70,14 +74,13 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 ### `time_only regime interpretation`
 
-Цель: если retained subset окажется time-heavy, отдельно понять, является ли это
+Цель: отдельно понять, является ли устойчивый календарно-временной эффект
 режимным фильтром, а не фрактальным сигналом.
 
 Условия возврата:
 
-- pruning показывает, что retained subset в основном `time_only`;
-- parity/stress не закрывают ветку;
 - есть заранее заданный план без нового выбора по `locked_test`.
+- исследование отделено от торгового verdict.
 
 Статус: `PARKED`.
 
@@ -88,24 +91,9 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 Условия возврата:
 
-- active fixed-11 ветка закрыта или retained subset требует объяснения
-  non-time вклада;
 - есть новый bounded protocol с заранее заданными profiles, target, model и
   gate;
 - `locked_test` не используется.
-
-Статус: `PARKED`.
-
-### `fractal0_price entry mechanics frozen probe`
-
-Цель: отдельно проверить механику входа от зоны `fractal0_price`.
-
-Условия возврата:
-
-- fixed-11 ветка закрыта или признана слишком time-heavy;
-- есть новый frozen probe-plan с rule, split roles, horizons, sample-size gate,
-  yearly/window contract и `allowed_max_verdict`;
-- нет PnL/PF/trading claims без нового проверочного контура.
 
 Статус: `PARKED`.
 
@@ -116,8 +104,6 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 Условия возврата:
 
-- primary fixed-11 / `fractal0_price` направления не дают usable retained
-  subset;
 - H6 объявлен primary horizon до запуска;
 - зафиксированы признаки, модель, target, seeds, split, пороги и
   `allowed_max_verdict`;
@@ -127,8 +113,8 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 ### `multi-asset / multi-timeframe validation`
 
-Цель: проверить переносимость только после появления retained system или
-подтверждённой рабочей механики.
+Цель: проверить переносимость только после появления подтверждённой рабочей
+механики.
 
 Условия возврата:
 
@@ -149,7 +135,7 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 Условия возврата:
 
-- есть retained subset, который реально надо экспортировать/исполнять;
+- есть набор правил или моделей, который реально надо экспортировать/исполнять;
 - ручной запуск нескольких процессов становится операционным риском.
 
 Статус: `PARKED_INFRA`.
@@ -161,7 +147,7 @@ monitoring/retraining policy и stop conditions для retained subset.
 
 Условия возврата:
 
-- retained system уже определён;
+- рабочая механика уже определена;
 - есть заранее ограниченный benchmark фильтра;
 - фильтр не используется как скрытый новый search по `locked_test`.
 
@@ -189,7 +175,7 @@ locked_test_policy:
 6. Не использовать `locked_test` для нового выбора winner, cutoffs, features,
    models, filters, entries, exits, stops, spread или PnL convention.
 7. Каждый завершённый ACTIVE-трек обязан создать report и decision memo:
-   `continue`, `close`, `supersede` или `unblock`.
+   `continue`, `close` или `unblock`.
 8. `CONTEXT_HANDOFF.md` хранит ближайшую рабочую точку для следующего агента.
 9. `docs/reports/*.md` остаются каноническим источником завершённых выводов.
 10. `docs/DATA_FLOW.md` не использовать как список задач; это стабильная карта

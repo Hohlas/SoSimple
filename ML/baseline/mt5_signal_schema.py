@@ -117,7 +117,7 @@ def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     if bad_entry:
         raise ValueError(f"unsupported entry_type values: {sorted(bad_entry)}")
 
-    _validate_time_order(frame, ["feature_time", "decision_time"])
+    _validate_time_order(frame, ["feature_time", "feature_available_time", "decision_time"])
 
 
 def validate_mt5_event_frame(frame: pd.DataFrame) -> None:
@@ -125,4 +125,7 @@ def validate_mt5_event_frame(frame: pd.DataFrame) -> None:
     if missing:
         raise ValueError(f"missing MT5 event columns: {missing}")
 
-    _validate_time_order(frame, ["feature_time", "decision_time", "execution_time"])
+    _validate_time_order(
+        frame,
+        ["feature_time", "feature_available_time", "decision_time", "execution_time"],
+    )

@@ -105,6 +105,22 @@ def test_parse_mt5_events_and_compute_metrics(tmp_path: Path) -> None:
     assert metrics["close_reason_counts"]["broker_history_limited"] == 1
     assert metrics["profit_sum"] == 12.5
     assert metrics["missing_open_estimate"] == 0
+    assert metrics["open_without_close_estimate"] == 0
+
+
+def test_compute_mt5_metrics_reports_open_without_close_estimate() -> None:
+    events = pd.DataFrame(
+        [
+            _event_row("ORDER_PLACED", "2023.01.02 10:00", open_positions=0),
+            _event_row("OPEN", "2023.01.02 10:05", open_positions=1),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    metrics = compute_mt5_metrics(events)
+
+    assert metrics["missing_open_estimate"] == 0
+    assert metrics["open_without_close_estimate"] == 1
 
 
 def test_parse_mt5_events_rejects_missing_columns(tmp_path: Path) -> None:

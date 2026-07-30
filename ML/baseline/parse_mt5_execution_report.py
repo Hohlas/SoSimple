@@ -40,6 +40,7 @@ def compute_mt5_metrics(events: pd.DataFrame) -> dict[str, object]:
     closes = events.loc[events["event"].astype(str).eq("CLOSE")].copy()
     profit = pd.to_numeric(closes.get("profit"), errors="coerce").fillna(0.0)
     missing_open_estimate = max(int(order_counts.get("ORDER_PLACED", 0)) - int(order_counts.get("OPEN", 0)), 0)
+    open_without_close_estimate = max(int(order_counts.get("OPEN", 0)) - int(order_counts.get("CLOSE", 0)), 0)
     ml_close_decision_count = int(order_counts.get("ML_CLOSE", 0))
 
     return {
@@ -51,6 +52,7 @@ def compute_mt5_metrics(events: pd.DataFrame) -> dict[str, object]:
         "ml_close_decision_count": ml_close_decision_count,
         "profit_sum": float(profit.sum()),
         "missing_open_estimate": missing_open_estimate,
+        "open_without_close_estimate": open_without_close_estimate,
     }
 
 
