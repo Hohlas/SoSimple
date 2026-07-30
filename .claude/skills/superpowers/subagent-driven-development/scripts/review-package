@@ -6,7 +6,9 @@
 #
 # Usage: review-package BASE HEAD [OUTFILE]
 # Default OUTFILE: <repo-root>/.superpowers/sdd/review-<base7>..<head7>.diff
-# (named per range, so a re-review after fixes gets a distinct fresh file).
+# Prefer passing an explicit OUTFILE inside the current plan's artifact
+# directory, e.g. .superpowers/sdd/<plan-slug>/review-task-1.diff. The generic
+# default remains only for backward compatibility.
 set -euo pipefail
 
 if [ $# -lt 2 ] || [ $# -gt 3 ]; then

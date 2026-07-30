@@ -1,100 +1,162 @@
-# Аудит плана `2026-07-29-mt5-execution-loop-migration`
+# Audit: MT5 execution-loop migration
 
-Проверенный документ: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`.
+Аудируемый план: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`.
 
-Проверенные связанные артефакты: `MT/README.md`, `MT/MQL5/Experts/$o$imple.mq5`, `MT/MQL5/Include/lib_PIC.mqh`, `MT/MQL5/Include/lib_ML_Signal.mqh`, `MT/MQL5/Include/MAIN.mqh`, `MT/MQL5/Include/INPUT.mqh`, `MT/MQL5/Include/ORDERS.mqh`, `MT/MQL5/Include/SERVICE.mqh`, `MT/MQL4/Include/lib_PIC.mqh`, `MT/MQL4/Include/lib_ML_Signal.mqh`, `docs/MT/lib_PIC.mqh.md`, `docs/MT/ml_signal_integration.md`, `docs/DATA_FLOW.md`, `docs/dataset_description.md`, `ML/data_loader.py`, `ML/online_tester_reconciliation.py`, `docs/ML/online_tester_reconciliation.py.md`, `docs/methodology/01-raw-data-inventory.md`, `03-feature-contract-leakage.md`, `06-temporal-split.md`, `09-validation-freeze.md`, `10-frozen-test-oos.md`, `12-backtest-costs.md`, `13-export-mt4-parity.md`, `13b-mt5-execution-parity.md`, `16-reporting-audit.md`, `A4-verdicts-stop-conditions.md`.
+Проверено точечно: итоговый отчёт, связанные схемы, manifests, runbook, roadmap/changelog/handoff/wiki, MQL5 expert/include-файлы, Python exporter/parser/tests и релевантные разделы `docs/methodology`.
 
-Навигация: `knowledge-rag search_similar` по плану вернул `no_results`; `graphify query` использовался только как карта кандидатов, не как источник доказательств.
+## 1. Критично
 
-## Подтверждено
+Место: `docs/reports/2026-07-29-mt5-execution-loop-migration.md:88-95`, `docs/MT/mt5_signal_executor.md:102-118`, `MT/MQL5/Experts/$o$imple.mq5:151-160`, `MT/MQL5/Include/lib_ML_Signal.mqh:372-431`.
 
-- Основная идея плана методологически верная: MT5 tester может проверять исполнение, но не доказывает честность ML-признаков сам по себе. Это совпадает с `docs/methodology/03-feature-contract-leakage.md:21-30`, `docs/methodology/13b-mt5-execution-parity.md:56-63`.
-- Выбор существующего `MT/MQL5/Experts/$o$imple.mq5` как первичного target подтверждён: файл есть, `MT/README.md:17-20` называет `MQL5/` экспериментальным портом, а `docs/methodology/13b-mt5-execution-parity.md:16-17` фиксирует этот expert и `.ex5`.
-- MT5 terminal фактически установлен: команда `find '/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5' -maxdepth 1 -type f` показала `MetaEditor64.exe`, `metatester64.exe`, `terminal64.exe`.
-- На диске есть свежий compile log: `/tmp/sosimple_mt5_compile.log` содержит `Result: 0 errors, 0 warnings`; `stat` показал `MT/MQL5/Experts/$o$imple.ex5` с датой `2026-07-29 19:22:27`.
+Суть проблемы: отчёт описывает вертикальный контур как готовый для проверки фактического fill/SL/TP/close mechanics в MT5 tester, но диагностический lifecycle сейчас запускается только на новом H1-баре и может пропустить сделку, которая открылась и закрылась внутри одного H1-бара.
 
-## Замечания
+Доказательство:
+- `OnTick()` при том же `Time[0]` вызывает только `CHECK_OUT()` и сразу выходит: `MT/MQL5/Experts/$o$imple.mq5:154-156`.
+- `MT5_LogLifecycleForCurrentState()` вызывается только из `ML_TRADE()`: `MT/MQL5/Include/lib_ML_Signal.mqh:547-555`, а `ML_TRADE()` вызывается из `INPUT()` внутри полного `MAIN()` на новом баре: `MT/MQL5/Include/MAIN.mqh:131-141`.
+- После `ORDER_PLACED` код не сохраняет реальный ticket заявки: `MT/MQL5/Include/lib_ML_Signal.mqh:600-603`, `618-621`; ticket в событии заранее равен `0`.
+- Если к следующему H1-бару pending уже исчез и market-позиции уже нет, ветка видит только отсутствие active order и пишет `OPEN_FAILED`/`ORDER_EXPIRED`, не восстанавливая fill и SL/TP из history: `MT/MQL5/Include/lib_ML_Signal.mqh:375-391`.
+- Ветка history работает только если ранее был установлен `MT5_TrackedTicket`, а он устанавливается только когда позиция была замечена активной: `MT/MQL5/Include/lib_ML_Signal.mqh:380-385`, `427-431`.
 
-### 1. Критично: MT5 `Nero.csv` сейчас не совместим с текущим Python-контрактом
+Почему это важно: главная цель перехода на MT5 - доверить платформе исполнение внутри бара. Если эксперт не логирует сделки, которые полностью прошли между H1-активациями, MT5 event log будет недосчитывать открытые/закрытые сделки и искажать parity.
 
-- **Место:** план, Task 1A, строки 220-228 и 267-278.
-- **Суть проблемы:** план требует `Nero.csv`-совместимость, но его parity-проверки не проверяют число вложенных полей в `fractal*` и наличие `Shift`.
-- **Доказательство:** текущий Python-контракт требует 23 поля: `ML/data_loader.py:94`, `ML/data_loader.py:612-617`, `processing/label_signals.py:57-97`, `docs/dataset_description.md:24-34`. MT4 producer пишет `Shift` как 23-е поле: `MT/MQL4/Include/lib_PIC.mqh:897-901` и `903-919`. MT5 producer сейчас заканчивает строку на `FractalAtr` и `Shift` не пишет: `MT/MQL5/Include/lib_PIC.mqh:878-894` и `896-912`.
-- **Почему это важно:** MT5 export может пройти поверхностную проверку по `fractal0.direction` и `fractal0.price`, но затем сломать Python-парсер или silently дать другой набор признаков.
-- **Рекомендуемое исправление:** в Task 1A добавить обязательную проверку `len(fractalN.split(':')) == 23` для всех `fractal0..fractal99`, проверку `Shift` и сравнение MT4/MT5 по полному вложенному формату. В MQL5 `NERO_CSV_CREATE(int cur_bar)` добавить `":" + S0(SHIFT(F[f].T) - cur_bar)`.
+Рекомендуемое исправление: перенести диагностическое сопровождение ордера в tick-level путь или `OnTradeTransaction`, сохранять реальный order/deal/position id после `OrderSend`, а при отсутствии active order проверять MT5 history по magic/order id/времени сигнала. До этого в отчёте явно написать: текущий прототип компилируется, но intrabar fill-and-close logging не доказан.
 
-### 2. Критично: нет мостика от `mt5_entry_signals.csv` к MQL5-исполнению
+## 2. Важно
 
-- **Место:** план, Task 3 и Task 4, строки 604-618, 791-800, 916-917.
-- **Суть проблемы:** Python exporter создаёт новый entry-only CSV, но план не добавляет MQL5-код, который читает именно этот CSV и применяет `limit_price`, `stop_price`, `max_fill_lag_bars`.
-- **Доказательство:** текущий MQL5 `lib_ML_Signal.mqh` читает только `ml_signals.csv`: `MT/MQL5/Include/lib_ML_Signal.mqh:20`, `55-99`. Поиск `rg -n "mt5_entry_signals|limit_price|protective_stop_price|max_fill_lag_bars" MT/MQL5/...` нашёл эти слова только в плане, не в MQL5-коде. `INPUT.mqh` вызывает старый `ML_TRADE()` при `iSignal=3`: `MT/MQL5/Include/INPUT.mqh:14-19`.
-- **Почему это важно:** после выполнения Task 3 у MT5 всё ещё нечего исполнять из нового файла. Цель плана про tester-executed limit orders не будет достигнута.
-- **Рекомендуемое исправление:** добавить отдельный MQL5 reader для `mt5_entry_signals.csv`: массивы `signal_time/rule_id/side/entry_type/limit_price/stop_price/atr/max_fill_lag_bars`, поиск по времени, постановку именно этих pending/limit orders, истечение заявки и лог `ORDER_PLACED`/`ORDER_EXPIRED`/`OPEN_FAILED`.
+Место: `MT/MQL5/Include/lib_ML_Signal.mqh:179-275`, `docs/methodology/13-export-mt4-parity.md:38-39`, `docs/methodology/12-backtest-costs.md:18-26`, `docs/reports/2026-07-29-mt5-execution-loop-migration.md:27-31`.
 
-### 3. Важно: план не использует MT5-специфическую методологию `13b`
+Суть проблемы: event log schema содержит поля для reconciliation, но MQL5 writer заполняет часть cost/execution-полей заглушками.
 
-- **Место:** Methodology Map, строки 63-72; Task 1 Unknowns, строки 26-32 и 121-143.
-- **Суть проблемы:** план ссылается на MT4 parity как аналог, но пропускает `docs/methodology/13b-mt5-execution-parity.md`, где уже есть конкретный MT5-контур, пути и команда компиляции.
-- **Доказательство:** `docs/methodology/13b-mt5-execution-parity.md:14-25` фиксирует terminal path и команду MetaEditor; `13b:34-39` объясняет, как читать compile verdict; `13b:56-63` задаёт обязательные проверки. План при этом пишет `mt5_terminal_executable_path: "UNKNOWN"` и `absolute MT5 terminal executable path` как blocker: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md:125`, `140`.
-- **Почему это важно:** исполнитель может зря остановиться на ручном handoff, хотя часть автоматической проверки уже описана и доступна.
-- **Рекомендуемое исправление:** добавить `docs/methodology/13b-mt5-execution-parity.md` в Methodology Map и заменить `UNKNOWN` по terminal path на `/home/hohla/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe`; отдельно оставить неизвестным только возможность автоматического tester-run.
+Доказательство:
+- Header содержит `take_profit`, `swap`, `commission`, `balance`, `equity`: `MT/MQL5/Include/lib_ML_Signal.mqh:217-218`.
+- Writer всегда пишет `take_profit=0.0`, `swap=0.0`, `commission=0.0`: `MT/MQL5/Include/lib_ML_Signal.mqh:257-261`.
+- В `CLOSE` строке `order_close_price` заполняется `OrderOpenPrice()`, а не ценой закрытия: `MT/MQL5/Include/lib_ML_Signal.mqh:431`.
+- Методика требует логировать spread/slippage/Bid/Ask/commission/swap/balance/equity: `docs/methodology/13-export-mt4-parity.md:38-39`; cost model должен включать commission/swap/slippage/position constraints: `docs/methodology/12-backtest-costs.md:18-26`.
 
-### 4. Важно: финальная проверка не компилирует MQL5 после изменений
+Почему это важно: такой event log пока пригоден как диагностика потока событий, но не как источник корректного PnL/cost reconciliation.
 
-- **Место:** Final Verification, строки 1523-1549.
-- **Суть проблемы:** план меняет `.mq5/.mqh`, но финальная проверка запускает только Python tests и `rg`.
-- **Доказательство:** `docs/methodology/13b-mt5-execution-parity.md:19-35` требует компиляцию через MetaEditor и verdict по логу `0 errors, 0 warnings`; `13b:58-59` делает это обязательной проверкой. В плане Final Verification такой команды нет.
-- **Почему это важно:** статический поиск символов не доказывает, что MQL5-код компилируется. Для MQL это особенно рискованно из-за include-порядка и отличий MQL4/MQL5 API.
-- **Рекомендуемое исправление:** добавить compile check из `13b` в Task 4 и Final Verification. Если агент не может запустить Wine/MetaEditor, отчёт должен явно содержать `compile_status: MANUAL_REQUIRED`, а не только `rg`-проверку.
+Рекомендуемое исправление: либо заполнить поля из MT5 positions/deals/history, либо в отчёте и schema явно пометить эти колонки как `CURRENTLY_STUBBED` до реализации history/deal reconciliation.
 
-### 5. Важно: event schema недостаточна для cost/reconciliation audit
+## 3. Важно
 
-- **Место:** Task 2, строки 363-367 и 489-505; Task 6, строки 1074-1081.
-- **Суть проблемы:** плановый MT5 event-log содержит базовые поля, но не содержит spread, slippage, Bid/Ask, OHLC бара, commission, swap, balance/equity, `order_open_price`, `order_close_price`, `entry_time`, `exit_time`.
-- **Доказательство:** методология требует логировать `OPEN_FAILED`, spread, slippage, Bid/Ask, commission, swap, balance/equity: `docs/methodology/13-export-mt4-parity.md:38-40`. Существующий MT4 event-log уже пишет эти поля: `MT/MQL4/Include/lib_ML_Signal.mqh:110-147`, `180-255`; документация это подтверждает: `docs/MT/ml_signal_integration.md:542-549`. Парсер reconciliation ожидает эти числовые поля: `ML/online_tester_reconciliation.py:37-66`.
-- **Почему это важно:** без этих полей нельзя честно объяснить разницу PnL, проскальзывание, издержки и причины пропущенных входов.
-- **Рекомендуемое исправление:** расширить `MT5_EVENT_COLUMNS` до уровня MT4 event-log или явно сделать `mt5_event_v1_minimal` только debug-схемой, а для parity добавить `mt5_event_v2_reconciliation` с полями cost/execution.
+Место: `ML/baseline/mt5_signal_schema.py:79-102`, `docs/schemas/mt5_signal_executor_schema.md:42-54`, `docs/methodology/03-feature-contract-leakage.md:46-77`.
 
-### 6. Важно: плановый event-log не очищается перед tester-run
+Суть проблемы: timing contract описан в документации, но Python-валидатор проверяет только наличие колонок и не проверяет порядок времени `feature_time <= decision_time <= execution_time`.
 
-- **Место:** Task 4 logger, строки 871-885; Task 7 runbook, строки 1236-1247.
-- **Суть проблемы:** предложенный logger дописывает в существующий файл и пишет заголовок только если файл пустой; отдельного удаления файла в tester-режиме нет.
-- **Доказательство:** `docs/methodology/13-export-mt4-parity.md:77` называет неочищенный event-log типовой ошибкой. Существующий MT4 logger удаляет файл при `IsTesting()`: `MT/MQL4/Include/lib_ML_Signal.mqh:164-167`, а docs фиксируют очистку tester CSV: `docs/MT/ml_signal_integration.md:557-559`.
-- **Почему это важно:** старые события смешаются с новым прогоном, и counts/PnL будут неверными.
-- **Рекомендуемое исправление:** добавить `MT5_PrepareEventFileIfNeeded()` с `FileDelete(MT5_EventFile)` при `IsTesting()` перед первой записью; добавить тест/ручную проверку, что новый run начинается с чистого файла.
+Доказательство:
+- Схема требует `feature_time <= decision_time <= execution_time`: `docs/schemas/mt5_signal_executor_schema.md:42-54`.
+- `validate_mt5_signal_frame()` проверяет missing columns, forbidden columns, side и entry_type, но не парсит время: `ML/baseline/mt5_signal_schema.py:79-96`.
+- `validate_mt5_event_frame()` проверяет только missing columns: `ML/baseline/mt5_signal_schema.py:99-102`.
+- Методика требует фиксировать `decision_time` и момент доступности признаков: `docs/methodology/03-feature-contract-leakage.md:46-77`.
 
-### 7. Важно: timing contract заявлен, но не представлен в данных
+Почему это важно: можно получить формально валидный CSV, где решение принято раньше доступности признаков или исполнение раньше решения. Это прямо возвращает риск заглядывания вперёд, ради устранения которого делается MT5-контур.
 
-- **Место:** Task 2 schema, строки 546-579; Task 5 contract, строки 987-1001.
-- **Суть проблемы:** документ пишет `feature_time <= decision_time <= execution_time`, но в signal/event CSV нет отдельных колонок `feature_time`, `decision_time`, `execution_time` или `feature_available_time`.
-- **Доказательство:** `MT5_SIGNAL_COLUMNS` содержит только `time`, `rule_id`, `side`, `entry_type`, `limit_price`, `stop_price`, `atr`, `max_fill_lag_bars`: план строки 468-477. `MT5_EVENT_COLUMNS` содержит `time` и `signal_time`, но не decision/execution timestamps: строки 489-505. Методология требует явно фиксировать `decision_time`: `docs/methodology/03-feature-contract-leakage.md:46-56`.
-- **Почему это важно:** нельзя доказать, что признаки были известны до решения, а исполнение произошло после решения.
-- **Рекомендуемое исправление:** добавить в signal/event schema поля `feature_time`, `feature_available_time`, `decision_time`, `execution_time`; для ML-exit добавить `fill_time`, `decision_bar_time` и `feature_bar_close_time`.
+Рекомендуемое исправление: добавить проверки времени в `validate_mt5_signal_frame()` и `validate_mt5_event_frame()`, плюс targeted tests на нарушение порядка.
 
-### 8. Улучшение: exporter metadata не выполняет собственный список обязательных полей
+## 4. Важно
 
-- **Место:** Task 3, строки 624-627 и 726-735.
-- **Суть проблемы:** Mandatory Checks требуют `nonzero counts`, но JSON meta их не пишет. Также нет hash входного source CSV, rule/model metadata и run config.
-- **Доказательство:** план требует `Hash, row counts, nonzero counts and duplicate times are written to JSON`: строка 627. Реальный шаблон meta содержит `rows`, `unique_times`, `duplicate_time_rows`, `side_counts`, `output_csv_sha256`, но не `nonzero_rows`, `source_csv_sha256`, `rule_hash`: строки 726-735. Методология требует paths, hashes, rules, checkpoints: `docs/methodology/16-reporting-audit.md:31`.
-- **Почему это важно:** следующий агент не сможет проверить, из каких входов получен signal CSV и сколько реально активных сигналов экспортировано.
-- **Рекомендуемое исправление:** добавить `source_csv`, `source_csv_sha256`, `rule_id`, `rule_hash`, `active_signal_rows`, `buy_rows`, `sell_rows`, `run_config_hash`.
+Место: `docs/reports/2026-07-29-mt5-feasibility.md:17-20`.
 
-### 9. Улучшение: `InpMT5_ExportNero=false -> no producer side effect` недоказуемо текущей статической проверкой
+Суть проблемы: feasibility-отчёт устарел и противоречит итоговому состоянию реализации.
 
-- **Место:** Task 1A, строки 315-340.
-- **Суть проблемы:** план задаёт guard для Nero export, но проверяет только наличие строк через `rg`, а не то, что оба overload-а `NERO_CSV_CREATE()` и все вызовы реально защищены.
-- **Доказательство:** текущий MQL5 код вызывает `NERO_CSV_CREATE()` в `EXPERT::INIT()`: `MT/MQL5/Include/lib_PIC.mqh:96-129`, и пишет строки через `NERO_CSV_CREATE(bar)` при обновлении уровней: `MT/MQL5/Include/lib_PIC.mqh:312`, `677-692`, `779-922`. Плановая проверка `rg` на строки `InpMT5_ExportNero|...` не доказывает отсутствие записи файла: план строки 329-340.
-- **Почему это важно:** при default `false` эксперт всё равно может удалить/создать `Nero.csv`, если guard вставлен не во все нужные места.
-- **Рекомендуемое исправление:** явно прописать: оба `NERO_CSV_CREATE` должны начинаться с `if(!MT5_ExportNero) return;`, имя файла должно использовать `MT5_NeroFile`, а проверка должна включать compile plus source grep по обоим overload-ам.
+Доказательство:
+- Feasibility пишет, что event CSV writer ещё отсутствует: `docs/reports/2026-07-29-mt5-feasibility.md:19`.
+- Фактически writer реализован как `MT5_ML_LogEvent(...)`: `MT/MQL5/Include/lib_ML_Signal.mqh:179-277`.
+- Feasibility фиксирует `.ex5` mtime `2026-07-30 05:33:50 UTC`: `docs/reports/2026-07-29-mt5-feasibility.md:17`, но текущий `stat` показывает `MT/MQL5/Experts/$o$imple.ex5` обновлён в `2026-07-30 06:12:07.863592194 +0000`.
 
-### 10. Вопрос: runbook не даёт точный путь к MT5 tester `Files`
+Почему это важно: следующий агент может принять старый feasibility-вывод за актуальный blocker или не понять, какая версия была скомпилирована.
 
-- **Место:** Task 1 manifest, строка 137; Task 7 runbook, строки 1236-1247.
-- **Суть проблемы:** обязательная проверка говорит, что runbook должен точно сказать, куда копировать файлы, но шаблон пишет только `MT5 tester Files directory`.
-- **Доказательство:** `MT/MQL5/Files` сейчас не существует: команда `test -d MT/MQL5/Files` вернула exit code `1`; `find MT/MQL5 -maxdepth 2 -type d` показал `Experts`, `Include`, `Profiles`, но не `Files`. План при этом указывает `"mt5_files_dir_planned": "MT/MQL5/Files"` и шаг `Copy signal CSV to MT5 tester Files directory`: строки 137, 1239.
-- **Почему это важно:** пользователь может положить CSV не туда, эксперт не найдёт файл, и tester-run будет ошибочно интерпретирован как проблема стратегии.
-- **Рекомендуемое исправление:** добавить шаг discovery: записать `TerminalInfoString(TERMINAL_DATA_PATH)`, tester agent files path или использовать `FILE_COMMON` с явно указанным common path. В manifest хранить фактический путь входного и выходного CSV.
+Рекомендуемое исправление: обновить feasibility как superseded-by final report или убрать/исправить устаревшие строки про отсутствующий writer и старое compile time.
 
-## Итог
+## 5. Улучшение
 
-План правильный по направлению, но в текущем виде его нельзя исполнять как надёжный implementation plan без правок. Главные блокеры: несовместимый MT5 `Nero.csv` без `Shift`, отсутствие MQL5 reader/executor для нового `mt5_entry_signals.csv`, слишком бедный event-log для reconciliation и отсутствие обязательной MT5 compile verification в финальных проверках.
+Место: `ML/reports/mt5_execution_loop/mt5_environment_manifest.json`.
+
+Суть проблемы: compile metadata в manifest устарела относительно фактического `.ex5`.
+
+Доказательство:
+- Manifest: `compile_check.checked_at_utc = 2026-07-30T05:33:50Z`, `expert_ex5_mtime_utc = 2026-07-30T05:33:50Z`.
+- Команда `stat -c '%y %n' MT/MQL5/Experts/'$o$imple.ex5'` показала `2026-07-30 06:12:07.863592194 +0000`.
+- Методика требует фиксировать команды, paths, hashes/artifacts: `docs/methodology/16-reporting-audit.md:31`, `88-97`.
+
+Почему это важно: manifest должен быть машинно-читаемым источником воспроизводимости. Сейчас он не соответствует текущему бинарнику.
+
+Рекомендуемое исправление: обновить compile timestamp и добавить hash `.mq5/.mqh/.ex5` или заменить точное время на статус `latest_compile_log_checked` с командой проверки.
+
+## 6. Важно
+
+Место: `ML/baseline/parse_mt5_execution_report.py:23-59`, `tests/test_parse_mt5_execution_report.py:65-107`.
+
+Суть проблемы: parser смешивает событие решения `ML_CLOSE` с фактической причиной закрытия и считает PnL только по строкам `CLOSE`, хотя текущий MQL5 close logging сам помечен как ограниченный.
+
+Доказательство:
+- `_filtered_reason_counts()` добавляет количество `ML_CLOSE` events в `close_reason_counts`: `ML/baseline/parse_mt5_execution_report.py:30-32`.
+- `profit_sum` считается только по `event == "CLOSE"`: `ML/baseline/parse_mt5_execution_report.py:45-58`.
+- Тест ожидает одновременно `ML_CLOSE` как close reason и `broker_history_limited`: `tests/test_parse_mt5_execution_report.py:96-106`.
+- Документация признаёт, что `ML_CLOSE` - диагностическое решение, а фактическое закрытие отдельной history-строкой `CLOSE`, при этом `CLOSE` ограничен: `docs/MT/mt5_signal_executor.md:115-126`.
+
+Почему это важно: в отчёте о tester-прогоне легко перепутать "модель попросила закрыть" и "позиция реально закрылась по этой причине". Для parity это разные факты.
+
+Рекомендуемое исправление: разделить `ml_close_decision_count` и actual `close_reason_counts`; не добавлять `ML_CLOSE` decision events в причины фактического закрытия. Для PnL явно требовать реальные `CLOSE`/deal rows.
+
+## 7. Улучшение
+
+Место: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`.
+
+Суть проблемы: план заявлен как выполненный, но чекбоксы задач остались незакрытыми.
+
+Доказательство:
+- В плане есть требование использовать checkbox syntax for tracking: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md:3`.
+- Поиск по плану показывает шаги вида `- [ ]`, например `Task 1` начинается с незакрытого `Step 1`: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md:104`.
+
+Почему это важно: для handoff непонятно, какие пункты реально выполнены, какие заменены, а какие остались ручными.
+
+Рекомендуемое исправление: либо отметить выполненные пункты, либо добавить отдельный execution status block с `done/manual/blocked` по задачам 1-9.
+
+## 8. Вопрос
+
+Место: `docs/reports/2026-07-29-mt5-execution-loop-migration.md:118-125`, `ML/reports/mt5_execution_loop/`.
+
+Суть проблемы: следующий шаг требует подать `mt5_entry_signals.csv` в tester, но в каталоге артефактов нет готового `mt5_entry_signals.csv` или `mt5_entry_signals_<run_id>.csv`.
+
+Доказательство:
+- Итоговый отчёт говорит: "Подать `mt5_entry_signals.csv` в MT5 tester": `docs/reports/2026-07-29-mt5-execution-loop-migration.md:120-122`.
+- `find ML/reports/mt5_execution_loop -maxdepth 1 -type f` показывает только manifests/README/sample events; entry-signal CSV отсутствует.
+
+Почему это важно: если это ожидаемый ручной шаг, всё нормально. Если этап должен был подготовить файл для single-rule прогона, артефакт не создан.
+
+Рекомендуемое исправление: уточнить в отчёте/runbook: entry CSV ещё должен быть сгенерирован отдельной командой `ML/baseline/export_mt5_entry_signals.py` из выбранного frozen source, либо создать диагностический sample entry CSV и manifest.
+
+## Выполненные проверки
+
+```bash
+./.venv/bin/python -m pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py -q
+```
+
+Результат: `6 passed in 0.21s`.
+
+```bash
+iconv -f UTF-16LE -t UTF-8 /tmp/sosimple_mt5_compile.log | tail -n 30
+```
+
+Результат: лог содержит `Result: 0 errors, 0 warnings, 5018 ms elapsed, cpu='X64 Regular'`.
+
+```bash
+stat -c '%y %n' MT/MQL5/Experts/'$o$imple.mq5' MT/MQL5/Include/lib_ML_Signal.mqh MT/MQL5/Include/lib_PIC.mqh MT/MQL5/Experts/'$o$imple.ex5'
+```
+
+Результат: `.ex5` новее проверенных MQL5 source-файлов.
+
+```bash
+rg -n "future_exit_time|pnl_r|fill_time" ML/baseline/export_mt5_entry_signals.py docs/schemas/mt5_signal_executor_schema.md
+```
+
+Результат: совпадения только в forbidden-column checks/schema и event schema, не как экспортируемые entry columns.
+
+```bash
+rg -n "DIAGNOSTIC_ONLY|feature_time <= decision_time <= execution_time|bars_since_fill=0|Nero.csv|MT5_PrepareEventFileIfNeeded|mt5_entry_signals.csv|Result: 0 errors, 0 warnings" docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md docs/schemas/mt5_signal_executor_schema.md docs/schemas/mt5_open_position_feature_contract.md docs/schemas/mt5_nero_csv_contract.md
+```
+
+Результат: обязательные contract terms найдены.
+
+Полный `./.venv/bin/python -m pytest tests/ -q` не запускался по правилу пользователя.

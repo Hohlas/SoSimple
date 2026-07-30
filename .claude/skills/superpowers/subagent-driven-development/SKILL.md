@@ -222,9 +222,15 @@ Everything you paste into a dispatch prompt — and everything a subagent
 prints back — stays resident in your context for the rest of the session
 and is re-read on every later turn. Hand artifacts over as files:
 
+- **Plan artifact directory:** before extracting briefs, derive a plan-scoped
+  directory from the plan filename:
+  `.superpowers/sdd/<plan-slug>/`. All briefs, reports, review packages, fix
+  reports and scratch logs for that plan go there. Do not write task artifacts
+  directly under `.superpowers/sdd/`; flat names like `task-1-report.md` are
+  ambiguous across plans.
 - **Task brief:** before dispatching an implementer, run this skill's
   `scripts/task-brief PLAN_FILE N` — it extracts the task's full text to a
-  uniquely named file and prints the path. Compose the dispatch so the
+  plan-scoped file and prints the path. Compose the dispatch so the
   brief stays the single source of requirements. Your dispatch should
   contain: (1) one line on where this task fits in the project; (2) the
   brief path, introduced as "read this first — it is your requirements,
@@ -234,7 +240,8 @@ and is re-read on every later turn. Hand artifacts over as files:
   report contract. Exact values (numbers, magic strings, signatures, test
   cases) appear only in the brief.
 - **Report file:** name the implementer's report file after the brief
-  (brief `…/task-N-brief.md` → report `…/task-N-report.md`) and put it in
+  (brief `…/<plan-slug>/task-N-brief.md` → report
+  `…/<plan-slug>/task-N-report.md`) and put it in
   the dispatch prompt. The implementer writes the full report there and
   returns only status, commits, a one-line test summary, and concerns.
 - **Reviewer inputs:** the task reviewer gets three paths — the same brief
@@ -251,12 +258,13 @@ sequences — the single most expensive failure observed. Track progress in
 a ledger file, not only in todos.
 
 - At skill start, check for a ledger:
-  `cat "$(git rev-parse --show-toplevel)/.superpowers/sdd/progress.md"`. Tasks listed there
-  as complete are DONE — do not re-dispatch them; resume at the first task
-  not marked complete.
+  `cat "$(git rev-parse --show-toplevel)/.superpowers/sdd/<plan-slug>/progress.md"`.
+  Only entries from the current plan's ledger are valid. Ignore legacy flat
+  ledgers such as `.superpowers/sdd/progress.md` unless the user explicitly
+  identifies them as belonging to the current plan.
 - When a task's review comes back clean, append one line to the ledger in
   the same message as your other bookkeeping:
-  `Task N: complete (commits <base7>..<head7>, review clean)`.
+  `<PLAN_FILE> :: Task N :: complete (commits <base7>..<head7>, review clean)`.
 - The ledger is your recovery map: the commits it names exist in git even
   when your context no longer remembers creating them. After compaction,
   trust the ledger and `git log` over your own recollection.
