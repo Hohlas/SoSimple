@@ -1,0 +1,62 @@
+{
+  "label": "mt5_execution_loop",
+  "status": "DIAGNOSTIC_ONLY",
+  "run_id": "20260730_entry_quality_filter",
+  "rows_total": 9463,
+  "active_signal_rows": 9463,
+  "nonzero_rows": 9463,
+  "buy_rows": 4494,
+  "sell_rows": 4969,
+  "unique_time_rows": 8985,
+  "duplicate_time_rows": 478,
+  "unique_time_side_rows": 9243,
+  "same_time_opposite_signal_groups": 258,
+  "side_counts": {
+    "SELL": 4969,
+    "BUY": 4494
+  },
+  "source_csv": "ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.csv",
+  "source_csv_sha256": "071d12817961c0a7ecaf93966281d3401a78dff0852e3956a3194b0be77cd7d0",
+  "rule_metadata": null,
+  "rule_metadata_path": null,
+  "rule_metadata_sha256": null,
+  "run_config_hash": "987f182d1ab6f4b63dcebee9dba90ebeb2247d7d61bdd7c687e7d32468003212",
+  "run_config": {
+    "label": "mt5_execution_loop",
+    "run_id": "20260730_entry_quality_filter",
+    "max_fill_lag_bars": 6,
+    "columns": [
+      "time",
+      "feature_time",
+      "feature_available_time",
+      "decision_time",
+      "rule_id",
+      "side",
+      "entry_type",
+      "limit_price",
+      "stop_price",
+      "atr",
+      "max_fill_lag_bars"
+    ],
+    "rule_metadata_sha256": null,
+    "source_csv_sha256": "071d12817961c0a7ecaf93966281d3401a78dff0852e3956a3194b0be77cd7d0"
+  },
+  "output_csv": "ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.csv",
+  "output_csv_sha256": "0b30fc5b6e8da9b2460ed1c21f9203b51b53852bfee531a08c62b33caecf9900",
+  "output_json": "ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.json",
+  "forbidden_source_columns": [],
+  "forbidden_future_lifecycle_columns_removed": true,
+  "exported_columns": [
+    "time",
+    "feature_time",
+    "feature_available_time",
+    "decision_time",
+    "rule_id",
+    "side",
+    "entry_type",
+    "limit_price",
+    "stop_price",
+    "atr",
+    "max_fill_lag_bars"
+  ]
+}

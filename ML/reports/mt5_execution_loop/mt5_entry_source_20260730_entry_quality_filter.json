@@ -1,0 +1,16 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "source_csv": "ML/reports/fractal0_entry_quality_filter_scores.csv",
+  "source_csv_sha256": "85a11f8b699658fe1211b5cfdf755c18dba0c0e66ccc2868926a91ce2f64932e",
+  "output_csv": "ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.csv",
+  "output_csv_sha256": "071d12817961c0a7ecaf93966281d3401a78dff0852e3956a3194b0be77cd7d0",
+  "rows": 9463,
+  "rule_id": "entry_quality_filter",
+  "date_from": "2019.06.20 16:00",
+  "date_to": "2022.12.02 07:00",
+  "time_policy": "feature_time, feature_available_time and decision_time are copied from signal_time; diagnostic bridge only",
+  "forbidden_source_columns_present": [
+    "fill_time"
+  ],
+  "forbidden_columns_exported": []
+}

@@ -1,0 +1,30 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "run_id": "20260730_entry_quality_filter",
+  "source_csv": "ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.csv",
+  "source_csv_sha256": "071d12817961c0a7ecaf93966281d3401a78dff0852e3956a3194b0be77cd7d0",
+  "source_origin_csv": "ML/reports/fractal0_entry_quality_filter_scores.csv",
+  "source_origin_csv_sha256": "85a11f8b699658fe1211b5cfdf755c18dba0c0e66ccc2868926a91ce2f64932e",
+  "source_bridge_json": "ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.json",
+  "selection_policy": "existing diagnostic entry-quality score source converted mechanically; no new selection by tester result",
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "max_fill_lag_bars": 6,
+  "date_from": "2019.06.20 16:00",
+  "date_to": "2022.12.02 07:00",
+  "date_range_policy": "source time range unless Task 4 records narrower tester range",
+  "locked_test_policy": "not used for new selection",
+  "time_policy": "feature_time, feature_available_time and decision_time are copied from signal_time; diagnostic bridge only",
+  "methodology": [
+    "docs/methodology/03-feature-contract-leakage.md",
+    "docs/methodology/12-backtest-costs.md",
+    "docs/methodology/13-export-mt4-parity.md",
+    "docs/methodology/13b-mt5-execution-parity.md",
+    "docs/methodology/16-reporting-audit.md"
+  ],
+  "unknowns": [
+    "actual MT5 tester Files path",
+    "automatic Strategy Tester launch availability",
+    "MT5 Nero.csv row-by-row parity status"
+  ]
+}

@@ -14,7 +14,9 @@ int OnInit(){// функции сохранения и восстановлен�
    else                 Company=StringSubstr(AccountCompany(),0,StringFind(AccountCompany()," ",0)); // Первое слово до пробела
    if (MarketInfo(Symbol(),MODE_LOTSTEP)<0.1) LotDigits=2; else LotDigits=1;
    ERROR_CHECK(__FUNCTION__+"-"+S0(__LINE__));
-   Print("\n\n\n\n OnInit() ",NAME,".V",VER,":  Time[",Bars,"]=",TimeToStr(Time[Bars-1],TIME_DATE)," Time[1]=",TimeToStr(Time[1],TIME_DATE));   
+   string oldest_bar_time = (Bars > 1 ? TimeToStr(Time[Bars-1],TIME_DATE) : "UNKNOWN");
+   string last_closed_bar_time = (Bars > 1 ? TimeToStr(Time[1],TIME_DATE) : "UNKNOWN");
+   Print("\n\n\n\n OnInit() ",NAME,".V",VER,":  Time[",Bars,"]=",oldest_bar_time," Time[1]=",last_closed_bar_time);   
    CHART_SETTINGS();
    if (Real){
       ExpPause=ushort(Period()); // временное значение до считывания файла параметров в INPUT_FILE_READ()

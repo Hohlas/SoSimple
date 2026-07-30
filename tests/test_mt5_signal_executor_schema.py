@@ -293,3 +293,60 @@ def test_export_mt5_entry_signals_writes_entry_only_csv(tmp_path):
     assert list(frame.columns) == MT5_SIGNAL_COLUMNS
     assert "exit_time" not in frame.columns
     assert "pnl_r" not in frame.columns
+
+
+def test_prepare_mt5_entry_source_from_entry_quality_scores_contract():
+    from ML.baseline.prepare_mt5_entry_source import prepare_entry_quality_source
+
+    source = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 10:00",
+                "side": "SELL",
+                "limit_price": 1910.0,
+                "protective_stop_price": 1920.0,
+                "atr": 10.0,
+                "pnl_r": -1.0,
+                "exit_time": "2023.01.02 15:00",
+            }
+        ]
+    )
+
+    prepared = prepare_entry_quality_source(source)
+
+    assert prepared.to_dict(orient="records") == [
+        {
+            "time": "2023.01.02 10:00",
+            "feature_time": "2023.01.02 10:00",
+            "feature_available_time": "2023.01.02 10:00",
+            "decision_time": "2023.01.02 10:00",
+            "rule_id": "entry_quality_filter",
+            "side": "SELL",
+            "limit_price": 1910.0,
+            "protective_stop_price": 1920.0,
+            "atr": 10.0,
+        }
+    ]
+    assert "pnl_r" not in prepared.columns
+    assert "exit_time" not in prepared.columns
+
+
+def test_prepare_mt5_entry_source_rejects_time_mismatch():
+    from ML.baseline.prepare_mt5_entry_source import prepare_entry_quality_source
+
+    source = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 11:00",
+                "side": "BUY",
+                "limit_price": 1900.0,
+                "protective_stop_price": 1890.0,
+                "atr": 10.0,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="time and signal_time differ"):
+        prepare_entry_quality_source(source)
