@@ -243,8 +243,7 @@ void EXPERT::NEW_LEVEL(char NewPicDir,
             F[f].Pwr = MathMin(F[f].FrntVal, F[f].BackVal);
             F[f].Near = New; // цена самого близкого подхода к уровню
             F[f].NearVal = 0; // амплитуда самого близкого подхода к уровню
-            if (F[f].Pwr > ATR * PicPwr && // достаточный передний фронт
-               F[f].StrongImp) { // сильный импульс из пика  
+            if (F[f].FrntVal > ATR * PicPwr * 0.5 && F[f].BackVal > ATR * PicPwr) { // достаточный передний и задний фронт
                F[f].Strong = 1;
             }
          }

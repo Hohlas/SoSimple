@@ -1,0 +1,121 @@
+{
+  "verdict": "PARITY_PARTIAL",
+  "structural": {
+    "column_match": true,
+    "columns_mt4": 104,
+    "columns_mt5": 104,
+    "column_names_match": true,
+    "rows_mt4_total": 62764,
+    "rows_mt5_total": 9378,
+    "rows_mt4_dedup": 59000,
+    "rows_mt5_dedup": 8905,
+    "duplicate_time_count_mt4": 3764,
+    "duplicate_time_count_mt5": 473,
+    "intersection_rows": 8905,
+    "min_time_mt4": "2004.07.07 20:00",
+    "max_time_mt4": "2026.04.22 12:00",
+    "min_time_mt5": "2019.07.02 15:00",
+    "max_time_mt5": "2022.12.02 22:00",
+    "min_time_intersection": "2019.07.02 15:00",
+    "max_time_intersection": "2022.12.02 22:00",
+    "field_count_distribution_mt4": {
+      "22": 20300
+    },
+    "field_count_distribution_mt5": {
+      "23": 20300
+    },
+    "shift_checked": 20300,
+    "shift_violations": 0
+  },
+  "numeric": {
+    "fractal0_direction_agreement_rate": 0.5892195395845031,
+    "fractal0_direction_total": 8905,
+    "fractal0_price_diff": {
+      "mean": 151.8357102751263,
+      "p50": 101.0,
+      "p95": 330.1999999999998,
+      "max": 427.5,
+      "count": 8905
+    },
+    "fractal0_price_diff_classification": {
+      "small_drift": 52,
+      "broker_history_shift": 604,
+      "systematic": 8249
+    },
+    "fractal0_T_agreement_rate": 0.00583941605839416,
+    "fractal0_T_total": 8905,
+    "atr_diff": {
+      "mean": 0.0,
+      "p50": 0.0,
+      "p95": 0.0,
+      "max": 0.0,
+      "count": 8905
+    },
+    "atr_diff_classification": {
+      "small_drift": 8905,
+      "broker_history_shift": 0,
+      "systematic": 0
+    },
+    "extended_fractal1_9": {
+      "fractal1": {
+        "direction_agreement_rate": 0.44098820887142054,
+        "direction_total": 8905,
+        "price_p95_diff": 199.20000000000005,
+        "price_mean_diff": 89.01341942728808
+      },
+      "fractal2": {
+        "direction_agreement_rate": 0.6011229646266143,
+        "direction_total": 8905,
+        "price_p95_diff": 228.0,
+        "price_mean_diff": 56.083189219539605
+      },
+      "fractal3": {
+        "direction_agreement_rate": 0.4797304884896126,
+        "direction_total": 8905,
+        "price_p95_diff": 189.20000000000005,
+        "price_mean_diff": 60.63766423357664
+      },
+      "fractal4": {
+        "direction_agreement_rate": 0.35687815833801234,
+        "direction_total": 8905,
+        "price_p95_diff": 264.39999999999986,
+        "price_mean_diff": 111.79984278495225
+      },
+      "fractal5": {
+        "direction_agreement_rate": 0.8083099382369455,
+        "direction_total": 8905,
+        "price_p95_diff": 281.79999999999995,
+        "price_mean_diff": 55.16916339135315
+      },
+      "fractal6": {
+        "direction_agreement_rate": 0.5592363840539023,
+        "direction_total": 8905,
+        "price_p95_diff": 152.0,
+        "price_mean_diff": 54.007827063447536
+      },
+      "fractal7": {
+        "direction_agreement_rate": 0.5228523301516003,
+        "direction_total": 8905,
+        "price_p95_diff": 275.9000000000001,
+        "price_mean_diff": 76.60692869174622
+      },
+      "fractal8": {
+        "direction_agreement_rate": 0.504884896125772,
+        "direction_total": 8905,
+        "price_p95_diff": 210.29999999999995,
+        "price_mean_diff": 80.03080291970801
+      },
+      "fractal9": {
+        "direction_agreement_rate": 0.581807973048849,
+        "direction_total": 8905,
+        "price_p95_diff": 141.19999999999982,
+        "price_mean_diff": 56.67069062324537
+      }
+    }
+  },
+  "thresholds": {
+    "direction_agreement_min": 0.95,
+    "price_p95_max": 5.0,
+    "atr_p95_max": 1.0
+  }
+}

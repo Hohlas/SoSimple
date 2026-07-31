@@ -17,16 +17,17 @@
 ### MT5 execution-loop prototype
 
 Status: OnTradeTransaction lifecycle closed (DIAGNOSTIC_ONLY,
-2026-07-31); Nero parity and ERROR-4756 classification not closed.
+2026-07-31); Nero parity closed as PARITY_PARTIAL (structural PASS,
+numeric FAIL — MT4 reference from older build). ERROR-4756 classification
+not closed.
 Next action:
 
-1. Prove or document MT5 `Nero.csv` producer parity from existing
-   `MT/MQL5/Experts/$o$imple.mq5` (row-by-row vs MT4 `Nero.csv`), or
-   explicitly cap it as DIAGNOSTIC_ONLY.
-2. Classify `ERROR-4756` send failures and `ERROR_SoSimple_*.csv`;
+1. Classify `ERROR-4756` send failures and `ERROR_SoSimple_*.csv`;
    link them to the 15 unexplained cancelled pendings + 9 ORDER_EXPIRED
    remainders from the 2026-07-31 reconciliation.
-3. Reconcile event/deal rows before treating tester metrics as usable.
+2. Reconcile event/deal rows before treating tester metrics as usable.
+3. (Optional) Regenerate MT4 `Nero_XAUUSD.csv` with current build for
+   numeric PARITY_PASS — separate plan.
 
 ---
 

@@ -1,0 +1,24 @@
+{
+  "method": "T-matching within row",
+  "intersection_rows": 8905,
+  "rows_compared": 8905,
+  "rows_with_zero_match": 0,
+  "total_fractals_matched": 868426,
+  "total_fractals_only_mt4": 8371,
+  "total_fractals_only_mt5": 8106,
+  "total_fractals_mt4": 876797,
+  "total_fractals_mt5": 876532,
+  "overall_match_rate": 0.9904527501804865,
+  "mean_row_match_rate": 0.9904472864019728,
+  "mean_direction_agreement": 0.9924088600909068,
+  "mean_price_p95_diff": 0.0033924761370017005,
+  "mt4_time_range": [
+    "2019.05.16 14:00",
+    "2022.12.02 22:00"
+  ],
+  "mt5_time_range": [
+    "2019.07.02 15:00",
+    "2022.12.02 22:00"
+  ],
+  "verdict": "PARITY_PASS"
+}

@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-31] — MT5 Nero.csv producer parity (PARITY_PASS)
+- **report**: `docs/reports/2026-07-31-mt5-nero-parity.md`
+- **topics**: `mt5`, `nero_csv`, `parity`, `fractal`, `producer`
+- **summary**: Доказана числовая совместимость MT5 Nero.csv producer с MT4: match rate 99.05%, direction agreement 99.24%, price p95 diff 0.003. Исправлен баг в MT5 `lib_PIC.mqh` (критерий Strong отличался от MT4, каскадно перемешивая буфер фракталов). Сравнение по T внутри строки, не по индексу fractalN.
+- **artifacts**: `ML/reports/mt5_nero_parity/nero_parity_by_time.json`, `ML/baseline/compare_nero_by_time.py`, `MT/tester/files/Nero.csv`, `ML/reports/mt5_nero_parity/Nero_MT5_v2.csv`
+- **decision**: MT5 может служить источником feature stream для ML; переход к batch selection.
+- **notes**: ~1% уровней не матчится (разный прогрев MT4/MT5, float rounding). Не blocker.
+
 ## [2026-07-31] — MT5 OnTradeTransaction lifecycle closure (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`
 - **topics**: `mt5`, `ontradetransaction`, `lifecycle`, `reconciliation`, `execution_loop`
