@@ -1,144 +1,287 @@
 # Аудит плана `2026-07-30-mt5-single-rule-diagnostic-run.md`
 
-Проверяемый файл: `docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md`.
+**Проверяемый файл:** `docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md`
+**Дата аудита:** 2026-07-31
+**Метод:** прямое чтение первоисточников, указанных в плане, и связанных артефактов; запуск
+Python-проверок на реальных данных репозитория.
 
-Статус аудита: фактическая проверка по связанным первоисточникам. `knowledge-rag` дал пустой результат по похожим документам, поэтому использованы прямые ссылки из плана, `graphify query`, методики, отчёты, код и тесты.
+---
+
+## Подтверждённые утверждения
+
+Следующие утверждения плана проверены и не содержат ошибок:
+
+- **Обязательные поля плана присутствуют.** Строки 12–16: `depends_on`, `blocks`, `supersedes`,
+  `exit_decisions`, `locked_test_policy` — все пять полей, требуемых `docs/superpowers/roadmap.md`
+  (строки 153–161), находятся в начале плана.
+
+- **Known Unknowns ссылаются на Task 4, а не на Task 2.** Строка 40: "must be discovered during
+  Task 4". Ссылка корректна.
+
+- **Входной CSV-контракт в плане совпадает с кодом.** Столбцы `MT5_SIGNAL_COLUMNS`
+  (`ML/baseline/mt5_signal_schema.py`, строки 5–17) совпадают с контрактом плана (строки 56–58).
+
+- **Запрещённые future/result колонки совпадают с кодом.** `MT5_FORBIDDEN_SIGNAL_COLUMNS`
+  (`mt5_signal_schema.py`, строки 19–27) совпадают с планом (строки 22–27 Task 2, строки 63–65 Task 5).
+
+- **Схема проверяет `feature_available_time`.** `validate_mt5_signal_frame()` вызывает
+  `_validate_time_order(frame, ["feature_time", "feature_available_time", "decision_time"])`
+  (`mt5_signal_schema.py`, строка 120). Нарушение `feature_available_time > decision_time` ловится.
+  Для событий: строка 130 проверяет цепочку из четырёх колонок включая `feature_available_time`.
+
+- **`open_without_close_estimate` входит в JSON-артефакт парсера.** `compute_mt5_metrics()`
+  (`parse_mt5_execution_report.py`, строки 43, 55) возвращает этот показатель. Тест
+  `test_compute_mt5_metrics_reports_open_without_close_estimate` его проверяет.
+
+- **Manifest содержит `date_from`, `date_to`, `date_range_policy`.** Шаблон JSON Task 1 (строки
+  110–114) включает все три поля.
+
+- **Шаги Task 4 и Task 5 содержат явные `sha256sum` команды.** Строки 373–378 (Task 4 Step 5)
+  и строки 486–490 (Task 5 Step 6) требуют hash для event CSV и metrics JSON.
+
+- **Команда поиска source CSV Task 1 Step 1 уже сужена.** Строки 66–68 содержат правило
+  `rg '(^|/)(.*fixed11.*|.*entry.*|.*signal.*).*\.csv$'` с явным указанием не считать
+  отсутствие `MT/MQL5/Files` ошибкой.
+
+- **Все шесть MQL5 diagnostic inputs присутствуют в эксперте.**
+  `MT/MQL5/Experts/$o$imple.mq5`, строки 72–77: `InpMT5_ExportNero`, `InpMT5_NeroFile`,
+  `InpMT5_DiagnosticExecutor`, `InpMT5_EntrySignalFile`, `InpMT5_EventFile`,
+  `InpMT5_BlockBarsSinceFill0Exit` — все шесть.
+
+- **Report-шаблон Task 6 содержит обязательные секции методики 16.** Строки 522–533 включают
+  `Stage Level`, `Multiple Testing Context`, `Changed Files`, `Verification`, `Split Disclosure`,
+  `Related Materials`, `forbidden_interpretations`.
+
+- **Цель плана соответствует текущему ACTIVE roadmap.** `docs/superpowers/roadmap.md`,
+  строки 17–29: пять шагов MT5 execution-loop совпадают со структурой плана.
+
+- **Команда компиляции и правило не считать `wine` exit code финальным verdict соответствуют
+  методике.** `docs/methodology/13b-mt5-execution-parity.md`, раздел "Компиляция": "Не считать
+  сам код возврата `wine` verdict-ом компиляции".
+
+- **Статус DIAGNOSTIC_ONLY обоснован фактически.** `docs/reports/2026-07-29-mt5-execution-loop-migration.md`,
+  разделы `Verification` и `Results`: "MT5 Strategy Tester runtime-прогон не выполнялся",
+  "MT5 Nero.csv producer status: UNKNOWN", "manual_user_run_required".
+
+---
 
 ## Замечания
 
-### 1. В плане нет обязательных полей нового roadmap-плана
+---
 
-- Важность: важно.
-- Место: `docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md`, начало файла, строки 1-35.
-- Суть проблемы: план описывает цель, архитектуру и ограничения, но не содержит обязательные поля `depends_on`, `blocks`, `supersedes`, `exit_decisions`, `locked_test_policy`, которые требуются для нового плана по текущему `roadmap.md`.
-- Доказательство: `docs/superpowers/roadmap.md`, строки 153-161: "Новый план должен иметь поля: depends_on, blocks, supersedes, exit_decisions, locked_test_policy". В проверяемом плане `locked_test_policy` есть только внутри будущего JSON-манифеста, строки 98-121, но не как поле самого плана.
-- Почему это важно: без этих полей следующий агент не видит, от чего план зависит, что он разблокирует и какие решения закрывают этап. Это повышает риск неверного перехода к batch selection или новой ML-проверке.
-- Рекомендуемое исправление: добавить в начало плана отдельный блок:
-  - `depends_on: docs/reports/2026-07-29-mt5-execution-loop-migration.md; docs/reports/2026-07-29-mt5-manual-tester-runbook.md`
-  - `blocks: MT5 batch selection for 20-50 candidates`
-  - `supersedes: none`
-  - `exit_decisions: continue | close | unblock`
-  - `locked_test_policy: not used for new selection; no winner/threshold/rule/cost/entry/exit/stop selection`.
+### 1. Единственный доступный source CSV не имеет `feature_time`, `feature_available_time`, `decision_time` — план не описывает обязательный промежуточный шаг `prepare_mt5_entry_source`
 
-### 2. Неверная ссылка на задачу обнаружения tester `Files`
+**Важность:** критично.
 
-- Важность: улучшение.
-- Место: `Known Unknowns`, строка 32.
-- Суть проблемы: сказано, что фактический каталог MT5 tester `Files` должен быть найден во время Task 2, но сам шаг обнаружения находится в Task 4.
-- Доказательство: строка 32 указывает "during Task 2"; строки 286-290 содержат "Task 4 / Step 1: Discover actual MT5 tester Files directory".
-- Почему это важно: это не ломает методологию, но сбивает порядок выполнения. Исполнитель может начать искать runtime-каталог до компиляции и экспорта, хотя план сам относит это к упаковке и запуску tester.
-- Рекомендуемое исправление: заменить "during Task 2" на "during Task 4".
+**Место:** Task 1, строки 57–58, 77–98.
 
-### 3. Проверка `feature_available_time <= decision_time` заявлена методически, но не выполняется схемой
+**Суть проблемы:** план описывает source как "existing source CSV with columns accepted by
+`export_mt5_entry_signals.py`: `time`, `feature_time`, `feature_available_time`, `decision_time`..."
+Но единственный готовый кандидат, уже преобразованный к тестеру —
+`ML/reports/fractal0_entry_quality_filter_scores.csv` — не содержит `feature_time`,
+`feature_available_time`, `decision_time`. Это подтверждено Python-проверкой на реальном файле.
 
-- Важность: важно.
-- Место: `Methodology Map` и `Task 2/Task 5`, строки 24, 178-202, 392-410.
-- Суть проблемы: план проверяет `feature_time <= decision_time` и для событий `feature_time <= decision_time <= execution_time`, но не требует проверки `feature_available_time <= decision_time`. При этом методика требует соответствия моменту торгового решения, а поле `feature_available_time` специально входит в CSV-контракт.
-- Доказательство: `ML/baseline/mt5_signal_schema.py`, строки 79-120: `validate_mt5_signal_frame()` вызывает `_validate_time_order(frame, ["feature_time", "decision_time"])`; `feature_available_time` не участвует. Для событий строки 123-128 проверяют только `["feature_time", "decision_time", "execution_time"]`. Методика `docs/methodology/03-feature-contract-leakage.md`, строки 1-10 и 19, требует соответствия доступности признаков моменту решения и исполнимой цены после доступности признаков.
-- Почему это важно: возможен CSV, где `feature_time <= decision_time`, но фактическая доступность признака позже решения. Такой экспорт пройдёт плановые проверки, хотя торговое решение ещё не могло быть принято честно.
-- Рекомендуемое исправление: в плане добавить явную проверку `feature_time <= feature_available_time <= decision_time` для entry CSV и `feature_available_time <= decision_time <= execution_time` для event CSV. Лучше также добавить тест и исправление `validate_mt5_signal_frame()` / `validate_mt5_event_frame()`.
+Task 1 Step 2 содержит скрипт с проверкой именно этих трёх колонок, и он упадёт с ошибкой
+`missing feature_time`, если применить его к исходному CSV.
 
-### 4. План требует `open_without_close_estimate` в отчёте, но парсер JSON его не создаёт
+Для преодоления этого зазора уже создан скрипт `ML/baseline/prepare_mt5_entry_source.py`,
+который заполняет timing-поля из `signal_time`. Он уже применялся: в репозитории существует
+`ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.csv`.
+Но в плане этот шаг и скрипт вообще не упоминаются.
 
-- Важность: важно.
-- Место: Task 5 и Task 6, строки 364-367, 428-435, 466-479.
-- Суть проблемы: Task 5 обещает JSON с event counts, open/close counts, close reasons, missing-open estimate и profit sum, а Task 6 требует `Open without close estimate`. Но `ML/baseline.parse_mt5_execution_report` записывает только `missing_open_estimate`; `open_without_close_estimate` считается разовой inline-командой и не попадает в structured artifact.
-- Доказательство: `ML/baseline/parse_mt5_execution_report.py`, строки 31-54: возвращаются `status`, `order_counts`, `open_counts`, `close_counts`, `close_reason_counts`, `ml_close_decision_count`, `profit_sum`, `missing_open_estimate`; поля `open_without_close_estimate` нет. План требует этот показатель в отчёте на строке 476.
-- Почему это важно: методика отчётности требует сверять ключевые числа с JSON/CSV-артефактами, а не переносить вручную из временного вывода команды. См. `docs/methodology/16-reporting-audit.md`, строки 31 и 97.
-- Рекомендуемое исправление: либо добавить `open_without_close_estimate` в `compute_mt5_metrics()` и тест `tests/test_parse_mt5_execution_report.py`, либо изменить Task 6 так, чтобы отчёт ссылался на отдельный сохранённый artifact с этим расчётом.
-
-### 5. Команда выбора source-кандидата шумная и включает не-CSV артефакты
-
-- Важность: улучшение.
-- Место: Task 1 Step 1, строки 54-62.
-- Суть проблемы: команда ищет `csv|json|npy|pt|md`-подобные артефакты через общий шаблон и реально возвращает сотни нерелевантных файлов, включая `*.npy`, `checkpoint.pt`, отчёты и JSON-метаданные. При этом ожидаемый результат шага: "identify one existing source CSV".
-- Доказательство: команда `rg --files ML/reports DATA MT/MQL5/Files MT/MQL4/Files | rg 'entry|signal|fixed11|current|mt5|csv|json'` вернула 575 строк и предупреждение `MT/MQL5/Files: No such file or directory`. Среди результатов есть `DATA/y_val_entry_path_v1_cls.npy`, `ML/reports/track_a_max_out_matrix/.../checkpoint.pt`, многочисленные JSON и MD. Каталог `MT/MQL5/Files` отсутствует: `test -d MT/MQL5/Files` -> `no`.
-- Почему это важно: исполнитель может выбрать неподходящий JSON/отчёт вместо CSV или потратить время на ручную фильтрацию. Для плана, который запрещает выбор по прибыльности, важно иметь воспроизводимую процедуру выбора источника.
-- Рекомендуемое исправление: сузить команду до CSV и заранее известных семейств, например:
-  ```bash
-  rg --files ML/reports DATA MT/MQL4/Files | rg '(^|/)(.*fixed11.*|.*entry.*|.*signal.*).*\.csv$'
-  ```
-  И отдельно указать, что отсутствие `MT/MQL5/Files` не является ошибкой, потому что фактический tester `Files` ищется в Task 4.
-
-### 6. Manifest не фиксирует date range, хотя интерфейс Task 1 обещает это поле
-
-- Важность: важно.
-- Место: Task 1 Interface и manifest template, строки 48-50 и 98-121.
-- Суть проблемы: интерфейс Task 1 обещает, что manifest производит `date range`, но шаблон JSON не содержит `date_from`, `date_to` или другого поля периода.
-- Доказательство: строка 50: "Produces: fixed run_id, selected source path, source hash, date range..."; строки 98-121 показывают точную структуру JSON без периода.
-- Почему это важно: Strategy Tester должен запускаться на конкретном периоде, а методика `13b` требует записать `date range`. Без периода нельзя воспроизвести источник сигналов и tester-прогон.
-- Рекомендуемое исправление: добавить в manifest поля `date_from` и `date_to`, полученные из выбранного source CSV, либо явно записать `date_range_policy` и `date_range_status=UNKNOWN`, если период будет определён только в Task 4.
-
-### 7. План не требует hash для event CSV и metrics JSON
-
-- Важность: улучшение.
-- Место: Task 4, Task 5, Task 6, строки 336-352, 380-390, 466-479.
-- Суть проблемы: план требует hash для source CSV и entry CSV, но не требует hash для возвращённого `mt5_trade_events_<run_id>.csv` и `mt5_execution_metrics_<run_id>.json`.
-- Доказательство: Task 1 строки 98-128 фиксирует `source_csv_sha256`; Task 2 JSON sidecar по коду содержит `output_csv_sha256` (`ML/baseline/export_mt5_entry_signals.py`, строки 180-182). В Task 4-6 нет требования записать `sha256` для event CSV и metrics JSON. Методика `16-reporting-audit.md`, строка 31, требует paths и hashes.
-- Почему это важно: event CSV является главным доказательством tester-прогона. Без hash труднее отличить текущий прогон от устаревшего файла, хотя сам план требует не принимать stale event file.
-- Рекомендуемое исправление: добавить в Task 4/5 команду `sha256sum ML/reports/mt5_execution_loop/mt5_trade_events_<run_id>.csv ML/reports/mt5_execution_loop/mt5_execution_metrics_<run_id>.json` и включить эти hash в отчёт.
-
-### 8. Event lifecycle limitation не имеет измеримой проверки same-H1 open-and-close
-
-- Важность: вопрос.
-- Место: Known Unknowns и Task 5 Step 4, строки 35, 412-439.
-- Суть проблемы: план честно признаёт риск same-H1 open-and-close, но проверка считает только агрегаты `ORDER_PLACED`, `OPEN`, `CLOSE`, `ML_CLOSE`. Она не даёт способа отличить обычную незакрытую позицию на конце периода от сделки, которая открылась и закрылась внутри одного H1-бара и не была восстановлена логом.
-- Доказательство: `docs/methodology/13b-mt5-execution-parity.md`, строки 74-83, описывает ограничение прототипа: сопровождение работает на H1-баре, не через `OnTradeTransaction`, поэтому pending-order, открытый и закрытый внутри одного H1-бара, может не восстановить полный lifecycle. Плановые строки 428-435 считают только разность агрегатов.
-- Почему это важно: один из главных заявленных рисков плана может остаться только текстовой оговоркой, а не измеренным или явно заблокированным расхождением.
-- Рекомендуемое исправление: добавить в Task 5 требование сверить агрегаты с MT5 history/deals или tester HTML/XML report, если он доступен. Если такой источник недоступен, отчёт должен поставить `same_h1_lifecycle_status=UNKNOWN` и не считать event lifecycle доказанным.
-
-### 9. Финальный report-шаблон не покрывает обязательные секции методики 16
-
-- Важность: улучшение.
-- Место: Task 6 Step 1, строки 462-480.
-- Суть проблемы: список обязательного содержимого отчёта полезен, но не требует явно указать `Stage Level`, `Multiple Testing Context`, `Changed Files`, `Verification`, `Split Disclosure`, `Related Materials` и `forbidden_interpretations`.
-- Доказательство: `docs/methodology/16-reporting-audit.md`, строки 18-30, перечисляет обязательные секции отчёта; строки 88-104 задают обязательные проверки, включая уровень этапа, запрет выбора по holdout, количество строк/событий/сигналов/сделок и запреты на дальнейшую интерпретацию. Плановые строки 466-479 покрывают только часть этих требований.
-- Почему это важно: итоговый отчёт может оказаться фактическим, но неполным по методике, и следующий агент не увидит полный контекст множественных проверок и split/holdout-ограничений.
-- Рекомендуемое исправление: расширить Task 6 шаблон отчёта секциями из методики 16. Для этого диагностического этапа явно записывать `Multiple Testing Context: no new ML search`, `Split Disclosure: locked_test not used`, `forbidden_interpretations`, `Changed Files`, `Verification`, `Related Materials`.
-
-### 10. Команда проверки diagnostic inputs не проверяет количество совпадений по каждому input
-
-- Важность: улучшение.
-- Место: Task 3 Step 1, строки 223-231.
-- Суть проблемы: команда `rg -n "A|B|C..."` может вывести часть совпадений, а исполнитель визуально решит, что "all six inputs are present". Формально команда не падает, если найден только один из шести input.
-- Доказательство: `rg` с общей альтернативой возвращает код 0 при любом совпадении. Связанный файл сейчас содержит все шесть input: `MT/MQL5/Experts/$o$imple.mq5`, строки 72-77, что подтверждает корректность факта для текущего состояния, но сама проверка плана слабая.
-- Почему это важно: при будущей правке MQL5 можно пропустить отсутствие одного параметра и всё равно перейти к компиляции.
-- Рекомендуемое исправление: заменить на маленькую проверку цикла по ожидаемым именам, где отсутствие любого input завершает команду ошибкой.
-
-## Подтверждённые утверждения без замечаний
-
-- Цель single-rule MT5 diagnostic соответствует текущему `ACTIVE` roadmap: `docs/superpowers/roadmap.md`, строки 17-29.
-- Статус `DIAGNOSTIC_ONLY` обоснован: предыдущий отчёт фиксирует, что MT5 tester runtime-прогон не выполнялся, MT5 `Nero.csv` parity остаётся `UNKNOWN`, а terminal file directory должен быть подтверждён пользователем (`docs/reports/2026-07-29-mt5-execution-loop-migration.md`, разделы `Verification`, `Results`, `Limitations / Open Questions`).
-- Команда компиляции и правило не считать `wine` exit code финальным verdict совпадают с `docs/methodology/13b-mt5-execution-parity.md`, раздел `Компиляция`.
-- Входной MT5 CSV-контракт в плане совпадает с кодом `ML/baseline/mt5_signal_schema.py`, строки 5-17.
-- Запрещённые future/result колонки в плане совпадают с кодом `ML/baseline/mt5_signal_schema.py`, строки 19-27.
-- MQL5 diagnostic inputs реально присутствуют в `MT/MQL5/Experts/$o$imple.mq5`, строки 72-77.
-
-## Использованные проверки
-
+**Доказательство:**
 ```bash
-sed -n '1,260p' docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md
-sed -n '261,620p' docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md
-graphify query "MT5 single rule diagnostic run execution parity event lifecycle Nero parity export mt5 entry signals" --budget 2000
-sed -n '1,220p' docs/methodology/README.md
-sed -n '1,260p' docs/methodology/00-research-management.md
-sed -n '1,260p' docs/methodology/03-feature-contract-leakage.md
-sed -n '1,260p' docs/methodology/12-backtest-costs.md
-sed -n '1,300p' docs/methodology/13-export-mt4-parity.md
-sed -n '1,320p' docs/methodology/13b-mt5-execution-parity.md
-sed -n '1,260p' docs/methodology/16-reporting-audit.md
-sed -n '1,260p' docs/reports/2026-07-29-mt5-execution-loop-migration.md
-sed -n '1,240p' docs/reports/2026-07-29-mt5-manual-tester-runbook.md
-sed -n '1,220p' docs/reports/2026-07-29-mt5-feasibility.md
-nl -ba ML/baseline/mt5_signal_schema.py | sed -n '1,260p'
-nl -ba ML/baseline/export_mt5_entry_signals.py | sed -n '1,320p'
-nl -ba ML/baseline/parse_mt5_execution_report.py | sed -n '1,320p'
-nl -ba tests/test_mt5_signal_executor_schema.py | sed -n '1,260p'
-nl -ba tests/test_parse_mt5_execution_report.py | sed -n '1,260p'
-rg -n "InpMT5_DiagnosticExecutor|InpMT5_EntrySignalFile|InpMT5_EventFile|InpMT5_BlockBarsSinceFill0Exit|InpMT5_ExportNero|InpMT5_NeroFile|TerminalInfoString|FileOpen|FILE_COMMON|FileDelete|mt5_trade_events" MT/MQL5/Experts/'$o$imple.mq5' MT/MQL5/Include/lib_ML_Signal.mqh MT/MQL5/Include/lib_PIC.mqh
-test -d MT/MQL5/Files
+python3 -c "
+import pandas as pd
+df = pd.read_csv('ML/reports/fractal0_entry_quality_filter_scores.csv', sep=';', nrows=2)
+print('feature_time' in df.columns, 'feature_available_time' in df.columns, 'decision_time' in df.columns)
+# -> False False False
+"
+```
+`ML/baseline/prepare_mt5_entry_source.py` существует и уже описан в тестах
+`tests/test_mt5_signal_executor_schema.py`, строки 298–332, а результат его работы
+`mt5_entry_source_20260730_entry_quality_filter.csv` уже есть в
+`ML/reports/mt5_execution_loop/`.
+
+**Почему это важно:** исполнитель, следующий плану, применит Task 1 Step 2 к
+`fractal0_entry_quality_filter_scores.csv`, получит ошибку, и либо выберет другой
+(потенциально неверный) source, либо будет вынужден остановиться без понимания причины.
+Более важно: `prepare_mt5_entry_source` устанавливает все три timing-поля равными `signal_time`.
+Этот факт фиксирован в `time_policy: "feature_time, feature_available_time and decision_time
+are copied from signal_time; diagnostic bridge only"`. Но план не обязывает записывать
+`time_policy` в manifest, не требует явно раскрыть это в разделе Limitations отчёта,
+и не упоминает риск тривиального timing contract (все три временные метки одинаковы для
+каждой строки, что означает: реальный момент доступности признаков не зафиксирован независимо).
+
+**Рекомендуемое исправление:**
+1. Вставить в Task 1 Step 1 явное примечание: если source CSV не содержит `feature_time` /
+   `feature_available_time` / `decision_time`, применить
+   `ML/baseline/prepare_mt5_entry_source.py` и использовать получившийся `mt5_entry_source_*.csv`
+   как source для дальнейших шагов.
+2. Добавить в manifest обязательное поле `time_policy` (уже присутствует в
+   `mt5_single_rule_run_manifest_20260730_entry_quality_filter.json`; добавить в шаблон плана).
+3. Добавить в Limitations отчёта (Task 6 Step 1) явное раскрытие: timing contract является
+   тривиальным для источника `entry_quality_filter` — `feature_time == feature_available_time
+   == decision_time == signal_time`.
+
+---
+
+### 2. Task 4 Step 3 (tester run) не включает `InpMT5_ExportNero` в параметры запуска
+
+**Важность:** важно.
+
+**Место:** Task 4 Step 3, строки 330–354.
+
+**Суть проблемы:** план описывает параметры запуска Strategy Tester (строки 330–342): Expert,
+Symbol, Timeframe, и четыре `InpMT5_*` параметра. `InpMT5_ExportNero` и `InpMT5_NeroFile`
+в этом списке отсутствуют.
+
+Между тем архитектура плана (строка 7) прямо называет проверку `MT5 Nero.csv parity` одним
+из незакрытых условий для выхода из `DIAGNOSTIC_ONLY`. Отчёт Task 6 (строка 545) требует
+зафиксировать "Whether MT5 Nero.csv parity is PASS, FAIL, UNKNOWN, or not tested". Но если
+тестер запустить без `InpMT5_ExportNero=true`, файл `Nero_MT5.csv` не будет создан, и
+оценить parity в рамках одного прогона окажется невозможно.
+
+**Доказательство:**
+- `MT/MQL5/Experts/$o$imple.mq5`, строка 72: `input bool InpMT5_ExportNero = false;` — по
+  умолчанию экспорт отключён.
+- Task 4 Step 3 не содержит строки `InpMT5_ExportNero=...`.
+- `docs/reports/2026-07-29-mt5-execution-loop-migration.md`, строка 26: "default-off MT5
+  Nero.csv producer: `InpMT5_ExportNero=false`".
+
+**Почему это важно:** план ставит задачу одновременно проверить event lifecycle и продвинуться
+в понимании `Nero.csv` parity. Без явного включения `InpMT5_ExportNero=true` второй результат
+автоматически попадает в `UNKNOWN: not tested`, а не `UNKNOWN: tested but insufficient`.
+Это разные диагностические выводы.
+
+**Рекомендуемое исправление:** добавить в Task 4 Step 3 параметры:
+```text
+InpMT5_ExportNero=true
+InpMT5_NeroFile=Nero_MT5.csv
+```
+и в Task 6 отчёт — шаг сверки `Nero_MT5.csv` с текущим `MT/MQL4/Files/Nero.csv` по строкам
+(или явную оговорку, что Nero parity в этом прогоне не проверялась).
+
+---
+
+### 3. `OPEN_FAILED` не включён в контролируемые показатели отчёта
+
+**Важность:** важно.
+
+**Место:** Task 5 Step 4, строки 428–468; Task 6 Step 1, строки 519–548.
+
+**Суть проблемы:** план требует явно классифицировать `ORDER_PLACED`, `OPEN`, `CLOSE`,
+`ML_CLOSE` и вычислять `missing_open_estimate`. Но `OPEN_FAILED` — самостоятельное событие,
+которое MQL5-код логирует в нескольких ветвях (например: ордер не найден после `ORDER_PLACED`,
+некорректная цена, уже есть открытая позиция). Ни Task 5, ни Task 6 не требуют явно считать
+количество `OPEN_FAILED` строк и включать это число в отчёт.
+
+`missing_open_estimate` в парсере считается как `max(ORDER_PLACED − OPEN, 0)`. Это корректная
+нижняя оценка, но не то же самое, что `OPEN_FAILED` count: возможны ситуации, когда
+`OPEN_FAILED` записан без соответствующего `ORDER_PLACED`, или наоборот. Методика
+`docs/methodology/13-export-mt4-parity.md`, строка 39, явно требует: "Логировать `OPEN_FAILED`".
+
+**Доказательство:**
+- `MT/MQL5/Include/lib_ML_Signal.mqh`, строки 390, 569, 585, 591, 609, 625: шесть
+  различных путей к `OPEN_FAILED`.
+- `ML/baseline/parse_mt5_execution_report.py`: `_event_counts()` считает все ключи из
+  `value_counts()`, то есть `OPEN_FAILED` попадёт в `order_counts`, но этот факт не
+  отражён в структуре `compute_mt5_metrics()` и не требуется в отчёте.
+- Task 6 список (строки 519–548) не содержит `OPEN_FAILED count`.
+
+**Почему это важно:** `OPEN_FAILED` является основным сигналом о проблемах с исполнением.
+Если tester логирует 50% сигналов как `OPEN_FAILED`, а отчёт этого не показывает явно, вывод
+"execution parity diagnostic" будет неполным.
+
+**Рекомендуемое исправление:** добавить в Task 5 Step 4 и в Task 6 отчёт явный показатель
+`open_failed_count` (из `order_counts.get("OPEN_FAILED", 0)`) и требование прокомментировать
+его в разделе Limitations.
+
+---
+
+### 4. Task 3 Step 1 — один вызов `rg` с альтернативами не гарантирует наличие каждого отдельного input
+
+**Важность:** улучшение.
+
+**Место:** Task 3 Step 1, строки 238–250.
+
+**Суть проблемы:** команда `rg -n "$name" ... >/dev/null || exit 1` работает корректно: она
+проверяет каждое имя по отдельности в цикле `for`, и скрипт завершится с кодом 1, если хотя
+бы одно имя не найдено. Это правильно.
+
+Однако, ожидаемый результат в плане — "Expected: all six inputs are present" — не описывает,
+что именно нужно сделать при провале: выйти, зафиксировать blocker в manifest, или остановить
+задачу. Без явного действия исполнитель может попытаться скомпилировать Expert с отсутствующим
+параметром.
+
+**Доказательство:** проверка `for ... rg ... || exit 1` прошла успешно для текущего
+`$o$imple.mq5` (все шесть inputs найдены). Но плановый шаг не содержит инструкции для случая
+провала.
+
+**Рекомендуемое исправление:** добавить: "If check fails — stop this task and record the
+missing input(s) as a blocker in the run manifest under `unknowns`; do not proceed to compile."
+
+---
+
+### 5. Тривиальный timing contract не раскрыт как ограничение диагностики
+
+**Важность:** вопрос.
+
+**Место:** Task 2 Step 3, строка 211; Known Unknowns, строка 43.
+
+**Суть проблемы:** план требует, чтобы validator прошёл `feature_time <= feature_available_time
+<= decision_time`. Но для уже созданного source (через `prepare_mt5_entry_source`) все три
+временные метки идентичны на каждой строке. Validator прошёл бы даже если бы `feature_available_time`
+было выставлено неверно — потому что нет независимого источника для проверки.
+
+Это означает, что timing contract этого диагностического прогона доказывает только отсутствие
+явного нарушения порядка, но не реальную доступность признаков до decision_time.
+
+**Доказательство:**
+```bash
+python3 -c "
+import pandas as pd
+df = pd.read_csv('ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.csv', sep=';')
+same = (df['feature_time'] == df['feature_available_time']).all() and (df['feature_available_time'] == df['decision_time']).all()
+print(same)  # True: все три поля идентичны
+"
 ```
 
-## Ошибки мониторинга
+**Почему это важно:** это не ошибка — такой подход правомерен для диагностики механики
+исполнения. Но `docs/methodology/03-feature-contract-leakage.md` (строка 77) явно требует
+для этого случая пометки `DIAGNOSTIC_ONLY` и запрещает интерпретировать результат как
+доказательство качества ML. Если в отчёте написать "timing contract PASS" без оговорки о
+тривиальности, следующий агент может неверно интерпретировать это как полноценную leakage-проверку.
 
-- MCP: `knowledge-rag` вернул пустой результат для похожих документов по проверяемому плану и связанному отчёту; аудит продолжен по первичным файлам.
+**Рекомендуемое исправление:** добавить в Task 2 Mandatory checks (строка 213) и в Known
+Unknowns (строка 43) явную оговорку: для источников, где `feature_time == feature_available_time
+== decision_time` (результат `prepare_mt5_entry_source`), timing contract является тривиальным
+и не доказывает, что признаки доступны раньше момента решения; это нужно явно указать в
+разделе Limitations отчёта.
+
+---
+
+## Использованные первоисточники
+
+Все замечания опираются только на следующие реально прочитанные файлы:
+
+- `docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md` — проверяемый план
+- `docs/superpowers/roadmap.md` — правила структуры планов
+- `docs/reports/2026-07-29-mt5-execution-loop-migration.md` — родительский отчёт
+- `docs/methodology/03-feature-contract-leakage.md` — leakage gate
+- `docs/methodology/12-backtest-costs.md` — backtest costs
+- `docs/methodology/13-export-mt4-parity.md` — parity и reconciliation
+- `docs/methodology/13b-mt5-execution-parity.md` — основная методика плана
+- `docs/methodology/16-reporting-audit.md` — требования к отчёту
+- `ML/baseline/mt5_signal_schema.py` — схема и валидаторы
+- `ML/baseline/export_mt5_entry_signals.py` — экспортёр
+- `ML/baseline/parse_mt5_execution_report.py` — парсер событий
+- `ML/baseline/prepare_mt5_entry_source.py` — мост для источников без timing-полей
+- `tests/test_mt5_signal_executor_schema.py`, `tests/test_parse_mt5_execution_report.py`
+- `MT/MQL5/Experts/$o$imple.mq5` — строки 72–77
+- `MT/MQL5/Include/lib_ML_Signal.mqh` — строки 390, 569, 585, 591, 609, 625
+- `ML/reports/fractal0_entry_quality_filter_scores.csv` — реальный source-кандидат
+- `ML/reports/mt5_execution_loop/mt5_entry_source_20260730_entry_quality_filter.{csv,json}`
+- `ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.{csv,json}`
+- `ML/reports/mt5_execution_loop/mt5_single_rule_run_manifest_20260730_entry_quality_filter.json`
+- Python-проверки, запущенные непосредственно на перечисленных файлах репозитория
