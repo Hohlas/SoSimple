@@ -1,0 +1,1 @@
+MQL4 (MetaQuotes Language for MetaTrader 4), compiled to .ex4 by the MT4 build-in compiler; uses the built-in `<Controls\*.mqh>` UI library for the SimplePanel example; relies on standard MT4 functions (`iHighest`, `iLowest`, `OrderSelect`, `MarketInfo`, `WindowFind`, `ObjectCreate`, etc.).

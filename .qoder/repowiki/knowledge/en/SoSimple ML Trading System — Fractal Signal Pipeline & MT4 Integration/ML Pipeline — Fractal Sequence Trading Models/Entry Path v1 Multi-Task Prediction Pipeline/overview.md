@@ -1,0 +1,1 @@
+End-to-end feature engineering, target construction, model building, quantile prediction, and trade-filter evaluation for the entry_path_v1 multi-task transformer pipeline.

@@ -1,0 +1,5 @@
+- Each script declares metadata via `#property` directives at the top (copyright, link, version, description, strict, show_inputs).
+- User-configurable parameters are exposed as `extern` or `input` variables placed before the main function so they appear in the MT4 input dialog.
+- File operations follow a check-then-use pattern: open the handle, verify the return value is non-negative, print/alert on failure, and always `FileClose` before returning.
+- Error reporting uses `Alert(...)`, `Print(...)` or `PrintFormat(...)` with descriptive prefixes rather than throwing exceptions.
+- Long-running loops guard termination with `while(!IsStopped())` and periodically call `Sleep(...)` to keep the terminal responsive.

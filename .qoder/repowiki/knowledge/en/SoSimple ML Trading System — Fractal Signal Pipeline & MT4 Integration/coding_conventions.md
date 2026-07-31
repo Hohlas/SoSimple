@@ -1,0 +1,5 @@
+- Each stage outputs artifacts as CSV files following a fixed column schema (e.g. `*_labeled.csv`, `ml_signals.csv`) that serve as the inter-module contract between Python and MT4.
+- Research scripts follow a consistent runner pattern: accept input CSVs, write results under a timestamped `reports/` directory, and log experiments to CSV logs for reproducibility.
+- Model code is organized by task (entry_path, take_skip_v2, trailing_stop_target) with separate model classes, task helpers, export utilities, and benchmark runners per task.
+- Tests mirror source modules one-to-one (`test_<module>.py`), use synthetic fixtures instead of real market data, and assert shape/type contracts rather than exact numerical values.
+- Live-safe preprocessing is enforced via causal-only operations (no future leakage) and validated by dedicated smoke checks in `statistics/data_contract_smoke_check.py`.

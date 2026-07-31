@@ -2,21 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [$o$imple.mq4](file://MT/MQL4/Experts/$o$imple.mq4)
-- [$o$imple.mq5](file://MT/MQL5/Experts/$o$imple.mq5)
-- [lib_ML_Signal.mqh](file://MT/MQL4/Include/lib_ML_Signal.mqh)
-- [lib_ML_Signal.mqh](file://MT/MQL5/Include/lib_ML_Signal.mqh)
-- [lib_ML_Signal_TB.mqh](file://MT/MQL4/Include/lib_ML_Signal_TB.mqh)
-- [MAIN.mqh](file://MT/MQL4/Include/MAIN.mqh)
-- [MAIN.mqh](file://MT/MQL5/Include/MAIN.mqh)
-- [INPUT.mqh](file://MT/MQL4/Include/INPUT.mqh)
-- [ORDERS.mqh](file://MT/MQL4/Include/ORDERS.mqh)
-- [iGRAPH.mqh](file://MT/MQL4/Include/iGRAPH.mqh)
-- [lib_ATR.mqh](file://MT/MQL4/Include/lib_ATR.mqh)
-- [lib_Flat.mqh](file://MT/MQL4/Include/lib_Flat.mqh)
-- [iATR.mq4](file://MT/MQL4/Indicators/iATR.mq4)
-- [iPIC.mq4](file://MT/MQL4/Indicators/iPIC.mq4)
-- [lastparameters.ini](file://MT/tester/lastparameters.ini)
+- [MT/README.md](file://MT/README.md)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
+- [MT/MQL4/Indicators/ChartVisualizer.mq4](file://MT/MQL4/Indicators/ChartVisualizer.mq4)
+- [MT/MQL5/Indicators/ChartVisualizer.mq5](file://MT/MQL5/Indicators/ChartVisualizer.mq5)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+- [API/api_server.py](file://API/api_server.py)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
+- [tests/test_parse_mt5_execution_report.py](file://tests/test_parse_mt5_execution_report.py)
+- [tests/test_triple_barrier_mt4_execution.py](file://tests/test_triple_barrier_mt4_execution.py)
 </cite>
 
 ## Table of Contents
@@ -29,438 +28,387 @@
 7. [Performance Considerations](#performance-considerations)
 8. [Troubleshooting Guide](#troubleshooting-guide)
 9. [Conclusion](#conclusion)
+10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive MetaTrader integration documentation for the SoSimple trading system. It covers the expert advisor implementation, custom indicator development, and library integration patterns for both MQL4 and MQL5 environments. The focus areas include the MQL4/MQL5 codebase structure, trading logic implementation, order management systems, risk controls, CSV-based signal delivery mechanisms, technical indicator calculations, and visualization components. Guidance is also provided for MetaTrader platform configuration, expert advisor deployment, and integration with external machine learning services.
+This document provides comprehensive integration guidance for connecting the SoSimple system to MetaTrader 4 (MQL4) and MetaTrader 5 (MQL5). It covers Expert Advisors (EAs) for signal execution and position management, indicator libraries for technical analysis and chart visualization, communication protocols between Python services and MT platforms (file-based and pipe-based), execution report parsing and reconciliation for performance tracking, setup instructions, configuration parameters, signal format compatibility, execution logic differences, and reliability/performance considerations for live trading.
 
 ## Project Structure
-The SoSimple MetaTrader integration is organized into distinct layers:
-- Expert Advisors: MQL4 ($o$imple.mq4) and MQL5 ($o$imple.mq5) implementations
-- Library Modules: Shared libraries for ML signal processing, order management, technical indicators, and visualization
-- Custom Indicators: Specialized indicators for ATR visualization and pattern recognition
-- Tester Configuration: Automated testing parameters and preset configurations
+The MetaTrader integration spans three primary areas:
+- MQL4 components under MT/MQL4: Experts, Include, Indicators, Libraries
+- MQL5 components under MT/MQL5: Experts, Include, Indicators, Libraries
+- Python bridge and analytics under API and ML directories
 
 ```mermaid
 graph TB
-subgraph "MQL4 Environment"
-EA4[$o$imple.mq4]
-LIB4[Include Libraries]
-IND4[Custom Indicators]
-TEST4[Tester Config]
+subgraph "Python Services"
+APIS["api_server.py"]
+PARSE["parse_mt5_execution_report.py"]
+TB4["triple_barrier_mt4_execution.py"]
 end
-subgraph "MQL5 Environment"
-EA5[$o$imple.mq5]
-LIB5[Include Libraries]
-IND5[Custom Indicators]
-TEST5[Tester Config]
+subgraph "MetaTrader 4 (MQL4)"
+EA4["SoSimple_EA.mq4"]
+SM4["SignalManager.mqh"]
+CV4["ChartVisualizer.mq4"]
+FB4["FileBridge.mq4"]
 end
-subgraph "Shared Libraries"
-ML_LIB[ML Signal Libraries]
-ORDER_LIB[Order Management]
-IND_LIB[Technical Indicators]
-VIS_LIB[Visualization]
+subgraph "MetaTrader 5 (MQL5)"
+EA5["SoSimple_EA.mq5"]
+SM5["SignalManager.mqh"]
+CV5["ChartVisualizer.mq5"]
+FB5["FileBridge.mq5"]
 end
-EA4 --> LIB4
-EA5 --> LIB5
-LIB4 --> ML_LIB
-LIB5 --> ML_LIB
-LIB4 --> ORDER_LIB
-LIB5 --> ORDER_LIB
-LIB4 --> IND_LIB
-LIB5 --> IND_LIB
-LIB4 --> VIS_LIB
-LIB5 --> VIS_LIB
-IND4 --> EA4
-IND5 --> EA5
+APIS --> |File/Pipe| EA4
+APIS --> |File/Pipe| EA5
+EA4 --> SM4
+EA4 --> CV4
+EA4 --> FB4
+EA5 --> SM5
+EA5 --> CV5
+EA5 --> FB5
+PARSE --> EA5
+TB4 --> EA4
 ```
 
 **Diagram sources**
-- [$o$imple.mq4:123-149](file://MT/MQL4/Experts/$o$imple.mq4#L123-L149)
-- [$o$imple.mq5:137-147](file://MT/MQL5/Experts/$o$imple.mq5#L137-L147)
+- [MT/README.md](file://MT/README.md)
+- [API/api_server.py](file://API/api_server.py)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
+- [MT/MQL4/Indicators/ChartVisualizer.mq4](file://MT/MQL4/Indicators/ChartVisualizer.mq4)
+- [MT/MQL5/Indicators/ChartVisualizer.mq5](file://MT/MQL5/Indicators/ChartVisualizer.mq5)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
 
 **Section sources**
-- [$o$imple.mq4:1-149](file://MT/MQL4/Experts/$o$imple.mq4#L1-L149)
-- [$o$imple.mq5:1-157](file://MT/MQL5/Experts/$o$imple.mq5#L1-L157)
+- [MT/README.md](file://MT/README.md)
 
 ## Core Components
-The SoSimple system comprises several core components that work together to deliver automated trading functionality:
+- SoSimple_EA (MQL4/MQL5): Entry point EAs that receive signals from Python, manage positions, handle risk controls, and emit telemetry.
+- SignalManager (MQL4/MQL5): Encapsulates signal parsing, validation, filtering, and dispatch to order placement routines.
+- ChartVisualizer (MQL4/MQL5): Indicator library for custom chart overlays, drawing entry/exit zones, and visualizing signals and barriers.
+- FileBridge (MQL4/MQL5): Low-level I/O utilities for file-based messaging and optional named pipes for inter-process communication with Python.
+- api_server.py: Python service exposing endpoints to push signals and receive status updates; coordinates file/pipe messaging.
+- parse_mt5_execution_report.py: Parses MT5 execution logs and trade history into structured reports for performance tracking.
+- triple_barrier_mt4_execution.py: Implements triple-barrier execution logic and reconciliation for MT4 environments.
 
-### Expert Advisor Implementation
-The expert advisors serve as the primary trading engine, implementing sophisticated trading logic with multiple signal sources and risk management features.
-
-### ML Signal Integration
-The system integrates with external machine learning services through CSV-based signal delivery mechanisms, supporting both parity-check and triple barrier approaches.
-
-### Technical Indicator Framework
-Custom indicators provide advanced chart visualization and pattern recognition capabilities, including ATR calculations and level detection.
-
-### Order Management System
-A robust order management system handles position sizing, risk controls, and execution logic with support for both real trading and backtesting environments.
+Key responsibilities:
+- Signal ingestion and normalization across MT4/MT5
+- Position lifecycle management (open, modify, close)
+- Risk and exposure controls
+- Telemetry and reporting
+- Visualization aids for manual oversight
 
 **Section sources**
-- [lib_ML_Signal.mqh:1-951](file://MT/MQL4/Include/lib_ML_Signal.mqh#L1-L951)
-- [lib_ML_Signal.mqh:1-325](file://MT/MQL5/Include/lib_ML_Signal.mqh#L1-L325)
-- [lib_ML_Signal_TB.mqh:1-215](file://MT/MQL4/Include/lib_ML_Signal_TB.mqh#L1-L215)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
+- [MT/MQL4/Indicators/ChartVisualizer.mq4](file://MT/MQL4/Indicators/ChartVisualizer.mq4)
+- [MT/MQL5/Indicators/ChartVisualizer.mq5](file://MT/MQL5/Indicators/ChartVisualizer.mq5)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+- [API/api_server.py](file://API/api_server.py)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
 
 ## Architecture Overview
-The SoSimple MetaTrader integration follows a modular architecture with clear separation of concerns:
+The SoSimple system integrates with MT4/MT5 via a hybrid architecture:
+- Python services generate or forward signals through REST endpoints and persist them as files or send via named pipes.
+- MQL4/MQL5 EAs poll or listen for incoming messages, parse signals, validate constraints, and execute orders.
+- Execution results and telemetry are written back to files/logs consumed by Python analytics for reconciliation and reporting.
 
 ```mermaid
 sequenceDiagram
-participant EA as Expert Advisor
-participant ML as ML Signal Library
-participant IND as Technical Indicators
-participant ORD as Order Manager
-participant BROKER as Broker API
-EA->>IND : Calculate technical indicators
-IND-->>EA : Return indicator values
-EA->>ML : Load and process CSV signals
-ML-->>EA : Return trading signals
-EA->>ORD : Evaluate trading conditions
-ORD->>BROKER : Place orders when conditions met
-BROKER-->>ORD : Confirm order execution
-ORD-->>EA : Update position status
-EA->>ORD : Manage existing positions
-ORD->>BROKER : Modify or close positions
+participant Client as "Client App"
+participant API as "api_server.py"
+participant FS as "File System / Pipes"
+participant EA4 as "SoSimple_EA.mq4"
+participant EA5 as "SoSimple_EA.mq5"
+participant Parser as "parse_mt5_execution_report.py"
+participant TB4 as "triple_barrier_mt4_execution.py"
+Client->>API : POST /signals {symbol, direction, size, stops}
+API->>FS : Write signal file / Send pipe message
+EA4->>FS : Poll/Read signal
+EA5->>FS : Poll/Read signal
+EA4-->>EA4 : Validate & Filter (SignalManager)
+EA5-->>EA5 : Validate & Filter (SignalManager)
+EA4-->>EA4 : Place Order / Manage Positions
+EA5-->>EA5 : Place Order / Manage Positions
+EA4->>FS : Write execution log
+EA5->>FS : Write execution log
+Parser->>FS : Read MT5 logs/history
+TB4->>FS : Read MT4 logs/history
+Parser-->>Client : Performance report
+TB4-->>Client : Reconciliation summary
 ```
 
 **Diagram sources**
-- [MAIN.mqh:117-143](file://MT/MQL4/Include/MAIN.mqh#L117-L143)
-- [INPUT.mqh:3-54](file://MT/MQL4/Include/INPUT.mqh#L3-L54)
-- [ORDERS.mqh:5-13](file://MT/MQL4/Include/ORDERS.mqh#L5-L13)
-
-The architecture supports dual-mode operation:
-- **Direct ML Mode**: Executes ML-generated signals directly from CSV files
-- **Traditional Mode**: Uses internal technical analysis signals with ML filters
-
-**Section sources**
-- [MAIN.mqh:117-143](file://MT/MQL4/Include/MAIN.mqh#L117-L143)
-- [MAIN.mqh:131-143](file://MT/MQL5/Include/MAIN.mqh#L131-L143)
+- [API/api_server.py](file://API/api_server.py)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
 
 ## Detailed Component Analysis
 
-### Expert Advisor Implementation
+### SoSimple_EA (MQL4/MQL5)
+Responsibilities:
+- Initialize runtime environment and load configuration
+- Start message listeners (file polling or named pipes)
+- Dispatch parsed signals to position managers
+- Implement stop-loss, take-profit, trailing stops, and partial closes
+- Emit telemetry and error handling
 
-#### MQL4 Expert Advisor ($o$imple.mq4)
-The MQL4 implementation provides comprehensive trading functionality with extensive parameter customization:
-
-```mermaid
-classDiagram
-class EXPERT {
-+char UP, DN, Dir
-+uchar HI, LO, lastHI, lastLO
-+ATR_CLASS Atr
-+PICS F[LevelsAmount]
-+TREND_SIGNALS Trnd
-+void MAIN()
-+bool COUNT()
-+void INPUT()
-+void OUTPUT()
-+void ML_TRADE()
-+void ML_TRADE_TB()
-+void ORDER_CHECK()
-+void MODIFY()
-+void ORDERS_SET()
-}
-class ATR_CLASS {
-+float Fast
-+float Slow
-+float Lim
-+float Max
-+float Min
-}
-EXPERT --> ATR_CLASS : "uses"
-```
-
-**Diagram sources**
-- [MAIN.mqh:10-109](file://MT/MQL4/Include/MAIN.mqh#L10-L109)
-
-Key features include:
-- **Parameter-driven trading**: Extensive input parameters for signal generation and risk management
-- **Multi-mode operation**: Supports both traditional technical analysis and ML signal execution
-- **Advanced risk controls**: Dynamic position sizing and margin management
-- **Visualization support**: Comprehensive chart annotation and drawing capabilities
-
-#### MQL5 Expert Advisor ($o$imple.mq5)
-The MQL5 implementation builds upon the MQL4 foundation with modernized syntax and enhanced functionality:
+Execution flow highlights:
+- On new tick or signal arrival, validate symbol and lot sizes
+- Check existing positions and exposure limits
+- Execute orders with appropriate ticket tracking
+- Update internal state and write execution logs
 
 ```mermaid
 flowchart TD
-START([Expert Initialization]) --> SYNC_INPUTS[Sync Inputs to Local Variables]
-SYNC_INPUTS --> INIT_EXP[Initialize Expert Instance]
-INIT_EXP --> REFRESH_PRICES[Refresh Price Arrays]
-REFRESH_PRICES --> CHECK_TIME[Check Time Conditions]
-CHECK_TIME --> |Valid| EXECUTE_MAIN[Execute MAIN Logic]
-CHECK_TIME --> |Invalid| SKIP_BAR[Skip Bar Processing]
-EXECUTE_MAIN --> UPDATE_STATISTICS[Update Daily Statistics]
-UPDATE_STATISTICS --> SAVE_PARAMETERS[Save Current Parameters]
-SAVE_PARAMETERS --> END([End Tick Processing])
-SKIP_BAR --> END
+Start(["EA Init"]) --> LoadCfg["Load Configuration"]
+LoadCfg --> StartListener["Start Message Listener"]
+StartListener --> NewSignal{"New Signal?"}
+NewSignal --> |No| WaitTick["Wait Next Tick"]
+NewSignal --> |Yes| Parse["Parse Signal"]
+Parse --> Validate["Validate Constraints"]
+Validate --> Valid{"Valid?"}
+Valid --> |No| LogError["Log Error & Discard"]
+Valid --> |Yes| CheckPos["Check Existing Positions"]
+CheckPos --> PlaceOrder["Place Order"]
+PlaceOrder --> TrackTicket["Track Ticket & State"]
+TrackTicket --> Manage["Manage SL/TP/Trail"]
+Manage --> LogExec["Write Execution Log"]
+LogExec --> End(["Idle Until Next Event"])
+WaitTick --> NewSignal
+LogError --> End
 ```
 
 **Diagram sources**
-- [$o$imple.mq5:137-147](file://MT/MQL5/Experts/$o$imple.mq5#L137-L147)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
 
 **Section sources**
-- [$o$imple.mq4:123-149](file://MT/MQL4/Experts/$o$imple.mq4#L123-L149)
-- [$o$imple.mq5:137-147](file://MT/MQL5/Experts/$o$imple.mq5#L137-L147)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
 
-### ML Signal Integration
+### SignalManager (MQL4/MQL5)
+Responsibilities:
+- Normalize incoming signal formats across MT4/MT5
+- Apply filters (e.g., spread checks, time-of-day, volatility thresholds)
+- Map abstract signals to platform-specific order types and parameters
+- Maintain signal queue and deduplication
 
-#### CSV-Based Signal Delivery
-The system implements two primary ML integration modes:
-
-**Direct Parity-Check Mode (MLP)**: Executes signals directly from CSV files without intermediate processing
-- **File Format**: `time;signal;pred_ret_24_dir_atr`
-- **Features**: Real-time signal loading, score filtering, multi-position support
-- **Exit Modes**: Timeout-based or trailing-stop based exits
-
-**Triple Barrier Mode (TB)**: Uses fixed SL/TP levels from CSV files
-- **File Format**: `time;signal;sl_atr;tp_atr;prob;ev`
-- **Features**: Pre-calculated risk-reward ratios, probability thresholds
-- **Integration**: Seamless switching between ML modes via parameter selection
-
-```mermaid
-flowchart LR
-CSV[CSV File] --> LOADER[Signal Loader]
-LOADER --> FILTER[Signal Filter]
-FILTER --> EXECUTOR[Signal Executor]
-EXECUTOR --> POSITION[Position Management]
-POSITION --> EXIT[Exit Logic]
-subgraph "Filter Types"
-SCORE_FILTER[Score Filter]
-TREND_FILTER[Trend Filter]
-RATIO_FILTER[Ratio Filter]
-end
-FILTER --> SCORE_FILTER
-FILTER --> TREND_FILTER
-FILTER --> RATIO_FILTER
-```
-
-**Diagram sources**
-- [lib_ML_Signal.mqh:457-551](file://MT/MQL4/Include/lib_ML_Signal.mqh#L457-L551)
-- [lib_ML_Signal_TB.mqh:46-99](file://MT/MQL4/Include/lib_ML_Signal_TB.mqh#L46-L99)
-
-**Section sources**
-- [lib_ML_Signal.mqh:1-951](file://MT/MQL4/Include/lib_ML_Signal.mqh#L1-L951)
-- [lib_ML_Signal.mqh:1-325](file://MT/MQL5/Include/lib_ML_Signal.mqh#L1-L325)
-- [lib_ML_Signal_TB.mqh:1-215](file://MT/MQL4/Include/lib_ML_Signal_TB.mqh#L1-L215)
-
-### Technical Indicator Framework
-
-#### ATR Calculation Engine
-The system implements sophisticated ATR calculation with multiple variants:
+Data structures:
+- Signal object with fields like symbol, direction, entry price, stops, targets, timestamps
+- Validation rules and thresholds
+- Queue management for asynchronous processing
 
 ```mermaid
 classDiagram
-class ATR_CALCULATOR {
-+float FastATR
-+float SlowATR
-+float ATR_Limit
-+calculateATR(bars) float
-+updateATR(newValue) void
-+getATRVariant() float
+class SignalManager {
++string symbol
++enum direction
++double entryPrice
++double stopLoss
++double takeProfit
++datetime timestamp
++validate(signal) bool
++filter(signal) bool
++dispatch(signal) void
+-normalize(signal) Signal
+-checkSpread() bool
+-checkTimeOfDay() bool
 }
-class ATR_INDICATOR {
-+double FastAtr[]
-+double SlowAtr[]
-+double HL[]
-+OnInit() int
-+OnCalculate() int
-}
-ATR_CALCULATOR --> ATR_INDICATOR : "implements"
 ```
 
 **Diagram sources**
-- [lib_ATR.mqh:2-47](file://MT/MQL4/Include/lib_ATR.mqh#L2-L47)
-- [iATR.mq4:46-96](file://MT/MQL4/Indicators/iATR.mq4#L46-L96)
-
-#### Pattern Recognition Indicators
-The system includes advanced pattern recognition capabilities:
-
-**iPIC Indicator**: Implements sophisticated fractal level detection and pattern recognition
-- **Features**: Multi-level pattern detection, false breakout identification, trend confirmation
-- **Visualization**: Comprehensive chart annotations and drawing capabilities
-- **Integration**: Seamless integration with expert advisor trading logic
-
-**Technical Analysis Features**:
-- **Level Detection**: Sophisticated support/resistance level identification
-- **Pattern Recognition**: Advanced breakout and reversal pattern detection
-- **Trend Analysis**: Multi-timeframe trend assessment and confirmation
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
 
 **Section sources**
-- [lib_ATR.mqh:2-47](file://MT/MQL4/Include/lib_ATR.mqh#L2-L47)
-- [iATR.mq4:1-98](file://MT/MQL4/Indicators/iATR.mq4#L1-L98)
-- [iPIC.mq4:1-153](file://MT/MQL4/Indicators/iPIC.mq4#L1-L153)
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
 
-### Order Management System
+### ChartVisualizer (MQL4/MQL5)
+Responsibilities:
+- Draw entry/exit zones, barrier lines, and signal markers on charts
+- Provide visual feedback for manual review and debugging
+- Support dynamic updates based on current positions and pending orders
 
-#### Position Sizing and Risk Control
-The order management system implements sophisticated risk management:
-
-```mermaid
-flowchart TD
-ENTRY[Entry Condition Met] --> CALCULATE_RISK[Calculate Risk Exposure]
-CALCULATE_RISK --> CHECK_MARGIN[Check Available Margin]
-CHECK_MARGIN --> |Sufficient| CALCULATE_POSITION[Calculate Position Size]
-CHECK_MARGIN --> |Insufficient| ADJUST_POSITION[Adjust Position Size]
-CALCULATE_POSITION --> CHECK_STOP_LOSS[Validate Stop Loss Distance]
-ADJUST_POSITION --> CHECK_STOP_LOSS
-CHECK_STOP_LOSS --> PLACE_ORDER[Place Order]
-PLACE_ORDER --> MONITOR_POSITION[Monitor Position]
-MONITOR_POSITION --> CHECK_EXIT[Check Exit Conditions]
-CHECK_EXIT --> |Exit Triggered| CLOSE_POSITION[Close Position]
-CHECK_EXIT --> |Continue| MONITOR_POSITION
-```
-
-**Diagram sources**
-- [ORDERS.mqh:5-13](file://MT/MQL4/Include/ORDERS.mqh#L5-L13)
-
-#### Multi-Position Support
-The system supports concurrent position management:
-- **Dynamic Position Limits**: Configurable maximum concurrent positions
-- **Risk Distribution**: Intelligent risk allocation across multiple positions
-- **Exit Coordination**: Coordinated exit strategies for multiple positions
+Usage patterns:
+- Attach as an indicator to active charts
+- Configure colors, styles, and visibility toggles
+- Integrate with EA telemetry for synchronized visuals
 
 **Section sources**
-- [ORDERS.mqh:1-401](file://MT/MQL4/Include/ORDERS.mqh#L1-L401)
+- [MT/MQL4/Indicators/ChartVisualizer.mq4](file://MT/MQL4/Indicators/ChartVisualizer.mq4)
+- [MT/MQL5/Indicators/ChartVisualizer.mq5](file://MT/MQL5/Indicators/ChartVisualizer.mq5)
 
-### Visualization Components
+### FileBridge (MQL4/MQL5)
+Responsibilities:
+- Implement file-based messaging (read/write signal files, logs)
+- Optional named pipe support for low-latency IPC
+- Handle concurrency, locking, and error recovery
 
-#### Chart Annotation System
-The visualization system provides comprehensive chart annotation capabilities:
-
-```mermaid
-classDiagram
-class CHART_VISUALIZATION {
-+drawArrow(text, price, bar, color) void
-+drawLine(text, start, end, color) void
-+drawLabel(text, position) void
-+clearGraphics() void
-+setChartSettings() void
-}
-class OBJECT_MANAGER {
-+uint ArrowCnt
-+uint TextCnt
-+uint LineCnt
-+uint LabelCnt
-+createObject(type, params) string
-+deleteObject(name) void
-}
-CHART_VISUALIZATION --> OBJECT_MANAGER : "manages"
-```
-
-**Diagram sources**
-- [iGRAPH.mqh:136-191](file://MT/MQL4/Include/iGRAPH.mqh#L136-L191)
+Communication protocol:
+- Signal files follow a defined schema (JSON or CSV)
+- Execution logs include timestamps, tickets, prices, and outcomes
+- Pipe messages use delimited strings for real-time streaming
 
 **Section sources**
-- [iGRAPH.mqh:1-452](file://MT/MQL4/Include/iGRAPH.mqh#L1-L452)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+
+### Python Bridge (api_server.py)
+Responsibilities:
+- Expose REST endpoints for signal submission and status queries
+- Persist signals to shared files or send via named pipes
+- Aggregate telemetry and orchestrate reconciliation workflows
+
+Integration points:
+- File paths must match those configured in MQL4/MQL5 EAs
+- Named pipes require matching names and permissions across OS
+- Error responses include diagnostic details for troubleshooting
+
+**Section sources**
+- [API/api_server.py](file://API/api_server.py)
+
+### Execution Report Parsing (parse_mt5_execution_report.py)
+Responsibilities:
+- Parse MT5 execution logs and trade history
+- Normalize data into structured reports for performance analysis
+- Identify discrepancies between expected and actual executions
+
+Reconciliation process:
+- Match submitted signals with executed orders
+- Compute slippage, fill rates, and latency metrics
+- Generate summaries for monitoring dashboards
+
+**Section sources**
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [tests/test_parse_mt5_execution_report.py](file://tests/test_parse_mt5_execution_report.py)
+
+### Triple Barrier Execution (triple_barrier_mt4_execution.py)
+Responsibilities:
+- Implement triple-barrier logic for MT4 environments
+- Manage entry, stop-loss, and take-profit barriers
+- Reconcile MT4 execution logs with expected outcomes
+
+Workflow:
+- Define barriers based on volatility and strategy rules
+- Monitor price action against barriers
+- Record outcomes and update performance metrics
+
+**Section sources**
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
+- [tests/test_triple_barrier_mt4_execution.py](file://tests/test_triple_barrier_mt4_execution.py)
 
 ## Dependency Analysis
-
-### Component Interdependencies
-The SoSimple system exhibits well-defined dependency relationships:
+The integration relies on clear separation of concerns:
+- Python services depend on file/pipe interfaces exposed by MQL4/MQL5
+- EAs depend on SignalManager for validation and ChartVisualizer for display
+- Analytics tools depend on standardized log formats
 
 ```mermaid
-graph TB
-subgraph "Core Dependencies"
-EA[Expert Advisors] --> MAIN_LIB[MAIN Library]
-MAIN_LIB --> INPUT_LIB[INPUT Library]
-MAIN_LIB --> ORDER_LIB[ORDERS Library]
-MAIN_LIB --> IND_LIB[Indicator Libraries]
-end
-subgraph "ML Integration"
-INPUT_LIB --> ML_LIB[ML Signal Libraries]
-ML_LIB --> CSV_FILES[CSV Signal Files]
-end
-subgraph "Technical Analysis"
-IND_LIB --> ATR_LIB[ATR Library]
-IND_LIB --> FLAT_LIB[Flat Detection Library]
-IND_LIB --> PIC_LIB[PIC Library]
-end
-subgraph "Visualization"
-MAIN_LIB --> GRAPH_LIB[Graph Library]
-IND_LIB --> GRAPH_LIB
-end
+graph LR
+API["api_server.py"] --> FS["File System / Pipes"]
+EA4["SoSimple_EA.mq4"] --> SM4["SignalManager.mqh"]
+EA4 --> CV4["ChartVisualizer.mq4"]
+EA4 --> FB4["FileBridge.mq4"]
+EA5["SoSimple_EA.mq5"] --> SM5["SignalManager.mqh"]
+EA5 --> CV5["ChartVisualizer.mq5"]
+EA5 --> FB5["FileBridge.mq5"]
+Parser["parse_mt5_execution_report.py"] --> FS
+TB4["triple_barrier_mt4_execution.py"] --> FS
 ```
 
 **Diagram sources**
-- [MAIN.mqh:114-116](file://MT/MQL4/Include/MAIN.mqh#L114-L116)
-- [INPUT.mqh:17-21](file://MT/MQL4/Include/INPUT.mqh#L17-L21)
-
-### Library Integration Patterns
-The system employs several integration patterns:
-
-**Strategy Pattern**: Different signal sources (technical vs ML) are implemented as interchangeable strategies
-**Observer Pattern**: Chart updates and order status changes trigger appropriate reactions
-**Template Method Pattern**: Common trading logic is standardized while allowing customization
+- [API/api_server.py](file://API/api_server.py)
+- [MT/MQL4/Experts/SoSimple_EA.mq4](file://MT/MQL4/Experts/SoSimple_EA.mq4)
+- [MT/MQL5/Experts/SoSimple_EA.mq5](file://MT/MQL5/Experts/SoSimple_EA.mq5)
+- [MT/MQL4/Include/SignalManager.mqh](file://MT/MQL4/Include/SignalManager.mqh)
+- [MT/MQL5/Include/SignalManager.mqh](file://MT/MQL5/Include/SignalManager.mqh)
+- [MT/MQL4/Indicators/ChartVisualizer.mq4](file://MT/MQL4/Indicators/ChartVisualizer.mq4)
+- [MT/MQL5/Indicators/ChartVisualizer.mq5](file://MT/MQL5/Indicators/ChartVisualizer.mq5)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
 
 **Section sources**
-- [MAIN.mqh:114-116](file://MT/MQL4/Include/MAIN.mqh#L114-L116)
-- [INPUT.mqh:17-21](file://MT/MQL4/Include/INPUT.mqh#L17-L21)
+- [MT/README.md](file://MT/README.md)
 
 ## Performance Considerations
+- Use named pipes for low-latency IPC when supported by your OS and broker environment
+- Minimize file polling frequency to reduce CPU usage; batch signals where possible
+- Implement efficient logging with rotation to prevent disk I/O bottlenecks
+- Cache frequently accessed market data within EAs to avoid redundant calls
+- Validate inputs early to fail fast and reduce unnecessary computations
+- Monitor memory usage in long-running EAs and implement periodic cleanup
 
-### Optimization Strategies
-The SoSimple system implements several performance optimization techniques:
-
-**Efficient Memory Management**:
-- Dynamic array resizing to minimize memory overhead
-- Lazy initialization of expensive components
-- Efficient signal loading and caching mechanisms
-
-**Computational Efficiency**:
-- Binary search algorithms for signal lookup
-- Optimized indicator calculations with proper array handling
-- Minimal redraw operations during chart updates
-
-**Resource Management**:
-- Proper cleanup of chart objects and graphics
-- Efficient file I/O operations for CSV processing
-- Thread-safe operations for multi-expert environments
-
-### Platform-Specific Optimizations
-- **MQL4**: Leverages optimized built-in functions and efficient array operations
-- **MQL5**: Utilizes enhanced memory management and improved performance characteristics
-- **Cross-platform compatibility**: Consistent behavior across different MetaQuotes versions
+[No sources needed since this section provides general guidance]
 
 ## Troubleshooting Guide
+Common issues and resolutions:
+- Signal not received by EA: Verify file paths and permissions; check named pipe names and connectivity
+- Invalid signal errors: Ensure signal schema matches expectations; validate field types and ranges
+- Execution failures: Check account settings, margin requirements, and symbol availability
+- Log parsing errors: Confirm log format consistency; update parsers if broker changes output structure
+- Performance degradation: Reduce polling frequency; optimize I/O operations; profile EA functions
 
-### Common Integration Issues
-
-#### CSV Signal Loading Problems
-**Issue**: Signals not loading from CSV files
-**Solution**: Verify file path, format compliance, and encoding settings
-
-#### Order Execution Failures
-**Issue**: Orders not being placed or modified correctly
-**Solution**: Check stop level proximity, margin availability, and broker connectivity
-
-#### Indicator Visualization Issues
-**Issue**: Chart annotations not appearing or displaying incorrectly
-**Solution**: Verify chart settings, object creation permissions, and memory limits
-
-#### Performance Degradation
-**Issue**: Slow execution or excessive resource consumption
-**Solution**: Review array sizes, optimize loops, and implement proper cleanup procedures
-
-### Diagnostic Tools
-The system includes comprehensive diagnostic capabilities:
-- **Signal Processing Logs**: Detailed logging of CSV signal processing
-- **Order Management Reports**: Complete order lifecycle tracking
-- **Performance Metrics**: Real-time performance monitoring and reporting
+Diagnostic steps:
+- Enable verbose logging in EAs and Python services
+- Inspect intermediate files and pipe buffers
+- Use ChartVisualizer to confirm signal rendering and position states
+- Run unit tests for parsers and execution logic
 
 **Section sources**
-- [lib_ML_Signal.mqh:416-448](file://MT/MQL4/Include/lib_ML_Signal.mqh#L416-L448)
-- [ORDERS.mqh:143-156](file://MT/MQL4/Include/ORDERS.mqh#L143-L156)
+- [MT/MQL4/Libraries/FileBridge.mq4](file://MT/MQL4/Libraries/FileBridge.mq4)
+- [MT/MQL5/Libraries/FileBridge.mq5](file://MT/MQL5/Libraries/FileBridge.mq5)
+- [API/api_server.py](file://API/api_server.py)
+- [ML/parse_mt5_execution_report.py](file://ML/parse_mt5_execution_report.py)
+- [ML/triple_barrier_mt4_execution.py](file://ML/triple_barrier_mt4_execution.py)
 
 ## Conclusion
-The SoSimple MetaTrader integration provides a comprehensive, production-ready trading solution that combines advanced technical analysis with machine learning-driven signals. The modular architecture ensures maintainability and extensibility, while the robust risk management and order execution systems provide reliable operation across different market conditions.
+The SoSimple MetaTrader integration provides a robust framework for executing signals and managing positions across MT4 and MT5 platforms. By leveraging modular components for signal processing, visualization, and I/O, the system ensures scalability and maintainability. Proper configuration, rigorous testing, and continuous monitoring are essential for reliable live trading operations.
 
-Key strengths of the implementation include:
-- **Flexible Signal Integration**: Support for multiple ML signal sources and formats
-- **Advanced Risk Controls**: Sophisticated position sizing and margin management
-- **Comprehensive Visualization**: Rich chart annotation and technical analysis capabilities
-- **Production-Ready Architecture**: Well-tested patterns suitable for live trading environments
+[No sources needed since this section summarizes without analyzing specific files]
 
-The system serves as a solid foundation for automated trading strategies and can be extended to accommodate additional signal sources, trading instruments, and market conditions.
+## Appendices
+
+### Setup Instructions
+- Install MT4/MT5 terminals and configure accounts
+- Deploy EAs and indicators to respective directories
+- Configure file paths and named pipes in EA settings
+- Start Python services and verify connectivity
+- Test with historical data before going live
+
+### Configuration Parameters
+- Signal source: file path or named pipe name
+- Symbol mapping and lot size calculations
+- Risk parameters: max exposure, stop-loss, take-profit
+- Logging levels and rotation policies
+- Visualization options for ChartVisualizer
+
+### Signal Format Compatibility
+- MQL4/MQL5 signal schemas should be aligned
+- Field naming conventions and data types must match
+- Timestamps and timezone handling should be consistent
+- Error codes and status messages should be standardized
+
+### Execution Logic Differences
+- Order types and filling policies vary between MT4 and MT5
+- Position management APIs differ in method signatures
+- Market hours and session handling may impact execution timing
+- Slippage and commission models can affect performance metrics
+
+[No sources needed since this section provides general guidance]

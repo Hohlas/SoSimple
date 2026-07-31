@@ -1,0 +1,1 @@
+Pure NumPy + Pandas; binary classification uses BCE and Brier score computed from clipped probabilities, while quantile regression uses pinball loss and safe Pearson correlation via `np.corrcoef`.

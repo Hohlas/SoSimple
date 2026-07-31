@@ -1,0 +1,1 @@
+PyTorch for all neural architectures (Transformer, BiLSTM, 1D-CNN, hybrid CNN-LSTM, dual-stream variants), Optuna for hyperparameter search, pandas/numpy for feature engineering, Matplotlib for training curves, and JSON/CSV as the universal artifact format across checkpoints, reports, and MT5 signal exports.

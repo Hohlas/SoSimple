@@ -1,0 +1,1 @@
+Defines target-label construction, export-frame building, and evaluation metrics for trailing-stop take/skip classification (v1 and v2) and quantile regression tasks driven by ATR-based PnL columns.

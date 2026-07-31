@@ -1,0 +1,1 @@
+Loads and parses NERO fractal CSVs into PyTorch datasets with feature engineering, applies piecewise linear-log normalization, and runs Optuna hyperparameter optimization over classification and regression tasks.

@@ -1,0 +1,14 @@
+schema_version: 1
+module_path: ml_pipeline/entry_path_task
+title: Entry Path v1 Multi-Task Prediction Pipeline
+scope:
+    - ML/entry_path_task.py
+    - ML/entry_path_feature_bank.py
+    - ML/entry_path_level_targets.py
+    - ML/entry_path_trade_filter.py
+    - ML/entry_path_v1_quantile_ensemble.py
+    - ML/entry_path_v1_quantile_task.py
+source_files: []
+depends_on: []
+related_to:
+    - path: ml_pipeline/take_skip_trailing_stop

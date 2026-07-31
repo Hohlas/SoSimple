@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: ml_pipeline/models
+title: Fractal Sequence Classification Models
+scope:
+    - ML/models/
+source_files: []
+depends_on: []
+related_to:
+    - path: ml_pipeline/data_and_training

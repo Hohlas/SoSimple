@@ -1,0 +1,1 @@
+Headers are intended to be included by MQL4 scripts/experts/indicators placed alongside them in the MT4 `Include/` directory. Some files contain `#include <...>` paths that assume the standard library path is configured in the MT4 IDE. The `#to_correct.txt` marker suggests pending cleanup of include paths.

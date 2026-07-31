@@ -1,0 +1,1 @@
+Central documentation repository for the SoSimple ML trading system covering data pipeline, methodology stages, audit reports, research plans/specs, schemas, and per-module reference docs.

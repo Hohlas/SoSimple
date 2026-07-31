@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: data_processing
+title: Trading Data Preprocessing & Labeling Pipeline
+scope:
+    - processing/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_server
+    - path: ml_pipeline/feature_engineering
+    - path: statistics_eda
+    - path: tests

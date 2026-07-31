@@ -1,0 +1,4 @@
+- Each MQL4 and MQL5 version maintains parallel Include/ headers (MAIN.mqh, ORDERS.mqh, lib_ML_Signal.mqh, etc.) so both platforms share identical trading logic without cross-references.
+- Expert Advisors and indicators follow the same naming scheme across platforms (e.g., $o$imple.mq4/$o$imple.mq5, MACD Sample.ex4/ex5).
+- Runtime data is exchanged via CSV files in Files/ or tester/files/ (ml_signals.csv, ml_exits_*.csv, ML_Trade_Events_*.csv) rather than direct inter-process communication.
+- Error handling is centralized through shared error headers (ERRORs.mqh / ERRORS.mqh, stderror.mqh, StdLibErr.mqh) included from every module.

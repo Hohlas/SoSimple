@@ -1,0 +1,5 @@
+- Wiki pages are Markdown tables linking to source reports or code paths, with each row documenting what the page covers and which report filenames it synthesizes.
+- The CLI uses argparse subcommands (`generate`, `verify`, `status`, `search`) that return integer exit codes (0 = OK, non-zero = issues found) rather than raising exceptions.
+- File categorization follows a fixed `CATEGORY_ORDER` list and a `categorize()` function that maps top-level directory names to categories (Root Docs, Documentation, Reports, ML, Processing, API, Statistics, Tests, MQL, Wiki, Agent Config, Other).
+- Ignored paths are declared in two centralized sets: `IGNORE_DIRS` (prefix-based absolute skips like `.git`, `DATA`, `ML/checkpoints`) and `IGNORE_DIR_NAMES` (name-based ancestor checks like `node_modules`, `__pycache__`).
+- Generated artifacts (`REPO_integrity.md`, `index.md`) begin with a header line stating generation timestamp, git commit hash, and the command to regenerate them.

@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: ml_pipeline/feature_engineering
+title: Fractal-Level & Multi-Scale Feature Engineering
+scope:
+    - ML/fractal_level_feature_builder.py
+    - ML/multi_scale_fractal_features.py
+    - ML/lib_pic_feature_profiles.py
+    - ML/lib_pic_geometry_feature_bank.py
+    - ML/lib_pic_path_reaction_feature_bank.py
+source_files: []
+depends_on: []
+related_to:
+    - path: data_processing

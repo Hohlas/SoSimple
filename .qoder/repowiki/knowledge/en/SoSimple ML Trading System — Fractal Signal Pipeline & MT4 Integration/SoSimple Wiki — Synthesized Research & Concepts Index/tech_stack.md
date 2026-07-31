@@ -1,0 +1,1 @@
+Pure Python 3 with only stdlib modules (`argparse`, `hashlib.blake2b`, `pathlib`, `subprocess` for `git rev-parse --short HEAD`). Hashes use blake2b with 4-byte digest; large files (>2 MB) are marked `--------` instead of hashed.

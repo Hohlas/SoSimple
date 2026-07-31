@@ -1,0 +1,1 @@
+Aggregates MetaTrader 4 and 5 source code, shared include libraries, indicators, expert advisors, scripts, and tester artifacts that implement the SoSimple trading system across both MT platforms.

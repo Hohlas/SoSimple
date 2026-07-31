@@ -1,0 +1,10 @@
+The module is organized as a flat collection of `.mqh` header files plus several sub-packages that group related functionality:
+- `Arrays/` — generic dynamic array base (`CArray`) with typed specializations (`ArrayInt`, `ArrayDouble`, `ArrayObj`, etc.), plus `List` and `Tree`/`TreeNode` containers.
+- `Controls/` — full GUI control hierarchy rooted at `Wnd.mqh` → `WndObj.mqh` → concrete controls (`Button`, `Edit`, `ListView`, `DatePicker`, …) with embedded BMP resources under `Controls/res/`.
+- `ChartObjects/` — chart object wrappers (`ChartObject`, `ChartObjectLines`, `ChartObjectShapes`, `ChartObjectFibo`, …).
+- `Indicators/` — indicator base classes (`CIndicator` from `Series.mqh`) and prebuilt indicator families (`Trend`, `Oscilators`, `Volumes`, `BillWilliams`).
+- `Files/`, `Strings/`, `Tools/` — I/O, string manipulation, and datetime helpers.
+
+At the top level, the trading framework centers on `MAIN.mqh`, which defines the `EXPERT` class (extending `EXPERT_PARENT_CLASS` from `head_PIC.mqh`) and an instance array `EXP[1]`. The main loop lives in `EXPERT::MAIN()`, which dispatches between ML-driven modes (`ML_TRADE`, `ML_TRADE_TB`) and traditional signal modes via `INPUT()` → `OUTPUT()` → `TRAILING_STOP()` → `MODIFY()` → `ORDERS_SET()`. Signal strategies are selected through the `iSignal` parameter and implemented in `INPUT.mqh` (`SIG_NULL`, `SIG_FIRST_LEVELS`, `SIG_TURTLE`, etc.). Order sizing and SL/TP logic live in `INPUT.mqh` (`OPEN_BUY`, `OPEN_SELL`, `DELTA`), while risk parameters are exposed through `EXPERT_PARENT_CLASS::EXTERN_VARS()`.
+
+Dependency direction is one-way: framework files (`MAIN`, `INPUT`, `OUTPUT`, `ORDERS`, `MM`, `MovingAverages`) include lower-level libraries; the standard library headers never depend on the trading framework. Cross-compilation compatibility between MQL4 and MQL5 is handled via `#ifdef __MQL5__` guards inside shared headers like `Array.mqh` and `stdlib.mqh`.

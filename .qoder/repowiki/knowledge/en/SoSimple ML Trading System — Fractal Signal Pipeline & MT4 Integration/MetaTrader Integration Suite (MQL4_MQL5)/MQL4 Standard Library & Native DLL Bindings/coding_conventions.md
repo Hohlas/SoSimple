@@ -1,0 +1,4 @@
+- External native functions are declared exclusively through `#import <module>` / `#import` blocks, never inline C code.
+- Error codes are exposed as `#define ERR_*` constants grouped by functional area (server, runtime, file, object) using contiguous numeric ranges.
+- Each `.mqh` header begins with a MetaQuotes copyright banner comment block followed by `#property copyright` and `#property link` directives.
+- Win32 API bindings provide both ANSI (`*A`) and Unicode (`*W`) variants of every exported function, mirroring the underlying Windows SDK convention.

@@ -1,0 +1,1 @@
+NumPy + Pandas for data manipulation, scikit-learn `f1_score` for classification metrics, custom pinball loss and Pearson correlation helpers, JSON serialization for period-detail snapshots, and PyTorch-backed transformer models loaded lazily via `ML.models.entry_path_*` imports.

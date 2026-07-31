@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: api_server
+title: ML Signal Generation & MT4 REST API Server
+scope:
+    - API/
+source_files: []
+depends_on: []
+related_to:
+    - path: data_processing
+    - path: metatrader_integration/mql4_scripts
+    - path: ml_pipeline/artifacts
+    - path: ml_pipeline/data_and_training

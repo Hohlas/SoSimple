@@ -1,0 +1,5 @@
+- Each task module defines its target name as a module-level string constant (e.g. `TAKE_SKIP_TRAILING_STOP_TARGET`, `TRAILING_STOP_TARGET_QUANTILE_TARGET`) and derives all column lists from it via list comprehensions over horizon/x-value tuples.
+- Target extraction functions return float32 numpy arrays obtained by selecting a predefined column list from the input DataFrame and applying an ATR threshold (e.g. `pnl >= TAKE_SKIP_THRESHOLD_ATR`).
+- Export-frame builders validate inputs with `_as_1d_vector` helpers that enforce (n,) or (n,1) shapes and matching row counts, then iterate over the declared column list to write `pred_*` and optional `true_*` columns.
+- Metric functions validate that y_true contains only 0/1 labels, y_prob is finite and in [0,1], and shapes match before computing per-column BCE/Brier or pinball losses, returning a dict of scalar floats.
+- All numeric I/O is explicitly cast to `np.float32` (or `float64` for metric internals) to guarantee dtype stability across the pipeline.

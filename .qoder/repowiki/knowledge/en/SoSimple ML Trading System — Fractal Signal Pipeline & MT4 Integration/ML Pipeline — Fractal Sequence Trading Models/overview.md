@@ -1,0 +1,1 @@
+End-to-end ML pipeline that engineers fractal-derived features, trains PyTorch sequence models (Transformer, BiLSTM, CNN1D, hybrids), optimizes hyperparameters with Optuna, and evaluates OOS performance for Up/Dn direction and trailing-stop take/skip trading tasks.

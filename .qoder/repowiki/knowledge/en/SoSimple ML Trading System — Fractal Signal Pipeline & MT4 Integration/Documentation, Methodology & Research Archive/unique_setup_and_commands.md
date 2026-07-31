@@ -1,0 +1,1 @@
+No build or setup required. The `DATA_FLOW.md` section documents the canonical pipeline commands (e.g., `python processing/label_main.py --input MT/MQL4/Files/Nero.csv --debug`, `python statistics/statistics.py DATA/Nero_train_labeled.csv`, `python -m ML.train --model transformer --task regression_updn ...`) that reproduce the documented pipeline stages.

@@ -1,0 +1,5 @@
+- Each test file begins with `import sys` followed by `sys.path.insert(0, '.')` (or `'processing'`) to make project modules importable without installation.
+- Synthetic inputs are constructed inside the test via small helper functions (e.g. `_make_ohlc_csv`, `_make_nero_df`, `_fractal_str`) rather than loading external fixtures, keeping tests fully self-contained.
+- Assertions target concrete output properties — tensor shapes for PyTorch heads, exact column names in pandas DataFrames, or scalar flag values — instead of approximate equality.
+- Temporary filesystem I/O is scoped with `tempfile.TemporaryDirectory()` and cleaned up automatically after each test case.
+- Tests are grouped into `class TestXxx:` blocks when multiple related scenarios share setup logic, with descriptive docstrings stating the expected outcome in plain language.

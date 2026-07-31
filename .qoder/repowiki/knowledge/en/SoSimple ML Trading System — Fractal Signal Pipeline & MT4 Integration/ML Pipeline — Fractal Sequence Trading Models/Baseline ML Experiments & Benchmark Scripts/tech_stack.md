@@ -1,0 +1,1 @@
+Python 3.10+ with pandas/numpy for data, scikit-learn (LogisticRegression, RandomForest, StandardScaler), XGBoost, LightGBM, and CatBoost for tabular models; matplotlib/seaborn for plots; CSVExperimentLogger from `ML.experiment_logger` for structured run tracking.

@@ -1,0 +1,1 @@
+MQL5 language headers compiled by the MetaTrader 5 compiler; DirectX rendering via HLSL vertex/pixel shaders (`DefaultShaderVertex.hlsl`, `DefaultShaderPixel.hlsl`); OpenCL acceleration wrapper in `OpenCL/OpenCL.mqh`; Windows API bindings split across `winbase`, `wingdi`, `winuser`, `fileapi`, `memoryapi`, etc.; BMP sprite resources embedded under `Controls/res/`.

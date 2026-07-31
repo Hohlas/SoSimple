@@ -1,0 +1,7 @@
+The module is a flat collection of independent Python scripts plus a Jupyter notebook, each serving a distinct diagnostic purpose:
+- `statistics.py` is the core streaming pipeline: a `StreamingStats` class accumulates per-feature Welford online mean/variance/min/max plus reservoir-sampled quantiles over chunked CSV reads, then emits `statistics_summary.json`, `class_balance_report.csv`, `feature_distributions.csv`, `nero_sample_stratified.csv`, and `class_statistics.json`.
+- `signal_tracer.py` performs trade-level reconciliation between `ml_signals.csv`/`ml_signals_tb.csv`, labeled CSVs, `*_updn_params.npy`, and MT4 tester logs; it parses INI parameters, denormalizes up/dn targets via piecewise linear-log inverse transforms, replicates MT4 SL/TP formulas, and classifies outcomes (TP_CLEAR/SL_CLEAR/BOTH_HIT/FLAT).
+- `analyze_path_ordering.py` bar-by-bar scans H1 OHLC to determine whether SL or TP was hit first, cross-referencing path order with MT4 results.
+- `data_contract_smoke_check.py` validates tensor shapes, value ranges, and label distributions before any ML experiment.
+- `EDA.ipynb` drives the generation of plots under `plots/` and PNG artifacts under `EDA_files/`, with an executed notebook saved in `reports/` alongside `EDA_report.md`.
+All scripts write artifacts into the same directory (`statistics/`) and read inputs from the project root `DATA/` directory via relative paths computed from `Path(__file__).parent`.

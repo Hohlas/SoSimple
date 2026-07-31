@@ -1,0 +1,1 @@
+Run all tests from repo root with `./.venv/bin/python -m pytest tests/ -q`; run a single file like `./.venv/bin/python -m pytest tests/test_label_updn.py -q`. Every test file performs `sys.path.insert(0, '.')` (or `'processing'`) so no package installation is required. Tests use only synthetic fixtures — no external data files or live market feeds are needed.

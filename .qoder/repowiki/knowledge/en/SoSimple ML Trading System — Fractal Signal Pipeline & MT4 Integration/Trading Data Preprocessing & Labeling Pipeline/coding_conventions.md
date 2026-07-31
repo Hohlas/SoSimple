@@ -1,0 +1,6 @@
+- Each script begins with a docstring header block declaring purpose, language, author, creation/update dates, input/output contracts, and external dependencies.
+- Fractal data is represented as a fixed 23-field colon-separated string in `fractal0..fractalN` columns, parsed by dedicated `parse_fractal` functions that return None for malformed rows.
+- CLI entry points use `argparse` with explicit `--input`/`--output`/`--debug` flags and print structured progress messages bracketed by `=` separators.
+- Per-row normalization parameters are computed once during training and saved as `{base}_updn_params.npy` with shape `(N, num_pairs, 2)` containing `[brk, cap]` per up/dn pair.
+- Online/live code explicitly avoids any function that requires future bars, validating fractal time ordering and guarding against double-normalization via `_looks_rowwise_normalized`.
+- Cross-script imports use a try/except `ModuleNotFoundError` fallback so scripts can be run both from the project root and with `processing/` prefixed paths.

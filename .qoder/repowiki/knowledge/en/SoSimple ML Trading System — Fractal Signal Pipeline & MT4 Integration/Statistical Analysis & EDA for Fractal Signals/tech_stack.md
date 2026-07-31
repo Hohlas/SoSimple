@@ -1,0 +1,1 @@
+Python with pandas, numpy, collections, pathlib, argparse; Jupyter notebook for EDA execution via `nbconvert --execute`; outputs include JSON, CSV, PNG plots, and Markdown reports. Uses Welford's algorithm for online variance and reservoir sampling for quantile estimation.

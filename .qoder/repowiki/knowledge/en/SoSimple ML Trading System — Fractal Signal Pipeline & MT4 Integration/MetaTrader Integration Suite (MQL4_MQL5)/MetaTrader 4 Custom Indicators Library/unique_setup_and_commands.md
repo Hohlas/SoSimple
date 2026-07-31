@@ -1,0 +1,1 @@
+Indicators are loaded by placing the .mq4 files into the MT4 terminal's `MQL4/Indicators/` directory and compiling them via the MetaEditor (producing matching .ex4 files). No external build system is used — compilation is performed inside the MT4 client or MetaEditor.

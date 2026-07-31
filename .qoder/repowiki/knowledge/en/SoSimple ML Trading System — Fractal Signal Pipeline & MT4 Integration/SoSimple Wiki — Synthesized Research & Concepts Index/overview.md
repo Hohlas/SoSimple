@@ -1,0 +1,1 @@
+LLM-maintained wiki layer that synthesizes research reports and stable design concepts into navigable Markdown pages, with a Python CLI to generate an integrity map of the entire repository.

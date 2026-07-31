@@ -1,0 +1,1 @@
+Headers are consumed directly by `.mq4/.mq5` source files via `#include <...>` using the MT5 include path; no separate build step is required beyond compiling the consuming EA/indicator/script that includes these headers.

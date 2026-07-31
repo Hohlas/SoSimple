@@ -1,0 +1,1 @@
+Compile MQL4 sources in MetaTrader 4's MetaEditor (F7) to produce .ex4 files under MQL4/Experts and MQL4/Indicators; compile MQL5 sources in MetaTrader 5's MetaEditor to produce .ex4/.ex5 under MQL5/. Backtests are run through the Strategy Tester using configurations in tester/*.set and *.ini files.

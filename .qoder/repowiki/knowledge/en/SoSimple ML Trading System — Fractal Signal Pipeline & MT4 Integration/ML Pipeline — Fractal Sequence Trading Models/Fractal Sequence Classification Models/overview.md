@@ -1,0 +1,1 @@
+PyTorch neural network models for classifying fractal price sequences, providing BiLSTM, 1D-CNN, Transformer, hybrid CNN-LSTM, and specialized multi-head transformer variants with a unified registry interface.

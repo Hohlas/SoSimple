@@ -1,0 +1,6 @@
+This is a flat data directory consumed by the MetaTrader Strategy Tester rather than executable code. It is organized into four logical sub-trees:
+- `files/` holds per-run `.set` parameter snapshots (e.g. `SoSimple_<pid>.set`) alongside CSV outputs produced by the EA: `ml_signals.csv`, `ml_trade_events.csv`, `ERROR_*_*.csv`, and rule-specific variants (`ml_signals_fixed11_ruleNN.csv`).
+- `history/` stores `.fxt` tick-history files used as backtest data sources.
+- `caches/` and `logs/` are empty directories reserved for MT5 tester cache and log output.
+- Root-level INI files drive the tester: `$o$imple.ini` defines the full input-parameter space with `<common>`, `<inputs>`, and `<limits>` sections; `opt.set` is the active optimization set; `lastparameters.ini` records the last run's optimization mode and date range; `lasttest.chr` is a binary checkpoint saved by the tester.
+The dependency direction is one-way: the MetaTrader Strategy Tester reads these files to configure and execute the SoSimple EA, then writes new CSV artifacts and `.set` snapshots back into this directory.

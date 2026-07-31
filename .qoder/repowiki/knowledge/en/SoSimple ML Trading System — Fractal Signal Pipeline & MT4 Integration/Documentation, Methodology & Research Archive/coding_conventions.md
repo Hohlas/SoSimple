@@ -1,0 +1,5 @@
+- Date-prefixed filenames are used consistently across `reports/`, `superpowers/plans/`, `superpowers/specs/`, and `audit/` (e.g., `2026-04-01-signal-research-variant-2.md`) to order artifacts chronologically.
+- Module-level documentation mirrors the sibling code directory structure, using `.py.md` suffixes for Python scripts (e.g., `ML/baseline_experiments.py.md`, `processing/normalize.py.md`) to document CLI entry points, inputs, outputs, and constraints.
+- Methodology documents in `methodology/` follow a numbered sequential convention (01–16) corresponding to pipeline stages, with checklist appendices prefixed A1–A8.
+- Data contracts are versioned via JSON Schema files in `schemas/` (e.g., `fractal_v23.schema.json`, `fractal_v24_raw_price.schema.json`) with explicit field counts and domains tied to the MT4 producer.
+- Archive content under `archive/0726/` is treated as immutable unless explicitly requested, preserving historical snapshots of prior iterations.

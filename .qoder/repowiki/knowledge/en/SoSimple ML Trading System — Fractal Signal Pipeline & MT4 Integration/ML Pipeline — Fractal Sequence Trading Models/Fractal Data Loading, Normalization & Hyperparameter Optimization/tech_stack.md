@@ -1,0 +1,1 @@
+PyTorch Dataset/DataLoader with WeightedRandomSampler, pandas/numpy for CSV parsing and tensor construction, scikit-learn StandardScaler, Optuna (TPESampler + MedianPruner) for hyperparameter search, pickle for normalizer serialization, JSON schema validation against `docs/schemas/fractal_v24_raw_price.schema.json`.

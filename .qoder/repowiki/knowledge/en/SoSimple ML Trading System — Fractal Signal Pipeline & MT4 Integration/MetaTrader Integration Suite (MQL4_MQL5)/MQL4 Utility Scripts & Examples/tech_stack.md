@@ -1,0 +1,1 @@
+MQL4 (MetaQuotes Language 4) running on the MetaTrader 4 terminal; optional C++ DLL interop via `#import`; Windows named pipes (`\\.\pipe\...`) for IPC; CSV binary history files (`.hst`) written with `FileWriteStruct(MqlRates)`.

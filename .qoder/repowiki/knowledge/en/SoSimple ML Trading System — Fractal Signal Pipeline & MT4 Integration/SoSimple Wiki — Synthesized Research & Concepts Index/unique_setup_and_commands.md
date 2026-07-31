@@ -1,0 +1,1 @@
+Run via the virtualenv: `./.venv/bin/python wiki/wiki.py generate` (builds REPO_integrity.md), `verify` (detects changed/added/removed files vs index), `status` (uncovered reports, staleness, broken links), `search <term>` (grep across wiki pages). The README also documents the agent workflow through `../.claude/skills/my/wiki/SKILL.md`.

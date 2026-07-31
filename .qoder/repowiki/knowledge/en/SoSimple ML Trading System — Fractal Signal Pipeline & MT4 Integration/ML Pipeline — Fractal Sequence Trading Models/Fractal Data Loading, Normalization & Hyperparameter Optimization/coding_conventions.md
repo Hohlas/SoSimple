@@ -1,0 +1,6 @@
+- Each module begins with a docstring header block listing file purpose, language version, dependencies, input/output paths, usage example, and notes.
+- Absolute filesystem paths are resolved via `PROJECT_ROOT = Path(__file__).resolve().parent.parent` followed by relative joins to `DATA/`, `ML/reports/`, and `docs/schemas/`.
+- Task/target variants are registered through top-level constant dictionaries (`TASK_TARGET_COLUMNS`, `BINARY_CLASSIFICATION_TARGETS`, `TASK_CHECKPOINT_SUFFIXES`) rather than string literals, enabling dispatch functions like `task_target_column()` and `task_checkpoint_suffix()`.
+- Data caching uses timestamp-based invalidation: cached `.npy` files are checked against source CSV mtime and feature-dimension compatibility before reuse, with explicit `clear_cache` override.
+- Metrics functions return structured dicts with consistent keys (e.g., `compute_metrics` returns f1_macro, per-class F1, signal precision/recall, confusion matrix, classification report) and are reused across training and optimization pipelines.
+- NumPy arrays are explicitly cast to `np.float32` and padded with `np.nan_to_num(..., nan=0.0)` to ensure stable GPU tensors.

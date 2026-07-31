@@ -1,0 +1,1 @@
+Collection of MetaTrader 4 custom indicators (technical analysis, volume profile, exposure tracking) and an MQL4 UI example panel, compiled to .ex4 for use on MT4 charts.
