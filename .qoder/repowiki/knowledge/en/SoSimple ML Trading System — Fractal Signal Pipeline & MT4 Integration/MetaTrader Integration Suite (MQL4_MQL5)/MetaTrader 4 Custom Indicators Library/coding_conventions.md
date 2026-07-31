@@ -1,6 +1,0 @@
-- Each indicator declares its behavior via `#property` directives at the top of the file (copyright, link, description, strict, indicator_separate_window/chart_window, indicator_buffers, indicator_color1).
-- Global indicator buffers are declared as module-level arrays with the `Ext` prefix (e.g., `ExtATRBuffer`, `ExtZigzagBuffer`, `ExtMapBuffer`) and registered in `OnInit()` via `SetIndexBuffer`.
-- Input parameters are exposed through `input` variables placed after the `#property` block, with inline comments describing their meaning.
-- Chart-drawing indicators use named graphical objects created with a unique prefix scheme (e.g., `Head_`, `Line_<n>_<col>`, `POC=...`) so they can be selectively deleted in `OnDeinit()`.
-- The `OnCalculate` function follows the standard pattern of checking `rates_total`/`prev_calculated`, setting array series orientation with `ArraySetAsSeries`, computing only new bars when `prev_calculated > 0`, and returning `rates_total`.
-- UI dialogs extend `CAppDialog` and register event handlers through the `EVENT_MAP_BEGIN`/`EVENT_MAP_END` macro block mapping control events to member functions.

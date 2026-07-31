@@ -1,1 +1,0 @@
-Pure pandas/numpy with no ML framework dependencies; uses `pd.to_datetime(..., format="%Y.%m.%d %H:%M")` for UTC-naive timestamps, `np.nan_to_num` for NaN/inf capping, and colon-delimited string parsing of fractal records.

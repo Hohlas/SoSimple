@@ -1,1 +1,0 @@
-pytest >= 8.0 with numpy >= 1.24, pandas >= 2.0, scikit-learn (for signal quality research), and PyTorch (for transformer model shape/backprop tests). All tests run against a local `.venv` Python interpreter.

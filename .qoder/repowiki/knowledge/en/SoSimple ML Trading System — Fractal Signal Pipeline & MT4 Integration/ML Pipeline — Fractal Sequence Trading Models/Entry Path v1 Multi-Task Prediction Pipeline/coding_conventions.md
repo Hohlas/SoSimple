@@ -1,5 +1,0 @@
-- Target and feature column sets are declared as module-level tuples/constants (e.g. `ENTRY_PATH_RET_TARGETS`, `FEATURE_BANK_WINDOWS`) and iterated to generate derived lists, keeping naming consistent across tasks.
-- Model factories accept a whitelist of allowed keyword keys and silently drop unknown kwargs, raising a descriptive `ValueError` listing available options when an unsupported name is given.
-- Export/report functions validate input shapes and lengths upfront with explicit `ValueError` messages, then produce either a full pandas DataFrame or a Markdown string with N/A sections when true labels are missing.
-- Metrics like `_safe_pearson` guard against degenerate inputs (length < 2, constant arrays, non-finite correlations) by returning 0.0 rather than raising.
-- Feature profiles are validated against a registered set (`ENTRY_PATH_FEATURE_PROFILES`) and split into built-in vs. external (LIB_PIC) branches, with live-safe variants handled by reindexing a dedicated column subset.

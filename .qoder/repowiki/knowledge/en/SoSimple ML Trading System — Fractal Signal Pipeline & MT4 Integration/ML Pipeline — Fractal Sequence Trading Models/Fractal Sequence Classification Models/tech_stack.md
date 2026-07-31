@@ -1,1 +1,0 @@
-PyTorch >=2.0 with `torch.nn.TransformerEncoderLayer`/`TransformerEncoder`, sinusoidal positional encodings, and standard activation/dropout layers; NumPy used only in `fractal_breach_transformer.py` for static token selection logic.

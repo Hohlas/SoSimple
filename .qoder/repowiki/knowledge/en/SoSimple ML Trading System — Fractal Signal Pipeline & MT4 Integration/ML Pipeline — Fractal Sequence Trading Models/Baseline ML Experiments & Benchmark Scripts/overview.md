@@ -1,1 +1,0 @@
-Collection of standalone Python scripts that train, evaluate, and audit baseline trading models (logistic regression, random forest, XGBoost, LightGBM, CatBoost) on fractal-derived features and produce confusion matrices, reports, and MT5 signal artifacts.

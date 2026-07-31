@@ -1,5 +1,0 @@
-- Each trained model checkpoint `<name>.pt` has a co-located `<name>_result.json` file recording training metrics, best epoch, parameter count, and per-class performance.
-- Checkpoint filenames encode both the model architecture (bilstm, cnn1d, transformer, hybrid, entry_path_dual_stream) and the task variant via a suffix such as `_regression`, `_updn`, `_tb`, `_signal_archetype_cls`, `_trade_outcome_cls`, or `_trade_pnl_reg`.
-- Optuna study runs are saved as `optuna_study_<task>_<YYYYMMDD_HHMMSS>.json` files at the top level of `reports/`, preserving trial parameters, durations, and states.
-- Experiment report directories under `reports/` are named after the feature pipeline or hypothesis being tested (e.g. `entry_path_v1_*`, `take_skip_*`, `fractal0_*`, `transformer_direction/`), with each directory grouping related JSON/CSV outputs for that run.
-- Markdown reports follow a consistent structure: header with date/task/loss/optimizer/framework, summary table of models vs metrics, per-model classification/regression reports, visualization links referencing `../plots/`, and a conclusions section.

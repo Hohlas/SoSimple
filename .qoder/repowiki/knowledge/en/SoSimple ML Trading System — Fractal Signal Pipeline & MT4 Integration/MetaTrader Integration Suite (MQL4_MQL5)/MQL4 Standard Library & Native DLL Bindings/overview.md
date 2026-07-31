@@ -1,1 +1,0 @@
-MetaTrader 4 standard library headers and compiled stubs that expose core MQL4 runtime functions, Windows user32 API bindings, and standardized error-code definitions to Expert Advisors and indicators.

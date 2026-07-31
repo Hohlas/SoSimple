@@ -1,1 +1,0 @@
-Parses fractal-encoded rows into live-safe features: nearest-k and zone aggregations around fractal0, multi-scale window summaries, and geometry/path-reaction feature banks for the lib_PIC profile.

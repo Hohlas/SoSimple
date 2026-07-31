@@ -1,6 +1,0 @@
-- Each `.mqh` file wraps its content in a single class or a set of related functions, following MetaQuotes' standard library style with `//+------------------------------------------------------------------+` comment blocks and copyright headers.
-- Cross-platform MQL4/MQL5 compatibility is achieved through `#ifdef __MQL5__` / `#else` / `#endif` guards around platform-specific calls (e.g., `ArrayMinimum`/`ArrayMaximum` argument order).
-- GUI controls follow a virtual-hierarchy pattern: base `CWnd` → `CWndObj` → concrete control classes, with property setters delegating to virtual `OnSet*` handlers that subclasses override.
-- Signal strategy selection is centralized in a `switch(iSignal)` block inside `EXPERT::INPUT()`, with each case calling a dedicated `SIG_*` method.
-- External input variables are registered declaratively via repeated `DATA("Name", Value)` calls inside `EXPERT_PARENT_CLASS::EXTERN_VARS()` rather than inline declarations.
-- Logging and debugging use three parallel helper methods `A()`, `V()`, `X()` that print colored annotations directly onto the chart at specific price/time coordinates.

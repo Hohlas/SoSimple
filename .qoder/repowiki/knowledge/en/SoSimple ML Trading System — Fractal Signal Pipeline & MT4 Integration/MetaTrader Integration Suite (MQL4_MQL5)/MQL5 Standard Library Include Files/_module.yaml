@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: metatrader_integration/mql5_include_libs
-title: MQL5 Standard Library Include Files
-scope:
-    - MT/MQL5/Include/
-source_files: []
-depends_on: []
-related_to: []

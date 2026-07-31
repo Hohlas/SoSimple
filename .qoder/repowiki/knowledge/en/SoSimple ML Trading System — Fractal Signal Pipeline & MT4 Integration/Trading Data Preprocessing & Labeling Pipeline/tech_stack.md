@@ -1,1 +1,0 @@
-Python 3.10+ with pandas ≥2.0, numpy ≥1.24, scikit-learn ≥1.3 (RobustScaler). Fractal data uses a fixed 23-field colon-delimited string format. Per-row normalization parameters are serialized as NumPy `.npy` files.

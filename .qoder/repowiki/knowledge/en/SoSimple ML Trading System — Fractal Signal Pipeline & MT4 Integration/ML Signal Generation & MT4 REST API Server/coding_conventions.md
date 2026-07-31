@@ -1,6 +1,0 @@
-- Each script is self-contained and runnable via `python -m API.<script>`, using `Path(__file__).resolve().parent.parent` to resolve `PROJECT_ROOT` and derive `CHECKPOINTS_DIR`, `REPORTS_DIR`, and output paths relative to the repository root.
-- Default configuration constants (model name, task, horizon, theta, optuna JSON path) are defined as module-level constants and also exposed through a Pydantic `BaseModel` (`MLServiceSettings`) for the API server.
-- Signal thresholding follows a consistent pattern: compute `pred_up / (pred_dn + 1e-6)` and `pred_dn / (pred_up + 1e-6)` ratios, then compare against `theta` to assign signal values 1 (BUY), -1 (SELL), or 0 (FLAT).
-- Online/live paths use `processing.online_causal_preprocessing.preprocess_online_frame` or `preprocess_online_csv` to sort fractals by time and apply rowwise normalization without future leakage before inference.
-- CLI arguments are parsed with `argparse` and default paths point to `ML/reports/` and `MT/MQL4/Files/` directories, with explicit `--output` flags controlling where results are written.
-- Error handling uses typed exceptions (`HTTPException` for FastAPI, custom `OnlineInferenceContractError` for contract violations) rather than generic raises, and file existence is checked before loading checkpoints.

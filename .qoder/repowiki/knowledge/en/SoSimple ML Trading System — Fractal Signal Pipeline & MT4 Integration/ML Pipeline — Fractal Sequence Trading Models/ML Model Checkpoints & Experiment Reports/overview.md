@@ -1,1 +1,0 @@
-Persistent storage for trained PyTorch model artifacts (.pt) with paired result metadata (.json), plus experiment reports, Optuna study logs, and analysis outputs organized by feature set and task variant.

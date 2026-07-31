@@ -1,1 +1,0 @@
-MQL4 and MQL5 languages with MetaTrader 4 and MetaTrader 5 terminals; Windows DLL bindings via WinUser32; CSV-based IPC for ML signal exchange; Strategy Tester for backtesting with .set optimization profiles.

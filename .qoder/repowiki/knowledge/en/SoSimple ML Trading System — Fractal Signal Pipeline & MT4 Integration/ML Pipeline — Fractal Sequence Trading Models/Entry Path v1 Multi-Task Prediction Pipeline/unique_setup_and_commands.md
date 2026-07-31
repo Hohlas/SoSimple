@@ -1,1 +1,0 @@
-No build script required; modules are imported directly. Quantile ensemble expects CSV artifacts named `entry_path_v1_quantile_{split}_predictions.csv` under a `seed_dir` directory, produced by separate training runs per seed checkpoint.

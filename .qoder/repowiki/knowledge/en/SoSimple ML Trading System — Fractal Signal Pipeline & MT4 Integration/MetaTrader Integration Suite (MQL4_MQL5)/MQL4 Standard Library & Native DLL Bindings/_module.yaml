@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: metatrader_integration/mql4_libraries
-title: MQL4 Standard Library & Native DLL Bindings
-scope:
-    - MT/MQL4/Libraries/
-source_files: []
-depends_on: []
-related_to: []

@@ -1,1 +1,0 @@
-FastAPI + Uvicorn for the REST server, Pydantic v2 for request validation, PyTorch for model inference (transformer models loaded from `.pt` checkpoints), pandas/numpy for data handling, and requests for the test client. Models are configured via Optuna best-parameter JSON files under `ML/reports/`.

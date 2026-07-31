@@ -1,1 +1,0 @@
-Stores MetaTrader Strategy Tester configuration files, optimization sets, CSV signal/trade event outputs, and runtime artifacts for the SoSimple EA backtesting and ML-optimization workflows.

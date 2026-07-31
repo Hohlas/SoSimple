@@ -1,1 +1,0 @@
-MetaTrader 4 MQL4 include library providing the core trading framework (EXPERT class, signal generation, order management), standard data structures (arrays, lists, trees), UI controls, chart objects, indicators, and file/string utilities used by the SoSimple expert advisor.

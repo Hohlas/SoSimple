@@ -1,1 +1,0 @@
-Models are instantiated through `ML.models.get_model(name, **kwargs)` rather than direct imports; valid names are registered in `MODEL_REGISTRY` (`bilstm`, `cnn1d`, `transformer`, `hybrid`). Some transformer variants lazily import `ENTRY_PATH_V1_FEATURE_COLUMNS` from `ML.entry_path_task` to infer `engineered_feature_dim` at construction time.

@@ -1,1 +1,0 @@
-Collection of MQL4 scripts for exporting OHLC/ATR data to CSV, converting history files between timeframes, logging to MATLAB format, and examples demonstrating DLL calls and named-pipe IPC between MQL4 processes.

@@ -1,1 +1,0 @@
-No build or runtime commands are needed; artifacts are produced by external training scripts that write directly into these directories. Reproducing results requires re-running the corresponding training script which will overwrite or append to these files.

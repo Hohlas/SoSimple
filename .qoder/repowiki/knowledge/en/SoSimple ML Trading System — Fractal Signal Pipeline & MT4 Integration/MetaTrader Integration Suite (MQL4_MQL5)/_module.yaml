@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: metatrader_integration
-title: MetaTrader Integration Suite (MQL4/MQL5)
-scope:
-    - MT/
-source_files: []
-depends_on: []
-related_to: []

@@ -1,1 +1,0 @@
-Pytest-based unit and smoke tests covering the entire SoSimple trading pipeline — fractal labeling, entry/exit path models, signal research, telemetry, and live-safe audit modules — using synthetic fixtures without real market data.

@@ -1,1 +1,0 @@
-No build or test commands — modules are imported directly (e.g. `from ML.fractal_level_feature_builder import parse_fractal, audit_fractal_rows`). Input CSVs must follow the `DATA/Nero_*_labeled.csv` schema produced by `processing/label_main.py`; output reports land under `ML/reports/entry_path_v1_fractal_level_signal/`.

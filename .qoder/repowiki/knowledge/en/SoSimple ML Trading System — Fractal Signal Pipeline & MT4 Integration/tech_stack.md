@@ -1,1 +1,0 @@
-Python 3.x with pandas/numpy/scipy/scikit-learn for data pipelines, PyTorch (CUDA 12.1 index) for sequence models, Optuna for hyperparameter search, FastAPI+Uvicorn+Pydantic for the REST API, XGBoost/LightGBM/CatBoost for tabular baselines, and MQL4/MQL5 for the MT4 execution layer; Jupyter/ipykernel for EDA notebooks.

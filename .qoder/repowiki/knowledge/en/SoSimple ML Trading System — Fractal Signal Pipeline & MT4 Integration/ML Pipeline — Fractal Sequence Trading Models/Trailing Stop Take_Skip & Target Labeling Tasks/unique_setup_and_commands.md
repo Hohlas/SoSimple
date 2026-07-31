@@ -1,1 +1,0 @@
-No build or test harness is present in these files; they are imported directly by upstream ML pipeline code. Column names must match the `trail_*_pnl_atr_x*` naming convention produced by the feature engineering stage.

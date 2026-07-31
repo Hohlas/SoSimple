@@ -1,1 +1,0 @@
-MetaTrader 5 Strategy Tester native file formats: `.set` parameter files, `.fxt` tick history, `.ini` configuration, and CSV for signals/events/errors. The SoSimple EA uses an internal ML pipeline that emits rule-scoped CSVs (`ml_signals_fixed11_ruleNN.csv`, `ml_exits_fixed11_ruleNN.csv`).

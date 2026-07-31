@@ -1,6 +1,0 @@
-- Each public class or interface file begins with a MetaQuotes copyright banner comment block followed by a one-line purpose comment.
-- Generic interfaces use the `interface` keyword with template parameters (e.g. `interface IList<T>`) and are placed under `Generic/Interfaces/`, while their implementations live as sibling non-interface classes.
-- Comparison and equality logic is decoupled via `IComparer<T>` and `IEqualityComparer<T>` interfaces passed explicitly to algorithms rather than hard-coded operators.
-- Expert framework components follow a layered inheritance chain (`CExpertBase` → `CExpert`) with virtual hooks (`Init`, `ValidationSettings`, `OnTick`, `Processing`) that derived EAs override instead of calling base methods directly.
-- DirectX canvas objects derive from `CDXObjectBase` which itself derives from `CObject`, and destructors explicitly unlink objects from the parent linked list before destruction.
-- Windows API headers are split per subsystem (one file per Win32 DLL namespace) and expose only the subset of constants/functions needed by MQL5 code.

@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: ml_pipeline/baseline_experiments
-title: Baseline ML Experiments & Benchmark Scripts
-scope:
-    - ML/baseline/
-source_files: []
-depends_on: []
-related_to: []

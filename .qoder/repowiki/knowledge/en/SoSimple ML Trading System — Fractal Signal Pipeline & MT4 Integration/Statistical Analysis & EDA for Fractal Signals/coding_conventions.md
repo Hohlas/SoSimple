@@ -1,5 +1,0 @@
-- Each script is self-contained with a header comment block documenting purpose, inputs, outputs, dependencies, usage examples, and notes in Russian.
-- File paths are resolved relative to the script's own location using `Path(__file__).parent` and `Path(__file__).resolve().parent.parent` for project root access, never hard-coded absolute paths.
-- CLI entry points use `argparse` with `--csv-out` style optional output flags, and default file paths point into the project's `DATA/` directory.
-- Statistical computations use streaming/chunked processing (pandas `chunksize`, Welford online updates, reservoir sampling) to avoid loading entire datasets into memory.
-- Output artifacts follow a consistent naming pattern: `<name>_summary.json`, `<name>_balance_report.csv`, `<name>_distributions.csv`, with human-readable percentage strings formatted via f-strings like `{value:.2f}%`.

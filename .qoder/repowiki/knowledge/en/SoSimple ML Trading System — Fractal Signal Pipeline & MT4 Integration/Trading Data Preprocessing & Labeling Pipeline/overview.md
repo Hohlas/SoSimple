@@ -1,1 +1,0 @@
-End-to-end preprocessing pipeline for MetaTrader Nero.csv: fractal sorting, signal/predict/updn labeling, rowwise normalization, train/val/test splitting, and online-safe causal preprocessing.

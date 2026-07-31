@@ -1,1 +1,0 @@
-Markdown-only documentation with embedded Python CLI examples; JSON Schema for data contracts; no build system or executable code within this module.

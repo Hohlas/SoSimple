@@ -1,4 +1,0 @@
-- Every EA input parameter appears three times in config files: the base key (e.g. `BackTest=0`), a `*,F=` flag indicating whether the parameter is optimized, and indexed ranges `*,1=`, `*,2=`, `*,3=` defining the optimization grid.
-- Parameter groups are separated by comment lines of the form `zN=          - <SECTION NAME> -` (e.g. `z1= - P I C   L E V E L S  -`, `zML= - M L   O P T I M I Z A T I O N  -`).
-- Each tester run generates a uniquely named `.set` file under `files/` using the pattern `SoSimple_<process_id>.set`, preserving the exact parameters used for that execution.
-- ML-related CSV outputs follow a consistent naming scheme: `ml_signals[_[fixed11_ruleNN]]_SoSimple_<pid>.csv` and `ML_Trade_Events_SoSimple_<pid>.csv`, with error runs prefixed by `ERROR_`.

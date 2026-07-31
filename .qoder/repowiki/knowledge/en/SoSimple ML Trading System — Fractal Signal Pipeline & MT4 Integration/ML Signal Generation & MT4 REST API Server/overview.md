@@ -1,1 +1,0 @@
-Python module providing FastAPI REST endpoints for MT4-to-ML inference, batch signal generation scripts, and a telemetry watcher that continuously converts live Nero.csv into ML trading signals.

@@ -1,6 +1,0 @@
-- Each script sets `PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent` and derives all I/O paths relative to it, keeping experiments self-contained.
-- Data loading uses `pd.read_csv(..., sep=';')` consistently across scripts, reflecting the semicolon-delimited CSV format produced by upstream processing.
-- Fractal strings are parsed via a fixed separator `:` into 11-element arrays, with NaN rows filled by zeros using `np.nan_to_num` or `fillna(0)`.
-- Model definitions are declared as named tuples or string-keyed dictionaries (e.g. `POWERFUL_TABULAR_MODEL_KEYS`, model metadata dicts) so configurations can be enumerated and iterated programmatically.
-- Validation functions enforce strict contracts on input DataFrames — checking required columns, forbidden future-looking columns, allowed enum values, and temporal ordering of timestamp fields.
-- Results are persisted in parallel artifact pairs: a human-readable Markdown report under `reports/` plus machine-parseable JSON/CSV files with matching prefixes.

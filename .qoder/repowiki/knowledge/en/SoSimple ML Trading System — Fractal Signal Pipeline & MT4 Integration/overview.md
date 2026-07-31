@@ -1,1 +1,0 @@
-End-to-end ML-driven Forex trading system that converts MetaTrader Nero.csv into fractal-derived signals, trains PyTorch sequence models, and serves predictions back to MT4 via a REST API and file-based telemetry loop.

@@ -1,1 +1,0 @@
-MQL4 (MetaQuotes Language 4) with `#import` directives binding to compiled `.ex4` libraries and native Windows `user32.dll`. Error codes follow MetaQuotes' official numbering scheme split into server errors (<150), MQL4 runtime errors (~4000–4099), object errors (~4200), and file errors (~5000+).

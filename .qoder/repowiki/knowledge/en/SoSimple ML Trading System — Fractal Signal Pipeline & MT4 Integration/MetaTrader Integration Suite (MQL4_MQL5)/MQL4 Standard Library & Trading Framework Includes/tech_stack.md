@@ -1,1 +1,0 @@
-MQL4 (MetaQuotes Language 4) compiled to `.ex4` via MetaTrader 4's built-in compiler. Uses native MQL4 classes (`CObject`, `CArray`, `CWnd`, `CWndObj`) and Win32 API bindings through `WinUser32.mqh` and `#import "stdlib.ex4"`. Embedded bitmap resources (`.bmp`) provide icon assets for the Controls UI.

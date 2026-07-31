@@ -1,5 +1,0 @@
-- Each task defines its own `<task>_task.py` module that centralizes label construction, feature matrix building, and metric definitions, then reuses the shared `data_loader.py` and `models/` registry.
-- Model classes in `models/` follow a uniform constructor signature accepting `(seq_len, n_features, n_classes)` and expose a `forward(x)` method returning logits or quantile outputs.
-- Experiments write results as paired `<name>.pt` (model weights) and `<name>_result.json` (metrics/hyperparameters) under `checkpoints/`, and human-readable summaries under `reports/<experiment>/`.
-- Seed determinism is enforced by setting random seeds at script entry and propagating them through DataLoader workers, Optuna studies, and multi-seed benchmark runners.
-- Live-safe mode is signaled via explicit `--feature-modes live_safe_baseline|live_safe_path` flags that strip future-derived row features before model input.

@@ -1,1 +1,0 @@
-PyTorch model serialization (`.pt` via `torch.save`), Optuna hyperparameter search studies persisted as JSON, scikit-learn/pickle normalizers (`.pkl`), and pandas-compatible CSV/JSON for metrics and audit trails.

@@ -1,1 +1,0 @@
-MetaTrader 5 standard library header files providing arrays, generic collections, expert advisor framework, indicators, chart objects, controls, graphics, math/statistics, trading APIs, and Windows/OpenCL/Canvas subsystems for MQL5 programs.

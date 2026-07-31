@@ -1,1 +1,0 @@
-Python scripts and notebooks that compute streaming fractal statistics, perform exploratory data analysis with visualizations, and reconcile ML predictions against MT4 trade logs for signal-level diagnostics.
