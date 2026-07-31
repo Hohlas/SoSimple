@@ -123,6 +123,69 @@ def test_compute_mt5_metrics_reports_open_without_close_estimate() -> None:
     assert metrics["open_without_close_estimate"] == 1
 
 
+def _tx_row(event: str, time: str, position_id: int, deal: int, reason: str, **overrides: object) -> dict[str, object]:
+    return _event_row(
+        event,
+        time,
+        feature_time="",
+        feature_available_time="",
+        decision_time="",
+        rule_id="",
+        signal_time="",
+        ticket=deal,
+        close_reason=(reason if event == "TX_CLOSE" else ""),
+        bars_since_fill=-1,
+        entry_time=(time if event == "TX_OPEN" else ""),
+        exit_time=(time if event == "TX_CLOSE" else ""),
+        comment=f"position_id={position_id}|deal={deal}|reason={reason}",
+        **overrides,
+    )
+
+
+def test_reconciliation_classifies_positions_and_counts_same_h1() -> None:
+    events = pd.DataFrame(
+        [
+            _event_row("OPEN", "2023.01.02 10:05", ticket=100),
+            _tx_row("TX_OPEN", "2023.01.02 10:05", 100, 1001, "EXPERT"),
+            _tx_row("TX_CLOSE", "2023.01.02 10:40", 100, 1002, "SL"),
+            _event_row("OPEN", "2023.01.03 09:05", ticket=200),
+            _tx_row("TX_OPEN", "2023.01.03 09:05", 200, 2001, "EXPERT"),
+            _event_row("OPEN", "2023.01.04 11:05", ticket=300),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    metrics = compute_mt5_metrics(events)
+    rec = metrics["reconciliation"]
+
+    assert rec["position_count"] == 3
+    assert rec["class_counts"] == {"CLOSED_TX": 1, "OPEN_AT_END": 1, "UNEXPLAINED": 1}
+    assert rec["unexplained_position_ids"] == ["300"]
+    assert rec["open_at_end_position_ids"] == ["200"]
+    assert rec["same_h1_count"] == 1
+    assert rec["tx_open_count"] == 2
+    assert rec["tx_close_count"] == 1
+    assert rec["signal_linked_tx_open_count"] == 2
+
+
+def test_tx_rows_with_empty_timing_fields_pass_validation(tmp_path: Path) -> None:
+    path = tmp_path / "events_tx.csv"
+    pd.DataFrame(
+        [
+            _event_row("ORDER_PLACED", "2023.01.02 10:00"),
+            _tx_row("TX_OPEN", "2023.01.02 10:05", 100, 1001, "EXPERT"),
+            _tx_row("TX_CLOSE", "2023.01.02 12:40", 100, 1002, "TP"),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    ).to_csv(path, sep=";", index=False)
+
+    events = parse_mt5_events(path)
+    metrics = compute_mt5_metrics(events)
+    assert metrics["order_counts"]["TX_OPEN"] == 1
+    assert metrics["order_counts"]["TX_CLOSE"] == 1
+    assert metrics["reconciliation"]["same_h1_count"] == 0
+
+
 def test_parse_mt5_events_rejects_missing_columns(tmp_path: Path) -> None:
     path = tmp_path / "events_missing.csv"
     frame = pd.DataFrame(

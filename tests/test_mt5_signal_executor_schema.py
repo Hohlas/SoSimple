@@ -257,6 +257,17 @@ def test_mt5_event_schema_rejects_decision_before_feature_available_time():
         validate_mt5_event_frame(frame)
 
 
+def test_mt5_event_schema_rejects_unknown_event_name():
+    frame = pd.DataFrame(
+        [{col: "" for col in MT5_EVENT_COLUMNS}],
+        columns=MT5_EVENT_COLUMNS,
+    )
+    frame.loc[0, "event"] = "TX_OPEN_TYPO"
+
+    with pytest.raises(ValueError, match="unknown MT5 event names"):
+        validate_mt5_event_frame(frame)
+
+
 def test_export_mt5_entry_signals_writes_entry_only_csv(tmp_path):
     from ML.baseline.export_mt5_entry_signals import export_mt5_entry_signals
 

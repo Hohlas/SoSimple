@@ -16,21 +16,17 @@
 
 ### MT5 execution-loop prototype
 
-Status: single-rule diagnostic run completed (DIAGNOSTIC_ONLY,
-2026-07-30); lifecycle and parity not closed.
+Status: OnTradeTransaction lifecycle closed (DIAGNOSTIC_ONLY,
+2026-07-31); Nero parity and ERROR-4756 classification not closed.
 Next action:
 
-1. Add `OnTradeTransaction` logging to the diagnostic executor and re-run
-   the single-rule tester to close the event lifecycle: full CLOSE
-   coverage, classify 234 OPEN-without-CLOSE rows, resolve
-   `same_h1_lifecycle_status`.
-2. Prove or document MT5 `Nero.csv` producer parity from existing
+1. Prove or document MT5 `Nero.csv` producer parity from existing
    `MT/MQL5/Experts/$o$imple.mq5` (row-by-row vs MT4 `Nero.csv`), or
    explicitly cap it as DIAGNOSTIC_ONLY.
-3. Classify 690 `ERROR-4756` send failures and `ERROR_SoSimple_*.csv`;
-   link them to the 32 `pending order was not found` + 9 ORDER_EXPIRED
-   remainders (expected to partially close via step 1 data).
-4. Reconcile event/deal rows before treating tester metrics as usable.
+2. Classify `ERROR-4756` send failures and `ERROR_SoSimple_*.csv`;
+   link them to the 15 unexplained cancelled pendings + 9 ORDER_EXPIRED
+   remainders from the 2026-07-31 reconciliation.
+3. Reconcile event/deal rows before treating tester metrics as usable.
 
 ---
 

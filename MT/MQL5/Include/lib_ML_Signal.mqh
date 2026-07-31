@@ -75,6 +75,24 @@ int      MT5_TrackedMagic = 0;
 int      MT5_TrackedIdx = -1;
 bool     MT5_TrackedOpenLogged = false;
 
+// position id -> signal index map (linkage is done in Python via OPEN rows;
+// this map keeps the association available on the MQL side as well)
+int   MT5_PosMapCount = 0;
+ulong MT5_PosMapIds[];
+int   MT5_PosMapIdx[];
+
+void MT5_RegisterPosition(ulong position_id, int idx) {
+   if (position_id == 0 || idx < 0) return;
+   for (int i = 0; i < MT5_PosMapCount; i++) {
+      if (MT5_PosMapIds[i] == position_id) { MT5_PosMapIdx[i] = idx; return; }
+   }
+   ArrayResize(MT5_PosMapIds, MT5_PosMapCount + 1);
+   ArrayResize(MT5_PosMapIdx, MT5_PosMapCount + 1);
+   MT5_PosMapIds[MT5_PosMapCount] = position_id;
+   MT5_PosMapIdx[MT5_PosMapCount] = idx;
+   MT5_PosMapCount++;
+}
+
 string MT5_TimeText(datetime value) {
    if (value <= 0) return "";
    return TimeToString(value, TIME_DATE | TIME_MINUTES);
@@ -309,6 +327,86 @@ void MT5_LogSignalEvent(string event_name, int idx, ulong ticket, string comment
    );
 }
 
+string MT5_DealReasonText(long reason) {
+   switch ((int)reason) {
+      case DEAL_REASON_CLIENT:   return "CLIENT";
+      case DEAL_REASON_MOBILE:   return "MOBILE";
+      case DEAL_REASON_WEB:      return "WEB";
+      case DEAL_REASON_EXPERT:   return "EXPERT";
+      case DEAL_REASON_SL:       return "SL";
+      case DEAL_REASON_TP:       return "TP";
+      case DEAL_REASON_SO:       return "SO";
+      case DEAL_REASON_ROLLOVER: return "ROLLOVER";
+      case DEAL_REASON_VMARGIN:  return "VMARGIN";
+      case DEAL_REASON_SPLIT:    return "SPLIT";
+      default:                   return "REASON_" + (string)reason;
+   }
+}
+
+void MT5_LogTxRow(string event_name, ulong deal_ticket, long position_id, string side,
+                  double deal_price, double deal_profit, string reason_text,
+                  datetime deal_time, string close_reason) {
+   string tx_comment = "position_id=" + (string)position_id +
+                       "|deal=" + (string)deal_ticket +
+                       "|reason=" + reason_text;
+   MT5_ML_LogEvent(
+      event_name,
+      deal_time,
+      0, 0, 0,
+      deal_time,
+      "",              // rule_id: linkage done in Python reconciliation
+      "",              // signal_time
+      deal_ticket,
+      side,
+      0.0,             // requested_price
+      deal_price,      // fill_price
+      deal_price,      // order_open_price
+      (event_name == "TX_CLOSE" ? deal_price : 0.0),
+      0.0,             // stop_price
+      close_reason,
+      deal_profit,
+      -1,              // bars_since_fill: INIT convention
+      0.0,             // atr_value
+      (event_name == "TX_OPEN" ? deal_time : 0),
+      (event_name == "TX_CLOSE" ? deal_time : 0),
+      0.0, 0.0, 0.0, 0.0, 0,
+      tx_comment
+   );
+}
+
+void MT5_OnTradeTransaction(const MqlTradeTransaction &trans) {
+   if (!MT5_DiagnosticExecutor) return;
+   if (trans.type != TRADE_TRANSACTION_DEAL_ADD) return;
+   if (trans.deal == 0) return;
+   if (!HistoryDealSelect(trans.deal)) {
+      Print("MT5_OnTradeTransaction: HistoryDealSelect failed for deal ", trans.deal, " Error=", GetLastError());
+      return;
+   }
+
+   long deal_entry = HistoryDealGetInteger(trans.deal, DEAL_ENTRY);
+   long deal_type = HistoryDealGetInteger(trans.deal, DEAL_TYPE);
+   if (deal_type != DEAL_TYPE_BUY && deal_type != DEAL_TYPE_SELL) return; // balance/credit deals
+
+   long position_id = HistoryDealGetInteger(trans.deal, DEAL_POSITION_ID);
+   long reason = HistoryDealGetInteger(trans.deal, DEAL_REASON);
+   double deal_price = HistoryDealGetDouble(trans.deal, DEAL_PRICE);
+   double deal_profit = HistoryDealGetDouble(trans.deal, DEAL_PROFIT);
+   datetime deal_time = (datetime)HistoryDealGetInteger(trans.deal, DEAL_TIME);
+   string side = (deal_type == DEAL_TYPE_BUY ? "BUY" : "SELL");
+   string reason_text = MT5_DealReasonText(reason);
+
+   if (deal_entry == DEAL_ENTRY_IN) {
+      MT5_LogTxRow("TX_OPEN", trans.deal, position_id, side, deal_price, deal_profit, reason_text, deal_time, "");
+   } else if (deal_entry == DEAL_ENTRY_OUT || deal_entry == DEAL_ENTRY_OUT_BY) {
+      MT5_LogTxRow("TX_CLOSE", trans.deal, position_id, side, deal_price, deal_profit, reason_text, deal_time, reason_text);
+   } else if (deal_entry == DEAL_ENTRY_INOUT) {
+      // reversal: expected impossible in this executor; log both legs and flag in report
+      MT5_LogTxRow("TX_CLOSE", trans.deal, position_id, side, deal_price, deal_profit, reason_text, deal_time, reason_text);
+      MT5_LogTxRow("TX_OPEN", trans.deal, position_id, side, deal_price, deal_profit, reason_text, deal_time, "");
+      Print("MT5_OnTradeTransaction: unexpected DEAL_ENTRY_INOUT deal=", trans.deal, " position_id=", position_id);
+   }
+}
+
 bool MT5_ENTRY_INIT() {
    int handle = FileOpen(MT5_EntrySignalFile, FILE_READ | FILE_CSV | FILE_ANSI, ';');
    if (handle < 0) {
@@ -382,6 +480,7 @@ void MT5_LogLifecycleForCurrentState(int magic, int &ml_close_order_type) {
          MT5_TrackedMagic = magic;
          MT5_TrackedIdx = MT5_LastPlacedIdx;
          MT5_TrackedOpenLogged = false;
+         MT5_RegisterPosition(MT5_TrackedTicket, MT5_TrackedIdx);
          MT5_LastPlacedIdx = -1;
       } else if (buy_pending == 0 && sell_pending == 0 && MT5_LastPlacedExpiry > 0 && TimeCurrent() > MT5_LastPlacedExpiry) {
          MT5_LogSignalEvent("ORDER_EXPIRED", MT5_LastPlacedIdx, 0, "pending order not active after max_fill_lag_bars");

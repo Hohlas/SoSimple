@@ -28,6 +28,74 @@ def _filtered_reason_counts(events: pd.DataFrame) -> dict[str, int]:
     return {str(key): int(value) for key, value in closes.value_counts(dropna=False).items()}
 
 
+def _tx_comment_field(comment: str, key: str) -> str:
+    for part in str(comment).split("|"):
+        if part.startswith(key + "="):
+            return part[len(key) + 1:]
+    return ""
+
+
+def _tx_position_ids(events: pd.DataFrame, event_name: str) -> dict[str, pd.Series]:
+    rows = events.loc[events["event"].astype(str).eq(event_name)]
+    result: dict[str, pd.Series] = {}
+    for _, row in rows.iterrows():
+        position_id = _tx_comment_field(row.get("comment", ""), "position_id")
+        if position_id and position_id != "0":
+            result.setdefault(position_id, row)
+    return result
+
+
+def reconcile_positions(events: pd.DataFrame) -> dict[str, object]:
+    tx_opens = _tx_position_ids(events, "TX_OPEN")
+    tx_closes = _tx_position_ids(events, "TX_CLOSE")
+
+    open_rows = events.loc[events["event"].astype(str).eq("OPEN")]
+    open_tickets = {
+        str(int(t)) if str(t).replace(".0", "").isdigit() else str(t)
+        for t in pd.to_numeric(open_rows.get("ticket"), errors="coerce").dropna().astype("int64")
+    }
+
+    all_positions = sorted(set(tx_opens) | set(tx_closes) | open_tickets, key=lambda v: (len(v), v))
+
+    classification: dict[str, str] = {}
+    same_h1_count = 0
+    for position_id in all_positions:
+        if position_id in tx_closes:
+            classification[position_id] = "CLOSED_TX"
+            if position_id in tx_opens:
+                open_time = pd.to_datetime(tx_opens[position_id]["time"], errors="coerce")
+                close_time = pd.to_datetime(tx_closes[position_id]["time"], errors="coerce")
+                if pd.notna(open_time) and pd.notna(close_time) and open_time.floor("h") == close_time.floor("h"):
+                    same_h1_count += 1
+        elif position_id in tx_opens:
+            classification[position_id] = "OPEN_AT_END"
+        else:
+            classification[position_id] = "UNEXPLAINED"
+
+    class_counts = {"CLOSED_TX": 0, "OPEN_AT_END": 0, "UNEXPLAINED": 0}
+    for value in classification.values():
+        class_counts[value] += 1
+
+    signal_linked = sum(1 for position_id in tx_opens if position_id in open_tickets)
+
+    return {
+        "position_count": len(all_positions),
+        "class_counts": class_counts,
+        "unexplained_position_ids": sorted(
+            (pid for pid, cls in classification.items() if cls == "UNEXPLAINED"),
+            key=lambda v: (len(v), v),
+        ),
+        "open_at_end_position_ids": sorted(
+            (pid for pid, cls in classification.items() if cls == "OPEN_AT_END"),
+            key=lambda v: (len(v), v),
+        ),
+        "same_h1_count": same_h1_count,
+        "tx_open_count": len(tx_opens),
+        "tx_close_count": len(tx_closes),
+        "signal_linked_tx_open_count": signal_linked,
+    }
+
+
 def compute_mt5_metrics(events: pd.DataFrame) -> dict[str, object]:
     order_counts = _event_counts(events)
     open_counts = {
@@ -53,6 +121,7 @@ def compute_mt5_metrics(events: pd.DataFrame) -> dict[str, object]:
         "profit_sum": float(profit.sum()),
         "missing_open_estimate": missing_open_estimate,
         "open_without_close_estimate": open_without_close_estimate,
+        "reconciliation": reconcile_positions(events),
     }
 
 

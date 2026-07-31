@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-31] — MT5 OnTradeTransaction lifecycle closure (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`
+- **topics**: `mt5`, `ontradetransaction`, `lifecycle`, `reconciliation`, `execution_loop`
+- **summary**: Нативные события `TX_OPEN`/`TX_CLOSE` из `OnTradeTransaction` закрыли жизненный цикл диагностического исполнителя: все 269 позиций классифицированы (`UNEXPLAINED=0`), `same_h1_lifecycle_status=MEASURED:17`, polling-поток идентичен прогону 30.07.
+- **artifacts**: `ML/reports/mt5_execution_loop/mt5_tx_lifecycle_run_manifest_20260731.json`, `ML/reports/mt5_execution_loop/mt5_trade_events_20260731_tx_lifecycle.csv`, `ML/baseline/parse_mt5_execution_report.py`
+- **decision**: continue → MT5 `Nero.csv` parity; запрещены PnL/PF-выводы и выбор правил по результатам тестера.
+- **notes**: причина слепоты старого polling-CLOSE осталась гипотезой; `DEAL_ENTRY_INOUT` не наблюдался.
+
 ## [2026-07-30] — MT5 single-rule diagnostic tester run (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`
 - **topics**: `mt5`, `strategy_tester`, `headless_wine`, `execution_loop`, `entry_quality_filter`

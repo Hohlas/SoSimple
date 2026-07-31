@@ -1,0 +1,98 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "run_id": "20260731_tx_lifecycle",
+  "goal": "close trade-event lifecycle via OnTradeTransaction; classify all opens; resolve same_h1_lifecycle_status",
+  "plan": "docs/superpowers/plans/2026-07-31-mt5-ontradetransaction-lifecycle.md",
+  "baseline_run": "ML/reports/mt5_execution_loop/mt5_single_rule_run_manifest_20260730_entry_quality_filter.json",
+  "entry_signals_csv": "ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.csv",
+  "entry_signals_sha256": "0b30fc5b6e8da9b2460ed1c21f9203b51b53852bfee531a08c62b33caecf9900",
+  "entry_signals_policy": "same frozen CSV as 2026-07-30 run; no regeneration, no reselection",
+  "compile_log": "ML/reports/mt5_execution_loop/mt5_compile_20260731_tx_lifecycle.log",
+  "compile_log_sha256": "c38811e1001e25b065f2ba8033ed189e624b024b04e760753db18b7f36b4ce2b",
+  "compile_result": "0 errors, 0 warnings",
+  "tester_run": {
+    "run_date": "2026-07-31",
+    "agent_build": 6061,
+    "config": "C:\\mt5_tx_full.ini",
+    "config_repo_copy": "ML/reports/mt5_execution_loop/mt5_tx_lifecycle_tester_20260731_full.ini",
+    "config_repo_copy_sha256": "6404b2a22fe3370b4cf25f25a75a9207901c7413c7813a3ba3a524bd7610bb78",
+    "smoke_config_repo_copy": "ML/reports/mt5_execution_loop/mt5_tx_lifecycle_tester_20260731_smoke.ini",
+    "smoke_config_repo_copy_sha256": "5d169ad7126a05e9f2c86937a06cc22cec332bd896263a7545d6281bb26575a6",
+    "set_profile": "MQL5/Profiles/Tester/mt5_tx_lifecycle_20260731.set (copy of mt5_single_rule_diagnostic_20260730.set, only InpMT5_EventFile changed)",
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "tester_range": "2019.06.20-2022.12.03",
+    "model": "1 minute OHLC",
+    "deposit": "10000 USD",
+    "leverage": "1:500",
+    "account_mode": "hedging (MetaQuotes-Demo)",
+    "ticks": 4850645,
+    "bars": 20427,
+    "duration": "0:08:04.397",
+    "smoke_run": {
+      "range": "2019.06.20-2019.07.20",
+      "tx_open": 24,
+      "tx_close": 24,
+      "unexplained": 0,
+      "verdict": "TX events fire under Model 1; deal reasons non-empty"
+    }
+  },
+  "event_csv": "ML/reports/mt5_execution_loop/mt5_trade_events_20260731_tx_lifecycle.csv",
+  "event_csv_sha256": "3ab9b78b2221d21b6de1e30651ffa57771e012c561c185435c2adcde05bed60b",
+  "event_count": 11794,
+  "metrics_json": "ML/reports/mt5_execution_loop/mt5_execution_metrics_20260731_tx_lifecycle.json",
+  "metrics_json_sha256": "e550d8bce1e364bba5424f725b93a002ddc822d0a6a0ce1b20b517facd182d28",
+  "event_counts": {
+    "ORDER_PLACED": 294,
+    "OPEN": 252,
+    "CLOSE": 18,
+    "ML_CLOSE": 53,
+    "ML_EVAL": 1915,
+    "OPEN_FAILED": 8714,
+    "ORDER_EXPIRED": 9,
+    "TX_OPEN": 269,
+    "TX_CLOSE": 269,
+    "INIT": 1
+  },
+  "reconciliation": {
+    "position_count": 269,
+    "class_counts": { "CLOSED_TX": 269, "OPEN_AT_END": 0, "UNEXPLAINED": 0 },
+    "same_h1_count": 17,
+    "signal_linked_tx_open_count": 252,
+    "same_h1_lifecycle_status": "MEASURED:17",
+    "tx_close_reasons": { "EXPERT": 145, "SL": 124 }
+  },
+  "cross_check_vs_20260730": {
+    "ORDER_PLACED": "294 == 294",
+    "OPEN": "252 == 252",
+    "CLOSE": "18 == 18",
+    "ML_EVAL": "1915 == 1915",
+    "ML_CLOSE": "53 == 53",
+    "OPEN_FAILED": "8714 == 8714",
+    "ORDER_EXPIRED": "9 == 9",
+    "INIT": "1 == 1",
+    "verdict": "polling stream identical; runs comparable"
+  },
+  "profit_sums": {
+    "tx_close_profit_sum": -1755.1,
+    "polling_close_profit_sum": 242.5,
+    "semantics": "sum of DEAL_PROFIT over 269 TX_CLOSE rows (full close coverage) and over 18 legacy polling CLOSE rows; DEAL_PROFIT excludes swap and commission (both 0 in TX rows)",
+    "guard": "DIAGNOSTIC_ONLY plumbing output; NOT a PnL/PF/profitability claim"
+  },
+  "legacy_metrics_fields": {
+    "missing_open_estimate": 42,
+    "open_without_close_estimate": 234,
+    "note": "polling-stream only (294-252, 252-18); superseded by reconciliation (OPEN_AT_END=0, UNEXPLAINED=0); metrics JSON profit_sum is polling-only too"
+  },
+  "profit_sum_guard": "profit_sum=242.5 (polling) and TX_CLOSE profit sum -1755.1 are DIAGNOSTIC_ONLY plumbing output; NOT a PnL/PF/profitability claim; entry rule quality is NOT evaluated by this run",
+  "verification": {
+    "pytest": "./.venv/bin/python -m pytest tests/test_parse_mt5_execution_report.py tests/test_mt5_signal_executor_schema.py -q -> 16 passed",
+    "schema": "validate_mt5_event_frame on full event CSV -> PASS"
+  },
+  "forbidden_interpretations": [
+    "no PnL/PF/profitability claims",
+    "no entry-rule quality claims",
+    "no selection of rules/thresholds by tester results",
+    "TX_CLOSE profit sum -1755.1 is not a performance result and must not be used for selection"
+  ]
+}

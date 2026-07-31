@@ -120,10 +120,28 @@ def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     _validate_time_order(frame, ["feature_time", "feature_available_time", "decision_time"])
 
 
+MT5_EVENT_NAMES = {
+    "INIT",
+    "ORDER_PLACED",
+    "ORDER_EXPIRED",
+    "OPEN_FAILED",
+    "OPEN",
+    "ML_EVAL",
+    "ML_CLOSE",
+    "CLOSE",
+    "TX_OPEN",
+    "TX_CLOSE",
+}
+
+
 def validate_mt5_event_frame(frame: pd.DataFrame) -> None:
     missing = [col for col in MT5_EVENT_COLUMNS if col not in frame.columns]
     if missing:
         raise ValueError(f"missing MT5 event columns: {missing}")
+
+    unknown = sorted(set(frame["event"].astype(str)) - MT5_EVENT_NAMES)
+    if unknown:
+        raise ValueError(f"unknown MT5 event names: {unknown}")
 
     _validate_time_order(
         frame,
