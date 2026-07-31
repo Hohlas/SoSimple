@@ -294,7 +294,6 @@ MT/MQL5/Include/Strings/
 MT/MQL5/Include/Tools/                                                                          
 MT/MQL5/Include/Trade/                                                                          
 MT/MQL5/Include/WinAPI/                          
-MT/MQL5/Include/MQL4Compat.mqh
 MT/MQL5/Include/StdLibErr.mqh                                                                   
 MT/MQL5/Include/stdlib.mqh                                                                      
 MT/MQL5/Include/stderror.mqh        

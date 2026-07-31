@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-30] — MT5 single-rule diagnostic tester run (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`
+- **topics**: `mt5`, `strategy_tester`, `headless_wine`, `execution_loop`, `entry_quality_filter`
+- **summary**: Первый полный автономный запуск MT5 Strategy Tester под Wine с диагностическим исполнителем: 9463 входных сигнала, 11256 событий, timing contract PASS (2532/2532 торговых строк). Исправлен каскад `array out of range` в слое совместимости MQL4→MQL5 и false-positive в Python-валидаторе временных меток.
+- **artifacts**: `ML/reports/mt5_execution_loop/mt5_trade_events_20260730_entry_quality_filter.csv`, `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json`, `MT/MQL5/Experts/$o$imple.mq5`, `MT/MQL5/Include/MQL4Compat.mqh`, `ML/baseline/mt5_signal_schema.py`
+- **decision**: `DIAGNOSTIC_ONLY`; continue. Метрики нельзя трактовать как качество стратегии: жизненный цикл неполный (252 OPEN vs 18 CLOSE), `same_h1_lifecycle_status=UNKNOWN`, parity `Nero_MT5.csv` не проверен.
+- **notes**: timing contract PASS тривиален (bridge копирует `signal_time` во все временные поля); 234 OPEN без CLOSE не классифицированы построчно; HTML-отчёт tester не получен.
+
 ## [2026-07-29] — MT5 execution-loop diagnostic prototype (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
 - **topics**: `mt5`, `execution_loop`, `nero_csv`, `strategy_tester`, `fixed11`

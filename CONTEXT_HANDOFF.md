@@ -3,8 +3,8 @@
 ## Current Active State
 
 - active track: `MT5 execution-loop prototype`
-- latest report: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
-- latest plan: `docs/superpowers/plans/2026-07-29-mt5-execution-loop-migration.md`
+- latest report: `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`
+- latest plan: `docs/superpowers/plans/2026-07-30-mt5-single-rule-diagnostic-run.md`
 - primary MT5 expert: `MT/MQL5/Experts/$o$imple.mq5`
 - MT5 signal schema validator: `ML/baseline/mt5_signal_schema.py`
 - MT5 execution methodology: `docs/methodology/13b-mt5-execution-parity.md`
@@ -12,57 +12,70 @@
 - MT5 producer contract: `docs/schemas/mt5_nero_csv_contract.md`
 - Python exporter: `ML/baseline/export_mt5_entry_signals.py`
 - Python event parser: `ML/baseline/parse_mt5_execution_report.py`
-- environment manifest: `ML/reports/mt5_execution_loop/mt5_environment_manifest.json`
-- parity manifest: `ML/reports/mt5_execution_loop/mt5_nero_parity_manifest.json`
+- run manifest: `ML/reports/mt5_execution_loop/mt5_single_rule_run_manifest_20260730_entry_quality_filter.json`
+- event CSV: `ML/reports/mt5_execution_loop/mt5_trade_events_20260730_entry_quality_filter.csv`
+- metrics JSON: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json`
 
 ## Decision
 
-MT5 diagnostic execution-loop prototype is prepared, but remains
-`DIAGNOSTIC_ONLY`.
+Single-rule MT5 diagnostic tester run is COMPLETED end-to-end, status stays
+`DIAGNOSTIC_ONLY`. Decision: continue.
 
 - verdict: `DIAGNOSTIC_ONLY`
 - compile status: MetaEditor reports `0 errors, 0 warnings`
-- tester runtime status: not run by agent
-- MT5 `Nero.csv` producer parity: `UNKNOWN`
-- manual user run: required before event metrics can be interpreted
+- tester runtime status: full run passed (XAUUSD H1, 2019.06.20–2022.12.03,
+  Model=1, 20427 bars, `Test passed in 0:08:00`)
+- event metrics: 294 ORDER_PLACED / 252 OPEN / 18 CLOSE / 53 ML_CLOSE;
+  timing contract PASS 2532/2532 trade rows
+- MT5 `Nero.csv` producer parity: `NOT TESTED` (`Nero_MT5.csv` создан, 191 МБ)
+- same_h1_lifecycle_status: `UNKNOWN` (нет independent deals/tester report)
 
 ## Current Diagnostic Facts
 
-- Existing MT5 `$o$imple.mq5` is the primary target; no fallback expert was created.
-- MT5 producer is default-off through `InpMT5_ExportNero=false`.
-- MT5 diagnostic executor is default-off through `InpMT5_DiagnosticExecutor=false`.
-- Entry signal CSV is entry-only and forbids `fill_time`, `exit_time`, `future_exit_time`, `pnl_r`.
-- Event log schema includes order/fill/close fields and post-fill features.
-- Diagnostic scorer can request `ML_CLOSE`, but it is not a trained model.
-- `bars_since_fill=0` cannot trigger diagnostic ML-close.
-- `OPEN/CLOSE` logging remains limited until actual MT5 tester history/deals are reconciled.
+- Headless запуск tester работает: `WINEPREFIX=~/.mt5 xvfb-run -a wine
+  terminal64.exe /portable /config:C:\mt5_test.ini` (путь конфига без пробелов;
+  путь с пробелами парсится с лишней кавычкой).
+- LiveUpdate payload в `.../AppData/Roaming/MetaQuotes/Terminal/<id>/liveupdate/`
+  заставляет терминал выйти сразу после старта; перед запуском убрать `mt5*.NNNN`.
+- Runtime Files каталог — tester agent:
+  `~/.mt5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/`;
+  сигнальный CSV доставляется туда только через
+  `#property tester_file "mt5_entry_signals.csv"` (добавлен в `$o$imple.mq5`).
+- Исправлена серия `array out of range` (SERVICE.mqh, MAIN.mqh, lib_PIC.mqh,
+  MQL4Compat.mqh): compat-массивы теперь заполняются в OnInit и копируют всю
+  историю; `Time[Bars-1]` заменён на `iTime()`; `EXP[]` расширяется в tester-ветке.
+- CLOSE восстановление ограничено (`broker_history_limited`), 234 OPEN без
+  CLOSE не классифицированы построчно.
+- Tester HTML report не создаётся (`Report=` с относительным путём в INI не
+  сработал под wine).
 
 ## Do Not Do
 
-- Do not claim MT5 metrics exist until `mt5_trade_events.csv` comes from a real tester run.
+- Do not interpret tester run as profitable/production-ready or as rule quality proof.
+- Do not use tester PnL for selection; lifecycle events are incomplete (18 CLOSE vs 252 OPEN).
+- Do not treat timing-contract PASS as leakage-safety proof: bridge копирует
+  `signal_time` во все временные поля (trivial contract).
+- Do not run batch selection until OPEN-without-CLOSE classified and Nero parity
+  tested or explicitly bounded.
 - Do not treat the diagnostic scorer as ML-quality proof.
-- Do not use Python PF/PnL as final selection metric when MT5 is the execution engine.
-- Do not run batch selection before single-rule MT5 run and `Nero.csv` producer parity are understood.
-- Do not claim feature-leakage safety from tester execution alone.
 
 ## Next Step
 
-Run one manual MT5 tester diagnostic:
-
-1. Follow `docs/reports/2026-07-29-mt5-manual-tester-runbook.md`.
-2. Confirm MT5 tester file directory.
-3. Generate/copy `mt5_entry_signals.csv`.
-4. Run `MT/MQL5/Experts/$o$imple.mq5` with `InpMT5_DiagnosticExecutor=true`.
-5. Return `mt5_trade_events.csv`.
-6. Parse it with `ML/baseline/parse_mt5_execution_report.py`.
+1. Классифицировать 234 OPEN-без-CLOSE (ticket-трассировка или
+   `OnTradeTransaction`-логирование).
+2. Проверить `Nero_MT5.csv` parity против MT4 `Nero.csv` или явно ограничить
+   диагностическим статусом.
+3. После этого — переход к `MT5 batch selection for 20-50 candidates`
+   (roadmap `NEXT_AFTER_MT5_SINGLE_RULE`).
 
 ## Verification
 
 Completed:
 
-- `./.venv/bin/python -m pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py -q`
+- `./.venv/bin/python -m pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py -q` → 13 passed
 - MetaEditor compile of `MT/MQL5/Experts/$o$imple.mq5`: `Result: 0 errors, 0 warnings`
-- static checks from MT5 migration plan
+- `validate_mt5_event_frame` PASS on real event CSV
+- sha256 hashes recorded in `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`
 
-Full `./.venv/bin/python -m pytest tests/ -q` was not run because this plan
+Full `./.venv/bin/python -m pytest tests/ -q` was not run because the plan
 explicitly forbids the full suite.

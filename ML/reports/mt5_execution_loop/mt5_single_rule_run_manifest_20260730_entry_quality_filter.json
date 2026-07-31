@@ -23,8 +23,30 @@
     "docs/methodology/16-reporting-audit.md"
   ],
   "unknowns": [
-    "actual MT5 tester Files path",
-    "automatic Strategy Tester launch availability",
     "MT5 Nero.csv row-by-row parity status"
-  ]
+  ],
+  "tester_run": {
+    "run_date": "2026-07-31",
+    "agent_build": 6061,
+    "config": "C:\\mt5_test.ini (copy of ML/reports/mt5_execution_loop/mt5_single_rule_tester_20260730_entry_quality_filter.ini)",
+    "tester_range": "2019.06.20-2022.12.03",
+    "model": "1 minute OHLC",
+    "deposit": "10000 USD",
+    "leverage": "1:500",
+    "ticks": 4850645,
+    "bars": 20427,
+    "history_quality_pct": 99,
+    "duration": "0:08:00.858",
+    "agent_files_dir": "~/.mt5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/",
+    "event_csv": "ML/reports/mt5_execution_loop/mt5_trade_events_20260730_entry_quality_filter.csv",
+    "event_csv_sha256": "ef88abf44c589222ae1e78c9fa510ad0743fff630223394dbca3d2af505159db",
+    "event_count": 11256,
+    "metrics_json": "ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json",
+    "metrics_json_sha256": "9a5af9bc89170d26f10cd06da14fa98b3e8ad767e238ee75c13ecc4c18c10494",
+    "compile_log": "ML/reports/mt5_execution_loop/mt5_compile_20260731_final.log",
+    "compile_log_sha256": "7dbb65f6a3f8854beb77fe9480b1d9a4329b930377609683e0adb23f861c4299",
+    "mql4compat_mqh_sha256": "19c6faebfdb3ded5a8ecfab5c2cba2bf9e54079395e80764fb83e99cb9e1dfc5",
+    "agent_log_error_4756_count": 690,
+    "agent_log_market_closed_failed_trades": 30
+  }
 }

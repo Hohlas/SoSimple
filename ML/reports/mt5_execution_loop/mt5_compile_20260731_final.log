@@ -1,0 +1,57 @@
+﻿
+
+MQL5\Experts\$o$imple.mq5 : information: compiling MQL5\Experts\$o$imple.mq5
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\MQL4Compat.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\stdlib.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\FUNCTIONS.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\MAIN.mqh
+C:\Program Files\MetaTrader 5\MQL5\Include\MAIN.mqh : information: including C:\Program Files\MetaTrader 5\MQL5\Include\head_PIC.mqh
+C:\Program Files\MetaTrader 5\MQL5\Include\MAIN.mqh : information: including C:\Program Files\MetaTrader 5\MQL5\Include\lib_ML_Signal.mqh
+C:\Program Files\MetaTrader 5\MQL5\Include\MAIN.mqh : information: including C:\Program Files\MetaTrader 5\MQL5\Include\lib_ML_Signal_TB.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\ERRORs.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\ORDERS.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\iGRAPH.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\SERVICE.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\MM.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\lib_PIC.mqh
+C:\Program Files\MetaTrader 5\MQL5\Include\lib_PIC.mqh : information: including C:\Program Files\MetaTrader 5\MQL5\Include\lib_ATR.mqh
+C:\Program Files\MetaTrader 5\MQL5\Include\lib_PIC.mqh : information: including C:\Program Files\MetaTrader 5\MQL5\Include\lib_Flat.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\COUNT.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\INPUT.mqh
+MQL5\Experts\$o$imple.mq5 : information: including C:\Program Files\MetaTrader 5\MQL5\Include\OUTPUT.mqh
+ : information: generating code
+ : information: generating code 3%
+ : information: generating code 6%
+ : information: generating code 9%
+ : information: generating code 12%
+ : information: generating code 15%
+ : information: generating code 18%
+ : information: generating code 21%
+ : information: generating code 24%
+ : information: generating code 27%
+ : information: generating code 30%
+ : information: generating code 33%
+ : information: generating code 36%
+ : information: generating code 39%
+ : information: generating code 42%
+ : information: generating code 45%
+ : information: generating code 48%
+ : information: generating code 51%
+ : information: generating code 54%
+ : information: generating code 57%
+ : information: generating code 60%
+ : information: generating code 63%
+ : information: generating code 66%
+ : information: generating code 69%
+ : information: generating code 72%
+ : information: generating code 75%
+ : information: generating code 78%
+ : information: generating code 81%
+ : information: generating code 84%
+ : information: generating code 87%
+ : information: generating code 90%
+ : information: generating code 93%
+ : information: generating code 95%
+ : information: generating code 100%
+ : information: code generated
+Result: 0 errors, 0 warnings, 4940 ms elapsed, cpu='X64 Regular'

@@ -38,7 +38,7 @@ class EXPERT : public EXPERT_PARENT_CLASS { // дочерний класс пе�
       void EXPERT(){Print("EXPERT constructor: CurExp=",CurExp, " VER=",VER); // конструктор по умолчанию, 
          for (uchar f=0; f<LevelsAmount; f++) F[f].P=0;  
          Trnd.Global=0; // инициализация глобального тренда
-         TimeFrom=Time[Bars-1];
+         TimeFrom=iTime(_Symbol,_Period,Bars-1);
          } 
       // expert functions
       void MAIN();

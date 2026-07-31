@@ -1,0 +1,29 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "order_counts": {
+    "OPEN_FAILED": 8714,
+    "ML_EVAL": 1915,
+    "ORDER_PLACED": 294,
+    "OPEN": 252,
+    "ML_CLOSE": 53,
+    "CLOSE": 18,
+    "ORDER_EXPIRED": 9,
+    "INIT": 1
+  },
+  "open_counts": {
+    "OPEN": 252,
+    "ORDER_PLACED": 294
+  },
+  "close_counts": {
+    "CLOSE": 18
+  },
+  "close_reason_counts": {
+    "broker_history_limited": 18
+  },
+  "ml_close_decision_count": 53,
+  "profit_sum": 242.5,
+  "missing_open_estimate": 42,
+  "open_without_close_estimate": 234,
+  "event_csv": "ML/reports/mt5_execution_loop/mt5_trade_events_20260730_entry_quality_filter.csv",
+  "schema_validation": "PASS"
+}

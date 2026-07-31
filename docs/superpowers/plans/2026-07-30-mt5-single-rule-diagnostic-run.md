@@ -41,6 +41,7 @@ locked_test_policy: not used for new selection; no winner/threshold/rule/cost/en
 - Automatic MT5 Strategy Tester launch from this environment is not proven. The plan first attempts to compile and package the run; if tester launch is unavailable, it produces a manual run package.
 - MT5 `Nero.csv` row-by-row parity with MT4/current source is currently `UNKNOWN`.
 - Current MQL5 event lifecycle is known to be limited on H1-bar polling; same-H1 open-and-close trades may not be fully reconstructed. This plan must measure or document that limitation, not hide it.
+- If the selected source is produced by `ML/baseline/prepare_mt5_entry_source.py`, the timing contract is trivial: `feature_time == feature_available_time == decision_time == signal_time` for every row. This does not prove real feature availability before decision time; it must be disclosed as a limitation in the report.
 
 ---
 
@@ -51,6 +52,7 @@ locked_test_policy: not used for new selection; no winner/threshold/rule/cost/en
 - Read: `docs/reports/2026-07-29-mt5-execution-loop-migration.md`
 - Read: `ML/baseline/export_mt5_entry_signals.py`
 - Read: `ML/baseline/mt5_signal_schema.py`
+- Read (if source lacks timing columns): `ML/baseline/prepare_mt5_entry_source.py`
 - Create: `ML/reports/mt5_execution_loop/mt5_single_rule_run_manifest_<run_id>.json`
 
 **Interfaces:**
@@ -68,6 +70,17 @@ rg --files ML/reports DATA MT/MQL4/Files | rg '(^|/)(.*fixed11.*|.*entry.*|.*sig
 ```
 
 Expected: identify one existing source CSV. Prefer a recent fixed diagnostic source already used in reports. Do not create or select a new rule by profitability. Do not treat missing `MT/MQL5/Files` as an error; the real MT5 tester file directory is discovered in Task 4.
+
+If the selected source CSV lacks `feature_time`, `feature_available_time`, or `decision_time` columns (e.g. `fractal0_entry_quality_filter_scores.csv`), first run the bridge:
+
+```bash
+./.venv/bin/python -m ML.baseline.prepare_mt5_entry_source \
+  --input-csv <original_source_csv> \
+  --output-csv ML/reports/mt5_execution_loop/mt5_entry_source_<run_id>.csv \
+  --output-json ML/reports/mt5_execution_loop/mt5_entry_source_<run_id>.json
+```
+
+Then use the bridge output as `<source_csv>` for all subsequent steps. Record `time_policy` from the bridge JSON in the manifest.
 
 - [ ] **Step 2: Verify source has required columns**
 
@@ -116,6 +129,7 @@ Create `ML/reports/mt5_execution_loop/mt5_single_rule_run_manifest_<run_id>.json
   "date_from": "<first source time or tester date_from>",
   "date_to": "<last source time or tester date_to>",
   "date_range_policy": "source time range unless Task 4 records narrower tester range",
+  "time_policy": "<from bridge JSON if prepare_mt5_entry_source was used; otherwise 'source timing columns used directly'>",
   "locked_test_policy": "not used for new selection",
   "methodology": [
     "docs/methodology/03-feature-contract-leakage.md",
@@ -210,7 +224,7 @@ PY
 
 Expected: prints row count and empty forbidden list. The validator enforces `feature_time <= feature_available_time <= decision_time`.
 
-**Mandatory checks:** no `fill_time`, `exit_time`, `pnl_r`, or future outcome columns; time order validator passes for `feature_time <= feature_available_time <= decision_time`; JSON sidecar hash exists.
+**Mandatory checks:** no `fill_time`, `exit_time`, `pnl_r`, or future outcome columns; time order validator passes for `feature_time <= feature_available_time <= decision_time`; JSON sidecar hash exists. If `time_policy` in the manifest indicates a bridge source (all timing fields equal), record in the report Limitations that the timing contract is trivial and does not prove real feature availability before decision time.
 
 **Completion criterion:** entry CSV and JSON sidecar are reproducible and validated.
 
@@ -248,7 +262,7 @@ do
 done
 ```
 
-Expected: all six inputs are present.
+Expected: all six inputs are present. If any input is missing, stop this task and record the missing input name(s) as a blocker in the run manifest under `unknowns`; do not proceed to compile.
 
 - [ ] **Step 2: Compile with MetaEditor 5**
 
@@ -337,6 +351,8 @@ InpMT5_DiagnosticExecutor=true
 InpMT5_EntrySignalFile=mt5_entry_signals.csv
 InpMT5_EventFile=mt5_trade_events.csv
 InpMT5_BlockBarsSinceFill0Exit=true
+InpMT5_ExportNero=true
+InpMT5_NeroFile=Nero_MT5.csv
 ```
 
 Record exact values:
@@ -455,18 +471,20 @@ placed = int(events.get("ORDER_PLACED", 0))
 opened = int(events.get("OPEN", 0))
 closed = int(events.get("CLOSE", 0))
 ml_close = int(events.get("ML_CLOSE", 0))
+open_failed = int(events.get("OPEN_FAILED", 0))
 print({
     "ORDER_PLACED": placed,
     "OPEN": opened,
     "CLOSE": closed,
     "ML_CLOSE": ml_close,
+    "OPEN_FAILED": open_failed,
     "missing_open_estimate": max(placed - opened, 0),
     "open_without_close_estimate": max(opened - closed, 0),
 })
 PY
 ```
 
-Expected: counts are reported. Do not call gaps harmless unless event/deal rows prove that.
+Expected: counts are reported. Do not call gaps harmless unless event/deal rows prove that. If `OPEN_FAILED > 0`, inspect the `comment` column of those rows and classify the failure reasons in the report.
 
 - [ ] **Step 5: Classify same-H1 lifecycle evidence**
 
@@ -538,10 +556,12 @@ Tester metadata
 Event CSV path and sha256
 Metrics JSON path and sha256
 Event counts
+OPEN_FAILED count and failure reason classification
 Missing open estimate
 Open without close estimate
 same_h1_lifecycle_status
 Known lifecycle limitations
+Timing contract status: trivial (bridge source) or independently verified
 Whether MT5 Nero.csv parity is PASS, FAIL, UNKNOWN, or not tested
 Decision: continue, close, or unblock
 ```

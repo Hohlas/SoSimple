@@ -5,6 +5,7 @@ ushort ExpPause; // индивидуальная пауза для рассин�
 // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ 
 int OnInit(){// функции сохранения и восстановления параметров на случай отключения терминала в течении часа // ЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖЖ
    SyncInputs();
+   RefreshPriceArrays(); // compat-массивы Time[]/Open[]... заполняются только в OnTick; без этого любой доступ в OnInit падает
    if (!IsTesting() && !IsOptimization()) {Real=true;} // на реале формирование файла проверки обязательно  
    InitDeposit=float(AccountBalance());
    DayMinEquity=InitDeposit;
@@ -14,8 +15,8 @@ int OnInit(){// функции сохранения и восстановлен�
    else                 Company=StringSubstr(AccountCompany(),0,StringFind(AccountCompany()," ",0)); // Первое слово до пробела
    if (MarketInfo(Symbol(),MODE_LOTSTEP)<0.1) LotDigits=2; else LotDigits=1;
    ERROR_CHECK(__FUNCTION__+"-"+S0(__LINE__));
-   string oldest_bar_time = (Bars > 1 ? TimeToStr(Time[Bars-1],TIME_DATE) : "UNKNOWN");
-   string last_closed_bar_time = (Bars > 1 ? TimeToStr(Time[1],TIME_DATE) : "UNKNOWN");
+   string oldest_bar_time = (Bars > 1 ? TimeToStr(iTime(_Symbol,_Period,Bars-1),TIME_DATE) : "UNKNOWN");
+   string last_closed_bar_time = (Bars > 1 ? TimeToStr(iTime(_Symbol,_Period,1),TIME_DATE) : "UNKNOWN");
    Print("\n\n\n\n OnInit() ",NAME,".V",VER,":  Time[",Bars,"]=",oldest_bar_time," Time[1]=",last_closed_bar_time);   
    CHART_SETTINGS();
    if (Real){
@@ -40,10 +41,11 @@ int OnInit(){// функции сохранения и восстановлен�
       if (!GlobalVariableCheck("ORDERS_STATE"))    GlobalVariableSet("ORDERS_STATE",ORDERS_STATE()); // время последнего выставленного ордера  
       if (!INPUT_FILE_READ()) return (INIT_FAILED); // занесение в массив CSV считанных из файла #.csv входных параметров всех экспертов 
       LABEL("                  "+NAME+VER+" Back="+S0(BackTest)+" Risk="+S1(Risk)+" MaxRisk="+S0(MaxRisk));
-      LABEL("                  Time["+S0(Bars)+"]="+TimeToStr(Time[Bars-1],TIME_DATE)+" Time[1]="+TimeToStr(Time[1],TIME_DATE));    
+      LABEL("                  Time["+S0(Bars)+"]="+TimeToStr(iTime(_Symbol,_Period,Bars-1),TIME_DATE)+" Time[1]="+TimeToStr(iTime(_Symbol,_Period,1),TIME_DATE));    
    }else{
       if (BackTest==0){// режим оптимизации
          ExpTotal=1; // отключение режима перебора экспертов
+         if (ArraySize(EXP)<=CurExp) ArrayResize(EXP,CurExp+1); // EXP[] динамический; вне INPUT_FILE_READ() он не расширяется
          EXP[CurExp].Mgc=MAGIC_GENERATOR();
          if (EXP[CurExp].INIT()==INIT_FAILED) return (INIT_FAILED); 
       }else{// работа экспетра со считанными из файла #.csv параметрами
@@ -102,7 +104,7 @@ void INPUT_PARAMETERS_PRINT(){ // ПЕЧАТЬ В ЛЕВОЙ ЧАСТИ ГРАФ
    if (IsOptimization()) return;
    ERROR_CHECK(__FUNCTION__+"-"+S0(__LINE__));
    LABEL("                  "+NAME+" Back="+S0(BackTest)+" Magic="+S0(EXP[CurExp].Mgc));
-   LABEL("                  Time["+S0(Bars)+"]="+TimeToStr(Time[Bars-1],TIME_DATE)+" Time[1]="+TimeToStr(Time[1],TIME_DATE));
+   LABEL("                  Time["+S0(Bars)+"]="+TimeToStr(iTime(_Symbol,_Period,Bars-1),TIME_DATE)+" Time[1]="+TimeToStr(iTime(_Symbol,_Period,1),TIME_DATE));
    LABEL(" "); 
    string FileName=NAME+"_"+S0(EXP[CurExp].Mgc)+".set";   // TerminalInfoString(TERMINAL_DATA_PATH)+"\\tester\\files\\"+Name+DoubleToString(Magic,0)+".txt";
    int file=FileOpen(FileName,FILE_WRITE|FILE_TXT);

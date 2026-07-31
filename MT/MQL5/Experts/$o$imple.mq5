@@ -3,6 +3,7 @@
 #property copyright  "Hohla"
 #property link       "hohla.ru"
 #property version  VERSION
+#property tester_file "mt5_entry_signals.csv"
 
 input short   InpBackTest=0;
 input char    InpOpt_Trades=10; // Opt_Trades Влияет только на оптимизацию, остальные параметры и на опт ина бэктест

@@ -122,7 +122,7 @@ int EXPERT::INIT() {
    PerAdapter = float(60.00 / Period());   // Print("PerAdapter=",PerAdapter);
    Print(__FILE__, "/", __FUNCTION__, " PIC INIT:  Bars=", Bars, " bar=", bar,
          " Time[bar]=", DTIME(Time[bar]),
-         " Time[Bars-1]=", DTIME(Time[Bars - 1]),
+         " Time[Bars-1]=", DTIME(iTime(_Symbol,_Period,Bars-1)),
          "  compilation time: ", __DATETIME__);
    CONSTANT_COUNTER();
    NERO_CSV_CREATE();
@@ -180,7 +180,7 @@ void EXPERT::NEW_LEVEL(char NewPicDir,
    Dir = NewPicDir;                         // направление последнего пика
    New = NewFractal;
    datetime ExPicTime =
-      Time[Bars - 1];  // время ближайшшего превосходящего пика из массива...
+      iTime(_Symbol,_Period,Bars-1);  // время ближайшшего превосходящего пика из массива...
    char FltNum = 1;     // кол-во совпадений c флэтовыми непробитыми пиками
    char Cnt = 1;        // кол-во совпадений со всеми пиками
    uchar FlatBegin = 0; // время начала флэта

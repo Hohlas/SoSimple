@@ -85,7 +85,7 @@ def _validate_time_order(frame: pd.DataFrame, columns: list[str]) -> None:
     bad_parse = [
         col
         for col, values in parsed.items()
-        if values.isna().any() and frame[col].astype(str).str.strip().ne("").any()
+        if (values.isna() & frame[col].fillna("").astype(str).str.strip().ne("")).any()
     ]
     if bad_parse:
         raise ValueError(f"invalid MT5 timestamp values in columns: {bad_parse}")
