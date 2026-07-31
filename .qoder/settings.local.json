@@ -1,12 +1,23 @@
 {
   "permissions": {
+    "additionalDirectories": [],
     "allow": [
-      "Bash(sed -n '200,300p' /home/hohla/.local/pipx/venvs/graphifyy/lib/python3.10/site-packages/graphify/__main__.py)",
-      "Read(//home/hohla/.local/pipx/venvs/graphifyy/lib/python3.10/site-packages/graphify/**)",
-      "Bash(sed -n '510,530p' /home/hohla/.local/pipx/venvs/graphifyy/lib/python3.10/site-packages/graphify/__main__.py; echo \"===\"; ls ~/.claude/skills 2>/dev/null; ls ~/.claude 2>/dev/null)",
+      "mcp__knowledge-rag__search_knowledge",
+      "Bash",
+      "Read(//home/hohla/.mt5/**)",
+      "Read(//home/hohla/git/**)",
       "Read(//home/hohla/.claude/**)",
-      "Bash(ls ~/.claude/skills/graphify 2>/dev/null && echo \"CLAUDE HAS IT\"; ls ~/.config/opencode/skills/graphify 2>/dev/null && echo \"OPENCODE HAS IT\"; ls ~/.codex/skills/graphify 2>/dev/null && echo \"CODEX HAS IT\")",
-      "Read(//home/hohla/git/SoSimple/.claude/skills/graphify/**)"
+      "Read(//home/hohla/.local/pipx/venvs/graphifyy/lib/python3.10/site-packages/graphify/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)"
+    ],
+    "trustDirectories": [
+      "/home/hohla/git/SoSimple",
+      "/home/hohla"
     ]
   }
 }
