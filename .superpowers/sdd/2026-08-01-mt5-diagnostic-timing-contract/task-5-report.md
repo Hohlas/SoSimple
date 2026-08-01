@@ -57,3 +57,15 @@
 - Verification:
   - `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py -q`
   - Result: `19 passed`
+
+## Final Review Fix (2026-08-01)
+- Review finding: coverage still missed `timing_violation_event_count` inside `summarize_timing_contract()`, so the summary field could regress without a direct unit-test failure.
+- Fix applied:
+  - added `test_summarize_timing_contract_counts_timing_violation_events_separately` to `tests/test_mt5_execution_diagnostics.py`;
+  - the test proves `TIMING_VIOLATION` rows are counted in `timing_violation_event_count` while remaining excluded from `checked_rows` and `violation_rows`.
+- Verification:
+  - `./.venv/bin/python -m pytest tests/test_mt5_execution_diagnostics.py -q`
+  - Result: `20 passed`
+  - `./.venv/bin/python -m ML.baseline.mt5_execution_diagnostics --phase events --output-json ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json --output-csv ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
+  - Result: exit `0`; command rewrote `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json` and `ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
+  - Scope note: generated diagnostics artifacts changed during verification and are intentionally left out of this final Task 5 review-fix commit.

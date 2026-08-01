@@ -245,6 +245,41 @@ def test_summarize_timing_contract_reports_invalid_timestamp_separately() -> Non
     assert summary["violations_by_rule"]["invalid_timestamp"] == 1
 
 
+def test_summarize_timing_contract_counts_timing_violation_events_separately() -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+    from ML.baseline.mt5_execution_diagnostics import summarize_timing_contract
+
+    events = pd.DataFrame(
+        [
+            _event_row(
+                "ORDER_PLACED",
+                "2023.01.02 10:00",
+                feature_time="2023.01.02 09:00",
+                signal_time="2023.01.02 09:30",
+                feature_available_time="2023.01.02 10:00",
+                decision_time="2023.01.02 10:00",
+                execution_time="2023.01.02 10:00",
+            ),
+            _event_row(
+                "TIMING_VIOLATION",
+                "2023.01.02 10:01",
+                feature_time="2023.01.02 09:00",
+                signal_time="2023.01.02 10:00",
+                feature_available_time="2023.01.02 10:00",
+                decision_time="2023.01.02 10:00",
+                execution_time="2023.01.02 10:01",
+            ),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    summary = summarize_timing_contract(events)
+
+    assert summary["checked_rows"] == 1
+    assert summary["violation_rows"] == 0
+    assert summary["timing_violation_event_count"] == 1
+
+
 def test_summarize_timing_contract_reports_legacy_violation_without_signal_time() -> None:
     from tests.test_parse_mt5_execution_report import _event_row
     from ML.baseline.mt5_execution_diagnostics import summarize_timing_contract
