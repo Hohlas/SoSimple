@@ -2,16 +2,22 @@
 
 ## Current Active State
 
-- active track: `MT5 saved-batch frozen probe planning`
-- latest report: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
-- latest plan: `docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md`
+- active track: `MT5 entry mechanics / trade-count frozen probe planning`
+- latest report: `docs/reports/2026-08-01-mt5-saved-batch-fill-rate-probe.md`
+- latest plan: `docs/superpowers/plans/2026-08-01-mt5-saved-batch-fill-rate-probe.md`
 - latest spec: `docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md`
 - batch summary: `ML/reports/mt5_execution_loop/batch/batch_summary.json`
 - event diagnostics: `ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json`
 
 ## Decision
 
-MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
+Fill-rate probe completed as `DIAGNOSTIC_ONLY`. Conversion-position-policy-dominant.
+Fill rate is NOT the primary cause of `BATCH_NO_WINNER`. Single-position policy
+blocks 99.2% of OPEN_FAILED signals; broker no-fill is negligible (0.8%).
+Median fill_rate=0.094, residual=12.5% unexplained.
+Next probe target: entry mechanics and trade-count consolidation, not fill rate.
+
+MT5 diagnostic timing contract continues as `DIAGNOSTIC_ONLY`.
 
 - Signal CSV timing is now `feature_time <= time < feature_available_time <= decision_time`.
 - Event timing for signal-linked rows is now `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time`.
@@ -42,11 +48,20 @@ MT5 diagnostic timing contract is implemented as `DIAGNOSTIC_ONLY`.
 
 ## Next Step
 
-Create a frozen probe plan using only current saved batch artifacts. The plan
-must choose one bounded target: fill-rate mechanics, cost/stress sensitivity,
-yearly/side concentration, or `fractal0_price` entry mechanics. Do not open
-`locked_test`, do not select a new winner, and do not change thresholds/models
-from this planning step.
+Create the next frozen probe plan targeting entry mechanics and trade-count
+consolidation. The fill-rate probe rejected conversion rate as the primary cause
+of BATCH_NO_WINNER: OPEN_FAILED is 99.2% single-position policy blocking, not
+broker no-fill. PF > 1.0 for 11 eligible candidates with BS_p05 < 1.0 for all
+suggests noise from low trade count, not fill rate.
+
+The next plan must:
+- Accept single-position policy as design constraint (cannot fix it).
+- Focus on why PF > 1.0 coexists with BS_p05 < 1.0: entry signal mechanics,
+  trade count consistency, and/or exit quality.
+- Keep the same batch artifacts (no MT5 rerun for planning).
+- Not open `locked_test`, not select new winner, max verdict DIAGNOSTIC_ONLY.
+- Optionally resolve the 12.5% residual (signals with neither ORDER_PLACED
+  nor OPEN_FAILED) via row-level event linkage.
 
 ## Verification
 

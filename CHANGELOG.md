@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-08-01] — MT5 Saved-Batch Fill-Rate Probe (DIAGNOSTIC_ONLY)
+- **report**: `docs/reports/2026-08-01-mt5-saved-batch-fill-rate-probe.md`
+- **topics**: `mt5`, `fill_rate`, `signal_to_trade_conversion`, `position_policy`
+- **summary**: Decomposed signal-to-trade conversion rate over saved batch artifacts (32 candidates). OPEN_FAILED is 99.2% `position_or_pending_order_exists` (single-position advisor), not broker no-fill. Median fill_rate=0.094, 12.5% residual unexplained. Fill rate hypothesis rejected as primary cause of BATCH_NO_WINNER.
+- **artifacts**: `ML/reports/mt5_execution_loop/diagnostics/fill_rate_diagnostics.json`, `ML/reports/mt5_execution_loop/diagnostics/fill_rate_candidates.csv`
+- **decision**: `DIAGNOSTIC_ONLY`; conversion_position_policy_dominant. Next probe: trade-count/entry mechanics, not fill rate. No new winner.
+- **notes**: No MT5 rerun; used only saved batch artifacts. `locked_test` not opened.
+
 ## [2026-08-01] — MT5 diagnostic timing contract (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md`
 - **topics**: `mt5`, `timing_contract`, `diagnostic_executor`, `event_diagnostics`

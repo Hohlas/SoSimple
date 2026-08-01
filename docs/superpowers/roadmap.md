@@ -14,33 +14,33 @@
 
 ## ACTIVE
 
-### MT5 saved-batch frozen probe execution
+### MT5 entry mechanics / trade-count frozen probe
 
-Status: plan ready, awaiting execution.
+Status: plan pending. Fill-rate probe completed \u2014 fill rate is NOT the primary
+cause of BATCH_NO_WINNER.
 
 Current facts:
 
-- The frozen probe plan exists at
-  `docs/superpowers/plans/2026-08-01-mt5-saved-batch-fill-rate-probe.md`.
-- The plan targets fill-rate mechanics over saved batch artifacts only.
-- MT5 timing contract rerun is complete as `DIAGNOSTIC_ONLY`.
-- LiveUpdate startup interception is handled in `run_mt5_batch.py`.
-- Fresh batch summary has `n_candidates=32`, `n_valid=32`, `n_eligible=11`,
-  `verdict=BATCH_NO_WINNER`.
-- Post-batch hygiene classified available error artifacts and preserved
-  `BATCH_NO_WINNER`.
+- Fill-rate probe rejected conversion rate as primary cause:
+  OPEN_FAILED is 99.2% single-position policy, not broker no-fill.
+- Median fill_rate=0.094, all 11 eligible candidates < 0.20.
+- 12.5% residual unexplained (saved artifacts lack per-signal linkage).
+- PF > 1.0 for all 11 eligible candidates; BS_p05 < 1.0 for all.
 - `locked_test` remains unopened.
 
 Next action:
 
-1. Execute the fill-rate probe plan: implement Tasks 1-4 (artifact contract
-   and fill-rate core, CLI phase and diagnostic artifacts, evidence review
-   and hypothesis decision, report and project state sync).
-2. Allowed max verdict for any output of the probe: `DIAGNOSTIC_ONLY`
-   (or `research_hypothesis` only if artifacts clearly support it and the
-   user explicitly accepts it).
+1. Create frozen probe plan targeting entry mechanics / trade-count
+   consolidation:
+   - Accept single-position policy as design constraint.
+   - Focus on why PF > 1.0 coexists with BS_p05 < 1.0.
+   - Use only saved batch artifacts for planning.
+   - No MT5 rerun for planning step.
+2. Allowed max verdict for any output: `DIAGNOSTIC_ONLY`.
 3. No threshold, model, profile, side, horizon, entry/exit rule, stop,
-   spread, cost or PnL convention may be selected from this probe.
+   spread, cost or PnL convention may be selected from the sole output of
+   this stage.
+4. Optionally — use row-level event linkage breakdown to resolve 12.5% residual.
 
 ---
 
