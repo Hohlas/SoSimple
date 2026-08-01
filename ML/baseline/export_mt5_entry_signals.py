@@ -12,6 +12,7 @@ from ML.baseline.mt5_signal_schema import MT5_SIGNAL_COLUMNS
 from ML.baseline.mt5_signal_schema import validate_mt5_signal_frame
 
 DEFAULT_REPORT_DIR = Path("ML/reports/mt5_execution_loop")
+TIMING_CONTRACT = "feature_time <= time < feature_available_time <= decision_time"
 FORBIDDEN_SOURCE_COLUMNS = {
     "fill_time",
     "exit_time",
@@ -125,6 +126,7 @@ def _build_metadata(
     output_csv: Path,
     output_json: Path,
     max_fill_lag_bars: int,
+    latency_bars: int,
     source_csv: str | Path | None,
     rule_metadata: dict[str, Any] | None,
     rule_metadata_path: str | None,
@@ -152,6 +154,8 @@ def _build_metadata(
         "label": label,
         "run_id": run_id,
         "max_fill_lag_bars": int(max_fill_lag_bars),
+        "latency_bars": int(latency_bars),
+        "timing_contract": TIMING_CONTRACT,
         "columns": MT5_SIGNAL_COLUMNS,
         "rule_metadata_sha256": rule_metadata_sha256,
         "source_csv_sha256": source_hash,
@@ -172,6 +176,8 @@ def _build_metadata(
         "side_counts": side.value_counts().to_dict(),
         "source_csv": source_path_str,
         "source_csv_sha256": source_hash,
+        "timing_contract": TIMING_CONTRACT,
+        "latency_bars": int(latency_bars),
         "rule_metadata": rule_metadata,
         "rule_metadata_path": rule_metadata_path,
         "rule_metadata_sha256": rule_metadata_sha256,
@@ -192,6 +198,7 @@ def export_mt5_entry_signals(
     output_csv: str | Path,
     output_json: str | Path,
     max_fill_lag_bars: int,
+    latency_bars: int = 0,
     *,
     source_csv: str | Path | None = None,
     rule_metadata: dict[str, Any] | str | Path | None = None,
@@ -213,6 +220,7 @@ def export_mt5_entry_signals(
         output_csv=output_csv_path,
         output_json=output_json_path,
         max_fill_lag_bars=max_fill_lag_bars,
+        latency_bars=latency_bars,
         source_csv=source_csv,
         rule_metadata=rule_payload,
         rule_metadata_path=rule_metadata_path,
@@ -239,6 +247,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-id", default="manual")
     parser.add_argument("--label", default="mt5_execution_loop")
     parser.add_argument("--max-fill-lag-bars", type=int, default=6)
+    parser.add_argument("--latency-bars", type=int, default=0)
     return parser.parse_args()
 
 
@@ -256,6 +265,7 @@ def main() -> Path:
         output_csv,
         output_json,
         args.max_fill_lag_bars,
+        latency_bars=args.latency_bars,
         source_csv=args.source_csv,
         rule_metadata=args.rule_metadata,
         run_id=args.run_id,

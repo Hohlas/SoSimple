@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -588,3 +589,39 @@ def test_write_prepared_source_records_timing_metadata(tmp_path: Path):
     assert written["latency_bars"] == 2
     assert written["output_csv_sha256"]
     assert written["forbidden_source_columns_present"] == ["pnl_r"]
+
+
+def test_export_mt5_entry_signals_metadata_records_timing_contract(tmp_path):
+    from ML.baseline.export_mt5_entry_signals import export_mt5_entry_signals
+
+    source = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 09:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
+                "rule_id": "rule01",
+                "side": "BUY",
+                "limit_price": 1900.0,
+                "protective_stop_price": 1890.0,
+                "atr": 10.0,
+            }
+        ]
+    )
+
+    out_csv = tmp_path / "signals.csv"
+    out_json = tmp_path / "signals.json"
+
+    export_mt5_entry_signals(
+        source,
+        out_csv,
+        out_json,
+        max_fill_lag_bars=6,
+        latency_bars=0,
+    )
+
+    metadata = json.loads(out_json.read_text(encoding="utf-8"))
+    assert metadata["timing_contract"] == "feature_time <= time < feature_available_time <= decision_time"
+    assert metadata["latency_bars"] == 0
+    assert metadata["run_config"]["latency_bars"] == 0

@@ -87,9 +87,13 @@ def generate_signals(candidates: list[dict], eq_scores: pd.DataFrame) -> None:
 
         if entry_csv.exists() and entry_json.exists():
             meta = json.loads(entry_json.read_text(encoding="utf-8"))
-            if meta.get("rows_total", 0) > 0:
+            if (
+                meta.get("rows_total", 0) > 0
+                and meta.get("timing_contract") == "feature_time <= time < feature_available_time <= decision_time"
+                and int(meta.get("latency_bars", -1)) == 0
+            ):
                 n_skipped += 1
-                print(f"[{i}/{n_total}] SKIP {run_id} (exists, {meta['rows_total']} rows)")
+                print(f"[{i}/{n_total}] SKIP {run_id} (exists, {meta['rows_total']} rows, timing_contract=v2)")
                 continue
 
         print(f"[{i}/{n_total}] Generating {run_id}...")
@@ -140,6 +144,7 @@ def generate_signals(candidates: list[dict], eq_scores: pd.DataFrame) -> None:
             max_fill_lag_bars=6,
             run_id=run_id,
             label="mt5_batch_selection",
+            latency_bars=0,
         )
         n_generated += 1
         meta = json.loads(entry_json.read_text(encoding="utf-8"))
