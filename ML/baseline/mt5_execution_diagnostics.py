@@ -325,6 +325,14 @@ def _complete_timing_rows(events: pd.DataFrame) -> pd.Series:
     return mask
 
 
+def _complete_legacy_timing_rows(events: pd.DataFrame) -> pd.Series:
+    mask = pd.Series(True, index=events.index)
+    for column in ("feature_time", "feature_available_time", "decision_time", "execution_time"):
+        mask &= events[column].fillna("").astype(str).str.strip().ne("")
+    mask &= events["signal_time"].fillna("").astype(str).str.strip().eq("")
+    return mask
+
+
 def summarize_timing_contract(events: pd.DataFrame) -> dict[str, object]:
     contract = "feature_time <= signal_time < feature_available_time <= decision_time <= execution_time"
     if events.empty:
@@ -341,41 +349,79 @@ def summarize_timing_contract(events: pd.DataFrame) -> dict[str, object]:
 
     event_names = events["event"].astype(str)
     signal_mask = event_names.isin(TIMING_CHECK_EVENT_NAMES)
-    complete_mask = _complete_timing_rows(events)
-    checked = events.loc[signal_mask & complete_mask, TIMING_CONTRACT_COLUMNS].copy()
-    parsed = {column: pd.to_datetime(checked[column], errors="coerce") for column in TIMING_CONTRACT_COLUMNS}
-    invalid_timestamp = pd.Series(False, index=checked.index)
-    for values in parsed.values():
-        invalid_timestamp |= values.isna()
-    valid_timestamp = ~invalid_timestamp
+    strict_checked = events.loc[signal_mask & _complete_timing_rows(events), TIMING_CONTRACT_COLUMNS].copy()
+    legacy_columns = ["feature_time", "feature_available_time", "decision_time", "execution_time"]
+    legacy_checked = events.loc[signal_mask & ~_complete_timing_rows(events) & _complete_legacy_timing_rows(events), legacy_columns].copy()
 
-    rules = {
-        "feature_time <= signal_time": parsed["feature_time"].le(parsed["signal_time"]),
-        "signal_time < feature_available_time": parsed["signal_time"].lt(parsed["feature_available_time"]),
-        "feature_available_time <= decision_time": parsed["feature_available_time"].le(parsed["decision_time"]),
-        "decision_time <= execution_time": parsed["decision_time"].le(parsed["execution_time"]),
+    strict_parsed = {
+        column: pd.to_datetime(strict_checked[column], errors="coerce")
+        for column in TIMING_CONTRACT_COLUMNS
     }
-    violations_by_rule = {
-        rule: int((~mask.fillna(False) & valid_timestamp).sum())
-        for rule, mask in rules.items()
-        if int((~mask.fillna(False) & valid_timestamp).sum()) > 0
+    legacy_parsed = {
+        column: pd.to_datetime(legacy_checked[column], errors="coerce")
+        for column in legacy_columns
     }
+
+    invalid_timestamp = pd.Series(False, index=strict_checked.index)
+    for values in strict_parsed.values():
+        invalid_timestamp |= values.isna()
+    legacy_invalid_timestamp = pd.Series(False, index=legacy_checked.index)
+    for values in legacy_parsed.values():
+        legacy_invalid_timestamp |= values.isna()
+
+    valid_timestamp = ~invalid_timestamp
+    legacy_valid_timestamp = ~legacy_invalid_timestamp
+
+    strict_rules = {
+        "feature_time <= signal_time": strict_parsed["feature_time"].le(strict_parsed["signal_time"]),
+        "signal_time < feature_available_time": strict_parsed["signal_time"].lt(strict_parsed["feature_available_time"]),
+        "feature_available_time <= decision_time": strict_parsed["feature_available_time"].le(strict_parsed["decision_time"]),
+        "decision_time <= execution_time": strict_parsed["decision_time"].le(strict_parsed["execution_time"]),
+    }
+    legacy_rules = {
+        "feature_time <= feature_available_time (legacy_no_signal_time)": legacy_parsed["feature_time"].le(
+            legacy_parsed["feature_available_time"]
+        ),
+        "feature_available_time <= decision_time (legacy_no_signal_time)": legacy_parsed[
+            "feature_available_time"
+        ].le(legacy_parsed["decision_time"]),
+        "decision_time <= execution_time (legacy_no_signal_time)": legacy_parsed["decision_time"].le(
+            legacy_parsed["execution_time"]
+        ),
+    }
+
+    violations_by_rule: dict[str, int] = {}
+    for rule, mask in strict_rules.items():
+        count = int((~mask.fillna(False) & valid_timestamp).sum())
+        if count > 0:
+            violations_by_rule[rule] = count
+    for rule, mask in legacy_rules.items():
+        count = int((~mask.fillna(False) & legacy_valid_timestamp).sum())
+        if count > 0:
+            violations_by_rule[rule] = count
     if invalid_timestamp.any():
         violations_by_rule["invalid_timestamp"] = int(invalid_timestamp.sum())
+    if legacy_invalid_timestamp.any():
+        violations_by_rule["invalid_timestamp_legacy_no_signal_time"] = int(legacy_invalid_timestamp.sum())
 
-    row_violation = pd.Series(False, index=checked.index)
-    for mask in rules.values():
+    row_violation = pd.Series(False, index=strict_checked.index)
+    for mask in strict_rules.values():
         row_violation |= ~mask.fillna(False) & valid_timestamp
     row_violation |= invalid_timestamp
+
+    legacy_row_violation = pd.Series(False, index=legacy_checked.index)
+    for mask in legacy_rules.values():
+        legacy_row_violation |= ~mask.fillna(False) & legacy_valid_timestamp
+    legacy_row_violation |= legacy_invalid_timestamp
 
     return {
         "status": "DIAGNOSTIC_ONLY",
         "contract": contract,
-        "checked_rows": int(len(checked)),
-        "violation_rows": int(row_violation.sum()),
+        "checked_rows": int(len(strict_checked) + len(legacy_checked)),
+        "violation_rows": int(row_violation.sum() + legacy_row_violation.sum()),
         "tx_rows_excluded": int(event_names.isin({"TX_OPEN", "TX_CLOSE"}).sum()),
         "timing_violation_event_count": int(event_names.eq("TIMING_VIOLATION").sum()),
-        "invalid_timestamp_rows": int(invalid_timestamp.sum()),
+        "invalid_timestamp_rows": int(invalid_timestamp.sum() + legacy_invalid_timestamp.sum()),
         "violations_by_rule": violations_by_rule,
     }
 
