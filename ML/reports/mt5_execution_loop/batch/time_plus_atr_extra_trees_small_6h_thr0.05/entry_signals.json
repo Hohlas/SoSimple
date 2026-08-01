@@ -16,15 +16,19 @@
     "BUY": 140
   },
   "source_csv": null,
-  "source_csv_sha256": "0a6f725a3018e3e2dc8a26c394dfcdcd863092fce3e73ce5ba3c4dbf244c4c93",
+  "source_csv_sha256": "027202468a0255d66cc28d31aab80996a8890d0cd2d47f7bc784ab52d6d90321",
+  "timing_contract": "feature_time <= time < feature_available_time <= decision_time",
+  "latency_bars": 0,
   "rule_metadata": null,
   "rule_metadata_path": null,
   "rule_metadata_sha256": null,
-  "run_config_hash": "389ce95ed72322eafc719ec6bb3ab05399b83cd2dac28b288ec0b26ebdbe8cd4",
+  "run_config_hash": "6f1f6b399028835c5dbbee030470ff69f28a6239c552cb3ab81d78f54b259daa",
   "run_config": {
     "label": "mt5_batch_selection",
     "run_id": "time_plus_atr_extra_trees_small_6h_thr0.05",
     "max_fill_lag_bars": 6,
+    "latency_bars": 0,
+    "timing_contract": "feature_time <= time < feature_available_time <= decision_time",
     "columns": [
       "time",
       "feature_time",
@@ -39,10 +43,10 @@
       "max_fill_lag_bars"
     ],
     "rule_metadata_sha256": null,
-    "source_csv_sha256": "0a6f725a3018e3e2dc8a26c394dfcdcd863092fce3e73ce5ba3c4dbf244c4c93"
+    "source_csv_sha256": "027202468a0255d66cc28d31aab80996a8890d0cd2d47f7bc784ab52d6d90321"
   },
   "output_csv": "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.csv",
-  "output_csv_sha256": "4af4a8713eeb291aa7ba0bd164d1484f78e65fd5dc0749f4393c68eebbe4b87f",
+  "output_csv_sha256": "f4a17629c65cf30e5612f5e0b07e901df24a3e7fdc26f9ea2381cf872abb6081",
   "output_json": "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.json",
   "forbidden_source_columns": [],
   "forbidden_future_lifecycle_columns_removed": true,
