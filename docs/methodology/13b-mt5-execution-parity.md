@@ -70,7 +70,7 @@ fill_time;exit_time;future_exit_time;future_favorable_r_3;future_adverse_r_3;hol
 Event log CSV:
 
 ```text
-event;time;feature_time;feature_available_time;decision_time;execution_time;rule_id;signal_time;ticket;side;requested_price;fill_price;order_open_price;order_close_price;stop_price;close_reason;profit;bars_since_fill;bid;ask;spread;spread_atr;bar_open;bar_high;bar_low;bar_close;calculation_open;slippage_points;entry;take_profit;close;swap;commission;hold_bars;open_positions;max_positions;balance;equity;entry_time;exit_time;unrealized_pnl_r_before_decision;max_favorable_r_before_decision;max_adverse_r_before_decision;ml_exit_score;ml_exit_decision;comment
+event;time;feature_time;feature_available_time;decision_time;execution_time;rule_id;signal_time;error_code;error_class;retcode;retcode_text;request_seq;magic;symbol;entry_type;ticket;side;requested_price;fill_price;order_open_price;order_close_price;stop_price;close_reason;profit;bars_since_fill;bid;ask;spread;spread_atr;bar_open;bar_high;bar_low;bar_close;calculation_open;slippage_points;entry;take_profit;close;swap;commission;hold_bars;open_positions;max_positions;balance;equity;entry_time;exit_time;unrealized_pnl_r_before_decision;max_favorable_r_before_decision;max_adverse_r_before_decision;ml_exit_score;ml_exit_decision;comment
 ```
 
 Timing contract:

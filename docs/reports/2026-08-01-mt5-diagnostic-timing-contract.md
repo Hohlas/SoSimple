@@ -137,7 +137,7 @@ Facts from regenerated artifacts:
 - signal artifacts: 32/32 `entry_signals.json` include `timing_contract` and `latency_bars=0`.
 - signal timing check: `checked_signal_files=32`, `bad_files=0`.
 - smoke tester: passed with `UNEXPLAINED=0`.
-- full batch runtime: `UNKNOWN`; `run_mt5_batch --phase all` produced fresh expected event files for 2/32 runs and failed to find event files for 30/32.
+- full batch runtime: `UNKNOWN`; `run_mt5_batch --phase all` observed expected event files for 2/32 runs and failed to find event files for 30/32. After final review, the runner was hardened to delete stale tester event files before each future launch and to reject non-zero tester exit codes.
 - `batch_summary.json`: `status=DIAGNOSTIC_ONLY`, `verdict=BATCH_NO_WINNER`, `n_candidates=32`, `n_valid=2`, `n_eligible=0`.
 - `event_anomaly_summary.json` `batch_runs.timing_contract`: `checked_rows=2189`, `violation_rows=0`, `timing_violation_event_count=0`.
 - `event_anomaly_summary.json` `reference_runs.timing_contract`: `checked_rows=22510`, `violation_rows=22510`; this reflects historical copied-timing reference artifacts, not the regenerated batch signal contract.
@@ -157,6 +157,9 @@ not fully verified in this environment.
 
 - Full 32-run runtime verification is `UNKNOWN`: MT5 tester did not write the
   expected `mt5_trade_events_<run_id>.csv` for 30 of 32 runs.
+- The original Task 7 runtime evidence cannot be upgraded beyond `UNKNOWN`;
+  freshness safeguards were added after review and require a new full-batch run
+  to re-establish runtime evidence.
 - Historical reference event artifacts still contain copied-timing violations.
   They are useful only as legacy reference context.
 - `latency_bars>0` is implemented as metadata/export support, but remains a

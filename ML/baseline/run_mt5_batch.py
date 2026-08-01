@@ -284,6 +284,15 @@ def run_tester(ini_path: Path) -> bool:
     env = {**dict(os.environ), "WINEPREFIX": str(WINE_PREFIX)}
     try:
         proc = subprocess.run(cmd, env=env, timeout=TESTER_TIMEOUT_S, capture_output=True)
+        if proc.returncode != 0:
+            stdout = proc.stdout.decode("utf-8", errors="replace") if isinstance(proc.stdout, bytes) else str(proc.stdout)
+            stderr = proc.stderr.decode("utf-8", errors="replace") if isinstance(proc.stderr, bytes) else str(proc.stderr)
+            print(f"  ERROR: tester exited with code {proc.returncode}")
+            if stdout.strip():
+                print(f"  tester stdout: {stdout.strip()[:500]}")
+            if stderr.strip():
+                print(f"  tester stderr: {stderr.strip()[:500]}")
+            return False
         return True
     except subprocess.TimeoutExpired:
         print(f"  ERROR: tester timed out after {TESTER_TIMEOUT_S}s")
@@ -326,11 +335,13 @@ def run_smoke_test(candidates: list[dict]) -> bool:
     set_path = create_set_file("_smoke")
     ini_path = create_ini_file("_smoke", set_path.name, model=2, from_date="2021.01.04", to_date="2021.03.31")
 
+    event_file_name = "mt5_trade_events__smoke.csv"
+    events_src = TESTER_FILES / event_file_name
+    events_src.unlink(missing_ok=True)
+
     if not run_tester(ini_path):
         return False
 
-    event_file_name = "mt5_trade_events__smoke.csv"
-    events_src = TESTER_FILES / event_file_name
     if not events_src.exists():
         print(f"  ERROR: events file not found: {events_src}")
         return False
@@ -383,12 +394,14 @@ def run_batch(candidates: list[dict]) -> None:
         set_path = create_set_file(run_id)
         ini_path = create_ini_file(run_id, set_path.name)
 
+        event_file_name = f"mt5_trade_events_{run_id}.csv"
+        events_src = TESTER_FILES / event_file_name
+        events_src.unlink(missing_ok=True)
+
         if not run_tester(ini_path):
             n_failed += 1
             continue
 
-        event_file_name = f"mt5_trade_events_{run_id}.csv"
-        events_src = TESTER_FILES / event_file_name
         if not events_src.exists():
             print(f"  ERROR: events file not found: {events_src}")
             n_failed += 1
@@ -610,9 +623,6 @@ def aggregate_batch(candidates: list[dict]) -> dict:
 
     verdict = "BATCH_NO_WINNER"
     winner_id = None
-    if winners and winners[0]["all_gates_pass"]:
-        verdict = "BATCH_WINNER"
-        winner_id = winners[0]["run_id"]
 
     summary = {
         "status": "DIAGNOSTIC_ONLY",

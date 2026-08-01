@@ -126,7 +126,11 @@ def _parse_mt5_events_for_diagnostics(path: Path) -> pd.DataFrame:
     try:
         return parse_mt5_events(path)
     except ValueError as exc:
-        if not str(exc).startswith("MT5 timing contract violation:"):
+        message = str(exc)
+        if not (
+            message.startswith("MT5 timing contract violation:")
+            or message.startswith("invalid MT5 timestamp values in columns:")
+        ):
             raise
 
     frame = pd.read_csv(path, sep=";")
