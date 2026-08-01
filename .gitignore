@@ -332,6 +332,8 @@ statistics/*.old_32k
 .knowledge-rag-data/
 DATA/raw_features_for_direction.pkl
 ML/reports/entry_path_v1_live_safe/runtime/
+ML/reports/mt5_execution_loop/batch/*/metrics.json
+!ML/reports/mt5_execution_loop/batch/_smoke/metrics.json
 MT/MQL4/Experts/$o$imple.ex4
 MT/MQL4/mql5.index
 
