@@ -26,10 +26,6 @@ Next action:
 
 1. Retrieve missing artifacts: `ERROR_SoSimple_163856259.csv` and the
    cumulative tester agent log containing the 690 `ERROR-4756` lines.
-2. If retrieval is impossible, explicitly accept `EXECUTION_HYGIENE_PARTIAL`
-   before choosing the next frozen probe plan.
-3. Only after retrieval or explicit partial acceptance, choose between
-   `fractal0_price entry mechanics frozen probe` and `H3/H6 live-safe direction`.
 
 ---
 

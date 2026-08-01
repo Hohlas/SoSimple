@@ -62,6 +62,8 @@ Commands:
 
 ## Changed Files
 
+Plan implementation commits created or modified:
+
 - `ML/baseline/mt5_execution_diagnostics.py`
 - `tests/test_mt5_execution_diagnostics.py`
 - `ML/reports/mt5_execution_loop/diagnostics/error_inventory.json`
@@ -71,10 +73,17 @@ Commands:
 - `ML/reports/mt5_execution_loop/diagnostics/event_anomalies.csv`
 - `ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json`
 - `ML/reports/mt5_execution_loop/diagnostics/post_batch_top_candidates.csv`
+
+Final documentation/wiki commit modified:
+
 - `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - `CONTEXT_HANDOFF.md`
 - `CHANGELOG.md`
 - `docs/superpowers/roadmap.md`
+- `wiki/research/mt5-execution-loop.md`
+- `wiki/index.md`
+- `wiki/log.md`
+- `wiki/REPO_integrity.md`
 
 ## Artifact Hashes
 
@@ -147,7 +156,7 @@ Do not interpret tester PF/PnL as profitable, production-ready, live-ready, trad
 
 ## Next Step
 
-Exactly one next action: retrieve the missing cumulative tester agent log and `ERROR_SoSimple_163856259.csv`, or explicitly accept `EXECUTION_HYGIENE_PARTIAL` before choosing the next frozen probe plan.
+Exactly one next action: retrieve the missing cumulative tester agent log and `ERROR_SoSimple_163856259.csv`.
 
 ## Related Materials
 

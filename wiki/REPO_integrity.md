@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-08-01 07:42 UTC · git `69bd42a`
+> Auto-generated 2026-08-01 07:45 UTC · git `9ed4eee`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,7 +9,7 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3593 files  ·  **Commit**: `69bd42a`  ·  **Generated**: 2026-08-01 07:42 UTC
+**Tracked**: 3593 files  ·  **Commit**: `9ed4eee`  ·  **Generated**: 2026-08-01 07:45 UTC
 
 ## Root Docs
 
@@ -18,7 +18,7 @@
 | [AGENTS.md](AGENTS.md) |  | 2026-07-29 | 10KB | `8b0976f5` |
 | [CHANGELOG.md](CHANGELOG.md) |  | 2026-08-01 | 167KB | `9dc1ab17` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 2KB | `30159fa1` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 2KB | `f9a3ead5` |
 | [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-08-01 | 59KB | `c7384b83` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
@@ -291,7 +291,7 @@
 | [docs/superpowers/plans/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/superpowers/plans/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 10KB | `ceb6bd5a` |
 | [docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 49KB | `dedc6303` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
-| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-08-01 | 7KB | `064b82a7` |
+| [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-08-01 | 7KB | `11676d63` |
 | [docs/superpowers/specs/2026-03-22-triple-barrier-design.md](docs/superpowers/specs/2026-03-22-triple-barrier-design.md) |  | 2026-06-17 | 12KB | `82b0860f` |
 | [docs/superpowers/specs/2026-03-27-pf-improvement-design.md](docs/superpowers/specs/2026-03-27-pf-improvement-design.md) |  | 2026-06-17 | 18KB | `85d548d9` |
 | [docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md](docs/superpowers/specs/2026-04-01-signal-research-variant-2-design.md) |  | 2026-06-17 | 13KB | `477a2843` |
@@ -474,7 +474,7 @@
 | [docs/reports/2026-07-31-mt5-batch-selection.md](docs/reports/2026-07-31-mt5-batch-selection.md) |  | 2026-08-01 | 14KB | `084ca3c5` |
 | [docs/reports/2026-07-31-mt5-nero-parity.md](docs/reports/2026-07-31-mt5-nero-parity.md) |  | 2026-07-31 | 5KB | `4d409cce` |
 | [docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 11KB | `4717b1dc` |
-| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 9KB | `e3595e5c` |
+| [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 9KB | `f2a81443` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
 ## ML

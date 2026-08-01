@@ -37,7 +37,7 @@ MT5 execution hygiene and post-batch diagnostics completed as
 
 ## Next Step
 
-Retrieve missing external artifacts (`ERROR_SoSimple_163856259.csv` and cumulative tester agent log with 690 `ERROR-4756` lines) or explicitly accept `EXECUTION_HYGIENE_PARTIAL` before choosing the next frozen probe plan.
+Retrieve missing external artifacts: `ERROR_SoSimple_163856259.csv` and the cumulative tester agent log with 690 `ERROR-4756` lines.
 
 ## Verification
 
