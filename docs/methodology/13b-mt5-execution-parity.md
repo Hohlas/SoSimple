@@ -31,8 +31,11 @@ InpMT5_BlockBarsSinceFill0Exit=true
 
 `mt5_entry_signals.csv` должен лежать в файловом каталоге MT5 tester `Files`.
 Диагностический reader отдельный от legacy `ML_SIGNALS_FILE=ml_signals.csv`.
-Строка выбирается по `decision_time` или `time`, совпадающему с рабочим баром
-`Time[bar]`. Поддержаны только лимитные заявки на вход:
+Строка выбирается только по колонке `time`, совпадающей с рабочим баром
+`Time[bar]`. В текущем эксперте `bar=1`, поэтому при `latency_bars=0`
+`time=T` означает размещение на первом тике бара `T+1`.
+`decision_time` является проверяемым описательным полем и не участвует в
+матчинге сигнала. Поддержаны только лимитные заявки на вход:
 
 ```text
 side=BUY,  entry_type=BUY_LIMIT
@@ -73,8 +76,12 @@ event;time;feature_time;feature_available_time;decision_time;execution_time;rule
 Timing contract:
 
 ```text
-feature_time <= decision_time <= execution_time
+feature_time <= time < feature_available_time <= decision_time <= execution_time
 ```
+
+В event log исходная колонка `time` из signal CSV записывается как
+`signal_time`, потому что колонка `time` в event log обозначает время самого
+события.
 
 Временные поля должны быть колонками CSV, а не только текстом отчёта.
 
@@ -94,10 +101,16 @@ CLOSE
 OPEN_FAILED
 ML_EVAL
 ML_CLOSE
+TIMING_VIOLATION
+TX_OPEN
+TX_CLOSE
 ```
 
 Минимальные требования к событиям:
 
+- `TIMING_VIOLATION` фиксирует входную строку signal CSV, нарушившую контракт
+  `feature_time <= time < feature_available_time <= decision_time`; такая
+  строка не должна размещать ордер.
 - `ORDER_PLACED` пишется до возврата фактического ticket, поэтому `ticket` может
   быть `0`.
 - `OPEN` фиксируется только после видимого tester fill.
@@ -109,6 +122,9 @@ ML_CLOSE
   считается рабочим ML-close решением.
 - `ML_CLOSE` - диагностическое решение закрыть позицию; фактическое закрытие
   отражается отдельной строкой `CLOSE`.
+- `TX_OPEN` и `TX_CLOSE` могут иметь пустые timing-поля: они приходят из
+  `OnTradeTransaction`, а связь с сигналом выполняется позже в Python
+  reconciliation.
 
 ### Ограничения прототипа
 
