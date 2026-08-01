@@ -22,7 +22,7 @@ from typing import Any, Iterator
 
 import pandas as pd
 
-from ML.baseline.mt5_signal_schema import MT5_EVENT_COLUMNS
+from ML.baseline.mt5_signal_schema import MT5_EVENT_COLUMNS, MT5_EVENT_NAMES
 from ML.baseline.parse_mt5_execution_report import compute_mt5_metrics, parse_mt5_events
 
 
@@ -122,12 +122,44 @@ def _empty_event_frame() -> pd.DataFrame:
     return pd.DataFrame({column: pd.Series(dtype="object") for column in columns})
 
 
+def _parse_mt5_events_for_diagnostics(path: Path) -> pd.DataFrame:
+    try:
+        return parse_mt5_events(path)
+    except ValueError as exc:
+        if not str(exc).startswith("MT5 timing contract violation:"):
+            raise
+
+    frame = pd.read_csv(path, sep=";")
+    for column, default in {
+        "error_code": 0,
+        "error_class": "",
+        "retcode": 0,
+        "retcode_text": "",
+        "request_seq": -1,
+        "magic": 0,
+        "symbol": "",
+        "entry_type": "",
+    }.items():
+        if column not in frame.columns:
+            frame[column] = default
+
+    missing = [column for column in MT5_EVENT_COLUMNS if column not in frame.columns]
+    if missing:
+        raise ValueError(f"missing MT5 event columns: {missing}")
+
+    unknown = sorted(set(frame["event"].astype(str)) - MT5_EVENT_NAMES)
+    if unknown:
+        raise ValueError(f"unknown MT5 event names: {unknown}")
+
+    return frame[MT5_EVENT_COLUMNS]
+
+
 def load_event_rows(paths: list[Path]) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
     for path in paths:
         if not path.exists():
             continue
-        frame = parse_mt5_events(path).copy()
+        frame = _parse_mt5_events_for_diagnostics(path).copy()
         frame["source_file"] = path.name
         frame["source_path"] = str(path)
         frame["run_id"] = path.parent.name if path.name == "events.csv" else path.stem

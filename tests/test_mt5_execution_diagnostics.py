@@ -302,6 +302,38 @@ def test_build_event_anomaly_outputs_reports_batch_run_count(tmp_path: Path) -> 
     assert len(anomalies) == 2
 
 
+def test_build_event_anomaly_outputs_tolerates_timing_violation_in_diagnostic_load(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    reference = tmp_path / "reference.csv"
+    batch_root = tmp_path / "batch"
+    candidate = batch_root / "candidate_a"
+    candidate.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            _event_row(
+                "ORDER_PLACED",
+                "2023.01.02 10:00",
+                signal_time="2023.01.02 10:00",
+                feature_available_time="2023.01.02 10:00",
+            )
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    ).to_csv(reference, sep=";", index=False)
+    pd.DataFrame([_event_row("OPEN_FAILED", "2023.01.02 11:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        candidate / "events.csv",
+        sep=";",
+        index=False,
+    )
+
+    summary, _ = build_event_anomaly_outputs([reference], batch_root)
+
+    timing = summary["reference_runs"]["timing_contract"]
+    assert timing["checked_rows"] == 1
+    assert timing["violation_rows"] == 1
+    assert timing["violations_by_rule"]["signal_time < feature_available_time"] == 1
+
+
 def test_write_error_outputs_summarizes_without_concat(tmp_path: Path) -> None:
     path = tmp_path / "ERROR_SoSimple_3.csv"
     path.write_text(
