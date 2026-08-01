@@ -1,5 +1,5 @@
 # REPO Integrity Map — SoSimple
-> Auto-generated 2026-08-01 09:29 UTC · git `1f1fec4`
+> Auto-generated 2026-08-01 13:02 UTC · git `2d5847e`
 > Refresh: `python wiki/wiki.py generate`  ·  Verify: `python wiki/wiki.py verify`
 
 ## Agent Access Protocol
@@ -9,17 +9,17 @@
 3. Navigate via paths in the tables; use `wiki/research/` and `wiki/concepts/` for synthesized knowledge.
 4. After modifying significant files, run `generate` and commit `REPO_integrity.md`.
 
-**Tracked**: 3595 files  ·  **Commit**: `1f1fec4`  ·  **Generated**: 2026-08-01 09:29 UTC
+**Tracked**: 3583 files  ·  **Commit**: `2d5847e`  ·  **Generated**: 2026-08-01 13:02 UTC
 
 ## Root Docs
 
 | Path | Description | Modified | Size | Hash |
 |------|-------------|----------|------|------|
 | [AGENTS.md](AGENTS.md) |  | 2026-07-29 | 10KB | `8b0976f5` |
-| [CHANGELOG.md](CHANGELOG.md) |  | 2026-08-01 | 167KB | `bba9858c` |
+| [CHANGELOG.md](CHANGELOG.md) |  | 2026-08-01 | 168KB | `987c9add` |
 | [CLAUDE.md](CLAUDE.md) |  | 2026-06-17 | 288B | `9c4cf5c6` |
-| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 2KB | `64deed7d` |
-| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-08-01 | 59KB | `c7384b83` |
+| [CONTEXT_HANDOFF.md](CONTEXT_HANDOFF.md) |  | 2026-08-01 | 3KB | `374add5b` |
+| [MODULE_INDEX.md](MODULE_INDEX.md) |  | 2026-08-01 | 60KB | `fc07aec2` |
 | [README.md](README.md) |  | 2026-06-17 | 1KB | `1b96a51c` |
 
 ## Documentation
@@ -77,6 +77,7 @@
 | [docs/ML/live_safe_audit.py.md](docs/ML/live_safe_audit.py.md) | Core-типы live-safe audit и свод feature verdict → system verdict | 2026-06-17 | 556B | `8341abc1` |
 | [docs/ML/live_safe_audit_registry.py.md](docs/ML/live_safe_audit_registry.py.md) | Реестр прибыльных ML-систем для повторного live-safe audit | 2026-06-17 | 469B | `8d81d796` |
 | [docs/ML/model_sweep_candidate_source.py.md](docs/ML/model_sweep_candidate_source.py.md) |  | 2026-06-17 | 970B | `8867924b` |
+| [docs/ML/mt5_execution_loop.md](docs/ML/mt5_execution_loop.md) |  | 2026-08-01 | 3KB | `c961880a` |
 | [docs/ML/neural_networks.md](docs/ML/neural_networks.md) | ML pipeline: архитектуры, обучение, метрики | 2026-06-17 | 26KB | `6eca467d` |
 | [docs/ML/online_tester_reconciliation.py.md](docs/ML/online_tester_reconciliation.py.md) |  | 2026-06-17 | 3KB | `28aa6c93` |
 | [docs/ML/prepare_entry_path_mt4_parity.py.md](docs/ML/prepare_entry_path_mt4_parity.py.md) | Подготовка frozen `entry_path_v1_live_safe + A @ 7.5%` export для MT4 parity | 2026-06-17 | 1KB | `5e881e55` |
@@ -135,7 +136,7 @@
 | [docs/methodology/11-robustness.md](docs/methodology/11-robustness.md) |  | 2026-07-20 | 11KB | `bf60036a` |
 | [docs/methodology/12-backtest-costs.md](docs/methodology/12-backtest-costs.md) |  | 2026-07-29 | 12KB | `03a3ec5a` |
 | [docs/methodology/13-export-mt4-parity.md](docs/methodology/13-export-mt4-parity.md) |  | 2026-07-29 | 5KB | `2f0c7aa0` |
-| [docs/methodology/13b-mt5-execution-parity.md](docs/methodology/13b-mt5-execution-parity.md) |  | 2026-07-30 | 8KB | `4bd789b2` |
+| [docs/methodology/13b-mt5-execution-parity.md](docs/methodology/13b-mt5-execution-parity.md) |  | 2026-08-01 | 10KB | `fdfc4062` |
 | [docs/methodology/14-forward-test-online.md](docs/methodology/14-forward-test-online.md) |  | 2026-07-20 | 2KB | `25d2c512` |
 | [docs/methodology/15-monitoring-retraining.md](docs/methodology/15-monitoring-retraining.md) |  | 2026-07-20 | 3KB | `c463688b` |
 | [docs/methodology/16-reporting-audit.md](docs/methodology/16-reporting-audit.md) |  | 2026-07-20 | 8KB | `33c362bc` |
@@ -161,7 +162,7 @@
 | [docs/statistics/signal_tracer.py.md](docs/statistics/signal_tracer.py.md) | Trade-level reconciliation: диагностика Python PF vs MT4 PF | 2026-06-17 | 7KB | `052eb4f7` |
 | [docs/statistics/statistics.py.md](docs/statistics/statistics.py.md) | Справка по потоковой статистике | 2026-06-17 | 6KB | `9835a477` |
 | [docs/superpowers/README.md](docs/superpowers/README.md) |  | 2026-06-24 | 1KB | `46894f42` |
-| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-08-01 | 15KB | `f847ed80` |
+| [docs/superpowers/audit.md](docs/superpowers/audit.md) |  | 2026-08-01 | 27KB | `8622e324` |
 | [docs/superpowers/plans/2026-03-22-triple-barrier.md](docs/superpowers/plans/2026-03-22-triple-barrier.md) |  | 2026-06-17 | 28KB | `fe31fa4e` |
 | [docs/superpowers/plans/2026-03-25-updn-denormalization.md](docs/superpowers/plans/2026-03-25-updn-denormalization.md) |  | 2026-06-17 | 19KB | `01d8efee` |
 | [docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md](docs/superpowers/plans/2026-03-27-pf-improvement-phase-a.md) |  | 2026-06-17 | 22KB | `ba50388e` |
@@ -289,7 +290,7 @@
 | [docs/superpowers/plans/2026-07-31-mt5-nero-parity-v2.md](docs/superpowers/plans/2026-07-31-mt5-nero-parity-v2.md) |  | 2026-07-31 | 3KB | `590be343` |
 | [docs/superpowers/plans/2026-07-31-mt5-nero-parity.md](docs/superpowers/plans/2026-07-31-mt5-nero-parity.md) |  | 2026-07-31 | 23KB | `5da03558` |
 | [docs/superpowers/plans/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/superpowers/plans/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 10KB | `ceb6bd5a` |
-| [docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md](docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md) |  | 2026-08-01 | 58KB | `e69e7b27` |
+| [docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md](docs/superpowers/plans/2026-08-01-mt5-diagnostic-timing-contract.md) |  | 2026-08-01 | 61KB | `e92308c5` |
 | [docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 49KB | `dedc6303` |
 | [docs/superpowers/plans/ME13_Diagnostics_Plan.md](docs/superpowers/plans/ME13_Diagnostics_Plan.md) |  | 2026-06-17 | 5KB | `10a0c4ea` |
 | [docs/superpowers/roadmap.md](docs/superpowers/roadmap.md) |  | 2026-08-01 | 7KB | `e94b93d7` |
@@ -476,6 +477,7 @@
 | [docs/reports/2026-07-31-mt5-batch-selection.md](docs/reports/2026-07-31-mt5-batch-selection.md) |  | 2026-08-01 | 14KB | `084ca3c5` |
 | [docs/reports/2026-07-31-mt5-nero-parity.md](docs/reports/2026-07-31-mt5-nero-parity.md) |  | 2026-07-31 | 5KB | `4d409cce` |
 | [docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md](docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md) |  | 2026-07-31 | 11KB | `4717b1dc` |
+| [docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md](docs/reports/2026-08-01-mt5-diagnostic-timing-contract.md) |  | 2026-08-01 | 7KB | `bd123d6f` |
 | [docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md](docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md) |  | 2026-08-01 | 13KB | `99496b91` |
 | [docs/reports/README.md](docs/reports/README.md) |  | 2026-07-06 | 2KB | `9a64f8af` |
 
@@ -532,22 +534,22 @@
 | [ML/baseline/diagnose_walk_forward.py](ML/baseline/diagnose_walk_forward.py) |  |  | 2026-06-20 | 24KB | `749b0549` |
 | [ML/baseline/direction_only_signal.py](ML/baseline/direction_only_signal.py) |  |  | 2026-06-17 | 6KB | `8d683a5b` |
 | [ML/baseline/direction_updn_signal.py](ML/baseline/direction_updn_signal.py) |  |  | 2026-06-17 | 3KB | `70523b5b` |
-| [ML/baseline/export_mt5_entry_signals.py](ML/baseline/export_mt5_entry_signals.py) |  |  | 2026-07-30 | 9KB | `4ea65af5` |
+| [ML/baseline/export_mt5_entry_signals.py](ML/baseline/export_mt5_entry_signals.py) | Экспорт MT5 entry signals с timing metadata и run_config hash | ✅ | 2026-08-01 | 10KB | `7587d3d9` |
 | [ML/baseline/feature_ablation.py](ML/baseline/feature_ablation.py) |  |  | 2026-06-17 | 16KB | `704db67c` |
 | [ML/baseline/fractal0_fixed11_internal_closure_rerun.py](ML/baseline/fractal0_fixed11_internal_closure_rerun.py) | Producer-level fixed11 internal closure rerun: stress-cost, timezone/calendar и multi-seed без `locked_test` | ✅ | 2026-07-29 | 69KB | `694fec17` |
 | [ML/baseline/fractal_ablation.py](ML/baseline/fractal_ablation.py) |  |  | 2026-06-17 | 9KB | `1e6b236f` |
 | [ML/baseline/improve_stage4.py](ML/baseline/improve_stage4.py) |  |  | 2026-06-17 | 33KB | `e5c6ddc8` |
-| [ML/baseline/mt5_execution_diagnostics.py](ML/baseline/mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 28KB | `f7220511` |
-| [ML/baseline/mt5_signal_schema.py](ML/baseline/mt5_signal_schema.py) |  |  | 2026-08-01 | 3KB | `8b77b614` |
+| [ML/baseline/mt5_execution_diagnostics.py](ML/baseline/mt5_execution_diagnostics.py) | Read-only diagnostics для MT5 event logs, errors и timing contract | ✅ | 2026-08-01 | 34KB | `6835779b` |
+| [ML/baseline/mt5_signal_schema.py](ML/baseline/mt5_signal_schema.py) | Executable schema source для MT5 signal/event CSV и timing validators | ✅ | 2026-08-01 | 6KB | `e16f806a` |
 | [ML/baseline/oracle_fractal_stop_fav.py](ML/baseline/oracle_fractal_stop_fav.py) | Oracle Fractal Stop Fav | ✅ | 2026-06-17 | 8KB | `02e614cf` |
 | [ML/baseline/parse_mt5_execution_report.py](ML/baseline/parse_mt5_execution_report.py) |  |  | 2026-08-01 | 5KB | `cc794eae` |
-| [ML/baseline/prepare_mt5_entry_source.py](ML/baseline/prepare_mt5_entry_source.py) |  |  | 2026-07-30 | 4KB | `287d79bb` |
+| [ML/baseline/prepare_mt5_entry_source.py](ML/baseline/prepare_mt5_entry_source.py) | H1 bridge из entry-quality rows в MT5 diagnostic timing contract | ✅ | 2026-08-01 | 5KB | `dba32cbf` |
 | [ML/baseline/prune_fractal0_fixed11_mutual_correlation.py](ML/baseline/prune_fractal0_fixed11_mutual_correlation.py) | Read-only pruning 11 fixed Fractal0 rules by mutual overlap без нового winner по `locked_test` | ✅ | 2026-07-29 | 31KB | `7bed97a1` |
 | [ML/baseline/reports/baseline_report.md](ML/baseline/reports/baseline_report.md) |  |  | 2026-06-17 | 4KB | `66cbf52f` |
 | [ML/baseline/reports/limit_order_spread_grid.md](ML/baseline/reports/limit_order_spread_grid.md) |  |  | 2026-06-17 | 3KB | `f8f3c27b` |
 | [ML/baseline/rf_gridsearch.py](ML/baseline/rf_gridsearch.py) |  |  | 2026-06-17 | 6KB | `31bd8826` |
 | [ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py](ML/baseline/run_fractal0_fixed11_rich_entry_locked_test.py) | Wrapper 11 fixed normalized rich-entry rules для locked-test/rerun с M5 fill timestamp и diagnostic contract fields | ✅ | 2026-07-29 | 20KB | `956b1768` |
-| [ML/baseline/run_mt5_batch.py](ML/baseline/run_mt5_batch.py) |  |  | 2026-07-31 | 24KB | `94cc9edc` |
+| [ML/baseline/run_mt5_batch.py](ML/baseline/run_mt5_batch.py) | Batch-runner для 32 MT5 diagnostic candidates | ✅ | 2026-08-01 | 24KB | `f3ba291d` |
 | [ML/baseline/tb_direction_signal.py](ML/baseline/tb_direction_signal.py) |  |  | 2026-06-17 | 8KB | `d211235a` |
 | [ML/baseline/trail_stop_stage4.py](ML/baseline/trail_stop_stage4.py) |  |  | 2026-06-17 | 21KB | `684b667a` |
 | [ML/baseline_candidate_source.py](ML/baseline_candidate_source.py) | Stage 07 baseline-first runner для candidate-source v2 | ✅ | 2026-06-17 | 10KB | `d2608702` |
@@ -920,76 +922,46 @@
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.json) |  |  | 2026-06-17 | 3KB | `5cb5fe58` |
 | [ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.md](ML/reports/mt4_entry_path_v1_live_safe_parity/reconciliation_2022_2025/summary.md) |  |  | 2026-06-17 | 279B | `75a53f21` |
 | [ML/reports/mt5_execution_loop/README.md](ML/reports/mt5_execution_loop/README.md) |  |  | 2026-07-30 | 739B | `34a0d75f` |
-| [ML/reports/mt5_execution_loop/batch/_smoke/metrics.json](ML/reports/mt5_execution_loop/batch/_smoke/metrics.json) |  |  | 2026-07-31 | 866B | `060d2e0d` |
-| [ML/reports/mt5_execution_loop/batch/batch_summary.json](ML/reports/mt5_execution_loop/batch/batch_summary.json) |  |  | 2026-07-31 | 66KB | `e8e53bc7` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `e0e11c22` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/metrics.json) |  |  | 2026-07-31 | 883B | `d11f2f13` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `0ef53a4c` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/metrics.json) |  |  | 2026-07-31 | 898B | `4d612af7` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `97bf0926` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/metrics.json) |  |  | 2026-07-31 | 906B | `d8309907` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `74c6d578` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/metrics.json) |  |  | 2026-07-31 | 900B | `9703e5a5` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `3c2b72f6` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/metrics.json) |  |  | 2026-07-31 | 887B | `85fbae75` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `cef379f8` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/metrics.json) |  |  | 2026-07-31 | 896B | `94f5c93d` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `bbdcc4b5` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/metrics.json) |  |  | 2026-07-31 | 883B | `83e78655` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `2c4b8775` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/metrics.json) |  |  | 2026-07-31 | 884B | `09fad76a` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `56559f46` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/metrics.json) |  |  | 2026-07-31 | 898B | `36ed941a` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `f79bdd5e` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/metrics.json) |  |  | 2026-07-31 | 901B | `6625ceaf` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `4da43faf` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/metrics.json) |  |  | 2026-07-31 | 913B | `409d3c63` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `c97d5a4c` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/metrics.json) |  |  | 2026-07-31 | 914B | `9e9122a1` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `6838ec85` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/metrics.json) |  |  | 2026-07-31 | 895B | `f0d5e51b` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `ad28f579` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/metrics.json) |  |  | 2026-07-31 | 898B | `33112b61` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `39fee4c8` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/metrics.json) |  |  | 2026-07-31 | 911B | `0c0acba6` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `bf8c366d` |
-| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/metrics.json) |  |  | 2026-07-31 | 912B | `67436c0b` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `a4b29ab2` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/metrics.json) |  |  | 2026-07-31 | 895B | `767f4151` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `fc21593c` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/metrics.json) |  |  | 2026-07-31 | 883B | `fbdcb423` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `a147d41e` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/metrics.json) |  |  | 2026-07-31 | 895B | `739c2857` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `388cd82a` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/metrics.json) |  |  | 2026-07-31 | 902B | `a5a957af` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `60ad081e` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/metrics.json) |  |  | 2026-07-31 | 896B | `57fa377e` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `05003ca2` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/metrics.json) |  |  | 2026-07-31 | 884B | `8dc4a00a` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `7a1a5a8a` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/metrics.json) |  |  | 2026-07-31 | 884B | `2786f73f` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `0181dc34` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/metrics.json) |  |  | 2026-07-31 | 900B | `4926f537` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `6e2aae56` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/metrics.json) |  |  | 2026-07-31 | 898B | `28c1bc74` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `dd3ad334` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/metrics.json) |  |  | 2026-07-31 | 899B | `5c35bb54` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `29f03def` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/metrics.json) |  |  | 2026-07-31 | 914B | `7649eae4` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `33494778` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/metrics.json) |  |  | 2026-07-31 | 899B | `4fa81eaa` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.json) |  |  | 2026-07-31 | 1KB | `48b9526b` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/metrics.json) |  |  | 2026-07-31 | 887B | `0d863343` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/entry_signals.json) |  |  | 2026-07-31 | 1KB | `6d1819f2` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/metrics.json) |  |  | 2026-07-31 | 885B | `b81adec2` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/entry_signals.json) |  |  | 2026-07-31 | 1KB | `0c73e4ac` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/metrics.json) |  |  | 2026-07-31 | 905B | `e1b5f7f4` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/entry_signals.json) |  |  | 2026-07-31 | 1KB | `25cb08cc` |
-| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/metrics.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/metrics.json) |  |  | 2026-07-31 | 894B | `0bd0109e` |
+| [ML/reports/mt5_execution_loop/batch/_smoke/metrics.json](ML/reports/mt5_execution_loop/batch/_smoke/metrics.json) |  |  | 2026-08-01 | 866B | `060d2e0d` |
+| [ML/reports/mt5_execution_loop/batch/batch_summary.json](ML/reports/mt5_execution_loop/batch/batch_summary.json) |  |  | 2026-08-01 | 7KB | `40bff5c4` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `e17ea1fa` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `25a99d61` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `bf68087e` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_12h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `61cbc39c` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `f3db82da` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `b312a048` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `2284c194` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_24h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `128eb31a` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `5cf13777` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.05/metrics.json) |  |  | 2026-08-01 | 898B | `36ed941a` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `ba435828` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/metrics.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.1/metrics.json) |  |  | 2026-08-01 | 901B | `6625ceaf` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `2fb18b31` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_3h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `2df9abbb` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `85405dbd` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `9385a348` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `43fa4b92` |
+| [ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/simple_combined_extra_trees_small_6h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `cd55d726` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `eb747b30` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `e3277c3b` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `342dbb84` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_12h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `fea907c7` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `4387f78d` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `2660aa3f` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `1ec07449` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_24h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `9e20a178` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `fa72e1dc` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `a561e8ba` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `7e8a2c01` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_extra_trees_small_6h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `520b2c29` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.json) |  |  | 2026-08-01 | 2KB | `a7cbeb64` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.1/entry_signals.json) |  |  | 2026-08-01 | 2KB | `4f4dfa9c` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/entry_signals.json) |  |  | 2026-08-01 | 2KB | `79ba38ed` |
+| [ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/entry_signals.json](ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/entry_signals.json) |  |  | 2026-08-01 | 2KB | `741f0f4e` |
 | [ML/reports/mt5_execution_loop/batch_selection_contract.json](ML/reports/mt5_execution_loop/batch_selection_contract.json) |  |  | 2026-07-31 | 1KB | `69734050` |
 | [ML/reports/mt5_execution_loop/diagnostics/error_inventory.json](ML/reports/mt5_execution_loop/diagnostics/error_inventory.json) |  |  | 2026-08-01 | 13KB | `66a1b685` |
 | [ML/reports/mt5_execution_loop/diagnostics/error_summary.json](ML/reports/mt5_execution_loop/diagnostics/error_summary.json) |  |  | 2026-08-01 | 8KB | `db49f233` |
-| [ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json](ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json) |  |  | 2026-08-01 | 25KB | `15bf13e2` |
+| [ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json](ML/reports/mt5_execution_loop/diagnostics/event_anomaly_summary.json) |  |  | 2026-08-01 | 8KB | `20620979` |
 | [ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json](ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json) |  |  | 2026-08-01 | 59KB | `a78b95cb` |
 | [ML/reports/mt5_execution_loop/manual_run_manifest_template.json](ML/reports/mt5_execution_loop/manual_run_manifest_template.json) |  |  | 2026-07-30 | 714B | `5a2309af` |
 | [ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.json](ML/reports/mt5_execution_loop/mt5_entry_signals_20260730_entry_quality_filter.json) |  |  | 2026-07-30 | 1KB | `3d88d62b` |
@@ -1417,15 +1389,15 @@
 | [tests/test_live_safe_audit.py](tests/test_live_safe_audit.py) | `ML/live_safe_audit.py`, `ML/live_safe_audit_registry.py`, `ML/run_live_safe_ml_audit.py` | ✅ | 2026-06-17 | 5KB | `3d37ad7d` |
 | [tests/test_ml_fractal_parser_contract.py](tests/test_ml_fractal_parser_contract.py) | `ML/` — запрет использовать parser разметки как ML feature extractor | ✅ | 2026-06-17 | 3KB | `281dac57` |
 | [tests/test_mql_telemetry_params_csv_contract.py](tests/test_mql_telemetry_params_csv_contract.py) | MQL telemetry `#.csv` / `EXTERN_VARS()` runtime contract | ✅ | 2026-07-29 | 19KB | `b95df2f2` |
-| [tests/test_mt5_execution_diagnostics.py](tests/test_mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 14KB | `cc2cad8c` |
+| [tests/test_mt5_execution_diagnostics.py](tests/test_mt5_execution_diagnostics.py) |  |  | 2026-08-01 | 21KB | `e6a05e17` |
 | [tests/test_mt5_nero_parity.py](tests/test_mt5_nero_parity.py) |  |  | 2026-07-31 | 6KB | `563137e4` |
-| [tests/test_mt5_signal_executor_schema.py](tests/test_mt5_signal_executor_schema.py) |  |  | 2026-08-01 | 11KB | `ab082418` |
+| [tests/test_mt5_signal_executor_schema.py](tests/test_mt5_signal_executor_schema.py) |  |  | 2026-08-01 | 20KB | `0ee22613` |
 | [tests/test_multi_scale_fractal_features.py](tests/test_multi_scale_fractal_features.py) |  |  | 2026-06-17 | 1KB | `de0eeac6` |
 | [tests/test_next_open_entry_updn_foundation.py](tests/test_next_open_entry_updn_foundation.py) | `ML/baseline/benchmark_next_open_entry_updn_foundation.py` | ✅ | 2026-07-20 | 3KB | `b453393c` |
 | [tests/test_online_causal_preprocessing.py](tests/test_online_causal_preprocessing.py) | `processing/online_causal_preprocessing.py` | ✅ | 2026-06-17 | 1KB | `7d04f504` |
 | [tests/test_online_tester_reconciliation.py](tests/test_online_tester_reconciliation.py) |  |  | 2026-06-17 | 7KB | `e461ccdf` |
 | [tests/test_outcome_tasks.py](tests/test_outcome_tasks.py) | outcome tasks в `ML/data_loader.py` | ✅ | 2026-06-17 | 1KB | `8be56a6e` |
-| [tests/test_parse_mt5_execution_report.py](tests/test_parse_mt5_execution_report.py) |  |  | 2026-08-01 | 7KB | `3de7411b` |
+| [tests/test_parse_mt5_execution_report.py](tests/test_parse_mt5_execution_report.py) |  |  | 2026-08-01 | 7KB | `41f30100` |
 | [tests/test_prepare_entry_path_mt4_parity.py](tests/test_prepare_entry_path_mt4_parity.py) | `ML/prepare_entry_path_mt4_parity.py` | ✅ | 2026-06-17 | 1KB | `43e1848e` |
 | [tests/test_rebuild_xauusd_top_level_updn.py](tests/test_rebuild_xauusd_top_level_updn.py) |  |  | 2026-07-20 | 3KB | `5554cbb1` |
 | [tests/test_regression_updn_already_moved_audit.py](tests/test_regression_updn_already_moved_audit.py) | `ML/baseline/analyze_regression_updn_already_moved_audit.py` | ✅ | 2026-07-20 | 7KB | `a41a8003` |
@@ -1869,7 +1841,7 @@
 | [MT/MQL5/Include/iGRAPH.mqh](MT/MQL5/Include/iGRAPH.mqh) |  |  | 2026-06-17 | 39KB | `f5abe888` |
 | [MT/MQL5/Include/lib_ATR.mqh](MT/MQL5/Include/lib_ATR.mqh) |  |  | 2026-06-17 | 2KB | `dcc5b590` |
 | [MT/MQL5/Include/lib_Flat.mqh](MT/MQL5/Include/lib_Flat.mqh) |  |  | 2026-06-17 | 13KB | `4536cf5c` |
-| [MT/MQL5/Include/lib_ML_Signal.mqh](MT/MQL5/Include/lib_ML_Signal.mqh) |  |  | 2026-08-01 | 37KB | `fda6b367` |
+| [MT/MQL5/Include/lib_ML_Signal.mqh](MT/MQL5/Include/lib_ML_Signal.mqh) |  |  | 2026-08-01 | 39KB | `d3948edb` |
 | [MT/MQL5/Include/lib_ML_Signal_TB.mqh](MT/MQL5/Include/lib_ML_Signal_TB.mqh) |  |  | 2026-06-17 | 8KB | `86f9658b` |
 | [MT/MQL5/Include/lib_PIC.mqh](MT/MQL5/Include/lib_PIC.mqh) |  |  | 2026-07-31 | 56KB | `0f3624b1` |
 | [MT/MQL5/Include/stderror.mqh](MT/MQL5/Include/stderror.mqh) |  |  | 2026-06-17 | 9KB | `e8590cbe` |
@@ -1896,8 +1868,8 @@
 | [wiki/README.md](wiki/README.md) |  | 2026-07-29 | 1KB | `41ec7dc6` |
 | [wiki/concepts/folded-mov-channels.md](wiki/concepts/folded-mov-channels.md) |  | 2026-06-17 | 4KB | `04d2d382` |
 | [wiki/concepts/signal-archetypes.md](wiki/concepts/signal-archetypes.md) |  | 2026-06-17 | 3KB | `52a35182` |
-| [wiki/index.md](wiki/index.md) |  | 2026-08-01 | 6KB | `11ef84ed` |
-| [wiki/log.md](wiki/log.md) |  | 2026-08-01 | 82KB | `46d69a02` |
+| [wiki/index.md](wiki/index.md) |  | 2026-08-01 | 6KB | `24cec879` |
+| [wiki/log.md](wiki/log.md) |  | 2026-08-01 | 82KB | `98587941` |
 | [wiki/research/execution-tracks-direct-direction-audit.md](wiki/research/execution-tracks-direct-direction-audit.md) |  | 2026-06-17 | 7KB | `db2ea437` |
 | [wiki/research/execution-tracks-early-research.md](wiki/research/execution-tracks-early-research.md) |  | 2026-06-17 | 5KB | `8d497df0` |
 | [wiki/research/execution-tracks-entry-path-v1.md](wiki/research/execution-tracks-entry-path-v1.md) |  | 2026-06-17 | 21KB | `ed6e7d2e` |
@@ -1911,7 +1883,7 @@
 | [wiki/research/fractal-stop-research.md](wiki/research/fractal-stop-research.md) |  | 2026-07-30 | 143KB | `84f493d1` |
 | [wiki/research/limit-order-feature-foundation.md](wiki/research/limit-order-feature-foundation.md) |  | 2026-06-17 | 4KB | `2bea4655` |
 | [wiki/research/methodology-cycle-candidate-source-v2.md](wiki/research/methodology-cycle-candidate-source-v2.md) |  | 2026-06-17 | 3KB | `fdb94cc5` |
-| [wiki/research/mt5-execution-loop.md](wiki/research/mt5-execution-loop.md) |  | 2026-08-01 | 6KB | `18c1e1ad` |
+| [wiki/research/mt5-execution-loop.md](wiki/research/mt5-execution-loop.md) |  | 2026-08-01 | 7KB | `3eda4d2e` |
 | [wiki/research/signal-quality-research.md](wiki/research/signal-quality-research.md) |  | 2026-06-17 | 8KB | `a5355801` |
 | [wiki/wiki.py](wiki/wiki.py) |  | 2026-06-17 | 18KB | `0d2c8d8e` |
 
@@ -1935,6 +1907,22 @@
 | [.opencode/package.json](.opencode/package.json) |  | 2026-05-20 | 64B | `9c478c62` |
 | [.superpowers/sdd/2026-07-30-mt5-single-rule-diagnostic-run/task-1-brief.md](.superpowers/sdd/2026-07-30-mt5-single-rule-diagnostic-run/task-1-brief.md) |  | 2026-07-30 | 3KB | `e694d25f` |
 | [.superpowers/sdd/2026-07-30-mt5-single-rule-diagnostic-run/task-1-report.md](.superpowers/sdd/2026-07-30-mt5-single-rule-diagnostic-run/task-1-report.md) |  | 2026-07-30 | 2KB | `eba4f27a` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/progress.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/progress.md) |  | 2026-08-01 | 1KB | `4085eb7c` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-1-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-1-brief.md) |  | 2026-08-01 | 10KB | `4d84cf07` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-1-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-1-report.md) |  | 2026-08-01 | 4KB | `41b3a394` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-2-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-2-brief.md) |  | 2026-08-01 | 9KB | `62e7fb98` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-2-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-2-report.md) |  | 2026-08-01 | 4KB | `f036e005` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-3-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-3-brief.md) |  | 2026-08-01 | 5KB | `3da18320` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-3-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-3-report.md) |  | 2026-08-01 | 1KB | `6c5d5c23` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-4-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-4-brief.md) |  | 2026-08-01 | 7KB | `c3864444` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-4-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-4-report.md) |  | 2026-08-01 | 1KB | `30fcd838` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-5-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-5-brief.md) |  | 2026-08-01 | 7KB | `7366d975` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-5-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-5-report.md) |  | 2026-08-01 | 6KB | `0d3b7a63` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-6-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-6-brief.md) |  | 2026-08-01 | 4KB | `6ef995b0` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-6-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-6-report.md) |  | 2026-08-01 | 1KB | `f4d12a71` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-7-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-7-brief.md) |  | 2026-08-01 | 5KB | `7820fb19` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-7-report.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-7-report.md) |  | 2026-08-01 | 5KB | `a21338ac` |
+| [.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-8-brief.md](.superpowers/sdd/2026-08-01-mt5-diagnostic-timing-contract/task-8-brief.md) |  | 2026-08-01 | 6KB | `edc582c5` |
 | [.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/progress.md](.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/progress.md) |  | 2026-08-01 | 660B | `8966b9fb` |
 | [.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/task-1-brief.md](.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/task-1-brief.md) |  | 2026-08-01 | 8KB | `150b6175` |
 | [.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/task-1-report.md](.superpowers/sdd/2026-08-01-mt5-execution-hygiene-postbatch/task-1-report.md) |  | 2026-08-01 | 1KB | `8d854c5f` |

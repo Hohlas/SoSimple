@@ -21,7 +21,7 @@ forbidden_interpretations: no live-ready claim; no production-ready claim; no ne
 ## What Was Done
 
 - Python schema теперь проверяет `feature_time <= time < feature_available_time <= decision_time`.
-- Event schema и diagnostics проверяют `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time` для signal-linked rows.
+- Event schema и diagnostics проверяют `feature_time <= signal_time < feature_available_time <= decision_time <= execution_time` для signal-linked rows with complete timing fields; rows without `signal_time` are treated as legacy/partial diagnostic rows, not as fully verified v2 event rows.
 - Entry source bridge формирует H1 timing: `feature_time=signal_time`, `feature_available_time=signal_time+1h`, `decision_time=feature_available_time+latency_bars*h`, `time=decision_time-1h`.
 - Export metadata пишет `timing_contract`, `latency_bars` и включает их в `run_config_hash`.
 - MQL5 reader матчится только по `time`, отклоняет неверные строки через `TIMING_VIOLATION` и не добавляет их в активный массив сигналов.
@@ -44,8 +44,10 @@ allowed_max_verdict: DIAGNOSTIC_ONLY
 - `ML/baseline/run_mt5_batch.py`
 - `ML/baseline/mt5_execution_diagnostics.py`
 - `MT/MQL5/Include/lib_ML_Signal.mqh`
+- `CHANGELOG.md`
 - `docs/methodology/13b-mt5-execution-parity.md`
 - `docs/ML/mt5_execution_loop.md`
+- `tests/test_mt5_batch_runtime_contract.py`
 - `tests/test_mt5_signal_executor_schema.py`
 - `tests/test_parse_mt5_execution_report.py`
 - `tests/test_mt5_execution_diagnostics.py`
@@ -97,6 +99,7 @@ Final Task 8 checks:
   tests/test_mt5_signal_executor_schema.py \
   tests/test_parse_mt5_execution_report.py \
   tests/test_mt5_execution_diagnostics.py \
+  tests/test_mt5_batch_runtime_contract.py \
   -q
 rg -n "TIMING_VIOLATION|feature_time <= time < feature_available_time <= decision_time|feature_time <= signal_time < feature_available_time <= decision_time <= execution_time|DIAGNOSTIC_ONLY|locked_test" \
   docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contract-design.md \
@@ -112,8 +115,8 @@ git status --short docs/superpowers/specs/2026-08-01-mt5-diagnostic-timing-contr
 ./.venv/bin/python -m pytest tests/ -q
 ```
 
-Results: targeted final subset passed (`50 passed`). Static checks and wiki
-status passed. Full `tests/` suite finished with `1565 passed, 1 failed,
+Results: targeted final subset passed (`53 passed`). Static checks and wiki
+status passed. Full `tests/` suite finished with `1568 passed, 1 failed,
 52 warnings`; the failing test was
 `tests/test_mql_telemetry_params_csv_contract.py::test_tester_ini_selects_telemetry_backtest_row`,
 which expects `BackTest=2` in `MT/tester/$o$imple.ini`, while the file currently
@@ -171,9 +174,13 @@ not fully verified in this environment.
 ## Split Disclosure
 
 ```text
-VAL_FROM: 2021-01-04
-VAL_TO: 2022-12-02
+train: not used by this timing-contract rerun; candidate training/search context inherited from `docs/reports/2026-07-31-mt5-batch-selection.md`.
+validation: 2021-01-04..2022-12-02; runner source role is `val_select`.
+val-stop: not used by this timing-contract rerun; inherited/unchanged where applicable.
+val-select: used only to regenerate and rerun the 32 previously selected diagnostic candidates.
+val-eval: not used by this timing-contract rerun; inherited/unchanged where applicable.
 locked_test: not opened
+sample_size_gate: no winner selection in this stage; `batch_summary.json` reports n_candidates=32, n_valid=2, n_eligible=0.
 ```
 
 ## Next Step
