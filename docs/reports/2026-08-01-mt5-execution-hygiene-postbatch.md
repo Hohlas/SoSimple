@@ -173,4 +173,5 @@ Exactly one next action: retrieve the missing cumulative tester agent log and `E
 - `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`
 - `docs/reports/2026-07-31-mt5-nero-parity.md`
 - `docs/reports/2026-07-31-mt5-batch-selection.md`
+- `docs/superpowers/roadmap.md`
 - `ML/reports/mt5_execution_loop/diagnostics/`
