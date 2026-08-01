@@ -20,8 +20,8 @@
 - **topics**: `mt5`, `execution_hygiene`, `error_4756`, `post_batch_diagnostics`
 - **summary**: Classified available MT5 execution error artifacts and summarized post-batch failure modes without selecting a new winner.
 - **artifacts**: `ML/reports/mt5_execution_loop/diagnostics/error_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json`
-- **decision**: `DIAGNOSTIC_ONLY`; execution hygiene status is `EXECUTION_HYGIENE_PARTIAL` because repo artifacts are classified, but missing expected error CSV / cumulative agent log keep row-level `ERROR-4756` linkage `UNKNOWN`.
-- **notes**: Result remains `DIAGNOSTIC_ONLY`; `ERROR-138` requote, `ERROR-132` market closed and `ERROR-129` invalid price are separate execution classes; no trading or model-quality conclusion.
+- **decision**: `DIAGNOSTIC_ONLY`; execution hygiene status is `EXECUTION_HYGIENE_PARTIAL` because repo artifacts are classified, but row-level error/event linkage remains `UNKNOWN`.
+- **notes**: Historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are abandoned as non-reproducible inputs; do not block current batch follow-up on them. `ERROR-138` requote, `ERROR-132` market closed and `ERROR-129` invalid price are separate execution classes; no trading or model-quality conclusion.
 
 ## [2026-07-31] — MT5 Batch Selection: 32 candidates (BATCH_NO_WINNER)
 - **report**: `docs/reports/2026-07-31-mt5-batch-selection.md`

@@ -19,13 +19,13 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 - **current_search_budget**: 0 new model/search configurations
 - **diagnostic_checks_budget**: 6 diagnostic groups: error classes, source buckets, event anomaly categories, trade-count buckets, top-11 candidate slices, profit concentration slice
 - **cumulative_search_budget**: inherits 64 benchmark -> 32 shortlist -> 32 MT5 tester -> 11 eligible from 2026-07-31 batch
-- **next_probe_freeze**: not selected in this report
+- **next_probe_freeze**: use only current saved batch artifacts; historical missing external logs are excluded from future decisions
 - **allowed_max_verdict**: DIAGNOSTIC_ONLY
 - **forbidden_interpretations**: profitable, ready, live-ready, tradable, new winner, model-quality proof
 
 ## Context
 
-The 2026-07-30 single-rule diagnostic reported external tester-agent `ERROR-4756` lines, 9 `ORDER_EXPIRED`, pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation.
+The 2026-07-30 single-rule diagnostic reported external tester-agent `ERROR-4756` lines, 9 `ORDER_EXPIRED`, pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation. These historical missing artifacts are now explicitly abandoned as non-reproducible inputs and are not used for current batch decisions.
 
 The 2026-07-31 OnTradeTransaction lifecycle report closed event/deal reconciliation for the diagnostic executor: 269 positions, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`.
 
@@ -108,7 +108,7 @@ Final documentation/wiki commit modified:
 - Error classes `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`: `error_summary.json.by_error_class`.
 - Source buckets `mt4_files=1174`, `mt_tester_files=705`: `error_summary.json.by_source_bucket`.
 - Historical lifecycle numbers `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation`.
-- Historical external `ERROR-4756` count: not used as a structured key number in this report because no repo JSON/CSV for the cumulative tester-agent log exists; linkage remains `UNKNOWN`.
+- Historical external `ERROR-4756` count: not used as a structured key number in this report because no repo JSON/CSV for the cumulative tester-agent log exists. The missing historical log is abandoned and must not block current batch follow-up.
 - Historical single-rule `ORDER_EXPIRED=9`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json.order_counts.ORDER_EXPIRED`.
 - 32 batch event paths, `_smoke` excluded: `event_anomaly_summary.json.batch_run_count`, `batch_event_path_count`, `excluded_service_dirs`.
 - Batch `OPEN_FAILED=22767`: `event_anomaly_summary.json.batch_runs.event_counts.OPEN_FAILED`.
@@ -140,7 +140,7 @@ Result after audit fixes, based on `HEAD=aad3bc9` plus working-tree audit change
 
 ## Results
 
-Error inventory found 6 available `ERROR_SoSimple_*.csv` files. `ERROR_SoSimple_163856259.csv` remains missing and is recorded as `UNKNOWN`.
+Error inventory found 6 available `ERROR_SoSimple_*.csv` files. `ERROR_SoSimple_163856259.csv` remains missing, is recorded as `UNKNOWN`, and is abandoned as a historical non-reproducible artifact.
 
 Error row classification produced 1879 rows: `INVALID_STOPS=670`, `OTHER=621`, `REQUOTE=550`, `MODIFICATION_TOO_CLOSE=35`, `MARKET_CLOSED=2`, `INVALID_PRICE=1`. Source buckets remain separated by artifact path: `mt4_files=1174`, `mt_tester_files=705`.
 
@@ -160,12 +160,12 @@ Hypothesis: batch failure is mainly consistent with low bootstrap lower bound un
 
 A5 post-mortem scope: partial. This report covers available failure-mode slices, gross PnL from saved `pnl_by_trade`, yearly PF/gross profit fields, and close-reason counts available in per-run `metrics.json`. It does not complete oracle component decomposition, TP/SL/TIMEOUT exit slices, yearly gross loss contribution, feature-period contrasts, or negative controls; those require additional saved inputs or a new diagnostic cycle.
 
-The verdict cannot be `EXECUTION_HYGIENE_CLASSIFIED` because the expected `ERROR_SoSimple_163856259.csv` and cumulative tester agent log with external `ERROR-4756` lines are not available in the repo, and row-level error-to-event linkage is `UNKNOWN`.
+The execution hygiene status remains `EXECUTION_HYGIENE_PARTIAL` because row-level error-to-event linkage is still `UNKNOWN`. The missing historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent log are no longer blockers for current batch follow-up.
 
 ## Limitations / Open Questions
 
-- Missing `ERROR_SoSimple_163856259.csv`.
-- Missing cumulative tester agent log containing external `ERROR-4756` lines.
+- Historical `ERROR_SoSimple_163856259.csv` is missing and abandoned as non-reproducible; do not use it in future conclusions.
+- Historical cumulative tester agent log containing external `ERROR-4756` lines is missing and abandoned as non-reproducible; do not use it in future conclusions.
 - Batch INI, batch compile log, terminal log, and agent log were not saved as batch artifacts.
 - Error/event linkage is `UNKNOWN`; no causality is inferred.
 - Cost model remains incomplete: swap, commission, slippage, latency, and stress-cost checks are not closed.
@@ -180,7 +180,7 @@ Do not interpret tester PF/PnL as profitable, production-ready, live-ready, trad
 
 ## Next Step
 
-Exactly one next action: retrieve the missing cumulative tester agent log and `ERROR_SoSimple_163856259.csv`.
+Exactly one next action: plan the next frozen probe using only current saved batch artifacts; do not wait for historical `ERROR-4756` logs or `ERROR_SoSimple_163856259.csv`.
 
 ## Related Materials
 

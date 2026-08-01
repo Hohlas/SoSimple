@@ -19,13 +19,14 @@
 Status: execution hygiene report completed as `DIAGNOSTIC_ONLY`.
 Execution hygiene status is `EXECUTION_HYGIENE_PARTIAL`: available repo
 `ERROR_SoSimple_*.csv`, reference events, 32 batch event files, and post-batch
-failure modes are classified, but full ERROR-4756 linkage remains open because
-`ERROR_SoSimple_163856259.csv` and the cumulative tester agent log are missing.
+failure modes are classified, but row-level error/event linkage remains
+`UNKNOWN`. Historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent
+`ERROR-4756` log are abandoned as non-reproducible inputs and no longer block
+current batch follow-up.
 
 Next action:
 
-1. Retrieve missing artifacts: `ERROR_SoSimple_163856259.csv` and the
-   cumulative tester agent log containing external `ERROR-4756` lines.
+1. Plan the next frozen probe using only current saved batch artifacts.
 
 ---
 

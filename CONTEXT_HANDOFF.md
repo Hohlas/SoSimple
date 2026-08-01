@@ -2,7 +2,7 @@
 
 ## Current Active State
 
-- active track: `MT5 execution hygiene -> retrieve missing artifacts`
+- active track: `MT5 execution hygiene -> next frozen probe from saved batch artifacts`
 - latest report: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - latest plan: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - diagnostics CLI: `ML/baseline/mt5_execution_diagnostics.py`
@@ -17,7 +17,7 @@ Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 - Available `ERROR_SoSimple_*.csv` files classified.
 - Reference and 32 batch event artifacts summarized; `_smoke` excluded.
 - Batch failure attribution preserves `BATCH_NO_WINNER`; no new winner selected.
-- `ERROR_SoSimple_163856259.csv` and cumulative tester agent log are still missing.
+- Historical `ERROR_SoSimple_163856259.csv` and cumulative tester agent log are missing, abandoned as non-reproducible inputs, and must not block current batch follow-up.
 - Error-to-event linkage status: `UNKNOWN`.
 
 ## Current Diagnostic Facts
@@ -37,7 +37,7 @@ Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 
 ## Next Step
 
-Retrieve missing external artifacts: `ERROR_SoSimple_163856259.csv` and the cumulative tester agent log with external `ERROR-4756` lines.
+Plan the next frozen probe using only current saved batch artifacts. Do not wait for historical `ERROR_SoSimple_163856259.csv` or cumulative tester agent log with external `ERROR-4756` lines.
 
 ## Verification
 

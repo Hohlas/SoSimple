@@ -896,3 +896,4 @@
 # 2026-08-01
 
 - Ingested MT5 execution-loop research page covering reports from 2026-07-29 through 2026-08-01, including `EXECUTION_HYGIENE_PARTIAL` and missing `ERROR-4756` linkage artifacts.
+- Updated MT5 execution-loop research page: historical missing `ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are abandoned as non-reproducible inputs; next frozen probe should use current saved batch artifacts.

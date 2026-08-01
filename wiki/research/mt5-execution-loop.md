@@ -6,7 +6,7 @@ status: active
 
 # MT5 Execution Loop
 
-> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; доступные repo-артефакты классифицированы, но полная связь `ERROR-4756` остаётся частичной из-за отсутствующих внешних логов.
+> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; доступные repo-артефакты классифицированы, row-level error/event linkage остаётся `UNKNOWN`, а старые отсутствующие `ERROR-4756`/`ERROR_SoSimple_163856259.csv` списаны как невоспроизводимые исторические артефакты.
 
 ## Хронология
 
@@ -26,7 +26,8 @@ metrics JSON. Timing contract был диагностически пройден
 неполным: много `OPEN` без `CLOSE`, `same_h1_lifecycle_status=UNKNOWN`.
 Отчёт также зафиксировал `ERROR-4756` lines во внешнем tester-agent log,
 9 `ORDER_EXPIRED`, 32 pending-order-not-found observations и ожидаемый, но
-непроанализированный `ERROR_SoSimple_163856259.csv`.
+непроанализированный `ERROR_SoSimple_163856259.csv`. Эти старые внешние
+артефакты больше не используются как источник истины для текущих batch-решений.
 
 ### 2026-07-31: OnTradeTransaction lifecycle closure
 
@@ -65,9 +66,10 @@ bootstrap lower bound; trade-count buckets are `100-149=9`, `150+=2`; one
 candidate failed profit concentration.
 
 Verdict: `DIAGNOSTIC_ONLY`. Execution hygiene status:
-`EXECUTION_HYGIENE_PARTIAL`. Full classification is blocked by missing
-`ERROR_SoSimple_163856259.csv`, missing cumulative tester agent log with
-external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
+`EXECUTION_HYGIENE_PARTIAL`. Current saved repo artifacts are classified.
+Historical missing `ERROR_SoSimple_163856259.csv` and cumulative tester-agent
+`ERROR-4756` log are abandoned as non-reproducible inputs. The remaining limit is
+row-level linkage status `UNKNOWN`.
 
 ## Ключевые результаты
 
@@ -84,14 +86,15 @@ external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
 MT5 diagnostic executor is usable for structured post-batch diagnostics, but
 not for trading claims. Hypothesis: available evidence is consistent with low
 bootstrap lower bound, small-to-moderate trade counts and low fill rate as
-diagnostic failure modes. This is not a proven model conclusion, and full
-`ERROR-4756` causality remains unknown.
+diagnostic failure modes. This is not a proven model conclusion. Historical
+external `ERROR-4756` causality is abandoned and must not be used in future
+conclusions.
 
 ## Открытые вопросы
 
-- Retrieve or explicitly abandon `ERROR_SoSimple_163856259.csv`.
-- Retrieve cumulative tester agent log with external `ERROR-4756` lines.
-- Retrieve missing artifacts before choosing the next frozen probe.
+- Do not use historical `ERROR_SoSimple_163856259.csv` or cumulative
+  tester-agent `ERROR-4756` log in future conclusions.
+- Plan the next frozen probe from current saved batch artifacts.
 - Complete cost model: swap, commission, slippage, latency and stress costs.
 
 ## Источники
