@@ -49,6 +49,22 @@ ERROR_OUTPUT_COLUMNS = [
 ]
 EVENT_METADATA_COLUMNS = ["source_file", "source_path", "run_id"]
 EVENT_ANOMALY_EVENTS = {"OPEN_FAILED", "ORDER_EXPIRED"}
+TIMING_CHECK_EVENT_NAMES = {
+    "ORDER_PLACED",
+    "ORDER_EXPIRED",
+    "OPEN_FAILED",
+    "OPEN",
+    "ML_EVAL",
+    "ML_CLOSE",
+    "CLOSE",
+}
+TIMING_CONTRACT_COLUMNS = [
+    "feature_time",
+    "signal_time",
+    "feature_available_time",
+    "decision_time",
+    "execution_time",
+]
 
 
 def sha256_file(path: Path) -> str:
@@ -270,6 +286,68 @@ def _event_linkage_status(events: pd.DataFrame) -> str:
     return "UNKNOWN"
 
 
+def _complete_timing_rows(events: pd.DataFrame) -> pd.Series:
+    mask = pd.Series(True, index=events.index)
+    for column in TIMING_CONTRACT_COLUMNS:
+        mask &= events[column].fillna("").astype(str).str.strip().ne("")
+    return mask
+
+
+def summarize_timing_contract(events: pd.DataFrame) -> dict[str, object]:
+    contract = "feature_time <= signal_time < feature_available_time <= decision_time <= execution_time"
+    if events.empty:
+        return {
+            "status": "DIAGNOSTIC_ONLY",
+            "contract": contract,
+            "checked_rows": 0,
+            "violation_rows": 0,
+            "tx_rows_excluded": 0,
+            "timing_violation_event_count": 0,
+            "invalid_timestamp_rows": 0,
+            "violations_by_rule": {},
+        }
+
+    event_names = events["event"].astype(str)
+    signal_mask = event_names.isin(TIMING_CHECK_EVENT_NAMES)
+    complete_mask = _complete_timing_rows(events)
+    checked = events.loc[signal_mask & complete_mask, TIMING_CONTRACT_COLUMNS].copy()
+    parsed = {column: pd.to_datetime(checked[column], errors="coerce") for column in TIMING_CONTRACT_COLUMNS}
+    invalid_timestamp = pd.Series(False, index=checked.index)
+    for values in parsed.values():
+        invalid_timestamp |= values.isna()
+    valid_timestamp = ~invalid_timestamp
+
+    rules = {
+        "feature_time <= signal_time": parsed["feature_time"].le(parsed["signal_time"]),
+        "signal_time < feature_available_time": parsed["signal_time"].lt(parsed["feature_available_time"]),
+        "feature_available_time <= decision_time": parsed["feature_available_time"].le(parsed["decision_time"]),
+        "decision_time <= execution_time": parsed["decision_time"].le(parsed["execution_time"]),
+    }
+    violations_by_rule = {
+        rule: int((~mask.fillna(False) & valid_timestamp).sum())
+        for rule, mask in rules.items()
+        if int((~mask.fillna(False) & valid_timestamp).sum()) > 0
+    }
+    if invalid_timestamp.any():
+        violations_by_rule["invalid_timestamp"] = int(invalid_timestamp.sum())
+
+    row_violation = pd.Series(False, index=checked.index)
+    for mask in rules.values():
+        row_violation |= ~mask.fillna(False) & valid_timestamp
+    row_violation |= invalid_timestamp
+
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "contract": contract,
+        "checked_rows": int(len(checked)),
+        "violation_rows": int(row_violation.sum()),
+        "tx_rows_excluded": int(event_names.isin({"TX_OPEN", "TX_CLOSE"}).sum()),
+        "timing_violation_event_count": int(event_names.eq("TIMING_VIOLATION").sum()),
+        "invalid_timestamp_rows": int(invalid_timestamp.sum()),
+        "violations_by_rule": violations_by_rule,
+    }
+
+
 def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
     if events.empty or "event" not in events.columns:
         return {
@@ -281,6 +359,7 @@ def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
             "reconciliation_by_run": {},
             "run_ids": [],
             "linkage_status": "UNKNOWN",
+            "timing_contract": summarize_timing_contract(events),
         }
 
     event_names = events["event"].astype(str)
@@ -321,6 +400,7 @@ def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
         "reconciliation_by_run": reconciliation_by_run,
         "run_ids": sorted(set(run_ids)),
         "linkage_status": _event_linkage_status(events),
+        "timing_contract": summarize_timing_contract(events),
     }
 
 

@@ -165,6 +165,86 @@ def test_summarize_event_anomalies_keeps_unknown_for_legacy_event_context(tmp_pa
     assert summary["linkage_status"] == "UNKNOWN"
 
 
+def test_summarize_timing_contract_excludes_tx_rows_with_empty_timing_fields() -> None:
+    from tests.test_parse_mt5_execution_report import _event_row, _tx_row
+    from ML.baseline.mt5_execution_diagnostics import summarize_timing_contract
+
+    events = pd.DataFrame(
+        [
+            _event_row(
+                "ORDER_PLACED",
+                "2023.01.02 10:00",
+                feature_time="2023.01.02 09:00",
+                signal_time="2023.01.02 09:00",
+                feature_available_time="2023.01.02 10:00",
+                decision_time="2023.01.02 10:00",
+                execution_time="2023.01.02 10:00",
+            ),
+            _tx_row("TX_OPEN", "2023.01.02 10:05", 100, 1001, "EXPERT"),
+            _tx_row("TX_CLOSE", "2023.01.02 10:40", 100, 1002, "SL"),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    summary = summarize_timing_contract(events)
+
+    assert summary["checked_rows"] == 1
+    assert summary["violation_rows"] == 0
+    assert summary["tx_rows_excluded"] == 2
+
+
+def test_summarize_timing_contract_reports_signal_time_violation() -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+    from ML.baseline.mt5_execution_diagnostics import summarize_timing_contract
+
+    events = pd.DataFrame(
+        [
+            _event_row(
+                "ORDER_PLACED",
+                "2023.01.02 10:00",
+                feature_time="2023.01.02 09:00",
+                signal_time="2023.01.02 10:00",
+                feature_available_time="2023.01.02 10:00",
+                decision_time="2023.01.02 10:00",
+                execution_time="2023.01.02 10:00",
+            )
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    summary = summarize_timing_contract(events)
+
+    assert summary["checked_rows"] == 1
+    assert summary["violation_rows"] == 1
+    assert summary["violations_by_rule"]["signal_time < feature_available_time"] == 1
+
+
+def test_summarize_timing_contract_reports_invalid_timestamp_separately() -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+    from ML.baseline.mt5_execution_diagnostics import summarize_timing_contract
+
+    events = pd.DataFrame(
+        [
+            _event_row(
+                "ORDER_PLACED",
+                "2023.01.02 10:00",
+                feature_time="not-a-time",
+                signal_time="2023.01.02 09:00",
+                feature_available_time="2023.01.02 10:00",
+                decision_time="2023.01.02 10:00",
+                execution_time="2023.01.02 10:00",
+            )
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    summary = summarize_timing_contract(events)
+
+    assert summary["checked_rows"] == 1
+    assert summary["invalid_timestamp_rows"] == 1
+    assert summary["violations_by_rule"]["invalid_timestamp"] == 1
+
+
 def test_discover_batch_event_paths_excludes_smoke(tmp_path: Path) -> None:
     from tests.test_parse_mt5_execution_report import _event_row
 
