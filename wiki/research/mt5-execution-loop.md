@@ -24,7 +24,7 @@ entry-only signal CSV, tester event log, headless Wine/MetaEditor workflow и
 scenario и сохранил `mt5_trade_events_20260730_entry_quality_filter.csv` и
 metrics JSON. Timing contract был диагностически пройден, но lifecycle был
 неполным: много `OPEN` без `CLOSE`, `same_h1_lifecycle_status=UNKNOWN`.
-Отчёт также зафиксировал 690 `ERROR-4756` lines во внешнем tester-agent log,
+Отчёт также зафиксировал `ERROR-4756` lines во внешнем tester-agent log,
 9 `ORDER_EXPIRED`, 32 pending-order-not-found observations и ожидаемый, но
 непроанализированный `ERROR_SoSimple_163856259.csv`.
 
@@ -66,7 +66,7 @@ candidate failed profit concentration.
 
 Verdict: `EXECUTION_HYGIENE_PARTIAL` / `DIAGNOSTIC_ONLY`. Full classification
 is blocked by missing `ERROR_SoSimple_163856259.csv`, missing cumulative tester
-agent log with 690 `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
+agent log with external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
 
 ## Ключевые результаты
 
@@ -89,7 +89,7 @@ causality remains unknown.
 ## Открытые вопросы
 
 - Retrieve or explicitly abandon `ERROR_SoSimple_163856259.csv`.
-- Retrieve cumulative tester agent log with 690 `ERROR-4756` lines.
+- Retrieve cumulative tester agent log with external `ERROR-4756` lines.
 - Decide whether `EXECUTION_HYGIENE_PARTIAL` is accepted before choosing the
   next frozen probe.
 - Complete cost model: swap, commission, slippage, latency and stress costs.

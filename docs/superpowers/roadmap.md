@@ -25,7 +25,7 @@ tester agent log are missing.
 Next action:
 
 1. Retrieve missing artifacts: `ERROR_SoSimple_163856259.csv` and the
-   cumulative tester agent log containing the 690 `ERROR-4756` lines.
+   cumulative tester agent log containing external `ERROR-4756` lines.
 
 ---
 

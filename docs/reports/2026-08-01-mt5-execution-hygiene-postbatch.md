@@ -23,7 +23,7 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 
 ## Context
 
-The 2026-07-30 single-rule diagnostic reported 690 `ERROR-4756` tester-agent log lines, 9 `ORDER_EXPIRED`, 32 pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation.
+The 2026-07-30 single-rule diagnostic reported external tester-agent `ERROR-4756` lines, 9 `ORDER_EXPIRED`, 32 pending-order-not-found messages, and an unanalysed `ERROR_SoSimple_163856259.csv` observation.
 
 The 2026-07-31 OnTradeTransaction lifecycle report closed event/deal reconciliation for the diagnostic executor: 269 positions, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`.
 
@@ -95,7 +95,8 @@ Final documentation/wiki commit modified:
 - `post_batch_diagnostics.json`: `4b1dc417738cb063e71471dcef9da6f5ad40051029a1594d0f2a68c85d1af25a`
 - `post_batch_top_candidates.csv`: `abf1b0c9ab009698ef1ba2d8c75aa1210b33104bec4aadba556ade63a960f725`
 - `batch_summary.json`: `215fa1322a2df30ea79bdf49ae4d5c933fbfe4b11dfc6919373ab63a657beafe`
-- `mt5_execution_metrics_20260731_tx_lifecycle.json`: source for `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`
+- `mt5_execution_metrics_20260731_tx_lifecycle.json`: `e550d8bce1e364bba5424f725b93a002ddc822d0a6a0ce1b20b517facd182d28`
+- `mt5_execution_metrics_20260730_entry_quality_filter.json`: `9a5af9bc89170d26f10cd06da14fa98b3e8ad767e238ee75c13ecc4c18c10494`
 
 ## Structured Artifact Cross-Check
 
@@ -105,7 +106,7 @@ Final documentation/wiki commit modified:
 - Error classes `OTHER=1174`, `INVALID_STOPS=670`, `MODIFICATION_TOO_CLOSE=35`: `error_summary.json.by_error_class`.
 - MT4/MT5 split `mt4_files=1174`, `mt_tester_files=705`: `error_summary.json.by_source_bucket`.
 - Historical lifecycle numbers `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation`.
-- Historical `ERROR-4756=690`: non-structured source `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`; no repo JSON/CSV for this external tester-agent log exists, so linkage remains `UNKNOWN`.
+- Historical external `ERROR-4756` count: not used as a structured key number in this report because no repo JSON/CSV for the cumulative tester-agent log exists; linkage remains `UNKNOWN`.
 - Historical single-rule `ORDER_EXPIRED=9`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json.order_counts.ORDER_EXPIRED`.
 - 32 batch event paths, `_smoke` excluded: `event_anomaly_summary.json.batch_run_count`, `batch_event_path_count`, `excluded_service_dirs`.
 - Batch `OPEN_FAILED=22767`: `event_anomaly_summary.json.batch_runs.event_counts.OPEN_FAILED`.
@@ -142,12 +143,12 @@ Facts: available repo error CSVs, reference events, batch events, and batch fail
 
 Hypothesis: batch failure is mainly consistent with low bootstrap lower bound under small-to-moderate trade counts and low fill rate, not with unexplained event/deal reconciliation, because batch reconciliation remains `UNEXPLAINED=0` in per-run metrics. This is a hypothesis, not a model-quality conclusion.
 
-The verdict cannot be `EXECUTION_HYGIENE_CLASSIFIED` because the expected `ERROR_SoSimple_163856259.csv` and cumulative tester agent log with 690 `ERROR-4756` lines are not available in the repo, and row-level error-to-event linkage is `UNKNOWN`.
+The verdict cannot be `EXECUTION_HYGIENE_CLASSIFIED` because the expected `ERROR_SoSimple_163856259.csv` and cumulative tester agent log with external `ERROR-4756` lines are not available in the repo, and row-level error-to-event linkage is `UNKNOWN`.
 
 ## Limitations / Open Questions
 
 - Missing `ERROR_SoSimple_163856259.csv`.
-- Missing cumulative tester agent log containing 690 `ERROR-4756` lines.
+- Missing cumulative tester agent log containing external `ERROR-4756` lines.
 - Batch INI, batch compile log, terminal log, and agent log were not saved as batch artifacts.
 - Error/event linkage is `UNKNOWN`; no causality is inferred.
 - Cost model remains incomplete: swap, commission, slippage, latency, and stress-cost checks are not closed.
