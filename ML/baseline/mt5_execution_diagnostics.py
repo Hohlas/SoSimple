@@ -22,9 +22,17 @@ from typing import Any, Iterator
 
 import pandas as pd
 
+from ML.baseline.mt5_signal_schema import MT5_EVENT_COLUMNS
+from ML.baseline.parse_mt5_execution_report import compute_mt5_metrics, parse_mt5_events
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DIAG_DIR = REPO_ROOT / "ML" / "reports" / "mt5_execution_loop" / "diagnostics"
+DEFAULT_EVENT_PATHS = [
+    REPO_ROOT / "ML" / "reports" / "mt5_execution_loop" / "mt5_trade_events_20260730_entry_quality_filter.csv",
+    REPO_ROOT / "ML" / "reports" / "mt5_execution_loop" / "mt5_trade_events_20260731_tx_lifecycle.csv",
+]
+BATCH_ROOT = REPO_ROOT / "ML" / "reports" / "mt5_execution_loop" / "batch"
 EXPECTED_ERROR_FILES = {"ERROR_SoSimple_163856259.csv"}
 ERROR_USECOLS = ["Error", "Lot/Ticket"]
 ERROR_CHUNKSIZE = 50_000
@@ -39,6 +47,8 @@ ERROR_OUTPUT_COLUMNS = [
     "missing_magic_column",
     "missing_magic_column_file",
 ]
+EVENT_METADATA_COLUMNS = ["source_file", "source_path", "run_id"]
+EVENT_ANOMALY_EVENTS = {"OPEN_FAILED", "ORDER_EXPIRED"}
 
 
 def sha256_file(path: Path) -> str:
@@ -73,6 +83,43 @@ def _source_bucket(path: Path) -> str:
     if len(parts) >= 3 and parts[-3:] == ("MT", "MQL4", "Files"):
         return "mt4_files"
     return "other"
+
+
+def discover_batch_event_paths(batch_root: Path = BATCH_ROOT) -> list[Path]:
+    return sorted(
+        path
+        for path in batch_root.glob("*/events.csv")
+        if not path.parent.name.startswith("_")
+    )
+
+
+def _batch_candidate_dirs(batch_root: Path = BATCH_ROOT) -> list[Path]:
+    return sorted(
+        path
+        for path in batch_root.iterdir()
+        if path.is_dir() and not path.name.startswith("_")
+    )
+
+
+def _empty_event_frame() -> pd.DataFrame:
+    columns = [*MT5_EVENT_COLUMNS, *EVENT_METADATA_COLUMNS]
+    return pd.DataFrame({column: pd.Series(dtype="object") for column in columns})
+
+
+def load_event_rows(paths: list[Path]) -> pd.DataFrame:
+    frames: list[pd.DataFrame] = []
+    for path in paths:
+        if not path.exists():
+            continue
+        frame = parse_mt5_events(path).copy()
+        frame["source_file"] = path.name
+        frame["source_path"] = str(path)
+        frame["run_id"] = path.parent.name if path.name == "events.csv" else path.stem
+        frames.append(frame[[*MT5_EVENT_COLUMNS, *EVENT_METADATA_COLUMNS]])
+
+    if not frames:
+        return _empty_event_frame()
+    return pd.concat(frames, ignore_index=True)
 
 
 def extract_error_code(message: str) -> int | None:
@@ -167,6 +214,82 @@ def load_error_rows(paths: list[Path]) -> pd.DataFrame:
 def _value_counts(series: pd.Series) -> dict[str, int]:
     counts = series.fillna("UNKNOWN").astype(str).value_counts(dropna=False)
     return {str(key): int(value) for key, value in counts.items()}
+
+
+def _event_reason_category(row: pd.Series) -> str:
+    text = str(row.get("comment", "") or row.get("close_reason", "") or "").strip()
+    lowered = text.lower()
+    if not lowered:
+        return "unknown"
+    if "position_or_pending_order_exists" in lowered:
+        return "position_or_pending_order_exists"
+    if "pending order was not found after order_placed" in lowered or "pending order was not found" in lowered:
+        return "pending_order_not_found_after_order_placed"
+    if "pending order not active after max_fill_lag_bars" in lowered:
+        return "pending_order_not_active_after_max_fill_lag_bars"
+    if "market closed" in lowered:
+        return "market_closed"
+    if "requote" in lowered:
+        return "requote"
+    if "invalid stops" in lowered:
+        return "invalid_stops"
+    if "trade request send failed" in lowered:
+        return "trade_request_send_failed"
+    return re.sub(r"[^a-z0-9]+", "_", lowered).strip("_") or "unknown"
+
+
+def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
+    if events.empty or "event" not in events.columns:
+        return {
+            "status": "DIAGNOSTIC_ONLY",
+            "total_rows": 0,
+            "event_counts": {},
+            "open_failed_reasons": {},
+            "order_expired_reasons": {},
+            "reconciliation_by_run": {},
+            "run_ids": [],
+            "linkage_status": "UNKNOWN",
+        }
+
+    event_names = events["event"].astype(str)
+    event_counts = _value_counts(event_names)
+
+    open_failed = events.loc[event_names.eq("OPEN_FAILED")]
+    order_expired = events.loc[event_names.eq("ORDER_EXPIRED")]
+
+    open_failed_reasons = (
+        _value_counts(open_failed.apply(_event_reason_category, axis=1)) if not open_failed.empty else {}
+    )
+    order_expired_reasons = (
+        _value_counts(order_expired.apply(_event_reason_category, axis=1)) if not order_expired.empty else {}
+    )
+
+    reconciliation_by_run: dict[str, object] = {}
+    run_ids: list[str] = []
+    if "run_id" in events.columns:
+        for run_id, group in events.groupby(events["run_id"].fillna("").astype(str), dropna=False):
+            run_key = str(run_id).strip()
+            if not run_key:
+                if "source_path" in group.columns and not group.empty:
+                    run_key = str(group.iloc[0].get("source_path", "")).strip() or "UNKNOWN"
+                else:
+                    run_key = "UNKNOWN"
+            run_ids.append(run_key)
+            reconciliation_by_run[run_key] = compute_mt5_metrics(group)["reconciliation"]
+    else:
+        reconciliation_by_run["UNKNOWN"] = compute_mt5_metrics(events)["reconciliation"]
+        run_ids.append("UNKNOWN")
+
+    return {
+        "status": "DIAGNOSTIC_ONLY",
+        "total_rows": int(len(events)),
+        "event_counts": event_counts,
+        "open_failed_reasons": open_failed_reasons,
+        "order_expired_reasons": order_expired_reasons,
+        "reconciliation_by_run": reconciliation_by_run,
+        "run_ids": sorted(set(run_ids)),
+        "linkage_status": "UNKNOWN",
+    }
 
 
 def summarize_error_rows(rows: pd.DataFrame) -> dict[str, object]:
@@ -325,7 +448,7 @@ def write_json(data: dict[str, Any], path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 execution diagnostics")
-    parser.add_argument("--phase", choices=["inventory", "errors"], required=True)
+    parser.add_argument("--phase", choices=["inventory", "errors", "events"], required=True)
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output-json", type=Path, default=DIAG_DIR / "error_inventory.json")
     parser.add_argument("--output-csv", type=Path, default=DIAG_DIR / "error_rows_classified.csv")
@@ -335,6 +458,39 @@ def main() -> None:
         write_json(build_error_inventory(args.root), args.output_json)
     elif args.phase == "errors":
         write_error_outputs(discover_error_csvs(args.root), args.output_csv, args.output_json)
+    elif args.phase == "events":
+        reference_events = load_event_rows([path for path in DEFAULT_EVENT_PATHS if path.exists()])
+        batch_event_paths = discover_batch_event_paths(BATCH_ROOT)
+        batch_events = load_event_rows(batch_event_paths)
+        combined_frames = [frame for frame in [reference_events, batch_events] if not frame.empty]
+        combined_events = pd.concat(combined_frames, ignore_index=True) if combined_frames else _empty_event_frame()
+        anomaly_rows = combined_events.loc[
+            combined_events["event"].astype(str).isin(EVENT_ANOMALY_EVENTS)
+        ].copy()
+
+        if not anomaly_rows.empty:
+            anomaly_rows = anomaly_rows.sort_values(by=["source_file", "time", "event"], kind="mergesort")
+
+        excluded_service_dirs = sorted(
+            path.name for path in BATCH_ROOT.iterdir() if path.is_dir() and path.name.startswith("_")
+        )
+
+        write_json(
+            {
+                "status": "DIAGNOSTIC_ONLY",
+                "reference_runs": summarize_event_anomalies(reference_events),
+                "batch_runs": summarize_event_anomalies(batch_events),
+                "reference_event_paths": [str(path) for path in DEFAULT_EVENT_PATHS if path.exists()],
+                "batch_event_paths": [str(path) for path in batch_event_paths],
+                "batch_candidate_count": len(_batch_candidate_dirs(BATCH_ROOT)),
+                "batch_event_path_count": len(batch_event_paths),
+                "excluded_service_dirs": excluded_service_dirs,
+                "linkage_status": "UNKNOWN",
+            },
+            args.output_json,
+        )
+        args.output_csv.parent.mkdir(parents=True, exist_ok=True)
+        anomaly_rows.to_csv(args.output_csv, sep=";", index=False)
 
 
 if __name__ == "__main__":

@@ -4,16 +4,22 @@ import inspect
 import json
 from pathlib import Path
 
+import pandas as pd
+
 from ML.baseline.mt5_execution_diagnostics import (
     build_error_inventory,
+    discover_batch_event_paths,
     classify_error_message,
     extract_error_code,
+    load_event_rows,
     load_error_rows,
     read_error_csv_sample,
+    summarize_event_anomalies,
     summarize_error_rows,
     write_error_outputs,
     _source_bucket,
 )
+from ML.baseline.mt5_signal_schema import MT5_EVENT_COLUMNS
 
 
 HEADER = "INFO;SymPer;ServerTime;Ask/Bid/StpLev;Spred;Lot/Ticket;Error;Expir BUY/SEL\n"
@@ -95,6 +101,62 @@ def test_load_and_summarize_error_rows(tmp_path: Path) -> None:
     assert summary["by_source_file"]["ERROR_SoSimple_2.csv"] == 2
     assert summary["by_source_bucket"]["other"] == 2
     assert summary["unknowns"]["missing_magic_column_files"] == []
+
+
+def test_summarize_event_anomalies(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row, _tx_row
+
+    path = tmp_path / "events.csv"
+    pd.DataFrame(
+        [
+            _event_row("ORDER_PLACED", "2023.01.02 10:00", comment="placed"),
+            _event_row(
+                "OPEN_FAILED",
+                "2023.01.02 10:00",
+                comment="position_or_pending_order_exists",
+            ),
+            _event_row(
+                "ORDER_EXPIRED",
+                "2023.01.02 16:00",
+                comment="pending order not active after max_fill_lag_bars",
+            ),
+            _tx_row("TX_OPEN", "2023.01.03 10:05", 100, 1001, "EXPERT"),
+            _tx_row("TX_CLOSE", "2023.01.03 10:40", 100, 1002, "SL"),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    ).to_csv(path, sep=";", index=False)
+
+    events = load_event_rows([path])
+    summary = summarize_event_anomalies(events)
+
+    assert summary["event_counts"]["ORDER_PLACED"] == 1
+    assert summary["event_counts"]["OPEN_FAILED"] == 1
+    assert summary["event_counts"]["ORDER_EXPIRED"] == 1
+    assert summary["open_failed_reasons"]["position_or_pending_order_exists"] == 1
+    assert summary["linkage_status"] == "UNKNOWN"
+
+
+def test_discover_batch_event_paths_excludes_smoke(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    batch_root = tmp_path / "batch"
+    candidate = batch_root / "candidate_a"
+    smoke = batch_root / "_smoke"
+    candidate.mkdir(parents=True)
+    smoke.mkdir(parents=True)
+    pd.DataFrame([_event_row("ORDER_PLACED", "2023.01.02 10:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        candidate / "events.csv",
+        sep=";",
+        index=False,
+    )
+    pd.DataFrame([_event_row("ORDER_PLACED", "2023.01.02 10:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        smoke / "events.csv",
+        sep=";",
+        index=False,
+    )
+
+    assert discover_batch_event_paths(batch_root) == [candidate / "events.csv"]
+    assert load_event_rows([candidate / "events.csv"])["run_id"].tolist() == ["candidate_a"]
 
 
 def test_write_error_outputs_summarizes_without_concat(tmp_path: Path) -> None:
