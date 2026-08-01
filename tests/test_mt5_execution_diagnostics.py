@@ -307,3 +307,54 @@ def test_summarize_batch_failure_keeps_no_winner(tmp_path: Path) -> None:
     assert summary["top_candidates"][0]["active_signal_rows"] == 204
     assert summary["top_candidates"][0]["gross_profit"] == 123.0
     assert summary["forbidden_interpretation_guard"] == "no_new_winner_selected"
+
+
+def test_summarize_batch_failure_does_not_fill_missing_metrics(tmp_path: Path) -> None:
+    batch = {
+        "status": "DIAGNOSTIC_ONLY",
+        "verdict": "BATCH_NO_WINNER",
+        "n_candidates": 1,
+        "n_valid": 1,
+        "n_eligible": 1,
+        "n_diagnostic_only": 0,
+        "winners_ranked": [
+            {
+                "run_id": "a",
+                "bs_p05": 0.88,
+                "trades_count": 102,
+                "profit_concentration_pass": True,
+                "all_gates_pass": False,
+            }
+        ],
+        "table": [
+            {
+                "run_id": "a",
+                "trades_count": 102,
+                "profit_factor": 1.23,
+                "gross_profit": 999.0,
+                "gross_loss": 888.0,
+            }
+        ],
+    }
+    path = tmp_path / "batch_summary.json"
+    path.write_text(json.dumps(batch), encoding="utf-8")
+    run_dir = tmp_path / "a"
+    run_dir.mkdir()
+    (run_dir / "entry_signals.json").write_text(
+        json.dumps({"active_signal_rows": 204}),
+        encoding="utf-8",
+    )
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    pd.DataFrame([_event_row("OPEN", "2024.01.01 00:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        run_dir / "events.csv",
+        sep=";",
+        index=False,
+    )
+
+    summary = summarize_batch_failure(path, batch_root=tmp_path)
+
+    candidate = summary["top_candidates"][0]
+    assert candidate["gross_profit"] is None
+    assert candidate["gross_loss"] is None
+    assert summary["unknowns"]["missing_per_run_inputs"] == {"a": ["metrics.json"]}
