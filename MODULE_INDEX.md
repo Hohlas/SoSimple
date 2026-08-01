@@ -81,7 +81,6 @@
 | [diagnose_stage4_3.py](ML/baseline/diagnose_stage4_3.py) | Stage 4.3 loss decomposition | labeled CSV + OHLC → diagnostics JSON | [docs](docs/ML/diagnose_stage4_3.py.md) | ✅ |
 | [diagnose_stage4_4.py](ML/baseline/diagnose_stage4_4.py) | Stage 4.4 micro-check | labeled CSV + OHLC → micro-check JSON | [docs](docs/ML/diagnose_stage4_4.py.md) | ✅ |
 | [diagnose_stage5_prep.py](ML/baseline/diagnose_stage5_prep.py) | Stage 5 prep diagnostic | labeled CSV + OHLC → diagnostics JSON | [docs](docs/ML/diagnose_stage5_prep.py.md) | ✅ |
-| [mt5_execution_diagnostics.py](ML/baseline/mt5_execution_diagnostics.py) | MT5 execution error-log diagnostics | `ERROR_SoSimple_*.csv` → inventory JSON / classified error summary CSV | [docs](docs/ML/mt5_execution_diagnostics.py.md) | ✅ |
 | [benchmark_stage5_transformer_breach.py](ML/baseline/benchmark_stage5_transformer_breach.py) | Stage 5 Transformer Breach | labeled CSV → `stage5_*` | [docs](docs/ML/benchmark_stage5_transformer_breach.py.md) | 🏁 |
 | [benchmark_stage6_outcome_based.py](ML/baseline/benchmark_stage6_outcome_based.py) | Stage 6.0 outcome-based triple-barrier baseline | labeled CSV + OHLC → `stage6_0_*` | — | ✅ |
 | [benchmark_stage6_1_relative_geometry.py](ML/baseline/benchmark_stage6_1_relative_geometry.py) | Stage 6.1 relative fractal geometry profiles | labeled CSV + OHLC → `stage6_1_*` | — | ✅ |
