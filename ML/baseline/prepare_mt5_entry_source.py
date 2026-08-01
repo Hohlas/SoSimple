@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from numbers import Integral, Real
 from pathlib import Path
 from typing import Any
 
@@ -55,14 +56,27 @@ def _coerce_time(series: pd.Series, *, label: str) -> pd.Series:
     return parsed.dt.strftime("%Y.%m.%d %H:%M")
 
 
+def _validate_latency_bars(latency_bars: int) -> int:
+    if isinstance(latency_bars, bool):
+        raise ValueError("latency_bars must be an integer number of bars")
+    if isinstance(latency_bars, Integral):
+        validated = int(latency_bars)
+    elif isinstance(latency_bars, Real) and float(latency_bars).is_integer():
+        validated = int(latency_bars)
+    else:
+        raise ValueError("latency_bars must be an integer number of bars")
+    if validated < 0:
+        raise ValueError("latency_bars must be >= 0")
+    return validated
+
+
 def prepare_entry_quality_source(
     source: pd.DataFrame,
     *,
     rule_id: str = "entry_quality_filter",
     latency_bars: int = 0,
 ) -> pd.DataFrame:
-    if latency_bars < 0:
-        raise ValueError("latency_bars must be >= 0")
+    latency_bars = _validate_latency_bars(latency_bars)
 
     missing = [col for col in SOURCE_COLUMNS if col not in source.columns]
     if missing:

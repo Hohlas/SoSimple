@@ -530,6 +530,26 @@ def test_prepare_mt5_entry_source_rejects_negative_latency_bars():
         prepare_entry_quality_source(source, latency_bars=-1)
 
 
+def test_prepare_mt5_entry_source_rejects_non_integer_latency_bars():
+    from ML.baseline.prepare_mt5_entry_source import prepare_entry_quality_source
+
+    source = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 10:00",
+                "side": "BUY",
+                "limit_price": 1900.0,
+                "protective_stop_price": 1890.0,
+                "atr": 10.0,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="latency_bars must be an integer number of bars"):
+        prepare_entry_quality_source(source, latency_bars=1.5)
+
+
 def test_write_prepared_source_records_timing_metadata(tmp_path: Path):
     import json
 
