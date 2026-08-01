@@ -40,6 +40,9 @@ FORBIDDEN_COLUMNS = {
     "pnl_r",
 }
 
+H1_BAR_DELTA = pd.Timedelta(hours=1)
+TIMING_CONTRACT = "feature_time <= time < feature_available_time <= decision_time"
+
 
 def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -56,15 +59,23 @@ def prepare_entry_quality_source(
     source: pd.DataFrame,
     *,
     rule_id: str = "entry_quality_filter",
+    latency_bars: int = 0,
 ) -> pd.DataFrame:
+    if latency_bars < 0:
+        raise ValueError("latency_bars must be >= 0")
+
     missing = [col for col in SOURCE_COLUMNS if col not in source.columns]
     if missing:
         raise ValueError(f"missing entry source columns: {missing}")
 
-    time = _coerce_time(source["time"], label="time")
-    signal_time = _coerce_time(source["signal_time"], label="signal_time")
-    if not time.eq(signal_time).all():
-        raise ValueError("time and signal_time differ; cannot infer a single diagnostic decision time")
+    signal_dt = pd.to_datetime(source["signal_time"], errors="coerce")
+    if signal_dt.isna().any():
+        raise ValueError("invalid signal_time values")
+
+    feature_time = signal_dt
+    feature_available_time = signal_dt + H1_BAR_DELTA
+    decision_time = feature_available_time + latency_bars * H1_BAR_DELTA
+    match_time = decision_time - H1_BAR_DELTA
 
     side = source["side"].astype(str).str.upper().str.strip()
     bad_side = sorted(set(side) - {"BUY", "SELL"})
@@ -73,10 +84,10 @@ def prepare_entry_quality_source(
 
     prepared = pd.DataFrame(
         {
-            "time": signal_time,
-            "feature_time": signal_time,
-            "feature_available_time": signal_time,
-            "decision_time": signal_time,
+            "time": match_time.dt.strftime("%Y.%m.%d %H:%M"),
+            "feature_time": feature_time.dt.strftime("%Y.%m.%d %H:%M"),
+            "feature_available_time": feature_available_time.dt.strftime("%Y.%m.%d %H:%M"),
+            "decision_time": decision_time.dt.strftime("%Y.%m.%d %H:%M"),
             "rule_id": rule_id,
             "side": side,
             "limit_price": pd.to_numeric(source["limit_price"], errors="raise"),
@@ -93,13 +104,14 @@ def write_prepared_source(
     output_csv: str | Path,
     output_json: str | Path,
     rule_id: str = "entry_quality_filter",
+    latency_bars: int = 0,
 ) -> dict[str, Any]:
     input_path = Path(input_csv)
     output_csv_path = Path(output_csv)
     output_json_path = Path(output_json)
 
     source = pd.read_csv(input_path, sep=";", usecols=lambda col: col in set(SOURCE_COLUMNS) | FORBIDDEN_COLUMNS)
-    prepared = prepare_entry_quality_source(source, rule_id=rule_id)
+    prepared = prepare_entry_quality_source(source, rule_id=rule_id, latency_bars=latency_bars)
 
     output_csv_path.parent.mkdir(parents=True, exist_ok=True)
     output_json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,7 +127,9 @@ def write_prepared_source(
         "rule_id": rule_id,
         "date_from": str(prepared["time"].min()) if not prepared.empty else None,
         "date_to": str(prepared["time"].max()) if not prepared.empty else None,
-        "time_policy": "feature_time, feature_available_time and decision_time are copied from signal_time; diagnostic bridge only",
+        "time_policy": "H1 diagnostic timing: feature_time=signal_time; feature_available_time=signal_time+1h; decision_time=feature_available_time+latency_bars*h; time=decision_time-1h for MT5 Time[1] matching",
+        "timing_contract": TIMING_CONTRACT,
+        "latency_bars": int(latency_bars),
         "forbidden_source_columns_present": sorted(set(source.columns) & FORBIDDEN_COLUMNS),
         "forbidden_columns_exported": sorted(set(prepared.columns) & FORBIDDEN_COLUMNS),
     }
@@ -129,6 +143,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-csv", required=True)
     parser.add_argument("--output-json", required=True)
     parser.add_argument("--rule-id", default="entry_quality_filter")
+    parser.add_argument("--latency-bars", type=int, default=0)
     return parser.parse_args()
 
 
@@ -139,6 +154,7 @@ def main() -> None:
         output_csv=args.output_csv,
         output_json=args.output_json,
         rule_id=args.rule_id,
+        latency_bars=args.latency_bars,
     )
     print(json.dumps(metadata, ensure_ascii=False, indent=2))
 

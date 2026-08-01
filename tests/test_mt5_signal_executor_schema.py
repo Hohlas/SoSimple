@@ -473,8 +473,8 @@ def test_prepare_mt5_entry_source_from_entry_quality_scores_contract():
         {
             "time": "2023.01.02 10:00",
             "feature_time": "2023.01.02 10:00",
-            "feature_available_time": "2023.01.02 10:00",
-            "decision_time": "2023.01.02 10:00",
+            "feature_available_time": "2023.01.02 11:00",
+            "decision_time": "2023.01.02 11:00",
             "rule_id": "entry_quality_filter",
             "side": "SELL",
             "limit_price": 1910.0,
@@ -486,14 +486,14 @@ def test_prepare_mt5_entry_source_from_entry_quality_scores_contract():
     assert "exit_time" not in prepared.columns
 
 
-def test_prepare_mt5_entry_source_rejects_time_mismatch():
+def test_prepare_mt5_entry_source_latency_bars_shifts_match_time_to_decision_minus_one_bar():
     from ML.baseline.prepare_mt5_entry_source import prepare_entry_quality_source
 
     source = pd.DataFrame(
         [
             {
                 "time": "2023.01.02 10:00",
-                "signal_time": "2023.01.02 11:00",
+                "signal_time": "2023.01.02 10:00",
                 "side": "BUY",
                 "limit_price": 1900.0,
                 "protective_stop_price": 1890.0,
@@ -502,5 +502,69 @@ def test_prepare_mt5_entry_source_rejects_time_mismatch():
         ]
     )
 
-    with pytest.raises(ValueError, match="time and signal_time differ"):
-        prepare_entry_quality_source(source)
+    prepared = prepare_entry_quality_source(source, latency_bars=2)
+
+    assert prepared.loc[0, "feature_time"] == "2023.01.02 10:00"
+    assert prepared.loc[0, "feature_available_time"] == "2023.01.02 11:00"
+    assert prepared.loc[0, "decision_time"] == "2023.01.02 13:00"
+    assert prepared.loc[0, "time"] == "2023.01.02 12:00"
+
+
+def test_prepare_mt5_entry_source_rejects_negative_latency_bars():
+    from ML.baseline.prepare_mt5_entry_source import prepare_entry_quality_source
+
+    source = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 10:00",
+                "side": "BUY",
+                "limit_price": 1900.0,
+                "protective_stop_price": 1890.0,
+                "atr": 10.0,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="latency_bars must be >= 0"):
+        prepare_entry_quality_source(source, latency_bars=-1)
+
+
+def test_write_prepared_source_records_timing_metadata(tmp_path: Path):
+    import json
+
+    from ML.baseline.prepare_mt5_entry_source import TIMING_CONTRACT, write_prepared_source
+
+    input_csv = tmp_path / "input.csv"
+    output_csv = tmp_path / "prepared.csv"
+    output_json = tmp_path / "prepared.json"
+    input_csv.write_text(
+        "\n".join(
+            [
+                "time;signal_time;side;limit_price;protective_stop_price;atr;pnl_r",
+                "2023.01.02 10:00;2023.01.02 10:00;BUY;1900;1890;10;1.0",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    metadata = write_prepared_source(
+        input_csv=input_csv,
+        output_csv=output_csv,
+        output_json=output_json,
+        latency_bars=2,
+    )
+
+    written = json.loads(output_json.read_text(encoding="utf-8"))
+    assert metadata == written
+    assert written["time_policy"] == (
+        "H1 diagnostic timing: feature_time=signal_time; "
+        "feature_available_time=signal_time+1h; "
+        "decision_time=feature_available_time+latency_bars*h; "
+        "time=decision_time-1h for MT5 Time[1] matching"
+    )
+    assert written["timing_contract"] == TIMING_CONTRACT
+    assert written["latency_bars"] == 2
+    assert written["output_csv_sha256"]
+    assert written["forbidden_source_columns_present"] == ["pnl_r"]
