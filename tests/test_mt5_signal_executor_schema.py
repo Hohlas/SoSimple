@@ -346,6 +346,29 @@ def test_mt5_event_schema_accepts_timing_violation_event_name():
     validate_mt5_event_frame(frame)
 
 
+def test_mt5_find_entry_signal_uses_entry_time_only():
+    text = MQL_SIGNAL_LIB.read_text(encoding="utf-8")
+    match = re.search(r"int\s+MT5_FindEntrySignal\(datetime barTime\)\s*\{(?P<body>.*?)\n\}", text, flags=re.S)
+
+    assert match is not None
+    body = match.group("body")
+    assert "MT5_EntryTimes[i] == barTime" in body
+    assert "MT5_DecisionTimes[i] == barTime" not in body
+
+
+def test_mt5_entry_init_logs_and_skips_timing_violations():
+    text = MQL_SIGNAL_LIB.read_text(encoding="utf-8")
+    assert "TIMING_VIOLATION" in text
+    assert "feature_time <= time < feature_available_time <= decision_time" in text
+    assert re.search(r"continue\s*;", text[text.find("TIMING_VIOLATION") : text.find("MT5_EntrySignalCount++")], flags=re.S)
+
+
+def test_mt5_lifecycle_events_keep_source_decision_time():
+    text = MQL_SIGNAL_LIB.read_text(encoding="utf-8")
+    assert '"ML_EVAL", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx]' in text
+    assert '"ML_CLOSE", TimeCurrent(), MT5_FeatureTimes[idx], MT5_FeatureAvailableTimes[idx], MT5_DecisionTimes[idx]' in text
+
+
 def test_mt5_event_schema_validates_signal_time_as_entry_match_key():
     frame = pd.DataFrame(
         [
