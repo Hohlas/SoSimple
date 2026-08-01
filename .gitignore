@@ -335,6 +335,9 @@ ML/reports/entry_path_v1_live_safe/runtime/
 MT/MQL4/Experts/$o$imple.ex4
 MT/MQL4/mql5.index
 
+# Qoder runtime/repowiki
+.qoder/
+
 # Graphify генерируемый артефакт (граф, AST-кэш, семантический кэш)
 graphify-out/
 node_modules/

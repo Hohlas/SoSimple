@@ -2,72 +2,62 @@
 
 ## Current Active State
 
-- active track: `MT5 execution-loop → batch selection`
-- latest report: `docs/reports/2026-07-31-mt5-nero-parity.md`
-- latest plan: `docs/superpowers/plans/2026-07-31-mt5-nero-parity-v2.md`
+- active track: `MT5 batch selection → post-batch diagnostics`
+- latest report: `docs/reports/2026-07-31-mt5-batch-selection.md`
+- latest plan: `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md`
 - primary MT5 expert: `MT/MQL5/Experts/$o$imple.mq5`
-- MT5 producer contract: `docs/schemas/mt5_nero_csv_contract.md`
+- batch script: `ML/baseline/run_mt5_batch.py`
+- batch summary: `ML/reports/mt5_execution_loop/batch/batch_summary.json`
 - MT5 execution methodology: `docs/methodology/13b-mt5-execution-parity.md`
-- Nero parity script: `ML/baseline/compare_nero_by_time.py`
-- Nero parity JSON: `ML/reports/mt5_nero_parity/nero_parity_by_time.json`
-- MT4 reference: `MT/tester/files/Nero.csv`
-- MT5 output: `ML/reports/mt5_nero_parity/Nero_MT5_v2.csv`
 
 ## Decision
 
-Nero.csv producer parity is PROVEN (PARITY_PASS). MT5 может служить
-источником feature stream для ML. Status остаётся `DIAGNOSTIC_ONLY`
-(no trading conclusions).
+Batch selection завершён. Verdict: **BATCH_NO_WINNER**.
 
-- verdict: `PARITY_PASS`
-- match rate: 99.05% (по T внутри строки)
-- direction agreement: 99.24%
-- price p95 diff: 0.003
-- bug fixed: MT5 Strong criterion aligned to MT4 (`lib_PIC.mqh:246`)
-- compile status: `0 errors, 0 warnings`
+- 32 кандидата прогнаны через MT5 Strategy Tester (Model 1, XAUUSD H1)
+- Validation period: 2021.01.04–2022.12.02
+- Все 32: UNEXPLAINED=0 (reconciliation PASS)
+- 11 eligible (trades>=100): ни один не прошёл BS_p05 > 1.0
+- Лучший: time_plus_atr_extra_trees_small_12h_thr0.2 (PF=1.232, BS_p05=0.887)
+- Holm-Bonferroni: 0 отклонённых гипотез
+- Status: DIAGNOSTIC_ONLY (no trading conclusions)
 
 ## Current Diagnostic Facts
 
-- Headless запуск tester работает: `WINEPREFIX=~/.mt5 xvfb-run -a wine
-  terminal64.exe /config:C:\mt5_tx_full.ini` (путь конфига без пробелов).
-- Перед запуском проверять: (а) `liveupdate/` payload отсутствует,
-  (б) нет уже работающего `terminal64.exe` — второй экземпляр молча выходит.
-- Runtime Files каталог — tester agent:
-  `~/.mt5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/MQL5/Files/`.
-- TX-строки не несут timing-полей (по дизайну); связь позиция→сигнал делает
-  Python reconciliation через polling OPEN-строки (252/269 связаны, 17 —
-  same-H1 позиции без OPEN, объяснены).
-- Причина слепоты старого polling-CLOSE (18 из 269) — гипотеза
-  (ticket vs position id в MODE_HISTORY через MQL4-компат слой), не доказана.
-- Tester HTML report не создаётся (`Report=` с относительным путём в INI не
-  сработал под wine).
+- Entry CSV копируется в **Terminal** MQL5/Files (не Tester Agent Files):
+  `~/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_entry_signals.csv`.
+  `#property tester_file` копирует оттуда в agent при старте.
+- INI кладётся на Wine C: drive: `~/.mt5/drive_c/mt5_batch_{run_id}.ini`,
+  запуск: `/config:C:\mt5_batch_{run_id}.ini`.
+- LiveUpdate: гипотеза/наблюдение оператора — после ~14-го кандидата терминал
+  мог попытаться автообновиться; каталог впоследствии заблокирован (chmod 555).
+  Факт не покрыт batch artifact (логом, `ls/stat`); при разблокировке терминал
+  скачивает обновление и перехватывает запуски.
+- Fill rate низкий: из 265–1737 сигналов исполняется 16–151 сделка.
+- Smoke test: Model 2, 2021.01–2021.03, ~1 сек. Full: Model 1, ~1 мин/кандидат.
 
 ## Do Not Do
 
 - Do not interpret tester run as profitable/production-ready or as rule quality proof.
-- Do not use tester PnL for selection or quality claims.
+- Do not use tester PnL for selection or quality claims without locked_test.
 - Do not treat timing-contract PASS as leakage-safety proof.
 - Do not treat the diagnostic scorer as ML-quality proof.
-- Do not compare fractals by index (fractalN) — only by T within row.
+- Do not unblock liveupdate directory without moving payload files first.
 
 ## Next Step
 
-1. Переход к `MT5 batch selection for 20-50 candidates`
-   (roadmap `NEXT_AFTER_MT5_SINGLE_RULE`).
-2. Классифицировать `ERROR-4756` и `ERROR_SoSimple_*.csv` (диагностические
-   файлы тестера, не blocker).
+1. Диагностический анализ: почему top-кандидаты (PF 1.17–1.23) не проходят
+   bootstrap — мало сделок или высокая дисперсия.
+2. Расширение периода (полный order mechanics 2019.06–2022.12) для выборки.
+3. Cost model: swap/commission по docs/methodology/12-backtest-costs.md.
+4. Отдельный val-eval split для снятия потолка RESEARCH_ONLY.
 
 ## Verification
 
 Completed:
 
-- `./.venv/bin/python -m pytest tests/test_mt5_signal_executor_schema.py tests/test_parse_mt5_execution_report.py -q` → 16 passed
-- MetaEditor compile of `MT/MQL5/Experts/$o$imple.mq5`: `Result: 0 errors, 0 warnings`
-  (`ML/reports/mt5_execution_loop/mt5_compile_20260731_tx_lifecycle.log`)
-- smoke run 2019.06.20–2019.07.20: TX events fire under Model 1, UNEXPLAINED=0
-- `validate_mt5_event_frame` PASS on real event CSV (incl. event-name whitelist)
-- sha256 hashes recorded in
-  `ML/reports/mt5_execution_loop/mt5_tx_lifecycle_run_manifest_20260731.json`
-
-Full `./.venv/bin/python -m pytest tests/ -q` was not run because the plan
-explicitly forbids the full suite.
+- 32/32 entry CSV: schema PASS (`validate_mt5_signal_frame`)
+- 32/32 events: UNEXPLAINED=0, 32 unique hashes
+- MetaEditor compile: `0 errors, 0 warnings`
+- Smoke test (Model 2): UNEXPLAINED=0
+- Block bootstrap + Holm-Bonferroni: BATCH_NO_WINNER

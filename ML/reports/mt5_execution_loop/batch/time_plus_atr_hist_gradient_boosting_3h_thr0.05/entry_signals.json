@@ -1,0 +1,62 @@
+{
+  "label": "mt5_batch_selection",
+  "status": "DIAGNOSTIC_ONLY",
+  "run_id": "time_plus_atr_hist_gradient_boosting_3h_thr0.05",
+  "rows_total": 269,
+  "active_signal_rows": 269,
+  "nonzero_rows": 269,
+  "buy_rows": 137,
+  "sell_rows": 132,
+  "unique_time_rows": 248,
+  "duplicate_time_rows": 21,
+  "unique_time_side_rows": 251,
+  "same_time_opposite_signal_groups": 3,
+  "side_counts": {
+    "BUY": 137,
+    "SELL": 132
+  },
+  "source_csv": null,
+  "source_csv_sha256": "d448fdcf770004f5812f64ab7e2eee5c186217ebef1798316e039b5024934176",
+  "rule_metadata": null,
+  "rule_metadata_path": null,
+  "rule_metadata_sha256": null,
+  "run_config_hash": "f0d1862f1a239e9a111d09a33960d5a37cf11ab0713af585378c3fd815fc7bbe",
+  "run_config": {
+    "label": "mt5_batch_selection",
+    "run_id": "time_plus_atr_hist_gradient_boosting_3h_thr0.05",
+    "max_fill_lag_bars": 6,
+    "columns": [
+      "time",
+      "feature_time",
+      "feature_available_time",
+      "decision_time",
+      "rule_id",
+      "side",
+      "entry_type",
+      "limit_price",
+      "stop_price",
+      "atr",
+      "max_fill_lag_bars"
+    ],
+    "rule_metadata_sha256": null,
+    "source_csv_sha256": "d448fdcf770004f5812f64ab7e2eee5c186217ebef1798316e039b5024934176"
+  },
+  "output_csv": "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.csv",
+  "output_csv_sha256": "e96a90dd059307cc6e42b625d10eccd9b8a924f80a41dc34e369333a5e90c91e",
+  "output_json": "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.05/entry_signals.json",
+  "forbidden_source_columns": [],
+  "forbidden_future_lifecycle_columns_removed": true,
+  "exported_columns": [
+    "time",
+    "feature_time",
+    "feature_available_time",
+    "decision_time",
+    "rule_id",
+    "side",
+    "entry_type",
+    "limit_price",
+    "stop_price",
+    "atr",
+    "max_fill_lag_bars"
+  ]
+}

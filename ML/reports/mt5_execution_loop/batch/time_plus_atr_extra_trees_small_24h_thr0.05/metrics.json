@@ -1,0 +1,43 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "order_counts": {
+    "OPEN_FAILED": 237,
+    "ML_EVAL": 225,
+    "ORDER_PLACED": 28,
+    "TX_CLOSE": 27,
+    "TX_OPEN": 27,
+    "OPEN": 27,
+    "CLOSE": 22,
+    "ML_CLOSE": 6,
+    "INIT": 1,
+    "ORDER_EXPIRED": 1
+  },
+  "open_counts": {
+    "OPEN": 27,
+    "ORDER_PLACED": 28
+  },
+  "close_counts": {
+    "CLOSE": 22
+  },
+  "close_reason_counts": {
+    "broker_history_limited": 22
+  },
+  "ml_close_decision_count": 6,
+  "profit_sum": -473.9000000000002,
+  "missing_open_estimate": 1,
+  "open_without_close_estimate": 5,
+  "reconciliation": {
+    "position_count": 27,
+    "class_counts": {
+      "CLOSED_TX": 27,
+      "OPEN_AT_END": 0,
+      "UNEXPLAINED": 0
+    },
+    "unexplained_position_ids": [],
+    "open_at_end_position_ids": [],
+    "same_h1_count": 0,
+    "tx_open_count": 27,
+    "tx_close_count": 27,
+    "signal_linked_tx_open_count": 27
+  }
+}

@@ -1,5 +1,8 @@
 {
-  "status": "PLANNED_AFTER_SINGLE_RULE_PROTOTYPE",
+  "status": "EXECUTED",
+  "executed_date": "2026-07-31",
+  "verdict": "BATCH_NO_WINNER",
+  "report": "docs/reports/2026-07-31-mt5-batch-selection.md",
   "allowed_max_verdict_before_successful_single_rule_run": "DIAGNOSTIC_ONLY",
   "python_role": [
     "train models",

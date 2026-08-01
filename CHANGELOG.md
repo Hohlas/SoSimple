@@ -15,6 +15,14 @@
 ```
 ---
 
+## [2026-07-31] — MT5 Batch Selection: 32 candidates (BATCH_NO_WINNER)
+- **report**: `docs/reports/2026-07-31-mt5-batch-selection.md`
+- **topics**: `mt5`, `batch_selection`, `movement_filter`, `bootstrap`, `holm_bonferroni`
+- **summary**: 32 кандидата movement-фильтра прогнаны через MT5 Strategy Tester (Model 1, XAUUSD H1, 2021.01–2022.12). Ни один не прошёл гейт BS_p05 > 1.0 после block bootstrap и Holm-Bonferroni.
+- **artifacts**: `ML/reports/mt5_execution_loop/batch/batch_summary.json`, `ML/baseline/run_mt5_batch.py`
+- **decision**: BATCH_NO_WINNER. В этом diagnostic MT5 validation batch ни один из 32 заранее отобранных movement-filter кандидатов не прошёл winner gates (gross PF, combined split roles, diagnostic timing contract). Это не закрывает семейство моделей вне данного периода, cost model и split protocol. Status DIAGNOSTIC_ONLY.
+- **notes**: Fill rate низкий (16–151 сделка из 265–1737 сигналов). Combined split roles → потолок RESEARCH_ONLY. Gross PF без swap/commission.
+
 ## [2026-07-31] — MT5 Nero.csv producer parity (PARITY_PASS)
 - **report**: `docs/reports/2026-07-31-mt5-nero-parity.md`
 - **topics**: `mt5`, `nero_csv`, `parity`, `fractal`, `producer`

@@ -1,359 +1,128 @@
-# Аудит плана `docs/superpowers/plans/2026-07-31-mt5-nero-parity.md`
+# Аудит: MT5 Batch Selection 32 Candidates
 
-**Дата аудита:** 2026-07-31
-**Аудитируемый документ:** `docs/superpowers/plans/2026-07-31-mt5-nero-parity.md` (далее «план»)
-**Метод:** точечная проверка утверждений плана против первоисточников (код, реальные CSV, методология, контракт, смежные отчёты и INI). Все доказательства подтверждаются командами или ссылками на конкретные файлы/строки.
+Аудируемые документы:
 
-Все проверки ниже относятся к плану и его окружению. Каждое замечание помечено важностью, местом, сутью, доказательством, значением и рекомендованным исправлением.
+- `docs/reports/2026-07-31-mt5-batch-selection.md`
+- `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md`
 
----
+Проверенные первоисточники: `ML/reports/mt5_execution_loop/batch/batch_summary.json`, `ML/reports/entry_based_movement_filter_candidates.csv`, `ML/baseline/run_mt5_batch.py`, `ML/reports/mt5_execution_loop/batch_selection_contract.json`, `CONTEXT_HANDOFF.md`, `CHANGELOG.md`, `docs/reports/2026-07-31-mt5-nero-parity.md`, `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`, `docs/methodology/09-validation-freeze.md`, `docs/methodology/12-backtest-costs.md`, `docs/methodology/13b-mt5-execution-parity.md`, `docs/methodology/16-reporting-audit.md`.
 
-## Сводка
+Навигация: `knowledge-rag` не нашёл `docs/reports/2026-07-31-mt5-batch-selection.md` как проиндексированный документ; `graphify query "MT5 batch selection report methodology validation freeze backtest costs execution parity" --budget 1500` указал на те же связанные источники: `run_mt5_batch.py`, `benchmark_entry_based_movement_filter.py`, `12-backtest-costs.md`, `docs/reports/2026-07-29-mt5-execution-loop-migration.md`, `export_mt5_entry_signals()` и `prepare_entry_quality_source()`.
 
-Утверждений и решений в плане проверено ~22. По ним обнаружено:
+## Итог
 
-- **Критичные замечания — 4.** План использует несуществующий синтаксис MT5 tester INI; игнорирует кодировку MT5 CSV (UTF-16LE); инвертирует знак поля Shift; опирается на методологию 13b, которая регламентирует trade-execution parity, а не feature-CSV parity.
-- **Важные замечания — 4.** Контракт требует 23 поля, но реальные эталонный файл MT4 и почти весь pipeline оперируют 22 — противоречие не разрешено на уровне контракта; план упускает уже существующий `Nero_MT5.csv` от 31.07; порог price p95 <=1.0 нереалистичен при разнице котировок MT4/MT5; дубликаты времени уже есть в эталоне (3764).
-- **Улучшения — 3.** План не воспроизводит формат INI из lifecycle-прогона; не учитывает реальное начало данных MT5 (2019.07.02, не 2019.06.20); перевести запись параметров эксперта в `.set` вместо `Inputs=`.
-- **Вопросы — 2.** Привязка порогов к валюте пункта XAUUSD; допустимость блокировки дубликатами при наличии их в эталоне.
-
-Положительно подтверждаются: наличие цели в roadmap; интерфейсы `InpMT5_*` в коде; совпадение заголовков (104 колонки); корректность индексов полей `T/price/dir`; период tester совпадает с lifecycle-прогоном; файл зависит от существующего и закрытого lifecycle-отчёта.
-
----
+Ключевые числа отчёта в основном совпадают со structured artifact `batch_summary.json`: 32 кандидата, 32 valid, 11 eligible, 16 diagnostic-only, 5 insufficient, `BATCH_NO_WINNER`, bootstrap 2000 итераций, block size 15, seed 42, Holm-Bonferroni по 11 тестам. Главные проблемы не в арифметике результата, а в статусах, воспроизводимости и нескольких неподтверждённых утверждениях.
 
 ## Замечания
 
-### З1. Несуществующий синтаксис ключей MT5 tester INI — КРИТИЧНО
-
-**Место:** план, Task 1, строки 130-144 (блок INI), строка 150 (команда tester).
-
-**Суть:** План приводит INI с ключами `DateFrom`/`DateTo` и `Inputs=`. Ни один из этих ключей не используется ни в одном рабочем INI проекта. Реальные INI MT5 Strategy Tester используют `FromDate`/`ToDate` и `ExpertParameters=<имя>.set`.
-
-**Доказательство:**
-```
-$ grep -rn "DateFrom\|FromDate=" ML/reports/mt5_execution_loop/*.ini
-ML/reports/mt5_execution_loop/...smoke.ini:8:FromDate=2019.06.20
-ML/reports/mt5_execution_loop/...full.ini:8:FromDate=2019.06.20
-```
-`DateFrom` и `Inputs=` в проекте встречаются **только в самом аудируемом плане**:
-```
-$ grep -rn "DateFrom=\|Inputs=" docs/ ML/
-docs/superpowers/plans/2026-07-31-mt5-nero-parity.md:136:DateFrom=2019.06.20
-docs/superpowers/plans/2026-07-31-mt5-nero-parity.md:143:Inputs=InpMT5_ExportNero=...
-```
-Рабочий INI формат (пример `ML/reports/mt5_execution_loop/mt5_tx_lifecycle_tester_20260731_full.ini`):
-```ini
-Expert=$o$imple.ex5
-ExpertParameters=mt5_tx_lifecycle_20260731.set
-FromDate=2019.06.20
-ToDate=2022.12.03
-Optimization=0
-Model=1
-ForwardMode=0
-ExecutionMode=0
-Visual=0
-Report=...
-ReplaceReport=1
-ShutdownTerminal=1
-UseLocal=1
-UseRemote=0
-UseCloud=0
-```
-Ключ `ShutdownTerminal=1` обязателен — иначе `terminal64.exe` не вернёт управление. План его не указывает.
-
-**Почему важно:** Запуск tester по плану выдаст INI, который MT5:
-- проигнорирует неизвестные ключи `DateFrom`/`Inputs` (останется дефолтный диапазон и дефолтные параметры эксперта — `InpMT5_ExportNero=false`, файл НЕ сгенерируется);
-- без `ShutdownTerminal=1` процесс не завершится, шаг «дождаться завершения» в Task 1 зависнет.
-
-**Рекомендованное исправление:** заменить INI в плане на проверенный формат `FromDate`/`ToDate` + `ExpertParameters=*.set` + `ShutdownTerminal=1` + служебные ключи; параметры `InpMT5_*` передавать через `.set` файл в `MT/MQL5/Profiles/Tester/`, не через `Inputs=`.
-
----
-
-### З2. Игнорирована кодировка MT5 CSV (UTF-16LE) — КРИТИЧНО
-
-**Место:** план, Task 2, строки 176-178 («Загрузка обоих CSV (delimiter `;`, dtype str)»); контракт `docs/schemas/mt5_nero_csv_contract.md` тоже не упоминает кодировку.
-
-**Суть:** Реальный `Nero_MT5.csv` записывается MT5 в UTF-16LE с CRLF, а эталонный `Nero_XAUUSD.csv` — ASCII/UTF-8 с CRLF. План читает оба одинаково без указания кодировки — `pandas.read_csv` упадёт или даст битые строки.
-
-**Доказательство:**
-```
-$ head -c 30 ".../Nero_MT5.csv" | xxd
-00000000: 0032 0030 0031 0039 002e 0030 0037 002e  .2.0.1.9...0.7..   ← UTF-16LE
-$ head -c 30 MT/MQL4/Files/Nero_XAUUSD.csv | xxd
-00000000: 7469 6d65 3b73 ...                            time;sign...  ← ASCII/UTF-8
-```
-Заголовок MT5 также имеет BOM (`\ufeff` перед `time`):
-```
-$ head -1 ".../Nero_MT5.csv" | cut -d';' -f1-5
-﻿time;signal;predict;ATR;fractal0
-```
-
-**Почему важно:** Без `encoding='utf-16'` (или ручного декода) ключ `time` MT5 будет содержать BOM-префикс `\ufefftime`, join по `time` даст нулевое пересечение, verdict автоматически `PARITY_FAIL` по ложной причине.
-
-**Рекомендованное исправление:** в `compare_nero_parity.py` загружать MT5 файл `encoding='utf-16'`, MT4 - `encoding='utf-8'` (или `latin1`); явно обработать BOM (`encoding='utf-8-sig'` либо strip). Зафиксировать кодировку в контракте `docs/schemas/mt5_nero_csv_contract.md` как обязательное свойство producer.
-
----
-
-### З3. Знак поля Shift инвертирован в плане — КРИТИЧНО
-
-**Место:** план, Design Decision 6, строки 84-87; Task 2, строка 190 (`23-е поле (Shift): integer check, <= 0 check (MT5 only)`).
-
-**Суть:** План утверждает, что Shift «<= 0 для прошлых баров». Реально Shift положителен: прошлое событие «дальше» текущего бара по MQL5-индексации.
-
-**Доказательство:**
-Код записи (MT5 `MT/MQL5/Include/lib_PIC.mqh:918`):
-```c
-S4(F[f].Atr) + ":" + S0(SHIFT(F[f].T) - cur_bar)
-```
-`SHIFT(F[f].T)` возвращает bar-индекс уровня T, который больше `cur_bar` (текущего бара), для любого уровня из прошлого. Разница положительна. Реальные данные подтверждают:
-```
-$ tail -n +2 ".../Nero_MT5.csv" | cut -d';' -f5 | awk -F':' '{print $23}' | head
-1, 7, 10, 100, 1000, ...
-```
-Распределение Shift (только положительные, нуля и отрицательных нет):
-```
-$ tail -n +2 ".../Nero_MT5.csv" | cut -d';' -f5 | awk -F':' '{print $23}' | sort -n | uniq -c | head
-1 (пусто — строка с пустым fractal0), 119×1, 48×10, 20×100, 1×1000, ...
-```
-
-**Почему важно:** Проверка `<= 0` в `compare_nero_parity.py` (Task 2, строка 188) даст FAIL для всех непустых фракталов, хотя данные корректны. Это ложный blocker, плюс противоречит логике bar-индексации.
-
-**Рекомендованное исправление:** Заменить проверку «`<= 0`» на «`> 0` для непустых фракталов уровня из прошлого» (или «`>= 0`», если возможны уровни на текущем баре, но实证ически там `>=1`). Заодно уточнить комментарий в DD6: Shift — смещение уровня назад в барах, всегда положителен для прошлых баров.
-
----
-
-### З4. Методология 13b регламентирует trade-execution parity, а не feature-CSV parity — КРИТИЧНО для рубрики Methodology Map
-
-**Место:** план, строки 46-48, 116-117, 50 (Методология Map + Task 1/3).
-
-**Суть:** План трижды привязывает этапы к `13b-mt5-execution-parity.md`, но этот документ целиком про trade-execution: entry CSV → сделки, event log, opened/closed trades, PnL, missing opens, close reasons. Сравнения feature-producer CSV между платформами в 13b нет.
-
-**Доказательство:** `docs/methodology/13b-mt5-execution-parity.md`:
-- строка 3: «Проверить, что MT5-эксперт собран... и tester исполняет тот же frozen-сигнал»;
-- строки 36-45: diagnostic executor и `mt5_entry_signals.csv` (вход, не вывод);
-- строки 99-111: события `ORDER_PLACED`/`OPEN`/`CLOSE`/`OPEN_FAILED`/`ML_EVAL`/`ML_CLOSE`;
-- строки 178-184 «Обязательные проверки»: `Открытие/закрытие сделок, направления, close reasons`;
-- строка 161: «Сверять tester-исполнение по правилам 13: opened/closed trades, missing opens, wrong direction, close reasons, PnL».
-
-Ни одной проверки про Nero.csv (feature stream) ни в 13, ни в 13b нет. План сам признаёт это (строки 51-54 «Раздел методологии, которого нет»), но при этом в Methodology Map Продолжает ставить 13b как методику для Task 1 «генерация Nero_MT5.csv». Это противоречие.
-
-**Почему важно:** Методологический объект Task 1 — компиляция и tester metadata — реально описан в 13b (раздел «Компиляция» и «Порядок», шаги 1-3, 10). Но Task 2/3 (сравнение feature CSV, direction/price/ATR agreement, parse success) не имеют покрытия в 13b. Это создаёт ложное ощущение, что методología полностью регламентирует сравнение, хотя регламентирует только trade-reconciliation.
-
-**Рекомендованное исправление:** В Methodology Map уточнить: для Task 1 брать из 13b только «Компиляция» и «tester metadata» (строки 124-143, 169-177); для Task 2/3 указать, что соответствующего раздела нет и действия основаны на 13 (counts, reconciliation, classification) + конкретном чек-листе контракта (что уже отражено в строках 51-54 плана). Не претендовать, что 13b покрывает feature-CSV parity.
-
----
-
-### З5. Контракт требует 23 поля; эталонный MT4 файл содержит 22 — противоречие не разрешено на уровне контракта — ВАЖНО
-
-**Место:** `docs/schemas/mt5_nero_csv_contract.md` строки 29-31; план, строки 84-87 (DD6), строки 96-97 (Known Unknowns); контракт это первичный чек-лист плана (строка 168 «Чек-лист: `docs/schemas/mt5_nero_csv_contract.md`»).
-
-**Суть:** Контракт устанавливает проверку `len(fractalN.split(':')) == 23` **для каждого** непустого фрактала. Эталонный MT4 файл (и `_old`, и текущий) последовательно содержит **22** поля. План фиксирует этот диссонанс (DD6) и исполняет вариант «первые 22 сравнивать, 23-е проверять на консистентность MT5». Но контракт, на который план ссылается, такое послабление не декларирует.
-
-**Доказательство:**
-Контракт (строки 29-31):
-```
-- `len(fractalN.split(':')) == 23` for every non-empty fractal field;
-- 23rd nested field is `Shift`;
-- full nested format agreement against MT4 on sampled rows;
-```
-Реальный MT4 файл (постоянно 22 поля, выборка 1000 строк с шагом 100 + первая + последняя строки):
-```
-$ tail -n +2 MT/MQL4/Files/Nero_XAUUSD.csv | sed -n '1~100p' | cut -d';' -f5 | awk -F':' '{print NF}' | sort -n | uniq -c
-628 22
-$ tail -1 MT/MQL4/Files/Nero_XAUUSD.csv | cut -d';' -f5 | awk -F':' '{print NF}'
-22
-```
-При этом текущий MT4 код (`MT/MQL4/Include/lib_PIC.mqh:919`) тоже пишет 23 поля (последнее = SHIFT). То есть файл 2004-2026 сгенерирован старой версией кода с 22 полями.
-
-**Почему важно:** Script в Task 2 (`compare_nero_parity.py`) если строго проверит чек-лист контракта `== 23` на MT4-стороне, получит массовый FAIL для эталона. План списывает это на «known evolution», но контракт этого не пишет. Чек-лист плана и контракт рассинхронизированы.
-
-**Рекомендованное исправление:** обновить контракт `mt5_nero_csv_contract.md`, явно зафиксировать: (a) MT5 producer пишет 23 поля (поле 23 = Shift, подтвердить кодом); (b) сравнение с эталонным MT4 файлом выполняется по первым N=min(22, 23) общим полям; (c) 23-е поле проверяется только на внутреннюю консистентность MT5. Дополнительно: рассмотреть решение из Known Unknowns №1 плана (перегенерация MT4 файла текущим кодом) — вне scope, но без этого эталон не соответствует контракту.
-
----
-
-### З6. План игнорирует уже существующий `Nero_MT5.csv` от 31.07 — ВАЖНО
-
-**Место:** план, Task 1 целиком; строки 106-108 (Known Unknowns: Tester Files каталог); Global Constraints строка 32.
-
-**Суть:** К моменту написания плана `Nero_MT5.csv` УЖЕ существует в tester Files и сгенерирован lifecycle-прогоном 31.07 (там же стоял `InpMT5_ExportNero=true`). План предполагает генерацию с нуля; не упоминает рисков и преимуществ повторного использования.
-
-**Доказательство:**
-```
-$ ls -la "..."Tester/Agent-127.0.0.1-3000/MQL5/Files/Nero_MT5.csv
--rw-rw-rw- ... 191661076 Jul 31 13:58 Nero_MT5.csv
-```
-Файл соответствует ожиданиям плана: 104 колонки, 23 поля во фрактале:
-```
-$ head -1 ".../Nero_MT5.csv" | awk -F';' '{print NF}'
-104
-$ head -2 ".../Nero_MT5.csv" | tail -1 | cut -d';' -f5 | awk -F':' '{print NF}'
-23
-```
-Этот файл создан прогоном, INI которого явно включал producer:
-```
-$ iconv .../mt5_tx_lifecycle_20260731.set | grep InpMT5_ExportNero
-InpMT5_ExportNero=true||false||0||true||N
-```
-
-**Почему важно:** (a) План мог бы пропустить генерацию и сразу перейти к Task 2/3, если состояние lifecycle-прогона достаточно для parity (но не факт: run DiagnosticExecutor был включён — см. З7). (b) Если Task 1 запустит tester заново, lifecycle-файл `Nero_MT5.csv` перетрётся — нужно явно упомянуть необходимость копировать/архивировать текущий перед перегоном. (c) Файл был создан вDiagnostic-run режиме (event writer), а не чистом producer-режиме — потенциальные побочные эффекты.
-
-**Рекомендованное исправление:** перед Task 1 проверить состояние существующего файла (sha256, диапазон, целостность) и явно зафиксировать решение: (a) переиспользовать или (b) перегенерировать чистым producer-прогоном (`InpMT5_DiagnosticExecutor=false`). В любом случае заархивировать текущий в `ML/reports/mt5_nero_parity/` до любого нового прогона. Уведомить исполнитель, что файл уже есть.
-
----
-
-### З7. Порог price p95 <= 1.0 нереалистичен при разнице котировок MT4/MT5 — ВАЖНО
-
-**Место:** план, Design Decision 5, строки 75-83 (особенно строка 77 и обоснование 81-83).
-
-**Суть:** Порог `price p95 diff <= 1.0` (в пунктах цены XAUUSD). Обоснование: «разница котировок между брокерами/терминалами обычно < 1.0». В реальности проверка показала разницу >1.0 на первом совпадающем времени: 2019.07.02 15:00 MT4 fractal0.price=1396.3, MT5 fractal0.price=1394.6 → |diff|=1.7 > 1.0. Это верхняя планка p95; ожидать p95 <= 1.0 при периоде 3.5 года XAUUSD с разницей истории между брокерами нереалистично.
-
-**Доказательство:**
-```
-$ grep "^2019.07.02 15:00;" MT/MQL4/Files/Nero_XAUUSD.csv | cut -d';' -f5 | awk -F':' '{print $2}'
-1396.3
-$ sed -n '2p' ".../Nero_MT5.csv" | cut -d';' -f5 | awk -F':' '{print $2}'
-1394.6
-```
-Разница |1396.3 - 1394.6| = 1.7 уже на первом совпадении — выше порога 1.0.
-
-**Почему важно:** Порог выбран гипотетически без эмпирической оценки. Установка p95 <= 1.0 почти гарантированно даст `PARITY_PARTIAL` (не PASS), даже при идеальной producer-логике, без возможности PASS без ретюннинга порогов по результату. Подгонка или пересмотр порогов после прогона — нарушение запрета подгонки по tester-результату (методология 13b строка 184, 193).
-
-**Рекомендованное исправление:** (a) Либо повысить порог price p95 до оценки разъезда историй XAUUSD между MT4/MT5 за 3.5 года (предлагается 3.0-5.0 с явной пометкой «диагностический», ищется отдельная оценка). (b) Либо переформулировать verdict: вместо одной жёсткой границы PASS/PARTIAL — сравнивать **распределение** diff и классифицировать: small drift (<0.1), broker-history shift (0.1-5?), systematic (>5). Это надёжнее, чем фиксированный порог без эмпирики. (c) Обязательно зафиксировать: пороги установлены до прогона и не пересматриваются по результату (явный анти-tuning disclosure, как в методологии 16 «DigiteResearch-first disclosure»).
-
----
-
-### З8. Дубликаты времени уже есть в эталоне (3764) и в MT5 (473) — вопрос о применимости «дубли блокер» — ВАЖНО/ВОПРОС
-
-**Место:** план, Design Decision 2, строки 61-63. З1 в Known Unknowns (строки 100-102) про MQL4Compat.
-
-**Суть:** DD2: «Дубликаты времени в любом из файлов — blocker для strict parity». Но эталонный MT4 файл уже содержит 3764 дубликата времени. Это значит strict PASS **априорно недостижим**, что план упускает при постановке `PARITY_PASS`.
-
-**Доказательство:**
-```
-$ tail -n +2 MT/MQL4/Files/Nero_XAUUSD.csv | cut -d';' -f1 | sort | uniq -d | wc -l
-3764
-$ tail -n +2 ".../Nero_MT5.csv" | cut -d';' -f1 | sort | uniq -d | wc -l
-473
-```
-
-**Почему важно:** Verdict `PARITY_PASS` (строки 76-77) формально недостижим, если применять DD2 буквально (дубли есть в эталоне). Это создаёт несоответствие между определением PASS и эталоном. Дубли для XAUUSD на H1 ожидаемы при пропусках/замещениях истории и являются известным артефактом (упоминалось в методологии 13 строка 68: «Известен effect duplicate timestamps»).
-
-**Рекомендованное исправление:** В DD2 уточнить: strict PASS допустим только на пересечении с дедупликацией по `time` (берётся последняя запись или явно фиксируется политика), либо формализовать: дубли в эталоне не являются blocker, если они объяснимы (gap fill) и количество дубликатов в обоих файлах согласовано и равно ±N. Зафиксироватьolicy dedup в manifest. Без этого правда PASS формально невозможна.
-
----
-
-### З9. Период MT5 фактически у́же, чем в плане (с 2019.07.02, не 2019.06.20) — ВАЖНО
-
-**Место:** план, строки 34, 58-59, 130-137 (период 2019.06.20-2022.12.03). Global Constraints. Эталон в строках 32-33.
-
-**Суть:** План ставит период MT5 tester `2019.06.20-2022.12.03`. Реальный существующий `Nero_MT5.csv` содержит данные с `2019.07.02 15:00` по `2022.12.02 22:00` — заметно у́же (первый бар позже на 12 дней, последний на день раньше).
-
-**Доказательство:**
-```
-$ head -2 ".../Nero_MT5.csv" | tail -1 | cut -d';' -f1
-2019.07.02 15:00
-$ tail -1 ".../Nero_MT5.csv" | cut -d';' -f1
-2022.12.02 22:00
-$ grep -c "^2019.06.20" MT/MQL4/Files/Nero_XAUUSD.csv  # эталон имеет более ранние строки
-<есть строки с 2019.06.20>
-```
-Также MT5 имеет 9379 строк данных (включая с пустыми фракталами), тогда как MT4 за тот же под-период существенно больше строк (XAUUSD H1 ~23-24 бара/день × 3.5 года ≈ 30000). Число строк в пересечении будет меньше 9379.
-
-**Почему важно:** (a) Период сравнения по факту — пересечение, а не запрошенный диапазон. (b) План DD1 (строка 59) правильно говорит «из MT4 берётся только пересечение» — это OK. Но ожидания числа строк (план стр. 109 «~20000+ строк», фактически 9379 в MT5) расходятся с реальностью; ограничения планированияTask 3/4 количеств надо уточнить. (c) Если планируется перегон (а не использование существующего), причина более позднего старта неясна: возможно … нужна прогрев-буфер фракталов — это должно быть задокументировано.
-
-**Рекомендованное исправление:** Уточнить в плане: фактический диапазон MT5 выхода зависит от периода «прогрева» (построения LevelsAmount фракталов), первые бары периода не содержат полного набора фракталов; пересечение рассчитывается из фактических min/max time обеих файлов. Проверить/зафиксировать, что более поздний старт (2019.07.02 vs 2019.06.20) объясняется периодом прогрева, а не дефектом producer.
-
----
-
-### З10. Параметры эксперта нужно передавать через `.set`, план использует `Inputs=` — УЛУЧШЕНИЕ
-
-**Место:** план, Task 1, INI-блок, строки 132-144. Команда tester строки 146-152.
-
-**Суть:** Все рабочие прогоны проекта передают входные параметры эксперта через `.set` (`ExpertParameters=<имя>.set`), файлы лежат в `MT/MQL5/Profiles/Tester/`. План предлагает `Inputs=параметр=значение;параметр=значение` прямо в INI. Это не подтверждено: в проекте `Inputs=` не встречается.
-
-**Доказательство:**
-```
-$ grep -rn "ExpertParameters=.*set" ML/reports/mt5_execution_loop/*.ini
-...:\ExpertParameters=mt5_tx_lifecycle_20260731.set
-... smoke.inI:3:ExpertParameters=mt5_tx_lifecycle_smoke_20260731.set
-...:\ExpertParameters=mt5_single_rule_diagnostic_20260730.set
-$ find . -name "*.set" -path "*Profiles/Tester*"
-.../mt5_tx_lifecycle_smoke_20260731.set
-.../setical.tx_lifecycle_20260731.setet
-.../mt5_single_rule_diagnostic_20260730.set
-```
-Пример формата `.set` (UTF-16LE, `InpName=value||...||N`):
-```
-InpMT5_ExportNero=true||false||0||true||N
-InpMT5_NeroFile=Nero_MT5.csv
-InpMT5_DiagnosticExecutor=false||false||0||true||N
-```
-
-**Почему важно:** Минимизация расхождения с проектным конвейером; форматы INI и `.set` в проекте доказанно работают. `Inputs=` требует проверки на совместимость с конкретным build MT5 — без этого риск непредсказуемого поведения.
-
-**Рекомендованное исправление:** Сгенерировать `MT/MQL5/Profiles/Tester/mt5_nero_parity_20260731.set` с `InpMT5_ExportNero=true`, `InpMT5_NeroFile=Nero_MT5.csv`, `InpMT5_DiagnosticExecutor=false`; в INI указать `ExpertParameters=mt5_nero_parity_20260731.set`. Указать в плане необходимость создания этого `.set` как шаг.
-
----
-
-### З11. Период tester синхронизирован с lifecycle, но это не делает run независимым — УЛУЧШЕНИЕ
-
-**Место:** план, строки 20, 34-35 (зависимость и период).
-
-**Суть:** План корректно объявляет зависимость от `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md`. Подтверждается: lifecycle-прогон использовал тот же XAUUSD H1, 2019.06.20-2022.12.03, Model 1. Это делает период плана обоснованным. Но план не отмечает, что lifecycle-прогон шёл с `InpMT5_DiagnosticExecutor=true` (event-запись в `mt5_trade_events_*.csv`), а план хочет `InpMT5_DiagnosticExecutor=false`. Это разница в режиме нужно фиксировать как отдельное условие.
-
-**Доказательство:**
-- Зависимость отчёт существует: `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md` (11342 байт, 31.07).
-- Lifecycle INI: `FromDate=2019.06.20`, `ToDate=2022.12.03`, `Model=1`, `Symbol=XAUUSD`, `Period=H1`, `Deposit=10000`, `Leverage=1:500`.
-- Lifecycle `.set`: `InpMT5_DiagnosticExecutor=true` (event writer включён).
-
-План хочет `InpMT5_DiagnosticExecutor=false` (только producer), это правильно по контексту: для parity не нужна event-запись, producer активируется через `InpMT5_ExportNero=true`.
-
-**Почему важно:** Если plan исполнитель попытается скопировать lifecycle INI/set один-в-один, получится сравнение `Nero_MT5.csv` из прогонов с DiagnosticExecutor — эти события пишут `mt5_trade_events_*.csv`, а не влияют на `Nero_MT5.csv`. Но нужно убедиться, что DiagnosticExecutor не вызывает побочных действий на producer. Код (`$o$imple.mq5:124`) перезаписывает `MT5_DiagnosticExecutor` из инпута только в начале, и producer-логика (`lib_PIC.mqh:NERO_CSV_CREATE`) не зависит от флага diagnostic — это достаточно для уверенности, но стоит зафиксировать.
-
-**Рекомендованное исправление:** Явно указать в плане, что чистый parity run требует `InpMT5_DiagnosticExecutor=false` (это уже в плане INI строка 144 — OK, но спецификация причины отсутствует). Указать, что producer (`InpMT5_ExportNero`) и diagnostic executor независимо работают; event writer не затрагивает Nero.csv. Зафиксировать в manifest режим run.
-
----
-
-### З12. Пороги привязаны к «пунктам цены XAUUSD», но единицы не формализованы — ВОПРОС
-
-**Место:** план, Design Decision 5, строки 75-83.
-
-**Суть:** Пороги price p95 <= 1.0, ATR p95 <= 0.5 даны «в пунктах цены XAUUSD». Но единица = **цена** (например, USD за унцию), а не «пункт» (1 пункт = 0.01 цены для золота у большинства брокеров). Слово «пункт» здесь вводит в заблуждение: 1.0 «пункта» = 0.01 цены, тогда как diff 1.7 в цене = 170 «пунктов». Порог 1.0 уже не «< 1 пункта», а как минимум 100 пунктов — гораздо либеральнее, чем звучит.
-
-**Доказательство:** В плане (строка 77) дословно: «`price p95 diff <= 1.0` (в пунктах цены XAUUSD)». Но degardi: 1396.3 - 1394.6 = 1.7 в **цене**, = 170 в **пунктах** (если 1 пункт = 0.01). То есть единицы в тексте не соответствуют значениям в тестах (где diff в цене).
-
-**Почему важно:** Возможно, имелась в виду цена (1.0 USD), а не пункт. Если в коде сравнения diff будет считаться в цене, порог 1.0 в цене почти гарантированно нарушен (см. З7). Если в пунктах — порог 1.0 пунктов = 0.01 цены, недостижим почти никогда. Это решает знак verdict.
-
-**Рекомендованное исправление:** Уточнить единицы: «diff в цене (USD за унцию XAUUSD), не в пунктах». Это разрешается прозрачно. Заодно пересмотреть сами пороги (см. З7).
-
----
-
-## Вне замечаний — положительные сверки
-
-Следующие утверждения плана проверены и подтверждаются:
-
-1. **Цель в roadmap:** `docs/superpowers/roadmap.md` строки 20-25 явно ставят Nero parity как активную задачу (Point 1). Цель выходит в roadmap корректна.
-2. **Интерфейсы `InpMT5_ExportNero/NeroFile/DiagnosticExecutor`:** существуют в `MT/MQL5/Experts/$o$imple.mq5` строки 73-75, используются в `MT/MQL5/Include/lib_PIC.mqh` (`MT5_ExportNero`, `MT5_NeroFile`, `MT5_DiagnosticExecutor`). План корректно их ссылает.
-3. **Заголовок CSV (104 колонки):** `time;signal;predict;ATR` + `fractal0..fractal99` подтверждены в обоих файлах — MT4 и MT5. Совпадает с планом строка 103.
-4. **Уровни LevelsAmount = 101 (100 фракталов):** `MT/MQL5/Include/head_PIC.mqh:4` `#define LevelsAmount 101`, и MT4 аналог. План строка 103 верен.
-5. **Индексы полей `T(price/dir)`:** план DD4 строка 72 (price = поле 2, индекс 1), строки 71/74 (dir = поле 3, индекс 2; T = поле 1, индекс 0). Подтверждается кодом `lib_PIC.mqh:902-904` (T:P:Dir:...) и реальными данными `1394.6` на индексе 1.
-6. **Период tester в плане и lifecycle совпадают:** XAUUSD H1, 2019.06.20-2022.12.03, Model 1 — то же, что lifecycle-прогон 31.07. Зависимость от lifecycle оправдана.
-7. **`USE_NORMALIZED_OUTPUT=false` в обоих кодах:** `MT/MQL5/Include/lib_PIC.mqh:87-88` и `MT/MQL4/Include/lib_PIC.mqh:87-88` (`bool USE_NORMALIZED_OUTPUT = false`). План строка 36 верен.
-8. **MT5 код пишет 23 поля (последнее = Shift):** `MT/MQL5/Include/lib_PIC.mqh:918` `S0(SHIFT(F[f].T) - cur_bar)` — 23-е. Подтверждается реальным MT5 файлом (23 поля). План DD6 строки 85-87 фиксируют это верно.
-9. **MT4 код в git тоже пишет 23:** `MT/MQL4/Include/lib_PIC.mqh:919` — тоже последняя `SHIFT`. Подтверждает тезис KnownUnknowns строки 96 о том, что эталонный файл (22) был создан старым билдом, а текущий код пишет 23.
-10. **Не существуют/не написаны целевые файлы:** `ML/baseline/compare_nero_parity.py`, `tests/test_mt5_nero_parity.py`, `ML/reports/mt5_nero_parity/` - отсутствуют (grep/ls возвращают not found). План новый, дубликатов нет.
-11. **Зависимый lifecycle reporting закрыт:** `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md` строки 166-167 «`continue` — lifecycle закрыт (`UNEXPLAINED=0`), блокер снят». Зависимость плана `depends_on` выполнена.
-
----
-
-## Рекомендации по приоритетам
-
-Для достижения работоспособного parity-прогона плана нужно обработать:
-
-1. **З1, З2, З3** — без этих правок план не выполнится целиком (INI синтаксис, кодировка Pandas, знак Shift в проверке).
-2. **З5, З8** — без этих правок такое определение `PARITY_PASS` формально недостижим (контракт vs эталон; дубли в эталоне).
-3. **З7, З12** — без эмпирического пересмотра порогов verdict, скорее всего, отримит предопределённое `PARTIAL`/`FAIL`.
-4. **З6, З9** — учесть существующий файл и фактический диапазон, сократить трассу исполнения.
-5. **З4, З10, З11** — уточнения методологии и форматов; не помешают прохождению, но улучшают воспроизводимость и честность отчёта.
-
-После правок по З1-З3 план пригоден к TDD-исполнению (Task 2 → Task 1 → Task 3 → Task 4).
+### 1. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:4`, `docs/reports/2026-07-31-mt5-batch-selection.md:124-125`, `docs/reports/2026-07-31-mt5-batch-selection.md:157-164`
+- **Суть проблемы:** отчёт одновременно ставит `Status: DIAGNOSTIC_ONLY` и пишет, что из-за combined split roles потолок статуса — `RESEARCH_ONLY`. Это разные статусы. В методологии `DIAGNOSTIC_ONLY` означает проверку механики без выводов о качестве, а `RESEARCH_ONLY` — поисковый результат, который не может стать кандидатом без нового проверочного цикла.
+- **Доказательство:** `docs/methodology/README.md:46-51` определяет оба статуса отдельно. `docs/methodology/09-validation-freeze.md:20-29` требует понизить результат до `RESEARCH_ONLY`, если validation роли объединены. `docs/methodology/12-backtest-costs.md:52-58` понижает execution-выводы до `DIAGNOSTIC_ONLY`, если неизвестна ценовая конвенция. В `batch_summary.json` поле `status` равно `DIAGNOSTIC_ONLY`.
+- **Почему это важно:** смешение статусов делает непонятным, что именно запрещает повышение результата: исследовательская роль split или неполный контур исполнения/издержек. Следующий агент может неверно решить, какой блокер надо закрывать первым.
+- **Рекомендуемое исправление:** ввести явное разделение: `lifecycle_status: RESEARCH_ONLY`, `execution_status: DIAGNOSTIC_ONLY`, `allowed_max_verdict: DIAGNOSTIC_ONLY`. Либо оставить один статус, но объяснить, что выбран более строгий потолок из-за gross PF, неполной metadata и timing/cost contract.
+
+### 2. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:26-35`, `docs/reports/2026-07-31-mt5-batch-selection.md:81-109`
+- **Суть проблемы:** отчёт с PF/PnL-метриками не содержит обязательный research-first disclosure-блок: `lifecycle_status`, `origin_bias`, `current_search_budget`, `cumulative_search_budget`, `allowed_max_verdict`, `forbidden_interpretations`.
+- **Доказательство:** `docs/methodology/16-reporting-audit.md:64-87` требует этот блок для исследовательских отчётов и требует рядом с PnL/PF указать `allowed_max_verdict`, причину, почему это не торговый вывод, непройденные проверки и запрещённые интерпретации. Поиск `rg -n "lifecycle_status|allowed_max_verdict|forbidden_interpretations" docs/reports/2026-07-31-mt5-batch-selection.md` не нашёл совпадений.
+- **Почему это важно:** без такого блока таблица PF выглядит как торговая оценка, хотя сам отчёт признаёт gross PF, combined split roles, отсутствие locked_test и неполный timing/cost contract.
+- **Рекомендуемое исправление:** добавить короткий блок disclosure перед Results и повторить рядом с таблицей PF: `allowed_max_verdict: DIAGNOSTIC_ONLY`, причина: gross MT5 tester PF без swap/commission, совмещённые validation-роли, нет locked_test, timing contract diagnostic.
+
+### 3. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:31`, `docs/reports/2026-07-31-mt5-batch-selection.md:73-79`, `docs/reports/2026-07-31-mt5-batch-selection.md:172`
+- **Суть проблемы:** cost model описан как будущий шаг, но методология запрещает оставлять spread/commission/slippage "на потом" для final verdict. Отчёт правильно понижает статус, но не фиксирует полный список отсутствующих cost assumptions: commission, slippage, swap, latency, missed opens, position limits.
+- **Доказательство:** `docs/methodology/12-backtest-costs.md:16-26` требует описать spread, commission, swap, slippage, requote/open failure, latency, next-bar entry и position limits. `docs/methodology/12-backtest-costs.md:66-75` требует, чтобы cost assumptions были указаны до final verdict, canonical spread был основным gate, а пропущенные входы не считались нулевым риском без обоснования. В отчёте есть только gross PF, swap/commission и spread mode.
+- **Почему это важно:** при PF около 1.17-1.23 даже небольшие издержки могут изменить ранжирование и вывод. Кроме того, fill rate низкий, а это отдельный execution-риск, не только статистическая слабость модели.
+- **Рекомендуемое исправление:** расширить Limitations/Next Steps отдельным списком отсутствующих издержек и явно запретить сравнивать gross PF с будущим net PF как один и тот же frozen result.
+
+### 4. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:37-54`, `docs/reports/2026-07-31-mt5-batch-selection.md:145-147`
+- **Суть проблемы:** tester metadata неполна, и часть полей названа "зафиксировано по смежным прогонам", но не указаны конкретные артефакты для batch-прогона. Сам `batch_summary.json` metadata не содержит.
+- **Доказательство:** команда `jq '.metadata // .tester_metadata // .config // empty' ML/reports/mt5_execution_loop/batch/batch_summary.json` возвращает пустой результат. `docs/methodology/13b-mt5-execution-parity.md:169-177` требует зафиксировать MT5 build, broker/server, symbol contract specification, tester model, date range, deposit/currency/leverage, spread mode, account mode. `run_mt5_batch.py:244-267` фиксирует в INI только Symbol, Period, Model, FromDate, ToDate, Deposit, Currency, Leverage и ExecutionMode; broker, build, contract spec, spread mode и account mode там не сохраняются.
+- **Почему это важно:** без metadata нельзя уверенно воспроизвести tester run и нельзя отличить изменение результата из-за модели от изменения условий брокера/терминала.
+- **Рекомендуемое исправление:** добавить в отчёт и JSON ссылку на batch INI, compile log, terminal/agent log, server/build и contract spec snapshot. Если артефактов нет, явно пометить эти поля как `UNKNOWN`, а не "зафиксировано".
+
+### 5. Важность: улучшение
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:67-71`, `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:104-108`
+- **Суть проблемы:** исключение кандидатов с `trades_count < 100` до Holm-Bonferroni действительно заранее задано в плане, но отчёт не раскрывает, что это меняет семейство проверяемых гипотез с 32 на 11 и оставляет 21 кандидата как диагностические/недостаточные результаты.
+- **Доказательство:** план `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:78-88` задаёт sample-size gate и коррекцию по кандидатам, прошедшим trades gate. `batch_summary.json` показывает `n_candidates=32`, `n_eligible=11`, `multiple_testing.n_tests=11`; команда `jq '.table as $t | {len: ($t|length), eligible: ($t | map(select(.trades_count >= 100 and .trades_buy >= 30 and .trades_sell >= 30)) | length), diagnostic_only: ($t | map(select(.trades_count >= 30 and .trades_count < 100)) | length), insufficient: ($t | map(select(.trades_count < 30)) | length)}' ...` вернула `32/11/16/5`.
+- **Почему это важно:** читатель может решить, что multiple-testing correction покрыла все 32 MT5-прогона. Фактически она покрыла только подмножество, допущенное к winner selection.
+- **Рекомендуемое исправление:** добавить формулировку: "Holm-Bonferroni применён только к 11 candidate tests после заранее заданного sample-size gate; 21 результат не участвовал в winner family и не может использоваться для выбора без нового плана коррекции".
+
+### 6. Важность: улучшение
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:91-95`, `docs/reports/2026-07-31-mt5-batch-selection.md:157-164`
+- **Суть проблемы:** в отчёте приведена только top-5 таблица, хотя plan Task 4 обещал "таблицу 32 метрик". Есть ссылка на JSON, но нет команды/сводки, позволяющей быстро проверить все 32 строки.
+- **Доказательство:** `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:237` требует "таблица 32 метрик". `docs/methodology/16-reporting-audit.md:94-97` требует количества raw rows, событий, сигналов и сделок после фильтров и сверку ключевых чисел со structured artifact. В отчёте строки 83-90 содержат только 5 кандидатов.
+- **Почему это важно:** отчёт становится менее воспроизводимым: чтобы проверить низкий fill rate, распределение по статусам и кандидатов с высоким PF при малом N, надо самостоятельно разбирать JSON.
+- **Рекомендуемое исправление:** добавить компактную полную таблицу 32 строк или appendix с командой `jq -r '.table[] | [...] | @tsv' ML/reports/mt5_execution_loop/batch/batch_summary.json`.
+
+### 7. Важность: улучшение
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:129-133`, `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:57-60`
+- **Суть проблемы:** отчёт корректно признаёт, что прежняя оценка "~4947 баров" не воспроизводится, но не заменяет её проверяемым числом H1-баров или командой расчёта.
+- **Доказательство:** план `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:57-60` содержит "~4947 баров"; отчёт `docs/reports/2026-07-31-mt5-batch-selection.md:129-133` говорит, что источник оценки не воспроизводится. `run_mt5_batch.py:50-55` фильтрует EQ scores по `2021-01-04` - `2022-12-02`, но отчёт не даёт проверочную команду по исходному CSV.
+- **Почему это важно:** размер периода влияет на интерпретацию sample size и на объяснение провала bootstrap.
+- **Рекомендуемое исправление:** либо убрать число из плана как устаревшее, либо добавить в отчёт команду расчёта пересечения movement scores и order mechanics с точным числом строк/баров.
+
+### 8. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:136-142`, `CONTEXT_HANDOFF.md:32-33`
+- **Суть проблемы:** LiveUpdate описан как гипотеза без артефакта, но handoff уже утверждает более сильный факт: "каталог заблокирован (chmod 555)" и "терминал скачивает обновление". Сам отчёт не ссылается на проверочный лог или команду.
+- **Доказательство:** `docs/reports/2026-07-31-mt5-batch-selection.md:136-140` прямо говорит, что событие не зафиксировано в `batch_summary.json` и не подкреплено логом терминала. `CONTEXT_HANDOFF.md:32-33` формулирует состояние как факт. `run_mt5_batch.py:187-197` только проверяет наличие liveupdate-файлов; он не сохраняет результат проверки в batch artifact.
+- **Почему это важно:** неподтверждённый внешний фактор может стать ложным объяснением качества или нестабильности batch-прогонов.
+- **Рекомендуемое исправление:** синхронизировать формулировки: либо добавить артефакт команды `ls/stat` и terminal log, либо в handoff тоже писать "гипотеза/наблюдение оператора, не покрыто артефактом".
+
+### 9. Важность: важно
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:159-164`, `CHANGELOG.md:23`
+- **Суть проблемы:** вывод "movement-filter модели не дают статистически значимого PF > 1.0 через механику limit orders" сильнее, чем позволяют ограничения. Проверка была только на одном validation-периоде, gross PF, без separate val-eval, без locked_test и без полного cost model.
+- **Доказательство:** `docs/methodology/09-validation-freeze.md:28` говорит, что объединённые validation роли дают результат не выше `RESEARCH_ONLY`; `docs/methodology/12-backtest-costs.md:112-119` запрещает выдавать gross-only результат за production; `docs/methodology/16-reporting-audit.md:79-87` требует запретить trading-интерпретации рядом с PnL/PF.
+- **Почему это важно:** формулировка может быть прочитана как общий отрицательный вывод о классе моделей, а не как результат конкретного diagnostic batch.
+- **Рекомендуемое исправление:** сузить вывод: "в этом diagnostic MT5 validation batch ни один из 32 заранее отобранных movement-filter кандидатов не прошёл winner gates; это не закрывает семейство моделей вне данного периода, cost model и split protocol".
+
+### 10. Важность: улучшение
+
+- **Место:** `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:203-208`, `docs/reports/2026-07-31-mt5-batch-selection.md:155`
+- **Суть проблемы:** план обещал новый `ML/baseline/aggregate_mt5_batch.py`, но фактическая агрегация реализована внутри `ML/baseline/run_mt5_batch.py`. Это не ломает результат, но план остался неточным.
+- **Доказательство:** `rg -n "aggregate_mt5_batch" ML/baseline docs/superpowers/plans/2026-07-31-mt5-batch-selection.md` показывает упоминание в плане и отсутствие файла `ML/baseline/aggregate_mt5_batch.py`; `run_mt5_batch.py:515-637` содержит `aggregate_batch()` и запись `batch_summary.json`.
+- **Почему это важно:** следующий агент может искать несуществующий entrypoint для воспроизведения summary.
+- **Рекомендуемое исправление:** обновить план или отчёт: "агрегация выполнена фазой `--phase aggregate` в `ML/baseline/run_mt5_batch.py`; отдельный `aggregate_mt5_batch.py` не создавался".
+
+### 11. Важность: улучшение
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:149-155`
+- **Суть проблемы:** раздел Artifacts не перечисляет batch compile log, INI/.set файлы и smoke artifact, хотя план и методика execution parity считают их важными для воспроизводимости.
+- **Доказательство:** `docs/superpowers/plans/2026-07-31-mt5-batch-selection.md:172-199` включает compile, smoke, INI/.set и loop progress. `docs/methodology/13b-mt5-execution-parity.md:181-183` требует `.ex5` из текущего `$o$imple.mq5` и сохранённый MetaEditor log. `CONTEXT_HANDOFF.md:57-61` утверждает, что compile и smoke выполнены, но отчёт не даёт пути к их артефактам.
+- **Почему это важно:** воспроизведение batch зависит не только от JSON и events CSV, но и от фактических настроек tester.
+- **Рекомендуемое исправление:** добавить paths к compile log, smoke `_smoke`, сохранённым INI/.set или явно написать, что эти артефакты не сохранены.
+
+### 12. Важность: вопрос
+
+- **Место:** `docs/reports/2026-07-31-mt5-batch-selection.md:39-44`
+- **Суть проблемы:** "Agent build: 6061; серверный build 6074 наблюдение сессии, без артефакта" сформулировано с синтаксическим пропуском и неясным уровнем доказанности.
+- **Доказательство:** смежный lifecycle report фиксирует `agent build 6061` в `docs/reports/2026-07-31-mt5-ontradetransaction-lifecycle.md:37-39`, но batch report сам признаёт отсутствие batch artifact для части metadata в строках 54 и 145-147.
+- **Почему это важно:** build терминала может влиять на Strategy Tester, а строка сейчас смешивает подтверждённый и неподтверждённый факт.
+- **Рекомендуемое исправление:** переписать как два пункта: `Agent build 6061: подтверждён смежным lifecycle artifact, не batch artifact`; `Server build 6074: наблюдение оператора, artifact отсутствует`.
+
+## Подтверждённые утверждения
+
+- `batch_summary.json` подтверждает `n_candidates=32`, `n_valid=32`, `n_eligible=11`, `n_diagnostic_only=16`, `verdict=BATCH_NO_WINNER`, `status=DIAGNOSTIC_ONLY`.
+- `batch_summary.json` подтверждает Holm-Bonferroni: `method=Holm-Bonferroni`, `alpha=0.05`, `n_tests=11`, все `holm_rejected=false`.
+- `batch_summary.json` и команда по `.table` подтверждают 5 insufficient candidates: 32 total минус 11 eligible минус 16 diagnostic-only.
+- `ML/reports/entry_based_movement_filter_candidates.csv` содержит 32 строки данных: `wc -l` вернул 33 с заголовком; все `selection_eligible=True` и `yearly_check_pass=True`.
+- Для 24h `simple_combined` Spearman `val_select_spearman_median=0.2698047684294034`, `movement_lift=1.330488` - `1.509332`, `selection_eligible=True`, `yearly_check_pass=True`; это подтверждает пояснение отчёта о прохождении шортлиста через movement-lift, а не Spearman.
+- `run_mt5_batch.py:417-432` подтверждает block bootstrap с `n_iter=2000`, `block_size=15`, `seed=42`; `run_mt5_batch.py:435-445` подтверждает Holm-Bonferroni.
+- `run_mt5_batch.py:544-545` подтверждает разделение `trades_count >= 100` и `30 <= trades_count < 100`; `run_mt5_batch.py:576-582` подтверждает gates `trades_total`, `trades_per_side`, `unexplained_zero`, `bs_p05_above_1`, `holm_rejected`.
+- `ML/reports/mt5_execution_loop/batch_selection_contract.json:2-5` подтверждает, что contract обновлён до `EXECUTED`, `BATCH_NO_WINNER` и ссылается на отчёт.
+
+## Ошибки выполнения аудита
+
+- MCP: `knowledge-rag search_similar` вернул `no_results` для `docs/reports/2026-07-31-mt5-batch-selection.md`; использован только как навигационная проверка, не как источник фактов.
+- Процедурная ошибка: при поиске связанных упоминаний команда `rg` случайно вернула строки из старого `docs/superpowers/audit.md`, хотя пользователь запретил читать его содержимое. Эти строки не использованы как доказательство; файл полностью удалён и создан заново этим аудитом.
