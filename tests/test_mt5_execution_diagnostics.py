@@ -8,8 +8,9 @@ import pandas as pd
 
 from ML.baseline.mt5_execution_diagnostics import (
     build_error_inventory,
-    discover_batch_event_paths,
+    build_event_anomaly_outputs,
     classify_error_message,
+    discover_batch_event_paths,
     extract_error_code,
     load_event_rows,
     load_error_rows,
@@ -157,6 +158,40 @@ def test_discover_batch_event_paths_excludes_smoke(tmp_path: Path) -> None:
 
     assert discover_batch_event_paths(batch_root) == [candidate / "events.csv"]
     assert load_event_rows([candidate / "events.csv"])["run_id"].tolist() == ["candidate_a"]
+
+
+def test_build_event_anomaly_outputs_reports_batch_run_count(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    reference = tmp_path / "reference.csv"
+    batch_root = tmp_path / "batch"
+    candidate = batch_root / "candidate_a"
+    smoke = batch_root / "_smoke"
+    candidate.mkdir(parents=True)
+    smoke.mkdir(parents=True)
+    pd.DataFrame([_event_row("ORDER_EXPIRED", "2023.01.02 10:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        reference,
+        sep=";",
+        index=False,
+    )
+    pd.DataFrame([_event_row("OPEN_FAILED", "2023.01.02 11:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        candidate / "events.csv",
+        sep=";",
+        index=False,
+    )
+    pd.DataFrame([_event_row("OPEN_FAILED", "2023.01.02 12:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+        smoke / "events.csv",
+        sep=";",
+        index=False,
+    )
+
+    summary, anomalies = build_event_anomaly_outputs([reference], batch_root)
+
+    assert summary["batch_run_count"] == 1
+    assert summary["batch_event_path_count"] == 1
+    assert summary["excluded_service_dirs"] == ["_smoke"]
+    assert summary["batch_runs"]["event_counts"]["OPEN_FAILED"] == 1
+    assert len(anomalies) == 2
 
 
 def test_write_error_outputs_summarizes_without_concat(tmp_path: Path) -> None:

@@ -446,6 +446,47 @@ def write_json(data: dict[str, Any], path: Path) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def build_event_anomaly_outputs(
+    reference_paths: list[Path] | None = None,
+    batch_root: Path = BATCH_ROOT,
+) -> tuple[dict[str, object], pd.DataFrame]:
+    reference_paths = reference_paths if reference_paths is not None else [
+        path for path in DEFAULT_EVENT_PATHS if path.exists()
+    ]
+    reference_events = load_event_rows(reference_paths)
+    batch_event_paths = discover_batch_event_paths(batch_root)
+    batch_events = load_event_rows(batch_event_paths)
+    combined_frames = [frame for frame in [reference_events, batch_events] if not frame.empty]
+    combined_events = pd.concat(combined_frames, ignore_index=True) if combined_frames else _empty_event_frame()
+    anomaly_rows = combined_events.loc[
+        combined_events["event"].astype(str).isin(EVENT_ANOMALY_EVENTS)
+    ].copy()
+
+    if not anomaly_rows.empty:
+        anomaly_rows = anomaly_rows.sort_values(by=["source_file", "time", "event"], kind="mergesort")
+
+    excluded_service_dirs = sorted(
+        path.name for path in batch_root.iterdir() if path.is_dir() and path.name.startswith("_")
+    ) if batch_root.exists() else []
+    batch_run_count = len(_batch_candidate_dirs(batch_root))
+
+    return (
+        {
+            "status": "DIAGNOSTIC_ONLY",
+            "reference_runs": summarize_event_anomalies(reference_events),
+            "batch_runs": summarize_event_anomalies(batch_events),
+            "reference_event_paths": [str(path) for path in reference_paths if path.exists()],
+            "batch_event_paths": [str(path) for path in batch_event_paths],
+            "batch_run_count": batch_run_count,
+            "batch_candidate_count": batch_run_count,
+            "batch_event_path_count": len(batch_event_paths),
+            "excluded_service_dirs": excluded_service_dirs,
+            "linkage_status": "UNKNOWN",
+        },
+        anomaly_rows,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 execution diagnostics")
     parser.add_argument("--phase", choices=["inventory", "errors", "events"], required=True)
@@ -459,36 +500,8 @@ def main() -> None:
     elif args.phase == "errors":
         write_error_outputs(discover_error_csvs(args.root), args.output_csv, args.output_json)
     elif args.phase == "events":
-        reference_events = load_event_rows([path for path in DEFAULT_EVENT_PATHS if path.exists()])
-        batch_event_paths = discover_batch_event_paths(BATCH_ROOT)
-        batch_events = load_event_rows(batch_event_paths)
-        combined_frames = [frame for frame in [reference_events, batch_events] if not frame.empty]
-        combined_events = pd.concat(combined_frames, ignore_index=True) if combined_frames else _empty_event_frame()
-        anomaly_rows = combined_events.loc[
-            combined_events["event"].astype(str).isin(EVENT_ANOMALY_EVENTS)
-        ].copy()
-
-        if not anomaly_rows.empty:
-            anomaly_rows = anomaly_rows.sort_values(by=["source_file", "time", "event"], kind="mergesort")
-
-        excluded_service_dirs = sorted(
-            path.name for path in BATCH_ROOT.iterdir() if path.is_dir() and path.name.startswith("_")
-        )
-
-        write_json(
-            {
-                "status": "DIAGNOSTIC_ONLY",
-                "reference_runs": summarize_event_anomalies(reference_events),
-                "batch_runs": summarize_event_anomalies(batch_events),
-                "reference_event_paths": [str(path) for path in DEFAULT_EVENT_PATHS if path.exists()],
-                "batch_event_paths": [str(path) for path in batch_event_paths],
-                "batch_candidate_count": len(_batch_candidate_dirs(BATCH_ROOT)),
-                "batch_event_path_count": len(batch_event_paths),
-                "excluded_service_dirs": excluded_service_dirs,
-                "linkage_status": "UNKNOWN",
-            },
-            args.output_json,
-        )
+        summary, anomaly_rows = build_event_anomaly_outputs()
+        write_json(summary, args.output_json)
         args.output_csv.parent.mkdir(parents=True, exist_ok=True)
         anomaly_rows.to_csv(args.output_csv, sep=";", index=False)
 

@@ -857,6 +857,7 @@
     "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.2/events.csv",
     "/home/hohla/git/SoSimple/ML/reports/mt5_execution_loop/batch/time_plus_atr_hist_gradient_boosting_3h_thr0.3/events.csv"
   ],
+  "batch_run_count": 32,
   "batch_candidate_count": 32,
   "batch_event_path_count": 32,
   "excluded_service_dirs": [
