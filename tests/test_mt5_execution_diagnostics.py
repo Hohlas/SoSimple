@@ -599,3 +599,88 @@ def test_summarize_batch_failure_does_not_fill_missing_metrics(tmp_path: Path) -
     assert candidate["gross_profit_by_year"] is None
     assert candidate["pnl_by_trade"] is None
     assert summary["unknowns"]["missing_per_run_inputs"] == {"a": ["metrics.json"]}
+
+
+def test_summarize_candidate_fill_rate_uses_entry_signal_denominator(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+    from ML.baseline.mt5_execution_diagnostics import summarize_candidate_fill_rate
+
+    run_dir = tmp_path / "candidate_a"
+    run_dir.mkdir()
+    (run_dir / "entry_signals.json").write_text(
+        json.dumps({"active_signal_rows": 100, "buy_rows": 40, "sell_rows": 60}),
+        encoding="utf-8",
+    )
+    pd.DataFrame(
+        [
+            _event_row("ORDER_PLACED", "2022.01.01 10:00"),
+            _event_row("OPEN", "2022.01.01 11:00", side="BUY"),
+            _event_row("CLOSE", "2022.01.01 15:00", side="BUY", profit=12.0),
+            _event_row("ORDER_EXPIRED", "2022.01.02 10:00", comment="pending order not active after max_fill_lag_bars"),
+            _event_row("OPEN_FAILED", "2022.01.03 10:00", comment="position_or_pending_order_exists"),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    ).to_csv(run_dir / "events.csv", sep=";", index=False)
+
+    row = {"run_id": "candidate_a", "trades_count": 1, "profit_factor": 1.2, "bs_p05": 0.8}
+    summary = summarize_candidate_fill_rate("candidate_a", tmp_path, row)
+
+    assert summary["active_signal_rows"] == 100
+    assert summary["trades_count"] == 1
+    assert summary["fill_rate"] == 0.01
+    assert summary["order_placed_count"] == 1
+    assert summary["open_failed_count"] == 1
+    assert summary["order_expired_count"] == 1
+    assert summary["open_failed_reasons"]["position_or_pending_order_exists"] == 1
+    assert summary["order_expired_reasons"]["pending_order_not_active_after_max_fill_lag_bars"] == 1
+    assert summary["unknowns"] == ["metrics.json"]
+
+
+def test_build_fill_rate_diagnostics_preserves_no_winner_and_no_selection(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+    from ML.baseline.mt5_execution_diagnostics import build_fill_rate_diagnostics
+
+    batch_summary = {
+        "status": "DIAGNOSTIC_ONLY",
+        "verdict": "BATCH_NO_WINNER",
+        "winner": None,
+        "n_candidates": 2,
+        "n_valid": 2,
+        "n_eligible": 1,
+        "n_diagnostic_only": 1,
+        "winners_ranked": [
+            {"run_id": "candidate_a", "bs_p05": 0.8, "trades_count": 1},
+        ],
+        "table": [
+            {"run_id": "candidate_a", "trades_count": 1, "profit_factor": 1.2, "bs_p05": 0.8},
+            {"run_id": "candidate_b", "trades_count": 0, "profit_factor": 0.0, "bs_p05": 0.0},
+        ],
+    }
+    path = tmp_path / "batch_summary.json"
+    path.write_text(json.dumps(batch_summary), encoding="utf-8")
+    for run_id, active_rows in [("candidate_a", 100), ("candidate_b", 50)]:
+        run_dir = tmp_path / run_id
+        run_dir.mkdir()
+        (run_dir / "entry_signals.json").write_text(
+            json.dumps({"active_signal_rows": active_rows}),
+            encoding="utf-8",
+        )
+        pd.DataFrame([_event_row("ORDER_PLACED", "2022.01.01 10:00")], columns=MT5_EVENT_COLUMNS).to_csv(
+            run_dir / "events.csv",
+            sep=";",
+            index=False,
+        )
+
+    summary, table = build_fill_rate_diagnostics(path, tmp_path)
+
+    assert summary["status"] == "DIAGNOSTIC_ONLY"
+    assert summary["verdict"] == "BATCH_NO_WINNER"
+    assert summary["forbidden_interpretation_guard"] == "no_new_winner_selected"
+    assert summary["candidate_count"] == 2
+    assert summary["n_diagnostic_only"] == 1
+    assert summary["fill_rate_distribution"]["min"] == 0.0
+    assert summary["fill_rate_by_status"]["eligible_top"]["count"] == 1
+    assert summary["fill_rate_by_status"]["diagnostic_only"]["count"] == 1
+    assert summary["fill_rate_by_status"]["eligible_top"]["min"] == 0.01
+    assert summary["fill_rate_by_status"]["diagnostic_only"]["min"] == 0.0
+    assert len(table) == 2

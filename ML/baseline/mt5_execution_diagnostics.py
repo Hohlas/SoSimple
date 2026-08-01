@@ -712,6 +712,150 @@ def _csv_safe_row(row: dict[str, object]) -> dict[str, object]:
     return {key: _csv_safe_value(value) for key, value in row.items()}
 
 
+def count_event_names(events: pd.DataFrame) -> dict[str, int]:
+    if events.empty or "event" not in events.columns:
+        return {}
+    return _value_counts(events["event"].astype(str))
+
+
+def _numeric_summary(values: list[float]) -> dict[str, float | None]:
+    clean = sorted(value for value in values if value == value)
+    if not clean:
+        return {"min": None, "p25": None, "median": None, "p75": None, "max": None}
+    series = pd.Series(clean, dtype="float64")
+    return {
+        "min": float(series.min()),
+        "p25": float(series.quantile(0.25)),
+        "median": float(series.quantile(0.50)),
+        "p75": float(series.quantile(0.75)),
+        "max": float(series.max()),
+    }
+
+
+def summarize_candidate_fill_rate(
+    run_id: str,
+    batch_root: Path,
+    batch_row: dict[str, object],
+) -> dict[str, object]:
+    run_dir = batch_root / run_id
+    entry_signals = load_json_if_exists(run_dir / "entry_signals.json") or {}
+    metrics = load_json_if_exists(run_dir / "metrics.json")
+    events_path = run_dir / "events.csv"
+    events = load_event_rows([events_path]) if events_path.exists() else _empty_event_frame()
+    event_summary = summarize_event_anomalies(events)
+    event_counts = count_event_names(events)
+
+    active_signal_rows = _to_int(entry_signals.get("active_signal_rows")) or 0
+    trades_count = _to_int(batch_row.get("trades_count")) or _to_int((metrics or {}).get("trades_count")) or 0
+    fill_rate = float(trades_count / active_signal_rows) if active_signal_rows > 0 else None
+
+    unknowns = []
+    if not entry_signals:
+        unknowns.append("entry_signals.json")
+    if not events_path.exists():
+        unknowns.append("events.csv")
+    if metrics is None:
+        unknowns.append("metrics.json")
+
+    return {
+        "run_id": run_id,
+        "profile": batch_row.get("profile"),
+        "model_key": batch_row.get("model_key"),
+        "horizon": batch_row.get("horizon"),
+        "threshold_value": batch_row.get("threshold_value"),
+        "profit_factor": batch_row.get("profit_factor"),
+        "bs_p05": batch_row.get("bs_p05"),
+        "trades_count": trades_count,
+        "active_signal_rows": active_signal_rows,
+        "buy_signal_rows": _to_int(entry_signals.get("buy_rows")),
+        "sell_signal_rows": _to_int(entry_signals.get("sell_rows")),
+        "fill_rate": fill_rate,
+        "order_placed_count": event_counts.get("ORDER_PLACED", 0),
+        "open_count": event_counts.get("OPEN", 0),
+        "close_count": event_counts.get("CLOSE", 0),
+        "open_failed_count": event_counts.get("OPEN_FAILED", 0),
+        "order_expired_count": event_counts.get("ORDER_EXPIRED", 0),
+        "open_failed_reasons": event_summary.get("open_failed_reasons", {}),
+        "order_expired_reasons": event_summary.get("order_expired_reasons", {}),
+        "reconciliation": compute_mt5_metrics(events)["reconciliation"] if not events.empty else {},
+        "unknowns": unknowns,
+    }
+
+
+def build_fill_rate_diagnostics(
+    batch_summary_path: Path,
+    batch_root: Path = BATCH_ROOT,
+) -> tuple[dict[str, object], pd.DataFrame]:
+    data = json.loads(batch_summary_path.read_text(encoding="utf-8"))
+    rows = []
+    for row in data.get("table", []):
+        run_id = str(row.get("run_id", "")).strip()
+        if run_id:
+            rows.append(summarize_candidate_fill_rate(run_id, batch_root, row))
+
+    table = pd.DataFrame(rows)
+    fill_rates = [
+        float(value)
+        for value in table.get("fill_rate", pd.Series(dtype="float64")).dropna().tolist()
+    ]
+    eligible_run_ids = {
+        str(item.get("run_id", "")).strip()
+        for item in data.get("winners_ranked", [])
+        if item.get("run_id")
+    }
+    eligible_fill_rates = [
+        float(row["fill_rate"])
+        for row in rows
+        if row.get("run_id") in eligible_run_ids and row.get("fill_rate") is not None
+    ]
+    diagnostic_fill_rates = [
+        float(row["fill_rate"])
+        for row in rows
+        if row.get("run_id") not in eligible_run_ids and row.get("fill_rate") is not None
+    ]
+    def _by_status(values: list[float]) -> dict[str, object]:
+        summary_status = _numeric_summary(values)
+        return {
+            "count": len(values),
+            **summary_status,
+            "low_fill_rate_count_lt_0_20": int(sum(value < 0.20 for value in values)),
+        }
+    summary = {
+        "status": "DIAGNOSTIC_ONLY",
+        "verdict": data.get("verdict", "UNKNOWN"),
+        "winner": data.get("winner"),
+        "candidate_count": len(rows),
+        "n_candidates": data.get("n_candidates"),
+        "n_valid": data.get("n_valid"),
+        "n_eligible": data.get("n_eligible"),
+        "n_diagnostic_only": data.get("n_diagnostic_only"),
+        "fill_rate_distribution": _numeric_summary(fill_rates),
+        "fill_rate_by_status": {
+            "eligible_top": _by_status(eligible_fill_rates),
+            "diagnostic_only": _by_status(diagnostic_fill_rates),
+            "all": _by_status(fill_rates),
+        },
+        "low_fill_rate_count_lt_0_10": int(sum(value < 0.10 for value in fill_rates)),
+        "low_fill_rate_count_lt_0_20": int(sum(value < 0.20 for value in fill_rates)),
+        "low_fill_rate_count_lt_0_20_eligible": int(
+            sum(value < 0.20 for value in eligible_fill_rates)
+        ),
+        "total_active_signal_rows": int(sum(row.get("active_signal_rows") or 0 for row in rows)),
+        "total_trades": int(sum(row.get("trades_count") or 0 for row in rows)),
+        "total_open_failed": int(sum(row.get("open_failed_count") or 0 for row in rows)),
+        "total_order_expired": int(sum(row.get("order_expired_count") or 0 for row in rows)),
+        "unknowns": {
+            "missing_per_run_inputs": {
+                row["run_id"]: row["unknowns"]
+                for row in rows
+                if row.get("unknowns")
+            }
+        },
+        "forbidden_interpretation_guard": "no_new_winner_selected",
+    }
+    return summary, table
+
+
 def summarize_batch_failure(
     batch_summary_path: Path,
     batch_root: Path = BATCH_ROOT,
