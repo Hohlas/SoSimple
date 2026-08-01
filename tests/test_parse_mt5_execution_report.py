@@ -18,7 +18,7 @@ def _event_row(event: str, time: str, **overrides: object) -> dict[str, object]:
         "decision_time": "2023.01.02 10:00",
         "execution_time": time,
         "rule_id": "rule01",
-        "signal_time": "2023.01.02 10:00",
+        "signal_time": "2023.01.02 09:00",
         "error_code": 0,
         "error_class": "",
         "retcode": 0,

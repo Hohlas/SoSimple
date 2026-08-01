@@ -27,7 +27,7 @@ def test_mt5_signal_schema_rejects_future_exit_columns():
     frame = pd.DataFrame(
         [
             {
-                "time": "2023.01.02 10:00",
+                "time": "2023.01.02 09:00",
                 "feature_time": "2023.01.02 09:00",
                 "feature_available_time": "2023.01.02 10:00",
                 "decision_time": "2023.01.02 10:00",
@@ -51,7 +51,7 @@ def test_mt5_signal_schema_accepts_entry_only_contract():
     frame = pd.DataFrame(
         [
             {
-                "time": "2023.01.02 10:00",
+                "time": "2023.01.02 09:00",
                 "feature_time": "2023.01.02 09:00",
                 "feature_available_time": "2023.01.02 10:00",
                 "decision_time": "2023.01.02 10:00",
@@ -73,10 +73,10 @@ def test_mt5_signal_schema_rejects_decision_before_features():
     frame = pd.DataFrame(
         [
             {
-                "time": "2023.01.02 10:00",
-                "feature_time": "2023.01.02 11:00",
-                "feature_available_time": "2023.01.02 11:00",
-                "decision_time": "2023.01.02 10:00",
+                "time": "2023.01.02 09:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 09:00",
                 "rule_id": "rule01",
                 "side": "BUY",
                 "entry_type": "BUY_LIMIT",
@@ -96,7 +96,7 @@ def test_mt5_signal_schema_rejects_decision_before_feature_available_time():
     frame = pd.DataFrame(
         [
             {
-                "time": "2023.01.02 10:00",
+                "time": "2023.01.02 09:00",
                 "feature_time": "2023.01.02 09:00",
                 "feature_available_time": "2023.01.02 10:01",
                 "decision_time": "2023.01.02 10:00",
@@ -112,6 +112,51 @@ def test_mt5_signal_schema_rejects_decision_before_feature_available_time():
     )
 
     with pytest.raises(ValueError, match="feature_available_time > decision_time"):
+        validate_mt5_signal_frame(frame)
+
+
+def test_mt5_signal_schema_requires_match_time_before_feature_available_time():
+    frame = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 09:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
+                "rule_id": "rule01",
+                "side": "BUY",
+                "entry_type": "BUY_LIMIT",
+                "limit_price": 1900.0,
+                "stop_price": 1890.0,
+                "atr": 10.0,
+                "max_fill_lag_bars": 6,
+            }
+        ]
+    )
+
+    validate_mt5_signal_frame(frame)
+
+
+def test_mt5_signal_schema_rejects_copied_timing_contract():
+    frame = pd.DataFrame(
+        [
+            {
+                "time": "2023.01.02 09:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 09:00",
+                "decision_time": "2023.01.02 09:00",
+                "rule_id": "rule01",
+                "side": "BUY",
+                "entry_type": "BUY_LIMIT",
+                "limit_price": 1900.0,
+                "stop_price": 1890.0,
+                "atr": 10.0,
+                "max_fill_lag_bars": 6,
+            }
+        ]
+    )
+
+    with pytest.raises(ValueError, match="time >= feature_available_time"):
         validate_mt5_signal_frame(frame)
 
 
@@ -172,7 +217,7 @@ def test_mt5_event_schema_rejects_execution_before_decision():
                 "decision_time": "2023.01.02 10:00",
                 "execution_time": "2023.01.02 09:59",
                 "rule_id": "rule01",
-                "signal_time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 09:00",
                 "ticket": 1,
                 "side": "BUY",
                 "requested_price": 1900.0,
@@ -231,7 +276,7 @@ def test_mt5_event_schema_rejects_decision_before_feature_available_time():
                 "decision_time": "2023.01.02 10:00",
                 "execution_time": "2023.01.02 10:05",
                 "rule_id": "rule01",
-                "signal_time": "2023.01.02 10:00",
+                "signal_time": "2023.01.02 09:00",
                 "ticket": 1,
                 "side": "BUY",
                 "requested_price": 1900.0,
@@ -290,13 +335,89 @@ def test_mt5_event_schema_rejects_unknown_event_name():
         validate_mt5_event_frame(frame)
 
 
+def test_mt5_event_schema_accepts_timing_violation_event_name():
+    frame = pd.DataFrame(
+        [{col: "" for col in MT5_EVENT_COLUMNS}],
+        columns=MT5_EVENT_COLUMNS,
+    )
+    frame.loc[0, "event"] = "TIMING_VIOLATION"
+
+    validate_mt5_event_frame(frame)
+
+
+def test_mt5_event_schema_validates_signal_time_as_entry_match_key():
+    frame = pd.DataFrame(
+        [
+            {
+                "event": "ORDER_PLACED",
+                "time": "2023.01.02 10:00",
+                "feature_time": "2023.01.02 09:00",
+                "feature_available_time": "2023.01.02 10:00",
+                "decision_time": "2023.01.02 10:00",
+                "execution_time": "2023.01.02 10:00",
+                "rule_id": "rule01",
+                "signal_time": "2023.01.02 09:00",
+                "error_code": 0,
+                "error_class": "",
+                "retcode": 0,
+                "retcode_text": "",
+                "request_seq": 1,
+                "magic": 163856259,
+                "symbol": "XAUUSD",
+                "entry_type": "BUY_LIMIT",
+                "ticket": 0,
+                "side": "BUY",
+                "requested_price": 1900.0,
+                "fill_price": 0.0,
+                "order_open_price": 0.0,
+                "order_close_price": 0.0,
+                "stop_price": 1890.0,
+                "close_reason": "",
+                "profit": 0.0,
+                "bars_since_fill": 0,
+                "bid": 1900.0,
+                "ask": 1900.2,
+                "spread": 0.2,
+                "spread_atr": 0.02,
+                "bar_open": 1901.0,
+                "bar_high": 1913.0,
+                "bar_low": 1899.0,
+                "bar_close": 1912.5,
+                "calculation_open": 1901.0,
+                "slippage_points": 0.0,
+                "entry": 0.0,
+                "take_profit": 0.0,
+                "close": 0.0,
+                "swap": 0.0,
+                "commission": 0.0,
+                "hold_bars": 0,
+                "open_positions": 0,
+                "max_positions": 1,
+                "balance": 10000.0,
+                "equity": 10000.0,
+                "entry_time": "",
+                "exit_time": "",
+                "unrealized_pnl_r_before_decision": 0.0,
+                "max_favorable_r_before_decision": 0.0,
+                "max_adverse_r_before_decision": 0.0,
+                "ml_exit_score": 0.0,
+                "ml_exit_decision": 0,
+                "comment": "",
+            }
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    validate_mt5_event_frame(frame)
+
+
 def test_export_mt5_entry_signals_writes_entry_only_csv(tmp_path):
     from ML.baseline.export_mt5_entry_signals import export_mt5_entry_signals
 
     source = pd.DataFrame(
         [
             {
-                "time": "2023.01.02 10:00",
+                "time": "2023.01.02 09:00",
                 "feature_time": "2023.01.02 09:00",
                 "feature_available_time": "2023.01.02 10:00",
                 "decision_time": "2023.01.02 10:00",

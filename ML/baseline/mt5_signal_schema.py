@@ -84,6 +84,17 @@ MT5_EVENT_COLUMNS = [
 ]
 
 
+MT5_SIGNAL_LINKED_EVENT_NAMES = {
+    "ORDER_PLACED",
+    "ORDER_EXPIRED",
+    "OPEN_FAILED",
+    "OPEN",
+    "ML_EVAL",
+    "ML_CLOSE",
+    "CLOSE",
+}
+
+
 def _validate_time_order(frame: pd.DataFrame, columns: list[str]) -> None:
     parsed = {
         col: pd.to_datetime(frame[col], errors="coerce")
@@ -106,6 +117,47 @@ def _validate_time_order(frame: pd.DataFrame, columns: list[str]) -> None:
             raise ValueError(f"MT5 timing contract violation: {left} > {right}")
 
 
+def _nonempty_timestamp_mask(frame: pd.DataFrame, columns: list[str]) -> pd.Series:
+    mask = pd.Series(True, index=frame.index)
+    for column in columns:
+        if column not in frame.columns:
+            return pd.Series(False, index=frame.index)
+        mask &= frame[column].fillna("").astype(str).str.strip().ne("")
+    return mask
+
+
+def _parse_required_timestamps(frame: pd.DataFrame, columns: list[str]) -> dict[str, pd.Series]:
+    parsed = {column: pd.to_datetime(frame[column], errors="coerce") for column in columns}
+    bad = [
+        column
+        for column, values in parsed.items()
+        if values.isna().any()
+    ]
+    if bad:
+        raise ValueError(f"invalid MT5 timestamp values in columns: {bad}")
+    return parsed
+
+
+def _validate_strict_timing_chain(
+    frame: pd.DataFrame,
+    columns: list[str],
+    *,
+    strict_pairs: set[tuple[str, str]],
+) -> None:
+    if frame.empty:
+        return
+    parsed = _parse_required_timestamps(frame, columns)
+    for left, right in zip(columns, columns[1:]):
+        if (left, right) in strict_pairs:
+            invalid = parsed[left].ge(parsed[right])
+            op = ">="
+        else:
+            invalid = parsed[left].gt(parsed[right])
+            op = ">"
+        if invalid.any():
+            raise ValueError(f"MT5 timing contract violation: {left} {op} {right}")
+
+
 def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     missing = [col for col in MT5_SIGNAL_COLUMNS if col not in frame.columns]
     if missing:
@@ -125,7 +177,11 @@ def validate_mt5_signal_frame(frame: pd.DataFrame) -> None:
     if bad_entry:
         raise ValueError(f"unsupported entry_type values: {sorted(bad_entry)}")
 
-    _validate_time_order(frame, ["feature_time", "feature_available_time", "decision_time"])
+    _validate_strict_timing_chain(
+        frame,
+        ["feature_time", "time", "feature_available_time", "decision_time"],
+        strict_pairs={("time", "feature_available_time")},
+    )
 
 
 MT5_EVENT_NAMES = {
@@ -137,6 +193,7 @@ MT5_EVENT_NAMES = {
     "ML_EVAL",
     "ML_CLOSE",
     "CLOSE",
+    "TIMING_VIOLATION",
     "TX_OPEN",
     "TX_CLOSE",
 }
@@ -154,4 +211,28 @@ def validate_mt5_event_frame(frame: pd.DataFrame) -> None:
     _validate_time_order(
         frame,
         ["feature_time", "feature_available_time", "decision_time", "execution_time"],
+    )
+
+    linked_mask = frame["event"].astype(str).isin(MT5_SIGNAL_LINKED_EVENT_NAMES)
+    timing_mask = _nonempty_timestamp_mask(
+        frame,
+        [
+            "feature_time",
+            "signal_time",
+            "feature_available_time",
+            "decision_time",
+            "execution_time",
+        ],
+    )
+    strict_rows = frame.loc[linked_mask & timing_mask]
+    _validate_strict_timing_chain(
+        strict_rows,
+        [
+            "feature_time",
+            "signal_time",
+            "feature_available_time",
+            "decision_time",
+            "execution_time",
+        ],
+        strict_pairs={("signal_time", "feature_available_time")},
     )
