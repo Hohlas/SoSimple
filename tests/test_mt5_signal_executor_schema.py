@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -7,6 +10,17 @@ from ML.baseline.mt5_signal_schema import (
     validate_mt5_event_frame,
     validate_mt5_signal_frame,
 )
+
+MQL_SIGNAL_LIB = Path("MT/MQL5/Include/lib_ML_Signal.mqh")
+
+
+def test_mt5_event_mql_header_matches_python_contract():
+    text = MQL_SIGNAL_LIB.read_text(encoding="utf-8")
+    match = re.search(r'FileWrite\(handle,\s*("event".*?)\);', text, flags=re.S)
+
+    assert match is not None
+    mql_columns = re.findall(r'"([^"]+)"', match.group(1))
+    assert mql_columns == MT5_EVENT_COLUMNS
 
 
 def test_mt5_signal_schema_rejects_future_exit_columns():
@@ -111,6 +125,14 @@ def test_mt5_event_schema_requires_reconciliation_columns():
         "execution_time",
         "rule_id",
         "signal_time",
+        "error_code",
+        "error_class",
+        "retcode",
+        "retcode_text",
+        "request_seq",
+        "magic",
+        "symbol",
+        "entry_type",
         "ticket",
         "side",
         "requested_price",

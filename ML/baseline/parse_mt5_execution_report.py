@@ -6,13 +6,28 @@ from pathlib import Path
 
 import pandas as pd
 
+from ML.baseline.mt5_signal_schema import MT5_EVENT_COLUMNS
 from ML.baseline.mt5_signal_schema import validate_mt5_event_frame
+
+NEW_EXECUTION_CONTEXT_DEFAULTS: dict[str, object] = {
+    "error_code": 0,
+    "error_class": "",
+    "retcode": 0,
+    "retcode_text": "",
+    "request_seq": -1,
+    "magic": 0,
+    "symbol": "",
+    "entry_type": "",
+}
 
 
 def parse_mt5_events(path: str | Path) -> pd.DataFrame:
     frame = pd.read_csv(path, sep=";")
+    for column, default in NEW_EXECUTION_CONTEXT_DEFAULTS.items():
+        if column not in frame.columns:
+            frame[column] = default
     validate_mt5_event_frame(frame)
-    return frame
+    return frame[MT5_EVENT_COLUMNS]
 
 
 def _event_counts(events: pd.DataFrame) -> dict[str, int]:

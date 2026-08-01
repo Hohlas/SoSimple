@@ -19,6 +19,14 @@ def _event_row(event: str, time: str, **overrides: object) -> dict[str, object]:
         "execution_time": time,
         "rule_id": "rule01",
         "signal_time": "2023.01.02 10:00",
+        "error_code": 0,
+        "error_class": "",
+        "retcode": 0,
+        "retcode_text": "",
+        "request_seq": 1,
+        "magic": 163856259,
+        "symbol": "XAUUSD",
+        "entry_type": "BUY_LIMIT",
         "ticket": 1,
         "side": "BUY",
         "requested_price": 1900.0,
@@ -132,6 +140,8 @@ def _tx_row(event: str, time: str, position_id: int, deal: int, reason: str, **o
         decision_time="",
         rule_id="",
         signal_time="",
+        request_seq=-1,
+        entry_type="",
         ticket=deal,
         close_reason=(reason if event == "TX_CLOSE" else ""),
         bars_since_fill=-1,
@@ -201,3 +211,33 @@ def test_parse_mt5_events_rejects_missing_columns(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="missing MT5 event columns"):
         parse_mt5_events(path)
+
+
+def test_parse_mt5_events_backfills_new_execution_context_columns(tmp_path: Path) -> None:
+    path = tmp_path / "events_old_schema.csv"
+    legacy_columns = [
+        col
+        for col in MT5_EVENT_COLUMNS
+        if col
+        not in {
+            "error_code",
+            "error_class",
+            "retcode",
+            "retcode_text",
+            "request_seq",
+            "magic",
+            "symbol",
+            "entry_type",
+        }
+    ]
+    pd.DataFrame(
+        [_event_row("OPEN_FAILED", "2023.01.02 10:00")],
+        columns=legacy_columns,
+    ).to_csv(path, sep=";", index=False)
+
+    events = parse_mt5_events(path)
+
+    assert list(events.columns) == MT5_EVENT_COLUMNS
+    assert events.loc[0, "error_code"] == 0
+    assert events.loc[0, "request_seq"] == -1
+    assert events.loc[0, "entry_type"] == ""

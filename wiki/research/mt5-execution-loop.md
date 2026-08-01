@@ -6,7 +6,7 @@ status: active
 
 # MT5 Execution Loop
 
-> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; доступные repo-артефакты классифицированы, row-level error/event linkage остаётся `UNKNOWN`, а старые отсутствующие `ERROR-4756`/`ERROR_SoSimple_163856259.csv` списаны как невоспроизводимые исторические артефакты.
+> MT5 стал текущим диагностическим execution-контуром после invalidation fixed11 chronology; доступные repo-артефакты классифицированы, старые saved artifacts сохраняют row-level error/event linkage `UNKNOWN`, а будущие `events.csv` получили поля execution context для проверки связи.
 
 ## Хронология
 
@@ -71,6 +71,12 @@ Historical missing `ERROR_SoSimple_163856259.csv` and cumulative tester-agent
 `ERROR-4756` log are abandoned as non-reproducible inputs. The remaining limit is
 row-level linkage status `UNKNOWN`.
 
+After the hygiene discussion, future MT5 diagnostic `events.csv` rows were
+expanded with `error_code`, `error_class`, `retcode`, `retcode_text`,
+`request_seq`, `magic`, `symbol`, and `entry_type`. The parser backfills these
+fields for legacy CSVs, so old saved artifacts stay readable but remain
+`UNKNOWN` until a new MT5 run writes real request context.
+
 ## Ключевые результаты
 
 | Area | Current fact | Source |
@@ -79,7 +85,7 @@ row-level linkage status `UNKNOWN`.
 | Nero parity | `PARITY_PASS` with diagnostic limitations | `2026-07-31-mt5-nero-parity.md` |
 | Batch verdict | `BATCH_NO_WINNER`, 32 candidates, 11 eligible | `2026-07-31-mt5-batch-selection.md` |
 | Error classification | 1879 rows classified, source buckets separated by artifact path | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
-| Event linkage | `UNKNOWN` | `2026-08-01-mt5-execution-hygiene-postbatch.md` |
+| Event linkage | saved artifacts `UNKNOWN`; future expanded `events.csv` can report `REQUEST_CONTEXT_AVAILABLE` | `ML/baseline/mt5_signal_schema.py` |
 
 ## Выводы
 
@@ -95,6 +101,8 @@ conclusions.
 - Do not use historical `ERROR_SoSimple_163856259.csv` or cumulative
   tester-agent `ERROR-4756` log in future conclusions.
 - Plan the next frozen probe from current saved batch artifacts.
+- Run the next MT5 diagnostic probe with expanded `events.csv` and check
+  `linkage_status` before using row-level execution conclusions.
 - Complete cost model: swap, commission, slippage, latency and stress costs.
 
 ## Источники

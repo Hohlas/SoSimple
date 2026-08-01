@@ -18,10 +18,10 @@
 ## [2026-08-01] — MT5 execution hygiene and post-batch diagnostics (DIAGNOSTIC_ONLY)
 - **report**: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - **topics**: `mt5`, `execution_hygiene`, `error_4756`, `post_batch_diagnostics`
-- **summary**: Classified available MT5 execution error artifacts and summarized post-batch failure modes without selecting a new winner.
-- **artifacts**: `ML/reports/mt5_execution_loop/diagnostics/error_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json`
-- **decision**: `DIAGNOSTIC_ONLY`; execution hygiene status is `EXECUTION_HYGIENE_PARTIAL` because repo artifacts are classified, but row-level error/event linkage remains `UNKNOWN`.
-- **notes**: Historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are abandoned as non-reproducible inputs; do not block current batch follow-up on them. `ERROR-138` requote, `ERROR-132` market closed and `ERROR-129` invalid price are separate execution classes; no trading or model-quality conclusion.
+- **summary**: Classified available MT5 execution error artifacts, summarized post-batch failure modes without selecting a new winner, then expanded the future `events.csv` contract for row-level execution context.
+- **artifacts**: `ML/reports/mt5_execution_loop/diagnostics/error_summary.json`, `ML/reports/mt5_execution_loop/diagnostics/post_batch_diagnostics.json`, `ML/baseline/mt5_signal_schema.py`, `MT/MQL5/Include/lib_ML_Signal.mqh`
+- **decision**: `DIAGNOSTIC_ONLY`; saved artifacts remain `EXECUTION_HYGIENE_PARTIAL` because old row-level error/event linkage is `UNKNOWN`; new MT5 diagnostic runs can report `REQUEST_CONTEXT_AVAILABLE` when context columns are populated.
+- **notes**: Historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are abandoned as non-reproducible inputs; do not block current batch follow-up on them. New `events.csv` fields are `error_code`, `error_class`, `retcode`, `retcode_text`, `request_seq`, `magic`, `symbol`, `entry_type`.
 
 ## [2026-07-31] — MT5 Batch Selection: 32 candidates (BATCH_NO_WINNER)
 - **report**: `docs/reports/2026-07-31-mt5-batch-selection.md`

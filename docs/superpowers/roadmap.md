@@ -17,12 +17,11 @@
 ### MT5 execution hygiene -> post-batch diagnostics
 
 Status: execution hygiene report completed as `DIAGNOSTIC_ONLY`.
-Execution hygiene status is `EXECUTION_HYGIENE_PARTIAL`: available repo
-`ERROR_SoSimple_*.csv`, reference events, 32 batch event files, and post-batch
-failure modes are classified, but row-level error/event linkage remains
-`UNKNOWN`. Historical `ERROR_SoSimple_163856259.csv` and cumulative tester-agent
-`ERROR-4756` log are abandoned as non-reproducible inputs and no longer block
-current batch follow-up.
+Available repo `ERROR_SoSimple_*.csv`, reference events, 32 batch event files,
+and post-batch failure modes are classified. Historical
+`ERROR_SoSimple_163856259.csv` and cumulative tester-agent `ERROR-4756` log are
+abandoned as non-reproducible inputs and no longer block current batch follow-up.
+Future MT5 diagnostic runs write execution context directly into `events.csv`.
 
 Next action:
 

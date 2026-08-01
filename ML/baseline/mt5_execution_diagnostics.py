@@ -242,6 +242,34 @@ def _event_reason_category(row: pd.Series) -> str:
     return re.sub(r"[^a-z0-9]+", "_", lowered).strip("_") or "unknown"
 
 
+def _event_linkage_status(events: pd.DataFrame) -> str:
+    required = {"request_seq", "magic", "symbol", "entry_type"}
+    if not required.issubset(events.columns):
+        return "UNKNOWN"
+
+    signal_events = {
+        "ORDER_PLACED",
+        "OPEN_FAILED",
+        "ORDER_EXPIRED",
+        "OPEN",
+        "ML_EVAL",
+        "ML_CLOSE",
+        "CLOSE",
+    }
+    rows = events.loc[events["event"].astype(str).isin(signal_events)]
+    if rows.empty:
+        return "UNKNOWN"
+
+    request_seq = pd.to_numeric(rows["request_seq"], errors="coerce")
+    has_request_seq = request_seq.notna() & request_seq.ge(0)
+    has_magic = pd.to_numeric(rows["magic"], errors="coerce").fillna(0).ne(0)
+    has_symbol = rows["symbol"].fillna("").astype(str).str.strip().ne("")
+    has_entry_type = rows["entry_type"].fillna("").astype(str).str.strip().ne("")
+    if (has_request_seq & has_magic & has_symbol & has_entry_type).all():
+        return "REQUEST_CONTEXT_AVAILABLE"
+    return "UNKNOWN"
+
+
 def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
     if events.empty or "event" not in events.columns:
         return {
@@ -292,7 +320,7 @@ def summarize_event_anomalies(events: pd.DataFrame) -> dict[str, object]:
         "order_expired_reasons": order_expired_reasons,
         "reconciliation_by_run": reconciliation_by_run,
         "run_ids": sorted(set(run_ids)),
-        "linkage_status": "UNKNOWN",
+        "linkage_status": _event_linkage_status(events),
     }
 
 

@@ -12,13 +12,13 @@
 ## Decision
 
 MT5 execution hygiene and post-batch diagnostics completed as `DIAGNOSTIC_ONLY`.
-Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
+Execution hygiene follow-up is unblocked for the next frozen probe.
 
 - Available `ERROR_SoSimple_*.csv` files classified.
 - Reference and 32 batch event artifacts summarized; `_smoke` excluded.
 - Batch failure attribution preserves `BATCH_NO_WINNER`; no new winner selected.
 - Historical `ERROR_SoSimple_163856259.csv` and cumulative tester agent log are missing, abandoned as non-reproducible inputs, and must not block current batch follow-up.
-- Error-to-event linkage status: `UNKNOWN`.
+- Future MT5 diagnostic `events.csv` rows now include execution context columns: `error_code`, `error_class`, `retcode`, `retcode_text`, `request_seq`, `magic`, `symbol`, `entry_type`.
 
 ## Current Diagnostic Facts
 
@@ -33,11 +33,10 @@ Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 - Do not interpret tester PF/PnL as profitable, live-ready, tradable, or model-quality proof.
 - Do not select a new winner from this diagnostic.
 - Do not use `locked_test` for any choice.
-- Do not infer causality between `ERROR_SoSimple` rows and event anomalies while linkage is `UNKNOWN`.
 
 ## Next Step
 
-Plan the next frozen probe using only current saved batch artifacts. Do not wait for historical `ERROR_SoSimple_163856259.csv` or cumulative tester agent log with external `ERROR-4756` lines.
+Plan the next frozen probe using only current saved batch artifacts. Do not wait for historical `ERROR_SoSimple_163856259.csv` or cumulative tester agent log with external `ERROR-4756` lines. New MT5 runs should use the expanded `events.csv` contract.
 
 ## Verification
 
@@ -47,3 +46,4 @@ Completed:
 - generated `error_inventory.json`, `error_summary.json`, `error_rows_classified.csv`
 - generated `event_anomaly_summary.json`, `event_anomalies.csv`
 - generated `post_batch_diagnostics.json`, `post_batch_top_candidates.csv`
+- expanded future MT5 `events.csv` contract with execution context columns and legacy parser backfill

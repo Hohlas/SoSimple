@@ -140,6 +140,28 @@ def test_summarize_event_anomalies(tmp_path: Path) -> None:
     assert summary["event_counts"]["OPEN_FAILED"] == 1
     assert summary["event_counts"]["ORDER_EXPIRED"] == 1
     assert summary["open_failed_reasons"]["position_or_pending_order_exists"] == 1
+    assert summary["linkage_status"] == "REQUEST_CONTEXT_AVAILABLE"
+
+
+def test_summarize_event_anomalies_keeps_unknown_for_legacy_event_context(tmp_path: Path) -> None:
+    from tests.test_parse_mt5_execution_report import _event_row
+
+    events = pd.DataFrame(
+        [
+            _event_row(
+                "OPEN_FAILED",
+                "2023.01.02 10:00",
+                request_seq=-1,
+                magic=0,
+                symbol="",
+                entry_type="",
+            ),
+        ],
+        columns=MT5_EVENT_COLUMNS,
+    )
+
+    summary = summarize_event_anomalies(events)
+
     assert summary["linkage_status"] == "UNKNOWN"
 
 
