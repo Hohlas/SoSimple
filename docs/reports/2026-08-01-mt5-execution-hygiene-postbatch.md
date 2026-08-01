@@ -1,8 +1,8 @@
 # MT5 Execution Hygiene And Post-Batch Diagnostics
 
 > **Дата**: 2026-08-01
-> **Статус**: Completed
-> **Вердикт**: DIAGNOSTIC_ONLY / EXECUTION_HYGIENE_PARTIAL
+> **Статус**: DIAGNOSTIC_ONLY
+> **Вердикт**: EXECUTION_HYGIENE_PARTIAL
 > **Цель**: классифицировать доступные MT5 execution error artifacts и разобрать post-batch failure modes без выбора нового winner.
 > **Related plan/spec**: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
 
@@ -95,15 +95,21 @@ Final documentation/wiki commit modified:
 - `post_batch_diagnostics.json`: `4b1dc417738cb063e71471dcef9da6f5ad40051029a1594d0f2a68c85d1af25a`
 - `post_batch_top_candidates.csv`: `abf1b0c9ab009698ef1ba2d8c75aa1210b33104bec4aadba556ade63a960f725`
 - `batch_summary.json`: `215fa1322a2df30ea79bdf49ae4d5c933fbfe4b11dfc6919373ab63a657beafe`
+- `mt5_execution_metrics_20260731_tx_lifecycle.json`: source for `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`
 
 ## Structured Artifact Cross-Check
 
 - 6 discovered `ERROR_SoSimple_*.csv`: `error_inventory.json.files`.
 - Missing `ERROR_SoSimple_163856259.csv`: `error_inventory.json.unknowns.not_found_expected_files`.
 - 1879 classified error rows: `error_summary.json.total_rows`.
-- Error classes: `error_summary.json.by_error_class`.
-- MT4/MT5 split: `error_summary.json.by_source_bucket`.
+- Error classes `OTHER=1174`, `INVALID_STOPS=670`, `MODIFICATION_TOO_CLOSE=35`: `error_summary.json.by_error_class`.
+- MT4/MT5 split `mt4_files=1174`, `mt_tester_files=705`: `error_summary.json.by_source_bucket`.
+- Historical lifecycle numbers `position_count=269`, `CLOSED_TX=269`, `UNEXPLAINED=0`, `same_h1_count=17`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260731_tx_lifecycle.json.reconciliation`.
+- Historical `ERROR-4756=690`: non-structured source `docs/reports/2026-07-30-mt5-single-rule-diagnostic-run.md`; no repo JSON/CSV for this external tester-agent log exists, so linkage remains `UNKNOWN`.
+- Historical single-rule `ORDER_EXPIRED=9`: `ML/reports/mt5_execution_loop/mt5_execution_metrics_20260730_entry_quality_filter.json.order_counts.ORDER_EXPIRED`.
 - 32 batch event paths, `_smoke` excluded: `event_anomaly_summary.json.batch_run_count`, `batch_event_path_count`, `excluded_service_dirs`.
+- Batch `OPEN_FAILED=22767`: `event_anomaly_summary.json.batch_runs.event_counts.OPEN_FAILED`.
+- Batch `ORDER_EXPIRED=67`: `event_anomaly_summary.json.batch_runs.event_counts.ORDER_EXPIRED`.
 - Event linkage status `UNKNOWN`: `event_anomaly_summary.json.linkage_status`.
 - Batch verdict `BATCH_NO_WINNER`: `post_batch_diagnostics.json.verdict`.
 - 11 top candidates all with `BS_p05 < 1.0`: `post_batch_diagnostics.json.top_failure_modes.low_bootstrap_lower_bound`.
