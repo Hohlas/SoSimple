@@ -1035,7 +1035,7 @@ def build_event_anomaly_outputs(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="MT5 execution diagnostics")
-    parser.add_argument("--phase", choices=["inventory", "errors", "events", "batch"], required=True)
+    parser.add_argument("--phase", choices=["inventory", "errors", "events", "batch", "fill-rate"], required=True)
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     parser.add_argument("--output-json", type=Path, default=DIAG_DIR / "error_inventory.json")
     parser.add_argument("--output-csv", type=Path, default=DIAG_DIR / "error_rows_classified.csv")
@@ -1055,6 +1055,17 @@ def main() -> None:
         write_json(summary, args.output_json)
         args.output_csv.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame([_csv_safe_row(candidate) for candidate in summary["top_candidates"]]).to_csv(
+            args.output_csv,
+            sep=";",
+            index=False,
+        )
+    elif args.phase == "fill-rate":
+        summary, table = build_fill_rate_diagnostics(
+            REPO_ROOT / "ML/reports/mt5_execution_loop/batch/batch_summary.json"
+        )
+        write_json(summary, args.output_json)
+        args.output_csv.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame([_csv_safe_row(row) for row in table.to_dict("records")]).to_csv(
             args.output_csv,
             sep=";",
             index=False,

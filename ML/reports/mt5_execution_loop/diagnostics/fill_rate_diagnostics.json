@@ -1,0 +1,57 @@
+{
+  "status": "DIAGNOSTIC_ONLY",
+  "verdict": "BATCH_NO_WINNER",
+  "winner": null,
+  "candidate_count": 32,
+  "n_candidates": 32,
+  "n_valid": 32,
+  "n_eligible": 11,
+  "n_diagnostic_only": 16,
+  "fill_rate_distribution": {
+    "min": 0.032114183764495985,
+    "p25": 0.06005428077966938,
+    "median": 0.09437441643323996,
+    "p75": 0.12013413578790025,
+    "max": 0.2013888888888889
+  },
+  "fill_rate_by_status": {
+    "eligible_top": {
+      "count": 11,
+      "min": 0.06102475532527346,
+      "p25": 0.0873838796860972,
+      "median": 0.09430438842203548,
+      "p75": 0.11532213150935847,
+      "max": 0.13262599469496023,
+      "low_fill_rate_count_lt_0_20": 11
+    },
+    "diagnostic_only": {
+      "count": 21,
+      "min": 0.032114183764495985,
+      "p25": 0.04961832061068702,
+      "median": 0.09491525423728814,
+      "p75": 0.15714285714285714,
+      "max": 0.2013888888888889,
+      "low_fill_rate_count_lt_0_20": 20
+    },
+    "all": {
+      "count": 32,
+      "min": 0.032114183764495985,
+      "p25": 0.06005428077966938,
+      "median": 0.09437441643323996,
+      "p75": 0.12013413578790025,
+      "max": 0.2013888888888889,
+      "low_fill_rate_count_lt_0_20": 31
+    }
+  },
+  "low_fill_rate_count_lt_0_10": 19,
+  "low_fill_rate_count_lt_0_20": 31,
+  "low_fill_rate_count_lt_0_20_eligible": 11,
+  "total_active_signal_rows": 28808,
+  "total_trades": 2508,
+  "total_open_failed": 22767,
+  "total_order_expired": 67,
+  "unknowns": {
+    "missing_per_run_inputs": {}
+  },
+  "forbidden_interpretation_guard": "no_new_winner_selected"
+}

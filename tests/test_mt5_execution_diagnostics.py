@@ -684,3 +684,13 @@ def test_build_fill_rate_diagnostics_preserves_no_winner_and_no_selection(tmp_pa
     assert summary["fill_rate_by_status"]["eligible_top"]["min"] == 0.01
     assert summary["fill_rate_by_status"]["diagnostic_only"]["min"] == 0.0
     assert len(table) == 2
+
+
+def test_cli_phase_choices_include_fill_rate() -> None:
+    import argparse
+    import inspect
+    from ML.baseline import mt5_execution_diagnostics as diag
+
+    source = inspect.getsource(diag.main)
+    assert '"fill-rate"' in source
+    assert "build_fill_rate_diagnostics" in source
