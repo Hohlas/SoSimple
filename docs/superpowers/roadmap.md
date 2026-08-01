@@ -16,11 +16,11 @@
 
 ### MT5 execution hygiene -> post-batch diagnostics
 
-Status: execution hygiene report completed as `EXECUTION_HYGIENE_PARTIAL` /
-`DIAGNOSTIC_ONLY`. Available repo `ERROR_SoSimple_*.csv`, reference events, 32
-batch event files, and post-batch failure modes are classified. Full ERROR-4756
-linkage remains open because `ERROR_SoSimple_163856259.csv` and the cumulative
-tester agent log are missing.
+Status: execution hygiene report completed as `DIAGNOSTIC_ONLY`.
+Execution hygiene status is `EXECUTION_HYGIENE_PARTIAL`: available repo
+`ERROR_SoSimple_*.csv`, reference events, 32 batch event files, and post-batch
+failure modes are classified, but full ERROR-4756 linkage remains open because
+`ERROR_SoSimple_163856259.csv` and the cumulative tester agent log are missing.
 
 Next action:
 

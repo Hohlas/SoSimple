@@ -2,7 +2,7 @@
 
 ## Current Active State
 
-- active track: `MT5 execution hygiene -> partial acceptance decision`
+- active track: `MT5 execution hygiene -> retrieve missing artifacts`
 - latest report: `docs/reports/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - latest plan: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
 - diagnostics CLI: `ML/baseline/mt5_execution_diagnostics.py`
@@ -11,8 +11,8 @@
 
 ## Decision
 
-MT5 execution hygiene and post-batch diagnostics completed as
-`EXECUTION_HYGIENE_PARTIAL` / `DIAGNOSTIC_ONLY`.
+MT5 execution hygiene and post-batch diagnostics completed as `DIAGNOSTIC_ONLY`.
+Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 
 - Available `ERROR_SoSimple_*.csv` files classified.
 - Reference and 32 batch event artifacts summarized; `_smoke` excluded.

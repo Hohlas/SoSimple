@@ -64,9 +64,10 @@ Post-batch attribution preserves `BATCH_NO_WINNER`: top 11 all failed low
 bootstrap lower bound; trade-count buckets are `100-149=9`, `150+=2`; one
 candidate failed profit concentration.
 
-Verdict: `EXECUTION_HYGIENE_PARTIAL` / `DIAGNOSTIC_ONLY`. Full classification
-is blocked by missing `ERROR_SoSimple_163856259.csv`, missing cumulative tester
-agent log with external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
+Verdict: `DIAGNOSTIC_ONLY`. Execution hygiene status:
+`EXECUTION_HYGIENE_PARTIAL`. Full classification is blocked by missing
+`ERROR_SoSimple_163856259.csv`, missing cumulative tester agent log with
+external `ERROR-4756` lines, and row-level linkage status `UNKNOWN`.
 
 ## Ключевые результаты
 
@@ -81,17 +82,16 @@ agent log with external `ERROR-4756` lines, and row-level linkage status `UNKNOW
 ## Выводы
 
 MT5 diagnostic executor is usable for structured post-batch diagnostics, but
-not for trading claims. The current failure is not a new model conclusion:
-available evidence points to low bootstrap lower bound, small-to-moderate trade
-counts and low fill rate as diagnostic failure modes, while full `ERROR-4756`
-causality remains unknown.
+not for trading claims. Hypothesis: available evidence is consistent with low
+bootstrap lower bound, small-to-moderate trade counts and low fill rate as
+diagnostic failure modes. This is not a proven model conclusion, and full
+`ERROR-4756` causality remains unknown.
 
 ## Открытые вопросы
 
 - Retrieve or explicitly abandon `ERROR_SoSimple_163856259.csv`.
 - Retrieve cumulative tester agent log with external `ERROR-4756` lines.
-- Decide whether `EXECUTION_HYGIENE_PARTIAL` is accepted before choosing the
-  next frozen probe.
+- Retrieve missing artifacts before choosing the next frozen probe.
 - Complete cost model: swap, commission, slippage, latency and stress costs.
 
 ## Источники

@@ -2,7 +2,7 @@
 
 > **Дата**: 2026-08-01
 > **Статус**: DIAGNOSTIC_ONLY
-> **Вердикт**: EXECUTION_HYGIENE_PARTIAL
+> **Вердикт**: DIAGNOSTIC_ONLY
 > **Цель**: классифицировать доступные MT5 execution error artifacts и разобрать post-batch failure modes без выбора нового winner.
 > **Related plan/spec**: `docs/superpowers/plans/2026-08-01-mt5-execution-hygiene-postbatch.md`
 
@@ -13,6 +13,7 @@ Search/post-mortem diagnostic stage. This report does not create a candidate and
 ## Research-first disclosure
 
 - **lifecycle_status**: DIAGNOSTIC_ONLY
+- **execution_hygiene_status**: EXECUTION_HYGIENE_PARTIAL
 - **origin_bias**: post-mortem after `BATCH_NO_WINNER`; no new selection
 - **research_priority**: infrastructure first, then post-batch diagnostics
 - **current_search_budget**: 0 new model/search configurations
@@ -138,7 +139,9 @@ Post-batch diagnostics preserve `BATCH_NO_WINNER`. Among 11 eligible ranked cand
 
 ## Conclusions
 
-Verdict: `EXECUTION_HYGIENE_PARTIAL`.
+Verdict: `DIAGNOSTIC_ONLY`.
+
+Execution hygiene status: `EXECUTION_HYGIENE_PARTIAL`.
 
 Facts: available repo error CSVs, reference events, batch events, and batch failure modes are now parsed into structured artifacts. No new winner was selected.
 
